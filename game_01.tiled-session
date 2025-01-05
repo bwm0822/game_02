@@ -1,0 +1,251 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "public/assets/town_02.json",
+    "expandedProjectPaths": [
+        ".",
+        "public/assets/icons",
+        "public/assets/templates",
+        "public/assets",
+        "public",
+        "public/assets/tiles"
+    ],
+    "fileStates": {
+        "": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "#buffs": {
+            "scaleInEditor": 1
+        },
+        "public/assets/Color A Spitesheet.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/TX Props.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/TX Struct.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/TX Tileset Grass.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/TX Tileset Stone Ground.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/TX Tileset Wall.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/assets_spritesheet_v2_free.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/dirtpath_tiles.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/fence_tiles.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 2,
+            "scaleInEditor": 1
+        },
+        "public/assets/free.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/group.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/hole.json": {
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 319.5,
+                "y": 319.5
+            }
+        },
+        "public/assets/hole.json#RPG Nature Tileset": {
+            "scaleInDock": 1
+        },
+        "public/assets/icons/buffs.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/icons/buffs.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/icons/town_01.json": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 530,
+                "y": 273.5
+            }
+        },
+        "public/assets/icons/town_01.json#buffs": {
+            "scaleInDock": 1
+        },
+        "public/assets/map.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 641.3333333333334,
+                "y": 479.3333333333333
+            }
+        },
+        "public/assets/map.json#RPG Nature Tileset": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "public/assets/map.tmj": {
+            "scale": 0.6689583333333333,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 480.59794456555596,
+                "y": 320.64777327935224
+            }
+        },
+        "public/assets/roles_v12.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/set.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/terrain_tiles_v2.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/tiles/RPG Nature Tileset.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/tiles/TX Tileset Grass.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/tiles/map.tmj": {
+            "scale": 0.6689583333333333,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 480.59794456555596,
+                "y": 320.64777327935224
+            }
+        },
+        "public/assets/town_00.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 581.3333333333333,
+                "y": 480.3333333333333
+            }
+        },
+        "public/assets/town_00.json#free": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/town_01.json": {
+            "expandedObjectLayers": [
+                6
+            ],
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 366,
+                "y": 574
+            }
+        },
+        "public/assets/town_01.json#RPG Nature Tileset": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "public/assets/town_01.json#group": {
+            "dynamicWrapping": true,
+            "scaleInEditor": 1
+        },
+        "public/assets/town_02.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 306,
+                "y": 296.5
+            }
+        },
+        "public/assets/town_02.json#spr_tileset_sunnysideworld": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/town_02.json#terrain_tiles_v2": {
+            "scaleInDock": 1
+        }
+    },
+    "last.imagePath": "C:/Personal/projects/web/game_01/public/assets/roles",
+    "last.objectTemplatePath": "C:/Personal/projects/web/game_01/public/assets/templates",
+    "map.fixedSize": true,
+    "map.height": 40,
+    "map.lastUsedFormat": "json",
+    "map.layerDataFormat": "1",
+    "map.tileHeight": 32,
+    "map.tileWidth": 32,
+    "map.width": 40,
+    "openFiles": [
+        "public/assets/town_02.json",
+        "public/assets/map.json"
+    ],
+    "project": "game_01.tiled-project",
+    "property.type": "int",
+    "recentFiles": [
+        "public/assets/map.json",
+        "public/assets/town_02.json",
+        "public/assets/Color A Spitesheet.tsj",
+        "public/assets/town_00.json",
+        "public/assets/town_01.json",
+        "public/assets/group.tsj",
+        "public/assets/set.tsj",
+        "public/assets/free.tsj",
+        "public/assets/hole.json",
+        "public/assets/fence_tiles.tsj",
+        "public/assets/terrain_tiles_v2.tsj",
+        "public/assets/assets_spritesheet_v2_free.tsj"
+    ],
+    "resizeMap.removeObjects": false,
+    "tileset.embedInMap": false,
+    "tileset.lastUsedFormat": "json",
+    "tileset.tileSize": {
+        "height": 64,
+        "width": 96
+    },
+    "tileset.type": 0
+}

@@ -1,0 +1,14 @@
+{ "columns":3,
+ "image":"roles\/Color A Spitesheet.png",
+ "imageheight":192,
+ "imagewidth":360,
+ "margin":0,
+ "name":"Color A Spitesheet",
+ "spacing":0,
+ "tilecount":9,
+ "tiledversion":"1.11.0",
+ "tileheight":64,
+ "tilewidth":96,
+ "type":"tileset",
+ "version":"1.10"
+}
