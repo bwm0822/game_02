@@ -206,8 +206,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 320,
-                "y": 319
+                "x": 330.5,
+                "y": 296.5
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -233,7 +233,7 @@
         "public/assets/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "bool",
     "recentFiles": [
         "public/assets/town_02.json",
         "public/assets/map.json",

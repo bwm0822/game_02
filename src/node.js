@@ -9,8 +9,14 @@ export class Node extends Entity
         super(scene,x,y);
         this.id = 0;
         this.type = '';
-        this.weight = 1;
+        this.weight = 10;
         this.act = 'enter';
+    }
+
+    addText(label)
+    {
+        let lb = this.scene.add.text(0,-60,label,{fontFamily:'Arial',fontSize:'48px',color:'#000',stroke:'#ff0',strokeThickness:0}).setOrigin(0.5);
+        this.add(lb);
     }
 
     addListener()
@@ -22,6 +28,7 @@ export class Node extends Entity
     init(map)
     {
         super.init(map);
+        this.addText(this.name);
         if(!this.scene.nodes){this.scene.nodes={};}
         this.scene.nodes[this.name]=this;
     }

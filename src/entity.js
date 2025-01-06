@@ -133,7 +133,7 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debug(depth.toFixed(1));
     }
 
-    init(map)
+    init()
     {
         this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
