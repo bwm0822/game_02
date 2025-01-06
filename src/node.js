@@ -6,20 +6,45 @@ export class Node extends Phaser.GameObjects.Container
     {
         super(scene);
         this.scene = scene;
-        this._sel=false;
-        this._enabled=false;
-        this.id = 0;
+        this.enableOutline();
+        this.addListener();
+        // this._sel=false;
+        // this._enabled=false;
+        this.id=0;
         this.type='';
+        this.weight=1;
+        this.act='enter';
 
-        this.on('pointerup', () => { if(this._enabled||this._sel){this.enter();} })
-            .on('pointerover', () => { this._sp.setTint(this.color&0x777777); })
-            .on('pointerout', () => { this._sp.setTint(this.color&0xffffff); })
+        // this.on('pointerup', () => { if(this._enabled||this._sel){this.enter();} })
+        //     .on('pointerover', () => { this._sp.setTint(this.color&0x777777); })
+        //     .on('pointerout', () => { this._sp.setTint(this.color&0xffffff); })
     }
 
-    get color() {return this._sel ? 0xff0000 : 0xffffff;}
-    set selected(value) {this._sel=value;this._sp.setTint(this.color);}
-    set enabled(value) {this._enabled=value;}
-    get links() {return this.data.get('link').split(',');}
+    get pos() {return {x:this.x,y:this.y};}
+    // get color() {return this._sel ? 0xff0000 : 0xffffff;}
+    // set selected(value) {this._sel=value;this._sp.setTint(this.color);}
+    // set enabled(value) {this._enabled=value;}
+    // get links() {return this.data.get('link').split(',');}
+
+    enableOutline()
+    {
+        this._outline = this.scene.plugins.get('rexOutlinePipeline');
+        this.on('outline', (on) => {this.outline(on);})
+    }
+
+    addListener()
+    {
+        this.on('pointerover',()=>{this.outline(true);this.scene.events.emit('over',this.act)})
+            .on('pointerout',()=>{this.outline(false);this.scene.events.emit('out')})
+        
+        this.on('enter',()=>{this.enter()})
+    }
+
+    outline(on,color=0xffffff)
+    {
+        if(on) {this._outline.add(this,{thickness:3,outlineColor:color});}
+        else {this._outline.remove(this);}
+    }
 
 
     setPosition(x,y)    // map.createFromObjects 會呼叫到
@@ -38,13 +63,22 @@ export class Node extends Phaser.GameObjects.Container
 
     setFlip(){} // map.createFromObjects 會呼叫到
 
-    init()
+    addPhysics()
+    {
+        this.scene.physics.add.existing(this, true);
+        this.body.setSize(this.displayWidth,this.displayHeight);
+        //this.body.setOffset(this.left,this.top);
+        //this.scene.groupStatic.add(this);
+    }
+
+    init(map)
     {
         //this.debugDraw();
-        this.setInteractive();
+        this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
+        this.addPhysics();
         if(!this.scene.nodes){this.scene.nodes={};}
-        console.log(this);
         this.scene.nodes[this.name]=this;
+        map.updateGrid(this.pos,this.weight);
     }
     
     async enter()

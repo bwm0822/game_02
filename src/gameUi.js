@@ -4,6 +4,13 @@ import Utility from './utility.js';
 
 const ICON_SHIELD = 'buffs/32';
 const ICON_MARK = 'buffs/108';
+const ICON_GO = 'cursors/steps';
+const ICON_TALK = 'cursors/message_dots_round';
+const ICON_EXIT = 'cursors/door_exit';
+const ICON_ENTER = 'cursors/door_enter';
+const ICON_UP = 'cursors/stairs_up';
+const ICON_DOWN = 'cursors/stairs_down';
+const ICON_TAKE = 'cursors/hand_small_open';
 
 export class Shield extends OverlapSizer
 {
@@ -427,10 +434,20 @@ export class Mark
 {
     constructor(scene)
     {
-        this._sp = sprite(scene,{icon:ICON_MARK,name:'mark'})
+        this._icons = {go:ICON_GO, talk:ICON_TALK, enter:ICON_ENTER, exit:ICON_EXIT, take:ICON_TAKE}
+        this._sp = sprite(scene,{icon:ICON_GO,name:'mark'})
         this._sp.visible=false;
-        this._sp.setDisplaySize(32,32);
+        //this._sp.setDisplaySize(32,32);
         this._sp.setDepth(Infinity);
+    }
+
+    setIcon(type)
+    {
+        if(type)
+        {
+            let [key,frame]=this._icons[type].split('/');
+            this._sp.setTexture(key,frame);
+        }
     }
 
     show(p,color=0xffffff)

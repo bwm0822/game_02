@@ -50,7 +50,7 @@
                  "id":12,
                  "name":"",
                  "rotation":0,
-                 "type":"entity",
+                 "type":"pickup",
                  "visible":true,
                  "width":32,
                  "x":256,

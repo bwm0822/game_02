@@ -40,49 +40,49 @@ export class GameTown extends Scene
     {
         console.log('town_create');
         this._dbgGraphics=null;
-        this.list=[];
-        this._interact=false;
+        this._roles=[];
+        this._act='go';
+        this._mark = new Mark(this);
         
         this.uiEvent();
         this.initUI();
-        this.groupStatic = this.physics.add.staticGroup();
+        //this.groupStatic = this.physics.add.staticGroup();
         QuestManager.load();
         this.map = new Map(this,this._data.map);
+
+        this.setPosition();
+        this.processInput();
+        this.process();
+    }
+
+    processInput()
+    {
         this.keys = this.input.keyboard.createCursorKeys();
 
-        // let margin = {w:map.map.width*map.map.tileWidth, h:map.map.height*map.map.tileHeight};
-        // let camSz = {w:this.cameras.main._width, h:this.cameras.main._height};
-        // this.camOff = {x:this.cameras.main._width/2,y:this.cameras.main._height/2}
+        this.input
+        .on('pointerdown', (pointer)=>{
 
-        // this.bounds = {left:0, right:margin.w-camSz.w, top:0, bottom:margin.h-camSz.h};
-
-
-        
-        //new Block(this,100,100);
-        this.setPosition();
-
-        this._mark = new Mark(this);
-
-        this.input.on('pointerup', (pointer)=>{
-
-            if(this._avatar.moving)
+            if (pointer.rightButtonDown())
             {
-                this._avatar.stop();
-                this.findPath({x:pointer.worldX,y:pointer.worldY});
+               console.log('right');
             }
-            else if(this?._rst?.valid)
+            else
             {
-                this._mark.hide();
-                this.debugDraw(null,true);
-                //this._avatar.path(this._rst.path);
-                //this._avatar.setTarget({x:pointer.worldX,y:pointer.worldY});
-                console.log(this._interact)
-                this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._interact);
-                //cb.resolve();
+                if(this._avatar.moving)
+                {
+                    this._avatar.stop();
+                    this.findPath({x:pointer.worldX,y:pointer.worldY});
+                }
+                else if(this?._rst?.valid)
+                {
+                    this._mark.hide();
+                    this.debugDraw(null,true);
+                    this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
+                }
             }
+            
         })
-
-        this.input.on('pointermove',(pointer)=>{
+        .on('pointermove',(pointer)=>{
 
             if(!this._avatar.moving)
             {
@@ -90,24 +90,18 @@ export class GameTown extends Scene
             }
         })
 
-
-        this.input.keyboard.on('keydown',()=>{
-            this.keyin();
-        })
-
-        this.process();
-
+        this.input.keyboard.on('keydown',()=>{this.keyin();})
     }
 
     async process()
     {
-        let list = this.list;
-        list.push(this._avatar);
+        let roles = this._roles;
+        roles.push(this._avatar);
         while(true)
         {
-            for(let i=0;i<list.length;i++)
+            for(let i=0;i<roles.length;i++)
             {
-                await list[i].process();
+                await roles[i].process();
             }
         }
     }
@@ -179,43 +173,9 @@ export class GameTown extends Scene
         if(this.keys.right.isDown){loc.x+=32;}
         if(this.keys.up.isDown){loc.y-=32;}
         if(this.keys.down.isDown){loc.y+=32;}
+        this.debugDraw(null,true);
+        this._mark.hide();
         this._avatar.setDes(loc);
-    }
-
-    update_1()
-    {
-        if(this.keys.left.isDown){this.keyL=3;}
-        else{this.keyL=Math.max(0, this.keyL-1);}
-        if(this.keys.right.isDown){this.keyR=3;}
-        else{this.keyR=Math.max(0, this.keyR-1);}
-        if(this.keys.up.isDown){this.keyU=3;}
-        else{this.keyU=Math.max(0, this.keyU-1);}
-        if(this.keys.down.isDown){this.keyD=3;}
-        else{this.keyD=Math.max(0, this.keyD-1);}
-
-        let v={x:0,y:0};
-        if(this.keyL>0){v.x+=-1;}
-        if(this.keyR>0){v.x+=1;}
-        if(this.keyU>0){v.y+=-1;}
-        if(this.keyD>0){v.y+=1;}
-        //this._avatar.move(v);
-        let loc={x:this._avatar.pos.x+v.x*16,y:this._avatar.pos.y+v.y*16}
-        //this._avatar.setDes(loc)
-
-        // if (this.cursors.left.isDown){this.camX=this.camX-1;}
-        // else if (this.cursors.right.isDown){this.camX=this.camX+1;}
-
-        // if (this.cursors.up.isDown){this.camY=this.camY-1;}
-        // else if (this.cursors.down.isDown){this.camY=this.camY+1;}
-
-        // let d={x:0,y:0}
-
-        // if (this.cursors.left.isDown){d.x-=1;}
-        // if (this.cursors.right.isDown){d.x+=1;}
-        // if (this.cursors.up.isDown){d.y-=1;}
-        // if (this.cursors.down.isDown){d.y+=1;}
-
-        // this._avatar.move(d);
     }
 
     initUI()
@@ -238,8 +198,8 @@ export class GameTown extends Scene
     {
         //if(this._done) return;
         //this._done = true;
-        this.events.on('over', (obj)=>{console.log('over');this._interact=true;})
-                    .on('out', (obj)=>{console.log('out');this._interact=false;});
+        this.events.on('over', (act)=>{this._act=act;this._mark.setIcon(this._act);})
+                    .on('out', ()=>{this._act='go';this._mark.setIcon(this._act);});
 
         const ui = this.scene.get('UI');
         ui.events.off('exit').off('battle');

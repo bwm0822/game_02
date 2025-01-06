@@ -78,6 +78,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.collide=true;
         this.enableOutline();
         this.addListener();
+        this.act='';
+        this.weight=0;
     }
 
     get pos()       {return {x:this.x,y:this.y}}
@@ -96,8 +98,8 @@ export class Entity extends Phaser.GameObjects.Container
         //     else{this.disableInteractive();}
         // })
 
-        this.on('pointerover',()=>{this.outline(true);this.scene.events.emit('over',this)})
-            .on('pointerout',()=>{this.outline(false);this.scene.events.emit('out',this)})
+        this.on('pointerover',()=>{this.outline(true);this.scene.events.emit('over',this.act)})
+            .on('pointerout',()=>{this.outline(false);this.scene.events.emit('out')})
     }
 
     outline(on)
@@ -134,13 +136,11 @@ export class Entity extends Phaser.GameObjects.Container
 
     init(map)
     {
-        console.log('entity')
         this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
-        map.updateGrid(this.pos,1000);
+        map.updateGrid(this.pos,this.weight);
         //this.debugDraw();
-        console.log(this);
     }
 
     debugDraw()
@@ -165,28 +165,31 @@ export class Entity extends Phaser.GameObjects.Container
 
 export class Pickup extends Entity
 {
+    constructor(scene)
+    {
+        super(scene);
+        this.act='take';        
+    }
+
     addListener()
     {
         super.addListener();
-        this.on('pointerup',()=>{this.pickup()})
+        this.on('take',()=>{this.pickup()})
     }
 
     pickup()
     {
         console.log('pickeup');
         this.set();
-       
-
-        this.destroy();
-        
+        this.destroy();   
     }
 
-    init(mapName)
-    {
-        this._mapName = mapName;
-        super.init();
-        this.check();
-    }
+    // init(mapName)
+    // {
+    //     this._mapName = mapName;
+    //     super.init();
+    //     this.check();
+    // }
 
     check()
     {
@@ -217,12 +220,13 @@ export class Port extends Entity
         this.id='';
         this.type='';
         this.map='';
+        this.act='exit';        
     }
 
     addListener()
     {
         super.addListener();
-        this.on('pointerup', () => { this.enter(); })
+        this.on('exit',()=>{this.exit();})
     }
 
     init(map)
@@ -232,9 +236,9 @@ export class Port extends Entity
         this.scene.ports[this.name]={x:this.x,y:this.y}
     }
 
-    async enter()
+    async exit()
     {
-        console.log('enter',this.id,this.type,this.map);
+        //console.log('exit',this.id,this.type,this.map);
         if(this.type=='map')
         {
             this.scene.scene.start('GameMap',{id:this.id});

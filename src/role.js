@@ -938,6 +938,150 @@ export class Player
 }
 
 
+export class Target extends Phaser.GameObjects.Container
+{
+    constructor(scene, x, y)
+    {
+        super(scene, x, y);
+        this.scene = scene;
+        scene.add.existing(this);
+        this.addSprite();
+        //this.updateDepth();
+        //this.debugDraw();
+        this._path=[];
+        this._t=0;
+        this._pid=0;
+        this._des=null;
+        this._resolve;
+        //this.drawPath([])
+        console.log(this)
+        this.loop();
+    }
+
+    get pos()       {return {x:this.x,y:this.y};}
+    get moving()    {return this._des!=null;}
+
+    addSprite()
+    {
+        let sp = this.scene.add.sprite(0,0,'buffs',20).setTint(0x0000ff);
+        sp.setDisplaySize(32,32);
+        this.setSize(32,32);
+        this.add(sp);
+    }
+
+    async loop()
+    {
+        while(true)
+        {
+            await this.process();
+        }
+    }
+
+    async process()
+    {
+        if(this.moving) {await this.moveTo();}
+        else
+        {
+            await this.pause();
+            if(this.moving) {await this.moveTo();}
+        }
+    }
+
+    async pause()
+    {
+        this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});
+    }
+
+    resume() {this._resolve?.(null);}
+
+    async setDes(des, act)
+    {
+        let rst = this.scene.map.getPath(this.pos, des, act);
+        if(rst && rst.valid)
+        {
+            this._path = rst.path;
+            this._des = {pos:des, act:act};
+        }
+        else
+        {
+            this._des = null;
+        }
+
+        this.resume();
+    }
+
+    async moveTo()
+    {
+        let path = this._path;
+        if(path[0].act=='go')
+        {
+            this.drawPath(path);
+            await this.step(path[0].pt);
+            //this.updateDepth();
+            path.splice(0,1);
+            if(path.length>0) {return;}
+        }
+        else
+        {
+            console.log('act',path[0].act)
+            this.interact(path[0].pt,path[0].act)
+        }
+        this.stop();
+        
+    }
+
+    interact(pt,act)
+    {
+        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+        bodys.forEach((body) => {
+            console.log(body.gameObject);
+            body.gameObject.emit(act);
+        });
+    }
+
+    step(target)
+    {
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: this,
+                x: target.x,
+                y: target.y,
+                duration: 200,
+                //ease: 'expo.in',
+                //delaycomplete: 1000,
+                onComplete: (tween, targets, gameObject)=>{
+                    resolve();
+                }         
+            });
+        });
+    }
+
+    stop()
+    {
+        this._des=null;
+        this._dbgPath.clear();
+    }
+
+    drawPath(path)
+    {
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this.scene.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+        }
+        this._dbgPath.clear();
+        path.forEach(node=>{
+            if(node.act=='go')
+            {
+                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            }
+        })
+    }
+}
+
+
 
 
 export class Avatar extends Phaser.GameObjects.Container
@@ -1022,20 +1166,21 @@ export class Avatar extends Phaser.GameObjects.Container
         this._list = list;
     }
 
-    interact(pt)
+    interact(pt,act)
     {
-        let list = this.scene.physics.overlapCirc(this.x, this.y, 5, true, true);
-        this._list.forEach((body) => {
+        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+        bodys.forEach((body) => {
             console.log(body.gameObject);
+            body.gameObject.emit(act);
         });
     }
 
-    preUpdate(time, delta)
-    {
-        //console.log(time,delta)
-        this.detect();
-        this.debugDraw();
-    }
+    // preUpdate(time, delta)
+    // {
+    //     //console.log(time,delta)
+    //     this.detect();
+    //     this.debugDraw();
+    // }
 
     async process()
     {
@@ -1091,14 +1236,14 @@ export class Avatar extends Phaser.GameObjects.Container
         this._pid=0;
     }
 
-    setDes(des,interact) {this._des={pos:des,interact:interact}; this.resume();}
+    setDes(des,act) {this._des={pos:des,act:act}; this.resume();}
 
     async moveTo()
     {
-        let rst = this.scene.map.getPath(this.pos, this._des.pos, this._des.interact);
+        let rst = this.scene.map.getPath(this.pos, this._des.pos, this._des.act);
         if(rst && rst.valid)
         {
-            if(!rst.path[0].act)
+            if(rst.path[0].act=='go')
             {
                 this.drawPath(rst.path);
                 this.scene.map.updateGrid(this.pos,-1000);
@@ -1106,6 +1251,12 @@ export class Avatar extends Phaser.GameObjects.Container
                 this.updateDepth();
                 this.scene.map.updateGrid(this.pos,1000);
                 if(rst.path.length>1) {return;}
+            }
+            else
+            {
+                console.log('act',rst.path[0].act)
+                this.interact(rst.path[0].pt,rst.path[0].act)
+
             }
         }
         this.stop();
@@ -1145,7 +1296,7 @@ export class Avatar extends Phaser.GameObjects.Container
         }
         this._dbgPath.clear();
         path.forEach(node=>{
-            if(!node.act)
+            if(node.act=='go')
             {
                 let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
                 this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
@@ -1172,8 +1323,6 @@ export class Avatar extends Phaser.GameObjects.Container
                         //.lineStyle(3, 0x00fff00)
                         .strokeCircleShape(circle);
     }
-
-
 }
 
 

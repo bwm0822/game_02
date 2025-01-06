@@ -13,9 +13,10 @@ import {astar, Graph} from './astar.js';
 
 class Map
 {
-    constructor(scene, mapName, record)
+    constructor(scene, mapName, diagonal)
     {
-        this.createMap(scene, mapName, record);
+        scene.map = this;
+        this.createMap(scene, mapName, diagonal);
     }
 
     static load(scene, maps)
@@ -182,40 +183,8 @@ class Map
         });
     }
 
-    // createMap(scene)
-    // {
-    //     // scene.mapLayer = scene.add.layer();
-    //     // scene.mapLayer.name = 'mapLayer';
-    //     // scene.gameLayer = scene.add.layer();
-    //     // scene.gameLayer.name = 'gameLayer';
 
-    //     this.scene = scene;
-    //     let map = scene.make.tilemap({key: 'map'});
-    //     map.tilesets.forEach((tileset) => {map.addTilesetImage(tileset.name);});
-
-    //     let layer1 = map.createLayer('Layer1', ['RPG Nature Tileset'], 0, 0);        
-    //     // let layer2 = map.createLayer('Tile Layer 2', ['RPG Nature Tileset','Wooden_Bridges','Campfire',], 0, 0);
-    //     let objs = map.createFromObjects('Layer2',[
-    //             {type:'node',classType:Node},
-    //         ]);
-    //     objs.forEach((obj) => {obj.init(map);});
-
-    //     map.setLayer(layer1);
-    //     //scene.mapLayer.add(layer1);
-    //     // scene.mapLayer.add([layer1, layer2]);
-    //     // scene.gameLayer.add(objs);
-        
-        
-
-    //     // this.craeteMark(map);
-    //     // this.debugDraw();
-
-    //     console.log(map);
-
-    // }
-
-
-    createMap(scene, mapName)
+    createMap(scene, mapName, diagonal)
     {
         let lut = scene.cache.tilemap.get(mapName).lut;
 
@@ -236,12 +205,11 @@ class Map
         //console.log(tilesets)
 
         
-
         map.layers.forEach((layer)=>{
             map.createLayer(layer.name, tilesets, 0, 0);    
         });
 
-        this.createGraph(map);
+        this.createGraph(diagonal);
 
         map.objects.forEach((layer)=>{
 
@@ -264,25 +232,9 @@ class Map
             objs.forEach((obj) => {obj.init?.(this);});
         });
 
-        
-
-
-
-        //let layer1 = map.createLayer('Layer1', ['RPG Nature Tileset'], 0, 0);        
-        // let layer2 = map.createLayer('Tile Layer 2', ['RPG Nature Tileset','Wooden_Bridges','Campfire',], 0, 0);
-        // let objs = map.createFromObjects('Layer2',[
-        //         {type:'node',classType:Node},
-        //     ]);
-        // objs.forEach((obj) => {obj.init(map);});
-
-        //map.setLayer(layer1);
-        //console.log(map);
-
-        return map;
-
     }
 
-    createGraph()
+    createGraph(diagonal=false)
     {
         let map = this.map;
 
@@ -297,44 +249,21 @@ class Map
         map.layers.forEach((layer)=>{
             map.setLayer(layer.name);
             map.forEachTile((tile)=>{
-                let p = tile.tileset?.tileProperties[tile.index-1];
+                //let p = tile.tileset?.tileProperties[tile.index-1];
+                let p = tile?.properties;
                 if(p)
                 {
                     if(p.collide){grid[tile.y][tile.x]=0;}
-                    else if(p.cost){grid[tile.y][tile.x]=p.cost;}
+                    else if(p.weight){grid[tile.y][tile.x]=p.weight;}
                 }
             });
         });
 
-        this.graph = new Graph(grid,{diagonal:true});
+        this.graph = new Graph(grid,{diagonal:diagonal});
         
     }
 
-    // path(sp,ep)
-    // {
-    //     let map = this.map;
-    //     let sx = map.worldToTileX(sp.x);
-    //     let sy = map.worldToTileX(sp.y);
-    //     let ex = map.worldToTileX(ep.x);
-    //     let ey = map.worldToTileX(ep.y);
-    //     if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
-
-    //     let start = this.graph.grid[sy][sx];
-    //     let end = this.graph.grid[ey][ex];
-    //     let result = astar.search(this.graph, start, end);
-    //     //console.log(result.length)
-    //     let tW=map.tileWidth, tW_2=tW/2;
-    //     let tH=map.tileHeight, tH_2=tH/2;
-    //     let pts=[];
-    //     result.forEach(node=>{
-    //         let pt = {x:node.y*tW+tW_2,y:node.x*tH+tH_2}
-    //         //this.debugDraw(pt);
-    //         pts.push(pt);
-    //     })
-    //     return pts;
-    // }
-
-    getPath(sp,ep,interact=false)
+    getPath(sp,ep,act='go')
     {
         let map = this.map;
         let ex = map.worldToTileX(ep.x);
@@ -372,7 +301,7 @@ class Map
                 let path=[];
                 result.forEach((node,i)=>{
                     let pt = {x:node.y*tW+tW_2,y:node.x*tH+tH_2}
-                    path.push({pt:pt,act:i==len-1&&interact});
+                    path.push({pt:pt,act:i==len-1?act:'go'});
                 })
                 return {valid:true,pt:pt,path:path}
             }
