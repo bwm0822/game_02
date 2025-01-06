@@ -305,21 +305,6 @@ class Map
                 })
                 return {valid:true,pt:pt,path:path}
             }
-
-
-            // if(len>=2 && result[len-2].g>=1000)
-            // {
-            //     return {valid:false,pt:pt}
-            // }
-            // else
-            // {
-            //     let path=[];
-            //     result.forEach((node)=>{
-            //         let pt = {x:node.y*tW+tW_2,y:node.x*tH+tH_2}
-            //         path.push({pt:pt,g:node.g});
-            //     })
-            //     return {valid:true,pt:pt,path:path}
-            // }
         }
     }
 
@@ -328,6 +313,13 @@ class Map
         let tx = this.map.worldToTileX(pos.x);
         let ty = this.map.worldToTileX(pos.y);
         this.graph.grid[ty][tx].weight += w;
+    }
+
+    isValid(pos,w=1000)
+    {
+        let tx = this.map.worldToTileX(pos.x);
+        let ty = this.map.worldToTileX(pos.y);
+        return this.graph.grid[ty][tx].weight<w;
     }
 
     processMap(map)

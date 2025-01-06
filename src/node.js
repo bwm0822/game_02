@@ -1,6 +1,50 @@
 import Record from './record.js'
+import {Entity} from './entity.js'
 
-export class Node extends Phaser.GameObjects.Container
+
+export class Node extends Entity
+{
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this.id = 0;
+        this.type = '';
+        this.weight = 1;
+        this.act = 'enter';
+    }
+
+    addListener()
+    {
+        super.addListener();
+        this.on('enter',()=>{this.enter()})
+    }
+
+    init(map)
+    {
+        super.init(map);
+        if(!this.scene.nodes){this.scene.nodes={};}
+        this.scene.nodes[this.name]=this;
+    }
+    
+    async enter()
+    {
+        console.log('enter',this.type);
+
+        if(this.type=='battle')
+        {
+            this.scene.scene.start('GameBattle',{id:this.id});
+        }
+        else
+        {
+            this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
+        }
+    }
+}
+
+
+
+
+export class Node_old extends Phaser.GameObjects.Container
 {
     constructor(scene)
     {

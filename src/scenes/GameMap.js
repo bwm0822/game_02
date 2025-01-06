@@ -56,7 +56,8 @@ export class GameMap extends Scene
     {
         let node = this.nodes[0];
         console.log(node)
-        this._avatar = new Role.Target(this,node.x,node.y)
+        this._avatar = new Role.Target(this,node.x,node.y);
+        this.cameras.main.startFollow(this._avatar,true,0.01,0.01);
     }
 
     initUI()

@@ -18,493 +18,496 @@ const ICON_CURE = 'buffs/28';
 const ICON_ATTACK = 'buffs/31';
 const ICON_SHIELD = 'buffs/32';
 const ICON_POISON = 'buffs/33';
+const ICON_TARGET = 'buffs/20';
+const ICON_AVATAR = 'role/0';
+const ICON_ENEMY = 'role/1';
 
-export class Role extends Phaser.GameObjects.Container
-{
-    constructor(scene, id, {x, y, faceTo='right', data}={})
-    {
-        super(scene, x, y);
-        this.scene = scene;
-        let role = RoleDB.get(id);
-        this.addData(role, id, data);
-        this.setSize(role.size.w,role.size.h);
-        this.addSprite(role,faceTo);
+// export class Role_old extends Phaser.GameObjects.Container
+// {
+//     constructor(scene, id, {x, y, faceTo='right', data}={})
+//     {
+//         super(scene, x, y);
+//         this.scene = scene;
+//         let role = RoleDB.get(id);
+//         this.addData(role, id, data);
+//         this.setSize(role.size.w,role.size.h);
+//         this.addSprite(role,faceTo);
         
-        this.createHp();
-        this.createShield();
-        this.createBuff();
-        this.createFlag();
-        this.addListener();
-        scene.add.existing(this);
+//         this.createHp();
+//         this.createShield();
+//         this.createBuff();
+//         this.createFlag();
+//         this.addListener();
+//         scene.add.existing(this);
 
-        this.updateHp();
-        //this.debugDraw();
-    }
+//         this.updateHp();
+//         //this.debugDraw();
+//     }
 
-    get pos() {return {x:this.x, y:this.y};} 
-    get dead() {return this.role.dead;}
+//     get pos() {return {x:this.x, y:this.y};} 
+//     get dead() {return this.role.dead;}
 
-    addData(role, id, data)
-    {
-        this.role = data??new RoleData(role, id);
-        this.role
-            .on('hp', async (delta,text,resolve)=>{
-                this._hpBar?.set(this.role.hp,this.role.hpMax);
-                if(delta != 0)
-                {
-                    if(delta<0){this.getHurt();}
-                    await this.createText(text);
-                }
-                resolve?.();
-            })
-            .on('shield', (num)=>{this._shield?.setNum(num);})
-            .on('text', (text,reslove)=>{this.createText(text,reslove);})
-            .on('defend', (num,resolve)=>{
-                this.defend();
-                this.createText('defend'.local(),resolve);
-                this._shield.setNum(num);
-            })
-            .on('addBuff', (buff)=>{this.addBuff(buff);})
-            .on('updateBuff', async(buff,apply)=>{await this.updateBuff(buff,apply);})
-            .on('ap', (ap)=>{this.scene.events.emit('ap',ap);})  // ui.js/UiBattle.setAp()
-            .on('flag',async(prepare,role,resolve)=>{
-                await this._flag.set(prepare,role);
-                resolve?.();
-            })
+//     addData(role, id, data)
+//     {
+//         this.role = data??new RoleData(role, id);
+//         this.role
+//             .on('hp', async (delta,text,resolve)=>{
+//                 this._hpBar?.set(this.role.hp,this.role.hpMax);
+//                 if(delta != 0)
+//                 {
+//                     if(delta<0){this.getHurt();}
+//                     await this.createText(text);
+//                 }
+//                 resolve?.();
+//             })
+//             .on('shield', (num)=>{this._shield?.setNum(num);})
+//             .on('text', (text,reslove)=>{this.createText(text,reslove);})
+//             .on('defend', (num,resolve)=>{
+//                 this.defend();
+//                 this.createText('defend'.local(),resolve);
+//                 this._shield.setNum(num);
+//             })
+//             .on('addBuff', (buff)=>{this.addBuff(buff);})
+//             .on('updateBuff', async(buff,apply)=>{await this.updateBuff(buff,apply);})
+//             .on('ap', (ap)=>{this.scene.events.emit('ap',ap);})  // ui.js/UiBattle.setAp()
+//             .on('flag',async(prepare,role,resolve)=>{
+//                 await this._flag.set(prepare,role);
+//                 resolve?.();
+//             })
 
-    }
+//     }
 
-    addListener()
-    {
-        let tween;
-        let addTween = ()=>{
-            tween = this.scene.tweens.add({
-                    targets: this._sprite,
-                    alpha: 0.5,
-                    duration: 500,
-                    ease: 'Sine.easeInOut',
-                    yoyo: true,
-                    repeat: -1
-            });
-        }
+//     addListener()
+//     {
+//         let tween;
+//         let addTween = ()=>{
+//             tween = this.scene.tweens.add({
+//                     targets: this._sprite,
+//                     alpha: 0.5,
+//                     duration: 500,
+//                     ease: 'Sine.easeInOut',
+//                     yoyo: true,
+//                     repeat: -1
+//             });
+//         }
 
-        let delTween = ()=>{ this._sprite.setAlpha(1); tween.remove(); }
+//         let delTween = ()=>{ this._sprite.setAlpha(1); tween.remove(); }
 
-        this.setInteractive();
-        this.on('pointerover', (pointer, x, y, event) => {
-                BuffInfo.show(this,this.role.action,this.role.buffs_m);
-                Battle.interact('over',this);
-            })
-            .on('pointerout', (pointer, x, y, event) => {
-                BuffInfo.hide();
-                Battle.interact('out',this);
-            })
-            .on('pointerup', (pointer, x, y, event) => {
-                Battle.interact('up',this);
-            })
-
-
-        this.on('apply', (effect,resolve)=>{
-            this.apply(effect,resolve);
-        });
-    }
-
-    addSprite(role, faceTo)
-    {
-        let [atlas, frame] = role.icon.split('/');
-        let anchor = role.anchor;
-        this._sprite = this.scene.add.sprite(0, 0, atlas,frame).setOrigin(anchor.x,anchor.y);
-        this._sprite.faceTo = role.faceTo??'right';
-        this.add([this._sprite]);
-        this._sprite.on('animationupdate', ()=>{ 
-            this._sprite.setOrigin(anchor.x,anchor.y);
-        });        
-        this.faceTo(faceTo);
-    }
-
-    faceTo(faceTo)
-    {
-        this._faceTo=faceTo;
-        this._sprite.flipX = this._sprite.faceTo != faceTo;
-        return this;
-    }
-
-    death()
-    {
-        this._sprite.setTexture('rip')
-                    .setScale(0.5)
-                    .setOrigin(0.5)
-                    .setPosition(0,0);
-    }
-
-    updateDepth()
-    {
-        let depth = this.y + this.height/2;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
-    }
-
-    createHp()
-    {
-        let w=this.width*1.5, h=10;
-        this._hpBar = new ProgressBar(this.scene, 0, this.height/2+10, w, h); 
-        this.add(this._hpBar);
-    }
-
-    createShield()
-    {
-        let x = -this.width*1.5/2-5;
-        let y = this.height/2+10;
-        //this._shield = new Buff(this.scene, 20, 20, {x:x, y:y, buff:{icon:ICON_SHIELD, dur:''}, align:'center'}).setOrigin(1,0.5);
-        this._shield = new Shield(this.scene, 30, 30,{x:x, y:y}).setOrigin(1,0.5);
-        this.add(this._shield);
-        this._shield.layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
-    }
-
-    createBuff()
-    {
-        let w=this.width*1.5, h=10;
-        this._buffBar = new BuffBar(this.scene, 0, this.height/2+h+15, w, h); 
-        this._buffBar.setDepth(1000);
-        this.add(this._buffBar);
-    }
-
-    createFlag()
-    {
-        this._flag = new Flag(this.scene, 0, -this.height/2-20); 
-        this.add(this._flag);
-    }
-
-    updateHp()
-    {
-        this._hpBar.set(this.role.hp,this.role.hpMax);
-    }
-
-    updateShield()
-    {
-        this._shield.setNum(this.role.shield);
-    }
-
-    addBuff(buff)
-    {
-        this.createSprite(buff.icon);
-    }
-
-    async updateBuff(buff,apply)
-    {
-        this.scene.events.emit('updateCard');
-        await this._buffBar.updateBuff(buff,apply);
-    }
-
-    updateShield()
-    {
-        if(this.role.shield<=0){this._shield.hide();}
-        else{this._shield.setNum(this.role.shield).show();}
-    }
-
-    async hideDisp(delay=-1)
-    {
-       // this._hpBar.hide(dealy);
-        await Utility.delay(delay);
-        this._hpBar.hide();
-        this._buffBar.hide();
-        this._shield.hide();
-    }
-
-    async createText(val)
-    {
-        let x=0, y=-this.height/2;
-        let config = {fontSize: '24px', fill: val>0?'#f00':'#0f0', stroke:'#000', strokeThickness:5};
-        let text = this.scene.add.text(x,y,`${val>0?'+':''}`+`${val}`, config).setOrigin(0.5);
-        this.bringToTop(text);
-        this.add(text);
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: text,
-                x: Phaser.Math.Between(-10, 10),
-                y: y-Phaser.Math.Between(20, 30),
-                scale: 2,
-                alpha: 0,
-                duration: 1000,
-                onComplete: () => {text.destroy(); resolve();}
-            });
-        })
-    }
-
-    async createSprite(icon)
-    {
-        let [frame,key]=icon.split('/');
-        let sprite = this.scene.add.sprite(0,0,frame,key).setOrigin(0.5);
-        this.add(sprite);
-        //this.bringToTop(sprite);
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: sprite,
-                scale : {from:1, to:2.5},
-                alpha: 0,
-                duration: 1000,
-                onComplete: () => {sprite.destroy(); resolve();}
-            });
-        })
-    }
-
-    // async updateAnim(type='idle',cb)
-    // {
-    //     let anim = this.role.anim;
-    //     await this.animate(anim?.[type]);
-    //     cb?.();
-    // }
-
-    async updateAnim(type='idle',cb)
-    {
-        let anim = this.role.anim;
-        if(anim && anim[type])
-        {
-            await this.animate(anim[type]);
-        }
-        else
-        {
-            switch(type)
-            {
-                case 'idle': await this.tw_Idle(); break;
-                case 'attack': await this.tw_Attack(); break;
-                case 'hurt': await this.tw_Hurt(); break;
-                case 'dead': return this.tw_Dead();;
-            }
-        }
-
-        cb?.();
-        return true;
-    }
-
-    tw_Idle()
-    {
-        return new Promise((resolve)=>{
-            if(this._tw){this._tw.remove();this._sw=null;}
-            this._tw = this.scene.tweens.add({
-                targets: this._sprite,
-                scaleY: {from:1, to:1.1},
-                yoyo: true,
-                repeat: -1,
-                duration: 1000,
-            })
-            resolve();
-        })
-    }
-
-    tw_Attack()
-    {
-        return new Promise((resolve)=>{
-            if(this._tw){this._tw.remove();this._sw=null;}
-            this.scene.tweens.add({
-                targets: this._sprite,
-                x: {from:0, to:this._faceTo==='left'?-50:50},
-                yoyo: true,
-                ease:'back.out',
-                repeat: 0,
-                duration: 100,
-                onComplete:()=>{resolve();this._sw=null;}
-            })
-        })
-    }
-
-    tw_Hurt()
-    {
-        return new Promise((resolve)=>{
-            if(this._tw){this._tw.remove();this._sw=null;}
-            this.scene.tweens.add({
-                targets: this._sprite,
-                x: {from:0, to:this._faceTo=='left'?10:-10},
-                yoyo: true,
-                repeat: 0,
-                ease:'back.out',
-                duration: 100,
-                onComplete:()=>{resolve();this._sw=null;}
-            })
-        })
-    }
-
-    tw_Dead()
-    {
-        if(this._tw){this._tw.remove();this._sw=null;}
-        return false;
-    }
-
-    animate(animation)
-    {
-        return new Promise((resolve)=>{
-            if(animation)
-            {
-                this._sprite.play(animation,true).setOrigin(0.25,0.75);
-                this._sprite.once('animationcomplete',()=>{resolve(true);});
-            }
-            else
-            {
-                resolve(false);
-            }
-        })
-    }
-
-    debugText(text)
-    {
-        if(!this._dbg)
-        {
-            this._dbg = this.scene.add.text(0,this.height/2,'', {fontSize: '12px', fill: '#fff'});
-            this.add(this._dbg);
-        }
-        this._dbg.setText(text);
-    }
+//         this.setInteractive();
+//         this.on('pointerover', (pointer, x, y, event) => {
+//                 BuffInfo.show(this,this.role.action,this.role.buffs_m);
+//                 Battle.interact('over',this);
+//             })
+//             .on('pointerout', (pointer, x, y, event) => {
+//                 BuffInfo.hide();
+//                 Battle.interact('out',this);
+//             })
+//             .on('pointerup', (pointer, x, y, event) => {
+//                 Battle.interact('up',this);
+//             })
 
 
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'Role';
-        }
+//         this.on('apply', (effect,resolve)=>{
+//             this.apply(effect,resolve);
+//         });
+//     }
 
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 4);
-        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-        this._dbgGraphics.lineStyle(1, 0x00ff00)
-                        .strokeRectShape(this.getBounds())
-                        .lineStyle(1, 0xff0000)
-                        .strokeRectShape(rect)
-                        .lineStyle(3, 0x00fff00)
-                        .strokeCircleShape(circle);
-    }
+//     addSprite(role, faceTo)
+//     {
+//         let [atlas, frame] = role.icon.split('/');
+//         let anchor = role.anchor;
+//         this._sprite = this.scene.add.sprite(0, 0, atlas,frame).setOrigin(anchor.x,anchor.y);
+//         this._sprite.faceTo = role.faceTo??'right';
+//         this.add([this._sprite]);
+//         this._sprite.on('animationupdate', ()=>{ 
+//             this._sprite.setOrigin(anchor.x,anchor.y);
+//         });        
+//         this.faceTo(faceTo);
+//     }
 
-    destroy()
-    {
-        console.log('destroy')
-        this.getAll().forEach((child)=>{child.destroy();});
-        super.destroy();
-    }
+//     faceTo(faceTo)
+//     {
+//         this._faceTo=faceTo;
+//         this._sprite.flipX = this._sprite.faceTo != faceTo;
+//         return this;
+//     }
 
-    idle() {this.updateAnim('idle');}
+//     death()
+//     {
+//         this._sprite.setTexture('rip')
+//                     .setScale(0.5)
+//                     .setOrigin(0.5)
+//                     .setPosition(0,0);
+//     }
 
-    defend(resolve)
-    {
-        this.updateAnim('defend',()=>{
-            this.idle();
-            resolve?.();
-        });
-    }
+//     updateDepth()
+//     {
+//         let depth = this.y + this.height/2;
+//         this.setDepth(depth);
+//         //this.debug(depth.toFixed(1));
+//     }
 
-    async getHurt()
-    {
-        this._sprite.setTintFill(COLOR_WHITE);
-        await this.updateAnim('hurt');
-        this._sprite.setTint(COLOR_WHITE);
-        if(this.dead){this.death();}
-        else{this.idle();}
-    }
-}
+//     createHp()
+//     {
+//         let w=this.width*1.5, h=10;
+//         this._hpBar = new ProgressBar(this.scene, 0, this.height/2+10, w, h); 
+//         this.add(this._hpBar);
+//     }
+
+//     createShield()
+//     {
+//         let x = -this.width*1.5/2-5;
+//         let y = this.height/2+10;
+//         //this._shield = new Buff(this.scene, 20, 20, {x:x, y:y, buff:{icon:ICON_SHIELD, dur:''}, align:'center'}).setOrigin(1,0.5);
+//         this._shield = new Shield(this.scene, 30, 30,{x:x, y:y}).setOrigin(1,0.5);
+//         this.add(this._shield);
+//         this._shield.layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+//     }
+
+//     createBuff()
+//     {
+//         let w=this.width*1.5, h=10;
+//         this._buffBar = new BuffBar(this.scene, 0, this.height/2+h+15, w, h); 
+//         this._buffBar.setDepth(1000);
+//         this.add(this._buffBar);
+//     }
+
+//     createFlag()
+//     {
+//         this._flag = new Flag(this.scene, 0, -this.height/2-20); 
+//         this.add(this._flag);
+//     }
+
+//     updateHp()
+//     {
+//         this._hpBar.set(this.role.hp,this.role.hpMax);
+//     }
+
+//     updateShield()
+//     {
+//         this._shield.setNum(this.role.shield);
+//     }
+
+//     addBuff(buff)
+//     {
+//         this.createSprite(buff.icon);
+//     }
+
+//     async updateBuff(buff,apply)
+//     {
+//         this.scene.events.emit('updateCard');
+//         await this._buffBar.updateBuff(buff,apply);
+//     }
+
+//     updateShield()
+//     {
+//         if(this.role.shield<=0){this._shield.hide();}
+//         else{this._shield.setNum(this.role.shield).show();}
+//     }
+
+//     async hideDisp(delay=-1)
+//     {
+//        // this._hpBar.hide(dealy);
+//         await Utility.delay(delay);
+//         this._hpBar.hide();
+//         this._buffBar.hide();
+//         this._shield.hide();
+//     }
+
+//     async createText(val)
+//     {
+//         let x=0, y=-this.height/2;
+//         let config = {fontSize: '24px', fill: val>0?'#f00':'#0f0', stroke:'#000', strokeThickness:5};
+//         let text = this.scene.add.text(x,y,`${val>0?'+':''}`+`${val}`, config).setOrigin(0.5);
+//         this.bringToTop(text);
+//         this.add(text);
+//         return new Promise((resolve)=>{
+//             this.scene.tweens.add({
+//                 targets: text,
+//                 x: Phaser.Math.Between(-10, 10),
+//                 y: y-Phaser.Math.Between(20, 30),
+//                 scale: 2,
+//                 alpha: 0,
+//                 duration: 1000,
+//                 onComplete: () => {text.destroy(); resolve();}
+//             });
+//         })
+//     }
+
+//     async createSprite(icon)
+//     {
+//         let [frame,key]=icon.split('/');
+//         let sprite = this.scene.add.sprite(0,0,frame,key).setOrigin(0.5);
+//         this.add(sprite);
+//         //this.bringToTop(sprite);
+//         return new Promise((resolve)=>{
+//             this.scene.tweens.add({
+//                 targets: sprite,
+//                 scale : {from:1, to:2.5},
+//                 alpha: 0,
+//                 duration: 1000,
+//                 onComplete: () => {sprite.destroy(); resolve();}
+//             });
+//         })
+//     }
+
+//     // async updateAnim(type='idle',cb)
+//     // {
+//     //     let anim = this.role.anim;
+//     //     await this.animate(anim?.[type]);
+//     //     cb?.();
+//     // }
+
+//     async updateAnim(type='idle',cb)
+//     {
+//         let anim = this.role.anim;
+//         if(anim && anim[type])
+//         {
+//             await this.animate(anim[type]);
+//         }
+//         else
+//         {
+//             switch(type)
+//             {
+//                 case 'idle': await this.tw_Idle(); break;
+//                 case 'attack': await this.tw_Attack(); break;
+//                 case 'hurt': await this.tw_Hurt(); break;
+//                 case 'dead': return this.tw_Dead();;
+//             }
+//         }
+
+//         cb?.();
+//         return true;
+//     }
+
+//     tw_Idle()
+//     {
+//         return new Promise((resolve)=>{
+//             if(this._tw){this._tw.remove();this._sw=null;}
+//             this._tw = this.scene.tweens.add({
+//                 targets: this._sprite,
+//                 scaleY: {from:1, to:1.1},
+//                 yoyo: true,
+//                 repeat: -1,
+//                 duration: 1000,
+//             })
+//             resolve();
+//         })
+//     }
+
+//     tw_Attack()
+//     {
+//         return new Promise((resolve)=>{
+//             if(this._tw){this._tw.remove();this._sw=null;}
+//             this.scene.tweens.add({
+//                 targets: this._sprite,
+//                 x: {from:0, to:this._faceTo==='left'?-50:50},
+//                 yoyo: true,
+//                 ease:'back.out',
+//                 repeat: 0,
+//                 duration: 100,
+//                 onComplete:()=>{resolve();this._sw=null;}
+//             })
+//         })
+//     }
+
+//     tw_Hurt()
+//     {
+//         return new Promise((resolve)=>{
+//             if(this._tw){this._tw.remove();this._sw=null;}
+//             this.scene.tweens.add({
+//                 targets: this._sprite,
+//                 x: {from:0, to:this._faceTo=='left'?10:-10},
+//                 yoyo: true,
+//                 repeat: 0,
+//                 ease:'back.out',
+//                 duration: 100,
+//                 onComplete:()=>{resolve();this._sw=null;}
+//             })
+//         })
+//     }
+
+//     tw_Dead()
+//     {
+//         if(this._tw){this._tw.remove();this._sw=null;}
+//         return false;
+//     }
+
+//     animate(animation)
+//     {
+//         return new Promise((resolve)=>{
+//             if(animation)
+//             {
+//                 this._sprite.play(animation,true).setOrigin(0.25,0.75);
+//                 this._sprite.once('animationcomplete',()=>{resolve(true);});
+//             }
+//             else
+//             {
+//                 resolve(false);
+//             }
+//         })
+//     }
+
+//     debugText(text)
+//     {
+//         if(!this._dbg)
+//         {
+//             this._dbg = this.scene.add.text(0,this.height/2,'', {fontSize: '12px', fill: '#fff'});
+//             this.add(this._dbg);
+//         }
+//         this._dbg.setText(text);
+//     }
+
+
+//     debugDraw()
+//     {
+//         if(!this._dbgGraphics)
+//         {
+//             this._dbgGraphics = this.scene.add.graphics();
+//             this._dbgGraphics.name = 'Role';
+//         }
+
+//         let circle = new Phaser.Geom.Circle(this.x, this.y, 4);
+//         let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+//         this._dbgGraphics.lineStyle(1, 0x00ff00)
+//                         .strokeRectShape(this.getBounds())
+//                         .lineStyle(1, 0xff0000)
+//                         .strokeRectShape(rect)
+//                         .lineStyle(3, 0x00fff00)
+//                         .strokeCircleShape(circle);
+//     }
+
+//     destroy()
+//     {
+//         console.log('destroy')
+//         this.getAll().forEach((child)=>{child.destroy();});
+//         super.destroy();
+//     }
+
+//     idle() {this.updateAnim('idle');}
+
+//     defend(resolve)
+//     {
+//         this.updateAnim('defend',()=>{
+//             this.idle();
+//             resolve?.();
+//         });
+//     }
+
+//     async getHurt()
+//     {
+//         this._sprite.setTintFill(COLOR_WHITE);
+//         await this.updateAnim('hurt');
+//         this._sprite.setTint(COLOR_WHITE);
+//         if(this.dead){this.death();}
+//         else{this.idle();}
+//     }
+// }
 
 
 
-export class Npc_old extends Role
-{
-    constructor(scene, id, config)
-    {
-        super(scene, id, config);
-        this.idle();
-        this.role.init();
-        this._act;
-        this._i=0;
-    }
+// export class Npc_old extends Role
+// {
+//     constructor(scene, id, config)
+//     {
+//         super(scene, id, config);
+//         this.idle();
+//         this.role.init();
+//         this._act;
+//         this._i=0;
+//     }
 
-    get ap()        {return this.role.ap;}
-    set ap(value)   {this.role.ap=value;}
+//     get ap()        {return this.role.ap;}
+//     set ap(value)   {this.role.ap=value;}
 
 
-    async action(act,target)
-    {
-        if(this.dead) {return;}
-        switch(act.id)
-        {
-            case 'attack': await this.attack(target); break;
-            default:
-                let buffs = act.buffs.map((buff)=>{return Utility.shallowClone(buff)});
-                let effect = {buffs:buffs};
-                await this.applyTo(target,effect);
-                break;
-        }
-    }
+//     async action(act,target)
+//     {
+//         if(this.dead) {return;}
+//         switch(act.id)
+//         {
+//             case 'attack': await this.attack(target); break;
+//             default:
+//                 let buffs = act.buffs.map((buff)=>{return Utility.shallowClone(buff)});
+//                 let effect = {buffs:buffs};
+//                 await this.applyTo(target,effect);
+//                 break;
+//         }
+//     }
 
-    async prepare()
-    {
-        if(this.dead) {return;}
-        await this.role.prepare();
-    }
+//     async prepare()
+//     {
+//         if(this.dead) {return;}
+//         await this.role.prepare();
+//     }
 
-    async execute(player)
-    {
-        if(this.dead) {return;}
-        this._flag.hide();
-        let act = this.role.action;
-        let target = act.target == 'enemy' ? player : this;
-        await this.action(act, target);
-    }
+//     async execute(player)
+//     {
+//         if(this.dead) {return;}
+//         this._flag.hide();
+//         let act = this.role.action;
+//         let target = act.target == 'enemy' ? player : this;
+//         await this.action(act, target);
+//     }
 
-    async apply(effect,resolve)
-    {
-        await this.role.apply(effect);
-        resolve?.();
-    }
+//     async apply(effect,resolve)
+//     {
+//         await this.role.apply(effect);
+//         resolve?.();
+//     }
 
-    async attack(target)
-    {
-        await this.updateAnim('attack');
-        let effect={damage:this.role.damage};
-        this.idle();
-        await this.applyTo(target,effect);
+//     async attack(target)
+//     {
+//         await this.updateAnim('attack');
+//         let effect={damage:this.role.damage};
+//         this.idle();
+//         await this.applyTo(target,effect);
         
-    }
+//     }
 
-    applyTo(target, effect)
-    {
-        return new Promise((resolve)=>{
-            target.emit('apply',effect,resolve);
-        });
-    }
+//     applyTo(target, effect)
+//     {
+//         return new Promise((resolve)=>{
+//             target.emit('apply',effect,resolve);
+//         });
+//     }
 
-    async turnStart()
-    {
-        if(this.dead){this.destroy();return;}
-        await this.role.turn_start();
-    }
+//     async turnStart()
+//     {
+//         if(this.dead){this.destroy();return;}
+//         await this.role.turn_start();
+//     }
 
-    async turnEnd(cb)
-    {
-        if(this.dead) {cb?.(); return;}
-        await this.role.turn_end();
-        //await Utility.delay(500);
-        cb?.();
-    }
+//     async turnEnd(cb)
+//     {
+//         if(this.dead) {cb?.(); return;}
+//         await this.role.turn_end();
+//         //await Utility.delay(500);
+//         cb?.();
+//     }
 
-    async turnNext()
-    {
-        if(this.dead) {return;}
-        await this.role.turn_next();
-    }
+//     async turnNext()
+//     {
+//         if(this.dead) {return;}
+//         await this.role.turn_next();
+//     }
 
-    gameOver()
-    {
-        this.role.gameOver();
-        this.destroy();
-    }
+//     gameOver()
+//     {
+//         this.role.gameOver();
+//         this.destroy();
+//     }
     
-    async death()
-    {
-        this.removeAllListeners();
-        this._flag.hide();
-        this.hideDisp(250);
-        await this.updateAnim('dead');
-        super.death();
-    }   
+//     async death()
+//     {
+//         this.removeAllListeners();
+//         this._flag.hide();
+//         this.hideDisp(250);
+//         await this.updateAnim('dead');
+//         super.death();
+//     }   
 
-}
+// }
 
 
 // export class Npc_NoAnim extends Npc
@@ -938,7 +941,265 @@ export class Player
 }
 
 
-export class Target extends Phaser.GameObjects.Container
+
+
+export class Role extends Phaser.GameObjects.Container
+{
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this.scene = scene;
+        scene.add.existing(this);
+        this._path = [];
+        this._des = null;
+        this._act = '';
+        this._resolve;
+        this._weight = 0;
+    }
+
+    get pos()       {return {x:this.x,y:this.y};}
+    set pos(value)  {this.x=value.x;this.y=value.y;}
+    get moving()    {return this._des!=null;}
+
+    setTexture(key,frame)   // map.createFromObjects 會呼叫到
+    {
+        //console.log(key,frame);
+        let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
+        this.setSize(sp.width,sp.height);
+        this.add(sp);
+        this._sp = sp;
+    }
+
+    setPosition(x,y) // map.createFromObjects 會呼叫到
+    {
+        super.setPosition(x,y);
+    }
+
+    setFlip(){} // map.createFromObjects 會呼叫到
+
+    // preUpdate(time, delta){//console.log(time,delta);this.debugDraw();}
+
+    addPhysics()
+    {
+        //scene.physics.world.enable(this);
+        this.scene.physics.add.existing(this, false);
+        this.body.setSize(this.width,this.height);
+    }
+
+    updateDepth()
+    {
+        let depth = this.y + this.height/2;
+        this.setDepth(depth);
+        //this.debug(depth.toFixed(1));
+    }
+
+    removeWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,-this._weight);}
+
+    addWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,this._weight);}
+
+    addToRoleList() {this.scene.roles.push(this);}
+
+    setDes(des, act)
+    {
+        let rst = this.scene.map.getPath(this.pos, des, act);
+        if(rst && rst.valid)
+        {
+            this._path = rst.path;
+            this._des = des; 
+            this._act = act;
+            this.resume();
+        }
+        else
+        {
+            this.stop();
+        }
+    }
+
+    async moveTo({duration=200,ease='expo.in',draw=true}={})
+    {
+        if(this._path.length==0) {return;}
+        let path = this._path;
+        if(path[0].act=='go')
+        { 
+            let pt = path[0].pt;
+            if(this.scene.map.isValid(pt))
+            {
+                if(draw) {this.drawPath(path);}
+                this.removeWeight();
+                await this.step(path[0].pt,duration,ease);
+                this.addWeight();
+                this.updateDepth();
+                path.splice(0,1);
+                if(path.length>0) {return;}
+            }
+        }
+        else
+        {
+            this.interact(path[0].pt,path[0].act)
+        }
+
+        this.stop();
+    }
+
+    stop()
+    {
+        this._des = null;
+        if(this._dbgPath){this._dbgPath.clear();}
+    }
+
+    step(pos, duration, ease)
+    {
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: this,
+                x: pos.x,
+                y: pos.y,
+                duration: duration,
+                ease: ease,
+                //delaycomplete: 1000,
+                onComplete: (tween, targets, gameObject)=>{resolve();}         
+            });
+        });
+    }
+
+    interact(pt, act)
+    {
+        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+        bodys.forEach((body) => {body.gameObject.emit(act);});
+    }
+
+    async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
+
+    resume() {this._resolve?.(null);}
+
+    drawPath(path)
+    {
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this.scene.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+        }
+        this._dbgPath.clear();
+        path.forEach(node=>{
+            if(node.act=='go')
+            {
+                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            }
+        })
+    }
+
+    debugDraw()
+    {
+        if(!this._dbgGraphics)
+        {
+            console.log('debugDraw');
+            this._dbgGraphics = this.scene.add.graphics();
+            this._dbgGraphics.name = 'Role';
+        }
+
+        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
+        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+        this._dbgGraphics.clear()
+                        .lineStyle(3, 0x00ff00)
+                        //.strokeRectShape(this.getBounds())
+                        //.lineStyle(1, 0xff0000)
+                        //.strokeRectShape(rect)
+                        //.lineStyle(3, 0x00fff00)
+                        .strokeCircleShape(circle);
+    }
+}
+
+
+
+export class Target extends Role
+{
+    constructor(scene, x, y)
+    {
+        super(scene, x, y);
+        this.addSprite();
+        this.loop();
+    }
+
+    addSprite()
+    {
+        let [key,frame]=ICON_TARGET.split('/');
+        this.setTexture(key,frame);
+    }
+
+    async loop()
+    {
+        while(true)
+        {
+            await this.process();
+        }
+    }
+
+    async process()
+    {
+        if(this.moving) {await this.moveTo({duration:150,ease:'linear'});}
+        else {await this.pause();}
+    }
+
+}
+
+
+export class Avatar extends Role
+{
+    static instance;
+    constructor(scene, x, y)
+    {
+        super(scene,x,y);
+        Avatar.instance = this;
+        this._weight = 1000;
+        this.addSprite();
+        this.setSize(32,32);
+        this.addPhysics();
+        this.updateDepth();
+        this.addWeight();
+        this.addToRoleList();
+    }
+
+    addSprite()
+    {
+        let [key,frame]=ICON_AVATAR.split('/');
+        this.setTexture(key,frame);
+    }
+
+    async process()
+    {
+        if(this.moving) {await this.moveTo();}
+        else
+        {
+            await this.pause();
+            if(this.moving) {await this.moveTo();}
+        }
+    }
+
+}
+
+export class Npc extends Role
+{
+    init()
+    {
+        this._weight=1000;
+        this.setSize(32,32);
+        this.addPhysics(this.scene)
+        this.addWeight();
+        this.addToRoleList();
+    }
+
+    async process()
+    {
+        this.setDes(Avatar.instance.pos);
+        await this.moveTo({draw:false});
+    }
+}
+
+
+
+export class Target_old extends Phaser.GameObjects.Container
 {
     constructor(scene, x, y)
     {
@@ -1001,13 +1262,12 @@ export class Target extends Phaser.GameObjects.Container
         {
             this._path = rst.path;
             this._des = {pos:des, act:act};
+            this.resume();
         }
         else
         {
-            this._des = null;
+            this.stop();
         }
-
-        this.resume();
     }
 
     async moveTo()
@@ -1081,10 +1341,7 @@ export class Target extends Phaser.GameObjects.Container
     }
 }
 
-
-
-
-export class Avatar extends Phaser.GameObjects.Container
+export class Avatar_old extends Phaser.GameObjects.Container
 {
     static instance;
     constructor(scene, x, y)
@@ -1102,10 +1359,10 @@ export class Avatar extends Phaser.GameObjects.Container
         this._t=0;
         this._pid=0;
         this._des=null;
+        this._act='';
         this._resolve;
         this.drawPath([])
-        console.log(scene);
-        scene.map.updateGrid(this.pos,1000);
+        
     }
 
     get pos()       {return {x:this.x,y:this.y}}
@@ -1205,59 +1462,41 @@ export class Avatar extends Phaser.GameObjects.Container
 
     resume() {this._resolve?.(null);}
 
-    async path(path)
+    setDes(des, act)
     {
-        let pid = ++this._pid;
-        while(path.length>0)
-        {
-            this.drawPath(path);
-            await this.goto(path[0]);
-            if(pid != this._pid){return;}
-            path.splice(0,1);
-        }
-        this.drawPath(path);
-        this._pid=0;
-    }
-
-    async setTarget(target, pid)
-    {
-        if(!pid) {pid = ++this._pid;}
-        let rst = this.scene.map.getPath(this.pos, target);
+        let rst = this.scene.map.getPath(this.pos, des, act);
         if(rst && rst.valid)
         {
-            if(rst.path[0].g < 1000)
-            {
-                this.drawPath(rst.path);
-                await this.step(rst.path[0].pt);
-                if(pid != this._pid) {return;}
-                await this.setTarget(target,pid);
-            }
+            this._path = rst.path;
+            this._des = des; 
+            this._act = act;
+            this.resume();
         }
-        this._pid=0;
+        else
+        {
+            this.stop();
+        }
     }
-
-    setDes(des,act) {this._des={pos:des,act:act}; this.resume();}
 
     async moveTo()
     {
-        let rst = this.scene.map.getPath(this.pos, this._des.pos, this._des.act);
-        if(rst && rst.valid)
+        let path = this._path;
+        if(path[0].act=='go')
+        { 
+            let pt = path[0].pt;
+            if(this.scene.map.isValid(pt))
+            {
+                this.drawPath(path);
+                await this.step(path[0].pt);
+                //this.updateDepth();
+                path.splice(0,1);
+                if(path.length>0) {return;}
+            }
+        }
+        else
         {
-            if(rst.path[0].act=='go')
-            {
-                this.drawPath(rst.path);
-                this.scene.map.updateGrid(this.pos,-1000);
-                await this.step(rst.path[0].pt);
-                this.updateDepth();
-                this.scene.map.updateGrid(this.pos,1000);
-                if(rst.path.length>1) {return;}
-            }
-            else
-            {
-                console.log('act',rst.path[0].act)
-                this.interact(rst.path[0].pt,rst.path[0].act)
-
-            }
+            console.log('act',path[0].act)
+            this.interact(path[0].pt,path[0].act)
         }
         this.stop();
         
@@ -1325,8 +1564,7 @@ export class Avatar extends Phaser.GameObjects.Container
     }
 }
 
-
-export class Npc extends Phaser.GameObjects.Container
+export class Npc_old extends Phaser.GameObjects.Container
 {
     constructor(scene)
     {
@@ -1390,7 +1628,7 @@ export class Npc extends Phaser.GameObjects.Container
         this.map=map;
         this.setSize(32,32);
         this.addPhysics(this.scene)
-        this.scene.list.push(this);
+        this.scene.roles.push(this);
         this.map.updateGrid(this.pos,1000);
         console.log(this.pos);
         console.log(this)
@@ -1430,6 +1668,7 @@ export class Npc extends Phaser.GameObjects.Container
 
     async process()
     {
+        console.log('npc')
         this.setDes(Avatar.instance.pos);
         await this.moveTo();
     }
@@ -1439,10 +1678,11 @@ export class Npc extends Phaser.GameObjects.Container
 
     async moveTo()
     {
-        let rst = this.scene.map.getPath(this.pos, this._des);
+        let rst = this.scene.map.getPath(this.pos, this._des, 'atk');
+        console.log(rst)
         if(rst && rst.valid)
         {
-            if(rst.path[0].g < 1000)
+            if(rst.path[0].act=='go')
             {
                 //this.drawPath(rst.path);
                 this.map.updateGrid(this.pos,-1000);

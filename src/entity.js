@@ -73,13 +73,12 @@ export class Entity extends Phaser.GameObjects.Container
         super(scene, x, y);
         this.scene = scene;
         scene.add.existing(this);
-        this.left=0,this.right=0,this.top=0,this.bottom=0;
-        this.interactable=true;
-        this.collide=true;
         this.enableOutline();
         this.addListener();
-        this.act='';
-        this.weight=0;
+        this.left=0,this.right=0,this.top=0,this.bottom=0;
+        this.collide = true;
+        this.act = '';
+        this.weight = 0;
     }
 
     get pos()       {return {x:this.x,y:this.y}}
@@ -139,7 +138,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
-        map.updateGrid(this.pos,this.weight);
+        this.scene.map.updateGrid(this.pos,this.weight);
         //this.debugDraw();
     }
 
@@ -217,10 +216,10 @@ export class Port extends Entity
     constructor(scene)
     {
         super(scene);
-        this.id='';
-        this.type='';
-        this.map='';
-        this.act='exit';        
+        this.id = '';
+        this.type = '';
+        this.map = '';
+        this.act = 'exit';        
     }
 
     addListener()

@@ -40,15 +40,14 @@ export class GameTown extends Scene
     {
         console.log('town_create');
         this._dbgGraphics=null;
-        this._roles=[];
+        this.roles=[];
         this._act='go';
         this._mark = new Mark(this);
         
         this.uiEvent();
         this.initUI();
-        //this.groupStatic = this.physics.add.staticGroup();
         QuestManager.load();
-        this.map = new Map(this,this._data.map);
+        new Map(this,this._data.map,true);
 
         this.setPosition();
         this.processInput();
@@ -95,8 +94,7 @@ export class GameTown extends Scene
 
     async process()
     {
-        let roles = this._roles;
-        roles.push(this._avatar);
+        let roles = this.roles;
         while(true)
         {
             for(let i=0;i<roles.length;i++)
