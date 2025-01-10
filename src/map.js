@@ -50,7 +50,7 @@ class Map
                         layer.objects.forEach((obj) => {
                             if(obj.template)    // 載入 template(*.tj) 的資料到 cache 裡
                             {
-                                console.log(`load[${obj.template}]`);
+                                //console.log(`load[${obj.template}]`);
                                 scene.load.json(obj.template, obj.template);
                             }
                         });
@@ -63,12 +63,12 @@ class Map
                 map.data.tilesets.forEach((tile) => {
                     if(tile.image)  // 載入 tileset(*.png) 的資料
                     {
-                        console.log(`load[${tile.image}]`);
+                        //console.log(`load[${tile.image}]`);
                         scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
                     }
                     else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
                     {
-                        console.log(`load[${tile.source}]`);
+                        //console.log(`load[${tile.source}]`);
                         scene.load.json(tile.source, tile.source);
                     } 
                 });
@@ -150,7 +150,7 @@ class Map
                         map.data.tilesets[index] = {...tile, ...json};
                         if(json.image)  // (*.tsj) 為 .png
                         {
-                            console.log(`load[${json.image}]`);
+                            //console.log(`load[${json.image}]`);
                             scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                         }
                         else    // (*.tsj) 為圖片集合
@@ -158,7 +158,7 @@ class Map
                             json.tiles.forEach((tile) => {
                                 if(tile.image)
                                 {
-                                    console.log(`load[${tile.image}]`);
+                                    //console.log(`load[${tile.image}]`);
                                     let name = source+'_'+Utility.extractFileName(tile.image);
                                     //scene.load.spritesheet(name, tile.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                                     //scene.load.spritesheet(name, tile.image, { frameWidth: tile.imagewidth, frameHeight: tile.imageheight });

@@ -34,15 +34,18 @@ export class Game extends Scene
 
     gotoScene() 
     {
-        if(!Record.data.node){Record.data.node='0';}
-        if(!Record.data.map){Record.data.map='';}
         if(Record.data.map)
         {
-            this.scene.start('GameTown',{id:Record.data.node,map:Record.data.map});
+            let config = {map:Record.data.map}
+            if(Record.data.pos) {config.pos = Record.data.pos;}
+            else {config.id = Record.data.default;}
+
+            this.scene.start('GameTown',config);
         }
         else
         {
-            this.scene.start('GameMap',{id:Record.data.node});
+            //console.log(Record.data.node);
+            this.scene.start('GameMap',{pos:Record.data.pos});
         }
     }
 

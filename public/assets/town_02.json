@@ -30,7 +30,7 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"3"
+                         "value":"\u5e03\u9b6f\u7279\u65af"
                         }, 
                         {
                          "name":"type",
@@ -75,7 +75,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":14,
+ "nextobjectid":15,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

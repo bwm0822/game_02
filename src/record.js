@@ -2,9 +2,7 @@ import Utility from './utility.js'
 
 export default class Record
 {
-    static data = {
-        node:'0',
-    }
+    static data = {default:'出口', map:'town_02'}
 
     static save()
     {
@@ -14,7 +12,7 @@ export default class Record
     static load()
     {
         let data = Utility.load();
-        if(data){Record.data = data;}
+        if(data) {Record.data = data;}
         return data;
     }
 

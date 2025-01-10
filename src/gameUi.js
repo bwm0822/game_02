@@ -434,25 +434,19 @@ export class Mark
 {
     constructor(scene)
     {
-        this._icons = {go:ICON_GO, talk:ICON_TALK, enter:ICON_ENTER, exit:ICON_EXIT, take:ICON_TAKE}
-        this._sp = sprite(scene,{icon:ICON_GO,name:'mark'})
+        //this._icons = {go:ICON_GO, talk:ICON_TALK, enter:ICON_ENTER, exit:ICON_EXIT, take:ICON_TAKE}
+        this._sp = sprite(scene,{icon:ICON_MARK,name:'mark'})
+        this._sp.setScale(0.5);
         this._sp.visible=false;
         //this._sp.setDisplaySize(32,32);
         this._sp.setDepth(Infinity);
     }
 
-    setIcon(type)
-    {
-        if(type)
-        {
-            let [key,frame]=this._icons[type].split('/');
-            this._sp.setTexture(key,frame);
-        }
-    }
+    set visible(value) {this._sp.visible = value;}
 
     show(p,color=0xffffff)
     {
-        this._sp.visible=true;
+        this.visible=true;
         this._sp.x=p.x;
         this._sp.y=p.y;
         this._sp.setTint(color);
@@ -460,7 +454,7 @@ export class Mark
 
     hide()
     {
-        this._sp.visible=false;
+        this.visible=false;
     }
 
 }

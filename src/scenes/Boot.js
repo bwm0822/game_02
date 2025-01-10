@@ -4,6 +4,7 @@ export class Boot extends Scene
 {
     constructor ()
     {
+        console.log('Boot');
         super('Boot');
     }
 

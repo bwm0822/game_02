@@ -13,29 +13,22 @@ export class GameMap extends Scene
 {
     constructor ()
     {
+        console.log('GameMap');
         super('GameMap');
     }
 
-    init(data)
-    {
-        this._data=data;
-        Record.data.node = data.id;   
-        Record.data.map = '';
-        Record.save();
-    }
+    init(data) {this._data = data;}
 
     create ()
     {
-        console.log('map_create');
         this._dbgPos = null;
-        this._graphics =null;
+        this._graphics = null;
         this._dbgPath = null;
+        this._act = 'go';
+        this._mark = new Mark(this);
        
-
         new Map(this,'map',false);
 
-        this._mark = new Mark(this);
-        
         this.loadRecord();
         this.uiEvent();
         this.initUI();
@@ -52,15 +45,25 @@ export class GameMap extends Scene
 
     setPosition()
     {
-        let node = this.nodes['家'];
-        console.log(node)
-        this._avatar = new Role.Target(this,node.x,node.y);
+        let pos;
+        if(this._data.pos){pos = this._data.pos}
+        else
+        {
+            let node = this.nodes[this._data.id];
+            pos = {x:node.x,y:node.y}
+        }
+
+        this._avatar = new Role.Target(this,pos.x,pos.y);
         this.cameras.main.startFollow(this._avatar,true,0.01,0.01);
+
+        Record.data.pos = this._avatar.pos;   
+        Record.data.map = '';
+        Record.save();
     }
 
     initUI()
     {
-        this.events.emit('gameMap');
+        this.events.emit('uiMain');
     }
 
     processInput()
@@ -68,7 +71,7 @@ export class GameMap extends Scene
         this.keys = this.input.keyboard.createCursorKeys();
 
         this.input
-        .on('pointerdown', (pointer)=>{
+        .on('pointerdown', (pointer,gameObject)=>{
 
             if (pointer.rightButtonDown())
             {
@@ -92,6 +95,7 @@ export class GameMap extends Scene
         })
         .on('pointermove',(pointer)=>{
             this.showMousePos();
+            //console.log('map',pointer.x.toFixed(0),pointer.y.toFixed(0),',',pointer.worldX.toFixed(0),pointer.worldY.toFixed(0))
 
             if(!this._avatar.moving)
             {
@@ -110,20 +114,20 @@ export class GameMap extends Scene
         {
             if(rst.valid)
             {
-                //this._avatar.path(path);
                 this.drawPath(rst.path);
-                this._mark.show(rst.pt,0xffffff);
+                if(this._act=='go') {this._mark.show(rst.pt,0xffffff);}
+                else {this._mark.hide();}
             }
             else
             {
-                //this.debugDraw(null,true);
+                this.clearPath();
                 if(rst.pt){this._mark.show(rst.pt,0xff0000);}
                 else{this._mark.hide();}
             }
         }
     }
 
-    clearPath() {this._dbgPath.clear();}
+    clearPath() {if(this._dbgPath){this._dbgPath.clear();}}
 
     drawPath(path)
     {
@@ -134,8 +138,9 @@ export class GameMap extends Scene
             this._dbgPath.fillStyle(0xffffff);
         }
         this._dbgPath.clear();
-        path.forEach(node=>{
-            if(node.act=='go')
+        path.forEach((node,i)=>{
+            //if(node.act=='go')
+            if(i<path.length-1)
             {
                 let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
                 this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
@@ -147,7 +152,8 @@ export class GameMap extends Scene
     home()
     {
         console.log('home');
-        Record.data.role = Role.Player.role.record();
+        //Record.data.role = Role.Player.role.record();
+        Record.data.pos = this._avatar.pos;   
         Record.save();
         this.scene.start('MainMenu');
     }
@@ -166,15 +172,16 @@ export class GameMap extends Scene
 
     uiEvent()
     {
-        // if(this._done) return;
-        // this._done = true;
-
-        this.events.on('over', (act)=>{this._act=act;this._mark.setIcon(this._act);})
-                    .on('out', ()=>{this._act='go';this._mark.setIcon(this._act);});
-
+        if(!this._done)
+        {
+            this._done = true;
+            this.events.on('over', (act)=>{this._act=act;this.events.emit('cursor',this._act);})
+                        .on('out', ()=>{this._act='go';this.events.emit('cursor','none');})
+        }
+                    
         const ui = this.scene.get('UI');
-        ui.events.off('home')
-        ui.events.on('home', ()=>{this.home();console.log('home')})
+        ui.events.off('home').on('home', ()=>{this.home();})
+                .off('mark').on('mark', (on)=>{this._mark.visible=on;})
     }
 
 }

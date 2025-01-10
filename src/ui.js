@@ -67,7 +67,7 @@ export default function createUI(scene)
     new UiEquipInfo(scene);
 
     new UiWeaponState(scene);
-    new Cursor(scene);
+    new UiCursor(scene);
     //new UiDialog(scene);
     new UiBattle(scene);
     new UiStore(scene);
@@ -654,8 +654,8 @@ function debug()
 
 function emit_ignore(on) {_scene.events.emit('ignore', on); Cursor.set(on?'none':undefined);}
 function emit_reload() {_scene.events.emit('reload');}
-function emit_pause() {_scene.events.emit('pause'); Cursor.ui(true);}
-function emit_resume() {_scene.events.emit('resume'); Cursor.ui(false);}
+function emit_pause() {_scene.events.emit('pause'); UiCursor.ui(true);}
+function emit_resume() {_scene.events.emit('resume'); UiCursor.ui(false);}
 
 class Pic extends OverlapSizer
 {
@@ -1574,16 +1574,18 @@ class UiTest extends UiTemplate
     }
 }
 
-export class UiMain extends OverlapSizer
+export class UiMain extends Sizer//OverlapSizer
 {
     static instance = null;
     constructor(scene)
     {
         super(scene);
         UiMain.instance = this;
-        this//.addBackground(rect(scene,{alpha:0.5}))
-            .add(this.createBar(scene),{align:'left-top',expand:{width:true}})
-            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+
+        this.addBackground(rect(scene,{alpha:0.5}))
+            //.add(this.createBar(scene),{align:'left-top',expand:{width:true}})
+            .add(this.createBar(scene))
+            //.layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
             .onResize()
             .hide();
         
@@ -1591,12 +1593,28 @@ export class UiMain extends OverlapSizer
         //scene.scale.on('resize', this.onResize, this);
         this.getLayer().name = 'UiMain';    // 產生layer，並設定layer名稱
         //scene.uiLayer.add(this.getLayer());
+        this.setInteractive();
+        this.on('pointerover',()=>{this.mark(false);})
+            .on('pointerout',()=>{this.mark(true);})
     }
 
     // pause(){if(!_shown){this.scene.events.emit('pause'); Cursor.ui(true);}}
     // resume(){if(!_shown){this.scene.events.emit('resume'); Cursor.ui(false);}}
 
+    mark(on) {this.scene.events.emit('mark',on);}
+
     onResize()
+    {
+        let viewport = this.scene.rexUI.viewport;
+        this.setPosition(0, 0)
+            .setOrigin(0,0)
+            .setMinWidth(viewport.width)
+            //.setMinSize(viewport.width, viewport.height)
+            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+        return this;
+    }
+
+    onResize_old()
     {
         let viewport = this.scene.rexUI.viewport;
         this.setPosition(viewport.centerX, viewport.centerY)
@@ -1610,7 +1628,6 @@ export class UiMain extends OverlapSizer
         switch(button.name)
         {
             case 'home': this.home(); break;
-            case 'exit': this.exit(); break;
             case 'bag': UiBag.show();break;//UiBag.show('test'); break;
             case 'profile': UiProfile.show(); break;
             case 'zoom': this.zoom(button); break;
@@ -1620,15 +1637,8 @@ export class UiMain extends OverlapSizer
 
     home()
     {
-        console.log('home');
         this.hide();
         this.scene.events.emit('home');
-    }
-
-    exit()
-    {
-        this.hide();
-        this.scene.events.emit('exit');
     }
 
     zoom(button)
@@ -1654,7 +1664,6 @@ export class UiMain extends OverlapSizer
                     .add(this.scene.rexUI.add.buttons({
                         buttons:[
                                 sprite(scene, {icon:ICON_HOME, name:'home'}),
-                                sprite(scene, {icon:ICON_EXIT, name:'exit'}),
                                 sprite(scene, {icon:ICON_PROFILE, name:'profile'}),
                                 sprite(scene, {icon:ICON_BAG, name:'bag'}),
                                 sprite(scene, {icon:ICON_QUEST, name:'test'}),
@@ -1670,33 +1679,19 @@ export class UiMain extends OverlapSizer
         this._buttons
             .on('button.down', (button)=>{button.setAlpha(0.5);})
             .on('button.up', (button)=>{button.setAlpha(1);this.onClick(button);})
-            .on('button.over', (button)=>{button.setAlpha(0.5); emit_ignore(true);})//Cursor.set('none')})
-            .on('button.out', (button)=>{button.setAlpha(1); emit_ignore(false);});// Cursor.set();});
+            // .on('button.over', (button)=>{button.setAlpha(0.5); emit_ignore(true); this.mark(false);})//Cursor.set('none')})
+            // .on('button.out', (button)=>{button.setAlpha(1); emit_ignore(false); this.mark(true);});// Cursor.set();});
+            .on('button.over', (button)=>{button.setAlpha(0.5); this.mark(false);})//Cursor.set('none')})
+            .on('button.out', (button)=>{button.setAlpha(1); this.mark(true);});// Cursor.set();});
 
         return bar;
 
     }
 
-    show(type='map')
-    {
-        console.log('type',type);
-        super.show();
-        if(type=='map')
-        {
-            this._buttons.showButton(0);
-            this._buttons.hideButton(1);
-        }
-        else
-        {
-            this._buttons.hideButton(0);
-            this._buttons.showButton(1);
-        }
-        this.layout();
-    }
 
-    static show(type)
+    static show()
     {
-        if(UiMain.instance) {UiMain.instance.show(type);}
+        if(UiMain.instance) {UiMain.instance.show();}
     }
 
     static hide()
@@ -2466,7 +2461,92 @@ export class UiMessage extends Toast
     }
 }
 
-export class Cursor extends Phaser.GameObjects.GameObject
+
+export class UiCursor extends Phaser.GameObjects.Sprite
+{
+    static icons = {
+        none :  {sprite:'cursors/cursor_none', origin:{x:0.25,y:0}, scale:1},
+        aim :   {sprite:'cursors/target_b', origin:{x:0.5,y:0.5}, scale:0.7},
+        melee :  {sprite:'cursors/tool_sword_b', origin:{x:0.5,y:0.5}, scale:0.7},
+        take :  {sprite:'cursors/hand_open', origin:{x:0.5,y:0.5}, scale:0.7},
+        talk :  {sprite:'cursors/message_dots_square', origin:{x:0.5,y:0.5}, scale:0.7},   
+        enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
+        exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
+    }
+
+    static instance = null;
+
+    constructor(scene)
+    {
+        super(scene);
+        UiCursor.instance = this;
+        this.scene = scene;
+        scene.add.existing(this);
+        this.setDepth(1000);
+        this.setIcon('none');
+    }
+
+    preUpdate(time, delta)
+    {
+        this.setPosition(this.scene.input.x, this.scene.input.y);
+    }
+
+    setIcon(type)
+    {
+        console.log(type)
+        let icon = UiCursor.icons[type];
+        let [key,frame]=icon.sprite.split('/')
+        this.setTexture(key,frame);
+        this.setOrigin(icon.origin.x,icon.origin.y);
+        this.setScale(icon.scale);
+    }
+
+    debugDraw()
+    {
+        if(!this._dbgGraphics)
+        {
+            this._dbgGraphics = this.scene.add.graphics();
+            this._dbgGraphics.setDepth(10000);
+            this._dbgGraphics.name = 'cursor';
+        }
+
+        //let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
+        let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+        this._dbgGraphics.clear();
+        this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+        this._dbgGraphics//.strokeRectShape(rect)
+                        .strokeCircleShape(circle);
+    }
+
+    setPos(x,y)
+    {
+        this.setPosition(x,y);
+        this.debugDraw();
+    }
+
+
+    ui(on) {}
+
+    static pos(x,y)
+    {
+        if(UiCursor.instance) {UiCursor.instance.setPos(x,y);}
+    }
+
+    static set(type)
+    {
+        if(UiCursor.instance) {UiCursor.instance.setIcon(type);}
+    }
+
+    static ui(on)
+    {
+        if(UiCursor.instance) {UiCursor.instance.ui(on);}
+    }
+
+}
+
+
+
+export class Cursor_old extends Phaser.GameObjects.GameObject
 {
     static instance = null;
     static type = {
@@ -2489,7 +2569,7 @@ export class Cursor extends Phaser.GameObjects.GameObject
         this._pre = Cursor.type.none;
         this._cur = Cursor.type.none;
         this._ui = false;
-    }
+    } 
 
     set(type)
     {
@@ -2526,9 +2606,19 @@ export class Cursor extends Phaser.GameObjects.GameObject
 
     ui(on) {this._ui = on; this.update();}
 
-    preUpdate(time, delta)
+    // preUpdate(time, delta)
+    // {
+    //     this._cursor.setPosition(this.scene.input.x, this.scene.input.y);
+    // }
+
+    setPos(x,y) 
     {
-        this._cursor.setPosition(this.scene.input.x, this.scene.input.y);
+        this._cursor.setPosition(x, y);
+    }
+
+    static pos(x,y)
+    {
+        if(Cursor.instance) {Cursor.instance.setPos(x,y);}
     }
 
     static set(type)
@@ -2544,7 +2634,7 @@ export class Cursor extends Phaser.GameObjects.GameObject
 
 }
 
-class UiDialog_old extends Sizer
+class UiDialog extends Sizer
 {
     constructor(scene, w=350, h=100)
     {
@@ -3751,7 +3841,7 @@ class UiConfirm extends Sizer
     }
 }
 
-export class UiDialog extends Sizer
+export class UiDialog_old extends Sizer
 {
     static instance = null;
     constructor(scene,{enType=true,enPre=false}={})

@@ -69,10 +69,10 @@ const config = {
         Preloader,
         MainMenu,
         Game,
-        GameOver,
+        //GameOver,
         GameMap,
         GameTown,
-        GameBattle,
+        //GameBattle,
         UI,
     ]
 };

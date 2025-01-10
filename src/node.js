@@ -35,16 +35,8 @@ export class Node extends Entity
     
     async enter()
     {
-        console.log('enter',this.type);
-
-        if(this.type=='battle')
-        {
-            this.scene.scene.start('GameBattle',{id:this.id});
-        }
-        else
-        {
-            this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
-        }
+        console.log('enter',this.id,this.type);
+        this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
     }
 }
 

@@ -5,6 +5,7 @@ export class MainMenu extends Scene
 {
     constructor ()
     {
+        console.log('MainMenu');
         super('MainMenu');
     }
 

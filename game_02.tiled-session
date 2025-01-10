@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/map.json",
+    "activeFile": "public/assets/town_02.json",
     "expandedProjectPaths": [
         "public",
-        "public/assets/tiles",
+        ".",
         "public/assets/templates",
+        "public/assets/tiles",
         "public/assets/icons",
-        "public/assets",
-        "."
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -106,11 +106,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1.5,
+            "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 406.3333333333333,
-                "y": 359.66666666666663
+                "x": 602,
+                "y": 480
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -206,8 +206,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 330.5,
-                "y": 296.5
+                "x": 739.5,
+                "y": 435.5
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -235,8 +235,8 @@
     "project": "game_02.tiled-project",
     "property.type": "bool",
     "recentFiles": [
-        "public/assets/town_02.json",
         "public/assets/map.json",
+        "public/assets/town_02.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",
         "public/assets/Color A Spitesheet.tsj",

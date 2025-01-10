@@ -17,6 +17,7 @@ export class GameTown extends Scene
 {
     constructor ()
     {
+        console.log('GameTown');
         super('GameTown');
     }
 
@@ -27,22 +28,14 @@ export class GameTown extends Scene
     set camX(value) {this.cameras.main.scrollX=value-this.camOff.x;}
     set camY(value) {this.cameras.main.scrollY=value-this.camOff.y;}
 
-    init(data)
-    {
-        console.log('init',data);
-        this._data = data;
-        Record.data.node = data.id;   
-        Record.data.map = this._data.map;
-        Record.save();
-    }
+    init(data) {this._data = data;}
 
     create ()
     {
-        console.log('town_create');
-        this._dbgGraphics=null;
-        this.roles=[];
+        this._dbgPath=null;
         this._act='go';
         this._mark = new Mark(this);
+        this.roles=[];
         
         this.uiEvent();
         this.initUI();
@@ -65,6 +58,10 @@ export class GameTown extends Scene
             {
                console.log('right');
             }
+            else if (pointer.middleButtonDown())
+            {
+                console.log('middle');
+            }
             else
             {
                 if(this._avatar.moving)
@@ -75,7 +72,7 @@ export class GameTown extends Scene
                 else if(this?._rst?.valid)
                 {
                     this._mark.hide();
-                    this.debugDraw(null,true);
+                    this.clearPath();
                     this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
                 }
             }
@@ -87,6 +84,7 @@ export class GameTown extends Scene
             {
                 this.findPath({x:pointer.worldX,y:pointer.worldY});
             }
+
         })
 
         this.input.keyboard.on('keydown',()=>{this.keyin();})
@@ -112,56 +110,106 @@ export class GameTown extends Scene
         {
             if(rst.valid)
             {
-                //this._avatar.path(path);
                 this.drawPath(rst.path);
-                this._mark.show(rst.pt,0xffffff);
+                if(this._act=='go') {this._mark.show(rst.pt,0xffffff);}
+                else {this._mark.hide();}
             }
             else
             {
-                this.debugDraw(null,true);
+                this.clearPath();
                 if(rst.pt){this._mark.show(rst.pt,0xff0000);}
                 else{this._mark.hide();}
             }
         }
     }
 
+    clearPath() {if(this._dbgPath){this._dbgPath.clear();}}
 
     drawPath(path)
     {
-        this.debugDraw(null,true);
-        //path.forEach((node,i)=>{if(node.g<1000 && i<path.length-1){this.debugDraw(node.pt)}})
-        path.forEach((node,i)=>{if(i<path.length-1){this.debugDraw(node.pt)}})
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+        }
+        this._dbgPath.clear();
+        path.forEach((node,i)=>{
+            //if(node.act=='go')
+            if(i<path.length-1)
+            {
+                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            }
+        })
     }
 
-    debugDraw(pt,clear=false)
-    {
-        //console.log(i);
-        if(!this._dbgGraphics)
-        {
-            this._dbgGraphics = this.add.graphics();
-            this._dbgGraphics.name = 'path';
-            this._dbgGraphics.lineStyle(2, 0xffffff, 1);
-        }
+    // findPath(pt)
+    // {
+    //     let rst = this.map.getPath(this._avatar.pos,pt)
+    //     this._rst = rst;
+    //     if(rst)
+    //     {
+    //         if(rst.valid)
+    //         {
+    //             this.drawPath(rst.path);
+    //             if(this._act=='go') {this._mark.show(rst.pt,0xffffff);}
+    //             else {this._mark.hide();}
+    //         }
+    //         else
+    //         {
+    //             this.debugDraw(null,true);
+    //             if(rst.pt) {this._mark.show(rst.pt,0xff0000);}
+    //             else {this._mark.hide();}
+    //         }
+    //     }
+    // }
+
+
+    // drawPath(path)
+    // {
+    //     this.debugDraw(null,true);
+    //     //path.forEach((node,i)=>{if(node.g<1000 && i<path.length-1){this.debugDraw(node.pt)}})
+    //     path.forEach((node,i)=>{if(i<path.length-1){this.debugDraw(node.pt)}})
+    // }
+
+    // debugDraw(pt,clear=false)
+    // {
+    //     //console.log(i);
+    //     if(!this._dbgGraphics)
+    //     {
+    //         this._dbgGraphics = this.add.graphics();
+    //         this._dbgGraphics.name = 'path';
+    //         this._dbgGraphics.lineStyle(2, 0xffffff, 1);
+    //     }
         
-        if(clear){this._dbgGraphics.clear();}
-        else
-        {
-            //let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-            let circle = new Phaser.Geom.Circle(pt.x,pt.y,5);
-            this._dbgGraphics.lineStyle(2, 0xffffff, 1)
-                        .strokeCircleShape(circle);
-        //this._dbgGraphics.strokeRectShape(rect)
-        }
-    }
+    //     if(clear){this._dbgGraphics.clear();}
+    //     else
+    //     {
+    //         //let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
+    //         let circle = new Phaser.Geom.Circle(pt.x,pt.y,5);
+    //         this._dbgGraphics.lineStyle(2, 0xffffff, 1)
+    //                     .strokeCircleShape(circle);
+    //     //this._dbgGraphics.strokeRectShape(rect)
+    //     }
+    // }
 
 
 
     setPosition()
     {
-        let pos = this.ports[this._data.id];
+        //let pos = this.ports[this._data.id];
+
+        let pos;
+        if(this._data.pos) {pos=this._data.pos;}
+        else {pos = this.ports[this._data.id];}
 
         this._avatar = new Avatar(this,pos.x,pos.y);
         this.cameras.main.startFollow(this._avatar,true,0.01,0.01);
+
+        Record.data.pos = this._avatar.pos;   
+        Record.data.map = this._data.map;
+        Record.save();
     }
 
     keyin()
@@ -178,7 +226,7 @@ export class GameTown extends Scene
 
     initUI()
     {
-        this.events.emit('gameTown');
+        this.events.emit('uiMain');
     }
 
     exit()
@@ -186,23 +234,28 @@ export class GameTown extends Scene
         this.scene.start('GameMap');
     }
 
-    battle(id)
+    home()
     {
-        this.scene.start('GameBattle',{id:id});
+        console.log('home');
+        //Record.data.role = Role.Player.role.record();
+        Record.data.pos = this._avatar.pos;   
+        Record.save();
+        this.scene.start('MainMenu');
     }
 
 
     uiEvent()
     {
-        //if(this._done) return;
-        //this._done = true;
-        this.events.on('over', (act)=>{this._act=act;this._mark.setIcon(this._act);})
-                    .on('out', ()=>{this._act='go';this._mark.setIcon(this._act);});
+        if(!this._done)
+        {
+            this._done = true;
+            this.events.on('over', (act)=>{this._act=act;this.events.emit('cursor',this._act);})
+                        .on('out', ()=>{this._act='go';this.events.emit('cursor','none');})
+        }
 
         const ui = this.scene.get('UI');
-        ui.events.off('exit').off('battle');
-        ui.events.on('exit', ()=>{this.exit();})
-                .on('battle', (id)=>{this.battle(id);})
+        ui.events.off('home').on('home', ()=>{this.home();})
+                .off('mark').on('mark', (on)=>{this._mark.visible=on;})
 
     }
 
