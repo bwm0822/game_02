@@ -1,7 +1,7 @@
 import { Scene } from 'phaser';
 //import createUI,{UiMain,UiStore,UiDialog,Cursor} from '../ui_new.js';
 //import createUI,{UiMain,UiCursor} from '../ui.js';
-import createUI,{UiMain,UiCursor,Dragged} from '../ui_new.js';
+import createUI,{UiMain,UiCursor,UiDragged} from '../ui_new.js';
 
 export class UI extends Scene
 {
@@ -32,7 +32,7 @@ export class UI extends Scene
         // .on('drop', ()=>{console.log('drop',this.id);})
         
         this.input.on('pointermove',(pointer)=>{
-            if(Dragged.on) {Dragged.setPos(pointer.x,pointer.y);}
+            if(UiDragged.on) {UiDragged.setPos(pointer.x,pointer.y);}
         })
     }
 

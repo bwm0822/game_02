@@ -1,44 +1,53 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import Utility from './utility.js';
-
-const COLOR_PRIMARY = 0x4e342e;
-const COLOR_LIGHT = 0x7b5e57;
-const COLOR_DARK = 0x260e04;
-//const S_COLOR_DARK = '#260e04';
-const COLOR_SLOT = 0xa4d4ff;
-const COLOR_SLOT_OVER = 0x4f9ef7;
-const COLOR_SLOT_DRAG = 0x55aa55;
-const COLOR_SLOT_DISABLE = 0x333333;
-const COLOR_COUNT = 0xff0000;//0x260e04;
-const COLOR_WHITE = 0xffffff;
-const COLOR_GRAY = 0x777777;
-const COLOR_RED = 0xff0000;
-const COLOR_YELLOW = 0xffff00;
-const COLOR_BLACK = 0x0;
-const FONT = "Arial";
-const ICON_CLOSE = 'cursors/cross_small';
-const ICON_DROP = 'cursors/iconPack_123';
-const ICON_USE = 'cursors/iconPack_123';
-const ICON_INFO = 'cursors/iconPack_27';
-
-let _scene;
-let _w,_h;
+import {UI, rect, sprite, text, bbcText} from './uibase.js';
 
 export default function createUI(scene)
 {
     console.log('createUI');
-    _scene = scene;
-    _w = scene.sys.canvas.width;
-    _h = scene.sys.canvas.height;
-    console.log('resolution:',_w,_h)
+    UI.w = scene.sys.canvas.width;
+    UI.h = scene.sys.canvas.height;
+    console.log('resolution:',UI.w, UI.h)
 
+    //test(scene);
+    //t1();
+
+    new UiCase(scene);
     new UiMain(scene);
     new UiCursor(scene);
+    new UiDragged(scene, 80, 80);
+    new UiCover(scene);
+    new UiInfo(scene);
+    new UiOption(scene);
 
+    t2(scene);
 
+}
 
+function t2(scene)
+{
+    let bag={0:{icon:'weapons/28'},1:{icon:'weapons/30'}};
+    UiCase.show(bag);
+    //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
+
+    console.log('test')
+    //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
+    //sprite(scene,{icon:UI.ICON_CLOSE});
+}
+
+function t1()
+{
+    let a={test:1}
+    let b;
+    let c=b;
+    b=a;
+    console.log('c',c,b)
+}
+
+function test(scene)
+{
     let bag={0:{icon:'weapons/28'},1:{icon:'weapons/30'}}
-    let slot0 = new Slot(scene,80,80,{x:100,y:100,icon:ICON_CLOSE,count:1,space:0});
+    let slot0 = new Slot(scene,80,80,{x:100,y:100,icon:UI.ICON_CLOSE,space:0});
     //slot1.setIcon('weapons/28').setCount(2);
     slot0.id=0;
     slot0.container=bag;
@@ -56,18 +65,11 @@ export default function createUI(scene)
     slot2.container=bag;
     slot2.update();
 
-    new Dragged(scene, 80, 80);
-
-    new UiCover(scene);
-
-    new UiOption(scene);
-    new UiInfo(scene);
+   
     //opt.show(100,100)
 
     //let btn=new UiButton(scene);
     //btn.setPosition(100,400);
-
-
 
     console.log(scene);
 
@@ -76,51 +78,10 @@ export default function createUI(scene)
 
 }
 
-export function rect(scene, config={})
-{
-    config.color = config.color ?? COLOR_PRIMARY;
-    return scene.rexUI.add.roundRectangle(config);
-}
-
-export function sprite(scene, {icon, name}={})
-{
-    let [atlas, frame] = icon ? icon.split('/'):[];
-    let sprite = scene.add.sprite(0,0,atlas,frame);
-    name && (sprite.name = name);
-    return sprite;
-}
-
-export function text(scene, config={})    
-{
-    // fixedWidth:fixedWidth,
-    config.fontSize = config.fontSize ?? 20;
-    config.fontFamily = config.fontFamily ?? FONT;
-    config.wrapWidth && (config.wordWrap = {width:config.wrapWidth, useAdvancedWrap:true});
-    config.wrapWidth && delete config.wrapWidth;
-    let t = scene.add.text(config?.x, config?.y, config?.text, config);
-    return t;
-}
-
-export function bbcText(scene, config={})    
-{
-    // fixedWidth:fixedWidth,
-    let style = {};
-    style.fontSize = config.fontSize ?? 20;
-    style.fontFamily = config.fontFamily ?? FONT;
-    style.strokeThickness = config.strokeThickness ?? 1;
-    config.color && (style.color = config.color);
-    config.stroke && (style.stroke = config.stroke);
-    config.strokeThickness && (style.strokeThickness = config.strokeThickness);
-    config.wrapWidth && (style.wrap = {mode:'char',width:config.wrapWidth}); 
-    //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
-    config.backgroundColor && (style.backgroundColor = config.backgroundColor);
-    let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, style);
-    return t;
-}
 
 class Pic extends OverlapSizer
 {
-    constructor(scene, w, h, {x=0, y=0, icon, color=COLOR_SLOT, radius=0, alpha=0, space=0}={})
+    constructor(scene, w, h, {x=0, y=0, icon, color=UI.COLOR_SLOT, radius=0, alpha=0, space=0}={})
     {
         super(scene, x, y, w, h,{space:space});
         this.addBackground(rect(scene,{color:color,radius:radius, alpha:alpha}),'background')
@@ -133,7 +94,7 @@ class Pic extends OverlapSizer
 
 class Icon extends OverlapSizer
 {
-    constructor(scene, w, h, {x=0, y=0, icon, count, color=COLOR_SLOT, radius=0, alpha=1, space=10, fontSize=20}={})
+    constructor(scene, w, h, {x=0, y=0, icon, count, color=UI.COLOR_SLOT, radius=0, alpha=1, space=10, fontSize=20}={})
     {
         super(scene, x, y, w, h,{space:space});
         this.fontSize=fontSize;
@@ -149,7 +110,7 @@ class Icon extends OverlapSizer
 
     setIcon(icon)
     {
-        let [key,frame] = icon ? icon.split('/'):[undefined,undefined];
+        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
         this.getElement('sprite').setTexture(key,frame);
         return this;
     }
@@ -168,67 +129,6 @@ class Icon extends OverlapSizer
 
 }
 
-export class Dragged extends Pic
-{
-    static instance = null;
-    constructor(scene, w, h)
-    {
-        super(scene, w, h);
-        Dragged.instance = this;
-        this.hide();
-
-        this.getLayer().name = 'Dragged';
-        
-    }
-
-    static get on() {return Dragged.instance.visible;}
-    static get icon() {return Dragged.instance.icon;}
-    static get slot() {return Dragged.instance.slot;}
-    static set slot(value) {return Dragged.instance.setSlot(value);}
-
-    clear()
-    {
-        this.hide();
-        delete this.slot;
-    }
-
-    setSlot(value)
-    {
-        this.slot=value;
-        this.setIcon(value.icon);
-    }
-
-
-    setIcon(icon)
-    {
-        this.show();
-        let [key,frame]=icon.split('/');
-        this.getElement('sprite').setTexture(key,frame);
-        return this;
-    }
-
-    static hide()
-    {
-        if(Dragged.instance){Dragged.instance.hide();}
-    }
-
-    static setIcon(icon)
-    {
-        if(Dragged.instance){return Dragged.instance.setIcon(icon);}
-    }
-
-    static setPos(x,y)
-    {
-        if(Dragged.instance){return Dragged.instance.setPosition(x,y);}
-    }
-
-    static clear()
-    {
-        if(Dragged.instance){return Dragged.instance.clear();}
-    }
-    
-    
-}
 
 class Slot extends Icon
 {
@@ -236,16 +136,19 @@ class Slot extends Icon
     {
         super(scene, w, h, config);
         this.addListener();
-        this.getLayer().name = 'Slot';
+        //this.getLayer().name = 'Slot';
+        this._getContainer=null;
     }
 
-    get slot() {return this.container[this.id];}
+    get slot() {return this.container?.[this.id];}
     set slot(value) {this.container[this.id]=value; this.setIcon(value.icon);}
     get isEmpty() {return this.checkIfEmpty(this.slot);}
+    get container() {return this._getContainer ? this._getContainer() : null;}
+    set container(value) {this._getContainer = value;}
 
     addListener()
     {
-        this.setInteractive({draggable:true/*,dropZone:true*/})
+        this.setInteractive({draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{
@@ -253,6 +156,8 @@ class Slot extends Icon
             else if(pointer.middleButtonDown()) {this.middleButtonDown(x,y);}
             else {this.leftButtonDown(x,y);}
         })
+        .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
+        .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
         // .on('pointerup', (pointer,x,y)=>{
         //     if(pointer.middleButtonUp())
         //     {
@@ -275,11 +180,7 @@ class Slot extends Icon
 
     copySlot() {return this.slot ? Utility.deepClone(this.slot) : null;}
 
-    update()
-    {
-        let data = this.container?.[this.id];
-        this.setIcon(data?.icon);
-    }
+    update() {this.setIcon(this.slot?.icon);}
 
     clear()
     {
@@ -289,24 +190,33 @@ class Slot extends Icon
     
     over()
     {
-        if(Dragged.on) 
+        if(UiDragged.on) 
         {
-            this.setBgColor(COLOR_SLOT_DRAG);
+            this.setBgColor(UI.COLOR_SLOT_DRAG);
         }
         else if(!this.isEmpty)
         {
-            this.setBgColor(COLOR_SLOT_OVER);
+            this.setBgColor(UI.COLOR_SLOT_OVER);
             UiInfo.show(this);
         }
     }
 
     out()
     {
-        this.setBgColor(COLOR_SLOT);
+        this.setBgColor(UI.COLOR_SLOT);
         UiInfo.hide();
     }
 
-    
+    leave(gameObject)
+    {
+        UiDragged.on&&gameObject.setBgColor(UI.COLOR_SLOT);
+    }
+
+    enter(gameObject)
+    {
+        UiDragged.on&&gameObject.setBgColor(UI.COLOR_SLOT_DRAG);
+    }
+
     middleButtonDown(x,y)
     {
         if(!this.isEmpty) {UiOption.show(this.left+x,this.top+y);}
@@ -316,19 +226,19 @@ class Slot extends Icon
     {
         UiInfo.hide();
         let slotCopy = this.copySlot();
-        if(Dragged.on)
+        if(UiDragged.on)
         {
-            this.slot = Dragged.slot;
-            Dragged.clear();
+            this.slot = UiDragged.slot;
+            UiDragged.clear();
             //console.log('slotCopty',slotCopy);
-            if(!this.checkIfEmpty(slotCopy)) {Dragged.slot = slotCopy;}
-            if(!Dragged.on) {this.setBgColor(COLOR_SLOT);}
+            if(!this.checkIfEmpty(slotCopy)) {UiDragged.slot=slotCopy;}
+            if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
         }
         else if(!this.checkIfEmpty(slotCopy))
         {
-            this.setBgColor(COLOR_SLOT_DRAG);
-            Dragged.slot = slotCopy;
-            Dragged.setPos(this.left+x,this.top+y);
+            this.setBgColor(UI.COLOR_SLOT_DRAG);
+            UiDragged.slot = slotCopy;
+            UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
         }
         //console.log(this.container)
@@ -377,25 +287,94 @@ class Slot extends Icon
 
 }
 
+export class UiDragged extends Pic
+{
+    static instance = null;
+    constructor(scene, w, h)
+    {
+        super(scene, w, h);
+        UiDragged.instance = this;
+        this.hide();
+
+        this.getLayer().name = 'Dragged';
+        
+    }
+
+    static get on() {return UiDragged.instance.visible;}
+    static get icon() {return UiDragged.instance.icon;}
+    static get slot() {return UiDragged.instance.slot;}
+    static set slot(value) {return UiDragged.instance.setSlot(value);}
+
+    clear()
+    {
+        this.hide();
+        delete this.slot;
+    }
+
+    setSlot(value)
+    {
+        this.slot=value;
+        this.setIcon(value.icon);
+    }
+
+    setIcon(icon)
+    {
+        this.show();
+        let [key,frame]=icon.split('/');
+        this.getElement('sprite').setTexture(key,frame);
+        return this;
+    }
+
+    static hide()
+    {
+        if(UiDragged.instance){UiDragged.instance.hide();}
+    }
+
+    static setIcon(icon)
+    {
+        if(UiDragged.instance){return UiDragged.instance.setIcon(icon);}
+    }
+
+    static setPos(x,y)
+    {
+        if(UiDragged.instance){return UiDragged.instance.setPosition(x,y);}
+    }
+
+    static clear()
+    {
+        if(UiDragged.instance){return UiDragged.instance.clear();}
+    }
+}
+
 class UiButton extends Sizer
 {
     constructor(scene,option)
     {
-        super(scene);
-        this.onclick=option.onclick;
-        this.addBackground(rect(scene,{color:COLOR_SLOT_OVER,alpha:0}),'bg')
-            .add(text(scene,{text:option.text}))
-            .layout()
-            .addListener()
+        super(scene,option);
+        this.onclick=option?.onclick;
+        if(option?.text) 
+        {
+            this.addBackground(rect(scene,{color:UI.COLOR_SLOT_OVER,alpha:0}),'bg')
+                .add(text(scene,{text:option.text}))
+        }
+        else if(option?.icon) 
+        {
+            console.log('icon',option?.icon)
+            this.add(sprite(scene,{icon:option.icon}),{key:'sp'})
+        }
+
+        this.layout().addListener()
         scene.add.existing(this);
         
     }
 
     addListener()
     {
+        let bg = this.getElement('bg');
+        let sp = this.getElement('sp');
         this.setInteractive();
-        this.on('pointerover',()=>{this.getElement('bg').fillAlpha=1;})
-            .on('pointerout',()=>{this.getElement('bg').fillAlpha=0;})
+        this.on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
+            .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
             .on('pointerdown',()=>{this.onclick&&this.onclick();})
     }
 }
@@ -405,9 +384,9 @@ class UiCover extends Sizer
     static instance = null;
     constructor(scene)
     {
-        super(scene,0,0,_w,_h);
+        super(scene,0,0,UI.w,UI.h);
         UiCover.instance = this;
-        this.addBackground(rect(scene,{color:COLOR_DARK,alpha:0}))
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:0}))
             .setOrigin(0,0)
             .layout()
             .hide()
@@ -428,7 +407,7 @@ class UiOption extends Sizer
         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
         UiOption.instance = this;
 
-        this.addBackground(rect(scene,{color:COLOR_DARK,alpha:1}))
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
             .add(new UiButton(scene,{text:'使用',onclick:()=>{this.use();}}),{expand:true,key:'use'})
             .add(new UiButton(scene,{text:'丟棄',onclick:()=>{this.drop();}}),{expand:true,key:'drop'})
             .setOrigin(0.2,0.2)
@@ -461,9 +440,9 @@ class UiOption extends Sizer
 
     rePos()
     {
-        if(this.right>_w) {this.x-=this.right-_w;}
+        if(this.right>UI.w) {this.x-=this.right-UI.w;}
         else if(this.left<0) {this.x-=this.left;}
-        if(this.bottom>_h) {this.y-=this.bottom-_h;}
+        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
         else if(this.top<0) {this.y-=this.top;}
     }
 
@@ -488,7 +467,7 @@ class UiInfo extends Sizer
         super(scene,{width:200,height:300,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
         UiInfo.instance = this;
 
-        this.addBackground(rect(scene,{color:COLOR_DARK,alpha:1}))
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
             .layout()
             .hide();
 
@@ -501,7 +480,7 @@ class UiInfo extends Sizer
         super.show();
         let x,y=target.y;
 
-        if(target.x>_w/2)
+        if(target.x>UI.w/2)
         {
             this.setOrigin(1,0.5);
             x=target.left-UiInfo.gap;
@@ -519,13 +498,85 @@ class UiInfo extends Sizer
 
     rePos()
     {
-        if(this.bottom>_h) {this.y-=this.bottom-_h;}
+        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
         else if(this.top<0) {this.y-=this.top;}
     }
 
     static hide() {if(UiInfo.instance){UiInfo.instance.hide();}}
 
     static show(target) {if(UiInfo.instance){UiInfo.instance.show(target);}}
+}
+
+class UiCase extends Sizer
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene,{x:200,y:200,orientation:'y'});
+        UiCase.instance = this;
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1,strokeColor:0x777777,strokeWidth:3}))
+            //.add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right'})
+            .addTop(scene)
+            .addGrid(scene)
+            .layout();
+        scene.add.existing(this);
+        this.getLayer().name = 'UiCase';
+    }
+
+    getContainer() {return this.container;}
+
+    addTop(scene)
+    {
+        let sz = scene.rexUI.add.overlapSizer();
+        sz//.addBackground(rect(scene,{color:UI.COLOR_GRAY}))
+            .add(text(scene,{text:'箱子'}),{align:'center',expand:false})
+            .add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right',expand:false})
+        this.add(sz,{expand:true});
+        return this;
+    }
+
+    addGrid(scene)
+    {
+        let config =
+        {
+            column: 4,
+            row: 4,
+            space: {column:5,row:5,left:10,right:10,bottom:10},
+        }
+
+        this.grid = scene.rexUI.add.gridSizer(config);
+        let count = config.column * config.row;
+        for(let i=0; i<count; i++)
+        {
+            let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE);
+            slot.id = i;
+            // 傳遞function，方法1,2 都可以
+            //slot.container = ()=>{return this.getContainer();}; // 方法1
+            slot.container = this.getContainer.bind(this); // 方法2
+            //slot.container = this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
+            this.grid.add(slot);
+        }
+
+        this.add(this.grid);
+        return this;
+    }
+
+    update()
+    {
+        this.grid.getElement('items').forEach(item => {item.update();});
+    }
+
+    show(container)
+    {
+        this.container = container;
+        this.update();
+    }
+
+    
+
+    static hide() {if(UiCase.instance){UiCase.instance.hide();}}
+
+    static show(container) {if(UiCase.instance){UiCase.instance.show(container);}}
 }
 
 
@@ -538,7 +589,7 @@ export class UiMain extends Sizer
         super(scene);
         UiMain.instance = this;
 
-        this.addBackground(rect(scene,{color:COLOR_DARK,alpha:1}))
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}))
             .size()
             .hide();
         
