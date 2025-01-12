@@ -2,12 +2,9 @@ import { Scene } from 'phaser';
 import Map from '../map.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
-import Battle from '../battle.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
-
-const ICON_NODE='buffs/10';
 
 export class GameMap extends Scene
 {

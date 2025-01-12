@@ -1,3 +1,4 @@
+import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 
 export let UI =
 {
@@ -5,7 +6,7 @@ export let UI =
     COLOR_LIGHT : 0x7b5e57,
     COLOR_DARK : 0x260e04,
     COLOR_SLOT : 0x666666,//0xa4d4ff,
-    COLOR_SLOT_OVER : 0xAAAAAA,//0x4f9ef7,
+    COLOR_SLOT_OVER : 0x909090,//0x4f9ef7,
     COLOR_SLOT_DRAG : 0x55aa55,
     COLOR_SLOT_DISABLE : 0x333333,
     COLOR_COUNT : 0xff0000,//0x260e04;
@@ -19,8 +20,12 @@ export let UI =
     ICON_DROP : 'cursors/iconPack_123',
     ICON_USE : 'cursors/iconPack_123',
     ICON_INFO : 'cursors/iconPack_27',
+    ICON_MARK : 'buffs/108',
+    ICON_WEAPON : 'weapons/5',
+    ICON_HELMET : 'weapons/45',
+    ICON_ARMOR : 'weapons/54',
+    ICON_BOOT : 'weapons/',
     SLOT_SIZE : 80,
-
 }
 
 
@@ -65,3 +70,54 @@ export function bbcText(scene, config={})
     let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, style);
     return t;
 }
+
+export class Pic extends OverlapSizer
+{
+    constructor(scene, w, h, {x=0, y=0, icon, color=UI.COLOR_SLOT, radius=0, alpha=0, space=0}={})
+    {
+        super(scene, x, y, w, h,{space:space});
+        this.addBackground(rect(scene,{color:color,radius:radius, alpha:alpha}),'background')
+            .add(sprite(this.scene,{icon:icon}),{aspectRatio:true, key:'sprite'})        
+            .layout()//.drawBounds(scene.add.graphics(), 0xff0000);   
+
+        scene.add.existing(this);
+    }
+}
+
+export class Icon extends OverlapSizer
+{
+    constructor(scene, w, h, {x=0, y=0, icon, count, color=UI.COLOR_SLOT, radius=0, alpha=1, space=10, fontSize=20}={})
+    {
+        super(scene, x, y, w, h,{space:space});
+        this.fontSize=fontSize;
+        this.addBackground(rect(scene,{color:color, radius:radius, alpha:alpha}),'background')
+            .add(sprite(scene,{icon:icon}),{aspectRatio:true, key:'sprite'})   
+            .add(text(scene,{text:count, fontSize:this.fontSize, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false,offsetY:0,offsetX:0})        
+
+        //if(name!=undefined) {this.name = name;}
+
+        this.layout()//.drawBounds(scene.add.graphics(), 0xff0000);
+        scene.add.existing(this);
+    }
+
+    setIcon(icon,{tint=0xffffff,alpha=1}={})
+    {
+        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        this.getElement('sprite').setTexture(key,frame).setTint(tint).setAlpha(alpha);
+        return this;
+    }
+
+    setCount(count)
+    {
+        this.getElement('count').setText(count);
+        return this;
+    }
+
+    clear()
+    {
+        this.getElement('sprite').setTexture();
+        this.getElement('count').setText('');
+    }
+
+}
+

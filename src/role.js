@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 import {RoleDB, ItemDB, RoleData, CardDB} from './database.js';
 //import {ItemDrop} from './item.js';
-import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
+//import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
 //import {Gun, Melee} from './weapon.js';
-import {UiBattle, UiMessage, UiWeaponState} from './ui.js';
+import {UiBattle, UiMessage, UiWeaponState} from './ui_old.js';
 import Utility from './utility.js';
 import Battle from './battle.js';
 import Record from './record';

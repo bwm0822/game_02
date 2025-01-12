@@ -1,7 +1,5 @@
 import { Scene } from 'phaser';
-//import createUI,{UiMain,UiStore,UiDialog,Cursor} from '../ui_new.js';
-//import createUI,{UiMain,UiCursor} from '../ui.js';
-import createUI,{UiMain,UiCursor,UiDragged} from '../ui_new.js';
+import createUI,{UiMain,UiCursor,UiDragged} from '../ui.js';
 
 export class UI extends Scene
 {

@@ -5,7 +5,6 @@ import { MainMenu } from './scenes/MainMenu';
 import { Preloader } from './scenes/Preloader';
 import { UI } from './scenes/UI';
 import { GameMap } from './scenes/GameMap';
-import { GameBattle } from './scenes/GameBattle';
 import { GameTown } from './scenes/GameTown';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
 import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';

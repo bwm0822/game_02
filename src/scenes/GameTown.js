@@ -1,17 +1,12 @@
-import { Scene } from 'phaser';
+import {Scene} from 'phaser';
 import Map from '../map.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
-import Battle from '../battle.js';
-import {BuffInfo, Mark} from '../gameUi.js'
+import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {Avatar} from '../role.js'
 import {Block} from '../entity.js'
 import {QuestManager} from '../quest.js';
-import {astar} from '../astar.js';
-
-const ICON_NODE='buffs/10';
-const ICON_MARK='buffs/108';
 
 export class GameTown extends Scene
 {
