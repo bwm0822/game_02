@@ -31,15 +31,21 @@ export class GameTown extends Scene
         this._act='go';
         this._mark = new Mark(this);
         this.roles=[];
-        
+        this.loadRecord();
         this.uiEvent();
         this.initUI();
-        QuestManager.load();
+       
         new Map(this,this._data.map,true);
 
         this.setPosition();
         this.processInput();
         this.process();
+    }
+
+    loadRecord()
+    {
+        Role.Player.load();
+        QuestManager.load();
     }
 
     processInput()
@@ -233,6 +239,15 @@ export class GameTown extends Scene
     {
         console.log('home');
         //Record.data.role = Role.Player.role.record();
+        console.log(this.objects)
+        this.objects.forEach((obj)=>{
+            console.log(obj)
+            if(obj.save)
+            {
+                console.log('save');
+                obj.save();
+            }
+        })
         Record.data.pos = this._avatar.pos;   
         Record.save();
         this.scene.start('MainMenu');

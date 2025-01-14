@@ -48,9 +48,15 @@
                  "gid":175,
                  "height":32,
                  "id":12,
-                 "name":"",
+                 "name":"\u6728\u7bb1",
+                 "properties":[
+                        {
+                         "name":"container",
+                         "type":"string",
+                         "value":"[\"sword_01\",\"helmet_01\",\"armor_01\"]"
+                        }],
                  "rotation":0,
-                 "type":"pickup",
+                 "type":"case",
                  "visible":true,
                  "width":32,
                  "x":256,
@@ -74,8 +80,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":3,
- "nextobjectid":15,
+ "nextlayerid":4,
+ "nextobjectid":16,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

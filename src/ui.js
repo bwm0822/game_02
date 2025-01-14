@@ -1,6 +1,8 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import Utility from './utility.js';
 import {UI, rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
+import * as Role from './role.js';
+import {ItemDB} from './database.js';
 
 export default function createUI(scene)
 {
@@ -20,20 +22,27 @@ export default function createUI(scene)
     new UiInfo(scene);
     new UiOption(scene);
 
-    t2(scene);
+    //t2(scene);
 
 }
 
 function t2(scene)
 {
+    let player =
+    {
+        equip:{},
+        bag:{}
+    }
+
     let box={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
+    //let box={};
     UiCase.show(box,'箱子');
 
-    let inv={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
-    UiInv.show(inv);
+    //let inv={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
+    //UiInv.show(player);
     //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
 
-    console.log('test')
+    //console.log('test')
     //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
     //sprite(scene,{icon:UI.ICON_CLOSE});
 }
@@ -91,12 +100,28 @@ class Slot extends Icon
         this._getContainer = getContainer;
     }
 
+    // get slot() {return this.container?.[this._id];}
+    // set slot(value) {this.container[this._id]=value; this.setIcon(value.icon);}
+
     get slot() {return this.container?.[this._id];}
-    set slot(value) {this.container[this._id]=value; this.setIcon(value.icon);}
+    set slot(value) {this.container[this._id]=value; this.setSlot(value);}
+
     get isEmpty() {return this.checkIfEmpty(this.slot);}
     get container() {return this._getContainer ? this._getContainer() : null;}
     get isValid() {return true;}
     //set container(value) {this._getContainer = value;}
+
+    setSlot(value)
+    {
+        let item = ItemDB.get(value?.id);
+        this.setIcon(item?.icon);
+    }
+
+    // setIcon(value)
+    // {
+    //     let item = ItemDB.get(value?.id);
+    //     super.setIcon(item?.icon);
+    // }
 
     addListener()
     {
@@ -132,7 +157,8 @@ class Slot extends Icon
 
     copySlot() {return this.slot ? Utility.deepClone(this.slot) : null;}
 
-    update() {this.setIcon(this.slot?.icon);}
+    //update() {this.setIcon(this.slot?.icon);}
+    update() {this.setSlot(this.slot);}
 
     clear()
     {
@@ -265,7 +291,7 @@ class EquipSlot extends Slot
     setIcon(icon)
     {
         if(icon) {return super.setIcon(icon);}
-        else {return super.setIcon(EquipSlot.icons[this._id],{alpha:0.5,tint:0x0});}
+        else {return super.setIcon(EquipSlot.icons[this.cat],{alpha:0.25,tint:0x0});}
     }
 
 }
@@ -317,19 +343,16 @@ export class UiDragged extends Pic
         super(scene, w, h);
         UiDragged.instance = this;
         this.hide();
-
         this.getLayer().name = 'Dragged';
-        
     }
 
     static get on() {return UiDragged.instance.visible;}
-    static get icon() {return UiDragged.instance.icon;}
     static get slot() {return UiDragged.instance.slot;}
     static set slot(value) {return UiDragged.instance.setSlot(value);}
 
     isCat(cat)
     {
-        return this.slot.cat == cat;
+        return this.item.cat == cat;
     }
 
     clear()
@@ -340,13 +363,14 @@ export class UiDragged extends Pic
 
     setSlot(value)
     {
-        this.slot=value;
-        this.setIcon(value.icon);
+        this.show();
+        this.slot = value;
+        this.item = ItemDB.get(value.id);
+        this.setIcon(this.item.icon);
     }
 
     setIcon(icon)
     {
-        this.show();
         let [key,frame]=icon.split('/');
         this.getElement('sprite').setTexture(key,frame);
         return this;
@@ -355,11 +379,6 @@ export class UiDragged extends Pic
     static hide()
     {
         if(UiDragged.instance){UiDragged.instance.hide();}
-    }
-
-    static setIcon(icon)
-    {
-        if(UiDragged.instance){return UiDragged.instance.setIcon(icon);}
     }
 
     static setPos(x,y)
@@ -541,7 +560,7 @@ class UiInfo extends Sizer
     static show(target) {if(UiInfo.instance){UiInfo.instance.show(target);}}
 }
 
-class UiCase extends Sizer
+export class UiCase extends Sizer
 {
     static instance = null;
     constructor(scene)
@@ -565,7 +584,9 @@ class UiCase extends Sizer
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
-            .layout().setOrigin(0)
+            .setOrigin(0)
+            .layout()
+            .hide()
         scene.add.existing(this);
         this.getElement('bg').setInteractive(); //避免 UI scene 的 input event 傳到其他 scene
         this.getLayer().name = 'UiCase';
@@ -581,6 +602,7 @@ class UiCase extends Sizer
 
     show(container,label)
     {
+        super.show();
         this.container = container;
         this.getElement('label',true).setText(label);
         this.layout();
@@ -592,7 +614,7 @@ class UiCase extends Sizer
     static show(container,label) {if(UiCase.instance){UiCase.instance.show(container,label);}}
 }
 
-class UiInv extends Sizer
+export class UiInv extends Sizer
 {
     static instance = null;
     constructor(scene)
@@ -612,22 +634,23 @@ class UiInv extends Sizer
         this.addGrid = addGrid;
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1,strokeColor:0x777777,strokeWidth:3}),'bg')
-            //.add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right'})
             .addTop(scene,'裝備')
-            .addEquip(scene,this.getContainer.bind(this))
-            .addGrid(scene,5,4,this.getContainer.bind(this),{bottom:30})
+            .addEquip(scene,this.getEquip.bind(this))
+            .addGrid(scene,5,4,this.getBag.bind(this),{bottom:30})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
             .setOrigin(0)
-            .layout();
+            .layout()
+            .hide()
         scene.add.existing(this);
         this.getElement('bg').setInteractive(); //避免 UI scene 的 input event 傳到其他 scene
-        this.getLayer().name = 'UiCase';
+        this.getLayer().name = 'UiInv';
     }
 
-    getContainer() {return this.container;}
+    getEquip() {return this.container?.equip;}
+    getBag() {return this.container?.bag;}
 
     addEquip(scene, getContainer)
     {
@@ -647,19 +670,21 @@ class UiInv extends Sizer
             .add(equip('helmet', getContainer))
             .add(equip('armor', getContainer))
 
-        this.add(grid,{key:'grid'});
+        this.add(grid,{key:'equip'});
         return this;
         
     }
 
     update()
     {
-        //this.grid.getElement('items').forEach(item => {item.update();});
-        this.getElement('grid').getElement('items').forEach(item => {item.update();});
+        this.getElement('equip').getElement('items').forEach(item => {item?.update();});
+        this.getElement('grid').getElement('items').forEach(item => {item?.update();});
     }
 
     show(container)
     {
+        console.log(container)
+        super.show();
         this.container = container;
         this.update();
     }
@@ -678,13 +703,27 @@ export class UiMain extends Sizer
         super(scene);
         UiMain.instance = this;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}))
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}),'bg')
+            .add(new UiButton(scene,{icon:UI.ICON_CLOSE,onclick:this.inv.bind(this)}))
+            .add(new UiButton(scene,{icon:UI.ICON_CLOSE,onclick:this.home.bind(this)}))
             .size()
             .hide();
         
         this.getLayer().name = 'UiMain';    // 產生layer，並設定layer名稱
         this.addListener();
        
+    }
+
+    inv()
+    {
+        console.log('inv')
+        UiInv.show(Role.Player.data);
+    }
+
+    home()
+    {
+        this.hide();
+        this.scene.events.emit('home');
     }
 
     addListener()
@@ -729,6 +768,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         talk :  {sprite:'cursors/message_dots_square', origin:{x:0.5,y:0.5}, scale:0.7},   
         enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
         exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
+        open :  {sprite:'cursors/gauntlet_open', origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;

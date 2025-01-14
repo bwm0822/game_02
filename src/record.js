@@ -2,11 +2,22 @@ import Utility from './utility.js'
 
 export default class Record
 {
-    static data = {default:'出口', map:'town_02'}
+    static data = {default:'出口', map:'town_02', player:{equip:{},bag:{}}}
 
     static save()
     {
         Utility.save(Record.data);
+    }
+
+    static getByUid(mapName, uid)
+    {
+        return Record.data[mapName]?.[uid];
+    }
+
+    static setByUid(mapName, uid, value)
+    {
+        if(!Record.data[mapName]){Record.data[mapName]={};}
+        Record.data[mapName][uid] = value;
     }
 
     static load()

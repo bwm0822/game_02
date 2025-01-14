@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
-import {RoleDB, ItemDB, RoleData, CardDB} from './database.js';
+//import {RoleDB, ItemDB, RoleData, CardDB} from './database.js';
 //import {ItemDrop} from './item.js';
 //import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
 //import {Gun, Melee} from './weapon.js';
 import {UiBattle, UiMessage, UiWeaponState} from './ui_old.js';
 import Utility from './utility.js';
-import Battle from './battle.js';
+//import Battle from './battle.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
@@ -797,149 +797,184 @@ const ICON_ENEMY = 'role/1';
 // }
 
 
-export class Player 
+// export class Player 
+// {
+//     static instance = null;
+//     constructor(id)
+//     {
+//         Player.instance = this;
+//         let role = RoleDB.get(id);
+//         this.addData(role, id);
+//     }
+
+//     static get pos() {return Player.instance.pos;}
+//     //static getBounds() {return Player.instance.getBounds();}
+//     static get role() {return Player.instance.role;}
+//     static get dead() {return Player.instance.dead;}
+
+//     avatar(scene, x, y)
+//     {
+//         return new Npc(scene, this.role.data.id, {x:x, y:y, data:this.role});
+//     }
+
+//     addData(role, id)
+//     {
+//         this.role = new RoleData(role, id);
+
+//         this.role.gold = 1000;
+//         this.role.bag = {
+//             capacity: 15,
+//             items: [  
+//                         {id:'itempack_0', count:2}, 
+//                         {id:'itempack_1', count:3}, 
+//                         {id:'axe', count:1},
+//                         {id:'sword', count:1},
+//                         {id:'helmet', count:1},
+//                         {id:'chestplate', count:1},
+//                         {id:'dagger', count:1},
+//                         {id:'itempack_2', count:1},
+//                     ]
+//         };
+        
+//         this.role.calc_equip();
+
+//     }
+
+//     load(data)
+//     {
+//         if(data)
+//         {
+//             this.role.load(data);
+//             this.role.calc_equip();
+//         }
+//     }
+
+//     drop(slot, count)
+//     {
+//         this.role.remove(slot, count);
+//         UiMessage.show(`丟棄 ${count} ${slot.label}`);
+//     }
+
+//     drop_equip(cat)
+//     {
+//         let id = this.role.get_equip(cat);
+//         this.unequip(cat, true);
+//         let count = 1;
+//         let data = ItemDB.get(id);
+//         UiMessage.show(`丟棄 ${count} ${data.name}`);
+//     }
+
+//     use(slot)
+//     {        
+//         //let dat = ItemDB.get(item.id);
+//         let dat = slot.dat;
+//         if(dat.cat == 'useable')
+//         {
+//             this.role.use(slot);
+//         }
+//         else
+//         {
+//             this.unequip(dat.cat);
+//             this.role.use(slot)
+//         }
+
+//     }
+
+//     unequip(cat, drop=false)
+//     {
+//         if(this.role.equips[cat])
+//         {
+//             this.role.unequip(cat, drop);
+//         }
+//     }
+
+//     buy(slot, count)
+//     {
+//         console.log(slot,count);
+//         let [state,text] = this.role.buy(slot, count);
+//         console.log(state,text);
+//         if(state){UiMessage.show(`購買 ${count} ${slot.label}`)}
+//         else{UiMessage.show(text)};    
+//         return state;
+//     }
+
+//     static save()
+//     {
+//         return Player.instance.role.save();
+//     }
+
+//     static drop(slot, count)
+//     {
+//         if(!Player.instance){Player.instance=new Player('knight');}
+//         if(Player.instance){Player.instance.drop(slot, count);}
+//     }
+
+//     static drop_equip(cat)
+//     {
+//         if(!Player.instance){Player.instance=new Player('knight');}
+//         if(Player.instance){Player.instance.drop_equip(cat);}
+//     }
+
+//     static use(item)
+//     {
+//         if(!Player.instance){Player.instance=new Player('knight');}
+//         if(Player.instance){Player.instance.use(item);}
+//     }
+
+//     static unequip(cat)
+//     {
+//         if(!Player.instance){Player.instance=new Player('knight');}
+//         if(Player.instance){Player.instance.unequip(cat);}
+//     }
+
+//     static avatar(scene, x, y)
+//     {
+//         if(!Player.instance){Player.instance=new Player('knight');}
+//         if(Player.instance){return Player.instance.avatar(scene, x, y);}
+//     }
+
+//     static buy(slot, count)
+//     {
+//         if(Player.instance){return Player.instance.buy(slot,count);}
+//     }
+
+// }
+
+
+export class Player
 {
     static instance = null;
-    constructor(id)
+    constructor()
     {
         Player.instance = this;
-        let role = RoleDB.get(id);
-        this.addData(role, id);
     }
 
-    static get pos() {return Player.instance.pos;}
-    //static getBounds() {return Player.instance.getBounds();}
-    static get role() {return Player.instance.role;}
-    static get dead() {return Player.instance.dead;}
+    static get data() {return Player.instance.data;}
 
-    avatar(scene, x, y)
+    load()
     {
-        return new Npc(scene, this.role.data.id, {x:x, y:y, data:this.role});
+        this.data = Record.data.player;
+        console.log(this.data);
     }
 
-    addData(role, id)
+    save()
     {
-        this.role = new RoleData(role, id);
-
-        this.role.gold = 1000;
-        this.role.bag = {
-            capacity: 15,
-            items: [  
-                        {id:'itempack_0', count:2}, 
-                        {id:'itempack_1', count:3}, 
-                        {id:'axe', count:1},
-                        {id:'sword', count:1},
-                        {id:'helmet', count:1},
-                        {id:'chestplate', count:1},
-                        {id:'dagger', count:1},
-                        {id:'itempack_2', count:1},
-                    ]
-        };
-        
-        this.role.calc_equip();
-
+        Record.data.player = this.data;
     }
 
-    load(data)
+    static load()
     {
-        if(data)
-        {
-            this.role.load(data);
-            this.role.calc_equip();
-        }
-    }
-
-    drop(slot, count)
-    {
-        this.role.remove(slot, count);
-        UiMessage.show(`丟棄 ${count} ${slot.label}`);
-    }
-
-    drop_equip(cat)
-    {
-        let id = this.role.get_equip(cat);
-        this.unequip(cat, true);
-        let count = 1;
-        let data = ItemDB.get(id);
-        UiMessage.show(`丟棄 ${count} ${data.name}`);
-    }
-
-    use(slot)
-    {        
-        //let dat = ItemDB.get(item.id);
-        let dat = slot.dat;
-        if(dat.cat == 'useable')
-        {
-            this.role.use(slot);
-        }
-        else
-        {
-            this.unequip(dat.cat);
-            this.role.use(slot)
-        }
-
-    }
-
-    unequip(cat, drop=false)
-    {
-        if(this.role.equips[cat])
-        {
-            this.role.unequip(cat, drop);
-        }
-    }
-
-    buy(slot, count)
-    {
-        console.log(slot,count);
-        let [state,text] = this.role.buy(slot, count);
-        console.log(state,text);
-        if(state){UiMessage.show(`購買 ${count} ${slot.label}`)}
-        else{UiMessage.show(text)};    
-        return state;
+        if(!Player.instance) {new Player();}
+        Player.instance.load();
     }
 
     static save()
     {
-        return Player.instance.role.save();
+        if(Player.instance) {Player.instance.save();}
     }
 
-    static drop(slot, count)
-    {
-        if(!Player.instance){Player.instance=new Player('knight');}
-        if(Player.instance){Player.instance.drop(slot, count);}
-    }
-
-    static drop_equip(cat)
-    {
-        if(!Player.instance){Player.instance=new Player('knight');}
-        if(Player.instance){Player.instance.drop_equip(cat);}
-    }
-
-    static use(item)
-    {
-        if(!Player.instance){Player.instance=new Player('knight');}
-        if(Player.instance){Player.instance.use(item);}
-    }
-
-    static unequip(cat)
-    {
-        if(!Player.instance){Player.instance=new Player('knight');}
-        if(Player.instance){Player.instance.unequip(cat);}
-    }
-
-    static avatar(scene, x, y)
-    {
-        if(!Player.instance){Player.instance=new Player('knight');}
-        if(Player.instance){return Player.instance.avatar(scene, x, y);}
-    }
-
-    static buy(slot, count)
-    {
-        if(Player.instance){return Player.instance.buy(slot,count);}
-    }
-
+    
 }
-
 
 
 

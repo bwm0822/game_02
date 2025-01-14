@@ -1,5 +1,6 @@
-import { Scene } from 'phaser';
-import createUI,{UiMain,UiCursor,UiDragged} from '../ui.js';
+import {Scene} from 'phaser';
+import createUI,{UiMain,UiCursor,UiDragged,UiCase,UiInv} from '../ui.js';
+import * as Role from '../role.js';
 
 export class UI extends Scene
 {
@@ -66,5 +67,6 @@ export class UI extends Scene
             .on('store', (slots)=>{UiStore.show(slots);})
             .on('dialog', (dialog)=>{UiDialog.show(dialog);})
             .on('cursor', (type)=>{UiCursor.set(type);})
+            .on('case', (container,label)=>{UiCase.show(container,label);UiInv.show(Role.Player.data);})
     }
 }

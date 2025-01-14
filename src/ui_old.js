@@ -1,7 +1,7 @@
-import {ItemDB, Inventory, ItemType, CardDB, QuestDB} from './database.js';
+import {ItemDB, Inventory, ItemType, CardDB, QuestDB} from './database_old.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import Utility from './utility.js';
-import {Player} from './role.js';
+//import {Player} from './role.js';
 import Record from './record.js';
 import {QuestManager} from  './quest.js';
 //import Button from 'phaser3-rex-plugins/plugins/button.js';
@@ -169,105 +169,105 @@ function button(scene, {icon, onclick})
     return btn;
 }
 
-class UiCard extends Phaser.GameObjects.Container
-{
-    constructor(scene,depth,id)
-    {
-        super(scene,0,0);
-        this.id = id;
-        let dat = CardDB.get(id);
-        this.ap = dat.ap;
+// class UiCard extends Phaser.GameObjects.Container
+// {
+//     constructor(scene,depth,id)
+//     {
+//         super(scene,0,0);
+//         this.id = id;
+//         let dat = CardDB.get(id);
+//         this.ap = dat.ap;
 
-        let top = scene.rexUI.add.overlapSizer();
+//         let top = scene.rexUI.add.overlapSizer();
         
-        let sizer = scene.rexUI.add.sizer({orientation:'y',space:{left:10,right:10,top:25,bottom:10}});
-        top.add(sizer);
+//         let sizer = scene.rexUI.add.sizer({orientation:'y',space:{left:10,right:10,top:25,bottom:10}});
+//         top.add(sizer);
 
-        sizer.addBackground(this.createBg(scene))
-            .add(this.createIcon(scene,0,0,150,100,dat.icon))
-            .add(this.createDescript(scene,0,0,150,100,dat))
-            .layout();
+//         sizer.addBackground(this.createBg(scene))
+//             .add(this.createIcon(scene,0,0,150,100,dat.icon))
+//             .add(this.createDescript(scene,0,0,150,100,dat))
+//             .layout();
     
-        top.add(sizer)
-            .add(this.createAP(scene,dat.ap),{align:'left-top',expand: false})
-            .add(this.createTitle(scene,dat.title),{align:'right-top',expand: false})
-            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+//         top.add(sizer)
+//             .add(this.createAP(scene,dat.ap),{align:'left-top',expand: false})
+//             .add(this.createTitle(scene,dat.title),{align:'right-top',expand: false})
+//             .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
            
-        this.add(top);
-        this.setDepth(depth);
-        this.setSize(top.width,top.height);
+//         this.add(top);
+//         this.setDepth(depth);
+//         this.setSize(top.width,top.height);
 
-        scene.add.existing(this);
+//         scene.add.existing(this);
 
-        this.checkAp = (ap)=>{
-            this._ap.setText(ap<dat.ap?`[color=red]${dat.ap}[/color]`:dat.ap);
-        }
+//         this.checkAp = (ap)=>{
+//             this._ap.setText(ap<dat.ap?`[color=red]${dat.ap}[/color]`:dat.ap);
+//         }
 
-        this.update = ()=>{
-            this._des.setText(this.parse(dat))
-        }
-    }
+//         this.update = ()=>{
+//             this._des.setText(this.parse(dat))
+//         }
+//     }
 
-    createBg(scene)
-    {
-        return rect(scene,{x:0,y:0,width:this.width,height:this.height,color:COLOR_DARK,radius:10});
-    }
+//     createBg(scene)
+//     {
+//         return rect(scene,{x:0,y:0,width:this.width,height:this.height,color:COLOR_DARK,radius:10});
+//     }
 
-    createIcon(scene,x,y,w,h,icon=ICON_NEXT)
-    {
-        //console.log('createIcon')
-        this._icon = new Pic(scene,w,h,{x:x,y:y,icon:icon,radius:0});
-        return this._icon;
-    }
+//     createIcon(scene,x,y,w,h,icon=ICON_NEXT)
+//     {
+//         //console.log('createIcon')
+//         this._icon = new Pic(scene,w,h,{x:x,y:y,icon:icon,radius:0});
+//         return this._icon;
+//     }
 
-    createDescript(scene,x,y,w,h,dat)
-    {
-        //console.log('createDes')
-        let sizer = scene.rexUI.add.sizer({x:x,y:y,width:w,height:h})
-        sizer.addBackground(rect(scene));
-        sizer.addSpace();
-        this._des = text(scene,{str:this.parse(dat),wrapWidth:w});
-        sizer.add(this._des)
-        sizer.addSpace();
-        return sizer;
-    }
+//     createDescript(scene,x,y,w,h,dat)
+//     {
+//         //console.log('createDes')
+//         let sizer = scene.rexUI.add.sizer({x:x,y:y,width:w,height:h})
+//         sizer.addBackground(rect(scene));
+//         sizer.addSpace();
+//         this._des = text(scene,{str:this.parse(dat),wrapWidth:w});
+//         sizer.add(this._des)
+//         sizer.addSpace();
+//         return sizer;
+//     }
 
-    createLabel(scene,str,w)
-    {
-        let config={
-            x: 0,
-            y: 0,
-            width: w,
-            space: 5,
-            background: rect(scene,{color:COLOR_DARK,radius:10}),
-            text: text(scene,{str:str}),
-            align: 'center',
-        }
-        let label = scene.rexUI.add.label(config);
-        return label;
-    }
+//     createLabel(scene,str,w)
+//     {
+//         let config={
+//             x: 0,
+//             y: 0,
+//             width: w,
+//             space: 5,
+//             background: rect(scene,{color:COLOR_DARK,radius:10}),
+//             text: text(scene,{str:str}),
+//             align: 'center',
+//         }
+//         let label = scene.rexUI.add.label(config);
+//         return label;
+//     }
 
-    createAP(scene, ap)
-    {
-        //console.log('createAP')
-        this._ap = this.createLabel(scene,ap);
-        return this._ap;
-    }
+//     createAP(scene, ap)
+//     {
+//         //console.log('createAP')
+//         this._ap = this.createLabel(scene,ap);
+//         return this._ap;
+//     }
 
-    createTitle(scene, title)
-    {
-        //console.log('createTitle')
-        return this.createLabel(scene,title);
-    }
+//     createTitle(scene, title)
+//     {
+//         //console.log('createTitle')
+//         return this.createLabel(scene,title);
+//     }
 
-    parse(dat)
-    {
-        let des=dat.descript.replace('%dmg', Player.role.damage);
-        des=des.replace('%val', dat.buffs?.[0].val);
-        des=des.replace('%dur', dat.buffs?.[0].dur);
-        return des;
-    }
-}
+//     parse(dat)
+//     {
+//         let des=dat.descript.replace('%dmg', Player.role.damage);
+//         des=des.replace('%val', dat.buffs?.[0].val);
+//         des=des.replace('%dur', dat.buffs?.[0].dur);
+//         return des;
+//     }
+// }
 
 // class UiCard extends OverlapSizer
 // {

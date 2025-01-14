@@ -79,6 +79,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.collide = true;
         this.act = '';
         this.weight = 0;
+        this.uid = 0;
     }
 
     get pos()       {return {x:this.x,y:this.y}}
@@ -159,6 +160,53 @@ export class Entity extends Phaser.GameObjects.Container
                         .strokeCircleShape(circle);
     }
 
+}
+
+export class Case extends Entity
+{
+    constructor(scene)
+    {
+        super(scene);
+        this.act='open';     
+        this.container={};   
+    }
+
+    addListener()
+    {
+        super.addListener();
+        this.on('open',()=>{this.open()})
+    }
+
+    init(mapName)
+    {
+        console.log(mapName);
+        this.mapName = mapName;
+        console.log(this);
+        super.init();
+        let data = Record.getByUid(this.mapName,this.uid);
+        if(data) {this.container = data;}
+        else 
+        {
+            
+            let items = JSON.parse(this.container);
+            //console.log(this.container,items)
+            this.container={};
+            items.forEach((item,i)=>{
+                this.container[i] = typeof item === 'object' ? item : {id:item};
+            })
+        }   
+    }
+
+    open()
+    { 
+        this.scene.events.emit('case',this.container,this.name);
+    }
+
+    save()
+    {
+        console.log('save')
+        Record.setByUid(this.mapName,this.uid,this.container);
+    }
 }
 
 

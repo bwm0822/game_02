@@ -2,7 +2,7 @@
 import {Node} from './node.js';
 //import {Port} from './port.js';
 import {Store} from './store.js';
-import {Block,Entity,Port,Pickup} from './entity.js';
+import {Block,Entity,Port,Pickup,Case} from './entity.js';
 import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
@@ -211,12 +211,20 @@ class Map
 
         this.createGraph(diagonal);
 
+        scene.objects = [];
+
         map.objects.forEach((layer)=>{
 
             if(layer.name,layer.name.includes('q'))
             {
                 if(!QuestManager.query(layer.name)){return;}
             }
+
+            // 將 id 加到 properties 的 uid
+            layer.objects.forEach((obj)=>{
+                if(!obj.properties){obj.properties=[]}
+                obj.properties.push({name:'uid',type:'int',value:obj.id});
+            });
             
             let objs = map.createFromObjects(layer.name,
             [
@@ -228,8 +236,10 @@ class Map
                 {type:'entity',classType:Entity},
                 {type:'pickup',classType:Pickup},
                 {type:'npc',classType:Npc},
+                {type:'case',classType:Case},
             ]);
-            objs.forEach((obj) => {obj.init?.(this);});
+            objs.forEach((obj) => {obj.init?.(mapName);});
+            scene.objects.push(...objs);
         });
 
     }

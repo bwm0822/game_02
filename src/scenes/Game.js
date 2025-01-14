@@ -1,7 +1,5 @@
 import { Scene } from 'phaser';
 import * as Role from '../role';
-import Utility from '../utility';
-import Battle from '../battle.js';
 import Record from '../record';
 
 
@@ -9,6 +7,7 @@ export class Game extends Scene
 {
     constructor ()
     {
+        console.log('Game');
         super('Game');
         this._done = false;
     }
@@ -28,8 +27,8 @@ export class Game extends Scene
 
     loadRecord()
     {
-        Record.load();
-        new Role.Player('knight').load(Record?.data?.role);
+        Record.load();// 執行後，其他 scene 不用再執行 Record.load()
+        //new Role.Player('knight').load(Record?.data?.role);
     }
 
     gotoScene() 

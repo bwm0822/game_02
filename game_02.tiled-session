@@ -5,12 +5,12 @@
     },
     "activeFile": "public/assets/town_02.json",
     "expandedProjectPaths": [
-        "public",
-        ".",
-        "public/assets/templates",
-        "public/assets/tiles",
         "public/assets/icons",
-        "public/assets"
+        ".",
+        "public",
+        "public/assets/tiles",
+        "public/assets",
+        "public/assets/templates"
     ],
     "fileStates": {
         "": {
@@ -185,10 +185,10 @@
                 6
             ],
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 366,
-                "y": 574
+                "x": 505.99999999999994,
+                "y": 410
             }
         },
         "public/assets/town_01.json#RPG Nature Tileset": {
@@ -206,8 +206,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 739.5,
-                "y": 435.5
+                "x": 320,
+                "y": 319
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -233,15 +233,15 @@
         "public/assets/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/map.json",
         "public/assets/town_02.json",
+        "public/assets/town_01.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",
         "public/assets/Color A Spitesheet.tsj",
         "public/assets/town_00.json",
-        "public/assets/town_01.json",
         "public/assets/group.tsj",
         "public/assets/set.tsj",
         "public/assets/free.tsj",

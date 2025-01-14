@@ -36,8 +36,8 @@ export class GameMap extends Scene
 
     loadRecord()
     {
-        Record.load();
         QuestManager.load();
+        Role.Player.load();
     }
 
     setPosition()
@@ -151,6 +151,7 @@ export class GameMap extends Scene
         console.log('home');
         //Record.data.role = Role.Player.role.record();
         Record.data.pos = this._avatar.pos;   
+        Role.Player.save();
         Record.save();
         this.scene.start('MainMenu');
     }
