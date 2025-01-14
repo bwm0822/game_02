@@ -22,17 +22,22 @@ export class ItemDB
 {
     static data = 
     {
-        'sword_01':{cat:'weapon',icon:'weapons/3'},
-        'sword_02':{cat:'weapon',icon:'weapons/4'},
-        'sword_03':{cat:'weapon',icon:'weapons/5'},
+        'sword_01':{cat:'weapon',icon:'weapons/3',name:'刀-1',gold:10,
+                    des:'這是一把刀',
+                    props:{damage:10,defend:1}},
+        'sword_02':{cat:'weapon',icon:'weapons/4',name:'刀-2'},
+        'sword_03':{cat:'weapon',icon:'weapons/5',name:'刀-3'},
 
-        'helmet_01':{cat:'helmet',icon:'weapons/45'},
-        'helmet_02':{cat:'helmet',icon:'weapons/46'},
-        'helmet_03':{cat:'helmet',icon:'weapons/47'},
+        'helmet_01':{cat:'helmet',icon:'weapons/45',name:'高級頭盔-1',
+                    des:'這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,'},
+        'helmet_02':{cat:'helmet',icon:'weapons/46',name:'頭盔-2'},
+        'helmet_03':{cat:'helmet',icon:'weapons/47',name:'頭盔-3'},
 
-        'armor_01':{cat:'armor',icon:'weapons/54'},
-        'armor_02':{cat:'armor',icon:'weapons/55'},
-        'armor_03':{cat:'armor',icon:'weapons/56'},
+        'armor_01':{cat:'armor',icon:'weapons/54',name:'護甲-1',
+                    des:'這是護甲',
+                    props:{defend:10}},
+        'armor_02':{cat:'armor',icon:'weapons/55',name:'護甲-2'},
+        'armor_03':{cat:'armor',icon:'weapons/56',name:'護甲-3'},
     }
 
     static get(id)

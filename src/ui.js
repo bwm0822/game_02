@@ -100,28 +100,18 @@ class Slot extends Icon
         this._getContainer = getContainer;
     }
 
-    // get slot() {return this.container?.[this._id];}
-    // set slot(value) {this.container[this._id]=value; this.setIcon(value.icon);}
-
     get slot() {return this.container?.[this._id];}
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
     get isEmpty() {return this.checkIfEmpty(this.slot);}
     get container() {return this._getContainer ? this._getContainer() : null;}
     get isValid() {return true;}
-    //set container(value) {this._getContainer = value;}
 
     setSlot(value)
     {
         let item = ItemDB.get(value?.id);
         this.setIcon(item?.icon);
     }
-
-    // setIcon(value)
-    // {
-    //     let item = ItemDB.get(value?.id);
-    //     super.setIcon(item?.icon);
-    // }
 
     addListener()
     {
@@ -157,7 +147,6 @@ class Slot extends Icon
 
     copySlot() {return this.slot ? Utility.deepClone(this.slot) : null;}
 
-    //update() {this.setIcon(this.slot?.icon);}
     update() {this.setSlot(this.slot);}
 
     clear()
@@ -514,10 +503,11 @@ class UiOption extends Sizer
 class UiInfo extends Sizer
 {
     static instance = null;
-    static gap = 10;
+    static gap = 10;    // show() 有用到，不可移除
+    static w = 250;
     constructor(scene)
     {
-        super(scene,{width:200,height:300,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
+        super(scene,{orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:0}});
         UiInfo.instance = this;
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
@@ -527,6 +517,84 @@ class UiInfo extends Sizer
         scene.add.existing(this);
         this.getLayer().name = 'UiInfo';
     }
+
+    addTitle(item)
+    {
+        this.add(bbcText(this.scene,{text:item.name}));
+        return this;
+    }
+
+    addCat(item)
+    {
+        let cat = `[color=gray]${item.cat.local()}[/color]`;
+        this.add(bbcText(this.scene,{text:cat}));
+        return this;
+    }
+
+    addDivider()
+    {
+        this.add(rect(this.scene,{width:200,height:1,color:0xffffff}),{padding:{top:10,bottom:10}})
+        return this;
+    }
+
+    addDescript(item)
+    {
+        if(item.des)
+        {
+            this.addDivider();
+            this.add(bbcText(this.scene,{text:item.des,wrapWidth:200}),{align:'left'});
+        }
+        return this;
+    }
+
+    addProps(item)
+    {
+        if(item.props)
+        {
+            this.addDivider();
+            for(let [key,value] of Object.entries(item.props))
+            {
+                //console.log(key,value);
+                this.addProp(key,value);
+            }
+        }
+        return this;
+    }
+
+    addGold(item)
+    {
+        if(item.gold)
+        {
+            let images = {gold:{key:'buffs',frame:210,width:UI.FONT_SIZE,height:UI.FONT_SIZE,tintFill:true }};
+            let text = `[color=yellow][img=gold][/color] ${item.gold}`
+            this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
+        }
+
+        return this;
+    }
+
+    addProp(key, value)
+    {
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        sizer//.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}))
+            .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
+            .add(bbcText(this.scene,{text:value}),{proportion:0});
+        this.add(sizer,{expand:true});
+        return this;
+    }
+
+    update(slot)
+    {
+        let item = ItemDB.get(slot.id);
+        this.removeAll(true)
+            .addTitle(item)
+            .addCat(item)
+            .addProps(item)
+            .addDescript(item)
+            .addGold(item)
+            .layout()
+    }
+
 
     show(target)
     {
@@ -544,6 +612,7 @@ class UiInfo extends Sizer
             x=target.right+UiInfo.gap;
         }
 
+        this.update(target.slot);
 
         this.setPosition(x,y).rePos();
         this.layout();
