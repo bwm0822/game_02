@@ -40,6 +40,7 @@ export class Preloader extends Scene
 
         this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');
         this.load.spritesheet('buffs', 'icons/buffs.png', { frameWidth: 64, frameHeight: 64 });
+        this.load.spritesheet('portraits', 'icons/portraits.png', { frameWidth: 64, frameHeight: 64 });
         
         //this.load.spritesheet('knight', 'Knight/Idle.png', { frameWidth: 128, frameHeight: 128 });
         this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');

@@ -134,6 +134,19 @@ export class QuestDB
 
 }
 
+export class RoleDB
+{
+    static data = {
+        '史考特':{name:'史考特', icon:'portraits/0', bag:['sword_01','helmet_01']},
+
+    }
+
+    static get(id)
+    {
+        return RoleDB.data[id];
+    }
+}
+
 
 export class CharacterDB
 {

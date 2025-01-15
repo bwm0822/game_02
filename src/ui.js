@@ -15,6 +15,7 @@ export default function createUI(scene)
     //t1();
     new UiCursor(scene);
     new UiInv(scene);
+    new UiTrade(scene);
     new UiCase(scene);
     new UiMain(scene);
     new UiDragged(scene, 80, 80);
@@ -164,14 +165,18 @@ class Slot extends Icon
         else if(!this.isEmpty)
         {
             this.setBgColor(UI.COLOR_SLOT_OVER);
-            UiInfo.show(this);
+            // 使用 setTimeout 延遲執行 UiInfo.show()
+            const delay = 100;
+            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, delay);
         }
     }
 
     out()
     {
+        clearTimeout(this.pointerOverTimeout);        
         this.setBgColor(UI.COLOR_SLOT);
         UiInfo.hide();
+        
     }
 
     leave(gameObject)
@@ -290,7 +295,7 @@ function addTop(scene, label)
     let sz = scene.rexUI.add.overlapSizer();
     sz//.addBackground(rect(scene,{color:UI.COLOR_GRAY}))
         .add(text(scene,{text:label}),{align:'center',expand:false,key:'label'})
-        .add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right',expand:false})
+        .add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
     this.add(sz,{expand:true, key:'top'});
     return this;
 }
@@ -561,6 +566,16 @@ class UiInfo extends Sizer
         return this;
     }
 
+    addProp(key, value)
+    {
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        sizer//.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}))
+            .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
+            .add(bbcText(this.scene,{text:value}),{proportion:0});
+        this.add(sizer,{expand:true});
+        return this;
+    }
+
     addGold(item)
     {
         if(item.gold)
@@ -570,16 +585,6 @@ class UiInfo extends Sizer
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
 
-        return this;
-    }
-
-    addProp(key, value)
-    {
-        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        sizer//.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
-            .add(bbcText(this.scene,{text:value}),{proportion:0});
-        this.add(sizer,{expand:true});
         return this;
     }
 
@@ -669,6 +674,8 @@ export class UiCase extends Sizer
         this.getElement('grid').getElement('items').forEach(item => {item.update();});
     }
 
+    close() {this.hide();}
+
     show(container,label)
     {
         super.show();
@@ -702,7 +709,7 @@ export class UiInv extends Sizer
         this.addTop = addTop;
         this.addGrid = addGrid;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1,strokeColor:0x777777,strokeWidth:3}),'bg')
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addTop(scene,'裝備')
             .addEquip(scene,this.getEquip.bind(this))
             .addGrid(scene,5,4,this.getBag.bind(this),{bottom:30})
@@ -727,7 +734,7 @@ export class UiInv extends Sizer
         {
             column: 5,
             row: 2,
-            space: {column:5,row:5,left:10,right:10,bottom:20},
+            space: {column:5,row:5,left:0,right:0,bottom:20},
         }
         let grid = scene.rexUI.add.gridSizer(config);
         let equip = function(cat, getContainer)
@@ -750,9 +757,14 @@ export class UiInv extends Sizer
         this.getElement('grid').getElement('items').forEach(item => {item?.update();});
     }
 
+    close()
+    {
+        this.hide();
+        UiCase.hide();
+    }
+
     show(container)
     {
-        console.log(container)
         super.show();
         this.container = container;
         this.update();
@@ -899,5 +911,58 @@ export class UiCursor extends Phaser.GameObjects.Sprite
     {
         if(UiCursor.instance) {UiCursor.instance.setIcon(type);}
     }
+
+}
+
+export class UiTrade extends Sizer
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : 0,
+            y : 0,
+            width : UI.w/2,
+            height : 500,
+            orientation : 'y',
+            space:{bottom:20},
+        }
+        super(scene, config);
+        UiTrade.instance = this;
+        this.addTop = addTop;
+        this.addGrid = addGrid;
+
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+            .addTop(scene,'交易')
+            .addInfo(scene)
+            .addGrid(scene,5,6)
+            .setOrigin(0)
+            .layout()
+            //.hide()
+        
+        this.getLayer().name = 'UiTrade';    // 產生layer，並設定layer名稱
+        //this.addListener();
+       
+    }
+
+    close() {this.hide();}
+
+    addInfo(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer.add(sprite(scene,{icon:'portraits/0'}));
+        sizer.add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top'});
+        this.add(sizer,{expand:true});
+        return this;
+    }
+
+    show(role)
+    {
+        this.show();
+    }
+
+    static show(role) {if(UiTrade.instance) {UiTrade.instance.show(role);}}
+    static hide() {if(UiTrade.instance) {UiTrade.instance.hide();}}
 
 }
