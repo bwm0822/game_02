@@ -23,21 +23,23 @@ export default function createUI(scene)
     new UiInfo(scene);
     new UiOption(scene);
 
-    //t2(scene);
+    t2(scene);
 
 }
 
 function t2(scene)
 {
-    let player =
+    let owner =
     {
+        trade:true,
+        gold:500,
         equip:{},
         bag:{}
     }
 
     let box={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
     //let box={};
-    UiCase.show(box,'箱子');
+    UiTrade.show(owner);
 
     //let inv={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
     //UiInv.show(player);
@@ -93,19 +95,20 @@ function test(scene)
 
 class Slot extends Icon
 {
-    constructor(scene, w, h, id, getContainer, config)
+    constructor(scene, w, h, id, getOwner, config)
     {
         super(scene, w, h, config);
         this.addListener();
         this._id = id
-        this._getContainer = getContainer;
+        this._getOwner = getOwner;
     }
 
     get slot() {return this.container?.[this._id];}
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
     get isEmpty() {return this.checkIfEmpty(this.slot);}
-    get container() {return this._getContainer ? this._getContainer() : null;}
+    //get container() {return this._getContainer ? this._getContainer() : null;}
+    get container() {return this._getOwner ? this._getOwner().bag : null;}
     get isValid() {return true;}
 
     setSlot(value)
@@ -272,11 +275,13 @@ class EquipSlot extends Slot
         boot : UI.ICON_BOOT,
     }
 
-    constructor(scene, w, h, cat, conatiner, config)
+    constructor(scene, w, h, cat, getOwner, config)
     {
-        super(scene, w, h, cat, conatiner, config);
+        super(scene, w, h, cat, getOwner, config);
         this.setIcon();
     }
+
+    get container() {return this._getOwner ? this._getOwner().equip : null;}
 
     get cat() {return this._id;}
 
@@ -653,7 +658,8 @@ export class UiCase extends Sizer
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1,strokeColor:0x777777,strokeWidth:3}),'bg')
             //.add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right'})
             .addTop(scene)
-            .addGrid(scene,4,4,this.getContainer.bind(this),{left:20,right:20,bottom:20})
+            //.addGrid(scene,4,4,this.getContainer.bind(this),{left:20,right:20,bottom:20})
+            .addGrid(scene,4,4,this.getOwner.bind(this),{left:20,right:20,bottom:20})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -666,7 +672,8 @@ export class UiCase extends Sizer
         this.getLayer().name = 'UiCase';
     }
 
-    getContainer() {return this.container;}
+    //getContainer() {return this.container;}
+    getOwner() {return this.owner;}
 
     update()
     {
@@ -676,10 +683,10 @@ export class UiCase extends Sizer
 
     close() {this.hide();}
 
-    show(container,label)
+    show(owner,label)
     {
         super.show();
-        this.container = container;
+        this.owner = owner;
         this.getElement('label',true).setText(label);
         this.layout();
         this.update();
@@ -687,7 +694,7 @@ export class UiCase extends Sizer
 
     static hide() {if(UiCase.instance){UiCase.instance.hide();}}
 
-    static show(container,label) {if(UiCase.instance){UiCase.instance.show(container,label);}}
+    static show(owner,label) {if(UiCase.instance){UiCase.instance.show(owner,label);}}
 }
 
 export class UiInv extends Sizer
@@ -711,8 +718,11 @@ export class UiInv extends Sizer
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addTop(scene,'裝備')
-            .addEquip(scene,this.getEquip.bind(this))
-            .addGrid(scene,5,4,this.getBag.bind(this),{bottom:30})
+            //.addEquip(scene,this.getEquip.bind(this))
+            //.addGrid(scene,5,4,this.getBag.bind(this),{bottom:30})
+            .addEquip(scene,this.getOwner.bind(this))
+            .addInfo(scene)
+            .addGrid(scene,5,4,this.getOwner.bind(this),{bottom:30})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -725,10 +735,11 @@ export class UiInv extends Sizer
         this.getLayer().name = 'UiInv';
     }
 
-    getEquip() {return this.container?.equip;}
-    getBag() {return this.container?.bag;}
+    //getEquip() {return this.owner?.equip;}
+    //getBag() {return this.owner?.bag;}
+    getOwner() {return this.owner;}
 
-    addEquip(scene, getContainer)
+    addEquip(scene, getOwner)
     {
         let config =
         {
@@ -742,19 +753,32 @@ export class UiInv extends Sizer
             let slot = new EquipSlot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, cat, getContainer);
             return slot;
         }
-        grid.add(equip('weapon', getContainer))
-            .add(equip('helmet', getContainer))
-            .add(equip('armor', getContainer))
+        grid.add(equip('weapon', getOwner))
+            .add(equip('helmet', getOwner))
+            .add(equip('armor', getOwner))
 
         this.add(grid,{key:'equip'});
         return this;
         
     }
 
+    addInfo(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        let images = {gold:{key:'buffs',frame:210,width:UI.FONT_SIZE,height:UI.FONT_SIZE,tintFill:true }};
+        let text = `[color=yellow][img=gold][/color] ${0}`
+        sizer.add(bbcText(scene,{text:text,images:images}),{padding:{left:10},align:'left',key:'gold'});
+        this.add(sizer,{expand:true,padding:10,key:'info'})
+        return this;
+    }
+
     update()
     {
         this.getElement('equip').getElement('items').forEach(item => {item?.update();});
         this.getElement('grid').getElement('items').forEach(item => {item?.update();});
+        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`)
+        this.layout();
     }
 
     close()
@@ -763,15 +787,15 @@ export class UiInv extends Sizer
         UiCase.hide();
     }
 
-    show(container)
+    show(owner)
     {
         super.show();
-        this.container = container;
+        this.owner = owner;
         this.update();
     }
 
     static hide() {if(UiInv.instance){UiInv.instance.hide();}}
-    static show(container) {if(UiInv.instance){UiInv.instance.show(container);}}
+    static show(owner) {if(UiInv.instance){UiInv.instance.show(owner);}}
 }
 
 
@@ -936,10 +960,11 @@ export class UiTrade extends Sizer
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addTop(scene,'交易')
             .addInfo(scene)
+            .addGold(scene)
             .addGrid(scene,5,6)
             .setOrigin(0)
             .layout()
-            //.hide()
+            .hide()
         
         this.getLayer().name = 'UiTrade';    // 產生layer，並設定layer名稱
         //this.addListener();
@@ -957,12 +982,31 @@ export class UiTrade extends Sizer
         return this;
     }
 
-    show(role)
+    addGold(scene)
     {
-        this.show();
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        let images = {gold:{key:'buffs',frame:210,width:UI.FONT_SIZE,height:UI.FONT_SIZE,tintFill:true }};
+        let text = `[color=yellow][img=gold][/color] ${0}`
+        sizer.add(bbcText(scene,{text:text,images:images}),{padding:{left:10},align:'left',key:'gold'});
+        this.add(sizer,{expand:true,padding:10,key:'info'})
+        return this;
     }
 
-    static show(role) {if(UiTrade.instance) {UiTrade.instance.show(role);}}
+    update()
+    {
+        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`)
+        this.layout();
+    }
+
+    show(owner)
+    {
+        super.show();
+        this.owner = owner;
+        this.update();
+    }
+
+    static show(owner) {if(UiTrade.instance) {UiTrade.instance.show(owner);}}
     static hide() {if(UiTrade.instance) {UiTrade.instance.hide();}}
 
 }

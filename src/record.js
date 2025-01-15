@@ -2,7 +2,8 @@ import Utility from './utility.js'
 
 export default class Record
 {
-    static data = {default:'出口', map:'town_02', player:{equip:{},bag:{}}}
+    static data = {default:'出口', map:'town_02', 
+                    player:{gold:100,equip:{},bag:{}}}
 
     static save()
     {
