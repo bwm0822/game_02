@@ -67,6 +67,12 @@
                  "height":64,
                  "id":13,
                  "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"scott"
+                        }],
                  "rotation":0,
                  "type":"npc",
                  "visible":true,

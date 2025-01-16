@@ -9,6 +9,8 @@ import Utility from './utility.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
+import {Entity} from './entity.js';
+import {RoleDB} from './database.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -1011,7 +1013,7 @@ export class Player
 
 
 
-export class Role extends Phaser.GameObjects.Container
+export class Role_old extends Phaser.GameObjects.Container
 {
     constructor(scene,x,y)
     {
@@ -1023,6 +1025,7 @@ export class Role extends Phaser.GameObjects.Container
         this._act = '';
         this._resolve;
         this._weight = 0;
+        this.id = '';
     }
 
     get pos()       {return {x:this.x,y:this.y};}
@@ -1180,6 +1183,157 @@ export class Role extends Phaser.GameObjects.Container
 }
 
 
+export class Role extends Entity
+{
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this.weight = 1000;
+        this.act = 'talk';
+        //
+        this._path = [];
+        this._des = null;
+        this._resolve;
+        //
+        this.id='';
+    }
+
+    get pos()       {return {x:this.x,y:this.y};}
+    set pos(value)  {this.x=value.x;this.y=value.y;}
+    get moving()    {return this._des!=null;}
+
+    setTexture(key,frame)   // map.createFromObjects 會呼叫到
+    {
+        //console.log(key,frame);
+        let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
+        this.setSize(sp.width,sp.height);
+        this.add(sp);
+        this._sp = sp;
+    }
+
+    addPhysics()
+    {
+        //scene.physics.world.enable(this);
+        this.scene.physics.add.existing(this, false);
+        this.body.setSize(this.width,this.height);
+    }
+
+    removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.pos,-this.weight);}
+
+    addWeight(){this.weight!=0 && this.scene.map.updateGrid(this.pos,this.weight);}
+
+    addToRoleList() {this.scene.roles.push(this);}
+
+    setDes(des, act)
+    {
+        let rst = this.scene.map.getPath(this.pos, des, act);
+        if(rst && rst.valid)
+        {
+            this._path = rst.path;
+            this._des = des; 
+            this.resume();
+        }
+        else
+        {
+            this.stop();
+        }
+    }
+
+    async moveTo({duration=200,ease='expo.in',draw=true}={})
+    {
+        if(this._path.length==0) {return;}
+        let path = this._path;
+        if(path[0].act=='go')
+        { 
+            let pt = path[0].pt;
+            if(this.scene.map.isValid(pt))
+            {
+                if(draw) {this.drawPath(path);}
+                this.removeWeight();
+                await this.step(path[0].pt,duration,ease);
+                this.addWeight();
+                this.updateDepth();
+                path.splice(0,1);
+                if(path.length>0) {return;}
+            }
+        }
+        else
+        {
+            this.interact(path[0].pt,path[0].act)
+        }
+
+        this.stop();
+    }
+
+    stop()
+    {
+        this._des = null;
+        if(this._dbgPath){this._dbgPath.clear();}
+    }
+
+    step(pos, duration, ease)
+    {
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: this,
+                x: pos.x,
+                y: pos.y,
+                duration: duration,
+                ease: ease,
+                //delaycomplete: 1000,
+                onComplete: (tween, targets, gameObject)=>{resolve();}         
+            });
+        });
+    }
+
+    interact(pt, act)
+    {
+        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+        bodys.forEach((body) => {body.gameObject.emit(act);});
+    }
+
+    async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
+
+    resume() {this._resolve?.(null);}
+
+    drawPath(path)
+    {
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this.scene.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+        }
+        this._dbgPath.clear();
+        path.forEach(node=>{
+            if(node.act=='go')
+            {
+                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            }
+        })
+    }
+
+    debugDraw()
+    {
+        if(!this._dbgGraphics)
+        {
+            console.log('debugDraw');
+            this._dbgGraphics = this.scene.add.graphics();
+            this._dbgGraphics.name = 'Role';
+        }
+
+        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
+        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+        this._dbgGraphics.clear()
+                        .lineStyle(3, 0x00ff00)
+                        //.strokeRectShape(this.getBounds())
+                        //.lineStyle(1, 0xff0000)
+                        //.strokeRectShape(rect)
+                        //.lineStyle(3, 0x00fff00)
+                        .strokeCircleShape(circle);
+    }
+}
 
 export class Target extends Role
 {
@@ -1220,7 +1374,7 @@ export class Avatar extends Role
     {
         super(scene,x,y);
         Avatar.instance = this;
-        this._weight = 1000;
+        this.weight = 1000;
         this.addSprite();
         this.setSize(32,32);
         this.addPhysics();
@@ -1249,13 +1403,46 @@ export class Avatar extends Role
 
 export class Npc extends Role
 {
-    init()
+    init(mapName)
     {
-        this._weight=1000;
-        this.setSize(32,32);
-        this.addPhysics(this.scene)
-        this.addWeight();
+        console.log(mapName, this.uid);
+        this.setSize(32,32);    //必須在 addPhysics() 之前執行
+        super.init();
         this.addToRoleList();
+        this.load(mapName);
+    }
+    
+
+    load(mapName)
+    {
+        this.mapName = mapName;
+        let roleD = RoleDB.get(this.id);
+        this.owner = {role:roleD}
+        let data = Record.getByUid(this.mapName,this.uid);
+        if(data)
+        {
+            this.owner.state = data;
+        }
+        else
+        {
+            this.owner.state = { trade:true, gold:roleD.gold, bag:this.toBag(roleD.bag) }
+        }
+    }
+
+    save()
+    {
+        Record.setByUid(this.mapName,this.uid,this.owner.state);
+    }
+
+    addListener()
+    {
+        super.addListener();
+        this.on('talk',()=>{this.trade()})
+    }
+
+    trade()
+    {
+        this.scene.events.emit('trade',this.owner);
     }
 
     async process()
@@ -1265,564 +1452,3 @@ export class Npc extends Role
     }
 }
 
-
-
-export class Target_old extends Phaser.GameObjects.Container
-{
-    constructor(scene, x, y)
-    {
-        super(scene, x, y);
-        this.scene = scene;
-        scene.add.existing(this);
-        this.addSprite();
-        //this.updateDepth();
-        //this.debugDraw();
-        this._path=[];
-        this._t=0;
-        this._pid=0;
-        this._des=null;
-        this._resolve;
-        //this.drawPath([])
-        console.log(this)
-        this.loop();
-    }
-
-    get pos()       {return {x:this.x,y:this.y};}
-    get moving()    {return this._des!=null;}
-
-    addSprite()
-    {
-        let sp = this.scene.add.sprite(0,0,'buffs',20).setTint(0x0000ff);
-        sp.setDisplaySize(32,32);
-        this.setSize(32,32);
-        this.add(sp);
-    }
-
-    async loop()
-    {
-        while(true)
-        {
-            await this.process();
-        }
-    }
-
-    async process()
-    {
-        if(this.moving) {await this.moveTo();}
-        else
-        {
-            await this.pause();
-            if(this.moving) {await this.moveTo();}
-        }
-    }
-
-    async pause()
-    {
-        this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});
-    }
-
-    resume() {this._resolve?.(null);}
-
-    async setDes(des, act)
-    {
-        let rst = this.scene.map.getPath(this.pos, des, act);
-        if(rst && rst.valid)
-        {
-            this._path = rst.path;
-            this._des = {pos:des, act:act};
-            this.resume();
-        }
-        else
-        {
-            this.stop();
-        }
-    }
-
-    async moveTo()
-    {
-        let path = this._path;
-        if(path[0].act=='go')
-        {
-            this.drawPath(path);
-            await this.step(path[0].pt);
-            //this.updateDepth();
-            path.splice(0,1);
-            if(path.length>0) {return;}
-        }
-        else
-        {
-            console.log('act',path[0].act)
-            this.interact(path[0].pt,path[0].act)
-        }
-        this.stop();
-        
-    }
-
-    interact(pt,act)
-    {
-        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
-        bodys.forEach((body) => {
-            console.log(body.gameObject);
-            body.gameObject.emit(act);
-        });
-    }
-
-    step(target)
-    {
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: this,
-                x: target.x,
-                y: target.y,
-                duration: 200,
-                //ease: 'expo.in',
-                //delaycomplete: 1000,
-                onComplete: (tween, targets, gameObject)=>{
-                    resolve();
-                }         
-            });
-        });
-    }
-
-    stop()
-    {
-        this._des=null;
-        this._dbgPath.clear();
-    }
-
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-        }
-        this._dbgPath.clear();
-        path.forEach(node=>{
-            if(node.act=='go')
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
-        })
-    }
-}
-
-export class Avatar_old extends Phaser.GameObjects.Container
-{
-    static instance;
-    constructor(scene, x, y)
-    {
-        super(scene, x, y);
-        Avatar.instance = this;
-        this.scene = scene;
-        scene.add.existing(this);
-        this.m={l:0,r:0,t:0,b:0};
-        this.addSprite(scene);
-        this.addPhysics(scene);
-        this.updateDepth();
-        //this.debugDraw();
-        this._path=[];
-        this._t=0;
-        this._pid=0;
-        this._des=null;
-        this._act='';
-        this._resolve;
-        this.drawPath([])
-        
-    }
-
-    get pos()       {return {x:this.x,y:this.y}}
-    set pos(value)  {this.x=value.x;this.y=value.y;}
-    get moving()    {return this._des!=null;}
-
-    addSprite(scene)
-    {
-        //let config={width:20,height:20,color:0xffffff}
-        //this.add(scene.rexUI.add.roundRectangle(config));
-        let sp = this.scene.add.sprite(0,16,'role',0).setOrigin(0.5,1);
-        this.setSize(32,32);
-        this.add(sp);
-    }
-
-    addPhysics(scene)
-    {
-        //scene.physics.world.enable(this);
-        scene.physics.add.existing(this, false);
-        let m = this.m;
-        this.body.setSize(this.width-m.l-m.r,this.height-m.t-m.b);
-        this.body.setOffset(m.l,m.t);
-        //scene.dynamic.add(this);
-        scene.physics.add.collider(this, scene.groupStatic);
-        //scene.physics.add.overlap(this, this.scene.dynamic, this.onoverlap, null, this);
-    }
-
-    updateDepth()
-    {
-        let depth = this.y + this.height/2;// + this.m.b;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
-    }
-
-    move(d)
-    {
-        let speed = 150;
-        let v = new Phaser.Math.Vector2(d).normalize().scale(speed);
-        this.body.setVelocity(v.x,v.y);
-        this.updateDepth();
-    }
-
-    detect()
-    {
-        //console.log('detect')
-        !this._list && (this._list=[]);
-        let list = this.scene.physics.overlapCirc(this.x, this.y, 50, true, true);
-        list = list.filter((body) => {return body.gameObject.interactable;});
-
-        this._list.forEach((body) => {
-            body.gameObject && !list.includes(body) && body.gameObject.emit('outline', false);
-        });
-
-        list.forEach(body=>{
-            !this._list.includes(body) && body.gameObject.emit('outline', true);
-        })
-
-        this._list = list;
-    }
-
-    interact(pt,act)
-    {
-        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
-        bodys.forEach((body) => {
-            console.log(body.gameObject);
-            body.gameObject.emit(act);
-        });
-    }
-
-    // preUpdate(time, delta)
-    // {
-    //     //console.log(time,delta)
-    //     this.detect();
-    //     this.debugDraw();
-    // }
-
-    async process()
-    {
-        if(this.moving)
-        {
-            await this.moveTo();
-        }
-        else
-        {
-            await this.pause();
-            if(this.moving)
-            {
-                await this.moveTo();
-            }
-        }
-    }
-
-    async pause()
-    {
-        this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});
-    }
-
-    resume() {this._resolve?.(null);}
-
-    setDes(des, act)
-    {
-        let rst = this.scene.map.getPath(this.pos, des, act);
-        if(rst && rst.valid)
-        {
-            this._path = rst.path;
-            this._des = des; 
-            this._act = act;
-            this.resume();
-        }
-        else
-        {
-            this.stop();
-        }
-    }
-
-    async moveTo()
-    {
-        let path = this._path;
-        if(path[0].act=='go')
-        { 
-            let pt = path[0].pt;
-            if(this.scene.map.isValid(pt))
-            {
-                this.drawPath(path);
-                await this.step(path[0].pt);
-                //this.updateDepth();
-                path.splice(0,1);
-                if(path.length>0) {return;}
-            }
-        }
-        else
-        {
-            console.log('act',path[0].act)
-            this.interact(path[0].pt,path[0].act)
-        }
-        this.stop();
-        
-    }
-
-    stop()
-    {
-        this._des=null;
-        this._dbgPath.clear();
-    }
-
-    step(target)
-    {
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: this,
-                x: target.x,
-                y: target.y,
-                duration: 200,
-                ease: 'expo.in',
-                //delaycomplete: 1000,
-                onComplete: (tween, targets, gameObject)=>{
-                    resolve();
-                }         
-            });
-        });
-    }
-
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-        }
-        this._dbgPath.clear();
-        path.forEach(node=>{
-            if(node.act=='go')
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
-        })
-    }
-
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            console.log('debugDraw');
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'Role';
-        }
-
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
-        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-        this._dbgGraphics.clear()
-                        .lineStyle(3, 0x00ff00)
-                        //.strokeRectShape(this.getBounds())
-                        //.lineStyle(1, 0xff0000)
-                        //.strokeRectShape(rect)
-                        //.lineStyle(3, 0x00fff00)
-                        .strokeCircleShape(circle);
-    }
-}
-
-export class Npc_old extends Phaser.GameObjects.Container
-{
-    constructor(scene)
-    {
-        super(scene);
-        this.scene = scene;
-        scene.add.existing(this);
-
-        //this.addSprite(scene);
-        //this.addPhysics(scene);
-        //this.debugDraw();
-        this._path=[];
-        this._t=0;
-        this._pid=0;
-        this._des=null;
-        this._resolve;
-        this.drawPath([])
-    }
-
-    get pos()       {return {x:this.x,y:this.y}}
-    set pos(value)  {this.x=value.x;this.y=value.y;}
-    get moving()    {return this._des!=null;}
-
-    addSprite(scene)
-    {
-        //let config={width:20,height:20,color:0xffffff}
-        //this.add(scene.rexUI.add.roundRectangle(config));
-        let sp = this.scene.add.sprite(0,16,'role',1).setOrigin(0.5,1);
-        this.setSize(32,32);
-        this.add(sp);
-    }
-
-    addPhysics(scene)
-    {
-        //scene.physics.world.enable(this);
-        scene.physics.add.existing(this, false);
-        this.body.setSize(this.width,this.height);
-        //scene.dynamic.add(this);
-        scene.physics.add.collider(this, scene.groupStatic);
-        //scene.physics.add.overlap(this, this.scene.dynamic, this.onoverlap, null, this);
-    }
-
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到
-    {
-        //console.log(key,frame);
-        let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
-        this.setSize(sp.width,sp.height);
-        this.add(sp);
-        this._sp = sp;
-    }
-
-    setPosition(x,y)
-    {
-        super.setPosition(x,y);
-        console.log(x,y);
-    }
-
-    setFlip(){} // map.createFromObjects 會呼叫到
-
-    init(map)
-    {
-        this.map=map;
-        this.setSize(32,32);
-        this.addPhysics(this.scene)
-        this.scene.roles.push(this);
-        this.map.updateGrid(this.pos,1000);
-        console.log(this.pos);
-        console.log(this)
-    }
-
-    updateDepth()
-    {
-        let depth = this.y + this.height/2;// + this.m.b;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
-    }
-
-    detect()
-    {
-        //console.log('detect')
-        !this._list && (this._list=[]);
-        let list = this.scene.physics.overlapCirc(this.x, this.y, 50, true, true);
-        list = list.filter((body) => {return body.gameObject.interactable;});
-
-        this._list.forEach((body) => {
-            body.gameObject && !list.includes(body) && body.gameObject.emit('outline', false);
-        });
-
-        list.forEach(body=>{
-            !this._list.includes(body) && body.gameObject.emit('outline', true);
-        })
-
-        this._list = list;
-    }
-
-    preUpdate(time, delta)
-    {
-        //console.log(time,delta)
-        this.detect();
-        this.debugDraw();
-    }
-
-    async process()
-    {
-        console.log('npc')
-        this.setDes(Avatar.instance.pos);
-        await this.moveTo();
-    }
-
- 
-    setDes(des) {this._des=des;}
-
-    async moveTo()
-    {
-        let rst = this.scene.map.getPath(this.pos, this._des, 'atk');
-        console.log(rst)
-        if(rst && rst.valid)
-        {
-            if(rst.path[0].act=='go')
-            {
-                //this.drawPath(rst.path);
-                this.map.updateGrid(this.pos,-1000);
-                await this.step(rst.path[0].pt);
-                this.map.updateGrid(this.pos,1000);
-                return;
-            }
-        }
-        this.stop();
-        
-    }
-
-    stop()
-    {
-        this._des=null;
-        this._dbgPath.clear();
-    }
-
-    step(target)
-    {
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: this,
-                x: target.x,
-                y: target.y,
-                duration: 10,
-                ease: 'expo.in',
-                //delaycomplete: 1000,
-                onComplete: (tween, targets, gameObject)=>{
-                    resolve();
-                }         
-            });
-        });
-    }
-
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-        }
-        this._dbgPath.clear();
-        path.forEach(node=>{
-            if(!node.act)
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
-        })
-    }
-
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            console.log('debugDraw');
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'Role';
-        }
-
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
-        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-        this._dbgGraphics.clear()
-                        .lineStyle(3, 0x00ff00)
-                        //.strokeRectShape(this.getBounds())
-                        //.lineStyle(1, 0xff0000)
-                        //.strokeRectShape(rect)
-                        //.lineStyle(3, 0x00fff00)
-                        .strokeCircleShape(circle);
-    }
-
-
-}

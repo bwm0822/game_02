@@ -109,8 +109,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 602,
-                "y": 480
+                "x": 602.5,
+                "y": 480.5
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -206,8 +206,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 359.5,
-                "y": 452.5
+                "x": 320,
+                "y": 319
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -234,7 +234,7 @@
         "public/assets/icons/buffs.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
         "public/assets/town_02.json",
         "public/assets/map.json",

@@ -92,12 +92,6 @@ export class Entity extends Phaser.GameObjects.Container
 
     addListener()
     {
-        //this.on('pointerover',()=>{console.log('over')})
-        // this.on('outline', (on)=>{
-        //     if(on){this.setInteractive();}
-        //     else{this.disableInteractive();}
-        // })
-
         this.on('pointerover',()=>{this.outline(true);this.scene.events.emit('over',this.act)})
             .on('pointerout',()=>{this.outline(false);this.scene.events.emit('out')})
     }
@@ -132,6 +126,13 @@ export class Entity extends Phaser.GameObjects.Container
         let depth = this.y + this.height/2 - this.bottom;
         this.setDepth(depth);
         //this.debug(depth.toFixed(1));
+    }
+
+    toBag(items)
+    {
+        let bag={};
+        items.forEach((item,i)=>{bag[i] = typeof item === 'object' ? item : {id:item};})
+        return bag;
     }
 
     init()
@@ -179,19 +180,15 @@ export class Case extends Entity
 
     init(mapName)
     {
-        this.mapName = mapName;
         super.init();
+        this.mapName = mapName;
         this.owner={};
         let data = Record.getByUid(this.mapName,this.uid);
         if(data) {this.owner.bag = data;}
         else 
         {
-            
             let items = JSON.parse(this.container);
-            this.owner.bag={};
-            items.forEach((item,i)=>{
-                this.owner.bag[i] = typeof item === 'object' ? item : {id:item};
-            })
+            this.owner.bag = this.toBag(items);
         }   
     }
 

@@ -23,7 +23,7 @@ export default function createUI(scene)
     new UiInfo(scene);
     new UiOption(scene);
 
-    t2(scene);
+    //t2(scene);
 
 }
 
@@ -34,7 +34,7 @@ function t2(scene)
         trade:true,
         gold:500,
         equip:{},
-        bag:{}
+        bag:{0:{id:'sword_01'}}
     }
 
     let box={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
@@ -818,6 +818,7 @@ export class UiInv extends Sizer
     {
         this.hide();
         UiCase.hide();
+        UiTrade.hide();
     }
 
     show(owner)
@@ -929,7 +930,6 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     setIcon(type)
     {
-        console.log(type)
         let icon = UiCursor.icons[type];
         let [key,frame]=icon.sprite.split('/')
         this.setTexture(key,frame);
@@ -1007,14 +1007,14 @@ export class UiTrade extends Sizer
 
     close() {this.hide();}
 
-    getOwner() {return this.owner;}
+    getOwner() {return this.owner.state;}
 
     addInfo(scene)
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
-        sizer.add(sprite(scene,{icon:'portraits/0'}));
-        sizer.add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top'});
-        this.add(sizer,{expand:true});
+        sizer.add(sprite(scene,{icon:'portraits/0'}),{key:'icon'});
+        sizer.add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top',key:'name'});
+        this.add(sizer,{expand:true,key:'descript'});
         return this;
     }
 
@@ -1031,13 +1031,28 @@ export class UiTrade extends Sizer
 
     update()
     {
-        this.getElement('grid').getElement('items').forEach(item => {item?.update();});
-        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);
+        this.updateInfo();
+        this.updateGrid();
         this.updateGold();
         this.layout();
     }
 
-    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);}
+    updateInfo()
+    {
+        let [key,frame]=this.owner.role.icon.split('/');
+        this.getElement('icon',true).setTexture(key,frame);
+        this.getElement('name',true).setText(this.owner.role.name);
+    }
+
+    updateGrid()
+    {
+        this.getElement('grid').getElement('items').forEach(item => {item?.update();});
+    }
+
+    updateGold() 
+    {
+        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.state.gold}`);
+    }
 
     show(owner)
     {

@@ -136,8 +136,10 @@ export class QuestDB
 
 export class RoleDB
 {
-    static data = {
-        '史考特':{name:'史考特', icon:'portraits/0', bag:['sword_01','helmet_01']},
+    static data = 
+    {
+        'scott': {name:'史考特', icon:'portraits/35', gold:200,
+                    bag:['sword_01',{id:'helmet_01'}]}
 
     }
 
