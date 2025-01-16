@@ -7,8 +7,10 @@ export let UI =
     COLOR_DARK : 0x260e04,
     COLOR_SLOT : 0x666666,//0xa4d4ff,
     COLOR_SLOT_OVER : 0x909090,//0x4f9ef7,
-    COLOR_SLOT_DRAG : 0x55aa55,
+    COLOR_SLOT_DRAG : 0x557755,
+    COLOR_SLOT_INVALID : 0x773333,
     COLOR_SLOT_DISABLE : 0x333333,
+    COLOR_SLOT_TRADE : 0x555555,
     COLOR_COUNT : 0xff0000,//0x260e04;
     COLOR_WHITE : 0xffffff,
     COLOR_GRAY : 0x777777,
@@ -26,7 +28,8 @@ export let UI =
     ICON_HELMET : 'weapons/45',
     ICON_ARMOR : 'weapons/54',
     ICON_BOOT : 'weapons/',
-    SLOT_SIZE : 80,
+    SLOT_SIZE : 80,     // slot 的寬、高
+    OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
 }
 
 

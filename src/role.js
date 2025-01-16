@@ -949,7 +949,30 @@ export class Player
         Player.instance = this;
     }
 
+    get gold() {return this.data.gold;}
+    set gold(value) {return this.data.gold=value;}
+
     static get data() {return Player.instance.data;}
+
+    buy(seller, gold)
+    {
+        console.log(seller.gold, gold)
+        if(this.gold < gold){return false;}
+        this.gold -= gold;
+        seller.gold += gold;
+        console.log(this.gold)
+        return true;
+    }
+
+    sell(buyer, gold)
+    {
+        console.log(buyer.gold, gold)
+        if(buyer.gold < gold){return false;}
+        this.gold -= gold;
+        buyer.gold += gold;
+        console.log(this.gold)
+        return true;
+    }
 
     load()
     {
@@ -960,6 +983,16 @@ export class Player
     save()
     {
         Record.data.player = this.data;
+    }
+
+    static buy(seller,gold)
+    {
+        if(Player.instance) {return Player.instance.buy(seller,gold);}
+    }
+
+    static sell(seller,gold)
+    {
+        if(Player.instance) {return Player.instance.sell(seller,gold);}
     }
 
     static load()

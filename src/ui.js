@@ -107,14 +107,15 @@ class Slot extends Icon
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
     get isEmpty() {return this.checkIfEmpty(this.slot);}
-    //get container() {return this._getContainer ? this._getContainer() : null;}
     get container() {return this._getOwner ? this._getOwner().bag : null;}
+    get owner() {return this._getOwner?.();}
     get isValid() {return true;}
+    get isTrade() {return this.owner?.trade??false;}
 
     setSlot(value)
     {
-        let item = ItemDB.get(value?.id);
-        this.setIcon(item?.icon);
+        this._item = ItemDB.get(value?.id);
+        this.setIcon(this._item?.icon);
     }
 
     addListener()
@@ -149,28 +150,39 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    copySlot() {return this.slot ? Utility.deepClone(this.slot) : null;}
+    copyData() {return this.slot ? {slot:Utility.deepClone(this.slot),owner:this.owner} : null;}
 
     update() {this.setSlot(this.slot);}
 
-    clear()
-    {
-        super.clear();
-        this.slot={};
-    }
+    clear() {super.clear();this.slot={};}
     
     over()
     {
         if(UiDragged.on) 
         {
-            this.setBgColor(this.isValid ? UI.COLOR_SLOT_DRAG : UI.COLOR_RED);
+            //console.log('slot:',this.isTrade,'dragged:',UiDragged.isTrade);
+            //console.log('buy:',this.isSell,'sell:',this.isBuy)
+            if(this.isSell||this.isBuy)
+            {
+                if(this.isEmpty)
+                {
+                    this.setBgColor(this.isValid ? UI.COLOR_SLOT_TRADE : UI.COLOR_SLOT_INVALID);
+                }
+                else
+                {
+                    this.setBgColor(UI.COLOR_SLOT_DISABLE);
+                }
+            }
+            else
+            {
+                this.setBgColor(this.isValid ? UI.COLOR_SLOT_DRAG : UI.COLOR_SLOT_INVALID);
+            }
         }
         else if(!this.isEmpty)
         {
             this.setBgColor(UI.COLOR_SLOT_OVER);
             // 使用 setTimeout 延遲執行 UiInfo.show()
-            const delay = 100;
-            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, delay);
+            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, UI.OVER_DELAY);
         }
     }
 
@@ -179,7 +191,6 @@ class Slot extends Icon
         clearTimeout(this.pointerOverTimeout);        
         this.setBgColor(UI.COLOR_SLOT);
         UiInfo.hide();
-        
     }
 
     leave(gameObject)
@@ -189,7 +200,7 @@ class Slot extends Icon
 
     enter(gameObject)
     {
-        UiDragged.on&&gameObject.setBgColor(UI.COLOR_SLOT_DRAG);
+        UiDragged.on&&this.noTrade&&gameObject.setBgColor(UI.COLOR_SLOT_DRAG);
     }
 
     middleButtonDown(x,y)
@@ -197,25 +208,47 @@ class Slot extends Icon
         if(!this.isEmpty) {UiOption.show(this.left+x,this.top+y);}
     }
 
+    get isSell() {return this.isTrade && !UiDragged.isTrade;}
+
+    get isBuy() {return !this.isTrade && UiDragged.isTrade;}
+
+    get noTrade() {return this.isTrade == UiDragged.isTrade;}
+
+    trade()
+    {
+        if(!this.isEmpty) {return;}
+        if(this.owner.gold >= UiDragged.gold)
+        {
+            this.owner.gold -= UiDragged.gold;
+            UiDragged.owner.gold += UiDragged.gold;
+            this.slot = UiDragged.slot;
+            UiDragged.clear();
+            UiInv.updateGold();
+            UiTrade.updateGold();
+        }   
+    }
+
     leftButtonDown(x,y)
     {
         UiInfo.hide();
         if(UiDragged.on)
         {
-            if(this.isValid)
+            if(this.isBuy||this.isSell) {this.trade();}
+            else if(this.isValid)
             {
-                let slotCopy = this.copySlot();
+                let dataCopy = this.copyData();
                 this.slot = UiDragged.slot;
                 UiDragged.clear();
                 //console.log('slotCopty',slotCopy);
-                if(!this.checkIfEmpty(slotCopy)) {UiDragged.slot=slotCopy;}
+                if(!this.checkIfEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
                 if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
             }
         }
-        else if(!this.checkIfEmpty(this.slot))
+        else if(!this.isEmpty)
         {
             this.setBgColor(UI.COLOR_SLOT_DRAG);
-            UiDragged.slot = this.copySlot();;
+            //UiDragged.slot = this.copySlot();;
+            UiDragged.data = this.copyData();;
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
         }
@@ -306,7 +339,7 @@ function addTop(scene, label)
 }
 
 
-function addGrid(scene, column, row, getContainer, space)
+function addGrid(scene, column, row, getOwner, space)
 {
     let config =
     {
@@ -319,7 +352,7 @@ function addGrid(scene, column, row, getContainer, space)
     let count = config.column * config.row;
     for(let i=0; i<count; i++)
     {
-        let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, i, getContainer);
+        let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, i, getOwner);
         //slot.id = i;
         //slot.container = getContainer;
         grid.add(slot);
@@ -346,26 +379,26 @@ export class UiDragged extends Pic
     }
 
     static get on() {return UiDragged.instance.visible;}
-    static get slot() {return UiDragged.instance.slot;}
-    static set slot(value) {return UiDragged.instance.setSlot(value);}
+    static get slot() {return UiDragged.instance.data.slot;}
+    static get owner() {return UiDragged.instance.data.owner;}
+    static get gold() {return UiDragged.instance.data.item.gold;}
+    static get isTrade() {return UiDragged.instance.data.owner.trade??false;}
+    static set data(value) {UiDragged.instance.setData(value);}
 
-    isCat(cat)
-    {
-        return this.item.cat == cat;
-    }
+    isCat(cat) {return this.data.item.cat == cat;}
 
     clear()
     {
         this.hide();
-        delete this.slot;
+        delete this.data;
     }
 
-    setSlot(value)
+    setData(value)
     {
         this.show();
-        this.slot = value;
-        this.item = ItemDB.get(value.id);
-        this.setIcon(this.item.icon);
+        this.data = value;
+        this.data.item = ItemDB.get(value.slot.id);
+        this.setIcon(this.data.item.icon);
     }
 
     setIcon(icon)
@@ -735,8 +768,6 @@ export class UiInv extends Sizer
         this.getLayer().name = 'UiInv';
     }
 
-    //getEquip() {return this.owner?.equip;}
-    //getBag() {return this.owner?.bag;}
     getOwner() {return this.owner;}
 
     addEquip(scene, getOwner)
@@ -748,9 +779,9 @@ export class UiInv extends Sizer
             space: {column:5,row:5,left:0,right:0,bottom:20},
         }
         let grid = scene.rexUI.add.gridSizer(config);
-        let equip = function(cat, getContainer)
+        let equip = function(cat, getOwner)
         {
-            let slot = new EquipSlot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, cat, getContainer);
+            let slot = new EquipSlot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, cat, getOwner);
             return slot;
         }
         grid.add(equip('weapon', getOwner))
@@ -777,9 +808,11 @@ export class UiInv extends Sizer
     {
         this.getElement('equip').getElement('items').forEach(item => {item?.update();});
         this.getElement('grid').getElement('items').forEach(item => {item?.update();});
-        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`)
+        this.updateGold();
         this.layout();
     }
+
+    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);}
 
     close()
     {
@@ -796,6 +829,7 @@ export class UiInv extends Sizer
 
     static hide() {if(UiInv.instance){UiInv.instance.hide();}}
     static show(owner) {if(UiInv.instance){UiInv.instance.show(owner);}}
+    static updateGold() {if(UiInv.instance){UiInv.instance.updateGold();}}
 }
 
 
@@ -961,7 +995,7 @@ export class UiTrade extends Sizer
             .addTop(scene,'交易')
             .addInfo(scene)
             .addGold(scene)
-            .addGrid(scene,5,6)
+            .addGrid(scene,5,6,this.getOwner.bind(this))
             .setOrigin(0)
             .layout()
             .hide()
@@ -972,6 +1006,8 @@ export class UiTrade extends Sizer
     }
 
     close() {this.hide();}
+
+    getOwner() {return this.owner;}
 
     addInfo(scene)
     {
@@ -995,9 +1031,13 @@ export class UiTrade extends Sizer
 
     update()
     {
-        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`)
+        this.getElement('grid').getElement('items').forEach(item => {item?.update();});
+        this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);
+        this.updateGold();
         this.layout();
     }
+
+    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);}
 
     show(owner)
     {
@@ -1008,5 +1048,6 @@ export class UiTrade extends Sizer
 
     static show(owner) {if(UiTrade.instance) {UiTrade.instance.show(owner);}}
     static hide() {if(UiTrade.instance) {UiTrade.instance.hide();}}
+    static updateGold() {if(UiTrade.instance){UiTrade.instance.updateGold();}}
 
 }
