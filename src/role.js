@@ -1405,20 +1405,18 @@ export class Npc extends Role
 {
     init(mapName)
     {
-        console.log(mapName, this.uid);
         this.setSize(32,32);    //必須在 addPhysics() 之前執行
-        super.init();
+        super.init(mapName);
         this.addToRoleList();
-        this.load(mapName);
+        this.load();
     }
     
 
-    load(mapName)
+    load()
     {
-        this.mapName = mapName;
         let roleD = RoleDB.get(this.id);
         this.owner = {role:roleD}
-        let data = Record.getByUid(this.mapName,this.uid);
+        let data = this.loadData();
         if(data)
         {
             this.owner.state = data;
@@ -1429,10 +1427,7 @@ export class Npc extends Role
         }
     }
 
-    save()
-    {
-        Record.setByUid(this.mapName,this.uid,this.owner.state);
-    }
+    save() {this.saveData(this.owner.state);}
 
     addListener()
     {
@@ -1440,10 +1435,9 @@ export class Npc extends Role
         this.on('talk',()=>{this.trade()})
     }
 
-    trade()
-    {
-        this.scene.events.emit('trade',this.owner);
-    }
+    talk() {this.scene.events.emit('talk',this.owner);}
+
+    trade() {this.scene.events.emit('trade',this.owner);}
 
     async process()
     {

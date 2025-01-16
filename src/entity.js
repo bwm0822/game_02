@@ -135,14 +135,19 @@ export class Entity extends Phaser.GameObjects.Container
         return bag;
     }
 
-    init()
+    init(mapName)
     {
+        this.mapName = mapName;
         this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
         this.scene.map.updateGrid(this.pos,this.weight);
         //this.debugDraw();
     }
+
+    loadData() {return Record.getByUid(this.mapName,this.uid);}
+
+    saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
 
     debugDraw()
     {
@@ -180,10 +185,14 @@ export class Case extends Entity
 
     init(mapName)
     {
-        super.init();
-        this.mapName = mapName;
+        super.init(mapName);
+        this.load();
+    }
+
+    load()
+    {
         this.owner={};
-        let data = Record.getByUid(this.mapName,this.uid);
+        let data = this.loadData();
         if(data) {this.owner.bag = data;}
         else 
         {
@@ -192,15 +201,14 @@ export class Case extends Entity
         }   
     }
 
+    save() { this.saveData(this.owner.bag); }
+
     open()
     { 
         this.scene.events.emit('case',this.owner,this.name);
     }
 
-    save()
-    {
-        Record.setByUid(this.mapName,this.uid,this.owner.bag);
-    }
+   
 }
 
 
