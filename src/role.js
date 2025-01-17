@@ -10,7 +10,7 @@ import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
 import {Entity} from './entity.js';
-import {RoleDB} from './database.js';
+import {RoleDB,DialogDB} from './database.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -1417,10 +1417,7 @@ export class Npc extends Role
         let roleD = RoleDB.get(this.id);
         this.owner = {role:roleD}
         let data = this.loadData();
-        if(data)
-        {
-            this.owner.state = data;
-        }
+        if(data) { this.owner.state = data; }
         else
         {
             this.owner.state = { trade:true, gold:roleD.gold, bag:this.toBag(roleD.bag) }
@@ -1432,10 +1429,14 @@ export class Npc extends Role
     addListener()
     {
         super.addListener();
-        this.on('talk',()=>{this.trade()})
+        this.on('talk',()=>{this.talk()})
     }
 
-    talk() {this.scene.events.emit('talk',this.owner);}
+    talk() 
+    {
+        this.owner.dialog = DialogDB.get(this.id);
+        this.scene.events.emit('talk',this.owner);
+    }
 
     trade() {this.scene.events.emit('trade',this.owner);}
 

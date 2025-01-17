@@ -203,10 +203,7 @@ export class Case extends Entity
 
     save() { this.saveData(this.owner.bag); }
 
-    open()
-    { 
-        this.scene.events.emit('case',this.owner,this.name);
-    }
+    open() { this.scene.events.emit('case',this.owner,this.name); }
 
    
 }

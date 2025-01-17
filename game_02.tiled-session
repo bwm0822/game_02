@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/icons/buffs.tsj",
+    "activeFile": "public/assets/town_02.json",
     "expandedProjectPaths": [
-        ".",
-        "public/assets/templates",
-        "public/assets",
         "public/assets/icons",
+        "public/assets/templates",
+        "public",
         "public/assets/tiles",
-        "public"
+        ".",
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -206,8 +206,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 320,
-                "y": 319
+                "x": 359.5,
+                "y": 452.5
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -236,9 +236,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/town_02.json",
-        "public/assets/map.json",
         "public/assets/icons/buffs.tsj",
+        "public/assets/map.json",
+        "public/assets/town_02.json",
         "public/assets/town_01.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",

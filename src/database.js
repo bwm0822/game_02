@@ -111,6 +111,14 @@ export class DialogDB
                         '[area=2][bgcolor=blue]離開[/bgcolor][/area]\n',
                     options:{1:'exit;battle 哥布林',2:'exit'} ,
                 },
+        },
+        'scott':
+        {
+            0:
+            {   
+                A:'你好\n1\n2\n3\n4\n5\n6',
+                B:['1.交易/trade','2.離開/exit']
+            }
         }
 
     }

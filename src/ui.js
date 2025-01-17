@@ -17,29 +17,43 @@ export default function createUI(scene)
     new UiInv(scene);
     new UiTrade(scene);
     new UiCase(scene);
+    new UiDialog(scene);
     new UiMain(scene);
     new UiDragged(scene, 80, 80);
     new UiCover(scene);
     new UiInfo(scene);
     new UiOption(scene);
 
+
     //t2(scene);
 
 }
 
+
+
 function t2(scene)
 {
-    let owner =
+    let dialog =
     {
-        trade:true,
-        gold:500,
-        equip:{},
-        bag:{0:{id:'sword_01'}}
+        0:
+        {   
+            A:'你好\n1\n2\n3\n4\n5\n6',
+            B:['1.交易/trade','2.離開/exit']
+        }
     }
 
-    let box={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
-    //let box={};
-    UiTrade.show(owner);
+    UiDialog.show(dialog);
+    // let owner =
+    // {
+    //     trade:true,
+    //     gold:500,
+    //     equip:{},
+    //     bag:{0:{id:'sword_01'}}
+    // }
+
+    // let box={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
+    // //let box={};
+    // UiTrade.show(owner);
 
     //let inv={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
     //UiInv.show(player);
@@ -1064,5 +1078,162 @@ export class UiTrade extends Sizer
     static show(owner) {if(UiTrade.instance) {UiTrade.instance.show(owner);}}
     static hide() {if(UiTrade.instance) {UiTrade.instance.hide();}}
     static updateGold() {if(UiTrade.instance){UiTrade.instance.updateGold();}}
+
+}
+
+export class UiDialog extends Sizer
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : UI.w/2,
+            y : UI.h/2,
+            width : 600,
+            //height : 300,
+            orientation : 'y',
+            //space:{bottom:20},
+        }
+
+        super(scene, config);
+        UiDialog.instance=this;
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+            .addSpeakerA(scene)
+            .addSpeakerB(scene)
+            .layout()
+            .hide()
+
+        let iconA = this.getElement('iconA',true);
+        let iconB = this.getElement('iconB',true);
+        let nameA = this.getElement('nameA',true);
+        let textA = this.getElement('textA',true);
+        let textB = this.getElement('textB',true).getElement('panel');
+
+        //let typing = scene.plugins.get('rexTextTyping').add(txt,{speed:50,wrap:true});
+        const lineCnt=3;
+        let page = scene.plugins.get('rexTextPage').add(textA,{maxLines:lineCnt});
+
+        this.getLayer().name = 'UiDialog';    // 產生layer，並設定layer名稱
+
+ 
+        this.setIconA = (icon)=>{let [key,frame]=icon.split('/');iconA.setTexture(key,frame);return this;}
+        this.setNameA = (name)=>{nameA.setText(name);return this;}
+        this.setTextA = (text)=>{page.setText(text);return this;}
+
+        this.setTextB = (options)=>{
+            textB.removeAll(true);
+            options.forEach((option)=>{
+                textB.add(this.createOption(option),{align:'left',expand:true})
+            })
+            this.layout();
+            return this;
+        }
+
+        this.nextPage = ()=>{
+            let np = page.getNextPage();
+            textA.setText(np);
+            //console.log(page.pageCount,page.pageIndex)
+            if (page.isLastPage) {this.setTextB(this.dialog[this.id].B);} 
+            else {this.setTextB(['*聆聽...*/next']);}
+        }
+    }
+
+    addSpeakerA(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer.addBackground(rect(scene,{color:UI.COLOR_LIGHT}),'bg')
+            .add(sprite(scene,{icon:'portraits/0'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconA'})
+            .add(this.createSub(scene),{align:'top',padding:{top:10},key:'sub'});
+        this.add(sizer,{expand:true,padding:{left:10,right:10,top:10},key:'speakerA'});
+        return this;
+    }
+
+    createSub(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'y'});
+        sizer.add(bbcText(scene,{text:'[color=yellow]阿凡達[/color]'}),{align:'left',key:'nameA'})
+            .add(bbcText(scene,{text:'說明',wrapWidth:500}),{align:'left',key:'textA'})
+        return sizer;
+    }
+    
+
+    addSpeakerB(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer.addBackground(rect(scene,{color:UI.COLOR_DARK}),'bg')
+            .add(sprite(scene,{icon:'portraits/1'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconB'})
+            .add(this.createTextB(),{padding:{top:10},expand:true,align:'top',proportion:1,key:'textB'})
+        this.add(sizer,{expand:true,padding:{left:10,right:10,bottom:10},key:'speakerB'});
+        return this;
+    }
+
+    createTextB()
+    {
+        let scene = this.scene;
+        let scroll = scene.rexUI.add.scrollablePanel({
+            //background:rect(scene),
+            panel: {child:scene.rexUI.add.sizer({orientation:'y'})},
+            mouseWheelScroller: {focus:false,speed:0.1},
+            slider: {
+                // track: scene.rexUI.add.roundRectangle(0, 0, 20, 10, 10, UI.COLOR_DARK),
+                // thumb: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 13, UI.COLOR_LIGHT),
+                track: rect(scene,{width:20,color:UI.COLOR_PRIMARY}),
+                thumb: rect(scene,{radius:13,color:UI.COLOR_LIGHT}),
+                hideUnscrollableSlider: true,
+            },
+        })
+        return scroll;
+    }
+
+    createOption(option)
+    {
+        let [text, cmd] = option.split('/');
+        let scene = this.scene;
+        let sizer = scene.rexUI.add.sizer();
+        sizer.addBackground(rect(scene,{color:UI.COLOR_GRAY}),'bg')
+            .add(bbcText(scene,{text:text}),{align:'left'})
+        let bg = sizer.getElement('bg').setAlpha(0);
+        if(cmd)
+        {
+            sizer.setInteractive()
+                .on('pointerover',()=>{bg.setAlpha(1);})
+                .on('pointerout',()=>{bg.setAlpha(0);})
+                .on('pointerdown',()=>{this.execute(cmd);})
+        }
+        return sizer;
+    }
+
+    execute(cmd)
+    {
+        let [op,p1]=cmd.split(' ');
+        switch(op)
+        {
+            case 'next': this.nextPage(); break;
+            case 'exit': this.hide(); break;
+            case 'trade': this.trade(); break;
+        }
+    }
+
+    trade()
+    {
+        this.hide(); 
+        UiTrade.show(this.owner); 
+        UiInv.show(Role.Player.data); 
+    }
+
+    show(owner)
+    {
+        this.owner = owner;
+        this.dialog = owner.dialog;
+        this.id = 0;
+        super.show();
+        this.setIconA(owner.role.icon)
+            .setNameA(owner.role.name)
+            .setTextA(this.dialog[this.id].A)
+            .nextPage();
+    }
+
+    static show(dialog) {if(UiDialog.instance) {UiDialog.instance.show(dialog);}}
 
 }

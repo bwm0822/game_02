@@ -18,7 +18,7 @@ export let UI =
     COLOR_YELLOW : 0xffff00,
     COLOR_BLACK : 0x0,
     FONT : "Arial",
-    FONT_SIZE: 20,
+    FONT_SIZE: 24,
     ICON_CLOSE : 'cursors/cross_small',
     ICON_DROP : 'cursors/iconPack_123',
     ICON_USE : 'cursors/iconPack_123',
