@@ -77,12 +77,13 @@ export class Entity extends Phaser.GameObjects.Container
         this.addListener();
         this.left=0,this.right=0,this.top=0,this.bottom=0;
         this.collide = true;
-        this.act = '';
+        this.acts = [];
         this.weight = 0;
         this.uid = 0;
     }
 
-    get pos()       {return {x:this.x,y:this.y}}
+    get pos()   {return {x:this.x,y:this.y}}
+    get act()   {return this.acts[0];}
 
     enableOutline()
     {
@@ -90,10 +91,21 @@ export class Entity extends Phaser.GameObjects.Container
         this.on('outline', (on) => {this.outline(on);})
     }
 
+    send(type, ...args) {this.scene.events.emit(type, ...args);}
+
     addListener()
     {
-        this.on('pointerover',()=>{this.outline(true);this.scene.events.emit('over',this.act)})
-            .on('pointerout',()=>{this.outline(false);this.scene.events.emit('out')})
+        this.on('pointerover',()=>{this.outline(true);this.send('over',this.act);})
+            .on('pointerout',()=>{this.outline(false);this.send('out');})
+            .on('pointerdown',(pointer)=>{
+                if (pointer.middleButtonDown())
+                {
+                    // world space to screen space
+                    let x = this.x - this.scene.cameras.main.worldView.x;
+                    let y = this.y - this.scene.cameras.main.worldView.y;
+                    this.send('option',x,y-10,this.acts,this);
+                }
+            })
     }
 
     outline(on)
@@ -173,8 +185,8 @@ export class Case extends Entity
     constructor(scene)
     {
         super(scene);
-        this.act='open';     
-        this.container={};   
+        this.acts = ['open'];     
+        this.container = {};   
     }
 
     addListener()
@@ -191,7 +203,7 @@ export class Case extends Entity
 
     load()
     {
-        this.owner={};
+        this.owner={name:this.name};
         let data = this.loadData();
         if(data) {this.owner.bag = data;}
         else 
@@ -203,7 +215,7 @@ export class Case extends Entity
 
     save() { this.saveData(this.owner.bag); }
 
-    open() { this.scene.events.emit('case',this.owner,this.name); }
+    open() { this.send('case', this.owner); }
 
    
 }
@@ -214,7 +226,7 @@ export class Pickup extends Entity
     constructor(scene)
     {
         super(scene);
-        this.act='take';        
+        this.acts = ['take'];        
     }
 
     addListener()
@@ -266,7 +278,7 @@ export class Port extends Entity
         this.id = '';
         this.type = '';
         this.map = '';
-        this.act = 'exit';        
+        this.acts = ['exit'];        
     }
 
     addListener()

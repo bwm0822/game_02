@@ -5,6 +5,8 @@ import Utility from '../utility.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
+import {UI} from  '../uibase.js';
+import {UiCursor} from '../ui.js'
 
 export class GameMap extends Scene
 {
@@ -22,7 +24,7 @@ export class GameMap extends Scene
         this._graphics = null;
         this._dbgPath = null;
         this._act = 'go';
-        this._mark = new Mark(this);
+        new Mark(this);
        
         new Map(this,'map',false);
 
@@ -83,7 +85,7 @@ export class GameMap extends Scene
                 }
                 else if(this?._rst?.valid)
                 {
-                    this._mark.hide();
+                    Mark.hide();
                     this.clearPath();
                     this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
                 }
@@ -112,14 +114,14 @@ export class GameMap extends Scene
             if(rst.valid)
             {
                 this.drawPath(rst.path);
-                if(this._act=='go') {this._mark.show(rst.pt,0xffffff);}
-                else {this._mark.hide();}
+                if(this._act=='go') {Mark.show(rst.pt,UI.COLOR_WHITE);}
+                else {Mark.hide();}
             }
             else
             {
                 this.clearPath();
-                if(rst.pt){this._mark.show(rst.pt,0xff0000);}
-                else{this._mark.hide();}
+                if(rst.pt) {Mark.show(rst.pt,UI.COLOR_RED);}
+                else {Mark.hide();}
             }
         }
     }
@@ -173,13 +175,13 @@ export class GameMap extends Scene
         if(!this._done)
         {
             this._done = true;
-            this.events.on('over', (act)=>{this._act=act;this.events.emit('cursor',this._act);})
-                        .on('out', ()=>{this._act='go';this.events.emit('cursor','none');})
+            this.events
+                .on('over', (act)=>{this._act=act;UiCursor.set(this._act);})
+                .on('out', ()=>{this._act='go';UiCursor.set('none');})
         }
                     
         const ui = this.scene.get('UI');
         ui.events.off('home').on('home', ()=>{this.home();})
-                .off('mark').on('mark', (on)=>{this._mark.visible=on;})
     }
 
 }

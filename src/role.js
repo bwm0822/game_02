@@ -1189,7 +1189,7 @@ export class Role extends Entity
     {
         super(scene,x,y);
         this.weight = 1000;
-        this.act = 'talk';
+        this.acts = ['talk','trade'];
         //
         this._path = [];
         this._des = null;
@@ -1435,10 +1435,10 @@ export class Npc extends Role
     talk() 
     {
         this.owner.dialog = DialogDB.get(this.id);
-        this.scene.events.emit('talk',this.owner);
+        this.send('talk',this.owner);
     }
 
-    trade() {this.scene.events.emit('trade',this.owner);}
+    trade() {this.send('trade',this.owner);}
 
     async process()
     {

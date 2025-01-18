@@ -4,9 +4,10 @@ import Utility from './utility.js';
 
 export class Mark
 {
+    static instance=null;
     constructor(scene)
     {
-        //this._icons = {go:ICON_GO, talk:ICON_TALK, enter:ICON_ENTER, exit:ICON_EXIT, take:ICON_TAKE}
+        Mark.instance=this;
         this._sp = sprite(scene,{icon:UI.ICON_MARK,name:'mark'})
         this._sp.setScale(0.5);
         this._sp.visible=false;
@@ -14,11 +15,16 @@ export class Mark
         this._sp.setDepth(Infinity);
     }
 
-    set visible(value) {this._sp.visible = value;}
+    //set visible(value) {this._sp.visible = value;}
+    static set visible(value) 
+    {
+        if(Mark.instance){console.log('mark',value)}
+        Mark.instance&&(Mark.instance._sp.visbile=value);
+    }
 
     show(p,color=0xffffff)
     {
-        this.visible=true;
+        this._sp.visible=true;
         this._sp.x=p.x;
         this._sp.y=p.y;
         this._sp.setTint(color);
@@ -26,7 +32,11 @@ export class Mark
 
     hide()
     {
-        this.visible=false;
+        this._sp.visible=false;
     }
+
+    static show(p,color) {Mark.instance?.show(p,color);}
+
+    static hide() {Mark.instance?.hide();}
 
 }

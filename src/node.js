@@ -10,7 +10,7 @@ export class Node extends Entity
         this.id = 0;
         this.type = '';
         this.weight = 10;
-        this.act = 'enter';
+        this.acts = ['enter'];
     }
 
     addText(label)

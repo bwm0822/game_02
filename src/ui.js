@@ -3,12 +3,16 @@ import Utility from './utility.js';
 import {UI, rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
+import {Mark} from './gameUi.js';
+
+let uiScene;
 
 export default function createUI(scene)
 {
     console.log('createUI');
     UI.w = scene.sys.canvas.width;
     UI.h = scene.sys.canvas.height;
+    uiScene = scene;
     console.log('resolution:',UI.w, UI.h)
 
     //test(scene);
@@ -105,6 +109,12 @@ function test(scene)
     //let t1 = text(scene,{x:100,y:100,text:'幹你娘123',color:'#0ff',backgroundColor:'#fff',stroke:'#000',strokeThickness:5,wrapWidth:50});
     //let t2 = bbcText(scene,{x:100,y:200,text:'[stroke]123456[/stroke]',color:'#000',backgroundColor:'#555',wrapWidth:50});
 
+}
+
+
+function mark(on) {
+    //uiScene.events.emit('mark',on);
+    Mark.visible=on;
 }
 
 class Slot extends Icon
@@ -219,7 +229,7 @@ class Slot extends Icon
 
     middleButtonDown(x,y)
     {
-        if(!this.isEmpty) {UiOption.show(this.left+x,this.top+y);}
+        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20);}
     }
 
     get isSell() {return this.isTrade && !UiDragged.isTrade;}
@@ -498,23 +508,37 @@ class UiCover extends Sizer
     static hide() {if(UiCover.instance){UiCover.instance.hide();}}
 }
 
-class UiOption extends Sizer
+export class UiOption extends Sizer
 {
     static instance = null;
     constructor(scene)
     {
         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
         UiOption.instance = this;
+        this.btns={};
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-            .add(new UiButton(scene,{text:'使用',onclick:()=>{this.use();}}),{expand:true,key:'use'})
-            .add(new UiButton(scene,{text:'丟棄',onclick:()=>{this.drop();}}),{expand:true,key:'drop'})
-            .setOrigin(0.2,0.2)
+            //.add(new UiButton(scene,{text:'使用',onclick:()=>{this.use();}}),{expand:true,key:'use'})
+            //.add(new UiButton(scene,{text:'丟棄',onclick:()=>{this.drop();}}),{expand:true,key:'drop'})
+            .addButton('use',this.use.bind(this))
+            .addButton('drop',this.drop.bind(this))
+            .addButton('talk')
+            .addButton('trade')
+            .addButton('open',this.act.bind(this))
+            .setOrigin(0)
             .layout()
             .hide();
 
         scene.add.existing(this);
         this.getLayer().name = 'UiOption';
+    }
+
+    addButton(key,onclick)
+    {
+        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{onclick?.(key);}});
+        this.btns[key] = btn;
+        this.add(btn,{expand:true})
+        return this;
     }
 
     use()
@@ -529,12 +553,22 @@ class UiOption extends Sizer
         console.log('drop');
     }
 
-    show(x,y)
+    act(act)
     {
+        this.hide();
+        this.scene.events.emit('goto',this.target.pos,act);
+    }
+
+
+    show(x,y,options=['use','drop'],target)
+    {
+        this.target = target;
         UiCover.show();
         UiInfo.hide();
-        super.show();
-        this.setPosition(x,y).rePos();
+        super.show();        
+        Object.values(this.btns).forEach((btn)=>{btn.hide();})
+        options.forEach((opt)=>{this.btns[opt].show();})
+        this.setPosition(x,y).rePos().layout();
     }
 
     rePos()
@@ -543,6 +577,7 @@ class UiOption extends Sizer
         else if(this.left<0) {this.x-=this.left;}
         if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
         else if(this.top<0) {this.y-=this.top;}
+        return this;
     }
 
     hide()
@@ -553,7 +588,7 @@ class UiOption extends Sizer
 
     static hide() {if(UiOption.instance){UiOption.instance.hide();}}
 
-    static show(x,y) {if(UiOption.instance){UiOption.instance.show(x,y);}}
+    static show(x,y,acts,target) {if(UiOption.instance){UiOption.instance.show(x,y,acts,target);}}
 
 }
 
@@ -730,18 +765,18 @@ export class UiCase extends Sizer
 
     close() {this.hide();}
 
-    show(owner,label)
+    show(owner)
     {
         super.show();
         this.owner = owner;
-        this.getElement('label',true).setText(label);
+        this.getElement('label',true).setText(owner.name);
         this.layout();
         this.update();
     }
 
     static hide() {if(UiCase.instance){UiCase.instance.hide();}}
 
-    static show(owner,label) {if(UiCase.instance){UiCase.instance.show(owner,label);}}
+    static show(owner) {if(UiCase.instance){UiCase.instance.show(owner);}}
 }
 
 export class UiInv extends Sizer
@@ -854,12 +889,13 @@ export class UiMain extends Sizer
     static instance = null;
     constructor(scene)
     {
-        super(scene);
+        let config = {space:{item:5}}
+        super(scene,config);
         UiMain.instance = this;
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}),'bg')
-            .add(new UiButton(scene,{icon:UI.ICON_CLOSE,onclick:this.inv.bind(this)}))
-            .add(new UiButton(scene,{icon:UI.ICON_CLOSE,onclick:this.home.bind(this)}))
+            .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
+            .add(new UiButton(scene,{text:'離\n開',onclick:this.home.bind(this)}))
             .size()
             .hide();
         
@@ -883,11 +919,11 @@ export class UiMain extends Sizer
     addListener()
     {
         this.setInteractive();
-        this.on('pointerover',()=>{this.mark(false);})
-            .on('pointerout',()=>{this.mark(true);})
+        this.on('pointerover',()=>{mark(false);})
+            .on('pointerout',()=>{mark(true);})
     }
 
-    mark(on) {this.scene.events.emit('mark',on);}
+    
 
     size()
     {
@@ -1234,6 +1270,6 @@ export class UiDialog extends Sizer
             .nextPage();
     }
 
-    static show(dialog) {if(UiDialog.instance) {UiDialog.instance.show(dialog);}}
+    static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}
 
 }
