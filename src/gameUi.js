@@ -30,13 +30,10 @@ export class Mark
         this._sp.setTint(color);
     }
 
-    hide()
-    {
-        this._sp.visible=false;
-    }
+    hide() {this._sp.visible=false;}
 
     static show(p,color) {Mark.instance?.show(p,color);}
 
-    static hide() {Mark.instance?.hide();}
+    static close() {Mark.instance?.hide();}
 
 }

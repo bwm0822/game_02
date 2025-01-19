@@ -93,7 +93,7 @@ export class GameTown extends Scene
         }
         else if(this?._rst?.valid)
         {
-            Mark.hide();
+            Mark.close();
             this.clearPath();
             this._avatar.setDes(pos,act);
         }
@@ -121,13 +121,13 @@ export class GameTown extends Scene
             {
                 this.drawPath(rst.path);
                 if(this._act=='go') {Mark.show(rst.pt,UI.COLOR_WHITE);}
-                else {Mark.hide();}
+                else {Mark.close();}
             }
             else
             {
                 this.clearPath();
                 if(rst.pt) {Mark.show(rst.pt,UI.COLOR_RED);}
-                else {Mark.hide();}
+                else {Mark.close();}
             }
         }
     }
@@ -153,6 +153,20 @@ export class GameTown extends Scene
         })
     }
 
+
+    setCameraFollow(mode)
+    {
+        let offsetX=0,offsetY=0;
+        switch(mode)
+        {
+            case UI.CAM_CENTER: 
+                offsetX=0; offsetY=0; break;
+            case UI.CAM_LEFT: 
+                offsetX = -this.cameras.main.width/4; offsetY = 0; break;
+        }
+        this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
+    }
+
     setPosition()
     {
         //let pos = this.ports[this._data.id];
@@ -162,7 +176,7 @@ export class GameTown extends Scene
         else {pos = this.ports[this._data.id];}
 
         this._avatar = new Avatar(this,pos.x,pos.y);
-        this.cameras.main.startFollow(this._avatar,true,0.01,0.01);
+        this.setCameraFollow(UI.CAM_CENTER);
 
         Record.data.pos = this._avatar.pos;   
         Record.data.map = this._data.map;
@@ -177,20 +191,17 @@ export class GameTown extends Scene
         if(this.keys.up.isDown){loc.y-=32;}
         if(this.keys.down.isDown){loc.y+=32;}
         this.debugDraw(null,true);
-        Mark.hide();
+        Mark.close();
         this._avatar.setDes(loc);
     }
 
-    initUI()
+    initUI() 
     {
-        //this.events.emit('uiMain');
         UiMain.show();
+        UiCursor.set();
     }
 
-    exit()
-    {
-        this.scene.start('GameMap');
-    }
+    exit() {this.scene.start('GameMap');}
 
     home()
     {
@@ -219,9 +230,9 @@ export class GameTown extends Scene
             this.events
             .on('over', (act)=>{this._act=act;UiCursor.set(this._act);})
             .on('out', ()=>{this._act='go';UiCursor.set('none');})
-            .on('case',(owner)=>{UiInv.show(Role.Player.data);UiCase.show(owner);})
+            .on('case',(owner)=>{UiCase.show(owner);})
             .on('talk',(owner)=>{UiDialog.show(owner);})
-            .on('trade',(owner)=>{UiInv.show(Role.Player.data);UiTrade.show(owner);})
+            .on('trade',(owner)=>{UiTrade.show(owner);})
             .on('option',(x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
         }
 
@@ -229,6 +240,7 @@ export class GameTown extends Scene
         ui.events
             .off('home').on('home', ()=>{this.home();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
+            .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
 
     }
 

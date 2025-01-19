@@ -17,6 +17,7 @@ export default function createUI(scene)
 
     //test(scene);
     //t1();
+    new UiCover(scene);
     new UiCursor(scene);
     new UiInv(scene);
     new UiTrade(scene);
@@ -24,7 +25,6 @@ export default function createUI(scene)
     new UiDialog(scene);
     new UiMain(scene);
     new UiDragged(scene, 80, 80);
-    new UiCover(scene);
     new UiInfo(scene);
     new UiOption(scene);
 
@@ -111,11 +111,9 @@ function test(scene)
 
 }
 
+function mark(on) {Mark.visible=on;}
 
-function mark(on) {
-    //uiScene.events.emit('mark',on);
-    Mark.visible=on;
-}
+function camera(mode) {uiScene.events.emit('camera',mode);}
 
 class Slot extends Icon
 {
@@ -214,7 +212,7 @@ class Slot extends Icon
     {
         clearTimeout(this.pointerOverTimeout);        
         this.setBgColor(UI.COLOR_SLOT);
-        UiInfo.hide();
+        UiInfo.close();
     }
 
     leave(gameObject)
@@ -254,7 +252,7 @@ class Slot extends Icon
 
     leftButtonDown(x,y)
     {
-        UiInfo.hide();
+        UiInfo.close();
         if(UiDragged.on)
         {
             if(this.isBuy||this.isSell) {this.trade();}
@@ -432,26 +430,13 @@ export class UiDragged extends Pic
         return this;
     }
 
-    static hide()
-    {
-        if(UiDragged.instance){UiDragged.instance.hide();}
-    }
+    //static close() {UiDragged.instance?.hide();}
 
-    static setPos(x,y)
-    {
-        if(UiDragged.instance){return UiDragged.instance.setPosition(x,y);}
-    }
+    static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
 
-    static clear()
-    {
-        if(UiDragged.instance){return UiDragged.instance.clear();}
-    }
-
-    static isCat(cat)
-    {
-        if(UiDragged.instance){return UiDragged.instance.isCat(cat);}
-    }
-
+    static clear() {UiDragged.instance?.clear();}
+    
+    static isCat(cat) {return UiDragged.instance?.isCat(cat);}
 
 }
 
@@ -501,11 +486,21 @@ class UiCover extends Sizer
             .hide()
         scene.add.existing(this);
         this.getLayer().name = 'UiCover';
-        this.setInteractive().on('pointerdown',()=>{UiOption.hide();})
+        this.setInteractive()
+            .on('pointerdown',()=>{
+                if(this._touchClose) {UiOption.close();}
+                else {console.log('touch')}
+            })
     }
 
-    static show() {if(UiCover.instance){UiCover.instance.show();}}
-    static hide() {if(UiCover.instance){UiCover.instance.hide();}}
+    show(touchClose=false)
+    {
+        super.show();
+        this._touchClose = touchClose;
+    }
+
+    static show(touchClose) {if(UiCover.instance){UiCover.instance.show(touchClose);}}
+    static close() {if(UiCover.instance){UiCover.instance.hide();}}
 }
 
 export class UiOption extends Sizer
@@ -563,8 +558,9 @@ export class UiOption extends Sizer
     show(x,y,options=['use','drop'],target)
     {
         this.target = target;
-        UiCover.show();
-        UiInfo.hide();
+        UiCover.show(true);
+        UiInfo.close();
+        UiCursor.set();
         super.show();        
         Object.values(this.btns).forEach((btn)=>{btn.hide();})
         options.forEach((opt)=>{this.btns[opt].show();})
@@ -580,15 +576,11 @@ export class UiOption extends Sizer
         return this;
     }
 
-    hide()
-    {
-        UiCover.hide();
-        super.hide();
-    }
+    close() {this.hide();UiCover.close();}
 
-    static hide() {if(UiOption.instance){UiOption.instance.hide();}}
+    static close() {UiOption.instance?.close();}
 
-    static show(x,y,acts,target) {if(UiOption.instance){UiOption.instance.show(x,y,acts,target);}}
+    static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
 
 }
 
@@ -716,9 +708,9 @@ class UiInfo extends Sizer
         else if(this.top<0) {this.y-=this.top;}
     }
 
-    static hide() {if(UiInfo.instance){UiInfo.instance.hide();}}
+    static close() {UiInfo.instance?.hide();}
 
-    static show(target) {if(UiInfo.instance){UiInfo.instance.show(target);}}
+    static show(target) {UiInfo.instance?.show(target);}
 }
 
 export class UiCase extends Sizer
@@ -763,7 +755,7 @@ export class UiCase extends Sizer
         this.getElement('grid').getElement('items').forEach(item => {item.update();});
     }
 
-    close() {this.hide();}
+    close() {this.hide();UiCover.close();}
 
     show(owner)
     {
@@ -772,11 +764,14 @@ export class UiCase extends Sizer
         this.getElement('label',true).setText(owner.name);
         this.layout();
         this.update();
+        UiInv.show(Role.Player.data);
+        UiCover.show();
+        UiCursor.set();
     }
 
-    static hide() {if(UiCase.instance){UiCase.instance.hide();}}
+    static close() {UiCase.instance?.close();}
 
-    static show(owner) {if(UiCase.instance){UiCase.instance.show(owner);}}
+    static show(owner) {UiCase.instance?.show(owner);}
 }
 
 export class UiInv extends Sizer
@@ -800,8 +795,6 @@ export class UiInv extends Sizer
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addTop(scene,'裝備')
-            //.addEquip(scene,this.getEquip.bind(this))
-            //.addGrid(scene,5,4,this.getBag.bind(this),{bottom:30})
             .addEquip(scene,this.getOwner.bind(this))
             .addInfo(scene)
             .addGrid(scene,5,4,this.getOwner.bind(this),{bottom:30})
@@ -813,7 +806,8 @@ export class UiInv extends Sizer
             .layout()
             .hide()
         scene.add.existing(this);
-        this.getElement('bg').setInteractive(); //避免 UI scene 的 input event 傳到其他 scene
+        this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
+            .on('pointerover',()=>{UiCursor.set();})
         this.getLayer().name = 'UiInv';
     }
 
@@ -866,8 +860,9 @@ export class UiInv extends Sizer
     close()
     {
         this.hide();
-        UiCase.hide();
-        UiTrade.hide();
+        UiCase.close();
+        UiTrade.close();
+        camera(UI.CAM_CENTER);
     }
 
     show(owner)
@@ -875,11 +870,12 @@ export class UiInv extends Sizer
         super.show();
         this.owner = owner;
         this.update();
+        camera(UI.CAM_LEFT);
     }
 
-    static hide() {if(UiInv.instance){UiInv.instance.hide();}}
-    static show(owner) {if(UiInv.instance){UiInv.instance.show(owner);}}
-    static updateGold() {if(UiInv.instance){UiInv.instance.updateGold();}}
+    static close() {UiInv.instance?.close();}
+    static show(owner) {UiInv.instance?.show(owner);}
+    static updateGold() {UiInv.instance?.updateGold();}
 }
 
 
@@ -923,8 +919,6 @@ export class UiMain extends Sizer
             .on('pointerout',()=>{mark(true);})
     }
 
-    
-
     size()
     {
         let viewport = this.scene.rexUI.viewport;
@@ -936,15 +930,9 @@ export class UiMain extends Sizer
         return this;
     }
 
-    static show()
-    {
-        if(UiMain.instance) {UiMain.instance.show();}
-    }
+    static show() {UiMain.instance?.show();}
 
-    static hide()
-    {
-        if(UiMain.instance) {UiMain.instance.hide();}
-    }
+    static close() {UiMain.instance?.hide();}
 
 }
 
@@ -980,6 +968,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     setIcon(type)
     {
+        type = type??'none';
         let icon = UiCursor.icons[type];
         let [key,frame]=icon.sprite.split('/')
         this.setTexture(key,frame);
@@ -1109,11 +1098,13 @@ export class UiTrade extends Sizer
         super.show();
         this.owner = owner;
         this.update();
+        UiInv.show(Role.Player.data);
+        UiCover.show();
     }
 
-    static show(owner) {if(UiTrade.instance) {UiTrade.instance.show(owner);}}
-    static hide() {if(UiTrade.instance) {UiTrade.instance.hide();}}
-    static updateGold() {if(UiTrade.instance){UiTrade.instance.updateGold();}}
+    static show(owner) {UiTrade.instance?.show(owner);}
+    static close() {UiTrade.instance?.close();}
+    static updateGold() {UiTrade.instance?.updateGold();}
 
 }
 
@@ -1246,16 +1237,21 @@ export class UiDialog extends Sizer
         switch(op)
         {
             case 'next': this.nextPage(); break;
-            case 'exit': this.hide(); break;
+            case 'exit': this.close(); break;
             case 'trade': this.trade(); break;
         }
     }
 
     trade()
     {
-        this.hide(); 
+        this.close();
         UiTrade.show(this.owner); 
-        UiInv.show(Role.Player.data); 
+    }
+
+    close()
+    {
+        this.hide(); 
+        UiCover.close();
     }
 
     show(owner)
@@ -1268,6 +1264,8 @@ export class UiDialog extends Sizer
             .setNameA(owner.role.name)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
+        UiCover.show();
+        UiCursor.set();
     }
 
     static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}

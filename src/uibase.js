@@ -30,6 +30,8 @@ export let UI =
     ICON_BOOT : 'weapons/',
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
+    CAM_CENTER : 'center',
+    CAM_LEFT : 'left',
 }
 
 

@@ -6,7 +6,7 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 import {UI} from  '../uibase.js';
-import {UiCursor} from '../ui.js'
+import {UiCursor,UiMain} from '../ui.js'
 
 export class GameMap extends Scene
 {
@@ -42,6 +42,19 @@ export class GameMap extends Scene
         Role.Player.load();
     }
 
+    setCameraFollow(mode)
+    {
+        let offsetX=0,offsetY=0;
+        switch(mode)
+        {
+            case UI.CAM_CENTER: 
+                offsetX=0; offsetY=0; break;
+            case UI.CAM_LEFT: 
+                offsetX = -this.cameras.main.width/4; offsetY = 0; break;
+        }
+        this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
+    }
+
     setPosition()
     {
         let pos;
@@ -53,16 +66,17 @@ export class GameMap extends Scene
         }
 
         this._avatar = new Role.Target(this,pos.x,pos.y);
-        this.cameras.main.startFollow(this._avatar,true,0.01,0.01);
+        this.setCameraFollow(UI.CAM_CENTER);
 
         Record.data.pos = this._avatar.pos;   
         Record.data.map = '';
         Record.save();
     }
 
-    initUI()
+    initUI() 
     {
-        this.events.emit('uiMain');
+        UiMain.show();
+        UiCursor.set();
     }
 
     processInput()
@@ -85,7 +99,7 @@ export class GameMap extends Scene
                 }
                 else if(this?._rst?.valid)
                 {
-                    Mark.hide();
+                    Mark.close();
                     this.clearPath();
                     this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
                 }
@@ -115,13 +129,13 @@ export class GameMap extends Scene
             {
                 this.drawPath(rst.path);
                 if(this._act=='go') {Mark.show(rst.pt,UI.COLOR_WHITE);}
-                else {Mark.hide();}
+                else {Mark.close();}
             }
             else
             {
                 this.clearPath();
                 if(rst.pt) {Mark.show(rst.pt,UI.COLOR_RED);}
-                else {Mark.hide();}
+                else {Mark.close();}
             }
         }
     }
@@ -181,7 +195,9 @@ export class GameMap extends Scene
         }
                     
         const ui = this.scene.get('UI');
-        ui.events.off('home').on('home', ()=>{this.home();})
+        ui.events
+            .off('home').on('home', ()=>{this.home();})
+            .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
     }
 
 }
