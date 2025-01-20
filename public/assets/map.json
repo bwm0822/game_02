@@ -25,7 +25,7 @@
          "name":"layer2",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":40,
          "x":0,
          "y":0
@@ -44,17 +44,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_00"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"town"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -72,17 +67,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_01"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"towm"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -100,17 +90,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_01"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"battle"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -128,17 +113,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_02"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"town"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -156,17 +136,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_01"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"battle"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -184,17 +159,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"town_02"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"town"
+                         "value":"town_01"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -212,17 +182,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_02"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"town"
                         }],
                  "rotation":0,
                  "type":"node",
@@ -240,17 +205,12 @@
                         {
                          "name":"id",
                          "type":"string",
-                         "value":"\u51fa\u53e3"
+                         "value":"\u5165\u53e3"
                         }, 
                         {
                          "name":"map",
                          "type":"string",
                          "value":"town_01"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"battle"
                         }],
                  "rotation":0,
                  "type":"node",

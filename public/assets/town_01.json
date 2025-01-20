@@ -54,29 +54,6 @@
                  "y":345
                 }, 
                 {
-                 "gid":448,
-                 "height":32,
-                 "id":2,
-                 "name":"\u51fa\u53e3",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"1"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"map"
-                        }],
-                 "rotation":0,
-                 "type":"port",
-                 "visible":true,
-                 "width":32,
-                 "x":448,
-                 "y":960
-                }, 
-                {
                  "gid":3,
                  "height":32,
                  "id":3,
@@ -114,67 +91,22 @@
                          "name":"top",
                          "type":"int",
                          "value":100
+                        }, 
+                        {
+                         "name":"weight",
+                         "type":"int",
+                         "value":-1
                         }],
                  "rotation":0,
                  "type":"entity",
                  "visible":true,
                  "width":139,
-                 "x":580.333333333333,
-                 "y":879.666666666667
-                }, 
-                {
-                 "height":960,
-                 "id":26,
-                 "name":"",
-                 "rotation":0,
-                 "type":"block",
-                 "visible":true,
-                 "width":32,
-                 "x":1248,
-                 "y":0
-                }, 
-                {
-                 "height":960,
-                 "id":28,
-                 "name":"",
-                 "rotation":0,
-                 "type":"block",
-                 "visible":true,
-                 "width":32,
-                 "x":0,
-                 "y":0
-                }, 
-                {
-                 "height":32,
-                 "id":29,
-                 "name":"",
-                 "rotation":0,
-                 "type":"block",
-                 "visible":true,
-                 "width":1280,
-                 "x":0,
-                 "y":960
-                }, 
-                {
-                 "height":32,
-                 "id":30,
-                 "name":"",
-                 "rotation":0,
-                 "type":"block",
-                 "visible":true,
-                 "width":1280,
-                 "x":0,
-                 "y":0
+                 "x":576,
+                 "y":864
                 }, 
                 {
                  "id":31,
                  "name":"\u6a39",
-                 "properties":[
-                        {
-                         "name":"interactable",
-                         "type":"bool",
-                         "value":true
-                        }],
                  "template":"templates\/tree.tj",
                  "x":192,
                  "y":768
@@ -226,6 +158,71 @@
                  "width":32,
                  "x":608,
                  "y":448
+                }, 
+                {
+                 "height":32,
+                 "id":158,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"\u6f01\u4eba\u78bc\u982d"
+                        }, 
+                        {
+                         "name":"map",
+                         "type":"string",
+                         "value":"map"
+                        }, 
+                        {
+                         "name":"outline_en",
+                         "type":"bool",
+                         "value":false
+                        }, 
+                        {
+                         "name":"weight",
+                         "type":"int",
+                         "value":10
+                        }],
+                 "rotation":0,
+                 "type":"port",
+                 "visible":true,
+                 "width":1280,
+                 "x":0,
+                 "y":928
+                }, 
+                {
+                 "height":32,
+                 "id":159,
+                 "name":"\u5165\u53e3",
+                 "rotation":0,
+                 "type":"entry",
+                 "visible":true,
+                 "width":32,
+                 "x":512,
+                 "y":896
+                }, 
+                {
+                 "height":40,
+                 "id":160,
+                 "name":"\u9580",
+                 "properties":[
+                        {
+                         "name":"top",
+                         "type":"int",
+                         "value":8
+                        }, 
+                        {
+                         "name":"weight",
+                         "type":"int",
+                         "value":100
+                        }],
+                 "rotation":0,
+                 "type":"port",
+                 "visible":true,
+                 "width":32,
+                 "x":608,
+                 "y":824
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -237,35 +234,7 @@
          "draworder":"topdown",
          "id":7,
          "name":"q01",
-         "objects":[
-                {
-                 "gid":3,
-                 "height":32,
-                 "id":39,
-                 "name":"\u5c71\u6d1e",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"\u51fa\u53e3"
-                        }, 
-                        {
-                         "name":"map",
-                         "type":"string",
-                         "value":"hole"
-                        }, 
-                        {
-                         "name":"type",
-                         "type":"string",
-                         "value":"twon"
-                        }],
-                 "rotation":0,
-                 "type":"port",
-                 "visible":true,
-                 "width":32,
-                 "x":672,
-                 "y":928
-                }],
+         "objects":[],
          "opacity":1,
          "type":"objectgroup",
          "visible":true,
@@ -273,7 +242,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":40,
+ "nextobjectid":162,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -310,7 +279,7 @@
         }, 
         {
          "firstgid":505,
-         "source":"icons\/buffs.tsj"
+         "source":"cursors.tsj"
         }],
  "tilewidth":32,
  "type":"map",

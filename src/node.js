@@ -7,6 +7,7 @@ export class Node extends Entity
     constructor(scene,x,y)
     {
         super(scene,x,y);
+        this.interactive = true;
         this.id = 0;
         this.type = '';
         this.weight = 10;

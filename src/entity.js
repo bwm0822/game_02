@@ -76,7 +76,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.enableOutline();
         this.addListener();
         this.left=0,this.right=0,this.top=0,this.bottom=0;
-        this.collide = true;
+        this.interactive = false;
+        this.outline_en = true;
         this.acts = [];
         this.weight = 0;
         this.uid = 0;
@@ -84,6 +85,11 @@ export class Entity extends Phaser.GameObjects.Container
 
     get pos()   {return {x:this.x,y:this.y}}
     get act()   {return this.acts[0];}
+
+    set displayWidth(value) {this.width==0&&(this.width=value);super.displayWidth=value;} 
+    set displayHeight(value) {this.height==0&&(this.height=value);super.displayHeight=value;}
+    get displayWidth() {return super.displayWidth;}
+    get displayHeight() {return super.displayHeight;}
 
     enableOutline()
     {
@@ -110,27 +116,53 @@ export class Entity extends Phaser.GameObjects.Container
 
     outline(on)
     {
-        if(on) {this._outline.add(this,{thickness:3,outlineColor:0xffffff});}
-        else {this._outline.remove(this);}
+        if(!this.outline_en) return;
+
+        if(this._sp)
+        {
+            if(on) {this._outline.add(this,{thickness:3,outlineColor:0xffffff});}
+            else {this._outline.remove(this);}
+        }
+        else
+        {
+            this.outline_rect(on);
+        }
+        
+    }
+
+    outline_rect(on)
+    {
+        if(!this._rect)
+        {
+            this._rect = this.scene.add.rectangle(0, 0, this.width, this.height, 0xffffff, 0.5);
+            this._rect.setStrokeStyle(2,0xffffff)
+            this.add(this._rect);
+            this.setDepth(Infinity);
+        }
+
+        this._rect.visible=on;
     }
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到
     {
         //console.log(key,frame);
-        let sp = this.scene.add.sprite(0,0,key,frame);
-        this.add(sp);
-        this.setSize(sp.width,sp.height);
-        this._sp = sp;
+        if(key)
+        {
+            let sp = this.scene.add.sprite(0,0,key,frame);
+            this.add(sp);
+            this.setSize(sp.width,sp.height);
+            this._sp = sp;
+        }
     }
 
     setFlip(){} // map.createFromObjects 會呼叫到
 
     addPhysics()
     {
+        this.setSize(this.displayWidth,this.displayHeight);
         this.scene.physics.add.existing(this, true);
         this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
         this.body.setOffset(this.left,this.top);
-        //this.scene.groupStatic.add(this);
     }
 
     updateDepth()
@@ -150,10 +182,12 @@ export class Entity extends Phaser.GameObjects.Container
     init(mapName)
     {
         this.mapName = mapName;
-        this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
+        this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
-        this.scene.map.updateGrid(this.pos,this.weight);
+        //this.scene.map.updateGrid(this.pos,this.weight,this.width,this.height);
+        this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
+        
         //this.debugDraw();
     }
 
@@ -168,14 +202,27 @@ export class Entity extends Phaser.GameObjects.Container
             this._dbgGraphics = this.scene.add.graphics();
             this._dbgGraphics.name = 'entity';
         }
-        let w = this.displayWidth;
-        let h = this.displayHeight;
-        let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-        let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+        // let w = this.displayWidth;
+        // let h = this.displayHeight;
+        // let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
+        // let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+        // this._dbgGraphics.clear();
+        // this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+        // this._dbgGraphics.strokeRectShape(rect)
+        //                 .strokeCircleShape(circle);
+
+        console.log(this.body)
+
+
+        let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+        let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+
         this._dbgGraphics.clear();
         this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
         this._dbgGraphics.strokeRectShape(rect)
                         .strokeCircleShape(circle);
+
+        
     }
 
 }
@@ -187,6 +234,7 @@ export class Case extends Entity
         super(scene);
         this.acts = ['open'];     
         this.container = {};   
+        this.interactive = true;
     }
 
     addListener()
@@ -226,7 +274,8 @@ export class Pickup extends Entity
     constructor(scene)
     {
         super(scene);
-        this.acts = ['take'];        
+        this.acts = ['take'];    
+        this.interactive = true;    
     }
 
     addListener()
@@ -263,20 +312,32 @@ export class Pickup extends Entity
         let obj = this.data?.get('obj');
         if(obj)
         {
-            if(!Record.data[this._mapName]){Record.data[this._mapName]={remove:[],add:[]};}
+            if(!Record.data[this._mapName]) {Record.data[this._mapName]={remove:[],add:[]};}
             Record.data[this._mapName].remove.push(obj);
             Record.save();
         }
     }
 }
 
+
+export class Entry extends Entity
+{
+    init(mapName)
+    {
+        //super.init(mapName);
+        if(!this.scene.entries) {this.scene.entries={};}
+        this.scene.entries[this.name] = {x:this.x,y:this.y}
+    }
+}
+
+
 export class Port extends Entity
 {
     constructor(scene)
     {
         super(scene);
+        this.interactive = true;   
         this.id = '';
-        this.type = '';
         this.map = '';
         this.acts = ['exit'];        
     }
@@ -287,17 +348,10 @@ export class Port extends Entity
         this.on('exit',()=>{this.exit();})
     }
 
-    init(map)
-    {
-        super.init(map);
-        if(!this.scene.ports){this.scene.ports={}}
-        this.scene.ports[this.name]={x:this.x,y:this.y}
-    }
-
     async exit()
     {
         //console.log('exit',this.id,this.type,this.map);
-        if(this.type=='map')
+        if(this.map=='map')
         {
             this.scene.scene.start('GameMap',{id:this.id});
         }

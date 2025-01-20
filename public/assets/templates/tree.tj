@@ -24,6 +24,11 @@
              "name":"top",
              "type":"int",
              "value":100
+            }, 
+            {
+             "name":"weight",
+             "type":"int",
+             "value":-1
             }],
      "rotation":0,
      "type":"entity",

@@ -2,7 +2,7 @@
 import {Node} from './node.js';
 //import {Port} from './port.js';
 import {Store} from './store.js';
-import {Block,Entity,Port,Pickup,Case} from './entity.js';
+import {Block,Entity,Port,Pickup,Case,Entry} from './entity.js';
 import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
@@ -230,6 +230,7 @@ class Map
             [
                 {type:'node',classType:Node},
                 {type:'port',classType:Port},
+                {type:'entry',classType:Entry},
                 {type:'block',classType:Block},
                 {type:'store',classType:Store},
                 {type:'character',classType:Character},
@@ -241,6 +242,8 @@ class Map
             objs.forEach((obj) => {obj.init?.(mapName);});
             scene.objects.push(...objs);
         });
+
+        console.log(this.map)
 
     }
 
@@ -318,11 +321,38 @@ class Map
         }
     }
 
-    updateGrid(pos,w)
+    updateGrid(pos,weight,w,h)
     {
-        let tx = this.map.worldToTileX(pos.x);
-        let ty = this.map.worldToTileX(pos.y);
-        this.graph.grid[ty][tx].weight += w;
+        if(w>this.map.tileWidth || h>this.map.tileHeight)
+        {
+            let w_2 = Math.floor(w/2)-1;
+            let h_2 = Math.floor(h/2)-1;
+            let tx0 = this.map.worldToTileX(pos.x-w_2);
+            let ty0 = this.map.worldToTileX(pos.y-h_2);
+
+            let tx1 = this.map.worldToTileX(pos.x+w_2);
+            let ty1 = this.map.worldToTileX(pos.y+h_2);
+
+            console.log(w,h,'->',tx0,ty0,tx1,ty1,weight)
+
+            for(let tx=tx0;tx<=tx1;tx++)
+            {
+                for(let ty=ty0;ty<=ty1;ty++)
+                {
+                    this.graph.grid[ty][tx].weight += weight;
+                }
+            }
+        }
+        else
+        {
+            let tx = this.map.worldToTileX(pos.x);
+            let ty = this.map.worldToTileX(pos.y);
+            this.graph.grid[ty][tx].weight += weight;
+        }
+
+        // let tx = this.map.worldToTileX(pos.x);
+        // let ty = this.map.worldToTileX(pos.y);
+        // this.graph.grid[ty][tx].weight += weight;
     }
 
     isValid(pos,w=1000)
@@ -330,6 +360,14 @@ class Map
         let tx = this.map.worldToTileX(pos.x);
         let ty = this.map.worldToTileX(pos.y);
         return this.graph.grid[ty][tx].weight<w;
+    }
+
+    getWeight(pos)
+    {
+        let tx = this.map.worldToTileX(pos.x);
+        let ty = this.map.worldToTileX(pos.y);
+        if(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height){return;}
+        return this.graph.grid[ty][tx].weight;
     }
 
     processMap(map)

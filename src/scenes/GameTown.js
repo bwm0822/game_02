@@ -78,9 +78,16 @@ export class GameTown extends Scene
                 this.findPath({x:pointer.worldX,y:pointer.worldY});
             }
 
+            //this.debugWeight(pointer);
+
         })
 
-        this.input.keyboard.on('keydown',()=>{this.keyin();})
+         this.input.keyboard.on('keydown',()=>{this.keyin();});
+    }
+
+    debugWeight(pointer)
+    {
+        console.log( this.map.getWeight({x:pointer.worldX,y:pointer.worldY}) );
     }
 
 
@@ -173,7 +180,7 @@ export class GameTown extends Scene
 
         let pos;
         if(this._data.pos) {pos=this._data.pos;}
-        else {pos = this.ports[this._data.id];}
+        else {pos = this.entries[this._data.id];}
 
         this._avatar = new Avatar(this,pos.x,pos.y);
         this.setCameraFollow(UI.CAM_CENTER);
@@ -203,6 +210,8 @@ export class GameTown extends Scene
 
     exit() {this.scene.start('GameMap');}
 
+
+
     home()
     {
         console.log('home');
@@ -228,7 +237,7 @@ export class GameTown extends Scene
         {
             this._done = true;
             this.events
-            .on('over', (act)=>{this._act=act;UiCursor.set(this._act);})
+            .on('over', (act)=>{this._act=act;UiCursor.set(this._act);Mark.close();})
             .on('out', ()=>{this._act='go';UiCursor.set('none');})
             .on('case',(owner)=>{UiCase.show(owner);})
             .on('talk',(owner)=>{UiDialog.show(owner);})

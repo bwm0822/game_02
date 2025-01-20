@@ -1,0 +1,14 @@
+{ "columns":14,
+ "image":"..\/..\/..\/game_01\/public\/assets\/icons\/cursors.png",
+ "imageheight":430,
+ "imagewidth":463,
+ "margin":0,
+ "name":"cursors",
+ "spacing":0,
+ "tilecount":182,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

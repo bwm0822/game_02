@@ -3,14 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/town_02.json",
+    "activeFile": "public/assets/town_01.json",
     "expandedProjectPaths": [
-        "public/assets/icons",
-        "public/assets/templates",
-        "public",
         "public/assets/tiles",
+        "public/assets/roles",
+        "public/assets",
+        "public/assets/icons",
         ".",
-        "public/assets"
+        "public",
+        "public/assets/templates"
     ],
     "fileStates": {
         "": {
@@ -45,6 +46,10 @@
             "scaleInEditor": 1
         },
         "public/assets/assets_spritesheet_v2_free.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/cursors.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -109,8 +114,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 602.5,
-                "y": 480.5
+                "x": 602,
+                "y": 480
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -171,8 +176,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 581.3333333333333,
-                "y": 480.3333333333333
+                "x": 640,
+                "y": 480
             }
         },
         "public/assets/town_00.json#free": {
@@ -184,11 +189,11 @@
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 0.75,
+            "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 505.99999999999994,
-                "y": 410
+                "x": 522,
+                "y": 891
             }
         },
         "public/assets/town_01.json#RPG Nature Tileset": {
@@ -206,8 +211,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 359.5,
-                "y": 452.5
+                "x": 320,
+                "y": 319
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -219,8 +224,8 @@
             "scaleInEditor": 1
         }
     },
-    "last.imagePath": "C:/Personal/projects/web/game_01/public/assets/tiles",
-    "last.objectTemplatePath": "C:/Personal/projects/web/game_01/public/assets/templates",
+    "last.imagePath": "C:/Personal/projects/web/game_01/public/assets/icons",
+    "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
     "map.height": 40,
     "map.lastUsedFormat": "json",
@@ -231,30 +236,33 @@
     "openFiles": [
         "public/assets/town_02.json",
         "public/assets/map.json",
-        "public/assets/icons/buffs.tsj"
+        "public/assets/icons/buffs.tsj",
+        "public/assets/town_00.json",
+        "public/assets/town_01.json",
+        "public/assets/cursors.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
-        "public/assets/icons/buffs.tsj",
-        "public/assets/map.json",
         "public/assets/town_02.json",
+        "public/assets/map.json",
+        "public/assets/icons/buffs.tsj",
+        "public/assets/town_00.json",
+        "public/assets/cursors.tsj",
         "public/assets/town_01.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",
         "public/assets/Color A Spitesheet.tsj",
-        "public/assets/town_00.json",
         "public/assets/group.tsj",
         "public/assets/set.tsj",
-        "public/assets/free.tsj",
-        "public/assets/hole.json"
+        "public/assets/free.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
     "tileset.lastUsedFormat": "json",
     "tileset.tileSize": {
-        "height": 16,
-        "width": 16
+        "height": 32,
+        "width": 32
     },
     "tileset.type": 0
 }
