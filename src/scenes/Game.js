@@ -39,7 +39,7 @@ export class Game extends Scene
             if(Record.data.pos) {config.pos = Record.data.pos;}
             else {config.id = Record.data.default;}
 
-            this.scene.start('GameTown',config);
+            this.scene.start('GameArea',config);
         }
         else
         {

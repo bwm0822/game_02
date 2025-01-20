@@ -902,7 +902,6 @@ export class UiMain extends Sizer
 
     inv()
     {
-        console.log('inv')
         UiInv.show(Role.Player.data);
     }
 

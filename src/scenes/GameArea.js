@@ -10,12 +10,12 @@ import {QuestManager} from '../quest.js';
 import {UI} from '../uibase.js'
 import {UiCursor,UiCase,UiInv,UiTrade,UiDialog,UiMain,UiOption} from '../ui.js'
 
-export class GameTown extends Scene
+export class GameArea extends Scene
 {
     constructor ()
     {
-        console.log('GameTown');
-        super('GameTown');
+        console.log('GameArea');
+        super('GameArea');
     }
 
     get camX() {return this.cameras.main.scrollX+this.camOff.x;}
@@ -137,6 +137,10 @@ export class GameTown extends Scene
                 else {Mark.close();}
             }
         }
+        else
+        {
+            this.clearPath();Mark.close();
+        }
     }
 
     clearPath() {if(this._dbgPath){this._dbgPath.clear();}}
@@ -181,6 +185,8 @@ export class GameTown extends Scene
         let pos;
         if(this._data.pos) {pos=this._data.pos;}
         else {pos = this.entries[this._data.id];}
+
+        console.log(this._data,this.entries)
 
         this._avatar = new Avatar(this,pos.x,pos.y);
         this.setCameraFollow(UI.CAM_CENTER);

@@ -208,6 +208,16 @@
                  "name":"\u9580",
                  "properties":[
                         {
+                         "name":"id",
+                         "type":"string",
+                         "value":"\u5165\u53e3"
+                        }, 
+                        {
+                         "name":"map",
+                         "type":"string",
+                         "value":"house_01"
+                        }, 
+                        {
                          "name":"top",
                          "type":"int",
                          "value":8
@@ -223,6 +233,17 @@
                  "width":32,
                  "x":608,
                  "y":824
+                }, 
+                {
+                 "height":32,
+                 "id":162,
+                 "name":"\u9580",
+                 "rotation":0,
+                 "type":"entry",
+                 "visible":true,
+                 "width":32,
+                 "x":608,
+                 "y":864
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -242,7 +263,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":162,
+ "nextobjectid":163,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

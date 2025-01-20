@@ -358,7 +358,7 @@ export class Port extends Entity
         else
         {
             //this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
-            this.scene.scene.start('GameTown',{id:this.id,map:this.map});
+            this.scene.scene.start('GameArea',{id:this.id,map:this.map});
         }
     }
 }

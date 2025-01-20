@@ -6,12 +6,12 @@
     "activeFile": "public/assets/town_01.json",
     "expandedProjectPaths": [
         "public/assets/tiles",
-        "public/assets/roles",
+        "public/assets/templates",
         "public/assets",
-        "public/assets/icons",
         ".",
         "public",
-        "public/assets/templates"
+        "public/assets/icons",
+        "public/assets/roles"
     ],
     "fileStates": {
         "": {
@@ -87,6 +87,17 @@
         "public/assets/hole.json#RPG Nature Tileset": {
             "scaleInDock": 1
         },
+        "public/assets/house_01.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 216,
+                "y": 273.5
+            }
+        },
         "public/assets/icons/buffs.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
@@ -114,8 +125,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 602,
-                "y": 480
+                "x": 406,
+                "y": 480.5
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -177,7 +188,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 480
+                "y": 480.3333333333333
             }
         },
         "public/assets/town_00.json#free": {
@@ -192,8 +203,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 522,
-                "y": 891
+                "x": 669.3333333333333,
+                "y": 729
             }
         },
         "public/assets/town_01.json#RPG Nature Tileset": {
@@ -212,7 +223,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 320,
-                "y": 319
+                "y": 441.5
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -227,35 +238,36 @@
     "last.imagePath": "C:/Personal/projects/web/game_01/public/assets/icons",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
-    "map.height": 40,
+    "map.height": 20,
     "map.lastUsedFormat": "json",
     "map.layerDataFormat": "1",
     "map.tileHeight": 32,
     "map.tileWidth": 32,
-    "map.width": 40,
+    "map.width": 20,
     "openFiles": [
         "public/assets/town_02.json",
         "public/assets/map.json",
         "public/assets/icons/buffs.tsj",
         "public/assets/town_00.json",
         "public/assets/town_01.json",
-        "public/assets/cursors.tsj"
+        "public/assets/cursors.tsj",
+        "public/assets/house_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "string",
     "recentFiles": [
         "public/assets/town_02.json",
         "public/assets/map.json",
         "public/assets/icons/buffs.tsj",
         "public/assets/town_00.json",
+        "public/assets/house_01.json",
         "public/assets/cursors.tsj",
         "public/assets/town_01.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",
         "public/assets/Color A Spitesheet.tsj",
         "public/assets/group.tsj",
-        "public/assets/set.tsj",
-        "public/assets/free.tsj"
+        "public/assets/set.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

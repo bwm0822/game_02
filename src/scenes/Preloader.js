@@ -57,7 +57,7 @@ export class Preloader extends Scene
         this.load.tilemapTiledJSON('town_00', 'town_00.json');
         this.load.tilemapTiledJSON('town_01', 'town_01.json');
         this.load.tilemapTiledJSON('town_02', 'town_02.json');
-        this.load.tilemapTiledJSON('hole', 'hole.json');
+        this.load.tilemapTiledJSON('house_01', 'house_01.json');
 
         this.load.plugin('rexbbcodetextplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexbbcodetextplugin.min.js', true);
         
@@ -71,7 +71,7 @@ export class Preloader extends Scene
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         //this.scene.start('MainMenu');
         //Map.preload(this, ()=>{this.scene.start('MainMenu')});
-        await Map.load(this, ['map','town_00','town_01','town_02','hole']);
+        await Map.load(this, ['map','town_00','town_01','town_02','house_01']);
         this.scene.start('MainMenu')
     }
 }

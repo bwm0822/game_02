@@ -37,7 +37,7 @@ export class Node extends Entity
     async enter()
     {
         console.log('enter',this.id,this.type);
-        this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
+        this.scene.scene.start('GameArea',{id:this.id,map:this.data.get('map')});
     }
 }
 

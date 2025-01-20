@@ -243,8 +243,6 @@ class Map
             scene.objects.push(...objs);
         });
 
-        console.log(this.map)
-
     }
 
     createGraph(diagonal=false)
@@ -333,7 +331,7 @@ class Map
             let tx1 = this.map.worldToTileX(pos.x+w_2);
             let ty1 = this.map.worldToTileX(pos.y+h_2);
 
-            console.log(w,h,'->',tx0,ty0,tx1,ty1,weight)
+            //console.log(w,h,'->',tx0,ty0,tx1,ty1,weight)
 
             for(let tx=tx0;tx<=tx1;tx++)
             {

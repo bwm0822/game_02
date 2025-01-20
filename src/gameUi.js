@@ -18,7 +18,6 @@ export class Mark
     //set visible(value) {this._sp.visible = value;}
     static set visible(value) 
     {
-        if(Mark.instance){console.log('mark',value)}
         Mark.instance&&(Mark.instance._sp.visbile=value);
     }
 
