@@ -28,24 +28,15 @@ export class Game extends Scene
     loadRecord()
     {
         Record.load();// 執行後，其他 scene 不用再執行 Record.load()
-        //new Role.Player('knight').load(Record?.data?.role);
     }
 
     gotoScene() 
     {
-        if(Record.data.map)
-        {
-            let config = {map:Record.data.map}
-            if(Record.data.pos) {config.pos = Record.data.pos;}
-            else {config.id = Record.data.default;}
+        let config = {map:Record.data.map}
+        if(Record.data.pos) {config.pos = Record.data.pos;}
+        else {config.port = Record.data.default;}
 
-            this.scene.start('GameArea',config);
-        }
-        else
-        {
-            //console.log(Record.data.node);
-            this.scene.start('GameMap',{pos:Record.data.pos});
-        }
+        this.scene.start(Record.data.map=='map'?'GameMap':'GameArea',config);
     }
 
 

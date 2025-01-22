@@ -153,29 +153,6 @@
                 {
                  "gid":193,
                  "height":32,
-                 "id":32,
-                 "name":"\u6f01\u4eba\u78bc\u982d",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"\u5165\u53e3"
-                        }, 
-                        {
-                         "name":"map",
-                         "type":"string",
-                         "value":"town_01"
-                        }],
-                 "rotation":0,
-                 "type":"node",
-                 "visible":true,
-                 "width":32,
-                 "x":352,
-                 "y":448
-                }, 
-                {
-                 "gid":193,
-                 "height":32,
                  "id":33,
                  "name":"\u932b\u5b89",
                  "properties":[
@@ -218,6 +195,26 @@
                  "width":32,
                  "x":512,
                  "y":448
+                }, 
+                {
+                 "height":32,
+                 "id":35,
+                 "name":"\u6f01\u4eba\u78bc\u982d",
+                 "properties":[
+                        {
+                         "name":"map",
+                         "type":"string",
+                         "value":"town_01"
+                        }, 
+                        {
+                         "name":"offsetX",
+                         "type":"int",
+                         "value":-32
+                        }],
+                 "template":"templates\/node.tj",
+                 "width":32,
+                 "x":352,
+                 "y":448
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -226,7 +223,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":35,
+ "nextobjectid":36,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

@@ -1,8 +1,7 @@
 { "object":
     {
-     "gid":11,
      "height":32,
-     "id":13,
+     "id":163,
      "name":"",
      "properties":[
             {
@@ -51,14 +50,9 @@
              "value":100
             }],
      "rotation":0,
-     "type":"node",
+     "type":"port",
      "visible":true,
      "width":32
-    },
- "tileset":
-    {
-     "firstgid":1,
-     "source":"..\/icons\/buffs.tsj"
     },
  "type":"template"
 }

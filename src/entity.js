@@ -101,7 +101,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     addListener()
     {
-        this.on('pointerover',()=>{this.outline(true);this.send('over',this.act);})
+        this.on('pointerover',()=>{this.outline(true);this.send('over',this);})
             .on('pointerout',()=>{this.outline(false);this.send('out');})
             .on('pointerdown',(pointer)=>{
                 if (pointer.middleButtonDown())
@@ -120,8 +120,8 @@ export class Entity extends Phaser.GameObjects.Container
 
         if(this._sp)
         {
-            if(on) {this._outline.add(this,{thickness:3,outlineColor:0xffffff});}
-            else {this._outline.remove(this);}
+            if(on) {this._outline.add(this._sp,{thickness:3,outlineColor:0xffffff});}
+            else {this._outline.remove(this._sp);}
         }
         else
         {
@@ -159,7 +159,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     addPhysics()
     {
-        this.setSize(this.displayWidth,this.displayHeight);
+        //this.setSize(this.displayWidth,this.displayHeight);
         this.scene.physics.add.existing(this, true);
         this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
         this.body.setOffset(this.left,this.top);
@@ -188,7 +188,9 @@ export class Entity extends Phaser.GameObjects.Container
         //this.scene.map.updateGrid(this.pos,this.weight,this.width,this.height);
         this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
         
-        //this.debugDraw();
+        this.debugDraw();
+        console.log(this);
+
     }
 
     loadData() {return Record.getByUid(this.mapName,this.uid);}
@@ -201,26 +203,31 @@ export class Entity extends Phaser.GameObjects.Container
         {
             this._dbgGraphics = this.scene.add.graphics();
             this._dbgGraphics.name = 'entity';
+            this._dbgGraphics.setDepth(Infinity);
         }
-        // let w = this.displayWidth;
-        // let h = this.displayHeight;
-        // let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-        // let circle = new Phaser.Geom.Circle(this.x,this.y,5);
-        // this._dbgGraphics.clear();
-        // this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-        // this._dbgGraphics.strokeRectShape(rect)
-        //                 .strokeCircleShape(circle);
 
-        console.log(this.body)
+        if(false)
+        {
+            console.log('draw')
+            let w = this.displayWidth;
+            let h = this.displayHeight;
+            let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
+            let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+            this._dbgGraphics.clear();
+            this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+            this._dbgGraphics.strokeRectShape(rect)
+                            .strokeCircleShape(circle);
+        }
+        else
+        {
+            let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+            let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
 
-
-        let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-        let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
-
-        this._dbgGraphics.clear();
-        this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-        this._dbgGraphics.strokeRectShape(rect)
-                        .strokeCircleShape(circle);
+            this._dbgGraphics.clear();
+            this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+            this._dbgGraphics.strokeRectShape(rect)
+                            .strokeCircleShape(circle);
+        }
 
         
     }
@@ -337,28 +344,60 @@ export class Port extends Entity
     {
         super(scene);
         this.interactive = true;   
-        this.id = '';
+        this.port = '';
         this.map = '';
-        this.acts = ['exit'];        
+        this.acts = ['enter'];        
+        this.offsetX = 0 ;
+        this.offsetY = 0;
+    }
+
+    get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
+
+    init(mapName)
+    {
+        super.init(mapName);
+        if(!this.scene.ports) {this.scene.ports={};}
+        this.scene.ports[this.name] = this;
     }
 
     addListener()
     {
         super.addListener();
-        this.on('exit',()=>{this.exit();})
+        this.on('enter',()=>{this.enter();})
     }
 
-    async exit()
+    async enter()
     {
-        //console.log('exit',this.id,this.type,this.map);
         if(this.map=='map')
         {
-            this.scene.scene.start('GameMap',{id:this.id});
+            this.scene.scene.start('GameMap',{port:this.port,map:this.map});
         }
         else
         {
-            //this.scene.scene.start('GameTown',{id:this.id,map:this.data.get('map')});
-            this.scene.scene.start('GameArea',{id:this.id,map:this.map});
+            console.log(this.port,this.map)
+            this.scene.scene.start('GameArea',{port:this.port,map:this.map});
         }
+    }
+}
+
+export class Node extends Port
+{
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this.weight = 10;
+    }
+
+    addText(label)
+    {
+        let lb = this.scene.add.text(0,-60,label,{fontFamily:'Arial',fontSize:'48px',color:'#000',stroke:'#ff0',strokeThickness:0}).setOrigin(0.5);
+        this.add(lb);
+    }
+
+    init(mapName)
+    {
+        super.init(mapName);
+        this.addText(this.name);
+        console.log('Node');
     }
 }

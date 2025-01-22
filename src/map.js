@@ -1,8 +1,8 @@
 //import {ProgressBar} from './item.js';
-import {Node} from './node.js';
+//import {Node} from './node.js';
 //import {Port} from './port.js';
 import {Store} from './store.js';
-import {Block,Entity,Port,Pickup,Case,Entry} from './entity.js';
+import {Block,Entity,Port,Pickup,Case,Entry,Node} from './entity.js';
 import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
@@ -103,7 +103,7 @@ class Map
                                 let object = Utility.deepClone(template.object);
                                 // 從 tileset 裡找到對應的 tileset，並將 gid 轉換成正確的 gid
                                 map.data.tilesets.forEach(element => {
-                                    if(template.tileset.source.includes(element.source))
+                                    if(template.tileset?.source.includes(element.source))
                                     {
                                         object.gid = element.firstgid + object.gid - 1;
                                     }   
@@ -129,8 +129,8 @@ class Map
                                     });
                                     delete obj.properties;
                                 }
-
-                                layer.objects[index] = {...obj, ...object};
+                              
+                                layer.objects[index] = {...object, ...obj};
                             }
                         });
                     }

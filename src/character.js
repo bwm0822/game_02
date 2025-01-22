@@ -67,8 +67,6 @@ export class Character extends Phaser.GameObjects.Container
         this.setInteractive();
         this.addPhysics();
         this._dialog=DialogDB.get(this.id);
-        console.log('dialog',this._dialog);
-        console.log(this);
     }
 
     addPhysics()

@@ -3,15 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/town_01.json",
+    "activeFile": "public/assets/map.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
-        "public/assets/templates",
         "public/assets",
         ".",
-        "public",
+        "public/assets/roles",
         "public/assets/icons",
-        "public/assets/roles"
+        "public/assets/templates",
+        "public",
+        "public/assets/tiles"
     ],
     "fileStates": {
         "": {
@@ -91,11 +91,11 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 1,
+            "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 216,
-                "y": 273.5
+                "x": 240,
+                "y": 238.66666666666669
             }
         },
         "public/assets/icons/buffs.tsj": {
@@ -122,11 +122,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1,
+            "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 406,
-                "y": 480.5
+                "x": 336.6666666666667,
+                "y": 431
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -200,11 +200,11 @@
             "expandedObjectLayers": [
                 6
             ],
-            "scale": 1.5,
+            "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 669.3333333333333,
-                "y": 729
+                "x": 627,
+                "y": 919.5
             }
         },
         "public/assets/town_01.json#RPG Nature Tileset": {
@@ -223,7 +223,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 320,
-                "y": 441.5
+                "y": 319
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -257,12 +257,12 @@
     "property.type": "string",
     "recentFiles": [
         "public/assets/town_02.json",
-        "public/assets/map.json",
-        "public/assets/icons/buffs.tsj",
-        "public/assets/town_00.json",
         "public/assets/house_01.json",
         "public/assets/cursors.tsj",
         "public/assets/town_01.json",
+        "public/assets/town_00.json",
+        "public/assets/icons/buffs.tsj",
+        "public/assets/map.json",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/spr_tileset_sunnysideworld.tsj",
         "public/assets/Color A Spitesheet.tsj",

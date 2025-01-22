@@ -102,7 +102,7 @@
                  "visible":true,
                  "width":139,
                  "x":576,
-                 "y":864
+                 "y":832
                 }, 
                 {
                  "id":31,
@@ -160,90 +160,49 @@
                  "y":448
                 }, 
                 {
-                 "height":32,
-                 "id":158,
-                 "name":"",
+                 "height":40,
+                 "id":164,
+                 "name":"\u9580",
                  "properties":[
                         {
-                         "name":"id",
-                         "type":"string",
-                         "value":"\u6f01\u4eba\u78bc\u982d"
+                         "name":"offsetY",
+                         "type":"int",
+                         "value":32
                         }, 
+                        {
+                         "name":"top",
+                         "type":"int",
+                         "value":8
+                        }],
+                 "template":"templates\/port.tj",
+                 "width":32,
+                 "x":608,
+                 "y":792
+                }, 
+                {
+                 "height":32,
+                 "id":165,
+                 "name":"\u5165\u53e3",
+                 "properties":[
                         {
                          "name":"map",
                          "type":"string",
                          "value":"map"
                         }, 
                         {
-                         "name":"outline_en",
-                         "type":"bool",
-                         "value":false
+                         "name":"offsetY",
+                         "type":"int",
+                         "value":-32
                         }, 
                         {
-                         "name":"weight",
-                         "type":"int",
-                         "value":10
+                         "name":"port",
+                         "type":"string",
+                         "value":"\u6f01\u4eba\u78bc\u982d"
                         }],
-                 "rotation":0,
-                 "type":"port",
-                 "visible":true,
+                 "template":"templates\/port.tj",
                  "width":1280,
                  "x":0,
                  "y":928
-                }, 
-                {
-                 "height":32,
-                 "id":159,
-                 "name":"\u5165\u53e3",
-                 "rotation":0,
-                 "type":"entry",
-                 "visible":true,
-                 "width":32,
-                 "x":512,
-                 "y":896
-                }, 
-                {
-                 "height":40,
-                 "id":160,
-                 "name":"\u9580",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"\u5165\u53e3"
-                        }, 
-                        {
-                         "name":"map",
-                         "type":"string",
-                         "value":"house_01"
-                        }, 
-                        {
-                         "name":"top",
-                         "type":"int",
-                         "value":8
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":100
-                        }],
-                 "rotation":0,
-                 "type":"port",
-                 "visible":true,
-                 "width":32,
-                 "x":608,
-                 "y":824
-                }, 
-                {
-                 "height":32,
-                 "id":162,
-                 "name":"\u9580",
-                 "rotation":0,
-                 "type":"entry",
-                 "visible":true,
-                 "width":32,
-                 "x":608,
-                 "y":864
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -263,7 +222,7 @@
          "y":0
         }],
  "nextlayerid":8,
- "nextobjectid":163,
+ "nextobjectid":166,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
