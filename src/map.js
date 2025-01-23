@@ -2,7 +2,7 @@
 //import {Node} from './node.js';
 //import {Port} from './port.js';
 import {Store} from './store.js';
-import {Block,Entity,Port,Pickup,Case,Entry,Node} from './entity.js';
+import {Entity,Port,Pickup,Case,Node} from './entity.js';
 import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
@@ -13,10 +13,10 @@ import {astar, Graph} from './astar.js';
 
 class Map
 {
-    constructor(scene, mapName, diagonal)
+    constructor(scene, mapName, diagonal, weight)
     {
         scene.map = this;
-        this.createMap(scene, mapName, diagonal);
+        this.createMap(scene, mapName, diagonal, weight);
     }
 
     static load(scene, maps)
@@ -50,7 +50,8 @@ class Map
                         layer.objects.forEach((obj) => {
                             if(obj.template)    // 載入 template(*.tj) 的資料到 cache 裡
                             {
-                                //console.log(`load[${obj.template}]`);
+                                obj.template = obj.template.replace('../','');
+                                console.log(`load[${obj.template}]`);
                                 scene.load.json(obj.template, obj.template);
                             }
                         });
@@ -63,12 +64,15 @@ class Map
                 map.data.tilesets.forEach((tile) => {
                     if(tile.image)  // 載入 tileset(*.png) 的資料
                     {
-                        //console.log(`load[${tile.image}]`);
+                        console.log(`load[${tile.image}]`);
+                        tile.image = tile.image.replace('../','');
+                        console.log(`load[${tile.image}]`);
                         scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
                     }
                     else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
                     {
-                        //console.log(`load[${tile.source}]`);
+                        tile.source = tile.source.replace('../','');
+                        console.log(`load[${tile.source}]`);
                         scene.load.json(tile.source, tile.source);
                     } 
                 });
@@ -184,7 +188,7 @@ class Map
     }
 
 
-    createMap(scene, mapName, diagonal)
+    createMap(scene, mapName, diagonal, weight)
     {
         let lut = scene.cache.tilemap.get(mapName).lut;
 
@@ -209,7 +213,7 @@ class Map
             map.createLayer(layer.name, tilesets, 0, 0);    
         });
 
-        this.createGraph(diagonal);
+        this.createGraph(diagonal, weight);
 
         scene.objects = [];
 
@@ -230,8 +234,6 @@ class Map
             [
                 {type:'node',classType:Node},
                 {type:'port',classType:Port},
-                {type:'entry',classType:Entry},
-                {type:'block',classType:Block},
                 {type:'store',classType:Store},
                 {type:'character',classType:Character},
                 {type:'entity',classType:Entity},
@@ -245,7 +247,7 @@ class Map
 
     }
 
-    createGraph(diagonal=false)
+    createGraph(diagonal=false,weight=1)
     {
         let map = this.map;
 
@@ -253,7 +255,7 @@ class Map
         for (let y = 0; y < map.height; y++) 
         {
             let row = [];
-            for (let x = 0; x < map.width; x++) {row.push(1);}
+            for (let x = 0; x < map.width; x++) {row.push(weight);}
             grid.push(row);
         }
 
@@ -303,7 +305,7 @@ class Map
         {
             let result = astar.search(this.graph, start, end);
             let len = result.length;
-            if(len>=2 && result[len-2].g>=1000)
+            if(len==0 || (len>=2 && result[len-2].g>=1000))
             {
                 return {valid:false,pt:pt}
             }

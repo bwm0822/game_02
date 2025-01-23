@@ -17,7 +17,7 @@ export class GameScene extends Scene
 
     init(data) {this._data = data;}
 
-    create ({diagonal,classType})
+    create ({diagonal,classType,weight})
     {
         this._dbgPos = null;
         this._graphics = null;
@@ -31,7 +31,7 @@ export class GameScene extends Scene
         this.uiEvent();
         this.initUI();
 
-        new Map(this, this._data.map, diagonal);
+        new Map(this, this._data.map, diagonal, weight);
 
         this.setPosition(classType);
         this.processInput();
@@ -60,7 +60,6 @@ export class GameScene extends Scene
     setPosition(classType)
     {
         let pos;
-        console.log(this.ports,this._data.port)
         if(this._data.pos) {pos = this._data.pos}
         else {pos = this.ports[this._data.port].pt;}
 
@@ -109,12 +108,11 @@ export class GameScene extends Scene
         })
         .on('pointermove',(pointer)=>{
             this.showMousePos();
-            this.dbg();
+            //this.dbg();
             //console.log('map',pointer.x.toFixed(0),pointer.y.toFixed(0),',',pointer.worldX.toFixed(0),pointer.worldY.toFixed(0))
 
             if(!this._avatar.moving)
             {
-                console.log('chk2');
                 let pos = this._ent ? this._ent.pos : {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pos);
             }
@@ -132,7 +130,6 @@ export class GameScene extends Scene
             if(rst.valid)
             {
                 this.drawPath(rst.path);
-                //if(this._act=='go') {Mark.show(rst.pt,UI.COLOR_WHITE);}
                 if(!this._ent) {Mark.show(rst.pt,UI.COLOR_WHITE);}
                 else {Mark.close();}
             }
@@ -157,20 +154,17 @@ export class GameScene extends Scene
         }
         this._dbgPath.clear();
         path.forEach((node,i)=>{
-            //if(node.act=='go')
             if(i<path.length-1)
             {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 2);
+                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
                 this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
             }
         })
     }
 
 
-    home()
+    menu()
     {
-        console.log('home');
-        //Record.data.role = Role.Player.role.record();
         Record.data.pos = this._avatar.pos;   
         Role.Player.save();
         Record.save();
@@ -221,7 +215,7 @@ export class GameScene extends Scene
 
         const ui = this.scene.get('UI');
         ui.events
-            .off('home').on('home', ()=>{this.home();})
+            .off('menu').on('menu', ()=>{this.menu();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
 

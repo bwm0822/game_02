@@ -12,6 +12,6 @@ export class GameMap extends GameScene
 
     create()
     {
-        super.create({diagonal:false,classType:Role.Target});
+        super.create({diagonal:false,classType:Role.Target,weight:0});
     }
 }

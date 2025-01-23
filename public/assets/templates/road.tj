@@ -1,0 +1,18 @@
+{ "object":
+    {
+     "height":32,
+     "id":36,
+     "name":"",
+     "properties":[
+            {
+             "name":"weight",
+             "type":"int",
+             "value":1
+            }],
+     "rotation":0,
+     "type":"entity",
+     "visible":true,
+     "width":32
+    },
+ "type":"template"
+}

@@ -891,7 +891,7 @@ export class UiMain extends Sizer
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}),'bg')
             .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
-            .add(new UiButton(scene,{text:'離\n開',onclick:this.home.bind(this)}))
+            .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
             .size()
             .hide();
         
@@ -905,10 +905,10 @@ export class UiMain extends Sizer
         UiInv.show(Role.Player.data);
     }
 
-    home()
+    menu()
     {
         this.hide();
-        this.scene.events.emit('home');
+        this.scene.events.emit('menu');
     }
 
     addListener()

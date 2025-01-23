@@ -1329,7 +1329,7 @@ export class Role extends Entity
                         .lineStyle(3, 0x00ff00)
                         //.strokeRectShape(this.getBounds())
                         //.lineStyle(1, 0xff0000)
-                        //.strokeRectShape(rect)
+                        .strokeRectShape(rect)
                         //.lineStyle(3, 0x00fff00)
                         .strokeCircleShape(circle);
     }
@@ -1341,6 +1341,7 @@ export class Target extends Role
     {
         super(scene, x, y);
         this.addSprite();
+        this.updateDepth();
         this.loop();
     }
 
@@ -1348,6 +1349,20 @@ export class Target extends Role
     {
         let [key,frame]=ICON_TARGET.split('/');
         this.setTexture(key,frame);
+    }
+
+    setTexture(key,frame)   // map.createFromObjects 會呼叫到
+    {
+        //console.log(key,frame);
+        let sp = this.scene.add.sprite(0,0,key,frame).setScale(0.5);
+        this.setSize(sp.displayWidth,sp.displayWidth);
+        this.add(sp);
+        this._sp = sp;
+    }
+
+    updateDepth()
+    {
+        this.setDepth(Infinity);
     }
 
     async loop()

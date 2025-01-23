@@ -1,0 +1,14 @@
+{ "columns":12,
+ "image":"tiles\/Overworld_Tileset_32x32\/0_Ground_LowSat.png",
+ "imageheight":416,
+ "imagewidth":384,
+ "margin":0,
+ "name":"0_Ground_LowSat",
+ "spacing":0,
+ "tilecount":156,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

@@ -1,71 +1,5 @@
 import Record from './record.js'
 
-export class Block extends Phaser.GameObjects.Container
-{
-    constructor(scene, x, y)
-    {
-        super(scene, x, y);
-        this.scene = scene;
-        scene.add.existing(this);
-        this.left=0;
-        this.right=0;
-        this.top=0;
-        this.bottom=0;        
-    }
-
-    set displayWidth(value) {this.width = value;}
-    set displayHeight(value) {this.height = value;}
-    get displayWidth() {return this.width;}
-    get displayHeight() {return this.height;}
-
-    setTexture(key,frame) {}  // map.createFromObjects 會呼叫到
-
-    setFlip(){} // map.createFromObjects 會呼叫到
-
-    addPhysics()
-    {
-        this.scene.physics.add.existing(this, true);
-        this.body.setSize(this.width-this.left-this.right,this.height-this.top-this.bottom);
-        this.body.setOffset(this.left,this.top);
-        this.scene.groupStatic.add(this);
-    }
-
-    updateDepth()
-    {
-        let depth = this.y + this.height/2 - this.bottom;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
-    }
-
-    init()
-    {
-        //console.log('block')
-        this.addPhysics();
-        this.updateDepth();
-        //this.debugDraw();
-    }
-
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'entity';
-        }
-        let w = this.width;
-        let h = this.height;
-        let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-        let circle = new Phaser.Geom.Circle(this.x,this.y,5);
-        this._dbgGraphics.clear();
-        this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-        this._dbgGraphics.strokeRectShape(rect)
-                        .strokeCircleShape(circle);
-    }
-
-    
-}
-
-
 export class Entity extends Phaser.GameObjects.Container
 {
     constructor(scene, x, y)
@@ -80,7 +14,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.outline_en = true;
         this.acts = [];
         this.weight = 0;
-        this.uid = 0;
+        this.uid = 0;   // map.createMap() 會自動設定 uid
     }
 
     get pos()   {return {x:this.x,y:this.y}}
@@ -155,7 +89,11 @@ export class Entity extends Phaser.GameObjects.Container
         }
     }
 
-    setFlip(){} // map.createFromObjects 會呼叫到
+    setFlip(horizontal,vertical)// map.createFromObjects 會呼叫到
+    {
+        this._sp&&(this._sp.flipX=horizontal);
+        this._sp&&(this._sp.flipY=vertical);
+    } 
 
     addPhysics()
     {
@@ -185,11 +123,9 @@ export class Entity extends Phaser.GameObjects.Container
         this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
-        //this.scene.map.updateGrid(this.pos,this.weight,this.width,this.height);
         this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
         
-        this.debugDraw();
-        console.log(this);
+        //this.debugDraw();
 
     }
 
@@ -368,15 +304,7 @@ export class Port extends Entity
 
     async enter()
     {
-        if(this.map=='map')
-        {
-            this.scene.scene.start('GameMap',{port:this.port,map:this.map});
-        }
-        else
-        {
-            console.log(this.port,this.map)
-            this.scene.scene.start('GameArea',{port:this.port,map:this.map});
-        }
+        this.scene.scene.start(this.map=='map'?'GameMap':'GameArea',{port:this.port,map:this.map});
     }
 }
 
@@ -390,7 +318,7 @@ export class Node extends Port
 
     addText(label)
     {
-        let lb = this.scene.add.text(0,-60,label,{fontFamily:'Arial',fontSize:'48px',color:'#000',stroke:'#ff0',strokeThickness:0}).setOrigin(0.5);
+        let lb = this.scene.add.text(0,-30,label,{fontFamily:'Arial',fontSize:'24px',color:'#000',stroke:'#ff0',strokeThickness:0}).setOrigin(0.5);
         this.add(lb);
     }
 
@@ -398,6 +326,5 @@ export class Node extends Port
     {
         super.init(mapName);
         this.addText(this.name);
-        console.log('Node');
     }
 }

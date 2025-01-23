@@ -3,15 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/map.json",
+    "activeFile": "public/assets/maps/map.json",
     "expandedProjectPaths": [
-        "public/assets",
         ".",
-        "public/assets/roles",
-        "public/assets/icons",
+        "public/assets/tiles",
         "public/assets/templates",
         "public",
-        "public/assets/tiles"
+        "public/assets/icons",
+        "public/assets/maps",
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -21,7 +21,23 @@
         "#buffs": {
             "scaleInEditor": 1
         },
+        "public/assets/0_Ground_LowSat.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/3_Road.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/4_Smallplaces.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/Color A Spitesheet.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -49,6 +65,11 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "public/assets/catographt.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.33,
+            "scaleInEditor": 1
+        },
         "public/assets/cursors.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -70,7 +91,7 @@
         },
         "public/assets/group.tsj": {
             "dynamicWrapping": true,
-            "scaleInDock": 1,
+            "scaleInDock": 0.33,
             "scaleInEditor": 1
         },
         "public/assets/hole.json": {
@@ -94,8 +115,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 240,
-                "y": 238.66666666666669
+                "x": 248.66666666666666,
+                "y": 278
             }
         },
         "public/assets/icons/buffs.tsj": {
@@ -125,8 +146,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 336.6666666666667,
-                "y": 431
+                "x": 337,
+                "y": 349
             }
         },
         "public/assets/map.json#RPG Nature Tileset": {
@@ -144,6 +165,79 @@
                 "y": 320.64777327935224
             }
         },
+        "public/assets/map.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.125,
+            "scaleInEditor": 1
+        },
+        "public/assets/maps/cursors.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/dirtpath_tiles.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/maps/group.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/icons/buffs.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/map.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 238.33333333333337,
+                "y": 947
+            }
+        },
+        "public/assets/maps/map.json#RPG Nature Tileset": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/map.json#catographt": {
+            "scaleInEditor": 1
+        },
+        "public/assets/maps/map.json#terrain_tiles_v2": {
+            "scaleInDock": 1
+        },
+        "public/assets/maps/roles_v12.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/terrain_tiles_v2.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "public/assets/maps/town_01.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 382.5,
+                "y": 1145.5
+            }
+        },
+        "public/assets/maps/town_01.json#RPG Nature Tileset": {
+            "dynamicWrapping": false,
+            "scaleInEditor": 1
+        },
+        "public/assets/maps/town_01.json#fence_tiles": {
+            "dynamicWrapping": false,
+            "scaleInEditor": 1
+        },
+        "public/assets/parchment.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 0.0625,
+            "scaleInEditor": 1
+        },
         "public/assets/roles_v12.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
@@ -154,11 +248,26 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "public/assets/spr_fencePost.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/spr_tileset_sunnysideworld.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "public/assets/spritesheet_default.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/terrain_tiles_v2.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/tiles.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -197,14 +306,11 @@
             "scaleInEditor": 1
         },
         "public/assets/town_01.json": {
-            "expandedObjectLayers": [
-                6
-            ],
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 627,
-                "y": 919.5
+                "x": 331,
+                "y": 614.5
             }
         },
         "public/assets/town_01.json#RPG Nature Tileset": {
@@ -222,8 +328,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 320,
-                "y": 319
+                "x": 328,
+                "y": 899.5
             }
         },
         "public/assets/town_02.json#spr_tileset_sunnysideworld": {
@@ -235,46 +341,42 @@
             "scaleInEditor": 1
         }
     },
-    "last.imagePath": "C:/Personal/projects/web/game_01/public/assets/icons",
+    "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/textures/parchment",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
-    "map.height": 20,
+    "map.height": 32,
     "map.lastUsedFormat": "json",
     "map.layerDataFormat": "1",
     "map.tileHeight": 32,
     "map.tileWidth": 32,
-    "map.width": 20,
+    "map.width": 32,
     "openFiles": [
-        "public/assets/town_02.json",
-        "public/assets/map.json",
-        "public/assets/icons/buffs.tsj",
-        "public/assets/town_00.json",
-        "public/assets/town_01.json",
-        "public/assets/cursors.tsj",
-        "public/assets/house_01.json"
+        "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
-        "public/assets/town_02.json",
-        "public/assets/house_01.json",
-        "public/assets/cursors.tsj",
+        "public/assets/maps/map.json",
+        "public/assets/maps/town_01.json",
+        "public/assets/parchment.tsj",
+        "public/assets/map.tsj",
+        "public/assets/catographt.tsj",
+        "public/assets/spritesheet_default.tsj",
+        "public/assets/3_Road.tsj",
+        "public/assets/4_Smallplaces.tsj",
+        "public/assets/0_Ground_LowSat.tsj",
         "public/assets/town_01.json",
-        "public/assets/town_00.json",
-        "public/assets/icons/buffs.tsj",
-        "public/assets/map.json",
-        "public/assets/terrain_tiles_v2.tsj",
-        "public/assets/spr_tileset_sunnysideworld.tsj",
-        "public/assets/Color A Spitesheet.tsj",
-        "public/assets/group.tsj",
-        "public/assets/set.tsj"
+        "public/assets/tiles.tsj",
+        "public/assets/town_02.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
+    "tileset.lastUsedFilter": "JSON tileset files (*.tsj *.json)",
     "tileset.lastUsedFormat": "json",
     "tileset.tileSize": {
         "height": 32,
         "width": 32
     },
-    "tileset.type": 0
+    "tileset.type": 1
 }

@@ -1,0 +1,14 @@
+{ "columns":21,
+ "image":"32rogues\/tiles.png",
+ "imageheight":768,
+ "imagewidth":672,
+ "margin":0,
+ "name":"tiles",
+ "spacing":0,
+ "tilecount":504,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}
