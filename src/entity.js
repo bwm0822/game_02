@@ -11,8 +11,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.enableOutline();
         //this.addListener();
         this.left=0,this.right=0,this.top=0,this.bottom=0;
-        this.sL=0,this.sR=0,this.sT=0,this.sB=0;    // for size
-        this.wL=0,this.wR=0,this.wT=0,this.wB=0;    // for weight
+        this.bl=0,this.br=0,this.bt=0,this.bb=0;
+        this.gl=0,this.gr=0,this.gt=0,this.gb=0;
         this.wBound={}
         this.interactive = false;
         this.outline_en = true;
@@ -24,10 +24,15 @@ export class Entity extends Phaser.GameObjects.Container
     get pos()   {return {x:this.x,y:this.y}}
     get act()   {return this.acts[0];}
 
-    set displayWidth(value) {this.width==0&&(this.width=value);super.displayWidth=value;} 
-    set displayHeight(value) {this.height==0&&(this.height=value);super.displayHeight=value;}
-    get displayWidth() {return super.displayWidth;}
-    get displayHeight() {return super.displayHeight;}
+    // set displayWidth(value) {this._w=value;this.width==0&&(this.width=value);super.displayWidth=value;} 
+    // set displayHeight(value) {this._h=value;this.height==0&&(this.height=value);super.displayHeight=value;}
+    // get displayWidth() {return super.displayWidth;}
+    // get displayHeight() {return super.displayHeight;}
+
+    set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
+    set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
+    get displayWidth() {return this._w;}
+    get displayHeight() {return this._h;}
 
     enableOutline()
     {
@@ -38,6 +43,8 @@ export class Entity extends Phaser.GameObjects.Container
     setPosition(x,y)
     {
         console.log(x,y)
+        this._x=x;
+        this._y=y;
         super.setPosition(x,y)
     }
 
@@ -115,7 +122,7 @@ export class Entity extends Phaser.GameObjects.Container
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
             this.add(sp);
-            this.setSize(sp.width,sp.height);
+            //this.setSize(sp.width,sp.height);
             this._sp = sp;
         }
     }
@@ -130,23 +137,25 @@ export class Entity extends Phaser.GameObjects.Container
     {
         //this.setSize(this.displayWidth,this.displayHeight);
         this.scene.physics.add.existing(this, true);
-        //this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
-        //this.body.setOffset(this.left,this.top);
-        this.body.setSize(this.displayWidth-this.sL-this.sR,this.displayHeight-this.sT-this.sB);
-        this.body.setOffset(this.sL,this.sT);
+        // this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
+        // this.body.setOffset(this.left,this.top);
+        //this.body.setSize(this.displayWidth-this.bl-this.br,this.displayHeight-this.bt-this.bb);
+        this.body.setSize(this._w-this.bl-this.br,this._h-this.bt-this.bb);
+        this.body.setOffset(this.bl,this.bt);
+        //this.body.setOffset(0,0);
+
+        console.log(this.displayWidth,this.displayHeight)
     }
 
-
-    addRect()
+    addGrid()
     {
-        this.bound={}
-    }
-
-    setWBound()
-    {
-        this.wBound.width=this.displayWidth-this.wL-this.wR;
-        this.wBound.height=this.displayWidth-this.wT-this.wB;
-        this.wBound.x
+        this.grid={};
+        // this.grid.w = this.displayWidth-this.gl-this.gr;
+        // this.grid.h = this.displayHeight-this.gt-this.gb;
+        this.grid.w = this._w-this.gl-this.gr;
+        this.grid.h = this._h-this.gt-this.gb;
+        this.grid.x = (this.gl-this.gr)/2;
+        this.grid.y = (this.gt-this.gb)/2;
     }
 
     updateDepth()
@@ -169,9 +178,37 @@ export class Entity extends Phaser.GameObjects.Container
         this.addListener();
         //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
+        this.addGrid();
         this.updateDepth();
-        this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
+        //this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
         
+        
+        if(this.data)
+        {
+            let ax = this.data.get('anchorX');
+            let ay = this.data.get('anchorY');
+            
+            // let dx = this.displayWidth/2-ax;
+            // let dy = this.displayHeight/2-ay;
+            let dx = this._w/2-ax;
+            let dy = this._h/2-ay;
+
+            this.x-=dx;
+            this.y-=-dy;
+
+            this.grid.x+=dx;
+            this.grid.y+=-dy;
+
+            this._sp.x+=dx;
+            this._sp.y+=-dy;
+
+            console.log(ax,ay);
+        }
+
+        let p = {x:this.x+this.grid.x, y:this.y+this.grid.y}
+        console.log(p,this.weight)
+        this.scene.map.updateGrid(p,this.weight,this.grid.w,this.grid.h);
+
         this.debugDraw();
 
         console.log(this);
@@ -190,27 +227,69 @@ export class Entity extends Phaser.GameObjects.Container
             this._dbgGraphics.setDepth(Infinity);
         }
 
-        if(true)
-        {
-            let w = this.displayWidth;
-            let h = this.displayHeight;
-            let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-            let circle = new Phaser.Geom.Circle(this.x,this.y,5);
-            this._dbgGraphics.clear();
-            this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-            this._dbgGraphics.strokeRectShape(rect)
-                            .strokeCircleShape(circle);
-        }
-        else
-        {
-            let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-            let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+        let type = 'grid';
+        let rect, circle;
 
-            this._dbgGraphics.clear();
-            this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-            this._dbgGraphics.strokeRectShape(rect)
-                            .strokeCircleShape(circle);
+        switch(type)
+        {
+            case 'body':
+                rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+                circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+                break;
+            case 'grid':
+                let w_2 = this.grid.w/2;
+                let h_2 = this.grid.h/2;
+                let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
+                rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
+                //circle = new Phaser.Geom.Circle(c.x,c.y,5);
+                circle = new Phaser.Geom.Circle(this.x,this.y,5);
+                break;
+            default:
+                rect = new Phaser.Geom.Rectangle(this.x-this.width/2,this.y-this.height/2,this.width,this.height);
+                circle = new Phaser.Geom.Circle(this.x,this.y,5);
+
         }
+       
+        this._dbgGraphics.clear();
+        this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+        this._dbgGraphics.strokeRectShape(rect)
+                        .strokeCircleShape(circle);
+
+        // if(type=='size')
+        // {
+        //     let w = this.displayWidth;
+        //     let h = this.displayHeight;
+        //     let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
+        //     let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+        //     this._dbgGraphics.clear();
+        //     this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+        //     this._dbgGraphics.strokeRectShape(rect)
+        //                     .strokeCircleShape(circle);
+        // }
+        // else if(type == 'body')
+        // {
+        //     let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+        //     let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+
+        //     this._dbgGraphics.clear();
+        //     this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+        //     this._dbgGraphics.strokeRectShape(rect)
+        //                     .strokeCircleShape(circle);
+        // }
+        // else
+        // {
+        //     let w_2 = this.grid.w/2;
+        //     let h_2 = this.grid.h/2;
+        //     let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
+        //     let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
+        //     //let circle = new Phaser.Geom.Circle(c.x,c.y,5);
+        //     let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+
+        //     this._dbgGraphics.clear();
+        //     this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+        //     this._dbgGraphics.strokeRectShape(rect)
+        //                     .strokeCircleShape(circle);
+        // }
 
         
     }

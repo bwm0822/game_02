@@ -55,20 +55,56 @@
                          "value":"\u5c0f\u6751\u838a"
                         }],
                  "template":"..\/templates\/port.tj",
-                 "x":448,
+                 "x":256,
                  "y":1248
                 }, 
                 {
                  "gid":164,
-                 "height":193,
+                 "height":96,
                  "id":5,
-                 "name":"",
+                 "name":"\u623f\u5b50",
+                 "properties":[
+                        {
+                         "name":"anchorX",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"bl",
+                         "type":"int",
+                         "value":10
+                        }, 
+                        {
+                         "name":"bt",
+                         "type":"int",
+                         "value":10
+                        }, 
+                        {
+                         "name":"gt",
+                         "type":"int",
+                         "value":32
+                        }, 
+                        {
+                         "name":"interactive",
+                         "type":"bool",
+                         "value":true
+                        }, 
+                        {
+                         "name":"weight",
+                         "type":"int",
+                         "value":10
+                        }],
                  "rotation":0,
                  "type":"entity",
                  "visible":true,
-                 "width":139,
-                 "x":576,
-                 "y":672
+                 "width":96,
+                 "x":256,
+                 "y":1184
                 }, 
                 {
                  "id":6,

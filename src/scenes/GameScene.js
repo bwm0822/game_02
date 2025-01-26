@@ -181,7 +181,10 @@ export class GameScene extends Scene
 
         let x = this.input.activePointer.worldX;
         let y = this.input.activePointer.worldY;
-        this._dbgPos.setPosition(x+20,y).setText(x.toFixed(0)+','+y.toFixed(0));
+        let w = this.map.getWeight({x:x,y:y});
+        let text = `${x.toFixed(0)},${y.toFixed(0)},(${w})`;
+        //this._dbgPos.setPosition(x+20,y).setText(x.toFixed(0)+','+y.toFixed(0));
+        this._dbgPos.setPosition(x+20,y).setText(text);
     }
 
     dbg()
