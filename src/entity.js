@@ -5,11 +5,15 @@ export class Entity extends Phaser.GameObjects.Container
     constructor(scene, x, y)
     {
         super(scene, x, y);
+        console.log(x,y);
         this.scene = scene;
         scene.add.existing(this);
         this.enableOutline();
-        this.addListener();
+        //this.addListener();
         this.left=0,this.right=0,this.top=0,this.bottom=0;
+        this.sL=0,this.sR=0,this.sT=0,this.sB=0;    // for size
+        this.wL=0,this.wR=0,this.wT=0,this.wB=0;    // for weight
+        this.wBound={}
         this.interactive = false;
         this.outline_en = true;
         this.acts = [];
@@ -31,21 +35,48 @@ export class Entity extends Phaser.GameObjects.Container
         this.on('outline', (on) => {this.outline(on);})
     }
 
+    setPosition(x,y)
+    {
+        console.log(x,y)
+        super.setPosition(x,y)
+    }
+
     send(type, ...args) {this.scene.events.emit(type, ...args);}
 
     addListener()
     {
-        this.on('pointerover',()=>{this.outline(true);this.send('over',this);})
-            .on('pointerout',()=>{this.outline(false);this.send('out');})
-            .on('pointerdown',(pointer)=>{
-                if (pointer.middleButtonDown())
-                {
-                    // world space to screen space
-                    let x = this.x - this.scene.cameras.main.worldView.x;
-                    let y = this.y - this.scene.cameras.main.worldView.y;
-                    this.send('option',x,y-10,this.acts,this);
-                }
-            })
+        if(this._sp)
+        {
+            console.log('chk1')
+            this.interactive&&this._sp.setInteractive()
+            this._sp.on('pointerover',()=>{this.outline(true);this.send('over',this);})
+                    .on('pointerout',()=>{this.outline(false);this.send('out');})
+                    .on('pointerdown',(pointer)=>{
+                        if (pointer.middleButtonDown())
+                        {
+                            // world space to screen space
+                            let x = this.x - this.scene.cameras.main.worldView.x;
+                            let y = this.y - this.scene.cameras.main.worldView.y;
+                            this.send('option',x,y-10,this.acts,this);
+                        }
+                    })
+        }
+        else
+        {
+            console.log('chk2')
+            this.interactive&&this.setInteractive()
+            this.on('pointerover',()=>{this.outline(true);this.send('over',this);})
+                .on('pointerout',()=>{this.outline(false);this.send('out');})
+                .on('pointerdown',(pointer)=>{
+                    if (pointer.middleButtonDown())
+                    {
+                        // world space to screen space
+                        let x = this.x - this.scene.cameras.main.worldView.x;
+                        let y = this.y - this.scene.cameras.main.worldView.y;
+                        this.send('option',x,y-10,this.acts,this);
+                    }
+                })
+        }
     }
 
     outline(on)
@@ -99,8 +130,23 @@ export class Entity extends Phaser.GameObjects.Container
     {
         //this.setSize(this.displayWidth,this.displayHeight);
         this.scene.physics.add.existing(this, true);
-        this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
-        this.body.setOffset(this.left,this.top);
+        //this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
+        //this.body.setOffset(this.left,this.top);
+        this.body.setSize(this.displayWidth-this.sL-this.sR,this.displayHeight-this.sT-this.sB);
+        this.body.setOffset(this.sL,this.sT);
+    }
+
+
+    addRect()
+    {
+        this.bound={}
+    }
+
+    setWBound()
+    {
+        this.wBound.width=this.displayWidth-this.wL-this.wR;
+        this.wBound.height=this.displayWidth-this.wT-this.wB;
+        this.wBound.x
     }
 
     updateDepth()
@@ -120,13 +166,15 @@ export class Entity extends Phaser.GameObjects.Container
     init(mapName)
     {
         this.mapName = mapName;
-        this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
+        this.addListener();
+        //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.updateDepth();
         this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
         
-        //this.debugDraw();
+        this.debugDraw();
 
+        console.log(this);
     }
 
     loadData() {return Record.getByUid(this.mapName,this.uid);}
@@ -142,9 +190,8 @@ export class Entity extends Phaser.GameObjects.Container
             this._dbgGraphics.setDepth(Infinity);
         }
 
-        if(false)
+        if(true)
         {
-            console.log('draw')
             let w = this.displayWidth;
             let h = this.displayHeight;
             let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
@@ -326,5 +373,6 @@ export class Node extends Port
     {
         super.init(mapName);
         this.addText(this.name);
+        this.debugDraw();
     }
 }

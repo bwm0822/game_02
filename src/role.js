@@ -22,6 +22,7 @@ const ICON_SHIELD = 'buffs/32';
 const ICON_POISON = 'buffs/33';
 const ICON_TARGET = 'buffs/20';
 const ICON_AVATAR = 'role/0';
+//const ICON_AVATAR = 'rogues/1';
 const ICON_ENEMY = 'role/1';
 
 // export class Role_old extends Phaser.GameObjects.Container
@@ -1321,9 +1322,10 @@ export class Role extends Entity
             console.log('debugDraw');
             this._dbgGraphics = this.scene.add.graphics();
             this._dbgGraphics.name = 'Role';
+            this._dbgGraphics.setDepth(Infinity);
         }
 
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
+        let circle = new Phaser.Geom.Circle(this.x, this.y, 5);
         let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
         this._dbgGraphics.clear()
                         .lineStyle(3, 0x00ff00)
@@ -1396,6 +1398,8 @@ export class Avatar extends Role
         this.updateDepth();
         this.addWeight();
         this.addToRoleList();
+        this.debugDraw();
+        console.log(this)
     }
 
     addSprite()
@@ -1462,3 +1466,34 @@ export class Npc extends Role
     }
 }
 
+
+
+export class Role_T extends Phaser.GameObjects.Container
+{
+    constructor(scene,x,y)
+    {
+        console.log('Role_T');
+        super(scene,x,y);
+
+        let r = scene.add.rectangle(0,0,10,20,0xffffff);
+        this.add(r);
+
+
+        // body(96)
+        let [key,frame] = 'items1/97'.split('/');
+        let body = scene.add.sprite(0,0,key,frame);
+        this.add(body);
+        // head(120)
+        [key,frame] = 'items1/121'.split('/');
+        let head = scene.add.sprite(0,-20,key,frame);
+        this.add(head);
+        // foot(112)
+        [key,frame] = 'items1/113'.split('/');
+        let foot = scene.add.sprite(0,16,key,frame);
+        this.add(foot);
+
+        this.setDepth(Infinity);
+        scene.add.existing(this);
+        console.log(this);
+    }
+}

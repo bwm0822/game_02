@@ -3,15 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/map.json",
+    "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        ".",
-        "public/assets/tiles",
-        "public/assets/templates",
         "public",
         "public/assets/icons",
+        "public/assets/tiles",
+        "public/assets",
+        "public/assets/templates",
         "public/assets/maps",
-        "public/assets"
+        "."
     ],
     "fileStates": {
         "": {
@@ -192,8 +192,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 238.33333333333337,
-                "y": 947
+                "x": 293.99999999999994,
+                "y": 835
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -232,6 +232,14 @@
         "public/assets/maps/town_01.json#fence_tiles": {
             "dynamicWrapping": false,
             "scaleInEditor": 1
+        },
+        "public/assets/maps/village_01.json": {
+            "scale": 0.63234375,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 387.44749196935993,
+                "y": 701.3590313812701
+            }
         },
         "public/assets/parchment.tsj": {
             "dynamicWrapping": false,
@@ -352,12 +360,16 @@
     "map.tileWidth": 32,
     "map.width": 32,
     "openFiles": [
-        "public/assets/maps/map.json"
+        "public/assets/maps/map.json",
+        "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "int",
     "recentFiles": [
+        "public/assets/terrain_tiles_v2.tsj",
         "public/assets/maps/map.json",
+        "public/assets/group.tsj",
+        "public/assets/maps/village_01.json",
         "public/assets/maps/town_01.json",
         "public/assets/parchment.tsj",
         "public/assets/map.tsj",
@@ -365,10 +377,7 @@
         "public/assets/spritesheet_default.tsj",
         "public/assets/3_Road.tsj",
         "public/assets/4_Smallplaces.tsj",
-        "public/assets/0_Ground_LowSat.tsj",
-        "public/assets/town_01.json",
-        "public/assets/tiles.tsj",
-        "public/assets/town_02.json"
+        "public/assets/0_Ground_LowSat.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

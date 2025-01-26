@@ -13,10 +13,18 @@ import {astar, Graph} from './astar.js';
 
 class Map
 {
+    static loaded = [];
     constructor(scene, mapName, diagonal, weight)
     {
         scene.map = this;
         this.createMap(scene, mapName, diagonal, weight);
+    }
+
+    static isLoaded(name)
+    {
+        if(Map.loaded.includes(name)) {return true;}
+        Map.loaded.push(name);
+        return false;
     }
 
     static load(scene, maps)
@@ -51,6 +59,7 @@ class Map
                             if(obj.template)    // 載入 template(*.tj) 的資料到 cache 裡
                             {
                                 obj.template = obj.template.replace('../','');
+                                if(Map.isLoaded(obj.template)) {return;}
                                 console.log(`load[${obj.template}]`);
                                 scene.load.json(obj.template, obj.template);
                             }
@@ -64,14 +73,15 @@ class Map
                 map.data.tilesets.forEach((tile) => {
                     if(tile.image)  // 載入 tileset(*.png) 的資料
                     {
-                        console.log(`load[${tile.image}]`);
                         tile.image = tile.image.replace('../','');
+                        if(Map.isLoaded(tile.image)) {return;}
                         console.log(`load[${tile.image}]`);
                         scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
                     }
                     else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
                     {
                         tile.source = tile.source.replace('../','');
+                        if(Map.isLoaded(tile.source)) {return;}
                         console.log(`load[${tile.source}]`);
                         scene.load.json(tile.source, tile.source);
                     } 
@@ -89,7 +99,7 @@ class Map
     }
 
     // 1) 將 cache 裡的 template(*.tj) 及 外部tileset(*.tsj) 的資料取出來，放到 object 裡
-    // 2) 載入 外部tileset(*.png)
+    // 2) 載入外部 tileset(*.png)
     static preprocess(scene, mapName, onComplete)  
     {
         return new Promise((resolve)=>{
@@ -144,17 +154,18 @@ class Map
             function processTileset(map)
             {
                 map.lut={};
-                // 處理 外部tileset(*.tsj) 的資料
+                // 處理外部 tileset(*.tsj) 的資料
                 map.data.tilesets.forEach((tile,index) => {
-                    if(tile.source) // tile 是 外部tileset(*.tsj)
+                    if(tile.source) // tile 是外部 tileset(*.tsj)
                     {
-                        let source = tile.source.split('.').shift();
+                        //let source = tile.source.split('.').shift();
                         let json = scene.cache.json.get(tile.source);
                         delete tile.source;
                         map.data.tilesets[index] = {...tile, ...json};
                         if(json.image)  // (*.tsj) 為 .png
                         {
-                            //console.log(`load[${json.image}]`);
+                            if(Map.isLoaded(json.image)) {return;}
+                            console.log(`load[${json.image}]`);
                             scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                         }
                         else    // (*.tsj) 為圖片集合
@@ -162,13 +173,14 @@ class Map
                             json.tiles.forEach((tile) => {
                                 if(tile.image)
                                 {
-                                    //console.log(`load[${tile.image}]`);
-                                    let name = source+'_'+Utility.extractFileName(tile.image);
-                                    //scene.load.spritesheet(name, tile.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
-                                    //scene.load.spritesheet(name, tile.image, { frameWidth: tile.imagewidth, frameHeight: tile.imageheight });
-                                    scene.load.image(name,tile.image);
-                                    tile.image = name;
-                                    map.lut[name]={w:tile.imagewidth,h:tile.imageheight};
+                                    // let name = source+'_'+Utility.extractFileName(tile.image);
+                                    // scene.load.image(name,tile.image);
+                                    // tile.image = name;
+                                    // map.lut[name]={w:tile.imagewidth,h:tile.imageheight};
+                                    if(Map.isLoaded(tile.image)) {return;}
+                                    console.log(`load[${tile.image}]`);
+                                    scene.load.image(tile.image,tile.image);
+                                    map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
                                 }
                             });
                         }

@@ -41,6 +41,11 @@ export class Preloader extends Scene
         this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');
         this.load.spritesheet('buffs', 'icons/buffs.png', { frameWidth: 64, frameHeight: 64 });
         this.load.spritesheet('portraits', 'icons/portraits.png', { frameWidth: 64, frameHeight: 64 });
+
+        this.load.spritesheet('items1', '32rogues/items.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('monsters', '32rogues/monsters.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('animals', '32rogues/animals.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('rogues', '32rogues/rogues.png', { frameWidth: 32, frameHeight: 32 });
         
         //this.load.spritesheet('knight', 'Knight/Idle.png', { frameWidth: 128, frameHeight: 128 });
         this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');
@@ -53,11 +58,6 @@ export class Preloader extends Scene
         this.load.atlas('hero', 'roles/hero.png', 'roles/hero_atlas.json');
         this.load.spritesheet('role', 'roles/Color A Spitesheet.png', { frameWidth: 90, frameHeight: 64 });
 
-        //this.load.tilemapTiledJSON('map', 'maps/map.json');
-        //this.load.tilemapTiledJSON('town_00', 'maps/town_00.json');
-        //this.load.tilemapTiledJSON('town_01', 'maps/town_01.json');
-        // this.load.tilemapTiledJSON('town_02', 'maps/town_02.json');
-        // this.load.tilemapTiledJSON('house_01', 'maps/house_01.json');
         this.load.tilemapTiledJSON('map', 'maps/map.json');
         this.load.tilemapTiledJSON('village_01', 'maps/village_01.json');
 
@@ -75,6 +75,7 @@ export class Preloader extends Scene
         //Map.preload(this, ()=>{this.scene.start('MainMenu')});
         //await Map.load(this, ['map','town_01','town_02','house_01']);
         await Map.load(this, ['map','village_01']);
+        //await Map.load(this, ['village_01']);
         this.scene.start('MainMenu')
     }
 }

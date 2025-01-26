@@ -22,17 +22,21 @@
          "name":"layer3",
          "objects":[
                 {
+                 "height":64,
                  "id":1,
                  "template":"..\/templates\/village.tj",
                  "type":"node",
+                 "width":64,
                  "x":112,
                  "y":896
                 }, 
                 {
+                 "height":64,
                  "id":25,
                  "name":"\u6843\u82b1\u6751",
                  "template":"..\/templates\/village.tj",
                  "type":"node",
+                 "width":64,
                  "x":176,
                  "y":704
                 }, 
@@ -106,7 +110,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":45,
+ "nextobjectid":47,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -119,6 +123,10 @@
         {
          "firstgid":250,
          "source":"..\/terrain_tiles_v2.tsj"
+        }, 
+        {
+         "firstgid":410,
+         "source":"..\/group.tsj"
         }],
  "tilewidth":32,
  "type":"map",

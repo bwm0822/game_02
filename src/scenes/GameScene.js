@@ -175,7 +175,8 @@ export class GameScene extends Scene
     {
         if(!this._dbgPos)
         {
-            this._dbgPos = this.add.text(0,0,'',{fontSize:'16px',color:'#000',stroke:'#ff0',strokeThickness:0});
+            this._dbgPos = this.add.text(0,0,'',{fontSize:'16px',color:'#fff',stroke:'#ff0',strokeThickness:0});
+            this._dbgPos.setDepth(Infinity);
         }
 
         let x = this.input.activePointer.worldX;
