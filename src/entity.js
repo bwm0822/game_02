@@ -142,6 +142,23 @@ export class Entity extends Phaser.GameObjects.Container
         return bag;
     }
 
+    setAnchor(anchor)
+    {
+        if(!anchor) return;
+            
+        let dx = this.displayWidth/2 - anchor.x;
+        let dy = this.displayHeight/2 - anchor.y;
+
+        this.grid.x += dx;
+        this.grid.y += -dy;
+
+        if(this._sp) {this._sp.x += dx; this._sp.y += -dy;}
+        if(this._zone) {this._zone.x += dx; this._zone.y += -dy;}
+        if(this.body) {this.body.offset.x += dx; this.body.offset.y += -dy;}
+
+        return {x:dx, y:dy};
+    }
+
     init(mapName)
     {
         this.mapName = mapName;
@@ -153,22 +170,10 @@ export class Entity extends Phaser.GameObjects.Container
         
         if(this.data)
         {
-            let ax = this.data.get('anchorX');
-            let ay = this.data.get('anchorY');
-            
-            let dx = this.displayWidth/2-ax;
-            let dy = this.displayHeight/2-ay;
-
-            this.x-=dx;
-            this.y-=-dy;
-
-            this.grid.x+=dx;
-            this.grid.y+=-dy;
-
-            if(this._sp) {this._sp.x+=dx; this._sp.y+=-dy;}
-            if(this._zone) {this._zone.x+=dx; this._zone.y+=-dy;}
-            if(this.body) {this.body.offset.x+=dx; this.body.offset.y-=dy;}
-
+            let anchor = {x:this.data.get('anchorX'), y:this.data.get('anchorY')};
+            let d = this.setAnchor(anchor);
+            this.x -= d.x;
+            this.y -= -d.y;
         }
 
         let p = {x:this.x+this.grid.x, y:this.y+this.grid.y}
@@ -180,7 +185,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
 
-    debugDraw(type='zone')
+    debugDraw(type='body')
     {
         if(!this._dbgGraphics)
         {

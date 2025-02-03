@@ -16,10 +16,10 @@ import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-p
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config = {
     type: Phaser.AUTO,
-    //width: 1024,
-    //height: 768,
-    width: 800,
-    height: 600,
+    width: 1024,
+    height: 768,
+    // width: 800,
+    // height: 600,
     parent: 'game-container',
     backgroundColor: '#000000',//'#028af8',
     scale: {
@@ -29,7 +29,7 @@ const config = {
     physics:{
         default:'arcade',
         arcade:{
-            //debug:true,
+            debug:true,
             //debug:false,
             //gravity:{y:300,}
         }

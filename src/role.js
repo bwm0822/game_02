@@ -1363,7 +1363,7 @@ export class Avatar extends Role
 
         this.addWeight();
         this.addToRoleList();
-        this.debugDraw();
+        //this.debugDraw();
     }
 
     initRole()
@@ -1394,21 +1394,6 @@ export class Avatar extends Role
         //let [key,frame]=ICON_AVATAR.split('/');
         let [key,frame]=sprite.split('/');
         this.setTexture(key,frame);
-    }
-
-    setAnchor(anchor)
-    {
-        if(!anchor) return;
-            
-        let dx = this.displayWidth/2-anchor.x;
-        let dy = this.displayHeight/2-anchor.y;
-
-        this.grid.x+=dx;
-        this.grid.y+=-dy;
-
-        if(this._sp) {this._sp.x+=dx; this._sp.y+=-dy;}
-        if(this._zone) {this._zone.x+=dx; this._zone.y+=-dy;}
-        if(this.body) {this.body.offset.x+=dx; this.body.offset.y-=dy;}
     }
 
     async process()

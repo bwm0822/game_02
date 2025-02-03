@@ -44,17 +44,17 @@
                         {
                          "name":"anchorX",
                          "type":"int",
-                         "value":16
+                         "value":0
                         }, 
                         {
                          "name":"anchorY",
                          "type":"int",
-                         "value":16
+                         "value":0
                         }, 
                         {
                          "name":"bb",
                          "type":"int",
-                         "value":10
+                         "value":0
                         }, 
                         {
                          "name":"bl",
@@ -64,7 +64,7 @@
                         {
                          "name":"br",
                          "type":"int",
-                         "value":10
+                         "value":0
                         }, 
                         {
                          "name":"bt",
@@ -102,8 +102,8 @@
                          "value":"map"
                         }],
                  "template":"..\/templates\/port.tj",
-                 "x":128,
-                 "y":1216
+                 "x":256,
+                 "y":1248
                 }, 
                 {
                  "gid":209,
