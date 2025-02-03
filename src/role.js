@@ -1196,7 +1196,7 @@ export class Role extends Entity
         this._des = null;
         this._resolve;
         //
-        this.id='';
+        //this.id='';
     }
 
     get pos()       {return {x:this.x,y:this.y};}

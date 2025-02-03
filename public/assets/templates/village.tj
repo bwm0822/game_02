@@ -6,9 +6,19 @@
      "name":"\u5c0f\u6751\u838a",
      "properties":[
             {
-             "name":"left",
+             "name":"gl",
              "type":"int",
              "value":16
+            }, 
+            {
+             "name":"gr",
+             "type":"int",
+             "value":16
+            }, 
+            {
+             "name":"gt",
+             "type":"int",
+             "value":32
             }, 
             {
              "name":"map",
@@ -26,19 +36,24 @@
              "value":"\u5165\u53e3"
             }, 
             {
-             "name":"right",
+             "name":"weight",
+             "type":"int",
+             "value":100
+            }, 
+            {
+             "name":"zl",
              "type":"int",
              "value":16
             }, 
             {
-             "name":"top",
+             "name":"zr",
              "type":"int",
-             "value":32
+             "value":16
             }, 
             {
-             "name":"weight",
+             "name":"zt",
              "type":"int",
-             "value":100
+             "value":32
             }],
      "rotation":0,
      "type":"node",

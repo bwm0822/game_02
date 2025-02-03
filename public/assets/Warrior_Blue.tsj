@@ -1,0 +1,14 @@
+{ "columns":6,
+ "image":"tiny\/Warrior_Blue.png",
+ "imageheight":1536,
+ "imagewidth":1152,
+ "margin":0,
+ "name":"Warrior_Blue",
+ "spacing":0,
+ "tilecount":48,
+ "tiledversion":"1.11.0",
+ "tileheight":192,
+ "tilewidth":192,
+ "type":"tileset",
+ "version":"1.10"
+}

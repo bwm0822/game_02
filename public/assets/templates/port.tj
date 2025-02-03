@@ -2,22 +2,12 @@
     {
      "height":32,
      "id":163,
-     "name":"",
+     "name":"\u5165\u53e3",
      "properties":[
-            {
-             "name":"bottom",
-             "type":"int",
-             "value":0
-            }, 
-            {
-             "name":"left",
-             "type":"int",
-             "value":0
-            }, 
             {
              "name":"map",
              "type":"string",
-             "value":"house_01"
+             "value":"map"
             }, 
             {
              "name":"offsetX",
@@ -27,22 +17,12 @@
             {
              "name":"offsetY",
              "type":"int",
-             "value":0
+             "value":-32
             }, 
             {
              "name":"port",
              "type":"string",
-             "value":"\u5165\u53e3"
-            }, 
-            {
-             "name":"right",
-             "type":"int",
-             "value":0
-            }, 
-            {
-             "name":"top",
-             "type":"int",
-             "value":0
+             "value":"\u5c0f\u6751\u838a"
             }, 
             {
              "name":"weight",

@@ -15,7 +15,7 @@ export class GameArea extends GameScene
         super.create({diagonal:true,classType:Role.Avatar});
         this.process();
 
-        new Role.Role_T(this,400,900)
+        //new Role.Role_T(this,400,900)
 
 
         console.log(this)

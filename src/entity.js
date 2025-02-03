@@ -5,17 +5,14 @@ export class Entity extends Phaser.GameObjects.Container
     constructor(scene, x, y)
     {
         super(scene, x, y);
-        console.log(x,y);
         this.scene = scene;
         scene.add.existing(this);
         this.enableOutline();
-        //this.addListener();
-        this.left=0,this.right=0,this.top=0,this.bottom=0;
         this.bl=0,this.br=0,this.bt=0,this.bb=0;
         this.gl=0,this.gr=0,this.gt=0,this.gb=0;
-        this.wBound={}
+        this.zl=0,this.zr=0,this.zt=0,this.zb=0;
         this.interactive = false;
-        this.outline_en = true;
+        this.en_outline = true;
         this.acts = [];
         this.weight = 0;
         this.uid = 0;   // map.createMap() 會自動設定 uid
@@ -23,11 +20,6 @@ export class Entity extends Phaser.GameObjects.Container
 
     get pos()   {return {x:this.x,y:this.y}}
     get act()   {return this.acts[0];}
-
-    // set displayWidth(value) {this._w=value;this.width==0&&(this.width=value);super.displayWidth=value;} 
-    // set displayHeight(value) {this._h=value;this.height==0&&(this.height=value);super.displayHeight=value;}
-    // get displayWidth() {return super.displayWidth;}
-    // get displayHeight() {return super.displayHeight;}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
@@ -42,53 +34,38 @@ export class Entity extends Phaser.GameObjects.Container
 
     setPosition(x,y)
     {
-        console.log(x,y)
-        this._x=x;
-        this._y=y;
-        super.setPosition(x,y)
+        this._x = x;
+        this._y = y;
+        super.setPosition(x, y);
     }
 
     send(type, ...args) {this.scene.events.emit(type, ...args);}
 
     addListener()
     {
-        if(this._sp)
-        {
-            console.log('chk1')
-            this.interactive&&this._sp.setInteractive()
-            this._sp.on('pointerover',()=>{this.outline(true);this.send('over',this);})
-                    .on('pointerout',()=>{this.outline(false);this.send('out');})
-                    .on('pointerdown',(pointer)=>{
-                        if (pointer.middleButtonDown())
-                        {
-                            // world space to screen space
-                            let x = this.x - this.scene.cameras.main.worldView.x;
-                            let y = this.y - this.scene.cameras.main.worldView.y;
-                            this.send('option',x,y-10,this.acts,this);
-                        }
-                    })
-        }
-        else
-        {
-            console.log('chk2')
-            this.interactive&&this.setInteractive()
-            this.on('pointerover',()=>{this.outline(true);this.send('over',this);})
-                .on('pointerout',()=>{this.outline(false);this.send('out');})
-                .on('pointerdown',(pointer)=>{
-                    if (pointer.middleButtonDown())
-                    {
-                        // world space to screen space
-                        let x = this.x - this.scene.cameras.main.worldView.x;
-                        let y = this.y - this.scene.cameras.main.worldView.y;
-                        this.send('option',x,y-10,this.acts,this);
-                    }
-                })
-        }
+        if(!this.interactive) {return;}
+
+        this._zone = this.scene.add.zone((this.zl-this.zr)/2, (this.zt-this.zb)/2, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
+        this.add(this._zone)
+        this._zone.setInteractive()
+        this._zone
+            .on('pointerover',()=>{this.outline(true);this.send('over',this);})
+            .on('pointerout',()=>{this.outline(false);this.send('out');})
+            .on('pointerdown',(pointer)=>{
+                if (pointer.middleButtonDown())
+                {
+                    // world space to screen space
+                    let x = this.x - this.scene.cameras.main.worldView.x;
+                    let y = this.y - this.scene.cameras.main.worldView.y;
+                    this.send('option',x,y-10,this.acts,this);
+                }
+            })
+        
     }
 
     outline(on)
     {
-        if(!this.outline_en) return;
+        if(!this.en_outline) return;
 
         if(this._sp)
         {
@@ -122,7 +99,6 @@ export class Entity extends Phaser.GameObjects.Container
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
             this.add(sp);
-            //this.setSize(sp.width,sp.height);
             this._sp = sp;
         }
     }
@@ -135,32 +111,25 @@ export class Entity extends Phaser.GameObjects.Container
 
     addPhysics()
     {
-        //this.setSize(this.displayWidth,this.displayHeight);
         this.scene.physics.add.existing(this, true);
-        // this.body.setSize(this.displayWidth-this.left-this.right,this.displayHeight-this.top-this.bottom);
-        // this.body.setOffset(this.left,this.top);
-        //this.body.setSize(this.displayWidth-this.bl-this.br,this.displayHeight-this.bt-this.bb);
-        this.body.setSize(this._w-this.bl-this.br,this._h-this.bt-this.bb);
-        this.body.setOffset(this.bl,this.bt);
-        //this.body.setOffset(0,0);
-
-        console.log(this.displayWidth,this.displayHeight)
+        this.body.setSize(this.displayWidth-this.bl-this.br, this.displayHeight-this.bt-this.bb);
+        this.body.x=this.x;
+        this.body.y=this.y;
+        this.body.setOffset(-this.displayWidth/2+this.bl, -this.displayHeight/2+this.bt);
     }
 
     addGrid()
     {
-        this.grid={};
-        // this.grid.w = this.displayWidth-this.gl-this.gr;
-        // this.grid.h = this.displayHeight-this.gt-this.gb;
-        this.grid.w = this._w-this.gl-this.gr;
-        this.grid.h = this._h-this.gt-this.gb;
-        this.grid.x = (this.gl-this.gr)/2;
-        this.grid.y = (this.gt-this.gb)/2;
+        this.grid = {};
+        this.grid.w = this.displayWidth -this.gl - this.gr;
+        this.grid.h = this.displayHeight - this.gt - this.gb;
+        this.grid.x = (this.gl - this.gr) / 2;
+        this.grid.y = (this.gt - this.gb) / 2;
     }
 
     updateDepth()
     {
-        let depth = this.y + this.height/2 - this.bottom;
+        let depth = this.y ;//+ this.height/2 - this.gb;
         this.setDepth(depth);
         //this.debug(depth.toFixed(1));
     }
@@ -180,18 +149,14 @@ export class Entity extends Phaser.GameObjects.Container
         this.addPhysics();
         this.addGrid();
         this.updateDepth();
-        //this.scene.map.updateGrid(this.body.center,this.weight,this.body.width,this.body.height);
-        
         
         if(this.data)
         {
             let ax = this.data.get('anchorX');
             let ay = this.data.get('anchorY');
             
-            // let dx = this.displayWidth/2-ax;
-            // let dy = this.displayHeight/2-ay;
-            let dx = this._w/2-ax;
-            let dy = this._h/2-ay;
+            let dx = this.displayWidth/2-ax;
+            let dy = this.displayHeight/2-ay;
 
             this.x-=dx;
             this.y-=-dy;
@@ -199,19 +164,15 @@ export class Entity extends Phaser.GameObjects.Container
             this.grid.x+=dx;
             this.grid.y+=-dy;
 
-            this._sp.x+=dx;
-            this._sp.y+=-dy;
+            if(this._sp) {this._sp.x+=dx; this._sp.y+=-dy;}
+            if(this._zone) {this._zone.x+=dx; this._zone.y+=-dy;}
+            if(this.body) {this.body.offset.x+=dx; this.body.offset.y-=dy;}
 
-            console.log(ax,ay);
         }
 
         let p = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-        console.log(p,this.weight)
         this.scene.map.updateGrid(p,this.weight,this.grid.w,this.grid.h);
-
         this.debugDraw();
-
-        console.log(this);
     }
 
     loadData() {return Record.getByUid(this.mapName,this.uid);}
@@ -227,7 +188,7 @@ export class Entity extends Phaser.GameObjects.Container
             this._dbgGraphics.setDepth(Infinity);
         }
 
-        let type = 'grid';
+        let type = 'zone';
         let rect, circle;
 
         switch(type)
@@ -237,60 +198,38 @@ export class Entity extends Phaser.GameObjects.Container
                 circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
                 break;
             case 'grid':
-                let w_2 = this.grid.w/2;
-                let h_2 = this.grid.h/2;
-                let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-                rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
-                //circle = new Phaser.Geom.Circle(c.x,c.y,5);
-                circle = new Phaser.Geom.Circle(this.x,this.y,5);
+                {
+                    let w_2 = this.grid.w/2;
+                    let h_2 = this.grid.h/2;
+                    let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
+                    rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
+                    //circle = new Phaser.Geom.Circle(c.x,c.y,5);
+                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
+                    break;
+                }
+            case 'zone':
+                if(this._zone)
+                {
+                    let w_2 = this._zone.width/2;
+                    let h_2 = this._zone.height/2;
+                    let c = {x:this.x+this._zone.x, y:this.y+this._zone.y}
+                    rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this._zone.width,this._zone.height);
+                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
+                    //circle = new Phaser.Geom.Circle(c.x,c.y,5);
+                    
+                }
+                else
+                {
+                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
+                }
                 break;
-            default:
-                rect = new Phaser.Geom.Rectangle(this.x-this.width/2,this.y-this.height/2,this.width,this.height);
-                circle = new Phaser.Geom.Circle(this.x,this.y,5);
-
         }
        
+
         this._dbgGraphics.clear();
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-        this._dbgGraphics.strokeRectShape(rect)
-                        .strokeCircleShape(circle);
-
-        // if(type=='size')
-        // {
-        //     let w = this.displayWidth;
-        //     let h = this.displayHeight;
-        //     let rect = new Phaser.Geom.Rectangle(this.x-w/2,this.y-h/2,w,h);
-        //     let circle = new Phaser.Geom.Circle(this.x,this.y,5);
-        //     this._dbgGraphics.clear();
-        //     this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-        //     this._dbgGraphics.strokeRectShape(rect)
-        //                     .strokeCircleShape(circle);
-        // }
-        // else if(type == 'body')
-        // {
-        //     let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-        //     let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
-
-        //     this._dbgGraphics.clear();
-        //     this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-        //     this._dbgGraphics.strokeRectShape(rect)
-        //                     .strokeCircleShape(circle);
-        // }
-        // else
-        // {
-        //     let w_2 = this.grid.w/2;
-        //     let h_2 = this.grid.h/2;
-        //     let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-        //     let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
-        //     //let circle = new Phaser.Geom.Circle(c.x,c.y,5);
-        //     let circle = new Phaser.Geom.Circle(this.x,this.y,5);
-
-        //     this._dbgGraphics.clear();
-        //     this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-        //     this._dbgGraphics.strokeRectShape(rect)
-        //                     .strokeCircleShape(circle);
-        // }
-
+        if(rect) {this._dbgGraphics.strokeRectShape(rect);}
+        if(circle) {this._dbgGraphics.strokeCircleShape(circle);}
         
     }
 
@@ -452,6 +391,6 @@ export class Node extends Port
     {
         super.init(mapName);
         this.addText(this.name);
-        this.debugDraw();
+        //this.debugDraw();
     }
 }
