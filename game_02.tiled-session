@@ -201,8 +201,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 252.99999999999997,
-                "y": 835
+                "x": 512.3333333333333,
+                "y": 512
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -249,8 +249,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 209.5,
-                "y": 846.5
+                "x": 657.5,
+                "y": 640
             }
         },
         "public/assets/parchment.tsj": {
@@ -377,7 +377,7 @@
         "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
         "public/assets/maps/map.json",
         "public/assets/group.tsj",

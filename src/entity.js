@@ -15,6 +15,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.en_outline = true;
         this.acts = [];
         this.weight = 0;
+        this.static = true; // true: static body, false: dynamic body
         this.uid = 0;   // map.createMap() 會自動設定 uid
     }
 
@@ -111,7 +112,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     addPhysics()
     {
-        this.scene.physics.add.existing(this, true);
+        this.scene.physics.add.existing(this, this.static);
         this.body.setSize(this.displayWidth-this.bl-this.br, this.displayHeight-this.bt-this.bb);
         this.body.x=this.x;
         this.body.y=this.y;
@@ -179,7 +180,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
 
-    debugDraw()
+    debugDraw(type='zone')
     {
         if(!this._dbgGraphics)
         {
@@ -188,7 +189,6 @@ export class Entity extends Phaser.GameObjects.Container
             this._dbgGraphics.setDepth(Infinity);
         }
 
-        let type = 'zone';
         let rect, circle;
 
         switch(type)

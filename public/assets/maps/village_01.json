@@ -144,7 +144,7 @@
                         {
                          "name":"gb",
                          "type":"int",
-                         "value":48
+                         "value":32
                         }, 
                         {
                          "name":"gl",
@@ -159,7 +159,12 @@
                         {
                          "name":"gt",
                          "type":"int",
-                         "value":32
+                         "value":64
+                        }, 
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"knight"
                         }, 
                         {
                          "name":"interactive",
@@ -192,7 +197,7 @@
                          "value":64
                         }],
                  "rotation":0,
-                 "type":"entity",
+                 "type":"npc",
                  "visible":true,
                  "width":128,
                  "x":48,

@@ -147,7 +147,14 @@ export class RoleDB
     static data = 
     {
         'scott': {name:'史考特', icon:'portraits/35', gold:200,
-                    bag:['sword_01',{id:'helmet_01'}]}
+                    bag:['sword_01',{id:'helmet_01'}]},
+        'knight': {name:'騎士', icon:'portraits/35', gold:200,
+                    sprite:'Warrior_Blue', faceR:true,
+                    anchor:{x:64,y:48}, w:128, h:128,
+                    b:{l:48,r:48,t:32,b:32},
+                    g:{l:48,r:48,t:32,b:32},
+                    z:{l:48,r:48,t:32,b:32},
+                    bag:[]}
 
     }
 

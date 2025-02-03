@@ -6,7 +6,7 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 import {UI} from  '../uibase.js';
-import {UiCursor,UiMain} from '../ui.js'
+import {UiCursor,UiMain,UiOption,UiDialog} from '../ui.js'
 
 export class GameScene extends Scene
 {

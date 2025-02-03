@@ -1191,33 +1191,19 @@ export class Role extends Entity
         super(scene,x,y);
         this.weight = 1000;
         this.acts = ['talk','trade'];
+        this._faceR = true;
         //
         this._path = [];
         this._des = null;
         this._resolve;
         //
-        //this.id='';
+        this.static = false; // true: static body, false: dynamic body
+        this.id='';
     }
 
     get pos()       {return {x:this.x,y:this.y};}
     set pos(value)  {this.x=value.x;this.y=value.y;}
     get moving()    {return this._des!=null;}
-
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到
-    {
-        //console.log(key,frame);
-        let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
-        this.setSize(sp.width,sp.height);
-        this.add(sp);
-        this._sp = sp;
-    }
-
-    addPhysics()
-    {
-        //scene.physics.world.enable(this);
-        this.scene.physics.add.existing(this, false);
-        this.body.setSize(this.width,this.height);
-    }
 
     removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.pos,-this.weight);}
 
@@ -1240,10 +1226,17 @@ export class Role extends Entity
         }
     }
 
+    faceTo(pt)
+    {
+        if(pt.x==this.x) {return;}
+        this._sp.flipX = (pt.x>this.x) != this._faceR;
+    }
+
     async moveTo({duration=200,ease='expo.in',draw=true}={})
     {
         if(this._path.length==0) {return;}
         let path = this._path;
+        this.faceTo(path[0].pt);
         if(path[0].act=='go')
         { 
             let pt = path[0].pt;
@@ -1314,27 +1307,6 @@ export class Role extends Entity
             }
         })
     }
-
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            console.log('debugDraw');
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'Role';
-            this._dbgGraphics.setDepth(Infinity);
-        }
-
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 5);
-        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-        this._dbgGraphics.clear()
-                        .lineStyle(3, 0x00ff00)
-                        //.strokeRectShape(this.getBounds())
-                        //.lineStyle(1, 0xff0000)
-                        .strokeRectShape(rect)
-                        //.lineStyle(3, 0x00fff00)
-                        .strokeCircleShape(circle);
-    }
 }
 
 export class Target extends Role
@@ -1345,21 +1317,15 @@ export class Target extends Role
         this.addSprite();
         this.updateDepth();
         this.loop();
+        this.debugDraw();
     }
 
     addSprite()
     {
         let [key,frame]=ICON_TARGET.split('/');
         this.setTexture(key,frame);
-    }
-
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到
-    {
-        //console.log(key,frame);
-        let sp = this.scene.add.sprite(0,0,key,frame).setScale(0.5);
-        this.setSize(sp.displayWidth,sp.displayWidth);
-        this.add(sp);
-        this._sp = sp;
+        this.displayWidth = 32;
+        this.displayHeight = 32;
     }
 
     updateDepth()
@@ -1392,20 +1358,57 @@ export class Avatar extends Role
         super(scene,x,y);
         Avatar.instance = this;
         this.weight = 1000;
-        this.addSprite();
-        this.setSize(32,32);
-        this.addPhysics();
-        this.updateDepth();
+        this.id = 'knight';
+        this.initRole();
+
         this.addWeight();
         this.addToRoleList();
         this.debugDraw();
-        console.log(this)
     }
 
-    addSprite()
+    initRole()
     {
-        let [key,frame]=ICON_AVATAR.split('/');
+        let roleD = RoleDB.get(this.id);
+
+        this._faceR = roleD.faceR;
+        this.addSprite(roleD.sprite);
+        this.displayWidth = roleD.w 
+        this.displayHeight = roleD.h;
+        this.setBound(roleD.b, roleD.g, roleD.z);
+        this.addListener();
+        this.addPhysics(false);
+        this.addGrid();
+        this.setAnchor(roleD.anchor);
+        this.updateDepth();
+    }
+
+    setBound(b,g,z)
+    {
+        if(b){this.bl=b.l;this.br=b.r;this.bt=b.t;this.bb=b.b;}
+        if(g){this.gl=g.l;this.gr=g.r;this.gt=g.t;this.gb=g.b;}
+        if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
+    }
+
+    addSprite(sprite)
+    {
+        //let [key,frame]=ICON_AVATAR.split('/');
+        let [key,frame]=sprite.split('/');
         this.setTexture(key,frame);
+    }
+
+    setAnchor(anchor)
+    {
+        if(!anchor) return;
+            
+        let dx = this.displayWidth/2-anchor.x;
+        let dy = this.displayHeight/2-anchor.y;
+
+        this.grid.x+=dx;
+        this.grid.y+=-dy;
+
+        if(this._sp) {this._sp.x+=dx; this._sp.y+=-dy;}
+        if(this._zone) {this._zone.x+=dx; this._zone.y+=-dy;}
+        if(this.body) {this.body.offset.x+=dx; this.body.offset.y-=dy;}
     }
 
     async process()
@@ -1424,7 +1427,6 @@ export class Npc extends Role
 {
     init(mapName)
     {
-        this.setSize(32,32);    //必須在 addPhysics() 之前執行
         super.init(mapName);
         this.addToRoleList();
         this.load();
@@ -1448,7 +1450,7 @@ export class Npc extends Role
     addListener()
     {
         super.addListener();
-        this.on('talk',()=>{this.talk()})
+        this.on('talk',()=>{this.talk();console.log('talk')})
     }
 
     talk() 
