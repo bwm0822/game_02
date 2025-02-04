@@ -324,10 +324,13 @@ class EquipSlot extends Slot
 {
     static icons =
     {
-        weapon : UI.ICON_WEAPON,
-        helmet : UI.ICON_HELMET,
-        armor : UI.ICON_ARMOR,
-        boot : UI.ICON_BOOT,
+        weapon      : UI.ICON_WEAPON,
+        helmet      : UI.ICON_HELMET,
+        chestplate  : UI.ICON_CHESTPLATE,
+        gloves      : UI.ICON_GLOVES,
+        boots       : UI.ICON_BOOTS,
+        necklace    : UI.ICON_NECKLACE,
+        ring        : UI.ICON_RING,
     }
 
     constructor(scene, w, h, cat, getOwner, config)
@@ -781,9 +784,9 @@ export class UiInv extends Sizer
     {
         let config =
         {
-            x : UI.w/2,
-            y : 0,
-            width : UI.w/2,
+            x : UI.w-3,//UI.w/2,
+            y : 2,
+            width : 450,//UI.w/2,
             height : 500,
             orientation : 'y',
         }
@@ -793,7 +796,7 @@ export class UiInv extends Sizer
         this.addTop = addTop;
         this.addGrid = addGrid;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0xffffff,strokeWidth:3}),'bg')
             .addTop(scene,'裝備')
             .addEquip(scene,this.getOwner.bind(this))
             .addInfo(scene)
@@ -802,7 +805,7 @@ export class UiInv extends Sizer
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
-            .setOrigin(0)
+            .setOrigin(1,0)
             .layout()
             .hide()
         scene.add.existing(this);
@@ -824,12 +827,16 @@ export class UiInv extends Sizer
         let grid = scene.rexUI.add.gridSizer(config);
         let equip = function(cat, getOwner)
         {
-            let slot = new EquipSlot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, cat, getOwner);
+            let slot = new EquipSlot(scene, UI.SLOT_SIZE, UI.SLOT_SIZE, cat, getOwner);
             return slot;
         }
-        grid.add(equip('weapon', getOwner))
-            .add(equip('helmet', getOwner))
-            .add(equip('armor', getOwner))
+        grid.add(equip(UI.CAT_WEAPON, getOwner))
+            .add(equip(UI.CAT_HELMET, getOwner))
+            .add(equip(UI.CAT_CHESTPLATE, getOwner))
+            .add(equip(UI.CAT_GLOVES, getOwner))
+            .add(equip(UI.CAT_BOOTS, getOwner))
+            .add(equip(UI.CAT_NECKLACE, getOwner))
+            .add(equip(UI.CAT_RING, getOwner))
 
         this.add(grid,{key:'equip'});
         return this;
@@ -1017,9 +1024,9 @@ export class UiTrade extends Sizer
     {
         let config =
         {
-            x : 0,
-            y : 0,
-            width : UI.w/2,
+            x : 3,
+            y : 2,
+            width : 450,//UI.w/2,
             height : 500,
             orientation : 'y',
             space:{bottom:20},
@@ -1029,7 +1036,7 @@ export class UiTrade extends Sizer
         this.addTop = addTop;
         this.addGrid = addGrid;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0xffffff,strokeWidth:3}),'bg')
             .addTop(scene,'交易')
             .addInfo(scene)
             .addGold(scene)

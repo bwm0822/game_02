@@ -213,8 +213,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 512,
-                "y": 512
+                "x": 252.66666666666669,
+                "y": 835
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -261,8 +261,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 640
+                "x": 271,
+                "y": 1047.5
             }
         },
         "public/assets/parchment.tsj": {
@@ -393,8 +393,8 @@
     "property.type": "int",
     "recentFiles": [
         "public/assets/Archer_Blue.tsj",
-        "public/assets/maps/map.json",
         "public/assets/group.tsj",
+        "public/assets/maps/map.json",
         "public/assets/maps/village_01.json",
         "public/assets/cursors_map.tsj",
         "public/assets/cursors.tsj",

@@ -92,7 +92,6 @@ export class Entity extends Phaser.GameObjects.Container
             this._rect.setStrokeStyle(2,0xffffff)
             this.add(this._rect);
             this.setDepth(Infinity);
-            console.log(this.body);
         }
 
         this._rect.visible=on;
@@ -134,7 +133,7 @@ export class Entity extends Phaser.GameObjects.Container
     }
 
     removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
-    
+
     addWeight(pt){this.weight!=0 && this.scene.map.updateGrid(pt??this.posG,this.weight,this.grid.w,this.grid.h);}
 
     updateDepth()

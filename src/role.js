@@ -1195,6 +1195,7 @@ export class Role extends Entity
         //
         this._path = [];
         this._des = null;
+        this._act = '';
         this._resolve;
         //
         this.static = false; // true: static body, false: dynamic body
@@ -1222,13 +1223,15 @@ export class Role extends Entity
 
     addToRoleList() {this.scene.roles.push(this);}
 
-    setDes(des, act)
+    setDes(des, ent)
     {
-        let rst = this.scene.map.getPath(this.pos, des, act);
+        this._act = ent?.act ?? '';
+        let rst = this.scene.map.getPath(this.pos, des);
         if(rst && rst.valid)
         {
             this._path = rst.path;
             this._des = des; 
+            this._ent = ent;
             this.resume();
         }
         else
@@ -1243,14 +1246,21 @@ export class Role extends Entity
         this._sp.flipX = (pt.x>this.x) != this._faceR;
     }
 
+    isTouch(ent)
+    {
+        if(!ent) {return false;}
+        return this.scene.map.isNearby(ent,this.pos)
+    }
+
     async moveTo({duration=200,ease='expo.in',draw=true}={})
     {
         if(this._path.length==0) {return;}
         let path = this._path;
-        this.faceTo(path[0].pt);
-        if(path[0].act=='go')
+        this.faceTo(path[0]);
+
+        if(!this.isTouch(this._ent))
         { 
-            let pt = path[0].pt;
+            let pt = path[0];
             if(this.scene.map.isValid(pt))
             {
                 if(draw) {this.drawPath(path);}
@@ -1259,20 +1269,19 @@ export class Role extends Entity
                 await this.step(pt,duration,ease);
                 //this.addWeight();
                 this.updateDepth();
-                path.splice(0,1);
+                path.shift();   //移除陣列第一個元素
                 if(path.length>0) {return;}
             }
         }
-        else
-        {
-            this.interact(path[0].pt,path[0].act)
-        }
+        
+        this._act && this.interact(this._ent.pos,this._act);
 
         this.stop();
     }
 
     stop()
     {
+        this._path = [];
         this._des = null;
         if(this._dbgPath){this._dbgPath.clear();}
     }
@@ -1312,11 +1321,8 @@ export class Role extends Entity
         }
         this._dbgPath.clear();
         path.forEach(node=>{
-            if(node.act=='go')
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
+            let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
+            this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
         })
     }
 }

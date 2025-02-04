@@ -1,3 +1,4 @@
+import {UI} from './uibase.js';
 
 export class RoleData
 {
@@ -22,22 +23,32 @@ export class ItemDB
 {
     static data = 
     {
-        'sword_01':{cat:'weapon',icon:'weapons/3',name:'刀-1',gold:25,
+        'sword_01':{cat:UI.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
                     des:'這是一把刀',
                     props:{damage:10,defend:1}},
-        'sword_02':{cat:'weapon',icon:'weapons/4',name:'刀-2'},
-        'sword_03':{cat:'weapon',icon:'weapons/5',name:'刀-3'},
+        'sword_02':{cat:UI.CAT_WEAPON,icon:'weapons/4',name:'刀-2'},
+        'sword_03':{cat:UI.CAT_WEAPON,icon:'weapons/5',name:'刀-3'},
 
-        'helmet_01':{cat:'helmet',icon:'weapons/45',name:'高級頭盔-1',gold:50,
+        'helmet_01':{cat:UI.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
                     des:'這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,'},
-        'helmet_02':{cat:'helmet',icon:'weapons/46',name:'頭盔-2'},
-        'helmet_03':{cat:'helmet',icon:'weapons/47',name:'頭盔-3'},
+        'helmet_02':{cat:UI.CAT_HELMET,icon:'weapons/46',name:'頭盔-2'},
+        'helmet_03':{cat:UI.CAT_HELMET,icon:'weapons/47',name:'頭盔-3'},
 
-        'armor_01':{cat:'armor',icon:'weapons/54',name:'護甲-1',gold:100,
+        'chest_01':{cat:UI.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
                     des:'這是護甲',
                     props:{defend:10}},
-        'armor_02':{cat:'armor',icon:'weapons/55',name:'護甲-2'},
-        'armor_03':{cat:'armor',icon:'weapons/56',name:'護甲-3'},
+        'chest_02':{cat:UI.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20},
+        'chest_03':{cat:UI.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20},
+
+        'gloves_01':{cat:UI.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套'},
+
+        'boots_01':{cat:UI.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子'},
+
+        'neck_01':{cat:UI.CAT_NECKLACE,icon:'icons/134',name:'項鍊-1',gold:10,des:'項鍊'},
+
+        'ring_01':{cat:UI.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
+
+
     }
 
     static get(id)
@@ -119,6 +130,22 @@ export class DialogDB
                 A:'你好\n1\n2\n3\n4\n5\n6',
                 B:['1.交易/trade','2.離開/exit']
             }
+        },
+        'knight':
+        {
+            0:
+            {   
+                A:'你好\n1\n2\n3\n4\n5\n6',
+                B:['1.交易/trade','2.離開/exit']
+            }
+        },
+        'archer':
+        {
+            0:
+            {   
+                A:'你好\n1\n2\n3\n4\n5\n6',
+                B:['1.交易/trade','2.離開/exit']
+            }
         }
 
     }
@@ -154,8 +181,8 @@ export class RoleDB
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
-                    bag:[]},
-        'archer': {name:'射手', icon:'portraits/35', gold:200,
+                    bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01']},
+        'archer': {name:'射手', icon:'portraits/40', gold:100,
                     sprite:'Archer_Blue', faceR:true,
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},

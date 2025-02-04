@@ -52,7 +52,7 @@ export class Preloader extends Scene
         this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');
         this.load.animation('knight_anim', 'Knight/knight_anim.json');
 
-        this.load.atlas('items', 'items/items.png', 'items/items_atlas.json');
+        this.load.spritesheet('icons', 'icons/icons.png',{ frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('weapons', 'items/weapons.png', { frameWidth: 32, frameHeight: 32 });
 
         this.load.atlas('roles_v12', 'roles/roles_v12.png', 'roles/roles_v12_atlas.json');

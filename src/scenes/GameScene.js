@@ -101,7 +101,9 @@ export class GameScene extends Scene
                     Mark.close();
                     this.clearPath();
                     //this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
-                    this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._ent?.act??'go');
+                    //this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._ent?.act??'go');
+                    let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
+                    this._avatar.setDes(pos,this._ent);
                 }
             }
             
@@ -113,7 +115,8 @@ export class GameScene extends Scene
 
             if(!this._avatar.moving)
             {
-                let pos = this._ent ? this._ent.pos : {x:pointer.worldX,y:pointer.worldY};
+                //let pos = this._ent ? this._ent.pos : {x:pointer.worldX,y:pointer.worldY};
+                let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pos);
             }
         })
@@ -129,7 +132,7 @@ export class GameScene extends Scene
         {
             if(rst.valid)
             {
-                this.drawPath(rst.path);
+                this.drawPath(rst.path,this._ent);
                 if(!this._ent) {Mark.show(rst.pt,UI.COLOR_WHITE);}
                 else {Mark.close();}
             }
@@ -144,7 +147,7 @@ export class GameScene extends Scene
 
     clearPath() {if(this._dbgPath){this._dbgPath.clear();}}
 
-    drawPath(path)
+    drawPath(path,ent)
     {
         if(!this._dbgPath)
         {
@@ -153,12 +156,10 @@ export class GameScene extends Scene
             this._dbgPath.fillStyle(0xffffff);
         }
         this._dbgPath.clear();
-        path.forEach((node,i)=>{
-            if(i<path.length-1)
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
+        path.pop(); //移除陣列最後一個元素
+        path.forEach((node)=>{
+            let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
+            this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
         })
     }
 

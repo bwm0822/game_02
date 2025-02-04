@@ -288,7 +288,53 @@ class Map
         
     }
 
-    getPath(sp,ep,act='go')
+    // getPath(sp,ep,act='go')
+    // {
+    //     let map = this.map;
+    //     let ex = map.worldToTileX(ep.x);
+    //     let ey = map.worldToTileX(ep.y);
+    //     if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
+
+    //     let sx = map.worldToTileX(sp.x);
+    //     let sy = map.worldToTileX(sp.y);
+
+    //     let end = this.graph.grid[ey][ex];
+    //     let start = this.graph.grid[sy][sx];
+
+    //     let tW = map.tileWidth, tW_2=tW/2;
+    //     let tH = map.tileHeight, tH_2=tH/2;
+    //     let pt = {x:ex*tW+tW_2,y:ey*tH+tH_2}
+
+    //     if(end.weight==0)
+    //     {
+    //         return {valid:false,pt:pt}
+    //     }
+    //     else if(start==end)
+    //     {
+    //         return {valid:false,pt:null}
+    //     }
+    //     else
+    //     {
+    //         let result = astar.search(this.graph, start, end);
+    //         let len = result.length;
+    //         if(len==0 || (len>=2 && result[len-2].g>=1000))
+    //         {
+    //             return {valid:false,pt:pt}
+    //         }
+    //         else
+    //         {
+    //             let path=[];
+    //             result.forEach((node,i)=>{
+    //                 let pt = {x:node.y*tW+tW_2,y:node.x*tH+tH_2}
+    //                 path.push({pt:pt,act:i==len-1?act:'go'});
+    //             })
+    //             return {valid:true,pt:pt,path:path}
+    //         }
+    //     }
+    // }
+
+
+    getPath(sp,ep)
     {
         let map = this.map;
         let ex = map.worldToTileX(ep.x);
@@ -323,11 +369,7 @@ class Map
             }
             else
             {
-                let path=[];
-                result.forEach((node,i)=>{
-                    let pt = {x:node.y*tW+tW_2,y:node.x*tH+tH_2}
-                    path.push({pt:pt,act:i==len-1?act:'go'});
-                })
+                let path = result.map((node)=>{return {x:node.y*tW+tW_2,y:node.x*tH+tH_2}});
                 return {valid:true,pt:pt,path:path}
             }
         }
@@ -372,6 +414,13 @@ class Map
         let tx = this.map.worldToTileX(pos.x);
         let ty = this.map.worldToTileX(pos.y);
         return this.graph.grid[ty][tx].weight<w;
+    }
+
+    isNearby(a,b)
+    {
+        let dx = Math.abs(a.x-b.x);
+        let dy = Math.abs(a.y-b.y);
+        return dx<=this.map.tileWidth && dy<=this.map.tileHeight;
     }
 
     getWeight(pos)
