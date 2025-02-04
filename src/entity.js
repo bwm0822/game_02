@@ -20,6 +20,8 @@ export class Entity extends Phaser.GameObjects.Container
     }
 
     get pos()   {return {x:this.x,y:this.y}}
+    set pos(value)  {this.x=value.x;this.y=value.y;}
+    get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
     get act()   {return this.acts[0];}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
@@ -66,7 +68,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     outline(on)
     {
-        if(!this.en_outline) return;
+        if(!this.en_outline) {return;}
 
         if(this._sp)
         {
@@ -84,10 +86,13 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(!this._rect)
         {
-            this._rect = this.scene.add.rectangle(0, 0, this.width, this.height, 0xffffff, 0.5);
+            let cx = this.body.x+this.body.width/2;
+            let cy = this.body.y+this.body.height/2;
+            this._rect = this.scene.add.rectangle(cx-this.x, cy-this.y, this.body.width, this.body.height, 0xffffff, 0.5);
             this._rect.setStrokeStyle(2,0xffffff)
             this.add(this._rect);
             this.setDepth(Infinity);
+            console.log(this.body);
         }
 
         this._rect.visible=on;
@@ -128,6 +133,10 @@ export class Entity extends Phaser.GameObjects.Container
         this.grid.y = (this.gt - this.gb) / 2;
     }
 
+    removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
+    
+    addWeight(pt){this.weight!=0 && this.scene.map.updateGrid(pt??this.posG,this.weight,this.grid.w,this.grid.h);}
+
     updateDepth()
     {
         let depth = this.y ;//+ this.height/2 - this.gb;
@@ -142,9 +151,9 @@ export class Entity extends Phaser.GameObjects.Container
         return bag;
     }
 
-    setAnchor(anchor)
+    setAnchor(anchor,set=false)
     {
-        if(!anchor) return;
+        if(!anchor) {return;}
             
         let dx = this.displayWidth/2 - anchor.x;
         let dy = this.displayHeight/2 - anchor.y;
@@ -156,36 +165,34 @@ export class Entity extends Phaser.GameObjects.Container
         if(this._zone) {this._zone.x += dx; this._zone.y += -dy;}
         if(this.body) {this.body.offset.x += dx; this.body.offset.y += -dy;}
 
-        return {x:dx, y:dy};
+        if(set) {this.x-=dx;this.y-=-dy}
     }
 
     init(mapName)
     {
         this.mapName = mapName;
+        let anchor;
+        if(this.data) 
+        {
+            let ax = this.data.get('anchorX');
+            let ay = this.data.get('anchorY');
+            ax && ay && (anchor={x:ax, y:ay});
+        }
         this.addListener();
         //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.addGrid();
+        this.setAnchor(anchor,true);
         this.updateDepth();
-        
-        if(this.data)
-        {
-            let anchor = {x:this.data.get('anchorX'), y:this.data.get('anchorY')};
-            let d = this.setAnchor(anchor);
-            this.x -= d.x;
-            this.y -= -d.y;
-        }
-
-        let p = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-        this.scene.map.updateGrid(p,this.weight,this.grid.w,this.grid.h);
-        this.debugDraw();
+        this.addWeight();
+        //this.debugDraw();
     }
 
     loadData() {return Record.getByUid(this.mapName,this.uid);}
 
     saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
 
-    debugDraw(type='body')
+    debugDraw(type='grid')
     {
         if(!this._dbgGraphics)
         {
@@ -199,10 +206,14 @@ export class Entity extends Phaser.GameObjects.Container
         switch(type)
         {
             case 'body':
-                rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-                circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+                if(this.bidy)
+                {
+                    rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+                    circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+                }
                 break;
             case 'grid':
+                if(this.grid)
                 {
                     let w_2 = this.grid.w/2;
                     let h_2 = this.grid.h/2;
@@ -210,8 +221,8 @@ export class Entity extends Phaser.GameObjects.Container
                     rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
                     //circle = new Phaser.Geom.Circle(c.x,c.y,5);
                     circle = new Phaser.Geom.Circle(this.x,this.y,5);
-                    break;
                 }
+                break;
             case 'zone':
                 if(this._zone)
                 {

@@ -1201,13 +1201,24 @@ export class Role extends Entity
         this.id='';
     }
 
-    get pos()       {return {x:this.x,y:this.y};}
-    set pos(value)  {this.x=value.x;this.y=value.y;}
     get moving()    {return this._des!=null;}
 
-    removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.pos,-this.weight);}
+    initData()
+    {
+        let roleD = RoleDB.get(this.id);
 
-    addWeight(){this.weight!=0 && this.scene.map.updateGrid(this.pos,this.weight);}
+        this._faceR = roleD.faceR;
+
+        let b = roleD.b;
+        let g = roleD.g;
+        let z = roleD.z;
+
+        if(b){this.bl=b.l;this.br=b.r;this.bt=b.t;this.bb=b.b;}
+        if(g){this.gl=g.l;this.gr=g.r;this.gt=g.t;this.gb=g.b;}
+        if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
+
+        return roleD;
+    }
 
     addToRoleList() {this.scene.roles.push(this);}
 
@@ -1244,8 +1255,9 @@ export class Role extends Entity
             {
                 if(draw) {this.drawPath(path);}
                 this.removeWeight();
-                await this.step(path[0].pt,duration,ease);
-                this.addWeight();
+                this.addWeight(pt);
+                await this.step(pt,duration,ease);
+                //this.addWeight();
                 this.updateDepth();
                 path.splice(0,1);
                 if(path.length>0) {return;}
@@ -1314,6 +1326,7 @@ export class Target extends Role
     constructor(scene, x, y)
     {
         super(scene, x, y);
+        this.weight=0;
         this.addSprite();
         this.updateDepth();
         this.loop();
@@ -1360,33 +1373,22 @@ export class Avatar extends Role
         this.weight = 1000;
         this.id = 'knight';
         this.initRole();
-
-        this.addWeight();
         this.addToRoleList();
-        //this.debugDraw();
+        this.debugDraw();
     }
 
     initRole()
     {
-        let roleD = RoleDB.get(this.id);
-
-        this._faceR = roleD.faceR;
+        let roleD = this.initData();
         this.addSprite(roleD.sprite);
         this.displayWidth = roleD.w 
         this.displayHeight = roleD.h;
-        this.setBound(roleD.b, roleD.g, roleD.z);
         this.addListener();
-        this.addPhysics(false);
+        this.addPhysics();
         this.addGrid();
         this.setAnchor(roleD.anchor);
         this.updateDepth();
-    }
-
-    setBound(b,g,z)
-    {
-        if(b){this.bl=b.l;this.br=b.r;this.bt=b.t;this.bb=b.b;}
-        if(g){this.gl=g.l;this.gr=g.r;this.gt=g.t;this.gb=g.b;}
-        if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
+        this.addWeight();
     }
 
     addSprite(sprite)
@@ -1412,12 +1414,17 @@ export class Npc extends Role
 {
     init(mapName)
     {
+        let roleD = this.initData();
+        if(roleD.anchor)
+        {
+            this.setData('anchorX',roleD.anchor.x);
+            this.setData('anchorY',roleD.anchor.y);
+        }
         super.init(mapName);
         this.addToRoleList();
         this.load();
     }
     
-
     load()
     {
         let roleD = RoleDB.get(this.id);

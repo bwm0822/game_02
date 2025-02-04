@@ -5,12 +5,13 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        ".",
+        "public/assets/templates",
         "public/assets/roles",
-        "public/assets/tiles",
         "public",
         "public/assets",
-        "public/assets/maps"
+        ".",
+        "public/assets/maps",
+        "public/assets/tiles"
     ],
     "fileStates": {
         "": {
@@ -31,6 +32,11 @@
             "scaleInEditor": 1
         },
         "public/assets/4_Smallplaces.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/Archer_Blue.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -75,6 +81,12 @@
             "scaleInEditor": 1
         },
         "public/assets/cursors.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/cursors_map.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -201,7 +213,7 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 512.3333333333333,
+                "x": 512,
                 "y": 512
             }
         },
@@ -249,7 +261,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 657.5,
+                "x": 640,
                 "y": 640
             }
         },
@@ -374,23 +386,24 @@
     "openFiles": [
         "public/assets/maps/village_01.json",
         "public/assets/group.tsj",
-        "public/assets/maps/map.json"
+        "public/assets/maps/map.json",
+        "public/assets/Archer_Blue.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
+        "public/assets/Archer_Blue.tsj",
         "public/assets/maps/map.json",
         "public/assets/group.tsj",
         "public/assets/maps/village_01.json",
+        "public/assets/cursors_map.tsj",
+        "public/assets/cursors.tsj",
         "public/assets/Warrior_Blue.tsj",
         "public/assets/maps/Warrior_Blue.tsj",
         "public/assets/terrain_tiles_v2.tsj",
         "public/assets/maps/town_01.json",
         "public/assets/parchment.tsj",
-        "public/assets/map.tsj",
-        "public/assets/catographt.tsj",
-        "public/assets/spritesheet_default.tsj",
-        "public/assets/3_Road.tsj"
+        "public/assets/map.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

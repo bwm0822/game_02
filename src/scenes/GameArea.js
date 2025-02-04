@@ -7,11 +7,12 @@ export class GameArea extends GameScene
     constructor()
     {
         console.log('GameArea');
-        super('GameArea')
+        super('GameArea');
     }
 
     create()
     {
+        this.mode = 'normal';
         super.create({diagonal:true,classType:Role.Avatar});
         this.process();
 
@@ -26,9 +27,13 @@ export class GameArea extends GameScene
         let roles = this.roles;
         while(true)
         {
-            for(let i=0;i<roles.length;i++)
+            if(this.mode=='normal')
             {
-                await roles[i].process();
+                await Promise.all( roles.map((role)=>{return role.process();}) );
+            } 
+            else
+            {
+                for(let i=0;i<roles.length;i++) {await roles[i].process();}
             }
         }
     }

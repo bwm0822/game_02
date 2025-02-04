@@ -46,6 +46,7 @@ export class Preloader extends Scene
         this.load.spritesheet('monsters', '32rogues/monsters.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('animals', '32rogues/animals.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('rogues', '32rogues/rogues.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('Warrior_Red', 'tiny/Warrior_Red.png', { frameWidth: 192, frameHeight: 192 });
         
         //this.load.spritesheet('knight', 'Knight/Idle.png', { frameWidth: 128, frameHeight: 128 });
         this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');

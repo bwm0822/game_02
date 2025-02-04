@@ -1,0 +1,14 @@
+{ "columns":8,
+ "image":"tiny\/Archer_Blue.png",
+ "imageheight":1344,
+ "imagewidth":1536,
+ "margin":0,
+ "name":"Archer_Blue",
+ "spacing":0,
+ "tilecount":56,
+ "tiledversion":"1.11.0",
+ "tileheight":192,
+ "tilewidth":192,
+ "type":"tileset",
+ "version":"1.10"
+}
