@@ -12,7 +12,7 @@ export class GameArea extends GameScene
 
     create()
     {
-        this.mode = 'normal';
+        this.mode = 'normal';//'combat';
         super.create({diagonal:true,classType:Role.Avatar});
         this.process();
 
@@ -24,16 +24,17 @@ export class GameArea extends GameScene
 
     async process()
     {
-        let roles = this.roles;
         while(true)
         {
             if(this.mode=='normal')
             {
-                await Promise.all( roles.map((role)=>{return role.process();}) );
+                let roles = this.roles.map((role)=>{return role.process();});
+                await Promise.all( [this._avatar.process(),...roles] );
             } 
             else
             {
-                for(let i=0;i<roles.length;i++) {await roles[i].process();}
+                await this._avatar.process();
+                for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
         }
     }

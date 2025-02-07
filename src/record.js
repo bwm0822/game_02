@@ -3,7 +3,11 @@ import Utility from './utility.js'
 export default class Record
 {
     static data = {default:'入口', map:'village_01', 
-                    player:{gold:100,equip:{},bag:{}}}
+                    // player:{
+                    //     gold:100, equip:{}, bag:{},
+                        
+                    // }
+                    }
 
     static save()
     {

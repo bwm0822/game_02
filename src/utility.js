@@ -3,8 +3,10 @@ export default class Utility
 {
     static _local={ weapon:'武器',armor:'防具',item:'道具',skill:'技能', 
                     helmet:'頭盔',chestplate:'胸甲',gloves:'手套',boots:'靴子',
-                    necklace:'手套',ring:'戒子',
+                    necklace:'項鍊',ring:'戒子',
                     other:'其他',
+                    attr:'屬性',state:'狀態',
+                    attack:'攻擊',
                     damage:'傷害',magazine:'彈匣',rof:'射速',range:'射程',
                     life:'生命',speed:'速度',attack:'攻擊',defense:'防禦',
                     shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',

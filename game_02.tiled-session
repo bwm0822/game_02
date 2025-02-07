@@ -5,13 +5,13 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        "public/assets/templates",
-        "public/assets/roles",
-        "public",
-        "public/assets",
-        ".",
         "public/assets/maps",
-        "public/assets/tiles"
+        "public/assets/roles",
+        ".",
+        "public/assets/templates",
+        "public/assets/tiles",
+        "public",
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -213,8 +213,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 252.66666666666669,
-                "y": 835
+                "x": 512,
+                "y": 512
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -261,8 +261,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 271,
-                "y": 1047.5
+                "x": 380,
+                "y": 1086.5
             }
         },
         "public/assets/parchment.tsj": {
@@ -393,8 +393,8 @@
     "property.type": "int",
     "recentFiles": [
         "public/assets/Archer_Blue.tsj",
-        "public/assets/group.tsj",
         "public/assets/maps/map.json",
+        "public/assets/group.tsj",
         "public/assets/maps/village_01.json",
         "public/assets/cursors_map.tsj",
         "public/assets/cursors.tsj",

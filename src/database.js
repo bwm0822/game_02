@@ -1,23 +1,21 @@
 import {UI} from './uibase.js';
 
-export class RoleData
-{
-    constructor()
-    {
-        this.data =
-        {
-            equip:{},
-            bag:{},
-            gold:0,
-        }
-    }
+// export class RoleData
+// {
+//     constructor()
+//     {
+//         this.data =
+//         {
+//             equip:{},
+//             bag:{},
+//             gold:0,
+//         }
+//     }
 
-    get equip() {return this.data.equip;}
-    get bag() {return this.data.bag;}
-    get gold() {return this.data.gold;}
-
-    
-}
+//     get equip() {return this.data.equip;}
+//     get bag() {return this.data.bag;}
+//     get gold() {return this.data.gold;}
+// }
 
 export class ItemDB
 {
@@ -175,20 +173,40 @@ export class RoleDB
     {
         'scott': {name:'史考特', icon:'portraits/35', gold:200,
                     bag:['sword_01',{id:'helmet_01'}]},
+
         'knight': {name:'騎士', icon:'portraits/35', gold:200,
                     sprite:'Warrior_Red', faceR:true,
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
-                    bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01']},
+                    bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01'],
+                    attr:
+                        {
+                            attack: 5,
+                        },
+                    state:
+                        {
+                            life: {cur:100,max:100},
+                        }
+                },
+
         'archer': {name:'射手', icon:'portraits/40', gold:100,
                     sprite:'Archer_Blue', faceR:true,
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
-                    bag:[]}
+                    bag:[],
+                    attr:
+                        {
+                            attack: 5,
+                        },
+                    state:
+                        {
+                            life: {cur:100,max:100},
+                        }
+                }
 
     }
 

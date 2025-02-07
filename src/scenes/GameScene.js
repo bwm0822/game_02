@@ -100,8 +100,6 @@ export class GameScene extends Scene
                 {
                     Mark.close();
                     this.clearPath();
-                    //this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._act);
-                    //this._avatar.setDes({x:pointer.worldX,y:pointer.worldY},this._ent?.act??'go');
                     let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
                     this._avatar.setDes(pos,this._ent);
                 }
@@ -176,7 +174,7 @@ export class GameScene extends Scene
     {
         if(!this._dbgPos)
         {
-            this._dbgPos = this.add.text(0,0,'',{fontSize:'16px',color:'#fff',stroke:'#ff0',strokeThickness:0});
+            this._dbgPos = this.add.text(0,0,'',{fontSize:'16px',color:'#fff',stroke:'#000',strokeThickness:3});
             this._dbgPos.setDepth(Infinity);
         }
 

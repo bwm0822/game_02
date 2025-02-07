@@ -950,12 +950,13 @@ export class Player
     constructor()
     {
         Player.instance = this;
+        this.id = 'knight';
     }
 
-    get gold() {return this.data.gold;}
-    set gold(value) {return this.data.gold=value;}
+    get gold() {return this.owner.status.gold;}
+    set gold(value) {return this.owner.status.gold=value;}
 
-    static get data() {return Player.instance.data;}
+    static get owner() {return Player.instance.owner;}
 
     buy(seller, gold)
     {
@@ -979,13 +980,26 @@ export class Player
 
     load()
     {
-        this.data = Record.data.player;
-        console.log(this.data);
+        let roleD = RoleDB.get(this.id);
+
+        if(!Record.data.player)
+        {
+            Record.data.player = {
+                gold: roleD.gold, 
+                equip: [],
+                bag: [],
+                attr: Utility.deepClone(roleD.attr),
+                state: Utility.deepClone(roleD.state), 
+            }
+        }
+
+        this.owner = {role:roleD, status:Record.data.player}
+        console.log(this.owner);
     }
 
     save()
     {
-        Record.data.player = this.data;
+        Record.data.player = this.owner.status;
     }
 
     static buy(seller,gold)
@@ -1190,7 +1204,7 @@ export class Role extends Entity
     {
         super(scene,x,y);
         this.weight = 1000;
-        this.acts = ['talk','trade'];
+        this.acts = ['attack','talk','trade'];
         this._faceR = true;
         //
         this._path = [];
@@ -1223,15 +1237,15 @@ export class Role extends Entity
 
     addToRoleList() {this.scene.roles.push(this);}
 
-    setDes(des, ent)
+    setDes(des, ent, act)
     {
-        this._act = ent?.act ?? '';
         let rst = this.scene.map.getPath(this.pos, des);
         if(rst && rst.valid)
         {
             this._path = rst.path;
             this._des = des; 
             this._ent = ent;
+            this._act = act ?? ent?.act ?? '';
             this.resume();
         }
         else
@@ -1274,9 +1288,22 @@ export class Role extends Entity
             }
         }
         
-        this._act && this.interact(this._ent.pos,this._act);
-
+        await this.action();
+        
         this.stop();
+    }
+
+    async action()
+    {
+        if(!this._act) {return;}
+        switch(this._act)
+        {
+            case 'attack':
+                await this.step(this._ent.pos,200,'expo.in',true); 
+                break;
+        }
+
+        this.interact(this._ent,this._act);
     }
 
     stop()
@@ -1286,7 +1313,7 @@ export class Role extends Entity
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
-    step(pos, duration, ease)
+    step(pos, duration, ease, yoyo=false)
     {
         return new Promise((resolve)=>{
             this.scene.tweens.add({
@@ -1295,21 +1322,52 @@ export class Role extends Entity
                 y: pos.y,
                 duration: duration,
                 ease: ease,
+                yoyo: yoyo,
                 //delaycomplete: 1000,
                 onComplete: (tween, targets, gameObject)=>{resolve();}         
             });
         });
     }
 
-    interact(pt, act)
+    // interact(pt, act)
+    // {
+    //     let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+    //     bodys.forEach((body) => {body.gameObject.emit(act, this.owner);});
+    // }
+
+    interact(ent, act) {ent.emit(act, this.owner);}
+
+    // async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
+
+    // resume() {this._resolve?.(null);}
+
+    async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
+
+    resume() {this._resolve?.();}
+
+    async attack()
     {
-        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
-        bodys.forEach((body) => {body.gameObject.emit(act);});
+        this._ent = Avatar.instance;
+
+        if(this.isTouch(this._ent))
+        {
+            this.faceTo(this._ent.pos);
+            await this.step(this._ent.pos,200,'expo.in',true);
+            this.interact(this._ent,'attack');
+        }
+        else
+        {
+            this.setDes(this._ent.pos,this._ent,'attack');
+            await this.moveTo({draw:false});
+        }
     }
 
-    async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
-
-    resume() {this._resolve?.(null);}
+    hurt(attacker)
+    {
+        this.owner.status.state.life.cur -= attacker.status.attr.attack;
+        console.log('hurt:',this.owner.status.state.life.cur)
+    }
+   
 
     drawPath(path)
     {
@@ -1379,9 +1437,11 @@ export class Avatar extends Role
         this.weight = 1000;
         this.id = 'knight';
         this.initRole();
-        this.addToRoleList();
+        //this.addToRoleList();
         this.debugDraw();
     }
+
+    get owner() {return Player.owner;}
 
     initRole()
     {
@@ -1402,6 +1462,13 @@ export class Avatar extends Role
         //let [key,frame]=ICON_AVATAR.split('/');
         let [key,frame]=sprite.split('/');
         this.setTexture(key,frame);
+    }
+
+    addListener()
+    {
+        super.addListener();
+        this.on('talk',()=>{this.talk();})
+        this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
     async process()
@@ -1429,6 +1496,7 @@ export class Npc extends Role
         super.init(mapName);
         this.addToRoleList();
         this.load();
+        this.state = 'attack';
     }
     
     load()
@@ -1436,10 +1504,17 @@ export class Npc extends Role
         let roleD = RoleDB.get(this.id);
         this.owner = {role:roleD}
         let data = this.loadData();
-        if(data) { this.owner.state = data; }
+        if(data) { this.owner.status = data; }
         else
         {
-            this.owner.state = { trade:true, gold:roleD.gold, bag:this.toBag(roleD.bag) }
+            this.owner.status = 
+            {   
+                trade: true, 
+                gold: roleD.gold, 
+                bag: this.toBag(roleD.bag),
+                attr: Utility.deepClone(roleD.attr),
+                state: Utility.deepClone(roleD.state), 
+            }
         }
     }
 
@@ -1448,7 +1523,8 @@ export class Npc extends Role
     addListener()
     {
         super.addListener();
-        this.on('talk',()=>{this.talk();console.log('talk')})
+        this.on('talk',()=>{this.talk();})
+        this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
     talk() 
@@ -1461,8 +1537,17 @@ export class Npc extends Role
 
     async process()
     {
-        this.setDes(Avatar.instance.pos);
-        await this.moveTo({draw:false});
+        switch(this.state)
+        {
+            case 'moving':
+                this.setDes(Avatar.instance.pos);
+                await this.moveTo({draw:false});
+                break;
+            case 'attack':
+                await this.attack();
+                break;
+        }
+        
     }
 }
 
