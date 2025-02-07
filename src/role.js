@@ -1237,20 +1237,30 @@ export class Role extends Entity
 
     addToRoleList() {this.scene.roles.push(this);}
 
-    setDes(des, ent, act)
+    async setDes(des, ent, act)
     {
-        let rst = this.scene.map.getPath(this.pos, des);
-        if(rst && rst.valid)
+        if(this.isTouch(ent))
         {
-            this._path = rst.path;
-            this._des = des; 
+            this._des = null; 
             this._ent = ent;
             this._act = act ?? ent?.act ?? '';
             this.resume();
         }
         else
         {
-            this.stop();
+            let rst = this.scene.map.getPath(this.pos, des);
+            if(rst && rst.valid)
+            {
+                this._path = rst.path;
+                this._des = des; 
+                this._ent = ent;
+                this._act = act ?? ent?.act ?? '';
+                this.resume();
+            }
+            else
+            {
+                this.stop();
+            }
         }
     }
 
@@ -1262,22 +1272,21 @@ export class Role extends Entity
 
     isTouch(ent)
     {
-        if(!ent) {return false;}
-        return this.scene.map.isNearby(ent,this.pos)
+        return !ent ? false : this.scene.map.isNearby(ent,this.pos);
     }
 
     async moveTo({duration=200,ease='expo.in',draw=true}={})
     {
         if(this._path.length==0) {return;}
         let path = this._path;
-        this.faceTo(path[0]);
-
+        
         if(!this.isTouch(this._ent))
         { 
             let pt = path[0];
             if(this.scene.map.isValid(pt))
             {
                 if(draw) {this.drawPath(path);}
+                this.faceTo(pt);
                 this.removeWeight();
                 this.addWeight(pt);
                 await this.step(pt,duration,ease);
@@ -1296,14 +1305,15 @@ export class Role extends Entity
     async action()
     {
         if(!this._act) {return;}
-        switch(this._act)
-        {
-            case 'attack':
-                await this.step(this._ent.pos,200,'expo.in',true); 
-                break;
-        }
 
-        this.interact(this._ent,this._act);
+        this.faceTo(this._ent.pos);
+
+        if(this._act)
+        {
+            await this.step(this._ent.pos,200,'expo.in',true, ()=>{this.interact(this._ent,this._act);}); 
+        }
+        else
+            this.interact(this._ent,this._act);
     }
 
     stop()
@@ -1313,7 +1323,7 @@ export class Role extends Entity
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
-    step(pos, duration, ease, yoyo=false)
+    step(pos, duration, ease, yoyo=false, onYoyo)
     {
         return new Promise((resolve)=>{
             this.scene.tweens.add({
@@ -1324,6 +1334,7 @@ export class Role extends Entity
                 ease: ease,
                 yoyo: yoyo,
                 //delaycomplete: 1000,
+                onYoyo: ()=>{onYoyo?.();},
                 onComplete: (tween, targets, gameObject)=>{resolve();}         
             });
         });
@@ -1337,10 +1348,6 @@ export class Role extends Entity
 
     interact(ent, act) {ent.emit(act, this.owner);}
 
-    // async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
-
-    // resume() {this._resolve?.(null);}
-
     async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
     resume() {this._resolve?.();}
@@ -1348,23 +1355,25 @@ export class Role extends Entity
     async attack()
     {
         this._ent = Avatar.instance;
+        this._act = 'attack';
 
         if(this.isTouch(this._ent))
         {
-            this.faceTo(this._ent.pos);
-            await this.step(this._ent.pos,200,'expo.in',true);
-            this.interact(this._ent,'attack');
+            await this.action();
         }
         else
         {
-            this.setDes(this._ent.pos,this._ent,'attack');
+            this.setDes(this._ent.pos,this._ent,this._act);
             await this.moveTo({draw:false});
         }
     }
 
-    hurt(attacker)
+    async hurt(attacker)
     {
         this.owner.status.state.life.cur -= attacker.status.attr.attack;
+        this._sp.setTint(0xff0000);
+        await Utility.delay(150);
+        this._sp.setTint(0xffffff);
         console.log('hurt:',this.owner.status.state.life.cur)
     }
    
@@ -1478,6 +1487,7 @@ export class Avatar extends Role
         {
             await this.pause();
             if(this.moving) {await this.moveTo();}
+            else {await this.action();}
         }
     }
 
