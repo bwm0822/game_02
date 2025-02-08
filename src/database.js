@@ -23,24 +23,33 @@ export class ItemDB
     {
         'sword_01':{cat:UI.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
                     des:'這是一把刀',
-                    props:{damage:10,defend:1}},
-        'sword_02':{cat:UI.CAT_WEAPON,icon:'weapons/4',name:'刀-2'},
-        'sword_03':{cat:UI.CAT_WEAPON,icon:'weapons/5',name:'刀-3'},
+                    props:{attack:10}},
+        'sword_02':{cat:UI.CAT_WEAPON,icon:'weapons/4',name:'刀-2',
+                    props:{attack:10}},
+        'sword_03':{cat:UI.CAT_WEAPON,icon:'weapons/5',name:'刀-3',
+                    props:{attack:10}},
 
         'helmet_01':{cat:UI.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
-                    des:'這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,這是頭盔,'},
-        'helmet_02':{cat:UI.CAT_HELMET,icon:'weapons/46',name:'頭盔-2'},
-        'helmet_03':{cat:UI.CAT_HELMET,icon:'weapons/47',name:'頭盔-3'},
+                    des:'這是頭盔',
+                    props:{defend:1}},
+        'helmet_02':{cat:UI.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',
+                    props:{defend:1}},
+        'helmet_03':{cat:UI.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',
+                    props:{defend:1}},
 
         'chest_01':{cat:UI.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
                     des:'這是護甲',
-                    props:{defend:10}},
-        'chest_02':{cat:UI.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20},
-        'chest_03':{cat:UI.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20},
+                    props:{defend:2}},
+        'chest_02':{cat:UI.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20,
+                    props:{defend:2}},
+        'chest_03':{cat:UI.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20,
+                    props:{defend:2}},
 
-        'gloves_01':{cat:UI.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套'},
+        'gloves_01':{cat:UI.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套',
+                    props:{defend:1}},
 
-        'boots_01':{cat:UI.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子'},
+        'boots_01':{cat:UI.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子',
+                    props:{defend:1}},
 
         'neck_01':{cat:UI.CAT_NECKLACE,icon:'icons/134',name:'項鍊-1',gold:10,des:'項鍊'},
 
@@ -181,11 +190,12 @@ export class RoleDB
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
                     bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01'],
-                    attr:
+                    attrs:
                         {
                             attack: 5,
+                            defend: 0,
                         },
-                    state:
+                    states:
                         {
                             life: {cur:100,max:100},
                         }
@@ -198,11 +208,12 @@ export class RoleDB
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
                     bag:[],
-                    attr:
+                    attrs:
                         {
                             attack: 5,
+                            defend: 0,
                         },
-                    state:
+                    states:
                         {
                             life: {cur:100,max:100},
                         }

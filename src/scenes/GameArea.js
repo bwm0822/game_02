@@ -12,7 +12,8 @@ export class GameArea extends GameScene
 
     create()
     {
-        this.mode = 'normal';//'combat';
+        //this.mode = 'normal';
+        this.mode = 'combat';
         super.create({diagonal:true,classType:Role.Avatar});
         this.process();
 

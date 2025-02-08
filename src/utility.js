@@ -5,7 +5,7 @@ export default class Utility
                     helmet:'頭盔',chestplate:'胸甲',gloves:'手套',boots:'靴子',
                     necklace:'項鍊',ring:'戒子',
                     other:'其他',
-                    attr:'屬性',state:'狀態',
+                    attrs:'屬性',states:'狀態',
                     attack:'攻擊',
                     damage:'傷害',magazine:'彈匣',rof:'射速',range:'射程',
                     life:'生命',speed:'速度',attack:'攻擊',defense:'防禦',

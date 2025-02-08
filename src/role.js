@@ -10,7 +10,8 @@ import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
 import {Entity} from './entity.js';
-import {RoleDB,DialogDB} from './database.js';
+import {RoleDB,DialogDB,ItemDB} from './database.js';
+import {UI,text} from './uibase.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -986,20 +987,56 @@ export class Player
         {
             Record.data.player = {
                 gold: roleD.gold, 
-                equip: [],
+                equips: [],
                 bag: [],
-                attr: Utility.deepClone(roleD.attr),
-                state: Utility.deepClone(roleD.state), 
+                attrs: Utility.deepClone(roleD.attrs),
+                states: Utility.deepClone(roleD.states), 
             }
         }
 
         this.owner = {role:roleD, status:Record.data.player}
         console.log(this.owner);
+        this.equip();
     }
 
     save()
     {
         Record.data.player = this.owner.status;
+    }
+
+    equip()
+    {
+        this.owner.status.attrs = Utility.deepClone(this.owner.role.attrs);
+        this.owner.status.states = Utility.deepClone(this.owner.role.states); 
+
+        this.owner.status.equips.forEach((equip)=>{
+            //console.log(equip);
+            if(equip.id)
+            {
+                let item = ItemDB.get(equip.id);
+                if(item.props)
+                {
+                    for(let [key,value] of Object.entries(item.props))
+                    {
+                        //console.log(key,value);
+                        switch(key)
+                        {
+                            case 'attack':
+                                this.owner.status.attrs[key]=value; break;
+                            case 'life':
+                                this.owner.status.states[key].max+=value; break;
+                            default:
+                                this.owner.status.attrs[key]+=value; break;
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    static equip()
+    {
+        Player.instance?.equip();
     }
 
     static buy(seller,gold)
@@ -1204,7 +1241,8 @@ export class Role extends Entity
     {
         super(scene,x,y);
         this.weight = 1000;
-        this.acts = ['attack','talk','trade'];
+        //this.acts = ['attack','talk','trade'];
+        this.acts = ['talk','trade'];
         this._faceR = true;
         //
         this._path = [];
@@ -1310,7 +1348,7 @@ export class Role extends Entity
 
         if(this._act)
         {
-            await this.step(this._ent.pos,200,'expo.in',true, ()=>{this.interact(this._ent,this._act);}); 
+            await this.step(this._ent.pos,200,'expo.in',true,()=>{this.interact(this._ent,this._act);}); 
         }
         else
             this.interact(this._ent,this._act);
@@ -1334,7 +1372,7 @@ export class Role extends Entity
                 ease: ease,
                 yoyo: yoyo,
                 //delaycomplete: 1000,
-                onYoyo: ()=>{onYoyo?.();},
+                onYoyo: ()=>{onYoyo?.();onYoyo=null;},  // 讓 onYoyo 只觸發一次
                 onComplete: (tween, targets, gameObject)=>{resolve();}         
             });
         });
@@ -1370,11 +1408,37 @@ export class Role extends Entity
 
     async hurt(attacker)
     {
-        this.owner.status.state.life.cur -= attacker.status.attr.attack;
+        //console.trace();
+        console.log(this.owner.status.states.life.cur,attacker.status.attrs.attack);
+        this.owner.status.states.life.cur -= attacker.status.attrs.attack;
         this._sp.setTint(0xff0000);
         await Utility.delay(150);
         this._sp.setTint(0xffffff);
-        console.log('hurt:',this.owner.status.state.life.cur)
+        console.log('hurt:',this.owner.status.states.life.cur)
+        this.disp(-attacker.status.attrs.attack,UI.COLOR_GREEN);
+    }
+
+    disp(value,color=UI.COLOR_RED)
+    {
+        if(!this._disp)
+        {
+            this._disp = text(this.scene,{stroke:'#000',strokeThickness:5});
+            this.add(this._disp);
+        }
+
+        this._disp.setText(value).setTint(color);
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: this._disp,
+                x: 0,
+                y: {from:-48, to:-64},
+                duration: 200,
+                ease: 'linear',
+                onStart: ()=>{this._disp.visible=true;},
+                onComplete: (tween, targets, gameObject)=>{resolve();this._disp.visible=false}         
+            });
+        });
+
     }
    
 
@@ -1506,7 +1570,8 @@ export class Npc extends Role
         super.init(mapName);
         this.addToRoleList();
         this.load();
-        this.state = 'attack';
+        //this.state = 'attack';
+        this.state = 'normal';
     }
     
     load()
@@ -1522,13 +1587,13 @@ export class Npc extends Role
                 trade: true, 
                 gold: roleD.gold, 
                 bag: this.toBag(roleD.bag),
-                attr: Utility.deepClone(roleD.attr),
-                state: Utility.deepClone(roleD.state), 
+                attrs: Utility.deepClone(roleD.attrs),
+                states: Utility.deepClone(roleD.states), 
             }
         }
     }
 
-    save() {this.saveData(this.owner.state);}
+    save() {this.saveData(this.owner.status);}
 
     addListener()
     {

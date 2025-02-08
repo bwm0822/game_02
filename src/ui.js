@@ -334,17 +334,22 @@ class EquipSlot extends Slot
         ring        : UI.ICON_RING,
     }
 
-    constructor(scene, w, h, cat, getOwner, config)
+    constructor(scene, w, h, id, getOwner, config, cat)
     {
-        super(scene, w, h, cat, getOwner, config);
+        super(scene, w, h, id, getOwner, config);
+        this._cat = cat;
         this.setIcon();
     }
 
-    get container() {return this._getOwner ? this._getOwner().equip : null;}
+    get container() {return this._getOwner ? this._getOwner().equips : null;}
 
-    get cat() {return this._id;}
+    get cat() {return this._cat;}
 
     get isValid() {return UiDragged.isCat(this.cat)}
+
+    // get, set 都要 assign 才會正常 work
+    get slot() {return super.slot;}
+    set slot(value) {super.slot=value; Role.Player.equip(); UiProfile.refresh();}
 
     setIcon(icon)
     {
@@ -898,18 +903,20 @@ export class UiInv extends UiBase
             space: {column:5,row:5,left:0,right:0,bottom:20},
         }
         let grid = scene.rexUI.add.gridSizer(config);
-        let equip = function(cat, getOwner)
+        let equip = function(id, cat, getOwner)
         {
-            let slot = new EquipSlot(scene, UI.SLOT_SIZE, UI.SLOT_SIZE, cat, getOwner);
+            let slot = new EquipSlot(scene, UI.SLOT_SIZE, UI.SLOT_SIZE, id, getOwner, {}, cat);
             return slot;
         }
-        grid.add(equip(UI.CAT_WEAPON, getOwner))
-            .add(equip(UI.CAT_HELMET, getOwner))
-            .add(equip(UI.CAT_CHESTPLATE, getOwner))
-            .add(equip(UI.CAT_GLOVES, getOwner))
-            .add(equip(UI.CAT_BOOTS, getOwner))
-            .add(equip(UI.CAT_NECKLACE, getOwner))
-            .add(equip(UI.CAT_RING, getOwner))
+        let i=0;
+        grid.add(equip(i++, UI.CAT_WEAPON, getOwner))
+            .add(equip(i++, UI.CAT_HELMET, getOwner))
+            .add(equip(i++, UI.CAT_CHESTPLATE, getOwner))
+            .add(equip(i++, UI.CAT_GLOVES, getOwner))
+            .add(equip(i++, UI.CAT_BOOTS, getOwner))
+            .add(equip(i++, UI.CAT_NECKLACE, getOwner))
+            .add(equip(i++, UI.CAT_RING, getOwner))
+            .add(equip(i++, UI.CAT_RING, getOwner))
 
         this.add(grid,{key:'equip'});
         return this;
@@ -1165,8 +1172,8 @@ export class UiProfile extends UiBase
             .addTop(scene,'個人')
             .addInfo(scene)
             .addTab(scene)
-            .addPage(scene,'attr')
-            .addPage(scene,'state')
+            .addPage(scene,'attrs')
+            .addPage(scene,'states')
             .setOrigin(0)
             .layout()
             .hide()
@@ -1234,8 +1241,8 @@ export class UiProfile extends UiBase
         let button_pre;
         let config = {
             background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
-            topButtons:[text(scene,{text:'attr'.local(),color:'#777777'}),
-                        text(scene,{text:'state'.local(),color:'#777777'})],
+            topButtons:[text(scene,{text:'attrs'.local(),color:'#777777'}),
+                        text(scene,{text:'states'.local(),color:'#777777'})],
             space: {left:5, top:5, bottom:5, topButton:20}
         }
 
@@ -1280,9 +1287,8 @@ export class UiProfile extends UiBase
 
         childPanel.removeAll(true);
 
-        for(let [key,value] of Object.entries(this.owner.role[cat]))
+        for(let [key,value] of Object.entries(this.owner.status[cat]))
         {
-            //console.log(key, value)
             switch(key)
             {
                 case 'life': value = `${value.cur} / ${value.max}`; break;
@@ -1290,12 +1296,19 @@ export class UiProfile extends UiBase
 
             childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})
         }
+
+        return this;
     }
 
     update()
     {
-        this.updatePage('attr');
-        this.updatePage('state');
+        if(this.visible)
+        {
+            //console.log('update');
+            this.updatePage('attrs')
+                .updatePage('states')
+                .layout();
+        }
     }
 
     show(owner)
@@ -1310,6 +1323,7 @@ export class UiProfile extends UiBase
 
     static show(owner) {UiProfile.instance?.show(owner);}
     static close() {UiProfile.instance?.close();}
+    static refresh() {UiProfile.instance?.update();}
 }
 
 export class UiDialog extends Sizer

@@ -15,6 +15,7 @@ export let UI =
     COLOR_WHITE : 0xffffff,
     COLOR_GRAY : 0x777777,
     COLOR_RED : 0xff0000,
+    COLOR_GREEN : 0x00ff00,
     COLOR_YELLOW : 0xffff00,
     COLOR_BLACK : 0x0,
 
