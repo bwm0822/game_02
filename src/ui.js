@@ -1,4 +1,5 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
+import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
 import {UI, rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
 import * as Role from './role.js';
@@ -131,10 +132,11 @@ class Slot extends Icon
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
     get isEmpty() {return this.checkIfEmpty(this.slot);}
-    get container() {return this._getOwner ? this._getOwner().bag : null;}
+    get container() {return this._getOwner ? this._getOwner().status.bag : null;}
     get owner() {return this._getOwner?.();}
     get isValid() {return true;}
-    get isTrade() {return this.owner?.trade??false;}
+    get isTrade() {return this.owner?.tradeable??false;}
+    get acts() {return ['use','drop']}
 
     setSlot(value)
     {
@@ -229,7 +231,7 @@ class Slot extends Icon
 
     middleButtonDown(x,y)
     {
-        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20);}
+        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts,this);}
     }
 
     get isSell() {return this.isTrade && !UiDragged.isTrade;}
@@ -238,13 +240,27 @@ class Slot extends Icon
 
     get noTrade() {return this.isTrade == UiDragged.isTrade;}
 
+    use()
+    {
+        console.log('use');
+        this.clear();
+    }
+
+    drop()
+    {
+        console.log('drop');
+        console.log(this.owner);
+        this.owner.drop(this);
+        this.clear();
+    }
+
     trade()
     {
         if(!this.isEmpty) {return;}
-        if(this.owner.gold >= UiDragged.gold)
+        if(this.owner.status.gold >= UiDragged.gold)
         {
-            this.owner.gold -= UiDragged.gold;
-            UiDragged.owner.gold += UiDragged.gold;
+            this.owner.status.gold -= UiDragged.gold;
+            UiDragged.owner.status.gold += UiDragged.gold;
             this.slot = UiDragged.slot;
             UiDragged.clear();
             UiInv.updateGold();
@@ -342,7 +358,7 @@ class EquipSlot extends Slot
         this.setIcon();
     }
 
-    get container() {return this._getOwner ? this._getOwner().equips : null;}
+    get container() {return this._getOwner ? this._getOwner().status.equips : null;}
 
     get cat() {return this._cat;}
 
@@ -414,7 +430,7 @@ export class UiDragged extends Pic
     static get slot() {return UiDragged.instance.data.slot;}
     static get owner() {return UiDragged.instance.data.owner;}
     static get gold() {return UiDragged.instance.data.item.gold;}
-    static get isTrade() {return UiDragged.instance.data.owner.trade??false;}
+    static get isTrade() {return UiDragged.instance.data.owner.tradeable??false;}
     static set data(value) {UiDragged.instance.setData(value);}
 
     isCat(cat) {return this.data.item.cat == cat;}
@@ -513,36 +529,161 @@ class UiCover extends Sizer
     static close() {if(UiCover.instance){UiCover.instance.hide();}}
 }
 
-export class UiOption extends Sizer
+// export class UiOption extends Sizer
+// {
+//     static instance = null;
+//     constructor(scene)
+//     {
+//         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
+//         UiOption.instance = this;
+//         this.btns={};
+
+//         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
+//             .addButton('use',this.use.bind(this))
+//             .addButton('drop',this.drop.bind(this))
+//             .addButton('talk')
+//             .addButton('trade')
+//             .addButton('observe',this.observe.bind(this))
+//             .addButton('attack')
+//             .addButton('open')
+//             .setOrigin(0)
+//             .layout()
+//             .hide();
+
+//         scene.add.existing(this);
+//         this.getLayer().name = 'UiOption';
+//     }
+
+//     addButton(key,onclick)
+//     {
+//         let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
+//             //onclick ? onclick(key) : this.act(key); 
+//             (onclick??this.act.bind(this))(key);
+//         }});
+            
+//         this.btns[key] = btn;
+//         this.add(btn,{expand:true})
+//         return this;
+//     }
+
+//     use()
+//     {
+//         this.close();
+//         //console.log('use');
+//         this.target.use();
+//     }
+
+//     drop()
+//     {
+//         this.close();
+//         //console.log('drop');
+//         this.target.drop();
+//     }
+
+//     observe()
+//     {
+//         this.close();
+//         UiObserve.show(this.target);
+//     }
+
+//     act(act)
+//     {
+//         this.close();
+//         Role.Avatar.setDes(this.target.pos,this.target,act);
+//     }
+
+
+//     show(x,y,options=['use','drop'],target)
+//     {
+//         this.target = target;
+//         UiCover.show(true);
+//         UiInfo.close();
+//         UiCursor.set();
+//         super.show();        
+//         Object.values(this.btns).forEach((btn)=>{btn.hide();})
+//         options.forEach((opt)=>{this.btns[opt].show();})
+//         this.setPosition(x,y).rePos().layout();
+//     }
+
+//     rePos()
+//     {
+//         if(this.right>UI.w) {this.x-=this.right-UI.w;}
+//         else if(this.left<0) {this.x-=this.left;}
+//         if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
+//         else if(this.top<0) {this.y-=this.top;}
+//         return this;
+//     }
+
+//     close() {this.hide();UiCover.close();}
+
+//     static close() {UiOption.instance?.close();}
+
+//     static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
+
+// }
+
+
+export class UiOption extends ContainerLite
 {
     static instance = null;
     constructor(scene)
     {
-        super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
+        super(scene,0,0,UI.w,UI.h);
         UiOption.instance = this;
-        this.btns={};
-
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-            .addButton('use',this.use.bind(this))
-            .addButton('drop',this.drop.bind(this))
-            .addButton('talk')
-            .addButton('trade')
-            .addButton('observe',this.observe.bind(this))
-            .addButton('attack')
-            .addButton('open')
-            .setOrigin(0)
-            .layout()
-            .hide();
+        //this.btns={};
+        this.addBg(scene)
+            .addOption(scene)
+            .visible=false;
 
         scene.add.existing(this);
         this.getLayer().name = 'UiOption';
     }
 
+    addBg(scene)
+    {
+        let sizer = scene.rexUI.add.sizer(0,0,UI.w,UI.h);
+        sizer.addBackground(rect(scene,{alpha:0.5}))
+            .setOrigin(0)
+            .layout()
+            .setInteractive()
+            .on('pointerdown',()=>{this.visible=false;})
+        this.add(sizer);
+
+        return this;
+    }
+
+    addOption(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
+        sizer.addButton = this.addButton;
+        sizer.rePos = this.rePos
+        sizer.btns = {};
+        this.setOption = (options)=> {
+            Object.values(sizer.btns).forEach((btn)=>{btn.hide();})
+            options.forEach((opt)=>{sizer.btns[opt].show();});
+            return this;
+        }
+        this.setPos = (x,y)=>{sizer.setPosition(x,y).rePos().layout();};
+
+        sizer
+            .addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
+            .addButton('use',this.use.bind(this))
+            .addButton('drop',this.drop.bind(this))
+            .addButton('talk',this.act.bind(this))
+            .addButton('trade',this.act.bind(this))
+            .addButton('observe',this.observe.bind(this))
+            .addButton('attack',this.act.bind(this))
+            .addButton('open',this.act.bind(this))
+            .setOrigin(0)
+        
+        this.add(sizer);
+        return this;
+    }
+
     addButton(key,onclick)
     {
         let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
-            //onclick ? onclick(key) : this.act(key); 
-            (onclick??this.act.bind(this))(key);
+            onclick?.(key);
         }});
             
         this.btns[key] = btn;
@@ -553,19 +694,21 @@ export class UiOption extends Sizer
     use()
     {
         this.close();
-        console.log('use');
+        //console.log('use');
+        this.target.use();
     }
 
     drop()
     {
         this.close();
-        console.log('drop');
+        //console.log('drop');
+        this.target.drop();
     }
 
     observe()
     {
         this.close();
-        UiObserve.show(this.target.owner);
+        UiObserve.show(this.target);
     }
 
     act(act)
@@ -578,13 +721,10 @@ export class UiOption extends Sizer
     show(x,y,options=['use','drop'],target)
     {
         this.target = target;
-        UiCover.show(true);
         UiInfo.close();
-        UiCursor.set();
-        super.show();        
-        Object.values(this.btns).forEach((btn)=>{btn.hide();})
-        options.forEach((opt)=>{this.btns[opt].show();})
-        this.setPosition(x,y).rePos().layout();
+        UiCursor.set();   
+        this.visible = true;
+        this.setOption(options).setPos(x,y);
     }
 
     rePos()
@@ -596,7 +736,7 @@ export class UiOption extends Sizer
         return this;
     }
 
-    close() {this.hide();UiCover.close();}
+    close() {this.visible=false;}
 
     static close() {UiOption.instance?.close();}
 
@@ -735,7 +875,7 @@ class UiInfo extends Sizer
 
 class UiBase extends Sizer
 {
-    getOwner() {return this.owner.status;}
+    getOwner() {return this.owner;}
 
     addBg(scene)
     {
@@ -870,7 +1010,7 @@ export class UiCase extends Sizer
         this.getElement('label',true).setText(owner.name);
         this.layout();
         this.update();
-        UiInv.show(Role.Player.owner);
+        UiInv.show(Role.Avatar.instance);
         UiCover.show();
         UiCursor.set();
     }
@@ -962,7 +1102,6 @@ export class UiInv extends UiBase
 
     show(owner)
     {
-        console.log('owner',owner)
         super.show();
         this.owner = owner;
         this.update();
@@ -1065,9 +1204,11 @@ export class UiMain extends Sizer
        
     }
 
-    inv() {UiInv.show(Role.Player.owner);}
+    //inv() {UiInv.show(Role.Player.instance);}
+    inv() {UiInv.show(Role.Avatar.instance);}
 
-    profile() {UiProfile.show(Role.Player.owner);}
+    //profile() {UiProfile.show(Role.Player.instance);}
+    profile() {UiProfile.show(Role.Avatar.instance);}
 
     menu() {this.hide();this.scene.events.emit('menu');}
 
@@ -1229,7 +1370,7 @@ export class UiTrade extends UiBase
         super.show();
         this.owner = owner;
         this.update();
-        UiInv.show(Role.Player.owner);
+        UiInv.show(Role.Avatar.instance);
         UiCover.show();
     }
 

@@ -1,4 +1,5 @@
 import Record from './record.js'
+import {ItemDB} from './database.js';
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -99,7 +100,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到
     {
-        console.log(key,frame);
+        //console.log(key,frame);
         if(key)
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
@@ -187,6 +188,20 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debugDraw();
     }
 
+    create(id)
+    {
+        let item = ItemDB.get(id);
+        let [key,frame] = item.icon.split('/');
+        this.setTexture(key,frame);
+        this.displayWidth = this._sp.width;
+        this.displayHeight = this._sp.height;
+        this.addListener();
+        this.addPhysics();
+        this.addGrid();
+        this.updateDepth();
+        this.addWeight();
+    }
+
     loadData() {return Record.getByUid(this.mapName,this.uid);}
 
     saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
@@ -257,6 +272,7 @@ export class Case extends Entity
         super(scene);   
         this.container = [];   
         this.interactive = true;
+        this.status = {};
     }
 
     get acts()  {return ['open'];}
@@ -277,17 +293,17 @@ export class Case extends Entity
     {
         this.owner={name:this.name};
         let data = this.loadData();
-        if(data) {this.owner.bag = data;}
+        if(data) {this.status.bag = data;}
         else 
         {
             let items = JSON.parse(this.container);
-            this.owner.bag = this.toBag(items);
+            this.status.bag = this.toBag(items);
         }   
     }
 
-    save() { this.saveData(this.owner.bag); }
+    save() { this.saveData(this.bag); }
 
-    open() { this.send('case', this.owner); }
+    open() { this.send('case', this); }
 
    
 }
@@ -295,9 +311,9 @@ export class Case extends Entity
 
 export class Pickup extends Entity
 {
-    constructor(scene)
+    constructor(scene,x,y)
     {
-        super(scene);  
+        super(scene,x,y);  
         this.interactive = true;    
     }
 

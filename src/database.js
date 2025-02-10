@@ -188,7 +188,7 @@ export class RoleDB
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
-                    z:{l:48,r:48,t:32,b:32},
+                    z:{l:48,r:48,t:64,b:32},
                     bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01'],
                     attrs:
                         {

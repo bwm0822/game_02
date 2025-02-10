@@ -394,7 +394,7 @@
         "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/maps/village_01.json",
         "public/assets/maps/map.json",

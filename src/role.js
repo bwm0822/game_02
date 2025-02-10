@@ -9,7 +9,7 @@ import Utility from './utility.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
-import {Entity} from './entity.js';
+import {Entity,Pickup} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import {UI,text,rect} from './uibase.js';
 
@@ -957,7 +957,7 @@ export class Player
     get gold() {return this.owner.status.gold;}
     set gold(value) {return this.owner.status.gold=value;}
 
-    static get owner() {return Player.instance.owner;}
+    //static get owner() {return Player.instance.owner;}
 
     buy(seller, gold)
     {
@@ -994,22 +994,22 @@ export class Player
             }
         }
 
-        this.owner = {role:roleD, status:Record.data.player}
-        console.log(this.owner);
+        this.role = roleD; 
+        this.status = Record.data.player;
         this.equip();
     }
 
     save()
     {
-        Record.data.player = this.owner.status;
+        Record.data.player = this.status;
     }
 
     equip()
     {
-        this.owner.status.attrs = Utility.deepClone(this.owner.role.attrs);
-        this.owner.status.states = Utility.deepClone(this.owner.role.states); 
+        this.status.attrs = Utility.deepClone(this.role.attrs);
+        this.status.states = Utility.deepClone(this.role.states); 
 
-        this.owner.status.equips.forEach((equip)=>{
+        this.status.equips.forEach((equip)=>{
             //console.log(equip);
             if(equip.id)
             {
@@ -1022,11 +1022,11 @@ export class Player
                         switch(key)
                         {
                             case 'attack':
-                                this.owner.status.attrs[key]=value; break;
+                                this.status.attrs[key]=value; break;
                             case 'life':
-                                this.owner.status.states[key].max+=value; break;
+                                this.status.states[key].max+=value; break;
                             default:
-                                this.owner.status.attrs[key]+=value; break;
+                                this.status.attrs[key]+=value; break;
                         }
                     }
                 }
@@ -1405,11 +1405,11 @@ export class Role extends Entity
 
     async hurt(attacker)
     {
-        this.owner.status.states.life.cur -= attacker.owner.status.attrs.attack;
+        this.status.states.life.cur -= attacker.status.attrs.attack;
         this._sp.setTint(0xff0000);
         await Utility.delay(150);
         this._sp.setTint(0xffffff);
-        this.disp(-attacker.owner.status.attrs.attack,UI.COLOR_GREEN);
+        this.disp(-attacker.status.attrs.attack,UI.COLOR_GREEN);
         this.speak('一二三四五六七八九十')
     }
 
@@ -1456,6 +1456,59 @@ export class Role extends Entity
         });
 
     }
+
+    equip()
+    {
+        this.status.attrs = Utility.deepClone(this.role.attrs);
+        this.status.states = Utility.deepClone(this.role.states); 
+
+        this.status.equips.forEach((equip)=>{
+            //console.log(equip);
+            if(equip.id)
+            {
+                let item = ItemDB.get(equip.id);
+                if(item.props)
+                {
+                    for(let [key,value] of Object.entries(item.props))
+                    {
+                        //console.log(key,value);
+                        switch(key)
+                        {
+                            case 'attack':
+                                this.status.attrs[key]=value; break;
+                            case 'life':
+                                this.status.states[key].max+=value; break;
+                            default:
+                                this.status.attrs[key]+=value; break;
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    load(record)
+    {
+        let roleD = RoleDB.get(this.id);
+
+        //if(!Record.data.player)
+        if(!record)
+        {
+            record = {
+                gold: roleD.gold, 
+                equips: [],
+                bag: [],
+                attrs: Utility.deepClone(roleD.attrs),
+                states: Utility.deepClone(roleD.states), 
+            }
+        }
+
+        this.role = roleD; 
+        this.status = record;
+        this.equip();
+    }
+
+    save() {return this.status;}
    
 
     drawPath(path)
@@ -1526,11 +1579,10 @@ export class Avatar extends Role
         this.weight = 1000;
         this.id = 'knight';
         this.initRole();
-        //this.addToRoleList();
-        this.debugDraw();
+        //this.debugDraw();
     }
 
-    get owner() {return Player.owner;}
+    //get owner() {return Player.instance;}
 
     async speak(value){}
 
@@ -1562,6 +1614,13 @@ export class Avatar extends Role
         this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
+    drop(slot)
+    {
+        console.log('-drop-',slot.slot);
+        new Pickup(this.scene,this.x,this.y).create(slot.slot.id);
+
+    }
+
     async process()
     {
         if(this.moving) {await this.moveTo();}
@@ -1575,7 +1634,6 @@ export class Avatar extends Role
 
     static setDes(pos,ent,act)
     {
-        console.log(pos,ent,act)
         Avatar.instance?.setDes(pos,ent,act);
     }
 
@@ -1597,20 +1655,21 @@ export class Npc extends Role
         this.state = 'idle';
     }
 
+    get tradeable() {return true;}
+
     get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
                                             : ['attack','observe'];}
     
     load()
     {
         let roleD = RoleDB.get(this.id);
-        this.owner = {role:roleD}
+        this.role = roleD;
         let data = this.loadData();
-        if(data) { this.owner.status = data; }
+        if(data) { this.status = data; }
         else
         {
-            this.owner.status = 
+            this.status = 
             {   
-                trade: true, 
                 gold: roleD.gold, 
                 bag: this.toBag(roleD.bag),
                 attrs: Utility.deepClone(roleD.attrs),
@@ -1619,7 +1678,7 @@ export class Npc extends Role
         }
     }
 
-    save() {this.saveData(this.owner.status);}
+    save() {this.saveData(this.status);}
 
     addListener()
     {
@@ -1631,13 +1690,13 @@ export class Npc extends Role
 
     talk() 
     {
-        this.owner.dialog = DialogDB.get(this.id);
-        this.send('talk',this.owner);
+        this.dialog = DialogDB.get(this.id);
+        this.send('talk',this);
     }
 
     trade() 
     {
-        this.send('trade',this.owner);
+        this.send('trade',this);
     }
 
     async hurt(attacker)

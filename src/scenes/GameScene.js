@@ -41,7 +41,7 @@ export class GameScene extends Scene
     loadRecord()
     {
         QuestManager.load();
-        Role.Player.load();
+        //Role.Player.load();
     }
 
     setCameraFollow(mode)
@@ -64,6 +64,7 @@ export class GameScene extends Scene
         else {pos = this.ports[this._data.port].pt;}
 
         this._avatar = new classType(this,pos.x,pos.y);
+        this._avatar.load(Record.data.player);
         this.setCameraFollow(UI.CAM_CENTER);
  
         Record.data.pos = this._avatar.pos;   
@@ -169,7 +170,8 @@ export class GameScene extends Scene
     menu()
     {
         Record.data.pos = this._avatar.pos;   
-        Role.Player.save();
+        Record.data.player = this._avatar.save();
+        //Role.Player.save();
         Record.save();
         this.scene.start('MainMenu');
     }
