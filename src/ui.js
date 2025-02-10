@@ -24,6 +24,7 @@ export default function createUI(scene)
     new UiProfile(scene);
     new UiCase(scene);
     new UiDialog(scene);
+    new UiObserve(scene);
     new UiMain(scene);
     new UiDragged(scene, 80, 80);
     new UiInfo(scene);
@@ -522,13 +523,13 @@ export class UiOption extends Sizer
         this.btns={};
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-            //.add(new UiButton(scene,{text:'使用',onclick:()=>{this.use();}}),{expand:true,key:'use'})
-            //.add(new UiButton(scene,{text:'丟棄',onclick:()=>{this.drop();}}),{expand:true,key:'drop'})
             .addButton('use',this.use.bind(this))
             .addButton('drop',this.drop.bind(this))
             .addButton('talk')
             .addButton('trade')
-            .addButton('open',this.act.bind(this))
+            .addButton('observe',this.observe.bind(this))
+            .addButton('attack')
+            .addButton('open')
             .setOrigin(0)
             .layout()
             .hide();
@@ -539,7 +540,11 @@ export class UiOption extends Sizer
 
     addButton(key,onclick)
     {
-        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{onclick?.(key);}});
+        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
+            //onclick ? onclick(key) : this.act(key); 
+            (onclick??this.act.bind(this))(key);
+        }});
+            
         this.btns[key] = btn;
         this.add(btn,{expand:true})
         return this;
@@ -547,20 +552,26 @@ export class UiOption extends Sizer
 
     use()
     {
-        this.hide();
+        this.close();
         console.log('use');
     }
 
     drop()
     {
-        this.hide();
+        this.close();
         console.log('drop');
+    }
+
+    observe()
+    {
+        this.close();
+        UiObserve.show(this.target.owner);
     }
 
     act(act)
     {
-        this.hide();
-        this.scene.events.emit('goto',this.target.pos,act);
+        this.close();
+        Role.Avatar.setDes(this.target.pos,this.target,act);
     }
 
 
@@ -776,16 +787,26 @@ class UiBase extends Sizer
         return this;
     }
 
-    prop(key, value)
+    addDivider(scene)
+    {
+        this.add(rect(scene,{width:200,height:1,color:0xffffff}),
+                    {padding:10,expand:true})
+        return this;
+    }
+
+    prop(key, value, interactive=true)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0})
         let bg = sizer.getElement('bg').setAlpha(0);
-        sizer.setInteractive()
-            .on('pointerover',()=>{ bg.alpha=1; })
-            .on('pointerout',()=>{ bg.alpha=0; })
+        if(interactive)
+        {
+            sizer.setInteractive()
+                .on('pointerover',()=>{ bg.alpha=1; })
+                .on('pointerout',()=>{ bg.alpha=0; })
+        }
         return sizer;
     }
 
@@ -849,7 +870,7 @@ export class UiCase extends Sizer
         this.getElement('label',true).setText(owner.name);
         this.layout();
         this.update();
-        UiInv.show(Role.Player.data);
+        UiInv.show(Role.Player.owner);
         UiCover.show();
         UiCursor.set();
     }
@@ -953,6 +974,73 @@ export class UiInv extends UiBase
     static show(owner) {UiInv.instance?.show(owner);}
     static updateGold() {UiInv.instance?.updateGold();}
 }
+
+class UiObserve extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : UI.w/2,
+            y : UI.h/2,
+            width : 300,
+            height : 300,
+            orientation : 'y',
+        }
+
+        super(scene,config)
+        UiObserve.instance = this;
+
+        this.addBg(scene)
+            .addTop(scene)
+            .addName(scene)
+            .addDivider(scene)
+            .addProps(scene)
+            .layout()
+            .hide()
+        scene.add.existing(this);
+       
+        this.getLayer().name = 'UiObserve';
+    }
+
+    addName(scene)
+    {
+        this.add(text(scene),{key:'name'})
+        return this;
+    }
+
+    addProps(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'y'})
+        this.add(sizer,{expand:true,key:'props'})
+        return this;
+    }
+
+    update()
+    {
+        this.getElement('name').setText(this.owner.role.name);
+        let props = this.getElement('props');
+        props.removeAll(true)
+        let life = this.owner.status.states['life'];
+        let value = `${life.cur} / ${life.max}`
+        props.add(this.prop('life'.local(), value, false),{expand:true,padding:{left:10,right:10}})
+        this.layout();
+    }
+
+    close() {this.hide();UiCover.close();}
+
+    show(owner)
+    {
+        super.show();
+        UiCover.show();
+        this.owner = owner;
+        this.update();
+    }
+
+    static show(owner) {UiObserve.instance?.show(owner);}
+}
+
 
 
 

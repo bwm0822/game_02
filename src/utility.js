@@ -12,7 +12,7 @@ export default class Utility
                     shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',
                     poison:'下毒',weak:'虛弱',
                     use:'使用',drop:'丟棄',talk:'交談',trade:'交易',
-                    open:'開啟'
+                    open:'開啟',observe:'觀察'
                     };
                     
     static wait_r()     {this._wid=0;}

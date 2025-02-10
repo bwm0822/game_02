@@ -6,7 +6,7 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 import {UI} from  '../uibase.js';
-import {UiCursor,UiMain,UiOption,UiDialog} from '../ui.js'
+import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase} from '../ui.js'
 
 export class GameScene extends Scene
 {
@@ -88,6 +88,10 @@ export class GameScene extends Scene
             if (pointer.rightButtonDown())
             {
                console.log('right');
+            }
+            else if (pointer.middleButtonDown())
+            {
+                console.log('middle');
             }
             else
             {

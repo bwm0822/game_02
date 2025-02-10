@@ -5,17 +5,17 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        "public/assets/maps",
-        "public/assets/roles",
-        ".",
-        "public/assets/templates",
         "public/assets/tiles",
-        "public",
-        "public/assets"
+        ".",
+        "public/assets",
+        "public/assets/templates",
+        "public/assets/roles",
+        "public/assets/maps",
+        "public"
     ],
     "fileStates": {
         "": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.33,
             "scaleInEditor": 1
         },
         "#buffs": {
@@ -213,8 +213,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 512,
-                "y": 512
+                "x": 176.66666666666666,
+                "y": 676.3333333333333
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -261,9 +261,16 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 380,
-                "y": 1086.5
+                "x": 296,
+                "y": 1001.5
             }
+        },
+        "public/assets/maps/village_01.json#group": {
+            "dynamicWrapping": true
+        },
+        "public/assets/maps/village_01.json#terrain_tiles_v2": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1
         },
         "public/assets/parchment.tsj": {
             "dynamicWrapping": false,
@@ -384,18 +391,15 @@
     "map.tileWidth": 32,
     "map.width": 32,
     "openFiles": [
-        "public/assets/maps/village_01.json",
-        "public/assets/group.tsj",
-        "public/assets/maps/map.json",
-        "public/assets/Archer_Blue.tsj"
+        "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
-        "public/assets/Archer_Blue.tsj",
-        "public/assets/maps/map.json",
-        "public/assets/group.tsj",
         "public/assets/maps/village_01.json",
+        "public/assets/maps/map.json",
+        "public/assets/Archer_Blue.tsj",
+        "public/assets/group.tsj",
         "public/assets/cursors_map.tsj",
         "public/assets/cursors.tsj",
         "public/assets/Warrior_Blue.tsj",

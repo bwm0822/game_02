@@ -114,10 +114,6 @@
         {
          "firstgid":250,
          "source":"..\/terrain_tiles_v2.tsj"
-        }, 
-        {
-         "firstgid":410,
-         "source":"..\/group.tsj"
         }],
  "tilewidth":32,
  "type":"map",

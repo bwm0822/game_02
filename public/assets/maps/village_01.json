@@ -36,65 +36,7 @@
          "name":"layer3",
          "objects":[
                 {
-                 "gid":164,
-                 "height":193,
-                 "id":5,
-                 "name":"\u623f\u5b50",
-                 "properties":[
-                        {
-                         "name":"anchorX",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"bb",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"bl",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"br",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"bt",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"gt",
-                         "type":"int",
-                         "value":64
-                        }, 
-                        {
-                         "name":"interactive",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":-1
-                        }],
-                 "rotation":0,
-                 "type":"entity",
-                 "visible":true,
-                 "width":139,
-                 "x":256,
-                 "y":1120
-                }, 
-                {
-                 "gid":209,
+                 "gid":161,
                  "height":128,
                  "id":12,
                  "name":"",
@@ -366,13 +308,55 @@
                  "template":"..\/templates\/exit_b.tj",
                  "x":1184,
                  "y":1280
-                },
-            
+                }, 
                 {
                  "id":77,
                  "template":"..\/templates\/exit_b.tj",
                  "x":1216,
                  "y":1280
+                },
+            
+                {
+                 "gid":450,
+                 "height":193,
+                 "id":92,
+                 "name":"",
+                 "rotation":0,
+                 "type":"entity",
+                 "visible":true,
+                 "width":139,
+                 "x":256,
+                 "y":1120
+                }, 
+                {
+                 "gid":451,
+                 "height":32,
+                 "id":93,
+                 "name":"",
+                 "rotation":0,
+                 "type":"entity",
+                 "visible":true,
+                 "width":32,
+                 "x":192,
+                 "y":928
+                }, 
+                {
+                 "gid":473,
+                 "height":27,
+                 "id":94,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"container",
+                         "type":"string",
+                         "value":"[\"boots_01\"]"
+                        }],
+                 "rotation":0,
+                 "type":"case",
+                 "visible":true,
+                 "width":32,
+                 "x":192,
+                 "y":1120
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -381,31 +365,40 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":82,
+ "nextobjectid":95,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
  "tileheight":32,
  "tilesets":[
         {
+         "columns":10,
          "firstgid":1,
-         "source":"..\/terrain_tiles_v2.tsj"
+         "image":"..\/tiles\/terrain_tiles_v2.png",
+         "imageheight":512,
+         "imagewidth":320,
+         "margin":0,
+         "name":"terrain_tiles_v2",
+         "spacing":0,
+         "tilecount":160,
+         "tileheight":32,
+         "tilewidth":32
         }, 
         {
          "firstgid":161,
-         "source":"..\/group.tsj"
-        }, 
-        {
-         "firstgid":209,
          "source":"..\/Warrior_Blue.tsj"
         }, 
         {
-         "firstgid":257,
+         "firstgid":209,
          "source":"..\/cursors_map.tsj"
         }, 
         {
-         "firstgid":439,
+         "firstgid":391,
          "source":"..\/Archer_Blue.tsj"
+        }, 
+        {
+         "firstgid":447,
+         "source":"..\/group.tsj"
         }],
  "tilewidth":32,
  "type":"map",

@@ -11,7 +11,7 @@ import Record from './record';
 //import Ctrl from './ctrl.js';
 import {Entity} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
-import {UI,text} from './uibase.js';
+import {UI,text,rect} from './uibase.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -1241,8 +1241,6 @@ export class Role extends Entity
     {
         super(scene,x,y);
         this.weight = 1000;
-        //this.acts = ['attack','talk','trade'];
-        this.acts = ['talk','trade'];
         this._faceR = true;
         //
         this._path = [];
@@ -1275,7 +1273,7 @@ export class Role extends Entity
 
     addToRoleList() {this.scene.roles.push(this);}
 
-    async setDes(des, ent, act)
+    setDes(des, ent, act)
     {
         if(this.isTouch(ent))
         {
@@ -1346,12 +1344,14 @@ export class Role extends Entity
 
         this.faceTo(this._ent.pos);
 
-        if(this._act)
+        if(this._act=='attack')
         {
             await this.step(this._ent.pos,200,'expo.in',true,()=>{this.interact(this._ent,this._act);}); 
         }
         else
+        {
             this.interact(this._ent,this._act);
+        }
     }
 
     stop()
@@ -1384,7 +1384,7 @@ export class Role extends Entity
     //     bodys.forEach((body) => {body.gameObject.emit(act, this.owner);});
     // }
 
-    interact(ent, act) {ent.emit(act, this.owner);}
+    interact(ent, act) {ent.emit(act, this);}
 
     async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
@@ -1392,9 +1392,6 @@ export class Role extends Entity
 
     async attack()
     {
-        this._ent = Avatar.instance;
-        this._act = 'attack';
-
         if(this.isTouch(this._ent))
         {
             await this.action();
@@ -1408,14 +1405,32 @@ export class Role extends Entity
 
     async hurt(attacker)
     {
-        //console.trace();
-        console.log(this.owner.status.states.life.cur,attacker.status.attrs.attack);
-        this.owner.status.states.life.cur -= attacker.status.attrs.attack;
+        this.owner.status.states.life.cur -= attacker.owner.status.attrs.attack;
         this._sp.setTint(0xff0000);
         await Utility.delay(150);
         this._sp.setTint(0xffffff);
-        console.log('hurt:',this.owner.status.states.life.cur)
-        this.disp(-attacker.status.attrs.attack,UI.COLOR_GREEN);
+        this.disp(-attacker.owner.status.attrs.attack,UI.COLOR_GREEN);
+        this.speak('一二三四五六七八九十')
+    }
+
+    speak(value)
+    {
+        if(!this._speak)
+        {
+            this._speak = this.scene.rexUI.add.sizer(0,-48,{space:5});
+            this._speak.addBackground(rect(this.scene,{color:0xffffff,radius:10,strokeColor:0x0,strokeWidth:0}))
+                        .add(text(this.scene,{color:'#000',wrapWidth:5*UI.FONT_SIZE}),{key:'text'})
+                        .setOrigin(0.5,1);
+            this.add(this._speak);
+            this.sort('depth')
+        }
+
+        this._speak.getElement('text').setText(value);
+        this._speak.layout();
+        this._speak.show();
+        if (this._to) {clearTimeout(this._to);this._to=null;}
+        this._to = setTimeout(()=>{this._speak.hide();this._to=null;}, 1000);
+
     }
 
     disp(value,color=UI.COLOR_RED)
@@ -1424,6 +1439,7 @@ export class Role extends Entity
         {
             this._disp = text(this.scene,{stroke:'#000',strokeThickness:5});
             this.add(this._disp);
+            this._disp.setDepth(100);
         }
 
         this._disp.setText(value).setTint(color);
@@ -1516,6 +1532,8 @@ export class Avatar extends Role
 
     get owner() {return Player.owner;}
 
+    async speak(value){}
+
     initRole()
     {
         let roleD = this.initData();
@@ -1555,6 +1573,12 @@ export class Avatar extends Role
         }
     }
 
+    static setDes(pos,ent,act)
+    {
+        console.log(pos,ent,act)
+        Avatar.instance?.setDes(pos,ent,act);
+    }
+
 }
 
 export class Npc extends Role
@@ -1570,9 +1594,11 @@ export class Npc extends Role
         super.init(mapName);
         this.addToRoleList();
         this.load();
-        //this.state = 'attack';
-        this.state = 'normal';
+        this.state = 'idle';
     }
+
+    get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
+                                            : ['attack','observe'];}
     
     load()
     {
@@ -1599,7 +1625,8 @@ export class Npc extends Role
     {
         super.addListener();
         this.on('talk',()=>{this.talk();})
-        this.on('attack',(attacker)=>{this.hurt(attacker);})
+            .on('trade',()=>{this.trade();})
+            .on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
     talk() 
@@ -1608,13 +1635,24 @@ export class Npc extends Role
         this.send('talk',this.owner);
     }
 
-    trade() {this.send('trade',this.owner);}
+    trade() 
+    {
+        this.send('trade',this.owner);
+    }
+
+    async hurt(attacker)
+    {
+        super.hurt(attacker);
+        this.state = 'attack';
+        this._ent = attacker;
+        this._act = 'attack';
+    }
 
     async process()
     {
         switch(this.state)
         {
-            case 'moving':
+            case 'move':
                 this.setDes(Avatar.instance.pos);
                 await this.moveTo({draw:false});
                 break;

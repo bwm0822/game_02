@@ -13,7 +13,6 @@ export class Entity extends Phaser.GameObjects.Container
         this.zl=0,this.zr=0,this.zt=0,this.zb=0;
         this.interactive = false;
         this.en_outline = true;
-        this.acts = [];
         this.weight = 0;
         this.static = true; // true: static body, false: dynamic body
         this.uid = 0;   // map.createMap() 會自動設定 uid
@@ -23,6 +22,7 @@ export class Entity extends Phaser.GameObjects.Container
     set pos(value)  {this.x=value.x;this.y=value.y;}
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
     get act()   {return this.acts[0];}
+    get acts()  {return [''];}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
@@ -99,7 +99,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到
     {
-        //console.log(key,frame);
+        console.log(key,frame);
         if(key)
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
@@ -254,11 +254,12 @@ export class Case extends Entity
 {
     constructor(scene)
     {
-        super(scene);
-        this.acts = ['open'];     
-        this.container = {};   
+        super(scene);   
+        this.container = [];   
         this.interactive = true;
     }
+
+    get acts()  {return ['open'];}
 
     addListener()
     {
@@ -296,10 +297,11 @@ export class Pickup extends Entity
 {
     constructor(scene)
     {
-        super(scene);
-        this.acts = ['take'];    
+        super(scene);  
         this.interactive = true;    
     }
+
+    get acts()  {return ['take'];}
 
     addListener()
     {
@@ -361,11 +363,12 @@ export class Port extends Entity
         super(scene);
         this.interactive = true;   
         this.port = '';
-        this.map = '';
-        this.acts = ['enter'];        
-        this.offsetX = 0 ;
+        this.map = '';      
+        this.offsetX = 0;
         this.offsetY = 0;
     }
+
+    get acts()  {return ['enter'];}
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
