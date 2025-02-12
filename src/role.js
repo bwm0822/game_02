@@ -1285,7 +1285,8 @@ export class Role extends Entity
         else
         {
             let rst = this.scene.map.getPath(this.pos, des);
-            if(rst && rst.valid)
+            //if(rst && rst.valid)
+            if(rst.state>=0)
             {
                 this._path = rst.path;
                 this._des = des; 
@@ -1464,7 +1465,7 @@ export class Role extends Entity
 
         this.status.equips.forEach((equip)=>{
             //console.log(equip);
-            if(equip.id)
+            if(equip && equip.id)
             {
                 let item = ItemDB.get(equip.id);
                 if(item.props)
@@ -1485,6 +1486,26 @@ export class Role extends Entity
                 }
             }
         })
+    }
+
+    drop(slot)
+    {
+        let p = this.scene.map.getDropPoint(this.pos);
+
+        //let drop = new Pickup(this.scene,this.x,this.y).create(slot.id);
+        new Pickup(this.scene,this.x,this.y-32).create(slot.id).falling(p);
+        
+    }
+
+    take(ent)
+    {
+        console.log('take',ent.slot);
+        //this.status.bag.push(ent.slot);
+        console.log('len',this.status.bag.length)
+        //let found = this.status.bag.find(slot=>Utility.isEmpty(slot))
+        let foundIndex = this.status.bag.findIndex(slot=>Utility.isEmpty(slot))
+        console.log(foundIndex)
+        if(foundIndex!=-1){this.status.bag[foundIndex]=ent.slot;}
     }
 
     load(record)
@@ -1614,11 +1635,11 @@ export class Avatar extends Role
         this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
-    drop(slot)
+    take(ent)
     {
-        console.log('-drop-',slot.slot);
-        new Pickup(this.scene,this.x,this.y).create(slot.slot.id);
-
+        super.take(ent);
+        this.send('out');
+        this.send('refresh');
     }
 
     async process()

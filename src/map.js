@@ -353,11 +353,13 @@ class Map
 
         if(end.weight==0)
         {
-            return {valid:false,pt:pt}
+            //return {valid:false,pt:pt}
+            return {state:-1,pt:pt}
         }
         else if(start==end)
         {
-            return {valid:false,pt:null}
+            //return {valid:false,pt:null}
+            return {state:0,pt:pt}
         }
         else
         {
@@ -365,27 +367,78 @@ class Map
             let len = result.length;
             if(len==0 || (len>=2 && result[len-2].g>=1000))
             {
-                return {valid:false,pt:pt}
+                //return {valid:false,pt:pt}
+                return {state:-1,pt:pt}
             }
             else
             {
                 let path = result.map((node)=>{return {x:node.y*tW+tW_2,y:node.x*tH+tH_2}});
-                return {valid:true,pt:pt,path:path}
+                //return {valid:true,pt:pt,path:path}
+                return {state:1,pt:pt,path:path}
             }
         }
     }
 
-    updateGrid(pos,weight,w,h)
+    getDropPoint(p)
+    {
+        let lut = [ {x:-1,y:-1},{x:0,y:-1},{x:1,y:-1},
+                    {x:-1,y:0},{x:1,y:0},
+                    {x:-1,y:1},{x:0,y:1},{x:1,y:1} ]
+
+        let w_2 = this.map.tileWidth/2;
+        let h_2 = this.map.tileHeight/2;
+
+        // let tx = this.map.worldToTileX(p.x);
+        // let ty = this.map.worldToTileX(p.y);
+        let [tx,ty] = this.worldToTile(p.x, p.y)
+
+        let r = Utility.random(0,lut.length-1);
+
+        for(let i=0;i<lut.length;i++)
+        {
+            let nx = tx + lut[r].x;
+            let ny = ty + lut[r].y;
+            if(this.getWeightByTile(nx,ny)==1)
+            {
+                let p = this.tileToWorld(nx,ny);
+                let dx = Utility.random(0, w_2);
+                let dy = Utility.random(0, h_2);
+                return {x:p.x+dx, y:p.y+dy}
+            }
+
+            if(++r>=lut.length) {r=0;}
+
+        }
+
+        return p;
+
+
+    }
+
+    tileToWorld(tx,ty)
+    {
+        return {x:tx*this.map.tileWidth, y:ty*this.map.tileHeight}
+    }
+
+    worldToTile(x,y)
+    {
+        return [this.map.worldToTileX(x), this.map.worldToTileY(y)];
+    }
+
+    updateGrid(p,weight,w,h)
     {
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
             let w_2 = Math.floor(w/2)-1;
             let h_2 = Math.floor(h/2)-1;
-            let tx0 = this.map.worldToTileX(pos.x-w_2);
-            let ty0 = this.map.worldToTileX(pos.y-h_2);
+            // let tx0 = this.map.worldToTileX(pos.x-w_2);
+            // let ty0 = this.map.worldToTileX(pos.y-h_2);
 
-            let tx1 = this.map.worldToTileX(pos.x+w_2);
-            let ty1 = this.map.worldToTileX(pos.y+h_2);
+            // let tx1 = this.map.worldToTileX(pos.x+w_2);
+            // let ty1 = this.map.worldToTileX(pos.y+h_2);
+
+            let [tx0,ty0] = this.worldToTile(p.x-w_2, p.y-h_2);
+            let [tx1,ty1] = this.worldToTile(p.x+w_2, p.y+h_2);
 
             //console.log(w,h,'->',tx0,ty0,tx1,ty1,weight)
 
@@ -399,8 +452,9 @@ class Map
         }
         else
         {
-            let tx = this.map.worldToTileX(pos.x);
-            let ty = this.map.worldToTileX(pos.y);
+            // let tx = this.map.worldToTileX(pos.x);
+            // let ty = this.map.worldToTileX(pos.y);
+            let [tx,ty] = this.worldToTile(p.x, p.y);
             this.graph.grid[ty][tx].weight += weight;
         }
 
@@ -409,26 +463,47 @@ class Map
         // this.graph.grid[ty][tx].weight += weight;
     }
 
-    isValid(pos,w=1000)
+    isValid(p,w=1000)
     {
-        let tx = this.map.worldToTileX(pos.x);
-        let ty = this.map.worldToTileX(pos.y);
+        // let tx = this.map.worldToTileX(pos.x);
+        // let ty = this.map.worldToTileY(pos.y);
+        let [tx,ty] = this.worldToTile(p.x,p.y)
         return this.graph.grid[ty][tx].weight<w;
+    }
+
+    isInside(tx,ty)
+    {
+        return !(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height);
     }
 
     isNearby(a,b)
     {
-        let dx = Math.abs(a.x-b.x);
-        let dy = Math.abs(a.y-b.y);
-        return dx<=this.map.tileWidth && dy<=this.map.tileHeight;
+        // let dx = Math.abs(a.x-b.x);
+        // let dy = Math.abs(a.y-b.y);
+        // return dx<=this.map.tileWidth && dy<=this.map.tileHeight;
+        let [tx_a,ty_a] = this.worldToTile(a.x,a.y);
+        let [tx_b,ty_b] = this.worldToTile(b.x,b.y);
+        let dx = Math.abs(tx_a-tx_b);
+        let dy = Math.abs(ty_a-ty_b);
+        return dx<=1 && dy<=1;
+
     }
 
-    getWeight(pos)
+    getWeight(p)
     {
-        let tx = this.map.worldToTileX(pos.x);
-        let ty = this.map.worldToTileX(pos.y);
-        if(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height){return;}
-        return this.graph.grid[ty][tx].weight;
+        // let tx = this.map.worldToTileX(pos.x);
+        // let ty = this.map.worldToTileX(pos.y);
+        let [tx,ty] = this.worldToTile(p.x,p.y);
+        //if(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height){return;}
+        //if(!this.isInside(tx,ty)){return;}
+        //return this.graph.grid[ty][tx].weight;
+        return this.getWeightByTile(tx,ty);
+    }
+
+    getWeightByTile(tx,ty)
+    {
+        if(!this.isInside(tx,ty)){return;}
+        return this.graph.grid[ty][tx].weight; 
     }
 
     processMap(map)

@@ -190,6 +190,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     create(id)
     {
+        this.slot = {id:id,count:1};
         let item = ItemDB.get(id);
         let [key,frame] = item.icon.split('/');
         this.setTexture(key,frame);
@@ -200,6 +201,26 @@ export class Entity extends Phaser.GameObjects.Container
         this.addGrid();
         this.updateDepth();
         this.addWeight();
+        return this;
+    }
+
+    falling(p)
+    {
+        let tx = (this.x+p.x)/2;
+        let ty = this.y-32;
+        let a = Phaser.Math.Between(0, 180);
+        
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{x:tx, angle:a, duration:100, ease:'linear'},
+                    {x:p.x, angle:a, duration:100, ease:'linear'}]
+        });
+
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{y:ty, duration:100, ease:'exp.out'},
+                    {y:p.y, duration:100, ease:'exp.in'}]
+        });
     }
 
     loadData() {return Record.getByUid(this.mapName,this.uid);}
@@ -322,12 +343,13 @@ export class Pickup extends Entity
     addListener()
     {
         super.addListener();
-        this.on('take',()=>{this.pickup()})
+        this.on('take',(taker)=>{this.pickup(taker)})
     }
 
-    pickup()
+    pickup(taker)
     {
         console.log('pickeup');
+        taker.take(this);
         this.set();
         this.destroy();   
     }

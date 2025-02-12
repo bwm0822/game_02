@@ -18,15 +18,17 @@ export default function createUI(scene)
 
     //test(scene);
     //t1();
+    //new UiTest(scene);
+    new UiMain(scene);
+    new UiProfile(scene);
     new UiCover(scene);
     new UiCursor(scene);
     new UiInv(scene);
     new UiTrade(scene);
-    new UiProfile(scene);
     new UiCase(scene);
     new UiDialog(scene);
     new UiObserve(scene);
-    new UiMain(scene);
+    
     new UiDragged(scene, 80, 80);
     new UiInfo(scene);
     new UiOption(scene);
@@ -118,6 +120,8 @@ function mark(on) {Mark.visible=on;}
 
 function camera(mode) {uiScene.events.emit('camera',mode);}
 
+function clearpath() {uiScene.events.emit('clearpath');}
+
 class Slot extends Icon
 {
     constructor(scene, w, h, id, getOwner, config)
@@ -131,7 +135,8 @@ class Slot extends Icon
     get slot() {return this.container?.[this._id];}
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
-    get isEmpty() {return this.checkIfEmpty(this.slot);}
+    //get isEmpty() {return this.checkIfEmpty(this.slot);}
+    get isEmpty() {return Utility.isEmpty(this.slot);}
     get container() {return this._getOwner ? this._getOwner().status.bag : null;}
     get owner() {return this._getOwner?.();}
     get isValid() {return true;}
@@ -172,7 +177,7 @@ class Slot extends Icon
         // .on('drop', (pointer,gameObject)=>{this.drop(gameObject);})
     }
 
-    checkIfEmpty(slot) {return !slot || Object.keys(slot).length==0;}
+    //checkIfEmpty(slot) {return !slot || Object.keys(slot).length==0;}
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
@@ -180,7 +185,7 @@ class Slot extends Icon
 
     update() {this.setSlot(this.slot);}
 
-    clear() {super.clear();this.slot={};}
+    clear() {super.clear();this.slot=null;}
     
     over()
     {
@@ -248,9 +253,7 @@ class Slot extends Icon
 
     drop()
     {
-        console.log('drop');
-        console.log(this.owner);
-        this.owner.drop(this);
+        this.owner.drop(this.slot);
         this.clear();
     }
 
@@ -280,15 +283,15 @@ class Slot extends Icon
                 this.slot = UiDragged.slot;
                 UiDragged.clear();
                 //console.log('slotCopty',slotCopy);
-                if(!this.checkIfEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                //if(!this.checkIfEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
                 if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
             }
         }
         else if(!this.isEmpty)
         {
             this.setBgColor(UI.COLOR_SLOT_DRAG);
-            //UiDragged.slot = this.copySlot();;
-            UiDragged.data = this.copyData();;
+            UiDragged.data = this.copyData();
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
         }
@@ -427,11 +430,16 @@ export class UiDragged extends Pic
     }
 
     static get on() {return UiDragged.instance.visible;}
-    static get slot() {return UiDragged.instance.data.slot;}
-    static get owner() {return UiDragged.instance.data.owner;}
+    //static get slot() {return UiDragged.instance.data.slot;}
+    //static get owner() {return UiDragged.instance.data.owner;}
+    static get slot() {return UiDragged.instance.slot;}
+    static get owner() {return UiDragged.instance.owner;}
     static get gold() {return UiDragged.instance.data.item.gold;}
     static get isTrade() {return UiDragged.instance.data.owner.tradeable??false;}
     static set data(value) {UiDragged.instance.setData(value);}
+
+    get owner() {return this.data.owner;}
+    get slot() {return this.data.slot;}
 
     isCat(cat) {return this.data.item.cat == cat;}
 
@@ -439,6 +447,7 @@ export class UiDragged extends Pic
     {
         this.hide();
         delete this.data;
+        UiCover.close();
     }
 
     setData(value)
@@ -447,6 +456,7 @@ export class UiDragged extends Pic
         this.data = value;
         this.data.item = ItemDB.get(value.slot.id);
         this.setIcon(this.data.item.icon);
+        UiCover.show();
     }
 
     setIcon(icon)
@@ -456,6 +466,12 @@ export class UiDragged extends Pic
         return this;
     }
 
+    drop()
+    {
+        this.owner.drop(this.slot);
+        this.clear();
+    }
+
     //static close() {UiDragged.instance?.hide();}
 
     static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
@@ -463,6 +479,8 @@ export class UiDragged extends Pic
     static clear() {UiDragged.instance?.clear();}
     
     static isCat(cat) {return UiDragged.instance?.isCat(cat);}
+
+    static drop() {UiDragged.instance?.drop();}
 
 }
 
@@ -499,6 +517,48 @@ class UiButton extends Sizer
     }
 }
 
+class UiTest extends Sizer
+{
+    constructor(scene)
+    {
+        super(scene,0,0,UI.w,UI.h);
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:0}))
+            .setOrigin(0,0)
+            .layout()
+        scene.add.existing(this);
+        this.getLayer().name = 'UiTest';
+
+        let gameScene = scene.scene.get('GameArea');
+        console.log(gameScene.cameras.main);
+        console.log(gameScene);
+        this.setInteractive()
+            .on('pointerdown',(pointer)=>{
+                pointer = this.convert(gameScene.cameras.main, pointer);
+                gameScene.input.emit('pointerdown',pointer)}
+            )
+            .on('pointermove',(pointer)=>{
+                pointer = this.convert(gameScene.cameras.main, pointer);
+                gameScene.input.emit('pointermove',pointer)
+            })
+            .on('pointerover',(pointer)=>{
+                pointer = this.convert(gameScene.cameras.main, pointer);
+                gameScene.input.emit('pointerover',pointer)}
+            )
+            .on('pointerout',(pointer)=>{
+                pointer = this.convert(gameScene.cameras.main, pointer);
+                gameScene.input.emit('pointerout',pointer)}
+            )
+    }
+
+    convert(camera, pointer)
+    {
+        let wpos = camera.getWorldPoint(pointer.worldX,pointer.worldY)
+        pointer.worldX = wpos.x;
+        pointer.worldY = wpos.y;
+        return pointer;
+    }
+}
+
 class UiCover extends Sizer
 {
     static instance = null;
@@ -515,7 +575,7 @@ class UiCover extends Sizer
         this.setInteractive()
             .on('pointerdown',()=>{
                 if(this._touchClose) {UiOption.close();}
-                else {console.log('touch')}
+                else {console.log('touch');UiDragged.drop();}
             })
     }
 
@@ -523,10 +583,11 @@ class UiCover extends Sizer
     {
         super.show();
         this._touchClose = touchClose;
+        
     }
 
-    static show(touchClose) {if(UiCover.instance){UiCover.instance.show(touchClose);}}
-    static close() {if(UiCover.instance){UiCover.instance.hide();}}
+    static show(touchClose) {UiCover.instance?.show(touchClose);}
+    static close() {UiCover.instance?.hide();}
 }
 
 // export class UiOption extends Sizer
@@ -1051,7 +1112,10 @@ export class UiInv extends UiBase
             .hide()
         scene.add.existing(this);
         this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
-            .on('pointerover',()=>{UiCursor.set();})
+           .on('pointerover',()=>{UiCursor.set();clearpath();})
+           //.on('pointerout',()=>{!this.isPointerInBounds()&&console.log('out')})
+        //this.onClickOutside(()=>{console.log('outside')});
+        
         this.getLayer().name = 'UiInv';
     }
 
@@ -1086,6 +1150,7 @@ export class UiInv extends UiBase
 
     update()
     {
+        if(!this.visible) {return;}
         this.updateEquip();
         this.updateGrid();
         this.updateGold();
@@ -1112,6 +1177,7 @@ export class UiInv extends UiBase
     static close() {UiInv.instance?.close();}
     static show(owner) {UiInv.instance?.show(owner);}
     static updateGold() {UiInv.instance?.updateGold();}
+    static refresh() {UiInv.instance?.update();}
 }
 
 class UiObserve extends UiBase
@@ -1263,6 +1329,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     preUpdate(time, delta)
     {
+        //console.log(this.scene.input.x,this.scene.input.y);
         this.setPosition(this.scene.input.x, this.scene.input.y);
     }
 

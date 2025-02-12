@@ -130,6 +130,17 @@ export default class Utility
     {
         return (typeof target === 'object' && !Array.isArray(target) && target !== null); 
     }
+
+    static isEmpty(slot)
+    {
+        return !slot || Object.keys(slot).length==0;
+    }
+
+    static random(s,e)
+    {
+        let d = Math.round(Math.random(0,1)*(e-s));
+        return s+d;
+    }
 }
 
 String.prototype.local = function(){return Utility.local(this);};

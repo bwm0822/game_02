@@ -7,11 +7,11 @@ import { UI } from './scenes/UI';
 import { GameMap } from './scenes/GameMap';
 import { GameArea } from './scenes/GameArea';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
-import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
+//import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
 import TextTypingPlugin from 'phaser3-rex-plugins/plugins/texttyping-plugin.js';
 import TextPagePlugin from 'phaser3-rex-plugins/plugins/textpage-plugin.js';
 import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin.js';
-import ContainerLitePlugin from 'phaser3-rex-plugins/plugins/containerlite-plugin.js';
+//import ContainerLitePlugin from 'phaser3-rex-plugins/plugins/containerlite-plugin.js';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -63,11 +63,11 @@ const config = {
                 plugin: OutlinePipelinePlugin,
                 start: true
             },
-            {
-                key: 'rexContainerLitePlugin',
-                plugin: ContainerLitePlugin,
-                start: true
-            },
+            // {
+            //     key: 'rexContainerLitePlugin',
+            //     plugin: ContainerLitePlugin,
+            //     start: true
+            // },
         // ...
         ]
     },

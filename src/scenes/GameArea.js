@@ -16,11 +16,11 @@ export class GameArea extends GameScene
         this.mode = 'combat';
         super.create({diagonal:true,classType:Role.Avatar});
         this.process();
-
+        //this.input.enabled = false;
         //new Role.Role_T(this,400,900)
 
 
-        console.log(this)
+        //console.log(this.cameras.main)
     }
 
     async process()

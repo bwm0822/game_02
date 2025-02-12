@@ -6,12 +6,12 @@
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
         "public/assets/tiles",
-        ".",
-        "public/assets",
         "public/assets/templates",
         "public/assets/roles",
         "public/assets/maps",
-        "public"
+        "public",
+        "public/assets",
+        "."
     ],
     "fileStates": {
         "": {
@@ -261,8 +261,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 296,
-                "y": 1001.5
+                "x": 163,
+                "y": 1040.5
             }
         },
         "public/assets/maps/village_01.json#group": {

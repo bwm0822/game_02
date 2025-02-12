@@ -6,7 +6,7 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 import {UI} from  '../uibase.js';
-import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase} from '../ui.js'
+import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv} from '../ui.js'
 
 export class GameScene extends Scene
 {
@@ -35,6 +35,7 @@ export class GameScene extends Scene
 
         this.setPosition(classType);
         this.processInput();
+
         
     }
 
@@ -101,24 +102,24 @@ export class GameScene extends Scene
                     this._avatar.stop();
                     this.findPath({x:pointer.worldX,y:pointer.worldY});
                 }
-                else if(this?._rst?.valid)
+                //else if(this?._rst?.valid)
+                else if(this._rst?.state>=0)
                 {
-                    Mark.close();
-                    this.clearPath();
-                    let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
-                    this._avatar.setDes(pos,this._ent);
+                    if(this._rst.state==1 || this._ent)
+                    {
+                        Mark.close();
+                        this.clearPath();
+                        let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
+                        this._avatar.setDes(pos,this._ent);
+                    }
                 }
             }
             
         })
         .on('pointermove',(pointer)=>{
             this.showMousePos();
-            //this.dbg();
-            //console.log('map',pointer.x.toFixed(0),pointer.y.toFixed(0),',',pointer.worldX.toFixed(0),pointer.worldY.toFixed(0))
-
             if(!this._avatar.moving)
             {
-                //let pos = this._ent ? this._ent.pos : {x:pointer.worldX,y:pointer.worldY};
                 let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pos);
             }
@@ -131,9 +132,11 @@ export class GameScene extends Scene
     {
         let rst = this.map.getPath(this._avatar.pos,pt)
         this._rst = rst;
+        
         if(rst)
         {
-            if(rst.valid)
+            //if(rst.valid)
+            if(rst.state>0)
             {
                 this.drawPath(rst.path,this._ent);
                 if(!this._ent) {Mark.show(rst.pt,UI.COLOR_WHITE);}
@@ -142,13 +145,18 @@ export class GameScene extends Scene
             else
             {
                 this.clearPath();
-                if(rst.pt) {Mark.show(rst.pt,UI.COLOR_RED);}
+                if(rst.state==-1) {Mark.show(rst.pt,UI.COLOR_RED);}
                 else {Mark.close();}
             }
         }
+        else
+        {
+            this.clearPath();
+            Mark.close();
+        }
     }
 
-    clearPath() {if(this._dbgPath){this._dbgPath.clear();}}
+    clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
 
     drawPath(path,ent)
     {
@@ -188,7 +196,6 @@ export class GameScene extends Scene
         let y = this.input.activePointer.worldY;
         let w = this.map.getWeight({x:x,y:y});
         let text = `${x.toFixed(0)},${y.toFixed(0)},(${w})`;
-        //this._dbgPos.setPosition(x+20,y).setText(x.toFixed(0)+','+y.toFixed(0));
         this._dbgPos.setPosition(x+20,y).setText(text);
     }
 
@@ -220,6 +227,7 @@ export class GameScene extends Scene
                 .on('talk',(owner)=>{UiDialog.show(owner);})
                 .on('trade',(owner)=>{UiTrade.show(owner);})
                 .on('option',(x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
+                .on('refresh',()=>{UiInv.refresh()})
         }
 
         const ui = this.scene.get('UI');
@@ -227,6 +235,7 @@ export class GameScene extends Scene
             .off('menu').on('menu', ()=>{this.menu();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
+            .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})
 
     }
 
