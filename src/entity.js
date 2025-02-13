@@ -204,16 +204,23 @@ export class Entity extends Phaser.GameObjects.Container
         return this;
     }
 
+    drop(slot)
+    {
+        let p = this.scene.map.getDropPoint(this.pos);
+        new Pickup(this.scene,this.x,this.y-32).create(slot.id).falling(p);
+        
+    }
+
     falling(p)
     {
         let tx = (this.x+p.x)/2;
         let ty = this.y-32;
-        let a = Phaser.Math.Between(0, 180);
+        let a = Phaser.Math.Between(-45, 45);
         
         this.scene.tweens.chain({
             targets: this,
             tweens:[{x:tx, angle:a, duration:100, ease:'linear'},
-                    {x:p.x, angle:a, duration:100, ease:'linear'}]
+                    {x:p.x, angle:2*a, duration:100, ease:'linear'}]
         });
 
         this.scene.tweens.chain({

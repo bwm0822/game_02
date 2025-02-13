@@ -317,18 +317,6 @@
                 },
             
                 {
-                 "gid":450,
-                 "height":193,
-                 "id":92,
-                 "name":"",
-                 "rotation":0,
-                 "type":"entity",
-                 "visible":true,
-                 "width":139,
-                 "x":256,
-                 "y":1120
-                }, 
-                {
                  "gid":451,
                  "height":32,
                  "id":93,
@@ -362,6 +350,12 @@
                  "width":32,
                  "x":192,
                  "y":1120
+                }, 
+                {
+                 "id":95,
+                 "template":"..\/templates\/house.tj",
+                 "x":256,
+                 "y":1120
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -370,7 +364,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":95,
+ "nextobjectid":96,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

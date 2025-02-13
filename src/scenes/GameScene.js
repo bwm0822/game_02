@@ -128,6 +128,22 @@ export class GameScene extends Scene
         this.input.keyboard.on('keydown',()=>{this.keyin();})
     }
 
+    keyin()
+    {
+        console.log('down')
+        let mx=0,my=0
+        if(this.keys.left.isDown){mx--;}
+        if(this.keys.right.isDown){mx++;}
+        if(this.keys.up.isDown){my--;}
+        if(this.keys.down.isDown){my++;}
+        if(mx!=0||my!=0)
+        {
+            this._avatar.move(mx,my);
+            this.clearPath();
+            Mark.close();
+        }
+    }
+
     findPath(pt)
     {
         let rst = this.map.getPath(this._avatar.pos,pt)
@@ -135,7 +151,6 @@ export class GameScene extends Scene
         
         if(rst)
         {
-            //if(rst.valid)
             if(rst.state>0)
             {
                 this.drawPath(rst.path,this._ent);

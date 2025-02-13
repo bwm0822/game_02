@@ -1273,6 +1273,19 @@ export class Role extends Entity
 
     addToRoleList() {this.scene.roles.push(this);}
 
+    move(h,v)
+    {
+        let rst = this.scene.map.move(this.pos,h,v);
+        if(rst.state>0)
+        {
+            this._path = rst.path;
+            this._des = rst.pt; 
+            this._ent = null;
+            this._act = '';
+            this.resume();
+        }
+    }
+
     setDes(des, ent, act)
     {
         if(this.isTouch(ent))
@@ -1285,8 +1298,7 @@ export class Role extends Entity
         else
         {
             let rst = this.scene.map.getPath(this.pos, des);
-            //if(rst && rst.valid)
-            if(rst.state>=0)
+            if(rst?.state>=0)
             {
                 this._path = rst.path;
                 this._des = des; 
@@ -1320,7 +1332,7 @@ export class Role extends Entity
         if(!this.isTouch(this._ent))
         { 
             let pt = path[0];
-            if(this.scene.map.isValid(pt))
+            if(this.scene.map.isWalkable(pt))
             {
                 if(draw) {this.drawPath(path);}
                 this.faceTo(pt);
@@ -1488,14 +1500,7 @@ export class Role extends Entity
         })
     }
 
-    drop(slot)
-    {
-        let p = this.scene.map.getDropPoint(this.pos);
-
-        //let drop = new Pickup(this.scene,this.x,this.y).create(slot.id);
-        new Pickup(this.scene,this.x,this.y-32).create(slot.id).falling(p);
-        
-    }
+    
 
     take(ent)
     {

@@ -136,11 +136,11 @@ export default class Utility
         return !slot || Object.keys(slot).length==0;
     }
 
-    static random(s,e)
-    {
-        let d = Math.round(Math.random(0,1)*(e-s));
-        return s+d;
-    }
+    // static random(s,e)
+    // {
+    //     let d = Math.round(Math.random(0,1)*(e-s));
+    //     return s+d;
+    // }
 }
 
 String.prototype.local = function(){return Utility.local(this);};
