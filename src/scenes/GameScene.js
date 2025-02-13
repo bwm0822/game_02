@@ -48,12 +48,21 @@ export class GameScene extends Scene
     setCameraFollow(mode)
     {
         let offsetX=0,offsetY=0;
+        if((mode&UI.CAM_LEFT_TOP)==UI.CAM_LEFT_TOP){mode=UI.CAM_LEFT_TOP;}
+        else {mode &= ~UI.CAM_LEFT_TOP;}
+
         switch(mode)
         {
             case UI.CAM_CENTER: 
                 offsetX=0; offsetY=0; break;
             case UI.CAM_LEFT: 
                 offsetX = -this.cameras.main.width/4; offsetY = 0; break;
+            case UI.CAM_RIGHT: 
+                offsetX = this.cameras.main.width/4; offsetY = 0; break;
+            case UI.CAM_LEFT_TOP: 
+                offsetX = -this.cameras.main.width/4; offsetY = -this.cameras.main.width/4; break;
+            default:
+                offsetX=0; offsetY=0; break;
         }
         this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
     }
@@ -130,7 +139,6 @@ export class GameScene extends Scene
 
     keyin()
     {
-        console.log('down')
         let mx=0,my=0
         if(this.keys.left.isDown){mx--;}
         if(this.keys.right.isDown){mx++;}

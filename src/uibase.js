@@ -46,8 +46,10 @@ export let UI =
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
-    CAM_CENTER : 'center',
-    CAM_LEFT : 'left',
+    CAM_CENTER : 0b000,
+    CAM_LEFT : 0b001,
+    CAM_RIGHT : 0b010,
+    CAM_LEFT_TOP : 0b100,
 }
 
 

@@ -5,13 +5,13 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
-        "public/assets/templates",
-        "public/assets/roles",
-        "public/assets/maps",
-        "public",
         "public/assets",
-        "."
+        ".",
+        "public/assets/tiles",
+        "public",
+        "public/assets/templates",
+        "public/assets/maps",
+        "public/assets/roles"
     ],
     "fileStates": {
         "": {
@@ -261,8 +261,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 163,
-                "y": 1040.5
+                "x": 505,
+                "y": 1079.5
             }
         },
         "public/assets/maps/village_01.json#group": {

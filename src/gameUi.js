@@ -8,6 +8,7 @@ export class Mark
     constructor(scene)
     {
         Mark.instance=this;
+        this.scene = scene;
         this._sp = sprite(scene,{icon:UI.ICON_MARK,name:'mark'})
         this._sp.setScale(0.5);
         this._sp.visible=false;
@@ -24,9 +25,20 @@ export class Mark
     show(p,color=0xffffff)
     {
         this._sp.visible=true;
-        this._sp.x=p.x;
-        this._sp.y=p.y;
-        this._sp.setTint(color);
+        if(this._xp!=p.x||this._yp!=p.y)
+        {
+            this._sp.x=p.x;
+            this._sp.y=p.y;
+            this._xp=p.x
+            this._yp=p.y;
+            this._sp.setTint(color);
+            this.scene.tweens.add({
+                targets: this._sp,
+                scale: {from:0.7,to:0.5},
+                //ease:'exp.in',
+                duration: 200,
+            })
+        }
     }
 
     hide() {this._sp.visible=false;}

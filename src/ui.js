@@ -7,6 +7,7 @@ import {ItemDB} from './database.js';
 import {Mark} from './gameUi.js';
 
 let uiScene;
+let _mode=0;
 
 export default function createUI(scene)
 {
@@ -18,10 +19,9 @@ export default function createUI(scene)
 
     //test(scene);
     //t1();
-    //new UiTest(scene);
+    new UiCover(scene);
     new UiMain(scene);
     new UiProfile(scene);
-    new UiCover(scene);
     new UiCursor(scene);
     new UiInv(scene);
     new UiTrade(scene);
@@ -118,7 +118,18 @@ function test(scene)
 
 function mark(on) {Mark.visible=on;}
 
-function camera(mode) {uiScene.events.emit('camera',mode);}
+function setCamera(mode) 
+{
+    _mode |= mode;
+    uiScene.events.emit('camera',_mode);
+}
+
+function clrCamera(mode) 
+{
+    _mode &= ~mode;
+    uiScene.events.emit('camera',_mode);
+}
+
 
 function clearpath() {uiScene.events.emit('clearpath');}
 
@@ -414,10 +425,6 @@ function addGrid(scene, column, row, getOwner, space)
 }
 
 
-
-
-
-
 export class UiDragged extends Pic
 {
     static instance = null;
@@ -430,8 +437,6 @@ export class UiDragged extends Pic
     }
 
     static get on() {return UiDragged.instance.visible;}
-    //static get slot() {return UiDragged.instance.data.slot;}
-    //static get owner() {return UiDragged.instance.data.owner;}
     static get slot() {return UiDragged.instance.slot;}
     static get owner() {return UiDragged.instance.owner;}
     static get gold() {return UiDragged.instance.data.item.gold;}
@@ -448,6 +453,7 @@ export class UiDragged extends Pic
         this.hide();
         delete this.data;
         UiCover.close();
+        UiMain.enable(true);
     }
 
     setData(value)
@@ -457,6 +463,7 @@ export class UiDragged extends Pic
         this.data.item = ItemDB.get(value.slot.id);
         this.setIcon(this.data.item.icon);
         UiCover.show();
+        UiMain.enable(false);
     }
 
     setIcon(icon)
@@ -468,8 +475,11 @@ export class UiDragged extends Pic
 
     drop()
     {
-        this.owner.drop(this.slot);
-        this.clear();
+        if(this.visible)
+        {
+            this.owner.drop(this.slot);
+            this.clear();
+        }
     }
 
     //static close() {UiDragged.instance?.hide();}
@@ -517,48 +527,6 @@ class UiButton extends Sizer
     }
 }
 
-class UiTest extends Sizer
-{
-    constructor(scene)
-    {
-        super(scene,0,0,UI.w,UI.h);
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:0}))
-            .setOrigin(0,0)
-            .layout()
-        scene.add.existing(this);
-        this.getLayer().name = 'UiTest';
-
-        let gameScene = scene.scene.get('GameArea');
-        console.log(gameScene.cameras.main);
-        console.log(gameScene);
-        this.setInteractive()
-            .on('pointerdown',(pointer)=>{
-                pointer = this.convert(gameScene.cameras.main, pointer);
-                gameScene.input.emit('pointerdown',pointer)}
-            )
-            .on('pointermove',(pointer)=>{
-                pointer = this.convert(gameScene.cameras.main, pointer);
-                gameScene.input.emit('pointermove',pointer)
-            })
-            .on('pointerover',(pointer)=>{
-                pointer = this.convert(gameScene.cameras.main, pointer);
-                gameScene.input.emit('pointerover',pointer)}
-            )
-            .on('pointerout',(pointer)=>{
-                pointer = this.convert(gameScene.cameras.main, pointer);
-                gameScene.input.emit('pointerout',pointer)}
-            )
-    }
-
-    convert(camera, pointer)
-    {
-        let wpos = camera.getWorldPoint(pointer.worldX,pointer.worldY)
-        pointer.worldX = wpos.x;
-        pointer.worldY = wpos.y;
-        return pointer;
-    }
-}
-
 class UiCover extends Sizer
 {
     static instance = null;
@@ -573,21 +541,27 @@ class UiCover extends Sizer
         scene.add.existing(this);
         this.getLayer().name = 'UiCover';
         this.setInteractive()
-            .on('pointerdown',()=>{
-                if(this._touchClose) {UiOption.close();}
-                else {console.log('touch');UiDragged.drop();}
-            })
+            .on('pointerdown',()=>{UiDragged.drop();})
+        this._cnt=0;
     }
 
-    show(touchClose=false)
+    show()
     {
         super.show();
-        this._touchClose = touchClose;
-        
+        this._cnt++;
     }
 
-    static show(touchClose) {UiCover.instance?.show(touchClose);}
-    static close() {UiCover.instance?.hide();}
+    close()
+    {
+        if(--this._cnt<=0)
+        {
+            this.hide();
+            this._cnt=0;
+        }
+    }
+
+    static show() {UiCover.instance?.show();}
+    static close() {UiCover.instance?.close();}
 }
 
 // export class UiOption extends Sizer
@@ -941,6 +915,8 @@ class UiBase extends Sizer
     addBg(scene)
     {
         this.addBackground(rect(scene,{color:UI.COLOR_PRIMARY,strokeColor:0xffffff,strokeWidth:0}),'bg');
+        this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
+            .on('pointerover',()=>{UiCursor.set();clearpath();})
         return this;
     }
 
@@ -1028,7 +1004,7 @@ export class UiCase extends Sizer
         let config =
         {
             x:100,
-            y:100,
+            y:UI.h-150,
             orientation:'y'
         }
 
@@ -1045,7 +1021,7 @@ export class UiCase extends Sizer
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
-            .setOrigin(0)
+            .setOrigin(0,1)
             .layout()
             .hide()
         scene.add.existing(this);
@@ -1062,7 +1038,7 @@ export class UiCase extends Sizer
         this.getElement('grid').getElement('items').forEach(item => {item.update();});
     }
 
-    close() {this.hide();UiCover.close();}
+    close() {this.hide();UiCover.close();clrCamera(UI.CAM_LEFT_TOP);}
 
     show(owner)
     {
@@ -1073,7 +1049,9 @@ export class UiCase extends Sizer
         this.update();
         UiInv.show(Role.Avatar.instance);
         UiCover.show();
+        UiProfile.close();
         UiCursor.set();
+        setCamera(UI.CAM_LEFT_TOP);
     }
 
     static close() {UiCase.instance?.close();}
@@ -1088,9 +1066,9 @@ export class UiInv extends UiBase
     {
         let config =
         {
-            x : UI.w-3,//UI.w/2,
-            y : 2,
-            width : 450,//UI.w/2,
+            x : UI.w,
+            y : 0,
+            width : 450,
             height : 500,
             orientation : 'y',
         }
@@ -1111,8 +1089,7 @@ export class UiInv extends UiBase
             .layout()
             .hide()
         scene.add.existing(this);
-        this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
-           .on('pointerover',()=>{UiCursor.set();clearpath();})
+        
            //.on('pointerout',()=>{!this.isPointerInBounds()&&console.log('out')})
         //this.onClickOutside(()=>{console.log('outside')});
         
@@ -1159,10 +1136,10 @@ export class UiInv extends UiBase
 
     close()
     {
-        this.hide();
+        super.close();
         UiCase.close();
         UiTrade.close();
-        camera(UI.CAM_CENTER);
+        clrCamera(UI.CAM_LEFT);
     }
 
     show(owner)
@@ -1170,14 +1147,21 @@ export class UiInv extends UiBase
         super.show();
         this.owner = owner;
         this.update();
-        camera(UI.CAM_LEFT);
-        
+        setCamera(UI.CAM_LEFT);
+    }
+
+    toggle(owner)
+    {
+        if(this.visible) {this.close();}
+        else {this.show(owner);}
     }
 
     static close() {UiInv.instance?.close();}
     static show(owner) {UiInv.instance?.show(owner);}
     static updateGold() {UiInv.instance?.updateGold();}
     static refresh() {UiInv.instance?.update();}
+    static toggle(owner) {UiInv.instance?.toggle(owner);}
+    
 }
 
 class UiObserve extends UiBase
@@ -1262,19 +1246,24 @@ export class UiMain extends Sizer
             .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
             .add(new UiButton(scene,{text:'個\n人',onclick:this.profile.bind(this)}))
             .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
+            .addBackground(rect(scene,{alpha:0}),'cover')
             .size()
             .hide();
-        
+        this._cover =this.getElement('cover');
         this.getLayer().name = 'UiMain';    // 產生layer，並設定layer名稱
         this.addListener();
        
     }
 
-    //inv() {UiInv.show(Role.Player.instance);}
-    inv() {UiInv.show(Role.Avatar.instance);}
+    enable(en)
+    {
+        if(en){this._cover.disableInteractive();}
+        else{this._cover.setInteractive();}
+    }
 
-    //profile() {UiProfile.show(Role.Player.instance);}
-    profile() {UiProfile.show(Role.Avatar.instance);}
+    inv() {UiInv.toggle(Role.Avatar.instance);}
+
+    profile() {UiProfile.toggle(Role.Avatar.instance);}
 
     menu() {this.hide();this.scene.events.emit('menu');}
 
@@ -1299,6 +1288,8 @@ export class UiMain extends Sizer
     static show() {UiMain.instance?.show();}
 
     static close() {UiMain.instance?.hide();}
+
+    static enable(en) {UiMain.instance?.enable(en);} 
 
 }
 
@@ -1385,8 +1376,8 @@ export class UiTrade extends UiBase
     {
         let config =
         {
-            x : 3,
-            y : 2,
+            x : 0,
+            y : 0,
             width : 450,//UI.w/2,
             height : 500,
             orientation : 'y',
@@ -1454,8 +1445,8 @@ export class UiProfile extends UiBase
     {
         let config =
         {
-            x : 3,
-            y : 2,
+            x : 0,
+            y : 0,
             width : 450,
             height : 500,
             orientation : 'y',
@@ -1614,12 +1605,27 @@ export class UiProfile extends UiBase
         this.updateInfo();
         this.update();
         this.getElement('tags').emitTopButtonClick(0);
+        setCamera(UI.CAM_RIGHT);
+        UiCase.close();
+    }
 
+    close()
+    {
+        super.close();
+        clrCamera(UI.CAM_RIGHT);
+    }
+
+    toggle(owner)
+    {
+        if(this.visible){this.close();}
+        else{this.show(owner)}
     }
 
     static show(owner) {UiProfile.instance?.show(owner);}
     static close() {UiProfile.instance?.close();}
     static refresh() {UiProfile.instance?.update();}
+    static toggle(owner) {UiProfile.instance?.toggle(owner);}
+    static get shown() {UiProfile.instance?.visible;}
 }
 
 export class UiDialog extends Sizer
