@@ -48,8 +48,8 @@ export class GameScene extends Scene
     setCameraFollow(mode)
     {
         let offsetX=0,offsetY=0;
-        if((mode&UI.CAM_LEFT_TOP)==UI.CAM_LEFT_TOP){mode=UI.CAM_LEFT_TOP;}
-        else {mode &= ~UI.CAM_LEFT_TOP;}
+        if((mode&UI.CAM_LEFT_TOP)==UI.CAM_LEFT_TOP) {mode=UI.CAM_LEFT_TOP;}
+        else {mode&=~UI.CAM_LEFT_TOP;}
 
         switch(mode)
         {

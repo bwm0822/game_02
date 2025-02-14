@@ -34,6 +34,7 @@ export default function createUI(scene)
     new UiOption(scene);
 
 
+
     //t2(scene);
 
 }
@@ -129,7 +130,6 @@ function clrCamera(mode)
     _mode &= ~mode;
     uiScene.events.emit('camera',_mode);
 }
-
 
 function clearpath() {uiScene.events.emit('clearpath');}
 
@@ -390,41 +390,6 @@ class EquipSlot extends Slot
 
 }
 
-function addTop(scene, label)
-{
-    let sz = scene.rexUI.add.overlapSizer();
-    sz//.addBackground(rect(scene,{color:UI.COLOR_GRAY}))
-        .add(text(scene,{text:label}),{align:'center',expand:false,key:'label'})
-        .add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
-    this.add(sz,{expand:true, key:'top'});
-    return this;
-}
-
-
-function addGrid(scene, column, row, getOwner, space)
-{
-    let config =
-    {
-        column: column,
-        row: row,
-        space: {column:5,row:5,...space},
-    }
-
-    let grid = scene.rexUI.add.gridSizer(config);
-    let count = config.column * config.row;
-    for(let i=0; i<count; i++)
-    {
-        let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, i, getOwner);
-        //slot.id = i;
-        //slot.container = getContainer;
-        grid.add(slot);
-    }
-
-    this.add(grid,{key:'grid'});
-    return this;
-}
-
-
 export class UiDragged extends Pic
 {
     static instance = null;
@@ -475,7 +440,7 @@ export class UiDragged extends Pic
 
     drop()
     {
-        if(this.visible)
+        if(this.visible&&!this.owner.tradeable)
         {
             this.owner.drop(this.slot);
             this.clear();
@@ -562,221 +527,6 @@ class UiCover extends Sizer
 
     static show() {UiCover.instance?.show();}
     static close() {UiCover.instance?.close();}
-}
-
-// export class UiOption extends Sizer
-// {
-//     static instance = null;
-//     constructor(scene)
-//     {
-//         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
-//         UiOption.instance = this;
-//         this.btns={};
-
-//         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-//             .addButton('use',this.use.bind(this))
-//             .addButton('drop',this.drop.bind(this))
-//             .addButton('talk')
-//             .addButton('trade')
-//             .addButton('observe',this.observe.bind(this))
-//             .addButton('attack')
-//             .addButton('open')
-//             .setOrigin(0)
-//             .layout()
-//             .hide();
-
-//         scene.add.existing(this);
-//         this.getLayer().name = 'UiOption';
-//     }
-
-//     addButton(key,onclick)
-//     {
-//         let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
-//             //onclick ? onclick(key) : this.act(key); 
-//             (onclick??this.act.bind(this))(key);
-//         }});
-            
-//         this.btns[key] = btn;
-//         this.add(btn,{expand:true})
-//         return this;
-//     }
-
-//     use()
-//     {
-//         this.close();
-//         //console.log('use');
-//         this.target.use();
-//     }
-
-//     drop()
-//     {
-//         this.close();
-//         //console.log('drop');
-//         this.target.drop();
-//     }
-
-//     observe()
-//     {
-//         this.close();
-//         UiObserve.show(this.target);
-//     }
-
-//     act(act)
-//     {
-//         this.close();
-//         Role.Avatar.setDes(this.target.pos,this.target,act);
-//     }
-
-
-//     show(x,y,options=['use','drop'],target)
-//     {
-//         this.target = target;
-//         UiCover.show(true);
-//         UiInfo.close();
-//         UiCursor.set();
-//         super.show();        
-//         Object.values(this.btns).forEach((btn)=>{btn.hide();})
-//         options.forEach((opt)=>{this.btns[opt].show();})
-//         this.setPosition(x,y).rePos().layout();
-//     }
-
-//     rePos()
-//     {
-//         if(this.right>UI.w) {this.x-=this.right-UI.w;}
-//         else if(this.left<0) {this.x-=this.left;}
-//         if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
-//         else if(this.top<0) {this.y-=this.top;}
-//         return this;
-//     }
-
-//     close() {this.hide();UiCover.close();}
-
-//     static close() {UiOption.instance?.close();}
-
-//     static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
-
-// }
-
-
-export class UiOption extends ContainerLite
-{
-    static instance = null;
-    constructor(scene)
-    {
-        super(scene,0,0,UI.w,UI.h);
-        UiOption.instance = this;
-        //this.btns={};
-        this.addBg(scene)
-            .addOption(scene)
-            .visible=false;
-
-        scene.add.existing(this);
-        this.getLayer().name = 'UiOption';
-    }
-
-    addBg(scene)
-    {
-        let sizer = scene.rexUI.add.sizer(0,0,UI.w,UI.h);
-        sizer.addBackground(rect(scene,{alpha:0.5}))
-            .setOrigin(0)
-            .layout()
-            .setInteractive()
-            .on('pointerdown',()=>{this.visible=false;})
-        this.add(sizer);
-
-        return this;
-    }
-
-    addOption(scene)
-    {
-        let sizer = scene.rexUI.add.sizer({width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
-        sizer.addButton = this.addButton;
-        sizer.rePos = this.rePos
-        sizer.btns = {};
-        this.setOption = (options)=> {
-            Object.values(sizer.btns).forEach((btn)=>{btn.hide();})
-            options.forEach((opt)=>{sizer.btns[opt].show();});
-            return this;
-        }
-        this.setPos = (x,y)=>{sizer.setPosition(x,y).rePos().layout();};
-
-        sizer
-            .addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-            .addButton('use',this.use.bind(this))
-            .addButton('drop',this.drop.bind(this))
-            .addButton('talk',this.act.bind(this))
-            .addButton('trade',this.act.bind(this))
-            .addButton('observe',this.observe.bind(this))
-            .addButton('attack',this.act.bind(this))
-            .addButton('open',this.act.bind(this))
-            .setOrigin(0)
-        
-        this.add(sizer);
-        return this;
-    }
-
-    addButton(key,onclick)
-    {
-        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
-            onclick?.(key);
-        }});
-            
-        this.btns[key] = btn;
-        this.add(btn,{expand:true})
-        return this;
-    }
-
-    use()
-    {
-        this.close();
-        //console.log('use');
-        this.target.use();
-    }
-
-    drop()
-    {
-        this.close();
-        //console.log('drop');
-        this.target.drop();
-    }
-
-    observe()
-    {
-        this.close();
-        UiObserve.show(this.target);
-    }
-
-    act(act)
-    {
-        this.close();
-        Role.Avatar.setDes(this.target.pos,this.target,act);
-    }
-
-
-    show(x,y,options=['use','drop'],target)
-    {
-        this.target = target;
-        UiInfo.close();
-        UiCursor.set();   
-        this.visible = true;
-        this.setOption(options).setPos(x,y);
-    }
-
-    rePos()
-    {
-        if(this.right>UI.w) {this.x-=this.right-UI.w;}
-        else if(this.left<0) {this.x-=this.left;}
-        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
-        else if(this.top<0) {this.y-=this.top;}
-        return this;
-    }
-
-    close() {this.visible=false;}
-
-    static close() {UiOption.instance?.close();}
-
-    static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
-
 }
 
 class UiInfo extends Sizer
@@ -908,8 +658,56 @@ class UiInfo extends Sizer
     static show(target) {UiInfo.instance?.show(target);}
 }
 
+class UiContainerBase extends ContainerLite
+{
+    constructor(scene, touchClose=true)
+    {
+        super(scene,0,0,UI.w,UI.h);
+        this.addBg(scene, touchClose)
+        scene.add.existing(this);
+    }
+
+    addBg(scene, touchClose)
+    {
+        let sizer = scene.rexUI.add.sizer(0,0,UI.w,UI.h);
+        sizer.addBackground(rect(scene,{alpha:0.5}))
+            .setOrigin(0)
+            .layout()
+            .setInteractive()
+        touchClose && sizer.on('pointerdown',()=>{this.visible=false;});
+        this.add(sizer);
+
+        return this;
+    }
+
+    add(content)
+    {
+        this.content = content;
+        this.content.onclose = this.close.bind(this);
+        super.add(this.content);
+        return this;
+    }
+
+    show(...args)
+    {
+        this.visible=true;
+        this.content.show(...args);
+    }
+
+    close() {this.visible=false;}
+
+}
+
 class UiBase extends Sizer
 {
+    static _register={};
+
+    closeAll() {for(let key in UiBase._register){UiBase._register[key]();}}
+
+    register() {UiBase._register[this.constructor.name]=this.close.bind(this);}
+
+    unregister() {delete UiBase._register[this.constructor.name];}
+
     getOwner() {return this.owner;}
 
     addBg(scene)
@@ -944,8 +742,6 @@ class UiBase extends Sizer
         for(let i=0; i<count; i++)
         {
             let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, i, getOwner);
-            //slot.id = i;
-            //slot.container = getContainer;
             grid.add(slot);
         }
 
@@ -987,6 +783,8 @@ class UiBase extends Sizer
         return sizer;
     }
 
+    setTitle(title) {this.getElement('label',true).setText(title);}
+
     updateEquip() {this.getElement('equip').getElement('items').forEach(item => {item?.update();});}
 
     updateGrid() {this.getElement('grid').getElement('items').forEach(item => {item?.update();});}
@@ -996,7 +794,160 @@ class UiBase extends Sizer
     close() {this.hide();}
 }
 
-export class UiCase extends Sizer
+class Option extends Sizer
+{
+    constructor(scene)
+    {
+        super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
+        this.btns={};
+
+        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
+            .addButton('use',this.use.bind(this))
+            .addButton('drop',this.drop.bind(this))
+            .addButton('talk')
+            .addButton('trade')
+            .addButton('observe',this.observe.bind(this))
+            .addButton('attack')
+            .addButton('open')
+            .setOrigin(0)
+            .layout()
+            .hide();
+
+        //scene.add.existing(this);
+        //this.getLayer().name = 'UiOption';
+    }
+
+    addButton(key,onclick)
+    {
+        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
+            //onclick ? onclick(key) : this.act(key); 
+            (onclick??this.act.bind(this))(key);
+        }});
+            
+        this.btns[key] = btn;
+        this.add(btn,{expand:true})
+        return this;
+    }
+
+    use()
+    {
+        this.close();
+        //console.log('use');
+        this.target.use();
+    }
+
+    drop()
+    {
+        this.close();
+        //console.log('drop');
+        this.target.drop();
+    }
+
+    observe()
+    {
+        this.close();
+        UiObserve.show(this.target);
+    }
+
+    act(act)
+    {
+        this.close();
+        Role.Avatar.setDes(this.target.pos,this.target,act);
+    }
+
+
+    show(x,y,options=['use','drop'],target)
+    {
+        this.target = target;
+        super.show();        
+        Object.values(this.btns).forEach((btn)=>{btn.hide();})
+        options.forEach((opt)=>{this.btns[opt].show();})
+        this.setPosition(x,y).rePos().layout();
+        // close
+        UiInfo.close();
+        UiCursor.set();
+    }
+
+    rePos()
+    {
+        if(this.right>UI.w) {this.x-=this.right-UI.w;}
+        else if(this.left<0) {this.x-=this.left;}
+        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
+        else if(this.top<0) {this.y-=this.top;}
+        return this;
+    }
+
+    close() 
+    {
+        this.hide();
+        this.onclose?.();
+    }
+
+}
+
+class Observe extends UiBase
+{
+    constructor(scene)
+    {
+        let config =
+        {
+            x : UI.w/2,
+            y : UI.h/2,
+            width : 300,
+            height : 300,
+            orientation : 'y',
+        }
+
+        super(scene,config)
+
+        this.addBg(scene)
+            .addTop(scene)
+            .addName(scene)
+            .addDivider(scene)
+            .addProps(scene)
+            .layout()
+            .hide()
+    }
+
+    addName(scene)
+    {
+        this.add(text(scene),{key:'name'})
+        return this;
+    }
+
+    addProps(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'y'})
+        this.add(sizer,{expand:true,key:'props'})
+        return this;
+    }
+
+    update()
+    {
+        this.getElement('name').setText(this.owner.role.name);
+        let props = this.getElement('props');
+        props.removeAll(true)
+        let life = this.owner.status.states['life'];
+        let value = `${life.cur} / ${life.max}`
+        props.add(this.prop('life'.local(), value, false),{expand:true,padding:{left:10,right:10}})
+        this.layout();
+    }
+
+    close()
+    {
+        super.close();
+        this.onclose?.();
+    }
+
+    show(owner)
+    {
+        super.show();
+        this.owner = owner;
+        this.update();
+    }
+}
+
+export class UiCase extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -1010,12 +961,8 @@ export class UiCase extends Sizer
 
         super(scene,config);
         UiCase.instance = this;
-        this.addTop = addTop;
-        this.addGrid = addGrid;
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1,strokeColor:0x777777,strokeWidth:3}),'bg')
-            //.add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.hide.bind(this)}),{align:'right'})
+        this.addBg(scene)
             .addTop(scene)
-            //.addGrid(scene,4,4,this.getContainer.bind(this),{left:20,right:20,bottom:20})
             .addGrid(scene,4,4,this.getOwner.bind(this),{left:20,right:20,bottom:20})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
@@ -1025,32 +972,32 @@ export class UiCase extends Sizer
             .layout()
             .hide()
         scene.add.existing(this);
-        this.getElement('bg').setInteractive(); //避免 UI scene 的 input event 傳到其他 scene
         this.getLayer().name = 'UiCase';
     }
 
-    //getContainer() {return this.container;}
-    getOwner() {return this.owner;}
-
-    update()
+    close() 
     {
-        //this.grid.getElement('items').forEach(item => {item.update();});
-        this.getElement('grid').getElement('items').forEach(item => {item.update();});
+        super.close();
+        // close
+        UiCover.close();
+        clrCamera(UI.CAM_LEFT_TOP);
     }
-
-    close() {this.hide();UiCover.close();clrCamera(UI.CAM_LEFT_TOP);}
 
     show(owner)
     {
         super.show();
         this.owner = owner;
-        this.getElement('label',true).setText(owner.name);
+        this.setTitle(owner.name);
+        this.updateGrid();
         this.layout();
-        this.update();
+        UiCursor.set();
+        
+        // show
         UiInv.show(Role.Avatar.instance);
         UiCover.show();
+        // close
         UiProfile.close();
-        UiCursor.set();
+        // camera
         setCamera(UI.CAM_LEFT_TOP);
     }
 
@@ -1137,6 +1084,10 @@ export class UiInv extends UiBase
     close()
     {
         super.close();
+        
+        // unregister
+        this.unregister();
+        // close
         UiCase.close();
         UiTrade.close();
         clrCamera(UI.CAM_LEFT);
@@ -1147,6 +1098,9 @@ export class UiInv extends UiBase
         super.show();
         this.owner = owner;
         this.update();
+        // register
+        this.register();     
+        // camera
         setCamera(UI.CAM_LEFT);
     }
 
@@ -1164,108 +1118,82 @@ export class UiInv extends UiBase
     
 }
 
-class UiObserve extends UiBase
+export class UiOption extends UiContainerBase
 {
     static instance = null;
     constructor(scene)
     {
-        let config =
-        {
-            x : UI.w/2,
-            y : UI.h/2,
-            width : 300,
-            height : 300,
-            orientation : 'y',
-        }
+        super(scene);
+        UiOption.instance = this;
+        this.add(new Option(scene))
+            .close() 
 
-        super(scene,config)
+        this.getLayer().name = 'UiOption';
+    }
+
+    static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
+
+}
+
+class UiObserve extends UiContainerBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene,false);
         UiObserve.instance = this;
+        this.add(new Observe(scene))
+            .close()
 
-        this.addBg(scene)
-            .addTop(scene)
-            .addName(scene)
-            .addDivider(scene)
-            .addProps(scene)
-            .layout()
-            .hide()
-        scene.add.existing(this);
-       
         this.getLayer().name = 'UiObserve';
-    }
-
-    addName(scene)
-    {
-        this.add(text(scene),{key:'name'})
-        return this;
-    }
-
-    addProps(scene)
-    {
-        let sizer = scene.rexUI.add.sizer({orientation:'y'})
-        this.add(sizer,{expand:true,key:'props'})
-        return this;
-    }
-
-    update()
-    {
-        this.getElement('name').setText(this.owner.role.name);
-        let props = this.getElement('props');
-        props.removeAll(true)
-        let life = this.owner.status.states['life'];
-        let value = `${life.cur} / ${life.max}`
-        props.add(this.prop('life'.local(), value, false),{expand:true,padding:{left:10,right:10}})
-        this.layout();
-    }
-
-    close() {this.hide();UiCover.close();}
-
-    show(owner)
-    {
-        super.show();
-        UiCover.show();
-        this.owner = owner;
-        this.update();
     }
 
     static show(owner) {UiObserve.instance?.show(owner);}
 }
 
-
-
-
-export class UiMain extends Sizer
+export class UiMain extends UiBase
 {
     static instance = null;
     constructor(scene)
     {
-        let config = {space:{item:5}}
+        let config = {space:{item:10,left:10,right:10,top:10,bottom:10}}
         super(scene,config);
         UiMain.instance = this;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:1}),'bg')
+        this.addBg(scene)
             .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
             .add(new UiButton(scene,{text:'個\n人',onclick:this.profile.bind(this)}))
             .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
-            .addBackground(rect(scene,{alpha:0}),'cover')
+            .add(new UiButton(scene,{text:'測\n試',onclick:this.test.bind(this)}))
+            .addEnable(scene)
             .size()
             .hide();
-        this._cover =this.getElement('cover');
+        
         this.getLayer().name = 'UiMain';    // 產生layer，並設定layer名稱
         this.addListener();
        
     }
 
+    addEnable(scene)
+    {
+        this.addBackground(rect(scene,{alpha:0}),'enable');
+        this._enable = this.getElement('enable');
+        return this;
+    }
+
     enable(en)
     {
-        if(en){this._cover.disableInteractive();}
-        else{this._cover.setInteractive();}
+        if(en){this._enable.disableInteractive();}
+        else{this._enable.setInteractive();}
     }
 
     inv() {UiInv.toggle(Role.Avatar.instance);}
 
     profile() {UiProfile.toggle(Role.Avatar.instance);}
 
-    menu() {this.hide();this.scene.events.emit('menu');}
+    menu() {this.close();this.closeAll();this.scene.events.emit('menu');}
+
+    test() {this.closeAll();}
 
     addListener()
     {
@@ -1279,15 +1207,15 @@ export class UiMain extends Sizer
         let viewport = this.scene.rexUI.viewport;
         this.setPosition(viewport.width/2, viewport.height)
             .setOrigin(0.5,1)
-            //.setMinWidth(viewport.width)
-            .setMinSize(viewport.width-100, 80)
+            .setMinWidth(viewport.width-100)
+            //.setMinSize(viewport.width-100, 80)
             .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
         return this;
     }
 
     static show() {UiMain.instance?.show();}
 
-    static close() {UiMain.instance?.hide();}
+    static close() {UiMain.instance?.close();}
 
     static enable(en) {UiMain.instance?.enable(en);} 
 
@@ -1378,7 +1306,7 @@ export class UiTrade extends UiBase
         {
             x : 0,
             y : 0,
-            width : 450,//UI.w/2,
+            width : 450,
             height : 500,
             orientation : 'y',
             space:{bottom:20},
@@ -1423,13 +1351,28 @@ export class UiTrade extends UiBase
         this.getElement('name',true).setText(this.owner.role.name);
     }
 
+    close()
+    {
+        super.close();
+        // close
+        UiCover.close();
+        // camera
+        clrCamera(UI.CAM_RIGHT);
+    }
+
     show(owner)
     {
         super.show();
         this.owner = owner;
         this.update();
+        
+        // show
         UiInv.show(Role.Avatar.instance);
         UiCover.show();
+        // close
+        UiProfile.close();
+        // camera
+        setCamera(UI.CAM_RIGHT);
     }
 
     static show(owner) {UiTrade.instance?.show(owner);}
@@ -1605,14 +1548,19 @@ export class UiProfile extends UiBase
         this.updateInfo();
         this.update();
         this.getElement('tags').emitTopButtonClick(0);
-        setCamera(UI.CAM_RIGHT);
+        this.register();
+        // close
         UiCase.close();
+        UiTrade.close();
+        // camera
+        setCamera(UI.CAM_RIGHT);
     }
 
     close()
     {
         super.close();
         clrCamera(UI.CAM_RIGHT);
+        this.unregister();
     }
 
     toggle(owner)
@@ -1628,7 +1576,7 @@ export class UiProfile extends UiBase
     static get shown() {UiProfile.instance?.visible;}
 }
 
-export class UiDialog extends Sizer
+export class UiDialog extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -1636,7 +1584,7 @@ export class UiDialog extends Sizer
         let config =
         {
             x : UI.w/2,
-            y : UI.h/2,
+            y : UI.h,
             width : 600,
             //height : 300,
             orientation : 'y',
@@ -1645,9 +1593,11 @@ export class UiDialog extends Sizer
 
         super(scene, config);
         UiDialog.instance=this;
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        this//.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+            .addBg(scene)
             .addSpeakerA(scene)
             .addSpeakerB(scene)
+            .setOrigin(0.5,1)
             .layout()
             .hide()
 
@@ -1770,8 +1720,9 @@ export class UiDialog extends Sizer
 
     close()
     {
-        this.hide(); 
+        super.close(); 
         UiCover.close();
+        UiMain.show();
     }
 
     show(owner)
@@ -1784,8 +1735,12 @@ export class UiDialog extends Sizer
             .setNameA(owner.role.name)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
+        // show
         UiCover.show();
         UiCursor.set();
+        // close
+        this.closeAll();
+        UiMain.close();
     }
 
     static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}
