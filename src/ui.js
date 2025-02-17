@@ -144,6 +144,7 @@ class Slot extends Icon
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
     get gold() {return this._item?.gold;}
+    get item() {return this._item;}
 
     get isEmpty() {return Utility.isEmpty(this.slot);}
     get container() {return this.owner?.status?.bag?.items;}
@@ -155,7 +156,7 @@ class Slot extends Icon
                                         : this.owner.trade == UI.BUYER ? ['sell','drop'] 
                                                                         : ['buy'];}
 
-    get trading() {return this.owner.trade;}
+    get trading() {return this.owner.trade != UiDragged.owner.trade;}
     get enabled() {return this.capacity==-1 || this._id<this.capacity;}
 
     setSlot(value)
@@ -194,7 +195,7 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    copyData() {return this.slot ? {slot:Utility.deepClone(this.slot),owner:this.owner} : null;}
+    copyData() {return this.slot ? {slot:Utility.deepClone(this.slot),owner:this.owner,item:this._item} : null;}
 
     update()
     {
@@ -216,9 +217,9 @@ class Slot extends Icon
         }
     }
 
-    clear() {super.clear();this.slot=null;}
+    clear() {super.clear();this.slot=null;this._item=null;}
     
-    over()
+    over(check=true)
     {
         if(UiDragged.on) 
         {
@@ -243,14 +244,16 @@ class Slot extends Icon
             this.setBgColor(UI.COLOR_SLOT_OVER);
             // 使用 setTimeout 延遲執行 UiInfo.show()
             this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, UI.OVER_DELAY);
+            check && UiInv.check(this.item.cat);
         }
     }
 
-    out()
+    out(check=true)
     {
         clearTimeout(this.pointerOverTimeout);        
         this.setBgColor(UI.COLOR_SLOT);
         UiInfo.close();
+        check && UiInv.check();
     }
 
     leave(gameObject)
@@ -268,43 +271,6 @@ class Slot extends Icon
         if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
     }
 
-    // use()
-    // {
-    //     console.log('use');
-    //     //this.clear();
-    // }
-
-    // drop()
-    // {
-    //     this.owner.drop(this);
-    //     //this.clear();
-    // }
-
-    // transfer()
-    // {
-    //     this.owner.transfer(this.owner.target,this)
-
-    //     // console.log('transfer', this.owner)
-    //     // if(this.owner.transfer(this.owner.target,this))
-    //     // {
-    //     //     this.clear();
-    //     // }
-    // }
-
-    trade()
-    {
-        if(!this.isEmpty) {return;}
-        if(this.owner.status.gold >= UiDragged.gold)
-        {
-            this.owner.status.gold -= UiDragged.gold;
-            UiDragged.owner.status.gold += UiDragged.gold;
-            this.slot = UiDragged.slot;
-            UiDragged.clear();
-            UiInv.updateGold();
-            UiTrade.updateGold();
-        }   
-    }
-
     leftButtonDown(x,y)
     {
         UiInfo.close();
@@ -312,7 +278,16 @@ class Slot extends Icon
         {            
             if(this.isValid)
             {
-                if(this.trading) {this.trade();}
+                if(this.trading) 
+                {
+                    if(!this.isEmpty) {return;}
+
+                    if(UiDragged.owner.sell(this.owner, UiDragged, this._id, this.isEquip))
+                    {
+                        UiDragged.clear();
+                        UiBase.refreshAll();
+                    }
+                }
                 else
                 {
                     let dataCopy = this.copyData();
@@ -321,6 +296,7 @@ class Slot extends Icon
                     if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
                     if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
                 }
+                this.over();
             }
         }
         else if(!this.isEmpty)
@@ -329,6 +305,7 @@ class Slot extends Icon
             UiDragged.data = this.copyData();
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
+            UiInv.check();
         }
     }
 
@@ -400,11 +377,21 @@ class EquipSlot extends Slot
 
     get cat() {return this._cat;}
 
+    get isEquip() {return true;}
+
     get isValid() {return UiDragged.isCat(this.cat)}
 
     // get, set 都要 assign 才會正常 work
     get slot() {return super.slot;}
-    set slot(value) {super.slot=value; this.owner.equip();}// UiProfile.refresh();}
+    set slot(value) {super.slot=value; this.owner.equip();}
+
+    over() {super.over(false);}
+    out() {super.out(false);}
+
+    check(cat)
+    {
+        this.setBgColor(cat == this.cat ? UI.COLOR_SLOT_DRAG : UI.COLOR_SLOT);
+    }
 
     setIcon(icon)
     {
@@ -428,12 +415,14 @@ export class UiDragged extends Pic
     static get on() {return UiDragged.instance.visible;}
     static get slot() {return UiDragged.instance.slot;}
     static get owner() {return UiDragged.instance.owner;}
-    static get gold() {return UiDragged.instance.data.item.gold;}
+    static get item() {return UiDragged.instance.item;}
+    static get gold() {return UiDragged.instance.item.gold;}
     static get isTrade() {return UiDragged.instance.data.owner.tradeable??false;}
     static set data(value) {UiDragged.instance.setData(value);}
 
     get owner() {return this.data.owner;}
     get slot() {return this.data.slot;}
+    get item() {return this.data.item;}
 
     isCat(cat) {return this.data.item.cat == cat;}
 
@@ -449,8 +438,9 @@ export class UiDragged extends Pic
     {
         this.show();
         this.data = value;
-        this.data.item = ItemDB.get(value.slot.id);
-        this.setIcon(this.data.item.icon);
+        //this.data.item = ItemDB.get(value.slot.id);
+        //this.setIcon(this.data.item.icon);
+        this.setIcon(value.item.icon);
         UiCover.show();
         UiMain.enable(false);
     }
@@ -725,9 +715,8 @@ class UiBase extends Sizer
     static _register={};
 
     closeAll() {for(let key in UiBase._register){UiBase._register[key].close();}}
-    refreshAll() {for(let key in UiBase._register){
-        UiBase._register[key].refresh?.();
-    }}
+    refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
+    static refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
 
     register() {UiBase._register[this.constructor.name]=this;}
 
@@ -1157,6 +1146,11 @@ export class UiInv extends UiBase
         this.update();
     }
 
+    check(cat)
+    {
+        this.getElement('equip').getElement('items').forEach(item => {item?.check(cat);});
+    }
+
     close()
     {
         if(!this.visible) {return;}
@@ -1192,6 +1186,7 @@ export class UiInv extends UiBase
     static updateGold() {UiInv.instance?.updateGold();}
     static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
+    static check(cat) {UiInv.instance?.check(cat);}
     
 }
 
@@ -1945,7 +1940,7 @@ export class UiMessage extends UiBase
         let config =
         {
             x : 10,
-            y : UI.h-100,
+            y : UI.h-80,
             width : 200,
             orientation : 'x',
             //space:{left:10},
@@ -1977,6 +1972,7 @@ export class UiMessage extends UiBase
     addScroll(scene,height=300)
     {
         this.scroll = scene.rexUI.add.scrollablePanel({
+            //background : rect(scene),
             height: height,
             panel: {child: scene.rexUI.add.sizer({orientation:'y'})},
         });
@@ -2012,11 +2008,12 @@ export class UiMessage extends UiBase
         let msg = this.queue.shift();
         
         this.process(msg);
-        this.delayAlpha();
     }
 
-    process(msg,{wrapWidth=200,duration=250,delay=250}={}) 
+    process(msg,{wrapWidth=200,duration=250,completeDelay=100}={}) 
     {
+        this.delayAlpha();
+
         let from = this.scroll.childOY;
         this.panel.add(bbcText(this.scene, {text:msg, wrapWidth:wrapWidth}),{align:'left'});
         this.layout();
@@ -2027,7 +2024,7 @@ export class UiMessage extends UiBase
             from: from,
             to: to,
             duration: duration,
-            delay: delay,
+            completeDelay: completeDelay,
             onUpdate: (tween) => {this.scroll.childOY = tween.getValue();},
             onComplete: () => {this.processNext();}
         });

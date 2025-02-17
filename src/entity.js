@@ -192,8 +192,8 @@ export class Entity extends Phaser.GameObjects.Container
     create(id)
     {
         this.slot = {id:id,count:1};
-        let item = ItemDB.get(id);
-        let [key,frame] = item.icon.split('/');
+        this.item = ItemDB.get(id);
+        let [key,frame] = this.item.icon.split('/');
         this.setTexture(key,frame);
         this.displayWidth = this._sp.width;
         this.displayHeight = this._sp.height;
@@ -211,17 +211,22 @@ export class Entity extends Phaser.GameObjects.Container
         return false;
     }
 
-    take(ent)
+    take(ent, i, isEquip)
     {
-        let capacity = this.status.bag.capacity;
-        let count = this.status.bag.items.length;
-        let foundIndex = this.status.bag.items.findIndex(slot=>Utility.isEmpty(slot))
-        let i = foundIndex!=-1 ? foundIndex 
-                                : capacity==-1 || count<capacity ? count 
-                                                                : -1;
+        if(i==undefined)
+        {
+            let capacity = this.status.bag.capacity;
+            let count = this.status.bag.items.length;
+            let foundIndex = this.status.bag.items.findIndex(slot=>Utility.isEmpty(slot))
+            i = foundIndex!=-1 ? foundIndex 
+                                    : capacity==-1 || count<capacity ? count 
+                                                                    : -1;
+        }
+
         if(i!=-1)
         {
-            this.status.bag.items[i]=ent.slot;
+            if(isEquip) {this.status.equips[i]=ent.slot; this.equip();}
+            else {this.status.bag.items[i]=ent.slot;}
             return true;
         }
         else
@@ -235,6 +240,7 @@ export class Entity extends Phaser.GameObjects.Container
     {
         let p = this.scene.map.getDropPoint(this.pos);
         new Pickup(this.scene,this.x,this.y-32).create(ent.slot.id).falling(p);
+        this.send('msg',`丟棄 ${ent.item.name}`);
     }
 
     falling(p)
@@ -376,15 +382,15 @@ export class Pickup extends Entity
     addListener()
     {
         super.addListener();
-        this.on('take',(taker)=>{this.pickup(taker)})
+        this.on('take',(taker)=>{this.take(taker)})
     }
 
-    pickup(taker)
+    take(taker)
     {
-        console.log('pickeup');
-
         if(taker.take(this))
         {
+            let item = this.item ?? ItemDB.get(this.slot.id)
+            this.send('msg',`取得 ${item.name}`)
             this.send('out');
             this.send('refresh');
             this.set();

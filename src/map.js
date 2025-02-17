@@ -208,8 +208,8 @@ class Map
         //let map = scene.make.tilemap({key: 'map'});
         this.map = scene.make.tilemap({key: mapName});
         let map = this.map;
-        map.tW_half = map.tileWidth/2;
-        map.tH_half = map.tileHeight/2;
+        map.tW_half = map.tileWidth*0.45;
+        map.tH_half = map.tileHeight*0.45;
 
         map.tilesets.forEach((tileset) => {
             if(tileset.name in lut)

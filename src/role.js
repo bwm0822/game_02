@@ -1250,7 +1250,7 @@ export class Role extends Entity
         this._resolve;
         //
         this.static = false; // true: static body, false: dynamic body
-        this.id='';
+        this.id = '';
     }
 
     get moving()    {return this._des!=null;}
@@ -1499,11 +1499,13 @@ export class Role extends Entity
                 }
             }
         })
+
+        this.send('equip'); // UiProfile.refresh()
     }
 
-    sell(target, ent)
+    sell(target, ent, i, isEquip)
     {
-        if(target.buy(ent))
+        if(target.buy(ent, i, isEquip))
         {
             this.status.gold+=ent.gold;
             return true;
@@ -1511,13 +1513,21 @@ export class Role extends Entity
         return false;
     }
 
-    buy(ent)
+    buy(ent, i, isEquip)
     {
         if(this.status.gold>=ent.gold)
         {
-            if(this.take(ent))
+            if(this.take(ent, i, isEquip))
             {
                 this.status.gold-=ent.gold;
+                if(this == Avatar.instance)
+                {
+                    this.send('msg',`購買 ${ent.item.name}`);
+                }
+                else
+                {
+                    this.send('msg',`出售 ${ent.item.name}`)
+                }
                 return true;
             }
             return false;
@@ -1526,6 +1536,19 @@ export class Role extends Entity
         {
             this.send('msg','金幣不足!!!');
             return false;
+        }
+    }
+
+    take(ent, i, isEquip)
+    {
+        if(isEquip)
+        {
+            this.status.equips[i]=ent.slot; this.equip();
+            return true;   
+        }
+        else
+        {
+            return super.take(ent, i);
         }
     }
 
