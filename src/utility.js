@@ -11,8 +11,8 @@ export default class Utility
                     life:'生命',speed:'速度',attack:'攻擊',defense:'防禦',
                     shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',
                     poison:'下毒',weak:'虛弱',
-                    use:'使用',drop:'丟棄',talk:'交談',trade:'交易',
-                    open:'開啟',observe:'觀察'
+                    use:'使用',drop:'丟棄',talk:'交談',trade:'交易',buy:'買',sell:'賣',
+                    open:'開啟',observe:'觀察',transfer:'移動',
                     };
                     
     static wait_r()     {this._wid=0;}

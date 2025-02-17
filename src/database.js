@@ -180,8 +180,24 @@ export class RoleDB
 {
     static data = 
     {
+
         'scott': {name:'史考特', icon:'portraits/35', gold:200,
-                    bag:['sword_01',{id:'helmet_01'}]},
+                    sprite:'Warrior_Red', faceR:true,
+                    anchor:{x:64,y:48}, w:128, h:128,
+                    b:{l:48,r:48,t:32,b:32},
+                    g:{l:48,r:48,t:64,b:32},
+                    z:{l:48,r:48,t:64,b:32},
+                    bag:{capacity:5,items:[]},
+                    attrs:
+                        {
+                            attack: 5,
+                            defend: 0,
+                        },
+                    states:
+                        {
+                            life: {cur:100,max:100},
+                        }
+                },
 
         'knight': {name:'騎士', icon:'portraits/35', gold:200,
                     sprite:'Warrior_Red', faceR:true,
@@ -189,7 +205,7 @@ export class RoleDB
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:64,b:32},
-                    bag:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01'],
+                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01']},
                     attrs:
                         {
                             attack: 5,
@@ -207,7 +223,7 @@ export class RoleDB
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:32,b:32},
-                    bag:[],
+                    bag:{},
                     attrs:
                         {
                             attack: 5,

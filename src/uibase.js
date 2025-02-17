@@ -50,6 +50,10 @@ export let UI =
     CAM_LEFT : 0b001,
     CAM_RIGHT : 0b010,
     CAM_LEFT_TOP : 0b100,
+
+    SELLER : 1,
+    BUYER : 2,
+
 }
 
 

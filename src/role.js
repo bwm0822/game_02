@@ -12,6 +12,7 @@ import Record from './record';
 import {Entity,Pickup} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import {UI,text,rect} from './uibase.js';
+import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -945,294 +946,294 @@ const ICON_ENEMY = 'role/1';
 // }
 
 
-export class Player
-{
-    static instance = null;
-    constructor()
-    {
-        Player.instance = this;
-        this.id = 'knight';
-    }
+// export class Player
+// {
+//     static instance = null;
+//     constructor()
+//     {
+//         Player.instance = this;
+//         this.id = 'knight';
+//     }
 
-    get gold() {return this.owner.status.gold;}
-    set gold(value) {return this.owner.status.gold=value;}
+//     get gold() {return this.owner.status.gold;}
+//     set gold(value) {return this.owner.status.gold=value;}
 
-    //static get owner() {return Player.instance.owner;}
+//     //static get owner() {return Player.instance.owner;}
 
-    buy(seller, gold)
-    {
-        console.log(seller.gold, gold)
-        if(this.gold < gold){return false;}
-        this.gold -= gold;
-        seller.gold += gold;
-        console.log(this.gold)
-        return true;
-    }
+//     buy(seller, gold)
+//     {
+//         console.log(seller.gold, gold)
+//         if(this.gold < gold){return false;}
+//         this.gold -= gold;
+//         seller.gold += gold;
+//         console.log(this.gold)
+//         return true;
+//     }
 
-    sell(buyer, gold)
-    {
-        console.log(buyer.gold, gold)
-        if(buyer.gold < gold){return false;}
-        this.gold -= gold;
-        buyer.gold += gold;
-        console.log(this.gold)
-        return true;
-    }
+//     sell(buyer, gold)
+//     {
+//         console.log(buyer.gold, gold)
+//         if(buyer.gold < gold){return false;}
+//         this.gold -= gold;
+//         buyer.gold += gold;
+//         console.log(this.gold)
+//         return true;
+//     }
 
-    load()
-    {
-        let roleD = RoleDB.get(this.id);
+//     load()
+//     {
+//         let roleD = RoleDB.get(this.id);
 
-        if(!Record.data.player)
-        {
-            Record.data.player = {
-                gold: roleD.gold, 
-                equips: [],
-                bag: [],
-                attrs: Utility.deepClone(roleD.attrs),
-                states: Utility.deepClone(roleD.states), 
-            }
-        }
+//         if(!Record.data.player)
+//         {
+//             Record.data.player = {
+//                 gold: roleD.gold, 
+//                 equips: [],
+//                 bag: [],
+//                 attrs: Utility.deepClone(roleD.attrs),
+//                 states: Utility.deepClone(roleD.states), 
+//             }
+//         }
 
-        this.role = roleD; 
-        this.status = Record.data.player;
-        this.equip();
-    }
+//         this.role = roleD; 
+//         this.status = Record.data.player;
+//         this.equip();
+//     }
 
-    save()
-    {
-        Record.data.player = this.status;
-    }
+//     save()
+//     {
+//         Record.data.player = this.status;
+//     }
 
-    equip()
-    {
-        this.status.attrs = Utility.deepClone(this.role.attrs);
-        this.status.states = Utility.deepClone(this.role.states); 
+//     equip()
+//     {
+//         this.status.attrs = Utility.deepClone(this.role.attrs);
+//         this.status.states = Utility.deepClone(this.role.states); 
 
-        this.status.equips.forEach((equip)=>{
-            //console.log(equip);
-            if(equip.id)
-            {
-                let item = ItemDB.get(equip.id);
-                if(item.props)
-                {
-                    for(let [key,value] of Object.entries(item.props))
-                    {
-                        //console.log(key,value);
-                        switch(key)
-                        {
-                            case 'attack':
-                                this.status.attrs[key]=value; break;
-                            case 'life':
-                                this.status.states[key].max+=value; break;
-                            default:
-                                this.status.attrs[key]+=value; break;
-                        }
-                    }
-                }
-            }
-        })
-    }
+//         this.status.equips.forEach((equip)=>{
+//             //console.log(equip);
+//             if(equip.id)
+//             {
+//                 let item = ItemDB.get(equip.id);
+//                 if(item.props)
+//                 {
+//                     for(let [key,value] of Object.entries(item.props))
+//                     {
+//                         //console.log(key,value);
+//                         switch(key)
+//                         {
+//                             case 'attack':
+//                                 this.status.attrs[key]=value; break;
+//                             case 'life':
+//                                 this.status.states[key].max+=value; break;
+//                             default:
+//                                 this.status.attrs[key]+=value; break;
+//                         }
+//                     }
+//                 }
+//             }
+//         })
+//     }
 
-    static equip()
-    {
-        Player.instance?.equip();
-    }
+//     static equip()
+//     {
+//         Player.instance?.equip();
+//     }
 
-    static buy(seller,gold)
-    {
-        if(Player.instance) {return Player.instance.buy(seller,gold);}
-    }
+//     static buy(seller,gold)
+//     {
+//         if(Player.instance) {return Player.instance.buy(seller,gold);}
+//     }
 
-    static sell(seller,gold)
-    {
-        if(Player.instance) {return Player.instance.sell(seller,gold);}
-    }
+//     static sell(seller,gold)
+//     {
+//         if(Player.instance) {return Player.instance.sell(seller,gold);}
+//     }
 
-    static load()
-    {
-        if(!Player.instance) {new Player();}
-        Player.instance.load();
-    }
+//     static load()
+//     {
+//         if(!Player.instance) {new Player();}
+//         Player.instance.load();
+//     }
 
-    static save()
-    {
-        if(Player.instance) {Player.instance.save();}
-    }
+//     static save()
+//     {
+//         if(Player.instance) {Player.instance.save();}
+//     }
 
     
-}
+// }
 
 
 
-export class Role_old extends Phaser.GameObjects.Container
-{
-    constructor(scene,x,y)
-    {
-        super(scene,x,y);
-        this.scene = scene;
-        scene.add.existing(this);
-        this._path = [];
-        this._des = null;
-        this._act = '';
-        this._resolve;
-        this._weight = 0;
-        this.id = '';
-    }
+// export class Role_old extends Phaser.GameObjects.Container
+// {
+//     constructor(scene,x,y)
+//     {
+//         super(scene,x,y);
+//         this.scene = scene;
+//         scene.add.existing(this);
+//         this._path = [];
+//         this._des = null;
+//         this._act = '';
+//         this._resolve;
+//         this._weight = 0;
+//         this.id = '';
+//     }
 
-    get pos()       {return {x:this.x,y:this.y};}
-    set pos(value)  {this.x=value.x;this.y=value.y;}
-    get moving()    {return this._des!=null;}
+//     get pos()       {return {x:this.x,y:this.y};}
+//     set pos(value)  {this.x=value.x;this.y=value.y;}
+//     get moving()    {return this._des!=null;}
 
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到
-    {
-        //console.log(key,frame);
-        let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
-        this.setSize(sp.width,sp.height);
-        this.add(sp);
-        this._sp = sp;
-    }
+//     setTexture(key,frame)   // map.createFromObjects 會呼叫到
+//     {
+//         //console.log(key,frame);
+//         let sp = this.scene.add.sprite(0,16,key,frame).setOrigin(0.5,1);
+//         this.setSize(sp.width,sp.height);
+//         this.add(sp);
+//         this._sp = sp;
+//     }
 
-    setPosition(x,y) // map.createFromObjects 會呼叫到
-    {
-        super.setPosition(x,y);
-    }
+//     setPosition(x,y) // map.createFromObjects 會呼叫到
+//     {
+//         super.setPosition(x,y);
+//     }
 
-    setFlip(){} // map.createFromObjects 會呼叫到
+//     setFlip(){} // map.createFromObjects 會呼叫到
 
-    // preUpdate(time, delta){//console.log(time,delta);this.debugDraw();}
+//     // preUpdate(time, delta){//console.log(time,delta);this.debugDraw();}
 
-    addPhysics()
-    {
-        //scene.physics.world.enable(this);
-        this.scene.physics.add.existing(this, false);
-        this.body.setSize(this.width,this.height);
-    }
+//     addPhysics()
+//     {
+//         //scene.physics.world.enable(this);
+//         this.scene.physics.add.existing(this, false);
+//         this.body.setSize(this.width,this.height);
+//     }
 
-    updateDepth()
-    {
-        let depth = this.y + this.height/2;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
-    }
+//     updateDepth()
+//     {
+//         let depth = this.y + this.height/2;
+//         this.setDepth(depth);
+//         //this.debug(depth.toFixed(1));
+//     }
 
-    removeWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,-this._weight);}
+//     removeWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,-this._weight);}
 
-    addWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,this._weight);}
+//     addWeight(){this._weight!=0 && this.scene.map.updateGrid(this.pos,this._weight);}
 
-    addToRoleList() {this.scene.roles.push(this);}
+//     addToRoleList() {this.scene.roles.push(this);}
 
-    setDes(des, act)
-    {
-        let rst = this.scene.map.getPath(this.pos, des, act);
-        if(rst && rst.valid)
-        {
-            this._path = rst.path;
-            this._des = des; 
-            this._act = act;
-            this.resume();
-        }
-        else
-        {
-            this.stop();
-        }
-    }
+//     setDes(des, act)
+//     {
+//         let rst = this.scene.map.getPath(this.pos, des, act);
+//         if(rst && rst.valid)
+//         {
+//             this._path = rst.path;
+//             this._des = des; 
+//             this._act = act;
+//             this.resume();
+//         }
+//         else
+//         {
+//             this.stop();
+//         }
+//     }
 
-    async moveTo({duration=200,ease='expo.in',draw=true}={})
-    {
-        if(this._path.length==0) {return;}
-        let path = this._path;
-        if(path[0].act=='go')
-        { 
-            let pt = path[0].pt;
-            if(this.scene.map.isValid(pt))
-            {
-                if(draw) {this.drawPath(path);}
-                this.removeWeight();
-                await this.step(path[0].pt,duration,ease);
-                this.addWeight();
-                this.updateDepth();
-                path.splice(0,1);
-                if(path.length>0) {return;}
-            }
-        }
-        else
-        {
-            this.interact(path[0].pt,path[0].act)
-        }
+//     async moveTo({duration=200,ease='expo.in',draw=true}={})
+//     {
+//         if(this._path.length==0) {return;}
+//         let path = this._path;
+//         if(path[0].act=='go')
+//         { 
+//             let pt = path[0].pt;
+//             if(this.scene.map.isValid(pt))
+//             {
+//                 if(draw) {this.drawPath(path);}
+//                 this.removeWeight();
+//                 await this.step(path[0].pt,duration,ease);
+//                 this.addWeight();
+//                 this.updateDepth();
+//                 path.splice(0,1);
+//                 if(path.length>0) {return;}
+//             }
+//         }
+//         else
+//         {
+//             this.interact(path[0].pt,path[0].act)
+//         }
 
-        this.stop();
-    }
+//         this.stop();
+//     }
 
-    stop()
-    {
-        this._des = null;
-        if(this._dbgPath){this._dbgPath.clear();}
-    }
+//     stop()
+//     {
+//         this._des = null;
+//         if(this._dbgPath){this._dbgPath.clear();}
+//     }
 
-    step(pos, duration, ease)
-    {
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: this,
-                x: pos.x,
-                y: pos.y,
-                duration: duration,
-                ease: ease,
-                //delaycomplete: 1000,
-                onComplete: (tween, targets, gameObject)=>{resolve();}         
-            });
-        });
-    }
+//     step(pos, duration, ease)
+//     {
+//         return new Promise((resolve)=>{
+//             this.scene.tweens.add({
+//                 targets: this,
+//                 x: pos.x,
+//                 y: pos.y,
+//                 duration: duration,
+//                 ease: ease,
+//                 //delaycomplete: 1000,
+//                 onComplete: (tween, targets, gameObject)=>{resolve();}         
+//             });
+//         });
+//     }
 
-    interact(pt, act)
-    {
-        let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
-        bodys.forEach((body) => {body.gameObject.emit(act);});
-    }
+//     interact(pt, act)
+//     {
+//         let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
+//         bodys.forEach((body) => {body.gameObject.emit(act);});
+//     }
 
-    async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
+//     async pause() {this._resolve = await new Promise((resolve)=>{this._resolve=resolve;});}
 
-    resume() {this._resolve?.(null);}
+//     resume() {this._resolve?.(null);}
 
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-        }
-        this._dbgPath.clear();
-        path.forEach(node=>{
-            if(node.act=='go')
-            {
-                let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            }
-        })
-    }
+//     drawPath(path)
+//     {
+//         if(!this._dbgPath)
+//         {
+//             this._dbgPath = this.scene.add.graphics();
+//             this._dbgPath.name = 'path';
+//             this._dbgPath.fillStyle(0xffffff);
+//         }
+//         this._dbgPath.clear();
+//         path.forEach(node=>{
+//             if(node.act=='go')
+//             {
+//                 let circle = new Phaser.Geom.Circle(node.pt.x, node.pt.y, 5);
+//                 this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+//             }
+//         })
+//     }
 
-    debugDraw()
-    {
-        if(!this._dbgGraphics)
-        {
-            console.log('debugDraw');
-            this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'Role';
-        }
+//     debugDraw()
+//     {
+//         if(!this._dbgGraphics)
+//         {
+//             console.log('debugDraw');
+//             this._dbgGraphics = this.scene.add.graphics();
+//             this._dbgGraphics.name = 'Role';
+//         }
 
-        let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
-        let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
-        this._dbgGraphics.clear()
-                        .lineStyle(3, 0x00ff00)
-                        //.strokeRectShape(this.getBounds())
-                        //.lineStyle(1, 0xff0000)
-                        //.strokeRectShape(rect)
-                        //.lineStyle(3, 0x00fff00)
-                        .strokeCircleShape(circle);
-    }
-}
+//         let circle = new Phaser.Geom.Circle(this.x, this.y, 32);
+//         let rect = new Phaser.Geom.Rectangle(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
+//         this._dbgGraphics.clear()
+//                         .lineStyle(3, 0x00ff00)
+//                         //.strokeRectShape(this.getBounds())
+//                         //.lineStyle(1, 0xff0000)
+//                         //.strokeRectShape(rect)
+//                         //.lineStyle(3, 0x00fff00)
+//                         .strokeCircleShape(circle);
+//     }
+// }
 
 
 export class Role extends Entity
@@ -1500,30 +1501,45 @@ export class Role extends Entity
         })
     }
 
-    
-
-    take(ent)
+    sell(target, ent)
     {
-        console.log('take',ent.slot);
-        //this.status.bag.push(ent.slot);
-        console.log('len',this.status.bag.length)
-        //let found = this.status.bag.find(slot=>Utility.isEmpty(slot))
-        let foundIndex = this.status.bag.findIndex(slot=>Utility.isEmpty(slot))
-        console.log(foundIndex)
-        if(foundIndex!=-1){this.status.bag[foundIndex]=ent.slot;}
+        if(target.buy(ent))
+        {
+            this.status.gold+=ent.gold;
+            return true;
+        }
+        return false;
     }
+
+    buy(ent)
+    {
+        if(this.status.gold>=ent.gold)
+        {
+            if(this.take(ent))
+            {
+                this.status.gold-=ent.gold;
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            this.send('msg','金幣不足!!!');
+            return false;
+        }
+    }
+
 
     load(record)
     {
         let roleD = RoleDB.get(this.id);
 
-        //if(!Record.data.player)
         if(!record)
         {
             record = {
                 gold: roleD.gold, 
                 equips: [],
-                bag: [],
+                bag: {capacity:roleD.bag.capacity, items:[]},
                 attrs: Utility.deepClone(roleD.attrs),
                 states: Utility.deepClone(roleD.states), 
             }
@@ -1603,12 +1619,10 @@ export class Avatar extends Role
         super(scene,x,y);
         Avatar.instance = this;
         this.weight = 1000;
-        this.id = 'knight';
+        this.id = 'scott';
         this.initRole();
         //this.debugDraw();
     }
-
-    //get owner() {return Player.instance;}
 
     async speak(value){}
 
@@ -1638,13 +1652,6 @@ export class Avatar extends Role
         super.addListener();
         this.on('talk',()=>{this.talk();})
         this.on('attack',(attacker)=>{this.hurt(attacker);})
-    }
-
-    take(ent)
-    {
-        super.take(ent);
-        this.send('out');
-        this.send('refresh');
     }
 
     async process()
@@ -1681,8 +1688,6 @@ export class Npc extends Role
         this.state = 'idle';
     }
 
-    get tradeable() {return true;}
-
     get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
                                             : ['attack','observe'];}
     
@@ -1697,7 +1702,7 @@ export class Npc extends Role
             this.status = 
             {   
                 gold: roleD.gold, 
-                bag: this.toBag(roleD.bag),
+                bag: this.toBag(roleD.bag.capacity,roleD.bag.items),
                 attrs: Utility.deepClone(roleD.attrs),
                 states: Utility.deepClone(roleD.states), 
             }

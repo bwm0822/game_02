@@ -32,10 +32,7 @@ export default function createUI(scene)
     new UiDragged(scene, 80, 80);
     new UiInfo(scene);
     new UiOption(scene);
-
-
-
-    //t2(scene);
+    new UiMessage(scene);
 
 }
 
@@ -138,21 +135,28 @@ class Slot extends Icon
     constructor(scene, w, h, id, getOwner, config)
     {
         super(scene, w, h, config);
-        this.addListener();
         this._id = id
         this._getOwner = getOwner;
+        this.addListener();
     }
 
     get slot() {return this.container?.[this._id];}
     set slot(value) {this.container[this._id]=value; this.setSlot(value);}
 
-    //get isEmpty() {return this.checkIfEmpty(this.slot);}
+    get gold() {return this._item?.gold;}
+
     get isEmpty() {return Utility.isEmpty(this.slot);}
-    get container() {return this._getOwner ? this._getOwner().status.bag : null;}
+    get container() {return this.owner?.status?.bag?.items;}
+    get capacity() {return this.owner?.status?.bag?.capacity; }
     get owner() {return this._getOwner?.();}
     get isValid() {return true;}
-    get isTrade() {return this.owner?.tradeable??false;}
-    get acts() {return ['use','drop']}
+    get acts() {return !this.owner.trade ? this.owner.target ? ['transfer','use','drop'] 
+                                                            : ['use','drop']
+                                        : this.owner.trade == UI.BUYER ? ['sell','drop'] 
+                                                                        : ['buy'];}
+
+    get trading() {return this.owner.trade;}
+    get enabled() {return this.capacity==-1 || this._id<this.capacity;}
 
     setSlot(value)
     {
@@ -188,13 +192,29 @@ class Slot extends Icon
         // .on('drop', (pointer,gameObject)=>{this.drop(gameObject);})
     }
 
-    //checkIfEmpty(slot) {return !slot || Object.keys(slot).length==0;}
-
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
     copyData() {return this.slot ? {slot:Utility.deepClone(this.slot),owner:this.owner} : null;}
 
-    update() {this.setSlot(this.slot);}
+    update()
+    {
+        this.setSlot(this.slot);
+        this.setEnable(this.enabled);
+    }
+
+    setEnable(on)
+    {
+        if(on)
+        {
+            this.setInteractive({draggable:true,dropZone:true});
+            this.setBgColor(UI.COLOR_SLOT);
+        }
+        else
+        {
+            this.disableInteractive();
+            this.setBgColor(UI.COLOR_SLOT_DISABLE);
+        }
+    }
 
     clear() {super.clear();this.slot=null;}
     
@@ -202,9 +222,7 @@ class Slot extends Icon
     {
         if(UiDragged.on) 
         {
-            //console.log('slot:',this.isTrade,'dragged:',UiDragged.isTrade);
-            //console.log('buy:',this.isSell,'sell:',this.isBuy)
-            if(this.isSell||this.isBuy)
+            if(this.trading)
             {
                 if(this.isEmpty)
                 {
@@ -247,26 +265,31 @@ class Slot extends Icon
 
     middleButtonDown(x,y)
     {
-        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts,this);}
+        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
     }
 
-    get isSell() {return this.isTrade && !UiDragged.isTrade;}
+    // use()
+    // {
+    //     console.log('use');
+    //     //this.clear();
+    // }
 
-    get isBuy() {return !this.isTrade && UiDragged.isTrade;}
+    // drop()
+    // {
+    //     this.owner.drop(this);
+    //     //this.clear();
+    // }
 
-    get noTrade() {return this.isTrade == UiDragged.isTrade;}
+    // transfer()
+    // {
+    //     this.owner.transfer(this.owner.target,this)
 
-    use()
-    {
-        console.log('use');
-        this.clear();
-    }
-
-    drop()
-    {
-        this.owner.drop(this.slot);
-        this.clear();
-    }
+    //     // console.log('transfer', this.owner)
+    //     // if(this.owner.transfer(this.owner.target,this))
+    //     // {
+    //     //     this.clear();
+    //     // }
+    // }
 
     trade()
     {
@@ -286,17 +309,18 @@ class Slot extends Icon
     {
         UiInfo.close();
         if(UiDragged.on)
-        {
-            if(this.isBuy||this.isSell) {this.trade();}
-            else if(this.isValid)
+        {            
+            if(this.isValid)
             {
-                let dataCopy = this.copyData();
-                this.slot = UiDragged.slot;
-                UiDragged.clear();
-                //console.log('slotCopty',slotCopy);
-                //if(!this.checkIfEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
-                if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
-                if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
+                if(this.trading) {this.trade();}
+                else
+                {
+                    let dataCopy = this.copyData();
+                    this.slot = UiDragged.slot;
+                    UiDragged.clear();
+                    if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                    if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
+                }
             }
         }
         else if(!this.isEmpty)
@@ -306,7 +330,6 @@ class Slot extends Icon
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
         }
-        //console.log(this.container)
     }
 
 
@@ -372,7 +395,8 @@ class EquipSlot extends Slot
         this.setIcon();
     }
 
-    get container() {return this._getOwner ? this._getOwner().status.equips : null;}
+    get container() {return this.owner?.status?.equips;}
+    get capacity() {return -1;}
 
     get cat() {return this._cat;}
 
@@ -380,7 +404,7 @@ class EquipSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get slot() {return super.slot;}
-    set slot(value) {super.slot=value; Role.Player.equip(); UiProfile.refresh();}
+    set slot(value) {super.slot=value; this.owner.equip();}// UiProfile.refresh();}
 
     setIcon(icon)
     {
@@ -442,12 +466,10 @@ export class UiDragged extends Pic
     {
         if(this.visible&&!this.owner.tradeable)
         {
-            this.owner.drop(this.slot);
+            this.owner.drop(this);
             this.clear();
         }
     }
-
-    //static close() {UiDragged.instance?.hide();}
 
     static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
 
@@ -702,9 +724,12 @@ class UiBase extends Sizer
 {
     static _register={};
 
-    closeAll() {for(let key in UiBase._register){UiBase._register[key]();}}
+    closeAll() {for(let key in UiBase._register){UiBase._register[key].close();}}
+    refreshAll() {for(let key in UiBase._register){
+        UiBase._register[key].refresh?.();
+    }}
 
-    register() {UiBase._register[this.constructor.name]=this.close.bind(this);}
+    register() {UiBase._register[this.constructor.name]=this;}
 
     unregister() {delete UiBase._register[this.constructor.name];}
 
@@ -792,9 +817,10 @@ class UiBase extends Sizer
     updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.status.gold}`);}
 
     close() {this.hide();}
+
 }
 
-class Option extends Sizer
+class Option extends UiBase
 {
     constructor(scene)
     {
@@ -802,13 +828,17 @@ class Option extends Sizer
         this.btns={};
 
         this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
-            .addButton('use',this.use.bind(this))
-            .addButton('drop',this.drop.bind(this))
             .addButton('talk')
             .addButton('trade')
             .addButton('observe',this.observe.bind(this))
             .addButton('attack')
             .addButton('open')
+            // slot
+            .addButton('buy',this.trade.bind(this))
+            .addButton('sell',this.trade.bind(this))
+            .addButton('transfer',this.transfer.bind(this))
+            .addButton('use',this.use.bind(this))
+            .addButton('drop',this.drop.bind(this))
             .setOrigin(0)
             .layout()
             .hide();
@@ -816,6 +846,9 @@ class Option extends Sizer
         //scene.add.existing(this);
         //this.getLayer().name = 'UiOption';
     }
+
+    get owner() {return this.object.owner;}
+    get target() {return this.object.owner.target;}
 
     addButton(key,onclick)
     {
@@ -833,32 +866,53 @@ class Option extends Sizer
     {
         this.close();
         //console.log('use');
-        this.target.use();
+        this.object.use();
     }
 
     drop()
     {
         this.close();
-        //console.log('drop');
-        this.target.drop();
+        this.owner.drop(this.object);
+        this.object.clear();
+        this.refreshAll();
+    }
+
+    transfer()
+    {
+        this.close();
+        if(this.owner.transfer(this.target, this.object))
+        {
+            this.object.clear();
+            this.refreshAll();
+        }
+    }
+
+    trade()
+    {
+        this.close();
+        if(this.owner.sell(this.target, this.object))
+        {
+            this.object.clear();
+            this.refreshAll();
+        }
     }
 
     observe()
     {
         this.close();
-        UiObserve.show(this.target);
+        UiObserve.show(this.object);
     }
 
     act(act)
     {
         this.close();
-        Role.Avatar.setDes(this.target.pos,this.target,act);
+        Role.Avatar.setDes(this.object.pos,this.object,act);
     }
 
 
-    show(x,y,options=['use','drop'],target)
+    show(x,y,options=['use','drop'],object)
     {
-        this.target = target;
+        this.object = object;
         super.show();        
         Object.values(this.btns).forEach((btn)=>{btn.hide();})
         options.forEach((opt)=>{this.btns[opt].show();})
@@ -977,16 +1031,31 @@ export class UiCase extends UiBase
 
     close() 
     {
+        if(!this.visible) {return;}
+
         super.close();
         // close
         UiCover.close();
         clrCamera(UI.CAM_LEFT_TOP);
+        // unregister
+        this.unregister();
+
+        delete this.owner.target;
+        delete Role.Avatar.instance.target;
+    }
+
+    refresh()
+    {
+        this.updateGrid();
     }
 
     show(owner)
     {
         super.show();
         this.owner = owner;
+        this.owner.target = Role.Avatar.instance;
+        Role.Avatar.instance.target = this.owner;
+
         this.setTitle(owner.name);
         this.updateGrid();
         this.layout();
@@ -997,6 +1066,8 @@ export class UiCase extends UiBase
         UiCover.show();
         // close
         UiProfile.close();
+        // register
+        this.register();  
         // camera
         setCamera(UI.CAM_LEFT_TOP);
     }
@@ -1081,10 +1152,16 @@ export class UiInv extends UiBase
         this.layout();
     }
 
+    refresh()
+    {
+        this.update();
+    }
+
     close()
     {
+        if(!this.visible) {return;}
+
         super.close();
-        
         // unregister
         this.unregister();
         // close
@@ -1213,9 +1290,24 @@ export class UiMain extends UiBase
         return this;
     }
 
+    close(force) 
+    {
+        if(force) 
+        {
+            super.close();
+            this.unregister();
+        }
+    }
+
+    show()
+    {
+        super.show();
+        this.register();
+    }
+
     static show() {UiMain.instance?.show();}
 
-    static close() {UiMain.instance?.close();}
+    static close() {UiMain.instance?.close(true);}
 
     static enable(en) {UiMain.instance?.enable(en);} 
 
@@ -1351,21 +1443,39 @@ export class UiTrade extends UiBase
         this.getElement('name',true).setText(this.owner.role.name);
     }
 
+    refresh()
+    {
+        this.update();
+    }
+
     close()
     {
+        if(!this.visible) {return;}
+
         super.close();
         // close
         UiCover.close();
         // camera
         clrCamera(UI.CAM_RIGHT);
+        // 
+        this.unregister();
+
+        delete this.owner.trade;
+        delete this.owner.target;
+        delete Role.Avatar.instance.trade;
+        delete Role.Avatar.instance.target;
     }
 
     show(owner)
     {
         super.show();
         this.owner = owner;
+        this.owner.trade = UI.SELLER;
+        this.owner.target = Role.Avatar.instance;
+        Role.Avatar.instance.trade = UI.BUYER;
+        Role.Avatar.instance.target = this.owner;
+
         this.update();
-        
         // show
         UiInv.show(Role.Avatar.instance);
         UiCover.show();
@@ -1373,6 +1483,8 @@ export class UiTrade extends UiBase
         UiProfile.close();
         // camera
         setCamera(UI.CAM_RIGHT);
+        // register
+        this.register();     
     }
 
     static show(owner) {UiTrade.instance?.show(owner);}
@@ -1558,6 +1670,8 @@ export class UiProfile extends UiBase
 
     close()
     {
+        if(!this.visible) {return;}
+
         super.close();
         clrCamera(UI.CAM_RIGHT);
         this.unregister();
@@ -1744,5 +1858,205 @@ export class UiDialog extends UiBase
     }
 
     static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}
+
+}
+
+// export class UiMessage extends UiBase
+// {
+//     static instance = null;
+//     constructor(scene)
+//     {
+//         let config =
+//         {
+//             x : 0,
+//             y : UI.h-100,
+//             width : 0,
+//             height : 0,
+//             orientation : 'y',
+//             space:{left:10},
+//         }
+
+//         super(scene, config);
+//         UiMessage.instance=this;
+//         this.addMsg(scene)
+//             .setOrigin(0,1)
+//             .hide()
+
+//         //this.UnitTest();
+//     }
+
+//     UnitTest()
+//     {
+//         this.pushMsg('test11111111111111')
+//         this.pushMsg('史考特撿起一個水果')
+//         this.pushMsg('test3')
+//         this.pushMsg('test4')
+//         this.pushMsg('test5')
+//         this.pushMsg('test6')
+//         this.layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+//     }
+
+//     addMsg(scene)
+//     {
+//         this._msg = [];
+//         this.add(bbcText(scene,{wrapWidth:300}),{key:'msg'})
+//         return this;
+//     }
+
+//     pushMsg(msg)
+//     {
+//         if(!this.visible) {this.show();}
+//         this._msg.push(msg);
+//         if(this._msg.length > 5) {this._msg.shift();}
+//         let text='';
+//         this._msg.forEach((m)=>{text+='\n'+m;})
+//         this.getElement('msg').setText(text);
+//         this.layout();
+
+//         this.setAlpha(1);
+//         if (this._interval) {clearTimeout(this._interval);}
+//         this._interval = setTimeout(() => {this.setAlpha(0.5);}, 5000);  
+//     }
+
+//     close(force) 
+//     {
+//         if(force)
+//         {
+//             super.close();
+//             this.unregister();
+//         }
+//     }
+
+//     show()
+//     {
+//         super.show();
+//         this.register();
+//     }
+
+//     static push(msg) {UiMessage.instance?.pushMsg(msg)}
+// }
+
+
+export class UiMessage extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : 10,
+            y : UI.h-100,
+            width : 200,
+            orientation : 'x',
+            //space:{left:10},
+        }
+
+        super(scene, config);
+        UiMessage.instance = this;
+
+        this.addScroll(scene)
+            .setOrigin(0,1)
+            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
+            .hide();
+
+        this.panel = this.scroll.getElement('panel');
+        this.scroll.childOY = this.scroll.height;
+        this.queue = [];
+        this.processing = false;
+
+        //this.UnitTest();
+    }
+
+    UnitTest()
+    {
+        UiMessage.push('789').push('789').push('789').push('789')
+            .push('789').push('789').push('789').push('789')
+            .push('789')
+    }
+
+    addScroll(scene,height=300)
+    {
+        this.scroll = scene.rexUI.add.scrollablePanel({
+            height: height,
+            panel: {child: scene.rexUI.add.sizer({orientation:'y'})},
+        });
+
+        this.add(this.scroll)
+        return this;
+    }
+
+    delayAlpha(delay=3000)
+    {
+        this.setAlpha(1);
+        if (this._interval) {clearTimeout(this._interval);}
+        this._interval = setTimeout(() => {this.setAlpha(0.5);}, delay); 
+    }
+
+    processNext(msgCnt=5) 
+    {
+        let msgs = this.panel.getElement('items')
+        if(msgs.length > msgCnt)
+        {
+            this.panel.remove(msgs[0],true);
+            this.layout();
+            this.scroll.childOY = this.scroll.height - this.panel.height;
+        }
+
+        if (this.queue.length === 0) 
+        {
+            this.processing = false;
+            return;
+        }
+
+        this.processing = true;
+        let msg = this.queue.shift();
+        
+        this.process(msg);
+        this.delayAlpha();
+    }
+
+    process(msg,{wrapWidth=200,duration=250,delay=250}={}) 
+    {
+        let from = this.scroll.childOY;
+        this.panel.add(bbcText(this.scene, {text:msg, wrapWidth:wrapWidth}),{align:'left'});
+        this.layout();
+        this.scroll.childOY = from;
+        let to = this.scroll.height - this.panel.height;
+        
+        this.scene.tweens.addCounter({
+            from: from,
+            to: to,
+            duration: duration,
+            delay: delay,
+            onUpdate: (tween) => {this.scroll.childOY = tween.getValue();},
+            onComplete: () => {this.processNext();}
+        });
+    }
+
+    push(msg) 
+    {
+        if(!this.visible) {this.show();}
+        this.queue.push(msg);
+        if (!this.processing) {this.processNext();}
+
+        return this;
+    }
+
+    close(force) 
+    {
+        if(force)
+        {
+            super.close();
+            this.unregister();
+        }
+    }
+
+    show()
+    {
+        super.show();
+        this.register();
+    }
+
+    static push(msg) {return UiMessage.instance?.push(msg)}
 
 }

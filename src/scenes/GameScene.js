@@ -6,7 +6,7 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 import {UI} from  '../uibase.js';
-import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv} from '../ui.js'
+import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv,UiMessage} from '../ui.js'
 
 export class GameScene extends Scene
 {
@@ -251,6 +251,7 @@ export class GameScene extends Scene
                 .on('trade',(owner)=>{UiTrade.show(owner);})
                 .on('option',(x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
                 .on('refresh',()=>{UiInv.refresh()})
+                .on('msg',(msg)=>{UiMessage.push(msg);})
         }
 
         const ui = this.scene.get('UI');

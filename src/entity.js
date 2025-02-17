@@ -1,5 +1,6 @@
 import Record from './record.js'
 import {ItemDB} from './database.js';
+import Utility from './utility.js';
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -144,10 +145,10 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debug(depth.toFixed(1));
     }
 
-    toBag(items)
+    toBag(capacity,items)
     {
-        let bag={};
-        items.forEach((item,i)=>{bag[i] = typeof item === 'object' ? item : {id:item};})
+        let bag={capacity:capacity,items:[]};
+        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item};})
         return bag;
     }
 
@@ -204,11 +205,36 @@ export class Entity extends Phaser.GameObjects.Container
         return this;
     }
 
-    drop(slot)
+    transfer(target, ent)
+    {
+        if(target.take(ent)) {return true;}
+        return false;
+    }
+
+    take(ent)
+    {
+        let capacity = this.status.bag.capacity;
+        let count = this.status.bag.items.length;
+        let foundIndex = this.status.bag.items.findIndex(slot=>Utility.isEmpty(slot))
+        let i = foundIndex!=-1 ? foundIndex 
+                                : capacity==-1 || count<capacity ? count 
+                                                                : -1;
+        if(i!=-1)
+        {
+            this.status.bag.items[i]=ent.slot;
+            return true;
+        }
+        else
+        {  
+            this.send('msg','空間已滿!!!');
+            return false;
+        }
+    }
+
+    drop(ent)
     {
         let p = this.scene.map.getDropPoint(this.pos);
-        new Pickup(this.scene,this.x,this.y-32).create(slot.id).falling(p);
-        
+        new Pickup(this.scene,this.x,this.y-32).create(ent.slot.id).falling(p);
     }
 
     falling(p)
@@ -325,7 +351,7 @@ export class Case extends Entity
         else 
         {
             let items = JSON.parse(this.container);
-            this.status.bag = this.toBag(items);
+            this.status.bag = this.toBag(-1,items);
         }   
     }
 
@@ -356,9 +382,14 @@ export class Pickup extends Entity
     pickup(taker)
     {
         console.log('pickeup');
-        taker.take(this);
-        this.set();
-        this.destroy();   
+
+        if(taker.take(this))
+        {
+            this.send('out');
+            this.send('refresh');
+            this.set();
+            this.destroy();
+        }   
     }
 
     // init(mapName)
