@@ -1,4 +1,4 @@
-import {UI} from './uibase.js';
+import {GM} from './setting.js';
 
 // export class RoleData
 // {
@@ -21,39 +21,39 @@ export class ItemDB
 {
     static data = 
     {
-        'sword_01':{cat:UI.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
+        'sword_01':{cat:GM.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
                     des:'這是一把刀',
-                    props:{attack:10}},
-        'sword_02':{cat:UI.CAT_WEAPON,icon:'weapons/4',name:'刀-2',
-                    props:{attack:10}},
-        'sword_03':{cat:UI.CAT_WEAPON,icon:'weapons/5',name:'刀-3',
-                    props:{attack:10}},
+                    props:{attack:20}},
+        'sword_02':{cat:GM.CAT_WEAPON,icon:'weapons/4',name:'刀-2',
+                    props:{attack:40}},
+        'sword_03':{cat:GM.CAT_WEAPON,icon:'weapons/5',name:'刀-3',
+                    props:{attack:60}},
 
-        'helmet_01':{cat:UI.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
+        'helmet_01':{cat:GM.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
                     des:'這是頭盔',
-                    props:{defend:1}},
-        'helmet_02':{cat:UI.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',
-                    props:{defend:1}},
-        'helmet_03':{cat:UI.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',
-                    props:{defend:1}},
+                    props:{defense:1}},
+        'helmet_02':{cat:GM.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',
+                    props:{defense:2}},
+        'helmet_03':{cat:GM.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',
+                    props:{defense:3}},
 
-        'chest_01':{cat:UI.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
+        'chest_01':{cat:GM.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
                     des:'這是護甲',
-                    props:{defend:2}},
-        'chest_02':{cat:UI.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20,
-                    props:{defend:2}},
-        'chest_03':{cat:UI.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20,
-                    props:{defend:2}},
+                    props:{defense:2}},
+        'chest_02':{cat:GM.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20,
+                    props:{defense:4}},
+        'chest_03':{cat:GM.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20,
+                    props:{defense:6}},
 
-        'gloves_01':{cat:UI.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套',
-                    props:{defend:1}},
+        'gloves_01':{cat:GM.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套',
+                    props:{defense:1}},
 
-        'boots_01':{cat:UI.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子',
-                    props:{defend:1}},
+        'boots_01':{cat:GM.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子',
+                    props:{defense:2}},
 
-        'neck_01':{cat:UI.CAT_NECKLACE,icon:'icons/134',name:'項鍊-1',gold:10,des:'項鍊'},
+        'neck_01':{cat:GM.CAT_NECKLACE,icon:'icons/134',name:'項鍊-1',gold:10,des:'項鍊'},
 
-        'ring_01':{cat:UI.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
+        'ring_01':{cat:GM.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
 
 
     }
@@ -191,7 +191,7 @@ export class RoleDB
                     attrs:
                         {
                             attack: 5,
-                            defend: 0,
+                            defense: 0,
                         },
                     states:
                         {
@@ -201,6 +201,8 @@ export class RoleDB
 
         'knight': {name:'騎士', icon:'portraits/35', gold:200,
                     sprite:'Warrior_Red', faceR:true,
+                    corpse:{sprite:'rip',scale:0.5},
+                    looties:[{id:'sword_02',p:50}, 'helmet_02'],
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
@@ -209,7 +211,7 @@ export class RoleDB
                     attrs:
                         {
                             attack: 5,
-                            defend: 0,
+                            defense: 0,
                         },
                     states:
                         {
@@ -227,7 +229,7 @@ export class RoleDB
                     attrs:
                         {
                             attack: 5,
-                            defend: 0,
+                            defense: 0,
                         },
                     states:
                         {

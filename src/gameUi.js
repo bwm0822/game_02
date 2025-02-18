@@ -1,5 +1,6 @@
 import {FixWidthSizer, OverlapSizer, Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {UI, sprite, text, rect} from './uibase.js';
+import {sprite, text, rect} from './uibase.js';
+import {GM} from './setting.js';
 import Utility from './utility.js';
 
 export class Mark
@@ -9,7 +10,7 @@ export class Mark
     {
         Mark.instance=this;
         this.scene = scene;
-        this._sp = sprite(scene,{icon:UI.ICON_MARK,name:'mark'})
+        this._sp = sprite(scene,{icon:GM.ICON_MARK,name:'mark'})
         this._sp.setScale(0.5);
         this._sp.visible=false;
         //this._sp.setDisplaySize(32,32);

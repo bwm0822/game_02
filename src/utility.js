@@ -13,6 +13,7 @@ export default class Utility
                     poison:'下毒',weak:'虛弱',
                     use:'使用',drop:'丟棄',talk:'交談',trade:'交易',buy:'買',sell:'賣',
                     open:'開啟',observe:'觀察',transfer:'移動',
+                    dodge:'閃避',block:'擋格',
                     };
                     
     static wait_r()     {this._wid=0;}
@@ -134,6 +135,11 @@ export default class Utility
     static isEmpty(slot)
     {
         return !slot || Object.keys(slot).length==0;
+    }
+
+    static roll(min=0,max=99)
+    {
+        return Phaser.Math.Between(min,max);
     }
 
     // static random(s,e)

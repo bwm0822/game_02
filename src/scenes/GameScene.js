@@ -5,7 +5,8 @@ import Utility from '../utility.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
-import {UI} from  '../uibase.js';
+//import {UI} from  '../uibase.js';
+import {GM} from '../setting.js';
 import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv,UiMessage,UiProfile} from '../ui.js'
 
 export class GameScene extends Scene
@@ -48,18 +49,18 @@ export class GameScene extends Scene
     setCameraFollow(mode)
     {
         let offsetX=0,offsetY=0;
-        if((mode&UI.CAM_LEFT_TOP)==UI.CAM_LEFT_TOP) {mode=UI.CAM_LEFT_TOP;}
-        else {mode&=~UI.CAM_LEFT_TOP;}
+        if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
+        else {mode&=~GM.CAM_LEFT_TOP;}
 
         switch(mode)
         {
-            case UI.CAM_CENTER: 
+            case GM.CAM_CENTER: 
                 offsetX=0; offsetY=0; break;
-            case UI.CAM_LEFT: 
+            case GM.CAM_LEFT: 
                 offsetX = -this.cameras.main.width/4; offsetY = 0; break;
-            case UI.CAM_RIGHT: 
+            case GM.CAM_RIGHT: 
                 offsetX = this.cameras.main.width/4; offsetY = 0; break;
-            case UI.CAM_LEFT_TOP: 
+            case GM.CAM_LEFT_TOP: 
                 offsetX = -this.cameras.main.width/4; offsetY = -this.cameras.main.width/4; break;
             default:
                 offsetX=0; offsetY=0; break;
@@ -75,7 +76,7 @@ export class GameScene extends Scene
 
         this._avatar = new classType(this,pos.x,pos.y);
         this._avatar.load(Record.data.player);
-        this.setCameraFollow(UI.CAM_CENTER);
+        this.setCameraFollow(GM.CAM_CENTER);
  
         Record.data.pos = this._avatar.pos;   
         Record.data.map = this._data.map;
@@ -162,13 +163,13 @@ export class GameScene extends Scene
             if(rst.state>0)
             {
                 this.drawPath(rst.path,this._ent);
-                if(!this._ent) {Mark.show(rst.pt,UI.COLOR_WHITE);}
+                if(!this._ent) {Mark.show(rst.pt,GM.COLOR_WHITE);}
                 else {Mark.close();}
             }
             else
             {
                 this.clearPath();
-                if(rst.state==-1) {Mark.show(rst.pt,UI.COLOR_RED);}
+                if(rst.state==-1) {Mark.show(rst.pt,GM.COLOR_RED);}
                 else {Mark.close();}
             }
         }

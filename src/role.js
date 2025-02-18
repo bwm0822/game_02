@@ -11,7 +11,8 @@ import Record from './record';
 //import Ctrl from './ctrl.js';
 import {Entity,Pickup} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
-import {UI,text,rect} from './uibase.js';
+import {text,rect} from './uibase.js';
+import {GM} from './setting.js';
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
@@ -1236,6 +1237,39 @@ const ICON_ENEMY = 'role/1';
 // }
 
 
+class Corpse extends Phaser.GameObjects.Container
+{
+    constructor(scene, x, y, id)
+    {
+        super(scene, x, y);
+        scene.add.existing(this);
+        this.scene = scene;
+        let data = RoleDB.get(id);
+        this.addSprite(data)
+            .addTweens()
+    }
+
+    addSprite(data)
+    {
+        let [key,frame] = data.corpse.sprite.split('/');
+        let sp = this.scene.add.sprite(0,0,key,frame);
+        sp.setScale(data.corpse.scale);
+        this.add(sp);
+        return this;
+    }
+
+    addTweens()
+    {
+        this.scene.tweens.add({
+            targets: this,
+            alpha: {from:1, to:0},
+            delay: 1000,
+            duration: 5000,
+            onComplete: ()=>{this.destroy();}
+        })
+    }
+}
+
 export class Role extends Entity
 {
     constructor(scene,x,y)
@@ -1273,6 +1307,12 @@ export class Role extends Entity
     }
 
     addToRoleList() {this.scene.roles.push(this);}
+
+    removeFromRoleList() 
+    {
+        const index = this.scene.roles.indexOf(this);
+        if (index > -1) {this.scene.roles.splice(index, 1);}
+    }
 
     move(h,v)
     {
@@ -1419,12 +1459,87 @@ export class Role extends Entity
 
     async hurt(attacker)
     {
-        this.status.states.life.cur -= attacker.status.attrs.attack;
-        this._sp.setTint(0xff0000);
-        await Utility.delay(150);
-        this._sp.setTint(0xffffff);
-        this.disp(-attacker.status.attrs.attack,UI.COLOR_GREEN);
-        this.speak('一二三四五六七八九十')
+        let rst = this.calc(attacker);
+        switch(rst.state)
+        {
+            case 'hit':
+                this.disp(-rst.dmg,GM.COLOR_GREEN);
+                this._sp.setTint(0xff0000);
+                await Utility.delay(150);
+                this._sp.setTint(0xffffff);
+                break;
+            case 'dodge':
+                this.disp('dodge'.local(),GM.COLOR_GREEN);
+                await Utility.delay(150);
+                break;
+            case 'block':
+                this.disp('block'.local(),GM.COLOR_GREEN);
+                await Utility.delay(150);
+                break;
+        }
+       
+        if(this.status.states.life.cur<=0)
+        {
+            this.dead(attacker);
+        }
+        else
+        {
+            this.speak('一二三四五六七八九十');
+        }
+    }
+
+    calc(attacker)
+    {
+        let dmg = attacker.status.attrs.attack;
+        let life = this.status.states.life.cur;
+        let defense = this.status.attrs.defense ?? 0;
+        let dodge = this.status.attrs.dodge ?? 20;
+        let block = this.status.attrs.block ?? 20;
+        //console.log(this.status.attrs,defense)
+        if(Utility.roll()<dodge)
+        {
+            return {state:'dodge'}  
+        }
+
+        if(Utility.roll()<block)
+        {
+            return {state:'block'}  
+        }
+
+
+        dmg = Math.max(0, dmg-defense);
+        life -= dmg;
+
+        this.status.states.life.cur = life;
+        return {state:'hit',dmg:dmg};
+    }
+
+    looties()
+    {
+        let roleD = RoleDB.get(this.id);
+
+        roleD.looties && 
+        roleD.looties.forEach((loot)=>{
+            let isObj = Utility.isObject(loot);
+            let id = isObj ? loot.id : loot;
+            let p = isObj ? loot.p : 100;
+            if(p==100 || Utility.roll()<p)
+            {
+                let pos = this.scene.map.getDropPoint(this.pos);
+                new Pickup(this.scene,this.x,this.y-32).create(id).falling(pos);
+            }
+        })
+    }
+
+    dead(attacker)
+    {
+        if(attacker) {this.send('msg', `${attacker.role.name} 擊殺 ${this.role.name}`);}
+        else {this.send('msg', `${this.role.name} 死亡`);}
+        this.looties();
+        this.removeWeight();
+        this.removeFromRoleList();
+        new Corpse(this.scene, this.x, this.y, this.id);
+        this.destroy();
     }
 
     speak(value)
@@ -1432,8 +1547,8 @@ export class Role extends Entity
         if(!this._speak)
         {
             this._speak = this.scene.rexUI.add.sizer(0,-48,{space:5});
-            this._speak.addBackground(rect(this.scene,{color:0xffffff,radius:10,strokeColor:0x0,strokeWidth:0}))
-                        .add(text(this.scene,{color:'#000',wrapWidth:5*UI.FONT_SIZE}),{key:'text'})
+            this._speak//.addBackground(rect(this.scene,{color:0xffffff,radius:10,strokeColor:0x0,strokeWidth:0}))
+                        .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
                         .setOrigin(0.5,1);
             this.add(this._speak);
             this.sort('depth')
@@ -1447,7 +1562,7 @@ export class Role extends Entity
 
     }
 
-    disp(value,color=UI.COLOR_RED)
+    disp(value,color=GM.COLOR_RED)
     {
         if(!this._disp)
         {

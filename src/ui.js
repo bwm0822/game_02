@@ -1,7 +1,8 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {UI, rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
+import {rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
+import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
 import {Mark} from './gameUi.js';
@@ -12,10 +13,10 @@ let _mode=0;
 export default function createUI(scene)
 {
     console.log('createUI');
-    UI.w = scene.sys.canvas.width;
-    UI.h = scene.sys.canvas.height;
+    GM.w = scene.sys.canvas.width;
+    GM.h = scene.sys.canvas.height;
     uiScene = scene;
-    console.log('resolution:',UI.w, UI.h)
+    console.log('resolution:',GM.w, GM.h)
 
     //test(scene);
     //t1();
@@ -64,11 +65,11 @@ function t2(scene)
 
     //let inv={0:{cat:'weapon',icon:'weapons/28'},1:{cat:'weapon',icon:'weapons/30'}};
     //UiInv.show(player);
-    //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
+    //new UiButton(scene,{x:100,y:100,icon:GM.ICON_CLOSE})
 
     //console.log('test')
-    //new UiButton(scene,{x:100,y:100,icon:UI.ICON_CLOSE})
-    //sprite(scene,{icon:UI.ICON_CLOSE});
+    //new UiButton(scene,{x:100,y:100,icon:GM.ICON_CLOSE})
+    //sprite(scene,{icon:GM.ICON_CLOSE});
 }
 
 function t1()
@@ -83,7 +84,7 @@ function t1()
 function test(scene)
 {
     let bag={0:{icon:'weapons/28'},1:{icon:'weapons/30'}}
-    let slot0 = new Slot(scene,80,80,{x:100,y:100,icon:UI.ICON_CLOSE,space:0});
+    let slot0 = new Slot(scene,80,80,{x:100,y:100,icon:GM.ICON_CLOSE,space:0});
     //slot1.setIcon('weapons/28').setCount(2);
     slot0.id=0;
     slot0.container=bag;
@@ -153,7 +154,7 @@ class Slot extends Icon
     get isValid() {return true;}
     get acts() {return !this.owner.trade ? this.owner.target ? ['transfer','use','drop'] 
                                                             : ['use','drop']
-                                        : this.owner.trade == UI.BUYER ? ['sell','drop'] 
+                                        : this.owner.trade == GM.BUYER ? ['sell','drop'] 
                                                                         : ['buy'];}
 
     get trading() {return this.owner.trade != UiDragged.owner.trade;}
@@ -208,12 +209,12 @@ class Slot extends Icon
         if(on)
         {
             this.setInteractive({draggable:true,dropZone:true});
-            this.setBgColor(UI.COLOR_SLOT);
+            this.setBgColor(GM.COLOR_SLOT);
         }
         else
         {
             this.disableInteractive();
-            this.setBgColor(UI.COLOR_SLOT_DISABLE);
+            this.setBgColor(GM.COLOR_SLOT_DISABLE);
         }
     }
 
@@ -227,23 +228,23 @@ class Slot extends Icon
             {
                 if(this.isEmpty)
                 {
-                    this.setBgColor(this.isValid ? UI.COLOR_SLOT_TRADE : UI.COLOR_SLOT_INVALID);
+                    this.setBgColor(this.isValid ? GM.COLOR_SLOT_TRADE : GM.COLOR_SLOT_INVALID);
                 }
                 else
                 {
-                    this.setBgColor(UI.COLOR_SLOT_DISABLE);
+                    this.setBgColor(GM.COLOR_SLOT_DISABLE);
                 }
             }
             else
             {
-                this.setBgColor(this.isValid ? UI.COLOR_SLOT_DRAG : UI.COLOR_SLOT_INVALID);
+                this.setBgColor(this.isValid ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT_INVALID);
             }
         }
         else if(!this.isEmpty)
         {
-            this.setBgColor(UI.COLOR_SLOT_OVER);
+            this.setBgColor(GM.COLOR_SLOT_OVER);
             // 使用 setTimeout 延遲執行 UiInfo.show()
-            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, UI.OVER_DELAY);
+            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, GM.OVER_DELAY);
             check && UiInv.check(this.item.cat);
         }
     }
@@ -251,19 +252,19 @@ class Slot extends Icon
     out(check=true)
     {
         clearTimeout(this.pointerOverTimeout);        
-        this.setBgColor(UI.COLOR_SLOT);
+        this.setBgColor(GM.COLOR_SLOT);
         UiInfo.close();
         check && UiInv.check();
     }
 
     leave(gameObject)
     {
-        UiDragged.on&&gameObject.setBgColor(UI.COLOR_SLOT);
+        UiDragged.on&&gameObject.setBgColor(GM.COLOR_SLOT);
     }
 
     enter(gameObject)
     {
-        UiDragged.on&&this.noTrade&&gameObject.setBgColor(UI.COLOR_SLOT_DRAG);
+        UiDragged.on&&this.noTrade&&gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
     }
 
     middleButtonDown(x,y)
@@ -294,14 +295,14 @@ class Slot extends Icon
                     this.slot = UiDragged.slot;
                     UiDragged.clear();
                     if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
-                    if(!UiDragged.on) {this.setBgColor(UI.COLOR_SLOT);}
+                    if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
                 }
                 this.over();
             }
         }
         else if(!this.isEmpty)
         {
-            this.setBgColor(UI.COLOR_SLOT_DRAG);
+            this.setBgColor(GM.COLOR_SLOT_DRAG);
             UiDragged.data = this.copyData();
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
@@ -356,13 +357,13 @@ class EquipSlot extends Slot
 {
     static icons =
     {
-        weapon      : UI.ICON_WEAPON,
-        helmet      : UI.ICON_HELMET,
-        chestplate  : UI.ICON_CHESTPLATE,
-        gloves      : UI.ICON_GLOVES,
-        boots       : UI.ICON_BOOTS,
-        necklace    : UI.ICON_NECKLACE,
-        ring        : UI.ICON_RING,
+        weapon      : GM.ICON_WEAPON,
+        helmet      : GM.ICON_HELMET,
+        chestplate  : GM.ICON_CHESTPLATE,
+        gloves      : GM.ICON_GLOVES,
+        boots       : GM.ICON_BOOTS,
+        necklace    : GM.ICON_NECKLACE,
+        ring        : GM.ICON_RING,
     }
 
     constructor(scene, w, h, id, getOwner, config, cat)
@@ -390,7 +391,7 @@ class EquipSlot extends Slot
 
     check(cat)
     {
-        this.setBgColor(cat == this.cat ? UI.COLOR_SLOT_DRAG : UI.COLOR_SLOT);
+        this.setBgColor(cat == this.cat ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
     }
 
     setIcon(icon)
@@ -454,7 +455,7 @@ export class UiDragged extends Pic
 
     drop()
     {
-        if(this.visible&&!this.owner.tradeable)
+        if(this.visible&&this.owner.trade!=GM.SELLER)
         {
             this.owner.drop(this);
             this.clear();
@@ -479,7 +480,7 @@ class UiButton extends Sizer
         this.onclick=option?.onclick;
         if(option?.text) 
         {
-            this.addBackground(rect(scene,{color:UI.COLOR_SLOT_OVER,alpha:0}),'bg')
+            this.addBackground(rect(scene,{color:GM.COLOR_SLOT_OVER,alpha:0}),'bg')
                 .add(text(scene,{text:option.text}))
         }
         else if(option?.icon) 
@@ -509,9 +510,9 @@ class UiCover extends Sizer
     static instance = null;
     constructor(scene)
     {
-        super(scene,0,0,UI.w,UI.h);
+        super(scene,0,0,GM.w,GM.h);
         UiCover.instance = this;
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,alpha:0}))
+        this.addBackground(rect(scene,{color:GM.COLOR_DARK,alpha:0}))
             .setOrigin(0,0)
             .layout()
             .hide()
@@ -551,7 +552,7 @@ class UiInfo extends Sizer
         super(scene,{orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:0}});
         UiInfo.instance = this;
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
+        this.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
             .layout()
             .hide();
 
@@ -605,7 +606,7 @@ class UiInfo extends Sizer
     addProp(key, value)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        sizer//.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}))
+        sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
             .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0});
         this.add(sizer,{expand:true});
@@ -616,7 +617,7 @@ class UiInfo extends Sizer
     {
         if(item.gold)
         {
-            let images = {gold:{key:'buffs',frame:210,width:UI.FONT_SIZE,height:UI.FONT_SIZE,tintFill:true }};
+            let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
             let text = `[color=yellow][img=gold][/color] ${item.gold}`
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
@@ -642,7 +643,7 @@ class UiInfo extends Sizer
         super.show();
         let x,y=target.y;
 
-        if(target.x>UI.w/2)
+        if(target.x>GM.w/2)
         {
             this.setOrigin(1,0.5);
             x=target.left-UiInfo.gap;
@@ -661,7 +662,7 @@ class UiInfo extends Sizer
 
     rePos()
     {
-        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
+        if(this.bottom>GM.h) {this.y-=this.bottom-GM.h;}
         else if(this.top<0) {this.y-=this.top;}
     }
 
@@ -674,14 +675,14 @@ class UiContainerBase extends ContainerLite
 {
     constructor(scene, touchClose=true)
     {
-        super(scene,0,0,UI.w,UI.h);
+        super(scene,0,0,GM.w,GM.h);
         this.addBg(scene, touchClose)
         scene.add.existing(this);
     }
 
     addBg(scene, touchClose)
     {
-        let sizer = scene.rexUI.add.sizer(0,0,UI.w,UI.h);
+        let sizer = scene.rexUI.add.sizer(0,0,GM.w,GM.h);
         sizer.addBackground(rect(scene,{alpha:0.5}))
             .setOrigin(0)
             .layout()
@@ -726,7 +727,7 @@ class UiBase extends Sizer
 
     addBg(scene)
     {
-        this.addBackground(rect(scene,{color:UI.COLOR_PRIMARY,strokeColor:0xffffff,strokeWidth:0}),'bg');
+        this.addBackground(rect(scene,{color:GM.COLOR_PRIMARY,strokeColor:0xffffff,strokeWidth:0}),'bg');
         this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
             .on('pointerover',()=>{UiCursor.set();clearpath();})
         return this;
@@ -735,9 +736,9 @@ class UiBase extends Sizer
     addTop(scene, label)
     {
         let sz = scene.rexUI.add.overlapSizer();
-        sz//.addBackground(rect(scene,{color:UI.COLOR_GRAY}))
+        sz//.addBackground(rect(scene,{color:GM.COLOR_GRAY}))
             .add(text(scene,{text:label}),{align:'center',expand:false,key:'label'})
-            .add(new UiButton(scene,{icon:UI.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
+            .add(new UiButton(scene,{icon:GM.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
         this.add(sz,{expand:true, key:'top'});
         return this;
     }
@@ -755,7 +756,7 @@ class UiBase extends Sizer
         let count = config.column * config.row;
         for(let i=0; i<count; i++)
         {
-            let slot = new Slot(scene,UI.SLOT_SIZE,UI.SLOT_SIZE, i, getOwner);
+            let slot = new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE, i, getOwner);
             grid.add(slot);
         }
 
@@ -766,8 +767,8 @@ class UiBase extends Sizer
     addGold(scene)
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
-        sizer.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
-        let images = {gold:{key:'buffs',frame:210,width:UI.FONT_SIZE,height:UI.FONT_SIZE,tintFill:true }};
+        sizer.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
         let text = `[color=yellow][img=gold][/color] ${0}`
         sizer.add(bbcText(scene,{text:text,images:images}),{padding:{left:10},align:'left',key:'gold'});
         this.add(sizer,{expand:true,padding:10,key:'info'})
@@ -784,7 +785,7 @@ class UiBase extends Sizer
     prop(key, value, interactive=true)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        sizer.addBackground(rect(this.scene,{color:UI.COLOR_LIGHT}),'bg')
+        sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0})
         let bg = sizer.getElement('bg').setAlpha(0);
@@ -816,7 +817,7 @@ class Option extends UiBase
         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
         this.btns={};
 
-        this.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:UI.COLOR_GRAY,strokeWidth:3}))
+        this.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
             .addButton('talk')
             .addButton('trade')
             .addButton('observe',this.observe.bind(this))
@@ -913,9 +914,9 @@ class Option extends UiBase
 
     rePos()
     {
-        if(this.right>UI.w) {this.x-=this.right-UI.w;}
+        if(this.right>GM.w) {this.x-=this.right-GM.w;}
         else if(this.left<0) {this.x-=this.left;}
-        if(this.bottom>UI.h) {this.y-=this.bottom-UI.h;}
+        if(this.bottom>GM.h) {this.y-=this.bottom-GM.h;}
         else if(this.top<0) {this.y-=this.top;}
         return this;
     }
@@ -934,8 +935,8 @@ class Observe extends UiBase
     {
         let config =
         {
-            x : UI.w/2,
-            y : UI.h/2,
+            x : GM.w/2,
+            y : GM.h/2,
             width : 300,
             height : 300,
             orientation : 'y',
@@ -998,7 +999,7 @@ export class UiCase extends UiBase
         let config =
         {
             x:100,
-            y:UI.h-150,
+            y:GM.h-150,
             orientation:'y'
         }
 
@@ -1025,7 +1026,7 @@ export class UiCase extends UiBase
         super.close();
         // close
         UiCover.close();
-        clrCamera(UI.CAM_LEFT_TOP);
+        clrCamera(GM.CAM_LEFT_TOP);
         // unregister
         this.unregister();
 
@@ -1058,7 +1059,7 @@ export class UiCase extends UiBase
         // register
         this.register();  
         // camera
-        setCamera(UI.CAM_LEFT_TOP);
+        setCamera(GM.CAM_LEFT_TOP);
     }
 
     static close() {UiCase.instance?.close();}
@@ -1073,7 +1074,7 @@ export class UiInv extends UiBase
     {
         let config =
         {
-            x : UI.w,
+            x : GM.w,
             y : 0,
             width : 450,
             height : 500,
@@ -1114,18 +1115,18 @@ export class UiInv extends UiBase
         let grid = scene.rexUI.add.gridSizer(config);
         let equip = function(id, cat, getOwner)
         {
-            let slot = new EquipSlot(scene, UI.SLOT_SIZE, UI.SLOT_SIZE, id, getOwner, {}, cat);
+            let slot = new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, id, getOwner, {}, cat);
             return slot;
         }
         let i=0;
-        grid.add(equip(i++, UI.CAT_WEAPON, getOwner))
-            .add(equip(i++, UI.CAT_HELMET, getOwner))
-            .add(equip(i++, UI.CAT_CHESTPLATE, getOwner))
-            .add(equip(i++, UI.CAT_GLOVES, getOwner))
-            .add(equip(i++, UI.CAT_BOOTS, getOwner))
-            .add(equip(i++, UI.CAT_NECKLACE, getOwner))
-            .add(equip(i++, UI.CAT_RING, getOwner))
-            .add(equip(i++, UI.CAT_RING, getOwner))
+        grid.add(equip(i++, GM.CAT_WEAPON, getOwner))
+            .add(equip(i++, GM.CAT_HELMET, getOwner))
+            .add(equip(i++, GM.CAT_CHESTPLATE, getOwner))
+            .add(equip(i++, GM.CAT_GLOVES, getOwner))
+            .add(equip(i++, GM.CAT_BOOTS, getOwner))
+            .add(equip(i++, GM.CAT_NECKLACE, getOwner))
+            .add(equip(i++, GM.CAT_RING, getOwner))
+            .add(equip(i++, GM.CAT_RING, getOwner))
 
         this.add(grid,{key:'equip'});
         return this;
@@ -1161,7 +1162,7 @@ export class UiInv extends UiBase
         // close
         UiCase.close();
         UiTrade.close();
-        clrCamera(UI.CAM_LEFT);
+        clrCamera(GM.CAM_LEFT);
     }
 
     show(owner)
@@ -1172,7 +1173,7 @@ export class UiInv extends UiBase
         // register
         this.register();     
         // camera
-        setCamera(UI.CAM_LEFT);
+        setCamera(GM.CAM_LEFT);
     }
 
     toggle(owner)
@@ -1451,7 +1452,7 @@ export class UiTrade extends UiBase
         // close
         UiCover.close();
         // camera
-        clrCamera(UI.CAM_RIGHT);
+        clrCamera(GM.CAM_RIGHT);
         // 
         this.unregister();
 
@@ -1465,9 +1466,9 @@ export class UiTrade extends UiBase
     {
         super.show();
         this.owner = owner;
-        this.owner.trade = UI.SELLER;
+        this.owner.trade = GM.SELLER;
         this.owner.target = Role.Avatar.instance;
-        Role.Avatar.instance.trade = UI.BUYER;
+        Role.Avatar.instance.trade = GM.BUYER;
         Role.Avatar.instance.target = this.owner;
 
         this.update();
@@ -1477,7 +1478,7 @@ export class UiTrade extends UiBase
         // close
         UiProfile.close();
         // camera
-        setCamera(UI.CAM_RIGHT);
+        setCamera(GM.CAM_RIGHT);
         // register
         this.register();     
     }
@@ -1538,7 +1539,7 @@ export class UiProfile extends UiBase
     // addTabPages(scene)
     // {
     //     let config = {
-    //         background: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 0, UI.COLOR_GRAY),
+    //         background: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 0, GM.COLOR_GRAY),
     //         tabs: {space: { item: 10 }},
     //         //pages: {fadeIn: 300},
     //         align: {tabs: 'left'},
@@ -1660,7 +1661,7 @@ export class UiProfile extends UiBase
         UiCase.close();
         UiTrade.close();
         // camera
-        setCamera(UI.CAM_RIGHT);
+        setCamera(GM.CAM_RIGHT);
     }
 
     close()
@@ -1668,7 +1669,7 @@ export class UiProfile extends UiBase
         if(!this.visible) {return;}
 
         super.close();
-        clrCamera(UI.CAM_RIGHT);
+        clrCamera(GM.CAM_RIGHT);
         this.unregister();
     }
 
@@ -1692,8 +1693,8 @@ export class UiDialog extends UiBase
     {
         let config =
         {
-            x : UI.w/2,
-            y : UI.h,
+            x : GM.w/2,
+            y : GM.h,
             width : 600,
             //height : 300,
             orientation : 'y',
@@ -1702,7 +1703,7 @@ export class UiDialog extends UiBase
 
         super(scene, config);
         UiDialog.instance=this;
-        this//.addBackground(rect(scene,{color:UI.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
+        this//.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addBg(scene)
             .addSpeakerA(scene)
             .addSpeakerB(scene)
@@ -1748,7 +1749,7 @@ export class UiDialog extends UiBase
     addSpeakerA(scene)
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
-        sizer.addBackground(rect(scene,{color:UI.COLOR_LIGHT}),'bg')
+        sizer.addBackground(rect(scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(sprite(scene,{icon:'portraits/0'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconA'})
             .add(this.createSub(scene),{align:'top',padding:{top:10},key:'sub'});
         this.add(sizer,{expand:true,padding:{left:10,right:10,top:10},key:'speakerA'});
@@ -1767,7 +1768,7 @@ export class UiDialog extends UiBase
     addSpeakerB(scene)
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
-        sizer.addBackground(rect(scene,{color:UI.COLOR_DARK}),'bg')
+        sizer.addBackground(rect(scene,{color:GM.COLOR_DARK}),'bg')
             .add(sprite(scene,{icon:'portraits/1'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconB'})
             .add(this.createTextB(),{padding:{top:10},expand:true,align:'top',proportion:1,key:'textB'})
         this.add(sizer,{expand:true,padding:{left:10,right:10,bottom:10},key:'speakerB'});
@@ -1782,10 +1783,10 @@ export class UiDialog extends UiBase
             panel: {child:scene.rexUI.add.sizer({orientation:'y'})},
             mouseWheelScroller: {focus:false,speed:0.1},
             slider: {
-                // track: scene.rexUI.add.roundRectangle(0, 0, 20, 10, 10, UI.COLOR_DARK),
-                // thumb: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 13, UI.COLOR_LIGHT),
-                track: rect(scene,{width:20,color:UI.COLOR_PRIMARY}),
-                thumb: rect(scene,{radius:13,color:UI.COLOR_LIGHT}),
+                // track: scene.rexUI.add.roundRectangle(0, 0, 20, 10, 10, GM.COLOR_DARK),
+                // thumb: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 13, GM.COLOR_LIGHT),
+                track: rect(scene,{width:20,color:GM.COLOR_PRIMARY}),
+                thumb: rect(scene,{radius:13,color:GM.COLOR_LIGHT}),
                 hideUnscrollableSlider: true,
             },
         })
@@ -1797,7 +1798,7 @@ export class UiDialog extends UiBase
         let [text, cmd] = option.split('/');
         let scene = this.scene;
         let sizer = scene.rexUI.add.sizer();
-        sizer.addBackground(rect(scene,{color:UI.COLOR_GRAY}),'bg')
+        sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
             .add(bbcText(scene,{text:text}),{align:'left'})
         let bg = sizer.getElement('bg').setAlpha(0);
         if(cmd)
@@ -1864,7 +1865,7 @@ export class UiDialog extends UiBase
 //         let config =
 //         {
 //             x : 0,
-//             y : UI.h-100,
+//             y : GM.h-100,
 //             width : 0,
 //             height : 0,
 //             orientation : 'y',
@@ -1940,7 +1941,7 @@ export class UiMessage extends UiBase
         let config =
         {
             x : 10,
-            y : UI.h-80,
+            y : GM.h-80,
             width : 200,
             orientation : 'x',
             //space:{left:10},
