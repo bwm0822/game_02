@@ -288,7 +288,7 @@ class Slot extends Icon
                     if(UiDragged.owner.sell(this.owner, UiDragged, this._id, this.isEquip))
                     {
                         UiDragged.clear();
-                        UiBase.refreshAll();
+                        UiReg.refreshAll();
                     }
                 }
                 else
@@ -673,6 +673,15 @@ class UiInfo extends Sizer
     static show(target) {UiInfo.instance?.show(target);}
 }
 
+class UiReg
+{
+    static _list = {};
+    static closeAll() {for(let key in UiReg._list){UiReg._list[key].close();}}
+    static refreshAll() {for(let key in UiReg._list){UiReg._list[key].refresh?.();}}
+    static register(obj) {UiReg._list[obj.constructor.name]=obj;}
+    static unregister(obj) {delete UiReg._list[obj.constructor.name];}
+}
+
 class UiContainerBase extends ContainerLite
 {
     constructor(scene, touchClose=true)
@@ -715,23 +724,32 @@ class UiContainerBase extends ContainerLite
 
 class UiBase extends Sizer
 {
-    static _register={};
+    // static _register={};
+    // closeAll() {for(let key in UiBase._register){UiBase._register[key].close();}}
+    // refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
+    // static refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
+    // register() {UiBase._register[this.constructor.name]=this;}
+    // unregister() {delete UiBase._register[this.constructor.name];}
 
-    closeAll() {for(let key in UiBase._register){UiBase._register[key].close();}}
-    refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
-    static refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
-
-    register() {UiBase._register[this.constructor.name]=this;}
-
-    unregister() {delete UiBase._register[this.constructor.name];}
+    closeAll() {UiReg.closeAll();}
+    refreshAll() {UiReg.refreshAll();}
+    //static refreshAll() {UiReg.refreshAll();}
+    register() {UiReg.register(this);}
+    unregister() {UiReg.unregister(this);}
 
     getOwner() {return this.owner;}
 
-    addBg(scene,config)
+    addBg_Int(scene, config)
     {
         this.addBackground(rect(scene,config),'bg');
         this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
             .on('pointerover',()=>{UiCursor.set();clearpath();})
+        return this;
+    }
+
+    addBg(scene, config)
+    {
+        this.addBackground(rect(scene,config),'bg');
         return this;
     }
 
@@ -819,7 +837,8 @@ class Option extends UiBase
         super(scene,{width:100,orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:10}});
         this.btns={};
 
-        this.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
+        this//.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
+            .addBg(scene, {color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3})
             .addButton('talk')
             .addButton('trade')
             .addButton('observe',this.observe.bind(this))
@@ -1007,7 +1026,7 @@ export class UiCase extends UiBase
 
         super(scene,config);
         UiCase.instance = this;
-        this.addBg(scene)
+        this.addBg_Int(scene)
             .addTop(scene)
             .addGrid(scene,4,4,this.getOwner.bind(this),{left:20,right:20,bottom:20})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
@@ -1086,7 +1105,7 @@ export class UiInv extends UiBase
         super(scene,config)
         UiInv.instance = this;
 
-        this.addBg(scene)
+        this.addBg_Int(scene)
             .addTop(scene,'裝備')
             .addEquip(scene,this.getOwner.bind(this))
             .addGold(scene)
@@ -1235,7 +1254,7 @@ export class UiMain extends UiBase
         super(scene,config);
         UiMain.instance = this;
 
-        this.addBg(scene)
+        this.addBg_Int(scene)
             .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
             .add(new UiButton(scene,{text:'個\n人',onclick:this.profile.bind(this)}))
             .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
@@ -1508,7 +1527,7 @@ export class UiProfile extends UiBase
         super(scene, config);
         UiProfile.instance = this;
 
-        this.addBg(scene)    
+        this.addBg_Int(scene)    
             .addTop(scene,'個人')
             .addInfo(scene)
             .addTab(scene)
@@ -1859,208 +1878,6 @@ export class UiDialog extends UiBase
 
 }
 
-// export class UiMessage extends UiBase
-// {
-//     static instance = null;
-//     constructor(scene)
-//     {
-//         let config =
-//         {
-//             x : 0,
-//             y : GM.h-100,
-//             width : 0,
-//             height : 0,
-//             orientation : 'y',
-//             space:{left:10},
-//         }
-
-//         super(scene, config);
-//         UiMessage.instance=this;
-//         this.addMsg(scene)
-//             .setOrigin(0,1)
-//             .hide()
-
-//         //this.UnitTest();
-//     }
-
-//     UnitTest()
-//     {
-//         this.pushMsg('test11111111111111')
-//         this.pushMsg('史考特撿起一個水果')
-//         this.pushMsg('test3')
-//         this.pushMsg('test4')
-//         this.pushMsg('test5')
-//         this.pushMsg('test6')
-//         this.layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
-//     }
-
-//     addMsg(scene)
-//     {
-//         this._msg = [];
-//         this.add(bbcText(scene,{wrapWidth:300}),{key:'msg'})
-//         return this;
-//     }
-
-//     pushMsg(msg)
-//     {
-//         if(!this.visible) {this.show();}
-//         this._msg.push(msg);
-//         if(this._msg.length > 5) {this._msg.shift();}
-//         let text='';
-//         this._msg.forEach((m)=>{text+='\n'+m;})
-//         this.getElement('msg').setText(text);
-//         this.layout();
-
-//         this.setAlpha(1);
-//         if (this._interval) {clearTimeout(this._interval);}
-//         this._interval = setTimeout(() => {this.setAlpha(0.5);}, 5000);  
-//     }
-
-//     close(force) 
-//     {
-//         if(force)
-//         {
-//             super.close();
-//             this.unregister();
-//         }
-//     }
-
-//     show()
-//     {
-//         super.show();
-//         this.register();
-//     }
-
-//     static push(msg) {UiMessage.instance?.pushMsg(msg)}
-// }
-
-
-export class UiMessage extends UiBase
-{
-    static instance = null;
-    constructor(scene)
-    {
-        let config =
-        {
-            x : 10,
-            y : GM.h-80,
-            width : 200,
-            orientation : 'x',
-            //space:{left:10},
-        }
-
-        super(scene, config);
-        UiMessage.instance = this;
-
-        this.addScroll(scene)
-            .setOrigin(0,1)
-            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
-            .hide();
-
-        this.panel = this.scroll.getElement('panel');
-        this.scroll.childOY = this.scroll.height;
-        this.queue = [];
-        this.processing = false;
-
-        //this.UnitTest();
-    }
-
-    UnitTest()
-    {
-        UiMessage.push('789').push('789').push('789').push('789')
-            .push('789').push('789').push('789').push('789')
-            .push('789')
-    }
-
-    addScroll(scene,height=300)
-    {
-        this.scroll = scene.rexUI.add.scrollablePanel({
-            //background : rect(scene),
-            height: height,
-            panel: {child: scene.rexUI.add.sizer({orientation:'y'})},
-        });
-
-        this.add(this.scroll)
-        return this;
-    }
-
-    delayAlpha(delay=3000)
-    {
-        this.setAlpha(1);
-        if (this._interval) {clearTimeout(this._interval);}
-        this._interval = setTimeout(() => {this.setAlpha(0.5);}, delay); 
-    }
-
-    processNext(msgCnt=5) 
-    {
-        let msgs = this.panel.getElement('items')
-        if(msgs.length > msgCnt)
-        {
-            this.panel.remove(msgs[0],true);
-            this.layout();
-            this.scroll.childOY = this.scroll.height - this.panel.height;
-        }
-
-        if (this.queue.length === 0) 
-        {
-            this.processing = false;
-            return;
-        }
-
-        this.processing = true;
-        let msg = this.queue.shift();
-        
-        this.process(msg);
-    }
-
-    process(msg,{wrapWidth=200,duration=250,completeDelay=100}={}) 
-    {
-        this.delayAlpha();
-
-        let from = this.scroll.childOY;
-        this.panel.add(bbcText(this.scene, {text:msg, wrapWidth:wrapWidth}),{align:'left'});
-        this.layout();
-        this.scroll.childOY = from;
-        let to = this.scroll.height - this.panel.height;
-        
-        this.scene.tweens.addCounter({
-            from: from,
-            to: to,
-            duration: duration,
-            completeDelay: completeDelay,
-            onUpdate: (tween) => {this.scroll.childOY = tween.getValue();},
-            onComplete: () => {this.processNext();}
-        });
-    }
-
-    push(msg) 
-    {
-        if(!this.visible) {this.show();}
-        this.queue.push(msg);
-        if (!this.processing) {this.processNext();}
-
-        return this;
-    }
-
-    close(force) 
-    {
-        if(force)
-        {
-            super.close();
-            this.unregister();
-        }
-    }
-
-    show()
-    {
-        super.show();
-        this.register();
-    }
-
-    static push(msg) {return UiMessage.instance?.push(msg)}
-
-}
-
 export class UiChangeScene extends UiBase
 {
     static instance = null;
@@ -2079,7 +1896,7 @@ export class UiChangeScene extends UiBase
         super(scene, config);
         UiChangeScene.instance = this;
 
-        this.addBg(scene,{color:GM.COLOR_BLACK,alpha:1})
+        this.addBg_Int(scene,{color:GM.COLOR_BLACK,alpha:1})
             .setOrigin(0)
             .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
             .hide()
@@ -2108,4 +1925,149 @@ export class UiChangeScene extends UiBase
     static done() {UiChangeScene.instance?.done();}
     static start(changeScene) {UiChangeScene.instance?.start(changeScene);}
 
+}
+
+export class UiMessage extends ContainerLite
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene);
+        UiMessage.instance = this;
+        this.scene = scene;
+        scene.add.existing(this);
+
+        let config =
+        {
+            x: 10,
+            y: GM.h-80,
+            width: 200,
+            height: 500,
+        }
+
+        this.addMask(scene, config)
+            .addPanel(scene, config)
+            .visible = false;
+
+        this.originY = config.y;
+        this.queue = [];
+        this.processing = false;
+
+        //this.UnitTest();
+    }
+
+    UnitTest()
+    {
+        this.push('test-1111111111111111111111')
+            .push('test-2')
+            .push('test-3')
+            .push('test-4')
+            .push('test-5')
+            .push('test-6')
+            .push('test-7')
+            .push('test-8')
+    }
+
+    addMask(scene, config)
+    {
+        config.alpha=0.5;
+        const maskRect = rect(scene,config).setVisible(false);
+        maskRect.setOrigin(0,1);
+        const mask = maskRect.createGeometryMask();
+        this.add(maskRect)
+        this.setMask(mask);
+        return this;
+    }
+
+    addPanel(scene, config)
+    {
+        this.panel = scene.rexUI.add.sizer({x:config.x,y:config.y,orientation:'y'});
+        this.panel.setOrigin(0,1);
+        this.add(this.panel);
+        return this;
+    }
+
+    delayAlpha(delay=3000)
+    {
+        this.setAlpha(1);
+        if (this._interval) {clearTimeout(this._interval);}
+        this._interval = setTimeout(() => {this.setAlpha(0.5);}, delay); 
+    }
+
+    processNext(msgCnt=5) 
+    {
+        let msgs = this.panel.getElement('items')
+        if(msgs.length > msgCnt)
+        {
+            this.panel.remove(msgs[0],true);
+            this.panel.layout();
+        }
+
+        if (this.queue.length === 0) 
+        {
+            this.processing = false;
+            return;
+        }
+
+        this.processing = true;
+        let msg = this.queue.shift();
+        
+        this.process(msg);
+    }
+
+
+    process(msg,{wrapWidth=200,duration=250,completeDelay=100}={}) 
+    {
+        this.delayAlpha();
+
+        let hTmp = this.panel.height;
+        this.panel.add(bbcText(this.scene, {text:msg, wrapWidth:wrapWidth}),{align:'left'})
+            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
+
+        let from = this.originY + this.panel.height - hTmp;
+        let to = this.originY;
+        this.panel.y = from;
+        
+        this.scene.tweens.addCounter({
+            from: from,
+            to: to,
+            duration: duration,
+            completeDelay: completeDelay,
+            onUpdate: (tween) => {this.panel.y = tween.getValue();},
+            onComplete: () => {this.processNext();}
+        });
+    }
+
+    push(msg) 
+    {
+        if(!this.visible) {this.show();}
+        this.queue.push(msg);
+        if (!this.processing) {this.processNext();}
+
+        return this;
+    }
+
+    clear()
+    {
+        this.panel.removeAll(true).layout();
+    }
+
+    close(force) 
+    {
+        if(force)
+        {
+            this.visible = false;
+            UiReg.unregister(this);
+        }
+    }
+
+    show()
+    {
+        this.visible = true;
+        UiReg.register(this);
+    }
+
+    static push(msg) {return UiMessage.instance?.push(msg)}
+
+    
 }
