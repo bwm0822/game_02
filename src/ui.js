@@ -35,6 +35,8 @@ export default function createUI(scene)
     new UiOption(scene);
     new UiMessage(scene);
 
+    new UiChangeScene(scene);
+
 }
 
 
@@ -725,9 +727,9 @@ class UiBase extends Sizer
 
     getOwner() {return this.owner;}
 
-    addBg(scene)
+    addBg(scene,config)
     {
-        this.addBackground(rect(scene,{color:GM.COLOR_PRIMARY,strokeColor:0xffffff,strokeWidth:0}),'bg');
+        this.addBackground(rect(scene,config),'bg');
         this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
             .on('pointerover',()=>{UiCursor.set();clearpath();})
         return this;
@@ -1342,7 +1344,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     setIcon(type)
     {
-        type = type??'none';
+        type = !type || type=='' ? 'none':type;
         let icon = UiCursor.icons[type];
         let [key,frame]=icon.sprite.split('/')
         this.setTexture(key,frame);
@@ -2056,5 +2058,54 @@ export class UiMessage extends UiBase
     }
 
     static push(msg) {return UiMessage.instance?.push(msg)}
+
+}
+
+export class UiChangeScene extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : 0,
+            y : 0,
+            width : GM.w,
+            height : GM.h,
+            //orientation : 'x',
+            //space:{left:10},
+        }
+
+        super(scene, config);
+        UiChangeScene.instance = this;
+
+        this.addBg(scene,{color:GM.COLOR_BLACK,alpha:1})
+            .setOrigin(0)
+            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
+            .hide()
+    }
+
+    start(changeScene, duration=GM.T_CHANGE_SCENE)
+    {
+        super.show();
+        this.scene.tweens.add({
+            targets: this,
+            alpha: {from:0,to:1},
+            duration: duration,
+            onComplete: ()=>{
+                changeScene();
+                //this._t0 = this.scene.time.now;
+            }
+        })
+    }
+
+    done()
+    {
+        //console.log('t(change scene) =',this.scene.time.now-this._t0);
+        this.close();
+    }
+
+    static done() {UiChangeScene.instance?.done();}
+    static start(changeScene) {UiChangeScene.instance?.start(changeScene);}
 
 }

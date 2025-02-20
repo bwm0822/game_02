@@ -10,6 +10,7 @@ import Record from './record.js';
 import {CharacterDB} from './database.js';
 import {QuestManager} from './quest.js';
 import {astar, Graph} from './astar.js';
+import {GM} from './setting.js';
 
 class Map
 {
@@ -199,6 +200,9 @@ class Map
         });
     }
 
+    get center() {return this._center;}
+    get small() {return this._small;}
+
 
     createMap(scene, mapName, diagonal, weight)
     {
@@ -210,6 +214,10 @@ class Map
         let map = this.map;
         map.tW_half = map.tileWidth*0.45;
         map.tH_half = map.tileHeight*0.45;
+        this._diagonal = diagonal;
+        this._center = {x:map.widthInPixels/2, y:map.heightInPixels/2};
+        this._small = map.widthInPixels<GM.w && map.heightInPixels<GM.h;
+
 
         map.tilesets.forEach((tileset) => {
             if(tileset.name in lut)
@@ -281,8 +289,8 @@ class Map
                 let p = tile?.properties;
                 if(p)
                 {
-                    if(p.collide){grid[tile.y][tile.x]=0;}
-                    else if(p.weight){grid[tile.y][tile.x]=p.weight;}
+                    if(p.collide) {grid[tile.y][tile.x]=0;}
+                    else if(p.weight!=undefined) {grid[tile.y][tile.x]=p.weight;}
                 }
             });
         });
@@ -329,7 +337,7 @@ class Map
         }
     }
 
-    move(from,h,v)
+    stepMove(from,h,v)
     {
         let to = {x:from.x+h*this.map.tileWidth, y:from.y+v*this.map.tileHeight};
         let w = this.getWeight(to);
@@ -418,8 +426,7 @@ class Map
         let [tx_b,ty_b] = this.worldToTile(b.x,b.y);
         let dx = Math.abs(tx_a-tx_b);
         let dy = Math.abs(ty_a-ty_b);
-        return dx<=1 && dy<=1;
-
+        return this._diagonal ? dx<=1 && dy<=1 : dx<=1 && dy==0 || dx==0 && dy<=1;
     }
 
     getWeight(p)

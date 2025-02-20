@@ -7,7 +7,8 @@ import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 //import {UI} from  '../uibase.js';
 import {GM} from '../setting.js';
-import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv,UiMessage,UiProfile} from '../ui.js'
+import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv,UiMessage,UiProfile,
+        UiChangeScene} from '../ui.js'
 
 export class GameScene extends Scene
 {
@@ -37,7 +38,7 @@ export class GameScene extends Scene
         this.setPosition(classType);
         this.processInput();
 
-        
+        UiChangeScene.done();
     }
 
     loadRecord()
@@ -51,21 +52,33 @@ export class GameScene extends Scene
         let offsetX=0,offsetY=0;
         if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
         else {mode&=~GM.CAM_LEFT_TOP;}
+        
 
         switch(mode)
         {
             case GM.CAM_CENTER: 
-                offsetX=0; offsetY=0; break;
+                offsetX = 0; offsetY = 0; break;
             case GM.CAM_LEFT: 
                 offsetX = -this.cameras.main.width/4; offsetY = 0; break;
             case GM.CAM_RIGHT: 
                 offsetX = this.cameras.main.width/4; offsetY = 0; break;
             case GM.CAM_LEFT_TOP: 
-                offsetX = -this.cameras.main.width/4; offsetY = -this.cameras.main.width/4; break;
+                offsetX = -this.cameras.main.width/4; 
+                offsetY = this.map.small ? 0 : -this.cameras.main.width/4; break;
             default:
-                offsetX=0; offsetY=0; break;
+                offsetX = 0; offsetY = 0; break;
         }
-        this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
+
+    
+        if(this.map.small)
+        {
+            this.cameras.main.centerOn(this.map.center.x-offsetX,this.map.center.y-offsetY);
+        }
+        else
+        {
+            this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
+        }
+      
     }
 
     setPosition(classType)
@@ -112,7 +125,6 @@ export class GameScene extends Scene
                     this._avatar.stop();
                     this.findPath({x:pointer.worldX,y:pointer.worldY});
                 }
-                //else if(this?._rst?.valid)
                 else if(this._rst?.state>=0)
                 {
                     if(this._rst.state==1 || this._ent)
@@ -147,7 +159,7 @@ export class GameScene extends Scene
         if(this.keys.down.isDown){my++;}
         if(mx!=0||my!=0)
         {
-            this._avatar.move(mx,my);
+            this._avatar.stepMove(mx,my);
             this.clearPath();
             Mark.close();
         }
@@ -254,6 +266,7 @@ export class GameScene extends Scene
                 .on('refresh',()=>{UiInv.refresh()})
                 .on('msg',(msg)=>{UiMessage.push(msg);})
                 .on('equip',()=>{UiProfile.refresh();})
+                .on('change',(changeScene)=>{UiChangeScene.start(changeScene);})
         }
 
         const ui = this.scene.get('UI');

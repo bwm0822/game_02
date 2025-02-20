@@ -53,4 +53,6 @@ export let GM =
     SELLER : 1,
     BUYER : 2,
 
+    T_CHANGE_SCENE: 500, // 轉場漸暗時間 ms
+
 }

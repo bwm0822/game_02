@@ -329,8 +329,7 @@ export class Case extends Entity
 {
     constructor(scene)
     {
-        super(scene);   
-        this.container = [];   
+        super(scene);    
         this.interactive = true;
         this.status = {};
     }
@@ -356,7 +355,8 @@ export class Case extends Entity
         if(data) {this.status.bag = data;}
         else 
         {
-            let items = JSON.parse(this.container);
+            let jsonData = this.data?.get('items');
+            let items = jsonData ? JSON.parse(jsonData) : [];
             this.status.bag = this.toBag(-1,items);
         }   
     }
@@ -467,9 +467,11 @@ export class Port extends Entity
         this.on('enter',()=>{this.enter();})
     }
 
-    async enter()
+    enter()
     {
-        this.scene.scene.start(this.map=='map'?'GameMap':'GameArea',{port:this.port,map:this.map});
+        this.send('change',()=>{
+            this.scene.scene.start(this.map=='map'?'GameMap':'GameArea',{port:this.port,map:this.map});
+        });
     }
 }
 

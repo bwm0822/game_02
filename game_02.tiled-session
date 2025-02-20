@@ -3,19 +3,18 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village_01.json",
+    "activeFile": "public/assets/maps/house_01.json",
     "expandedProjectPaths": [
-        "public/assets",
         ".",
-        "public/assets/tiles",
         "public",
         "public/assets/templates",
-        "public/assets/maps",
-        "public/assets/roles"
+        "public/assets/tiles",
+        "public/assets",
+        "public/assets/maps"
     ],
     "fileStates": {
         "": {
-            "scaleInDock": 0.33,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "#buffs": {
@@ -124,6 +123,11 @@
         "public/assets/hole.json#RPG Nature Tileset": {
             "scaleInDock": 1
         },
+        "public/assets/houe_1.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1.5,
+            "scaleInEditor": 1
+        },
         "public/assets/house_01.json": {
             "expandedObjectLayers": [
                 3
@@ -202,6 +206,17 @@
             "dynamicWrapping": true,
             "scaleInDock": 1
         },
+        "public/assets/maps/house_01.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 3,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 155.83333333333331,
+                "y": 177.83333333333331
+            }
+        },
         "public/assets/maps/icons/buffs.tsj": {
             "dynamicWrapping": true,
             "scaleInDock": 1
@@ -213,7 +228,7 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 176.66666666666666,
+                "x": 176.33333333333334,
                 "y": 676.3333333333333
             }
         },
@@ -261,8 +276,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 505,
-                "y": 1079.5
+                "x": 269.5,
+                "y": 1118.5
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -275,6 +290,11 @@
         "public/assets/parchment.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 0.0625,
+            "scaleInEditor": 1
+        },
+        "public/assets/props.tsj": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "public/assets/roles_v12.tsj": {
@@ -381,41 +401,42 @@
         }
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
-    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/tiny",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/props",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
-    "map.height": 32,
+    "map.height": 20,
     "map.lastUsedFormat": "json",
     "map.layerDataFormat": "1",
     "map.tileHeight": 32,
     "map.tileWidth": 32,
-    "map.width": 32,
+    "map.width": 20,
     "openFiles": [
+        "public/assets/maps/house_01.json",
         "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
         "public/assets/maps/village_01.json",
+        "public/assets/maps/house_01.json",
         "public/assets/maps/map.json",
+        "public/assets/houe_1.tsj",
+        "public/assets/props.tsj",
         "public/assets/Archer_Blue.tsj",
         "public/assets/group.tsj",
         "public/assets/cursors_map.tsj",
         "public/assets/cursors.tsj",
         "public/assets/Warrior_Blue.tsj",
         "public/assets/maps/Warrior_Blue.tsj",
-        "public/assets/terrain_tiles_v2.tsj",
-        "public/assets/maps/town_01.json",
-        "public/assets/parchment.tsj",
-        "public/assets/map.tsj"
+        "public/assets/terrain_tiles_v2.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
     "tileset.lastUsedFilter": "JSON tileset files (*.tsj *.json)",
     "tileset.lastUsedFormat": "json",
     "tileset.tileSize": {
-        "height": 192,
-        "width": 192
+        "height": 32,
+        "width": 32
     },
-    "tileset.type": 0
+    "tileset.type": 1
 }

@@ -61,6 +61,7 @@ export class Preloader extends Scene
 
         this.load.tilemapTiledJSON('map', 'maps/map.json');
         this.load.tilemapTiledJSON('village_01', 'maps/village_01.json');
+        this.load.tilemapTiledJSON('house_01', 'maps/house_01.json');
 
         this.load.plugin('rexbbcodetextplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexbbcodetextplugin.min.js', true);
         
@@ -75,7 +76,7 @@ export class Preloader extends Scene
         //this.scene.start('MainMenu');
         //Map.preload(this, ()=>{this.scene.start('MainMenu')});
         //await Map.load(this, ['map','town_01','town_02','house_01']);
-        await Map.load(this, ['map','village_01']);
+        await Map.load(this, ['map','village_01','house_01']);
         //await Map.load(this, ['village_01']);
         this.scene.start('MainMenu')
     }

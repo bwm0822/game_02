@@ -1314,9 +1314,9 @@ export class Role extends Entity
         if (index > -1) {this.scene.roles.splice(index, 1);}
     }
 
-    move(h,v)
+    stepMove(h,v)
     {
-        let rst = this.scene.map.move(this.pos,h,v);
+        let rst = this.scene.map.stepMove(this.pos,h,v);
         if(rst.state>0)
         {
             this._path = rst.path;
@@ -1705,6 +1705,17 @@ export class Role extends Entity
             this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
         })
     }
+
+    async process()
+    {
+        if(this.moving) {await this.moveTo();}
+        else
+        {
+            await this.pause();
+            if(this.moving) {await this.moveTo();}
+            else {await this.action();}
+        }
+    }
 }
 
 export class Target extends Role
@@ -1732,6 +1743,8 @@ export class Target extends Role
         this.setDepth(Infinity);
     }
 
+    load(){}
+
     async loop()
     {
         while(true)
@@ -1740,11 +1753,11 @@ export class Target extends Role
         }
     }
 
-    async process()
-    {
-        if(this.moving) {await this.moveTo({duration:150,ease:'linear'});}
-        else {await this.pause();}
-    }
+    // async process()
+    // {
+    //     if(this.moving) {await this.moveTo({duration:150,ease:'linear'});}
+    //     else {await this.pause();}
+    // }
 
 }
 
@@ -1792,16 +1805,7 @@ export class Avatar extends Role
         this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
-    async process()
-    {
-        if(this.moving) {await this.moveTo();}
-        else
-        {
-            await this.pause();
-            if(this.moving) {await this.moveTo();}
-            else {await this.action();}
-        }
-    }
+   
 
     static setDes(pos,ent,act)
     {
