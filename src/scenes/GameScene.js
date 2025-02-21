@@ -17,10 +17,15 @@ export class GameScene extends Scene
         super(name);
     }
 
-    init(data) {this._data = data;}
-
-    create ({diagonal,classType,weight})
+    init(data) 
     {
+        //console.log('1.init',data);
+        this._data = data;
+    }
+
+    async create ({diagonal,classType,weight})
+    {
+        //console.log('2.create')
         this._dbgPos = null;
         this._graphics = null;
         this._dbgPath = null;
@@ -33,7 +38,7 @@ export class GameScene extends Scene
         this.uiEvent();
         this.initUI();
 
-        new Map(this, this._data.map, diagonal, weight);
+        await new Map(this).createMap(this._data.map, diagonal, weight)
 
         this.setPosition(classType);
         this.processInput();

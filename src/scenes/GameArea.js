@@ -10,11 +10,11 @@ export class GameArea extends GameScene
         super('GameArea');
     }
 
-    create()
+    async create()
     {
         //this.mode = 'normal';
         this.mode = 'combat';
-        super.create({diagonal:true,classType:Role.Avatar});
+        await super.create({diagonal:true,classType:Role.Avatar});
         this.process();
         //this.input.enabled = false;
         //new Role.Role_T(this,400,900)

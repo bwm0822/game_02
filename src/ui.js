@@ -1911,14 +1911,14 @@ export class UiChangeScene extends UiBase
             duration: duration,
             onComplete: ()=>{
                 changeScene();
-                //this._t0 = this.scene.time.now;
+                this._t = this.scene.time.now;
             }
         })
     }
 
     done()
     {
-        //console.log('t(change scene) =',this.scene.time.now-this._t0);
+        console.log('t(change scene) =',this.scene.time.now-this._t);
         this.close();
     }
 
