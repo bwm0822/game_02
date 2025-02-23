@@ -1493,19 +1493,11 @@ export class Role extends Entity
         let dmg = attacker.status.attrs.attack;
         let life = this.status.states.life.cur;
         let defense = this.status.attrs.defense ?? 0;
-        let dodge = this.status.attrs.dodge ?? 20;
-        let block = this.status.attrs.block ?? 20;
+        let dodge = this.status.attrs.dodge ?? 0;
+        let block = this.status.attrs.block ?? 0;
         //console.log(this.status.attrs,defense)
-        if(Utility.roll()<dodge)
-        {
-            return {state:'dodge'}  
-        }
-
-        if(Utility.roll()<block)
-        {
-            return {state:'block'}  
-        }
-
+        if(Utility.roll()<dodge) { return {state:'dodge'}  }
+        if(Utility.roll()<block) { return {state:'block'}  }
 
         dmg = Math.max(0, dmg-defense);
         life -= dmg;
@@ -1805,7 +1797,11 @@ export class Avatar extends Role
         this.on('attack',(attacker)=>{this.hurt(attacker);})
     }
 
-   
+    dead(attacker)
+    {
+        this.send('gameover');
+        super.dead(attacker);
+    }
 
     static setDes(pos,ent,act)
     {

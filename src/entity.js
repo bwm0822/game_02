@@ -17,7 +17,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.en_outline = true;
         this.weight = 0;
         this.static = true; // true: static body, false: dynamic body
-        this.uid = 0;   // map.createMap() 會自動設定 uid
+        this.uid = -1;   // map.createMap() 會自動設定 uid
     }
 
     get pos()   {return {x:this.x,y:this.y}}
@@ -169,9 +169,8 @@ export class Entity extends Phaser.GameObjects.Container
         if(set) {this.x-=dx;this.y-=-dy}
     }
 
-    init(mapName)
+    init()
     {
-        this.mapName = mapName;
         let anchor;
         if(this.data) 
         {
@@ -189,7 +188,7 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debugDraw();
     }
 
-    create(id)
+    init_runtime(id)
     {
         this.slot = {id:id,count:1};
         this.item = ItemDB.get(id);
@@ -202,6 +201,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.addGrid();
         this.updateDepth();
         this.addWeight();
+        this.addToObjects();
         return this;
     }
 
@@ -239,7 +239,8 @@ export class Entity extends Phaser.GameObjects.Container
     drop(ent)
     {
         let p = this.scene.map.getDropPoint(this.pos);
-        new Pickup(this.scene,this.x,this.y-32).create(ent.slot.id).falling(p);
+        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.slot.id);
+        obj.falling(p);
         this.send('msg',`丟棄 ${ent.item.name}`);
     }
 
@@ -262,9 +263,8 @@ export class Entity extends Phaser.GameObjects.Container
         });
     }
 
-    loadData() {return Record.getByUid(this.mapName,this.uid);}
-
-    saveData(data) {Record.setByUid(this.mapName,this.uid,data);}
+    loadData() {return Record.getByUid(this.scene._data.map, this.uid);}
+    saveData(data) {Record.setByUid(this.scene._data.map, this.uid, data);}
 
     debugDraw(type='grid')
     {
@@ -323,6 +323,14 @@ export class Entity extends Phaser.GameObjects.Container
         
     }
 
+    removeFromObjects()
+    {
+        const index = this.scene.objects.indexOf(this);
+        if(index>-1) {this.scene.objects.splice(index,1);}
+    }
+
+    addToObjects() {this.scene.objects.push(this);}
+
 }
 
 export class Case extends Entity
@@ -342,9 +350,9 @@ export class Case extends Entity
         this.on('open',()=>{this.open()})
     }
 
-    init(mapName)
+    init()
     {
-        super.init(mapName);
+        super.init();
         this.load();
     }
 
@@ -361,7 +369,7 @@ export class Case extends Entity
         }   
     }
 
-    save() { this.saveData(this.bag); }
+    save() { this.saveData(this.status.bag); }
 
     open() { this.send('case', this); }
 
@@ -371,21 +379,22 @@ export class Case extends Entity
 
 export class Pickup extends Entity
 {
-    constructor(scene,x,y)
+    constructor(scene,x,y,angle=0)
     {
         super(scene,x,y);  
+        this.angle = angle;
         this.interactive = true;    
     }
 
-    get acts()  {return ['take'];}
+    get acts()  {return ['pickup'];}
 
     addListener()
     {
         super.addListener();
-        this.on('take',(taker)=>{this.take(taker)})
+        this.on('pickup',(taker)=>{this.pickup(taker)})
     }
 
-    take(taker)
+    pickup(taker)
     {
         if(taker.take(this))
         {
@@ -393,43 +402,37 @@ export class Pickup extends Entity
             this.send('msg',`取得 ${item.name}`)
             this.send('out');
             this.send('refresh');
-            this.set();
+            this.removeFromObjects();
             this.destroy();
         }   
     }
 
-    // init(mapName)
-    // {
-    //     this._mapName = mapName;
-    //     super.init();
-    //     this.check();
-    // }
-
-    check()
+    init()
     {
-        let obj = this.data?.get('obj');
-        if(obj && Record.data[this._mapName]?.remove?.includes(obj))
-        {
-            this.destroy();
-        }
+        let data = this.loadData();
+        if(data?.removed) {this.destroy(); return true;}
+
+        super.init();
+        this.slot = {id:this.data.get('id'),count:1};
     }
 
-    set()
+    save()
     {
-        let obj = this.data?.get('obj');
-        if(obj)
-        {
-            if(!Record.data[this._mapName]) {Record.data[this._mapName]={remove:[],add:[]};}
-            Record.data[this._mapName].remove.push(obj);
-            Record.save();
-        }
+        if(this.uid!=-1) {this.saveData({removed:true})}
+        else {this.saveData({...this.pos,angle:this.angle,...this.slot});}
+    }
+
+    destroy()
+    {
+        if(this.uid!=-1) {this.saveData({removed:true})}
+        super.destroy();
     }
 }
 
 
 export class Entry extends Entity
 {
-    init(mapName)
+    init()
     {
         //super.init(mapName);
         if(!this.scene.entries) {this.scene.entries={};}
@@ -454,9 +457,9 @@ export class Port extends Entity
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
-    init(mapName)
+    init()
     {
-        super.init(mapName);
+        super.init();
         if(!this.scene.ports) {this.scene.ports={};}
         this.scene.ports[this.name] = this;
     }
@@ -469,9 +472,7 @@ export class Port extends Entity
 
     enter()
     {
-        this.send('change',()=>{
-            this.scene.scene.start(this.map=='map'?'GameMap':'GameArea',{port:this.port,map:this.map});
-        });
+        this.send('scene',{map:this.map, port:this.port});
     }
 }
 

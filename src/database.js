@@ -24,9 +24,9 @@ export class ItemDB
         'sword_01':{cat:GM.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
                     des:'這是一把刀',
                     props:{attack:20}},
-        'sword_02':{cat:GM.CAT_WEAPON,icon:'weapons/4',name:'刀-2',
+        'sword_02':{cat:GM.CAT_WEAPON,icon:'weapons/4',name:'刀-2',gold:25,
                     props:{attack:40}},
-        'sword_03':{cat:GM.CAT_WEAPON,icon:'weapons/5',name:'刀-3',
+        'sword_03':{cat:GM.CAT_WEAPON,icon:'weapons/5',name:'刀-3',gold:35,
                     props:{attack:60}},
 
         'helmet_01':{cat:GM.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
@@ -183,6 +183,7 @@ export class RoleDB
 
         'scott': {name:'史考特', icon:'portraits/35', gold:200,
                     sprite:'Warrior_Red', faceR:true,
+                    corpse:{sprite:'rip',scale:0.5},
                     anchor:{x:64,y:48}, w:128, h:128,
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
@@ -210,7 +211,7 @@ export class RoleDB
                     bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01']},
                     attrs:
                         {
-                            attack: 5,
+                            attack: 50,
                             defense: 0,
                         },
                     states:

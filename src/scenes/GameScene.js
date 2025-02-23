@@ -6,9 +6,10 @@ import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
 //import {UI} from  '../uibase.js';
+import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
-import {UiCursor,UiMain,UiOption,UiDialog,UiTrade,UiCase,UiInv,UiMessage,UiProfile,
-        UiChangeScene} from '../ui.js'
+import {UiCursor, UiOption, UiDialog, UiTrade, UiCase, UiInv, UiMessage, 
+        UiProfile, UiChangeScene, Ui, UiGameOver} from '../ui.js'
 
 export class GameScene extends Scene
 {
@@ -38,12 +39,24 @@ export class GameScene extends Scene
         this.uiEvent();
         this.initUI();
 
-        await new Map(this).createMap(this._data.map, diagonal, weight)
+        await new Map(this).createMap(this._data.map, diagonal, weight);
+        this.createRuntime();
 
         this.setPosition(classType);
         this.processInput();
 
+        UiMessage.clear();
         UiChangeScene.done();
+    }
+
+    createRuntime()
+    {
+        let objs = Record.data[this._data.map]?.runtime;
+        if(objs)
+        {
+            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj.id);});
+            Record.data[this._data.map].runtime = [];
+        }
     }
 
     loadRecord()
@@ -58,7 +71,6 @@ export class GameScene extends Scene
         if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
         else {mode&=~GM.CAM_LEFT_TOP;}
         
-
         switch(mode)
         {
             case GM.CAM_CENTER: 
@@ -103,7 +115,6 @@ export class GameScene extends Scene
 
     initUI() 
     {
-        UiMain.show();
         UiCursor.set();
         new Mark(this);
     }
@@ -215,14 +226,33 @@ export class GameScene extends Scene
         })
     }
 
-
-    menu()
+    save()
     {
         Record.data.pos = this._avatar.pos;   
         Record.data.player = this._avatar.save();
-        //Role.Player.save();
+        this.objects.forEach((obj)=>{obj.save?.();})
         Record.save();
+    }
+
+    mainMenu()
+    {
+        this.save();
+        Ui.closeAll(true);
         this.scene.start('MainMenu');
+    }
+
+    gotoScene(config)
+    {
+        this.save();
+        Ui.closeAll(true);
+        this.scene.start(config.map=='map'?'GameMap':'GameArea',config);
+    }
+
+    gameOver()
+    {
+        this.clearPath()
+        this.input.keyboard.off('keydown');
+        UiGameOver.show();
     }
 
     showMousePos()
@@ -264,19 +294,20 @@ export class GameScene extends Scene
             this.events
                 .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);Mark.close();})
                 .on('out', ()=>{this._ent=null;UiCursor.set();})
-                .on('case',(owner)=>{UiCase.show(owner);})
-                .on('talk',(owner)=>{UiDialog.show(owner);})
-                .on('trade',(owner)=>{UiTrade.show(owner);})
-                .on('option',(x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
-                .on('refresh',()=>{UiInv.refresh()})
-                .on('msg',(msg)=>{UiMessage.push(msg);})
-                .on('equip',()=>{UiProfile.refresh();})
-                .on('change',(changeScene)=>{UiChangeScene.start(changeScene);})
+                .on('case', (owner)=>{UiCase.show(owner);})
+                .on('talk', (owner)=>{UiDialog.show(owner);})
+                .on('trade', (owner)=>{UiTrade.show(owner);})
+                .on('option', (x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
+                .on('refresh', ()=>{UiInv.refresh()})
+                .on('msg', (msg)=>{UiMessage.push(msg);})
+                .on('equip', ()=>{UiProfile.refresh();})
+                .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
+                .on('gameover',()=>{this.gameOver();})
         }
 
         const ui = this.scene.get('UI');
         ui.events
-            .off('menu').on('menu', ()=>{this.menu();})
+            .off('menu').on('menu', ()=>{this.mainMenu();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
             .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})

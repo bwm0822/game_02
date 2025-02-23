@@ -1,5 +1,6 @@
 import { GameScene } from "./GameScene.js";
 import * as Role from '../role.js';
+import {UiMain} from '../ui.js'
 
 
 export class GameArea extends GameScene
@@ -16,11 +17,12 @@ export class GameArea extends GameScene
         this.mode = 'combat';
         await super.create({diagonal:true,classType:Role.Avatar});
         this.process();
-        //this.input.enabled = false;
-        //new Role.Role_T(this,400,900)
+    }
 
-
-        //console.log(this.cameras.main)
+    initUI() 
+    {
+        super.initUI();
+        UiMain.show();
     }
 
     async process()

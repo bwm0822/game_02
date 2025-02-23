@@ -35,6 +35,8 @@ export default function createUI(scene)
     new UiOption(scene);
     new UiMessage(scene);
 
+    new UiGameOver(scene);
+
     new UiChangeScene(scene);
 
 }
@@ -132,6 +134,17 @@ function clrCamera(mode)
 }
 
 function clearpath() {uiScene.events.emit('clearpath');}
+
+function send(event) {uiScene.events.emit(event);}
+
+export class Ui
+{
+    static _list = {};
+    static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].close(force);}}
+    static refreshAll() {for(let key in Ui._list){Ui._list[key].refresh?.();}}
+    static register(obj) {Ui._list[obj.constructor.name]=obj;}
+    static unregister(obj) {delete Ui._list[obj.constructor.name];}
+}
 
 class Slot extends Icon
 {
@@ -288,7 +301,7 @@ class Slot extends Icon
                     if(UiDragged.owner.sell(this.owner, UiDragged, this._id, this.isEquip))
                     {
                         UiDragged.clear();
-                        UiReg.refreshAll();
+                        Ui.refreshAll();
                     }
                 }
                 else
@@ -480,14 +493,18 @@ class UiButton extends Sizer
     {
         super(scene,option);
         this.onclick=option?.onclick;
-        if(option?.text) 
+        if(option?.rect)
+        {
+            this.addBackground(option.rect,'rect')
+            if(option?.text){ this.add(text(scene,{text:option.text})) }
+        }
+        else if(option?.text) 
         {
             this.addBackground(rect(scene,{color:GM.COLOR_SLOT_OVER,alpha:0}),'bg')
                 .add(text(scene,{text:option.text}))
         }
         else if(option?.icon) 
         {
-            console.log('icon',option?.icon)
             this.add(sprite(scene,{icon:option.icon}),{key:'sp'})
         }
 
@@ -498,11 +515,23 @@ class UiButton extends Sizer
 
     addListener()
     {
+        let rect = this.getElement('rect');
         let bg = this.getElement('bg');
         let sp = this.getElement('sp');
+
+        let over = function(on)
+        {
+            rect && (rect.fillAlpha = on ? 0.5 : 1 );
+            bg && (bg.fillAlpha = on ? 1 : 0); 
+            sp && sp.setTint( on ? 0x777777 : 0xffffff);
+        }
+
         this.setInteractive();
-        this.on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
-            .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
+        this
+            // .on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
+            // .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
+            .on('pointerover',()=>{over(true);})
+            .on('pointerout',()=>{over(false);})
             .on('pointerdown',()=>{this.onclick&&this.onclick();})
     }
 }
@@ -673,15 +702,6 @@ class UiInfo extends Sizer
     static show(target) {UiInfo.instance?.show(target);}
 }
 
-class UiReg
-{
-    static _list = {};
-    static closeAll() {for(let key in UiReg._list){UiReg._list[key].close();}}
-    static refreshAll() {for(let key in UiReg._list){UiReg._list[key].refresh?.();}}
-    static register(obj) {UiReg._list[obj.constructor.name]=obj;}
-    static unregister(obj) {delete UiReg._list[obj.constructor.name];}
-}
-
 class UiContainerBase extends ContainerLite
 {
     constructor(scene, touchClose=true)
@@ -731,11 +751,10 @@ class UiBase extends Sizer
     // register() {UiBase._register[this.constructor.name]=this;}
     // unregister() {delete UiBase._register[this.constructor.name];}
 
-    closeAll() {UiReg.closeAll();}
-    refreshAll() {UiReg.refreshAll();}
-    //static refreshAll() {UiReg.refreshAll();}
-    register() {UiReg.register(this);}
-    unregister() {UiReg.unregister(this);}
+    closeAll(force) {Ui.closeAll(force);}
+    refreshAll() {Ui.refreshAll();}
+    register() {Ui.register(this);}
+    unregister() {Ui.unregister(this);}
 
     getOwner() {return this.owner;}
 
@@ -1285,9 +1304,13 @@ export class UiMain extends UiBase
 
     profile() {UiProfile.toggle(Role.Avatar.instance);}
 
-    menu() {this.close();this.closeAll();this.scene.events.emit('menu');}
+    menu() {this.close();this.closeAll();send('menu');}
 
-    test() {this.closeAll();}
+    test() 
+    {
+        //this.closeAll();
+        UiGameOver.show();
+    }
 
     addListener()
     {
@@ -1336,7 +1359,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         none :  {sprite:'cursors/cursor_none', origin:{x:0.25,y:0}, scale:1},
         aim :   {sprite:'cursors/target_b', origin:{x:0.5,y:0.5}, scale:0.7},
         attack :  {sprite:'cursors/tool_sword_b', origin:{x:0.5,y:0.5}, scale:0.7},
-        take :  {sprite:'cursors/hand_open', origin:{x:0.5,y:0.5}, scale:0.7},
+        pickup :  {sprite:'cursors/hand_open', origin:{x:0.5,y:0.5}, scale:0.7},
         talk :  {sprite:'cursors/message_dots_square', origin:{x:0.5,y:0.5}, scale:0.7},   
         enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
         exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
@@ -1902,17 +1925,14 @@ export class UiChangeScene extends UiBase
             .hide()
     }
 
-    start(changeScene, duration=GM.T_CHANGE_SCENE)
+    start(gotoScene, duration=GM.T_CHANGE_SCENE)
     {
         super.show();
         this.scene.tweens.add({
             targets: this,
             alpha: {from:0,to:1},
             duration: duration,
-            onComplete: ()=>{
-                changeScene();
-                this._t = this.scene.time.now;
-            }
+            onComplete: ()=>{gotoScene();this._t = this.scene.time.now;}
         })
     }
 
@@ -2049,6 +2069,8 @@ export class UiMessage extends ContainerLite
 
     clear()
     {
+        console.log('clear')
+        this.queue = [];
         this.panel.removeAll(true).layout();
     }
 
@@ -2057,17 +2079,65 @@ export class UiMessage extends ContainerLite
         if(force)
         {
             this.visible = false;
-            UiReg.unregister(this);
+            Ui.unregister(this);
         }
     }
 
     show()
     {
         this.visible = true;
-        UiReg.register(this);
+        Ui.register(this);
     }
 
-    static push(msg) {return UiMessage.instance?.push(msg)}
-
-    
+    static clear() {UiMessage.instance?.clear();}
+    static push(msg) {return UiMessage.instance?.push(msg);}
 }
+
+
+export class UiGameOver extends UiBase
+{
+    static instance=null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            width : GM.w,
+            height : GM.h,
+            orientation: 'x'
+        }
+
+        super(scene,config)
+        this.scene=scene;
+        UiGameOver.instance=this;
+        this.addBg(scene,{color:GM.COLOR_BLACK,alpha:0.5})
+            .addSpace()
+            .add(text(scene,{text:'遊 戲 結 束',fontSize:64}),{align:'bottom',padding:{bottom:GM.h/4}})
+            .addSpace()
+            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000)
+            .addLisitener()
+            .close()
+    }
+
+    addLisitener()
+    {
+        this.setInteractive()
+            .on('pointerdown',()=>{this.close(); send('menu');})
+        return this;
+    }
+
+    show()
+    {
+        super.show();
+        this.scene.tweens.add({
+            targets: this,
+            alpha: {from:0, to:1},
+            duration: 1000,
+        })
+    }
+
+    static show() {UiGameOver.instance?.show();}
+
+}
+

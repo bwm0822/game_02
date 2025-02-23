@@ -295,7 +295,9 @@ class Map
                     {type:'npc',classType:Npc},
                     {type:'case',classType:Case},
                 ]);
-                objs.forEach((obj) => {obj.init?.(mapName);});
+                let rmList=[];
+                objs.forEach((obj) => { if(obj.init?.()){rmList.push(obj)}; });
+                rmList.forEach((obj)=>{ let i=objs.indexOf(obj); objs.splice(i,1); });
                 scene.objects.push(...objs);
             });
 
