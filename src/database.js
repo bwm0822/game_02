@@ -208,16 +208,31 @@ export class RoleDB
                     b:{l:48,r:48,t:32,b:32},
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:64,b:32},
+                    restock:2,
                     bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01']},
                     attrs:
-                        {
-                            attack: 50,
-                            defense: 0,
-                        },
+                    {
+                        attack: 5,
+                        defense: 0,
+                    },
                     states:
-                        {
-                            life: {cur:100,max:100},
-                        }
+                    {
+                        life: {cur:100, max:100},
+                    },
+                    schedule:
+                    {
+                        village_01:
+                        [   {type:'enter',  range:[6],      from:{x:16,y:16},     to:{x:100,y:100}}, 
+                            {type:'stay',   range:[6,16],   pos:{x:100,y:100}},
+                            {type:'exit',   range:[17],     from:{x:10,y:10},   to:{x:0,y:0}},
+                        ],
+                        house_01:
+                        [   {type:'stay',   range:[0,5],    pos:{x:0,y:0}}, 
+                            {type:'exit',   range:[6],      from:{x:10,y:10},   to:{x:0,y:0}},
+                            {type:'enter',  range:[17],     from:{x:0,y:0},     to:{x:10,y:10}},
+                            {type:'stay',   range:[17,23],  pos:{x:10,y:10}}, 
+                        ],
+                    },
                 },
 
         'archer': {name:'射手', icon:'portraits/40', gold:100,
@@ -257,4 +272,10 @@ export class CharacterDB
     {
         return CharacterDB.data[id];
     }
+}
+
+
+export class Roles
+{
+    static list = ['knight'];
 }

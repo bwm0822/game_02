@@ -12,6 +12,7 @@ import TextTypingPlugin from 'phaser3-rex-plugins/plugins/texttyping-plugin.js';
 import TextPagePlugin from 'phaser3-rex-plugins/plugins/textpage-plugin.js';
 import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin.js';
 //import ContainerLitePlugin from 'phaser3-rex-plugins/plugins/containerlite-plugin.js';
+//import TextEditPlugin from 'phaser3-rex-plugins/plugins/textedit-plugin.js';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -64,12 +65,15 @@ const config = {
                 start: true
             },
             // {
-            //     key: 'rexContainerLitePlugin',
-            //     plugin: ContainerLitePlugin,
+            //     key: 'rexTextEdit',
+            //     plugin: TextEditPlugin,
             //     start: true
             // },
-        // ...
+
         ]
+    },
+    dom: {
+        createContainer: true
     },
     scene: [
         Boot,

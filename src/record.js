@@ -16,13 +16,11 @@ export default class Record
 
     static getByUid(mapName, uid)
     {
-        console.log(mapName,uid,Record.data[mapName]?.prefab[uid])
         return Record.data[mapName]?.prefab[uid];
     }
 
     static setByUid(mapName, uid, value)
     {
-        console.log(mapName, uid, value)
         if(!Record.data[mapName]) { Record.data[mapName] = { prefab:{}, runtime:[] }; }
         if(uid==-1) { Record.data[mapName].runtime.push(value); }
         else { Record.data[mapName].prefab[uid] = value; }

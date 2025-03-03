@@ -27,22 +27,37 @@ export function text(scene, config={})
     return t;
 }
 
+// export function bbcText(scene, config={})    
+// {
+//     // fixedWidth:fixedWidth,
+//     let style = {};
+//     style.fontSize = config.fontSize ?? GM.FONT_SIZE;
+//     style.fontFamily = config.fontFamily ?? GM.FONT;
+//     style.strokeThickness = config.strokeThickness ?? 1;
+//     config.images && (style.images = config.images);
+//     config.color && (style.color = config.color);
+//     config.stroke && (style.stroke = config.stroke);
+//     config.strokeThickness && (style.strokeThickness = config.strokeThickness);
+//     config.wrapWidth && (style.wrap = {mode:'char',width:config.wrapWidth}); 
+//     //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
+//     config.backgroundColor && (style.backgroundColor = config.backgroundColor);
+
+//     let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, style);
+//     return t;
+// }
+
+
 export function bbcText(scene, config={})    
 {
-    // fixedWidth:fixedWidth,
     let style = {};
-    style.fontSize = config.fontSize ?? GM.FONT_SIZE;
-    style.fontFamily = config.fontFamily ?? GM.FONT;
-    style.strokeThickness = config.strokeThickness ?? 1;
-    config.images && (style.images = config.images);
-    config.color && (style.color = config.color);
-    config.stroke && (style.stroke = config.stroke);
-    config.strokeThickness && (style.strokeThickness = config.strokeThickness);
-    config.wrapWidth && (style.wrap = {mode:'char',width:config.wrapWidth}); 
-    //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
-    config.backgroundColor && (style.backgroundColor = config.backgroundColor);
+    config.fontSize = config.fontSize ?? GM.FONT_SIZE;
+    config.fontFamily = config.fontFamily ?? GM.FONT;
+    config.strokeThickness = config.strokeThickness ?? 1;
 
-    let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, style);
+    config.wrapWidth && (config.wrap = {mode:'char',width:config.wrapWidth}); 
+    //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
+
+    let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, config);
     return t;
 }
 

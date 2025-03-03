@@ -6,6 +6,7 @@ import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
 import {Mark} from './gameUi.js';
+import TimeManager from './time.js';
 
 let uiScene;
 let _mode=0;
@@ -38,6 +39,8 @@ export default function createUI(scene)
     new UiGameOver(scene);
 
     new UiChangeScene(scene);
+
+    new UiDebuger(scene);
 
 }
 
@@ -106,16 +109,7 @@ function test(scene)
     slot2.container=bag;
     slot2.update();
 
-   
-    //opt.show(100,100)
-
-    //let btn=new UiButton(scene);
-    //btn.setPosition(100,400);
-
     console.log(scene);
-
-    //let t1 = text(scene,{x:100,y:100,text:'幹你娘123',color:'#0ff',backgroundColor:'#fff',stroke:'#000',strokeThickness:5,wrapWidth:50});
-    //let t2 = bbcText(scene,{x:100,y:200,text:'[stroke]123456[/stroke]',color:'#000',backgroundColor:'#555',wrapWidth:50});
 
 }
 
@@ -1278,6 +1272,7 @@ export class UiMain extends UiBase
             .add(new UiButton(scene,{text:'個\n人',onclick:this.profile.bind(this)}))
             .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
             .add(new UiButton(scene,{text:'測\n試',onclick:this.test.bind(this)}))
+            .add(new UiButton(scene,{text:'除\n錯',onclick:this.debug.bind(this)}))
             .addEnable(scene)
             .size()
             .hide();
@@ -1309,7 +1304,15 @@ export class UiMain extends UiBase
     test() 
     {
         //this.closeAll();
-        UiGameOver.show();
+        //UiGameOver.show();
+        TimeManager.inc(60);
+        console.log(TimeManager.time)
+    }
+
+    debug()
+    {
+        console.log('debuger')
+        UiDebuger.show();
     }
 
     addListener()
@@ -1509,6 +1512,7 @@ export class UiTrade extends UiBase
     show(owner)
     {
         super.show();
+        owner.restock();
         this.owner = owner;
         this.owner.trade = GM.SELLER;
         this.owner.target = Role.Avatar.instance;
@@ -1942,8 +1946,8 @@ export class UiChangeScene extends UiBase
         this.close();
     }
 
-    static done() {UiChangeScene.instance?.done();}
-    static start(changeScene) {UiChangeScene.instance?.start(changeScene);}
+    static done() {this.instance?.done();}
+    static start(changeScene) {this.instance?.start(changeScene);}
 
 }
 
@@ -2089,8 +2093,8 @@ export class UiMessage extends ContainerLite
         Ui.register(this);
     }
 
-    static clear() {UiMessage.instance?.clear();}
-    static push(msg) {return UiMessage.instance?.push(msg);}
+    static clear() {this.instance?.clear();}
+    static push(msg) {return this.instance?.push(msg);}
 }
 
 
@@ -2139,5 +2143,121 @@ export class UiGameOver extends UiBase
 
     static show() {UiGameOver.instance?.show();}
 
+}
+
+
+class UiDebuger extends UiBase
+{
+    static instance=null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            orientation: 'y',
+            space:{top:10,bottom:10,left:10,right:10,item:10},
+        }
+
+        super(scene,config)
+        UiDebuger.instance=this;
+        this.scene=scene;
+        this.addBg_Int(scene)
+            .addTop(scene, '除錯器')
+            .addTextArea(scene)
+            .addInput(scene)
+            .layout()
+            .close()
+    }
+
+    addTextArea(scene)
+    {
+        this.area =  scene.rexUI.add.textArea({
+            width: GM.w/2,
+            height: GM.h/4,
+            background: rect(scene,{color:GM.COLOR_LIGHT}),
+            text: bbcText(scene),
+            //content: '123\n456\n789\n1111\n777\n888\n999\n111'
+        })
+        this.add(this.area)
+        return this;
+    }
+
+    addInput(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+
+        let label = scene.rexUI.add.label({
+            orientation: 'x',
+            background: rect(scene, {color:GM.COLOR_LIGHT}),
+            text: bbcText(scene, {fixedWidth:GM.w/2-100, fixedHeight:36, valign:'center'}),
+            space: {top:5,bottom:5,left:5,right:5,icon: 10}
+        })
+        .setInteractive()
+        .on('pointerdown', function () {
+            var config = {
+                enterClose: false,
+                onTextChanged: (textObject, text) =>{textObject.text=text;}
+            }
+            scene.rexUI.edit(label.getElement('text'), config);
+        });
+
+        let btn = new UiButton(scene,{text:'送出',onclick:()=>{
+            let cmd = label.getElement('text').text;
+            label.getElement('text').text='';
+            this.process(cmd);
+
+        }})
+    
+        sizer.add(label)
+            .addSpace()
+            .add(btn)
+        this.add(sizer,{expand:true})
+
+        return this;
+    }
+
+    process(cmd)
+    {
+        console.log('cmd =',cmd)
+        let args = cmd.split(' ');
+        let func = eval(`this.cmd_${args[0]}`);
+        if(func) {func.bind(this)(args);}
+        else {this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')}
+    }
+
+    print(str)
+    {
+        this.area.appendText(str);
+        this.area.scrollToBottom();
+    }
+
+    cmd_clr(args) 
+    {
+        //console.log(args)
+        this.area.setText('');
+    }
+
+    cmd_t(args)
+    {
+        //console.log(args);
+        if(args.length == 1)
+        {
+            let t = TimeManager.time;
+            let str = `d:${t.d} h:${t.h} m:${t.m}\n`;
+            this.print(str)
+        }
+        else
+        {
+            for(let i=1;i<args.length;i++)
+            {
+                let [type,val]=args[i].split(':');
+                TimeManager.set(type,val)
+            }
+        }
+
+    }
+
+    static show() {UiDebuger.instance?.show();}
 }
 

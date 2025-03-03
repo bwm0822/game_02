@@ -147,6 +147,38 @@ export default class Utility
     //     let d = Math.round(Math.random(0,1)*(e-s));
     //     return s+d;
     // }
+
+    static str2Func(str)
+    {
+        try 
+        {
+            // 使用 eval 將字串轉換成函數
+            const func = eval(str); //const func = eval(`(${str})`);
+            if (typeof func === 'function') {return func;} 
+            else {throw new Error('字串未轉換成函數');}
+        } 
+        catch (error) 
+        {
+            console.warn('轉換失敗:', error);
+            //console.error('轉換失敗:', error);
+            return null;
+        }
+    }
+
+    static str2Func2(str)
+    {
+        try 
+        {
+            const func = new Function(str);
+            if (typeof func === 'function') {return func;} 
+            else {throw new Error('Provided string is not a function');}
+        } 
+        catch (error) 
+        {
+            console.error('Error executing function from string:', error);
+            return null;
+        }
+    }
 }
 
 String.prototype.local = function(){return Utility.local(this);};

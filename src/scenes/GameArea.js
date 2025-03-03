@@ -1,6 +1,8 @@
 import { GameScene } from "./GameScene.js";
 import * as Role from '../role.js';
 import {UiMain} from '../ui.js'
+import TimeManager,{Schedular} from '../time.js';
+import {Roles,RoleDB} from '../database.js';
 
 
 export class GameArea extends GameScene
@@ -11,11 +13,13 @@ export class GameArea extends GameScene
         super('GameArea');
     }
 
+    get mapName() {return this._data.map;}
+
     async create()
     {
-        //this.mode = 'normal';
-        this.mode = 'combat';
-        await super.create({diagonal:true,classType:Role.Avatar});
+        this.mode = 'normal';
+        //this.mode = 'combat';
+        await super.create({diagonal:true,classType:Role.Avatar});        
         this.process();
     }
 
@@ -23,6 +27,12 @@ export class GameArea extends GameScene
     {
         super.initUI();
         UiMain.show();
+    }
+
+    initSchedule()
+    {
+        Schedular.init(this, this.mapName);
+        TimeManager.register(Schedular.check.bind(Schedular));
     }
 
     async process()
@@ -39,6 +49,7 @@ export class GameArea extends GameScene
                 await this._avatar.process();
                 for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
+            TimeManager.inc();
         }
     }
 }

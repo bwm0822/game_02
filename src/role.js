@@ -13,6 +13,7 @@ import {Entity,Pickup} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import {text,rect} from './uibase.js';
 import {GM} from './setting.js';
+import TimeManager from './time.js';
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
@@ -1285,9 +1286,19 @@ export class Role extends Entity
         //
         this.static = false; // true: static body, false: dynamic body
         this.id = '';
+        this.interactive = true;
+
+        this.registerTimeManager();
     }
 
     get moving()    {return this._des!=null;}
+
+    addSprite(sprite)
+    {
+        //let [key,frame]=ICON_AVATAR.split('/');
+        let [key,frame]=sprite.split('/');
+        this.setTexture(key,frame);
+    }
 
     initData()
     {
@@ -1304,6 +1315,29 @@ export class Role extends Entity
         if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
 
         return roleD;
+    }
+
+    init_runtime(id)
+    {
+        this.id=id;
+        let roleD = this.initData();
+        this.addSprite(roleD.sprite);
+        this.displayWidth = roleD.w 
+        this.displayHeight = roleD.h;
+        this.addListener();
+        this.addPhysics();
+        this.addGrid();
+        this.setAnchor(roleD.anchor);
+        this.updateDepth();
+        this.addWeight();
+
+        // this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1)
+        // this.light.x = this.x;
+        // this.light.y = this.y; 
+
+        //this.debugDraw('zone')
+
+        return this;
     }
 
     addToRoleList() {this.scene.roles.push(this);}
@@ -1379,18 +1413,20 @@ export class Role extends Entity
                 this.faceTo(pt);
                 this.removeWeight();
                 this.addWeight(pt);
-                await this.step(pt,duration,ease);
+                await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
                 //this.addWeight();
                 this.updateDepth();
                 path.shift();   //移除陣列第一個元素
-                if(path.length>0) {return;}
+                if(path.length>0) {return false;}
             }
         }
         
         await this.action();
-        
         this.stop();
+        return true;
     }
+
+   
 
     async action()
     {
@@ -1400,7 +1436,8 @@ export class Role extends Entity
 
         if(this._act=='attack')
         {
-            await this.step(this._ent.pos,200,'expo.in',true,()=>{this.interact(this._ent,this._act);}); 
+            await this.step( this._ent.pos, 200, 'expo.in',
+                            {yoyo:true, onYoyo:()=>{this.interact(this._ent,this._act);}} ); 
         }
         else
         {
@@ -1415,7 +1452,7 @@ export class Role extends Entity
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
-    step(pos, duration, ease, yoyo=false, onYoyo)
+    step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
     {
         return new Promise((resolve)=>{
             this.scene.tweens.add({
@@ -1427,7 +1464,8 @@ export class Role extends Entity
                 yoyo: yoyo,
                 //delaycomplete: 1000,
                 onYoyo: ()=>{onYoyo?.();onYoyo=null;},  // 讓 onYoyo 只觸發一次
-                onComplete: (tween, targets, gameObject)=>{resolve();}         
+                onUpdate: ()=>{onUpdate?.();},
+                onComplete: (tween, targets, gameObject)=>{onComplete?.();resolve();}         
             });
         });
     }
@@ -1530,6 +1568,7 @@ export class Role extends Entity
         this.looties();
         this.removeWeight();
         this.removeFromRoleList();
+        this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
         this.destroy();
     }
@@ -1708,6 +1747,40 @@ export class Role extends Entity
             else {await this.action();}
         }
     }
+
+    registerTimeManager()
+    {
+        this._updateTimeCallback = this.updateTime.bind(this); // 保存回调函数引用
+        TimeManager.register(this._updateTimeCallback);
+    }
+
+    unregisterTimeManager()
+    {
+        TimeManager.unregister(this._updateTimeCallback);
+    }
+
+    setLightPos()
+    {
+        if(this.light)
+        {
+            this.light.x = this.x;
+            this.light.y = this.y;
+        }
+    }
+
+    setLightInt()
+    {
+        if(this.light)
+        {
+            let a = this.scene.lights.ambientColor;
+            this.light.intensity = 1-a.r;
+        }
+    }
+
+    updateTime()
+    {
+        this.setLightInt();
+    }
 }
 
 export class Target extends Role
@@ -1718,7 +1791,7 @@ export class Target extends Role
         this.weight=0;
         this.addSprite();
         this.updateDepth();
-        this.loop();
+        //this.loop();
         this.debugDraw();
     }
 
@@ -1737,20 +1810,6 @@ export class Target extends Role
 
     load(){}
 
-    async loop()
-    {
-        while(true)
-        {
-            await this.process();
-        }
-    }
-
-    // async process()
-    // {
-    //     if(this.moving) {await this.moveTo({duration:150,ease:'linear'});}
-    //     else {await this.pause();}
-    // }
-
 }
 
 
@@ -1763,32 +1822,29 @@ export class Avatar extends Role
         Avatar.instance = this;
         this.weight = 1000;
         this.id = 'scott';
-        this.initRole();
+        //this.initRole();
         //this.debugDraw();
     }
 
     async speak(value){}
 
-    initRole()
-    {
-        let roleD = this.initData();
-        this.addSprite(roleD.sprite);
-        this.displayWidth = roleD.w 
-        this.displayHeight = roleD.h;
-        this.addListener();
-        this.addPhysics();
-        this.addGrid();
-        this.setAnchor(roleD.anchor);
-        this.updateDepth();
-        this.addWeight();
-    }
+    // initRole()
+    // {
+    //     let roleD = this.initData();
+    //     this.addSprite(roleD.sprite);
+    //     this.displayWidth = roleD.w 
+    //     this.displayHeight = roleD.h;
+    //     this.addListener();
+    //     this.addPhysics();
+    //     this.addGrid();
+    //     this.setAnchor(roleD.anchor);
+    //     this.updateDepth();
+    //     this.addWeight();
 
-    addSprite(sprite)
-    {
-        //let [key,frame]=ICON_AVATAR.split('/');
-        let [key,frame]=sprite.split('/');
-        this.setTexture(key,frame);
-    }
+    //     this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1)
+    //     this.light.x = this.x;
+    //     this.light.y = this.y;
+    // }
 
     addListener()
     {
@@ -1812,7 +1868,10 @@ export class Avatar extends Role
 
 export class Npc extends Role
 {
-    init(mapName)
+    get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
+                                            : ['attack','observe'];}
+
+    init()
     {
         let roleD = this.initData();
         if(roleD.anchor)
@@ -1820,14 +1879,60 @@ export class Npc extends Role
             this.setData('anchorX',roleD.anchor.x);
             this.setData('anchorY',roleD.anchor.y);
         }
-        super.init(mapName);
+        super.init();
         this.addToRoleList();
         this.load();
         this.state = 'idle';
+        //this.debugDraw('zone')
     }
 
-    get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
-                                            : ['attack','observe'];}
+   
+    init_runtime(id)
+    {
+        this.state = 'idle';
+        this.addToRoleList();
+        return super.init_runtime(id);
+    }
+
+    updateTime()
+    {
+        //console.log('updateTime')
+        this.checkSchedule();
+    }
+
+    setSchedule()
+    {
+        let sch = this.role.schedule[this.mapName];
+        this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
+    }
+
+    checkSchedule()
+    {
+        if(this.schedule)
+        {
+            let sch = this.schedule.find((s)=>{return TimeManager.inRange(s.range);})
+            if(sch)
+            {
+                this.setDes(sch.to);
+                this.state = 'move';
+            }
+        }
+    }
+
+    restock()
+    {
+        if(!this.status.restock)
+        {
+            this.status.restock = TimeManager.time.d + 2;
+        }
+
+        if(TimeManager.time.d >= this.status.restock)
+        {
+            let roleD = RoleDB.get(this.id);
+            this.status.restock = TimeManager.time.d + 2;
+            this.status.bag = this.toBag(roleD.bag.capacity,roleD.bag.items);
+        }
+    }
     
     load()
     {
@@ -1845,6 +1950,9 @@ export class Npc extends Role
                 states: Utility.deepClone(roleD.states), 
             }
         }
+
+        this.setSchedule();
+        this.checkSchedule();
     }
 
     save() {this.saveData(this.status);}
@@ -1878,11 +1986,14 @@ export class Npc extends Role
 
     async process()
     {
+        console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
         switch(this.state)
         {
+            case 'idle': break;
             case 'move':
-                this.setDes(Avatar.instance.pos);
-                await this.moveTo({draw:false});
+                //this.setDes(Avatar.instance.pos);
+                let ret = await this.moveTo({draw:false});
+                if(ret) {this.state = 'idle';}
                 break;
             case 'attack':
                 await this.attack();

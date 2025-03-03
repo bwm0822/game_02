@@ -31,6 +31,8 @@ export class Entity extends Phaser.GameObjects.Container
     get displayWidth() {return this._w;}
     get displayHeight() {return this._h;}
 
+    get mapName() {return this.scene._data.map;}
+
     enableOutline()
     {
         this._outline = this.scene.plugins.get('rexOutlinePipeline');
@@ -105,6 +107,7 @@ export class Entity extends Phaser.GameObjects.Container
         if(key)
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
+            sp.setPipeline('Light2D');
             this.add(sp);
             this._sp = sp;
         }
@@ -263,8 +266,8 @@ export class Entity extends Phaser.GameObjects.Container
         });
     }
 
-    loadData() {return Record.getByUid(this.scene._data.map, this.uid);}
-    saveData(data) {Record.setByUid(this.scene._data.map, this.uid, data);}
+    loadData() {return Record.getByUid(this.mapName, this.uid);}
+    saveData(data) {Record.setByUid(this.mapName, this.uid, data);}
 
     debugDraw(type='grid')
     {

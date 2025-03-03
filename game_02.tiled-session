@@ -3,14 +3,13 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/house_01.json",
+    "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
+        "public/assets/tiles",
+        "public/assets/maps",
         ".",
         "public",
-        "public/assets/templates",
-        "public/assets/tiles",
-        "public/assets",
-        "public/assets/maps"
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -213,8 +212,8 @@
             "scale": 3,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 389.16666666666663,
-                "y": 190.83333333333331
+                "x": 331.16666666666663,
+                "y": 320
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -276,8 +275,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 544,
-                "y": 640
+                "x": 177.5,
+                "y": 1196.5
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -426,6 +425,8 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "public/assets/maps/house_01.json",
+        "public/assets/maps/village_01.json",
         "public/assets/weapons.tsj",
         "public/assets/houe_1.tsj",
         "public/assets/maps/weapons.tsj",
@@ -434,8 +435,6 @@
         "public/assets/4_Smallplaces.tsj",
         "public/assets/0_Ground_LowSat.tsj",
         "public/assets/group.tsj",
-        "public/assets/maps/village_01.json",
-        "public/assets/maps/house_01.json",
         "public/assets/maps/map.json",
         "public/assets/Archer_Blue.tsj"
     ],

@@ -10,6 +10,35 @@ import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiCase, UiInv, UiMessage, 
         UiProfile, UiChangeScene, Ui, UiGameOver} from '../ui.js'
+import TimeManager from '../time.js';
+
+
+let lutAmbient = [   
+    0x333333    ,
+    0x333333    ,
+    0x333333    ,
+    0x333333	,
+    0x666666	,
+    0x999999	,
+    0xcccccc	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xcccccc	,
+    0x999999	,
+    0x666666	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    ]
 
 export class GameScene extends Scene
 {
@@ -38,15 +67,29 @@ export class GameScene extends Scene
         this.loadRecord();
         this.uiEvent();
         this.initUI();
-
+        
         await new Map(this).createMap(this._data.map, diagonal, weight);
         this.createRuntime();
+        this.initAmbient();
+        this.initSchedule();
 
         this.setPosition(classType);
         this.processInput();
 
+        TimeManager.start();
         UiMessage.clear();
         UiChangeScene.done();
+    }
+
+    initAmbient()
+    {
+        console.log('enable light')
+        this.lights.enable();
+    }
+
+    setAmbient(time)
+    {
+        this.lights.setAmbientColor(lutAmbient[time.h]);
     }
 
     createRuntime()
@@ -62,7 +105,14 @@ export class GameScene extends Scene
     loadRecord()
     {
         QuestManager.load();
+        TimeManager.load();
+        TimeManager.register(this.setAmbient.bind(this));
         //Role.Player.load();
+    }
+
+    initSchedule()
+    {
+        // define in GameArea.js
     }
 
     setCameraFollow(mode)
@@ -105,6 +155,7 @@ export class GameScene extends Scene
         else {pos = this.ports[this._data.port].pt;}
 
         this._avatar = new classType(this,pos.x,pos.y);
+        this._avatar.init_runtime('knight');
         this._avatar.load(Record.data.player);
         this.setCameraFollow(GM.CAM_CENTER);
  
@@ -121,8 +172,7 @@ export class GameScene extends Scene
 
     processInput()
     {
-        this.keys = this.input.keyboard.createCursorKeys();
-
+        
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
@@ -155,6 +205,7 @@ export class GameScene extends Scene
             
         })
         .on('pointermove',(pointer)=>{
+
             this.showMousePos();
             if(!this._avatar.moving)
             {
@@ -163,7 +214,8 @@ export class GameScene extends Scene
             }
         })
 
-        this.input.keyboard.on('keydown',()=>{this.keyin();})
+        //this.keys = this.input.keyboard.createCursorKeys();
+        //this.input.keyboard.on('keydown',()=>{this.keyin();})
     }
 
     keyin()
@@ -231,6 +283,7 @@ export class GameScene extends Scene
         Record.data.pos = this._avatar.pos;   
         Record.data.player = this._avatar.save();
         this.objects.forEach((obj)=>{obj.save?.();})
+        TimeManager.save();
         Record.save();
     }
 

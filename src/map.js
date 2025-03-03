@@ -264,7 +264,7 @@ class Map
 
             
             map.layers.forEach((layer)=>{
-                map.createLayer(layer.name, tilesets, 0, 0);    
+                map.createLayer(layer.name, tilesets, 0, 0).setPipeline('Light2D');
             });
 
             this.createGraph(diagonal, weight);
@@ -272,7 +272,6 @@ class Map
             scene.objects = [];
 
             map.objects.forEach((layer)=>{
-
                 if(layer.name,layer.name.includes('q'))
                 {
                     if(!QuestManager.query(layer.name)){return;}
