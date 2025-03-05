@@ -222,15 +222,15 @@ export class RoleDB
                     schedule:
                     {
                         village_01:
-                        [   {type:'enter',  range:[6],      from:{x:16,y:16},     to:{x:100,y:100}}, 
-                            {type:'stay',   range:[6,16],   pos:{x:100,y:100}},
-                            {type:'exit',   range:[17],     from:{x:10,y:10},   to:{x:0,y:0}},
+                        [   {type:'enter',  range:['6:00','6:10'],      from:'門-1',    to:'point-1'}, 
+                            {type:'stay',   range:['6:10','17:00'],     pos:'point-1'},
+                            {type:'exit',   range:['17:00','17:10'],    from:'point-1', to:'門-1'},
                         ],
                         house_01:
-                        [   {type:'stay',   range:[0,5],    pos:{x:0,y:0}}, 
-                            {type:'exit',   range:[6],      from:{x:10,y:10},   to:{x:0,y:0}},
-                            {type:'enter',  range:[17],     from:{x:0,y:0},     to:{x:10,y:10}},
-                            {type:'stay',   range:[17,23],  pos:{x:10,y:10}}, 
+                        [   {type:'stay',   range:['0:00','5:50'],      pos:'point-1'},
+                            {type:'exit',   range:['5:50','6:00'],      from:'point-1',     to:'門'},
+                            {type:'enter',  range:['17:10','17:20'],    from:'門',          to:'point-1'},
+                            {type:'stay',   range:['17:20','24:00'],    pos:'point-1'}, 
                         ],
                     },
                 },

@@ -433,13 +433,26 @@ export class Pickup extends Entity
 }
 
 
-export class Entry extends Entity
+// export class Entry extends Entity
+// {
+//     init()
+//     {
+//         //super.init(mapName);
+//         if(!this.scene.entries) {this.scene.entries={};}
+//         this.scene.entries[this.name] = {x:this.x,y:this.y}
+//     }
+// }
+
+export class Point extends Entity
 {
+
+    get pt() {return {x:this.x, y:this.y}}
+
     init()
     {
-        //super.init(mapName);
-        if(!this.scene.entries) {this.scene.entries={};}
-        this.scene.entries[this.name] = {x:this.x,y:this.y}
+        super.init();
+        if(!this.scene.ports) {this.scene.ports={};}
+        this.scene.ports[this.name] = this;
     }
 }
 

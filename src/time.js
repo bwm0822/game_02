@@ -6,6 +6,7 @@ import * as Role from './role.js';
 export default class TimeManager
 {
     static time = {d:0,h:0,m:0};
+    static ticks = 0;
 
     static list = [];
 
@@ -22,6 +23,8 @@ export default class TimeManager
             this.time.d += Math.floor(this.time.h / 24);
             this.time.h = this.time.h % 24;
         }
+
+        this.ticks = this.time2Ticks(this.time);
 
         this.emit();
     }
@@ -58,7 +61,11 @@ export default class TimeManager
 
     static load()
     {
-        if(Record.data.time) {this.time = Record.data.time;}
+        if(Record.data.time) 
+        {
+            this.time = Record.data.time;
+            this.ticks = this.time2Ticks(this.time);
+        }
         this.list = [];
     }
 
@@ -69,14 +76,23 @@ export default class TimeManager
 
     static inRange(range)
     {
-        if(range.length == 1)
-        {
-            return this.time.h==range[0] && this.time.m==0;
-        }
-        else
-        {
-            return this.time.h>=range[0] && this.time.h<range[1];
-        }
+        let t0 = this.str2Ticks(range[0]);
+        let t1 = this.str2Ticks(range[1]);
+        return this.ticks>=t0 && this.ticks<t1;
+        
+    }
+
+    static time2Ticks(time)
+    {
+        return time.h * 60 + time.m;
+    }
+
+    static str2Ticks(str) 
+    {
+        let sps = str.split(':');
+        let hours = parseInt(sps[0], 10);
+        let minutes = parseInt(sps[1], 10);
+        return hours * 60 + minutes;
     }
 }
 
@@ -91,36 +107,43 @@ export class Schedular
         this.scene = scene;
 
         Roles.list.forEach((id)=>{
-            console.log(id);
             let role = RoleDB.get(id);
-            let sh = role.schedule?.[mapName];
-            if(sh)
+            let schedule = role.schedule?.[mapName];
+            if(schedule)
             {
-                let found = sh.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.range);});
+                let found = schedule.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.range);});
                 if(found)
                 {
-                    let npc = new Role.Npc(scene,found.pos.x,found.pos.y);
-                    npc.init_runtime(id).load();
+                    let pt = this.scene.ports[found.pos]?.pt;
+                    if(pt)
+                    {
+                        let npc = new Role.Npc(scene,pt.x,pt.y);
+                        npc.init_runtime(id).load();
+                    }
                 }
 
-                let shs = sh.filter((s)=>{return s.type=='enter'});
-                shs.forEach( (sh)=>{this.schedules.push({id:id,...sh});} )
+                let filter = schedule.filter((s)=>{return s.type=='enter'});
+                filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
                 
             }
         })
-
-        console.log(this.schedules);
     }
 
     static check()
     {
         //console.log('check',Schedular.schedules);
         this.schedules.forEach((sh)=>{
-            if(TimeManager.inRange(sh.range))
+            if(sh.cd==0 && TimeManager.inRange(sh.range))
             {
-                let npc = new Role.Npc(this.scene,sh.from.x,sh.from.y);
-                npc.init_runtime(sh.id).load();
+                sh.cd=60;
+                let pt = this.scene.ports[sh.from]?.pt;
+                if(pt)
+                {
+                    let npc = new Role.Npc(this.scene,pt.x,pt.y);
+                    npc.init_runtime(sh.id).load();
+                }
             }
+            else if(sh.cd>0) {sh.cd--;}
         })
     }
 }

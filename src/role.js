@@ -1291,6 +1291,9 @@ export class Role extends Entity
         this.registerTimeManager();
     }
 
+    get pos()       {return super.pos;}
+    set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value); }
+
     get moving()    {return this._des!=null;}
 
     addSprite(sprite)
@@ -1432,12 +1435,16 @@ export class Role extends Entity
     {
         if(!this._act) {return;}
 
-        this.faceTo(this._ent.pos);
+        if(this._ent) {this.faceTo(this._ent.pos);}
 
         if(this._act=='attack')
         {
             await this.step( this._ent.pos, 200, 'expo.in',
                             {yoyo:true, onYoyo:()=>{this.interact(this._ent,this._act);}} ); 
+        }
+        else if(this._act=='exit')
+        {
+            this.exit();
         }
         else
         {
@@ -1570,6 +1577,14 @@ export class Role extends Entity
         this.removeFromRoleList();
         this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
+        this.destroy();
+    }
+
+    exit()
+    {
+        this.removeWeight();
+        this.removeFromRoleList();
+        this.unregisterTimeManager();
         this.destroy();
     }
 
@@ -1904,17 +1919,44 @@ export class Npc extends Role
     {
         let sch = this.role.schedule[this.mapName];
         this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
+        this.schedule.forEach((s)=>{s.cd=0;})
     }
 
     checkSchedule()
     {
         if(this.schedule)
         {
-            let sch = this.schedule.find((s)=>{return TimeManager.inRange(s.range);})
-            if(sch)
+            let found = this.schedule.find((s)=>{return s.cd==0 && TimeManager.inRange(s.range);})
+            if(found)
             {
-                this.setDes(sch.to);
+                // let pt = this.scene.ports[found.to]?.pt;
+                // if(pt)
+                // {
+                //     let act = found.type == 'exit' ? 'exit' : null;
+                //     this.setDes(pt,null,act);
+                //     this.state = 'move';
+                // }
+
+                found.cd = 60;
+
+                let p0 = this.scene.ports[found.from];
+                let p1 = this.scene.ports[found.to];
+
+                let rst = this.scene.map.getPath(p0, p1);
+                console.log(found,rst);
+
+                let t0 = TimeManager.str2Ticks(found.range[0])
+                let t1 = TimeManager.str2Ticks(found.range[1])
+                let tc = TimeManager.ticks;
+                let ratio = (tc-t0) / (t1-t0);
+                let i = Math.floor(rst.path.length*ratio);
+                console.log(ratio, rst.path.length, i);
+
+                this.pos = rst.path[i];
+                let act = found.type == 'exit' ? 'exit' : null;
+                this.setDes(p1,null,act);
                 this.state = 'move';
+
             }
         }
     }

@@ -1,6 +1,6 @@
 import { GameScene } from "./GameScene.js";
 import * as Role from '../role.js';
-import {UiMain} from '../ui.js'
+import {UiMain, UiTime} from '../ui.js'
 import TimeManager,{Schedular} from '../time.js';
 import {Roles,RoleDB} from '../database.js';
 
@@ -19,7 +19,8 @@ export class GameArea extends GameScene
     {
         this.mode = 'normal';
         //this.mode = 'combat';
-        await super.create({diagonal:true,classType:Role.Avatar});        
+        await super.create({diagonal:true,classType:Role.Avatar});       
+        console.log(this.ports) 
         this.process();
     }
 
@@ -27,6 +28,7 @@ export class GameArea extends GameScene
     {
         super.initUI();
         UiMain.show();
+        TimeManager.register(UiTime.updateTime.bind(UiTime))
     }
 
     initSchedule()

@@ -36,34 +36,6 @@
          "name":"layer3",
          "objects":[
                 {
-                 "gid":1,
-                 "height":128,
-                 "id":12,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"knight"
-                        }, 
-                        {
-                         "name":"interactive",
-                         "type":"bool",
-                         "value":true
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":10
-                        }],
-                 "rotation":0,
-                 "type":"npc",
-                 "visible":true,
-                 "width":128,
-                 "x":48,
-                 "y":1056
-                }, 
-                {
                  "id":18,
                  "template":"..\/templates\/exit_b.tj",
                  "type":"port",
@@ -304,8 +276,7 @@
                  "width":32,
                  "x":192,
                  "y":928
-                },
-            
+                }, 
                 {
                  "gid":257,
                  "height":27,
@@ -328,7 +299,8 @@
                  "width":32,
                  "x":192,
                  "y":1120
-                }, 
+                },
+            
                 {
                  "id":95,
                  "template":"..\/templates\/house.tj",
@@ -352,7 +324,7 @@
                         {
                          "name":"port",
                          "type":"string",
-                         "value":"\u5165\u53e3"
+                         "value":"\u9580"
                         }],
                  "template":"..\/templates\/port.tj",
                  "x":320,
@@ -375,6 +347,17 @@
                  "width":32,
                  "x":512,
                  "y":1056
+                }, 
+                {
+                 "height":32,
+                 "id":100,
+                 "name":"point-1",
+                 "rotation":0,
+                 "type":"point",
+                 "visible":true,
+                 "width":32,
+                 "x":672,
+                 "y":896
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -383,7 +366,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":99,
+ "nextobjectid":102,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

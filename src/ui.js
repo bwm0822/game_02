@@ -42,6 +42,8 @@ export default function createUI(scene)
 
     new UiDebuger(scene);
 
+    new UiTime(scene);
+
 }
 
 
@@ -2259,5 +2261,44 @@ class UiDebuger extends UiBase
     }
 
     static show() {UiDebuger.instance?.show();}
+}
+
+export class UiTime extends UiBase
+{
+    static instance=null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : 0,
+            y : 0,
+            orientation: 'y',
+            space:{top:10,bottom:10,left:10,right:10,item:10},
+        }
+
+        super(scene,config)
+        UiTime.instance=this;
+        this.scene=scene;
+        this.addBg(scene)
+            .addTime(scene)
+            .setOrigin(0)
+            .layout()
+    }
+
+    addTime(scene)
+    {
+        this.time = text(scene,{text:'D1 10:01'});
+        this.add(this.time)
+        return this;
+    }
+
+    static updateTime(time)
+    {
+        let h = String(time.h).padStart(2, '0');
+        let m = String(time.m).padStart(2, '0');
+        this.instance.time.setText(`D${time.d} ${h}:${m}`);
+    }
+
+
 }
 
