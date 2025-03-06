@@ -65,7 +65,7 @@ export class GameScene extends Scene
         this.ports = {};
         this.roles = [];
         this.loadRecord();
-        this.uiEvent();
+        this.setEvent();
         this.initUI();
         
         await new Map(this).createMap(this._data.map, diagonal, weight);
@@ -283,6 +283,7 @@ export class GameScene extends Scene
         Record.data.pos = this._avatar.pos;   
         Record.data.player = this._avatar.save();
         this.objects.forEach((obj)=>{obj.save?.();})
+        this.roles.forEach((role)=>{role.uid==-1 && role.save();})
         TimeManager.save();
         Record.save();
     }
@@ -339,7 +340,7 @@ export class GameScene extends Scene
         this._dbg.strokeCircleShape(circle);
     }
 
-    uiEvent()
+    setEvent()
     {
         if(!this._done)
         {
@@ -356,6 +357,7 @@ export class GameScene extends Scene
                 .on('equip', ()=>{UiProfile.refresh();})
                 .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
+                .on('stove',(owner)=>{console.log('stove');})
         }
 
         const ui = this.scene.get('UI');

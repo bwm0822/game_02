@@ -34,6 +34,7 @@ export let GM =
     ICON_BOOTS : 'icons/130',
     ICON_NECKLACE : 'icons/134',
     ICON_RING : 'icons/133',
+    ICON_ITEM : 'icons/170',
 
     CAT_WEAPON: 'weapon',
     CAT_HELMET: 'helmet',
@@ -42,6 +43,7 @@ export let GM =
     CAT_BOOTS: 'boots',
     CAT_NECKLACE: 'necklace',
     CAT_RING: 'ring',
+    CAT_ITEM: 'item',
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)

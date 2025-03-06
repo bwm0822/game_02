@@ -1,0 +1,14 @@
+{ "columns":16,
+ "image":"icons\/icons.png",
+ "imageheight":867,
+ "imagewidth":512,
+ "margin":0,
+ "name":"icons",
+ "spacing":0,
+ "tilecount":432,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

@@ -375,6 +375,7 @@ class EquipSlot extends Slot
         boots       : GM.ICON_BOOTS,
         necklace    : GM.ICON_NECKLACE,
         ring        : GM.ICON_RING,
+        item        : GM.ICON_ITEM,
     }
 
     constructor(scene, w, h, id, getOwner, config, cat)
@@ -859,7 +860,8 @@ class Option extends UiBase
             .addButton('observe',this.observe.bind(this))
             .addButton('attack')
             .addButton('open')
-            // slot
+            .addButton('tool')
+            // for slot
             .addButton('buy',this.trade.bind(this))
             .addButton('sell',this.trade.bind(this))
             .addButton('transfer',this.transfer.bind(this))
@@ -1163,6 +1165,7 @@ export class UiInv extends UiBase
             .add(equip(i++, GM.CAT_NECKLACE, getOwner))
             .add(equip(i++, GM.CAT_RING, getOwner))
             .add(equip(i++, GM.CAT_RING, getOwner))
+            .add(equip(i++, GM.CAT_ITEM, getOwner))
 
         this.add(grid,{key:'equip'});
         return this;
@@ -1369,6 +1372,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
         exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
         open :  {sprite:'cursors/gauntlet_open', origin:{x:0.5,y:0.5}, scale:1},
+        tool :  {sprite:'cursors/tool_wrench', origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;
@@ -2254,6 +2258,7 @@ class UiDebuger extends UiBase
             for(let i=1;i<args.length;i++)
             {
                 let [type,val]=args[i].split(':');
+                console.log(type,val);
                 TimeManager.set(type,val)
             }
         }
@@ -2298,7 +2303,5 @@ export class UiTime extends UiBase
         let m = String(time.m).padStart(2, '0');
         this.instance.time.setText(`D${time.d} ${h}:${m}`);
     }
-
-
 }
 

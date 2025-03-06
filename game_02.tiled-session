@@ -138,6 +138,11 @@
                 "y": 278
             }
         },
+        "public/assets/icons.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/icons/buffs.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
@@ -212,8 +217,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 276.33333333333337,
-                "y": 121.66666666666666
+                "x": 342.3333333333333,
+                "y": 320
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -409,7 +414,7 @@
         }
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
-    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/items",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/icons",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
     "map.height": 20,
@@ -425,6 +430,7 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "public/assets/icons.tsj",
         "public/assets/maps/house_01.json",
         "public/assets/maps/village_01.json",
         "public/assets/weapons.tsj",
@@ -435,8 +441,7 @@
         "public/assets/4_Smallplaces.tsj",
         "public/assets/0_Ground_LowSat.tsj",
         "public/assets/group.tsj",
-        "public/assets/maps/map.json",
-        "public/assets/Archer_Blue.tsj"
+        "public/assets/maps/map.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

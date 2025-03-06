@@ -1334,13 +1334,28 @@ export class Role extends Entity
         this.updateDepth();
         this.addWeight();
 
-        // this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1)
-        // this.light.x = this.x;
-        // this.light.y = this.y; 
-
         //this.debugDraw('zone')
 
         return this;
+    }
+
+    addLight()
+    {
+        if(!this.light)
+        {
+            this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1);
+            this.light.x = this.x;
+            this.light.y = this.y;
+        }
+    }
+
+    removeLight()
+    {
+        if(this.light)
+        {
+            this.scene.lights.removeLight(this.light);
+            this.light = null;
+        }
     }
 
     addToRoleList() {this.scene.roles.push(this);}
@@ -1636,6 +1651,7 @@ export class Role extends Entity
     {
         this.status.attrs = Utility.deepClone(this.role.attrs);
         this.status.states = Utility.deepClone(this.role.states); 
+        this.removeLight();
 
         this.status.equips.forEach((equip)=>{
             //console.log(equip);
@@ -1659,7 +1675,13 @@ export class Role extends Entity
                     }
                 }
             }
+
+            if(equip?.id == 'torch')
+            {
+                this.addLight();
+            }
         })
+
 
         this.send('equip'); // UiProfile.refresh()
     }
@@ -1995,6 +2017,32 @@ export class Npc extends Role
 
         this.setSchedule();
         this.checkSchedule();
+    }
+
+    loadData()
+    {
+        if(this.uid==-1)
+        {
+            return Record.data.roles?.[this.id];
+        }
+        else
+        {
+            return super.loadData();
+        }
+    }
+
+    saveData(value)
+    {
+        if(this.uid==-1)
+        {
+            if(!Record.data.roles) {Record.data.roles={};}
+            Record.data.roles[this.id]=value;
+        }
+        else
+        {
+            super.saveData(value);
+        }
+
     }
 
     save() {this.saveData(this.status);}

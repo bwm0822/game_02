@@ -358,6 +358,18 @@
                  "width":32,
                  "x":672,
                  "y":896
+                }, 
+                {
+                 "gid":897,
+                 "height":32,
+                 "id":102,
+                 "name":"",
+                 "rotation":0,
+                 "type":"stove",
+                 "visible":true,
+                 "width":32,
+                 "x":736,
+                 "y":1056
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -366,7 +378,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":102,
+ "nextobjectid":103,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -395,6 +407,10 @@
         {
          "firstgid":503,
          "source":"..\/weapons.tsj"
+        }, 
+        {
+         "firstgid":584,
+         "source":"..\/icons.tsj"
         }],
  "tilewidth":32,
  "type":"map",

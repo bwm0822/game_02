@@ -31,7 +31,7 @@ export default class TimeManager
 
     static set(type,val)
     {
-        if(this.time[type]) 
+        if(type in this.time)
         {
             this.time[type] = parseInt(val, 10);
             console.log(this.time);

@@ -432,6 +432,25 @@ export class Pickup extends Entity
     }
 }
 
+export class Stove extends Entity
+{
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);  
+        this.weight = 1000;
+        this.interactive = true;    
+    }
+
+    get acts()  {return ['tool'];}
+
+    addListener()
+    {
+        super.addListener();
+        this.on('tool',(owner)=>{this.send('stove',owner)})
+    }
+
+}
+
 
 // export class Entry extends Entity
 // {

@@ -2,7 +2,7 @@
 //import {Node} from './node.js';
 //import {Port} from './port.js';
 import {Store} from './store.js';
-import {Entity,Port,Pickup,Case,Node,Point} from './entity.js';
+import {Entity,Port,Pickup,Case,Node,Point,Stove} from './entity.js';
 import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
@@ -294,6 +294,7 @@ class Map
                     {type:'npc',classType:Npc},
                     {type:'case',classType:Case},
                     {type:'point',classType:Point},
+                    {type:'stove',classType:Stove},
                 ]);
                 let rmList=[];
                 objs.forEach((obj) => { if(obj.init?.()){rmList.push(obj)}; });
