@@ -23,6 +23,7 @@ export default function createUI(scene)
     //t1();
     new UiCover(scene);
     new UiMain(scene);
+    new UiManufacture(scene);
     new UiProfile(scene);
     new UiCursor(scene);
     new UiInv(scene);
@@ -41,6 +42,7 @@ export default function createUI(scene)
     new UiChangeScene(scene);
 
     new UiDebuger(scene);
+
 
     new UiTime(scene);
 
@@ -159,8 +161,10 @@ class Slot extends Icon
     get item() {return this._item;}
 
     get isEmpty() {return Utility.isEmpty(this.slot);}
-    get container() {return this.owner?.status?.bag?.items;}
-    get capacity() {return this.owner?.status?.bag?.capacity; }
+    //get container() {return this.owner?.status?.bag?.items;}
+    //get capacity() {return this.owner?.status?.bag?.capacity; }
+    get container() {return this.owner?.storage?.items;}
+    get capacity() {return this.owner?.storage?.capacity; }
     get owner() {return this._getOwner?.();}
     get isValid() {return true;}
     get acts() {return !this.owner.trade ? this.owner.target ? ['transfer','use','drop'] 
@@ -775,7 +779,7 @@ class UiBase extends Sizer
         sz//.addBackground(rect(scene,{color:GM.COLOR_GRAY}))
             .add(text(scene,{text:label}),{align:'center',expand:false,key:'label'})
             .add(new UiButton(scene,{icon:GM.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
-        this.add(sz,{expand:true, key:'top'});
+        this.add(sz,{padding:{left:5,right:5}, expand:true, key:'top'});
         return this;
     }
 
@@ -2275,8 +2279,8 @@ export class UiTime extends UiBase
     {
         let config =
         {
-            x : 0,
-            y : 0,
+            x : GM.w,
+            y : GM.h,
             orientation: 'y',
             space:{top:10,bottom:10,left:10,right:10,item:10},
         }
@@ -2286,7 +2290,7 @@ export class UiTime extends UiBase
         this.scene=scene;
         this.addBg(scene)
             .addTime(scene)
-            .setOrigin(0)
+            .setOrigin(1,1)
             .layout()
     }
 
@@ -2303,5 +2307,91 @@ export class UiTime extends UiBase
         let m = String(time.m).padStart(2, '0');
         this.instance.time.setText(`D${time.d} ${h}:${m}`);
     }
+}
+
+export class UiManufacture extends UiBase
+{
+    static instance=null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : 0,
+            y : 0,
+            width : 450,
+            height : 500,
+            orientation : 'y',
+            space : 0,
+        }
+
+        super(scene,config)
+        UiManufacture.instance=this;
+        this.scene=scene;
+        this.addBg_Int(scene)
+            .addTop(scene,'製作')
+            .addMain(scene)
+            .setOrigin(0)
+            .layout()
+            .hide()
+    }
+
+    addMain(scene)
+    {
+        let config = 
+        {
+            height:400,
+            orientation:'x',
+        }
+
+        let main = scene.rexUI.add.sizer(config);
+        main.addMenu = this.addMenu;
+        main.addProduce = this.addProduce;
+        main.addGrid = this.addGrid;
+        main.getOwner = this.getOwner.bind(this);
+        main.addBackground(rect(scene))
+            .addMenu(scene, {expand:true})
+            .addProduce(scene, {expand:true})
+        this.add(main, {padding:{left:10,right:10},expand:true})
+        return this;
+    }
+
+
+    addMenu(scene)
+    {
+        let config = {
+            width: 100,
+            background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
+            panel: {
+                child: scene.rexUI.add.sizer({orientation:'y',space:5}),
+            },
+        }
+        let menu = scene.rexUI.add.scrollablePanel(config);
+        this.add( menu, {expand:true} );
+        menu.getElement('panel').add(text(scene,{text:'炒飯'}),{align:'left'});
+        return this;
+    }
+
+    addProduce(scene)
+    {
+        let config = {
+          width: 300,
+          orientation:'y',
+        }
+        let sizer = scene.rexUI.add.sizer(config);
+        sizer.addGrid = this.addGrid;
+        sizer.addBackground( rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}) )
+            .addGrid(scene, 3, 3, this.getOwner, {top:10})
+        this.add( sizer, {expand:true} );
+        return this;
+    }
+
+    show(owner)
+    {
+        this.owner = owner;
+        console.log(this.getOwner())
+        super.show();
+    }
+
+    static show(owner) {this.instance.show(owner);}
 }
 

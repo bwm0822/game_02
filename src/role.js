@@ -1295,6 +1295,7 @@ export class Role extends Entity
     set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value); }
 
     get moving()    {return this._des!=null;}
+    get storage()   {return this.status.bag;}
 
     addSprite(sprite)
     {

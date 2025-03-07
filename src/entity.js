@@ -148,7 +148,8 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debug(depth.toFixed(1));
     }
 
-    toBag(capacity,items)
+    //toBag(capacity,items)
+    toStorage(capacity,items)
     {
         let bag={capacity:capacity,items:[]};
         items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item};})
@@ -336,16 +337,61 @@ export class Entity extends Phaser.GameObjects.Container
 
 }
 
+// export class Case extends Entity
+// {
+//     constructor(scene)
+//     {
+//         super(scene);    
+//         this.interactive = true;
+//         this.status = {};
+//     }
+
+//     get acts()  {return ['open'];}
+
+//     addListener()
+//     {
+//         super.addListener();
+//         this.on('open',()=>{this.open()})
+//     }
+
+//     init()
+//     {
+//         super.init();
+//         this.load();
+//     }
+
+//     load()
+//     {
+//         this.owner={name:this.name};
+//         let data = this.loadData();
+//         if(data) {this.status.bag = data;}
+//         else 
+//         {
+//             let jsonData = this.data?.get('items');
+//             let items = jsonData ? JSON.parse(jsonData) : [];
+//             this.status.bag = this.toBag(-1,items);
+//         }   
+//     }
+
+//     save() { this.saveData(this.status.bag); }
+
+//     open() { this.send('case', this); }
+
+   
+// }
+
+
 export class Case extends Entity
 {
     constructor(scene)
     {
         super(scene);    
         this.interactive = true;
-        this.status = {};
+        this._storage = {};
     }
 
     get acts()  {return ['open'];}
+    get storage() {return this._storage;}
 
     addListener()
     {
@@ -363,16 +409,16 @@ export class Case extends Entity
     {
         this.owner={name:this.name};
         let data = this.loadData();
-        if(data) {this.status.bag = data;}
+        if(data) {this._storage = data;}
         else 
         {
             let jsonData = this.data?.get('items');
             let items = jsonData ? JSON.parse(jsonData) : [];
-            this.status.bag = this.toBag(-1,items);
+            this._storage = this.toStorage(-1,items);
         }   
     }
 
-    save() { this.saveData(this.status.bag); }
+    save() { this.saveData(this._storage); }
 
     open() { this.send('case', this); }
 
@@ -438,15 +484,17 @@ export class Stove extends Entity
     {
         super(scene,x,y);  
         this.weight = 1000;
-        this.interactive = true;    
+        this.interactive = true;  
+        this._storage = {capacity:-1,items:[]};  
     }
 
     get acts()  {return ['tool'];}
+    get storage() {return this._storage;}
 
     addListener()
     {
         super.addListener();
-        this.on('tool',(owner)=>{this.send('stove',owner)})
+        this.on('tool',()=>{this.send('stove',this)})
     }
 
 }

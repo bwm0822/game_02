@@ -9,7 +9,7 @@ import {QuestManager} from  '../quest.js';
 import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiCase, UiInv, UiMessage, 
-        UiProfile, UiChangeScene, Ui, UiGameOver} from '../ui.js'
+        UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture} from '../ui.js'
 import TimeManager from '../time.js';
 
 
@@ -357,7 +357,7 @@ export class GameScene extends Scene
                 .on('equip', ()=>{UiProfile.refresh();})
                 .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
-                .on('stove',(owner)=>{console.log('stove');})
+                .on('stove',(owner)=>{UiManufacture.show(owner);})
         }
 
         const ui = this.scene.get('UI');
