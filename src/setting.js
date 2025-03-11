@@ -55,6 +55,17 @@ export let GM =
     SELLER : 1,
     BUYER : 2,
 
+    BTN_NORMAL : 'normal',
+    BTN_NOBG : 'nobg',
+    BTN_TEXT : 'text',   
+
+    UI_LEFT :   0b00001,
+    UI_LEFT_P : 0b00010,
+    UI_RIGHT :  0b00100,
+    UI_BOTTOM : 0b01000,
+    UI_MSG :    0b10000,
+    UI_ALL :    0b11111,
+
     T_CHANGE_SCENE: 500, // 轉場漸暗時間 ms
 
 }

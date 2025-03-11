@@ -486,15 +486,86 @@ export class Stove extends Entity
         this.weight = 1000;
         this.interactive = true;  
         this._storage = {capacity:-1,items:[]};  
+        this._output = null;
     }
 
     get acts()  {return ['tool'];}
     get storage() {return this._storage;}
+    get output() {return this._output;}
+    set output(value) {return this._output=value;}
+    get menu()  {return ['sword_02','sword_03'];}    
+    get isFull() {return this._output?.count>0;}
+    get sel() {return this._sel;}
+    set sel(id) {
+        this._sel = id;
+        this._make = ItemDB.get(id).make;
+        this._output = {id:id,count:0};
+    }
+
+    init()
+    {
+        super.init();
+        this.load();
+    }
 
     addListener()
     {
         super.addListener();
         this.on('tool',()=>{this.send('stove',this)})
+    }
+
+    check()
+    {
+        if(!this._sel) {return false}
+        if(this.isFull) {return false;}
+        for(let [id,count] of Object.entries(this._make.items))
+        {
+            if(this.count(id)<count) {return false;}
+        }
+        return true;
+    }
+
+    count(id)
+    {
+        return this._storage.items.filter(slot=>slot?.id==id).length;
+    }
+
+    make()
+    {
+        for(let [id,count] of Object.entries(this._make.items))
+        {
+            for(let i=0;i<count;i++)
+            {
+                let index = this._storage.items.findIndex(slot=>slot?.id==id);
+                this._storage.items.splice(index,1);
+            }
+        }
+
+        this._output.count++;
+    }
+
+    load()
+    {
+        this.owner={name:this.name};
+        let data = this.loadData();
+        if(data) 
+        {
+            this._storage = data.storage;
+            this._output = data.output;
+        }
+        else 
+        {
+            this._storage = {capacity:-1,items:[]}; 
+            this._output = null;
+        }   
+
+        console.log('------------load',this._storage,this._output);
+    }
+
+    save() 
+    { 
+        let output = this._output?.count>0 ? this._output : null;
+        this.saveData({storage:this._storage,output:output}); 
     }
 
 }

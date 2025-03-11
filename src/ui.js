@@ -46,6 +46,13 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
+    t3({});
+
+}
+
+function t3(config={a:0,b:1,c:2})
+{
+    console.log(config.a,config.b,config.c,config.d);
 }
 
 
@@ -138,31 +145,38 @@ function send(event) {uiScene.events.emit(event);}
 export class Ui
 {
     static _list = {};
-    static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].close(force);}}
-    static refreshAll() {for(let key in Ui._list){Ui._list[key].refresh?.();}}
-    static register(obj) {Ui._list[obj.constructor.name]=obj;}
-    static unregister(obj) {delete Ui._list[obj.constructor.name];}
+    //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
+    static closeAll(mode=GM.UI_FORCE) 
+    {
+        for(let key in Ui._list)
+        {
+            if((Ui._list[key].type&mode) != 0) {Ui._list[key].ui.close();}
+        }
+    }
+    static refreshAll() {for(let key in Ui._list){Ui._list[key].ui.refresh?.();}}
+    static register(ui,type) {Ui._list[ui.constructor.name]={ui:ui,type:type};}
+    static unregister(ui) {delete Ui._list[ui.constructor.name];}
 }
 
 class Slot extends Icon
 {
-    constructor(scene, w, h, id, getOwner, config)
+    constructor(scene, w, h, i, getOwner, config)
     {
         super(scene, w, h, config);
-        this._id = id
+        this.addBackground(rect(scene,{color:GM.COLOR_BLACK, radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.getElement('disabled').fillAlpha=0;
+        this._i = i;
         this._getOwner = getOwner;
         this.addListener();
     }
 
-    get slot() {return this.container?.[this._id];}
-    set slot(value) {this.container[this._id]=value; this.setSlot(value);}
+    get slot() {return this._i>=0?this.container?.[this._i]:this.container;}
+    set slot(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
 
     get gold() {return this._item?.gold;}
     get item() {return this._item;}
 
-    get isEmpty() {return Utility.isEmpty(this.slot);}
-    //get container() {return this.owner?.status?.bag?.items;}
-    //get capacity() {return this.owner?.status?.bag?.capacity; }
+    get isEmpty() {return Utility.isEmpty(this.slot)||this.slot.count==0;}
     get container() {return this.owner?.storage?.items;}
     get capacity() {return this.owner?.storage?.capacity; }
     get owner() {return this._getOwner?.();}
@@ -174,6 +188,7 @@ class Slot extends Icon
 
     get trading() {return this.owner.trade != UiDragged.owner.trade;}
     get enabled() {return this.capacity==-1 || this._id<this.capacity;}
+    get dropable() {return true;}
 
     setSlot(value)
     {
@@ -224,12 +239,14 @@ class Slot extends Icon
         if(on)
         {
             this.setInteractive({draggable:true,dropZone:true});
-            this.setBgColor(GM.COLOR_SLOT);
+            //this.setBgColor(GM.COLOR_SLOT);
+            this.getElement('disabled').fillAlpha=0;
         }
         else
         {
             this.disableInteractive();
-            this.setBgColor(GM.COLOR_SLOT_DISABLE);
+            //this.setBgColor(GM.COLOR_SLOT_DISABLE);
+            this.getElement('disabled').fillAlpha=0.6;
         }
     }
 
@@ -237,7 +254,7 @@ class Slot extends Icon
     
     over(check=true)
     {
-        if(UiDragged.on) 
+        if(this.dropable && UiDragged.on) 
         {
             if(this.trading)
             {
@@ -290,7 +307,7 @@ class Slot extends Icon
     leftButtonDown(x,y)
     {
         UiInfo.close();
-        if(UiDragged.on)
+        if(this.dropable && UiDragged.on)
         {            
             if(this.isValid)
             {
@@ -298,7 +315,7 @@ class Slot extends Icon
                 {
                     if(!this.isEmpty) {return;}
 
-                    if(UiDragged.owner.sell(this.owner, UiDragged, this._id, this.isEquip))
+                    if(UiDragged.owner.sell(this.owner, UiDragged, this._i, this.isEquip))
                     {
                         UiDragged.clear();
                         Ui.refreshAll();
@@ -382,10 +399,10 @@ class EquipSlot extends Slot
         item        : GM.ICON_ITEM,
     }
 
-    constructor(scene, w, h, id, getOwner, config, cat)
+    constructor(scene, w, h, i, getOwner, config)
     {
-        super(scene, w, h, id, getOwner, config);
-        this._cat = cat;
+        super(scene, w, h, i, getOwner, config);
+        this._cat = config?.cat;
         this.setIcon();
     }
 
@@ -417,6 +434,45 @@ class EquipSlot extends Slot
     }
 
 }
+
+class MatSlot extends Slot
+{
+    constructor(scene, w, h, i, getOwner, config)
+    {
+        super(scene, w, h, i, getOwner, config);
+        this.onset = config?.onset;
+    }
+
+    // get, set 都要 assign 才會正常 work
+    get slot() {return super.slot;}
+    set slot(value) {super.slot=value; this.onset?.();}
+}
+
+class OutputSlot extends Slot
+{
+    constructor(scene, w, h, getOwner, config)
+    {
+        super(scene, w, h, -1, getOwner, config);
+        this.onset = config?.onset;
+    }
+
+    get dropable() {return false;}
+    get container() {return this.owner?.output;}
+    set container(value) {this.owner.output=value;}
+    get capacity() {return -1; }
+
+    // get, set 都要 assign 才會正常 work
+    get slot() {return super.slot;}
+    set slot(value) {super.slot=value; this.onset?.();}
+
+    setSlot(value)
+    {
+        console.log(value)
+        this._item = ItemDB.get(value?.id);
+        this.setIcon(this._item?.icon,{alpha:value?.count>0?1:0.25});
+    }
+}
+
 
 export class UiDragged extends Pic
 {
@@ -488,25 +544,89 @@ export class UiDragged extends Pic
 
 }
 
+// class UiButton extends Sizer
+// {
+//     constructor(scene,option)
+//     {
+//         super(scene,option);
+//         this.onclick=option?.onclick;
+//         if(option?.rect)
+//         {
+//             this.addBackground(option.rect,'rect')
+//             if(option?.text){ this.add(text(scene,{text:option.text})) }
+//         }
+//         else if(option?.text) 
+//         {
+//             this.addBackground(rect(scene,{color:GM.COLOR_SLOT_OVER,alpha:0}),'bg')
+//                 .add(text(scene,{text:option.text}))
+//         }
+//         else if(option?.icon) 
+//         {
+//             this.add(sprite(scene,{icon:option.icon}),{key:'sp'})
+//         }
+
+//         this.layout().addListener()
+//         scene.add.existing(this);
+        
+//     }
+
+//     addListener()
+//     {
+//         let rect = this.getElement('rect');
+//         let bg = this.getElement('bg');
+//         let sp = this.getElement('sp');
+
+//         let over = function(on)
+//         {
+//             rect && (rect.fillAlpha = on ? 0.5 : 1 );
+//             bg && (bg.fillAlpha = on ? 1 : 0); 
+//             sp && sp.setTint( on ? 0x777777 : 0xffffff);
+//         }
+
+//         this.setInteractive();
+//         this
+//             // .on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
+//             // .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
+//             .on('pointerover',()=>{over(true);})
+//             .on('pointerout',()=>{over(false);})
+//             .on('pointerdown',()=>{this.onclick&&this.onclick();})
+//     }
+
+//     setEnable(on)
+//     {
+//         this.setInteractive(on);
+//         if(on) {this.getElement('bg').setAlpha(0);}
+//         else {this.getElement('bg').setAlpha(0.5);}
+//     }
+// }
+
+
 class UiButton extends Sizer
 {
     constructor(scene,option)
     {
         super(scene,option);
-        this.onclick=option?.onclick;
-        if(option?.rect)
+        this.onclick = option?.onclick;
+        this.type = option.type ?? GM.BTN_NORMAL;
+
+        switch(this.type)
         {
-            this.addBackground(option.rect,'rect')
-            if(option?.text){ this.add(text(scene,{text:option.text})) }
-        }
-        else if(option?.text) 
-        {
-            this.addBackground(rect(scene,{color:GM.COLOR_SLOT_OVER,alpha:0}),'bg')
-                .add(text(scene,{text:option.text}))
-        }
-        else if(option?.icon) 
-        {
-            this.add(sprite(scene,{icon:option.icon}),{key:'sp'})
+            case GM.BTN_NORMAL:
+                let bg = option.bg ?? rect(scene,{color:GM.COLOR_DARK,radius:10,});
+                this.addBackground(bg,'bg')
+                if(option.text) { this.add(text(scene,{text:option.text}),{padding:10,key:'text'}); }
+                if(option.icon) { this.add(sprite(scene,{icon:option.icon}),{padding:10,key:'icon'}); }
+                break;
+
+            case GM.BTN_NOBG:
+                if(option.text) { this.add(text(scene,{text:option.text}),{key:'text'}); }
+                if(option.icon) { this.add(sprite(scene,{icon:option.icon}),{key:'icon'}); }
+                break;
+
+            case GM.BTN_TEXT:
+                this.addBackground( rect(scene,{color:GM.COLOR_SLOT,alpha:0}),'bg' )
+                if(option.text) { this.add(text(scene,{text:option.text}),{key:'text'}); }
+                break;
         }
 
         this.layout().addListener()
@@ -516,15 +636,25 @@ class UiButton extends Sizer
 
     addListener()
     {
-        let rect = this.getElement('rect');
         let bg = this.getElement('bg');
-        let sp = this.getElement('sp');
+        let icon = this.getElement('icon');
+        let text = this.getElement('text');
 
-        let over = function(on)
-        {
-            rect && (rect.fillAlpha = on ? 0.5 : 1 );
-            bg && (bg.fillAlpha = on ? 1 : 0); 
-            sp && sp.setTint( on ? 0x777777 : 0xffffff);
+        let over = (on)=>{
+
+            switch(this.type)
+            {
+                case GM.BTN_NORMAL: 
+                    bg && (bg.fillAlpha = on ? 0.5 : 1); 
+                    break;
+                case GM.BTN_NOBG: 
+                    icon && (icon.setTint( on ? 0x777777 : 0xffffff)); 
+                    text && (text.setTint( on ? 0x777777 : 0xffffff)); 
+                    break;
+                case GM.BTN_TEXT: 
+                    bg && (bg.fillAlpha = on ? 1 : 0); 
+                    break;
+            }
         }
 
         this.setInteractive();
@@ -535,7 +665,27 @@ class UiButton extends Sizer
             .on('pointerout',()=>{over(false);})
             .on('pointerdown',()=>{this.onclick&&this.onclick();})
     }
+
+    setEnable(on)
+    {        
+        if(on) 
+        {
+            this.setInteractive();
+            this.getElement('bg')?.setAlpha(1);
+            this.getElement('icon')?.setAlpha(1);
+            this.getElement('text')?.setAlpha(1);
+        }
+        else 
+        {
+            this.disableInteractive();
+            this.getElement('bg')?.setAlpha(0.5);
+            this.getElement('icon')?.setAlpha(0.5);
+            this.getElement('text')?.setAlpha(0.5);
+        }
+    }
 }
+
+
 
 class UiCover extends Sizer
 {
@@ -645,6 +795,19 @@ class UiInfo extends Sizer
         return this;
     }
 
+    addMake(item)
+    {
+        this.addDivider();
+        let text = `[color=yellow]需求[/color]\n`;
+        Object.entries(item.make.items).forEach(([key,value])=>{
+            let item = ItemDB.get(key);
+            text+=`- ${item.name} (${value})\n`;
+        });
+        this.add(bbcText(this.scene,{text:text}),{expand:true});
+        return this;
+        
+    }
+
     addGold(item)
     {
         if(item.gold)
@@ -664,10 +827,23 @@ class UiInfo extends Sizer
             .addTitle(item)
             .addCat(item)
             .addProps(item)
-            .addDescript(item)
-            .addGold(item)
-            .layout()
+
+        if(slot.type=='make') 
+        {
+            this.addMake(item)
+                .addDescript(item)
+                .layout()
+        }
+        else
+        {
+            this.addDescript(item)
+                .addGold(item)
+                .layout()
+        }
+            
     }
+
+
 
 
     show(target)
@@ -752,9 +928,9 @@ class UiBase extends Sizer
     // register() {UiBase._register[this.constructor.name]=this;}
     // unregister() {delete UiBase._register[this.constructor.name];}
 
-    closeAll(force) {Ui.closeAll(force);}
+    closeAll(mode) {Ui.closeAll(mode);}
     refreshAll() {Ui.refreshAll();}
-    register() {Ui.register(this);}
+    register(type) {Ui.register(this,type);}
     unregister() {Ui.unregister(this);}
 
     getOwner() {return this.owner;}
@@ -778,29 +954,81 @@ class UiBase extends Sizer
         let sz = scene.rexUI.add.overlapSizer();
         sz//.addBackground(rect(scene,{color:GM.COLOR_GRAY}))
             .add(text(scene,{text:label}),{align:'center',expand:false,key:'label'})
-            .add(new UiButton(scene,{icon:GM.ICON_CLOSE, onclick:this.close.bind(this)}),{align:'right',expand:false})
+            .add(new UiButton(scene,{icon:GM.ICON_CLOSE,type:'nobg', onclick:this.close.bind(this)}),{align:'right',expand:false})
         this.add(sz,{padding:{left:5,right:5}, expand:true, key:'top'});
         return this;
     }
 
-    addGrid(scene, column, row, getOwner, space)
+    // addGrid(scene, column, row, getOwner, space)
+    // {
+    //     let config =
+    //     {
+    //         column: column,
+    //         row: row,
+    //         space: {column:5,row:5,...space},
+    //     }
+
+    //     let grid = scene.rexUI.add.gridSizer(config);
+    //     let count = config.column * config.row;
+    //     for(let i=0; i<count; i++)
+    //     {
+    //         let slot = new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE, i, getOwner);
+    //         grid.add(slot);
+    //     }
+
+    //     this.add(grid,{key:'grid'});
+    //     return this;
+    // }
+
+    addGrid(scene, column, row, getOwner, ext={})
     {
         let config =
         {
             column: column,
             row: row,
-            space: {column:5,row:5,...space},
+            space: {column:5,row:5,...ext.space},
         }
+
+        let slot_w = ext.slot_w ?? GM.SLOT_SIZE;
+        let slot_h = ext.slot_h ?? GM.SLOT_SIZE;
+
+        let classT = ext.classT ?? Slot;
+        let classC = ext.classC ?? {};
 
         let grid = scene.rexUI.add.gridSizer(config);
         let count = config.column * config.row;
         for(let i=0; i<count; i++)
         {
-            let slot = new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE, i, getOwner);
+            let slot = new classT(scene, slot_w, slot_h, i, getOwner, classC);
             grid.add(slot);
         }
 
         this.add(grid,{key:'grid'});
+        return this;
+    }
+
+    addScroll(scene, {  width=0, height=0,
+                        bg={alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2},
+                        panel={orientation:'y',space:5},
+                        add={expand:true, key:'scroll'},
+                    }={})
+    {
+        let config = 
+        {
+            width: width,
+            height: height,
+            background: rect(scene, bg),
+            panel: {child:scene.rexUI.add.sizer(panel)},
+            slider: {
+                track: rect(scene,{width:15,color:GM.COLOR_DARK}),
+                thumb: rect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+                space: 5,
+                hideUnscrollableSlider: true,
+                disableUnscrollableDrag: true,
+            },
+        }
+        let scroll = scene.rexUI.add.scrollablePanel(config);
+        this.add(scroll, add);
         return this;
     }
 
@@ -822,6 +1050,25 @@ class UiBase extends Sizer
         return this;
     }
 
+    item(id,{onover,onout,ondown}={})
+    {
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        let item = ItemDB.get(id);
+        sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
+            .add(text(this.scene,{text:item.name.local(),color:'#777777'}),{key:'label'})
+        let bg = sizer.getElement('bg').setAlpha(0);
+        let lb = sizer.getElement('label');
+        sizer.unsel = ()=>{lb.setColor('#777777');}
+        sizer.sel = ()=>{lb.setColor('#ffffff');}
+        sizer.setInteractive()
+            .on('pointerover',()=>{ onover?.(sizer); bg.alpha=1; })
+            .on('pointerout',()=>{ bg.alpha=0; onout?.();})
+            .on('pointerdown',()=>{ ondown?.(sizer); })
+        sizer.slot = {id:id,type:'make'};
+        
+        return sizer;  
+    }
+
     prop(key, value, interactive=true)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
@@ -840,9 +1087,9 @@ class UiBase extends Sizer
 
     setTitle(title) {this.getElement('label',true).setText(title);}
 
-    updateEquip() {this.getElement('equip').getElement('items').forEach(item => {item?.update();});}
+    updateEquip() {this.getElement('equip',true).getElement('items').forEach(item => {item?.update();});}
 
-    updateGrid() {this.getElement('grid').getElement('items').forEach(item => {item?.update();});}
+    updateGrid() {this.getElement('grid',true).getElement('items').forEach(item => {item?.update();});}
 
     updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.status.gold}`);}
 
@@ -884,7 +1131,7 @@ class Option extends UiBase
 
     addButton(key,onclick)
     {
-        let btn = new UiButton(this.scene,{text:key.local(),onclick:()=>{
+        let btn = new UiButton(this.scene,{type:GM.BTN_TEXT,text:key.local(),onclick:()=>{
             //onclick ? onclick(key) : this.act(key); 
             (onclick??this.act.bind(this))(key);
         }});
@@ -1049,7 +1296,7 @@ export class UiCase extends UiBase
         UiCase.instance = this;
         this.addBg_Int(scene)
             .addTop(scene)
-            .addGrid(scene,4,4,this.getOwner.bind(this),{left:20,right:20,bottom:20})
+            .addGrid(scene,4,4,this.getOwner.bind(this),{space:{left:20,right:20,bottom:20}})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -1066,10 +1313,9 @@ export class UiCase extends UiBase
         if(!this.visible) {return;}
 
         super.close();
-        // close
+        // close/unregister/camera
         UiCover.close();
         clrCamera(GM.CAM_LEFT_TOP);
-        // unregister
         this.unregister();
 
         delete this.owner.target;
@@ -1095,12 +1341,10 @@ export class UiCase extends UiBase
         
         // show
         UiInv.show(Role.Avatar.instance);
+        // cover/closeAll/register/camera
         UiCover.show();
-        // close
-        UiProfile.close();
-        // register
-        this.register();  
-        // camera
+        Ui.closeAll(GM.UI_LEFT_P);
+        this.register(GM.UI_LEFT);  
         setCamera(GM.CAM_LEFT_TOP);
     }
 
@@ -1130,7 +1374,7 @@ export class UiInv extends UiBase
             .addTop(scene,'裝備')
             .addEquip(scene,this.getOwner.bind(this))
             .addGold(scene)
-            .addGrid(scene,5,4,this.getOwner.bind(this),{bottom:30})
+            .addGrid(scene,5,4,this.getOwner.bind(this),{space:{bottom:30}})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -1157,7 +1401,7 @@ export class UiInv extends UiBase
         let grid = scene.rexUI.add.gridSizer(config);
         let equip = function(id, cat, getOwner)
         {
-            let slot = new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, id, getOwner, {}, cat);
+            let slot = new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, id, getOwner, {cat:cat});
             return slot;
         }
         let i=0;
@@ -1200,11 +1444,9 @@ export class UiInv extends UiBase
         if(!this.visible) {return;}
 
         super.close();
-        // unregister
+        // closeAll/unregister/camera
         this.unregister();
-        // close
-        UiCase.close();
-        UiTrade.close();
+        Ui.closeAll(GM.UI_LEFT);
         clrCamera(GM.CAM_LEFT);
     }
 
@@ -1213,9 +1455,8 @@ export class UiInv extends UiBase
         super.show();
         this.owner = owner;
         this.update();
-        // register
-        this.register();     
-        // camera
+        // register/camera
+        this.register(GM.UI_RIGHT);     
         setCamera(GM.CAM_LEFT);
     }
 
@@ -1225,12 +1466,27 @@ export class UiInv extends UiBase
         else {this.show(owner);}
     }
 
+    filter(ids)
+    {
+        this.getElement('grid').getElement('items').forEach((slot) => {
+            slot.setEnable(ids.includes(slot.slot?.id));
+        });
+    }
+
+    unfilter()
+    {
+        this.getElement('grid').getElement('items').forEach((slot) => {
+            slot.setEnable(true);
+        });
+    }   
+
     static close() {UiInv.instance?.close();}
     static show(owner) {UiInv.instance?.show(owner);}
     static updateGold() {UiInv.instance?.updateGold();}
     static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
     static check(cat) {UiInv.instance?.check(cat);}
+    static filter(ids) {UiInv.instance?.filter(ids);}
     
 }
 
@@ -1342,19 +1598,16 @@ export class UiMain extends UiBase
         return this;
     }
 
-    close(force) 
+    close() 
     {
-        if(force) 
-        {
-            super.close();
-            this.unregister();
-        }
+        super.close();
+        this.unregister();   
     }
 
     show()
     {
         super.show();
-        this.register();
+        this.register(GM.UI_BOTTOM);
     }
 
     static show() {UiMain.instance?.show();}
@@ -1506,11 +1759,9 @@ export class UiTrade extends UiBase
         if(!this.visible) {return;}
 
         super.close();
-        // close
+        // close/camera/unregister
         UiCover.close();
-        // camera
         clrCamera(GM.CAM_RIGHT);
-        // 
         this.unregister();
 
         delete this.owner.trade;
@@ -1532,13 +1783,11 @@ export class UiTrade extends UiBase
         this.update();
         // show
         UiInv.show(Role.Avatar.instance);
+        // cover/closeAll/register/camera
         UiCover.show();
-        // close
-        UiProfile.close();
-        // camera
-        setCamera(GM.CAM_RIGHT);
-        // register
-        this.register();     
+        Ui.closeAll(GM.UI_LEFT_P);
+        this.register(GM.UI_LEFT);    
+        setCamera(GM.CAM_RIGHT);         
     }
 
     static show(owner) {UiTrade.instance?.show(owner);}
@@ -1665,7 +1914,7 @@ export class UiProfile extends UiBase
         let config = {
             //width: 400,
             height: 220,
-            background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
+            background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
             panel: {
                 child: scene.rexUI.add.sizer({orientation:'y',space:5}),
             },
@@ -1714,11 +1963,9 @@ export class UiProfile extends UiBase
         this.updateInfo();
         this.update();
         this.getElement('tags').emitTopButtonClick(0);
-        this.register();
-        // close
-        UiCase.close();
-        UiTrade.close();
-        // camera
+        // closeAll/register/camera
+        Ui.closeAll(GM.UI_LEFT);
+        this.register(GM.UI_LEFT_P);
         setCamera(GM.CAM_RIGHT);
     }
 
@@ -1907,8 +2154,7 @@ export class UiDialog extends UiBase
         UiCover.show();
         UiCursor.set();
         // close
-        this.closeAll();
-        UiMain.close();
+        this.closeAll(~GM.UI_MSG);
     }
 
     static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}
@@ -2088,19 +2334,16 @@ export class UiMessage extends ContainerLite
         this.panel.removeAll(true).layout();
     }
 
-    close(force) 
+    close() 
     {
-        if(force)
-        {
-            this.visible = false;
-            Ui.unregister(this);
-        }
+        this.visible = false;
+        Ui.unregister(this);   
     }
 
     show()
     {
         this.visible = true;
-        Ui.register(this);
+        Ui.register(this,GM.UI_MSG);
     }
 
     static clear() {this.instance?.clear();}
@@ -2318,7 +2561,6 @@ export class UiManufacture extends UiBase
         {
             x : 0,
             y : 0,
-            width : 450,
             height : 500,
             orientation : 'y',
             space : 0,
@@ -2339,7 +2581,7 @@ export class UiManufacture extends UiBase
     {
         let config = 
         {
-            height:400,
+            height:600,
             orientation:'x',
         }
 
@@ -2348,26 +2590,19 @@ export class UiManufacture extends UiBase
         main.addProduce = this.addProduce;
         main.addGrid = this.addGrid;
         main.getOwner = this.getOwner.bind(this);
+        main.addScroll = this.addScroll;
+        main.check = this.check.bind(this);
+        main.make = this.make.bind(this);
         main.addBackground(rect(scene))
-            .addMenu(scene, {expand:true})
-            .addProduce(scene, {expand:true})
-        this.add(main, {padding:{left:10,right:10},expand:true})
+            .addMenu(scene)
+            .addProduce(scene)
+        this.add(main, {padding:{left:10,right:10,bottom:10},expand:true,key:'main'});
         return this;
     }
 
-
     addMenu(scene)
     {
-        let config = {
-            width: 100,
-            background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
-            panel: {
-                child: scene.rexUI.add.sizer({orientation:'y',space:5}),
-            },
-        }
-        let menu = scene.rexUI.add.scrollablePanel(config);
-        this.add( menu, {expand:true} );
-        menu.getElement('panel').add(text(scene,{text:'炒飯'}),{align:'left'});
+        this.addScroll(scene,{width:100})
         return this;
     }
 
@@ -2377,19 +2612,89 @@ export class UiManufacture extends UiBase
           width: 300,
           orientation:'y',
         }
-        let sizer = scene.rexUI.add.sizer(config);
-        sizer.addGrid = this.addGrid;
-        sizer.addBackground( rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}) )
-            .addGrid(scene, 3, 3, this.getOwner, {top:10})
-        this.add( sizer, {expand:true} );
+
+        let produce = scene.rexUI.add.sizer(config);
+        produce.addGrid = this.addGrid;
+        produce.addBackground( rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}) )
+                .addGrid(scene, 3, 3, this.getOwner, {space:{top:10},classT:MatSlot,classC:{onset:this.check}})
+                .addSpace()
+                .add(new OutputSlot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,this.getOwner),{key:'output'})
+                .addSpace()
+                .add(new UiButton(scene,{text:'製作',onclick:this.make}),{key:'button'})
+                .addSpace()
+        this.add( produce, {expand:true, key:'produce'} );
         return this;
     }
+
+    check()
+    {
+        let on = this.owner.check();
+        this.getElement('button',true).setEnable(on);
+    }
+
+    make()
+    {
+        this.owner.make();
+        this.updateGrid();
+        this.getElement('output',true).update();
+        this.check();
+    }
+
+    update()
+    {
+        let itemSel = null;
+        let onover = (item)=>{UiInfo.show(item);}
+        let onout = ()=>{UiInfo.close();}  
+        let ondown = (item)=>{
+                if(!this.owner.isFull)
+                {
+                    itemSel?.unsel();
+                    itemSel=item;
+                    item.sel();
+                    this.owner.sel=item.slot.id;
+                    this.getElement('output',true).update();
+                    this.check();
+                }
+            }
+
+        let panel = this.getElement('panel',true);
+        panel.removeAll(true);
+        this.owner.menu.forEach((item)=>{
+            let add =this.item(item,{onover:onover, onout:onout, ondown:ondown});
+            if(item==this.owner.sel) {add.sel();itemSel=add;}
+            panel.add(add,{expand:true})
+        })
+        this.layout();
+        this.check();
+
+        this.updateGrid();
+        this.getElement('output',true).update();
+    }
+
+    close() 
+    {
+        super.close();
+        UiCover.close();
+        clrCamera(GM.CAM_RIGHT);
+        this.unregister();
+    }
+
 
     show(owner)
     {
         this.owner = owner;
-        console.log(this.getOwner())
         super.show();
+        this.update();
+        UiCursor.set();
+
+        UiInv.show(Role.Avatar.instance);
+        
+        // cover/close/register/camera
+        UiCover.show();
+        Ui.closeAll(GM.UI_LEFT_P);
+        this.register(GM.UI_LEFT);  
+        setCamera(GM.CAM_RIGHT);
+
     }
 
     static show(owner) {this.instance.show(owner);}

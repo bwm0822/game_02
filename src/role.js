@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 //import {ItemDrop} from './item.js';
 //import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
 //import {Gun, Melee} from './weapon.js';
-import {UiBattle, UiMessage, UiWeaponState} from './ui_old.js';
 import Utility from './utility.js';
 //import Battle from './battle.js';
 import Record from './record';
@@ -2010,7 +2009,7 @@ export class Npc extends Role
             this.status = 
             {   
                 gold: roleD.gold, 
-                bag: this.toBag(roleD.bag.capacity,roleD.bag.items),
+                bag: this.toStorage(roleD.bag.capacity,roleD.bag.items),
                 attrs: Utility.deepClone(roleD.attrs),
                 states: Utility.deepClone(roleD.states), 
             }

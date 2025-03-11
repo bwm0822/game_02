@@ -21,13 +21,23 @@ export class ItemDB
 {
     static data = 
     {
+        'iron':{cat:GM.CAT_ITEM,icon:'icons/273',name:'鐵礦',gold:10,des:'鐵礦'},
+        'wood':{cat:GM.CAT_ITEM,icon:'icons/272',name:'木頭',gold:10,des:'木頭'},
+
+
         'sword_01':{cat:GM.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
                     des:'這是一把刀',
                     props:{attack:20}},
+
         'sword_02':{cat:GM.CAT_WEAPON,icon:'weapons/4',name:'刀-2',gold:25,
-                    props:{attack:40}},
+                    props:{attack:40},
+                    des:'這是一把刀',
+                    make:{gold:10,items:{'sword_01':1, 'iron':2}}},
+
         'sword_03':{cat:GM.CAT_WEAPON,icon:'weapons/5',name:'刀-3',gold:35,
-                    props:{attack:60}},
+                    props:{attack:60},
+                    des:'這是一把刀',
+                    make:{gold:10,items:{'sword_02':1, 'iron':2}}},
 
         'helmet_01':{cat:GM.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
                     des:'這是頭盔',
@@ -211,7 +221,7 @@ export class RoleDB
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:64,b:32},
                     restock:2,
-                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01','torch']},
+                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01','torch','iron','iron']},
                     attrs:
                     {
                         attack: 5,
