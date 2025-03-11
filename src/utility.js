@@ -1,3 +1,4 @@
+import {GM} from './setting.js';
 
 export default class Utility
 {
@@ -42,6 +43,22 @@ export default class Utility
     static local(key)
     {
         return Utility._local[key]??key;
+    }
+
+    static lut(key)
+    {
+        switch(key)
+        {
+            case GM.CAT_WEAPON: return 'weapon';
+            case GM.CAT_HELMET: return 'helmet';
+            case GM.CAT_CHESTPLATE: return 'chestplate';
+            case GM.CAT_GLOVES: return 'gloves';
+            case GM.CAT_BOOTS: return 'boots';
+            case GM.CAT_NECKLACE: return 'necklace';
+            case GM.CAT_RING: return 'ring';
+            case GM.CAT_ITEM: return 'item';
+            default: return key.toString();
+        }
     }
 
     static shallowClone(obj)
@@ -181,7 +198,8 @@ export default class Utility
     }
 }
 
-String.prototype.local = function(){return Utility.local(this);};
+String.prototype.local = function(){ return Utility.local(this); };
+Number.prototype.local = function(){ return Utility.local(Utility.lut(this)); };
 
 
 

@@ -1578,7 +1578,7 @@ export class Role extends Entity
             if(p==100 || Utility.roll()<p)
             {
                 let pos = this.scene.map.getDropPoint(this.pos);
-                new Pickup(this.scene,this.x,this.y-32).create(id).falling(pos);
+                new Pickup(this.scene,this.x,this.y-32).init_runtime(id).falling(pos);
             }
         })
     }
