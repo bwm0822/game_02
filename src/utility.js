@@ -196,6 +196,17 @@ export default class Utility
             return null;
         }
     }
+
+    static tick2Str(ticks)
+    {
+        let d = Math.floor(ticks / 1440);
+        let h = Math.floor((ticks % 1440) / 60);
+        let m = ticks % 60;
+        let str = `${m}m`;
+        if(h>0) {str = `${h}h${str}`;}
+        if(d>0) {str = `${d}d${str}`;}
+        return str;
+    }
 }
 
 String.prototype.local = function(){ return Utility.local(this); };

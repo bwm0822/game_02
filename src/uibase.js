@@ -8,6 +8,26 @@ export function rect(scene, config={})
     return scene.rexUI.add.roundRectangle(config);
 }
 
+export function bar(scene, config={})
+{
+    config.height = config.height ?? 20,
+    config.width = config.width ?? 100,
+    config.barColor = config.barColor ?? GM.COLOR_PRIMARY,
+    config.value = config.value ?? 0.5
+    return scene.add.rexRoundRectangleProgress(config);
+}
+
+export function progress(scene, config={})
+{
+    config.height = config.height ?? 20,
+    config.width = config.width ?? 100,
+    config.barColor = config.barColor ?? GM.COLOR_PRIMARY,
+    config.trackColor = config.trackColor ?? GM.COLOR_DARK,
+    //config.trackStrokeColor = config.trackStrokeColor ?? GM.COLOR_LIGHT,
+    config.value = config.value ?? 0.5
+    return scene.add.rexRoundRectangleProgress(config);
+}
+
 export function sprite(scene, {x, y, icon, name}={})
 {
     let [atlas, frame] = icon ? icon.split('/'):[];
@@ -82,7 +102,7 @@ export class Icon extends OverlapSizer
         this.fontSize=fontSize;
         this.addBackground(rect(scene,{color:color, radius:radius, alpha:alpha}),'background')
             .add(sprite(scene,{icon:icon}),{aspectRatio:true, key:'sprite'})   
-            .add(text(scene,{text:count, fontSize:this.fontSize, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false,offsetY:0,offsetX:0})        
+            .add(text(scene,{text:count, fontSize:this.fontSize, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false,offsetY:space,offsetX:space})        
 
         //if(name!=undefined) {this.name = name;}
 
@@ -100,6 +120,7 @@ export class Icon extends OverlapSizer
     setCount(count)
     {
         this.getElement('count').setText(count);
+        this.layout();
         return this;
     }
 

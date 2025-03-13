@@ -192,10 +192,11 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debugDraw();
     }
 
-    init_runtime(id)
+    init_runtime(obj)
     {
-        this.slot = {id:id,count:1};
-        this.item = ItemDB.get(id);
+        console.log(obj);
+        this.slot = obj;
+        this.item = ItemDB.get(obj.id);
         let [key,frame] = this.item.icon.split('/');
         this.setTexture(key,frame);
         this.displayWidth = this._sp.width;
@@ -243,7 +244,7 @@ export class Entity extends Phaser.GameObjects.Container
     drop(ent)
     {
         let p = this.scene.map.getDropPoint(this.pos);
-        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.slot.id);
+        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.slot);
         obj.falling(p);
         this.send('msg',`丟棄 ${ent.item.name}`);
     }
@@ -452,7 +453,7 @@ export class Pickup extends Entity
             this.send('out');
             this.send('refresh');
             this.removeFromObjects();
-            this.destroy();
+            this.remove();
         }   
     }
 
@@ -467,14 +468,15 @@ export class Pickup extends Entity
 
     save()
     {
-        if(this.uid!=-1) {this.saveData({removed:true})}
-        else {this.saveData({...this.pos,angle:this.angle,...this.slot});}
+        if(this.uid!=-1) {this.saveData({removed:false})}
+        else {this.saveData({...this.pos,angle:this.angle,slot:this.slot});}
     }
 
-    destroy()
+    remove()
     {
+        console.log('remove',this);
         if(this.uid!=-1) {this.saveData({removed:true})}
-        super.destroy();
+        this.destroy();
     }
 }
 

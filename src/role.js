@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser, { Time } from 'phaser';
 //import {RoleDB, ItemDB, RoleData, CardDB} from './database.js';
 //import {ItemDrop} from './item.js';
 //import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
@@ -1339,13 +1339,19 @@ export class Role extends Entity
         return this;
     }
 
-    addLight()
+    addLight(equip)
     {
         if(!this.light)
         {
             this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1);
             this.light.x = this.x;
             this.light.y = this.y;
+
+            this._cbLight = ()=>{
+                if(--equip.endurance<=0){this.removeEquip(equip);}
+                this.send('refresh')
+            }
+            TimeManager.register(this._cbLight);
         }
     }
 
@@ -1355,6 +1361,8 @@ export class Role extends Entity
         {
             this.scene.lights.removeLight(this.light);
             this.light = null;
+
+            TimeManager.unregister( this._cbLight);
         }
     }
 
@@ -1647,6 +1655,16 @@ export class Role extends Entity
 
     }
 
+    removeEquip(equip)
+    {
+        let index = this.status.equips.indexOf(equip);
+        if(index>=0)
+        {
+            this.status.equips[index] = null;
+            this.equip();
+        }
+    }
+
     equip()
     {
         this.status.attrs = Utility.deepClone(this.role.attrs);
@@ -1678,10 +1696,9 @@ export class Role extends Entity
 
             if(equip?.id == 'torch')
             {
-                this.addLight();
+                this.addLight(equip);
             }
         })
-
 
         this.send('equip'); // UiProfile.refresh()
     }

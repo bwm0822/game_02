@@ -13,6 +13,7 @@ import TextPagePlugin from 'phaser3-rex-plugins/plugins/textpage-plugin.js';
 import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin.js';
 //import ContainerLitePlugin from 'phaser3-rex-plugins/plugins/containerlite-plugin.js';
 //import TextEditPlugin from 'phaser3-rex-plugins/plugins/textedit-plugin.js';
+import RoundRectangleProgressPlugin from 'phaser3-rex-plugins/plugins/roundrectangleprogress-plugin.js';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -69,6 +70,11 @@ const config = {
             //     plugin: TextEditPlugin,
             //     start: true
             // },
+            {
+                key: 'rexRoundRectangleProgressPlugin',
+                plugin: RoundRectangleProgressPlugin,
+                start: true
+            },
 
         ]
     },

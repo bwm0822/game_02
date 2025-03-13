@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, sprite, text, bbcText, Pic, Icon} from './uibase.js';
+import {rect, sprite, text, bbcText, Pic, Icon, bar, progress} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
@@ -52,7 +52,8 @@ export default function createUI(scene)
 
 function t3(config={a:0,b:1,c:2})
 {
-    console.log(config.a,config.b,config.c,config.d);
+    //console.log(config.a,config.b,config.c,config.d);
+    //progress(uiScene,{x:100,y:100,value:0.5});
 }
 
 
@@ -163,6 +164,7 @@ class Slot extends Icon
     constructor(scene, w, h, i, getOwner, config)
     {
         super(scene, w, h, config);
+        this.add(bar(scene,{width:0,height:5,value:0}),{key:'progress',align:'bottom',expand:{width:true},offsetY:5});
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK, radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this._i = i;
@@ -194,6 +196,16 @@ class Slot extends Icon
     {
         this._item = ItemDB.get(value?.id);
         this.setIcon(this._item?.icon);
+        this.setCount(value?.count>1?value.count:'');
+        if(this._item?.endurance)
+        {
+            if(!value.endurance) {value.endurance=this._item.endurance.cur;}
+            this.getElement('progress').setValue(value.endurance/this._item.endurance.max);
+        }
+        else
+        {
+            this.getElement('progress').setValue(0);
+        }
     }
 
     addListener()
@@ -387,16 +399,19 @@ class Slot extends Icon
 
 class EquipSlot extends Slot
 {
-    static icons =
+    static cat2Icon(cat)
     {
-        weapon      : GM.ICON_WEAPON,
-        helmet      : GM.ICON_HELMET,
-        chestplate  : GM.ICON_CHESTPLATE,
-        gloves      : GM.ICON_GLOVES,
-        boots       : GM.ICON_BOOTS,
-        necklace    : GM.ICON_NECKLACE,
-        ring        : GM.ICON_RING,
-        item        : GM.ICON_ITEM,
+        switch(cat)
+        {
+            case GM.CAT_WEAPON: return GM.ICON_WEAPON;
+            case GM.CAT_HELMET: return GM.ICON_HELMET;
+            case GM.CAT_CHESTPLATE: return GM.ICON_CHESTPLATE;
+            case GM.CAT_GLOVES: return GM.ICON_GLOVES;
+            case GM.CAT_BOOTS: return GM.ICON_BOOTS;
+            case GM.CAT_NECKLACE: return GM.ICON_NECKLACE;
+            case GM.CAT_RING: return GM.ICON_RING;
+            case GM.CAT_ITEM: return GM.ICON_ITEM;
+        }
     }
 
     constructor(scene, w, h, i, getOwner, config)
@@ -413,24 +428,26 @@ class EquipSlot extends Slot
 
     get isEquip() {return true;}
 
-    get isValid() {return UiDragged.isCat(this.cat)}
+    get isValid() {return UiDragged.checkCat(this.cat)}
 
     // get, set 都要 assign 才會正常 work
     get slot() {return super.slot;}
     set slot(value) {super.slot=value; this.owner.equip();}
+
+    checkCat(cat)   {return (this.cat & cat) == cat;}  
 
     over() {super.over(false);}
     out() {super.out(false);}
 
     check(cat)
     {
-        this.setBgColor(cat == this.cat ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
+        this.setBgColor( this.checkCat(cat) ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
     }
 
     setIcon(icon)
     {
         if(icon) {return super.setIcon(icon);}
-        else {return super.setIcon(EquipSlot.icons[this.cat],{alpha:0.25,tint:0x0});}
+        else {return super.setIcon(EquipSlot.cat2Icon(this.cat),{alpha:0.25,tint:0x0});}
     }
 
 }
@@ -497,7 +514,7 @@ export class UiDragged extends Pic
     get slot() {return this.data.slot;}
     get item() {return this.data.item;}
 
-    isCat(cat) {return this.data.item.cat == cat;}
+    checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
 
     clear()
     {
@@ -538,7 +555,7 @@ export class UiDragged extends Pic
 
     static clear() {UiDragged.instance?.clear();}
     
-    static isCat(cat) {return UiDragged.instance?.isCat(cat);}
+    static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
 
     static drop() {UiDragged.instance?.drop();}
 
@@ -771,16 +788,21 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addProps(item)
+    addProps(item,slot)
     {
+        if(item.props || item.endurance) {this.addDivider();}
         if(item.props)
         {
-            this.addDivider();
             for(let [key,value] of Object.entries(item.props))
             {
                 //console.log(key,value);
                 this.addProp(key,value);
             }
+        }
+        if(item.endurance)
+        {
+            //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
+            this.addProp('耐久',Utility.tick2Str(slot.endurance));
         }
         return this;
     }
@@ -826,7 +848,7 @@ class UiInfo extends Sizer
         this.removeAll(true)
             .addTitle(item)
             .addCat(item)
-            .addProps(item)
+            .addProps(item,slot)
 
         if(slot.type=='make') 
         {
@@ -1564,7 +1586,7 @@ export class UiMain extends UiBase
 
     profile() {UiProfile.toggle(Role.Avatar.instance);}
 
-    menu() {this.close();this.closeAll();send('menu');}
+    menu() {this.close();this.closeAll(GM.UI_ALL);send('menu');}
 
     test() 
     {

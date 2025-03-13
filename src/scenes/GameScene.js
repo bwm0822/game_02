@@ -97,8 +97,8 @@ export class GameScene extends Scene
         let objs = Record.data[this._data.map]?.runtime;
         if(objs)
         {
-            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj.id);});
-            Record.data[this._data.map].runtime = [];
+            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj.slot);});
+            //Record.data[this._data.map].runtime = [];
         }
     }
 
@@ -282,6 +282,7 @@ export class GameScene extends Scene
     {
         Record.data.pos = this._avatar.pos;   
         Record.data.player = this._avatar.save();
+        if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
         this.objects.forEach((obj)=>{obj.save?.();})
         this.roles.forEach((role)=>{role.uid==-1 && role.save();})
         TimeManager.save();

@@ -23,6 +23,7 @@ export class ItemDB
     {
         'iron':{cat:GM.CAT_ITEM,icon:'icons/273',name:'鐵礦',gold:10,des:'鐵礦'},
         'wood':{cat:GM.CAT_ITEM,icon:'icons/272',name:'木頭',gold:10,des:'木頭'},
+        'salt':{cat:GM.CAT_ITEM,icon:'icons/250',name:'鹽',gold:10,des:'鹽',cps:10},
 
 
         'sword_01':{cat:GM.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
@@ -65,7 +66,7 @@ export class ItemDB
 
         'ring_01':{cat:GM.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
 
-        'torch':{cat:GM.CAT_ITEM,icon:'icons/170',name:'火把',gold:10,des:'火把'},
+        'torch':{cat:GM.CAT_ITEM,icon:'icons/170',name:'火把',gold:10,des:'火把', endurance:{cur:6*60,max:6*60}},    
 
 
     }
@@ -221,7 +222,7 @@ export class RoleDB
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:64,b:32},
                     restock:2,
-                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01','torch','iron','iron']},
+                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01','boots_01','neck_01','ring_01','torch','iron','iron',{id:'salt',count:10}]},
                     attrs:
                     {
                         attack: 5,
