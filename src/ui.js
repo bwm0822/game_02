@@ -172,24 +172,51 @@ class Slot extends Icon
         this.addListener();
     }
 
+    get i() {return this._i;}
+    get cps() {return this.item.cps;}
     get slot() {return this._i>=0?this.container?.[this._i]:this.container;}
     set slot(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
 
-    get gold() {return this._item?.gold;}
     get item() {return this._item;}
+    get gold() {return this.slot.count*this.item.gold;}
 
     get isEmpty() {return Utility.isEmpty(this.slot)||this.slot.count==0;}
     get container() {return this.owner?.storage?.items;}
     get capacity() {return this.owner?.storage?.capacity; }
     get owner() {return this._getOwner?.();}
     get isValid() {return true;}
-    get acts() {return !this.owner.trade ? this.owner.target ? ['transfer','use','drop'] 
-                                                            : ['use','drop']
-                                        : this.owner.trade == GM.BUYER ? ['sell','drop'] 
-                                                                        : ['buy'];}
+
+    get storage() {
+        if(!this.slot.storage) {this.slot.storage={capacity:this.item.storage,items:[]}};
+        return this.slot.storage;
+    }
+    get acts()
+    {
+        if(this.owner.trade)
+        {
+            if(this.owner.trade == GM.BUYER) {return ['sell','drop'];}
+            else {return ['buy'];}
+        }
+        else
+        {
+            if(this.owner.target) 
+            {
+                let acts = ['transfer','use','drop'];
+                if(this.slot.count>1) {return [...acts,'split'];}
+                else if(this.slot.storage) {return [...acts,'open'];}
+                else {return acts;}
+            }
+            else 
+            {
+                if(this.slot.count>1) {return ['use','drop','split'];}
+                else if(this.item.storage) {return ['use','drop','openbag'];}
+                else {return ['use','drop'];}
+            }
+        }
+    }
 
     get trading() {return this.owner.trade != UiDragged.owner.trade;}
-    get enabled() {return this.capacity==-1 || this._id<this.capacity;}
+    get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
     setSlot(value)
@@ -335,11 +362,18 @@ class Slot extends Icon
                 }
                 else
                 {
-                    let dataCopy = this.copyData();
-                    this.slot = UiDragged.slot;
-                    UiDragged.clear();
-                    if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
-                    if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
+                    if(this.isMergeable())
+                    {
+                        this.merge();
+                    }
+                    else
+                    {
+                        let dataCopy = this.copyData();
+                        this.slot = UiDragged.slot;
+                        UiDragged.clear();
+                        if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                        if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
+                    }  
                 }
                 this.over();
             }
@@ -351,6 +385,23 @@ class Slot extends Icon
             UiDragged.setPos(this.left+x,this.top+y);
             this.clear();
             UiInv.check();
+        }
+    }
+
+    isMergeable() {return this.slot && this.slot.id==UiDragged.slot.id && this.cps>1;}
+
+    merge()
+    {
+        //console.log('merge',this.slot.count,this.cps)
+        if(this.slot.count<this.cps)
+        {
+            let draggedCount = UiDragged.slot.count;
+            let count = Math.min(this.slot.count+draggedCount,this.cps);
+            draggedCount -= count-this.slot.count;
+            this.slot.count = count;
+            UiDragged.slot.count = draggedCount;
+            this.update();
+            UiDragged.update();
         }
     }
 
@@ -498,23 +549,37 @@ export class UiDragged extends Pic
     {
         super(scene, w, h);
         UiDragged.instance = this;
-        this.hide();
+        this.addCount(scene)
+            .layout()
+            .hide()
         this.getLayer().name = 'Dragged';
     }
 
-    static get on() {return UiDragged.instance.visible;}
-    static get slot() {return UiDragged.instance.slot;}
-    static get owner() {return UiDragged.instance.owner;}
-    static get item() {return UiDragged.instance.item;}
-    static get gold() {return UiDragged.instance.item.gold;}
-    static get isTrade() {return UiDragged.instance.data.owner.tradeable??false;}
-    static set data(value) {UiDragged.instance.setData(value);}
+    static get on() {return this.instance.visible;}
+    static get slot() {return this.instance.slot;}
+    static get owner() {return this.instance.owner;}
+    static get item() {return this.instance.item;}
+    static get gold() {return this.instance.item.gold*this.instance.slot.count;}
+    static get isTrade() {return this.instance.data.owner.tradeable??false;}
+    static set data(value) {this.instance.setData(value);}
 
     get owner() {return this.data.owner;}
     get slot() {return this.data.slot;}
     get item() {return this.data.item;}
 
     checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
+
+    update() 
+    {
+        if(this.slot.count==0)
+        {
+            this.clear();
+        }
+        else
+        {
+            this.setCount(valuthise.slot.count>1?value.slot.count:'')
+        }
+    }
 
     clear()
     {
@@ -524,13 +589,19 @@ export class UiDragged extends Pic
         UiMain.enable(true);
     }
 
+    addCount(scene)
+    {
+        this.add(text(scene,{fontSize:20, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false})
+        return this
+    }
+
     setData(value)
     {
         this.show();
         this.data = value;
-        //this.data.item = ItemDB.get(value.slot.id);
-        //this.setIcon(this.data.item.icon);
-        this.setIcon(value.item.icon);
+        console.log(value)
+        this.setIcon(value.item.icon)
+            .setCount(value.slot.count>1?value.slot.count:'')
         UiCover.show();
         UiMain.enable(false);
     }
@@ -539,6 +610,13 @@ export class UiDragged extends Pic
     {
         let [key,frame]=icon.split('/');
         this.getElement('sprite').setTexture(key,frame);
+        return this;
+    }
+
+    setCount(count)
+    {
+        this.getElement('count').setText(count);
+        this.layout();
         return this;
     }
 
@@ -556,6 +634,8 @@ export class UiDragged extends Pic
     static clear() {UiDragged.instance?.clear();}
     
     static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
+
+    static update() {UiDragged.instance?.update();}
 
     static drop() {UiDragged.instance?.drop();}
 
@@ -830,12 +910,12 @@ class UiInfo extends Sizer
         
     }
 
-    addGold(item)
+    addGold(item,slot)
     {
         if(item.gold)
         {
             let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
-            let text = `[color=yellow][img=gold][/color] ${item.gold}`
+            let text = `[color=yellow][img=gold][/color] ${slot.count*item.gold}`
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
 
@@ -859,7 +939,7 @@ class UiInfo extends Sizer
         else
         {
             this.addDescript(item)
-                .addGold(item)
+                .addGold(item,slot)
                 .layout()
         }
             
@@ -1140,6 +1220,8 @@ class Option extends UiBase
             .addButton('transfer',this.transfer.bind(this))
             .addButton('use',this.use.bind(this))
             .addButton('drop',this.drop.bind(this))
+            .addButton('split',this.split.bind(this))
+            .addButton('openbag',this.openbag.bind(this))
             .setOrigin(0)
             .layout()
             .hide();
@@ -1202,6 +1284,20 @@ class Option extends UiBase
     {
         this.close();
         UiObserve.show(this.object);
+    }
+
+    split()
+    {
+        this.close();
+        this.owner.split(this.object);
+        this.refreshAll();
+    }
+
+    openbag()
+    {
+        this.close();
+        UiCase.show(this.object);
+        UiInv.filter('storage');
     }
 
     act(act)
@@ -1337,6 +1433,7 @@ export class UiCase extends UiBase
         super.close();
         // close/unregister/camera
         UiCover.close();
+        UiInv.unfilter();
         clrCamera(GM.CAM_LEFT_TOP);
         this.unregister();
 
@@ -1488,15 +1585,24 @@ export class UiInv extends UiBase
         else {this.show(owner);}
     }
 
-    filter(ids)
+    filter(type)
     {
-        this.getElement('grid').getElement('items').forEach((slot) => {
-            slot.setEnable(ids.includes(slot.slot?.id));
-        });
+        if(type=='storage')
+        {
+            this.getElement('equip').getElement('items').forEach((slot) => {
+                slot?.setEnable(!slot?.item?.storage);
+            });
+            this.getElement('grid').getElement('items').forEach((slot) => {
+                slot.setEnable(!slot?.item?.storage);
+            });
+        }
     }
 
     unfilter()
     {
+        this.getElement('equip').getElement('items').forEach((slot) => {
+            slot?.setEnable(true);
+        });
         this.getElement('grid').getElement('items').forEach((slot) => {
             slot.setEnable(true);
         });
@@ -1508,7 +1614,8 @@ export class UiInv extends UiBase
     static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
     static check(cat) {UiInv.instance?.check(cat);}
-    static filter(ids) {UiInv.instance?.filter(ids);}
+    static filter(type) {UiInv.instance?.filter(type);}
+    static unfilter() {UiInv.instance?.unfilter();}
     
 }
 

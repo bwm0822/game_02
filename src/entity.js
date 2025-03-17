@@ -152,7 +152,7 @@ export class Entity extends Phaser.GameObjects.Container
     toStorage(capacity,items)
     {
         let bag={capacity:capacity,items:[]};
-        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item};})
+        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
         return bag;
     }
 
@@ -216,22 +216,25 @@ export class Entity extends Phaser.GameObjects.Container
         return false;
     }
 
+    findEmpty()
+    {
+        let capacity = this.storage.capacity;
+        let count = this.storage.items.length;
+        let foundIndex = this.storage.items.findIndex(slot=>Utility.isEmpty(slot))
+        let i = foundIndex!=-1 ? foundIndex 
+                            : capacity==-1 || count<capacity ? count 
+                                                                : -1;
+        return i;
+    }
+
     take(ent, i, isEquip)
     {
-        if(i==undefined)
-        {
-            let capacity = this.status.bag.capacity;
-            let count = this.status.bag.items.length;
-            let foundIndex = this.status.bag.items.findIndex(slot=>Utility.isEmpty(slot))
-            i = foundIndex!=-1 ? foundIndex 
-                                    : capacity==-1 || count<capacity ? count 
-                                                                    : -1;
-        }
+        !i && (i = this.findEmpty());
 
         if(i!=-1)
         {
             if(isEquip) {this.status.equips[i]=ent.slot; this.equip();}
-            else {this.status.bag.items[i]=ent.slot;}
+            else {this.storage.items[i]=ent.slot;}
             return true;
         }
         else
@@ -239,6 +242,16 @@ export class Entity extends Phaser.GameObjects.Container
             this.send('msg','空間已滿!!!');
             return false;
         }
+    }
+
+    split(ent)
+    {
+        let count = ent.slot.count;
+        let half = Math.floor(count/2);
+        ent.slot.count = half;
+        let split = {id:ent.slot.id,count:count-half};
+        let i = this.findEmpty();
+        if(i!=-1) {this.storage.items[i]=split;}
     }
 
     drop(ent)
@@ -463,7 +476,9 @@ export class Pickup extends Entity
         if(data?.removed) {this.destroy(); return true;}
 
         super.init();
-        this.slot = {id:this.data.get('id'),count:1};
+        let id = this.data.get('id');
+        let count = this.data.get('count') ?? 1;
+        this.slot = {id:id,count:count};
     }
 
     save()
