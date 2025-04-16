@@ -4,8 +4,8 @@ export default class Utility
 {
     static _local={ weapon:'武器',armor:'防具',item:'道具',skill:'技能', 
                     helmet:'頭盔',chestplate:'胸甲',gloves:'手套',boots:'靴子',
-                    necklace:'項鍊',ring:'戒子',
-                    other:'其他',
+                    necklace:'項鍊',ring:'戒子',bag:'背包',equip:'裝備',
+                    other:'其他',storage:'儲量',endurance:'耐久',durability:'耐久',
                     attrs:'屬性',states:'狀態',
                     attack:'攻擊',
                     damage:'傷害',magazine:'彈匣',rof:'射速',range:'射程',
@@ -13,7 +13,7 @@ export default class Utility
                     shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',
                     poison:'下毒',weak:'虛弱',
                     use:'使用',drop:'丟棄',talk:'交談',trade:'交易',buy:'買',sell:'賣',
-                    open:'開啟',observe:'觀察',transfer:'移動',
+                    open:'開啟',observe:'觀察',transfer:'移動',openbag:'開啟',
                     dodge:'閃避',block:'擋格',
                     };
                     
@@ -56,7 +56,8 @@ export default class Utility
             case GM.CAT_BOOTS: return 'boots';
             case GM.CAT_NECKLACE: return 'necklace';
             case GM.CAT_RING: return 'ring';
-            case GM.CAT_ITEM: return 'item';
+            case GM.CAT_EQUIP: return 'equip';
+            case GM.CAT_BAG: return 'bag';
             default: return key.toString();
         }
     }

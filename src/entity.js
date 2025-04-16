@@ -1,6 +1,7 @@
 import Record from './record.js'
 import {ItemDB} from './database.js';
 import Utility from './utility.js';
+import { GM } from './setting.js';
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -434,7 +435,7 @@ export class Case extends Entity
 
     save() { this.saveData(this._storage); }
 
-    open() { this.send('case', this); }
+    open() { this.send('storage', this); }
 
    
 }
@@ -504,13 +505,14 @@ export class Stove extends Entity
         this.interactive = true;  
         this._storage = {capacity:-1,items:[]};  
         this._output = null;
+        this.cat = GM.CAT_FOOD;
     }
 
     get acts()  {return ['tool'];}
     get storage() {return this._storage;}
     get output() {return this._output;}
     set output(value) {return this._output=value;}
-    get menu()  {return ['sword_02','sword_03'];}    
+    get menu()  {return ['cook','salt_baked_fish'];}    
     get isFull() {return this._output?.count>0;}
     get sel() {return this._sel;}
     set sel(id) {
@@ -535,30 +537,68 @@ export class Stove extends Entity
     {
         if(!this._sel) {return false}
         if(this.isFull) {return false;}
-        for(let [id,count] of Object.entries(this._make.items))
+        if(this._sel=='cook') 
         {
-            if(this.count(id)<count) {return false;}
+            let found = this._storage.items.find(slot=>{
+                return ItemDB.get(slot?.id)?.cook
+            })
+            return found;
         }
-        return true;
+        else
+        {
+            for(let [id,count] of Object.entries(this._make.items))
+            {
+                if(this.count(id)<count) {return false;}
+            }
+            return true;
+        }
+        
     }
 
     count(id)
     {
-        return this._storage.items.filter(slot=>slot?.id==id).length;
+        let count = 0;
+        this._storage.items.forEach(slot=>{
+            if(slot?.id==id) {count+=slot.count;}
+        })
+        return count;
     }
 
     make()
     {
-        for(let [id,count] of Object.entries(this._make.items))
+        if(this._sel=='cook') 
         {
-            for(let i=0;i<count;i++)
-            {
-                let index = this._storage.items.findIndex(slot=>slot?.id==id);
-                this._storage.items.splice(index,1);
-            }
+            this._storage.items.forEach(slot=>{
+                let cook = ItemDB.get(slot?.id)?.cook;
+                if(cook) {slot.id = cook.id;}
+            })
         }
+        else
+        {
+            for(let [id,count] of Object.entries(this._make.items))
+            {
 
-        this._output.count++;
+                for(let i=0;i<this._storage.items.length;i++)
+                {
+                    if(this._storage.items[i]?.id==id)
+                    {
+                        if(this._storage.items[i].count >= count)
+                        {
+                            this._storage.items[i].count -= count;
+                            if(this._storage.items[i].count==0) {this._storage.items[i]=null;}
+                            break;
+                        }
+                        else
+                        {
+                            count -= this._storage.items[i].count;
+                            this._storage.items[i]=null;
+                        }
+                    }
+                }
+            }
+
+            this._output.count++;
+        }
     }
 
     load()

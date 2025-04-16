@@ -81,6 +81,61 @@ export function bbcText(scene, config={})
     return t;
 }
 
+export function slider(scene,{trackRadius=10,thumbRadius=20}={})
+{
+    return scene.rexUI.add.slider({
+        orientation: 'x',
+
+        track: rect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
+        thumb: rect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
+        //thumbOffsetY: -10,
+        // valuechangeCallback: function (value) {
+        //     print0.text = value;
+        // },
+        //space: {top: 4,bottom: 4},
+        //input: 'drag', // 'drag'|'click'
+    })
+}
+
+export function scrollBar(scene) 
+{
+    return scene.rexUI.add.scrollBar({
+        width: 100,
+        orientation: 'x',
+
+        background: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 0, GM.COLOR_DARK),
+
+        buttons: {
+            left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_PRIMARY).setDirection('left'),
+            right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_PRIMARY).setDirection('right'),
+        },
+
+        slider: {
+            thumb: scene.rexUI.add.roundRectangle(0, 0, 40, 20, 10, GM.COLOR_LIGHT),
+        },
+
+        space: {
+            left: 5, right: 5, top: 5, bottom: 5, item: 5
+        },
+    })
+}
+
+export function label(scene,config)
+{
+    let color = config.color ?? GM.COLOR_DARK;
+    let radius = config.radius ?? 5;
+    let str = config.text ?? '';
+    let space = config.space ?? 5;
+    return scene.rexUI.add.label({
+        width: config.width,
+        height: config.height,
+        background: rect(scene,{color:color,radius:radius}),
+        text: text(scene,{text:str}),
+        space: space,
+        align: 'center',
+    });
+}
+
 export class Pic extends OverlapSizer
 {
     constructor(scene, w, h, {x=0, y=0, icon, color=GM.COLOR_SLOT, radius=0, alpha=0, space=0}={})
@@ -131,4 +186,6 @@ export class Icon extends OverlapSizer
     }
 
 }
+
+
 

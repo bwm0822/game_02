@@ -34,7 +34,8 @@ export let GM =
     ICON_BOOTS : 'icons/130',
     ICON_NECKLACE : 'icons/134',
     ICON_RING : 'icons/133',
-    ICON_ITEM : 'icons/170',
+    ICON_EQUIP : 'icons/170',
+    ICON_BAG : 'icons/137',
 
     // CAT_WEAPON: 'weapon',
     // CAT_HELMET: 'helmet',
@@ -45,14 +46,18 @@ export let GM =
     // CAT_RING: 'ring',
     // CAT_ITEM: 'item',
 
-    CAT_WEAPON:     0b00000001,
-    CAT_HELMET:     0b00000010,
-    CAT_CHESTPLATE: 0b00000100,
-    CAT_GLOVES:     0b00001000,
-    CAT_BOOTS:      0b00010000,
-    CAT_NECKLACE:   0b00100000,
-    CAT_RING:       0b01000000,
-    CAT_ITEM:       0b10000000,
+    CAT_ALL:        0b1111_1111_1111_1111,
+    CAT_WEAPON:     0b0000_0000_0000_0001,
+    CAT_HELMET:     0b0000_0000_0000_0010,
+    CAT_CHESTPLATE: 0b0000_0000_0000_0100,
+    CAT_GLOVES:     0b0000_0000_0000_1000,
+    CAT_BOOTS:      0b0000_0000_0001_0000,
+    CAT_NECKLACE:   0b0000_0000_0010_0000,
+    CAT_RING:       0b0000_0000_0100_0000,
+    CAT_EQUIP:      0b0000_0000_1000_0000,
+    CAT_BAG:        0b0000_0001_0000_0000,
+    CAT_FOOD:       0b0000_0010_0000_0000,
+    CAT_ITEM:       0b0000_0100_0000_0000,
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)

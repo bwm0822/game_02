@@ -1,5 +1,5 @@
 import {Scene} from 'phaser';
-import createUI,{UiMain,UiCursor,UiDragged,UiCase,UiInv,UiTrade,UiDialog,UiOption} from '../ui.js';
+import createUI,{UiDragged} from '../ui.js';
 import * as Role from '../role.js';
 
 export class UI extends Scene

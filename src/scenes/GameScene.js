@@ -8,7 +8,7 @@ import {QuestManager} from  '../quest.js';
 //import {UI} from  '../uibase.js';
 import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
-import {UiCursor, UiOption, UiDialog, UiTrade, UiCase, UiInv, UiMessage, 
+import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage, 
         UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture} from '../ui.js'
 import TimeManager from '../time.js';
 
@@ -349,7 +349,7 @@ export class GameScene extends Scene
             this.events
                 .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);Mark.close();})
                 .on('out', ()=>{this._ent=null;UiCursor.set();})
-                .on('case', (owner)=>{UiCase.show(owner);})
+                .on('storage', (owner)=>{UiStorage.show(owner);})
                 .on('talk', (owner)=>{UiDialog.show(owner);})
                 .on('trade', (owner)=>{UiTrade.show(owner);})
                 .on('option', (x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
