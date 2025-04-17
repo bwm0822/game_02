@@ -1,0 +1,2374 @@
+{
+    "frames": [
+        {
+            "filename": "arrow_e",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_n",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_ne",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_nw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_s",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_se",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_sw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "arrow_w",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "boot",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "bracket_a_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "bracket_a_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "bracket_b_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "bracket_b_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "busy_circle",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "busy_circle_fade",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "busy_hourglass",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "busy_hourglass_outline",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "busy_hourglass_outline_detail",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cross_large",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cross_small",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_alias",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_busy",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_cogs",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_copy",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_disabled",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_exclamation",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_help",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_menu",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "cursor_none",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "disabled",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "door",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "door_disabled",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "door_enter",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "door_exit",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "dot_large",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "dot_small",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_brush",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_brush_large",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_bucket",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_eraser",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_pen",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_pencil",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_picker",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "drawing_spray",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "gauntlet_default",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "gauntlet_open",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "gauntlet_point",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_closed",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_open",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_point",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_point_e",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_point_n",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_small_closed",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_small_open",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_small_point",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_small_point_e",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_small_point_n",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_closed",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_open",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_point",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_small_closed",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_small_open",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "hand_thin_small_point",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "line_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "line_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "line_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "lock",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "lock_unlocked",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "look_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "look_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "look_c",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "look_d",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "mark_exclamation",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "mark_exclamation_pointer_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "mark_question",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "mark_question_pointer_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "message_dots_round",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "message_dots_square",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "message_round",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "message_square",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_e",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_n",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_ne",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_nw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_s",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_se",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_sw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "navigation_w",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_b_shaded",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_c",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_c_shaded",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_d",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_e",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_f",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_g",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_h",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_i",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_j",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_k",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_l",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_scifi_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_scifi_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_toon_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "pointer_toon_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_ccw_25",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_ccw_50",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_ccw_75",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_cw_25",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_cw_50",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_cw_75",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_empty",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "progress_full",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_cross_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_diagonal_mirror",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_a_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_cross_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_diagonal_mirror",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_b_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_cross_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_diagonal_mirror",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_c_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_cross_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_diagonal_mirror",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_d_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_cross",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_cross_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_diagonal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_diagonal_mirror",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_e_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "resize_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "rotate_ccw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "rotate_cw",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "rotate_horizontal_down",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "rotate_horizontal_up",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "stairs",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "stairs_down",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "stairs_up",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "steps",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "target_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "target_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "target_round_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 1,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "target_round_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 34,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_axe",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 67,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_axe_single",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 100,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_bomb",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 133,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_bow",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 166,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_hammer",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 199,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_hoe",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 232,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_pickaxe",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 265,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_shovel",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 298,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_sword_a",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 331,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_sword_b",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 364,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_torch",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 397,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_wand",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 1
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_watering_can",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 34
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tool_wrench",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 67
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_horizontal",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 100
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_horizontal_down",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 133
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_horizontal_up",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 166
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_vertical",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 199
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_vertical_left",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 232
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "tracking_vertical_right",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 265
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "zoom",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 298
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "zoom_in",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 331
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "zoom_out",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 364
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        },
+        {
+            "filename": "zoom_reset",
+            "frame": {
+                "w": 32,
+                "h": 32,
+                "x": 430,
+                "y": 397
+            },
+            "anchor": {
+                "x": 0.5,
+                "y": 0.5
+            }
+        }
+    ],
+    "meta": {
+        "description": "Atlas generado con Atlas Packer Gamma V2",
+        "web": "https://gammafp.github.io/atlas-packer-phaser/"
+    }
+}

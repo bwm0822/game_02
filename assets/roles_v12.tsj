@@ -1,0 +1,14 @@
+{ "columns":10,
+ "image":"roles\/roles_v12.png",
+ "imageheight":1280,
+ "imagewidth":1280,
+ "margin":0,
+ "name":"roles_v12",
+ "spacing":0,
+ "tilecount":100,
+ "tiledversion":"1.11.0",
+ "tileheight":128,
+ "tilewidth":128,
+ "type":"tileset",
+ "version":"1.10"
+}

@@ -1,0 +1,18 @@
+{ "object":
+    {
+     "gid":4,
+     "height":64,
+     "id":2,
+     "name":"",
+     "rotation":0,
+     "type":"npc",
+     "visible":true,
+     "width":96
+    },
+ "tileset":
+    {
+     "firstgid":1,
+     "source":"..\/Color A Spitesheet.tsj"
+    },
+ "type":"template"
+}
