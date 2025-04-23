@@ -4,6 +4,32 @@ import {UiMain, UiTime} from '../ui.js'
 import TimeManager,{Schedular} from '../time.js';
 import {Roles,RoleDB} from '../database.js';
 
+let lutAmbient = [   
+    0x333333    ,
+    0x333333    ,
+    0x333333    ,
+    0x333333	,
+    0x666666	,
+    0x999999	,
+    0xcccccc	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xf0f0f0	,
+    0xcccccc	,
+    0x999999	,
+    0x666666	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    0x333333	,
+    ]
 
 export class GameArea extends GameScene
 {
@@ -22,6 +48,11 @@ export class GameArea extends GameScene
         await super.create({diagonal:true,classType:Role.Avatar});       
         console.log(this.ports) 
         this.process();
+    }
+
+    getAmbientColor(time)
+    {
+        return lutAmbient[time.h];
     }
 
     initUI() 

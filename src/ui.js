@@ -48,7 +48,7 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
-    t3({});
+    //t3({});
 
 }
 
@@ -1028,7 +1028,7 @@ class UiContainerBase extends ContainerLite
     show(...args)
     {
         this.visible=true;
-        this.content.show(...args);
+        return this.content.show(...args);
     }
 
     close() {this.visible=false;}
@@ -1300,10 +1300,13 @@ class Option extends UiBase
         UiObserve.show(this.object);
     }
 
-    split()
+    async split()
     {
         this.close();
-        this.owner.split(this.object);
+        console.log('split',this.object);
+        let cnt = await UiCount.getCount(1, this.object.slot.count-1)
+        if(cnt==0) {return;}
+        this.owner.split(this.object,cnt);
         this.refreshAll();
     }
 
@@ -1668,7 +1671,24 @@ class UiObserve extends UiContainerBase
         this.getLayer().name = 'UiObserve';
     }
 
-    static show(owner) {UiObserve.instance?.show(owner);}
+    static show(owner) {this.instance?.show(owner);}
+}
+
+class UiCount extends UiContainerBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene,false);
+        UiCount.instance = this;
+        this.add(new Count(scene))
+            .close()
+
+        this.getLayer().name = 'UiCount';
+    }
+
+    // static show(owner) {this.instance?.show(owner);}
+    static getCount(min,max) {return this.instance.show(min,max);}
 }
 
 export class UiMain extends UiBase
@@ -1708,9 +1728,15 @@ export class UiMain extends UiBase
         else{this._enable.setInteractive();}
     }
 
-    inv() {UiInv.toggle(Role.Avatar.instance);}
+    inv() {
+        // UiInv.toggle(Role.Avatar.instance);
+        UiInv.toggle(Role.getPlayer());
+    }
 
-    profile() {UiProfile.toggle(Role.Avatar.instance);}
+    profile() {
+        // UiProfile.toggle(Role.Avatar.instance);
+        UiProfile.toggle(Role.getPlayer());
+    }
 
     menu() {this.close();this.closeAll(GM.UI_ALL);send('menu');}
 
@@ -2849,9 +2875,8 @@ export class UiManufacture extends UiBase
 }
 
 
-export class UiCount extends UiBase
+class Count extends UiBase
 {
-    static instance=null;
     constructor(scene)
     {
         let config =
@@ -2865,7 +2890,6 @@ export class UiCount extends UiBase
         }
 
         super(scene,config)
-        UiCount.instance=this;
         this.scene=scene;
         this.addBg_Int(scene)
             .addSlider(scene)
@@ -2910,12 +2934,13 @@ export class UiCount extends UiBase
 
     cancel()
     {
-        this._resolve();
+        this._resolve(0);
         this.close();
     }
 
-    getCount(min,max)
+    show(min,max)
     {
+        console.log('getCount',min,max)
         super.show();
         this._min = min;
         this._max = max;
@@ -2928,6 +2953,12 @@ export class UiCount extends UiBase
         });
     }
 
-    static getCount(min,max) {return this.instance.getCount(min,max);}
+    close()
+    {
+        super.close();
+        this.onclose?.();
+    }
+
+    
 }
 

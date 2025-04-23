@@ -82,4 +82,6 @@ export let GM =
 
     T_CHANGE_SCENE: 500, // 轉場漸暗時間 ms
 
+    LIGHT : 1.2,    // 火炬光源強度
+
 }

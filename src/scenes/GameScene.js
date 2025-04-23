@@ -1,7 +1,6 @@
 import {Scene} from 'phaser';
 import Map from '../map.js';
 import * as Role from '../role.js';
-import Utility from '../utility.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
@@ -12,33 +11,6 @@ import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage,
         UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture} from '../ui.js'
 import TimeManager from '../time.js';
 
-
-let lutAmbient = [   
-    0x333333    ,
-    0x333333    ,
-    0x333333    ,
-    0x333333	,
-    0x666666	,
-    0x999999	,
-    0xcccccc	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xffffff	,
-    0xcccccc	,
-    0x999999	,
-    0x666666	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
-    ]
 
 export class GameScene extends Scene
 {
@@ -85,11 +57,17 @@ export class GameScene extends Scene
     {
         console.log('enable light')
         this.lights.enable();
+        TimeManager.register(this.setAmbient.bind(this));
     }
 
     setAmbient(time)
     {
-        this.lights.setAmbientColor(lutAmbient[time.h]);
+        this.lights.setAmbientColor(this.getAmbientColor(time));
+    }
+
+    getAmbientColor(time)
+    {
+        return 0x808080;
     }
 
     createRuntime()
@@ -106,7 +84,6 @@ export class GameScene extends Scene
     {
         QuestManager.load();
         TimeManager.load();
-        TimeManager.register(this.setAmbient.bind(this));
         //Role.Player.load();
     }
 
@@ -158,6 +135,8 @@ export class GameScene extends Scene
         this._avatar.init_runtime('knight');
         this._avatar.load(Record.data.player);
         this.setCameraFollow(GM.CAM_CENTER);
+
+        Role.setPlayer(this._avatar); 
  
         Record.data.pos = this._avatar.pos;   
         Record.data.map = this._data.map;
@@ -172,7 +151,6 @@ export class GameScene extends Scene
 
     processInput()
     {
-        
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
@@ -195,8 +173,6 @@ export class GameScene extends Scene
                 {
                     if(this._rst.state==1 || this._ent)
                     {
-                        Mark.close();
-                        this.clearPath();
                         let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
                         this._avatar.setDes(pos,this._ent);
                     }
@@ -359,6 +335,7 @@ export class GameScene extends Scene
                 .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
+                .on('clearpath',()=>{this.clearPath();})
         }
 
         const ui = this.scene.get('UI');

@@ -67,16 +67,17 @@
 
     2. 在 package.json 新增以下設定
         "scripts": {
-            "deploy": "npm run build && gh-pages -d dist"
+            "deploy": "npm run build && gh-pages -d frontend"
         }
 
     3. 一鍵發佈
         npm run deploy
 
-        他會自動將 \dist 上傳到 repository 的 gh-pages branch
+        他會自動將 \frontend 上傳到 repository 的 gh-pages branch
+        分享網頁:
         到 github 的 Pages 頁面，將 Branch 設成 gh-pages
         注意 : 要將 repository 設成 public
-        網址 : https://帳號.github.io/repository名稱/
+        網頁位址為 : https://帳號.github.io/repository名稱/
 
 
     

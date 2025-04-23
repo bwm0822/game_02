@@ -104,7 +104,8 @@ export class Entity extends Phaser.GameObjects.Container
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到
     {
-        //console.log(key,frame);
+        console.log(key,frame);
+        // console.trace();
         if(key)
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
@@ -245,12 +246,12 @@ export class Entity extends Phaser.GameObjects.Container
         }
     }
 
-    split(ent)
+    split(ent, cnt)
     {
         let count = ent.slot.count;
-        let half = Math.floor(count/2);
-        ent.slot.count = half;
-        let split = {id:ent.slot.id,count:count-half};
+        // let half = Math.floor(count/2);
+        ent.slot.count -= cnt;
+        let split = {id:ent.slot.id,count:cnt};
         let i = this.findEmpty();
         if(i!=-1) {this.storage.items[i]=split;}
     }

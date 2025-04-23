@@ -54,11 +54,11 @@ export class ItemDB
                     make:{gold:10,items:{'sword_02':1, 'iron':2}}},
 
         'helmet_01':{cat:GM.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
-                    des:'這是頭盔',
-                    props:{defense:1}},
-        'helmet_02':{cat:GM.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',
+                    
+                    props:{defense:1},des:'這是頭盔',},
+        'helmet_02':{cat:GM.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',gold:20,
                     props:{defense:2}},
-        'helmet_03':{cat:GM.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',
+        'helmet_03':{cat:GM.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',gold:30,
                     props:{defense:3}},
 
         'chest_01':{cat:GM.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
@@ -235,7 +235,7 @@ export class RoleDB
                     g:{l:48,r:48,t:64,b:32},
                     z:{l:48,r:48,t:64,b:32},
                     restock:2,
-                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01'},'chest_01','gloves_01',
+                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
                                             'boots_01','neck_01','ring_01','torch','iron','iron',
                                             {id:'salt',count:10},'bag','bag','raw_meat','raw_fish']},
                     attrs:
