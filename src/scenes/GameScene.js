@@ -72,11 +72,11 @@ export class GameScene extends Scene
 
     createRuntime()
     {
-        let objs = Record.data[this._data.map]?.runtime;
+        let objs = Record.data.scenes?.[this._data.map]?.runtime;
         if(objs)
         {
             objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj.slot);});
-            //Record.data[this._data.map].runtime = [];
+            Record.data.scenes[this._data.map].runtime = [];
         }
     }
 

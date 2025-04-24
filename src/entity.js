@@ -24,8 +24,8 @@ export class Entity extends Phaser.GameObjects.Container
     get pos()   {return {x:this.x,y:this.y}}
     set pos(value)  {this.x=value.x;this.y=value.y;}
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
-    get act()   {return this.acts[0];}
-    get acts()  {return [''];}
+    get act()   {return this.acts.length > 0 ? this.acts[0] : '';}
+    get acts()  {return [];}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
@@ -60,12 +60,12 @@ export class Entity extends Phaser.GameObjects.Container
             .on('pointerover',()=>{this.outline(true);this.send('over',this);})
             .on('pointerout',()=>{this.outline(false);this.send('out');})
             .on('pointerdown',(pointer)=>{
-                if (pointer.middleButtonDown())
+                if (pointer.rightButtonDown())
                 {
                     // world space to screen space
                     let x = this.x - this.scene.cameras.main.worldView.x;
                     let y = this.y - this.scene.cameras.main.worldView.y;
-                    this.send('option',x,y-10,this.acts,this);
+                    if(this.acts.length>0) {this.send('option',x,y-10,this.acts,this);}
                 }
             })
         

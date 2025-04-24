@@ -21,19 +21,21 @@ export class ItemDB
 {
     static data = 
     {
-        'cook':{name:'烹飪',des:'烹飪技能'},
+        'cook':{name:'烹飪', des:'烹飪技能'},
 
 
-        'iron':{cat:GM.CAT_ITEM,icon:'icons/273',name:'鐵礦',gold:10,des:'鐵礦'},
-        'wood':{cat:GM.CAT_ITEM,icon:'icons/272',name:'木頭',gold:10,des:'木頭'},
-        'salt':{cat:GM.CAT_FOOD,icon:'icons/250',name:'鹽',gold:10,des:'鹽',cps:10},
-        'bag':{cat:GM.CAT_BAG,icon:'icons/137',name:'背包',gold:10,des:'背包',storage:12},
+        'iron':{cat:GM.CAT_ITEM, icon:'icons/273', name:'鐵礦', gold:10, des:'鐵礦'},
+        'wood':{cat:GM.CAT_ITEM, icon:'icons/272', name:'木頭', gold:10, des:'木頭'},
+        'salt':{cat:GM.CAT_FOOD, icon:'icons/250', name:'鹽', gold:10, des:'鹽', cps:10},
+        'bag':{cat:GM.CAT_BAG, icon:'icons/137', name:'背包', gold:10, des:'背包', storage:12},
 
-        'raw_meat':{cat:GM.CAT_FOOD,icon:'icons/241',name:'生肉',gold:10,des:'沒煮過的肉',
-                    cook:{id:'cooked_meat'}},
-        'cooked_meat':{cat:GM.CAT_FOOD,icon:'icons/242',name:'熟肉',gold:15,des:'煮熟的肉'},
+        'raw_meat':{cat:GM.CAT_FOOD, icon:'icons/241', name:'生肉', gold:10, des:'沒煮過的肉',
+                    cook:{id:'cooked_meat'}, useable:true},
 
-        'raw_fish':{cat:GM.CAT_FOOD,icon:'icons/259',name:'生魚',gold:10,des:'沒煮過的魚'},
+        'cooked_meat':{cat:GM.CAT_FOOD, icon:'icons/242', name:'熟肉', gold:15, des:'煮熟的肉',
+                    useable:true},
+
+        'raw_fish':{cat:GM.CAT_FOOD, icon:'icons/259', name:'生魚', gold:10, des:'沒煮過的魚'},
 
         'salt_baked_fish':{cat:GM.CAT_FOOD,icon:'icons/260',name:'鹽烤魚',gold:20,des:'用鹽烤過的魚',
                         make:{items:{'raw_fish':1, 'salt':2}}},

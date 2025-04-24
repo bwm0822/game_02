@@ -200,29 +200,36 @@ class Slot extends Icon
         if(!this.slot.storage) {this.slot.storage={capacity:this.item.storage,items:[]}};
         return this.slot.storage;
     }
+
     get acts()
     {
+        let acts = [];
+
         if(this.owner.trade)
         {
-            if(this.owner.trade == GM.BUYER) {return ['sell','drop'];}
-            else {return ['buy'];}
+            if(this.owner.trade == GM.BUYER) {acts = ['sell','drop'];}
+            else {acts = ['buy'];}
+            if(this.slot.count>1) {acts = [...acts,'split'];}
         }
         else
         {
+            if(this.item.useable) {acts = [...acts,'use'];}
+
             if(this.owner.target) 
             {
-                let acts = ['transfer','use','drop'];
-                if(this.slot.count>1) {return [...acts,'split'];}
-                else if(this.slot.storage) {return [...acts,'open'];}
-                else {return acts;}
+                acts = [...acts,'transfer','drop'];
+                if(this.slot.count>1) {acts = [...acts,'split'];}
+                else if(this.slot.storage) {acts = [...acts,'open'];}
             }
             else 
             {
-                if(this.slot.count>1) {return ['use','drop','split'];}
-                else if(this.item.storage) {return ['use','drop','openbag'];}
-                else {return ['use','drop'];}
+                if(this.slot.count>1) {acts = [...acts,'drop','split'];}
+                else if(this.item.storage) {acts = [...acts,'drop','openbag'];}
+                else {acts = [...acts,'drop'];}
             }
         }
+
+        return acts;
     }
 
     get trading() {return this.owner.trade != UiDragged.owner.trade;}
@@ -251,8 +258,8 @@ class Slot extends Icon
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{
-            if (pointer.rightButtonDown()) {}
-            else if(pointer.middleButtonDown()) {this.middleButtonDown(x,y);}
+            if (pointer.rightButtonDown()) {this.rightButtonDown(x,y);}
+            else if(pointer.middleButtonDown()) {}
             else {this.leftButtonDown(x,y);}
         })
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
@@ -349,7 +356,7 @@ class Slot extends Icon
         UiDragged.on&&this.noTrade&&gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
     }
 
-    middleButtonDown(x,y)
+    rightButtonDown(x,y)
     {
         if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
     }
@@ -1263,6 +1270,7 @@ class Option extends UiBase
     {
         this.close();
         //console.log('use');
+        console.log(this.object);
         this.object.use();
     }
 
@@ -1323,7 +1331,8 @@ class Option extends UiBase
         Role.Avatar.setDes(this.object.pos,this.object,act);
     }
 
-    show(x,y,options=['use','drop'],object)
+    // show(x,y,options=['use','drop'],object)
+    show(x,y,options,object)
     {
         this.object = object;
         super.show();        
