@@ -84,4 +84,7 @@ export let GM =
 
     LIGHT : 1.2,    // 火炬光源強度
 
+    HUNGER_INC : 0.1, //
+    THIRST_INC : 0.1, //
+
 }

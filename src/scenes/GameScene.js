@@ -132,7 +132,7 @@ export class GameScene extends Scene
         else {pos = this.ports[this._data.port].pt;}
 
         this._avatar = new classType(this,pos.x,pos.y);
-        this._avatar.init_runtime('knight');
+        this._avatar.init_runtime('scott');
         this._avatar.load(Record.data.player);
         this.setCameraFollow(GM.CAM_CENTER);
 
@@ -268,14 +268,14 @@ export class GameScene extends Scene
     mainMenu()
     {
         this.save();
-        Ui.closeAll(true);
+        Ui.closeAll(GM.UI_ALL);
         this.scene.start('MainMenu');
     }
 
     gotoScene(config)
     {
         this.save();
-        Ui.closeAll(true);
+        Ui.closeAll(GM.UI_ALL);
         this.scene.start(config.map=='map'?'GameMap':'GameArea',config);
     }
 

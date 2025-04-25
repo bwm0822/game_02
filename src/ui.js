@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, sprite, text, bbcText, Pic, Icon, bar, scrollBar, label, slider} from './uibase.js';
+import {rect, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label, slider} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
@@ -170,7 +170,9 @@ class Slot extends Icon
     constructor(scene, w, h, i, getOwner, config)
     {
         super(scene, w, h, config);
-        this.add(bar(scene,{width:0,height:5,value:0}),{key:'progress',align:'bottom',expand:{width:true},offsetY:5});
+        this.add(bar(scene,{width:0,height:5,value:0}),{key:'bar',align:'bottom',expand:{width:true},offsetY:5});
+        this.add(progress(scene,{width:0,height:5,value:0}),{key:'progress',align:'bottom',expand:{width:true},offsetY:5});
+        this.add(bbcText(scene,{text:'',fontSize:16, lineSpacing:-8,color:'#fff', stroke:'#000', strokeThickness:5}),{key:'times',align:'left-bottom',expand:false,offsetY:10,offsetX:0});
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK, radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this._i = i;
@@ -196,7 +198,8 @@ class Slot extends Icon
     set cat(value) {this._cat=value;}
     get isValid() {return UiDragged.checkCat(this.cat)}
 
-    get storage() {
+    get storage() 
+    {
         if(!this.slot.storage) {this.slot.storage={capacity:this.item.storage,items:[]}};
         return this.slot.storage;
     }
@@ -236,20 +239,65 @@ class Slot extends Icon
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
-    setSlot(value)
+    setSlot(thsSlot)
     {
-        this._item = ItemDB.get(value?.id);
+        this._item = ItemDB.get(thsSlot?.id);
         this.setIcon(this._item?.icon);
-        this.setCount(value?.count>1?value.count:'');
+        this.setCount(thsSlot?.count>1?thsSlot.count:'');
+
+        this.setBar(false);
+        this.setProgress(false);
+        this.setTimes(false);
         if(this._item?.endurance)
         {
-            if(!value.endurance) {value.endurance=this._item.endurance.cur;}
-            this.getElement('progress').setValue(value.endurance/this._item.endurance.max);
+            if(!thsSlot.endurance) {thsSlot.endurance=this._item.endurance.cur;}
+            this.setBar(true,thsSlot.endurance,this._item.endurance.max);
         }
-        else
+        if(this._item?.capacity)
         {
-            this.getElement('progress').setValue(0);
+            if(!thsSlot.capacity) {thsSlot.capacity=this._item.capacity.cur;}
+            this.setProgress(true,thsSlot.capacity,this._item.capacity.max);
         }
+        if(this._item?.times)
+        {
+            if(!thsSlot.times) {thsSlot.times=this._item.times.cur;}
+            this.setTimes(true,thsSlot.times,this._item.times.max);
+        }
+    }
+
+    setBar(visible, cur, max)
+    {
+        let elm = this.getElement('bar');
+        elm.visible = visible;
+        if(visible) {elm.setValue(cur/max);}
+    }
+
+    setProgress(visible, cur, max)
+    {
+        let elm = this.getElement('progress');
+        elm.visible = visible;
+        if(visible) 
+        {
+            elm.setValue(cur/max);
+        }
+    }
+
+    setTimes(visible, cur, max)
+    {
+        let elm = this.getElement('times');
+        elm.visible=visible;
+        if(visible) 
+        {
+            let times = '';
+            for(let i=0;i<max;i++) 
+            {
+                times += cur>i?'■':'□';
+                if(i%6==5 && i!=max-1) {times += '\n';}
+            }
+            elm.setText(times);
+            this.layout();
+        }
+
     }
 
     addListener()
@@ -904,6 +952,11 @@ class UiInfo extends Sizer
             for(let [key,value] of Object.entries(item.props))
             {
                 //console.log(key,value);
+                switch(key)
+                {
+                    case 'hunger': value = `${value}%`; break;
+                    case 'thirst': value = `${value}%`; break;
+                }
                 this.addProp(key,value);
             }
         }
@@ -917,6 +970,10 @@ class UiInfo extends Sizer
             let cnt = slot.storage?.items.filter(item => item).length;
             this.addProp('storage'.local(),`${cnt??0}/${item.storage}`);
         }
+        if(item.times)
+        {
+            this.addTimes('times'.local(),`${slot.times}/${item.times.max}`);
+        }
         return this;
     }
 
@@ -924,8 +981,18 @@ class UiInfo extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
+            .add(bbcText(this.scene,{text:key.local(),color:'#888'}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0});
+        this.add(sizer,{expand:true});
+        return this;
+    }
+
+    addTimes(key, value)
+    {
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
+            .add(bbcText(this.scene,{text:`${key.local()} : `, color:'#888'}))
+            .add(bbcText(this.scene,{text:value}));
         this.add(sizer,{expand:true});
         return this;
     }
@@ -1269,9 +1336,8 @@ class Option extends UiBase
     use()
     {
         this.close();
-        //console.log('use');
-        console.log(this.object);
-        this.object.use();
+        this.owner.use(this.object);
+        this.refreshAll();
     }
 
     drop()
@@ -1747,14 +1813,14 @@ export class UiMain extends UiBase
         UiProfile.toggle(Role.getPlayer());
     }
 
-    menu() {this.close();this.closeAll(GM.UI_ALL);send('menu');}
+    menu() {this.close();send('menu');}
 
     test() 
     {
-        //this.closeAll();
+        this.closeAll(GM.UI_ALL);
         //UiGameOver.show();
-        TimeManager.inc(60);
-        console.log(TimeManager.time)
+        // TimeManager.inc(60);
+        // console.log(TimeManager.time)
     }
 
     debug()
@@ -2120,6 +2186,8 @@ export class UiProfile extends UiBase
             switch(key)
             {
                 case 'life': value = `${value.cur} / ${value.max}`; break;
+                case 'hunger': value = `${Math.floor(value.cur)}%`; break;
+                case 'thirst': value = `${Math.floor(value.cur)}%`; break;
             }
 
             childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})

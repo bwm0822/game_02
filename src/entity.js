@@ -231,6 +231,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     take(ent, i, isEquip)
     {
+        console.log('take', ent, i, isEquip);
         !i && (i = this.findEmpty());
 
         if(i!=-1)
@@ -616,8 +617,6 @@ export class Stove extends Entity
             this._storage = {capacity:-1,items:[]}; 
             this._output = null;
         }   
-
-        console.log('------------load',this._storage,this._output);
     }
 
     save() 

@@ -386,10 +386,12 @@ export class Role extends Entity
             let isObj = Utility.isObject(loot);
             let id = isObj ? loot.id : loot;
             let p = isObj ? loot.p : 100;
+            let count = isObj ? loot.count : 1;
             if(p==100 || Utility.roll()<p)
             {
                 let pos = this.scene.map.getDropPoint(this.pos);
-                new Pickup(this.scene,this.x,this.y-32).init_runtime(id).falling(pos);
+                let obj = {id:id, count:count};
+                new Pickup(this.scene,this.x,this.y-32).init_runtime(obj).falling(pos);
             }
         })
     }
@@ -471,7 +473,7 @@ export class Role extends Entity
     equip()
     {
         this.status.attrs = Utility.deepClone(this.role.attrs);
-        this.status.states = Utility.deepClone(this.role.states); 
+        //this.status.states = Utility.deepClone(this.role.states); 
         this.removeLight();
 
         this.status.equips.forEach((equip)=>{
@@ -555,11 +557,43 @@ export class Role extends Entity
         }
     }
 
+    use(ent)
+    {
+        console.log('use',ent.item);
+        let states = this.status.states;
+        for(let [key,value] of Object.entries(ent.item.props))
+        {
+            switch(key)
+            {
+                case 'hunger':
+                case 'thirst':
+                    states[key].cur = Utility.clamp(states[key].cur+value, 0, states[key].max); 
+                    break;
+            }
+        }
+
+        if(ent.slot?.times)
+        {
+            ent.slot.times--;
+            if(ent.slot.times<=0)
+            {
+                this.status.bag.items.splice(ent.i,1);
+            }
+        }
+        else
+        {
+            ent.slot.count--;
+            if(ent.slot.count<=0)
+            {
+                this.status.bag.items.splice(ent.i,1);
+            }
+        }
+    }
+
 
     load(record)
     {
         let roleD = RoleDB.get(this.id);
-
         if(!record)
         {
             record = {
@@ -596,6 +630,7 @@ export class Role extends Entity
 
     async process()
     {
+        this.updateStates();
         if(this.moving) {await this.moveTo();}
         else
         {
@@ -638,6 +673,13 @@ export class Role extends Entity
     {
         this.setLightInt();
     }
+
+    updateStates()
+    {
+        let states = this.status.states;
+        if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC,states.hunger.max);}
+        if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC,states.thirst.max);}
+    }
 }
 
 export class Target extends Role
@@ -678,8 +720,6 @@ export class Target extends Role
     // {}
 }
 
-
-
 export class Avatar extends Role
 {
     static instance;
@@ -688,33 +728,12 @@ export class Avatar extends Role
         super(scene,x,y);
         Avatar.instance = this;
         this.weight = 1000;
-        this.id = 'scott';
         this._drawPath = true;
-        //this.initRole();
-        //this.debugDraw();
     }
 
     get isPlayer() {return true;}
 
     async speak(value){}
-
-    // initRole()
-    // {
-    //     let roleD = this.initData();
-    //     this.addSprite(roleD.sprite);
-    //     this.displayWidth = roleD.w 
-    //     this.displayHeight = roleD.h;
-    //     this.addListener();
-    //     this.addPhysics();
-    //     this.addGrid();
-    //     this.setAnchor(roleD.anchor);
-    //     this.updateDepth();
-    //     this.addWeight();
-
-    //     this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(1)
-    //     this.light.x = this.x;
-    //     this.light.y = this.y;
-    // }
 
     addListener()
     {
@@ -827,7 +846,7 @@ export class Npc extends Role
         {
             let roleD = RoleDB.get(this.id);
             this.status.restock = TimeManager.time.d + 2;
-            this.status.bag = this.toBag(roleD.bag.capacity,roleD.bag.items);
+            this.status.bag = this.toStorage(roleD.bag.capacity,roleD.bag.items);
         }
     }
     
@@ -909,7 +928,8 @@ export class Npc extends Role
 
     async process()
     {
-        console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
+        // console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
+        this.updateStates();
         switch(this.state)
         {
             case 'idle': break;

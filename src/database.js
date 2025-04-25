@@ -30,10 +30,12 @@ export class ItemDB
         'bag':{cat:GM.CAT_BAG, icon:'icons/137', name:'背包', gold:10, des:'背包', storage:12},
 
         'raw_meat':{cat:GM.CAT_FOOD, icon:'icons/241', name:'生肉', gold:10, des:'沒煮過的肉',
-                    cook:{id:'cooked_meat'}, useable:true},
+                    cook:{id:'cooked_meat'}, useable:true,
+                    props:{hunger:-1}},
 
         'cooked_meat':{cat:GM.CAT_FOOD, icon:'icons/242', name:'熟肉', gold:15, des:'煮熟的肉',
-                    useable:true},
+                    useable:true,
+                    props:{hunger:-5}},
 
         'raw_fish':{cat:GM.CAT_FOOD, icon:'icons/259', name:'生魚', gold:10, des:'沒煮過的魚'},
 
@@ -81,7 +83,10 @@ export class ItemDB
 
         'ring_01':{cat:GM.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
 
-        'torch':{cat:GM.CAT_EQUIP,icon:'icons/170',name:'火把',gold:10,des:'火把', endurance:{cur:6*60,max:6*60}},    
+        'torch':{cat:GM.CAT_EQUIP,icon:'icons/170',name:'火把',gold:10,des:'火把', endurance:{cur:6*60,max:6*60}}, 
+        
+        'bottle':{cat:GM.CAT_ITEM,icon:'icons/307',name:'瓶子',gold:10,des:'瓶子', times:{cur:3,max:10},
+                    props:{thirst:-25}, useable:true},
 
 
     }
@@ -166,11 +171,11 @@ export class DialogDB
                 B:['1.交易/trade','2.離開/exit']
             }
         },
-        'knight':
+        'smith':
         {
             0:
             {   
-                A:'你好\n1\n2\n3\n4\n5\n6',
+                A:'你好\n我是這村子唯一的鐵匠...\n這邊有許多武器\n想要買什麼?',
                 B:['1.交易/trade','2.離開/exit']
             }
         },
@@ -210,13 +215,20 @@ export class RoleDB
     {
 
         'scott': {name:'史考特', icon:'portraits/35', gold:200,
-                    sprite:'Warrior_Red', faceR:true,
                     corpse:{sprite:'rip',scale:0.5},
-                    anchor:{x:64,y:48}, w:128, h:128,
-                    b:{l:48,r:48,t:32,b:32},
-                    g:{l:48,r:48,t:64,b:32},
-                    z:{l:48,r:48,t:64,b:32},
-                    bag:{capacity:5,items:[]},
+                    // sprite:'Warrior_Red', faceR:true,
+                    // anchor:{x:64,y:48}, w:128, h:128,
+                    // b:{l:48,r:48,t:32,b:32},
+                    // g:{l:48,r:48,t:64,b:32},
+                    // z:{l:48,r:48,t:64,b:32},
+
+                    sprite:'rogues/10', faceR:false,
+                    anchor:{x:32,y:16}, w:64, h:64,
+                    b:{l:16,r:16,t:32,b:0},
+                    g:{l:16,r:16,t:32,b:0},
+                    z:{l:16,r:16,t:32,b:0},
+
+                    bag:{capacity:20,items:[]},
                     attrs:
                         {
                             attack: 5,
@@ -225,6 +237,8 @@ export class RoleDB
                     states:
                         {
                             life: {cur:100,max:100},
+                            hunger: {cur:0,max:100},
+                            thirst: {cur:0,max:100},
                         }
                 },
 
@@ -281,6 +295,42 @@ export class RoleDB
                         {
                             life: {cur:100,max:100},
                         }
+                },
+
+        
+        'smith': {name:'鐵匠', icon:'portraits/40', gold:100,
+
+                    corpse:{sprite:'rip',scale:0.5},
+                    looties:[{id:'sword_02',p:50}, 'helmet_02'],
+
+                    sprite:'rogues/38', faceR:false,
+                    anchor:{x:32,y:16}, w:64, h:64,
+                    b:{l:16,r:16,t:32,b:0},
+                    g:{l:16,r:16,t:32,b:0},
+                    z:{l:16,r:16,t:32,b:0},
+
+                    restock:2,
+                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
+                                            'boots_01','neck_01','ring_01','torch','iron','iron',
+                                            {id:'salt',count:10},'bag','bag','raw_meat','raw_fish','bottle']},
+                    
+                    attrs:{ attack: 5, defense: 0, },
+                    states:{ life: {cur:100,max:100},},
+
+                    schedule:
+                    {
+                        village_01:
+                        [   {type:'enter',  range:['6:00','6:10'],      from:'門-1',    to:'point-1'}, 
+                            {type:'stay',   range:['6:10','17:00'],     pos:'point-1'},
+                            {type:'exit',   range:['17:00','17:10'],    from:'point-1', to:'門-1'},
+                        ],
+                        house_01:
+                        [   {type:'stay',   range:['0:00','5:50'],      pos:'point-1'},
+                            {type:'exit',   range:['5:50','6:00'],      from:'point-1',     to:'門'},
+                            {type:'enter',  range:['17:10','17:20'],    from:'門',          to:'point-1'},
+                            {type:'stay',   range:['17:20','24:00'],    pos:'point-1'}, 
+                        ],
+                    },
                 }
 
     }
@@ -307,5 +357,5 @@ export class CharacterDB
 
 export class Roles
 {
-    static list = ['knight'];
+    static list = ['smith'];
 }

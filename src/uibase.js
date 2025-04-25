@@ -10,9 +10,9 @@ export function rect(scene, config={})
 
 export function bar(scene, config={})
 {
-    config.height = config.height ?? 20,
-    config.width = config.width ?? 100,
-    config.barColor = config.barColor ?? GM.COLOR_PRIMARY,
+    config.height = config.height ?? 20
+    config.width = config.width ?? 100
+    config.barColor = config.barColor ?? GM.COLOR_PRIMARY
     config.value = config.value ?? 0.5
     return scene.add.rexRoundRectangleProgress(config);
 }
