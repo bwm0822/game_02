@@ -39,54 +39,54 @@ export class ItemDB
 
         'raw_fish':{cat:GM.CAT_FOOD, icon:'icons/259', name:'生魚', gold:10, des:'沒煮過的魚'},
 
-        'salt_baked_fish':{cat:GM.CAT_FOOD,icon:'icons/260',name:'鹽烤魚',gold:20,des:'用鹽烤過的魚',
+        'salt_baked_fish':{cat:GM.CAT_FOOD, icon:'icons/260',name:'鹽烤魚', gold:20, des:'用鹽烤過的魚',
                         make:{items:{'raw_fish':1, 'salt':2}}},
 
 
-        'sword_01':{cat:GM.CAT_WEAPON,icon:'weapons/3',name:'刀-1',gold:15,
+        'sword_01':{cat:GM.CAT_WEAPON, icon:'weapons/3',name:'刀-1', gold:15,
                     des:'這是一把刀',
                     props:{attack:20}},
 
-        'sword_02':{cat:GM.CAT_WEAPON,icon:'weapons/4',name:'刀-2',gold:25,
+        'sword_02':{cat:GM.CAT_WEAPON, icon:'weapons/4',name:'刀-2', gold:25,
                     props:{attack:40},
                     des:'這是一把刀',
                     make:{gold:10,items:{'sword_01':1, 'iron':2}}},
 
-        'sword_03':{cat:GM.CAT_WEAPON,icon:'weapons/5',name:'刀-3',gold:35,
+        'sword_03':{cat:GM.CAT_WEAPON, icon:'weapons/5',name:'刀-3', gold:35,
                     props:{attack:60},
                     des:'這是一把刀',
-                    make:{gold:10,items:{'sword_02':1, 'iron':2}}},
+                    make:{gold:10, items:{'sword_02':1, 'iron':2}}},
 
-        'helmet_01':{cat:GM.CAT_HELMET,icon:'weapons/45',name:'高級頭盔-1',gold:10,
+        'helmet_01':{cat:GM.CAT_HELMET, icon:'weapons/45', name:'高級頭盔-1', gold:10,
                     
                     props:{defense:1},des:'這是頭盔',},
-        'helmet_02':{cat:GM.CAT_HELMET,icon:'weapons/46',name:'頭盔-2',gold:20,
+        'helmet_02':{cat:GM.CAT_HELMET, icon:'weapons/46', name:'頭盔-2', gold:20,
                     props:{defense:2}},
-        'helmet_03':{cat:GM.CAT_HELMET,icon:'weapons/47',name:'頭盔-3',gold:30,
+        'helmet_03':{cat:GM.CAT_HELMET, icon:'weapons/47', name:'頭盔-3', gold:30,
                     props:{defense:3}},
 
-        'chest_01':{cat:GM.CAT_CHESTPLATE,icon:'weapons/54',name:'胸甲-1',gold:20,
+        'chest_01':{cat:GM.CAT_CHESTPLATE, icon:'weapons/54', name:'胸甲-1', gold:20,
                     des:'這是護甲',
                     props:{defense:2}},
-        'chest_02':{cat:GM.CAT_CHESTPLATE,icon:'weapons/55',name:'胸甲-2',gold:20,
+        'chest_02':{cat:GM.CAT_CHESTPLATE, icon:'weapons/55', name:'胸甲-2', gold:20,
                     props:{defense:4}},
-        'chest_03':{cat:GM.CAT_CHESTPLATE,icon:'weapons/56',name:'胸甲-3',gold:20,
+        'chest_03':{cat:GM.CAT_CHESTPLATE, icon:'weapons/56', name:'胸甲-3', gold:20,
                     props:{defense:6}},
 
-        'gloves_01':{cat:GM.CAT_GLOVES,icon:'icons/128',name:'手套-1',gold:10,des:'手套',
+        'gloves_01':{cat:GM.CAT_GLOVES, icon:'icons/128', name:'手套-1', gold:10, des:'手套',
                     props:{defense:1}},
 
-        'boots_01':{cat:GM.CAT_BOOTS,icon:'icons/130',name:'靴子-1',gold:10,des:'靴子',
+        'boots_01':{cat:GM.CAT_BOOTS, icon:'icons/130', name:'靴子-1', gold:10, des:'靴子',
                     props:{defense:2}},
 
-        'neck_01':{cat:GM.CAT_NECKLACE,icon:'icons/134',name:'項鍊-1',gold:10,des:'項鍊'},
+        'neck_01':{cat:GM.CAT_NECKLACE, icon:'icons/134', name:'項鍊-1', gold:10, des:'項鍊'},
 
-        'ring_01':{cat:GM.CAT_RING,icon:'icons/132',name:'戒子-1',gold:10,des:'戒子'},
+        'ring_01':{cat:GM.CAT_RING, icon:'icons/132',name:'戒子-1', gold:10, des:'戒子'},
 
-        'torch':{cat:GM.CAT_EQUIP,icon:'icons/170',name:'火把',gold:10,des:'火把', endurance:{cur:6*60,max:6*60}}, 
+        'torch':{cat:GM.CAT_EQUIP, icon:'icons/170',name:'火把', gold:10, des:'火把', endurance:{cur:6*60,max:6*60}}, 
         
-        'bottle':{cat:GM.CAT_ITEM,icon:'icons/307',name:'瓶子',gold:10,des:'瓶子', times:{cur:3,max:10},
-                    props:{thirst:-25}, useable:true},
+        'bottle':{cat:GM.CAT_ITEM, icon:'icons/307',name:'水壺', gold:10, des:'水壺', capacity:{cur:3,max:10},
+                    props:{thirst:-25}, useable:true, keep:true},
 
 
     }

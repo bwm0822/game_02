@@ -572,21 +572,26 @@ export class Role extends Entity
             }
         }
 
-        if(ent.slot?.times)
+        if(ent.item?.times) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         {
             ent.slot.times--;
-            if(ent.slot.times<=0)
+            if(ent.slot.times<=0 && !ent.item.keep)
             {
-                this.status.bag.items.splice(ent.i,1);
+                ent.clear();
+            }
+        }
+        else if(ent.item?.capacity)
+        {
+            ent.slot.capacity--;
+            if(ent.slot.capacity<=0 && !ent.item.keep)
+            {
+                ent.clear();
             }
         }
         else
         {
             ent.slot.count--;
-            if(ent.slot.count<=0)
-            {
-                this.status.bag.items.splice(ent.i,1);
-            }
+            if(ent.slot.count<=0) {ent.clear();}
         }
     }
 

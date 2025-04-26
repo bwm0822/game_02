@@ -16,6 +16,7 @@ export let GM =
     COLOR_RED : 0xff0000,
     COLOR_GREEN : 0x00ff00,
     COLOR_YELLOW : 0xffff00,
+    COLOR_BLUE : 0x0000ff,
     COLOR_BLACK : 0x0,
 
     FONT : "Arial",

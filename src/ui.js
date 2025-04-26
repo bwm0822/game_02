@@ -216,11 +216,17 @@ class Slot extends Icon
         }
         else
         {
-            if(this.item.useable) {acts = [...acts,'use'];}
+            if(this.item.useable) 
+            {
+                if(this.slot?.times===0)
+                    acts = [...acts,'use:false'];
+                else
+                    acts = [...acts,'use'];
+            }
 
             if(this.owner.target) 
             {
-                acts = [...acts,'transfer','drop'];
+                acts = [...acts,{transfer:true},'drop'];
                 if(this.slot.count>1) {acts = [...acts,'split'];}
                 else if(this.slot.storage) {acts = [...acts,'open'];}
             }
@@ -250,17 +256,17 @@ class Slot extends Icon
         this.setTimes(false);
         if(this._item?.endurance)
         {
-            if(!thsSlot.endurance) {thsSlot.endurance=this._item.endurance.cur;}
+            if(thsSlot.endurance===undefined) {thsSlot.endurance=this._item.endurance.cur;}
             this.setBar(true,thsSlot.endurance,this._item.endurance.max);
         }
         if(this._item?.capacity)
         {
-            if(!thsSlot.capacity) {thsSlot.capacity=this._item.capacity.cur;}
+            if(thsSlot.capacity===undefined) {thsSlot.capacity=this._item.capacity.cur;}
             this.setProgress(true,thsSlot.capacity,this._item.capacity.max);
         }
         if(this._item?.times)
         {
-            if(!thsSlot.times) {thsSlot.times=this._item.times.cur;}
+            if(thsSlot.times===undefined) {thsSlot.times=this._item.times.cur;}
             this.setTimes(true,thsSlot.times,this._item.times.max);
         }
     }
@@ -834,6 +840,7 @@ class UiButton extends Sizer
 
     setEnable(on)
     {        
+        console.log('setEnable',on)
         if(on) 
         {
             this.setInteractive();
@@ -1318,8 +1325,8 @@ class Option extends UiBase
         //this.getLayer().name = 'UiOption';
     }
 
-    get owner() {return this.object.owner;}
-    get target() {return this.object.owner.target;}
+    get owner() {return this.ent.owner;}
+    get target() {return this.ent.owner.target;}
 
     addButton(key,onclick)
     {
@@ -1336,24 +1343,24 @@ class Option extends UiBase
     use()
     {
         this.close();
-        this.owner.use(this.object);
+        this.owner.use(this.ent);
         this.refreshAll();
     }
 
     drop()
     {
         this.close();
-        this.owner.drop(this.object);
-        this.object.clear();
+        this.owner.drop(this.ent);
+        this.ent.clear();
         this.refreshAll();
     }
 
     transfer()
     {
         this.close();
-        if(this.owner.transfer(this.target, this.object))
+        if(this.owner.transfer(this.target, this.ent))
         {
-            this.object.clear();
+            this.ent.clear();
             this.refreshAll();
         }
     }
@@ -1361,9 +1368,9 @@ class Option extends UiBase
     trade()
     {
         this.close();
-        if(this.owner.sell(this.target, this.object))
+        if(this.owner.sell(this.target, this.ent))
         {
-            this.object.clear();
+            this.ent.clear();
             this.refreshAll();
         }
     }
@@ -1371,39 +1378,41 @@ class Option extends UiBase
     observe()
     {
         this.close();
-        UiObserve.show(this.object);
+        UiObserve.show(this.ent);
     }
 
     async split()
     {
         this.close();
-        console.log('split',this.object);
-        let cnt = await UiCount.getCount(1, this.object.slot.count-1)
+        console.log('split',this.ent);
+        let cnt = await UiCount.getCount(1, this.ent.slot.count-1)
         if(cnt==0) {return;}
-        this.owner.split(this.object,cnt);
+        this.owner.split(this.ent,cnt);
         this.refreshAll();
     }
 
     openbag()
     {
         this.close();        
-        UiStorage.show(this.object, ~GM.CAT_BAG);
-        this.object.setEnable(false);
+        UiStorage.show(this.ent, ~GM.CAT_BAG);
+        this.ent.setEnable(false);
     }
  
     act(act)
     {
         this.close();
-        Role.Avatar.setDes(this.object.pos,this.object,act);
+        Role.Avatar.setDes(this.ent.pos,this.ent,act);
     }
 
-    // show(x,y,options=['use','drop'],object)
-    show(x,y,options,object)
+    show(x,y,options,ent)
     {
-        this.object = object;
+        this.ent = ent;
         super.show();        
         Object.values(this.btns).forEach((btn)=>{btn.hide();})
-        options.forEach((opt)=>{this.btns[opt].show();})
+        options.forEach((opt)=>{
+            let [type, en] = opt.split(':');
+            this.btns[type].show().setEnable(en !== 'false');
+        })
         this.setPosition(x,y).rePos().layout();
         // close
         UiInfo.close();

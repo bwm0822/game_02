@@ -10,21 +10,21 @@ export function rect(scene, config={})
 
 export function bar(scene, config={})
 {
-    config.height = config.height ?? 20
-    config.width = config.width ?? 100
-    config.barColor = config.barColor ?? GM.COLOR_PRIMARY
-    config.value = config.value ?? 0.5
+    config.height = config.height ?? 20;
+    config.width = config.width ?? 100;
+    config.barColor = config.barColor ?? GM.COLOR_GREEN;
+    config.value = config.value ?? 0.5;
     return scene.add.rexRoundRectangleProgress(config);
 }
 
 export function progress(scene, config={})
 {
-    config.height = config.height ?? 20,
-    config.width = config.width ?? 100,
-    config.barColor = config.barColor ?? GM.COLOR_PRIMARY,
-    config.trackColor = config.trackColor ?? GM.COLOR_DARK,
+    config.height = config.height ?? 20;
+    config.width = config.width ?? 100;
+    config.barColor = config.barColor ?? GM.COLOR_GREEN;
+    config.trackColor = config.trackColor ?? GM.COLOR_BLACK;
     //config.trackStrokeColor = config.trackStrokeColor ?? GM.COLOR_LIGHT,
-    config.value = config.value ?? 0.5
+    config.value = config.value ?? 0.5;
     return scene.add.rexRoundRectangleProgress(config);
 }
 
