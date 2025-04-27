@@ -728,6 +728,7 @@ export class Target extends Role
 export class Avatar extends Role
 {
     static instance;
+    get acts() {return ['inv','profile'];}
     constructor(scene, x, y)
     {
         super(scene,x,y);

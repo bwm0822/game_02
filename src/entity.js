@@ -60,15 +60,17 @@ export class Entity extends Phaser.GameObjects.Container
             .on('pointerover',()=>{this.outline(true);this.send('over',this);})
             .on('pointerout',()=>{this.outline(false);this.send('out');})
             .on('pointerdown',(pointer)=>{
-                if (pointer.rightButtonDown())
-                {
-                    // world space to screen space
-                    let x = this.x - this.scene.cameras.main.worldView.x;
-                    let y = this.y - this.scene.cameras.main.worldView.y;
-                    if(this.acts.length>0) {this.send('option',x,y-10,this.acts,this);}
-                }
+                if (pointer.rightButtonDown()) {this.rightButtonDown();}
             })
         
+    }
+
+    rightButtonDown()
+    {
+        // world space to screen space
+        let x = this.x - this.scene.cameras.main.worldView.x;
+        let y = this.y - this.scene.cameras.main.worldView.y;
+        if(this.acts.length>0) {this.send('option',x,y-10,this.acts,this);}
     }
 
     outline(on)
@@ -694,6 +696,8 @@ export class Node extends Port
         super(scene,x,y);
         this.weight = 10;
     }
+
+    rightButtonDown() {}
 
     addText(label)
     {

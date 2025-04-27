@@ -218,7 +218,7 @@ class Slot extends Icon
         {
             if(this.item.useable) 
             {
-                if(this.slot?.times===0)
+                if(this.slot?.times===0 || this.slot?.capacity===0)
                     acts = [...acts,'use:false'];
                 else
                     acts = [...acts,'use'];
@@ -1309,6 +1309,9 @@ class Option extends UiBase
             .addButton('attack')
             .addButton('open')
             .addButton('tool')
+            .addButton('enter')
+            .addButton('inv', this.inv.bind(this))
+            .addButton('profile', this.profile.bind(this))
             // for slot
             .addButton('buy',this.trade.bind(this))
             .addButton('sell',this.trade.bind(this))
@@ -1331,7 +1334,6 @@ class Option extends UiBase
     addButton(key,onclick)
     {
         let btn = new UiButton(this.scene,{type:GM.BTN_TEXT,text:key.local(),onclick:()=>{
-            //onclick ? onclick(key) : this.act(key); 
             (onclick??this.act.bind(this))(key);
         }});
             
@@ -1381,6 +1383,18 @@ class Option extends UiBase
         UiObserve.show(this.ent);
     }
 
+    inv()
+    {
+        this.close();
+        UiInv.show(Role.Avatar.instance);
+    }
+
+    profile()
+    {
+        this.close();
+        UiProfile.show(Role.Avatar.instance);
+    }
+
     async split()
     {
         this.close();
@@ -1413,7 +1427,7 @@ class Option extends UiBase
             let [type, en] = opt.split(':');
             this.btns[type].show().setEnable(en !== 'false');
         })
-        this.setPosition(x,y).rePos().layout();
+        this.layout().setPosition(x,y).rePos(); // 注意要在 layout 之後再 setPosition，否則會有 offset 的問題
         // close
         UiInfo.close();
         UiCursor.set();
@@ -1910,8 +1924,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     setIcon(type)
     {
-        type = !type || type=='' ? 'none':type;
-        let icon = UiCursor.icons[type];
+        let icon = UiCursor.icons[type] ?? UiCursor.icons.none;
         let [key,frame]=icon.sprite.split('/')
         this.setTexture(key,frame);
         this.setOrigin(icon.origin.x,icon.origin.y);
@@ -2290,9 +2303,10 @@ export class UiDialog extends UiBase
 
  
         this.setIconA = (icon)=>{let [key,frame]=icon.split('/');iconA.setTexture(key,frame);return this;}
-        this.setNameA = (name)=>{nameA.setText(name);return this;}
+        this.setNameA = (name)=>{nameA.setText(`[color=yellow]${name}[/color]`);return this;}
         this.setTextA = (text)=>{page.setText(text);return this;}
 
+        this.setIconB = (icon)=>{let [key,frame]=icon.split('/');iconB.setTexture(key,frame);return this;}
         this.setTextB = (options)=>{
             textB.removeAll(true);
             options.forEach((option)=>{
@@ -2408,6 +2422,7 @@ export class UiDialog extends UiBase
         super.show();
         this.setIconA(owner.role.icon)
             .setNameA(owner.role.name)
+            .setIconB(Role.Avatar.instance.role.icon)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
         // show

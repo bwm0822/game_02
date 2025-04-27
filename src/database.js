@@ -298,7 +298,7 @@ export class RoleDB
                 },
 
         
-        'smith': {name:'鐵匠', icon:'portraits/40', gold:100,
+        'smith': {name:'鐵匠', icon:'portraits/4', gold:100,
 
                     corpse:{sprite:'rip',scale:0.5},
                     looties:[{id:'sword_02',p:50}, 'helmet_02'],

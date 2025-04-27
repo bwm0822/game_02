@@ -14,7 +14,7 @@ export default class Utility
                     shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',
                     poison:'下毒',weak:'虛弱',
                     use:'使用',drop:'丟棄',talk:'交談',trade:'交易',buy:'買',sell:'賣',split:'拆分',
-                    open:'開啟',observe:'觀察',transfer:'移動',openbag:'開啟',
+                    open:'開啟',observe:'觀察',transfer:'移動',openbag:'開啟',inv:'背包',profile:'個人',
                     dodge:'閃避',block:'擋格',
                     };
                     
