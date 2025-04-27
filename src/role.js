@@ -140,7 +140,7 @@ export class Role extends Entity
         return this;
     }
 
-    addLight(equip)
+    addLight()
     {
         if(!this.light)
         {
@@ -148,12 +148,6 @@ export class Role extends Entity
             this.light = this.scene.lights.addLight(0, 0, 300).setIntensity(GM.LIGHT-a.r);
             this.light.x = this.x;
             this.light.y = this.y;
-
-            this._cbLight = ()=>{
-                if(--equip.endurance<=0){this.removeEquip(equip);}
-                this.send('refresh')
-            }
-            TimeManager.register(this._cbLight);
         }
     }
 
@@ -163,8 +157,6 @@ export class Role extends Entity
         {
             this.scene.lights.removeLight(this.light);
             this.light = null;
-
-            TimeManager.unregister( this._cbLight);
         }
     }
 
@@ -477,7 +469,6 @@ export class Role extends Entity
         this.removeLight();
 
         this.status.equips.forEach((equip)=>{
-            //console.log(equip);
             if(equip && equip.id)
             {
                 let item = ItemDB.get(equip.id);
@@ -499,10 +490,7 @@ export class Role extends Entity
                 }
             }
 
-            if(equip?.id == 'torch')
-            {
-                this.addLight(equip);
-            }
+            if(equip?.id == 'torch') {this.addLight();}
         })
 
         this.send('equip'); // UiProfile.refresh()
@@ -635,7 +623,6 @@ export class Role extends Entity
 
     async process()
     {
-        this.updateStates();
         if(this.moving) {await this.moveTo();}
         else
         {
@@ -674,16 +661,27 @@ export class Role extends Entity
         }
     }
 
-    updateTime()
+    updateTime(dt)
     {
         this.setLightInt();
+        this.updateStates(dt);
+        this.status.equips.forEach((equip)=>{
+            if(equip && equip.endurance)
+            {
+                equip.endurance -= dt;
+                if(equip.endurance<=0)
+                {
+                    this.removeEquip(equip);
+                }
+            }
+        })
     }
 
-    updateStates()
+    updateStates(dt=1)
     {
         let states = this.status.states;
-        if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC,states.hunger.max);}
-        if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC,states.thirst.max);}
+        if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC*dt,states.hunger.max);}
+        if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
     }
 }
 

@@ -50,14 +50,25 @@ export default function createUI(scene)
 
     //t3({});
 
+
+
 }
 
 async function t3(config={a:0,b:1,c:2})
 {
-    let cnt = await UiCount.getCount(1,5);
-    console.log(cnt);
+    // let cnt = await UiCount.getCount(1,5);
+    // console.log(cnt);
     //console.log(config.a,config.b,config.c,config.d);
     //progress(uiScene,{x:100,y:100,value:0.5});
+
+    let t=['a','b','c','d','e']
+    t.forEach((v,i)=>{
+        console.log(v,i);
+        t.splice(i,1);
+
+    })
+    console.log(t);
+    
 }
 
 
@@ -2819,7 +2830,7 @@ export class UiTime extends UiBase
         return this;
     }
 
-    static updateTime(time)
+    static updateTime(dt,time)
     {
         let h = String(time.h).padStart(2, '0');
         let m = String(time.m).padStart(2, '0');

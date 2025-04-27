@@ -60,7 +60,7 @@ export class GameScene extends Scene
         TimeManager.register(this.setAmbient.bind(this));
     }
 
-    setAmbient(time)
+    setAmbient(dt,time)
     {
         this.lights.setAmbientColor(this.getAmbientColor(time));
     }

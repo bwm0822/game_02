@@ -26,7 +26,7 @@ export default class TimeManager
 
         this.ticks = this.time2Ticks(this.time);
 
-        this.emit();
+        this.emit(minutes);
     }
 
     static set(type,val)
@@ -49,14 +49,14 @@ export default class TimeManager
         if(index>-1) {this.list.splice(index,1);}
     }
 
-    static emit()
+    static emit(dt)
     {
-        this.list.forEach((cb)=>{cb(this.time);})
+        this.list.forEach((cb)=>{cb(dt,this.time);})
     }
 
     static start()
     {
-        this.emit();
+        this.emit(0,this.time);
     }
 
     static load()
