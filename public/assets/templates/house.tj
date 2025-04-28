@@ -6,24 +6,14 @@
      "name":"\u623f\u5b50",
      "properties":[
             {
-             "name":"bottom",
+             "name":"bt",
              "type":"int",
-             "value":0
+             "value":64
             }, 
             {
-             "name":"left",
+             "name":"gt",
              "type":"int",
-             "value":0
-            }, 
-            {
-             "name":"right",
-             "type":"int",
-             "value":0
-            }, 
-            {
-             "name":"top",
-             "type":"int",
-             "value":96
+             "value":64
             }, 
             {
              "name":"weight",

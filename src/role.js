@@ -97,6 +97,8 @@ export class Role extends Entity
     get moving()    {return this._des!=null;}
     get storage()   {return this.status.bag;}
 
+    get msg_name() {return `[weight=900]${this.role.name}[/weight] `}
+
     addSprite(sprite)
     {
         //let [key,frame]=ICON_AVATAR.split('/');
@@ -472,6 +474,7 @@ export class Role extends Entity
             if(equip && equip.id)
             {
                 let item = ItemDB.get(equip.id);
+
                 if(item.props)
                 {
                     for(let [key,value] of Object.entries(item.props))
@@ -488,9 +491,9 @@ export class Role extends Entity
                         }
                     }
                 }
-            }
 
-            if(equip?.id == 'torch') {this.addLight();}
+                if(item.light) {this.addLight();}
+            }
         })
 
         this.send('equip'); // UiProfile.refresh()
@@ -515,11 +518,11 @@ export class Role extends Entity
                 this.status.gold-=ent.gold;
                 if(this == Avatar.instance)
                 {
-                    this.send('msg',`購買 ${ent.item.name}`);
+                    this.send('msg',this.msg_name+`購買 ${ent.item.name}`);
                 }
                 else
                 {
-                    this.send('msg',`出售 ${ent.item.name}`)
+                    this.send('msg',Avatar.instance.msg_name+`出售 ${ent.item.name}`)
                 }
                 return true;
             }
@@ -581,6 +584,12 @@ export class Role extends Entity
             ent.slot.count--;
             if(ent.slot.count<=0) {ent.clear();}
         }
+    }
+
+    drink()
+    {
+        let states = this.status.states;
+        if(states.thirst) {states.thirst.cur=0; this.send('msg',this.msg_name+'喝了一口水');}
     }
 
 
@@ -787,10 +796,11 @@ export class Npc extends Role
         return super.init_runtime(id);
     }
 
-    updateTime()
+    updateTime(dt)
     {
         //console.log('updateTime')
         this.checkSchedule();
+        this.updateStates();
     }
 
     setSchedule()
@@ -933,7 +943,7 @@ export class Npc extends Role
     async process()
     {
         // console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
-        this.updateStates();
+        
         switch(this.state)
         {
             case 'idle': break;

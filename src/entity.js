@@ -11,9 +11,9 @@ export class Entity extends Phaser.GameObjects.Container
         this.scene = scene;
         scene.add.existing(this);
         this.enableOutline();
-        this.bl=0,this.br=0,this.bt=0,this.bb=0;
-        this.gl=0,this.gr=0,this.gt=0,this.gb=0;
-        this.zl=0,this.zr=0,this.zt=0,this.zb=0;
+        this.bl=0,this.br=0,this.bt=0,this.bb=0;    // body
+        this.gl=0,this.gr=0,this.gt=0,this.gb=0;    // grid
+        this.zl=0,this.zr=0,this.zt=0,this.zb=0;    // zone，interactive=true 才有作用
         this.interactive = false;
         this.en_outline = true;
         this.weight = 0;
@@ -53,6 +53,7 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(!this.interactive) {return;}
 
+        // zone(cx,cy,w,h)
         this._zone = this.scene.add.zone((this.zl-this.zr)/2, (this.zt-this.zb)/2, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
         this.add(this._zone)
         this._zone.setInteractive()
@@ -512,7 +513,7 @@ export class Stove extends Entity
         this.cat = GM.CAT_FOOD;
     }
 
-    get acts()  {return ['tool'];}
+    get acts()  {return ['cook'];}
     get storage() {return this._storage;}
     get output() {return this._output;}
     set output(value) {return this._output=value;}
@@ -534,7 +535,7 @@ export class Stove extends Entity
     addListener()
     {
         super.addListener();
-        this.on('tool',()=>{this.send('stove',this)})
+        this.on('cook',()=>{this.send('stove',this)})
     }
 
     check()
@@ -627,6 +628,24 @@ export class Stove extends Entity
         this.saveData({storage:this._storage,output:output}); 
     }
 
+}
+
+export class Well extends Entity
+{
+    constructor(scene, x, y)
+    {
+        super(scene,x,y);  
+        this.weight = 1000;
+        this.interactive = true;  
+    }
+
+    get acts()  {return ['drink','fill'];}
+
+    addListener()
+    {
+        super.addListener();
+        this.on('drink',(role)=>{role.drink();})
+    }
 }
 
 

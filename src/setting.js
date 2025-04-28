@@ -22,11 +22,18 @@ export let GM =
     FONT : "Arial",
     FONT_SIZE: 24,
 
-    ICON_CLOSE : 'cursors/cross_small',
-    ICON_DROP : 'cursors/iconPack_123',
-    ICON_USE : 'cursors/iconPack_123',
-    ICON_INFO : 'cursors/iconPack_27',
     ICON_MARK : 'buffs/108',
+
+    ICON_CLOSE : 'cursors/46',
+    ICON_NONE : 'cursors/47',
+    ICON_AIM : 'cursors/168',
+    ICON_ATTACK : 'cursors/179',
+    ICON_PICKUP : 'cursors/90',
+    ICON_TALK : 'cursors/117',
+    ICON_ENTER : 'cursors/72',
+    ICON_EXIT : 'cursors/73',
+    ICON_OPEN : 'cursors/87',
+    ICON_TOOL : 'cursors/58',
 
     ICON_WEAPON : 'icons/80',  //'weapons/5'
     ICON_HELMET : 'icons/113', //'weapons/45'
@@ -37,15 +44,6 @@ export let GM =
     ICON_RING : 'icons/133',
     ICON_EQUIP : 'icons/170',
     ICON_BAG : 'icons/137',
-
-    // CAT_WEAPON: 'weapon',
-    // CAT_HELMET: 'helmet',
-    // CAT_CHESTPLATE: 'chestplate',
-    // CAT_GLOVES: 'gloves',
-    // CAT_BOOTS: 'boots',
-    // CAT_NECKLACE: 'necklace',
-    // CAT_RING: 'ring',
-    // CAT_ITEM: 'item',
 
     CAT_ALL:        0b1111_1111_1111_1111,
     CAT_WEAPON:     0b0000_0000_0000_0001,

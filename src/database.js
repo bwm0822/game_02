@@ -83,7 +83,7 @@ export class ItemDB
 
         'ring_01':{cat:GM.CAT_RING, icon:'icons/132',name:'戒子-1', gold:10, des:'戒子'},
 
-        'torch':{cat:GM.CAT_EQUIP, icon:'icons/170',name:'火把', gold:10, des:'火把', endurance:{cur:6*60,max:6*60}}, 
+        'torch':{cat:GM.CAT_EQUIP, icon:'icons/170',name:'火把', gold:10, des:'火把', endurance:{cur:6*60,max:6*60}, light:true}, 
         
         'bottle':{cat:GM.CAT_ITEM, icon:'icons/307',name:'水壺', gold:10, des:'水壺', capacity:{cur:3,max:10},
                     props:{thirst:-25}, useable:true, keep:true},

@@ -1319,10 +1319,12 @@ class Option extends UiBase
             .addButton('observe',this.observe.bind(this))
             .addButton('attack')
             .addButton('open')
-            .addButton('tool')
             .addButton('enter')
             .addButton('inv', this.inv.bind(this))
             .addButton('profile', this.profile.bind(this))
+            .addButton('cook')
+            .addButton('drink')
+            .addButton('fill', this.inv.bind(this))
             // for slot
             .addButton('buy',this.trade.bind(this))
             .addButton('sell',this.trade.bind(this))
@@ -1904,15 +1906,26 @@ export class UiMain extends UiBase
 export class UiCursor extends Phaser.GameObjects.Sprite
 {
     static icons = {
-        none :  {sprite:'cursors/cursor_none', origin:{x:0.25,y:0}, scale:1},
-        aim :   {sprite:'cursors/target_b', origin:{x:0.5,y:0.5}, scale:0.7},
-        attack :  {sprite:'cursors/tool_sword_b', origin:{x:0.5,y:0.5}, scale:0.7},
-        pickup :  {sprite:'cursors/hand_open', origin:{x:0.5,y:0.5}, scale:0.7},
-        talk :  {sprite:'cursors/message_dots_square', origin:{x:0.5,y:0.5}, scale:0.7},   
-        enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
-        exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
-        open :  {sprite:'cursors/gauntlet_open', origin:{x:0.5,y:0.5}, scale:1},
-        tool :  {sprite:'cursors/tool_wrench', origin:{x:0.5,y:0.5}, scale:1},
+        // none :  {sprite:'cursors/cursor_none', origin:{x:0.25,y:0}, scale:1},
+        // aim :   {sprite:'cursors/target_b', origin:{x:0.5,y:0.5}, scale:0.7},
+        // attack :  {sprite:'cursors/tool_sword_b', origin:{x:0.5,y:0.5}, scale:0.7},
+        // pickup :  {sprite:'cursors/hand_open', origin:{x:0.5,y:0.5}, scale:0.7},
+        // talk :  {sprite:'cursors/message_dots_square', origin:{x:0.5,y:0.5}, scale:0.7},   
+        // enter :  {sprite:'cursors/door_enter', origin:{x:0.5,y:0.5}, scale:1},  
+        // exit :  {sprite:'cursors/door_exit', origin:{x:0.5,y:0.5}, scale:1},
+        // open :  {sprite:'cursors/gauntlet_open', origin:{x:0.5,y:0.5}, scale:1},
+        // tool :  {sprite:'cursors/tool_wrench', origin:{x:0.5,y:0.5}, scale:1},
+
+        none :  {sprite:GM.ICON_NONE, origin:{x:0.25,y:0}, scale:1},
+        aim :   {sprite:GM.ICON_AIM, origin:{x:0.5,y:0.5}, scale:0.7},
+        attack :  {sprite:GM.ICON_ATTACK, origin:{x:0.5,y:0.5}, scale:0.7},
+        pickup :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
+        talk :  {sprite:GM.ICON_TALK, origin:{x:0.5,y:0.5}, scale:0.7},   
+        enter :  {sprite:GM.ICON_ENTER, origin:{x:0.5,y:0.5}, scale:1},  
+        exit :  {sprite:GM.ICON_EXIT, origin:{x:0.5,y:0.5}, scale:1},
+        open :  {sprite:GM.ICON_OPEN, origin:{x:0.5,y:0.5}, scale:1},
+        cook :  {sprite:GM.ICON_TOOL, origin:{x:0.5,y:0.5}, scale:1},
+        drink :  {sprite:GM.ICON_TOOL, origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;
