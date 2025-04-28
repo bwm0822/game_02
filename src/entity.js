@@ -645,6 +645,7 @@ export class Well extends Entity
     {
         super.addListener();
         this.on('drink',(role)=>{role.drink();})
+        this.on('fill',(role)=>{this.send('fill');})
     }
 }
 

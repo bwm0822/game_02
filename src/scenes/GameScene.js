@@ -336,6 +336,10 @@ export class GameScene extends Scene
                 .on('gameover',()=>{this.gameOver();})
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
+                .on('fill',()=>{
+                    UiInv.show(Role.Avatar.instance);
+                    UiInv.filter([{type:'id',op:'==',value:'bottle'}])
+                })
         }
 
         const ui = this.scene.get('UI');

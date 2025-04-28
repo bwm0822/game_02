@@ -48,7 +48,7 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
-    //t3({});
+    t3({});
 
 
 
@@ -61,13 +61,23 @@ async function t3(config={a:0,b:1,c:2})
     //console.log(config.a,config.b,config.c,config.d);
     //progress(uiScene,{x:100,y:100,value:0.5});
 
-    let t=['a','b','c','d','e']
-    t.forEach((v,i)=>{
-        console.log(v,i);
-        t.splice(i,1);
+    // let t=['a','b','c','d','e']
+    // t.forEach((v,i)=>{
+    //     console.log(v,i);
+    //     t.splice(i,1);
 
-    })
-    console.log(t);
+    // })
+    // console.log(t);
+
+    console.log('============================')
+
+    let opts=[{type:'cat',op:'==', value:10}, {type:'name',op:'==', value:'劍'}]
+
+    for(let opt of opts)
+    {
+        console.log(opt)
+                
+    }
     
 }
 
@@ -255,6 +265,8 @@ class Slot extends Icon
     get trading() {return this.owner.trade != UiDragged.owner.trade;}
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
+
+    get(p) {return this.slot?.[p] != undefined ? this.slot[p] : this.item?.[p];}
 
     setSlot(thsSlot)
     {
@@ -1316,7 +1328,7 @@ class Option extends UiBase
             .addBg(scene, {color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3})
             .addButton('talk')
             .addButton('trade')
-            .addButton('observe',this.observe.bind(this))
+            .addButton('observe', this.observe.bind(this))
             .addButton('attack')
             .addButton('open')
             .addButton('enter')
@@ -1324,15 +1336,15 @@ class Option extends UiBase
             .addButton('profile', this.profile.bind(this))
             .addButton('cook')
             .addButton('drink')
-            .addButton('fill', this.inv.bind(this))
+            .addButton('fill')
             // for slot
-            .addButton('buy',this.trade.bind(this))
-            .addButton('sell',this.trade.bind(this))
-            .addButton('transfer',this.transfer.bind(this))
-            .addButton('use',this.use.bind(this))
-            .addButton('drop',this.drop.bind(this))
-            .addButton('split',this.split.bind(this))
-            .addButton('openbag',this.openbag.bind(this))
+            .addButton('buy', this.trade.bind(this))
+            .addButton('sell', this.trade.bind(this))
+            .addButton('transfer', this.transfer.bind(this))
+            .addButton('use', this.use.bind(this))
+            .addButton('drop', this.drop.bind(this))
+            .addButton('split', this.split.bind(this))
+            .addButton('openbag', this.openbag.bind(this))
             .setOrigin(0)
             .layout()
             .hide();
@@ -1718,17 +1730,40 @@ export class UiInv extends UiBase
         else {this.show(owner);}
     }
 
-    filter(type)
+
+    condition(opts, slot)
     {
-        if(type=='storage')
+        for(let opt of opts)
         {
-            this.getElement('equip').getElement('items').forEach((slot) => {
-                slot?.setEnable(!slot?.item?.storage);
-            });
-            this.getElement('grid').getElement('items').forEach((slot) => {
-                slot.setEnable(!slot?.item?.storage);
-            });
+            let p = slot.get(opt.type);
+            let value = opt.value;
+            let rst; 
+            switch(opt.op)
+            {
+                case '==': rst = p == value; break;
+                case '!=': rst = p != value; break;
+                case '>=': rst = p >= value; break;
+                case '<=': rst = p <= value; break;
+                case '>': rst = p > value; break;
+                case '<': rst = p < value; break;
+                default: rst = false;
+            }
+            if(!rst) {return false;}
         }
+        return true;
+    }
+
+
+    filter(opts)
+    {
+        this.getElement('equip').getElement('items').forEach((slot) => {
+            slot?.setEnable( this.condition(opts,slot) );
+        });
+
+        this.getElement('grid').getElement('items').forEach((slot) => {
+            slot.setEnable( this.condition(opts,slot) );
+        }); 
+
     }
 
     unfilter()
@@ -1747,7 +1782,7 @@ export class UiInv extends UiBase
     static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
     static check(cat) {UiInv.instance?.check(cat);}
-    static filter(type) {UiInv.instance?.filter(type);}
+    static filter(opts) {UiInv.instance?.filter(opts);}
     static unfilter() {UiInv.instance?.unfilter();}
     
 }
