@@ -6,10 +6,10 @@
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
         "public/assets/tiles",
-        "public/assets",
+        "public/assets/templates",
         "public",
         ".",
-        "public/assets/maps"
+        "public/assets"
     ],
     "fileStates": {
         "": {
@@ -280,7 +280,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 279,
+                "x": 537,
                 "y": 1064
             }
         },
@@ -430,9 +430,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/weapons.tsj",
         "public/assets/maps/house_01.json",
         "public/assets/maps/village_01.json",
+        "public/assets/weapons.tsj",
         "public/assets/icons.tsj",
         "public/assets/houe_1.tsj",
         "public/assets/maps/weapons.tsj",

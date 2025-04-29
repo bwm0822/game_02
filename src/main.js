@@ -7,7 +7,7 @@ import { UI } from './scenes/UI';
 import { GameMap } from './scenes/GameMap';
 import { GameArea } from './scenes/GameArea';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
-//import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
+import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
 import TextTypingPlugin from 'phaser3-rex-plugins/plugins/texttyping-plugin.js';
 import TextPagePlugin from 'phaser3-rex-plugins/plugins/textpage-plugin.js';
 import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin.js';
@@ -45,11 +45,11 @@ const config = {
         },
         ],
         global: [
-            // {
-            //     key: 'rexBBCodeTextPlugin',
-            //     plugin: BBCodeTextPlugin,
-            //     start: true
-            // },
+            {
+                key: 'rexBBCodeTextPlugin',
+                plugin: BBCodeTextPlugin,
+                start: true
+            },
             {
                 key: 'rexTextTyping',
                 plugin: TextTypingPlugin,

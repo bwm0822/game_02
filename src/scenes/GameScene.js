@@ -8,7 +8,7 @@ import {QuestManager} from  '../quest.js';
 import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage, 
-        UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture} from '../ui.js'
+        UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import TimeManager from '../time.js';
 
 
@@ -317,6 +317,15 @@ export class GameScene extends Scene
         this._dbg.strokeCircleShape(circle);
     }
 
+    fill()
+    {
+        UiInv.show(Role.Avatar.instance);
+        UiInv.filter([{type:'capacity',op:'<',value:'$max'}]);
+        UiCursor.set('aim');
+        UiCover.show();
+        Ui.setMode(GM.UI_MODE_FILL)
+    }
+
     setEvent()
     {
         if(!this._done)
@@ -329,17 +338,13 @@ export class GameScene extends Scene
                 .on('talk', (owner)=>{UiDialog.show(owner);})
                 .on('trade', (owner)=>{UiTrade.show(owner);})
                 .on('option', (x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
-                .on('refresh', ()=>{UiInv.refresh()})
+                .on('refresh', ()=>{Ui.refreshAll()})
                 .on('msg', (msg)=>{UiMessage.push(msg);})
-                .on('equip', ()=>{UiProfile.refresh();})
                 .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
-                .on('fill',()=>{
-                    UiInv.show(Role.Avatar.instance);
-                    UiInv.filter([{type:'id',op:'==',value:'bottle'}])
-                })
+                .on('fill',()=>{this.fill();})
         }
 
         const ui = this.scene.get('UI');

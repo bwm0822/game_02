@@ -26,7 +26,7 @@ export let GM =
 
     ICON_CLOSE : 'cursors/46',
     ICON_NONE : 'cursors/47',
-    ICON_AIM : 'cursors/168',
+    ICON_AIM : 'cursors/169',
     ICON_ATTACK : 'cursors/179',
     ICON_PICKUP : 'cursors/90',
     ICON_TALK : 'cursors/117',
@@ -79,11 +79,14 @@ export let GM =
     UI_MSG :    0b10000,
     UI_ALL :    0b11111,
 
-    T_CHANGE_SCENE: 500, // 轉場漸暗時間 ms
+    T_CHANGE_SCENE : 500, // 轉場漸暗時間 ms
 
     LIGHT : 1.2,    // 火炬光源強度
 
-    HUNGER_INC : 0.1, //
-    THIRST_INC : 0.1, //
+    HUNGER_INC : 0.1, // 飢餓每分鐘增加量
+    THIRST_INC : 0.1, // 口渴每分鐘增加量
+
+    UI_MODE_NORMAL : 0, //
+    UI_MODE_FILL : 1, //  
 
 }

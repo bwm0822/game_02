@@ -496,7 +496,7 @@ export class Role extends Entity
             }
         })
 
-        this.send('equip'); // UiProfile.refresh()
+        this.send('refresh');
     }
 
     sell(target, ent, i, isEquip)

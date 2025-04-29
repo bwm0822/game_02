@@ -9,7 +9,7 @@ import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
 
 let uiScene;
-let _mode=0;
+let _mode = 0;
 
 export default function createUI(scene)
 {
@@ -71,13 +71,23 @@ async function t3(config={a:0,b:1,c:2})
 
     console.log('============================')
 
-    let opts=[{type:'cat',op:'==', value:10}, {type:'name',op:'==', value:'劍'}]
+    // let opts=[{type:'cat',op:'==', value:10}, {type:'name',op:'==', value:'劍'}]
 
-    for(let opt of opts)
-    {
-        console.log(opt)
+    // for(let opt of opts)
+    // {
+    //     console.log(opt)
                 
-    }
+    // }
+
+    let slot={id:'test', count:0}
+
+    console.log(slot.id, slot['id'], slot['quality'], slot.quality)
+    if(slot.count){console.log(slot.count)}
+    else {console.log('none')}
+
+    slot['quality']=100;
+
+    console.log(slot);
     
 }
 
@@ -168,11 +178,12 @@ function clearpath() {uiScene.events.emit('clearpath');}
 
 function send(event) {uiScene.events.emit(event);}
 
-
-
 export class Ui
 {
     static _list = {};
+    static _mode = GM.UI_MODE_NORMAL;
+
+    static get mode() {return this._mode;}
     //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
     static closeAll(mode=GM.UI_FORCE) 
     {
@@ -184,6 +195,7 @@ export class Ui
     static refreshAll() {for(let key in Ui._list){Ui._list[key].ui.refresh?.();}}
     static register(ui,type) {Ui._list[ui.constructor.name]={ui:ui,type:type};}
     static unregister(ui) {delete Ui._list[ui.constructor.name];}
+    static setMode(mode) {this._mode = mode;}
 }
 
 class Slot extends Icon
@@ -266,12 +278,19 @@ class Slot extends Icon
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
-    get(p) {return this.slot?.[p] != undefined ? this.slot[p] : this.item?.[p];}
+    get(p,sub) // slot,item 有可能會是 null/undefined (例如:EquipSlot的第10個)
+    {
+        return sub ? this.slot?.[p]?.[sub] != undefined ? this.slot[p][sub] : this.item?.[p]?.[sub]
+                    : this.slot?.[p] != undefined ? this.slot[p] : this.item?.[p];
+    }  
+
+    fill(p) {if(this.item[p] != undefined) {this.slot[p] = this.item[p].max;}}
 
     setSlot(thsSlot)
     {
         this._item = ItemDB.get(thsSlot?.id);
-        this.setIcon(this._item?.icon);
+        // this.setIcon(this._item?.icon);
+        this.setIcon(this._item?.icon,{alpha:thsSlot?.count>0?1:0.25});
         this.setCount(thsSlot?.count>1?thsSlot.count:'');
 
         this.setBar(false);
@@ -373,13 +392,12 @@ class Slot extends Icon
         if(on)
         {
             this.setInteractive({draggable:true,dropZone:true});
-            //this.setBgColor(GM.COLOR_SLOT);
             this.getElement('disabled').fillAlpha=0;
         }
         else
         {
             this.disableInteractive();
-            //this.setBgColor(GM.COLOR_SLOT_DISABLE);
+            this.setBgColor(GM.COLOR_SLOT);
             this.getElement('disabled').fillAlpha=0.6;
         }
     }
@@ -441,45 +459,53 @@ class Slot extends Icon
     leftButtonDown(x,y)
     {
         UiInfo.close();
-        if(this.dropable && UiDragged.on)
-        {            
-            if(this.isValid)
-            {
-                if(this.trading) 
+        if(Ui.mode == GM.UI_MODE_NORMAL)
+        {
+            if(this.dropable && UiDragged.on)
+            {            
+                if(this.isValid)
                 {
-                    if(!this.isEmpty) {return;}
+                    if(this.trading) 
+                    {
+                        if(!this.isEmpty) {return;}
 
-                    if(UiDragged.owner.sell(this.owner, UiDragged, this._i, this.isEquip))
-                    {
-                        UiDragged.clear();
-                        Ui.refreshAll();
-                    }
-                }
-                else
-                {
-                    if(this.isMergeable())
-                    {
-                        this.merge();
+                        if(UiDragged.owner.sell(this.owner, UiDragged, this._i, this.isEquip))
+                        {
+                            UiDragged.clear();
+                            Ui.refreshAll();
+                        }
                     }
                     else
                     {
-                        let dataCopy = this.copyData();
-                        this.slot = UiDragged.slot;
-                        UiDragged.clear();
-                        if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
-                        if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
-                    }  
+                        if(this.isMergeable())
+                        {
+                            this.merge();
+                        }
+                        else
+                        {
+                            let dataCopy = this.copyData();
+                            this.slot = UiDragged.slot;
+                            UiDragged.clear();
+                            if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                            if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
+                        }  
+                    }
+                    this.over();
                 }
-                this.over();
+            }
+            else if(!this.isEmpty)
+            {
+                this.setBgColor(GM.COLOR_SLOT_DRAG);
+                UiDragged.data = this.copyData();
+                UiDragged.setPos(this.left+x,this.top+y);
+                this.clear();
+                UiInv.check();
             }
         }
-        else if(!this.isEmpty)
+        else if(Ui.mode == GM.UI_MODE_FILL)
         {
-            this.setBgColor(GM.COLOR_SLOT_DRAG);
-            UiDragged.data = this.copyData();
-            UiDragged.setPos(this.left+x,this.top+y);
-            this.clear();
-            UiInv.check();
+            this.fill('capacity');
+            Ui.refreshAll();
         }
     }
 
@@ -630,11 +656,14 @@ class OutputSlot extends Slot
 
     clear() {this.slot.count=0;this.slot=this.slot;}
 
-    setSlot(value)
-    {
-        this._item = ItemDB.get(value?.id);
-        this.setIcon(this._item?.icon,{alpha:value?.count>0?1:0.25});
-    }
+    // setSlot(value)
+    // {
+    //     this.setBar(false);
+    //     this.setProgress(false);
+    //     this.setTimes(false);
+    //     this._item = ItemDB.get(value?.id);
+    //     this.setIcon(this._item?.icon,{alpha:value?.count>0?1:0.25});
+    // }
 }
 
 
@@ -883,7 +912,7 @@ class UiButton extends Sizer
 
 
 
-class UiCover extends Sizer
+export class UiCover extends Sizer
 {
     static instance = null;
     constructor(scene)
@@ -1159,7 +1188,7 @@ class UiBase extends Sizer
     {
         this.addBackground(rect(scene,config),'bg');
         this.getElement('bg').setInteractive() //避免 UI scene 的 input event 傳到其他 scene
-            .on('pointerover',()=>{UiCursor.set();clearpath();})
+            .on('pointerover',()=>{if(Ui.mode==GM.UI_MODE_NORMAL){UiCursor.set();clearpath();}})
         return this;
     }
 
@@ -1650,7 +1679,7 @@ export class UiInv extends UiBase
         
            //.on('pointerout',()=>{!this.isPointerInBounds()&&console.log('out')})
         //this.onClickOutside(()=>{console.log('outside')});
-        
+        this._opts = null;
         this.getLayer().name = 'UiInv';
     }
 
@@ -1693,9 +1722,10 @@ export class UiInv extends UiBase
         this.layout();
     }
 
-    refresh()
+    refresh()   // call by Ui.refreshAll()
     {
         this.update();
+        if(this._opts){this.filter(this._opts);}
     }
 
     check(cat)
@@ -1706,12 +1736,16 @@ export class UiInv extends UiBase
     close()
     {
         if(!this.visible) {return;}
+        this._opts = null;
 
         super.close();
         // closeAll/unregister/camera
         this.unregister();
         Ui.closeAll(GM.UI_LEFT);
         clrCamera(GM.CAM_LEFT);
+        Ui.setMode(GM.UI_MODE_NORMAL);
+        UiCover.close();
+        UiCursor.set();
     }
 
     show(owner)
@@ -1736,7 +1770,8 @@ export class UiInv extends UiBase
         for(let opt of opts)
         {
             let p = slot.get(opt.type);
-            let value = opt.value;
+            let value = opt.value.startsWith('$') ? slot.get(opt.type, opt.value.slice(1)) : opt.value;
+            // let value = opt.value == 'max' ? slot.get(opt.type, 'max') : opt.value;
             let rst; 
             switch(opt.op)
             {
@@ -1756,6 +1791,7 @@ export class UiInv extends UiBase
 
     filter(opts)
     {
+        this._opts = opts;
         this.getElement('equip').getElement('items').forEach((slot) => {
             slot?.setEnable( this.condition(opts,slot) );
         });
@@ -1768,6 +1804,7 @@ export class UiInv extends UiBase
 
     unfilter()
     {
+        this._opts = null;
         this.getElement('equip').getElement('items').forEach((slot) => {
             slot?.setEnable(true);
         });
@@ -1779,7 +1816,7 @@ export class UiInv extends UiBase
     static close() {UiInv.instance?.close();}
     static show(owner) {UiInv.instance?.show(owner);}
     static updateGold() {UiInv.instance?.updateGold();}
-    static refresh() {UiInv.instance?.update();}
+    // static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
     static check(cat) {UiInv.instance?.check(cat);}
     static filter(opts) {UiInv.instance?.filter(opts);}
@@ -1952,7 +1989,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         // tool :  {sprite:'cursors/tool_wrench', origin:{x:0.5,y:0.5}, scale:1},
 
         none :  {sprite:GM.ICON_NONE, origin:{x:0.25,y:0}, scale:1},
-        aim :   {sprite:GM.ICON_AIM, origin:{x:0.5,y:0.5}, scale:0.7},
+        aim :   {sprite:GM.ICON_AIM, origin:{x:0.5,y:0.5}, scale:1},
         attack :  {sprite:GM.ICON_ATTACK, origin:{x:0.5,y:0.5}, scale:0.7},
         pickup :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
         talk :  {sprite:GM.ICON_TALK, origin:{x:0.5,y:0.5}, scale:0.7},   
@@ -2288,6 +2325,8 @@ export class UiProfile extends UiBase
         }
     }
 
+    refresh() {this.update();}  // call by Ui.refreshAll()
+
     show(owner)
     {
         this.owner = owner;
@@ -2318,7 +2357,7 @@ export class UiProfile extends UiBase
 
     static show(owner) {UiProfile.instance?.show(owner);}
     static close() {UiProfile.instance?.close();}
-    static refresh() {UiProfile.instance?.update();}
+    // static refresh() {UiProfile.instance?.update();}
     static toggle(owner) {UiProfile.instance?.toggle(owner);}
     static get shown() {UiProfile.instance?.visible;}
 }
