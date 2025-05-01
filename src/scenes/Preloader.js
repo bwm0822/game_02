@@ -62,6 +62,9 @@ export class Preloader extends Scene
 
         // this.load.plugin('rexbbcodetextplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexbbcodetextplugin.min.js', true);
         // this.load.plugin('rextexteditplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rextexteditplugin.min.js', true);
+
+        this.load.json('local', 'json/local.json');
+        this.load.json('item', 'json/item.json');
         
     }
 

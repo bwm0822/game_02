@@ -1,0 +1,324 @@
+{
+  "weapon": {
+    "tw": {
+      "lab": "武器",
+      "des": "攻擊用"
+    },
+    "us": {
+      "lab": "weapon",
+      "des": "attack"
+    }
+  },
+  "armor": {
+    "tw": {
+      "lab": "防具"
+    },
+    "us": {
+      "lab": "armor"
+    }
+  },
+  "item": {
+    "tw": {
+      "lab": "道具"
+    },
+    "us": {
+      "lab": "item"
+    }
+  },
+  "skill": {
+    "tw": {
+      "lab": "技能"
+    },
+    "us": {
+      "lab": "skill"
+    }
+  },
+  "helmet": {
+    "tw": {
+      "lab": "頭盔"
+    },
+    "us": {
+      "lab": "helmet"
+    }
+  },
+  "chestplate": {
+    "tw": {
+      "lab": "胸甲"
+    },
+    "us": {
+      "lab": "chestplate"
+    }
+  },
+  "gloves": {
+    "tw": {
+      "lab": "手套"
+    },
+    "us": {
+      "lab": "gloves"
+    }
+  },
+  "boots": {
+    "tw": {
+      "lab": "靴子"
+    },
+    "us": {
+      "lab": "boots"
+    }
+  },
+  "necklace": {
+    "tw": {
+      "lab": "項鍊"
+    },
+    "us": {
+      "lab": "necklace"
+    }
+  },
+  "ring": {
+    "tw": {
+      "lab": "戒子"
+    },
+    "us": {
+      "lab": "ring"
+    }
+  },
+  "bag": {
+    "tw": {
+      "lab": "背包"
+    },
+    "us": {
+      "lab": "bag"
+    }
+  },
+  "equip": {
+    "tw": {
+      "lab": "裝備"
+    },
+    "us": {
+      "lab": "equip"
+    }
+  },
+  "other": {
+    "tw": {
+      "lab": "其他"
+    },
+    "us": {
+      "lab": "other"
+    }
+  },
+  "storage": {
+    "tw": {
+      "lab": "儲量"
+    },
+    "us": {
+      "lab": "storage"
+    }
+  },
+  "endurance": {
+    "tw": {
+      "lab": "耐久"
+    },
+    "us": {
+      "lab": "endurance"
+    }
+  },
+  "durability": {
+    "tw": {
+      "lab": "耐久"
+    },
+    "us": {
+      "lab": "durability"
+    }
+  },
+  "times": {
+    "tw": {
+      "lab": "次數"
+    },
+    "us": {
+      "lab": "times"
+    }
+  },
+  "attrs": {
+    "tw": {
+      "lab": "屬性"
+    },
+    "us": {
+      "lab": "attrs"
+    }
+  },
+  "states": {
+    "tw": {
+      "lab": "狀態"
+    },
+    "us": {
+      "lab": "states"
+    }
+  },
+  "life": {
+    "tw": {
+      "lab": "生命"
+    },
+    "us": {
+      "lab": "life"
+    }
+  },
+  "attack": {
+    "tw": {
+      "lab": "攻擊"
+    },
+    "us": {
+      "lab": "attack"
+    }
+  },
+  "defense": {
+    "tw": {
+      "lab": "防禦"
+    },
+    "us": {
+      "lab": "defense"
+    }
+  },
+  "hunger": {
+    "tw": {
+      "lab": "飢餓"
+    },
+    "us": {
+      "lab": "hunger"
+    }
+  },
+  "thirst": {
+    "tw": {
+      "lab": "口渴"
+    },
+    "us": {
+      "lab": "thirst"
+    }
+  },
+  "use": {
+    "tw": {
+      "lab": "使用"
+    },
+    "us": {
+      "lab": "use"
+    }
+  },
+  "drop": {
+    "tw": {
+      "lab": "丟棄"
+    },
+    "us": {
+      "lab": "drop"
+    }
+  },
+  "talk": {
+    "tw": {
+      "lab": "交談"
+    },
+    "us": {
+      "lab": "talk"
+    }
+  },
+  "trade": {
+    "tw": {
+      "lab": "交易"
+    },
+    "us": {
+      "lab": "trade"
+    }
+  },
+  "buy": {
+    "tw": {
+      "lab": "買"
+    },
+    "us": {
+      "lab": "buy"
+    }
+  },
+  "sell": {
+    "tw": {
+      "lab": "賣"
+    },
+    "us": {
+      "lab": "sell"
+    }
+  },
+  "split": {
+    "tw": {
+      "lab": "拆分"
+    },
+    "us": {
+      "lab": "split"
+    }
+  },
+  "open": {
+    "tw": {
+      "lab": "開啟"
+    },
+    "us": {
+      "lab": "open"
+    }
+  },
+  "observe": {
+    "tw": {
+      "lab": "觀察"
+    },
+    "us": {
+      "lab": "observe"
+    }
+  },
+  "transfer": {
+    "tw": {
+      "lab": "移動"
+    },
+    "us": {
+      "lab": "transfer"
+    }
+  },
+  "openbag": {
+    "tw": {
+      "lab": "開啟"
+    },
+    "us": {
+      "lab": "openbag"
+    }
+  },
+  "inv": {
+    "tw": {
+      "lab": "背包"
+    },
+    "us": {
+      "lab": "inv"
+    }
+  },
+  "profile": {
+    "tw": {
+      "lab": "個人"
+    },
+    "us": {
+      "lab": "profile"
+    }
+  },
+  "drink": {
+    "tw": {
+      "lab": "喝水"
+    },
+    "us": {
+      "lab": "drink"
+    }
+  },
+  "fill": {
+    "tw": {
+      "lab": "取水"
+    },
+    "us": {
+      "lab": "fill"
+    }
+  },
+  "cook": {
+    "tw": {
+      "lab": "烹煮"
+    },
+    "us": {
+      "lab": "cook"
+    }
+  }
+}

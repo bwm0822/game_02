@@ -48,7 +48,7 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
-    t3({});
+    // t3({});
 
 
 
@@ -79,15 +79,18 @@ async function t3(config={a:0,b:1,c:2})
                 
     // }
 
-    let slot={id:'test', count:0}
+    // let slot={id:'test', count:0}
 
-    console.log(slot.id, slot['id'], slot['quality'], slot.quality)
-    if(slot.count){console.log(slot.count)}
-    else {console.log('none')}
+    // console.log(slot.id, slot['id'], slot['quality'], slot.quality)
+    // if(slot.count){console.log(slot.count)}
+    // else {console.log('none')}
 
-    slot['quality']=100;
+    // slot['quality']=100;
 
-    console.log(slot);
+    // console.log(slot);
+
+    const data = uiScene.cache.json.get('local');
+    console.log(data); // 看看您可愛的 JSON 內容吧～
     
 }
 
@@ -724,7 +727,6 @@ export class UiDragged extends Pic
     {
         this.show();
         this.data = value;
-        console.log(value)
         this.setIcon(value.item.icon)
             .setCount(value.slot.count>1?value.slot.count:'')
         UiCover.show();
@@ -892,7 +894,6 @@ class UiButton extends Sizer
 
     setEnable(on)
     {        
-        console.log('setEnable',on)
         if(on) 
         {
             this.setInteractive();
@@ -969,7 +970,8 @@ class UiInfo extends Sizer
 
     addTitle(item)
     {
-        this.add(bbcText(this.scene,{text:item.name}));
+        console.log(item)
+        this.add(bbcText(this.scene,{text:item.name.lab()}));
         return this;
     }
 
@@ -977,7 +979,7 @@ class UiInfo extends Sizer
     {
         if(item.cat)
         {
-            let cat = `[color=gray]${item.cat.local()}[/color]`;
+            let cat = `[color=gray]${item.cat.lab()}[/color]`;
             this.add(bbcText(this.scene,{text:cat}));
         }
         return this;
@@ -1022,16 +1024,16 @@ class UiInfo extends Sizer
         if(item.endurance)
         {
             //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
-            this.addProp('endurance'.local(),Utility.tick2Str(slot.endurance));
+            this.addProp('endurance'.lab(),Utility.tick2Str(slot.endurance));
         }
         if(item.storage)
         {
             let cnt = slot.storage?.items.filter(item => item).length;
-            this.addProp('storage'.local(),`${cnt??0}/${item.storage}`);
+            this.addProp('storage'.lab(),`${cnt??0}/${item.storage}`);
         }
         if(item.times)
         {
-            this.addTimes('times'.local(),`${slot.times}/${item.times.max}`);
+            this.addTimes('times'.lab(),`${slot.times}/${item.times.max}`);
         }
         return this;
     }
@@ -1040,7 +1042,7 @@ class UiInfo extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:key.local(),color:'#888'}),{proportion:1})
+            .add(bbcText(this.scene,{text:key.lab(),color:'#888'}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0});
         this.add(sizer,{expand:true});
         return this;
@@ -1050,7 +1052,7 @@ class UiInfo extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:`${key.local()} : `, color:'#888'}))
+            .add(bbcText(this.scene,{text:`${key.lab()} : `, color:'#888'}))
             .add(bbcText(this.scene,{text:value}));
         this.add(sizer,{expand:true});
         return this;
@@ -1097,6 +1099,7 @@ class UiInfo extends Sizer
 
     show(target)
     {
+        console.log(target)
         super.show();
         let x,y=target.y;
 

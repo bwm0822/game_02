@@ -1,0 +1,158 @@
+{
+  "iron": {
+    "cat": "CAT_ITEM",
+    "icon": "icons/273"
+  },
+  "salt": {
+    "cat": "CAT_ITEM",
+    "icon": "icons/250",
+    "cps": 10
+  },
+  "bag": {
+    "cat": "CAT_BAG",
+    "icon": "icons/137",
+    "storage": 12
+  },
+  "raw_meat": {
+    "cat": "CAT_FOOD",
+    "icon": "icons/241",
+    "props": {
+      "hunger": -1
+    },
+    "useable": true,
+    "cook": {
+      "id": "cooked_meat"
+    }
+  },
+  "cooked_meat": {
+    "cat": "CAT_FOOD",
+    "icon": "icons/242",
+    "props": {
+      "hunger": -5
+    },
+    "useable": true
+  },
+  "raw_fish": {
+    "cat": "CAT_FOOD",
+    "icon": "icons/259",
+    "props": {
+      "hunger": -1
+    },
+    "useable": true
+  },
+  "salt_baked_fish": {
+    "cat": "CAT_FOOD",
+    "icon": "icons/260",
+    "props": {
+      "hunger": -5
+    },
+    "useable": true,
+    "make": {
+      "items": {
+        "raw_fish": 1,
+        "salt": 2
+      }
+    }
+  },
+  "sword_01": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons/3",
+    "props": {
+      "attack": 15
+    }
+  },
+  "sword_02": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons/4",
+    "props": {
+      "attack": 25
+    }
+  },
+  "sword_03": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons/5",
+    "props": {
+      "attack": 35
+    }
+  },
+  "helmet_01": {
+    "cat": "CAT_HELMET",
+    "icon": "weapons/45",
+    "props": {
+      "defense": 1
+    }
+  },
+  "helmet_02": {
+    "cat": "CAT_HELMET",
+    "icon": "weapons/46",
+    "props": {
+      "defense": 2
+    }
+  },
+  "helmet_03": {
+    "cat": "CAT_HELMET",
+    "icon": "weapons/47",
+    "props": {
+      "defense": 3
+    }
+  },
+  "chest_01": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "weapons/54",
+    "props": {
+      "defense": 2
+    }
+  },
+  "chest_02": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "weapons/55",
+    "props": {
+      "defense": 4
+    }
+  },
+  "chest_03": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "weapons/56",
+    "props": {
+      "defense": 6
+    }
+  },
+  "gloves_01": {
+    "cat": "CAT_GLOVES",
+    "icon": "icons/128",
+    "props": {
+      "defense": 1
+    }
+  },
+  "boots_01": {
+    "cat": "CAT_BOOTS",
+    "icon": "icons/130",
+    "props": {
+      "defense": 1
+    }
+  },
+  "neck_01": {
+    "cat": "CAT_NECKLACE",
+    "icon": "icons/134"
+  },
+  "ring_01": {
+    "cat": "CAT_RING",
+    "icon": "icons/132"
+  },
+  "torch": {
+    "cat": "CAT_EQUIP",
+    "icon": "icons/170",
+    "endurance": {
+      "cur": 360,
+      "max": 360
+    }
+  },
+  "bottle": {
+    "cat": "CAT_ITEM",
+    "icon": "icons/307",
+    "capacity": {
+      "cur": 3,
+      "max": 10
+    }
+  }
+}

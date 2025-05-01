@@ -12,6 +12,10 @@ import {QuestManager} from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 
+let DEBUG=false;
+
+function debug(...args) {if(DEBUG) {console.log(args);}}
+
 class Map
 {
     static maploaded = [];
@@ -56,7 +60,7 @@ class Map
     loadTileMap(scene, mapName)
     {
         return new Promise((resolve)=>{
-            console.log('loadTileMap');
+            debug('loadTileMap');
 
             scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
             scene.load.tilemapTiledJSON(mapName, `maps/${mapName}.json`);
@@ -78,7 +82,7 @@ class Map
                     {
                         obj.template = obj.template.replace('../','');
                         if(this.isLoaded(obj.template)) {return;}
-                        console.log(`load[${obj.template}]`);
+                        debug(`load[${obj.template}]`);
                         scene.load.json(obj.template, obj.template);
                     }
                 });
@@ -93,14 +97,14 @@ class Map
             {
                 tile.image = tile.image.replace('../','');
                 if(this.isLoaded(tile.image)) {return;}
-                console.log(`load[${tile.image}]`);
+                debug(`load[${tile.image}]`);
                 scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
             }
             else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
             {
                 tile.source = tile.source.replace('../','');
                 if(this.isLoaded(tile.source)) {return;}
-                console.log(`load[${tile.source}]`);
+                debug(`load[${tile.source}]`);
                 scene.load.json(tile.source, tile.source);
             } 
         });
@@ -109,7 +113,7 @@ class Map
     preload(scene, mapName)   
     {
         return new Promise((resolve)=>{
-            console.log('preload');
+            debug('preload');
 
             scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
 
@@ -183,7 +187,7 @@ class Map
                 if(json.image)  // (*.tsj) 為 .png
                 {
                     if(this.isLoaded(json.image)) {return;}
-                    console.log(`load[${json.image}]`);
+                    debug(`load[${json.image}]`);
                     scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                 }
                 else    // (*.tsj) 為圖片集合
@@ -196,7 +200,7 @@ class Map
                             // tile.image = name;
                             // map.lut[name]={w:tile.imagewidth,h:tile.imageheight};
                             if(this.isLoaded(tile.image)) {return;}
-                            console.log(`load[${tile.image}]`);
+                            debug(`load[${tile.image}]`);
                             scene.load.image(tile.image,tile.image);
                             map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
                         }
@@ -209,7 +213,7 @@ class Map
     preprocess(scene, mapName)  
     {
         return new Promise((resolve)=>{
-            console.log('preprocess');
+            debug('preprocess');
 
             let map = scene.cache.tilemap.get(mapName);
             this.preprocess_Template(scene, map);
@@ -260,7 +264,7 @@ class Map
             });
 
             let tilesets = map.tilesets.map(tileset=>tileset.name);
-            //console.log(tilesets)
+            //debug(tilesets)
 
             
             map.layers.forEach((layer)=>{
@@ -379,7 +383,7 @@ class Map
     {
         let to = {x:from.x+h*this.map.tileWidth, y:from.y+v*this.map.tileHeight};
         let w = this.getWeight(to);
-        console.log('w',w)
+        debug('w',w)
         if(w==1){return {state:1, pt:to, path:[to]};}
         else {return {state:-1, pt:to};}
     }
@@ -505,7 +509,7 @@ class Map
                 let colBoxY = tile.pixelY + obj.y;
                 let colBoxW = obj.width;
                 let colBoxH = obj.height;
-                //console.log(colBoxX, colBoxY, colBoxW, colBoxH);
+                //debug(colBoxX, colBoxY, colBoxW, colBoxH);
                 let zone = this.scene.add.zone(colBoxX+(colBoxW/2),colBoxY+(colBoxH/2), colBoxW,colBoxH);
                 this.scene.static.add(zone);
                 this.scene.mapLayer.add(zone);
@@ -531,7 +535,7 @@ class Map
         {
             const tileX = this.map.worldToTileX(p.x);
             const tileY = this.map.worldToTileY(p.y);
-            //console.log(tileX, tileY);
+            //debug(tileX, tileY);
             let tile = this.map.getTileAt(tileX, tileY, true, 'Tile Layer 1');
 
             this.marker.x = this.map.tileToWorldX(tileX);
@@ -541,7 +545,7 @@ class Map
 
             if(this.scene.ctrl.get().pressed)
             {
-                console.log(tile?.tileset);
+                debug(tile?.tileset);
             }
         }
         

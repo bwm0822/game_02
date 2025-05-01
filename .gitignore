@@ -25,3 +25,6 @@ dist-ssr
 
 # custom
 tmp
+venv
+__pycache__
+~*.xlsx
