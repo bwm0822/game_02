@@ -539,7 +539,7 @@ export class Role extends Entity
     {
         if(isEquip)
         {
-            this.status.equips[i]=ent.slot; this.equip();
+            this.status.equips[i]=ent.itm; this.equip();
             return true;   
         }
         else
@@ -550,9 +550,9 @@ export class Role extends Entity
 
     use(ent)
     {
-        console.log('use',ent.item);
+        // console.log('use',ent.item);
         let states = this.status.states;
-        for(let [key,value] of Object.entries(ent.item.props))
+        for(let [key,value] of Object.entries(ent.props))
         {
             switch(key)
             {
@@ -563,26 +563,34 @@ export class Role extends Entity
             }
         }
 
-        if(ent.item?.times) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
+        //if(ent.item?.times) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
+        if(ent.p('times')!=undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         {
-            ent.slot.times--;
-            if(ent.slot.times<=0 && !ent.item.keep)
+            //ent.slot.times--;
+            ent.incp('times', -1)
+            //if(ent.slot.times<=0 && !ent.item.keep)
+            if(ent.p('times')<=0 && !ent.p('keep'))
             {
                 ent.clear();
             }
         }
-        else if(ent.item?.capacity)
+        //else if(ent.item?.capacity)
+        else if(ent.p('capacity') != undefined)
         {
-            ent.slot.capacity--;
-            if(ent.slot.capacity<=0 && !ent.item.keep)
+            // ent.slot.capacity--;
+            ent.incp('capacity',-1)
+            //if(ent.slot.capacity<=0 && !ent.item.keep)
+            if(ent.p('capacity')<=0 && !ent.p('keep'))
             {
                 ent.clear();
             }
         }
         else
         {
-            ent.slot.count--;
-            if(ent.slot.count<=0) {ent.clear();}
+            // ent.slot.count--;
+            ent.count--;
+            //if(ent.slot.count<=0) {ent.clear();}
+            if(ent.count<=0) {ent.clear();}
         }
     }
 

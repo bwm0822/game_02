@@ -81,17 +81,15 @@ export function bbcText(scene, config={})
     return t;
 }
 
-export function slider(scene,{trackRadius=10,thumbRadius=20}={})
+export function slider(scene,{width,trackRadius=10,thumbRadius=20,valuechangeCallback}={})
 {
     return scene.rexUI.add.slider({
         orientation: 'x',
-
+        width: width,
         track: rect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
         thumb: rect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
+        valuechangeCallback: valuechangeCallback ?? function(){},
         //thumbOffsetY: -10,
-        // valuechangeCallback: function (value) {
-        //     print0.text = value;
-        // },
         //space: {top: 4,bottom: 4},
         //input: 'drag', // 'drag'|'click'
     })
@@ -126,14 +124,68 @@ export function label(scene,config)
     let radius = config.radius ?? 5;
     let str = config.text ?? '';
     let space = config.space ?? 5;
+    let fontSize = config.fontSize ?? GM.FONT_SIZE;
     return scene.rexUI.add.label({
         width: config.width,
         height: config.height,
         background: rect(scene,{color:color,radius:radius}),
-        text: text(scene,{text:str}),
+        text: text(scene,{text:str, fontSize:fontSize}),
         space: space,
         align: 'center',
     });
+}
+
+export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],stringOption=false})
+{
+    return scene.rexUI.add.dropDownList({
+            // x: 400, y: 300,
+            options: options,
+            background: rect(scene,{color:GM.COLOR_GRAY, radius:10, strokeColor:GM.COLOR_WHITE, strokeThickness:3}),
+            // icon: rect(scene, {color:GM.COLOR_DARK, radius:10}),
+            text: text(scene, {text:'', align:'center'}).setFixedSize(width, 0),
+            space: space,
+            list: {
+                    createBackgroundCallback: function (scene) {
+                        return rect(scene, {color:GM.COLOR_GRAY});
+                    },
+                    createButtonCallback: function (scene, option, index, options) {
+                        var txt = (stringOption) ? option : option.text;
+                        var button = label(scene,{ text:txt, color:GM.COLOR_GRAY });
+                        button.value = (stringOption) ? undefined : option.value;
+                        return button;
+                    },
+
+                    // scope: dropDownList
+                    onButtonClick: function (button, index, pointer, event) {
+                        // Set label text, and value
+                        console.log(`Select ${button.text}, value=${button.value}\n`);
+                        this.text = button.text;
+                        this.value = button.value;
+                        
+                    },
+
+                    // scope: dropDownList
+                    onButtonOver: function (button, index, pointer, event) {
+                        button.getElement('background').setStrokeStyle(2, GM.COLOR_WHITE);
+                    },
+
+                    // scope: dropDownList
+                    onButtonOut: function (button, index, pointer, event) {
+                        button.getElement('background').setStrokeStyle();
+                    },
+                
+                    // expandDirection: 'up',
+                },
+
+            setValueCallback: function (dropDownList, value, previousValue) {
+                    console.log('setValueCallback',value);
+                    const option = options.find(item => item.value === value);
+                    dropDownList.text = option.text;
+                },
+
+            value: undefined,
+
+        })
 }
 
 export class Pic extends OverlapSizer

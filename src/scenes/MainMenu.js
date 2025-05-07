@@ -1,5 +1,9 @@
 import { Scene } from 'phaser';
 import Utility from '../utility.js';
+import Record from '../record';
+import Local from '../local';
+import DB from '../db';
+import {UiSettings} from '../ui.js'
 
 export class MainMenu extends Scene
 {
@@ -7,6 +11,7 @@ export class MainMenu extends Scene
     {
         console.log('MainMenu');
         super('MainMenu');
+        this._done = false;
     }
 
     create ()
@@ -20,6 +25,15 @@ export class MainMenu extends Scene
 
         this.start(50, 400);
         this.setting(50, 450);
+
+        if(!this._done)
+        {
+            this._done = true;
+            this.scene.launch('UI');
+            //this.cameras.main.setBackgroundColor(0x555555);
+            // this.loadRecord();
+            this.loadData();
+        }
 
     }
 
@@ -38,13 +52,35 @@ export class MainMenu extends Scene
             .on('pointerdown', ()=>{cb&&cb()});
     }
 
+    loadData()
+    {
+        Local.load(this);
+        DB.load(this);
+        Record.load();// 執行後，其他 scene 不用再執行 Record.load()
+    }
+
+    startGame()
+    {
+        let config = {map:Record.data.map}
+        if(Record.data.pos) {config.pos = Record.data.pos;}
+        else {config.port = Record.data.default;}
+
+        this.scene.start(Record.data.map=='map'?'GameMap':'GameArea',config);
+    }
+
     start(x, y) 
     {
-        this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
+        // this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
+        this.button(x, y, '開始遊戲', () => {this.startGame();});
     }
+
+
 
     setting(x, y)
     {
-        this.button(x, y, '遊戲設定',()=>{console.log('setting')});//, () => {this.scene.start('Setting');});
+        this.button(x, y, '遊戲設定',()=>{
+            console.log('setting')
+            UiSettings.show()
+        });//, () => {this.scene.start('Setting');});
     }
 }

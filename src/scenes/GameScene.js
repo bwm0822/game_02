@@ -320,7 +320,7 @@ export class GameScene extends Scene
     fill()
     {
         UiInv.show(Role.Avatar.instance);
-        UiInv.filter([{type:'capacity',op:'<',value:'$max'}]);
+        UiInv.filter([{type:'capacity',op:'<',value:'.max'}]);
         UiCursor.set('aim');
         UiCover.show();
         Ui.setMode(GM.UI_MODE_FILL)

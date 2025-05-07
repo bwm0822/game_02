@@ -20,6 +20,8 @@ export let GM =
     COLOR_BLACK : 0x0,
 
     FONT : "Arial",
+    // FONT : "Segoe UI Emoji",
+
     FONT_SIZE: 24,
 
     ICON_MARK : 'buffs/108',

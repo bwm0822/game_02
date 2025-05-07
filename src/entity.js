@@ -197,12 +197,12 @@ export class Entity extends Phaser.GameObjects.Container
         //this.debugDraw();
     }
 
-    init_runtime(obj)
+    init_runtime(itm)
     {
-        console.log(obj);
-        this.slot = obj;
-        this.item = ItemDB.get(obj.id);
-        let [key,frame] = this.item.icon.split('/');
+        // console.log(itm);
+        this.itm = itm;
+        this.dat = ItemDB.get(itm.id);
+        let [key,frame] = this.dat.icon.split('/');
         this.setTexture(key,frame);
         this.displayWidth = this._sp.width;
         this.displayHeight = this._sp.height;
@@ -239,8 +239,8 @@ export class Entity extends Phaser.GameObjects.Container
 
         if(i!=-1)
         {
-            if(isEquip) {this.status.equips[i]=ent.slot; this.equip();}
-            else {this.storage.items[i]=ent.slot;}
+            if(isEquip) {this.status.equips[i]=ent.itm; this.equip();}
+            else {this.storage.items[i]=ent.itm;}
             return true;
         }
         else
@@ -252,20 +252,20 @@ export class Entity extends Phaser.GameObjects.Container
 
     split(ent, cnt)
     {
-        let count = ent.slot.count;
+        // let count = ent.slot.count;
         // let half = Math.floor(count/2);
-        ent.slot.count -= cnt;
-        let split = {id:ent.slot.id,count:cnt};
+        ent.itm.count -= cnt;
+        let split = {id:ent.itm.id,count:cnt};
         let i = this.findEmpty();
         if(i!=-1) {this.storage.items[i]=split;}
     }
 
-    drop(ent)
+    drop(ent)   // ent 有可能是 slot 或 UiDragged
     {
         let p = this.scene.map.getDropPoint(this.pos);
-        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.slot);
+        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
         obj.falling(p);
-        this.send('msg',`丟棄 ${ent.item.name}`);
+        this.send('msg',`丟棄 ${ent.label}`);
     }
 
     falling(p)
@@ -467,8 +467,8 @@ export class Pickup extends Entity
     {
         if(taker.take(this))
         {
-            let item = this.item ?? ItemDB.get(this.slot.id)
-            this.send('msg',`取得 ${item.name}`)
+            let dat = this.dat ?? ItemDB.get(this.itm.id)
+            this.send('msg',`取得 ${dat.name}`)
             this.send('out');
             this.send('refresh');
             this.removeFromObjects();
@@ -484,7 +484,7 @@ export class Pickup extends Entity
         super.init();
         let id = this.data.get('id');
         let count = this.data.get('count') ?? 1;
-        this.slot = {id:id,count:count};
+        this.itm = {id:id,count:count};
     }
 
     save()

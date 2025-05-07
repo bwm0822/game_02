@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label, slider} from './uibase.js';
+import {rect, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label, slider, dropdown} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
@@ -48,10 +48,21 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
-    // t3({});
+    new UiSettings(scene);
+
+
+    //t3({});
+
+    let t={a:1,b:2};
+    console.log(get(t,'a'))
 
 
 
+}
+
+function get(s,p)
+{
+    return s[p];
 }
 
 async function t3(config={a:0,b:1,c:2})
@@ -218,58 +229,66 @@ class Slot extends Icon
     }
 
     get i() {return this._i;}
-    get cps() {return this.item.cps;}
-    get slot() {return this._i>=0?this.container?.[this._i]:this.container;}
-    set slot(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
-
-    get item() {return this._item;}
-    get gold() {return this.slot.count*this.item.gold;}
-
-    get isEmpty() {return Utility.isEmpty(this.slot)||this.slot.count==0;}
-    get container() {return this.owner?.storage?.items;}
-    get capacity() {return this.owner?.storage?.capacity; }
-    get owner() {return this._getOwner?.();}
-    //get isValid() {return true;}
+    get cps() {return this.dat.cps;}
+    get count() {return this.itm.count;}
+    set count(value) {return this.itm.count=value;}
+    get props() {return this.dat.props;}
+    get label() {return this.dat.name;}
+    // itm
+    get itm() {return this._i>=0?this.container?.[this._i]:this.container;}
+    set itm(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
+    // dat
+    get dat() {return this._dat;}
+    set dat(value) {return this._dat=value;}
+    // cat
     get cat() {return this._cat;}
     set cat(value) {this._cat=value;}
     get isValid() {return UiDragged.checkCat(this.cat)}
+    // owner
+    get owner() {return this._getOwner?.();}
+    // others
+    get gold() {return this.itm.count*this.itm.gold;}
+
+    get isEmpty() {return Utility.isEmpty(this.itm)||this.itm.count==0;}
+    get container() {return this.owner?.storage?.items;}
+    get capacity() {return this.owner?.storage?.capacity; }
 
     get storage() 
     {
-        if(!this.slot.storage) {this.slot.storage={capacity:this.item.storage,items:[]}};
-        return this.slot.storage;
+        if(!this.itm.storage) {this.itm.storage={capacity:this.dat.storage,items:[]}};
+        return this.itm.storage;
     }
 
     get acts()
     {
         let acts = [];
 
-        if(this.owner.trade)
+        if(this.owner.trade)    // 交易
         {
             if(this.owner.trade == GM.BUYER) {acts = ['sell','drop'];}
             else {acts = ['buy'];}
-            if(this.slot.count>1) {acts = [...acts,'split'];}
+            if(this.itm.count>1) {acts = [...acts,'split'];}
         }
         else
         {
-            if(this.item.useable) 
+            if(this.dat.useable) 
             {
-                if(this.slot?.times===0 || this.slot?.capacity===0)
+                if(this.itm?.times===0 || this.itm?.capacity===0)
                     acts = [...acts,'use:false'];
                 else
                     acts = [...acts,'use'];
             }
 
-            if(this.owner.target) 
+            if(this.owner.target) // 打開箱子
             {
-                acts = [...acts,{transfer:true},'drop'];
-                if(this.slot.count>1) {acts = [...acts,'split'];}
-                else if(this.slot.storage) {acts = [...acts,'open'];}
+                acts = [...acts,'transfer','drop'];
+                if(this.itm.count>1) {acts = [...acts,'split'];}
+                else if(this.itm.storage) {acts = [...acts,'open'];}
             }
             else 
             {
-                if(this.slot.count>1) {acts = [...acts,'drop','split'];}
-                else if(this.item.storage) {acts = [...acts,'drop','openbag'];}
+                if(this.itm.count>1) {acts = [...acts,'drop','split'];}
+                else if(this.dat.storage) {acts = [...acts,'drop','openbag'];}
                 else {acts = [...acts,'drop'];}
             }
         }
@@ -281,38 +300,58 @@ class Slot extends Icon
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
-    get(p,sub) // slot,item 有可能會是 null/undefined (例如:EquipSlot的第10個)
+    p(prop) // itm,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
     {
-        return sub ? this.slot?.[p]?.[sub] != undefined ? this.slot[p][sub] : this.item?.[p]?.[sub]
-                    : this.slot?.[p] != undefined ? this.slot[p] : this.item?.[p];
+        let [p,sub] = prop.split('.');
+        return sub ? this.itm?.[p]?.[sub] != undefined ? this.itm[p][sub] 
+                                                        : this.dat?.[p]?.[sub]
+                    : this.itm?.[p] != undefined ? this.itm[p] 
+                                                    : this.dat?.[p];
     }  
 
-    fill(p) {if(this.item[p] != undefined) {this.slot[p] = this.item[p].max;}}
-
-    setSlot(thsSlot)
+    incp(prop, value)
     {
-        this._item = ItemDB.get(thsSlot?.id);
-        // this.setIcon(this._item?.icon);
-        this.setIcon(this._item?.icon,{alpha:thsSlot?.count>0?1:0.25});
-        this.setCount(thsSlot?.count>1?thsSlot.count:'');
+        this.setp(prop, this.p(prop)+value)
+    }
+
+    setp(prop, value)
+    {
+        let [p,sub] = prop.split(':');
+        if(sub)
+        {
+            if(this.itm?.[p]?.[sub] != undefined) {this.itm[p][sub] = value;}
+        }
+        else
+        {
+            if(this.itm?.[p] != undefined) {this.itm[p] = value;}
+        }
+    }
+
+    fill(p) {if(this.dat[p] != undefined) {this.itm[p] = this.dat[p].max;}}
+
+    setSlot(itm)
+    {
+        this.dat = ItemDB.get(itm?.id);
+        this.setIcon(this.dat?.icon,{alpha:itm?.count>0?1:0.25});
+        this.setCount(itm?.count>1?itm.count:'');
 
         this.setBar(false);
         this.setProgress(false);
         this.setTimes(false);
-        if(this._item?.endurance)
+        if(this.dat?.endurance)
         {
-            if(thsSlot.endurance===undefined) {thsSlot.endurance=this._item.endurance.cur;}
-            this.setBar(true,thsSlot.endurance,this._item.endurance.max);
+            if(itm.endurance===undefined) {itm.endurance=this.dat.endurance.cur;}
+            this.setBar(true,itm.endurance,this.dat.endurance.max);
         }
-        if(this._item?.capacity)
+        if(this.dat?.capacity)
         {
-            if(thsSlot.capacity===undefined) {thsSlot.capacity=this._item.capacity.cur;}
-            this.setProgress(true,thsSlot.capacity,this._item.capacity.max);
+            if(itm.capacity===undefined) {itm.capacity=this.dat.capacity.cur;}
+            this.setProgress(true,itm.capacity,this.dat.capacity.max);
         }
-        if(this._item?.times)
+        if(this.dat?.times)
         {
-            if(thsSlot.times===undefined) {thsSlot.times=this._item.times.cur;}
-            this.setTimes(true,thsSlot.times,this._item.times.max);
+            if(itm.times===undefined) {itm.times=this.dat.times.cur;}
+            this.setTimes(true,itm.times,this.dat.times.max);
         }
     }
 
@@ -346,7 +385,7 @@ class Slot extends Icon
                 if(i%6==5 && i!=max-1) {times += '\n';}
             }
             elm.setText(times);
-            this.layout();
+            this.layout();  // 長度會改變，所以要加 layout()
         }
 
     }
@@ -381,12 +420,12 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    copyData() {return this.slot ? {slot:Utility.deepClone(this.slot),owner:this.owner,item:this._item} : null;}
+    copyData() {return this.itm ? {itm:Utility.deepClone(this.itm),owner:this.owner,dat:this.dat} : null;}
 
     update(cat)
     {
-        cat && (this.cat=cat);
-        this.setSlot(this.slot);
+        cat && (this.cat=cat);  // for EquipSlot, MatSlot
+        this.setSlot(this.itm);
         this.setEnable(this.enabled);
     }
 
@@ -405,7 +444,7 @@ class Slot extends Icon
         }
     }
 
-    clear() {super.clear();this.slot=null;this._item=null;}
+    clear() {super.clear();this.itm=null;this.dat=null;}
     
     over(check=true)
     {
@@ -432,7 +471,7 @@ class Slot extends Icon
             this.setBgColor(GM.COLOR_SLOT_OVER);
             // 使用 setTimeout 延遲執行 UiInfo.show()
             this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, GM.OVER_DELAY);
-            check && UiInv.check(this.item.cat);
+            check && UiInv.check(this.dat.cat);
         }
     }
 
@@ -487,9 +526,9 @@ class Slot extends Icon
                         else
                         {
                             let dataCopy = this.copyData();
-                            this.slot = UiDragged.slot;
+                            this.itm = UiDragged.itm;
                             UiDragged.clear();
-                            if(!Utility.isEmpty(dataCopy?.slot)) {UiDragged.data=dataCopy;}
+                            if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.data=dataCopy;}
                             if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
                         }  
                     }
@@ -512,18 +551,18 @@ class Slot extends Icon
         }
     }
 
-    isMergeable() {return this.slot && this.slot.id==UiDragged.slot.id && this.cps>1;}
+    isMergeable() {return this.itm && this.itm.id==UiDragged.itm.id && this.cps>1;}
 
     merge()
     {
         //console.log('merge',this.slot.count,this.cps)
-        if(this.slot.count<this.cps)
+        if(this.itm.count<this.cps)
         {
-            let draggedCount = UiDragged.slot.count;
-            let count = Math.min(this.slot.count+draggedCount,this.cps);
-            draggedCount -= count-this.slot.count;
-            this.slot.count = count;
-            UiDragged.slot.count = draggedCount;
+            let draggedCount = UiDragged.itm.count;
+            let count = Math.min(this.itm.count+draggedCount,this.cps);
+            draggedCount -= count-this.itm.count;
+            this.itm.count = count;
+            UiDragged.itm.count = draggedCount;
             this.update();
             UiDragged.update();
         }
@@ -606,8 +645,8 @@ class EquipSlot extends Slot
     //get isValid() {return UiDragged.checkCat(this.cat)}
 
     // get, set 都要 assign 才會正常 work
-    get slot() {return super.slot;}
-    set slot(value) {super.slot=value; this.owner.equip();}
+    get itm() {return super.itm;}
+    set itm(value) {super.itm=value; this.owner.equip();}
 
     checkCat(cat)   {return (this.cat & cat) == cat;}  
 
@@ -636,8 +675,8 @@ class MatSlot extends Slot
     }
 
     // get, set 都要 assign 才會正常 work
-    get slot() {return super.slot;}
-    set slot(value) {super.slot=value; this.onset?.();}
+    get itm() {return super.itm;}
+    set itm(value) {super.itm=value; this.onset?.();}
 }
 
 class OutputSlot extends Slot
@@ -654,10 +693,10 @@ class OutputSlot extends Slot
     get capacity() {return -1; }
 
     // get, set 都要 assign 才會正常 work
-    get slot() {return super.slot;}
-    set slot(value) {super.slot=value; this.onset?.();}
+    get itm() {return super.itm;}
+    set itm(value) {super.itm=value; this.onset?.();}
 
-    clear() {this.slot.count=0;this.slot=this.slot;}
+    clear() {this.itm.count=0;this.itm=this.itm;}
 
     // setSlot(value)
     // {
@@ -683,36 +722,57 @@ export class UiDragged extends Pic
         this.getLayer().name = 'Dragged';
     }
 
+    // static get on() {return this.instance.visible;}
+    // static get slot() {return this.instance.slot;}
+    // static get owner() {return this.instance.owner;}
+    // static get item() {return this.instance.item;}
+    // static get gold() {return this.instance.item.gold*this.instance.slot.count;}
+    // static get isTrade() {return this.instance.data.owner.tradeable??false;}
+    // static set data(value) {this.instance.setData(value);}
+
+    // get owner() {return this.data.owner;}
+    // get slot() {return this.data.slot;}
+    // get item() {return this.data.item;}
+
+
     static get on() {return this.instance.visible;}
-    static get slot() {return this.instance.slot;}
+    
+    //static get slot() {return this.instance.slot;}
+    static get itm() {return this.instance.itm;}
+
     static get owner() {return this.instance.owner;}
-    static get item() {return this.instance.item;}
-    static get gold() {return this.instance.item.gold*this.instance.slot.count;}
-    static get isTrade() {return this.instance.data.owner.tradeable??false;}
+
+    // static get item() {return this.instance.item;}
+    // static get gold() {return this.instance.item.gold*this.instance.slot.count;}
+    // static get isTrade() {return this.instance.data.owner.tradeable??false;}
+    
+    //static set data(value) {this.instance.setData(value);}
     static set data(value) {this.instance.setData(value);}
 
     get owner() {return this.data.owner;}
-    get slot() {return this.data.slot;}
-    get item() {return this.data.item;}
+    get itm() {return this.data.itm;}
+    get dat() {return this.data.dat;}
+    get label() {return this.dat.name;}
 
-    checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
+    //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
+    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
 
     update() 
     {
-        if(this.slot.count==0)
+        if(this.itm.count==0)
         {
             this.clear();
         }
         else
         {
-            this.setCount(valuthise.slot.count>1?value.slot.count:'')
+            this.setCount(this.itm.count>1 ? this.itm.count : '')
         }
     }
 
     clear()
     {
         this.hide();
-        delete this.data;
+        delete this.slot;
         UiCover.close();
         UiMain.enable(true);
     }
@@ -727,8 +787,8 @@ export class UiDragged extends Pic
     {
         this.show();
         this.data = value;
-        this.setIcon(value.item.icon)
-            .setCount(value.slot.count>1?value.slot.count:'')
+        this.setIcon(value.dat.icon)
+            .setCount(value.itm.count>1 ? value.itm.count : '')
         UiCover.show();
         UiMain.enable(false);
     }
@@ -968,18 +1028,17 @@ class UiInfo extends Sizer
         this.getLayer().name = 'UiInfo';
     }
 
-    addTitle(item)
+    addTitle(slot)
     {
-        console.log(item)
-        this.add(bbcText(this.scene,{text:item.name.lab()}));
+        this.add(bbcText(this.scene,{text:slot.dat.name}));
         return this;
     }
 
-    addCat(item)
+    addCat(slot)
     {
-        if(item.cat)
+        if(slot.dat.cat)
         {
-            let cat = `[color=gray]${item.cat.lab()}[/color]`;
+            let cat = `[color=gray]${slot.dat.cat.lab()}[/color]`;
             this.add(bbcText(this.scene,{text:cat}));
         }
         return this;
@@ -991,26 +1050,26 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addDescript(item)
+    addDescript(slot)
     {
-        if(item.des)
+        if(slot.dat.des)
         {
             this.addDivider();
-            this.add(bbcText(this.scene,{text:item.des,wrapWidth:200}),{align:'left'});
+            this.add(bbcText(this.scene,{text:slot.dat.des,wrapWidth:200}),{align:'left'});
         }
         return this;
     }
 
-    addProps(item,slot)
+    addProps(slot)
     {
-        if(item.props || item.endurance || item.storage) 
+        if(slot.dat.props || slot.dat.endurance || slot.dat.storage) 
         {
             this.addDivider();
         }
 
-        if(item.props)
+        if(slot.dat.props)
         {
-            for(let [key,value] of Object.entries(item.props))
+            for(let [key,value] of Object.entries(slot.dat.props))
             {
                 //console.log(key,value);
                 switch(key)
@@ -1021,19 +1080,19 @@ class UiInfo extends Sizer
                 this.addProp(key,value);
             }
         }
-        if(item.endurance)
+        if(slot.dat.endurance)
         {
             //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
-            this.addProp('endurance'.lab(),Utility.tick2Str(slot.endurance));
+            this.addProp('endurance'.lab(),Utility.tick2Str(slot.itm.endurance));
         }
-        if(item.storage)
+        if(slot.dat.storage)
         {
-            let cnt = slot.storage?.items.filter(item => item).length;
-            this.addProp('storage'.lab(),`${cnt??0}/${item.storage}`);
+            let cnt = slot.itm.storage?.items.filter(item => item).length;
+            this.addProp('storage'.lab(),`${cnt??0}/${slot.dat.storage}`);
         }
-        if(item.times)
+        if(slot.dat.times)
         {
-            this.addTimes('times'.lab(),`${slot.times}/${item.times.max}`);
+            this.addTimes('times'.lab(),`${slot.itm.times}/${slot.dat.times.max}`);
         }
         return this;
     }
@@ -1072,12 +1131,12 @@ class UiInfo extends Sizer
         
     }
 
-    addGold(item,slot)
+    addGold(slot)
     {
-        if(item.gold)
+        if(slot.dat.gold)
         {
             let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
-            let text = `[color=yellow][img=gold][/color] ${(slot.count??1)*item.gold}`
+            let text = `[color=yellow][img=gold][/color] ${(slot.itm.count??1)*slot.dat.gold}`
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
 
@@ -1086,14 +1145,14 @@ class UiInfo extends Sizer
 
     update(slot)
     {
-        let item = ItemDB.get(slot.id);
+        // let item = ItemDB.get(slot.id);
         this.removeAll(true)
-            .addTitle(item)
-            .addCat(item)
-            .addProps(item,slot)
-            .addMake(item)
-            .addDescript(item)
-            .addGold(item,slot)
+            .addTitle(slot)
+            .addCat(slot)
+            .addProps(slot)
+            .addMake(slot)
+            .addDescript(slot)
+            .addGold(slot)
             .layout()
     }
 
@@ -1114,7 +1173,7 @@ class UiInfo extends Sizer
             x=target.right+UiInfo.gap;
         }
 
-        this.update(target.slot);
+        this.update(target);
 
         this.setPosition(x,y).rePos();
         this.layout();
@@ -1305,9 +1364,10 @@ class UiBase extends Sizer
     item(id,{onover,onout,ondown}={})
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        let item = ItemDB.get(id);
+        sizer.itm = {id:id,type:'make'};
+        sizer.dat = ItemDB.get(id);
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(text(this.scene,{text:item.name.local(),color:'#777777'}),{key:'label'})
+            .add(text(this.scene,{text:sizer.dat.name.local(),color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
         let lb = sizer.getElement('label');
         sizer.unsel = ()=>{lb.setColor('#777777');}
@@ -1316,8 +1376,6 @@ class UiBase extends Sizer
             .on('pointerover',()=>{ onover?.(sizer); bg.alpha=1; })
             .on('pointerout',()=>{ bg.alpha=0; onout?.();})
             .on('pointerdown',()=>{ ondown?.(sizer); })
-        sizer.slot = {id:id,type:'make'};
-        
         return sizer;  
     }
 
@@ -1456,7 +1514,7 @@ class Option extends UiBase
     {
         this.close();
         console.log('split',this.ent);
-        let cnt = await UiCount.getCount(1, this.ent.slot.count-1)
+        let cnt = await UiCount.getCount(1, this.ent.itm.count-1)
         if(cnt==0) {return;}
         this.owner.split(this.ent,cnt);
         this.refreshAll();
@@ -1772,8 +1830,9 @@ export class UiInv extends UiBase
     {
         for(let opt of opts)
         {
-            let p = slot.get(opt.type);
-            let value = opt.value.startsWith('$') ? slot.get(opt.type, opt.value.slice(1)) : opt.value;
+            let p = slot.p(opt.type);
+            let value = opt.value.startsWith('.') ? slot.p(opt.type+opt.value) : opt.value;
+            // let value = opt.value.startsWith('$') ? slot.p(opt.type, opt.value.slice(1)) : opt.value;
             // let value = opt.value == 'max' ? slot.get(opt.type, 'max') : opt.value;
             let rst; 
             switch(opt.op)
@@ -3027,7 +3086,7 @@ export class UiManufacture extends UiBase
                     itemSel?.unsel();
                     itemSel=item;
                     item.sel();
-                    this.owner.sel=item.slot.id;
+                    this.owner.sel=item.itm.id;
                     this.getElement('output',true).update();
                     this.check();
                 }
@@ -3035,9 +3094,9 @@ export class UiManufacture extends UiBase
 
         let panel = this.getElement('panel',true);
         panel.removeAll(true);
-        this.owner.menu.forEach((item)=>{
-            let add =this.item(item,{onover:onover, onout:onout, ondown:ondown});
-            if(item==this.owner.sel) {add.sel();itemSel=add;}
+        this.owner.menu.forEach((id)=>{
+            let add =this.item(id,{onover:onover, onout:onout, ondown:ondown});
+            if(id==this.owner.sel) {add.sel();itemSel=add;}
             panel.add(add,{expand:true})
         })
         this.layout();
@@ -3162,5 +3221,89 @@ class Count extends UiBase
     }
 
     
+}
+
+export class Settings extends UiBase
+{
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            width: 500,
+            height : 300,
+            orientation : 'y',
+            space : 0,
+        }
+
+        super(scene,config)
+        this.scene=scene;
+        this.addBg(scene)
+            .addTop(scene,'設定')
+            .addLang(scene, 200)
+            .addVolume(scene, 200)
+            .layout()
+            //.drawBounds(this.scene.add.graphics(), 0xff0000)
+            .hide()
+
+        this.getElement('dropdown',true).setValue('tw')   
+    }
+
+    addLang(scene, width)
+    {
+        let options = [{text:'中文',value:'tw'},
+                        {text:'ENGLISH',value:'us'},]
+        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
+        sizer.add(text(scene,{text:'🌐', fontSize:40}))
+            .add(dropdown(scene,{width:width, options:options, space:{top:5,bottom:5}}),{key:'dropdown'});
+        this.add(sizer,{key:'lang'});
+        return this
+    }
+
+    addVolume(scene, width)
+    {
+        let onchange = function(value)
+        {
+            console.log(value)
+            if(value==0)
+                sizer.getElement('icon').setText('🔇')
+            else if(value < 0.66)
+                sizer.getElement('icon').setText('🔈')
+            else if(value < 1)
+                sizer.getElement('icon').setText('🔉')
+            else
+                sizer.getElement('icon').setText('🔊')
+        }
+
+        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
+        sizer.add(text(scene,{text:'🔈', fontSize:40}),{key:'icon'})
+            .add(slider(scene,{width:width,valuechangeCallback:onchange}));
+        this.add(sizer);
+        return this
+    }
+
+    close()
+    {
+        super.close();
+        this.onclose?.();
+    }
+
+}
+
+export class UiSettings extends UiContainerBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene,false);
+        UiSettings.instance = this;
+        this.add(new Settings(scene))
+            .close()
+
+        this.getLayer().name = 'UiSettings';
+    }
+
+    static show() {this.instance?.show();}
 }
 
