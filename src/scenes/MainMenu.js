@@ -26,12 +26,13 @@ export class MainMenu extends Scene
         this.start(50, 400);
         this.setting(50, 450);
 
-        if(!this._done)
+        // new UiSettings(this);
+
+        // this.scene.launch('UI');
+        // this.cameras.main.setBackgroundColor(0x555555);
+         if(!this._done)
         {
             this._done = true;
-            this.scene.launch('UI');
-            //this.cameras.main.setBackgroundColor(0x555555);
-            // this.loadRecord();
             this.loadData();
         }
 
@@ -52,7 +53,7 @@ export class MainMenu extends Scene
             .on('pointerdown', ()=>{cb&&cb()});
     }
 
-    loadData()
+    loadData()  // function 不能叫 load()
     {
         Local.load(this);
         DB.load(this);
@@ -70,8 +71,8 @@ export class MainMenu extends Scene
 
     start(x, y) 
     {
-        // this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
-        this.button(x, y, '開始遊戲', () => {this.startGame();});
+        this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
+        // this.button(x, y, '開始遊戲', () => {this.startGame();});
     }
 
 
@@ -79,7 +80,6 @@ export class MainMenu extends Scene
     setting(x, y)
     {
         this.button(x, y, '遊戲設定',()=>{
-            console.log('setting')
             UiSettings.show()
         });//, () => {this.scene.start('Setting');});
     }

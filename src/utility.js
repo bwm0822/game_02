@@ -214,8 +214,8 @@ export default class Utility
     }
 }
 
-String.prototype.local = function(){ return Utility.local(this); };
-Number.prototype.local = function(){ return Utility.local(Utility.lut(this)); };
+// String.prototype.local = function(){ return Utility.local(this); };
+// Number.prototype.local = function(){ return Utility.local(Utility.lut(this)); };
 
 
 

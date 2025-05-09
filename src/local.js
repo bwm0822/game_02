@@ -1,12 +1,11 @@
 import {GM} from './setting.js';
+import Record from './record.js';
 
 export default class Local
 {
     static _local;
-    static _lang='us';
 
-    static get lang() {return this._lang;}
-    static set lang(value) {this._lang=value;}
+    static get lang() {return Record.data.lang;}
 
     static load(scene)
     {
@@ -16,12 +15,12 @@ export default class Local
 
     static lab(key)
     {
-        return this._local?.[key]?.[this._lang].lab ?? `[color=red]${key}[/color]`;
+        return this._local?.[key]?.[this.lang].lab ?? `[color=red]${key}[/color]`;
     }
 
     static des(key)
     {
-        return this._local?.[key]?.[this._lang].des ?? `[color=red]${key}[/color]`;
+        return this._local?.[key]?.[this.lang].des ?? `[color=red]${key}[/color]`;
     }
 
     static lut(key)

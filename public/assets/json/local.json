@@ -86,7 +86,7 @@
       "lab": "背包"
     },
     "us": {
-      "lab": "bag"
+      "lab": "Bag"
     }
   },
   "equip": {
@@ -319,6 +319,174 @@
     },
     "us": {
       "lab": "cook"
+    }
+  },
+  "iron": {
+    "tw": {
+      "lab": "鐵礦"
+    },
+    "us": {
+      "lab": "Iron ore"
+    }
+  },
+  "salt": {
+    "tw": {
+      "lab": "鹽"
+    },
+    "us": {
+      "lab": "Salt"
+    }
+  },
+  "raw_meat": {
+    "tw": {
+      "lab": "生肉"
+    },
+    "us": {
+      "lab": "Raw meat"
+    }
+  },
+  "cooked_meat": {
+    "tw": {
+      "lab": "熟肉"
+    },
+    "us": {
+      "lab": "Cooked meat"
+    }
+  },
+  "raw_fish": {
+    "tw": {
+      "lab": "生魚"
+    },
+    "us": {
+      "lab": "Raw fish"
+    }
+  },
+  "salt_baked_fish": {
+    "tw": {
+      "lab": "鹽烤魚"
+    },
+    "us": {
+      "lab": "Salt-baked fish"
+    }
+  },
+  "sword_01": {
+    "tw": {
+      "lab": "普通刀"
+    },
+    "us": {
+      "lab": "Ordinary knife"
+    }
+  },
+  "sword_02": {
+    "tw": {
+      "lab": "鐵劍"
+    },
+    "us": {
+      "lab": "Iron Sword"
+    }
+  },
+  "sword_03": {
+    "tw": {
+      "lab": "鋼劍"
+    },
+    "us": {
+      "lab": "Steel Sword"
+    }
+  },
+  "helmet_01": {
+    "tw": {
+      "lab": "草帽"
+    },
+    "us": {
+      "lab": "Straw hat"
+    }
+  },
+  "helmet_02": {
+    "tw": {
+      "lab": "麻布帽"
+    },
+    "us": {
+      "lab": "Linen hat"
+    }
+  },
+  "helmet_03": {
+    "tw": {
+      "lab": "皮帽"
+    },
+    "us": {
+      "lab": "Leather hat"
+    }
+  },
+  "chest_01": {
+    "tw": {
+      "lab": "草衣"
+    },
+    "us": {
+      "lab": "Grass Clothes"
+    }
+  },
+  "chest_02": {
+    "tw": {
+      "lab": "麻布衣"
+    },
+    "us": {
+      "lab": "Linen Clothes"
+    }
+  },
+  "chest_03": {
+    "tw": {
+      "lab": "皮衣"
+    },
+    "us": {
+      "lab": "Leather"
+    }
+  },
+  "gloves_01": {
+    "tw": {
+      "lab": "手套"
+    },
+    "us": {
+      "lab": "Gloves"
+    }
+  },
+  "boots_01": {
+    "tw": {
+      "lab": "靴子"
+    },
+    "us": {
+      "lab": "Boots"
+    }
+  },
+  "neck_01": {
+    "tw": {
+      "lab": "項鍊"
+    },
+    "us": {
+      "lab": "Necklace"
+    }
+  },
+  "ring_01": {
+    "tw": {
+      "lab": "戒子"
+    },
+    "us": {
+      "lab": "Ring"
+    }
+  },
+  "torch": {
+    "tw": {
+      "lab": "火把"
+    },
+    "us": {
+      "lab": "Torch"
+    }
+  },
+  "bottle": {
+    "tw": {
+      "lab": "水壺"
+    },
+    "us": {
+      "lab": "Bottle"
     }
   }
 }

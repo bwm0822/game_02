@@ -2,17 +2,38 @@ import pandas as pd
 import json
 
 
-def local_to_json(input_excel_path, output_json_path):
+def local_to_json(input_excel_path, output_json_path, all_sheets=True):
 
-    # 讀取 Excel，指定 header=[0,1] 表示兩層欄位（MultiIndex）
-    df = pd.read_excel(input_excel_path, header=[0, 1])
+    output = {}
+
+    if all_sheets:
+        # 讀取所有工作表，指定 header=[0,1] 表示兩層欄位（MultiIndex）
+        excel_data = pd.read_excel(input_excel_path, sheet_name=None, header=[0, 1])
+        for sheet_name, df in excel_data.items():
+            output.update(df_to_json(df))
+    else:
+       # 只讀第一個工作表，指定 header=[0,1] 表示兩層欄位（MultiIndex）
+       df = pd.read_excel(input_excel_path, header=[0, 1])
+       output.update(df_to_json(df))
+
+    # 儲存 JSON
+    with open(output_json_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print("所有工作表都處理完囉～轉換完成 ✅")
+
+
+
+
+def df_to_json(df):
 
     # 將第一欄 key 單獨抽出來
     # print(df.columns.tolist())
 
+    output = {}
+
     # 準備轉換格式
     key_col = ('key', 'Unnamed: 0_level_1')
-    output = {}
 
     for _, row in df.iterrows():
         key = row[key_col]
@@ -36,20 +57,17 @@ def local_to_json(input_excel_path, output_json_path):
         if entry:
             output[key] = entry
 
+    return output
 
-    # print(output)
 
-    # 儲存成 JSON 檔案
-    with open(output_json_path, "w", encoding="utf-8") as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-
-    print("local 轉換完成 ✅")
 
 def unit_test():
     # 設定檔案路徑
-    input_excel_path = "local.xlsx"     # 你的 Excel 
-    output_json_path = "local.json"     # 輸出的 JSON 檔案名稱
+    input_excel_path = "./xls/local.xlsx"               # 你的 Excel 
+    output_json_path = "./public/assets/json/local.json"     # 輸出的 JSON 檔案名稱
+
     local_to_json(input_excel_path, output_json_path)
+
 
 
 if __name__ == "__main__":

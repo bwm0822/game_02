@@ -5,8 +5,10 @@ import {rect, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label,
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import {ItemDB} from './database.js';
+import DB from './db.js';
 import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
+import Record from './record.js';
 
 let uiScene;
 let _mode = 0;
@@ -48,16 +50,10 @@ export default function createUI(scene)
 
     new UiTime(scene);
 
-    new UiSettings(scene);
+    // new UiSettings(scene);
 
 
     //t3({});
-
-    let t={a:1,b:2};
-    console.log(get(t,'a'))
-
-
-
 }
 
 function get(s,p)
@@ -234,6 +230,8 @@ class Slot extends Icon
     set count(value) {return this.itm.count=value;}
     get props() {return this.dat.props;}
     get label() {return this.dat.name;}
+
+    get id() {return this.itm?.id;}
     // itm
     get itm() {return this._i>=0?this.container?.[this._i]:this.container;}
     set itm(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
@@ -331,7 +329,8 @@ class Slot extends Icon
 
     setSlot(itm)
     {
-        this.dat = ItemDB.get(itm?.id);
+        // this.dat = ItemDB.get(itm?.id);
+        this.dat = DB.item(itm?.id);
         this.setIcon(this.dat?.icon,{alpha:itm?.count>0?1:0.25});
         this.setCount(itm?.count>1?itm.count:'');
 
@@ -1030,7 +1029,7 @@ class UiInfo extends Sizer
 
     addTitle(slot)
     {
-        this.add(bbcText(this.scene,{text:slot.dat.name}));
+        this.add(bbcText(this.scene,{text:slot.id.lab()}));
         return this;
     }
 
@@ -1055,7 +1054,7 @@ class UiInfo extends Sizer
         if(slot.dat.des)
         {
             this.addDivider();
-            this.add(bbcText(this.scene,{text:slot.dat.des,wrapWidth:200}),{align:'left'});
+            this.add(bbcText(this.scene,{text:slot.id.des(),wrapWidth:200}),{align:'left'});
         }
         return this;
     }
@@ -1083,16 +1082,16 @@ class UiInfo extends Sizer
         if(slot.dat.endurance)
         {
             //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
-            this.addProp('endurance'.lab(),Utility.tick2Str(slot.itm.endurance));
+            this.addProp('endurance',Utility.tick2Str(slot.itm.endurance));
         }
         if(slot.dat.storage)
         {
             let cnt = slot.itm.storage?.items.filter(item => item).length;
-            this.addProp('storage'.lab(),`${cnt??0}/${slot.dat.storage}`);
+            this.addProp('storage',`${cnt??0}/${slot.dat.storage}`);
         }
         if(slot.dat.times)
         {
-            this.addTimes('times'.lab(),`${slot.itm.times}/${slot.dat.times.max}`);
+            this.addTimes('times',`${slot.itm.times}/${slot.dat.times.max}`);
         }
         return this;
     }
@@ -1158,7 +1157,7 @@ class UiInfo extends Sizer
 
     show(target)
     {
-        console.log(target)
+        // console.log(target)
         super.show();
         let x,y=target.y;
 
@@ -1367,7 +1366,7 @@ class UiBase extends Sizer
         sizer.itm = {id:id,type:'make'};
         sizer.dat = ItemDB.get(id);
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(text(this.scene,{text:sizer.dat.name.local(),color:'#777777'}),{key:'label'})
+            .add(text(this.scene,{text:sizer.itm.id.lab(),color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
         let lb = sizer.getElement('label');
         sizer.unsel = ()=>{lb.setColor('#777777');}
@@ -1383,7 +1382,7 @@ class UiBase extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(bbcText(this.scene,{text:key.local()}),{proportion:1})
+            .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0})
         let bg = sizer.getElement('bg').setAlpha(0);
         if(interactive)
@@ -1448,7 +1447,7 @@ class Option extends UiBase
 
     addButton(key,onclick)
     {
-        let btn = new UiButton(this.scene,{type:GM.BTN_TEXT,text:key.local(),onclick:()=>{
+        let btn = new UiButton(this.scene,{type:GM.BTN_TEXT,text:key.lab(),onclick:()=>{
             (onclick??this.act.bind(this))(key);
         }});
             
@@ -1609,7 +1608,7 @@ class Observe extends UiBase
         props.removeAll(true)
         let life = this.owner.status.states['life'];
         let value = `${life.cur} / ${life.max}`
-        props.add(this.prop('life'.local(), value, false),{expand:true,padding:{left:10,right:10}})
+        props.add(this.prop('life'.lab(), value, false),{expand:true,padding:{left:10,right:10}})
         this.layout();
     }
 
@@ -2315,8 +2314,8 @@ export class UiProfile extends UiBase
         let button_pre;
         let config = {
             background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
-            topButtons:[text(scene,{text:'attrs'.local(),color:'#777777'}),
-                        text(scene,{text:'states'.local(),color:'#777777'})],
+            topButtons:[text(scene,{text:'attrs'.lab(),color:'#777777'}),
+                        text(scene,{text:'states'.lab(),color:'#777777'})],
             space: {left:5, top:5, bottom:5, topButton:20}
         }
 
@@ -2349,14 +2348,14 @@ export class UiProfile extends UiBase
             },
         }
         let panel = scene.rexUI.add.scrollablePanel(config);
-        this.add(panel,{expand:true,padding:{left:10,right:10},key:key.local()});
+        this.add(panel,{expand:true,padding:{left:10,right:10},key:key.lab()});
         panel.hide();
         return this;
     }
 
     updatePage(cat)
     {
-        let panel = this.getElement(cat.local());
+        let panel = this.getElement(cat.lab());
         let childPanel = panel.getElement('panel');
 
         childPanel.removeAll(true);
@@ -3247,16 +3246,24 @@ export class Settings extends UiBase
             //.drawBounds(this.scene.add.graphics(), 0xff0000)
             .hide()
 
-        this.getElement('dropdown',true).setValue('tw')   
+        // this.getElement('dropdown',true).setValue('tw')   
     }
 
     addLang(scene, width)
     {
         let options = [{text:'中文',value:'tw'},
                         {text:'ENGLISH',value:'us'},]
+
+        let onchange = function(value)
+        {
+            console.log('lang:',value)
+            Record.data.lang=value;
+            Record.save();
+        }
+
         let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
         sizer.add(text(scene,{text:'🌐', fontSize:40}))
-            .add(dropdown(scene,{width:width, options:options, space:{top:5,bottom:5}}),{key:'dropdown'});
+            .add(dropdown(scene,{width:width, options:options, space:{top:5,bottom:5},onchange:onchange}),{key:'dropdown'});
         this.add(sizer,{key:'lang'});
         return this
     }
@@ -3265,21 +3272,21 @@ export class Settings extends UiBase
     {
         let onchange = function(value)
         {
-            console.log(value)
-            if(value==0)
-                sizer.getElement('icon').setText('🔇')
-            else if(value < 0.66)
-                sizer.getElement('icon').setText('🔈')
-            else if(value < 1)
-                sizer.getElement('icon').setText('🔉')
-            else
-                sizer.getElement('icon').setText('🔊')
+            value = Math.round(value * 10) / 10;
+            if(value==0) {sizer.getElement('icon').setText('🔇');}
+            else if(value < 0.5) {sizer.getElement('icon').setText('🔈');}
+            else if(value < 1) {sizer.getElement('icon').setText('🔉');}
+            else {sizer.getElement('icon').setText('🔊');}
+            Record.data.volume = value;
+            Record.save();
         }
 
         let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
         sizer.add(text(scene,{text:'🔈', fontSize:40}),{key:'icon'})
-            .add(slider(scene,{width:width,valuechangeCallback:onchange}));
-        this.add(sizer);
+            .add(slider(scene,{width:width, gap:0.2}),{key:'volume_value'});
+        this.add(sizer,{key:'volume'});
+
+        this.getElement('volume_value',true).off('valuechange').on('valuechange',onchange); 
         return this
     }
 
@@ -3287,6 +3294,13 @@ export class Settings extends UiBase
     {
         super.close();
         this.onclose?.();
+    }
+
+    show()
+    {
+        super.show();
+        this.getElement('dropdown',true).setValue(Record.data.lang); 
+        this.getElement('volume_value',true).setValue(Record.data.volume); 
     }
 
 }

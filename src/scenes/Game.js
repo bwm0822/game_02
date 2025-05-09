@@ -11,20 +11,21 @@ export class Game extends Scene
     {
         console.log('Game');
         super('Game');
-        this._done = false;
+        // this._done = false;
     }
 
     create ()
     {
-        if(!this._done)
-        {
-            this._done = true;
-            this.scene.launch('UI');
-            //this.cameras.main.setBackgroundColor(0x555555);
-            // this.loadRecord();
-            this.loadData();
-        }
-
+        console.log('create Game')
+        // if(!this._done)
+        // {
+        //     this._done = true;
+        //     this.scene.launch('UI');
+        //     //this.cameras.main.setBackgroundColor(0x555555);
+        //     // this.loadRecord();
+        //     this.loadData();
+        // }
+        this.scene.launch('UI');
         this.gotoScene();
     }
 

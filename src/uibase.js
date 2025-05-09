@@ -81,14 +81,16 @@ export function bbcText(scene, config={})
     return t;
 }
 
-export function slider(scene,{width,trackRadius=10,thumbRadius=20,valuechangeCallback}={})
+export function slider(scene,{width,trackRadius=10,thumbRadius=20,onchange,gap,space}={})
 {
     return scene.rexUI.add.slider({
         orientation: 'x',
         width: width,
         track: rect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
         thumb: rect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
-        valuechangeCallback: valuechangeCallback ?? function(){},
+        valuechangeCallback: function(value){onchange?.(value)},
+        gap: gap,
+        space: space,
         //thumbOffsetY: -10,
         //space: {top: 4,bottom: 4},
         //input: 'drag', // 'drag'|'click'
@@ -135,7 +137,7 @@ export function label(scene,config)
     });
 }
 
-export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],stringOption=false})
+export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],stringOption=false,onchange})
 {
     return scene.rexUI.add.dropDownList({
             // x: 400, y: 300,
@@ -181,6 +183,7 @@ export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw
                     console.log('setValueCallback',value);
                     const option = options.find(item => item.value === value);
                     dropDownList.text = option.text;
+                    onchange?.(value)
                 },
 
             value: undefined,

@@ -21,13 +21,13 @@ export class GameScene extends Scene
 
     init(data) 
     {
-        //console.log('1.init',data);
+        console.log('1.init',data);
         this._data = data;
     }
 
     async create ({diagonal,classType,weight})
     {
-        //console.log('2.create')
+        console.log('2.create')
         this._dbgPos = null;
         this._graphics = null;
         this._dbgPath = null;
@@ -268,7 +268,8 @@ export class GameScene extends Scene
     mainMenu()
     {
         this.save();
-        Ui.closeAll(GM.UI_ALL);
+        // Ui.closeAll(GM.UI_ALL);
+        this.scene.remove('UI');
         this.scene.start('MainMenu');
     }
 

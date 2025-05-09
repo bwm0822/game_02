@@ -12,6 +12,7 @@ export class UI extends Scene
 
     create ()
     {
+        console.log('create UI')
         createUI(this);
         this.uiEvent();
         this.processInput();
