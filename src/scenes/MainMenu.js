@@ -3,7 +3,10 @@ import Utility from '../utility.js';
 import Record from '../record';
 import Local from '../local';
 import DB from '../db';
-import {UiSettings} from '../ui.js'
+import {UiSettings, UiCursor} from '../ui.js'
+import {GM} from '../setting.js';
+import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
+import {rect,sprite,text} from '../uibase.js'
 
 export class MainMenu extends Scene
 {
@@ -16,19 +19,9 @@ export class MainMenu extends Scene
 
     create ()
     {
-        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
-        const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
+       
+        this.initUI()
 
-        this.add.image(screenCenterX, screenCenterY, 'background').setOrigin(0.5);
-
-        this.add.image(screenCenterX, screenCenterY, 'logo').setOrigin(0.5);
-
-        this.start(50, 400);
-        this.setting(50, 450);
-
-        // new UiSettings(this);
-
-        // this.scene.launch('UI');
         // this.cameras.main.setBackgroundColor(0x555555);
          if(!this._done)
         {
@@ -36,6 +29,25 @@ export class MainMenu extends Scene
             this.loadData();
         }
 
+    }
+
+
+    initUI()
+    {
+        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
+        const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
+
+        this.add.image(screenCenterX, screenCenterY, 'background').setOrigin(0.5);
+        this.add.image(screenCenterX, screenCenterY, 'logo').setOrigin(0.5);
+
+        this.start(50, 400);
+        this.setting(50, 450);
+
+        GM.w = this.sys.canvas.width;
+        GM.h = this.sys.canvas.height;
+        this.input.setDefaultCursor('none');    // 消除預設的游標
+        new UiSettings(this);
+        new UiCursor(this);
     }
 
     button(x,y,text,cb)
@@ -76,11 +88,71 @@ export class MainMenu extends Scene
     }
 
 
-
     setting(x, y)
     {
         this.button(x, y, '遊戲設定',()=>{
             UiSettings.show()
         });//, () => {this.scene.start('Setting');});
+    }
+
+    debug()
+    {
+        this.input.keyboard.on('keyup', (event) => {
+            console.log(event.key)
+            if(event.key=='q')
+            {
+                this.scene.start('Game');
+            }
+            else if(event.key=='a')
+            {
+                t.inc(this)
+                console.log(this)
+            }
+        }); 
+    }
+}
+
+
+class UiTest extends Sizer
+{
+    constructor(scene)
+    {
+        super(scene,0,0,GM.w,GM.h);
+        // scene.add.existing(this);
+        let layer = scene.add.layer();
+        layer.name = 'UiTest';
+        layer.add(this);
+
+        
+
+        this//.addBackground(rect(scene,{alpha:0.5}))
+            .add(sprite(scene,{icon:'buffs/0'}))
+            // .add(text(scene,{text:'123'}))
+
+        this.setOrigin(0,0)
+            .layout()
+        
+        
+        //this.getLayer().name = 'UiTest';    // 產生layer，並設定layer名稱
+        // let layer = scene.add.layer();
+        // layer.name = 'UiTest';
+        // layer.add(this);
+
+        console.log('Children:', this.getAllChildren());
+        console.log(this)
+        console.log(scene)
+    }
+
+    inc(scene)
+    {
+        this.add(sprite(scene,{icon:'buffs/0'}))
+            .layout()
+    }
+
+    destroy(...args) 
+    {
+
+        console.log('UiTest.destroy',args)
+        super.destroy(args)
     }
 }

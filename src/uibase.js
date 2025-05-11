@@ -33,6 +33,17 @@ export function sprite(scene, {x, y, icon, name}={})
     let [atlas, frame] = icon ? icon.split('/'):[];
     let sprite = scene.add.sprite(x,y,atlas,frame);
     name && (sprite.name = name);
+
+    // // 儲存原本的 destroy 方法
+    // let _originalDestroy = sprite.destroy.bind(sprite);
+    
+    // // 改寫 destroy 方法
+    // sprite.destroy = function (...args) {
+    //     console.log('sprite.destroy',args)  
+    //     _originalDestroy(...args);
+           
+    // };
+
     return sprite;
 }
 
@@ -234,7 +245,7 @@ export class Icon extends OverlapSizer
         return this;
     }
 
-    clear()
+    empty()
     {
         this.getElement('sprite').setTexture();
         this.getElement('count').setText('');

@@ -23,37 +23,32 @@ export default function createUI(scene)
 
     //test(scene);
     //t1();
-    new UiCover(scene);
-    new UiMain(scene);
-    new UiManufacture(scene);
-    new UiProfile(scene);
-    new UiCursor(scene);
-    new UiInv(scene);
-    new UiTrade(scene);
-    new UiStorage(scene);
-    new UiDialog(scene);
-    new UiObserve(scene);
+    new UiCover(scene);             // 1
+    new UiMain(scene);              // 2
+    new UiManufacture(scene);       // 3
+    new UiProfile(scene);           // 4
+    new UiCursor(scene);            // 5
+    new UiInv(scene);               // 6
+    new UiTrade(scene);             // 7
+    new UiStorage(scene);           // 8
+    new UiDialog(scene);            // 9
+    new UiObserve(scene);           // 10
 
-    new UiCount(scene);
+    // new UiCount(scene);
     
-    new UiDragged(scene, 80, 80);
-    new UiInfo(scene);
-    new UiOption(scene);
-    new UiMessage(scene);
+    new UiDragged(scene, 80, 80);   // 11
+    new UiInfo(scene);              // 12
+    new UiOption(scene);            // 13
+    new UiMessage(scene);           // 14
 
-    new UiGameOver(scene);
+    new UiGameOver(scene);          // 15
 
-    new UiChangeScene(scene);
+    new UiChangeScene(scene);       // 16
 
-    new UiDebuger(scene);
+    new UiDebuger(scene);           // 17
 
+    new UiTime(scene);              // 18
 
-    new UiTime(scene);
-
-    // new UiSettings(scene);
-
-
-    //t3({});
 }
 
 function get(s,p)
@@ -206,6 +201,13 @@ export class Ui
     static register(ui,type) {Ui._list[ui.constructor.name]={ui:ui,type:type};}
     static unregister(ui) {delete Ui._list[ui.constructor.name];}
     static setMode(mode) {this._mode = mode;}
+
+    static addLayer(scene, name, top)
+    {
+        let layer = scene.add.layer();
+        layer.name = name;
+        layer.add(top);     // 把 top 加入 layer
+    }
 }
 
 class Slot extends Icon
@@ -443,7 +445,7 @@ class Slot extends Icon
         }
     }
 
-    clear() {super.clear();this.itm=null;this.dat=null;}
+    empty() {super.empty();this.itm=null;this.dat=null;}
     
     over(check=true)
     {
@@ -512,7 +514,7 @@ class Slot extends Icon
 
                         if(UiDragged.owner.sell(this.owner, UiDragged, this._i, this.isEquip))
                         {
-                            UiDragged.clear();
+                            UiDragged.empty();
                             Ui.refreshAll();
                         }
                     }
@@ -526,8 +528,8 @@ class Slot extends Icon
                         {
                             let dataCopy = this.copyData();
                             this.itm = UiDragged.itm;
-                            UiDragged.clear();
-                            if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.data=dataCopy;}
+                            UiDragged.empty();
+                            if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.setData(dataCopy);}
                             if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
                         }  
                     }
@@ -537,9 +539,9 @@ class Slot extends Icon
             else if(!this.isEmpty)
             {
                 this.setBgColor(GM.COLOR_SLOT_DRAG);
-                UiDragged.data = this.copyData();
+                UiDragged.setData(this.copyData());
                 UiDragged.setPos(this.left+x,this.top+y);
-                this.clear();
+                this.empty();
                 UiInv.check();
             }
         }
@@ -695,7 +697,7 @@ class OutputSlot extends Slot
     get itm() {return super.itm;}
     set itm(value) {super.itm=value; this.onset?.();}
 
-    clear() {this.itm.count=0;this.itm=this.itm;}
+    empty() {this.itm.count=0;this.itm=this.itm;}
 
     // setSlot(value)
     // {
@@ -708,17 +710,20 @@ class OutputSlot extends Slot
 }
 
 
-export class UiDragged extends Pic
+export class UiDragged_o extends Pic
 {
     static instance = null;
     constructor(scene, w, h)
     {
         super(scene, w, h);
         UiDragged.instance = this;
+        Ui.addLayer(scene, 'UiDragged', this);    // 產生layer，並設定layer名稱
+
         this.addCount(scene)
             .layout()
             .hide()
-        this.getLayer().name = 'Dragged';
+
+        // this.getLayer().name = 'UiDragged'
     }
 
     // static get on() {return this.instance.visible;}
@@ -746,12 +751,12 @@ export class UiDragged extends Pic
     // static get isTrade() {return this.instance.data.owner.tradeable??false;}
     
     //static set data(value) {this.instance.setData(value);}
-    static set data(value) {this.instance.setData(value);}
+    // static set slot(value) {this.instance.setData(value);}  
 
-    get owner() {return this.data.owner;}
-    get itm() {return this.data.itm;}
-    get dat() {return this.data.dat;}
-    get label() {return this.dat.name;}
+    get owner() {return this.slot.owner;}
+    get itm() {return this.slot.itm;}
+    get dat() {return this.slot.dat;}
+    get label() {return this.itm.id.lab();}
 
     //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
     checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
@@ -760,7 +765,7 @@ export class UiDragged extends Pic
     {
         if(this.itm.count==0)
         {
-            this.clear();
+            this.empty();
         }
         else
         {
@@ -768,7 +773,7 @@ export class UiDragged extends Pic
         }
     }
 
-    clear()
+    empty()
     {
         this.hide();
         delete this.slot;
@@ -784,8 +789,9 @@ export class UiDragged extends Pic
 
     setData(value)
     {
+        // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
         this.show();
-        this.data = value;
+        this.slot = value;
         this.setIcon(value.dat.icon)
             .setCount(value.itm.count>1 ? value.itm.count : '')
         UiCover.show();
@@ -811,13 +817,116 @@ export class UiDragged extends Pic
         if(this.visible&&this.owner.trade!=GM.SELLER)
         {
             this.owner.drop(this);
-            this.clear();
+            this.empty();
         }
     }
 
+    static setData(value) {this.instance.setData(value);}
+
     static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
 
-    static clear() {UiDragged.instance?.clear();}
+    static empty() {UiDragged.instance?.empty();}
+    
+    static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
+
+    static update() {UiDragged.instance?.update();}
+
+    static drop() {UiDragged.instance?.drop();}
+
+}
+
+export class UiDragged extends OverlapSizer
+{
+    static instance = null;
+    constructor(scene, w, h)
+    {
+        super(scene, 0, 0,w, h);
+        UiDragged.instance = this;
+        Ui.addLayer(scene, 'UiDragged', this);    // 產生layer，並設定layer名稱
+        this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:0, alpha:0}),'background')
+            .add(sprite(this.scene),{aspectRatio:true, key:'sprite'})  
+            .addCount(scene)
+            .layout()
+            .hide()
+    }
+
+
+    static get on() {return this.instance.visible;}
+    static get itm() {return this.instance.itm;}
+    static get owner() {return this.instance.owner;}
+    get owner() {return this.slot.owner;}
+    get itm() {return this.slot.itm;}
+    get dat() {return this.slot.dat;}
+    get label() {return this.itm.id.lab();}
+
+    //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
+    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
+
+    update() 
+    {
+        if(this.itm.count==0)
+        {
+            this.empty();
+        }
+        else
+        {
+            this.setCount(this.itm.count>1 ? this.itm.count : '')
+        }
+    }
+
+    empty()
+    {
+        this.hide();
+        delete this.slot;
+        UiCover.close();
+        UiMain.enable(true);
+    }
+
+    addCount(scene)
+    {
+        this.add(text(scene,{fontSize:20, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false})
+        return this
+    }
+
+    setData(value)
+    {
+        // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
+        this.show();
+        this.slot = value;
+        this.setIcon(value.dat.icon)
+            .setCount(value.itm.count>1 ? value.itm.count : '')
+        UiCover.show();
+        UiMain.enable(false);
+    }
+
+    setIcon(icon)
+    {
+        let [key,frame]=icon.split('/');
+        this.getElement('sprite').setTexture(key,frame);
+        return this;
+    }
+
+    setCount(count)
+    {
+        this.getElement('count').setText(count);
+        this.layout();
+        return this;
+    }
+
+    drop()
+    {
+        if(this.visible&&this.owner.trade!=GM.SELLER)
+        {
+            this.owner.drop(this);
+            this.empty();
+        }
+    }
+
+    static setData(value) {this.instance.setData(value);}
+
+    static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
+
+    static empty() {UiDragged.instance?.empty();}
     
     static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
 
@@ -979,12 +1088,16 @@ export class UiCover extends Sizer
     {
         super(scene,0,0,GM.w,GM.h);
         UiCover.instance = this;
+        Ui.addLayer(scene, 'UiCover', this);    // 產生layer，並設定layer名稱
+
         this.addBackground(rect(scene,{color:GM.COLOR_DARK,alpha:0}))
             .setOrigin(0,0)
             .layout()
             .hide()
-        scene.add.existing(this);
-        this.getLayer().name = 'UiCover';
+        // scene.add.existing(this);
+        // Ui.addLayer(scene, 'UiCover', this);
+
+
         this.setInteractive()
             .on('pointerdown',()=>{UiDragged.drop();})
         this._cnt=0;
@@ -1018,13 +1131,14 @@ class UiInfo extends Sizer
     {
         super(scene,{orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:0}});
         UiInfo.instance = this;
+        Ui.addLayer(scene, 'UiInfo', this);    // 產生layer，並設定layer名稱
 
         this.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
             .layout()
             .hide();
 
-        scene.add.existing(this);
-        this.getLayer().name = 'UiInfo';
+        // scene.add.existing(this);
+        // Ui.addLayer(scene, 'UiInfo', this);
     }
 
     addTitle(slot)
@@ -1191,15 +1305,17 @@ class UiInfo extends Sizer
 
 class UiContainerBase extends ContainerLite
 {
-    constructor(scene, touchClose=true)
+    constructor(scene, layername, touchClose=true)
     {
         super(scene,0,0,GM.w,GM.h);
+        Ui.addLayer(scene, layername, this);    // 產生layer，並設定layer名稱
         this.addBg(scene, touchClose)
-        scene.add.existing(this);
+        // scene.add.existing(this);
     }
 
     addBg(scene, touchClose)
     {
+        console.log(GM.w, GM.h)
         let sizer = scene.rexUI.add.sizer(0,0,GM.w,GM.h);
         sizer.addBackground(rect(scene,{alpha:0.5}))
             .setOrigin(0)
@@ -1231,12 +1347,12 @@ class UiContainerBase extends ContainerLite
 
 class UiBase extends Sizer
 {
-    // static _register={};
-    // closeAll() {for(let key in UiBase._register){UiBase._register[key].close();}}
-    // refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
-    // static refreshAll() {for(let key in UiBase._register){UiBase._register[key].refresh?.();}}
-    // register() {UiBase._register[this.constructor.name]=this;}
-    // unregister() {delete UiBase._register[this.constructor.name];}
+    constructor(scene, config, layername)
+    {
+        super(scene, config)
+        if(layername) {Ui.addLayer(scene, layername, this);}
+        else {scene.add.existing(this);}
+    }
 
     closeAll(mode) {Ui.closeAll(mode);}
     refreshAll() {Ui.refreshAll();}
@@ -1404,6 +1520,8 @@ class UiBase extends Sizer
 
     close() {this.hide();}
 
+    // destroy() {super.destroy();}
+
 }
 
 class Option extends UiBase
@@ -1439,7 +1557,7 @@ class Option extends UiBase
             .hide();
 
         //scene.add.existing(this);
-        //this.getLayer().name = 'UiOption';
+        //Ui.addLayer(scene, 'UiOption', this);
     }
 
     get owner() {return this.ent.owner;}
@@ -1467,7 +1585,7 @@ class Option extends UiBase
     {
         this.close();
         this.owner.drop(this.ent);
-        this.ent.clear();
+        this.ent.empty();
         this.refreshAll();
     }
 
@@ -1476,7 +1594,7 @@ class Option extends UiBase
         this.close();
         if(this.owner.transfer(this.target, this.ent))
         {
-            this.ent.clear();
+            this.ent.empty();
             this.refreshAll();
         }
     }
@@ -1486,7 +1604,7 @@ class Option extends UiBase
         this.close();
         if(this.owner.sell(this.target, this.ent))
         {
-            this.ent.clear();
+            this.ent.empty();
             this.refreshAll();
         }
     }
@@ -1638,8 +1756,9 @@ export class UiStorage extends UiBase
             orientation:'y'
         }
 
-        super(scene,config);
+        super(scene, config, 'UiStorage');
         UiStorage.instance = this;
+
         this.addBg_Int(scene)
             .addTop(scene)
             .addGrid(scene,4,4,this.getOwner.bind(this),{space:{left:20,right:20,bottom:20}})
@@ -1650,8 +1769,7 @@ export class UiStorage extends UiBase
             .setOrigin(0,1)
             .layout()
             .hide()
-        scene.add.existing(this);
-        this.getLayer().name = 'UiStorage';
+        
     }
 
     setCat(cat)
@@ -1720,7 +1838,7 @@ export class UiInv extends UiBase
             orientation : 'y',
         }
 
-        super(scene,config)
+        super(scene, config, 'UiInv')
         UiInv.instance = this;
 
         this.addBg_Int(scene)
@@ -1735,12 +1853,10 @@ export class UiInv extends UiBase
             .setOrigin(1,0)
             .layout()
             .hide()
-        scene.add.existing(this);
         
            //.on('pointerout',()=>{!this.isPointerInBounds()&&console.log('out')})
         //this.onClickOutside(()=>{console.log('outside')});
         this._opts = null;
-        this.getLayer().name = 'UiInv';
     }
 
     addEquip(scene, getOwner)
@@ -1890,12 +2006,10 @@ export class UiOption extends UiContainerBase
     static instance = null;
     constructor(scene)
     {
-        super(scene);
+        super(scene, 'UiOption');
         UiOption.instance = this;
         this.add(new Option(scene))
             .close() 
-
-        this.getLayer().name = 'UiOption';
     }
 
     static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
@@ -1907,12 +2021,17 @@ class UiObserve extends UiContainerBase
     static instance = null;
     constructor(scene)
     {
-        super(scene,false);
+        super(scene, 'UiObserve', false);
         UiObserve.instance = this;
         this.add(new Observe(scene))
             .close()
+    }
 
-        this.getLayer().name = 'UiObserve';
+    destroy(args)
+    {
+        console.log('-------------destroy', args)
+        super.destroy(args)
+        
     }
 
     static show(owner) {this.instance?.show(owner);}
@@ -1923,12 +2042,10 @@ class UiCount extends UiContainerBase
     static instance = null;
     constructor(scene)
     {
-        super(scene,false);
+        super(scene,'UiCount',false);
         UiCount.instance = this;
         this.add(new Count(scene))
             .close()
-
-        this.getLayer().name = 'UiCount';
     }
 
     // static show(owner) {this.instance?.show(owner);}
@@ -1941,7 +2058,7 @@ export class UiMain extends UiBase
     constructor(scene)
     {
         let config = {space:{item:10,left:10,right:10,top:10,bottom:10}}
-        super(scene,config);
+        super(scene, config, 'UiMain');
         UiMain.instance = this;
 
         this.addBg_Int(scene)
@@ -1954,7 +2071,6 @@ export class UiMain extends UiBase
             .size()
             .hide();
         
-        this.getLayer().name = 'UiMain';    // 產生layer，並設定layer名稱
         this.addListener();
        
     }
@@ -2137,8 +2253,8 @@ export class UiTrade extends UiBase
             orientation : 'y',
             space:{bottom:20},
         }
-        super(scene, config);
-        UiTrade.instance = this;
+        super(scene, config, 'UiTrade');
+        UiTrade.instance = this;    
 
         this.addBg(scene)    
             .addTop(scene,'交易')
@@ -2148,8 +2264,6 @@ export class UiTrade extends UiBase
             .setOrigin(0)
             .layout()
             .hide()
-        
-        this.getLayer().name = 'UiTrade';    // 產生layer，並設定layer名稱       
     }
 
 
@@ -2238,8 +2352,8 @@ export class UiProfile extends UiBase
             orientation : 'y',
             space:{bottom:20},
         }
-        super(scene, config);
-        UiProfile.instance = this;
+        super(scene, config, 'UiProfile');
+        UiProfile.instance = this; 
 
         this.addBg_Int(scene)    
             .addTop(scene,'個人')
@@ -2251,7 +2365,7 @@ export class UiProfile extends UiBase
             .layout()
             .hide()
         
-        this.getLayer().name = 'UiProfile';    // 產生layer，並設定layer名稱       
+          
     }
 
     addInfo(scene)
@@ -2438,8 +2552,9 @@ export class UiDialog extends UiBase
             //space:{bottom:20},
         }
 
-        super(scene, config);
+        super(scene, config, 'UiDialog');
         UiDialog.instance=this;
+
         this//.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addBg(scene)
             .addSpeakerA(scene)
@@ -2457,9 +2572,6 @@ export class UiDialog extends UiBase
         //let typing = scene.plugins.get('rexTextTyping').add(txt,{speed:50,wrap:true});
         const lineCnt=3;
         let page = scene.plugins.get('rexTextPage').add(textA,{maxLines:lineCnt});
-
-        this.getLayer().name = 'UiDialog';    // 產生layer，並設定layer名稱
-
  
         this.setIconA = (icon)=>{let [key,frame]=icon.split('/');iconA.setTexture(key,frame);return this;}
         this.setNameA = (name)=>{nameA.setText(`[color=yellow]${name}[/color]`);return this;}
@@ -2610,7 +2722,7 @@ export class UiChangeScene extends UiBase
             //space:{left:10},
         }
 
-        super(scene, config);
+        super(scene, config, 'UiChangeScene');
         UiChangeScene.instance = this;
 
         this.addBg_Int(scene,{color:GM.COLOR_BLACK,alpha:1})
@@ -2647,9 +2759,9 @@ export class UiMessage extends ContainerLite
     constructor(scene)
     {
         super(scene);
+        Ui.addLayer(scene, 'UiMessage', this);
         UiMessage.instance = this;
         this.scene = scene;
-        scene.add.existing(this);
 
         let config =
         {
@@ -2761,9 +2873,9 @@ export class UiMessage extends ContainerLite
         return this;
     }
 
-    clear()
+    clean()
     {
-        console.log('clear')
+        console.log('clean')
         this.queue = [];
         this.panel.removeAll(true).layout();
     }
@@ -2780,7 +2892,7 @@ export class UiMessage extends ContainerLite
         Ui.register(this,GM.UI_MSG);
     }
 
-    static clear() {this.instance?.clear();}
+    static clean() {this.instance?.clean();}
     static push(msg) {return this.instance?.push(msg);}
 }
 
@@ -2799,7 +2911,7 @@ export class UiGameOver extends UiBase
             orientation: 'x'
         }
 
-        super(scene,config)
+        super(scene, config, 'UiGameOver')
         this.scene=scene;
         UiGameOver.instance=this;
         this.addBg(scene,{color:GM.COLOR_BLACK,alpha:0.5})
@@ -2846,7 +2958,7 @@ class UiDebuger extends UiBase
             space:{top:10,bottom:10,left:10,right:10,item:10},
         }
 
-        super(scene,config)
+        super(scene, config, 'UiDebuger')
         UiDebuger.instance=this;
         this.scene=scene;
         this.addBg_Int(scene)
@@ -2962,7 +3074,7 @@ export class UiTime extends UiBase
             space:{top:10,bottom:10,left:10,right:10,item:10},
         }
 
-        super(scene,config)
+        super(scene, config ,'UiTime')
         UiTime.instance=this;
         this.scene=scene;
         this.addBg(scene)
@@ -3000,7 +3112,7 @@ export class UiManufacture extends UiBase
             space : 0,
         }
 
-        super(scene,config)
+        super(scene, config, 'UiManufacture')
         UiManufacture.instance=this;
         this.scene=scene;
         this.addBg_Int(scene)
@@ -3149,7 +3261,7 @@ class Count extends UiBase
             space : 0,
         }
 
-        super(scene,config)
+        super(scene, config)
         this.scene=scene;
         this.addBg_Int(scene)
             .addSlider(scene)
@@ -3310,12 +3422,13 @@ export class UiSettings extends UiContainerBase
     static instance = null;
     constructor(scene)
     {
-        super(scene,false);
+        super(scene, 'UiSettings', false);
         UiSettings.instance = this;
+
         this.add(new Settings(scene))
             .close()
 
-        this.getLayer().name = 'UiSettings';
+        
     }
 
     static show() {this.instance?.show();}

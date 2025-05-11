@@ -16,7 +16,8 @@ export class UI extends Scene
         createUI(this);
         this.uiEvent();
         this.processInput();
-        this.input.setDefaultCursor('none');
+        // this.input.setDefaultCursor('none');    
+        console.log(this)
     }
 
     processInput()
@@ -36,8 +37,17 @@ export class UI extends Scene
         })
     }
 
+    stop()
+    {
+        console.log('stop ui')
+        this.scene.stop();
+    }
+
     uiEvent()
     {
         console.log('UI_event');
+        const area = this.scene.get('GameArea');
+        area.events
+            .off('stop_ui').on('stop_ui', ()=>{this.stop();})
     }
 }

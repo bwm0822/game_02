@@ -49,7 +49,7 @@ export class GameScene extends Scene
         this.processInput();
 
         TimeManager.start();
-        UiMessage.clear();
+        UiMessage.clean();
         UiChangeScene.done();
     }
 
@@ -269,8 +269,14 @@ export class GameScene extends Scene
     {
         this.save();
         // Ui.closeAll(GM.UI_ALL);
-        this.scene.remove('UI');
+        // this.scene.stop('UI');
+        // this.events.emit('stop_ui')
+        // this.scene.start('MainMenu');
+        // this.scene.stop('UI');
+        // this.scene.stop().launch('MainMenu');
+        this.scene.stop('UI');
         this.scene.start('MainMenu');
+
     }
 
     gotoScene(config)
