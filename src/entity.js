@@ -245,7 +245,7 @@ export class Entity extends Phaser.GameObjects.Container
         }
         else
         {  
-            this.send('msg','空間已滿!!!');
+            this.send('msg','_space_full'.lab());
             return false;
         }
     }
@@ -265,7 +265,7 @@ export class Entity extends Phaser.GameObjects.Container
         let p = this.scene.map.getDropPoint(this.pos);
         let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
         obj.falling(p);
-        this.send('msg',`丟棄 ${ent.label}`);
+        this.send('msg',`${'_drop'.lab()} ${ent.label}`);
     }
 
     falling(p)
@@ -357,49 +357,6 @@ export class Entity extends Phaser.GameObjects.Container
 
 }
 
-// export class Case extends Entity
-// {
-//     constructor(scene)
-//     {
-//         super(scene);    
-//         this.interactive = true;
-//         this.status = {};
-//     }
-
-//     get acts()  {return ['open'];}
-
-//     addListener()
-//     {
-//         super.addListener();
-//         this.on('open',()=>{this.open()})
-//     }
-
-//     init()
-//     {
-//         super.init();
-//         this.load();
-//     }
-
-//     load()
-//     {
-//         this.owner={name:this.name};
-//         let data = this.loadData();
-//         if(data) {this.status.bag = data;}
-//         else 
-//         {
-//             let jsonData = this.data?.get('items');
-//             let items = jsonData ? JSON.parse(jsonData) : [];
-//             this.status.bag = this.toBag(-1,items);
-//         }   
-//     }
-
-//     save() { this.saveData(this.status.bag); }
-
-//     open() { this.send('case', this); }
-
-   
-// }
-
 
 export class Case extends Entity
 {
@@ -455,12 +412,12 @@ export class Pickup extends Entity
         this.interactive = true;    
     }
 
-    get acts()  {return ['pickup'];}
+    get acts()  {return [GM.TAKE];}
 
     addListener()
     {
         super.addListener();
-        this.on('pickup',(taker)=>{this.pickup(taker)})
+        this.on(GM.TAKE,(taker)=>{this.pickup(taker)})
     }
 
     pickup(taker)
@@ -468,7 +425,7 @@ export class Pickup extends Entity
         if(taker.take(this))
         {
             let dat = this.dat ?? ItemDB.get(this.itm.id)
-            this.send('msg',`取得 ${dat.name}`)
+            this.send('msg',`${'_pickup'.lab()} ${dat.name}`)
             this.send('out');
             this.send('refresh');
             this.removeFromObjects();
@@ -490,7 +447,7 @@ export class Pickup extends Entity
     save()
     {
         if(this.uid!=-1) {this.saveData({removed:false})}
-        else {this.saveData({...this.pos,angle:this.angle,slot:this.slot});}
+        else {this.saveData({...this.pos,angle:this.angle,slot:this.itm});}
     }
 
     remove()
@@ -513,7 +470,7 @@ export class Stove extends Entity
         this.cat = GM.CAT_FOOD;
     }
 
-    get acts()  {return ['cook'];}
+    get acts()  {return [GM.COOK];}
     get storage() {return this._storage;}
     get output() {return this._output;}
     set output(value) {return this._output=value;}
@@ -639,13 +596,13 @@ export class Well extends Entity
         this.interactive = true;  
     }
 
-    get acts()  {return ['drink','fill'];}
+    get acts()  {return [GM.DRINK, GM.FILL];}
 
     addListener()
     {
         super.addListener();
-        this.on('drink',(role)=>{role.drink();})
-        this.on('fill',(role)=>{this.send('fill');})
+        this.on(GM.DRINK,(role)=>{role.drink();})
+        this.on(GM.FILL,(role)=>{this.send('fill');})
     }
 }
 
@@ -686,7 +643,7 @@ export class Port extends Entity
         this.offsetY = 0;
     }
 
-    get acts()  {return ['enter'];}
+    get acts()  {return [GM.ENTER];}
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
@@ -700,7 +657,7 @@ export class Port extends Entity
     addListener()
     {
         super.addListener();
-        this.on('enter',()=>{this.enter();})
+        this.on(GM.ENTER,()=>{this.enter();})
     }
 
     enter()

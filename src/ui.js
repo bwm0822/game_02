@@ -33,22 +33,15 @@ export default function createUI(scene)
     new UiStorage(scene);           // 8
     new UiDialog(scene);            // 9
     new UiObserve(scene);           // 10
-
-    // new UiCount(scene);
-    
-    new UiDragged(scene, 80, 80);   // 11
-    new UiInfo(scene);              // 12
-    new UiOption(scene);            // 13
-    new UiMessage(scene);           // 14
-
-    new UiGameOver(scene);          // 15
-
-    new UiChangeScene(scene);       // 16
-
-    new UiDebuger(scene);           // 17
-
-    new UiTime(scene);              // 18
-
+    new UiCount(scene);             // 11
+    new UiDragged(scene, 80, 80);   // 12
+    new UiInfo(scene);              // 13
+    new UiOption(scene);            // 14
+    new UiMessage(scene);           // 15
+    new UiGameOver(scene);          // 16
+    new UiChangeScene(scene);       // 17
+    new UiDebuger(scene);           // 18
+    new UiTime(scene);              // 19
 }
 
 function get(s,p)
@@ -187,6 +180,7 @@ export class Ui
 {
     static _list = {};
     static _mode = GM.UI_MODE_NORMAL;
+    static _to = null;
 
     static get mode() {return this._mode;}
     //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
@@ -207,6 +201,17 @@ export class Ui
         let layer = scene.add.layer();
         layer.name = name;
         layer.add(top);     // 把 top 加入 layer
+    }
+
+    static delayCall(func)
+    {
+        if(!func) {return;}
+        this._to = setTimeout(() => {func();}, GM.OVER_DELAY);
+    }
+
+    static cancelDelayCall()
+    {
+        clearTimeout(this._to);
     }
 }
 
@@ -232,6 +237,7 @@ class Slot extends Icon
     set count(value) {return this.itm.count=value;}
     get props() {return this.dat.props;}
     get label() {return this.dat.name;}
+    get tp() {return GM.TP_SLOT;}
 
     get id() {return this.itm?.id;}
     // itm
@@ -470,15 +476,15 @@ class Slot extends Icon
         else if(!this.isEmpty)
         {
             this.setBgColor(GM.COLOR_SLOT_OVER);
-            // 使用 setTimeout 延遲執行 UiInfo.show()
-            this.pointerOverTimeout = setTimeout(() => {UiInfo.show(this);}, GM.OVER_DELAY);
+           
+            Ui.delayCall(() => {UiInfo.show(GM.TP_SLOT,this);}); // 使用 delacyCall 延遲執行 UiInfo.show()
             check && UiInv.check(this.dat.cat);
         }
     }
 
     out(check=true)
-    {
-        clearTimeout(this.pointerOverTimeout);        
+    { 
+        Ui.cancelDelayCall();    
         this.setBgColor(GM.COLOR_SLOT);
         UiInfo.close();
         check && UiInv.check();
@@ -698,142 +704,8 @@ class OutputSlot extends Slot
     set itm(value) {super.itm=value; this.onset?.();}
 
     empty() {this.itm.count=0;this.itm=this.itm;}
-
-    // setSlot(value)
-    // {
-    //     this.setBar(false);
-    //     this.setProgress(false);
-    //     this.setTimes(false);
-    //     this._item = ItemDB.get(value?.id);
-    //     this.setIcon(this._item?.icon,{alpha:value?.count>0?1:0.25});
-    // }
 }
 
-
-export class UiDragged_o extends Pic
-{
-    static instance = null;
-    constructor(scene, w, h)
-    {
-        super(scene, w, h);
-        UiDragged.instance = this;
-        Ui.addLayer(scene, 'UiDragged', this);    // 產生layer，並設定layer名稱
-
-        this.addCount(scene)
-            .layout()
-            .hide()
-
-        // this.getLayer().name = 'UiDragged'
-    }
-
-    // static get on() {return this.instance.visible;}
-    // static get slot() {return this.instance.slot;}
-    // static get owner() {return this.instance.owner;}
-    // static get item() {return this.instance.item;}
-    // static get gold() {return this.instance.item.gold*this.instance.slot.count;}
-    // static get isTrade() {return this.instance.data.owner.tradeable??false;}
-    // static set data(value) {this.instance.setData(value);}
-
-    // get owner() {return this.data.owner;}
-    // get slot() {return this.data.slot;}
-    // get item() {return this.data.item;}
-
-
-    static get on() {return this.instance.visible;}
-    
-    //static get slot() {return this.instance.slot;}
-    static get itm() {return this.instance.itm;}
-
-    static get owner() {return this.instance.owner;}
-
-    // static get item() {return this.instance.item;}
-    // static get gold() {return this.instance.item.gold*this.instance.slot.count;}
-    // static get isTrade() {return this.instance.data.owner.tradeable??false;}
-    
-    //static set data(value) {this.instance.setData(value);}
-    // static set slot(value) {this.instance.setData(value);}  
-
-    get owner() {return this.slot.owner;}
-    get itm() {return this.slot.itm;}
-    get dat() {return this.slot.dat;}
-    get label() {return this.itm.id.lab();}
-
-    //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
-    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
-
-    update() 
-    {
-        if(this.itm.count==0)
-        {
-            this.empty();
-        }
-        else
-        {
-            this.setCount(this.itm.count>1 ? this.itm.count : '')
-        }
-    }
-
-    empty()
-    {
-        this.hide();
-        delete this.slot;
-        UiCover.close();
-        UiMain.enable(true);
-    }
-
-    addCount(scene)
-    {
-        this.add(text(scene,{fontSize:20, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false})
-        return this
-    }
-
-    setData(value)
-    {
-        // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
-        this.show();
-        this.slot = value;
-        this.setIcon(value.dat.icon)
-            .setCount(value.itm.count>1 ? value.itm.count : '')
-        UiCover.show();
-        UiMain.enable(false);
-    }
-
-    setIcon(icon)
-    {
-        let [key,frame]=icon.split('/');
-        this.getElement('sprite').setTexture(key,frame);
-        return this;
-    }
-
-    setCount(count)
-    {
-        this.getElement('count').setText(count);
-        this.layout();
-        return this;
-    }
-
-    drop()
-    {
-        if(this.visible&&this.owner.trade!=GM.SELLER)
-        {
-            this.owner.drop(this);
-            this.empty();
-        }
-    }
-
-    static setData(value) {this.instance.setData(value);}
-
-    static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
-
-    static empty() {UiDragged.instance?.empty();}
-    
-    static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
-
-    static update() {UiDragged.instance?.update();}
-
-    static drop() {UiDragged.instance?.drop();}
-
-}
 
 export class UiDragged extends OverlapSizer
 {
@@ -936,62 +808,6 @@ export class UiDragged extends OverlapSizer
 
 }
 
-// class UiButton extends Sizer
-// {
-//     constructor(scene,option)
-//     {
-//         super(scene,option);
-//         this.onclick=option?.onclick;
-//         if(option?.rect)
-//         {
-//             this.addBackground(option.rect,'rect')
-//             if(option?.text){ this.add(text(scene,{text:option.text})) }
-//         }
-//         else if(option?.text) 
-//         {
-//             this.addBackground(rect(scene,{color:GM.COLOR_SLOT_OVER,alpha:0}),'bg')
-//                 .add(text(scene,{text:option.text}))
-//         }
-//         else if(option?.icon) 
-//         {
-//             this.add(sprite(scene,{icon:option.icon}),{key:'sp'})
-//         }
-
-//         this.layout().addListener()
-//         scene.add.existing(this);
-        
-//     }
-
-//     addListener()
-//     {
-//         let rect = this.getElement('rect');
-//         let bg = this.getElement('bg');
-//         let sp = this.getElement('sp');
-
-//         let over = function(on)
-//         {
-//             rect && (rect.fillAlpha = on ? 0.5 : 1 );
-//             bg && (bg.fillAlpha = on ? 1 : 0); 
-//             sp && sp.setTint( on ? 0x777777 : 0xffffff);
-//         }
-
-//         this.setInteractive();
-//         this
-//             // .on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
-//             // .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
-//             .on('pointerover',()=>{over(true);})
-//             .on('pointerout',()=>{over(false);})
-//             .on('pointerdown',()=>{this.onclick&&this.onclick();})
-//     }
-
-//     setEnable(on)
-//     {
-//         this.setInteractive(on);
-//         if(on) {this.getElement('bg').setAlpha(0);}
-//         else {this.getElement('bg').setAlpha(0.5);}
-//     }
-// }
-
 
 class UiButton extends Sizer
 {
@@ -999,7 +815,10 @@ class UiButton extends Sizer
     {
         super(scene,option);
         this.onclick = option?.onclick;
-        this.type = option.type ?? GM.BTN_NORMAL;
+        this.onover = option?.onover;
+        this.onout = option?.onout;
+        this.type = option?.type ?? GM.BTN_NORMAL;
+        this.key = option?.key;
         let radius = option.radius ?? 10;
         let padding = option.padding ?? 10;
 
@@ -1042,8 +861,8 @@ class UiButton extends Sizer
                     bg && (bg.fillAlpha = on ? 0.5 : 1); 
                     break;
                 case GM.BTN_NOBG: 
-                    icon && (icon.setTint( on ? 0x777777 : 0xffffff)); 
-                    text && (text.setTint( on ? 0x777777 : 0xffffff)); 
+                    icon && (icon.setTint( on ? GM.COLOR_GRAY : GM.COLOR_WHITE)); 
+                    text && (text.setTint( on ? GM.COLOR_GRAY : GM.COLOR_WHITE)); 
                     break;
                 case GM.BTN_TEXT: 
                     bg && (bg.fillAlpha = on ? 1 : 0); 
@@ -1052,12 +871,9 @@ class UiButton extends Sizer
         }
 
         this.setInteractive();
-        this
-            // .on('pointerover',()=>{bg&&(bg.fillAlpha=1); sp&&(sp.setTint(0x777777));})
-            // .on('pointerout',()=>{bg&&(bg.fillAlpha=0); sp&&(sp.setTint(0xffffff));})
-            .on('pointerover',()=>{over(true);})
-            .on('pointerout',()=>{over(false);})
-            .on('pointerdown',()=>{this.onclick&&this.onclick();})
+        this.on('pointerover',()=>{over(true);this.onover&&this.onover(this);})
+            .on('pointerout',()=>{over(false);this.onout&&this.onout(this);})
+            .on('pointerdown',()=>{this.onclick&&this.onclick(this);})
     }
 
     setEnable(on)
@@ -1159,7 +975,7 @@ class UiInfo extends Sizer
 
     addDivider()
     {
-        this.add(rect(this.scene,{width:200,height:1,color:0xffffff}),{padding:{top:10,bottom:10}})
+        this.add(rect(this.scene,{width:200,height:1,color:GM.COLOR_WHITE}),{padding:{top:10,bottom:10}})
         return this;
     }
 
@@ -1187,8 +1003,8 @@ class UiInfo extends Sizer
                 //console.log(key,value);
                 switch(key)
                 {
-                    case 'hunger': value = `${value}%`; break;
-                    case 'thirst': value = `${value}%`; break;
+                    case GM.P_HUNGER: value = `${value}%`; break;
+                    case GM.P_THIRST: value = `${value}%`; break;
                 }
                 this.addProp(key,value);
             }
@@ -1196,16 +1012,16 @@ class UiInfo extends Sizer
         if(slot.dat.endurance)
         {
             //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
-            this.addProp('endurance',Utility.tick2Str(slot.itm.endurance));
+            this.addProp(GM.P_ENDURANCE,Utility.tick2Str(slot.itm.endurance));
         }
         if(slot.dat.storage)
         {
             let cnt = slot.itm.storage?.items.filter(item => item).length;
-            this.addProp('storage',`${cnt??0}/${slot.dat.storage}`);
+            this.addProp(GM.P_STORAGE,`${cnt??0}/${slot.dat.storage}`);
         }
         if(slot.dat.times)
         {
-            this.addTimes('times',`${slot.itm.times}/${slot.dat.times.max}`);
+            this.addTimes(GM.P_TIMES,`${slot.itm.times}/${slot.dat.times.max}`);
         }
         return this;
     }
@@ -1256,37 +1072,66 @@ class UiInfo extends Sizer
         return this;
     }
 
-    update(slot)
+    update(tp, elm)
     {
         // let item = ItemDB.get(slot.id);
         this.removeAll(true)
-            .addTitle(slot)
-            .addCat(slot)
-            .addProps(slot)
-            .addMake(slot)
-            .addDescript(slot)
-            .addGold(slot)
-            .layout()
+           
+        if(tp==GM.TP_SLOT)
+        {
+            this.addTitle(elm)
+                .addCat(elm)
+                .addProps(elm)
+                .addMake(elm)
+                .addDescript(elm)
+                .addGold(elm)
+        }
+        else if(tp==GM.TP_PROP)
+        {
+            this.add(bbcText(this.scene,{text:elm.p.des()}));        
+        }
+        else if(tp==GM.TP_BTN)
+        {
+            this.add(bbcText(this.scene,{text:elm.key.lab()}));        
+        }
+
+        this.layout()
     }
 
-    show(target)
+    show(tp, elm)
     {
-        // console.log(target)
+        // console.log(elm,elm.left,elm.right,elm.top,elm.bottom);
         super.show();
-        let x,y=target.y;
+        let x=elm.x,y=elm.y;
 
-        if(target.x>GM.w/2)
+        if(tp == GM.TP_BTN)
         {
-            this.setOrigin(1,0.5);
-            x=target.left-UiInfo.gap;
+            if(elm.y>GM.h/2)
+            {
+                this.setOrigin(0.5,1);
+                y=elm.top-UiInfo.gap;
+            }
+            else
+            {
+                this.setOrigin(0.5,0);
+                y=elm.bottom+UiInfo.gap;
+            }
         }
         else
         {
-            this.setOrigin(0,0.5);
-            x=target.right+UiInfo.gap;
+            if(elm.x>GM.w/2)
+            {
+                this.setOrigin(1,0.5);
+                x=elm.left-UiInfo.gap;
+            }
+            else
+            {
+                this.setOrigin(0,0.5);
+                x=elm.right+UiInfo.gap;
+            }
         }
 
-        this.update(target);
+        this.update(tp, elm);
 
         this.setPosition(x,y).rePos();
         this.layout();
@@ -1300,7 +1145,7 @@ class UiInfo extends Sizer
 
     static close() {UiInfo.instance?.hide();}
 
-    static show(target) {UiInfo.instance?.show(target);}
+    static show(tp, elm) {UiInfo.instance?.show(tp, elm);}
 }
 
 class UiContainerBase extends ContainerLite
@@ -1471,7 +1316,7 @@ class UiBase extends Sizer
 
     addDivider(scene)
     {
-        this.add(rect(scene,{width:200,height:1,color:0xffffff}),
+        this.add(rect(scene,{width:200,height:1,color:GM.COLOR_WHITE}),
                     {padding:10,expand:true})
         return this;
     }
@@ -1501,11 +1346,13 @@ class UiBase extends Sizer
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0})
         let bg = sizer.getElement('bg').setAlpha(0);
+        sizer.p = key;
         if(interactive)
         {
+        
             sizer.setInteractive()
-                .on('pointerover',()=>{ bg.alpha=1; })
-                .on('pointerout',()=>{ bg.alpha=0; })
+                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.TP_PROP,sizer);}) })
+                .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
         }
         return sizer;
     }
@@ -1533,25 +1380,26 @@ class Option extends UiBase
 
         this//.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))
             .addBg(scene, {color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3})
-            .addButton('talk')
-            .addButton('trade')
-            .addButton('observe', this.observe.bind(this))
-            .addButton('attack')
-            .addButton('open')
-            .addButton('enter')
-            .addButton('inv', this.inv.bind(this))
-            .addButton('profile', this.profile.bind(this))
-            .addButton('cook')
-            .addButton('drink')
-            .addButton('fill')
+            .addButton(GM.TALK)
+            .addButton(GM.TRADE)
+            .addButton(GM.OBSERVE, this.observe.bind(this))
+            .addButton(GM.ATTACK)
+            .addButton(GM.TAKE)
+            .addButton(GM.OPEN)
+            .addButton(GM.ENTER)
+            .addButton(GM.INV, this.inv.bind(this))
+            .addButton(GM.PROFILE, this.profile.bind(this))
+            .addButton(GM.COOK)
+            .addButton(GM.DRINK)
+            .addButton(GM.FILL)
             // for slot
-            .addButton('buy', this.trade.bind(this))
-            .addButton('sell', this.trade.bind(this))
-            .addButton('transfer', this.transfer.bind(this))
-            .addButton('use', this.use.bind(this))
-            .addButton('drop', this.drop.bind(this))
-            .addButton('split', this.split.bind(this))
-            .addButton('openbag', this.openbag.bind(this))
+            .addButton(GM.BUY, this.trade.bind(this))
+            .addButton(GM.SELL, this.trade.bind(this))
+            .addButton(GM.TRANSFER, this.transfer.bind(this))
+            .addButton(GM.USE, this.use.bind(this))
+            .addButton(GM.DROP, this.drop.bind(this))
+            .addButton(GM.SPLIT, this.split.bind(this))
+            .addButton(GM.OPENBAG, this.openbag.bind(this))
             .setOrigin(0)
             .layout()
             .hide();
@@ -1842,7 +1690,7 @@ export class UiInv extends UiBase
         UiInv.instance = this;
 
         this.addBg_Int(scene)
-            .addTop(scene,'裝備')
+            .addTop(scene,'bag'.lab())
             .addEquip(scene,this.getOwner.bind(this))
             .addGold(scene)
             .addGrid(scene,5,4,this.getOwner.bind(this),{space:{bottom:30}})
@@ -2062,11 +1910,11 @@ export class UiMain extends UiBase
         UiMain.instance = this;
 
         this.addBg_Int(scene)
-            .add(new UiButton(scene,{text:'裝\n備',onclick:this.inv.bind(this)}))
-            .add(new UiButton(scene,{text:'個\n人',onclick:this.profile.bind(this)}))
-            .add(new UiButton(scene,{text:'離\n開',onclick:this.menu.bind(this)}))
-            .add(new UiButton(scene,{text:'測\n試',onclick:this.test.bind(this)}))
-            .add(new UiButton(scene,{text:'除\n錯',onclick:this.debug.bind(this)}))
+            .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'🚪',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'🧪',key:'test',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}))
             .addEnable(scene)
             .size()
             .hide();
@@ -2074,6 +1922,18 @@ export class UiMain extends UiBase
         this.addListener();
        
     }
+
+    onover(btn)
+    {
+        Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN,btn);})
+    }
+
+    onout()
+    {
+        Ui.cancelDelayCall();
+        UiInfo.close();
+    }
+
 
     addEnable(scene)
     {
@@ -2088,31 +1948,15 @@ export class UiMain extends UiBase
         else{this._enable.setInteractive();}
     }
 
-    inv() {
-        // UiInv.toggle(Role.Avatar.instance);
-        UiInv.toggle(Role.getPlayer());
-    }
+    inv() {UiInv.toggle(Role.getPlayer());}     // function內沒有用到 this 參數，就不需要 bind(this)
 
-    profile() {
-        // UiProfile.toggle(Role.Avatar.instance);
-        UiProfile.toggle(Role.getPlayer());
-    }
+    profile() {UiProfile.toggle(Role.getPlayer());}
 
-    menu() {this.close();send('menu');}
+    menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
 
-    test() 
-    {
-        this.closeAll(GM.UI_ALL);
-        //UiGameOver.show();
-        // TimeManager.inc(60);
-        // console.log(TimeManager.time)
-    }
+    test() {this.closeAll(GM.UI_ALL);}
 
-    debug()
-    {
-        console.log('debuger')
-        UiDebuger.show();
-    }
+    debug() {UiDebuger.show();}
 
     addListener()
     {
@@ -2168,7 +2012,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         none :  {sprite:GM.ICON_NONE, origin:{x:0.25,y:0}, scale:1},
         aim :   {sprite:GM.ICON_AIM, origin:{x:0.5,y:0.5}, scale:1},
         attack :  {sprite:GM.ICON_ATTACK, origin:{x:0.5,y:0.5}, scale:0.7},
-        pickup :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
+        take :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
         talk :  {sprite:GM.ICON_TALK, origin:{x:0.5,y:0.5}, scale:0.7},   
         enter :  {sprite:GM.ICON_ENTER, origin:{x:0.5,y:0.5}, scale:1},  
         exit :  {sprite:GM.ICON_EXIT, origin:{x:0.5,y:0.5}, scale:1},
@@ -2257,7 +2101,7 @@ export class UiTrade extends UiBase
         UiTrade.instance = this;    
 
         this.addBg(scene)    
-            .addTop(scene,'交易')
+            .addTop(scene,'trade'.lab())
             .addInfo(scene)
             .addGold(scene)
             .addGrid(scene,5,6,this.getOwner.bind(this))
@@ -2356,7 +2200,7 @@ export class UiProfile extends UiBase
         UiProfile.instance = this; 
 
         this.addBg_Int(scene)    
-            .addTop(scene,'個人')
+            .addTop(scene,'profile'.lab())
             .addInfo(scene)
             .addTab(scene)
             .addPage(scene,'attrs')
@@ -2427,25 +2271,38 @@ export class UiProfile extends UiBase
     {
         let button_pre;
         let config = {
-            background: rect(scene,{alpha:0,strokeColor:0x777777,strokeWidth:2}),
-            topButtons:[text(scene,{text:'attrs'.lab(),color:'#777777'}),
-                        text(scene,{text:'states'.lab(),color:'#777777'})],
-            space: {left:5, top:5, bottom:5, topButton:20}
+            background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+            topButtons:[
+                        label(scene,{text:'🎴',color:GM.COLOR_DARK,key:'attrs',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'❤️',color:GM.COLOR_DARK,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
+                    ],
+
+            space: {left:5, top:5, bottom:5, topButton:1}
         }
 
         let tabs = scene.rexUI.add.tabs(config); 
 
         tabs.on('button.click', (button, groupName, index)=>{
+                UiInfo.close();
                 if(button_pre) 
                 {
-                    button_pre.setColor('#777777');
-                    this.getElement(button_pre.text)?.hide();
+                    button_pre.getElement('background').setFillStyle(GM.COLOR_DARK);
+                    this.getElement(button_pre.key)?.hide();
                 }
                 button_pre = button;
-                button.setColor('#ffffff');
-                this.getElement(button.text)?.show();
+                button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
+                this.getElement(button.key)?.show();
                 this.layout();
             })
+
+        tabs.on('button.over', (button, groupName, index)=>{
+            Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN, button)})
+        })
+
+        tabs.on('button.out', (button, groupName, index)=>{
+            Ui.cancelDelayCall();
+            UiInfo.close();
+        })
 
         this.add(tabs,{expand:true,padding:{left:10,right:10},key:'tags'});
         return this;
@@ -2462,14 +2319,14 @@ export class UiProfile extends UiBase
             },
         }
         let panel = scene.rexUI.add.scrollablePanel(config);
-        this.add(panel,{expand:true,padding:{left:10,right:10},key:key.lab()});
+        this.add(panel,{expand:true,padding:{left:10,right:10},key:key});
         panel.hide();
         return this;
     }
 
     updatePage(cat)
     {
-        let panel = this.getElement(cat.lab());
+        let panel = this.getElement(cat);
         let childPanel = panel.getElement('panel');
 
         childPanel.removeAll(true);
@@ -2478,9 +2335,9 @@ export class UiProfile extends UiBase
         {
             switch(key)
             {
-                case 'life': value = `${value.cur} / ${value.max}`; break;
-                case 'hunger': value = `${Math.floor(value.cur)}%`; break;
-                case 'thirst': value = `${Math.floor(value.cur)}%`; break;
+                case GM.P_LIFE: value = `${value.cur} / ${value.max}`; break;
+                case GM.P_HUNGER: value = `${Math.floor(value.cur)}%`; break;
+                case GM.P_THIRST: value = `${Math.floor(value.cur)}%`; break;
             }
 
             childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})
@@ -3291,9 +3148,9 @@ class Count extends UiBase
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
         sizer
-            .add(new UiButton(scene,{text:'確定',onclick:this.confirm.bind(this),radius:5,padding:5}))
+            .add(new UiButton(scene,{text:'❌',onclick:this.cancel.bind(this),radius:5,padding:5}))
             .addSpace()
-            .add(new UiButton(scene,{text:'取消',onclick:this.cancel.bind(this),radius:5,padding:5}))
+            .add(new UiButton(scene,{text:'✔️',onclick:this.confirm.bind(this),radius:5,padding:5}))
         this.add(sizer,{expand:true,padding:{left:10,right:10,bottom:20}});
         return this;
     }

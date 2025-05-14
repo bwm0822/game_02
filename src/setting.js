@@ -91,4 +91,44 @@ export let GM =
     UI_MODE_NORMAL : 0, //
     UI_MODE_FILL : 1, //  
 
+    // 動作
+    TALK: 'talk',
+    TRADE : 'trade',
+    OBSERVE : 'observe',
+    ATTACK : 'attack',
+    TAKE : 'take',
+    OPEN : 'open',
+    ENTER : 'enter',
+    INV : 'inv',
+    PROFILE : 'profile',
+    COOK : 'cook',
+    DRINK : 'drink',
+    FILL : 'fill',      // 裝滿水
+    // for slot
+    BUY : 'buy',
+    SELL : 'sell',
+    TRANSFER : 'transfer',
+    USE : 'use',
+    DROP : 'drop',
+    SPLIT : 'split',
+    OPENBAG : 'openbag',
+
+    // 屬性
+    P_LIFE : 'life',
+    P_ATTACK : 'attack',
+    P_DEFENSE : 'defense',
+    P_HUNGER : 'hunger',
+    P_THIRST : 'thirst',
+    P_STORAGE : 'storage',
+    P_CAPACITY : 'capacity',
+    P_TIMES : 'times',
+    P_ENDURANCE : 'endurance',
+    P_KEEP : 'keep',
+
+    TP_SLOT : 0,
+    TP_PROP : 1,
+    TP_BTN : 2,
+
+
+
 }

@@ -81,11 +81,17 @@
 
 
     
+繼承 RexUI 的 class 裡面， 
+不要用 this.getLayer() 來新增 layer，
+這會導致 Ui scene 結束時，出現錯誤，因為 Layer 會先被清除，
+之後再清除 layer 裡的 sprite，會從 layer 的 list 裡移除 sprite，
+但此時 layer 已經被清除了，所以出先現問題 => properties of undefined (reading 'indexOf')
 
-
-
-
-
+要用 let layer = scene.add.layer(); layer.add(this);  來新增 layer，
+而且要放在 class 的最開始，這樣之後新增的 elment 才會加到 layer 裡面，
+class 裡面如果有呼叫 scene.add.layer() 就不需要再呼叫 scene.add.exisiting(this)，
+如果 新增layer 之後，再呼叫 scene.add.exisiting(this)，
+則這個 class 及其下的 elemet 會同時出現在 layer 跟 DisplayList2
 
 
 

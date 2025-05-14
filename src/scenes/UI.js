@@ -16,7 +16,7 @@ export class UI extends Scene
         createUI(this);
         this.uiEvent();
         this.processInput();
-        // this.input.setDefaultCursor('none');    
+        this.input.setDefaultCursor('none');    // 消除預設的游標
         console.log(this)
     }
 

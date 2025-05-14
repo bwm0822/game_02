@@ -10,6 +10,7 @@ import Record from './record';
 //import Ctrl from './ctrl.js';
 import {Entity,Pickup} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
+import DB from './db.js';
 import {text,rect} from './uibase.js';
 import {GM} from './setting.js';
 import TimeManager from './time.js';
@@ -257,12 +258,12 @@ export class Role extends Entity
 
         if(this._ent) {this.faceTo(this._ent.pos);}
 
-        if(this._act=='attack')
+        if(this._act==GM.ATTACK)
         {
             await this.step( this._ent.pos, 200, 'expo.in',
                             {yoyo:true, onYoyo:()=>{this.interact(this._ent,this._act);}} ); 
         }
-        else if(this._act=='exit')
+        else if(this._act==GM.EXIT)
         {
             this.exit();
         }
@@ -392,8 +393,8 @@ export class Role extends Entity
 
     dead(attacker)
     {
-        if(attacker) {this.send('msg', `${attacker.role.name} 擊殺 ${this.role.name}`);}
-        else {this.send('msg', `${this.role.name} 死亡`);}
+        if(attacker) {this.send('msg', `${attacker.role.name} ${'_kill'.lab()} ${this.role.name}`);}
+        else {this.send('msg', `${this.role.name} ${'_die'.lab()}`);}
         this.looties();
         this.removeWeight();
         this.removeFromRoleList();
@@ -473,18 +474,20 @@ export class Role extends Entity
         this.status.equips.forEach((equip)=>{
             if(equip && equip.id)
             {
-                let item = ItemDB.get(equip.id);
+                let item = DB.item(equip.id);
 
                 if(item.props)
                 {
                     for(let [key,value] of Object.entries(item.props))
                     {
-                        //console.log(key,value);
+                        // console.log(key,value);
                         switch(key)
                         {
-                            case 'attack':
-                                this.status.attrs[key]=value; break;
-                            case 'life':
+                            case GM.P_ATTACK:
+                                if(item.cat==GM.CAT_WEAPON) { this.status.attrs[key]=value; }
+                                else { this.status.attrs[key]+=value; }
+                                break;
+                            case GM.P_LIFE:
                                 this.status.states[key].max+=value; break;
                             default:
                                 this.status.attrs[key]+=value; break;
@@ -518,11 +521,11 @@ export class Role extends Entity
                 this.status.gold-=ent.gold;
                 if(this == Avatar.instance)
                 {
-                    this.send('msg',this.msg_name+`購買 ${ent.item.name}`);
+                    this.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.item.name}`);
                 }
                 else
                 {
-                    this.send('msg',Avatar.instance.msg_name+`出售 ${ent.item.name}`)
+                    this.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.item.name}`)
                 }
                 return true;
             }
@@ -530,7 +533,7 @@ export class Role extends Entity
         }
         else
         {
-            this.send('msg','金幣不足!!!');
+            this.send('msg','_not_enough_gold'.lab());
             return false;
         }
     }
@@ -556,31 +559,31 @@ export class Role extends Entity
         {
             switch(key)
             {
-                case 'hunger':
-                case 'thirst':
+                case GM.P_HUNGER:
+                case GM.P_THIRST:
                     states[key].cur = Utility.clamp(states[key].cur+value, 0, states[key].max); 
                     break;
             }
         }
 
         //if(ent.item?.times) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
-        if(ent.p('times')!=undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
+        if(ent.p(GM.P_TIMES)!=undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         {
             //ent.slot.times--;
-            ent.incp('times', -1)
+            ent.incp(GM.P_TIMES, -1)
             //if(ent.slot.times<=0 && !ent.item.keep)
-            if(ent.p('times')<=0 && !ent.p('keep'))
+            if(ent.p(GM.P_TIMES)<=0 && !ent.p(GM.P_KEEP))
             {
                 ent.clear();
             }
         }
         //else if(ent.item?.capacity)
-        else if(ent.p('capacity') != undefined)
+        else if(ent.p(GM.P_CAPACITY) != undefined)
         {
             // ent.slot.capacity--;
-            ent.incp('capacity',-1)
+            ent.incp(GM.P_CAPACITY,-1)
             //if(ent.slot.capacity<=0 && !ent.item.keep)
-            if(ent.p('capacity')<=0 && !ent.p('keep'))
+            if(ent.p(GM.P_CAPACITY)<=0 && !ent.p(GM.P_KEEP))
             {
                 ent.clear();
             }
@@ -597,7 +600,7 @@ export class Role extends Entity
     drink()
     {
         let states = this.status.states;
-        if(states.thirst) {states.thirst.cur=0; this.send('msg',this.msg_name+'喝了一口水');}
+        if(states.thirst) {states.thirst.cur=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
     }
 
 

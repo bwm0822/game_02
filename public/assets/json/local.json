@@ -5,8 +5,8 @@
       "des": "攻擊用"
     },
     "us": {
-      "lab": "weapon",
-      "des": "attack"
+      "lab": "Weapon",
+      "des": "Attack"
     }
   },
   "armor": {
@@ -14,7 +14,7 @@
       "lab": "防具"
     },
     "us": {
-      "lab": "armor"
+      "lab": "Armor"
     }
   },
   "item": {
@@ -22,7 +22,7 @@
       "lab": "道具"
     },
     "us": {
-      "lab": "item"
+      "lab": "Item"
     }
   },
   "skill": {
@@ -30,7 +30,7 @@
       "lab": "技能"
     },
     "us": {
-      "lab": "skill"
+      "lab": "Skill"
     }
   },
   "helmet": {
@@ -38,7 +38,7 @@
       "lab": "頭盔"
     },
     "us": {
-      "lab": "helmet"
+      "lab": "Helmet"
     }
   },
   "chestplate": {
@@ -46,7 +46,7 @@
       "lab": "胸甲"
     },
     "us": {
-      "lab": "chestplate"
+      "lab": "Chestplate"
     }
   },
   "gloves": {
@@ -54,7 +54,7 @@
       "lab": "手套"
     },
     "us": {
-      "lab": "gloves"
+      "lab": "Gloves"
     }
   },
   "boots": {
@@ -62,7 +62,7 @@
       "lab": "靴子"
     },
     "us": {
-      "lab": "boots"
+      "lab": "Boots"
     }
   },
   "necklace": {
@@ -70,7 +70,7 @@
       "lab": "項鍊"
     },
     "us": {
-      "lab": "necklace"
+      "lab": "Necklace"
     }
   },
   "ring": {
@@ -78,7 +78,7 @@
       "lab": "戒子"
     },
     "us": {
-      "lab": "ring"
+      "lab": "Ring"
     }
   },
   "bag": {
@@ -94,7 +94,7 @@
       "lab": "裝備"
     },
     "us": {
-      "lab": "equip"
+      "lab": "Equip"
     }
   },
   "other": {
@@ -102,7 +102,7 @@
       "lab": "其他"
     },
     "us": {
-      "lab": "other"
+      "lab": "Other"
     }
   },
   "storage": {
@@ -110,7 +110,7 @@
       "lab": "儲量"
     },
     "us": {
-      "lab": "storage"
+      "lab": "Storage"
     }
   },
   "endurance": {
@@ -118,7 +118,7 @@
       "lab": "耐久"
     },
     "us": {
-      "lab": "endurance"
+      "lab": "Endurance"
     }
   },
   "durability": {
@@ -126,7 +126,7 @@
       "lab": "耐久"
     },
     "us": {
-      "lab": "durability"
+      "lab": "Durability"
     }
   },
   "times": {
@@ -134,7 +134,7 @@
       "lab": "次數"
     },
     "us": {
-      "lab": "times"
+      "lab": "Times"
     }
   },
   "attrs": {
@@ -142,7 +142,7 @@
       "lab": "屬性"
     },
     "us": {
-      "lab": "attrs"
+      "lab": "Attrs"
     }
   },
   "states": {
@@ -150,47 +150,52 @@
       "lab": "狀態"
     },
     "us": {
-      "lab": "states"
+      "lab": "States"
     }
   },
   "life": {
     "tw": {
-      "lab": "生命"
+      "lab": "生命",
+      "des": "生命值\n降到 0，就死亡"
     },
     "us": {
-      "lab": "life"
+      "lab": "Life"
     }
   },
   "attack": {
     "tw": {
-      "lab": "攻擊"
+      "lab": "攻擊",
+      "des": "可造成的傷害"
     },
     "us": {
-      "lab": "attack"
+      "lab": "Attack"
     }
   },
   "defense": {
     "tw": {
-      "lab": "防禦"
+      "lab": "防禦",
+      "des": "可吸收的傷害"
     },
     "us": {
-      "lab": "defense"
+      "lab": "Defense"
     }
   },
   "hunger": {
     "tw": {
-      "lab": "飢餓"
+      "lab": "飢餓",
+      "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
     },
     "us": {
-      "lab": "hunger"
+      "lab": "Hunger"
     }
   },
   "thirst": {
     "tw": {
-      "lab": "口渴"
+      "lab": "口渴",
+      "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
     },
     "us": {
-      "lab": "thirst"
+      "lab": "Thirst"
     }
   },
   "use": {
@@ -198,7 +203,7 @@
       "lab": "使用"
     },
     "us": {
-      "lab": "use"
+      "lab": "Use"
     }
   },
   "drop": {
@@ -206,7 +211,15 @@
       "lab": "丟棄"
     },
     "us": {
-      "lab": "drop"
+      "lab": "Drop"
+    }
+  },
+  "take": {
+    "tw": {
+      "lab": "拿"
+    },
+    "us": {
+      "lab": "Take"
     }
   },
   "talk": {
@@ -214,7 +227,7 @@
       "lab": "交談"
     },
     "us": {
-      "lab": "talk"
+      "lab": "Talk"
     }
   },
   "trade": {
@@ -222,7 +235,7 @@
       "lab": "交易"
     },
     "us": {
-      "lab": "trade"
+      "lab": "Trade"
     }
   },
   "buy": {
@@ -230,7 +243,7 @@
       "lab": "買"
     },
     "us": {
-      "lab": "buy"
+      "lab": "Buy"
     }
   },
   "sell": {
@@ -238,7 +251,7 @@
       "lab": "賣"
     },
     "us": {
-      "lab": "sell"
+      "lab": "Sell"
     }
   },
   "split": {
@@ -246,7 +259,7 @@
       "lab": "拆分"
     },
     "us": {
-      "lab": "split"
+      "lab": "Split"
     }
   },
   "open": {
@@ -254,7 +267,7 @@
       "lab": "開啟"
     },
     "us": {
-      "lab": "open"
+      "lab": "Open"
     }
   },
   "observe": {
@@ -262,7 +275,7 @@
       "lab": "觀察"
     },
     "us": {
-      "lab": "observe"
+      "lab": "Observe"
     }
   },
   "transfer": {
@@ -270,7 +283,7 @@
       "lab": "移動"
     },
     "us": {
-      "lab": "transfer"
+      "lab": "Transfer"
     }
   },
   "openbag": {
@@ -278,7 +291,7 @@
       "lab": "開啟"
     },
     "us": {
-      "lab": "openbag"
+      "lab": "Openbag"
     }
   },
   "inv": {
@@ -286,7 +299,7 @@
       "lab": "背包"
     },
     "us": {
-      "lab": "inv"
+      "lab": "Inv"
     }
   },
   "profile": {
@@ -294,7 +307,7 @@
       "lab": "個人"
     },
     "us": {
-      "lab": "profile"
+      "lab": "Profile"
     }
   },
   "drink": {
@@ -302,7 +315,7 @@
       "lab": "喝水"
     },
     "us": {
-      "lab": "drink"
+      "lab": "Drink"
     }
   },
   "fill": {
@@ -310,7 +323,7 @@
       "lab": "取水"
     },
     "us": {
-      "lab": "fill"
+      "lab": "Fill"
     }
   },
   "cook": {
@@ -318,7 +331,79 @@
       "lab": "烹煮"
     },
     "us": {
-      "lab": "cook"
+      "lab": "Cook"
+    }
+  },
+  "_pickup": {
+    "tw": {
+      "lab": "拾取"
+    },
+    "us": {
+      "lab": "picks up"
+    }
+  },
+  "_drop": {
+    "tw": {
+      "lab": "丟棄"
+    },
+    "us": {
+      "lab": "drops"
+    }
+  },
+  "_kill": {
+    "tw": {
+      "lab": "擊殺"
+    },
+    "us": {
+      "lab": "kills"
+    }
+  },
+  "_die": {
+    "tw": {
+      "lab": "死亡"
+    },
+    "us": {
+      "lab": "died"
+    }
+  },
+  "_buy": {
+    "tw": {
+      "lab": "購買"
+    },
+    "us": {
+      "lab": "buys"
+    }
+  },
+  "_sell": {
+    "tw": {
+      "lab": "出售"
+    },
+    "us": {
+      "lab": "sells"
+    }
+  },
+  "_drink": {
+    "tw": {
+      "lab": "喝水"
+    },
+    "us": {
+      "lab": "drinks water"
+    }
+  },
+  "_space_full": {
+    "tw": {
+      "lab": "空間已滿 !!!"
+    },
+    "us": {
+      "lab": "Space is full !!!"
+    }
+  },
+  "_not_enough_gold": {
+    "tw": {
+      "lab": "金幣不足 !!!"
+    },
+    "us": {
+      "lab": "Not enough coins !!!"
     }
   },
   "iron": {

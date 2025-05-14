@@ -55,6 +55,7 @@ export function text(scene, config={})
     config.wrapWidth && (config.wordWrap = {width:config.wrapWidth, useAdvancedWrap:true});
     config.wrapWidth && delete config.wrapWidth;
     let t = scene.add.text(config?.x, config?.y, config?.text, config);
+    t.key = config?.key;
     return t;
 }
 
@@ -89,6 +90,7 @@ export function bbcText(scene, config={})
     //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
 
     let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, config);
+    t.key = config?.key;
     return t;
 }
 
@@ -138,7 +140,7 @@ export function label(scene,config)
     let str = config.text ?? '';
     let space = config.space ?? 5;
     let fontSize = config.fontSize ?? GM.FONT_SIZE;
-    return scene.rexUI.add.label({
+    let label = scene.rexUI.add.label({
         width: config.width,
         height: config.height,
         background: rect(scene,{color:color,radius:radius}),
@@ -146,6 +148,8 @@ export function label(scene,config)
         space: space,
         align: 'center',
     });
+    label.key = config.key;
+    return label;
 }
 
 export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],stringOption=false,onchange})

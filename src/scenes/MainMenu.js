@@ -23,7 +23,7 @@ export class MainMenu extends Scene
         this.initUI()
 
         // this.cameras.main.setBackgroundColor(0x555555);
-         if(!this._done)
+        if(!this._done)
         {
             this._done = true;
             this.loadData();
@@ -48,6 +48,8 @@ export class MainMenu extends Scene
         this.input.setDefaultCursor('none');    // 消除預設的游標
         new UiSettings(this);
         new UiCursor(this);
+
+        // new UiTest(this)
     }
 
     button(x,y,text,cb)
@@ -118,12 +120,9 @@ class UiTest extends Sizer
     constructor(scene)
     {
         super(scene,0,0,GM.w,GM.h);
-        // scene.add.existing(this);
-        let layer = scene.add.layer();
-        layer.name = 'UiTest';
-        layer.add(this);
-
         
+        this.addLayer(scene);
+        scene.add.existing(this);
 
         this//.addBackground(rect(scene,{alpha:0.5}))
             .add(sprite(scene,{icon:'buffs/0'}))
@@ -131,16 +130,20 @@ class UiTest extends Sizer
 
         this.setOrigin(0,0)
             .layout()
-        
-        
-        //this.getLayer().name = 'UiTest';    // 產生layer，並設定layer名稱
-        // let layer = scene.add.layer();
-        // layer.name = 'UiTest';
-        // layer.add(this);
+                
+        // this.getLayer().name = 'UiTest';    // 產生layer，並設定layer名稱
+
 
         console.log('Children:', this.getAllChildren());
         console.log(this)
         console.log(scene)
+    }
+
+    addLayer(scene)
+    {
+        let layer = scene.add.layer();
+        layer.name = 'UiTest';
+        layer.add(this);   
     }
 
     inc(scene)
