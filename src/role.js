@@ -521,11 +521,11 @@ export class Role extends Entity
                 this.status.gold-=ent.gold;
                 if(this == Avatar.instance)
                 {
-                    this.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.item.name}`);
+                    this.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
                 }
                 else
                 {
-                    this.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.item.name}`)
+                    this.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
                 }
                 return true;
             }
@@ -566,34 +566,26 @@ export class Role extends Entity
             }
         }
 
-        //if(ent.item?.times) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         if(ent.p(GM.P_TIMES)!=undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         {
-            //ent.slot.times--;
             ent.incp(GM.P_TIMES, -1)
-            //if(ent.slot.times<=0 && !ent.item.keep)
             if(ent.p(GM.P_TIMES)<=0 && !ent.p(GM.P_KEEP))
             {
-                ent.clear();
+                ent.empty();
             }
         }
-        //else if(ent.item?.capacity)
         else if(ent.p(GM.P_CAPACITY) != undefined)
         {
-            // ent.slot.capacity--;
             ent.incp(GM.P_CAPACITY,-1)
-            //if(ent.slot.capacity<=0 && !ent.item.keep)
             if(ent.p(GM.P_CAPACITY)<=0 && !ent.p(GM.P_KEEP))
             {
-                ent.clear();
+                ent.empty();
             }
         }
         else
         {
-            // ent.slot.count--;
             ent.count--;
-            //if(ent.slot.count<=0) {ent.clear();}
-            if(ent.count<=0) {ent.clear();}
+            if(ent.count<=0) {ent.empty();}
         }
     }
 

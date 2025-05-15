@@ -1,21 +1,25 @@
 {
   "iron": {
     "cat": "CAT_ITEM",
-    "icon": "icons/273"
+    "icon": "icons/273",
+    "gold": 10
   },
   "salt": {
-    "cat": "CAT_ITEM",
+    "cat": "CAT_FOOD",
     "icon": "icons/250",
+    "gold": 10,
     "cps": 10
   },
   "bag": {
     "cat": "CAT_BAG",
     "icon": "icons/137",
+    "gold": 10,
     "storage": 12
   },
   "raw_meat": {
     "cat": "CAT_FOOD",
     "icon": "icons/241",
+    "gold": 10,
     "props": {
       "hunger": -1
     },
@@ -27,6 +31,7 @@
   "cooked_meat": {
     "cat": "CAT_FOOD",
     "icon": "icons/242",
+    "gold": 15,
     "props": {
       "hunger": -5
     },
@@ -35,6 +40,7 @@
   "raw_fish": {
     "cat": "CAT_FOOD",
     "icon": "icons/259",
+    "gold": 10,
     "props": {
       "hunger": -1
     },
@@ -43,6 +49,7 @@
   "salt_baked_fish": {
     "cat": "CAT_FOOD",
     "icon": "icons/260",
+    "gold": 15,
     "props": {
       "hunger": -5
     },
@@ -57,6 +64,7 @@
   "sword_01": {
     "cat": "CAT_WEAPON",
     "icon": "weapons/3",
+    "gold": 15,
     "props": {
       "attack": 15
     }
@@ -64,6 +72,7 @@
   "sword_02": {
     "cat": "CAT_WEAPON",
     "icon": "weapons/4",
+    "gold": 25,
     "props": {
       "attack": 25
     }
@@ -71,6 +80,7 @@
   "sword_03": {
     "cat": "CAT_WEAPON",
     "icon": "weapons/5",
+    "gold": 35,
     "props": {
       "attack": 35
     }
@@ -78,6 +88,7 @@
   "helmet_01": {
     "cat": "CAT_HELMET",
     "icon": "weapons/45",
+    "gold": 10,
     "props": {
       "defense": 1
     }
@@ -85,6 +96,7 @@
   "helmet_02": {
     "cat": "CAT_HELMET",
     "icon": "weapons/46",
+    "gold": 20,
     "props": {
       "defense": 2
     }
@@ -92,6 +104,7 @@
   "helmet_03": {
     "cat": "CAT_HELMET",
     "icon": "weapons/47",
+    "gold": 30,
     "props": {
       "defense": 3
     }
@@ -99,6 +112,7 @@
   "chest_01": {
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons/54",
+    "gold": 20,
     "props": {
       "defense": 2
     }
@@ -106,6 +120,7 @@
   "chest_02": {
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons/55",
+    "gold": 40,
     "props": {
       "defense": 4
     }
@@ -113,6 +128,7 @@
   "chest_03": {
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons/56",
+    "gold": 60,
     "props": {
       "defense": 6
     }
@@ -120,6 +136,7 @@
   "gloves_01": {
     "cat": "CAT_GLOVES",
     "icon": "icons/128",
+    "gold": 10,
     "props": {
       "defense": 1
     }
@@ -127,21 +144,25 @@
   "boots_01": {
     "cat": "CAT_BOOTS",
     "icon": "icons/130",
+    "gold": 10,
     "props": {
       "defense": 1
     }
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
-    "icon": "icons/134"
+    "icon": "icons/134",
+    "gold": 10
   },
   "ring_01": {
     "cat": "CAT_RING",
-    "icon": "icons/132"
+    "icon": "icons/132",
+    "gold": 10
   },
   "torch": {
     "cat": "CAT_EQUIP",
     "icon": "icons/170",
+    "gold": 10,
     "endurance": {
       "cur": 360,
       "max": 360
@@ -150,6 +171,7 @@
   "bottle": {
     "cat": "CAT_ITEM",
     "icon": "icons/307",
+    "gold": 10,
     "capacity": {
       "cur": 3,
       "max": 10

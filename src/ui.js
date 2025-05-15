@@ -42,6 +42,8 @@ export default function createUI(scene)
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
     new UiTime(scene);              // 19
+
+    t3();
 }
 
 function get(s,p)
@@ -49,43 +51,15 @@ function get(s,p)
     return s[p];
 }
 
-async function t3(config={a:0,b:1,c:2})
+async function t3()
 {
-    // let cnt = await UiCount.getCount(1,5);
-    // console.log(cnt);
-    //console.log(config.a,config.b,config.c,config.d);
-    //progress(uiScene,{x:100,y:100,value:0.5});
+    let slot = {itm:{id:'test',count:1}};
+    let itm = slot.itm;
+    // slot.itm = null;
+    slot.itm.id='';
+    slot.itm.count= 0;
 
-    // let t=['a','b','c','d','e']
-    // t.forEach((v,i)=>{
-    //     console.log(v,i);
-    //     t.splice(i,1);
-
-    // })
-    // console.log(t);
-
-    console.log('============================')
-
-    // let opts=[{type:'cat',op:'==', value:10}, {type:'name',op:'==', value:'劍'}]
-
-    // for(let opt of opts)
-    // {
-    //     console.log(opt)
-                
-    // }
-
-    // let slot={id:'test', count:0}
-
-    // console.log(slot.id, slot['id'], slot['quality'], slot.quality)
-    // if(slot.count){console.log(slot.count)}
-    // else {console.log('none')}
-
-    // slot['quality']=100;
-
-    // console.log(slot);
-
-    const data = uiScene.cache.json.get('local');
-    console.log(data); // 看看您可愛的 JSON 內容吧～
+    console.log('slot:',slot, 'itm:',itm);
     
 }
 
@@ -337,7 +311,6 @@ class Slot extends Icon
 
     setSlot(itm)
     {
-        // this.dat = ItemDB.get(itm?.id);
         this.dat = DB.item(itm?.id);
         this.setIcon(this.dat?.icon,{alpha:itm?.count>0?1:0.25});
         this.setCount(itm?.count>1?itm.count:'');
@@ -427,7 +400,7 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    copyData() {return this.itm ? {itm:Utility.deepClone(this.itm),owner:this.owner,dat:this.dat} : null;}
+    // copyData() {return this.itm ? {itm:Utility.deepClone(this.itm),owner:this.owner,dat:this.dat} : null;}
 
     update(cat)
     {
@@ -518,7 +491,7 @@ class Slot extends Icon
                     {
                         if(!this.isEmpty) {return;}
 
-                        if(UiDragged.owner.sell(this.owner, UiDragged, this._i, this.isEquip))
+                        if(UiDragged.owner.sell(this.owner, UiDragged.slot, this._i, this.isEquip))
                         {
                             UiDragged.empty();
                             Ui.refreshAll();
@@ -532,10 +505,17 @@ class Slot extends Icon
                         }
                         else
                         {
-                            let dataCopy = this.copyData();
-                            this.itm = UiDragged.itm;
-                            UiDragged.empty();
-                            if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.setData(dataCopy);}
+                            // let dataCopy = this.copyData();
+                            // this.itm = UiDragged.slot.itm;
+                            // UiDragged.empty();
+                            // if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.setData(dataCopy);}
+                            // if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
+
+                            // let dataCopy = this.copyData();
+                            let tmp = UiDragged.slot.itm;
+                            if(this.isEmpty) {UiDragged.empty();}
+                            else {UiDragged.slot=this;}
+                            this.itm = tmp;
                             if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
                         }  
                     }
@@ -545,8 +525,10 @@ class Slot extends Icon
             else if(!this.isEmpty)
             {
                 this.setBgColor(GM.COLOR_SLOT_DRAG);
-                UiDragged.setData(this.copyData());
+                // UiDragged.setData(this.copyData());
+                UiDragged.slot = this;
                 UiDragged.setPos(this.left+x,this.top+y);
+                
                 this.empty();
                 UiInv.check();
             }
@@ -558,18 +540,18 @@ class Slot extends Icon
         }
     }
 
-    isMergeable() {return this.itm && this.itm.id==UiDragged.itm.id && this.cps>1;}
+    isMergeable() {return this.itm && this.itm.id==UiDragged.slot.itm.id && this.cps>1;}
 
     merge()
     {
         //console.log('merge',this.slot.count,this.cps)
         if(this.itm.count<this.cps)
         {
-            let draggedCount = UiDragged.itm.count;
+            let draggedCount = UiDragged.slot.itm.count;
             let count = Math.min(this.itm.count+draggedCount,this.cps);
             draggedCount -= count-this.itm.count;
             this.itm.count = count;
-            UiDragged.itm.count = draggedCount;
+            UiDragged.slot.itm.count = draggedCount;
             this.update();
             UiDragged.update();
         }
@@ -703,7 +685,8 @@ class OutputSlot extends Slot
     get itm() {return super.itm;}
     set itm(value) {super.itm=value; this.onset?.();}
 
-    empty() {this.itm.count=0;this.itm=this.itm;}
+    // empty() {this.itm.count=0;this.itm=this.itm;}
+    empty() {this.itm={id:this.itm.id,count:0};}
 }
 
 
@@ -724,12 +707,20 @@ export class UiDragged extends OverlapSizer
 
 
     static get on() {return this.instance.visible;}
-    static get itm() {return this.instance.itm;}
     static get owner() {return this.instance.owner;}
-    get owner() {return this.slot.owner;}
-    get itm() {return this.slot.itm;}
-    get dat() {return this.slot.dat;}
+    // static get itm() {return this.instance.itm;}
+    // get owner() {return this.slot.owner;}
+    // get itm() {return this.slot.itm;}
+    // get dat() {return this.slot.dat;}
     get label() {return this.itm.id.lab();}
+    get gold() {return this.itm.count*this.dat.gold;}
+
+
+
+    static get slot() {return this.instance;}
+    static set slot(value) {this.instance.slot=value;}
+
+    set slot(value) {this.setSlot(value)}
 
     //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
     checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
@@ -764,9 +755,25 @@ export class UiDragged extends OverlapSizer
     {
         // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
         this.show();
+        // this._owner = value.owner;
+        // this._itm = value.itm;
+        // this._dat = value.dat;
         this.slot = value;
         this.setIcon(value.dat.icon)
             .setCount(value.itm.count>1 ? value.itm.count : '')
+        UiCover.show();
+        UiMain.enable(false);
+    }
+
+    setSlot(slot)
+    {
+        this.show();
+        this.itm = slot.itm;
+        this.dat = slot.dat;
+        this.owner = slot.owner;
+
+        this.setIcon(slot.dat.icon)
+            .setCount(slot.itm.count>1 ? slot.itm.count : '')
         UiCover.show();
         UiMain.enable(false);
     }
@@ -959,7 +966,7 @@ class UiInfo extends Sizer
 
     addTitle(slot)
     {
-        this.add(bbcText(this.scene,{text:slot.id.lab()}));
+        this.add(bbcText(this.scene,{text:slot.itm.id.lab()}));
         return this;
     }
 
@@ -1046,18 +1053,16 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addMake(item)
+    addMake(slot)
     {
-        if(!item.make) {return this;}
+        if(!slot.dat.make) {return this;}
         this.addDivider();
-        let text = `[color=yellow]需求[/color]\n`;
-        Object.entries(item.make.items).forEach(([key,value])=>{
-            let item = ItemDB.get(key);
-            text+=`- ${item.name} (${value})\n`;
+        let text = `[color=yellow]${'required'.lab()}[/color]\n`;
+        Object.entries(slot.dat.make.items).forEach(([key,value])=>{
+            text+=`- ${key.lab()} (${value})\n`;
         });
         this.add(bbcText(this.scene,{text:text}),{expand:true});
         return this;
-        
     }
 
     addGold(slot)
@@ -1325,7 +1330,7 @@ class UiBase extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer.itm = {id:id,type:'make'};
-        sizer.dat = ItemDB.get(id);
+        sizer.dat = DB.item(id)??{};
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(text(this.scene,{text:sizer.itm.id.lab(),color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
@@ -3046,7 +3051,7 @@ export class UiManufacture extends UiBase
     update()
     {
         let itemSel = null;
-        let onover = (item)=>{UiInfo.show(item);}
+        let onover = (item)=>{UiInfo.show(GM.TP_SLOT, item);}
         let onout = ()=>{UiInfo.close();}  
         let ondown = (item)=>{
                 if(!this.owner.isFull)

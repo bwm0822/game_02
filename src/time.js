@@ -1,5 +1,6 @@
 import Record from './record.js'
 import {RoleDB,Roles} from './database.js'
+import DB from './db.js'
 import * as Role from './role.js';
 
 
@@ -107,7 +108,8 @@ export class Schedular
         this.scene = scene;
 
         Roles.list.forEach((id)=>{
-            let role = RoleDB.get(id);
+            // let role = RoleDB.get(id);
+            let role = DB.role(id);
             let schedule = role.schedule?.[mapName];
             if(schedule)
             {

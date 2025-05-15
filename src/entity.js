@@ -234,7 +234,6 @@ export class Entity extends Phaser.GameObjects.Container
 
     take(ent, i, isEquip)
     {
-        console.log('take', ent, i, isEquip);
         !i && (i = this.findEmpty());
 
         if(i!=-1)

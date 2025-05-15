@@ -12,6 +12,8 @@ export default class DB
             if(val.cat) {val.cat = this.lut(val.cat);}
         }
         console.log(this._itemDB);
+
+        this._roleDB = scene.cache.json.get('role');
     }
 
     static lut(key)
@@ -33,8 +35,7 @@ export default class DB
         }
     }
 
-    static item(id)
-    {
-        return this._itemDB?.[id];
-    }
+    static item(id) { return this._itemDB?.[id]; }
+
+    static role(id) { return this._roleDB?.[id]; }
 }
