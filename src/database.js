@@ -211,134 +211,134 @@ export class QuestDB
 
 export class RoleDB
 {
-    static data = 
-    {
+    // static data = 
+    // {
 
-        'scott': {name:'史考特', icon:'portraits/35', gold:200,
-                    corpse:{sprite:'rip',scale:0.5},
-                    // sprite:'Warrior_Red', faceR:true,
-                    // anchor:{x:64,y:48}, w:128, h:128,
-                    // b:{l:48,r:48,t:32,b:32},
-                    // g:{l:48,r:48,t:64,b:32},
-                    // z:{l:48,r:48,t:64,b:32},
+    //     'scott': {name:'史考特', icon:'portraits/35', gold:200,
+    //                 corpse:{sprite:'rip',scale:0.5},
+    //                 // sprite:'Warrior_Red', faceR:true,
+    //                 // anchor:{x:64,y:48}, w:128, h:128,
+    //                 // b:{l:48,r:48,t:32,b:32},
+    //                 // g:{l:48,r:48,t:64,b:32},
+    //                 // z:{l:48,r:48,t:64,b:32},
 
-                    sprite:'rogues/10', faceR:false,
-                    anchor:{x:32,y:16}, w:64, h:64,
-                    b:{l:16,r:16,t:32,b:0},
-                    g:{l:16,r:16,t:32,b:0},
-                    z:{l:16,r:16,t:32,b:0},
+    //                 sprite:'rogues/10', faceR:false,
+    //                 anchor:{x:32,y:16}, w:64, h:64,
+    //                 b:{l:16,r:16,t:32,b:0},
+    //                 g:{l:16,r:16,t:32,b:0},
+    //                 z:{l:16,r:16,t:32,b:0},
 
-                    bag:{capacity:20,items:[]},
-                    attrs:
-                        {
-                            attack: 5,
-                            defense: 0,
-                        },
-                    states:
-                        {
-                            life: {cur:100,max:100},
-                            hunger: {cur:0,max:100},
-                            thirst: {cur:0,max:100},
-                        }
-                },
+    //                 bag:{capacity:20,items:[]},
+    //                 attrs:
+    //                     {
+    //                         attack: 5,
+    //                         defense: 0,
+    //                     },
+    //                 states:
+    //                     {
+    //                         life: {cur:100,max:100},
+    //                         hunger: {cur:0,max:100},
+    //                         thirst: {cur:0,max:100},
+    //                     }
+    //             },
 
-        'knight': {name:'騎士', icon:'portraits/35', gold:200,
-                    sprite:'Warrior_Red', faceR:true,
-                    corpse:{sprite:'rip',scale:0.5},
-                    looties:[{id:'sword_02',p:50}, 'helmet_02'],
-                    anchor:{x:64,y:48}, w:128, h:128,
-                    b:{l:48,r:48,t:32,b:32},
-                    g:{l:48,r:48,t:64,b:32},
-                    z:{l:48,r:48,t:64,b:32},
-                    restock:2,
-                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
-                                            'boots_01','neck_01','ring_01','torch','iron','iron',
-                                            {id:'salt',count:10},'bag','bag','raw_meat','raw_fish']},
-                    attrs:
-                    {
-                        attack: 5,
-                        defense: 0,
-                    },
-                    states:
-                    {
-                        life: {cur:100, max:100},
-                    },
-                    schedule:
-                    {
-                        village_01:
-                        [   {type:'enter',  range:['6:00','6:10'],      from:'門-1',    to:'point-1'}, 
-                            {type:'stay',   range:['6:10','17:00'],     pos:'point-1'},
-                            {type:'exit',   range:['17:00','17:10'],    from:'point-1', to:'門-1'},
-                        ],
-                        house_01:
-                        [   {type:'stay',   range:['0:00','5:50'],      pos:'point-1'},
-                            {type:'exit',   range:['5:50','6:00'],      from:'point-1',     to:'門'},
-                            {type:'enter',  range:['17:10','17:20'],    from:'門',          to:'point-1'},
-                            {type:'stay',   range:['17:20','24:00'],    pos:'point-1'}, 
-                        ],
-                    },
-                },
+    //     'knight': {name:'騎士', icon:'portraits/35', gold:200,
+    //                 sprite:'Warrior_Red', faceR:true,
+    //                 corpse:{sprite:'rip',scale:0.5},
+    //                 looties:[{id:'sword_02',p:50}, 'helmet_02'],
+    //                 anchor:{x:64,y:48}, w:128, h:128,
+    //                 b:{l:48,r:48,t:32,b:32},
+    //                 g:{l:48,r:48,t:64,b:32},
+    //                 z:{l:48,r:48,t:64,b:32},
+    //                 restock:2,
+    //                 bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
+    //                                         'boots_01','neck_01','ring_01','torch','iron','iron',
+    //                                         {id:'salt',count:10},'bag','bag','raw_meat','raw_fish']},
+    //                 attrs:
+    //                 {
+    //                     attack: 5,
+    //                     defense: 0,
+    //                 },
+    //                 states:
+    //                 {
+    //                     life: {cur:100, max:100},
+    //                 },
+    //                 schedule:
+    //                 {
+    //                     village_01:
+    //                     [   {type:'enter',  range:['6:00','6:10'],      from:'門-1',    to:'point-1'}, 
+    //                         {type:'stay',   range:['6:10','17:00'],     pos:'point-1'},
+    //                         {type:'exit',   range:['17:00','17:10'],    from:'point-1', to:'門-1'},
+    //                     ],
+    //                     house_01:
+    //                     [   {type:'stay',   range:['0:00','5:50'],      pos:'point-1'},
+    //                         {type:'exit',   range:['5:50','6:00'],      from:'point-1',     to:'門'},
+    //                         {type:'enter',  range:['17:10','17:20'],    from:'門',          to:'point-1'},
+    //                         {type:'stay',   range:['17:20','24:00'],    pos:'point-1'}, 
+    //                     ],
+    //                 },
+    //             },
 
-        'archer': {name:'射手', icon:'portraits/40', gold:100,
-                    sprite:'Archer_Blue', faceR:true,
-                    anchor:{x:64,y:48}, w:128, h:128,
-                    b:{l:48,r:48,t:32,b:32},
-                    g:{l:48,r:48,t:64,b:32},
-                    z:{l:48,r:48,t:32,b:32},
-                    bag:{},
-                    attrs:
-                        {
-                            attack: 5,
-                            defense: 0,
-                        },
-                    states:
-                        {
-                            life: {cur:100,max:100},
-                        }
-                },
+    //     'archer': {name:'射手', icon:'portraits/40', gold:100,
+    //                 sprite:'Archer_Blue', faceR:true,
+    //                 anchor:{x:64,y:48}, w:128, h:128,
+    //                 b:{l:48,r:48,t:32,b:32},
+    //                 g:{l:48,r:48,t:64,b:32},
+    //                 z:{l:48,r:48,t:32,b:32},
+    //                 bag:{},
+    //                 attrs:
+    //                     {
+    //                         attack: 5,
+    //                         defense: 0,
+    //                     },
+    //                 states:
+    //                     {
+    //                         life: {cur:100,max:100},
+    //                     }
+    //             },
 
         
-        'smith': {name:'鐵匠', icon:'portraits/4', gold:100,
+    //     'smith': {name:'鐵匠', icon:'portraits/4', gold:100,
 
-                    corpse:{sprite:'rip',scale:0.5},
-                    looties:[{id:'sword_02',p:50}, 'helmet_02'],
+    //                 corpse:{sprite:'rip',scale:0.5},
+    //                 looties:[{id:'sword_02',p:50}, 'helmet_02'],
 
-                    sprite:'rogues/38', faceR:false,
-                    anchor:{x:32,y:16}, w:64, h:64,
-                    b:{l:16,r:16,t:32,b:0},
-                    g:{l:16,r:16,t:32,b:0},
-                    z:{l:16,r:16,t:32,b:0},
+    //                 sprite:'rogues/38', faceR:false,
+    //                 anchor:{x:32,y:16}, w:64, h:64,
+    //                 b:{l:16,r:16,t:32,b:0},
+    //                 g:{l:16,r:16,t:32,b:0},
+    //                 z:{l:16,r:16,t:32,b:0},
 
-                    restock:2,
-                    bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
-                                            'boots_01','neck_01','ring_01','torch','iron','iron',
-                                            {id:'salt',count:10},'bag','bag','raw_meat','raw_fish','bottle']},
+    //                 restock:2,
+    //                 bag:{capacity:-1,items:['sword_01',{id:'helmet_01',count:1},'chest_01','gloves_01',
+    //                                         'boots_01','neck_01','ring_01','torch','iron','iron',
+    //                                         {id:'salt',count:10},'bag','bag','raw_meat','raw_fish','bottle']},
                     
-                    attrs:{ attack: 5, defense: 0, },
-                    states:{ life: {cur:100,max:100},},
+    //                 attrs:{ attack: 5, defense: 0, },
+    //                 states:{ life: {cur:100,max:100},},
 
-                    schedule:
-                    {
-                        village_01:
-                        [   {"type":"enter",  "range":["6:00","6:10"],      "from":"門-1",    "to":"point-1"}, 
-                            {"type":"stay",   "range":["6:10","17:00"],     "pos":"point-1"},
-                            {"type":"exit",   "range":["17:00","17:10"],    "from":"point-1", "to":"門-1"},
-                        ],
-                        house_01:
-                        [   {"type":"stay",   "range":["0:00","5:50"],      "pos":"point-1"},
-                            {"type":"exit",   "range":["5:50","6:00"],      "from":"point-1",     "to":"門"},
-                            {"type":"enter",  "range":["17:10","17:20"],    "from":"門",          "to":"point-1"},
-                            {"type":"stay",   "range":["17:20","24:00"],    "pos":"point-1"},
-                        ],
-                    },
-                }
+    //                 schedule:
+    //                 {
+    //                     village_01:
+    //                     [   {"type":"enter",  "range":["6:00","6:10"],      "from":"門-1",    "to":"point-1"}, 
+    //                         {"type":"stay",   "range":["6:10","17:00"],     "pos":"point-1"},
+    //                         {"type":"exit",   "range":["17:00","17:10"],    "from":"point-1", "to":"門-1"},
+    //                     ],
+    //                     house_01:
+    //                     [   {"type":"stay",   "range":["0:00","5:50"],      "pos":"point-1"},
+    //                         {"type":"exit",   "range":["5:50","6:00"],      "from":"point-1",     "to":"門"},
+    //                         {"type":"enter",  "range":["17:10","17:20"],    "from":"門",          "to":"point-1"},
+    //                         {"type":"stay",   "range":["17:20","24:00"],    "pos":"point-1"},
+    //                     ],
+    //                 },
+    //             }
 
-    }
+    // }
 
-    static get(id)
-    {
-        return RoleDB.data[id];
-    }
+    // static get(id)
+    // {
+    //     return RoleDB.data[id];
+    // }
 }
 
 

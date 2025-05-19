@@ -1,6 +1,5 @@
 {
   "scott": {
-    "id": "scott",
     "icon": "portraits/35",
     "corpse": {
       "sprite": "rip",
@@ -52,7 +51,6 @@
     }
   },
   "smith": {
-    "id": "smith",
     "icon": "portraits/4",
     "corpse": {
       "sprite": "rip",

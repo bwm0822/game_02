@@ -11,9 +11,10 @@ export default class DB
         {
             if(val.cat) {val.cat = this.lut(val.cat);}
         }
-        console.log(this._itemDB);
 
         this._roleDB = scene.cache.json.get('role');
+
+        this._dialogDB = scene.cache.json.get('dialog');
     }
 
     static lut(key)
@@ -38,4 +39,6 @@ export default class DB
     static item(id) { return this._itemDB?.[id]; }
 
     static role(id) { return this._roleDB?.[id]; }
+
+    static dialog(id) { return this._dialogDB?.[id]; }
 }

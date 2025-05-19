@@ -98,7 +98,7 @@ export class Role extends Entity
     get moving()    {return this._des!=null;}
     get storage()   {return this.status.bag;}
 
-    get msg_name() {return `[weight=900]${this.role.name}[/weight] `}
+    get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
     addSprite(sprite)
     {
@@ -109,7 +109,9 @@ export class Role extends Entity
 
     initData()
     {
-        let roleD = RoleDB.get(this.id);
+        // let roleD = RoleDB.get(this.id);
+        let roleD = DB.role(this.id);
+        console.log('initData',roleD);
 
         this._faceR = roleD.faceR;
 
@@ -374,7 +376,8 @@ export class Role extends Entity
 
     looties()
     {
-        let roleD = RoleDB.get(this.id);
+        // let roleD = RoleDB.get(this.id);
+        let roleD = DB.role(this.id);
 
         roleD.looties && 
         roleD.looties.forEach((loot)=>{
@@ -598,7 +601,8 @@ export class Role extends Entity
 
     load(record)
     {
-        let roleD = RoleDB.get(this.id);
+        // let roleD = RoleDB.get(this.id);
+        let roleD = DB.role(this.id);
         if(!record)
         {
             record = {
@@ -869,7 +873,8 @@ export class Npc extends Role
     
     load()
     {
-        let roleD = RoleDB.get(this.id);
+        // let roleD = RoleDB.get(this.id);
+        let roleD = DB.role(this.id);
         this.role = roleD;
         let data = this.loadData();
         if(data) { this.status = data; }
@@ -926,7 +931,8 @@ export class Npc extends Role
 
     talk() 
     {
-        this.dialog = DialogDB.get(this.id);
+        // this.dialog = DialogDB.get(this.id);
+        this.dialog = DB.dialog(this.id);
         this.send('talk',this);
     }
 

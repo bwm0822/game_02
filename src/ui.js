@@ -42,6 +42,7 @@ export default function createUI(scene)
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
     new UiTime(scene);              // 19
+    new UiQuest(scene);              // 20
 
     t3();
 }
@@ -1959,7 +1960,11 @@ export class UiMain extends UiBase
 
     menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
 
-    test() {this.closeAll(GM.UI_ALL);}
+    test()
+    {
+        //this.closeAll(GM.UI_ALL);
+        UiQuest.toggle(Role.getPlayer());
+    }
 
     debug() {UiDebuger.show();}
 
@@ -2137,7 +2142,7 @@ export class UiTrade extends UiBase
     {
         let [key,frame]=this.owner.role.icon.split('/');
         this.getElement('icon',true).setTexture(key,frame);
-        this.getElement('name',true).setText(this.owner.role.name);
+        this.getElement('name',true).setText(this.owner.id.lab());
     }
 
     refresh()
@@ -2554,7 +2559,7 @@ export class UiDialog extends UiBase
         this.id = 0;
         super.show();
         this.setIconA(owner.role.icon)
-            .setNameA(owner.role.name)
+            .setNameA(owner.id.lab())
             .setIconB(Role.Avatar.instance.role.icon)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
@@ -3294,5 +3299,147 @@ export class UiSettings extends UiContainerBase
     }
 
     static show() {this.instance?.show();}
+}
+
+
+export class UiQuest extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            width : 800,
+            height : 500,
+            orientation : 'y',
+            space:{bottom:20},
+        }
+        super(scene, config, 'UiQuest');
+        UiQuest.instance = this; 
+
+        this.addBg_Int(scene)    
+            .addTop(scene,'quest'.lab())
+            .addTab(scene)
+            .addPage(scene,'quests')
+            .setOrigin(0.5)
+            .layout()
+            .hide()  
+    }
+
+    addTab(scene)
+    {
+        let button_pre;
+        let config = {
+            background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+            topButtons:[
+                        label(scene,{text:'🎴',color:GM.COLOR_DARK,key:'quests',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'❤️',color:GM.COLOR_DARK,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
+                    ],
+
+            space: {left:5, top:5, bottom:5, topButton:1}
+        }
+
+        let tabs = scene.rexUI.add.tabs(config); 
+
+        tabs.on('button.click', (button, groupName, index)=>{
+                UiInfo.close();
+                if(button_pre) 
+                {
+                    button_pre.getElement('background').setFillStyle(GM.COLOR_DARK);
+                    this.getElement(button_pre.key)?.hide();
+                }
+                button_pre = button;
+                button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
+                console.log(button.key)
+                this.getElement(button.key)?.show();
+                this.layout();
+            })
+
+        tabs.on('button.over', (button, groupName, index)=>{
+            Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN, button)})
+        })
+
+        tabs.on('button.out', (button, groupName, index)=>{
+            Ui.cancelDelayCall();
+            UiInfo.close();
+        })
+
+        this.add(tabs,{expand:true,padding:{left:10,right:10},key:'tags'});
+        return this;
+    }
+
+    addPage(scene, key)
+    {
+        let config = {
+            height: 220,
+        }
+        let panel = scene.rexUI.add.sizer(config);
+        panel.addScroll = this.addScroll;
+        panel.addBackground(rect(scene,{color:GM.COLOR_LIGHT,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
+        this.add(panel,{expand:true,padding:{left:10,right:10},key:key});
+        panel.addScroll(scene,{width:200});
+        panel.hide();
+        return this;
+    }
+
+    updatePage(cat)
+    {
+        let panel = this.getElement('panel',true);
+        console.log(panel)
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+        panel.add(text(this.scene,{'text':'123'}));
+
+        return this;
+    }
+
+    update()
+    {
+        if(this.visible)
+        {
+            this.updatePage();
+        }
+    }
+
+    refresh() {this.update();}  // call by Ui.refreshAll()
+
+    show(owner)
+    {
+        this.owner = owner;
+        super.show();
+        this.update();
+        this.getElement('tags').emitTopButtonClick(0);
+        // closeAll/register/camera
+        Ui.closeAll(GM.UI_LEFT);
+        this.register(GM.UI_LEFT_P);
+        // setCamera(GM.CAM_RIGHT);
+    }
+
+    close()
+    {
+        if(!this.visible) {return;}
+
+        super.close();
+        this.unregister();
+    }
+
+    toggle(owner)
+    {
+        if(this.visible){this.close();}
+        else{this.show(owner)}
+    }
+
+    static show(owner) {UiQuest.instance?.show(owner);}
+    static close() {UiQuest.instance?.close();}
+    static toggle(owner) {UiQuest.instance?.toggle(owner);}
+    static get shown() {UiQuest.instance?.visible;}
 }
 
