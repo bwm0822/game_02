@@ -9,6 +9,7 @@ import DB from './db.js';
 import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
 import Record from './record.js';
+import QuestManager from './quest.js';
 
 let uiScene;
 let _mode = 0;
@@ -1309,6 +1310,24 @@ class UiBase extends Sizer
         return this;
     }
 
+    addPanel(scene, {  width=0, height=0,
+                        orientation='y',space=5,
+                        color=GM.COLOR_PRIMARY,strokeColor=GM.COLOR_GRAY,strokeWidth=2,
+                    }={})
+    {
+        let config = 
+        {
+            width: width,
+            height: height,
+            orientation: orientation,
+            space: space,
+        }
+        let panel = scene.rexUI.add.sizer(config);
+        panel.addBackground(rect(scene,{color:color,strokeColor:strokeColor,strokeWidth:strokeWidth}),'bg')
+        this.add(panel,{expand:true, proportion:1, key:'panel'});
+        return this;
+    }
+
     addGold(scene)
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
@@ -1330,10 +1349,10 @@ class UiBase extends Sizer
     item(id,{onover,onout,ondown}={})
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        sizer.itm = {id:id,type:'make'};
-        sizer.dat = DB.item(id)??{};
+        // sizer.itm = {id:id,type:'make'};
+        // sizer.dat = DB.item(id)??{};
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(text(this.scene,{text:sizer.itm.id.lab(),color:'#777777'}),{key:'label'})
+            .add(text(this.scene,{text:id,color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
         let lb = sizer.getElement('label');
         sizer.unsel = ()=>{lb.setColor('#777777');}
@@ -2536,6 +2555,8 @@ export class UiDialog extends UiBase
             case 'next': this.nextPage(); break;
             case 'exit': this.close(); break;
             case 'trade': this.trade(); break;
+            case 'goto': this.goto(p1); break;
+            case 'quest': this.quest(p1); break;
         }
     }
 
@@ -2543,6 +2564,20 @@ export class UiDialog extends UiBase
     {
         this.close();
         UiTrade.show(this.owner); 
+    }
+
+    goto(p1)
+    {
+        this.id=p1;
+        this.setTextA(this.dialog[p1].A)
+            .nextPage();
+    }
+
+    quest(p1)
+    {
+        this.close();
+        console.log('quest',p1)
+        QuestManager.add(p1);
     }
 
     close()
@@ -3074,6 +3109,8 @@ export class UiManufacture extends UiBase
         panel.removeAll(true);
         this.owner.menu.forEach((id)=>{
             let add =this.item(id,{onover:onover, onout:onout, ondown:ondown});
+            add.itm = {id:id,type:'make'};
+            add.dat = DB.item(id)??{};
             if(id==this.owner.sel) {add.sel();itemSel=add;}
             panel.add(add,{expand:true})
         })
@@ -3373,30 +3410,57 @@ export class UiQuest extends UiBase
     addPage(scene, key)
     {
         let config = {
-            height: 220,
+            orientation:'x',
         }
         let panel = scene.rexUI.add.sizer(config);
+
         panel.addScroll = this.addScroll;
-        panel.addBackground(rect(scene,{color:GM.COLOR_LIGHT,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
-        this.add(panel,{expand:true,padding:{left:10,right:10},key:key});
+        panel.addPanel = this.addPanel;
+        panel.addBackground(rect(scene,{color:GM.COLOR_PRIMARY,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
+        this.add(panel,{expand:true,proportion:1,padding:{left:10,right:10},key:key});
+        
         panel.addScroll(scene,{width:200});
+        panel.addPanel(scene,{color:GM.COLOR_LIGHT});
+
         panel.hide();
         return this;
     }
 
     updatePage(cat)
     {
-        let panel = this.getElement('panel',true);
-        console.log(panel)
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
-        panel.add(text(this.scene,{'text':'123'}));
+        let itemSel = null;
+        let ondown = (item)=>{
+            itemSel?.unsel();
+            itemSel=item;
+            item.sel();
+
+            let panel = this.getElement('panel',true);
+            panel.addDivider = this.addDivider;
+            panel.removeAll(true);
+            panel.add(bbcText(this.scene,{text:item.dat.title}))
+                .addDivider(this.scene)
+                .add(bbcText(this.scene,{text:item.dat.des}),{expand:true})
+            
+            panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
+            item.dat.rewards.forEach((reward)=>{
+                for(let key in reward)
+                {
+                    let val = reward[key];
+                    panel.add(bbcText(this.scene,{text:`■ ${key} ${val}`}),{expand:true})
+                }
+            })
+            this.layout();
+        }
+
+        let list = this.getElement('scroll',true).getElement('panel');
+        list.removeAll(true);
+
+        QuestManager.opened.forEach((quest)=>{
+            let questD = DB.quest(quest);
+            let add =this.item(questD.title,{ondown:ondown});
+            add.dat = questD;
+            list.add(add,{expand:true})
+        })
 
         return this;
     }

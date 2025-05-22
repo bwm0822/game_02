@@ -1,0 +1,14 @@
+{ "columns":12,
+ "image":"32rogues\/monsters.png",
+ "imageheight":416,
+ "imagewidth":384,
+ "margin":0,
+ "name":"monsters",
+ "spacing":0,
+ "tilecount":156,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

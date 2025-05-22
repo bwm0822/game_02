@@ -67,7 +67,8 @@ export class Preloader extends Scene
         this.load.json('item', 'json/item.json');
         this.load.json('role', 'json/role.json');
         this.load.json('dialog', 'json/dialog.json');
-        
+        this.load.json('quest', 'json/quest.json');
+
     }
 
     async create ()

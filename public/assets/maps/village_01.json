@@ -382,6 +382,24 @@
                  "width":32,
                  "x":608,
                  "y":1152
+                }, 
+                {
+                 "gid":968,
+                 "height":64,
+                 "id":107,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"orc"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":64,
+                 "x":512,
+                 "y":672
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -390,7 +408,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":107,
+ "nextobjectid":108,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -419,6 +437,10 @@
         {
          "firstgid":536,
          "source":"..\/icons.tsj"
+        }, 
+        {
+         "firstgid":968,
+         "source":"..\/monsters.tsj"
         }],
  "tilewidth":32,
  "type":"map",

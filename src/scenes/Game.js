@@ -11,35 +11,15 @@ export class Game extends Scene
     {
         console.log('Game');
         super('Game');
-        // this._done = false;
     }
 
     create ()
     {
         console.log('create Game')
-        // if(!this._done)
-        // {
-        //     this._done = true;
-        //     this.scene.launch('UI');
-        //     //this.cameras.main.setBackgroundColor(0x555555);
-        //     // this.loadRecord();
-        //     this.loadData();
-        // }
+
         this.scene.launch('UI');
         this.gotoScene();
     }
-
-    loadData()
-    {
-        Local.load(this);
-        DB.load(this);
-        Record.load();// 執行後，其他 scene 不用再執行 Record.load()
-    }
-
-    // loadRecord()
-    // {
-    //     Record.load();// 執行後，其他 scene 不用再執行 Record.load()
-    // }
 
     gotoScene() 
     {

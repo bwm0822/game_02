@@ -15,6 +15,8 @@ export default class DB
         this._roleDB = scene.cache.json.get('role');
 
         this._dialogDB = scene.cache.json.get('dialog');
+
+        this._questDB = scene.cache.json.get('quest');
     }
 
     static lut(key)
@@ -41,4 +43,6 @@ export default class DB
     static role(id) { return this._roleDB?.[id]; }
 
     static dialog(id) { return this._dialogDB?.[id]; }
+
+    static quest(id) { return this._questDB?.[id];}
 }

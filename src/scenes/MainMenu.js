@@ -7,6 +7,7 @@ import {UiSettings, UiCursor} from '../ui.js'
 import {GM} from '../setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
+import QuestManager from '../quest.js';
 
 export class MainMenu extends Scene
 {
@@ -67,11 +68,12 @@ export class MainMenu extends Scene
             .on('pointerdown', ()=>{cb&&cb()});
     }
 
-    loadData()  // function 不能叫 load()
+    loadData()  // 注意: func 的名稱不能叫 load()
     {
         Local.load(this);
         DB.load(this);
         Record.load();// 執行後，其他 scene 不用再執行 Record.load()
+        QuestManager.load();
     }
 
     startGame()

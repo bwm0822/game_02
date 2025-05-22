@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-from itertools import islice
 
 
 def df_to_json(df):
@@ -16,8 +15,7 @@ def df_to_json(df):
 
             # 特殊處理
             if pd.isna(val) or val == "":
-                # obj[key] = None
-                pass
+                continue
             elif key == "id":
                 id = val
             # elif isinstance(val, str) and val.upper() == "FALSE":
@@ -33,18 +31,18 @@ def df_to_json(df):
         output[id] = obj
     return output
 
-
-
-def role_to_json(input_excel_path, output_json_path):
+def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
     output = {}
-    df = pd.read_excel(input_excel_path, header=None)
-    output = df_to_json(df)
+    if all_sheets:
+        excel_data = pd.read_excel(input_excel_path, header=None, sheet_name=None)
+        for sheet_name, df in excel_data.items():
+            output.update(df_to_json(df))
+    else:
+        df = pd.read_excel(input_excel_path, header=None)
+        output = df_to_json(df)
 
-    # 儲存為 JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-
-    print("轉換完成！🥰")
 
 
 
@@ -53,7 +51,7 @@ def unit_test():
     input_excel_path = "./xls/role.xlsx"                    # 你的 Excel 
     output_json_path = "./public/assets/json/role.json"     # 輸出的 JSON 檔案名稱
 
-    role_to_json(input_excel_path, output_json_path)
+    excel_to_json(input_excel_path, output_json_path)
 
 
 

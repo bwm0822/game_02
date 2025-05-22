@@ -1,6 +1,7 @@
 {
   "scott": {
     "icon": "portraits/35",
+    "gold": 100,
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -52,6 +53,7 @@
   },
   "smith": {
     "icon": "portraits/4",
+    "gold": 200,
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -192,6 +194,57 @@
           "pos": "point-1"
         }
       ]
+    }
+  },
+  "orc": {
+    "icon": "portraits/35",
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5
+    },
+    "sprite": "monsters/0",
+    "faceR": false,
+    "anchor": {
+      "x": 32,
+      "y": 16
+    },
+    "w": 64,
+    "h": 64,
+    "b": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 10,
+        "max": 10
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
     }
   }
 }

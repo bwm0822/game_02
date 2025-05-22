@@ -1,14 +1,8 @@
-//import {ProgressBar} from './item.js';
-//import {Node} from './node.js';
-//import {Port} from './port.js';
 import {Store} from './store.js';
 import {Entity,Port,Pickup,Case,Node,Point,Stove,Well} from './entity.js';
-import {Character} from './character.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
-import Record from './record.js';
-import {CharacterDB} from './database.js';
-import {QuestManager} from './quest.js';
+import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 
@@ -301,10 +295,11 @@ class Map
                     {type:'stove',classType:Stove},
                     {type:'well',classType:Well},
                 ]);
-                let rmList=[];
-                objs.forEach((obj) => { if(obj.init?.()){rmList.push(obj)}; });
-                rmList.forEach((obj)=>{ let i=objs.indexOf(obj); objs.splice(i,1); });
-                scene.objects.push(...objs);
+                objs.forEach((obj) => {obj.init_prefab?.()});
+                // let rmList=[];
+                // objs.forEach((obj) => { if(obj.init?.()){rmList.push(obj)}; });
+                // rmList.forEach((obj)=>{ let i=objs.indexOf(obj); objs.splice(i,1); });
+                // scene.objects.push(...objs);
             });
 
             resolve();

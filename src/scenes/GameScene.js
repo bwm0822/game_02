@@ -3,8 +3,7 @@ import Map from '../map.js';
 import * as Role from '../role.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
-import {QuestManager} from  '../quest.js';
-//import {UI} from  '../uibase.js';
+import QuestManager from  '../quest.js';
 import {Pickup} from '../entity.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage, 
@@ -259,8 +258,9 @@ export class GameScene extends Scene
         Record.data.pos = this._avatar.pos;   
         Record.data.player = this._avatar.save();
         if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
+        console.log(this.objects)
         this.objects.forEach((obj)=>{obj.save?.();})
-        this.roles.forEach((role)=>{role.uid==-1 && role.save();})
+        // this.roles.forEach((role)=>{role.uid==-1 && role.save();})
         TimeManager.save();
         Record.save();
     }

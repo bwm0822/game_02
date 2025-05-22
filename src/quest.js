@@ -1,7 +1,7 @@
 import Record from './record';
-import {QuestDB} from './database';
+import DB from './db';
 
-export class QuestManager
+export default class QuestManager
 {
     static opened=[];
     static closed=[];
@@ -10,8 +10,8 @@ export class QuestManager
     {
         QuestManager.opened.push(id);
         QuestManager.save();
-        let quest = QuestDB.get(id);
-        QuestManager.process(quest.act);
+        // let quest = DB.quest(id);
+        // QuestManager.process(quest.act);
     }
 
     static process(act)

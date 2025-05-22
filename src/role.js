@@ -43,7 +43,7 @@ class Corpse extends Phaser.GameObjects.Container
         super(scene, x, y);
         scene.add.existing(this);
         this.scene = scene;
-        let data = RoleDB.get(id);
+        let data = DB.role(id);
         this.addSprite(data)
             .addTweens()
     }
@@ -85,9 +85,7 @@ export class Role extends Entity
         this.static = false; // true: static body, false: dynamic body
         this.id = '';
         this.interactive = true;
-        //
-
-        this.registerTimeManager();
+        //        
     }
 
     get isPlayer() {return false;}
@@ -126,8 +124,17 @@ export class Role extends Entity
         return roleD;
     }
 
+    init_prefab()
+    {
+        if(!super.init_prefab()){return false;}
+        this.registerTimeManager();
+        return true;
+    }
+
     init_runtime(id)
     {
+        this.registerTimeManager();
+
         this.id=id;
         let roleD = this.initData();
         this.addSprite(roleD.sprite);
@@ -139,7 +146,7 @@ export class Role extends Entity
         this.setAnchor(roleD.anchor);
         this.updateDepth();
         this.addWeight();
-
+        this.addToObjects();
         //this.debugDraw('zone')
 
         return this;
@@ -403,7 +410,8 @@ export class Role extends Entity
         this.removeFromRoleList();
         this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
-        this.destroy();
+        // this.destroy();
+        this.delete();
     }
 
     exit()
@@ -599,16 +607,17 @@ export class Role extends Entity
     }
 
 
-    load(record)
+    load(record)    // call by Avatar
     {
         // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
         if(!record)
         {
             record = {
-                gold: roleD.gold, 
+                gold: roleD.gold??0, 
                 equips: [],
-                bag: {capacity:roleD.bag.capacity, items:[]},
+                // bag: {capacity:roleD.bag.capacity, items:[]},
+                bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
                 attrs: Utility.deepClone(roleD.attrs),
                 states: Utility.deepClone(roleD.states), 
             }
@@ -780,19 +789,22 @@ export class Npc extends Role
     get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
                                             : ['attack','observe'];}
 
-    init()
+    init_prefab()
     {
+        if(!super.init_prefab()) {return false;}
+
         let roleD = this.initData();
         if(roleD.anchor)
         {
             this.setData('anchorX',roleD.anchor.x);
             this.setData('anchorY',roleD.anchor.y);
         }
-        super.init();
+        
         this.addToRoleList();
         this.load();
         this.state = 'idle';
         //this.debugDraw('zone')
+        return true;
     }
 
    
@@ -812,6 +824,7 @@ export class Npc extends Role
 
     setSchedule()
     {
+        if(!this.role.schedule) {return;}
         let sch = this.role.schedule[this.mapName];
         this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
         this.schedule.forEach((s)=>{s.cd=0;})
@@ -882,8 +895,8 @@ export class Npc extends Role
         {
             this.status = 
             {   
-                gold: roleD.gold, 
-                bag: this.toStorage(roleD.bag.capacity,roleD.bag.items),
+                gold: roleD.gold??0, 
+                bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
                 attrs: Utility.deepClone(roleD.attrs),
                 states: Utility.deepClone(roleD.states), 
             }
@@ -969,34 +982,3 @@ export class Npc extends Role
     }
 }
 
-
-
-export class Role_T extends Phaser.GameObjects.Container
-{
-    constructor(scene,x,y)
-    {
-        console.log('Role_T');
-        super(scene,x,y);
-
-        let r = scene.add.rectangle(0,0,10,20,0xffffff);
-        this.add(r);
-
-
-        // body(96)
-        let [key,frame] = 'items1/97'.split('/');
-        let body = scene.add.sprite(0,0,key,frame);
-        this.add(body);
-        // head(120)
-        [key,frame] = 'items1/121'.split('/');
-        let head = scene.add.sprite(0,-20,key,frame);
-        this.add(head);
-        // foot(112)
-        [key,frame] = 'items1/113'.split('/');
-        let foot = scene.add.sprite(0,16,key,frame);
-        this.add(foot);
-
-        this.setDepth(Infinity);
-        scene.add.existing(this);
-        console.log(this);
-    }
-}

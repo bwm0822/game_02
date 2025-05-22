@@ -5,11 +5,11 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        "public/assets",
+        "public/assets/maps",
         "public",
-        ".",
-        "public/assets/templates",
-        "public/assets/tiles"
+        "public/assets/tiles",
+        "public/assets",
+        "."
     ],
     "fileStates": {
         "": {
@@ -217,8 +217,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 348.3333333333333,
-                "y": 319.66666666666663
+                "x": 311.3333333333333,
+                "y": 159.33333333333334
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -280,8 +280,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 866,
-                "y": 1102
+                "x": 510.5,
+                "y": 780
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -292,6 +292,10 @@
             "scaleInDock": 1
         },
         "public/assets/maps/weapons.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/monsters.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -414,7 +418,7 @@
         }
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
-    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/icons",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/32rogues",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "map.fixedSize": true,
     "map.height": 20,
@@ -432,6 +436,7 @@
     "recentFiles": [
         "public/assets/maps/house_01.json",
         "public/assets/maps/village_01.json",
+        "public/assets/monsters.tsj",
         "public/assets/weapons.tsj",
         "public/assets/icons.tsj",
         "public/assets/houe_1.tsj",
@@ -440,8 +445,7 @@
         "public/assets/spr_fencePost.tsj",
         "public/assets/4_Smallplaces.tsj",
         "public/assets/0_Ground_LowSat.tsj",
-        "public/assets/group.tsj",
-        "public/assets/maps/map.json"
+        "public/assets/group.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

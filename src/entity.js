@@ -2,6 +2,7 @@ import Record from './record.js'
 import {ItemDB} from './database.js';
 import Utility from './utility.js';
 import { GM } from './setting.js';
+import DB from './db.js';
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -156,6 +157,8 @@ export class Entity extends Phaser.GameObjects.Container
     //toBag(capacity,items)
     toStorage(capacity,items)
     {
+        if(capacity == undefined) {capacity = -1;}
+        if(!items) {items = [];}
         let bag={capacity:capacity,items:[]};
         items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
         return bag;
@@ -178,8 +181,16 @@ export class Entity extends Phaser.GameObjects.Container
         if(set) {this.x-=dx;this.y-=-dy}
     }
 
-    init()
+    init_prefab()
     {
+        let data = this.loadData();
+        if(data?.removed) 
+        {
+            if(this.uid!=-1) {this.saveData({removed:true})}
+            this.destroy(); 
+            return false;
+        }
+
         let anchor;
         if(this.data) 
         {
@@ -194,7 +205,10 @@ export class Entity extends Phaser.GameObjects.Container
         this.setAnchor(anchor,true);
         this.updateDepth();
         this.addWeight();
+        this.addToObjects();
         //this.debugDraw();
+        return true;
+        
     }
 
     init_runtime(itm)
@@ -354,6 +368,26 @@ export class Entity extends Phaser.GameObjects.Container
 
     addToObjects() {this.scene.objects.push(this);}
 
+    delete()
+    {
+        if(this.uid!=-1) {this.saveData({removed:true})}
+        this.removeFromObjects();
+        this.destroy();
+    }
+
+    // destroy()
+    // { 
+    //     if(this.removed)
+    //     {
+    //         if(this.uid!=-1) {this.saveData({removed:true})}
+    //     }
+    //     else
+    //     {
+    //         this.save?.();
+    //     }
+    //     super.destroy();
+    // }
+
 }
 
 
@@ -375,9 +409,9 @@ export class Case extends Entity
         this.on('open',()=>{this.open()})
     }
 
-    init()
+    init_prefab()
     {
-        super.init();
+        super.init_prefab();
         this.load();
     }
 
@@ -427,20 +461,20 @@ export class Pickup extends Entity
             this.send('msg',`${'_pickup'.lab()} ${dat.name}`)
             this.send('out');
             this.send('refresh');
-            this.removeFromObjects();
-            this.remove();
+            // this.removeFromObjects();
+            // this.remove();
+            this.delete();
         }   
     }
 
-    init()
+    init_prefab()
     {
-        let data = this.loadData();
-        if(data?.removed) {this.destroy(); return true;}
-
-        super.init();
+        if(!super.init_prefab()) {return false;}
         let id = this.data.get('id');
         let count = this.data.get('count') ?? 1;
         this.itm = {id:id,count:count};
+        return true;
+        
     }
 
     save()
@@ -449,12 +483,12 @@ export class Pickup extends Entity
         else {this.saveData({...this.pos,angle:this.angle,slot:this.itm});}
     }
 
-    remove()
-    {
-        console.log('remove',this);
-        if(this.uid!=-1) {this.saveData({removed:true})}
-        this.destroy();
-    }
+    // remove()
+    // {
+    //     console.log('remove',this);
+    //     if(this.uid!=-1) {this.saveData({removed:true})}
+    //     this.destroy();
+    // }
 }
 
 export class Stove extends Entity
@@ -482,9 +516,9 @@ export class Stove extends Entity
         this._output = {id:id,count:0};
     }
 
-    init()
+    init_prefab()
     {
-        super.init();
+        super.init_prefab();
         this.load();
     }
 
@@ -501,7 +535,7 @@ export class Stove extends Entity
         if(this._sel=='cook') 
         {
             let found = this._storage.items.find(slot=>{
-                return ItemDB.get(slot?.id)?.cook
+                return DB.item(slot?.id)?.cook
             })
             return found;
         }
@@ -606,24 +640,14 @@ export class Well extends Entity
 }
 
 
-// export class Entry extends Entity
-// {
-//     init()
-//     {
-//         //super.init(mapName);
-//         if(!this.scene.entries) {this.scene.entries={};}
-//         this.scene.entries[this.name] = {x:this.x,y:this.y}
-//     }
-// }
-
 export class Point extends Entity
 {
 
     get pt() {return {x:this.x, y:this.y}}
 
-    init()
+    init_prefab()
     {
-        super.init();
+        super.init_prefab();
         if(!this.scene.ports) {this.scene.ports={};}
         this.scene.ports[this.name] = this;
     }
@@ -646,9 +670,9 @@ export class Port extends Entity
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
-    init()
+    init_prefab()
     {
-        super.init();
+        super.init_prefab();
         if(!this.scene.ports) {this.scene.ports={};}
         this.scene.ports[this.name] = this;
     }
@@ -681,9 +705,9 @@ export class Node extends Port
         this.add(lb);
     }
 
-    init(mapName)
+    init_prefab(mapName)
     {
-        super.init(mapName);
+        super.init_prefab(mapName);
         this.addText(this.name);
         //this.debugDraw();
     }

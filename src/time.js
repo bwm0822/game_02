@@ -108,7 +108,6 @@ export class Schedular
         this.scene = scene;
 
         Roles.list.forEach((id)=>{
-            // let role = RoleDB.get(id);
             let role = DB.role(id);
             let schedule = role.schedule?.[mapName];
             if(schedule)
