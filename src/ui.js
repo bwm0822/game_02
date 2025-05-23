@@ -1491,13 +1491,13 @@ class Option extends UiBase
     inv()
     {
         this.close();
-        UiInv.show(Role.Avatar.instance);
+        UiInv.show(Role.getPlayer());
     }
 
     profile()
     {
         this.close();
-        UiProfile.show(Role.Avatar.instance);
+        UiProfile.show(Role.getPlayer());
     }
 
     async split()
@@ -1520,7 +1520,7 @@ class Option extends UiBase
     act(act)
     {
         this.close();
-        Role.Avatar.setDes(this.ent.pos,this.ent,act);
+        Role.getPlayer().setDes(this.ent.pos,this.ent,act);
     }
 
     show(x,y,options,ent)
@@ -1663,7 +1663,7 @@ export class UiStorage extends UiBase
         this.unregister();
 
         delete this.owner.target;
-        delete Role.Avatar.instance.target;
+        delete Role.getPlayer().target;
     }
 
     refresh()
@@ -1675,8 +1675,8 @@ export class UiStorage extends UiBase
     {
         super.show();
         this.owner = owner;
-        this.owner.target = Role.Avatar.instance;
-        Role.Avatar.instance.target = this.owner;
+        this.owner.target = Role.getPlayer();
+        Role.getPlayer().target = this.owner;
 
         this.setTitle(owner.name);
         this.updateGrid(cat);
@@ -1684,7 +1684,7 @@ export class UiStorage extends UiBase
         UiCursor.set();
         
         // show
-        UiInv.show(Role.Avatar.instance);
+        UiInv.show(Role.getPlayer());
         // cover/closeAll/register/camera
         UiCover.show();
         Ui.closeAll(GM.UI_LEFT_P);
@@ -2181,8 +2181,8 @@ export class UiTrade extends UiBase
 
         delete this.owner.trade;
         delete this.owner.target;
-        delete Role.Avatar.instance.trade;
-        delete Role.Avatar.instance.target;
+        delete Role.getPlayer().trade;
+        delete Role.getPlayer().target;
     }
 
     show(owner)
@@ -2191,13 +2191,13 @@ export class UiTrade extends UiBase
         owner.restock();
         this.owner = owner;
         this.owner.trade = GM.SELLER;
-        this.owner.target = Role.Avatar.instance;
-        Role.Avatar.instance.trade = GM.BUYER;
-        Role.Avatar.instance.target = this.owner;
+        this.owner.target = Role.getPlayer();
+        Role.getPlayer().trade = GM.BUYER;
+        Role.getPlayer().target = this.owner;
 
         this.update();
         // show
-        UiInv.show(Role.Avatar.instance);
+        UiInv.show(Role.getPlayer());
         // cover/closeAll/register/camera
         UiCover.show();
         Ui.closeAll(GM.UI_LEFT_P);
@@ -2595,7 +2595,7 @@ export class UiDialog extends UiBase
         super.show();
         this.setIconA(owner.role.icon)
             .setNameA(owner.id.lab())
-            .setIconB(Role.Avatar.instance.role.icon)
+            .setIconB(Role.getPlayer().role.icon)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
         // show
@@ -3137,7 +3137,7 @@ export class UiManufacture extends UiBase
         this.update();
         UiCursor.set();
 
-        UiInv.show(Role.Avatar.instance);
+        UiInv.show(Role.getPlayer());
         
         // cover/close/register/camera
         UiCover.show();
@@ -3461,16 +3461,6 @@ export class UiQuest extends UiBase
                         break;
                 }
             })
-            // item.dat.conds.forEach((cond,i)=>{
-            //     console.log(i)
-            //     switch(cond.type)
-            //     {
-            //         case GM.KILL: 
-            //             console.log(q.conds[i])
-            //             panel.add(bbcText(this.scene,{text:`□ ${cond.type} ${cond.id}`}),{expand:true})
-            //             break;
-            //     }
-            // })
             
             panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
             item.dat.rewards.forEach((reward)=>{
@@ -3486,12 +3476,6 @@ export class UiQuest extends UiBase
         let list = this.getElement('scroll',true).getElement('panel');
         list.removeAll(true);
 
-        // QuestManager.opened.forEach((quest)=>{
-        //     let questD = DB.quest(quest);
-        //     let add =this.item(questD.title,{ondown:ondown});
-        //     add.dat = questD;
-        //     list.add(add,{expand:true})
-        // })
         for(let id in QuestManager.opened)
         {
             let questD = DB.quest(id);

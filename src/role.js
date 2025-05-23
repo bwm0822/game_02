@@ -785,11 +785,6 @@ export class Avatar extends Role
         super.dead(attacker);
     }
 
-    static setDes(pos,ent,act)
-    {
-        Avatar.instance?.setDes(pos,ent,act);
-    }
-
 }
 
 export class Npc extends Role
