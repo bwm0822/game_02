@@ -132,6 +132,7 @@ export let GM =
     // 任務類型
     KILL : 'kill',
     TALK : 'talk',
+    FINAL : 'final',
 
 
 

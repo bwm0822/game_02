@@ -1,6 +1,7 @@
 import Record from './record';
 import DB from './db';
-import {GM} from './setting'
+import {GM} from './setting';
+import * as Role from './role.js';
 
 export default class QuestManager
 {
@@ -25,6 +26,15 @@ export default class QuestManager
         return true;
     }
 
+    static getState(conds)
+    {
+        for(let cond of conds)
+        {
+            if(cond.type != GM.FINAL && this.testCond(cond) == false) {return 'open';}
+        }
+        return 'finish';
+    }
+
     static add(id)
     {
         let questD = DB.quest(id);
@@ -34,6 +44,7 @@ export default class QuestManager
             {
                 case GM.KILL: conds.push({...cond,cur:0,cnt:1}); break;
                 case GM.TALK: conds.push({...cond,cur:0}); break;
+                case GM.FINAL: conds.push({...cond,cur:0}); break;
             }
             
         });
@@ -65,7 +76,9 @@ export default class QuestManager
                 cond.test=()=>{return this.testCond(cond)};
                 cond.shown=()=>{return this.isShowCond(q.conds,cond)};
             })
+            q.state = ()=>{return this.getState(q.conds)}
         }
+
 
         return q;
 
@@ -91,12 +104,21 @@ export default class QuestManager
 
     static close(id)
     {
-        let i = QuestManager.opened.indexOf(id);
-        if(i>-1)
-        {
-            QuestManager.opened.splice(id,1);
-            QuestManager.closed.push(id)
-        }
+        // let i = QuestManager.opened.indexOf(id);
+        // if(i>-1)
+        // {
+        //     QuestManager.opened.splice(id,1);
+        //     QuestManager.closed.push(id)
+        // }
+        let q = QuestManager.opened[id];
+        let questD = DB.quest(id);
+        questD.rewards.forEach((reward)=>{
+            switch(reward.type)
+            {
+                case 'gold': Role.getPlayer().status.gold+=reward.count; break;
+            }
+        })
+        q.status='close';
     }
 
     static save()

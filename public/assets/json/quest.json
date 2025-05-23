@@ -8,16 +8,14 @@
         "id": "orc"
       },
       {
-        "type": "talk",
-        "id": "smith",
-        "cond": [
-          0
-        ]
+        "type": "final",
+        "des": "跟 smith 回報"
       }
     ],
     "rewards": [
       {
-        "gold": 100
+        "type": "gold",
+        "count": 100
       }
     ]
   },
@@ -26,7 +24,8 @@
     "des": "殺死郊區的野狼",
     "rewards": [
       {
-        "gold": 50
+        "type": "gold",
+        "count": 50
       }
     ]
   }

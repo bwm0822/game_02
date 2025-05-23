@@ -4,7 +4,6 @@ import Utility from './utility.js';
 import {rect, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label, slider, dropdown} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
-import {ItemDB} from './database.js';
 import DB from './db.js';
 import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
@@ -2531,33 +2530,39 @@ export class UiDialog extends UiBase
 
     createOption(option)
     {
-        let [text, cmd] = option.split('/');
+        let [text,args] = option.split('/').map(s => s.trim());
         let scene = this.scene;
         let sizer = scene.rexUI.add.sizer();
         sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
             .add(bbcText(scene,{text:text}),{align:'left'})
         let bg = sizer.getElement('bg').setAlpha(0);
-        if(cmd)
+        if(args)
         {
             sizer.setInteractive()
                 .on('pointerover',()=>{bg.setAlpha(1);})
                 .on('pointerout',()=>{bg.setAlpha(0);})
-                .on('pointerdown',()=>{this.execute(cmd);})
+                .on('pointerdown',()=>{this.execute(args);})
         }
         return sizer;
     }
 
-    execute(cmd)
+    execute(args)
     {
-        let [op,p1]=cmd.split(' ');
-        switch(op)
-        {
-            case 'next': this.nextPage(); break;
-            case 'exit': this.close(); break;
-            case 'trade': this.trade(); break;
-            case 'goto': this.goto(p1); break;
-            case 'quest': this.quest(p1); break;
-        }
+        let cmds = args.split(';').map(s => s.trim());
+        cmds.forEach(cmd=>{
+            let [op,p1,p2]=cmd.split(' ');
+            switch(op)
+            {
+                case 'next': this.nextPage(); break;
+                case 'exit': this.close(); break;
+                case 'trade': this.trade(); break;
+                case 'goto': this.goto(p1); break;
+                case 'quest': this.quest(p1); break;
+                case 'close': this.close_quest(p1); break;
+                case 'set': this.set(p1,p2)
+            }
+        })
+       
     }
 
     trade()
@@ -2568,9 +2573,42 @@ export class UiDialog extends UiBase
 
     goto(p1)
     {
-        this.id=p1;
-        this.setTextA(this.dialog[p1].A)
+        let m = p1.match(/\[([^\]]+)\]/);   //取出[]內的字串
+        if(m)
+        {
+            let [p,val] = m[1].split('=');
+            if(this.owner.status[p])
+            {
+                if(p=='quest')
+                {
+                    let q = QuestManager.query(this.owner.status[p]);
+                    if(q)
+                    {
+                        this.id = this.owner.status[p]+'_'+q.state();
+                    }
+                    else
+                    {
+                        this.id = this.owner.status[p];
+                    }
+                }
+            }
+            else
+            {
+                this.id = val;
+            }
+        }
+        else
+        {
+            this.id=p1;
+        }
+
+        this.setTextA(this.dialog[this.id].A)
             .nextPage();
+    }
+
+    set(key, value)
+    {
+        this.owner.status[key]=value;
     }
 
     quest(p1)
@@ -2578,6 +2616,14 @@ export class UiDialog extends UiBase
         this.close();
         console.log('quest',p1)
         QuestManager.add(p1);
+        // this.owner.status['quest']=p1;
+        this.set('quest', p1);
+    }
+
+    close_quest(p1)
+    {
+        console.log('quest',p1)
+        QuestManager.close(p1);
     }
 
     close()
@@ -2589,6 +2635,7 @@ export class UiDialog extends UiBase
 
     show(owner)
     {
+        console.log(owner)
         this.owner = owner;
         this.dialog = owner.dialog;
         this.id = 0;
@@ -3441,34 +3488,42 @@ export class UiQuest extends UiBase
                 .addDivider(this.scene)
                 .add(bbcText(this.scene,{text:item.dat.des}),{expand:true})
 
-            console.log(item.id)
             let q = QuestManager.query(item.id);
-            q.conds.forEach((cond)=>{
-                switch(cond.type)
-                {
-                    case GM.KILL: 
-                        if(cond.shown())
-                        {
-                            let flag = cond.test() ? '🗹':'☐';
-                            panel.add(bbcText(this.scene,{text:`${flag} ${cond.type} ${cond.id}`}),{expand:true});
-                        }
-                        break;
-                    case GM.TALK:
-                        if(cond.shown())
-                        {
-                            panel.add(bbcText(this.scene,{text:`☐ ${cond.type} ${cond.id}`}),{expand:true});
-                        }
-                        break;
-                }
-            })
+            if(q.status == 'close')
+            {
+                panel.add(bbcText(this.scene,{text:`🗹 任務完成`}),{expand:true});
+            }
+            else
+            {
+                q.conds.forEach((cond)=>{
+                    switch(cond.type)
+                    {
+                        case GM.KILL: 
+                            if(cond.shown())
+                            {
+                                let flag = cond.test() ? '🗹':'☐';
+                                panel.add(bbcText(this.scene,{text:`${flag} ${cond.type} ${cond.id}`}),{expand:true});
+                            }
+                            break;
+                        case GM.TALK:
+                            if(cond.shown())
+                            {
+                                panel.add(bbcText(this.scene,{text:`☐ ${cond.type} ${cond.id}`}),{expand:true});
+                            }
+                            break;
+                        case GM.FINAL:
+                            if(q.state()=='finish')
+                            {
+                                panel.add(bbcText(this.scene,{text:`☐ ${cond.des}`}),{expand:true});
+                            }
+                            break;
+                    }
+                })
+            }
             
             panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
             item.dat.rewards.forEach((reward)=>{
-                for(let key in reward)
-                {
-                    let val = reward[key];
-                    panel.add(bbcText(this.scene,{text:`■ ${key} ${val}`}),{expand:true})
-                }
+                panel.add(bbcText(this.scene,{text:`■ ${reward.type} ${reward.count}`}),{expand:true})
             })
             this.layout();
         }
