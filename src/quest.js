@@ -1,14 +1,43 @@
 import Record from './record';
 import DB from './db';
+import {GM} from './setting'
 
 export default class QuestManager
 {
-    static opened=[];
-    static closed=[];
+    static opened={};
+    static closed={};
+
+    static testCond(cond)
+    {
+        switch(cond.type)
+        {
+            case GM.KILL: return cond.cur >= cond.cnt;
+        }
+    }
+
+    static isShowCond(conds, cond)
+    {
+        if(!cond.cond) {return true;}
+        for(let i of cond.cond)
+        {
+            if(this.testCond(conds[i]) == false) {return false;}
+        }
+        return true;
+    }
 
     static add(id)
     {
-        QuestManager.opened.push(id);
+        let questD = DB.quest(id);
+        let conds=[]
+        questD.conds.forEach(cond => {
+            switch(cond.type)
+            {
+                case GM.KILL: conds.push({...cond,cur:0,cnt:1}); break;
+                case GM.TALK: conds.push({...cond,cur:0}); break;
+            }
+            
+        });
+        QuestManager.opened[id]={status:'open',conds:conds}
         QuestManager.save();
         // let quest = DB.quest(id);
         // QuestManager.process(quest.act);
@@ -26,8 +55,38 @@ export default class QuestManager
 
     static query(id)
     {
-        console.log(QuestManager.opened,id);
-        return QuestManager.opened.includes(id);
+        //console.log(QuestManager.opened,id);
+        //return QuestManager.opened.includes(id);
+        
+        let q = QuestManager.opened[id];
+        if(q)
+        {
+            q.conds.forEach(cond=>{
+                cond.test=()=>{return this.testCond(cond)};
+                cond.shown=()=>{return this.isShowCond(q.conds,cond)};
+            })
+        }
+
+        return q;
+
+    }
+
+    static check(id, chk)
+    {
+        let q = QuestManager.opened[id];
+        if(q)
+        {
+            q.conds.forEach(cond=>{
+                if(chk.type == cond.type)
+                {
+                    if(cond.id && cond.id == chk.id)
+                    {
+                        cond.cur+=1;
+                    }
+                }
+            })
+        }
+        console.log(q);
     }
 
     static close(id)

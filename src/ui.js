@@ -3440,6 +3440,37 @@ export class UiQuest extends UiBase
             panel.add(bbcText(this.scene,{text:item.dat.title}))
                 .addDivider(this.scene)
                 .add(bbcText(this.scene,{text:item.dat.des}),{expand:true})
+
+            console.log(item.id)
+            let q = QuestManager.query(item.id);
+            q.conds.forEach((cond)=>{
+                switch(cond.type)
+                {
+                    case GM.KILL: 
+                        if(cond.shown())
+                        {
+                            let flag = cond.test() ? '🗹':'☐';
+                            panel.add(bbcText(this.scene,{text:`${flag} ${cond.type} ${cond.id}`}),{expand:true});
+                        }
+                        break;
+                    case GM.TALK:
+                        if(cond.shown())
+                        {
+                            panel.add(bbcText(this.scene,{text:`☐ ${cond.type} ${cond.id}`}),{expand:true});
+                        }
+                        break;
+                }
+            })
+            // item.dat.conds.forEach((cond,i)=>{
+            //     console.log(i)
+            //     switch(cond.type)
+            //     {
+            //         case GM.KILL: 
+            //             console.log(q.conds[i])
+            //             panel.add(bbcText(this.scene,{text:`□ ${cond.type} ${cond.id}`}),{expand:true})
+            //             break;
+            //     }
+            // })
             
             panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
             item.dat.rewards.forEach((reward)=>{
@@ -3455,12 +3486,20 @@ export class UiQuest extends UiBase
         let list = this.getElement('scroll',true).getElement('panel');
         list.removeAll(true);
 
-        QuestManager.opened.forEach((quest)=>{
-            let questD = DB.quest(quest);
+        // QuestManager.opened.forEach((quest)=>{
+        //     let questD = DB.quest(quest);
+        //     let add =this.item(questD.title,{ondown:ondown});
+        //     add.dat = questD;
+        //     list.add(add,{expand:true})
+        // })
+        for(let id in QuestManager.opened)
+        {
+            let questD = DB.quest(id);
             let add =this.item(questD.title,{ondown:ondown});
             add.dat = questD;
+            add.id = id;
             list.add(add,{expand:true})
-        })
+        }
 
         return this;
     }

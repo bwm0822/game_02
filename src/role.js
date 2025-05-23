@@ -14,7 +14,7 @@ import DB from './db.js';
 import {text,rect} from './uibase.js';
 import {GM} from './setting.js';
 import TimeManager from './time.js';
-import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
+import QuestManager from './quest.js';  
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -403,15 +403,23 @@ export class Role extends Entity
 
     dead(attacker)
     {
-        if(attacker) {this.send('msg', `${attacker.role.name} ${'_kill'.lab()} ${this.role.name}`);}
-        else {this.send('msg', `${this.role.name} ${'_die'.lab()}`);}
+        if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
+        else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
         this.looties();
         this.removeWeight();
         this.removeFromRoleList();
         this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
-        // this.destroy();
-        this.delete();
+         let qid = this.data.get('qid');
+        console.log(qid)
+        if(qid)
+        {
+            QuestManager.check(qid,{type:GM.KILL,id:this.id})
+        }
+
+
+        this.delete(); 
+       
     }
 
     exit()

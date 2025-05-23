@@ -129,6 +129,10 @@ export let GM =
     TP_PROP : 1,
     TP_BTN : 2,
 
+    // 任務類型
+    KILL : 'kill',
+    TALK : 'talk',
+
 
 
 }

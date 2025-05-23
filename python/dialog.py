@@ -23,7 +23,7 @@ def df_to_json(df):
     for _, row in df.iterrows():
         obj = {}
         for key, val in row.items():
-            print(f"key: {key}, val: {val}")  # Debugging line to check key and value
+            # print(f"key: {key}, val: {val}")  # Debugging line to check key and value
             # 去除多餘空格與換行
             if isinstance(val, str):
                 val = val.strip()
@@ -36,7 +36,7 @@ def df_to_json(df):
                 id = val
             else:
                 fixed = "{" + val + "}"
-                print(f"fixed: {fixed}")  # Debugging line to check fixed value
+                # print(f"fixed: {fixed}")  # Debugging line to check fixed value
                 obj[key] = json.loads(fixed)
         output[id] = obj
     return output

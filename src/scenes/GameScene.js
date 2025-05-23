@@ -268,12 +268,6 @@ export class GameScene extends Scene
     mainMenu()
     {
         this.save();
-        // Ui.closeAll(GM.UI_ALL);
-        // this.scene.stop('UI');
-        // this.events.emit('stop_ui')
-        // this.scene.start('MainMenu');
-        // this.scene.stop('UI');
-        // this.scene.stop().launch('MainMenu');
         this.scene.stop('UI');
         this.scene.start('MainMenu');
 

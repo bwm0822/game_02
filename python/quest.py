@@ -1,6 +1,28 @@
 import pandas as pd
 import json
 
+
+def df_to_json(df):
+    output = {}
+    for _, row in df.iterrows():
+        obj = {}
+        for key, val in row.items():
+            if pd.isna(val) or val == "":
+                continue
+            elif key == "id":
+                id = val
+            elif key == "rewards":
+                fixed = "[{" + val + "}]"
+                obj.update({'rewards': json.loads(fixed)})
+            elif key == "conds":
+                fixed = "[" + val + "]"
+                obj.update({'conds': json.loads(fixed)})
+            else:
+                obj[key] = val.strip()
+        if obj: output[id] = obj
+    return output
+
+
 def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
     output = {}
     if all_sheets:
@@ -15,29 +37,12 @@ def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
         json.dump(output, f, ensure_ascii=False, indent=2)
 
 
-def df_to_json(df):
-    output = {}
-    for _, row in df.iterrows():
-        obj = {}
-        for key, val in row.items():
-            if pd.isna(val) or val == "":
-                continue
-            elif key == "id":
-                id = val
-            elif key == "rewards":
-                fixed = "[{" + val + "}]"
-                obj.update({'rewards': json.loads(fixed)})
-            else:
-                obj[key] = val.strip()
-        if obj: output[id] = obj
-    return output
-        
-
 def unit_test():
     # 設定檔案路徑
     input_excel_path = "./xls/quest.xlsx"                    # 你的 Excel 
     output_json_path = "./public/assets/json/quest.json"     # 輸出的 JSON 檔案名稱
     excel_to_json(input_excel_path, output_json_path, False)
+    print("轉換完成！🥰")
 
 
 if __name__ == "__main__":
