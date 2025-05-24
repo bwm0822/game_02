@@ -211,7 +211,7 @@ class Slot extends Icon
     get count() {return this.itm.count;}
     set count(value) {return this.itm.count=value;}
     get props() {return this.dat.props;}
-    get label() {return this.dat.name;}
+    get label() {return this.itm.id.lab();}
     get tp() {return GM.TP_SLOT;}
 
     get id() {return this.itm?.id;}
@@ -2986,6 +2986,12 @@ class UiDebuger extends UiBase
         this.area.setText('');
     }
 
+    cmd_get(args)
+    {
+        let rewards=[{type:args[1],id:args[2],count:args[3]}]
+        Role.getPlayer().receive(rewards)
+    }
+
     cmd_t(args)
     {
         //console.log(args);
@@ -3523,7 +3529,15 @@ export class UiQuest extends UiBase
             
             panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
             item.dat.rewards.forEach((reward)=>{
-                panel.add(bbcText(this.scene,{text:`■ ${reward.type} ${reward.count}`}),{expand:true})
+                switch(reward.type)
+                {
+                    case 'gold':
+                        panel.add(bbcText(this.scene,{text:`■ ${reward.type.lab()} ${reward.count}`}),{expand:true});
+                        break;
+                    case 'item':
+                        panel.add(bbcText(this.scene,{text:`■ ${reward.id.lab()} ${reward.count}`}),{expand:true});
+                        break;
+                }
             })
             this.layout();
         }

@@ -32,6 +32,9 @@
       "t": 32,
       "b": 0
     },
+    "bag": {
+      "capacity": 20
+    },
     "attrs": {
       "attack": 5,
       "defense": 0

@@ -246,6 +246,48 @@ export class Entity extends Phaser.GameObjects.Container
         return i;
     }
 
+    putStorage(id, count)
+    {
+        let cps = DB.item(id).cps ?? 1;
+
+        let i = 0;
+        let capacity = this.storage.capacity;
+        let len = this.storage.items.length;
+        let items = this.storage.items;
+        while(count>0 && (capacity == -1 || i<capacity))
+        {
+            if(i<len)
+            {
+                if(Utility.isEmpty(items[i]))
+                {
+                    items[i]={id:id, count:Math.min(count,cps)}
+                    count-=items[i].count
+
+                }
+                else if(items[i].id==id && items[i].count<cps)
+                {
+                    let sum = items[i].count+count;
+                    items[i].count = Math.min(sum,cps)
+                    count = sum-cps;
+                }
+            }
+            else
+            {
+                let min = Math.min(count,cps);
+                items.push({id:id, count:min});
+                count-=min;
+            }
+            i++;
+        }
+
+        if(count>0)
+        {
+            let ent = {label:id.lab(),itm:{id:id,count:count}}
+            this.drop(ent)
+        }
+       
+    }
+
     take(ent, i, isEquip)
     {
         !i && (i = this.findEmpty());
@@ -278,7 +320,7 @@ export class Entity extends Phaser.GameObjects.Container
         let p = this.scene.map.getDropPoint(this.pos);
         let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
         obj.falling(p);
-        this.send('msg',`${'_drop'.lab()} ${ent.label}`);
+        this.send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
     }
 
     falling(p)
@@ -457,12 +499,9 @@ export class Pickup extends Entity
     {
         if(taker.take(this))
         {
-            let dat = this.dat ?? ItemDB.get(this.itm.id)
-            this.send('msg',`${'_pickup'.lab()} ${dat.name}`)
+            this.send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
             this.send('out');
             this.send('refresh');
-            // this.removeFromObjects();
-            // this.remove();
             this.delete();
         }   
     }

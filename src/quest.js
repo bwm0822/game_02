@@ -112,12 +112,7 @@ export default class QuestManager
         // }
         let q = QuestManager.opened[id];
         let questD = DB.quest(id);
-        questD.rewards.forEach((reward)=>{
-            switch(reward.type)
-            {
-                case 'gold': Role.getPlayer().status.gold+=reward.count; break;
-            }
-        })
+        Role.getPlayer().receive(questD.rewards);
         q.status='close';
     }
 

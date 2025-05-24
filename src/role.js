@@ -570,6 +570,19 @@ export class Role extends Entity
         }
     }
 
+    receive(rewards)
+    {
+        rewards.forEach((reward)=>{
+            console.log(reward.type)
+            switch(reward.type)
+            {
+                case 'gold': this.status.gold+=reward.count; break;
+                case 'item': this.putStorage(reward.id, reward.count); break;
+            }
+        })
+       
+    }
+
     use(ent)
     {
         // console.log('use',ent.item);

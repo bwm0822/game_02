@@ -16,6 +16,11 @@
       {
         "type": "gold",
         "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
       }
     ]
   },
@@ -25,7 +30,7 @@
     "rewards": [
       {
         "type": "gold",
-        "count": 50
+        "count": 100
       }
     ]
   }
