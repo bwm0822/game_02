@@ -135,6 +135,10 @@ export let GM =
     TALK : 'talk',
     FINAL : 'final',
 
+    // 頭像大小
+    PORTRAITS_W : 80,
+    PORTRAITS_H : 80,
+
 
 
 }

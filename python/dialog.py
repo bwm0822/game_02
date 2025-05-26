@@ -43,10 +43,19 @@ def df_to_json(df):
 
 
 
-def role_to_json(input_excel_path, output_json_path):
+def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
     output = {}
-    df = pd.read_excel(input_excel_path, header=None)
-    output = df_to_json(df)
+    if all_sheets:
+        # xls = pd.ExcelFile(input_excel_path)
+        # for sheet_name in xls.sheet_names:
+        #     df = pd.read_excel(xls, sheet_name=sheet_name, header=None, sheet_name=None)
+        #     output[sheet_name] = df_to_json(df)
+        excel_data = pd.read_excel(input_excel_path, header=None, sheet_name=None)
+        for sheet_name, df in excel_data.items():
+            output.update(df_to_json(df))
+    else:
+        df = pd.read_excel(input_excel_path, header=None)
+        output = df_to_json(df)
 
     # 儲存為 JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
@@ -61,7 +70,7 @@ def unit_test():
     input_excel_path = "./xls/dialog.xlsx"                    # 你的 Excel 
     output_json_path = "./public/assets/json/dialog.json"     # 輸出的 JSON 檔案名稱
 
-    role_to_json(input_excel_path, output_json_path)
+    excel_to_json(input_excel_path, output_json_path)
 
 
 

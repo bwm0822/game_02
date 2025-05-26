@@ -8,6 +8,16 @@
  "tilecount":504,
  "tiledversion":"1.11.0",
  "tileheight":32,
+ "tiles":[
+        {
+         "id":1,
+         "properties":[
+                {
+                 "name":"weight",
+                 "type":"int",
+                 "value":0
+                }]
+        }],
  "tilewidth":32,
  "type":"tileset",
  "version":"1.10"

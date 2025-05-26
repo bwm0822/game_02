@@ -23,6 +23,10 @@ def df_to_json(df):
             elif key == "shape" or key == 'others':
                 fixed = "{" + val + "}"
                 obj.update(json.loads(fixed))
+            elif key == "schedule":
+                fixed = "{" + val + "}"
+                if obj.get(key) is None: obj[key] = {}
+                obj[key].update(json.loads(fixed))
             else:
                 fixed = "{" + val + "}"
                 obj[key] = json.loads(fixed)

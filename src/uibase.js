@@ -191,9 +191,9 @@ export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw
         })
 }
 
-export class Pic extends Sizer
+export class Pic extends OverlapSizer
 {
-    constructor(scene, w, h, {x, y, icon, color=GM.COLOR_SLOT, radius=0, alpha=0, space=2, strokeColor=GM.COLOR_GRAY, strokeWidth=2}={})
+    constructor(scene, w, h, {x, y, icon, color=GM.COLOR_GRAY, radius=0, alpha=1, space=2, strokeColor=GM.COLOR_WHITE, strokeWidth=2}={})
     {
         super(scene, x, y, w, h,{space:space});
         this.addBackground(rect(scene,{color:color,radius:radius, alpha:alpha, strokeColor:strokeColor, strokeWidth:strokeWidth}),'background')

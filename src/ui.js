@@ -1285,7 +1285,7 @@ class UiBase extends Sizer
             grid.add(slot);
         }
 
-        this.add(grid,{key:'grid'});
+        this.add(grid,{key:'grid',padding:ext.padding});
         return this;
     }
 
@@ -1653,7 +1653,7 @@ export class UiStorage extends UiBase
 
         this.addBg_Int(scene)
             .addTop(scene)
-            .addGrid(scene,4,4,this.getOwner.bind(this),{space:{left:20,right:20,bottom:20}})
+            .addGrid(scene,4,4,this.getOwner.bind(this),{padding:{left:10,right:10,bottom:10}})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -2165,7 +2165,7 @@ export class UiTrade extends UiBase
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
-            .add(new Pic(scene,0,0,{icon:'portraits/0'}),{padding:10, key:'icon'})
+            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/0'}),{padding:10, key:'icon'})
             .add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top',padding:{top:10},key:'name'})
         this.add(sizer,{expand:true,key:'descript'})
         return this;
@@ -2267,7 +2267,7 @@ export class UiProfile extends UiBase
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
-            .add(new Pic(scene,0,0,{icon:'portraits/0'}),{padding:10, key:'icon'})
+            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/0'}),{padding:10, key:'icon'})
             .add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top',padding:{top:10},key:'name'})
         this.add(sizer,{expand:true,key:'info'});
         return this;
@@ -2508,7 +2508,7 @@ export class UiDialog extends UiBase
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(new Pic(scene,0,0,{icon:'portraits/0'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconA'})
+            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/0'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconA'})
             .add(this.createSub(scene),{align:'top',padding:{top:10},key:'sub'});
         this.add(sizer,{expand:true,padding:{left:10,right:10,top:10},key:'speakerA'});
         return this;
@@ -2527,7 +2527,7 @@ export class UiDialog extends UiBase
     {
         let sizer = scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(scene,{color:GM.COLOR_DARK}),'bg')
-            .add(new Pic(scene,0,0,{icon:'portraits/1'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconB'})
+            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/1'}),{padding:{left:10,top:10,bottom:50,right:10},key:'iconB'})
             .add(this.createTextB(),{padding:{top:10},expand:true,align:'top',proportion:1,key:'textB'})
         this.add(sizer,{expand:true,padding:{left:10,right:10,bottom:10},key:'speakerB'});
         return this;
@@ -2661,6 +2661,7 @@ export class UiDialog extends UiBase
         console.log(owner)
         this.owner = owner;
         this.dialog = owner.dialog;
+        console.log(this.dialog)
         this.id = 0;
         super.show();
         this.setIconA(owner.role.icon)
@@ -3140,7 +3141,7 @@ export class UiManufacture extends UiBase
         let produce = scene.rexUI.add.sizer(config);
         produce.addGrid = this.addGrid;
         produce.addBackground( rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}) )
-                .addGrid(scene, 3, 3, this.getOwner, {space:{top:10},classT:MatSlot,classC:{onset:this.check}})
+                .addGrid(scene, 3, 3, this.getOwner, {padding:{top:10},classT:MatSlot,classC:{onset:this.check}})
                 .addSpace()
                 .add(new OutputSlot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,this.getOwner),{key:'output'})
                 .addSpace()

@@ -3,12 +3,13 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village_01.json",
+    "activeFile": "public/assets/maps/trump_inn_f1.json",
     "expandedProjectPaths": [
-        "public/assets",
         ".",
         "public/assets/maps",
+        "public/assets/templates",
         "public",
+        "public/assets",
         "public/assets/tiles"
     ],
     "fileStates": {
@@ -217,8 +218,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 348.3333333333333,
-                "y": 79.33333333333334
+                "x": 335,
+                "y": 239.33333333333334
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -273,6 +274,17 @@
             "dynamicWrapping": false,
             "scaleInEditor": 1
         },
+        "public/assets/maps/trump_inn_f1.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 297,
+                "y": 166.66666666666669
+            }
+        },
         "public/assets/maps/village_01.json": {
             "expandedObjectLayers": [
                 3
@@ -280,8 +292,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 399.5,
-                "y": 856
+                "x": 704.5,
+                "y": 774
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -296,6 +308,7 @@
             "scaleInEditor": 1
         },
         "public/assets/monsters.tsj": {
+            "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -420,22 +433,29 @@
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
     "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/32rogues",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
+    "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
+    "loadedWorlds": [
+        "C:/Personal/projects/web/game_02/public/assets/maps/1.world"
+    ],
     "map.fixedSize": true,
-    "map.height": 20,
+    "map.height": 15,
     "map.lastUsedFormat": "json",
     "map.layerDataFormat": "1",
     "map.tileHeight": 32,
     "map.tileWidth": 32,
-    "map.width": 20,
+    "map.width": 15,
     "openFiles": [
         "public/assets/maps/house_01.json",
-        "public/assets/maps/village_01.json"
+        "public/assets/maps/village_01.json",
+        "public/assets/maps/trump_inn_f1.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
         "public/assets/maps/house_01.json",
         "public/assets/maps/village_01.json",
+        "public/assets/maps/trump_inn_f1.json",
+        "public/assets/tiles.tsj",
         "public/assets/monsters.tsj",
         "public/assets/weapons.tsj",
         "public/assets/icons.tsj",
@@ -443,9 +463,7 @@
         "public/assets/maps/weapons.tsj",
         "public/assets/props.tsj",
         "public/assets/spr_fencePost.tsj",
-        "public/assets/4_Smallplaces.tsj",
-        "public/assets/0_Ground_LowSat.tsj",
-        "public/assets/group.tsj"
+        "public/assets/4_Smallplaces.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

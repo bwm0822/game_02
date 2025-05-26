@@ -55,183 +55,8 @@
       }
     }
   },
-  "smith_1": {
-    "icon": "portraits/4",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5
-    },
-    "gold": 200,
-    "sprite": "rogues/38",
-    "faceR": false,
-    "anchor": {
-      "x": 32,
-      "y": 16
-    },
-    "w": 64,
-    "h": 64,
-    "b": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "g": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "z": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "bag": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        {
-          "id": "helmet_01",
-          "count": 1
-        },
-        "chest_01",
-        "gloves_01",
-        "boots_01",
-        "neck_01",
-        "ring_01",
-        "torch",
-        "iron",
-        "iron",
-        {
-          "id": "salt",
-          "count": 10
-        },
-        "bag",
-        "bag",
-        "raw_meat",
-        "raw_fish",
-        "bottle"
-      ]
-    },
-    "attrs": {
-      "attack": 5,
-      "defense": 0
-    },
-    "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
-    },
-    "schedule": {
-      "village_01": [
-        {
-          "type": "enter",
-          "t": "6:00-6:10",
-          "from": "門-1",
-          "to": "point-1"
-        },
-        {
-          "type": "stay",
-          "t": "6:10-17:00",
-          "pos": "point-1"
-        },
-        {
-          "type": "exit",
-          "t": "17:00-17:10",
-          "from": "point-1",
-          "to": "門-1"
-        }
-      ],
-      "house_01": [
-        {
-          "type": "stay",
-          "t": "0:00-5:50",
-          "pos": "point-1"
-        },
-        {
-          "type": "exit",
-          "t": "5:50-6:00",
-          "from": "point-1",
-          "to": "門"
-        },
-        {
-          "type": "enter",
-          "t": "17:10-17:20",
-          "from": "門",
-          "to": "point-1"
-        },
-        {
-          "type": "stay",
-          "t": "17:20-24:00",
-          "pos": "point-1"
-        }
-      ]
-    }
-  },
-  "orc": {
-    "icon": "portraits/35",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5
-    },
-    "sprite": "monsters/0",
-    "faceR": false,
-    "anchor": {
-      "x": 32,
-      "y": 16
-    },
-    "w": 64,
-    "h": 64,
-    "b": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "g": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "z": {
-      "l": 16,
-      "r": 16,
-      "t": 32,
-      "b": 0
-    },
-    "attrs": {
-      "attack": 5,
-      "defense": 0
-    },
-    "states": {
-      "life": {
-        "cur": 10,
-        "max": 10
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
-    }
-  },
-  "eldon": {
-    "icon": "portraits/4",
+  "musk": {
+    "icon": "icon_musk",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -297,19 +122,19 @@
         {
           "type": "enter",
           "t": "6:00-6:10",
-          "from": "smith-p0",
-          "to": "smith-p1"
+          "from": "musk-p0",
+          "to": "musk-p1"
         },
         {
           "type": "stay",
           "t": "6:10-17:00",
-          "pos": "smith-p1"
+          "pos": "musk-p1"
         },
         {
           "type": "exit",
           "t": "17:00-17:10",
-          "from": "smith-p1",
-          "to": "smith-p0"
+          "from": "musk-p1",
+          "to": "musk-p0"
         }
       ],
       "house_01": [
@@ -338,8 +163,8 @@
       ]
     }
   },
-  "hobart": {
-    "icon": "portraits/18",
+  "trump": {
+    "icon": "icon_trump",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -371,6 +196,43 @@
       "r": 16,
       "t": 32,
       "b": 0
+    },
+    "bag": {
+      "capacity": -1,
+      "items": [
+        "sword_01",
+        {
+          "id": "helmet_01",
+          "count": 1
+        }
+      ]
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 100,
+        "max": 100
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    },
+    "schedule": {
+      "trump_inn_f1": [
+        {
+          "type": "stay",
+          "t": "0:00-24:00",
+          "pos": "trump-p0"
+        }
+      ]
     }
   },
   "gilly": {
@@ -380,6 +242,7 @@
       "scale": 0.5
     },
     "job": "trader",
+    "gold": 200,
     "sprite": "rogues/37",
     "faceR": false,
     "anchor": {
@@ -405,16 +268,35 @@
       "r": 16,
       "t": 32,
       "b": 0
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 100,
+        "max": 100
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
     }
   },
-  "gorham": {
-    "icon": "portraits/21",
+  "xi": {
+    "icon": "icon_xi",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
     },
     "job": "butcher",
-    "sprite": "rogues/3",
+    "gold": 200,
+    "sprite": "rogues/36",
     "faceR": false,
     "anchor": {
       "x": 32,
@@ -439,15 +321,65 @@
       "r": 16,
       "t": 32,
       "b": 0
+    },
+    "bag": {
+      "capacity": -1,
+      "items": [
+        "sword_01",
+        {
+          "id": "helmet_01",
+          "count": 1
+        }
+      ]
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 100,
+        "max": 100
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    },
+    "schedule": {
+      "village_01": [
+        {
+          "type": "enter",
+          "t": "6:00-6:10",
+          "from": "xi-p0",
+          "to": "xi-p1"
+        },
+        {
+          "type": "stay",
+          "t": "6:10-17:00",
+          "pos": "xi-p1"
+        },
+        {
+          "type": "exit",
+          "t": "17:00-17:10",
+          "from": "xi-p1",
+          "to": "xi-p0"
+        }
+      ]
     }
   },
-  "mordo": {
-    "icon": "portraits/45",
+  "macron": {
+    "icon": "icon_macron",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
     },
     "job": "merchant",
+    "gold": 200,
     "sprite": "rogues/40",
     "faceR": false,
     "anchor": {
@@ -473,6 +405,106 @@
       "r": 16,
       "t": 32,
       "b": 0
+    },
+    "bag": {
+      "capacity": -1,
+      "items": [
+        "sword_01",
+        {
+          "id": "helmet_01",
+          "count": 1
+        }
+      ]
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 100,
+        "max": 100
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    },
+    "schedule": {
+      "village_01": [
+        {
+          "type": "enter",
+          "t": "6:00-6:10",
+          "from": "macron-p0",
+          "to": "macron-p1"
+        },
+        {
+          "type": "stay",
+          "t": "6:10-17:00",
+          "pos": "macron-p1"
+        },
+        {
+          "type": "exit",
+          "t": "17:00-17:10",
+          "from": "macron-p1",
+          "to": "macron-p0"
+        }
+      ]
+    }
+  },
+  "orc": {
+    "icon": "portraits/35",
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5
+    },
+    "sprite": "monsters/0",
+    "faceR": false,
+    "anchor": {
+      "x": 32,
+      "y": 16
+    },
+    "w": 64,
+    "h": 64,
+    "b": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 16,
+      "r": 16,
+      "t": 32,
+      "b": 0
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 10,
+        "max": 10
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
     }
   }
 }

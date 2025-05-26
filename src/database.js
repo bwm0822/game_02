@@ -357,5 +357,5 @@ export class CharacterDB
 
 export class Roles
 {
-    static list = ['eldon'];
+    static list = ['musk','xi','macron','trump'];
 }

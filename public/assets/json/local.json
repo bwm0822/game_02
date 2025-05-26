@@ -583,22 +583,22 @@
       "lab": "Scott"
     }
   },
-  "eldon": {
+  "musk": {
     "tw": {
-      "lab": "艾爾登",
+      "lab": "馬斯克",
       "des": "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席"
     },
     "us": {
-      "lab": "Eldon"
+      "lab": "Musk"
     }
   },
-  "hobart": {
+  "trump": {
     "tw": {
-      "lab": "霍巴特",
+      "lab": "川普",
       "des": "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。"
     },
     "us": {
-      "lab": "Hobart"
+      "lab": "Trump"
     }
   },
   "gilly": {
@@ -610,22 +610,22 @@
       "lab": "Gilly"
     }
   },
-  "gorham": {
+  "xi": {
     "tw": {
-      "lab": "戈勒姆",
+      "lab": "習近平",
       "des": "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……"
     },
     "us": {
-      "lab": "Gorham"
+      "lab": "Xi Jinping"
     }
   },
-  "mordo": {
+  "macron": {
     "tw": {
-      "lab": "莫爾多",
+      "lab": "馬克宏",
       "des": "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。"
     },
     "us": {
-      "lab": "Mordo"
+      "lab": "Macron"
     }
   },
   "ranger": {
