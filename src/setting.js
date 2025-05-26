@@ -77,6 +77,7 @@ export let GM =
     UI_LEFT :   0b00001,
     UI_LEFT_P : 0b00010,
     UI_RIGHT :  0b00100,
+    UI_CENTER : 0b00111,
     UI_BOTTOM : 0b01000,
     UI_MSG :    0b10000,
     UI_ALL :    0b11111,

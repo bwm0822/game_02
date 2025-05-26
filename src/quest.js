@@ -104,16 +104,15 @@ export default class QuestManager
 
     static close(id)
     {
-        // let i = QuestManager.opened.indexOf(id);
-        // if(i>-1)
-        // {
-        //     QuestManager.opened.splice(id,1);
-        //     QuestManager.closed.push(id)
-        // }
         let q = QuestManager.opened[id];
         let questD = DB.quest(id);
         Role.getPlayer().receive(questD.rewards);
         q.status='close';
+    }
+
+    static remove(id)
+    {
+        delete QuestManager.opened[id];
     }
 
     static save()

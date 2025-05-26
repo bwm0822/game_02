@@ -75,11 +75,12 @@ export default class TimeManager
         Record.data.time = this.time;
     }
 
-    static inRange(range)
+    static inRange(t)
     {
-        let t0 = this.str2Ticks(range[0]);
-        let t1 = this.str2Ticks(range[1]);
-        return this.ticks>=t0 && this.ticks<t1;
+        t = t.split('-');
+        let ts = this.str2Ticks(t[0]);
+        let te = this.str2Ticks(t[1]);
+        return this.ticks>=ts && this.ticks<te;
         
     }
 
@@ -112,7 +113,7 @@ export class Schedular
             let schedule = role.schedule?.[mapName];
             if(schedule)
             {
-                let found = schedule.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.range);});
+                let found = schedule.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.t);});
                 if(found)
                 {
                     let pt = this.scene.ports[found.pos]?.pt;
@@ -134,7 +135,7 @@ export class Schedular
     {
         //console.log('check',Schedular.schedules);
         this.schedules.forEach((sh)=>{
-            if(sh.cd==0 && TimeManager.inRange(sh.range))
+            if(sh.cd==0 && TimeManager.inRange(sh.t))
             {
                 sh.cd=60;
                 let pt = this.scene.ports[sh.from]?.pt;

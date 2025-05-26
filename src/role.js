@@ -850,17 +850,9 @@ export class Npc extends Role
     {
         if(this.schedule)
         {
-            let found = this.schedule.find((s)=>{return s.cd==0 && TimeManager.inRange(s.range);})
+            let found = this.schedule.find((s)=>{return s.cd==0 && TimeManager.inRange(s.t);})
             if(found)
             {
-                // let pt = this.scene.ports[found.to]?.pt;
-                // if(pt)
-                // {
-                //     let act = found.type == 'exit' ? 'exit' : null;
-                //     this.setDes(pt,null,act);
-                //     this.state = 'move';
-                // }
-
                 found.cd = 60;
 
                 let p0 = this.scene.ports[found.from];
@@ -869,8 +861,9 @@ export class Npc extends Role
                 let rst = this.scene.map.getPath(p0, p1);
                 console.log(found,rst);
 
-                let t0 = TimeManager.str2Ticks(found.range[0])
-                let t1 = TimeManager.str2Ticks(found.range[1])
+                let t = found.t.split('-');
+                let t0 = TimeManager.str2Ticks(t[0])
+                let t1 = TimeManager.str2Ticks(t[1])
                 let tc = TimeManager.ticks;
                 let ratio = (tc-t0) / (t1-t0);
                 let i = Math.floor(rst.path.length*ratio);

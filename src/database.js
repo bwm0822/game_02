@@ -357,5 +357,5 @@ export class CharacterDB
 
 export class Roles
 {
-    static list = ['smith'];
+    static list = ['eldon'];
 }

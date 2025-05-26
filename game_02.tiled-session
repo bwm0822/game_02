@@ -5,11 +5,11 @@
     },
     "activeFile": "public/assets/maps/village_01.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
-        "public/assets/maps",
         "public/assets",
+        ".",
+        "public/assets/maps",
         "public",
-        "."
+        "public/assets/tiles"
     ],
     "fileStates": {
         "": {
@@ -218,7 +218,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 348.3333333333333,
-                "y": 319.66666666666663
+                "y": 79.33333333333334
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -278,10 +278,10 @@
                 3
             ],
             "scale": 1,
-            "selectedLayer": 3,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 571,
-                "y": 818
+                "x": 399.5,
+                "y": 856
             }
         },
         "public/assets/maps/village_01.json#group": {

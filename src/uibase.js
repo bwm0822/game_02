@@ -8,6 +8,11 @@ export function rect(scene, config={})
     return scene.rexUI.add.roundRectangle(config);
 }
 
+export function divider(scene)
+{
+    return rect(scene,{width:200,height:1,color:GM.COLOR_WHITE})
+}
+
 export function bar(scene, config={})
 {
     config.height = config.height ?? 20;
@@ -58,26 +63,6 @@ export function text(scene, config={})
     t.key = config?.key;
     return t;
 }
-
-// export function bbcText(scene, config={})    
-// {
-//     // fixedWidth:fixedWidth,
-//     let style = {};
-//     style.fontSize = config.fontSize ?? GM.FONT_SIZE;
-//     style.fontFamily = config.fontFamily ?? GM.FONT;
-//     style.strokeThickness = config.strokeThickness ?? 1;
-//     config.images && (style.images = config.images);
-//     config.color && (style.color = config.color);
-//     config.stroke && (style.stroke = config.stroke);
-//     config.strokeThickness && (style.strokeThickness = config.strokeThickness);
-//     config.wrapWidth && (style.wrap = {mode:'char',width:config.wrapWidth}); 
-//     //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
-//     config.backgroundColor && (style.backgroundColor = config.backgroundColor);
-
-//     let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, style);
-//     return t;
-// }
-
 
 export function bbcText(scene, config={})    
 {
@@ -206,13 +191,14 @@ export function dropdown(scene, {width, space, options=[{text:'中文',value:'tw
         })
 }
 
-export class Pic extends OverlapSizer
+export class Pic extends Sizer
 {
-    constructor(scene, w, h, {x=0, y=0, icon, color=GM.COLOR_SLOT, radius=0, alpha=0, space=0}={})
+    constructor(scene, w, h, {x, y, icon, color=GM.COLOR_SLOT, radius=0, alpha=0, space=2, strokeColor=GM.COLOR_GRAY, strokeWidth=2}={})
     {
         super(scene, x, y, w, h,{space:space});
-        this.addBackground(rect(scene,{color:color,radius:radius, alpha:alpha}),'background')
-            .add(sprite(this.scene,{icon:icon}),{aspectRatio:true, key:'sprite'})        
+        this.addBackground(rect(scene,{color:color,radius:radius, alpha:alpha, strokeColor:strokeColor, strokeWidth:strokeWidth}),'background')
+            .add(sprite(this.scene,{icon:icon}),{aspectRatio:true, key:'sprite',padding:0})    
+            // .add(text(this.scene,{text:'123'}))        
             .layout()//.drawBounds(scene.add.graphics(), 0xff0000);   
 
         scene.add.existing(this);

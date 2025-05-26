@@ -473,8 +473,6 @@ export class Case extends Entity
     save() { this.saveData(this._storage); }
 
     open() { this.send('storage', this); }
-
-   
 }
 
 

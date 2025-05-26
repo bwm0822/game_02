@@ -18,10 +18,8 @@ def df_to_json(df):
                 continue
             elif key == "id":
                 id = val
-            # elif isinstance(val, str) and val.upper() == "FALSE":
-            #     obj[key] = False
-            # elif isinstance(val, str) and val.upper() == "TRUE":
-            #     obj[key] = True
+            elif key == 'icon':
+                obj[key] = val
             elif key == "shape" or key == 'others':
                 fixed = "{" + val + "}"
                 obj.update(json.loads(fixed))
@@ -52,7 +50,7 @@ def unit_test():
     output_json_path = "./public/assets/json/role.json"     # 輸出的 JSON 檔案名稱
 
     excel_to_json(input_excel_path, output_json_path)
-
+    print("轉換完成！🥰")
 
 
 if __name__ == "__main__":
