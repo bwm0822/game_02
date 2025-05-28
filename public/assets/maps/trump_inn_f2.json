@@ -18,7 +18,7 @@
         }, 
         {
          "compression":"",
-         "data":"rQAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlgAAAJYAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArgAAAJYAAAAAAAAAAAAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACZAAAA",
+         "data":"rQAAAJYAAACWAAAAlgAAAJYAAACXAAAAlgAAAJYAAACWAAAAlgAAAJcAAACWAAAAlgAAAJYAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAlgAAAJYAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAACsAAAAAAAAAAAAAAAAAAAAAAAAAKwAAAAAAAAAAAAAAAAAAACsAAAArQAAAJYAAAAAAAAAAAAAAJYAAACWAAAAlgAAAAAAAAAAAAAAlgAAAJkAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsAAAArgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACWAAAAlgAAAJYAAACZAAAA",
          "encoding":"base64",
          "height":15,
          "id":3,
@@ -48,15 +48,15 @@
                  "y":496
                 }, 
                 {
-                 "gid":2147484057,
+                 "gid":408,
                  "height":64,
-                 "id":11,
-                 "name":"stair_up",
+                 "id":54,
+                 "name":"stair_dn",
                  "properties":[
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"trump_inn_f2"
+                         "value":"trump_inn_f1"
                         }, 
                         {
                          "name":"offsetX",
@@ -66,7 +66,7 @@
                         {
                          "name":"port",
                          "type":"string",
-                         "value":"stair_dn"
+                         "value":"stair_up"
                         }, 
                         {
                          "name":"weight",
@@ -81,100 +81,28 @@
                  "y":96
                 }, 
                 {
-                 "id":48,
-                 "name":"door",
-                 "properties":[
-                        {
-                         "name":"map",
-                         "type":"string",
-                         "value":"village_01"
-                        }, 
-                        {
-                         "name":"port",
-                         "type":"string",
-                         "value":"trump-inn-p0"
-                        }],
-                 "template":"..\/templates\/exit_door.tj",
+                 "gid":1111,
+                 "height":96,
+                 "id":166,
+                 "name":"",
+                 "rotation":0,
+                 "type":"entity",
+                 "visible":true,
+                 "width":96,
                  "x":64,
-                 "y":480
-                }, 
-                {
-                 "height":32,
-                 "id":49,
-                 "name":"trump-p0",
-                 "rotation":0,
-                 "type":"point",
-                 "visible":true,
-                 "width":32,
-                 "x":96,
-                 "y":64
-                }, 
-                {
-                 "id":54,
-                 "template":"..\/templates\/table.tj",
-                 "x":256,
-                 "y":448
-                }, 
-                {
-                 "id":55,
-                 "template":"..\/templates\/cabinet.tj",
-                 "type":"entity",
-                 "x":32,
-                 "y":64
-                }, 
-                {
-                 "id":56,
-                 "template":"..\/templates\/cabinet.tj",
-                 "x":96,
-                 "y":64
-                }, 
-                {
-                 "id":57,
-                 "template":"..\/templates\/table.tj",
-                 "x":32,
                  "y":128
                 }, 
                 {
-                 "id":58,
-                 "template":"..\/templates\/table.tj",
-                 "x":96,
-                 "y":128
-                }, 
-                {
-                 "id":59,
-                 "template":"..\/templates\/chair.tj",
-                 "x":272,
-                 "y":400
-                }, 
-                {
-                 "gid":577,
-                 "height":48,
-                 "id":67,
+                 "gid":1111,
+                 "height":96,
+                 "id":167,
                  "name":"",
-                 "properties":[
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":-1
-                        }],
                  "rotation":0,
                  "type":"entity",
                  "visible":true,
-                 "width":64,
-                 "x":384,
-                 "y":448
-                }, 
-                {
-                 "gid":1069,
-                 "height":64,
-                 "id":69,
-                 "name":"",
-                 "rotation":0,
-                 "type":"stove",
-                 "visible":true,
-                 "width":64,
-                 "x":256,
-                 "y":64
+                 "width":96,
+                 "x":224,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -183,7 +111,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":71,
+ "nextobjectid":189,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -207,6 +135,14 @@
         }, 
         {
          "firstgid":1010,
+         "source":"..\/FreePixel.tsj"
+        }, 
+        {
+         "firstgid":1042,
+         "source":"..\/Full_1.tsj"
+        }, 
+        {
+         "firstgid":1098,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

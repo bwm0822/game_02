@@ -5,13 +5,13 @@
     },
     "activeFile": "public/assets/maps/trump_inn_f1.json",
     "expandedProjectPaths": [
-        ".",
-        "public/assets/maps",
-        "public/assets/templates",
-        "public",
         "public/assets",
+        "public/assets/maps",
+        "public",
+        ".",
         "public/assets/tiles"
     ],
+    "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
         "": {
             "scaleInDock": 1,
@@ -23,6 +23,10 @@
         "public/assets/0_Ground_LowSat.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/32x32GridItemsAll.tsj": {
+            "scaleInDock": 2,
             "scaleInEditor": 1
         },
         "public/assets/3_Road.tsj": {
@@ -41,6 +45,16 @@
             "scaleInEditor": 1
         },
         "public/assets/Color A Spitesheet.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/FreePixel.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/Full_1.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
@@ -125,7 +139,7 @@
         },
         "public/assets/houe_1.tsj": {
             "dynamicWrapping": false,
-            "scaleInDock": 1.5,
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "public/assets/house_01.json": {
@@ -218,8 +232,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 335,
-                "y": 239.33333333333334
+                "x": 348.3333333333333,
+                "y": 319.66666666666663
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -251,6 +265,14 @@
             "dynamicWrapping": false,
             "scaleInDock": 1
         },
+        "public/assets/maps/spr_tileset_sunnysideworld.json": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/maps/spr_tileset_sunnysideworld.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/maps/terrain_tiles_v2.tsj": {
             "dynamicWrapping": true,
             "scaleInDock": 1
@@ -279,10 +301,21 @@
                 2
             ],
             "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 223.99999999999997,
+                "y": 89.33333333333334
+            }
+        },
+        "public/assets/maps/trump_inn_f2.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 297,
-                "y": 166.66666666666669
+                "x": 43.333333333333314,
+                "y": 210
             }
         },
         "public/assets/maps/village_01.json": {
@@ -292,8 +325,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 704.5,
-                "y": 774
+                "x": 582,
+                "y": 1014
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -338,7 +371,8 @@
             "scaleInEditor": 1
         },
         "public/assets/spr_tileset_sunnysideworld.tsj": {
-            "scaleInDock": 1,
+            "dynamicWrapping": false,
+            "scaleInDock": 2,
             "scaleInEditor": 1
         },
         "public/assets/spritesheet_default.tsj": {
@@ -353,7 +387,7 @@
         },
         "public/assets/tiles.tsj": {
             "dynamicWrapping": false,
-            "scaleInDock": 1,
+            "scaleInDock": 2,
             "scaleInEditor": 1
         },
         "public/assets/tiles/RPG Nature Tileset.tsx": {
@@ -372,6 +406,16 @@
                 "x": 480.59794456555596,
                 "y": 320.64777327935224
             }
+        },
+        "public/assets/tiles_1.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/top.tsj": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "public/assets/town_00.json": {
             "expandedObjectLayers": [
@@ -431,7 +475,7 @@
         }
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
-    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/32rogues",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/tiles",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
@@ -445,25 +489,25 @@
     "map.tileWidth": 32,
     "map.width": 15,
     "openFiles": [
-        "public/assets/maps/house_01.json",
-        "public/assets/maps/village_01.json",
-        "public/assets/maps/trump_inn_f1.json"
+        "public/assets/maps/trump_inn_f2.json",
+        "public/assets/maps/trump_inn_f1.json",
+        "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
-        "public/assets/maps/house_01.json",
+        "public/assets/maps/trump_inn_f2.json",
         "public/assets/maps/village_01.json",
         "public/assets/maps/trump_inn_f1.json",
         "public/assets/tiles.tsj",
-        "public/assets/monsters.tsj",
-        "public/assets/weapons.tsj",
-        "public/assets/icons.tsj",
-        "public/assets/houe_1.tsj",
-        "public/assets/maps/weapons.tsj",
-        "public/assets/props.tsj",
-        "public/assets/spr_fencePost.tsj",
-        "public/assets/4_Smallplaces.tsj"
+        "public/assets/top.tsj",
+        "public/assets/tiles_1.tsj",
+        "public/assets/32x32GridItemsAll.tsj",
+        "public/assets/Full_1.tsj",
+        "public/assets/FreePixel.tsj",
+        "public/assets/spr_tileset_sunnysideworld.tsj",
+        "public/assets/maps/spr_tileset_sunnysideworld.tsj",
+        "public/assets/maps/house_01.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
@@ -473,5 +517,7 @@
         "height": 32,
         "width": 32
     },
-    "tileset.type": 0
+    "tileset.transparentColor": "#0c1317",
+    "tileset.type": 0,
+    "tileset.useTransparentColor": true
 }

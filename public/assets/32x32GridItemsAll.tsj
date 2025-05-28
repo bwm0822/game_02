@@ -1,0 +1,14 @@
+{ "columns":18,
+ "image":"tiles\/32x32GridItemsAll.png",
+ "imageheight":600,
+ "imagewidth":576,
+ "margin":0,
+ "name":"32x32GridItemsAll",
+ "spacing":0,
+ "tilecount":324,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "type":"tileset",
+ "version":"1.10"
+}

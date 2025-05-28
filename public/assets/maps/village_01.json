@@ -361,30 +361,6 @@
                  "y":960
                 }, 
                 {
-                 "gid":849,
-                 "height":32,
-                 "id":102,
-                 "name":"",
-                 "rotation":0,
-                 "type":"stove",
-                 "visible":true,
-                 "width":32,
-                 "x":736,
-                 "y":1056
-                }, 
-                {
-                 "gid":856,
-                 "height":32,
-                 "id":106,
-                 "name":"",
-                 "rotation":0,
-                 "type":"well",
-                 "visible":true,
-                 "width":32,
-                 "x":608,
-                 "y":1152
-                }, 
-                {
                  "id":109,
                  "name":"gilly-house",
                  "template":"..\/templates\/house.tj",
@@ -536,6 +512,18 @@
                  "width":32,
                  "x":320,
                  "y":704
+                }, 
+                {
+                 "gid":1184,
+                 "height":64,
+                 "id":122,
+                 "name":"",
+                 "rotation":0,
+                 "type":"well",
+                 "visible":true,
+                 "width":64,
+                 "x":480,
+                 "y":1056
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -578,7 +566,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":122,
+ "nextobjectid":123,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -611,6 +599,10 @@
         {
          "firstgid":968,
          "source":"..\/monsters.tsj"
+        }, 
+        {
+         "firstgid":1124,
+         "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,
  "type":"map",

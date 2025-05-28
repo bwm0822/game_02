@@ -189,14 +189,10 @@ class Map
                     json.tiles.forEach((tile) => {
                         if(tile.image)
                         {
-                            // let name = source+'_'+Utility.extractFileName(tile.image);
-                            // scene.load.image(name,tile.image);
-                            // tile.image = name;
-                            // map.lut[name]={w:tile.imagewidth,h:tile.imageheight};
+                            map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
                             if(this.isLoaded(tile.image)) {return;}
                             debug(`load[${tile.image}]`);
                             scene.load.image(tile.image,tile.image);
-                            map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
                         }
                     });
                 }

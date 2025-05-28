@@ -1,0 +1,24 @@
+{ "object":
+    {
+     "gid":2,
+     "height":64,
+     "id":55,
+     "name":"",
+     "properties":[
+            {
+             "name":"weight",
+             "type":"int",
+             "value":-1
+            }],
+     "rotation":0,
+     "type":"entity",
+     "visible":true,
+     "width":64
+    },
+ "tileset":
+    {
+     "firstgid":1,
+     "source":"..\/props.tsj"
+    },
+ "type":"template"
+}
