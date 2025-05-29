@@ -78,7 +78,7 @@ export class Role extends Entity
         this._faceR = true;
         //
         this._path = [];
-        this._des = null;
+        this._moving = false;
         this._act = '';
         this._resolve;
         //
@@ -93,7 +93,7 @@ export class Role extends Entity
     get pos()       {return super.pos;}
     set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value); }
 
-    get moving()    {return this._des!=null;}
+    get moving()    {return this._moving;}
     get storage()   {return this.status.bag;}
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
@@ -109,7 +109,7 @@ export class Role extends Entity
     {
         // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
-        console.log('initData',roleD);
+        // console.log('initData',roleD);
 
         this._faceR = roleD.faceR;
 
@@ -186,30 +186,31 @@ export class Role extends Entity
         if(rst.state>0)
         {
             this._path = rst.path;
-            this._des = rst.pt; 
+            this._moving = true; 
             this._ent = null;
             this._act = '';
             this.resume();
         }
     }
 
-    setDes(des, ent, act)
+    setDes(pt, ent, act)
     {
+        let pts = ent?.pts ?? [pt];
         if(this.isTouch(ent))
         {
-            this._des = null; 
+            this._moving = false; 
             this._ent = ent;
             this._act = act ?? ent?.act ?? '';
             this.resume();
         }
         else
         {
-            let rst = this.scene.map.getPath(this.pos, des);
+            let rst = this.scene.map.getPath(this.pos, pts);
             if(rst?.state>=0)
             {
                 if(this.isPlayer) {this.send('clearpath');}
                 this._path = rst.path;
-                this._des = des; 
+                this._moving = true; 
                 this._ent = ent;
                 this._act = act ?? ent?.act ?? '';
                 this.resume();
@@ -285,7 +286,7 @@ export class Role extends Entity
     stop()
     {
         this._path = [];
-        this._des = null;
+        this._moving = false;
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
@@ -327,7 +328,7 @@ export class Role extends Entity
         }
         else
         {
-            this.setDes(this._ent.pos,this._ent,this._act);
+            this.setDes(null,this._ent,this._act);
             await this.moveTo({draw:false});
         }
     }

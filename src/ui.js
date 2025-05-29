@@ -1355,7 +1355,7 @@ class UiBase extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(text(this.scene,{text:id,color:'#777777'}),{key:'label'})
+            .add(text(this.scene,{text:id.lab(),color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
         let lb = sizer.getElement('label');
         sizer.unsel = ()=>{lb.setColor('#777777');}
@@ -3149,7 +3149,7 @@ export class UiManufacture extends UiBase
                 .addSpace()
                 .add(new OutputSlot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,this.getOwner),{key:'output'})
                 .addSpace()
-                .add(new UiButton(scene,{text:'製作',onclick:this.make}),{key:'button'})
+                .add(new UiButton(scene,{text:'make'.lab(),onclick:this.make}),{key:'button'})
                 .addSpace()
         this.add( produce, {expand:true, key:'produce'} );
         return this;
@@ -3328,22 +3328,35 @@ export class Settings extends UiBase
             x : GM.w/2,
             y : GM.h/2,
             width: 500,
-            height : 300,
             orientation : 'y',
-            space : 0,
+            space : {left:10,right:10,bottom:10},
         }
 
         super(scene,config)
         this.scene=scene;
         this.addBg(scene)
-            .addTop(scene,{text:'setting'.lab()})
-            .addLang(scene, 200)
-            .addSfxVolume(scene, 200)
+            .addTop(scene)
+            .addMain(scene)
             .layout()
             //.drawBounds(this.scene.add.graphics(), 0xff0000)
             .hide()
 
         // this.getElement('dropdown',true).setValue('tw')   
+    }
+
+    addMain(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'y',space:{top:50,bottom:50,item:50}})
+        sizer.addLang = this.addLang;
+        sizer.addSfxVolume = this.addSfxVolume;
+        sizer.addBgmVolume = this.addBgmVolume;
+
+        sizer.addBackground(rect(scene,{strokeColor:GM.COLOR_GRAY, strokeWidth:2}))
+        sizer.addLang(scene,200)
+            .addSfxVolume(scene,200)
+            .addBgmVolume(scene,200)
+        this.add(sizer, {key:'main', expand:true});
+        return this;
     }
 
     addLang(scene, width)
@@ -3358,7 +3371,7 @@ export class Settings extends UiBase
             Record.save();
         }
 
-        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
+        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{item:10}});
         sizer.add(text(scene,{text:'🌐', fontSize:40}))
             .add(dropdown(scene,{width:width, options:options, space:{top:5,bottom:5},onchange:onchange}),{key:'dropdown'});
         this.add(sizer,{key:'lang'});
@@ -3378,12 +3391,30 @@ export class Settings extends UiBase
             Record.save();
         }
 
-        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
+        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{item:10}});
         sizer.add(text(scene,{text:'🔈', fontSize:40}),{key:'icon'})
             .add(slider(scene,{width:width, gap:0.2}),{key:'sfx_volume'});
         this.add(sizer,{key:'sfx'});
 
         this.getElement('sfx_volume',true).off('valuechange').on('valuechange',onchange); 
+        return this
+    }
+
+    addBgmVolume(scene, width)
+    {
+        let onchange = function(value)
+        {
+            value = Math.round(value * 10) / 10;
+            Record.data.bgmVolume = value;
+            Record.save();
+        }
+
+        let sizer = scene.rexUI.add.sizer({orientation:'x', space:{item:10}});
+        sizer.add(text(scene,{text:'🎵', fontSize:40}),{key:'icon'})
+            .add(slider(scene,{width:width, gap:0.2}),{key:'bgm_volume'});
+        this.add(sizer,{key:'bgm'});
+
+        this.getElement('bgm_volume',true).off('valuechange').on('valuechange',onchange); 
         return this
     }
 
@@ -3398,6 +3429,7 @@ export class Settings extends UiBase
         super.show();
         this.getElement('dropdown',true).setValue(Record.data.lang); 
         this.getElement('sfx_volume',true).setValue(Record.data.sfxVolume); 
+        this.getElement('bgm_volume',true).setValue(Record.data.bgmVolume); 
     }
 
 }

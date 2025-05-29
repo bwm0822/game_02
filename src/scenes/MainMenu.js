@@ -20,15 +20,14 @@ export class MainMenu extends Scene
 
     create ()
     {
-       
-        this.initUI()
-
         // this.cameras.main.setBackgroundColor(0x555555);
         if(!this._done)
         {
             this._done = true;
             this.loadData();
         }
+
+        this.initUI()
 
     }
 

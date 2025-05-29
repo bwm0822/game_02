@@ -21,6 +21,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.weight = 0;
         this.static = true; // true: static body, false: dynamic body
         this.uid = -1;   // map.createMap() 會自動設定 uid
+        this._pts=[];
     }
 
     get pos()   {return {x:this.x,y:this.y}}
@@ -28,6 +29,8 @@ export class Entity extends Phaser.GameObjects.Container
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
     get act()   {return this.acts.length > 0 ? this.acts[0] : '';}
     get acts()  {return [];}
+    get pts() {return this._pts;}
+    set pts(value) {this._pts=value;}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
@@ -60,7 +63,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone
-            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw('zone');console.log(this.y)})
+            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw('grid');console.log(this.y)})
             .on('pointerout',()=>{this.outline(false);this.send('out');this.debugDraw('none');})
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) {this.rightButtonDown();}
@@ -157,7 +160,10 @@ export class Entity extends Phaser.GameObjects.Container
     addWeight(pt,weight)
     {
         let wei = weight ?? this.weight;
-        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        // wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        this.pts=this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+
+        // this.pts = this.scene.map.getPts(pt??this.posG,this.grid.w,this.grid.h);
     }
 
 
@@ -417,6 +423,16 @@ export class Entity extends Phaser.GameObjects.Container
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
         if(rect) {this._dbgGraphics.strokeRectShape(rect);}
         if(circle) {this._dbgGraphics.strokeCircleShape(circle);}
+        if(type != 'none')
+        {
+            for(let p of this.pts)
+            {
+                this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+                circle = new Phaser.Geom.Circle(p.x,p.y,5);
+                this._dbgGraphics.strokeCircleShape(circle);
+            }
+        }
+
         
     }
 
@@ -433,6 +449,13 @@ export class Entity extends Phaser.GameObjects.Container
         if(this.uid!=-1) {this.saveData({removed:true})}
         this.removeFromObjects();
         this.destroy();
+    }
+    
+    destroy()
+    {
+        if(this._dbgGraphics){this._dbgGraphics.clear();}
+        super.destroy();
+
     }
 
     // destroy()
@@ -736,6 +759,30 @@ export class Door extends Entity
         AudioManager.doorClose();
         // this.debugDraw('zone');
     }
+}
+
+export class Bed extends Entity
+{
+    constructor(scene, x, y)
+    {
+        super(scene,x,y);  
+        this.weight = 1000;
+        this.interactive = true;  
+    }   
+
+    get acts()  {return [GM.USE];}
+
+    addListener()
+    {
+        super.addListener();
+        this.on(GM.USE,()=>{this.use();})
+    }
+
+    use()
+    {
+        console.log('use')
+    }
+    
 }
 
 

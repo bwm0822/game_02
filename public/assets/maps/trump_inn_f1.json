@@ -181,6 +181,30 @@
                  "template":"..\/templates\/chair.tj",
                  "x":416,
                  "y":400
+                },
+            
+                {
+                 "gid":1023,
+                 "height":96,
+                 "id":78,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"gl",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"gr",
+                         "type":"int",
+                         "value":16
+                        }],
+                 "rotation":0,
+                 "type":"bed",
+                 "visible":true,
+                 "width":96,
+                 "x":128,
+                 "y":320
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -189,7 +213,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":78,
+ "nextobjectid":79,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

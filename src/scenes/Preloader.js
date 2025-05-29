@@ -84,6 +84,7 @@ export class Preloader extends Scene
         this.load.audio('doorClose', 'audios/scene/doorClose_1.ogg');
         this.load.audio('doorOpen', 'audios/scene/doorOpen_1.ogg');
         this.load.audio('drop', 'audios/scene/dropLeather.ogg');
+        this.load.audio('bgm', 'audios/music/今夜妳會不會來.mp3');
 
     }
 

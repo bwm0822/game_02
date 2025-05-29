@@ -350,6 +350,22 @@
       "lab": "Close"
     }
   },
+  "make": {
+    "tw": {
+      "lab": "製作"
+    },
+    "us": {
+      "lab": "Make"
+    }
+  },
+  "setting": {
+    "tw": {
+      "lab": "設定"
+    },
+    "us": {
+      "lab": "Setting"
+    }
+  },
   "_pickup": {
     "tw": {
       "lab": "拾取"

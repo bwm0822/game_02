@@ -52,6 +52,7 @@ export class GameScene extends Scene
         TimeManager.start();
         UiMessage.clean();
         UiChangeScene.done();
+        AudioManager.bgmStart();
     }
 
     initAmbient()
@@ -165,17 +166,17 @@ export class GameScene extends Scene
             }
             else
             {
+                let pt = {x:pointer.worldX, y:pointer.worldY};
                 if(this._avatar.moving)
                 {
                     this._avatar.stop();
-                    this.findPath({x:pointer.worldX,y:pointer.worldY});
+                    this.findPath(pt);
                 }
                 else if(this._rst?.state>=0)
                 {
                     if(this._rst.state==1 || this._ent)
                     {
-                        let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
-                        this._avatar.setDes(pos,this._ent);
+                        this._avatar.setDes(pt,this._ent);
                     }
                 }
             }
@@ -186,8 +187,8 @@ export class GameScene extends Scene
             this.showMousePos();
             if(!this._avatar.moving)
             {
-                let pos = this._ent?.pos ?? {x:pointer.worldX,y:pointer.worldY};
-                this.findPath(pos);
+                let pt = {x:pointer.worldX,y:pointer.worldY};
+                this.findPath(pt, this._ent);
             }
         })
 
@@ -210,9 +211,13 @@ export class GameScene extends Scene
         }
     }
 
-    findPath(pt)
+
+    findPath(pt, ent)
     {
-        let rst = this.map.getPath(this._avatar.pos,pt)
+        let pts = ent?.pts ?? [pt];
+
+        let rst = this.map.getPath(this._avatar.pos,pts)
+
         this._rst = rst;
         
         if(rst)
@@ -226,7 +231,11 @@ export class GameScene extends Scene
             else
             {
                 this.clearPath();
-                if(rst.state==-1) {Mark.show(rst.pt,GM.COLOR_RED);}
+                if(rst.state==-1) 
+                {
+                    // Mark.show(rst.pt,GM.COLOR_RED);
+                    Mark.show(this.map.getPt(pt),GM.COLOR_RED);
+                }
                 else {Mark.close();}
             }
         }
@@ -272,6 +281,7 @@ export class GameScene extends Scene
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
+        AudioManager.bgmPause();
 
     }
 

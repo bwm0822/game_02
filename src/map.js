@@ -1,5 +1,5 @@
 import {Store} from './store.js';
-import {Entity,Port,Pickup,Case,Node,Point,Stove,Well,Door} from './entity.js';
+import {Entity,Port,Pickup,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
 import QuestManager from './quest.js';
@@ -284,7 +284,6 @@ class Map
                     {type:'node',classType:Node},
                     {type:'port',classType:Port},
                     {type:'store',classType:Store},
-                    //{type:'character',classType:Character},
                     {type:'entity',classType:Entity},
                     {type:'pickup',classType:Pickup},
                     {type:'npc',classType:Npc},
@@ -293,12 +292,9 @@ class Map
                     {type:'stove',classType:Stove},
                     {type:'well',classType:Well},
                     {type:'door',classType:Door},
+                    {type:'bed',classType:Bed},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
-                // let rmList=[];
-                // objs.forEach((obj) => { if(obj.init?.()){rmList.push(obj)}; });
-                // rmList.forEach((obj)=>{ let i=objs.indexOf(obj); objs.splice(i,1); });
-                // scene.objects.push(...objs);
             });
 
             resolve();
@@ -332,10 +328,23 @@ class Map
         });
 
         this.graph = new Graph(grid,{diagonal:diagonal});
-        
     }
 
-    getPath(sp,ep)
+    getPath(sp, eps)
+    {
+        let rst;
+        eps.forEach((ep)=>{
+            let path = this.calcPath(sp,ep)
+            if(path)
+            {
+                if(!rst) {rst=path;}
+                else if(path.state>0 && path.cost<rst.cost){rst=path}
+            }
+        })
+        return rst;
+    }
+
+    calcPath(sp,ep)
     {
         let map = this.map;
 
@@ -351,11 +360,11 @@ class Map
 
         if(end.weight==0)
         {
-            return {state:-1,pt:pt}
+            return {state:-1,pt:pt,cost:Infinity}
         }
         else if(start==end)
         {
-            return {state:0,pt:pt}
+            return {state:0,pt:pt,cost:Infinity}
         }
         else
         {
@@ -363,12 +372,12 @@ class Map
             let len = result.length;
             if(len==0 || (len>=2 && result[len-2].g>=1000))
             {
-                return {state:-1,pt:pt}
+                return {state:-1,pt:pt,cost:Infinity}
             }
             else
             {
                 let path = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
-                return {state:1,pt:pt,path:path}
+                return {state:1,pt:pt,path:path,cost:result.at(-1).g}
             }
         }
     }
@@ -420,8 +429,45 @@ class Map
         return [this.map.worldToTileX(x), this.map.worldToTileY(y)];
     }
 
+    // getPts(p,w,h)
+    // {
+    //     let pts=[]
+    //     if(w>this.map.tileWidth || h>this.map.tileHeight)
+    //     {
+    //         let w_2 = w/2;
+    //         let h_2 = h/2;
+    //         let tw_2 = this.map.tileWidth/2;
+    //         let th_2 = this.map.tileHeight/2
+
+    //         let min = {x:p.x-w_2+tw_2,y:p.y-h_2+th_2}
+    //         let max = {x:p.x+w_2-tw_2,y:p.y+h_2-th_2}
+
+
+    //         for(let x=min.x;x<=max.x;x+=this.map.tileWidth)
+    //         {
+    //             for(let y=min.y;y<=max.y;y+=this.map.tileHeight)
+    //             {
+    //                 pts.push({x:x,y:y})
+    //             }
+    //         }
+    //     }
+    //     else
+    //     {
+    //         pts.push(p)
+    //     }   
+
+    //     return pts;
+    // }
+
+    getPt(p)
+    {
+        let [tx,ty]=this.worldToTile(p.x,p.y);
+        return this.tileToWorld(tx,ty);
+    }
+
     updateGrid(p,weight,w,h)
     {
+        let pts=[];
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
             let w_2 = Math.floor(w/2)-1;
@@ -435,6 +481,7 @@ class Map
                 for(let ty=ty0;ty<=ty1;ty++)
                 {
                     this.graph.grid[ty][tx].weight += weight;
+                    pts.push(this.tileToWorld(tx,ty))
                 }
             }
         }
@@ -442,7 +489,9 @@ class Map
         {
             let [tx,ty] = this.worldToTile(p.x, p.y);
             this.graph.grid[ty][tx].weight += weight;
+            pts.push(p)
         }
+        return pts;
     }
 
     isWalkable(p,w=1000)
