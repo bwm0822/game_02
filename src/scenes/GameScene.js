@@ -9,6 +9,7 @@ import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage, 
         UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import TimeManager from '../time.js';
+import AudioManager from '../audio.js';
 
 
 export class GameScene extends Scene
@@ -47,6 +48,7 @@ export class GameScene extends Scene
         this.setPosition(classType);
         this.processInput();
 
+        AudioManager.init(this);
         TimeManager.start();
         UiMessage.clean();
         UiChangeScene.done();

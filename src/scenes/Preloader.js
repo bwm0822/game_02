@@ -38,10 +38,11 @@ export class Preloader extends Scene
         this.load.image('logo', 'logo.png');
         this.load.image('rip', 'rip.png');
 
-        this.load.image('icon_musk', 'portraits/icon_musk.png');
-        this.load.image('icon_trump', 'portraits/icon_trump.png');
-        this.load.image('icon_xi', 'portraits/icon_xi.png');
-        this.load.image('icon_macron', 'portraits/icon_macron.png');
+        this.load.image('icon_musk', 'portraits/icon_musk_m.png');
+        this.load.image('icon_trump', 'portraits/icon_trump_m.png');
+        this.load.image('icon_xi', 'portraits/icon_xi_m.png');
+        this.load.image('icon_macron', 'portraits/icon_macron_m.png');
+        this.load.image('icon_karen', 'portraits/icon_karen_m.png');
 
         this.load.image('trump', 'roles_64x64/trump_body.png');
 
@@ -56,6 +57,8 @@ export class Preloader extends Scene
         this.load.spritesheet('animals', '32rogues/animals.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('rogues', '32rogues/rogues.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('Warrior_Red', 'tiny/Warrior_Red.png', { frameWidth: 192, frameHeight: 192 });
+
+        this.load.spritesheet('doors', 'props/doors.png', { frameWidth: 32, frameHeight: 32 });
         
         //this.load.spritesheet('knight', 'Knight/Idle.png', { frameWidth: 128, frameHeight: 128 });
         // this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');
@@ -76,6 +79,11 @@ export class Preloader extends Scene
         this.load.json('role', 'json/role.json');
         this.load.json('dialog', 'json/dialog.json');
         this.load.json('quest', 'json/quest.json');
+
+        // audios
+        this.load.audio('doorClose', 'audios/scene/doorClose_1.ogg');
+        this.load.audio('doorOpen', 'audios/scene/doorOpen_1.ogg');
+        this.load.audio('drop', 'audios/scene/dropLeather.ogg');
 
     }
 

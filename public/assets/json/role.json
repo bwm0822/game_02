@@ -235,8 +235,8 @@
       ]
     }
   },
-  "gilly": {
-    "icon": "portraits/1",
+  "karen": {
+    "icon": "icon_karen",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -286,6 +286,27 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "schedule": {
+      "village_01": [
+        {
+          "type": "enter",
+          "t": "6:00-6:10",
+          "from": "karen-p0",
+          "to": "karen-p1"
+        },
+        {
+          "type": "stay",
+          "t": "6:10-17:00",
+          "pos": "karen-p1"
+        },
+        {
+          "type": "exit",
+          "t": "17:00-17:10",
+          "from": "karen-p1",
+          "to": "karen-p0"
+        }
+      ]
     }
   },
   "xi": {

@@ -3,11 +3,12 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/trump_inn_f1.json",
+    "activeFile": "public/assets/maps/trump_inn_f2.json",
     "expandedProjectPaths": [
-        "public/assets",
         "public/assets/maps",
+        "public/assets",
         "public",
+        "public/assets/templates",
         ".",
         "public/assets/tiles"
     ],
@@ -303,8 +304,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 223.99999999999997,
-                "y": 89.33333333333334
+                "x": 210.99999999999997,
+                "y": 249.3333333333333
             }
         },
         "public/assets/maps/trump_inn_f2.json": {
@@ -312,21 +313,22 @@
                 2
             ],
             "scale": 1.5,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 43.333333333333314,
-                "y": 210
+                "x": 283.33333333333337,
+                "y": 200.66666666666669
             }
         },
         "public/assets/maps/village_01.json": {
             "expandedObjectLayers": [
-                3
+                3,
+                4
             ],
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 0.75,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 582,
-                "y": 1014
+                "x": 74.66666666666663,
+                "y": 122.66666666666669
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -494,20 +496,20 @@
         "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "int",
     "recentFiles": [
-        "public/assets/maps/trump_inn_f2.json",
         "public/assets/maps/village_01.json",
         "public/assets/maps/trump_inn_f1.json",
+        "public/assets/maps/trump_inn_f2.json",
+        "public/assets/spr_fencePost.tsj",
+        "public/assets/fence_tiles.tsj",
         "public/assets/tiles.tsj",
         "public/assets/top.tsj",
         "public/assets/tiles_1.tsj",
         "public/assets/32x32GridItemsAll.tsj",
         "public/assets/Full_1.tsj",
         "public/assets/FreePixel.tsj",
-        "public/assets/spr_tileset_sunnysideworld.tsj",
-        "public/assets/maps/spr_tileset_sunnysideworld.tsj",
-        "public/assets/maps/house_01.json"
+        "public/assets/spr_tileset_sunnysideworld.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

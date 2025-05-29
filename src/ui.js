@@ -1414,6 +1414,8 @@ class Option extends UiBase
             .addButton(GM.TAKE)
             .addButton(GM.OPEN)
             .addButton(GM.ENTER)
+            .addButton(GM.OPEN_DOOR)
+            .addButton(GM.CLOSE_DOOR)
             .addButton(GM.INV, this.inv.bind(this))
             .addButton(GM.PROFILE, this.profile.bind(this))
             .addButton(GM.COOK)
@@ -2069,6 +2071,8 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         open :  {sprite:GM.ICON_OPEN, origin:{x:0.5,y:0.5}, scale:1},
         cook :  {sprite:GM.ICON_TOOL, origin:{x:0.5,y:0.5}, scale:1},
         drink :  {sprite:GM.ICON_TOOL, origin:{x:0.5,y:0.5}, scale:1},
+        open_door :  {sprite:GM.ICON_DOOR, origin:{x:0.5,y:0.5}, scale:1},
+        close_door :  {sprite:GM.ICON_DOOR, origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;
@@ -3332,9 +3336,9 @@ export class Settings extends UiBase
         super(scene,config)
         this.scene=scene;
         this.addBg(scene)
-            .addTop(scene,{text:'setting'.lab})
+            .addTop(scene,{text:'setting'.lab()})
             .addLang(scene, 200)
-            .addVolume(scene, 200)
+            .addSfxVolume(scene, 200)
             .layout()
             //.drawBounds(this.scene.add.graphics(), 0xff0000)
             .hide()
@@ -3361,7 +3365,7 @@ export class Settings extends UiBase
         return this
     }
 
-    addVolume(scene, width)
+    addSfxVolume(scene, width)
     {
         let onchange = function(value)
         {
@@ -3370,16 +3374,16 @@ export class Settings extends UiBase
             else if(value < 0.5) {sizer.getElement('icon').setText('🔈');}
             else if(value < 1) {sizer.getElement('icon').setText('🔉');}
             else {sizer.getElement('icon').setText('🔊');}
-            Record.data.volume = value;
+            Record.data.sfxVolume = value;
             Record.save();
         }
 
         let sizer = scene.rexUI.add.sizer({orientation:'x', space:{top:50,item:10}});
         sizer.add(text(scene,{text:'🔈', fontSize:40}),{key:'icon'})
-            .add(slider(scene,{width:width, gap:0.2}),{key:'volume_value'});
-        this.add(sizer,{key:'volume'});
+            .add(slider(scene,{width:width, gap:0.2}),{key:'sfx_volume'});
+        this.add(sizer,{key:'sfx'});
 
-        this.getElement('volume_value',true).off('valuechange').on('valuechange',onchange); 
+        this.getElement('sfx_volume',true).off('valuechange').on('valuechange',onchange); 
         return this
     }
 
@@ -3393,7 +3397,7 @@ export class Settings extends UiBase
     {
         super.show();
         this.getElement('dropdown',true).setValue(Record.data.lang); 
-        this.getElement('volume_value',true).setValue(Record.data.volume); 
+        this.getElement('sfx_volume',true).setValue(Record.data.sfxVolume); 
     }
 
 }

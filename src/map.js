@@ -1,5 +1,5 @@
 import {Store} from './store.js';
-import {Entity,Port,Pickup,Case,Node,Point,Stove,Well} from './entity.js';
+import {Entity,Port,Pickup,Case,Node,Point,Stove,Well,Door} from './entity.js';
 import {Npc} from './role.js';
 import Utility from './utility.js';
 import QuestManager from './quest.js';
@@ -237,8 +237,10 @@ class Map
 
             this.map = scene.make.tilemap({key: mapName});
             let map = this.map;
-            map.tW_half = map.tileWidth*0.45;
-            map.tH_half = map.tileHeight*0.45;
+            map.tW_half = map.tileWidth*0.5;
+            map.tH_half = map.tileHeight*0.5;
+            map.tW_p45 = map.tileWidth*0.45;
+            map.tH_p45 = map.tileHeight*0.45;
             this._diagonal = diagonal;
             this._center = {x:map.widthInPixels/2, y:map.heightInPixels/2};
             this._small = map.widthInPixels<GM.w && map.heightInPixels<GM.h;
@@ -290,6 +292,7 @@ class Map
                     {type:'point',classType:Point},
                     {type:'stove',classType:Stove},
                     {type:'well',classType:Well},
+                    {type:'door',classType:Door},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
                 // let rmList=[];
@@ -395,8 +398,8 @@ class Map
             if(this.getWeightByTile(nx,ny)==1)
             {
                 let p = this.tileToWorld(nx,ny);
-                let dx = Phaser.Math.Between(0, this.map.tW_half);
-                let dy = Phaser.Math.Between(0, this.map.tH_half);
+                let dx = Phaser.Math.Between(0, this.map.tW_p45);
+                let dy = Phaser.Math.Between(0, this.map.tH_p45);
                 return {x:p.x+dx, y:p.y+dy}
             }
 

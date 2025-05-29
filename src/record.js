@@ -5,7 +5,8 @@ export default class Record
     static data = {default:'入口', map:'village_01', 
                     time:{d:0,h:8,m:0},
                     lang:'tw',
-                    volume:0.5,
+                    bgmVolume:1.0,
+                    sfxVolume:1.0,
                     }
 
     static save()

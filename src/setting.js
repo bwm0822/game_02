@@ -36,6 +36,7 @@ export let GM =
     ICON_EXIT : 'cursors/73',
     ICON_OPEN : 'cursors/87',
     ICON_TOOL : 'cursors/58',
+    ICON_DOOR : 'cursors/70',
 
     ICON_WEAPON : 'icons/80',  //'weapons/5'
     ICON_HELMET : 'icons/113', //'weapons/45'
@@ -105,6 +106,8 @@ export let GM =
     COOK : 'cook',
     DRINK : 'drink',
     FILL : 'fill',      // 裝滿水
+    OPEN_DOOR: 'open_door',
+    CLOSE_DOOR: 'close_door',
     // for slot
     BUY : 'buy',
     SELL : 'sell',

@@ -1,0 +1,24 @@
+{ "object":
+    {
+     "gid":60,
+     "height":64,
+     "id":69,
+     "name":"",
+     "properties":[
+            {
+             "name":"gt",
+             "type":"int",
+             "value":32
+            }],
+     "rotation":0,
+     "type":"stove",
+     "visible":true,
+     "width":64
+    },
+ "tileset":
+    {
+     "firstgid":1,
+     "source":"..\/32x32GridItemsAll.tsj"
+    },
+ "type":"template"
+}

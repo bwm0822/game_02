@@ -147,7 +147,7 @@ export class Role extends Entity
         this.updateDepth();
         this.addWeight();
         this.addToObjects();
-        //this.debugDraw('zone')
+        // this.debugDraw('zone')
 
         return this;
     }
@@ -819,7 +819,7 @@ export class Npc extends Role
         this.addToRoleList();
         this.load();
         this.state = 'idle';
-        //this.debugDraw('zone')
+        this.debugDraw('zone')
         return true;
     }
 

@@ -6,6 +6,11 @@
      "name":"",
      "properties":[
             {
+             "name":"gt",
+             "type":"int",
+             "value":16
+            }, 
+            {
              "name":"weight",
              "type":"int",
              "value":-1

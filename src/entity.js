@@ -3,6 +3,7 @@ import {ItemDB} from './database.js';
 import Utility from './utility.js';
 import { GM } from './setting.js';
 import DB from './db.js';
+import AudioManager from './audio.js';
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -59,8 +60,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone
-            .on('pointerover',()=>{this.outline(true);this.send('over',this);})
-            .on('pointerout',()=>{this.outline(false);this.send('out');})
+            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw('zone');console.log(this.y)})
+            .on('pointerout',()=>{this.outline(false);this.send('out');this.debugDraw('none');})
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) {this.rightButtonDown();}
             })
@@ -143,9 +144,22 @@ export class Entity extends Phaser.GameObjects.Container
         this.grid.y = (this.gt - this.gb) / 2;
     }
 
-    removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
+    // removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
 
-    addWeight(pt){this.weight!=0 && this.scene.map.updateGrid(pt??this.posG,this.weight,this.grid.w,this.grid.h);}
+    // addWeight(pt){this.weight!=0 && this.scene.map.updateGrid(pt??this.posG,this.weight,this.grid.w,this.grid.h);}
+
+    removeWeight(weight)
+    {
+        let wei = weight ?? this.weight;
+        wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this.grid.w,this.grid.h);
+    }
+
+    addWeight(pt,weight)
+    {
+        let wei = weight ?? this.weight;
+        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+    }
+
 
     updateDepth()
     {
@@ -164,8 +178,10 @@ export class Entity extends Phaser.GameObjects.Container
         return bag;
     }
 
-    setAnchor(anchor,set=false)
+    setAnchor(anchor,modify=false)
     {
+        // anchor (0,0) 代表左下角
+        // 如果不設定 anchor，預設是中心點
         if(!anchor) {return;}
             
         let dx = this.displayWidth/2 - anchor.x;
@@ -178,7 +194,8 @@ export class Entity extends Phaser.GameObjects.Container
         if(this._zone) {this._zone.x += dx; this._zone.y += -dy;}
         if(this.body) {this.body.offset.x += dx; this.body.offset.y += -dy;}
 
-        if(set) {this.x-=dx;this.y-=-dy}
+        // prefab 才需要將 modify 設成 true，用以修正位置
+        if(modify) {this.x-=dx;this.y-=-dy}
     }
 
     init_prefab()
@@ -196,7 +213,7 @@ export class Entity extends Phaser.GameObjects.Container
         {
             let ax = this.data.get('anchorX');
             let ay = this.data.get('anchorY');
-            ax && ay && (anchor={x:ax, y:ay});
+            ax!=undefined && ay!=undefined && (anchor={x:ax, y:ay});
         }
         this.addListener();
         //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
@@ -206,7 +223,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.updateDepth();
         this.addWeight();
         this.addToObjects();
-        //this.debugDraw();
+        // this.debugDraw();
         return true;
         
     }
@@ -320,6 +337,7 @@ export class Entity extends Phaser.GameObjects.Container
         let p = this.scene.map.getDropPoint(this.pos);
         let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
         obj.falling(p);
+        AudioManager.drop();
         this.send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
     }
 
@@ -673,6 +691,50 @@ export class Well extends Entity
         super.addListener();
         this.on(GM.DRINK,(role)=>{role.drink();})
         this.on(GM.FILL,(role)=>{this.send('fill');})
+    }
+}
+
+export class Door extends Entity
+{
+     constructor(scene, x, y)
+    {
+        super(scene,x,y);  
+        this.weight = 1000;
+        this.interactive = true;  
+        this.opened=false;
+    }
+
+    get acts()  {return [this.opened ? GM.CLOSE_DOOR : GM.OPEN_DOOR];}
+
+    addListener()
+    {
+        super.addListener();
+        this.on(GM.OPEN_DOOR,()=>{this.open();})
+        this.on(GM.CLOSE_DOOR,()=>{this.close();})
+    }
+
+    open()
+    {
+        this.opened=true;
+        this._sp.setTexture('doors',1);
+        this.removeWeight();
+        this.addWeight(undefined,25);
+        this._zone.setPosition(-this.displayWidth/2+10,-16);
+        this._zone.setSize(20,this.displayHeight)
+        AudioManager.doorOpen();
+        // this.debugDraw('zone');
+    }
+
+    close()
+    {
+        this.opened=false;
+        this._sp.setTexture('doors',0);
+        this.removeWeight(25);
+        this.addWeight();
+        this._zone.setPosition(0,-16);
+        this._zone.setSize(this.displayWidth,this.displayHeight);
+        AudioManager.doorClose();
+        // this.debugDraw('zone');
     }
 }
 

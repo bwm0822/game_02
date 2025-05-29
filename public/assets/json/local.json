@@ -334,6 +334,22 @@
       "lab": "Cook"
     }
   },
+  "open_door": {
+    "tw": {
+      "lab": "打開"
+    },
+    "us": {
+      "lab": "Open"
+    }
+  },
+  "close_door": {
+    "tw": {
+      "lab": "關閉"
+    },
+    "us": {
+      "lab": "Close"
+    }
+  },
   "_pickup": {
     "tw": {
       "lab": "拾取"
@@ -601,9 +617,9 @@
       "lab": "Trump"
     }
   },
-  "gilly": {
+  "karen": {
     "tw": {
-      "lab": "吉莉",
+      "lab": "凱倫",
       "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～"
     },
     "us": {

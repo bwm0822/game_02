@@ -3,25 +3,30 @@
      "gid":1,
      "height":128,
      "id":22,
-     "name":"\u6a39",
+     "name":"",
      "properties":[
             {
-             "name":"bottom",
+             "name":"anchorX",
+             "type":"int",
+             "value":40
+            }, 
+            {
+             "name":"anchorY",
              "type":"int",
              "value":0
             }, 
             {
-             "name":"left",
+             "name":"gl",
              "type":"int",
              "value":10
             }, 
             {
-             "name":"right",
+             "name":"gr",
              "type":"int",
              "value":16
             }, 
             {
-             "name":"top",
+             "name":"gt",
              "type":"int",
              "value":96
             }, 
