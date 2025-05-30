@@ -142,6 +142,13 @@ export let GM =
     PORTRAITS_W : 80,
     PORTRAITS_H : 80,
 
+    // debug
+    DBG_BODY :  0b001,
+    DBG_GRID :  0b010,
+    DBG_ZONE :  0b100,
+    DBG_ALL :   0b111,
+    DBG_CLR :   0b000,
+
 
 
 }

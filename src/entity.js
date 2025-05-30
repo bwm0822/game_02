@@ -4,6 +4,7 @@ import Utility from './utility.js';
 import { GM } from './setting.js';
 import DB from './db.js';
 import AudioManager from './audio.js';
+import {bbcText} from './uibase'
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -63,8 +64,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone
-            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw('grid');console.log(this.y)})
-            .on('pointerout',()=>{this.outline(false);this.send('out');this.debugDraw('none');})
+            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw(GM.DBG_ALL,this.y);})
+            .on('pointerout',()=>{this.outline(false);this.send('out');this.debugDraw(GM.DBG_CLR);})
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) {this.rightButtonDown();}
             })
@@ -369,71 +370,96 @@ export class Entity extends Phaser.GameObjects.Container
     loadData() {return Record.getByUid(this.mapName, this.uid);}
     saveData(data) {Record.setByUid(this.mapName, this.uid, data);}
 
-    debugDraw(type='grid')
+    debugDraw(type=GM.DBG_ALL,text)
     {
         if(!this._dbgGraphics)
         {
             this._dbgGraphics = this.scene.add.graphics();
-            this._dbgGraphics.name = 'entity';
             this._dbgGraphics.setDepth(Infinity);
         }
 
-        let rect, circle;
-
-        switch(type)
+        if(text && !this._dbgText)
         {
-            case 'body':
-                if(this.bidy)
-                {
-                    rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
-                    circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
-                }
-                break;
-            case 'grid':
-                if(this.grid)
-                {
-                    let w_2 = this.grid.w/2;
-                    let h_2 = this.grid.h/2;
-                    let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-                    rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
-                    //circle = new Phaser.Geom.Circle(c.x,c.y,5);
-                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
-                }
-                break;
-            case 'zone':
-                if(this._zone)
-                {
-                    let w_2 = this._zone.width/2;
-                    let h_2 = this._zone.height/2;
-                    let c = {x:this.x+this._zone.x, y:this.y+this._zone.y}
-                    rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this._zone.width,this._zone.height);
-                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
-                    //circle = new Phaser.Geom.Circle(c.x,c.y,5);
-                    
-                }
-                else
-                {
-                    circle = new Phaser.Geom.Circle(this.x,this.y,5);
-                }
-                break;
+            this._dbgText = bbcText(this.scene,{text:'dbg'});
+            this._dbgText.setDepth(Infinity);
+            this._dbgText.setOrigin(0.5,1);
         }
-       
 
-        this._dbgGraphics.clear();
-        this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-        if(rect) {this._dbgGraphics.strokeRectShape(rect);}
-        if(circle) {this._dbgGraphics.strokeCircleShape(circle);}
-        if(type != 'none')
-        {
-            for(let p of this.pts)
+        let draw_body = ()=>{
+            if((type&GM.DBG_BODY)===0) {return;}
+            if(this.body)
             {
-                this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-                circle = new Phaser.Geom.Circle(p.x,p.y,5);
+                this._dbgGraphics.lineStyle(6, 0x0000ff, 1);
+                let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
+                let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
+                this._dbgGraphics.strokeRectShape(rect);
                 this._dbgGraphics.strokeCircleShape(circle);
+            } 
+        }
+
+        let draw_grid = ()=>{
+            if((type&GM.DBG_GRID)===0) {return;}
+            if(this.grid)
+            {
+                this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
+                let w_2 = this.grid.w/2;
+                let h_2 = this.grid.h/2;
+                let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
+                let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
+                this._dbgGraphics.strokeRectShape(rect);
             }
         }
 
-        
+        let draw_zone = ()=>{
+            if((type&GM.DBG_ZONE)===0) {return;}
+            if(this._zone)
+            {
+                this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+                let w_2 = this._zone.width/2;
+                let h_2 = this._zone.height/2;
+                let c = {x:this.x+this._zone.x, y:this.y+this._zone.y}
+                let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this._zone.width,this._zone.height); 
+                this._dbgGraphics.strokeRectShape(rect);            
+            }
+        }
+
+        let dreaw_pts = ()=>{
+            if(type===GM.DBG_CLR) {return;}
+            for(let p of this.pts)
+            {
+                this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+                let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
+                this._dbgGraphics.strokeCircleShape(circle);
+            }
+            this._dbgGraphics.lineStyle(2, 0xffffff, 1);
+            let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+            this._dbgGraphics.strokeCircleShape(circle);
+        }
+
+        let clr = ()=>{
+            this._dbgGraphics.clear();
+            if(this._dbgText) {this._dbgText.text='';}
+            this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+        }
+
+        let show_text = (text)=>{
+            if(type===GM.DBG_CLR) {return;}
+            if(this._dbgText)
+            {
+                this._dbgText.x = this.x;
+                this._dbgText.y = this.y-this.displayHeight*2/3;
+                this._dbgText.setText(`[bgcolor=white][color=black]${text}[/color][/bgcolor]`)
+            }
+        }
+
+
+        clr();
+
+        draw_body();
+        draw_grid();
+        draw_zone();
+        dreaw_pts();
+        show_text(text);
     }
 
     removeFromObjects()

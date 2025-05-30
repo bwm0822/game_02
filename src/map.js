@@ -429,37 +429,7 @@ class Map
         return [this.map.worldToTileX(x), this.map.worldToTileY(y)];
     }
 
-    // getPts(p,w,h)
-    // {
-    //     let pts=[]
-    //     if(w>this.map.tileWidth || h>this.map.tileHeight)
-    //     {
-    //         let w_2 = w/2;
-    //         let h_2 = h/2;
-    //         let tw_2 = this.map.tileWidth/2;
-    //         let th_2 = this.map.tileHeight/2
-
-    //         let min = {x:p.x-w_2+tw_2,y:p.y-h_2+th_2}
-    //         let max = {x:p.x+w_2-tw_2,y:p.y+h_2-th_2}
-
-
-    //         for(let x=min.x;x<=max.x;x+=this.map.tileWidth)
-    //         {
-    //             for(let y=min.y;y<=max.y;y+=this.map.tileHeight)
-    //             {
-    //                 pts.push({x:x,y:y})
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         pts.push(p)
-    //     }   
-
-    //     return pts;
-    // }
-
-    getPt(p)
+    getPt(p)    // get center of tile
     {
         let [tx,ty]=this.worldToTile(p.x,p.y);
         return this.tileToWorld(tx,ty);
