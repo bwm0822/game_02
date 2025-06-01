@@ -6,11 +6,6 @@
      "name":"",
      "properties":[
             {
-             "name":"anchorX",
-             "type":"int",
-             "value":32
-            }, 
-            {
              "name":"anchorY",
              "type":"int",
              "value":16

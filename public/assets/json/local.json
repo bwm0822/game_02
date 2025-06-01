@@ -358,6 +358,22 @@
       "lab": "Make"
     }
   },
+  "rest": {
+    "tw": {
+      "lab": "休息"
+    },
+    "us": {
+      "lab": "Rest"
+    }
+  },
+  "wake": {
+    "tw": {
+      "lab": "起床"
+    },
+    "us": {
+      "lab": "Wake"
+    }
+  },
   "setting": {
     "tw": {
       "lab": "設定"

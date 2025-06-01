@@ -156,6 +156,8 @@ export class GameScene extends Scene
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
+            if(this._avatar.state==GM.ST_SLEEP) {return;}
+
             if (pointer.rightButtonDown())
             {
                console.log('right');
@@ -185,7 +187,10 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            if(!this._avatar.moving)
+            console.log(this._avatar.state)
+            if(this._avatar.state==GM.ST_SLEEP) {return;}
+            // if(!this._avatar.moving)
+            if(this._avatar.state!=GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pt, this._ent);
@@ -255,6 +260,7 @@ export class GameScene extends Scene
             this._dbgPath = this.add.graphics();
             this._dbgPath.name = 'path';
             this._dbgPath.fillStyle(0xffffff);
+            this._dbgPath.setDepth(Infinity);
         }
         this._dbgPath.clear();
         path.pop(); //移除陣列最後一個元素
@@ -366,6 +372,10 @@ export class GameScene extends Scene
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
             .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})
+            .off('setWeight').on('setWeight',(p,weight)=>{
+                console.log(p,weight)
+                this.map.setWeight(p,weight)
+            })
 
     }
 

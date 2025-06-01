@@ -81,19 +81,50 @@
                  "y":96
                 }, 
                 {
-                 "gid":1111,
+                 "gid":1113,
                  "height":96,
                  "id":166,
                  "name":"",
+                 "properties":[
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":10
+                        }, 
+                        {
+                         "name":"bl",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"br",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"gl",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"gr",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"offsetX",
+                         "type":"int",
+                         "value":-32
+                        }],
                  "rotation":0,
                  "type":"bed",
                  "visible":true,
                  "width":96,
-                 "x":64,
-                 "y":128
+                 "x":224,
+                 "y":224
                 }, 
                 {
-                 "gid":1111,
+                 "gid":1113,
                  "height":96,
                  "id":167,
                  "name":"",
@@ -116,6 +147,42 @@
                  "template":"..\/templates\/door.tj",
                  "x":224,
                  "y":320
+                }, 
+                {
+                 "gid":578,
+                 "height":96,
+                 "id":194,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"offsetX",
+                         "type":"int",
+                         "value":-48
+                        }],
+                 "rotation":0,
+                 "type":"bed",
+                 "visible":true,
+                 "width":64,
+                 "x":96,
+                 "y":128
+                }, 
+                {
+                 "gid":578,
+                 "height":96,
+                 "id":196,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"offsetX",
+                         "type":"int",
+                         "value":-48
+                        }],
+                 "rotation":0,
+                 "type":"bed",
+                 "visible":true,
+                 "width":64,
+                 "x":96,
+                 "y":256
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -124,7 +191,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":194,
+ "nextobjectid":197,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -143,19 +210,19 @@
          "source":"..\/props.tsj"
         }, 
         {
-         "firstgid":578,
+         "firstgid":580,
          "source":"..\/icons.tsj"
         }, 
         {
-         "firstgid":1010,
+         "firstgid":1012,
          "source":"..\/FreePixel.tsj"
         }, 
         {
-         "firstgid":1042,
+         "firstgid":1044,
          "source":"..\/Full_1.tsj"
         }, 
         {
-         "firstgid":1098,
+         "firstgid":1100,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

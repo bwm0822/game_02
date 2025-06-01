@@ -153,7 +153,7 @@ function clrCamera(mode)
 
 function clearpath() {uiScene.events.emit('clearpath');}
 
-function send(event) {uiScene.events.emit(event);}
+function send(event, ...args) {uiScene.events.emit(event, ...args);}
 
 export class Ui
 {
@@ -1421,6 +1421,8 @@ class Option extends UiBase
             .addButton(GM.COOK)
             .addButton(GM.DRINK)
             .addButton(GM.FILL)
+            .addButton(GM.REST)
+            .addButton(GM.WAKE)
             // for slot
             .addButton(GM.BUY, this.trade.bind(this))
             .addButton(GM.SELL, this.trade.bind(this))
@@ -3018,6 +3020,20 @@ class UiDebuger extends UiBase
     {
         let rewards=[{type:args[1],id:args[2],count:args[3]}]
         Role.getPlayer().receive(rewards)
+    }
+
+    cmd_w(args)
+    {
+        if(args.length < 4)
+        {
+            this.print('[color=yellow][參數太少][/color]\n')
+        }
+        else
+        {
+            let p={x:Number(args[1]),y:Number(args[2])}
+            let weight=Number(args[3])
+            send('setWeight',p,weight)
+        }
     }
 
     cmd_t(args)

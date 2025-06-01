@@ -10,7 +10,7 @@
     "sprite": "trump",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -66,7 +66,7 @@
     "sprite": "rogues/34",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -174,7 +174,7 @@
     "sprite": "rogues/38",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -246,7 +246,7 @@
     "sprite": "rogues/37",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -320,7 +320,7 @@
     "sprite": "rogues/36",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -404,7 +404,7 @@
     "sprite": "rogues/40",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,
@@ -486,7 +486,7 @@
     "sprite": "monsters/0",
     "faceR": false,
     "anchor": {
-      "x": 32,
+      "x": 0,
       "y": 16
     },
     "w": 64,

@@ -5,6 +5,10 @@ import { GM } from './setting.js';
 import DB from './db.js';
 import AudioManager from './audio.js';
 import {bbcText} from './uibase'
+import * as Role from './role';
+
+let DEBUG=true;
+let DBG_TYPE=GM.DBG_ALL;
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -17,12 +21,14 @@ export class Entity extends Phaser.GameObjects.Container
         this.bl=0,this.br=0,this.bt=0,this.bb=0;    // body
         this.gl=0,this.gr=0,this.gt=0,this.gb=0;    // grid
         this.zl=0,this.zr=0,this.zt=0,this.zb=0;    // zone，interactive=true 才有作用
+        this.anchorX = 0;
+        this.anchorY = 0;
         this.interactive = false;
         this.en_outline = true;
         this.weight = 0;
-        this.static = true; // true: static body, false: dynamic body
+        this.isStatic = true; // true: static body, false: dynamic body
         this.uid = -1;   // map.createMap() 會自動設定 uid
-        this._pts=[];
+        this._pGrids=[];   // grid 所佔據的點
     }
 
     get pos()   {return {x:this.x,y:this.y}}
@@ -30,8 +36,12 @@ export class Entity extends Phaser.GameObjects.Container
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
     get act()   {return this.acts.length > 0 ? this.acts[0] : '';}
     get acts()  {return [];}
-    get pts() {return this._pts;}
-    set pts(value) {this._pts=value;}
+    get pts() {return this._pGrids;}
+    set pts(value) {this._pGrids=value;}
+    get anchor() {return {x:this.anchorX, y:this.anchorY};}
+    set anchor(value) {this.anchorX=value.x;this.anchorY=value.y;}
+    get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};}
+    get max() {return {x:this.displayWidth/2-this.anchorX, y:this.displayHeight/2-this.anchorY};}
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
@@ -39,6 +49,8 @@ export class Entity extends Phaser.GameObjects.Container
     get displayHeight() {return this._h;}
 
     get mapName() {return this.scene._data.map;}
+
+    
 
     enableOutline()
     {
@@ -59,17 +71,23 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(!this.interactive) {return;}
 
-        // zone(cx,cy,w,h)
-        this._zone = this.scene.add.zone((this.zl-this.zr)/2, (this.zt-this.zb)/2, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
+        // scene.add.zone( centerX, centerY, w, h )
+        let cx = (this.min.x + this.zl + this.max.x - this.zr)/2;
+        let cy = (this.min.y + this.zt + this.max.y - this.zb)/2;
+        this._zone = this.scene.add.zone(cx, cy, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone
-            .on('pointerover',()=>{this.outline(true);this.send('over',this);this.debugDraw(GM.DBG_ALL,this.y);})
-            .on('pointerout',()=>{this.outline(false);this.send('out');this.debugDraw(GM.DBG_CLR);})
+            .on('pointerover',()=>{
+                if(!Role.getPlayer().isInteractive(this)) {return;}
+                this.outline(true);this.send('over',this);this.debugDraw(undefined,this.y);})
+            .on('pointerout',()=>{
+                if(!Role.getPlayer().isInteractive(this)) {return;}
+                this.outline(false);this.send('out');this.debugDraw(GM.DBG_CLR);})
             .on('pointerdown',(pointer)=>{
+                if(!Role.getPlayer().isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) {this.rightButtonDown();}
             })
-        
     }
 
     rightButtonDown()
@@ -111,7 +129,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._rect.visible=on;
     }
 
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到
+    setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
     {
         console.log(key,frame);
         // console.trace();
@@ -132,20 +150,36 @@ export class Entity extends Phaser.GameObjects.Container
 
     addPhysics()
     {
-        this.scene.physics.add.existing(this, this.static);
+        // (body.x, body.y) 是 body 的左上角， body.center 才是中心點
+        this.scene.physics.add.existing(this, this.isStatic);
         this.body.setSize(this.displayWidth-this.bl-this.br, this.displayHeight-this.bt-this.bb);
-        this.body.x=this.x;
-        this.body.y=this.y;
-        this.body.setOffset(-this.displayWidth/2+this.bl, -this.displayHeight/2+this.bt);
+        if(this.isStatic) {this.body.setOffset(this.bl, this.bt);}
+        else {this.body.setOffset(this.min.x+this.bl, this.min.y+this.bt);}
+    }
+
+    isInGrid(pos)
+    {
+        let p = {x:pos.x-this.x,y:pos.y-this.y};
+        return p.x > (this.min.x + this.gl) && 
+                p.x < (this.max.x - this.gr) && 
+                p.y > (this.min.y + this.gt) && 
+                p.y < (this.max.y - this.gb);
     }
 
     addGrid()
     {
         this.grid = {};
-        this.grid.w = this.displayWidth -this.gl - this.gr;
+
+        this.grid.w = this.displayWidth - this.gl - this.gr;
         this.grid.h = this.displayHeight - this.gt - this.gb;
-        this.grid.x = (this.gl - this.gr) / 2;
-        this.grid.y = (this.gt - this.gb) / 2;
+        // this.grid.x = (this.gl - this.gr) / 2;
+        // this.grid.y = (this.gt - this.gb) / 2;
+
+        this.grid.x = (this.min.x + this.gl + this.max.x - this.gr)/2; 
+        this.grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
+
+        this.grid.left = this.min.x + this.gl;
+        this.grid.top = this.min.y + this.gt;
     }
 
     // removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
@@ -162,20 +196,16 @@ export class Entity extends Phaser.GameObjects.Container
     {
         let wei = weight ?? this.weight;
         // wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        this.pts=this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-
-        // this.pts = this.scene.map.getPts(pt??this.posG,this.grid.w,this.grid.h);
+        this.pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
     }
-
 
     updateDepth()
     {
-        let depth = this.y ;//+ this.height/2 - this.gb;
+        let depth = this.y;
         this.setDepth(depth);
         //this.debug(depth.toFixed(1));
     }
 
-    //toBag(capacity,items)
     toStorage(capacity,items)
     {
         if(capacity == undefined) {capacity = -1;}
@@ -185,24 +215,11 @@ export class Entity extends Phaser.GameObjects.Container
         return bag;
     }
 
-    setAnchor(anchor,modify=false)
+    setAnchor(modify=false)
     {
-        // anchor (0,0) 代表左下角
-        // 如果不設定 anchor，預設是中心點
-        if(!anchor) {return;}
-            
-        let dx = this.displayWidth/2 - anchor.x;
-        let dy = this.displayHeight/2 - anchor.y;
-
-        this.grid.x += dx;
-        this.grid.y += -dy;
-
-        if(this._sp) {this._sp.x += dx; this._sp.y += -dy;}
-        if(this._zone) {this._zone.x += dx; this._zone.y += -dy;}
-        if(this.body) {this.body.offset.x += dx; this.body.offset.y += -dy;}
-
+        if(this._sp) {this._sp.x = -this.anchorX; this._sp.y = -this.anchorY;}
         // prefab 才需要將 modify 設成 true，用以修正位置
-        if(modify) {this.x-=dx;this.y-=-dy}
+        if(modify) {this.x+=this.anchorX;this.y+=this.anchorY;}
     }
 
     init_prefab()
@@ -215,18 +232,11 @@ export class Entity extends Phaser.GameObjects.Container
             return false;
         }
 
-        let anchor;
-        if(this.data) 
-        {
-            let ax = this.data.get('anchorX');
-            let ay = this.data.get('anchorY');
-            ax!=undefined && ay!=undefined && (anchor={x:ax, y:ay});
-        }
         this.addListener();
         //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
         this.addPhysics();
         this.addGrid();
-        this.setAnchor(anchor,true);
+        this.setAnchor(true);
         this.updateDepth();
         this.addWeight();
         this.addToObjects();
@@ -370,8 +380,10 @@ export class Entity extends Phaser.GameObjects.Container
     loadData() {return Record.getByUid(this.mapName, this.uid);}
     saveData(data) {Record.setByUid(this.mapName, this.uid, data);}
 
-    debugDraw(type=GM.DBG_ALL,text)
+    debugDraw(type=DBG_TYPE,text)
     {
+        if(!DEBUG) {return;}
+
         if(!this._dbgGraphics)
         {
             this._dbgGraphics = this.scene.add.graphics();
@@ -386,9 +398,11 @@ export class Entity extends Phaser.GameObjects.Container
         }
 
         let draw_body = ()=>{
-            if((type&GM.DBG_BODY)===0) {return;}
+            if((type & GM.DBG_BODY)===0) {return;}
             if(this.body)
             {
+                // body 的 x, y 是 body 的左上角
+                // Phaser.Geom.Rectangle( left, top, w, h )
                 this._dbgGraphics.lineStyle(6, 0x0000ff, 1);
                 let rect = new Phaser.Geom.Rectangle(this.body.x,this.body.y,this.body.width,this.body.height);
                 let circle = new Phaser.Geom.Circle(this.body.center.x,this.body.center.y,5);
@@ -398,33 +412,35 @@ export class Entity extends Phaser.GameObjects.Container
         }
 
         let draw_grid = ()=>{
-            if((type&GM.DBG_GRID)===0) {return;}
+            if((type & GM.DBG_GRID)===0) {return;}
             if(this.grid)
             {
+                // grid 的 x, y 是 body 的中心點
+                // Phaser.Geom.Rectangle( left, top, w, h )
                 this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
-                let w_2 = this.grid.w/2;
-                let h_2 = this.grid.h/2;
-                let c = {x:this.x+this.grid.x, y:this.y+this.grid.y}
-                let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this.grid.w,this.grid.h);
+                let x = this.x + this.min.x + this.gl;
+                let y = this.y + this.min.y + this.gt;
+                let rect = new Phaser.Geom.Rectangle( x, y, this.grid.w, this.grid.h );
                 this._dbgGraphics.strokeRectShape(rect);
             }
         }
 
         let draw_zone = ()=>{
-            if((type&GM.DBG_ZONE)===0) {return;}
+            if((type & GM.DBG_ZONE)===0) {return;}
             if(this._zone)
             {
+                // zone 的 x, y 是 zone 的中心點
+                // Phaser.Geom.Rectangle( left, top, w, h )
                 this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-                let w_2 = this._zone.width/2;
-                let h_2 = this._zone.height/2;
-                let c = {x:this.x+this._zone.x, y:this.y+this._zone.y}
-                let rect = new Phaser.Geom.Rectangle(c.x-w_2,c.y-h_2,this._zone.width,this._zone.height); 
+                let p = {x:this.x + this._zone.x - this._zone.width/2, 
+                        y:this.y + this._zone.y - this._zone.height/2}
+                let rect = new Phaser.Geom.Rectangle(p.x,p.y,this._zone.width,this._zone.height); 
                 this._dbgGraphics.strokeRectShape(rect);            
             }
         }
 
-        let dreaw_pts = ()=>{
-            if(type===GM.DBG_CLR) {return;}
+        let draw_pts = ()=>{
+            if(type === GM.DBG_CLR) {return;}
             for(let p of this.pts)
             {
                 this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
@@ -443,7 +459,7 @@ export class Entity extends Phaser.GameObjects.Container
         }
 
         let show_text = (text)=>{
-            if(type===GM.DBG_CLR) {return;}
+            if(type === GM.DBG_CLR) {return;}
             if(this._dbgText)
             {
                 this._dbgText.x = this.x;
@@ -458,8 +474,10 @@ export class Entity extends Phaser.GameObjects.Container
         draw_body();
         draw_grid();
         draw_zone();
-        dreaw_pts();
+        draw_pts();
         show_text(text);
+
+        console.log(this)
     }
 
     removeFromObjects()
@@ -759,7 +777,7 @@ export class Door extends Entity
     {
         super.addListener();
         this.on(GM.OPEN_DOOR,()=>{this.open();})
-        this.on(GM.CLOSE_DOOR,()=>{this.close();})
+        this.on(GM.CLOSE_DOOR,(role)=>{this.close(role);})
     }
 
     open()
@@ -774,16 +792,23 @@ export class Door extends Entity
         // this.debugDraw('zone');
     }
 
-    close()
+    close(role)
     {
-        this.opened=false;
-        this._sp.setTexture('doors',0);
-        this.removeWeight(25);
-        this.addWeight();
-        this._zone.setPosition(0,-16);
-        this._zone.setSize(this.displayWidth,this.displayHeight);
-        AudioManager.doorClose();
-        // this.debugDraw('zone');
+        if(!this.isInGrid(role.pos))
+        {
+            this.opened=false;
+            this._sp.setTexture('doors',0);
+            this.removeWeight(25);
+            this.addWeight();
+            this._zone.setPosition(0,-16);
+            this._zone.setSize(this.displayWidth,this.displayHeight);
+            AudioManager.doorClose();
+            // this.debugDraw('zone');
+        }
+        else
+        {
+            console.log('inGrid')
+        }
     }
 }
 
@@ -794,19 +819,53 @@ export class Bed extends Entity
         super(scene,x,y);  
         this.weight = 1000;
         this.interactive = true;  
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.user = null;
+        this._blanket;
     }   
 
-    get acts()  {return [GM.USE];}
+    get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
+
+    get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
+
+    init_prefab()
+    {
+        super.init_prefab();
+        this.addBlanket()
+
+    }
+
+    addBlanket()   
+    {
+        let key='props/blanket.png';
+        let sp = this.scene.add.sprite(0,0,key);
+        sp.setPipeline('Light2D');
+        sp.displayWidth = this.displayWidth;
+        sp.displayHeight = this.displayHeight;
+        this.add(sp);
+        this._blanket = sp;
+        
+    }
 
     addListener()
     {
         super.addListener();
-        this.on(GM.USE,()=>{this.use();})
+        this.on(GM.REST,(role)=>{this.rest(role);})
+        this.on(GM.WAKE,()=>{this.wake();})
     }
 
-    use()
+    rest(role)
     {
-        console.log('use')
+        role.sleep(this);
+        this.user = role;
+        this.bringToTop(this._blanket);
+    }
+
+    wake()
+    {
+        this.user.wake(this)
+        this.user = null;
     }
     
 }

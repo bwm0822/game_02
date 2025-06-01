@@ -6,7 +6,7 @@ import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 
-let DEBUG=false;
+let DEBUG=true;
 
 function debug(...args) {if(DEBUG) {console.log(args);}}
 
@@ -475,19 +475,35 @@ class Map
         return !(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height);
     }
 
+    // isNearby(a,b)
+    // {
+    //     let [tx_a,ty_a] = this.worldToTile(a.x,a.y);
+    //     let [tx_b,ty_b] = this.worldToTile(b.x,b.y);
+    //     let dx = Math.abs(tx_a-tx_b);
+    //     let dy = Math.abs(ty_a-ty_b);
+    //     return this._diagonal ? dx<=1 && dy<=1 : dx<=1 && dy==0 || dx==0 && dy<=1;
+    //     // return dx<=1 && dy==0 || dx==0 && dy<=1;
+    // }
+
     isNearby(a,b)
     {
-        let [tx_a,ty_a] = this.worldToTile(a.x,a.y);
-        let [tx_b,ty_b] = this.worldToTile(b.x,b.y);
-        let dx = Math.abs(tx_a-tx_b);
-        let dy = Math.abs(ty_a-ty_b);
-        return this._diagonal ? dx<=1 && dy<=1 : dx<=1 && dy==0 || dx==0 && dy<=1;
+        let tw = this.map.tileWidth;
+        let th = this.map.tileHeight;
+        let dx = Math.abs(a.x-b.x);
+        let dy = Math.abs(a.y-b.y);
+        return dx<=tw && dy<=th;
     }
 
     getWeight(p)
     {
         let [tx,ty] = this.worldToTile(p.x,p.y);
         return this.getWeightByTile(tx,ty);
+    }
+
+    setWeight(p,weight)
+    {
+        let [tx,ty] = this.worldToTile(p.x,p.y);
+        this.graph.grid[ty][tx].weight = weight;
     }
 
     getWeightByTile(tx,ty)

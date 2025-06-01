@@ -108,6 +108,8 @@ export let GM =
     FILL : 'fill',      // 裝滿水
     OPEN_DOOR: 'open_door',
     CLOSE_DOOR: 'close_door',
+    REST : 'rest',
+    WAKE : 'wake',
     // for slot
     BUY : 'buy',
     SELL : 'sell',
@@ -148,6 +150,12 @@ export let GM =
     DBG_ZONE :  0b100,
     DBG_ALL :   0b111,
     DBG_CLR :   0b000,
+
+    // state
+    ST_IDLE : 'idle',
+    ST_MOVING : 'moving',
+    ST_SLEEP : 'sleep',
+    ST_ATTACK : 'attack'
 
 
 

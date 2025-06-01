@@ -78,23 +78,27 @@ export class Role extends Entity
         this._faceR = true;
         //
         this._path = [];
-        this._moving = false;
+        // this._moving = false;
         this._act = '';
         this._resolve;
         //
-        this.static = false; // true: static body, false: dynamic body
+        this.isStatic = false; // true: static body, false: dynamic body
         this.id = '';
         this.interactive = true;
-        //        
+        //       
+        this._state = GM.ST_IDLE; 
     }
 
     get isPlayer() {return false;}
 
     get pos()       {return super.pos;}
-    set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value); }
+    set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value);}
 
-    get moving()    {return this._moving;}
+    // get moving()    {return this._moving;}
     get storage()   {return this.status.bag;}
+
+    get state()     {return this._state;}
+    set state(value) {this._state=value; console.log('set:',this.state);}
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
@@ -140,10 +144,11 @@ export class Role extends Entity
         this.addSprite(roleD.sprite);
         this.displayWidth = roleD.w 
         this.displayHeight = roleD.h;
+        this.anchor = roleD.anchor;
         this.addListener();
         this.addPhysics();
         this.addGrid();
-        this.setAnchor(roleD.anchor);
+        this.setAnchor();
         this.updateDepth();
         this.addWeight();
         this.addToObjects();
@@ -186,7 +191,8 @@ export class Role extends Entity
         if(rst.state>0)
         {
             this._path = rst.path;
-            this._moving = true; 
+            // this._moving = true; 
+            this.state = GM.ST_MOVING;
             this._ent = null;
             this._act = '';
             this.resume();
@@ -198,7 +204,8 @@ export class Role extends Entity
         let pts = ent?.pts ?? [pt];
         if(this.isTouch(ent))
         {
-            this._moving = false; 
+            // this._moving = false; 
+            this.state = GM.ST_IDLE;
             this._ent = ent;
             this._act = act ?? ent?.act ?? '';
             this.resume();
@@ -210,7 +217,8 @@ export class Role extends Entity
             {
                 if(this.isPlayer) {this.send('clearpath');}
                 this._path = rst.path;
-                this._moving = true; 
+                // this._moving = true; 
+                this.state = GM.ST_MOVING;
                 this._ent = ent;
                 this._act = act ?? ent?.act ?? '';
                 this.resume();
@@ -228,8 +236,14 @@ export class Role extends Entity
         this._sp.flipX = (pt.x>this.x) != this._faceR;
     }
 
+    isInteractive(ent)
+    {
+        return this.state != GM.ST_SLEEP || this.parentContainer == ent;
+    }
+
     isTouch(ent)
     {
+        if(ent && this.parentContainer == ent) {return true;}
         return !ent ? false : this.scene.map.isNearby(ent,this.pos);
     }
 
@@ -255,12 +269,10 @@ export class Role extends Entity
             }
         }
         
-        await this.action();
         this.stop();
+        await this.action();
         return true;
     }
-
-   
 
     async action()
     {
@@ -286,7 +298,8 @@ export class Role extends Entity
     stop()
     {
         this._path = [];
-        this._moving = false;
+        // this._moving = false;
+        this.state = GM.ST_IDLE;
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
@@ -628,6 +641,26 @@ export class Role extends Entity
         if(states.thirst) {states.thirst.cur=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
     }
 
+    sleep(ent)
+    {
+        ent.add(this);
+        this.pos={x:0,y:0}
+        this.rotation = ent.rotation;
+        this._zone.disableInteractive();
+        
+        this.state=GM.ST_SLEEP;
+        console.log('------------------------',this.state)
+    }
+
+    wake(ent)
+    {
+        ent.remove(this)
+        this.pos = ent.pt;
+        this.rotation = 0;
+        this._zone.setInteractive();
+        this.state=GM.ST_IDLE;
+        console.log('------------------------wake',this.state)
+    }
 
     load(record)    // call by Avatar
     {
@@ -660,6 +693,7 @@ export class Role extends Entity
             this._dbgPath = this.scene.add.graphics();
             this._dbgPath.name = 'path';
             this._dbgPath.fillStyle(0xffffff);
+            this._dbgPath.setDepth(Infinity);
         }
         this._dbgPath.clear();
         path.forEach(node=>{
@@ -670,11 +704,11 @@ export class Role extends Entity
 
     async process()
     {
-        if(this.moving) {await this.moveTo();}
+        if(this.state == GM.ST_MOVING) {await this.moveTo();}
         else
         {
             await this.pause();
-            if(this.moving) {await this.moveTo();}
+            if(this.state == GM.ST_MOVING) {await this.moveTo();}
             else {await this.action();}
         }
     }
@@ -819,7 +853,6 @@ export class Npc extends Role
         
         this.addToRoleList();
         this.load();
-        this.state = 'idle';
         this.debugDraw('zone')
         return true;
     }
@@ -827,7 +860,6 @@ export class Npc extends Role
    
     init_runtime(id)
     {
-        this.state = 'idle';
         this.addToRoleList();
         return super.init_runtime(id);
     }
@@ -873,7 +905,7 @@ export class Npc extends Role
                 this.pos = rst.path[i];
                 let act = found.type == 'exit' ? 'exit' : null;
                 this.setDes(p1,null,act);
-                this.state = 'move';
+                this.state = GM.ST_MOVING;
 
             }
         }
@@ -967,7 +999,7 @@ export class Npc extends Role
     async hurt(attacker)
     {
         super.hurt(attacker);
-        this.state = 'attack';
+        this.state = GM.ST_ATTACK;
         this._ent = attacker;
         this._act = 'attack';
     }
@@ -978,13 +1010,13 @@ export class Npc extends Role
         
         switch(this.state)
         {
-            case 'idle': break;
-            case 'move':
+            case GM.ST_IDLE: break;
+            case GM.ST_MOVING:
                 //this.setDes(Avatar.instance.pos);
                 let ret = await this.moveTo({draw:false});
-                if(ret) {this.state = 'idle';}
+                if(ret) {this.state = GM.ST_IDLE;}
                 break;
-            case 'attack':
+            case GM.ST_ATTACK:
                 await this.attack();
                 break;
         }

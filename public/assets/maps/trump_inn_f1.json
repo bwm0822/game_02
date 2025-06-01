@@ -198,6 +198,11 @@
                          "name":"gr",
                          "type":"int",
                          "value":16
+                        }, 
+                        {
+                         "name":"offsetX",
+                         "type":"int",
+                         "value":-32
                         }],
                  "rotation":0,
                  "type":"bed",
