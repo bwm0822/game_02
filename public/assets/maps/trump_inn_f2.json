@@ -81,61 +81,6 @@
                  "y":96
                 }, 
                 {
-                 "gid":1113,
-                 "height":96,
-                 "id":166,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":10
-                        }, 
-                        {
-                         "name":"bl",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"br",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"gl",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"gr",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"offsetX",
-                         "type":"int",
-                         "value":-32
-                        }],
-                 "rotation":0,
-                 "type":"bed",
-                 "visible":true,
-                 "width":96,
-                 "x":224,
-                 "y":224
-                }, 
-                {
-                 "gid":1113,
-                 "height":96,
-                 "id":167,
-                 "name":"",
-                 "rotation":0,
-                 "type":"entity",
-                 "visible":true,
-                 "width":96,
-                 "x":224,
-                 "y":128
-                }, 
-                {
                  "id":192,
                  "template":"..\/templates\/door.tj",
                  "type":"door",
@@ -149,40 +94,95 @@
                  "y":320
                 }, 
                 {
-                 "gid":578,
-                 "height":96,
-                 "id":194,
+                 "gid":580,
+                 "height":64,
+                 "id":197,
                  "name":"",
                  "properties":[
                         {
-                         "name":"offsetX",
+                         "name":"anchorX",
                          "type":"int",
-                         "value":-48
+                         "value":0
+                        }, 
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"blanket",
+                         "type":"string",
+                         "value":"props\/blanket_h.png"
+                        }, 
+                        {
+                         "name":"offsetY",
+                         "type":"int",
+                         "value":48
+                        }, 
+                        {
+                         "name":"sleepA",
+                         "type":"int",
+                         "value":-90
+                        }, 
+                        {
+                         "name":"sleepX",
+                         "type":"int",
+                         "value":5
+                        }, 
+                        {
+                         "name":"sleepY",
+                         "type":"int",
+                         "value":-25
                         }],
                  "rotation":0,
                  "type":"bed",
                  "visible":true,
-                 "width":64,
-                 "x":96,
-                 "y":128
+                 "width":96,
+                 "x":32,
+                 "y":96
                 }, 
                 {
-                 "gid":578,
+                 "gid":581,
                  "height":96,
-                 "id":196,
+                 "id":198,
                  "name":"",
                  "properties":[
                         {
+                         "name":"anchorX",
+                         "type":"int",
+                         "value":-16
+                        }, 
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"blanket",
+                         "type":"string",
+                         "value":"props\/blanket_v.png"
+                        }, 
+                        {
                          "name":"offsetX",
                          "type":"int",
-                         "value":-48
+                         "value":-32
+                        }, 
+                        {
+                         "name":"sleepX",
+                         "type":"int",
+                         "value":16
+                        }, 
+                        {
+                         "name":"sleepY",
+                         "type":"int",
+                         "value":5
                         }],
                  "rotation":0,
                  "type":"bed",
                  "visible":true,
                  "width":64,
-                 "x":96,
-                 "y":256
+                 "x":256,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -191,7 +191,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":197,
+ "nextobjectid":200,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -210,19 +210,19 @@
          "source":"..\/props.tsj"
         }, 
         {
-         "firstgid":580,
+         "firstgid":584,
          "source":"..\/icons.tsj"
         }, 
         {
-         "firstgid":1012,
+         "firstgid":1016,
          "source":"..\/FreePixel.tsj"
         }, 
         {
-         "firstgid":1044,
+         "firstgid":1048,
          "source":"..\/Full_1.tsj"
         }, 
         {
-         "firstgid":1100,
+         "firstgid":1104,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

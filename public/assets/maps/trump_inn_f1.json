@@ -153,6 +153,12 @@
                 }, 
                 {
                  "id":69,
+                 "properties":[
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":16
+                        }],
                  "template":"..\/templates\/stove.tj",
                  "type":"stove",
                  "x":256,
@@ -181,35 +187,6 @@
                  "template":"..\/templates\/chair.tj",
                  "x":416,
                  "y":400
-                },
-            
-                {
-                 "gid":1023,
-                 "height":96,
-                 "id":78,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"gl",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"gr",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"offsetX",
-                         "type":"int",
-                         "value":-32
-                        }],
-                 "rotation":0,
-                 "type":"bed",
-                 "visible":true,
-                 "width":96,
-                 "x":128,
-                 "y":320
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -237,11 +214,11 @@
          "source":"..\/props.tsj"
         }, 
         {
-         "firstgid":578,
+         "firstgid":584,
          "source":"..\/icons.tsj"
         }, 
         {
-         "firstgid":1010,
+         "firstgid":1016,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

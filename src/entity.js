@@ -7,8 +7,8 @@ import AudioManager from './audio.js';
 import {bbcText} from './uibase'
 import * as Role from './role';
 
-let DEBUG=true;
-let DBG_TYPE=GM.DBG_ALL;
+let DEBUG = true;
+let DBG_TYPE = GM.DBG_ALL;
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -18,17 +18,20 @@ export class Entity extends Phaser.GameObjects.Container
         this.scene = scene;
         scene.add.existing(this);
         this.enableOutline();
-        this.bl=0,this.br=0,this.bt=0,this.bb=0;    // body
-        this.gl=0,this.gr=0,this.gt=0,this.gb=0;    // grid
-        this.zl=0,this.zr=0,this.zt=0,this.zb=0;    // zone，interactive=true 才有作用
-        this.anchorX = 0;
-        this.anchorY = 0;
         this.interactive = false;
         this.en_outline = true;
         this.weight = 0;
         this.isStatic = true; // true: static body, false: dynamic body
         this.uid = -1;   // map.createMap() 會自動設定 uid
-        this._pGrids=[];   // grid 所佔據的點
+        this._pGrids = [];   // grid 所佔據的點
+        this._flipX = false;
+        this._flipY = false;
+        // 變數一定要給值，map 在初始化時，才會 assign 相對應的值
+        this.bl=0, this.br=0, this.bt=0, this.bb=0;    // body
+        this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid
+        this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone，interactive=true 才有作用
+        this.anchorX = 0;
+        this.anchorY = 0;
     }
 
     get pos()   {return {x:this.x,y:this.y}}
@@ -43,14 +46,12 @@ export class Entity extends Phaser.GameObjects.Container
     get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};}
     get max() {return {x:this.displayWidth/2-this.anchorX, y:this.displayHeight/2-this.anchorY};}
 
-    set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);} 
-    set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}
+    set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);}    // map.createFromObjects 會呼叫到
+    set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}  // map.createFromObjects 會呼叫到
     get displayWidth() {return this._w;}
     get displayHeight() {return this._h;}
 
     get mapName() {return this.scene._data.map;}
-
-    
 
     enableOutline()
     {
@@ -58,7 +59,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.on('outline', (on) => {this.outline(on);})
     }
 
-    setPosition(x,y)
+    setPosition(x,y)    // map.createFromObjects 會呼叫到
     {
         this._x = x;
         this._y = y;
@@ -131,7 +132,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
     {
-        console.log(key,frame);
+        // console.log(key,frame);
         // console.trace();
         if(key)
         {
@@ -144,8 +145,10 @@ export class Entity extends Phaser.GameObjects.Container
 
     setFlip(horizontal,vertical)// map.createFromObjects 會呼叫到
     {
-        this._sp&&(this._sp.flipX=horizontal);
-        this._sp&&(this._sp.flipY=vertical);
+        this._flipX = horizontal;
+        this._flipY = vertical;
+        this._sp && (this._sp.flipX = horizontal);
+        this._sp && (this._sp.flipY = vertical);
     } 
 
     addPhysics()
@@ -195,8 +198,10 @@ export class Entity extends Phaser.GameObjects.Container
     addWeight(pt,weight)
     {
         let wei = weight ?? this.weight;
-        // wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        this.pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        // this.pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        this.pts = [pt??this.pos];
+
     }
 
     updateDepth()
@@ -218,12 +223,34 @@ export class Entity extends Phaser.GameObjects.Container
     setAnchor(modify=false)
     {
         if(this._sp) {this._sp.x = -this.anchorX; this._sp.y = -this.anchorY;}
+
         // prefab 才需要將 modify 設成 true，用以修正位置
         if(modify) {this.x+=this.anchorX;this.y+=this.anchorY;}
     }
 
+    updateFlip()
+    {
+        if(this._flipX)
+        {
+            let tmp = this.bl; this.bl = this.br; this.br = tmp;
+            tmp = this.zl; this.zl = this.zr; this.zr = tmp;
+            tmp = this.gl; this.gl = this.gr; this.gr = tmp;
+            this.anchorX = -this.anchorX;
+        }
+
+        if(this._flipY)
+        {
+            let tmp = this.bt; this.bt = this.bb; this.bb = tmp;
+            tmp = this.zt; this.zt = this.zb; this.zt = tmp;
+            tmp = this.gt; this.gt = this.gb; this.gb = tmp;
+            this.anchorY = -this.anchorY;
+        }
+    }
+
     init_prefab()
     {
+        this.updateFlip()
+
         let data = this.loadData();
         if(data?.removed) 
         {
@@ -476,8 +503,6 @@ export class Entity extends Phaser.GameObjects.Container
         draw_zone();
         draw_pts();
         show_text(text);
-
-        console.log(this)
     }
 
     removeFromObjects()
@@ -819,33 +844,71 @@ export class Bed extends Entity
         super(scene,x,y);  
         this.weight = 1000;
         this.interactive = true;  
-        this.offsetX = 0;
-        this.offsetY = 0;
-        this.user = null;
+        this.user = null;   // 使用者
         this._blanket;
-    }   
+        // 變數一定要給值，map 在初始化時，才會 assign 相對應的值
+        this.offsetX = 0;   // 下床點 x
+        this.offsetY = 0;   // 下床點 y
+        this.blanket = '';  // 棉被的 png，如:'props/blanket_h.png'
+        this.sleepX = 0;    // 睡覺點 x
+        this.sleepY = 0;    // 睡覺點 y
+        this.sleepA = 0;    // 使用者的旋轉角度(degree)
+    }  
+    
+    get displayWidth() {return super.displayWidth;}
+    get displayHeight() {return super.displayHeight;}
+
+    set displayWidth(value) {super.displayWidth=value;this._blanket&&(this._blanket.displayWidth=value);}
+    set displayHeight(value) {super.displayHeight=value;this._blanket&&(this._blanket.displayHeight=value);}
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
+    updateFlip()
+    {
+        super.updateFlip();
+        if(this._sp.flipX)
+        {
+            this.offsetX = -this.offsetX;
+            this.sleepX = -this.sleepX;
+            this.sleepA = -this.sleepA;
+        }
+
+        if(this._sp.flipY)
+        {
+            this.offsetY = -this.offsetY;
+            this.sleepY = -this.sleepY;
+            this.sleepA = this.sleepA+180;
+        }
+    }
+
+
     init_prefab()
     {
+        this.addBlanket();
         super.init_prefab();
-        this.addBlanket()
-
     }
 
     addBlanket()   
     {
-        let key='props/blanket.png';
-        let sp = this.scene.add.sprite(0,0,key);
-        sp.setPipeline('Light2D');
-        sp.displayWidth = this.displayWidth;
-        sp.displayHeight = this.displayHeight;
-        this.add(sp);
-        this._blanket = sp;
-        
+        if(this.blanket)
+        {
+            let sp = this.scene.add.sprite(0,0,this.blanket);
+            sp.setPipeline('Light2D');
+            sp.displayWidth = this.displayWidth;
+            sp.displayHeight = this.displayHeight;
+            sp.flipX = this._flipX;
+            sp.flipY = this._flipY;
+            this.add(sp);
+            this._blanket = sp;
+        }
+    }
+
+    setAnchor(modify=false)
+    {
+        super.setAnchor(modify)
+        if(this._blanket) {this._blanket.x = -this.anchorX; this._blanket.y = -this.anchorY;}
     }
 
     addListener()
@@ -860,6 +923,7 @@ export class Bed extends Entity
         role.sleep(this);
         this.user = role;
         this.bringToTop(this._blanket);
+        console.log(this);
     }
 
     wake()

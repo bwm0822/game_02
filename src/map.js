@@ -6,7 +6,7 @@ import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 
-let DEBUG=true;
+let DEBUG = false;
 
 function debug(...args) {if(DEBUG) {console.log(args);}}
 

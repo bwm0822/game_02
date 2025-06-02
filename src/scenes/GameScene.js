@@ -187,9 +187,7 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            console.log(this._avatar.state)
             if(this._avatar.state==GM.ST_SLEEP) {return;}
-            // if(!this._avatar.moving)
             if(this._avatar.state!=GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};

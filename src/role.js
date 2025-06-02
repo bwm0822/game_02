@@ -78,7 +78,6 @@ export class Role extends Entity
         this._faceR = true;
         //
         this._path = [];
-        // this._moving = false;
         this._act = '';
         this._resolve;
         //
@@ -91,14 +90,10 @@ export class Role extends Entity
 
     get isPlayer() {return false;}
 
-    get pos()       {return super.pos;}
-    set pos(value)  { this.removeWeight(); super.pos=value; this.addWeight(value);}
-
-    // get moving()    {return this._moving;}
     get storage()   {return this.status.bag;}
 
     get state()     {return this._state;}
-    set state(value) {this._state=value; console.log('set:',this.state);}
+    set state(value) {this._state=value;}
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
@@ -191,7 +186,6 @@ export class Role extends Entity
         if(rst.state>0)
         {
             this._path = rst.path;
-            // this._moving = true; 
             this.state = GM.ST_MOVING;
             this._ent = null;
             this._act = '';
@@ -204,7 +198,6 @@ export class Role extends Entity
         let pts = ent?.pts ?? [pt];
         if(this.isTouch(ent))
         {
-            // this._moving = false; 
             this.state = GM.ST_IDLE;
             this._ent = ent;
             this._act = act ?? ent?.act ?? '';
@@ -217,7 +210,6 @@ export class Role extends Entity
             {
                 if(this.isPlayer) {this.send('clearpath');}
                 this._path = rst.path;
-                // this._moving = true; 
                 this.state = GM.ST_MOVING;
                 this._ent = ent;
                 this._act = act ?? ent?.act ?? '';
@@ -298,7 +290,6 @@ export class Role extends Entity
     stop()
     {
         this._path = [];
-        // this._moving = false;
         this.state = GM.ST_IDLE;
         if(this._dbgPath){this._dbgPath.clear();}
     }
@@ -643,23 +634,22 @@ export class Role extends Entity
 
     sleep(ent)
     {
+        this.removeWeight()
         ent.add(this);
-        this.pos={x:0,y:0}
-        this.rotation = ent.rotation;
-        this._zone.disableInteractive();
-        
-        this.state=GM.ST_SLEEP;
-        console.log('------------------------',this.state)
+        this.pos = {x:ent.sleepX,y:ent.sleepY}
+        this.angle = ent.sleepA;
+        this._zone.disableInteractive();        
+        this.state = GM.ST_SLEEP;
     }
 
     wake(ent)
     {
         ent.remove(this)
         this.pos = ent.pt;
-        this.rotation = 0;
+        this.angle = 0;
+        this.addWeight();
         this._zone.setInteractive();
-        this.state=GM.ST_IDLE;
-        console.log('------------------------wake',this.state)
+        this.state = GM.ST_IDLE;
     }
 
     load(record)    // call by Avatar
