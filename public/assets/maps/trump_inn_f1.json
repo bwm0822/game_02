@@ -104,17 +104,6 @@
                  "y":480
                 }, 
                 {
-                 "height":32,
-                 "id":49,
-                 "name":"trump-p0",
-                 "rotation":0,
-                 "type":"point",
-                 "visible":true,
-                 "width":32,
-                 "x":96,
-                 "y":64
-                }, 
-                {
                  "id":54,
                  "template":"..\/templates\/table.tj",
                  "x":256,
@@ -187,6 +176,13 @@
                  "template":"..\/templates\/chair.tj",
                  "x":416,
                  "y":400
+                }, 
+                {
+                 "id":79,
+                 "name":"trump-p0",
+                 "template":"..\/templates\/point.tj",
+                 "x":96,
+                 "y":64
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -195,7 +191,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":79,
+ "nextobjectid":80,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

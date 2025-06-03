@@ -116,7 +116,7 @@ export class Schedular
                 let found = schedule.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.t);});
                 if(found)
                 {
-                    let pt = this.scene.ports[found.pos]?.pt;
+                    let pt = this.scene.ents[found.pos]?.pt;
                     if(pt)
                     {
                         let npc = new Role.Npc(scene,pt.x,pt.y);
@@ -138,9 +138,10 @@ export class Schedular
             if(sh.cd==0 && TimeManager.inRange(sh.t))
             {
                 sh.cd=60;
-                let pt = this.scene.ports[sh.from]?.pt;
+                let pt = this.scene.ents[sh.from]?.pt;
                 if(pt)
                 {
+                    console.log('create')
                     let npc = new Role.Npc(this.scene,pt.x,pt.y);
                     npc.init_runtime(sh.id).load();
                 }

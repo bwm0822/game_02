@@ -80,6 +80,7 @@ export class GameArea extends GameScene
             else
             {
                 await this._avatar.process();
+                console.log(this.roles)
                 for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
             TimeManager.inc();

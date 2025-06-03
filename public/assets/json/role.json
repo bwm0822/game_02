@@ -232,6 +232,19 @@
           "t": "0:00-24:00",
           "pos": "trump-p0"
         }
+      ],
+      "trump_inn_f2": [
+        {
+          "type": "stay",
+          "t": "0:00-7:00",
+          "pos": "trump-p0"
+        },
+        {
+          "type": "enter",
+          "t": "7:00-7:10",
+          "from": "trump-p0",
+          "to": "bed"
+        }
       ]
     }
   },

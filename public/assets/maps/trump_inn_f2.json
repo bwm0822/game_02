@@ -115,6 +115,11 @@
                          "value":"props\/blanket_h.png"
                         }, 
                         {
+                         "name":"en_multi",
+                         "type":"bool",
+                         "value":false
+                        }, 
+                        {
                          "name":"offsetY",
                          "type":"int",
                          "value":48
@@ -145,7 +150,7 @@
                  "gid":581,
                  "height":96,
                  "id":198,
-                 "name":"",
+                 "name":"bed",
                  "properties":[
                         {
                          "name":"anchorX",
@@ -161,6 +166,11 @@
                          "name":"blanket",
                          "type":"string",
                          "value":"props\/blanket_v.png"
+                        }, 
+                        {
+                         "name":"en_multi",
+                         "type":"bool",
+                         "value":false
                         }, 
                         {
                          "name":"offsetX",
@@ -183,6 +193,13 @@
                  "width":64,
                  "x":256,
                  "y":128
+                }, 
+                {
+                 "id":201,
+                 "name":"trump-p0",
+                 "template":"..\/templates\/point.tj",
+                 "x":192,
+                 "y":224
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -191,7 +208,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":200,
+ "nextobjectid":202,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

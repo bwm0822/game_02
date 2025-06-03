@@ -27,24 +27,26 @@ export class Entity extends Phaser.GameObjects.Container
         this._flipX = false;
         this._flipY = false;
         // 變數一定要給值，map 在初始化時，才會 assign 相對應的值
-        this.bl=0, this.br=0, this.bt=0, this.bb=0;    // body
-        this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid
-        this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone，interactive=true 才有作用
-        this.anchorX = 0;
-        this.anchorY = 0;
+        this.bl=0, this.br=0, this.bt=0, this.bb=0;    // body 的 left, right, top, bottom
+        this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid 的 left, right, top, bottom
+        this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone 的 left, right, top, bottom，interactive=true 才有作用
+        this.anchorX = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
+        this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角
+        this.en_multi = true;
     }
 
-    get pos()   {return {x:this.x,y:this.y}}
-    set pos(value)  {this.x=value.x;this.y=value.y;}
-    get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}}
-    get act()   {return this.acts.length > 0 ? this.acts[0] : '';}
+    get pt() {return {x:this.x, y:this.y}}
+    get pos()   {return {x:this.x,y:this.y}}    // 錨點的座標(world space)
+    set pos(value)  {this.x=value.x;this.y=value.y;}    
+    get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}} // grid 的中心點(world space)
+    get act()   {return this.acts.length > 0 ? this.acts[0] : '';}  // 預設的動作
     get acts()  {return [];}
     get pts() {return this._pGrids;}
     set pts(value) {this._pGrids=value;}
     get anchor() {return {x:this.anchorX, y:this.anchorY};}
     set anchor(value) {this.anchorX=value.x;this.anchorY=value.y;}
-    get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};}
-    get max() {return {x:this.displayWidth/2-this.anchorX, y:this.displayHeight/2-this.anchorY};}
+    get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};} // entity 的左上角跟錨點的差距
+    get max() {return {x:this.displayWidth/2-this.anchorX, y:this.displayHeight/2-this.anchorY};}   // entity 的右下角跟錨點的差距
 
     set displayWidth(value) {this._w=value;this._sp&&(this._sp.displayWidth=value);}    // map.createFromObjects 會呼叫到
     set displayHeight(value) {this._h=value;this._sp&&(this._sp.displayHeight=value);}  // map.createFromObjects 會呼叫到
@@ -53,10 +55,19 @@ export class Entity extends Phaser.GameObjects.Container
 
     get mapName() {return this.scene._data.map;}
 
-    enableOutline()
+    send(type, ...args) {this.scene.events.emit(type, ...args);}
+
+    setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
     {
-        this._outline = this.scene.plugins.get('rexOutlinePipeline');
-        this.on('outline', (on) => {this.outline(on);})
+        // console.log(key,frame);
+        // console.trace();
+        if(key)
+        {
+            let sp = this.scene.add.sprite(0,0,key,frame);
+            sp.setPipeline('Light2D');
+            this.add(sp);
+            this._sp = sp;
+        }
     }
 
     setPosition(x,y)    // map.createFromObjects 會呼叫到
@@ -66,8 +77,22 @@ export class Entity extends Phaser.GameObjects.Container
         super.setPosition(x, y);
     }
 
-    send(type, ...args) {this.scene.events.emit(type, ...args);}
+    setFlip(horizontal,vertical)    // map.createFromObjects 會呼叫到
+    {
+        this._flipX = horizontal;
+        this._flipY = vertical;
+        this._sp && (this._sp.flipX = horizontal);
+        this._sp && (this._sp.flipY = vertical);
+    } 
 
+
+    enableOutline()
+    {
+        this._outline = this.scene.plugins.get('rexOutlinePipeline');
+        this.on('outline', (on) => {this.outline(on);})
+    }
+
+  
     addListener()
     {
         if(!this.interactive) {return;}
@@ -130,27 +155,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._rect.visible=on;
     }
 
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
-    {
-        // console.log(key,frame);
-        // console.trace();
-        if(key)
-        {
-            let sp = this.scene.add.sprite(0,0,key,frame);
-            sp.setPipeline('Light2D');
-            this.add(sp);
-            this._sp = sp;
-        }
-    }
-
-    setFlip(horizontal,vertical)// map.createFromObjects 會呼叫到
-    {
-        this._flipX = horizontal;
-        this._flipY = vertical;
-        this._sp && (this._sp.flipX = horizontal);
-        this._sp && (this._sp.flipY = vertical);
-    } 
-
+   
     addPhysics()
     {
         // (body.x, body.y) 是 body 的左上角， body.center 才是中心點
@@ -198,9 +203,11 @@ export class Entity extends Phaser.GameObjects.Container
     addWeight(pt,weight)
     {
         let wei = weight ?? this.weight;
-        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        // this.pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        this.pts = [pt??this.pos];
+        // wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        let pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        this.pts = pt ? [pt] 
+                        : this.en_multi ? pts 
+                                        : [this.pos];
 
     }
 
@@ -249,6 +256,12 @@ export class Entity extends Phaser.GameObjects.Container
 
     init_prefab()
     {
+        if(this.name)
+        {
+            if(!this.scene.ents) {this.scene.ents={};}
+            this.scene.ents[this.name] = this;
+        }
+
         this.updateFlip()
 
         let data = this.loadData();
@@ -920,10 +933,13 @@ export class Bed extends Entity
 
     rest(role)
     {
-        role.sleep(this);
-        this.user = role;
-        this.bringToTop(this._blanket);
-        console.log(this);
+        if(!this.user)
+        {
+            role.sleep(this);
+            this.user = role;
+            this.bringToTop(this._blanket);
+            console.log(this);
+        }
     }
 
     wake()
@@ -940,12 +956,12 @@ export class Point extends Entity
 
     get pt() {return {x:this.x, y:this.y}}
 
-    init_prefab()
-    {
-        super.init_prefab();
-        if(!this.scene.ports) {this.scene.ports={};}
-        this.scene.ports[this.name] = this;
-    }
+    // init_prefab()
+    // {
+    //     super.init_prefab();
+    //     if(!this.scene.ports) {this.scene.ports={};}
+    //     this.scene.ports[this.name] = this;
+    // }
 }
 
 
@@ -964,13 +980,6 @@ export class Port extends Entity
     get acts()  {return [GM.ENTER];}
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
-
-    init_prefab()
-    {
-        super.init_prefab();
-        if(!this.scene.ports) {this.scene.ports={};}
-        this.scene.ports[this.name] = this;
-    }
 
     addListener()
     {

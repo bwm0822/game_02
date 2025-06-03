@@ -213,6 +213,7 @@ export class Role extends Entity
                 this.state = GM.ST_MOVING;
                 this._ent = ent;
                 this._act = act ?? ent?.act ?? '';
+                this._pt = pt;
                 this.resume();
             }
             else
@@ -259,9 +260,15 @@ export class Role extends Entity
                 path.shift();   //移除陣列第一個元素
                 if(path.length>0) {return false;}
             }
+            else
+            {
+                this.setDes(this._pt, this._ent, this._act);
+                return false;
+            }
         }
         
         this.stop();
+        console.log('action')
         await this.action();
         return true;
     }
@@ -686,10 +693,13 @@ export class Role extends Entity
             this._dbgPath.setDepth(Infinity);
         }
         this._dbgPath.clear();
-        path.forEach(node=>{
-            let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
-            this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-        })
+        if(path)
+        {
+            path.forEach(node=>{
+                let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            })
+        }
     }
 
     async process()
@@ -843,7 +853,6 @@ export class Npc extends Role
         
         this.addToRoleList();
         this.load();
-        this.debugDraw('zone')
         return true;
     }
 
@@ -876,12 +885,13 @@ export class Npc extends Role
             let found = this.schedule.find((s)=>{return s.cd==0 && TimeManager.inRange(s.t);})
             if(found)
             {
+                console.log('-------chk1');
                 found.cd = 60;
 
-                let p0 = this.scene.ports[found.from];
-                let p1 = this.scene.ports[found.to];
+                let p0 = this.scene.ents[found.from];
+                let p1 = this.scene.ents[found.to];
 
-                let rst = this.scene.map.getPath(p0, p1);
+                let rst = this.scene.map.getPath(p0.pt, [p1.pt]);
                 console.log(found,rst);
 
                 let t = found.t.split('-');
@@ -892,9 +902,12 @@ export class Npc extends Role
                 let i = Math.floor(rst.path.length*ratio);
                 console.log(ratio, rst.path.length, i);
 
+                this.removeWeight();
                 this.pos = rst.path[i];
+                this.addWeight();
                 let act = found.type == 'exit' ? 'exit' : null;
-                this.setDes(p1,null,act);
+                // this.setDes(p1,null,act);
+                this.setDes(p1.pt,p1);
                 this.state = GM.ST_MOVING;
 
             }
@@ -1011,6 +1024,16 @@ export class Npc extends Role
                 break;
         }
         
+    }
+
+    debugDraw(type,text)
+    {
+        super.debugDraw(type,text);
+        if(type === GM.DBG_CLR) 
+            this.drawPath(null);
+        else
+            this.drawPath(this._path);
+
     }
 }
 
