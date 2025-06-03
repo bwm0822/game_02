@@ -240,10 +240,22 @@
           "pos": "trump-p0"
         },
         {
-          "type": "enter",
+          "type": "action",
           "t": "7:00-7:10",
           "from": "trump-p0",
           "to": "bed"
+        },
+        {
+          "type": "action",
+          "t": "7:15-7:25",
+          "from": "bed",
+          "to": "door"
+        },
+        {
+          "type": "exit",
+          "t": "7:25-7:30",
+          "from": "door",
+          "to": "stair_dn"
         }
       ]
     }

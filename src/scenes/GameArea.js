@@ -43,6 +43,7 @@ export class GameArea extends GameScene
 
     async create()
     {
+        this.phyGroup = this.physics.add.group();
         this.mode = 'normal';
         //this.mode = 'combat';
         await super.create({diagonal:true,classType:Role.Avatar});       
@@ -76,6 +77,10 @@ export class GameArea extends GameScene
             {
                 let roles = this.roles.map((role)=>{return role.process();});
                 await Promise.all( [this._avatar.process(),...roles] );
+
+                // await this._avatar.process();
+                // let roles = this.roles.map((role)=>{return role.process();});
+                // await Promise.all(roles);
             } 
             else
             {

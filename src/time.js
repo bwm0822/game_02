@@ -84,6 +84,15 @@ export default class TimeManager
         
     }
 
+    static atTs(t)
+    {
+        t = t.split('-');
+        let ts = this.str2Ticks(t[0]);
+        let te = this.str2Ticks(t[1]);
+        return this.ticks==ts;
+        
+    }
+
     static time2Ticks(time)
     {
         return time.h * 60 + time.m;

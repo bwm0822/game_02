@@ -81,14 +81,8 @@
                  "y":96
                 }, 
                 {
-                 "id":192,
-                 "template":"..\/templates\/door.tj",
-                 "type":"door",
-                 "x":64,
-                 "y":320
-                }, 
-                {
                  "id":193,
+                 "name":"door",
                  "template":"..\/templates\/door.tj",
                  "x":224,
                  "y":320

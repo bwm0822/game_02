@@ -6,11 +6,11 @@
     "activeFile": "public/assets/maps/trump_inn_f2.json",
     "expandedProjectPaths": [
         ".",
+        "public/assets/maps",
         "public",
         "public/assets/tiles",
-        "public/assets",
-        "public/assets/maps",
-        "public/assets/templates"
+        "public/assets/templates",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -304,8 +304,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 169,
-                "y": 89.33333333333334
+                "x": 240,
+                "y": 239.66666666666663
             }
         },
         "public/assets/maps/trump_inn_f2.json": {
@@ -315,20 +315,20 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 264.3333333333333,
+                "x": 223.66666666666669,
                 "y": 200.66666666666669
             }
         },
         "public/assets/maps/village_01.json": {
             "expandedObjectLayers": [
-                4,
-                3
+                3,
+                4
             ],
             "scale": 0.75,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 806.6666666666665,
-                "y": 922.6666666666666
+                "x": 640,
+                "y": 640.6666666666667
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -496,7 +496,7 @@
         "public/assets/maps/village_01.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/maps/village_01.json",
         "public/assets/maps/trump_inn_f1.json",

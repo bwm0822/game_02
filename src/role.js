@@ -97,6 +97,12 @@ export class Role extends Entity
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
+    addPhysics()
+    {
+        super.addPhysics();
+        this.scene.phyGroup.add(this);
+    }
+
     addSprite(sprite)
     {
         //let [key,frame]=ICON_AVATAR.split('/');
@@ -266,11 +272,15 @@ export class Role extends Entity
                 return false;
             }
         }
+        else
+        {
+            console.log('touch')
+        }
         
         this.stop();
         console.log('action')
         await this.action();
-        return true;
+        // return true;
     }
 
     async action()
@@ -283,10 +293,6 @@ export class Role extends Entity
         {
             await this.step( this._ent.pos, 200, 'expo.in',
                             {yoyo:true, onYoyo:()=>{this.interact(this._ent,this._act);}} ); 
-        }
-        else if(this._act==GM.EXIT)
-        {
-            this.exit();
         }
         else
         {
@@ -647,6 +653,7 @@ export class Role extends Entity
         this.angle = ent.sleepA;
         this._zone.disableInteractive();        
         this.state = GM.ST_SLEEP;
+        console.log(this.state)
     }
 
     wake(ent)
@@ -840,6 +847,9 @@ export class Npc extends Role
     get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
                                             : ['attack','observe'];}
 
+    // get state()     {return super.state;}
+    // set state(value) {super.state=value;console.log(value);console.trace()}               
+
     init_prefab()
     {
         if(!super.init_prefab()) {return false;}
@@ -866,7 +876,8 @@ export class Npc extends Role
     updateTime(dt)
     {
         //console.log('updateTime')
-        this.checkSchedule();
+        //this.checkSchedule();
+        this.updateSchedule();
         this.updateStates();
     }
 
@@ -874,26 +885,31 @@ export class Npc extends Role
     {
         if(!this.role.schedule) {return;}
         let sch = this.role.schedule[this.mapName];
-        this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
-        this.schedule.forEach((s)=>{s.cd=0;})
+        // this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
+        this.schedule = sch.filter((s)=>{return s.type!='stay'});
+        // this.schedule.forEach((s)=>{s.cd=0;})
     }
 
     checkSchedule()
     {
         if(this.schedule)
         {
-            let found = this.schedule.find((s)=>{return s.cd==0 && TimeManager.inRange(s.t);})
+            let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                console.log('-------chk1');
-                found.cd = 60;
+                // found.cd = 60;
 
-                let p0 = this.scene.ents[found.from];
-                let p1 = this.scene.ents[found.to];
+                let ent0 = this.scene.ents[found.from];
+                let ent1 = this.scene.ents[found.to];
 
-                let rst = this.scene.map.getPath(p0.pt, [p1.pt]);
-                console.log(found,rst);
+                console.log(this.state)
+                
+                if(this.state == GM.ST_SLEEP)
+                {
+                    ent0.wake();
+                }
 
+                let rst = this.scene.map.getPath(ent0.pt, [ent1.pt]);
                 let t = found.t.split('-');
                 let t0 = TimeManager.str2Ticks(t[0])
                 let t1 = TimeManager.str2Ticks(t[1])
@@ -905,12 +921,40 @@ export class Npc extends Role
                 this.removeWeight();
                 this.pos = rst.path[i];
                 this.addWeight();
-                let act = found.type == 'exit' ? 'exit' : null;
-                // this.setDes(p1,null,act);
-                this.setDes(p1.pt,p1);
-                this.state = GM.ST_MOVING;
+                this.setDes(ent1.pt,ent1);
 
             }
+        }
+    }
+
+    updateSchedule()
+    {
+        if(this.schedule)
+        {
+            let found = this.schedule.find((s)=>{return TimeManager.atTs(s.t);})
+            if(found)
+            {
+                let ent0 = this.scene.ents[found.from];
+                let ent1 = this.scene.ents[found.to];
+            
+                if(this.state == GM.ST_SLEEP)
+                {
+                    ent0.wake();
+                }
+                this.setDes(ent1.pt,ent1);
+            }
+        }
+    }
+
+    interact(ent, act) 
+    {
+        if(act == GM.ENTER)
+        {
+            this.exit();
+        }
+        else
+        {
+            super.interact(ent, act)
         }
     }
 
@@ -1016,8 +1060,9 @@ export class Npc extends Role
             case GM.ST_IDLE: break;
             case GM.ST_MOVING:
                 //this.setDes(Avatar.instance.pos);
-                let ret = await this.moveTo({draw:false});
-                if(ret) {this.state = GM.ST_IDLE;}
+                // let ret = await this.moveTo({draw:false});
+                // if(ret) {this.state = GM.ST_IDLE;}
+                await this.moveTo({draw:false});
                 break;
             case GM.ST_ATTACK:
                 await this.attack();

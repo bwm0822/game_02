@@ -131,7 +131,7 @@ export class GameScene extends Scene
     {
         let pos;
         if(this._data.pos) {pos = this._data.pos}
-        else {pos = this.ports[this._data.port].pt;}
+        else {pos = this.ents[this._data.port].pt;}
 
         this._avatar = new classType(this,pos.x,pos.y);
         this._avatar.init_runtime('scott');

@@ -811,11 +811,34 @@ export class Door extends Entity
 
     get acts()  {return [this.opened ? GM.CLOSE_DOOR : GM.OPEN_DOOR];}
 
+
+    addPhysics()
+    {
+        super.addPhysics();
+        // this.scene.physics.add.overlap(this, this.scene.phyGroup, (obj1, obj2) => {
+        //     // console.log('撞上啦！要小心哦 ♥', obj1, obj2);
+        //     this.overlap=true;
+        //     console.log('overlap')
+        // }, null, this);
+    }
+
     addListener()
     {
         super.addListener();
         this.on(GM.OPEN_DOOR,()=>{this.open();})
         this.on(GM.CLOSE_DOOR,(role)=>{this.close(role);})
+    }
+
+    checkOverlap()
+    {
+        for(let elm of this.scene.phyGroup.children.entries)
+        {
+            if (this.scene.physics.world.overlap(this, elm)) 
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     open()
@@ -832,7 +855,8 @@ export class Door extends Entity
 
     close(role)
     {
-        if(!this.isInGrid(role.pos))
+        // if(!this.isInGrid(role.pos))
+        if(!this.checkOverlap())
         {
             this.opened=false;
             this._sp.setTexture('doors',0);
@@ -842,10 +866,6 @@ export class Door extends Entity
             this._zone.setSize(this.displayWidth,this.displayHeight);
             AudioManager.doorClose();
             // this.debugDraw('zone');
-        }
-        else
-        {
-            console.log('inGrid')
         }
     }
 }
@@ -878,6 +898,7 @@ export class Bed extends Entity
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
+   
     updateFlip()
     {
         super.updateFlip();
@@ -954,7 +975,7 @@ export class Bed extends Entity
 export class Point extends Entity
 {
 
-    get pt() {return {x:this.x, y:this.y}}
+    // get pt() {return {x:this.x, y:this.y}}
 
     // init_prefab()
     // {
