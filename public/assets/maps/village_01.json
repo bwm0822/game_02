@@ -76,11 +76,6 @@
                          "name":"items",
                          "type":"string",
                          "value":"[\"boots_01\"]"
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":1000
                         }],
                  "rotation":0,
                  "type":"case",

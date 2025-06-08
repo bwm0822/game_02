@@ -120,45 +120,8 @@
     "schedule": {
       "village_01": [
         {
-          "type": "enter",
-          "t": "6:00-6:10",
-          "from": "musk-p0",
-          "to": "musk-p1"
-        },
-        {
-          "type": "stay",
-          "t": "6:10-17:00",
-          "pos": "musk-p1"
-        },
-        {
-          "type": "exit",
-          "t": "17:00-17:10",
-          "from": "musk-p1",
-          "to": "musk-p0"
-        }
-      ],
-      "house_01": [
-        {
-          "type": "stay",
-          "t": "0:00-5:50",
-          "pos": "point-1"
-        },
-        {
-          "type": "exit",
-          "t": "5:50-6:00",
-          "from": "point-1",
-          "to": "門"
-        },
-        {
-          "type": "enter",
-          "t": "17:10-17:20",
-          "from": "門",
-          "to": "point-1"
-        },
-        {
-          "type": "stay",
-          "t": "17:20-24:00",
-          "pos": "point-1"
+          "t": "0:0~24:0",
+          "p": "musk-p0"
         }
       ]
     }
@@ -228,34 +191,34 @@
     "schedule": {
       "trump_inn_f1": [
         {
-          "type": "stay",
-          "t": "0:00-24:00",
-          "pos": "trump-p0"
+          "t": "7:20~7:30",
+          "p": "stair_up~trump-p0"
+        },
+        {
+          "t": "7:30~21:00",
+          "p": "trump-p0"
+        },
+        {
+          "t": "21:00~21:10",
+          "p": "trump-p0~stair_up"
         }
       ],
       "trump_inn_f2": [
         {
-          "type": "stay",
-          "t": "0:00-7:00",
-          "pos": "trump-p0"
+          "t": "7:00~7:25",
+          "p": "bed~stair_dn"
         },
         {
-          "type": "action",
-          "t": "7:00-7:10",
-          "from": "trump-p0",
-          "to": "bed"
+          "t": "8:10~8:25",
+          "p": "stair_dn~bed"
         },
         {
-          "type": "action",
-          "t": "7:15-7:25",
-          "from": "bed",
-          "to": "door"
+          "t": "8:25~8:35",
+          "p": "bed"
         },
         {
-          "type": "exit",
-          "t": "7:25-7:30",
-          "from": "door",
-          "to": "stair_dn"
+          "t": "8:35~9:30",
+          "p": "bed~stair_dn"
         }
       ]
     }
@@ -315,21 +278,8 @@
     "schedule": {
       "village_01": [
         {
-          "type": "enter",
-          "t": "6:00-6:10",
-          "from": "karen-p0",
-          "to": "karen-p1"
-        },
-        {
-          "type": "stay",
-          "t": "6:10-17:00",
-          "pos": "karen-p1"
-        },
-        {
-          "type": "exit",
-          "t": "17:00-17:10",
-          "from": "karen-p1",
-          "to": "karen-p0"
+          "t": "0:0~24:0",
+          "p": "karen-p0"
         }
       ]
     }
@@ -399,21 +349,8 @@
     "schedule": {
       "village_01": [
         {
-          "type": "enter",
-          "t": "6:00-6:10",
-          "from": "xi-p0",
-          "to": "xi-p1"
-        },
-        {
-          "type": "stay",
-          "t": "6:10-17:00",
-          "pos": "xi-p1"
-        },
-        {
-          "type": "exit",
-          "t": "17:00-17:10",
-          "from": "xi-p1",
-          "to": "xi-p0"
+          "t": "0:0~24:0",
+          "p": "xi-p0"
         }
       ]
     }
@@ -483,21 +420,8 @@
     "schedule": {
       "village_01": [
         {
-          "type": "enter",
-          "t": "6:00-6:10",
-          "from": "macron-p0",
-          "to": "macron-p1"
-        },
-        {
-          "type": "stay",
-          "t": "6:10-17:00",
-          "pos": "macron-p1"
-        },
-        {
-          "type": "exit",
-          "t": "17:00-17:10",
-          "from": "macron-p1",
-          "to": "macron-p0"
+          "t": "0:0~24:0",
+          "p": "macron-p0"
         }
       ]
     }

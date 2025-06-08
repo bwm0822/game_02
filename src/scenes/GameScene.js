@@ -169,7 +169,7 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._avatar.moving)
+                if(this._avatar.state==GM.ST_MOVING)
                 {
                     this._avatar.stop();
                     this.findPath(pt);

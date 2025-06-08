@@ -8,10 +8,10 @@ import Utility from './utility.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
-import {Entity,Pickup} from './entity.js';
+import {Entity,Pickup,Door} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
-import {text,rect} from './uibase.js';
+import {text,bbcText,rect} from './uibase.js';
 import {GM} from './setting.js';
 import TimeManager from './time.js';
 import QuestManager from './quest.js';  
@@ -202,14 +202,15 @@ export class Role extends Entity
     setDes(pt, ent, act)
     {
         let pts = ent?.pts ?? [pt];
-        if(this.isTouch(ent))
-        {
-            this.state = GM.ST_IDLE;
-            this._ent = ent;
-            this._act = act ?? ent?.act ?? '';
-            this.resume();
-        }
-        else
+        // if(this.isTouch(ent))
+        // {
+        //     console.log('t-1')
+        //     this.state = GM.ST_IDLE;
+        //     this._ent = ent;
+        //     this._act = act ?? ent?.act ?? '';
+        //     this.resume();
+        // }
+        // else
         {
             let rst = this.scene.map.getPath(this.pos, pts);
             if(rst?.state>=0)
@@ -218,13 +219,15 @@ export class Role extends Entity
                 this._path = rst.path;
                 this.state = GM.ST_MOVING;
                 this._ent = ent;
-                this._act = act ?? ent?.act ?? '';
+                // this._act = act ?? ent?.act ?? '';
+                this._act = act;
                 this._pt = pt;
                 this.resume();
             }
             else
             {
                 this.stop();
+                this.state = GM.ST_IDLE;
             }
         }
     }
@@ -246,17 +249,43 @@ export class Role extends Entity
         return !ent ? false : this.scene.map.isNearby(ent,this.pos);
     }
 
-    async moveTo({duration=200,ease='expo.in'}={})
+    async move({duration=200,ease='expo.in',repath=true}={})
     {
-        if(this._path.length==0) {return;}
-        let path = this._path;
+        // if(this._path.length==0) {return false;}
+        // let path = this._path;
+
+        if(this._exec)
+        {
+            await this.interact(this._exec.ent, this._exec.act);
+            this._exec = null;
+            return true;
+        }
         
         if(!this.isTouch(this._ent))
         { 
+            if(this._path.length==0) 
+            {
+                this.stop();
+                this.state=GM.ST_IDLE;
+                return false;
+            }
+            let path = this._path;
             let pt = path[0];
-            if(this.scene.map.isWalkable(pt))
+            let w = this.scene.map.getWeight(pt)
+
+            if(w<GM.W_BLOCK)    // walkable
             {
                 if(this.isPlayer) {this.drawPath(path);}
+                else
+                {
+                    if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
+                    {
+                        let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
+                        this._exec = {ent:bodys[0]?.gameObject, act:GM.CLOSE_DOOR}
+                    }
+                    this._preW=w;
+                    this._prePt=pt;
+                }
                 this.faceTo(pt);
                 this.removeWeight();
                 this.addWeight(pt);
@@ -264,12 +293,44 @@ export class Role extends Entity
                 //this.addWeight();
                 this.updateDepth();
                 path.shift();   //移除陣列第一個元素
-                if(path.length>0) {return false;}
+                console.log(path.length)
+                // if(path.length>0) {return true;}
+                return false;
             }
             else
             {
-                this.setDes(this._pt, this._ent, this._act);
-                return false;
+                if(this.isPlayer)
+                {
+                    this.stop();
+                    this.state = GM.ST_IDLE;
+                    return false;
+                }
+                else
+                {
+                     // console.log(this.scene.phyGroup.children.entries[0].body.center,pt)
+                    let bodys = this.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
+                    let ent = bodys[0]?.gameObject;
+
+                    if (ent && ent instanceof Door && !ent.opened) 
+                    {
+                        await this.interact(ent, GM.OPEN_DOOR);
+                        return true;
+                    }
+                    else if(repath)
+                    {
+                        this.setDes(this._pt, this._ent, this._act);
+                        let ret = await this.move({repath:false});
+                        if(!ret)
+                        {
+                            this.speak('操...給老子滾開...💢');
+                        }
+
+                        return ret;
+                    }
+                    return false;
+                    
+                }
+
             }
         }
         else
@@ -278,32 +339,46 @@ export class Role extends Entity
         }
         
         this.stop();
-        console.log('action')
         await this.action();
-        // return true;
+        return true;
     }
 
     async action()
     {
-        if(!this._act) {return;}
+        // if(!this._act) {return;}
 
         if(this._ent) {this.faceTo(this._ent.pos);}
 
-        if(this._act==GM.ATTACK)
+        let act = this._act??this._ent?.act;
+
+        console.log(`[${this.isPlayer?'player':'npc'}] action:${act}`);
+
+        if(act==GM.ATTACK)
         {
+            this.state = GM.ST_ATTACK;
             await this.step( this._ent.pos, 200, 'expo.in',
-                            {yoyo:true, onYoyo:()=>{this.interact(this._ent,this._act);}} ); 
+                            {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent,act);}} ); 
         }
         else
         {
-            this.interact(this._ent,this._act);
+            this.state = GM.ST_IDLE;
+            await this.interact(this._ent,act);
         }
+
+        // this._act = null;
+        // this._ent = null;
+    }
+
+    next()
+    {
+        this.resume();
     }
 
     stop()
     {
+        // console.log('stop')
         this._path = [];
-        this.state = GM.ST_IDLE;
+        // this.state = GM.ST_IDLE;
         if(this._dbgPath){this._dbgPath.clear();}
     }
 
@@ -331,7 +406,11 @@ export class Role extends Entity
     //     bodys.forEach((body) => {body.gameObject.emit(act, this.owner);});
     // }
 
-    interact(ent, act) {ent.emit(act, this);}
+    async interact(ent, act) 
+    {
+        if(!act) {return;}
+        return new Promise((resolve)=>{ent.emit(act, resolve, this);});
+    }
 
     async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
@@ -346,7 +425,7 @@ export class Role extends Entity
         else
         {
             this.setDes(null,this._ent,this._act);
-            await this.moveTo({draw:false});
+            await this.move({draw:false});
         }
     }
 
@@ -383,6 +462,7 @@ export class Role extends Entity
 
     calc(attacker)
     {
+        // console.log(attacker)
         let dmg = attacker.status.attrs.attack;
         let life = this.status.states.life.cur;
         let defense = this.status.attrs.defense ?? 0;
@@ -448,23 +528,51 @@ export class Role extends Entity
         this.destroy();
     }
 
-    speak(value)
+    speak(words, {duration=1000,tween=false}={})
     {
         if(!this._speak)
         {
             this._speak = this.scene.rexUI.add.sizer(0,-48,{space:5});
-            this._speak//.addBackground(rect(this.scene,{color:0xffffff,radius:10,strokeColor:0x0,strokeWidth:0}))
+            this._speak.addBackground(rect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
                         .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
                         .setOrigin(0.5,1);
             this.add(this._speak);
             this.sort('depth')
         }
 
-        this._speak.getElement('text').setText(value);
-        this._speak.layout();
-        this._speak.show();
-        if (this._to) {clearTimeout(this._to);this._to=null;}
-        this._to = setTimeout(()=>{this._speak.hide();this._to=null;}, 1000);
+        if(tween)
+        {
+            this._speak.tw = this.scene.tweens.add({
+                targets: this._speak,
+                scale: 0.5,
+                loop: -1,
+                duration: 1000,
+                yoyo:true,
+                onStop: ()=>{this._speak.setScale(1);}, 
+            })
+        }
+
+        if(words)
+        {
+            this._speak.getElement('text').setText(words);
+            this._speak.show();
+            this._speak.layout();
+            if(duration>0)
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+                this._to = setTimeout(()=>{this._speak.hide();this._to=null;}, duration);
+            }
+            else
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+            }
+        }
+        else
+        {
+            if (this._to) {clearTimeout(this._to);this._to=null;}
+            this._speak.hide();
+            this._speak.tw?.stop();
+        }
 
     }
 
@@ -653,17 +761,22 @@ export class Role extends Entity
         this.angle = ent.sleepA;
         this._zone.disableInteractive();        
         this.state = GM.ST_SLEEP;
-        console.log(this.state)
+        this.speak('💤',{duration:-1,tween:true});
     }
 
-    wake(ent)
+    wake()
     {
+        console.log('wake')
+        this.speak();
+        let ent = this.parentContainer;
         ent.remove(this)
+        ent.user=null;
         this.pos = ent.pt;
         this.angle = 0;
         this.addWeight();
         this._zone.setInteractive();
         this.state = GM.ST_IDLE;
+        
     }
 
     load(record)    // call by Avatar
@@ -711,13 +824,27 @@ export class Role extends Entity
 
     async process()
     {
-        if(this.state == GM.ST_MOVING) {await this.moveTo();}
-        else
+        if(this.state==GM.ST_MOVING) {await this.move(); return}
+
+        console.log('pause-1')
+        await this.pause(); 
+        console.log('pause-2')
+
+        switch(this.state)
         {
-            await this.pause();
-            if(this.state == GM.ST_MOVING) {await this.moveTo();}
-            else {await this.action();}
+            case GM.ST_IDLE: break;
+            case GM.ST_MOVING:
+                console.log('[player]-moving');
+                await this.move(); break;
         }
+
+        // if(this.state == GM.ST_MOVING) {await this.move();}
+        // else
+        // {
+        //     await this.pause();
+        //     if(this.state == GM.ST_MOVING) {await this.move();}
+        //     else {await this.action();}
+        // }
     }
 
     registerTimeManager()
@@ -825,13 +952,13 @@ export class Avatar extends Role
 
     get isPlayer() {return true;}
 
-    async speak(value){}
+    // async speak(value){}
 
     addListener()
     {
         super.addListener();
-        this.on('talk',()=>{this.talk();})
-        this.on('attack',(attacker)=>{this.hurt(attacker);})
+        this.on('talk',(resolve)=>{this.talk();resolve()})
+        this.on('attack',(resolve,attacker)=>{this.hurt(attacker);resolve()})
     }
 
     dead(attacker)
@@ -884,9 +1011,9 @@ export class Npc extends Role
     setSchedule()
     {
         if(!this.role.schedule) {return;}
-        let sch = this.role.schedule[this.mapName];
+        this.schedule = this.role.schedule[this.mapName];
         // this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
-        this.schedule = sch.filter((s)=>{return s.type!='stay'});
+        // this.schedule = sch.filter((s)=>{return s.type!='stay'});
         // this.schedule.forEach((s)=>{s.cd=0;})
     }
 
@@ -897,51 +1024,115 @@ export class Npc extends Role
             let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                // found.cd = 60;
+                this._shCurrent = found;
+                console.log(found)
+                let ents = this.toEnts(found.p);
 
-                let ent0 = this.scene.ents[found.from];
-                let ent1 = this.scene.ents[found.to];
-
-                console.log(this.state)
-                
-                if(this.state == GM.ST_SLEEP)
+                if(ents.length==1)
                 {
-                    ent0.wake();
+                    this.setDes(null,ents[0]);
+                }
+                else
+                {
+                    if(this.state == GM.ST_SLEEP)
+                    {
+                        ents[0].wake();
+                    }
+
+                    let rst = this.scene.map.getPath(ents[0].pt, ents[1].pts);
+                    let t = found.t.split('~');
+                    let t0 = TimeManager.str2Ticks(t[0])
+                    let t1 = TimeManager.str2Ticks(t[1])
+                    let tc = TimeManager.ticks;
+                    let ratio = (tc-t0) / (t1-t0);
+                    let i = Math.floor(rst.path.length*ratio);
+                    console.log(ratio, rst.path.length, i);
+
+                    this.removeWeight();
+                    this.pos = rst.path[i];
+                    this.addWeight();
+                    this.setDes(null,ents[1]);
+
                 }
 
-                let rst = this.scene.map.getPath(ent0.pt, [ent1.pt]);
-                let t = found.t.split('-');
-                let t0 = TimeManager.str2Ticks(t[0])
-                let t1 = TimeManager.str2Ticks(t[1])
-                let tc = TimeManager.ticks;
-                let ratio = (tc-t0) / (t1-t0);
-                let i = Math.floor(rst.path.length*ratio);
-                console.log(ratio, rst.path.length, i);
 
-                this.removeWeight();
-                this.pos = rst.path[i];
-                this.addWeight();
-                this.setDes(ent1.pt,ent1);
+                // let ent0 = this.scene.ents[pts[0]];
+                // let ent1 = this.scene.ents[found.to];
+
+                
+                // if(this.state == GM.ST_SLEEP)
+                // {
+                //     ent0.wake();
+                // }
+
+                // let rst = this.scene.map.getPath(ent0.pt, [ent1.pt]);
+                // let t = found.t.split('-');
+                // let t0 = TimeManager.str2Ticks(t[0])
+                // let t1 = TimeManager.str2Ticks(t[1])
+                // let tc = TimeManager.ticks;
+                // let ratio = (tc-t0) / (t1-t0);
+                // let i = Math.floor(rst.path.length*ratio);
+                // console.log(ratio, rst.path.length, i);
+
+                // this.removeWeight();
+                // this.pos = rst.path[i];
+                // this.addWeight();
+                // this.setDes(ent1.pt,ent1);
 
             }
         }
     }
 
+    toEnts(p)
+    {
+        return p.split('~').map(id=>this.scene.ents[id])
+    }
+
     updateSchedule()
     {
+        // 如果正在移動中，則不檢查 schedule
+        if(this.state != GM.ST_IDLE && this.state != GM.ST_SLEEP) {return;}
+ 
         if(this.schedule)
         {
-            let found = this.schedule.find((s)=>{return TimeManager.atTs(s.t);})
+            console.log(this.schedule)
+            let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                let ent0 = this.scene.ents[found.from];
-                let ent1 = this.scene.ents[found.to];
-            
-                if(this.state == GM.ST_SLEEP)
+                console.log(found)
+                // 1. 檢查是否第一次進入 schedule
+                if(found != this._shCurrent)    
                 {
-                    ent0.wake();
+                    console.log('chk1')
+                    this._shCurrent = found;
+                    this._shLatency = GM.SH_LATENCY;
                 }
-                this.setDes(ent1.pt,ent1);
+
+                // 2. 如果已達目的地，則離開
+                console.log('chk2')
+                let ents = this.toEnts(found.p);    
+                let ent = ents.at(-1);
+                if(ent.checkInside(this)) {return;}
+
+                // 3. 檢查延遲
+                console.log('chk3')
+                if(this._shLatency >= GM.SH_LATENCY) 
+                {
+                    this._shLatency=0;
+                    console.log(this._shLatency);
+                }
+                else 
+                {
+                    this._shLatency++; 
+                    console.log(this._shLatency);
+                    return;
+                }
+
+                // 4. 執行 schedule
+                console.log('chk4')
+                if(this.state == GM.ST_SLEEP) {this.wake();}
+                console.log('setDes')
+                this.setDes(null,ent);
             }
         }
     }
@@ -1026,9 +1217,11 @@ export class Npc extends Role
     addListener()
     {
         super.addListener();
-        this.on('talk',()=>{this.talk();})
-            .on('trade',()=>{this.trade();})
-            .on('attack',(attacker)=>{this.hurt(attacker);})
+        this.on('talk',(resolve)=>{this.talk();resolve();})
+            .on('trade',(resolve)=>{this.trade();resolve();})
+            .on('attack',(resolve,attacker)=>{
+                this.hurt(attacker);
+                resolve();})
     }
 
     talk() 
@@ -1058,13 +1251,22 @@ export class Npc extends Role
         switch(this.state)
         {
             case GM.ST_IDLE: break;
+
             case GM.ST_MOVING:
-                //this.setDes(Avatar.instance.pos);
-                // let ret = await this.moveTo({draw:false});
-                // if(ret) {this.state = GM.ST_IDLE;}
-                await this.moveTo({draw:false});
+                console.log('[npc]-moving');
+                if(await this.move({draw:false}))
+                {
+                    await this.action();
+                }
                 break;
+
+            case GM.ST_ACTION:
+                console.log('[npc]-action');
+                await this.action();
+                break;
+
             case GM.ST_ATTACK:
+                console.log('[npc]-attack');
                 await this.attack();
                 break;
         }

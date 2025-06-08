@@ -1965,6 +1965,7 @@ export class UiMain extends UiBase
             .add(new UiButton(scene,{text:'🚪',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}))
             .add(new UiButton(scene,{text:'🧪',key:'test',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}))
             .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}))
             .addEnable(scene)
             .size()
             .hide();
@@ -2003,6 +2004,11 @@ export class UiMain extends UiBase
     profile() {UiProfile.toggle(Role.getPlayer());}
 
     menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
+
+    next()
+    {
+        Role.getPlayer().next();
+    }
 
     test()
     {

@@ -154,8 +154,17 @@ export let GM =
     // state
     ST_IDLE : 'idle',
     ST_MOVING : 'moving',
+    ST_ACTION : 'action',
     ST_SLEEP : 'sleep',
-    ST_ATTACK : 'attack'
+    ST_ATTACK : 'attack',
+
+    // weight
+    W_BLOCK : 1000,   
+    W_DOOR : 20,
+    W_NODE : 10,
+
+    // schedule 延遲
+    SH_LATENCY : 5, // 5 m
 
 
 

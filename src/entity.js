@@ -55,6 +55,8 @@ export class Entity extends Phaser.GameObjects.Container
 
     get mapName() {return this.scene._data.map;}
 
+    checkInside(role) {return true;}
+
     send(type, ...args) {this.scene.events.emit(type, ...args);}
 
     setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
@@ -504,7 +506,7 @@ export class Entity extends Phaser.GameObjects.Container
             {
                 this._dbgText.x = this.x;
                 this._dbgText.y = this.y-this.displayHeight*2/3;
-                this._dbgText.setText(`[bgcolor=white][color=black]${text}[/color][/bgcolor]`)
+                this._dbgText.setText(`[bgcolor=white][color=black]${text}\n${this.state}[/color][/bgcolor]`)
             }
         }
 
@@ -562,6 +564,7 @@ export class Case extends Entity
     {
         super(scene);    
         this.interactive = true;
+        this.weight = GM.W_BLOCK;
         this._storage = {};
     }
 
@@ -571,7 +574,7 @@ export class Case extends Entity
     addListener()
     {
         super.addListener();
-        this.on('open',()=>{this.open()})
+        this.on('open',(resolve)=>{this.open();resolve()})
     }
 
     init_prefab()
@@ -613,7 +616,7 @@ export class Pickup extends Entity
     addListener()
     {
         super.addListener();
-        this.on(GM.TAKE,(taker)=>{this.pickup(taker)})
+        this.on(GM.TAKE,(resolve,taker)=>{this.pickup(taker);resolve();})
     }
 
     pickup(taker)
@@ -656,11 +659,12 @@ export class Stove extends Entity
     constructor(scene,x,y)
     {
         super(scene,x,y);  
-        this.weight = 1000;
+        this.weight = GM.W_BLOCK;
         this.interactive = true;  
         this._storage = {capacity:-1,items:[]};  
         this._output = null;
         this.cat = GM.CAT_FOOD;
+        this.en_multi=false;
     }
 
     get acts()  {return [GM.COOK];}
@@ -685,7 +689,7 @@ export class Stove extends Entity
     addListener()
     {
         super.addListener();
-        this.on('cook',()=>{this.send('stove',this)})
+        this.on('cook',(resolve)=>{this.send('stove',this);resolve();})
     }
 
     check()
@@ -785,7 +789,7 @@ export class Well extends Entity
     constructor(scene, x, y)
     {
         super(scene,x,y);  
-        this.weight = 1000;
+        this.weight = GM.W_BLOCK;
         this.interactive = true;  
     }
 
@@ -794,8 +798,8 @@ export class Well extends Entity
     addListener()
     {
         super.addListener();
-        this.on(GM.DRINK,(role)=>{role.drink();})
-        this.on(GM.FILL,(role)=>{this.send('fill');})
+        this.on(GM.DRINK,(resolve,role)=>{role.drink();resolve()})
+        this.on(GM.FILL,(resolve)=>{this.send('fill');resolve()})
     }
 }
 
@@ -804,7 +808,7 @@ export class Door extends Entity
      constructor(scene, x, y)
     {
         super(scene,x,y);  
-        this.weight = 1000;
+        this.weight = GM.W_BLOCK;
         this.interactive = true;  
         this.opened=false;
     }
@@ -825,8 +829,8 @@ export class Door extends Entity
     addListener()
     {
         super.addListener();
-        this.on(GM.OPEN_DOOR,()=>{this.open();})
-        this.on(GM.CLOSE_DOOR,(role)=>{this.close(role);})
+        this.on(GM.OPEN_DOOR,async(resolve)=>{await this.open();resolve()})
+        this.on(GM.CLOSE_DOOR,async(resolve)=>{await this.close();resolve()})
     }
 
     checkOverlap()
@@ -841,31 +845,35 @@ export class Door extends Entity
         return false;
     }
 
-    open()
+    async open()
     {
-        this.opened=true;
-        this._sp.setTexture('doors',1);
-        this.removeWeight();
-        this.addWeight(undefined,25);
-        this._zone.setPosition(-this.displayWidth/2+10,-16);
-        this._zone.setSize(20,this.displayHeight)
-        AudioManager.doorOpen();
-        // this.debugDraw('zone');
+        if(!this.opened)
+        {
+            this.opened=true;
+            this._sp.setTexture('doors',1);
+            this.removeWeight();
+            this.addWeight(undefined,GM.W_DOOR-1);
+            this._zone.setPosition(-this.displayWidth/2+10,-16);
+            this._zone.setSize(20,this.displayHeight)
+            AudioManager.doorOpen();
+            await Utility.delay(500);
+        }
+
     }
 
-    close(role)
+    async close()
     {
-        // if(!this.isInGrid(role.pos))
-        if(!this.checkOverlap())
+        if(this.opened && !this.checkOverlap())
         {
             this.opened=false;
             this._sp.setTexture('doors',0);
-            this.removeWeight(25);
+            this.removeWeight(GM.W_DOOR-1);
             this.addWeight();
             this._zone.setPosition(0,-16);
             this._zone.setSize(this.displayWidth,this.displayHeight);
             AudioManager.doorClose();
-            // this.debugDraw('zone');
+            console.log('close')
+            await Utility.delay(500);
         }
     }
 }
@@ -875,7 +883,7 @@ export class Bed extends Entity
     constructor(scene, x, y)
     {
         super(scene,x,y);  
-        this.weight = 1000;
+        this.weight = GM.W_BLOCK;
         this.interactive = true;  
         this.user = null;   // 使用者
         this._blanket;
@@ -898,6 +906,7 @@ export class Bed extends Entity
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
+    checkInside(role) {return role.parentContainer == this;}
    
     updateFlip()
     {
@@ -948,8 +957,8 @@ export class Bed extends Entity
     addListener()
     {
         super.addListener();
-        this.on(GM.REST,(role)=>{this.rest(role);})
-        this.on(GM.WAKE,()=>{this.wake();})
+        this.on(GM.REST,(resolve,role)=>{this.rest(role);resolve()})
+        this.on(GM.WAKE,(resolve)=>{this.wake();resolve()})
     }
 
     rest(role)
@@ -959,13 +968,12 @@ export class Bed extends Entity
             role.sleep(this);
             this.user = role;
             this.bringToTop(this._blanket);
-            console.log(this);
         }
     }
 
     wake()
     {
-        this.user.wake(this)
+        this.user.wake()
         this.user = null;
     }
     
@@ -974,15 +982,7 @@ export class Bed extends Entity
 
 export class Point extends Entity
 {
-
-    // get pt() {return {x:this.x, y:this.y}}
-
-    // init_prefab()
-    // {
-    //     super.init_prefab();
-    //     if(!this.scene.ports) {this.scene.ports={};}
-    //     this.scene.ports[this.name] = this;
-    // }
+    checkInside(role) {return role.pos.x==this.x && role.pos.y==this.y;}
 }
 
 
@@ -1002,6 +1002,8 @@ export class Port extends Entity
 
     get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
 
+    checkInside(role) {return false;}
+
     addListener()
     {
         super.addListener();
@@ -1019,7 +1021,7 @@ export class Node extends Port
     constructor(scene,x,y)
     {
         super(scene,x,y);
-        this.weight = 10;
+        this.weight = GM.W_NODE;
     }
 
     rightButtonDown() {}

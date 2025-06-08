@@ -3,13 +3,14 @@ import {RoleDB,Roles} from './database.js'
 import DB from './db.js'
 import * as Role from './role.js';
 
-
+const ticksMax = 24*60-1;
 export default class TimeManager
 {
     static time = {d:0,h:0,m:0};
     static ticks = 0;
 
     static list = [];
+
 
     static inc(minutes = 1) 
     {
@@ -77,18 +78,26 @@ export default class TimeManager
 
     static inRange(t)
     {
-        t = t.split('-');
+        t = t.split('~');
         let ts = this.str2Ticks(t[0]);
         let te = this.str2Ticks(t[1]);
-        return this.ticks>=ts && this.ticks<te;
+        if(te<=ts) 
+        {
+            return (this.ticks>=ts && this.ticks<=ticksMax) ||
+                    (this.ticks>=0 && this.ticks<te);
+        }
+        else 
+        {
+            return this.ticks>=ts && this.ticks<te;
+        }
         
     }
 
     static atTs(t)
     {
-        t = t.split('-');
+        t = t.split('~');
         let ts = this.str2Ticks(t[0]);
-        let te = this.str2Ticks(t[1]);
+        // let te = this.str2Ticks(t[1]);
         return this.ticks==ts;
         
     }
@@ -112,6 +121,50 @@ export class Schedular
 {
     static schedules = [];
     static scene;
+    // static init(scene, mapName)
+    // {
+    //     this.schedules = [];
+    //     this.scene = scene;
+
+    //     Roles.list.forEach((id)=>{
+    //         let role = DB.role(id);
+    //         let schedule = role.schedule?.[mapName];
+    //         if(schedule)
+    //         {
+    //             let found = schedule.find((s)=>{return TimeManager.inRange(s.t);});
+    //             if(found)
+    //             {
+    //                 let pts = s.p.split('~');
+    //                 if(pts.length==1)
+    //                 {
+    //                     let pt = this.scene.ents[pts[0]]?.pt;
+    //                     if(pt)
+    //                     {
+    //                         let npc = new Role.Npc(scene,pt.x,pt.y);
+    //                         npc.init_runtime(id).load();
+    //                     }
+    //                 }
+    //                 else
+    //                 {
+
+    //                 }
+
+
+    //             }
+
+    //             let filter = schedule.filter((s)=>{return s.type=='enter'});
+    //             filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
+                
+    //         }
+    //     })
+    // }
+
+    static toEnts(p)
+    {
+        return p.split('~').map(id=>this.scene.ents[id])
+    }
+
+
     static init(scene, mapName)
     {
         this.schedules = [];
@@ -122,40 +175,53 @@ export class Schedular
             let schedule = role.schedule?.[mapName];
             if(schedule)
             {
-                let found = schedule.find((s)=>{return s.type=='stay' && TimeManager.inRange(s.t);});
+                // let filter = schedule.filter((s)=>{return s.type=='enter'});
+                // filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
+
+                schedule.forEach((sh)=>{
+                    this.schedules.push({id:id,...sh});
+                })
+
+                let found = schedule.find((s)=>{return TimeManager.inRange(s.t);});
                 if(found)
                 {
-                    let pt = this.scene.ents[found.pos]?.pt;
-                    if(pt)
-                    {
-                        let npc = new Role.Npc(scene,pt.x,pt.y);
-                        npc.init_runtime(id).load();
-                    }
+                    // let ent = this.scene.ents[found.p.split('~')[0]]
+                    // let ents = found.p.split('~').map(p=>this.scene.ents[p])
+                    console.log(found)
+                    let ents = this.toEnts(found.p);
+                    console.log(ents)
+                    let npc = new Role.Npc(scene,ents[0].pt.x,ents[0].pt.y);
+                    npc.init_runtime(id).load();
                 }
-
-                let filter = schedule.filter((s)=>{return s.type=='enter'});
-                filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
-                
             }
         })
     }
 
+    static isExisted(id)
+    {
+        for(let role of this.scene.roles)
+        {
+            return role.id == id;
+        }
+        return false;
+    }
+
     static check()
     {
-        //console.log('check',Schedular.schedules);
+
         this.schedules.forEach((sh)=>{
-            if(sh.cd==0 && TimeManager.inRange(sh.t))
+            if(this.isExisted(sh.id)) {return;}
+            // console.log('check', sh,TimeManager.time)
+            if(TimeManager.atTs(sh.t))
             {
-                sh.cd=60;
-                let pt = this.scene.ents[sh.from]?.pt;
-                if(pt)
-                {
-                    console.log('create')
-                    let npc = new Role.Npc(this.scene,pt.x,pt.y);
-                    npc.init_runtime(sh.id).load();
-                }
+                // let pt = this.scene.ents[sh.from]?.pt;
+                let ents = this.toEnts(sh.p);
+                
+                console.log('create')
+                let npc = new Role.Npc(this.scene,ents[0].pt.x,ents[0].pt.y);
+                npc.init_runtime(sh.id).load();
+                
             }
-            else if(sh.cd>0) {sh.cd--;}
         })
     }
 }

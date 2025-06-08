@@ -370,14 +370,18 @@ class Map
         {
             let result = astar.search(this.graph, start, end);
             let len = result.length;
-            if(len==0 || (len>=2 && result[len-2].g>=1000))
+            // if(len==0 || (len>=2 && result[len-2].g>=1000))
+            // {
+            //     return {state:-1,pt:pt,cost:Infinity}
+            // }
+            if(len==0)
             {
                 return {state:-1,pt:pt,cost:Infinity}
             }
             else
             {
                 let path = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
-                return {state:1,pt:pt,path:path,cost:result.at(-1).g}
+                return {state:1,pt:pt,path:path,cost:result.at(-1).g, block:(len>=2 && result[len-2].g>=GM.W_BLOCK)}
             }
         }
     }
@@ -464,7 +468,7 @@ class Map
         return pts;
     }
 
-    isWalkable(p,w=1000)
+    isWalkable(p,w=GM.W_BLOCK)
     {
         let [tx,ty] = this.worldToTile(p.x,p.y)
         return this.graph.grid[ty][tx].weight<w;
