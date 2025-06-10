@@ -11,7 +11,6 @@ export default class TimeManager
 
     static list = [];
 
-
     static inc(minutes = 1) 
     {
         this.time.m += minutes;
@@ -190,7 +189,7 @@ export class Schedular
                     console.log(found)
                     let ents = this.toEnts(found.p);
                     console.log(ents)
-                    let npc = new Role.Npc(scene,ents[0].pt.x,ents[0].pt.y);
+                    let npc = new Role.Npc(scene,ents[0].pts[0].x,ents[0].pts[0].y);
                     npc.init_runtime(id).load();
                 }
             }
@@ -218,7 +217,7 @@ export class Schedular
                 let ents = this.toEnts(sh.p);
                 
                 console.log('create')
-                let npc = new Role.Npc(this.scene,ents[0].pt.x,ents[0].pt.y);
+                let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
                 npc.init_runtime(sh.id).load();
                 
             }

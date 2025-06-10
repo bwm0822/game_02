@@ -26,6 +26,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._pGrids = [];   // grid 所佔據的點
         this._flipX = false;
         this._flipY = false;
+        this._pts = null;
         // 變數一定要給值，map 在初始化時，才會 assign 相對應的值
         this.bl=0, this.br=0, this.bt=0, this.bb=0;    // body 的 left, right, top, bottom
         this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid 的 left, right, top, bottom
@@ -33,6 +34,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.anchorX = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
         this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角
         this.en_multi = true;
+
     }
 
     get pt() {return {x:this.x, y:this.y}}
@@ -41,8 +43,11 @@ export class Entity extends Phaser.GameObjects.Container
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}} // grid 的中心點(world space)
     get act()   {return this.acts.length > 0 ? this.acts[0] : '';}  // 預設的動作
     get acts()  {return [];}
-    get pts() {return this._pGrids;}
-    set pts(value) {this._pGrids=value;}
+    // get pts() {return this._pGrids;}
+    // set pts(value) {this._pGrids=value;}
+    // get pts() {return this._pts ?? [this.pos];}    
+    get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}}):[this.pos]} 
+    set pts(value) {this._pts = value;}
     get anchor() {return {x:this.anchorX, y:this.anchorY};}
     set anchor(value) {this.anchorX=value.x;this.anchorY=value.y;}
     get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};} // entity 的左上角跟錨點的差距
@@ -55,7 +60,18 @@ export class Entity extends Phaser.GameObjects.Container
 
     get mapName() {return this.scene._data.map;}
 
-    checkInside(role) {return true;}
+    // checkInside(role) {return true;}
+
+    checkTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
+    checkAt(role) {return role.pos.x==this.pos.x && role.pos.y==this.pos.y;}
+    checkPts(role)
+    {
+        for(let p of this.pts)
+        {
+            if(p.x==role.pos.x && p.y==role.pos.y){return true;}
+        }
+        return false;
+    }
 
     send(type, ...args) {this.scene.events.emit(type, ...args);}
 
@@ -188,8 +204,8 @@ export class Entity extends Phaser.GameObjects.Container
         this.grid.x = (this.min.x + this.gl + this.max.x - this.gr)/2; 
         this.grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
 
-        this.grid.left = this.min.x + this.gl;
-        this.grid.top = this.min.y + this.gt;
+        // this.grid.left = this.min.x + this.gl;
+        // this.grid.top = this.min.y + this.gt;
     }
 
     // removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
@@ -205,11 +221,11 @@ export class Entity extends Phaser.GameObjects.Container
     addWeight(pt,weight)
     {
         let wei = weight ?? this.weight;
-        // wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        let pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
-        this.pts = pt ? [pt] 
-                        : this.en_multi ? pts 
-                                        : [this.pos];
+        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        // let pts = this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
+        // this.pts = pt ? [pt] 
+        //                 : this.en_multi ? pts 
+        //                                 : [this.pos];
 
     }
 
@@ -262,6 +278,18 @@ export class Entity extends Phaser.GameObjects.Container
         {
             if(!this.scene.ents) {this.scene.ents={};}
             this.scene.ents[this.name] = this;
+        }
+
+        console.log('------data',this.data)
+        if(this.data)
+        {
+            let json_pts = this.data.get('json_pts');
+            if(json_pts)
+            {
+                this._pts = JSON.parse(json_pts);
+                console.log('---pts',this._pts, this.pts);
+
+            }
         }
 
         this.updateFlip()
@@ -485,6 +513,7 @@ export class Entity extends Phaser.GameObjects.Container
             if(type === GM.DBG_CLR) {return;}
             for(let p of this.pts)
             {
+                console.log(p)
                 this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
                 let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
                 this._dbgGraphics.strokeCircleShape(circle);
@@ -680,6 +709,8 @@ export class Stove extends Entity
         this._output = {id:id,count:0};
     }
 
+    checkTouch(role) {return this.checkPts(role);}
+
     init_prefab()
     {
         super.init_prefab();
@@ -815,16 +846,7 @@ export class Door extends Entity
 
     get acts()  {return [this.opened ? GM.CLOSE_DOOR : GM.OPEN_DOOR];}
 
-
-    addPhysics()
-    {
-        super.addPhysics();
-        // this.scene.physics.add.overlap(this, this.scene.phyGroup, (obj1, obj2) => {
-        //     // console.log('撞上啦！要小心哦 ♥', obj1, obj2);
-        //     this.overlap=true;
-        //     console.log('overlap')
-        // }, null, this);
-    }
+    checkTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
 
     addListener()
     {
@@ -833,6 +855,7 @@ export class Door extends Entity
         this.on(GM.CLOSE_DOOR,async(resolve)=>{await this.close();resolve()})
     }
 
+    // 檢查門上是否障礙物
     checkOverlap()
     {
         for(let elm of this.scene.phyGroup.children.entries)
@@ -863,6 +886,7 @@ export class Door extends Entity
 
     async close()
     {
+        // 檢查門是否開著，有無障礙物
         if(this.opened && !this.checkOverlap())
         {
             this.opened=false;
@@ -906,7 +930,9 @@ export class Bed extends Entity
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
-    checkInside(role) {return role.parentContainer == this;}
+    checkTouch(role) {return (role.pos.x==this.pt.x && role.pos.y==this.pt.y) || role.parentContainer == this;}
+    checkAt(role) {return role.parentContainer == this;}
+    
    
     updateFlip()
     {
@@ -982,7 +1008,7 @@ export class Bed extends Entity
 
 export class Point extends Entity
 {
-    checkInside(role) {return role.pos.x==this.x && role.pos.y==this.y;}
+    checkAt(role) {return role.pos.x==this.x && role.pos.y==this.y;}
 }
 
 
@@ -994,15 +1020,12 @@ export class Port extends Entity
         this.interactive = true;   
         this.port = '';
         this.map = '';      
-        this.offsetX = 0;
-        this.offsetY = 0;
     }
 
     get acts()  {return [GM.ENTER];}
 
-    get pt() {return {x:this.x+this.offsetX, y:this.y+this.offsetY}}
-
-    checkInside(role) {return false;}
+    checkAt(role) {return false;}
+    checkTouch(role) {return this.checkPts(role);}
 
     addListener()
     {

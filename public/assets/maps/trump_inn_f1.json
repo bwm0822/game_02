@@ -54,14 +54,14 @@
                  "name":"stair_up",
                  "properties":[
                         {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":-48,\"y\":16}]"
+                        }, 
+                        {
                          "name":"map",
                          "type":"string",
                          "value":"trump_inn_f2"
-                        }, 
-                        {
-                         "name":"offsetX",
-                         "type":"int",
-                         "value":-32
                         }, 
                         {
                          "name":"port",
@@ -144,9 +144,9 @@
                  "id":69,
                  "properties":[
                         {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":16
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":-16,\"y\":48},{\"x\":16,\"y\":48}]"
                         }],
                  "template":"..\/templates\/stove.tj",
                  "type":"stove",

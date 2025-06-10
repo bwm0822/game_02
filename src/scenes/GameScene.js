@@ -131,7 +131,7 @@ export class GameScene extends Scene
     {
         let pos;
         if(this._data.pos) {pos = this._data.pos}
-        else {pos = this.ents[this._data.port].pt;}
+        else {pos = this.ents[this._data.port].pts[0];}
 
         this._avatar = new classType(this,pos.x,pos.y);
         this._avatar.init_runtime('scott');
@@ -169,17 +169,18 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._avatar.state==GM.ST_MOVING)
+                if(this._avatar.state == GM.ST_MOVING)
                 {
                     this._avatar.stop();
                     this.findPath(pt);
                 }
-                else if(this._rst?.state>=0)
+                else if(this._rst && this._rst.state==1 && !this._rst.block)
                 {
-                    if(this._rst.state==1 || this._ent)
-                    {
-                        this._avatar.setDes(pt,this._ent);
-                    }
+                    this._avatar.setDes(pt,this._ent);
+                    // if(this._rst.state==1 || this._ent)
+                    // {
+                    //     this._avatar.setDes(pt,this._ent);
+                    // }
                 }
             }
             
@@ -217,6 +218,8 @@ export class GameScene extends Scene
 
     findPath(pt, ent)
     {
+        if(ent==this._avatar) {this._rst={status:-1};return;}
+
         let pts = ent?.pts ?? [pt];
 
         let rst = this.map.getPath(this._avatar.pos,pts)
@@ -225,21 +228,21 @@ export class GameScene extends Scene
         
         if(rst)
         {
-            if(rst.state>0)
+            if(rst.state==1 && !rst.block)
             {
                 this.drawPath(rst.path,this._ent);
-                if(!this._ent) {Mark.show(rst.pt,GM.COLOR_WHITE);}
-                else {Mark.close();}
+                if(this._ent) {Mark.close();}
+                else {Mark.show(rst.pt,GM.COLOR_WHITE);}
             }
             else
             {
                 this.clearPath();
-                if(rst.state==-1) 
-                {
-                    // Mark.show(rst.pt,GM.COLOR_RED);
-                    Mark.show(this.map.getPt(pt),GM.COLOR_RED);
-                }
-                else {Mark.close();}
+                Mark.show(this.map.getPt(pt),GM.COLOR_RED);
+                // if(rst.state==-1||rst.block) 
+                // {
+                //     Mark.show(this.map.getPt(pt),GM.COLOR_RED);
+                // }
+                // else {Mark.close();}
             }
         }
         else
@@ -336,7 +339,7 @@ export class GameScene extends Scene
 
     fill()
     {
-        UiInv.show(Role.Avatar.instance);
+        UiInv.show(this._avator);
         UiInv.filter([{type:'capacity',op:'<',value:'.max'}]);
         UiCursor.set('aim');
         UiCover.show();

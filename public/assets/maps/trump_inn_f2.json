@@ -54,14 +54,14 @@
                  "name":"stair_dn",
                  "properties":[
                         {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":-48,\"y\":16}]"
+                        }, 
+                        {
                          "name":"map",
                          "type":"string",
                          "value":"trump_inn_f1"
-                        }, 
-                        {
-                         "name":"offsetX",
-                         "type":"int",
-                         "value":-32
                         }, 
                         {
                          "name":"port",
@@ -84,6 +84,12 @@
                  "height":64,
                  "id":193,
                  "name":"door",
+                 "properties":[
+                        {
+                         "name":"zt",
+                         "type":"int",
+                         "value":32
+                        }],
                  "template":"..\/templates\/door.tj",
                  "width":32,
                  "x":224,

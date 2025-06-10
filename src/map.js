@@ -332,16 +332,16 @@ class Map
 
     getPath(sp, eps)
     {
-        let rst;
+        let bestPath;
         eps.forEach((ep)=>{
             let path = this.calcPath(sp,ep)
             if(path)
             {
-                if(!rst) {rst=path;}
-                else if(path.state>0 && path.cost<rst.cost){rst=path}
+                if(!bestPath) {bestPath=path;}
+                else if(path.state>0 && path.cost<bestPath.cost) {bestPath=path}
             }
         })
-        return rst;
+        return bestPath;
     }
 
     calcPath(sp,ep)
@@ -349,8 +349,11 @@ class Map
         let map = this.map;
 
         let [ex,ey] =  this.worldToTile(ep.x, ep.y);
+
+        // 1. 終點 超出 map 範圍，(隱藏框框)
         if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
 
+        // 2. 
         let [sx,sy] =  this.worldToTile(sp.x, sp.y);
 
         let end = this.graph.grid[ey][ex];
@@ -358,30 +361,27 @@ class Map
 
         let pt = this.tileToWorld(ex,ey);
 
-        if(end.weight==0)
+        if(end.weight==0)   // 終點為不可通過的點，(顯示紅色框框)
         {
-            return {state:-1,pt:pt,cost:Infinity}
+            return {state:-1, pt:pt, cost:Infinity}
         }
-        else if(start==end)
+        else if(start==end) // 起點 = 終點
         {
-            return {state:0,pt:pt,cost:Infinity}
+            return {state:1, pt:pt, path:[], cost:0}
         }
         else
         {
             let result = astar.search(this.graph, start, end);
             let len = result.length;
-            // if(len==0 || (len>=2 && result[len-2].g>=1000))
-            // {
-            //     return {state:-1,pt:pt,cost:Infinity}
-            // }
-            if(len==0)
+            if(len==0)  // 找不到路徑，(顯示紅色框框)
             {
-                return {state:-1,pt:pt,cost:Infinity}
+                return {state:-1, pt:pt, cost:Infinity}
             }
             else
             {
                 let path = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
-                return {state:1,pt:pt,path:path,cost:result.at(-1).g, block:(len>=2 && result[len-2].g>=GM.W_BLOCK)}
+                let block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
+                return {state:1, pt:pt, path:path, cost:result.at(-1).g, block:block}
             }
         }
     }
@@ -466,6 +466,14 @@ class Map
             pts.push(p)
         }
         return pts;
+    }
+
+    isTouch(c,w,h,p)
+    {
+        let min = {x:c.x-w/2-this.map.tW_half, y:c.y-h/2-this.map.tH_half};
+        let max = {x:c.x+w/2+this.map.tW_half, y:c.y+h/2+this.map.tH_half};
+        return p.x>=min.x && p.x<=max.x && p.y>=min.y && p.y<=max.y;
+
     }
 
     isWalkable(p,w=GM.W_BLOCK)

@@ -3,6 +3,7 @@ import * as Role from '../role.js';
 import {UiMain, UiTime} from '../ui.js'
 import TimeManager,{Schedular} from '../time.js';
 import {Roles,RoleDB} from '../database.js';
+import Utility from '../utility';
 
 let lutAmbient = [   
     0x333333    ,
@@ -48,6 +49,7 @@ export class GameArea extends GameScene
         //this.mode = 'combat';
         await super.create({diagonal:true,classType:Role.Avatar});       
         console.log(this.ports) 
+        // await Utility.delay(1000)
         this.process();
     }
 
@@ -75,9 +77,7 @@ export class GameArea extends GameScene
         {
             if(this.mode=='normal')
             {
-                console.log('go')
                 let roles = this.roles.map((role)=>{return role.process();});
-                console.log(roles)
                 await Promise.all( [this._avatar.process(),...roles] );
 
                 // await this._avatar.process();
@@ -87,7 +87,6 @@ export class GameArea extends GameScene
             else
             {
                 await this._avatar.process();
-                console.log(this.roles)
                 for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
             TimeManager.inc();
