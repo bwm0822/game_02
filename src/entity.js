@@ -513,7 +513,6 @@ export class Entity extends Phaser.GameObjects.Container
             if(type === GM.DBG_CLR) {return;}
             for(let p of this.pts)
             {
-                console.log(p)
                 this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
                 let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
                 this._dbgGraphics.strokeCircleShape(circle);
@@ -912,8 +911,6 @@ export class Bed extends Entity
         this.user = null;   // 使用者
         this._blanket;
         // 變數一定要給值，map 在初始化時，才會 assign 相對應的值
-        this.offsetX = 0;   // 下床點 x
-        this.offsetY = 0;   // 下床點 y
         this.blanket = '';  // 棉被的 png，如:'props/blanket_h.png'
         this.sleepX = 0;    // 睡覺點 x
         this.sleepY = 0;    // 睡覺點 y
@@ -930,7 +927,7 @@ export class Bed extends Entity
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
-    checkTouch(role) {return (role.pos.x==this.pt.x && role.pos.y==this.pt.y) || role.parentContainer == this;}
+    checkTouch(role) {return (role.pos.x==this.pts[0].x && role.pos.y==this.pts[0].y) || role.parentContainer == this;}
     checkAt(role) {return role.parentContainer == this;}
     
    

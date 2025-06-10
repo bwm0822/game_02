@@ -155,34 +155,14 @@
                  "name":"bed",
                  "properties":[
                         {
-                         "name":"anchorX",
-                         "type":"int",
-                         "value":-16
-                        }, 
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
                          "name":"blanket",
                          "type":"string",
                          "value":"props\/blanket_v.png"
                         }, 
                         {
-                         "name":"en_multi",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
-                         "name":"offsetX",
-                         "type":"int",
-                         "value":-32
-                        }, 
-                        {
-                         "name":"sleepX",
-                         "type":"int",
-                         "value":16
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":-48,\"y\":0}]"
                         }, 
                         {
                          "name":"sleepY",

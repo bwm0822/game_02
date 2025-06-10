@@ -27,6 +27,7 @@ export default class TimeManager
 
         this.ticks = this.time2Ticks(this.time);
 
+        console.log('[time] inc')
         this.emit(minutes);
     }
 

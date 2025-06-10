@@ -204,11 +204,10 @@ export class Role extends Entity
         let pts = ent?.pts ?? [pt];
 
         let rst = this.scene.map.getPath(this.pos, pts);
-        console.log('path',rst)
+        console.log('setDes',rst)
         if(rst?.state>0)
         {
             this._path = rst.path;
-            console.log(this._path)
             this._ent = ent;
             // this._act = act ?? ent?.act ?? '';
             this._act = act;
@@ -262,35 +261,30 @@ export class Role extends Entity
     {
         let path = this._path;
 
-        if(this.isPlayer){console.log('[player]')}
-        else{console.log('[npc]')}
-
         // 判斷是否接觸目標
         if(this.isTouch(this._ent))
         {
-            console.log('chk1')
             this.clearPath();
             await this.action();
             return;
         }
         else
         {
-            console.log('chk3',path.length)
+            console.log('[move]',path.length)
             if(path.length==0)
             {
+                console.log('[stop]')
                 this.stop();
                 return;
             }
 
             // 取出路徑
             let pt = path[0];
-            console.log(pt,path.length)
             let w = this.scene.map.getWeight(pt);
 
             // 判斷是否可行走
             if(w < GM.W_BLOCK)    
             {
-                console.log('chk4')
                 if(this.isPlayer) {this.drawPath(path);}
                 else    // npc
                 {
@@ -306,11 +300,12 @@ export class Role extends Entity
 
                 await this.moveTo(pt);  // 移至 pt
                 path.shift();           // 移除陣列第一個元素
+
                 if(path.length==0)
                 {
                     let act = this._act ?? this._ent?.act;
-                    console.log('----reach',act)
-                    if(!act) {this.stop();}
+                    
+                    if(!act) {this.stop(); console.log('[reach]')}
                     else {this.clearPath();}
                 }
                 return;
@@ -462,7 +457,6 @@ export class Role extends Entity
         }
         else
         {
-            console.log('chk2',this._ent,act)
             this.state = GM.ST_IDLE;
             await this.interact(this._ent,act);
         }
@@ -878,7 +872,7 @@ export class Role extends Entity
         let ent = this.parentContainer;
         ent.remove(this)
         ent.user=null;
-        this.pos = ent.pt;
+        this.pos = ent.pts[0];
         this.angle = 0;
         this.addWeight();
         this._zone.setInteractive();
@@ -936,16 +930,16 @@ export class Role extends Entity
 
         if(this.state!=GM.ST_MOVING)
         {
-            console.log('pause-1')
+            console.log('[pause-1]')
             await this.pause(); 
-            console.log('pause-2')
+            console.log('[pause-2]')
         }
 
         switch(this.state)
         {
             case GM.ST_IDLE: break;
             case GM.ST_MOVING:
-                console.log('[player]-moving');
+                console.log('[player] moving');
                 await this.st_moving();
                 break;
         }
@@ -1138,8 +1132,6 @@ export class Npc extends Role
 
     updateTime(dt)
     {
-        console.log('updateTime')
-        //this.checkSchedule();
         this.updateSchedule();
         this.updateStates();
     }
@@ -1148,9 +1140,6 @@ export class Npc extends Role
     {
         if(!this.role.schedule) {return;}
         this.schedule = this.role.schedule[this.mapName];
-        // this.schedule = sch.filter((s)=>{return s.type=='enter' || s.type=='exit'});
-        // this.schedule = sch.filter((s)=>{return s.type!='stay'});
-        // this.schedule.forEach((s)=>{s.cd=0;})
     }
 
     checkSchedule()
@@ -1191,30 +1180,6 @@ export class Npc extends Role
 
                 }
 
-
-                // let ent0 = this.scene.ents[pts[0]];
-                // let ent1 = this.scene.ents[found.to];
-
-                
-                // if(this.state == GM.ST_SLEEP)
-                // {
-                //     ent0.wake();
-                // }
-
-                // let rst = this.scene.map.getPath(ent0.pt, [ent1.pt]);
-                // let t = found.t.split('-');
-                // let t0 = TimeManager.str2Ticks(t[0])
-                // let t1 = TimeManager.str2Ticks(t[1])
-                // let tc = TimeManager.ticks;
-                // let ratio = (tc-t0) / (t1-t0);
-                // let i = Math.floor(rst.path.length*ratio);
-                // console.log(ratio, rst.path.length, i);
-
-                // this.removeWeight();
-                // this.pos = rst.path[i];
-                // this.addWeight();
-                // this.setDes(ent1.pt,ent1);
-
             }
         }
     }
@@ -1231,27 +1196,24 @@ export class Npc extends Role
  
         if(this.schedule)
         {
-            console.log(this.schedule)
+            // console.log(this.schedule)
             let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                console.log(found)
+                // console.log(found)
                 // 1. 檢查是否第一次進入 updateSchedule
                 if(found != this._shCurrent)    
                 {
-                    console.log('chk1')
                     this._shCurrent = found;
                     this._shLatency = GM.SH_LATENCY;
                 }
 
                 // 2. 如果已達目的地，則離開
-                console.log('chk2')
                 let ents = this.toEnts(found.p);    
                 let ent = ents.at(-1);
                 if(ent.checkAt(this)) {return;}
 
                 // 3. 檢查延遲
-                console.log('chk3')
                 if(this._shLatency >= GM.SH_LATENCY) 
                 {
                     this._shLatency=0;
@@ -1265,9 +1227,13 @@ export class Npc extends Role
                 }
 
                 // 4. 執行 schedule
-                console.log('chk4')
-                if(this.state == GM.ST_SLEEP) {this.wake();}
-                console.log('setDes')
+                if(this.state == GM.ST_SLEEP)
+                {
+                    this.wake();
+                    this._shLatency = GM.SH_LATENCY;
+                    return;
+                }
+                console.log('[setDes]')
                 this.setDes(null,ent);
             }
         }
@@ -1369,7 +1335,7 @@ export class Npc extends Role
             case GM.ST_IDLE: break;
 
             case GM.ST_MOVING:
-                console.log('[npc]-moving');
+                console.log('[npc] moving');
                 // if(await this.move({draw:false}))
                 // {
                 //     await this.action();
@@ -1378,12 +1344,12 @@ export class Npc extends Role
                 break;
 
             case GM.ST_ACTION:
-                console.log('[npc]-action');
+                console.log('[npc] action');
                 await this.action();
                 break;
 
             case GM.ST_ATTACK:
-                console.log('[npc]-attack');
+                console.log('[npc] attack');
                 await this.attack();
                 break;
         }
