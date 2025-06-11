@@ -415,7 +415,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     drop(ent)   // ent 有可能是 slot 或 UiDragged
     {
-        let p = this.scene.map.getDropPoint(this.pos);
+        let p = this.scene.map.getValidPoint(this.pos);
         let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
         obj.falling(p);
         AudioManager.drop();

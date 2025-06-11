@@ -48,7 +48,7 @@ export default function createUI(scene)
 
     
 
-    t3();
+    // t3();
 }
 
 function get(s,p)
@@ -1170,7 +1170,7 @@ class UiContainerBase extends ContainerLite
 
     addBg(scene, touchClose)
     {
-        console.log(GM.w, GM.h)
+        // console.log(GM.w, GM.h)
         let sizer = scene.rexUI.add.sizer(0,0,GM.w,GM.h);
         sizer.addBackground(rect(scene,{alpha:0.5}))
             .setOrigin(0)
@@ -2394,6 +2394,7 @@ export class UiProfile extends UiBase
 
         childPanel.removeAll(true);
 
+        console.log(this.owner.status);
         for(let [key,value] of Object.entries(this.owner.status[cat]))
         {
             switch(key)

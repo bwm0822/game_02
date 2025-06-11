@@ -59,7 +59,7 @@ export default class TimeManager
     static start()
     {
         console.log('[time] start')
-        this.emit(this.time);
+        this.emit(0, this.time);
     }
 
     static load()
@@ -183,7 +183,9 @@ export class Schedular
 
     static isExisted(id)
     {
-        for(let role of this.scene.roles) {return role.id == id;}
+        for(let role of this.scene.roles) {
+            if(role.id == id) {return true;}
+        }
         return false;
     }
 
@@ -194,7 +196,7 @@ export class Schedular
             if(TimeManager.inRange(sh.t))
             {
                 let ents = this.toEnts(sh.p);
-                console.log('[time] check');   
+                console.log('[time] check',sh.id); 
                 let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
                 npc.init_runtime(sh.id).load();
             }

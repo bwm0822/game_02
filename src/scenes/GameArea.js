@@ -77,15 +77,15 @@ export class GameArea extends GameScene
             if(this.mode=='normal')
             {
                 let roles = this.roles.map((role)=>{return role.process();});
-                await Promise.all( [this._avatar.process(),...roles] );
+                await Promise.all( [this._player.process(),...roles] );
 
-                // await this._avatar.process();
+                // await this._player.process();
                 // let roles = this.roles.map((role)=>{return role.process();});
                 // await Promise.all(roles);
             } 
             else
             {
-                await this._avatar.process();
+                await this._player.process();
                 for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
             TimeManager.inc();

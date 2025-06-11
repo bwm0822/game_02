@@ -153,6 +153,7 @@ export let GM =
 
     // state
     ST_IDLE : 'idle',
+    ST_NEXT : 'next',
     ST_MOVING : 'moving',
     ST_ACTION : 'action',
     ST_SLEEP : 'sleep',

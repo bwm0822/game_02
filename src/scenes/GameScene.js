@@ -120,7 +120,7 @@ export class GameScene extends Scene
         }
         else
         {
-            this.cameras.main.startFollow(this._avatar,true,0.01,0.01,offsetX,offsetY);
+            this.cameras.main.startFollow(this._player,true,0.01,0.01,offsetX,offsetY);
         }
       
     }
@@ -131,14 +131,14 @@ export class GameScene extends Scene
         if(this._data.pos) {pos = this._data.pos}
         else {pos = this.ents[this._data.port].pts[0];}
 
-        this._avatar = new classType(this,pos.x,pos.y);
-        this._avatar.init_runtime('scott');
-        this._avatar.load(Record.data.player);
+        this._player = new classType(this,pos.x,pos.y);
+        this._player.init_runtime('scott');
+        this._player.load(Record.data.player);
         this.setCameraFollow(GM.CAM_CENTER);
 
-        Role.setPlayer(this._avatar); 
+        Role.setPlayer(this._player); 
  
-        Record.data.pos = this._avatar.pos;   
+        Record.data.pos = this._player.pos;   
         Record.data.map = this._data.map;
         Record.save();
     }
@@ -154,7 +154,7 @@ export class GameScene extends Scene
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
-            if(this._avatar.state==GM.ST_SLEEP) {return;}
+            if(this._player.state==GM.ST_SLEEP) {return;}
 
             if (pointer.rightButtonDown())
             {
@@ -167,17 +167,17 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._avatar.state == GM.ST_MOVING)
+                if(this._player.state == GM.ST_MOVING)
                 {
-                    this._avatar.stop();
+                    this._player.stop();
                     this.findPath(pt);
                 }
                 else if(this._rst && this._rst.state==1 && !this._rst.block)
                 {
-                    this._avatar.setDes(pt,this._ent);
+                    this._player.setDes({pt:pt,ent:this._ent});
                     // if(this._rst.state==1 || this._ent)
                     // {
-                    //     this._avatar.setDes(pt,this._ent);
+                    //     this._player.setDes(pt,this._ent);
                     // }
                 }
             }
@@ -186,8 +186,8 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            if(this._avatar.state==GM.ST_SLEEP) {return;}
-            if(this._avatar.state!=GM.ST_MOVING)
+            if(this._player.state==GM.ST_SLEEP) {return;}
+            if(this._player.state!=GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pt, this._ent);
@@ -207,7 +207,7 @@ export class GameScene extends Scene
         if(this.keys.down.isDown){my++;}
         if(mx!=0||my!=0)
         {
-            this._avatar.stepMove(mx,my);
+            this._player.stepMove(mx,my);
             this.clearPath();
             Mark.close();
         }
@@ -216,11 +216,11 @@ export class GameScene extends Scene
 
     findPath(pt, ent)
     {
-        if(ent==this._avatar) {this._rst={status:-1};return;}
+        if(ent==this._player) {this._rst={status:-1};return;}
 
         let pts = ent?.pts ?? [pt];
 
-        let rst = this.map.getPath(this._avatar.pos,pts)
+        let rst = this.map.getPath(this._player.pos,pts)
 
         this._rst = rst;
         
@@ -274,8 +274,8 @@ export class GameScene extends Scene
 
     save()
     {
-        Record.data.pos = this._avatar.pos;   
-        Record.data.player = this._avatar.save();
+        Record.data.pos = this._player.pos;   
+        Record.data.player = this._player.save();
         if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
         console.log(this.objects)
         this.objects.forEach((obj)=>{obj.save?.();})
@@ -340,7 +340,7 @@ export class GameScene extends Scene
 
     fill()
     {
-        UiInv.show(this._avator);
+        UiInv.show(this._player);
         UiInv.filter([{type:'capacity',op:'<',value:'.max'}]);
         UiCursor.set('aim');
         UiCover.show();

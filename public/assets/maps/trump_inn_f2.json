@@ -51,7 +51,7 @@
                  "gid":408,
                  "height":64,
                  "id":54,
-                 "name":"stair_dn",
+                 "name":"stair-dn",
                  "properties":[
                         {
                          "name":"json_pts",
@@ -96,59 +96,6 @@
                  "y":320
                 }, 
                 {
-                 "gid":580,
-                 "height":64,
-                 "id":197,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"anchorX",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"blanket",
-                         "type":"string",
-                         "value":"props\/blanket_h.png"
-                        }, 
-                        {
-                         "name":"en_multi",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
-                         "name":"offsetY",
-                         "type":"int",
-                         "value":48
-                        }, 
-                        {
-                         "name":"sleepA",
-                         "type":"int",
-                         "value":-90
-                        }, 
-                        {
-                         "name":"sleepX",
-                         "type":"int",
-                         "value":5
-                        }, 
-                        {
-                         "name":"sleepY",
-                         "type":"int",
-                         "value":-25
-                        }],
-                 "rotation":0,
-                 "type":"bed",
-                 "visible":true,
-                 "width":96,
-                 "x":32,
-                 "y":96
-                }, 
-                {
                  "gid":581,
                  "height":96,
                  "id":198,
@@ -162,7 +109,7 @@
                         {
                          "name":"json_pts",
                          "type":"string",
-                         "value":"[{\"x\":-48,\"y\":0}]"
+                         "value":"[{\"x\":48,\"y\":0}]"
                         }, 
                         {
                          "name":"sleepY",
@@ -173,7 +120,35 @@
                  "type":"bed",
                  "visible":true,
                  "width":64,
-                 "x":256,
+                 "x":192,
+                 "y":128
+                }, 
+                {
+                 "gid":581,
+                 "height":96,
+                 "id":202,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"blanket",
+                         "type":"string",
+                         "value":"props\/blanket_v.png"
+                        }, 
+                        {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":48,\"y\":0}]"
+                        }, 
+                        {
+                         "name":"sleepY",
+                         "type":"int",
+                         "value":5
+                        }],
+                 "rotation":0,
+                 "type":"bed",
+                 "visible":true,
+                 "width":64,
+                 "x":32,
                  "y":128
                 }],
          "opacity":1,
@@ -183,7 +158,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":202,
+ "nextobjectid":203,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

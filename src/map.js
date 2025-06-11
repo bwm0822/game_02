@@ -395,14 +395,14 @@ class Map
         else {return {state:-1, pt:to};}
     }
 
-    getDropPoint(p)
+    getValidPoint(p,random=true)
     {
         let lut = [ {x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1},
                     {x:-1,y:0}, {x:1,y:0},
                     {x:-1,y:1}, {x:0,y:1}, {x:1,y:1} ]
 
         let [tx,ty] = this.worldToTile(p.x, p.y)
-        let r = Phaser.Math.Between(0,lut.length-1);
+        let r = random ? Phaser.Math.Between(0,lut.length-1) : 1;
 
         for(let i=0;i<lut.length;i++)
         {
@@ -411,8 +411,8 @@ class Map
             if(this.getWeightByTile(nx,ny)==1)
             {
                 let p = this.tileToWorld(nx,ny);
-                let dx = Phaser.Math.Between(0, this.map.tW_p45);
-                let dy = Phaser.Math.Between(0, this.map.tH_p45);
+                let dx = random ? Phaser.Math.Between(0, this.map.tW_p45) : 0;
+                let dy = random ? Phaser.Math.Between(0, this.map.tH_p45) : 0;
                 return {x:p.x+dx, y:p.y+dy}
             }
 
@@ -473,7 +473,6 @@ class Map
         let min = {x:c.x-w/2-this.map.tW_half, y:c.y-h/2-this.map.tH_half};
         let max = {x:c.x+w/2+this.map.tW_half, y:c.y+h/2+this.map.tH_half};
         return p.x>=min.x && p.x<=max.x && p.y>=min.y && p.y<=max.y;
-
     }
 
     isWalkable(p,w=GM.W_BLOCK)
@@ -497,14 +496,14 @@ class Map
     //     // return dx<=1 && dy==0 || dx==0 && dy<=1;
     // }
 
-    isNearby(a,b)
-    {
-        let tw = this.map.tileWidth;
-        let th = this.map.tileHeight;
-        let dx = Math.abs(a.x-b.x);
-        let dy = Math.abs(a.y-b.y);
-        return dx<=tw && dy<=th;
-    }
+    // isNearby(a,b)
+    // {
+    //     let tw = this.map.tileWidth;
+    //     let th = this.map.tileHeight;
+    //     let dx = Math.abs(a.x-b.x);
+    //     let dy = Math.abs(a.y-b.y);
+    //     return dx<=tw && dy<=th;
+    // }
 
     getWeight(p)
     {

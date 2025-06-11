@@ -199,10 +199,9 @@ export class Role extends Entity
         }
     }
 
-    setDes(pt, ent, act)
+    setDes({pt, ent, act, next=false}={})
     {
         let pts = ent?.pts ?? [pt];
-
         let rst = this.scene.map.getPath(this.pos, pts);
         console.log('setDes',rst.state,act)
         if(rst?.state>0)
@@ -211,9 +210,8 @@ export class Role extends Entity
             this._ent = ent;
             // this._act = act ?? ent?.act ?? '';
             this._act = act;
-            this._pt = pt;
 
-            this.state = GM.ST_MOVING;
+            this.state = next ? GM.ST_NEXT : GM.ST_MOVING;
 
             if(this.isPlayer) 
             {
@@ -324,7 +322,7 @@ export class Role extends Entity
                     }
                     else if(repath)     // 重新找路徑
                     {
-                        this.setDes(null, this._ent, this._act);
+                        this.setDes({ent:this._ent, act:this._act});
                         let ret = await this.st_moving(false);
                         if(ret)
                         {
@@ -338,100 +336,6 @@ export class Role extends Entity
             }
         }
     }
-
-    // async move({duration=200,ease='expo.in',repath=true}={})
-    // {
-    //     // if(this._path.length==0) {return false;}
-    //     // let path = this._path;
-
-    //     if(this._exec)
-    //     {
-    //         await this.interact(this._exec.ent, this._exec.act);
-    //         this._exec = null;
-    //         return true;
-    //     }
-        
-    //     if(!this.isTouch(this._ent))
-    //     { 
-    //         if(this._path.length==0) 
-    //         {
-    //             this.stop();
-    //             this.state=GM.ST_IDLE;
-    //             return false;
-    //         }
-    //         let path = this._path;
-    //         let pt = path[0];
-    //         let w = this.scene.map.getWeight(pt)
-
-    //         if(w<GM.W_BLOCK)    // walkable
-    //         {
-    //             if(this.isPlayer) {this.drawPath(path);}
-    //             else
-    //             {
-    //                 if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
-    //                 {
-    //                     let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
-    //                     this._exec = {ent:bodys[0]?.gameObject, act:GM.CLOSE_DOOR}
-    //                 }
-    //                 this._preW=w;
-    //                 this._prePt=pt;
-    //             }
-    //             this.faceTo(pt);
-    //             this.removeWeight();
-    //             this.addWeight(pt);
-    //             await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
-    //             //this.addWeight();
-    //             this.updateDepth();
-    //             path.shift();   //移除陣列第一個元素
-    //             console.log(path.length)
-    //             // if(path.length>0) {return true;}
-    //             return false;
-    //         }
-    //         else
-    //         {
-    //             if(this.isPlayer)
-    //             {
-    //                 this.stop();
-    //                 this.state = GM.ST_IDLE;
-    //                 return false;
-    //             }
-    //             else
-    //             {
-    //                  // console.log(this.scene.phyGroup.children.entries[0].body.center,pt)
-    //                 let bodys = this.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
-    //                 let ent = bodys[0]?.gameObject;
-
-    //                 if (ent && ent instanceof Door && !ent.opened) 
-    //                 {
-    //                     await this.interact(ent, GM.OPEN_DOOR);
-    //                     return true;
-    //                 }
-    //                 else if(repath)
-    //                 {
-    //                     this.setDes(this._pt, this._ent, this._act);
-    //                     let ret = await this.move({repath:false});
-    //                     if(!ret)
-    //                     {
-    //                         this.speak('操...給老子滾開...💢');
-    //                     }
-
-    //                     return ret;
-    //                 }
-    //                 return false;
-                    
-    //             }
-
-    //         }
-    //     }
-    //     else
-    //     {
-    //         console.log('touch')
-    //     }
-        
-    //     this.stop();
-    //     await this.action();
-    //     return true;
-    // }
 
     async action()
     {
@@ -519,7 +423,7 @@ export class Role extends Entity
         }
         else
         {
-            this.setDes(null,this._ent,this._act);
+            this.setDes({ent:this._ent, act:this._act});
             await this.st_moving();
         }
     }
@@ -866,9 +770,10 @@ export class Role extends Entity
         let ent = this.parentContainer;
         ent.remove(this)
         ent.user=null;
-        this.pos = ent.pts[0];
+        this.pos = this.scene.map.getValidPoint(ent.pts[0],false);
         this.angle = 0;
         this.addWeight();
+        this.updateDepth();
         this._zone.setInteractive();
         this.state = GM.ST_IDLE;
         
@@ -1146,9 +1051,9 @@ export class Npc extends Role
                 console.log('[npc] checkSchedule'); 
                 let ents = this.toEnts(found.p);
 
-                if(ents.length==1)  // 只有一個目標，表示已經到達目標，執行動作，例如:bed
+                if(ents.length==1)  // 只有一個目標，表示已經到達目標，立即執行動作，例如:bed
                 {
-                    this.setDes(null,ents[0]);
+                    this.setDes({ent:ents[0]});
                 }
                 else
                 {
@@ -1167,6 +1072,7 @@ export class Npc extends Role
                     this.removeWeight();
                     this.pos = tc==t0 ? ents[0].pts[0] : rst.path[i];
                     this.addWeight();
+                    this.setDes({ent:ents[1],next:true});
                 }
 
             }
@@ -1200,18 +1106,22 @@ export class Npc extends Role
                 // 2. 如果已達目的地，則離開
                 let ents = this.toEnts(found.p);    
                 let ent = ents.at(-1);
-                if(ent.isAt(this)) {return;}
+                if(ent.isAt(this)) 
+                {
+                    this._shLatency = 0;
+                    return;
+                }
 
                 // 3. 檢查延遲
                 if(this._shLatency >= GM.SH_LATENCY) 
                 {
+                    console.log('[npc] latency:',this._shLatency);
                     this._shLatency=0;
-                    // console.log(this._shLatency);
                 }
                 else 
                 {
+                    console.log('[npc] latency:',this._shLatency);
                     this._shLatency++; 
-                    // console.log(this._shLatency);
                     return;
                 }
 
@@ -1223,7 +1133,7 @@ export class Npc extends Role
                     return;
                 }
                 console.log('[setDes]')
-                this.setDes(null,ent);
+                this.setDes({ent:ent});
             }
         }
     }
@@ -1323,22 +1233,23 @@ export class Npc extends Role
         {
             case GM.ST_IDLE: break;
 
+            case GM.ST_NEXT:
+                console.log(`[npc] ${this.id} next`);
+                this.state = GM.ST_MOVING;
+                break;
+
             case GM.ST_MOVING:
-                console.log('[npc] moving');
-                // if(await this.move({draw:false}))
-                // {
-                //     await this.action();
-                // }
+                console.log(`[npc] ${this.id} moving`);
                 await this.st_moving();
                 break;
 
             case GM.ST_ACTION:
-                console.log('[npc] action');
+                console.log(`[npc] ${this.id} action`);
                 await this.action();
                 break;
 
             case GM.ST_ATTACK:
-                console.log('[npc] attack');
+                console.log(`[npc] ${this.id} attack`);
                 await this.attack();
                 break;
         }
