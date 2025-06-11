@@ -7,7 +7,7 @@ import AudioManager from './audio.js';
 import {bbcText} from './uibase'
 import * as Role from './role';
 
-let DEBUG = true;
+let DEBUG = true; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ALL;
 
 export class Entity extends Phaser.GameObjects.Container
@@ -33,11 +33,10 @@ export class Entity extends Phaser.GameObjects.Container
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone 的 left, right, top, bottom，interactive=true 才有作用
         this.anchorX = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
         this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角
-        this.en_multi = true;
 
     }
 
-    get pt() {return {x:this.x, y:this.y}}
+    // get pt() {return {x:this.x, y:this.y}}
     get pos()   {return {x:this.x,y:this.y}}    // 錨點的座標(world space)
     set pos(value)  {this.x=value.x;this.y=value.y;}    
     get posG() {return {x:this.x+this.grid.x, y:this.y+this.grid.y}} // grid 的中心點(world space)
@@ -62,14 +61,11 @@ export class Entity extends Phaser.GameObjects.Container
 
     // checkInside(role) {return true;}
 
-    checkTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
-    checkAt(role) {return role.pos.x==this.pos.x && role.pos.y==this.pos.y;}
-    checkPts(role)
+    isTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
+    isAt(role) {return role.pos.x==this.pos.x && role.pos.y==this.pos.y;}
+    isAtPts(role)
     {
-        for(let p of this.pts)
-        {
-            if(p.x==role.pos.x && p.y==role.pos.y){return true;}
-        }
+        for(let p of this.pts) {if(p.x==role.pos.x && p.y==role.pos.y){return true;}}
         return false;
     }
 
@@ -124,10 +120,14 @@ export class Entity extends Phaser.GameObjects.Container
         this._zone
             .on('pointerover',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(true);this.send('over',this);this.debugDraw(undefined,this.y);})
+                this.outline(true);this.send('over',this);
+                if(DEBUG){this.debugDraw(undefined,this.y);}
+            })
             .on('pointerout',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(false);this.send('out');this.debugDraw(GM.DBG_CLR);})
+                this.outline(false);this.send('out');
+                if(DEBUG){this.debugDraw(GM.DBG_CLR);}
+            })
             .on('pointerdown',(pointer)=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) {this.rightButtonDown();}
@@ -280,16 +280,10 @@ export class Entity extends Phaser.GameObjects.Container
             this.scene.ents[this.name] = this;
         }
 
-        console.log('------data',this.data)
         if(this.data)
         {
             let json_pts = this.data.get('json_pts');
-            if(json_pts)
-            {
-                this._pts = JSON.parse(json_pts);
-                console.log('---pts',this._pts, this.pts);
-
-            }
+            if(json_pts) {this._pts = JSON.parse(json_pts);}
         }
 
         this.updateFlip()
@@ -452,8 +446,6 @@ export class Entity extends Phaser.GameObjects.Container
 
     debugDraw(type=DBG_TYPE,text)
     {
-        if(!DEBUG) {return;}
-
         if(!this._dbgGraphics)
         {
             this._dbgGraphics = this.scene.add.graphics();
@@ -692,7 +684,6 @@ export class Stove extends Entity
         this._storage = {capacity:-1,items:[]};  
         this._output = null;
         this.cat = GM.CAT_FOOD;
-        this.en_multi=false;
     }
 
     get acts()  {return [GM.COOK];}
@@ -708,7 +699,7 @@ export class Stove extends Entity
         this._output = {id:id,count:0};
     }
 
-    checkTouch(role) {return this.checkPts(role);}
+    isTouch(role) {return this.isAtPts(role);}
 
     init_prefab()
     {
@@ -845,7 +836,8 @@ export class Door extends Entity
 
     get acts()  {return [this.opened ? GM.CLOSE_DOOR : GM.OPEN_DOOR];}
 
-    checkTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
+    // isTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
+    isTouch(role) {return this.isAtPts(role);}
 
     addListener()
     {
@@ -927,8 +919,8 @@ export class Bed extends Entity
 
     get acts()  {return [!this.user ? GM.REST : GM.WAKE];}
 
-    checkTouch(role) {return (role.pos.x==this.pts[0].x && role.pos.y==this.pts[0].y) || role.parentContainer == this;}
-    checkAt(role) {return role.parentContainer == this;}
+    isTouch(role) {return (role.pos.x==this.pts[0].x && role.pos.y==this.pts[0].y) || role.parentContainer == this;}
+    isAt(role) {return role.parentContainer == this;}
     
    
     updateFlip()
@@ -1005,7 +997,8 @@ export class Bed extends Entity
 
 export class Point extends Entity
 {
-    checkAt(role) {return role.pos.x==this.x && role.pos.y==this.y;}
+    isAt(role) {return role.pos.x==this.x && role.pos.y==this.y;}
+    isTouch(role) {return role.pos.x==this.x && role.pos.y==this.y;}
 }
 
 
@@ -1015,14 +1008,15 @@ export class Port extends Entity
     {
         super(scene);
         this.interactive = true;   
+        this.weight = 1000;
         this.port = '';
         this.map = '';      
     }
 
     get acts()  {return [GM.ENTER];}
 
-    checkAt(role) {return false;}
-    checkTouch(role) {return this.checkPts(role);}
+    // isAt(role) {return false;}
+    isTouch(role) {return this.isAtPts(role);}
 
     addListener()
     {

@@ -21,20 +21,19 @@ export class GameScene extends Scene
 
     init(data) 
     {
-        console.log('1.init',data);
+        console.log('[1] init',data);
         this._data = data;
     }
 
     async create ({diagonal,classType,weight})
     {
-        console.log('2.create')
+        console.log('[2] create')
         this._dbgPos = null;
         this._graphics = null;
         this._dbgPath = null;
         this._pos = null;
         this._act = 'go';
         this._ent = null;
-        this.ports = {};
         this.roles = [];
         this.loadRecord();
         this.setEvent();
@@ -57,7 +56,6 @@ export class GameScene extends Scene
 
     initAmbient()
     {
-        console.log('enable light')
         this.lights.enable();
         TimeManager.register(this.setAmbient.bind(this));
     }
@@ -230,7 +228,7 @@ export class GameScene extends Scene
         {
             if(rst.state==1 && !rst.block)
             {
-                this.drawPath(rst.path,this._ent);
+                this.drawPath(rst.path);
                 if(this._ent) {Mark.close();}
                 else {Mark.show(rst.pt,GM.COLOR_WHITE);}
             }
@@ -254,8 +252,8 @@ export class GameScene extends Scene
 
     clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
 
-    drawPath(path,ent)
-    {
+    drawPath(path)
+    {    
         if(!this._dbgPath)
         {
             this._dbgPath = this.add.graphics();
@@ -264,6 +262,9 @@ export class GameScene extends Scene
             this._dbgPath.setDepth(Infinity);
         }
         this._dbgPath.clear();
+
+        if(Role.dbg_hover_npc) {return;}    // DEBUG 用，如果有 NPC 被滑鼠指向，則不畫 player 的路徑，以免干擾 npc 路徑的顯示
+        
         path.pop(); //移除陣列最後一個元素
         path.forEach((node)=>{
             let circle = new Phaser.Geom.Circle(node.x, node.y, 5);

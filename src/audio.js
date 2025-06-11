@@ -15,7 +15,7 @@ export default class AudioManager
         this.scene = scene;
         if(!this._init)
         {
-            console.log('[AudioManager Init]')
+            console.log('[AudioManager] init')
             this._init = true;
             this.bgm0 = this.scene.sound.add('bgm',{loop: true});
         }
@@ -28,9 +28,7 @@ export default class AudioManager
 
     static bgmStart()
     {
-        this.bgm0.setVolume(this.bgmVolume)
-        console.log('playing:',this.bgm0.isPlaying)
-        console.log('paused:',this.bgm0.isPaused)            
+        this.bgm0.setVolume(this.bgmVolume)           
         if(this.bgm0.isPaused) {this.bgm0.resume();}
         else if(!this.bgm0.isPlaying) {this.bgm0.play();}
     }

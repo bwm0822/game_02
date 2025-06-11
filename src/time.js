@@ -58,7 +58,8 @@ export default class TimeManager
 
     static start()
     {
-        this.emit(0,this.time);
+        console.log('[time] start')
+        this.emit(this.time);
     }
 
     static load()
@@ -175,52 +176,27 @@ export class Schedular
             let schedule = role.schedule?.[mapName];
             if(schedule)
             {
-                // let filter = schedule.filter((s)=>{return s.type=='enter'});
-                // filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
-
-                schedule.forEach((sh)=>{
-                    this.schedules.push({id:id,...sh});
-                })
-
-                let found = schedule.find((s)=>{return TimeManager.inRange(s.t);});
-                if(found)
-                {
-                    // let ent = this.scene.ents[found.p.split('~')[0]]
-                    // let ents = found.p.split('~').map(p=>this.scene.ents[p])
-                    console.log(found)
-                    let ents = this.toEnts(found.p);
-                    console.log(ents)
-                    let npc = new Role.Npc(scene,ents[0].pts[0].x,ents[0].pts[0].y);
-                    npc.init_runtime(id).load();
-                }
+                schedule.forEach((sh)=>{this.schedules.push({id:id,...sh});})
             }
         })
     }
 
     static isExisted(id)
     {
-        for(let role of this.scene.roles)
-        {
-            return role.id == id;
-        }
+        for(let role of this.scene.roles) {return role.id == id;}
         return false;
     }
 
     static check()
     {
-
         this.schedules.forEach((sh)=>{
             if(this.isExisted(sh.id)) {return;}
-            // console.log('check', sh,TimeManager.time)
-            if(TimeManager.atTs(sh.t))
+            if(TimeManager.inRange(sh.t))
             {
-                // let pt = this.scene.ents[sh.from]?.pt;
                 let ents = this.toEnts(sh.p);
-                
-                console.log('create')
+                console.log('[time] check');   
                 let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
                 npc.init_runtime(sh.id).load();
-                
             }
         })
     }

@@ -67,11 +67,6 @@
                          "name":"port",
                          "type":"string",
                          "value":"stair_up"
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":100
                         }],
                  "rotation":0,
                  "type":"port",
@@ -85,6 +80,11 @@
                  "id":193,
                  "name":"door",
                  "properties":[
+                        {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":0,\"y\":-32},{\"x\":0,\"y\":32}]"
+                        }, 
                         {
                          "name":"zt",
                          "type":"int",
@@ -175,13 +175,6 @@
                  "width":64,
                  "x":256,
                  "y":128
-                }, 
-                {
-                 "id":201,
-                 "name":"trump-p0",
-                 "template":"..\/templates\/point.tj",
-                 "x":192,
-                 "y":224
                 }],
          "opacity":1,
          "type":"objectgroup",

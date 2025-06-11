@@ -29,7 +29,7 @@ const ICON_AVATAR = 'role/0';
 //const ICON_AVATAR = 'rogues/1';
 const ICON_ENEMY = 'role/1';
 
-
+export let dbg_hover_npc = false;   // 是否有 npc 被 hover
 let player = null;
 
 export function setPlayer(value) {player = value;}
@@ -204,7 +204,7 @@ export class Role extends Entity
         let pts = ent?.pts ?? [pt];
 
         let rst = this.scene.map.getPath(this.pos, pts);
-        console.log('setDes',rst)
+        console.log('setDes',rst.state,act)
         if(rst?.state>0)
         {
             this._path = rst.path;
@@ -220,13 +220,7 @@ export class Role extends Entity
                 this.send('clearpath');
                 this.resume();
             }
-        }
-        // else
-        // {
-        //     this.stop();
-        //     this.state = GM.ST_IDLE;
-        // }
-        
+        }        
     }
 
     faceTo(pt)
@@ -240,11 +234,11 @@ export class Role extends Entity
         return this.state != GM.ST_SLEEP || this.parentContainer == ent;
     }
 
-    isTouch(ent)
+    checkIsTouch(ent)
     {
         // if(ent && this.parentContainer == ent) {return true;}
         // return !ent ? false : this.scene.map.isNearby(ent,this.pos);
-        return ! ent ? false : ent.checkTouch(this);
+        return !ent ? false : ent.isTouch(this);
     }
 
     async moveTo(pt,{duration=200,ease='expo.in'}={})
@@ -262,7 +256,7 @@ export class Role extends Entity
         let path = this._path;
 
         // 判斷是否接觸目標
-        if(this.isTouch(this._ent))
+        if(this.checkIsTouch(this._ent))
         {
             this.clearPath();
             await this.action();
@@ -1108,7 +1102,7 @@ export class Npc extends Role
         return super.init_runtime(id);
     }
 
-     load()
+    load()
     {
         // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
@@ -1149,20 +1143,17 @@ export class Npc extends Role
             let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                // this._shCurrent = found;
-                console.log(found)
+                console.log('[npc] checkSchedule'); 
                 let ents = this.toEnts(found.p);
 
-                if(ents.length==1)
+                if(ents.length==1)  // 只有一個目標，表示已經到達目標，執行動作，例如:bed
                 {
                     this.setDes(null,ents[0]);
                 }
                 else
                 {
-                    if(this.state == GM.ST_SLEEP)
-                    {
-                        ents[0].wake();
-                    }
+                    // 如果 npc 正在睡覺，則叫醒
+                    if(this.state == GM.ST_SLEEP) {ents[0].wake();}
 
                     let rst = this.scene.map.getPath(ents[0].pts[0], ents[1].pts);
                     let t = found.t.split('~');
@@ -1176,8 +1167,6 @@ export class Npc extends Role
                     this.removeWeight();
                     this.pos = tc==t0 ? ents[0].pts[0] : rst.path[i];
                     this.addWeight();
-                    // this.setDes(null,ents[1]);
-
                 }
 
             }
@@ -1196,11 +1185,11 @@ export class Npc extends Role
  
         if(this.schedule)
         {
-            // console.log(this.schedule)
             let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
             if(found)
             {
-                // console.log(found)
+                console.log('[npc] updateSchedule'); 
+
                 // 1. 檢查是否第一次進入 updateSchedule
                 if(found != this._shCurrent)    
                 {
@@ -1211,18 +1200,18 @@ export class Npc extends Role
                 // 2. 如果已達目的地，則離開
                 let ents = this.toEnts(found.p);    
                 let ent = ents.at(-1);
-                if(ent.checkAt(this)) {return;}
+                if(ent.isAt(this)) {return;}
 
                 // 3. 檢查延遲
                 if(this._shLatency >= GM.SH_LATENCY) 
                 {
                     this._shLatency=0;
-                    console.log(this._shLatency);
+                    // console.log(this._shLatency);
                 }
                 else 
                 {
                     this._shLatency++; 
-                    console.log(this._shLatency);
+                    // console.log(this._shLatency);
                     return;
                 }
 
@@ -1360,10 +1349,15 @@ export class Npc extends Role
     {
         super.debugDraw(type,text);
         if(type === GM.DBG_CLR) 
+        {
+            dbg_hover_npc = false;
             this.drawPath(null);
-        else
+        }
+        else 
+        {
+            dbg_hover_npc = true;
             this.drawPath(this._path);
-
+        }
     }
 }
 

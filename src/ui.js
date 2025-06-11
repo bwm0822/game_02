@@ -2860,7 +2860,6 @@ export class UiMessage extends ContainerLite
 
     clean()
     {
-        console.log('clean')
         this.queue = [];
         this.panel.removeAll(true).layout();
     }

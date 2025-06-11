@@ -48,8 +48,7 @@ export class GameArea extends GameScene
         this.mode = 'normal';
         //this.mode = 'combat';
         await super.create({diagonal:true,classType:Role.Avatar});       
-        console.log(this.ports) 
-        // await Utility.delay(1000)
+        // await Utility.delay(5000)
         this.process();
     }
 

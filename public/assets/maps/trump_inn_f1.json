@@ -67,11 +67,6 @@
                          "name":"port",
                          "type":"string",
                          "value":"stair_dn"
-                        }, 
-                        {
-                         "name":"weight",
-                         "type":"int",
-                         "value":100
                         }],
                  "rotation":0,
                  "type":"port",

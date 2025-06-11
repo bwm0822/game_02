@@ -5,12 +5,12 @@
     },
     "activeFile": "public/assets/maps/trump_inn_f2.json",
     "expandedProjectPaths": [
-        "public/assets",
-        ".",
-        "public/assets/tiles",
         "public",
         "public/assets/templates",
-        "public/assets/maps"
+        "public/assets",
+        "public/assets/maps",
+        ".",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -315,20 +315,20 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240,
-                "y": 239.66666666666663
+                "x": 229.99999999999997,
+                "y": 239.33333333333334
             }
         },
         "public/assets/maps/village_01.json": {
             "expandedObjectLayers": [
-                4,
-                3
+                3,
+                4
             ],
             "scale": 0.75,
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 640.6666666666667
+                "y": 961.3333333333333
             }
         },
         "public/assets/maps/village_01.json#group": {
