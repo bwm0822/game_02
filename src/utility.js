@@ -212,6 +212,11 @@ export default class Utility
         if(d>0) {str = `${d}d${str}`;}
         return str;
     }
+
+    static isString(value) 
+    {
+        return typeof value === 'string' || value instanceof String;
+    }
 }
 
 // String.prototype.local = function(){ return Utility.local(this); };

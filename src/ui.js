@@ -58,13 +58,17 @@ function get(s,p)
 
 async function t3()
 {
-    let slot = {itm:{id:'test',count:1}};
-    let itm = slot.itm;
-    // slot.itm = null;
-    slot.itm.id='';
-    slot.itm.count= 0;
+    // let slot = {itm:{id:'test',count:1}};
+    // let itm = slot.itm;
+    // // slot.itm = null;
+    // slot.itm.id='';
+    // slot.itm.count= 0;
 
-    console.log('slot:',slot, 'itm:',itm);
+    // console.log('slot:',slot, 'itm:',itm);
+
+    let rec={'t1':0,'t2':1};
+    console.log('t1:',rec['t1'])
+    console.log('t3:',rec['t3'])
     
 }
 
@@ -1526,7 +1530,7 @@ class Option extends UiBase
     act(act)
     {
         this.close();
-        Role.getPlayer().setDes(this.ent.pos,this.ent,act);
+        Role.getPlayer().setDes({ent:this.ent,act});
     }
 
     show(x,y,options,ent)

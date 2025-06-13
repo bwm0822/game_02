@@ -2,6 +2,7 @@ import Record from './record.js'
 import {RoleDB,Roles} from './database.js'
 import DB from './db.js'
 import * as Role from './role.js';
+import Utility from './utility';
 
 const ticksMax = 24*60-1;
 export default class TimeManager
@@ -77,11 +78,29 @@ export default class TimeManager
         Record.data.time = this.time;
     }
 
-    static inRange(t)
+    static checkRange(day, time, range)
     {
-        t = t.split('~');
-        let ts = this.str2Ticks(t[0]);
-        let te = this.str2Ticks(t[1]);
+        console.log(day, time, range);
+        if(day != TimeManager.time.d) {return false;}
+        let tt = this.time2Ticks(time);
+        let r = range.split('~');
+        let ts = this.str2Ticks(r[0]);
+        let te = this.str2Ticks(r[1]);
+        if(te<=ts) 
+        {
+            return (tt>=ts && tt<=ticksMax) || (tt>=0 && tt<te);
+        }
+        else 
+        {
+            return tt>=ts && tt<te;
+        }
+    }
+
+    static inRange(range)
+    {
+        let r = range.split('~');
+        let ts = this.str2Ticks(r[0]);
+        let te = this.str2Ticks(r[1]);
         if(te<=ts) 
         {
             return (this.ticks>=ts && this.ticks<=ticksMax) ||
@@ -94,7 +113,7 @@ export default class TimeManager
         
     }
 
-    static atTs(t)
+    static atTime(t)
     {
         t = t.split('~');
         let ts = this.str2Ticks(t[0]);
@@ -103,10 +122,10 @@ export default class TimeManager
         
     }
 
-    static time2Ticks(time)
-    {
-        return time.h * 60 + time.m;
-    }
+    // static time2Ticks(time)
+    // {
+    //     return time.h * 60 + time.m;
+    // }
 
     static str2Ticks(str) 
     {
@@ -114,6 +133,12 @@ export default class TimeManager
         let hours = parseInt(sps[0], 10);
         let minutes = parseInt(sps[1], 10);
         return hours * 60 + minutes;
+    }
+
+    static time2Ticks(time)
+    {
+        if(typeof time == 'string') {return this.str2Ticks(time);}
+        else {return time.h * 60 + time.m;}
     }
 }
 
@@ -174,11 +199,13 @@ export class Schedular
         Roles.list.forEach((id)=>{
             let role = DB.role(id);
             let schedule = role.schedule?.[mapName];
-            if(schedule)
+            if(schedule) 
             {
                 schedule.forEach((sh)=>{this.schedules.push({id:id,...sh});})
+                this.initCheck(schedule, id, mapName);
             }
         })
+
     }
 
     static isExisted(id)
@@ -189,17 +216,71 @@ export class Schedular
         return false;
     }
 
-    static check()
+    static initCheck(schedule, id, mapName)
+    {
+        let role = this.loadRole(id);
+        console.log(role);
+        for(let sh of schedule)
+        {
+            if(TimeManager.inRange(sh.t))
+            {
+                if(role?.exit)
+                {   
+                    // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
+                    if(TimeManager.checkRange(role.exit.t.d, role.exit.t, sh.t)) {return;}
+                }
+                let ents = this.toEnts(sh.p);
+                console.log('[time] init',id, sh.t); 
+                let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
+                npc.init_runtime(id).load();
+                return;
+            }
+            // else if(role?.exit)
+            // {
+            //     console.log(sh.t,role.exit.sh.t)
+            //     if(sh.t==role.exit.sh.t) 
+            //     {
+            //         delete role.exit;
+            //         Record.data.roles[id] = role;
+            //         console.log('[time] remove exit',id, sh.t);
+            //     }
+            // }
+        }
+
+        if(role?.exit && role.exit.map == mapName)
+        {
+            // npc 進入這個 map，但還在離開的時間區段內，則載入 npc
+            if(TimeManager.inRange(role.exit.sh.t))
+            {
+                let ent = this.scene.ents[role.exit.port];
+                let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                npc.init_runtime(id).load();
+            }
+        }
+    }
+
+    static check(dt,time)
     {
         this.schedules.forEach((sh)=>{
             if(this.isExisted(sh.id)) {return;}
-            if(TimeManager.inRange(sh.t))
+            if(TimeManager.atTime(sh.t))
             {
+                let role = this.loadRole(sh.id);
+                if(role?.exit)
+                {
+                    // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
+                    if(TimeManager.checkRange(role.exit.t.d, role.exit.t, sh.t)) {return;}
+                }
                 let ents = this.toEnts(sh.p);
-                console.log('[time] check',sh.id); 
+                console.log('[time] check',sh.id, sh.t); 
                 let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
                 npc.init_runtime(sh.id).load();
             }
         })
+    }
+
+    static loadRole(id)
+    {
+        return Record.data.roles?.[id];
     }
 }

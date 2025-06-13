@@ -66,7 +66,7 @@
                         {
                          "name":"port",
                          "type":"string",
-                         "value":"stair_up"
+                         "value":"stair-up"
                         }],
                  "rotation":0,
                  "type":"port",
