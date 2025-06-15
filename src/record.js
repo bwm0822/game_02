@@ -11,8 +11,6 @@ export default class Record
 
     static save()
     {
-        console.trace();
-        console.log('------ save')
         Utility.save(Record.data);
     }
 

@@ -147,10 +147,7 @@ export class Role extends Entity
         this.displayHeight = roleD.h;
         this.anchor = roleD.anchor;
         this.addListener();
-
-        console.log('---------- getPos')
-        this.pos = this.getPos(this.pos);
-
+        this.pos = this.getPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
         this.addPhysics();
         this.addGrid();
         this.setAnchor();
@@ -768,11 +765,10 @@ export class Role extends Entity
         this.speak('💤',{duration:-1,tween:true});
     }
 
+    // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
     getPos(p)
     {
-        console.log('--- chk1')
         if(this.scene.map.getWeight(p)==1) {return p;}
-        console.log('--- chk2')
         return this.scene.map.getValidPoint(p,false);
     }
 
@@ -1054,22 +1050,6 @@ export class Npc extends Role
         this.schedule = this.role.schedule[this.mapName];
     }
 
-    // setStartPos(ents,tSch)
-    // {
-    //     let rst = this.scene.map.getPath(ents[0].pts[0], ents[1].pts);
-    //     let t = tSch.split('~');
-    //     let t0 = TimeManager.str2Ticks(t[0])
-    //     let t1 = TimeManager.str2Ticks(t[1])
-    //     let tc = TimeManager.ticks;
-    //     let ratio = (tc-t0) / (t1-t0);
-    //     let i = Math.floor(rst.path.length*ratio);
-    //     console.log(ratio, rst.path.length, i);
-
-    //     this.removeWeight();
-    //     this.pos = tc==t0 ? ents[0].pts[0] : rst.path[i];
-    //     this.addWeight();
-    // }
-
     setStartPos(ents,tSch)
     {
         // let rst = this.scene.map.getPath(ents[0].pts[0], ents[1].pts);
@@ -1090,19 +1070,28 @@ export class Npc extends Role
 
     findSchedule()
     {
-        let found;
-        if(this.status.exit)
+        if(this.status.exit && this.status.exit.map == this.mapName)
         {
-            let t = this.status.exit.t;
-            let time = this.status.exit.sh.t.split('~')[1];
-            found = this.schedule.find((sh)=>{return TimeManager.checkRange(t.d, time, sh.t);});
-            if(found) {return found;}
-            else {delete this.status.exit;}
+            // 找出 exit.sh 之後的 schedule (next)
+            let day = this.status.exit.t.d;
+            let time = this.status.exit.sh.t.split('~')[1]; 
+            let next = this.schedule.find((sh)=>{return TimeManager.checkRange(day, time, sh.t);});
+            
+            // 檢查 npc 是否在 exit.sh + next.sh 的區間內
+            let hit = TimeManager.inRange(this.status.exit.sh.t) | TimeManager.inRange(next.t);
+            if(hit) // 如果 npc 在 exit.h + next.t 的區間內，則返回 next
+            {
+                console.log(`[${this.id}] -------- next`);
+                return next;
+            }   
+            else    // 如果 npc 不在 exit.sh + next.sh 的區間內，則刪除 exit
+            {
+                console.log(`[${this.id}] -------- delete exit`);
+                delete this.status.exit;
+            }
         }
 
-        found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
-
-        return found;
+        return this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
     
     }
 
@@ -1112,14 +1101,13 @@ export class Npc extends Role
         if(this.state != GM.ST_IDLE && this.state != GM.ST_SLEEP) {return;}
  
         if(this.schedule)
-        {
-            // let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
+        { 
             let found = this.findSchedule();
             if(found)
             {
                 console.log(`[npc ${this.id}] updateSchedule`); 
 
-                // 1. 檢查是否第一次進入 updateSchedule
+                // 1. 檢查是否第一次進入 found 這個 schedule，
                 if(found != this._shCurrent)    
                 {
                     this._shCurrent = found;
@@ -1138,17 +1126,20 @@ export class Npc extends Role
                     }
                     else    // 有起訖點，根據時間，計算起始位置
                     {
-                        // 如果 npc 正在睡覺，則叫醒
+                        // 1. 如果 npc 正在睡覺，則叫醒
                         if(this.state == GM.ST_SLEEP) {ents[0].wake();}
+
+                        // 2. 根據時間，計算起始位置
                         this.setStartPos(ents,found.t);
 
+                        // 3. 執行 schedule, 將 next 設成 true，進到 ST_NEXT，會等一輪再執行
                         this.setDes({ent:ents.at(-1),next:true});
                     }
                 }
                 else    // 如果不是初始化，則檢查是否已經到達目標
                 {
                     // 1. 如果已達目的地，則離開
-                    if(ents.at(-1).isAt(this)) {this._shLatency = 0;return;}
+                    if(ents.at(-1).isAt(this)) {this._shLatency = 0; return;}
 
                     // 2. 檢查延遲
                      console.log(`[npc ${this.id}] latency:`,this._shLatency);
@@ -1156,12 +1147,7 @@ export class Npc extends Role
                     else {this._shLatency++; return;}
 
                     // 3. 如果 npc 正在睡覺，則叫醒
-                    if(this.state == GM.ST_SLEEP)
-                    {
-                        this.wake();
-                        // this._shLatency = GM.SH_LATENCY;
-                        return;
-                    }
+                    if(this.state == GM.ST_SLEEP) {this.wake(); return;}
 
                     // 4. 執行 schedule
                     this.setDes({ent:ents.at(-1)});
@@ -1171,112 +1157,10 @@ export class Npc extends Role
         }
     }
 
-
-
-    // checkSchedule()
-    // {
-    //     if(this.schedule)
-    //     {
-    //         let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
-    //         if(found)
-    //         {
-    //             console.log('[npc] checkSchedule'); 
-    //             this.status.schedule = {map:this.mapName, t:found.t};
-    //             console.log(this.status.schedule)
-                
-    //             let ents = this.toEnts(found.p);
-
-    //             if(ents.length==1)  // 只有一個目標，表示已經到達目標，立即執行動作，例如:bed
-    //             {
-    //                 this.setDes({ent:ents[0]});
-    //             }
-    //             else
-    //             {
-    //                 // 如果 npc 正在睡覺，則叫醒
-    //                 if(this.state == GM.ST_SLEEP) {ents[0].wake();}
-
-    //                 // let rst = this.scene.map.getPath(ents[0].pts[0], ents[1].pts);
-    //                 // let t = found.t.split('~');
-    //                 // let t0 = TimeManager.str2Ticks(t[0])
-    //                 // let t1 = TimeManager.str2Ticks(t[1])
-    //                 // let tc = TimeManager.ticks;
-    //                 // let ratio = (tc-t0) / (t1-t0);
-    //                 // let i = Math.floor(rst.path.length*ratio);
-    //                 // console.log(ratio, rst.path.length, i);
-
-    //                 // this.removeWeight();
-    //                 // this.pos = tc==t0 ? ents[0].pts[0] : rst.path[i];
-    //                 // this.addWeight();
-
-    //                 this.setStartPos(ents,found.t);
-    //                 this.setDes({ent:ents[1],next:true});
-    //             }
-
-    //         }
-    //     }
-    // }
-
     toEnts(p)
     {
         return p.split('~').map(id=>this.scene.ents[id])
     }
-
-    // updateSchedule_old()
-    // {
-    //     // 如果正在移動中，則不檢查 schedule
-    //     if(this.state != GM.ST_IDLE && this.state != GM.ST_SLEEP) {return;}
- 
-    //     if(this.schedule)
-    //     {
-    //         let found = this.schedule.find((s)=>{return TimeManager.inRange(s.t);})
-    //         if(found)
-    //         {
-    //             console.log('[npc] updateSchedule'); 
-
-    //             // 1. 檢查是否第一次進入 updateSchedule
-    //             if(found != this._shCurrent)    
-    //             {
-    //                 this._shCurrent = found;
-    //                 this._shLatency = GM.SH_LATENCY;
-
-    //                 this.status.schedule = {map:this.mapName, t:found.t};
-    //                 console.log(this.status.schedule)
-    //             }
-
-    //             // 2. 如果已達目的地，則離開
-    //             let ents = this.toEnts(found.p);    
-    //             let ent = ents.at(-1);
-    //             if(ent.isAt(this)) 
-    //             {
-    //                 this._shLatency = 0;
-    //                 return;
-    //             }
-
-    //             // 3. 檢查延遲
-    //             if(this._shLatency >= GM.SH_LATENCY) 
-    //             {
-    //                 console.log('[npc] latency:',this._shLatency);
-    //                 this._shLatency=0;
-    //             }
-    //             else 
-    //             {
-    //                 console.log('[npc] latency:',this._shLatency);
-    //                 this._shLatency++; 
-    //                 return;
-    //             }
-
-    //             // 4. 執行 schedule
-    //             if(this.state == GM.ST_SLEEP)
-    //             {
-    //                 this.wake();
-    //                 this._shLatency = GM.SH_LATENCY;
-    //                 return;
-    //             }
-    //             console.log('[setDes]')
-    //             this.setDes({ent:ent});
-    //         }
-    //     }
-    // }
 
     interact(ent, act) 
     {

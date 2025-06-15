@@ -80,7 +80,7 @@ export default class TimeManager
 
     static checkRange(day, time, range)
     {
-        console.log(day, time, range);
+        // console.log(day, time, range);
         if(day != TimeManager.time.d) {return false;}
         let tt = this.time2Ticks(time);
         let r = range.split('~');
@@ -147,43 +147,6 @@ export class Schedular
 {
     static schedules = [];
     static scene;
-    // static init(scene, mapName)
-    // {
-    //     this.schedules = [];
-    //     this.scene = scene;
-
-    //     Roles.list.forEach((id)=>{
-    //         let role = DB.role(id);
-    //         let schedule = role.schedule?.[mapName];
-    //         if(schedule)
-    //         {
-    //             let found = schedule.find((s)=>{return TimeManager.inRange(s.t);});
-    //             if(found)
-    //             {
-    //                 let pts = s.p.split('~');
-    //                 if(pts.length==1)
-    //                 {
-    //                     let pt = this.scene.ents[pts[0]]?.pt;
-    //                     if(pt)
-    //                     {
-    //                         let npc = new Role.Npc(scene,pt.x,pt.y);
-    //                         npc.init_runtime(id).load();
-    //                     }
-    //                 }
-    //                 else
-    //                 {
-
-    //                 }
-
-
-    //             }
-
-    //             let filter = schedule.filter((s)=>{return s.type=='enter'});
-    //             filter.forEach( (s)=>{this.schedules.push({id:id,...s,cd:0});} )
-                
-    //         }
-    //     })
-    // }
 
     static toEnts(p)
     {
@@ -219,7 +182,6 @@ export class Schedular
     static initCheck(schedule, id, mapName)
     {
         let role = this.loadRole(id);
-        console.log(role);
         for(let sh of schedule)
         {
             if(TimeManager.inRange(sh.t))
