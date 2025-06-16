@@ -133,14 +133,6 @@
                  "y":128
                 }, 
                 {
-                 "id":59,
-                 "name":"sit-1",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":192,
-                 "y":400
-                }, 
-                {
                  "id":69,
                  "properties":[
                         {
@@ -162,30 +154,6 @@
                  "y":448
                 }, 
                 {
-                 "id":72,
-                 "name":"sit-6",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":256,
-                 "y":272
-                }, 
-                {
-                 "id":76,
-                 "name":"sit-2",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":256,
-                 "y":400
-                }, 
-                {
-                 "id":77,
-                 "name":"sit-4",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":416,
-                 "y":400
-                }, 
-                {
                  "id":79,
                  "name":"trump-p0",
                  "template":"..\/templates\/point.tj",
@@ -199,23 +167,6 @@
                  "width":96,
                  "x":192,
                  "y":320
-                },
-            
-                {
-                 "id":82,
-                 "name":"sit-5",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":192,
-                 "y":272
-                }, 
-                {
-                 "id":83,
-                 "name":"sit-3",
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":352,
-                 "y":400
                 }, 
                 {
                  "height":48,
@@ -226,7 +177,56 @@
                  "y":320
                 }, 
                 {
-                 "id":85,
+                 "id":93,
+                 "name":"sit-1",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":192,
+                 "y":400
+                }, 
+                {
+                 "id":95,
+                 "name":"sit-2",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":256,
+                 "y":400
+                }, 
+                {
+                 "id":96,
+                 "name":"sit-3",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":352,
+                 "y":400
+                },
+            
+                {
+                 "id":97,
+                 "name":"sit-4",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":416,
+                 "y":400
+                }, 
+                {
+                 "id":98,
+                 "name":"sit-5",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":192,
+                 "y":272
+                }, 
+                {
+                 "id":99,
+                 "name":"sit-6",
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":256,
+                 "y":272
+                }, 
+                {
+                 "id":100,
                  "name":"sit-7",
                  "template":"..\/templates\/chair.tj",
                  "type":"point",
@@ -234,7 +234,7 @@
                  "y":272
                 }, 
                 {
-                 "id":86,
+                 "id":101,
                  "name":"sit-8",
                  "template":"..\/templates\/chair.tj",
                  "type":"point",
@@ -248,7 +248,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":87,
+ "nextobjectid":102,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -267,11 +267,11 @@
          "source":"..\/props.tsj"
         }, 
         {
-         "firstgid":584,
+         "firstgid":586,
          "source":"..\/icons.tsj"
         }, 
         {
-         "firstgid":1016,
+         "firstgid":1018,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

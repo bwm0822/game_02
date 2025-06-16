@@ -1,13 +1,29 @@
 { "object":
     {
-     "gid":4,
+     "gid":17,
      "height":32,
-     "id":31,
+     "id":93,
      "name":"",
+     "properties":[
+            {
+             "name":"anchorY",
+             "type":"int",
+             "value":8
+            }, 
+            {
+             "name":"gt",
+             "type":"int",
+             "value":16
+            }, 
+            {
+             "name":"weight",
+             "type":"int",
+             "value":10
+            }],
      "rotation":0,
-     "type":"entity",
+     "type":"point",
      "visible":true,
-     "width":24
+     "width":32
     },
  "tileset":
     {

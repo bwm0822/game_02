@@ -31,12 +31,6 @@
          "imagewidth":14
         }, 
         {
-         "id":3,
-         "image":"props\/Chair.png",
-         "imageheight":23,
-         "imagewidth":13
-        }, 
-        {
          "id":4,
          "image":"props\/Crate.png",
          "imageheight":23,
@@ -89,6 +83,12 @@
          "image":"props\/blanket_v.png",
          "imageheight":32,
          "imagewidth":20
+        }, 
+        {
+         "id":16,
+         "image":"props\/Chair.png",
+         "imageheight":23,
+         "imagewidth":19
         }],
  "tilewidth":72,
  "type":"tileset",

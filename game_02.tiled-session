@@ -5,12 +5,12 @@
     },
     "activeFile": "public/assets/maps/trump_inn_f1.json",
     "expandedProjectPaths": [
-        "public/assets",
-        "public/assets/tiles",
         ".",
-        "public/assets/templates",
         "public",
-        "public/assets/maps"
+        "public/assets/maps",
+        "public/assets/templates",
+        "public/assets",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -263,6 +263,9 @@
             "scaleInDock": 1
         },
         "public/assets/maps/musk_home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
@@ -323,8 +326,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 452,
-                "y": 239.33333333333334
+                "x": 291,
+                "y": 319.33333333333326
             }
         },
         "public/assets/maps/trump_inn_f2.json": {
@@ -334,8 +337,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240,
-                "y": 239.66666666666663
+                "x": 263.3333333333333,
+                "y": 239.33333333333334
             }
         },
         "public/assets/maps/village_01.json": {
@@ -513,17 +516,18 @@
         "public/assets/maps/trump_inn_f2.json",
         "public/assets/maps/trump_inn_f1.json",
         "public/assets/maps/village_01.json",
-        "public/assets/maps/musk_house.json"
+        "public/assets/maps/musk_home.json",
+        "public/assets/props.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "int",
     "recentFiles": [
-        "public/assets/maps/musk_home.json",
-        "public/assets/maps/musk_house.json",
         "public/assets/maps/trump_inn_f2.json",
+        "public/assets/props.tsj",
+        "public/assets/maps/musk_home.json",
         "public/assets/maps/village_01.json",
         "public/assets/maps/trump_inn_f1.json",
-        "public/assets/props.tsj",
+        "public/assets/maps/musk_house.json",
         "public/assets/spr_fencePost.tsj",
         "public/assets/fence_tiles.tsj",
         "public/assets/tiles.tsj",
