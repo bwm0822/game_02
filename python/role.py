@@ -6,6 +6,7 @@ def df_to_json(df):
     df = df.set_index(0).T  # 將第一欄設為欄位名，再轉置
     # 對所有角色資料做清理
     output = {}
+    i = 0
     for _, row in df.iterrows():
         obj = {}
         for key, val in row.items():
@@ -24,9 +25,10 @@ def df_to_json(df):
                 fixed = "{" + val + "}"
                 obj.update(json.loads(fixed))
             elif key == "schedule":
-                fixed = "{" + val + "}"
-                if obj.get(key) is None: obj[key] = {}
-                obj[key].update(json.loads(fixed))
+                fixed = f'{{"i":{i},{val}}}'
+                i = i + 1
+                if obj.get(key) is None: obj[key] = []
+                obj[key].append(json.loads(fixed))
             else:
                 fixed = "{" + val + "}"
                 obj[key] = json.loads(fixed)

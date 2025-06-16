@@ -16,6 +16,11 @@
              "value":32
             }, 
             {
+             "name":"json_pts",
+             "type":"string",
+             "value":"[{\"x\":-16,\"y\":-32},{\"x\":16,\"y\":-32}]"
+            }, 
+            {
              "name":"map",
              "type":"string",
              "value":""

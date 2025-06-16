@@ -1047,52 +1047,68 @@ export class Npc extends Role
     setSchedule()
     {
         if(!this.role.schedule) {return;}
-        this.schedule = this.role.schedule[this.mapName];
+        // this.schedule = this.role.schedule[this.mapName];
+        this.schedule = this.role.schedule?.filter(sh=>sh.map===this.mapName)
     }
 
     setStartPos(ents,tSch)
     {
-        // let rst = this.scene.map.getPath(ents[0].pts[0], ents[1].pts);
+        // 1. 取得路徑
         let rst = this.scene.map.getPath(this.pos, ents[1].pts);
 
-        // let t = tSch.split('~');
-        // let td = TimeManager.ticks - TimeManager.str2Ticks(t[0]) - 1;
+        // 2. 取得進入時間
         let ts = this.status.exit ? this.status.exit.t : tSch.split('~')[0];
 
+        // 3. 計算時間差
         let td = TimeManager.ticks - TimeManager.time2Ticks(ts) - 1;
 
+        // 4. 計算位置
         let i = td <= rst.path.length-1 ? td : rst.path.length-1;
         console.log('setStartPos', td, rst.path.length, i);
         this.removeWeight();
-        this.pos = i<=0 ? this.pos : rst.path[i];
+        this.pos = i<0 ? this.pos : rst.path[i];
         this.addWeight();
     }
 
+    // findSchedule()
+    // {
+    //     if(this.status.exit && this.status.exit.map == this.mapName)
+    //     {
+    //         // 找出 exit.sh 之後的 schedule (next)
+    //         let day = this.status.exit.t.d;
+    //         let time = this.status.exit.sh.t.split('~')[1]; 
+    //         let next = this.schedule.find((sh)=>{return TimeManager.checkRange(day, time, sh.t);});
+            
+    //         // 檢查 npc 是否在 exit.sh + next.sh 的區間內
+    //         let hit = TimeManager.inRange(this.status.exit.sh.t) | TimeManager.inRange(next.t);
+    //         if(hit) // 如果 npc 在 exit.h + next.t 的區間內，則返回 next
+    //         {
+    //             console.log(`[${this.id}] -------- next`);
+    //             return next;
+    //         }   
+    //         else    // 如果 npc 不在 exit.sh + next.sh 的區間內，則刪除 exit
+    //         {
+    //             console.log(`[${this.id}] -------- delete exit`);
+    //             delete this.status.exit;
+    //         }
+    //     }
+
+    //     return this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
+    
+    // }
+
+
     findSchedule()
     {
-        if(this.status.exit && this.status.exit.map == this.mapName)
+        let found = this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
+        if(!found && this.status.exit)
         {
-            // 找出 exit.sh 之後的 schedule (next)
-            let day = this.status.exit.t.d;
-            let time = this.status.exit.sh.t.split('~')[1]; 
-            let next = this.schedule.find((sh)=>{return TimeManager.checkRange(day, time, sh.t);});
-            
-            // 檢查 npc 是否在 exit.sh + next.sh 的區間內
-            let hit = TimeManager.inRange(this.status.exit.sh.t) | TimeManager.inRange(next.t);
-            if(hit) // 如果 npc 在 exit.h + next.t 的區間內，則返回 next
+            if(this.status.exit.map===this.mapName && this.status.exit.t.d===TimeManager.time.d)
             {
-                console.log(`[${this.id}] -------- next`);
-                return next;
-            }   
-            else    // 如果 npc 不在 exit.sh + next.sh 的區間內，則刪除 exit
-            {
-                console.log(`[${this.id}] -------- delete exit`);
-                delete this.status.exit;
+                found = this.schedule.find(sh=>sh.i===this.status.exit.sh.i+1);
             }
         }
-
-        return this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
-    
+        return found;
     }
 
     updateSchedule(init=false)

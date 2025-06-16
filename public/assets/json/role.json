@@ -117,44 +117,104 @@
         "max": 100
       }
     },
-    "schedule": {
-      "village_01": [
-        {
-          "t": "7:50~8:0",
-          "p": "musk-p0~musk-p1"
-        },
-        {
-          "t": "8:0~11:50",
-          "p": "musk-p1"
-        },
-        {
-          "t": "11:50~12:0",
-          "p": "musk-p1~trump-inn-p0"
-        },
-        {
-          "t": "13:10~13:20",
-          "p": "trump-inn-p0~musk-p1"
-        },
-        {
-          "t": "13:20~17:00",
-          "p": "musk-p1"
-        }
-      ],
-      "trump_inn_f1": [
-        {
-          "t": "12:0~12:10",
-          "p": "door~sit-1"
-        },
-        {
-          "t": "12:0~13:0",
-          "p": "sit-1"
-        },
-        {
-          "t": "13:0~13:10",
-          "p": "sit-1~door"
-        }
-      ]
-    }
+    "schedule": [
+      {
+        "i": 0,
+        "t": "07:40~07:50",
+        "p": "bed~door",
+        "map": "musk_home"
+      },
+      {
+        "i": 1,
+        "t": "07:50~08:00",
+        "p": "musk-home~musk-p1",
+        "map": "village_01"
+      },
+      {
+        "i": 2,
+        "t": "08:00~11:50",
+        "p": "musk-p1",
+        "map": "village_01"
+      },
+      {
+        "i": 3,
+        "t": "11:50~12:00",
+        "p": "musk-p1~trump-inn",
+        "map": "village_01"
+      },
+      {
+        "i": 4,
+        "t": "12:00~12:10",
+        "p": "door~sit-1",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 5,
+        "t": "12:10~13:00",
+        "p": "sit-1",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 6,
+        "t": "13:00~13:10",
+        "p": "sit-1~door",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 7,
+        "t": "13:10~13:20",
+        "p": "trump-inn~musk-p1",
+        "map": "village_01"
+      },
+      {
+        "i": 8,
+        "t": "13:20~17:00",
+        "p": "musk-p1",
+        "map": "village_01"
+      },
+      {
+        "i": 9,
+        "t": "17:00~17:10",
+        "p": "musk-p1~trump-inn",
+        "map": "village_01"
+      },
+      {
+        "i": 10,
+        "t": "17:10~17:20",
+        "p": "door~sit-1",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 11,
+        "t": "17:20~20:00",
+        "p": "sit-1",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 12,
+        "t": "20:00~20:10",
+        "p": "sit-1~door",
+        "map": "trump_inn_f1"
+      },
+      {
+        "i": 13,
+        "t": "20:10~20:20",
+        "p": "trump-inn~musk-home",
+        "map": "village_01"
+      },
+      {
+        "i": 14,
+        "t": "20:20~20:30",
+        "p": "door~bed",
+        "map": "musk_home"
+      },
+      {
+        "i": 15,
+        "t": "20:30~07:40",
+        "p": "bed",
+        "map": "musk_home"
+      }
+    ]
   },
   "trump": {
     "icon": "icon_trump",
@@ -217,40 +277,6 @@
         "cur": 0,
         "max": 100
       }
-    },
-    "schedule": {
-      "trump_inn_f1": [
-        {
-          "t": "7:20~7:30",
-          "p": "stair-up~trump-p0"
-        },
-        {
-          "t": "7:30~21:00",
-          "p": "trump-p0"
-        },
-        {
-          "t": "21:00~21:10",
-          "p": "trump-p0~stair-up"
-        }
-      ],
-      "trump_inn_f2": [
-        {
-          "t": "7:00~7:25",
-          "p": "bed~stair-dn"
-        },
-        {
-          "t": "8:10~8:25",
-          "p": "stair-dn~bed"
-        },
-        {
-          "t": "8:25~9:00",
-          "p": "bed"
-        },
-        {
-          "t": "9:00~9:10",
-          "p": "bed~stair-dn"
-        }
-      ]
     }
   },
   "karen": {
@@ -304,14 +330,6 @@
         "cur": 0,
         "max": 100
       }
-    },
-    "schedule": {
-      "village_01": [
-        {
-          "t": "0:0~24:0",
-          "p": "karen-p1"
-        }
-      ]
     }
   },
   "xi": {
@@ -375,14 +393,6 @@
         "cur": 0,
         "max": 100
       }
-    },
-    "schedule": {
-      "village_01": [
-        {
-          "t": "0:0~24:0",
-          "p": "xi-p1"
-        }
-      ]
     }
   },
   "macron": {
@@ -446,14 +456,6 @@
         "cur": 0,
         "max": 100
       }
-    },
-    "schedule": {
-      "village_01": [
-        {
-          "t": "0:0~24:0",
-          "p": "macron-p1"
-        }
-      ]
     }
   },
   "orc": {

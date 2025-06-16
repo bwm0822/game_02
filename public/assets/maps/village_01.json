@@ -86,19 +86,19 @@
                 }, 
                 {
                  "id":95,
-                 "name":"musk-house",
+                 "name":"",
                  "template":"..\/templates\/house.tj",
                  "x":64,
                  "y":1024
                 }, 
                 {
                  "id":96,
-                 "name":"musk-p0",
+                 "name":"musk-home",
                  "properties":[
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"eldon_house"
+                         "value":"musk_home"
                         }, 
                         {
                          "name":"port",
@@ -140,14 +140,12 @@
                 }, 
                 {
                  "id":109,
-                 "name":"karen-house",
                  "template":"..\/templates\/house.tj",
                  "x":992,
                  "y":960
                 }, 
                 {
                  "id":110,
-                 "name":"trump-inn",
                  "template":"..\/templates\/house.tj",
                  "x":480,
                  "y":352
@@ -165,7 +163,7 @@
                 }, 
                 {
                  "id":112,
-                 "name":"karen-p0",
+                 "name":"karen-home",
                  "properties":[
                         {
                          "name":"map",
@@ -183,7 +181,7 @@
                 }, 
                 {
                  "id":113,
-                 "name":"trump-inn-p0",
+                 "name":"trump-inn",
                  "properties":[
                         {
                          "name":"map",
@@ -206,7 +204,6 @@
                 }, 
                 {
                  "id":114,
-                 "name":"xi-house",
                  "template":"..\/templates\/house.tj",
                  "x":928,
                  "y":608
@@ -224,7 +221,7 @@
                 }, 
                 {
                  "id":116,
-                 "name":"xi-p0",
+                 "name":"xi-home",
                  "properties":[
                         {
                          "name":"map",
@@ -242,14 +239,13 @@
                 }, 
                 {
                  "id":117,
-                 "name":"macron-house",
                  "template":"..\/templates\/house.tj",
                  "x":96,
                  "y":640
                 }, 
                 {
                  "id":118,
-                 "name":"macron-p0",
+                 "name":"macron-home",
                  "properties":[
                         {
                          "name":"map",

@@ -161,7 +161,8 @@ export class Schedular
 
         Roles.list.forEach((id)=>{
             let role = DB.role(id);
-            let schedule = role.schedule?.[mapName];
+            // let schedule = role.schedule?.[mapName];
+            let schedule = role.schedule?.filter(sh=>sh.map===mapName)
             if(schedule) 
             {
                 schedule.forEach((sh)=>{this.schedules.push({id:id,...sh});})
@@ -189,27 +190,18 @@ export class Schedular
                 if(role?.exit)
                 {   
                     // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
-                    if(TimeManager.checkRange(role.exit.t.d, role.exit.t, sh.t)) {return;}
+                    if(sh.i == role.exit.sh.i && TimeManager.time.d==role.exit.t.d){return;}
                 }
+
                 let ents = this.toEnts(sh.p);
                 console.log('[time] init',id, sh.t); 
                 let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
                 npc.init_runtime(id).load();
                 return;
             }
-            // else if(role?.exit)
-            // {
-            //     console.log(sh.t,role.exit.sh.t)
-            //     if(sh.t==role.exit.sh.t) 
-            //     {
-            //         delete role.exit;
-            //         Record.data.roles[id] = role;
-            //         console.log('[time] remove exit',id, sh.t);
-            //     }
-            // }
         }
 
-        if(role?.exit && role.exit.map == mapName)
+        if(role?.exit && role.exit.map===mapName)
         {
             // npc 進入這個 map，但還在離開的時間區段內，則載入 npc
             if(TimeManager.inRange(role.exit.sh.t))

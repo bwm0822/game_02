@@ -3063,6 +3063,7 @@ class UiDebuger extends UiBase
                 console.log(type,val);
                 TimeManager.set(type,val)
             }
+            Role.getPlayer().next();
         }
 
     }

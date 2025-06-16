@@ -6,10 +6,10 @@ import {Roles,RoleDB} from '../database.js';
 import Utility from '../utility';
 
 let lutAmbient = [   
-    0x333333    ,
-    0x333333    ,
-    0x333333    ,
-    0x333333	,
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333	,
     0x666666	,
     0x999999	,
     0xcccccc	,
@@ -25,11 +25,11 @@ let lutAmbient = [
     0xcccccc	,
     0x999999	,
     0x666666	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
-    0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
     ]
 
 export class GameArea extends GameScene

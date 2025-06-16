@@ -6,6 +6,7 @@ import DB from './db.js';
 import AudioManager from './audio.js';
 import {bbcText} from './uibase'
 import * as Role from './role';
+import TimeManager from './time';
 
 let DEBUG = true; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ALL;
@@ -1026,6 +1027,7 @@ export class Port extends Entity
 
     enter()
     {
+        TimeManager.inc();
         this.send('scene',{map:this.map, port:this.port});
     }
 }
