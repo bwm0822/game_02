@@ -122,97 +122,97 @@
         "i": 0,
         "t": "07:40~07:50",
         "p": "bed~door",
-        "map": "musk_home"
+        "map": "musk-home"
       },
       {
         "i": 1,
         "t": "07:50~08:00",
         "p": "musk-home~musk-p1",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 2,
         "t": "08:00~11:50",
         "p": "musk-p1",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 3,
         "t": "11:50~12:00",
         "p": "musk-p1~trump-inn",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 4,
         "t": "12:00~12:10",
         "p": "door~sit-1",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 5,
         "t": "12:10~13:00",
         "p": "sit-1",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 6,
         "t": "13:00~13:10",
         "p": "sit-1~door",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 7,
         "t": "13:10~13:20",
         "p": "trump-inn~musk-p1",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 8,
         "t": "13:20~17:00",
         "p": "musk-p1",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 9,
         "t": "17:00~17:10",
         "p": "musk-p1~trump-inn",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 10,
         "t": "17:10~17:20",
         "p": "door~sit-1",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 11,
         "t": "17:20~20:00",
         "p": "sit-1",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 12,
         "t": "20:00~20:10",
         "p": "sit-1~door",
-        "map": "trump_inn_f1"
+        "map": "trump-inn-f1"
       },
       {
         "i": 13,
         "t": "20:10~20:20",
         "p": "trump-inn~musk-home",
-        "map": "village_01"
+        "map": "village-01"
       },
       {
         "i": 14,
         "t": "20:20~20:30",
         "p": "door~bed",
-        "map": "musk_home"
+        "map": "musk-home"
       },
       {
         "i": 15,
         "t": "20:30~07:40",
         "p": "bed",
-        "map": "musk_home"
+        "map": "musk-home"
       }
     ]
   },
@@ -330,7 +330,105 @@
         "cur": 0,
         "max": 100
       }
-    }
+    },
+    "schedule": [
+      {
+        "i": 16,
+        "t": "07:40~07:50",
+        "p": "bed~door",
+        "map": "karen-home"
+      },
+      {
+        "i": 17,
+        "t": "07:50~08:00",
+        "p": "karen-home~karen-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 18,
+        "t": "08:00~11:50",
+        "p": "karen-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 19,
+        "t": "11:50~12:00",
+        "p": "karen-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 20,
+        "t": "12:00~12:10",
+        "p": "door~sit-3",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 21,
+        "t": "12:10~13:00",
+        "p": "sit-3",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 22,
+        "t": "13:00~13:10",
+        "p": "sit-3~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 23,
+        "t": "13:10~13:20",
+        "p": "trump-inn~karen-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 24,
+        "t": "13:20~17:00",
+        "p": "karen-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 25,
+        "t": "17:00~17:10",
+        "p": "karen-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 26,
+        "t": "17:10~17:20",
+        "p": "door~sit-3",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 27,
+        "t": "17:20~20:00",
+        "p": "sit-3",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 28,
+        "t": "20:00~20:10",
+        "p": "sit-3~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 29,
+        "t": "20:10~20:20",
+        "p": "trump-inn~karen-home",
+        "map": "village-01"
+      },
+      {
+        "i": 30,
+        "t": "20:20~20:30",
+        "p": "door~bed",
+        "map": "karen-home"
+      },
+      {
+        "i": 31,
+        "t": "20:30~07:40",
+        "p": "bed",
+        "map": "karen-home"
+      }
+    ]
   },
   "xi": {
     "icon": "icon_xi",
@@ -393,7 +491,105 @@
         "cur": 0,
         "max": 100
       }
-    }
+    },
+    "schedule": [
+      {
+        "i": 32,
+        "t": "07:40~07:50",
+        "p": "bed~door",
+        "map": "xi-home"
+      },
+      {
+        "i": 33,
+        "t": "07:50~08:00",
+        "p": "xi-home~xi-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 34,
+        "t": "08:00~11:50",
+        "p": "xi-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 35,
+        "t": "11:50~12:00",
+        "p": "xi-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 36,
+        "t": "12:00~12:10",
+        "p": "door~sit-5",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 37,
+        "t": "12:10~13:00",
+        "p": "sit-5",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 38,
+        "t": "13:00~13:10",
+        "p": "sit-5~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 39,
+        "t": "13:10~13:20",
+        "p": "trump-inn~xi-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 40,
+        "t": "13:20~17:00",
+        "p": "xi-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 41,
+        "t": "17:00~17:10",
+        "p": "xi-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 42,
+        "t": "17:10~17:20",
+        "p": "door~sit-5",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 43,
+        "t": "17:20~20:00",
+        "p": "sit-5",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 44,
+        "t": "20:00~20:10",
+        "p": "sit-5~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 45,
+        "t": "20:10~20:20",
+        "p": "trump-inn~xi-home",
+        "map": "village-01"
+      },
+      {
+        "i": 46,
+        "t": "20:20~20:30",
+        "p": "door~bed",
+        "map": "xi-home"
+      },
+      {
+        "i": 47,
+        "t": "20:30~07:40",
+        "p": "bed",
+        "map": "xi-home"
+      }
+    ]
   },
   "macron": {
     "icon": "icon_macron",
@@ -456,7 +652,105 @@
         "cur": 0,
         "max": 100
       }
-    }
+    },
+    "schedule": [
+      {
+        "i": 48,
+        "t": "07:40~07:50",
+        "p": "bed~door",
+        "map": "macron-home"
+      },
+      {
+        "i": 49,
+        "t": "07:50~08:00",
+        "p": "macron-home~macron-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 50,
+        "t": "08:00~11:50",
+        "p": "macron-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 51,
+        "t": "11:50~12:00",
+        "p": "macron-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 52,
+        "t": "12:00~12:10",
+        "p": "door~sit-7",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 53,
+        "t": "12:10~13:00",
+        "p": "sit-7",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 54,
+        "t": "13:00~13:10",
+        "p": "sit-7~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 55,
+        "t": "13:10~13:20",
+        "p": "trump-inn~macron-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 56,
+        "t": "13:20~17:00",
+        "p": "macron-p1",
+        "map": "village-01"
+      },
+      {
+        "i": 57,
+        "t": "17:00~17:10",
+        "p": "macron-p1~trump-inn",
+        "map": "village-01"
+      },
+      {
+        "i": 58,
+        "t": "17:10~17:20",
+        "p": "door~sit-7",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 59,
+        "t": "17:20~20:00",
+        "p": "sit-7",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 60,
+        "t": "20:00~20:10",
+        "p": "sit-7~door",
+        "map": "trump-inn-f1"
+      },
+      {
+        "i": 61,
+        "t": "20:10~20:20",
+        "p": "trump-inn~macron-home",
+        "map": "village-01"
+      },
+      {
+        "i": 62,
+        "t": "20:20~20:30",
+        "p": "door~bed",
+        "map": "macron-home"
+      },
+      {
+        "i": 63,
+        "t": "20:30~07:40",
+        "p": "bed",
+        "map": "macron-home"
+      }
+    ]
   },
   "orc": {
     "icon": "portraits/35",

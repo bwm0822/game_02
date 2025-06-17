@@ -204,7 +204,7 @@ export class Role extends Entity
     {
         let pts = ent?.pts ?? [pt];
         let rst = this.scene.map.getPath(this.pos, pts);
-        console.log('setDes',rst.state,act)
+        console.log('setDes',rst,act)
         if(rst?.state>0)
         {
             this._path = rst.path;
@@ -768,7 +768,7 @@ export class Role extends Entity
     // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
     getPos(p)
     {
-        if(this.scene.map.getWeight(p)==1) {return p;}
+        if(this.scene.map.getWeight(p)<GM.W_BLOCK) {return p;}
         return this.scene.map.getValidPoint(p,false);
     }
 
@@ -1068,6 +1068,7 @@ export class Npc extends Role
         this.removeWeight();
         this.pos = i<0 ? this.pos : rst.path[i];
         this.addWeight();
+        this.updateDepth();
     }
 
     // findSchedule()
@@ -1149,7 +1150,7 @@ export class Npc extends Role
                         this.setStartPos(ents,found.t);
 
                         // 3. 執行 schedule, 將 next 設成 true，進到 ST_NEXT，會等一輪再執行
-                        this.setDes({ent:ents.at(-1),next:true});
+                        this.setDes({ent:ents.at(-1), next:true});
                     }
                 }
                 else    // 如果不是初始化，則檢查是否已經到達目標
@@ -1162,11 +1163,12 @@ export class Npc extends Role
                     if(this._shLatency >= GM.SH_LATENCY) {this._shLatency=0;}
                     else {this._shLatency++; return;}
 
-                    // 3. 如果 npc 正在睡覺，則叫醒
-                    if(this.state == GM.ST_SLEEP) {this.wake(); return;}
+                    // 3. 如果 npc 正在睡覺，則叫醒，並將 next 設成 true，(起床後，等一輪再執行)
+                    let next = false;
+                    if(this.state == GM.ST_SLEEP) {this.wake(); next=true;}
 
                     // 4. 執行 schedule
-                    this.setDes({ent:ents.at(-1)});
+                    this.setDes({ent:ents.at(-1), next:next});
                 }
 
             }

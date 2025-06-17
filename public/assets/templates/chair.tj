@@ -8,12 +8,17 @@
             {
              "name":"anchorY",
              "type":"int",
-             "value":8
+             "value":-8
             }, 
             {
              "name":"gt",
              "type":"int",
              "value":16
+            }, 
+            {
+             "name":"json_pts",
+             "type":"string",
+             "value":"[{\"x\":0,\"y\":24}]"
             }, 
             {
              "name":"weight",

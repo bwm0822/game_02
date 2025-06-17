@@ -86,7 +86,6 @@
                 }, 
                 {
                  "id":95,
-                 "name":"",
                  "template":"..\/templates\/house.tj",
                  "x":64,
                  "y":1024
@@ -98,7 +97,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"musk_home"
+                         "value":"musk-home"
                         }, 
                         {
                          "name":"port",
@@ -168,7 +167,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"gilly_house"
+                         "value":"karen-home"
                         }, 
                         {
                          "name":"port",
@@ -186,7 +185,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"trump_inn_f1"
+                         "value":"trump-inn-f1"
                         }, 
                         {
                          "name":"offsetY",
@@ -226,7 +225,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"gorham_house"
+                         "value":"xi-home"
                         }, 
                         {
                          "name":"port",
@@ -250,7 +249,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"eldon_house"
+                         "value":"macron-home"
                         }, 
                         {
                          "name":"port",

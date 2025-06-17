@@ -32,6 +32,11 @@ export default class TimeManager
         this.emit(minutes);
     }
 
+    static update()
+    {
+        this.emit(0);
+    }
+
     static set(type,val)
     {
         if(type in this.time)

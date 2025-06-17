@@ -61,7 +61,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"trump_inn_f1"
+                         "value":"trump-inn-f1"
                         }, 
                         {
                          "name":"port",
@@ -156,19 +156,19 @@
          "source":"..\/props.tsj"
         }, 
         {
-         "firstgid":584,
+         "firstgid":586,
          "source":"..\/icons.tsj"
         }, 
         {
-         "firstgid":1016,
+         "firstgid":1018,
          "source":"..\/FreePixel.tsj"
         }, 
         {
-         "firstgid":1048,
+         "firstgid":1050,
          "source":"..\/Full_1.tsj"
         }, 
         {
-         "firstgid":1104,
+         "firstgid":1106,
          "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,

@@ -2,7 +2,7 @@ import Utility from './utility.js'
 
 export default class Record
 {
-    static data = {default:'入口', map:'village_01', 
+    static data = {default:'入口', map:'village-01', 
                     time:{d:0,h:8,m:0},
                     lang:'tw',
                     bgmVolume:1.0,

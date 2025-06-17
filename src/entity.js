@@ -63,10 +63,11 @@ export class Entity extends Phaser.GameObjects.Container
     // checkInside(role) {return true;}
 
     isTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
-    isAt(role) {return role.pos.x==this.pos.x && role.pos.y==this.pos.y;}
+    // isAt(role) {return role.pos.x===this.pos.x && role.pos.y===this.pos.y;}
+    isAt(role) {return this.isAtPts(role);}
     isAtPts(role)
     {
-        for(let p of this.pts) {if(p.x==role.pos.x && p.y==role.pos.y){return true;}}
+        for(let p of this.pts) {if(p.x===role.pos.x && p.y===role.pos.y){return true;}}
         return false;
     }
 
@@ -998,8 +999,7 @@ export class Bed extends Entity
 
 export class Point extends Entity
 {
-    isAt(role) {return role.pos.x==this.x && role.pos.y==this.y;}
-    isTouch(role) {return role.pos.x==this.x && role.pos.y==this.y;}
+    isTouch(role) {return this.isAtPts(role);}
 }
 
 
@@ -1016,7 +1016,6 @@ export class Port extends Entity
 
     get acts()  {return [GM.ENTER];}
 
-    // isAt(role) {return false;}
     isTouch(role) {return this.isAtPts(role);}
 
     addListener()

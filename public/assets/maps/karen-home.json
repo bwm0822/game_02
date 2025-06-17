@@ -49,12 +49,12 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"village_01"
+                         "value":"village-01"
                         }, 
                         {
                          "name":"port",
                          "type":"string",
-                         "value":"musk-home"
+                         "value":"karen-home"
                         }],
                  "template":"..\/templates\/exit_door.tj",
                  "x":128,

@@ -241,6 +241,39 @@
             "dynamicWrapping": true,
             "scaleInDock": 1
         },
+        "public/assets/maps/karen-home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 74,
+                "y": 236
+            }
+        },
+        "public/assets/maps/karen_home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 147.33333333333331,
+                "y": 147.33333333333334
+            }
+        },
+        "public/assets/maps/macron-home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 74,
+                "y": 116
+            }
+        },
         "public/assets/maps/map.json": {
             "expandedObjectLayers": [
                 2
@@ -262,6 +295,17 @@
         "public/assets/maps/map.json#terrain_tiles_v2": {
             "scaleInDock": 1
         },
+        "public/assets/maps/musk-home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 2.20578125,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 160.03400155840478,
+                "y": 160.03400155840478
+            }
+        },
         "public/assets/maps/musk_home.json": {
             "expandedObjectLayers": [
                 3
@@ -269,8 +313,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 147.33333333333331,
-                "y": 147.33333333333334
+                "x": 160,
+                "y": 159.66666666666663
             }
         },
         "public/assets/maps/musk_house.json": {
@@ -319,6 +363,25 @@
             "dynamicWrapping": false,
             "scaleInEditor": 1
         },
+        "public/assets/maps/trump-inn-f1.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.4705208333333333,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 240.05100233760712,
+                "y": 240.05100233760714
+            }
+        },
+        "public/assets/maps/trump-inn-f2.json": {
+            "scale": 1.4705208333333333,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 240.05100233760712,
+                "y": 240.05100233760714
+            }
+        },
         "public/assets/maps/trump_inn_f1.json": {
             "expandedObjectLayers": [
                 2
@@ -326,8 +389,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 291,
-                "y": 319.33333333333326
+                "x": 187.33333333333331,
+                "y": 159.33333333333334
             }
         },
         "public/assets/maps/trump_inn_f2.json": {
@@ -341,6 +404,17 @@
                 "y": 239.33333333333334
             }
         },
+        "public/assets/maps/village-01.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 298,
+                "y": 350
+            }
+        },
         "public/assets/maps/village_01.json": {
             "expandedObjectLayers": [
                 4,
@@ -349,8 +423,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 383,
-                "y": 984
+                "x": 945,
+                "y": 744
             }
         },
         "public/assets/maps/village_01.json#group": {
@@ -363,6 +437,17 @@
         "public/assets/maps/weapons.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
+        },
+        "public/assets/maps/xi-home.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 147.33333333333331,
+                "y": 147.33333333333334
+            }
         },
         "public/assets/monsters.tsj": {
             "dynamicWrapping": false,
@@ -520,20 +605,20 @@
         "public/assets/props.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
+        "public/assets/maps/xi-home.json",
+        "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/trump_inn_f2.json",
+        "public/assets/maps/trump_inn_f1.json",
+        "public/assets/maps/village_01.json",
         "public/assets/props.tsj",
         "public/assets/maps/musk_home.json",
-        "public/assets/maps/village_01.json",
-        "public/assets/maps/trump_inn_f1.json",
         "public/assets/maps/musk_house.json",
         "public/assets/spr_fencePost.tsj",
         "public/assets/fence_tiles.tsj",
         "public/assets/tiles.tsj",
-        "public/assets/top.tsj",
-        "public/assets/tiles_1.tsj",
-        "public/assets/32x32GridItemsAll.tsj"
+        "public/assets/top.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

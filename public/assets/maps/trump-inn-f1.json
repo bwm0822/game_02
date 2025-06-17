@@ -61,7 +61,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"trump_inn_f2"
+                         "value":"trump-inn-f2"
                         }, 
                         {
                          "name":"port",
@@ -92,7 +92,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"village_01"
+                         "value":"village-01"
                         }, 
                         {
                          "name":"port",
@@ -179,6 +179,12 @@
                 {
                  "id":93,
                  "name":"sit-1",
+                 "properties":[
+                        {
+                         "name":"anchorY",
+                         "type":"int",
+                         "value":-8
+                        }],
                  "template":"..\/templates\/chair.tj",
                  "type":"point",
                  "x":192,
@@ -240,6 +246,25 @@
                  "type":"point",
                  "x":416,
                  "y":272
+                }, 
+                {
+                 "id":104,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"gt",
+                         "type":"int",
+                         "value":24
+                        }, 
+                        {
+                         "name":"interactive",
+                         "type":"bool",
+                         "value":true
+                        }],
+                 "template":"..\/templates\/chair.tj",
+                 "type":"point",
+                 "x":96,
+                 "y":272
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -248,7 +273,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":102,
+ "nextobjectid":105,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
