@@ -21,14 +21,14 @@
              "value":32
             }, 
             {
-             "name":"map",
+             "name":"json_pts",
              "type":"string",
-             "value":"village_01"
+             "value":"[{\"x\":0,\"y\":16}]"
             }, 
             {
-             "name":"offsetY",
-             "type":"int",
-             "value":48
+             "name":"map",
+             "type":"string",
+             "value":"village-01"
             }, 
             {
              "name":"port",

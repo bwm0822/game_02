@@ -95,6 +95,11 @@
                  "name":"musk-home",
                  "properties":[
                         {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
+                        {
                          "name":"map",
                          "type":"string",
                          "value":"musk-home"
@@ -165,6 +170,11 @@
                  "name":"karen-home",
                  "properties":[
                         {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
+                        {
                          "name":"map",
                          "type":"string",
                          "value":"karen-home"
@@ -182,6 +192,11 @@
                  "id":113,
                  "name":"trump-inn",
                  "properties":[
+                        {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
                         {
                          "name":"map",
                          "type":"string",
@@ -223,6 +238,11 @@
                  "name":"xi-home",
                  "properties":[
                         {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
+                        {
                          "name":"map",
                          "type":"string",
                          "value":"xi-home"
@@ -246,6 +266,11 @@
                  "id":118,
                  "name":"macron-home",
                  "properties":[
+                        {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
                         {
                          "name":"map",
                          "type":"string",

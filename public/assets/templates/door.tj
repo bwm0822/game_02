@@ -19,6 +19,11 @@
              "name":"gt",
              "type":"int",
              "value":32
+            }, 
+            {
+             "name":"json_pts",
+             "type":"string",
+             "value":"[{\"x\":16,\"y\":-32},{\"x\":16,\"y\":32}]"
             }],
      "rotation":0,
      "type":"door",

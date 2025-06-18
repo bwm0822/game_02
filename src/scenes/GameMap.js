@@ -60,7 +60,7 @@ export class GameMap extends GameScene
     {
         while(true)
         {
-            await this._avatar.process();
+            await this._player.process();
             TimeManager.inc(60);
         }
     }

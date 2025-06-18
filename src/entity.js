@@ -880,8 +880,10 @@ export class Door extends Entity
     async close()
     {
         // 檢查門是否開著，有無障礙物
+        console.log('chk1',this.opened,this.checkOverlap())
         if(this.opened && !this.checkOverlap())
         {
+            console.log('chk2')
             this.opened=false;
             this._sp.setTexture('doors',0);
             this.removeWeight(GM.W_DOOR-1);
@@ -1018,6 +1020,16 @@ export class Port extends Entity
 
     isTouch(role) {return this.isAtPts(role);}
 
+    init_prefab()
+    {
+        super.init_prefab();
+        if(this.data)
+        {
+            this.ambient = this.data.get('ambient');
+        }
+
+    }
+
     addListener()
     {
         super.addListener();
@@ -1027,7 +1039,7 @@ export class Port extends Entity
     enter()
     {
         TimeManager.inc();
-        this.send('scene',{map:this.map, port:this.port});
+        this.send('scene',{map:this.map, port:this.port, ambient:this.ambient});
     }
 }
 

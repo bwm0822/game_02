@@ -23,7 +23,7 @@ export class Game extends Scene
 
     gotoScene() 
     {
-        let config = {map:Record.data.map}
+        let config = {map:Record.data.map,ambient:Record.data.ambient}
         if(Record.data.pos) {config.pos = Record.data.pos;}
         else {config.port = Record.data.default;}
 

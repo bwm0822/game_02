@@ -41,7 +41,7 @@ export class GameScene extends Scene
         
         await new Map(this).createMap(this._data.map, diagonal, weight);
         this.createRuntime();
-        this.initAmbient();
+        this.initAmbient(this._data.ambient);
         this.initSchedule();
 
         this.setPosition(classType);
@@ -54,10 +54,11 @@ export class GameScene extends Scene
         AudioManager.bgmStart();
     }
 
-    initAmbient()
+    initAmbient(amb)
     {
         this.lights.enable();
-        TimeManager.register(this.setAmbient.bind(this));
+        if(amb) {this.lights.setAmbientColor(parseInt(amb));}
+        else {TimeManager.register(this.setAmbient.bind(this));}
     }
 
     setAmbient(dt,time)
@@ -140,6 +141,7 @@ export class GameScene extends Scene
  
         Record.data.pos = this._player.pos;   
         Record.data.map = this._data.map;
+        Record.data.ambient = this._data.ambient;
         Record.save();
     }
 

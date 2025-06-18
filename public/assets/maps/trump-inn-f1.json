@@ -54,6 +54,11 @@
                  "name":"stair-up",
                  "properties":[
                         {
+                         "name":"ambient",
+                         "type":"string",
+                         "value":"0xffffff"
+                        }, 
+                        {
                          "name":"json_pts",
                          "type":"string",
                          "value":"[{\"x\":-48,\"y\":16}]"
@@ -155,7 +160,7 @@
                 }, 
                 {
                  "id":79,
-                 "name":"trump-p0",
+                 "name":"trump-p1",
                  "template":"..\/templates\/point.tj",
                  "x":96,
                  "y":64

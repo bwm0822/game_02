@@ -166,9 +166,8 @@ export class Schedular
 
         Roles.list.forEach((id)=>{
             let role = DB.role(id);
-            // let schedule = role.schedule?.[mapName];
             let schedule = role.schedule?.filter(sh=>sh.map===mapName)
-            if(schedule) 
+            if(schedule.length>0) 
             {
                 schedule.forEach((sh)=>{this.schedules.push({id:id,...sh});})
                 this.initCheck(schedule, id, mapName);
@@ -187,12 +186,23 @@ export class Schedular
 
     static initCheck(schedule, id, mapName)
     {
-        let role = this.loadRole(id);
+        let role = this.loadRole(id);   
+
+        if(role.exit)   
+        {
+            // 如果時間小於role.exit.t(時間到轉，用來 debug)，就刪除 role.exit
+            if(TimeManager.ticks < TimeManager.time2Ticks(role.exit.t))
+            {
+                delete role.exit;
+                console.log('[delete role.exit]')
+            }
+        }
+
         for(let sh of schedule)
         {
             if(TimeManager.inRange(sh.t))
             {
-                if(role?.exit)
+                if(role.exit)
                 {   
                     // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
                     if(sh.i == role.exit.sh.i && TimeManager.time.d==role.exit.t.d){return;}
@@ -200,13 +210,15 @@ export class Schedular
 
                 let ents = this.toEnts(sh.p);
                 console.log('[time] init',id, sh.t); 
-                let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
+                let ent = role.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
+                // let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
+                let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 npc.init_runtime(id).load();
                 return;
             }
         }
 
-        if(role?.exit && role.exit.map===mapName)
+        if(role.exit && role.exit.map===mapName)
         {
             // npc 進入這個 map，但還在離開的時間區段內，則載入 npc
             if(TimeManager.inRange(role.exit.sh.t))

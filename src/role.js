@@ -250,6 +250,18 @@ export class Role extends Entity
         this.updateDepth();
     }
 
+    closeDoorWhenLeave(pt,w)
+    {
+        // 是否離開門，如果是，關門
+        if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
+        {
+            let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
+            this.interact(bodys[0]?.gameObject,GM.CLOSE_DOOR);
+        }
+        this._preW=w;
+        this._prePt=pt;  
+    }
+
     async st_moving(repath=true)
     {
         let path = this._path;
@@ -278,20 +290,11 @@ export class Role extends Entity
             // 判斷是否可行走
             if(w < GM.W_BLOCK)    
             {
-                if(this.isPlayer) {this.drawPath(path);}
-                else    // npc
-                {
-                    // 是否離開門，如果是，下一輪，關門
-                    if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
-                    {
-                        let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
-                        this._exec = {ent:bodys[0]?.gameObject, act:GM.CLOSE_DOOR}
-                    }
-                    this._preW=w;
-                    this._prePt=pt;   
-                }
-
                 await this.moveTo(pt);  // 移至 pt
+
+                if(this.isPlayer) {this.drawPath(path);}
+                else {this.closeDoorWhenLeave(pt,w);}
+
                 path.shift();           // 移除陣列第一個元素
 
                 if(path.length==0)
@@ -1053,51 +1056,40 @@ export class Npc extends Role
 
     setStartPos(ents,tSch)
     {
-        // 1. 取得路徑
-        let rst = this.scene.map.getPath(this.pos, ents[1].pts);
+        if(!this.status.exit && ents.length===1)
+        {
+            // 如果已經到達目的地，回傳 false( next = false，直接執行動作，不需等下一輪)
+            return false;
+        }
+        else
+        {
+            console.log(this.scene.mapName);
 
-        // 2. 取得進入時間
-        let ts = this.status.exit ? this.status.exit.t : tSch.split('~')[0];
+            let ent = ents.at(-1);
 
-        // 3. 計算時間差
-        let td = TimeManager.ticks - TimeManager.time2Ticks(ts) - 1;
+            // 1. 取得路徑
+            let rst = this.scene.map.getPath(this.pos, ent.pts);
 
-        // 4. 計算位置
-        let i = td <= rst.path.length-1 ? td : rst.path.length-1;
-        console.log('setStartPos', td, rst.path.length, i);
-        this.removeWeight();
-        this.pos = i<0 ? this.pos : rst.path[i];
-        this.addWeight();
-        this.updateDepth();
+            // 2. 取得進入時間
+            let ts = this.status.exit && this.status.exit.map===this.scene.mapName ? this.status.exit.t : tSch.split('~')[0];
+
+            // 3. 計算時間差
+            let td = TimeManager.ticks - TimeManager.time2Ticks(ts) - 1;
+
+            // 4. 計算位置
+            let i = td <= rst.path.length-1 ? td : rst.path.length-1;
+            console.log('[setStartPos]', td, rst.path.length, i);
+            this.removeWeight();
+            // i < 0，表示在初始點
+            this.pos = i<0 ? this.pos : rst.path[i];
+            this.addWeight();
+            this.updateDepth();
+
+            // 檢查是否達目的地，如果是，回傳 false( next = false，直接執行動作，不需等下一輪)
+            // i = rst.path.length-1 ，代表到達目的地
+            return i != rst.path.length-1;
+        }
     }
-
-    // findSchedule()
-    // {
-    //     if(this.status.exit && this.status.exit.map == this.mapName)
-    //     {
-    //         // 找出 exit.sh 之後的 schedule (next)
-    //         let day = this.status.exit.t.d;
-    //         let time = this.status.exit.sh.t.split('~')[1]; 
-    //         let next = this.schedule.find((sh)=>{return TimeManager.checkRange(day, time, sh.t);});
-            
-    //         // 檢查 npc 是否在 exit.sh + next.sh 的區間內
-    //         let hit = TimeManager.inRange(this.status.exit.sh.t) | TimeManager.inRange(next.t);
-    //         if(hit) // 如果 npc 在 exit.h + next.t 的區間內，則返回 next
-    //         {
-    //             console.log(`[${this.id}] -------- next`);
-    //             return next;
-    //         }   
-    //         else    // 如果 npc 不在 exit.sh + next.sh 的區間內，則刪除 exit
-    //         {
-    //             console.log(`[${this.id}] -------- delete exit`);
-    //             delete this.status.exit;
-    //         }
-    //     }
-
-    //     return this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
-    
-    // }
-
 
     findSchedule()
     {
@@ -1136,22 +1128,15 @@ export class Npc extends Role
 
                 if(init)    // 初始化
                 {
-                    console.log(this.status.exit);
-                    if(ents.length==1)  // 只有一個目標，表示已經到達目標，立即執行動作，例如:bed
-                    {
-                        this.setDes({ent:ents[0]});
-                    }
-                    else    // 有起訖點，根據時間，計算起始位置
-                    {
-                        // 1. 如果 npc 正在睡覺，則叫醒
-                        if(this.state == GM.ST_SLEEP) {ents[0].wake();}
+                    // 1. 如果 npc 正在睡覺，則叫醒
+                    if(this.state == GM.ST_SLEEP) {ents[0].wake();}
 
-                        // 2. 根據時間，計算起始位置
-                        this.setStartPos(ents,found.t);
+                    // 2. 根據時間，計算起始位置
+                    let next = this.setStartPos(ents,found.t);
 
-                        // 3. 執行 schedule, 將 next 設成 true，進到 ST_NEXT，會等一輪再執行
-                        this.setDes({ent:ents.at(-1), next:true});
-                    }
+                    // 3. 執行 schedule, 將 next 設成 true，進到 ST_NEXT，會等一輪再執行
+                    this.setDes({ent:ents.at(-1), next:next});
+
                 }
                 else    // 如果不是初始化，則檢查是否已經到達目標
                 {
