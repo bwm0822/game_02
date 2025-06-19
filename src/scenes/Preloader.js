@@ -44,7 +44,11 @@ export class Preloader extends Scene
         this.load.image('icon_macron', 'portraits/icon_macron_m.png');
         this.load.image('icon_karen', 'portraits/icon_karen_m.png');
 
-        this.load.image('trump', 'roles_64x64/trump_body.png');
+        this.load.image('trump', 'roles_64x64/trump_32x64.png');
+        this.load.image('body', 'roles_64x64/body.png');
+        this.load.image('trump_head', 'roles_64x64/trump.png');
+        this.load.image('armor-1', 'roles_64x64/armor-1.png');
+        this.load.image('boots-1', 'roles_64x64/boots-1.png');
 
 
         // this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');

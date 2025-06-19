@@ -105,7 +105,7 @@ export class Role extends Entity
 
     addSprite(sprite)
     {
-        //let [key,frame]=ICON_AVATAR.split('/');
+        if(!sprite) {return;}
         let [key,frame]=sprite.split('/');
         this.setTexture(key,frame);
     }
@@ -136,12 +136,64 @@ export class Role extends Entity
         return true;
     }
 
+    addParts(roleD)
+    {
+        this._parts = new Phaser.GameObjects.Container(this.scene,0,roleD.anchor.y);
+        this.add(this._parts);
+        if(roleD.body) {this.addPart(roleD.body,GM.PART_BODY);}
+        if(roleD.head) {this.addPart(roleD.head,GM.PART_HEAD);}
+    }
+
+    addPart(part, type)
+    {
+        if(!this._parts) {return;}
+        let getDepth = function(type)
+        {
+            switch(type)
+            {
+                case GM.PART_BODY : return 0;
+                case GM.PART_HEAD : return 2;
+                case GM.CAT_HELMET : return 3;
+                case GM.CAT_CHESTPLATE : return 1;
+                case GM.CAT_GLOVES : return 1;
+                case GM.CAT_BOOTS : return 1;
+                case GM.CAT_WEAPON : return 4;
+            }
+            return 0;
+        }
+
+        let [key,frame]=part.sprite.split('/');
+        if(key)
+        {
+            let sp = this.scene.add.sprite(0,0,key,frame);
+            sp.setScale(part.scale);
+            sp.setPipeline('Light2D');
+            sp.setOrigin(0.5,1);
+            sp.x = part.x ?? 0;
+            sp.y = part.y ?? 0;
+            sp.depth = getDepth(type)
+            this._parts.add(sp);
+            return sp;
+        }
+    }
+
+    sortParts()
+    {
+        if(!this._parts) {return;}
+        let children = this._parts.getAll().sort((a, b) => a.depth - b.depth);
+        children.forEach(child => {this._parts.bringToTop(child);});
+    }
+
     init_runtime(id)
     {
         this.registerTimeManager();
 
         this.id=id;
         let roleD = this.initData();
+
+        // console.log(roleD)
+        
+        this.addParts(roleD);
         this.addSprite(roleD.sprite);
         this.displayWidth = roleD.w 
         this.displayHeight = roleD.h;
@@ -225,7 +277,8 @@ export class Role extends Entity
     faceTo(pt)
     {
         if(pt.x==this.x) {return;}
-        this._sp.flipX = (pt.x>this.x) != this._faceR;
+        if(this._sp) {this._sp.flipX = (pt.x>this.x) != this._faceR;}
+        if(this._parts) {this._parts.scaleX = (pt.x>this.x) != this._faceR ? -1 : 1;}
     }
 
     isInteractive(ent)
@@ -291,11 +344,18 @@ export class Role extends Entity
             if(w < GM.W_BLOCK)    
             {
                 await this.moveTo(pt);  // 移至 pt
-
-                if(this.isPlayer) {this.drawPath(path);}
-                else {this.closeDoorWhenLeave(pt,w);}
-
                 path.shift();           // 移除陣列第一個元素
+                
+                if(this.isPlayer) 
+                {
+                    // state = GM.ST_MOVING 時，才 drawPath()，
+                    // 避免移動到一半，點選地圖，呼叫 stop() clearPath()後，還 drawPath()
+                    if(this.state===GM.ST_MOVING) {this.drawPath(path);} 
+                }
+                else // npc
+                {
+                    this.closeDoorWhenLeave(pt,w);
+                }
 
                 if(path.length==0)
                 {
@@ -381,7 +441,6 @@ export class Role extends Entity
 
     stop()
     {
-        // console.log('stop')
         this.state = GM.ST_IDLE;
         this.clearPath();
     }
@@ -564,7 +623,7 @@ export class Role extends Entity
             if(duration>0)
             {
                 if (this._to) {clearTimeout(this._to);this._to=null;}
-                this._to = setTimeout(()=>{this._speak.hide();this._to=null;}, duration);
+                this._to = setTimeout(()=>{this._speak?.hide();this._to=null;}, duration);
             }
             else
             {
@@ -614,16 +673,36 @@ export class Role extends Entity
         }
     }
 
+    addEquip(item)
+    {
+        if(!item.equip) {return;}
+        let sp = this.addPart(item.equip, item.cat);
+        if(!this.equips) {this.equips=[];}
+        this.equips.push(sp);
+    }
+
+    removeEquip()
+    {
+        if(!this.equips) {return;}
+        this.equips.forEach((equip)=>{equip.destroy();})
+        this.equips=[];
+    }
+
+
+
     equip()
     {
         this.status.attrs = Utility.deepClone(this.role.attrs);
         //this.status.states = Utility.deepClone(this.role.states); 
         this.removeLight();
+        this.removeEquip();
 
         this.status.equips.forEach((equip)=>{
             if(equip && equip.id)
             {
                 let item = DB.item(equip.id);
+
+                this.addEquip(item);
 
                 if(item.props)
                 {
@@ -647,6 +726,8 @@ export class Role extends Entity
                 if(item.light) {this.addLight();}
             }
         })
+
+        this.sortParts()
 
         this.send('refresh');
     }
@@ -939,8 +1020,8 @@ export class Target extends Role
     {
         let [key,frame]=ICON_TARGET.split('/');
         this.setTexture(key,frame);
-        this.displayWidth = 32;
-        this.displayHeight = 32;
+        this.displayWidth = GM.TILE_W;
+        this.displayHeight = GM.TILE_H;
     }
 
     updateDepth()

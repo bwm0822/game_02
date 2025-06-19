@@ -188,7 +188,7 @@ export class Schedular
     {
         let role = this.loadRole(id);   
 
-        if(role.exit)   
+        if(role?.exit)   
         {
             // 如果時間小於role.exit.t(時間到轉，用來 debug)，就刪除 role.exit
             if(TimeManager.ticks < TimeManager.time2Ticks(role.exit.t))
@@ -202,7 +202,7 @@ export class Schedular
         {
             if(TimeManager.inRange(sh.t))
             {
-                if(role.exit)
+                if(role?.exit)
                 {   
                     // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
                     if(sh.i == role.exit.sh.i && TimeManager.time.d==role.exit.t.d){return;}
@@ -210,7 +210,7 @@ export class Schedular
 
                 let ents = this.toEnts(sh.p);
                 console.log('[time] init',id, sh.t); 
-                let ent = role.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
+                let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
                 // let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
                 let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 npc.init_runtime(id).load();
@@ -218,7 +218,7 @@ export class Schedular
             }
         }
 
-        if(role.exit && role.exit.map===mapName)
+        if(role?.exit && role.exit.map===mapName)
         {
             // npc 進入這個 map，但還在離開的時間區段內，則載入 npc
             if(TimeManager.inRange(role.exit.sh.t))

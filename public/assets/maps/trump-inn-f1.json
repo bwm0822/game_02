@@ -251,25 +251,6 @@
                  "type":"point",
                  "x":416,
                  "y":272
-                }, 
-                {
-                 "id":104,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"gt",
-                         "type":"int",
-                         "value":24
-                        }, 
-                        {
-                         "name":"interactive",
-                         "type":"bool",
-                         "value":true
-                        }],
-                 "template":"..\/templates\/chair.tj",
-                 "type":"point",
-                 "x":96,
-                 "y":272
                 }],
          "opacity":1,
          "type":"objectgroup",

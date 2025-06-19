@@ -7,29 +7,47 @@
     },
     "job": "ranger",
     "gold": 100,
-    "sprite": "trump",
-    "faceR": false,
+    "body": {
+      "sprite": "body",
+      "scale": 0.25
+    },
+    "head": {
+      "sprite": "trump_head",
+      "scale": 0.3,
+      "y": -35
+    },
+    "armor": {
+      "sprite": "armor-1",
+      "scale": 0.25,
+      "y": -10
+    },
+    "boot": {
+      "sprite": "boot-1",
+      "scale": 0.25,
+      "x": 1
+    },
+    "faceR": true,
     "anchor": {
       "x": 0,
       "y": 16
     },
-    "w": 64,
+    "w": 32,
     "h": 64,
     "b": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
     "g": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
     "z": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
@@ -93,6 +111,7 @@
       "capacity": -1,
       "items": [
         "sword_01",
+        "chest_01",
         {
           "id": "helmet_01",
           "count": 1

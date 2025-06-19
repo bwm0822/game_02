@@ -60,6 +60,9 @@ export let GM =
     CAT_BAG         :   0b0000_0001_0000_0000,
     CAT_FOOD        :   0b0000_0010_0000_0000,
     CAT_ITEM        :   0b0000_0100_0000_0000,
+
+    PART_HEAD       :   0b0000_1000_0000_0000,
+    PART_BODY       :   0b0001_0000_0000_0000,
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
@@ -167,6 +170,7 @@ export let GM =
     // schedule 延遲
     SH_LATENCY : 5, // 5 m
 
-
-
+    // tile size
+    TILE_W : 32,
+    TILE_H : 32,
 }

@@ -73,13 +73,13 @@ export class Entity extends Phaser.GameObjects.Container
 
     send(type, ...args) {this.scene.events.emit(type, ...args);}
 
-    setTexture(key,frame)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
+    setTexture(key,frame,scale)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
     {
         // console.log(key,frame);
-        // console.trace();
         if(key)
         {
             let sp = this.scene.add.sprite(0,0,key,frame);
+            if(scale) {sp.setScale(scale);}
             sp.setPipeline('Light2D');
             this.add(sp);
             this._sp = sp;
@@ -313,13 +313,22 @@ export class Entity extends Phaser.GameObjects.Container
 
     init_runtime(itm)
     {
-        // console.log(itm);
         this.itm = itm;
-        this.dat = ItemDB.get(itm.id);
-        let [key,frame] = this.dat.icon.split('/');
-        this.setTexture(key,frame);
-        this.displayWidth = this._sp.width;
-        this.displayHeight = this._sp.height;
+        this.dat = DB.item(itm.id);
+        if(this.dat.drop)
+        {
+            let [key,frame] = this.dat.drop.sprite.split('/');
+            this.setTexture(key,frame,this.dat.drop.scale);
+        }
+        else
+        {
+            let [key,frame] = this.dat.icon.split('/');
+            this.setTexture(key,frame);
+        }
+
+        this._w = Math.max(GM.TILE_W, this._sp.displayWidth);
+        this._h = Math.max(GM.TILE_H, this._sp.displayHeight);
+        
         this.addListener();
         this.addPhysics();
         this.addGrid();
@@ -559,7 +568,8 @@ export class Entity extends Phaser.GameObjects.Container
     
     destroy()
     {
-        if(this._dbgGraphics){this._dbgGraphics.clear();}
+        if(this._dbgGraphics){this._dbgGraphics.destroy();}
+        if(this._dbgText) {this._dbgText.destroy();}
         super.destroy();
 
     }
