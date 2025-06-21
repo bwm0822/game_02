@@ -136,17 +136,18 @@ export class Role extends Entity
         return true;
     }
 
-    addParts(roleD)
+    addShape(roleD)
     {
-        this._parts = new Phaser.GameObjects.Container(this.scene,0,roleD.anchor.y);
-        this.add(this._parts);
-        if(roleD.body) {this.addPart(roleD.body,GM.PART_BODY);}
-        if(roleD.head) {this.addPart(roleD.head,GM.PART_HEAD);}
+        // 將 parts 定位在 container 的底部
+        this._shape = new Phaser.GameObjects.Container(this.scene, 0, roleD.anchor.y);
+        this.add(this._shape);
+        if(roleD.body) {this.addPart(roleD.body, GM.PART_BODY);}
+        if(roleD.head) {this.addPart(roleD.head, GM.PART_HEAD);}
     }
 
     addPart(part, type)
     {
-        if(!this._parts) {return;}
+        if(!this._shape) {return;}
         let getDepth = function(type)
         {
             switch(type)
@@ -172,16 +173,16 @@ export class Role extends Entity
             sp.x = part.x ?? 0;
             sp.y = part.y ?? 0;
             sp.depth = getDepth(type)
-            this._parts.add(sp);
+            this._shape.add(sp);
             return sp;
         }
     }
 
     sortParts()
     {
-        if(!this._parts) {return;}
-        let children = this._parts.getAll().sort((a, b) => a.depth - b.depth);
-        children.forEach(child => {this._parts.bringToTop(child);});
+        if(!this._shape) {return;}
+        let children = this._shape.getAll().sort((a, b) => a.depth - b.depth);
+        children.forEach(child => {this._shape.bringToTop(child);});
     }
 
     init_runtime(id)
@@ -193,7 +194,7 @@ export class Role extends Entity
 
         // console.log(roleD)
         
-        this.addParts(roleD);
+        this.addShape(roleD);
         this.addSprite(roleD.sprite);
         this.displayWidth = roleD.w 
         this.displayHeight = roleD.h;
@@ -269,8 +270,8 @@ export class Role extends Entity
         if(!this._twY)
         {
             this._twY = this.scene.tweens.add({
-                    targets: this._parts,
-                    y: {from:this._parts.y, to:this._parts.y-1.5},
+                    targets: this._shape,
+                    y: {from:this._shape.y, to:this._shape.y-1.5},
                     // ease:'sin.out',
                     duration: 500,
                     yoyo: true,
@@ -311,7 +312,7 @@ export class Role extends Entity
     {
         if(pt.x==this.x) {return;}
         if(this._sp) {this._sp.flipX = (pt.x>this.x) != this._faceR;}
-        if(this._parts) {this._parts.scaleX = (pt.x>this.x) != this._faceR ? -1 : 1;}
+        if(this._shape) {this._shape.scaleX = (pt.x>this.x) != this._faceR ? -1 : 1;}
     }
 
     isInteractive(ent)

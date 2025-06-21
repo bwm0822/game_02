@@ -676,6 +676,15 @@
       "lab": "Macron"
     }
   },
+  "melanie": {
+    "tw": {
+      "lab": "梅蘭妮",
+      "des": "漂亮大方的女士，跟川普共同經營一家旅館"
+    },
+    "us": {
+      "lab": "Melanie"
+    }
+  },
   "ranger": {
     "tw": {
       "lab": "遊俠",

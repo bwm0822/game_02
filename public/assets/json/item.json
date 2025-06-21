@@ -120,8 +120,17 @@
   },
   "helmet_02": {
     "cat": "CAT_HELMET",
-    "icon": "weapons/46",
+    "icon": "leather-helmet",
     "gold": 20,
+    "equip": {
+      "sprite": "leather-helmet",
+      "scale": 0.25,
+      "y": -38
+    },
+    "drop": {
+      "sprite": "leather-helmet",
+      "scale": 0.25
+    },
     "props": {
       "defense": 2
     }
@@ -153,8 +162,17 @@
   },
   "chest_02": {
     "cat": "CAT_CHESTPLATE",
-    "icon": "weapons/55",
+    "icon": "leather-armor",
     "gold": 40,
+    "equip": {
+      "sprite": "leather-armor",
+      "scale": 0.25,
+      "y": -7
+    },
+    "drop": {
+      "sprite": "leather-armor",
+      "scale": 0.25
+    },
     "props": {
       "defense": 4
     }
@@ -184,6 +202,23 @@
       "defense": 1
     }
   },
+  "gloves_02": {
+    "cat": "CAT_GLOVES",
+    "icon": "leather-gloves",
+    "gold": 10,
+    "equip": {
+      "sprite": "leather-gloves",
+      "scale": 0.25,
+      "y": -10
+    },
+    "drop": {
+      "sprite": "leather-gloves",
+      "scale": 0.25
+    },
+    "props": {
+      "defense": 2
+    }
+  },
   "boots_01": {
     "cat": "CAT_BOOTS",
     "icon": "cloth-boots",
@@ -199,6 +234,23 @@
     },
     "props": {
       "defense": 1
+    }
+  },
+  "boots_02": {
+    "cat": "CAT_BOOTS",
+    "icon": "leather-boots",
+    "gold": 10,
+    "equip": {
+      "sprite": "leather-boots",
+      "scale": 0.25,
+      "x": 1
+    },
+    "drop": {
+      "sprite": "leather-boots",
+      "scale": 0.25
+    },
+    "props": {
+      "defense": 2
     }
   },
   "neck_01": {

@@ -203,6 +203,17 @@ export class Pic extends OverlapSizer
 
         scene.add.existing(this);
     }
+
+    setIcon(icon,{tint=0xffffff,alpha=1}={})
+    {
+        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        let sp = this.getElement('sprite');
+        // this.getElement('sprite').setTexture(key,frame).setTint(tint).setAlpha(alpha)
+        sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+        sp.rexSizer.aspectRatio = sp.width/sp.height;
+        this.layout();
+        return this;
+    }
 }
 
 export class Icon extends OverlapSizer

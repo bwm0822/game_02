@@ -251,6 +251,13 @@
                  "type":"point",
                  "x":416,
                  "y":272
+                }, 
+                {
+                 "id":105,
+                 "name":"melanie-p1",
+                 "template":"..\/templates\/point.tj",
+                 "x":32,
+                 "y":256
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -259,7 +266,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":105,
+ "nextobjectid":106,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

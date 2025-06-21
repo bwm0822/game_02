@@ -8,7 +8,7 @@ import {bbcText} from './uibase'
 import * as Role from './role';
 import TimeManager from './time';
 
-let DEBUG = true; // 是否開啟 debug 模式
+let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;
 
 export class Entity extends Phaser.GameObjects.Container
@@ -155,10 +155,10 @@ export class Entity extends Phaser.GameObjects.Container
             if(on) {this._outline.add(this._sp,{thickness:3, outlineColor:0xffffff});}
             else {this._outline.remove(this._sp);}
         }
-        else if(this._parts)
+        else if(this._shape)
         {
-            if(on) {this._outline.add(this._parts,{thickness:3, outlineColor:0xffffff});}
-            else {this._outline.remove(this._parts);}
+            if(on) {this._outline.add(this._shape,{thickness:3, outlineColor:0xffffff});}
+            else {this._outline.remove(this._shape);}
         }
         else
         {

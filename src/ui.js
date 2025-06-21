@@ -2199,8 +2199,7 @@ export class UiTrade extends UiBase
 
     updateInfo()
     {
-        let [key,frame]=this.owner.role.icon.split('/');
-        this.getElement('icon',true).getElement('sprite')?.setTexture(key,frame);
+        this.getElement('icon',true).setIcon(this.owner.role.icon);
         this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.role.job?.lab()}`);
     }
 
@@ -2490,8 +2489,8 @@ export class UiDialog extends UiBase
             .layout()
             .hide()
 
-        let iconA = this.getElement('iconA',true).getElement('sprite');
-        let iconB = this.getElement('iconB',true).getElement('sprite');
+        let iconA = this.getElement('iconA',true);
+        let iconB = this.getElement('iconB',true);
         let nameA = this.getElement('nameA',true);
         let textA = this.getElement('textA',true);
         let textB = this.getElement('textB',true).getElement('panel');
@@ -2500,11 +2499,11 @@ export class UiDialog extends UiBase
         const lineCnt=3;
         let page = scene.plugins.get('rexTextPage').add(textA,{maxLines:lineCnt});
  
-        this.setIconA = (icon)=>{let [key,frame]=icon.split('/');iconA.setTexture(key,frame);return this;}
+        this.setIconA = (icon)=>{iconA.setIcon(icon);return this;}
         this.setNameA = (name)=>{nameA.setText(`[color=yellow]${name}[/color]`);return this;}
         this.setTextA = (text)=>{page.setText(text);return this;}
 
-        this.setIconB = (icon)=>{let [key,frame]=icon.split('/');iconB.setTexture(key,frame);return this;}
+        this.setIconB = (icon)=>{iconB.setIcon(icon);return this;}
         this.setTextB = (options)=>{
             textB.removeAll(true);
             options.forEach((option)=>{

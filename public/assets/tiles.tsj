@@ -55,6 +55,15 @@
                 }]
         }, 
         {
+         "id":89,
+         "properties":[
+                {
+                 "name":"collide",
+                 "type":"bool",
+                 "value":true
+                }]
+        }, 
+        {
          "id":107,
          "properties":[
                 {
@@ -74,6 +83,15 @@
         }, 
         {
          "id":109,
+         "properties":[
+                {
+                 "name":"collide",
+                 "type":"bool",
+                 "value":true
+                }]
+        }, 
+        {
+         "id":110,
          "properties":[
                 {
                  "name":"collide",

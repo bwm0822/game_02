@@ -45,14 +45,29 @@ export class Preloader extends Scene
         this.load.image('icon_karen', 'portraits/icon_karen_m.png');
 
         this.load.image('body-man', 'roles_64x64/body-man.png');
+
         this.load.image('head-trump', 'roles_64x64/head-trump.png');
         this.load.image('head-wick', 'roles_64x64/head-wick.png');
+        this.load.image('head-musk', 'roles_64x64/head-musk.png');
+        this.load.image('head-xi', 'roles_64x64/head-xi.png');
+        this.load.image('head-macron', 'roles_64x64/head-macron.png');
+        this.load.image('head-melanie', 'roles_64x64/head-melanie.png');
+
         this.load.image('cloth-hood', 'roles_64x64/cloth-hood.png');
         this.load.image('cloth-armor', 'roles_64x64/cloth-armor.png');
         this.load.image('cloth-boots', 'roles_64x64/cloth-boots.png');
         this.load.image('cloth-gloves', 'roles_64x64/cloth-gloves.png');
 
+        this.load.image('leather-helmet', 'roles_64x64/leather-helmet.png');
+        this.load.image('leather-armor', 'roles_64x64/leather-armor.png');
+        this.load.image('leather-boots', 'roles_64x64/leather-boots.png');
+        this.load.image('leather-gloves', 'roles_64x64/leather-gloves.png');
+
         this.load.image('trump', 'roles_64x64/trump.png');
+        this.load.image('musk', 'roles_64x64/musk.png');
+        this.load.image('xi', 'roles_64x64/xi.png');
+        this.load.image('macron', 'roles_64x64/macron.png');
+        this.load.image('melanie', 'roles_64x64/melanie.png');
 
 
 
