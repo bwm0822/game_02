@@ -13,3 +13,20 @@
 1. 頭部 : 用川普頭像
 2. 軀幹 : 只要身體、腳，不要手臂
 3. 手部 : 握拳
+
+
+二頭身，直立站姿，身體朝左25度，中世紀女性造型，透明背景，
+穿緊身內衣，分為頭部、軀幹、手部，三大部位，每個部位分開，不要連在一起
+1. 頭部 : 用川普頭像
+2. 軀幹 : 只要身體、腳，不要手臂
+3. 手部 : 握拳
+
+
+cloth armor、cloth gloves、shoes、cloth hood
+leather armor、leather gloves、leather boots、leather helm
+chain mail、gloves、greaves、chain mail coif
+scale mail、gloves、greaves、helm
+chest plate、gloves、greaves、helm with chain mail
+
+穿上 布罩 布甲 手套 靴子
+分離出 頭盔 護甲 手套 靴子

@@ -133,7 +133,7 @@ export class GameScene extends Scene
         else {pos = this.ents[this._data.port].pts[0];}
 
         this._player = new classType(this,pos.x,pos.y);
-        this._player.init_runtime('scott');
+        this._player.init_runtime('wick');
         this._player.load(Record.data.player);
         this.setCameraFollow(GM.CAM_CENTER);
 

@@ -5,11 +5,11 @@
     },
     "activeFile": "public/assets/maps/map.json",
     "expandedProjectPaths": [
+        ".",
         "public/assets",
+        "public/assets/tiles",
         "public/assets/templates",
         "public/assets/maps",
-        "public/assets/tiles",
-        ".",
         "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
@@ -281,8 +281,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 176,
-                "y": 836
+                "x": 395.3333333333333,
+                "y": 836.6666666666665
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -370,8 +370,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 202.64928809237088,
-                "y": 240.05100233760714
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -414,8 +414,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 71,
-                "y": 230
+                "x": 640,
+                "y": 639.5
             }
         },
         "public/assets/maps/village_01.json": {

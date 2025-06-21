@@ -9,7 +9,7 @@ import * as Role from './role';
 import TimeManager from './time';
 
 let DEBUG = true; // 是否開啟 debug 模式
-let DBG_TYPE = GM.DBG_ALL;
+let DBG_TYPE = GM.DBG_ZONE;
 
 export class Entity extends Phaser.GameObjects.Container
 {
@@ -122,12 +122,14 @@ export class Entity extends Phaser.GameObjects.Container
         this._zone
             .on('pointerover',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(true);this.send('over',this);
+                this.outline(true);
+                this.send('over',this);
                 if(DEBUG){this.debugDraw(undefined,this.y);}
             })
             .on('pointerout',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(false);this.send('out');
+                this.outline(false);
+                this.send('out');
                 if(DEBUG){this.debugDraw(GM.DBG_CLR);}
             })
             .on('pointerdown',(pointer)=>{
@@ -150,8 +152,13 @@ export class Entity extends Phaser.GameObjects.Container
 
         if(this._sp)
         {
-            if(on) {this._outline.add(this._sp,{thickness:3,outlineColor:0xffffff});}
+            if(on) {this._outline.add(this._sp,{thickness:3, outlineColor:0xffffff});}
             else {this._outline.remove(this._sp);}
+        }
+        else if(this._parts)
+        {
+            if(on) {this._outline.add(this._parts,{thickness:3, outlineColor:0xffffff});}
+            else {this._outline.remove(this._parts);}
         }
         else
         {
@@ -164,21 +171,35 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(!this._rect)
         {
-            let cx = this.body.x+this.body.width/2;
-            let cy = this.body.y+this.body.height/2;
-            this._rect = this.scene.add.rectangle(cx-this.x, cy-this.y, this.body.width, this.body.height, 0xffffff, 0.5);
-            this._rect.setStrokeStyle(2,0xffffff)
-            this.add(this._rect);
-            this.setDepth(Infinity);
+            // let cx = this.body.x+this.body.width/2;
+            // let cy = this.body.y+this.body.height/2;
+            // this._rect = this.scene.add.rectangle(cx-this.x, cy-this.y, this.body.width, this.body.height, 0xffffff, 0.5);
+            // this._rect.setStrokeStyle(2,0xffffff)
+            // this.add(this._rect);
+            // this.setDepth(Infinity);
+
+            let p = {x:this.x + this._zone.x, y:this.y + this._zone.y};
+            this._rect = this.scene.add.rectangle(p.x, p.y, this._zone.width, this._zone.height, 0xffffff, 0.5);
+            this._rect.setStrokeStyle(2, 0xffffff)
+            this._rect.setDepth(Infinity);
         }
 
-        this._rect.visible=on;
+        if(on)
+        {
+            // let p = {x:this.x + this._zone.x, y:this.y + this._zone.y};
+            let p = {x:this.x + this._zone.x, y:this.y + this._zone.y};
+
+            this._rect.x = p.x;
+            this._rect.y = p.y;
+        }
+
+        this._rect.visible = on;
     }
 
    
     addPhysics()
     {
-        // (body.x, body.y) 是 body 的左上角， body.center 才是中心點
+        // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
         this.body.setSize(this.displayWidth-this.bl-this.br, this.displayHeight-this.bt-this.bb);
         if(this.isStatic) {this.body.setOffset(this.bl, this.bt);}
@@ -570,6 +591,7 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(this._dbgGraphics){this._dbgGraphics.destroy();}
         if(this._dbgText) {this._dbgText.destroy();}
+        if(this._rect) {this._rect.destroy();}
         super.destroy();
 
     }

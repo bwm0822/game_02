@@ -1,6 +1,6 @@
 {
-  "scott": {
-    "icon": "portraits/38",
+  "wick": {
+    "icon": "head-wick",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
@@ -8,23 +8,13 @@
     "job": "ranger",
     "gold": 100,
     "body": {
-      "sprite": "body",
+      "sprite": "body-man",
       "scale": 0.25
     },
     "head": {
-      "sprite": "trump_head",
-      "scale": 0.3,
-      "y": -35
-    },
-    "armor": {
-      "sprite": "armor-1",
+      "sprite": "head-wick",
       "scale": 0.25,
-      "y": -10
-    },
-    "boot": {
-      "sprite": "boot-1",
-      "scale": 0.25,
-      "x": 1
+      "y": -28.5
     },
     "faceR": true,
     "anchor": {
@@ -112,6 +102,7 @@
       "items": [
         "sword_01",
         "chest_01",
+        "gloves_01",
         {
           "id": "helmet_01",
           "count": 1
@@ -236,14 +227,17 @@
     ]
   },
   "trump": {
-    "icon": "icon_trump",
+    "icon": "head-trump",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
     },
     "job": "innkeeper",
     "gold": 200,
-    "sprite": "rogues/38",
+    "body": {
+      "sprite": "trump",
+      "scale": 0.25
+    },
     "faceR": false,
     "anchor": {
       "x": 0,

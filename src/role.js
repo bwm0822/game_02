@@ -207,7 +207,7 @@ export class Role extends Entity
         this.addWeight();
         this.addToObjects();
         // this.debugDraw('zone')
-
+        this.start_tw();
         return this;
     }
 
@@ -250,6 +250,39 @@ export class Role extends Entity
             this._act = '';
             this.resume();
         }
+    }
+
+    start_tw()
+    {
+        // if(!this._twX)
+        // {
+        //     this._twX = this.scene.tweens.add({
+        //             targets: this._parts,
+        //             x: {from:-1.5, to:1.5},
+        //             // ease:'sin.out',
+        //             duration: 500,
+        //             yoyo: true,
+        //             loop:-1,     
+        //         });
+        // }
+
+        if(!this._twY)
+        {
+            this._twY = this.scene.tweens.add({
+                    targets: this._parts,
+                    y: {from:this._parts.y, to:this._parts.y-1.5},
+                    // ease:'sin.out',
+                    duration: 500,
+                    yoyo: true,
+                    loop:-1,     
+                });
+        }
+    }
+
+    stop_tw()
+    {
+        if(this._twX) {this._twX.stop(); this._twX=null;}
+        if(this._twY) {this._twY.stop(); this._twY=null;}
     }
 
     setDes({pt, ent, act, next=false}={})
@@ -847,6 +880,7 @@ export class Role extends Entity
         this._zone.disableInteractive();        
         this.state = GM.ST_SLEEP;
         this.speak('💤',{duration:-1,tween:true});
+        this.stop_tw();
     }
 
     // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
@@ -869,6 +903,7 @@ export class Role extends Entity
         this.updateDepth();
         this._zone.setInteractive();
         this.state = GM.ST_IDLE;
+        this.start_tw();
         
     }
 

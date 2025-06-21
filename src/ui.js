@@ -46,8 +46,6 @@ export default function createUI(scene)
     new UiTime(scene);              // 19
     new UiQuest(scene);              // 20
 
-    
-
     // t3();
 }
 
@@ -790,7 +788,11 @@ export class UiDragged extends OverlapSizer
     setIcon(icon)
     {
         let [key,frame]=icon.split('/');
-        this.getElement('sprite').setTexture(key,frame);
+        let sp = this.getElement('sprite');
+        // this.getElement('sprite').setTexture(key,frame);
+        sp.setTexture(key,frame);
+        sp.rexSizer.aspectRatio = sp.width/sp.height;
+        this.layout();
         return this;
     }
 
