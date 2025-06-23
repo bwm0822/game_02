@@ -138,44 +138,58 @@ export class Role extends Entity
 
     addShape(roleD)
     {
-        // 將 parts 定位在 container 的底部
+        // 將 _shape 定位在 container 的底部
         this._shape = new Phaser.GameObjects.Container(this.scene, 0, roleD.anchor.y);
         this.add(this._shape);
         if(roleD.body) {this.addPart(roleD.body, GM.PART_BODY);}
         if(roleD.head) {this.addPart(roleD.head, GM.PART_HEAD);}
+        if(roleD.hand) {this.addPart(roleD.hand, GM.PART_HAND);}
     }
 
     addPart(part, type)
     {
         if(!this._shape) {return;}
+
         let getDepth = function(type)
         {
             switch(type)
             {
                 case GM.PART_BODY : return 0;
                 case GM.PART_HEAD : return 2;
+                case GM.PART_HAND : return 5;
+
                 case GM.CAT_HELMET : return 3;
                 case GM.CAT_CHESTPLATE : return 1;
-                case GM.CAT_GLOVES : return 1;
+                case GM.CAT_GLOVES : return 6;
                 case GM.CAT_BOOTS : return 1;
                 case GM.CAT_WEAPON : return 4;
             }
             return 0;
         }
 
-        let [key,frame]=part.sprite.split('/');
-        if(key)
+        let addSp = (sprite, depth)=>
         {
-            let sp = this.scene.add.sprite(0,0,key,frame);
-            sp.setScale(part.scale);
-            sp.setPipeline('Light2D');
-            sp.setOrigin(0.5,1);
-            sp.x = part.x ?? 0;
-            sp.y = part.y ?? 0;
-            sp.depth = getDepth(type)
-            this._shape.add(sp);
-            return sp;
+            if(!sprite) {return;}
+            let [key,frame]=sprite.split('/');
+            if(key)
+            {
+                let sp = this.scene.add.sprite(0,0,key,frame);
+                sp.setScale(part.scale);
+                sp.setPipeline('Light2D');
+                sp.setOrigin(0.5,1);
+                sp.x = part.x ?? 0;
+                sp.y = part.y ?? 0;
+                sp.angle = part.a ?? 0;
+                sp.depth = depth
+                this._shape.add(sp);
+                sps.push(sp);
+            }
         }
+
+        let sps = [];
+        addSp(part.sprite, getDepth(type));
+        addSp(part.ext, 6);
+        return sps;
     }
 
     sortParts()
@@ -208,7 +222,6 @@ export class Role extends Entity
         this.addWeight();
         this.addToObjects();
         // this.debugDraw('zone')
-        this.start_tw();
         return this;
     }
 
@@ -253,37 +266,37 @@ export class Role extends Entity
         }
     }
 
-    start_tw()
+    tw_idle(on)
     {
-        // if(!this._twX)
-        // {
-        //     this._twX = this.scene.tweens.add({
-        //             targets: this._parts,
-        //             x: {from:-1.5, to:1.5},
-        //             // ease:'sin.out',
-        //             duration: 500,
-        //             yoyo: true,
-        //             loop:-1,     
-        //         });
-        // }
-
-        if(!this._twY)
+        if(on)
         {
-            this._twY = this.scene.tweens.add({
-                    targets: this._shape,
-                    y: {from:this._shape.y, to:this._shape.y-1.5},
-                    // ease:'sin.out',
-                    duration: 500,
-                    yoyo: true,
-                    loop:-1,     
-                });
+            if(!this._twIdle)
+            {
+                this._twIdle = this.scene.tweens.add({
+                        targets: this._shape,
+                        y: {from:this.max.y, to:this.max.y-1.5},
+                        // ease:'sin.out',
+                        duration: 500,
+                        yoyo: true,
+                        loop:-1,     
+                    });
+            }
+        }
+        else
+        {
+            if(this._twIdle) {this._twIdle.stop(); this._twIdle=null;}
         }
     }
 
-    stop_tw()
+    tw_walk(duration)
     {
-        if(this._twX) {this._twX.stop(); this._twX=null;}
-        if(this._twY) {this._twY.stop(); this._twY=null;}
+        this.scene.tweens.add({
+            targets: this._shape,
+            y: {from:this.max.y, to:this.max.y-5},
+            ease:'quint.in',
+            duration: duration,
+            yoyo: true,  
+        });
     }
 
     setDes({pt, ent, act, next=false}={})
@@ -332,6 +345,8 @@ export class Role extends Entity
         this.faceTo(pt);
         this.removeWeight();
         this.addWeight(pt);
+        this.tw_idle(false);
+        this.tw_walk(duration/2);
         await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
         //this.addWeight();
         this.updateDepth();
@@ -710,9 +725,9 @@ export class Role extends Entity
     addEquip(item)
     {
         if(!item.equip) {return;}
-        let sp = this.addPart(item.equip, item.cat);
+        let sps = this.addPart(item.equip, item.cat);
         if(!this.equips) {this.equips=[];}
-        this.equips.push(sp);
+        this.equips.push(...sps);
     }
 
     removeEquip()
@@ -881,7 +896,6 @@ export class Role extends Entity
         this._zone.disableInteractive();        
         this.state = GM.ST_SLEEP;
         this.speak('💤',{duration:-1,tween:true});
-        this.stop_tw();
     }
 
     // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
@@ -904,7 +918,6 @@ export class Role extends Entity
         this.updateDepth();
         this._zone.setInteractive();
         this.state = GM.ST_IDLE;
-        this.start_tw();
         
     }
 
@@ -953,11 +966,9 @@ export class Role extends Entity
 
     async process()
     {
-        // if(this.state==GM.ST_MOVING) {await this.move(); return}
-        // if(this.state==GM.ST_MOVING) {await this.st_moving(); return}
-
         if(this.state!=GM.ST_MOVING)
         {
+            this.tw_idle(true);
             console.log('[pause-1]')
             await this.pause(); 
             console.log('[pause-2]')
@@ -973,14 +984,6 @@ export class Role extends Entity
         }
 
         
-
-        // if(this.state == GM.ST_MOVING) {await this.move();}
-        // else
-        // {
-        //     await this.pause();
-        //     if(this.state == GM.ST_MOVING) {await this.move();}
-        //     else {await this.action();}
-        // }
     }
 
     registerTimeManager()
@@ -1402,6 +1405,8 @@ export class Npc extends Role
                 await this.attack();
                 break;
         }
+
+        this.tw_idle(true); 
         
     }
 

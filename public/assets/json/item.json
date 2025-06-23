@@ -101,6 +101,32 @@
       "attack": 35
     }
   },
+  "bow_01": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons/22",
+    "gold": 35,
+    "equip": {
+      "sprite": "weapons/22",
+      "y": -8,
+      "x": 15
+    },
+    "props": {
+      "attack": 15
+    }
+  },
+  "bow_02": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons/26",
+    "gold": 35,
+    "equip": {
+      "sprite": "weapons/26",
+      "y": -8,
+      "x": 15
+    },
+    "props": {
+      "attack": 25
+    }
+  },
   "helmet_01": {
     "cat": "CAT_HELMET",
     "icon": "cloth-hood",

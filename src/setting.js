@@ -63,6 +63,8 @@ export let GM =
 
     PART_HEAD       :   0b0000_1000_0000_0000,
     PART_BODY       :   0b0001_0000_0000_0000,
+    PART_HAND       :   0b0010_0000_0000_0000,
+    PART_EXT        :   0b0100_0000_0000_0000,
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)

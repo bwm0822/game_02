@@ -3029,6 +3029,7 @@ class UiDebuger extends UiBase
 
     cmd_get(args)
     {
+        // [get] [gold/item] [id] [count]
         let rewards=[{type:args[1],id:args[2],count:args[3]}]
         Role.getPlayer().receive(rewards)
     }
