@@ -10,6 +10,7 @@ import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage,
         UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import TimeManager from '../time.js';
 import AudioManager from '../audio.js';
+import {Projectile} from '../entity';
 
 
 export class GameScene extends Scene
@@ -161,6 +162,9 @@ export class GameScene extends Scene
             if (pointer.rightButtonDown())
             {
                console.log('right');
+               let pt = {x:pointer.worldX, y:pointer.worldY};
+               let p = this._player.pos;
+               new Projectile(this, p.x, p.y, 'arrow', 0.25 ).shoot(pt.x, pt.y);
             }
             else if (pointer.middleButtonDown())
             {

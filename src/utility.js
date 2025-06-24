@@ -217,6 +217,16 @@ export default class Utility
     {
         return typeof value === 'string' || value instanceof String;
     }
+
+    static rotate(x, y, rad) 
+    {
+        // const rad = theta * Math.PI / 180; // 轉成弧度
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const xNew = x * cos - y * sin;
+        const yNew = x * sin + y * cos;
+        return [xNew, yNew];
+    }
 }
 
 // String.prototype.local = function(){ return Utility.local(this); };

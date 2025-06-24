@@ -70,6 +70,8 @@ export class Preloader extends Scene
         this.load.image('macron', 'roles_64x64/macron.png');
         this.load.image('melanie', 'roles_64x64/melanie.png');
 
+        this.load.image('arrow', 'roles_64x64/arrow.png');
+
 
 
         // this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');

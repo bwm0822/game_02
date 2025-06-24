@@ -1098,3 +1098,50 @@ export class Node extends Port
         //this.debugDraw();
     }
 }
+
+export class Projectile extends Phaser.GameObjects.Sprite
+{
+    constructor(scene, x, y, sprite, scale)
+    {
+        let[texture, frame] = sprite.split('/')
+        super(scene, x, y, texture, frame);
+        scene.add.existing(this);
+        this.setScale(scale);
+        this.depth = Infinity;
+        this.from = {x:x, y:y};
+    }
+
+    shoot(x, y, bias=50, duration=500)
+    {
+        let from = this.from;
+        
+        let dx = x - from.x;
+        let dy = y - from.y;
+        let dist = Phaser.Math.Distance.Between(0, 0, dx, dy);
+        let rad = dy > 0 ? Math.acos(dx/dist) : -Math.acos(dx/dist);
+        bias = -bias * Math.cos(rad);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        this.scene.tweens.addCounter({
+            from: 0,
+            to: 1,
+            duration: duration, 
+            onUpdate: (tween, target, key, current, previous, param)=>{
+                let x = dist * current;
+                let y = bias * Math.sin(current * Math.PI);
+
+                // rotate + offset
+                let nx = x * cos - y * sin + from.x; 
+                let ny = x * sin + y * cos + from.y;
+                // angle                
+                let a = Math.atan((ny - this.y)/(nx - this.x));
+
+                this.x = nx;
+                this.y = ny;
+                this.angle = a * 180 / Math.PI;
+            },
+            onComplete:()=>{this.destroy();}
+        });
+    }
+}
