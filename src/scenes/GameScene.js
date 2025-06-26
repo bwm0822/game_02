@@ -161,10 +161,7 @@ export class GameScene extends Scene
 
             if (pointer.rightButtonDown())
             {
-               console.log('right');
-               let pt = {x:pointer.worldX, y:pointer.worldY};
-               let p = this._player.pos;
-               new Projectile(this, p.x, p.y, 'arrow', 0.25 ).shoot(pt.x, pt.y);
+                console.log('right');
             }
             else if (pointer.middleButtonDown())
             {
@@ -180,11 +177,14 @@ export class GameScene extends Scene
                 }
                 else if(this._rst && this._rst.state==1 && !this._rst.block)
                 {
-                    this._player.setDes({pt:pt,ent:this._ent});
-                    // if(this._rst.state==1 || this._ent)
-                    // {
-                    //     this._player.setDes(pt,this._ent);
-                    // }
+                    if(this._ent?.act===GM.ATTACK)
+                    {
+                        this._player.attack(this._ent);
+                    }
+                    else
+                    {
+                        this._player.setDes({pt:pt,ent:this._ent});
+                    }
                 }
             }
             

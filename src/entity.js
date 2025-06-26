@@ -1111,7 +1111,7 @@ export class Projectile extends Phaser.GameObjects.Sprite
         this.from = {x:x, y:y};
     }
 
-    shoot(x, y, bias=50, duration=500)
+    shoot(x, y, onComplete, bias=50, duration=500)
     {
         let from = this.from;
         
@@ -1141,7 +1141,7 @@ export class Projectile extends Phaser.GameObjects.Sprite
                 this.y = ny;
                 this.angle = a * 180 / Math.PI;
             },
-            onComplete:()=>{this.destroy();}
+            onComplete:()=>{onComplete?.();this.destroy();}
         });
     }
 }

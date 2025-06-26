@@ -111,7 +111,8 @@
       "x": 15
     },
     "props": {
-      "attack": 15
+      "attack": 15,
+      "range": 5
     }
   },
   "bow_02": {
@@ -124,7 +125,8 @@
       "x": 15
     },
     "props": {
-      "attack": 25
+      "attack": 25,
+      "range": 5
     }
   },
   "helmet_01": {

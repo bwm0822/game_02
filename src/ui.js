@@ -1532,7 +1532,14 @@ class Option extends UiBase
     act(act)
     {
         this.close();
-        Role.getPlayer().setDes({ent:this.ent,act});
+        if(act === GM.ATTACK)
+        {
+            Role.getPlayer().attack(this.ent);
+        }
+        else
+        {
+            Role.getPlayer().setDes({ent:this.ent,act});
+        }
     }
 
     show(x,y,options,ent)

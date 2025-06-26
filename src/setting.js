@@ -124,12 +124,15 @@ export let GM =
     SPLIT : 'split',
     OPENBAG : 'openbag',
 
-    // 屬性
+    // 角色狀態
     P_LIFE : 'life',
-    P_ATTACK : 'attack',
-    P_DEFENSE : 'defense',
     P_HUNGER : 'hunger',
     P_THIRST : 'thirst',
+
+    // 屬性
+    P_ATTACK : 'attack',
+    P_DEFENSE : 'defense',
+    P_RANGE : 'range',
     P_STORAGE : 'storage',
     P_CAPACITY : 'capacity',
     P_TIMES : 'times',
@@ -163,6 +166,7 @@ export let GM =
     ST_ACTION : 'action',
     ST_SLEEP : 'sleep',
     ST_ATTACK : 'attack',
+    ST_DEATH : 'death',
 
     // weight
     W_BLOCK : 1000,   
@@ -176,3 +180,9 @@ export let GM =
     TILE_W : 32,
     TILE_H : 32,
 }
+
+export let ROLE_ATTRS = {
+    [GM.P_ATTACK]: 0,
+    [GM.P_DEFENSE]: 0,
+    [GM.P_RANGE]: 1,
+};

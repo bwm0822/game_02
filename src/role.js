@@ -8,11 +8,11 @@ import Utility from './utility.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
-import {Entity,Pickup,Door} from './entity.js';
+import {Entity,Pickup,Door, Projectile} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
 import {text,bbcText,rect} from './uibase.js';
-import {GM} from './setting.js';
+import {GM, ROLE_ATTRS} from './setting.js';
 import TimeManager from './time.js';
 import QuestManager from './quest.js';  
 
@@ -249,6 +249,7 @@ export class Role extends Entity
 
     removeFromRoleList() 
     {
+        console.log(this.id,'remove role')
         const index = this.scene.roles.indexOf(this);
         if (index > -1) {this.scene.roles.splice(index, 1);}
     }
@@ -369,7 +370,18 @@ export class Role extends Entity
         let path = this._path;
 
         // 判斷是否接觸目標
-        if(this.checkIsTouch(this._ent))
+        // if(this.checkIsTouch(this._ent))
+        if(this._act === GM.ATTACK)
+        {
+            if(this.isInRange(this._ent))
+            {
+                this.clearPath();
+                await this.action();
+                return;
+            }
+
+        }
+        else if(this.checkIsTouch(this._ent))
         {
             this.clearPath();
             await this.action();
@@ -450,6 +462,27 @@ export class Role extends Entity
         }
     }
 
+
+    action_atk()
+    {
+        if(this.status.attrs[GM.P_RANGE]>1)
+        {
+            return new Promise((resolve)=>{
+                new Projectile(this.scene, this.x, this.y, 'arrow', 0.25)
+                    .shoot(this._ent.x, this._ent.y, 
+                        async ()=>{
+                            await this.interact(this._ent, this._act);
+                            resolve();
+                        });
+            })
+        }
+        else
+        {
+             return this.step( this._ent.pos, 200, 'expo.in',
+                            {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent, this._act);}} ); 
+        }
+    }
+
     async action()
     {
         // if(!this._act) {return;}
@@ -461,11 +494,12 @@ export class Role extends Entity
         if(this.isPlayer) {console.log(`[player] action : ${act}`);}
         else {console.log(`[npc ${this.id}] action : ${act}`);}
         
-        if(act==GM.ATTACK)
+        if(act===GM.ATTACK)
         {
             this.state = GM.ST_ATTACK;
-            await this.step( this._ent.pos, 200, 'expo.in',
-                            {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent,act);}} ); 
+            // await this.step( this._ent.pos, 200, 'expo.in',
+            //                 {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent,act);}} ); 
+            await this.action_atk();
         }
         else
         {
@@ -528,29 +562,60 @@ export class Role extends Entity
 
     resume() {this._resolve?.();this._resolve=null;}
 
-    async attack()
+    isInRange(ent)
     {
-        if(this.isTouch(this._ent))
-        {
-            await this.action();
-        }
-        else
-        {
-            this.setDes({ent:this._ent, act:this._act});
-            await this.st_moving();
-        }
+        let range = this.status.attrs[GM.P_RANGE];
+        console.log(range)
+        let [tx1, ty1] = this.scene.map.worldToTile(this.x,this.y);
+        let [tx2, ty2] = this.scene.map.worldToTile(ent.x,ent.y);
+        let dx = Math.abs(tx1 - tx2);
+        let dy = Math.abs(ty1 - ty2);
+        return dx <= range && dy <= range;
     }
 
-    async hurt(attacker)
+
+    async attack(ent)
+    {
+        console.log('attack')   
+        this._ent = ent;
+        this._act = GM.ATTACK;
+
+        if(this.isPlayer)
+        {
+            if(this.isInRange(ent))
+            {
+                await this.action();
+                this.resume();
+            }
+            else
+            {
+                let rst = this.scene.map.getPath(this.pos, this._ent.pts);
+                if(rst?.state > 0)    // 找到路徑
+                {
+                    await this.moveTo(rst.path[0]);  // 移至 pt     
+                }        
+            }
+        }    
+        else
+        {
+            this.state = GM.ST_ATTACK;
+            this._ent = ent;
+            this._act = GM.ATTACK;
+        }
+        
+    }
+
+
+    async hurt(attacker,resolve)
     {
         let rst = this.calc(attacker);
         switch(rst.state)
         {
             case 'hit':
                 this.disp(-rst.dmg,GM.COLOR_GREEN);
-                this._sp.setTint(0xff0000);
+                this._shape.getAll().forEach(child => {child.setTint(0xff0000);});
                 await Utility.delay(150);
-                this._sp.setTint(0xffffff);
+                this._shape.getAll().forEach(child => {child.setTint(0xffffff);});
                 break;
             case 'dodge':
                 this.disp('dodge'.local(),GM.COLOR_GREEN);
@@ -570,6 +635,7 @@ export class Role extends Entity
         {
             this.speak('一二三四五六七八九十');
         }
+        resolve?.();
     }
 
     calc(attacker)
@@ -616,29 +682,33 @@ export class Role extends Entity
         if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
         else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
         this.looties();
-        this.removeWeight();
-        this.removeFromRoleList();
-        this.unregisterTimeManager();
+        // this.removeWeight();
+        // this.removeFromRoleList();
+        // this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
-         let qid = this.data.get('qid');
-        console.log(qid)
-        if(qid)
-        {
-            QuestManager.check(qid,{type:GM.KILL,id:this.id})
-        }
-
+        let qid = this.data?.get('qid');
+        // console.log(qid)
+        if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
 
         this.delete(); 
        
     }
 
-    exit()
+    delete()
     {
         this.removeWeight();
         this.removeFromRoleList();
         this.unregisterTimeManager();
-        this.destroy();
+        super.delete();
     }
+
+    // exit()
+    // {
+    //     this.removeWeight();
+    //     this.removeFromRoleList();
+    //     this.unregisterTimeManager();
+    //     this.destroy();
+    // }
 
     speak(words, {duration=1000,tween=false}={})
     {
@@ -737,11 +807,26 @@ export class Role extends Entity
         this.equips=[];
     }
 
+    attrs(key)
+    {
+        if(!(key in this.status.attrs)) {this.status.attrs[key]=0;}
+        return this.status.attrs[key];
+    }
 
+    setAttrs(key, value)
+    {
+        this.status.attrs[key] = value
+    }
+
+    addAttrs(key, value)
+    {
+        this.status.attrs[key] = this.attrs(key)+value;
+    }
 
     equip()
     {
-        this.status.attrs = Utility.deepClone(this.role.attrs);
+        // this.status.attrs = Utility.deepClone(this.role.attrs);
+        this.status.attrs = this.initAttrs(this.role.attrs);
         //this.status.states = Utility.deepClone(this.role.states); 
         this.removeLight();
         this.removeEquip();
@@ -760,7 +845,8 @@ export class Role extends Entity
                         // console.log(key,value);
                         switch(key)
                         {
-                            case GM.P_ATTACK:
+                            case GM.P_RANGE:
+                            case GM.P_ATTACK: 
                                 if(item.cat==GM.CAT_WEAPON) { this.status.attrs[key]=value; }
                                 else { this.status.attrs[key]+=value; }
                                 break;
@@ -921,6 +1007,26 @@ export class Role extends Entity
         
     }
 
+    initAttrs(data)
+    {
+        let attrs = Utility.deepClone(data);
+        for (let [key, value] of Object.entries(ROLE_ATTRS)) 
+        {
+            console.log(key, value);
+            if(!(key in attrs))
+            {
+                attrs[key] = value;
+            }
+        }
+        console.log(attrs)
+        return attrs;
+    }
+
+    initStates(data)
+    {
+        return Utility.deepClone(data);
+    }
+        
     load(record)    // call by Avatar
     {
         // let roleD = RoleDB.get(this.id);
@@ -932,14 +1038,17 @@ export class Role extends Entity
                 equips: [],
                 // bag: {capacity:roleD.bag.capacity, items:[]},
                 bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                attrs: Utility.deepClone(roleD.attrs),
-                states: Utility.deepClone(roleD.states), 
+                // attrs: Utility.deepClone(roleD.attrs),
+                // states: Utility.deepClone(roleD.states), 
+                attrs: this.initAttrs(roleD.attrs),
+                states: this.initStates(roleD.states),
             }
         }
 
         this.role = roleD; 
         this.status = record;
         this.equip();
+        console.log('----------------', this.status.attrs);
     }
 
     save() {return this.status;}
@@ -1097,7 +1206,7 @@ export class Avatar extends Role
     {
         super.addListener();
         this.on('talk',(resolve)=>{this.talk();resolve()})
-        this.on('attack',(resolve,attacker)=>{this.hurt(attacker);resolve()})
+        this.on('attack',(resolve,attacker)=>{this.hurt(attacker,resolve);})
     }
 
     dead(attacker)
@@ -1152,8 +1261,10 @@ export class Npc extends Role
             {   
                 gold: roleD.gold??0, 
                 bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                attrs: Utility.deepClone(roleD.attrs),
-                states: Utility.deepClone(roleD.states), 
+                // attrs: Utility.deepClone(roleD.attrs),
+                // states: Utility.deepClone(roleD.states), 
+                attrs: this.initAttrs(roleD.attrs),
+                states: this.initStates(roleD.states),
             }
         }
 
@@ -1289,7 +1400,10 @@ export class Npc extends Role
     {
         if(act == GM.ENTER) 
         {
-            this.exit();
+            // this.exit();
+            this.delete();
+
+
             // npc 離開時，將目的地的 map、port、當前時間、當前 shedule 存入 status.exit，
             // 用來檢查 npc 是否要顯示及其正確的位置
             let exit = {map:ent.map, port:ent.port, t:TimeManager.time, sh:this._shCurrent};
@@ -1352,9 +1466,7 @@ export class Npc extends Role
         super.addListener();
         this.on('talk',(resolve)=>{this.talk();resolve();})
             .on('trade',(resolve)=>{this.trade();resolve();})
-            .on('attack',(resolve,attacker)=>{
-                this.hurt(attacker);
-                resolve();})
+            .on('attack',(resolve,attacker)=>{this.hurt(attacker,resolve);})
     }
 
     talk() 
@@ -1369,12 +1481,12 @@ export class Npc extends Role
         this.send('trade',this);
     }
 
-    async hurt(attacker)
+    async hurt(attacker,resolve)
     {
-        super.hurt(attacker);
+        super.hurt(attacker,resolve);
         this.state = GM.ST_ATTACK;
         this._ent = attacker;
-        this._act = 'attack';
+        this._act = GM.ATTACK;
     }
 
     async process()
@@ -1382,7 +1494,7 @@ export class Npc extends Role
         // console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
         
         switch(this.state)
-        {
+        {            
             case GM.ST_IDLE: break;
 
             case GM.ST_NEXT:
@@ -1402,11 +1514,11 @@ export class Npc extends Role
 
             case GM.ST_ATTACK:
                 console.log(`[npc ${this.id}] attack`);
-                await this.attack();
+                await this.st_attack();
                 break;
         }
 
-        this.tw_idle(true); 
+        this.tw_idle(true);
         
     }
 
@@ -1422,6 +1534,26 @@ export class Npc extends Role
         {
             dbg_hover_npc = true;
             this.drawPath(this._path);
+        }
+    }
+
+     async st_attack()
+    {
+        if(this.isInRange(this._ent))
+        {
+            await this.action();
+        }
+        else
+        {
+            let rst = this.scene.map.getPath(this.pos, this._ent.pts);
+            if(rst?.state > 0)    // 找到路徑
+            {
+                await this.moveTo(rst.path[0]);  // 移至 pt     
+            }        
+            else
+            {
+                this.state = GM.ST_IDLE;
+            }
         }
     }
 }
