@@ -1,9 +1,9 @@
 { "object":
     {
-     "gid":200,
+     "gid":239,
      "height":64,
-     "id":1,
-     "name":"\u5c0f\u6751\u838a",
+     "id":56,
+     "name":"\u6697\u591c\u68ee\u6797",
      "properties":[
             {
              "name":"gl",
@@ -28,7 +28,7 @@
             {
              "name":"map",
              "type":"string",
-             "value":"village-01"
+             "value":"forest-01"
             }, 
             {
              "name":"port",

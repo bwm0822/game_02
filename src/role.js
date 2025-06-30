@@ -269,7 +269,8 @@ export class Role extends Entity
 
     tw_idle(on)
     {
-        if(on)
+        if(!this._shape){return;}   // 判斷 this._shape ，以避免在地圖上出錯
+        if(on)   
         {
             if(!this._twIdle)
             {
@@ -361,27 +362,30 @@ export class Role extends Entity
             let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
             this.interact(bodys[0]?.gameObject,GM.CLOSE_DOOR);
         }
-        this._preW=w;
-        this._prePt=pt;  
+        this._preW = w;
+        this._prePt = pt;  
+    }
+
+    async openDoorIfNeed(pt)
+    {
+        let bodys = this.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
+        let ent = bodys[0]?.gameObject;
+
+        // 如果是門，則打開
+        if (ent && ent instanceof Door && !ent.opened) 
+        {
+            await this.interact(ent, GM.OPEN_DOOR);
+            return true;
+        }
+        return false;
     }
 
     async st_moving(repath=true)
     {
         let path = this._path;
 
-        // 判斷是否接觸目標
-        // if(this.checkIsTouch(this._ent))
-        if(this._act === GM.ATTACK)
-        {
-            if(this.isInRange(this._ent))
-            {
-                this.clearPath();
-                await this.action();
-                return;
-            }
-
-        }
-        else if(this.checkIsTouch(this._ent))
+        // 判斷是否接觸目標      
+        if(this.checkIsTouch(this._ent))
         {
             this.clearPath();
             await this.action();
@@ -436,20 +440,14 @@ export class Role extends Entity
                 }
                 else                // for npc
                 {
-                    let bodys = this.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
-                    let ent = bodys[0]?.gameObject;
-
-                    // 如果是門，則打開
-                    if (ent && ent instanceof Door && !ent.opened) 
+                    if(await this.openDoorIfNeed(pt))
                     {
-                        await this.interact(ent, GM.OPEN_DOOR);
                         return;
                     }
                     else if(repath)     // 重新找路徑
                     {
                         this.setDes({ent:this._ent, act:this._act});
-                        let ret = await this.st_moving(false);
-                        if(ret)
+                        if(await this.st_moving(false))
                         {
                             this.speak('操...給老子滾開...💢');
                         }
@@ -794,6 +792,7 @@ export class Role extends Entity
 
     addEquip(item)
     {
+        if(!this._shape) {return;}
         if(!item.equip) {return;}
         let sps = this.addPart(item.equip, item.cat);
         if(!this.equips) {this.equips=[];}

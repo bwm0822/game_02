@@ -43,7 +43,7 @@
                 }, 
                 {
                  "id":50,
-                 "name":"\u5165\u53e3",
+                 "name":"entry",
                  "template":"..\/templates\/exit_b.tj",
                  "x":608,
                  "y":1280

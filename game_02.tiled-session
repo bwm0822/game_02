@@ -5,12 +5,12 @@
     },
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
-        ".",
         "public/assets/templates",
+        ".",
+        "public/assets",
         "public",
         "public/assets/maps",
-        "public/assets"
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -223,6 +223,28 @@
         "public/assets/maps/dirtpath_tiles.tsj": {
             "scaleInDock": 1
         },
+        "public/assets/maps/forest-01.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 2,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 623.75,
+                "y": 1135
+            }
+        },
+        "public/assets/maps/forest_01.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 728.6666666666666,
+                "y": 1228.6666666666665
+            }
+        },
         "public/assets/maps/group.tsj": {
             "dynamicWrapping": true,
             "scaleInDock": 1
@@ -272,7 +294,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160,
-                "y": 159.5
+                "y": 159
             }
         },
         "public/assets/maps/map.json": {
@@ -282,8 +304,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 477.33333333333326,
-                "y": 836.6666666666665
+                "x": 161.66666666666666,
+                "y": 776.6666666666665
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -304,7 +326,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160.03400155840478,
-                "y": 159.80732450237304
+                "y": 159.5806474463413
             }
         },
         "public/assets/maps/musk_home.json": {
@@ -371,7 +393,7 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 99.96458170999504,
+                "x": 99.96458170999503,
                 "y": 239.37097116951196
             }
         },
@@ -382,7 +404,7 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
+                "x": 240.05100233760712,
                 "y": 239.37097116951196
             }
         },
@@ -412,11 +434,22 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 1,
+            "scale": 2,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 77,
-                "y": 640
+                "x": 583.25,
+                "y": 1200
+            }
+        },
+        "public/assets/maps/village-02.json": {
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 675,
+                "y": 1246
             }
         },
         "public/assets/maps/village_01.json": {
@@ -450,7 +483,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160,
-                "y": 159.66666666666663
+                "y": 159.33333333333334
             }
         },
         "public/assets/monsters.tsj": {
@@ -595,35 +628,33 @@
         "C:/Personal/projects/web/game_02/public/assets/maps/1.world"
     ],
     "map.fixedSize": true,
-    "map.height": 10,
+    "map.height": 40,
     "map.lastUsedFormat": "json",
     "map.layerDataFormat": "1",
     "map.tileHeight": 32,
     "map.tileWidth": 32,
-    "map.width": 10,
+    "map.width": 40,
     "openFiles": [
         "public/assets/maps/village-01.json",
-        "public/assets/maps/macron-home.json",
-        "public/assets/maps/musk-home.json",
-        "public/assets/maps/trump-inn-f1.json",
-        "public/assets/maps/xi-home.json",
-        "public/assets/maps/trump-inn-f2.json"
+        "public/assets/maps/map.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/maps/village-02.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/trump-inn-f2.json",
-        "public/assets/maps/xi-home.json",
-        "public/assets/maps/trump-inn-f1.json",
-        "public/assets/maps/musk-home.json",
-        "public/assets/maps/macron-home.json",
-        "public/assets/maps/village-01.json",
+        "public/assets/maps/village-02.json",
+        "public/assets/maps/forest-01.json",
         "public/assets/maps/map.json",
+        "public/assets/maps/village-01.json",
+        "public/assets/maps/forest_01.json",
+        "public/assets/maps/macron-home.json",
+        "public/assets/maps/musk-home.json",
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/xi-home.json",
+        "public/assets/maps/trump-inn-f2.json",
         "public/assets/tiles.tsj",
-        "public/assets/maps/trump_inn_f2.json",
-        "public/assets/maps/trump_inn_f1.json",
-        "public/assets/maps/village_01.json",
-        "public/assets/props.tsj"
+        "public/assets/maps/trump_inn_f2.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

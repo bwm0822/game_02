@@ -34,6 +34,17 @@
                  "height":64,
                  "id":25,
                  "name":"\u6843\u82b1\u6751",
+                 "properties":[
+                        {
+                         "name":"map",
+                         "type":"string",
+                         "value":"village-02"
+                        }, 
+                        {
+                         "name":"port",
+                         "type":"string",
+                         "value":"entry"
+                        }],
                  "template":"..\/templates\/village.tj",
                  "type":"node",
                  "width":64,
@@ -93,6 +104,49 @@
                  "template":"..\/templates\/road.tj",
                  "x":192,
                  "y":704
+                }, 
+                {
+                 "id":56,
+                 "template":"..\/templates\/forest.tj",
+                 "type":"node",
+                 "x":16,
+                 "y":800
+                }, 
+                {
+                 "id":57,
+                 "template":"..\/templates\/road.tj",
+                 "x":96,
+                 "y":896
+                }, 
+                {
+                 "id":58,
+                 "template":"..\/templates\/road.tj",
+                 "x":64,
+                 "y":896
+                }, 
+                {
+                 "id":59,
+                 "template":"..\/templates\/road.tj",
+                 "x":32,
+                 "y":896
+                }, 
+                {
+                 "id":60,
+                 "template":"..\/templates\/road.tj",
+                 "x":32,
+                 "y":864
+                }, 
+                {
+                 "id":61,
+                 "template":"..\/templates\/road.tj",
+                 "x":32,
+                 "y":832
+                }, 
+                {
+                 "id":62,
+                 "template":"..\/templates\/road.tj",
+                 "x":32,
+                 "y":800
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -101,7 +155,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":56,
+ "nextobjectid":63,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
