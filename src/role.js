@@ -112,9 +112,7 @@ export class Role extends Entity
 
     initData()
     {
-        // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
-        // console.log('initData',roleD);
 
         this._faceR = roleD.faceR;
 
@@ -125,6 +123,10 @@ export class Role extends Entity
         if(b){this.bl=b.l;this.br=b.r;this.bt=b.t;this.bb=b.b;}
         if(g){this.gl=g.l;this.gr=g.r;this.gt=g.t;this.gb=g.b;}
         if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
+
+        this.displayWidth = roleD.w; 
+        this.displayHeight = roleD.h;
+        this.anchor = roleD.anchor;
 
         return roleD;
     }
@@ -199,25 +201,22 @@ export class Role extends Entity
         children.forEach(child => {this._shape.bringToTop(child);});
     }
 
-    init_runtime(id)
+    init_runtime(id,modify=false)
     {
         this.registerTimeManager();
 
-        this.id=id;
+        this.id = id;
         let roleD = this.initData();
 
         // console.log(roleD)
         
         this.addShape(roleD);
         this.addSprite(roleD.sprite);
-        this.displayWidth = roleD.w 
-        this.displayHeight = roleD.h;
-        this.anchor = roleD.anchor;
         this.addListener();
         this.pos = this.getPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
         this.addPhysics();
         this.addGrid();
-        this.setAnchor();
+        this.setAnchor(modify);
         this.updateDepth();
         this.addWeight();
         this.addToObjects();
@@ -675,21 +674,21 @@ export class Role extends Entity
         })
     }
 
+    checkQuest()
+    {
+        let qid = this.data?.get('qid');
+        // console.log(qid)
+        if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
+    }
+
     dead(attacker)
     {
         if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
         else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
         this.looties();
-        // this.removeWeight();
-        // this.removeFromRoleList();
-        // this.unregisterTimeManager();
         new Corpse(this.scene, this.x, this.y, this.id);
-        let qid = this.data?.get('qid');
-        // console.log(qid)
-        if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
-
+        this.checkQuest();
         this.delete(); 
-       
     }
 
     delete()
@@ -699,14 +698,6 @@ export class Role extends Entity
         this.unregisterTimeManager();
         super.delete();
     }
-
-    // exit()
-    // {
-    //     this.removeWeight();
-    //     this.removeFromRoleList();
-    //     this.unregisterTimeManager();
-    //     this.destroy();
-    // }
 
     speak(words, {duration=1000,tween=false}={})
     {
@@ -1026,7 +1017,8 @@ export class Role extends Entity
         return Utility.deepClone(data);
     }
         
-    load(record)    // call by Avatar
+    
+    load(record)    // call by Avatar/Target
     {
         // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
@@ -1051,8 +1043,8 @@ export class Role extends Entity
     }
 
     save() {return this.status;}
-   
 
+   
     drawPath(path)
     {
         if(!this._dbgPath)
@@ -1166,7 +1158,9 @@ export class Target extends Role
     addSprite()
     {
         let [key,frame]=ICON_TARGET.split('/');
-        this.setTexture(key,frame);
+        this._sp = this.scene.add.sprite(0,0,key,frame);
+        this._sp.setPipeline('Light2D');
+        this.add(this._sp);
         this.displayWidth = GM.TILE_W;
         this.displayHeight = GM.TILE_H;
     }
@@ -1214,26 +1208,19 @@ export class Avatar extends Role
         super.dead(attacker);
     }
 
+
+
 }
 
 export class Npc extends Role
 {
-    get acts() {return this.state != 'attack' ? ['talk','trade','observe','attack']
-                                            : ['attack','observe'];}
-
-    // get state()     {return super.state;}
-    // set state(value) {super.state=value;console.log(value);console.trace()}               
+    get acts() {return this.state != GM.ST_ATTACK ? ['talk','trade','observe','attack']
+                                            : ['attack','observe'];}           
 
     init_prefab()
     {
+        this.initData();
         if(!super.init_prefab()) {return false;}
-
-        let roleD = this.initData();
-        if(roleD.anchor)
-        {
-            this.setData('anchorX',roleD.anchor.x);
-            this.setData('anchorY',roleD.anchor.y);
-        }
         
         this.addToRoleList();
         this.load();
@@ -1241,15 +1228,14 @@ export class Npc extends Role
     }
 
    
-    init_runtime(id)
+    init_runtime(id,modify=false)
     {
         this.addToRoleList();
-        return super.init_runtime(id);
+        return super.init_runtime(id,modify);
     }
 
     load()
     {
-        // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
         this.role = roleD;
         let data = this.loadData();
@@ -1260,13 +1246,17 @@ export class Npc extends Role
             {   
                 gold: roleD.gold??0, 
                 bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                // attrs: Utility.deepClone(roleD.attrs),
-                // states: Utility.deepClone(roleD.states), 
                 attrs: this.initAttrs(roleD.attrs),
                 states: this.initStates(roleD.states),
             }
         }
 
+        return this;
+        
+    }
+
+    initSchedule()
+    {
         this.setSchedule();
         this.updateSchedule(true); // 初始化時，init 設成 true
     }
@@ -1554,6 +1544,24 @@ export class Npc extends Role
                 this.state = GM.ST_IDLE;
             }
         }
+    }
+}
+
+
+export class Enemy extends Npc
+{
+
+    setTexture(key, frame) {}   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定 
+
+    
+    init_prefab()
+    {
+        let data = this.loadData();
+        if(!data?.removed)
+        {
+            this.init_runtime(this.id,true).load();
+        }
+        return true;
     }
 }
 

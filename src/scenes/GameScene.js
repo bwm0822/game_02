@@ -130,6 +130,7 @@ export class GameScene extends Scene
     setPosition(classType)
     {
         let pos;
+        console.log(this._data.port)
         if(this._data.pos) {pos = this._data.pos}
         else {pos = this.ents[this._data.port].pts[0];}
 

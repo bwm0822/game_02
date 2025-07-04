@@ -1,6 +1,6 @@
 import {Store} from './store.js';
 import {Entity,Port,Pickup,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
-import {Npc} from './role.js';
+import {Npc, Enemy} from './role.js';
 import Utility from './utility.js';
 import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
@@ -293,6 +293,7 @@ class Map
                     {type:'well',classType:Well},
                     {type:'door',classType:Door},
                     {type:'bed',classType:Bed},
+                    {type:'enemy',classType:Enemy},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
             });

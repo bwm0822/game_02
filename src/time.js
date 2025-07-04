@@ -213,7 +213,8 @@ export class Schedular
                 let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
                 // let npc = new Role.Npc(this.scene, ents[0].pts[0].x, ents[0].pts[0].y);
                 let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id).load();
+                // npc.init_runtime(id).load();
+                npc.init_runtime(id).load().initSchedule();
                 return;
             }
         }
@@ -225,7 +226,7 @@ export class Schedular
             {
                 let ent = this.scene.ents[role.exit.port];
                 let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id).load();
+                npc.init_runtime(id).load().initSchedule();
             }
         }
     }

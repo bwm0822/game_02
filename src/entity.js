@@ -117,6 +117,7 @@ export class Entity extends Phaser.GameObjects.Container
         let cx = (this.min.x + this.zl + this.max.x - this.zr)/2;
         let cy = (this.min.y + this.zt + this.max.y - this.zb)/2;
         this._zone = this.scene.add.zone(cx, cy, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
+        console.log(this._zone)
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone

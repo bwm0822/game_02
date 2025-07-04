@@ -33,6 +33,24 @@
                  "template":"..\/templates\/exit_b.tj",
                  "x":608,
                  "y":1280
+                }, 
+                {
+                 "gid":343,
+                 "height":64,
+                 "id":2,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"macron"
+                        }],
+                 "rotation":0,
+                 "type":"enemy",
+                 "visible":true,
+                 "width":32,
+                 "x":576,
+                 "y":1248
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -41,7 +59,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":2,
+ "nextobjectid":3,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -54,6 +72,10 @@
         {
          "firstgid":161,
          "source":"..\/cursors_map.tsj"
+        }, 
+        {
+         "firstgid":343,
+         "source":"..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",
