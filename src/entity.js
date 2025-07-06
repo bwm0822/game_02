@@ -222,19 +222,10 @@ export class Entity extends Phaser.GameObjects.Container
 
         this.grid.w = this.displayWidth - this.gl - this.gr;
         this.grid.h = this.displayHeight - this.gt - this.gb;
-        // this.grid.x = (this.gl - this.gr) / 2;
-        // this.grid.y = (this.gt - this.gb) / 2;
 
         this.grid.x = (this.min.x + this.gl + this.max.x - this.gr)/2; 
         this.grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
-
-        // this.grid.left = this.min.x + this.gl;
-        // this.grid.top = this.min.y + this.gt;
     }
-
-    // removeWeight(){this.weight!=0 && this.scene.map.updateGrid(this.posG,-this.weight,this.grid.w,this.grid.h);}
-
-    // addWeight(pt){this.weight!=0 && this.scene.map.updateGrid(pt??this.posG,this.weight,this.grid.w,this.grid.h);}
 
     removeWeight(weight)
     {
@@ -585,16 +576,18 @@ export class Entity extends Phaser.GameObjects.Container
     {
         if(this.uid!=-1) {this.saveData({removed:true})}
         this.removeFromObjects();
-        this.destroy();
-    }
-    
-    destroy()
-    {
         if(this._dbgGraphics){this._dbgGraphics.destroy();}
         if(this._dbgText) {this._dbgText.destroy();}
         if(this._rect) {this._rect.destroy();}
-        super.destroy();
+
+        this.destroy();
     }
+    
+    // destroy()
+    // {
+
+    //     super.destroy();
+    // }
 
 }
 
