@@ -229,8 +229,8 @@
             "scale": 2,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 581.5,
-                "y": 1135
+                "x": 640,
+                "y": 640.25
             }
         },
         "public/assets/maps/forest_01.json": {

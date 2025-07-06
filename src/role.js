@@ -1484,7 +1484,7 @@ export class Npc extends Role
         
         switch(this.state)
         {            
-            case GM.ST_IDLE: break;
+            case GM.ST_IDLE: this.st_idle(); break;
 
             case GM.ST_NEXT:
                 console.log(`[npc ${this.id}] next`);
@@ -1526,7 +1526,7 @@ export class Npc extends Role
         }
     }
 
-     async st_attack()
+    async st_attack()
     {
         if(this.isInRange(this._ent))
         {
@@ -1545,6 +1545,30 @@ export class Npc extends Role
             }
         }
     }
+
+    st_idle() {}
+
+    dbgRect(range)
+    {
+        if(!this._dbgGraphics) {this._dbgGraphics = this.scene.add.graphics();}
+        this._dbgGraphics.lineStyle(2, 0xff0000, 1);
+        let rect = new Phaser.Geom.Rectangle(
+                        this.x-range*GM.TILE_W, this.y-range*GM.TILE_H, 
+                        2*range*GM.TILE_W, 2*range*GM.TILE_H);
+        this._dbgGraphics.strokeRectShape(rect);
+    }
+
+    isDetect(range=5)
+    {
+        this.dbgRect(range);
+        let pos = getPlayer()?.pos;
+        if(pos)
+        {
+            return Math.abs(this.pos.x-pos.x) <= range*GM.TILE_W &&
+                    Math.abs(this.pos.y-pos.y) <= range*GM.TILE_H;
+        }
+        return false;
+    }
 }
 
 
@@ -1552,6 +1576,15 @@ export class Enemy extends Npc
 {
 
     setTexture(key, frame) {}   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定 
+
+    st_idle()
+    {
+        if(this.isDetect())
+        {
+            this.speak('‼️');
+            this.attack(getPlayer());
+        }
+    }
 
     
     init_prefab()
