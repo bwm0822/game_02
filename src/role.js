@@ -688,15 +688,21 @@ export class Role extends Entity
         this.looties();
         new Corpse(this.scene, this.x, this.y, this.id);
         this.checkQuest();
-        this.delete(); 
+        this.removed(); 
     }
 
-    delete()
+    removed()
     {
         this.removeWeight();
         this.removeFromRoleList();
         this.unregisterTimeManager();
-        super.delete();
+        super.removed();
+    }
+
+    destroy()
+    {
+        if (this._to) {clearTimeout(this._to);this._to=null;}
+        super.destroy();
     }
 
     speak(words, {duration=1000,tween=false}={})
@@ -1390,7 +1396,7 @@ export class Npc extends Role
         if(act == GM.ENTER) 
         {
             // this.exit();
-            this.delete();
+            this.removed();
 
 
             // npc 離開時，將目的地的 map、port、當前時間、當前 shedule 存入 status.exit，

@@ -581,7 +581,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     addToObjects() {this.scene.objects.push(this);}
 
-    delete()
+    removed()
     {
         if(this.uid!=-1) {this.saveData({removed:true})}
         this.removeFromObjects();
@@ -596,19 +596,6 @@ export class Entity extends Phaser.GameObjects.Container
         super.destroy();
 
     }
-
-    // destroy()
-    // { 
-    //     if(this.removed)
-    //     {
-    //         if(this.uid!=-1) {this.saveData({removed:true})}
-    //     }
-    //     else
-    //     {
-    //         this.save?.();
-    //     }
-    //     super.destroy();
-    // }
 
 }
 
@@ -681,7 +668,7 @@ export class Pickup extends Entity
             this.send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
             this.send('out');
             this.send('refresh');
-            this.delete();
+            this.removed();
         }   
     }
 
