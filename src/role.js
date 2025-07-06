@@ -693,15 +693,20 @@ export class Role extends Entity
 
     removed()
     {
+        // 不可以放到 destroy()，離開場景時，如果呼叫 removeWeight() 會出現錯誤，
+        // 因為此時 this.scene.map 已經移除了
         this.removeWeight();
         this.removeFromRoleList();
         this.unregisterTimeManager();
+
         super.removed();
     }
 
     destroy()
     {
+        // 強制清除 timeout()，避免離開場景時，觸發 timeout，導致錯誤
         if (this._to) {clearTimeout(this._to);this._to=null;}
+        
         super.destroy();
     }
 

@@ -594,7 +594,6 @@ export class Entity extends Phaser.GameObjects.Container
         if(this._dbgText) {this._dbgText.destroy();}
         if(this._rect) {this._rect.destroy();}
         super.destroy();
-
     }
 
 }
