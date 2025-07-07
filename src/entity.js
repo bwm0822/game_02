@@ -582,12 +582,6 @@ export class Entity extends Phaser.GameObjects.Container
 
         this.destroy();
     }
-    
-    // destroy()
-    // {
-
-    //     super.destroy();
-    // }
 
 }
 
@@ -679,13 +673,6 @@ export class Pickup extends Entity
         if(this.uid!=-1) {this.saveData({removed:false})}
         else {this.saveData({...this.pos,angle:this.angle,slot:this.itm});}
     }
-
-    // remove()
-    // {
-    //     console.log('remove',this);
-    //     if(this.uid!=-1) {this.saveData({removed:true})}
-    //     this.destroy();
-    // }
 }
 
 export class Stove extends Entity

@@ -3,13 +3,13 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/roles.tsj",
     "expandedProjectPaths": [
         "public",
-        "public/assets/tiles",
-        "public/assets",
         ".",
-        "public/assets/maps"
+        "public/assets/maps",
+        "public/assets",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -226,11 +226,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 2,
+            "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
-                "y": 640.25
+                "x": 391,
+                "y": 1150
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -436,8 +436,8 @@
             "scale": 2,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 636.5,
-                "y": 1198.5
+                "x": 640,
+                "y": 639.75
             }
         },
         "public/assets/maps/village-02.json": {
@@ -448,7 +448,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 640,
-                "y": 640.3333333333333
+                "y": 640
             }
         },
         "public/assets/maps/village_01.json": {
@@ -648,11 +648,11 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/roles.tsj",
-        "public/assets/maps/village-02.json",
-        "public/assets/maps/forest-01.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/village-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/maps/village-02.json",
+        "public/assets/roles.tsj",
         "public/assets/maps/forest_01.json",
         "public/assets/maps/macron-home.json",
         "public/assets/maps/musk-home.json",

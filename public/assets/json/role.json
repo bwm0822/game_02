@@ -936,46 +936,58 @@
       }
     ]
   },
-  "orc": {
-    "icon": "portraits/35",
+  "rogue": {
+    "icon": "head-trump",
     "corpse": {
       "sprite": "rip",
       "scale": 0.5
     },
-    "sprite": "monsters/0",
-    "faceR": false,
+    "job": "rogue",
+    "gold": 200,
+    "body": {
+      "sprite": "rogue",
+      "scale": 0.25
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25
+    },
+    "faceR": true,
     "anchor": {
       "x": 0,
       "y": 16
     },
-    "w": 64,
+    "w": 32,
     "h": 64,
     "b": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
     "g": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
     "z": {
-      "l": 16,
-      "r": 16,
+      "l": 0,
+      "r": 0,
       "t": 32,
       "b": 0
     },
+    "equips": [
+      "sword_01"
+    ],
     "attrs": {
       "attack": 5,
       "defense": 0
     },
     "states": {
       "life": {
-        "cur": 10,
-        "max": 10
+        "cur": 50,
+        "max": 50
       },
       "hunger": {
         "cur": 0,

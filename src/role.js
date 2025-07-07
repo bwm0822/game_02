@@ -826,9 +826,7 @@ export class Role extends Entity
 
     equip()
     {
-        // this.status.attrs = Utility.deepClone(this.role.attrs);
         this.status.attrs = this.initAttrs(this.role.attrs);
-        //this.status.states = Utility.deepClone(this.role.states); 
         this.removeLight();
         this.removeEquip();
 
@@ -865,7 +863,7 @@ export class Role extends Entity
 
         this.sortParts()
 
-        this.send('refresh');
+        if(this.isPlayer) {this.send('refresh');}
     }
 
     sell(target, ent, i, isEquip)
@@ -1027,21 +1025,21 @@ export class Role extends Entity
     {
         return Utility.deepClone(data);
     }
+
+    initEquips(data)
+    {
+        return data ? data.map(id=>({id:id, count:1})): [];
+    }
         
-    
     load(record)    // call by Avatar/Target
     {
-        // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
         if(!record)
         {
             record = {
                 gold: roleD.gold??0, 
                 equips: [],
-                // bag: {capacity:roleD.bag.capacity, items:[]},
                 bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                // attrs: Utility.deepClone(roleD.attrs),
-                // states: Utility.deepClone(roleD.states), 
                 attrs: this.initAttrs(roleD.attrs),
                 states: this.initStates(roleD.states),
             }
@@ -1257,13 +1255,13 @@ export class Npc extends Role
             {   
                 gold: roleD.gold??0, 
                 bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
+                equips: this.initEquips(roleD.equips),
                 attrs: this.initAttrs(roleD.attrs),
                 states: this.initStates(roleD.states),
             }
         }
-
+        this.equip();
         return this;
-        
     }
 
     initSchedule()

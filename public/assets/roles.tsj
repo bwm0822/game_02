@@ -8,7 +8,7 @@
  "margin":0,
  "name":"roles",
  "spacing":0,
- "tilecount":5,
+ "tilecount":6,
  "tiledversion":"1.11.0",
  "tileheight":256,
  "tiles":[
@@ -41,8 +41,14 @@
          "image":"roles_64x64\/xi.png",
          "imageheight":249,
          "imagewidth":126
+        }, 
+        {
+         "id":5,
+         "image":"roles_64x64\/rogue.png",
+         "imageheight":250,
+         "imagewidth":141
         }],
- "tilewidth":129,
+ "tilewidth":141,
  "type":"tileset",
  "version":"1.10"
 }
