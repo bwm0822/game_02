@@ -224,6 +224,51 @@ export class Role extends Entity
         return this;
     }
 
+    loadData()
+    {
+        if(this.isPlayer) {return Record.data.player;}
+        else if(this.uid==-1) {return Record.data.roles?.[this.id];}
+        else {return super.loadData();}
+    }
+
+    initAttrs(data)
+    {
+        let attrs = Utility.deepClone(data);
+        for (let [key, value] of Object.entries(ROLE_ATTRS)) 
+        {
+            if(!(key in attrs)) {attrs[key] = value;}
+        }
+        return attrs;
+    }
+
+    initStates(data) {return Utility.deepClone(data);}
+
+    initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
+
+    initStatus(roleD)
+    {
+        return {
+            gold: roleD.gold??0, 
+            bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
+            equips: this.initEquips(roleD.equips),
+            attrs: this.initAttrs(roleD.attrs),
+            states: this.initStates(roleD.states),
+        }
+    }
+
+    load()
+    {
+        let roleD = DB.role(this.id);
+        this.role = roleD;
+        let data = this.loadData();
+        this.status = data ?? this.initStatus(roleD);
+        this.equip();
+        return this;
+    }
+
+    
+    save() {return this.status;}
+
     addLight()
     {
         if(!this.light)
@@ -1006,53 +1051,6 @@ export class Role extends Entity
         
     }
 
-    initAttrs(data)
-    {
-        let attrs = Utility.deepClone(data);
-        for (let [key, value] of Object.entries(ROLE_ATTRS)) 
-        {
-            console.log(key, value);
-            if(!(key in attrs))
-            {
-                attrs[key] = value;
-            }
-        }
-        console.log(attrs)
-        return attrs;
-    }
-
-    initStates(data)
-    {
-        return Utility.deepClone(data);
-    }
-
-    initEquips(data)
-    {
-        return data ? data.map(id=>({id:id, count:1})): [];
-    }
-        
-    load(record)    // call by Avatar/Target
-    {
-        let roleD = DB.role(this.id);
-        if(!record)
-        {
-            record = {
-                gold: roleD.gold??0, 
-                equips: [],
-                bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                attrs: this.initAttrs(roleD.attrs),
-                states: this.initStates(roleD.states),
-            }
-        }
-
-        this.role = roleD; 
-        this.status = record;
-        this.equip();
-        console.log('----------------', this.status.attrs);
-    }
-
-    save() {return this.status;}
-
    
     drawPath(path)
     {
@@ -1182,10 +1180,8 @@ export class Target extends Role
     init_runtime(id)
     {
         this.id=id;
+        return this;
     }
-
-    // load()
-    // {}
 }
 
 export class Avatar extends Role
@@ -1241,27 +1237,6 @@ export class Npc extends Role
     {
         this.addToRoleList();
         return super.init_runtime(id,modify);
-    }
-
-    load()
-    {
-        let roleD = DB.role(this.id);
-        this.role = roleD;
-        let data = this.loadData();
-        if(data) { this.status = data; }
-        else
-        {
-            this.status = 
-            {   
-                gold: roleD.gold??0, 
-                bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-                equips: this.initEquips(roleD.equips),
-                attrs: this.initAttrs(roleD.attrs),
-                states: this.initStates(roleD.states),
-            }
-        }
-        this.equip();
-        return this;
     }
 
     initSchedule()
@@ -1431,17 +1406,7 @@ export class Npc extends Role
     
    
 
-    loadData()
-    {
-        if(this.uid==-1)
-        {
-            return Record.data.roles?.[this.id];
-        }
-        else
-        {
-            return super.loadData();
-        }
-    }
+
 
     saveData(value)
     {
