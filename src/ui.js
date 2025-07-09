@@ -1361,7 +1361,7 @@ class UiBase extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-            .add(text(this.scene,{text:id.lab(),color:'#777777'}),{key:'label'})
+            .add(bbcText(this.scene,{text:id,color:'#777777'}),{key:'label'})
         let bg = sizer.getElement('bg').setAlpha(0);
         let lb = sizer.getElement('label');
         sizer.unsel = ()=>{lb.setColor('#777777');}
@@ -3226,7 +3226,7 @@ export class UiManufacture extends UiBase
         let panel = this.getElement('panel',true);
         panel.removeAll(true);
         this.owner.menu.forEach((id)=>{
-            let add =this.item(id,{onover:onover, onout:onout, ondown:ondown});
+            let add = this.item(id.lab(),{onover:onover, onout:onout, ondown:ondown});
             add.itm = {id:id,type:'make'};
             add.dat = DB.item(id)??{};
             if(id==this.owner.sel) {add.sel();itemSel=add;}
@@ -3605,7 +3605,7 @@ export class UiQuest extends UiBase
                             if(cond.shown())
                             {
                                 let flag = cond.test() ? '🗹':'☐';
-                                panel.add(bbcText(this.scene,{text:`${flag} ${cond.type} ${cond.id}`}),{expand:true});
+                                panel.add(bbcText(this.scene,{text:`${flag} ${cond.type.lab()} ${cond.id.lab()} (${cond.cur}/${cond.count})`}),{expand:true});
                             }
                             break;
                         case GM.TALK:
@@ -3659,7 +3659,7 @@ export class UiQuest extends UiBase
             let questD = DB.quest(id);
             let q = QuestManager.opened[id]
             let flag = q.status == 'close' ? '🗹':'☐';
-            let item =this.item(flag+' '+questD.title,{ondown:ondown});
+            let item = this.item(flag+' '+questD.title,{ondown:ondown});
             item.dat = questD;
             item.id = id;
             list.add(item,{expand:true})

@@ -5,6 +5,7 @@ import Utility from './utility.js';
 import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
+import Record from './record.js';
 
 let DEBUG = false;
 
@@ -268,15 +269,25 @@ class Map
             scene.objects = [];
 
             map.objects.forEach((layer)=>{
+                
+                let qid;
+                // 如果 layer name 包含 q，代表是任務 layer，要比對 QuestManager 有沒有開啟任務
                 if(layer.name,layer.name.includes('q'))
                 {
-                    if(!QuestManager.query(layer.name)){return;}
+                    if(!QuestManager.query(layer.name))
+                    {
+                        // 如果任務完成，就移除任務的存檔
+                        Record.remove(mapName,layer.name);
+                        return;
+                    }
+                    qid = layer.name;
                 }
 
-                // 將 id 加到 properties 的 uid
+                // 將 id,qid 加到 properties
                 layer.objects.forEach((obj)=>{
                     if(!obj.properties){obj.properties=[]}
                     obj.properties.push({name:'uid',type:'int',value:obj.id});
+                    if(qid) {obj.properties.push({name:'qid',type:'string',value:qid});}
                 });
                 
                 let objs = map.createFromObjects(layer.name,

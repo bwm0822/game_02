@@ -12,7 +12,7 @@ export default class QuestManager
     {
         switch(cond.type)
         {
-            case GM.KILL: return cond.cur >= cond.cnt;
+            case GM.KILL: return cond.cur >= cond.count;
         }
     }
 
@@ -38,11 +38,11 @@ export default class QuestManager
     static add(id)
     {
         let questD = DB.quest(id);
-        let conds=[]
+        let conds = [];
         questD.conds.forEach(cond => {
             switch(cond.type)
             {
-                case GM.KILL: conds.push({...cond,cur:0,cnt:1}); break;
+                case GM.KILL: conds.push({...cond,cur:0}); break;
                 case GM.TALK: conds.push({...cond,cur:0}); break;
                 case GM.FINAL: conds.push({...cond,cur:0}); break;
             }

@@ -8,7 +8,7 @@ import {bbcText} from './uibase'
 import * as Role from './role';
 import TimeManager from './time';
 
-let DEBUG = true; // 是否開啟 debug 模式
+let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;
 
 export class Entity extends Phaser.GameObjects.Container
@@ -24,6 +24,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.weight = 0;
         this.isStatic = true; // true: static body, false: dynamic body
         this.uid = -1;   // map.createMap() 會自動設定 uid
+        this.qid = '';  // map.createMap() 會自動設定 qid
         this._pGrids = [];   // grid 所佔據的點
         this._flipX = false;
         this._flipY = false;
@@ -117,7 +118,7 @@ export class Entity extends Phaser.GameObjects.Container
         let cx = (this.min.x + this.zl + this.max.x - this.zr)/2;
         let cy = (this.min.y + this.zt + this.max.y - this.zb)/2;
         this._zone = this.scene.add.zone(cx, cy, this.displayWidth-this.zl-this.zr, this.displayHeight-this.zt-this.zb)
-        console.log(this._zone)
+        // console.log(this._zone)
         this.add(this._zone)
         this._zone.setInteractive()
         this._zone
@@ -465,8 +466,8 @@ export class Entity extends Phaser.GameObjects.Container
         });
     }
 
-    loadData() {return Record.getByUid(this.mapName, this.uid);}
-    saveData(data) {Record.setByUid(this.mapName, this.uid, data);}
+    loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
+    saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
 
     debugDraw(type=DBG_TYPE,text)
     {

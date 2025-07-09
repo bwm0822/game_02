@@ -634,7 +634,8 @@ export class Role extends Entity
                 let rst = this.scene.map.getPath(this.pos, this._ent.pts);
                 if(rst?.state > 0)    // 找到路徑
                 {
-                    await this.moveTo(rst.path[0]);  // 移至 pt     
+                    await this.moveTo(rst.path[0]);  // 移至 pt  
+                    this.resume();   
                 }        
             }
         }    
@@ -721,7 +722,8 @@ export class Role extends Entity
 
     checkQuest()
     {
-        let qid = this.data?.get('qid');
+        // let qid = this.data?.get('qid');
+        let qid = this.qid;
         // console.log(qid)
         if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
     }
@@ -1563,6 +1565,7 @@ export class Enemy extends Npc
     
     init_prefab()
     {
+        console.log('----------------------',this.uid,this.qid)
         let data = this.loadData();
         if(!data?.removed)
         {

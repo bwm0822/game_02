@@ -1,15 +1,16 @@
 {
   "q01": {
-    "title": "殺死半獸人",
-    "des": "殺死郊區的半獸人",
+    "title": "殺死盜賊",
+    "des": "殺死郊區的盜賊",
     "conds": [
       {
         "type": "kill",
-        "id": "orc"
+        "id": "rogue",
+        "count": 3
       },
       {
         "type": "final",
-        "des": "跟 smith 回報"
+        "des": "跟 musk 回報"
       }
     ],
     "rewards": [

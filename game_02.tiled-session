@@ -226,11 +226,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 0.5,
+            "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 391,
-                "y": 1150
+                "x": 468,
+                "y": 1171
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -434,10 +434,10 @@
                 3
             ],
             "scale": 2,
-            "selectedLayer": 2,
+            "selectedLayer": -1,
             "viewCenter": {
-                "x": 640,
-                "y": 639.75
+                "x": 116.5,
+                "y": 40
             }
         },
         "public/assets/maps/village-02.json": {
@@ -448,7 +448,7 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 640,
-                "y": 640
+                "y": 640.3333333333333
             }
         },
         "public/assets/maps/village_01.json": {

@@ -14,19 +14,24 @@ export default class Record
         Utility.save(Record.data);
     }
 
-    static getByUid(mapName, uid)
+    static getByUid(mapName, uid, qid)
     {
-        return Record.data.scenes?.[mapName]?.prefab[uid];
+        if(qid) {return Record.data.scenes?.[mapName]?.[qid]?.[uid];}
+        else {return Record.data.scenes?.[mapName]?.prefab[uid];}
     }
 
-    static setByUid(mapName, uid, value)
+    static setByUid(mapName, uid, value, qid)
     {
         if(!Record.data.scenes) { Record.data.scenes = {}; }
         if(!Record.data.scenes[mapName]) { Record.data.scenes[mapName] = { prefab:{}, runtime:[] };}
+        if(qid && !Record.data.scenes[mapName][qid] ) { Record.data.scenes[mapName][qid] = {};}
     
-        // if(!Record.data[mapName]) { Record.data[mapName] = { prefab:{}, runtime:[] }; }
         if(uid==-1) { Record.data.scenes[mapName].runtime.push(value); }
-        else { Record.data.scenes[mapName].prefab[uid] = value; }
+        else 
+        {
+            if(qid) {Record.data.scenes[mapName][qid][uid] = value;}
+            else {Record.data.scenes[mapName].prefab[uid] = value;} 
+        }
     }
 
     static load()
@@ -34,6 +39,11 @@ export default class Record
         let data = Utility.load();
         if(data) {Record.data = data;}
         return data;
+    }
+
+    static remove(mapName, qid)
+    {
+        delete Record.data.scenes[mapName][qid];
     }
 
     // static add(map,id,x,y)
