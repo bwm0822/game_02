@@ -295,8 +295,13 @@
     },
     "job": "smith",
     "gold": 200,
+    "weapon": "sword_01",
     "body": {
       "sprite": "musk",
+      "scale": 0.25
+    },
+    "hand": {
+      "sprite": "hand-man",
       "scale": 0.25
     },
     "faceR": true,

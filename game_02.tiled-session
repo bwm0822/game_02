@@ -3,13 +3,13 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/roles.tsj",
+    "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
-        "public",
-        ".",
         "public/assets/maps",
+        "public/assets/tiles",
         "public/assets",
-        "public/assets/tiles"
+        ".",
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -224,13 +224,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2
+                2,
+                3
             ],
             "scale": 1,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
                 "x": 468,
-                "y": 1171
+                "y": 691
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -650,9 +651,9 @@
     "recentFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
-        "public/assets/maps/forest-01.json",
-        "public/assets/maps/village-02.json",
         "public/assets/roles.tsj",
+        "public/assets/maps/village-02.json",
+        "public/assets/maps/forest-01.json",
         "public/assets/maps/forest_01.json",
         "public/assets/maps/macron-home.json",
         "public/assets/maps/musk-home.json",

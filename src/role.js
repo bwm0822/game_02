@@ -871,6 +871,8 @@ export class Role extends Entity
         this.status.attrs[key] = this.attrs(key)+value;
     }
 
+    
+
     equip()
     {
         this.status.attrs = this.initAttrs(this.role.attrs);
@@ -953,7 +955,8 @@ export class Role extends Entity
     {
         if(isEquip)
         {
-            this.status.equips[i]=ent.itm; this.equip();
+            this.status.equips[i]=ent.itm; 
+            this.equip();
             return true;   
         }
         else
@@ -1446,9 +1449,44 @@ export class Npc extends Role
         this.send('trade',this);
     }
 
+    isEquipWeapon()
+    {
+        let weapon = this.status.equips.find((equip)=>{
+                        let dat = DB.item(equip.id);
+                        return dat.cat===GM.CAT_WEAPON;
+                    });
+        return weapon != undefined;
+    }
+
+    equipWeapon()
+    {
+        if(this.role.weapon && !this.isEquipWeapon())
+        {
+            this.status.equips.push({id:this.role.weapon,count:1});
+            this.equip();
+        }
+    }
+
+    unEquipWeapon()
+    {
+        this.status.equips.find((equip,i)=>{
+            let dat = DB.item(equip.id);
+            if(dat.cat===GM.CAT_WEAPON)
+            {
+                this.status.equips.splice(i, 1);
+                this.equip();
+                return true;
+            }
+        });
+    }
+
     async hurt(attacker,resolve)
     {
         super.hurt(attacker,resolve);
+        if(this.state === GM.ST_IDLE)
+        {
+            this.equipWeapon();
+        }
         this.state = GM.ST_ATTACK;
         this._ent = attacker;
         this._act = GM.ATTACK;
