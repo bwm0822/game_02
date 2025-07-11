@@ -27,6 +27,7 @@ export default function createUI(scene)
 
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
+    new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4
     new UiCursor(scene);            // 5
@@ -43,7 +44,6 @@ export default function createUI(scene)
     new UiGameOver(scene);          // 16
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
-    new UiTime(scene);              // 19
     new UiQuest(scene);              // 20
 
     // t3();
@@ -694,6 +694,45 @@ class OutputSlot extends Slot
 
     // empty() {this.itm.count=0;this.itm=this.itm;}
     empty() {this.itm={id:this.itm.id,count:0};}
+}
+
+class Skill extends Pic
+{
+    constructor(scene, w, h, config)
+    {
+        super(scene, w, h, config);
+        this.setIcon(config?.icon);
+        this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.getElement('disabled').fillAlpha=0;
+        this.addListener();
+    }
+
+    addListener()
+    {
+        this.setInteractive({draggable:true,dropZone:true})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
+        .on('pointerdown', (pointer,x,y)=>{
+            if (pointer.rightButtonDown()) {this.rightButtonDown(x,y);}
+            else if(pointer.middleButtonDown()) {}
+            else {this.leftButtonDown(x,y);}
+        })
+        .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
+        .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
+    }
+
+    setBgColor(color) {this.getElement('background').fillColor = color;}
+
+    over()
+    {
+        this.setBgColor(GM.COLOR_SLOT_OVER);
+    }
+
+    out()
+    {  
+        this.setBgColor(GM.COLOR_SLOT);
+
+    }
 }
 
 
@@ -1975,11 +2014,11 @@ export class UiMain extends UiBase
         this.addBg_Int(scene)
             .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🚪',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🧪',key:'test',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🚪',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addCtrl(scene)
+            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addEnable(scene)
             .size()
             .hide();
@@ -2009,8 +2048,11 @@ export class UiMain extends UiBase
         let slots =  scene.rexUI.add.sizer(config_slots);
         root.add(top,{align:'left',key:'top'});
 
-        slots.add(rect(scene,{width:50,height:50,color:GM.COLOR_BLUE}))
-        slots.add(rect(scene,{width:50,height:50,color:GM.COLOR_BLUE}))
+        for(let i=0; i<10; i++)
+        {
+            slots.add(new Skill(scene,50,50))
+        }
+       
 
         root.add(slots,{align:'left',key:'slots'});
 
@@ -3126,10 +3168,10 @@ export class UiTime extends UiBase
     {
         let config =
         {
-            x : GM.w,
-            y : GM.h,
+            x : GM.w-50,
+            y : GM.h-70,
             orientation: 'y',
-            space:{top:10,bottom:10,left:10,right:10,item:10},
+            // space:{top:10,bottom:10,left:10,right:10,item:10},
         }
 
         super(scene, config ,'UiTime')
