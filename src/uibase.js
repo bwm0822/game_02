@@ -33,6 +33,42 @@ export function progress(scene, config={})
     return scene.add.rexRoundRectangleProgress(config);
 }
 
+export function progress_text(scene, config={}) 
+{
+    // 建立進度條
+    config.barColor = config.barColor ?? GM.COLOR_RED;
+    let bar = progress(scene,config)
+    // 建立文字
+    config.text = config.text ?? '0.5';
+    let text = bbcText(scene,{text:config.text})
+    // 建立 sizer，將 bar 與 text 疊在一起
+    let sizer = scene.rexUI.add.overlapSizer()
+    sizer.add(bar).add(text,{expand:false})
+
+    // 添加 setHP 方法到 sizer
+    sizer.set = function(current,max) {
+        let percent = Phaser.Math.Clamp(current / max, 0, 1);
+        bar.setValue(percent);
+        text.setText(`${current}/${max}`);
+        this.layout();
+
+        // // 根據血量比例改變顏色
+        // if (percent > 0.5) {
+        //     bar.setColor(0x00ff00); // 綠色
+        // } else if (percent > 0.2) {
+        //     bar.setColor(0xffff00); // 黃色
+        // } else {
+        //     bar.setColor(0xff0000); // 紅色
+        // }
+    };
+
+    // 初始設為滿血
+    // sizer.setValue(50,100);
+
+    return sizer;
+}
+
+
 export function sprite(scene, {x, y, icon, name}={})
 {
     let [atlas, frame] = icon ? icon.split('/'):[];

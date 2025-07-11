@@ -95,6 +95,8 @@ export class Role extends Entity
     get state()     {return this._state;}
     set state(value) {this._state=value;}
 
+    get states() {return this.status.states;}
+
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
     addPhysics()
@@ -697,6 +699,7 @@ export class Role extends Entity
         life -= dmg;
 
         this.status.states.life.cur = life;
+        if(this.isPlayer) {this.send('refresh');}
         return {state:'hit',dmg:dmg};
     }
 

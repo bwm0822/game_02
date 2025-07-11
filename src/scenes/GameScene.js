@@ -135,11 +135,9 @@ export class GameScene extends Scene
         else {pos = this.ents[this._data.port].pts[0];}
 
         this._player = new classType(this,pos.x,pos.y);
-        // this._player.init_runtime('wick').load(Record.data.player);
+        Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()
         this._player.init_runtime('wick').load();
         this.setCameraFollow(GM.CAM_CENTER);
-
-        Role.setPlayer(this._player); 
  
         Record.data.pos = this._player.pos;   
         Record.data.map = this._data.map;

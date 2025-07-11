@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, scrollBar, label, slider, dropdown} from './uibase.js';
+import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import DB from './db.js';
@@ -1973,18 +1973,49 @@ export class UiMain extends UiBase
         UiMain.instance = this;
 
         this.addBg_Int(scene)
-            .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}))
-            .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}))
-            .add(new UiButton(scene,{text:'🚪',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}))
-            .add(new UiButton(scene,{text:'🧪',key:'test',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}))
-            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}))
-            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}))
+            .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🚪',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🧪',key:'test',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .addCtrl(scene)
             .addEnable(scene)
             .size()
             .hide();
         
         this.addListener();
-       
+    }
+
+    addCtrl(scene)
+    {
+        let config_root = {
+            width:400,
+            height:60,
+            orientation:'y',
+            space:{item:5}
+        }
+
+        let config_top = {orientation:'x'}
+
+        let config_slots = {orientation:'x',space:{item:5}}
+
+        let root = scene.rexUI.add.sizer(config_root);
+        root.addBackground(rect(scene,{color:GM.COLOR_GRAY}));
+
+        let top =  scene.rexUI.add.sizer(config_top);
+        top.add(progress_text(scene,{width:200}),{key:'hp'})
+
+        let slots =  scene.rexUI.add.sizer(config_slots);
+        root.add(top,{align:'left',key:'top'});
+
+        slots.add(rect(scene,{width:50,height:50,color:GM.COLOR_BLUE}))
+        slots.add(rect(scene,{width:50,height:50,color:GM.COLOR_BLUE}))
+
+        root.add(slots,{align:'left',key:'slots'});
+
+        this.add(root,{key:'root'});
+        return this;    
     }
 
     onover(btn)
@@ -2053,6 +2084,13 @@ export class UiMain extends UiBase
     {
         super.close();
         this.unregister();   
+    }
+
+    refresh()
+    {
+        let player = Role.getPlayer();
+        let hp = this.getElement('hp',true);
+        hp.set(player.states.life.cur,player.states.life.max);
     }
 
     show()
