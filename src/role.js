@@ -1152,6 +1152,86 @@ export class Role extends Entity
         if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC*dt,states.hunger.max);}
         if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
     }
+
+    setSkill(skill)
+    {
+        this.showRange(true);
+    }
+
+    unsetSkill()
+    {
+        this.showRange(false);
+    }
+
+    showRange(on)
+    {
+        this._range?.clear();
+        if(!on) {return;}
+        if(!this._range) {this._range = this.scene.add.graphics();}
+
+        let n = 3;
+        let rows = 2*n+1;
+        let cols = 2*n+1;
+        let a = Array.from({ length: rows }, () => Array(cols));
+        let [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                let px = this.x + (x-n)*GM.TILE_W;
+                let py = this.y + (y-n)*GM.TILE_H;
+                let wei = this.scene.map.getWeight({x:px,y:py});
+                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, w:wei};
+            }
+        }
+
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                a[y][x].l = a[y][x-1]?.w==1 ? false : true;
+                a[y][x].r = a[y][x+1]?.w==1 ? false : true;
+                a[y][x].t = a[y-1]?.[x]?.w==1 ? false : true;
+                a[y][x].b = a[y+1]?.[x]?.w==1 ? false : true;
+
+            }
+        }
+
+        for(let y=0; y<=2*n; y++)
+        {
+            for(let x=0; x<=2*n; x++)
+            {
+                let rect = a[y][x];
+                if(rect.w==1)
+                {
+                    Utility.drawBlock(this._range, rect);
+                }
+            }
+        }
+        
+    }
+
+    showRange_old(on)
+    {
+        if(!this._range)
+        {
+            this._range = this.scene.add.graphics();
+        }
+
+        this._range.clear();
+
+        if(on)
+        {
+            const points = [
+                new Phaser.Math.Vector2(this.x-48, this.y-48),
+                new Phaser.Math.Vector2(this.x+48, this.y-48),
+                new Phaser.Math.Vector2(this.x+48, this.y+48),
+                new Phaser.Math.Vector2(this.x-48, this.y+48),
+            ];
+            Utility.drawPolygon(this._range,points)
+        }
+    }
 }
 
 export class Target extends Role

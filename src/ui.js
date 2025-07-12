@@ -47,11 +47,8 @@ export default function createUI(scene)
     new UiQuest(scene);              // 20
 
     // t3();
-}
-
-function get(s,p)
-{
-    return s[p];
+    t4(scene);
+    t5();
 }
 
 async function t3()
@@ -68,6 +65,39 @@ async function t3()
     console.log('t1:',rec['t1'])
     console.log('t3:',rec['t3'])
     
+}
+
+function t4(scene)
+{
+    const points = [
+            new Phaser.Math.Vector2(100, 100),
+            new Phaser.Math.Vector2(200, 100),
+            new Phaser.Math.Vector2(200, 400),
+            new Phaser.Math.Vector2(100, 400),
+            new Phaser.Math.Vector2(100, 300),
+            new Phaser.Math.Vector2(150, 300),
+            new Phaser.Math.Vector2(150, 200),
+            new Phaser.Math.Vector2(100, 200),
+        ];
+
+    const graphics = scene.add.graphics();
+    // Utility.drawPolygon(graphics, points);
+    Utility.drawBlock(graphics, 100, 100, 100, 100);
+}
+
+function t5()
+{
+    let cols=3;
+    let rows=4;
+    let arr = Array.from({ length: rows }, () => Array(cols));
+   
+    arr[0][0] = 0;
+    arr[0][1] = 1;
+    arr[0][2] = 2;
+
+    console.log(arr[-1]?.[-1])
+
+     console.log(arr)
 }
 
 
@@ -705,13 +735,14 @@ class Skill extends Pic
         this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
+        this._sel = false;    //
     }
 
     addListener()
     {
         this.setInteractive({draggable:true,dropZone:true})
-        .on('pointerover', ()=>{this.over();})
-        .on('pointerout', ()=>{this.out();})
+        // .on('pointerover', ()=>{this.over();})
+        // .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{
             if (pointer.rightButtonDown()) {this.rightButtonDown(x,y);}
             else if(pointer.middleButtonDown()) {}
@@ -722,16 +753,28 @@ class Skill extends Pic
     }
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
+    over() {this.setBgColor(GM.COLOR_SLOT_OVER);}
+    out() {this.setBgColor(GM.COLOR_SLOT);}
 
-    over()
+    leave() {}
+    enter() {}
+    
+    leftButtonDown(x,y)
     {
-        this.setBgColor(GM.COLOR_SLOT_OVER);
-    }
-
-    out()
-    {  
-        this.setBgColor(GM.COLOR_SLOT);
-
+        console.log('press');
+        this._sel = !this._sel;
+        if(this._sel) 
+        {
+            this.setBgColor(GM.COLOR_RED);
+            // UiInfo.show(GM.TP_SKILL,this);
+            Role.getPlayer().setSkill(this);
+        }
+        else 
+        {
+            this.setBgColor(GM.COLOR_GRAY);
+            // UiInfo.close();
+            Role.getPlayer().unsetSkill();
+        }
     }
 }
 
@@ -876,8 +919,8 @@ class UiButton extends Sizer
         this.onout = option?.onout;
         this.type = option?.type ?? GM.BTN_NORMAL;
         this.key = option?.key;
-        let radius = option.radius ?? 10;
-        let padding = option.padding ?? 10;
+        let radius = option.radius ?? 5;
+        let padding = option.padding ?? 5;
 
         switch(this.type)
         {
@@ -2014,7 +2057,7 @@ export class UiMain extends UiBase
         this.addBg_Int(scene)
             .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🚪',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'📖',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addCtrl(scene)
             .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
@@ -3168,7 +3211,7 @@ export class UiTime extends UiBase
     {
         let config =
         {
-            x : GM.w-50,
+            x : GM.w-60,
             y : GM.h-70,
             orientation: 'y',
             // space:{top:10,bottom:10,left:10,right:10,item:10},

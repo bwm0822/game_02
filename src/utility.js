@@ -227,6 +227,30 @@ export default class Utility
         const yNew = x * sin + y * cos;
         return [xNew, yNew];
     }
+
+    static drawPolygon(graphics, points)
+    {
+        const polygon = new Phaser.Geom.Polygon(points);
+        graphics.clear();
+        graphics.fillStyle(0xffffff, 0.5);
+        graphics.fillPoints(polygon.points, true);
+        graphics.lineStyle(2, 0xffffff);
+        graphics.strokePoints(polygon.points, true);
+    }
+
+    static drawBlock(graphics, rect)
+    {
+        let [x,y,width,height] = [rect.x, rect.y, rect.width, rect.height];
+        let [l,r,t,b] = [rect.l, rect.r, rect.t, rect.b];
+        // graphics.clear();
+        graphics.fillStyle(0xffffff, 0.5);
+        graphics.fillRect(x, y, width, height);
+        graphics.lineStyle(2, 0xffffff);
+        if(l) {graphics.lineBetween(x, y, x, y+height);}
+        if(r) {graphics.lineBetween(x+width, y, x+width, y+height);}
+        if(t) {graphics.lineBetween(x, y, x+width, y);}
+        if(b) {graphics.lineBetween(x, y+height, x+width, y+height);}
+    }
 }
 
 // String.prototype.local = function(){ return Utility.local(this); };
