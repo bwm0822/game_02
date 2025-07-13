@@ -176,14 +176,7 @@ export class GameScene extends Scene
                 }
                 else if(this._rst && this._rst.state==1 && !this._rst.block)
                 {
-                    if(this._ent?.act===GM.ATTACK)
-                    {
-                        this._player.attack(this._ent);
-                    }
-                    else
-                    {
-                        this._player.setDes({pt:pt,ent:this._ent});
-                    }
+                    this._player.apply({pt:pt,ent:this._ent});
                 }
             }
             

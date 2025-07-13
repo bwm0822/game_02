@@ -1097,8 +1097,6 @@ export class Role extends Entity
                 await this.st_moving();
                 break;
         }
-
-        
     }
 
     registerTimeManager()
@@ -1156,11 +1154,13 @@ export class Role extends Entity
     setSkill(skill)
     {
         this.showRange(true);
+        this.skill = 'a';
     }
 
     unsetSkill()
     {
         this.showRange(false);
+        this.skill ='';
     }
 
     showRange(on)
@@ -1299,6 +1299,22 @@ export class Avatar extends Role
     {
         this.send('gameover');
         super.dead(attacker);
+    }
+
+    apply({pt,ent}={})
+    {
+        if(this.skill)
+        {
+
+        }
+        else if(ent?.act===GM.ATTACK)
+        {
+            this.attack(ent);
+        }
+        else
+        {
+            this.setDes({pt:pt,ent:ent});
+        }
     }
 
 
