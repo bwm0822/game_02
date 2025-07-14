@@ -506,6 +506,16 @@ export class Role extends Entity
         }
     }
 
+    useSkill(pos)
+    {
+        this.faceTo(pos);
+        return this.step( pos, 200, 'expo.in',
+                            {   yoyo:true, 
+                                onYoyo:()=>{this.unsetSkill();this.send('refresh')}} 
+                        );
+        
+    }
+
 
     action_atk()
     {
@@ -1155,12 +1165,34 @@ export class Role extends Entity
     {
         this.showRange(true);
         this.skill = 'a';
+        this.state = GM.ST_SKILL;
     }
 
     unsetSkill()
     {
         this.showRange(false);
         this.skill ='';
+        this.state = GM.ST_IDLE;
+    }
+
+    isInSkillRange(pos)
+    {
+        let n=3;
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                let rect = this.a[y][x];
+                if( rect.w===1 && 
+                    pos.x>=rect.x && pos.x<rect.x+rect.width &&
+                    pos.y>=rect.y && pos.y<rect.y+rect.height)
+                {
+                    return true
+                }
+            }
+        }
+
+        return false;
     }
 
     showRange(on)
@@ -1209,6 +1241,8 @@ export class Role extends Entity
                 }
             }
         }
+
+        this.a=a;
         
     }
 
@@ -1305,7 +1339,10 @@ export class Avatar extends Role
     {
         if(this.skill)
         {
-
+            if(this.isInSkillRange(pt??ent.pos))
+            {
+                this.useSkill(pt??ent.pos);
+            }
         }
         else if(ent?.act===GM.ATTACK)
         {

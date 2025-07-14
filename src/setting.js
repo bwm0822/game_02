@@ -167,6 +167,7 @@ export let GM =
     ST_SLEEP : 'sleep',
     ST_ATTACK : 'attack',
     ST_DEATH : 'death',
+    ST_SKILL : 'skill',
 
     // weight
     W_BLOCK : 1000,   

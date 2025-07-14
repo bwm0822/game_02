@@ -728,11 +728,13 @@ class OutputSlot extends Slot
 
 class Skill extends Pic
 {
+    static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, config)
     {
         super(scene, w, h, config);
+        this.add(bbcText(scene,{text:'12',fontSize:16,color:'#fff'}),{key:'cd',align:'right-top',expand:false});
         this.setIcon(config?.icon);
-        this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
         this._sel = false;    //
@@ -768,13 +770,23 @@ class Skill extends Pic
             this.setBgColor(GM.COLOR_RED);
             // UiInfo.show(GM.TP_SKILL,this);
             Role.getPlayer().setSkill(this);
+            if(Skill.selected) {Skill.selected.reset();} // 如果有其他技能被選擇，則重設它
+            Skill.selected = this; // 設定目前選擇的技能
         }
         else 
         {
             this.setBgColor(GM.COLOR_GRAY);
             // UiInfo.close();
             Role.getPlayer().unsetSkill();
+            Skill.selected = null; // 清除目前選擇的技能
         }
+    }
+
+    reset()
+    {
+        this._sel = false;
+        this.setBgColor(GM.COLOR_GRAY);
+        Skill.selected = null; // 清除目前選擇的技能
     }
 }
 
@@ -2095,7 +2107,12 @@ export class UiMain extends UiBase
         {
             slots.add(new Skill(scene,50,50))
         }
-       
+
+        this.resetSkill = () => {
+            slots.children.forEach((slot) => {
+                if(slot instanceof Skill) {slot.reset();}
+            });
+        }
 
         root.add(slots,{align:'left',key:'slots'});
 
@@ -2176,6 +2193,7 @@ export class UiMain extends UiBase
         let player = Role.getPlayer();
         let hp = this.getElement('hp',true);
         hp.set(player.states.life.cur,player.states.life.max);
+        this.resetSkill();
     }
 
     show()

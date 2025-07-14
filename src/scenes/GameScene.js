@@ -184,8 +184,22 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            if(this._player.state==GM.ST_SLEEP) {return;}
-            if(this._player.state!=GM.ST_MOVING)
+            if(this._player.state==GM.ST_SKILL) 
+            {
+                let pt = {x:pointer.worldX,y:pointer.worldY};
+                if(this._player.isInSkillRange(pt))
+                {
+                    UiCursor.set('aim');
+                }
+                else
+                {
+                    UiCursor.set('none');
+                }
+                
+                return;
+            }
+            else if(this._player.state==GM.ST_SLEEP) {return;}
+            else if(this._player.state!=GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pt, this._ent);
