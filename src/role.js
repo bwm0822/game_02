@@ -122,9 +122,9 @@ export class Role extends Entity
         let g = roleD.g;
         let z = roleD.z;
 
-        if(b){this.bl=b.l;this.br=b.r;this.bt=b.t;this.bb=b.b;}
-        if(g){this.gl=g.l;this.gr=g.r;this.gt=g.t;this.gb=g.b;}
-        if(z){this.zl=z.l;this.zr=z.r;this.zt=z.t;this.zb=z.b;}
+        if(b) {this.bl=b.l; this.br=b.r; this.bt=b.t; this.bb=b.b;}
+        if(g) {this.gl=g.l; this.gr=g.r; this.gt=g.t; this.gb=g.b;}
+        if(z) {this.zl=z.l; this.zr=z.r; this.zt=z.t; this.zb=z.b;}
 
         this.displayWidth = roleD.w; 
         this.displayHeight = roleD.h;
@@ -255,7 +255,13 @@ export class Role extends Entity
             equips: this.initEquips(roleD.equips),
             attrs: this.initAttrs(roleD.attrs),
             states: this.initStates(roleD.states),
+            skills: this.initSkills(),
         }
+    }
+
+    initSkills(data)
+    {
+        return [{id:'lunge'}];
     }
 
     load()

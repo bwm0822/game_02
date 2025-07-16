@@ -1,0 +1,11 @@
+{
+  "lunge": {
+    "icon": "icons/0",
+    "type": "active",
+    "cd": 3,
+    "tw": {
+      "lab": "突刺",
+      "des": ""
+    }
+  }
+}

@@ -465,7 +465,7 @@ class Slot extends Icon
     
     over(check=true)
     {
-        if(this.dropable && UiDragged.on) 
+        if(this.dropable && UiDragged.slot) 
         {
             if(this.trading)
             {
@@ -502,12 +502,12 @@ class Slot extends Icon
 
     leave(gameObject)
     {
-        UiDragged.on&&gameObject.setBgColor(GM.COLOR_SLOT);
+        UiDragged.slot && gameObject.setBgColor(GM.COLOR_SLOT);
     }
 
     enter(gameObject)
     {
-        UiDragged.on&&this.noTrade&&gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
+        UiDragged.slot && this.noTrade && gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
     }
 
     rightButtonDown(x,y)
@@ -520,7 +520,7 @@ class Slot extends Icon
         UiInfo.close();
         if(Ui.mode == GM.UI_MODE_NORMAL)
         {
-            if(this.dropable && UiDragged.on)
+            if(this.dropable && UiDragged.slot)
             {            
                 if(this.isValid)
                 {
@@ -553,7 +553,7 @@ class Slot extends Icon
                             if(this.isEmpty) {UiDragged.empty();}
                             else {UiDragged.slot=this;}
                             this.itm = tmp;
-                            if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
+                            if(!UiDragged.slot) {this.setBgColor(GM.COLOR_SLOT);}
                         }  
                     }
                     this.over();
@@ -729,7 +729,7 @@ class OutputSlot extends Slot
 class Skill extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
-    constructor(scene, w, h, config)
+    constructor(scene, w, h, i, config)
     {
         super(scene, w, h, config);
         this.add(bbcText(scene,{text:'12',fontSize:16,color:'#fff'}),{key:'cd',align:'right-top',expand:false});
@@ -737,7 +737,9 @@ class Skill extends Pic
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
+        this._i = i;          // 技能索引
         this._sel = false;    //
+        this._skill = null;
     }
 
     addListener()
@@ -745,40 +747,62 @@ class Skill extends Pic
         this.setInteractive({draggable:true,dropZone:true})
         // .on('pointerover', ()=>{this.over();})
         // .on('pointerout', ()=>{this.out();})
-        .on('pointerdown', (pointer,x,y)=>{
-            if (pointer.rightButtonDown()) {this.rightButtonDown(x,y);}
-            else if(pointer.middleButtonDown()) {}
-            else {this.leftButtonDown(x,y);}
-        })
+        .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
+        .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
         .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
+        .on('drag', (pointer,gameObject)=>{console.log('drag')})
     }
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
-    over() {this.setBgColor(GM.COLOR_SLOT_OVER);}
-    out() {this.setBgColor(GM.COLOR_SLOT);}
+    // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
+    // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
 
-    leave() {}
-    enter() {}
-    
+    leave() {console.log('leave'); UiDragged.interact(true);}
+    enter(gameObject) {
+        if(gameObject instanceof Skill) {
+            console.log('enter',this._i,gameObject);
+            UiDragged.interact(false);
+        }
+    }
+
     leftButtonDown(x,y)
     {
-        console.log('press');
-        this._sel = !this._sel;
-        if(this._sel) 
+        Ui.delayCall(() => {
+            UiDragged.skill = this._skill;
+            UiDragged.setPos(this.left+x,this.top+y);
+            this.empty();
+        });
+    }
+    
+    leftButtonUp(x,y)
+    {
+        console.log('up');
+        Ui.cancelDelayCall();   
+        if(UiDragged.skill)
         {
-            this.setBgColor(GM.COLOR_RED);
-            // UiInfo.show(GM.TP_SKILL,this);
-            Role.getPlayer().setSkill(this);
-            if(Skill.selected) {Skill.selected.reset();} // 如果有其他技能被選擇，則重設它
-            Skill.selected = this; // 設定目前選擇的技能
+            Role.getPlayer().status.skills[this._i] = UiDragged.skill; // 清除技能
+            UiDragged.empty();
+            this.update();
         }
-        else 
+        else
         {
-            this.setBgColor(GM.COLOR_GRAY);
-            // UiInfo.close();
-            Role.getPlayer().unsetSkill();
-            Skill.selected = null; // 清除目前選擇的技能
+            this._sel = !this._sel;
+            if(this._sel) 
+            {
+                this.setBgColor(GM.COLOR_RED);
+                // UiInfo.show(GM.TP_SKILL,this);
+                Role.getPlayer().setSkill(this);
+                if(Skill.selected) {Skill.selected.reset();} // 如果有其他技能被選擇，則重設它
+                Skill.selected = this; // 設定目前選擇的技能
+            }
+            else 
+            {
+                this.setBgColor(GM.COLOR_GRAY);
+                // UiInfo.close();
+                Role.getPlayer().unsetSkill();
+                Skill.selected = null; // 清除目前選擇的技能
+            }
         }
     }
 
@@ -788,6 +812,28 @@ class Skill extends Pic
         this.setBgColor(GM.COLOR_GRAY);
         Skill.selected = null; // 清除目前選擇的技能
     }
+
+    empty()
+    {
+        this._skill = null;
+        this.setIcon();
+        this.getElement('cd').setText('');
+        this.setBgColor(GM.COLOR_SLOT);
+        Role.getPlayer().status.skills[this._i] = null; // 清除技能
+    }
+
+    update()
+    {
+        this._skill = Role.getPlayer().status.skills[this._i];
+
+        if(this._skill)
+        {
+            let dat = DB.skill(this._skill.id);
+            this.setIcon(dat.icon);
+            this.getElement('cd').setText(dat.cd>0 ? dat.cd : '');
+            this.setBgColor(dat.cd>0 ? GM.COLOR_SLOT_DISABLE : GM.COLOR_SLOT);
+        }
+    }
 }
 
 
@@ -796,7 +842,7 @@ export class UiDragged extends OverlapSizer
     static instance = null;
     constructor(scene, w, h)
     {
-        super(scene, 0, 0,w, h);
+        super(scene, 0, 0, w, h);
         UiDragged.instance = this;
         Ui.addLayer(scene, 'UiDragged', this);    // 產生layer，並設定layer名稱
         this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:0, alpha:0}),'background')
@@ -804,44 +850,67 @@ export class UiDragged extends OverlapSizer
             .addCount(scene)
             .layout()
             .hide()
+            .addListener();
     }
 
 
     static get on() {return this.instance.visible;}
-    static get owner() {return this.instance.owner;}
+    static get owner() {return this.instance.slot.owner;}
     // static get itm() {return this.instance.itm;}
     // get owner() {return this.slot.owner;}
     // get itm() {return this.slot.itm;}
     // get dat() {return this.slot.dat;}
-    get label() {return this.itm.id.lab();}
-    get gold() {return this.itm.count*this.dat.gold;}
+    get label() {return this.slot.itm.id.lab();}
+    get gold() {return this.slot.itm.count*this.slot.dat.gold;}
 
 
 
-    static get slot() {return this.instance;}
+    static get slot() {return this.instance.slot;}
     static set slot(value) {this.instance.slot=value;}
 
+    static set skill(value) {this.instance.setSkill(value);}
+    static get skill() {return this.instance._skill;}
+
     set slot(value) {this.setSlot(value)}
+    get slot() {return this._slot;}
+
+
+    addListener()
+    {
+        this//.setInteractive()
+            .on('pointerup',()=>{
+                console.log('-drop-')
+                this.empty();
+                this.disableInteractive();
+            })
+    }
+
+    interact(on) 
+    {
+        if(on) {this.setInteractive();}
+        else {this.disableInteractive();}
+    }
 
     //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
-    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
+    checkCat(cat) {return (this.slot.dat.cat & cat) == this.slot.dat.cat;}
 
     update() 
     {
-        if(this.itm.count==0)
+        if(this.slot.itm.count==0)
         {
             this.empty();
         }
         else
         {
-            this.setCount(this.itm.count>1 ? this.itm.count : '')
+            this.setCount(this.slot.itm.count>1 ? this.slot.itm.count : '')
         }
     }
 
     empty()
     {
         this.hide();
-        delete this.slot;
+        delete this._slot;
+        delete this._skill;
         UiCover.close();
         UiMain.enable(true);
     }
@@ -869,14 +938,30 @@ export class UiDragged extends OverlapSizer
     setSlot(slot)
     {
         this.show();
-        this.itm = slot.itm;
-        this.dat = slot.dat;
-        this.owner = slot.owner;
+        // this.itm = slot.itm;
+        // this.dat = slot.dat;
+        // this.owner = slot.owner;
+        this._slot = {
+            itm: slot.itm,
+            dat: slot.dat,
+            owner: slot.owner
+        };
 
         this.setIcon(slot.dat.icon)
             .setCount(slot.itm.count>1 ? slot.itm.count : '')
         UiCover.show();
         UiMain.enable(false);
+    }
+
+    setSkill(skill)
+    {
+        this.show();
+        this._skill = {id:skill.id}; // 技能只有一個
+        let dat = DB.skill(skill.id);
+        // this.owner = Role.getPlayer();
+        this.setIcon(dat.icon).setCount('')
+        UiCover.show();
+        // UiMain.enable(false);
     }
 
     setIcon(icon)
@@ -899,24 +984,26 @@ export class UiDragged extends OverlapSizer
 
     drop()
     {
-        if(this.visible&&this.owner.trade!=GM.SELLER)
+        if(this.slot&&this.slot.owner.trade!=GM.SELLER)
         {
-            this.owner.drop(this);
+            this.slot.owner.drop(this.slot);
             this.empty();
         }
     }
 
     static setData(value) {this.instance.setData(value);}
 
-    static setPos(x,y) {return UiDragged.instance?.setPosition(x,y);}
+    static setPos(x,y) {return this.instance?.setPosition(x,y);}
 
-    static empty() {UiDragged.instance?.empty();}
+    static empty() {this.instance?.empty();}
     
-    static checkCat(cat) {return UiDragged.instance?.checkCat(cat);}
+    static checkCat(cat) {return this.instance?.checkCat(cat);}
 
-    static update() {UiDragged.instance?.update();}
+    static update() {this.instance?.update();}
 
-    static drop() {UiDragged.instance?.drop();}
+    static drop() {this.instance?.drop();}
+
+    static interact(on) {this.instance.interact(on);}
 
 }
 
@@ -2105,12 +2192,18 @@ export class UiMain extends UiBase
 
         for(let i=0; i<10; i++)
         {
-            slots.add(new Skill(scene,50,50))
+            slots.add(new Skill(scene,50,50,i));
         }
 
         this.resetSkill = () => {
             slots.children.forEach((slot) => {
                 if(slot instanceof Skill) {slot.reset();}
+            });
+        }
+
+        this.updateSkill = () => {
+            slots.children.forEach((slot) => {
+                if(slot instanceof Skill) {slot.update();}
             });
         }
 
@@ -2194,6 +2287,7 @@ export class UiMain extends UiBase
         let hp = this.getElement('hp',true);
         hp.set(player.states.life.cur,player.states.life.max);
         this.resetSkill();
+        this.updateSkill();
     }
 
     show()

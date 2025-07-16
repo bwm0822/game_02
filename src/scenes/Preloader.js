@@ -108,6 +108,7 @@ export class Preloader extends Scene
         this.load.json('role', 'json/role.json');
         this.load.json('dialog', 'json/dialog.json');
         this.load.json('quest', 'json/quest.json');
+        this.load.json('skill', 'json/skill.json');
 
         // audios
         this.load.audio('doorClose', 'audios/scene/doorClose_1.ogg');
