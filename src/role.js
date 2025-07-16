@@ -255,13 +255,19 @@ export class Role extends Entity
             equips: this.initEquips(roleD.equips),
             attrs: this.initAttrs(roleD.attrs),
             states: this.initStates(roleD.states),
+            skillSlots: this.initSkillSlots(),
             skills: this.initSkills(),
         }
     }
 
-    initSkills(data)
+    initSkillSlots()
     {
-        return [{id:'lunge'}];
+        return ['lunge','fireball'];
+    }
+
+    initSkills()
+    {
+        return {'lunge':{en:true, cd:0}, 'fireball':{en:true, cd:0}};
     }
 
     load()
@@ -515,6 +521,9 @@ export class Role extends Entity
     useSkill(pos)
     {
         this.faceTo(pos);
+        let skill = this.status.skills[this.skill.id];
+        let dat = DB.skill(this.skill.id);
+        skill.cd = dat.cd;
         return this.step( pos, 200, 'expo.in',
                             {   yoyo:true, 
                                 onYoyo:()=>{this.unsetSkill();this.send('refresh')}} 
@@ -1158,6 +1167,8 @@ export class Role extends Entity
                 }
             }
         })
+        Object.values(this.status.skills).forEach((skill)=>{skill.cd>0 && (skill.cd--);});
+        if(this.isPlayer) {this.send('refresh');}
     }
 
     updateStates(dt=1)
@@ -1167,17 +1178,17 @@ export class Role extends Entity
         if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
     }
 
-    setSkill(skill)
+    setSkill(id)
     {
         this.showRange(true);
-        this.skill = 'a';
+        this.skill = id;
         this.state = GM.ST_SKILL;
     }
 
     unsetSkill()
     {
         this.showRange(false);
-        this.skill ='';
+        this.skill = '';
         this.state = GM.ST_IDLE;
     }
 

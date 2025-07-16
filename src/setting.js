@@ -68,6 +68,7 @@ export let GM =
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
+    PRESS_DELAY : 250,   // 按壓技能延遲時間 (unit:ms)
     CAM_CENTER : 0b000,
     CAM_LEFT : 0b001,
     CAM_RIGHT : 0b010,

@@ -214,10 +214,10 @@ export class Ui
         layer.add(top);     // 把 top 加入 layer
     }
 
-    static delayCall(func)
+    static delayCall(func, delay=GM.OVER_DELAY)
     {
         if(!func) {return;}
-        this._to = setTimeout(() => {func();}, GM.OVER_DELAY);
+        this._to = setTimeout(() => {func();}, delay);
     }
 
     static cancelDelayCall()
@@ -726,21 +726,23 @@ class OutputSlot extends Slot
     empty() {this.itm={id:this.itm.id,count:0};}
 }
 
-class Skill extends Pic
+class SkillSlot extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, i, config)
     {
         super(scene, w, h, config);
-        this.add(bbcText(scene,{text:'12',fontSize:16,color:'#fff'}),{key:'cd',align:'right-top',expand:false});
-        this.setIcon(config?.icon);
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.add(bbcText(scene,{text:'',fontSize:20,color:'#fff'}),{key:'cd',align:'center-center',expand:false});
+        this.setIcon(config?.icon);
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
-        this._i = i;          // 技能索引
-        this._sel = false;    //
-        this._skill = null;
+        this._i = i;               // 技能欄位索引
+        this._id = null;
     }
+
+    get owner() {return Role.getPlayer();}
+    get id() {return this._id;}
 
     addListener()
     {
@@ -751,16 +753,19 @@ class Skill extends Pic
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
         .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
-        .on('drag', (pointer,gameObject)=>{console.log('drag')})
+        // .on('drag', (pointer,gameObject)=>{console.log('drag')})
     }
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
+    setStrokeColor(color) {this.getElement('background').strokeColor = color;}
     // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
     // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
 
     leave() {console.log('leave'); UiDragged.interact(true);}
-    enter(gameObject) {
-        if(gameObject instanceof Skill) {
+    enter(gameObject) 
+    {
+        if(gameObject instanceof SkillSlot) 
+        {
             console.log('enter',this._i,gameObject);
             UiDragged.interact(false);
         }
@@ -768,49 +773,47 @@ class Skill extends Pic
 
     leftButtonDown(x,y)
     {
+        if(!this._id || SkillSlot.selected) {return;}
         Ui.delayCall(() => {
-            UiDragged.skill = this._skill;
-            UiDragged.setPos(this.left+x,this.top+y);
-            this.empty();
-        });
+                UiDragged.skill = {id:this._id, i:this._i};
+                UiDragged.setPos(this.left+x, this.top+y);
+                this.empty();
+            }, 
+            GM.PRESS_DELAY) ;
     }
     
     leftButtonUp(x,y)
     {
-        console.log('up');
         Ui.cancelDelayCall();   
         if(UiDragged.skill)
         {
-            Role.getPlayer().status.skills[this._i] = UiDragged.skill; // 清除技能
+            this._id && (this.owner.status.skillSlots[UiDragged.skill.i] = this._id);
+            this.owner.status.skillSlots[this._i] = UiDragged.skill.id;
             UiDragged.empty();
-            this.update();
+            Ui.refreshAll();
         }
-        else
+        else if(this._id)
         {
-            this._sel = !this._sel;
-            if(this._sel) 
+            if(SkillSlot.selected)
             {
-                this.setBgColor(GM.COLOR_RED);
-                // UiInfo.show(GM.TP_SKILL,this);
-                Role.getPlayer().setSkill(this);
-                if(Skill.selected) {Skill.selected.reset();} // 如果有其他技能被選擇，則重設它
-                Skill.selected = this; // 設定目前選擇的技能
+                if(SkillSlot.selected === this)
+                    SkillSlot.selected.reset(); // 如果有其他技能被選擇，則重設它
             }
-            else 
+            else
             {
-                this.setBgColor(GM.COLOR_GRAY);
-                // UiInfo.close();
-                Role.getPlayer().unsetSkill();
-                Skill.selected = null; // 清除目前選擇的技能
+                SkillSlot.selected = this; // 設定目前選擇的技能
+                this.setStrokeColor(GM.COLOR_RED);
+                this.owner.setSkill(this); // 設定角色的技能
             }
         }
     }
 
     reset()
     {
-        this._sel = false;
-        this.setBgColor(GM.COLOR_GRAY);
-        Skill.selected = null; // 清除目前選擇的技能
+        this.setBgColor(GM.COLOR_SLOT);
+        this.setStrokeColor(GM.COLOR_WHITE);
+        this.owner.unsetSkill();
+        SkillSlot.selected = null; // 清除目前選擇的技能
     }
 
     empty()
@@ -819,19 +822,22 @@ class Skill extends Pic
         this.setIcon();
         this.getElement('cd').setText('');
         this.setBgColor(GM.COLOR_SLOT);
-        Role.getPlayer().status.skills[this._i] = null; // 清除技能
+        this.owner.status.skillSlots[this._i] = null; // 清除技能
+        this.getElement('disabled').fillAlpha = 0;
     }
 
     update()
     {
-        this._skill = Role.getPlayer().status.skills[this._i];
+        this._id = this.owner.status.skillSlots[this._i];
 
-        if(this._skill)
+        if(this._id)
         {
-            let dat = DB.skill(this._skill.id);
+            let dat = DB.skill(this._id);
+            let cd = this.owner.status.skills[this._id].cd;
             this.setIcon(dat.icon);
-            this.getElement('cd').setText(dat.cd>0 ? dat.cd : '');
-            this.setBgColor(dat.cd>0 ? GM.COLOR_SLOT_DISABLE : GM.COLOR_SLOT);
+            this.getElement('cd').setText(cd>0?cd:'');
+            this.getElement('disabled').fillAlpha=cd>0 ? 0.5 : 0;
+            this.layout();
         }
     }
 }
@@ -956,7 +962,11 @@ export class UiDragged extends OverlapSizer
     setSkill(skill)
     {
         this.show();
-        this._skill = {id:skill.id}; // 技能只有一個
+        this._skill = 
+        {
+            id: skill.id,
+            i: skill.i,
+        }
         let dat = DB.skill(skill.id);
         // this.owner = Role.getPlayer();
         this.setIcon(dat.icon).setCount('')
@@ -2192,18 +2202,18 @@ export class UiMain extends UiBase
 
         for(let i=0; i<10; i++)
         {
-            slots.add(new Skill(scene,50,50,i));
+            slots.add(new SkillSlot(scene,50,50,i,{color:GM.COLOR_SLOT}));
         }
 
         this.resetSkill = () => {
             slots.children.forEach((slot) => {
-                if(slot instanceof Skill) {slot.reset();}
+                if(slot instanceof SkillSlot) {slot.reset();}
             });
         }
 
         this.updateSkill = () => {
             slots.children.forEach((slot) => {
-                if(slot instanceof Skill) {slot.update();}
+                if(slot instanceof SkillSlot) {slot.update();}
             });
         }
 

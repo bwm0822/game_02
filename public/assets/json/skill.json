@@ -7,5 +7,14 @@
       "lab": "突刺",
       "des": ""
     }
+  },
+  "fireball": {
+    "icon": "icons/1",
+    "type": "active",
+    "cd": 2,
+    "tw": {
+      "lab": "火球術",
+      "des": ""
+    }
   }
 }
