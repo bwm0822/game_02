@@ -93,7 +93,13 @@ export class Role extends Entity
     get storage()   {return this.status.bag;}
 
     get state()     {return this._state;}
-    set state(value) {this._state=value;}
+    set state(value) {this._state=value;
+        if(this.isPlayer)
+        {
+            console.log(value);
+            console.trace();
+        }
+    }
 
     get states() {return this.status.states;}
 
@@ -366,6 +372,7 @@ export class Role extends Entity
         console.log('setDes',rst,act)
         if(rst?.state>0)
         {
+            console.log('chk---')
             this._path = rst.path;
             this._ent = ent;
             // this._act = act ?? ent?.act ?? '';
@@ -518,18 +525,7 @@ export class Role extends Entity
         }
     }
 
-    useSkill(pos)
-    {
-        this.faceTo(pos);
-        let skill = this.status.skills[this.skill.id];
-        let dat = DB.skill(this.skill.id);
-        skill.cd = dat.cd;
-        return this.step( pos, 200, 'expo.in',
-                            {   yoyo:true, 
-                                onYoyo:()=>{this.unsetSkill();this.send('refresh')}} 
-                        );
-        
-    }
+    
 
 
     action_atk()
@@ -1178,23 +1174,41 @@ export class Role extends Entity
         if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
     }
 
-    setSkill(id)
+    useSkill(pos)
     {
-        this.showRange(true);
-        this.skill = id;
+        this.faceTo(pos);
+        let skill = this.status.skills[this.skill.id];
+        let dat = DB.skill(this.skill.id);
+        skill.cd = dat.cd;
+        return this.step( pos, 200, 'expo.in',
+                            {   yoyo:true, 
+                                onYoyo:()=>{this.resetSkill(true);}} 
+                        );
+    }
+
+    setSkill(skill)
+    {
+        this.showRange(true, skill._dat.range);
+        this.skill = skill;
         this.state = GM.ST_SKILL;
     }
 
     unsetSkill()
     {
         this.showRange(false);
-        this.skill = '';
+        this.skill = null;
         this.state = GM.ST_IDLE;
+    }
+
+    resetSkill()
+    {
+        this.skill.reset();
+        this.unsetSkill();
     }
 
     isInSkillRange(pos)
     {
-        let n=3;
+        let n=DB.skill(this.skill.id).range;
         for(let x=0; x<=2*n; x++)
         {
             for(let y=0; y<=2*n; y++)
@@ -1212,13 +1226,13 @@ export class Role extends Entity
         return false;
     }
 
-    showRange(on)
+    showRange(on,range)
     {
         this._range?.clear();
         if(!on) {return;}
         if(!this._range) {this._range = this.scene.add.graphics();}
 
-        let n = 3;
+        let n = range;
         let rows = 2*n+1;
         let cols = 2*n+1;
         let a = Array.from({ length: rows }, () => Array(cols));
@@ -1243,7 +1257,6 @@ export class Role extends Entity
                 a[y][x].r = a[y][x+1]?.w==1 ? false : true;
                 a[y][x].t = a[y-1]?.[x]?.w==1 ? false : true;
                 a[y][x].b = a[y+1]?.[x]?.w==1 ? false : true;
-
             }
         }
 

@@ -737,12 +737,15 @@ class SkillSlot extends Pic
         this.setIcon(config?.icon);
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
-        this._i = i;               // 技能欄位索引
+        this._i = i;            // 技能欄位索引
         this._id = null;
+        this._skill = null;     // 用來存放技能狀態
+        this._dat = null;       // 用來存放技能資料
     }
 
     get owner() {return Role.getPlayer();}
     get id() {return this._id;}
+    get i() {return this._i;}
 
     addListener()
     {
@@ -761,12 +764,11 @@ class SkillSlot extends Pic
     // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
     // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
 
-    leave() {console.log('leave'); UiDragged.interact(true);}
+    leave() {UiDragged.interact(true);}
     enter(gameObject) 
     {
         if(gameObject instanceof SkillSlot) 
         {
-            console.log('enter',this._i,gameObject);
             UiDragged.interact(false);
         }
     }
@@ -774,12 +776,14 @@ class SkillSlot extends Pic
     leftButtonDown(x,y)
     {
         if(!this._id || SkillSlot.selected) {return;}
-        Ui.delayCall(() => {
-                UiDragged.skill = {id:this._id, i:this._i};
-                UiDragged.setPos(this.left+x, this.top+y);
-                this.empty();
-            }, 
-            GM.PRESS_DELAY) ;
+        Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+    }
+
+    drag(x,y)
+    {
+        UiDragged.skill = this;
+        UiDragged.setPos(this.left+x, this.top+y);
+        this.empty();
     }
     
     leftButtonUp(x,y)
@@ -792,53 +796,68 @@ class SkillSlot extends Pic
             UiDragged.empty();
             Ui.refreshAll();
         }
-        else if(this._id)
+        else if(this._skill)
         {
             if(SkillSlot.selected)
             {
-                if(SkillSlot.selected === this)
-                    SkillSlot.selected.reset(); // 如果有其他技能被選擇，則重設它
+                SkillSlot.selected===this && SkillSlot.selected.unselect();
             }
-            else
+            else if(this._skill.cd===0)
             {
-                SkillSlot.selected = this; // 設定目前選擇的技能
-                this.setStrokeColor(GM.COLOR_RED);
-                this.owner.setSkill(this); // 設定角色的技能
+                this.select();
             }
         }
-    }
-
-    reset()
-    {
-        this.setBgColor(GM.COLOR_SLOT);
-        this.setStrokeColor(GM.COLOR_WHITE);
-        this.owner.unsetSkill();
-        SkillSlot.selected = null; // 清除目前選擇的技能
-    }
-
-    empty()
-    {
-        this._skill = null;
-        this.setIcon();
-        this.getElement('cd').setText('');
-        this.setBgColor(GM.COLOR_SLOT);
-        this.owner.status.skillSlots[this._i] = null; // 清除技能
-        this.getElement('disabled').fillAlpha = 0;
     }
 
     update()
     {
         this._id = this.owner.status.skillSlots[this._i];
+        if(this._id) {this.set();}
+        else {this.empty();}
+    }
 
-        if(this._id)
-        {
-            let dat = DB.skill(this._id);
-            let cd = this.owner.status.skills[this._id].cd;
-            this.setIcon(dat.icon);
-            this.getElement('cd').setText(cd>0?cd:'');
-            this.getElement('disabled').fillAlpha=cd>0 ? 0.5 : 0;
-            this.layout();
-        }
+    select()
+    {
+        SkillSlot.selected = this; // 設定目前選擇的技能
+        this.setStrokeColor(GM.COLOR_RED);
+        this.owner.setSkill(this); // 設定角色的技能
+    }
+
+    unselect()
+    {
+        SkillSlot.selected = null; // 清除目前選擇的技能
+        this.setStrokeColor(GM.COLOR_WHITE);
+        this.owner.unsetSkill();
+    }
+
+    reset() // call by role.resetSkill()
+    {
+        SkillSlot.selected = null; // 清除目前選擇的技能
+        this.setStrokeColor(GM.COLOR_WHITE);
+        this.update();
+    }
+
+    set()
+    {
+        this._skill =  this.owner.status.skills[this._id];
+        this._dat = DB.skill(this._id);
+        let cd = this._skill.cd;
+        this.setIcon(this._dat.icon);
+        this.getElement('cd').setText(cd>0?cd:'');
+        this.getElement('disabled').fillAlpha=cd>0 ? 0.5 : 0;
+        this.layout();
+    }
+
+    empty()
+    {
+        this._id = null;
+        this._skill = null;
+        this._dat = null
+        this.setIcon();
+        this.getElement('cd').setText('');
+        this.setBgColor(GM.COLOR_SLOT);
+        this.getElement('disabled').fillAlpha = 0;
+        this.owner.status.skillSlots[this._i] = null; // 清除技能欄位
     }
 }
 
@@ -2296,7 +2315,7 @@ export class UiMain extends UiBase
         let player = Role.getPlayer();
         let hp = this.getElement('hp',true);
         hp.set(player.states.life.cur,player.states.life.max);
-        this.resetSkill();
+        // this.resetSkill();
         this.updateSkill();
     }
 

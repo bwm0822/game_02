@@ -3,6 +3,7 @@
     "icon": "icons/0",
     "type": "active",
     "cd": 3,
+    "range": 2,
     "tw": {
       "lab": "突刺",
       "des": ""
@@ -11,7 +12,8 @@
   "fireball": {
     "icon": "icons/1",
     "type": "active",
-    "cd": 2,
+    "cd": 5,
+    "range": 5,
     "tw": {
       "lab": "火球術",
       "des": ""
