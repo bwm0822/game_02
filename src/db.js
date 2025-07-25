@@ -4,6 +4,8 @@ export default class DB
 {
     static _itemDB;
 
+    static get skills() {return this._skillDB;}
+
     static load(scene)
     {
         this._itemDB = scene.cache.json.get('item');
@@ -49,4 +51,6 @@ export default class DB
     static quest(id) { return this._questDB?.[id];}
 
     static skill(id) { return this._skillDB?.[id]; }
+
+    
 }

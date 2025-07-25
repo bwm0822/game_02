@@ -27,6 +27,7 @@ export default function createUI(scene)
 
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
+    new UiSkill(scene);
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4
@@ -45,6 +46,7 @@ export default function createUI(scene)
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
     new UiQuest(scene);              // 20
+
 
     // t3();
     t4(scene);
@@ -756,7 +758,6 @@ class SkillSlot extends Pic
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
         .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
-        // .on('drag', (pointer,gameObject)=>{console.log('drag')})
     }
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
@@ -764,14 +765,8 @@ class SkillSlot extends Pic
     // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
     // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
 
-    leave() {UiDragged.interact(true);}
-    enter(gameObject) 
-    {
-        if(gameObject instanceof SkillSlot) 
-        {
-            UiDragged.interact(false);
-        }
-    }
+    leave() {UiDragged.interact(true);console.log('enter-1')}
+    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);console.log('enter-1')}
 
     leftButtonDown(x,y)
     {
@@ -791,6 +786,14 @@ class SkillSlot extends Pic
         Ui.cancelDelayCall();   
         if(UiDragged.skill)
         {
+            this.owner.status.skillSlots.forEach((slot,i)=>{
+                if(slot===UiDragged.skill.id)
+                {
+                    this.owner.status.skillSlots[i]=null;
+
+                }
+                
+            })
             this._id && (this.owner.status.skillSlots[UiDragged.skill.i] = this._id);
             this.owner.status.skillSlots[this._i] = UiDragged.skill.id;
             UiDragged.empty();
@@ -859,6 +862,91 @@ class SkillSlot extends Pic
         this.getElement('disabled').fillAlpha = 0;
         this.owner.status.skillSlots[this._i] = null; // 清除技能欄位
     }
+}
+
+
+class SkillItem extends Pic
+{
+    constructor(scene, w, h, config)
+    {
+        super(scene, w, h, config);
+        this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.add(bbcText(scene,{text:'',fontSize:20,color:'#fff'}),{key:'text',align:'center-center',expand:false});
+        this.setIcon(config?.icon);
+        this.getElement('disabled').fillAlpha=0;
+        this.addListener();
+        this._id = null;
+        this._skill = null;     // 用來存放技能狀態
+        this._dat = null;       // 用來存放技能資料
+    }
+
+    get owner() {return Role.getPlayer();}
+    get id() {return this._id;}
+    get i() {return this._i;}
+
+    get locked()
+    {
+        if(this._skill.en) {return false;}
+        let ret = this._dat.refs?.find(ref=>this.owner.status.skills[ref].en===false);
+        return ret!==undefined;
+    }
+
+    leave() {UiDragged.interact(true);console.log('leave-2')}
+    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);console.log('enter-2')}
+
+    addListener()
+    {
+        this.setInteractive({draggable:true,dropZone:true})
+        // .on('pointerover', ()=>{this.over();})
+        // .on('pointerout', ()=>{this.out();})
+        .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
+        .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
+        .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
+        .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
+    }
+
+    leftButtonDown(x,y)
+    {
+        if(!this._skill?.en || SkillSlot.selected) {return;}
+        Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+    }
+
+    leftButtonUp(x,y)
+    {
+        console.log('up');
+        Ui.cancelDelayCall();   
+        UiDragged.empty();
+    }
+
+    drag(x,y)
+    {
+        let mpos=this.scene.input.activePointer;
+        UiDragged.skill = this;
+        // UiDragged.setPos(this.left+x, this.top+y);
+        UiDragged.setPos(mpos.x, mpos.y);
+    }
+
+    
+
+    update()
+    {
+        this.getElement('text').setText(this._skill.en?'':'🔒');
+        this.getElement('disabled').fillAlpha=this._skill.en?0:0.75;
+    }
+
+    set(id, x, y)
+    {
+        this._id = id;
+        this.x = x;
+        this.y = y;
+        this._skill =  this.owner.status.skills[this._id];
+        this._dat = DB.skill(this._id);
+        this.setIcon(this._dat.icon);
+        this.getElement('text').setText(this.locked?'🔒':'');
+        this.getElement('disabled').fillAlpha=this._skill.en?0:0.75;
+        this.layout();
+    }
+
 }
 
 
@@ -2186,6 +2274,7 @@ export class UiMain extends UiBase
             .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'📖',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🧠',key:'skill',onclick:this.skill,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addCtrl(scene)
             .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
@@ -2282,6 +2371,11 @@ export class UiMain extends UiBase
     {
         //this.closeAll(GM.UI_ALL);
         UiQuest.toggle(Role.getPlayer());
+    }
+
+    skill()
+    {
+        UiSkill.toggle();
     }
 
     debug() {UiDebuger.show();}
@@ -3971,5 +4065,129 @@ export class UiQuest extends UiBase
     static close() {UiQuest.instance?.close();}
     static toggle(owner) {UiQuest.instance?.toggle(owner);}
     static get shown() {UiQuest.instance?.visible;}
+}
+
+
+export class UiSkill extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            width : 800,
+            height : 500,
+            orientation : 'y',
+            space:{left:10,right:10,bottom:10,item:5},
+        }
+        super(scene, config, 'UiSkill');
+        UiSkill.instance = this; 
+        this.addBg(scene) 
+            .addTop(scene,{text:'skill'.lab()})
+            // .addGrid(scene,5,4,this.getOwner,{classT:SkillItem})
+            .addTest(scene)
+            .layout()
+            .hide()
+    }
+
+    addTest(scene)
+    {
+        let config = 
+        {
+            width: 100,
+            height: 200,
+            background: rect(scene,{color:GM.COLOR_BLACK}),
+            panel: {child:this.createPanel(scene)},
+            slider: {
+                track: rect(scene,{width:15,color:GM.COLOR_DARK}),
+                thumb: rect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+                space: 5,
+                hideUnscrollableSlider: true,
+                disableUnscrollableDrag: true,
+            },
+        }
+        let scroll = scene.rexUI.add.scrollablePanel(config);
+        this.add(scroll, {expand:true, key:'scroll'});
+        this._panel = this.getElement('scroll').getElement('panel')
+        this._graphic = this.scene.add.graphics();
+        this._panel.add(this._graphic);
+        return this;
+    }
+
+    createPanel(scene)
+    {
+        let sizer= scene.rexUI.add.sizer({orientation:'y',space:5})
+        return sizer;
+    }
+
+    createPanel(scene)
+    {
+        let sizer= scene.add.container()
+        sizer.setSize(100,500)
+        return sizer;
+    }
+
+    getOwner()
+    {
+        return Role.getPlayer();
+    }
+
+    toggle()
+    {
+        if(this.visible){this.close();}
+        else{this.show()}
+    }
+
+    checkRefs(refs)
+    {
+        for(let i=0; i<refs.length; i++)
+        {
+            let id = refs[i];
+            let skill = this.getOwner().status.skills[id];
+            if(!skill.en) {return false};
+        }
+
+        return true;
+    }
+
+    update()
+    {
+        let tree = this.getOwner().skTree;
+        this._graphic.lineStyle(4, 0x808080, 1);
+        
+        tree.forEach(dat=>{
+            if(dat.type==='skill')
+            {
+                let slot = new SkillItem(this.scene,50,50);
+                slot.set(dat.id,dat.x,dat.y)
+                this._panel.add(slot)
+            }
+            else
+            {
+                let pts = dat.pts;
+                this._graphic.lineStyle(4, this.checkRefs(dat.refs)?0xffffff:0x505050, 1);
+                for(let i=0;i<pts.length-1;i++)
+                {
+                    this._graphic.lineBetween(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);
+                }
+            }
+        })
+    }
+
+    show()
+    {
+        super.show();
+
+        this.update();
+
+        
+    }
+
+    static show() {this.instance?.show();}
+    static close() {this.instance?.close();}
+    static toggle(owner) {this.instance?.toggle(owner);}
+    static get shown() {this.instance?.visible;}
 }
 

@@ -23,6 +23,8 @@ def df_to_json(input_excel_path, output_json_path):
                 obj[key] = val
             elif key == 'cd' or key == 'range':
                 obj[key] = int(val)
+            elif key == 'refs':
+                obj[key] = json.loads(f"[{val}]")
             else:
                 obj[key] = json.loads(f"{{{val}}}")
         if obj:

@@ -18,5 +18,19 @@
       "lab": "火球術",
       "des": ""
     }
+  },
+  "lightning": {
+    "icon": "icons/8",
+    "type": "active",
+    "refs": [
+      "lunge",
+      "fireball"
+    ],
+    "cd": 5,
+    "range": 5,
+    "tw": {
+      "lab": "閃電術",
+      "des": ""
+    }
   }
 }
