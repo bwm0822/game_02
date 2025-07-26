@@ -947,6 +947,7 @@ export class Role extends Entity
 
     buy(ent, i, isEquip)
     {
+        console.log(this.status.gold, ent)
         if(this.status.gold>=ent.gold)
         {
             if(this.take(ent, i, isEquip))

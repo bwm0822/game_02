@@ -46,6 +46,7 @@ export default function createUI(scene)
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
     new UiQuest(scene);              // 20
+    new UiConfirm(scene);
 
 
     // t3();
@@ -266,7 +267,7 @@ class Slot extends Icon
     // owner
     get owner() {return this._getOwner?.();}
     // others
-    get gold() {return this.itm.count*this.itm.gold;}
+    get gold() {return this.itm.count*this.dat.gold;}
 
     get isEmpty() {return Utility.isEmpty(this.itm)||this.itm.count==0;}
     get container() {return this.owner?.storage?.items;}
@@ -899,16 +900,31 @@ class SkillItem extends Pic
         this.setInteractive({draggable:true,dropZone:true})
         // .on('pointerover', ()=>{this.over();})
         // .on('pointerout', ()=>{this.out();})
-        .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
+        .on('pointerdown', async (pointer,x,y)=>{this.leftButtonDown(x,y);})
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
         .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
     }
 
-    leftButtonDown(x,y)
+    async leftButtonDown(x,y)
     {
-        if(!this._skill?.en || SkillSlot.selected) {return;}
-        Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+        // if(!this._skill?.en || SkillSlot.selected) {return;}
+        if(this.locked || SkillSlot.selected) {return;}
+       
+        if(!this._skill?.en)
+        {
+            let ret = await UiConfirm.msg('學習此技能?');
+            console.log(ret)
+            if(ret)
+            {
+                this._skill.en=true;
+                Ui.refreshAll();
+            }
+        }
+        else
+        {
+            Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+        }
     }
 
     leftButtonUp(x,y)
@@ -1057,7 +1073,8 @@ export class UiDragged extends OverlapSizer
         this._slot = {
             itm: slot.itm,
             dat: slot.dat,
-            owner: slot.owner
+            owner: slot.owner,
+            gold: slot.gold
         };
 
         this.setIcon(slot.dat.icon)
@@ -3300,6 +3317,7 @@ export class UiGameOver extends UiBase
 }
 
 
+
 class UiDebuger extends UiBase
 {
     static instance=null;
@@ -3712,6 +3730,94 @@ class Count extends UiBase
     }
 
     
+}
+
+export class Confirm extends UiBase
+{
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : GM.h/2,
+            width: 250,
+            orientation : 'y',
+            space : {left:10,right:10,bottom:10,top:20,item:20},
+        }
+
+        super(scene,config)
+        this.scene=scene;
+        this.addBg(scene,{strokeColor:GM.COLOR_GRAY})
+            .addText(scene)
+            .addButtons(scene)
+            .layout()
+            //.drawBounds(this.scene.add.graphics(), 0xff0000)
+            .hide()
+
+        // this.getElement('dropdown',true).setValue('tw')   
+    }
+
+    addText(scene)
+    {
+        
+        this.add(text(scene,{text:'123'}), {key:'msg'});
+        return this;
+    }
+
+    addButtons(scene)
+    {
+        let sizer = scene.rexUI.add.sizer({orientation:'x'});
+        sizer
+            .add(new UiButton(scene,{text:'❌',onclick:this.cancel.bind(this),radius:5,padding:10}))
+            .addSpace()
+            .add(new UiButton(scene,{text:'✔️',onclick:this.confirm.bind(this),radius:5,padding:10}))
+        this.add(sizer,{expand:true,padding:{left:10,right:10,bottom:10}});
+        return this;
+    }
+
+    confirm()
+    {
+        this._resolve(true);
+        this.close();
+    }
+
+    cancel()
+    {
+        this._resolve(false);
+        this.close();
+    }
+
+    close()
+    {
+        super.close();
+        this.onclose?.();
+    }
+
+    show(msg)
+    {
+        super.show();
+        this.getElement('msg').setText(msg);
+        this.layout();
+        return new Promise((resolve, reject) => {
+            this._resolve = resolve;
+        });
+    }
+}
+
+export class UiConfirm extends UiContainerBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        super(scene, 'UiConfirm', false);
+        UiConfirm.instance = this;
+
+        this.add(new Confirm(scene)).close()
+    }
+
+
+
+    static msg(msg) {return this.instance?.show(msg);}
 }
 
 export class Settings extends UiBase
@@ -4152,6 +4258,8 @@ export class UiSkill extends UiBase
         return true;
     }
 
+    refresh() {this.update();}
+
     update()
     {
         let tree = this.getOwner().skTree;
@@ -4179,10 +4287,15 @@ export class UiSkill extends UiBase
     show()
     {
         super.show();
-
         this.update();
+        this.closeAll(GM.UI_CENTER);
+        this.register(GM.UI_CENTER);
+    }
 
-        
+    close()
+    {
+        super.close();
+        this.unregister();
     }
 
     static show() {this.instance?.show();}
