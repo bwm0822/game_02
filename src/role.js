@@ -1352,14 +1352,28 @@ export class Avatar extends Role
 
     skillTree()
     {
-        this.skTree = [
-            {type:'skill',id:'lunge',x:25,y:25},
-            {type:'skill',id:'fireball',x:125,y:25},
-            {type:'skill',id:'lightning',x:75,y:125},
-            {type:'link',pts:[{x:25,y:50},{x:25,y:75},{x:75,y:75}],refs:['lunge']},
-            {type:'link',pts:[{x:125,y:50},{x:125,y:75},{x:75,y:75}],refs:['fireball']},
-            {type:'link',pts:[{x:75,y:75},{x:75,y:100}],refs:['lunge','fireball']},
-        ];
+        this.skTree = {
+            
+            "normal":
+            [
+                {type:'skill',id:'lunge',x:25,y:25},
+                {type:'skill',id:'fireball',x:125,y:25},
+                {type:'skill',id:'lightning',x:75,y:125},
+                {type:'link',pts:[{x:25,y:50},{x:25,y:75},{x:75,y:75}],refs:['lunge']},
+                {type:'link',pts:[{x:125,y:50},{x:125,y:75},{x:75,y:75}],refs:['fireball']},
+                {type:'link',pts:[{x:75,y:75},{x:75,y:100}],refs:['lunge','fireball']},
+            ],
+            "test":
+            [
+                {type:'skill',id:'lunge',x:25,y:25},
+                {type:'skill',id:'fireball',x:125,y:25},
+            
+                {type:'link',pts:[{x:25,y:50},{x:25,y:75},{x:75,y:75}],refs:['lunge']},
+                {type:'link',pts:[{x:125,y:50},{x:125,y:75},{x:75,y:75}],refs:['fireball']},
+            
+            ],
+            
+        };
     }
 
     addListener()

@@ -4183,8 +4183,8 @@ export class UiSkill extends UiBase
         {
             x : GM.w/2,
             y : GM.h/2,
-            width : 800,
-            height : 500,
+            width : 500,
+            height : 400,
             orientation : 'y',
             space:{left:10,right:10,bottom:10,item:5},
         }
@@ -4193,16 +4193,47 @@ export class UiSkill extends UiBase
         this.addBg(scene) 
             .addTop(scene,{text:'skill'.lab()})
             // .addGrid(scene,5,4,this.getOwner,{classT:SkillItem})
-            .addTest(scene)
+            // .addTest(scene)
+            .addMain(scene)
             .layout()
             .hide()
     }
 
-    addTest(scene)
+    get _graphic() {return this._main._graphic;}
+    get _panel() {return this._main._panel;}
+
+    addMain(scene)
     {
         let config = 
         {
-            width: 100,
+            height:400,
+            orientation:'x',
+            space:{item:10},
+        }
+
+        let main = scene.rexUI.add.sizer(config);
+        main.addMenu = this.addMenu;
+        main.addPanel = this.addPanel;
+        main.addScroll = this.addScroll;
+        main.createPanel = this.createPanel;
+        main.addMenu(scene)
+            .addPanel(scene)
+        this.add(main,{key:'main'})
+        this._main = main;
+        return this;
+    }
+
+    addMenu(scene)
+    {
+        this.addScroll(scene,{width:100});
+        return this;
+    }
+
+    addPanel(scene)
+    {
+        let config = 
+        {
+            width: 500,
             height: 200,
             background: rect(scene,{color:GM.COLOR_BLACK}),
             panel: {child:this.createPanel(scene)},
@@ -4215,18 +4246,18 @@ export class UiSkill extends UiBase
             },
         }
         let scroll = scene.rexUI.add.scrollablePanel(config);
-        this.add(scroll, {expand:true, key:'scroll'});
-        this._panel = this.getElement('scroll').getElement('panel')
+        this.add(scroll, {expand:true});
+        this._panel = scroll.getElement('panel')
         this._graphic = this.scene.add.graphics();
         this._panel.add(this._graphic);
         return this;
     }
 
-    createPanel(scene)
-    {
-        let sizer= scene.rexUI.add.sizer({orientation:'y',space:5})
-        return sizer;
-    }
+    // createPanel(scene)
+    // {
+    //     let sizer= scene.rexUI.add.sizer({orientation:'y',space:5})
+    //     return sizer;
+    // }
 
     createPanel(scene)
     {
@@ -4262,7 +4293,23 @@ export class UiSkill extends UiBase
 
     update()
     {
-        let tree = this.getOwner().skTree;
+        console.log(this.getOwner().skTree);
+        let tree = this.getOwner().skTree['normal'];
+
+        let trees = this.getOwner().skTree;
+        let panel = this.getElement('scroll',true).getElement('panel')
+        console.log(panel)
+        panel.removeAll(true);
+        Object.keys(trees).forEach((tree)=>{
+            console.log(tree)
+
+            let add = this.item(tree);
+            panel.add(add,{expand:true})
+
+        })
+
+
+
         this._graphic.lineStyle(4, 0x808080, 1);
         
         tree.forEach(dat=>{
@@ -4282,6 +4329,8 @@ export class UiSkill extends UiBase
                 }
             }
         })
+
+        this.layout();
     }
 
     show()
