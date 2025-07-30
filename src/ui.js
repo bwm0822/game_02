@@ -4197,9 +4197,12 @@ export class UiSkill extends UiBase
             .addMain(scene)
             .layout()
             .hide()
+
+        this._itemSel = null;
     }
 
     get _graphic() {return this._main._graphic;}
+    set _graphic(value) {this._main._graphic = value;}
     get _panel() {return this._main._panel;}
 
     addMain(scene)
@@ -4214,7 +4217,7 @@ export class UiSkill extends UiBase
         let main = scene.rexUI.add.sizer(config);
         main.addMenu = this.addMenu;
         main.addPanel = this.addPanel;
-        main.addScroll = this.addScroll;
+        main.addScroll = this.addScroll;    // call by this.addMenu()
         main.createPanel = this.createPanel;
         main.addMenu(scene)
             .addPanel(scene)
@@ -4248,8 +4251,8 @@ export class UiSkill extends UiBase
         let scroll = scene.rexUI.add.scrollablePanel(config);
         this.add(scroll, {expand:true});
         this._panel = scroll.getElement('panel')
-        this._graphic = this.scene.add.graphics();
-        this._panel.add(this._graphic);
+        // this._graphic = this.scene.add.graphics();
+        // this._panel.add(this._graphic);
         return this;
     }
 
@@ -4289,26 +4292,20 @@ export class UiSkill extends UiBase
         return true;
     }
 
-    refresh() {this.update();}
-
-    update()
+    // refresh() {this.update();}
+    refresh() 
     {
-        console.log(this.getOwner().skTree);
-        let tree = this.getOwner().skTree['normal'];
+        let item = this._itemSel;
+        let tree = this.getOwner().skTree[item.id];
+        this.drawTree(tree)
+        this.drawTree(tree);
+    }
 
-        let trees = this.getOwner().skTree;
-        let panel = this.getElement('scroll',true).getElement('panel')
-        console.log(panel)
-        panel.removeAll(true);
-        Object.keys(trees).forEach((tree)=>{
-            console.log(tree)
-
-            let add = this.item(tree);
-            panel.add(add,{expand:true})
-
-        })
-
-
+    drawTree(tree)
+    {
+        this._panel.removeAll(true);
+        this._graphic = this.scene.add.graphics();
+        this._panel.add(this._graphic);
 
         this._graphic.lineStyle(4, 0x808080, 1);
         
@@ -4333,10 +4330,40 @@ export class UiSkill extends UiBase
         this.layout();
     }
 
+    ondown(item)
+    {
+        this._itemSel?.unsel();
+        this._itemSel = item;
+        let tree = this.getOwner().skTree[item.id];
+        this.drawTree(tree)
+        item.sel();
+    }
+    
+
+    showMenu()
+    {
+        this._itemSel = null;
+        let trees = this.getOwner().skTree;
+        let panel = this.getElement('scroll',true).getElement('panel')
+
+        panel.removeAll(true);
+        Object.keys(trees).forEach((tree)=>{
+            let item = this.item(tree,{ondown:this.ondown.bind(this)});
+            item.id = tree;
+            panel.add(item,{expand:true})
+
+        })
+
+        this._panel.removeAll(true);
+
+        this.layout();
+    }
+
+
     show()
     {
         super.show();
-        this.update();
+        this.showMenu();
         this.closeAll(GM.UI_CENTER);
         this.register(GM.UI_CENTER);
     }
