@@ -766,8 +766,8 @@ class SkillSlot extends Pic
     // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
     // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
 
-    leave() {UiDragged.interact(true);console.log('enter-1')}
-    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);console.log('enter-1')}
+    leave() {UiDragged.interact(true);}
+    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
 
     leftButtonDown(x,y)
     {
@@ -892,8 +892,8 @@ class SkillItem extends Pic
         return ret!==undefined;
     }
 
-    leave() {UiDragged.interact(true);console.log('leave-2')}
-    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);console.log('enter-2')}
+    leave() {UiDragged.interact(true);}
+    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
 
     addListener()
     {
@@ -914,7 +914,6 @@ class SkillItem extends Pic
         if(!this._skill?.en)
         {
             let ret = await UiConfirm.msg('學習此技能?');
-            console.log(ret)
             if(ret)
             {
                 this._skill.en=true;
@@ -929,7 +928,6 @@ class SkillItem extends Pic
 
     leftButtonUp(x,y)
     {
-        console.log('up');
         Ui.cancelDelayCall();   
         UiDragged.empty();
     }
@@ -4192,8 +4190,6 @@ export class UiSkill extends UiBase
         UiSkill.instance = this; 
         this.addBg(scene) 
             .addTop(scene,{text:'skill'.lab()})
-            // .addGrid(scene,5,4,this.getOwner,{classT:SkillItem})
-            // .addTest(scene)
             .addMain(scene)
             .layout()
             .hide()
@@ -4219,6 +4215,7 @@ export class UiSkill extends UiBase
         main.addPanel = this.addPanel;
         main.addScroll = this.addScroll;    // call by this.addMenu()
         main.createPanel = this.createPanel;
+        main.getOwner = this.getOwner;
         main.addMenu(scene)
             .addPanel(scene)
         this.add(main,{key:'main'})
@@ -4251,16 +4248,8 @@ export class UiSkill extends UiBase
         let scroll = scene.rexUI.add.scrollablePanel(config);
         this.add(scroll, {expand:true});
         this._panel = scroll.getElement('panel')
-        // this._graphic = this.scene.add.graphics();
-        // this._panel.add(this._graphic);
         return this;
     }
-
-    // createPanel(scene)
-    // {
-    //     let sizer= scene.rexUI.add.sizer({orientation:'y',space:5})
-    //     return sizer;
-    // }
 
     createPanel(scene)
     {
@@ -4332,31 +4321,34 @@ export class UiSkill extends UiBase
 
     ondown(item)
     {
-        this._itemSel?.unsel();
-        this._itemSel = item;
-        let tree = this.getOwner().skTree[item.id];
-        this.drawTree(tree)
-        item.sel();
+         this._itemSel?.unsel();
+            this._itemSel = item;
+            let tree = this.getOwner().skTree[item.id];
+            this.drawTree(tree)
+            item.sel();
     }
-    
+
 
     showMenu()
     {
-        this._itemSel = null;
-        let trees = this.getOwner().skTree;
-        let panel = this.getElement('scroll',true).getElement('panel')
+        if(this._itemSel === null)
+        {
+            let trees = this.getOwner().skTree;
+            let menu = this.getElement('scroll',true).getElement('panel')
 
-        panel.removeAll(true);
-        Object.keys(trees).forEach((tree)=>{
-            let item = this.item(tree,{ondown:this.ondown.bind(this)});
-            item.id = tree;
-            panel.add(item,{expand:true})
+            menu.removeAll(true);
+            Object.keys(trees).forEach((tree,i)=>{
+                let item = this.item(tree,{ondown:this.ondown.bind(this)});
+                item.id = tree;
+                menu.add(item,{expand:true})
+                if(i===0)
+                {
+                    item.emit('pointerdown',item);
+                }
 
-        })
-
-        this._panel.removeAll(true);
-
-        this.layout();
+            })
+            this.layout();
+        }
     }
 
 
