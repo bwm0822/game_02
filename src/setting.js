@@ -143,6 +143,7 @@ export let GM =
     TP_SLOT : 0,
     TP_PROP : 1,
     TP_BTN : 2,
+    TP_SKILL : 3,
 
     // 任務類型
     KILL : 'kill',

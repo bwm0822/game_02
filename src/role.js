@@ -262,7 +262,8 @@ export class Role extends Entity
 
     initSkillSlots()
     {
-        return ['lunge','fireball'];
+        // return ['lunge','fireball'];
+        return [];
     }
 
     initSkills()

@@ -884,6 +884,7 @@ class SkillItem extends Pic
     get owner() {return Role.getPlayer();}
     get id() {return this._id;}
     get i() {return this._i;}
+    get dat() {return this._dat;}
 
     get locked()
     {
@@ -894,12 +895,14 @@ class SkillItem extends Pic
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
+    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_SKILL,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() {Ui.cancelDelayCall();UiInfo.close();}
 
     addListener()
     {
         this.setInteractive({draggable:true,dropZone:true})
-        // .on('pointerover', ()=>{this.over();})
-        // .on('pointerout', ()=>{this.out();})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
         .on('pointerdown', async (pointer,x,y)=>{this.leftButtonDown(x,y);})
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
@@ -936,8 +939,9 @@ class SkillItem extends Pic
     {
         let mpos=this.scene.input.activePointer;
         UiDragged.skill = this;
-        // UiDragged.setPos(this.left+x, this.top+y);
         UiDragged.setPos(mpos.x, mpos.y);
+        Ui.cancelDelayCall();
+        UiInfo.close();
     }
 
     
@@ -1401,12 +1405,25 @@ class UiInfo extends Sizer
         return this;
     }
 
+    addCd(skill)
+    {
+        console.log(skill)
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
+            .add(bbcText(this.scene,{text:skill.dat.type}))
+            .addSpace()
+            .add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
+        this.addDivider();
+        this.add(sizer,{expand:true});
+        return this;
+    }
+
     update(tp, elm)
     {
         // let item = ItemDB.get(slot.id);
         this.removeAll(true)
            
-        if(tp==GM.TP_SLOT)
+        if(tp===GM.TP_SLOT)
         {
             this.addTitle(elm)
                 .addCat(elm)
@@ -1415,13 +1432,18 @@ class UiInfo extends Sizer
                 .addDescript(elm)
                 .addGold(elm)
         }
-        else if(tp==GM.TP_PROP)
+        else if(tp===GM.TP_PROP)
         {
             this.add(bbcText(this.scene,{text:elm.p.des()}));        
         }
-        else if(tp==GM.TP_BTN)
+        else if(tp===GM.TP_BTN)
         {
             this.add(bbcText(this.scene,{text:elm.key.lab()}));        
+        }
+        else if(tp===GM.TP_SKILL)
+        {
+            this.add(bbcText(this.scene,{text:elm.id.lab()}))
+                .addCd(elm)
         }
 
         this.layout()
@@ -1433,17 +1455,27 @@ class UiInfo extends Sizer
         super.show();
         let x=elm.x,y=elm.y;
 
-        if(tp == GM.TP_BTN)
+        let parent = elm.parentContainer;
+        let parentX=0, parentY=0;
+        if(parent)
+        {
+            parentX = parent.x;
+            parentY = parent.y;
+            x += parentX;
+            y += parentY;
+        }
+
+        if(tp === GM.TP_BTN)
         {
             if(elm.y>GM.h/2)
             {
                 this.setOrigin(0.5,1);
-                y=elm.top-UiInfo.gap;
+                y=parentY+elm.top-UiInfo.gap;
             }
             else
             {
                 this.setOrigin(0.5,0);
-                y=elm.bottom+UiInfo.gap;
+                y=parentY+elm.bottom+UiInfo.gap;
             }
         }
         else
@@ -1451,12 +1483,12 @@ class UiInfo extends Sizer
             if(elm.x>GM.w/2)
             {
                 this.setOrigin(1,0.5);
-                x=elm.left-UiInfo.gap;
+                x=parentX+elm.left-UiInfo.gap;
             }
             else
             {
                 this.setOrigin(0,0.5);
-                x=elm.right+UiInfo.gap;
+                x=parentX+elm.right+UiInfo.gap;
             }
         }
 
