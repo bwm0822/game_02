@@ -886,12 +886,15 @@ class SkillItem extends Pic
     get i() {return this._i;}
     get dat() {return this._dat;}
 
+    get en() {return this._skill && this._skill.en;}
+
     get locked()
     {
-        if(this._skill.en) {return false;}
-        let ret = this._dat.refs?.find(ref=>this.owner.status.skills[ref].en===false);
+        if(this.en) {return false;}
+        let ret = this._dat.refs?.find(ref=> this.owner.status.skills[ref]===undefined || this.owner.status.skills[ref].en===false);
         return ret!==undefined;
     }
+    
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
@@ -919,11 +922,16 @@ class SkillItem extends Pic
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
+                if(!this._skill)
+                {
+                    this.owner.status.skills[this._id]={en:false,cd:0}
+                    this._skill=this.owner.status.skills[this._id];
+                }
                 this._skill.en=true;
                 Ui.refreshAll();
             }
         }
-        else
+        else if(this.dat.type === GM.ACTIVE)
         {
             Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
         }
@@ -948,8 +956,9 @@ class SkillItem extends Pic
 
     update()
     {
-        this.getElement('text').setText(this._skill.en?'':'🔒');
-        this.getElement('disabled').fillAlpha=this._skill.en?0:0.75;
+        this.getElement('text').setText(this.locked?'🔒':'');
+        this.getElement('disabled').fillAlpha=this.en?0:0.75;
+
     }
 
     set(id, x, y)
@@ -961,7 +970,7 @@ class SkillItem extends Pic
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
-        this.getElement('disabled').fillAlpha=this._skill.en?0:0.75;
+        this.getElement('disabled').fillAlpha=this.en?0:0.75;
         this.layout();
     }
 
@@ -1292,9 +1301,12 @@ class UiInfo extends Sizer
         // Ui.addLayer(scene, 'UiInfo', this);
     }
 
+    get lang() {return Record.data.lang;}
+
     addTitle(slot)
     {
-        this.add(bbcText(this.scene,{text:slot.itm.id.lab()}));
+        let title = slot.dat[this.lang]?.lab
+        this.add(bbcText(this.scene,{text:title??slot.dat.id}));
         return this;
     }
 
@@ -1316,10 +1328,12 @@ class UiInfo extends Sizer
 
     addDescript(slot)
     {
-        if(slot.dat.des)
+        let des = slot.dat[this.lang]?.des
+        if(des)
         {
             this.addDivider();
-            this.add(bbcText(this.scene,{text:slot.id.des(),wrapWidth:200}),{align:'left'});
+            // this.add(bbcText(this.scene,{text:slot.id.des(),wrapWidth:200}),{align:'left'});
+            this.add(bbcText(this.scene,{text:des,wrapWidth:200}),{align:'left'});
         }
         return this;
     }
@@ -1407,12 +1421,14 @@ class UiInfo extends Sizer
 
     addCd(skill)
     {
-        console.log(skill)
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
             .add(bbcText(this.scene,{text:skill.dat.type}))
             .addSpace()
-            .add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
+        if(skill.dat.cd)
+        {
+            sizer.add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
+        }
         this.addDivider();
         this.add(sizer,{expand:true});
         return this;
@@ -1442,8 +1458,10 @@ class UiInfo extends Sizer
         }
         else if(tp===GM.TP_SKILL)
         {
-            this.add(bbcText(this.scene,{text:elm.id.lab()}))
+            this.addTitle(elm)
                 .addCd(elm)
+                .addDescript(elm)
+                
         }
 
         this.layout()
@@ -4213,8 +4231,8 @@ export class UiSkill extends UiBase
         {
             x : GM.w/2,
             y : GM.h/2,
-            width : 500,
-            height : 400,
+            // width : 500,
+            // height : 400,
             orientation : 'y',
             space:{left:10,right:10,bottom:10,item:5},
         }
@@ -4237,7 +4255,7 @@ export class UiSkill extends UiBase
     {
         let config = 
         {
-            height:400,
+            height:100,
             orientation:'x',
             space:{item:10},
         }
@@ -4265,8 +4283,8 @@ export class UiSkill extends UiBase
     {
         let config = 
         {
-            width: 500,
-            height: 200,
+            width: 300,
+            height: 400,
             background: rect(scene,{color:GM.COLOR_BLACK}),
             panel: {child:this.createPanel(scene)},
             slider: {
@@ -4285,8 +4303,8 @@ export class UiSkill extends UiBase
 
     createPanel(scene)
     {
-        let sizer= scene.add.container()
-        sizer.setSize(100,500)
+        let sizer = scene.add.container()
+        // sizer.setSize(100,200)
         return sizer;
     }
 
@@ -4307,7 +4325,7 @@ export class UiSkill extends UiBase
         {
             let id = refs[i];
             let skill = this.getOwner().status.skills[id];
-            if(!skill.en) {return false};
+            if(!skill?.en) {return false};
         }
 
         return true;
@@ -4319,7 +4337,6 @@ export class UiSkill extends UiBase
         let item = this._itemSel;
         let tree = this.getOwner().skTree[item.id];
         this.drawTree(tree)
-        this.drawTree(tree);
     }
 
     drawTree(tree)
@@ -4329,6 +4346,8 @@ export class UiSkill extends UiBase
         this._panel.add(this._graphic);
 
         this._graphic.lineStyle(4, 0x808080, 1);
+
+        let xMax=0, yMax=0;
         
         tree.forEach(dat=>{
             if(dat.type==='skill')
@@ -4336,6 +4355,8 @@ export class UiSkill extends UiBase
                 let slot = new SkillItem(this.scene,50,50);
                 slot.set(dat.id,dat.x,dat.y)
                 this._panel.add(slot)
+                xMax = Math.max(xMax, dat.x);
+                yMax = Math.max(yMax, dat.y);
             }
             else
             {
@@ -4348,6 +4369,8 @@ export class UiSkill extends UiBase
             }
         })
 
+        // console.log(xMax,yMax)
+        this._panel.setSize(xMax+50,yMax+50)
         this.layout();
     }
 

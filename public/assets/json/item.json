@@ -2,7 +2,15 @@
   "iron": {
     "cat": "CAT_ITEM",
     "icon": "icons/273",
-    "gold": 10
+    "gold": 10,
+    "tw": {
+      "lab": "鐵礦",
+      "des": "鐵礦"
+    },
+    "us": {
+      "lab": "Iron ore",
+      "des": ""
+    }
   },
   "salt": {
     "cat": "CAT_FOOD",
@@ -10,6 +18,14 @@
     "gold": 10,
     "others": {
       "cps": 10
+    },
+    "tw": {
+      "lab": "鹽",
+      "des": "鹽"
+    },
+    "us": {
+      "lab": "Salt",
+      "des": ""
     }
   },
   "bag": {
@@ -18,6 +34,14 @@
     "gold": 10,
     "others": {
       "storage": 12
+    },
+    "tw": {
+      "lab": "背包",
+      "des": "可以裝物品"
+    },
+    "us": {
+      "lab": "Bag",
+      "des": ""
     }
   },
   "raw_meat": {
@@ -32,6 +56,14 @@
       "cook": {
         "id": "cooked_meat"
       }
+    },
+    "tw": {
+      "lab": "生肉",
+      "des": ""
+    },
+    "us": {
+      "lab": "Raw meat",
+      "des": ""
     }
   },
   "cooked_meat": {
@@ -43,6 +75,14 @@
     },
     "others": {
       "useable": true
+    },
+    "tw": {
+      "lab": "熟肉",
+      "des": ""
+    },
+    "us": {
+      "lab": "Cooked meat",
+      "des": ""
     }
   },
   "raw_fish": {
@@ -54,6 +94,14 @@
     },
     "others": {
       "useable": true
+    },
+    "tw": {
+      "lab": "生魚",
+      "des": "鐵礦"
+    },
+    "us": {
+      "lab": "Raw fish",
+      "des": ""
     }
   },
   "salt_baked_fish": {
@@ -71,6 +119,14 @@
           "salt": 2
         }
       }
+    },
+    "tw": {
+      "lab": "鹽烤魚",
+      "des": ""
+    },
+    "us": {
+      "lab": "Salt-baked fish",
+      "des": ""
     }
   },
   "sword_01": {
@@ -83,6 +139,14 @@
     },
     "props": {
       "attack": 15
+    },
+    "tw": {
+      "lab": "匕首",
+      "des": ""
+    },
+    "us": {
+      "lab": "Ordinary knife",
+      "des": ""
     }
   },
   "sword_02": {
@@ -91,6 +155,14 @@
     "gold": 25,
     "props": {
       "attack": 25
+    },
+    "tw": {
+      "lab": "鐵劍",
+      "des": ""
+    },
+    "us": {
+      "lab": "Iron Sword",
+      "des": ""
     }
   },
   "sword_03": {
@@ -99,6 +171,14 @@
     "gold": 35,
     "props": {
       "attack": 35
+    },
+    "tw": {
+      "lab": "鋼劍",
+      "des": ""
+    },
+    "us": {
+      "lab": "Steel Sword",
+      "des": ""
     }
   },
   "bow_01": {
@@ -144,6 +224,14 @@
     },
     "props": {
       "defense": 1
+    },
+    "tw": {
+      "lab": "草帽",
+      "des": ""
+    },
+    "us": {
+      "lab": "Straw hat",
+      "des": ""
     }
   },
   "helmet_02": {
@@ -161,6 +249,14 @@
     },
     "props": {
       "defense": 2
+    },
+    "tw": {
+      "lab": "麻布帽",
+      "des": ""
+    },
+    "us": {
+      "lab": "Linen hat",
+      "des": ""
     }
   },
   "helmet_03": {
@@ -169,6 +265,14 @@
     "gold": 30,
     "props": {
       "defense": 3
+    },
+    "tw": {
+      "lab": "皮帽",
+      "des": ""
+    },
+    "us": {
+      "lab": "Leather hat",
+      "des": ""
     }
   },
   "chest_01": {
@@ -186,6 +290,14 @@
     },
     "props": {
       "defense": 2
+    },
+    "tw": {
+      "lab": "草衣",
+      "des": ""
+    },
+    "us": {
+      "lab": "Grass Clothes",
+      "des": ""
     }
   },
   "chest_02": {
@@ -203,6 +315,14 @@
     },
     "props": {
       "defense": 4
+    },
+    "tw": {
+      "lab": "麻布衣",
+      "des": ""
+    },
+    "us": {
+      "lab": "Linen Clothes",
+      "des": ""
     }
   },
   "chest_03": {
@@ -211,6 +331,14 @@
     "gold": 60,
     "props": {
       "defense": 6
+    },
+    "tw": {
+      "lab": "皮衣",
+      "des": ""
+    },
+    "us": {
+      "lab": "Leather",
+      "des": ""
     }
   },
   "gloves_01": {
@@ -228,6 +356,14 @@
     },
     "props": {
       "defense": 1
+    },
+    "tw": {
+      "lab": "手套",
+      "des": ""
+    },
+    "us": {
+      "lab": "Gloves",
+      "des": ""
     }
   },
   "gloves_02": {
@@ -245,6 +381,10 @@
     },
     "props": {
       "defense": 2
+    },
+    "us": {
+      "lab": "Salt",
+      "des": ""
     }
   },
   "boots_01": {
@@ -262,6 +402,14 @@
     },
     "props": {
       "defense": 1
+    },
+    "tw": {
+      "lab": "靴子",
+      "des": ""
+    },
+    "us": {
+      "lab": "Boots",
+      "des": ""
     }
   },
   "boots_02": {
@@ -279,17 +427,37 @@
     },
     "props": {
       "defense": 2
+    },
+    "us": {
+      "lab": "Salt",
+      "des": ""
     }
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
     "icon": "icons/134",
-    "gold": 10
+    "gold": 10,
+    "tw": {
+      "lab": "項鍊",
+      "des": ""
+    },
+    "us": {
+      "lab": "Necklace",
+      "des": ""
+    }
   },
   "ring_01": {
     "cat": "CAT_RING",
     "icon": "icons/132",
-    "gold": 10
+    "gold": 10,
+    "tw": {
+      "lab": "戒子",
+      "des": ""
+    },
+    "us": {
+      "lab": "Ring",
+      "des": ""
+    }
   },
   "torch": {
     "cat": "CAT_EQUIP",
@@ -300,6 +468,14 @@
         "cur": 360,
         "max": 360
       }
+    },
+    "tw": {
+      "lab": "火把",
+      "des": ""
+    },
+    "us": {
+      "lab": "Torch",
+      "des": ""
     }
   },
   "bottle": {
@@ -311,6 +487,14 @@
         "cur": 3,
         "max": 10
       }
+    },
+    "tw": {
+      "lab": "水壺",
+      "des": ""
+    },
+    "us": {
+      "lab": "Bottle",
+      "des": ""
     }
   }
 }

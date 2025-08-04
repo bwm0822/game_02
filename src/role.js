@@ -97,7 +97,22 @@ export class Role extends Entity
 
     get states() {return this.status.states;}
 
+    // states
+    get life() {return {cur:this.states.life.cur, 
+                        max:this.recal(states.life.max, 'hpmax')}}
+
+
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
+
+    recal(value, prop)
+    {
+        this.skills.forEach(skill=>{
+            let val = skill.props?.[prop];
+            if(val){value+=val;}
+        })
+
+        return value;
+    }
 
     addPhysics()
     {
@@ -243,7 +258,11 @@ export class Role extends Entity
         return attrs;
     }
 
-    initStates(data) {return Utility.deepClone(data);}
+    initStates(data) 
+    {
+        let states = Utility.deepClone(data);
+        return states;
+    }
 
     initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
 
@@ -268,9 +287,10 @@ export class Role extends Entity
 
     initSkills()
     {
-        return {'lunge':{en:false, cd:0}, 
-                'fireball':{en:true, cd:0},
-                'lightning':{en:false, cd:0}};
+        // return {'lunge':{en:false, cd:0}, 
+        //         'fireball':{en:true, cd:0},
+        //         'lightning':{en:false, cd:0}};
+        return {};
     }
 
     load()
@@ -1366,12 +1386,7 @@ export class Avatar extends Role
             ],
             "test":
             [
-                {type:'skill',id:'lunge',x:25,y:25},
-                {type:'skill',id:'fireball',x:125,y:25},
-            
-                {type:'link',pts:[{x:25,y:50},{x:25,y:75},{x:75,y:75}],refs:['lunge']},
-                {type:'link',pts:[{x:125,y:50},{x:125,y:75},{x:75,y:75}],refs:['fireball']},
-            
+                {type:'skill',id:'strong',x:25,y:25},            
             ],
             
         };

@@ -6,7 +6,7 @@
     "range": 2,
     "tw": {
       "lab": "突刺",
-      "des": ""
+      "des": "突刺"
     }
   },
   "fireball": {
@@ -16,7 +16,7 @@
     "range": 5,
     "tw": {
       "lab": "火球術",
-      "des": ""
+      "des": "火球術"
     }
   },
   "lightning": {
@@ -30,7 +30,18 @@
     "range": 5,
     "tw": {
       "lab": "閃電術",
-      "des": ""
+      "des": "閃電術"
+    }
+  },
+  "strong": {
+    "icon": "icons/20",
+    "type": "passive",
+    "props": {
+      "hpmax": 10
+    },
+    "tw": {
+      "lab": "強化",
+      "des": "強化"
     }
   }
 }

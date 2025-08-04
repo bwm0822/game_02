@@ -182,6 +182,10 @@ export let GM =
     // tile size
     TILE_W : 32,
     TILE_H : 32,
+
+    // skill type
+    ACTIVE : 'active',
+    PASSIVE: 'passive'
 }
 
 export let ROLE_ATTRS = {
