@@ -37,7 +37,7 @@
     "icon": "icons/20",
     "type": "passive",
     "props": {
-      "hpmax": 10
+      "lifeMax": 10
     },
     "tw": {
       "lab": "強化",

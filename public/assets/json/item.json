@@ -16,9 +16,7 @@
     "cat": "CAT_FOOD",
     "icon": "icons/250",
     "gold": 10,
-    "others": {
-      "cps": 10
-    },
+    "cps": 10,
     "tw": {
       "lab": "鹽",
       "des": "鹽"
@@ -32,9 +30,7 @@
     "cat": "CAT_BAG",
     "icon": "icons/137",
     "gold": 10,
-    "others": {
-      "storage": 12
-    },
+    "storage": 12,
     "tw": {
       "lab": "背包",
       "des": "可以裝物品"
@@ -49,13 +45,12 @@
     "icon": "icons/241",
     "gold": 10,
     "props": {
-      "hunger": -1
+      "hunger": -1,
+      "life": 10
     },
-    "others": {
-      "useable": true,
-      "cook": {
-        "id": "cooked_meat"
-      }
+    "useable": true,
+    "cook": {
+      "id": "cooked_meat"
     },
     "tw": {
       "lab": "生肉",
@@ -71,11 +66,10 @@
     "icon": "icons/242",
     "gold": 15,
     "props": {
-      "hunger": -5
+      "hunger": -5,
+      "life": 20
     },
-    "others": {
-      "useable": true
-    },
+    "useable": true,
     "tw": {
       "lab": "熟肉",
       "des": ""
@@ -90,11 +84,10 @@
     "icon": "icons/259",
     "gold": 10,
     "props": {
-      "hunger": -1
+      "hunger": -1,
+      "life": 10
     },
-    "others": {
-      "useable": true
-    },
+    "useable": true,
     "tw": {
       "lab": "生魚",
       "des": "鐵礦"
@@ -109,15 +102,14 @@
     "icon": "icons/260",
     "gold": 15,
     "props": {
-      "hunger": -5
+      "hunger": -5,
+      "life": 20
     },
-    "others": {
-      "useable": true,
-      "make": {
-        "items": {
-          "raw_fish": 1,
-          "salt": 2
-        }
+    "useable": true,
+    "make": {
+      "items": {
+        "raw_fish": 1,
+        "salt": 2
       }
     },
     "tw": {
@@ -289,7 +281,8 @@
       "scale": 0.25
     },
     "props": {
-      "defense": 2
+      "defense": 2,
+      "lifeMax": 10
     },
     "tw": {
       "lab": "草衣",
@@ -314,7 +307,8 @@
       "scale": 0.25
     },
     "props": {
-      "defense": 4
+      "defense": 4,
+      "lifeMax": 20
     },
     "tw": {
       "lab": "麻布衣",
@@ -463,11 +457,9 @@
     "cat": "CAT_EQUIP",
     "icon": "icons/170",
     "gold": 10,
-    "others": {
-      "endurance": {
-        "cur": 360,
-        "max": 360
-      }
+    "endurance": {
+      "cur": 360,
+      "max": 360
     },
     "tw": {
       "lab": "火把",
@@ -482,11 +474,9 @@
     "cat": "CAT_ITEM",
     "icon": "icons/307",
     "gold": 10,
-    "others": {
-      "capacity": {
-        "cur": 3,
-        "max": 10
-      }
+    "capacity": {
+      "cur": 3,
+      "max": 10
     },
     "tw": {
       "lab": "水壺",

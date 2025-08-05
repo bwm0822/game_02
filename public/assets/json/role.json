@@ -50,21 +50,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     }
   },
   "trump": {
@@ -116,21 +108,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {
@@ -220,21 +204,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {
@@ -344,21 +320,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {
@@ -498,21 +466,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {
@@ -662,21 +622,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {
@@ -826,21 +778,13 @@
     },
     "attrs": {
       "attack": 5,
-      "defense": 0
+      "defense": 0,
+      "lifeMax": 100
     },
     "states": {
-      "life": {
-        "cur": 100,
-        "max": 100
-      },
-      "hunger": {
-        "cur": 0,
-        "max": 100
-      },
-      "thirst": {
-        "cur": 0,
-        "max": 100
-      }
+      "life": 100,
+      "hunger": 0,
+      "thirst": 0
     },
     "schedule": [
       {

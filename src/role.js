@@ -97,22 +97,9 @@ export class Role extends Entity
 
     get states() {return this.status.states;}
 
-    // states
-    get life() {return {cur:this.states.life.cur, 
-                        max:this.recal(states.life.max, 'hpmax')}}
-
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
-    recal(value, prop)
-    {
-        this.skills.forEach(skill=>{
-            let val = skill.props?.[prop];
-            if(val){value+=val;}
-        })
-
-        return value;
-    }
 
     addPhysics()
     {
@@ -272,7 +259,7 @@ export class Role extends Entity
             gold: roleD.gold??0, 
             bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
             equips: this.initEquips(roleD.equips),
-            attrs: this.initAttrs(roleD.attrs),
+            // attrs: this.initAttrs(roleD.attrs),
             states: this.initStates(roleD.states),
             skillSlots: this.initSkillSlots(),
             skills: this.initSkills(),
@@ -300,6 +287,7 @@ export class Role extends Entity
         let data = this.loadData();
         this.status = data ?? this.initStatus(roleD);
         this.equip();
+        // this.calcSkills();
         return this;
     }
 
@@ -710,33 +698,52 @@ export class Role extends Entity
                 break;
         }
        
-        if(this.status.states.life.cur<=0)
+        if(this.getState(GM.P_LIFE).cur<=0)
         {
             this.dead(attacker);
         }
-        else
-        {
-            this.speak('一二三四五六七八九十');
-        }
+        // else
+        // {
+        //     this.speak('一二三四五六七八九十');
+        // }
         resolve?.();
     }
+
+    // calc(attacker)
+    // {
+    //     // console.log(attacker)
+    //     let dmg = attacker.status.attrs.attack;
+    //     let life = this.status.states.life.cur;
+    //     let defense = this.status.attrs.defense ?? 0;
+    //     let dodge = this.status.attrs.dodge ?? 0;
+    //     let block = this.status.attrs.block ?? 0;
+    //     //console.log(this.status.attrs,defense)
+    //     if(Utility.roll()<dodge) { return {state:'dodge'}  }
+    //     if(Utility.roll()<block) { return {state:'block'}  }
+
+    //     dmg = Math.max(0, dmg-defense);
+    //     life -= dmg;
+
+    //     this.status.states.life.cur = life;
+    //     if(this.isPlayer) {this.send('refresh');}
+    //     return {state:'hit',dmg:dmg};
+    // }
 
     calc(attacker)
     {
         // console.log(attacker)
-        let dmg = attacker.status.attrs.attack;
-        let life = this.status.states.life.cur;
-        let defense = this.status.attrs.defense ?? 0;
-        let dodge = this.status.attrs.dodge ?? 0;
-        let block = this.status.attrs.block ?? 0;
+        let dmg = attacker.getAttr('attack',0);
+        let life = this.getState('life').cur;
+        let defense = this.getAttr('defense',0)
+        let dodge = this.getAttr('dodge',0);
+        let block = this.getAttr('block',0);
         //console.log(this.status.attrs,defense)
         if(Utility.roll()<dodge) { return {state:'dodge'}  }
         if(Utility.roll()<block) { return {state:'block'}  }
 
         dmg = Math.max(0, dmg-defense);
-        life -= dmg;
-
-        this.status.states.life.cur = life;
+        // this.status.states.life.cur = life;
+        this.setState('life', life-dmg)
         if(this.isPlayer) {this.send('refresh');}
         return {state:'hit',dmg:dmg};
     }
@@ -912,7 +919,82 @@ export class Role extends Entity
         this.status.attrs[key] = this.attrs(key)+value;
     }
 
-    
+    getAttr(prop, def=undefined)
+    {
+        let value = this.role.attrs?.[prop];
+        if(value===undefined) {return def;}
+        value += this.fromSkill(prop)
+        value += this.fromEquip(prop)
+        return value;
+        
+    }
+
+    getState(prop)
+    {
+        if(this.status.states[prop]===undefined) {return;}
+        let cur = this.status.states[prop];
+        let max = this.getAttr(prop+'Max')
+        if(max) 
+        {
+            if(cur>max){this.status.states[prop]=max;cur=max;}
+            return {cur:cur,max:max};
+        }
+        else {return {cur:cur,den:100};}
+    }
+
+    setState(prop, value)
+    {
+        if(this.status.states[prop]===undefined) {return;}
+        let max = this.getAttr(prop+'Max') ?? 100;
+        this.status.states[prop] = Utility.clamp(value,0,max);
+    }
+
+    incState(prop, value)
+    {
+        if(this.status.states[prop]===undefined) {return;}
+        let cur = this.getState(prop).cur;
+        this.setState(prop,cur+value);
+    }
+
+    fromSkill(prop)
+    {
+        let value = 0;
+        Object.keys(this.status.skills).forEach(id=>{
+            let skill = DB.skill(id);
+            if(skill.type===GM.PASSIVE)
+            {
+                let val = skill.props?.[prop];
+                if(val){value+=val;}
+            }
+        })
+        return value;
+    }
+
+    fromEquip(prop)
+    {
+        let value = 0;
+        this.status.equips.forEach((equip)=>{
+            if(equip && equip.id)
+            {
+                let item = DB.item(equip.id);
+                let val = item.props?.[prop]
+                if(val) {value+=val;}
+            }
+        })
+
+        return value;
+    }
+
+    fromBuff(prop)
+    {
+        let value=0;
+        this.buffs.forEach(buff=>{
+            let val = buff.props?.[prop];
+            if(val){value+=val;}
+        })
+
+        return value;
+    }
 
     equip()
     {
@@ -927,25 +1009,25 @@ export class Role extends Entity
 
                 this.addEquip(item);
 
-                if(item.props)
-                {
-                    for(let [key,value] of Object.entries(item.props))
-                    {
-                        // console.log(key,value);
-                        switch(key)
-                        {
-                            case GM.P_RANGE:
-                            case GM.P_ATTACK: 
-                                if(item.cat==GM.CAT_WEAPON) { this.status.attrs[key]=value; }
-                                else { this.status.attrs[key]+=value; }
-                                break;
-                            case GM.P_LIFE:
-                                this.status.states[key].max+=value; break;
-                            default:
-                                this.status.attrs[key]+=value; break;
-                        }
-                    }
-                }
+                // if(item.props)
+                // {
+                //     for(let [key,value] of Object.entries(item.props))
+                //     {
+                //         // console.log(key,value);
+                //         switch(key)
+                //         {
+                //             case GM.P_RANGE:
+                //             case GM.P_ATTACK: 
+                //                 if(item.cat==GM.CAT_WEAPON) { this.status.attrs[key]=value; }
+                //                 else { this.status.attrs[key]+=value; }
+                //                 break;
+                //             case GM.P_LIFE:
+                //                 this.status.states[key].max+=value; break;
+                //             default:
+                //                 this.status.attrs[key]+=value; break;
+                //         }
+                //     }
+                // }
 
                 if(item.light) {this.addLight();}
             }
@@ -1028,14 +1110,15 @@ export class Role extends Entity
         {
             switch(key)
             {
+                case GM.P_LIFE:
                 case GM.P_HUNGER:
                 case GM.P_THIRST:
-                    states[key].cur = Utility.clamp(states[key].cur+value, 0, states[key].max); 
+                    this.incState(key,value)
                     break;
             }
         }
 
-        if(ent.p(GM.P_TIMES)!=undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
+        if(ent.p(GM.P_TIMES) !== undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
         {
             ent.incp(GM.P_TIMES, -1)
             if(ent.p(GM.P_TIMES)<=0 && !ent.p(GM.P_KEEP))
@@ -1043,7 +1126,7 @@ export class Role extends Entity
                 ent.empty();
             }
         }
-        else if(ent.p(GM.P_CAPACITY) != undefined)
+        else if(ent.p(GM.P_CAPACITY) !== undefined)
         {
             ent.incp(GM.P_CAPACITY,-1)
             if(ent.p(GM.P_CAPACITY)<=0 && !ent.p(GM.P_KEEP))
@@ -1187,9 +1270,12 @@ export class Role extends Entity
 
     updateStates(dt=1)
     {
-        let states = this.status.states;
-        if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC*dt,states.hunger.max);}
-        if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
+        // let states = this.status.states;
+        // if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC*dt,states.hunger.max);}
+        // if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
+
+        this.incState(GM.P_HUNGER,GM.HUNGER_INC*dt);
+        this.incState(GM.P_THIRST,GM.THIRST_INC*dt);
     }
 
     useSkill(pos)

@@ -282,6 +282,7 @@ class Slot extends Icon
     get acts()
     {
         let acts = [];
+        console.log('useable',this.dat.useable,this.dat)
 
         if(this.owner.trade)    // 交易
         {
@@ -1739,6 +1740,8 @@ class UiBase extends Sizer
     prop(key, value, interactive=true)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        if(value.max) {value=`${value.cur} / ${value.max}`;}
+        else if(value.den) {value=`${Math.floor(value.cur)} %`;}
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}),{proportion:0})
@@ -1974,9 +1977,11 @@ class Observe extends UiBase
     {
         let props = this.scene.rexUI.add.sizer({orientation:'y'})
 
-        let life = this.owner.status.states['life'];
-        let value = `${life.cur} / ${life.max}`
-        props.add(this.prop('life', value, false),{expand:true,padding:{left:0,right:0}})
+        // let life = this.owner.status.states['life'];
+        // let value = `${life.cur} / ${life.max}`
+        // props.add(this.prop('life', value, false),{expand:true,padding:{left:0,right:0}})
+
+        props.add(this.prop(GM.P_LIFE, this.owner.getState(GM.P_LIFE), false),{expand:true,padding:{left:0,right:0}})
 
         return props;
     }
@@ -2473,7 +2478,9 @@ export class UiMain extends UiBase
     {
         let player = Role.getPlayer();
         let hp = this.getElement('hp',true);
-        hp.set(player.states.life.cur,player.states.life.max);
+        let life = player.getState('life');
+        hp.set(life.cur,life.max);
+        // hp.set(player.states.life.cur,player.states.life.max);
         // this.resetSkill();
         this.updateSkill();
     }
@@ -2822,6 +2829,30 @@ export class UiProfile extends UiBase
         return this;
     }
 
+    // updatePage(cat)
+    // {
+    //     let panel = this.getElement(cat);
+    //     let childPanel = panel.getElement('panel');
+
+    //     childPanel.removeAll(true);
+
+    //     console.log(this.owner.status);
+    //     for(let [key,value] of Object.entries(this.owner.status[cat]))
+    //     {
+    //         switch(key)
+    //         {
+    //             case GM.P_LIFE: value = `${value.cur} / ${value.max}`; break;
+    //             case GM.P_HUNGER: value = `${Math.floor(value.cur)}%`; break;
+    //             case GM.P_THIRST: value = `${Math.floor(value.cur)}%`; break;
+    //         }
+
+    //         childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})
+    //     }
+
+    //     return this;
+    // }
+
+
     updatePage(cat)
     {
         let panel = this.getElement(cat);
@@ -2829,21 +2860,26 @@ export class UiProfile extends UiBase
 
         childPanel.removeAll(true);
 
-        console.log(this.owner.status);
-        for(let [key,value] of Object.entries(this.owner.status[cat]))
+        if(cat === 'states')
         {
-            switch(key)
-            {
-                case GM.P_LIFE: value = `${value.cur} / ${value.max}`; break;
-                case GM.P_HUNGER: value = `${Math.floor(value.cur)}%`; break;
-                case GM.P_THIRST: value = `${Math.floor(value.cur)}%`; break;
-            }
+            let keys=['life','hunger','thirst']
+            keys.forEach(key=>{
+                childPanel.add(this.prop(key,this.owner.getState(key)),{expand:true,padding:{left:5,right:5}})
+            })
 
-            childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})
+            
+        }
+        else if(cat === 'attrs')
+        {
+            let keys=['attack','defense']
+            keys.forEach(key=>{
+                childPanel.add(this.prop(key,this.owner.getAttr(key)),{expand:true,padding:{left:5,right:5}})
+            })
         }
 
         return this;
     }
+
 
     update()
     {

@@ -23,6 +23,8 @@ def item_to_json(input_excel_path, output_json_path):
                 obj[key] = int(val)
             elif key == 'icon' or key == 'cat':
                 obj[key] = val
+            elif key == 'others':
+                obj.update(json.loads(f"{{{val}}}"))
             else:
                 obj[key] = json.loads(f"{{{val}}}")
         if obj:
