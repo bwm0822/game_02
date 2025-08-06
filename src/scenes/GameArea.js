@@ -1,6 +1,6 @@
 import { GameScene } from "./GameScene.js";
 import * as Role from '../role.js';
-import {UiMain, UiTime} from '../ui.js'
+import {UiMain, UiTime, UiBuff} from '../ui.js'
 import TimeManager,{Schedular} from '../time.js';
 import {Roles,RoleDB} from '../database.js';
 import Utility from '../utility';
@@ -61,6 +61,7 @@ export class GameArea extends GameScene
     {
         super.initUI();
         UiMain.show();
+        UiBuff.show();
         TimeManager.register(UiTime.updateTime.bind(UiTime))
     }
 

@@ -81,13 +81,14 @@ export let GM =
     BTN_NOBG : 'nobg',
     BTN_TEXT : 'text',   
 
-    UI_LEFT :   0b00001,
-    UI_LEFT_P : 0b00010,
-    UI_RIGHT :  0b00100,
-    UI_CENTER : 0b00111,
-    UI_BOTTOM : 0b01000,
-    UI_MSG :    0b10000,
-    UI_ALL :    0b11111,
+    UI_LEFT :   0b000001,
+    UI_LEFT_P : 0b000010,
+    UI_RIGHT :  0b000100,
+    UI_CENTER : 0b000111,
+    UI_BOTTOM : 0b001000,
+    UI_TOP :    0b010000,
+    UI_MSG :    0b010000,
+    UI_ALL :    0b111111,
 
     T_CHANGE_SCENE : 500, // 轉場漸暗時間 ms
 
@@ -140,10 +141,12 @@ export let GM =
     P_ENDURANCE : 'endurance',
     P_KEEP : 'keep',
 
+    // UiInfo Type
     TP_SLOT : 0,
     TP_PROP : 1,
     TP_BTN : 2,
     TP_SKILL : 3,
+    TP_BUFF : 4,
 
     // 任務類型
     KILL : 'kill',
@@ -185,7 +188,8 @@ export let GM =
 
     // skill type
     ACTIVE : 'active',
-    PASSIVE: 'passive'
+    PASSIVE: 'passive',
+    SELF: 'self'
 }
 
 export let ROLE_ATTRS = {

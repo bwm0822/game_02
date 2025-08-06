@@ -263,6 +263,7 @@ export class Role extends Entity
             states: this.initStates(roleD.states),
             skillSlots: this.initSkillSlots(),
             skills: this.initSkills(),
+            buffs: this.initBuffs(),
         }
     }
 
@@ -278,6 +279,11 @@ export class Role extends Entity
         //         'fireball':{en:true, cd:0},
         //         'lightning':{en:false, cd:0}};
         return {};
+    }
+
+    initBuffs()
+    {
+        return [];
     }
 
     load()
@@ -702,10 +708,10 @@ export class Role extends Entity
         {
             this.dead(attacker);
         }
-        // else
-        // {
-        //     this.speak('一二三四五六七八九十');
-        // }
+        else
+        {
+            if(Utility.roll()<50) {this.speak('操');}
+        }
         resolve?.();
     }
 
@@ -925,6 +931,7 @@ export class Role extends Entity
         if(value===undefined) {return def;}
         value += this.fromSkill(prop)
         value += this.fromEquip(prop)
+        value += this.fromBuff(prop)
         return value;
         
     }
@@ -988,12 +995,49 @@ export class Role extends Entity
     fromBuff(prop)
     {
         let value=0;
-        this.buffs.forEach(buff=>{
-            let val = buff.props?.[prop];
-            if(val){value+=val;}
+        this.status.buffs.forEach(buff=>{
+            let p = buff.effects?.[prop];
+            if(p) {value +=p.value;}
         })
 
         return value;
+    }
+
+    processBuffs(dt)
+    {
+        // this.status.buffs.forEach((buff,i)=>{
+        //     for(let [key,p] of Object.entries(buff.effects))
+        //     {
+        //         p.d--;
+        //         console.log(key,p)
+        //         if(p.d==0)
+        //         {
+        //             delete buff.effects[key];
+        //         }
+        //     }
+
+        //     if(Utility.isEmpty(buff.effects))
+        //     {
+        //         this.status.buffs.splice(i,1)
+        //     }
+        // })
+
+        for(let i=0; i<this.status.buffs.length; i++)
+        {
+            let buff = this.status.buffs[i];
+            for(let [key,p] of Object.entries(buff.effects))
+            {
+                if(--p.d===0) {delete buff.effects[key];}
+            }
+
+            if(Utility.isEmpty(buff.effects))
+            {
+                this.status.buffs.splice(i,1);
+                i--;
+            }
+        }
+
+        console.log(this.status.buffs)
     }
 
     equip()
@@ -1254,6 +1298,7 @@ export class Role extends Entity
     {
         this.setLightInt();
         this.updateStates(dt);
+        this.processBuffs(dt);
         this.status.equips.forEach((equip)=>{
             if(equip && equip.endurance)
             {
@@ -1278,21 +1323,35 @@ export class Role extends Entity
         this.incState(GM.P_THIRST,GM.THIRST_INC*dt);
     }
 
-    useSkill(pos)
+    useSkill(skill) // call by SkillSlot
+    {
+        skill.st.cd = skill.dat.cd;
+        console.log(skill.dat.buff);
+        this.status.buffs.push(Utility.deepClone(skill.dat.buff))
+        console.log(this.buffs);
+        this.status.buffs.forEach(buff=>{
+            console.log(buff)
+        })
+        console.log(this.status.buffs,skill.dat.buff)
+        skill.reset();
+
+        this.send('refresh')
+    }
+
+    applySkillAt(pos)
     {
         this.faceTo(pos);
-        let skill = this.status.skills[this.skill.id];
-        let dat = DB.skill(this.skill.id);
-        skill.cd = dat.cd;
+        this.skill.st.cd = this.skill.dat.cd;
         return this.step( pos, 200, 'expo.in',
-                            {   yoyo:true, 
-                                onYoyo:()=>{this.resetSkill(true);}} 
-                        );
+                        {   yoyo:true, 
+                            onYoyo:()=>{this.resetSkill(true);}} 
+                    );
+        
     }
 
     setSkill(skill)
     {
-        this.showRange(true, skill._dat.range);
+        this.showRange(true, skill.dat.range);
         this.skill = skill;
         this.state = GM.ST_SKILL;
     }
@@ -1472,7 +1531,8 @@ export class Avatar extends Role
             ],
             "test":
             [
-                {type:'skill',id:'strong',x:25,y:25},            
+                {type:'skill',id:'strong',x:25,y:25},    
+                {type:'skill',id:'test',x:125,y:25},        
             ],
             
         };
@@ -1497,7 +1557,7 @@ export class Avatar extends Role
         {
             if(this.isInSkillRange(pt??ent.pos))
             {
-                this.useSkill(pt??ent.pos);
+                this.applySkillAt(pt??ent.pos);
             }
         }
         else if(ent?.act===GM.ATTACK)

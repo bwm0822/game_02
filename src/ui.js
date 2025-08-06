@@ -27,6 +27,7 @@ export default function createUI(scene)
 
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
+    new UiBuff(scene);
     new UiSkill(scene);
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
@@ -47,11 +48,13 @@ export default function createUI(scene)
     new UiDebuger(scene);           // 18
     new UiQuest(scene);              // 20
     new UiConfirm(scene);
+    
 
 
     // t3();
     t4(scene);
     t5();
+    t6();
 }
 
 async function t3()
@@ -101,6 +104,38 @@ function t5()
     console.log(arr[-1]?.[-1])
 
      console.log(arr)
+}
+
+function t6()
+{
+    console.log('---------------- t6')
+    let t = {t1:{d:2},t2:{d:1},t3:{d:2}};
+    for(let[key,p] of Object.entries(t))
+    {
+        p.d--;
+        if(p.d===0) delete t[key];
+    }
+    console.log('t=',t)
+
+     let tt = [2,1,3];
+    tt.forEach((t,i)=>{
+       
+        console.log(i,t)
+        t--;
+        if(t==0){tt.splice(i,1)}
+    })
+    console.log('tt=',tt)
+
+    let ttt = [2,1,3]
+    for(let i=0; i<ttt.length; i++)
+    {
+
+        ttt[i]=ttt[i]-1
+        if(ttt[i]==0) {ttt.splice(i,1), i--}
+        
+    }
+
+    console.log('ttt=',ttt)
 }
 
 
@@ -743,13 +778,15 @@ class SkillSlot extends Pic
         this.addListener();
         this._i = i;            // 技能欄位索引
         this._id = null;
-        this._skill = null;     // 用來存放技能狀態
+        this._state = null;     // 用來存放技能狀態
         this._dat = null;       // 用來存放技能資料
     }
 
     get owner() {return Role.getPlayer();}
     get id() {return this._id;}
     get i() {return this._i;}
+    get dat() {return this._dat;}
+    get st() {return this._state;}
 
     addListener()
     {
@@ -801,15 +838,16 @@ class SkillSlot extends Pic
             UiDragged.empty();
             Ui.refreshAll();
         }
-        else if(this._skill)
+        else if(this._state)
         {
-            if(SkillSlot.selected)
+            // console.log(this._state)
+            if(this._dat.type === GM.SELF)
             {
-                SkillSlot.selected===this && SkillSlot.selected.unselect();
+                this.owner.useSkill(this);
             }
-            else if(this._skill.cd===0)
+            else
             {
-                this.select();
+                this.toggle();
             }
         }
     }
@@ -819,6 +857,18 @@ class SkillSlot extends Pic
         this._id = this.owner.status.skillSlots[this._i];
         if(this._id) {this.set();}
         else {this.empty();}
+    }
+
+    toggle()
+    {
+        if(SkillSlot.selected)
+        {
+            SkillSlot.selected===this && SkillSlot.selected.unselect();
+        }
+        else if(this._state.cd===0)
+        {
+            this.select();
+        }
     }
 
     select()
@@ -844,9 +894,9 @@ class SkillSlot extends Pic
 
     set()
     {
-        this._skill =  this.owner.status.skills[this._id];
+        this._state =  this.owner.status.skills[this._id];
         this._dat = DB.skill(this._id);
-        let cd = this._skill.cd;
+        let cd = this._state.cd;
         this.setIcon(this._dat.icon);
         this.getElement('cd').setText(cd>0?cd:'');
         this.getElement('disabled').fillAlpha=cd>0 ? 0.5 : 0;
@@ -856,7 +906,7 @@ class SkillSlot extends Pic
     empty()
     {
         this._id = null;
-        this._skill = null;
+        this._state = null;
         this._dat = null
         this.setIcon();
         this.getElement('cd').setText('');
@@ -932,7 +982,7 @@ class SkillItem extends Pic
                 Ui.refreshAll();
             }
         }
-        else if(this.dat.type === GM.ACTIVE)
+        else if(this.dat.type !== GM.PASSIVE)
         {
             Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
         }
@@ -976,6 +1026,9 @@ class SkillItem extends Pic
     }
 
 }
+
+
+
 
 
 export class UiDragged extends OverlapSizer
@@ -1435,34 +1488,48 @@ class UiInfo extends Sizer
         return this;
     }
 
+    addEffect(buff)
+    {
+        this.addDivider();
+        Object.entries(buff.dat.effects).forEach(([key,value])=>{
+            this.addProp(key,value.value)
+        })
+    }
+
     update(tp, elm)
     {
         // let item = ItemDB.get(slot.id);
         this.removeAll(true)
-           
-        if(tp===GM.TP_SLOT)
+
+        switch(tp)
         {
-            this.addTitle(elm)
-                .addCat(elm)
-                .addProps(elm)
-                .addMake(elm)
-                .addDescript(elm)
-                .addGold(elm)
-        }
-        else if(tp===GM.TP_PROP)
-        {
-            this.add(bbcText(this.scene,{text:elm.p.des()}));        
-        }
-        else if(tp===GM.TP_BTN)
-        {
-            this.add(bbcText(this.scene,{text:elm.key.lab()}));        
-        }
-        else if(tp===GM.TP_SKILL)
-        {
-            this.addTitle(elm)
-                .addCd(elm)
-                .addDescript(elm)
-                
+            case GM.TP_SLOT:
+                 this.addTitle(elm)
+                    .addCat(elm)
+                    .addProps(elm)
+                    .addMake(elm)
+                    .addDescript(elm)
+                    .addGold(elm)
+                break;
+
+            case GM.TP_PROP:
+                this.add(bbcText(this.scene,{text:elm.p.des()}));
+                break;
+
+            case GM.TP_BTN:
+                this.add(bbcText(this.scene,{text:elm.key.lab()}));
+                break;
+
+            case GM.TP_SKILL:
+                 this.addTitle(elm)
+                    .addCd(elm)
+                    .addDescript(elm)
+                break;
+
+            case GM.TP_BUFF:
+                this.add(bbcText(this.scene,{text:elm.dat.id}))
+                    .addEffect(elm)
+                break;
         }
 
         this.layout()
@@ -1484,31 +1551,34 @@ class UiInfo extends Sizer
             y += parentY;
         }
 
-        if(tp === GM.TP_BTN)
+        switch(tp)
         {
-            if(elm.y>GM.h/2)
-            {
-                this.setOrigin(0.5,1);
-                y=parentY+elm.top-UiInfo.gap;
-            }
-            else
-            {
-                this.setOrigin(0.5,0);
-                y=parentY+elm.bottom+UiInfo.gap;
-            }
-        }
-        else
-        {
-            if(elm.x>GM.w/2)
-            {
-                this.setOrigin(1,0.5);
-                x=parentX+elm.left-UiInfo.gap;
-            }
-            else
-            {
-                this.setOrigin(0,0.5);
-                x=parentX+elm.right+UiInfo.gap;
-            }
+            case GM.TP_BTN:
+            case GM.TP_BUFF:
+                if(elm.y>GM.h/2)
+                {
+                    this.setOrigin(0.5,1);
+                    y=parentY+elm.top-UiInfo.gap;
+                }
+                else
+                {
+                    this.setOrigin(0.5,0);
+                    y=parentY+elm.bottom+UiInfo.gap;
+                }
+                break;
+
+            default:
+                if(elm.x>GM.w/2)
+                {
+                    this.setOrigin(1,0.5);
+                    x=parentX+elm.left-UiInfo.gap;
+                }
+                else
+                {
+                    this.setOrigin(0,0.5);
+                    x=parentX+elm.right+UiInfo.gap;
+                }
+                break;
         }
 
         this.update(tp, elm);
@@ -2491,11 +2561,11 @@ export class UiMain extends UiBase
         this.register(GM.UI_BOTTOM);
     }
 
-    static show() {UiMain.instance?.show();}
+    static show() {this.instance?.show();}
 
-    static close() {UiMain.instance?.close(true);}
+    static close() {this.instance?.close(true);}
 
-    static enable(en) {UiMain.instance?.enable(en);} 
+    static enable(en) {this.instance?.enable(en);} 
 
 }
 
@@ -2578,12 +2648,12 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
     static pos(x,y)
     {
-        if(UiCursor.instance) {UiCursor.instance.setPos(x,y);}
+        if(this.instance) {this.instance.setPos(x,y);}
     }
 
     static set(type)
     {
-        if(UiCursor.instance) {UiCursor.instance.setIcon(type);}
+        if(this.instance) {this.instance.setIcon(type);}
     }
 
 }
@@ -2681,9 +2751,9 @@ export class UiTrade extends UiBase
         setCamera(GM.CAM_RIGHT);         
     }
 
-    static show(owner) {UiTrade.instance?.show(owner);}
-    static close() {UiTrade.instance?.close();}
-    static updateGold() {UiTrade.instance?.updateGold();}
+    static show(owner) {this.instance?.show(owner);}
+    static close() {this.instance?.close();}
+    static updateGold() {this.instance?.updateGold();}
 
 }
 
@@ -2922,11 +2992,11 @@ export class UiProfile extends UiBase
         else{this.show(owner)}
     }
 
-    static show(owner) {UiProfile.instance?.show(owner);}
-    static close() {UiProfile.instance?.close();}
+    static show(owner) {this.instance?.show(owner);}
+    static close() {this.instance?.close();}
     // static refresh() {UiProfile.instance?.update();}
-    static toggle(owner) {UiProfile.instance?.toggle(owner);}
-    static get shown() {UiProfile.instance?.visible;}
+    static toggle(owner) {this.instance?.toggle(owner);}
+    static get shown() {this.instance?.visible;}
 }
 
 export class UiDialog extends UiBase
@@ -3160,7 +3230,7 @@ export class UiDialog extends UiBase
         this.closeAll(~GM.UI_MSG);
     }
 
-    static show(owner) {if(UiDialog.instance) {UiDialog.instance.show(owner);}}
+    static show(owner) {if(this.instance) {this.instance.show(owner);}}
 
 }
 
@@ -4251,10 +4321,10 @@ export class UiQuest extends UiBase
         else{this.show(owner)}
     }
 
-    static show(owner) {UiQuest.instance?.show(owner);}
-    static close() {UiQuest.instance?.close();}
-    static toggle(owner) {UiQuest.instance?.toggle(owner);}
-    static get shown() {UiQuest.instance?.visible;}
+    static show(owner) {this.instance?.show(owner);}
+    static close() {this.instance?.close();}
+    static toggle(owner) {this.instance?.toggle(owner);}
+    static get shown() {this.instance?.visible;}
 }
 
 
@@ -4461,5 +4531,101 @@ export class UiSkill extends UiBase
     static close() {this.instance?.close();}
     static toggle(owner) {this.instance?.toggle(owner);}
     static get shown() {this.instance?.visible;}
+}
+
+
+
+class Buff extends Pic
+{
+    constructor(scene, w, h, buff)
+    {
+        super(scene, w, h, {icon:buff.icon, strokeWidth:0, space:0});
+        let d=0;
+        Object.values(buff.effects).forEach(effect=>d=Math.max(d,effect.d))
+        this.add(bbcText(scene,{text:d,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})
+            .layout();
+        this.addListener()
+        this._dat=buff;
+    }
+
+    get dat() {return this._dat;}
+
+    addListener()
+    {
+        this.setInteractive({draggable:true,dropZone:true})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
+    }
+
+    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_BUFF,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() {Ui.cancelDelayCall();UiInfo.close();}
+
+}
+
+
+export class UiBuff extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x : GM.w/2,
+            y : 0,
+            // width : 500,
+            // height : 50,
+            orientation : 'y',
+            // space:{left:10,right:10,bottom:10,item:5},
+        }
+        super(scene, config, 'UiBuff');
+        UiBuff.instance = this; 
+        this.setOrigin(0.5,0);
+        this//.addBg(scene,{color:GM.COLOR_WHITE,alpha:0.5}) 
+            .addMain(scene)
+            .layout()
+            .hide()
+    }
+
+    getOwner() {return Role.getPlayer();}
+
+    addMain(scene)
+    {
+        let config = 
+        {
+            width : (50+5)*10,
+            orientation : 'x',
+            align : 'center',
+            space: {top:0, item:5, line:5},
+        }
+        this._main = scene.rexUI.add.fixWidthSizer(config);
+        this.add(this._main);
+        return this;
+    }
+
+    refresh()
+    {
+        this._main.removeAll(true);
+
+        let buffs = this.getOwner()?.status?.buffs;
+        if(buffs)
+        {
+            buffs.forEach(buff=>{
+                if(buff.icon){this._main.add(new Buff(this.scene,50,50,buff));}
+            })
+        }
+
+        this.layout();
+    }
+
+    show()
+    {
+        super.show();
+        this.register(GM.UI_TOP);
+        this.refresh()
+    }
+
+    static show() {this.instance?.show();}
+
+    static close() {this.instance?.close(true);}
 }
 

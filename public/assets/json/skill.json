@@ -43,5 +43,24 @@
       "lab": "強化",
       "des": "強化"
     }
+  },
+  "test": {
+    "icon": "icons/16",
+    "type": "self",
+    "cd": 5,
+    "buff": {
+      "id": "test",
+      "icon": "icons/16",
+      "effects": {
+        "attack": {
+          "value": 10,
+          "d": 10
+        }
+      }
+    },
+    "tw": {
+      "lab": "測試",
+      "des": "測試"
+    }
   }
 }
