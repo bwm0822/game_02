@@ -146,7 +146,8 @@ export let GM =
     TP_PROP : 1,
     TP_BTN : 2,
     TP_SKILL : 3,
-    TP_BUFF : 4,
+    TP_SKILL_1 : 4,
+    TP_BUFF : 5,
 
     // 任務類型
     KILL : 'kill',
@@ -188,8 +189,8 @@ export let GM =
 
     // skill type
     ACTIVE : 'active',
-    PASSIVE: 'passive',
-    SELF: 'self'
+    PASSIVE : 'passive',
+    SELF : 'self'
 }
 
 export let ROLE_ATTRS = {

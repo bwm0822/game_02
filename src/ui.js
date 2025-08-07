@@ -791,8 +791,8 @@ class SkillSlot extends Pic
     addListener()
     {
         this.setInteractive({draggable:true,dropZone:true})
-        // .on('pointerover', ()=>{this.over();})
-        // .on('pointerout', ()=>{this.out();})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
         .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
@@ -801,8 +801,8 @@ class SkillSlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    // over() {console.log('over'); this.setBgColor(GM.COLOR_SLOT_OVER);}
-    // out() {console.log('out');this.setBgColor(GM.COLOR_SLOT);}
+    over() { this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_1,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() { Ui.cancelDelayCall();UiInfo.close(); }
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
@@ -1521,6 +1521,7 @@ class UiInfo extends Sizer
                 break;
 
             case GM.TP_SKILL:
+            case GM.TP_SKILL_1:
                  this.addTitle(elm)
                     .addCd(elm)
                     .addDescript(elm)
@@ -1555,6 +1556,7 @@ class UiInfo extends Sizer
         {
             case GM.TP_BTN:
             case GM.TP_BUFF:
+            case GM.TP_SKILL_1:
                 if(elm.y>GM.h/2)
                 {
                     this.setOrigin(0.5,1);
@@ -4441,8 +4443,7 @@ export class UiSkill extends UiBase
     refresh() 
     {
         let item = this._itemSel;
-        let tree = this.getOwner().skTree[item.id];
-        this.drawTree(tree)
+        this.drawTree(DB.skTree[item.id])
     }
 
     drawTree(tree)
@@ -4484,8 +4485,7 @@ export class UiSkill extends UiBase
     {
          this._itemSel?.unsel();
             this._itemSel = item;
-            let tree = this.getOwner().skTree[item.id];
-            this.drawTree(tree)
+            this.drawTree(DB.skTree[item.id])
             item.sel();
     }
 
@@ -4494,11 +4494,10 @@ export class UiSkill extends UiBase
     {
         if(this._itemSel === null)
         {
-            let trees = this.getOwner().skTree;
             let menu = this.getElement('scroll',true).getElement('panel')
 
             menu.removeAll(true);
-            Object.keys(trees).forEach((tree,i)=>{
+            Object.keys(DB.skTree).forEach((tree,i)=>{
                 let item = this.item(tree,{ondown:this.ondown.bind(this)});
                 item.id = tree;
                 menu.add(item,{expand:true})
