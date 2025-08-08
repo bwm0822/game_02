@@ -1326,19 +1326,14 @@ export class Role extends Entity
     useSkill(skill) // call by SkillSlot
     {
         skill.st.cd = skill.dat.cd;
-        // console.log(skill.dat.buff);
-        this.status.buffs.push(Utility.deepClone(skill.dat.buff))
-        // console.log(this.buffs);
-        // this.status.buffs.forEach(buff=>{
-        //     console.log(buff)
-        // })
-        // console.log(this.status.buffs,skill.dat.buff)
+        // this.status.buffs.push(Utility.deepClone(skill.dat.buff))
+        this.applyBuff(skill.dat.buff)
         skill.reset();
 
         this.send('refresh')
     }
 
-    getBodiesInRect(range)
+    getBodiesInRect(range, checkBlock)
     {
         let x = this.x - range * GM.TILE_W;
         let y = this.y - range * GM.TILE_H;
@@ -1349,19 +1344,33 @@ export class Role extends Entity
         let includeDynamic = true;
         let includeStatic = false;
         let bodies = this.scene.physics.overlapRect(x, y, width, height, includeDynamic, includeStatic);
-        bodies = bodies.filter(body=>body.gameObject!==this)
-        console.log(bodies)
+        bodies = bodies.filter(body=>{
+            if(body.gameObject===this) {return false;}
+            if(checkBlock)
+            {
+                let hits = Utility.raycast(this.x,this.y,body.x,body.y,[this.scene.staGroup])
+                return hits.length===0;
+            }
+            return true;
+        })
+        return bodies;
     }
+
+    applyBuff(buff)
+    {
+        this.status.buffs.push(Utility.deepClone(buff))
+    }
+
+    
 
     applySkillAt(pos)
     {
         this.faceTo(pos);
         this.skill.st.cd = this.skill.dat.cd;
 
-        this.getBodiesInRect(this.skill.dat.range)
+        let bodies = this.getBodiesInRect(this.skill.dat.range, false)
+        console.log(bodies)
 
-        let hits = Utility.raycast(this.x,this.y,pos.x,pos.y,this.scene.staGroup)
-        console.log(hits)
 
 
         return this.step( pos, 200, 'expo.in',
@@ -1372,7 +1381,7 @@ export class Role extends Entity
 
     setSkill(skill)
     {
-        this.showRange(true, skill.dat.range);
+        this.showRange(true, skill.dat.range,false);
         this.skill = skill;
         this.state = GM.ST_SKILL;
     }
@@ -1460,7 +1469,7 @@ export class Role extends Entity
         
     // }
 
-    showRange(on,range)
+    showRange(on, range, checkBlock)
     {
         this._range?.clear();
         if(!on) {return;}
@@ -1479,7 +1488,7 @@ export class Role extends Entity
                 let px = this.x + (x-n)*GM.TILE_W;
                 let py = this.y + (y-n)*GM.TILE_H;
                 let wei = this.scene.map.getWeight({x:px,y:py});
-                let hits = Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]);
+                let hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
                 let block = wei<=0 || hits.length>0;
                 a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:block};
             }

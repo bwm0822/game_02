@@ -8,12 +8,27 @@
             {
              "name":"anchorX",
              "type":"int",
-             "value":40
+             "value":0
             }, 
             {
              "name":"anchorY",
              "type":"int",
-             "value":0
+             "value":48
+            }, 
+            {
+             "name":"bl",
+             "type":"int",
+             "value":10
+            }, 
+            {
+             "name":"br",
+             "type":"int",
+             "value":10
+            }, 
+            {
+             "name":"bt",
+             "type":"int",
+             "value":96
             }, 
             {
              "name":"gl",
@@ -29,6 +44,11 @@
              "name":"gt",
              "type":"int",
              "value":96
+            }, 
+            {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
             }, 
             {
              "name":"weight",

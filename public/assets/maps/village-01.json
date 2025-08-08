@@ -353,6 +353,12 @@
                 }, 
                 {
                  "id":131,
+                 "properties":[
+                        {
+                         "name":"isBlock",
+                         "type":"bool",
+                         "value":true
+                        }],
                  "template":"..\/templates\/tree.tj",
                  "x":864,
                  "y":288
