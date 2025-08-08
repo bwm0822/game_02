@@ -922,7 +922,7 @@ class SkillItem extends Pic
     constructor(scene, w, h, config)
     {
         super(scene, w, h, config);
-        this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
+        this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0}),'disabled');
         this.add(bbcText(scene,{text:'',fontSize:20,color:'#fff'}),{key:'text',align:'center-center',expand:false});
         this.setIcon(config?.icon);
         this.getElement('disabled').fillAlpha=0;
@@ -965,7 +965,6 @@ class SkillItem extends Pic
 
     async leftButtonDown(x,y)
     {
-        // if(!this._skill?.en || SkillSlot.selected) {return;}
         if(this.locked || SkillSlot.selected) {return;}
        
         if(!this._skill?.en)
@@ -1008,7 +1007,7 @@ class SkillItem extends Pic
     update()
     {
         this.getElement('text').setText(this.locked?'🔒':'');
-        this.getElement('disabled').fillAlpha=this.en?0:0.75;
+        this.getElement('disabled').fillAlpha=this.en?0:0.7;
 
     }
 
@@ -1021,7 +1020,7 @@ class SkillItem extends Pic
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
-        this.getElement('disabled').fillAlpha=this.en?0:0.75;
+        this.getElement('disabled').fillAlpha=this.en?0:0.7;
         this.layout();
     }
 

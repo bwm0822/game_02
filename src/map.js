@@ -531,7 +531,7 @@ class Map
 
     getWeightByTile(tx,ty)
     {
-        if(!this.isInside(tx,ty)){return;}
+        if(!this.isInside(tx,ty)){return -1;}
         return this.graph.grid[ty][tx].weight; 
     }
 

@@ -3,12 +3,12 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/forest-01.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets/maps",
+        ".",
+        "public/assets/templates",
         "public/assets/tiles",
         "public/assets",
-        ".",
         "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
@@ -224,8 +224,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 1,
             "selectedLayer": 2,
@@ -435,10 +435,10 @@
                 3
             ],
             "scale": 2,
-            "selectedLayer": -1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 116.5,
-                "y": 40
+                "x": 574,
+                "y": 280
             }
         },
         "public/assets/maps/village-02.json": {
@@ -647,13 +647,13 @@
         "public/assets/roles.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
-        "public/assets/maps/map.json",
         "public/assets/roles.tsj",
         "public/assets/maps/village-02.json",
         "public/assets/maps/forest-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/village-01.json",
         "public/assets/maps/forest_01.json",
         "public/assets/maps/macron-home.json",
         "public/assets/maps/musk-home.json",

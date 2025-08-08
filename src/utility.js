@@ -251,7 +251,64 @@ export default class Utility
         if(t) {graphics.lineBetween(x, y, x+width, y);}
         if(b) {graphics.lineBetween(x, y+height, x+width, y+height);}
     }
+
+
+    // // 使用範例
+    // static raycast(startX, startY, endX, endY, group) 
+    // {
+    //     const ray = new Phaser.Geom.Line(startX, startY, endX, endY);
+    //     const hits = [];
+
+    //     group.getChildren().forEach(obj => {
+    //         if (!obj.body) return;
+
+    //         const bounds = new Phaser.Geom.Rectangle(
+    //             obj.body.x,
+    //             obj.body.y,
+    //             obj.body.width,
+    //             obj.body.height
+    //         );
+
+    //         if (Phaser.Geom.Intersects.LineToRectangle(ray, bounds)) {
+    //             hits.push(obj);
+    //         }
+    //     });
+
+    //     return hits;
+    // }
+
+    static raycast(startX, startY, endX, endY, groups) 
+    {
+        const ray = new Phaser.Geom.Line(startX, startY, endX, endY);
+        const hits = [];
+
+        groups.forEach(group => {
+            group.getChildren().forEach(obj => {
+                if (!obj.body) return;
+
+                const bounds = new Phaser.Geom.Rectangle(
+                    obj.body.x,
+                    obj.body.y,
+                    obj.body.width,
+                    obj.body.height
+                );
+
+                if (Phaser.Geom.Intersects.LineToRectangle(ray, bounds)) {
+                    hits.push(obj);
+                }
+            });
+        });
+
+        return hits;
+    }
+
 }
+
+
+
+
+
+
 
 // String.prototype.local = function(){ return Utility.local(this); };
 // Number.prototype.local = function(){ return Utility.local(Utility.lut(this)); };

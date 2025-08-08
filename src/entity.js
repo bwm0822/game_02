@@ -23,6 +23,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.en_outline = true;
         this.weight = 0;
         this.isStatic = true; // true: static body, false: dynamic body
+        this.isBlock = false;   // 是否會阻擋
         this.uid = -1;   // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
         this._pGrids = [];   // grid 所佔據的點
@@ -204,8 +205,16 @@ export class Entity extends Phaser.GameObjects.Container
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
         this.body.setSize(this.displayWidth-this.bl-this.br, this.displayHeight-this.bt-this.bb);
-        if(this.isStatic) {this.body.setOffset(this.bl, this.bt);}
-        else {this.body.setOffset(this.min.x+this.bl, this.min.y+this.bt);}
+        if(this.isStatic) 
+        {
+            this.body.setOffset(this.bl, this.bt);
+            this.isBlock && this.scene.staGroup.add(this);
+        }
+        else 
+        {
+            this.body.setOffset(this.min.x+this.bl, this.min.y+this.bt);
+            this.isBlock && this.scene.dynGroup.add(this);
+        }
     }
 
     isInGrid(pos)

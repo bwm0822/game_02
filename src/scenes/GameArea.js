@@ -44,7 +44,8 @@ export class GameArea extends GameScene
 
     async create()
     {
-        this.phyGroup = this.physics.add.group();
+        this.dynGroup = this.physics.add.group();
+        this.staGroup = this.physics.add.staticGroup();
         this.mode = 'normal';
         //this.mode = 'combat';
         await super.create({diagonal:true,classType:Role.Avatar});       

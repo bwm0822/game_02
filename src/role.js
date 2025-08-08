@@ -101,11 +101,11 @@ export class Role extends Entity
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
 
-    addPhysics()
-    {
-        super.addPhysics();
-        this.scene.phyGroup.add(this);
-    }
+    // addPhysics()
+    // {
+    //     super.addPhysics();
+    //     this.scene.dynGroup.add(this);
+    // }
 
     addSprite(sprite)
     {
@@ -1326,27 +1326,48 @@ export class Role extends Entity
     useSkill(skill) // call by SkillSlot
     {
         skill.st.cd = skill.dat.cd;
-        console.log(skill.dat.buff);
+        // console.log(skill.dat.buff);
         this.status.buffs.push(Utility.deepClone(skill.dat.buff))
-        console.log(this.buffs);
-        this.status.buffs.forEach(buff=>{
-            console.log(buff)
-        })
-        console.log(this.status.buffs,skill.dat.buff)
+        // console.log(this.buffs);
+        // this.status.buffs.forEach(buff=>{
+        //     console.log(buff)
+        // })
+        // console.log(this.status.buffs,skill.dat.buff)
         skill.reset();
 
         this.send('refresh')
+    }
+
+    getBodiesInRect(range)
+    {
+        let x = this.x - range * GM.TILE_W;
+        let y = this.y - range * GM.TILE_H;
+        let width = 2 * range * GM.TILE_W;
+        let height = 2 * range * GM.TILE_H;
+
+        console.log(x,y,width,height,range)
+        let includeDynamic = true;
+        let includeStatic = false;
+        let bodies = this.scene.physics.overlapRect(x, y, width, height, includeDynamic, includeStatic);
+        bodies = bodies.filter(body=>body.gameObject!==this)
+        console.log(bodies)
     }
 
     applySkillAt(pos)
     {
         this.faceTo(pos);
         this.skill.st.cd = this.skill.dat.cd;
+
+        this.getBodiesInRect(this.skill.dat.range)
+
+        let hits = Utility.raycast(this.x,this.y,pos.x,pos.y,this.scene.staGroup)
+        console.log(hits)
+
+
         return this.step( pos, 200, 'expo.in',
                         {   yoyo:true, 
                             onYoyo:()=>{this.resetSkill(true);}} 
                     );
-        
     }
 
     setSkill(skill)
@@ -1377,7 +1398,7 @@ export class Role extends Entity
             for(let y=0; y<=2*n; y++)
             {
                 let rect = this.a[y][x];
-                if( rect.w===1 && 
+                if( !rect.block && 
                     pos.x>=rect.x && pos.x<rect.x+rect.width &&
                     pos.y>=rect.y && pos.y<rect.y+rect.height)
                 {
@@ -1388,6 +1409,56 @@ export class Role extends Entity
 
         return false;
     }
+
+    // showRange(on,range)
+    // {
+    //     this._range?.clear();
+    //     if(!on) {return;}
+    //     if(!this._range) {this._range = this.scene.add.graphics();}
+
+    //     let n = range;
+    //     let rows = 2*n+1;
+    //     let cols = 2*n+1;
+    //     let a = Array.from({ length: rows }, () => Array(cols));
+    //     let [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+
+    //     for(let x=0; x<=2*n; x++)
+    //     {
+    //         for(let y=0; y<=2*n; y++)
+    //         {
+    //             let px = this.x + (x-n)*GM.TILE_W;
+    //             let py = this.y + (y-n)*GM.TILE_H;
+    //             let wei = this.scene.map.getWeight({x:px,y:py});
+    //             a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, w:wei};
+    //         }
+    //     }
+
+    //     for(let x=0; x<=2*n; x++)
+    //     {
+    //         for(let y=0; y<=2*n; y++)
+    //         {
+    //             a[y][x].l = a[y][x-1]?.w==1 ? false : true;
+    //             a[y][x].r = a[y][x+1]?.w==1 ? false : true;
+    //             a[y][x].t = a[y-1]?.[x]?.w==1 ? false : true;
+    //             a[y][x].b = a[y+1]?.[x]?.w==1 ? false : true;
+    //         }
+    //     }
+
+    //     for(let y=0; y<=2*n; y++)
+    //     {
+    //         for(let x=0; x<=2*n; x++)
+    //         {
+    //             let rect = a[y][x];
+    //             if(rect.w==1)
+    //             {
+    //                 Utility.drawBlock(this._range, rect);
+    //             }
+    //         }
+    //     }
+
+    //     this.a=a;
+        
+    // }
 
     showRange(on,range)
     {
@@ -1408,7 +1479,9 @@ export class Role extends Entity
                 let px = this.x + (x-n)*GM.TILE_W;
                 let py = this.y + (y-n)*GM.TILE_H;
                 let wei = this.scene.map.getWeight({x:px,y:py});
-                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, w:wei};
+                let hits = Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]);
+                let block = wei<=0 || hits.length>0;
+                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:block};
             }
         }
 
@@ -1416,10 +1489,10 @@ export class Role extends Entity
         {
             for(let y=0; y<=2*n; y++)
             {
-                a[y][x].l = a[y][x-1]?.w==1 ? false : true;
-                a[y][x].r = a[y][x+1]?.w==1 ? false : true;
-                a[y][x].t = a[y-1]?.[x]?.w==1 ? false : true;
-                a[y][x].b = a[y+1]?.[x]?.w==1 ? false : true;
+                a[y][x].l = a[y][x-1]?.block===false ? false : true;
+                a[y][x].r = a[y][x+1]?.block===false ? false : true;
+                a[y][x].t = a[y-1]?.[x]?.block===false ? false : true;
+                a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
             }
         }
 
@@ -1428,7 +1501,7 @@ export class Role extends Entity
             for(let x=0; x<=2*n; x++)
             {
                 let rect = a[y][x];
-                if(rect.w==1)
+                if(!rect.block)
                 {
                     Utility.drawBlock(this._range, rect);
                 }
@@ -1437,27 +1510,6 @@ export class Role extends Entity
 
         this.a=a;
         
-    }
-
-    showRange_old(on)
-    {
-        if(!this._range)
-        {
-            this._range = this.scene.add.graphics();
-        }
-
-        this._range.clear();
-
-        if(on)
-        {
-            const points = [
-                new Phaser.Math.Vector2(this.x-48, this.y-48),
-                new Phaser.Math.Vector2(this.x+48, this.y-48),
-                new Phaser.Math.Vector2(this.x+48, this.y+48),
-                new Phaser.Math.Vector2(this.x-48, this.y+48),
-            ];
-            Utility.drawPolygon(this._range,points)
-        }
     }
 }
 

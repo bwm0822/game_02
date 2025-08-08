@@ -36,6 +36,23 @@
       "type": "link",
       "pts": [
         {
+          "x": 75,
+          "y": 75
+        },
+        {
+          "x": 75,
+          "y": 100
+        }
+      ],
+      "refs": [
+        "lunge",
+        "fireball"
+      ]
+    },
+    {
+      "type": "link",
+      "pts": [
+        {
           "x": 125,
           "y": 50
         },
@@ -49,23 +66,6 @@
         }
       ],
       "refs": [
-        "fireball"
-      ]
-    },
-    {
-      "type": "link",
-      "pts": [
-        {
-          "x": 75,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 100
-        }
-      ],
-      "refs": [
-        "lunge",
         "fireball"
       ]
     },
@@ -87,6 +87,12 @@
       "type": "skill",
       "id": "test",
       "x": 125,
+      "y": 25
+    },
+    {
+      "type": "skill",
+      "id": "test1",
+      "x": 225,
       "y": 25
     }
   ]
