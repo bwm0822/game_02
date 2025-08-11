@@ -28,8 +28,15 @@
     ],
     "cd": 5,
     "range": 5,
-    "props": {
-      "life": -10
+    "buff": {
+      "id": "test",
+      "icon": "icons/17",
+      "effects": {
+        "life": {
+          "value": -1,
+          "d": 5
+        }
+      }
     },
     "tw": {
       "lab": "閃電術",
@@ -41,6 +48,10 @@
     "type": "passive",
     "props": {
       "lifeMax": 10
+    },
+    "stats": {
+      "str": 1,
+      "hpMax": 10
     },
     "tw": {
       "lab": "強化",

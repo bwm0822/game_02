@@ -48,15 +48,11 @@
     "bag": {
       "capacity": 20
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     }
   },
   "trump": {
@@ -106,15 +102,11 @@
         }
       ]
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {
@@ -202,15 +194,11 @@
         }
       ]
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {
@@ -318,15 +306,11 @@
         }
       ]
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {
@@ -464,15 +448,11 @@
       "t": 32,
       "b": 0
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {
@@ -620,15 +600,11 @@
         }
       ]
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {
@@ -776,15 +752,11 @@
         }
       ]
     },
-    "attrs": {
-      "attack": 5,
-      "defense": 0,
-      "lifeMax": 100
-    },
-    "states": {
-      "life": 100,
-      "hunger": 0,
-      "thirst": 0
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
     },
     "schedule": [
       {

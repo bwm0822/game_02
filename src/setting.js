@@ -131,6 +131,29 @@ export let GM =
     P_HUNGER : 'hunger',
     P_THIRST : 'thirst',
 
+    
+    // 基礎屬性
+    BASE : ["str", "dex", "con", "int"],
+    STR: "str",
+    DEX: "dex",
+    CON: "con",
+    INT: "int",
+
+    // 戰鬥屬性 
+    HPMAX : "hpMax",        // 生命上限
+    ATK : "atk",            // 攻擊
+    DEF : "def",            // 防禦
+    HIT : "hit",            // 命中
+    DODGE : "dodge",        // 閃避
+    CRITR : "critRate",     // 暴擊率
+    CRITD : "critDmg",      // 暴擊傷害倍率
+
+    // 抗性 (Resists)
+    PHY : "phy",
+    FIRE : "fire",
+    ICE : "ice",
+    POISON : "poison",
+
     // 屬性
     P_ATTACK : 'attack',
     P_DEFENSE : 'defense',
@@ -190,7 +213,9 @@ export let GM =
     // skill type
     ACTIVE : 'active',
     PASSIVE : 'passive',
-    SELF : 'self'
+    SELF : 'self',
+
+
 }
 
 export let ROLE_ATTRS = {

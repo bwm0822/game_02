@@ -118,17 +118,48 @@ class 裡面如果有呼叫 scene.add.layer() 就不需要再呼叫 scene.add.ex
 
     美式中古世紀回合式 RPG
     1.裝備:
-        近戰 : atk = atk + weapon_atk 
-        遠程 : atk = weapon_atk
+        近戰(melee): atk = atk + weapon_atk 
+        遠程(ranged): atk = weapon_atk
+
     2.技能:
         主動、被動、冷卻時間、攻擊範圍、目標(單一/多個)
         BUFF、DEBUFF    (加減屬性)
         DOT             (受抗性影響、可疊加、刷新、忽略)
-    3.攻擊屬性 : 物理、火、冰、毒
-    4.基礎屬性:
-        力量
-        敏捷
-        體質
-        精力
-    5.屬性:
+
+    3.攻擊屬性(element): physical(物理)、fire(火)、ice(冰)、poison(毒)
+
+    4.基礎屬性(baseStats):
+        str(力量): 20
+        dex(敏捷): 10
+        con(體質): 18
+        int(智力): 5
+        
+    5.衍生屬性(derivedStats):
+        hpMax(生命上限): base.con * 10
+        mpMax(魔力上限): base.int * 5
+        atk(攻擊): base.str * 5
+        def(防禦): base.con * 1.2
+        hit(命中率): base.dex * 0.5
+        dodge(閃避率): base.dex * 0.3
+        critRate(暴擊率): base.dex * 0.1
+        critDmg(暴擊傷害倍率): 1.5
+
+    6.屬性抗性（Resistances） 
+
+
+
+ {
+    baseStats:
+    {
+        str:10,
+        dex:10,
+        con:10,
+        int:10
+    }
+ }
+
+ function getDerivedStats()
+ {
+
+ }
 

@@ -132,6 +132,10 @@
     "props": {
       "attack": 15
     },
+    "stats": {
+      "atk": 15,
+      "str": 1
+    },
     "tw": {
       "lab": "匕首",
       "des": ""
@@ -148,6 +152,9 @@
     "props": {
       "attack": 25
     },
+    "stats": {
+      "atk": 25
+    },
     "tw": {
       "lab": "鐵劍",
       "des": ""
@@ -163,6 +170,9 @@
     "gold": 35,
     "props": {
       "attack": 35
+    },
+    "stats": {
+      "atk": 35
     },
     "tw": {
       "lab": "鋼劍",
@@ -185,6 +195,10 @@
     "props": {
       "attack": 15,
       "range": 5
+    },
+    "stats": {
+      "atk": 15,
+      "range": 5
     }
   },
   "bow_02": {
@@ -198,6 +212,10 @@
     },
     "props": {
       "attack": 25,
+      "range": 5
+    },
+    "stats": {
+      "atk": 25,
       "range": 5
     }
   },
@@ -216,6 +234,9 @@
     },
     "props": {
       "defense": 1
+    },
+    "stats": {
+      "def": 10
     },
     "tw": {
       "lab": "草帽",
@@ -242,6 +263,9 @@
     "props": {
       "defense": 2
     },
+    "stats": {
+      "def": 20
+    },
     "tw": {
       "lab": "麻布帽",
       "des": ""
@@ -257,6 +281,9 @@
     "gold": 30,
     "props": {
       "defense": 3
+    },
+    "stats": {
+      "def": 30
     },
     "tw": {
       "lab": "皮帽",

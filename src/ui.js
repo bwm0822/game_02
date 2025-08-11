@@ -1827,6 +1827,23 @@ class UiBase extends Sizer
         return sizer;
     }
 
+    stat(key, value, interactive=true)
+    {
+        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
+            .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
+            .add(bbcText(this.scene,{text:value}),{proportion:0})
+        let bg = sizer.getElement('bg').setAlpha(0);
+        if(interactive)
+        {
+            sizer.p = key;
+            sizer.setInteractive()
+                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.TP_PROP,sizer);}) })
+                .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
+        }
+        return sizer;
+    }
+
     setTitle(title) {this.getElement('label',true).setText(title);}
 
     updateEquip() {this.getElement('equip',true).getElement('items').forEach(item => {item?.update();});}
@@ -2549,8 +2566,11 @@ export class UiMain extends UiBase
     {
         let player = Role.getPlayer();
         let hp = this.getElement('hp',true);
-        let life = player.getState('life');
-        hp.set(life.cur,life.max);
+        // let life = player.getState('life');
+        // hp.set(life.cur,life.max);
+        let total = player.getTotalStats();
+        hp.set(player.status.hp,total[GM.HPMAX]);
+        
         // hp.set(player.states.life.cur,player.states.life.max);
         // this.resetSkill();
         this.updateSkill();
@@ -2779,69 +2799,13 @@ export class UiProfile extends UiBase
             .addTop(scene,{text:'profile'.lab()})
             .addInfo(scene)
             .addTab(scene)
-            .addPage(scene,'attrs')
-            .addPage(scene,'states')
+            .addPage(scene)
             .setOrigin(0)
             .layout()
             .hide()
         
-          
+        this._tab;
     }
-
-    addInfo(scene)
-    {
-        let sizer = scene.rexUI.add.sizer({orientation:'x'});
-        sizer.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
-            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/0'}),{padding:10, key:'icon'})
-            .add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top',padding:{top:10},key:'name'})
-        this.add(sizer,{expand:true,key:'info'});
-        return this;
-    }
-
-    updateInfo()
-    {
-        let [key,frame]=this.owner.role.icon.split('/');
-        this.getElement('icon',true).getElement('sprite')?.setTexture(key,frame);
-        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.role.job?.lab()}`);
-    }
-
-    // addTabPages(scene)
-    // {
-    //     let config = {
-    //         background: scene.rexUI.add.roundRectangle(0, 0, 0, 0, 0, GM.COLOR_GRAY),
-    //         tabs: {space: { item: 10 }},
-    //         //pages: {fadeIn: 300},
-    //         align: {tabs: 'left'},
-    //         space: { left: 5, right: 5, top: 5, bottom: 5, item: 10 }
-    //     }
-
-    //     let tabPages = scene.rexUI.add.tabPages(config); 
-
-    //     tabPages
-    //         .addPage({
-    //             key: 'page0',
-    //             tab: text(scene,{text:'page0'}),
-    //             page: text(scene,{text:'page0'})
-    //         })
-    //         .addPage({
-    //             key: 'page1',
-    //             tab: text(scene,{text:'page1'}),
-    //             page: text(scene,{text:'page1'})
-    //         })
-    //         .on('tab.focus', function (tab, key) {
-    //             //console.log(tab,key)
-    //             console.log('focus',key)
-    //             tab.setColor('#ff0000');
-    //         })
-    //         .on('tab.blur', function (tab, key) {
-    //             //console.log(tab,key)
-    //             console.log('blur',key)
-    //             tab.setColor('#ffffff');
-    //         })
-
-    //     this.add(tabPages,{expand:true,padding:{left:10,right:10}});
-    //     return this;
-    // }
 
     addTab(scene)
     {
@@ -2849,8 +2813,8 @@ export class UiProfile extends UiBase
         let config = {
             background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
             topButtons:[
-                        label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'attrs',space:{left:20,right:20,top:5,bottom:5}}),
-                        label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'stats',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'status',space:{left:20,right:20,top:5,bottom:5}}),
                     ],
 
             space: {left:5, top:5, bottom:5, topButton:1}
@@ -2867,7 +2831,8 @@ export class UiProfile extends UiBase
                 }
                 button_pre = button;
                 button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
-                this.getElement(button.key)?.show();
+                this._tab = button.key;
+                this.updatePage(button.key);
                 this.layout();
             })
 
@@ -2884,7 +2849,53 @@ export class UiProfile extends UiBase
         return this;
     }
 
-    addPage(scene, key)
+
+    addInfo(scene)
+    {
+        // main
+        let main = scene.rexUI.add.sizer({orientation:'x',space:{left:5,right:5,top:5,bottom:5,item:5}});
+        main.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}));
+
+        // infoL
+        let left = scene.rexUI.add.sizer({orientation:'x',space:{left:5,right:5,top:5,bottom:5,item:5}});
+        left.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
+            .add(new Pic(scene,GM.PORTRAITS_W,GM.PORTRAITS_H,{icon:'portraits/0'}),{key:'icon',align:'top'})
+            .add(bbcText(scene,{text:'阿凡達\n精靈'}),{align:'top',key:'name'})
+
+        // infoR
+        let right = scene.rexUI.add.sizer({orientation:'y',space:{left:5,right:5,top:5,bottom:5,item:5}});
+        right.addBackground(rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
+        
+        //
+        main.add(left,{expand:true,key:'infoL'})
+            .add(right,{expand:true,key:'infoR',proportion:1});
+
+        //
+        this.add(main,{expand:true,key:'info'});
+
+        return this;
+    }
+
+    updateInfo()
+    {
+        // infoL
+        let [key,frame]=this.owner.role.icon.split('/');
+        this.getElement('icon',true).getElement('sprite')?.setTexture(key,frame);
+        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.role.job?.lab()}`);
+
+        // infoR
+        let infoR = this.getElement('infoR',true);
+        infoR.removeAll(true);
+        for(const key of GM.BASE)
+        {
+            infoR.add(this.stat(key,this.total[key]),{expand:true,padding:{left:5,right:5}});   
+        }
+
+        return this;   
+    }
+
+    
+    addPage(scene)
     {
         let config = {
             //width: 400,
@@ -2895,57 +2906,35 @@ export class UiProfile extends UiBase
             },
         }
         let panel = scene.rexUI.add.scrollablePanel(config);
-        this.add(panel,{expand:true,key:key});
-        panel.hide();
+        this.add(panel,{expand:true,key:'page'});
+        // panel.hide();
         return this;
     }
 
-    // updatePage(cat)
-    // {
-    //     let panel = this.getElement(cat);
-    //     let childPanel = panel.getElement('panel');
-
-    //     childPanel.removeAll(true);
-
-    //     console.log(this.owner.status);
-    //     for(let [key,value] of Object.entries(this.owner.status[cat]))
-    //     {
-    //         switch(key)
-    //         {
-    //             case GM.P_LIFE: value = `${value.cur} / ${value.max}`; break;
-    //             case GM.P_HUNGER: value = `${Math.floor(value.cur)}%`; break;
-    //             case GM.P_THIRST: value = `${Math.floor(value.cur)}%`; break;
-    //         }
-
-    //         childPanel.add(this.prop(key,value),{expand:true,padding:{left:5,right:5}})
-    //     }
-
-    //     return this;
-    // }
-
-
-    updatePage(cat)
+    updatePage(tab)
     {
-        let panel = this.getElement(cat);
+        if(!tab) {return this;}
+
+        let panel = this.getElement('page');
         let childPanel = panel.getElement('panel');
 
         childPanel.removeAll(true);
 
-        if(cat === 'states')
-        {
-            let keys=['life','hunger','thirst']
-            keys.forEach(key=>{
-                childPanel.add(this.prop(key,this.owner.getState(key)),{expand:true,padding:{left:5,right:5}})
-            })
+        let keys=[];
 
-            
-        }
-        else if(cat === 'attrs')
+        switch(tab)
         {
-            let keys=['attack','defense']
-            keys.forEach(key=>{
-                childPanel.add(this.prop(key,this.owner.getAttr(key)),{expand:true,padding:{left:5,right:5}})
-            })
+            case 'status': keys = ['hp','hunger','thirst']; break;
+            case 'stats': keys = ['atk','def']; break;
+        }
+
+        for(const key of keys)
+        {
+            let max = this.total[key+'Max'];
+            let val= this.total[key];
+            let value = tab !== 'status' ? val : ( max ? `${val}/${max}` : `${val}%` );
+
+            childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})
         }
 
         return this;
@@ -2954,24 +2943,27 @@ export class UiProfile extends UiBase
 
     update()
     {
-        if(this.visible)
-        {
-            //console.log('update');
-            this.updatePage('attrs')
-                .updatePage('states')
-                .layout();
-        }
+        this.updateInfo()
+            .updatePage(this._tab)
+            .layout();
     }
 
-    refresh() {this.update();}  // call by Ui.refreshAll()
+    refresh() // call by Ui.refreshAll()
+    {
+        if(this.visible)
+        {
+            this.total = this.owner.getTotalStats();
+            this.update();
+        }
+    }  
 
     show(owner)
     {
         this.owner = owner;
         super.show();
-        this.updateInfo();
+        this.total = this.owner.getTotalStats();
         this.update();
-        this.getElement('tags').emitTopButtonClick(0);
+        this._tab || this.getElement('tags').emitTopButtonClick(0);
         // closeAll/register/camera
         Ui.closeAll(GM.UI_LEFT);
         this.register(GM.UI_LEFT_P);

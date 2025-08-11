@@ -247,8 +247,14 @@ export class Role extends Entity
 
     initStates(data) 
     {
+        console.log('------------------',data)
         let states = Utility.deepClone(data);
         return states;
+    }
+
+    initBaseStats(data)
+    {
+        return data ?? {[GM.STR]:10,[GM.DEX]:10,[GM.CON]:10,[GM.INT]:10};
     }
 
     initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
@@ -259,11 +265,15 @@ export class Role extends Entity
             gold: roleD.gold??0, 
             bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
             equips: this.initEquips(roleD.equips),
-            // attrs: this.initAttrs(roleD.attrs),
-            states: this.initStates(roleD.states),
+            // states: this.initStates(roleD.states),
+            states: this.initStates(roleD.stats),
             skillSlots: this.initSkillSlots(),
             skills: this.initSkills(),
             buffs: this.initBuffs(),
+            baseStats: this.initBaseStats(roleD.baseStats),
+            activeEffects: [],
+            hp:100,
+            mp:100,
         }
     }
 
@@ -291,9 +301,11 @@ export class Role extends Entity
         let roleD = DB.role(this.id);
         this.role = roleD;
         let data = this.loadData();
+        console.log("roleD-------------",roleD)
         this.status = data ?? this.initStatus(roleD);
         this.equip();
         // this.calcSkills();
+        this.getTotalStats();
         return this;
     }
 
@@ -735,7 +747,7 @@ export class Role extends Entity
     //     return {state:'hit',dmg:dmg};
     // }
 
-    calc(attacker)
+    calc_old(attacker)
     {
         // console.log(attacker)
         let dmg = attacker.getAttr('attack',0);
@@ -750,6 +762,15 @@ export class Role extends Entity
         dmg = Math.max(0, dmg-defense);
         // this.status.states.life.cur = life;
         this.setState('life', life-dmg)
+        if(this.isPlayer) {this.send('refresh');}
+        return {state:'hit',dmg:dmg};
+    }
+
+    calc(attacker)
+    {
+        let dmg = this.calculateDamage(attacker, this)
+        this.status.hp -= dmg;
+
         if(this.isPlayer) {this.send('refresh');}
         return {state:'hit',dmg:dmg};
     }
@@ -1042,7 +1063,7 @@ export class Role extends Entity
 
     equip()
     {
-        this.status.attrs = this.initAttrs(this.role.attrs);
+        // this.status.attrs = this.initAttrs(this.role.attrs);
         this.removeLight();
         this.removeEquip();
 
@@ -1519,6 +1540,247 @@ export class Role extends Entity
 
         this.a=a;
         
+    }
+
+
+    deriveStats(base) 
+    {
+        const out = {};
+        // 1) Vital & resource
+        if (base[GM.HPMAX] == null) out[GM.HPMAX] = Math.round((base[GM.CON] || 0) * 10 + (base[GM.STR] || 0) * 2);
+        // if (base[GM.MPMAX] == null) out.mpMax = Math.round((base.int || 0) * 5);
+
+        // 2) Combat basics
+        if (base[GM.ATK] == null) out[GM.ATK] = (base[GM.STR] || 0) * 1.5;          // 攻擊 = STRx1.5
+        if (base[GM.DEF] == null) out[GM.DEF] = (base[GM.CON] || 0) * 1.2;          // 物防 = CON×1.2
+        if (base[GM.HIT] == null) out[GM.HIT] = (base[GM.DEX] || 0) * 0.5;          // 命中
+        if (base[GM.DODGE] == null) out[GM.DODGE] = (base[GM.DEX] || 0) * 0.3;      // 閃避
+
+        // 3) Critical
+        if (base[GM.CRITR] == null) out[GM.CRITR] = Math.min(0.5, (base[GM.DEX] || 0) * 0.01); // 每點 DEX +1% 暴擊，上限 50%
+        if (base[GM.CRITD] == null) out[GM.CRITD] = 1.5;                            // 基礎暴擊傷害倍率
+
+        // 4) Resistances placeholder
+        if (base.resists == null) out.resists = { [GM.FIRE]: 0, [GM.ICE]: 0, [GM.POISON]: 0, [GM.PHY]: 0 };
+
+        return out;
+    }
+
+    getTotalStats() 
+    {
+        // 1) 淺層拷貝 基礎屬性
+        let base = {...this.status.baseStats};
+
+        // 2) 計算裝備加成
+        let baseAdd = {};   // 基礎屬性 加成
+        let secAdd = {};    // 次級屬性 加成
+
+        for(const equip of this.status.equips) 
+        {
+            if(equip)
+            {
+                let eq = DB.item(equip.id);
+                const st = eq.stats || {};
+                for(const k in st)
+                {
+                    if(GM.BASE.includes(k)) // 2-1) 基礎屬性
+                    {
+                        baseAdd[k] = (baseAdd[k] || 0) + st[k];
+                    }
+                    else    // 2-2) 次級屬性、抗性、武器資訊
+                    {
+                        secAdd[k] = (secAdd[k] || 0) + st[k];
+                    }
+                }
+            }
+        }
+
+        // 3) 計算 被動技能 加成
+        for(const key in this.status.skills)
+        {
+            let sk = DB.skill(key);
+            if(sk.type === GM.PASSIVE)
+            {
+                const st = sk.stats || {};
+                for(const k in st)
+                {
+                    if(GM.BASE.includes(k)) // 2-1) 基礎屬性
+                    {
+                        baseAdd[k] = (baseAdd[k] || 0) + st[k];
+                    }
+                    else    // 2-2) 次級屬性、抗性、武器資訊
+                    {
+                        secAdd[k] = (secAdd[k] || 0) + st[k];
+                    }
+                }
+            }
+        }
+
+        // 4) 用裝備修正後的 base（先加法，再乘百分比）
+        for (const k of Object.keys(baseAdd)) 
+        {
+            base[k] = (base[k] || 0) + baseAdd[k];
+        }
+
+        // 5) 由更新後的 base 推導 derived
+        const derived = this.deriveStats(base);
+
+        // 6) 合併：base 值優先，derived 補空位
+        const total = { ...derived, ...base };
+
+        // 7) 再套用「推導後」的裝備加成與抗性、武器
+        for (const [k, v] of Object.entries(secAdd)) {total[k] = (total[k] || 0) + v};
+
+        // 8) Buff / Debuff（乘法）
+        for (const eff of this.status.activeEffects) 
+        {
+            if (eff.type === "buff" || eff.type === "debuff") 
+            {
+                total[eff.stat] = (total[eff.stat] || 0) * (1 + eff.value);
+            }
+        }
+
+        // console.log(total);
+        return total;
+    }
+
+    
+    addEffect(effect)
+    {
+        const maxStack = effect.maxStack || 99;
+        if (effect.stackable) 
+        {
+            const existingStacks = this.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
+            if (existingStacks.length >= maxStack) {
+                console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
+                return;
+            }
+            const newEff = { ...effect, remaining: effect.duration };
+            this.activeEffects.push(newEff);
+            console.log(`${this.name} 疊加 ${effect.tag} 效果（第 ${existingStacks.length + 1} 層）`);
+        } 
+        else 
+        {
+            const existing = this.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
+            if (existing) 
+            {
+                existing.remaining = effect.duration;
+                existing.value = effect.value;
+                console.log(`${this.name} 的 ${effect.tag} 效果已刷新`);
+            } 
+            else 
+            {
+                const newEff = { ...effect, remaining: effect.duration };
+                this.activeEffects.push(newEff);
+                console.log(`${this.name} 獲得 ${effect.type}：${effect.stat || effect.tag} ${effect.value * 100 || effect.value}% 持續 ${effect.duration} 回合`);
+            }
+        }
+    }
+
+    applyEffects() 
+    {
+        const expired = [];
+        for (const e of this.activeEffects) 
+        {
+            if (e.type === "dot") 
+            {
+                let finalDamage = e.value;
+                if (e.element) 
+                {
+                    const resist = this.getTotalStats().resistances?.[e.element] || 0;
+                    finalDamage *= 1 - resist;
+                }
+                finalDamage = Math.round(Math.max(1, finalDamage));
+                this.takeDamage(finalDamage);
+                console.log(`${this.name} 受到 ${e.tag} DoT 傷害 ${finalDamage}`);
+            }
+            e.remaining -= 1;
+            if (e.remaining <= 0) {expired.push(e);}
+        }
+        for (const e of expired) 
+        {
+            this.activeEffects = this.activeEffects.filter(x => x !== e);
+            console.log(`${this.name} 的 ${e.stat || e.tag} ${e.type} 效果結束`);
+        }
+
+        for (const skill of this.skills) 
+        {
+            const name = skill.name;
+            if (this.cooldowns[name] > 0) {this.cooldowns[name]--;}
+        }
+    }
+
+    calculateDamage_old(attacker, defender, skill) 
+    {
+        const aStats = attacker.getTotalStats();
+        const dStats = defender.getTotalStats();
+
+        let baseStat = 0;
+        if (skill.sourceStats) 
+        {
+            for (const [stat, ratio] of Object.entries(skill.sourceStats)) 
+            {
+                baseStat += (aStats[stat] || 0) * ratio;
+            }
+        } 
+        else 
+        {
+            baseStat = aStats.combatAtk;
+        }
+
+        let baseDamage = baseStat * (skill.multiplier || 1);
+
+        let defFactor = 1;
+        const penetrate = skill.extra?.penetrate || 0;
+        if (skill.defType === "def") 
+        {
+            const effectiveDef = dStats.def * (1 - penetrate);
+            defFactor = 100 / (100 + effectiveDef);
+        }
+
+        let damage = baseDamage * defFactor;
+        const resist = dStats.resistances?.[skill.element] || 0;
+        damage *= 1 - resist;
+
+        if (Math.random() < aStats.critRate) 
+        {
+            damage *= aStats.critDmg;
+            console.log(`💥 ${attacker.name} 暴擊！`);
+        }
+
+        damage *= 0.95 + Math.random() * 0.1;
+        return Math.round(Math.max(1, damage));
+    }
+
+    calculateDamage(attacker, defender, skill) 
+    {
+        const aStats = attacker.getTotalStats();
+        const dStats = defender.getTotalStats();
+        console.log(aStats,dStats)
+
+        let atk = aStats[GM.ATK] || 0;  // 基本攻擊
+        let elm = GM.PHY;               // 攻擊屬性
+        let mul = 1;                    // 傷害倍率
+        let penetrate = 0;              // 防禦穿透率
+
+        // 1. 計算基礎傷害
+        let baseDamage = atk * mul;
+        // 2. 計算防禦係數
+        const effectiveDef = dStats.def * (1 - penetrate);
+        let defFactor = 100 / (100 + effectiveDef);
+        // 3. 計算實際傷害
+        let damage = baseDamage * defFactor;
+        const resist = dStats.resists?.[elm] || 0;
+        damage *= 1 - resist;
+        // 4. 計算暴擊
+        if (Math.random() < aStats[GM.CRITR]) 
+        {
+            damage *= aStats[GM.CRITD];
+            console.log(`💥 ${attacker.name} 暴擊！`);
+        }
+        // 5. 浮動傷害(0.85 ~ 1.05)
+        damage *= 0.95 + Math.random() * 0.1;
+        return Math.round(Math.max(1, damage));
     }
 }
 
