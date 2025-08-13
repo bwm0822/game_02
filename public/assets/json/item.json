@@ -311,6 +311,9 @@
       "defense": 2,
       "lifeMax": 10
     },
+    "stats": {
+      "def": 20
+    },
     "tw": {
       "lab": "草衣",
       "des": ""
@@ -337,6 +340,9 @@
       "defense": 4,
       "lifeMax": 20
     },
+    "stats": {
+      "def": 30
+    },
     "tw": {
       "lab": "麻布衣",
       "des": ""
@@ -352,6 +358,9 @@
     "gold": 60,
     "props": {
       "defense": 6
+    },
+    "stats": {
+      "def": 40
     },
     "tw": {
       "lab": "皮衣",
@@ -378,6 +387,9 @@
     "props": {
       "defense": 1
     },
+    "stats": {
+      "def": 5
+    },
     "tw": {
       "lab": "手套",
       "des": ""
@@ -403,6 +415,9 @@
     "props": {
       "defense": 2
     },
+    "stats": {
+      "def": 10
+    },
     "us": {
       "lab": "Salt",
       "des": ""
@@ -423,6 +438,9 @@
     },
     "props": {
       "defense": 1
+    },
+    "stats": {
+      "def": 5
     },
     "tw": {
       "lab": "靴子",
@@ -448,6 +466,9 @@
     },
     "props": {
       "defense": 2
+    },
+    "stats": {
+      "def": 10
     },
     "us": {
       "lab": "Salt",

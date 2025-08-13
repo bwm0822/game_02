@@ -126,12 +126,6 @@ export let GM =
     SPLIT : 'split',
     OPENBAG : 'openbag',
 
-    // 角色狀態
-    P_LIFE : 'life',
-    P_HUNGER : 'hunger',
-    P_THIRST : 'thirst',
-
-    
     // 基礎屬性
     BASE : ["str", "dex", "con", "int"],
     STR: "str",
@@ -140,6 +134,7 @@ export let GM =
     INT: "int",
 
     // 戰鬥屬性 
+    COMBAT: ["atk", "def", "hit", "dodge", "critRate", "critDmg"],
     HPMAX : "hpMax",        // 生命上限
     ATK : "atk",            // 攻擊
     DEF : "def",            // 防禦
@@ -149,10 +144,28 @@ export let GM =
     CRITD : "critDmg",      // 暴擊傷害倍率
 
     // 抗性 (Resists)
+    RESIST : ["phy_res", "fire_res", "ice_res", "poison_res"],
+    PHY_RES : "phy_res",
+    FIRE_RES : "fire_res",
+    ICE_RES : "ice_res",
+    POISON_RES : "poison_res",
+
+    // 元素
+    ELM : "elm",            // 元素
     PHY : "phy",
     FIRE : "fire",
     ICE : "ice",
     POISON : "poison",
+
+    // 生存屬性
+    SURVIVAL : ["hp", "hunger", "thirst"],
+    HP : 'hp',
+    HUNGER : 'hunger',
+    THIRST : 'thirst',
+
+    HEAL : 'heal',
+    DOT : 'dot',
+    HOT : 'hot',
 
     // 屬性
     P_ATTACK : 'attack',
@@ -170,7 +183,7 @@ export let GM =
     TP_BTN : 2,
     TP_SKILL : 3,
     TP_SKILL_1 : 4,
-    TP_BUFF : 5,
+    TP_EFFECT : 5,
 
     // 任務類型
     KILL : 'kill',

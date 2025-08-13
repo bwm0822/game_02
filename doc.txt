@@ -146,6 +146,28 @@ class 裡面如果有呼叫 scene.add.layer() 就不需要再呼叫 scene.add.ex
 
     6.屬性抗性（Resistances） 
 
+    7.Effect type : 
+        buff    : 自己  stats
+        debuff  : 敵人  stats
+        dot     : 敵人  hp
+        hot     : 自己  hp
+
+    8. 技能表示法
+    {
+        name: "Dual Care",
+        cooldown: 4,
+        type: "active" or "passive" or "attack"
+        range: 1
+        icon:
+        effects: 
+        [
+            { type: "heal", tag: "Self Patch", value: 40 },     
+            { type: "hot",  tag: "Ally Regen", value: 10, duration: 4 }
+            { type: "buff", tag: "strong", stat: "str", value: 1, duration: 5 }
+        ]
+    }
+
+
 
 
  {

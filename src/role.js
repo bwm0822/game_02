@@ -90,12 +90,12 @@ export class Role extends Entity
 
     get isPlayer() {return false;}
 
-    get storage()   {return this.status.bag;}
+    get storage()   {return this.rec.bag;}
 
     get state()     {return this._state;}
     set state(value) {this._state=value;}
 
-    get states() {return this.status.states;}
+    get states() {return this.rec.states;}
 
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
@@ -235,29 +235,15 @@ export class Role extends Entity
         else {return super.loadData();}
     }
 
-    initAttrs(data)
-    {
-        let attrs = Utility.deepClone(data);
-        for (let [key, value] of Object.entries(ROLE_ATTRS)) 
-        {
-            if(!(key in attrs)) {attrs[key] = value;}
-        }
-        return attrs;
-    }
-
-    initStates(data) 
-    {
-        console.log('------------------',data)
-        let states = Utility.deepClone(data);
-        return states;
-    }
-
     initBaseStats(data)
     {
         return data ?? {[GM.STR]:10,[GM.DEX]:10,[GM.CON]:10,[GM.INT]:10};
     }
 
+    initStates() {return {[GM.HP]: 100,[GM.HUNGER]: 0,[GM.THIRST]: 0};}
+
     initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
+
 
     initStatus(roleD)
     {
@@ -265,15 +251,12 @@ export class Role extends Entity
             gold: roleD.gold??0, 
             bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
             equips: this.initEquips(roleD.equips),
-            // states: this.initStates(roleD.states),
-            states: this.initStates(roleD.stats),
+            baseStats: this.initBaseStats(roleD.baseStats),
+            states: this.initStates(),
             skillSlots: this.initSkillSlots(),
             skills: this.initSkills(),
             buffs: this.initBuffs(),
-            baseStats: this.initBaseStats(roleD.baseStats),
             activeEffects: [],
-            hp:100,
-            mp:100,
         }
     }
 
@@ -302,7 +285,7 @@ export class Role extends Entity
         this.role = roleD;
         let data = this.loadData();
         console.log("roleD-------------",roleD)
-        this.status = data ?? this.initStatus(roleD);
+        this.rec = data ?? this.initStatus(roleD);
         this.equip();
         // this.calcSkills();
         this.getTotalStats();
@@ -310,7 +293,7 @@ export class Role extends Entity
     }
 
     
-    save() {return this.status;}
+    save() {return this.rec;}
 
     addLight()
     {
@@ -553,7 +536,8 @@ export class Role extends Entity
 
     action_atk()
     {
-        if(this.status.attrs[GM.P_RANGE]>1)
+        let range = this.rec[GM.P_RANGE]||1;
+        if(range>1)
         {
             return new Promise((resolve)=>{
                 new Projectile(this.scene, this.x, this.y, 'arrow', 0.25)
@@ -567,7 +551,11 @@ export class Role extends Entity
         else
         {
              return this.step( this._ent.pos, 200, 'expo.in',
-                            {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent, this._act);}} ); 
+                                {   
+                                    yoyo: true, 
+                                    onYoyo: async ()=>{await this.interact(this._ent, this._act);}
+                                } 
+                            ); 
         }
     }
 
@@ -652,7 +640,8 @@ export class Role extends Entity
 
     isInRange(ent)
     {
-        let range = this.status.attrs[GM.P_RANGE];
+        // let range = this.status.attrs[GM.P_RANGE];
+        let range = this.rec[GM.P_RANGE]||1;
         console.log(range)
         let [tx1, ty1] = this.scene.map.worldToTile(this.x,this.y);
         let [tx2, ty2] = this.scene.map.worldToTile(ent.x,ent.y);
@@ -716,7 +705,8 @@ export class Role extends Entity
                 break;
         }
        
-        if(this.getState(GM.P_LIFE).cur<=0)
+        // if(this.getState(GM.P_LIFE).cur<=0)
+        if(this.rec.states[GM.HP]<=0)
         {
             this.dead(attacker);
         }
@@ -769,7 +759,7 @@ export class Role extends Entity
     calc(attacker)
     {
         let dmg = this.calculateDamage(attacker, this)
-        this.status.hp -= dmg;
+        this.rec.states[GM.HP] -= dmg;
 
         if(this.isPlayer) {this.send('refresh');}
         return {state:'hit',dmg:dmg};
@@ -880,6 +870,26 @@ export class Role extends Entity
 
     }
 
+    createDisp(value,color='#fff',stroke='#000')
+    {
+        let t = text(this.scene,{text:value,color:color,stroke:stroke,strokeThickness:5});
+        this.add(t);
+        t.setOrigin(0.5,0.5);
+        t.setDepth(100);
+        // t.setText(value).setTint(color);
+        let x = Phaser.Math.Between(10, -10);
+        this.scene.tweens.add({
+                targets: t,
+                x: {from:x, to:x},
+                y: {from:-48, to:-64},
+                duration: 300,
+                ease: 'linear',
+                onStart: ()=>{},
+                onComplete: (tween, targets, gameObject)=>{t.destroy();}         
+            });
+        return t;
+    }
+
     disp(value,color=GM.COLOR_RED)
     {
         if(!this._disp)
@@ -906,10 +916,10 @@ export class Role extends Entity
 
     removeEquip(equip)
     {
-        let index = this.status.equips.indexOf(equip);
+        let index = this.rec.equips.indexOf(equip);
         if(index>=0)
         {
-            this.status.equips[index] = null;
+            this.rec.equips[index] = null;
             this.equip();
         }
     }
@@ -930,99 +940,99 @@ export class Role extends Entity
         this.equips=[];
     }
 
-    attrs(key)
-    {
-        if(!(key in this.status.attrs)) {this.status.attrs[key]=0;}
-        return this.status.attrs[key];
-    }
+    // attrs(key)
+    // {
+    //     if(!(key in this.rec.attrs)) {this.rec.attrs[key]=0;}
+    //     return this.rec.attrs[key];
+    // }
 
-    setAttrs(key, value)
-    {
-        this.status.attrs[key] = value
-    }
+    // setAttrs(key, value)
+    // {
+    //     this.rec.attrs[key] = value
+    // }
 
-    addAttrs(key, value)
-    {
-        this.status.attrs[key] = this.attrs(key)+value;
-    }
+    // addAttrs(key, value)
+    // {
+    //     this.rec.attrs[key] = this.attrs(key)+value;
+    // }
 
-    getAttr(prop, def=undefined)
-    {
-        let value = this.role.attrs?.[prop];
-        if(value===undefined) {return def;}
-        value += this.fromSkill(prop)
-        value += this.fromEquip(prop)
-        value += this.fromBuff(prop)
-        return value;
+    // getAttr(prop, def=undefined)
+    // {
+    //     let value = this.role.attrs?.[prop];
+    //     if(value===undefined) {return def;}
+    //     value += this.fromSkill(prop)
+    //     value += this.fromEquip(prop)
+    //     value += this.fromBuff(prop)
+    //     return value;
         
-    }
+    // }
 
-    getState(prop)
-    {
-        if(this.status.states[prop]===undefined) {return;}
-        let cur = this.status.states[prop];
-        let max = this.getAttr(prop+'Max')
-        if(max) 
-        {
-            if(cur>max){this.status.states[prop]=max;cur=max;}
-            return {cur:cur,max:max};
-        }
-        else {return {cur:cur,den:100};}
-    }
+    // getState(prop)
+    // {
+    //     if(this.rec.states[prop]===undefined) {return;}
+    //     let cur = this.rec.states[prop];
+    //     let max = this.getAttr(prop+'Max')
+    //     if(max) 
+    //     {
+    //         if(cur>max){this.rec.states[prop]=max;cur=max;}
+    //         return {cur:cur,max:max};
+    //     }
+    //     else {return {cur:cur,den:100};}
+    // }
 
-    setState(prop, value)
-    {
-        if(this.status.states[prop]===undefined) {return;}
-        let max = this.getAttr(prop+'Max') ?? 100;
-        this.status.states[prop] = Utility.clamp(value,0,max);
-    }
+    // setState(prop, value)
+    // {
+    //     if(this.rec.states[prop]===undefined) {return;}
+    //     let max = this.getAttr(prop+'Max') ?? 100;
+    //     this.rec.states[prop] = Utility.clamp(value,0,max);
+    // }
 
-    incState(prop, value)
-    {
-        if(this.status.states[prop]===undefined) {return;}
-        let cur = this.getState(prop).cur;
-        this.setState(prop,cur+value);
-    }
+    // incState(prop, value)
+    // {
+    //     if(this.rec.states[prop]===undefined) {return;}
+    //     let cur = this.getState(prop).cur;
+    //     this.setState(prop,cur+value);
+    // }
 
-    fromSkill(prop)
-    {
-        let value = 0;
-        Object.keys(this.status.skills).forEach(id=>{
-            let skill = DB.skill(id);
-            if(skill.type===GM.PASSIVE)
-            {
-                let val = skill.props?.[prop];
-                if(val){value+=val;}
-            }
-        })
-        return value;
-    }
+    // fromSkill(prop)
+    // {
+    //     let value = 0;
+    //     Object.keys(this.rec.skills).forEach(id=>{
+    //         let skill = DB.skill(id);
+    //         if(skill.type===GM.PASSIVE)
+    //         {
+    //             let val = skill.props?.[prop];
+    //             if(val){value+=val;}
+    //         }
+    //     })
+    //     return value;
+    // }
 
-    fromEquip(prop)
-    {
-        let value = 0;
-        this.status.equips.forEach((equip)=>{
-            if(equip && equip.id)
-            {
-                let item = DB.item(equip.id);
-                let val = item.props?.[prop]
-                if(val) {value+=val;}
-            }
-        })
+    // fromEquip(prop)
+    // {
+    //     let value = 0;
+    //     this.rec.equips.forEach((equip)=>{
+    //         if(equip && equip.id)
+    //         {
+    //             let item = DB.item(equip.id);
+    //             let val = item.props?.[prop]
+    //             if(val) {value+=val;}
+    //         }
+    //     })
 
-        return value;
-    }
+    //     return value;
+    // }
 
-    fromBuff(prop)
-    {
-        let value=0;
-        this.status.buffs.forEach(buff=>{
-            let p = buff.effects?.[prop];
-            if(p) {value +=p.value;}
-        })
+    // fromBuff(prop)
+    // {
+    //     let value=0;
+    //     this.rec.buffs.forEach(buff=>{
+    //         let p = buff.effects?.[prop];
+    //         if(p) {value +=p.value;}
+    //     })
 
-        return value;
-    }
+    //     return value;
+    // }
 
     processBuffs(dt)
     {
@@ -1043,9 +1053,9 @@ export class Role extends Entity
         //     }
         // })
 
-        for(let i=0; i<this.status.buffs.length; i++)
+        for(let i=0; i<this.rec.buffs.length; i++)
         {
-            let buff = this.status.buffs[i];
+            let buff = this.rec.buffs[i];
             for(let [key,p] of Object.entries(buff.effects))
             {
                 if(--p.d===0) {delete buff.effects[key];}
@@ -1053,47 +1063,24 @@ export class Role extends Entity
 
             if(Utility.isEmpty(buff.effects))
             {
-                this.status.buffs.splice(i,1);
+                this.rec.buffs.splice(i,1);
                 i--;
             }
         }
 
-        console.log(this.status.buffs)
+        console.log(this.rec.buffs)
     }
 
     equip()
     {
-        // this.status.attrs = this.initAttrs(this.role.attrs);
         this.removeLight();
         this.removeEquip();
 
-        this.status.equips.forEach((equip)=>{
+        this.rec.equips.forEach((equip)=>{
             if(equip && equip.id)
             {
                 let item = DB.item(equip.id);
-
                 this.addEquip(item);
-
-                // if(item.props)
-                // {
-                //     for(let [key,value] of Object.entries(item.props))
-                //     {
-                //         // console.log(key,value);
-                //         switch(key)
-                //         {
-                //             case GM.P_RANGE:
-                //             case GM.P_ATTACK: 
-                //                 if(item.cat==GM.CAT_WEAPON) { this.status.attrs[key]=value; }
-                //                 else { this.status.attrs[key]+=value; }
-                //                 break;
-                //             case GM.P_LIFE:
-                //                 this.status.states[key].max+=value; break;
-                //             default:
-                //                 this.status.attrs[key]+=value; break;
-                //         }
-                //     }
-                // }
-
                 if(item.light) {this.addLight();}
             }
         })
@@ -1107,7 +1094,7 @@ export class Role extends Entity
     {
         if(target.buy(ent, i, isEquip))
         {
-            this.status.gold+=ent.gold;
+            this.rec.gold+=ent.gold;
             return true;
         }
         return false;
@@ -1115,12 +1102,12 @@ export class Role extends Entity
 
     buy(ent, i, isEquip)
     {
-        console.log(this.status.gold, ent)
-        if(this.status.gold>=ent.gold)
+        console.log(this.rec.gold, ent)
+        if(this.rec.gold>=ent.gold)
         {
             if(this.take(ent, i, isEquip))
             {
-                this.status.gold-=ent.gold;
+                this.rec.gold-=ent.gold;
                 if(this == Avatar.instance)
                 {
                     this.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
@@ -1144,7 +1131,7 @@ export class Role extends Entity
     {
         if(isEquip)
         {
-            this.status.equips[i]=ent.itm; 
+            this.rec.equips[i]=ent.itm; 
             this.equip();
             return true;   
         }
@@ -1160,7 +1147,7 @@ export class Role extends Entity
             console.log(reward.type)
             switch(reward.type)
             {
-                case 'gold': this.status.gold+=reward.count; break;
+                case 'gold': this.rec.gold+=reward.count; break;
                 case 'item': this.putStorage(reward.id, reward.count); break;
             }
         })
@@ -1170,14 +1157,13 @@ export class Role extends Entity
     use(ent)
     {
         // console.log('use',ent.item);
-        let states = this.status.states;
         for(let [key,value] of Object.entries(ent.props))
         {
             switch(key)
             {
-                case GM.P_LIFE:
-                case GM.P_HUNGER:
-                case GM.P_THIRST:
+                case GM.HP:
+                case GM.HUNGER:
+                case GM.THIRST:
                     this.incState(key,value)
                     break;
             }
@@ -1208,8 +1194,8 @@ export class Role extends Entity
 
     drink()
     {
-        let states = this.status.states;
-        if(states.thirst) {states.thirst.cur=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
+        let states = this.rec.states;
+        if(states[GM.THIRST]) {states[GM.THIRST]=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
     }
 
     sleep(ent)
@@ -1319,8 +1305,10 @@ export class Role extends Entity
     {
         this.setLightInt();
         this.updateStates(dt);
-        this.processBuffs(dt);
-        this.status.equips.forEach((equip)=>{
+        // this.processBuffs(dt);
+        this.applyEffects(dt);
+
+        this.rec.equips.forEach((equip)=>{
             if(equip && equip.endurance)
             {
                 equip.endurance -= dt;
@@ -1330,7 +1318,7 @@ export class Role extends Entity
                 }
             }
         })
-        Object.values(this.status.skills).forEach((skill)=>{skill.cd>0 && (skill.cd--);});
+        Object.values(this.rec.skills).forEach((skill)=>{skill.cd>0 && (skill.cd--);});
         if(this.isPlayer) {this.send('refresh');}
     }
 
@@ -1340,18 +1328,59 @@ export class Role extends Entity
         // if(states.hunger) {states.hunger.cur = Math.min(states.hunger.cur+GM.HUNGER_INC*dt,states.hunger.max);}
         // if(states.thirst) {states.thirst.cur = Math.min(states.thirst.cur+GM.THIRST_INC*dt,states.thirst.max);}
 
-        this.incState(GM.P_HUNGER,GM.HUNGER_INC*dt);
-        this.incState(GM.P_THIRST,GM.THIRST_INC*dt);
+        // this.incState(GM.P_HUNGER,GM.HUNGER_INC*dt);
+        // this.incState(GM.P_THIRST,GM.THIRST_INC*dt);
+        this.rec.states[GM.HUNGER] = Math.min(this.rec.states[GM.HUNGER] + GM.HUNGER_INC * dt, 100);
+        this.rec.states[GM.THIRST] = Math.min(this.rec.states[GM.THIRST] + GM.THIRST_INC * dt, 100);
     }
 
     useSkill(skill) // call by SkillSlot
     {
         skill.st.cd = skill.dat.cd;
-        // this.status.buffs.push(Utility.deepClone(skill.dat.buff))
-        this.applyBuff(skill.dat.buff)
+        for(const effect of skill.dat.effects)
+        {
+            if(effect.type==='heal')
+            {
+                this.heal(effect.value);    
+            }
+            else
+            {
+                this.addEffect(effect);
+            }
+        }
+
         skill.reset();
 
         this.send('refresh')
+    }
+
+    applySkillTo(target, skill)
+    {
+        let damage = this.calculateDamage(this, target, skill);
+        target.takeDamage(damage);
+
+        for(const effect of skill.dat.effects)
+        {
+            console.log(effect);
+            target.addEffect(effect);
+        }
+    }
+
+
+    useSkillTo(pos, target)
+    {
+        this.faceTo(pos);
+        this.skill.st.cd = this.skill.dat.cd;
+
+        let bodies = this.getBodiesInRect(this.skill.dat.range, false)
+
+        return this.step( pos, 200, 'expo.in',
+                        {   yoyo:true, 
+                            onYoyo:()=>{
+                                this.applySkillTo(target, this.skill);
+                                this.resetSkill(true);
+                            }} 
+                    );
     }
 
     getBodiesInRect(range, checkBlock)
@@ -1377,28 +1406,6 @@ export class Role extends Entity
         return bodies;
     }
 
-    applyBuff(buff)
-    {
-        this.status.buffs.push(Utility.deepClone(buff))
-    }
-
-    
-
-    applySkillAt(pos)
-    {
-        this.faceTo(pos);
-        this.skill.st.cd = this.skill.dat.cd;
-
-        let bodies = this.getBodiesInRect(this.skill.dat.range, false)
-        console.log(bodies)
-
-
-
-        return this.step( pos, 200, 'expo.in',
-                        {   yoyo:true, 
-                            onYoyo:()=>{this.resetSkill(true);}} 
-                    );
-    }
 
     setSkill(skill)
     {
@@ -1539,7 +1546,6 @@ export class Role extends Entity
         }
 
         this.a=a;
-        
     }
 
 
@@ -1560,22 +1566,22 @@ export class Role extends Entity
         if (base[GM.CRITR] == null) out[GM.CRITR] = Math.min(0.5, (base[GM.DEX] || 0) * 0.01); // 每點 DEX +1% 暴擊，上限 50%
         if (base[GM.CRITD] == null) out[GM.CRITD] = 1.5;                            // 基礎暴擊傷害倍率
 
-        // 4) Resistances placeholder
-        if (base.resists == null) out.resists = { [GM.FIRE]: 0, [GM.ICE]: 0, [GM.POISON]: 0, [GM.PHY]: 0 };
+        // 4) Resistances
+        if (base.resists == null) out.resists = { [GM.FIRE_RES]: 0, [GM.ICE_RES]: 0, [GM.POISON_RES]: 0, [GM.PHY_RES]: 0 };
 
         return out;
     }
 
     getTotalStats() 
     {
-        // 1) 淺層拷貝 基礎屬性
-        let base = {...this.status.baseStats};
+        // 1) 淺層拷貝 [基礎屬性]
+        let base = {...this.rec.baseStats};
 
-        // 2) 計算裝備加成
         let baseAdd = {};   // 基礎屬性 加成
         let secAdd = {};    // 次級屬性 加成
 
-        for(const equip of this.status.equips) 
+        // 2) 計算 [裝備] 加成
+        for(const equip of this.rec.equips) 
         {
             if(equip)
             {
@@ -1595,52 +1601,65 @@ export class Role extends Entity
             }
         }
 
-        // 3) 計算 被動技能 加成
-        for(const key in this.status.skills)
+        // 3) 計算 [被動技能] 的加成
+        for(const key in this.rec.skills)
         {
             let sk = DB.skill(key);
             if(sk.type === GM.PASSIVE)
             {
-                const st = sk.stats || {};
-                for(const k in st)
+                const effects = sk.effects || {};
+                for(const eff of effects)
                 {
-                    if(GM.BASE.includes(k)) // 2-1) 基礎屬性
+                    if(eff.type==='buff')
                     {
-                        baseAdd[k] = (baseAdd[k] || 0) + st[k];
-                    }
-                    else    // 2-2) 次級屬性、抗性、武器資訊
-                    {
-                        secAdd[k] = (secAdd[k] || 0) + st[k];
+                        if(GM.BASE.includes(eff.stat)) // 2-1) 基礎屬性
+                        {
+                            baseAdd[eff.stat] = (baseAdd[eff.stat] || 0) + eff.value;
+                        }
+                        else    // 2-2) 次級屬性、抗性、武器資訊
+                        {
+                            secAdd[eff.stat] = (secAdd[eff.stat] || 0) + eff.value;
+                        }
                     }
                 }
             }
         }
 
-        // 4) 用裝備修正後的 base（先加法，再乘百分比）
-        for (const k of Object.keys(baseAdd)) 
+        // 4) 計算 [作用中效果] 的加成
+        for (const eff of this.rec.activeEffects) 
         {
-            base[k] = (base[k] || 0) + baseAdd[k];
+            if (eff.type === "buff" || eff.type === "debuff") 
+            {
+                if(GM.BASE.includes(eff.stat)) // 2-1) 基礎屬性
+                {
+                    baseAdd[eff.stat] = (baseAdd[eff.stat] || 0) + eff.value;
+                }
+                else    // 2-2) 次級屬性、抗性、武器資訊
+                {
+                    secAdd[eff.stat] = (secAdd[eff.stat] || 0) + eff.value;
+                }
+            }
         }
 
-        // 5) 由更新後的 base 推導 derived
+        // 4) 修正後的 base
+        for (const [k, v] of Object.entries(baseAdd)) 
+        {
+            base[k] = (base[k] || 0) + v;
+        }
+
+        // 5) 修正後的 base 推導 derived
         const derived = this.deriveStats(base);
 
         // 6) 合併：base 值優先，derived 補空位
         const total = { ...derived, ...base };
 
         // 7) 再套用「推導後」的裝備加成與抗性、武器
-        for (const [k, v] of Object.entries(secAdd)) {total[k] = (total[k] || 0) + v};
+        for (const [k, v] of Object.entries(secAdd)) {total[k] = (total[k] || 0) + v;}
 
-        // 8) Buff / Debuff（乘法）
-        for (const eff of this.status.activeEffects) 
-        {
-            if (eff.type === "buff" || eff.type === "debuff") 
-            {
-                total[eff.stat] = (total[eff.stat] || 0) * (1 + eff.value);
-            }
-        }
+        // 8) 最後合併狀態，並確保當前生命值不超過最大值
+        this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], this.rec.states[GM.HP]); 
+        Object.assign(total, this.rec.states);
 
-        // console.log(total);
         return total;
     }
 
@@ -1655,13 +1674,13 @@ export class Role extends Entity
                 console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
                 return;
             }
-            const newEff = { ...effect, remaining: effect.duration };
-            this.activeEffects.push(newEff);
+            const newEff = { ...effect, remaining: effect.dur };
+            this.rec.activeEffects.push(newEff);
             console.log(`${this.name} 疊加 ${effect.tag} 效果（第 ${existingStacks.length + 1} 層）`);
         } 
         else 
         {
-            const existing = this.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
+            const existing = this.rec.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
             if (existing) 
             {
                 existing.remaining = effect.duration;
@@ -1670,86 +1689,62 @@ export class Role extends Entity
             } 
             else 
             {
-                const newEff = { ...effect, remaining: effect.duration };
-                this.activeEffects.push(newEff);
+                const newEff = { ...effect, remaining: effect.dur };
+                this.rec.activeEffects.push(newEff);
                 console.log(`${this.name} 獲得 ${effect.type}：${effect.stat || effect.tag} ${effect.value * 100 || effect.value}% 持續 ${effect.duration} 回合`);
             }
         }
     }
 
+    takeDamage(amount) 
+    {
+        this.createDisp(-amount, '#f00', '#fff');
+        this.rec.states[GM.HP] -= amount;
+        console.log(`${this.name} 受到 ${amount} 傷害`);
+    }
+
+    heal(amount) 
+    {
+        this.createDisp('+'+amount, '#0f0', '#000');
+        const total = this.getTotalStats();
+        this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], total[GM.HP] + amount);
+        console.log(`${this.name} 獲得 ${amount} 治療`);
+    }
+
     applyEffects() 
     {
         const expired = [];
-        for (const e of this.activeEffects) 
+        for (const e of this.rec.activeEffects) 
         {
             if (e.type === "dot") 
             {
                 let finalDamage = e.value;
                 if (e.element) 
                 {
-                    const resist = this.getTotalStats().resistances?.[e.element] || 0;
+                    const resist = this.getTotalStats().resists?.[e.element] || 0;
                     finalDamage *= 1 - resist;
                 }
-                finalDamage = Math.round(Math.max(1, finalDamage));
                 this.takeDamage(finalDamage);
-                console.log(`${this.name} 受到 ${e.tag} DoT 傷害 ${finalDamage}`);
+            }
+            else if (e.type === "hot") 
+            {
+                let finalHeal = e.value;
+                this.heal(finalHeal);
             }
             e.remaining -= 1;
             if (e.remaining <= 0) {expired.push(e);}
         }
         for (const e of expired) 
         {
-            this.activeEffects = this.activeEffects.filter(x => x !== e);
+            this.rec.activeEffects = this.rec.activeEffects.filter(x => x !== e);
             console.log(`${this.name} 的 ${e.stat || e.tag} ${e.type} 效果結束`);
         }
 
-        for (const skill of this.skills) 
-        {
-            const name = skill.name;
-            if (this.cooldowns[name] > 0) {this.cooldowns[name]--;}
-        }
-    }
-
-    calculateDamage_old(attacker, defender, skill) 
-    {
-        const aStats = attacker.getTotalStats();
-        const dStats = defender.getTotalStats();
-
-        let baseStat = 0;
-        if (skill.sourceStats) 
-        {
-            for (const [stat, ratio] of Object.entries(skill.sourceStats)) 
-            {
-                baseStat += (aStats[stat] || 0) * ratio;
-            }
-        } 
-        else 
-        {
-            baseStat = aStats.combatAtk;
-        }
-
-        let baseDamage = baseStat * (skill.multiplier || 1);
-
-        let defFactor = 1;
-        const penetrate = skill.extra?.penetrate || 0;
-        if (skill.defType === "def") 
-        {
-            const effectiveDef = dStats.def * (1 - penetrate);
-            defFactor = 100 / (100 + effectiveDef);
-        }
-
-        let damage = baseDamage * defFactor;
-        const resist = dStats.resistances?.[skill.element] || 0;
-        damage *= 1 - resist;
-
-        if (Math.random() < aStats.critRate) 
-        {
-            damage *= aStats.critDmg;
-            console.log(`💥 ${attacker.name} 暴擊！`);
-        }
-
-        damage *= 0.95 + Math.random() * 0.1;
-        return Math.round(Math.max(1, damage));
+        // for (const skill of this.skills) 
+        // {
+        //     const name = skill.name;
+        //     if (this.cooldowns[name] > 0) {this.cooldowns[name]--;}
+        // }
     }
 
     calculateDamage(attacker, defender, skill) 
@@ -1767,10 +1762,10 @@ export class Role extends Entity
         let baseDamage = atk * mul;
         // 2. 計算防禦係數
         const effectiveDef = dStats.def * (1 - penetrate);
-        let defFactor = 100 / (100 + effectiveDef);
+        let defFactor = baseDamage / (baseDamage + effectiveDef);
         // 3. 計算實際傷害
         let damage = baseDamage * defFactor;
-        const resist = dStats.resists?.[elm] || 0;
+        const resist = dStats.resists?.[elm+'_res'] || 0;
         damage *= 1 - resist;
         // 4. 計算暴擊
         if (Math.random() < aStats[GM.CRITR]) 
@@ -1857,7 +1852,7 @@ export class Avatar extends Role
         {
             if(this.isInSkillRange(pt??ent.pos))
             {
-                this.applySkillAt(pt??ent.pos);
+                this.useSkillTo(pt??ent.pos, ent);
             }
         }
         else if(ent?.act===GM.ATTACK)
@@ -1906,6 +1901,7 @@ export class Npc extends Role
     {
         this.updateSchedule();
         this.updateStates();
+        this.applyEffects();
     }
 
     setSchedule()
@@ -1917,7 +1913,7 @@ export class Npc extends Role
 
     setStartPos(ents,tSch)
     {
-        if(!this.status.exit && ents.length===1)
+        if(!this.rec.exit && ents.length===1)
         {
             // 如果已經到達目的地，回傳 false( next = false，直接執行動作，不需等下一輪)
             return false;
@@ -1932,7 +1928,7 @@ export class Npc extends Role
             let rst = this.scene.map.getPath(this.pos, ent.pts);
 
             // 2. 取得進入時間
-            let ts = this.status.exit && this.status.exit.map===this.scene.mapName ? this.status.exit.t : tSch.split('~')[0];
+            let ts = this.rec.exit && this.rec.exit.map===this.scene.mapName ? this.rec.exit.t : tSch.split('~')[0];
 
             // 3. 計算時間差
             let td = TimeManager.ticks - TimeManager.time2Ticks(ts) - 1;
@@ -1955,11 +1951,11 @@ export class Npc extends Role
     findSchedule()
     {
         let found = this.schedule.find((sh)=>{return TimeManager.inRange(sh.t);})
-        if(!found && this.status.exit)
+        if(!found && this.rec.exit)
         {
-            if(this.status.exit.map===this.mapName && this.status.exit.t.d===TimeManager.time.d)
+            if(this.rec.exit.map===this.mapName && this.rec.exit.t.d===TimeManager.time.d)
             {
-                found = this.schedule.find(sh=>sh.i===this.status.exit.sh.i+1);
+                found = this.schedule.find(sh=>sh.i===this.rec.exit.sh.i+1);
             }
         }
         return found;
@@ -2040,7 +2036,7 @@ export class Npc extends Role
             // TimeManager.time、this._shCurrent 是物件，要用 Utility.deepClone，
             // 把當下的 TimeManager.time、this._shCurrent 的值複製一份，
             // 否則在下一輪 TimeManager.time 會變成當前時間，this._shCurrent 也可能指向其他 shedule
-            this.status.exit = Utility.deepClone(exit);
+            this.rec.exit = Utility.deepClone(exit);
             this.save();    // 只是把 Record.data.roles[id] 指向 this.status，還未真正存檔
         }
         else {super.interact(ent, act);}
@@ -2048,16 +2044,16 @@ export class Npc extends Role
 
     restock()
     {
-        if(!this.status.restock)
+        if(!this.rec.restock)
         {
-            this.status.restock = TimeManager.time.d + 2;
+            this.rec.restock = TimeManager.time.d + 2;
         }
 
-        if(TimeManager.time.d >= this.status.restock)
+        if(TimeManager.time.d >= this.rec.restock)
         {
             let roleD = RoleDB.get(this.id);
-            this.status.restock = TimeManager.time.d + 2;
-            this.status.bag = this.toStorage(roleD.bag.capacity,roleD.bag.items);
+            this.rec.restock = TimeManager.time.d + 2;
+            this.rec.bag = this.toStorage(roleD.bag.capacity,roleD.bag.items);
         }
     }
     
@@ -2079,7 +2075,7 @@ export class Npc extends Role
 
     }
 
-    save() {this.saveData(this.status);}
+    save() {this.saveData(this.rec);}
 
     addListener()
     {
@@ -2103,7 +2099,7 @@ export class Npc extends Role
 
     isEquipWeapon()
     {
-        let weapon = this.status.equips.find((equip)=>{
+        let weapon = this.rec.equips.find((equip)=>{
                         let dat = DB.item(equip.id);
                         return dat.cat===GM.CAT_WEAPON;
                     });
@@ -2114,18 +2110,18 @@ export class Npc extends Role
     {
         if(this.role.weapon && !this.isEquipWeapon())
         {
-            this.status.equips.push({id:this.role.weapon,count:1});
+            this.rec.equips.push({id:this.role.weapon,count:1});
             this.equip();
         }
     }
 
     unEquipWeapon()
     {
-        this.status.equips.find((equip,i)=>{
+        this.rec.equips.find((equip,i)=>{
             let dat = DB.item(equip.id);
             if(dat.cat===GM.CAT_WEAPON)
             {
-                this.status.equips.splice(i, 1);
+                this.rec.equips.splice(i, 1);
                 this.equip();
                 return true;
             }

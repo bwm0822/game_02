@@ -71,7 +71,7 @@
     },
     {
       "type": "skill",
-      "id": "lightning",
+      "id": "ice",
       "x": 75,
       "y": 125
     }
@@ -85,7 +85,7 @@
     },
     {
       "type": "skill",
-      "id": "test",
+      "id": "heal",
       "x": 125,
       "y": 25
     },

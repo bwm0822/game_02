@@ -1,9 +1,19 @@
 {
   "lunge": {
     "icon": "icons/0",
-    "type": "active",
+    "type": "attack",
     "cd": 3,
     "range": 2,
+    "mul": 1.5,
+    "elm": "phy",
+    "effects": [
+      {
+        "type": "dot",
+        "value": 2,
+        "dur": 3,
+        "icon": "icons/0"
+      }
+    ],
     "tw": {
       "lab": "突刺",
       "des": "突刺"
@@ -11,86 +21,80 @@
   },
   "fireball": {
     "icon": "icons/1",
-    "type": "active",
-    "cd": 5,
+    "type": "attack",
+    "cd": 3,
     "range": 5,
+    "mul": 1.5,
+    "elm": "fire",
     "tw": {
       "lab": "火球術",
       "des": "火球術"
     }
   },
-  "lightning": {
+  "ice": {
     "icon": "icons/8",
-    "type": "active",
+    "type": "attack",
     "refs": [
       "lunge",
       "fireball"
     ],
-    "cd": 5,
+    "cd": 3,
     "range": 5,
-    "buff": {
-      "id": "test",
-      "icon": "icons/17",
-      "effects": {
-        "life": {
-          "value": -1,
-          "d": 5
-        }
-      }
-    },
+    "mul": 2,
+    "elm": "ice",
     "tw": {
-      "lab": "閃電術",
-      "des": "閃電術"
+      "lab": "冰凍術",
+      "des": "冰凍術"
     }
   },
   "strong": {
     "icon": "icons/20",
     "type": "passive",
-    "props": {
-      "lifeMax": 10
-    },
-    "stats": {
-      "str": 1,
-      "hpMax": 10
-    },
+    "effects": [
+      {
+        "type": "buff",
+        "stat": "str",
+        "value": 1
+      }
+    ],
     "tw": {
       "lab": "強化",
       "des": "強化"
     }
   },
-  "test": {
+  "heal": {
     "icon": "icons/16",
-    "type": "self",
-    "cd": 5,
-    "buff": {
-      "id": "test",
-      "icon": "icons/16",
-      "effects": {
-        "attack": {
-          "value": 10,
-          "d": 10
-        }
+    "type": "active",
+    "cd": 3,
+    "effects": [
+      {
+        "type": "heal",
+        "value": 10
+      },
+      {
+        "type": "hot",
+        "value": 5,
+        "dur": 5,
+        "icon": "icons/16"
+      },
+      {
+        "type": "buff",
+        "stat": "str",
+        "value": 1,
+        "dur": 5,
+        "icon": "icons/16"
       }
-    },
+    ],
     "tw": {
-      "lab": "測試",
-      "des": "測試"
+      "lab": "回復術",
+      "des": "回復術"
     }
   },
   "test1": {
     "icon": "icons/17",
     "type": "active",
-    "cd": 5,
-    "buff": {
-      "id": "test",
-      "icon": "icons/16",
-      "effects": {
-        "attack": {
-          "value": 10,
-          "d": 10
-        }
-      }
-    },
+    "cd": 3,
+    "range": 2,
     "tw": {
       "lab": "測試1",
       "des": "測試1"

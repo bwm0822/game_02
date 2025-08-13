@@ -180,24 +180,6 @@
       "lab": "Defense"
     }
   },
-  "hunger": {
-    "tw": {
-      "lab": "飢餓",
-      "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
-    },
-    "us": {
-      "lab": "Hunger"
-    }
-  },
-  "thirst": {
-    "tw": {
-      "lab": "口渴",
-      "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
-    },
-    "us": {
-      "lab": "Thirst"
-    }
-  },
   "use": {
     "tw": {
       "lab": "使用"
@@ -737,6 +719,151 @@
     },
     "us": {
       "lab": "Merchant"
+    }
+  },
+  "str": {
+    "tw": {
+      "lab": "力量"
+    }
+  },
+  "dex": {
+    "tw": {
+      "lab": "敏捷"
+    }
+  },
+  "con": {
+    "tw": {
+      "lab": "體質"
+    }
+  },
+  "int": {
+    "tw": {
+      "lab": "智慧"
+    }
+  },
+  "combat": {
+    "tw": {
+      "lab": "戰鬥"
+    }
+  },
+  "atk": {
+    "tw": {
+      "lab": "攻擊",
+      "des": "物理傷害"
+    }
+  },
+  "def": {
+    "tw": {
+      "lab": "防禦",
+      "des": "物理防禦"
+    }
+  },
+  "hit": {
+    "tw": {
+      "lab": "命中",
+      "des": "命中率"
+    }
+  },
+  "dodge": {
+    "tw": {
+      "lab": "閃避",
+      "des": "閃避率"
+    }
+  },
+  "critRate": {
+    "tw": {
+      "lab": "暴率",
+      "des": "暴擊率"
+    }
+  },
+  "critDmg": {
+    "tw": {
+      "lab": "暴傷",
+      "des": "暴擊傷害倍率"
+    }
+  },
+  "resist": {
+    "tw": {
+      "lab": "抗性"
+    }
+  },
+  "phy_res": {
+    "tw": {
+      "lab": "物抗",
+      "des": "物理抗性"
+    }
+  },
+  "fire_res": {
+    "tw": {
+      "lab": "火抗",
+      "des": "火焰抗性"
+    }
+  },
+  "ice_res": {
+    "tw": {
+      "lab": "冰抗",
+      "des": "冰凍抗性"
+    }
+  },
+  "poison_res": {
+    "tw": {
+      "lab": "毒抗",
+      "des": "中毒抗性"
+    }
+  },
+  "elm": {
+    "tw": {
+      "lab": "元素"
+    }
+  },
+  "phy": {
+    "tw": {
+      "lab": "物理"
+    }
+  },
+  "fire": {
+    "tw": {
+      "lab": "火焰"
+    }
+  },
+  "ice": {
+    "tw": {
+      "lab": "冰凍"
+    }
+  },
+  "poison": {
+    "tw": {
+      "lab": "中毒"
+    }
+  },
+  "hp": {
+    "tw": {
+      "lab": "生命",
+      "des": "生命值\n降到 0，就死亡"
+    }
+  },
+  "hunger": {
+    "tw": {
+      "lab": "飢餓",
+      "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
+    }
+  },
+  "thirst": {
+    "tw": {
+      "lab": "口渴",
+      "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
+    }
+  },
+  "hot": {
+    "tw": {
+      "lab": "持續回復",
+      "des": "每回合回復 [color=red]{0}[/color] 生命"
+    }
+  },
+  "dot": {
+    "tw": {
+      "lab": "持續傷害",
+      "des": "每回合扣 {0} 生命"
     }
   }
 }

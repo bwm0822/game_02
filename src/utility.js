@@ -218,6 +218,15 @@ export default class Utility
         return typeof value === 'string' || value instanceof String;
     }
 
+    static format(str, ...args) 
+    {
+        return str.replace(
+            /{(\d+)}/g,              // 找出 {0}、{1}... 的位置
+            (match, index) =>        // match 是整個匹配到的字串，index 是捕獲的數字
+            typeof args[index] !== 'undefined' ? args[index] : match
+        );
+    }
+
     static rotate(x, y, rad) 
     {
         // const rad = theta * Math.PI / 180; // 轉成弧度

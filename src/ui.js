@@ -27,7 +27,7 @@ export default function createUI(scene)
 
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
-    new UiBuff(scene);
+    new UiEffect(scene);
     new UiSkill(scene);
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
@@ -136,6 +136,9 @@ function t6()
     }
 
     console.log('ttt=',ttt)
+
+    let num = 1;
+    console.log(num.toFixed(1));
 }
 
 
@@ -700,7 +703,7 @@ class EquipSlot extends Slot
         this.setIcon();
     }
 
-    get container() {return this.owner?.status?.equips;}
+    get container() {return this.owner?.rec?.equips;}
     get capacity() {return -1;}
 
     //get cat() {return this._cat;}
@@ -825,23 +828,21 @@ class SkillSlot extends Pic
         Ui.cancelDelayCall();   
         if(UiDragged.skill)
         {
-            this.owner.status.skillSlots.forEach((slot,i)=>{
+            this.owner.rec.skillSlots.forEach((slot,i)=>{
                 if(slot===UiDragged.skill.id)
                 {
-                    this.owner.status.skillSlots[i]=null;
-
+                    this.owner.rec.skillSlots[i]=null;
                 }
-                
             })
-            this._id && (this.owner.status.skillSlots[UiDragged.skill.i] = this._id);
-            this.owner.status.skillSlots[this._i] = UiDragged.skill.id;
+            this._id && (this.owner.rec.skillSlots[UiDragged.skill.i] = this._id);
+            this.owner.rec.skillSlots[this._i] = UiDragged.skill.id;
             UiDragged.empty();
             Ui.refreshAll();
         }
         else if(this._state)
         {
             // console.log(this._state)
-            if(this._dat.type === GM.SELF)
+            if(this._dat.type === GM.ACTIVE)
             {
                 this.owner.useSkill(this);
             }
@@ -854,7 +855,7 @@ class SkillSlot extends Pic
 
     update()
     {
-        this._id = this.owner.status.skillSlots[this._i];
+        this._id = this.owner.rec.skillSlots[this._i];
         if(this._id) {this.set();}
         else {this.empty();}
     }
@@ -894,7 +895,7 @@ class SkillSlot extends Pic
 
     set()
     {
-        this._state =  this.owner.status.skills[this._id];
+        this._state =  this.owner.rec.skills[this._id];
         this._dat = DB.skill(this._id);
         let cd = this._state.cd;
         this.setIcon(this._dat.icon);
@@ -912,7 +913,7 @@ class SkillSlot extends Pic
         this.getElement('cd').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        this.owner.status.skillSlots[this._i] = null; // 清除技能欄位
+        this.owner.rec.skillSlots[this._i] = null; // 清除技能欄位
     }
 }
 
@@ -942,7 +943,7 @@ class SkillItem extends Pic
     get locked()
     {
         if(this.en) {return false;}
-        let ret = this._dat.refs?.find(ref=> this.owner.status.skills[ref]===undefined || this.owner.status.skills[ref].en===false);
+        let ret = this._dat.refs?.find(ref=> this.owner.rec.skills[ref]===undefined || this.owner.rec.skills[ref].en===false);
         return ret!==undefined;
     }
     
@@ -974,8 +975,8 @@ class SkillItem extends Pic
             {
                 if(!this._skill)
                 {
-                    this.owner.status.skills[this._id]={en:false,cd:0}
-                    this._skill=this.owner.status.skills[this._id];
+                    this.owner.rec.skills[this._id]={en:false,cd:0}
+                    this._skill=this.owner.rec.skills[this._id];
                 }
                 this._skill.en=true;
                 Ui.refreshAll();
@@ -1016,7 +1017,7 @@ class SkillItem extends Pic
         this._id = id;
         this.x = x;
         this.y = y;
-        this._skill =  this.owner.status.skills[this._id];
+        this._skill =  this.owner.rec.skills[this._id];
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
@@ -1342,7 +1343,13 @@ class UiInfo extends Sizer
     static w = 250;
     constructor(scene)
     {
-        super(scene,{orientation:'y',space:{left:10,right:10,bottom:10,top:10,item:0}});
+        const config = 
+        {
+            width: 150,
+            orientation:'y',
+            space:{left:10,right:10,bottom:10,top:10,item:0}
+        }
+        super(scene, config);
         UiInfo.instance = this;
         Ui.addLayer(scene, 'UiInfo', this);    // 產生layer，並設定layer名稱
 
@@ -1391,7 +1398,13 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addProps(slot)
+    addText(text)
+    {
+        this.add(bbcText(this.scene,{text:text,wrapWidth:200}));
+        return this;
+    }
+
+    addStats(slot)
     {
         if(slot.dat.props || slot.dat.endurance || slot.dat.storage) 
         {
@@ -1408,18 +1421,17 @@ class UiInfo extends Sizer
                     case GM.P_HUNGER: value = `${value}%`; break;
                     case GM.P_THIRST: value = `${value}%`; break;
                 }
-                this.addProp(key,value);
+                this.addStat(key,value);
             }
         }
         if(slot.dat.endurance)
         {
-            //this.addProp('耐久',`${slot.endurance}/${item.endurance.max}`);
-            this.addProp(GM.P_ENDURANCE,Utility.tick2Str(slot.itm.endurance));
+            this.addStat(GM.P_ENDURANCE,Utility.tick2Str(slot.itm.endurance));
         }
         if(slot.dat.storage)
         {
             let cnt = slot.itm.storage?.items.filter(item => item).length;
-            this.addProp(GM.P_STORAGE,`${cnt??0}/${slot.dat.storage}`);
+            this.addStat(GM.P_STORAGE,`${cnt??0}/${slot.dat.storage}`);
         }
         if(slot.dat.times)
         {
@@ -1428,7 +1440,7 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addProp(key, value)
+    addStat(key, value)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
@@ -1487,25 +1499,35 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addEffect(buff)
+    addEffect(effect)
     {
-        this.addDivider();
-        Object.entries(buff.dat.effects).forEach(([key,value])=>{
-            this.addProp(key,value.value)
-        })
+        let eff = effect.dat;
+        switch(eff.type)
+        {
+            case 'buff':
+                this.addStat(eff.stat,`+${eff.value}`)
+                break;
+            case 'hot':
+                this.addText(Utility.format("hot".des(), eff.value));
+                break;
+            case 'dot':
+                this.addText(Utility.format("dot".des(), eff.value));
+                break;
+        }
+      
     }
 
-    update(tp, elm)
+    update(type, elm)
     {
         // let item = ItemDB.get(slot.id);
         this.removeAll(true)
 
-        switch(tp)
+        switch(type)
         {
             case GM.TP_SLOT:
                  this.addTitle(elm)
                     .addCat(elm)
-                    .addProps(elm)
+                    .addStats(elm)
                     .addMake(elm)
                     .addDescript(elm)
                     .addGold(elm)
@@ -1526,9 +1548,8 @@ class UiInfo extends Sizer
                     .addDescript(elm)
                 break;
 
-            case GM.TP_BUFF:
-                this.add(bbcText(this.scene,{text:elm.dat.id}))
-                    .addEffect(elm)
+            case GM.TP_EFFECT:
+                this.addEffect(elm)
                 break;
         }
 
@@ -1554,7 +1575,7 @@ class UiInfo extends Sizer
         switch(tp)
         {
             case GM.TP_BTN:
-            case GM.TP_BUFF:
+            case GM.TP_EFFECT:
             case GM.TP_SKILL_1:
                 if(elm.y>GM.h/2)
                 {
@@ -1850,7 +1871,7 @@ class UiBase extends Sizer
 
     updateGrid(cat) {this.getElement('grid',true).getElement('items').forEach(item => {item?.update(cat);});}
 
-    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.status.gold}`);}
+    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.rec.gold}`);}
 
     close() {this.hide();}
 
@@ -2061,17 +2082,14 @@ class Observe extends UiBase
         return bbcText(this.scene,{text:this.owner.id.des(),wrapWidth:250});
     }
 
-    props()
+    stats()
     {
-        let props = this.scene.rexUI.add.sizer({orientation:'y'})
+        let stats = this.scene.rexUI.add.sizer({orientation:'y'})
+        const total = this.owner.getTotalStats();
+        let value = `${total[GM.HP]}/${total[GM.HPMAX]}`;
+        stats.add(this.stat(GM.HP, value, false),{expand:true,padding:{left:0,right:0}})
 
-        // let life = this.owner.status.states['life'];
-        // let value = `${life.cur} / ${life.max}`
-        // props.add(this.prop('life', value, false),{expand:true,padding:{left:0,right:0}})
-
-        props.add(this.prop(GM.P_LIFE, this.owner.getState(GM.P_LIFE), false),{expand:true,padding:{left:0,right:0}})
-
-        return props;
+        return stats;
     }
 
     addContent(scene)
@@ -2088,7 +2106,7 @@ class Observe extends UiBase
         sizer.removeAll(true)
             .add(this.label(),{padding:{top:10}})
             .add(divider(this.scene),{expand:true,padding:10})
-            .add(this.props(),{expand:true,padding:{left:10,right:10}})
+            .add(this.stats(),{expand:true,padding:{left:10,right:10}})
             .add(divider(this.scene),{expand:true,padding:10})
             .add(this.des(),{align:'left',padding:{left:10,bottom:10}})
         this.layout()
@@ -2569,7 +2587,7 @@ export class UiMain extends UiBase
         // let life = player.getState('life');
         // hp.set(life.cur,life.max);
         let total = player.getTotalStats();
-        hp.set(player.status.hp,total[GM.HPMAX]);
+        hp.set(total[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
         // this.resetSkill();
@@ -2814,7 +2832,7 @@ export class UiProfile extends UiBase
             background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
             topButtons:[
                         label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'stats',space:{left:20,right:20,top:5,bottom:5}}),
-                        label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'status',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
                     ],
 
             space: {left:5, top:5, bottom:5, topButton:1}
@@ -2899,10 +2917,17 @@ export class UiProfile extends UiBase
     {
         let config = {
             //width: 400,
-            height: 220,
+            height: 400,
             background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
             panel: {
                 child: scene.rexUI.add.sizer({orientation:'y',space:5}),
+            },
+            slider: {
+                track: rect(scene,{width:15,color:GM.COLOR_DARK}),
+                thumb: rect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+                space: 5,
+                hideUnscrollableSlider: false,
+                disableUnscrollableDrag: true,
             },
         }
         let panel = scene.rexUI.add.scrollablePanel(config);
@@ -2920,21 +2945,33 @@ export class UiProfile extends UiBase
 
         childPanel.removeAll(true);
 
-        let keys=[];
-
         switch(tab)
         {
-            case 'status': keys = ['hp','hunger','thirst']; break;
-            case 'stats': keys = ['atk','def']; break;
-        }
+            case 'states': 
+                for(const key of GM.SURVIVAL)
+                {
+                    let max = this.total[key+'Max'];
+                    let val= this.total[key];
+                    let value = max ? `${val}/${max}` : `${Math.floor(val)}%`;
 
-        for(const key of keys)
-        {
-            let max = this.total[key+'Max'];
-            let val= this.total[key];
-            let value = tab !== 'status' ? val : ( max ? `${val}/${max}` : `${val}%` );
+                    childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})
+                }
+                break;
 
-            childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})
+            case 'stats': 
+                childPanel.add(bbcText(this.scene,{text:`[color=yellow]${'combat'.lab()}[/color]`}))
+                for(const key of GM.COMBAT)
+                {
+                    let value = this.total[key];
+                    childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})
+                }
+                childPanel.add(bbcText(this.scene,{text:`[color=yellow]${'resist'.lab()}[/color]`}))
+                for(const key of GM.RESIST)
+                {
+                    let value = this.total.resists[key];
+                    childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})
+                }
+                break;
         }
 
         return this;
@@ -3147,18 +3184,18 @@ export class UiDialog extends UiBase
         if(m)
         {
             let [p,val] = m[1].split('=');
-            if(this.owner.status[p])
+            if(this.owner.rec[p])
             {
                 if(p=='quest')
                 {
-                    let q = QuestManager.query(this.owner.status[p]);
+                    let q = QuestManager.query(this.owner.rec[p]);
                     if(q)
                     {
-                        this.id = this.owner.status[p]+'_'+q.state();
+                        this.id = this.owner.rec[p]+'_'+q.state();
                     }
                     else
                     {
-                        this.id = this.owner.status[p];
+                        this.id = this.owner.rec[p];
                     }
                 }
             }
@@ -3178,7 +3215,7 @@ export class UiDialog extends UiBase
 
     set(key, value)
     {
-        this.owner.status[key]=value;
+        this.owner.rec[key]=value;
     }
 
     quest(p1)
@@ -4423,7 +4460,7 @@ export class UiSkill extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            let skill = this.getOwner().status.skills[id];
+            let skill = this.getOwner().rec.skills[id];
             if(!skill?.en) {return false};
         }
 
@@ -4524,18 +4561,18 @@ export class UiSkill extends UiBase
 }
 
 
-
-class Buff extends Pic
+class Effect extends Pic
 {
-    constructor(scene, w, h, buff)
+    constructor(scene, w, h, effect)
     {
-        super(scene, w, h, {icon:buff.icon, strokeWidth:0, space:0});
-        let d=0;
-        Object.values(buff.effects).forEach(effect=>d=Math.max(d,effect.d))
-        this.add(bbcText(scene,{text:d,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})
+        super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
+        // let d=0;
+        // Object.values(buff.effects).forEach(effect=>d=Math.max(d,effect.d))
+        console.log(effect)
+        this.add(bbcText(scene,{text:effect.remaining,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})
             .layout();
         this.addListener()
-        this._dat=buff;
+        this._dat=effect;
     }
 
     get dat() {return this._dat;}
@@ -4547,13 +4584,13 @@ class Buff extends Pic
         .on('pointerout', ()=>{this.out();})
     }
 
-    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_BUFF,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_EFFECT,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
 }
 
 
-export class UiBuff extends UiBase
+export class UiEffect extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -4567,8 +4604,8 @@ export class UiBuff extends UiBase
             orientation : 'y',
             // space:{left:10,right:10,bottom:10,item:5},
         }
-        super(scene, config, 'UiBuff');
-        UiBuff.instance = this; 
+        super(scene, config, 'UiEffect');
+        UiEffect.instance = this;
         this.setOrigin(0.5,0);
         this//.addBg(scene,{color:GM.COLOR_WHITE,alpha:0.5}) 
             .addMain(scene)
@@ -4596,11 +4633,11 @@ export class UiBuff extends UiBase
     {
         this._main.removeAll(true);
 
-        let buffs = this.getOwner()?.status?.buffs;
-        if(buffs)
+        let effects = this.getOwner()?.rec?.activeEffects;
+        if(effects)
         {
-            buffs.forEach(buff=>{
-                if(buff.icon){this._main.add(new Buff(this.scene,50,50,buff));}
+            effects.forEach(effect=>{
+                if(effect.icon){this._main.add(new Effect(this.scene,50,50,effect));}
             })
         }
 
