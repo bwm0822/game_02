@@ -143,6 +143,11 @@ export default class Utility
         localStorage.setItem(key,JSON.stringify(data));
     }
 
+    static delete(key='record')
+    {
+        localStorage.removeItem(key);
+    }
+
     static load(key='record')
     {
         return JSON.parse(localStorage.getItem(key));

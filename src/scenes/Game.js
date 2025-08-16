@@ -1,8 +1,6 @@
 import { Scene } from 'phaser';
-import * as Role from '../role';
 import Record from '../record';
-import Local from '../local';
-import DB from '../db';
+import QuestManager from '../quest.js';
 
 
 export class Game extends Scene
@@ -16,9 +14,15 @@ export class Game extends Scene
     create ()
     {
         console.log('create Game')
-
+        this.loadRecord();
         this.scene.launch('UI');
         this.gotoScene();
+    }
+
+    loadRecord()
+    {
+        Record.load();// 執行後，其他 scene 不用再執行 Record.load()
+        QuestManager.load();
     }
 
     gotoScene() 

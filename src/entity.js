@@ -8,7 +8,7 @@ import {bbcText} from './uibase'
 import * as Role from './role';
 import TimeManager from './time';
 
-let DEBUG = true; // 是否開啟 debug 模式
+let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;
 
 export class Entity extends Phaser.GameObjects.Container

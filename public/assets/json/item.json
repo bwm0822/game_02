@@ -133,6 +133,8 @@
       "attack": 15
     },
     "stats": {
+      "type": "melee",
+      "range": 1,
       "atk": 15,
       "str": 1
     },
@@ -153,6 +155,8 @@
       "attack": 25
     },
     "stats": {
+      "type": "melee",
+      "range": 1,
       "atk": 25
     },
     "tw": {
@@ -172,6 +176,8 @@
       "attack": 35
     },
     "stats": {
+      "type": "melee",
+      "range": 1,
       "atk": 35
     },
     "tw": {
@@ -197,8 +203,9 @@
       "range": 5
     },
     "stats": {
-      "atk": 15,
-      "range": 5
+      "type": "ranged",
+      "range": 5,
+      "atk": 15
     }
   },
   "bow_02": {
@@ -215,8 +222,9 @@
       "range": 5
     },
     "stats": {
-      "atk": 25,
-      "range": 5
+      "type": "ranged",
+      "range": 5,
+      "atk": 25
     }
   },
   "helmet_01": {

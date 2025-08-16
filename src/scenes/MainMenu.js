@@ -7,7 +7,6 @@ import {UiSettings, UiCursor} from '../ui.js'
 import {GM} from '../setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
-import QuestManager from '../quest.js';
 
 export class MainMenu extends Scene
 {
@@ -40,16 +39,14 @@ export class MainMenu extends Scene
         this.add.image(screenCenterX, screenCenterY, 'background').setOrigin(0.5);
         this.add.image(screenCenterX, screenCenterY, 'logo').setOrigin(0.5);
 
-        this.start(50, 400);
-        this.setting(50, 450);
+        this.btn_start(50, 400);
+        this.btn_setting(50, 450);
 
         GM.w = this.sys.canvas.width;
         GM.h = this.sys.canvas.height;
         this.input.setDefaultCursor('none');    // 消除預設的游標
         new UiSettings(this);
         new UiCursor(this);
-
-        // new UiTest(this)
     }
 
     button(x,y,text,cb)
@@ -71,27 +68,16 @@ export class MainMenu extends Scene
     {
         Local.load(this);
         DB.load(this);
-        Record.load();// 執行後，其他 scene 不用再執行 Record.load()
-        QuestManager.load();
     }
 
-    startGame()
-    {
-        let config = {map:Record.data.map}
-        if(Record.data.pos) {config.pos = Record.data.pos;}
-        else {config.port = Record.data.default;}
 
-        this.scene.start(Record.data.map=='map'?'GameMap':'GameArea',config);
-    }
-
-    start(x, y) 
+    btn_start(x, y) 
     {
         this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
-        // this.button(x, y, '開始遊戲', () => {this.startGame();});
     }
 
 
-    setting(x, y)
+    btn_setting(x, y)
     {
         this.button(x, y, '遊戲設定',()=>{
             UiSettings.show()

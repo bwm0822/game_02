@@ -134,10 +134,11 @@ export let GM =
     INT: "int",
 
     // 戰鬥屬性 
-    COMBAT: ["atk", "def", "hit", "dodge", "critRate", "critDmg"],
+    COMBAT: ["atk", "def", "range", "hit", "dodge", "critRate", "critDmg"],
     HPMAX : "hpMax",        // 生命上限
     ATK : "atk",            // 攻擊
     DEF : "def",            // 防禦
+    RANGE: "range",         // 攻擊半徑
     HIT : "hit",            // 命中
     DODGE : "dodge",        // 閃避
     CRITR : "critRate",     // 暴擊率
@@ -182,8 +183,9 @@ export let GM =
     TP_PROP : 1,
     TP_BTN : 2,
     TP_SKILL : 3,
-    TP_SKILL_1 : 4,
+    TP_SKILL_TB : 4,
     TP_EFFECT : 5,
+    TP_EFFECT_TB : 6,
 
     // 任務類型
     KILL : 'kill',

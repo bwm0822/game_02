@@ -102,10 +102,10 @@ export function text(scene, config={})
 
 export function bbcText(scene, config={})    
 {
-    let style = {};
     config.fontSize = config.fontSize ?? GM.FONT_SIZE;
     config.fontFamily = config.fontFamily ?? GM.FONT;
-    config.strokeThickness = config.strokeThickness ?? 1;
+    config.strokeThickness = config.strokeThickness ?? 3;   // 設成3才會有明顯描邊的效果
+    // 描邊，要用指令才有作用 [stroke=#000]text[/stroke]
 
     config.wrapWidth && (config.wrap = {mode:'char',width:config.wrapWidth}); 
     //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'

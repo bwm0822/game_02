@@ -2,12 +2,18 @@ import Utility from './utility.js'
 
 export default class Record
 {
-    static data = {default:'entry', map:'village-01', 
-                    time:{d:0,h:8,m:0},
-                    lang:'tw',
-                    bgmVolume:1.0,
-                    sfxVolume:1.0,
-                    }
+    static default = { default:'entry', map:'village-01', 
+                        time:{d:0,h:8,m:0},
+                        lang:'tw',
+                        bgmVolume:1.0,
+                        sfxVolume:1.0,
+                        }
+    static data;
+
+    static delete()
+    {
+        Utility.delete();
+    }
 
     static save()
     {
@@ -37,7 +43,8 @@ export default class Record
     static load()
     {
         let data = Utility.load();
-        if(data) {Record.data = data;}
+        if(data) {this.data = data;}
+        else {this.data = Utility.deepClone(this.default);}
         return data;
     }
 

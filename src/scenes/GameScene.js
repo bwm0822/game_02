@@ -309,6 +309,17 @@ export class GameScene extends Scene
 
     }
 
+    
+    restart()
+    {
+        console.log('------------------------ restart')
+        Record.delete();
+        this.scene.stop('UI');
+        this.scene.start('MainMenu');
+        
+        AudioManager.bgmPause();
+    }
+
     gotoScene(config)
     {
         this.save();
@@ -387,6 +398,7 @@ export class GameScene extends Scene
         const ui = this.scene.get('UI');
         ui.events
             .off('menu').on('menu', ()=>{this.mainMenu();})
+            .off('restart').on('restart', ()=>{this.restart();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
             .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})

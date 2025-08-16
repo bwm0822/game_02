@@ -775,21 +775,19 @@ class SkillSlot extends Pic
     {
         super(scene, w, h, config);
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK,radius:config?.radius??0, alpha:0.6}),'disabled');
-        this.add(bbcText(scene,{text:'',fontSize:20,color:'#fff'}),{key:'cd',align:'center-center',expand:false});
+        this.add(bbcText(scene,{text:'',fontSize:20,color:'#fff'}),{key:'remain',align:'center-center',expand:false});
         this.setIcon(config?.icon);
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
         this._i = i;            // 技能欄位索引
-        this._id = null;
-        this._state = null;     // 用來存放技能狀態
         this._dat = null;       // 用來存放技能資料
     }
 
     get owner() {return Role.getPlayer();}
-    get id() {return this._id;}
+    get id() {return this.owner.getSkillSlotAt(this._i);}
+    get remain() {return this.owner.getSkill(this.id).remain;}
     get i() {return this._i;}
     get dat() {return this._dat;}
-    get st() {return this._state;}
 
     addListener()
     {
@@ -804,7 +802,7 @@ class SkillSlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_1,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() { this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { Ui.cancelDelayCall();UiInfo.close(); }
 
     leave() {UiDragged.interact(true);}
@@ -812,7 +810,7 @@ class SkillSlot extends Pic
 
     leftButtonDown(x,y)
     {
-        if(!this._id || SkillSlot.selected) {return;}
+        if(!this.id || SkillSlot.selected) {return;}
         Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
     }
 
@@ -828,35 +826,29 @@ class SkillSlot extends Pic
         Ui.cancelDelayCall();   
         if(UiDragged.skill)
         {
-            this.owner.rec.skillSlots.forEach((slot,i)=>{
+            // 清除重復的技能欄位
+            this.owner.getSkillSlots().find((slot,i)=>{
                 if(slot===UiDragged.skill.id)
                 {
-                    this.owner.rec.skillSlots[i]=null;
+                    this.owner.clearSkillSlotAt(i); // 清除技能欄位
                 }
             })
-            this._id && (this.owner.rec.skillSlots[UiDragged.skill.i] = this._id);
-            this.owner.rec.skillSlots[this._i] = UiDragged.skill.id;
+            
+            this.id && (this.owner.setSkillSlotAt(UiDragged.skill.i, this.id));
+            this.owner.setSkillSlotAt(this.i, UiDragged.skill.id);
             UiDragged.empty();
             Ui.refreshAll();
         }
-        else if(this._state)
+        else if(this.id) // 如果有技能欄位，則使用技能
         {
-            // console.log(this._state)
-            if(this._dat.type === GM.ACTIVE)
-            {
-                this.owner.useSkill(this);
-            }
-            else
-            {
-                this.toggle();
-            }
+            if(this._dat.type === GM.ACTIVE) {this.owner.useSkill(this);}
+            else {this.toggle();}
         }
     }
 
     update()
     {
-        this._id = this.owner.rec.skillSlots[this._i];
-        if(this._id) {this.set();}
+        if(this.id) {this.set();}
         else {this.empty();}
     }
 
@@ -866,7 +858,7 @@ class SkillSlot extends Pic
         {
             SkillSlot.selected===this && SkillSlot.selected.unselect();
         }
-        else if(this._state.cd===0)
+        else if(this.remain===0)
         {
             this.select();
         }
@@ -876,14 +868,14 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
-        this.owner.setSkill(this); // 設定角色的技能
+        this.owner.selectSkill(this); // 設定角色的技能
     }
 
     unselect()
     {
         SkillSlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
-        this.owner.unsetSkill();
+        this.owner.unselectSkill();
     }
 
     reset() // call by role.resetSkill()
@@ -895,25 +887,21 @@ class SkillSlot extends Pic
 
     set()
     {
-        this._state =  this.owner.rec.skills[this._id];
-        this._dat = DB.skill(this._id);
-        let cd = this._state.cd;
+        this._dat = DB.skill(this.id);
         this.setIcon(this._dat.icon);
-        this.getElement('cd').setText(cd>0?cd:'');
-        this.getElement('disabled').fillAlpha=cd>0 ? 0.5 : 0;
+        this.getElement('remain').setText( this.remain>0 ? this.remain : '' );
+        this.getElement('disabled').fillAlpha = this.remain>0 ? 0.5 : 0;
         this.layout();
     }
 
     empty()
     {
-        this._id = null;
-        this._state = null;
         this._dat = null
         this.setIcon();
-        this.getElement('cd').setText('');
+        this.getElement('remain').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        this.owner.rec.skillSlots[this._i] = null; // 清除技能欄位
+        this.owner.clearSkillSlotAt(this.i); // 清除技能欄位
     }
 }
 
@@ -938,7 +926,7 @@ class SkillItem extends Pic
     get i() {return this._i;}
     get dat() {return this._dat;}
 
-    get en() {return this._skill && this._skill.en;}
+    get en() {return this._skill;}
 
     get locked()
     {
@@ -968,17 +956,12 @@ class SkillItem extends Pic
     {
         if(this.locked || SkillSlot.selected) {return;}
        
-        if(!this._skill?.en)
+        if(!this._skill)
         {
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
-                if(!this._skill)
-                {
-                    this.owner.rec.skills[this._id]={en:false,cd:0}
-                    this._skill=this.owner.rec.skills[this._id];
-                }
-                this._skill.en=true;
+                this.owner.learnSkill(this._id);
                 Ui.refreshAll();
             }
         }
@@ -1017,7 +1000,7 @@ class SkillItem extends Pic
         this._id = id;
         this.x = x;
         this.y = y;
-        this._skill =  this.owner.rec.skills[this._id];
+        this._skill =  this.owner.getSkill(this._id);
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
@@ -1542,13 +1525,14 @@ class UiInfo extends Sizer
                 break;
 
             case GM.TP_SKILL:
-            case GM.TP_SKILL_1:
+            case GM.TP_SKILL_TB:
                  this.addTitle(elm)
                     .addCd(elm)
                     .addDescript(elm)
                 break;
 
             case GM.TP_EFFECT:
+            case GM.TP_EFFECT_TB:
                 this.addEffect(elm)
                 break;
         }
@@ -1575,8 +1559,8 @@ class UiInfo extends Sizer
         switch(tp)
         {
             case GM.TP_BTN:
-            case GM.TP_EFFECT:
-            case GM.TP_SKILL_1:
+            case GM.TP_EFFECT_TB:
+            case GM.TP_SKILL_TB:
                 if(elm.y>GM.h/2)
                 {
                     this.setOrigin(0.5,1);
@@ -2049,6 +2033,30 @@ class Option extends UiBase
 
 }
 
+class Block extends Pic
+{
+    constructor(scene, w, h, effect)
+    {
+        super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
+        this.layout()
+            .addListener()
+        this._dat=effect;
+    }
+
+    get dat() {return this._dat;}
+
+    addListener()
+    {
+        this.setInteractive({draggable:true,dropZone:true})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
+    }
+
+    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_EFFECT,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() {Ui.cancelDelayCall();UiInfo.close();}
+
+}
+
 class Observe extends UiBase
 {
     constructor(scene)
@@ -2085,11 +2093,29 @@ class Observe extends UiBase
     stats()
     {
         let stats = this.scene.rexUI.add.sizer({orientation:'y'})
-        const total = this.owner.getTotalStats();
+        // const total = this.owner.getTotalStats();
+        const total = this.owner.total;
         let value = `${total[GM.HP]}/${total[GM.HPMAX]}`;
         stats.add(this.stat(GM.HP, value, false),{expand:true,padding:{left:0,right:0}})
 
         return stats;
+    }
+
+    effects(list)
+    {
+        let config = 
+        {
+            width : (50+5)*5,
+            orientation : 'x',
+            align : 'left',
+            space: {top:0, item:5, line:5},
+        }
+        let sizer = this.scene.rexUI.add.fixWidthSizer(config);
+        list.forEach(effect=>{
+            if(effect.icon){sizer.add(new Block(this.scene,50,50,effect));}
+        })
+
+        return sizer;
     }
 
     addContent(scene)
@@ -2107,8 +2133,28 @@ class Observe extends UiBase
             .add(this.label(),{padding:{top:10}})
             .add(divider(this.scene),{expand:true,padding:10})
             .add(this.stats(),{expand:true,padding:{left:10,right:10}})
-            .add(divider(this.scene),{expand:true,padding:10})
-            .add(this.des(),{align:'left',padding:{left:10,bottom:10}})
+           
+
+        if(this.owner.getSkills().length>0)
+        {
+            sizer
+                .add(bbcText(this.scene,{text:'技能'}))
+                .add(divider(this.scene),{expand:true,padding:10})
+                .add(this.skills(),{expand:true,padding:{left:10,right:10}})
+        }
+
+        if(this.owner.getEffects().length>0)
+        {
+            sizer
+                .add(bbcText(this.scene,{text:'效果'}))
+                .add(divider(this.scene),{expand:true,padding:10})
+                .add(this.effects(this.owner.getEffects()),
+                    {expand:true,padding:{left:10,right:10}})
+        }
+
+        sizer.add(divider(this.scene),{expand:true,padding:10})
+                .add(this.des(),{align:'left',padding:{left:10,bottom:10}})
+
         this.layout()
         return this;
     }
@@ -2586,7 +2632,8 @@ export class UiMain extends UiBase
         let hp = this.getElement('hp',true);
         // let life = player.getState('life');
         // hp.set(life.cur,life.max);
-        let total = player.getTotalStats();
+        // let total = player.getTotalStats();
+        let total = player.total;
         hp.set(total[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
@@ -2989,7 +3036,8 @@ export class UiProfile extends UiBase
     {
         if(this.visible)
         {
-            this.total = this.owner.getTotalStats();
+            // this.total = this.owner.getTotalStats();
+            this.total = this.owner.total;
             this.update();
         }
     }  
@@ -2998,7 +3046,8 @@ export class UiProfile extends UiBase
     {
         this.owner = owner;
         super.show();
-        this.total = this.owner.getTotalStats();
+        // this.total = this.owner.getTotalStats();
+        this.total = this.owner.total;
         this.update();
         this._tab || this.getElement('tags').emitTopButtonClick(0);
         // closeAll/register/camera
@@ -3482,7 +3531,7 @@ export class UiGameOver extends UiBase
     addLisitener()
     {
         this.setInteractive()
-            .on('pointerdown',()=>{this.close(); send('menu');})
+            .on('pointerdown',()=>{this.close(); send('restart');})
         return this;
     }
 
@@ -4460,8 +4509,8 @@ export class UiSkill extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            let skill = this.getOwner().rec.skills[id];
-            if(!skill?.en) {return false};
+            let skill = this.getOwner().getSkill(id);
+            if(!skill) {return false};
         }
 
         return true;
@@ -4511,10 +4560,10 @@ export class UiSkill extends UiBase
 
     ondown(item)
     {
-         this._itemSel?.unsel();
-            this._itemSel = item;
-            this.drawTree(DB.skTree[item.id])
-            item.sel();
+        this._itemSel?.unsel();
+        this._itemSel = item;
+        this.drawTree(DB.skTree[item.id])
+        item.sel();
     }
 
 
@@ -4563,16 +4612,14 @@ export class UiSkill extends UiBase
 
 class Effect extends Pic
 {
-    constructor(scene, w, h, effect)
+    constructor(scene, w, h, effect, style=GM.TP_EFFECT_TB)
     {
         super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
-        // let d=0;
-        // Object.values(buff.effects).forEach(effect=>d=Math.max(d,effect.d))
-        console.log(effect)
-        this.add(bbcText(scene,{text:effect.remaining,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})
+        this.add(bbcText(scene,{text:`[stroke=#000]${effect.remaining}[/stroke]`,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})
             .layout();
         this.addListener()
         this._dat=effect;
+        this._style=style;
     }
 
     get dat() {return this._dat;}
@@ -4584,11 +4631,10 @@ class Effect extends Pic
         .on('pointerout', ()=>{this.out();})
     }
 
-    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_EFFECT,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(this._style,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
 }
-
 
 export class UiEffect extends UiBase
 {
