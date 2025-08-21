@@ -232,6 +232,30 @@ export default class Utility
         );
     }
 
+    static fmt_Eff(str, obj, self, target) 
+    {
+        return str.replace(/{#(\w+)}/g, (match, key) => {
+                let val = obj[key]
+                if(val) 
+                {
+                    switch(key)
+                    {
+                        case 'tag': return `[color=deepskyblue]${val.lab()}[/color]`;
+                        case 'dur': return `[color=white]${val}[/color]`;
+                        case 'mul': return `[color=${val>1?'lime':'red'}]${val*100}%[/color]`;
+                        case 'self': return self;
+                        case 'target': return target;
+                        default:
+                            let n = Number(val);
+                            let c = isNaN(n) ? 'white' : (n > 0 ? 'lime' : 'red');
+                            return `[color=${c}]${isNaN(n)?val.lab():n}[/color]`;
+                    }
+                }
+                return '';
+            }
+        );
+    }
+
     static rotate(x, y, rad) 
     {
         // const rad = theta * Math.PI / 180; // 轉成弧度
@@ -264,6 +288,27 @@ export default class Utility
         if(r) {graphics.lineBetween(x+width, y, x+width, y+height);}
         if(t) {graphics.lineBetween(x, y, x+width, y);}
         if(b) {graphics.lineBetween(x, y+height, x+width, y+height);}
+    }
+
+    static parseDes(des, stats, self, target)
+    {
+        // 範例:
+        // 將       造成{#mul*100}%的{#elm}傷害
+        // 轉成     `造成${stats.mul*100}%的${stats.elm}傷害`
+        // 並執行   eval(`造成${stats.mul*100}%的${stats.elm}傷害`)
+
+        // 取得變數 stats 的名稱(字串)
+        let wrapper = {stats}
+        let vName = Object.keys(wrapper)[0]
+        // console.log('-----vName:',vName)
+        // 將 '{' 取代為 '${' , '#' 取代為 'vName.'
+        des = des.replace(/{/g,'${').replace(/#/g, vName+'.')
+        // 將字串前後加入 '`'，並執行
+        des = '`' + des + '`';
+        // console.log('-----stats:',stats)
+        // console.log('-----des:',des)
+        
+        return eval(des);   
     }
 
 

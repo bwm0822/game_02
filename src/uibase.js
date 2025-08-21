@@ -8,6 +8,11 @@ export function rect(scene, config={})
     return scene.rexUI.add.roundRectangle(config);
 }
 
+export function vSpace(scene, height)
+{
+    return rect(scene,{height:height})
+}
+
 export function divider(scene)
 {
     return rect(scene,{width:200,height:1,color:GM.COLOR_WHITE})

@@ -50,7 +50,7 @@ export default class Record
 
     static remove(mapName, qid)
     {
-        delete Record.data.scenes[mapName][qid];
+        delete Record.data.scenes[mapName]?.[qid];
     }
 
     // static add(map,id,x,y)

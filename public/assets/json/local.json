@@ -164,11 +164,7 @@
   },
   "attack": {
     "tw": {
-      "lab": "攻擊",
-      "des": "可造成的傷害"
-    },
-    "us": {
-      "lab": "Attack"
+      "lab": "攻擊"
     }
   },
   "defense": {
@@ -788,6 +784,12 @@
       "des": "暴擊傷害倍率"
     }
   },
+  "pen": {
+    "tw": {
+      "lab": "穿透",
+      "des": "無視防禦"
+    }
+  },
   "resist": {
     "tw": {
       "lab": "抗性"
@@ -863,13 +865,61 @@
   "hot": {
     "tw": {
       "lab": "持續回復",
-      "des": "每回合回復 [color=red]{0}[/color] 生命"
+      "des": "觸發{#tag}，每回合增加{#value}點生命，持續{#dur}回合 "
     }
   },
   "dot": {
     "tw": {
       "lab": "持續傷害",
-      "des": "每回合扣 [color=green]{0}[/color] 生命"
+      "des": "觸發{#tag}，每回合受到{#value}點{#elm}傷害，持續{#dur}回合 "
+    }
+  },
+  "buff": {
+    "tw": {
+      "lab": "增益",
+      "des": "觸發{#tag}，持續{#dur}回合 "
+    }
+  },
+  "act_hot": {
+    "tw": {
+      "lab": "持續回復",
+      "des": "每回合增加{#value}點生命 "
+    }
+  },
+  "act_dot": {
+    "tw": {
+      "lab": "持續傷害",
+      "des": "每回合受到{#value}點{#elm}傷害"
+    }
+  },
+  "act_buff": {
+    "tw": {
+      "lab": "增益"
+    }
+  },
+  "bleed": {
+    "tw": {
+      "lab": "出血"
+    }
+  },
+  "heal": {
+    "tw": {
+      "lab": "治療"
+    }
+  },
+  "strong": {
+    "tw": {
+      "lab": "強化"
+    }
+  },
+  "active": {
+    "tw": {
+      "lab": "主動"
+    }
+  },
+  "passive": {
+    "tw": {
+      "lab": "被動"
     }
   }
 }

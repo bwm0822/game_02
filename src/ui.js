@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown} from './uibase.js';
+import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
 import {GM} from './setting.js';
 import * as Role from './role.js';
 import DB from './db.js';
@@ -55,6 +55,10 @@ export default function createUI(scene)
     t4(scene);
     t5();
     t6();
+    t7();
+    let sk={mul:1.5, elm:'phy'};
+    t8(sk);
+    t9();
 }
 
 async function t3()
@@ -139,6 +143,46 @@ function t6()
 
     let num = 1;
     console.log(num.toFixed(1));
+}
+
+function t7()
+{
+    let skill = {mul:1.5,elm:'phy'}
+    let str='對目標造成${#mul*100}%的${#elm.lab()}傷害';
+    str = str.replace(/#/g, "skill.");
+    let ev='`'+str+'`';
+    let rst=eval(ev);
+    console.log('-------------------------=',rst)
+}
+
+function t8(skill)
+{
+    let wrapper = {skill}
+    let s=Object.keys(wrapper)[0]
+    console.log('t8--------------------',s);
+    let str='對目標造成${#mul*100}%的${#elm.lab()}傷害';
+    str = str.replace(/#/g, s+'.');
+    let ev='`'+str+'`';
+    console.log(ev)
+    let rst=eval(ev);
+    console.log('-------------------------=',rst)
+
+}
+
+function t9()
+{
+    console.log('t9-------------------------')
+    let des='突襲'
+    let st={}
+    let ret=Utility.parseDes(des,st);
+    console.log(ret)
+
+    let text='tt'
+    let b={};
+    let c={text:text,...b};
+    console.log(c)
+
+    
 }
 
 
@@ -1363,9 +1407,15 @@ class UiInfo extends Sizer
         return this;
     }
 
+    addVSpace(height)
+    {
+        this.add(vSpace(this.scene,height));
+        return this;
+    }
+
     addDivider()
     {
-        this.add(rect(this.scene,{width:200,height:1,color:GM.COLOR_WHITE}),{padding:{top:10,bottom:10}})
+        this.add(rect(this.scene,{width:UiInfo.w,height:1,color:GM.COLOR_WHITE}),{padding:{top:10,bottom:10}})
         return this;
     }
 
@@ -1376,14 +1426,20 @@ class UiInfo extends Sizer
         {
             this.addDivider();
             // this.add(bbcText(this.scene,{text:slot.id.des(),wrapWidth:200}),{align:'left'});
-            this.add(bbcText(this.scene,{text:des,wrapWidth:200}),{align:'left'});
+            this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w}),{align:'left'});
         }
         return this;
     }
 
-    addText(text)
+    addDes(des, stats, self, target)
     {
-        this.add(bbcText(this.scene,{text:text,wrapWidth:200}));
+        des = Utility.fmt_Eff(des, stats, self, target);
+        this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w,color:GM.COLOR_GRAY}),{align:'left'});
+    }
+
+    addText(text,config)
+    {
+        this.add(bbcText(this.scene,{text:text,wrapWidth:UiInfo.w,...config}),{align:'left'});
         return this;
     }
 
@@ -1401,8 +1457,8 @@ class UiInfo extends Sizer
                 //console.log(key,value);
                 switch(key)
                 {
-                    case GM.P_HUNGER: value = `${value}%`; break;
-                    case GM.P_THIRST: value = `${value}%`; break;
+                    case GM.HUNGER: value = `${value}%`; break;
+                    case GM.THIRST: value = `${value}%`; break;
                 }
                 this.addStat(key,value);
             }
@@ -1427,10 +1483,25 @@ class UiInfo extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:key.lab(),color:'#888'}),{proportion:1})
-            .add(bbcText(this.scene,{text:value}),{proportion:0});
+            // .add(bbcText(this.scene,{text:key.lab(),color:'#888'}),{proportion:1})
+            // .add(bbcText(this.scene,{text:value}),{proportion:0});
+            .add(bbcText(this.scene,{text:key.lab(),color:'#888'}))
+            .addSpace()
+            .add(bbcText(this.scene,{text:value}));
         this.add(sizer,{expand:true});
         return this;
+    }
+
+    addSkillStats(stats)
+    {
+        for(let[key,val] of Object.entries(stats))
+        {
+            console.log(key,val);
+            let c = val>0?'lime':'red';
+            let s = val>0?'+':'';
+            let text = `${key.lab()} [color=${c}]${s}${val}[/color]`
+            this.add(bbcText(this.scene,{text:text,color:GM.COLOR_GRAY}),{align:'left'})
+        }
     }
 
     addTimes(key, value)
@@ -1471,7 +1542,7 @@ class UiInfo extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
         sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:skill.dat.type}))
+            .add(bbcText(this.scene,{text:skill.dat.type.lab()}))
             .addSpace()
         if(skill.dat.cd)
         {
@@ -1482,22 +1553,62 @@ class UiInfo extends Sizer
         return this;
     }
 
-    addEffect(effect)
+    getStats(stats)
     {
-        let eff = effect.dat;
-        switch(eff.type)
+        if(!stats) return;
+        let str='';
+        for(let[key,val] of Object.entries(stats))
         {
-            case 'buff':
-                this.addStat(eff.stat,`+${eff.value}`)
-                break;
-            case 'hot':
-                this.addText(Utility.format("hot".des(), eff.value));
-                break;
-            case 'dot':
-                this.addText(Utility.format("dot".des(), eff.value));
-                break;
+            let c = val>0?'lime':'red';
+            let s = val>0?'+':'';
+            str += `${key.lab()} [color=${c}]${s}${val}[/color]`
         }
-      
+        return str;
+    }
+
+    addSkill(elm)
+    {
+        console.log(elm.dat)
+        this.addTitle(elm)
+            .addCd(elm)
+            .addDivider();
+        if(elm.dat[GM.RANGE]) {this.addStat(GM.RANGE, elm.dat[GM.RANGE]);}
+        if(elm.dat[this.lang]?.des)
+        {
+            let self = this.getStats(elm.dat.self);
+            let target = this.getStats(elm.dat.target)
+            this.addVSpace(20)
+                .addDes(elm.dat[this.lang]?.des, elm.dat, self, target);
+        }
+        if(elm.dat.effects)
+        {
+            this.addVSpace(20)
+            elm.dat.effects.forEach(eff=>{this.addEff(eff, false);})
+        }
+    }
+
+    addEff(eff, isActive)
+    {
+        if(isActive)
+        {
+            this.addText(Utility.fmt_Eff(('act_'+eff.type).des(), eff),{color:GM.COLOR_GRAY});
+        }
+        else
+        {
+            this.addVSpace(20);
+            this.addText(Utility.fmt_Eff(eff.type.des(), eff),{color:GM.COLOR_GRAY});
+        }
+
+        eff.type==='buff' && this.addSkillStats(eff.stats);
+    }
+
+
+    addEffect(elm)
+    {
+        let eff = elm.dat;
+        this.addText(eff.tag.lab())
+            .addDivider()
+            .addEff(eff, true)
     }
 
     update(type, elm)
@@ -1526,9 +1637,7 @@ class UiInfo extends Sizer
 
             case GM.TP_SKILL:
             case GM.TP_SKILL_TB:
-                 this.addTitle(elm)
-                    .addCd(elm)
-                    .addDescript(elm)
+                this.addSkill(elm)
                 break;
 
             case GM.TP_EFFECT:
@@ -1835,9 +1944,13 @@ class UiBase extends Sizer
     stat(key, value, interactive=true)
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+
+        if(GM.PCT.includes(key)){value=value+'%'}
+        else if(GM.PCT100.includes(key)){value=value*100+'%'}
+
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
-            .add(bbcText(this.scene,{text:value}),{proportion:0})
+            .add(bbcText(this.scene,{text:value}))
         let bg = sizer.getElement('bg').setAlpha(0);
         if(interactive)
         {

@@ -6,17 +6,24 @@
     "range": 2,
     "mul": 1.5,
     "elm": "phy",
+    "self": {
+      "pen": 0.1
+    },
+    "target": {
+      "dodge": -0.1
+    },
     "effects": [
       {
         "type": "dot",
         "value": 2,
         "dur": 3,
-        "icon": "icons/0"
+        "icon": "icons/0",
+        "tag": "bleed"
       }
     ],
     "tw": {
       "lab": "突刺",
-      "des": "突刺"
+      "des": "對目標造成{#mul}的{#elm}傷害，{#self}，目標{#target}"
     }
   },
   "fireball": {
@@ -28,7 +35,7 @@
     "elm": "fire",
     "tw": {
       "lab": "火球術",
-      "des": "火球術"
+      "des": "對目標造成{#mul}的{#elm}傷害"
     }
   },
   "ice": {
@@ -44,50 +51,45 @@
     "elm": "ice",
     "tw": {
       "lab": "冰凍術",
-      "des": "冰凍術"
+      "des": "對目標造成{#mul}的{#elm}傷害"
     }
   },
   "strong": {
     "icon": "icons/20",
     "type": "passive",
-    "effects": [
-      {
-        "type": "buff",
-        "stat": "str",
-        "value": 1
-      }
-    ],
+    "stats": {
+      "str": 1
+    },
     "tw": {
-      "lab": "強化",
-      "des": "強化"
+      "lab": "強化"
     }
   },
   "heal": {
     "icon": "icons/16",
     "type": "active",
     "cd": 3,
+    "heal": 10,
     "effects": [
-      {
-        "type": "heal",
-        "value": 10
-      },
       {
         "type": "hot",
         "value": 5,
         "dur": 5,
-        "icon": "icons/16"
+        "icon": "icons/16",
+        "tag": "heal"
       },
       {
         "type": "buff",
-        "stat": "str",
-        "value": 1,
+        "stats": {
+          "str": 1
+        },
         "dur": 5,
-        "icon": "icons/16"
+        "icon": "icons/16",
+        "tag": "strong"
       }
     ],
     "tw": {
       "lab": "回復術",
-      "des": "回復術"
+      "des": "回復{#heal}點生命"
     }
   },
   "test1": {

@@ -23,6 +23,8 @@ export default class Local
         return this._local?.[key]?.[this.lang].des ?? `[color=red]${key}[/color]`;
     }
 
+    
+
     static lut(key)
     {
         switch(key)

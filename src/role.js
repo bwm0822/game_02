@@ -1211,7 +1211,7 @@ export class Role extends Entity
 
     useSkillTo(pos, target)
     {
-        if(!target) {return;}
+        if(!target || !target.isAlive) {return;}
 
         this.faceTo(pos);
         // let bodies = this.getBodiesInRect(this.skill.dat.range, false);
@@ -1227,9 +1227,7 @@ export class Role extends Entity
 
     applySkillTo(target, skill)
     {
-        if(!target) {return;}
-        if(!target.isAlive) {return;}   
-
+        if(!target || !target.isAlive) {return;}
         let damage = this.calculateDamage(this, target, skill);
         target.takeDamage(damage, this);
 
@@ -1368,20 +1366,19 @@ export class Role extends Entity
     {
         const out = {};
         // 1) Vital & resource
-        if (base[GM.HPMAX] == null) out[GM.HPMAX] = Math.round((base[GM.CON] || 0) * 10 + (base[GM.STR] || 0) * 2);
-        // if (base[GM.MPMAX] == null) out.mpMax = Math.round((base.int || 0) * 5);
+        if (base[GM.HPMAX] == null) out[GM.HPMAX] = Math.round((base[GM.CON] || 0) * 10);               // HP = CON x 10
 
         // 2) Combat basics
         console.log("type=",base.type);
-        if (base[GM.ATK] == null) out[GM.ATK] = base.type === "ranged" ? 0 : (base[GM.STR] || 0) * 1.5;          // 攻擊 = STRx1.5
-        if (base[GM.DEF] == null) out[GM.DEF] = (base[GM.CON] || 0) * 1.2;          // 物防 = CON×1.2
-        if (base[GM.RANGE] == null) out[GM.RANGE] = base.type ? 0 : 1;                              // 攻擊半徑
-        if (base[GM.HIT] == null) out[GM.HIT] = (base[GM.DEX] || 0) * 0.5;          // 命中
-        if (base[GM.DODGE] == null) out[GM.DODGE] = (base[GM.DEX] || 0) * 0.3;      // 閃避
+        if (base[GM.ATK] == null) out[GM.ATK] = base.type === "ranged" ? 0 : (base[GM.STR] || 0) * 1.5; // 攻擊 = STR x 1.5
+        if (base[GM.DEF] == null) out[GM.DEF] = (base[GM.CON] || 0);                                    // 物防 = CON
+        if (base[GM.RANGE] == null) out[GM.RANGE] = base.type ? 0 : 1;                                  // 攻擊半徑
+        if (base[GM.HIT] == null) out[GM.HIT] = 1;                                                      // 命中 = 1
+        if (base[GM.DODGE] == null) out[GM.DODGE] = (base[GM.DEX] || 0) * 0.01;                         // 閃避 = DEX x 0.01
         
         // 3) Critical
-        if (base[GM.CRITR] == null) out[GM.CRITR] = Math.min(0.5, (base[GM.DEX] || 0) * 0.01); // 每點 DEX +1% 暴擊，上限 50%
-        if (base[GM.CRITD] == null) out[GM.CRITD] = 1.5;                            // 基礎暴擊傷害倍率
+        if (base[GM.CRITR] == null) out[GM.CRITR] = Math.min(0.5, (base[GM.DEX] || 0) * 0.01);          // 每點 DEX +1% 暴擊，上限 50%
+        if (base[GM.CRITD] == null) out[GM.CRITD] = 1.5;                                                // 基礎暴擊傷害倍率
 
         // 4) Resistances
         if (base.resists == null) out.resists = { [GM.FIRE_RES]: 0, [GM.ICE_RES]: 0, [GM.POISON_RES]: 0, [GM.PHY_RES]: 0 };
@@ -1391,11 +1388,32 @@ export class Role extends Entity
 
     getTotalStats() 
     {
+        let calc = (stats) =>
+        {
+            for(let [k,v] of Object.entries(stats))
+            {
+                if(GM.BASE.includes(k)) // 基礎屬性
+                {
+                    // v 為 string => 乘，v 為 數值 => 加
+                    if(typeof v === 'string') {baseMul[k] = (baseMul[k] || 0) + Number(v);}
+                    else {baseAdd[k] = (baseAdd[k] || 0) + v;}
+                }
+                else    // 次級屬性、抗性
+                {
+                    // v 為 string => 乘，v 為 數值 => 加
+                    if(typeof v === 'string') {secMul[k] = (secMul[k] || 0) + Number(v);}
+                    else {secAdd[k] = (secAdd[k] || 0) + v;}
+                }
+            }
+        }
+
         // 1) 淺層拷貝 [基礎屬性]
         let base = {...this.rec.baseStats};
 
-        let baseAdd = {};   // 基礎屬性 加成
-        let secAdd = {};    // 次級屬性 加成
+        let baseAdd = {};   // 基礎屬性 加
+        let baseMul = {};   // 基礎屬性 乘
+        let secAdd = {};    // 次級屬性 加
+        let secMul = {};    // 次級屬性 乘
 
         // 2) 計算 [裝備] 加成
         for(const equip of this.rec.equips) 
@@ -1403,19 +1421,7 @@ export class Role extends Entity
             if(equip)
             {
                 let eq = DB.item(equip.id);
-                const st = eq.stats || {};
-                for(const k in st)
-                {
-                    if(GM.BASE.includes(k)) // 2-1) 基礎屬性
-                    {
-                        baseAdd[k] = (baseAdd[k] || 0) + st[k];
-                    }
-                    else    // 2-2) 次級屬性、抗性、武器資訊
-                    {
-                        secAdd[k] = (secAdd[k] || 0) + st[k];   
-                    }
-                }
-
+                calc(eq.stats || {});
                 if(eq.cat === GM.CAT_WEAPON) {base.type = st.type;}
             }
         }
@@ -1424,47 +1430,18 @@ export class Role extends Entity
         for(const key in this.rec.skills)
         {
             let sk = DB.skill(key);
-            if(sk.type === GM.PASSIVE)
-            {
-                const effects = sk.effects || {};
-                for(const eff of effects)
-                {
-                    if(eff.type==='buff')
-                    {
-                        if(GM.BASE.includes(eff.stat)) // 2-1) 基礎屬性
-                        {
-                            baseAdd[eff.stat] = (baseAdd[eff.stat] || 0) + eff.value;
-                        }
-                        else    // 2-2) 次級屬性、抗性、武器資訊
-                        {
-                            secAdd[eff.stat] = (secAdd[eff.stat] || 0) + eff.value;
-                        }
-                    }
-                }
-            }
+            if(sk.type === GM.PASSIVE) {calc(sk.stats || {});}
         }
 
         // 4) 計算 [作用中效果] 的加成
         for (const eff of this.rec.activeEffects) 
         {
-            if (eff.type === "buff" || eff.type === "debuff") 
-            {
-                if(GM.BASE.includes(eff.stat)) // 2-1) 基礎屬性
-                {
-                    baseAdd[eff.stat] = (baseAdd[eff.stat] || 0) + eff.value;
-                }
-                else    // 2-2) 次級屬性、抗性、武器資訊
-                {
-                    secAdd[eff.stat] = (secAdd[eff.stat] || 0) + eff.value;
-                }
-            }
+            if (eff.type === "buff" || eff.type === "debuff") {calc(eff.stats)}
         }
 
         // 4) 修正後的 base
-        for (const [k, v] of Object.entries(baseAdd)) 
-        {
-            base[k] = (base[k] || 0) + v;
-        }
+        for (const [k, v] of Object.entries(baseAdd)) {base[k] = (base[k] || 0) + v;}
+        for (const [k, v] of Object.entries(baseMul)) {base[k] = (base[k] || 0) * (1 + v);}
 
         // 5) 修正後的 base 推導 derived
         const derived = this.deriveStats(base);
@@ -1474,6 +1451,7 @@ export class Role extends Entity
 
         // 7) 再套用「推導後」的裝備加成與抗性、武器
         for (const [k, v] of Object.entries(secAdd)) {total[k] = (total[k] || 0) + v;}
+        for (const [k, v] of Object.entries(secMul)) {total[k] = (total[k] || 0) * ( 1 + v);}
 
         // 8) 最後合併狀態，並確保當前生命值不超過最大值
         this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], this.rec.states[GM.HP]); 
@@ -1520,18 +1498,32 @@ export class Role extends Entity
         }
     }
 
-    takeDamage(amount) 
+    takeDamage(dmg) 
     {
-        this.createDisp(-amount, '#f00', '#fff');
-        this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-amount); 
-
-        console.log(`${this.name} 受到 ${amount} 傷害`);
+        switch(dmg.type)
+        {
+            case GM.CRIT:
+                this.createDisp(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
+                console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
+                break;
+            case GM.DODGE:
+                this.createDisp(GM.DODGE.lab(), '#0f0', '#000');
+                break;
+            case GM.MISS:
+                this.createDisp(GM.MISS.lab(), '#0f0', '#000');
+                break;
+            default:
+                this.createDisp(-dmg.amount, '#f00', '#fff');
+                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
+                console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
+        }
 
         this.total[GM.HP] = this.rec.states[GM.HP];
 
         if(this.isPlayer) {this.send('refresh');}
 
-        if(this.rec.states[GM.HP] == 0) {this.dead();}   
+        if(this.rec.states[GM.HP] === 0) {this.dead();}   
     }
 
     heal(amount) 
@@ -1559,7 +1551,7 @@ export class Role extends Entity
                     const resist = this.total.resists?.[e.element] || 0;
                     finalDamage *= 1 - resist;
                 }
-                this.takeDamage(finalDamage);
+                this.takeDamage({amount:finalDamage});
             }
             else if (e.type === "hot") 
             {
@@ -1586,14 +1578,24 @@ export class Role extends Entity
 
     calculateDamage(attacker, defender, skill) 
     {
+        console.log('skill------------------',skill?.dat)
         const aStats = attacker.getTotalStats();
         const dStats = defender.getTotalStats();
         console.log(aStats,dStats)
 
-        let atk = aStats[GM.ATK] || 0;  // 基本攻擊
-        let elm = GM.PHY;               // 攻擊屬性
-        let mul = 1;                    // 傷害倍率
-        let penetrate = 0;              // 防禦穿透率
+        // 計算命中率
+        let hit = aStats[GM.HIT] + (skill?.dat?.self?.hit??0); 
+        let dodge = dStats[GM.DODGE] + (skill?.dat?.target?.dodge??0);
+        let rnd = Math.random();
+        console.log('---------------------------------',rnd,hit,hit-dodge)
+        if(rnd >= hit) {return {amount:0, type:GM.MISS};}
+        else if(rnd >= (hit-dodge)) {return {amount:0, type:GM.DODGE};}
+
+        let type = 'normal';
+        let atk = aStats[GM.ATK] || 0;          // 基本攻擊
+        let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性
+        let mul = skill?.dat?.mul ?? 1;         // 傷害倍率
+        let penetrate = skill?.dat?.pen ?? 0;   // 防禦穿透率
 
         // 1. 計算基礎傷害
         let baseDamage = atk * mul;
@@ -1609,11 +1611,34 @@ export class Role extends Entity
         {
             damage *= aStats[GM.CRITD];
             console.log(`💥 ${attacker.name} 暴擊！`);
+            type = GM.CRIT;
         }
         // 5. 浮動傷害(0.85 ~ 1.05)
         damage *= 0.95 + Math.random() * 0.1;
-        return Math.round(Math.max(1, damage));
+        damage = Math.round(Math.max(1, damage))
+
+        return {amount:damage, type:type};
     }
+
+    apply({pt,ent}={})
+    {
+        if(this.skill)
+        {
+            if(this.isInSkillRange(pt??ent.pos))
+            {
+                this.useSkillTo(pt??ent.pos, ent);
+            }
+        }
+        else if(ent?.act===GM.ATTACK)
+        {
+            this.attack(ent);
+        }
+        else
+        {
+            this.setDes({pt:pt,ent:ent});
+        }
+    }
+
 }
 
 export class Target extends Role
@@ -1683,25 +1708,7 @@ export class Avatar extends Role
         super.dead(attacker);
     }
 
-    apply({pt,ent}={})
-    {
-        if(this.skill)
-        {
-            if(this.isInSkillRange(pt??ent.pos))
-            {
-                this.useSkillTo(pt??ent.pos, ent);
-            }
-        }
-        else if(ent?.act===GM.ATTACK)
-        {
-            this.attack(ent);
-        }
-        else
-        {
-            this.setDes({pt:pt,ent:ent});
-        }
-    }
-
+    
 
 
 }
@@ -1978,9 +1985,9 @@ export class Npc extends Role
     //     this._act = GM.ATTACK;
     // }
 
-    takeDamage(amount, attacker) 
+    takeDamage(dmg, attacker) 
     {
-        super.takeDamage(amount);
+        super.takeDamage(dmg);
 
         if(attacker)
         {

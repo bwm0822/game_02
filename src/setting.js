@@ -143,6 +143,10 @@ export let GM =
     DODGE : "dodge",        // 閃避
     CRITR : "critRate",     // 暴擊率
     CRITD : "critDmg",      // 暴擊傷害倍率
+    
+    PCT: ["phy_res","fire_res","ice_res","poison_res"],
+
+    PCT100:["hit","dodge","critRate"],
 
     // 抗性 (Resists)
     RESIST : ["phy_res", "fire_res", "ice_res", "poison_res"],
@@ -167,6 +171,8 @@ export let GM =
     HEAL : 'heal',
     DOT : 'dot',
     HOT : 'hot',
+    CRIT : "crit",          // 暴擊
+    MISS : "miss",          // 失誤
 
     // 屬性
     P_ATTACK : 'attack',
