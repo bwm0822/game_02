@@ -44,10 +44,6 @@
     "cat": "CAT_FOOD",
     "icon": "icons/241",
     "gold": 10,
-    "props": {
-      "hunger": -1,
-      "life": 10
-    },
     "useable": true,
     "cook": {
       "id": "cooked_meat"
@@ -65,10 +61,6 @@
     "cat": "CAT_FOOD",
     "icon": "icons/242",
     "gold": 15,
-    "props": {
-      "hunger": -5,
-      "life": 20
-    },
     "useable": true,
     "tw": {
       "lab": "熟肉",
@@ -83,10 +75,6 @@
     "cat": "CAT_FOOD",
     "icon": "icons/259",
     "gold": 10,
-    "props": {
-      "hunger": -1,
-      "life": 10
-    },
     "useable": true,
     "tw": {
       "lab": "生魚",
@@ -101,10 +89,6 @@
     "cat": "CAT_FOOD",
     "icon": "icons/260",
     "gold": 15,
-    "props": {
-      "hunger": -5,
-      "life": 20
-    },
     "useable": true,
     "make": {
       "items": {
@@ -129,18 +113,27 @@
       "sprite": "weapons/3",
       "y": -10
     },
-    "props": {
-      "attack": 15
-    },
-    "stats": {
+    "self": {
       "type": "melee",
       "range": 1,
       "atk": 15,
-      "str": 1
+      "str": "0.5*"
     },
+    "target": {
+      "dodge": "-0.1"
+    },
+    "effects": [
+      {
+        "type": "dot",
+        "value": 2,
+        "dur": 3,
+        "icon": "icons/0",
+        "tag": "bleed"
+      }
+    ],
     "tw": {
       "lab": "匕首",
-      "des": ""
+      "des": "常用近戰武器"
     },
     "us": {
       "lab": "Ordinary knife",
@@ -151,10 +144,7 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons/4",
     "gold": 25,
-    "props": {
-      "attack": 25
-    },
-    "stats": {
+    "self": {
       "type": "melee",
       "range": 1,
       "atk": 25
@@ -172,10 +162,7 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons/5",
     "gold": 35,
-    "props": {
-      "attack": 35
-    },
-    "stats": {
+    "self": {
       "type": "melee",
       "range": 1,
       "atk": 35
@@ -198,11 +185,7 @@
       "y": -8,
       "x": 15
     },
-    "props": {
-      "attack": 15,
-      "range": 5
-    },
-    "stats": {
+    "self": {
       "type": "ranged",
       "range": 5,
       "atk": 15
@@ -217,11 +200,7 @@
       "y": -8,
       "x": 15
     },
-    "props": {
-      "attack": 25,
-      "range": 5
-    },
-    "stats": {
+    "self": {
       "type": "ranged",
       "range": 5,
       "atk": 25
@@ -240,10 +219,7 @@
       "sprite": "cloth-hood",
       "scale": 0.25
     },
-    "props": {
-      "defense": 1
-    },
-    "stats": {
+    "self": {
       "def": 10
     },
     "tw": {
@@ -268,10 +244,7 @@
       "sprite": "leather-helmet",
       "scale": 0.25
     },
-    "props": {
-      "defense": 2
-    },
-    "stats": {
+    "self": {
       "def": 20
     },
     "tw": {
@@ -287,10 +260,7 @@
     "cat": "CAT_HELMET",
     "icon": "weapons/47",
     "gold": 30,
-    "props": {
-      "defense": 3
-    },
-    "stats": {
+    "self": {
       "def": 30
     },
     "tw": {
@@ -315,11 +285,7 @@
       "sprite": "cloth-armor",
       "scale": 0.25
     },
-    "props": {
-      "defense": 2,
-      "lifeMax": 10
-    },
-    "stats": {
+    "self": {
       "def": 20
     },
     "tw": {
@@ -344,11 +310,7 @@
       "sprite": "leather-armor",
       "scale": 0.25
     },
-    "props": {
-      "defense": 4,
-      "lifeMax": 20
-    },
-    "stats": {
+    "self": {
       "def": 30
     },
     "tw": {
@@ -364,10 +326,7 @@
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons/56",
     "gold": 60,
-    "props": {
-      "defense": 6
-    },
-    "stats": {
+    "self": {
       "def": 40
     },
     "tw": {
@@ -392,10 +351,7 @@
       "sprite": "cloth-gloves",
       "scale": 0.25
     },
-    "props": {
-      "defense": 1
-    },
-    "stats": {
+    "self": {
       "def": 5
     },
     "tw": {
@@ -420,10 +376,7 @@
       "sprite": "leather-gloves",
       "scale": 0.25
     },
-    "props": {
-      "defense": 2
-    },
-    "stats": {
+    "self": {
       "def": 10
     },
     "us": {
@@ -444,10 +397,7 @@
       "sprite": "cloth-boots",
       "scale": 0.25
     },
-    "props": {
-      "defense": 1
-    },
-    "stats": {
+    "self": {
       "def": 5
     },
     "tw": {
@@ -472,10 +422,7 @@
       "sprite": "leather-boots",
       "scale": 0.25
     },
-    "props": {
-      "defense": 2
-    },
-    "stats": {
+    "self": {
       "def": 10
     },
     "us": {
@@ -519,7 +466,7 @@
     },
     "tw": {
       "lab": "火把",
-      "des": ""
+      "des": "可以照明"
     },
     "us": {
       "lab": "Torch",
@@ -536,7 +483,7 @@
     },
     "tw": {
       "lab": "水壺",
-      "des": ""
+      "des": "可以裝水"
     },
     "us": {
       "lab": "Bottle",

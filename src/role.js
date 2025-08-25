@@ -11,7 +11,7 @@ import Record from './record';
 import {Entity,Pickup,Door, Projectile} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
-import {text,bbcText,rect} from './uibase.js';
+import {text,bbcText,rect, sprite} from './uibase.js';
 import {GM, ROLE_ATTRS} from './setting.js';
 import TimeManager from './time.js';
 import QuestManager from './quest.js';  
@@ -826,6 +826,27 @@ export class Role extends Entity
         return t;
     }
 
+    async dispSkill(skill)
+    {
+        let sp = sprite(this.scene,{icon:skill.dat.icon});
+        this.add(sp);
+        sp.setOrigin(0.5,0.5);
+        sp.setDepth(100);
+        
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: sp,
+                y: {from:-32, to:-64},
+                scale:{from:1, to:2},
+                duration: 300,
+                ease: 'linear',
+                onStart: ()=>{},
+                onComplete: (tween, targets, gameObject)=>{sp.destroy();resolve()}         
+            });
+        });
+
+    }
+
     // disp(value,color=GM.COLOR_RED)
     // {
     //     if(!this._disp)
@@ -1191,16 +1212,13 @@ export class Role extends Entity
     
     
     // 使用技能
-    useSkill(skill) // call by SkillSlot
+    async useSkill(skill) // call by SkillSlot
     {   
-        for(const eff of skill.dat.effects)
-        {
-            switch(eff.type)
-            {
-                case GM.HEAL: this.heal(eff.value); break;
-                default: this.addEffect(eff);
-            }
-        }
+        await this.dispSkill(skill);
+
+        if(skill.dat[GM.HEAL]){ this.heal(skill.dat[GM.HEAL]); }
+
+        for(const eff of skill.dat.effects) {this.addEffect(eff);}
 
         this.updateSkill(skill)
         skill.reset();
@@ -1235,10 +1253,7 @@ export class Role extends Entity
 
         if(skill)
         {
-            for(const effect of skill.dat.effects)
-            {
-                target.addEffect(effect);
-            }
+            
             
             this.updateSkill(skill);
             this.resetSkill();
@@ -1386,92 +1401,21 @@ export class Role extends Entity
         return out;
     }
 
-    getTotalStats() 
-    {
-        let calc = (stats) =>
-        {
-            for(let [k,v] of Object.entries(stats))
-            {
-                if(GM.BASE.includes(k)) // 基礎屬性
-                {
-                    // v 為 string => 乘，v 為 數值 => 加
-                    if(typeof v === 'string') {baseMul[k] = (baseMul[k] || 0) + Number(v);}
-                    else {baseAdd[k] = (baseAdd[k] || 0) + v;}
-                }
-                else    // 次級屬性、抗性
-                {
-                    // v 為 string => 乘，v 為 數值 => 加
-                    if(typeof v === 'string') {secMul[k] = (secMul[k] || 0) + Number(v);}
-                    else {secAdd[k] = (secAdd[k] || 0) + v;}
-                }
-            }
-        }
 
-        // 1) 淺層拷貝 [基礎屬性]
-        let base = {...this.rec.baseStats};
-
-        let baseAdd = {};   // 基礎屬性 加
-        let baseMul = {};   // 基礎屬性 乘
-        let secAdd = {};    // 次級屬性 加
-        let secMul = {};    // 次級屬性 乘
-
-        // 2) 計算 [裝備] 加成
-        for(const equip of this.rec.equips) 
-        {
-            if(equip)
-            {
-                let eq = DB.item(equip.id);
-                calc(eq.stats || {});
-                if(eq.cat === GM.CAT_WEAPON) {base.type = st.type;}
-            }
-        }
-
-        // 3) 計算 [被動技能] 的加成
-        for(const key in this.rec.skills)
-        {
-            let sk = DB.skill(key);
-            if(sk.type === GM.PASSIVE) {calc(sk.stats || {});}
-        }
-
-        // 4) 計算 [作用中效果] 的加成
-        for (const eff of this.rec.activeEffects) 
-        {
-            if (eff.type === "buff" || eff.type === "debuff") {calc(eff.stats)}
-        }
-
-        // 4) 修正後的 base
-        for (const [k, v] of Object.entries(baseAdd)) {base[k] = (base[k] || 0) + v;}
-        for (const [k, v] of Object.entries(baseMul)) {base[k] = (base[k] || 0) * (1 + v);}
-
-        // 5) 修正後的 base 推導 derived
-        const derived = this.deriveStats(base);
-
-        // 6) 合併：base 值優先，derived 補空位
-        const total = { ...derived, ...base };
-
-        // 7) 再套用「推導後」的裝備加成與抗性、武器
-        for (const [k, v] of Object.entries(secAdd)) {total[k] = (total[k] || 0) + v;}
-        for (const [k, v] of Object.entries(secMul)) {total[k] = (total[k] || 0) * ( 1 + v);}
-
-        // 8) 最後合併狀態，並確保當前生命值不超過最大值
-        this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], this.rec.states[GM.HP]); 
-        Object.assign(total, this.rec.states);
-
-        this.total = total;
-        return total;
-    }
 
     getEffects()
     {
         return this.rec.activeEffects;
     }
 
-    addEffect(effect)
+    addEffect(effect,types=['hot','dot','buff','debuff'])
     {
+        if(!types.includes(effect.type)) {return;}
+
         const maxStack = effect.maxStack || 99;
-        if (effect.stackable) 
+        if (true)//effect.stackable) 
         {
-            const existingStacks = this.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
+            const existingStacks = this.rec.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
             if (existingStacks.length >= maxStack) {
                 console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
                 return;
@@ -1576,14 +1520,102 @@ export class Role extends Entity
         }
     }
 
+    getTotalStats(extern) 
+    {
+        let calc = function(stats, out)
+        {
+            for(let [k,v] of Object.entries(stats))
+            {
+                if(GM.BASE.includes(k)) // 基礎屬性
+                {
+                    // 如果 v 為包含'*'的字串(如 '0.1*') => 乘， 其餘 => 加
+                    if(v?.includes?.('*')) {out.baseMul[k] = (out.baseMul[k] || 0) + parseFloat(v);}
+                    else {out.baseAdd[k] = (out.baseAdd[k] || 0) + parseFloat(v);}
+                }
+                else    // 次級屬性、抗性
+                {
+                    // 如果 v 為包含'x'的字串(如 '0.1*') => 乘， 其餘 => 加
+                    if(v?.includes?.('*')) {out.secMul[k] = (out.secMul[k] || 0) + parseFloat(v);}
+                    else {out.secAdd[k] = (out.secAdd[k] || 0) + parseFloat(v);}
+                }
+            }
+        }
+
+        let addEffs = function(effs, out)
+        {
+            for(const eff of effs)
+            {
+                if(['dot','debuff'].includes(eff.type)) {out.effs.push(eff);}
+            }
+        }
+
+        // 1) 淺層拷貝 [基礎屬性]
+        let base = {...this.rec.baseStats};
+
+        // 基礎屬性(加),基礎屬性(乘),次級屬性(加),次級屬性(乘)
+        let mSelf = extern ?? {baseAdd:{}, baseMul:{}, secAdd:{}, secMul:{}}
+        let mTarget = {baseAdd:{}, baseMul:{}, secAdd:{}, secMul:{}, effs:[]}
+
+        // 2) 計算 [裝備] 加成
+        for(const equip of this.rec.equips) 
+        {
+            if(equip)
+            {
+                let eq = DB.item(equip.id);
+                let self = eq.self || {};
+                let target = eq.target || {};
+                let effs = eq.effects || [];
+                calc(self, mSelf);
+                calc(target, mTarget);
+                addEffs(effs, mTarget)
+                if(eq.cat === GM.CAT_WEAPON) {base.type = self.type;}
+            }
+        }
+
+        // 3) 計算 [被動技能] 的加成
+        for(const key in this.rec.skills)
+        {
+            let sk = DB.skill(key);
+            if(sk.type === GM.PASSIVE) {calc(sk.stats || {}, mSelf);}
+        }
+
+        // 4) 計算 [作用中效果] 的加成
+        for (const eff of this.rec.activeEffects) 
+        {
+            if (eff.type === "buff" || eff.type === "debuff") {calc(eff.stats, mSelf)}
+        }
+
+        // 4) 修正後的 base
+        for (const [k, v] of Object.entries(mSelf.baseAdd)) {base[k] = (base[k] || 0) + v;}
+        for (const [k, v] of Object.entries(mSelf.baseMul)) {base[k] = (base[k] || 0) * (1 + v);}
+
+        // 5) 修正後的 base 推導 derived
+        const derived = this.deriveStats(base);
+
+        // 6) 合併：base 值優先，derived 補空位
+        const total = { ...derived, ...base};
+        total.mTarget = mTarget;
+
+        // 7) 再套用「推導後」的裝備加成與抗性、武器
+        for (const [k, v] of Object.entries(mSelf.secAdd)) {total[k] = (total[k] || 0) + v;}
+        for (const [k, v] of Object.entries(mSelf.secMul)) {total[k] = (total[k] || 0) * ( 1 + v);}
+
+        // 8) 最後合併狀態，並確保當前生命值不超過最大值
+        this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], this.rec.states[GM.HP]); 
+        Object.assign(total, this.rec.states);
+
+        this.total = total;
+        return total;
+    }
+
     calculateDamage(attacker, defender, skill) 
     {
         console.log('skill------------------',skill?.dat)
         const aStats = attacker.getTotalStats();
-        const dStats = defender.getTotalStats();
+        const dStats = defender.getTotalStats(aStats.mTarget);
         console.log(aStats,dStats)
 
-        // 計算命中率
+        // 計算是否命中
         let hit = aStats[GM.HIT] + (skill?.dat?.self?.hit??0); 
         let dodge = dStats[GM.DODGE] + (skill?.dat?.target?.dodge??0);
         let rnd = Math.random();
@@ -1591,6 +1623,26 @@ export class Role extends Entity
         if(rnd >= hit) {return {amount:0, type:GM.MISS};}
         else if(rnd >= (hit-dodge)) {return {amount:0, type:GM.DODGE};}
 
+
+        // 計算 Effect
+        let effs = [...aStats.mTarget.effs,...(skill?.dat?.effects??[])]
+        console.log('---------------effs',effs)
+        for(const effect of effs)
+        {
+            defender.addEffect(effect,['dot','debuff']);
+        }
+
+        // for(const effect of aStats.mTarget.effs)
+        // {
+        //     defender.addEffect(effect,['dot','debuff']);
+        // }
+
+        // for(const effect of skill?.dat?.effects??[])
+        // {
+        //     defender.addEffect(effect,['dot','debuff']);
+        // }
+
+        // 計算傷害
         let type = 'normal';
         let atk = aStats[GM.ATK] || 0;          // 基本攻擊
         let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性

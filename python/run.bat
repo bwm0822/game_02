@@ -1,4 +1,4 @@
-@REM py ./python/item.py
+py ./python/item.py
 py ./python/role.py
 py ./python/local.py
 py ./python/quest.py

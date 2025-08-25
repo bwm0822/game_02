@@ -20,7 +20,7 @@ export default class Local
 
     static des(key)
     {
-        return this._local?.[key]?.[this.lang].des ?? `[color=red]${key}[/color]`;
+        return this._local?.[key]?.[this.lang].des ?? '';//`[color=red]${key}[/color]`;
     }
 
     

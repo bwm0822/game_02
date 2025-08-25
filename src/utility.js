@@ -242,18 +242,68 @@ export default class Utility
                     {
                         case 'tag': return `[color=deepskyblue]${val.lab()}[/color]`;
                         case 'dur': return `[color=white]${val}[/color]`;
-                        case 'mul': return `[color=${val>1?'lime':'red'}]${val*100}%[/color]`;
+                        // case 'mul': return `[color=${val>1?'lime':'red'}]${val*100}[size=18]%[/size][/color]`;
                         case 'self': return self;
                         case 'target': return target;
                         default:
-                            let n = Number(val);
-                            let c = isNaN(n) ? 'white' : (n > 0 ? 'lime' : 'red');
-                            return `[color=${c}]${isNaN(n)?val.lab():n}[/color]`;
+                            // let n = Number(val);
+                            // let c = isNaN(n) ? 'white' : (n > 0 ? 'lime' : 'red');
+                            // return `[color=${c}]${isNaN(n)?val.lab():n}[/color]`;
+                            return this.fmt_Stat(key,val);
                     }
                 }
                 return '';
             }
         );
+    }
+
+    static getStorageCount(storage)
+    {
+        // 傳回 storage 被佔據的數量
+        return storage?.items.filter(item => item).length??0;
+    }
+
+    static fmt_Stat(key, val, elm)
+    {
+        let cat = elm?.dat?.cat;
+        switch(key)
+        {
+            case GM.ENDURANCE: return this.tick2Str(elm.itm[key]);
+            case GM.STORAGE: return `${this.getStorageCount(elm.itm[key])}[size=18]/${val}[/size]`;
+            case GM.CAPACITY:
+            case GM.TIMES: return `${elm.itm[key]}[size=18]/${val.max}[/size]`;
+            default:
+                if(typeof val === 'number')
+                {
+                    GM.PCT.includes(key) && (val=val*100+'[size=18]%[/size]');
+                    return `[color=white]${val}[/color]`;
+                }
+                else
+                {
+                    let f = parseFloat(val);
+                    if(f)
+                    {
+                        let c = f > 0 ? 'orange' : 'lime';
+                        let s = f > 0 ? '+' :'';
+                        
+                        if(val.includes('*'))
+                        {
+                            f=f*100+'[size=18]%[/size]';
+                            return `[color=${c}][size=18]1${s}[/size]${f}[/color]`;
+                        }
+                        else
+                        {
+                            GM.PCT.includes(key) && (f=f*100+'[size=18]%[/size]');
+                            return `[color=${c}]${s}${f}[/color]`;
+                        }
+                    }
+                    else
+                    {
+                        return `[color=white]${val.lab()}[/color]`;
+                    }
+                }
+        }
+
     }
 
     static rotate(x, y, rad) 

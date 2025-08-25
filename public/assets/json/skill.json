@@ -7,10 +7,10 @@
     "mul": 1.5,
     "elm": "phy",
     "self": {
-      "pen": 0.1
+      "pen": "0.1"
     },
     "target": {
-      "dodge": -0.1
+      "dodge": "-0.1"
     },
     "effects": [
       {
@@ -80,7 +80,7 @@
       {
         "type": "buff",
         "stats": {
-          "str": 1
+          "str": "1"
         },
         "dur": 5,
         "icon": "icons/16",

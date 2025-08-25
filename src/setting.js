@@ -49,6 +49,7 @@ export let GM =
     ICON_BAG : 'icons/137',
 
     CAT_ALL         :   0b1111_1111_1111_1111,
+    CAT_ARMOR       :   0b0000_0000_0001_1110,
     CAT_WEAPON      :   0b0000_0000_0000_0001,
     CAT_HELMET      :   0b0000_0000_0000_0010,
     CAT_CHESTPLATE  :   0b0000_0000_0000_0100,
@@ -144,9 +145,10 @@ export let GM =
     CRITR : "critRate",     // 暴擊率
     CRITD : "critDmg",      // 暴擊傷害倍率
     
-    PCT: ["phy_res","fire_res","ice_res","poison_res"],
-
-    PCT100:["hit","dodge","critRate"],
+    PEN : "pen",            // 穿透
+    
+    PCT: [  "hit","dodge","critRate","pen","mul",
+            "phy_res","fire_res","ice_res","poison_res"],
 
     // 抗性 (Resists)
     RESIST : ["phy_res", "fire_res", "ice_res", "poison_res"],
@@ -174,6 +176,13 @@ export let GM =
     CRIT : "crit",          // 暴擊
     MISS : "miss",          // 失誤
 
+    // 物品屬性
+    ITEMS : ['endurance','storage','capacity','times'],
+    ENDURANCE : 'endurance',
+    STORAGE : 'storage',
+    CAPACITY : 'capacity',
+    TIMES : 'times',
+    
     // 屬性
     P_ATTACK : 'attack',
     P_DEFENSE : 'defense',
