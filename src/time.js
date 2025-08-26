@@ -12,7 +12,7 @@ export default class TimeManager
 
     static list = [];
 
-    static inc(minutes = 1) 
+    static async inc(minutes = 1) 
     {
         this.time.m += minutes;
 
@@ -29,7 +29,16 @@ export default class TimeManager
         this.ticks = this.time2Ticks(this.time);
 
         console.log('[time] inc')
-        this.emit(minutes);
+        // this.emit(minutes);
+        await this.aEmit(minutes);
+    }
+
+    static async aEmit(dt)
+    {
+        let promises=[];
+        this.list.forEach( (cb)=>{promises.push(cb(dt,this.time))} )
+
+        await Promise.all(promises);
     }
 
     static update()

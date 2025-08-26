@@ -90,7 +90,7 @@ export class GameArea extends GameScene
                 await this._player.process();
                 for(let i=0;i<this.roles.length;i++) {await this.roles[i].process();}
             }
-            TimeManager.inc();
+            await TimeManager.inc();
         }
     }
 }

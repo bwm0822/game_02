@@ -4,7 +4,7 @@ import Phaser, { Time } from 'phaser';
 //import {ProgressBar, BuffBar, Buff, Shield, BuffInfo, Flag} from './gameUi.js';
 //import {Gun, Melee} from './weapon.js';
 import Utility from './utility.js';
-//import Battle from './battle.js';
+//import Battle from './battle.js'ST_IDLE;
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
@@ -512,7 +512,7 @@ export class Role extends Entity
         }
     }
 
-    action_atk()
+    async action_atk()
     {
         // let range = this.getTotalStats()[GM.RANGE];
         let range = this.total[GM.RANGE];
@@ -729,13 +729,20 @@ export class Role extends Entity
         if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
     }
 
-    dead(attacker)
+    async dead(attacker)
     {
+        if(this.state === GM.ST_DEATH) {return;}
+        console.log(`[${this.id}] ----------------- ${this.id} daed [${this.state}]`)
+        this.state = GM.ST_DEATH;
+        
         if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
         else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
+       
+        this.checkQuest();
+        await this.waitDisp();
+        console.log(`[${this.id}] ----------------- ${this.id} daed-1 [${this.state}]`)
         this.looties();
         new Corpse(this.scene, this.x, this.y, this.id);
-        this.checkQuest();
         this.removed(); 
     }
 
@@ -806,6 +813,50 @@ export class Role extends Entity
 
     }
 
+    async waitDisp()
+    {
+        console.log(`#--------# ${this.id}:waitDisp-0 ${this._promises?.length}`)
+        if(!this._promises || this._promises.length===0) {return;}
+        console.log(`#--------# ${this.id}:waitDisp-1`)
+        await Promise.all(this._promises);    
+        this._queue=[]; 
+        this._promises=[];
+        console.log(`#--------# ${this.id}:waitDisp-2`)
+    }
+
+    async showDisp()
+    {
+        this._busy = true;
+        let m = this._queue.shift();
+        this._promises.push(this.createDisp(m.value,m.color,m.stroke));
+        console.log(`########## ${this.id}:showDisp-1`)
+        await Utility.delay(100);
+        if (this._queue.length === 0) 
+        {
+            this._busy = false;
+        }
+        else
+        {
+            this._busy = true;
+            this.showDisp();
+        }
+
+
+        console.log(`########## ${this.id}:showDisp-2`)
+        
+        
+    }
+
+    addDisp(value,color='#fff',stroke='#000')
+    {
+        // !this._queue && (this._quene=[]);
+        if(!this._queue){this._queue=[];}
+        console.log(`########## ${this.id}:addDisp ${this._busy}`)
+        if(!this._promises) {this._promises=[];}
+        this._queue.push({value:value,color:color,stroke:stroke});
+        if(!this._busy) {this.showDisp();}
+    }
+
     createDisp(value,color='#fff',stroke='#000')
     {
         let t = text(this.scene,{text:value,color:color,stroke:stroke,strokeThickness:5});
@@ -814,16 +865,18 @@ export class Role extends Entity
         t.setDepth(100);
         // t.setText(value).setTint(color);
         let x = Phaser.Math.Between(10, -10);
-        this.scene.tweens.add({
-                targets: t,
-                x: {from:x, to:x},
-                y: {from:-48, to:-64},
-                duration: 300,
-                ease: 'linear',
-                onStart: ()=>{},
-                onComplete: (tween, targets, gameObject)=>{t.destroy();}         
-            });
-        return t;
+        return new Promise((resolve)=>{
+            console.log(`----------------------> ${this.id} createDisp`)
+            this.scene.tweens.add({
+                    targets: t,
+                    x: {from:x, to:x},
+                    y: {from:-48, to:-64},
+                    duration: 300,
+                    ease: 'linear',
+                    onStart: ()=>{},
+                    onComplete: (tween, targets, gameObject)=>{t.destroy();resolve()}         
+                });
+        });
     }
 
     async dispSkill(skill)
@@ -1166,7 +1219,7 @@ export class Role extends Entity
         }
     }
 
-    updateTime(dt)
+    async updateTime(dt)
     {
         this.setLightInt();
         this.updateStates(dt);
@@ -1186,6 +1239,8 @@ export class Role extends Entity
         
         this.getTotalStats();
         if(this.isPlayer) {this.send('refresh');}
+
+        await this.waitDisp();
     }
 
     updateStates(dt=1)
@@ -1447,18 +1502,18 @@ export class Role extends Entity
         switch(dmg.type)
         {
             case GM.CRIT:
-                this.createDisp(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                this.addDisp(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
                 this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
                 console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.DODGE:
-                this.createDisp(GM.DODGE.lab(), '#0f0', '#000');
+                this.addDisp(GM.DODGE.lab(), '#0f0', '#000');
                 break;
             case GM.MISS:
-                this.createDisp(GM.MISS.lab(), '#0f0', '#000');
+                this.addDisp(GM.MISS.lab(), '#0f0', '#000');
                 break;
             default:
-                this.createDisp(-dmg.amount, '#f00', '#fff');
+                this.addDisp(-dmg.amount, '#f00', '#fff');
                 this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
                 console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
@@ -1472,7 +1527,7 @@ export class Role extends Entity
 
     heal(amount) 
     {
-        this.createDisp('+'+amount, '#0f0', '#000');
+        this.addDisp('+'+amount, '#0f0', '#000');
         let total = this.total;//this.getTotalStats();
         this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], total[GM.HP] + amount);
         this.total[GM.HP] = this.rec.states[GM.HP];
@@ -1793,12 +1848,13 @@ export class Npc extends Role
         this.updateSchedule(true); // 初始化時，init 設成 true
     }
 
-    updateTime(dt)
+    async updateTime(dt)
     {
         this.updateSchedule();
         this.updateStates();
         this.applyEffects();
         this.getTotalStats();
+        await this.waitDisp();
     }
 
     setSchedule()
@@ -2041,12 +2097,9 @@ export class Npc extends Role
     {
         super.takeDamage(dmg);
 
-        if(attacker)
+        if(this.state!==GM.ST_DEATH && attacker)
         {
-            if(this.state === GM.ST_IDLE)
-            {
-                this.equipWeapon();
-            }
+            if(this.state === GM.ST_IDLE) {this.equipWeapon();}
             this.state = GM.ST_ATTACK;
             this._ent = attacker;
             this._act = GM.ATTACK;
