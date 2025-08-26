@@ -12,7 +12,6 @@ import QuestManager from './quest.js';
 
 let uiScene;
 let _mode = 0;
-let _queue=[];
 
 export default function createUI(scene)
 {
@@ -50,7 +49,22 @@ export default function createUI(scene)
     new UiQuest(scene);              // 20
     new UiConfirm(scene);
 
+    t1();
+
   
+}
+
+function t1()
+{
+    let list=[{t:1},{t:2},{t:3},{t:4},{t:5}]
+    list.forEach(v=>{
+        if(v.t===2)
+        {
+            v.t=0;
+        }
+    })
+
+    console.log('------------------list=',list);
 }
 
 function test(scene)
@@ -652,8 +666,10 @@ class SkillSlot extends Pic
     }
 
     get owner() {return Role.getPlayer();}
-    get id() {return this.owner.getSkillSlotAt(this._i);}
-    get remain() {return this.owner.getSkill(this.id).remain;}
+    // get id() {return this.owner.getSkillSlotAt(this._i);}
+    get id() {return this.owner.skill.getSlotAt(this._i);}
+    // get remain() {return this.owner.getSkill(this.id).remain;}
+    get remain() {return this.owner.skill.get(this.id).remain;}
     get i() {return this._i;}
     get dat() {return this._dat;}
 
@@ -695,21 +711,29 @@ class SkillSlot extends Pic
         if(UiDragged.skill)
         {
             // 清除重復的技能欄位
-            this.owner.getSkillSlots().find((slot,i)=>{
+            // this.owner.getSkillSlots().find((slot,i)=>{
+            this.owner.skill.getSlots().find((slot,i)=>{
                 if(slot===UiDragged.skill.id)
                 {
-                    this.owner.clearSkillSlotAt(i); // 清除技能欄位
+                    // this.owner.clearSkillSlotAt(i); // 清除技能欄位
+                    this.owner.skill.clearSlotAt(i); // 清除技能欄位
                 }
             })
             
-            this.id && (this.owner.setSkillSlotAt(UiDragged.skill.i, this.id));
-            this.owner.setSkillSlotAt(this.i, UiDragged.skill.id);
+            // this.id && (this.owner.setSkillSlotAt(UiDragged.skill.i, this.id));
+            // this.owner.setSkillSlotAt(this.i, UiDragged.skill.id);
+            this.id && (this.owner.skill.setSlotAt(UiDragged.skill.i, this.id));
+            this.owner.skill.setSlotAt(this.i, UiDragged.skill.id);
+
             UiDragged.empty();
             Ui.refreshAll();
         }
         else if(this.id) // 如果有技能欄位，則使用技能
         {
-            if(this._dat.type === GM.ACTIVE) {this.owner.useSkill(this);}
+            if(this._dat.type === GM.ACTIVE) {
+                // this.owner.useSkill(this);
+                this.owner.skill.use(this);
+            }
             else {this.toggle();}
         }
     }
@@ -736,14 +760,17 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
-        this.owner.selectSkill(this); // 設定角色的技能
+        // this.owner.selectSkill(this); // 設定角色的技能
+        this.owner.skill.select(this); // 設定角色的技能
+
     }
 
     unselect()
     {
         SkillSlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
-        this.owner.unselectSkill();
+        // this.owner.unselectSkill();
+        this.owner.skill.unselect();
     }
 
     reset() // call by role.resetSkill()
@@ -769,7 +796,8 @@ class SkillSlot extends Pic
         this.getElement('remain').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        this.owner.clearSkillSlotAt(this.i); // 清除技能欄位
+        // this.owner.clearSkillSlotAt(this.i); // 清除技能欄位
+        this.owner.skill.clearSlotAt(this.i); // 清除技能欄位
     }
 }
 
@@ -829,7 +857,8 @@ class SkillItem extends Pic
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
-                this.owner.learnSkill(this._id);
+                // this.owner.learnSkill(this._id);
+                this.owner.skill.learn(this._id);
                 Ui.refreshAll();
             }
         }
@@ -868,7 +897,8 @@ class SkillItem extends Pic
         this._id = id;
         this.x = x;
         this.y = y;
-        this._skill =  this.owner.getSkill(this._id);
+        // this._skill =  this.owner.getSkill(this._id);
+        this._skill =  this.owner.skill.get(this._id);
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
@@ -2066,7 +2096,8 @@ class Observe extends UiBase
             .add(this.stats(),{expand:true,padding:{left:10,right:10}})
            
 
-        if(this.owner.getSkills().length>0)
+        // if(this.owner.getSkills().length>0)
+        if(this.owner.skill.getAll().length>0)
         {
             sizer
                 .add(bbcText(this.scene,{text:'技能'}))
@@ -4440,7 +4471,8 @@ export class UiSkill extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            let skill = this.getOwner().getSkill(id);
+            // let skill = this.getOwner().getSkill(id);
+            let skill = this.getOwner().skill.get(id);
             if(!skill) {return false};
         }
 

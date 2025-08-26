@@ -36,7 +36,7 @@ export function setPlayer(value) {player = value;}
 
 export function getPlayer() {return player;}
 
-class Corpse extends Phaser.GameObjects.Container
+class _Corpse extends Phaser.GameObjects.Container
 {
     constructor(scene, x, y, id)
     {
@@ -66,6 +66,253 @@ class Corpse extends Phaser.GameObjects.Container
             duration: 5000,
             onComplete: ()=>{this.destroy();}
         })
+    }
+}
+
+class _Shape extends Phaser.GameObjects.Container
+{
+    constructor(scene, roleD)
+    {
+        super(scene, 0, roleD.anchor.y)
+        if(roleD.body) {this._addPart(roleD.body, GM.PART_BODY);}
+        if(roleD.head) {this._addPart(roleD.head, GM.PART_HEAD);}
+        if(roleD.hand) {this._addPart(roleD.hand, GM.PART_HAND);}
+        this._equips = [];
+    }
+
+    _addPart(part, type)
+    {
+        let getDepth = function(type)
+        {
+            switch(type)
+            {
+                case GM.PART_BODY : return 0;
+                case GM.PART_HEAD : return 2;
+                case GM.PART_HAND : return 5;
+
+                case GM.CAT_HELMET : return 3;
+                case GM.CAT_CHESTPLATE : return 1;
+                case GM.CAT_GLOVES : return 6;
+                case GM.CAT_BOOTS : return 1;
+                case GM.CAT_WEAPON : return 4;
+            }
+            return 0;
+        }
+
+        let addSp = (sprite, depth)=>
+        {
+            if(!sprite) {return;}
+            let [key,frame]=sprite.split('/');
+            if(key)
+            {
+                let sp = this.scene.add.sprite(0,0,key,frame);
+                sp.setScale(part.scale);
+                sp.setPipeline('Light2D');
+                sp.setOrigin(0.5,1);
+                sp.x = part.x ?? 0;
+                sp.y = part.y ?? 0;
+                sp.angle = part.a ?? 0;
+                sp.depth = depth
+                this.add(sp);
+                sps.push(sp);
+            }
+        }
+
+        let sps = [];
+        addSp(part.sprite, getDepth(type));
+        addSp(part.ext, 6);
+        return sps;
+    }
+
+    _sortParts()
+    {
+        let children = this.getAll().sort((a, b) => a.depth - b.depth);
+        children.forEach(child => {this.bringToTop(child);});
+    }
+
+    addEquip(item)
+    {
+        if(!item.equip) {return;}
+        let sps = this._addPart(item.equip, item.cat);
+        this._sortParts();
+        this._equips.push(...sps);
+    }
+
+    removeEquips()
+    {
+        this._equips.forEach((equip)=>{equip.destroy();})
+        this._equips = [];
+    }
+}
+
+class _RoleInit
+{
+    constructor(roleD, data)
+    {
+        this._rec = data ?? this._initData(roleD);
+    }
+
+    get gold() {return this._rec.gold;}
+    set gold(value) {this._rec.gold=value;}
+
+    get bag() {return this._rec.bag;}
+    get equips() {return this._rec.equips;}
+    get baseStats() {return this._rec.baseStats;}
+    get states() {return this._rec.states;}
+    get skillSlots() {return this._rec.skillSlots;}
+    get skills() {return this._rec.skills;}
+    get buffs() {return this._rec.buffs;}
+
+    get activeEffects() {return this._rec.activeEffects;}
+    set activeEffects(value) {return this._rec.activeEffects=value;}
+
+    _initData(roleD)
+    {
+         return {
+                gold: roleD.gold??0, 
+                bag: Utility.toStorage(roleD.bag?.capacity,roleD.bag?.items),
+                equips: this._initEquips(roleD.equips),
+                baseStats: this._initBaseStats(roleD.baseStats),
+                states: this._initStates(),
+                skillSlots: this._initSkillSlots(),
+                skills: this._initSkills(),
+                buffs: this._initBuffs(),
+                activeEffects: [],
+            }
+    }
+
+    _initBaseStats(data) {return data ?? {[GM.STR]:10,[GM.DEX]:10,[GM.CON]:10,[GM.INT]:10};}
+
+    _initStates() {return {[GM.HP]: 100,[GM.HUNGER]: 0,[GM.THIRST]: 0};}
+
+    _initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
+
+    _initSkillSlots() {return [];}
+
+    _initSkills() {return {};}
+
+    _initBuffs() {return [];}
+
+    save() {return this._rec;}
+
+}
+
+class _Skill
+{
+    constructor(role)
+    {
+        this._role = role;
+        this._sel = null;
+    }
+
+    get role() {return this._role;}
+    get rec() {return this._role.rec;}
+    get sel() {return this._sel;}
+    
+    learn(id)
+    {
+        this.role.rec.skills[id] = {remain:0}
+        this.role.getTotalStats();
+    }
+
+    update(skill) {this.role.rec.skills[skill.id] = {newAdd:true, remain:skill.dat.cd};}
+    
+    getAll() {return this.role.rec.skills;}                     // 取得所有技能
+    get(id) {return this.role.rec.skills[id];}
+    
+    // 技能欄位，call by SkillSlot
+    clearSlotAt(i) {this.role.rec.skillSlots[i] = null;}        // 清除技能欄位
+    setSlotAt(i, skill) {this.role.rec.skillSlots[i] = skill;}  // 設定技能欄位
+    getSlots() {return this.role.rec.skillSlots;}               // 取得所有技能欄位
+    getSlotAt(i) {return this.role.rec.skillSlots[i];}          // 取得技能欄位
+    
+    
+    // 使用技能
+    async use(skill) // call by SkillSlot
+    {   
+        await this.role.dispSkill(skill);
+
+        if(skill.dat[GM.HEAL]){ this.role.heal(skill.dat[GM.HEAL]); }
+
+        for(const eff of skill.dat.effects) {this.role.addEffect(eff);}
+
+        this.update(skill)
+        skill.reset();
+
+        this.role.send('refresh')
+        this.role.resume();
+    }
+
+    useTo(pos, target)
+    {
+        if(!target || !target.isAlive) {return;}
+
+        this.role.faceTo(pos);
+        // let bodies = this.getBodiesInRect(this.skill.dat.range, false);
+
+        return this.role.step( pos, 200, 'expo.in',
+                        {   
+                            yoyo:true, 
+                            onYoyo:()=>{this.applyTo(target);},
+                            onComplete: () => {this.role.resume();}
+                        }
+                    );
+    }
+
+    applyTo(target)
+    {
+        if(!target || !target.isAlive) {return;}
+        let damage = this.role.calculateDamage(this.role, target, this._sel);
+        target.takeDamage(damage, this.role);
+
+        //let bodies = this.getBodiesInRect(this.skill.dat.range, false)
+
+        if(this._sel)
+        {
+            this.update(this._sel);
+            this.reset();
+        }
+    }
+
+    // 選擇技能，call by SkillItem
+    select(skill)
+    {
+        this.role.showRange(true, skill.dat.range, false);
+        this._sel = skill;
+        this.role.state = GM.ST_SKILL;
+    }
+
+    unselect()
+    {
+        this.role.showRange(false);
+        this._sel = null;
+        this.role.state = GM.ST_IDLE;
+    }
+
+    reset()
+    {
+        this._sel.reset();
+        this.unselect();
+    }
+
+    isInRange(pos)
+    {
+        let n = DB.skill(this._sel.id).range;
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                let rect = this.role.a[y][x];
+                if( !rect.block && 
+                    pos.x>=rect.x && pos.x<rect.x+rect.width &&
+                    pos.y>=rect.y && pos.y<rect.y+rect.height)
+                {
+                    return true
+                }
+            }
+        }
+
+        return false;
     }
 }
 
@@ -101,12 +348,8 @@ export class Role extends Entity
 
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
+    get skill() {return this._skill;}
 
-    // addPhysics()
-    // {
-    //     super.addPhysics();
-    //     this.scene.dynGroup.add(this);
-    // }
 
     addSprite(sprite)
     {
@@ -143,69 +386,6 @@ export class Role extends Entity
         return true;
     }
 
-    addShape(roleD)
-    {
-        // 將 _shape 定位在 container 的底部
-        this._shape = new Phaser.GameObjects.Container(this.scene, 0, roleD.anchor.y);
-        this.add(this._shape);
-        if(roleD.body) {this.addPart(roleD.body, GM.PART_BODY);}
-        if(roleD.head) {this.addPart(roleD.head, GM.PART_HEAD);}
-        if(roleD.hand) {this.addPart(roleD.hand, GM.PART_HAND);}
-    }
-
-    addPart(part, type)
-    {
-        if(!this._shape) {return;}
-
-        let getDepth = function(type)
-        {
-            switch(type)
-            {
-                case GM.PART_BODY : return 0;
-                case GM.PART_HEAD : return 2;
-                case GM.PART_HAND : return 5;
-
-                case GM.CAT_HELMET : return 3;
-                case GM.CAT_CHESTPLATE : return 1;
-                case GM.CAT_GLOVES : return 6;
-                case GM.CAT_BOOTS : return 1;
-                case GM.CAT_WEAPON : return 4;
-            }
-            return 0;
-        }
-
-        let addSp = (sprite, depth)=>
-        {
-            if(!sprite) {return;}
-            let [key,frame]=sprite.split('/');
-            if(key)
-            {
-                let sp = this.scene.add.sprite(0,0,key,frame);
-                sp.setScale(part.scale);
-                sp.setPipeline('Light2D');
-                sp.setOrigin(0.5,1);
-                sp.x = part.x ?? 0;
-                sp.y = part.y ?? 0;
-                sp.angle = part.a ?? 0;
-                sp.depth = depth
-                this._shape.add(sp);
-                sps.push(sp);
-            }
-        }
-
-        let sps = [];
-        addSp(part.sprite, getDepth(type));
-        addSp(part.ext, 6);
-        return sps;
-    }
-
-    sortParts()
-    {
-        if(!this._shape) {return;}
-        let children = this._shape.getAll().sort((a, b) => a.depth - b.depth);
-        children.forEach(child => {this._shape.bringToTop(child);});
-    }
-
     init_runtime(id,modify=false)
     {
         this.registerTimeManager();
@@ -215,7 +395,11 @@ export class Role extends Entity
 
         // console.log(roleD)
         
-        this.addShape(roleD);
+        this._shape = new _Shape(this.scene, roleD);
+        this.add(this._shape);
+
+        this._skill = new _Skill(this);
+
         this.addSprite(roleD.sprite);
         this.addListener();
         this.pos = this.getPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
@@ -236,45 +420,18 @@ export class Role extends Entity
         else {return super.loadData();}
     }
 
-    initBaseStats(data) {return data ?? {[GM.STR]:10,[GM.DEX]:10,[GM.CON]:10,[GM.INT]:10};}
-
-    initStates() {return {[GM.HP]: 100,[GM.HUNGER]: 0,[GM.THIRST]: 0};}
-
-    initEquips(data) {return data ? data.map(id=>({id:id, count:1})): [];}
-
-    initRec(roleD)
-    {
-        return {
-            gold: roleD.gold??0, 
-            bag: this.toStorage(roleD.bag?.capacity,roleD.bag?.items),
-            equips: this.initEquips(roleD.equips),
-            baseStats: this.initBaseStats(roleD.baseStats),
-            states: this.initStates(),
-            skillSlots: this.initSkillSlots(),
-            skills: this.initSkills(),
-            buffs: this.initBuffs(),
-            activeEffects: [],
-        }
-    }
-
-    initSkillSlots() {return [];}
-
-    initSkills() {return {};}
-
-    initBuffs() {return [];}
-
     load()
     {
         let roleD = DB.role(this.id);
         this.role = roleD;
         let data = this.loadData();
-        this.rec = data ?? this.initRec(roleD);
+        this.rec = new _RoleInit(roleD, data);
         this.equip();
         return this;
     }
 
     
-    save() {return this.rec;}
+    save() {return this.rec.save();}
 
     addLight()
     {
@@ -523,7 +680,10 @@ export class Role extends Entity
                     .shoot( this._ent.x, 
                             this._ent.y, 
                             // async ()=>{await this.interact(this._ent, this._act);resolve();}
-                            ()=>{this.applySkillTo(this._ent, this.skill);resolve();}
+                            ()=>{
+                                // this.applySkillTo(this._ent, this.skill.sel);
+                                this.skill.applyTo(this._ent);
+                                resolve();}
                         );
             })
         }
@@ -534,7 +694,8 @@ export class Role extends Entity
                                     yoyo: true, 
                                     onYoyo: async ()=>{
                                         // await this.interact(this._ent, this._act);
-                                        this.applySkillTo(this._ent, this.skill);
+                                        // this.applySkillTo(this._ent, this.skill.sel);
+                                         this.skill.applyTo(this._ent);
                                     }
                                 } 
                             ); 
@@ -667,40 +828,6 @@ export class Role extends Entity
     }
 
 
-    // async hurt(attacker,resolve)
-    // {
-    //     let rst = this.calc(attacker);
-    //     switch(rst.state)
-    //     {
-    //         case 'hit':
-    //             this.disp(-rst.dmg,GM.COLOR_GREEN);
-    //             this._shape.getAll().forEach(child => {child.setTint(0xff0000);});
-    //             await Utility.delay(150);
-    //             this._shape.getAll().forEach(child => {child.setTint(0xffffff);});
-    //             break;
-    //         case 'dodge':
-    //             this.disp('dodge'.local(),GM.COLOR_GREEN);
-    //             await Utility.delay(150);
-    //             break;
-    //         case 'block':
-    //             this.disp('block'.local(),GM.COLOR_GREEN);
-    //             await Utility.delay(150);
-    //             break;
-    //     }
-       
-    //     // if(this.getState(GM.P_LIFE).cur<=0)
-    //     if(this.rec.states[GM.HP]<=0)
-    //     {
-    //         this.dead(attacker);
-    //     }
-    //     else
-    //     {
-    //         if(Utility.roll()<50) {this.speak('操');}
-    //     }
-    //     resolve?.();
-    // }
-
-
     looties()
     {
         // let roleD = RoleDB.get(this.id);
@@ -742,7 +869,7 @@ export class Role extends Entity
         await this.waitDisp();
         console.log(`[${this.id}] ----------------- ${this.id} daed-1 [${this.state}]`)
         this.looties();
-        new Corpse(this.scene, this.x, this.y, this.id);
+        new _Corpse(this.scene, this.x, this.y, this.id);
         this.removed(); 
     }
 
@@ -900,108 +1027,22 @@ export class Role extends Entity
 
     }
 
-    // disp(value,color=GM.COLOR_RED)
-    // {
-    //     if(!this._disp)
-    //     {
-    //         this._disp = text(this.scene,{stroke:'#000',strokeThickness:5});
-    //         this.add(this._disp);
-    //         this._disp.setDepth(100);
-    //     }
-
-    //     this._disp.setText(value).setTint(color);
-    //     return new Promise((resolve)=>{
-    //         this.scene.tweens.add({
-    //             targets: this._disp,
-    //             x: 0,
-    //             y: {from:-48, to:-64},
-    //             duration: 200,
-    //             ease: 'linear',
-    //             onStart: ()=>{this._disp.visible=true;},
-    //             onComplete: (tween, targets, gameObject)=>{resolve();this._disp.visible=false}         
-    //         });
-    //     });
-
-    // }
-
-    removeEquip(equip)
-    {
-        let index = this.rec.equips.indexOf(equip);
-        if(index>=0)
-        {
-            this.rec.equips[index] = null;
-            this.equip();
-        }
-    }
-
-    addEquip(item)
-    {
-        if(!this._shape) {return;}
-        if(!item.equip) {return;}
-        let sps = this.addPart(item.equip, item.cat);
-        if(!this.equips) {this.equips=[];}
-        this.equips.push(...sps);
-    }
-
-    removeEquip()
-    {
-        if(!this.equips) {return;}
-        this.equips.forEach((equip)=>{equip.destroy();})
-        this.equips=[];
-    }
-
-    processBuffs(dt)
-    {
-        // this.status.buffs.forEach((buff,i)=>{
-        //     for(let [key,p] of Object.entries(buff.effects))
-        //     {
-        //         p.d--;
-        //         console.log(key,p)
-        //         if(p.d==0)
-        //         {
-        //             delete buff.effects[key];
-        //         }
-        //     }
-
-        //     if(Utility.isEmpty(buff.effects))
-        //     {
-        //         this.status.buffs.splice(i,1)
-        //     }
-        // })
-
-        for(let i=0; i<this.rec.buffs.length; i++)
-        {
-            let buff = this.rec.buffs[i];
-            for(let [key,p] of Object.entries(buff.effects))
-            {
-                if(--p.d===0) {delete buff.effects[key];}
-            }
-
-            if(Utility.isEmpty(buff.effects))
-            {
-                this.rec.buffs.splice(i,1);
-                i--;
-            }
-        }
-
-        console.log(this.rec.buffs)
-    }
-
     equip()
     {
         this.removeLight();
-        this.removeEquip();
+        this._shape?.removeEquips();
 
+        console.log(`${this.id}-------------------------------${this.rec.equips}`)
         this.rec.equips.forEach((equip)=>{
             if(equip && equip.id)
             {
                 let item = DB.item(equip.id);
-                this.addEquip(item);
+                this._shape?.addEquip(item);
                 if(item.light) {this.addLight();}
             }
         })
 
-        this.sortParts()
+        // this.sortParts()
 
         this.getTotalStats();
 
@@ -1170,25 +1211,7 @@ export class Role extends Entity
         }
     }
 
-    async process()
-    {
-        if(this.state!=GM.ST_MOVING)
-        {
-            this.tw_idle(true);
-            console.log('[pause-1]')
-            await this.pause(); 
-            console.log('[pause-2]')
-        }
 
-        switch(this.state)
-        {
-            case GM.ST_IDLE: break;
-            case GM.ST_MOVING:
-                console.log('[player] moving');
-                await this.st_moving();
-                break;
-        }
-    }
 
     registerTimeManager()
     {
@@ -1219,23 +1242,41 @@ export class Role extends Entity
         }
     }
 
-    async updateTime(dt)
+    updateEquips(dt)
     {
-        this.setLightInt();
-        this.updateStates(dt);
-        // this.processBuffs(dt);
-        this.applyEffects(dt);
-
-        this.rec.equips.forEach((equip)=>{
+        for(let i=0; i<this.rec.equips.length;i++)
+        {
+            let equip = this.rec.equips[i];
             if(equip && equip.endurance)
             {
                 equip.endurance -= dt;
                 if(equip.endurance<=0)
                 {
-                    this.removeEquip(equip);
+                    this.rec.equips[i]=null;
+                    this.equip();
                 }
             }
-        })
+        }
+    }
+
+    async updateTime(dt)
+    {
+        this.setLightInt();
+        this.updateStates(dt);
+        this.applyEffects(dt);
+        this.updateEquips(dt);
+
+        // this.rec.equips.forEach((equip)=>{
+        //     if(equip && equip.endurance)
+        //     {
+        //         equip.endurance -= dt;
+        //         if(equip.endurance<=0)
+        //         {
+        //             this.removeEquip(equip);
+        //             equip=null;
+        //         }
+        //     }
+        // })
         
         this.getTotalStats();
         if(this.isPlayer) {this.send('refresh');}
@@ -1247,72 +1288,6 @@ export class Role extends Entity
     {
         this.rec.states[GM.HUNGER] = Math.min(this.rec.states[GM.HUNGER] + GM.HUNGER_INC * dt, 100);
         this.rec.states[GM.THIRST] = Math.min(this.rec.states[GM.THIRST] + GM.THIRST_INC * dt, 100);
-    }
-
-    // 技能樹，call by SkillItem
-    learnSkill(id)
-    {
-        this.rec.skills[id] = {remain:0}
-        this.getTotalStats();
-    }
-    updateSkill(skill) {this.rec.skills[skill.id] = {newAdd:true, remain:skill.dat.cd};}
-    getSkills() {return this.rec.skills;}                       // 取得所有技能
-    getSkill(id) {return this.rec.skills[id];}
-    
-    // 技能欄位，call by SkillSlot
-    clearSkillSlotAt(i) {this.rec.skillSlots[i] = null;}        // 清除技能欄位
-    setSkillSlotAt(i, skill) {this.rec.skillSlots[i] = skill;}  // 設定技能欄位
-    getSkillSlots() {return this.rec.skillSlots;}               // 取得所有技能欄位
-    getSkillSlotAt(i) {return this.rec.skillSlots[i];}          // 取得技能欄位
-    
-    
-    // 使用技能
-    async useSkill(skill) // call by SkillSlot
-    {   
-        await this.dispSkill(skill);
-
-        if(skill.dat[GM.HEAL]){ this.heal(skill.dat[GM.HEAL]); }
-
-        for(const eff of skill.dat.effects) {this.addEffect(eff);}
-
-        this.updateSkill(skill)
-        skill.reset();
-
-        this.send('refresh')
-        this.resume();
-    }
-
-    useSkillTo(pos, target)
-    {
-        if(!target || !target.isAlive) {return;}
-
-        this.faceTo(pos);
-        // let bodies = this.getBodiesInRect(this.skill.dat.range, false);
-
-        return this.step( pos, 200, 'expo.in',
-                        {   
-                            yoyo:true, 
-                            onYoyo:()=>{this.applySkillTo(target, this.skill);},
-                            onComplete: () => {this.resume();}
-                        }
-                    );
-    }
-
-    applySkillTo(target, skill)
-    {
-        if(!target || !target.isAlive) {return;}
-        let damage = this.calculateDamage(this, target, skill);
-        target.takeDamage(damage, this);
-
-        //let bodies = this.getBodiesInRect(this.skill.dat.range, false)
-
-        if(skill)
-        {
-            
-            
-            this.updateSkill(skill);
-            this.resetSkill();
-        }
     }
 
     getBodiesInRect(range, checkBlock)
@@ -1336,48 +1311,6 @@ export class Role extends Entity
             return true;
         })
         return bodies;
-    }
-
-
-    // 選擇技能，call by SkillItem
-    selectSkill(skill)
-    {
-        this.showRange(true, skill.dat.range,false);
-        this.skill = skill;
-        this.state = GM.ST_SKILL;
-    }
-
-    unselectSkill()
-    {
-        this.showRange(false);
-        this.skill = null;
-        this.state = GM.ST_IDLE;
-    }
-
-    resetSkill()
-    {
-        this.skill.reset();
-        this.unselectSkill();
-    }
-
-    isInSkillRange(pos)
-    {
-        let n=DB.skill(this.skill.id).range;
-        for(let x=0; x<=2*n; x++)
-        {
-            for(let y=0; y<=2*n; y++)
-            {
-                let rect = this.a[y][x];
-                if( !rect.block && 
-                    pos.x>=rect.x && pos.x<rect.x+rect.width &&
-                    pos.y>=rect.y && pos.y<rect.y+rect.height)
-                {
-                    return true
-                }
-            }
-        }
-
-        return false;
     }
 
     showRange(on, range, checkBlock)
@@ -1729,11 +1662,13 @@ export class Role extends Entity
 
     apply({pt,ent}={})
     {
-        if(this.skill)
+        if(this.skill.sel)
         {
-            if(this.isInSkillRange(pt??ent.pos))
+            // if(this.isInSkillRange(pt??ent.pos))
+            if(this.skill.isInRange(pt??ent.pos))
             {
-                this.useSkillTo(pt??ent.pos, ent);
+                // this.useSkillTo(pt??ent.pos, ent);
+                this.skill.useTo(pt??ent.pos, ent);
             }
         }
         else if(ent?.act===GM.ATTACK)
@@ -1743,6 +1678,27 @@ export class Role extends Entity
         else
         {
             this.setDes({pt:pt,ent:ent});
+        }
+    }
+
+
+    async process()
+    {
+        if(this.state!==GM.ST_MOVING)
+        {
+            this.tw_idle(true);
+            console.log('[pause-1]')
+            await this.pause(); 
+            console.log('[pause-2]')
+        }
+
+        switch(this.state)
+        {
+            case GM.ST_IDLE: break;
+            case GM.ST_MOVING:
+                console.log('[player] moving');
+                await this.st_moving();
+                break;
         }
     }
 
@@ -2028,7 +1984,7 @@ export class Npc extends Role
 
     }
 
-    save() {this.saveData(this.rec);}
+    save() {this.saveData(this.rec.save());}
 
     addListener()
     {

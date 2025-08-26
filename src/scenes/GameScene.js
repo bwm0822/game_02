@@ -174,11 +174,11 @@ export class GameScene extends Scene
                     this._player.stop();
                     this.findPath(pt);
                 }
-                else if(this._player.state == GM.ST_SKILL)
+                else if(this._player.state === GM.ST_SKILL)
                 {
                     this._player.apply({pt:pt,ent:this._ent});
                 }
-                else if(this._rst && this._rst.state==1 && !this._rst.block)
+                else if(this._rst && this._rst.state===1 && !this._rst.block)
                 {
                     this._player.apply({pt:pt,ent:this._ent});
                 }
@@ -191,7 +191,8 @@ export class GameScene extends Scene
             if(this._player.state===GM.ST_SKILL) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
-                if(this._player.isInSkillRange(pt))
+                // if(this._player.isInSkillRange(pt))
+                if(this._player.skill.isInRange(pt))
                 {
                     UiCursor.set('aim');
                 }

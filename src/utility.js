@@ -306,6 +306,16 @@ export default class Utility
 
     }
 
+
+    static toStorage(capacity,items)
+    {
+        if(capacity == undefined) {capacity = -1;}
+        if(!items) {items = [];}
+        let bag={capacity:capacity,items:[]};
+        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
+        return bag;
+    }
+
     static rotate(x, y, rad) 
     {
         // const rad = theta * Math.PI / 180; // 轉成弧度
