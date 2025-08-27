@@ -316,6 +316,185 @@ class _Skill
     }
 }
 
+class _Action
+{
+    constructor(role) {this._role = role;}
+
+    sell(target, ent, i, isEquip)
+    {
+        if(target.buy(ent, i, isEquip))
+        {
+            this._role.rec.gold+=ent.gold;
+            return true;
+        }
+        return false;
+    }
+
+    buy(ent, i, isEquip)
+    {
+        console.log(this._role.rec.gold, ent)
+        if(this._role.rec.gold>=ent.gold)
+        {
+            if(this.take(ent, i, isEquip))
+            {
+                this._role.rec.gold-=ent.gold;
+                if(this == Avatar.instance)
+                {
+                    this._role.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
+                }
+                else
+                {
+                    this._role.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
+                }
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            this._role.send('msg','_not_enough_gold'.lab());
+            return false;
+        }
+    }
+
+    take(ent, i, isEquip)
+    {
+        if(isEquip)
+        {
+            this._role.rec.equips[i] = ent.itm; 
+            this._role.equip();
+            return true;   
+        }
+        else
+        {
+            return Entity.prototype.take.call(this._role, ent,i)
+        }
+    }
+
+    receive(rewards)
+    {
+        rewards.forEach((reward)=>{
+            console.log(reward.type)
+            switch(reward.type)
+            {
+                case 'gold': this._role.rec.gold+=reward.count; break;
+                case 'item': this._role.putStorage(reward.id, reward.count); break;
+            }
+        })
+       
+    }
+
+    use(ent)
+    {
+        // console.log('use',ent.item);
+        for(let [key,value] of Object.entries(ent.props))
+        {
+            switch(key)
+            {
+                case GM.HP:
+                case GM.HUNGER:
+                case GM.THIRST:
+                    this._role.incState(key,value);
+                    break;
+            }
+        }
+
+        if(ent.p(GM.P_TIMES) !== undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
+        {
+            ent.incp(GM.P_TIMES, -1)
+            if(ent.p(GM.P_TIMES)<=0 && !ent.p(GM.P_KEEP))
+            {
+                ent.empty();
+            }
+        }
+        else if(ent.p(GM.P_CAPACITY) !== undefined)
+        {
+            ent.incp(GM.P_CAPACITY,-1)
+            if(ent.p(GM.P_CAPACITY)<=0 && !ent.p(GM.P_KEEP))
+            {
+                ent.empty();
+            }
+        }
+        else
+        {
+            ent.count--;
+            if(ent.count<=0) {ent.empty();}
+        }
+    }
+
+    drink()
+    {
+        let states = this._role.rec.states;
+        if(states[GM.THIRST]) {states[GM.THIRST]=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
+    }
+
+    sleep(ent)
+    {
+        this._role.removeWeight()
+        ent.add(this._role);
+        this._role.pos = {x:ent.sleepX,y:ent.sleepY}
+        this._role.angle = ent.sleepA;
+        this._role._zone.disableInteractive();        
+        this._role.state = GM.ST_SLEEP;
+        this._role.speak('💤',{duration:-1,tween:true});
+    }
+
+    wake()
+    {
+        this._role.speak();
+        let ent = this._role.parentContainer;
+        ent.remove(this._role)
+        ent.user = null;
+        this._role.pos = this._role.getPos(ent.pts[0]);
+        this._role.angle = 0;
+        this._role.addWeight();
+        this._role.updateDepth();
+        this._role._zone.setInteractive();
+        this._role.state = GM.ST_IDLE;
+        
+    }
+
+}
+
+class _Tween
+{
+    constructor(role)   {this._role = role;}
+
+    idle(on)
+    {
+        if(!this._role._shape){return;}   // 判斷 this._shape ，以避免在地圖上出錯
+        if(on)   
+        {
+            if(!this._twIdle)
+            {
+                this._twIdle = this._role.scene.tweens.add({
+                        targets: this._role._shape,
+                        y: {from:this._role.max.y, to:this._role.max.y-1.5},
+                        // ease:'sin.out',
+                        duration: 500,
+                        yoyo: true,
+                        loop:-1,     
+                    });
+            }
+        }
+        else
+        {
+            if(this._twIdle) {this._twIdle.stop(); this._twIdle=null;}
+        }
+    }
+
+    walk(duration)
+    {
+        this._role.scene.tweens.add({
+            targets: this._role._shape,
+            y: {from:this._role.max.y, to:this._role.max.y-5},
+            ease:'quint.in',
+            duration: duration,
+            yoyo: true,  
+        });
+    }
+}
+
 export class Role extends Entity
 {
     constructor(scene,x,y)
@@ -349,6 +528,15 @@ export class Role extends Entity
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
     get skill() {return this._skill;}
+
+    buy(...args) {return this._action.buy(...args);}
+    sell(...args) {return this._action.sell(...args);}
+    take(...args) {return this._action.take(...args);}
+    use(...args) {return this._action.use(...args);}
+    receive(...args) {return this._action.receive(...args);}
+    drink(...args) {return this._action.drink(...args);}
+    sleep(...args) {return this._action.sleep(...args);}
+    wake(...args) {return this._action.wake(...args);}
 
 
     addSprite(sprite)
@@ -399,6 +587,8 @@ export class Role extends Entity
         this.add(this._shape);
 
         this._skill = new _Skill(this);
+        this._tween = new _Tween(this); 
+        this._action = new _Action(this);
 
         this.addSprite(roleD.sprite);
         this.addListener();
@@ -475,40 +665,6 @@ export class Role extends Entity
         }
     }
 
-    tw_idle(on)
-    {
-        if(!this._shape){return;}   // 判斷 this._shape ，以避免在地圖上出錯
-        if(on)   
-        {
-            if(!this._twIdle)
-            {
-                this._twIdle = this.scene.tweens.add({
-                        targets: this._shape,
-                        y: {from:this.max.y, to:this.max.y-1.5},
-                        // ease:'sin.out',
-                        duration: 500,
-                        yoyo: true,
-                        loop:-1,     
-                    });
-            }
-        }
-        else
-        {
-            if(this._twIdle) {this._twIdle.stop(); this._twIdle=null;}
-        }
-    }
-
-    tw_walk(duration)
-    {
-        this.scene.tweens.add({
-            targets: this._shape,
-            y: {from:this.max.y, to:this.max.y-5},
-            ease:'quint.in',
-            duration: duration,
-            yoyo: true,  
-        });
-    }
-
     setDes({pt, ent, act, next=false}={})
     {
         let pts = ent?.pts ?? [pt];
@@ -556,8 +712,10 @@ export class Role extends Entity
         this.faceTo(pt);
         this.removeWeight();
         this.addWeight(pt);
-        this.tw_idle(false);
-        this.tw_walk(duration/2);
+        // this.tw_idle(false);
+        this._tween.idle(false);
+        // this.tw_walk(duration/2);
+        this._tween.walk(duration/2);
         await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
         //this.addWeight();
         this.updateDepth();
@@ -1049,146 +1207,11 @@ export class Role extends Entity
         if(this.isPlayer) {this.send('refresh');}
     }
 
-    sell(target, ent, i, isEquip)
-    {
-        if(target.buy(ent, i, isEquip))
-        {
-            this.rec.gold+=ent.gold;
-            return true;
-        }
-        return false;
-    }
-
-    buy(ent, i, isEquip)
-    {
-        console.log(this.rec.gold, ent)
-        if(this.rec.gold>=ent.gold)
-        {
-            if(this.take(ent, i, isEquip))
-            {
-                this.rec.gold-=ent.gold;
-                if(this == Avatar.instance)
-                {
-                    this.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
-                }
-                else
-                {
-                    this.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
-                }
-                return true;
-            }
-            return false;
-        }
-        else
-        {
-            this.send('msg','_not_enough_gold'.lab());
-            return false;
-        }
-    }
-
-    take(ent, i, isEquip)
-    {
-        if(isEquip)
-        {
-            this.rec.equips[i]=ent.itm; 
-            this.equip();
-            return true;   
-        }
-        else
-        {
-            return super.take(ent, i);
-        }
-    }
-
-    receive(rewards)
-    {
-        rewards.forEach((reward)=>{
-            console.log(reward.type)
-            switch(reward.type)
-            {
-                case 'gold': this.rec.gold+=reward.count; break;
-                case 'item': this.putStorage(reward.id, reward.count); break;
-            }
-        })
-       
-    }
-
-    use(ent)
-    {
-        // console.log('use',ent.item);
-        for(let [key,value] of Object.entries(ent.props))
-        {
-            switch(key)
-            {
-                case GM.HP:
-                case GM.HUNGER:
-                case GM.THIRST:
-                    this.incState(key,value)
-                    break;
-            }
-        }
-
-        if(ent.p(GM.P_TIMES) !== undefined) // 不可以使用 ent.slot?.times，因為 ent.slot.items=0 時，條件不成立
-        {
-            ent.incp(GM.P_TIMES, -1)
-            if(ent.p(GM.P_TIMES)<=0 && !ent.p(GM.P_KEEP))
-            {
-                ent.empty();
-            }
-        }
-        else if(ent.p(GM.P_CAPACITY) !== undefined)
-        {
-            ent.incp(GM.P_CAPACITY,-1)
-            if(ent.p(GM.P_CAPACITY)<=0 && !ent.p(GM.P_KEEP))
-            {
-                ent.empty();
-            }
-        }
-        else
-        {
-            ent.count--;
-            if(ent.count<=0) {ent.empty();}
-        }
-    }
-
-    drink()
-    {
-        let states = this.rec.states;
-        if(states[GM.THIRST]) {states[GM.THIRST]=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
-    }
-
-    sleep(ent)
-    {
-        this.removeWeight()
-        ent.add(this);
-        this.pos = {x:ent.sleepX,y:ent.sleepY}
-        this.angle = ent.sleepA;
-        this._zone.disableInteractive();        
-        this.state = GM.ST_SLEEP;
-        this.speak('💤',{duration:-1,tween:true});
-    }
-
     // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
     getPos(p)
     {
         if(this.scene.map.getWeight(p)<GM.W_BLOCK) {return p;}
         return this.scene.map.getValidPoint(p,false);
-    }
-
-    wake()
-    {
-        console.log('wake')
-        this.speak();
-        let ent = this.parentContainer;
-        ent.remove(this)
-        ent.user = null;
-        this.pos = this.getPos(ent.pts[0]);
-        this.angle = 0;
-        this.addWeight();
-        this.updateDepth();
-        this._zone.setInteractive();
-        this.state = GM.ST_IDLE;
-        
     }
 
    
@@ -1686,7 +1709,8 @@ export class Role extends Entity
     {
         if(this.state!==GM.ST_MOVING)
         {
-            this.tw_idle(true);
+            // this.tw_idle(true);
+            this._tween.idle(true);
             console.log('[pause-1]')
             await this.pause(); 
             console.log('[pause-2]')
@@ -2091,7 +2115,8 @@ export class Npc extends Role
                 break;
         }
 
-        this.tw_idle(true);
+        // this.tw_idle(true);
+        this._tween.idle(true)
         
     }
 

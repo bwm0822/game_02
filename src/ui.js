@@ -13,6 +13,65 @@ import QuestManager from './quest.js';
 let uiScene;
 let _mode = 0;
 
+
+function getSuper(obj) 
+{
+  let proto = Object.getPrototypeOf(Object.getPrototypeOf(obj));
+  return proto;
+}
+
+function getRoot(obj) 
+{
+  let proto = Object.getPrototypeOf(obj);        // Avatar.prototype
+  while (Object.getPrototypeOf(proto)) {         // 繼續往上爬
+    proto = Object.getPrototypeOf(proto);
+  }
+  
+  return proto; // 這會是 Object.prototype
+}
+
+class human
+{
+    take(a)
+    {
+        console.log('--------- take human',a)
+        return a;
+    }
+}
+
+class _test
+{
+    constructor(role)
+    {
+        this._role=role;
+    }
+
+    take(a)
+    {
+        return getSuper(this._role).take.call(this._role, a);
+        // return getRoot(this._role).take.call(this._role, a);
+        // return this._role.take.call(this._role, a);
+    }
+}
+
+class man extends human
+{
+    constructor()
+    {
+        super();
+        this._test = new _test(this);
+    }
+
+    take(...args) {return this._test.take(...args);}
+
+    // take()
+    // {
+    //     // super.take();
+    //     getSuper(this).take.call(this);
+    //     console.log('----------take man')
+    // }
+}
+
 export default function createUI(scene)
 {
     console.log('createUI');
@@ -50,6 +109,10 @@ export default function createUI(scene)
     new UiConfirm(scene);
 
     t1();
+
+    let m = new man();
+    m.take(1); 
+    // getSuper(m).take(m);
 
   
 }
@@ -452,6 +515,7 @@ class Slot extends Icon
                     {
                         if(!this.isEmpty) {return;}
 
+                        console.log('----------------- owner:',UiDragged.owner)
                         if(UiDragged.owner.sell(this.owner, UiDragged.slot, this._i, this.isEquip))
                         {
                             UiDragged.empty();
