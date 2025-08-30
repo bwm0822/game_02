@@ -227,6 +227,7 @@ export let GM =
     ST_ATTACK : 'attack',
     ST_DEATH : 'death',
     ST_SKILL : 'skill',
+    ST_UNDERATTACK : 'underattack',
 
     // weight
     W_BLOCK : 1000,   

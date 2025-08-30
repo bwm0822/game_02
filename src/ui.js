@@ -114,7 +114,24 @@ export default function createUI(scene)
     m.take(1); 
     // getSuper(m).take(m);
 
+    t2();
+
   
+}
+
+function t3(){}
+
+async function t4(){}
+
+async function t2()
+{
+    console.log('----------------- t1')
+    await t3();
+    console.log('----------------- t2')
+
+    console.log('----------------- t3')
+    await t4();
+    console.log('----------------- t4')
 }
 
 function t1()
@@ -2016,14 +2033,19 @@ class Option extends UiBase
     act(act)
     {
         this.close();
-        if(act === GM.ATTACK)
-        {
-            Role.getPlayer().attack(this.ent);
-        }
-        else
-        {
-            Role.getPlayer().setDes({ent:this.ent,act});
-        }
+        // if(act === GM.ATTACK)
+        // {
+        //     // Role.getPlayer().attack(this.ent);
+        //     Role.getPlayer().goto({ent:this.ent,act:GM.ATTACK});
+        // }
+        // else
+        // {
+        //     // Role.getPlayer().setDes({ent:this.ent,act});
+        //     Role.getPlayer().goto({ent:this.ent,act:act});
+        // }
+
+        // Role.getPlayer().goto({ent:this.ent,act:act});
+         Role.getPlayer().execute({ent:this.ent,act:act});
     }
 
     show(x,y,options,ent)

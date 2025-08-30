@@ -172,15 +172,19 @@ export class GameScene extends Scene
                 if(this._player.state == GM.ST_MOVING)
                 {
                     this._player.stop();
-                    this.findPath(pt);
+                    // this.findPath(pt);
                 }
                 else if(this._player.state === GM.ST_SKILL)
                 {
-                    this._player.apply({pt:pt,ent:this._ent});
+                    // this._player.apply({pt:pt,ent:this._ent});
+                    this._player.execute({pt:pt,ent:this._ent});
                 }
                 else if(this._rst && this._rst.state===1 && !this._rst.block)
                 {
-                    this._player.apply({pt:pt,ent:this._ent});
+                    // this._player.apply({pt:pt,ent:this._ent});
+                    console.log('------------------------------------ down')
+                    // this._player.goto({pt:pt,ent:this._ent});
+                    this._player.execute({pt:pt,ent:this._ent});
                 }
             }
             

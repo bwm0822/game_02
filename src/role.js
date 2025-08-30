@@ -230,7 +230,7 @@ class _Skill
     // 使用技能
     async use(skill) // call by SkillSlot
     {   
-        await this.role.dispSkill(skill);
+        await this.role.disp.skill(skill);
 
         if(skill.dat[GM.HEAL]){ this.role.heal(skill.dat[GM.HEAL]); }
 
@@ -454,6 +454,46 @@ class _Action
         
     }
 
+    async attack(ent)
+    {
+        this._role.faceTo(ent.pos);
+        let range = this._role.total[GM.RANGE];
+        if(range>1)
+        {
+            return new Promise((resolve)=>{
+                new Projectile(this._role.scene, this._role.x, this._role.y, 'arrow', 0.25)
+                    .shoot( ent.x, 
+                            ent.y, 
+                            // async ()=>{await this.interact(this._ent, this._act);resolve();}
+                            ()=>{
+                                // this.applySkillTo(this._ent, this.skill.sel);
+                                this._role.skill.applyTo(this._ent);
+                                resolve();}
+                        );
+            })
+        }
+        else
+        {
+             return this._role.step( ent.pos, 200, 'expo.in',
+                                {   
+                                    yoyo: true, 
+                                    onYoyo: async ()=>{
+                                        // await this.interact(this._ent, this._act);
+                                        // this.applySkillTo(this._ent, this.skill.sel);
+                                         this._role.skill.applyTo(ent);
+                                    }
+                                } 
+                            ); 
+        }
+    }
+
+    async interact(ent, act) 
+    {
+        if(!act) {return;}
+        if(ent) {this._role.faceTo(ent.pos);}
+        return new Promise((resolve)=>{ent.emit(act, resolve, this._role);});
+    }
+
 }
 
 class _Tween
@@ -495,6 +535,252 @@ class _Tween
     }
 }
 
+class _Path
+{
+    constructor(role)   
+    {
+        this._role = role;
+        this._path, this._ent, this._act;
+        this._dbgPath
+    }
+
+    setDes({pt, ent, act, next=false}={})
+    {
+        let pts = ent?.pts ?? [pt];
+        let rst = this._role.scene.map.getPath(this._role.pos, pts);
+        // console.log('setDes',rst,act)
+        if(rst?.state>0)
+        {
+            // console.log('chk---')
+            this._path = rst.path;
+            this._ent = ent;
+            // this._act = act ?? ent?.act ?? '';
+            this._act = act;
+
+            // this._role.state = next ? GM.ST_NEXT : GM.ST_MOVING;
+
+            if(this._role.isPlayer) 
+            {
+                this._role.state = act===GM.ATTACK ? GM.ST_ATTACK : GM.ST_MOVING;
+                this._role.send('clearpath');
+                this._role.resume();
+            }
+            else
+            {
+                this._role.state = act===GM.ATTACK ? GM.ST_ATTACK 
+                                                    : next ? GM.ST_NEXT
+                                                           : GM.ST_MOVING;
+            }
+        }        
+    }
+
+    clearPath()
+    {
+        this._path = [];
+        if(this._dbgPath){this._dbgPath.clear();}
+    }
+
+    stop()
+    {
+        this._role.state = GM.ST_IDLE;
+        this.clearPath();
+    }
+
+    drawPath(path)
+    {
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this._role.scene.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+            this._dbgPath.setDepth(Infinity);
+        }
+        this._dbgPath.clear();
+        if(path)
+        {
+            path.forEach(node=>{
+                let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            })
+        }
+    }
+
+    isInRange()
+    {
+        if(this._act===GM.ATTACK)
+        {
+            return this._role.isInAttackRange(this._ent);
+        }
+        else
+        {
+            return this._role.checkIsTouch(this._ent);
+        }
+    }
+
+    async move(repath=true)
+    {
+        let path = this._path;
+
+        // 判斷是否接觸目標      
+        // if(this._role.checkIsTouch(this._ent))
+        if(this.isInRange())
+        {
+            this.clearPath();
+            await this._role.action(this._ent,this._act);
+            return;
+        }
+        else
+        {
+            // console.log('[move]',path.length)
+            if(path.length==0)
+            {
+                // console.log('[stop]')
+                this.stop();
+                return;
+            }
+
+            // 取出路徑
+            let pt = path[0];
+            let w = this._role.scene.map.getWeight(pt);
+
+            // 判斷是否可行走
+            if(w < GM.W_BLOCK)    // 可以行走
+            {
+                await this._role.moveTo(pt);    // 移至 pt
+                path.shift();                   // 移除陣列第一個元素
+                
+                if(this._role.isPlayer) 
+                {
+                    // state = GM.ST_MOVING 時，才 drawPath()，
+                    // 避免移動到一半，點選地圖，呼叫 stop() clearPath()後，還 drawPath()
+                    if(this._role.state===GM.ST_MOVING) {this.drawPath(path);} 
+                }
+                else // npc
+                {
+                    this._role.closeDoorWhenLeave(pt,w);
+                }
+
+                if(path.length===0) // 到達目的地
+                {
+                    let act = this._act ?? this._ent?.act;
+                    
+                    if(!act) {this.stop(); console.log('[reach]')}
+                    else {this.clearPath();}
+                }
+                return;
+            }
+            else    // 不可行走
+            {
+                if(this._role.isPlayer)   // for player
+                {
+                    this.stop(); return;
+                }
+                else                // for npc
+                {
+                    if(await this._role.openDoorIfNeed(pt))
+                    {
+                        return;
+                    }
+                    else if(repath)     // 重新找路徑
+                    {
+                        this.setDes({ent:this._ent, act:this._act});
+                        if(await this.move(false))
+                        {
+                            this._role.speak('操...給老子滾開...💢');
+                        }
+
+                        return;
+                    }
+                    return true;
+                }
+            }
+        }
+    }
+}
+
+class _Disp
+{
+    constructor(role)   
+    {
+        this._role = role;
+    }
+
+    async _show()
+    {
+        this._busy = true;
+        let m = this._queue.shift();
+        this._promises.push(this._create(m.value,m.color,m.stroke));
+        await Utility.delay(100);
+        if (this._queue.length === 0) 
+        {
+            this._busy = false;
+        }
+        else
+        {
+            this._busy = true;
+            this._show();
+        }
+    }
+
+    _create(value,color='#fff',stroke='#000')
+    {
+        let t = text(this._role.scene,{text:value,color:color,stroke:stroke,strokeThickness:5});
+        this._role.add(t);
+        t.setOrigin(0.5,0.5);
+        t.setDepth(100);
+        // t.setText(value).setTint(color);
+        let x = Phaser.Math.Between(10, -10);
+        return new Promise((resolve)=>{
+            this._role.scene.tweens.add({
+                    targets: t,
+                    x: {from:x, to:x},
+                    y: {from:-48, to:-64},
+                    duration: 300,
+                    ease: 'linear',
+                    onStart: ()=>{},
+                    onComplete: (tween, targets, gameObject)=>{t.destroy();resolve()}         
+                });
+        });
+    }
+
+    async wait()
+    {
+        if(!this._promises || this._promises.length===0) {return;}
+        await Promise.all(this._promises);    
+        this._queue=[]; 
+        this._promises=[];
+    }
+
+    add(value,color='#fff',stroke='#000')
+    {
+        if(!this._queue){this._queue=[];}
+        if(!this._promises) {this._promises=[];}
+        this._queue.push({value:value,color:color,stroke:stroke});
+        if(!this._busy) {this._show();}
+    }
+    
+    async skill(skill)
+    {
+        let sp = sprite(this._role.scene,{icon:skill.dat.icon});
+        this._role.add(sp);
+        sp.setOrigin(0.5,0.5);
+        sp.setDepth(100);
+        
+        return new Promise((resolve)=>{
+            this._role.scene.tweens.add({
+                targets: sp,
+                y: {from:-32, to:-64},
+                scale:{from:1, to:2},
+                duration: 300,
+                ease: 'linear',
+                onStart: ()=>{},
+                onComplete: (tween, targets, gameObject)=>{sp.destroy();resolve()}         
+            });
+        });
+
+    }
+}
+
 export class Role extends Entity
 {
     constructor(scene,x,y)
@@ -528,7 +814,9 @@ export class Role extends Entity
     get msg_name() {return `[weight=900]${this.id.lab()}[/weight] `}
 
     get skill() {return this._skill;}
+    get disp() {return this._disp;}
 
+    // action
     buy(...args) {return this._action.buy(...args);}
     sell(...args) {return this._action.sell(...args);}
     take(...args) {return this._action.take(...args);}
@@ -537,7 +825,12 @@ export class Role extends Entity
     drink(...args) {return this._action.drink(...args);}
     sleep(...args) {return this._action.sleep(...args);}
     wake(...args) {return this._action.wake(...args);}
-
+    attack(...args) {return this._action.attack(...args);}  // attack() 不用加 async
+    interact(...args) {return this._action.interact(...args);}  // interact() 不用加 async
+    // path
+    setDes(...args) {return this._path.setDes(...args);}
+    st_moving(...args) {return this._path.move(...args);}
+    stop(...args) {return this._path.stop(...args);}
 
     addSprite(sprite)
     {
@@ -589,6 +882,8 @@ export class Role extends Entity
         this._skill = new _Skill(this);
         this._tween = new _Tween(this); 
         this._action = new _Action(this);
+        this._path = new _Path(this);
+        this._disp = new _Disp(this);
 
         this.addSprite(roleD.sprite);
         this.addListener();
@@ -620,7 +915,6 @@ export class Role extends Entity
         return this;
     }
 
-    
     save() {return this.rec.save();}
 
     addLight()
@@ -663,29 +957,6 @@ export class Role extends Entity
             this._act = '';
             this.resume();
         }
-    }
-
-    setDes({pt, ent, act, next=false}={})
-    {
-        let pts = ent?.pts ?? [pt];
-        let rst = this.scene.map.getPath(this.pos, pts);
-        console.log('setDes',rst,act)
-        if(rst?.state>0)
-        {
-            console.log('chk---')
-            this._path = rst.path;
-            this._ent = ent;
-            // this._act = act ?? ent?.act ?? '';
-            this._act = act;
-
-            this.state = next ? GM.ST_NEXT : GM.ST_MOVING;
-
-            if(this.isPlayer) 
-            {
-                this.send('clearpath');
-                this.resume();
-            }
-        }        
     }
 
     faceTo(pt)
@@ -747,162 +1018,27 @@ export class Role extends Entity
         return false;
     }
 
-    async st_moving(repath=true)
+    async action(ent, act)
     {
-        let path = this._path;
-
-        // 判斷是否接觸目標      
-        if(this.checkIsTouch(this._ent))
-        {
-            this.clearPath();
-            await this.action();
-            return;
-        }
-        else
-        {
-            console.log('[move]',path.length)
-            if(path.length==0)
-            {
-                console.log('[stop]')
-                this.stop();
-                return;
-            }
-
-            // 取出路徑
-            let pt = path[0];
-            let w = this.scene.map.getWeight(pt);
-
-            // 判斷是否可行走
-            if(w < GM.W_BLOCK)    
-            {
-                await this.moveTo(pt);  // 移至 pt
-                path.shift();           // 移除陣列第一個元素
-                
-                if(this.isPlayer) 
-                {
-                    // state = GM.ST_MOVING 時，才 drawPath()，
-                    // 避免移動到一半，點選地圖，呼叫 stop() clearPath()後，還 drawPath()
-                    if(this.state===GM.ST_MOVING) {this.drawPath(path);} 
-                }
-                else // npc
-                {
-                    this.closeDoorWhenLeave(pt,w);
-                }
-
-                if(path.length==0)
-                {
-                    let act = this._act ?? this._ent?.act;
-                    
-                    if(!act) {this.stop(); console.log('[reach]')}
-                    else {this.clearPath();}
-                }
-                return;
-            }
-            else
-            {
-                if(this.isPlayer)   // for player
-                {
-                    this.stop();
-                    return;
-                }
-                else                // for npc
-                {
-                    if(await this.openDoorIfNeed(pt))
-                    {
-                        return;
-                    }
-                    else if(repath)     // 重新找路徑
-                    {
-                        this.setDes({ent:this._ent, act:this._act});
-                        if(await this.st_moving(false))
-                        {
-                            this.speak('操...給老子滾開...💢');
-                        }
-
-                        return;
-                    }
-                    return true;
-                }
-            }
-        }
-    }
-
-    async action_atk()
-    {
-        // let range = this.getTotalStats()[GM.RANGE];
-        let range = this.total[GM.RANGE];
-        if(range>1)
-        {
-            return new Promise((resolve)=>{
-                new Projectile(this.scene, this.x, this.y, 'arrow', 0.25)
-                    .shoot( this._ent.x, 
-                            this._ent.y, 
-                            // async ()=>{await this.interact(this._ent, this._act);resolve();}
-                            ()=>{
-                                // this.applySkillTo(this._ent, this.skill.sel);
-                                this.skill.applyTo(this._ent);
-                                resolve();}
-                        );
-            })
-        }
-        else
-        {
-             return this.step( this._ent.pos, 200, 'expo.in',
-                                {   
-                                    yoyo: true, 
-                                    onYoyo: async ()=>{
-                                        // await this.interact(this._ent, this._act);
-                                        // this.applySkillTo(this._ent, this.skill.sel);
-                                         this.skill.applyTo(this._ent);
-                                    }
-                                } 
-                            ); 
-        }
-    }
-
-    async action()
-    {
-        // if(!this._act) {return;}
-
-        if(this._ent) {this.faceTo(this._ent.pos);}
-
-        let act = this._act??this._ent?.act;
-
-        if(this.isPlayer) {console.log(`[player] action : ${act}`);}
-        else {console.log(`[npc ${this.id}] action : ${act}`);}
+        act = act??ent?.act;
         
         if(act===GM.ATTACK)
         {
-            this.state = GM.ST_ATTACK;
-            // await this.step( this._ent.pos, 200, 'expo.in',
-            //                 {yoyo:true, onYoyo:async ()=>{await this.interact(this._ent,act);}} ); 
-            await this.action_atk();
+            if(this.isPlayer) {this.state = GM.ST_IDLE;}
+            await this.attack(ent);
         }
         else
         {
             this.state = GM.ST_IDLE;
-            await this.interact(this._ent,act);
+            await this.interact(ent,act);
         }
 
-        // this._act = null;
-        // this._ent = null;
+        if(this.isPlayer) {this.resume();}
     }
 
     next()
     {
         this.resume();
-    }
-
-    clearPath()
-    {
-        this._path = [];
-        if(this._dbgPath){this._dbgPath.clear();}
-    }
-
-    stop()
-    {
-        this.state = GM.ST_IDLE;
-        this.clearPath();
     }
 
     step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
@@ -923,68 +1059,20 @@ export class Role extends Entity
         });
     }
 
-    // interact(pt, act)
-    // {
-    //     let bodys = this.scene.physics.overlapCirc(pt.x, pt.y, 5, true, true);
-    //     bodys.forEach((body) => {body.gameObject.emit(act, this.owner);});
-    // }
-
-    async interact(ent, act) 
-    {
-        if(!act) {return;}
-        return new Promise((resolve)=>{ent.emit(act, resolve, this);});
-    }
-
     async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
     resume() {this._resolve?.();this._resolve=null;}
 
-    isInRange(ent)
+    isInAttackRange(ent)
     {
-        console.log("ent------------------------------",ent)
         // let range = this.status.attrs[GM.P_RANGE];
         let range = this.getTotalStats()[GM.RANGE];
-        console.log('range=',range)
         let [tx1, ty1] = this.scene.map.worldToTile(this.x,this.y);
         let [tx2, ty2] = this.scene.map.worldToTile(ent.x,ent.y);
         let dx = Math.abs(tx1 - tx2);
         let dy = Math.abs(ty1 - ty2);
         return dx <= range && dy <= range;
     }
-
-
-    async attack(ent)
-    {
-        console.log('attack')   
-        this._ent = ent;
-        this._act = GM.ATTACK;
-
-        if(this.isPlayer)
-        {
-            if(this.isInRange(ent))
-            {
-                await this.action();
-                this.resume();
-            }
-            else
-            {
-                let rst = this.scene.map.getPath(this.pos, this._ent.pts);
-                if(rst?.state > 0)    // 找到路徑
-                {
-                    await this.moveTo(rst.path[0]);  // 移至 pt  
-                    this.resume();   
-                }        
-            }
-        }    
-        else
-        {
-            this.state = GM.ST_ATTACK;
-            this._ent = ent;
-            this._act = GM.ATTACK;
-        }
-        
-    }
-
 
     looties()
     {
@@ -1098,93 +1186,6 @@ export class Role extends Entity
 
     }
 
-    async waitDisp()
-    {
-        console.log(`#--------# ${this.id}:waitDisp-0 ${this._promises?.length}`)
-        if(!this._promises || this._promises.length===0) {return;}
-        console.log(`#--------# ${this.id}:waitDisp-1`)
-        await Promise.all(this._promises);    
-        this._queue=[]; 
-        this._promises=[];
-        console.log(`#--------# ${this.id}:waitDisp-2`)
-    }
-
-    async showDisp()
-    {
-        this._busy = true;
-        let m = this._queue.shift();
-        this._promises.push(this.createDisp(m.value,m.color,m.stroke));
-        console.log(`########## ${this.id}:showDisp-1`)
-        await Utility.delay(100);
-        if (this._queue.length === 0) 
-        {
-            this._busy = false;
-        }
-        else
-        {
-            this._busy = true;
-            this.showDisp();
-        }
-
-
-        console.log(`########## ${this.id}:showDisp-2`)
-        
-        
-    }
-
-    addDisp(value,color='#fff',stroke='#000')
-    {
-        // !this._queue && (this._quene=[]);
-        if(!this._queue){this._queue=[];}
-        console.log(`########## ${this.id}:addDisp ${this._busy}`)
-        if(!this._promises) {this._promises=[];}
-        this._queue.push({value:value,color:color,stroke:stroke});
-        if(!this._busy) {this.showDisp();}
-    }
-
-    createDisp(value,color='#fff',stroke='#000')
-    {
-        let t = text(this.scene,{text:value,color:color,stroke:stroke,strokeThickness:5});
-        this.add(t);
-        t.setOrigin(0.5,0.5);
-        t.setDepth(100);
-        // t.setText(value).setTint(color);
-        let x = Phaser.Math.Between(10, -10);
-        return new Promise((resolve)=>{
-            console.log(`----------------------> ${this.id} createDisp`)
-            this.scene.tweens.add({
-                    targets: t,
-                    x: {from:x, to:x},
-                    y: {from:-48, to:-64},
-                    duration: 300,
-                    ease: 'linear',
-                    onStart: ()=>{},
-                    onComplete: (tween, targets, gameObject)=>{t.destroy();resolve()}         
-                });
-        });
-    }
-
-    async dispSkill(skill)
-    {
-        let sp = sprite(this.scene,{icon:skill.dat.icon});
-        this.add(sp);
-        sp.setOrigin(0.5,0.5);
-        sp.setDepth(100);
-        
-        return new Promise((resolve)=>{
-            this.scene.tweens.add({
-                targets: sp,
-                y: {from:-32, to:-64},
-                scale:{from:1, to:2},
-                duration: 300,
-                ease: 'linear',
-                onStart: ()=>{},
-                onComplete: (tween, targets, gameObject)=>{sp.destroy();resolve()}         
-            });
-        });
-
-    }
-
     equip()
     {
         this.removeLight();
@@ -1233,7 +1234,6 @@ export class Role extends Entity
             })
         }
     }
-
 
 
     registerTimeManager()
@@ -1304,7 +1304,7 @@ export class Role extends Entity
         this.getTotalStats();
         if(this.isPlayer) {this.send('refresh');}
 
-        await this.waitDisp();
+        await this.disp.wait();
     }
 
     updateStates(dt=1)
@@ -1458,18 +1458,18 @@ export class Role extends Entity
         switch(dmg.type)
         {
             case GM.CRIT:
-                this.addDisp(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                this.disp.add(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
                 this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
                 console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.DODGE:
-                this.addDisp(GM.DODGE.lab(), '#0f0', '#000');
+                this.disp.add(GM.DODGE.lab(), '#0f0', '#000');
                 break;
             case GM.MISS:
-                this.addDisp(GM.MISS.lab(), '#0f0', '#000');
+                this.disp.add(GM.MISS.lab(), '#0f0', '#000');
                 break;
             default:
-                this.addDisp(-dmg.amount, '#f00', '#fff');
+                this.disp.add(-dmg.amount, '#f00', '#fff');
                 this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
                 console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
@@ -1483,7 +1483,7 @@ export class Role extends Entity
 
     heal(amount) 
     {
-        this.addDisp('+'+amount, '#0f0', '#000');
+        this.disp.add('+'+amount, '#0f0', '#000');
         let total = this.total;//this.getTotalStats();
         this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], total[GM.HP] + amount);
         this.total[GM.HP] = this.rec.states[GM.HP];
@@ -1683,7 +1683,9 @@ export class Role extends Entity
         return {amount:damage, type:type};
     }
 
-    apply({pt,ent}={})
+    // public
+
+    async execute({pt,ent,act}={})
     {
         if(this.skill.sel)
         {
@@ -1694,14 +1696,18 @@ export class Role extends Entity
                 this.skill.useTo(pt??ent.pos, ent);
             }
         }
-        else if(ent?.act===GM.ATTACK)
+        else if( (act===GM.ATTACK && this.isInAttackRange(ent)) ||
+            this.checkIsTouch(ent) )
         {
-            this.attack(ent);
+            console.log('-------------------------------------------- goto')
+            await this.action(ent,act);
+            // this.resume();
         }
         else
         {
-            this.setDes({pt:pt,ent:ent});
+            this.setDes({pt:pt,ent:ent,act:act});
         }
+        
     }
 
 
@@ -1720,6 +1726,7 @@ export class Role extends Entity
         {
             case GM.ST_IDLE: break;
             case GM.ST_MOVING:
+            case GM.ST_ATTACK:
                 console.log('[player] moving');
                 await this.st_moving();
                 break;
@@ -1834,7 +1841,7 @@ export class Npc extends Role
         this.updateStates();
         this.applyEffects();
         this.getTotalStats();
-        await this.waitDisp();
+        await this.disp.wait();
     }
 
     setSchedule()
@@ -2073,6 +2080,19 @@ export class Npc extends Role
     //     this._act = GM.ATTACK;
     // }
 
+    // takeDamage(dmg, attacker) 
+    // {
+    //     super.takeDamage(dmg);
+
+    //     if(this.state!==GM.ST_DEATH && attacker)
+    //     {
+    //         if(this.state === GM.ST_IDLE) {this.equipWeapon();}
+    //         this.state = GM.ST_ATTACK;
+    //         this._ent = attacker;
+    //         this._act = GM.ATTACK;
+    //     }
+    // }
+
     takeDamage(dmg, attacker) 
     {
         super.takeDamage(dmg);
@@ -2095,22 +2115,22 @@ export class Npc extends Role
             case GM.ST_IDLE: this.st_idle(); break;
 
             case GM.ST_NEXT:
-                console.log(`[npc ${this.id}] next`);
+                // console.log(`[npc ${this.id}] next`);
                 this.state = GM.ST_MOVING;
                 break;
 
             case GM.ST_MOVING:
-                console.log(`[npc ${this.id}] moving`);
+                // console.log(`[npc ${this.id}] moving`);
                 await this.st_moving();
                 break;
 
             case GM.ST_ACTION:
-                console.log(`[npc ${this.id}] action`);
+                // console.log(`[npc ${this.id}] action`);
                 await this.action();
                 break;
 
             case GM.ST_ATTACK:
-                console.log(`[npc ${this.id}] attack`);
+                // console.log(`[npc ${this.id}] attack`);
                 await this.st_attack();
                 break;
         }
@@ -2135,23 +2155,38 @@ export class Npc extends Role
         }
     }
 
+    // async st_attack()
+    // {
+    //     if(this.isInAttackRange(this._ent))
+    //     {
+    //         await this.action(this._ent,GM.ATTACK);
+    //     }
+    //     else
+    //     {
+    //         let rst = this.scene.map.getPath(this.pos, this._ent.pts);
+    //         if(rst?.state > 0)    // 找到路徑
+    //         {
+    //             await this.moveTo(rst.path[0]);  // 移至 pt     
+    //         }        
+    //         else
+    //         {
+    //             this.state = GM.ST_IDLE;
+    //         }
+    //     }
+    // }
+
     async st_attack()
     {
-        if(this.isInRange(this._ent))
+        if( this.isInAttackRange(this._ent) )
         {
-            await this.action();
+            console.log('---------------------- chk1')
+            await this.action(this._ent,this._act);
         }
         else
         {
-            let rst = this.scene.map.getPath(this.pos, this._ent.pts);
-            if(rst?.state > 0)    // 找到路徑
-            {
-                await this.moveTo(rst.path[0]);  // 移至 pt     
-            }        
-            else
-            {
-                this.state = GM.ST_IDLE;
-            }
+            console.log('---------------------- chk2')
+            this.setDes({ent:this._ent, act:this._act})
+            await this.st_moving();
         }
     }
 
