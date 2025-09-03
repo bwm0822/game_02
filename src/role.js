@@ -436,12 +436,12 @@ class _Action
         this._role.angle = ent.sleepA;
         this._role._zone.disableInteractive();        
         this._role.state = GM.ST_SLEEP;
-        this._role.speak('💤',{duration:-1,tween:true});
+        this._role.disp.speak('💤',{duration:-1,tween:true});
     }
 
     wake()
     {
-        this._role.speak();
+        this._role.disp.speak();
         let ent = this._role.parentContainer;
         ent.remove(this._role)
         ent.user = null;
@@ -494,9 +494,20 @@ class _Action
         return new Promise((resolve)=>{ent.emit(act, resolve, this._role);});
     }
 
+    heal(amount) 
+    {
+        this._role.disp.add('+'+amount, '#0f0', '#000');
+        let total = this._role.total;//this.getTotalStats();
+        this._role.rec.states[GM.HP] = Math.min(total[GM.HPMAX], total[GM.HP] + amount);
+        total[GM.HP] = this._role.rec.states[GM.HP];
+        console.log(`${this._role.name} 獲得 ${amount} 治療`);
+
+        if(this._role.isPlayer) {this._role.send('refresh');}
+    }
+
 }
 
-class _Tween
+class _Anim
 {
     constructor(role)   {this._role = role;}
 
@@ -686,7 +697,7 @@ class _Path
                         this.setDes({ent:this._ent, act:this._act});
                         if(await this.move(false))
                         {
-                            this._role.speak('操...給老子滾開...💢');
+                            this._role.disp.speak('操...給老子滾開...💢');
                         }
 
                         return;
@@ -779,6 +790,54 @@ class _Disp
         });
 
     }
+
+    speak(words, {duration=1000,tween=false}={})
+    {
+        if(!this._speak)
+        {
+            this._speak = this._role.scene.rexUI.add.sizer(0,-48,{space:5});
+            this._speak.addBackground(rect(this._role.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
+                        .add(text(this._role.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
+                        .setOrigin(0.5,1);
+            this._role.add(this._speak);
+            this._role.sort('depth')
+        }
+
+        if(tween)
+        {
+            this._speak.tw = this._role.scene.tweens.add({
+                targets: this._speak,
+                scale: 0.5,
+                loop: -1,
+                duration: 1000,
+                yoyo:true,
+                onStop: ()=>{this._speak.setScale(1);}, 
+            })
+        }
+
+        if(words)
+        {
+            this._speak.getElement('text').setText(words);
+            this._speak.show();
+            this._speak.layout();
+            if(duration>0)
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+                this._to = setTimeout(()=>{this._speak?.hide();this._to=null;}, duration);
+            }
+            else
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+            }
+        }
+        else
+        {
+            if (this._to) {clearTimeout(this._to);this._to=null;}
+            this._speak.hide();
+            this._speak.tw?.stop();
+        }
+
+    }
 }
 
 export class Role extends Entity
@@ -815,6 +874,7 @@ export class Role extends Entity
 
     get skill() {return this._skill;}
     get disp() {return this._disp;}
+    get anim() {return this._anim;}
 
     // action
     buy(...args) {return this._action.buy(...args);}
@@ -827,6 +887,7 @@ export class Role extends Entity
     wake(...args) {return this._action.wake(...args);}
     attack(...args) {return this._action.attack(...args);}  // attack() 不用加 async
     interact(...args) {return this._action.interact(...args);}  // interact() 不用加 async
+    heal(...args) {return this._action.heal(...args);}
     // path
     setDes(...args) {return this._path.setDes(...args);}
     st_moving(...args) {return this._path.move(...args);}
@@ -880,7 +941,7 @@ export class Role extends Entity
         this.add(this._shape);
 
         this._skill = new _Skill(this);
-        this._tween = new _Tween(this); 
+        this._anim = new _Anim(this); 
         this._action = new _Action(this);
         this._path = new _Path(this);
         this._disp = new _Disp(this);
@@ -984,9 +1045,9 @@ export class Role extends Entity
         this.removeWeight();
         this.addWeight(pt);
         // this.tw_idle(false);
-        this._tween.idle(false);
+        this.anim.idle(false);
         // this.tw_walk(duration/2);
-        this._tween.walk(duration/2);
+        this.anim.walk(duration/2);
         await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
         //this.addWeight();
         this.updateDepth();
@@ -1105,15 +1166,13 @@ export class Role extends Entity
     async dead(attacker)
     {
         if(this.state === GM.ST_DEATH) {return;}
-        console.log(`[${this.id}] ----------------- ${this.id} daed [${this.state}]`)
         this.state = GM.ST_DEATH;
         
         if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
         else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
        
         this.checkQuest();
-        await this.waitDisp();
-        console.log(`[${this.id}] ----------------- ${this.id} daed-1 [${this.state}]`)
+        await this.disp.wait();
         this.looties();
         new _Corpse(this.scene, this.x, this.y, this.id);
         this.removed(); 
@@ -1136,54 +1195,6 @@ export class Role extends Entity
         if (this._to) {clearTimeout(this._to);this._to=null;}
         
         super.destroy();
-    }
-
-    speak(words, {duration=1000,tween=false}={})
-    {
-        if(!this._speak)
-        {
-            this._speak = this.scene.rexUI.add.sizer(0,-48,{space:5});
-            this._speak.addBackground(rect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
-                        .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
-                        .setOrigin(0.5,1);
-            this.add(this._speak);
-            this.sort('depth')
-        }
-
-        if(tween)
-        {
-            this._speak.tw = this.scene.tweens.add({
-                targets: this._speak,
-                scale: 0.5,
-                loop: -1,
-                duration: 1000,
-                yoyo:true,
-                onStop: ()=>{this._speak.setScale(1);}, 
-            })
-        }
-
-        if(words)
-        {
-            this._speak.getElement('text').setText(words);
-            this._speak.show();
-            this._speak.layout();
-            if(duration>0)
-            {
-                if (this._to) {clearTimeout(this._to);this._to=null;}
-                this._to = setTimeout(()=>{this._speak?.hide();this._to=null;}, duration);
-            }
-            else
-            {
-                if (this._to) {clearTimeout(this._to);this._to=null;}
-            }
-        }
-        else
-        {
-            if (this._to) {clearTimeout(this._to);this._to=null;}
-            this._speak.hide();
-            this._speak.tw?.stop();
-        }
-
     }
 
     equip()
@@ -1215,27 +1226,6 @@ export class Role extends Entity
         return this.scene.map.getValidPoint(p,false);
     }
 
-   
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-            this._dbgPath.setDepth(Infinity);
-        }
-        this._dbgPath.clear();
-        if(path)
-        {
-            path.forEach(node=>{
-                let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            })
-        }
-    }
-
-
     registerTimeManager()
     {
         this._updateTimeCallback = this.updateTime.bind(this); // 保存回调函数引用
@@ -1265,6 +1255,24 @@ export class Role extends Entity
         }
     }
 
+    async updateTime(dt)
+    {
+        this.setLightInt();
+        this.updateStates(dt);
+        this.applyEffects(dt);
+        this.updateEquips(dt);
+        this.getTotalStats();
+        if(this.isPlayer) {this.send('refresh');}
+
+        await this.disp.wait();
+    }
+
+    updateStates(dt=1)
+    {
+        this.rec.states[GM.HUNGER] = Math.min(this.rec.states[GM.HUNGER] + GM.HUNGER_INC * dt, 100);
+        this.rec.states[GM.THIRST] = Math.min(this.rec.states[GM.THIRST] + GM.THIRST_INC * dt, 100);
+    }
+
     updateEquips(dt)
     {
         for(let i=0; i<this.rec.equips.length;i++)
@@ -1280,37 +1288,6 @@ export class Role extends Entity
                 }
             }
         }
-    }
-
-    async updateTime(dt)
-    {
-        this.setLightInt();
-        this.updateStates(dt);
-        this.applyEffects(dt);
-        this.updateEquips(dt);
-
-        // this.rec.equips.forEach((equip)=>{
-        //     if(equip && equip.endurance)
-        //     {
-        //         equip.endurance -= dt;
-        //         if(equip.endurance<=0)
-        //         {
-        //             this.removeEquip(equip);
-        //             equip=null;
-        //         }
-        //     }
-        // })
-        
-        this.getTotalStats();
-        if(this.isPlayer) {this.send('refresh');}
-
-        await this.disp.wait();
-    }
-
-    updateStates(dt=1)
-    {
-        this.rec.states[GM.HUNGER] = Math.min(this.rec.states[GM.HUNGER] + GM.HUNGER_INC * dt, 100);
-        this.rec.states[GM.THIRST] = Math.min(this.rec.states[GM.THIRST] + GM.THIRST_INC * dt, 100);
     }
 
     getBodiesInRect(range, checkBlock)
@@ -1387,7 +1364,6 @@ export class Role extends Entity
         this.a=a;
     }
 
-
     deriveStats(base) 
     {
         const out = {};
@@ -1411,8 +1387,6 @@ export class Role extends Entity
 
         return out;
     }
-
-
 
     getEffects()
     {
@@ -1479,17 +1453,6 @@ export class Role extends Entity
         if(this.isPlayer) {this.send('refresh');}
 
         if(this.rec.states[GM.HP] === 0) {this.dead();}   
-    }
-
-    heal(amount) 
-    {
-        this.disp.add('+'+amount, '#0f0', '#000');
-        let total = this.total;//this.getTotalStats();
-        this.rec.states[GM.HP] = Math.min(total[GM.HPMAX], total[GM.HP] + amount);
-        this.total[GM.HP] = this.rec.states[GM.HP];
-        console.log(`${this.name} 獲得 ${amount} 治療`);
-
-        if(this.isPlayer) {this.send('refresh');}
     }
 
     applyEffects() 
@@ -1684,7 +1647,6 @@ export class Role extends Entity
     }
 
     // public
-
     async execute({pt,ent,act}={})
     {
         if(this.skill.sel)
@@ -1710,13 +1672,12 @@ export class Role extends Entity
         
     }
 
-
     async process()
     {
         if(this.state!==GM.ST_MOVING)
         {
             // this.tw_idle(true);
-            this._tween.idle(true);
+            this.anim.idle(true);
             console.log('[pause-1]')
             await this.pause(); 
             console.log('[pause-2]')
@@ -1996,10 +1957,6 @@ export class Npc extends Role
             this.rec.bag = this.toStorage(roleD.bag.capacity,roleD.bag.items);
         }
     }
-    
-   
-
-
 
     saveData(value)
     {
@@ -2068,31 +2025,6 @@ export class Npc extends Role
         });
     }
 
-    // async hurt(attacker,resolve)
-    // {
-    //     super.hurt(attacker,resolve);
-    //     if(this.state === GM.ST_IDLE)
-    //     {
-    //         this.equipWeapon();
-    //     }
-    //     this.state = GM.ST_ATTACK;
-    //     this._ent = attacker;
-    //     this._act = GM.ATTACK;
-    // }
-
-    // takeDamage(dmg, attacker) 
-    // {
-    //     super.takeDamage(dmg);
-
-    //     if(this.state!==GM.ST_DEATH && attacker)
-    //     {
-    //         if(this.state === GM.ST_IDLE) {this.equipWeapon();}
-    //         this.state = GM.ST_ATTACK;
-    //         this._ent = attacker;
-    //         this._act = GM.ATTACK;
-    //     }
-    // }
-
     takeDamage(dmg, attacker) 
     {
         super.takeDamage(dmg);
@@ -2136,7 +2068,7 @@ export class Npc extends Role
         }
 
         // this.tw_idle(true);
-        this._tween.idle(true)
+        this.anim.idle(true)
         
     }
 
@@ -2146,12 +2078,12 @@ export class Npc extends Role
         if(type === GM.DBG_CLR) 
         {
             dbg_hover_npc = false;
-            this.drawPath(null);
+            this.disp.drawPath(null);
         }
         else 
         {
             dbg_hover_npc = true;
-            this.drawPath(this._path);
+            this.disp.drawPath(this._path);
         }
     }
 
@@ -2225,7 +2157,7 @@ export class Enemy extends Npc
     {
         if(this.isDetect())
         {
-            this.speak('‼️');
+            this.disp.speak('‼️');
             this.attack(getPlayer());
         }
     }
