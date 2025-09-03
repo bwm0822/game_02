@@ -44,11 +44,11 @@ class _Corpse extends Phaser.GameObjects.Container
         scene.add.existing(this);
         this.scene = scene;
         let data = DB.role(id);
-        this.addSprite(data)
+        this._addSprite(data)
             .addTweens()
     }
 
-    addSprite(data)
+    _addSprite(data)
     {
         let [key,frame] = data.corpse.sprite.split('/');
         let sp = this.scene.add.sprite(0,0,key,frame);
@@ -240,21 +240,21 @@ class _Skill
         skill.reset();
 
         this.role.send('refresh')
-        this.role.resume();
+        this.role._resume();
     }
 
     useTo(pos, target)
     {
         if(!target || !target.isAlive) {return;}
 
-        this.role.faceTo(pos);
+        this.role._faceTo(pos);
         // let bodies = this.getBodiesInRect(this.skill.dat.range, false);
 
-        return this.role.step( pos, 200, 'expo.in',
+        return this.role._step( pos, 200, 'expo.in',
                         {   
                             yoyo:true, 
                             onYoyo:()=>{this.applyTo(target);},
-                            onComplete: () => {this.role.resume();}
+                            onComplete: () => {this.role._resume();}
                         }
                     );
     }
@@ -262,7 +262,7 @@ class _Skill
     applyTo(target)
     {
         if(!target || !target.isAlive) {return;}
-        let damage = this.role.calculateDamage(this.role, target, this._sel);
+        let damage = this.role._calculateDamage(this.role, target, this._sel);
         target.takeDamage(damage, this.role);
 
         //let bodies = this.getBodiesInRect(this.skill.dat.range, false)
@@ -277,14 +277,14 @@ class _Skill
     // 選擇技能，call by SkillItem
     select(skill)
     {
-        this.role.showRange(true, skill.dat.range, false);
+        this.role._showRange(true, skill.dat.range, false);
         this._sel = skill;
         this.role.state = GM.ST_SKILL;
     }
 
     unselect()
     {
-        this.role.showRange(false);
+        this.role._showRange(false);
         this._sel = null;
         this.role.state = GM.ST_IDLE;
     }
@@ -445,7 +445,7 @@ class _Action
         let ent = this._role.parentContainer;
         ent.remove(this._role)
         ent.user = null;
-        this._role.pos = this._role.getPos(ent.pts[0]);
+        this._role.pos = this._role._getUnoccupiedPos(ent.pts[0]);
         this._role.angle = 0;
         this._role.addWeight();
         this._role.updateDepth();
@@ -456,7 +456,7 @@ class _Action
 
     async attack(ent)
     {
-        this._role.faceTo(ent.pos);
+        this._role._faceTo(ent.pos);
         let range = this._role.total[GM.RANGE];
         if(range>1)
         {
@@ -474,7 +474,7 @@ class _Action
         }
         else
         {
-             return this._role.step( ent.pos, 200, 'expo.in',
+             return this._role._step( ent.pos, 200, 'expo.in',
                                 {   
                                     yoyo: true, 
                                     onYoyo: async ()=>{
@@ -490,7 +490,7 @@ class _Action
     async interact(ent, act) 
     {
         if(!act) {return;}
-        if(ent) {this._role.faceTo(ent.pos);}
+        if(ent) {this._role._faceTo(ent.pos);}
         return new Promise((resolve)=>{ent.emit(act, resolve, this._role);});
     }
 
@@ -552,9 +552,73 @@ class _Path
     {
         this._role = role;
         this._path, this._ent, this._act;
-        this._dbgPath
+        this._dbgPath;
     }
 
+    _clearPath()
+    {
+        this._path = [];
+        if(this._dbgPath){this._dbgPath.clear();}
+    }
+
+    _drawPath(path)
+    {
+        if(!this._dbgPath)
+        {
+            this._dbgPath = this._role.scene.add.graphics();
+            this._dbgPath.name = 'path';
+            this._dbgPath.fillStyle(0xffffff);
+            this._dbgPath.setDepth(Infinity);
+        }
+        this._dbgPath.clear();
+        if(path)
+        {
+            path.forEach(node=>{
+                let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
+                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
+            })
+        }
+    }
+
+    _isInRange()
+    {
+        if(this._act===GM.ATTACK)
+        {
+            return this._role._isInAttackRange(this._ent);
+        }
+        else
+        {
+            return this._role._checkIsTouch(this._ent);
+        }
+    }
+
+    _closeDoorWhenLeave(pt,w)
+    {
+        // 是否離開門，如果是，關門
+        if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
+        {
+            let bodys = this._role.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
+            this._role.interact(bodys[0]?.gameObject,GM.CLOSE_DOOR);
+        }
+        this._preW = w;
+        this._prePt = pt;  
+    }
+
+    async _openDoorIfNeed(pt)
+    {
+        let bodys = this._role.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
+        let ent = bodys[0]?.gameObject;
+
+        // 如果是門，則打開
+        if (ent && ent instanceof Door && !ent.opened) 
+        {
+            await this._role.interact(ent, GM.OPEN_DOOR);
+            return true;
+        }
+        return false;
+    }
+
+    // public
     setDes({pt, ent, act, next=false}={})
     {
         let pts = ent?.pts ?? [pt];
@@ -574,7 +638,7 @@ class _Path
             {
                 this._role.state = act===GM.ATTACK ? GM.ST_ATTACK : GM.ST_MOVING;
                 this._role.send('clearpath');
-                this._role.resume();
+                this._role._resume();
             }
             else
             {
@@ -585,47 +649,10 @@ class _Path
         }        
     }
 
-    clearPath()
-    {
-        this._path = [];
-        if(this._dbgPath){this._dbgPath.clear();}
-    }
-
     stop()
     {
         this._role.state = GM.ST_IDLE;
-        this.clearPath();
-    }
-
-    drawPath(path)
-    {
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this._role.scene.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-            this._dbgPath.setDepth(Infinity);
-        }
-        this._dbgPath.clear();
-        if(path)
-        {
-            path.forEach(node=>{
-                let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
-                this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-            })
-        }
-    }
-
-    isInRange()
-    {
-        if(this._act===GM.ATTACK)
-        {
-            return this._role.isInAttackRange(this._ent);
-        }
-        else
-        {
-            return this._role.checkIsTouch(this._ent);
-        }
+        this._clearPath();
     }
 
     async move(repath=true)
@@ -633,11 +660,10 @@ class _Path
         let path = this._path;
 
         // 判斷是否接觸目標      
-        // if(this._role.checkIsTouch(this._ent))
-        if(this.isInRange())
+        if(this._isInRange())
         {
-            this.clearPath();
-            await this._role.action(this._ent,this._act);
+            this._clearPath();
+            await this._role._cmd(this._ent,this._act);
             return;
         }
         else
@@ -657,18 +683,18 @@ class _Path
             // 判斷是否可行走
             if(w < GM.W_BLOCK)    // 可以行走
             {
-                await this._role.moveTo(pt);    // 移至 pt
+                await this._role._moveTo(pt);    // 移至 pt
                 path.shift();                   // 移除陣列第一個元素
                 
                 if(this._role.isPlayer) 
                 {
                     // state = GM.ST_MOVING 時，才 drawPath()，
                     // 避免移動到一半，點選地圖，呼叫 stop() clearPath()後，還 drawPath()
-                    if(this._role.state===GM.ST_MOVING) {this.drawPath(path);} 
+                    if(this._role.state===GM.ST_MOVING) {this._drawPath(path);} 
                 }
                 else // npc
                 {
-                    this._role.closeDoorWhenLeave(pt,w);
+                    this._closeDoorWhenLeave(pt,w);
                 }
 
                 if(path.length===0) // 到達目的地
@@ -676,7 +702,7 @@ class _Path
                     let act = this._act ?? this._ent?.act;
                     
                     if(!act) {this.stop(); console.log('[reach]')}
-                    else {this.clearPath();}
+                    else {this._clearPath();}
                 }
                 return;
             }
@@ -688,7 +714,7 @@ class _Path
                 }
                 else                // for npc
                 {
-                    if(await this._role.openDoorIfNeed(pt))
+                    if(await this._openDoorIfNeed(pt))
                     {
                         return;
                     }
@@ -707,6 +733,8 @@ class _Path
             }
         }
     }
+
+
 }
 
 class _Disp
@@ -754,6 +782,7 @@ class _Disp
         });
     }
 
+    // 等待 所有 disp 都結束
     async wait()
     {
         if(!this._promises || this._promises.length===0) {return;}
@@ -893,14 +922,14 @@ export class Role extends Entity
     st_moving(...args) {return this._path.move(...args);}
     stop(...args) {return this._path.stop(...args);}
 
-    addSprite(sprite)
+    _addSprite(sprite)
     {
         if(!sprite) {return;}
         let [key,frame]=sprite.split('/');
         this.setTexture(key,frame);
     }
 
-    initData()
+    _initData()
     {
         let roleD = DB.role(this.id);
 
@@ -921,64 +950,14 @@ export class Role extends Entity
         return roleD;
     }
 
-    init_prefab()
-    {
-        if(!super.init_prefab()){return false;}
-        this.registerTimeManager();
-        return true;
-    }
-
-    init_runtime(id,modify=false)
-    {
-        this.registerTimeManager();
-
-        this.id = id;
-        let roleD = this.initData();
-
-        // console.log(roleD)
-        
-        this._shape = new _Shape(this.scene, roleD);
-        this.add(this._shape);
-
-        this._skill = new _Skill(this);
-        this._anim = new _Anim(this); 
-        this._action = new _Action(this);
-        this._path = new _Path(this);
-        this._disp = new _Disp(this);
-
-        this.addSprite(roleD.sprite);
-        this.addListener();
-        this.pos = this.getPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
-        this.addPhysics();
-        this.addGrid();
-        this.setAnchor(modify);
-        this.updateDepth();
-        this.addWeight();
-        this.addToObjects();
-        // this.debugDraw('zone')
-        return this;
-    }
-
-    loadData()
+    _loadData()
     {
         if(this.isPlayer) {return Record.data.player;}
         else if(this.uid==-1) {return Record.data.roles?.[this.id];}
-        else {return super.loadData();}
+        else {return super._loadData();}
     }
 
-    load()
-    {
-        let roleD = DB.role(this.id);
-        this.role = roleD;
-        let data = this.loadData();
-        this.rec = new _RoleInit(roleD, data);
-        this.equip();
-        return this;
-    }
-
-    save() {return this.rec.save();}
-
-    addLight()
+    _addLight()
     {
         if(!this.light)
         {
@@ -989,7 +968,7 @@ export class Role extends Entity
         }
     }
 
-    removeLight()
+    _removeLight()
     {
         if(this.light)
         {
@@ -998,16 +977,30 @@ export class Role extends Entity
         }
     }
 
-    addToRoleList() {this.scene.roles.push(this);}
+    _addToRoleList() {this.scene.roles.push(this);}
 
-    removeFromRoleList() 
+    _removeFromRoleList() 
     {
         console.log(this.id,'remove role')
         const index = this.scene.roles.indexOf(this);
         if (index > -1) {this.scene.roles.splice(index, 1);}
     }
 
-    stepMove(h,v)
+    _faceTo(pt)
+    {
+        if(pt.x==this.x) {return;}
+        if(this._sp) {this._sp.flipX = (pt.x>this.x) != this._faceR;}
+        if(this._shape) {this._shape.scaleX = (pt.x>this.x) != this._faceR ? -1 : 1;}
+    }
+
+    _checkIsTouch(ent)
+    {
+        // if(ent && this.parentContainer == ent) {return true;}
+        // return !ent ? false : this.scene.map.isNearby(ent,this.pos);
+        return !ent ? false : ent.isTouch(this);
+    }
+
+    _stepMove(h,v)
     {
         let rst = this.scene.map.stepMove(this.pos,h,v);
         if(rst.state>0)
@@ -1016,70 +1009,23 @@ export class Role extends Entity
             this.state = GM.ST_MOVING;
             this._ent = null;
             this._act = '';
-            this.resume();
+            this._resume();
         }
     }
 
-    faceTo(pt)
+    async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
-        if(pt.x==this.x) {return;}
-        if(this._sp) {this._sp.flipX = (pt.x>this.x) != this._faceR;}
-        if(this._shape) {this._shape.scaleX = (pt.x>this.x) != this._faceR ? -1 : 1;}
-    }
-
-    isInteractive(ent)
-    {
-        return this.state != GM.ST_SLEEP || this.parentContainer == ent;
-    }
-
-    checkIsTouch(ent)
-    {
-        // if(ent && this.parentContainer == ent) {return true;}
-        // return !ent ? false : this.scene.map.isNearby(ent,this.pos);
-        return !ent ? false : ent.isTouch(this);
-    }
-
-    async moveTo(pt,{duration=200,ease='expo.in'}={})
-    {
-        this.faceTo(pt);
+        this._faceTo(pt);
         this.removeWeight();
         this.addWeight(pt);
-        // this.tw_idle(false);
         this.anim.idle(false);
-        // this.tw_walk(duration/2);
         this.anim.walk(duration/2);
-        await this.step(pt,duration,ease,{onUpdate:this.setLightPos.bind(this)});
+        await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
         //this.addWeight();
         this.updateDepth();
     }
 
-    closeDoorWhenLeave(pt,w)
-    {
-        // 是否離開門，如果是，關門
-        if(this._preW==GM.W_DOOR && w!=GM.W_DOOR)    // exit door
-        {
-            let bodys = this.scene.physics.overlapCirc(this._prePt.x,this._prePt.y,0,true,true);
-            this.interact(bodys[0]?.gameObject,GM.CLOSE_DOOR);
-        }
-        this._preW = w;
-        this._prePt = pt;  
-    }
-
-    async openDoorIfNeed(pt)
-    {
-        let bodys = this.scene.physics.overlapCirc(pt.x,pt.y,0,true,true);
-        let ent = bodys[0]?.gameObject;
-
-        // 如果是門，則打開
-        if (ent && ent instanceof Door && !ent.opened) 
-        {
-            await this.interact(ent, GM.OPEN_DOOR);
-            return true;
-        }
-        return false;
-    }
-
-    async action(ent, act)
+    async _cmd(ent, act)
     {
         act = act??ent?.act;
         
@@ -1094,15 +1040,10 @@ export class Role extends Entity
             await this.interact(ent,act);
         }
 
-        if(this.isPlayer) {this.resume();}
+        if(this.isPlayer) {this._resume();}
     }
 
-    next()
-    {
-        this.resume();
-    }
-
-    step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
+    _step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
     {
         return new Promise((resolve)=>{
             this.scene.tweens.add({
@@ -1120,11 +1061,11 @@ export class Role extends Entity
         });
     }
 
-    async pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
+    async _pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
-    resume() {this._resolve?.();this._resolve=null;}
+    _resume() {this._resolve?.();this._resolve=null;}
 
-    isInAttackRange(ent)
+    _isInAttackRange(ent)
     {
         // let range = this.status.attrs[GM.P_RANGE];
         let range = this.getTotalStats()[GM.RANGE];
@@ -1135,7 +1076,7 @@ export class Role extends Entity
         return dx <= range && dy <= range;
     }
 
-    looties()
+    _looties()
     {
         // let roleD = RoleDB.get(this.id);
         let roleD = DB.role(this.id);
@@ -1155,7 +1096,7 @@ export class Role extends Entity
         })
     }
 
-    checkQuest()
+    _checkQuest()
     {
         // let qid = this.data?.get('qid');
         let qid = this.qid;
@@ -1163,7 +1104,7 @@ export class Role extends Entity
         if(qid) {QuestManager.check(qid,{type:GM.KILL,id:this.id});}
     }
 
-    async dead(attacker)
+    async _dead(attacker)
     {
         if(this.state === GM.ST_DEATH) {return;}
         this.state = GM.ST_DEATH;
@@ -1171,73 +1112,32 @@ export class Role extends Entity
         if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
         else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
        
-        this.checkQuest();
+        this._checkQuest();
         await this.disp.wait();
-        this.looties();
+        this._looties();
         new _Corpse(this.scene, this.x, this.y, this.id);
-        this.removed(); 
+        this._removed(); 
     }
 
-    removed()
+    _removed()
     {
         // 不可以放到 destroy()，離開場景時，如果呼叫 removeWeight() 會出現錯誤，
         // 因為此時 this.scene.map 已經移除了
         this.removeWeight();
-        this.removeFromRoleList();
-        this.unregisterTimeManager();
+        this._removeFromRoleList();
+        this._unregisterTimeManager();
 
-        super.removed();
-    }
-
-    destroy()
-    {
-        // 強制清除 timeout()，避免離開場景時，觸發 timeout，導致錯誤
-        if (this._to) {clearTimeout(this._to);this._to=null;}
-        
-        super.destroy();
-    }
-
-    equip()
-    {
-        this.removeLight();
-        this._shape?.removeEquips();
-
-        console.log(`${this.id}-------------------------------${this.rec.equips}`)
-        this.rec.equips.forEach((equip)=>{
-            if(equip && equip.id)
-            {
-                let item = DB.item(equip.id);
-                this._shape?.addEquip(item);
-                if(item.light) {this.addLight();}
-            }
-        })
-
-        // this.sortParts()
-
-        this.getTotalStats();
-
-        if(this.isPlayer) {this.send('refresh');}
+        super._removed();
     }
 
     // 檢查 p 這個點是否被佔用，如果被佔用，則尋找一個可用的點
-    getPos(p)
+    _getUnoccupiedPos(p)
     {
         if(this.scene.map.getWeight(p)<GM.W_BLOCK) {return p;}
         return this.scene.map.getValidPoint(p,false);
     }
-
-    registerTimeManager()
-    {
-        this._updateTimeCallback = this.updateTime.bind(this); // 保存回调函数引用
-        TimeManager.register(this._updateTimeCallback);
-    }
-
-    unregisterTimeManager()
-    {
-        TimeManager.unregister(this._updateTimeCallback);
-    }
-
-    setLightPos()
+   
+    _setLightPos()
     {
         if(this.light)
         {
@@ -1246,7 +1146,7 @@ export class Role extends Entity
         }
     }
 
-    setLightInt()
+    _setLightInt()
     {
         if(this.light)
         {
@@ -1255,25 +1155,33 @@ export class Role extends Entity
         }
     }
 
-    async updateTime(dt)
+    _registerTimeManager()
     {
-        this.setLightInt();
-        this.updateStates(dt);
-        this.applyEffects(dt);
-        this.updateEquips(dt);
+        this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
+        TimeManager.register(this._updateTimeCallback);
+    }
+
+    _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
+
+    async _updateTime(dt)
+    {
+        this._setLightInt();
+        this._updateStates(dt);
+        this._applyEffects(dt);
+        this._updateEquips(dt);
         this.getTotalStats();
         if(this.isPlayer) {this.send('refresh');}
 
         await this.disp.wait();
     }
 
-    updateStates(dt=1)
+    _updateStates(dt=1)
     {
         this.rec.states[GM.HUNGER] = Math.min(this.rec.states[GM.HUNGER] + GM.HUNGER_INC * dt, 100);
         this.rec.states[GM.THIRST] = Math.min(this.rec.states[GM.THIRST] + GM.THIRST_INC * dt, 100);
     }
 
-    updateEquips(dt)
+    _updateEquips(dt)
     {
         for(let i=0; i<this.rec.equips.length;i++)
         {
@@ -1290,30 +1198,7 @@ export class Role extends Entity
         }
     }
 
-    getBodiesInRect(range, checkBlock)
-    {
-        let x = this.x - range * GM.TILE_W;
-        let y = this.y - range * GM.TILE_H;
-        let width = 2 * range * GM.TILE_W;
-        let height = 2 * range * GM.TILE_H;
-
-        console.log(x,y,width,height,range)
-        let includeDynamic = true;
-        let includeStatic = false;
-        let bodies = this.scene.physics.overlapRect(x, y, width, height, includeDynamic, includeStatic);
-        bodies = bodies.filter(body=>{
-            if(body.gameObject===this) {return false;}
-            if(checkBlock)
-            {
-                let hits = Utility.raycast(this.x,this.y,body.x,body.y,[this.scene.staGroup])
-                return hits.length===0;
-            }
-            return true;
-        })
-        return bodies;
-    }
-
-    showRange(on, range, checkBlock)
+    _showRange(on, range, checkBlock)
     {
         this._range?.clear();
         if(!on) {return;}
@@ -1364,7 +1249,7 @@ export class Role extends Entity
         this.a=a;
     }
 
-    deriveStats(base) 
+    _deriveStats(base) 
     {
         const out = {};
         // 1) Vital & resource
@@ -1388,74 +1273,71 @@ export class Role extends Entity
         return out;
     }
 
-    getEffects()
+    _calculateDamage(attacker, defender, skill) 
     {
-        return this.rec.activeEffects;
-    }
+        // console.log('skill------------------',skill?.dat)
+        const aStats = attacker.getTotalStats();
+        const dStats = defender.getTotalStats(aStats.mTarget);
+        console.log(aStats,dStats)
 
-    addEffect(effect,types=['hot','dot','buff','debuff'])
-    {
-        if(!types.includes(effect.type)) {return;}
+        // 計算是否命中
+        let hit = aStats[GM.HIT] + (skill?.dat?.self?.hit??0); 
+        let dodge = dStats[GM.DODGE] + (skill?.dat?.target?.dodge??0);
+        let rnd = Math.random();
+        // console.log('---------------------------------',rnd,hit,hit-dodge)
+        if(rnd >= hit) {return {amount:0, type:GM.MISS};}
+        else if(rnd >= (hit-dodge)) {return {amount:0, type:GM.DODGE};}
 
-        const maxStack = effect.maxStack || 99;
-        if (true)//effect.stackable) 
-        {
-            const existingStacks = this.rec.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
-            if (existingStacks.length >= maxStack) {
-                console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
-                return;
-            }
-            const newEff = { ...effect, remaining: effect.dur, newAdd:true };
-            this.rec.activeEffects.push(newEff);
-            console.log(`${this.name} 疊加 ${effect.tag} 效果（第 ${existingStacks.length + 1} 層）`);
-        } 
-        else 
-        {
-            const existing = this.rec.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
-            if (existing) 
-            {
-                existing.remaining = effect.duration;
-                existing.value = effect.value;
-                console.log(`${this.name} 的 ${effect.tag} 效果已刷新`);
-            } 
-            else 
-            {
-                const newEff = { ...effect, remaining: effect.dur, newAdd:true };
-                this.rec.activeEffects.push(newEff);
-                console.log(`${this.name} 獲得 ${effect.type}：${effect.stat || effect.tag} ${effect.value * 100 || effect.value}% 持續 ${effect.duration} 回合`);
-            }
-        }
-    }
 
-    takeDamage(dmg) 
-    {
-        switch(dmg.type)
+        // 計算 Effect
+        let effs = [...aStats.mTarget.effs,...(skill?.dat?.effects??[])]
+        // console.log('---------------effs',effs)
+        for(const effect of effs)
         {
-            case GM.CRIT:
-                this.disp.add(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
-                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
-                console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
-                break;
-            case GM.DODGE:
-                this.disp.add(GM.DODGE.lab(), '#0f0', '#000');
-                break;
-            case GM.MISS:
-                this.disp.add(GM.MISS.lab(), '#0f0', '#000');
-                break;
-            default:
-                this.disp.add(-dmg.amount, '#f00', '#fff');
-                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
-                console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
+            defender.addEffect(effect,['dot','debuff']);
         }
 
-        this.total[GM.HP] = this.rec.states[GM.HP];
+        // for(const effect of aStats.mTarget.effs)
+        // {
+        //     defender.addEffect(effect,['dot','debuff']);
+        // }
 
-        if(this.isPlayer) {this.send('refresh');}
+        // for(const effect of skill?.dat?.effects??[])
+        // {
+        //     defender.addEffect(effect,['dot','debuff']);
+        // }
 
-        if(this.rec.states[GM.HP] === 0) {this.dead();}   
+        // 計算傷害
+        let type = 'normal';
+        let atk = aStats[GM.ATK] || 0;          // 基本攻擊
+        let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性
+        let mul = skill?.dat?.mul ?? 1;         // 傷害倍率
+        let penetrate = skill?.dat?.pen ?? 0;   // 防禦穿透率
+
+        // 1. 計算基礎傷害
+        let baseDamage = atk * mul;
+        // 2. 計算防禦係數
+        const effectiveDef = dStats.def * (1 - penetrate);
+        let defFactor = baseDamage / (baseDamage + effectiveDef);
+        // 3. 計算實際傷害
+        let damage = baseDamage * defFactor;
+        const resist = dStats.resists?.[elm+'_res'] || 0;
+        damage *= 1 - resist;
+        // 4. 計算暴擊
+        if (Math.random() < aStats[GM.CRITR]) 
+        {
+            damage *= aStats[GM.CRITD];
+            console.log(`💥 ${attacker.name} 暴擊！`);
+            type = GM.CRIT;
+        }
+        // 5. 浮動傷害(0.85 ~ 1.05)
+        damage *= 0.95 + Math.random() * 0.1;
+        damage = Math.round(Math.max(1, damage))
+
+        return {amount:damage, type:type};
     }
 
-    applyEffects() 
+    _applyEffects() 
     {
         const expired = [];
         for (const e of this.rec.activeEffects) 
@@ -1494,6 +1376,9 @@ export class Role extends Entity
         }
     }
 
+    /////////////////////////////////////////////////////
+    // public
+    /////////////////////////////////////////////////////
     getTotalStats(extern) 
     {
         let calc = function(stats, out)
@@ -1564,7 +1449,7 @@ export class Role extends Entity
         for (const [k, v] of Object.entries(mSelf.baseMul)) {base[k] = (base[k] || 0) * (1 + v);}
 
         // 5) 修正後的 base 推導 derived
-        const derived = this.deriveStats(base);
+        const derived = this._deriveStats(base);
 
         // 6) 合併：base 值優先，derived 補空位
         const total = { ...derived, ...base};
@@ -1582,71 +1467,152 @@ export class Role extends Entity
         return total;
     }
 
-    calculateDamage(attacker, defender, skill) 
+    takeDamage(dmg) 
     {
-        console.log('skill------------------',skill?.dat)
-        const aStats = attacker.getTotalStats();
-        const dStats = defender.getTotalStats(aStats.mTarget);
-        console.log(aStats,dStats)
-
-        // 計算是否命中
-        let hit = aStats[GM.HIT] + (skill?.dat?.self?.hit??0); 
-        let dodge = dStats[GM.DODGE] + (skill?.dat?.target?.dodge??0);
-        let rnd = Math.random();
-        console.log('---------------------------------',rnd,hit,hit-dodge)
-        if(rnd >= hit) {return {amount:0, type:GM.MISS};}
-        else if(rnd >= (hit-dodge)) {return {amount:0, type:GM.DODGE};}
-
-
-        // 計算 Effect
-        let effs = [...aStats.mTarget.effs,...(skill?.dat?.effects??[])]
-        console.log('---------------effs',effs)
-        for(const effect of effs)
+        switch(dmg.type)
         {
-            defender.addEffect(effect,['dot','debuff']);
+            case GM.CRIT:
+                this.disp.add(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
+                console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
+                break;
+            case GM.DODGE:
+                this.disp.add(GM.DODGE.lab(), '#0f0', '#000');
+                break;
+            case GM.MISS:
+                this.disp.add(GM.MISS.lab(), '#0f0', '#000');
+                break;
+            default:
+                this.disp.add(-dmg.amount, '#f00', '#fff');
+                this.rec.states[GM.HP] = Math.max(0, this.rec.states[GM.HP]-dmg.amount); 
+                console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
 
-        // for(const effect of aStats.mTarget.effs)
-        // {
-        //     defender.addEffect(effect,['dot','debuff']);
-        // }
+        this.total[GM.HP] = this.rec.states[GM.HP];
 
-        // for(const effect of skill?.dat?.effects??[])
-        // {
-        //     defender.addEffect(effect,['dot','debuff']);
-        // }
+        if(this.isPlayer) {this.send('refresh');}
 
-        // 計算傷害
-        let type = 'normal';
-        let atk = aStats[GM.ATK] || 0;          // 基本攻擊
-        let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性
-        let mul = skill?.dat?.mul ?? 1;         // 傷害倍率
-        let penetrate = skill?.dat?.pen ?? 0;   // 防禦穿透率
-
-        // 1. 計算基礎傷害
-        let baseDamage = atk * mul;
-        // 2. 計算防禦係數
-        const effectiveDef = dStats.def * (1 - penetrate);
-        let defFactor = baseDamage / (baseDamage + effectiveDef);
-        // 3. 計算實際傷害
-        let damage = baseDamage * defFactor;
-        const resist = dStats.resists?.[elm+'_res'] || 0;
-        damage *= 1 - resist;
-        // 4. 計算暴擊
-        if (Math.random() < aStats[GM.CRITR]) 
-        {
-            damage *= aStats[GM.CRITD];
-            console.log(`💥 ${attacker.name} 暴擊！`);
-            type = GM.CRIT;
-        }
-        // 5. 浮動傷害(0.85 ~ 1.05)
-        damage *= 0.95 + Math.random() * 0.1;
-        damage = Math.round(Math.max(1, damage))
-
-        return {amount:damage, type:type};
+        if(this.rec.states[GM.HP] === 0) {this._dead();}   
     }
 
-    // public
+    addEffect(effect,types=['hot','dot','buff','debuff'])
+    {
+        if(!types.includes(effect.type)) {return;}
+
+        const maxStack = effect.maxStack || 99;
+        if (true)//effect.stackable) 
+        {
+            const existingStacks = this.rec.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
+            if (existingStacks.length >= maxStack) {
+                console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
+                return;
+            }
+            const newEff = { ...effect, remaining: effect.dur, newAdd:true };
+            this.rec.activeEffects.push(newEff);
+            console.log(`${this.name} 疊加 ${effect.tag} 效果（第 ${existingStacks.length + 1} 層）`);
+        } 
+        else 
+        {
+            const existing = this.rec.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
+            if (existing) 
+            {
+                existing.remaining = effect.duration;
+                existing.value = effect.value;
+                console.log(`${this.name} 的 ${effect.tag} 效果已刷新`);
+            } 
+            else 
+            {
+                const newEff = { ...effect, remaining: effect.dur, newAdd:true };
+                this.rec.activeEffects.push(newEff);
+                console.log(`${this.name} 獲得 ${effect.type}：${effect.stat || effect.tag} ${effect.value * 100 || effect.value}% 持續 ${effect.duration} 回合`);
+            }
+        }
+    }
+
+    save() {return this.rec.save();}
+
+    load()
+    {
+        let roleD = DB.role(this.id);
+        this.role = roleD;
+        let data = this._loadData();
+        this.rec = new _RoleInit(roleD, data);
+        this.equip();
+        return this;
+    }
+
+    init_prefab()
+    {
+        if(!super.init_prefab()){return false;}
+        this._registerTimeManager();
+        return true;
+    }
+
+    init_runtime(id,modify=false)
+    {
+        this._registerTimeManager();
+
+        this.id = id;
+        let roleD = this._initData();
+
+        // console.log(roleD)
+        
+        this._shape = new _Shape(this.scene, roleD);
+        this.add(this._shape);
+
+        this._skill = new _Skill(this);
+        this._anim = new _Anim(this); 
+        this._action = new _Action(this);
+        this._path = new _Path(this);
+        this._disp = new _Disp(this);
+
+        this._addSprite(roleD.sprite);
+        this.addListener();
+        this.pos = this._getUnoccupiedPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
+        this.addPhysics();
+        this.addGrid();
+        this.setAnchor(modify);
+        this.updateDepth();
+        this.addWeight();
+        this.addToObjects();
+        // this.debugDraw('zone')
+        return this;
+    }
+
+    destroy()
+    {
+        // 強制清除 timeout()，避免離開場景時，觸發 timeout，導致錯誤
+        if (this._to) {clearTimeout(this._to);this._to=null;}
+        super.destroy();
+    }
+
+    equip()
+    {
+        this._removeLight();
+        this._shape?.removeEquips();
+
+        // console.log(`${this.id}-------------------------------${this.rec.equips}`)
+        this.rec.equips.forEach((equip)=>{
+            if(equip && equip.id)
+            {
+                let item = DB.item(equip.id);
+                this._shape?.addEquip(item);
+                if(item.light) {this._addLight();}
+            }
+        })
+
+        // this.sortParts()
+
+        this.getTotalStats();
+
+        if(this.isPlayer) {this.send('refresh');}
+    }
+
+    isInteractive(ent) {return this.state != GM.ST_SLEEP || this.parentContainer === ent;}
+
+    // 跳過這一回合
+    next() { this._resume();}
+
     async execute({pt,ent,act}={})
     {
         if(this.skill.sel)
@@ -1658,11 +1624,10 @@ export class Role extends Entity
                 this.skill.useTo(pt??ent.pos, ent);
             }
         }
-        else if( (act===GM.ATTACK && this.isInAttackRange(ent)) ||
-            this.checkIsTouch(ent) )
+        else if( (act===GM.ATTACK && this._isInAttackRange(ent)) ||
+            this._checkIsTouch(ent) )
         {
-            console.log('-------------------------------------------- goto')
-            await this.action(ent,act);
+            await this._cmd(ent,act);
             // this.resume();
         }
         else
@@ -1678,9 +1643,9 @@ export class Role extends Entity
         {
             // this.tw_idle(true);
             this.anim.idle(true);
-            console.log('[pause-1]')
-            await this.pause(); 
-            console.log('[pause-2]')
+            // console.log('[pause-1]')
+            await this._pause(); 
+            // console.log('[pause-2]')
         }
 
         switch(this.state)
@@ -1694,6 +1659,35 @@ export class Role extends Entity
         }
     }
 
+    // TBD
+    // getBodiesInRect(range, checkBlock)
+    // {
+    //     let x = this.x - range * GM.TILE_W;
+    //     let y = this.y - range * GM.TILE_H;
+    //     let width = 2 * range * GM.TILE_W;
+    //     let height = 2 * range * GM.TILE_H;
+
+    //     console.log(x,y,width,height,range)
+    //     let includeDynamic = true;
+    //     let includeStatic = false;
+    //     let bodies = this.scene.physics.overlapRect(x, y, width, height, includeDynamic, includeStatic);
+    //     bodies = bodies.filter(body=>{
+    //         if(body.gameObject===this) {return false;}
+    //         if(checkBlock)
+    //         {
+    //             let hits = Utility.raycast(this.x,this.y,body.x,body.y,[this.scene.staGroup])
+    //             return hits.length===0;
+    //         }
+    //         return true;
+    //     })
+    //     return bodies;
+    // }
+
+    // getEffects()
+    // {
+    //     return this.rec.activeEffects;
+    // }
+
 }
 
 export class Target extends Role
@@ -1703,7 +1697,7 @@ export class Target extends Role
         super(scene, x, y);
         this.weight=0;
         this._drawPath = true;
-        this.addSprite();
+        this._addSprite();
         this.updateDepth();
         //this.loop();
         this.debugDraw();
@@ -1712,7 +1706,7 @@ export class Target extends Role
 
     get isPlayer() {return true;}
 
-    addSprite()
+    _addSprite()
     {
         let [key,frame]=ICON_TARGET.split('/');
         this._sp = this.scene.add.sprite(0,0,key,frame);
@@ -1757,10 +1751,10 @@ export class Avatar extends Role
         this.on('attack',(resolve,attacker)=>{this.hurt(attacker,resolve);})
     }
 
-    dead(attacker)
+    _dead(attacker)
     {
         this.send('gameover');
-        super.dead(attacker);
+        super._dead(attacker);
     }
 
     
@@ -1775,10 +1769,10 @@ export class Npc extends Role
 
     init_prefab()
     {
-        this.initData();
+        this._initData();
         if(!super.init_prefab()) {return false;}
         
-        this.addToRoleList();
+        this._addToRoleList();
         this.load();
         return true;
     }
@@ -1786,7 +1780,7 @@ export class Npc extends Role
    
     init_runtime(id,modify=false)
     {
-        this.addToRoleList();
+        this._addToRoleList();
         return super.init_runtime(id,modify);
     }
 
@@ -1796,11 +1790,11 @@ export class Npc extends Role
         this.updateSchedule(true); // 初始化時，init 設成 true
     }
 
-    async updateTime(dt)
+    async _updateTime(dt)
     {
         this.updateSchedule();
-        this.updateStates();
-        this.applyEffects();
+        this._updateStates();
+        this._applyEffects();
         this.getTotalStats();
         await this.disp.wait();
     }
@@ -1928,7 +1922,7 @@ export class Npc extends Role
         if(act == GM.ENTER) 
         {
             // this.exit();
-            this.removed();
+            this._removed();
 
 
             // npc 離開時，將目的地的 map、port、當前時間、當前 shedule 存入 status.exit，
@@ -1938,7 +1932,7 @@ export class Npc extends Role
             // 把當下的 TimeManager.time、this._shCurrent 的值複製一份，
             // 否則在下一輪 TimeManager.time 會變成當前時間，this._shCurrent 也可能指向其他 shedule
             this.rec.exit = Utility.deepClone(exit);
-            this.save();    // 只是把 Record.data.roles[id] 指向 this.status，還未真正存檔
+            this._save();    // 只是把 Record.data.roles[id] 指向 this.status，還未真正存檔
         }
         else {super.interact(ent, act);}
     }
@@ -1972,7 +1966,7 @@ export class Npc extends Role
 
     }
 
-    save() {this.saveData(this.rec.save());}
+    _save() {this.saveData(this.rec.save());}
 
     addListener()
     {
@@ -2056,11 +2050,6 @@ export class Npc extends Role
                 await this.st_moving();
                 break;
 
-            case GM.ST_ACTION:
-                // console.log(`[npc ${this.id}] action`);
-                await this.action();
-                break;
-
             case GM.ST_ATTACK:
                 // console.log(`[npc ${this.id}] attack`);
                 await this.st_attack();
@@ -2087,32 +2076,12 @@ export class Npc extends Role
         }
     }
 
-    // async st_attack()
-    // {
-    //     if(this.isInAttackRange(this._ent))
-    //     {
-    //         await this.action(this._ent,GM.ATTACK);
-    //     }
-    //     else
-    //     {
-    //         let rst = this.scene.map.getPath(this.pos, this._ent.pts);
-    //         if(rst?.state > 0)    // 找到路徑
-    //         {
-    //             await this.moveTo(rst.path[0]);  // 移至 pt     
-    //         }        
-    //         else
-    //         {
-    //             this.state = GM.ST_IDLE;
-    //         }
-    //     }
-    // }
-
     async st_attack()
     {
-        if( this.isInAttackRange(this._ent) )
+        if( this._isInAttackRange(this._ent) )
         {
             console.log('---------------------- chk1')
-            await this.action(this._ent,this._act);
+            await this._cmd(this._ent,this._act);
         }
         else
         {
@@ -2166,7 +2135,7 @@ export class Enemy extends Npc
     init_prefab()
     {
         console.log('----------------------',this.uid,this.qid)
-        let data = this.loadData();
+        let data = this._loadData();
         if(!data?.removed)
         {
             this.init_runtime(this.id,true).load();

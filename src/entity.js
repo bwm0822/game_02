@@ -313,7 +313,7 @@ export class Entity extends Phaser.GameObjects.Container
 
         this.updateFlip()
 
-        let data = this.loadData();
+        let data = this._loadData();
         if(data?.removed) 
         {
             if(this.uid!=-1) {this.saveData({removed:true})}
@@ -475,7 +475,7 @@ export class Entity extends Phaser.GameObjects.Container
         });
     }
 
-    loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
+    _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
     saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
 
     debugDraw(type=DBG_TYPE,text)
@@ -582,7 +582,7 @@ export class Entity extends Phaser.GameObjects.Container
 
     addToObjects() {this.scene.objects.push(this);}
 
-    removed()
+    _removed()
     {
         if(this.uid!=-1) {this.saveData({removed:true})}
         this.removeFromObjects();
@@ -624,7 +624,7 @@ export class Case extends Entity
     load()
     {
         this.owner={name:this.name};
-        let data = this.loadData();
+        let data = this._loadData();
         if(data) {this._storage = data;}
         else 
         {
@@ -664,7 +664,7 @@ export class Pickup extends Entity
             this.send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
             this.send('out');
             this.send('refresh');
-            this.removed();
+            this._removed();
         }   
     }
 
@@ -795,7 +795,7 @@ export class Stove extends Entity
     load()
     {
         this.owner={name:this.name};
-        let data = this.loadData();
+        let data = this._loadData();
         if(data) 
         {
             this._storage = data.storage;
@@ -860,7 +860,7 @@ export class Door extends Entity
     // 檢查門上是否障礙物
     checkOverlap()
     {
-        for(let elm of this.scene.phyGroup.children.entries)
+        for(let elm of this.scene.dynGroup.children.entries)
         {
             if (this.scene.physics.world.overlap(this, elm)) 
             {
