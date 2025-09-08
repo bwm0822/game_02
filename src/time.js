@@ -255,7 +255,7 @@ export class Schedular
                 let ents = this.toEnts(sh.p);
                 console.log('[time] check',sh.id, sh.t); 
                 let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
-                npc.init_runtime(sh.id).load();
+                npc.init_runtime(sh.id).load().initSchedule();
             }
         })
     }
