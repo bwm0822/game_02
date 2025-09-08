@@ -18,7 +18,7 @@ export class Entity extends Phaser.GameObjects.Container
         super(scene, x, y);
         this.scene = scene;
         scene.add.existing(this);
-        this.enableOutline();
+        this._enableOutline();
         this.interactive = false;
         this.en_outline = true;
         this.weight = 0;
@@ -36,7 +36,6 @@ export class Entity extends Phaser.GameObjects.Container
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone 的 left, right, top, bottom，interactive=true 才有作用
         this.anchorX = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
         this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角
-
     }
 
     // get pt() {return {x:this.x, y:this.y}}
@@ -61,19 +60,6 @@ export class Entity extends Phaser.GameObjects.Container
     get displayHeight() {return this._h;}
 
     get mapName() {return this.scene._data.map;}
-
-    // checkInside(role) {return true;}
-
-    isTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
-    // isAt(role) {return role.pos.x===this.pos.x && role.pos.y===this.pos.y;}
-    isAt(role) {return this.isAtPts(role);}
-    isAtPts(role)
-    {
-        for(let p of this.pts) {if(p.x===role.pos.x && p.y===role.pos.y){return true;}}
-        return false;
-    }
-
-    send(type, ...args) {this.scene.events.emit(type, ...args);}
 
     setTexture(key,frame,scale)   // map.createFromObjects 會呼叫到，此時 anchorX, anchorY 還沒被設定
     {
@@ -102,14 +88,6 @@ export class Entity extends Phaser.GameObjects.Container
         this._sp && (this._sp.flipX = horizontal);
         this._sp && (this._sp.flipY = vertical);
     } 
-
-
-    enableOutline()
-    {
-        this._outline = this.scene.plugins.get('rexOutlinePipeline');
-        this.on('outline', (on) => {this.outline(on);})
-    }
-
   
     addListener()
     {
@@ -125,31 +103,39 @@ export class Entity extends Phaser.GameObjects.Container
         this._zone
             .on('pointerover',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(true);
-                this.send('over',this);
-                if(DEBUG){this.debugDraw(undefined,this.y);}
+                this._setOutline(true);
+                this._send('over',this);
+                if(DEBUG){this._debugDraw(undefined,this.y);}
             })
             .on('pointerout',()=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                this.outline(false);
-                this.send('out');
-                if(DEBUG){this.debugDraw(GM.DBG_CLR);}
+                this._setOutline(false);
+                this._send('out');
+                if(DEBUG){this._debugDraw(GM.DBG_CLR);}
             })
             .on('pointerdown',(pointer)=>{
                 if(!Role.getPlayer().isInteractive(this)) {return;}
-                if (pointer.rightButtonDown()) {this.rightButtonDown();}
+                if (pointer.rightButtonDown()) {this._rightButtonDown();}
             })
     }
 
-    rightButtonDown()
+    _send(type, ...args) {this.scene.events.emit(type, ...args);}
+
+    _rightButtonDown()
     {
         // world space to screen space
         let x = this.x - this.scene.cameras.main.worldView.x;
         let y = this.y - this.scene.cameras.main.worldView.y;
-        if(this.acts.length>0) {this.send('option',x,y-10,this.acts,this);}
+        if(this.acts.length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
-    outline(on)
+    _enableOutline()
+    {
+        this._outline = this.scene.plugins.get('rexOutlinePipeline');
+        this.on('outline', (on) => {this._setOutline(on);})
+    }
+
+    _setOutline(on)
     {
         if(!this.en_outline) {return;}
 
@@ -165,12 +151,12 @@ export class Entity extends Phaser.GameObjects.Container
         }
         else
         {
-            this.outline_rect(on);
+            this._setOutline_rect(on);
         }
         
     }
 
-    outline_rect(on)
+    _setOutline_rect(on)
     {
         if(!this._rect)
         {
@@ -199,8 +185,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._rect.visible = on;
     }
 
-   
-    addPhysics()
+    _addPhysics()
     {
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
@@ -217,16 +202,7 @@ export class Entity extends Phaser.GameObjects.Container
         }
     }
 
-    isInGrid(pos)
-    {
-        let p = {x:pos.x-this.x,y:pos.y-this.y};
-        return p.x > (this.min.x + this.gl) && 
-                p.x < (this.max.x - this.gr) && 
-                p.y > (this.min.y + this.gt) && 
-                p.y < (this.max.y - this.gb);
-    }
-
-    addGrid()
+    _addGrid()
     {
         this.grid = {};
 
@@ -237,13 +213,13 @@ export class Entity extends Phaser.GameObjects.Container
         this.grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
     }
 
-    removeWeight(weight)
+    _removeWeight(weight)
     {
         let wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this.grid.w,this.grid.h);
     }
 
-    addWeight(pt,weight)
+    _addWeight(pt,weight)
     {
         let wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this.grid.w,this.grid.h);
@@ -254,23 +230,14 @@ export class Entity extends Phaser.GameObjects.Container
 
     }
 
-    updateDepth()
+    _updateDepth()
     {
         let depth = this.y;
         this.setDepth(depth);
         //this.debug(depth.toFixed(1));
     }
 
-    toStorage(capacity,items)
-    {
-        if(capacity == undefined) {capacity = -1;}
-        if(!items) {items = [];}
-        let bag={capacity:capacity,items:[]};
-        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
-        return bag;
-    }
-
-    setAnchor(modify=false)
+    _setAnchor(modify=false)
     {
         if(this._sp) {this._sp.x = -this.anchorX; this._sp.y = -this.anchorY;}
 
@@ -278,7 +245,7 @@ export class Entity extends Phaser.GameObjects.Container
         if(modify) {this.x+=this.anchorX;this.y+=this.anchorY;}
     }
 
-    updateFlip()
+    _updateFlip()
     {
         if(this._flipX)
         {
@@ -297,77 +264,7 @@ export class Entity extends Phaser.GameObjects.Container
         }
     }
 
-    init_prefab()
-    {
-        if(this.name)
-        {
-            if(!this.scene.ents) {this.scene.ents={};}
-            this.scene.ents[this.name] = this;
-        }
-
-        if(this.data)
-        {
-            let json_pts = this.data.get('json_pts');
-            if(json_pts) {this._pts = JSON.parse(json_pts);}
-        }
-
-        this.updateFlip()
-
-        let data = this._loadData();
-        if(data?.removed) 
-        {
-            if(this.uid!=-1) {this.saveData({removed:true})}
-            this.destroy(); 
-            return false;
-        }
-
-        this.addListener();
-        //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
-        this.addPhysics();
-        this.addGrid();
-        this.setAnchor(true);
-        this.updateDepth();
-        this.addWeight();
-        this.addToObjects();
-        // this.debugDraw();
-        return true;
-        
-    }
-
-    init_runtime(itm)
-    {
-        this.itm = itm;
-        this.dat = DB.item(itm.id);
-        if(this.dat.drop)
-        {
-            let [key,frame] = this.dat.drop.sprite.split('/');
-            this.setTexture(key,frame,this.dat.drop.scale);
-        }
-        else
-        {
-            let [key,frame] = this.dat.icon.split('/');
-            this.setTexture(key,frame);
-        }
-
-        this._w = Math.max(GM.TILE_W, this._sp.displayWidth);
-        this._h = Math.max(GM.TILE_H, this._sp.displayHeight);
-        
-        this.addListener();
-        this.addPhysics();
-        this.addGrid();
-        this.updateDepth();
-        this.addWeight();
-        this.addToObjects();
-        return this;
-    }
-
-    transfer(target, ent)
-    {
-        if(target.take(ent)) {return true;}
-        return false;
-    }
-
-    findEmpty()
+    _findEmpty()
     {
         let capacity = this.storage.capacity;
         let count = this.storage.items.length;
@@ -378,107 +275,10 @@ export class Entity extends Phaser.GameObjects.Container
         return i;
     }
 
-    putStorage(id, count)
-    {
-        let cps = DB.item(id).cps ?? 1;
-
-        let i = 0;
-        let capacity = this.storage.capacity;
-        let len = this.storage.items.length;
-        let items = this.storage.items;
-        while(count>0 && (capacity == -1 || i<capacity))
-        {
-            if(i<len)
-            {
-                if(Utility.isEmpty(items[i]))
-                {
-                    items[i]={id:id, count:Math.min(count,cps)}
-                    count-=items[i].count
-
-                }
-                else if(items[i].id==id && items[i].count<cps)
-                {
-                    let sum = items[i].count+count;
-                    items[i].count = Math.min(sum,cps)
-                    count = sum-cps;
-                }
-            }
-            else
-            {
-                let min = Math.min(count,cps);
-                items.push({id:id, count:min});
-                count-=min;
-            }
-            i++;
-        }
-
-        if(count>0)
-        {
-            let ent = {label:id.lab(),itm:{id:id,count:count}}
-            this.drop(ent)
-        }
-       
-    }
-
-    take(ent, i, isEquip)
-    {
-        !i && (i = this.findEmpty());
-
-        if(i!=-1)
-        {
-            if(isEquip) {this.status.equips[i]=ent.itm; this.equip();}
-            else {this.storage.items[i]=ent.itm;}
-            return true;
-        }
-        else
-        {  
-            this.send('msg','_space_full'.lab());
-            return false;
-        }
-    }
-
-    split(ent, cnt)
-    {
-        // let count = ent.slot.count;
-        // let half = Math.floor(count/2);
-        ent.itm.count -= cnt;
-        let split = {id:ent.itm.id,count:cnt};
-        let i = this.findEmpty();
-        if(i!=-1) {this.storage.items[i]=split;}
-    }
-
-    drop(ent)   // ent 有可能是 slot 或 UiDragged
-    {
-        let p = this.scene.map.getValidPoint(this.pos);
-        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
-        obj.falling(p);
-        AudioManager.drop();
-        this.send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
-    }
-
-    falling(p)
-    {
-        let tx = (this.x+p.x)/2;
-        let ty = this.y-32;
-        let a = Phaser.Math.Between(-45, 45);
-        
-        this.scene.tweens.chain({
-            targets: this,
-            tweens:[{x:tx, angle:a, duration:100, ease:'linear'},
-                    {x:p.x, angle:2*a, duration:100, ease:'linear'}]
-        });
-
-        this.scene.tweens.chain({
-            targets: this,
-            tweens:[{y:ty, duration:100, ease:'exp.out'},
-                    {y:p.y, duration:100, ease:'exp.in'}]
-        });
-    }
-
     _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
-    saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
+    _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
 
-    debugDraw(type=DBG_TYPE,text)
+    _debugDraw(type=DBG_TYPE,text)
     {
         if(!this._dbgGraphics)
         {
@@ -574,18 +374,18 @@ export class Entity extends Phaser.GameObjects.Container
         show_text(text);
     }
 
-    removeFromObjects()
+    _removeFromObjects()
     {
         const index = this.scene.objects.indexOf(this);
         if(index>-1) {this.scene.objects.splice(index,1);}
     }
 
-    addToObjects() {this.scene.objects.push(this);}
+    _addToObjects() {this.scene.objects.push(this);}
 
     _removed()
     {
-        if(this.uid!=-1) {this.saveData({removed:true})}
-        this.removeFromObjects();
+        if(this.uid!=-1) {this._saveData({removed:true})}
+        this._removeFromObjects();
         if(this._dbgGraphics){this._dbgGraphics.destroy();}
         if(this._dbgText) {this._dbgText.destroy();}
         if(this._rect) {this._rect.destroy();}
@@ -593,6 +393,194 @@ export class Entity extends Phaser.GameObjects.Container
         this.destroy();
     }
 
+    ///////////////////////////////////////////////////////
+    // public
+    ///////////////////////////////////////////////////////
+    isTouch(role) {return this.scene.map.isTouch(this.posG,this.grid.w,this.grid.h,role.pos)}
+    // isAt(role) {return role.pos.x===this.pos.x && role.pos.y===this.pos.y;}
+    isAt(role) {return this.isAtPts(role);}
+    isAtPts(role)
+    {
+        for(let p of this.pts) {if(p.x===role.pos.x && p.y===role.pos.y){return true;}}
+        return false;
+    }
+
+    init_prefab()
+    {
+        if(this.name)
+        {
+            if(!this.scene.ents) {this.scene.ents={};}
+            this.scene.ents[this.name] = this;
+        }
+
+        if(this.data)
+        {
+            let json_pts = this.data.get('json_pts');
+            if(json_pts) {this._pts = JSON.parse(json_pts);}
+        }
+
+        this._updateFlip()
+
+        let data = this._loadData();
+        if(data?.removed) 
+        {
+            if(this.uid!=-1) {this._saveData({removed:true})}
+            this.destroy(); 
+            return false;
+        }
+
+        this.addListener();
+        //this.interactive&&this.setInteractive();  //必須在 this.setSize()之後執行才會有作用
+        this._addPhysics();
+        this._addGrid();
+        this._setAnchor(true);
+        this._updateDepth();
+        this._addWeight();
+        this._addToObjects();
+        // this._debugDraw();
+        return true;
+        
+    }
+
+    init_runtime(itm)
+    {
+        this.itm = itm;
+        this.dat = DB.item(itm.id);
+        if(this.dat.drop)
+        {
+            let [key,frame] = this.dat.drop.sprite.split('/');
+            this.setTexture(key,frame,this.dat.drop.scale);
+        }
+        else
+        {
+            let [key,frame] = this.dat.icon.split('/');
+            this.setTexture(key,frame);
+        }
+
+        this._w = Math.max(GM.TILE_W, this._sp.displayWidth);
+        this._h = Math.max(GM.TILE_H, this._sp.displayHeight);
+        
+        this.addListener();
+        this._addPhysics();
+        this._addGrid();
+        this._updateDepth();
+        this._addWeight();
+        this._addToObjects();
+        return this;
+    }
+
+    transfer(target, ent)
+    {
+        if(target.take(ent)) {return true;}
+        return false;
+    }
+
+    putStorage(id, count)
+    {
+        let cps = DB.item(id).cps ?? 1;
+
+        let i = 0;
+        let capacity = this.storage.capacity;
+        let len = this.storage.items.length;
+        let items = this.storage.items;
+        while(count>0 && (capacity == -1 || i<capacity))
+        {
+            if(i<len)
+            {
+                if(Utility.isEmpty(items[i]))
+                {
+                    items[i]={id:id, count:Math.min(count,cps)}
+                    count-=items[i].count
+
+                }
+                else if(items[i].id==id && items[i].count<cps)
+                {
+                    let sum = items[i].count+count;
+                    items[i].count = Math.min(sum,cps)
+                    count = sum-cps;
+                }
+            }
+            else
+            {
+                let min = Math.min(count,cps);
+                items.push({id:id, count:min});
+                count-=min;
+            }
+            i++;
+        }
+
+        if(count>0)
+        {
+            let ent = {label:id.lab(),itm:{id:id,count:count}}
+            this.drop(ent)
+        }
+       
+    }
+
+    take(ent, i, isEquip)
+    {
+        !i && (i = this._findEmpty());
+
+        if(i!=-1)
+        {
+            if(isEquip) {this.status.equips[i]=ent.itm; this.equip();}
+            else {this.storage.items[i]=ent.itm;}
+            return true;
+        }
+        else
+        {  
+            this._send('msg','_space_full'.lab());
+            return false;
+        }
+    }
+
+    split(ent, cnt)
+    {
+        // let count = ent.slot.count;
+        // let half = Math.floor(count/2);
+        ent.itm.count -= cnt;
+        let split = {id:ent.itm.id,count:cnt};
+        let i = this._findEmpty();
+        if(i!=-1) {this.storage.items[i]=split;}
+    }
+
+    drop(ent)   // ent 有可能是 slot 或 UiDragged
+    {
+        let p = this.scene.map.getValidPoint(this.pos);
+        let obj = new Pickup(this.scene,this.x,this.y-32).init_runtime(ent.itm);
+        obj.falling(p);
+        AudioManager.drop();
+        this._send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
+    }
+
+    falling(p)
+    {
+        let tx = (this.x+p.x)/2;
+        let ty = this.y-32;
+        let a = Phaser.Math.Between(-45, 45);
+        
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{x:tx, angle:a, duration:100, ease:'linear'},
+                    {x:p.x, angle:2*a, duration:100, ease:'linear'}]
+        });
+
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{y:ty, duration:100, ease:'exp.out'},
+                    {y:p.y, duration:100, ease:'exp.in'}]
+        });
+    }
+
+    // TBD
+    // isInGrid(pos)
+    // {
+    //     let p = {x:pos.x-this.x,y:pos.y-this.y};
+    //     return p.x > (this.min.x + this.gl) && 
+    //             p.x < (this.max.x - this.gr) && 
+    //             p.y > (this.min.y + this.gt) && 
+    //             p.y < (this.max.y - this.gb);
+    // }
 }
 
 
@@ -630,13 +618,13 @@ export class Case extends Entity
         {
             let jsonData = this.data?.get('items');
             let items = jsonData ? JSON.parse(jsonData) : [];
-            this._storage = this.toStorage(-1,items);
+            this._storage = Utility.toStorage(-1,items);
         }   
     }
 
-    save() { this.saveData(this._storage); }
+    save() { this._saveData(this._storage); }
 
-    open() { this.send('storage', this); }
+    open() { this._send('storage', this); }
 }
 
 
@@ -661,9 +649,9 @@ export class Pickup extends Entity
     {
         if(taker.take(this))
         {
-            this.send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
-            this.send('out');
-            this.send('refresh');
+            this._send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
+            this._send('out');
+            this._send('refresh');
             this._removed();
         }   
     }
@@ -680,8 +668,8 @@ export class Pickup extends Entity
 
     save()
     {
-        if(this.uid!=-1) {this.saveData({removed:false})}
-        else {this.saveData({...this.pos,angle:this.angle,slot:this.itm});}
+        if(this.uid!=-1) {this._saveData({removed:false})}
+        else {this._saveData({...this.pos,angle:this.angle,slot:this.itm});}
     }
 }
 
@@ -721,7 +709,7 @@ export class Stove extends Entity
     addListener()
     {
         super.addListener();
-        this.on('cook',(resolve)=>{this.send('stove',this);resolve();})
+        this.on('cook',(resolve)=>{this._send('stove',this);resolve();})
     }
 
     check()
@@ -811,7 +799,7 @@ export class Stove extends Entity
     save() 
     { 
         let output = this._output?.count>0 ? this._output : null;
-        this.saveData({storage:this._storage,output:output}); 
+        this._saveData({storage:this._storage,output:output}); 
     }
 
 }
@@ -831,7 +819,7 @@ export class Well extends Entity
     {
         super.addListener();
         this.on(GM.DRINK,(resolve,role)=>{role.drink();resolve()})
-        this.on(GM.FILL,(resolve)=>{this.send('fill');resolve()})
+        this.on(GM.FILL,(resolve)=>{this._send('fill');resolve()})
     }
 }
 
@@ -876,8 +864,8 @@ export class Door extends Entity
         {
             this.opened=true;
             this._sp.setTexture('doors',1);
-            this.removeWeight();
-            this.addWeight(undefined,GM.W_DOOR-1);
+            this._removeWeight();
+            this._addWeight(undefined,GM.W_DOOR-1);
             this._zone.setPosition(-this.displayWidth/2+10,-16);
             this._zone.setSize(20,this.displayHeight)
             AudioManager.doorOpen();
@@ -895,8 +883,8 @@ export class Door extends Entity
             console.log('chk2')
             this.opened=false;
             this._sp.setTexture('doors',0);
-            this.removeWeight(GM.W_DOOR-1);
-            this.addWeight();
+            this._removeWeight(GM.W_DOOR-1);
+            this._addWeight();
             this._zone.setPosition(0,-16);
             this._zone.setSize(this.displayWidth,this.displayHeight);
             AudioManager.doorClose();
@@ -936,9 +924,9 @@ export class Bed extends Entity
     isAt(role) {return role.parentContainer == this;}
     
    
-    updateFlip()
+    _updateFlip()
     {
-        super.updateFlip();
+        super._updateFlip();
         if(this._sp.flipX)
         {
             this.offsetX = -this.offsetX;
@@ -976,9 +964,9 @@ export class Bed extends Entity
         }
     }
 
-    setAnchor(modify=false)
+    _setAnchor(modify=false)
     {
-        super.setAnchor(modify)
+        super._setAnchor(modify)
         if(this._blanket) {this._blanket.x = -this.anchorX; this._blanket.y = -this.anchorY;}
     }
 
@@ -1048,7 +1036,7 @@ export class Port extends Entity
     enter()
     {
         TimeManager.inc();
-        this.send('scene',{map:this.map, port:this.port, ambient:this.ambient});
+        this._send('scene',{map:this.map, port:this.port, ambient:this.ambient});
     }
 }
 
@@ -1060,7 +1048,7 @@ export class Node extends Port
         this.weight = GM.W_NODE;
     }
 
-    rightButtonDown() {}
+    _rightButtonDown() {}
 
     addText(label)
     {
@@ -1072,7 +1060,7 @@ export class Node extends Port
     {
         super.init_prefab(mapName);
         this.addText(this.name);
-        //this.debugDraw();
+        //this._debugDraw();
     }
 }
 

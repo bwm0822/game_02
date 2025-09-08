@@ -189,6 +189,14 @@
       "type": "ranged",
       "range": 5,
       "atk": 15
+    },
+    "tw": {
+      "lab": "弓",
+      "des": ""
+    },
+    "us": {
+      "lab": "Bow",
+      "des": ""
     }
   },
   "bow_02": {
@@ -204,6 +212,14 @@
       "type": "ranged",
       "range": 5,
       "atk": 25
+    },
+    "tw": {
+      "lab": "高級弓",
+      "des": ""
+    },
+    "us": {
+      "lab": "Bow",
+      "des": ""
     }
   },
   "helmet_01": {
@@ -379,8 +395,12 @@
     "self": {
       "def": 10
     },
+    "tw": {
+      "lab": "高級手套",
+      "des": ""
+    },
     "us": {
-      "lab": "Salt",
+      "lab": "Gloves",
       "des": ""
     }
   },
@@ -425,8 +445,12 @@
     "self": {
       "def": 10
     },
+    "tw": {
+      "lab": "高級靴子",
+      "des": ""
+    },
     "us": {
-      "lab": "Salt",
+      "lab": "Boots",
       "des": ""
     }
   },

@@ -239,7 +239,7 @@ class _Skill
         this.update(skill)
         skill.reset();
 
-        this.role.send('refresh')
+        this.role._send('refresh')
         this.role._resume();
     }
 
@@ -340,11 +340,11 @@ class _Action
                 this._role.rec.gold-=ent.gold;
                 if(this == Avatar.instance)
                 {
-                    this._role.send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
+                    this._role._send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
                 }
                 else
                 {
-                    this._role.send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
+                    this._role._send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
                 }
                 return true;
             }
@@ -352,7 +352,7 @@ class _Action
         }
         else
         {
-            this._role.send('msg','_not_enough_gold'.lab());
+            this._role._send('msg','_not_enough_gold'.lab());
             return false;
         }
     }
@@ -425,12 +425,12 @@ class _Action
     drink()
     {
         let states = this._role.rec.states;
-        if(states[GM.THIRST]) {states[GM.THIRST]=0; this.send('msg',this.msg_name+`${'_drink'.lab()}`);}
+        if(states[GM.THIRST]) {states[GM.THIRST]=0; this._role._send('msg',this.msg_name+`${'_drink'.lab()}`);}
     }
 
     sleep(ent)
     {
-        this._role.removeWeight()
+        this._role._removeWeight()
         ent.add(this._role);
         this._role.pos = {x:ent.sleepX,y:ent.sleepY}
         this._role.angle = ent.sleepA;
@@ -447,8 +447,8 @@ class _Action
         ent.user = null;
         this._role.pos = this._role._getUnoccupiedPos(ent.pts[0]);
         this._role.angle = 0;
-        this._role.addWeight();
-        this._role.updateDepth();
+        this._role._addWeight();
+        this._role._updateDepth();
         this._role._zone.setInteractive();
         this._role.state = GM.ST_IDLE;
         
@@ -502,7 +502,7 @@ class _Action
         total[GM.HP] = this._role.rec.states[GM.HP];
         console.log(`${this._role.name} 獲得 ${amount} 治療`);
 
-        if(this._role.isPlayer) {this._role.send('refresh');}
+        if(this._role.isPlayer) {this._role._send('refresh');}
     }
 
 }
@@ -637,7 +637,7 @@ class _Path
             if(this._role.isPlayer) 
             {
                 this._role.state = act===GM.ATTACK ? GM.ST_ATTACK : GM.ST_MOVING;
-                this._role.send('clearpath');
+                this._role._send('clearpath');
                 this._role._resume();
             }
             else
@@ -1016,13 +1016,13 @@ export class Role extends Entity
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
         this._faceTo(pt);
-        this.removeWeight();
-        this.addWeight(pt);
+        this._removeWeight();
+        this._addWeight(pt);
         this.anim.idle(false);
         this.anim.walk(duration/2);
         await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
-        //this.addWeight();
-        this.updateDepth();
+        //this._addWeight();
+        this._updateDepth();
     }
 
     async _cmd(ent, act)
@@ -1109,8 +1109,8 @@ export class Role extends Entity
         if(this.state === GM.ST_DEATH) {return;}
         this.state = GM.ST_DEATH;
         
-        if(attacker) {this.send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
-        else {this.send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
+        if(attacker) {this._send('msg', `${attacker.id.lab()} ${'_kill'.lab()} ${this.id.lab()}`);}
+        else {this._send('msg', `${this.id.lab()} ${'_die'.lab()}`);}
        
         this._checkQuest();
         await this.disp.wait();
@@ -1123,7 +1123,7 @@ export class Role extends Entity
     {
         // 不可以放到 destroy()，離開場景時，如果呼叫 removeWeight() 會出現錯誤，
         // 因為此時 this.scene.map 已經移除了
-        this.removeWeight();
+        this._removeWeight();
         this._removeFromRoleList();
         this._unregisterTimeManager();
 
@@ -1170,7 +1170,7 @@ export class Role extends Entity
         this._applyEffects(dt);
         this._updateEquips(dt);
         this.getTotalStats();
-        if(this.isPlayer) {this.send('refresh');}
+        if(this.isPlayer) {this._send('refresh');}
 
         await this.disp.wait();
     }
@@ -1490,7 +1490,7 @@ export class Role extends Entity
 
         this.total[GM.HP] = this.rec.states[GM.HP];
 
-        if(this.isPlayer) {this.send('refresh');}
+        if(this.isPlayer) {this._send('refresh');}
 
         if(this.rec.states[GM.HP] === 0) {this._dead();}   
     }
@@ -1569,13 +1569,13 @@ export class Role extends Entity
         this._addSprite(roleD.sprite);
         this.addListener();
         this.pos = this._getUnoccupiedPos(this.pos);   // 檢查this.pos 這個點是否被佔用，如果被佔用，則尋找一個可用的點
-        this.addPhysics();
-        this.addGrid();
-        this.setAnchor(modify);
-        this.updateDepth();
-        this.addWeight();
-        this.addToObjects();
-        // this.debugDraw('zone')
+        this._addPhysics();
+        this._addGrid();
+        this._setAnchor(modify);
+        this._updateDepth();
+        this._addWeight();
+        this._addToObjects();
+        // this._debugDraw('zone')
         return this;
     }
 
@@ -1605,7 +1605,7 @@ export class Role extends Entity
 
         this.getTotalStats();
 
-        if(this.isPlayer) {this.send('refresh');}
+        if(this.isPlayer) {this._send('refresh');}
     }
 
     isInteractive(ent) {return this.state != GM.ST_SLEEP || this.parentContainer === ent;}
@@ -1698,9 +1698,9 @@ export class Target extends Role
         this.weight=0;
         this._drawPath = true;
         this._addSprite();
-        this.updateDepth();
+        this._updateDepth();
         //this.loop();
-        this.debugDraw();
+        this._debugDraw();
         
     }
 
@@ -1716,7 +1716,7 @@ export class Target extends Role
         this.displayHeight = GM.TILE_H;
     }
 
-    updateDepth()
+    _updateDepth()
     {
         this.setDepth(Infinity);
     }
@@ -1753,13 +1753,9 @@ export class Avatar extends Role
 
     _dead(attacker)
     {
-        this.send('gameover');
+        this._send('gameover');
         super._dead(attacker);
     }
-
-    
-
-
 }
 
 export class Npc extends Role
@@ -1831,11 +1827,11 @@ export class Npc extends Role
             // 4. 計算位置
             let i = td <= rst.path.length-1 ? td : rst.path.length-1;
             console.log('[setStartPos]', td, rst.path.length, i);
-            this.removeWeight();
+            this._removeWeight();
             // i < 0，表示在初始點
             this.pos = i<0 ? this.pos : rst.path[i];
-            this.addWeight();
-            this.updateDepth();
+            this._addWeight();
+            this._updateDepth();
 
             // 檢查是否達目的地，如果是，回傳 false( next = false，直接執行動作，不需等下一輪)
             // i = rst.path.length-1 ，代表到達目的地
@@ -1948,11 +1944,11 @@ export class Npc extends Role
         {
             let roleD = RoleDB.get(this.id);
             this.rec.restock = TimeManager.time.d + 2;
-            this.rec.bag = this.toStorage(roleD.bag.capacity,roleD.bag.items);
+            this.rec.bag = Utility.toStorage(roleD.bag.capacity,roleD.bag.items);
         }
     }
 
-    saveData(value)
+    _saveData(value)
     {
         if(this.uid==-1)
         {
@@ -1961,12 +1957,27 @@ export class Npc extends Role
         }
         else
         {
-            super.saveData(value);
+            super._saveData(value);
         }
 
     }
 
-    _save() {this.saveData(this.rec.save());}
+    _save() {this._saveData(this.rec.save());}
+
+    _debugDraw(type,text)
+    {
+        super._debugDraw(type,text);
+        if(type === GM.DBG_CLR) 
+        {
+            dbg_hover_npc = false;
+            this.disp.drawPath(null);
+        }
+        else 
+        {
+            dbg_hover_npc = true;
+            this.disp.drawPath(this._path);
+        }
+    }
 
     addListener()
     {
@@ -1980,12 +1991,12 @@ export class Npc extends Role
     {
         // this.dialog = DialogDB.get(this.id);
         this.dialog = DB.dialog(this.id);
-        this.send('talk',this);
+        this._send('talk',this);
     }
 
     trade() 
     {
-        this.send('trade',this);
+        this._send('trade',this);
     }
 
     isEquipWeapon()
@@ -2059,21 +2070,6 @@ export class Npc extends Role
         // this.tw_idle(true);
         this.anim.idle(true)
         
-    }
-
-    debugDraw(type,text)
-    {
-        super.debugDraw(type,text);
-        if(type === GM.DBG_CLR) 
-        {
-            dbg_hover_npc = false;
-            this.disp.drawPath(null);
-        }
-        else 
-        {
-            dbg_hover_npc = true;
-            this.disp.drawPath(this._path);
-        }
     }
 
     async st_attack()
