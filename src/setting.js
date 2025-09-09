@@ -248,8 +248,15 @@ export let GM =
 
 }
 
-export let ROLE_ATTRS = {
+export const ROLE_ATTRS = {
     [GM.P_ATTACK]: 0,
     [GM.P_DEFENSE]: 0,
     [GM.P_RANGE]: 1,
+};
+
+export const RESIST_MAP = { 
+    [GM.PHY]: GM.PHY_RES, 
+    [GM.FIRE]: GM.FIRE_RES, 
+    [GM.ICE]: GM.ICE_RES, 
+    [GM.POISON]: GM.POISON_RES, 
 };

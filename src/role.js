@@ -12,7 +12,7 @@ import {Entity,Pickup,Door, Projectile} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
 import {text,bbcText,rect, sprite} from './uibase.js';
-import {GM, ROLE_ATTRS} from './setting.js';
+import {GM, ROLE_ATTRS, RESIST_MAP} from './setting.js';
 import TimeManager from './time.js';
 import QuestManager from './quest.js';  
 
@@ -922,6 +922,10 @@ export class Role extends Entity
     st_moving(...args) {return this._path.move(...args);}
     stop(...args) {return this._path.stop(...args);}
 
+    /////////////////////////////////////////////////////
+    // private
+    /////////////////////////////////////////////////////
+
     _addSprite(sprite)
     {
         if(!sprite) {return;}
@@ -1321,7 +1325,8 @@ export class Role extends Entity
         let defFactor = baseDamage / (baseDamage + effectiveDef);
         // 3. 計算實際傷害
         let damage = baseDamage * defFactor;
-        const resist = dStats.resists?.[elm+'_res'] || 0;
+        // const resist = dStats.resists?.[elm+'_res'] || 0;
+        const resist = dStats.resists?.[RESIST_MAP[elm]] || 0;
         damage *= 1 - resist;
         // 4. 計算暴擊
         if (Math.random() < aStats[GM.CRITR]) 
@@ -1346,9 +1351,9 @@ export class Role extends Entity
             if (e.type === "dot") 
             {
                 let finalDamage = e.value;
-                if (e.element) 
+                if (e.elm) 
                 {
-                    const resist = this.total.resists?.[e.element] || 0;
+                    const resist = this.total.resists?.[RESIST_MAP[e.elm]] || 0;
                     finalDamage *= 1 - resist;
                 }
                 this.takeDamage({amount:finalDamage});
@@ -1903,6 +1908,9 @@ export class Npc extends Role
     get acts() {return this.state != GM.ST_ATTACK ? ['talk','trade','observe','attack']
                                             : ['attack','observe'];}           
 
+    ///////////////////////////////////////////////////////
+    // private
+    ///////////////////////////////////////////////////////                        
     _saveData(value)
     {
         if(this.uid==-1)
@@ -1934,10 +1942,7 @@ export class Npc extends Role
         }
     }
 
-    _updateSchedule()
-    {
-        this._sch?.update();
-    }
+    _updateSchedule() {this._sch?.update();}
 
     async _updateTime(dt)
     {
@@ -1949,8 +1954,9 @@ export class Npc extends Role
         await this.disp.wait();
     }
 
-    
+    /////////////////////////////////////////////////
     // public
+    /////////////////////////////////////////////////
     addListener()
     {
         super.addListener();
@@ -1975,11 +1981,7 @@ export class Npc extends Role
         return super.init_runtime(id,modify);
     }
 
-    initSchedule()
-    {
-        console.log("---------------- initSchedule")
-        this._sch = new _Schedule(this);
-    }
+    initSchedule() {this._sch = new _Schedule(this);}
 
     interact(ent, act) 
     {
@@ -2000,6 +2002,7 @@ export class Npc extends Role
         else {super.interact(ent, act);}
     }
 
+    // 回補商品
     restock()
     {
         if(!this.rec.restock)

@@ -10,6 +10,8 @@ import TimeManager from './time.js';
 import Record from './record.js';
 import QuestManager from './quest.js';
 
+// import InventoryService from './services/inventoryService.js';
+
 let uiScene;
 let _mode = 0;
 
@@ -30,48 +32,6 @@ function getRoot(obj)
   return proto; // 這會是 Object.prototype
 }
 
-class human
-{
-    take(a)
-    {
-        console.log('--------- take human',a)
-        return a;
-    }
-}
-
-class _test
-{
-    constructor(role)
-    {
-        this._role=role;
-    }
-
-    take(a)
-    {
-        return getSuper(this._role).take.call(this._role, a);
-        // return getRoot(this._role).take.call(this._role, a);
-        // return this._role.take.call(this._role, a);
-    }
-}
-
-class man extends human
-{
-    constructor()
-    {
-        super();
-        this._test = new _test(this);
-    }
-
-    take(...args) {return this._test.take(...args);}
-
-    // take()
-    // {
-    //     // super.take();
-    //     getSuper(this).take.call(this);
-    //     console.log('----------take man')
-    // }
-}
-
 export default function createUI(scene)
 {
     console.log('createUI');
@@ -79,10 +39,6 @@ export default function createUI(scene)
     GM.h = scene.sys.canvas.height;
     uiScene = scene;
     console.log('resolution:',GM.w, GM.h)
-
-    //test(scene);
-    //t1();
-    // rect(scene,{x:GM.w/2, y:GM.h/2-100, width:300, height:100, color:GM.COLOR_WHITE})
 
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
@@ -108,67 +64,7 @@ export default function createUI(scene)
     new UiQuest(scene);              // 20
     new UiConfirm(scene);
 
-    t1();
-
-    let m = new man();
-    m.take(1); 
-    // getSuper(m).take(m);
-
-    t2();
-
-  
-}
-
-function t3(){}
-
-async function t4(){}
-
-async function t2()
-{
-    console.log('----------------- t1')
-    await t3();
-    console.log('----------------- t2')
-
-    console.log('----------------- t3')
-    await t4();
-    console.log('----------------- t4')
-}
-
-function t1()
-{
-    let list=[{t:1},{t:2},{t:3},{t:4},{t:5}]
-    list.forEach(v=>{
-        if(v.t===2)
-        {
-            v.t=0;
-        }
-    })
-
-    console.log('------------------list=',list);
-}
-
-function test(scene)
-{
-    let bag={0:{icon:'weapons/28'},1:{icon:'weapons/30'}}
-    let slot0 = new Slot(scene,80,80,{x:100,y:100,icon:GM.ICON_CLOSE,space:0});
-    //slot1.setIcon('weapons/28').setCount(2);
-    slot0.id=0;
-    slot0.container=bag;
-    slot0.update();
-
-    let slot1 = new Slot(scene,80,80,{x:100,y:200,space:0});
-    //slot2.setIcon('weapons/30').setCount(2);
-    slot1.id=1;
-    slot1.container=bag;
-    slot1.update();
-
-    let slot2 = new Slot(scene,80,80,{x:100,y:300,space:0});
-    //slot2.setIcon('weapons/30').setCount(2);
-    slot2.id=2;
-    slot2.container=bag;
-    slot2.update();
-
-    console.log(scene);
+    // InventoryService.handleDrop();
 
 }
 
@@ -330,23 +226,23 @@ class Slot extends Icon
                                                     : this.dat?.[p];
     }  
 
-    incp(prop, value)
-    {
-        this.setp(prop, this.p(prop)+value)
-    }
+    // incp(prop, value)
+    // {
+    //     this.setp(prop, this.p(prop)+value)
+    // }
 
-    setp(prop, value)
-    {
-        let [p,sub] = prop.split(':');
-        if(sub)
-        {
-            if(this.itm?.[p]?.[sub] != undefined) {this.itm[p][sub] = value;}
-        }
-        else
-        {
-            if(this.itm?.[p] != undefined) {this.itm[p] = value;}
-        }
-    }
+    // setp(prop, value)
+    // {
+    //     let [p,sub] = prop.split(':');
+    //     if(sub)
+    //     {
+    //         if(this.itm?.[p]?.[sub] != undefined) {this.itm[p][sub] = value;}
+    //     }
+    //     else
+    //     {
+    //         if(this.itm?.[p] != undefined) {this.itm[p] = value;}
+    //     }
+    // }
 
     fill(p) {if(this.dat[p] != undefined) {this.itm[p] = this.dat[p].max;}}
 
