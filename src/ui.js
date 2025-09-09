@@ -10,7 +10,9 @@ import TimeManager from './time.js';
 import Record from './record.js';
 import QuestManager from './quest.js';
 
-// import InventoryService from './services/inventoryService.js';
+import InventoryService from './services/inventoryService.js';
+import PressService from './services/pressService.js';
+import DragService from './services/dragService.js';
 
 let uiScene;
 let _mode = 0;
@@ -40,6 +42,9 @@ export default function createUI(scene)
     uiScene = scene;
     console.log('resolution:',GM.w, GM.h)
 
+    PressService.bindToScene(scene);
+    DragService.init(scene);
+
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
     new UiEffect(scene);
@@ -63,8 +68,6 @@ export default function createUI(scene)
     new UiDebuger(scene);           // 18
     new UiQuest(scene);              // 20
     new UiConfirm(scene);
-
-    // InventoryService.handleDrop();
 
 }
 
@@ -1914,9 +1917,13 @@ class Option extends UiBase
         this.close();
         console.log('split',this.ent);
         let cnt = await UiCount.getCount(1, this.ent.itm.count-1)
-        if(cnt==0) {return;}
-        this.owner.split(this.ent,cnt);
-        this.refreshAll();
+        // if(cnt==0) {return;}
+        // this.owner.split(this.ent,cnt);
+        // this.refreshAll();
+
+        if (cnt==0) return;
+        const ok = InventoryService.split(this.ent, cnt);
+        if (ok) this.refreshAll();
     }
 
     openbag()
