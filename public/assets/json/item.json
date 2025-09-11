@@ -50,7 +50,7 @@
     },
     "tw": {
       "lab": "生肉",
-      "des": ""
+      "des": "可烹煮"
     },
     "us": {
       "lab": "Raw meat",
@@ -64,7 +64,7 @@
     "useable": true,
     "tw": {
       "lab": "熟肉",
-      "des": ""
+      "des": "熟肉"
     },
     "us": {
       "lab": "Cooked meat",
@@ -78,7 +78,7 @@
     "useable": true,
     "tw": {
       "lab": "生魚",
-      "des": "鐵礦"
+      "des": "可烹煮"
     },
     "us": {
       "lab": "Raw fish",
@@ -98,7 +98,7 @@
     },
     "tw": {
       "lab": "鹽烤魚",
-      "des": ""
+      "des": "鹽烤魚"
     },
     "us": {
       "lab": "Salt-baked fish",
@@ -151,7 +151,7 @@
     },
     "tw": {
       "lab": "鐵劍",
-      "des": ""
+      "des": "鐵劍"
     },
     "us": {
       "lab": "Iron Sword",

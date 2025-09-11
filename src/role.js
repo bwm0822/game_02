@@ -325,6 +325,7 @@ class _Action
         if(target.buy(ent, i, isEquip))
         {
             this._role.rec.gold+=ent.gold;
+            ent.empty();
             return true;
         }
         return false;
@@ -332,19 +333,18 @@ class _Action
 
     buy(ent, i, isEquip)
     {
-        console.log(this._role.rec.gold, ent)
         if(this._role.rec.gold>=ent.gold)
         {
             if(this.take(ent, i, isEquip))
             {
                 this._role.rec.gold-=ent.gold;
-                if(this == Avatar.instance)
+                if(this._role === getPlayer())
                 {
-                    this._role._send('msg',this.msg_name+`${'_buy'.lab()} ${ent.label}`);
+                    this._role._send('msg',this._role.msg_name+`${'_buy'.lab()} ${ent.label}`);
                 }
                 else
                 {
-                    this._role._send('msg',Avatar.instance.msg_name+`${'_sell'.lab()} ${ent.label}`)
+                    this._role._send('msg',getPlayer().msg_name+`${'_sell'.lab()} ${ent.label}`)
                 }
                 return true;
             }
@@ -367,7 +367,8 @@ class _Action
         }
         else
         {
-            return Entity.prototype.take.call(this._role, ent,i)
+            // 呼叫 Role 的 父物件 Entity 的 take()
+            return Entity.prototype.take.call(this._role, ent, i)
         }
     }
 
@@ -491,6 +492,8 @@ class _Action
     {
         if(!act) {return;}
         if(ent) {this._role._faceTo(ent.pos);}
+
+        console.log('---------------------------',act)
         return new Promise((resolve)=>{ent.emit(act, resolve, this._role);});
     }
 
@@ -1961,7 +1964,7 @@ export class Npc extends Role
     {
         super.addListener();
         this.on('talk',(resolve)=>{this.talk();resolve();})
-            .on('trade',(resolve)=>{this.trade();resolve();})
+            .on('trade',(resolve,target)=>{this.trade(target);resolve();})
             .on('attack',(resolve,attacker)=>{this.hurt(attacker,resolve);})
     }
 
@@ -2020,13 +2023,22 @@ export class Npc extends Role
 
     talk() 
     {
-        // this.dialog = DialogDB.get(this.id);
         this.dialog = DB.dialog(this.id);
         this._send('talk',this);
     }
 
-    trade() 
+    stopTrade() // call by UiTrade.close()
     {
+        delete this.tradeType;
+        delete this._target.tradeType;
+    }
+
+    trade(target)
+    {
+        this.restock();
+        this._target = target;
+        this.tradeType = GM.SELLER;
+        target.tradeType = GM.BUYER;
         this._send('trade',this);
     }
 

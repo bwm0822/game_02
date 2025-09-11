@@ -140,7 +140,6 @@ class Slot extends Icon
         this.getElement('disabled').fillAlpha=0;
         this._i = i;
         this._getOwner = getOwner;
-        this._cat = GM.CAT_ALL;
         this.addListener();
     }
 
@@ -160,8 +159,8 @@ class Slot extends Icon
     get dat() {return this._dat;}
     set dat(value) {return this._dat=value;}
     // cat
-    get cat() {return this._cat;}
-    set cat(value) {this._cat=value;}
+    get cat() {return GM.CAT_ALL;}
+    set cat(value) {}
     get isValid() {return UiDragged.checkCat(this.cat)}
     // owner
     get owner() {return this._getOwner?.();}
@@ -216,7 +215,7 @@ class Slot extends Icon
         return acts;
     }
 
-    get trading() {return this.owner.trade != UiDragged.owner.trade;}
+    get trading() {return this.owner.tradeType !== UiDragged.owner.tradeType;}
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
@@ -228,24 +227,6 @@ class Slot extends Icon
                     : this.itm?.[p] != undefined ? this.itm[p] 
                                                     : this.dat?.[p];
     }  
-
-    // incp(prop, value)
-    // {
-    //     this.setp(prop, this.p(prop)+value)
-    // }
-
-    // setp(prop, value)
-    // {
-    //     let [p,sub] = prop.split(':');
-    //     if(sub)
-    //     {
-    //         if(this.itm?.[p]?.[sub] != undefined) {this.itm[p][sub] = value;}
-    //     }
-    //     else
-    //     {
-    //         if(this.itm?.[p] != undefined) {this.itm[p] = value;}
-    //     }
-    // }
 
     fill(p) {if(this.dat[p] != undefined) {this.itm[p] = this.dat[p].max;}}
 
@@ -340,11 +321,9 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    // copyData() {return this.itm ? {itm:Utility.deepClone(this.itm),owner:this.owner,dat:this.dat} : null;}
-
     update(cat)
     {
-        cat && (this.cat=cat);  // for EquipSlot, MatSlot
+        cat && (this.cat=cat);  // for MatSlot
         this.setSlot(this.itm);
         this.setEnable(this.enabled);
     }
@@ -366,9 +345,9 @@ class Slot extends Icon
 
     empty() {super.empty();this.itm=null;this.dat=null;}
     
-    over(check=true)
+    over(checkEquip=true)
     {
-        if(this.dropable && UiDragged.slot) 
+        if(this.dropable && UiDragged.isSlot)
         {
             if(this.trading)
             {
@@ -386,31 +365,34 @@ class Slot extends Icon
                 this.setBgColor(this.isValid ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT_INVALID);
             }
         }
-        else if(!this.isEmpty)
+        else if(!this.isEmpty && !UiDragged.isSkill)
         {
             this.setBgColor(GM.COLOR_SLOT_OVER);
-           
-            Ui.delayCall(() => {UiInfo.show(GM.TP_SLOT,this);}); // 使用 delacyCall 延遲執行 UiInfo.show()
-            check && UiInv.check(this.dat.cat);
+
+            // 使用 delacyCall 延遲執行 UiInfo.show()
+            Ui.delayCall(() => {UiInfo.show(GM.TP_SLOT,this);}); 
+            // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
+            checkEquip && UiInv.checkEquipSlots(this.dat.cat);
         }
     }
 
-    out(check=true)
+    out(checkEquip=true)
     { 
         Ui.cancelDelayCall();    
         this.setBgColor(GM.COLOR_SLOT);
         UiInfo.close();
-        check && UiInv.check();
+        // 將裝備欄位的背景顏色設置為 COLOR_SLOT
+        checkEquip && UiInv.checkEquipSlots(null);   
     }
 
     leave(gameObject)
     {
-        UiDragged.slot && gameObject.setBgColor(GM.COLOR_SLOT);
+        UiDragged.on && gameObject.setBgColor(GM.COLOR_SLOT);
     }
 
     enter(gameObject)
     {
-        UiDragged.slot && this.noTrade && gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
+        UiDragged.on && this.noTrade && gameObject.setBgColor(GM.COLOR_SLOT_DRAG);
     }
 
     rightButtonDown(x,y)
@@ -420,124 +402,8 @@ class Slot extends Icon
 
     leftButtonDown(x,y)
     {
-        UiInfo.close();
-        if(Ui.mode == GM.UI_MODE_NORMAL)
-        {
-            if(this.dropable && UiDragged.slot)
-            {            
-                if(this.isValid)
-                {
-                    if(this.trading) 
-                    {
-                        if(!this.isEmpty) {return;}
-
-                        console.log('----------------- owner:',UiDragged.owner)
-                        if(UiDragged.owner.sell(this.owner, UiDragged.slot, this._i, this.isEquip))
-                        {
-                            UiDragged.empty();
-                            Ui.refreshAll();
-                        }
-                    }
-                    else
-                    {
-                        if(this.isMergeable())
-                        {
-                            this.merge();
-                        }
-                        else
-                        {
-                            // let dataCopy = this.copyData();
-                            // this.itm = UiDragged.slot.itm;
-                            // UiDragged.empty();
-                            // if(!Utility.isEmpty(dataCopy?.itm)) {UiDragged.setData(dataCopy);}
-                            // if(!UiDragged.on) {this.setBgColor(GM.COLOR_SLOT);}
-
-                            // let dataCopy = this.copyData();
-                            let tmp = UiDragged.slot.itm;
-                            if(this.isEmpty) {UiDragged.empty();}
-                            else {UiDragged.slot=this;}
-                            this.itm = tmp;
-                            if(!UiDragged.slot) {this.setBgColor(GM.COLOR_SLOT);}
-                        }  
-                    }
-                    this.over();
-                }
-            }
-            else if(!this.isEmpty)
-            {
-                this.setBgColor(GM.COLOR_SLOT_DRAG);
-                // UiDragged.setData(this.copyData());
-                UiDragged.slot = this;
-                UiDragged.setPos(this.left+x,this.top+y);
-                
-                this.empty();
-                UiInv.check();
-            }
-        }
-        else if(Ui.mode == GM.UI_MODE_FILL)
-        {
-            this.fill('capacity');
-            Ui.refreshAll();
-        }
+        DragService.onSlotDown(this, x, y);
     }
-
-    isMergeable() {return this.itm && this.itm.id==UiDragged.slot.itm.id && this.cps>1;}
-
-    merge()
-    {
-        //console.log('merge',this.slot.count,this.cps)
-        if(this.itm.count<this.cps)
-        {
-            let draggedCount = UiDragged.slot.itm.count;
-            let count = Math.min(this.itm.count+draggedCount,this.cps);
-            draggedCount -= count-this.itm.count;
-            this.itm.count = count;
-            UiDragged.slot.itm.count = draggedCount;
-            this.update();
-            UiDragged.update();
-        }
-    }
-
-
-
-    // dragStart()
-    // {
-    //     if(this.icon)
-    //     {
-    //         this.dragged = new Pic(this.scene,this.width,this.height,{x:this.x,y:this.y,icon:this.icon})
-    //         this.dragged.icon = this.icon;
-    //         this.clear();
-    //     }
-    // }
-
-    // drag(x,y)
-    // {
-    //     if(this.dragged) {this.dragged.setPosition(x,y);}
-    // }
-
-    // dragend(x,y,dropped)
-    // {
-    //     if(!dropped)
-    //     {
-    //         this.setIcon(this.dragged.icon)
-    //     }
-
-    //     if(this.dragged)
-    //     {
-    //         this.dragged.destroy();
-    //         delete this.dragged;
-    //     }
-
-    // }
-
-    // dragenter(gameObject) {gameObject.emit('pointerover');}
-
-    // dragleave(gameObject) {gameObject.emit('pointerout');}
-
-    // drop(gameObject)
-    // {
-    //     if(this.dragged) {gameObject.setIcon(this.dragged.icon);}
-    // }
 
 }
 
@@ -568,7 +434,7 @@ class EquipSlot extends Slot
     get container() {return this.owner?.rec?.equips;}
     get capacity() {return -1;}
 
-    //get cat() {return this._cat;}
+    get cat() {return this._cat;}
 
     get isEquip() {return true;}
 
@@ -578,14 +444,15 @@ class EquipSlot extends Slot
     get itm() {return super.itm;}
     set itm(value) {super.itm=value; this.owner.equip();}
 
-    checkCat(cat)   {return (this.cat & cat) == cat;}  
+    _isSameCat(cat)   {return (this.cat & cat) == cat;}  
 
     over() {super.over(false);}
     out() {super.out(false);}
 
-    check(cat)
+    // 檢查裝備欄位，是否有是符合類別的裝備，是，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
+    checkIfSameCat(cat)
     {
-        this.setBgColor( this.checkCat(cat) ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
+        this.setBgColor( this._isSameCat(cat) ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
     }
 
     setIcon(icon)
@@ -603,6 +470,9 @@ class MatSlot extends Slot
         super(scene, w, h, i, getOwner, config);
         this.onset = config?.onset;
     }
+
+    get cat() {return this._cat;}
+    set cat(cat) {this._cat=cat;}
 
     // get, set 都要 assign 才會正常 work
     get itm() {return super.itm;}
@@ -626,7 +496,6 @@ class OutputSlot extends Slot
     get itm() {return super.itm;}
     set itm(value) {super.itm=value; this.onset?.();}
 
-    // empty() {this.itm.count=0;this.itm=this.itm;}
     empty() {this.itm={id:this.itm.id,count:0};}
 }
 
@@ -646,12 +515,12 @@ class SkillSlot extends Pic
     }
 
     get owner() {return Role.getPlayer();}
-    // get id() {return this.owner.getSkillSlotAt(this._i);}
     get id() {return this.owner.skill.getSlotAt(this._i);}
-    // get remain() {return this.owner.getSkill(this.id).remain;}
     get remain() {return this.owner.skill.get(this.id).remain;}
+    get ready() {return this.remain===0;}
     get i() {return this._i;}
     get dat() {return this._dat;}
+    get isEmpty() {return this._dat===null;}
 
     addListener()
     {
@@ -660,62 +529,23 @@ class SkillSlot extends Pic
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
         .on('pointerup', (pointer,x,y)=>{this.leftButtonUp(x,y);})
-        .on('dragleave', (pointer,gameObject)=>{this.leave(gameObject);})
-        .on('dragenter', (pointer,gameObject)=>{this.enter(gameObject);})
     }
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
-    out() { Ui.cancelDelayCall();UiInfo.close(); }
-
-    leave() {UiDragged.interact(true);}
-    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
+    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
     leftButtonDown(x,y)
     {
-        if(!this.id || SkillSlot.selected) {return;}
-        Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+        if(this.isEmpty || SkillSlot.selected) {return;}
+        Ui.delayCall(() => {DragService.onSkillDown(this);}, GM.PRESS_DELAY) ;
     }
 
-    drag(x,y)
-    {
-        UiDragged.skill = this;
-        UiDragged.setPos(this.left+x, this.top+y);
-        this.empty();
-    }
-    
     leftButtonUp(x,y)
     {
-        Ui.cancelDelayCall();   
-        if(UiDragged.skill)
-        {
-            // 清除重復的技能欄位
-            // this.owner.getSkillSlots().find((slot,i)=>{
-            this.owner.skill.getSlots().find((slot,i)=>{
-                if(slot===UiDragged.skill.id)
-                {
-                    // this.owner.clearSkillSlotAt(i); // 清除技能欄位
-                    this.owner.skill.clearSlotAt(i); // 清除技能欄位
-                }
-            })
-            
-            // this.id && (this.owner.setSkillSlotAt(UiDragged.skill.i, this.id));
-            // this.owner.setSkillSlotAt(this.i, UiDragged.skill.id);
-            this.id && (this.owner.skill.setSlotAt(UiDragged.skill.i, this.id));
-            this.owner.skill.setSlotAt(this.i, UiDragged.skill.id);
-
-            UiDragged.empty();
-            Ui.refreshAll();
-        }
-        else if(this.id) // 如果有技能欄位，則使用技能
-        {
-            if(this._dat.type === GM.ACTIVE) {
-                // this.owner.useSkill(this);
-                this.owner.skill.use(this);
-            }
-            else {this.toggle();}
-        }
+        Ui.cancelDelayCall();  
+        DragService.onSkillUp(this);
     }
 
     update()
@@ -724,13 +554,18 @@ class SkillSlot extends Pic
         else {this.empty();}
     }
 
+    use()
+    {
+         if(this.ready) {this.owner.skill.use(this);}
+    }
+
     toggle()
     {
         if(SkillSlot.selected)
         {
             SkillSlot.selected===this && SkillSlot.selected.unselect();
         }
-        else if(this.remain===0)
+        else if(this.ready)
         {
             this.select();
         }
@@ -740,7 +575,6 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
-        // this.owner.selectSkill(this); // 設定角色的技能
         this.owner.skill.select(this); // 設定角色的技能
 
     }
@@ -749,7 +583,6 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
-        // this.owner.unselectSkill();
         this.owner.skill.unselect();
     }
 
@@ -776,7 +609,6 @@ class SkillSlot extends Pic
         this.getElement('remain').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        // this.owner.clearSkillSlotAt(this.i); // 清除技能欄位
         this.owner.skill.clearSlotAt(this.i); // 清除技能欄位
     }
 }
@@ -837,14 +669,13 @@ class SkillItem extends Pic
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
-                // this.owner.learnSkill(this._id);
                 this.owner.skill.learn(this._id);
                 Ui.refreshAll();
             }
         }
         else if(this.dat.type !== GM.PASSIVE)
         {
-            Ui.delayCall(() => {this.drag(x,y);}, GM.PRESS_DELAY) ;
+            Ui.delayCall(() => {DragService.onSkillDown(this);}, GM.PRESS_DELAY) ;
         }
     }
 
@@ -854,16 +685,6 @@ class SkillItem extends Pic
         UiDragged.empty();
     }
 
-    drag(x,y)
-    {
-        let mpos=this.scene.input.activePointer;
-        UiDragged.skill = this;
-        UiDragged.setPos(mpos.x, mpos.y);
-        Ui.cancelDelayCall();
-        UiInfo.close();
-    }
-
-    
 
     update()
     {
@@ -892,7 +713,7 @@ class SkillItem extends Pic
 
 
 
-export class UiDragged extends OverlapSizer
+export class UiDragged_old extends OverlapSizer
 {
     static instance = null;
     constructor(scene, w, h)
@@ -1051,7 +872,207 @@ export class UiDragged extends OverlapSizer
         }
     }
 
-    static setData(value) {this.instance.setData(value);}
+    refresh()
+    {
+        console.log('refresh', this.slot)
+        this.setSlot(this.slot)
+    }
+
+    static refresh() {this.instance.refresh();}
+
+    // static setData(value) {this.instance.setData(value);}
+
+    static setPos(x,y) {return this.instance?.setPosition(x,y);}
+
+    static empty() {this.instance?.empty();}
+    
+    static checkCat(cat) {return this.instance?.checkCat(cat);}
+
+    static update() {this.instance?.update();}
+
+    static drop() {this.instance?.drop();}
+
+    static interact(on) {this.instance.interact(on);}
+
+}
+
+export class UiDragged extends OverlapSizer
+{
+    static instance = null;
+    constructor(scene, w, h)
+    {
+        super(scene, 0, 0, w, h);
+        UiDragged.instance = this;
+        Ui.addLayer(scene, 'UiDragged', this);    // 產生layer，並設定layer名稱
+        this.addBackground(rect(scene,{color:GM.COLOR_SLOT,radius:0, alpha:0}),'background')
+            .add(sprite(this.scene),{aspectRatio:true, key:'sprite'})  
+            .addCount(scene)
+            .layout()
+            .hide()
+            .addListener();
+    }
+
+
+    static get on() {return this.instance.visible;}
+    static get obj() {return this.instance;}
+    static get owner() {return this.instance.owner;}
+    static get dat() {return this.instance.dat;}
+
+    static get isSlot() {return this.instance._obj?.itm !== undefined;}
+    static get isSkill() {return this.instance._obj?.id !== undefined;}
+
+
+    get owner() {return this._obj.owner;}
+    get itm() {return this._obj.itm;}
+    set itm(val) {this.setItm(val);}
+    get dat() {return this._obj.dat;}
+    get id() {return this._obj.id;}
+    get i() {return this._obj.i;}
+    get label() {return this.itm.id.lab();}
+    get gold() {return this.itm.count*this.dat.gold;}
+
+
+    addListener()
+    {
+        this//.setInteractive()
+            .on('pointerup',()=>{
+                console.log('-drop-')
+                this.empty();
+                this.disableInteractive();
+            })
+    }
+
+    interact(on) 
+    {
+        if(on) {this.setInteractive();}
+        else {this.disableInteractive();}
+    }
+
+    //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
+    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
+
+    update() 
+    {
+        if(this.itm.count==0)
+        {
+            this.empty();
+        }
+        else
+        {
+            this.setCount(this.itm.count>1 ? this.itm.count : '')
+        }
+    }
+
+    empty()
+    {
+        this.hide();
+        delete this._obj;
+        UiCover.close();
+        UiMain.enable(true);
+    }
+
+    addCount(scene)
+    {
+        this.add(text(scene,{fontSize:20, color:'#fff', stroke:'#000', strokeThickness:5}),{key:'count',align:'right-bottom',expand:false})
+        return this
+    }
+
+    // setData(value)
+    // {
+    //     // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
+    //     this.show();
+    //     // this._owner = value.owner;
+    //     // this._itm = value.itm;
+    //     // this._dat = value.dat;
+    //     this.slot = value;
+    //     this.setIcon(value.dat.icon)
+    //         .setCount(value.itm.count>1 ? value.itm.count : '')
+    //     UiCover.show();
+    //     UiMain.enable(false);
+    // }
+
+    setItm(itm)
+    {
+        if(itm)
+        {
+            console.log(itm)
+            this._obj.itm = itm;
+            this._obj.dat = DB.item(itm.id);
+            this.setIcon(this.dat.icon)
+                .setCount(this.itm.count>1 ? this.itm.count : '')
+        }
+        else
+        {
+            this.empty();
+        }
+    }
+
+    set(obj)
+    {
+        console.log(Object.prototype.toString.call(obj))
+        if(obj instanceof Slot)
+        {
+            console.log('slot')
+            
+            this._obj = {
+                itm: obj.itm,
+                dat: obj.dat,
+                owner: obj.owner,
+                gold: obj.gold
+            };
+
+            this.show()
+                .setIcon(this.dat.icon)
+                .setCount(this.itm.count>1 ? this.itm.count : '')
+            UiCover.show();
+            UiMain.enable(false);
+        }
+        else
+        {
+            console.log('skill')
+            
+            this._obj = {
+                dat: DB.skill(obj.id),
+                id: obj.id,
+                i: obj.i,
+            }
+
+            this.show()
+                .setIcon(this.dat.icon).setCount('')
+            UiCover.show();
+        }
+
+    }
+
+    setIcon(icon)
+    {
+        let [key,frame]=icon.split('/');
+        let sp = this.getElement('sprite');
+        // this.getElement('sprite').setTexture(key,frame);
+        sp.setTexture(key,frame);
+        sp.rexSizer.aspectRatio = sp.width/sp.height;
+        this.layout();
+        return this;
+    }
+
+    setCount(count)
+    {
+        this.getElement('count').setText(count);
+        this.layout();
+        return this;
+    }
+
+    drop()
+    {
+        if(this._obj && this.owner.trade!=GM.SELLER)
+        {
+            this.owner.drop(this._obj);
+            this.empty();
+        }
+    }
+
+
+    static set(obj) {return this.instance?.set(obj);}
 
     static setPos(x,y) {return this.instance?.setPosition(x,y);}
 
@@ -1165,7 +1186,7 @@ export class UiCover extends Sizer
         UiCover.instance = this;
         Ui.addLayer(scene, 'UiCover', this);    // 產生layer，並設定layer名稱
 
-        this.addBackground(rect(scene,{color:GM.COLOR_DARK,alpha:0}))
+        this.addBackground(rect(scene,{color:GM.COLOR_DARK,alpha:0.5}))
             .setOrigin(0,0)
             .layout()
             .hide()
@@ -1173,8 +1194,9 @@ export class UiCover extends Sizer
         // Ui.addLayer(scene, 'UiCover', this);
 
 
-        this.setInteractive()
-            .on('pointerdown',()=>{UiDragged.drop();})
+        // this.setInteractive()
+        //     .on('pointerdown',()=>{UiDragged.drop();})
+        this.setInteractive();
         this._cnt=0;
     }
 
@@ -1197,7 +1219,7 @@ export class UiCover extends Sizer
     static close() {UiCover.instance?.close();}
 }
 
-class UiInfo extends Sizer
+export class UiInfo extends Sizer
 {
     static instance = null;
     static gap = 10;    // show() 有用到，不可移除
@@ -1227,7 +1249,7 @@ class UiInfo extends Sizer
     addTitle(slot)
     {
         let title = slot.dat[this.lang]?.lab
-        this.add(bbcText(this.scene,{text:title??slot.dat.id}));
+        this.add(bbcText(this.scene,{text:title??slot.dat.id}));   
         return this;
     }
 
@@ -1453,7 +1475,8 @@ class UiInfo extends Sizer
         switch(type)
         {
             case GM.TP_SLOT:
-                this.addSlot(elm);
+                if(typeof elm.dat === 'object') {this.addSlot(elm);}
+                else {this.add(bbcText(this.scene,{text:elm.dat.lab()}));}
                 break;
 
             case GM.TP_PROP:
@@ -1921,7 +1944,7 @@ class Option extends UiBase
         // this.owner.split(this.ent,cnt);
         // this.refreshAll();
 
-        if (cnt==0) return;
+        if (cnt==0) {return;}
         const ok = InventoryService.split(this.ent, cnt);
         if (ok) this.refreshAll();
     }
@@ -2286,9 +2309,10 @@ export class UiInv extends UiBase
         if(this._opts){this.filter(this._opts);}
     }
 
-    check(cat)
+    // 檢查所有裝備欄位，符合類別的裝備欄位，背景設置為 COLOR_SLOT_DRAG，否則設置為 COLOR_SLOT
+    checkEquipSlots(cat)  
     {
-        this.getElement('equip').getElement('items').forEach(item => {item?.check(cat);});
+        this.getElement('equip').getElement('items').forEach(item => {item?.checkIfSameCat(cat);});
     }
 
     close()
@@ -2377,7 +2401,7 @@ export class UiInv extends UiBase
     static updateGold() {UiInv.instance?.updateGold();}
     // static refresh() {UiInv.instance?.update();}
     static toggle(owner) {UiInv.instance?.toggle(owner);}
-    static check(cat) {UiInv.instance?.check(cat);}
+    static checkEquipSlots(cat) {UiInv.instance?.checkEquipSlots(cat);}
     static filter(opts) {UiInv.instance?.filter(opts);}
     static unfilter() {UiInv.instance?.unfilter();}
     
@@ -2535,10 +2559,7 @@ export class UiMain extends UiBase
 
     menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
 
-    next()
-    {
-        Role.getPlayer().next();
-    }
+    next() {Role.getPlayer().next();}
 
     test()
     {
@@ -2546,10 +2567,7 @@ export class UiMain extends UiBase
         UiQuest.toggle(Role.getPlayer());
     }
 
-    skill()
-    {
-        UiSkill.toggle();
-    }
+    skill() {UiSkill.toggle();}
 
     debug() {UiDebuger.show();}
 
@@ -2762,21 +2780,23 @@ export class UiTrade extends UiBase
         clrCamera(GM.CAM_RIGHT);
         this.unregister();
 
-        delete this.owner.trade;
-        delete this.owner.target;
-        delete Role.getPlayer().trade;
-        delete Role.getPlayer().target;
+        // delete this.owner.trade;
+        // delete this.owner.target;
+        // delete Role.getPlayer().trade;
+        // delete Role.getPlayer().target;
+        this.owner.stopTrade();
     }
 
     show(owner)
     {
         super.show();
-        owner.restock();
         this.owner = owner;
-        this.owner.trade = GM.SELLER;
-        this.owner.target = Role.getPlayer();
-        Role.getPlayer().trade = GM.BUYER;
-        Role.getPlayer().target = this.owner;
+        // owner.restock();
+        // this.owner = owner;
+        // this.owner.trade = GM.SELLER;
+        // this.owner.target = Role.getPlayer();
+        // Role.getPlayer().trade = GM.BUYER;
+        // Role.getPlayer().target = this.owner;
 
         this.update();
         // show
@@ -3175,7 +3195,7 @@ export class UiDialog extends UiBase
     trade()
     {
         this.close();
-        UiTrade.show(this.owner); 
+        this.owner.trade(Role.getPlayer());
     }
 
     goto(p1)
@@ -3788,7 +3808,7 @@ export class UiManufacture extends UiBase
         this.owner.menu.forEach((id)=>{
             let add = this.item(id.lab(),{onover:onover, onout:onout, ondown:ondown});
             add.itm = {id:id,type:'make'};
-            add.dat = DB.item(id)??{};
+            add.dat = DB.item(id)??id;
             if(id==this.owner.sel) {add.sel();itemSel=add;}
             panel.add(add,{expand:true})
         })

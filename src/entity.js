@@ -517,14 +517,15 @@ export class Entity extends Phaser.GameObjects.Container
        
     }
 
-    take(ent, i, isEquip)
+    take(ent, i)
     {
         !i && (i = this._findEmpty());
 
         if(i!=-1)
         {
-            if(isEquip) {this.status.equips[i]=ent.itm; this.equip();}
-            else {this.storage.items[i]=ent.itm;}
+            // if(isEquip) {this.status.equips[i]=ent.itm; this.equip();}
+            // else {this.storage.items[i]=ent.itm;}
+            this.storage.items[i]=ent.itm;
             return true;
         }
         else
