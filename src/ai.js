@@ -42,6 +42,11 @@ export class TurnCooldown
     clear() { this.map.clear(); }
 }
 
+// 防止被動到（Object.freeze）
+// 不能增刪屬性：AI_CD.NEW = 'x' 會失敗
+// 不能改值：AI_CD.TAUNT = 'roar' 會失敗（嚴格模式下丟錯）
+const AI_CD = Object.freeze({ FLEE:'flee', TAUNT:'taunt', PATROL:'patrol', WANDER:'wander', SENSE:'sense'});
+
 class AiBase 
 {
     constructor(role) 
@@ -83,17 +88,12 @@ class AiBase
     }
 
     // ---- 行為工具（全部以回合為節奏）----
-    goToEnt(ent, act=null) {
-        if (!ent) return;
-        this.role.setDes({ ent, act });
-    }
+    goToEnt(ent, act=null) { if (!ent) return; this.role.order({ act: act || GM.MOVE, target: ent }); }
 
-    goToPos(pt) {
-        this.role.setDes({ pt });
-    }
+    goToPos(pt) { this.role.order({ act: GM.MOVE, pt }); }
 
     randomWander(radiusTiles=4, cdTurns=2) {
-        if (!this.cd.ready('wander', cdTurns)) return;
+        if (!this.cd.ready(AI_CD.WANDER, cdTurns)) return;
         const ox = this.bb.home.x;
         const oy = this.bb.home.y;
         const wx = ox + Math.round(rnd(-radiusTiles, radiusTiles)) * GM.TILE_W;
@@ -122,20 +122,20 @@ class AiBase
         this.role._ent = target;
         this.role._act = GM.ATTACK;
         
-        if (this.role._isInAttackRange(target)) 
+        // if (this.role._isInAttackRange(target)) 
+        // {
+        //     // 交由你現成的命令流程（會在角色回合內完成）
+        //     this.role._cmd(target, GM.ATTACK);
+        // } 
+        // else 
         {
-            // 交由你現成的命令流程（會在角色回合內完成）
-            this.role._cmd(target, GM.ATTACK);
-        } 
-        else 
-        {
-            this.role.setDes({ ent: target, act: GM.ATTACK });
+            this.role.order({ act: GM.ATTACK, target: target });
         }
     }
 
     fleeFrom(target, tiles=6) {
         if (!target) return;
-        if (!this.cd.ready('flee', 1)) return;  // 每回合最多下一次逃跑目的地
+        if (!this.cd.ready(AI_CD.FLEE, 1)) return;  // 每回合最多下一次逃跑目的地
         const vx = this.role.x - target.x;
         const vy = this.role.y - target.y;
         const len = Math.max(1, Math.hypot(vx, vy));
@@ -205,14 +205,14 @@ export class EnemyAI extends AiBase
         if (player) 
         {
             // 嘲諷每 5 回合一次
-            if (this.cd.ready('taunt', 5)) {this.role.disp.speak('你逃不掉的！');}
+            if (this.cd.ready(AI_CD.TAUNT, 5)) {this.role.disp.speak('你逃不掉的！');}
             // 交給現有攻擊/追擊流程
             this.attackOrApproach(player);
             return;
         }
 
         // 巡邏（每 3 回合換下一點）
-        if (this.patrol.length > 0 && this.role.state === GM.ST_IDLE && this.cd.ready('patrol', 3)) 
+        if (this.patrol.length > 0 && this.role.state === GM.ST_IDLE && this.cd.ready(AI_CD.PATROL, 3)) 
         {
             const ent = this.patrol[this.bb.patrolIdx % this.patrol.length];
             this.bb.patrolIdx++;

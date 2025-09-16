@@ -126,6 +126,7 @@ export let GM =
     DROP : 'drop',
     SPLIT : 'split',
     OPENBAG : 'openbag',
+    MOVE: 'move',
 
     // 基礎屬性
     BASE : ["str", "dex", "con", "int"],

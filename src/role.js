@@ -1668,6 +1668,47 @@ export class Role extends Entity
         }
     }
 
+    // === Facade for AI & external controllers ===
+    order({ act, target=null, pos=null, pt=null }) 
+    {
+        // alias
+        if (!pos && pt) pos = pt;
+        try {
+            switch (act) 
+            {
+                case GM.ATTACK:
+                    if (target) 
+                    {
+                        this._ent = target;
+                        this._act = GM.ATTACK;
+                        // 若已在攻擊距離，直接下指令，否則交給 setDes 規劃
+                        if (this._isInAttackRange(target)) {this._cmd(target, GM.ATTACK);} 
+                        else {this.setDes({ ent: target, act: GM.ATTACK });}
+                    }
+                    break;
+                case GM.USE:
+                    if (target || pos) {
+                    this.setDes({ ent: target || null, pos: pos || null, act: GM.USE });
+                    }
+                    break;
+                case GM.MOVE:
+                default:
+                    if (target && target.pos) pos = target.pos;
+                    if (pos) this.setDes({ pos, act: GM.MOVE });
+                    break;
+            }
+            return { ok: true };
+        } catch (e) {
+            return { ok: false, reason: e?.message || 'order-error' };
+        }
+    }
+
+    // moveTo(pos)       { return this.order({ act: GM.MOVE, pos }); }
+    // attack(target)    { return this.order({ act: GM.ATTACK, target }); }
+    // use(targetOrPos)  { return (targetOrPos && targetOrPos.pos) ? this.order({ act: GM.USE, target: targetOrPos }) : this.order({ act: GM.USE, pos: targetOrPos }); }
+    // wait(turns=1)     { /* 回合制等候可由調度器處理；此處留空回傳成功 */ return { ok: true, waited: turns }; }
+
+
     // TBD
     // getBodiesInRect(range, checkBlock)
     // {
@@ -1900,7 +1941,9 @@ class _Schedule
 
             }
         }
-    }
+    
+  
+}
 
 }
 
@@ -2054,7 +2097,7 @@ export class Npc extends Role
                         let dat = DB.item(equip.id);
                         return dat.cat===GM.CAT_WEAPON;
                     });
-        return weapon != undefined;
+        return weapon !== undefined;
     }
 
     equipWeapon()
@@ -2142,6 +2185,7 @@ export class Npc extends Role
     dbgRect(range)
     {
         if(!this._dbgGraphics) {this._dbgGraphics = this.scene.add.graphics();}
+        this._dbgGraphics.clear();
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
         let rect = new Phaser.Geom.Rectangle(
                         this.x-range*GM.TILE_W, this.y-range*GM.TILE_H, 
