@@ -613,7 +613,6 @@ class SkillSlot extends Pic
     }
 }
 
-
 class SkillItem extends Pic
 {
     constructor(scene, w, h, config)
@@ -708,10 +707,6 @@ class SkillItem extends Pic
     }
 
 }
-
-
-
-
 
 export class UiDragged_old extends OverlapSizer
 {
@@ -3321,7 +3316,6 @@ export class UiChangeScene extends UiBase
 
     done()
     {
-        console.log('t(change scene) =',this.scene.time.now-this._t);
         this.close();
     }
 
@@ -3656,6 +3650,11 @@ class UiDebuger extends UiBase
             this.close();
         }
 
+    }
+
+    cmd_log()
+    {
+        send('log');
     }
 
     static show() {UiDebuger.instance?.show();}

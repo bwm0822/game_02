@@ -22,7 +22,7 @@ export class GameScene extends Scene
 
     init(data) 
     {
-        console.log('[1] init',data);
+        console.log('[1] init');
         this._data = data;
     }
 
@@ -36,6 +36,7 @@ export class GameScene extends Scene
         this._act = 'go';
         this._ent = null;
         this.roles = [];
+        this.entities = [];
         this.loadRecord();
         this.setEvent();
         this.initUI();
@@ -53,6 +54,14 @@ export class GameScene extends Scene
         UiMessage.clean();
         UiChangeScene.done();
         AudioManager.bgmStart();
+
+        this.log();
+    }
+
+    log()
+    {
+        console.log("Roles:", this.roles);
+        console.log("Entities:", this.entities);
     }
 
     initAmbient(amb)
@@ -130,7 +139,6 @@ export class GameScene extends Scene
     setPosition(classType)
     {
         let pos;
-        console.log(this._data.port)
         if(this._data.pos) {pos = this._data.pos}
         else {pos = this.ents[this._data.port].pts[0];}
 
@@ -172,18 +180,13 @@ export class GameScene extends Scene
                 if(this._player.state == GM.ST_MOVING)
                 {
                     this._player.stop();
-                    // this.findPath(pt);
                 }
                 else if(this._player.state === GM.ST_SKILL)
                 {
-                    // this._player.apply({pt:pt,ent:this._ent});
                     this._player.execute({pt:pt,ent:this._ent});
                 }
                 else if(this._rst && this._rst.state===1 && !this._rst.block)
                 {
-                    // this._player.apply({pt:pt,ent:this._ent});
-                    console.log('------------------------------------ down')
-                    // this._player.goto({pt:pt,ent:this._ent});
                     this._player.execute({pt:pt,ent:this._ent});
                 }
             }
@@ -398,6 +401,7 @@ export class GameScene extends Scene
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
+                
         }
 
         const ui = this.scene.get('UI');
@@ -411,6 +415,7 @@ export class GameScene extends Scene
                 console.log(p,weight)
                 this.map.setWeight(p,weight)
             })
+            .off('log').on('log',()=>{this.log();})
 
     }
 

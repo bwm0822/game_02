@@ -15,6 +15,7 @@ import {text,bbcText,rect, sprite} from './uibase.js';
 import {GM, ROLE_ATTRS, RESIST_MAP} from './setting.js';
 import TimeManager from './time.js';
 import QuestManager from './quest.js';  
+import { createAIFor } from './ai.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};
 const COLOR_RED = 0xff0000;
@@ -469,7 +470,8 @@ class _Action
                             ()=>{
                                 // this.applySkillTo(this._ent, this.skill.sel);
                                 this._role.skill.applyTo(this._ent);
-                                resolve();}
+                                resolve();
+                            }
                         );
             })
         }
@@ -924,6 +926,8 @@ export class Role extends Entity
     setDes(...args) {return this._path.setDes(...args);}
     st_moving(...args) {return this._path.move(...args);}
     stop(...args) {return this._path.stop(...args);}
+    // other
+    faceTo(...args) {return this._faceTo(...args);}
 
     /////////////////////////////////////////////////////
     // private
@@ -984,11 +988,11 @@ export class Role extends Entity
         }
     }
 
-    _addToRoleList() {this.scene.roles.push(this);}
+    _addToList() {this.scene.roles && this.scene.roles.push(this);}
 
-    _removeFromRoleList() 
+    _removeFromList() 
     {
-        console.log(this.id,'remove role')
+        if(!this.scene.roles) {return;}
         const index = this.scene.roles.indexOf(this);
         if (index > -1) {this.scene.roles.splice(index, 1);}
     }
@@ -1131,7 +1135,7 @@ export class Role extends Entity
         // 不可以放到 destroy()，離開場景時，如果呼叫 removeWeight() 會出現錯誤，
         // 因為此時 this.scene.map 已經移除了
         this._removeWeight();
-        this._removeFromRoleList();
+        // this._removeFromRoleList();
         this._unregisterTimeManager();
 
         super._removed();
@@ -1263,7 +1267,6 @@ export class Role extends Entity
         if (base[GM.HPMAX] == null) out[GM.HPMAX] = Math.round((base[GM.CON] || 0) * 10);               // HP = CON x 10
 
         // 2) Combat basics
-        console.log("type=",base.type);
         if (base[GM.ATK] == null) out[GM.ATK] = base.type === "ranged" ? 0 : (base[GM.STR] || 0) * 1.5; // 攻擊 = STR x 1.5
         if (base[GM.DEF] == null) out[GM.DEF] = (base[GM.CON] || 0);                                    // 物防 = CON
         if (base[GM.RANGE] == null) out[GM.RANGE] = base.type ? 0 : 1;                                  // 攻擊半徑
@@ -1582,7 +1585,7 @@ export class Role extends Entity
         this._setAnchor(modify);
         this._updateDepth();
         this._addWeight();
-        this._addToObjects();
+        this._addToList();
         // this._debugDraw('zone')
         return this;
     }
@@ -1661,7 +1664,7 @@ export class Role extends Entity
             case GM.ST_IDLE: break;
             case GM.ST_MOVING:
             case GM.ST_ATTACK:
-                console.log('[player] moving');
+                // console.log('[player] moving');
                 await this.st_moving();
                 break;
         }
@@ -1786,7 +1789,7 @@ class _Schedule
         if(!this._role.role.schedule) {return;}
         // this.schedule = this.role.schedule[this.mapName];
         this._schedule = this._role.role.schedule?.filter(sh=>sh.map===this._role.mapName);
-        console.log(this._schedule)
+        // console.log(this._schedule)
     }
     
     _setStartPos(ents,tSch)
@@ -1848,17 +1851,15 @@ class _Schedule
 
     update(init=false)
     {
-        console.log('--------------- update',init);
         // ST_IDLE 或 ST_SLEEP，才檢查 schedule
         if(this._role.state != GM.ST_IDLE && this._role.state != GM.ST_SLEEP) {return;}
  
         if(this._schedule)
         { 
-            console.log('--------------- chk1',this._schedule);
             let found = this._findSchedule();
             if(found)
             {
-                console.log(`[npc ${this._role.id}] updateSchedule`); 
+                // console.log(`[npc ${this._role.id}] updateSchedule`); 
 
                 // 1. 檢查是否第一次進入 found 這個 schedule，
                 if(found != this._shCurrent)    
@@ -1973,15 +1974,18 @@ export class Npc extends Role
         this._initData();
         if(!super.init_prefab()) {return false;}
         
-        this._addToRoleList();
+        // this._addToRoleList();
         this.load();
+        this.ai = createAIFor(this);     // ★ 綁定回合制 AI
         return true;
     }
 
     init_runtime(id,modify=false)
     {
-        this._addToRoleList();
-        return super.init_runtime(id,modify);
+        // this._addToRoleList();
+        const r= super.init_runtime(id,modify);
+        this.ai = createAIFor(this);     // ★ 綁定回合制 AI
+        return r;
     }
 
     initSchedule() {this._sch = new _Schedule(this);}
@@ -2089,6 +2093,9 @@ export class Npc extends Role
     async process()
     {
         // console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
+
+        // ★ 先由 AI 針對「這個回合」下指令（移動/攻擊/說話…）
+        this.ai?.updateTurn?.();
         
         switch(this.state)
         {            

@@ -10,7 +10,7 @@ export default class Local
     static load(scene)
     {
         this._local = scene.cache.json.get('local');
-        console.log(this._local)
+        // console.log(this._local)
     }
 
     static lab(key)

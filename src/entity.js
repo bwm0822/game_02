@@ -35,7 +35,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid 的 left, right, top, bottom
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone 的 left, right, top, bottom，interactive=true 才有作用
         this.anchorX = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
-        this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角
+        this.anchorY = 0;   // entity錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角 
     }
 
     // get pt() {return {x:this.x, y:this.y}}
@@ -374,18 +374,19 @@ export class Entity extends Phaser.GameObjects.Container
         show_text(text);
     }
 
-    _removeFromObjects()
-    {
-        const index = this.scene.objects.indexOf(this);
-        if(index>-1) {this.scene.objects.splice(index,1);}
-    }
+    _addToList() {this.scene.entities && this.scene.entities.push(this);}
 
-    _addToObjects() {this.scene.objects.push(this);}
+    _removeFromList()
+    {
+        if(!this.scene.entities) {return;}
+        const index = this.scene.entities.indexOf(this);
+        if(index>-1) {this.scene.entities.splice(index,1);}
+    }
 
     _removed()
     {
         if(this.uid!=-1) {this._saveData({removed:true})}
-        this._removeFromObjects();
+        this._removeFromList();
         if(this._dbgGraphics){this._dbgGraphics.destroy();}
         if(this._dbgText) {this._dbgText.destroy();}
         if(this._rect) {this._rect.destroy();}
@@ -436,7 +437,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._setAnchor(true);
         this._updateDepth();
         this._addWeight();
-        this._addToObjects();
+        this._addToList();
         // this._debugDraw();
         return true;
         
@@ -465,7 +466,7 @@ export class Entity extends Phaser.GameObjects.Container
         this._addGrid();
         this._updateDepth();
         this._addWeight();
-        this._addToObjects();
+        this._addToList();
         return this;
     }
 
