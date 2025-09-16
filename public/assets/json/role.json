@@ -865,6 +865,7 @@
     },
     "job": "rogue",
     "gold": 200,
+    "type": "enemy",
     "body": {
       "sprite": "rogue",
       "scale": 0.25

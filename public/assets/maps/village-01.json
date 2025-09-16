@@ -362,6 +362,24 @@
                  "template":"..\/templates\/tree.tj",
                  "x":864,
                  "y":288
+                }, 
+                {
+                 "gid":1982,
+                 "height":64,
+                 "id":132,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"rogue"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":32,
+                 "x":96,
+                 "y":192
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -370,7 +388,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":132,
+ "nextobjectid":133,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -419,6 +437,10 @@
         {
          "firstgid":1473,
          "source":"..\/tiles.tsj"
+        }, 
+        {
+         "firstgid":1977,
+         "source":"..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",

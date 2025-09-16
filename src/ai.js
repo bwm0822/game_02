@@ -118,6 +118,10 @@ class AiBase
     attackOrApproach(target) 
     {
         if (!target || !target.isAlive) {return;}
+
+        this.role._ent = target;
+        this.role._act = GM.ATTACK;
+        
         if (this.role._isInAttackRange(target)) 
         {
             // 交由你現成的命令流程（會在角色回合內完成）

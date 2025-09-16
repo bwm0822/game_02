@@ -631,14 +631,11 @@ class _Path
         // console.log('setDes',rst,act)
         if(rst?.state>0)
         {
-            // console.log('chk---')
             this._path = rst.path;
             this._ent = ent;
-            // this._act = act ?? ent?.act ?? '';
             this._act = act;
 
-            // this._role.state = next ? GM.ST_NEXT : GM.ST_MOVING;
-
+            // 設定角色狀態
             if(this._role.isPlayer) 
             {
                 this._role.state = act===GM.ATTACK ? GM.ST_ATTACK : GM.ST_MOVING;
@@ -1079,6 +1076,7 @@ export class Role extends Entity
     _isInAttackRange(ent)
     {
         // let range = this.status.attrs[GM.P_RANGE];
+        console.log('------------------------ ent:',ent);
         let range = this.getTotalStats()[GM.RANGE];
         let [tx1, ty1] = this.scene.map.worldToTile(this.x,this.y);
         let [tx2, ty2] = this.scene.map.worldToTile(ent.x,ent.y);
@@ -1712,7 +1710,6 @@ export class Target extends Role
         this._updateDepth();
         //this.loop();
         this._debugDraw();
-        
     }
 
     get isPlayer() {return true;}
@@ -1969,22 +1966,27 @@ export class Npc extends Role
             .on('attack',(resolve,attacker)=>{this.hurt(attacker,resolve);})
     }
 
+    // init_prefab()
+    // {
+    //     this._initData();
+    //     if(!super.init_prefab()) {return false;}   
+    //     this.load();
+    //     this._ai = createAIFor(this);     // ★ 綁定回合制 AI
+    //     return true;
+    // }
+
     init_prefab()
     {
-        this._initData();
-        if(!super.init_prefab()) {return false;}
-        
-        // this._addToRoleList();
-        this.load();
-        this.ai = createAIFor(this);     // ★ 綁定回合制 AI
+        console.log('----------------------',this.uid,this.qid)
+        let data = this._loadData();
+        if(!data?.removed) {this.init_runtime(this.id,true).load();}
         return true;
     }
 
     init_runtime(id,modify=false)
     {
-        // this._addToRoleList();
         const r= super.init_runtime(id,modify);
-        this.ai = createAIFor(this);     // ★ 綁定回合制 AI
+        this._ai = createAIFor(this);     // ★ 綁定回合制 AI
         return r;
     }
 
@@ -2095,7 +2097,7 @@ export class Npc extends Role
         // console.log(`[${this.scene.roles.indexOf(this)}]`,this.state);
 
         // ★ 先由 AI 針對「這個回合」下指令（移動/攻擊/說話…）
-        this.ai?.updateTurn?.();
+        this._ai?.updateTurn?.();
         
         switch(this.state)
         {            
