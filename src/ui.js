@@ -2413,7 +2413,7 @@ export class UiOption extends UiContainerBase
             .close() 
     }
 
-    static show(x,y,acts,target) {UiOption.instance?.show(x,y,acts,target);}
+    static show(x,y,acts,target) {this.instance?.show(x,y,acts,target);}
 
 }
 
@@ -2426,13 +2426,6 @@ class UiObserve extends UiContainerBase
         UiObserve.instance = this;
         this.add(new Observe(scene))
             .close()
-    }
-
-    destroy(args)
-    {
-        console.log('-------------destroy', args)
-        super.destroy(args)
-        
     }
 
     static show(owner) {this.instance?.show(owner);}

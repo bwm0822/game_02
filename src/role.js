@@ -1538,6 +1538,11 @@ export class Role extends Entity
         }
     }
 
+    getEffects()
+    {
+        return this.rec.activeEffects;
+    }
+
     save() {return this.rec.save();}
 
     load()

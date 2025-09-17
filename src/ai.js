@@ -45,7 +45,11 @@ export class TurnCooldown
 // 防止被動到（Object.freeze）
 // 不能增刪屬性：AI_CD.NEW = 'x' 會失敗
 // 不能改值：AI_CD.TAUNT = 'roar' 會失敗（嚴格模式下丟錯）
-const AI_CD = Object.freeze({ FLEE:'flee', TAUNT:'taunt', PATROL:'patrol', WANDER:'wander', SENSE:'sense'});
+const AI_CD = Object.freeze({ 
+        FLEE:'flee', TAUNT:'taunt', PATROL:'patrol', 
+        WANDER:'wander', SENSE:'sense', SNARL:'snarl',  
+        GREET:'greet', CHIRP:'chirp', FLOCK:'flock'
+    });
 
 class AiBase 
 {
@@ -121,16 +125,7 @@ class AiBase
 
         this.role._ent = target;
         this.role._act = GM.ATTACK;
-        
-        // if (this.role._isInAttackRange(target)) 
-        // {
-        //     // 交由你現成的命令流程（會在角色回合內完成）
-        //     this.role._cmd(target, GM.ATTACK);
-        // } 
-        // else 
-        {
-            this.role.order({ act: GM.ATTACK, target: target });
-        }
+        this.role.order({ act: GM.ATTACK, target: target });
     }
 
     fleeFrom(target, tiles=6) {
@@ -168,7 +163,7 @@ export class VillagerAI extends AiBase
         {
             // 與玩家簡易互動（每 20 回合一次）
             const p = this.sensePlayer(4, false);
-            if (p && this.cd.ready('greet', 20)) 
+            if (p && this.cd.ready(AI_CD.GREET, 20)) 
             {
                 this.role.faceTo(p.pos);
                 this.role.disp.speak('你好！');
@@ -235,7 +230,7 @@ export class BeastAI extends AiBase {
 
     // 被逼近的警戒反應（距離 ≤3 格）
     if (player && withinTiles(this.role.pos, player.pos, 3)) {
-      if (this.cd.ready('snarl', 4)) this.role.disp.speak('低吼…');
+      if (this.cd.ready(AI_CD.SNARL, 4)) this.role.disp.speak('低吼…');
       if (Math.random() < 0.5) this.attackOrApproach(player);
       else this.fleeFrom(player, 6);
       return;
@@ -266,12 +261,12 @@ export class AnimalAI extends AiBase {
     // 受驚逃跑（距離 ≤3 格）
     if (player && withinTiles(this.role.pos, player.pos, 3)) {
       this.fleeFrom(player, 8);
-      if (this.cd.ready('chirp', 6)) this.role.disp.speak('！');
+      if (this.cd.ready(AI_CD.CHIRP, 6)) this.role.disp.speak('！');
       return;
     }
 
     // 簡化群聚：靠近最近的同類（每 3 回合調整一次）
-    if (this.role.state === GM.ST_IDLE && this.cd.ready('flock', 3)) {
+    if (this.role.state === GM.ST_IDLE && this.cd.ready(AI_CD.FLOCK, 3)) {
       const kin = this.role.scene.roles
         .filter(r => r !== this.role && r.constructor === this.role.constructor)
         .sort((a, b) => dist2(a.pos, this.role.pos) - dist2(b.pos, this.role.pos));
