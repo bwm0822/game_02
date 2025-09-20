@@ -1,8 +1,8 @@
 import {GM} from '../setting.js';
 
 
-let DEBUG = false; // 是否開啟 debug 模式
-let DBG_TYPE = GM.DBG_BODY;
+let DEBUG = true; // 是否開啟 debug 模式
+let DBG_TYPE = GM.DBG_ALL;
 
 
 function debugDraw(type=DBG_TYPE,text)
@@ -103,7 +103,7 @@ function debugDraw(type=DBG_TYPE,text)
 
 
 // 處理跟 Phaser 相關的功能(顯示、互動、物理)
-export class View extends Phaser.GameObjects.Container
+class View extends Phaser.GameObjects.Container
 {
     constructor(root, modify=false)
     {
@@ -188,28 +188,7 @@ export class View extends Phaser.GameObjects.Container
         // this._rect.visible = on;
     }
 
-    //--------------------------------------------------
-    // Shape
-    //--------------------------------------------------
-    _addShape()
-    {
-        if(this.key)
-        {
-            let sp = this.scene.add.sprite(0,0,this.key,this.frame);
-            sp.setPipeline('Light2D');
-            sp.displayWidth = this.wid;
-            sp.displayHeight = this.hei;
-            sp.x = -this.anchorX; 
-            sp.y = -this.anchorY;
-            // sp.flipX = this._tmp.flipX;
-            // sp.flipY = this._tmp.flipY;
-            this.add(sp);
-            this._shape = sp;
-        }
-
-        return this;
-    }
-
+   
     //--------------------------------------------------
     // Z depth
     //--------------------------------------------------
@@ -327,19 +306,9 @@ export class View extends Phaser.GameObjects.Container
         return this;
     }
 
-    _setData(data)
-    {
-        for(let key in data)
-        {
-            if(this[key]!==undefined) {this[key]=data[key];}
-        }
-
-        return this;
-    }
-
     _init(modify)
     {
-        this._setData(this._root._bb)
+        this._setData()
             ._modify(modify)
             ._addShape()
             ._addPhysics()
@@ -352,13 +321,159 @@ export class View extends Phaser.GameObjects.Container
         this._root.pos = this.pos;
         this._root.isTouch = this.isTouch;
 
-        return this;
+        // return this;
     }
     
     //--------------------------------------------------
     // public
     //--------------------------------------------------
     isTouch() {return true;}
+
+    
+    //--------------------------------------------------
+    // virtual method
+    //--------------------------------------------------
+    _setData()
+    {
+        let data = this._root._bb;
+        for(let key in data)
+        {
+            if(this[key]!==undefined) {this[key]=data[key];}
+        }
+
+        return this;
+    }
+
+    _addShape() {return this;}
+
+
+}
+
+
+
+export class ItemView extends View
+{
+    _addShape()
+    {
+        if(this.key)
+        {
+            let sp = this.scene.add.sprite(0,0,this.key,this.frame);
+            sp.setPipeline('Light2D');
+            sp.displayWidth = this.wid;
+            sp.displayHeight = this.hei;
+            sp.x = -this.anchorX; 
+            sp.y = -this.anchorY;
+            // sp.flipX = this._tmp.flipX;
+            // sp.flipY = this._tmp.flipY;
+            this.add(sp);
+            this._shape = sp;
+        }
+
+        return this;
+    }
+}
+
+
+export class RoleView extends View
+{
+    _setData()
+    {
+
+        this.roleD={};
+        super._setData();
+        
+        // this._faceR = roleD.faceR;
+
+        let b = this.roleD.b;
+        let g = this.roleD.g;
+        let z = this.roleD.z;
+
+        if(b) {this.bl=b.l; this.br=b.r; this.bt=b.t; this.bb=b.b;}
+        if(g) {this.gl=g.l; this.gr=g.r; this.gt=g.t; this.gb=g.b;}
+        if(z) {this.zl=z.l; this.zr=z.r; this.zt=z.t; this.zb=z.b;}
+
+        this.wid = this.roleD.w; 
+        this.hei = this.roleD.h;
+        this.anchorX = this.roleD.anchor.x;
+        this.anchorY = this.roleD.anchor.y;
+
+        return this;
+    }
+
+    _addShape()
+    {
+        const roleD = this.roleD;
+        this._shape = this.scene.add.container(roleD.anchor.x,roleD.anchor.y);
+        this.add(this._shape);
+        if(roleD.body) {this._addPart(roleD.body, GM.PART_BODY);}
+        if(roleD.head) {this._addPart(roleD.head, GM.PART_HEAD);}
+        if(roleD.hand) {this._addPart(roleD.hand, GM.PART_HAND);}
+        this._equips = []; 
+        
+        return this;
+    }
+
+
+    _addPart(part, type)
+    {
+        const _DEPTH = Object.freeze({
+            [GM.PART_BODY] : 0,
+            [GM.PART_HEAD] : 2,
+            [GM.PART_HAND] : 5,
+            [GM.CAT_HELMET] : 3,
+            [GM.CAT_CHESTPLATE] : 1,
+            [GM.CAT_GLOVES] : 6,
+            [GM.CAT_BOOTS] : 1,
+            [GM.CAT_WEAPON] :4,
+        });
+
+        let addSp = (sprite, depth)=>
+        {
+            if(!sprite) {return;}
+            let [key,frame]=sprite.split('/');
+            if(key)
+            {
+                let sp = this.scene.add.sprite(0,0,key,frame);
+                sp.setScale(part.scale);
+                sp.setPipeline('Light2D');
+                sp.setOrigin(0.5,1);
+                sp.x = part.x ?? 0;
+                sp.y = part.y ?? 0;
+                sp.angle = part.a ?? 0;
+                sp.depth = depth;
+                this._shape.add(sp);
+                sps.push(sp);
+            }
+        }
+
+        let sps = [];
+        addSp(part.sprite, _DEPTH[type]);
+        addSp(part.ext, 6);
+        return sps;
+    }
+
+    _sortParts()
+    {
+        let children = this.getAll().sort((a, b) => a.depth - b.depth);
+        children.forEach(child => {this.bringToTop(child);});
+    }
+
+    //--------------------------------------------------
+    // public
+    //--------------------------------------------------
+    addEquip(item)
+    {
+        if(!item.equip) {return;}
+        let sps = this._addPart(item.equip, item.cat);
+        this._sortParts();
+        this._equips.push(...sps);
+    }
+
+    removeEquips()
+    {
+        this._equips.forEach((equip)=>{equip.destroy();})
+        this._equips = [];
+    }
 }
 
 

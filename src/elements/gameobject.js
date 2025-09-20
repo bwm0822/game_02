@@ -12,25 +12,28 @@ export class GameObject
         this._init();
     }
 
+    // 取得地圖名稱，存檔時，需要地圖名稱
     get mapName() {return this.scene._data.map;}
 
     //------------------------------------------------------
-    // map.createFromObjects 會呼叫到以下的 function
+    // map.createFromObjects() 會呼叫到以下的 function
     //------------------------------------------------------
     set displayWidth(value) {this._bb.wid=value;} 
     set displayHeight(value) {this._bb.hei=value;}  
-    // map.createFromObjects 要參考 originX、originX、x、y 才能算出正確的 position
+    // map.createFromObjects 要參考 originX、originY、x、y 才能算出正確的 position
     get originX() {return 0.5;}
     get originY() {return 0.5;}
     get x() {return this._bb.x;}
     get y() {return this._bb.y;}
     set x(value) {this._bb.x=value;}
     set y(value) {this._bb.y=value;}
+    //---- function 
     setName(name) {this._bb.name=name;}
     setPosition(x,y) {this._bb.x=x; this._bb.y=y;}
     setTexture(key,frame) {this._bb.key=key; this._bb.frame=frame;}
     setFlip(h,v) {console.log(h,v)}
-    setData(key,value) {this._bb[key]=value;}
+    // map.createFromObjects() 會利用 setData() 傳遞參數給 GameObject
+    setData(key,value) {this._bb[key]=value;}   
 
     //------------------------------------------------------
     // Local
@@ -48,10 +51,7 @@ export class GameObject
         if(this.acts.length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
-    _addToList()
-    {
-        this.scene.gos && this.scene.gos.push(this);
-    }
+    _addToList() {this.scene.gos && this.scene.gos.push(this);}
 
     _removeFromList()
     {
@@ -77,19 +77,20 @@ export class GameObject
     //------------------------------------------------------
     on(...args) {this._evt?.on(...args)}
     emit(...args) {this._evt?.emit(...args)}
+    //---- 加入 component
     add(com)
     {   
         if(!this._coms) {this._coms=[];}
         this._coms.push(com);
         return this;
     }
-
+    //---- 載入
     load()
     {
         let data = this._loadData();
         if(data) {for(let com of this._coms) {com.load?.(data);}}
     }
-
+    //---- 儲存
     save() 
     { 
         let data = {};
@@ -98,7 +99,7 @@ export class GameObject
     }
 
     //------------------------------------------------------
-    // interface
+    // abstract mehod
     //------------------------------------------------------
     get acts() {}
     get act() {}

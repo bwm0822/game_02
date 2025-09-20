@@ -225,8 +225,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 1,
             "selectedLayer": 2,
@@ -438,8 +438,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 606,
-                "y": 783.3333333333333
+                "x": 640,
+                "y": 639.6666666666666
             }
         },
         "public/assets/maps/village-02.json": {
@@ -648,7 +648,7 @@
         "public/assets/roles.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
         "public/assets/roles.tsj",
         "public/assets/maps/village-02.json",

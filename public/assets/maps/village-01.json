@@ -403,6 +403,11 @@
                          "value":32
                         }, 
                         {
+                         "name":"id",
+                         "type":"string",
+                         "value":"rogue"
+                        }, 
+                        {
                          "name":"interactive",
                          "type":"bool",
                          "value":true
@@ -413,7 +418,7 @@
                          "value":32
                         }],
                  "rotation":0,
-                 "type":"item",
+                 "type":"man",
                  "visible":true,
                  "width":32,
                  "x":544,

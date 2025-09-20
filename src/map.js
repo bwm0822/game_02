@@ -6,7 +6,7 @@ import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 import Record from './record.js';
-// import {View} from './view/view.js';
+import {Man} from './elements/man.js';
 import {Box} from './elements/case.js';
 
 let DEBUG = false;
@@ -307,7 +307,7 @@ class Map
                     {type:'door',classType:Door},
                     {type:'bed',classType:Bed},
                     {type:'enemy',classType:Enemy},
-                    // {type:'view',classType:View},
+                    {type:'man',classType:Man},
                     {type:'box',classType:Box},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
