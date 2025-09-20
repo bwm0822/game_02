@@ -1,0 +1,121 @@
+import Utility from '../utility.js';
+import DB from '../db.js';
+
+// 背包系統
+export class Inv
+{
+    constructor(root, capacity=-1)
+    {
+        this._root = root;
+        this._storage = {capacity:capacity,items:[]}
+
+        this._init();
+    }
+
+    get storage() {return this._storage;}
+
+    _init()
+    {
+        // interface
+        this._root.storage = this.storage;
+        this._root.put = this.put.bind(this);
+        this._root.take = this.take.bind(this);
+        this._root.split = this.split.bind(this);
+        this._root.drop = this.drop.bind(this);
+    }
+
+    _findEmpty()
+    {
+        let capacity = this.storage.capacity;
+        let count = this.storage.items.length;
+        let foundIndex = this.storage.items.findIndex(slot=>Utility.isEmpty(slot))
+        let i = foundIndex!=-1 ? foundIndex 
+                            : capacity==-1 || count<capacity ? count 
+                                                                : -1;
+        return i;
+    }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    load(data) {this._storage = data.storage; this._root.storage = this.storage;}
+    save() {return {storage:this._storage};}
+
+    put(id, count)
+    {
+        let cps = DB.item(id).cps ?? 1;
+
+        let i = 0;
+        let capacity = this.storage.capacity;
+        let len = this.storage.items.length;
+        let items = this.storage.items;
+        while(count>0 && (capacity == -1 || i<capacity))
+        {
+            if(i<len)
+            {
+                if(Utility.isEmpty(items[i]))
+                {
+                    items[i]={id:id, count:Math.min(count,cps)}
+                    count-=items[i].count
+
+                }
+                else if(items[i].id==id && items[i].count<cps)
+                {
+                    let sum = items[i].count+count;
+                    items[i].count = Math.min(sum,cps)
+                    count = sum-cps;
+                }
+            }
+            else
+            {
+                let min = Math.min(count,cps);
+                items.push({id:id, count:min});
+                count-=min;
+            }
+            i++;
+        }
+
+        if(count>0)
+        {
+            let ent = {label:id.lab(),itm:{id:id,count:count}}
+            this.drop(ent)
+        }
+        
+    }
+
+
+    take(ent, i)
+    {
+        !i && (i = this._findEmpty());
+
+        if(i!=-1)
+        {
+            this.storage.items[i]=ent.itm;
+            return true;
+        }
+        else
+        {  
+            this._send('msg','_space_full'.lab());
+            return false;
+        }
+    }
+
+    split(ent, cnt)
+    {
+        console.log('---- split')
+        ent.itm.count -= cnt;
+        let split = {id:ent.itm.id,count:cnt};
+        let i = this._findEmpty();
+        console.log(i)
+        if(i!=-1) {
+            this.storage.items[i]=split;
+        }
+        console.log( this.storage)
+    }
+
+    drop()
+    {
+        console.log('drop')
+    }
+
+}

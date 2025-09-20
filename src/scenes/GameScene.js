@@ -37,6 +37,7 @@ export class GameScene extends Scene
         this._ent = null;
         this.roles = [];
         this.entities = [];
+        this.gos = [];
         this.loadRecord();
         this.setEvent();
         this.initUI();
@@ -303,6 +304,7 @@ export class GameScene extends Scene
         if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
         console.log(this.objects)
         this.objects.forEach((obj)=>{obj.save?.();})
+        this.gos.forEach((go)=>{go.save?.();})
         // this.roles.forEach((role)=>{role.uid==-1 && role.save();})
         TimeManager.save();
         Record.save();

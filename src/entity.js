@@ -18,7 +18,6 @@ export class Entity extends Phaser.GameObjects.Container
         super(scene, x, y);
         this.scene = scene;
         scene.add.existing(this);
-        this._enableOutline();
         this.interactive = false;
         this.en_outline = true;
         this.weight = 0;
@@ -129,25 +128,18 @@ export class Entity extends Phaser.GameObjects.Container
         if(this.acts.length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
-    _enableOutline()
-    {
-        this._outline = this.scene.plugins.get('rexOutlinePipeline');
-        this.on('outline', (on) => {this._setOutline(on);})
-    }
-
     _setOutline(on)
     {
         if(!this.en_outline) {return;}
 
-        if(this._sp)
+        let shape = this._shape || this._sp;    
+
+        if(shape)
         {
-            if(on) {this._outline.add(this._sp,{thickness:3, outlineColor:0xffffff});}
-            else {this._outline.remove(this._sp);}
-        }
-        else if(this._shape)
-        {
-            if(on) {this._outline.add(this._shape,{thickness:3, outlineColor:0xffffff});}
-            else {this._outline.remove(this._shape);}
+            if(!this._outline) {this._outline = this.scene.plugins.get('rexOutlinePipeline');}
+
+            if(on) {this._outline.add(shape,{thickness:3, outlineColor:0xffffff});}
+            else {this._outline.remove(shape);}
         }
         else
         {

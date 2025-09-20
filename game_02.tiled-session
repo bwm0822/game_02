@@ -6,11 +6,11 @@
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
         "public/assets/templates",
-        "public/assets/maps",
+        "public/assets",
         ".",
-        "public",
+        "public/assets/maps",
         "public/assets/tiles",
-        "public/assets"
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -225,14 +225,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                3,
-                2
+                2,
+                3
             ],
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 335,
-                "y": 728
+                "x": 640,
+                "y": 640.5
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -305,8 +305,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 511.99999999999994,
-                "y": 512.6666666666666
+                "x": 512,
+                "y": 512.3333333333334
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -438,8 +438,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 219.99999999999997,
-                "y": 143.33333333333334
+                "x": 606,
+                "y": 783.3333333333333
             }
         },
         "public/assets/maps/village-02.json": {
@@ -648,7 +648,7 @@
         "public/assets/roles.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/roles.tsj",
         "public/assets/maps/village-02.json",

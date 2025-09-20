@@ -1,0 +1,108 @@
+import {Evt} from '../core/event.js';
+import Record from '../record.js'
+
+export class GameObject
+{
+    constructor(scene)
+    {
+        this.scene = scene;
+        this.uid = -1;   // map.createMap() 會自動設定 uid
+        this.qid = '';  // map.createMap() 會自動設定 qid
+        this._bb = {};  // blackboard，共享資料中心，可與各 component 分享資訊
+        this._init();
+    }
+
+    get mapName() {return this.scene._data.map;}
+
+    //------------------------------------------------------
+    // map.createFromObjects 會呼叫到以下的 function
+    //------------------------------------------------------
+    set displayWidth(value) {this._bb.wid=value;} 
+    set displayHeight(value) {this._bb.hei=value;}  
+    // map.createFromObjects 要參考 originX、originX、x、y 才能算出正確的 position
+    get originX() {return 0.5;}
+    get originY() {return 0.5;}
+    get x() {return this._bb.x;}
+    get y() {return this._bb.y;}
+    set x(value) {this._bb.x=value;}
+    set y(value) {this._bb.y=value;}
+    setName(name) {this._bb.name=name;}
+    setPosition(x,y) {this._bb.x=x; this._bb.y=y;}
+    setTexture(key,frame) {this._bb.key=key; this._bb.frame=frame;}
+    setFlip(h,v) {console.log(h,v)}
+    setData(key,value) {this._bb[key]=value;}
+
+    //------------------------------------------------------
+    // Local
+    //------------------------------------------------------
+    _send(type, ...args) {this.scene.events.emit(type, ...args);}
+
+    _onover() {this._send('over',this);}
+
+    _onout() {this._send('out',this);}
+
+    _ondown()
+    {
+        let x = this.pos.x - this.scene.cameras.main.worldView.x;
+        let y = this.pos.y - this.scene.cameras.main.worldView.y;
+        if(this.acts.length>0) {this._send('option',x,y-10,this.acts,this);}
+    }
+
+    _addToList()
+    {
+        this.scene.gos && this.scene.gos.push(this);
+    }
+
+    _removeFromList()
+    {
+        if(!this.scene.gos) {return;}
+        const index = this.scene.gos.indexOf(this);
+        if(index>-1) {this.scene.gos.splice(index,1);}
+    }
+
+    _init()
+    {
+        this._evt = new Evt();
+        // view 會觸發
+        this.on('over', this._onover.bind(this))
+        this.on('out', this._onout.bind(this))
+        this.on('down', this._ondown.bind(this))
+    }
+
+    _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
+    _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
+
+    //------------------------------------------------------
+    // Public
+    //------------------------------------------------------
+    on(...args) {this._evt?.on(...args)}
+    emit(...args) {this._evt?.emit(...args)}
+    add(com)
+    {   
+        if(!this._coms) {this._coms=[];}
+        this._coms.push(com);
+        return this;
+    }
+
+    load()
+    {
+        let data = this._loadData();
+        if(data) {for(let com of this._coms) {com.load?.(data);}}
+    }
+
+    save() 
+    { 
+        let data = {};
+        for(let com of this._coms) {data = {...data,...com.save?.()}}
+        this._saveData(data); 
+    }
+
+    //------------------------------------------------------
+    // interface
+    //------------------------------------------------------
+    get acts() {}
+    get act() {}
+    init_prefab() {}
+
+    
+}
