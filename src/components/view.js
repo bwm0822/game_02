@@ -101,8 +101,13 @@ function debugDraw(type=DBG_TYPE,text)
     show_text(text);
 }
 
-
-// 處理跟 Phaser 相關的功能(顯示、互動、物理)
+//--------------------------------------------------
+// 類別 : 元件(component) 
+// 名稱 : View 元件
+// 功能 :
+//  負責處理跟 Phaser 相關的功能，
+//  如 : 圖像顯示、互動、物理碰撞...等
+//--------------------------------------------------
 class View extends Phaser.GameObjects.Container
 {
     constructor(root, modify=false)
@@ -317,11 +322,10 @@ class View extends Phaser.GameObjects.Container
             ._addWeight()
             ._addListener()
 
-        // interface
+
+        // 在上層綁定操作介面，提供給其他元件使用
         this._root.pos = this.pos;
         this._root.isTouch = this.isTouch;
-
-        // return this;
     }
     
     //--------------------------------------------------
@@ -378,7 +382,6 @@ export class RoleView extends View
 {
     _setData()
     {
-
         this.roleD={};
         super._setData();
         

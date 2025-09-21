@@ -6,8 +6,8 @@ import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 import Record from './record.js';
-import {Man} from './elements/man.js';
-import {Box} from './elements/case.js';
+import {Man} from './roles/man.js';
+import {Box} from './items/case.js';
 
 let DEBUG = false;
 

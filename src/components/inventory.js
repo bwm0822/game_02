@@ -1,7 +1,11 @@
 import Utility from '../utility.js';
 import DB from '../db.js';
 
-// 背包系統
+//--------------------------------------------------
+// 類別 : 元件(component) 
+// 名稱 : 背包元件
+// 功能 : 提供儲存物品的功能
+//--------------------------------------------------
 export class Inv
 {
     constructor(root, capacity=-1)
@@ -16,7 +20,7 @@ export class Inv
 
     _init()
     {
-        // interface
+        // 在上層綁定操作介面，提供給其他元件使用
         this._root.storage = this.storage;
         this._root.put = this.put.bind(this);
         this._root.take = this.take.bind(this);
@@ -36,11 +40,14 @@ export class Inv
     }
 
     //------------------------------------------------------
-    //  Public
+    // 提供 load() save() 給上層調用
     //------------------------------------------------------
     load(data) {this._storage = data.storage; this._root.storage = this.storage;}
     save() {return {storage:this._storage};}
 
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
     put(id, count)
     {
         let cps = DB.item(id).cps ?? 1;

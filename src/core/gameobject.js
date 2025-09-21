@@ -1,14 +1,21 @@
-import {Evt} from '../core/event.js';
+import {Evt} from './event.js';
 import Record from '../record.js'
 
+//--------------------------------------------------
+// 遊戲場景中的物件都繼承 GameObject
+// 功能 :
+//  1. 提供 加入元件、載入、儲存的功能
+//  2. 提供 blackboard，讓元件共享資訊
+//  3. 提供事件監聽與觸發的功能(Evt)
+//--------------------------------------------------
 export class GameObject
 {
     constructor(scene)
     {
         this.scene = scene;
-        this.uid = -1;   // map.createMap() 會自動設定 uid
+        this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
-        this._bb = {};  // blackboard，共享資料中心，可與各 component 分享資訊
+        this._bb = {};  // blackboard，共享資料中心，可與各元件共享資訊
         this._init();
     }
 
@@ -38,6 +45,8 @@ export class GameObject
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
+    _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
+    _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
     _send(type, ...args) {this.scene.events.emit(type, ...args);}
 
     _onover() {this._send('over',this);}
@@ -69,28 +78,30 @@ export class GameObject
         this.on('down', this._ondown.bind(this))
     }
 
-    _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
-    _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
-
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
+
+    // 事件監聽與觸發
     on(...args) {this._evt?.on(...args)}
     emit(...args) {this._evt?.emit(...args)}
-    //---- 加入 component
+    
+    // 加入元件(component)
     add(com)
     {   
         if(!this._coms) {this._coms=[];}
         this._coms.push(com);
         return this;
     }
-    //---- 載入
+
+    // 載入資料
     load()
     {
         let data = this._loadData();
         if(data) {for(let com of this._coms) {com.load?.(data);}}
     }
-    //---- 儲存
+
+    // 儲存資料
     save() 
     { 
         let data = {};
