@@ -150,30 +150,27 @@ class View extends Phaser.GameObjects.Container
     // _addPhysics 會用到，不然 body 的位置會有問題
     get displayWidth() {return this.wid;}
     get displayHeight() {return this.hei;}
+
     //--------------------------------------------------
     // outline
     //--------------------------------------------------
     _setOutline(on)
     {
         if(!this.en_outline) {return;}
-
-        let shape = this._shape;
-
-        if(shape)
-        {
-            if(!this._outline) {this._outline = this.scene.plugins.get('rexOutlinePipeline');}
-
-            if(on) {this._outline.add(shape,{thickness:3, outlineColor:0xffffff});}
-            else {this._outline.remove(shape);}
-        }
-        else
-        {
-            this._setOutline_rect(on);
-        }
-        
+        (this._shape ? this._outline_shape.bind(this) : this._outline_rect.bind(this))(on);
     }
 
-    _setOutline_rect(on)
+    _outline_shape(on)
+    {
+        let shape = this._shape;
+
+        if(!this._outline) {this._outline = this.scene.plugins.get('rexOutlinePipeline');}
+
+        if(on) {this._outline.add(shape,{thickness:3, outlineColor:0xffffff});}
+        else {this._outline.remove(shape);}
+    }
+
+    _outline_rect(on)
     {
         if(!this._rect)
         {
@@ -191,10 +188,9 @@ class View extends Phaser.GameObjects.Container
             this._rect.y = p.y;
         }
 
-        // this._rect.visible = on;
+        this._rect.visible = on;
     }
 
-   
     //--------------------------------------------------
     // Z depth
     //--------------------------------------------------
@@ -328,7 +324,9 @@ class View extends Phaser.GameObjects.Container
             ._addWeight()
             ._addListener()
 
+        // 將 view 掛在 con 之下
         this._root.con.add(this);
+
         // 在上層綁定操作介面，提供給其他元件使用
         this._root.isTouch = this.isTouch;
     }
@@ -408,7 +406,6 @@ export class RoleView extends View
     _addShape()
     {
         const roleD = this.roleD;
-        // this._shape = this.scene.add.container(roleD.anchor.x,roleD.anchor.y);
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
         if(roleD.body) {this._addPart(roleD.body, GM.PART_BODY);}
