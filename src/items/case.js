@@ -11,7 +11,7 @@ export class Box extends GameObject
     init_prefab()
     {      
         // 加入元件  
-        this.add(new ItemView(this,true))
+        this.add(new ItemView(this, true))
             .add(new Inv(this))
 
         //
@@ -21,7 +21,7 @@ export class Box extends GameObject
 
         this._addToList();
 
-        console.log('uid:',this.uid,'qid:',this.qid)
+        // console.log('uid:',this.uid,'qid:',this.qid)
     }
 
     open()

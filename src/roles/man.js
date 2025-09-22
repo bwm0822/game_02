@@ -14,7 +14,7 @@ export class Man extends GameObject
         this._bb.roleD = DB.role(this._bb.id);
 
         // 加入元件
-        this.add(new RoleView(this,true))
+        this.add(new RoleView(this, true))
             .add(new Inv(this))
 
 

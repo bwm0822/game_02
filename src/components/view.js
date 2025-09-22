@@ -1,7 +1,7 @@
 import {GM} from '../setting.js';
 
 
-let DEBUG = true; // 是否開啟 debug 模式
+let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ALL;
 
 
@@ -41,8 +41,8 @@ function debugDraw(type=DBG_TYPE,text)
             // grid 的 x, y 是 body 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
-            let x = this.x + this.min.x + this.gl;
-            let y = this.y + this.min.y + this.gt;
+            let x = this.cen.x + this.min.x + this.gl;
+            let y = this.cen.y + this.min.y + this.gt;
             let rect = new Phaser.Geom.Rectangle( x, y, this._grid.w, this._grid.h );
             this._dbgGraphics.strokeRectShape(rect);
         }
@@ -55,8 +55,8 @@ function debugDraw(type=DBG_TYPE,text)
             // zone 的 x, y 是 zone 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(2, 0xff0000, 1);
-            let p = {x:this.x + this._zone.x - this._zone.width/2, 
-                    y:this.y + this._zone.y - this._zone.height/2}
+            let p = {x:this.cen.x + this._zone.x - this._zone.width/2, 
+                    y:this.cen.y + this._zone.y - this._zone.height/2}
             let rect = new Phaser.Geom.Rectangle(p.x,p.y,this._zone.width,this._zone.height); 
             this._dbgGraphics.strokeRectShape(rect);            
         }
@@ -71,7 +71,8 @@ function debugDraw(type=DBG_TYPE,text)
             this._dbgGraphics.strokeCircleShape(circle);
         }
         this._dbgGraphics.lineStyle(2, 0xffffff, 1);
-        let circle = new Phaser.Geom.Circle(this.x,this.y,5);
+        // let circle = new Phaser.Geom.Circle(this.pos.x,this.pos.y,5);
+        let circle = new Phaser.Geom.Circle(this.anchor.x,this.anchor.y,5);
         this._dbgGraphics.strokeCircleShape(circle);
     }
 
@@ -110,10 +111,9 @@ function debugDraw(type=DBG_TYPE,text)
 //--------------------------------------------------
 class View extends Phaser.GameObjects.Container
 {
-    constructor(root, modify=false)
+    constructor(root, modify)
     {
         super(root.scene);
-        // this.scene = scene;
         this.scene.add.existing(this);
         this._root = root;
         this._pGrids = [];          // grid 在地圖網格所佔據的點
@@ -127,7 +127,7 @@ class View extends Phaser.GameObjects.Container
         this.en_outline = true;     // 是否開啟 outline 的功能
         this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否會阻擋
-        this.weight = 0;
+        this.weight = 1000;
         this.bl=0, this.br=0, this.bt=0, this.bb=0;    // body 的 left, right, top, bottom，物理 body 方塊
         this.gl=0, this.gr=0, this.gt=0, this.gb=0;    // grid 的 left, right, top, bottom，地圖網格方塊
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;    // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
@@ -139,12 +139,13 @@ class View extends Phaser.GameObjects.Container
         this._init(modify);
     }
 
-    get pos()   {return {x:this.x,y:this.y}}    // 錨點的座標(world space)
-    get posG() {return {x:this.x+this._grid.x, y:this.y+this._grid.y}} // grid 的中心點(world space)
-    get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}}):[this.pos]} 
+    get anchor() {return this._root.pos;}          // 錨點的座標(world space)
+    get cen()   {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}    // 中心點的座標(world space)
+    get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
+    get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
     
-    get min() {return {x:-this.wid/2-this.anchorX, y:-this.hei/2-this.anchorY};} // view 的左上角座標
-    get max() {return {x:this.wid/2-this.anchorX, y:this.hei/2-this.anchorY};} // view 的右下角座標
+    get min() {return {x:-this.wid/2, y:-this.hei/2};} // view 的左上角座標
+    get max() {return {x:this.wid/2, y:this.hei/2};} // view 的右下角座標
 
     // _addPhysics 會用到，不然 body 的位置會有問題
     get displayWidth() {return this.wid;}
@@ -176,7 +177,7 @@ class View extends Phaser.GameObjects.Container
     {
         if(!this._rect)
         {
-            let p = {x:this.x + this._zone.x, y:this.y + this._zone.y};
+            let p = {x:this.cen.x + this._zone.x, y:this.cen.y + this._zone.y};
             this._rect = this.scene.add.rectangle(p.x, p.y, this._zone.width, this._zone.height, 0xffffff, 0.5);
             this._rect.setStrokeStyle(2, 0xffffff)
             this._rect.setDepth(Infinity);
@@ -184,7 +185,7 @@ class View extends Phaser.GameObjects.Container
 
         if(on)
         {
-            let p = {x:this.x + this._zone.x, y:this.y + this._zone.y};
+            let p = {x:this.cen.x + this._zone.x, y:this.cen.y + this._zone.y};
 
             this._rect.x = p.x;
             this._rect.y = p.y;
@@ -199,9 +200,7 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _updateDepth()
     {
-        let depth = this.y;
-        this.setDepth(depth);
-        //this.debug(depth.toFixed(1));
+        this._root.updateDepth();
         return this;
     }
 
@@ -215,7 +214,7 @@ class View extends Phaser.GameObjects.Container
         this.body.setSize(this.wid-this.bl-this.br, this.hei-this.bt-this.bb);
         if(this.isStatic) 
         {
-            this.body.setOffset(-this.anchorX+this.bl, -this.anchorY+this.bt);
+            this.body.setOffset(this.anchor.x+this.bl, this.anchor.y+this.bt);
             this.isBlock && this.scene.staGroup.add(this);
         }
         else 
@@ -260,13 +259,17 @@ class View extends Phaser.GameObjects.Container
     }
 
     //--------------------------------------------------
-    // 調整位置
+    // 設定 anchor
     //--------------------------------------------------
-    _modify(modify)
+    _setAnchor(modify)
     {
-        // prefab 才需要將 modify 設成 true，用以修正位置
-        if(modify) {this.x+=this.anchorX;this.y+=this.anchorY;}
-
+        this.x = -this.anchorX;
+        this.y = -this.anchorY;
+        if(modify)
+        {
+            this._root.x += this.anchorX;
+            this._root.y += this.anchorY;
+        }
         return this;
     }
 
@@ -311,10 +314,13 @@ class View extends Phaser.GameObjects.Container
         return this;
     }
 
+    //--------------------------------------------------
+    // 初始化
+    //--------------------------------------------------
     _init(modify)
     {
         this._setData()
-            ._modify(modify)
+            ._setAnchor(modify)
             ._addShape()
             ._addPhysics()
             ._addGrid()
@@ -322,9 +328,8 @@ class View extends Phaser.GameObjects.Container
             ._addWeight()
             ._addListener()
 
-
+        this._root.con.add(this);
         // 在上層綁定操作介面，提供給其他元件使用
-        this._root.pos = this.pos;
         this._root.isTouch = this.isTouch;
     }
     
@@ -354,7 +359,6 @@ class View extends Phaser.GameObjects.Container
 }
 
 
-
 export class ItemView extends View
 {
     _addShape()
@@ -365,8 +369,6 @@ export class ItemView extends View
             sp.setPipeline('Light2D');
             sp.displayWidth = this.wid;
             sp.displayHeight = this.hei;
-            sp.x = -this.anchorX; 
-            sp.y = -this.anchorY;
             // sp.flipX = this._tmp.flipX;
             // sp.flipY = this._tmp.flipY;
             this.add(sp);
@@ -406,7 +408,8 @@ export class RoleView extends View
     _addShape()
     {
         const roleD = this.roleD;
-        this._shape = this.scene.add.container(roleD.anchor.x,roleD.anchor.y);
+        // this._shape = this.scene.add.container(roleD.anchor.x,roleD.anchor.y);
+        this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
         if(roleD.body) {this._addPart(roleD.body, GM.PART_BODY);}
         if(roleD.head) {this._addPart(roleD.head, GM.PART_HEAD);}
@@ -439,7 +442,7 @@ export class RoleView extends View
                 let sp = this.scene.add.sprite(0,0,key,frame);
                 sp.setScale(part.scale);
                 sp.setPipeline('Light2D');
-                sp.setOrigin(0.5,1);
+                // sp.setOrigin(0.5,1);
                 sp.x = part.x ?? 0;
                 sp.y = part.y ?? 0;
                 sp.angle = part.a ?? 0;
