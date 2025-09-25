@@ -3,7 +3,7 @@ import DB from '../db.js';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
-// 名稱 : 背包元件
+// 標籤 : inv
 // 功能 : 提供儲存物品的功能
 //--------------------------------------------------
 export class Inv
@@ -13,19 +13,21 @@ export class Inv
         this._root = root;
         this._storage = {capacity:capacity,items:[]}
 
-        this._init();
+        this._bind(root);
     }
 
-    get storage() {return this._storage;}
+    get tag() {return 'inv';}   // 回傳元件的標籤
 
-    _init()
+    get storage() {return this._storage;}
+    
+    _bind(root)
     {
         // 在上層綁定操作介面，提供給其他元件使用
-        this._root.storage = this.storage;
-        this._root.put = this.put.bind(this);
-        this._root.take = this.take.bind(this);
-        this._root.split = this.split.bind(this);
-        this._root.drop = this.drop.bind(this);
+        root.storage = this.storage;
+        root.put = this.put.bind(this);
+        root.take = this.take.bind(this);
+        root.split = this.split.bind(this);
+        root.drop = this.drop.bind(this);
     }
 
     _findEmpty()
@@ -40,7 +42,7 @@ export class Inv
     }
 
     //------------------------------------------------------
-    // 提供 load() save() 給上層調用
+    // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
     load(data) {this._storage = data.storage; this._root.storage = this.storage;}
     save() {return {storage:this._storage};}

@@ -4,44 +4,55 @@ import Record from '../record.js'
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
 // 功能 :
-//  1. 提供 加入元件、載入、儲存的功能
+//  1. 提供 元件庫、載入、儲存的功能
 //  2. 提供 blackboard，讓元件共享資訊
-//  3. 提供事件監聽與觸發的功能(Evt)
+//  3. 提供 事件監聽與觸發的功能(Evt)
 //--------------------------------------------------
+
 export class GameObject
 {
     constructor(scene)
     {
         this.scene = scene;
-        this.con = scene.add.container(0,0);    //
+        this._coms = {}; // 元件庫
+        this._bb = {};  // blackboard，共享資料中心，可與各元件共享資訊
+        this._ent = scene.add.container(0,0);    // gameObject 的實體，view 掛在其下
+
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
-        this._bb = {};  // blackboard，共享資料中心，可與各元件共享資訊
+
         this._init();
     }
 
     get mapName() {return this.scene._data.map;}    // 取得地圖名稱，存檔時，需要地圖名稱
     get pos() {return {x:this.x, y:this.y};}        // 位置
+
+    get ent() {return this._ent;}                   // 實體
+    get coms() {return this._coms;}                 // 元件庫
+    get bb() {return this._bb;}                     // blackboard
+
+    // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
+    get ctx() {return {...this.coms,bb:this.bb};}
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
     //------------------------------------------------------
-    set displayWidth(value) {this._bb.wid=value;} 
-    set displayHeight(value) {this._bb.hei=value;}  
+    set displayWidth(value) {this.bb.wid=value;} 
+    set displayHeight(value) {this.bb.hei=value;}  
     // map.createFromObjects 要參考 originX、originY、x、y 才能算出正確的 position
     get originX() {return 0.5;}
     get originY() {return 0.5;}
-    get x() {return this.con.x;}
-    get y() {return this.con.y;}
-    set x(value) {this.con.x=value;}
-    set y(value) {this.con.y=value;}
+    get x() {return this.ent.x;}
+    get y() {return this.ent.y;}
+    set x(value) {this.ent.x=value;}
+    set y(value) {this.ent.y=value;}
     
     //---- function 
-    setName(name) {this._bb.name=name;}
+    setName(name) {this.bb.name=name;}
     setPosition(x,y) {this.x=x; this.y=y;}
-    setTexture(key,frame) {this._bb.key=key; this._bb.frame=frame;}
+    setTexture(key,frame) {this.bb.key=key; this.bb.frame=frame;}
     setFlip(h,v) {console.log(h,v)}
     // map.createFromObjects() 會利用 setData() 傳遞參數給 GameObject
-    setData(key,value) {this._bb[key]=value;}   
+    setData(key,value) {this.bb[key]=value;}   
 
     //------------------------------------------------------
     // Local
@@ -87,8 +98,7 @@ export class GameObject
     // 加入元件(component)
     add(com)
     {   
-        if(!this._coms) {this._coms=[];}
-        this._coms.push(com);
+        this.coms[com.tag]=com;
         return this;
     }
 
@@ -96,14 +106,14 @@ export class GameObject
     load()
     {
         let data = this._loadData();
-        if(data) {for(let com of this._coms) {com.load?.(data);}}
+        if(data) {for(let com of Object.values(this.coms)) {com.load?.(data);}}
     }
 
     // 儲存資料
     save() 
     { 
         let data = {};
-        for(let com of this._coms) {data = {...data,...com.save?.()}}
+        for(let com of Object.values(this.coms)) {data = {...data,...com.save?.()}}
         this._saveData(data); 
     }
 
@@ -111,7 +121,7 @@ export class GameObject
     updateDepth()
     {
         let depth = this.y;
-        this.con.setDepth(depth);
+        this.ent.setDepth(depth);
     }
     //------------------------------------------------------
     // abstract mehod
