@@ -21,6 +21,7 @@ class Behavior
     // 工具：冷卻與間隔
     _isOnCooldown(ctx) 
     {
+        console.log('-------',this.minInterval, ctx.tick)
         if (this.minInterval > 0 && ctx.tick - this.lastUsedTick < this.minInterval) return true;
         return !ctx.cd.ready(this.coolKey, 0);
     }
@@ -39,32 +40,24 @@ export class BehAttack extends Behavior
     score(ctx) 
     {
         const { bb, sense, role } = ctx;
-        const t = bb.target ?? sense.findNearestEnemy();
+        const t = bb.target ?? sense.sensePlayer();
         if (!t) return [0, 'no target'];
         if (!sense.canSee(t)) return [0.1, 'target unseen']; // 很低分：可以先追
-        const dist = sense.distTo(t);
-        const inRange = sense.inAttackRange(t);
-        if (!role.canAttack()) return [0, 'cant attack'];
-        let base = inRange ? 0.8 : 0.4;
-        // 目標血量越低，優先度越高（收頭）
-        base += (1 - t.hpRatio) * 0.3;
-        // 自身血量越低，降低攻擊傾向
-        base -= (1 - role.hpRatio) * 0.4;
-        // 冷卻扣分
-        if (this._isOnCooldown(ctx)) base *= 0.2;
-        return [Math.max(0, base * this.weight), `dist=${dist.toFixed(1)} inRange=${inRange}`];
+        let base = 1;
+        return [Math.max(0, base * this.weight), `none`];
     }
 
     async act(ctx) 
     {
-        const { bb, action, sense } = ctx;
-        const t = bb.target ?? sense.findNearestEnemy();
+        const {bb, action, sense} = ctx;
+
+        const t = bb.target ?? sense.sensePlayer();
         if (!t) return { ok:false, note:'no target' };
         if (sense.inAttackRange(t)) 
         {
             const ok = await action.attack(t);
             if (ok) { this._commitUse(ctx); return { ok:true, note:'attack' }; }
-            return { ok:false, note:'attack failed' };
+            else {return { ok:false, note:'attack failed' };}
         } 
         else 
         {
@@ -80,19 +73,28 @@ export class BehChase extends Behavior
 
     score(ctx) 
     {
-        const { bb, sense } = ctx;
-        const t = bb.target ?? sense.sensePlayer();
-        if (!t) {return [0, 'no target'];}
-        if (!sense.canSee(t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
-        let base = 1;
-        return [Math.max(0, base * this.weight), `none`];
+        if (this._isOnCooldown(ctx)) 
+        {
+            return [0, `cooldown`];
+        }
+        else
+        {
+            const { bb, sense } = ctx;
+            const t = bb.target ?? sense.sensePlayer();
+            if (!t) {return [0, 'no target'];}
+            if (!sense.canSee(t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
+            let base = 1;
+            return [Math.max(0, base * this.weight), `none`];
+        }
     }
 
     async act(ctx) 
     {
         const { bb, action, sense } = ctx;
         const t = bb.target ?? sense.sensePlayer();
-        if (!t) return { ok:false, note:'no target' };
+        if (!t) {return { ok:false, note:'no target' };}
+
+        this._commitUse(ctx) 
         const ok = await action.moveToward(t, { maxSteps: 2 });
         return { ok, note:'chase' };
         

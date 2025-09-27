@@ -8,7 +8,7 @@ import Utility from './utility.js';
 import Record from './record';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
-import {Entity,Pickup,Door, Projectile} from './entity.js';
+import {Entity, Pickup,Door, Projectile} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
 import {text,bbcText,rect, sprite} from './uibase.js';

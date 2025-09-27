@@ -1,3 +1,6 @@
+import {Projectile} from '../entity.js';
+
+
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : action
@@ -52,10 +55,24 @@ export class Action
         anim?._idle(false);
         anim?._walk(duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
-        await this._step(pt,duration,ease);
+        await this._step(pt, duration, ease);
         view?._updateDepth();
     }
 
+    _attack_Melee(target, onHit)
+    {
+        let [pos,duration,ease] = [target.pos, 200, 'expo.in'];
+        return this._step( pos, duration, ease, {yoyo: true, onYoyo: onHit} );  
+    }
+
+    _attack_Ranged(target, onHit)
+    {
+        return new Promise((resolve)=>{
+                        new Projectile(this.scene, this.ent.x, this.ent.y, 'arrow', 0.25)
+                            .shoot( target.pos.x, target.pos.y, 
+                                async ()=>{onHit?.();resolve();});
+                    })
+    }
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -73,4 +90,16 @@ export class Action
         }
         return true;
     }
+
+    async attack(target)
+    {
+        const {view} = this.ctx;
+        view?._faceTo(target.pos);
+        let ranged=false;
+        if(ranged) {await this._attack_Ranged(target);}
+        else {await this._attack_Melee(target);}
+        return true;
+    }
+
+    
 }

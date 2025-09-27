@@ -1,6 +1,6 @@
 import {GameObject} from '../core/gameobject.js';
 import {ItemView,RoleView} from '../components/view.js';
-import {Inv} from '../components/inventory.js';
+import {Inventory} from '../components/inventory.js';
 import {Anim} from '../components/anim.js';
 import {Action} from '../components/action.js';
 import {Nav} from '../components/nav.js';
@@ -28,7 +28,7 @@ export class Man extends GameObject
 
         // 加入元件
         this.add(new RoleView(this, true))
-            .add(new Inv(this))
+            .add(new Inventory(this))
             .add(new Anim(this))
             .add(new Action(this))
             .add(new Nav(this))

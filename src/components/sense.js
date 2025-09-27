@@ -60,6 +60,12 @@ export class Sense
         return hits.length === 0;
     }
 
+    inAttackRange(target)
+    {
+        let maxTiles=1;
+        return withinTiles(this.pos, target.pos, maxTiles);
+    }
+
 
 
 

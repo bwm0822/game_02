@@ -1,5 +1,5 @@
 import TimeManager from '../../time.js';
-import {BehChase} from './behavior.js';
+import {BehAttack, BehChase} from './behavior.js';
 
 
 // 回合制冷卻：以 TimeManager.ticks（回合數）判定
@@ -34,9 +34,6 @@ const AI_CD = Object.freeze({
         WANDER:'wander', SENSE:'sense', SNARL:'snarl',  
         GREET:'greet', CHIRP:'chirp', FLOCK:'flock'
     });
-
-
-
 
 // --- 決策器：Utility 選最高分，然後執行 ---
 // 你也可以在這裡加上「分數門檻」、「次佳備援」等策略
@@ -81,15 +78,15 @@ export class AIController
         this.behaviors = [
             // new BehDrinkPotion({ weight: 1.0 }),
             // new BehFlee({ weight: 1.0 }),
-            // new BehAttack({ weight: 1.2 }),   // 偏攻擊
-            new BehChase(),
+            new BehAttack({weight:1.2}),   // 偏攻擊
+            new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
         ];
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
     get root() {return this._root;}
-    get ctx() {return this._root.ctx;}
+    get ctx() {return {...this._root.ctx, cd:this.cd, tick:TimeManager.ticks};}
 
     //------------------------------------------------------
     //  Public
