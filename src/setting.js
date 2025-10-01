@@ -128,15 +128,21 @@ export let GM =
     OPENBAG : 'openbag',
     MOVE: 'move',
 
+
+
+
     // 基礎屬性
-    BASE : ["str", "dex", "con", "int"],
+    BASE : ["str", "dex", "con", "int", "luk"],
     STR: "str",
     DEX: "dex",
     CON: "con",
     INT: "int",
+    LUK: "luk",
+
 
     // 戰鬥屬性 
-    COMBAT: ["atk", "def", "range", "hit", "dodge", "critRate", "critDmg"],
+    COMBAT: ["atk", "def", "range", "hit", "dodge", "critRate", "critDmg", 
+            "acc", "eva", "cri", "crid", "type"],
     HPMAX : "hpMax",        // 生命上限
     ATK : "atk",            // 攻擊
     DEF : "def",            // 防禦
@@ -144,26 +150,33 @@ export let GM =
     HIT : "hit",            // 命中
     DODGE : "dodge",        // 閃避
     CRITR : "critRate",     // 暴擊率
-    CRITD : "critDmg",      // 暴擊傷害倍率
-    
-    PEN : "pen",            // 穿透
+    CRITD : "critDmg",      // 暴擊率
+    ACC : "acc",        // 準確
+    EVA : "eva",        // 閃避
+    CRI : "cri",        // 暴率
+    CRID : "crid",      // 暴傷
+    PEN : "pen",        // 穿透
+    TYPE : "type",      // 攻擊類型: ranged/melee
+    // 攻擊類型
+    RANGED : 'ranged',
+    MELEE : 'melee',
     
     PCT: [  "hit","dodge","critRate","pen","mul",
             "phy_res","fire_res","ice_res","poison_res"],
 
     // 抗性 (Resists)
     RESIST : ["phy_res", "fire_res", "ice_res", "poison_res"],
-    PHY_RES : "phy_res",
-    FIRE_RES : "fire_res",
-    ICE_RES : "ice_res",
-    POISON_RES : "poison_res",
+    PHY_RES : "phy_res",        // 物抗
+    FIRE_RES : "fire_res",      // 火炕
+    ICE_RES : "ice_res",        // 冰抗
+    POISON_RES : "poison_res",  // 毒抗
 
     // 元素
     ELM : "elm",            // 元素
-    PHY : "phy",
-    FIRE : "fire",
-    ICE : "ice",
-    POISON : "poison",
+    PHY : "phy",            // 物理
+    FIRE : "fire",          // 火焰
+    ICE : "ice",            // 冰凍  
+    POISON : "poison",      // 毒藥
 
     // 生存屬性
     SURVIVAL : ["hp", "hunger", "thirst"],

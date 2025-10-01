@@ -1,47 +1,64 @@
+import {GM} from '../setting.js';
+
 // systems/combat.js
 // 傷害型別：'phys' | 'fire' | 'ice' | 'poison' ...
 // skill = { power:1.0, element:'phys', kind:'melee'|'ranged'|'magic', flat?:0, ignoreDef?:0 }
-export function computeDamage(attacker, defender, skill={}) {
-  const aStats = attacker.coms?.stats ?? attacker.stats ?? attacker; // 保守取法
-  const dStats = defender.coms?.stats ?? defender.stats ?? defender;
-  const element = skill.element || 'phys';
-  const kind = skill.kind || 'melee';
-  const power = skill.power ?? 1.0;
-  const flat  = skill.flat  ?? 0;
-  const ignoreDef = skill.ignoreDef ?? 0; // 0~1
 
-  // --- 1) 攻擊力：基礎 + 武器 ---
-  // 你的規則：近戰 atk = base_atk + weapon_atk；遠程 atk = weapon_atk
-  // 這裡假設 attacker.weapon = { atk, ranged:boolean, magic?:boolean }
-  const w = attacker.weapon ?? { atk: 0, ranged:false, magic:false };
+function _checkHit(aStats, dStats, skill)
+{   
+    let acc = aStats[GM.ACC] + (skill?.dat?.self?.hit??0); 
+    let eva = dStats[GM.EVA] + (skill?.dat?.target?.dodge??0);
+    let rnd = Math.random();
+    if(rnd >= acc) {return {amount:0, type:GM.MISS};}
+    else if(rnd >= (hit-eva)) {return {amount:0, type:GM.EVA};}
+}
 
-  let baseATK = 0;
-  if (kind === 'melee') baseATK = aStats.baseMeleeATK + (w.atk||0);
-  else if (kind === 'ranged') baseATK = (w.atk||0); // ranged 規則：只吃武器ATK
-  else if (kind === 'magic') baseATK = aStats.baseMagicATK + (w.atk||0);
+export function computeDamage(attacker, defender, skill={}) 
+{
+    const aStats = attacker.getTotalStats();
+    const dStats = defender.getTotalStats(aStats.enemy);
+    console.log(aStats,dStats)
 
-  let atk = Math.max(0, baseATK * power + flat);
+    const element = skill.element || GM.PHY;
+    const kind = skill.kind || GM.MELEE;
+    const power = skill.power ?? 1.0;
+    const flat  = skill.flat  ?? 0;
+    const ignoreDef = skill.ignoreDef ?? 0; // 0~1
 
-  // --- 2) 防禦 ---
-  let def = (element === 'phys') ? dStats.basePDEF : dStats.baseMDEF;
-  def = Math.max(0, def * (1 - ignoreDef));
+    // 計算是否命中
+    const ret = _checkHit(aStats, dStats, skill);
+    if(ret) {return ret;}
 
-  // --- 3) 先算基礎傷害 ---
-  let dmg = Math.max(1, atk - def);
+    // 計算傷害
+    let type = GM.HIT;
+    let atk = aStats[GM.ATK] || 0;          // 基本攻擊
+    let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性
+    let pow = skill?.dat?.mul ?? 1;         // 傷害倍率
+    let pen = skill?.dat?.pen ?? 0;         // 防禦穿透率(penetrate)
 
-  // --- 4) 屬性抗性 ---
-  const res = defender.resists ? defender.resists() : (dStats.data?.res ?? {});
-  const r = res[element] ?? 0; // 0.2=減20%，-0.5=多吃50%
-  dmg *= (1 - r);
+    // 1. 計算基礎傷害
+    let baseDamage = atk * pow;
+    // 2. 計算防禦係數
+    const effectiveDef = dStats.def * (1 - pen);
+    let defFactor = baseDamage / (baseDamage + effectiveDef);
+    // 3. 計算實際傷害
+    let damage = baseDamage * defFactor;
+    const resist = dStats.resists?.[RESIST_MAP[elm]] || 0;
+    damage *= 1 - resist;
+    // 4. 計算暴擊
+    if (Math.random() < aStats[GM.CRITR]) 
+    {
+        damage *= aStats[GM.CRITD];
+        console.log(`💥 ${attacker.name} 暴擊！`);
+        type = GM.CRIT;
+    }
+    // 5. 浮動傷害(0.85 ~ 1.05)
+    damage *= 0.95 + Math.random() * 0.1;
+    damage = Math.round(Math.max(1, damage))
 
-  // --- 5) 暴擊 ---
-  const crit = Math.random() < (aStats.critRate ?? 0.05);
-  if (crit) dmg *= (aStats.critMult ?? 1.5);
 
-  // --- 6) 隨機浮動（±10%）---
-  dmg *= (0.9 + Math.random() * 0.2);
+    return {amount:damage, type:type};
 
-  return { damage: Math.floor(dmg), crit };
 }
 
 export default { computeDamage };
