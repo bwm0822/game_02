@@ -20,7 +20,7 @@
 export class Evt 
 {
     constructor(){ this.map = new Map(); }
-    on(k, f){ if(!this.map.has(k)) this.map.set(k,new Set()); this.map.get(k).add(f); }
-    off(k, f){ this.map.get(k)?.delete(f); }
-    emit(k, ...a){ this.map.get(k)?.forEach(fn=>fn(...a)); }
+    on(k, f) { if(!this.map.has(k)) this.map.set(k,new Set()); this.map.get(k).add(f); }
+    off(k, f) { this.map.get(k)?.delete(f); }
+    emit(k, ...a) { this.map.get(k)?.forEach(fn=>fn(...a)); }
 }

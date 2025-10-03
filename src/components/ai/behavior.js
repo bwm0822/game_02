@@ -21,7 +21,6 @@ class Behavior
     // 工具：冷卻與間隔
     _isOnCooldown(ctx) 
     {
-        console.log('-------',this.minInterval, ctx.tick)
         if (this.minInterval > 0 && ctx.tick - this.lastUsedTick < this.minInterval) return true;
         return !ctx.cd.ready(this.coolKey, 0);
     }

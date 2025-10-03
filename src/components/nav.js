@@ -21,7 +21,7 @@ export class Nav
 
     _bind(root)
     {
-        // 在上層綁定操作介面，提供給其他元件使用
+        // 在上層綁定操作介面，提供給外部件使用
     }
 
     //------------------------------------------------------
@@ -30,6 +30,7 @@ export class Nav
     findPath(ep)
     {
         let rst = this.map.getPath(this.pos, [ep]);
+        // rst = {state:1,path:[]}
         this.bb.path = rst;
     }
 

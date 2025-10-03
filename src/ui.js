@@ -3,7 +3,7 @@ import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
 import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
 import {GM} from './setting.js';
-import * as Role from './role.js';
+
 import DB from './db.js';
 import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
@@ -13,6 +13,10 @@ import QuestManager from './quest.js';
 import InventoryService from './services/inventoryService.js';
 import PressService from './services/pressService.js';
 import DragService from './services/dragService.js';
+
+// import * as Role from './role.js';
+// import {getPlayer} from './role.js';
+import {getPlayer} from './roles/role.js';
 
 let uiScene;
 let _mode = 0;
@@ -180,8 +184,8 @@ class Slot extends Icon
     get gold() {return this.itm.count*this.dat.gold;}
 
     get isEmpty() {return Utility.isEmpty(this.itm)||this.itm.count==0;}
-    get container() {return this.owner?.storage?.items;}
-    get capacity() {return this.owner?.storage?.capacity; }
+    get container() {return this.owner?.inv?.storage?.items??this.owner?.storage?.items;}
+    get capacity() {return this.owner?.inv?.storage?.capacity??this.owner?.storage?.capacity; }
 
     get storage() 
     {
@@ -443,7 +447,8 @@ class EquipSlot extends Slot
         this.setIcon();
     }
 
-    get container() {return this.owner?.rec?.equips;}
+    // get container() {return this.owner?.rec?.equips;}
+    get container() {return this.owner?.inv?.equips;}
     get capacity() {return -1;}
 
     get cat() {return this._cat;}
@@ -454,7 +459,8 @@ class EquipSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get itm() {return super.itm;}
-    set itm(value) {super.itm=value; this.owner.equip();}
+    // set itm(value) {super.itm=value; this.owner.equip();}
+    set itm(value) {super.itm=value; this.owner.inv.equip();}
 
     _isSameCat(cat)   {return (this.cat & cat) == cat;}  
 
@@ -526,7 +532,7 @@ class SkillSlot extends Pic
         this._dat = null;       // 用來存放技能資料
     }
 
-    get owner() {return Role.getPlayer();}
+    get owner() {return getPlayer();}
     get id() {return this.owner.skill.getSlotAt(this._i);}
     get remain() {return this.owner.skill.get(this.id).remain;}
     get ready() {return this.remain===0;}
@@ -640,7 +646,7 @@ class SkillItem extends Pic
         this._dat = null;       // 用來存放技能資料
     }
 
-    get owner() {return Role.getPlayer();}
+    get owner() {return getPlayer();}
     get id() {return this._id;}
     get i() {return this._i;}
     get dat() {return this._dat;}
@@ -846,7 +852,7 @@ export class UiDragged_old extends OverlapSizer
             i: skill.i,
         }
         let dat = DB.skill(skill.id);
-        // this.owner = Role.getPlayer();
+        // this.owner = getPlayer();
         this.setIcon(dat.icon).setCount('')
         UiCover.show();
         // UiMain.enable(false);
@@ -1826,7 +1832,8 @@ class UiBase extends Sizer
 
     updateGrid(cat) {this.getElement('grid',true).getElement('items').forEach(item => {item?.update(cat);});}
 
-    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.rec.gold}`);}
+    // updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.rec.gold}`);}
+    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.inv.gold}`);}
 
     close() {this.hide();}
 
@@ -1933,13 +1940,13 @@ class Option extends UiBase
     inv()
     {
         this.close();
-        UiInv.show(Role.getPlayer());
+        UiInv.show(getPlayer());
     }
 
     profile()
     {
         this.close();
-        UiProfile.show(Role.getPlayer());
+        UiProfile.show(getPlayer());
     }
 
     async split()
@@ -1968,17 +1975,17 @@ class Option extends UiBase
         this.close();
         // if(act === GM.ATTACK)
         // {
-        //     // Role.getPlayer().attack(this.ent);
-        //     Role.getPlayer().goto({ent:this.ent,act:GM.ATTACK});
+        //     // getPlayer().attack(this.ent);
+        //     getPlayer().goto({ent:this.ent,act:GM.ATTACK});
         // }
         // else
         // {
-        //     // Role.getPlayer().setDes({ent:this.ent,act});
-        //     Role.getPlayer().goto({ent:this.ent,act:act});
+        //     // getPlayer().setDes({ent:this.ent,act});
+        //     getPlayer().goto({ent:this.ent,act:act});
         // }
 
-        // Role.getPlayer().goto({ent:this.ent,act:act});
-         Role.getPlayer().execute({ent:this.ent,act:act});
+        // getPlayer().goto({ent:this.ent,act:act});
+         getPlayer().execute({ent:this.ent,act:act});
     }
 
     show(x,y,options,ent)
@@ -2200,7 +2207,7 @@ export class UiStorage extends UiBase
         this.unregister();
 
         delete this.owner.target;
-        delete Role.getPlayer().target;
+        delete getPlayer().target;
     }
 
     refresh()
@@ -2212,8 +2219,8 @@ export class UiStorage extends UiBase
     {
         super.show();
         this.owner = owner;
-        this.owner.target = Role.getPlayer();
-        Role.getPlayer().target = this.owner;
+        this.owner.target = getPlayer();
+        getPlayer().target = this.owner;
 
         this.setTitle(owner.name);
         this.updateGrid(cat);
@@ -2221,7 +2228,7 @@ export class UiStorage extends UiBase
         UiCursor.set();
         
         // show
-        UiInv.show(Role.getPlayer());
+        UiInv.show(getPlayer());
         // cover/closeAll/register/camera
         UiCover.show();
         Ui.closeAll(GM.UI_LEFT_P);
@@ -2553,18 +2560,19 @@ export class UiMain extends UiBase
         else{this._enable.setInteractive();}
     }
 
-    inv() {UiInv.toggle(Role.getPlayer());}     // function內沒有用到 this 參數，就不需要 bind(this)
+    inv() {UiInv.toggle(getPlayer());}     // function內沒有用到 this 參數，就不需要 bind(this)
 
-    profile() {UiProfile.toggle(Role.getPlayer());}
+    profile() {UiProfile.toggle(getPlayer());}
 
     menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
 
-    next() {Role.getPlayer().next();}
+    // next() {getPlayer().next();}
+    next() {getPlayer().next();}
 
     test()
     {
         //this.closeAll(GM.UI_ALL);
-        UiQuest.toggle(Role.getPlayer());
+        UiQuest.toggle(getPlayer());
     }
 
     skill() {UiSkill.toggle();}
@@ -2597,7 +2605,7 @@ export class UiMain extends UiBase
 
     refresh()
     {
-        let player = Role.getPlayer();
+        let player = getPlayer();
         let hp = this.getElement('hp',true);
         // let life = player.getState('life');
         // hp.set(life.cur,life.max);
@@ -2782,8 +2790,8 @@ export class UiTrade extends UiBase
 
         // delete this.owner.trade;
         // delete this.owner.target;
-        // delete Role.getPlayer().trade;
-        // delete Role.getPlayer().target;
+        // delete getPlayer().trade;
+        // delete getPlayer().target;
         this.owner.stopTrade();
     }
 
@@ -2794,13 +2802,13 @@ export class UiTrade extends UiBase
         // owner.restock();
         // this.owner = owner;
         // this.owner.trade = GM.SELLER;
-        // this.owner.target = Role.getPlayer();
-        // Role.getPlayer().trade = GM.BUYER;
-        // Role.getPlayer().target = this.owner;
+        // this.owner.target = getPlayer();
+        // getPlayer().trade = GM.BUYER;
+        // getPlayer().target = this.owner;
 
         this.update();
         // show
-        UiInv.show(Role.getPlayer());
+        UiInv.show(getPlayer());
         // cover/closeAll/register/camera
         UiCover.show();
         Ui.closeAll(GM.UI_LEFT_P);
@@ -3195,7 +3203,7 @@ export class UiDialog extends UiBase
     trade()
     {
         this.close();
-        this.owner.trade(Role.getPlayer());
+        this.owner.trade(getPlayer());
     }
 
     goto(p1)
@@ -3270,7 +3278,7 @@ export class UiDialog extends UiBase
         super.show();
         this.setIconA(owner.role.icon)
             .setNameA(owner.id.lab())
-            .setIconB(Role.getPlayer().role.icon)
+            .setIconB(getPlayer().role.icon)
             .setTextA(this.dialog[this.id].A)
             .nextPage();
         // show
@@ -3617,7 +3625,7 @@ class UiDebuger extends UiBase
     {
         // [get] [gold/item] [id] [count]
         let rewards=[{type:args[1],id:args[2],count:args[3]}]
-        Role.getPlayer().receive(rewards)
+        getPlayer().receive(rewards)
     }
 
     cmd_w(args)
@@ -3839,7 +3847,7 @@ export class UiManufacture extends UiBase
         this.update();
         UiCursor.set();
 
-        UiInv.show(Role.getPlayer());
+        UiInv.show(getPlayer());
         
         // cover/close/register/camera
         UiCover.show();
@@ -4470,7 +4478,7 @@ export class UiSkill extends UiBase
 
     getOwner()
     {
-        return Role.getPlayer();
+        return getPlayer();
     }
 
     toggle()
@@ -4635,7 +4643,7 @@ export class UiEffect extends UiBase
             .hide()
     }
 
-    getOwner() {return Role.getPlayer();}
+    getOwner() {return getPlayer();}
 
     addMain(scene)
     {

@@ -92,8 +92,8 @@ export class GameObject
     //------------------------------------------------------
 
     // 事件監聽與觸發
-    on(...args) {this._evt?.on(...args)}
-    emit(...args) {this._evt?.emit(...args)}
+    on(...args) {this._evt?.on(...args);}
+    emit(...args) {this._evt?.emit(...args);}
     
     // 加入元件(component)
     add(com)

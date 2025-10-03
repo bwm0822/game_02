@@ -69,9 +69,12 @@ function _calcMods(eff, mod)
 function _metaOfEquips(equips)   // 取得裝備基本屬性
 {
     const meta={};
+    console.log(equips)
     for(let equip of equips)
     {
+        if(!equip) {continue;}
         let eq = DB.item(equip.id);
+        console.log('eq=',eq)
         for(let[k,v] of Object.entries(eq))
         {
             if(k===GM.DEF)  // 裝備防禦會累加
@@ -88,12 +91,13 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
     return meta;
 }
     
-function _modsFromEquips(equips, mods)
+function _modsFromEquips(equips, mod)
 {
     for(let equip of equips)
     {
+        if(!equip) {continue;}
         let eq = DB.item(equip.id);
-        for(let eff in eq.effects) {this._calcMods(eff, mods);}
+        for(let eff in eq.effects) {_calcMods(eff, mod);}
     }
 }
 
@@ -111,6 +115,7 @@ function _modsFromSkills(skills, mod)
 
 function _adjustBase(base, mod)
 {
+    console.log(mod)
     for (const [k, v] of Object.entries(mod.self.basA)) {base[k] = (base[k] || 0) + v;}
     for (const [k, v] of Object.entries(mod.self.basM)) {base[k] = (base[k] || 0) * (1 + v);}
 }
@@ -122,13 +127,12 @@ function _adjustDerived(total, mod)
 }
 
 
-
 //--------------------------------------------------
 // 類別 : 元件(component)
 // 標籤 : stats
 // 功能 : 角色屬性、衍生屬性、HP/MP、抗性、受傷/治療、DoT
 //--------------------------------------------------
-export default class Stats 
+export class Stats 
 {
     constructor(root, init={}) 
     {
@@ -151,8 +155,6 @@ export default class Stats
 
     get tag() { return 'stats'; }
     get ctx() { return this._root.ctx; }
-    get emit() { return this._root.emit;}
-    get on() {return this._root.on;}
 
 
     //------------------------------------------------------
@@ -161,7 +163,8 @@ export default class Stats
     _bind(root) 
     {
         // 對上層公開 API
-        
+        // 
+        root.on('equip', ()=>{this.getTotalStats();});
     }
     
     //------------------------------------------------------
@@ -174,8 +177,8 @@ export default class Stats
         // 初始化 mod
         const mod = _initMod(fromEnemy);
         // 取得裝備基本屬性，如:攻擊、防禦、攻擊類型、距離...等
-        const meta = this._metaOfEquips(inv.equips);
-       
+        const meta = _metaOfEquips(inv.equips);
+        console.log('-------- meta=',meta)
         // 1) 淺層拷貝 [基礎屬性]
         const base = {...this.baseStats};
 
@@ -202,6 +205,8 @@ export default class Stats
 
         // 9) 最後合併狀態，並確保當前生命值不超過最大值
         this._hp = Math.min(total[GM.HPMAX], this._hp); 
+
+        console.log(total);
 
         return total;
 

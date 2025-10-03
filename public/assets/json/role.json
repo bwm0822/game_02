@@ -9,16 +9,18 @@
     "gold": 100,
     "body": {
       "sprite": "body-man",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "hand": {
       "sprite": "hand-man",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "head": {
       "sprite": "head-wick",
       "scale": 0.25,
-      "y": -28.5
+      "y": 3.5
     },
     "faceR": true,
     "anchor": {
@@ -262,11 +264,13 @@
     "weapon": "sword_01",
     "body": {
       "sprite": "musk",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "hand": {
       "sprite": "hand-man",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -868,11 +872,13 @@
     "type": "enemy",
     "body": {
       "sprite": "rogue",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "hand": {
       "sprite": "hand-man",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {

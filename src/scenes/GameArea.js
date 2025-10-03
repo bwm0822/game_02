@@ -1,9 +1,9 @@
 import { GameScene } from "./GameScene.js";
-import * as Role from '../role.js';
-import {UiMain, UiTime, UiEffect} from '../ui.js'
+import {UiMain, UiTime, UiEffect} from '../ui.js';
 import TimeManager,{Schedular} from '../time.js';
-import {Roles,RoleDB} from '../database.js';
-import Utility from '../utility';
+// import * as Role from '../role.js';
+// import {Avatar} from '../role.js';
+import {Role} from '../roles/role.js';
 
 let lutAmbient = [   
     0x666666	,// 0x333333    ,
@@ -48,7 +48,8 @@ export class GameArea extends GameScene
         this.staGroup = this.physics.add.staticGroup();
         this.mode = 'normal';
         //this.mode = 'combat';
-        await super.create({diagonal:true,classType:Role.Avatar});       
+        // await super.create({diagonal:true,classType:Avatar});   
+        await super.create({diagonal:true,classType:Role});        
         // await Utility.delay(5000)
         this.process();
     }

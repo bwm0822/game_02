@@ -113,15 +113,10 @@
       "sprite": "weapons/3",
       "y": -10
     },
-    "self": {
-      "type": "melee",
-      "range": 1,
-      "atk": 15,
-      "str": "0.5*"
-    },
-    "target": {
-      "dodge": "-0.1"
-    },
+    "type": "melee",
+    "range": 1,
+    "atk": 15,
+    "str": "0.5*",
     "effects": [
       {
         "type": "dot",
@@ -144,11 +139,9 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons/4",
     "gold": 25,
-    "self": {
-      "type": "melee",
-      "range": 1,
-      "atk": 25
-    },
+    "type": "melee",
+    "range": 1,
+    "atk": 25,
     "tw": {
       "lab": "鐵劍",
       "des": "鐵劍"
@@ -162,11 +155,9 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons/5",
     "gold": 35,
-    "self": {
-      "type": "melee",
-      "range": 1,
-      "atk": 35
-    },
+    "type": "melee",
+    "range": 1,
+    "atk": 35,
     "tw": {
       "lab": "鋼劍",
       "des": ""
@@ -185,11 +176,9 @@
       "y": -8,
       "x": 15
     },
-    "self": {
-      "type": "ranged",
-      "range": 5,
-      "atk": 15
-    },
+    "type": "ranged",
+    "range": 5,
+    "atk": 15,
     "tw": {
       "lab": "弓",
       "des": ""
@@ -208,11 +197,9 @@
       "y": -8,
       "x": 15
     },
-    "self": {
-      "type": "ranged",
-      "range": 5,
-      "atk": 25
-    },
+    "type": "ranged",
+    "range": 5,
+    "atk": 25,
     "tw": {
       "lab": "高級弓",
       "des": ""
@@ -235,9 +222,7 @@
       "sprite": "cloth-hood",
       "scale": 0.25
     },
-    "self": {
-      "def": 10
-    },
+    "def": 10,
     "tw": {
       "lab": "草帽",
       "des": ""
@@ -260,9 +245,7 @@
       "sprite": "leather-helmet",
       "scale": 0.25
     },
-    "self": {
-      "def": 20
-    },
+    "def": 20,
     "tw": {
       "lab": "麻布帽",
       "des": ""
@@ -276,9 +259,7 @@
     "cat": "CAT_HELMET",
     "icon": "weapons/47",
     "gold": 30,
-    "self": {
-      "def": 30
-    },
+    "def": 30,
     "tw": {
       "lab": "皮帽",
       "des": ""
@@ -301,9 +282,7 @@
       "sprite": "cloth-armor",
       "scale": 0.25
     },
-    "self": {
-      "def": 20
-    },
+    "def": 20,
     "tw": {
       "lab": "草衣",
       "des": ""
@@ -326,9 +305,7 @@
       "sprite": "leather-armor",
       "scale": 0.25
     },
-    "self": {
-      "def": 30
-    },
+    "def": 30,
     "tw": {
       "lab": "麻布衣",
       "des": ""
@@ -342,9 +319,7 @@
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons/56",
     "gold": 60,
-    "self": {
-      "def": 40
-    },
+    "def": 40,
     "tw": {
       "lab": "皮衣",
       "des": ""
@@ -367,9 +342,7 @@
       "sprite": "cloth-gloves",
       "scale": 0.25
     },
-    "self": {
-      "def": 5
-    },
+    "def": 5,
     "tw": {
       "lab": "手套",
       "des": ""
@@ -392,9 +365,7 @@
       "sprite": "leather-gloves",
       "scale": 0.25
     },
-    "self": {
-      "def": 10
-    },
+    "def": 10,
     "tw": {
       "lab": "高級手套",
       "des": ""
@@ -417,9 +388,7 @@
       "sprite": "cloth-boots",
       "scale": 0.25
     },
-    "self": {
-      "def": 5
-    },
+    "def": 5,
     "tw": {
       "lab": "靴子",
       "des": ""
@@ -442,9 +411,7 @@
       "sprite": "leather-boots",
       "scale": 0.25
     },
-    "self": {
-      "def": 10
-    },
+    "def": 10,
     "tw": {
       "lab": "高級靴子",
       "des": ""

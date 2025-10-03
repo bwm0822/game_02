@@ -1,6 +1,6 @@
 import {Scene} from 'phaser';
 import Map from '../map.js';
-import * as Role from '../role.js';
+
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import QuestManager from  '../quest.js';
@@ -11,6 +11,10 @@ import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage,
 import TimeManager from '../time.js';
 import AudioManager from '../audio.js';
 import {Projectile} from '../entity';
+
+// import * as Role from '../role.js';
+// import {setPlayer,dbg_hover_npc} from '../role.js';
+import {setPlayer, dbg_hover_npc} from '../roles/role.js';
 
 
 export class GameScene extends Scene
@@ -144,7 +148,8 @@ export class GameScene extends Scene
         else {pos = this.ents[this._data.port].pts[0];}
 
         this._player = new classType(this,pos.x,pos.y);
-        Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()
+        // Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()
+        setPlayer(this._player);
         this._player.init_runtime('wick').load();
         this.setCameraFollow(GM.CAM_CENTER);
  
@@ -288,7 +293,7 @@ export class GameScene extends Scene
         }
         this._dbgPath.clear();
 
-        if(Role.dbg_hover_npc) {return;}    // DEBUG 用，如果有 NPC 被滑鼠指向，則不畫 player 的路徑，以免干擾 npc 路徑的顯示
+        if(dbg_hover_npc) {return;}    // DEBUG 用，如果有 NPC 被滑鼠指向，則不畫 player 的路徑，以免干擾 npc 路徑的顯示
         
         path.pop(); //移除陣列最後一個元素
         path.forEach((node)=>{

@@ -67,7 +67,7 @@ export class AIController
     constructor(root) 
     {
         this._root = root;
-        this.debug = true;
+        this.debug = false;
 
         this.cd = new Cooldown();
         // this.bb = makeBlackboard(role);

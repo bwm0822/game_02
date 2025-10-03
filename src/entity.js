@@ -5,8 +5,10 @@ import { GM } from './setting.js';
 import DB from './db.js';
 import AudioManager from './audio.js';
 import {bbcText} from './uibase'
-import * as Role from './role';
+
 import TimeManager from './time';
+// import * as Role from './role';
+import {getPlayer} from './roles/role.js';
 
 let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;
@@ -101,19 +103,19 @@ export class Entity extends Phaser.GameObjects.Container
         this._zone.setInteractive()
         this._zone
             .on('pointerover',()=>{
-                if(!Role.getPlayer().isInteractive(this)) {return;}
+                if(!getPlayer().isInteractive(this)) {return;}
                 this._setOutline(true);
                 this._send('over',this);
                 if(DEBUG){this._debugDraw(undefined,this.y);}
             })
             .on('pointerout',()=>{
-                if(!Role.getPlayer().isInteractive(this)) {return;}
+                if(!getPlayer().isInteractive(this)) {return;}
                 this._setOutline(false);
                 this._send('out');
                 if(DEBUG){this._debugDraw(GM.DBG_CLR);}
             })
             .on('pointerdown',(pointer)=>{
-                if(!Role.getPlayer().isInteractive(this)) {return;}
+                if(!getPlayer().isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) {this._rightButtonDown();}
             })
     }
@@ -594,7 +596,7 @@ export class Case extends Entity
     addListener()
     {
         super.addListener();
-        this.on('open',(resolve)=>{this.open();resolve()})
+        this.on('open',(resolve)=>{this.open();resolve?.()})
     }
 
     init_prefab()
@@ -618,7 +620,10 @@ export class Case extends Entity
 
     save() { this._saveData(this._storage); }
 
-    open() { this._send('storage', this); }
+    open() 
+    {
+        this._send('storage', this); 
+    }
 }
 
 

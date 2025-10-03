@@ -142,6 +142,7 @@ export class Inventory
     {
         this._root = root;
         this._equips = [];
+        this._gold = 0;
         this._storage = {capacity:capacity,items:[]}
 
         this._bind(root);
@@ -149,14 +150,16 @@ export class Inventory
 
     get tag() {return 'inv';}   // 回傳元件的標籤
     
-    get emit() {return this._root.ev.emit;}
     get equips() {return this._equips;}
     get storage() {return this._storage;}
+    get gold() {return this._gold;}
+    set gold(value) {this._gold = value;}
     
     _bind(root)
     {
-        // 在上層綁定操作介面，提供給其他元件使用
-        root.storage = this.storage;
+        // 在上層綁定操作介面，提供給外部使用
+        // root.storage = this.storage;
+        root.inv = this; 
     }
 
     _findEmpty()
@@ -179,17 +182,10 @@ export class Inventory
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    equip(i, item)
+    equip()
     {
-        this.equips[i] = item;
-        this.emit?.('equip-changed', { slot, item });
+        this._root.emit('equip', this.equips);
     }
 
-    unequip(i)
-    {
-        const old = this.equips[i]; this.equips[i] = null;
-        this.emit?.('equip-changed', { slot, item:null, old });
-    }
-
-    getEquipped(){ return this.equips.filter(Boolean); }
+    getEquipped() { return this.equips.filter(Boolean); }
 }

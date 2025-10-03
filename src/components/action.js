@@ -88,7 +88,17 @@ export class Action
                 bb.path.path.splice(0,1);
             }
         }
+
+        if(bb.path.path.length===0) {delete bb.path;}
         return true;
+    }
+
+    async move()
+    {
+        const {bb} = this.ctx;
+        await this._moveTo(bb.path.path[0]);
+        bb.path.path.splice(0,1);
+        if(bb.path.path.length===0) {delete bb.path;}
     }
 
     async attack(target)
