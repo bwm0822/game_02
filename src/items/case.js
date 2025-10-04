@@ -11,8 +11,8 @@ export class Box extends GameObject
     init_prefab()
     {      
         // 加入元件  
-        this.add(new ItemView(this, true))
-            .add(new Storage(this))
+        this.add(new ItemView(this.scene),{modify:true})
+            .add(new Storage())
 
         //
         this.on('open', this.open.bind(this))

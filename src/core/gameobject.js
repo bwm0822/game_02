@@ -107,10 +107,10 @@ export class GameObject
     }
     
     // 插入元件(component)
-    add(com)
+    add(com, config={})
     {   
         this.coms[com.tag] = com;
-        com.bind?.(this);
+        com.bind?.(this, config);
         return this;
     }
 

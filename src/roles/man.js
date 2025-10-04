@@ -28,13 +28,13 @@ export class Man extends GameObject
         this.bb.roleD = DB.role(this.bb.id);
 
         // 加入元件
-        this.add(new RoleView(this, true))
-            .add(new Inventory(this))
-            .add(new Anim(this))
-            .add(new Action(this))
-            .add(new Nav(this))
-            .add(new AIController(this))
-            .add(new Sense(this))
+        this.add(new RoleView(this.scene),{modify:true})
+            .add(new Inventory())
+            .add(new Anim())
+            .add(new Action())
+            .add(new Nav())
+            .add(new AIController())
+            .add(new Sense())
 
         // 載入
         this.load();

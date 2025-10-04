@@ -131,10 +131,8 @@ function _adjustDerived(total, mod)
 //--------------------------------------------------
 export class Stats 
 {
-    constructor(root, init={}) 
+    constructor(init={}) 
     {
-        this._root = root;
-
         // --- 基礎屬性（可依你資料庫載入覆蓋） ---
         this.baseStats =
         {
@@ -160,6 +158,9 @@ export class Stats
     //------------------------------------------------------
     bind(root) 
     {
+        this._root = root;
+
+
         // 對上層公開 API
 
         // 註冊 event 
@@ -168,7 +169,7 @@ export class Stats
         // 綁定時，先跑一次
         this._total = this.getTotalStats();      
     }
-    
+
     getTotalStats(fromEnemy)
     {
         const {bb} = this.ctx;

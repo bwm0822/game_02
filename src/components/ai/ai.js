@@ -64,9 +64,8 @@ class StateMachine
 // --- AI Controller 本體 ---
 export class AIController 
 {
-    constructor(root) 
+    constructor() 
     {
-        this._root = root;
         this.debug = false;
 
         this.cd = new Cooldown();
@@ -89,8 +88,24 @@ export class AIController
     get ctx() {return {...this._root.ctx, cd:this.cd, tick:TimeManager.ticks};}
 
     //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _preUpdateBlackboard(ctx) 
+    {
+        // 例如：若沒有 target，找一個最近敵人
+        if (!ctx.bb.target) 
+        {
+            const t = ctx.senses.findNearestEnemy();
+            if (t) ctx.bb.target = t;
+        }
+        // 更新 lastSeen
+        if (ctx.bb.target) ctx.bb.lastSeen.set(ctx.bb.target.id ?? ctx.bb.target, ctx.tick);
+    }
+
+    //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root) {this._root = root;}
     // 回合主流程
     async think() 
     {
@@ -124,17 +139,7 @@ export class AIController
         return { ...res, chosen: best.beh.name, score: best.score };
     }
 
-    _preUpdateBlackboard(ctx) 
-    {
-        // 例如：若沒有 target，找一個最近敵人
-        if (!ctx.bb.target) 
-        {
-            const t = ctx.senses.findNearestEnemy();
-            if (t) ctx.bb.target = t;
-        }
-        // 更新 lastSeen
-        if (ctx.bb.target) ctx.bb.lastSeen.set(ctx.bb.target.id ?? ctx.bb.target, ctx.tick);
-    }
+
 }
 
 

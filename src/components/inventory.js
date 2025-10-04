@@ -8,9 +8,8 @@ import DB from '../db.js';
 //--------------------------------------------------
 export class Storage
 {
-    constructor(root, capacity=-1)
+    constructor(capacity=-1)
     {
-        this._root = root;
         this._storage = {capacity:capacity,items:[]}
     }
 
@@ -37,7 +36,9 @@ export class Storage
     //------------------------------------------------------
     bind(root)
     {
-         // 在上層綁定操作介面，提供給其他元件使用
+        this._root = root;
+        
+        // 在上層綁定操作介面，提供給其他元件使用
         root.storage = this.storage;
         root.put = this.put.bind(this);
         root.take = this.take.bind(this);

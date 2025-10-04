@@ -23,11 +23,6 @@ const choose = arr => arr[Math.floor(Math.random() * arr.length)];
 //--------------------------------------------------
 export class Sense
 {
-    constructor(root)   
-    {
-        this._root = root;
-    }
-
     get tag() {return 'sense';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
@@ -35,8 +30,8 @@ export class Sense
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    bind(root) {}
-    
+    bind(root) {this._root = root;}
+
     // ---- 感知 ----
     sensePlayer(maxTiles=8, needSight=true) 
     {

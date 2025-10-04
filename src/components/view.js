@@ -111,11 +111,11 @@ function debugDraw(type=DBG_TYPE,text)
 //--------------------------------------------------
 class View extends Phaser.GameObjects.Container
 {
-    constructor(root, modify)
+    constructor(scene)
     {
-        super(root.scene);
+        super(scene);
         this.scene.add.existing(this);
-        this._root = root;
+
         this._pGrids = [];          // grid 在地圖網格所佔據的點
         this._flipX = false;
         this._flipY = false;
@@ -135,8 +135,6 @@ class View extends Phaser.GameObjects.Container
         this.anchorY = 0;           // 錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角 
         this.key = null;
         this.frame = null;
-
-        this._init(modify);
     }
 
     get tag() {return 'view';}          // 回傳元件的標籤
@@ -343,13 +341,15 @@ class View extends Phaser.GameObjects.Container
         this.ent.add(this);
     }
 
-
-    
     //--------------------------------------------------
     // public
     //--------------------------------------------------
-    bind(root)
+    bind(root, config)
     {
+        this._root = root;
+        const {modify} = config;
+        this._init(modify);
+        
         // 在上層綁定操作介面，提供給其他元件使用
         root.isTouch = this.isTouch;
     }
@@ -501,9 +501,9 @@ export class RoleView extends View
     //--------------------------------------------------
     // public
     //--------------------------------------------------
-    bind(root)
+    bind(root, config)
     {
-        super.bind(root);
+        super.bind(root, config);
         
         // 註冊 event
         root.on('equip', this.equip.bind(this));

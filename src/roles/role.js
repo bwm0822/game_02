@@ -54,13 +54,13 @@ export class Role extends GameObject
         this.bb.roleD = DB.role(this.bb.id);    // 取得roleD，放入bbd，view 元件會用到
 
         // 加入元件
-        this.add(new RoleView(this, true))
-            .add(new Inventory(this))
-            .add(new Anim(this))
-            .add(new Action(this))
-            .add(new Nav(this))
-            .add(new Sense(this))
-            .add(new Stats(this))
+        this.add(new RoleView(this.scene),{modify:true})
+            .add(new Inventory())
+            .add(new Anim())
+            .add(new Action())
+            .add(new Nav())
+            .add(new Sense())
+            .add(new Stats())
 
         // 載入
         this.load();
@@ -75,7 +75,7 @@ export class Role extends GameObject
         this.bb.interactive = true;     // 設成 可互動，view 元件會參考
 
         // 加入元件
-        this.add(new RoleView(this, false))
+        this.add(new RoleView(this.scene),{modify:false})
             .add(new Inventory(this))
             .add(new Anim(this))
             .add(new Action(this))
