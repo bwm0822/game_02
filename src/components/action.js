@@ -14,7 +14,6 @@ export class Action
     constructor(root)   
     {
         this._root = root;
-        this._bind(root);
     }
 
     get tag() {return 'action';}  // 回傳元件的標籤
@@ -23,10 +22,11 @@ export class Action
     get scene() {return this._root.scene;}
     get ctx() {return this._root.ctx;} // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
 
-    _bind(root)
-    {
-        // 在上層綁定操作介面，提供給其他元件使用
-    }
+
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _emit(...args) {this._root.emit(...args);}
 
     _step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
     {
@@ -48,15 +48,14 @@ export class Action
 
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
-        const {view, anim} = this.ctx;
-        view?._faceTo(pt);
-        view?._removeWeight();
-        view?._addWeight(pt);
-        anim?._idle(false);
-        anim?._walk(duration/2);
+        this._emit('face',pt);
+        this._emit('removeWeight');
+        this._emit('addWeight',pt);
+        this._emit('idle',false);
+        this._emit('walk',duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
         await this._step(pt, duration, ease);
-        view?._updateDepth();
+        this._emit('updateDepth');
     }
 
     _attack_Melee(target, onHit)
@@ -76,29 +75,43 @@ export class Action
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root)
+    {
+        // 在上層綁定操作介面，提供給其他元件使用
+        
+        // 註冊 event
+        root.on('move', this.move.bind(this));
+    }
+
     async moveToward(target, {maxSteps=1}={})
     {
-        const {nav,bb} = this.ctx;
-        nav.findPath(target.pos)
-        for(let i=0;i<maxSteps;i++)
-        {
-            if(bb.path.state===1 && bb.path.path.length>1)
-            {
-                await this._moveTo(bb.path.path[0])
-                bb.path.path.splice(0,1);
-            }
-        }
+        const {bb} = this.ctx;
 
-        if(bb.path.path.length===0) {delete bb.path;}
+        this._emit('findPath', target.pos); // 搜尋路徑，結果會存於 bb.path
+
+        if(bb.path)
+        {
+            for(let i=0;i<maxSteps;i++)
+            {
+                if(bb.path.state===1 && bb.path.path.length>1)
+                {
+                    await this._moveTo(bb.path.path[0])
+                    bb.path.path.splice(0,1);
+                }
+            }
+
+            if(bb.path.path.length===0) {delete bb.path;}
+        }
         return true;
     }
 
-    async move()
+    async move(resolve)
     {
         const {bb} = this.ctx;
         await this._moveTo(bb.path.path[0]);
         bb.path.path.splice(0,1);
         if(bb.path.path.length===0) {delete bb.path;}
+        resolve?.();
     }
 
     async attack(target)

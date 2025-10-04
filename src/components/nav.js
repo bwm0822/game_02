@@ -10,7 +10,6 @@ export class Nav
     constructor(root)
     {
         this._root = root;
-        this._bind(root);
     }
 
     get tag() {return 'nav';}   // 回傳元件的標籤
@@ -19,14 +18,19 @@ export class Nav
 
     get map() {return this._root.scene.map;}
 
-    _bind(root)
-    {
-        // 在上層綁定操作介面，提供給外部件使用
-    }
+
 
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root)
+    {
+        // 在上層綁定操作介面，提供給外部件使用
+        
+        // 註冊 event
+        root.on('findPath', this.findPath.bind(this))
+    }
+
     findPath(ep)
     {
         let rst = this.map.getPath(this.pos, [ep]);

@@ -12,24 +12,15 @@ export class Storage
     {
         this._root = root;
         this._storage = {capacity:capacity,items:[]}
-
-        this._bind(root);
     }
 
     get tag() {return 'inv';}   // 回傳元件的標籤
 
     get storage() {return this._storage;}
-    
-    _bind(root)
-    {
-        // 在上層綁定操作介面，提供給其他元件使用
-        root.storage = this.storage;
-        root.put = this.put.bind(this);
-        root.take = this.take.bind(this);
-        root.split = this.split.bind(this);
-        root.drop = this.drop.bind(this);
-    }
 
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
     _findEmpty()
     {
         let capacity = this.storage.capacity;
@@ -42,14 +33,25 @@ export class Storage
     }
 
     //------------------------------------------------------
-    // 提供 載入、儲存的功能，上層會呼叫
-    //------------------------------------------------------
-    load(data) {this._storage = data.storage; this._root.storage = this.storage;}
-    save() {return {storage:this._storage};}
-
-    //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root)
+    {
+         // 在上層綁定操作介面，提供給其他元件使用
+        root.storage = this.storage;
+        root.put = this.put.bind(this);
+        root.take = this.take.bind(this);
+        root.split = this.split.bind(this);
+        root.drop = this.drop.bind(this);
+    }
+
+    //------------------------------------------------------
+    // 提供 載入、儲存的功能，上層會呼叫
+    //------------------------------------------------------
+    load(data) {Object.assign(this._storage, data.storage);}
+    save() {return {storage:this._storage};}
+
+
     put(id, count)
     {
         let cps = DB.item(id).cps ?? 1;
@@ -136,7 +138,67 @@ export class Storage
 // 標籤 : inv
 // 功能 : 提供裝備、儲存物品的功能
 //--------------------------------------------------
-export class Inventory
+export class Inventory extends Storage
+{
+    constructor(root, capacity=-1)
+    {
+        super(root, capacity);
+        this._equips = [];
+        this._gold = 0;
+    }
+
+    
+    get ctx() {return this._root.ctx;}
+    get equips() {return this._equips;}
+
+    get gold() {return this._gold;}
+    set gold(value) {this._gold = value;}
+    
+   
+    //------------------------------------------------------
+    // Local
+    //------------------------------------------------------
+    _emit(...args) {this._root.emit(...args);}
+
+    //------------------------------------------------------
+    // Public
+    //------------------------------------------------------
+    bind(root)
+    {
+        super.bind(root);
+
+        // 在上層綁定操作介面，提供給外部使用
+        root.inv = this; 
+
+        root.prop('gold', this, '_gold')
+
+        // 共享裝備資料
+        root.bb.equips = this.equips;
+    }
+
+    //------------------------------------------------------
+    // 提供 載入、儲存的功能，上層會呼叫
+    //------------------------------------------------------
+    load(data) 
+    {
+        Object.assign(this._storage, data.storage); 
+        Object.assign(this._equips, data.equips);
+    }
+    save() {return {storage:this._storage, equips:this._equips};}
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    equip() { this._emit('equip');}
+
+    getEquipped() { return this.equips.filter(Boolean); }
+}
+
+
+
+
+
+export class Inventory_old
 {
     constructor(root, capacity=-1)
     {
@@ -150,6 +212,7 @@ export class Inventory
 
     get tag() {return 'inv';}   // 回傳元件的標籤
     
+    get ctx() {return this._root.ctx;}
     get equips() {return this._equips;}
     get storage() {return this._storage;}
     get gold() {return this._gold;}
@@ -160,7 +223,15 @@ export class Inventory
         // 在上層綁定操作介面，提供給外部使用
         // root.storage = this.storage;
         root.inv = this; 
+
+        root.prop('gold', ()=>{this._gold})
+        root.take = this.take.bind(this);
+
+        // 共享裝備資料
+        root.bb.equips = this.equips;
     }
+
+    _emit(...args) {this._root.emit(...args);}
 
     _findEmpty()
     {
@@ -176,16 +247,33 @@ export class Inventory
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) {this._storage = data.storage; this._root.storage = this.storage;}
-    save() {return {storage:this._storage};}
+    load(data) 
+    {
+        Object.assign(this._storage, data.storage); 
+        Object.assign(this._equips, data.equips);
+    }
+    save() {return {storage:this._storage, equips:this._equips};}
 
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    equip()
+    take(ent, i)
     {
-        this._root.emit('equip', this.equips);
+        !i && (i = this._findEmpty());
+
+        if(i!=-1)
+        {
+            this.storage.items[i]=ent.itm;
+            return true;
+        }
+        else
+        {  
+            this._send('msg','_space_full'.lab());
+            return false;
+        }
     }
+
+    equip() { this._emit('equip');}
 
     getEquipped() { return this.equips.filter(Boolean); }
 }

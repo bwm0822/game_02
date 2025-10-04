@@ -111,7 +111,7 @@
     "gold": 15,
     "equip": {
       "sprite": "weapons/3",
-      "y": -10
+      "y": 22
     },
     "type": "melee",
     "range": 1,
@@ -216,7 +216,7 @@
     "equip": {
       "sprite": "cloth-hood",
       "scale": 0.25,
-      "y": -30
+      "y": 2
     },
     "drop": {
       "sprite": "cloth-hood",
@@ -239,7 +239,7 @@
     "equip": {
       "sprite": "leather-helmet",
       "scale": 0.25,
-      "y": -38
+      "y": -6
     },
     "drop": {
       "sprite": "leather-helmet",
@@ -276,7 +276,7 @@
     "equip": {
       "sprite": "cloth-armor",
       "scale": 0.25,
-      "y": -7
+      "y": 25
     },
     "drop": {
       "sprite": "cloth-armor",
@@ -299,7 +299,7 @@
     "equip": {
       "sprite": "leather-armor",
       "scale": 0.25,
-      "y": -7
+      "y": 25
     },
     "drop": {
       "sprite": "leather-armor",
@@ -336,7 +336,7 @@
     "equip": {
       "sprite": "cloth-gloves",
       "scale": 0.25,
-      "y": -10
+      "y": 22
     },
     "drop": {
       "sprite": "cloth-gloves",
@@ -359,7 +359,7 @@
     "equip": {
       "sprite": "leather-gloves",
       "scale": 0.25,
-      "y": -10
+      "y": 22
     },
     "drop": {
       "sprite": "leather-gloves",
@@ -382,7 +382,8 @@
     "equip": {
       "sprite": "cloth-boots",
       "scale": 0.25,
-      "x": 1
+      "x": 1,
+      "y": 32
     },
     "drop": {
       "sprite": "cloth-boots",
@@ -405,7 +406,8 @@
     "equip": {
       "sprite": "leather-boots",
       "scale": 0.25,
-      "x": 1
+      "x": 1,
+      "y": 32
     },
     "drop": {
       "sprite": "leather-boots",

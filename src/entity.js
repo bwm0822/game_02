@@ -646,11 +646,12 @@ export class Pickup extends Entity
 
     pickup(taker)
     {
+        console.log('----------- taker=',taker)
         if(taker.take(this))
         {
             this._send('msg',`${'_pickup'.lab()} ${this.itm.id.lab()}`)
             this._send('out');
-            this._send('refresh');
+            // this._send('refresh');
             this._removed();
         }   
     }

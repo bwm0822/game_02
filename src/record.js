@@ -32,7 +32,7 @@ export default class Record
         if(!Record.data.scenes[mapName]) { Record.data.scenes[mapName] = { prefab:{}, runtime:[] };}
         if(qid && !Record.data.scenes[mapName][qid] ) { Record.data.scenes[mapName][qid] = {};}
     
-        if(uid==-1) { Record.data.scenes[mapName].runtime.push(value); }
+        if(uid==-1) {Record.data.scenes[mapName].runtime.push(value); }
         else 
         {
             if(qid) {Record.data.scenes[mapName][qid][uid] = value;}

@@ -8,6 +8,7 @@ import {AiBase, AIController} from '../components/ai/ai.js';
 import {Sense} from '../components/sense.js';
 import {Stats} from '../components/stats.js';
 import DB from '../db.js'
+import Record from '../record.js'
 
 export let dbg_hover_npc = false;   // 是否有 npc 被 hover
 let player = null;
@@ -22,6 +23,7 @@ export class Role extends GameObject
     get acts() {return ['open']}
     get act() {return this.acts[0];}
 
+    get total() {return this.bb.total;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -30,6 +32,17 @@ export class Role extends GameObject
 
     async _pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
     _resume() {this._resolve?.();this._resolve=null;}
+
+    _loadData()
+    {
+        return Record.data.player;
+    }
+
+    _saveData(data)
+    {
+        Record.data.pos = this.pos;
+        Record.data.player = data;
+    }
 
     //------------------------------------------------------
     //  Public
@@ -73,17 +86,21 @@ export class Role extends GameObject
         return this;
     }
 
-    load() {}
+    load()
+    {
+        super.load();
+        this.emit('equip');
+    }
 
     // 跳過這一回合
     next() { this._resume();}
 
     execute({pt,ent,act}={})
     {
-        const {bb, nav} = this.ctx;
+        const {bb}= this.ctx;
         bb.ent = ent;
         bb.act = act;
-        nav.findPath(pt??ent.pos);
+        this.emit('findPath',pt??ent.pos);
       
         this._resume();
     }
@@ -93,10 +110,9 @@ export class Role extends GameObject
     interact(ent, act) 
     {
         if(!act) {return;}
-        const {view} = this.ctx;
-        if(ent) {view._faceTo(ent.pos);}
+        if(ent) {this.emit('face',ent.pos);}
 
-        return new Promise((resolve)=>{ent.emit(act, resolve, this._role);});
+        return new Promise((resolve)=>{ent.emit(act, resolve, this);});
     }
 
     async process()
@@ -104,7 +120,7 @@ export class Role extends GameObject
         // 解構賦值 (destructuring assignment)，
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
-        const {bb, action} = this.ctx;
+        const {bb} = this.ctx;
 
         if(!bb.path)
         {
@@ -115,7 +131,7 @@ export class Role extends GameObject
         
         if(bb.path)
         {
-            await action.move();
+            await this.aEmit('move');
             console.log(bb.ent,bb.path?.path.length)
             if(bb.ent && bb.path?.path.length===1)
             {

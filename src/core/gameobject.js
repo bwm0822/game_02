@@ -11,12 +11,12 @@ import Record from '../record.js'
 
 export class GameObject
 {
-    constructor(scene)
+    constructor(scene,x,y)
     {
         this.scene = scene;
         this._coms = {}; // 元件庫
         this._bb = {};  // blackboard，共享資料中心，可與各元件共享資訊
-        this._ent = scene.add.container(0,0);    // gameObject 的實體，view 掛在其下
+        this._ent = scene.add.container(x,y);    // gameObject 的實體，view 掛在其下
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
@@ -45,7 +45,6 @@ export class GameObject
     get y() {return this.ent.y;}
     set x(value) {this.ent.x=value;}
     set y(value) {this.ent.y=value;}
-    
     //---- function 
     setName(name) {this.bb.name=name;}
     setPosition(x,y) {this.x=x; this.y=y;}
@@ -94,12 +93,32 @@ export class GameObject
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
     emit(...args) {this._evt?.emit(...args);}
+    aEmit(...args) {return new Promise(resolve=>this._evt?.emit(...args,resolve));}
+
+    // 讓元件在 root 加入 prop
+    prop(name, target, key)
+    {
+        Object.defineProperty(this, name, {
+            get: () => target[key],
+            set: v => { target[key] = v; },
+            enumerable: true,
+            configurable: true
+        });
+    }
     
-    // 加入元件(component)
+    // 插入元件(component)
     add(com)
     {   
-        this.coms[com.tag]=com;
+        this.coms[com.tag] = com;
+        com.bind?.(this);
         return this;
+    }
+
+    // 拔除元件(component)
+    remove(tag)
+    {
+        this.coms[tag]?.unbind?.(this);
+        delete this.coms[tag];
     }
 
     // 載入資料

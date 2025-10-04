@@ -31,8 +31,8 @@ function _derivedStats(base, meta)
     // 2) Combat basics
     if (base[GM.ATK]===undefined)
     {
-        if(base[GM.TYPE]!==GM.MELEE) {out[GM.ATK] = (meta[GM.ATK] || 0);}
-        else {out[GM.ATK] = _baseATK(base) + (meta[GM.ATK] || 0); }
+        if(out[GM.TYPE]!==GM.MELEE) {out[GM.ATK] = (meta[GM.ATK] || 0);}
+        else {out[GM.ATK] = _baseATK(base) + (meta[GM.ATK] || 0);}
     } 
     if (base[GM.DEF]===undefined) {out[GM.DEF] = (meta[GM.DEF] || 0) + _baseDEF(base);}
     if (base[GM.RANGE]===undefined) {out[GM.RANGE] = (meta[GM.RANGE] || 1);}
@@ -69,12 +69,10 @@ function _calcMods(eff, mod)
 function _metaOfEquips(equips)   // 取得裝備基本屬性
 {
     const meta={};
-    console.log(equips)
     for(let equip of equips)
     {
         if(!equip) {continue;}
         let eq = DB.item(equip.id);
-        console.log('eq=',eq)
         for(let[k,v] of Object.entries(eq))
         {
             if(k===GM.DEF)  // 裝備防禦會累加
@@ -115,7 +113,6 @@ function _modsFromSkills(skills, mod)
 
 function _adjustBase(base, mod)
 {
-    console.log(mod)
     for (const [k, v] of Object.entries(mod.self.basA)) {base[k] = (base[k] || 0) + v;}
     for (const [k, v] of Object.entries(mod.self.basM)) {base[k] = (base[k] || 0) * (1 + v);}
 }
@@ -137,20 +134,16 @@ export class Stats
     constructor(root, init={}) 
     {
         this._root = root;
-        this._bind(root);
 
         // --- 基礎屬性（可依你資料庫載入覆蓋） ---
-        const baseStats =
+        this.baseStats =
         {
             [GM.STR] : 5, [GM.DEX] : 5, [GM.INT] : 5,
             [GM.CON] : 5, [GM.LUK] : 5,
         }
 
         this._hp = 100;
-
         this._effs = [];
-        
-        this._total = this.getTotalStats();      // 初始化時先跑一次
     }
 
     get tag() { return 'stats'; }
@@ -160,30 +153,37 @@ export class Stats
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _bind(root) 
-    {
-        // 對上層公開 API
-        // 
-        root.on('equip', ()=>{this.getTotalStats();});
-    }
+    
     
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root) 
+    {
+        // 對上層公開 API
+
+        // 註冊 event 
+        root.on('equip', ()=>{this.getTotalStats();});
+
+        // 綁定時，先跑一次
+        this._total = this.getTotalStats();      
+    }
+    
     getTotalStats(fromEnemy)
     {
-        const {inv} = this.ctx;
+        const {bb} = this.ctx;
 
         // 初始化 mod
         const mod = _initMod(fromEnemy);
+        
         // 取得裝備基本屬性，如:攻擊、防禦、攻擊類型、距離...等
-        const meta = _metaOfEquips(inv.equips);
-        console.log('-------- meta=',meta)
+        const meta = _metaOfEquips(bb.equips);
+
         // 1) 淺層拷貝 [基礎屬性]
         const base = {...this.baseStats};
 
         // 2) 計算 [裝備] 加成
-        _modsFromEquips(inv.equips, mod);
+        _modsFromEquips(bb.equips, mod);
 
         // 3) 計算 [被動技能] 加成
         // this._modsFromSkills(skills, mod);
@@ -207,6 +207,8 @@ export class Stats
         this._hp = Math.min(total[GM.HPMAX], this._hp); 
 
         console.log(total);
+
+        bb.total = total;
 
         return total;
 

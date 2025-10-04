@@ -84,6 +84,11 @@ function t1()
     if(obj.c===null){console.log('------------------ c:null')}
     if(!obj.c){console.log('------------------ c:???')}
     console.log('-----------------',obj);
+
+
+    //const v=[1,2,3]
+    let v=[1,2,3]
+    console.log('v=',v?.forEach((v)=>{console.log(v)}));
 }
 
 

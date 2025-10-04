@@ -26,19 +26,17 @@ export class Sense
     constructor(root)   
     {
         this._root = root;
-        this._bind(root);
     }
 
     get tag() {return 'sense';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
 
-    _bind(root) {}
-
-
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    bind(root) {}
+    
     // ---- 感知 ----
     sensePlayer(maxTiles=8, needSight=true) 
     {
