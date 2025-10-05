@@ -39,7 +39,7 @@ export class Storage
         this._root = root;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.storage = this.storage;
+        root.storage = this._storage;
         root.put = this.put.bind(this);
         root.take = this.take.bind(this);
         root.split = this.split.bind(this);
@@ -141,9 +141,9 @@ export class Storage
 //--------------------------------------------------
 export class Inventory extends Storage
 {
-    constructor(root, capacity=-1)
+    constructor(capacity=-1)
     {
-        super(root, capacity);
+        super(capacity);
         this._equips = [];
         this._gold = 0;
     }

@@ -24,7 +24,6 @@ export class Man extends GameObject
         this._addToList();
 
         // 取得roleD，放入bbd，view元件會用到
-        console.log(this.bb)
         this.bb.roleD = DB.role(this.bb.id);
 
         // 加入元件

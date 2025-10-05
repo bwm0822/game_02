@@ -33,10 +33,7 @@ export class Role extends GameObject
     async _pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
     _resume() {this._resolve?.();this._resolve=null;}
 
-    _loadData()
-    {
-        return Record.data.player;
-    }
+    _loadData() {return Record.data.player;}
 
     _saveData(data)
     {
@@ -76,12 +73,12 @@ export class Role extends GameObject
 
         // 加入元件
         this.add(new RoleView(this.scene),{modify:false})
-            .add(new Inventory(this))
-            .add(new Anim(this))
-            .add(new Action(this))
-            .add(new Nav(this))
-            .add(new Sense(this))
-            .add(new Stats(this))
+            .add(new Inventory())
+            .add(new Anim())
+            .add(new Action())
+            .add(new Nav())
+            .add(new Sense())
+            .add(new Stats())
 
         return this;
     }
