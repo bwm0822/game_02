@@ -159,7 +159,6 @@ export class Inventory extends Storage
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
-    _emit(...args) {this._root.emit(...args);}
 
     //------------------------------------------------------
     // Public
@@ -185,96 +184,17 @@ export class Inventory extends Storage
         Object.assign(this._storage, data.storage); 
         Object.assign(this._equips, data.equips);
     }
+
     save() {return {storage:this._storage, equips:this._equips};}
 
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    equip() { this._emit('equip');}
-
-    getEquipped() { return this.equips.filter(Boolean); }
-}
-
-
-
-
-
-export class Inventory_old
-{
-    constructor(root, capacity=-1)
+    equip() 
     {
-        this._root = root;
-        this._equips = [];
-        this._gold = 0;
-        this._storage = {capacity:capacity,items:[]}
-
-        this._bind(root);
+        const {emit}=this.ctx; 
+        emit('equip');
     }
-
-    get tag() {return 'inv';}   // 回傳元件的標籤
-    
-    get ctx() {return this._root.ctx;}
-    get equips() {return this._equips;}
-    get storage() {return this._storage;}
-    get gold() {return this._gold;}
-    set gold(value) {this._gold = value;}
-    
-    _bind(root)
-    {
-        // 在上層綁定操作介面，提供給外部使用
-        // root.storage = this.storage;
-        root.inv = this; 
-
-        root.prop('gold', ()=>{this._gold})
-        root.take = this.take.bind(this);
-
-        // 共享裝備資料
-        root.bb.equips = this.equips;
-    }
-
-    _emit(...args) {this._root.emit(...args);}
-
-    _findEmpty()
-    {
-        let capacity = this.storage.capacity;
-        let count = this.storage.items.length;
-        let foundIndex = this.storage.items.findIndex(slot=>Utility.isEmpty(slot))
-        let i = foundIndex!=-1 ? foundIndex 
-                            : capacity==-1 || count<capacity ? count 
-                                                                : -1;
-        return i;
-    }
-
-    //------------------------------------------------------
-    // 提供 載入、儲存的功能，上層會呼叫
-    //------------------------------------------------------
-    load(data) 
-    {
-        Object.assign(this._storage, data.storage); 
-        Object.assign(this._equips, data.equips);
-    }
-    save() {return {storage:this._storage, equips:this._equips};}
-
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    take(ent, i)
-    {
-        !i && (i = this._findEmpty());
-
-        if(i!=-1)
-        {
-            this.storage.items[i]=ent.itm;
-            return true;
-        }
-        else
-        {  
-            this._send('msg','_space_full'.lab());
-            return false;
-        }
-    }
-
-    equip() { this._emit('equip');}
 
     getEquipped() { return this.equips.filter(Boolean); }
 }

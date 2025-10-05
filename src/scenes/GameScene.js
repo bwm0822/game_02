@@ -304,7 +304,7 @@ export class GameScene extends Scene
 
     save()
     {
-        // Record.data.pos = this._player.pos;   
+        Record.data.pos = this._player.pos;   
         // Record.data.player = this._player.save();
         // this._player.save();
 
@@ -312,7 +312,7 @@ export class GameScene extends Scene
         console.log(this.objects)
         this.objects.forEach((obj)=>{obj.save?.();})
         this.gos.forEach(go=>go.save?.())
-        // this.roles.forEach((role)=>{role.uid==-1 && role.save();})
+        this.roles.forEach((role)=>{role.uid===-1 && role.save();})
         TimeManager.save();
         Record.save();
     }

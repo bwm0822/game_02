@@ -77,8 +77,8 @@ export class AIController
         this.behaviors = [
             // new BehDrinkPotion({ weight: 1.0 }),
             // new BehFlee({ weight: 1.0 }),
-            // new BehAttack({weight:1.2}),   // 偏攻擊
-            new BehChase({minInterval:2}),
+            new BehAttack({weight:1.2}),   // 偏攻擊
+            // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
         ];
     }

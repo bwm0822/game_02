@@ -22,8 +22,6 @@ export class Action
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _emit(...args) {return this._root.emit(...args);}
-
     _step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
     {
         return new Promise((resolve)=>{
@@ -80,6 +78,7 @@ export class Action
         // 註冊 event
         root.on('move', async(resolve)=>{await this.move();resolve?.();});
         root.on('moveToward', async(resolve,...a)=>{await this.moveToward(...a);resolve?.();});
+        root.on('attack', async(resolve,...a)=>{await this.attack(...a);resolve?.();});
     }
 
     async moveToward(target, {maxSteps=1}={})
@@ -114,9 +113,9 @@ export class Action
 
     async attack(target)
     {
-        const {view} = this.ctx;
-        view?._faceTo(target.pos);
-        let ranged=false;
+        const {emit} = this.ctx;
+        emit('face', target.pos);
+        let ranged = false;
         if(ranged) {await this._attack_Ranged(target);}
         else {await this._attack_Melee(target);}
         return true;

@@ -352,6 +352,7 @@ class View extends Phaser.GameObjects.Container
         
         // 在上層綁定操作介面，提供給其他元件使用
         root.isTouch = this.isTouch;
+        // 註冊 event
         root.on('view',()=>{return this;})
     }
 
