@@ -73,23 +73,8 @@ export default function createUI(scene)
     new UiQuest(scene);              // 20
     new UiConfirm(scene);
 
-    t1();
-
 }
 
-function t1()
-{
-    let obj={a:1,b:2,c:0}
-    if(obj.c===undefined){console.log('------------------ c:undefined')}
-    if(obj.c===null){console.log('------------------ c:null')}
-    if(!obj.c){console.log('------------------ c:???')}
-    console.log('-----------------',obj);
-
-
-    //const v=[1,2,3]
-    let v=[1,2,3]
-    console.log('v=',v?.forEach((v)=>{console.log(v)}));
-}
 
 
 function mark(on) {Mark.visible=on;}

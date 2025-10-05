@@ -11,10 +11,6 @@ import {Projectile} from '../entity.js';
 
 export class Action
 {
-    constructor(root)   
-    {
-        this._root = root;
-    }
 
     get tag() {return 'action';}  // 回傳元件的標籤
 
@@ -26,7 +22,7 @@ export class Action
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _emit(...args) {this._root.emit(...args);}
+    _emit(...args) {return this._root.emit(...args);}
 
     _step(pos, duration, ease, {yoyo=false, onYoyo, onUpdate, onComplete}={})
     {
@@ -48,14 +44,15 @@ export class Action
 
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
-        this._emit('face',pt);
-        this._emit('removeWeight');
-        this._emit('addWeight',pt);
-        this._emit('idle',false);
-        this._emit('walk',duration/2);
+        const {emit}=this.ctx
+        emit('face',pt);
+        emit('removeWeight');
+        emit('addWeight',pt);
+        emit('idle',false);
+        emit('walk',duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
         await this._step(pt, duration, ease);
-        this._emit('updateDepth');
+        emit('updateDepth');
     }
 
     _attack_Melee(target, onHit)
@@ -77,17 +74,19 @@ export class Action
     //------------------------------------------------------
     bind(root)
     {
+        this._root = root;
         // 在上層綁定操作介面，提供給其他元件使用
         
         // 註冊 event
-        root.on('move', this.move.bind(this));
+        root.on('move', async(resolve)=>{await this.move();resolve?.();});
+        root.on('moveToward', async(resolve,...a)=>{await this.moveToward(...a);resolve?.();});
     }
 
     async moveToward(target, {maxSteps=1}={})
     {
-        const {bb} = this.ctx;
+        const {bb,emit} = this.ctx;
 
-        this._emit('findPath', target.pos); // 搜尋路徑，結果會存於 bb.path
+        emit('findPath', target.pos); // 搜尋路徑，結果會存於 bb.path
 
         if(bb.path)
         {
@@ -105,13 +104,12 @@ export class Action
         return true;
     }
 
-    async move(resolve)
+    async move()
     {
         const {bb} = this.ctx;
         await this._moveTo(bb.path.path[0]);
         bb.path.path.splice(0,1);
         if(bb.path.path.length===0) {delete bb.path;}
-        resolve?.();
     }
 
     async attack(target)

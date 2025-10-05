@@ -32,7 +32,8 @@ export class GameObject
     get bb() {return this._bb;}                     // blackboard
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
-    get ctx() {return {...this.coms,bb:this.bb};}
+    // get ctx() {return {...this.coms,bb:this.bb};}
+    get ctx() {return {bb:this.bb, emit:this.emit.bind(this), aEmit:this.aEmit.bind(this)};}
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
     //------------------------------------------------------
@@ -92,8 +93,8 @@ export class GameObject
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
-    emit(...args) {this._evt?.emit(...args);}
-    aEmit(...args) {return new Promise(resolve=>this._evt?.emit(...args,resolve));}
+    emit(...args) {return this._evt?.emit(...args);}
+    aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
 
     // 讓元件在 root 加入 prop
     prop(name, target, key)

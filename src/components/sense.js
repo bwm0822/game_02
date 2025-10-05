@@ -1,6 +1,7 @@
 import { GM } from '../setting.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
+import {getPlayer} from '../roles/role.js';
 
 
 const dist2 = (a, b) => {
@@ -30,14 +31,24 @@ export class Sense
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    bind(root) {this._root = root;}
+    bind(root) 
+    {
+        this._root = root;
+
+        // 註冊 event
+        root.on('sensePlayer', this.sensePlayer.bind(this));
+        root.on('canSee', this.canSee.bind(this));
+        root.on('inAttackRange', this.inAttackRange.bind(this));
+    }
 
     // ---- 感知 ----
     sensePlayer(maxTiles=8, needSight=true) 
     {
+
         // const player = this.role.scene?.roles?.find(r => r.isPlayer);
-        const player = Role.getPlayer();
-        if (!player || !player.isAlive) {return null;}
+        // const player = Role.getPlayer();
+        const player = getPlayer();
+        // if (!player || !player.isAlive) {return null;}
         if (!withinTiles(this.pos, player.pos, maxTiles)) {return null;}
         if (needSight) 
         {

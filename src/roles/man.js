@@ -47,7 +47,7 @@ export class Man extends GameObject
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
         const {ai} = this.ctx;  
 
-        await ai?.think();
+        await this.aEmit('think');
     }
 
 

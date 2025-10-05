@@ -78,10 +78,16 @@ export class BehChase extends Behavior
         }
         else
         {
-            const { bb, sense } = ctx;
-            const t = bb.target ?? sense.sensePlayer();
+            // const { bb, sense } = ctx;
+            // const t = bb.target ?? sense.sensePlayer();
+
+            const { bb, emit } = ctx;
+            const t = bb.target ?? emit('sensePlayer');
+
+
             if (!t) {return [0, 'no target'];}
-            if (!sense.canSee(t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
+            // if (!sense.canSee(t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
+            if (!emit('canSee',t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
             let base = 1;
             return [Math.max(0, base * this.weight), `none`];
         }
@@ -89,12 +95,14 @@ export class BehChase extends Behavior
 
     async act(ctx) 
     {
-        const { bb, action, sense } = ctx;
-        const t = bb.target ?? sense.sensePlayer();
+        const { bb, emit, aEmit } = ctx;
+        // const t = bb.target ?? sense.sensePlayer();
+        const t = bb.target ?? emit('sensePlayer');
         if (!t) {return { ok:false, note:'no target' };}
 
-        this._commitUse(ctx) 
-        const ok = await action.moveToward(t, { maxSteps: 2 });
+        this._commitUse(ctx); 
+        // const ok = await action.moveToward(t, { maxSteps: 2 });
+        const ok = await aEmit('moveToward',t, { maxSteps: 2 });
         return { ok, note:'chase' };
         
     }

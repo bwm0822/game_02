@@ -107,7 +107,7 @@ export class Role extends GameObject
 
     isInteractive() {return true;}
 
-    interact(ent, act) 
+    async interact(ent, act) 
     {
         if(!act) {return;}
         if(ent) {this.emit('face',ent.pos);}
