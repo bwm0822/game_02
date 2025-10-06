@@ -151,22 +151,16 @@ class Slot extends Icon
 
     get i() {return this._i;}
     get cps() {return this.dat.cps;}
-    get count() {return this.itm.count;}
-    set count(value) {return this.itm.count=value;}
+    get count() {return this.content.count;}
+    set count(value) {return this.content.count=value;}
     get props() {return this.dat.props;}
-    get label() {return this.itm.id.lab();}
+    get label() {return this.content.id.lab();}
     get tp() {return GM.TP_SLOT;}
 
-    get id() {return this.itm?.id;}
-    // itm
+    get id() {return this.content?.id;}
+    // content
     get content() {return this.owner.storage.items[this._i];}
-    set content(value) {this.owner.storage.items[this._i]=value;}
-    // get itm() {return this.content;}
-    // set itm(value) {this.content=value; this.setSlot(value);}
-
-    get itm() {return this.owner.storage.items[this._i];}
-    set itm(value) {this.owner.storage.items[this._i]=value; this.setSlot(value);}
-
+    set content(value) {this.owner.storage.items[this._i]=value; this.setSlot(value);}
     // dat
     get dat() {return this._dat;}
     set dat(value) {return this._dat=value;}
@@ -177,9 +171,9 @@ class Slot extends Icon
     // owner
     get owner() {return this._getOwner?.();}
     // others
-    get gold() {return this.itm.count*this.dat.gold;}
+    get gold() {return this.content.count*this.dat.gold;}
 
-    get isEmpty() {return Utility.isEmpty(this.itm)||this.itm.count==0;}
+    get isEmpty() {return Utility.isEmpty(this.content)||this.content.count==0;}
     get capacity() {return this.owner?.storage?.capacity; }
 
 
@@ -193,13 +187,13 @@ class Slot extends Icon
         {
             if(this.owner.trade == GM.BUYER) {acts = ['sell','drop'];}
             else {acts = ['buy'];}
-            if(this.itm.count>1) {acts = [...acts,'split'];}
+            if(this.content.count>1) {acts = [...acts,'split'];}
         }
         else
         {
             if(this.dat.useable) 
             {
-                if(this.itm?.times===0 || this.itm?.capacity===0)
+                if(this.content?.times===0 || this.content?.capacity===0)
                     acts = [...acts,'use:false'];
                 else
                     acts = [...acts,'use'];
@@ -208,12 +202,12 @@ class Slot extends Icon
             if(this.owner.target) // 打開箱子
             {
                 acts = [...acts,'transfer','drop'];
-                if(this.itm.count>1) {acts = [...acts,'split'];}
-                else if(this.itm.storage) {acts = [...acts,'open'];}
+                if(this.content.count>1) {acts = [...acts,'split'];}
+                else if(this.content.storage) {acts = [...acts,'open'];}
             }
             else 
             {
-                if(this.itm.count>1) {acts = [...acts,'drop','split'];}
+                if(this.content.count>1) {acts = [...acts,'drop','split'];}
                 else if(this.dat.storage) {acts = [...acts,'drop','openbag'];}
                 else {acts = [...acts,'drop'];}
             }
@@ -226,40 +220,40 @@ class Slot extends Icon
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
-    p(prop) // itm,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
+    p(prop) // content,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
     {
         let [p,sub] = prop.split('.');
-        return sub ? this.itm?.[p]?.[sub] != undefined ? this.itm[p][sub] 
+        return sub ? this.content?.[p]?.[sub] != undefined ? this.content[p][sub] 
                                                         : this.dat?.[p]?.[sub]
-                    : this.itm?.[p] != undefined ? this.itm[p] 
+                    : this.content?.[p] != undefined ? this.content[p] 
                                                     : this.dat?.[p];
     }  
 
-    fill(p) {if(this.dat[p] != undefined) {this.itm[p] = this.dat[p].max;}}
+    fill(p) {if(this.dat[p] != undefined) {this.content[p] = this.dat[p].max;}}
 
-    setSlot(itm)
+    setSlot(content)
     {
-        this.dat = DB.item(itm?.id);
-        this.setIcon(this.dat?.icon,{alpha:itm?.count>0?1:0.25});
-        this.setCount(itm?.count>1?itm.count:'');
+        this.dat = DB.item(content?.id);
+        this.setIcon(this.dat?.icon,{alpha:content?.count>0?1:0.25});
+        this.setCount(content?.count>1?content.count:'');
 
         this.setBar(false);
         this.setProgress(false);
         this.setTimes(false);
         if(this.dat?.endurance)
         {
-            if(itm.endurance===undefined) {itm.endurance=this.dat.endurance.cur;}
-            this.setBar(true,itm.endurance,this.dat.endurance.max);
+            if(content.endurance===undefined) {content.endurance=this.dat.endurance.cur;}
+            this.setBar(true,content.endurance,this.dat.endurance.max);
         }
         if(this.dat?.capacity)
         {
-            if(itm.capacity===undefined) {itm.capacity=this.dat.capacity.cur;}
-            this.setProgress(true,itm.capacity,this.dat.capacity.max);
+            if(content.capacity===undefined) {content.capacity=this.dat.capacity.cur;}
+            this.setProgress(true,content.capacity,this.dat.capacity.max);
         }
         if(this.dat?.times)
         {
-            if(itm.times===undefined) {itm.times=this.dat.times.cur;}
-            this.setTimes(true,itm.times,this.dat.times.max);
+            if(content.times===undefined) {content.times=this.dat.times.cur;}
+            this.setTimes(true,content.times,this.dat.times.max);
         }
     }
 
@@ -331,7 +325,7 @@ class Slot extends Icon
     update(cat)
     {
         cat && (this.cat=cat);  // for MatSlot
-        this.setSlot(this.itm);
+        this.setSlot(this.content);
         this.setEnable(this.enabled);
     }
 
@@ -350,7 +344,7 @@ class Slot extends Icon
         }
     }
 
-    empty() {super.empty();this.itm=null;this.dat=null;}
+    empty() {super.empty();this.content=null;this.dat=null;}
     
     over(checkEquip=true)
     {
@@ -446,9 +440,7 @@ class EquipSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get content() {return this.owner.equips[this._i];}
-    set content(value) {this.owner.equips[this._i]=value;}
-    get itm() {return this.owner.equips[this._i];}
-    set itm(value) {this.owner.equips[this._i]=value; this.setSlot(value); this.owner.equip();}
+    set content(value) {this.owner.equips[this._i]=value; this.setSlot(value); this.owner.equip();}
 
     _isSameCat(cat)   {return (this.cat & cat) == cat;}  
 
@@ -481,8 +473,8 @@ class MatSlot extends Slot
     set cat(cat) {this._cat=cat;}
 
     // get, set 都要 assign 才會正常 work
-    get itm() {return super.itm;}
-    set itm(value) {super.itm=value; this.onset?.();}
+    get content() {return super.content;}
+    set content(value) {super.content=value; this.onset?.();}
 }
 
 class OutputSlot extends Slot
@@ -494,15 +486,13 @@ class OutputSlot extends Slot
     }
 
     get dropable() {return false;}
-    get container() {return this.owner?.output;}
-    set container(value) {this.owner.output=value;}
     get capacity() {return -1; }
 
     // get, set 都要 assign 才會正常 work
-    get itm() {return super.itm;}
-    set itm(value) {super.itm=value; this.onset?.();}
+    get content() {return this.owner?.output;}
+    set content(value) {this.owner.output=value; this.onset?.();}
 
-    empty() {this.itm={id:this.itm.id,count:0};}
+    empty() {this.content={id:this.content.id,count:0};}
 }
 
 class SkillSlot extends Pic
@@ -737,8 +727,8 @@ export class UiDragged_old extends OverlapSizer
     // get owner() {return this.slot.owner;}
     // get itm() {return this.slot.itm;}
     // get dat() {return this.slot.dat;}
-    get label() {return this.slot.itm.id.lab();}
-    get gold() {return this.slot.itm.count*this.slot.dat.gold;}
+    get label() {return this.slot.content.id.lab();}
+    get gold() {return this.slot.content.count*this.slot.dat.gold;}
 
 
 
@@ -773,13 +763,13 @@ export class UiDragged_old extends OverlapSizer
 
     update() 
     {
-        if(this.slot.itm.count==0)
+        if(this.slot.content.count==0)
         {
             this.empty();
         }
         else
         {
-            this.setCount(this.slot.itm.count>1 ? this.slot.itm.count : '')
+            this.setCount(this.slot.content.count>1 ? this.slot.content.count : '')
         }
     }
 
@@ -807,7 +797,7 @@ export class UiDragged_old extends OverlapSizer
         // this._dat = value.dat;
         this.slot = value;
         this.setIcon(value.dat.icon)
-            .setCount(value.itm.count>1 ? value.itm.count : '')
+            .setCount(value.content.count>1 ? value.content.count : '')
         UiCover.show();
         UiMain.enable(false);
     }
@@ -819,14 +809,14 @@ export class UiDragged_old extends OverlapSizer
         // this.dat = slot.dat;
         // this.owner = slot.owner;
         this._slot = {
-            itm: slot.itm,
+            content: slot.content,
             dat: slot.dat,
             owner: slot.owner,
             gold: slot.gold
         };
 
         this.setIcon(slot.dat.icon)
-            .setCount(slot.itm.count>1 ? slot.itm.count : '')
+            .setCount(slot.content.count>1 ? slot.content.count : '')
         UiCover.show();
         UiMain.enable(false);
     }
@@ -919,18 +909,18 @@ export class UiDragged extends OverlapSizer
     static get owner() {return this.instance.owner;}
     static get dat() {return this.instance.dat;}
 
-    static get isSlot() {return this.instance._obj?.itm !== undefined;}
+    static get isSlot() {return this.instance._obj?.content !== undefined;}
     static get isSkill() {return this.instance._obj?.id !== undefined;}
 
 
     get owner() {return this._obj.owner;}
-    get itm() {return this._obj.itm;}
-    set itm(val) {this.setItm(val);}
+    get content() {return this._obj.content;}
+    set content(val) {this.setItm(val);}
     get dat() {return this._obj.dat;}
     get id() {return this._obj.id;}
     get i() {return this._obj.i;}
-    get label() {return this.itm.id.lab();}
-    get gold() {return this.itm.count*this.dat.gold;}
+    get label() {return this.content.id.lab();}
+    get gold() {return this.content.count*this.dat.gold;}
 
 
     addListener()
@@ -954,13 +944,13 @@ export class UiDragged extends OverlapSizer
 
     update() 
     {
-        if(this.itm.count==0)
+        if(this.content.count==0)
         {
             this.empty();
         }
         else
         {
-            this.setCount(this.itm.count>1 ? this.itm.count : '')
+            this.setCount(this.content.count>1 ? this.content.count : '')
         }
     }
 
@@ -978,29 +968,15 @@ export class UiDragged extends OverlapSizer
         return this
     }
 
-    // setData(value)
-    // {
-    //     // value ={itm:{id:id, count:count}, dat:{}, owner:{}}
-    //     this.show();
-    //     // this._owner = value.owner;
-    //     // this._itm = value.itm;
-    //     // this._dat = value.dat;
-    //     this.slot = value;
-    //     this.setIcon(value.dat.icon)
-    //         .setCount(value.itm.count>1 ? value.itm.count : '')
-    //     UiCover.show();
-    //     UiMain.enable(false);
-    // }
-
-    setItm(itm)
+    setItm(content)
     {
-        if(itm)
+        if(content)
         {
-            console.log(itm)
-            this._obj.itm = itm;
-            this._obj.dat = DB.item(itm.id);
+            console.log(content)
+            this._obj.content = content;
+            this._obj.dat = DB.item(content.id);
             this.setIcon(this.dat.icon)
-                .setCount(this.itm.count>1 ? this.itm.count : '')
+                .setCount(this.content.count>1 ? this.content.count : '')
         }
         else
         {
@@ -1016,7 +992,7 @@ export class UiDragged extends OverlapSizer
             console.log('slot')
             
             this._obj = {
-                itm: obj.itm,
+                content: obj.content,
                 dat: obj.dat,
                 owner: obj.owner,
                 gold: obj.gold
@@ -1024,7 +1000,7 @@ export class UiDragged extends OverlapSizer
 
             this.show()
                 .setIcon(this.dat.icon)
-                .setCount(this.itm.count>1 ? this.itm.count : '')
+                .setCount(this.content.count>1 ? this.content.count : '')
             UiCover.show();
             UiMain.enable(false);
         }
@@ -1374,7 +1350,7 @@ export class UiInfo extends Sizer
         if(slot.dat.gold)
         {
             let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
-            let text = `\n[color=yellow][img=gold][/color] ${(slot.itm.count??1)*slot.dat.gold}`
+            let text = `\n[color=yellow][img=gold][/color] ${(slot.content.count??1)*slot.dat.gold}`
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
 
@@ -1943,7 +1919,7 @@ class Option extends UiBase
     {
         this.close();
         console.log('split',this.ent);
-        let cnt = await UiCount.getCount(1, this.ent.itm.count-1)
+        let cnt = await UiCount.getCount(1, this.ent.content.count-1)
         // if(cnt==0) {return;}
         // this.owner.split(this.ent,cnt);
         // this.refreshAll();
@@ -3799,7 +3775,7 @@ export class UiManufacture extends UiBase
                     itemSel?.unsel();
                     itemSel=item;
                     item.sel();
-                    this.owner.sel=item.itm.id;
+                    this.owner.sel=item.content.id;
                     this.getElement('output',true).update();
                     this.check();
                 }
@@ -3809,7 +3785,7 @@ export class UiManufacture extends UiBase
         panel.removeAll(true);
         this.owner.menu.forEach((id)=>{
             let add = this.item(id.lab(),{onover:onover, onout:onout, ondown:ondown});
-            add.itm = {id:id,type:'make'};
+            add.content = {id:id,type:'make'};
             add.dat = DB.item(id)??id;
             if(id==this.owner.sel) {add.sel();itemSel=add;}
             panel.add(add,{expand:true})

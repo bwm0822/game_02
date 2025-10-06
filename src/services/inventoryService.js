@@ -1,28 +1,28 @@
 // services/inventoryService.js
 
-function sameItem(a, b) {return a?.itm && b?.itm && a.itm.id === b.itm.id;}
+function sameItem(a, b) {return a?.content && b?.content && a.content.id === b.content.id;}
 
 function mergePossible(from, to) 
 {
-    return sameItem(from, to) && (to.dat?.cps ?? 1) > 1 && (to.itm?.count ?? 0) < to.dat.cps;
+    return sameItem(from, to) && (to.dat?.cps ?? 1) > 1 && (to.content?.count ?? 0) < to.dat.cps;
 }
 
 function doMerge(from, to) 
 {
-    const toCount = to.itm.count ?? 0;
-    const dragged = from.itm.count ?? 0;
+    const toCount = to.content.count ?? 0;
+    const dragged = from.content.count ?? 0;
     const cap = to.dat.cps;
     const merged = Math.min(toCount + dragged, cap);
     const remain = dragged - (merged - toCount);
-    to.itm.count = merged;
-    from.itm.count = remain;
+    to.content.count = merged;
+    from.content.count = remain;
 }
 
 function swap(from, to) 
 {
-    const tmp = from.itm;
-    from.itm = to.itm;
-    to.itm = tmp;
+    const tmp = from.content;
+    from.content = to.content;
+    to.content = tmp;
 }
 
 function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
@@ -52,8 +52,8 @@ export default class InventoryService
         // 移動 / 互換 
         if (to.isEmpty) // 目標空 => 移動
         {
-            to.itm = from.itm;
-            from.itm = null;
+            to.content = from.content;
+            from.content = null;
             return 'moved';
         } 
         else // 互換位置
@@ -66,7 +66,7 @@ export default class InventoryService
     // 分堆（給 Option.split 呼叫）
     static split(slot, count) 
     {
-        if (!slot?.itm?.count || count <= 0 || count >= slot.itm.count) return false;
+        if (!slot?.content?.count || count <= 0 || count >= slot.content.count) return false;
         slot.owner.split(slot, count);
         return true;
     }
