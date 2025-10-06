@@ -15,8 +15,6 @@ export class Storage
 
     get tag() {return 'inv';}   // 回傳元件的標籤
 
-    get storage() {return this._storage;}
-
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -39,7 +37,7 @@ export class Storage
         this._root = root;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.storage = this._storage;
+        root.prop('storage', this, '_storage');
         root.put = this.put.bind(this);
         root.take = this.take.bind(this);
         root.split = this.split.bind(this);
@@ -148,13 +146,11 @@ export class Inventory extends Storage
         this._gold = 0;
     }
 
-    
     get ctx() {return this._root.ctx;}
     get equips() {return this._equips;}
 
     get gold() {return this._gold;}
     set gold(value) {this._gold = value;}
-    
    
     //------------------------------------------------------
     // Local
@@ -168,9 +164,9 @@ export class Inventory extends Storage
         super.bind(root);
 
         // 在上層綁定操作介面，提供給外部使用
-        root.inv = this; 
-
-        root.prop('gold', this, '_gold')
+        root.prop('equips', this, '_equips');
+        root.prop('gold', this, '_gold');
+        root.equip = this.equip.bind(this);
 
         // 共享裝備資料
         root.bb.equips = this.equips;

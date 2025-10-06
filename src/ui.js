@@ -159,8 +159,14 @@ class Slot extends Icon
 
     get id() {return this.itm?.id;}
     // itm
-    get itm() {return this._i>=0?this.container?.[this._i]:this.container;}
-    set itm(value) {this._i>=0?this.container[this._i]=value:this.container=value; this.setSlot(value);}
+    get content() {return this.owner.storage.items[this._i];}
+    set content(value) {this.owner.storage.items[this._i]=value;}
+    // get itm() {return this.content;}
+    // set itm(value) {this.content=value; this.setSlot(value);}
+
+    get itm() {return this.owner.storage.items[this._i];}
+    set itm(value) {this.owner.storage.items[this._i]=value; this.setSlot(value);}
+
     // dat
     get dat() {return this._dat;}
     set dat(value) {return this._dat=value;}
@@ -174,14 +180,9 @@ class Slot extends Icon
     get gold() {return this.itm.count*this.dat.gold;}
 
     get isEmpty() {return Utility.isEmpty(this.itm)||this.itm.count==0;}
-    get container() {return this.owner?.inv?.storage?.items??this.owner?.storage?.items;}
-    get capacity() {return this.owner?.inv?.storage?.capacity??this.owner?.storage?.capacity; }
+    get capacity() {return this.owner?.storage?.capacity; }
 
-    get storage() 
-    {
-        if(!this.itm.storage) {this.itm.storage={capacity:this.dat.storage,items:[]}};
-        return this.itm.storage;
-    }
+
 
     get acts()
     {
@@ -437,20 +438,17 @@ class EquipSlot extends Slot
         this.setIcon();
     }
 
-    // get container() {return this.owner?.rec?.equips;}
-    get container() {return this.owner?.inv?.equips;}
     get capacity() {return -1;}
 
     get cat() {return this._cat;}
 
     get isEquip() {return true;}
 
-    //get isValid() {return UiDragged.checkCat(this.cat)}
-
     // get, set 都要 assign 才會正常 work
-    get itm() {return super.itm;}
-    // set itm(value) {super.itm=value; this.owner.equip();}
-    set itm(value) {super.itm=value; this.owner.inv.equip();}
+    get content() {return this.owner.equips[this._i];}
+    set content(value) {this.owner.equips[this._i]=value;}
+    get itm() {return this.owner.equips[this._i];}
+    set itm(value) {this.owner.equips[this._i]=value; this.setSlot(value); this.owner.equip();}
 
     _isSameCat(cat)   {return (this.cat & cat) == cat;}  
 
@@ -1823,7 +1821,9 @@ class UiBase extends Sizer
     updateGrid(cat) {this.getElement('grid',true).getElement('items').forEach(item => {item?.update(cat);});}
 
     // updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.rec.gold}`);}
-    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.inv.gold}`);}
+    // updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.inv.gold}`);}
+    updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);}
+
 
     close() {this.hide();}
 
