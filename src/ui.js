@@ -136,7 +136,7 @@ export class Ui
 
 class Slot extends Icon
 {
-    constructor(scene, w, h, i, getOwner, config)
+    constructor(scene, w, h, i, config)
     {
         super(scene, w, h, config);
         this.add(bar(scene,{width:0,height:5,value:0}),{key:'bar',align:'bottom',expand:{width:true},offsetY:5});
@@ -145,7 +145,6 @@ class Slot extends Icon
         this.addBackground(rect(scene,{color:GM.COLOR_BLACK, radius:config?.radius??0, alpha:0.6}),'disabled');
         this.getElement('disabled').fillAlpha=0;
         this._i = i;
-        this._getOwner = getOwner;
         this.addListener();
     }
 
@@ -168,8 +167,6 @@ class Slot extends Icon
     get cat() {return GM.CAT_ALL;}
     set cat(value) {}
     get isValid() {return UiDragged.checkCat(this.cat)}
-    // owner
-    get owner() {return this._getOwner?.();}
     // others
     get gold() {return this.content.count*this.dat.gold;}
 
@@ -181,7 +178,7 @@ class Slot extends Icon
     get acts()
     {
         let acts = [];
-        console.log('useable',this.dat.useable,this.dat)
+        // console.log('useable',this.dat.useable,this.dat)
 
         if(this.owner.trade)    // 交易
         {
@@ -322,8 +319,9 @@ class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
-    update(cat)
+    update(owner,cat)
     {
+        this.owner = owner;
         cat && (this.cat=cat);  // for MatSlot
         this.setSlot(this.content);
         this.setEnable(this.enabled);
@@ -425,9 +423,9 @@ class EquipSlot extends Slot
         }
     }
 
-    constructor(scene, w, h, i, getOwner, config)
+    constructor(scene, w, h, i, config)
     {
-        super(scene, w, h, i, getOwner, config);
+        super(scene, w, h, i, config);
         this._cat = config?.cat;
         this.setIcon();
     }
@@ -1624,28 +1622,7 @@ class UiBase extends Sizer
         return this;
     }
 
-    // addGrid(scene, column, row, getOwner, space)
-    // {
-    //     let config =
-    //     {
-    //         column: column,
-    //         row: row,
-    //         space: {column:5,row:5,...space},
-    //     }
-
-    //     let grid = scene.rexUI.add.gridSizer(config);
-    //     let count = config.column * config.row;
-    //     for(let i=0; i<count; i++)
-    //     {
-    //         let slot = new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE, i, getOwner);
-    //         grid.add(slot);
-    //     }
-
-    //     this.add(grid,{key:'grid'});
-    //     return this;
-    // }
-
-    addGrid(scene, column, row, getOwner, ext={})
+    addGrid(scene, column, row, ext={})
     {
         let config =
         {
@@ -1665,7 +1642,7 @@ class UiBase extends Sizer
         let count = config.column * config.row;
         for(let i=0; i<count; i++)
         {
-            let slot = new classT(scene, slot_w, slot_h, i, getOwner, classC);
+            let slot = new classT(scene, slot_w, slot_h, i, classC);
             grid.add(slot);
         }
 
@@ -1792,14 +1769,9 @@ class UiBase extends Sizer
 
     setTitle(title) {this.getElement('label',true).setText(title);}
 
-    updateEquip() {this.getElement('equip',true).getElement('items').forEach(item => {item?.update();});}
-
-    updateGrid(cat) {this.getElement('grid',true).getElement('items').forEach(item => {item?.update(cat);});}
-
-    // updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.rec.gold}`);}
-    // updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.inv.gold}`);}
+    updateEquip() {this.getElement('equip',true).getElement('items').forEach(item => {item?.update(this.owner);});}
+    updateGrid(cat) {this.getElement('grid',true).getElement('items').forEach(item => {item?.update(this.owner,cat);});}
     updateGold() {this.getElement('gold',true).setText(`[color=yellow][img=gold][/color] ${this.owner.gold}`);}
-
 
     close() {this.hide();}
 
@@ -2144,7 +2116,7 @@ export class UiStorage extends UiBase
 
         this.addBg_Int(scene)
             .addTop(scene)
-            .addGrid(scene,4,4,this.getOwner.bind(this),{padding:{left:10,right:10,bottom:10}})
+            .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -2227,9 +2199,9 @@ export class UiInv extends UiBase
 
         this.addBg_Int(scene)
             .addTop(scene,{text:'bag'.lab()})
-            .addEquip(scene,this.getOwner.bind(this))
+            .addEquip(scene)
             .addGold(scene)
-            .addGrid(scene,5,4,this.getOwner.bind(this))
+            .addGrid(scene,5,4)
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
             // 方法 2: this.getContainer.bind(this);
@@ -2243,8 +2215,14 @@ export class UiInv extends UiBase
         this._opts = null;
     }
 
-    addEquip(scene, getOwner)
+    addEquip(scene)
     {
+        let equip = function(id, cat)
+        {
+            let slot = new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, id, {cat:cat});
+            return slot;
+        }
+
         let config =
         {
             column: 5,
@@ -2253,21 +2231,17 @@ export class UiInv extends UiBase
         }
         let grid = scene.rexUI.add.gridSizer(config);
         grid.addBackground(rect(scene,{strokeColor:GM.COLOR_GRAY,stroleWidth:2}))
-        let equip = function(id, cat, getOwner)
-        {
-            let slot = new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, id, getOwner, {cat:cat});
-            return slot;
-        }
+      
         let i=0;
-        grid.add(equip(i++, GM.CAT_WEAPON, getOwner))
-            .add(equip(i++, GM.CAT_HELMET, getOwner))
-            .add(equip(i++, GM.CAT_CHESTPLATE, getOwner))
-            .add(equip(i++, GM.CAT_GLOVES, getOwner))
-            .add(equip(i++, GM.CAT_BOOTS, getOwner))
-            .add(equip(i++, GM.CAT_NECKLACE, getOwner))
-            .add(equip(i++, GM.CAT_RING, getOwner))
-            .add(equip(i++, GM.CAT_RING, getOwner))
-            .add(equip(i++, GM.CAT_EQUIP|GM.CAT_BAG, getOwner))
+        grid.add(equip(i++, GM.CAT_WEAPON))
+            .add(equip(i++, GM.CAT_HELMET))
+            .add(equip(i++, GM.CAT_CHESTPLATE))
+            .add(equip(i++, GM.CAT_GLOVES))
+            .add(equip(i++, GM.CAT_BOOTS))
+            .add(equip(i++, GM.CAT_NECKLACE))
+            .add(equip(i++, GM.CAT_RING))
+            .add(equip(i++, GM.CAT_RING))
+            .add(equip(i++, GM.CAT_EQUIP|GM.CAT_BAG))
 
         this.add(grid,{key:'equip'});
         return this;
@@ -3740,9 +3714,9 @@ export class UiManufacture extends UiBase
         let produce = scene.rexUI.add.sizer(config);
         produce.addGrid = this.addGrid;
         produce.addBackground( rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}) )
-                .addGrid(scene, 3, 3, this.getOwner, {padding:{top:10},classT:MatSlot,classC:{onset:this.check}})
+                .addGrid(scene, 3, 3, {padding:{top:10},classT:MatSlot,classC:{onset:this.check}})
                 .addSpace()
-                .add(new OutputSlot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,this.getOwner),{key:'output'})
+                .add(new OutputSlot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE),{key:'output'})
                 .addSpace()
                 .add(new UiButton(scene,{text:'make'.lab(),onclick:this.make}),{key:'button'})
                 .addSpace()
@@ -3764,6 +3738,11 @@ export class UiManufacture extends UiBase
         this.check();
     }
 
+    updateOutput()
+    {
+        this.getElement('output',true).update(this.owner);
+    }
+
     update()
     {
         let itemSel = null;
@@ -3776,7 +3755,7 @@ export class UiManufacture extends UiBase
                     itemSel=item;
                     item.sel();
                     this.owner.sel=item.content.id;
-                    this.getElement('output',true).update();
+                    this.updateOutput();
                     this.check();
                 }
             }
@@ -3794,7 +3773,7 @@ export class UiManufacture extends UiBase
         this.check();
 
         this.updateGrid(this.owner.cat);
-        this.getElement('output',true).update();
+        this.updateOutput();
     }
 
     close() 
