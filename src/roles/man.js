@@ -23,8 +23,8 @@ export class Man extends GameObject
     {     
         this._addToList();
 
-        // 取得roleD，放入bbd，view元件會用到
-        this.bb.roleD = DB.role(this.bb.id);
+        // 取得roleD，放入bb，view元件會用到
+        this.bb.meta = DB.role(this.bb.id);
 
         // 加入元件
         this.add(new RoleView(this.scene),{modify:true})

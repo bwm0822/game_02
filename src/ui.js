@@ -2862,10 +2862,11 @@ export class UiProfile extends UiBase
 
     updateInfo()
     {
+        console.log(this.owner.meta)
         // infoL
-        let [key,frame]=this.owner.role.icon.split('/');
+        let [key,frame]=this.owner.meta.icon.split('/');
         this.getElement('icon',true).getElement('sprite')?.setTexture(key,frame);
-        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.role.job?.lab()}`);
+        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.meta.job?.lab()}`);
 
         // infoR
         let infoR = this.getElement('infoR',true);

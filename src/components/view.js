@@ -408,35 +408,35 @@ export class RoleView extends View
     //--------------------------------------------------
     _setData()
     {
-        this.roleD={};      // 新增 roleD
+        this.meta={};      // 新增 roleD
         super._setData();   // 從 bb 取得 roldD
         
-        this._faceR = this.roleD.faceR;
+        this._faceR = this.meta.faceR;
 
-        let b = this.roleD.b;
-        let g = this.roleD.g;
-        let z = this.roleD.z;
+        let b = this.meta.b;
+        let g = this.meta.g;
+        let z = this.meta.z;
 
         if(b) {this.bl=b.l; this.br=b.r; this.bt=b.t; this.bb=b.b;}
         if(g) {this.gl=g.l; this.gr=g.r; this.gt=g.t; this.gb=g.b;}
         if(z) {this.zl=z.l; this.zr=z.r; this.zt=z.t; this.zb=z.b;}
 
-        this.wid = this.roleD.w; 
-        this.hei = this.roleD.h;
-        this.anchorX = this.roleD.anchor.x;
-        this.anchorY = this.roleD.anchor.y;
+        this.wid = this.meta.w; 
+        this.hei = this.meta.h;
+        this.anchorX = this.meta.anchor.x;
+        this.anchorY = this.meta.anchor.y;
 
         return this;
     }
 
     _addShape()
     {
-        const roleD = this.roleD;
+        const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
-        if(roleD.body) {this._addPart(roleD.body, GM.PART_BODY);}
-        if(roleD.head) {this._addPart(roleD.head, GM.PART_HEAD);}
-        if(roleD.hand) {this._addPart(roleD.hand, GM.PART_HAND);}
+        if(meta.body) {this._addPart(meta.body, GM.PART_BODY);}
+        if(meta.head) {this._addPart(meta.head, GM.PART_HEAD);}
+        if(meta.hand) {this._addPart(meta.hand, GM.PART_HAND);}
         this._equips = []; 
         
         return this;

@@ -24,6 +24,8 @@ export class Role extends GameObject
     get act() {return this.acts[0];}
 
     get total() {return this.bb.total;}
+    get meta() {return this.bb.meta;}
+    get id() {return this.bb.id;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -48,7 +50,7 @@ export class Role extends GameObject
     {     
         this._addToList();
 
-        this.bb.roleD = DB.role(this.bb.id);    // 取得roleD，放入bbd，view 元件會用到
+        this.bb.meta = DB.role(this.bb.id);    // 取得roleD，放入bb，view 元件會用到
 
         // 加入元件
         this.add(new RoleView(this.scene),{modify:true})
@@ -67,7 +69,8 @@ export class Role extends GameObject
     {     
         this._addToList();
 
-        this.bb.roleD = DB.role(id);    // 取得roleD，放入bb，view 元件會用到
+        this.bb.id = id;
+        this.bb.meta = DB.role(id);    // 取得roleD，放入bb，view 元件會用到
         this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
         this.bb.interactive = true;     // 設成 可互動，view 元件會參考
 
