@@ -8,7 +8,7 @@ import {bbcText} from './uibase'
 
 import TimeManager from './time';
 // import * as Role from './role';
-import {getPlayer} from './roles/role.js';
+import {getPlayer} from './roles/player.js';
 
 let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;

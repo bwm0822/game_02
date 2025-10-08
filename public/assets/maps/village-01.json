@@ -418,7 +418,7 @@
                          "value":32
                         }],
                  "rotation":0,
-                 "type":"man",
+                 "type":"npc_n",
                  "visible":true,
                  "width":32,
                  "x":544,

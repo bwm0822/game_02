@@ -14,7 +14,7 @@ import {Projectile} from '../entity';
 
 // import * as Role from '../role.js';
 // import {setPlayer,dbg_hover_npc} from '../role.js';
-import {setPlayer, dbg_hover_npc} from '../roles/role.js';
+import {setPlayer, dbg_hover_npc} from '../roles/player.js';
 
 
 export class GameScene extends Scene

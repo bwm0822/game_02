@@ -1,7 +1,7 @@
 import { GM } from '../setting.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
-import {getPlayer} from '../roles/role.js';
+import {getPlayer} from '../roles/player.js';
 
 
 const dist2 = (a, b) => {

@@ -6,8 +6,8 @@ import QuestManager from './quest.js';
 import {astar, Graph} from './astar.js';
 import {GM} from './setting.js';
 import Record from './record.js';
-import {Man} from './roles/man.js';
 import {Box} from './items/case.js';
+import {Npc as Npc_n} from './roles/npc.js';
 
 let DEBUG = false;
 
@@ -307,7 +307,7 @@ class Map
                     {type:'door',classType:Door},
                     {type:'bed',classType:Bed},
                     {type:'enemy',classType:Enemy},
-                    {type:'man',classType:Man},
+                    {type:'npc_n',classType:Npc_n},
                     {type:'box',classType:Box},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});

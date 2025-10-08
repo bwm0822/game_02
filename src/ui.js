@@ -16,7 +16,7 @@ import DragService from './services/dragService.js';
 
 // import * as Role from './role.js';
 // import {getPlayer} from './role.js';
-import {getPlayer} from './roles/role.js';
+import {getPlayer} from './roles/player.js';
 
 let uiScene;
 let _mode = 0;
@@ -1923,7 +1923,8 @@ class Option extends UiBase
         // }
 
         // getPlayer().goto({ent:this.ent,act:act});
-         getPlayer().execute({ent:this.ent,act:act});
+        console.log('----------- ent', this.ent)
+        getPlayer().execute({ent:this.ent,act:act});
     }
 
     show(x,y,options,ent)
@@ -2545,17 +2546,18 @@ export class UiMain extends UiBase
 
     refresh()
     {
+        console.log('--------------- refresh')
         let player = getPlayer();
         let hp = this.getElement('hp',true);
         // let life = player.getState('life');
         // hp.set(life.cur,life.max);
         // let total = player.getTotalStats();
         let total = player.total;
-        hp.set(total[GM.HP],total[GM.HPMAX]);
+        hp.set(total.state[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
         // this.resetSkill();
-        this.updateSkill();
+        // this.updateSkill();
     }
 
     show()
@@ -2918,7 +2920,7 @@ export class UiProfile extends UiBase
                 for(const key of GM.SURVIVAL)
                 {
                     let max = this.total[key+'Max'];
-                    let val= this.total[key];
+                    let val= this.total.state[key];
                     let value = max ? `${val}/${max}` : `${Math.floor(val)}%`;
 
                     childPanel.add(this.stat(key,value),{expand:true,padding:{left:5,right:5}})

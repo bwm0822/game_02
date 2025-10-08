@@ -1,4 +1,5 @@
 import {Projectile} from '../entity.js';
+import {computeDamage} from '../core/combat.js';
 
 
 //--------------------------------------------------
@@ -117,7 +118,14 @@ export class Action
         emit('face', target.pos);
         let ranged = false;
         if(ranged) {await this._attack_Ranged(target);}
-        else {await this._attack_Melee(target);}
+        else {
+            await this._attack_Melee(target,()=>{
+                console.log('onHit')
+                const dmg = computeDamage(this._root, target);
+                console.log(dmg)
+                target.takeDamage(dmg, this._role);
+            });
+        }
         return true;
     }
 

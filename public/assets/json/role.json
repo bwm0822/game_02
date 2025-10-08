@@ -865,7 +865,8 @@
     "icon": "head-trump",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "rogue",
     "gold": 200,

@@ -3,7 +3,7 @@ import {UiMain, UiTime, UiEffect} from '../ui.js';
 import TimeManager,{Schedular} from '../time.js';
 // import * as Role from '../role.js';
 // import {Avatar} from '../role.js';
-import {Role} from '../roles/role.js';
+import {Player} from '../roles/player.js';
 
 let lutAmbient = [   
     0x666666	,// 0x333333    ,
@@ -49,7 +49,7 @@ export class GameArea extends GameScene
         this.mode = 'normal';
         //this.mode = 'combat';
         // await super.create({diagonal:true,classType:Avatar});   
-        await super.create({diagonal:true,classType:Role});        
+        await super.create({diagonal:true,classType:Player});        
         // await Utility.delay(5000)
         this.process();
     }

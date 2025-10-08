@@ -120,6 +120,7 @@ class View extends Phaser.GameObjects.Container
         this._flipX = false;
         this._flipY = false;
         this._pts = null;
+        this._hover = false;
         // 以下參數一定要給值，_setData()時，才會 assign 相對應的值
         this.wid = 0;               // container 的寬
         this.hei = 0;               // container 的高
@@ -159,6 +160,7 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _setOutline(on)
     {
+        this._hover = on;
         if(!this.en_outline) {return;}
         (this._shape ? this._outline_shape.bind(this) : this._outline_rect.bind(this))(on);
     }
@@ -267,6 +269,20 @@ class View extends Phaser.GameObjects.Container
         return this;
     }
 
+    _remove()
+    {
+        this._removeWeight();
+        if(this._zone)
+        {
+            this._zone.destroy();
+            this._zone=null;
+        }
+        if(this.body)
+        {
+            this.body.destroy();
+            this.body=null;
+        }
+    }
     //--------------------------------------------------
     // 設定 anchor
     //--------------------------------------------------
@@ -296,26 +312,25 @@ class View extends Phaser.GameObjects.Container
         this.add(this._zone)
 
         // 將 zone 方塊設成可互動的
+        const {emit}=this.ctx;
         this._zone.setInteractive()
             .on('pointerover',()=>{
                 // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(true);
-                // this._send('over',this);
-                this._root?.emit('over');
+                emit('over');
                 if(DEBUG){debugDraw.bind(this)();}
             })
             .on('pointerout',()=>{
                 // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(false);
-                // this._send('out');
-                this._root?.emit('out');
+                emit('out');
                 if(DEBUG){debugDraw.bind(this)(GM.DBG_CLR);}
             })
             .on('pointerdown',(pointer)=>{
                 // if(!Role.getPlayer().isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) 
                 {
-                    this._root?.emit('down');
+                    emit('down');
                     // this._rightButtonDown();
                 }
             })
@@ -442,7 +457,7 @@ export class RoleView extends View
         return this;
     }
 
-    _addPart(part, type)
+    _addPart(part, type=GM.PART_BODY)
     {
         const _DEPTH = Object.freeze({
             [GM.PART_BODY] : 0,
@@ -500,6 +515,28 @@ export class RoleView extends View
         this._equips = [];
     }
 
+    _dead()
+    {
+        const {emit}=this.ctx;
+        this._remove();
+        if(this._hover)
+        {
+            this._outline_shape(false);
+            emit('out');
+        }
+        // 移除 parts
+        this._shape.getAll().forEach((child)=>{child.destroy();});
+        // 新增 corpse
+        this._addPart(this.meta.corpse)
+    }
+
+    _fadout()
+    {
+        this._alpha = this.alpha??1;
+        this._shape.setAlpha(this._alpha);
+        this.alpha*=0.9;
+    }
+
     //--------------------------------------------------
     // public
     //--------------------------------------------------
@@ -513,6 +550,8 @@ export class RoleView extends View
         root.on('removeWeight', this._removeWeight.bind(this));
         root.on('addWeight', this._addWeight.bind(this));
         root.on('updateDepth', this._updateDepth.bind(this));
+        root.on('dead', this._dead.bind(this));
+        root.on('fadout', this._fadout.bind(this));
     }
 
     equip()
