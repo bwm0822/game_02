@@ -162,6 +162,7 @@ export class Stats
 
         // 對上層公開 API
         root.getTotalStats = this.getTotalStats.bind(this);
+        root.prop('total', this, '_total');
 
         // 註冊 event 
         root.on('equip', this.getTotalStats.bind(this) );
@@ -206,9 +207,8 @@ export class Stats
         _adjustDerived(total, mod);
 
         // 9) 最後合併狀態，並確保當前生命值不超過最大值
-        this._state.hp = Math.min(total[GM.HPMAX], this._state.hp); 
+        this._state[GM.HP] = Math.min(total[GM.HPMAX], this._state[GM.HP]); 
         total.state = this._state;
-
 
         bb.total = total;
 
@@ -224,17 +224,21 @@ export class Stats
         {
             case GM.CRI:
                 // this.disp.add(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                emit('text',`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
                 this._state[GM.HP] = Math.max(0, this._state[GM.HP]-dmg.amount); 
                 console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
                 // this.disp.add(GM.DODGE.lab(), '#0f0', '#000');
+                emit('text',GM.DODGE.lab(), '#0f0', '#000');
                 break;
             case GM.MISS:
                 // this.disp.add(GM.MISS.lab(), '#0f0', '#000');
+                emit('text',GM.MISS.lab(), '#0f0', '#000');
                 break;
             default:
                 // this.disp.add(-dmg.amount, '#f00', '#fff');
+                emit('text',-dmg.amount, '#f00', '#fff');
                 this._state[GM.HP] = Math.max(0, this._state[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }

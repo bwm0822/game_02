@@ -4,9 +4,10 @@ import {Inventory} from '../components/inventory.js'
 import {Anim} from '../components/anim.js'
 import {Action} from '../components/action.js'
 import {Nav} from '../components/nav.js'
-import {AiBase, AIController} from '../components/ai/ai.js'
 import {Sense} from '../components/sense.js'
 import {Stats} from '../components/stats.js'
+import {Disp} from '../components/disp.js'
+
 import DB from '../db.js'
 import Record from '../record.js'
 import TimeManager from '../time.js'
@@ -22,7 +23,7 @@ export function getPlayer() {return player;}
 
 export class Player extends GameObject
 {
-    get acts() {return ['open']}
+    get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
     get total() {return this.bb.total;}
@@ -90,7 +91,7 @@ export class Player extends GameObject
         this._registerTimeManager()
 
         this.bb.id = id;
-        this.bb.meta = DB.role(id);    // 取得roleD，放入bb，view 元件會用到
+        this.bb.meta = DB.role(id);     // 取得roleD，放入bb，view 元件會用到
         this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
         this.bb.interactive = true;     // 設成 可互動，view 元件會參考
 
@@ -102,6 +103,7 @@ export class Player extends GameObject
             .add(new Nav())
             .add(new Sense())
             .add(new Stats())
+            .add(new Disp())
  
         // 註冊 event
         this.on('dead', this.dead.bind(this));

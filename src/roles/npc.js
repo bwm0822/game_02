@@ -6,9 +6,11 @@ import {Action} from '../components/action.js'
 import {Nav} from '../components/nav.js'
 import {AiBase, AIController} from '../components/ai/ai.js'
 import {Sense} from '../components/sense.js';
+import {Disp} from '../components/disp.js'
 import DB from '../db.js'
 import {Stats} from '../components/stats.js'
 import TimeManager from '../time.js'
+import {GM} from '../setting.js';
 
 
 export class Npc extends GameObject
@@ -19,8 +21,10 @@ export class Npc extends GameObject
         this.isAlive = true;
 
     }
-    get acts() {return ['attack']}
+
+    get acts() {return [GM.ATTACK,GM.OBSERVE]}
     get act() {return this.acts[0];}
+    get id() {return this.bb.id;}
 
     _addToList() {this.scene.roles && this.scene.roles.push(this);}
     _removeFromList()
@@ -75,6 +79,7 @@ export class Npc extends GameObject
             .add(new AIController())
             .add(new Sense())
             .add(new Stats())
+            .add(new Disp())
 
         // 載入
         this.load();

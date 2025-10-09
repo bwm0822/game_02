@@ -2021,7 +2021,7 @@ class Observe extends UiBase
         let stats = this.scene.rexUI.add.sizer({orientation:'y'})
         // const total = this.owner.getTotalStats();
         const total = this.owner.total;
-        let value = `${total[GM.HP]}/${total[GM.HPMAX]}`;
+        let value = `${total.state[GM.HP]}/${total[GM.HPMAX]}`;
         stats.add(this.stat(GM.HP, value, false),{expand:true,padding:{left:0,right:0}})
 
         return stats;
@@ -2061,23 +2061,22 @@ class Observe extends UiBase
             .add(this.stats(),{expand:true,padding:{left:10,right:10}})
            
 
-        // if(this.owner.getSkills().length>0)
-        if(this.owner.skill.getAll().length>0)
-        {
-            sizer
-                .add(bbcText(this.scene,{text:'技能'}))
-                .add(divider(this.scene),{expand:true,padding:10})
-                .add(this.skills(),{expand:true,padding:{left:10,right:10}})
-        }
+        // if(this.owner.skill.getAll().length>0)
+        // {
+        //     sizer
+        //         .add(bbcText(this.scene,{text:'技能'}))
+        //         .add(divider(this.scene),{expand:true,padding:10})
+        //         .add(this.skills(),{expand:true,padding:{left:10,right:10}})
+        // }
 
-        if(this.owner.getEffects().length>0)
-        {
-            sizer
-                .add(bbcText(this.scene,{text:'效果'}))
-                .add(divider(this.scene),{expand:true,padding:10})
-                .add(this.effects(this.owner.getEffects()),
-                    {expand:true,padding:{left:10,right:10}})
-        }
+        // if(this.owner.getEffects().length>0)
+        // {
+        //     sizer
+        //         .add(bbcText(this.scene,{text:'效果'}))
+        //         .add(divider(this.scene),{expand:true,padding:10})
+        //         .add(this.effects(this.owner.getEffects()),
+        //             {expand:true,padding:{left:10,right:10}})
+        // }
 
         sizer.add(divider(this.scene),{expand:true,padding:10})
                 .add(this.des(),{align:'left',padding:{left:10,bottom:10}})
