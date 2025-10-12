@@ -44,11 +44,16 @@ export class Npc extends GameObject
 
     async _updateTime(dt) 
     {
-        const {emit}=this.ctx;
+        const {emit, aEmit}=this.ctx;
         if(!this.isAlive) 
         { 
-            (this.deadCnt--)<=0 && this._remove();
+            (this._latency--)<=0 && this._remove();
             emit('fadout');
+        }
+        else
+        {
+            // await this.aEmit('process', dt);  // await 等待事件處理完成，才繼續往下執行
+            await aEmit('update', dt);
         }
     }
 
@@ -57,6 +62,12 @@ export class Npc extends GameObject
         this._removeFromList();
         this._unregisterTimeManager();
         this._ent.destroy();
+    }
+
+    _dead()
+    {
+        this.isAlive = false;
+        this._latency = 5;
     }
 
     //------------------------------------------------------
@@ -72,7 +83,7 @@ export class Npc extends GameObject
 
         // 加入元件
         this.add(new RoleView(this.scene),{modify:true})
-            .add(new Inventory())
+            .add(new Inventory(this.bb.meta))
             .add(new Anim())
             .add(new Action())
             .add(new Nav())
@@ -81,18 +92,12 @@ export class Npc extends GameObject
             .add(new Stats())
             .add(new Disp())
 
+        // 註冊 event
+        this.on('dead', this._dead.bind(this));
+
         // 載入
         this.load();
-
-        // 註冊 event
-        this.on('dead', this.dead.bind(this));
-        
-    }
-
-    takeDamage(dmg, attacker)
-    {
-        const {emit} = this.ctx;
-        emit('takeDamage', dmg);
+        this.emit('equip');
     }
 
     async process()
@@ -102,13 +107,7 @@ export class Npc extends GameObject
         await this.aEmit('think');
     }
 
-    dead()
-    {
-        console.log('---- dead ----');
-        this.isAlive = false;
-        this.deadCnt = 5;
 
-    }
 
 
 

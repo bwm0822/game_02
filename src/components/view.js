@@ -562,7 +562,7 @@ export class RoleView extends View
         bb.equips.forEach((eq)=>{
             if(eq)
             {
-                const dat = DB.item(eq.id);
+                const dat = DB.item(eq.id??eq);
                 this._addEquip(dat);
             }
         })

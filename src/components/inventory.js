@@ -139,11 +139,11 @@ export class Storage
 //--------------------------------------------------
 export class Inventory extends Storage
 {
-    constructor(capacity=-1)
+    constructor(config={capacity:-1,equips:[],gold:0})
     {
-        super(capacity);
-        this._equips = [];
-        this._gold = 0;
+        super(config.capacity);
+        this._equips = config.equips;
+        this._gold = config.gold;
     }
 
     get ctx() {return this._root.ctx;}

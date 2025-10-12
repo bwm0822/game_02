@@ -263,6 +263,13 @@ export default class Utility
         return storage?.items.filter(item => item).length??0;
     }
 
+    static fmt_mod(mod)
+    {
+        let sign = function(val) {return val>0?'+':'';}
+        if(mod.a !== undefined) {return sign(mod.a)+`${mod.a}`;}
+        if(mod.m !== undefined) {return sign(mod.m)+`${mod.m*100}%`;}
+    }
+
     static fmt_Stat(key, val, elm)
     {
         let cat = elm?.dat?.cat;

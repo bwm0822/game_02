@@ -984,11 +984,9 @@ export class UiDragged extends OverlapSizer
 
     set(obj)
     {
-        console.log(Object.prototype.toString.call(obj))
+        // console.log(Object.prototype.toString.call(obj))
         if(obj instanceof Slot)
-        {
-            console.log('slot')
-            
+        {            
             this._obj = {
                 content: obj.content,
                 dat: obj.dat,
@@ -1246,7 +1244,7 @@ export class UiInfo extends Sizer
 
     addDivider()
     {
-        this.add(rect(this.scene,{width:UiInfo.w,height:1,color:GM.COLOR_WHITE}),{padding:{top:10,bottom:10}})
+        this.add(rect(this.scene,{width:UiInfo.w,height:1,color:GM.COLOR_GRAY}),{padding:{top:10,bottom:10}})
         return this;
     }
 
@@ -1264,8 +1262,12 @@ export class UiInfo extends Sizer
 
     addDes(des, stats, self, target)
     {
-        des = '\n'+Utility.fmt_Eff(des, stats, self, target);
-        this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w,color:GM.COLOR_GRAY}),{align:'left'});
+        if(des)
+        {
+            this.addDivider();
+            des = Utility.fmt_Eff(des, stats, self, target);
+            this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w,color:GM.COLOR_GRAY}),{align:'left'});
+        }
         return this;
     }
 
@@ -1275,9 +1277,73 @@ export class UiInfo extends Sizer
         return this;
     }
 
+    addMeta(slot)
+    {
+        const {type,def,atk,range}=slot.dat;
+        if(def)
+        {
+            this.addDivider();
+            let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+            sizer.add(bbcText(this.scene,{text:`${def} ${GM.DEF.lab()}`}))
+            this.add(sizer);
+        }
+        else if(atk)
+        {
+            this.addDivider();
+            let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+            sizer.add(bbcText(this.scene,{text:type.lab(),color:'#888'}))
+                .addSpace()
+                .add(bbcText(this.scene,{text:`${atk} ${GM.ATK.lab()}`}))
+                .addSpace()
+                .add(bbcText(this.scene,{text:`${GM.RANGE.lab()} ${range}`,color:'#888'}))
+            this.add(sizer,{expand:true});
+        }
+        return this;
+    }
+
+    addMods(slot)
+    {
+        if(slot.dat.effects)
+        {
+            this.addDivider();
+            slot.dat.effects.forEach((eff)=>{
+                this.addMod(eff);
+            })
+        }
+
+        return this;
+    }
+
+    addMod(mod)
+    {
+        let row = this.scene.rexUI.add.sizer({orientation:'x'});
+        row.add(bbcText(this.scene,{text:mod.stat.lab(),color:'#888'}))
+            .addSpace()
+            .add(bbcText(this.scene,{text:Utility.fmt_mod(mod)}))
+        this.add(row,{expand:true});
+        return this;
+    }
+
+    addProcs(slot)
+    {
+        if(slot.dat.procs)
+        {
+            this.addDivider();
+            slot.dat.procs.forEach((proc)=>{this.addProc(proc);})
+        }
+
+        return this;
+    }
+
+    addProc(proc)
+    {
+        let text = Utility.fmt_Eff(proc.type.des(),proc)
+        this.addText(text,{color:'#808080'})
+        return this;
+    }
+
     addStats(slot)
     {
-
         this.addDivider();
 
         for(let key of GM.ITEMS)
@@ -1302,7 +1368,10 @@ export class UiInfo extends Sizer
             }
         }
 
-        slot.dat.effects && slot.dat.effects.forEach(eff=>{this.addEff(eff);})
+        if(slot.dat.effects)
+        {
+            slot.dat.effects.forEach(eff=>{this.addEff(eff);})
+        }
         
         return this;
     }
@@ -1403,6 +1472,12 @@ export class UiInfo extends Sizer
         }
     }
 
+    addEff(eff)
+    {
+        this.addVSpace(20);
+        this.addText(`${eff.stat.lab()} ${eff.m}`,{color:GM.COLOR_GRAY});
+    }
+
     addSkill(elm)
     {
         // console.log(elm.dat)
@@ -1436,7 +1511,10 @@ export class UiInfo extends Sizer
     {
         this.addTitle(elm)
             .addCat(elm)
-            .addStats(elm)
+            .addMeta(elm)
+            .addMods(elm)
+            // .addStats(elm)
+            .addProcs(elm)
             .addMake(elm)
             .addDes(elm.dat[this.lang].des)
             .addGold(elm)
@@ -1752,6 +1830,7 @@ class UiBase extends Sizer
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
 
         if(GM.PCT.includes(key)){value=value*100+'%'}
+        else {value=value?.toFixed?.(1);}
 
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
@@ -2545,7 +2624,6 @@ export class UiMain extends UiBase
 
     refresh()
     {
-        console.log('--------------- refresh')
         let player = getPlayer();
         let hp = this.getElement('hp',true);
         // let life = player.getState('life');
@@ -2969,6 +3047,7 @@ export class UiProfile extends UiBase
         super.show();
         // this.total = this.owner.getTotalStats();
         this.total = this.owner.total;
+        console.log(this.total)
         this.update();
         this._tab || this.getElement('tags').emitTopButtonClick(0);
         // closeAll/register/camera

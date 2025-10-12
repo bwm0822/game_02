@@ -19,7 +19,7 @@ export function computeDamage(attacker, defender, skill={})
 {
     const aStats = attacker.getTotalStats();
     const dStats = defender.getTotalStats(aStats.enemy);
-    // console.log(aStats,dStats)
+    console.log(aStats,dStats)
 
     const element = skill.element || GM.PHY;
     const kind = skill.kind || GM.MELEE;
@@ -30,6 +30,10 @@ export function computeDamage(attacker, defender, skill={})
     // 計算是否命中
     const ret = _checkHit(aStats, dStats, skill);
     if(ret) {return ret;}
+
+    // 計算 Effect
+    let procs = [...aStats.enemy.procs]
+    procs.forEach((proc)=>{defender.addProcs(proc);});
 
     // 計算傷害
     let type = GM.HIT;

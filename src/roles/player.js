@@ -52,7 +52,11 @@ export class Player extends GameObject
     
     _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
 
-    async _updateTime(dt) {this._send('refresh');}
+    async _updateTime(dt) 
+    {
+        this.emit('update', dt);
+        this._send('refresh');
+    }
 
     async _interact(ent, act) 
     {
@@ -60,6 +64,13 @@ export class Player extends GameObject
         if(ent) {this.emit('face',ent.pos);}
 
         return new Promise((resolve)=>{ent.emit(act, resolve, this);});
+    }
+
+    _damage() {this._send('refresh');}
+
+    _dead()
+    {
+        console.log('---- dead ----')
     }
 
     //------------------------------------------------------
@@ -106,7 +117,8 @@ export class Player extends GameObject
             .add(new Disp())
  
         // 註冊 event
-        this.on('dead', this.dead.bind(this));
+        this.on('dead', this._dead.bind(this));
+        this.on('damage', this._damage.bind(this));
 
         return this;
     }
@@ -128,12 +140,7 @@ export class Player extends GameObject
 
     isInteractive() {return true;}
 
-    takeDamage(dmg, attacker)
-    {
-        const {emit} = this.ctx;
-        emit('takeDamage', dmg);
-        this._send('refresh')
-    }
+    
 
     async process()
     {
@@ -148,8 +155,6 @@ export class Player extends GameObject
             await this._pause();
             console.log('-------------------- pause 1')
         }
-
-        console.log('--------------------- act',bb.act)
         
         if(bb.path)
         {
@@ -160,7 +165,6 @@ export class Player extends GameObject
             else
             {
                 await this.aEmit('move');
-                console.log(bb.ent,bb.path?.path.length)
                 if(bb.ent && bb.path?.path.length===1)
                 {
                     delete bb.path;
@@ -178,9 +182,6 @@ export class Player extends GameObject
         delete bb.path;
     }
 
-    dead()
-    {
-        console.log('---- dead ----')
-    }
+
     
 }

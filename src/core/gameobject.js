@@ -94,7 +94,8 @@ export class GameObject
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
     emit(...args) {return this._evt?.emit(...args);}
-    aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
+    aEmit(...args) {return this._evt?.aEmit(...args);}
+    // aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
 
     // 讓元件在 root 加入 prop
     prop(name, target, key)

@@ -78,8 +78,10 @@ export class Action
         
         // 註冊 event
         root.on('move', async(resolve)=>{await this.move();resolve?.();});
-        root.on('moveToward', async(resolve,...a)=>{await this.moveToward(...a);resolve?.();});
-        root.on('attack', async(resolve,...a)=>{await this.attack(...a);resolve?.();});
+        // root.on('moveToward', async(resolve,...a)=>{await this.moveToward(...a);resolve?.();});
+        root.on('moveToward', this.moveToward.bind(this));
+        // root.on('attack', async(resolve,...a)=>{await this.attack(...a);resolve?.();});
+        root.on('attack', this.attack.bind(this));
     }
 
     async moveToward(target, {maxSteps=1}={})
@@ -123,7 +125,7 @@ export class Action
                 console.log('onHit')
                 const dmg = computeDamage(this._root, target);
                 console.log(dmg)
-                target.takeDamage(dmg, this._role);
+                target.takeDamage(dmg, this._root);
             });
         }
         return true;

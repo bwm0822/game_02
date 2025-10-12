@@ -25,7 +25,7 @@ def item_to_json(input_excel_path, output_json_path):
                 obj[key] = val
             elif key == 'others' or key == 'meta':
                 obj.update(json.loads(f"{{{val}}}"))
-            elif key == 'effects':
+            elif key == 'effects' or key == 'procs':
                 obj[key] = json.loads(f"[{val}]")
             else:
                 obj[key] = json.loads(f"{{{val}}}")

@@ -28,4 +28,10 @@ export class Evt
         this.map.get(k)?.forEach(fn=>ret=fn(...a));
         return ret;
     }
+    async aEmit(k, ...a) 
+    {
+        let promises=[];
+        this.map.get(k)?.forEach(fn=>promises.push(fn(...a)));
+        return Promise.all(promises);
+    }
 }

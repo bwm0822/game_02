@@ -119,6 +119,14 @@
     "str": "0.5*",
     "effects": [
       {
+        "scope": "self",
+        "stat": "atk",
+        "m": 0.05
+      }
+    ],
+    "procs": [
+      {
+        "scope": "enemy",
         "type": "dot",
         "value": 2,
         "dur": 3,

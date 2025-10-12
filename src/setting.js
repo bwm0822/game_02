@@ -190,6 +190,8 @@ export let GM =
     CRIT : "crit",          // 暴擊
     MISS : "miss",          // 失誤
 
+    META : ['type', 'atk','def','range'],
+
     // 物品屬性
     ITEMS : ['endurance','storage','capacity','times'],
     ENDURANCE : 'endurance',
@@ -258,6 +260,7 @@ export let GM =
     ACTIVE : 'active',
     PASSIVE : 'passive',
     SELF : 'self',
+    ENEMY : 'enemy',
 
 
 }
