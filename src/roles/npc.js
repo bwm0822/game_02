@@ -19,7 +19,6 @@ export class Npc extends GameObject
     {
         super(scene,x,y);
         this.isAlive = true;
-
     }
 
     get acts() {return [GM.ATTACK,GM.OBSERVE]}

@@ -20,9 +20,9 @@ export class Storage
     //------------------------------------------------------
     _findEmpty()
     {
-        let capacity = this.storage.capacity;
-        let count = this.storage.items.length;
-        let foundIndex = this.storage.items.findIndex(slot=>Utility.isEmpty(slot))
+        let capacity = this._storage.capacity;
+        let count = this._storage.items.length;
+        let foundIndex = this._storage.items.findIndex(slot=>Utility.isEmpty(slot))
         let i = foundIndex!=-1 ? foundIndex 
                             : capacity==-1 || count<capacity ? count 
                                                                 : -1;
@@ -56,9 +56,9 @@ export class Storage
         let cps = DB.item(id).cps ?? 1;
 
         let i = 0;
-        let capacity = this.storage.capacity;
-        let len = this.storage.items.length;
-        let items = this.storage.items;
+        let capacity = this._storage.capacity;
+        let len = this._storage.items.length;
+        let items = this._storage.items;
         while(count>0 && (capacity == -1 || i<capacity))
         {
             if(i<len)
@@ -100,7 +100,7 @@ export class Storage
 
         if(i!=-1)
         {
-            this.storage.items[i]=ent.itm;
+            this._storage.items[i]=ent.itm;
             return true;
         }
         else
@@ -118,9 +118,9 @@ export class Storage
         let i = this._findEmpty();
         console.log(i)
         if(i!=-1) {
-            this.storage.items[i]=split;
+            this._storage.items[i]=split;
         }
-        console.log( this.storage)
+        console.log( this._storage)
     }
 
     drop()

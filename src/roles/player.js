@@ -23,6 +23,12 @@ export function getPlayer() {return player;}
 
 export class Player extends GameObject
 {
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this.isAlive = true;
+    }
+
     get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
@@ -71,6 +77,10 @@ export class Player extends GameObject
     _dead()
     {
         console.log('---- dead ----')
+        this.isAlive = false;
+        this._removeFromList();
+        this._unregisterTimeManager();
+        this._send('gameover');
     }
 
     //------------------------------------------------------
@@ -130,6 +140,8 @@ export class Player extends GameObject
 
     execute({pt,ent,act}={})
     {
+        if(!this.isAlive) {return;}
+        
         const {bb}= this.ctx;
         bb.ent = ent;
         bb.act = act??ent?.act;

@@ -277,3 +277,9 @@ export const RESIST_MAP = {
     [GM.ICE]: GM.ICE_RES, 
     [GM.POISON]: GM.POISON_RES, 
 };
+
+export const ACT_TYPE = {
+    [GM.DOT] : 'act_dot',
+    [GM.HOT] : 'act_hot',
+    [GM.BUFF] : 'act_buff',
+};

@@ -115,9 +115,9 @@ function _procsFromEquips(equips, procs)
     }
 }
 
-function _modFromActive(active, mod)
+function _modsFromActives(actives, mod)
 {
-    for(let proc of active)
+    for(let proc of actives)
     {
         proc.effects?.forEach((eff)=>{_calcMods(eff, mod);});   
     }
@@ -162,8 +162,8 @@ export class Stats
             [GM.CON] : 5, [GM.LUK] : 5,
         }
 
-        this._state = {[GM.HP]:100};
-        this._active = [];
+        this._states = {[GM.HP]:100};
+        this._actives = [];
     }
 
     get tag() { return 'stats'; }
@@ -185,6 +185,8 @@ export class Stats
         // 對上層公開 API
         root.getTotalStats = this.getTotalStats.bind(this);
         root.prop('total', this, '_total');
+        root.prop('actives', this, '_actives');
+        root.states = this._states;
         root.addProcs = this.addProcs.bind(this);
         root.takeDamage = this.takeDamage.bind(this);
 
@@ -220,7 +222,7 @@ export class Stats
         // this._modsFromSkills(skills, mod);
 
         // 4) 計算 [作用中效果] 的加成
-        _modFromActive(this._active, mod);
+        _modsFromActives(this._actives, mod);
 
         // 5) 修正 base
         _adjustBase(base, mod);
@@ -231,14 +233,13 @@ export class Stats
         // 7) 合併：base 值優先，derived 補空位
         const total = {...derived, ...base};
         total.enemy = {mod:mod.enemy, procs:procs};
-        console.log('---- enemy',total.enemy)
 
         // 8) 修正 derived
         _adjustDerived(total, mod);
 
         // 9) 最後合併狀態，並確保當前生命值不超過最大值
-        this._state[GM.HP] = Math.min(total[GM.HPMAX], this._state[GM.HP]); 
-        total.state = this._state;
+        this._states[GM.HP] = Math.min(total[GM.HPMAX], this._states[GM.HP]); 
+        total.states = this._states;
 
         this._total = total;
         bb.total = total;
@@ -255,7 +256,7 @@ export class Stats
         {
             case GM.CRI:
                 emit('text',`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
-                this._state[GM.HP] = Math.max(0, this._state[GM.HP]-dmg.amount); 
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
@@ -266,30 +267,30 @@ export class Stats
                 break;
             default:
                 emit('text',-dmg.amount, '#f00', '#fff');
-                this._state[GM.HP] = Math.max(0, this._state[GM.HP]-dmg.amount); 
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
 
         emit('damage');
-        this._state[GM.HP]===0 && emit('dead');
+        this._states[GM.HP]===0 && emit('dead');
     }
 
     heal(amount)
     {
         const {emit}=this.ctx;
-        this._state[GM.HP] = Math.min(this._total[GM.HPMAX], this._state[GM.HP]+amount); 
+        this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
         emit('text',`+${amount}`, '#0f0', '#000');
         // console.log(`${this.name} 回復 ${amount} 點生命`);
     }
 
     addProcs(procs)
     {
-        this._active.push({...procs,remaining:procs.dur});
+        this._actives.push({...procs,remaining:procs.dur});
     }
 
     processProcs()
     {
-        this._active.forEach((proc)=>{
+        this._actives.forEach((proc)=>{
             if (proc.type === GM.DOT) 
             {
                 let finalDamage = proc.value;
@@ -309,7 +310,7 @@ export class Stats
         });
 
         // 移除過期效果
-        this._active = this._active.filter(proc => {
+        this._actives = this._actives.filter(proc => {
             if (proc.remaining <= 0) {
                 console.log(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
                 return false;

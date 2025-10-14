@@ -3,7 +3,8 @@
     "icon": "head-wick",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "ranger",
     "gold": 100,

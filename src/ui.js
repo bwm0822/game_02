@@ -2,7 +2,7 @@ import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'ph
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
 import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
-import {GM} from './setting.js';
+import {GM, ACT_TYPE} from './setting.js';
 
 import DB from './db.js';
 import {Mark} from './gameUi.js';
@@ -1342,6 +1342,14 @@ export class UiInfo extends Sizer
         return this;
     }
 
+    addActive(elm)
+    {
+        const proc = elm.dat;
+        let text = Utility.fmt_Eff(ACT_TYPE[proc.type].des(),proc)
+        this.addText(text,{color:'#808080'})
+        return this;
+    }
+
     addStats(slot)
     {
         this.addDivider();
@@ -1452,6 +1460,7 @@ export class UiInfo extends Sizer
 
     addEff(eff, isActive)
     {
+        console.log(eff, isActive)
         if(isActive)
         {
             this.addText(Utility.fmt_Eff(('act_'+eff.type).des(), eff),{color:GM.COLOR_GRAY});
@@ -1504,7 +1513,8 @@ export class UiInfo extends Sizer
         let eff = elm.dat;
         this.addText(eff.tag.lab())
             .addDivider()
-            .addEff(eff, true)
+            // .addEff(eff, true)
+            .addActive(elm)
     }
 
     addSlot(elm)
@@ -1829,8 +1839,11 @@ class UiBase extends Sizer
     {
         let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
 
-        if(GM.PCT.includes(key)){value=value*100+'%'}
-        else {value=value?.toFixed?.(1);}
+        if(typeof value !== 'string')
+        {
+            if(GM.PCT.includes(key)){value=value*100+'%'}
+            else {value=value?.toFixed?.(1);}
+        }
 
         sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
@@ -2098,9 +2111,8 @@ class Observe extends UiBase
     stats()
     {
         let stats = this.scene.rexUI.add.sizer({orientation:'y'})
-        // const total = this.owner.getTotalStats();
         const total = this.owner.total;
-        let value = `${total.state[GM.HP]}/${total[GM.HPMAX]}`;
+        let value = `${total.states[GM.HP]}/${total[GM.HPMAX]}`;
         stats.add(this.stat(GM.HP, value, false),{expand:true,padding:{left:0,right:0}})
 
         return stats;
@@ -2148,14 +2160,16 @@ class Observe extends UiBase
         //         .add(this.skills(),{expand:true,padding:{left:10,right:10}})
         // }
 
-        // if(this.owner.getEffects().length>0)
-        // {
-        //     sizer
-        //         .add(bbcText(this.scene,{text:'效果'}))
-        //         .add(divider(this.scene),{expand:true,padding:10})
-        //         .add(this.effects(this.owner.getEffects()),
-        //             {expand:true,padding:{left:10,right:10}})
-        // }
+        console.log('---- actives=',this.owner.actives);
+
+        if(this.owner.actives?.length>0)
+        {
+            sizer
+                .add(bbcText(this.scene,{text:'效果'}))
+                .add(divider(this.scene),{expand:true,padding:10})
+                .add(this.effects(this.owner.actives),
+                    {expand:true,padding:{left:10,right:10}})
+        }
 
         sizer.add(divider(this.scene),{expand:true,padding:10})
                 .add(this.des(),{align:'left',padding:{left:10,bottom:10}})
@@ -2630,7 +2644,7 @@ export class UiMain extends UiBase
         // hp.set(life.cur,life.max);
         // let total = player.getTotalStats();
         let total = player.total;
-        hp.set(total.state[GM.HP],total[GM.HPMAX]);
+        hp.set(total.states[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
         // this.resetSkill();
@@ -4687,9 +4701,11 @@ export class UiEffect extends UiBase
 
     refresh()
     {
+        console.log('------------------------- UiEffect refresh')
         this._main.removeAll(true);
 
-        let effects = this.getOwner()?.rec?.activeEffects;
+        // let effects = this.getOwner()?.rec?.activeEffects;
+        let effects = this.getOwner()?.actives;
         if(effects)
         {
             effects.forEach(effect=>{
