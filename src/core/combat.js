@@ -21,11 +21,11 @@ export function computeDamage(attacker, defender, skill={})
     const dStats = defender.getTotalStats(aStats.enemy);
     console.log(aStats,dStats)
 
-    const element = skill.element || GM.PHY;
-    const kind = skill.kind || GM.MELEE;
-    const power = skill.power ?? 1.0;
+    const element = skill.elm || GM.PHY;
+    // const kind = skill.kind || GM.MELEE;
+    const power = skill.pow ?? 1.0;
     const flat  = skill.flat  ?? 0;
-    const ignoreDef = skill.ignoreDef ?? 0; // 0~1
+    // const ignoreDef = skill.ignoreDef ?? 0; // 0~1
 
     // 計算是否命中
     const ret = _checkHit(aStats, dStats, skill);

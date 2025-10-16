@@ -509,8 +509,10 @@ class SkillSlot extends Pic
     }
 
     get owner() {return getPlayer();}
-    get id() {return this.owner.skill.getSlotAt(this._i);}
-    get remain() {return this.owner.skill.get(this.id).remain;}
+    // get id() {return this.owner.skill.getSlotAt(this._i);}
+    get id() {return this.owner.getSlot(this._i);}
+    // get remain() {return this.owner.skill.get(this.id).remain;}
+     get remain() {return this.owner.skills[this.id].remain;}
     get ready() {return this.remain===0;}
     get i() {return this._i;}
     get dat() {return this._dat;}
@@ -569,7 +571,8 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
-        this.owner.skill.select(this); // 設定角色的技能
+        // this.owner.skill.select(this); // 設定角色的技能
+        this.owner.selectSkill(this.id); // 設定角色的技能
 
     }
 
@@ -577,7 +580,8 @@ class SkillSlot extends Pic
     {
         SkillSlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
-        this.owner.skill.unselect();
+        // this.owner.skill.unselect(); // 清除角色的技能
+        this.owner.unselectSkill();// 清除角色的技能
     }
 
     reset() // call by role.resetSkill()
@@ -603,7 +607,8 @@ class SkillSlot extends Pic
         this.getElement('remain').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        this.owner.skill.clearSlotAt(this.i); // 清除技能欄位
+        // this.owner.skill.clearSlotAt(this.i); // 清除技能欄位
+      this.owner.clearSlot(this.i); // 清除技能欄位   
     }
 }
 
@@ -632,7 +637,9 @@ class SkillItem extends Pic
     get locked()
     {
         if(this.en) {return false;}
-        let ret = this._dat.refs?.find(ref=> this.owner.rec.skills[ref]===undefined || this.owner.rec.skills[ref].en===false);
+        // let ret = this._dat.refs?.find(ref=> this.owner.rec.skills[ref]===undefined || this.owner.rec.skills[ref].en===false);
+
+        let ret = this._dat.refs?.find(ref=> this.owner.skills[ref]===undefined || this.owner.skills[ref].en===false);
         return ret!==undefined;
     }
     
@@ -662,7 +669,8 @@ class SkillItem extends Pic
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
-                this.owner.skill.learn(this._id);
+                // this.owner.skill.learn(this._id);
+                this.owner.learnSkill(this._id);
                 Ui.refreshAll();
             }
         }
@@ -692,7 +700,8 @@ class SkillItem extends Pic
         this.x = x;
         this.y = y;
         // this._skill =  this.owner.getSkill(this._id);
-        this._skill =  this.owner.skill.get(this._id);
+        // this._skill =  this.owner.skill.get(this._id);
+        this._skill =  this.owner.skills[this._id];
         this._dat = DB.skill(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
@@ -1002,7 +1011,7 @@ export class UiDragged extends OverlapSizer
         }
         else
         {
-            console.log('skill')
+            console.log('skill', obj.id, obj.i)
             
             this._obj = {
                 dat: DB.skill(obj.id),
@@ -2647,8 +2656,8 @@ export class UiMain extends UiBase
         hp.set(total.states[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
-        // this.resetSkill();
-        // this.updateSkill();
+        this.resetSkill();
+        this.updateSkill();
     }
 
     show()
@@ -4533,7 +4542,8 @@ export class UiSkill extends UiBase
         {
             let id = refs[i];
             // let skill = this.getOwner().getSkill(id);
-            let skill = this.getOwner().skill.get(id);
+            // let skill = this.getOwner().skill.get(id);
+            let skill = this.getOwner().skills[id];
             if(!skill) {return false};
         }
 

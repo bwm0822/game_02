@@ -2,17 +2,21 @@
   "lunge": {
     "icon": "icons/0",
     "type": "attack",
+    "scope": "enemy",
     "cd": 3,
     "range": 2,
-    "mul": 1.5,
+    "pow": 1.5,
+    "flat": 0,
     "elm": "phy",
-    "self": {
-      "pen": "0.1"
-    },
-    "target": {
-      "dodge": "-0.1"
-    },
+    "scaling": "atk",
     "effects": [
+      {
+        "scope": "self",
+        "stat": "pen",
+        "a": 0.1
+      }
+    ],
+    "procs": [
       {
         "type": "dot",
         "value": 2,
@@ -29,10 +33,13 @@
   "fireball": {
     "icon": "icons/1",
     "type": "attack",
+    "scope": "enemy",
     "cd": 3,
     "range": 5,
-    "mul": 1.5,
+    "pow": 1.5,
+    "flat": 10,
     "elm": "fire",
+    "scaling": "int",
     "tw": {
       "lab": "火球術",
       "des": "對目標造成{#mul}的{#elm}傷害"
@@ -45,10 +52,13 @@
       "lunge",
       "fireball"
     ],
+    "scope": "enemy",
     "cd": 3,
     "range": 5,
-    "mul": 2,
+    "pow": 2,
+    "flat": 10,
     "elm": "ice",
+    "scaling": "int",
     "tw": {
       "lab": "冰凍術",
       "des": "對目標造成{#mul}的{#elm}傷害"
@@ -57,9 +67,13 @@
   "strong": {
     "icon": "icons/20",
     "type": "passive",
-    "stats": {
-      "str": 1
-    },
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "str",
+        "a": 1
+      }
+    ],
     "tw": {
       "lab": "強化"
     }
@@ -67,9 +81,12 @@
   "heal": {
     "icon": "icons/16",
     "type": "active",
+    "scope": "self",
     "cd": 3,
-    "heal": 10,
-    "effects": [
+    "pow": 2,
+    "flat": 10,
+    "scaling": "int",
+    "procs": [
       {
         "type": "hot",
         "value": 5,

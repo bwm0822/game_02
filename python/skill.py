@@ -21,9 +21,9 @@ def df_to_json(input_excel_path, output_json_path):
                 id = val
             elif key == 'icon' or key == 'type':
                 obj[key] = val
-            elif key == 'others':
+            elif key == 'meta':
                 obj.update(json.loads(f"{{{val}}}"))
-            elif key == 'refs' or key == 'effects':
+            elif key == 'refs' or key == 'effects' or key == 'procs':
                 obj[key] = json.loads(f"[{val}]")
             else:
                 obj[key] = json.loads(f"{{{val}}}")

@@ -48,15 +48,19 @@ export default class DragService
         if(UiDragged.on)    // 放下技能格
         {
             const src = UiDragged.obj;
-            // 1. 清除重複
-            owner.skill.getSlots().find((slotId, i) => {
-                    if (slotId === src.id) {owner.skill.clearSlotAt(i);}
-                }
-            );
-            // 2. 如果 skillSlot 不是空的，要交換位置
-            !skillSlot.isEmpty && owner.skill.setSlotAt(src.i, skillSlot.id);
-            // 3. 設定新的技能
-            owner.skill.setSlotAt(skillSlot.i, src.id);
+
+            // // 1. 清除重複
+            // owner.skill.getSlots().find((slotId, i) => {
+            //         if (slotId === src.id) {owner.skill.clearSlotAt(i);}
+            //     }
+            // );
+            // // 2. 如果 skillSlot 不是空的，要交換位置
+            // !skillSlot.isEmpty && owner.skill.setSlotAt(src.i, skillSlot.id);
+            // // 3. 設定新的技能
+            // owner.skill.setSlotAt(skillSlot.i, src.id);
+
+            owner.setSlot(skillSlot.i, src.id, src.i);
+
             // 4. 清空拖曳
             src.empty();
             // 5. 更新畫面

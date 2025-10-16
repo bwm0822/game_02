@@ -177,8 +177,8 @@ export class Inventory extends Storage
     //------------------------------------------------------
     load(data) 
     {
-        Object.assign(this._storage, data.storage); 
-        Object.assign(this._equips, data.equips);
+        if(data.storage) {Object.assign(this._storage, data.storage); }
+        if(data.equips) {Object.assign(this._equips, data.equips);}
     }
 
     save() {return {storage:this._storage, equips:this._equips};}

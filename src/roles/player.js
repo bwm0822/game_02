@@ -7,6 +7,8 @@ import {Nav} from '../components/nav.js'
 import {Sense} from '../components/sense.js'
 import {Stats} from '../components/stats.js'
 import {Disp} from '../components/disp.js'
+import {Skill} from '../components/skill.js'
+import {SkillSlots} from '../components/skillslots.js'
 
 import DB from '../db.js'
 import Record from '../record.js'
@@ -74,6 +76,8 @@ export class Player extends GameObject
 
     _damage() {this._send('refresh');}
 
+    _refresh() {this._send('refresh');}
+
     _dead()
     {
         console.log('---- dead ----')
@@ -125,10 +129,13 @@ export class Player extends GameObject
             .add(new Sense())
             .add(new Stats())
             .add(new Disp())
+            .add(new Skill())
+            .add(new SkillSlots())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
         this.on('damage', this._damage.bind(this));
+        this.on('refresh', this._refresh.bind(this));
 
         return this;
     }
@@ -138,16 +145,26 @@ export class Player extends GameObject
     // 跳過這一回合
     next() { this._resume();}
 
-    execute({pt,ent,act}={})
+    async execute({pt,ent,act}={})
     {
         if(!this.isAlive) {return;}
         
         const {bb}= this.ctx;
-        bb.ent = ent;
-        bb.act = act??ent?.act;
-        this.emit('findPath',pt??ent.pos);
-      
-        this._resume();
+        if(bb.skillSel) 
+        {
+            if(await this.aEmit('useSkill',ent))
+            {
+                this._refresh();
+                this._resume();
+            }
+        }
+        else
+        {
+            bb.ent = ent;
+            bb.act = act??ent?.act;
+            this.emit('findPath',pt??ent.pos);
+            this._resume();
+        }
     }
 
     isInteractive() {return true;}

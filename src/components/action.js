@@ -114,7 +114,7 @@ export class Action
         if(bb.path.path.length===0) {delete bb.path;}
     }
 
-    async attack(target)
+    async attack(target, skill)
     {
         const {emit} = this.ctx;
         emit('face', target.pos);
@@ -122,14 +122,12 @@ export class Action
         if(ranged) {await this._attack_Ranged(target);}
         else {
             await this._attack_Melee(target,()=>{
-                console.log('onHit')
-                const dmg = computeDamage(this._root, target);
+                console.log('onHit',skill)
+                const dmg = computeDamage(this._root, target, skill);
                 console.log(dmg)
                 target.takeDamage(dmg, this._root);
             });
         }
         return true;
     }
-
-    
 }

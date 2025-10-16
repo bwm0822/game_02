@@ -116,7 +116,6 @@
     "type": "melee",
     "range": 1,
     "atk": 15,
-    "str": "0.5*",
     "effects": [
       {
         "scope": "self",
