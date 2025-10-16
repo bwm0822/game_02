@@ -8,6 +8,7 @@ import {Sense} from '../components/sense.js'
 import {Stats} from '../components/stats.js'
 import {Disp} from '../components/disp.js'
 import {Skill} from '../components/skill.js'
+import {SkillTree} from '../components/skilltree.js'
 import {SkillSlots} from '../components/skillslots.js'
 
 import DB from '../db.js'
@@ -130,6 +131,7 @@ export class Player extends GameObject
             .add(new Stats())
             .add(new Disp())
             .add(new Skill())
+            .add(new SkillTree())
             .add(new SkillSlots())
  
         // 註冊 event

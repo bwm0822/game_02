@@ -4468,6 +4468,8 @@ export class UiSkill extends UiBase
     set _graphic(value) {this._main._graphic = value;}
     get _panel() {return this._main._panel;}
 
+    get owner() {return getPlayer();}
+
     addMain(scene)
     {
         let config = 
@@ -4525,11 +4527,6 @@ export class UiSkill extends UiBase
         return sizer;
     }
 
-    getOwner()
-    {
-        return getPlayer();
-    }
-
     toggle()
     {
         if(this.visible){this.close();}
@@ -4541,20 +4538,17 @@ export class UiSkill extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            // let skill = this.getOwner().getSkill(id);
-            // let skill = this.getOwner().skill.get(id);
-            let skill = this.getOwner().skills[id];
+            let skill = this.owner.skills[id];
             if(!skill) {return false};
         }
 
         return true;
     }
 
-    // refresh() {this.update();}
     refresh() 
     {
         let item = this._itemSel;
-        this.drawTree(DB.skTree[item.id])
+        this.drawTree(this.owner.skTree[item.id])
     }
 
     drawTree(tree)
@@ -4596,7 +4590,7 @@ export class UiSkill extends UiBase
     {
         this._itemSel?.unsel();
         this._itemSel = item;
-        this.drawTree(DB.skTree[item.id])
+        this.drawTree(this.owner.skTree[item.id]);
         item.sel();
     }
 
@@ -4608,7 +4602,7 @@ export class UiSkill extends UiBase
             let menu = this.getElement('scroll',true).getElement('panel')
 
             menu.removeAll(true);
-            Object.keys(DB.skTree).forEach((tree,i)=>{
+            Object.keys(this.owner.skTree).forEach((tree,i)=>{
                 let item = this.item(tree,{ondown:this.ondown.bind(this)});
                 item.id = tree;
                 menu.add(item,{expand:true})

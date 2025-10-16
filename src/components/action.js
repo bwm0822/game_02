@@ -77,10 +77,8 @@ export class Action
         // 在上層綁定操作介面，提供給其他元件使用
         
         // 註冊 event
-        root.on('move', async(resolve)=>{await this.move();resolve?.();});
-        // root.on('moveToward', async(resolve,...a)=>{await this.moveToward(...a);resolve?.();});
+        root.on('move', this.move.bind(this));
         root.on('moveToward', this.moveToward.bind(this));
-        // root.on('attack', async(resolve,...a)=>{await this.attack(...a);resolve?.();});
         root.on('attack', this.attack.bind(this));
     }
 

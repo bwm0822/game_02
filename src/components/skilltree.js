@@ -26,12 +26,10 @@ export class SkillTree
     bind(root)
     {
         this._root = root;
-        // 在上層綁定操作介面，提供給其他元件使用
-
         this._skTree = DB.skTree;
-
-        //
-        root.skTree = this._skTree;
+        
+        // 在上層綁定操作介面，提供給其他元件使用
+        root.prop('skTree', this, '_skTree');
         
         // 註冊 event
         
