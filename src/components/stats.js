@@ -55,10 +55,10 @@ function _derivedStats(base, meta)
     return out;
 }
 
-function _calcMods(eff, mod)
+function _calcMods(eff, mods)
 {
     const { scope, stat, a, m } = eff;
-    const o = scope==='self' ? mod.self : mod.enemy;
+    const o = scope==='self' ? mods.self : mods.enemy;
 
     if(GM.BASE.includes(stat)) // 基礎屬性
     {        
@@ -95,13 +95,13 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
     return meta;
 }
     
-function _modsFromEquips(equips, mod)
+function _modsFromEquips(equips, mods)
 {
     for(let equip of equips)
     {
         if(!equip) {continue;}
         let eq = DB.item(equip.id??equip);
-        eq?.effects?.forEach((eff)=>{_calcMods(eff, mod);});
+        eq?.effects?.forEach((eff)=>{_calcMods(eff, mods);});
     }
 }
 
@@ -115,37 +115,37 @@ function _procsFromEquips(equips, procs)
     }
 }
 
-function _modsFromActives(actives, mod)
+function _modsFromActives(actives, mods)
 {
     for(let proc of actives)
     {
-        proc.effects?.forEach((eff)=>{_calcMods(eff, mod);});   
+        proc.effects?.forEach((eff)=>{_calcMods(eff, mods);});   
     }
 }
 
 
-function _modsFromSkills(skills, mod)
+function _modsFromSkills(skills, mods)
 {
     for(const id in skills)
     {
         let sk = DB.skill(id);
         if(sk.type === GM.PASSIVE)
         {
-            sk.effects?.forEach((eff)=>{_calcMods(eff, mod);});
+            sk.effects?.forEach((eff)=>{_calcMods(eff, mods);});
         }
     }
 }
 
-function _adjustBase(base, mod)
+function _adjustBase(base, mods)
 {
-    for (const [k, v] of Object.entries(mod.self.basA)) {base[k] = (base[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mod.self.basM)) {base[k] = (base[k] || 0) * (1 + v);}
+    for (const [k, v] of Object.entries(mods.self.basA)) {base[k] = (base[k] || 0) + v;}
+    for (const [k, v] of Object.entries(mods.self.basM)) {base[k] = (base[k] || 0) * (1 + v);}
 }
 
-function _adjustDerived(total, mod)
+function _adjustDerived(total, mods)
 {
-    for (const [k, v] of Object.entries(mod.self.derA)) {total[k] = (total[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mod.self.derM)) {total[k] = (total[k] || 0) * (1 + v);}
+    for (const [k, v] of Object.entries(mods.self.derA)) {total[k] = (total[k] || 0) + v;}
+    for (const [k, v] of Object.entries(mods.self.derM)) {total[k] = (total[k] || 0) * (1 + v);}
 }
 
 
@@ -207,7 +207,7 @@ export class Stats
         const {bb} = this.ctx;
 
         // 初始化 mod
-        const mod = _initMod(fromEnemy?.mod);
+        const mods = _initMod(fromEnemy?.mods);
         const procs = _initProcs(fromEnemy?.procs);
         
         // 取得裝備基本屬性，如:攻擊、防禦、攻擊類型、距離...等
@@ -217,29 +217,29 @@ export class Stats
         const base = {...this.baseStats};
 
         // 2) 計算 [裝備] 加成
-        _modsFromEquips(bb.equips, mod);
+        _modsFromEquips(bb.equips, mods);
 
         // 3) 取得 [裝備] procs
         _procsFromEquips(bb.equips, procs);
 
         // 3) 計算 [被動技能] 加成
-        _modsFromSkills(bb.skills, mod);
+        _modsFromSkills(bb.skills, mods);
 
         // 4) 計算 [作用中效果] 的加成
-        _modsFromActives(this._actives, mod);
+        _modsFromActives(this._actives, mods);
 
         // 5) 修正 base
-        _adjustBase(base, mod);
+        _adjustBase(base, mods);
 
         // 6) 修正後的 base 推導 derived
         const derived = _derivedStats(base, meta);
 
         // 7) 合併：base 值優先，derived 補空位
         const total = {...derived, ...base};
-        total.enemy = {mod:mod.enemy, procs:procs};
+        total.enemy = {mods:mods.enemy, procs:procs};
 
         // 8) 修正 derived
-        _adjustDerived(total, mod);
+        _adjustDerived(total, mods);
 
         // 9) 最後合併狀態，並確保當前生命值不超過最大值
         this._states[GM.HP] = Math.min(total[GM.HPMAX], this._states[GM.HP]); 
