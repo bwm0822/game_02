@@ -1,4 +1,3 @@
-import {GameObject} from '../core/gameobject.js'
 import {ItemView,RoleView} from '../components/view.js'
 import {Inventory} from '../components/inventory.js'
 import {Anim} from '../components/anim.js'
@@ -13,7 +12,7 @@ import {SkillSlots} from '../components/skillslots.js'
 
 import DB from '../db.js'
 import Record from '../record.js'
-import TimeManager from '../time.js'
+import {Role} from './role.js';
 
 
 export let dbg_hover_npc = false;   // 是否有 npc 被 hover
@@ -24,26 +23,18 @@ export function setPlayer(value) {player = value;}
 export function getPlayer() {return player;}
 
 
-export class Player extends GameObject
+export class Player extends Role
 {
-    constructor(scene,x,y)
-    {
-        super(scene,x,y);
-        this.isAlive = true;
-    }
 
     get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
     get total() {return this.bb.total;}
     get meta() {return this.bb.meta;}
-    get id() {return this.bb.id;}
 
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-
-    _addToList() {this.scene.roles && this.scene.roles.push(this);}
 
     async _pause() {await new Promise((resolve)=>{this._resolve=resolve;});}
 
@@ -53,13 +44,6 @@ export class Player extends GameObject
 
     _saveData(data) {Record.data.pos = this.pos; Record.data.player = data;}
 
-    _registerTimeManager()
-    {
-        this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
-        TimeManager.register(this._updateTimeCallback);
-    }
-    
-    _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
 
     async _updateTime(dt) 
     {
@@ -94,6 +78,7 @@ export class Player extends GameObject
     init_prefab()
     {     
         this._addToList();
+        this._registerTimeManager()
 
         this.bb.meta = DB.role(this.bb.id);    // 取得roleD，放入bb，view 元件會用到
 

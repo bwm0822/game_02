@@ -56,18 +56,28 @@ export class Action
 
     _attack_Melee(target, onHit)
     {
+        const {emit}=this.ctx
+        emit('face', target.pos);
         let [pos,duration,ease] = [target.pos, 200, 'expo.in'];
         return this._step( pos, duration, ease, {yoyo: true, onYoyo: onHit} );  
     }
 
     _attack_Ranged(target, onHit)
     {
+        const {emit}=this.ctx
+        emit('face', target.pos);
         return new Promise((resolve)=>{
                         new Projectile(this.scene, this.ent.x, this.ent.y, 'arrow', 0.25)
-                            .shoot( target.pos.x, target.pos.y, 
-                                async ()=>{onHit?.();resolve();});
+                            .shoot( target.pos.x, target.pos.y,()=>{onHit?.();resolve();});
                     })
     }
+
+    _onDamage(target, skill)
+    {
+        const dmg = computeDamage(this._root, target, skill);
+        target.takeDamage(dmg, this._root);
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -114,18 +124,11 @@ export class Action
 
     async attack(target, skill)
     {
-        const {emit} = this.ctx;
-        emit('face', target.pos);
-        let ranged = false;
-        if(ranged) {await this._attack_Ranged(target);}
-        else {
-            await this._attack_Melee(target,()=>{
-                console.log('onHit',skill)
-                const dmg = computeDamage(this._root, target, skill);
-                console.log(dmg)
-                target.takeDamage(dmg, this._root);
-            });
-        }
+        const {bb} = this.ctx;
+        const onDamage = this._onDamage.bind(this, target, skill);
+
+        if(bb.total==='ranged') {await this._attack_Ranged(target, onDamage);}
+        else {await this._attack_Melee(target, onDamage);}
         return true;
     }
 }

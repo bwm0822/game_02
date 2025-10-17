@@ -1,4 +1,3 @@
-import {GameObject} from '../core/gameobject.js'
 import {ItemView,RoleView} from '../components/view.js'
 import {Inventory} from '../components/inventory.js'
 import {Anim} from '../components/anim.js'
@@ -9,45 +8,28 @@ import {Sense} from '../components/sense.js';
 import {Disp} from '../components/disp.js'
 import DB from '../db.js'
 import {Stats} from '../components/stats.js'
-import TimeManager from '../time.js'
 import {GM} from '../setting.js';
+import {Role} from './role.js';
 
 
-export class Npc extends GameObject
+export class Npc extends Role
 {
-    constructor(scene,x,y)
-    {
-        super(scene,x,y);
-        this.isAlive = true;
-    }
 
     get acts() {return [GM.ATTACK,GM.OBSERVE]}
     get act() {return this.acts[0];}
-    get id() {return this.bb.id;}
 
-    _addToList() {this.scene.roles && this.scene.roles.push(this);}
-    _removeFromList()
-    {
-        if(!this.scene.roles) {return;}
-        const index = this.scene.roles.indexOf(this);
-        if(index>-1) {this.scene.roles.splice(index,1);}
-    }
-
-    _registerTimeManager()
-    {
-        this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
-        TimeManager.register(this._updateTimeCallback);
-    }
-        
-    _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
 
     async _updateTime(dt) 
     {
         const {emit, aEmit}=this.ctx;
+
         if(!this.isAlive) 
         { 
-            (this._latency--)<=0 && this._remove();
-            emit('fadout');
+            if(this._latency--<=0) {this._remove();}
+            else {emit('fadout');}
         }
         else
         {
@@ -105,14 +87,5 @@ export class Npc extends GameObject
 
         await this.aEmit('think');
     }
-
-
-
-
-
-
-
-
-
     
 }

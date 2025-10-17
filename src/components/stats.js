@@ -129,7 +129,10 @@ function _modsFromSkills(skills, mod)
     for(const id in skills)
     {
         let sk = DB.skill(id);
-        sk.type === GM.PASSIVE && sk.effects?.forEach((eff)=>{_calcMods(eff, mod);});
+        if(sk.type === GM.PASSIVE)
+        {
+            sk.effects?.forEach((eff)=>{_calcMods(eff, mod);});
+        }
     }
 }
 
@@ -183,16 +186,17 @@ export class Stats
         this._root = root;
 
         // 對上層公開 API
-        root.getTotalStats = this.getTotalStats.bind(this);
         root.prop('total', this, '_total');
         root.prop('actives', this, '_actives');
-        root.states = this._states;
+        // root.states = this._states;
         root.addProcs = this.addProcs.bind(this);
         root.takeDamage = this.takeDamage.bind(this);
+        root.getTotalStats = this.getTotalStats.bind(this);
 
         // 註冊 event 
         root.on('equip', this.getTotalStats.bind(this) );
         root.on('update', this.processProcs.bind(this) );
+        root.on('stats', this.getTotalStats.bind(this) );   // 更新屬性
 
         // 綁定時，先跑一次
         this.getTotalStats();      
@@ -219,7 +223,7 @@ export class Stats
         _procsFromEquips(bb.equips, procs);
 
         // 3) 計算 [被動技能] 加成
-        // this._modsFromSkills(skills, mod);
+        _modsFromSkills(bb.skills, mod);
 
         // 4) 計算 [作用中效果] 的加成
         _modsFromActives(this._actives, mod);

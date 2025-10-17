@@ -13,8 +13,8 @@ export class Skill
 {
     constructor()
     {
-        this._skills = {}; // 技能
-        this._range = 0;    // 技能範圍
+        this._skills = {}; // 可用的技能
+        this._skill = null; // 當前選擇的技能
     }
 
     get tag() {return 'skill';}   // 回傳元件的標籤
@@ -26,10 +26,13 @@ export class Skill
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    // 學習新技能
     _learn(id)
     {
+        const {emit}= this.ctx;
         this._skills[id] = {remain:0};
         this._skill = null;
+        emit('stats');  // 更新屬性
     }
 
     _showRange(on, range, checkBlock)
@@ -83,28 +86,29 @@ export class Skill
         this.a=a;
     }
 
+    // 選擇技能
     _select(id)
     {
         if(!this._skills[id]) {return false;}
         const skill = DB.skill(id);
         this._showRange(true, skill.range, false);
-        const {bb}=this.ctx;
+
+        const {bb} = this.ctx;
         bb.skillSel = id;
         this._skill = skill;
-        this._range  = skill.range;
     }
 
+    // 取消選擇技能
     _unselect()
     {
         const {bb}=this.ctx;
         this._showRange(false);
-        bb.skillSel = undefined;
-        this._range  = 0;
+        bb.skillSel = null;
     }
 
     _isInRange(pos)
     {
-        let n = this._range;
+        let n = this._skill.range;
         for(let x=0; x<=2*n; x++)
         {
             for(let y=0; y<=2*n; y++)
@@ -124,15 +128,29 @@ export class Skill
 
     async _useSkill(ent)
     {
-        const {emit,aEmit} = this.ctx;
+        const {bb,aEmit} = this.ctx;
         if(ent && this._isInRange(ent.pos))
         {
+            this._skills[bb.skillSel]={skip:true, remain:this._skill.cd};
             this._unselect();
             await aEmit('attack', ent, this._skill);
             return true;
         } 
 
         return false;
+    }
+
+    // 更新技能冷卻時間
+    _update(dt)
+    {
+        Object.values(this._skills).forEach(s=>{
+            if(s.skip) {delete s.skip; dt--;}
+            if(dt>0 && s.remain>0) 
+            {
+                s.remain -= dt;
+                if(s.remain<0) {s.remain=0;}
+            }
+        });
     }
 
     //------------------------------------------------------
@@ -150,6 +168,10 @@ export class Skill
         
         // 註冊 event
         root.on('useSkill', this._useSkill.bind(this));
+        root.on('update', this._update.bind(this) );
+
+        // 共享資料
+        root.bb.skills = this._skills;
     }
 
     //------------------------------------------------------

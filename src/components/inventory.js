@@ -147,10 +147,6 @@ export class Inventory extends Storage
     }
 
     get ctx() {return this._root.ctx;}
-    get equips() {return this._equips;}
-
-    get gold() {return this._gold;}
-    set gold(value) {this._gold = value;}
    
     //------------------------------------------------------
     // Local
@@ -169,7 +165,7 @@ export class Inventory extends Storage
         root.equip = this.equip.bind(this);
 
         // 共享裝備資料
-        root.bb.equips = this.equips;
+        root.bb.equips = this._equips;
     }
 
     //------------------------------------------------------
@@ -192,5 +188,5 @@ export class Inventory extends Storage
         emit('equip');
     }
 
-    getEquipped() { return this.equips.filter(Boolean); }
+    getEquipped() { return this._equips.filter(Boolean); }
 }
