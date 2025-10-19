@@ -17,15 +17,10 @@ function _checkHit(aStats, dStats, skill)
 
 export function computeDamage(attacker, defender, skill={}) 
 {
-    const aStats = attacker.getTotalStats();
-    const dStats = defender.getTotalStats(aStats.enemy);
+    const cond = skill?.type??'attack';
+    const aStats = attacker.getTotalStats({condition:cond});
+    const dStats = defender.getTotalStats({fromEnemy:aStats.enemy});
     console.log(aStats,dStats)
-
-    const element = skill.elm || GM.PHY;
-    // const kind = skill.kind || GM.MELEE;
-    const power = skill.pow ?? 1.0;
-    const flat  = skill.flat  ?? 0;
-    // const ignoreDef = skill.ignoreDef ?? 0; // 0~1
 
     // 計算是否命中
     const ret = _checkHit(aStats, dStats, skill);
@@ -37,28 +32,35 @@ export function computeDamage(attacker, defender, skill={})
 
     // 計算傷害
     let type = GM.HIT;
-    let atk = aStats[GM.ATK] || 0;          // 基本攻擊
-    let elm = skill?.dat?.elm ?? GM.PHY;    // 攻擊屬性
-    let pow = skill?.dat?.mul ?? 1;         // 傷害倍率
-    let pen = skill?.dat?.pen ?? 0;         // 防禦穿透率(penetrate)
+    let dmg = aStats[skill?.src??GM.ATK] || 0; // 基本攻擊
+    let elm = skill?.elm ?? GM.PHY;    // 攻擊屬性
+    let pow = skill?.pow ?? 1;         // 傷害倍率
+    let pen = skill?.pen ?? 0;         // 防禦穿透率(penetrate)
+    let flat = skill?.flat ?? 0;       // 固定傷害
 
     // 1. 計算基礎傷害
-    let baseDamage = atk * pow;
+    let baseDamage = dmg * pow + flat;
+
     // 2. 計算防禦係數
     const effectiveDef = dStats.def * (1 - pen);
     let defFactor = baseDamage / (baseDamage + effectiveDef);
+
     // 3. 計算實際傷害
     let damage = baseDamage * defFactor;
+
+    // 4. 計算抗性
     const resist = dStats.resists?.[RESIST_MAP[elm]] || 0;
     damage *= 1 - resist;
-    // 4. 計算暴擊
+
+    // 5. 計算暴擊
     if (Math.random() < aStats[GM.CRITR]) 
     {
         damage *= aStats[GM.CRITD];
         console.log(`💥 ${attacker.name} 暴擊！`);
         type = GM.CRIT;
     }
-    // 5. 浮動傷害(0.85 ~ 1.05)
+
+    // 6. 浮動傷害(0.85 ~ 1.05)
     damage *= 0.95 + Math.random() * 0.1;
     damage = Math.round(Math.max(1, damage))
 
@@ -67,7 +69,19 @@ export function computeDamage(attacker, defender, skill={})
 
 }
 
+export function computeHealing(healer, skill) 
+{
+    const cond = skill?.type??'heal';
+    const stats = healer.getTotalStats({condition:cond});
 
+    // 計算治療量
+    let base = stats[skill?.src??GM.INT] || 0;  // 基本治療
+    let pow = skill?.pow ?? 1;                  // 治療倍率
+    let flat = skill?.flat ?? 0;                // 固定治療
+    let amount = base * pow + flat;
+
+    return amount;
+}
 
 
 

@@ -259,6 +259,8 @@ export let GM =
     // skill type
     ACTIVE : 'active',
     PASSIVE : 'passive',
+    SPELL : 'spell',
+    ATTACK : 'attack',
     SELF : 'self',
     ENEMY : 'enemy',
 

@@ -8,7 +8,7 @@
     "pow": 1.5,
     "flat": 0,
     "elm": "phy",
-    "scaling": "atk",
+    "src": "atk",
     "effects": [
       {
         "scope": "self",
@@ -32,14 +32,19 @@
   },
   "fireball": {
     "icon": "icons/1",
-    "type": "attack",
+    "type": "spell",
     "scope": "enemy",
     "cd": 3,
     "range": 5,
     "pow": 1.5,
     "flat": 10,
     "elm": "fire",
-    "scaling": "int",
+    "src": "int",
+    "sprite": {
+      "img": "icons/1",
+      "scl": 1,
+      "deg": -45
+    },
     "tw": {
       "lab": "火球術",
       "des": "對目標造成{#mul}的{#elm}傷害"
@@ -47,7 +52,7 @@
   },
   "ice": {
     "icon": "icons/8",
-    "type": "attack",
+    "type": "spell",
     "refs": [
       "lunge",
       "fireball"
@@ -58,7 +63,7 @@
     "pow": 2,
     "flat": 10,
     "elm": "ice",
-    "scaling": "int",
+    "src": "int",
     "tw": {
       "lab": "冰凍術",
       "des": "對目標造成{#mul}的{#elm}傷害"
@@ -85,7 +90,7 @@
     "cd": 3,
     "pow": 2,
     "flat": 10,
-    "scaling": "int",
+    "src": "int",
     "procs": [
       {
         "type": "hot",

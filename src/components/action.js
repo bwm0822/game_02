@@ -66,10 +66,25 @@ export class Action
     {
         const {emit}=this.ctx
         emit('face', target.pos);
+        const sprite = {img:'arrow', scl:0.25};
         return new Promise((resolve)=>{
-                        new Projectile(this.scene, this.ent.x, this.ent.y, 'arrow', 0.25)
-                            .shoot( target.pos.x, target.pos.y,()=>{onHit?.();resolve();});
-                    })
+                new Projectile(this.scene, this.ent.x, this.ent.y, sprite)
+                    .shoot( target.pos.x, target.pos.y,
+                            {onComplete:()=>{onHit?.();resolve();}}
+                        );
+            })
+    }
+
+    _attack_Spell(target, onHit, skill)
+    {
+        const {emit}=this.ctx
+        emit('face', target.pos);
+        return new Promise((resolve)=>{
+                new Projectile(this.scene, this.ent.x, this.ent.y, skill.sprite)
+                    .shoot( target.pos.x, target.pos.y,
+                            {onComplete:()=>{onHit?.();resolve();}, bias:0}
+                        );
+            })  
     }
 
     _onDamage(target, skill)
@@ -127,8 +142,15 @@ export class Action
         const {bb} = this.ctx;
         const onDamage = this._onDamage.bind(this, target, skill);
 
-        if(bb.total==='ranged') {await this._attack_Ranged(target, onDamage);}
-        else {await this._attack_Melee(target, onDamage);}
+        if(skill?.type==='spell')
+        {
+            await this._attack_Spell(target, onDamage, skill);
+        }
+        else
+        {
+            if(bb.total.type==='ranged') {await this._attack_Ranged(target, onDamage);}
+            else {await this._attack_Melee(target, onDamage);}
+        }
         return true;
     }
 }

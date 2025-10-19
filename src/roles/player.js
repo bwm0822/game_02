@@ -132,6 +132,15 @@ export class Player extends Role
     // 跳過這一回合
     next() { this._resume();}
 
+    async useSkill(target, id)
+    {
+        if(await this.aEmit('useSkill', target, id))
+        {
+            this._refresh();
+            this._resume();
+        }
+    }
+
     async execute({pt,ent,act}={})
     {
         if(!this.isAlive) {return;}

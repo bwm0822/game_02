@@ -55,10 +55,11 @@ function _derivedStats(base, meta)
     return out;
 }
 
-function _calcMods(eff, mods)
+function _calcMods(eff, mods, condition)
 {
-    const { scope, stat, a, m } = eff;
+    const { scope, stat, a, m, cond } = eff;
     const o = scope==='self' ? mods.self : mods.enemy;
+    if (cond && cond !== condition) {return;} // 條件不符，跳過
 
     if(GM.BASE.includes(stat)) // 基礎屬性
     {        
@@ -95,23 +96,27 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
     return meta;
 }
     
-function _modsFromEquips(equips, mods)
+function _modsFromEquips(equips, mods, condition)
 {
     for(let equip of equips)
     {
         if(!equip) {continue;}
         let eq = DB.item(equip.id??equip);
-        eq?.effects?.forEach((eff)=>{_calcMods(eff, mods);});
+        eq?.effects?.forEach((eff)=>{_calcMods(eff, mods, condition);});
     }
 }
 
-function _procsFromEquips(equips, procs)
+function _procsFromEquips(equips, procs, condition)
 {
     for(let equip of equips)
     {
         if(!equip) {continue;}
         let eq = DB.item(equip.id??equip);
-        eq?.procs?.forEach((proc)=>{proc.scope===GM.ENEMY && procs.push(proc)});
+        eq?.procs?.forEach((proc)=>{
+            const {cond, scope} = proc;
+            if(cond && cond !== condition) {return;}   // 條件不符，跳過
+            scope===GM.ENEMY && procs.push(proc)
+        });
     }
 }
 
@@ -194,15 +199,17 @@ export class Stats
         root.getTotalStats = this.getTotalStats.bind(this);
 
         // 註冊 event 
+        root.on('heal', this.heal.bind(this) );
         root.on('equip', this.getTotalStats.bind(this) );
         root.on('update', this.processProcs.bind(this) );
         root.on('stats', this.getTotalStats.bind(this) );   // 更新屬性
+
 
         // 綁定時，先跑一次
         this.getTotalStats();      
     }
 
-    getTotalStats(fromEnemy)
+    getTotalStats({fromEnemy, condition}={})
     {
         const {bb} = this.ctx;
 
@@ -217,31 +224,31 @@ export class Stats
         const base = {...this.baseStats};
 
         // 2) 計算 [裝備] 加成
-        _modsFromEquips(bb.equips, mods);
+        _modsFromEquips(bb.equips, mods, condition);
 
         // 3) 取得 [裝備] procs
-        _procsFromEquips(bb.equips, procs);
+        _procsFromEquips(bb.equips, procs, condition);
 
-        // 3) 計算 [被動技能] 加成
+        // 4) 計算 [被動技能] 加成
         _modsFromSkills(bb.skills, mods);
 
-        // 4) 計算 [作用中效果] 的加成
+        // 5) 計算 [作用中效果] 的加成
         _modsFromActives(this._actives, mods);
 
-        // 5) 修正 base
+        // 6) 修正 base
         _adjustBase(base, mods);
 
-        // 6) 修正後的 base 推導 derived
+        // 7) 修正後的 base 推導 derived
         const derived = _derivedStats(base, meta);
 
-        // 7) 合併：base 值優先，derived 補空位
+        // 8) 合併：base 值優先，derived 補空位
         const total = {...derived, ...base};
         total.enemy = {mods:mods.enemy, procs:procs};
 
-        // 8) 修正 derived
+        // 9) 修正 derived
         _adjustDerived(total, mods);
 
-        // 9) 最後合併狀態，並確保當前生命值不超過最大值
+        // 10) 最後合併狀態，並確保當前生命值不超過最大值
         this._states[GM.HP] = Math.min(total[GM.HPMAX], this._states[GM.HP]); 
         total.states = this._states;
 

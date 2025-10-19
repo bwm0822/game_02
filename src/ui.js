@@ -552,7 +552,8 @@ class SkillSlot extends Pic
 
     use()
     {
-         if(this.ready) {this.owner.skill.use(this);}
+        //  if(this.ready) {this.owner.skill.use(this.id);}
+        if(this.ready) {this.owner.useSkill(this.owner, this.id);}
     }
 
     toggle()

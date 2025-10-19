@@ -118,6 +118,7 @@
     "atk": 15,
     "effects": [
       {
+        "cond": "attack",
         "scope": "self",
         "stat": "atk",
         "m": 0.05
@@ -125,6 +126,7 @@
     ],
     "procs": [
       {
+        "cond": "attack",
         "scope": "enemy",
         "type": "dot",
         "value": 2,

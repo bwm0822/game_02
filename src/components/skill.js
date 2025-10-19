@@ -1,6 +1,7 @@
 import DB from '../db.js';
 import {GM} from '../setting.js';
 import Utility from '../utility.js';
+import {computeHealing} from '../core/combat.js';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -126,14 +127,23 @@ export class Skill
         return false;
     }
 
-    async _useSkill(ent)
+    async _useSkill(target, id)
     {
-        const {bb,aEmit} = this.ctx;
-        if(ent && this._isInRange(ent.pos))
+        const {bb,emit,aEmit} = this.ctx;
+        if(id) {this._skill = DB.skill(id);}
+        
+        if(this._skill.type===GM.ACTIVE) 
+        {
+            this._skills[id]={skip:true, remain:this._skill.cd};
+            const amount = computeHealing(target, this._skill);
+            emit('heal', amount);
+            return true;
+        }
+        else if(target && this._isInRange(target.pos))
         {
             this._skills[bb.skillSel]={skip:true, remain:this._skill.cd};
             this._unselect();
-            await aEmit('attack', ent, this._skill);
+            await aEmit('attack', target, this._skill);
             return true;
         } 
 
