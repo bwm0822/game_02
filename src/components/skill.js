@@ -33,7 +33,7 @@ export class Skill
         const {emit}= this.ctx;
         this._skills[id] = {remain:0};
         this._skill = null;
-        emit('stats');  // 更新屬性
+        emit('dirty');  // 更新屬性
     }
 
     _showRange(on, range, checkBlock)
@@ -154,7 +154,7 @@ export class Skill
     _update(dt)
     {
         Object.values(this._skills).forEach(s=>{
-            if(s.skip) {delete s.skip; dt--;}
+            if(s.skip) {s.skip=false; dt--;}
             if(dt>0 && s.remain>0) 
             {
                 s.remain -= dt;
@@ -169,7 +169,7 @@ export class Skill
     bind(root)
     {
         this._root = root;
-
+        
         // 在上層綁定操作介面，提供給其他元件使用
         root.prop('skills', this, '_skills');
         root.learnSkill = this._learn.bind(this);

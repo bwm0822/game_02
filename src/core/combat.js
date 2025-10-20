@@ -18,7 +18,7 @@ function _checkHit(aStats, dStats, skill)
 export function computeDamage(attacker, defender, skill={}) 
 {
     const cond = skill?.type??'attack';
-    const aStats = attacker.getTotalStats({condition:cond});
+    const aStats = attacker.getTotalStats({condition:cond, skill:skill});
     const dStats = defender.getTotalStats({fromEnemy:aStats.enemy});
     console.log(aStats,dStats)
 
@@ -26,8 +26,8 @@ export function computeDamage(attacker, defender, skill={})
     const ret = _checkHit(aStats, dStats, skill);
     if(ret) {return ret;}
 
-    // 計算 Effect
-    let procs = [...aStats.enemy.procs]
+    // 計算 Procs
+    let procs = [...aStats.procs.enemy]
     procs.forEach((proc)=>{defender.addProcs(proc);});
 
     // 計算傷害
@@ -72,7 +72,12 @@ export function computeDamage(attacker, defender, skill={})
 export function computeHealing(healer, skill) 
 {
     const cond = skill?.type??'heal';
-    const stats = healer.getTotalStats({condition:cond});
+    const stats = healer.getTotalStats({condition:cond, skill:skill});
+    console.log(stats);
+
+    // 計算 Procs
+    let procs = [...stats.procs.self]
+    procs.forEach((proc)=>{healer.addProcs(proc);});
 
     // 計算治療量
     let base = stats[skill?.src??GM.INT] || 0;  // 基本治療

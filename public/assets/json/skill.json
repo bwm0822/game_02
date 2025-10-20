@@ -18,6 +18,7 @@
     ],
     "procs": [
       {
+        "scope": "self",
         "type": "dot",
         "value": 2,
         "dur": 3,
@@ -93,6 +94,7 @@
     "src": "int",
     "procs": [
       {
+        "scope": "self",
         "type": "hot",
         "value": 5,
         "dur": 5,
@@ -100,10 +102,14 @@
         "tag": "heal"
       },
       {
+        "scope": "self",
         "type": "buff",
-        "stats": {
-          "str": "1"
-        },
+        "effects": [
+          {
+            "stat": "str",
+            "a": 1
+          }
+        ],
         "dur": 5,
         "icon": "icons/16",
         "tag": "strong"
