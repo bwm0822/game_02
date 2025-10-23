@@ -184,6 +184,7 @@ export let GM =
     HUNGER : 'hunger',
     THIRST : 'thirst',
 
+    BUFF : 'buff',
     HEAL : 'heal',
     DOT : 'dot',
     HOT : 'hot',
@@ -210,13 +211,13 @@ export let GM =
     P_KEEP : 'keep',
 
     // UiInfo Type
-    TP_SLOT : 0,
-    TP_PROP : 1,
-    TP_BTN : 2,
-    TP_SKILL : 3,
-    TP_SKILL_TB : 4,
-    TP_EFFECT : 5,
-    TP_EFFECT_TB : 6,
+    IF_SLOT : 0,
+    IF_PROP : 1,
+    IF_BTN : 2,
+    IF_SKILL : 3,
+    IF_SKILL_TB : 4,
+    IF_ACTIVE : 5,
+    IF_ACTIVE_TB : 6,
 
     // 任務類型
     KILL : 'kill',

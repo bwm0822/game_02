@@ -14,6 +14,11 @@
         "scope": "self",
         "stat": "pen",
         "a": 0.1
+      },
+      {
+        "scope": "enemy",
+        "stat": "def",
+        "m": -0.1
       }
     ],
     "procs": [
@@ -28,7 +33,7 @@
     ],
     "tw": {
       "lab": "突刺",
-      "des": "對目標造成{#mul}的{#elm}傷害，{#self}，目標{#target}"
+      "des": "對目標造成{#fmt}點{#elm}傷害。{#eff}"
     }
   },
   "fireball": {
@@ -48,7 +53,7 @@
     },
     "tw": {
       "lab": "火球術",
-      "des": "對目標造成{#mul}的{#elm}傷害"
+      "des": "對目標造成{#fmt}點{#elm}傷害。{#eff}"
     }
   },
   "ice": {
@@ -67,7 +72,7 @@
     "src": "int",
     "tw": {
       "lab": "冰凍術",
-      "des": "對目標造成{#mul}的{#elm}傷害"
+      "des": "對目標造成{#fmt}點{#elm}傷害。{#eff}"
     }
   },
   "strong": {
@@ -81,7 +86,8 @@
       }
     ],
     "tw": {
-      "lab": "強化"
+      "lab": "強化",
+      "des": "{#eff}"
     }
   },
   "heal": {
@@ -117,7 +123,7 @@
     ],
     "tw": {
       "lab": "回復術",
-      "des": "回復{#heal}點生命"
+      "des": "回復{#fmt}點生命"
     }
   },
   "test1": {

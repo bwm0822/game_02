@@ -1,4 +1,4 @@
-import {GM} from './setting.js';
+import {GM,ACT_TYPE} from './setting.js';
 
 export default class Utility
 {
@@ -232,30 +232,112 @@ export default class Utility
         );
     }
 
-    static fmt_Eff(str, obj, self, target) 
+    // 屬性
+    static fmt_Stat(key, val, elm)
     {
-        return str.replace(/{#(\w+)}/g, (match, key) => {
-                let val = obj[key]
-                if(val) 
+        switch(key)
+        {
+            case GM.ENDURANCE: return this.tick2Str(elm.content[key]);
+            case GM.STORAGE: return `${this.getStorageCount(elm.content[key])}[size=18]/${val}[/size]`;
+            case GM.CAPACITY:
+            case GM.TIMES: return `${elm.content[key]}[size=18]/${val.max}[/size]`;
+            default:
+                if(typeof val === 'number')
                 {
-                    switch(key)
-                    {
-                        case 'tag': return `[color=deepskyblue]${val.lab()}[/color]`;
-                        case 'dur': return `[color=white]${val}[/color]`;
-                        // case 'mul': return `[color=${val>1?'lime':'red'}]${val*100}[size=18]%[/size][/color]`;
-                        case 'self': return self;
-                        case 'target': return target;
-                        default:
-                            // let n = Number(val);
-                            // let c = isNaN(n) ? 'white' : (n > 0 ? 'lime' : 'red');
-                            // return `[color=${c}]${isNaN(n)?val.lab():n}[/color]`;
-                            return this.fmt_Stat(key,val);
-                    }
+                    GM.PCT.includes(key) && (val=`${val*100}[size=18]%[/size]`);
+                    return `[color=white]${val}[/color]`;
                 }
-                return '';
-            }
+                else
+                {
+                    return `[color=white]${val.lab()}[/color]`;   
+                }
+        }
+    }
+
+    // 修正
+    static fmt_Mod(mod)
+    {
+        let sign = function(val) {return val>0?'+':'';}
+        if(mod.a !== undefined) {return `[color=white]${sign(mod.a)}${mod.a}[/color]`;}
+        if(mod.m !== undefined) {return `[color=white]${sign(mod.m)}${mod.m*100}%[/color]`;}
+    }
+
+    // 效果
+    static fmt_Effs(effs)
+    {
+        if(!effs) {return '';}
+
+        let self='',enemy='';
+
+        effs.filter(eff=>!eff.scope || eff.scope==='self').forEach((eff,i)=>{
+            if(i!==0) {self+='、'}
+            self+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
+        });
+
+        effs.filter(eff=>eff.scope==='enemy').forEach((eff,i)=>{
+            if(i===0) {enemy+='目標'}
+            if(i!==0) {enemy+='、'}
+            enemy+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
+        });
+
+        let split = self&&enemy?'，':'';
+
+        return self+split+enemy;
+    }
+
+    static fmt_Des(str, obj, total) 
+    {
+        let fmt = function(obj, total) {return obj.pow * total[obj.src] + obj.flat;}
+        let val = function(obj, key) {
+            let val = obj[key];
+            return typeof val==='string' ? val.lab() : val;
+        }
+
+        return str.replace(/{#(\w+)}/g, (match, key) => {
+            switch(key)
+            {
+                case 'fmt': return `[color=white] ${fmt(obj,total)} [/color]`; 
+                case 'tag': return `[color=deepskyblue] ${val(obj,key)} [/color]`;
+                case 'eff': return this.fmt_Effs(obj.effects);
+                default:
+                    if(!obj[key]) return ''; 
+                    return `[color=white] ${val(obj,key)} [/color]`;
+            }}
         );
     }
+
+    // buff / dot
+    static fmt_Proc(proc) {return this.fmt_Des(proc.type.des(),proc);}
+
+    // 作用中 buff / dot
+    static fmt_Active(proc) {return this.fmt_Des(ACT_TYPE[proc.type].des(),proc);}
+
+
+    // static fmt_Eff(str, obj, self, target) 
+    // {
+    //     console.log('fmt',str)
+    //     return str.replace(/{#(\w+)}/g, (match, key) => {
+    //             let val = obj[key]
+    //             if(val) 
+    //             {
+    //                 switch(key)
+    //                 {
+    //                     case 'tag': return `[color=deepskyblue]${val.lab()}[/color]`;
+    //                     case 'dur': return `[color=white]${val}[/color]`;
+    //                     // case 'mul': return `[color=${val>1?'lime':'red'}]${val*100}[size=18]%[/size][/color]`;
+    //                     case 'self': return self;
+    //                     case 'target': return target;
+    //                     default:
+    //                         // let n = Number(val);
+    //                         // let c = isNaN(n) ? 'white' : (n > 0 ? 'lime' : 'red');
+    //                         // return `[color=${c}]${isNaN(n)?val.lab():n}[/color]`;
+    //                         return this.fmt_Stat(key,val);
+    //                 }
+    //             }
+    //             return '';
+    //         }
+    //     );
+    // }
 
     static getStorageCount(storage)
     {
@@ -263,55 +345,49 @@ export default class Utility
         return storage?.items.filter(item => item).length??0;
     }
 
-    static fmt_mod(mod)
-    {
-        let sign = function(val) {return val>0?'+':'';}
-        if(mod.a !== undefined) {return sign(mod.a)+`${mod.a}`;}
-        if(mod.m !== undefined) {return sign(mod.m)+`${mod.m*100}%`;}
-    }
+    
 
-    static fmt_Stat(key, val, elm)
-    {
-        let cat = elm?.dat?.cat;
-        switch(key)
-        {
-            case GM.ENDURANCE: return this.tick2Str(elm.itm[key]);
-            case GM.STORAGE: return `${this.getStorageCount(elm.itm[key])}[size=18]/${val}[/size]`;
-            case GM.CAPACITY:
-            case GM.TIMES: return `${elm.itm[key]}[size=18]/${val.max}[/size]`;
-            default:
-                if(typeof val === 'number')
-                {
-                    GM.PCT.includes(key) && (val=val*100+'[size=18]%[/size]');
-                    return `[color=white]${val}[/color]`;
-                }
-                else
-                {
-                    let f = parseFloat(val);
-                    if(f)
-                    {
-                        let c = f > 0 ? 'orange' : 'lime';
-                        let s = f > 0 ? '+' :'';
+    // static fmt_Stat(key, val, elm)
+    // {
+    //     switch(key)
+    //     {
+    //         case GM.ENDURANCE: return this.tick2Str(elm.content[key]);
+    //         case GM.STORAGE: return `${this.getStorageCount(elm.content[key])}[size=18]/${val}[/size]`;
+    //         case GM.CAPACITY:
+    //         case GM.TIMES: return `${elm.content[key]}[size=18]/${val.max}[/size]`;
+    //         default:
+    //             if(typeof val === 'number')
+    //             {
+    //                 GM.PCT.includes(key) && (val=val*100+'[size=18]%[/size]');
+    //                 return `[color=white]${val}[/color]`;
+    //             }
+    //             else
+    //             {
+    //                 let f = parseFloat(val);
+    //                 if(f)
+    //                 {
+    //                     let c = f > 0 ? 'orange' : 'lime';
+    //                     let s = f > 0 ? '+' :'';
                         
-                        if(val.includes('*'))
-                        {
-                            f=f*100+'[size=18]%[/size]';
-                            return `[color=${c}][size=18]1${s}[/size]${f}[/color]`;
-                        }
-                        else
-                        {
-                            GM.PCT.includes(key) && (f=f*100+'[size=18]%[/size]');
-                            return `[color=${c}]${s}${f}[/color]`;
-                        }
-                    }
-                    else
-                    {
-                        return `[color=white]${val.lab()}[/color]`;
-                    }
-                }
-        }
+    //                     if(val.includes('*'))
+    //                     {
+    //                         f=f*100+'[size=18]%[/size]';
+    //                         return `[color=${c}][size=18]1${s}[/size]${f}[/color]`;
+    //                     }
+    //                     else
+    //                     {
+    //                         GM.PCT.includes(key) && (f=f*100+'[size=18]%[/size]');
+    //                         return `[color=${c}]${s}${f}[/color]`;
+    //                     }
+    //                 }
+    //                 else
+    //                 {
+    //                     return `[color=white]${val.lab()}[/color]`;
+    //                 }
+    //             }
+    //     }
 
-    }
+    // }
 
 
     static toStorage(capacity,items)

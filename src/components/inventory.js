@@ -151,6 +151,16 @@ export class Inventory extends Storage
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
+    _receive(rewards)
+    {
+        rewards.forEach((reward)=>{
+            switch(reward.type)
+            {
+                case 'gold': this._gold+=reward.count; break;
+                case 'item': this.put(reward.id, reward.count); break;
+            }
+        })       
+    }
 
     //------------------------------------------------------
     // Public
@@ -163,6 +173,7 @@ export class Inventory extends Storage
         root.prop('equips', this, '_equips');
         root.prop('gold', this, '_gold');
         root.equip = this.equip.bind(this);
+        root.receive = this._receive.bind(this);
 
         // 共享裝備資料
         root.bb.equips = this._equips;

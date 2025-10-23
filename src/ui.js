@@ -154,7 +154,7 @@ class Slot extends Icon
     set count(value) {return this.content.count=value;}
     get props() {return this.dat.props;}
     get label() {return this.content.id.lab();}
-    get tp() {return GM.TP_SLOT;}
+    get tp() {return GM.IF_SLOT;}
 
     get id() {return this.content?.id;}
     // content
@@ -369,7 +369,7 @@ class Slot extends Icon
             this.setBgColor(GM.COLOR_SLOT_OVER);
 
             // 使用 delacyCall 延遲執行 UiInfo.show()
-            Ui.delayCall(() => {UiInfo.show(GM.TP_SLOT,this);}); 
+            Ui.delayCall(() => {UiInfo.show(GM.IF_SLOT,this);}); 
             // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
             checkEquip && UiInv.checkEquipSlots(this.dat.cat);
         }
@@ -529,7 +529,7 @@ class SkillSlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(GM.TP_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(GM.IF_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
     leftButtonDown(x,y)
@@ -647,7 +647,7 @@ class SkillItem extends Pic
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
-    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_SKILL,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_SKILL,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
     addListener()
@@ -1229,19 +1229,20 @@ export class UiInfo extends Sizer
 
     get lang() {return Record.data.lang;}
 
-    addTitle(slot)
+    addTitle(elm)
     {
-        let title = slot.dat[this.lang]?.lab
-        this.add(bbcText(this.scene,{text:title??slot.dat.id}));   
+        let title = elm.dat[this.lang]?.lab
+        this.add(bbcText(this.scene,{text:title??elm.dat.id}));   
         return this;
     }
 
-    addCat(slot)
+    addCat(elm)
     {
-        if(slot.dat.cat)
+        if(elm.dat.cat)
         {
-            let cat = `[color=gray]${slot.dat.cat.lab()}[/color]`;
-            this.add(bbcText(this.scene,{text:cat}));
+            let cat = `[color=gray]${elm.dat.cat.lab()}[/color]`;
+            this.add(bbcText(this.scene,{text:cat}))
+                .addDivider()
         }
         return this;
     }
@@ -1252,190 +1253,123 @@ export class UiInfo extends Sizer
         return this;
     }
 
-    addDivider()
+    addDivider(en=true)
     {
-        this.add(rect(this.scene,{width:UiInfo.w,height:1,color:GM.COLOR_GRAY}),{padding:{top:10,bottom:10}})
+        if(!en) {return this;}
+        this.add(rect(this.scene,{width:UiInfo.w,height:1,color:GM.COLOR_GRAY}),
+                    {padding:{top:10,bottom:10}})
         return this;
     }
 
-    // addDescript(slot)
-    // {
-    //     let des = slot.dat[this.lang]?.des
-    //     if(des)
-    //     {
-    //         this.addDivider();
-    //         // this.add(bbcText(this.scene,{text:slot.id.des(),wrapWidth:200}),{align:'left'});
-    //         this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w}),{align:'left'});
-    //     }
-    //     return this;
-    // }
-
-    addDes(des, stats, self, target)
+    addDes(des, {stats,total}={}, layout)
     {
         if(des)
         {
-            this.addDivider();
-            des = Utility.fmt_Eff(des, stats, self, target);
-            this.add(bbcText(this.scene,{text:des,wrapWidth:UiInfo.w,color:GM.COLOR_GRAY}),{align:'left'});
+            this.addDivider(layout?.div);
+            layout?.div && (layout.div=false);
+            des = Utility.fmt_Des(des, stats, total);
+            this.addText(des,{color:GM.COLOR_GRAY});
+            layout && (layout.vspace=true);
         }
         return this;
     }
 
-    addText(text,config)
+    addText(text,{color=GM.COLOR_WHITE,align='left'}={})
     {
-        this.add(bbcText(this.scene,{text:text,wrapWidth:UiInfo.w,...config}),{align:'left'});
+        this.add(bbcText(this.scene,{text:text,wrapWidth:UiInfo.w,color:color}),
+                {align:align});
         return this;
     }
 
-    addMeta(slot)
+    addKV(key, val)
     {
-        const {type,def,atk,range}=slot.dat;
-        if(def)
+        let row = this.scene.rexUI.add.sizer({orientation:'x'});
+        row.add(bbcText(this.scene,{text:key.lab(),color:GM.COLOR_GRAY}))
+            .addSpace()
+            .add(bbcText(this.scene,{text:val}))
+        this.add(row,{expand:true});
+    }
+
+    addMeta(elm)
+    {
+        const {def,atk}=elm.dat;
+        let val = def || atk;
+        let key = def ? GM.DEF.lab() : GM.ATK.lab();
+        if(val)
         {
-            this.addDivider();
-            let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-            sizer.add(bbcText(this.scene,{text:`${def} ${GM.DEF.lab()}`}))
-            this.add(sizer);
-        }
-        else if(atk)
-        {
-            this.addDivider();
-            let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-            sizer.add(bbcText(this.scene,{text:type.lab(),color:'#888'}))
-                .addSpace()
-                .add(bbcText(this.scene,{text:`${atk} ${GM.ATK.lab()}`}))
-                .addSpace()
-                .add(bbcText(this.scene,{text:`${GM.RANGE.lab()} ${range}`,color:'#888'}))
-            this.add(sizer,{expand:true});
+            this.addText(`${val} ${key}`,{align:'center'})
+                .addDivider()
         }
         return this;
     }
 
-    addMods(slot)
+    addMods(elm)
     {
-        if(slot.dat.effects)
+        if(elm.dat.effects)
         {
-            this.addDivider();
-            slot.dat.effects.forEach((eff)=>{
-                this.addMod(eff);
+            elm.dat.effects.forEach((eff)=>{
+                this.addKV(eff.stat, Utility.fmt_Mod(eff));
             })
         }
 
         return this;
     }
 
-    addMod(mod)
+    addProcs(elm, layout)
     {
-        let row = this.scene.rexUI.add.sizer({orientation:'x'});
-        row.add(bbcText(this.scene,{text:mod.stat.lab(),color:'#888'}))
-            .addSpace()
-            .add(bbcText(this.scene,{text:Utility.fmt_mod(mod)}))
-        this.add(row,{expand:true});
-        return this;
-    }
-
-    addProcs(slot)
-    {
-        if(slot.dat.procs)
+        if(elm.dat.procs)
         {
-            this.addDivider();
-            slot.dat.procs.forEach((proc)=>{this.addProc(proc);})
+            this.addDivider(layout?.div);
+            elm.dat.procs.forEach((proc)=>{
+                layout?.vspace && this.addVSpace(15);
+                this.addText(Utility.fmt_Proc(proc),{color:GM.COLOR_GRAY})
+                layout && (layout.vspace = true);
+            })
         }
 
-        return this;
-    }
-
-    addProc(proc)
-    {
-        let text = Utility.fmt_Eff(proc.type.des(),proc)
-        this.addText(text,{color:'#808080'})
         return this;
     }
 
     addActive(elm)
     {
         const proc = elm.dat;
-        let text = Utility.fmt_Eff(ACT_TYPE[proc.type].des(),proc)
-        this.addText(text,{color:'#808080'})
+        let text = Utility.fmt_Active(proc);
+        this.addText(text,{color:GM.COLOR_GRAY})
         return this;
     }
 
-    addStats(slot)
+    addStats(keys, elm)
     {
-        this.addDivider();
-
-        for(let key of GM.ITEMS)
+        for(let key of keys)
         {
-            slot.dat[key] && this.addStat(key,slot.dat[key],slot);
-        }
-
-        if(slot.dat.self)
-        {
-            for(let [key,value] of Object.entries(slot.dat.self))
-            {
-                this.addStat(key,value,slot);
+            let value = elm.dat[key];
+            if(value)
+            {            
+                this.addKV(key,Utility.fmt_Stat(key,value,elm));
             }
-        }
-
-        if(slot.dat.target)
-        {
-            this.addText('\n對目標造成:')
-            for(let [key,value] of Object.entries(slot.dat.target))
-            {
-                this.addStat(key,value,slot);
-            }
-        }
-
-        if(slot.dat.effects)
-        {
-            slot.dat.effects.forEach(eff=>{this.addEff(eff);})
         }
         
         return this;
     }
 
-    addStat(key, value, elm)
+    addMake(elm)
     {
-        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        // sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-        //     .add(bbcText(this.scene,{text:key.lab(),color:'#888'}),{proportion:1})
-        //     .add(bbcText(this.scene,{text:value}),{proportion:0});
-        sizer.add(bbcText(this.scene,{text:key.lab(),color:'#888'}))
-            .addSpace()
-            .add(bbcText(this.scene,{text:Utility.fmt_Stat(key,value,elm)}))
-        this.add(sizer,{expand:true});
-        return this;
-    }
-
-
-    // addTimes(key, value)
-    // {
-    //     let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-    //     sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-    //         .add(bbcText(this.scene,{text:`${key.lab()} : `, color:'#888'}))
-    //         .add(bbcText(this.scene,{text:value}));
-    //     this.add(sizer,{expand:true});
-    //     return this;
-    // }
-
-    addMake(slot)
-    {
-        if(!slot.dat.make) {return this;}
+        if(!elm.dat.make) {return this;}
         this.addDivider();
         let text = `[color=yellow]${'required'.lab()}[/color]\n`;
-        Object.entries(slot.dat.make.items).forEach(([key,value])=>{
+        Object.entries(elm.dat.make.items).forEach(([key,value])=>{
             text+=`- ${key.lab()} (${value})\n`;
         });
         this.add(bbcText(this.scene,{text:text}),{expand:true});
         return this;
     }
 
-    addGold(slot)
+    addGold(elm)
     {
-        if(slot.dat.gold)
+        if(elm.dat.gold)
         {
             let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
-            let text = `\n[color=yellow][img=gold][/color] ${(slot.content.count??1)*slot.dat.gold}`
+            let text = `\n[color=yellow][img=gold][/color] ${(elm.content.count??1)*elm.dat.gold}`
             this.add(bbcText(this.scene,{text:text,images:images}),{align:'right'});
         }
 
@@ -1444,96 +1378,53 @@ export class UiInfo extends Sizer
 
     addCd(skill)
     {
-        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-        sizer//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
+        let row = this.scene.rexUI.add.sizer({orientation:'x'});
+        row//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
             .add(bbcText(this.scene,{text:skill.dat.type.lab()}))
             .addSpace()
         if(skill.dat.cd)
         {
-            sizer.add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
+            row.add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
         }
         this.addDivider();
-        this.add(sizer,{expand:true});
+        this.add(row,{expand:true});
         return this;
     }
 
-    getStats(stats)
+    ifSkill(elm)
     {
-        if(!stats) {return;}
-        let str='';
-        for(let[key,val] of Object.entries(stats))
-        {
-            str += `${key.lab()}${Utility.fmt_Stat(key,val)}`
-        }
-        return str;
-    }
-
-    addEff(eff, isActive)
-    {
-        console.log(eff, isActive)
-        if(isActive)
-        {
-            this.addText(Utility.fmt_Eff(('act_'+eff.type).des(), eff),{color:GM.COLOR_GRAY});
-        }
-        else
-        {
-            this.addVSpace(20);
-            this.addText(Utility.fmt_Eff(eff.type.des(), eff),{color:GM.COLOR_GRAY});
+        let config = {
+            des : elm.dat[this.lang]?.des,
+            stats : elm.dat,
+            total : getPlayer().total,
         }
 
-        if(eff.type==='buff')
-        {
-            for(let[key,val] of Object.entries(eff.stats))
-            {
-                let text = `${key.lab()}${Utility.fmt_Stat(key,val)}`;
-                this.add(bbcText(this.scene,{text:text,color:GM.COLOR_GRAY}),{align:'left'})
-            }
-        }
-    }
+        let layout = {div:true, vspace:false}
 
-    addEff(eff)
-    {
-        this.addVSpace(20);
-        this.addText(`${eff.stat.lab()} ${eff.m}`,{color:GM.COLOR_GRAY});
-    }
-
-    addSkill(elm)
-    {
-        // console.log(elm.dat)
         this.addTitle(elm)
             .addCd(elm)
-            .addDivider();
-        if(elm.dat[GM.RANGE]) {this.addStat(GM.RANGE, elm.dat[GM.RANGE]);}
-        if(elm.dat[this.lang]?.des)
-        {
-            let self = this.getStats(elm.dat.self);
-            let target = this.getStats(elm.dat.target)
-            this.addDes(elm.dat[this.lang]?.des, elm.dat, self, target);
-        }
-        if(elm.dat.effects)
-        {
-            this.addVSpace(20)
-            elm.dat.effects.forEach(eff=>{this.addEff(eff, false);})
-        }
+            .addStats([GM.RANGE], elm)
+            .addDes(config.des, config, layout)
+            .addProcs(elm, layout)
     }
 
 
-    addEffect(elm)
+    ifActive(elm)
     {
-        let eff = elm.dat;
-        this.addText(eff.tag.lab())
+        let tag = elm.dat.tag;
+        this.addText(tag.lab(),{align:'center'})
             .addDivider()
-            // .addEff(eff, true)
             .addActive(elm)
     }
 
-    addSlot(elm)
+    ifSlot(elm)
     {
         this.addTitle(elm)
             .addCat(elm)
             .addMeta(elm)
+            .addStats([GM.RANGE], elm)
             .addMods(elm)
-            // .addStats(elm)
+            .addStats(GM.ITEMS, elm)
             .addProcs(elm)
             .addMake(elm)
             .addDes(elm.dat[this.lang].des)
@@ -1547,27 +1438,28 @@ export class UiInfo extends Sizer
 
         switch(type)
         {
-            case GM.TP_SLOT:
-                if(typeof elm.dat === 'object') {this.addSlot(elm);}
-                else {this.add(bbcText(this.scene,{text:elm.dat.lab()}));}
+            case GM.IF_SLOT:
+                if(typeof elm.dat === 'object') {this.ifSlot(elm);}
+                else {this.addText(elm.dat.des(),{align:'center'});}
                 break;
 
-            case GM.TP_PROP:
-                this.add(bbcText(this.scene,{text:elm.p.des()}));
+            case GM.IF_PROP:
+                this.addText(elm.p.des(),{align:'center'});
                 break;
 
-            case GM.TP_BTN:
-                this.add(bbcText(this.scene,{text:elm.key.lab()}));
+            case GM.IF_BTN:
+                this.addText(elm.key.lab(),{align:'center'});
+                // this.addText(elm.key.des());
                 break;
 
-            case GM.TP_SKILL:
-            case GM.TP_SKILL_TB:
-                this.addSkill(elm)
+            case GM.IF_SKILL:
+            case GM.IF_SKILL_TB:
+                this.ifSkill(elm)
                 break;
 
-            case GM.TP_EFFECT:
-            case GM.TP_EFFECT_TB:
-                this.addEffect(elm)
+            case GM.IF_ACTIVE:
+            case GM.IF_ACTIVE_TB:
+                this.ifActive(elm)
                 break;
         }
 
@@ -1592,9 +1484,9 @@ export class UiInfo extends Sizer
 
         switch(tp)
         {
-            case GM.TP_BTN:
-            case GM.TP_EFFECT_TB:
-            case GM.TP_SKILL_TB:
+            case GM.IF_BTN:
+            case GM.IF_ACTIVE_TB:
+            case GM.IF_SKILL_TB:
                 if(elm.y>GM.h/2)
                 {
                     this.setOrigin(0.5,1);
@@ -1839,7 +1731,7 @@ class UiBase extends Sizer
         {
             sizer.p = key;
             sizer.setInteractive()
-                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.TP_PROP,sizer);}) })
+                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,sizer);}) })
                 .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
         }
         return sizer;
@@ -1863,7 +1755,7 @@ class UiBase extends Sizer
         {
             sizer.p = key;
             sizer.setInteractive()
-                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.TP_PROP,sizer);}) })
+                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,sizer);}) })
                 .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
         }
         return sizer;
@@ -2080,7 +1972,7 @@ class Block extends Pic
         .on('pointerout', ()=>{this.out();})
     }
 
-    over() {Ui.delayCall(() => {UiInfo.show(GM.TP_EFFECT,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_ACTIVE,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
 }
@@ -2580,7 +2472,7 @@ export class UiMain extends UiBase
 
     onover(btn)
     {
-        Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN,btn);})
+        Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN,btn);})
     }
 
     onout()
@@ -2924,7 +2816,7 @@ export class UiProfile extends UiBase
             })
 
         tabs.on('button.over', (button, groupName, index)=>{
-            Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN, button)})
+            Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN, button)})
         })
 
         tabs.on('button.out', (button, groupName, index)=>{
@@ -3851,7 +3743,7 @@ export class UiManufacture extends UiBase
     update()
     {
         let itemSel = null;
-        let onover = (item)=>{UiInfo.show(GM.TP_SLOT, item);}
+        let onover = (item)=>{UiInfo.show(GM.IF_SLOT, item);}
         let onout = ()=>{UiInfo.close();}  
         let ondown = (item)=>{
                 if(!this.owner.isFull)
@@ -4275,7 +4167,7 @@ export class UiQuest extends UiBase
             })
 
         tabs.on('button.over', (button, groupName, index)=>{
-            Ui.delayCall(()=>{UiInfo.show(GM.TP_BTN, button)})
+            Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN, button)})
         })
 
         tabs.on('button.out', (button, groupName, index)=>{
@@ -4641,7 +4533,7 @@ export class UiSkill extends UiBase
 
 class Effect extends Pic
 {
-    constructor(scene, w, h, effect, style=GM.TP_EFFECT_TB)
+    constructor(scene, w, h, effect, style=GM.IF_ACTIVE_TB)
     {
         super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
         this.add(bbcText(scene,{text:`[stroke=#000]${effect.remaining}[/stroke]`,fontSize:20,color:'#fff'}),{align:'bottom-center',expand:false})

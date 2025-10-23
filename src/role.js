@@ -383,7 +383,6 @@ class _Action
                 case 'item': this._role.putStorage(reward.id, reward.count); break;
             }
         })
-       
     }
 
     use(ent)
