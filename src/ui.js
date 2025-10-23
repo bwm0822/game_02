@@ -1739,26 +1739,30 @@ class UiBase extends Sizer
 
     stat(key, value, interactive=true)
     {
-        let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+        let row = this.scene.rexUI.add.sizer({orientation:'x'});
 
         if(typeof value !== 'string')
         {
             if(GM.PCT.includes(key)){value=value*100+'%'}
             else {value=value?.toFixed?.(1);}
         }
+        else
+        {
+            value=value.lab();
+        }
 
-        sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
+        row.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
             .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
             .add(bbcText(this.scene,{text:value}))
-        let bg = sizer.getElement('bg').setAlpha(0);
+        let bg = row.getElement('bg').setAlpha(0);
         if(interactive)
         {
-            sizer.p = key;
-            sizer.setInteractive()
-                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,sizer);}) })
+            row.p = key;
+            row.setInteractive()
+                .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,row);}) })
                 .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
         }
-        return sizer;
+        return row;
     }
 
     setTitle(title) {this.getElement('label',true).setText(title);}
@@ -2540,12 +2544,8 @@ export class UiMain extends UiBase
 
     refresh()
     {
-        let player = getPlayer();
         let hp = this.getElement('hp',true);
-        // let life = player.getState('life');
-        // hp.set(life.cur,life.max);
-        // let total = player.getTotalStats();
-        let total = player.total;
+        let total = getPlayer().total;
         hp.set(total.states[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
@@ -4598,7 +4598,6 @@ export class UiEffect extends UiBase
 
     refresh()
     {
-        console.log('------------------------- UiEffect refresh')
         this._main.removeAll(true);
 
         // let effects = this.getOwner()?.rec?.activeEffects;

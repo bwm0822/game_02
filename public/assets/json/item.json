@@ -182,7 +182,7 @@
     "gold": 35,
     "equip": {
       "sprite": "weapons/22",
-      "y": -8,
+      "y": 24,
       "x": 15
     },
     "type": "ranged",

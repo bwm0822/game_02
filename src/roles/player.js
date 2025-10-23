@@ -29,7 +29,7 @@ export class Player extends Role
     get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
-    get total() {return this.bb.total;}
+    // get total() {return this.bb.total;}
     get meta() {return this.bb.meta;}
 
     //------------------------------------------------------
@@ -127,7 +127,7 @@ export class Player extends Role
         return this;
     }
 
-    load() {super.load(); this.emit('equip');}
+    load() {super.load(); this.equip?.();}
 
     // 跳過這一回合
     next() { this._resume();}

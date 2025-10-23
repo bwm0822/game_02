@@ -128,9 +128,6 @@ export let GM =
     OPENBAG : 'openbag',
     MOVE: 'move',
 
-
-
-
     // 基礎屬性
     BASE : ["str", "dex", "con", "int", "luk"],
     STR: "str",
@@ -139,18 +136,16 @@ export let GM =
     INT: "int",
     LUK: "luk",
 
-
     // 戰鬥屬性 
-    COMBAT: ["atk", "def", "range", "hit", "dodge", "critRate", "critDmg", 
-            "acc", "eva", "cri", "crid", "type"],
+    COMBAT: ["atk","def","range","acc","eva","cri","crid","type"],
     HPMAX : "hpMax",        // 生命上限
     ATK : "atk",            // 攻擊
     DEF : "def",            // 防禦
     RANGE: "range",         // 攻擊半徑
-    HIT : "hit",            // 命中
-    DODGE : "dodge",        // 閃避
-    CRITR : "critRate",     // 暴擊率
-    CRITD : "critDmg",      // 暴擊率
+    // HIT : "hit",            // 命中
+    // DODGE : "dodge",        // 閃避
+    // CRITR : "critRate",     // 暴擊率
+    // CRITD : "critDmg",      // 暴擊率
     ACC : "acc",        // 準確
     EVA : "eva",        // 閃避
     CRI : "cri",        // 暴率
@@ -161,7 +156,7 @@ export let GM =
     RANGED : 'ranged',
     MELEE : 'melee',
     
-    PCT: [  "hit","dodge","critRate","pen","mul",
+    PCT: [  "acc","eva","cri","pen",
             "phy_res","fire_res","ice_res","poison_res"],
 
     // 抗性 (Resists)

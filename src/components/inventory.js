@@ -196,6 +196,7 @@ export class Inventory extends Storage
     equip() 
     {
         const {emit}=this.ctx; 
+        emit('equip');
         emit('dirty'); // 更新屬性
     }
 

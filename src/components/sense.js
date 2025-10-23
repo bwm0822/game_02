@@ -27,6 +27,7 @@ export class Sense
     get tag() {return 'sense';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
+    get ctx() {return this._root.ctx;}
 
     //------------------------------------------------------
     //  Public
@@ -66,8 +67,10 @@ export class Sense
 
     inAttackRange(target)
     {
-        let maxTiles=1;
-        return withinTiles(this.pos, target.pos, maxTiles);
+        // let maxTiles=1;
+        const {emit}=this.ctx;
+        const total = emit('total');
+        return withinTiles(this.pos, target.pos, total.range);
     }
 
 

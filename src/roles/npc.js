@@ -78,7 +78,7 @@ export class Npc extends Role
 
         // 載入
         this.load();
-        this.emit('equip');
+        this.equip?.();
     }
 
     async process()

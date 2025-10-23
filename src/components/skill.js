@@ -178,7 +178,7 @@ export class Skill
         
         // 註冊 event
         root.on('useSkill', this._useSkill.bind(this));
-        root.on('update', this._update.bind(this) );
+        root.on('update', this._update.bind(this));
 
         // 共享資料
         root.bb.skills = this._skills;

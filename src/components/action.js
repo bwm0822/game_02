@@ -139,7 +139,7 @@ export class Action
 
     async attack(target, skill)
     {
-        const {bb} = this.ctx;
+
         const onDamage = this._onDamage.bind(this, target, skill);
 
         if(skill?.type==='spell')
@@ -148,7 +148,9 @@ export class Action
         }
         else
         {
-            if(bb.total.type==='ranged') {await this._attack_Ranged(target, onDamage);}
+            const {emit} = this.ctx;
+            const total = emit('total');
+            if(total.type==='ranged') {await this._attack_Ranged(target, onDamage);}
             else {await this._attack_Melee(target, onDamage);}
         }
         return true;

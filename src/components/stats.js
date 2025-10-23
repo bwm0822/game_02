@@ -212,7 +212,6 @@ export class Stats
         // 對上層公開 API
         root.prop('total', this, {getter:this.getTotalStats.bind(this)});
         root.prop('actives', this, '_actives');
-        // root.states = this._states;
         root.addProcs = this.addProcs.bind(this);
         root.takeDamage = this.takeDamage.bind(this);
         root.getTotalStats = this.getTotalStats.bind(this);
@@ -222,10 +221,10 @@ export class Stats
         // root.on('equip', this.getTotalStats.bind(this) );
         root.on('update', this.processProcs.bind(this) );
         root.on('dirty', this._setDirty.bind(this));
-
+        root.on('total', this.getTotalStats.bind(this));
 
         // 綁定時，先跑一次
-        this.getTotalStats();      
+        // this.getTotalStats();      
     }
 
     getTotalStats({fromEnemy, condition, skill}={})
@@ -239,8 +238,6 @@ export class Stats
         if(!this._dirty) {return this._total;} 
         // 重算後，標記為最新
         this._dirty = false; 
-
-        console.log('-------- dirty');
 
         const {bb} = this.ctx;
 
@@ -260,7 +257,7 @@ export class Stats
         // 3) 取得 [裝備] procs
         _procsFromEquips(bb.equips, procs, condition);
 
-        // 4) 計算 [被動技能] 加成
+        // 4) 計算 [技能] 加成
         _modsFromPassiveSkills(bb.skills, mods);
         _modsFromUsingSkill(skill, mods);
         _procsFromUsingSkill(skill, procs);
@@ -285,11 +282,10 @@ export class Stats
         // 10) 最後合併狀態，並確保當前生命值不超過最大值
         this._states[GM.HP] = Math.min(total[GM.HPMAX], this._states[GM.HP]);
         total.states = this._states;
-
-        this._total = total;
-        bb.total = total;
         
-
+        // 11) 儲存 local
+        this._total = total;
+        
         return total;
     }
 
@@ -305,7 +301,7 @@ export class Stats
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
-                emit('text',GM.DODGE.lab(), '#0f0', '#000');
+                emit('text',GM.EVA.lab(), '#0f0', '#000');
                 break;
             case GM.MISS:
                 emit('text',GM.MISS.lab(), '#0f0', '#000');
