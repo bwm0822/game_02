@@ -93,21 +93,7 @@ export class Action
         target.takeDamage(dmg, this._root);
     }
 
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    bind(root)
-    {
-        this._root = root;
-        // 在上層綁定操作介面，提供給其他元件使用
-        
-        // 註冊 event
-        root.on('move', this.move.bind(this));
-        root.on('moveToward', this.moveToward.bind(this));
-        root.on('attack', this.attack.bind(this));
-    }
-
-    async moveToward(target, {maxSteps=1}={})
+    async _moveToward(target, {maxSteps=1}={})
     {
         const {bb,emit} = this.ctx;
 
@@ -129,7 +115,7 @@ export class Action
         return true;
     }
 
-    async move()
+    async _move()
     {
         const {bb} = this.ctx;
         await this._moveTo(bb.path.path[0]);
@@ -137,7 +123,7 @@ export class Action
         if(bb.path.path.length===0) {delete bb.path;}
     }
 
-    async attack(target, skill)
+    async _attack(target, skill)
     {
 
         const onDamage = this._onDamage.bind(this, target, skill);
@@ -155,4 +141,20 @@ export class Action
         }
         return true;
     }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root)
+    {
+        this._root = root;
+        // 在上層綁定操作介面，提供給其他元件使用
+        
+        // 註冊 event
+        root.on('move', this._move.bind(this));
+        root.on('moveToward', this._moveToward.bind(this));
+        root.on('attack', this._attack.bind(this));
+    }
+
+    
 }

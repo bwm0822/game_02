@@ -28,22 +28,12 @@ export class Sense
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
     get ctx() {return this._root.ctx;}
-
+    
     //------------------------------------------------------
-    //  Public
+    //  Local
     //------------------------------------------------------
-    bind(root) 
-    {
-        this._root = root;
-
-        // 註冊 event
-        root.on('sensePlayer', this.sensePlayer.bind(this));
-        root.on('canSee', this.canSee.bind(this));
-        root.on('inAttackRange', this.inAttackRange.bind(this));
-    }
-
     // ---- 感知 ----
-    sensePlayer(maxTiles=8, needSight=true) 
+    _sensePlayer(maxTiles=8, needSight=true) 
     {
 
         // const player = this.role.scene?.roles?.find(r => r.isPlayer);
@@ -59,19 +49,34 @@ export class Sense
         return player;
     }
 
-    canSee(target)
+    _canSee(target)
     {
         const hits = Utility.raycast(this.pos.x, this.pos.y, target.x, target.y, [this.scene.staGroup]);
         return hits.length === 0;
     }
 
-    inAttackRange(target)
+    _inAttackRange(target)
     {
         // let maxTiles=1;
         const {emit}=this.ctx;
         const total = emit('total');
         return withinTiles(this.pos, target.pos, total.range);
     }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root) 
+    {
+        this._root = root;
+
+        // 註冊 event
+        root.on('sensePlayer', this._sensePlayer.bind(this));
+        root.on('canSee', this._canSee.bind(this));
+        root.on('inAttackRange', this._inAttackRange.bind(this));
+    }
+
+    
 
 
 

@@ -201,33 +201,8 @@ export class Stats
         this._dirty = true;
         console.log('---- set as Dirty')
     }
-    
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    bind(root) 
-    {
-        this._root = root;
 
-        // 對上層公開 API
-        root.prop('total', this, {getter:this.getTotalStats.bind(this)});
-        root.prop('actives', this, '_actives');
-        root.addProcs = this.addProcs.bind(this);
-        root.takeDamage = this.takeDamage.bind(this);
-        root.getTotalStats = this.getTotalStats.bind(this);
-
-        // 註冊 event 
-        root.on('heal', this.heal.bind(this) );
-        // root.on('equip', this.getTotalStats.bind(this) );
-        root.on('update', this.processProcs.bind(this) );
-        root.on('dirty', this._setDirty.bind(this));
-        root.on('total', this.getTotalStats.bind(this));
-
-        // 綁定時，先跑一次
-        // this.getTotalStats();      
-    }
-
-    getTotalStats({fromEnemy, condition, skill}={})
+    _getTotalStats({fromEnemy, condition, skill}={})
     {
         // console.log('-------- getTotalStats',fromEnemy, condition, skill);
         // console.trace();
@@ -289,8 +264,7 @@ export class Stats
         return total;
     }
 
-
-    takeDamage(dmg) 
+    _takeDamage(dmg) 
     {
         const {emit}=this.ctx;
         switch(dmg.type)
@@ -316,7 +290,7 @@ export class Stats
         this._states[GM.HP]===0 && emit('dead');
     }
 
-    heal(amount)
+    _heal(amount)
     {
         const {emit}=this.ctx;
         this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
@@ -324,12 +298,12 @@ export class Stats
         // console.log(`${this.name} 回復 ${amount} 點生命`);
     }
 
-    addProcs(procs)
+    _addProcs(procs)
     {
         this._actives.push({...procs,skip:true,remaining:procs.dur});
     }
 
-    processProcs()
+    _processProcs()
     {
         this._actives.forEach((proc)=>{
             if(proc.skip) 
@@ -346,12 +320,12 @@ export class Stats
                     const resist = this._total.resists?.[RESIST_MAP[proc.elm]] || 0;
                     finalDamage *= 1 - resist;
                 }
-                this.takeDamage({amount:finalDamage});
+                this._takeDamage({amount:finalDamage});
             }
             else if (proc.type === GM.HOT) 
             {
                 let finalHeal = proc.value;
-                this.heal(finalHeal);
+                this._heal(finalHeal);
             }
             proc.remaining -= 1;
         });
@@ -367,42 +341,31 @@ export class Stats
         });
 
     }
+    
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root) 
+    {
+        this._root = root;
 
+        // 對上層公開 API
+        root.prop('total', this, {getter:this._getTotalStats.bind(this)});
+        root.prop('actives', this, '_actives');
+        root.addProcs = this._addProcs.bind(this);
+        root.takeDamage = this._takeDamage.bind(this);
+        root.getTotalStats = this._getTotalStats.bind(this);
 
+        // 註冊 event 
+        root.on('heal', this._heal.bind(this) );
+        // root.on('equip', this.getTotalStats.bind(this) );
+        root.on('update', this._processProcs.bind(this) );
+        root.on('dirty', this._setDirty.bind(this));
+        root.on('total', this._getTotalStats.bind(this));
+   
+    }
 
-    // addEffect(effect,types=['hot','dot','buff','debuff'])
-    // {
-    //     if(!types.includes(effect.type)) {return;}
-
-    //     const maxStack = effect.maxStack || 99;
-    //     if (true)//effect.stackable) 
-    //     {
-    //         const existingStacks = this.rec.activeEffects.filter(e => e.tag === effect.tag && e.type === effect.type);
-    //         if (existingStacks.length >= maxStack) {
-    //             console.log(`${this.name} 的 ${effect.tag} 疊層已達上限 (${maxStack})`);
-    //             return;
-    //         }
-    //         const newEff = { ...effect, remaining: effect.dur, newAdd:true };
-    //         this.rec.activeEffects.push(newEff);
-    //         console.log(`${this.name} 疊加 ${effect.tag} 效果（第 ${existingStacks.length + 1} 層）`);
-    //     } 
-    //     else 
-    //     {
-    //         const existing = this.rec.activeEffects.find(e => e.tag === effect.tag && e.type === effect.type);
-    //         if (existing) 
-    //         {
-    //             existing.remaining = effect.duration;
-    //             existing.value = effect.value;
-    //             console.log(`${this.name} 的 ${effect.tag} 效果已刷新`);
-    //         } 
-    //         else 
-    //         {
-    //             const newEff = { ...effect, remaining: effect.dur, newAdd:true };
-    //             this.rec.activeEffects.push(newEff);
-    //             console.log(`${this.name} 獲得 ${effect.type}：${effect.stat || effect.tag} ${effect.value * 100 || effect.value}% 持續 ${effect.duration} 回合`);
-    //         }
-    //     }
-    // }
+    
 
     
 }

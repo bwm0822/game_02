@@ -29,29 +29,8 @@ export class Storage
         return i;
     }
 
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    bind(root)
-    {
-        this._root = root;
-        
-        // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('storage', this, '_storage');
-        root.put = this.put.bind(this);
-        root.take = this.take.bind(this);
-        root.split = this.split.bind(this);
-        root.drop = this.drop.bind(this);
-    }
 
-    //------------------------------------------------------
-    // 提供 載入、儲存的功能，上層會呼叫
-    //------------------------------------------------------
-    load(data) {Object.assign(this._storage, data.storage);}
-    save() {return {storage:this._storage};}
-
-
-    put(id, count)
+    _put(id, count)
     {
         let cps = DB.item(id).cps ?? 1;
 
@@ -94,7 +73,7 @@ export class Storage
     }
 
 
-    take(ent, i)
+    _take(ent, i)
     {
         !i && (i = this._findEmpty());
 
@@ -110,7 +89,7 @@ export class Storage
         }
     }
 
-    split(ent, cnt)
+    _split(ent, cnt)
     {
         console.log('---- split')
         ent.itm.count -= cnt;
@@ -123,10 +102,34 @@ export class Storage
         console.log( this._storage)
     }
 
-    drop()
+    _drop()
     {
         console.log('drop')
     }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root)
+    {
+        this._root = root;
+        
+        // 在上層綁定操作介面，提供給其他元件使用
+        root.prop('storage', this, '_storage');
+        root.put = this._put.bind(this);
+        root.take = this._take.bind(this);
+        root.split = this._split.bind(this);
+        root.drop = this._drop.bind(this);
+    }
+
+    //------------------------------------------------------
+    // 提供 載入、儲存的功能，上層會呼叫
+    //------------------------------------------------------
+    load(data) {Object.assign(this._storage, data.storage);}
+    save() {return {storage:this._storage};}
+
+
+    
 
 }
 
@@ -162,6 +165,15 @@ export class Inventory extends Storage
         })       
     }
 
+    // _getEquipped() { return this._equips.filter(Boolean); }
+
+    _equip() 
+    {
+        const {emit}=this.ctx; 
+        emit('equip');
+        emit('dirty'); // 更新屬性
+    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -172,7 +184,7 @@ export class Inventory extends Storage
         // 在上層綁定操作介面，提供給外部使用
         root.prop('equips', this, '_equips');
         root.prop('gold', this, '_gold');
-        root.equip = this.equip.bind(this);
+        root.equip = this._equip.bind(this);
         root.receive = this._receive.bind(this);
 
         // 共享裝備資料
@@ -190,15 +202,4 @@ export class Inventory extends Storage
 
     save() {return {storage:this._storage, equips:this._equips};}
 
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    equip() 
-    {
-        const {emit}=this.ctx; 
-        emit('equip');
-        emit('dirty'); // 更新屬性
-    }
-
-    getEquipped() { return this._equips.filter(Boolean); }
 }

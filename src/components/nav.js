@@ -12,6 +12,15 @@ export class Nav
     get bb() {return this._root.bb;}
 
     get map() {return this._root.scene.map;}
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _findPath(ep)
+    {
+        let rst = this.map.getPath(this.pos, [ep]);
+        // rst = {state:1,path:[]}
+        this.bb.path = rst;
+    }
 
     //------------------------------------------------------
     //  Public
@@ -22,15 +31,10 @@ export class Nav
         // 在上層綁定操作介面，提供給外部件使用
         
         // 註冊 event
-        root.on('findPath', this.findPath.bind(this))
+        root.on('findPath', this._findPath.bind(this))
     }
 
-    findPath(ep)
-    {
-        let rst = this.map.getPath(this.pos, [ep]);
-        // rst = {state:1,path:[]}
-        this.bb.path = rst;
-    }
+
 
 
 }

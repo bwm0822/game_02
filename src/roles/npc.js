@@ -3,7 +3,7 @@ import {Inventory} from '../components/inventory.js'
 import {Anim} from '../components/anim.js'
 import {Action} from '../components/action.js'
 import {Nav} from '../components/nav.js'
-import {AiBase, AIController} from '../components/ai/ai.js'
+import {AIController} from '../components/ai/ai.js'
 import {Sense} from '../components/sense.js';
 import {Disp} from '../components/disp.js'
 import DB from '../db.js'

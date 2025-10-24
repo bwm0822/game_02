@@ -64,16 +64,7 @@ export class Disp
         if(!this._busy) {this._show();}
     }
 
-    //------------------------------------------------------
-    //  Public
-    //------------------------------------------------------
-    bind(root)
-    {
-        this._root = root;
-        // 在上層綁定操作介面，提供給其他元件使用
-        // 註冊 event
-        root.on('text', this._text.bind(this));
-    }
+
 
     // 等待 所有 disp 都結束
     async wait()
@@ -84,8 +75,6 @@ export class Disp
         this._promises=[];
     }
 
-
-    
     async skill(skill)
     {
         let sp = sprite(this._role.scene,{icon:skill.dat.icon});
@@ -154,4 +143,17 @@ export class Disp
         }
 
     }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root)
+    {
+        this._root = root;
+        // 在上層綁定操作介面，提供給其他元件使用
+        // 註冊 event
+        root.on('text', this._text.bind(this));
+    }
+
+    
 }
