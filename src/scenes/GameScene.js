@@ -4,7 +4,8 @@ import Map from '../map.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import QuestManager from  '../quest.js';
-import {Pickup} from '../entity.js';
+// import {Pickup} from '../entity.js';
+import {Pickup} from '../items/pickup.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade, UiStorage, UiInv, UiMessage, 
         UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture, UiCover} from '../ui.js'
@@ -91,7 +92,7 @@ export class GameScene extends Scene
         let objs = Record.data.scenes?.[this._data.map]?.runtime;
         if(objs)
         {
-            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj.slot);});
+            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj);});
             Record.data.scenes[this._data.map].runtime = [];
         }
     }

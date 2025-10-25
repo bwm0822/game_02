@@ -1,5 +1,6 @@
 import Utility from '../utility.js';
 import DB from '../db.js';
+import {Pickup} from '../items/pickup.js';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -14,6 +15,8 @@ export class Storage
     }
 
     get tag() {return 'inv';}   // 回傳元件的標籤
+    get scene() {return this._root.scene;}
+    get pos() {return this._root.pos;}
 
     //------------------------------------------------------
     //  Local
@@ -67,7 +70,7 @@ export class Storage
         if(count>0)
         {
             let ent = {label:id.lab(),itm:{id:id,count:count}}
-            this.drop(ent)
+            this._drop(ent)
         }
         
     }
@@ -75,11 +78,14 @@ export class Storage
 
     _take(ent, i)
     {
+        console.log("take",ent,i);
+
         !i && (i = this._findEmpty());
 
         if(i!=-1)
         {
-            this._storage.items[i]=ent.itm;
+            console.log(i,ent.content)
+            this._storage.items[i]=ent.content;
             return true;
         }
         else
@@ -102,9 +108,14 @@ export class Storage
         console.log( this._storage)
     }
 
-    _drop()
+    _drop(ent)
     {
-        console.log('drop')
+        console.log('drop',ent)
+        let p = this.scene.map.getValidPoint(this.pos);
+        let obj = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
+        obj.falling(p);
+        // AudioManager.drop();
+        // this._send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
     }
 
     //------------------------------------------------------

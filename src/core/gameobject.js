@@ -1,5 +1,6 @@
-import {Evt} from './event.js';
+import {Evt} from './event.js'
 import Record from '../record.js'
+import {Pickup} from '../items/pickup.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -7,8 +8,8 @@ import Record from '../record.js'
 //  1. 提供 元件庫、載入、儲存的功能
 //  2. 提供 blackboard，讓元件共享資訊
 //  3. 提供 事件監聽與觸發的功能(Evt)
+//  4. 提供 drop / falling
 //--------------------------------------------------
-
 export class GameObject
 {
     constructor(scene,x,y)
@@ -85,8 +86,38 @@ export class GameObject
         this.on('over', this._onover.bind(this))
         this.on('out', this._onout.bind(this))
         this.on('down', this._ondown.bind(this))
+
+        // 加入 List
+        this._addToList();
     }
 
+    _isRemoved()
+    {
+        let data = this._loadData();
+        if(data?.removed) {this._remove(); return true;}
+        return false;
+    }
+
+    _remove()
+    { 
+        this._removeFromList();
+
+        // 1) 如果是 prefab，將 removed 設成 true
+        if(this.uid!==-1) {this._saveData({removed:true})}
+
+        // 2) 銷毀所有元件（如果元件有自帶 unbind 方法）
+        for (let key in this._coms) {this._coms[key].unbind?.();}
+        this._coms = null;
+
+        // 3) 銷毀視覺實體
+        if(this._ent) {this._ent.destroy(true); this._ent=null;} 
+
+        // 4) 清空共享資料（可選）
+        this._bb = null;
+
+        // 5) 移除場景引用，讓 GC 可以回收
+        this.scene = null;
+    }
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -98,16 +129,6 @@ export class GameObject
     // aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
 
     // 讓元件在 root 加入 prop
-    // prop(name, target, key)
-    // {
-    //     Object.defineProperty(this, name, {
-    //         get: () => target[key],
-    //         set: v => { target[key] = v; },
-    //         enumerable: true,
-    //         configurable: true
-    //     });
-    // }
-
     prop(name, target, config) 
     { 
         let key, getter, setter;
@@ -122,7 +143,7 @@ export class GameObject
     }
     
     // 插入元件(component)
-    add(com, config={})
+    addCom(com, config={})
     {   
         this.coms[com.tag] = com;
         com.bind?.(this, config);
@@ -130,7 +151,7 @@ export class GameObject
     }
 
     // 拔除元件(component)
-    remove(tag)
+    rmCom(tag)
     {
         this.coms[tag]?.unbind?.(this);
         delete this.coms[tag];
@@ -144,9 +165,8 @@ export class GameObject
     }
 
     // 儲存資料
-    save() 
+    save(data={}) 
     { 
-        let data = {};
         for(let com of Object.values(this.coms)) {data = {...data,...com.save?.()}}
         this._saveData(data); 
     }
@@ -157,12 +177,42 @@ export class GameObject
         let depth = this.y;
         this.ent.setDepth(depth);
     }
+
+    falling(p)
+    {
+        this.emit('removeWeight');
+        this.emit('addWeight',p);
+
+        let tx = (this.x+p.x)/2;
+        let ty = this.y-32;
+
+        // let a = Phaser.Math.Between(-45, 45);
+
+        // this.scene.tweens.chain({
+        //     targets: this._ent,
+        //     tweens:[{angle:a, duration:100, ease:'linear'},
+        //             {angle:2*a, duration:100, ease:'linear'}]
+        // });
+
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{x:tx, duration:100, ease:'linear'},
+                    {x:p.x, duration:100, ease:'linear'}]
+        });
+
+        this.scene.tweens.chain({
+            targets: this,
+            tweens:[{y:ty, duration:100, ease:'exp.out'},
+                    {y:p.y, duration:100, ease:'exp.in'}]
+        });
+    }
+
     //------------------------------------------------------
     // abstract mehod
     //------------------------------------------------------
     get acts() {}
     get act() {}
     init_prefab() {}
-
+    
     
 }

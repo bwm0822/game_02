@@ -67,7 +67,6 @@ export class Player extends Role
     {
         console.log('---- dead ----')
         this.isAlive = false;
-        this._removeFromList();
         this._unregisterTimeManager();
         this._send('gameover');
     }
@@ -77,19 +76,18 @@ export class Player extends Role
     //------------------------------------------------------
     init_prefab()
     {     
-        this._addToList();
         this._registerTimeManager()
 
         this.bb.meta = DB.role(this.bb.id);    // 取得roleD，放入bb，view 元件會用到
 
         // 加入元件
-        this.add(new RoleView(this.scene),{modify:true})
-            .add(new Inventory())
-            .add(new Anim())
-            .add(new Action())
-            .add(new Nav())
-            .add(new Sense())
-            .add(new Stats())
+        this.addCom(new RoleView(this.scene),{modify:true})
+            .addCom(new Inventory())
+            .addCom(new Anim())
+            .addCom(new Action())
+            .addCom(new Nav())
+            .addCom(new Sense())
+            .addCom(new Stats())
 
         // 載入
         this.load();
@@ -97,27 +95,26 @@ export class Player extends Role
 
     init_runtime(id)
     {     
-        this._addToList();
         // 註冊 TimeManager
         this._registerTimeManager()
 
         this.bb.id = id;
-        this.bb.meta = DB.role(id);     // 取得roleD，放入bb，view 元件會用到
+        this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
         this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
         this.bb.interactive = true;     // 設成 可互動，view 元件會參考
 
         // 加入元件
-        this.add(new RoleView(this.scene),{modify:false})
-            .add(new Inventory())
-            .add(new Anim())
-            .add(new Action())
-            .add(new Nav())
-            .add(new Sense())
-            .add(new Stats())
-            .add(new Disp())
-            .add(new Skill())
-            .add(new SkillTree())
-            .add(new SkillSlots())
+        this.addCom(new RoleView(this.scene),{modify:false})
+            .addCom(new Inventory())
+            .addCom(new Anim())
+            .addCom(new Action())
+            .addCom(new Nav())
+            .addCom(new Sense())
+            .addCom(new Stats())
+            .addCom(new Disp())
+            .addCom(new Skill())
+            .addCom(new SkillTree())
+            .addCom(new SkillSlots())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
@@ -164,8 +161,6 @@ export class Player extends Role
     }
 
     isInteractive() {return true;}
-
-    
 
     async process()
     {

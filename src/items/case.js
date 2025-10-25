@@ -5,7 +5,7 @@ import {GameObject} from '../core/gameobject.js';
 
 export class Box extends GameObject
 {
-    get acts() {return ['open']}
+    get acts() {return [GM.OPEN]}
     get act() {return this.acts[0];}
 
     //------------------------------------------------------
@@ -26,8 +26,8 @@ export class Box extends GameObject
         this._addToList();
 
         // 加入元件  
-        this.add( new ItemView(this.scene), {modify:true} )
-            .add( new Storage() )
+        this.addCom( new ItemView(this.scene), {modify:true} )
+            .addCom( new Storage() )
 
         // 載入
         this.load();
@@ -37,11 +37,4 @@ export class Box extends GameObject
 
     }
 
-
-
-
-
-
-
-    
 }

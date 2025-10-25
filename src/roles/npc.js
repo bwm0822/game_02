@@ -40,9 +40,8 @@ export class Npc extends Role
 
     _remove()
     {
-        this._removeFromList();
         this._unregisterTimeManager();
-        this._ent.destroy();
+        super._remove();
     }
 
     _dead()
@@ -56,22 +55,23 @@ export class Npc extends Role
     //------------------------------------------------------
     init_prefab()
     {     
-        this._addToList();
+        if(this._isRemoved()) {return;}
+
         this._registerTimeManager();
 
         // 取得roleD，放入bb，view元件會用到
         this.bb.meta = DB.role(this.bb.id);
 
         // 加入元件
-        this.add(new RoleView(this.scene),{modify:true})
-            .add(new Inventory(this.bb.meta))
-            .add(new Anim())
-            .add(new Action())
-            .add(new Nav())
-            .add(new AIController())
-            .add(new Sense())
-            .add(new Stats())
-            .add(new Disp())
+        this.addCom(new RoleView(this.scene),{modify:true})
+            .addCom(new Inventory(this.bb.meta))
+            .addCom(new Anim())
+            .addCom(new Action())
+            .addCom(new Nav())
+            .addCom(new AIController())
+            .addCom(new Sense())
+            .addCom(new Stats())
+            .addCom(new Disp())
 
         // 註冊 event
         this.on('dead', this._dead.bind(this));

@@ -134,8 +134,9 @@ class View extends Phaser.GameObjects.Container
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;     // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
         this.anchorX = 0;           // 錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
         this.anchorY = 0;           // 錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角 
-        this.key = null;
-        this.frame = null;
+        
+        this.key = null;            // sprite 的 key
+        this.frame = null;          // sprite 的 frame
     }
 
     get tag() {return 'view';}          // 回傳元件的標籤
@@ -283,6 +284,7 @@ class View extends Phaser.GameObjects.Container
             this.body=null;
         }
     }
+
     //--------------------------------------------------
     // 設定 anchor
     //--------------------------------------------------
@@ -369,10 +371,13 @@ class View extends Phaser.GameObjects.Container
         root.isTouch = this.isTouch;
         // 註冊 event
         root.on('view',()=>{return this;})
+        root.on('removeWeight', this._removeWeight.bind(this));
+        root.on('addWeight', this._addWeight.bind(this));
     }
 
-    isTouch() {return true;}
 
+
+    isTouch() {return true;}
     //--------------------------------------------------
     // virtual method
     //--------------------------------------------------
@@ -402,8 +407,15 @@ export class ItemView extends View
         {
             let sp = this.scene.add.sprite(0,0,this.key,this.frame);
             sp.setPipeline('Light2D');
-            sp.displayWidth = this.wid;
-            sp.displayHeight = this.hei;
+            if(this.scale)
+            {
+                sp.setScale(this.scale);
+            }
+            else
+            {
+                sp.displayWidth = this.wid;
+                sp.displayHeight = this.hei;
+            }
             // sp.flipX = this._tmp.flipX;
             // sp.flipY = this._tmp.flipY;
             this.add(sp);
@@ -412,6 +424,12 @@ export class ItemView extends View
 
         return this;
     }
+
+    //--------------------------------------------------
+    // public
+    //--------------------------------------------------
+    unbind() {this._remove();}
+
 }
 
 
@@ -423,8 +441,8 @@ export class RoleView extends View
     //--------------------------------------------------
     _setData()
     {
-        this.meta={};      // 新增 roleD
-        super._setData();   // 從 bb 取得 roldD
+        this.meta={};      // 新增 meta(roleD)
+        super._setData();   // 從 bb 取得 meta(releD)
         
         this._faceR = this.meta.faceR;
 
@@ -547,8 +565,7 @@ export class RoleView extends View
         // 註冊 event
         root.on('equip', this.equip.bind(this));
         root.on('face', this._faceTo.bind(this));
-        root.on('removeWeight', this._removeWeight.bind(this));
-        root.on('addWeight', this._addWeight.bind(this));
+
         root.on('updateDepth', this._updateDepth.bind(this));
         root.on('dead', this._dead.bind(this));
         root.on('fadout', this._fadout.bind(this));

@@ -1,5 +1,6 @@
 import {Store} from './store.js';
-import {Entity,Port,Pickup,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
+import {Entity,Port,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
+import {Pickup} from './items/pickup.js';
 import {Npc, Enemy} from './role.js';
 import Utility from './utility.js';
 import QuestManager from './quest.js';
