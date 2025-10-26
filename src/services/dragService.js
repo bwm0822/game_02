@@ -5,7 +5,6 @@ import InventoryService from './inventoryService.js';
 
 export default class DragService 
 {
-    static _scene = null;
     static _downOnSlot = false;
     
     // ---  拖曳 Slot ---
@@ -134,9 +133,7 @@ export default class DragService
     ////////////////////////////////////////////////////////////////
     static init(scene) 
     {
-        if (this._scene) return;    // 防止重複 init()
-        this._scene = scene;
-
+        // 切換場景時，scene.input會被清除，所以 scene.input 要再設一次
         scene.input.on('pointermove', (pointer) => {this._onpointermove(pointer);});
 
         scene.input.on('pointerup', (pointer) => {this._onpointerup(pointer);});

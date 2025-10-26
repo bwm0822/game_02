@@ -1,0 +1,58 @@
+import DB from '../db.js'
+import Record from '../record.js'
+import {GM} from '../setting.js';
+
+//--------------------------------------------------
+// 類別 : 元件(component) 
+// 標籤 : pick
+// 功能 : 
+//  提供拾取功能
+//--------------------------------------------------
+
+export class Pickable
+{
+    get tag() {return 'pick';}   // 回傳元件的標籤
+    get ctx() {return this._root.ctx;}
+    get content() {return this._content;}                   // gameObject 的內容
+    get label() {return this._dat[Record.data.lang].lab;}   // gameObject 的名稱
+
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _pickup(taker)
+    {
+        if(taker.take(this))
+        {
+            const {emit}=this.ctx;
+            emit('msg',`${'_pickup'.lab()} ${this.label}`)
+            emit('out');
+            emit('refresh');
+            emit('remove');
+        }   
+    }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root)
+    {
+        this._root = root;
+
+        const {bb} = this.ctx;
+        this._content = {id:bb.id, count:bb.count??1};
+        this._dat = DB.item(bb.id);
+
+        // 在上層綁定操作介面，提供給外部件使用
+        root.prop('content', this, '_content')
+        
+        // 註冊 event
+        // 提供給外界操作
+        root.on(GM.TAKE, (resolve,taker)=>{this._pickup(taker);resolve?.();})
+    }
+
+    save() {return this._content;}
+
+
+
+
+}

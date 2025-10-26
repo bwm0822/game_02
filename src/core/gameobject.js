@@ -1,6 +1,6 @@
+
 import {Evt} from './event.js'
 import Record from '../record.js'
-import {Pickup} from '../items/pickup.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -35,6 +35,7 @@ export class GameObject
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     // get ctx() {return {...this.coms,bb:this.bb};}
     get ctx() {return {bb:this.bb, emit:this.emit.bind(this), aEmit:this.aEmit.bind(this)};}
+
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
     //------------------------------------------------------
@@ -82,10 +83,17 @@ export class GameObject
     {
         // 提供事件監聽與觸發的功能(Evt)
         this._evt = new Evt();  
+
         // view 會觸發
         this.on('over', this._onover.bind(this))
         this.on('out', this._onout.bind(this))
         this.on('down', this._ondown.bind(this))
+        
+        // 發送 msg
+        this.on('msg', (args)=>{this._send('msg',args)})
+
+        // 移除 gameObject
+        this.on('remove', this._remove.bind(this));
 
         // 加入 List
         this._addToList();
@@ -118,6 +126,7 @@ export class GameObject
         // 5) 移除場景引用，讓 GC 可以回收
         this.scene = null;
     }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------

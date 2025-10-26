@@ -320,14 +320,13 @@ export class GameScene extends Scene
 
     mainMenu()
     {
+        console.log('------------------------ mainMenu')
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
         AudioManager.bgmPause();
-
     }
 
-    
     restart()
     {
         console.log('------------------------ restart')
@@ -393,7 +392,8 @@ export class GameScene extends Scene
     }
 
     setEvent()
-    {
+    {        
+        // 切換場景時，this.events不會被清除，所以設過後就無須再設
         if(!this._done)
         {
             this._done = true;
@@ -411,8 +411,8 @@ export class GameScene extends Scene
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
-                
         }
+
 
         const ui = this.scene.get('UI');
         ui.events
