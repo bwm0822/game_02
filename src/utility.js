@@ -240,7 +240,7 @@ export default class Utility
             case GM.ENDURANCE: return this.tick2Str(elm.content[key]);
             case GM.STORAGE: return `${this.getStorageCount(elm.content[key])}[size=18]/${val}[/size]`;
             case GM.CAPACITY:
-            case GM.TIMES: return `${elm.content[key]}[size=18]/${val.max}[/size]`;
+            case GM.TIMES: return `${elm.content[key]}[size=18]/${val}[/size]`;
             default:
                 if(typeof val === 'number')
                 {

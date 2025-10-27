@@ -175,7 +175,7 @@ export class Inventory extends Storage
             switch(reward.type)
             {
                 case 'gold': this._gold+=reward.count; break;
-                case 'item': this.put(reward.id, reward.count); break;
+                case 'item': this._put(reward.id, reward.count); break;
             }
         })       
     }

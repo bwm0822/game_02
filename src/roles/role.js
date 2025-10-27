@@ -1,5 +1,6 @@
 import {GameObject} from '../core/gameobject.js'
 import TimeManager from '../time.js'
+import {GM} from '../setting.js'
 
 
 export class Role extends GameObject
@@ -33,8 +34,39 @@ export class Role extends GameObject
         
     _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
 
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    use(ent)
+    {
+        // console.log(ent.content, ent.dat)
 
+        const list=[GM.TIMES, GM.CAPACITY];
+        let key = Object.keys(ent.dat).find(key=>list.includes(key));
+
+        if(!key || ent.content[key]>0)
+        {
+            ent.dat.effects.forEach(eff=>{
+                switch(eff.stat)
+                {
+                    case GM.HP: this.emit('heal', eff); break;
+                }
+            })
+
+            if(key) 
+            {
+                if(--ent.content[key]===0 && !ent.dat[GM.KEEP])
+                {
+                    ent.content.count--;
+                }
+            }
+            else
+            {
+                ent.content.count--;
+            }
+        }
+
+        if(ent.content.count<=0) {ent.empty();}
+    }
 }

@@ -184,11 +184,14 @@ export class Player extends Role
             }
             else
             {
-                await this.aEmit('move');
                 if(bb.ent && bb.path?.path.length===1)
                 {
                     delete bb.path;
                     await this._interact(bb.ent,bb.act);
+                }
+                else
+                {
+                    await this.aEmit('move');
                 }
             }
         }

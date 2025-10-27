@@ -194,6 +194,8 @@ export let GM =
     STORAGE : 'storage',
     CAPACITY : 'capacity',
     TIMES : 'times',
+    DFT: 'dft',     // 預設值
+    KEEP: 'keep',   // 
     
     // 屬性
     P_ATTACK : 'attack',

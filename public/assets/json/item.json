@@ -462,10 +462,7 @@
     "cat": "CAT_EQUIP",
     "icon": "icons/170",
     "gold": 10,
-    "endurance": {
-      "cur": 360,
-      "max": 360
-    },
+    "endurance": 360,
     "tw": {
       "lab": "火把",
       "des": "可以照明"
@@ -479,10 +476,16 @@
     "cat": "CAT_ITEM",
     "icon": "icons/307",
     "gold": 10,
-    "capacity": {
-      "cur": 3,
-      "max": 10
-    },
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "hp",
+        "m": 0.1
+      }
+    ],
+    "useable": true,
+    "capacity": 10,
+    "dft": 3,
     "tw": {
       "lab": "水壺",
       "des": "可以裝水"

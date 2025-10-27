@@ -237,20 +237,21 @@ class Slot extends Icon
         this.setBar(false);
         this.setProgress(false);
         this.setTimes(false);
-        if(this.dat?.endurance)
+
+        if(this.dat) 
         {
-            if(content.endurance===undefined) {content.endurance=this.dat.endurance.cur;}
-            this.setBar(true,content.endurance,this.dat.endurance.max);
-        }
-        if(this.dat?.capacity)
-        {
-            if(content.capacity===undefined) {content.capacity=this.dat.capacity.cur;}
-            this.setProgress(true,content.capacity,this.dat.capacity.max);
-        }
-        if(this.dat?.times)
-        {
-            if(content.times===undefined) {content.times=this.dat.times.cur;}
-            this.setTimes(true,content.times,this.dat.times.max);
+            const list = [GM.ENDURANCE, GM.CAPACITY, GM.TIMES];
+            const fmap = {  [GM.ENDURANCE] : this.setBar.bind(this),
+                            [GM.CAPACITY] : this.setProgress.bind(this),
+                            [GM.TIMES] : this.setTimes.bind(this)    };
+
+            list.forEach(key=>{
+                if(this.dat?.[key])
+                {
+                    if(content[key]===undefined) {content[key]=this.dat[GM.DFT]??this.dat[key];}
+                    fmap[key](true, content[key], this.dat[key]);
+                }
+            })
         }
     }
 

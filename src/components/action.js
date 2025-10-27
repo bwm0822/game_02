@@ -125,7 +125,6 @@ export class Action
 
     async _attack(target, skill)
     {
-
         const onDamage = this._onDamage.bind(this, target, skill);
 
         if(skill?.type==='spell')

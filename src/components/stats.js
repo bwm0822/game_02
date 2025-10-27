@@ -290,8 +290,13 @@ export class Stats
         this._states[GM.HP]===0 && emit('dead');
     }
 
+    // amount = number or {a,m}
     _heal(amount)
     {
+        if(typeof amount!=='number')
+        {
+            amount = (amount.a??0) + (amount.m??0)*this._total[GM.HPMAX];
+        }
         const {emit}=this.ctx;
         this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
         emit('text',`+${amount}`, '#0f0', '#000');
@@ -341,7 +346,6 @@ export class Stats
         });
 
     }
-    
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -358,7 +362,6 @@ export class Stats
 
         // 註冊 event 
         root.on('heal', this._heal.bind(this) );
-        // root.on('equip', this.getTotalStats.bind(this) );
         root.on('update', this._processProcs.bind(this) );
         root.on('dirty', this._setDirty.bind(this));
         root.on('total', this._getTotalStats.bind(this));
