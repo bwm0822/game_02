@@ -6,9 +6,9 @@ import {Nav} from '../components/nav.js'
 import {Sense} from '../components/sense.js'
 import {Stats} from '../components/stats.js'
 import {Disp} from '../components/disp.js'
-import {Skill} from '../components/skill.js'
-import {SkillTree} from '../components/skilltree.js'
-import {SkillSlots} from '../components/skillslots.js'
+import {Skill} from '../components/ability.js'
+import {SkillTree} from '../components/abilitytree.js'
+import {SkillSlots} from '../components/abilityslots.js'
 
 import DB from '../db.js'
 import Record from '../record.js'
@@ -56,7 +56,8 @@ export class Player extends Role
         if(!act) {return;}
         if(ent) {this.emit('face',ent.pos);}
 
-        return new Promise((resolve)=>{ent.emit(act, resolve, this);});
+        // return new Promise((resolve)=>{ent.emit(act, resolve, this);});
+        await ent.aEmit(act,this);
     }
 
     _damage() {this._send('refresh');}

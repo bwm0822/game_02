@@ -2,6 +2,7 @@ import Utility from '../utility.js';
 import DB from '../db.js';
 import {Pickup} from '../items/pickup.js';
 import AudioManager from '../audio.js';
+import {GM} from '../setting.js';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -19,6 +20,7 @@ export class Storage
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
     get ctx() {return this._root.ctx;}
+    get storage() {return this._storage;}
 
     //------------------------------------------------------
     //  Local
@@ -117,9 +119,14 @@ export class Storage
         let go = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
         go.falling(p);
         AudioManager.drop();
-        // this._send('msg',`${'_drop'.lab()} ${ent.itm.id.lab()}`);
-        const {emit}=this.ctx;
-        emit('msg',`${'_drop'.lab()} ${ent.dat['tw'].lab}`);
+        const {send}=this.ctx;
+        send('msg',`${'_drop'.lab()} ${ent.dat['tw'].lab}`);
+    }
+
+    _open() // 提供給外界操作
+    {
+        const {send}=this.ctx;
+        send('storage', this._root); 
     }
 
     //------------------------------------------------------
@@ -135,6 +142,9 @@ export class Storage
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
+
+        // 提供給外界操作
+        root.on(GM.OPEN, ()=>{this._open();})
     }
 
     //------------------------------------------------------

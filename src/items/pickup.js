@@ -27,7 +27,6 @@ export class Pickup extends GameObject
         this.load();
 
         // 提供給外界操作
-        // this.on(GM.TAKE, (resolve,taker)=>{this._pickup(taker); resolve?.();})
 
         return this;
     }
@@ -64,7 +63,6 @@ export class Pickup extends GameObject
         this.load();
 
         // 提供給外界操作
-        // this.on(GM.TAKE, (resolve,taker)=>{this._pickup(taker); resolve?.();})
 
         return this;
 

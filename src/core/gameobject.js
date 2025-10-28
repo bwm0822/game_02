@@ -34,7 +34,11 @@ export class GameObject
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     // get ctx() {return {...this.coms,bb:this.bb};}
-    get ctx() {return {bb:this.bb, emit:this.emit.bind(this), aEmit:this.aEmit.bind(this)};}
+    get ctx() {return { bb : this.bb, 
+                        emit : this.emit.bind(this), 
+                        aEmit : this.aEmit.bind(this),
+                        send : this._send.bind(this)
+                    }}
 
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
@@ -88,9 +92,6 @@ export class GameObject
         this.on('over', this._onover.bind(this))
         this.on('out', this._onout.bind(this))
         this.on('down', this._ondown.bind(this))
-        
-        // 發送 msg
-        this.on('msg', (args)=>{this._send('msg',args)})
 
         // 移除 gameObject
         this.on('remove', this._remove.bind(this));

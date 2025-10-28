@@ -408,10 +408,7 @@ export class ItemView extends View
         {
             let sp = this.scene.add.sprite(0,0,this.key,this.frame);
             sp.setPipeline('Light2D');
-            if(this.scl)
-            {
-                sp.setScale(this.scl);
-            }
+            if(this.scl) { sp.setScale(this.scl); }
             else
             {
                 sp.displayWidth = this.wid;

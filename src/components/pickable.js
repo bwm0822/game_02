@@ -20,12 +20,12 @@ export class Pickable
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _pickup(taker)
+    _pickup(taker)  // 提供給外界操作
     {
         if(taker.take(this))
         {
-            const {emit}=this.ctx;
-            emit('msg',`${'_pickup'.lab()} ${this.label}`)
+            const {emit,send}=this.ctx;
+            send('msg',`${'_pickup'.lab()} ${this.label}`)
             emit('out');
             emit('refresh');
             emit('remove');
@@ -59,7 +59,7 @@ export class Pickable
         
         // 註冊 event
         // 提供給外界操作
-        root.on(GM.TAKE, (resolve,taker)=>{this._pickup(taker);resolve?.();})
+        root.on(GM.TAKE, (taker)=>{this._pickup(taker);})
     }
 
     save() {return {...this.pos,...this._content};}

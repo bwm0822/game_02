@@ -1916,19 +1916,6 @@ class Option extends UiBase
     act(act)
     {
         this.close();
-        // if(act === GM.ATTACK)
-        // {
-        //     // getPlayer().attack(this.ent);
-        //     getPlayer().goto({ent:this.ent,act:GM.ATTACK});
-        // }
-        // else
-        // {
-        //     // getPlayer().setDes({ent:this.ent,act});
-        //     getPlayer().goto({ent:this.ent,act:act});
-        // }
-
-        // getPlayer().goto({ent:this.ent,act:act});
-        console.log('----------- ent', this.ent)
         getPlayer().execute({ent:this.ent,act:act});
     }
 
