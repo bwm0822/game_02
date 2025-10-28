@@ -2,6 +2,7 @@ import {GM} from '../setting.js';
 import {ItemView} from '../components/view.js';
 import {Storage} from '../components/inventory.js';
 import {GameObject} from '../core/gameobject.js';
+import { Pickable } from '../components/pickable.js';
 
 export class Box extends GameObject
 {
@@ -22,8 +23,6 @@ export class Box extends GameObject
     init_prefab()
     {      
         // console.log('uid:',this.uid,'qid:',this.qid)
-        
-        this._addToList();
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )

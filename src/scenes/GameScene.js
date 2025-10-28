@@ -393,7 +393,7 @@ export class GameScene extends Scene
 
     setEvent()
     {        
-        // 切換場景時，this.events不會被清除，所以設過後就無須再設
+        // 切換場景時，this.events 不會被清除，所以設過後就無須再設
         if(!this._done)
         {
             this._done = true;
@@ -414,6 +414,7 @@ export class GameScene extends Scene
         }
 
 
+        // 切換場景時，events 不會被清除，所以重設時，須先清除之前的設定
         const ui = this.scene.get('UI');
         ui.events
             .off('menu').on('menu', ()=>{this.mainMenu();})

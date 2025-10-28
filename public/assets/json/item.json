@@ -484,6 +484,7 @@
       }
     ],
     "useable": true,
+    "keep": true,
     "capacity": 10,
     "dft": 3,
     "tw": {

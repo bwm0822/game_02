@@ -173,6 +173,8 @@ class Slot extends Icon
     get isEmpty() {return Utility.isEmpty(this.content)||this.content.count==0;}
     get capacity() {return this.owner?.storage?.capacity; }
 
+    get storage() {return this.content.storage;}
+
 
 
     get acts()
@@ -200,7 +202,7 @@ class Slot extends Icon
             {
                 acts = [...acts,'transfer','drop'];
                 if(this.content.count>1) {acts = [...acts,'split'];}
-                else if(this.content.storage) {acts = [...acts,'open'];}
+                else if(this.content.storage) {acts = [...acts,'openbag:false'];}
             }
             else 
             {
@@ -239,17 +241,21 @@ class Slot extends Icon
         this.setTimes(false);
 
         if(this.dat) 
-        {
-            const list = [GM.ENDURANCE, GM.CAPACITY, GM.TIMES];
+        { 
             const fmap = {  [GM.ENDURANCE] : this.setBar.bind(this),
                             [GM.CAPACITY] : this.setProgress.bind(this),
-                            [GM.TIMES] : this.setTimes.bind(this)    };
+                            [GM.TIMES] : this.setTimes.bind(this),
+                            [GM.STORAGE] : null        };
 
-            list.forEach(key=>{
-                if(this.dat?.[key])
+            Object.keys(fmap).forEach(key=>{
+                if(this.dat[key])
                 {
-                    if(content[key]===undefined) {content[key]=this.dat[GM.DFT]??this.dat[key];}
-                    fmap[key](true, content[key], this.dat[key]);
+                    if(content[key]===undefined) 
+                    {
+                        content[key]=key===GM.STORAGE ? {capacity:this.dat[key],items:[]}
+                                                        : this.dat[GM.DFT]??this.dat[key];
+                    }
+                    fmap[key]?.(true, content[key], this.dat[key]);
                 }
             })
         }
@@ -2155,6 +2161,7 @@ export class UiStorage extends UiBase
 
     show(owner, cat=GM.CAT_ALL)
     {
+        this.close();
         super.show();
         this.owner = owner;
         this.owner.target = getPlayer();

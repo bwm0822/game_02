@@ -39,8 +39,19 @@ export class Pickable
         this._root = root;
 
         const {bb} = this.ctx;
-        this._content = {id:bb.id, count:bb.count??1};
-        this._dat = DB.item(bb.id);
+        if(bb.content)
+        {
+            delete bb.content.x;
+            delete bb.content.y;
+            delete bb.content.angle;
+            this._content = bb.content;
+        }
+        else
+        {
+            this._content = {id:bb.id,count:bb.count??1};
+        }
+        
+        this._dat = DB.item(this._content.id);
 
         // 在上層綁定操作介面，提供給外部件使用
         root.prop('content', this, '_content')

@@ -71,7 +71,7 @@ export class Storage
 
         if(count>0)
         {
-            let ent = {label:id.lab(),itm:{id:id,count:count}}
+            let ent = {label:id.lab(),content:{id:id,count:count}}
             this._drop(ent)
         }
         

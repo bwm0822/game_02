@@ -33,13 +33,12 @@ export class Pickup extends GameObject
         return this;
     }
 
-    init_runtime({id,count}={})
+    init_runtime(content)
     {      
         // console.log('uid:',this.uid,'qid:',this.qid)
-        console.log(id,count)
+        this.bb.content = content;
 
-        const dat = DB.item(id);
-        this.bb.id = id;
+        const dat = DB.item(content.id);
         this.bb.interactive = true;
         this.bb.wid = GM.TILE_W;
         this.bb.hei = GM.TILE_H;
