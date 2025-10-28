@@ -7,23 +7,23 @@ import DB from '../db.js';
 //  角色的技能槽
 //--------------------------------------------------
 
-export class SkillSlots
+export class AbilitySlots
 {
     constructor()
     {
         this._slots = []; // 技能槽資料
     }
 
-    get tag() {return 'skillslots';}   // 回傳元件的標籤
+    get tag() {return 'abilityslots';}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _setSlot(i, skillId, from)
+    _setSlot(i, abilityId, from)
     {
-        this._slots.find((id, i)=>{id===skillId && (this._slots[i]=null);}); // 先清除重複的技能
+        this._slots.find((id, i)=>{id===abilityId && (this._slots[i]=null);}); // 先清除重複的技能
         const tmp = this._slots[i];
-        this._slots[i] = skillId;
+        this._slots[i] = abilityId;
         tmp && from>=0 && (this._slots[from] = tmp); // 如果是交換位置，則把原本的技能放回去
     }
 

@@ -4,8 +4,8 @@ export default class DB
 {
     static _itemDB;
 
-    static get skills() {return this._skillDB;}
-    static get skTree() {return this._skTree;}
+    static get abilities() {return this._abilityDB;}
+    static get abTree() {return this._abTree;}
 
     static load(scene)
     {
@@ -21,9 +21,9 @@ export default class DB
 
         this._questDB = scene.cache.json.get('quest');
 
-        this._skillDB = scene.cache.json.get('skill');
+        this._abilityDB = scene.cache.json.get('skill');
 
-        this._skTree = scene.cache.json.get('sk_tree');
+        this._abTree = scene.cache.json.get('sk_tree');
     }
 
     static lut(key)
@@ -53,7 +53,7 @@ export default class DB
 
     static quest(id) { return this._questDB?.[id];}
 
-    static skill(id) { return this._skillDB?.[id]; }
+    static ability(id) { return this._abilityDB?.[id]; }
 
     
 }

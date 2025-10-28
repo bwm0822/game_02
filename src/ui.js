@@ -52,7 +52,7 @@ export default function createUI(scene)
     new UiCover(scene);             // 1
     new UiMain(scene);              // 2
     new UiEffect(scene);
-    new UiSkill(scene);
+    new UiAbility(scene);
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4
@@ -500,7 +500,7 @@ class OutputSlot extends Slot
     empty() {this.content={id:this.content.id,count:0};}
 }
 
-class SkillSlot extends Pic
+class AbilitySlot extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, i, config)
@@ -519,7 +519,7 @@ class SkillSlot extends Pic
     // get id() {return this.owner.skill.getSlotAt(this._i);}
     get id() {return this.owner.getSlot(this._i);}
     // get remain() {return this.owner.skill.get(this.id).remain;}
-     get remain() {return this.owner.skills[this.id].remain;}
+     get remain() {return this.owner.abilities[this.id].remain;}
     get ready() {return this.remain===0;}
     get i() {return this._i;}
     get dat() {return this._dat;}
@@ -541,7 +541,7 @@ class SkillSlot extends Pic
 
     leftButtonDown(x,y)
     {
-        if(this.isEmpty || SkillSlot.selected) {return;}
+        if(this.isEmpty || AbilitySlot.selected) {return;}
         Ui.delayCall(() => {DragService.onSkillDown(this);}, GM.PRESS_DELAY) ;
     }
 
@@ -565,9 +565,9 @@ class SkillSlot extends Pic
 
     toggle()
     {
-        if(SkillSlot.selected)
+        if(AbilitySlot.selected)
         {
-            SkillSlot.selected===this && SkillSlot.selected.unselect();
+            AbilitySlot.selected===this && AbilitySlot.selected.unselect();
         }
         else if(this.ready)
         {
@@ -577,31 +577,31 @@ class SkillSlot extends Pic
 
     select()
     {
-        SkillSlot.selected = this; // 設定目前選擇的技能
+        AbilitySlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
         // this.owner.skill.select(this); // 設定角色的技能
-        this.owner.selectSkill(this.id); // 設定角色的技能
+        this.owner.selectAbility(this.id); // 設定角色的技能
 
     }
 
     unselect()
     {
-        SkillSlot.selected = null; // 清除目前選擇的技能
+        AbilitySlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
         // this.owner.skill.unselect(); // 清除角色的技能
-        this.owner.unselectSkill();// 清除角色的技能
+        this.owner.unselectAbility();// 清除角色的技能
     }
 
-    reset() // call by role.resetSkill()
+    reset() // call by role.resetAbility()
     {
-        SkillSlot.selected = null; // 清除目前選擇的技能
+        AbilitySlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
         this.update();
     }
 
     set()
     {
-        this._dat = DB.skill(this.id);
+        this._dat = DB.ability(this.id);
         this.setIcon(this._dat.icon);
         this.getElement('remain').setText( this.remain>0 ? this.remain : '' );
         this.getElement('disabled').fillAlpha = this.remain>0 ? 0.5 : 0;
@@ -620,7 +620,7 @@ class SkillSlot extends Pic
     }
 }
 
-class SkillItem extends Pic
+class AbilityItem extends Pic
 {
     constructor(scene, w, h, config)
     {
@@ -647,13 +647,13 @@ class SkillItem extends Pic
         if(this.en) {return false;}
         // let ret = this._dat.refs?.find(ref=> this.owner.rec.skills[ref]===undefined || this.owner.rec.skills[ref].en===false);
 
-        let ret = this._dat.refs?.find(ref=> this.owner.skills[ref]===undefined || this.owner.skills[ref].en===false);
+        let ret = this._dat.refs?.find(ref=> this.owner.abilities[ref]===undefined || this.owner.abilities[ref].en===false);
         return ret!==undefined;
     }
     
 
     leave() {UiDragged.interact(true);}
-    enter(gameObject) {(gameObject instanceof SkillSlot) && UiDragged.interact(false);}
+    enter(gameObject) {(gameObject instanceof AbilitySlot) && UiDragged.interact(false);}
     over() {Ui.delayCall(() => {UiInfo.show(GM.IF_SKILL,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
@@ -670,7 +670,7 @@ class SkillItem extends Pic
 
     async leftButtonDown(x,y)
     {
-        if(this.locked || SkillSlot.selected) {return;}
+        if(this.locked || AbilitySlot.selected) {return;}
        
         if(!this._skill)
         {
@@ -678,7 +678,7 @@ class SkillItem extends Pic
             if(ret)
             {
                 // this.owner.skill.learn(this._id);
-                this.owner.learnSkill(this._id);
+                this.owner.learnAbility(this._id);
                 Ui.refreshAll();
             }
         }
@@ -709,8 +709,8 @@ class SkillItem extends Pic
         this.y = y;
         // this._skill =  this.owner.getSkill(this._id);
         // this._skill =  this.owner.skill.get(this._id);
-        this._skill =  this.owner.skills[this._id];
-        this._dat = DB.skill(this._id);
+        this._skill =  this.owner.abilities[this._id];
+        this._dat = DB.ability(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
         this.getElement('disabled').fillAlpha=this.en?0:0.7;
@@ -844,7 +844,7 @@ export class UiDragged_old extends OverlapSizer
             id: skill.id,
             i: skill.i,
         }
-        let dat = DB.skill(skill.id);
+        let dat = DB.ability(skill.id);
         // this.owner = getPlayer();
         this.setIcon(dat.icon).setCount('')
         UiCover.show();
@@ -1019,10 +1019,10 @@ export class UiDragged extends OverlapSizer
         }
         else
         {
-            console.log('skill', obj.id, obj.i)
+            console.log('ability', obj.id, obj.i)
             
             this._obj = {
-                dat: DB.skill(obj.id),
+                dat: DB.ability(obj.id),
                 id: obj.id,
                 i: obj.i,
             }
@@ -2448,18 +2448,18 @@ export class UiMain extends UiBase
 
         for(let i=0; i<10; i++)
         {
-            slots.add(new SkillSlot(scene,50,50,i,{color:GM.COLOR_SLOT}));
+            slots.add(new AbilitySlot(scene,50,50,i,{color:GM.COLOR_SLOT}));
         }
 
-        this.resetSkill = () => {
+        this.resetAbility = () => {
             slots.children.forEach((slot) => {
-                if(slot instanceof SkillSlot) {slot.reset();}
+                if(slot instanceof AbilitySlot) {slot.reset();}
             });
         }
 
-        this.updateSkill = () => {
+        this.updateAbility = () => {
             slots.children.forEach((slot) => {
-                if(slot instanceof SkillSlot) {slot.update();}
+                if(slot instanceof AbilitySlot) {slot.update();}
             });
         }
 
@@ -2509,7 +2509,7 @@ export class UiMain extends UiBase
         UiQuest.toggle(getPlayer());
     }
 
-    skill() {UiSkill.toggle();}
+    skill() {UiAbility.toggle();}
 
     debug() {UiDebuger.show();}
 
@@ -2544,8 +2544,8 @@ export class UiMain extends UiBase
         hp.set(total.states[GM.HP],total[GM.HPMAX]);
         
         // hp.set(player.states.life.cur,player.states.life.max);
-        this.resetSkill();
-        this.updateSkill();
+        this.resetAbility();
+        this.updateAbility();
     }
 
     show()
@@ -4327,7 +4327,7 @@ export class UiQuest extends UiBase
 }
 
 
-export class UiSkill extends UiBase
+export class UiAbility extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -4341,10 +4341,10 @@ export class UiSkill extends UiBase
             orientation : 'y',
             space:{left:10,right:10,bottom:10,item:5},
         }
-        super(scene, config, 'UiSkill');
-        UiSkill.instance = this; 
+        super(scene, config, 'UiAbility');
+        UiAbility.instance = this; 
         this.addBg(scene) 
-            .addTop(scene,{text:'skill'.lab()})
+            .addTop(scene,{text:'ability'.lab()})
             .addMain(scene)
             .layout()
             .hide()
@@ -4426,7 +4426,7 @@ export class UiSkill extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            let skill = this.owner.skills[id];
+            let skill = this.owner.abilities[id];
             if(!skill) {return false};
         }
 
@@ -4452,7 +4452,7 @@ export class UiSkill extends UiBase
         tree.forEach(dat=>{
             if(dat.type==='skill')
             {
-                let slot = new SkillItem(this.scene,50,50);
+                let slot = new AbilityItem(this.scene,50,50);
                 slot.set(dat.id,dat.x,dat.y)
                 this._panel.add(slot)
                 xMax = Math.max(xMax, dat.x);

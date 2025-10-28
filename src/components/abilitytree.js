@@ -7,14 +7,14 @@ import DB from '../db.js';
 //  角色的技能樹
 //--------------------------------------------------
 
-export class SkillTree
+export class AbilityTree
 {
     constructor()
     {
-        this._skTree = {}; // 技能樹資料
+        this._abTree = {}; // 技能樹資料
     }
 
-    get tag() {return 'skilltree';}   // 回傳元件的標籤
+    get tag() {return 'abilitytree';}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
@@ -26,10 +26,10 @@ export class SkillTree
     bind(root)
     {
         this._root = root;
-        this._skTree = DB.skTree;
+        this._abTree = DB.abTree;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('skTree', this, '_skTree');
+        root.prop('skTree', this, '_abTree');
         
         // 註冊 event
         

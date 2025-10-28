@@ -6,9 +6,9 @@ import {Nav} from '../components/nav.js'
 import {Sense} from '../components/sense.js'
 import {Stats} from '../components/stats.js'
 import {Disp} from '../components/disp.js'
-import {Skill} from '../components/ability.js'
-import {SkillTree} from '../components/abilitytree.js'
-import {SkillSlots} from '../components/abilityslots.js'
+import {Ability} from '../components/ability.js'
+import {AbilityTree} from '../components/abilitytree.js'
+import {AbilitySlots} from '../components/abilityslots.js'
 
 import DB from '../db.js'
 import Record from '../record.js'
@@ -113,9 +113,9 @@ export class Player extends Role
             .addCom(new Sense())
             .addCom(new Stats())
             .addCom(new Disp())
-            .addCom(new Skill())
-            .addCom(new SkillTree())
-            .addCom(new SkillSlots())
+            .addCom(new Ability())
+            .addCom(new AbilityTree())
+            .addCom(new AbilitySlots())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
