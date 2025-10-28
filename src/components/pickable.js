@@ -15,6 +15,7 @@ export class Pickable
     get ctx() {return this._root.ctx;}
     get content() {return this._content;}                   // gameObject 的內容
     get label() {return this._dat[Record.data.lang].lab;}   // gameObject 的名稱
+    get pos() {return this._root.pos;}
 
     //------------------------------------------------------
     //  Local
@@ -61,7 +62,7 @@ export class Pickable
         root.on(GM.TAKE, (resolve,taker)=>{this._pickup(taker);resolve?.();})
     }
 
-    save() {return this._content;}
+    save() {return {...this.pos,...this._content};}
 
 
 

@@ -54,6 +54,6 @@ export class SkillSlots
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) { if(data.slots) {Object.assign(this._slots, data.slots);}}
+    load(data) { if(data?.slots) {this._slots = data.slots;}}
     save() {return {slots:this._slots};}
 }

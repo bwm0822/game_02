@@ -13,7 +13,6 @@ export class Pickup extends GameObject
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    save() {super.save({...this.pos})}
     
     init_prefab()
     {        
@@ -48,7 +47,7 @@ export class Pickup extends GameObject
             let [key,frame] = dat.drop.sprite.split('/');
             this.bb.key = key;
             this.bb.frame = frame;
-            this.scale = dat.drop.scale;
+            this.bb.scl = dat.drop.scale;
         }
         else
         {

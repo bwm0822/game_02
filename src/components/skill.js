@@ -180,13 +180,13 @@ export class Skill
         root.on('useSkill', this._useSkill.bind(this));
         root.on('update', this._update.bind(this));
 
-        // 共享資料
+        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.skills = this._skills;
     }
 
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) { if(data.skills) {Object.assign(this._skills, data.skills);}}
+    load(data) { if(data?.skills) {Object.assign(this._skills,data.skills);}}
     save() {return {skills:this._skills};}
 }

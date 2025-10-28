@@ -170,7 +170,8 @@ export class GameObject
     load()
     {
         let data = this._loadData();
-        if(data) {for(let com of Object.values(this.coms)) {com.load?.(data);}}
+        // if(data) {for(let com of Object.values(this.coms)) {com.load?.(data);}}
+        for(let com of Object.values(this.coms)) {com.load?.(data);}
     }
 
     // 儲存資料

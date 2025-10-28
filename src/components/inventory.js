@@ -140,11 +140,16 @@ export class Storage
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) {Object.assign(this._storage, data.storage);}
+    load(data) 
+    {
+        if(data) {this._storage = data.storage;}
+        else
+        {
+            const {bb} = this.ctx;
+            if(bb.storage) {this._storage = Utility.json2Storage(bb.storage);}
+        }
+    }
     save() {return {storage:this._storage};}
-
-
-    
 
 }
 
@@ -202,7 +207,7 @@ export class Inventory extends Storage
         root.equip = this._equip.bind(this);
         root.receive = this._receive.bind(this);
 
-        // 共享裝備資料
+        // 共享裝備資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.equips = this._equips;
     }
 
@@ -211,8 +216,8 @@ export class Inventory extends Storage
     //------------------------------------------------------
     load(data) 
     {
-        if(data.storage) {Object.assign(this._storage, data.storage); }
-        if(data.equips) {Object.assign(this._equips, data.equips);}
+        super.load(data);
+        if(data?.equips) {Object.assign(this._equips, data.equips);}
     }
 
     save() {return {storage:this._storage, equips:this._equips};}

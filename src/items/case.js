@@ -28,6 +28,8 @@ export class Box extends GameObject
         this.addCom( new ItemView(this.scene), {modify:true} )
             .addCom( new Storage() )
 
+        console.log('----------------- bb=',this.bb)
+
         // 載入
         this.load();
 

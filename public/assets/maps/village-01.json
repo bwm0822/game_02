@@ -426,7 +426,7 @@
                 }, 
                 {
                  "gid":209,
-                 "height":32,
+                 "height":27,
                  "id":134,
                  "name":"",
                  "properties":[
@@ -434,6 +434,11 @@
                          "name":"interactive",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"storage",
+                         "type":"string",
+                         "value":"[\"boots_01\",\"helmet_01\",\"chest_01\",\"gloves_01\",\"boots_02\",\"helmet_02\",\"chest_02\",\"gloves_02\"]"
                         }, 
                         {
                          "name":"weight",

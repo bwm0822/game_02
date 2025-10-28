@@ -137,6 +137,7 @@ class View extends Phaser.GameObjects.Container
         
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
+        this.scl = null;            // sprite 的 scl, 注意:變數名稱不可為 this.scale，會跟 Phaser.GameObjects.Container 相衝
     }
 
     get tag() {return 'view';}          // 回傳元件的標籤
@@ -407,9 +408,9 @@ export class ItemView extends View
         {
             let sp = this.scene.add.sprite(0,0,this.key,this.frame);
             sp.setPipeline('Light2D');
-            if(this.scale)
+            if(this.scl)
             {
-                sp.setScale(this.scale);
+                sp.setScale(this.scl);
             }
             else
             {
