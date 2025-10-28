@@ -560,7 +560,7 @@ class AbilitySlot extends Pic
     use()
     {
         //  if(this.ready) {this.owner.skill.use(this.id);}
-        if(this.ready) {this.owner.useSkill(this.owner, this.id);}
+        if(this.ready) {this.owner.useAbility(this.owner, this.id);}
     }
 
     toggle()
@@ -579,7 +579,6 @@ class AbilitySlot extends Pic
     {
         AbilitySlot.selected = this; // 設定目前選擇的技能
         this.setStrokeColor(GM.COLOR_RED);
-        // this.owner.skill.select(this); // 設定角色的技能
         this.owner.selectAbility(this.id); // 設定角色的技能
 
     }
@@ -588,7 +587,6 @@ class AbilitySlot extends Pic
     {
         AbilitySlot.selected = null; // 清除目前選擇的技能
         this.setStrokeColor(GM.COLOR_WHITE);
-        // this.owner.skill.unselect(); // 清除角色的技能
         this.owner.unselectAbility();// 清除角色的技能
     }
 
@@ -615,8 +613,7 @@ class AbilitySlot extends Pic
         this.getElement('remain').setText('');
         this.setBgColor(GM.COLOR_SLOT);
         this.getElement('disabled').fillAlpha = 0;
-        // this.owner.skill.clearSlotAt(this.i); // 清除技能欄位
-      this.owner.clearSlot(this.i); // 清除技能欄位   
+        this.owner.clearSlot(this.i); // 清除技能欄位   
     }
 }
 
@@ -645,8 +642,6 @@ class AbilityItem extends Pic
     get locked()
     {
         if(this.en) {return false;}
-        // let ret = this._dat.refs?.find(ref=> this.owner.rec.skills[ref]===undefined || this.owner.rec.skills[ref].en===false);
-
         let ret = this._dat.refs?.find(ref=> this.owner.abilities[ref]===undefined || this.owner.abilities[ref].en===false);
         return ret!==undefined;
     }
@@ -677,7 +672,6 @@ class AbilityItem extends Pic
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
             {
-                // this.owner.skill.learn(this._id);
                 this.owner.learnAbility(this._id);
                 Ui.refreshAll();
             }
@@ -707,8 +701,6 @@ class AbilityItem extends Pic
         this._id = id;
         this.x = x;
         this.y = y;
-        // this._skill =  this.owner.getSkill(this._id);
-        // this._skill =  this.owner.skill.get(this._id);
         this._skill =  this.owner.abilities[this._id];
         this._dat = DB.ability(this._id);
         this.setIcon(this._dat.icon);
@@ -954,7 +946,6 @@ export class UiDragged extends OverlapSizer
         else {this.disableInteractive();}
     }
 
-    //checkCat(cat) {return (this.data.item.cat & cat) == this.data.item.cat;}
     checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
 
     update() 
@@ -1001,7 +992,6 @@ export class UiDragged extends OverlapSizer
 
     set(obj)
     {
-        // console.log(Object.prototype.toString.call(obj))
         if(obj instanceof Slot)
         {            
             this._obj = {
@@ -1038,7 +1028,6 @@ export class UiDragged extends OverlapSizer
     {
         let [key,frame]=icon.split('/');
         let sp = this.getElement('sprite');
-        // this.getElement('sprite').setTexture(key,frame);
         sp.setTexture(key,frame);
         sp.rexSizer.aspectRatio = sp.width/sp.height;
         this.layout();

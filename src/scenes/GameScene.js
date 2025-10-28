@@ -184,15 +184,15 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._player.state == GM.ST_MOVING)
-                {
-                    this._player.stop();
-                }
-                else if(this._player.state === GM.ST_SKILL)
-                {
-                    this._player.execute({pt:pt,ent:this._ent});
-                }
-                else if(this._rst && this._rst.state===1 && !this._rst.block)
+                // if(this._player.state == GM.ST_MOVING)
+                // {
+                //     this._player.stop();
+                // }
+                // else if(this._player.state === GM.ST_SKILL)
+                // {
+                //     this._player.execute({pt:pt,ent:this._ent});
+                // }
+                if(this._rst && this._rst.state===1 && !this._rst.block)
                 {
                     this._player.execute({pt:pt,ent:this._ent});
                 }
@@ -202,19 +202,11 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            if(this._player.state===GM.ST_SKILL) 
+            if(this._player.ability) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
-                // if(this._player.isInSkillRange(pt))
-                if(this._player.skill.isInRange(pt))
-                {
-                    UiCursor.set('aim');
-                }
-                else
-                {
-                    UiCursor.set('none');
-                }
-                
+                if(this._player.isInRange(pt)) {UiCursor.set('aim');}
+                else {UiCursor.set('none');}
                 return;
             }
             else if(this._player.state==GM.ST_SLEEP) {return;}

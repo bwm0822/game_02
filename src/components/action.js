@@ -75,21 +75,21 @@ export class Action
             })
     }
 
-    _attack_Spell(target, onHit, skill)
+    _attack_Spell(target, onHit, ability)
     {
         const {emit}=this.ctx
         emit('face', target.pos);
         return new Promise((resolve)=>{
-                new Projectile(this.scene, this.ent.x, this.ent.y, skill.sprite)
+                new Projectile(this.scene, this.ent.x, this.ent.y, ability.sprite)
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}, bias:0}
                         );
             })  
     }
 
-    _onDamage(target, skill)
+    _onDamage(target, ability)
     {
-        const dmg = computeDamage(this._root, target, skill);
+        const dmg = computeDamage(this._root, target, ability);
         target.takeDamage(dmg, this._root);
     }
 
@@ -123,13 +123,13 @@ export class Action
         if(bb.path.path.length===0) {delete bb.path;}
     }
 
-    async _attack(target, skill)
+    async _attack(target, ability)
     {
-        const onDamage = this._onDamage.bind(this, target, skill);
+        const onDamage = this._onDamage.bind(this, target, ability);
 
-        if(skill?.type==='spell')
+        if(ability?.type==='spell')
         {
-            await this._attack_Spell(target, onDamage, skill);
+            await this._attack_Spell(target, onDamage, ability);
         }
         else
         {

@@ -16,6 +16,7 @@ export class Ability
     {
         this._abilities = {}; // 可用的技能
         this._ability = null; // 當前選擇的技能
+        this._idSel = null;
     }
 
     get tag() {return 'ability';}   // 回傳元件的標籤
@@ -32,7 +33,7 @@ export class Ability
     {
         const {emit}= this.ctx;
         this._abilities[id] = {remain:0};
-        this._ability = null;
+        // this._ability = null;
         emit('dirty');  // 更新屬性
     }
 
@@ -94,17 +95,21 @@ export class Ability
         const ability = DB.ability(id);
         this._showRange(true, ability.range, false);
 
-        const {bb} = this.ctx;
-        bb.skillSel = id;
         this._ability = ability;
+        this._idSel = id;
     }
 
     // 取消選擇技能
     _unselect()
     {
-        const {bb}=this.ctx;
         this._showRange(false);
-        bb.skillSel = null;
+        this._clrAbility();
+    }
+
+    _clrAbility()
+    {
+        this._ability = null;
+        this._idSel = null;
     }
 
     _isInRange(pos)
@@ -137,13 +142,15 @@ export class Ability
             this._abilities[id]={skip:true, remain:this._ability.cd};
             const amount = computeHealing(target, this._ability);
             emit('heal', amount);
+            this._clrAbility();
             return true;
         }
         else if(target && this._isInRange(target.pos))
         {
-            this._abilities[bb.skillSel]={skip:true, remain:this._ability.cd};
-            this._unselect();
+            this._abilities[this._idSel]={skip:true, remain:this._ability.cd};
+            this._showRange(false);
             await aEmit('attack', target, this._ability);
+            this._clrAbility();
             return true;
         } 
 
@@ -172,12 +179,14 @@ export class Ability
         
         // 在上層綁定操作介面，提供給其他元件使用
         root.prop('abilities', this, '_abilities');
+        root.prop('ability', this, '_ability');
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);
+        root.isInRange = this._isInRange.bind(this);
         
         // 註冊 event
-        root.on('useSkill', this._useAbility.bind(this));
+        root.on('useAbility', this._useAbility.bind(this));
         root.on('update', this._update.bind(this));
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)

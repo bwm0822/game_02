@@ -130,13 +130,23 @@ export class Player extends Role
     // 跳過這一回合
     next() { this._resume();}
 
-    async useSkill(target, id)
+    isInteractive() {return true;}
+
+    async useAbility(target, id)
     {
-        if(await this.aEmit('useSkill', target, id))
+        if(await this.aEmit('useAbility', target, id))
         {
             this._refresh();
             this._resume();
         }
+    }
+
+    async attack()
+    {
+        const {bb, emit, aEmit} = this.ctx;
+        if (emit('inAttackRange',bb.ent)) {await aEmit('attack',bb.ent);}
+        else { await this.aEmit('move'); }
+        delete bb.path;
     }
 
     async execute({pt,ent,act}={})
@@ -144,9 +154,10 @@ export class Player extends Role
         if(!this.isAlive) {return;}
         
         const {bb}= this.ctx;
-        if(bb.skillSel) 
+
+        if(this.ability)
         {
-            if(await this.aEmit('useSkill',ent))
+            if(await this.aEmit('useAbility',ent))
             {
                 this._refresh();
                 this._resume();
@@ -161,7 +172,6 @@ export class Player extends Role
         }
     }
 
-    isInteractive() {return true;}
 
     async process()
     {
@@ -198,13 +208,7 @@ export class Player extends Role
         }
     }
 
-    async attack()
-    {
-        const {bb, emit, aEmit} = this.ctx;
-        if (emit('inAttackRange',bb.ent)) {await aEmit('attack',bb.ent);}
-        else { await this.aEmit('move'); }
-        delete bb.path;
-    }
+
 
 
     

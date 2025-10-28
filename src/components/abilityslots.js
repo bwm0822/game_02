@@ -1,5 +1,3 @@
-import DB from '../db.js';
-
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : abilityslots
@@ -11,7 +9,7 @@ export class AbilitySlots
 {
     constructor()
     {
-        this._slots = []; // 技能槽資料
+        this._slots = []; // 能力槽資料
     }
 
     get tag() {return 'abilityslots';}   // 回傳元件的標籤
@@ -27,15 +25,9 @@ export class AbilitySlots
         tmp && from>=0 && (this._slots[from] = tmp); // 如果是交換位置，則把原本的技能放回去
     }
 
-    _getSlot(i)
-    {
-        return this._slots[i];
-    }
+    _getSlot(i) {return this._slots[i];}
 
-    _clearSlot(i)
-    {
-        this._slots[i] = null;
-    }
+    _clearSlot(i) {this._slots[i] = null;}
 
     //------------------------------------------------------
     //  Public
