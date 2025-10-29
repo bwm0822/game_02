@@ -41,8 +41,8 @@ def df_to_json(input_excel_path, output_json_path):
 
 def unit_test():
     # 設定檔案路徑
-    input_excel_path = "./xls/skill.xlsx"                    # 你的 Excel 
-    output_json_path = "./public/assets/json/skill.json"     # 輸出的 JSON 檔案名稱
+    input_excel_path = "./xls/ability.xlsx"                    # 你的 Excel 
+    output_json_path = "./public/assets/json/ability.json"     # 輸出的 JSON 檔案名稱
     df_to_json(input_excel_path, output_json_path)
 
 

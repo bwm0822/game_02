@@ -22,8 +22,8 @@ def excel_to_json(input_excel_path, output_json_path,):
 
 def unit_test():
     # 設定檔案路徑
-    input_excel_path = "./xls/sk_tree.xlsx"                    # 你的 Excel 
-    output_json_path = "./public/assets/json/sk_tree.json"     # 輸出的 JSON 檔案名稱
+    input_excel_path = "./xls/ab_tree.xlsx"                    # 你的 Excel 
+    output_json_path = "./public/assets/json/ab_tree.json"     # 輸出的 JSON 檔案名稱
     excel_to_json(input_excel_path, output_json_path)
 
 if __name__ == "__main__":
