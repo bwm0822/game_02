@@ -33,6 +33,14 @@
       "lab": "Skill"
     }
   },
+  "ability": {
+    "tw": {
+      "lab": "能力"
+    },
+    "us": {
+      "lab": "Ability"
+    }
+  },
   "helmet": {
     "tw": {
       "lab": "頭盔"
