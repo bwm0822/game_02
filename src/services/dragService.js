@@ -30,20 +30,20 @@ export default class DragService
         this._finish(result, slot);
     }
 
-    // --- 拖曳 Skill ---
-    static _startSkillDrag(skillSlot) 
+    // --- 拖曳 Ability ---
+    static _startAbilityDrag(abilitySlot) 
     {
-        const p = skillSlot.scene.input.activePointer;
+        const p = abilitySlot.scene.input.activePointer;
         // 1. 顯示拖曳影像
-        UiDragged.set(skillSlot);
+        UiDragged.set(abilitySlot);
         UiDragged.setPos(p.x, p.y);
         // 2. 取出：把原格子清空
-        skillSlot.empty?.();
+        abilitySlot.empty?.();
     }
 
-    static _dropOrClickOnSkillSlot(skillSlot) 
+    static _dropOrClickOnAbilitySlot(abilitySlot) 
     {
-        const owner = skillSlot.owner;
+        const owner = abilitySlot.owner;
         if(UiDragged.on)    // 放下技能格
         {
             const src = UiDragged.obj;
@@ -58,22 +58,22 @@ export default class DragService
             // // 3. 設定新的技能
             // owner.skill.setSlotAt(skillSlot.i, src.id);
 
-            owner.setSlot(skillSlot.i, src.id, src.i);
+            owner.setSlot(abilitySlot.i, src.id, src.i);
 
             // 4. 清空拖曳
             src.empty();
             // 5. 更新畫面
             Ui.refreshAll();
         }
-        else if(!skillSlot.isEmpty) // 點擊 SkillSlot
+        else if(!abilitySlot.isEmpty) // 點擊 AbilitySlot
         {
-            if(skillSlot.dat.type === GM.ACTIVE) 
+            if(abilitySlot.dat.type === GM.ACTIVE) 
             {
-                skillSlot.use();  // 使用技能
+                abilitySlot.use();  // 使用技能
             }
             else 
             {
-                skillSlot.toggle();
+                abilitySlot.toggle();
             }
         }
     }
@@ -110,7 +110,7 @@ export default class DragService
 
     static _onpointerup(pointer) 
     {
-        if(UiDragged.isSkill) // 在 SkillSlot 以外的地方放開，就會清除
+        if(UiDragged.isAbility) // 在 AbilitySlot 以外的地方放開，就會清除
         {
             UiDragged.empty();
         }
@@ -143,7 +143,7 @@ export default class DragService
         // scene.events.once('shutdown', () => { this._cancel(); });
     }
 
-    // --- 小工具給 Slot/SkillSlot 呼叫 ---
+    // --- 小工具給 Slot/AbilitySlot 呼叫 ---
     static onSlotDown(slot, x, y) 
     {
         UiInfo.close(); 
@@ -166,13 +166,13 @@ export default class DragService
         }
     }
 
-    static onSkillDown(skillSlot, x, y, pressIdHolder) 
+    static onAbilityDown(abilitySlot, x, y, pressIdHolder) 
     {
-        this._startSkillDrag(skillSlot);
+        this._startAbilityDrag(abilitySlot);
     }
 
-    static onSkillUp(skillSlot) 
+    static onAbilityUp(abilitySlot) 
     {
-        this._dropOrClickOnSkillSlot(skillSlot);
+        this._dropOrClickOnAbilitySlot(abilitySlot);
     }
 }

@@ -29,7 +29,7 @@ export class AbilityTree
         this._abTree = DB.abTree;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('skTree', this, '_abTree');
+        root.prop('abTree', this, '_abTree');
         
         // 註冊 event
         

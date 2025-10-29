@@ -371,7 +371,7 @@ class Slot extends Icon
                 this.setBgColor(this.isValid ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT_INVALID);
             }
         }
-        else if(!this.isEmpty && !UiDragged.isSkill)
+        else if(!this.isEmpty && !UiDragged.isAbility)
         {
             this.setBgColor(GM.COLOR_SLOT_OVER);
 
@@ -516,10 +516,8 @@ class AbilitySlot extends Pic
     }
 
     get owner() {return getPlayer();}
-    // get id() {return this.owner.skill.getSlotAt(this._i);}
     get id() {return this.owner.getSlot(this._i);}
-    // get remain() {return this.owner.skill.get(this.id).remain;}
-     get remain() {return this.owner.abilities[this.id].remain;}
+    get remain() {return this.owner.abilities[this.id].remain;}
     get ready() {return this.remain===0;}
     get i() {return this._i;}
     get dat() {return this._dat;}
@@ -536,19 +534,19 @@ class AbilitySlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(GM.IF_SKILL_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(GM.IF_ABILITY_TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
     leftButtonDown(x,y)
     {
         if(this.isEmpty || AbilitySlot.selected) {return;}
-        Ui.delayCall(() => {DragService.onSkillDown(this);}, GM.PRESS_DELAY) ;
+        Ui.delayCall(() => {DragService.onAbilityDown(this);}, GM.PRESS_DELAY) ;
     }
 
     leftButtonUp(x,y)
     {
         Ui.cancelDelayCall();  
-        DragService.onSkillUp(this);
+        DragService.onAbilityUp(this);
     }
 
     update()
@@ -559,7 +557,6 @@ class AbilitySlot extends Pic
 
     use()
     {
-        //  if(this.ready) {this.owner.skill.use(this.id);}
         if(this.ready) {this.owner.useAbility(this.owner, this.id);}
     }
 
@@ -628,7 +625,7 @@ class AbilityItem extends Pic
         this.getElement('disabled').fillAlpha=0;
         this.addListener();
         this._id = null;
-        this._skill = null;     // 用來存放技能狀態
+        this._ability = null;     // 用來存放技能狀態
         this._dat = null;       // 用來存放技能資料
     }
 
@@ -637,7 +634,7 @@ class AbilityItem extends Pic
     get i() {return this._i;}
     get dat() {return this._dat;}
 
-    get en() {return this._skill;}
+    get en() {return this._ability;}
 
     get locked()
     {
@@ -649,7 +646,7 @@ class AbilityItem extends Pic
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof AbilitySlot) && UiDragged.interact(false);}
-    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_SKILL,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_ABILITY,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
     addListener()
@@ -667,7 +664,7 @@ class AbilityItem extends Pic
     {
         if(this.locked || AbilitySlot.selected) {return;}
        
-        if(!this._skill)
+        if(!this._ability)
         {
             let ret = await UiConfirm.msg('學習此技能?');
             if(ret)
@@ -678,7 +675,7 @@ class AbilityItem extends Pic
         }
         else if(this.dat.type !== GM.PASSIVE)
         {
-            Ui.delayCall(() => {DragService.onSkillDown(this);}, GM.PRESS_DELAY) ;
+            Ui.delayCall(() => {DragService.onAbilityDown(this);}, GM.PRESS_DELAY) ;
         }
     }
 
@@ -701,7 +698,7 @@ class AbilityItem extends Pic
         this._id = id;
         this.x = x;
         this.y = y;
-        this._skill =  this.owner.abilities[this._id];
+        this._ability =  this.owner.abilities[this._id];
         this._dat = DB.ability(this._id);
         this.setIcon(this._dat.icon);
         this.getElement('text').setText(this.locked?'🔒':'');
@@ -711,6 +708,7 @@ class AbilityItem extends Pic
 
 }
 
+/*
 export class UiDragged_old extends OverlapSizer
 {
     static instance = null;
@@ -893,6 +891,7 @@ export class UiDragged_old extends OverlapSizer
     static interact(on) {this.instance.interact(on);}
 
 }
+*/
 
 export class UiDragged extends OverlapSizer
 {
@@ -917,7 +916,7 @@ export class UiDragged extends OverlapSizer
     static get dat() {return this.instance.dat;}
 
     static get isSlot() {return this.instance._obj?.content !== undefined;}
-    static get isSkill() {return this.instance._obj?.id !== undefined;}
+    static get isAbility() {return this.instance._obj?.id !== undefined;}
 
 
     get owner() {return this._obj.owner;}
@@ -1372,22 +1371,22 @@ export class UiInfo extends Sizer
         return this;
     }
 
-    addCd(skill)
+    addCd(ability)
     {
         let row = this.scene.rexUI.add.sizer({orientation:'x'});
         row//.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}))
-            .add(bbcText(this.scene,{text:skill.dat.type.lab()}))
+            .add(bbcText(this.scene,{text:ability.dat.type.lab()}))
             .addSpace()
-        if(skill.dat.cd)
+        if(ability.dat.cd)
         {
-            row.add(bbcText(this.scene,{text:`⌛${skill.dat.cd}`}));
+            row.add(bbcText(this.scene,{text:`⌛${ability.dat.cd}`}));
         }
         this.addDivider();
         this.add(row,{expand:true});
         return this;
     }
 
-    ifSkill(elm)
+    ifAbility(elm)
     {
         let config = {
             des : elm.dat[this.lang]?.des,
@@ -1448,9 +1447,9 @@ export class UiInfo extends Sizer
                 // this.addText(elm.key.des());
                 break;
 
-            case GM.IF_SKILL:
-            case GM.IF_SKILL_TB:
-                this.ifSkill(elm)
+            case GM.IF_ABILITY:
+            case GM.IF_ABILITY_TB:
+                this.ifAbility(elm)
                 break;
 
             case GM.IF_ACTIVE:
@@ -1482,7 +1481,7 @@ export class UiInfo extends Sizer
         {
             case GM.IF_BTN:
             case GM.IF_ACTIVE_TB:
-            case GM.IF_SKILL_TB:
+            case GM.IF_ABILITY_TB:
                 if(elm.y>GM.h/2)
                 {
                     this.setOrigin(0.5,1);
@@ -2039,16 +2038,7 @@ class Observe extends UiBase
             .add(this.label(),{padding:{top:10}})
             .add(divider(this.scene),{expand:true,padding:10})
             .add(this.stats(),{expand:true,padding:{left:10,right:10}})
-           
-
-        // if(this.owner.skill.getAll().length>0)
-        // {
-        //     sizer
-        //         .add(bbcText(this.scene,{text:'技能'}))
-        //         .add(divider(this.scene),{expand:true,padding:10})
-        //         .add(this.skills(),{expand:true,padding:{left:10,right:10}})
-        // }
-
+    
         console.log('---- actives=',this.owner.actives);
 
         if(this.owner.actives?.length>0)
@@ -2401,7 +2391,7 @@ export class UiMain extends UiBase
             .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'📖',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🧠',key:'skill',onclick:this.skill,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'🧠',key:'ability',onclick:this.ability,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addCtrl(scene)
             .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
@@ -2498,7 +2488,7 @@ export class UiMain extends UiBase
         UiQuest.toggle(getPlayer());
     }
 
-    skill() {UiAbility.toggle();}
+    ability() {UiAbility.toggle();}
 
     debug() {UiDebuger.show();}
 
@@ -4415,8 +4405,8 @@ export class UiAbility extends UiBase
         for(let i=0; i<refs.length; i++)
         {
             let id = refs[i];
-            let skill = this.owner.abilities[id];
-            if(!skill) {return false};
+            let ability = this.owner.abilities[id];
+            if(!ability) {return false};
         }
 
         return true;
@@ -4425,7 +4415,7 @@ export class UiAbility extends UiBase
     refresh() 
     {
         let item = this._itemSel;
-        this.drawTree(this.owner.skTree[item.id])
+        this.drawTree(this.owner.abTree[item.id])
     }
 
     drawTree(tree)
@@ -4467,7 +4457,7 @@ export class UiAbility extends UiBase
     {
         this._itemSel?.unsel();
         this._itemSel = item;
-        this.drawTree(this.owner.skTree[item.id]);
+        this.drawTree(this.owner.abTree[item.id]);
         item.sel();
     }
 
@@ -4479,7 +4469,7 @@ export class UiAbility extends UiBase
             let menu = this.getElement('scroll',true).getElement('panel')
 
             menu.removeAll(true);
-            Object.keys(this.owner.skTree).forEach((tree,i)=>{
+            Object.keys(this.owner.abTree).forEach((tree,i)=>{
                 let item = this.item(tree,{ondown:this.ondown.bind(this)});
                 item.id = tree;
                 menu.add(item,{expand:true})

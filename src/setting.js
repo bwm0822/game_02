@@ -211,8 +211,8 @@ export let GM =
     IF_SLOT : 0,
     IF_PROP : 1,
     IF_BTN : 2,
-    IF_SKILL : 3,
-    IF_SKILL_TB : 4,
+    IF_ABILITY : 3,
+    IF_ABILITY_TB : 4,
     IF_ACTIVE : 5,
     IF_ACTIVE_TB : 6,
 
@@ -239,7 +239,7 @@ export let GM =
     ST_SLEEP : 'sleep',
     ST_ATTACK : 'attack',
     ST_DEATH : 'death',
-    ST_SKILL : 'skill',
+    ST_ABILITY : 'ability',
     ST_UNDERATTACK : 'underattack',
 
     // weight
@@ -254,7 +254,7 @@ export let GM =
     TILE_W : 32,
     TILE_H : 32,
 
-    // skill type
+    // ability type
     ACTIVE : 'active',
     PASSIVE : 'passive',
     SPELL : 'spell',
