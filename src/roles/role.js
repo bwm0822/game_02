@@ -9,13 +9,17 @@ export class Role extends GameObject
     {
         super(scene,x,y);
         this.isAlive = true;
+        this._state = GM.ST_IDLE;   // 角色狀態
     }
 
     get id() {return this.bb.id;}
+    get state() {return this._state;}
 
+    get ctx() {return {...super.ctx, sta:this._setState.bind(this)}}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _setState(val) {val&&(this._state=val); return val;}
 
     _addToList() {this.scene.roles && this.scene.roles.push(this);}
     

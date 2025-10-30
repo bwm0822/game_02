@@ -11,8 +11,10 @@ import {AbilityTree} from '../components/abilitytree.js'
 import {AbilitySlots} from '../components/abilityslots.js'
 
 import DB from '../db.js'
+import {GM} from '../setting.js'
 import Record from '../record.js'
-import {Role} from './role.js';
+import {Role} from './role.js'
+
 
 
 export let dbg_hover_npc = false;   // 是否有 npc 被 hover
@@ -29,8 +31,8 @@ export class Player extends Role
     get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
-    // get total() {return this.bb.total;}
     get meta() {return this.bb.meta;}
+
 
     //------------------------------------------------------
     //  Local
@@ -77,9 +79,9 @@ export class Player extends Role
     //------------------------------------------------------
     init_prefab()
     {     
-        this._registerTimeManager()
+        this._registerTimeManager();            // 註冊 TimeManager
 
-        this.bb.meta = DB.role(this.bb.id);    // 取得roleD，放入bb，view 元件會用到
+        this.bb.meta = DB.role(this.bb.id);     // 取得 roleD，放入 bb，view 元件會用到
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:true})
@@ -96,8 +98,7 @@ export class Player extends Role
 
     init_runtime(id)
     {     
-        // 註冊 TimeManager
-        this._registerTimeManager()
+        this._registerTimeManager();    // 註冊 TimeManager
 
         this.bb.id = id;
         this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
@@ -149,13 +150,18 @@ export class Player extends Role
         delete bb.path;
     }
 
+    stop()
+    {
+        this.emit('clearPath');
+    }
+
     async execute({pt,ent,act}={})
     {
         if(!this.isAlive) {return;}
         
-        const {bb}= this.ctx;
+        const {bb} = this.ctx;
 
-        if(this.ability)
+        if(this.state===GM.ST_ABILITY)
         {
             if(await this.aEmit('useAbility',ent))
             {
@@ -168,6 +174,7 @@ export class Player extends Role
             bb.ent = ent;
             bb.act = act??ent?.act;
             this.emit('findPath',pt??ent.pos);
+            this.emit('drawPath');
             this._resume();
         }
     }
@@ -178,7 +185,7 @@ export class Player extends Role
         // 解構賦值 (destructuring assignment)，
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
-        const {bb} = this.ctx;
+        const {bb,sta} = this.ctx;
 
         if(!bb.path)
         {
@@ -195,7 +202,7 @@ export class Player extends Role
             }
             else
             {
-                if(bb.ent && bb.path?.path.length===1)
+                if(bb.ent && bb.path.pts.length===1)
                 {
                     delete bb.path;
                     await this._interact(bb.ent,bb.act);
@@ -206,6 +213,9 @@ export class Player extends Role
                 }
             }
         }
+
+        if(bb.path) {sta(GM.ST_MOVING);}
+        else {sta(GM.ST_IDLE);}
     }
 
 

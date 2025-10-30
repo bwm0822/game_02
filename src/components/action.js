@@ -1,5 +1,6 @@
-import {Projectile} from '../entity.js';
-import {computeDamage} from '../core/combat.js';
+import {Projectile} from '../entity.js'
+import {computeDamage} from '../core/combat.js'
+import {GM} from '../setting.js'
 
 
 //--------------------------------------------------
@@ -103,24 +104,30 @@ export class Action
         {
             for(let i=0;i<maxSteps;i++)
             {
-                if(bb.path.state===1 && bb.path.path.length>1)
+                if(bb.path.state===1 && bb.path.pts.length>1)
                 {
-                    await this._moveTo(bb.path.path[0])
-                    bb.path.path.splice(0,1);
+                    await this._moveTo(bb.path.pts[0])
+                    bb.path.pts.splice(0,1);  
                 }
             }
 
-            if(bb.path.path.length===0) {delete bb.path;}
+            if(bb.path.pts.length===0) {delete bb.path;}
         }
         return true;
     }
 
     async _move()
     {
-        const {bb} = this.ctx;
-        await this._moveTo(bb.path.path[0]);
-        bb.path.path.splice(0,1);
-        if(bb.path.path.length===0) {delete bb.path;}
+        const {bb,emit} = this.ctx;
+        await this._moveTo(bb.path.pts[0]);
+
+        // bb.path 有可能在被 delete，如 : 在移動中，點擊畫面，會呼叫 player.stop()
+        if(bb.path)
+        {
+            bb.path.pts.splice(0,1);
+            if(bb.path.pts.length===0) {delete bb.path;}
+        }
+        emit('drawPath');
     }
 
     async _attack(target, ability)

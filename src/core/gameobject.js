@@ -1,6 +1,7 @@
 
 import {Evt} from './event.js'
 import Record from '../record.js'
+import {GM} from '../setting.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -34,10 +35,11 @@ export class GameObject
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     // get ctx() {return {...this.coms,bb:this.bb};}
-    get ctx() {return { bb : this.bb, 
+    get ctx() {return { 
+                        bb : this.bb, 
                         emit : this.emit.bind(this), 
                         aEmit : this.aEmit.bind(this),
-                        send : this._send.bind(this)
+                        send : this._send.bind(this),
                     }}
 
     //------------------------------------------------------
@@ -63,6 +65,7 @@ export class GameObject
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
+    _setState(val) {val&&(this._state=val); return this._state;}
     _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
     _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
     _send(type, ...args) {this.scene.events.emit(type, ...args);}

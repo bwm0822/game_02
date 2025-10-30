@@ -184,17 +184,18 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                // if(this._player.state == GM.ST_MOVING)
-                // {
-                //     this._player.stop();
-                // }
-                // else if(this._player.state === GM.ST_SKILL)
-                // {
-                //     this._player.execute({pt:pt,ent:this._ent});
-                // }
-                if(this._rst && this._rst.state===1 && !this._rst.block)
+                if(this._player.state===GM.ST_MOVING)
+                {
+                    this._player.stop();
+                }
+                else if(this._player.state===GM.ST_ABILITY)
                 {
                     this._player.execute({pt:pt,ent:this._ent});
+                }
+                else if(this._rst && this._rst.state===1 && !this._rst.block)
+                {
+                    this._player.execute({pt:pt,ent:this._ent});
+                    // this.clearPath();
                 }
             }
             
@@ -202,18 +203,19 @@ export class GameScene extends Scene
         .on('pointermove',(pointer)=>{
 
             this.showMousePos();
-            if(this._player.ability) 
+            if(this._player.state===GM.ST_ABILITY) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 if(this._player.isInRange(pt)) {UiCursor.set('aim');}
                 else {UiCursor.set('none');}
                 return;
             }
-            else if(this._player.state==GM.ST_SLEEP) {return;}
-            else if(this._player.state!=GM.ST_MOVING)
+            else if(this._player.state===GM.ST_SLEEP) {return;}
+            else if(this._player.state!==GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.findPath(pt, this._ent);
+                
             }
         })
 
@@ -243,7 +245,8 @@ export class GameScene extends Scene
 
         let pts = ent?.pts ?? [pt];
 
-        let rst = this.map.getPath(this._player.pos,pts)
+        // let rst = this.map.getPath(this._player.pos,pts)
+        let rst = this._player.getPath(pts)
 
         this._rst = rst;
         
@@ -251,14 +254,15 @@ export class GameScene extends Scene
         {
             if(rst.state==1 && !rst.block)
             {
-                this.drawPath(rst.path);
+                this.drawPath(rst.pts);
                 if(this._ent) {Mark.close();}
                 else {Mark.show(rst.pt,GM.COLOR_WHITE);}
             }
             else
             {
                 this.clearPath();
-                Mark.show(this.map.getPt(pt),GM.COLOR_RED);
+                Mark.show(rst.pt,GM.COLOR_RED);
+                // Mark.show(this.map.getPt(pt),GM.COLOR_RED);
                 // if(rst.state==-1||rst.block) 
                 // {
                 //     Mark.show(this.map.getPt(pt),GM.COLOR_RED);

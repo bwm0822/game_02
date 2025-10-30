@@ -384,7 +384,7 @@ class Map
         }
         else if(start==end) // 起點 = 終點
         {
-            return {state:1, pt:pt, path:[], cost:0}
+            return {state:1, pt:pt, pts:[], cost:0}
         }
         else
         {
@@ -396,9 +396,9 @@ class Map
             }
             else
             {
-                let path = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
+                let pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
                 let block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
-                return {state:1, pt:pt, path:path, cost:result.at(-1).g, block:block}
+                return {state:1, pt:pt, pts:pts, cost:result.at(-1).g, block:block}
             }
         }
     }

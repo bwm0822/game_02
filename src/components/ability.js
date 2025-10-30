@@ -97,6 +97,9 @@ export class Ability
 
         this._ability = ability;
         this._idSel = id;
+
+        const {sta}=this.ctx;
+        sta(GM.ST_ABILITY);
     }
 
     // 取消選擇技能
@@ -110,6 +113,9 @@ export class Ability
     {
         this._ability = null;
         this._idSel = null;
+
+        const {sta}=this.ctx;
+        sta(GM.ST_IDLE);
     }
 
     _isInRange(pos)
@@ -179,7 +185,6 @@ export class Ability
         
         // 在上層綁定操作介面，提供給其他元件使用
         root.prop('abilities', this, '_abilities');
-        root.prop('ability', this, '_ability');
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);
