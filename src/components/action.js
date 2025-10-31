@@ -101,15 +101,16 @@ export class Action
 
         emit('findPath', target.pos); // 搜尋路徑，結果會存於 bb.path
 
-        if(bb.path)
+        if(bb.path?.state>GM.PATH_NONE)
         {
             for(let i=0;i<maxSteps;i++)
             {
-                if(bb.path.state!==GM.PATH_NONE && bb.path.pts.length>1)
+                if(bb.path.pts.length>1)
                 {
                     await this._moveTo(bb.path.pts[0])
                     bb.path.pts.splice(0,1);  
                 }
+                else {break;}
             }
 
             if(bb.path.pts.length===0) {delete bb.path;}
@@ -121,7 +122,6 @@ export class Action
     {
         const {bb,emit} = this.ctx;
 
-        emit('checkPath',true);
         await this._moveTo(bb.path?.pts[0]);
 
         // bb.path 有可能在被 delete，如 : 在移動中，點擊畫面，會呼叫 player.stop()

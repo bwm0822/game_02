@@ -376,30 +376,32 @@ class Map
         let end = this.graph.grid[ey][ex];
         let start = this.graph.grid[sy][sx];
 
-        let pt = this.tileToWorld(ex,ey);
+        let ept = this.tileToWorld(ex,ey);
 
         if(end.weight==0)   // 終點為不可通過的點，(顯示紅色框框)
         {
-            return {state:GM.PATH_NONE, pt:pt, cost:Infinity}
+            return {state:GM.PATH_NONE, ep:ept, cost:Infinity}
         }
         else if(start==end) // 起點 = 終點
         {
-            return {state:GM.PATH_OK, pt:pt, pts:[], cost:0}
+            return {state:GM.PATH_OK, ep:ept, pts:[], cost:0}
         }
         else
         {
-            let result = astar.search(this.graph, start, end);
-            let len = result.length;
+            const result = astar.search(this.graph, start, end);
+            const len = result.length;
             if(len==0)  // 找不到路徑，(顯示紅色框框)
             {
-                return {state:GM.PATH_NONE, pt:pt, cost:Infinity}
+                return {state:GM.PATH_NONE, ep:ept, cost:Infinity}
             }
             else
             {
                 let pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
                 // 如果到達目的地之前的 g >= W_BLOCK，代表有非牆壁的阻擋物(如:人、門)
-                let block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
-                return {state:block?GM.PATH_BLK:GM.PATH_OK, pt:pt, pts:pts, cost:result.at(-1).g}
+                const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
+                const state = block ? GM.PATH_BLK : GM.PATH_OK;
+                const cost = result.at(-1).g;   // 用於判斷最佳路徑
+                return {state:state, ep:ept, pts:pts, cost:cost}
             }
         }
     }

@@ -1,5 +1,4 @@
 import { GM } from '../setting.js';
-import * as Role from '../role.js';
 import Utility from '../utility.js';
 import {getPlayer} from '../roles/player.js';
 
@@ -33,19 +32,25 @@ export class Sense
     //  Local
     //------------------------------------------------------
     // ---- 感知 ----
-    _sensePlayer(maxTiles=8, needSight=true) 
+    _sensePlayer({maxTiles=8, needSight=true}={}) 
     {
-
         // const player = this.role.scene?.roles?.find(r => r.isPlayer);
         // const player = Role.getPlayer();
+        const {bb,emit}=this.ctx;
         const player = getPlayer();
         // if (!player || !player.isAlive) {return null;}
-        if (!withinTiles(this.pos, player.pos, maxTiles)) {return null;}
-        if (needSight) 
+        if (!withinTiles(this.pos, player.pos, maxTiles)) 
         {
-            const hits = Utility.raycast(this.pos.x, this.pos.y, player.x, player.y, [this.scene.staGroup]);
-            if (hits.length > 0) {return null;}
+            bb.sensePlayer=false; return;
         }
+
+        if (needSight && !this._canSee(player)) 
+        {
+            bb.sensePlayer=false; return;
+        }
+
+        const s=needSight ? '👁️‍🗨️' : '‼️';
+        if(!bb.sensePlayer) {bb.sensePlayer=true; emit('speak',s)}
         return player;
     }
 

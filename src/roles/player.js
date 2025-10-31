@@ -210,8 +210,6 @@ export class Player extends Role
             await this._pause();
             console.log('-------------------- pause 1')
         }
-
-        
         
         if(bb.path)
         {
@@ -230,6 +228,7 @@ export class Player extends Role
                 }
                 else
                 {
+                    this.emit('checkPath'); // 檢查是否被阻擋
                     await this.aEmit('move');
                 }
             }

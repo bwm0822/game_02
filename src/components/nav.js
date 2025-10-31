@@ -81,20 +81,17 @@ export class Nav
 
     _clearPath() {delete this.bb.path;}
 
-    _checkPath(repath=true)
+    // 檢查下一個點是否被阻擋
+    _checkPath()
     {
         const pt = this.bb.path?.pts[0];
         if(pt)
         {
             let w = this.scene.map.getWeight(pt);
-            if(w > GM.W_BLOCK)  // 被阻擋 
-            {
-                if(repath) {this._findPath(this.bb.path.pt);}
-                else {this._clearPath();}
-            }
+            // 被阻擋，就清除路徑 
+            if(w > GM.W_BLOCK) {this._clearPath(); return false;}
         }
-
-        return this.bb.path?.state===GM.PATH_OK; 
+        return true;
     }
 
     //------------------------------------------------------

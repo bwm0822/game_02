@@ -1,5 +1,6 @@
-import Utility from '../utility.js';
-import {text, rect} from '../uibase.js';
+import Utility from '../utility.js'
+import {text, rect} from '../uibase.js'
+import { GM } from '../setting.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -64,6 +65,56 @@ export class Disp
         if(!this._busy) {this._show();}
     }
 
+    _speak(words, {duration=1000,tween=false}={})
+    {
+        console.log('speak',words)
+        if(!this._spk)
+        {
+            this._spk = this.scene.rexUI.add.sizer(0,-48,{space:5});
+            this._spk.addBackground(rect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
+                        .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
+                        .setOrigin(0.5,1)
+                        .setDepth(100)
+            this.ent.add(this._spk);
+            // this.ent.sort('depth')
+        }
+
+        if(tween)
+        {
+            this._spk.tw = this.scene.tweens.add({
+                targets: this._spk,
+                scale: 0.5,
+                loop: -1,
+                duration: 1000,
+                yoyo:true,
+                onStop: ()=>{this._spk.setScale(1);}, 
+            })
+        }
+
+        if(words)
+        {
+            this._spk.getElement('text').setText(words);
+            this._spk.show();
+            this._spk.layout();
+            if(duration>0)
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+                this._to = setTimeout(()=>{this._spk?.hide();this._to=null;}, duration);
+            }
+            else
+            {
+                if (this._to) {clearTimeout(this._to);this._to=null;}
+            }
+        }
+        else
+        {
+            if (this._to) {clearTimeout(this._to);this._to=null;}
+            this._spk.hide();
+            this._spk.tw?.stop();
+        }
+
+    }
+
 
 
     // 等待 所有 disp 都結束
@@ -96,53 +147,7 @@ export class Disp
 
     }
 
-    speak(words, {duration=1000,tween=false}={})
-    {
-        if(!this._speak)
-        {
-            this._speak = this.scene.rexUI.add.sizer(0,-48,{space:5});
-            this._speak.addBackground(rect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
-                        .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
-                        .setOrigin(0.5,1);
-            this.ent.add(this._speak);
-            this.ent.sort('depth')
-        }
-
-        if(tween)
-        {
-            this._speak.tw = this.scene.tweens.add({
-                targets: this._speak,
-                scale: 0.5,
-                loop: -1,
-                duration: 1000,
-                yoyo:true,
-                onStop: ()=>{this._speak.setScale(1);}, 
-            })
-        }
-
-        if(words)
-        {
-            this._speak.getElement('text').setText(words);
-            this._speak.show();
-            this._speak.layout();
-            if(duration>0)
-            {
-                if (this._to) {clearTimeout(this._to);this._to=null;}
-                this._to = setTimeout(()=>{this._speak?.hide();this._to=null;}, duration);
-            }
-            else
-            {
-                if (this._to) {clearTimeout(this._to);this._to=null;}
-            }
-        }
-        else
-        {
-            if (this._to) {clearTimeout(this._to);this._to=null;}
-            this._speak.hide();
-            this._speak.tw?.stop();
-        }
-
-    }
+    
 
     //------------------------------------------------------
     //  Public
@@ -153,6 +158,7 @@ export class Disp
         // 在上層綁定操作介面，提供給其他元件使用
         // 註冊 event
         root.on('text', this._text.bind(this));
+        root.on('speak', this._speak.bind(this));
     }
 
     

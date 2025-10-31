@@ -247,11 +247,11 @@ export class GameScene extends Scene
             if(path.state===GM.PATH_OK)
             {
                 if(this._ent) {Mark.close();}
-                else {Mark.show(path.pt,GM.COLOR_WHITE);}
+                else {Mark.show(path.ep,GM.COLOR_WHITE);}
             }
             else
             {
-                Mark.show(path.pt,GM.COLOR_RED);
+                Mark.show(path.ep,GM.COLOR_RED);
             }
         }
         else
