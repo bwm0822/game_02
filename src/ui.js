@@ -2396,6 +2396,7 @@ export class UiMain extends UiBase
             .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
             .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
+            .add(new UiButton(scene,{text:'▶️',key:'step',onclick:this.step,onover:this.onover,onout:this.onout}),{align:'bottom'})
             .addEnable(scene)
             .size()
             .hide();
@@ -2481,6 +2482,8 @@ export class UiMain extends UiBase
 
     // next() {getPlayer().next();}
     next() {getPlayer().next();}
+
+    step() {getPlayer().dbgStep();}
 
     test()
     {
@@ -3579,6 +3582,13 @@ class UiDebuger extends UiBase
     cmd_log()
     {
         send('log');
+    }
+
+    cmd_dbg(args)
+    {
+        console.log('dbg',args)
+        const on = args[1]==='on';
+        getPlayer().debug(on);
     }
 
     static show() {UiDebuger.instance?.show();}

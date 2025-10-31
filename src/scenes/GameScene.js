@@ -192,10 +192,10 @@ export class GameScene extends Scene
                 {
                     this._player.execute({pt:pt,ent:this._ent});
                 }
-                else if(this._rst && this._rst.state===1 && !this._rst.block)
+                else if(this._path?.state===GM.PATH_OK)
                 {
-                    this._player.execute({pt:pt,ent:this._ent});
-                    // this.clearPath();
+                    this._player.execute({pt:pt,ent:this._ent,path:this._path});
+                    Mark.close();
                 }
             }
             
@@ -214,8 +214,7 @@ export class GameScene extends Scene
             else if(this._player.state!==GM.ST_MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
-                this.findPath(pt, this._ent);
-                
+                this.showPath(pt, this._ent);
             }
         })
 
@@ -238,44 +237,31 @@ export class GameScene extends Scene
         }
     }
 
-
-    findPath(pt, ent)
+    showPath(pt, ent)
     {
-        if(ent==this._player) {this._rst={status:-1};return;}
-
+        if(ent===this._player) {this._path=null; return;}
         let pts = ent?.pts ?? [pt];
-
-        // let rst = this.map.getPath(this._player.pos,pts)
-        let rst = this._player.getPath(pts)
-
-        this._rst = rst;
-        
-        if(rst)
+        let path = this._player.showPath(pts)
+        if(path)
         {
-            if(rst.state==1 && !rst.block)
+            if(path.state===GM.PATH_OK)
             {
-                this.drawPath(rst.pts);
                 if(this._ent) {Mark.close();}
-                else {Mark.show(rst.pt,GM.COLOR_WHITE);}
+                else {Mark.show(path.pt,GM.COLOR_WHITE);}
             }
             else
             {
-                this.clearPath();
-                Mark.show(rst.pt,GM.COLOR_RED);
-                // Mark.show(this.map.getPt(pt),GM.COLOR_RED);
-                // if(rst.state==-1||rst.block) 
-                // {
-                //     Mark.show(this.map.getPt(pt),GM.COLOR_RED);
-                // }
-                // else {Mark.close();}
+                Mark.show(path.pt,GM.COLOR_RED);
             }
         }
         else
         {
-            this.clearPath();
             Mark.close();
         }
+
+        this._path = path;
     }
+
 
     clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
 

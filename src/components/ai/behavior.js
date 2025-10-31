@@ -1,3 +1,4 @@
+import {GM} from '../../setting.js'
 
 // --- 行為介面 ---
 class Behavior 
@@ -41,26 +42,33 @@ export class BehAttack extends Behavior
         // const { bb, sense, role } = ctx;
         const { bb, emit } = ctx;
         const t = bb.target ?? emit('sensePlayer');
-        if (!t) return [0, 'no target'];
-        if (!emit('canSee',t)) return [0.1, 'target unseen']; // 很低分：可以先追
+        if (!t) { return [0, 'no target']; }
+        if (!emit('canSee',t)) { return [0.1, 'target unseen']; } // 很低分：可以先追
         let base = 1;
-        return [Math.max(0, base * this.weight), `none`];
+        return [Math.max(0, base * this.weight), 'none'];
     }
 
     async act(ctx) 
     {
         // const {bb, action, sense} = ctx;
-        const { bb, emit, aEmit } = ctx;
+        const { bb, emit, aEmit, sta } = ctx;
         const t = bb.target ?? emit('sensePlayer');
-        if (!t) return { ok:false, note:'no target' };
+        if (!t)
+        {
+            sta(GM.ST_IDLE);
+            return { ok:false, note:'no target' };
+        }
+
         if (emit('inAttackRange',t)) 
         {
+            sta(GM.ST_ATTACK);
             const ok = await aEmit('attack',t);
             if (ok) { this._commitUse(ctx); return { ok:true, note:'attack' }; }
             else {return { ok:false, note:'attack failed' };}
         } 
         else 
         {
+            sta(GM.ST_MOVING);
             const ok = await aEmit('moveToward',t, { maxSteps: 1 });
             return { ok, note:'chase' };
         }

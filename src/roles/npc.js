@@ -11,6 +11,7 @@ import {Stats} from '../components/stats.js'
 import {GM} from '../setting.js';
 import {Role} from './role.js';
 
+let _dbg = true;
 
 export class Npc extends Role
 {
@@ -86,6 +87,13 @@ export class Npc extends Role
         if(!this.isAlive) {return;}
 
         await this.aEmit('think');
+
+        if(this.state!==GM.ST_MOVING && this.bb.path)
+        {
+            this.emit('clearPath');
+        }
+
+        if(_dbg) {this.emit('updateDebugPath');}
     }
     
 }

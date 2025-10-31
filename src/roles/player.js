@@ -74,9 +74,22 @@ export class Player extends Role
         this._send('gameover');
     }
 
+   
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    debug(on) {this._dbg=on;}
+    dbgStep() {this._dbgRes?.();}
+    async dbgWait() 
+    {
+        if(this._dbg)
+        {
+            console.log('-------------------- debug wait 0')
+            await new Promise((res)=>{this._dbgRes=res;})
+            console.log('-------------------- debug wait 1')
+        }
+    }
+
     init_prefab()
     {     
         this._registerTimeManager();            // 註冊 TimeManager
@@ -155,11 +168,11 @@ export class Player extends Role
         this.emit('clearPath');
     }
 
-    async execute({pt,ent,act}={})
+    async execute({pt, ent, act, path}={})
     {
         if(!this.isAlive) {return;}
         
-        const {bb} = this.ctx;
+        const {bb,sta} = this.ctx;
 
         if(this.state===GM.ST_ABILITY)
         {
@@ -173,8 +186,12 @@ export class Player extends Role
         {
             bb.ent = ent;
             bb.act = act??ent?.act;
-            this.emit('findPath',pt??ent.pos);
-            this.emit('drawPath');
+
+            if(path) { this.emit('setPath', path); }
+            else { this.emit('findPath', pt??ent.pos); }
+            this.emit('updatePath');
+            sta(GM.ST_MOVING);
+
             this._resume();
         }
     }
@@ -193,9 +210,13 @@ export class Player extends Role
             await this._pause();
             console.log('-------------------- pause 1')
         }
+
+        
         
         if(bb.path)
         {
+            await this.dbgWait();
+
             if(bb.act === 'attack')
             {
                 await this.attack();
@@ -218,8 +239,4 @@ export class Player extends Role
         else {sta(GM.ST_IDLE);}
     }
 
-
-
-
-    
 }

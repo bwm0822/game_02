@@ -262,6 +262,11 @@ export let GM =
     SELF : 'self',
     ENEMY : 'enemy',
 
+    // path
+    PATH_NONE : -1, // 找不到路徑
+    PATH_BLK : 0,   // 有阻擋
+    PATH_OK : 1,    // 無阻擋
+
 
 }
 

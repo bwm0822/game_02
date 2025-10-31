@@ -1,5 +1,6 @@
-import TimeManager from '../../time.js';
-import {BehAttack, BehChase} from './behavior.js';
+import TimeManager from '../../time.js'
+import {BehAttack, BehChase} from './behavior.js'
+import {GM} from '../../setting.js'
 
 
 // 回合制冷卻：以 TimeManager.ticks（回合數）判定
@@ -129,6 +130,8 @@ export class AIController
 
         if (!best || best.score <= 0) 
         {
+            const {sta}=this.ctx;
+            sta(GM.ST_IDLE);
             this.debug && console.log('[AI] no viable behavior');
             return { ok:false, note:'idle' };
         }
