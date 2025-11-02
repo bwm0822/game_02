@@ -3,6 +3,7 @@ import {RoleDB,Roles} from './database.js'
 import DB from './db.js'
 import * as Role from './role.js';
 import Utility from './utility';
+import {Npc} from './roles/npc.js'
 
 const ticksMax = 24*60-1;
 export default class TimeManager
@@ -220,8 +221,10 @@ export class Schedular
                 let ents = this.toEnts(sh.p);
                 // console.log('[time] init',id, sh.t); 
                 let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
-                let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id).load().initSchedule();
+                // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                // npc.init_runtime(id).load().initSchedule();
+                const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                npc.init_runtime(id);
                 return;
             }
         }
@@ -232,8 +235,10 @@ export class Schedular
             if(TimeManager.inRange(role.exit.sh.t))
             {
                 let ent = this.scene.ents[role.exit.port];
-                let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id).load().initSchedule();
+                // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                // npc.init_runtime(id).load().initSchedule();
+                const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                npc.init_runtime(id);
             }
         }
     }

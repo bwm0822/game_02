@@ -165,7 +165,9 @@ export class Player extends Role
 
     stop()
     {
-        this.emit('clearPath');
+        console.log('------------------------- stop')
+        // this.emit('clearPath');
+        this.bb.path.stop = true; 
     }
 
     async execute({pt, ent, act, path}={})
@@ -204,6 +206,7 @@ export class Player extends Role
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
         const {bb,sta} = this.ctx;
 
+        // console.log(bb.path);
         if(!bb.path)
         {
             console.log('-------------------- pause 0')
@@ -228,7 +231,7 @@ export class Player extends Role
                 }
                 else
                 {
-                    this.emit('checkPath'); // 檢查是否被阻擋
+                    // this.emit('checkPath'); // 檢查是否被阻擋
                     await this.aEmit('move');
                 }
             }

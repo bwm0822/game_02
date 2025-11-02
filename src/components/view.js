@@ -574,7 +574,7 @@ export class RoleView extends View
         const {bb} = this.ctx;
 
         this._removeEquips();
-        bb.equips.forEach((eq)=>{
+        bb.equips?.forEach((eq)=>{
             if(eq)
             {
                 const dat = DB.item(eq.id??eq);

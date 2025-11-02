@@ -134,14 +134,17 @@ export class Action
             {
                 // 判斷是否是目的地，如果不是，回傳值設成 false
                 bb.path.pts.length>1 && (ret=false);
-                delete bb.path;
+                bb.path=null;
             }
             else
             {
                 await this._moveTo(pt);
-                // bb.path有可能在被delete，例如:在移動中，點擊畫面，會呼叫player.stop()
-                bb.path?.pts.splice(0,1);
-                bb.path?.pts.length===0 && delete bb.path;
+                if(bb.path.stop) {bb.path=null;}
+                else
+                {
+                    bb.path.pts.splice(0,1);
+                    bb.path.pts.length===0 && (bb.path=null);
+                }
             }
         }
 

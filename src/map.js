@@ -384,7 +384,7 @@ class Map
         }
         else if(start==end) // 起點 = 終點
         {
-            return {state:GM.PATH_OK, ep:ept, pts:[], cost:0}
+            return {state:GM.PATH_NONE, ep:ept, cost:0}
         }
         else
         {

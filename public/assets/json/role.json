@@ -68,7 +68,8 @@
     "gold": 200,
     "body": {
       "sprite": "trump",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -160,7 +161,8 @@
     "gold": 200,
     "body": {
       "sprite": "melanie",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -426,7 +428,8 @@
     "gold": 200,
     "body": {
       "sprite": "melanie",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -568,7 +571,8 @@
     "gold": 200,
     "body": {
       "sprite": "xi",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -720,7 +724,8 @@
     "gold": 200,
     "body": {
       "sprite": "macron",
-      "scale": 0.25
+      "scale": 0.25,
+      "y": 32
     },
     "faceR": true,
     "anchor": {

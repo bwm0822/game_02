@@ -196,6 +196,7 @@ export class GameScene extends Scene
                 {
                     this._player.execute({pt:pt,ent:this._ent,path:this._path});
                     Mark.close();
+                    this._path=null;
                 }
             }
             
@@ -262,28 +263,7 @@ export class GameScene extends Scene
         this._path = path;
     }
 
-
     clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
-
-    drawPath(path)
-    {    
-        if(!this._dbgPath)
-        {
-            this._dbgPath = this.add.graphics();
-            this._dbgPath.name = 'path';
-            this._dbgPath.fillStyle(0xffffff);
-            this._dbgPath.setDepth(Infinity);
-        }
-        this._dbgPath.clear();
-
-        if(dbg_hover_npc) {return;}    // DEBUG 用，如果有 NPC 被滑鼠指向，則不畫 player 的路徑，以免干擾 npc 路徑的顯示
-        
-        path.pop(); //移除陣列最後一個元素
-        path.forEach((node)=>{
-            let circle = new Phaser.Geom.Circle(node.x, node.y, 5);
-            this._dbgPath.fillStyle(0xffffff).fillCircleShape(circle);
-        })
-    }
 
     save()
     {

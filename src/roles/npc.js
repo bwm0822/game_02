@@ -54,7 +54,7 @@ export class Npc extends Role
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    init_prefab()
+    init_prefab(modify=true)
     {     
         if(this._isRemoved()) {return;}
 
@@ -64,7 +64,7 @@ export class Npc extends Role
         this.bb.meta = DB.role(this.bb.id);
 
         // 加入元件
-        this.addCom(new RoleView(this.scene),{modify:true})
+        this.addCom(new RoleView(this.scene),{modify:modify})
             .addCom(new Inventory(this.bb.meta))
             .addCom(new Anim())
             .addCom(new Action())
@@ -80,6 +80,12 @@ export class Npc extends Role
         // 載入
         this.load();
         this.equip?.();
+    }
+
+    init_runtime(id)
+    {
+        this.bb.id = id;
+        this.init_prefab(false); 
     }
 
     async process()

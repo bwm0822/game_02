@@ -29,9 +29,6 @@ export class Nav
         }
         this._graph.clear();
 
-        // if(dbg_hover_npc) {return;}    // DEBUG 用，如果有 NPC 被滑鼠指向，則不畫 player 的路徑，以免干擾 npc 路徑的顯示
-        
-        // path.pop(); //移除陣列最後一個元素
         if(!path || path.state===GM.PATH_NONE) {return;}  
 
         let len = path.skipLast ? path.pts.length-1 : path.pts.length;
