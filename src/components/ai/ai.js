@@ -1,5 +1,5 @@
 import TimeManager from '../../time.js'
-import {BehAttack, BehChase} from './behavior.js'
+import {BehAttack, BehChase, BehTest} from './behavior.js'
 import {GM} from '../../setting.js'
 
 
@@ -84,9 +84,10 @@ export class AIController
         this.behaviors = [
             // new BehDrinkPotion({ weight: 1.0 }),
             // new BehFlee({ weight: 1.0 }),
-            new BehAttack({weight:1.2}),   // 偏攻擊
+            // new BehAttack({weight:1.2}),   // 偏攻擊
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
+            new BehTest(),
         ];
     }
 

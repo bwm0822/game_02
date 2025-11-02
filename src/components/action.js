@@ -122,15 +122,32 @@ export class Action
     {
         const {bb,emit} = this.ctx;
 
-        await this._moveTo(bb.path?.pts[0]);
+        const pt = bb.path?.pts[0];
+        let ret = true;
 
-        // bb.path 有可能在被 delete，如 : 在移動中，點擊畫面，會呼叫 player.stop()
-        if(bb.path)
+        if(pt)
         {
-            bb.path.pts.splice(0,1);
-            if(bb.path.pts.length===0) {delete bb.path;}
+            // 判斷前面是否有障礙物
+            const blocked = this.scene.map.getWeight(pt) > GM.W_BLOCK;
+            
+            if(blocked) // 前面有障礙物
+            {
+                // 判斷是否是目的地，如果不是，回傳值設成 false
+                bb.path.pts.length>1 && (ret=false);
+                delete bb.path;
+            }
+            else
+            {
+                await this._moveTo(pt);
+                // bb.path有可能在被delete，例如:在移動中，點擊畫面，會呼叫player.stop()
+                bb.path?.pts.splice(0,1);
+                bb.path?.pts.length===0 && delete bb.path;
+            }
         }
+
         emit('updatePath');
+
+        return ret;
     }
 
     async _attack(target, ability)

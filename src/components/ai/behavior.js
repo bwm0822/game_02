@@ -105,7 +105,7 @@ export class BehChase extends Behavior
 
     async act(ctx) 
     {
-        const { bb, emit, aEmit } = ctx;
+        const { bb, emit, aEmit } = ctx;a
         const t = bb.target ?? emit('sensePlayer');
         if (!t) {return { ok:false, note:'no target' };}
 
@@ -130,10 +130,9 @@ export class BehTest extends Behavior
         else
         {
             const { bb, emit } = ctx;
-            const t = bb.target ?? emit('sensePlayer');
+            bb.target = emit('sensePlayer');
 
-            if (!t) {return [0, 'no target'];}
-            if (!emit('canSee',t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
+            if (!bb.target) {return [0, 'no target'];}
             let base = 1;
             return [Math.max(0, base * this.weight), `none`];
         }
@@ -141,13 +140,26 @@ export class BehTest extends Behavior
 
     async act(ctx) 
     {
-        const { bb, emit, aEmit } = ctx;
-        const t = bb.target ?? emit('sensePlayer');
-        if (!t) {return { ok:false, note:'no target' };}
+        const { bb, emit, aEmit, sta } = ctx;
+
+        sta(GM.ST_MOVING);
+        if(!bb.path) 
+        {
+            console.log('------ findPath')
+            emit('findPath', bb.target.pos??bb.target);
+        }
+        const ep = bb.path.ep
+        let ret = await aEmit('move');
+        if(ret[0]===false) 
+        {
+            console.log('------ rePath')
+            emit('findPath', ep);
+            await aEmit('move');
+        }
 
         this._commitUse(ctx); 
-        const ok = await aEmit('moveToward',t, { maxSteps: 2 });
-        return { ok, note:'chase' };
+        // const ok = await aEmit('move');
+        return { ok:true, note:'chase' };
         
     }
 }
