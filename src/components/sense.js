@@ -1,3 +1,4 @@
+import Com from './com.js'
 import { GM } from '../setting.js';
 import Utility from '../utility.js';
 import {getPlayer} from '../roles/player.js';

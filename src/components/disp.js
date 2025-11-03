@@ -1,3 +1,4 @@
+import Com from './com.js'
 import Utility from '../utility.js'
 import {text, rect} from '../uibase.js'
 import { GM } from '../setting.js'

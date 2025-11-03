@@ -142,11 +142,11 @@ export class GameObject
     // aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
 
     // 讓元件在 root 加入 prop
-    prop(name, target, config) 
+    prop(name, {target, key, getter, setter}={}) 
     { 
-        let key, getter, setter;
-        if(typeof config === 'string') {key = config;}
-        else {({getter,setter} = config);}
+        // let key, getter, setter;
+        // if(typeof config === 'string') {key = config;}
+        // else {({getter,setter} = config);}
 
         Object.defineProperty(this, name, { 
             get: getter ? () => getter() : () => target[key], 

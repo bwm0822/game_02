@@ -1,25 +1,27 @@
-import Utility from '../utility.js';
-import DB from '../db.js';
-import {Pickup} from '../items/pickup.js';
-import AudioManager from '../audio.js';
-import {GM} from '../setting.js';
+import Com from './com.js'
+import Utility from '../utility.js'
+import DB from '../db.js'
+import {Pickup} from '../items/pickup.js'
+import AudioManager from '../audio.js'
+import {GM} from '../setting.js'
+
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : inv
 // 功能 : 提供儲存物品的功能
 //--------------------------------------------------
-export class Storage
+export class Storage extends Com
 {
     constructor(capacity=-1)
     {
+        super();
         this._storage = {capacity:capacity,items:[]}
     }
 
     get tag() {return 'inv';}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
-    get ctx() {return this._root.ctx;}
     get storage() {return this._storage;}
 
     //------------------------------------------------------
@@ -134,16 +136,17 @@ export class Storage
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('storage', this, '_storage');
+        root.prop('storage', {target:this, key:'_storage'});
         root.put = this._put.bind(this);
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
 
         // 提供給外界操作
+        root.on('take', this._take.bind(this));
         root.on(GM.OPEN, ()=>{this._open();})
     }
 
@@ -178,8 +181,6 @@ export class Inventory extends Storage
         this._equips = config.equips;
         this._gold = config.gold;
     }
-
-    get ctx() {return this._root.ctx;}
    
     //------------------------------------------------------
     // Local
@@ -212,13 +213,14 @@ export class Inventory extends Storage
         super.bind(root);
 
         // 在上層綁定操作介面，提供給外部使用
-        root.prop('equips', this, '_equips');
-        root.prop('gold', this, '_gold');
+        this.addP(root, 'equips', {target:this, key:'_equips'});
+        this.addP(root, 'gold', {target:this, key:'_gold'});
         root.equip = this._equip.bind(this);
         root.receive = this._receive.bind(this);
 
-        // 共享裝備資料 (有共享的資料，load()時，要用 Object.assign)
+        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.equips = this._equips;
+        this.addP(root.bb, 'gold', {target:this, key:'_gold'});
     }
 
     //------------------------------------------------------

@@ -1,3 +1,4 @@
+import Com from './com.js'
 import DB from '../db.js';
 
 //--------------------------------------------------
@@ -29,7 +30,7 @@ export class AbilityTree
         this._abTree = DB.abTree;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('abTree', this, '_abTree');
+        root.prop('abTree', {target:this, key:'_abTree'});
         
         // 註冊 event
         

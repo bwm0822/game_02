@@ -1,3 +1,5 @@
+import Com from './com.js'
+
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : abilityslots

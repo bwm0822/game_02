@@ -13,6 +13,8 @@ export class Role extends GameObject
     }
 
     get id() {return this.bb.id;}
+    get icon() {return this.bb.meta.icon;}
+    get job() {return this.bb.meta.job;}
     get state() {return this._state;}
 
     get ctx() {return {...super.ctx, sta:this._setState.bind(this)}}

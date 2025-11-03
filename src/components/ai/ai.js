@@ -1,3 +1,4 @@
+import Com from '../com.js'
 import TimeManager from '../../time.js'
 import {BehAttack, BehChase, BehTest} from './behavior.js'
 import {GM} from '../../setting.js'
@@ -69,10 +70,11 @@ class StateMachine
 // 功能 :
 //  控制 NPC 的行為
 //--------------------------------------------------
-export class AIController 
+export class AIController extends Com
 {
     constructor() 
     {
+        super();
         this.debug = false;
 
         this.cd = new Cooldown();
@@ -92,8 +94,9 @@ export class AIController
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
-    get root() {return this._root;}
-    get ctx() {return {...this._root.ctx, cd:this.cd, tick:TimeManager.ticks};}
+    // get root() {return this._root;}
+    // get ctx() {return {...this._root.ctx, cd:this.cd, tick:TimeManager.ticks};}
+    get ctx() {return {...super.ctx, cd:this.cd, tick:TimeManager.ticks};}
 
     //------------------------------------------------------
     //  Local
@@ -150,7 +153,7 @@ export class AIController
     //------------------------------------------------------
     bind(root) 
     {
-        this._root = root;
+        super.bind(root);
         // 註冊 event
         root.on('think', async(resolve)=>{await this._think();resolve?.();});
     }

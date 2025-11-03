@@ -1,3 +1,4 @@
+import Com from './com.js'
 import DB from '../db.js'
 import Record from '../record.js'
 import {GM} from '../setting.js';
@@ -55,7 +56,7 @@ export class Pickable
         this._dat = DB.item(this._content.id);
 
         // 在上層綁定操作介面，提供給外部件使用
-        root.prop('content', this, '_content')
+        root.prop('content', {target:this, key:'_content'})
         
         // 註冊 event
         // 提供給外界操作

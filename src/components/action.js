@@ -1,3 +1,4 @@
+import Com from './com.js'
 import {Projectile} from '../entity.js'
 import {computeDamage} from '../core/combat.js'
 import {GM} from '../setting.js'

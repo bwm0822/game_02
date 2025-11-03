@@ -1,3 +1,4 @@
+import Com from './com.js'
 import {GM} from '../setting.js';
 import DB from '../db.js';
 import Utility from '../utility.js';
@@ -173,10 +174,11 @@ function _adjustDerived(total, mods)
 // 標籤 : stats
 // 功能 : 角色屬性、衍生屬性、HP/MP、抗性、受傷/治療、DoT
 //--------------------------------------------------
-export class Stats 
+export class Stats extends Com
 {
     constructor(init={}) 
     {
+        super();
         // --- 基礎屬性（可依你資料庫載入覆蓋） ---
         this.baseStats =
         {
@@ -190,7 +192,6 @@ export class Stats
     }
 
     get tag() { return 'stats'; }
-    get ctx() { return this._root.ctx; }
 
 
     //------------------------------------------------------
@@ -351,11 +352,11 @@ export class Stats
     //------------------------------------------------------
     bind(root) 
     {
-        this._root = root;
+        super.bind(root);
 
         // 對上層公開 API
-        root.prop('total', this, {getter:this._getTotalStats.bind(this)});
-        root.prop('actives', this, '_actives');
+        this.addP(root, 'total', {getter:this._getTotalStats.bind(this)});
+        this.addP(root, 'actives', {target:this, key:'_actives'});
         root.addProcs = this._addProcs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);

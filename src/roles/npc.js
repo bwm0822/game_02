@@ -4,8 +4,10 @@ import {Anim} from '../components/anim.js'
 import {Action} from '../components/action.js'
 import {Nav} from '../components/nav.js'
 import {AIController} from '../components/ai/ai.js'
-import {Sense} from '../components/sense.js';
+import {Sense} from '../components/sense.js'
 import {Disp} from '../components/disp.js'
+import {Talk} from '../components/talk.js'
+import {Trade} from '../components/trade.js'
 import DB from '../db.js'
 import {Stats} from '../components/stats.js'
 import {GM} from '../setting.js';
@@ -16,7 +18,7 @@ let _dbg = true;
 export class Npc extends Role
 {
 
-    get acts() {return [GM.ATTACK,GM.OBSERVE]}
+    get acts() {return [GM.TALK,GM.ATTACK,GM.OBSERVE]}
     get act() {return this.acts[0];}
 
     //------------------------------------------------------
@@ -73,6 +75,8 @@ export class Npc extends Role
             .addCom(new Sense())
             .addCom(new Stats())
             .addCom(new Disp())
+            .addCom(new Talk())
+            .addCom(new Trade())
 
         // 註冊 event
         this.on('dead', this._dead.bind(this));
@@ -84,7 +88,9 @@ export class Npc extends Role
 
     init_runtime(id)
     {
-        this.bb.id = id;
+        this.bb.id = id;                // 將 id 存到 bb.id
+        this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
+        this.bb.interactive = true;     // 設成 可互動，view 元件會參考
         this.init_prefab(false); 
     }
 

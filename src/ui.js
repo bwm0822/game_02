@@ -2681,8 +2681,8 @@ export class UiTrade extends UiBase
 
     updateInfo()
     {
-        this.getElement('icon',true).setIcon(this.owner.role.icon);
-        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.role.job?.lab()}`);
+        this.getElement('icon',true).setIcon(this.owner.icon);
+        this.getElement('name',true).setText(`${this.owner.id.lab()}\n${this.owner.job?.lab()}`);
     }
 
     refresh()
@@ -3013,7 +3013,11 @@ export class UiDialog extends UiBase
 
         this.setIconB = (icon)=>{iconB.setIcon(icon);return this;}
         this.setTextB = (options)=>{
+            console.log(options)
             textB.removeAll(true);
+            // options.forEach((option)=>{
+            //     textB.add(this.createOption(option),{align:'left',expand:true})
+            // })
             options.forEach((option)=>{
                 textB.add(this.createOption(option),{align:'left',expand:true})
             })
@@ -3025,7 +3029,8 @@ export class UiDialog extends UiBase
             let np = page.getNextPage();
             textA.setText(np);
             //console.log(page.pageCount,page.pageIndex)
-            if (page.isLastPage) {this.setTextB(this.dialog[this.id].B);} 
+            // if (page.isLastPage) {this.setTextB(this.dialog[this.id].B);} 
+            if (page.isLastPage) {this.setTextB(this.dialog.B);} 
             else {this.setTextB(['*聆聽...*/next']);}
         }
     }
@@ -3077,42 +3082,71 @@ export class UiDialog extends UiBase
         return scroll;
     }
 
+    // createOption(option)
+    // {
+    //     let [text,args] = option.split('/').map(s => s.trim());
+    //     let scene = this.scene;
+    //     let sizer = scene.rexUI.add.sizer();
+    //     sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
+    //         .add(bbcText(scene,{text:text}),{align:'left'})
+    //     let bg = sizer.getElement('bg').setAlpha(0);
+    //     if(args)
+    //     {
+    //         sizer.setInteractive()
+    //             .on('pointerover',()=>{bg.setAlpha(1);})
+    //             .on('pointerout',()=>{bg.setAlpha(0);})
+    //             .on('pointerdown',()=>{this.execute(args);})
+    //     }
+    //     return sizer;
+    // }
+
     createOption(option)
     {
-        let [text,args] = option.split('/').map(s => s.trim());
+        let [text,cmds] = option.split('/').map(s => s.trim());
         let scene = this.scene;
         let sizer = scene.rexUI.add.sizer();
         sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
             .add(bbcText(scene,{text:text}),{align:'left'})
         let bg = sizer.getElement('bg').setAlpha(0);
-        if(args)
+        if(cmds)
         {
             sizer.setInteractive()
                 .on('pointerover',()=>{bg.setAlpha(1);})
                 .on('pointerout',()=>{bg.setAlpha(0);})
-                .on('pointerdown',()=>{this.execute(args);})
+                .on('pointerdown',()=>{this.owner.select(option, this.cb.bind(this));})
         }
         return sizer;
     }
 
-    execute(args)
+    cb(cmd)
     {
-        let cmds = args.split(';').map(s => s.trim());
-        cmds.forEach(cmd=>{
-            let [op,p1,p2]=cmd.split(' ');
-            switch(op)
-            {
-                case 'next': this.nextPage(); break;
-                case 'exit': this.close(); break;
-                case 'trade': this.trade(); break;
-                case 'goto': this.goto(p1); break;
-                case 'quest': this.quest(p1); break;
-                case 'close': this.close_quest(p1); break;
-                case 'set': this.set(p1,p2)
-            }
-        })
-       
+        switch(cmd)
+        {
+            case 'trade': this.trade(); return;
+            case 'exit': this.close(); return;
+            case 'goto': this.setTextA(this.dialog.A).nextPage(); return;
+            case 'next': this.nextPage(); return;
+        }
     }
+
+    // execute(args)
+    // {
+    //     let cmds = args.split(';').map(s => s.trim());
+    //     cmds.forEach(cmd=>{
+    //         let [op,p1,p2]=cmd.split(' ');
+    //         switch(op)
+    //         {
+    //             case 'next': this.nextPage(); break;
+    //             case 'exit': this.close(); break;
+    //             case 'trade': this.trade(); break;
+    //             case 'goto': this.goto(p1); break;
+    //             case 'quest': this.quest(p1); break;
+    //             case 'close': this.close_quest(p1); break;
+    //             case 'set': this.set(p1,p2)
+    //         }
+    //     })
+       
+    // }
 
     trade()
     {
@@ -3120,60 +3154,61 @@ export class UiDialog extends UiBase
         this.owner.trade(getPlayer());
     }
 
-    goto(p1)
-    {
-        let m = p1.match(/\[([^\]]+)\]/);   //取出[]內的字串
-        if(m)
-        {
-            let [p,val] = m[1].split('=');
-            if(this.owner.rec[p])
-            {
-                if(p=='quest')
-                {
-                    let q = QuestManager.query(this.owner.rec[p]);
-                    if(q)
-                    {
-                        this.id = this.owner.rec[p]+'_'+q.state();
-                    }
-                    else
-                    {
-                        this.id = this.owner.rec[p];
-                    }
-                }
-            }
-            else
-            {
-                this.id = val;
-            }
-        }
-        else
-        {
-            this.id=p1;
-        }
+    // goto(p1)
+    // {
+    //     let m = p1.match(/\[([^\]]+)\]/);   //取出[]內的字串
+    //     if(m)
+    //     {
+    //         let [p,val] = m[1].split('=');
+    //         if(this.owner.rec[p])
+    //         {
+    //             if(p=='quest')
+    //             {
+    //                 let q = QuestManager.query(this.owner.rec[p]);
+    //                 if(q)
+    //                 {
+    //                     this.id = this.owner.rec[p]+'_'+q.state();
+    //                 }
+    //                 else
+    //                 {
+    //                     this.id = this.owner.rec[p];
+    //                 }
+    //             }
+    //         }
+    //         else
+    //         {
+    //             this.id = val;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         this.id=p1;
+    //     }
 
-        this.setTextA(this.dialog[this.id].A)
-            .nextPage();
-    }
+    //     // this.setTextA(this.dialog[this.id].A)
+    //     this.setTextA(this.dialog.A)
+    //         .nextPage();
+    // }
 
-    set(key, value)
-    {
-        this.owner.rec[key]=value;
-    }
+    // set(key, value)
+    // {
+    //     this.owner.rec[key]=value;
+    // }
 
-    quest(p1)
-    {
-        this.close();
-        console.log('quest',p1)
-        QuestManager.add(p1);
-        // this.owner.status['quest']=p1;
-        this.set('quest', p1);
-    }
+    // quest(p1)
+    // {
+    //     this.close();
+    //     console.log('quest',p1)
+    //     QuestManager.add(p1);
+    //     // this.owner.status['quest']=p1;
+    //     this.set('quest', p1);
+    // }
 
-    close_quest(p1)
-    {
-        console.log('quest',p1)
-        QuestManager.close(p1);
-    }
+    // close_quest(p1)
+    // {
+    //     console.log('quest',p1)
+    //     QuestManager.close(p1);
+    // }
 
     close()
     {
@@ -3190,10 +3225,13 @@ export class UiDialog extends UiBase
         console.log(this.dialog)
         this.id = 0;
         super.show();
-        this.setIconA(owner.role.icon)
+        // this.setIconA(owner.role.icon)
+        this.setIconA(owner.icon)
             .setNameA(owner.id.lab())
-            .setIconB(getPlayer().role.icon)
-            .setTextA(this.dialog[this.id].A)
+            // .setIconB(getPlayer().role.icon)
+            .setIconB(getPlayer().icon)
+            // .setTextA(this.dialog[this.id].A)
+            .setTextA(this.dialog.A)
             .nextPage();
         // show
         UiCover.show();

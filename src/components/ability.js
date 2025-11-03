@@ -1,7 +1,8 @@
-import DB from '../db.js';
-import {GM} from '../setting.js';
-import Utility from '../utility.js';
-import {computeHealing} from '../core/combat.js';
+import Com from './com.js'
+import DB from '../db.js'
+import {GM} from '../setting.js'
+import Utility from '../utility.js'
+import {computeHealing} from '../core/combat.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -10,10 +11,11 @@ import {computeHealing} from '../core/combat.js';
 //  角色的技能
 //--------------------------------------------------
 
-export class Ability
+export class Ability extends Com
 {
     constructor()
     {
+        super();
         this._abilities = {}; // 可用的技能
         this._ability = null; // 當前選擇的技能
         this._idSel = null;
@@ -21,7 +23,6 @@ export class Ability
 
     get tag() {return 'ability';}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
-    get ctx() {return this._root.ctx;}
     get x() {return this._root.x;}
     get y() {return this._root.y;}
 
@@ -181,10 +182,10 @@ export class Ability
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('abilities', this, '_abilities');
+        root.prop('abilities', {target:this, key:'_abilities'});
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);

@@ -9,6 +9,7 @@ import {Disp} from '../components/disp.js'
 import {Ability} from '../components/ability.js'
 import {AbilityTree} from '../components/abilitytree.js'
 import {AbilitySlots} from '../components/abilityslots.js'
+import {Trade} from '../components/trade.js'
 
 import DB from '../db.js'
 import {GM} from '../setting.js'
@@ -130,6 +131,7 @@ export class Player extends Role
             .addCom(new Ability())
             .addCom(new AbilityTree())
             .addCom(new AbilitySlots())
+            .addCom(new Trade())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
