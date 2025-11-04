@@ -32,7 +32,7 @@ export class AbilityTree extends Com
         this._abTree = DB.abTree;
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('abTree', {target:this, key:'_abTree'});
+        this.addP(root, 'abTree', {target:this, key:'_abTree'});
         
         // 註冊 event
         

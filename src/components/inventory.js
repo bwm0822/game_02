@@ -139,7 +139,7 @@ export class Storage extends Com
         super.bind(root);
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('storage', {target:this, key:'_storage'});
+        this.addP(root, 'storage', {target:this, key:'_storage'});
         root.put = this._put.bind(this);
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);

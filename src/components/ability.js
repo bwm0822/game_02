@@ -185,7 +185,7 @@ export class Ability extends Com
         super.bind(root);
         
         // 在上層綁定操作介面，提供給其他元件使用
-        root.prop('abilities', {target:this, key:'_abilities'});
+        this.addP(root, 'abilities', {target:this, key:'_abilities'});
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);

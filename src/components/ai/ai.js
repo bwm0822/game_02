@@ -152,8 +152,9 @@ export class AIController extends Com
     bind(root) 
     {
         super.bind(root);
+        
         // 註冊 event
-        root.on('think', async(resolve)=>{await this._think();resolve?.();});
+        root.on('think', this._think.bind(this));
     }
 
 }

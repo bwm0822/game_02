@@ -99,7 +99,6 @@ export class Nav extends Com
     {
         super.bind(root);
         // 在上層綁定操作介面，提供給外部件使用
-        // root.getPath = this._getPath.bind(this);
         root.showPath = this._showPath.bind(this);
         
         // 註冊 event
