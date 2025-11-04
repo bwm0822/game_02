@@ -10,10 +10,9 @@ import {GM} from '../setting.js';
 //  提供拾取功能
 //--------------------------------------------------
 
-export class Pickable
+export class Pickable extends Com
 {
     get tag() {return 'pick';}   // 回傳元件的標籤
-    get ctx() {return this._root.ctx;}
     get content() {return this._content;}                   // gameObject 的內容
     get label() {return this._dat[Record.data.lang].lab;}   // gameObject 的名稱
     get pos() {return this._root.pos;}
@@ -38,7 +37,7 @@ export class Pickable
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root)
 
         const {bb} = this.ctx;
         if(bb.content)

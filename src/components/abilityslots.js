@@ -7,10 +7,11 @@ import Com from './com.js'
 //  角色的技能槽
 //--------------------------------------------------
 
-export class AbilitySlots
+export class AbilitySlots extends Com
 {
     constructor()
     {
+        super();
         this._slots = []; // 能力槽資料
     }
 
@@ -36,7 +37,7 @@ export class AbilitySlots
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
         // 在上層綁定操作介面，提供給其他元件使用
         root.setSlot = this._setSlot.bind(this);
         root.getSlot = this._getSlot.bind(this);

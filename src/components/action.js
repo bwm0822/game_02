@@ -12,14 +12,13 @@ import {GM} from '../setting.js'
 //  2. 會用到 view、anim 元件
 //--------------------------------------------------
 
-export class Action
+export class Action extends Com
 {
 
     get tag() {return 'action';}  // 回傳元件的標籤
 
     get ent() {return this._root.ent;}
     get scene() {return this._root.scene;}
-    get ctx() {return this._root.ctx;} // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
 
 
     //------------------------------------------------------
@@ -177,7 +176,8 @@ export class Action
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
+        
         // 在上層綁定操作介面，提供給其他元件使用
         
         // 註冊 event

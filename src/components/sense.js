@@ -22,12 +22,11 @@ const choose = arr => arr[Math.floor(Math.random() * arr.length)];
 // 功能 : 
 //  偵測敵人
 //--------------------------------------------------
-export class Sense
+export class Sense extends Com
 {
     get tag() {return 'sense';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
-    get ctx() {return this._root.ctx;}
     
     //------------------------------------------------------
     //  Local
@@ -74,7 +73,7 @@ export class Sense
     //------------------------------------------------------
     bind(root) 
     {
-        this._root = root;
+        super.bind(root);
 
         // 註冊 event
         root.on('sensePlayer', this._sensePlayer.bind(this));

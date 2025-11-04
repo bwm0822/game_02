@@ -8,10 +8,11 @@ import DB from '../db.js';
 //  角色的技能樹
 //--------------------------------------------------
 
-export class AbilityTree
+export class AbilityTree extends Com
 {
     constructor()
     {
+        super();
         this._abTree = {}; // 技能樹資料
     }
 
@@ -26,7 +27,8 @@ export class AbilityTree
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
+
         this._abTree = DB.abTree;
         
         // 在上層綁定操作介面，提供給其他元件使用

@@ -8,7 +8,7 @@ import {GM} from '../setting.js'
 //  尋找路徑
 //--------------------------------------------------
 
-export class Nav
+export class Nav extends Com
 {
     get tag() {return 'nav';}   // 回傳元件的標籤
     get pos() {return this._root.pos;}
@@ -97,7 +97,7 @@ export class Nav
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
         // 在上層綁定操作介面，提供給外部件使用
         // root.getPath = this._getPath.bind(this);
         root.showPath = this._showPath.bind(this);

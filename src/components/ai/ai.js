@@ -89,13 +89,11 @@ export class AIController extends Com
             // new BehAttack({weight:1.2}),   // 偏攻擊
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
-            // new BehTest(),
+            new BehTest(),
         ];
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
-    // get root() {return this._root;}
-    // get ctx() {return {...this._root.ctx, cd:this.cd, tick:TimeManager.ticks};}
     get ctx() {return {...super.ctx, cd:this.cd, tick:TimeManager.ticks};}
 
     //------------------------------------------------------

@@ -10,7 +10,7 @@ import { GM } from '../setting.js'
 //  負責顯示 傷害、對話...等
 //--------------------------------------------------
 
-export class Disp
+export class Disp extends Com
 {
 
     get tag() {return 'disp';}  // 回傳元件的標籤
@@ -155,7 +155,7 @@ export class Disp
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
         // 在上層綁定操作介面，提供給其他元件使用
         // 註冊 event
         root.on('text', this._text.bind(this));

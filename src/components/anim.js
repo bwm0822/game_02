@@ -8,11 +8,10 @@ import Com from './com.js'
 //  2. 會用到 view 元件
 //--------------------------------------------------
 
-export class Anim
+export class Anim extends Com
 {
     get tag() {return 'anim';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
-    get ctx() {return this._root.ctx;}
 
 
     //------------------------------------------------------
@@ -61,7 +60,8 @@ export class Anim
     //------------------------------------------------------
     bind(root)
     {
-        this._root = root;
+        super.bind(root);
+        
         // 在上層綁定操作介面，提供給其他元件使用
         // 註冊 event
         root.on('idle', this._idle.bind(this));
