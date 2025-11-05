@@ -39,6 +39,10 @@ export class Pickable extends Com
     {
         super.bind(root)
 
+        // act
+        root._setAct(GM.TAKE, true);
+
+
         const {bb} = this.ctx;
         if(bb.content)
         {

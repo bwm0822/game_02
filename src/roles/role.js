@@ -1,6 +1,7 @@
 import {GameObject} from '../core/gameobject.js'
 import TimeManager from '../time.js'
 import {GM} from '../setting.js'
+import Record from '../record.js'
 
 
 export class Role extends GameObject
@@ -21,6 +22,25 @@ export class Role extends GameObject
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _saveData(value)
+    {
+        if(this.uid===-1)
+        {
+            if(!Record.data.roles) {Record.data.roles={};}
+            Record.data.roles[this.id]=value;
+        }
+        else
+        {
+            super._saveData(value);
+        }
+    }
+
+    _loadData()
+    {
+        if(this.uid===-1) {return Record.data.roles?.[this.id];}
+        else {return super._loadData();}
+    }
+
     _setState(val) {val&&(this._state=val); return val;}
 
     _addToList() {this.scene.roles && this.scene.roles.push(this);}

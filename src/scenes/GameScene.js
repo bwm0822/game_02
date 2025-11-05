@@ -272,8 +272,9 @@ export class GameScene extends Scene
         // this._player.save();
 
         if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
-        console.log(this.objects)
-        this.objects.forEach((obj)=>{obj.save?.();})
+        // console.log('objects:',this.objects)
+        // this.objects.forEach((obj)=>{obj.save?.();})
+        console.log('gos:',this.gos)
         this.gos.forEach(go=>go.save?.())
         this.roles.forEach((role)=>{role.uid===-1 && role.save();})
         TimeManager.save();

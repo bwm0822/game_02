@@ -86,7 +86,8 @@ export class Talk extends Com
     bind(root) 
     {
         super.bind(root);
-
+        // act
+        root._setAct(GM.TALK, true);
         // init
         const {bb} = this.ctx;
         this._dialog = DB.dialog(bb.id);

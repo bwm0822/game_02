@@ -17,9 +17,11 @@ let _dbg = true;
 
 export class Npc extends Role
 {
-
-    get acts() {return [GM.TALK,GM.ATTACK,GM.OBSERVE]}
-    get act() {return this.acts[0];}
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        this._setAct(GM.OBSERVE,true);
+    }
 
     //------------------------------------------------------
     //  Local

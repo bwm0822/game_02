@@ -137,6 +137,9 @@ export class Storage extends Com
     bind(root)
     {
         super.bind(root);
+
+        // act
+        root._setAct(GM.OPEN, true);
         
         // 在上層綁定操作介面，提供給其他元件使用
         this.addP(root, 'storage', {target:this, key:'_storage'});

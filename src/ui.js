@@ -179,36 +179,38 @@ class Slot extends Icon
 
     get acts()
     {
-        let acts = [];
+        let acts = {};
         // console.log('useable',this.dat.useable,this.dat)
 
-        if(this.owner.trade)    // 交易
+        console.log(this.owner)
+
+        if(this.owner.tradeType)    // 交易
         {
-            if(this.owner.trade == GM.BUYER) {acts = ['sell','drop'];}
-            else {acts = ['buy'];}
-            if(this.content.count>1) {acts = [...acts,'split'];}
+            if(this.owner.tradeType == GM.BUYER) {acts = {'sell':true,'drop':true};}
+            else {acts = {'buy':true};}
+            if(this.content.count>1) {acts = {...acts,'split':true};}
         }
         else
         {
             if(this.dat.useable) 
             {
                 if(this.content?.times===0 || this.content?.capacity===0)
-                    acts = [...acts,'use:false'];
+                    acts = {...acts,'use':false};
                 else
-                    acts = [...acts,'use'];
+                    acts = {...acts,'use':true};
             }
 
             if(this.owner.target) // 打開箱子
             {
-                acts = [...acts,'transfer','drop'];
-                if(this.content.count>1) {acts = [...acts,'split'];}
-                else if(this.content.storage) {acts = [...acts,'openbag:false'];}
+                acts = {...acts,'transfer':true,'drop':true};
+                if(this.content.count>1) {acts = {...acts,'split':true};}
+                else if(this.content.storage) {acts = {...acts,'openbag':false};}
             }
             else 
             {
-                if(this.content.count>1) {acts = [...acts,'drop','split'];}
-                else if(this.dat.storage) {acts = [...acts,'drop','openbag'];}
-                else {acts = [...acts,'drop'];}
+                if(this.content.count>1) {acts = {...acts,'drop':true,'split':true};}
+                else if(this.dat.storage) {acts = {...acts,'drop':true,'openbag':true};}
+                else {acts = {...acts,'drop':true};}
             }
         }
 
@@ -1855,7 +1857,8 @@ class Option extends UiBase
     trade()
     {
         this.close();
-        if(this.owner.sell(this.target, this.ent))
+        console.log(this.owner);
+        if(this.owner.sell(this.owner.target, this.ent))
         {
             this.ent.empty();
             this.refreshAll();
@@ -1909,13 +1912,19 @@ class Option extends UiBase
 
     show(x,y,options,ent)
     {
+        console.log(options)
         this.ent = ent;
         super.show();        
         Object.values(this.btns).forEach((btn)=>{btn.hide();})
-        options.forEach((opt)=>{
-            let [type, en] = opt.split(':');
-            this.btns[type].show().setEnable(en !== 'false');
+        // options.forEach((opt)=>{
+        //     let [type, en] = opt.split(':');
+        //     this.btns[type].show().setEnable(en !== 'false');
+        // })
+
+        Object.entries(options).forEach(([key,val])=>{
+            this.btns[key].show().setEnable(val);
         })
+
         this.layout().setPosition(x,y).rePos(); // 注意要在 layout 之後再 setPosition，否則會有 offset 的問題
         // close
         UiInfo.close();
@@ -2626,9 +2635,9 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         if(this.instance) {this.instance.setPos(x,y);}
     }
 
-    static set(type)
+    static set(key)
     {
-        if(this.instance) {this.instance.setIcon(type);}
+        if(this.instance) {this.instance.setIcon(key);}
     }
 
 }

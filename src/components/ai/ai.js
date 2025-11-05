@@ -89,7 +89,7 @@ export class AIController extends Com
             // new BehAttack({weight:1.2}),   // 偏攻擊
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
-            new BehTest(),
+            // new BehTest(),
         ];
     }
 

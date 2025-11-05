@@ -1,7 +1,7 @@
 
 import {Evt} from './event.js'
 import Record from '../record.js'
-import {GM} from '../setting.js'
+import {ORDER} from '../setting.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -23,6 +23,7 @@ export class GameObject
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
 
+        this._acts = {}; // 可操作的方式
         this._init();
     }
 
@@ -34,13 +35,21 @@ export class GameObject
     get bb() {return this._bb;}                     // blackboard
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
-    // get ctx() {return {...this.coms,bb:this.bb};}
     get ctx() {return { 
                         bb : this.bb, 
                         emit : this.emit.bind(this), 
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
                     }}
+
+    // 可操作的方式
+    get acts() {return this._acts;}
+    get act() {
+        for(let key of ORDER)
+        {
+            if(this._acts[key]) {return key;}
+        }
+    }
 
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
@@ -75,7 +84,7 @@ export class GameObject
     {
         let x = this.x - this.scene.cameras.main.worldView.x;
         let y = this.y - this.scene.cameras.main.worldView.y;
-        if(this.acts.length>0) {this._send('option',x,y-10,this.acts,this);}
+        if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
     _addToList() {this.scene.gos && this.scene.gos.push(this);}
@@ -131,9 +140,15 @@ export class GameObject
         this.scene = null;
     }
 
+    _setAct(key,value) {this._acts[key]=value;}
+
+    _delAct(key) {delete this._acts[key];}
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
+
+
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
@@ -210,8 +225,6 @@ export class GameObject
     //------------------------------------------------------
     // abstract mehod
     //------------------------------------------------------
-    get acts() {}
-    get act() {}
     init_prefab() {}
     
     

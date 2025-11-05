@@ -7,8 +7,8 @@ import {GameObject} from '../core/gameobject.js';
 
 export class Pickup extends GameObject
 {
-    get acts() {return [GM.TAKE]}
-    get act() {return this.acts[0];}
+    // get acts() {return [GM.TAKE]}
+    // get act() {return this.acts[0];}
 
     //------------------------------------------------------
     //  Public

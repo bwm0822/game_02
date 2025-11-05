@@ -5,8 +5,8 @@ import {GameObject} from '../core/gameobject.js';
 
 export class Box extends GameObject
 {
-    get acts() {return [GM.OPEN]}
-    get act() {return this.acts[0];}
+    // get acts() {return [GM.OPEN]}
+    // get act() {return this.acts[0];}
 
     //------------------------------------------------------
     //  Local
