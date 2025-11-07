@@ -330,7 +330,7 @@ class Slot extends Icon
 
     update(owner,cat)
     {
-        this.owner = owner;
+        owner && (this.owner=owner);
         cat && (this.cat=cat);  // for MatSlot
         this.setSlot(this.content);
         this.setEnable(this.enabled);
@@ -2568,7 +2568,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
         none :  {sprite:GM.ICON_NONE, origin:{x:0.25,y:0}, scale:1},
         aim :   {sprite:GM.ICON_AIM, origin:{x:0.5,y:0.5}, scale:1},
         attack :  {sprite:GM.ICON_ATTACK, origin:{x:0.5,y:0.5}, scale:0.7},
-        take :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
+        pickup :  {sprite:GM.ICON_PICKUP, origin:{x:0.5,y:0.5}, scale:0.7},
         talk :  {sprite:GM.ICON_TALK, origin:{x:0.5,y:0.5}, scale:0.7},   
         enter :  {sprite:GM.ICON_ENTER, origin:{x:0.5,y:0.5}, scale:1},  
         exit :  {sprite:GM.ICON_EXIT, origin:{x:0.5,y:0.5}, scale:1},

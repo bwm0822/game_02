@@ -11,8 +11,8 @@ function doMerge(from, to)
 {
     const toCount = to.content.count ?? 0;
     const dragged = from.content.count ?? 0;
-    const cap = to.dat.cps;
-    const merged = Math.min(toCount + dragged, cap);
+    const cps = to.dat.cps;
+    const merged = Math.min(toCount + dragged, cps);
     const remain = dragged - (merged - toCount);
     to.content.count = merged;
     from.content.count = remain;
@@ -47,6 +47,7 @@ export default class InventoryService
         // 合併
         if (mergePossible(from, to)) 
         {
+            console.log(from,to)
             doMerge(from, to);
             return 'merged';
         }

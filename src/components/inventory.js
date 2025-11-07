@@ -142,8 +142,8 @@ export class Storage extends Com
     _split(ent, cnt)
     {
         console.log('---- split')
-        ent.itm.count -= cnt;
-        let split = {id:ent.itm.id,count:cnt};
+        ent.content.count -= cnt;
+        let split = {id:ent.content.id,count:cnt};
         let i = this._findEmpty();
         console.log(i)
         if(i!=-1) {
@@ -154,7 +154,7 @@ export class Storage extends Com
 
     _transfer(ent)
     {
-        console.log(ent, this.root.target);
+        // console.log(ent, this.root.target);
         const remain = this.root.target.get(ent.content);
         if(remain===0){ent.empty();}
         else {ent.count=remain;}
@@ -228,11 +228,11 @@ export class Storage extends Com
 //--------------------------------------------------
 export class Inventory extends Storage
 {
-    constructor(config={capacity:-1,equips:[],gold:0})
+    constructor(config)
     {
-        super(config.capacity);
-        this._equips = config.equips;
-        this._gold = config.gold;
+        super(config?.capacity??-1);
+        this._equips = config?.equips??[];
+        this._gold = config?.gold??0;
     }
    
     //------------------------------------------------------
@@ -246,7 +246,7 @@ export class Inventory extends Storage
                 case 'gold': this._gold+=reward.count; break;
                 case 'item': 
                     // this._put(reward.id, reward.count); 
-                    reamin = this._get(reward);
+                    let remain = this._get(reward);
                     if(remain)
                     {
                         reward.count=remain;
@@ -287,6 +287,8 @@ export class Inventory extends Storage
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.equips = this._equips;
         this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+
+        console.log('----- equips',this._equips)
 
     }
 

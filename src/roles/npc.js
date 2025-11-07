@@ -86,6 +86,9 @@ export class Npc extends Role
         // 載入
         this.load();
         this.equip?.();
+
+        //
+        this._setAct(GM.ATTACK,true);
     }
 
     init_runtime(id)
