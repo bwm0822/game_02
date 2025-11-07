@@ -39,8 +39,51 @@ export class Storage extends Com
     }
 
 
-    _put(id, count)
+    // _put(id, count)
+    // {
+    //     let cps = DB.item(id).cps ?? 1;
+
+    //     let i = 0;
+    //     let capacity = this._storage.capacity;
+    //     let len = this._storage.items.length;
+    //     let items = this._storage.items;
+    //     while(count>0 && (capacity == -1 || i<capacity))
+    //     {
+    //         if(i<len)
+    //         {
+    //             if(Utility.isEmpty(items[i]))
+    //             {
+    //                 items[i]={id:id, count:Math.min(count,cps)}
+    //                 count-=items[i].count
+
+    //             }
+    //             else if(items[i].id==id && items[i].count<cps)
+    //             {
+    //                 let sum = items[i].count+count;
+    //                 items[i].count = Math.min(sum,cps)
+    //                 count = sum-cps;
+    //             }
+    //         }
+    //         else
+    //         {
+    //             let min = Math.min(count,cps);
+    //             items.push({id:id, count:min});
+    //             count-=min;
+    //         }
+    //         i++;
+    //     }
+
+    //     if(count>0)
+    //     {
+    //         let ent = {label:id.lab(),content:{id:id,count:count}}
+    //         this._drop(ent)
+    //     }
+        
+    // }
+
+    _get(content)
     {
+        let {id,count}=content;
         let cps = DB.item(id).cps ?? 1;
 
         let i = 0;
@@ -53,50 +96,45 @@ export class Storage extends Com
             {
                 if(Utility.isEmpty(items[i]))
                 {
-                    items[i]={id:id, count:Math.min(count,cps)}
-                    count-=items[i].count
+                    const cnt = Math.min(count,cps)
+                    items[i]={id:id, count:cnt, ...content}
+                    count-=cnt;
 
                 }
                 else if(items[i].id==id && items[i].count<cps)
                 {
-                    let sum = items[i].count+count;
+                    const sum = items[i].count+count;
                     items[i].count = Math.min(sum,cps)
+                    items[i]={...items[i],...content}
                     count = sum-cps;
                 }
             }
-            else
+            else    // 新的欄位
             {
-                let min = Math.min(count,cps);
-                items.push({id:id, count:min});
-                count-=min;
+                const cnt = Math.min(count,cps);
+                items.push({id:id, count:cnt, ...content});
+                count-=cnt;
             }
             i++;
         }
 
-        if(count>0)
-        {
-            let ent = {label:id.lab(),content:{id:id,count:count}}
-            this._drop(ent)
-        }
-        
+        return count;
     }
 
 
-    _take(ent, i)
+    _take(content,i,isEquip)
     {
-        // console.log("take",ent,i);
+        // console.log('take', content, i);
 
-        !i && (i = this._findEmpty());
+        i = i??this._findEmpty();
 
         if(i!=-1)
         {
-            console.log(i,ent.content)
-            this._storage.items[i]=ent.content;
+            this._storage.items[i]=content;
             return true;
         }
         else
         {  
-            this._send('msg','_space_full'.lab());
             return false;
         }
     }
@@ -114,6 +152,15 @@ export class Storage extends Com
         console.log( this._storage)
     }
 
+    _transfer(ent)
+    {
+        console.log(ent, this.root.target);
+        const remain = this.root.target.get(ent.content);
+        if(remain===0){ent.empty();}
+        else {ent.count=remain;}
+        return true;
+    }
+
     _drop(ent)
     {
         console.log('drop',ent)
@@ -125,10 +172,12 @@ export class Storage extends Com
         send('msg',`${'_drop'.lab()} ${ent.dat['tw'].lab}`);
     }
 
-    _open() // 提供給外界操作
+    _open(target) // 提供給外界操作
     {
         const {send}=this.ctx;
-        send('storage', this._root); 
+        send('storage', this.root); 
+        this.root.target=target;
+        target.target=this.root;
     }
 
     //------------------------------------------------------
@@ -143,14 +192,15 @@ export class Storage extends Com
         
         // 在上層綁定操作介面，提供給其他元件使用
         this.addP(root, 'storage', {target:this, key:'_storage'});
-        root.put = this._put.bind(this);
+        root.get = this._get.bind(this);
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
-
+        root.transfer = this._transfer.bind(this);
+        
         // 提供給外界操作
         root.on('take', this._take.bind(this));
-        root.on(GM.OPEN, ()=>{this._open();})
+        root.on(GM.OPEN, this._open.bind(this));
     }
 
     //------------------------------------------------------
@@ -194,7 +244,16 @@ export class Inventory extends Storage
             switch(reward.type)
             {
                 case 'gold': this._gold+=reward.count; break;
-                case 'item': this._put(reward.id, reward.count); break;
+                case 'item': 
+                    // this._put(reward.id, reward.count); 
+                    reamin = this._get(reward);
+                    if(remain)
+                    {
+                        reward.count=remain;
+                        let ent = {dat:DB.item(reward.id),content:reward}
+                        this._drop(ent)
+                    }
+                    break;
             }
         })       
     }
@@ -215,6 +274,10 @@ export class Inventory extends Storage
     {
         super.bind(root);
 
+        // remove GM.OPEN
+        root._delAct(GM.OPEN);
+        root.off(GM.OPEN, this._open.bind(this));
+
         // 在上層綁定操作介面，提供給外部使用
         this.addP(root, 'equips', {target:this, key:'_equips'});
         this.addP(root, 'gold', {target:this, key:'_gold'});
@@ -224,6 +287,7 @@ export class Inventory extends Storage
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.equips = this._equips;
         this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+
     }
 
     //------------------------------------------------------

@@ -22,14 +22,18 @@ export class Pickable extends Com
     //------------------------------------------------------
     _pickup(taker)  // 提供給外界操作
     {
-        if(taker.take(this))
+        if(taker.take(this.content))
         {
             const {emit,send}=this.ctx;
             send('msg',`${'_pickup'.lab()} ${this.label}`)
             emit('out');
             emit('refresh');
             emit('remove');
-        }   
+        } 
+        else
+        {
+            send('msg','_space_full'.lab());
+        }  
     }
 
     //------------------------------------------------------
@@ -40,7 +44,7 @@ export class Pickable extends Com
         super.bind(root)
 
         // act
-        root._setAct(GM.TAKE, true);
+        root._setAct(GM.PICKUP, true);
 
 
         const {bb} = this.ctx;
@@ -59,11 +63,11 @@ export class Pickable extends Com
         this._dat = DB.item(this._content.id);
 
         // 在上層綁定操作介面，提供給外部件使用
-        this.addP(root, 'content', {target:this, key:'_content'})
+        this.addP(root, 'content', {target:this, key:'_content'});
         
         // 註冊 event
         // 提供給外界操作
-        root.on(GM.TAKE, (taker)=>{this._pickup(taker);})
+        root.on(GM.PICKUP, this._pickup.bind(this));
     }
 
     save() {return {...this.pos,...this._content};}

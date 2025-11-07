@@ -19,28 +19,26 @@ export class Trade extends Com
     _trade(target)
     {
         const {send} = this.ctx;
-        this._target = target;
+
         this.root.tradeType = GM.SELLER;
         this.root.target = target;
-        target.tradeType = GM.BUYER;
-        target.target = this.root;
+        this.root.target.tradeType = GM.BUYER;
+        this.root.target.target = this.root;
         send('trade',this.root);
     }
 
     _stopTrade()
     {
+        delete this.root.target.tradeType;
+        delete this.root.target.target;
         delete this.root.tradeType;
         delete this.root.target;
-        delete this._target.tradeType;
-        delete this._target.target;
     }
 
-    _sell(target, ent, i, isEquip)
+    _sell(ent, i, isEquip)
     {
-        // console.log('sell', target, ent, i, isEquip);
-
         const {bb} = this.ctx;
-        if(target.buy(ent, i, isEquip))
+        if(this.root.target.buy(ent, i, isEquip))
         {
             bb.gold+=ent.gold;
             ent.empty();
@@ -51,14 +49,12 @@ export class Trade extends Com
 
     _buy(ent, i, isEquip)
     {
-        // console.log('buy',ent, i, isEquip);
-
         const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
 
         const {bb,emit,send} = this.ctx;
         if(bb.gold>=ent.gold)
         {
-            if(emit('take',ent, i, isEquip))
+            if(emit('take',ent.content, i, isEquip))
             {
                 bb.gold-=ent.gold;
                 if(this.root === getPlayer())

@@ -30,15 +30,17 @@ function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
 export default class InventoryService 
 {
     // 入口：處理放下
-    static handleDrop({ from, to }) 
+    static handleDrop({ from, to }={}) 
     {
+        console.log('---------------- handleDrop')
+
         if (!to.enabled) {return 'blocked';}
 
         // 交易
         if (trading(from, to)) 
         {
             if (!to.isEmpty) {return 'blocked';}
-            const ok = from.owner.sell(to.owner, from, to.i, to.isEquip);
+            const ok = from.owner.sell(from, to.i, to.isEquip);
             return ok ? 'traded' : 'blocked';
         }
 

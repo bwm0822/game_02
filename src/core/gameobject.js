@@ -152,6 +152,7 @@ export class GameObject
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
+    off(...args) {this._evt?.off(...args);}
     emit(...args) {return this._evt?.emit(...args);}
     aEmit(...args) {return this._evt?.aEmit(...args);}
     // aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}

@@ -1787,7 +1787,7 @@ class Option extends UiBase
             .addButton(GM.TRADE)
             .addButton(GM.OBSERVE, this.observe.bind(this))
             .addButton(GM.ATTACK)
-            .addButton(GM.TAKE)
+            .addButton(GM.PICKUP)
             .addButton(GM.OPEN)
             .addButton(GM.ENTER)
             .addButton(GM.OPEN_DOOR)
@@ -1847,9 +1847,9 @@ class Option extends UiBase
     transfer()
     {
         this.close();
-        if(this.owner.transfer(this.target, this.ent))
+        if(this.owner.transfer(this.ent))
         {
-            this.ent.empty();
+            // this.ent.empty();
             this.refreshAll();
         }
     }
@@ -1857,8 +1857,7 @@ class Option extends UiBase
     trade()
     {
         this.close();
-        console.log(this.owner);
-        if(this.owner.sell(this.owner.target, this.ent))
+        if(this.owner.sell(this.ent))
         {
             this.ent.empty();
             this.refreshAll();
@@ -2729,7 +2728,8 @@ export class UiTrade extends UiBase
 
         this.update();
         // show
-        UiInv.show(getPlayer());
+        // UiInv.show(getPlayer());
+        UiInv.show(owner.target);
         // cover/closeAll/register/camera
         UiCover.show();
         Ui.closeAll(GM.UI_LEFT_P);
