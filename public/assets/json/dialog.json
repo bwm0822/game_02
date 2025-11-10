@@ -9,11 +9,26 @@
       ]
     },
     "q01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest q01",
-        "離開/exit"
-      ]
+      "type": "quest",
+      "start": {
+        "A": "殺死半獸人",
+        "B": [
+          "接受/quest q01",
+          "離開/exit"
+        ]
+      },
+      "open": {
+        "A": "...",
+        "B": [
+          "離開/exit"
+        ]
+      },
+      "done": {
+        "A": "...",
+        "B": [
+          "任務完成了/goto none;close q01;set quest none"
+        ]
+      }
     },
     "q01_open": {
       "A": "...",

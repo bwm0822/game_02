@@ -1,6 +1,8 @@
 import Com from './com.js'
 import DB from '../db.js'
 import {GM} from '../setting.js'
+import QuestManager from '../quest.js'
+import {getPlayer} from '../roles/player.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -11,6 +13,12 @@ import {GM} from '../setting.js'
 
 export class Talk extends Com
 {
+    constructor()
+    {
+        super();
+        this._rec={};
+    }
+
     get tag() {return 'talk';}  // 回傳元件的標籤
 
     //------------------------------------------------------
@@ -18,11 +26,10 @@ export class Talk extends Com
     //------------------------------------------------------
     _talk()
     {
-        const{send}=this.ctx;
-        send('talk',this.root);
+        const{send} = this.ctx;
+        this._idx = this._rec.idx ?? 0;
+        send('talk', this.root); // 開啟 對話UI
     }
-
-    _getter() {return this._dialog[this._id];}
 
     _select(option, cb)
     {
@@ -35,51 +42,64 @@ export class Talk extends Com
             switch(op)
             {
                 case 'next': 
-                case 'exit': 
-                case 'trade': cb?.(op); break;
+                case 'exit': cb?.(op); break;
+                case 'trade': this._trade(); cb?.('exit'); break;
                 case 'goto': this._goto(p1); cb?.(op); break;
-                case 'quest': this._quest(p1); break;
+                case 'quest': this._quest(p1); cb?.('exit'); break;
                 case 'close': this._close_quest(p1); break;
                 case 'set': this._set(p1,p2); break;
             }
         })
     }
 
+    _getDialog()
+    {
+        const idx = this._idx;
+        let dialog = this._dialog[idx];
+        if(dialog.type==='quest')
+        {
+            const sta = QuestManager.query(idx);
+            return dialog[sta?.status??'start'];
+        }
+        return dialog;
+    }
+
     _goto(p1)
     {
         let m = p1.match(/\[([^\]]+)\]/);   //取出[]內的字串
-        if(m)
+        if(m)   // 有[]，取出變數值
         {
-            let [p,val] = m[1].split('=');
-            if(this.owner.rec[p])
-            {
-                if(p==='quest')
-                {
-                    let q = QuestManager.query(this.owner.rec[p]);
-                    if(q)
-                    {
-                        this._id = this.owner.rec[p]+'_'+q.state();
-                    }
-                    else
-                    {
-                        this._id = this.owner.rec[p];
-                    }
-                }
-            }
-            else
-            {
-                this._id = val;
-            }
+            let [p,def] = m[1].split('=');
+            this._idx = this._rec[p]??def;
         }
         else
         {
-            this._id = p1;
+            this._idx = p1;
         }
     }
 
-    _close_quest(q) {}
-    _quest(q) {}
-    _set(p1,p2) {}
+    _trade()
+    {
+        const {emit}=this.ctx;
+        emit('trade', getPlayer())  // trade.js
+    }
+
+    _quest(p1)
+    {
+        QuestManager.add(p1);
+        this._set('quest', p1);
+    }
+
+    _close_quest(p1)
+    {
+        console.log('quest',p1)
+        QuestManager.close(p1);
+    }
+
+    _set(key, value)
+    {
+        this._rec[key]=value;
+    }
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -91,13 +111,20 @@ export class Talk extends Com
         // init
         const {bb} = this.ctx;
         this._dialog = DB.dialog(bb.id);
-        this._id = 0;
 
-        this.addP(root, 'dialog', {getter:this._getter.bind(this)});
+        // this.addP(root, 'dialog', {getter:this.get_dialog.bind(this)});
         root.talk = this._talk.bind(this);
         root.select = this._select.bind(this);
+        root.getDialog = this._getDialog.bind(this);
 
         // 註冊 event
         root.on(GM.TALK, this._talk.bind(this));
     }
+
+    load(data) 
+    {
+        if(data?.talk) {Object.assign(this._rec, data.talk);}
+    }
+
+    save() {return {talk:this._rec};}
 }

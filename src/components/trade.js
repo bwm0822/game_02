@@ -24,7 +24,7 @@ export class Trade extends Com
         this.root.target = target;
         this.root.target.tradeType = GM.BUYER;
         this.root.target.target = this.root;
-        send('trade',this.root);
+        send('trade',this.root);    // 開啟 交易UI
     }
 
     _stopTrade()
