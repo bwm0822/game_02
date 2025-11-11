@@ -3,53 +3,91 @@ import DB from './db';
 import {GM} from './setting';
 import * as Role from './role.js';
 
+
+function isDone(cond)
+{
+    switch(cond.dat.type)
+    {
+        case GM.KILL: return cond.cur >= cond.dat.count;
+    }
+}
+
+function isShown(conds, cond)
+{
+    if(!cond.dat.cond) {return true;}
+    for(let i of cond.dat.cond)
+    {
+        if(isDone(conds[i]) === false) {return false;}
+    }
+    return true;
+}
+
+function getState(conds)
+{
+    for(let cond of conds)
+    {
+        if(cond.dat.type !== GM.FINAL && isDone(cond) === false) {return 'open';}
+    }
+    return 'finish';
+}
+
+function fmt_conds(q)
+{
+    let ret = '';
+    q.conds.forEach((cond) => {
+        console.log(cond.dat);
+        switch (cond.dat.type) 
+        {
+            case GM.KILL:
+                if(cond.shown())
+                {
+                    let flag = cond.done() ? '🗹':'☐';
+                    ret+=`${flag} ${cond.dat.type.lab()} ${cond.dat.id.lab()} (${cond.cur}/${cond.dat.count})\n`
+                }
+                break;
+            case GM.TALK:
+                if(cond.shown())
+                {
+                    ret+=`☐ ${cond.dat.type} ${cond.dat.id}\n`;
+                }
+                break;
+            case GM.FINAL:
+                if (q.state() == 'finish') {
+                    ret += `☐ ${cond.dat.des}\n`;
+                }
+                break;
+        }
+    });
+    return ret;
+}
+
+function fmt_rewards(rewards)
+{
+    let ret = 'rewards'.lab()+'\n';
+    rewards.forEach((reward) => {
+        switch (reward.type) {
+            case 'gold':
+                ret += `■ ${reward.type.lab()} ${reward.count}\n`;
+                break;
+            case 'item':
+                ret += `■ ${reward.id.lab()} ${reward.count}\n`;
+                break;
+        }
+    });
+    return ret;
+}
+
 export default class QuestManager
 {
-    static opened={};
-    static closed={};
-
-    static testCond(cond)
-    {
-        switch(cond.type)
-        {
-            case GM.KILL: return cond.cur >= cond.count;
-        }
-    }
-
-    static isShowCond(conds, cond)
-    {
-        if(!cond.cond) {return true;}
-        for(let i of cond.cond)
-        {
-            if(this.testCond(conds[i]) == false) {return false;}
-        }
-        return true;
-    }
-
-    static getState(conds)
-    {
-        for(let cond of conds)
-        {
-            if(cond.type != GM.FINAL && this.testCond(cond) == false) {return 'open';}
-        }
-        return 'finish';
-    }
+    static quests={opened:{}, closed:{}};
 
     static add(id)
     {
-        let questD = DB.quest(id);
+        let qD = DB.quest(id);
         let conds = [];
-        questD.conds.forEach(cond => {
-            switch(cond.type)
-            {
-                case GM.KILL: conds.push({...cond,cur:0}); break;
-                case GM.TALK: conds.push({...cond,cur:0}); break;
-                case GM.FINAL: conds.push({...cond,cur:0}); break;
-            }
-            
-        });
-        QuestManager.opened[id]={status:'open',conds:conds}
-        QuestManager.save();
+        qD.conds.forEach(() => {conds.push({cur:0})});
+        this.quests.opened[id]={status:'open',conds:conds}
+        this.save();
         // let quest = DB.quest(id);
         // QuestManager.process(quest.act);
     }
@@ -65,28 +103,43 @@ export default class QuestManager
     }
 
     static query(id)
-    {
-        //console.log(QuestManager.opened,id);
-        //return QuestManager.opened.includes(id);
-        
-        let q = QuestManager.opened[id];
+    {        
+        let q = this.quests.opened[id];
         if(q)
         {
-            q.conds.forEach(cond=>{
-                cond.test=()=>{return this.testCond(cond)};
-                cond.shown=()=>{return this.isShowCond(q.conds,cond)};
+            let qD = DB.quest(id);
+            q.conds.forEach((cond, i) => {
+                if(!cond.dat) {Object.defineProperty(cond, 'dat', {get() {return qD.conds[i];}});}
+                if(!cond.done) {cond.done=()=>{return isDone(cond)};}
+                if(!cond.shown) {cond.shown=()=>{return isShown(q.conds,cond)};}
             })
-            q.state = ()=>{return this.getState(q.conds)}
+            if(!q.state) {q.state = ()=>{return getState(q.conds)};}
+            if(!q.fmt) {q.fmt = ()=>{return this.fmt(id);};}
+
         }
-
-
         return q;
+    }
 
+    static fmt(id)
+    {
+        let qD = DB.quest(id);
+        let q = this.quests.opened[id];
+        if(q.state==='close')
+        {
+            return `🗹 任務完成`;
+        }
+        else
+        {
+            let ret='';
+            ret += fmt_conds(q);
+            ret += fmt_rewards(qD.rewards);
+            return ret;
+        }
     }
 
     static check(id, chk)
     {
-        let q = QuestManager.opened[id];
+        let q = this.quests.opened[id];
         if(q)
         {
             q.conds.forEach(cond=>{
@@ -99,35 +152,29 @@ export default class QuestManager
                 }
             })
         }
-        console.log(q);
     }
 
     static close(id)
     {
-        let q = QuestManager.opened[id];
-        let questD = DB.quest(id);
-        Role.getPlayer().receive(questD.rewards);
+        let q = this.quests.opened[id];
+        let qD = DB.quest(id);
+        Role.getPlayer().receive(qD.rewards);
         q.status='close';
     }
 
     static remove(id)
     {
-        delete QuestManager.opened[id];
+        delete this.quests.opened[id];
     }
 
     static save()
     {
-        Record.data.quest = {opened:QuestManager.opened,
-                            closed:QuestManager.closed};
+        Record.data.quest = this.quests;
         Record.save();
     }
 
     static load()
     {
-        if(Record.data.quest)
-        {
-            QuestManager.opened = Record.data.quest.opened;
-            QuestManager.closed = Record.data.quest.closed;
-        }
+        if(Record.data.quest) {this.quests = Record.data.quest;}
     }
 }

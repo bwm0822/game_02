@@ -4140,50 +4140,7 @@ export class UiQuest extends UiBase
                 .add(bbcText(this.scene,{text:item.dat.des}),{expand:true})
 
             let q = QuestManager.query(item.id);
-            if(q.status == 'close')
-            {
-                panel.add(bbcText(this.scene,{text:`🗹 任務完成`}),{expand:true});
-            }
-            else
-            {
-                q.conds.forEach((cond)=>{
-                    switch(cond.type)
-                    {
-                        case GM.KILL: 
-                            if(cond.shown())
-                            {
-                                let flag = cond.test() ? '🗹':'☐';
-                                panel.add(bbcText(this.scene,{text:`${flag} ${cond.type.lab()} ${cond.id.lab()} (${cond.cur}/${cond.count})`}),{expand:true});
-                            }
-                            break;
-                        case GM.TALK:
-                            if(cond.shown())
-                            {
-                                panel.add(bbcText(this.scene,{text:`☐ ${cond.type} ${cond.id}`}),{expand:true});
-                            }
-                            break;
-                        case GM.FINAL:
-                            if(q.state()=='finish')
-                            {
-                                panel.add(bbcText(this.scene,{text:`☐ ${cond.des}`}),{expand:true});
-                            }
-                            break;
-                    }
-                })
-            }
-            
-            panel.add(bbcText(this.scene,{text:'rewards'.lab()}),{expand:true})
-            item.dat.rewards.forEach((reward)=>{
-                switch(reward.type)
-                {
-                    case 'gold':
-                        panel.add(bbcText(this.scene,{text:`■ ${reward.type.lab()} ${reward.count}`}),{expand:true});
-                        break;
-                    case 'item':
-                        panel.add(bbcText(this.scene,{text:`■ ${reward.id.lab()} ${reward.count}`}),{expand:true});
-                        break;
-                }
-            })
+            panel.add(bbcText(this.scene,{text:q.fmt(item.id)}),{expand:true});
 
             if(q.status == 'close')
             {
@@ -4202,10 +4159,10 @@ export class UiQuest extends UiBase
         let list = this.getElement('scroll',true).getElement('panel');
         list.removeAll(true);
 
-        for(let id in QuestManager.opened)
+        for(let id in QuestManager.quests.opened)
         {
             let questD = DB.quest(id);
-            let q = QuestManager.opened[id]
+            let q = QuestManager.quests.opened[id]
             let flag = q.status == 'close' ? '🗹':'☐';
             let item = this.item(flag+' '+questD.title,{ondown:ondown});
             item.dat = questD;
