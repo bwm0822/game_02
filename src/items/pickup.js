@@ -1,7 +1,7 @@
 import DB from '../db.js'
 import {GM} from '../setting.js';
 import {ItemView} from '../components/view.js';
-import {Pickable} from '../components/pickable.js';
+import {COM_Pickable} from '../components/pickable.js';
 import {GameObject} from '../core/gameobject.js';
 
 
@@ -19,7 +19,7 @@ export class Pickup extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )
-            .addCom( new Pickable() )
+            .addCom( new COM_Pickable() )
 
         this.load();
 

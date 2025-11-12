@@ -7,7 +7,7 @@ import Com from './com.js'
 //  角色的技能槽
 //--------------------------------------------------
 
-export class AbilitySlots extends Com
+export class COM_AbilitySlots extends Com
 {
     constructor()
     {

@@ -8,7 +8,7 @@ import {GM} from '../setting.js'
 //  尋找路徑
 //--------------------------------------------------
 
-export class Nav extends Com
+export class COM_Nav extends Com
 {
     get tag() {return 'nav';}   // 回傳元件的標籤
     get pos() {return this._root.pos;}

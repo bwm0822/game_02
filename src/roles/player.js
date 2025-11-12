@@ -1,15 +1,15 @@
 import {ItemView,RoleView} from '../components/view.js'
-import {Inventory} from '../components/inventory.js'
-import {Anim} from '../components/anim.js'
-import {Action} from '../components/action.js'
-import {Nav} from '../components/nav.js'
-import {Sense} from '../components/sense.js'
-import {Stats} from '../components/stats.js'
-import {Disp} from '../components/disp.js'
-import {Ability} from '../components/ability.js'
-import {AbilityTree} from '../components/abilitytree.js'
-import {AbilitySlots} from '../components/abilityslots.js'
-import {Trade} from '../components/trade.js'
+import {COM_Inventory} from '../components/inventory.js'
+import {COM_Anim} from '../components/anim.js'
+import {COM_Action} from '../components/action.js'
+import {COM_Nav} from '../components/nav.js'
+import {COM_Sense} from '../components/sense.js'
+import {COM_Stats} from '../components/stats.js'
+import {COM_Disp} from '../components/disp.js'
+import {COM_Ability} from '../components/ability.js'
+import {COM_AbilityTree} from '../components/abilitytree.js'
+import {COM_AbilitySlots} from '../components/abilityslots.js'
+import {COM_Trade} from '../components/trade.js'
 
 import DB from '../db.js'
 import {GM} from '../setting.js'
@@ -99,12 +99,12 @@ export class Player extends Role
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:true})
-            .addCom(new Inventory())
-            .addCom(new Anim())
-            .addCom(new Action())
-            .addCom(new Nav())
-            .addCom(new Sense())
-            .addCom(new Stats())
+            .addCom(new COM_Inventory())
+            .addCom(new COM_Anim())
+            .addCom(new COM_Action())
+            .addCom(new COM_Nav())
+            .addCom(new COM_Sense())
+            .addCom(new COM_Stats())
 
         // 載入
         this.load();
@@ -121,17 +121,17 @@ export class Player extends Role
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:false})
-            .addCom(new Inventory())
-            .addCom(new Anim())
-            .addCom(new Action())
-            .addCom(new Nav())
-            .addCom(new Sense())
-            .addCom(new Stats())
-            .addCom(new Disp())
-            .addCom(new Ability())
-            .addCom(new AbilityTree())
-            .addCom(new AbilitySlots())
-            .addCom(new Trade())
+            .addCom(new COM_Inventory())
+            .addCom(new COM_Anim())
+            .addCom(new COM_Action())
+            .addCom(new COM_Nav())
+            .addCom(new COM_Sense())
+            .addCom(new COM_Stats())
+            .addCom(new COM_Disp())
+            .addCom(new COM_Ability())
+            .addCom(new COM_AbilityTree())
+            .addCom(new COM_AbilitySlots())
+            .addCom(new COM_Trade())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));

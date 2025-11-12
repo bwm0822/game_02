@@ -8,7 +8,7 @@ import Com from './com.js'
 //  2. 會用到 view 元件
 //--------------------------------------------------
 
-export class Anim extends Com
+export class COM_Anim extends Com
 {
     get tag() {return 'anim';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}

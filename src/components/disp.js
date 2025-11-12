@@ -10,7 +10,7 @@ import { GM } from '../setting.js'
 //  負責顯示 傷害、對話...等
 //--------------------------------------------------
 
-export class Disp extends Com
+export class COM_Disp extends Com
 {
 
     get tag() {return 'disp';}  // 回傳元件的標籤

@@ -8,7 +8,7 @@ import DB from '../db.js';
 //  角色的技能樹
 //--------------------------------------------------
 
-export class AbilityTree extends Com
+export class COM_AbilityTree extends Com
 {
     constructor()
     {

@@ -11,7 +11,7 @@ import {getPlayer} from '../roles/player.js'
 //  交談
 //--------------------------------------------------
 
-export class Talk extends Com
+export class COM_Talk extends Com
 {
     constructor()
     {

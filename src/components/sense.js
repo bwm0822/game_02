@@ -22,7 +22,7 @@ const choose = arr => arr[Math.floor(Math.random() * arr.length)];
 // 功能 : 
 //  偵測敵人
 //--------------------------------------------------
-export class Sense extends Com
+export class COM_Sense extends Com
 {
     get tag() {return 'sense';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}

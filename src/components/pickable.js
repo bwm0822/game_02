@@ -10,7 +10,7 @@ import {GM} from '../setting.js';
 //  提供拾取功能
 //--------------------------------------------------
 
-export class Pickable extends Com
+export class COM_Pickable extends Com
 {
     get tag() {return 'pick';}   // 回傳元件的標籤
     get content() {return this._content;}                   // gameObject 的內容

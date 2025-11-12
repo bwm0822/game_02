@@ -11,7 +11,7 @@ import {GM} from '../setting.js'
 // 標籤 : inv
 // 功能 : 提供儲存物品的功能
 //--------------------------------------------------
-export class Storage extends Com
+export class COM_Storage extends Com
 {
     constructor(capacity=-1)
     {
@@ -226,7 +226,7 @@ export class Storage extends Com
 // 標籤 : inv
 // 功能 : 提供裝備、儲存物品的功能
 //--------------------------------------------------
-export class Inventory extends Storage
+export class COM_Inventory extends COM_Storage
 {
     constructor(config)
     {

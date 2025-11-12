@@ -11,7 +11,7 @@ import {computeHealing} from '../core/combat.js'
 //  角色的技能
 //--------------------------------------------------
 
-export class Ability extends Com
+export class COM_Ability extends Com
 {
     constructor()
     {

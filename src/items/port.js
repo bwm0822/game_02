@@ -1,6 +1,6 @@
 import {GameObject} from '../core/gameobject.js';
 import {ItemView} from '../components/view.js';
-import {Com_Port} from '../components/port.js';
+import {COM_Port} from '../components/port.js';
 
 export class Port extends GameObject
 {
@@ -12,7 +12,7 @@ export class Port extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
-            .addCom( new Com_Port() )
+            .addCom( new COM_Port() )
 
         // 載入
         this.load();

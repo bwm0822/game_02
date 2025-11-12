@@ -12,7 +12,7 @@ import {GM} from '../setting.js'
 //  2. 會用到 view、anim 元件
 //--------------------------------------------------
 
-export class Action extends Com
+export class COM_Action extends Com
 {
 
     get tag() {return 'action';}  // 回傳元件的標籤

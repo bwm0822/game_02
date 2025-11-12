@@ -1,6 +1,6 @@
 import {GM} from '../setting.js';
 import {ItemView} from '../components/view.js';
-import {Storage} from '../components/inventory.js';
+import {COM_Storage} from '../components/inventory.js';
 import {GameObject} from '../core/gameobject.js';
 
 export class Box extends GameObject
@@ -18,7 +18,7 @@ export class Box extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
-            .addCom( new Storage() )
+            .addCom( new COM_Storage() )
 
         // 載入
         this.load();

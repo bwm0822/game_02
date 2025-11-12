@@ -1,15 +1,15 @@
 import {ItemView,RoleView} from '../components/view.js'
-import {Inventory} from '../components/inventory.js'
-import {Anim} from '../components/anim.js'
-import {Action} from '../components/action.js'
-import {Nav} from '../components/nav.js'
-import {AIController} from '../components/ai/ai.js'
-import {Sense} from '../components/sense.js'
-import {Disp} from '../components/disp.js'
-import {Talk} from '../components/talk.js'
-import {Trade} from '../components/trade.js'
+import {COM_Inventory} from '../components/inventory.js'
+import {COM_Anim} from '../components/anim.js'
+import {COM_Action} from '../components/action.js'
+import {COM_Nav} from '../components/nav.js'
+import {COM_AI} from '../components/ai/ai.js'
+import {COM_Sense} from '../components/sense.js'
+import {COM_Disp} from '../components/disp.js'
+import {COM_Talk} from '../components/talk.js'
+import {COM_Trade} from '../components/trade.js'
+import {COM_Stats} from '../components/stats.js'
 import DB from '../db.js'
-import {Stats} from '../components/stats.js'
 import {GM} from '../setting.js';
 import {Role} from './role.js';
 
@@ -69,16 +69,16 @@ export class Npc extends Role
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:modify})
-            .addCom(new Inventory(this.bb.meta))
-            .addCom(new Anim())
-            .addCom(new Action())
-            .addCom(new Nav())
-            .addCom(new AIController())
-            .addCom(new Sense())
-            .addCom(new Stats())
-            .addCom(new Disp())
-            .addCom(new Talk())
-            .addCom(new Trade())
+            .addCom(new COM_Inventory(this.bb.meta))
+            .addCom(new COM_Anim())
+            .addCom(new COM_Action())
+            .addCom(new COM_Nav())
+            .addCom(new COM_AI())
+            .addCom(new COM_Sense())
+            .addCom(new COM_Stats())
+            .addCom(new COM_Disp())
+            .addCom(new COM_Talk())
+            .addCom(new COM_Trade())
 
         // 註冊 event
         this.on('dead', this._dead.bind(this));

@@ -70,7 +70,7 @@ class StateMachine
 // 功能 :
 //  控制 NPC 的行為
 //--------------------------------------------------
-export class AIController extends Com
+export class COM_AI extends Com
 {
     constructor() 
     {

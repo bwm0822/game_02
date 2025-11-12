@@ -174,7 +174,7 @@ function _adjustDerived(total, mods)
 // 標籤 : stats
 // 功能 : 角色屬性、衍生屬性、HP/MP、抗性、受傷/治療、DoT
 //--------------------------------------------------
-export class Stats extends Com
+export class COM_Stats extends Com
 {
     constructor(init={}) 
     {

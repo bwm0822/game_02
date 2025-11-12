@@ -9,7 +9,7 @@ import {getPlayer} from '../roles/player.js'
 //  交易
 //--------------------------------------------------
 
-export class Trade extends Com
+export class COM_Trade extends Com
 {
     get tag() {return 'trade';}  // 回傳元件的標籤
 

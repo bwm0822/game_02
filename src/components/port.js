@@ -8,7 +8,7 @@ import TimeManager from '../time'
 // 功能 : 
 //  提供傳送門功能
 //--------------------------------------------------
-export class Com_Port extends Com
+export class COM_Port extends Com
 {
     get tag() {return 'port';}  // 回傳元件的標籤
 
