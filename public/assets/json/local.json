@@ -679,6 +679,11 @@
       "lab": "Melanie"
     }
   },
+  "rogue": {
+    "tw": {
+      "lab": "盜賊"
+    }
+  },
   "ranger": {
     "tw": {
       "lab": "遊俠",
@@ -973,6 +978,31 @@
   "ranged": {
     "tw": {
       "lab": "遠距"
+    }
+  },
+  "quest": {
+    "tw": {
+      "lab": "任務"
+    }
+  },
+  "conditions": {
+    "tw": {
+      "lab": "條件"
+    }
+  },
+  "rewards": {
+    "tw": {
+      "lab": "獎勵"
+    }
+  },
+  "gold": {
+    "tw": {
+      "lab": "金幣"
+    }
+  },
+  "kill": {
+    "tw": {
+      "lab": "殺死"
     }
   }
 }

@@ -60,6 +60,7 @@ export default function createUI(scene)
     new UiInv(scene);               // 6
     new UiTrade(scene);             // 7
     new UiStorage(scene);           // 8
+    new UiQuest(scene);              // 20
     new UiDialog(scene);            // 9
     new UiObserve(scene);           // 10
     new UiCount(scene);             // 11
@@ -70,7 +71,7 @@ export default function createUI(scene)
     new UiGameOver(scene);          // 16
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
-    new UiQuest(scene);              // 20
+    
     new UiConfirm(scene);
 
 }
@@ -4057,7 +4058,7 @@ export class UiQuest extends UiBase
         this.addBg_Int(scene)    
             .addTop(scene,{text:'quest'.lab()})
             .addTab(scene)
-            .addPage(scene,'quests')
+            .addPage(scene,'quest')
             .setOrigin(0.5)
             .layout()
             .hide()  
@@ -4069,7 +4070,7 @@ export class UiQuest extends UiBase
         let config = {
             background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
             topButtons:[
-                        label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'quests',space:{left:20,right:20,top:5,bottom:5}}),
+                        label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'quest',space:{left:20,right:20,top:5,bottom:5}}),
                         label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
                     ],
 

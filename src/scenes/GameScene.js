@@ -145,8 +145,9 @@ export class GameScene extends Scene
     setPosition(classType)
     {
         let pos;
+        console.log('------------',this.points)
         if(this._data.pos) {pos = this._data.pos}
-        else {pos = this.ents[this._data.port].pts[0];}
+        else {pos = this.points[this._data.port].pts[0];}
 
         this._player = new classType(this,pos.x,pos.y);
         // Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()

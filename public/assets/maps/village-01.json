@@ -433,7 +433,7 @@
                         {
                          "name":"interactive",
                          "type":"bool",
-                         "value":true
+                         "value":false
                         }, 
                         {
                          "name":"storage",
@@ -459,7 +459,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":135,
+ "nextobjectid":136,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

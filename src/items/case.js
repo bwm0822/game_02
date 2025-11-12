@@ -5,8 +5,6 @@ import {GameObject} from '../core/gameobject.js';
 
 export class Box extends GameObject
 {
-    // get acts() {return [GM.OPEN]}
-    // get act() {return this.acts[0];}
 
     //------------------------------------------------------
     //  Local
@@ -16,7 +14,7 @@ export class Box extends GameObject
     //------------------------------------------------------
     init_prefab()
     {      
-        // console.log('uid:',this.uid,'qid:',this.qid)
+        if(!super.init_prefab()) {return;}
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )

@@ -33,7 +33,8 @@ function getState(conds)
 
 function fmt_conds(q)
 {
-    let ret = '';
+    let ret = `\n[color=yellow]${'conditions'.lab()}[/color]\n`;
+
     q.conds.forEach((cond) => {
         console.log(cond.dat);
         switch (cond.dat.type) 
@@ -63,14 +64,15 @@ function fmt_conds(q)
 
 function fmt_rewards(rewards)
 {
-    let ret = 'rewards'.lab()+'\n';
+    let ret = `\n[color=yellow]${'rewards'.lab()}[/color]\n`;
+
     rewards.forEach((reward) => {
         switch (reward.type) {
             case 'gold':
-                ret += `■ ${reward.type.lab()} ${reward.count}\n`;
+                ret += `■ ${reward.type.lab()} x${reward.count}\n`;
                 break;
             case 'item':
-                ret += `■ ${reward.id.lab()} ${reward.count}\n`;
+                ret += `■ ${reward.id.lab()} x${reward.count}\n`;
                 break;
         }
     });

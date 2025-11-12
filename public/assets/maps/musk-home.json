@@ -65,9 +65,38 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":4,
+         "name":"q01",
+         "objects":[
+                {
+                 "gid":527,
+                 "height":64,
+                 "id":6,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"rogue"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":32,
+                 "x":192,
+                 "y":128
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":4,
- "nextobjectid":6,
+ "nextlayerid":5,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -80,6 +109,10 @@
         {
          "firstgid":505,
          "source":"..\/props.tsj"
+        }, 
+        {
+         "firstgid":522,
+         "source":"..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",

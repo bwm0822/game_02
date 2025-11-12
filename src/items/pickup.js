@@ -7,16 +7,13 @@ import {GameObject} from '../core/gameobject.js';
 
 export class Pickup extends GameObject
 {
-    // get acts() {return [GM.TAKE]}
-    // get act() {return this.acts[0];}
-
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
     
     init_prefab()
     {        
-        if(this._isRemoved()) {return;}
+        if(!super.init_prefab()) {return;}
 
         this.bb.interactive = true;
 

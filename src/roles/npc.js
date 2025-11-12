@@ -60,7 +60,7 @@ export class Npc extends Role
     //------------------------------------------------------
     init_prefab(modify=true)
     {     
-        if(this._isRemoved()) {return;}
+        if(!super.init_prefab()) {return;}
 
         this._registerTimeManager();
 

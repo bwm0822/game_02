@@ -23,6 +23,7 @@ export class GameObject
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
 
+        this._pts = null;  // 可互動的點陣列
         this._acts = {}; // 可操作的方式
         this._init();
     }
@@ -50,6 +51,9 @@ export class GameObject
             if(this._acts[key]) {return key;}
         }
     }
+
+    get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
+                                : [this.pos]} 
 
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
@@ -110,6 +114,8 @@ export class GameObject
 
         // 加入 List
         this._addToList();
+
+       
     }
 
     _isRemoved()
@@ -147,8 +153,6 @@ export class GameObject
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
-
-
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
@@ -223,10 +227,31 @@ export class GameObject
         });
     }
 
+
+    // 處理傳遞給GameObject的參數
+    _processBB()
+    {
+        if(this.bb.name) 
+        {
+            if(!this.scene.points) {this.scene.points={};}
+            this.scene.points[this.bb.name] = this;
+        }
+
+        if(this.bb.json_pts)
+        {
+            this._pts = JSON.parse(this.bb.json_pts);
+        }
+    }
+
     //------------------------------------------------------
-    // abstract mehod
+    // mehod
     //------------------------------------------------------
-    init_prefab() {}
-    
-    
+    init_prefab() 
+    {
+        if(this._isRemoved()) {return false;}
+        this._processBB();
+        return true;
+    }
+
+
 }

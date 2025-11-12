@@ -187,9 +187,6 @@ export class Storage extends Com
     {
         super.bind(root);
 
-        // act
-        root._setAct(GM.OPEN, true);
-        
         // 在上層綁定操作介面，提供給其他元件使用
         this.addP(root, 'storage', {target:this, key:'_storage'});
         root.get = this._get.bind(this);
@@ -197,6 +194,9 @@ export class Storage extends Com
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
         root.transfer = this._transfer.bind(this);
+
+        // 提供 操作的指令
+        root._setAct(GM.OPEN, true);
         
         // 提供給外界操作
         root.on('take', this._take.bind(this));
@@ -274,7 +274,7 @@ export class Inventory extends Storage
     {
         super.bind(root);
 
-        // remove GM.OPEN
+        // 移除 操作指令 GM.OPEN
         root._delAct(GM.OPEN);
         root.off(GM.OPEN, this._open.bind(this));
 
