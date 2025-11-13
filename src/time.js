@@ -1,7 +1,7 @@
 import Record from './record.js'
 import {RoleDB,Roles} from './database.js'
 import DB from './db.js'
-import * as Role from './role.js';
+import * as Role from './role_.js';
 import Utility from './utility';
 import {Npc} from './roles/npc.js'
 

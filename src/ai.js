@@ -4,7 +4,7 @@ import Utility from './utility.js';
 import DB from './db.js';
 import { GM } from './setting.js';
 import TimeManager from './time.js';
-import * as Role from './role.js';
+import * as Role from './role_.js';
 
 const dist2 = (a, b) => {
   const dx = a.x - b.x, dy = a.y - b.y;

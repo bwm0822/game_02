@@ -23,7 +23,7 @@
           "離開/exit"
         ]
       },
-      "done": {
+      "finish": {
         "A": "...",
         "B": [
           "任務完成了/goto none;close q01;set quest none"

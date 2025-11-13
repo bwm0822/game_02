@@ -1,5 +1,5 @@
 import { GameScene } from "./GameScene";
-import * as Role from '../role.js';
+// import * as Role from '../role.js';
 import TimeManager from '../time.js';
 import {UiMain, UiTime} from '../ui.js'
 

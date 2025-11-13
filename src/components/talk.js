@@ -59,7 +59,8 @@ export class COM_Talk extends Com
         if(dialog.type==='quest')
         {
             const sta = QuestManager.query(idx);
-            return dialog[sta?.status??'start'];
+            console.log('dialog=',sta.state)
+            return dialog[sta?.state??'start'];
         }
         return dialog;
     }
@@ -92,7 +93,9 @@ export class COM_Talk extends Com
 
     _close_quest(p1)
     {
-        console.log('quest',p1)
+        const {send}=this.ctx;
+        
+        send('msg', '任務完成！');
         QuestManager.close(p1);
     }
 

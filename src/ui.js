@@ -4136,14 +4136,13 @@ export class UiQuest extends UiBase
             let panel = this.getElement('panel',true);
             panel.addDivider = this.addDivider;
             panel.removeAll(true);
-            panel.add(bbcText(this.scene,{text:item.dat.title}))
+            panel.add(bbcText(this.scene,{text:item.q.dat.title}))
                 .addDivider(this.scene)
-                .add(bbcText(this.scene,{text:item.dat.des}),{expand:true})
+                .add(bbcText(this.scene,{text:item.q.dat.des}),{expand:true})
 
-            let q = QuestManager.query(item.id);
-            panel.add(bbcText(this.scene,{text:q.fmt(item.id)}),{expand:true});
+            panel.add(bbcText(this.scene,{text:item.q.fmt()}),{expand:true});
 
-            if(q.status == 'close')
+            if(item.q.state === 'close')
             {
                 let onclick=()=>{QuestManager.remove(item.id);this.update();}
                 panel.addSpace()
@@ -4162,11 +4161,10 @@ export class UiQuest extends UiBase
 
         for(let id in QuestManager.quests.opened)
         {
-            let questD = DB.quest(id);
-            let q = QuestManager.quests.opened[id]
-            let flag = q.status == 'close' ? '🗹':'☐';
-            let item = this.item(flag+' '+questD.title,{ondown:ondown});
-            item.dat = questD;
+            let q = QuestManager.query(id);
+            let flag = q.state === 'close' ? '🗹':'☐';
+            let item = this.item(flag+' '+q.dat.title,{ondown:ondown});
+            item.q = q;
             item.id = id;
             list.add(item,{expand:true})
         }
