@@ -54,7 +54,7 @@ export class Pickup extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )
-            .addCom( new Pickable() )
+            .addCom( new COM_Pickable() )
 
         // 載入
         this.load();

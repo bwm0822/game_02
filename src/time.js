@@ -224,7 +224,7 @@ export class Schedular
                 // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 // npc.init_runtime(id).load().initSchedule();
                 const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id);
+                npc.init_runtime(id,true);
                 return;
             }
         }
@@ -238,7 +238,7 @@ export class Schedular
                 // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 // npc.init_runtime(id).load().initSchedule();
                 const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                npc.init_runtime(id);
+                npc.init_runtime(id,true);
             }
         }
     }
@@ -258,7 +258,7 @@ export class Schedular
                 let ents = this.toEnts(sh.p);
                 console.log('[time] check',sh.id, sh.t); 
                 let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
-                npc.init_runtime(sh.id).load().initSchedule();
+                npc.init_runtime(sh.id,true).load().initSchedule();
             }
         })
     }

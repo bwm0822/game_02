@@ -12,6 +12,7 @@ import {COM_Stats} from '../components/stats.js'
 import DB from '../db.js'
 import {GM} from '../setting.js';
 import {Role} from './role.js';
+import QuestManager from '../quest.js'
 
 let _dbg = true;
 
@@ -46,13 +47,15 @@ export class Npc extends Role
     _remove()
     {
         this._unregisterTimeManager();
+        // 死亡時，若是 schedule，則標記為 removed
+        if(this.schedule) {{this._saveData({removed:true})}}
         super._remove();
     }
 
     _dead()
     {
-        this.isAlive = false;
         this._latency = 5;
+        QuestManager.notify({type: GM.KILL, id: this.id});
     }
 
     //------------------------------------------------------
@@ -64,8 +67,9 @@ export class Npc extends Role
 
         this._registerTimeManager();
 
-        // 取得roleD，放入bb，view元件會用到
-        this.bb.meta = DB.role(this.bb.id);
+        this.bb.meta = DB.role(this.bb.id); // 取得roleD，放入bb.meta，view元件會用到
+        this.bb.isStatic = false;           // 設成 dynamic body，view 元件會參考
+        this.bb.interactive = true;         // 設成 可互動，view 元件會參考
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:modify})
@@ -89,13 +93,15 @@ export class Npc extends Role
 
         //
         this._setAct(GM.ATTACK,true);
+
+        // 檢查是否死亡
+        if(!this.isAlive) {this.emit('dead');}
     }
 
-    init_runtime(id)
+    init_runtime(id, schedule=false)
     {
         this.bb.id = id;                // 將 id 存到 bb.id
-        this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
-        this.bb.interactive = true;     // 設成 可互動，view 元件會參考
+        this.schedule = schedule;
         this.init_prefab(false); 
     }
 

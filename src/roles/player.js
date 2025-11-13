@@ -70,7 +70,6 @@ export class Player extends Role
     _dead()
     {
         console.log('---- dead ----')
-        this.isAlive = false;
         this._unregisterTimeManager();
         this._send('gameover');
     }

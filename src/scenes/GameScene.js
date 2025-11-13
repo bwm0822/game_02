@@ -277,7 +277,8 @@ export class GameScene extends Scene
         // this.objects.forEach((obj)=>{obj.save?.();})
         console.log('gos:',this.gos)
         this.gos.forEach(go=>go.save?.())
-        this.roles.forEach((role)=>{role.uid===-1 && role.save();})
+        // this.roles.forEach((role)=>{role.uid===-1 && role.save();})
+        this.roles.forEach((role)=>{role.save();})
         TimeManager.save();
         Record.save();
     }

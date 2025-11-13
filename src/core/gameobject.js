@@ -189,6 +189,7 @@ export class GameObject
     { 
         for(let com of Object.values(this.coms)) {data = {...data,...com.save?.()}}
         this._saveData(data); 
+        
     }
 
     // 更新 Z depth

@@ -186,7 +186,7 @@ export class COM_Stats extends Com
             [GM.CON] : 5, [GM.LUK] : 5,
         }
 
-        this._states = {[GM.HP]:100};
+        this._states = {[GM.HP]:_baseHPMAX(this.baseStats)};
         this._actives = [];
         this._dirty = true;  // 標記屬性需要重算
     }
@@ -197,11 +197,7 @@ export class COM_Stats extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _setDirty() 
-    {
-        this._dirty = true;
-        console.log('---- set as Dirty')
-    }
+    _setDirty() {this._dirty = true;}
 
     _getTotalStats({fromEnemy, condition, skill}={})
     {
@@ -350,6 +346,16 @@ export class COM_Stats extends Com
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    load(data) 
+    {
+        if(data?.states) {Object.assign(this._states, data.states);}
+    }
+
+    save() 
+    {
+        return {states:this._states};
+    }
+
     bind(root) 
     {
         super.bind(root);
@@ -357,6 +363,7 @@ export class COM_Stats extends Com
         // 對上層公開 API
         this.addP(root, 'total', {getter:this._getTotalStats.bind(this)});
         this.addP(root, 'actives', {target:this, key:'_actives'});
+        this.addP(root, 'isAlive', {getter:()=>this._states[GM.HP]>0});
         root.addProcs = this._addProcs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);
@@ -366,6 +373,9 @@ export class COM_Stats extends Com
         root.on('update', this._processProcs.bind(this) );
         root.on('dirty', this._setDirty.bind(this));
         root.on('total', this._getTotalStats.bind(this));
+
+        // 計算總屬性
+        this._getTotalStats();
    
     }
 

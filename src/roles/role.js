@@ -9,7 +9,6 @@ export class Role extends GameObject
     constructor(scene,x,y)
     {
         super(scene,x,y);
-        this.isAlive = true;
         this._state = GM.ST_IDLE;   // 角色狀態
     }
 

@@ -287,9 +287,6 @@ export class COM_Inventory extends COM_Storage
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.equips = this._equips;
         this.addP(root.bb, 'gold', {target:this, key:'_gold'});
-
-        console.log('----- equips',this._equips)
-
     }
 
     //------------------------------------------------------

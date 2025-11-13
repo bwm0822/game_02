@@ -79,6 +79,20 @@ function fmt_rewards(rewards)
     return ret;
 }
 
+function check(q, chk)
+{
+    q.conds.forEach(cond=>{
+        if(chk.type === cond.dat.type)
+        {
+            if(cond.dat.id && cond.dat.id === chk.id)
+            {
+                cond.cur+=1;
+                console.log('----------------', 'increment cond.cur', cond.cur);
+            }
+        }
+    })
+}
+
 export default class QuestManager
 {
     static quests={opened:{}, closed:{}};
@@ -117,6 +131,7 @@ export default class QuestManager
             })
             if(!q.state) {q.state = ()=>{return getState(q.conds)};}
             if(!q.fmt) {q.fmt = ()=>{return this.fmt(id);};}
+            if(!q.check) {q.check = (chk)=>{return check(q,chk);};}
 
         }
         return q;
@@ -139,21 +154,42 @@ export default class QuestManager
         }
     }
 
-    static check(id, chk)
+    // static check(id, chk)
+    // {
+    //     let q = this.quests.opened[id];
+    //     if(q)
+    //     {
+    //         q.conds.forEach(cond=>{
+    //             if(chk.type == cond.type)
+    //             {
+    //                 if(cond.id && cond.id == chk.id)
+    //                 {
+    //                     cond.cur+=1;
+    //                 }
+    //             }
+    //         })
+    //     }
+    // }
+
+    static notify({type, id})
     {
-        let q = this.quests.opened[id];
-        if(q)
+        for(let qid in this.quests.opened)
         {
-            q.conds.forEach(cond=>{
-                if(chk.type == cond.type)
-                {
-                    if(cond.id && cond.id == chk.id)
-                    {
-                        cond.cur+=1;
-                    }
-                }
-            })
+            const q = this.query(qid);
+            q.check({type,id});
         }
+
+        // this.quests.opened.forEach(q=>{
+        //     q.conds.forEach(cond=>{
+        //         if(cond.dat.type === type)
+        //         {
+        //             if(cond.dat.id && cond.dat.id === id)
+        //             {
+        //                 cond.cur+=1;
+        //             }
+        //         }
+        //     })
+        // });
     }
 
     static close(id)
