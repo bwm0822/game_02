@@ -3107,27 +3107,8 @@ export class UiDialog extends UiBase
         return scroll;
     }
 
-    // createOption(option)
-    // {
-    //     let [text,cmds] = option.split('/').map(s => s.trim());
-    //     let scene = this.scene;
-    //     let sizer = scene.rexUI.add.sizer();
-    //     sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
-    //         .add(bbcText(scene,{text:text}),{align:'left'})
-    //     let bg = sizer.getElement('bg').setAlpha(0);
-    //     if(cmds)
-    //     {
-    //         sizer.setInteractive()
-    //             .on('pointerover',()=>{bg.setAlpha(1);})
-    //             .on('pointerout',()=>{bg.setAlpha(0);})
-    //             .on('pointerdown',()=>{this.owner.select(option, this.cb.bind(this));})
-    //     }
-    //     return sizer;
-    // }
-
     createOption(option)
     {
-        // let [text,cmds] = option.split('/').map(s => s.trim());
         let scene = this.scene;
         let sizer = scene.rexUI.add.sizer();
         sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
@@ -3155,7 +3136,6 @@ export class UiDialog extends UiBase
 
     goto()
     {
-        console.log('------------- goto');
         this.dialog = this.owner.getDialog(); 
         this.setTextA(this.dialog.A).nextPage();
     }
