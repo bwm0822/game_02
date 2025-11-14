@@ -232,7 +232,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 640.5
+                "y": 641
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -258,7 +258,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 320,
-                "y": 320.33333333333337
+                "y": 320.6666666666667
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -305,8 +305,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 512,
-                "y": 512.3333333333334
+                "x": 511.99999999999994,
+                "y": 512.6666666666666
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -327,7 +327,7 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 136,
+                "x": 355.3333333333333,
                 "y": 157.33333333333334
             }
         },
@@ -439,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 941.3333333333333,
-                "y": 1040.6666666666665
+                "x": 640,
+                "y": 639.6666666666666
             }
         },
         "public/assets/maps/village-02.json": {

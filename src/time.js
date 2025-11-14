@@ -245,22 +245,22 @@ export class Schedular
 
     static check(dt,time)
     {
-        this.schedules.forEach((sh)=>{
-            if(this.isExisted(sh.id)) {return;}
-            if(TimeManager.atTime(sh.t))
-            {
-                let role = this.loadRole(sh.id);
-                if(role?.exit)
-                {
-                    // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
-                    if(TimeManager.checkRange(role.exit.t.d, role.exit.t, sh.t)) {return;}
-                }
-                let ents = this.toEnts(sh.p);
-                console.log('[time] check',sh.id, sh.t); 
-                let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
-                npc.init_runtime(sh.id,true).load().initSchedule();
-            }
-        })
+        // this.schedules.forEach((sh)=>{
+        //     if(this.isExisted(sh.id)) {return;}
+        //     if(TimeManager.atTime(sh.t))
+        //     {
+        //         let role = this.loadRole(sh.id);
+        //         if(role?.exit)
+        //         {
+        //             // 檢查 npc 離開的時間，是否在這個時間區段，如果是，表示 npc 已經離開了，不需要載入
+        //             if(TimeManager.checkRange(role.exit.t.d, role.exit.t, sh.t)) {return;}
+        //         }
+        //         let ents = this.toEnts(sh.p);
+        //         console.log('[time] check',sh.id, sh.t); 
+        //         let npc = new Role.Npc(this.scene,ents[0].pts[0].x,ents[0].pts[0].y);
+        //         npc.init_runtime(sh.id,true).load().initSchedule();
+        //     }
+        // })
     }
 
     static loadRole(id)

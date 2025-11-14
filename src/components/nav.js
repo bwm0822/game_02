@@ -19,7 +19,7 @@ export class COM_Nav extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _drawPath(path,{color=0xffffff,alpha=1,size=5}={})
+    _drawPath(path,{drawLast,color=0xffffff,alpha=1,size=5}={})
     {    
         if(!this._graph)
         {
@@ -30,9 +30,9 @@ export class COM_Nav extends Com
         }
         this._graph.clear();
 
-        if(!path || path.state===GM.PATH_NONE) {return;}  
+        if(!path || path.state===GM.PATH_NONE || !path.pts) {return;}  
 
-        let len = path.skipLast ? path.pts.length-1 : path.pts.length;
+        let len = (drawLast??path.drawLast) ? path.pts.length : path.pts.length-1;
         path.pts.forEach((node,i)=>{
             if(i<len)
             {
@@ -52,29 +52,26 @@ export class COM_Nav extends Com
         this._drawPath(this.bb.path,{alpha:0.5,size:10});
     }
 
-    _showPath(eps)
+    _showPath(eps,drawLast)
     {
         let path = this.map.getPath(this.pos, eps);
         if(path)
         {
-            path.skipLast=true;
-            this._drawPath(path);
+            this._drawPath(path,{drawLast:drawLast});
         }
         return path;
     }
 
     _findPath(ep)
     {
-        // path = {state:NONE/BLK/OK, pts:[], pt:pt cost:cost, skipLastPt}
+        // path = {state:NONE/BLK/OK, pts:[], ep:ep cost:cost}
         let path = this.map.getPath(this.pos, [ep]);
-        path.skipLast = !!this.bb.ent;
         this.bb.path = path;
     }
 
     _setPath(path)
     {
         this.bb.path = path;
-        this.bb.path.skipLast = !!this.bb.ent;
     }
 
     _clearPath() {delete this.bb.path;}

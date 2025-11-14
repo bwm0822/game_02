@@ -118,32 +118,74 @@ export class COM_Action extends Com
         return false;
     }
 
+    // async _move()
+    // {
+    //     const {bb,emit} = this.ctx;
+
+    //     const pt = bb.path?.pts[0];
+    //     let ret = true;
+
+    //     if(pt)
+    //     {
+    //         // 判斷前面是否有障礙物
+    //         const blocked = this.scene.map.getWeight(pt) > GM.W_BLOCK;
+            
+    //         if(blocked) // 前面有障礙物
+    //         {
+    //             // 判斷是否是目的地，如果不是，回傳值設成 false
+    //             bb.path.pts.length>1 && (ret=false);
+    //             bb.path=null;
+    //         }
+    //         else
+    //         {
+    //             await this._moveTo(pt);
+    //             if(bb.path.stop) {bb.path=null;}
+    //             else
+    //             {
+    //                 bb.path.pts.splice(0,1);
+    //                 bb.path.pts.length===0 && (bb.path=null);
+    //             }
+    //         }
+    //     }
+
+    //     emit('updatePath');
+
+    //     return ret;
+    // }
+
     async _move()
     {
         const {bb,emit} = this.ctx;
 
-        const pt = bb.path?.pts[0];
-        let ret = true;
+        // const pt = bb.path?.pts[0];
+        let ret = 'moving';
 
-        if(pt)
+        if(bb.path.pts.length===0)
         {
+            ret = 'reach';
+            bb.path=null;
+        }
+        else
+        {
+            const pt = bb.path.pts[0];
+
             // 判斷前面是否有障礙物
             const blocked = this.scene.map.getWeight(pt) > GM.W_BLOCK;
             
             if(blocked) // 前面有障礙物
             {
-                // 判斷是否是目的地，如果不是，回傳值設成 false
-                bb.path.pts.length>1 && (ret=false);
+                // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
+                ret = bb.path.pts.length>1 ? 'blocked' : 'reach';
                 bb.path=null;
             }
             else
             {
                 await this._moveTo(pt);
-                if(bb.path.stop) {bb.path=null;}
+                if(bb.path.stop) {bb.path=null; ret='stopped';}
                 else
                 {
                     bb.path.pts.splice(0,1);
-                    bb.path.pts.length===0 && (bb.path=null);
+                    if(bb.path.pts.length===0) {bb.path=null; ret='reach';}
                 }
             }
         }

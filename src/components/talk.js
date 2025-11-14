@@ -11,6 +11,71 @@ import {getPlayer} from '../roles/player.js'
 //  交談
 //--------------------------------------------------
 
+function parseOption(str, rec) 
+{
+    // options 的格式 : "(cond)text/cmds"
+    const opt = extractOption(str);
+    opt.cond = opt.cond ? checkCond(opt.cond, rec) : true;
+    opt.cmds = opt.cmds ? opt.cmds.split(';').map(s => s.trim()) : [];
+    return opt;
+}
+
+function extractOption(str) 
+{
+    // 1. 嘗試有 (cond) 的格式 : (cond)text/cmds
+    let m = str.match(/^\((.*?)\)([^\/]*)(?:\/(.*))?$/);
+    if (m) {return {cond: m[1],text:m[2],cmds:m[3]};}
+
+    // 2. 沒有 (cond) 的格式： text/cmds
+    m = str.match(/^([^\/]*)(?:\/(.*))?$/);
+    if (m) {return {cond: null,text: m[1],cmds: m[2]};}
+
+    return {cond: null,text: str,cmds: null};
+}
+
+function extractCond(str) 
+{
+    str = str.trim();
+
+    // 1. A op B 形式
+    let m = str.match(/^(\S+)\s*(!=|==|>=|<=|>|<)\s*(\S+)$/);
+    if (m) {return { A: m[1], op: m[2], B: m[3] };}
+
+    // 2. op A 形式
+    m = str.match(/^(!)\s*(\S+)$/);
+    if (m) {return { A: m[2], op: m[1], B: null };}
+
+    return null; // 不符合格式
+}
+
+function checkCond(cond, rec)
+{
+    const c = extractCond(cond);
+    if(!c) {return true;}  // 無條件
+
+    const valA = parseP(c.A, rec);
+    const valB = parseP(c.B, rec);
+    // const valB = c.B !== null ? (isNaN(c.B) ? rec[c.B] : Number(c.B)) : null;
+    switch(c.op)
+    {
+        case '==': return valA == valB;
+        case '!=': return valA != valB;
+        case '>=': return valA >= valB;
+        case '<=': return valA <= valB;
+        case '>':  return valA > valB;
+        case '<':  return valA < valB;
+        case '!':  return !valA;
+        default:   return false;
+    }
+}
+
+function parseP(str, rec)
+{
+    if(!str) {return null;}
+    const [val, key, def] = str.split(/[:#]/);
+    return val!=''?val:rec[key]??def;
+}
+
 export class COM_Talk extends Com
 {
     constructor()
@@ -33,12 +98,8 @@ export class COM_Talk extends Com
 
     _select(option, cb)
     {
-        const [text,args] = option.split('/').map(s => s.trim());
-        // console.log(text,args)
-        const cmds = args.split(';').map(s => s.trim());
-        cmds.forEach(cmd=>{
-            let [op,p1,p2]=cmd.split(' ');
-            // console.log('op=',op)
+        option.cmds.forEach(cmd=>{
+            const [op,p1,p2]=cmd.split(' ');
             switch(op)
             {
                 case 'next': 
@@ -59,25 +120,29 @@ export class COM_Talk extends Com
         if(dialog.type==='quest')
         {
             const sta = QuestManager.query(idx);
-            console.log('dialog=',sta.state)
-            return dialog[sta?.state??'start'];
+            dialog = dialog[sta?.state??'start'];
         }
-        return dialog;
+        const a = dialog.A;
+        const b = this._processOptions(dialog.B);
+
+        const out = {A:a, B:b};
+        return out;
     }
 
-    _goto(p1)
+    _processOptions(options)
     {
-        let m = p1.match(/\[([^\]]+)\]/);   //取出[]內的字串
-        if(m)   // 有[]，取出變數值
-        {
-            let [p,def] = m[1].split('=');
-            this._idx = this._rec[p]??def;
-        }
-        else
-        {
-            this._idx = p1;
-        }
+        // options的格式 : "(cond)text/cmds"
+
+        let opts=[];
+        options.forEach(option=>{
+            const opt = parseOption(option, this._rec);
+            if(opt.cond) {opts.push(opt);}
+        });
+
+        return opts;
     }
+
+    _goto(p1) {this._idx = parseP(p1,this._rec);}
 
     _trade()
     {

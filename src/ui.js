@@ -74,8 +74,28 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
+    test();
+
 }
 
+function test()
+{
+    let str = "#var:def";
+    let [c, v, d] = str.split(/[:#]/);
+    console.log(c??v??d);
+    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+
+    str = "#var";
+    [c, v, d] = str.split(/[:#]/);
+    console.log(c??v??d);
+    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+
+    
+    str = "var";
+    [c, v, d] = str.split(/[:#]/);
+    console.log(c??v??d);
+    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+}
 
 
 function mark(on) {Mark.visible=on;}
@@ -3035,7 +3055,8 @@ export class UiDialog extends UiBase
             let np = page.getNextPage();
             textA.setText(np);
             if (page.isLastPage) {this.setTextB(this.dialog.B);} 
-            else {this.setTextB(['*聆聽...*/next']);}
+            // else {this.setTextB(['*聆聽...*/next']);}
+            else {this.setTextB([{text:'*聆聽...*',cmds:['next']}]);}
         }
     }
 
@@ -3086,15 +3107,33 @@ export class UiDialog extends UiBase
         return scroll;
     }
 
+    // createOption(option)
+    // {
+    //     let [text,cmds] = option.split('/').map(s => s.trim());
+    //     let scene = this.scene;
+    //     let sizer = scene.rexUI.add.sizer();
+    //     sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
+    //         .add(bbcText(scene,{text:text}),{align:'left'})
+    //     let bg = sizer.getElement('bg').setAlpha(0);
+    //     if(cmds)
+    //     {
+    //         sizer.setInteractive()
+    //             .on('pointerover',()=>{bg.setAlpha(1);})
+    //             .on('pointerout',()=>{bg.setAlpha(0);})
+    //             .on('pointerdown',()=>{this.owner.select(option, this.cb.bind(this));})
+    //     }
+    //     return sizer;
+    // }
+
     createOption(option)
     {
-        let [text,cmds] = option.split('/').map(s => s.trim());
+        // let [text,cmds] = option.split('/').map(s => s.trim());
         let scene = this.scene;
         let sizer = scene.rexUI.add.sizer();
         sizer.addBackground(rect(scene,{color:GM.COLOR_GRAY}),'bg')
-            .add(bbcText(scene,{text:text}),{align:'left'})
+            .add(bbcText(scene,{text:option.text}),{align:'left'})
         let bg = sizer.getElement('bg').setAlpha(0);
-        if(cmds)
+        if(option.cmds)
         {
             sizer.setInteractive()
                 .on('pointerover',()=>{bg.setAlpha(1);})
@@ -3116,6 +3155,7 @@ export class UiDialog extends UiBase
 
     goto()
     {
+        console.log('------------- goto');
         this.dialog = this.owner.getDialog(); 
         this.setTextA(this.dialog.A).nextPage();
     }
@@ -3129,7 +3169,6 @@ export class UiDialog extends UiBase
 
     show(owner)
     {
-        console.log(owner)
         this.owner = owner;
         this.dialog = owner.getDialog();
         super.show();
@@ -4088,7 +4127,6 @@ export class UiQuest extends UiBase
                 }
                 button_pre = button;
                 button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
-                console.log(button.key)
                 this.getElement(button.key)?.show();
                 this.layout();
             })

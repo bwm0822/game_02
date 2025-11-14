@@ -353,11 +353,11 @@ class Map
     getPath(sp, eps)
     {
         let bestPath;
-        eps.forEach((ep)=>{
-            let path = this.calcPath(sp,ep)
+        eps.forEach((ep,i)=>{
+            let path = this.calcPath(sp,ep);
             if(path)
             {
-                if(!bestPath) {bestPath=path;}
+                if(!bestPath&&path.state>0) {bestPath=path;}
                 else if(path.state>0 && path.cost<bestPath.cost) {bestPath=path}
             }
         })
@@ -387,7 +387,7 @@ class Map
         }
         else if(start==end) // 起點 = 終點
         {
-            return {state:GM.PATH_NONE, ep:ept, cost:0}
+            return {state:GM.PATH_OK, ep:ept, pts:[], cost:0}
         }
         else
         {
@@ -404,7 +404,8 @@ class Map
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
                 const state = block ? GM.PATH_BLK : GM.PATH_OK;
                 const cost = result.at(-1).g;   // 用於判斷最佳路徑
-                return {state:state, ep:ept, pts:pts, cost:cost}
+                const drawLast = this.getWeight(ept) <= GM.W_BLOCK;
+                return {state:state, ep:ept, pts:pts, cost:cost, drawLast:drawLast}
             }
         }
     }

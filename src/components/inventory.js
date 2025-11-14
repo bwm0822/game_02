@@ -84,6 +84,7 @@ export class COM_Storage extends Com
     _get(content)
     {
         let {id,count}=content;
+        delete content.count;   // 從 content 移除 count 屬性
         let cps = DB.item(id).cps ?? 1;
 
         let i = 0;
@@ -97,22 +98,22 @@ export class COM_Storage extends Com
                 if(Utility.isEmpty(items[i]))
                 {
                     const cnt = Math.min(count,cps)
-                    items[i]={id:id, count:cnt, ...content}
+                    items[i]={...content,count:cnt};
                     count-=cnt;
 
                 }
                 else if(items[i].id==id && items[i].count<cps)
                 {
                     const sum = items[i].count+count;
-                    items[i].count = Math.min(sum,cps)
                     items[i]={...items[i],...content}
+                    items[i].count = Math.min(sum,cps)
                     count = sum-cps;
                 }
             }
             else    // 新的欄位
             {
                 const cnt = Math.min(count,cps);
-                items.push({id:id, count:cnt, ...content});
+                items.push({...content,count:cnt});
                 count-=cnt;
             }
             i++;

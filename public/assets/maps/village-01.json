@@ -431,11 +431,6 @@
                  "name":"",
                  "properties":[
                         {
-                         "name":"interactive",
-                         "type":"bool",
-                         "value":false
-                        }, 
-                        {
                          "name":"storage",
                          "type":"string",
                          "value":"[\"boots_01\",\"helmet_01\",\"chest_01\",\"gloves_01\",\"boots_02\",\"helmet_02\",\"chest_02\",\"gloves_02\"]"

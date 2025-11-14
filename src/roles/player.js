@@ -225,15 +225,10 @@ export class Player extends Role
             }
             else
             {
-                if(bb.ent && bb.path.pts.length===1)
+                const state = await this.aEmit('move');
+                if(state[0]==='reach'&&bb.ent)
                 {
-                    delete bb.path;
                     await this._interact(bb.ent,bb.act);
-                }
-                else
-                {
-                    // this.emit('checkPath'); // 檢查是否被阻擋
-                    await this.aEmit('move');
                 }
             }
         }

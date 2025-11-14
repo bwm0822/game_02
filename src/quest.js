@@ -30,18 +30,17 @@ function fmt_conds(q)
     let ret = `\n[color=yellow]${'conditions'.lab()}[/color]\n`;
 
     q.conds.forEach((cond) => {
-        console.log(cond.dat);
         switch (cond.dat.type) 
         {
             case GM.KILL:
-                if(cond.shown())
+                if(cond.shown)
                 {
-                    let flag = cond.done() ? '🗹':'☐';
+                    let flag = cond.done ? '🗹':'☐';
                     ret+=`${flag} ${cond.dat.type.lab()} ${cond.dat.id.lab()} (${cond.cur}/${cond.dat.count})\n`
                 }
                 break;
             case GM.TALK:
-                if(cond.shown())
+                if(cond.shown)
                 {
                     ret+=`☐ ${cond.dat.type} ${cond.dat.id}\n`;
                 }
@@ -79,7 +78,7 @@ function fmt_rewards(rewards)
 function check(q, chk)
 {
     q.conds.forEach(cond=>{
-        if(!q.cond.done && chk.type===cond.dat.type)
+        if(!cond.done && chk.type===cond.dat.type)
         {
             if(cond.dat.id && cond.dat.id===chk.id)
             {
@@ -121,9 +120,9 @@ export default class QuestManager
         {
             let qD = DB.quest(id);
             q.conds.forEach((cond, i) => {
-                if(!cond.dat) {Object.defineProperty(cond, 'dat', {get() {return qD.conds[i];}});}
-                if(!cond.done) {cond.done=()=>{return isDone(cond)};}
-                if(!cond.shown) {cond.shown=()=>{return isShown(q.conds,cond)};}
+                if(!cond.dat) {Object.defineProperty( cond, 'dat', {get() {return qD.conds[i];}} );}
+                if(cond.done===undefined) {Object.defineProperty( cond, 'done', {get() {return isDone(cond);}} );}
+                if(cond.shown===undefined) {Object.defineProperty( cond, 'shown', {get() {return isShown(q.conds,cond);}} );}
             })
             if(!q.dat) {Object.defineProperty(q, 'dat', {get() {return qD;}});}
             if(!q.state) {Object.defineProperty(q, 'state', {get() {return q.result??getState(q.conds);}});}
