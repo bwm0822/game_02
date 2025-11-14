@@ -71,6 +71,11 @@ function checkCond(cond, rec)
 
 function parseP(str, rec)
 {
+    // 格式 : 'val#key:def'
+    // 1. str='val' 回傳 val
+    // 2. str='#key' 回傳 rec[key]
+    // 3. str='#key:def' 回傳 rec[key]，若無則回傳 def
+    
     if(!str) {return null;}
     const [val, key, def] = str.split(/[:#]/);
     return val!=''?val:rec[key]??def;
