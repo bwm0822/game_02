@@ -18,16 +18,21 @@ export function divider(scene)
     return rect(scene,{width:200,height:1,color:GM.COLOR_WHITE})
 }
 
-export function bar(scene, config={})
+// 沒有底色
+export function bar(scene, config={}, config2)
 {
     config.height = config.height ?? 20;
     config.width = config.width ?? 100;
     config.barColor = config.barColor ?? GM.COLOR_GREEN;
     config.value = config.value ?? 0.5;
-    return scene.add.rexRoundRectangleProgress(config);
+    const bar = scene.add.rexRoundRectangleProgress(config);
+
+    if(this) {this.add(bar,config2)}
+    return bar;
 }
 
-export function progress(scene, config={})
+// 有底色
+export function progress(scene, config={}, config2)
 {
     config.height = config.height ?? 20;
     config.width = config.width ?? 100;
@@ -35,10 +40,14 @@ export function progress(scene, config={})
     config.trackColor = config.trackColor ?? GM.COLOR_BLACK;
     //config.trackStrokeColor = config.trackStrokeColor ?? GM.COLOR_LIGHT,
     config.value = config.value ?? 0.5;
-    return scene.add.rexRoundRectangleProgress(config);
+    const bar = scene.add.rexRoundRectangleProgress(config);
+
+    if(this) {this.add(bar,config2)}
+    return bar;
 }
 
-export function progress_text(scene, config={}) 
+// 有底色及文字
+export function progress_text(scene, config={},config2={}) 
 {
     // 建立進度條
     config.barColor = config.barColor ?? GM.COLOR_RED;
@@ -70,11 +79,12 @@ export function progress_text(scene, config={})
     // 初始設為滿血
     // sizer.setValue(50,100);
 
+    if(this) {this.add(sizer,config2)}
     return sizer;
 }
 
 
-export function sprite(scene, {x, y, icon, name}={})
+export function sprite(scene, {x, y, icon, name}={},config={})
 {
     let [atlas, frame] = icon ? icon.split('/'):[];
     let sprite = scene.add.sprite(x,y,atlas,frame);
@@ -90,6 +100,7 @@ export function sprite(scene, {x, y, icon, name}={})
            
     // };
 
+    if(this) {this.add(sprite,config);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return sprite;
 }
 
@@ -105,7 +116,7 @@ export function text(scene, config={})
     return t;
 }
 
-export function bbcText(scene, config={})    
+export function bbcText(scene, config={}, config2={})    
 {
     config.fontSize = config.fontSize ?? GM.FONT_SIZE;
     config.fontFamily = config.fontFamily ?? GM.FONT;
@@ -117,6 +128,8 @@ export function bbcText(scene, config={})
 
     let t = scene.add.rexBBCodeText(config?.x, config?.y, config?.text, config);
     t.key = config?.key;
+    
+    if(this) {this.add(t,config2);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return t;
 }
 

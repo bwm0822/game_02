@@ -17,7 +17,7 @@ export let GM =
     COLOR_GREEN : 0x00ff00,
     COLOR_YELLOW : 0xffff00,
     COLOR_BLUE : 0x0000ff,
-    COLOR_BLACK : 0x0,
+    COLOR_BLACK : 0x010101,
 
     FONT : "Arial",
     // FONT : "Segoe UI Emoji",

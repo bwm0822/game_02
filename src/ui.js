@@ -17,6 +17,7 @@ import DragService from './services/dragService.js';
 // import * as Role from './role.js';
 // import {getPlayer} from './role.js';
 import {getPlayer} from './roles/player.js';
+import {UiTest} from './ui/uiframe.js';
 
 let uiScene;
 let _mode = 0;
@@ -73,6 +74,8 @@ export default function createUI(scene)
     new UiDebuger(scene);           // 18
     
     new UiConfirm(scene);
+
+    new UiTest(scene);
 
     test();
 
@@ -2117,6 +2120,7 @@ export class UiStorage extends UiBase
 
         this.addBg_Int(scene)
             .addTop(scene)
+            // .addGrid(scene,4,4)
             .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
             // 方法 1: ()=>{return this.getContainer();};
