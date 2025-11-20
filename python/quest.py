@@ -11,6 +11,7 @@ def df_to_json(df):
                 continue
             elif key == "id":
                 id = val
+                obj[key] = val
             elif key == "rewards":
                 fixed = "[" + val + "]"
                 obj.update({'rewards': json.loads(fixed)})

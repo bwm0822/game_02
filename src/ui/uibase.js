@@ -1,5 +1,6 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {GM} from '../setting.js';
+import ImageData from 'phaser3-rex-plugins/plugins/gameobjects/blitter/blitterbase/bob/image/ImageData.js';
 
 export function uRect(scene, config={})
 {
@@ -65,30 +66,97 @@ export function uPanel(scene, config={})
     return panel;
 }
 
-export function uButton(scene,{space, bg, text, icon, 
-                        onover, onout, onclick, ext}={})
-{
-    const btn = scene.rexUI.add.sizer({space});
+// export function uButton(scene,{space, bg, text, icon, 
+//                         onover, onout, onclick, ext}={})
+// {
+//     const btn = scene.rexUI.add.sizer({space});
 
     
-    if(bg) {uBg.call(btn, scene, bg);}
-    if(text) {uBbc.call(btn, scene, {text});}
-    if(icon) {uSprite.call(btn, scene, {icon});}
+//     if(bg) {uBg.call(btn, scene, bg);}
+//     if(text) {uBbc.call(btn, scene, {text});}
+//     if(icon) {uSprite.call(btn, scene, {icon});}
 
-    let over = (on)=>{
-        btn.children.forEach(child=>{
-            child.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
-            child.setFillStyle?.(child.fillColor, on? 0.5 : 1);
-        })
+//     let over = (on)=>{
+//         btn.children.forEach(child=>{
+//             child.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
+//             child.setFillStyle?.(child.fillColor, on? 0.5 : 1);
+//         })
+//     }
+
+//     btn.setInteractive()
+//         .on('pointerover',()=>{over(true);onover?.();})
+//         .on('pointerout',()=>{over(false);onout?.();})
+//         .on('pointerdown',()=>{onclick?.()})
+
+//     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+//     return btn;
+// }
+
+export function uLabel(scene, config={})
+{
+    const {ext,text,icon,bg,...cfg}=config;
+    if(bg) {cfg.background=uRect(scene, bg);}
+    if(text) {cfg.text=uBbc(scene, {text:text});}
+    if(icon) {cfg.icon=uSprite(scene, {icon:icon});}
+    const lab = scene.rexUI.add.label(cfg); 
+    lab._bg=cfg.background;
+    lab._text=cfg.text;
+    lab._icon=cfg.icon;
+    if(this&&this.add) {this.add(lab, ext);}
+    return lab;
+}
+
+export function uButton(scene,config={})
+{
+    // 避免 config 傳入非物件參數(如:123、null)時，產生錯誤
+    if (typeof config !== 'object' || config === null) {config = {};}
+
+    const {onover, onout, onclick, ext, ...cfg}=config;
+    cfg.bg = cfg.bg ?? {color:GM.COLOR_LIGHT, radius:10}
+    cfg.space = cfg.space ?? 5;
+    const btn = uLabel(scene, cfg);
+
+    let _over = (on)=>{
+        btn._bg?.setFillStyle(btn._bg.fillColor, on? 0.5 : 1);
+        btn._text?.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
+        btn._icon?.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
     }
 
     btn.setInteractive()
-        .on('pointerover',()=>{over(true);onover?.();})
-        .on('pointerout',()=>{over(false);onout?.();})
-        .on('pointerdown',()=>{onclick?.()})
+        .on('pointerover',()=>{_over(true);onover?.(btn);})
+        .on('pointerout',()=>{_over(false);onout?.(btn);})
+        .on('pointerdown',()=>{onclick?.(btn)})
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
+}
+
+export function uItem(scene, config={})
+{
+    const cDEF=GM.COLOR_GRAY;
+    const cHL=GM.COLOR_WHITE;
+    const cBG=GM.COLOR_LIGHT;
+
+    const {onclick, ext, ...cfg}=config;
+    cfg.bg = cfg.bg ?? {color:cBG};
+    cfg.text = cfg.text ?? {text:''}
+    const itm = uLabel(scene, cfg);
+    itm._bg.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel被設成true
+    itm._text.setColor(cDEF);
+
+    // 提供外界操作
+    itm.highlight = (on)=>{itm._text.setColor(on?cHL:cDEF)}
+    itm.setText = (text)=>{itm._text.setText(text);}
+    
+    // events
+    let _over = (on)=>{itm._bg.setAlpha(on?1:0);}
+    itm.setInteractive()
+        .on('pointerover',()=>{_over(true);})
+        .on('pointerout',()=>{_over(false);})
+        .on('pointerdown',()=>{onclick?.(itm)})
+    
+    if(this&&this.add) {this.add(itm, ext);}
+    return itm;
 }
 
 export function uTop(scene, {text,color,onclose}={})
@@ -99,53 +167,16 @@ export function uTop(scene, {text,color,onclose}={})
 
     //{bg:strokeColor:GM.COLOR_GRAY,strokeWidth:2}
     uButton.call(row,scene,{
-                            // bg:{},
-                            // text:'X',
-                            icon:GM.ICON_CLOSE,
-                            ext:{align:'right',expand:false},
-                            onclick:onclose,
+                            icon: GM.ICON_CLOSE,
+                            bg: {},
+                            space: 0,
+                            ext: {align:'right',expand:false},
+                            onclick: onclose,
                             })
 
-   
-    this.add(row,{padding:{left:0,right:0}, expand:true, key:'top'});
+    if(this&&this.add) {this.add(row,{padding:{left:0,right:0}, expand:true, key:'top'});}
     return row;
 }
-
-// export function uScroll(scene, config1, config2)
-// {
-//     config1 = config1 ?? {};
-//     const width = config1.width ?? 50;
-//     const height = config1.height ?? 100;
-//     const bg = config1.bg ?? {alpha:1,strokeColor:GM.COLOR_GRAY,strokeWidth:2};
-//     const panelCfg = config1.panel ?? {orientation:'y',space:5}; 
-//     config2 = config2 ?? {expand:true, key:'scroll'};
-
-//     const scroll = scene.rexUI.add.scrollablePanel({
-//         width: width,
-//         height: height,
-//         background: uRect(scene, bg),
-//         panel: {child:scene.rexUI.add.sizer(panelCfg)},
-//         slider: {
-//             track: uRect(scene,{width:15,color:GM.COLOR_DARK}),
-//             thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
-//             space: 5,
-//             hideUnscrollableSlider: false,
-//             disableUnscrollableDrag: false,
-//         },
-//     });
-
-//     const panel = scroll.getElement('panel');
-
-//     // 操作介面
-//     scroll.addItem = (item,config={align:'left'})=>{panel.add(item,config); return scroll;}
-//     scroll.clearAll = ()=>{panel.removeAll(true); return scroll;}
-
-//     if(this&&this.add) {this.add(scroll, config2);}
-//     return scroll;
-// }
-
-
-
 
 // 沒有底色
 export function uBar(scene, config={})
@@ -215,7 +246,41 @@ export function uTextProgress(scene, config={})
     return sizer;
 }
 
-export function uScroll(scene, {width,height,bg,column,row,space,ext}={})
+export function uScroll(scene, {width,height,bg,space,ext}={})
+{
+    width = width ?? 50;
+    height = height ?? 100;
+    bg = bg ?? {alpha:1,strokeColor:GM.COLOR_GRAY,strokeWidth:2};
+    space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
+    ext = ext ?? {expand:true, key:'scroll'};
+
+    const scroll = scene.rexUI.add.scrollablePanel({
+        width: width,
+        height: height,
+        background: uRect(scene, bg),
+        panel: {child:scene.rexUI.add.sizer({space,orientation:'y'})},
+        slider: {
+            track: uRect(scene,{width:15,color:GM.COLOR_DARK}),
+            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+            space: 5,
+            hideUnscrollableSlider: false,
+            disableUnscrollableDrag: false,
+        },
+    });
+
+    const _panel = scroll.getElement('panel');
+
+    // 操作介面
+    scroll.addItem = (item,config={align:'left',expand:true})=>{_panel.add(item,config); return scroll;}
+    scroll.clearAll = ()=>{_panel.removeAll(true); return scroll;}
+
+    scroll._panel = _panel;
+
+    if(this&&this.add) {this.add(scroll, ext);}
+    return scroll;
+}
+
+export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
 {
     width = width ?? 50;
     height = height ?? 100;
@@ -272,13 +337,54 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext}={})
         const count = column * row;
         for(let i=0; i<count; i++)
         {
-            grid.add(addItem());
+            grid.add(addItem(i));
         }
     }
 
     // 3. 操作介面
     grid.update = (cb)=>{grid.getElement('items').forEach((item)=>{cb(item);})}
 
-    if(this&&this.add) { this.add(grid,{key:'grid', ext}); }
+    if(this&&this.add) { this.add(grid,{key:'grid', ...ext}); }
     return grid;
+}
+
+
+export function uTabs(scene,{btns,onclick,onover,onout})
+{
+    let previous;
+    const cDEF = GM.COLOR_DARK;
+    const cSEL = GM.COLOR_PRIMARY; 
+    const cBG = GM.COLOR_BLACK;
+    
+    let config = {
+        // background: uRect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+        background: uRect(scene,{color:cBG}),
+        topButtons: btns.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,tr:20}},...btn})}),
+        space: {left:5, right:5, top:5, bottom:0, topButton:10}
+    }
+
+    let tabs = scene.rexUI.add.tabs(config); 
+
+    // 提供給外界操作
+    tabs.init = ()=>{tabs.emitButtonClick('top',0);}
+
+    // events
+    tabs.on('button.click', (button, groupName, index)=>{
+           if(previous) {previous._bg.setFillStyle(cDEF);}
+           previous=button;
+           button._bg.setFillStyle(cSEL);
+           onclick?.(button);
+        })
+
+    tabs.on('button.over', (button, groupName, index)=>{
+        onover?.();
+    })
+
+    tabs.on('button.out', (button, groupName, index)=>{
+        onout?.();
+    })
+
+    if(this&&this.add) {this.add(tabs,{expand:true,key:'tags'});}
+
+    return tabs;
 }

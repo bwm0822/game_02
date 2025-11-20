@@ -19,6 +19,9 @@ import DragService from './services/dragService.js';
 import {getPlayer} from './roles/player.js';
 import {UiTest} from './ui/uiframe.js';
 
+import UiStorage from './ui/uistorage.js';
+import UiQuest from './ui/uiquest.js';
+
 let uiScene;
 let _mode = 0;
 
@@ -75,7 +78,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    new UiTest(scene);
+    // new UiTest(scene);
 
     test();
 
@@ -158,7 +161,7 @@ export class Ui
     }
 }
 
-class Slot extends Icon
+export class Slot extends Icon
 {
     constructor(scene, w, h, i, config)
     {
@@ -2103,87 +2106,87 @@ class Observe extends UiBase
     }
 }
 
-export class UiStorage extends UiBase
-{
-    static instance = null;
-    constructor(scene)
-    {
-        let config =
-        {
-            x:100,
-            y:GM.h-150,
-            orientation:'y'
-        }
+// export class UiStorage extends UiBase
+// {
+//     static instance = null;
+//     constructor(scene)
+//     {
+//         let config =
+//         {
+//             x:100,
+//             y:GM.h-150,
+//             orientation:'y'
+//         }
 
-        super(scene, config, 'UiStorage');
-        UiStorage.instance = this;
+//         super(scene, config, 'UiStorage');
+//         UiStorage.instance = this;
 
-        this.addBg_Int(scene)
-            .addTop(scene)
-            // .addGrid(scene,4,4)
-            .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
-            // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
-            // 方法 1: ()=>{return this.getContainer();};
-            // 方法 2: this.getContainer.bind(this);
-            // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
-            .setOrigin(0,1)
-            .layout()
-            .hide()
+//         this.addBg_Int(scene)
+//             .addTop(scene)
+//             // .addGrid(scene,4,4)
+//             .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
+//             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
+//             // 方法 1: ()=>{return this.getContainer();};
+//             // 方法 2: this.getContainer.bind(this);
+//             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
+//             .setOrigin(0,1)
+//             .layout()
+//             .hide()
         
-    }
+//     }
 
-    setCat(cat)
-    {
-        this.cat = cat;
-        this.updateGrid();
-    }
+//     setCat(cat)
+//     {
+//         this.cat = cat;
+//         this.updateGrid();
+//     }
 
-    close() 
-    {
-        if(!this.visible) {return;}
+//     close() 
+//     {
+//         if(!this.visible) {return;}
 
-        super.close();
-        // close/unregister/camera
-        UiCover.close();
-        this.owner.setEnable?.(true);
-        clrCamera(GM.CAM_LEFT_TOP);
-        this.unregister();
+//         super.close();
+//         // close/unregister/camera
+//         UiCover.close();
+//         this.owner.setEnable?.(true);
+//         clrCamera(GM.CAM_LEFT_TOP);
+//         this.unregister();
 
-        delete this.owner.target;
-        delete getPlayer().target;
-    }
+//         delete this.owner.target;
+//         delete getPlayer().target;
+//     }
 
-    refresh()
-    {
-        this.updateGrid();
-    }
+//     refresh()
+//     {
+//         this.updateGrid();
+//     }
 
-    show(owner, cat=GM.CAT_ALL)
-    {
-        this.close();
-        super.show();
-        this.owner = owner;
-        this.owner.target = getPlayer();
-        getPlayer().target = this.owner;
+//     show(owner, cat=GM.CAT_ALL)
+//     {
+//         this.close();
+//         super.show();
+//         this.owner = owner;
+//         this.owner.target = getPlayer();
+//         getPlayer().target = this.owner;
 
-        this.setTitle(owner.name);
-        this.updateGrid(cat);
-        this.layout();
-        UiCursor.set();
+//         this.setTitle(owner.name);
+//         this.updateGrid(cat);
+//         this.layout();
+//         UiCursor.set();
         
-        // show
-        UiInv.show(getPlayer());
-        // cover/closeAll/register/camera
-        UiCover.show();
-        Ui.closeAll(GM.UI_LEFT_P);
-        this.register(GM.UI_LEFT);  
-        setCamera(GM.CAM_LEFT_TOP);
-    }
+//         // show
+//         UiInv.show(getPlayer());
+//         // cover/closeAll/register/camera
+//         UiCover.show();
+//         Ui.closeAll(GM.UI_LEFT_P);
+//         this.register(GM.UI_LEFT);  
+//         setCamera(GM.CAM_LEFT_TOP);
+//     }
 
-    static close() {this.instance?.close();}
+//     static close() {this.instance?.close();}
 
-    static show(owner,cat) {this.instance?.show(owner,cat);}
-}
+//     static show(owner,cat) {this.instance?.show(owner,cat);}
+// }
 
 export class UiInv extends UiBase
 {
@@ -4061,179 +4064,179 @@ export class UiSettings extends UiContainerBase
 }
 
 
-export class UiQuest extends UiBase
-{
-    static instance = null;
-    constructor(scene)
-    {
-        let config =
-        {
-            x : GM.w/2,
-            y : GM.h/2,
-            width : 800,
-            height : 500,
-            orientation : 'y',
-            space:{left:10,right:10,bottom:10,item:5},
-        }
-        super(scene, config, 'UiQuest');
-        UiQuest.instance = this; 
+// export class UiQuest extends UiBase
+// {
+//     static instance = null;
+//     constructor(scene)
+//     {
+//         let config =
+//         {
+//             x : GM.w/2,
+//             y : GM.h/2,
+//             width : 800,
+//             height : 500,
+//             orientation : 'y',
+//             space:{left:10,right:10,bottom:10,item:5},
+//         }
+//         super(scene, config, 'UiQuest');
+//         UiQuest.instance = this; 
 
-        this.addBg_Int(scene)    
-            .addTop(scene,{text:'quest'.lab()})
-            .addTab(scene)
-            .addPage(scene,'quest')
-            .setOrigin(0.5)
-            .layout()
-            .hide()  
-    }
+//         this.addBg_Int(scene)    
+//             .addTop(scene,{text:'quest'.lab()})
+//             .addTab(scene)
+//             .addPage(scene,'quest')
+//             .setOrigin(0.5)
+//             .layout()
+//             .hide()  
+//     }
 
-    addTab(scene)
-    {
-        let button_pre;
-        let config = {
-            background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
-            topButtons:[
-                        label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'quest',space:{left:20,right:20,top:5,bottom:5}}),
-                        label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
-                    ],
+//     addTab(scene)
+//     {
+//         let button_pre;
+//         let config = {
+//             background: rect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+//             topButtons:[
+//                         label(scene,{text:'🎴',color:GM.COLOR_PRIMARY,key:'quest',space:{left:20,right:20,top:5,bottom:5}}),
+//                         label(scene,{text:'❤️',color:GM.COLOR_PRIMARY,key:'states',space:{left:20,right:20,top:5,bottom:5}}),
+//                     ],
 
-            space: {left:5, top:5, bottom:5, topButton:1}
-        }
+//             space: {left:5, top:5, bottom:5, topButton:1}
+//         }
 
-        let tabs = scene.rexUI.add.tabs(config); 
+//         let tabs = scene.rexUI.add.tabs(config); 
 
-        tabs.on('button.click', (button, groupName, index)=>{
-                UiInfo.close();
-                if(button_pre) 
-                {
-                    button_pre.getElement('background').setFillStyle(GM.COLOR_PRIMARY);
-                    this.getElement(button_pre.key)?.hide();
-                }
-                button_pre = button;
-                button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
-                this.getElement(button.key)?.show();
-                this.layout();
-            })
+//         tabs.on('button.click', (button, groupName, index)=>{
+//                 UiInfo.close();
+//                 if(button_pre) 
+//                 {
+//                     button_pre.getElement('background').setFillStyle(GM.COLOR_PRIMARY);
+//                     this.getElement(button_pre.key)?.hide();
+//                 }
+//                 button_pre = button;
+//                 button.getElement('background').setFillStyle(GM.COLOR_LIGHT);
+//                 this.getElement(button.key)?.show();
+//                 this.layout();
+//             })
 
-        tabs.on('button.over', (button, groupName, index)=>{
-            Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN, button)})
-        })
+//         tabs.on('button.over', (button, groupName, index)=>{
+//             Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN, button)})
+//         })
 
-        tabs.on('button.out', (button, groupName, index)=>{
-            Ui.cancelDelayCall();
-            UiInfo.close();
-        })
+//         tabs.on('button.out', (button, groupName, index)=>{
+//             Ui.cancelDelayCall();
+//             UiInfo.close();
+//         })
 
-        this.add(tabs,{expand:true, key:'tags'});
-        return this;
-    }
+//         this.add(tabs,{expand:true, key:'tags'});
+//         return this;
+//     }
 
-    addPage(scene, key)
-    {
-        let config = {
-            orientation:'x',
-        }
-        let panel = scene.rexUI.add.sizer(config);
+//     addPage(scene, key)
+//     {
+//         let config = {
+//             orientation:'x',
+//         }
+//         let panel = scene.rexUI.add.sizer(config);
 
-        panel.addScroll = this.addScroll;
-        panel.addPanel = this.addPanel;
-        panel.addBackground(rect(scene,{color:GM.COLOR_PRIMARY,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
-        this.add(panel,{expand:true,proportion:1,key:key});
+//         panel.addScroll = this.addScroll;
+//         panel.addPanel = this.addPanel;
+//         panel.addBackground(rect(scene,{color:GM.COLOR_PRIMARY,strokeColor:GM.COLOR_GRAY,strokeWidth:2}))
+//         this.add(panel,{expand:true,proportion:1,key:key});
         
-        panel.addScroll(scene,{width:300});
-        panel.addPanel(scene,{color:GM.COLOR_LIGHT});
+//         panel.addScroll(scene,{width:300});
+//         panel.addPanel(scene,{color:GM.COLOR_LIGHT});
 
-        panel.hide();
-        return this;
-    }
+//         panel.hide();
+//         return this;
+//     }
 
-    updatePage()
-    {
-        let itemSel = null;
-        let ondown = (item)=>{
-            itemSel?.unsel();
-            itemSel=item;
-            item.sel();
+//     updatePage()
+//     {
+//         let itemSel = null;
+//         let ondown = (item)=>{
+//             itemSel?.unsel();
+//             itemSel=item;
+//             item.sel();
 
-            let panel = this.getElement('panel',true);
-            panel.addDivider = this.addDivider;
-            panel.removeAll(true);
-            panel.add(bbcText(this.scene,{text:item.q.dat.title}))
-                .addDivider(this.scene)
-                .add(bbcText(this.scene,{text:item.q.dat.des}),{expand:true})
+//             let panel = this.getElement('panel',true);
+//             panel.addDivider = this.addDivider;
+//             panel.removeAll(true);
+//             panel.add(bbcText(this.scene,{text:item.q.dat.title}))
+//                 .addDivider(this.scene)
+//                 .add(bbcText(this.scene,{text:item.q.dat.des}),{expand:true})
 
-            panel.add(bbcText(this.scene,{text:item.q.fmt()}),{expand:true});
+//             panel.add(bbcText(this.scene,{text:item.q.fmt()}),{expand:true});
 
-            if(item.q.state === 'close')
-            {
-                let onclick=()=>{QuestManager.remove(item.id);this.update();}
-                panel.addSpace()
-                panel.add(new UiButton(this.scene,{text:'移除',onclick:onclick}),
-                            {align:'right'})
-            }
-            this.layout();
+//             if(item.q.state === 'close')
+//             {
+//                 let onclick=()=>{QuestManager.remove(item.id);this.update();}
+//                 panel.addSpace()
+//                 panel.add(new UiButton(this.scene,{text:'移除',onclick:onclick}),
+//                             {align:'right'})
+//             }
+//             this.layout();
             
-        }
+//         }
 
-        let panel = this.getElement('panel',true);
-        panel.removeAll(true);
+//         let panel = this.getElement('panel',true);
+//         panel.removeAll(true);
 
-        let list = this.getElement('scroll',true).getElement('panel');
-        list.removeAll(true);
+//         let list = this.getElement('scroll',true).getElement('panel');
+//         list.removeAll(true);
 
-        for(let id in QuestManager.quests.opened)
-        {
-            let q = QuestManager.query(id);
-            let flag = q.state === 'close' ? '🗹':'☐';
-            let item = this.item(flag+' '+q.dat.title,{ondown:ondown});
-            item.q = q;
-            item.id = id;
-            list.add(item,{expand:true})
-        }
+//         for(let id in QuestManager.quests.opened)
+//         {
+//             let q = QuestManager.query(id);
+//             let flag = q.state === 'close' ? '🗹':'☐';
+//             let item = this.item(flag+' '+q.dat.title,{ondown:ondown});
+//             item.q = q;
+//             item.id = id;
+//             list.add(item,{expand:true})
+//         }
 
-        return this;
-    }
+//         return this;
+//     }
 
-    update()
-    {
-        if(this.visible)
-        {
-            this.updatePage();
-        }
-    }
+//     update()
+//     {
+//         if(this.visible)
+//         {
+//             this.updatePage();
+//         }
+//     }
 
-    refresh() {this.update();}  // call by Ui.refreshAll()
+//     refresh() {this.update();}  // call by Ui.refreshAll()
 
-    show(owner)
-    {
-        this.owner = owner;
-        super.show();
-        this.update();
-        this.getElement('tags').emitTopButtonClick(0);
-        // closeAll/register/camera
-        this.closeAll(GM.UI_CENTER);
-        this.register(GM.UI_CENTER);
-    }
+//     show(owner)
+//     {
+//         this.owner = owner;
+//         super.show();
+//         this.update();
+//         this.getElement('tags').emitTopButtonClick(0);
+//         // closeAll/register/camera
+//         this.closeAll(GM.UI_CENTER);
+//         this.register(GM.UI_CENTER);
+//     }
 
-    close()
-    {
-        if(!this.visible) {return;}
+//     close()
+//     {
+//         if(!this.visible) {return;}
 
-        super.close();
-        this.unregister();
-    }
+//         super.close();
+//         this.unregister();
+//     }
 
-    toggle(owner)
-    {
-        if(this.visible){this.close();}
-        else{this.show(owner)}
-    }
+//     toggle(owner)
+//     {
+//         if(this.visible){this.close();}
+//         else{this.show(owner)}
+//     }
 
-    static show(owner) {this.instance?.show(owner);}
-    static close() {this.instance?.close();}
-    static toggle(owner) {this.instance?.toggle(owner);}
-    static get shown() {this.instance?.visible;}
-}
+//     static show(owner) {this.instance?.show(owner);}
+//     static close() {this.instance?.close();}
+//     static toggle(owner) {this.instance?.toggle(owner);}
+//     static get shown() {this.instance?.visible;}
+// }
 
 
 export class UiAbility extends UiBase

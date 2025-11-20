@@ -25,6 +25,11 @@ function getState(conds)
     return 'finish';
 }
 
+function fmt_des(q)
+{
+    return `\n${q.dat.des}\n`;
+}
+
 function fmt_conds(q)
 {
     let ret = `\n[color=yellow]${'conditions'.lab()}[/color]\n`;
@@ -73,6 +78,11 @@ function fmt_rewards(rewards)
         }
     });
     return ret;
+}
+
+function fmt_title(q)
+{
+    return `${q.state==='close' ? '🗹':'☐'} ${q.dat.title}`;
 }
 
 function check(q, chk)
@@ -128,6 +138,7 @@ export default class QuestManager
             if(!q.state) {Object.defineProperty(q, 'state', {get() {return q.result??getState(q.conds);}});}
             if(!q.fmt) {q.fmt = ()=>{return this.fmt(id);};}
             if(!q.check) {q.check = (chk)=>{return check(q,chk);};}
+            if(!q.title) {q.title = ()=>{return fmt_title(q);}}
 
         }
         return q;
@@ -137,7 +148,7 @@ export default class QuestManager
     {
         let qD = DB.quest(id);
         let q = this.quests.opened[id];
-        let ret = fmt_conds(q) + fmt_rewards(qD.rewards);
+        let ret = fmt_des(q) + fmt_conds(q) + fmt_rewards(qD.rewards);
         return ret;
         
     }

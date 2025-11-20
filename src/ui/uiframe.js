@@ -4,7 +4,7 @@ import * as ui from './uibase.js';
 import {GM} from '../setting.js';
 
 
-class UiFrame extends Sizer
+export default class UiFrame extends Sizer
 {
     constructor(scene, config, layername)
     {
@@ -12,9 +12,8 @@ class UiFrame extends Sizer
         this._addToLayer(layername);
     }
 
-    close()
+    _close()
     {
-        console.log('close ui frame');
         this.hide();
     }
 
