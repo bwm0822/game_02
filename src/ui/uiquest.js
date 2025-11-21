@@ -1,4 +1,4 @@
-import * as ui from './uibase.js'
+import * as ui from './uicomponents.js'
 import {GM} from '../setting.js'
 import UiFrame from './uiframe.js'
 import QuestManager from '../quest.js';
@@ -27,7 +27,7 @@ export default class UiQuest extends UiFrame
         // 2. add top
         ui.uTop.call(this, scene, {
             text:'quest'.lab(),
-            onclose:this._close.bind(this)
+            onclose:this.close.bind(this)
         })
 
         // 3. add tabs
@@ -83,9 +83,7 @@ export default class UiQuest extends UiFrame
     updatePage()
     {
         const scene = this.scene;
-        this._itm = null;
-        this._page.scroll.clearAll();
-        this._page.content.removeAll(true);
+
         const onclick = (itm)=>{
             if(this._itm) {this._itm.highlight(false);}
             this._itm=itm;
@@ -93,6 +91,10 @@ export default class UiQuest extends UiFrame
             this.updateContent(itm.q);
         }
 
+        this._itm = null;
+        this._page.scroll.clearAll();
+        this._page.content.removeAll(true);
+        
         if(this._pageName==='open')
         {
             for(let id in QuestManager.quests.opened)
@@ -112,20 +114,20 @@ export default class UiQuest extends UiFrame
        this.updatePage();
     }
 
-    _show(owner)
+    show(owner)
     {
         super.show();
         this._owner=owner;
         this._tabs.init();
     }
 
-    _toggle(owner)
+    toggle(owner)
     {
-        if(this.visible){this._close();}
-        else{this._show(owner)}
+        if(this.visible){this.close();}
+        else{this.show(owner)}
     }
 
-    static show(owner,cat) {this.instance?._show(owner,cat);}
-    static toggle(owner) {this.instance?._toggle(owner);}
+    static show(owner,cat) {this.instance?.show(owner,cat);}
+    static toggle(owner) {this.instance?.toggle(owner);}
 }
 

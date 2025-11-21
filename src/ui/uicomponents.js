@@ -226,7 +226,7 @@ export function uTextProgress(scene, config={})
     sizer.set = function(current,max) {
         let percent = Phaser.Math.Clamp(current / max, 0, 1);
         bar.setValue(percent);
-        text.setText(`${current}/${max}`);
+        bbc.setText(`${current}/${max}`);
         this.layout();
 
         // // 根據血量比例改變顏色

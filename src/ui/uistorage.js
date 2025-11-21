@@ -1,4 +1,4 @@
-import * as ui from './uibase.js'
+import * as ui from './uicomponents.js'
 import {GM} from '../setting.js'
 import UiFrame from './uiframe.js'
 import {Slot} from '../ui.js'
@@ -23,7 +23,7 @@ export default class UiStorage extends UiFrame
         ui.uBg.call(this, scene)
         // top
         ui.uTop.call(this, scene, {text:'storage'.lab(),
-                                    onclose:this._close.bind(this)})
+                                    onclose:this.close.bind(this)})
         // grid
         this._grid = ui.uGrid.call(this, scene, {
             column: 4, row: 4,
@@ -40,13 +40,13 @@ export default class UiStorage extends UiFrame
         this._grid.update((item)=>item.update(this._owner));
     }
 
-    _show(owner)
+    show(owner)
     {
         super.show();
         this._owner=owner;
         this._refresh();
     }
 
-    static show(owner,cat) {this.instance?._show(owner,cat);}
+    static show(owner,cat) {this.instance?.show(owner,cat);}
 }
 

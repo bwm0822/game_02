@@ -1,7 +1,10 @@
 // services/dragService.js
-import { Ui, UiInv, UiCover, UiMain, UiDragged, UiInfo } from '../ui.js';
-import { GM } from '../setting.js';
-import InventoryService from './inventoryService.js';
+// import { Ui, UiInv, UiCover, UiMain, UiDragged, UiInfo } from '../ui.js';
+import {UiInv,UiCover,UiDragged,UiInfo} from '../ui.js'
+import {GM} from '../setting.js'
+import Ui from '../ui/uicommon.js'
+import UiMain from '../ui/uimain.js'
+import InventoryService from './inventoryService.js'
 
 export default class DragService 
 {

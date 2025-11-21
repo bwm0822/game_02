@@ -8,7 +8,8 @@ import QuestManager from  '../quest.js';
 import {Pickup} from '../items/pickup.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiOption, UiDialog, UiTrade,  UiInv, UiMessage, 
-        UiProfile, UiChangeScene, Ui, UiGameOver, UiManufacture, UiCover} from '../ui.js'
+        UiProfile, UiChangeScene, UiGameOver, UiManufacture, UiCover} from '../ui.js'
+import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
 import TimeManager from '../time.js';
 import AudioManager from '../audio.js';

@@ -14,13 +14,11 @@ import InventoryService from './services/inventoryService.js';
 import PressService from './services/pressService.js';
 import DragService from './services/dragService.js';
 
-// import * as Role from './role.js';
-// import {getPlayer} from './role.js';
 import {getPlayer} from './roles/player.js';
-import {UiTest} from './ui/uiframe.js';
-
 import UiStorage from './ui/uistorage.js';
 import UiQuest from './ui/uiquest.js';
+import UiMain from './ui/uimain.js';
+import Ui from './ui/uicommon.js';
 
 let uiScene;
 let _mode = 0;
@@ -122,44 +120,44 @@ function clearpath() {uiScene.events.emit('clearpath');}
 
 function send(event, ...args) {uiScene.events.emit(event, ...args);}
 
-export class Ui
-{
-    static _list = {};
-    static _mode = GM.UI_MODE_NORMAL;
-    static _to = null;
+// export class Ui
+// {
+//     static _list = {};
+//     static _mode = GM.UI_MODE_NORMAL;
+//     static _to = null;
 
-    static get mode() {return this._mode;}
-    //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
-    static closeAll(mode=GM.UI_FORCE) 
-    {
-        for(let key in Ui._list)
-        {
-            if((Ui._list[key].type&mode) != 0) {Ui._list[key].ui.close();}
-        }
-    }
-    static refreshAll() {for(let key in Ui._list){Ui._list[key].ui.refresh?.();}}
-    static register(ui,type) {Ui._list[ui.constructor.name]={ui:ui,type:type};}
-    static unregister(ui) {delete Ui._list[ui.constructor.name];}
-    static setMode(mode) {this._mode = mode;}
+//     static get mode() {return this._mode;}
+//     //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
+//     static closeAll(mode=GM.UI_FORCE) 
+//     {
+//         for(let key in this._list)
+//         {
+//             if((this._list[key].type&mode) != 0) {this._list[key].ui.close();}
+//         }
+//     }
+//     static refreshAll() {for(let key in this._list){this._list[key].ui.refresh?.();}}
+//     static register(ui,type) {this._list[ui.constructor.name]={ui:ui,type:type};}
+//     static unregister(ui) {delete this._list[ui.constructor.name];}
+//     static setMode(mode) {this._mode = mode;}
 
-    static addLayer(scene, name, top)
-    {
-        let layer = scene.add.layer();
-        layer.name = name;
-        layer.add(top);     // 把 top 加入 layer
-    }
+//     static addLayer(scene, name, top)
+//     {
+//         let layer = scene.add.layer();
+//         layer.name = name;
+//         layer.add(top);     // 把 top 加入 layer
+//     }
 
-    static delayCall(func, delay=GM.OVER_DELAY)
-    {
-        if(!func) {return;}
-        this._to = setTimeout(() => {func();}, delay);
-    }
+//     static delayCall(func, delay=GM.OVER_DELAY)
+//     {
+//         if(!func) {return;}
+//         this._to = setTimeout(() => {func();}, delay);
+//     }
 
-    static cancelDelayCall()
-    {
-        clearTimeout(this._to);
-    }
-}
+//     static cancelDelayCall()
+//     {
+//         clearTimeout(this._to);
+//     }
+// }
 
 export class Slot extends Icon
 {
@@ -529,7 +527,7 @@ class OutputSlot extends Slot
     empty() {this.content={id:this.content.id,count:0};}
 }
 
-class AbilitySlot extends Pic
+export class AbilitySlot extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, i, config)
@@ -2414,171 +2412,171 @@ class UiCount extends UiContainerBase
     static getCount(min,max) {return this.instance.show(min,max);}
 }
 
-export class UiMain extends UiBase
-{
-    static instance = null;
-    constructor(scene)
-    {
-        let config = {space:{item:10,left:10,right:10,top:10,bottom:10}}
-        super(scene, config, 'UiMain');
-        UiMain.instance = this;
+// export class UiMain extends UiBase
+// {
+//     static instance = null;
+//     constructor(scene)
+//     {
+//         let config = {space:{item:10,left:10,right:10,top:10,bottom:10}}
+//         super(scene, config, 'UiMain');
+//         UiMain.instance = this;
 
-        this.addBg_Int(scene)
-            .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'📖',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🧠',key:'ability',onclick:this.ability,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .addCtrl(scene)
-            .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .add(new UiButton(scene,{text:'▶️',key:'step',onclick:this.step,onover:this.onover,onout:this.onout}),{align:'bottom'})
-            .addEnable(scene)
-            .size()
-            .hide();
+//         this.addBg_Int(scene)
+//             .add(new UiButton(scene,{text:'🎒',key:'inv',onclick:this.inv,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'👤',key:'profile',onclick:this.profile,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'📖',key:'quest',onclick:this.test.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'🧠',key:'ability',onclick:this.ability,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .addCtrl(scene)
+//             .add(new UiButton(scene,{text:'⏳',key:'next',onclick:this.next,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'⚙️',key:'exit',onclick:this.menu.bind(this),onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'🐛',key:'debug',onclick:this.debug,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .add(new UiButton(scene,{text:'▶️',key:'step',onclick:this.step,onover:this.onover,onout:this.onout}),{align:'bottom'})
+//             .addEnable(scene)
+//             .size()
+//             .hide();
         
-        this.addListener();
-    }
+//         this.addListener();
+//     }
 
-    addCtrl(scene)
-    {
-        let config_root = {
-            width:400,
-            height:60,
-            orientation:'y',
-            space:{item:5}
-        }
+//     addCtrl(scene)
+//     {
+//         let config_root = {
+//             width:400,
+//             height:60,
+//             orientation:'y',
+//             space:{item:5}
+//         }
 
-        let config_top = {orientation:'x'}
+//         let config_top = {orientation:'x'}
 
-        let config_slots = {orientation:'x',space:{item:5}}
+//         let config_slots = {orientation:'x',space:{item:5}}
 
-        let root = scene.rexUI.add.sizer(config_root);
-        root.addBackground(rect(scene,{color:GM.COLOR_GRAY}));
+//         let root = scene.rexUI.add.sizer(config_root);
+//         root.addBackground(rect(scene,{color:GM.COLOR_GRAY}));
 
-        let top =  scene.rexUI.add.sizer(config_top);
-        top.add(progress_text(scene,{width:200}),{key:'hp'})
+//         let top =  scene.rexUI.add.sizer(config_top);
+//         top.add(progress_text(scene,{width:200}),{key:'hp'})
 
-        let slots =  scene.rexUI.add.sizer(config_slots);
-        root.add(top,{align:'left',key:'top'});
+//         let slots =  scene.rexUI.add.sizer(config_slots);
+//         root.add(top,{align:'left',key:'top'});
 
-        for(let i=0; i<10; i++)
-        {
-            slots.add(new AbilitySlot(scene,50,50,i,{color:GM.COLOR_SLOT}));
-        }
+//         for(let i=0; i<10; i++)
+//         {
+//             slots.add(new AbilitySlot(scene,50,50,i,{color:GM.COLOR_SLOT}));
+//         }
 
-        this.resetAbility = () => {
-            slots.children.forEach((slot) => {
-                if(slot instanceof AbilitySlot) {slot.reset();}
-            });
-        }
+//         this.resetAbility = () => {
+//             slots.children.forEach((slot) => {
+//                 if(slot instanceof AbilitySlot) {slot.reset();}
+//             });
+//         }
 
-        this.updateAbility = () => {
-            slots.children.forEach((slot) => {
-                if(slot instanceof AbilitySlot) {slot.update();}
-            });
-        }
+//         this.updateAbility = () => {
+//             slots.children.forEach((slot) => {
+//                 if(slot instanceof AbilitySlot) {slot.update();}
+//             });
+//         }
 
-        root.add(slots,{align:'left',key:'slots'});
+//         root.add(slots,{align:'left',key:'slots'});
 
-        this.add(root,{key:'root'});
-        return this;    
-    }
+//         this.add(root,{key:'root'});
+//         return this;    
+//     }
 
-    onover(btn)
-    {
-        Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN,btn);})
-    }
+//     onover(btn)
+//     {
+//         Ui.delayCall(()=>{UiInfo.show(GM.IF_BTN,btn);})
+//     }
 
-    onout()
-    {
-        Ui.cancelDelayCall();
-        UiInfo.close();
-    }
+//     onout()
+//     {
+//         Ui.cancelDelayCall();
+//         UiInfo.close();
+//     }
 
 
-    addEnable(scene)
-    {
-        this.addBackground(rect(scene,{alpha:0}),'enable');
-        this._enable = this.getElement('enable');
-        return this;
-    }
+//     addEnable(scene)
+//     {
+//         this.addBackground(rect(scene,{alpha:0}),'enable');
+//         this._enable = this.getElement('enable');
+//         return this;
+//     }
 
-    enable(en)
-    {
-        if(en){this._enable.disableInteractive();}
-        else{this._enable.setInteractive();}
-    }
+//     enable(en)
+//     {
+//         if(en){this._enable.disableInteractive();}
+//         else{this._enable.setInteractive();}
+//     }
 
-    inv() {UiInv.toggle(getPlayer());}     // function內沒有用到 this 參數，就不需要 bind(this)
+//     inv() {UiInv.toggle(getPlayer());}     // function內沒有用到 this 參數，就不需要 bind(this)
 
-    profile() {UiProfile.toggle(getPlayer());}
+//     profile() {UiProfile.toggle(getPlayer());}
 
-    menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
+//     menu() {this.close();send('menu');} // function有用到 this 參數，需要 bind(this)
 
-    // next() {getPlayer().next();}
-    next() {getPlayer().next();}
+//     // next() {getPlayer().next();}
+//     next() {getPlayer().next();}
 
-    step() {getPlayer().dbgStep();}
+//     step() {getPlayer().dbgStep();}
 
-    test()
-    {
-        //this.closeAll(GM.UI_ALL);
-        UiQuest.toggle(getPlayer());
-    }
+//     test()
+//     {
+//         //this.closeAll(GM.UI_ALL);
+//         UiQuest.toggle(getPlayer());
+//     }
 
-    ability() {UiAbility.toggle();}
+//     ability() {UiAbility.toggle();}
 
-    debug() {UiDebuger.show();}
+//     debug() {UiDebuger.show();}
 
-    addListener()
-    {
-        this.setInteractive();
-        this.on('pointerover',()=>{mark(false);})
-            .on('pointerout',()=>{mark(true);})
-    }
+//     addListener()
+//     {
+//         this.setInteractive();
+//         this.on('pointerover',()=>{mark(false);})
+//             .on('pointerout',()=>{mark(true);})
+//     }
 
-    size()
-    {
-        let viewport = this.scene.rexUI.viewport;
-        this.setPosition(viewport.width/2, viewport.height)
-            .setOrigin(0.5,1)
-            .setMinWidth(viewport.width-100)
-            //.setMinSize(viewport.width-100, 80)
-            .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
-        return this;
-    }
+//     size()
+//     {
+//         let viewport = this.scene.rexUI.viewport;
+//         this.setPosition(viewport.width/2, viewport.height)
+//             .setOrigin(0.5,1)
+//             .setMinWidth(viewport.width-100)
+//             //.setMinSize(viewport.width-100, 80)
+//             .layout()//.drawBounds(this.scene.add.graphics(), 0xff0000);
+//         return this;
+//     }
 
-    close() 
-    {
-        super.close();
-        this.unregister();   
-    }
+//     close() 
+//     {
+//         super.close();
+//         this.unregister();   
+//     }
 
-    refresh()
-    {
-        let hp = this.getElement('hp',true);
-        let total = getPlayer().total;
-        hp.set(total.states[GM.HP],total[GM.HPMAX]);
+//     refresh()
+//     {
+//         let hp = this.getElement('hp',true);
+//         let total = getPlayer().total;
+//         hp.set(total.states[GM.HP],total[GM.HPMAX]);
         
-        // hp.set(player.states.life.cur,player.states.life.max);
-        this.resetAbility();
-        this.updateAbility();
-    }
+//         // hp.set(player.states.life.cur,player.states.life.max);
+//         this.resetAbility();
+//         this.updateAbility();
+//     }
 
-    show()
-    {
-        super.show();
-        this.register(GM.UI_BOTTOM);
-    }
+//     show()
+//     {
+//         super.show();
+//         this.register(GM.UI_BOTTOM);
+//     }
 
-    static show() {this.instance?.show();}
+//     static show() {this.instance?.show();}
 
-    static close() {this.instance?.close(true);}
+//     static close() {this.instance?.close(true);}
 
-    static enable(en) {this.instance?.enable(en);} 
+//     static enable(en) {this.instance?.enable(en);} 
 
-}
+// }
 
 export class UiCursor extends Phaser.GameObjects.Sprite
 {
@@ -3412,7 +3410,7 @@ export class UiGameOver extends UiBase
 
 
 
-class UiDebuger extends UiBase
+export class UiDebuger extends UiBase
 {
     static instance=null;
     constructor(scene)

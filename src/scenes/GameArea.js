@@ -1,5 +1,8 @@
 import { GameScene } from "./GameScene.js";
-import {UiMain, UiTime, UiEffect} from '../ui.js';
+// import {UiMain, UiTime, UiEffect} from '../ui.js';
+import {UiTime, UiEffect} from '../ui.js';
+import UiMain from '../ui/uimain.js';
+
 import TimeManager,{Schedular} from '../time.js';
 // import * as Role from '../role.js';
 // import {Avatar} from '../role.js';
