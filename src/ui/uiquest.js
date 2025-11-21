@@ -22,7 +22,7 @@ export default class UiQuest extends UiFrame
         UiQuest.instance = this;
 
         // 1. add bg
-        ui.uBg.call(this, scene);
+        this.addBg(scene);
 
         // 2. add top
         ui.uTop.call(this, scene, {

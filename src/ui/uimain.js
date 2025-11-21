@@ -4,7 +4,7 @@ import {GM} from '../setting.js'
 import UiFrame from './uiframe.js'
 import UiQuest from '../ui/uiquest.js'
 import {UiInv, UiProfile, UiAbility, UiDebuger, AbilitySlot} from '../ui.js'
-import {getPlayer} from '../roles/player.js';
+import {getPlayer} from '../roles/player.js'
 
 export default class UiMain extends UiFrame
 {
@@ -24,7 +24,7 @@ export default class UiMain extends UiFrame
         UiMain.instance = this;
 
         // 1. add bg
-        ui.uBg.call(this, scene);
+        this.addBg(scene);
 
         // 2. add buttons
         this.add(ui.uButton(scene,{text:'🎒',bg:{},onclick:this._inv}),{align:'bottom'})

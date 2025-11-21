@@ -20,7 +20,8 @@ export default class UiStorage extends UiFrame
         UiStorage.instance = this;
 
         // bg
-        ui.uBg.call(this, scene)
+        this.addBg(scene);
+
         // top
         ui.uTop.call(this, scene, {text:'storage'.lab(),
                                     onclose:this.close.bind(this)})

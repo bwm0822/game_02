@@ -205,7 +205,6 @@ export class GameScene extends Scene
             
         })
         .on('pointermove',(pointer)=>{
-
             this.showMousePos();
             if(this._player.state===GM.ST_ABILITY) 
             {

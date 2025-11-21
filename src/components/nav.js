@@ -42,6 +42,18 @@ export class COM_Nav extends Com
         })
     }
 
+    _hidePath()
+    {
+        if(!this._graph)
+        {
+            this._graph = this.scene.add.graphics();
+            this._graph.name = 'path';
+            this._graph.fillStyle(0xffffff);
+            this._graph.setDepth(Infinity);
+        }
+        this._graph.clear();
+    }
+
     _updatePath()
     {
         this._drawPath(this.bb.path);
@@ -95,8 +107,10 @@ export class COM_Nav extends Com
     bind(root)
     {
         super.bind(root);
+
         // 在上層綁定操作介面，提供給外部件使用
         root.showPath = this._showPath.bind(this);
+        root.hidePath = this._hidePath.bind(this);
         
         // 註冊 event
         root.on('findPath', this._findPath.bind(this))
