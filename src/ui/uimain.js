@@ -1,9 +1,10 @@
+import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
 import {GM} from '../setting.js'
-import UiFrame from './uiframe.js'
 import UiQuest from '../ui/uiquest.js'
-import {UiInv, UiProfile, UiAbility, UiDebuger, AbilitySlot} from '../ui.js'
+import {UiProfile, UiAbility, UiDebuger, AbilitySlot} from '../ui.js'
+import UiInv from '../ui/uiinv.js'
 import {getPlayer} from '../roles/player.js'
 
 export default class UiMain extends UiFrame

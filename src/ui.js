@@ -21,6 +21,7 @@ import UiMain from './ui/uimain.js';
 import Ui from './ui/uicommon.js';
 
 import UiOption from './ui/uioption.js';
+import UiInv from './ui/uiinv.js';
 
 let uiScene;
 let _mode = 0;
@@ -78,9 +79,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    new UiOption_1(scene)
-
-    // new UiTest(scene);
+    // new UiInv_1(scene);
 
     test();
 
@@ -404,6 +403,7 @@ export class Slot extends Icon
         }
         else if(!this.isEmpty && !UiDragged.isAbility)
         {
+            console.log(this.content)
             this.setBgColor(GM.COLOR_SLOT_OVER);
 
             // 使用 delacyCall 延遲執行 UiInfo.show()
@@ -419,7 +419,7 @@ export class Slot extends Icon
         this.setBgColor(GM.COLOR_SLOT);
         UiInfo.close();
         // 將裝備欄位的背景顏色設置為 COLOR_SLOT
-        checkEquip && UiInv.checkEquipSlots(null);   
+        // checkEquip && UiInv.checkEquipSlots(null);   
     }
 
     leave(gameObject)
@@ -445,7 +445,7 @@ export class Slot extends Icon
 
 }
 
-class EquipSlot extends Slot
+export class EquipSlot extends Slot
 {
     static cat2Icon(cat)
     {
@@ -2191,7 +2191,7 @@ class Observe extends UiBase
 //     static show(owner,cat) {this.instance?.show(owner,cat);}
 // }
 
-export class UiInv extends UiBase
+export class UiInv_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -2207,7 +2207,7 @@ export class UiInv extends UiBase
         }
 
         super(scene, config, 'UiInv')
-        UiInv.instance = this;
+        UiInv_1.instance = this;
 
         this.addBg_Int(scene)
             .addTop(scene,{text:'bag'.lab()})

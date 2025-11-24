@@ -327,13 +327,16 @@ export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
     return scroll;
 }
 
-export function uGrid(scene, {column,row,bg,space,addItem,ext}={})
+export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
 {
     column = column ?? 3;
     row = row ?? 3;
     bg = bg ?? {strokeColor:GM.COLOR_GRAY,strokeWidth:2};
     space = space ?? {column:5,row:5,left:5,right:5,top:5,bottom:5};
-    addItem = addItem ?? function() {return uRect(scene,{color:GM.COLOR_GRAY,width:50,height:50})};
+    if(!addItem && test)
+    {
+        addItem = function() {return uRect(scene,{color:GM.COLOR_GRAY,width:50,height:50})};
+    }
 
     // 1. 產生 grid
     const grid = scene.rexUI.add.gridSizer({
@@ -347,15 +350,16 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext}={})
     // 2. 新增 Item
     if(addItem)
     {
-        const count = column * row;
+        const count = column*row;
         for(let i=0; i<count; i++)
         {
-            grid.add(addItem(i));
+            const itm = addItem(i);
+            itm&&grid.add(itm);
         }
     }
 
     // 3. 操作介面
-    grid.update = (cb)=>{grid.getElement('items').forEach((item)=>{cb(item);})}
+    grid.loop = (cb)=>{grid.getElement('items').forEach((item)=>{cb(item);})}
 
     if(this&&this.add) { this.add(grid,{key:'grid', ...ext}); }
     return grid;

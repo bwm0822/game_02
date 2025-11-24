@@ -1,6 +1,6 @@
+import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM} from '../setting.js'
-import UiFrame from './uiframe.js'
 import QuestManager from '../quest.js';
 
 export default class UiQuest extends UiFrame
@@ -21,22 +21,16 @@ export default class UiQuest extends UiFrame
         super(scene, config, 'UiQuest');
         UiQuest.instance = this;
 
-        // 1. add bg
-        this.addBg(scene);
+        // 1. add bg/top
+        this.addBg(scene).addTop(scene,'quest')
 
-        // 2. add top
-        ui.uTop.call(this, scene, {
-            text:'quest'.lab(),
-            onclose:this.close.bind(this)
-        })
-
-        // 3. add tabs
+        // 2. add tabs
         this._tabs = ui.uTabs.call(this, scene, {
             btns: [{text:'open',name:'open'},{text:'close',name:'close'}],
             onclick:(btn)=>{this._pageName=btn.name;this.updatePage();}
         })
 
-        // 4. add page
+        // 3. add page
         this.addPage(scene);
 
         //

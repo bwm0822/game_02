@@ -1,6 +1,7 @@
 // services/dragService.js
 // import { Ui, UiInv, UiCover, UiMain, UiDragged, UiInfo } from '../ui.js';
-import {UiInv,UiCover,UiDragged,UiInfo} from '../ui.js'
+import {UiCover,UiDragged,UiInfo} from '../ui.js'
+import UiInv from '../ui/uiinv.js'
 import {GM} from '../setting.js'
 import Ui from '../ui/uicommon.js'
 import UiMain from '../ui/uimain.js'
@@ -19,8 +20,8 @@ export default class DragService
         UiDragged.setPos(pointerX, pointerY);
         // 2. 取出：把原格子清空
         slot.empty();
-        // 3. 將裝備欄位的背景顏色設置為 COLOR_SLOT
-        UiInv.checkEquipSlots(null);  
+        // 3. 設定裝備欄位的背景顏色
+        UiInv.checkEquipSlots(slot.cat);
         return true;
     }
 
