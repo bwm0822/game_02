@@ -4,8 +4,17 @@ import ImageData from 'phaser3-rex-plugins/plugins/gameobjects/blitter/blitterba
 
 export function uRect(scene, config={})
 {
-    config.color = config.color ?? GM.COLOR_PRIMARY;
-    const r = scene.rexUI.add.roundRectangle(config);
+    const {interactive,onover,onout,ondown,...cfg}=config;
+    cfg.color = cfg.color ?? GM.COLOR_PRIMARY;
+    const r = scene.rexUI.add.roundRectangle(cfg);
+
+    if(interactive)
+    {
+        r.setInteractive();
+        if(onover){r.on('pointerover',()=>{onover()})};
+        if(onout){r.on('pointerout',()=>{onout()})};
+        if(ondown){r.on('pointerdown',()=>{ondown()})};
+    }
 
     if(this&&this.add) {this.add(r,config);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return r;
@@ -49,7 +58,7 @@ export function uBbc(scene, config={})
     return t;
 }
 
-export function uBg(scene, config)
+export function uBg(scene, config={})
 {   
     const r = uRect(scene, config);
     if(this&&this.addBackground) {this.addBackground(r, 'bg');}
@@ -125,7 +134,7 @@ export function uButton(scene,config={})
     btn.setInteractive()
         .on('pointerover',()=>{_over(true);onover?.(btn);})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
-        .on('pointerdown',()=>{onclick?.(btn)})
+        .on('pointerup',()=>{onclick?.(btn)})
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
@@ -137,23 +146,27 @@ export function uItem(scene, config={})
     const cHL=GM.COLOR_WHITE;
     const cBG=GM.COLOR_LIGHT;
 
-    const {onclick, ext, ...cfg}=config;
+    const {ondown, ext, ...cfg}=config;
     cfg.bg = cfg.bg ?? {color:cBG};
     cfg.text = cfg.text ?? {text:''}
     const itm = uLabel(scene, cfg);
-    itm._bg.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel被設成true
+    itm._bg.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
     itm._text.setColor(cDEF);
 
     // 提供外界操作
     itm.highlight = (on)=>{itm._text.setColor(on?cHL:cDEF)}
     itm.setText = (text)=>{itm._text.setText(text);}
+    itm.setEnable = (on)=>{
+        if(on) {itm.setInteractive();itm._text.setAlpha(1);}
+        else {itm.disableInteractive();itm._text.setAlpha(0.5);}
+    }
     
     // events
     let _over = (on)=>{itm._bg.setAlpha(on?1:0);}
     itm.setInteractive()
         .on('pointerover',()=>{_over(true);})
         .on('pointerout',()=>{_over(false);})
-        .on('pointerdown',()=>{onclick?.(itm)})
+        .on('pointerdown',()=>{ondown?.(itm)})
     
     if(this&&this.add) {this.add(itm, ext);}
     return itm;

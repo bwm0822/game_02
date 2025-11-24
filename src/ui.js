@@ -20,6 +20,8 @@ import UiQuest from './ui/uiquest.js';
 import UiMain from './ui/uimain.js';
 import Ui from './ui/uicommon.js';
 
+import UiOption from './ui/uioption.js';
+
 let uiScene;
 let _mode = 0;
 
@@ -75,6 +77,8 @@ export default function createUI(scene)
     new UiDebuger(scene);           // 18
     
     new UiConfirm(scene);
+
+    new UiOption_1(scene)
 
     // new UiTest(scene);
 
@@ -430,7 +434,8 @@ export class Slot extends Icon
 
     rightButtonDown(x,y)
     {
-        if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
+        // if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
+        if(!this.isEmpty) {UiOption.show(this.left+x+20,this.top+y-20, this.acts, this);}
     }
 
     leftButtonDown(x,y)
@@ -2368,13 +2373,13 @@ export class UiInv extends UiBase
     
 }
 
-export class UiOption extends UiContainerBase
+export class UiOption_1 extends UiContainerBase
 {
     static instance = null;
     constructor(scene)
     {
         super(scene, 'UiOption');
-        UiOption.instance = this;
+        UiOption_1.instance = this;
         this.add(new Option(scene))
             .close() 
     }

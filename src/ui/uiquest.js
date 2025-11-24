@@ -84,7 +84,7 @@ export default class UiQuest extends UiFrame
     {
         const scene = this.scene;
 
-        const onclick = (itm)=>{
+        const ondown = (itm)=>{
             if(this._itm) {this._itm.highlight(false);}
             this._itm=itm;
             itm.highlight(true);
@@ -100,7 +100,7 @@ export default class UiQuest extends UiFrame
             for(let id in QuestManager.quests.opened)
             {
                 let q = QuestManager.query(id);
-                const itm = ui.uItem(scene,{text:q.title(),onclick:onclick});
+                const itm = ui.uItem(scene,{text:q.title(),ondown:ondown});
                 this._page.scroll.addItem(itm);
                 itm.q=q;
             }
