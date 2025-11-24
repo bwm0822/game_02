@@ -33,6 +33,8 @@ export default class UiFrame extends Sizer
         
     }
 
+    get player() {return getPlayer();}
+
     send(event, ...args) {this.scene.events.emit(event, ...args);}
 
     closeAll(mode) {Ui.closeAll(mode);}

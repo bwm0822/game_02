@@ -419,7 +419,7 @@ export class Slot extends Icon
         this.setBgColor(GM.COLOR_SLOT);
         UiInfo.close();
         // 將裝備欄位的背景顏色設置為 COLOR_SLOT
-        // checkEquip && UiInv.checkEquipSlots(null);   
+        checkEquip && UiInv.checkEquipSlots(null);   
     }
 
     leave(gameObject)
@@ -2109,87 +2109,87 @@ class Observe extends UiBase
     }
 }
 
-// export class UiStorage extends UiBase
-// {
-//     static instance = null;
-//     constructor(scene)
-//     {
-//         let config =
-//         {
-//             x:100,
-//             y:GM.h-150,
-//             orientation:'y'
-//         }
+export class UiStorage_1 extends UiBase
+{
+    static instance = null;
+    constructor(scene)
+    {
+        let config =
+        {
+            x:100,
+            y:GM.h-150,
+            orientation:'y'
+        }
 
-//         super(scene, config, 'UiStorage');
-//         UiStorage.instance = this;
+        super(scene, config, 'UiStorage');
+        UiStorage.instance = this;
 
-//         this.addBg_Int(scene)
-//             .addTop(scene)
-//             // .addGrid(scene,4,4)
-//             .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
-//             // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
-//             // 方法 1: ()=>{return this.getContainer();};
-//             // 方法 2: this.getContainer.bind(this);
-//             // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
-//             .setOrigin(0,1)
-//             .layout()
-//             .hide()
+        this.addBg_Int(scene)
+            .addTop(scene)
+            // .addGrid(scene,4,4)
+            .addGrid(scene,4,4,{padding:{left:10,right:10,bottom:10}})
+            // 透過參數傳遞 function，方法1,2 都可以，方法3 會有問題
+            // 方法 1: ()=>{return this.getContainer();};
+            // 方法 2: this.getContainer.bind(this);
+            // 方法 3: this.getContainer; // Note:這種寫法會出錯，因為this會指向slot，要改成 this.getContainer.bind(this)
+            .setOrigin(0,1)
+            .layout()
+            .hide()
         
-//     }
+    }
 
-//     setCat(cat)
-//     {
-//         this.cat = cat;
-//         this.updateGrid();
-//     }
+    setCat(cat)
+    {
+        this.cat = cat;
+        this.updateGrid();
+    }
 
-//     close() 
-//     {
-//         if(!this.visible) {return;}
+    close() 
+    {
+        if(!this.visible) {return;}
 
-//         super.close();
-//         // close/unregister/camera
-//         UiCover.close();
-//         this.owner.setEnable?.(true);
-//         clrCamera(GM.CAM_LEFT_TOP);
-//         this.unregister();
+        super.close();
+        // close/unregister/camera
+        UiCover.close();
+        this.owner.setEnable?.(true);
+        clrCamera(GM.CAM_LEFT_TOP);
+        this.unregister();
 
-//         delete this.owner.target;
-//         delete getPlayer().target;
-//     }
+        delete this.owner.target;
+        delete getPlayer().target;
+    }
 
-//     refresh()
-//     {
-//         this.updateGrid();
-//     }
+    refresh()
+    {
+        this.updateGrid();
+    }
 
-//     show(owner, cat=GM.CAT_ALL)
-//     {
-//         this.close();
-//         super.show();
-//         this.owner = owner;
-//         this.owner.target = getPlayer();
-//         getPlayer().target = this.owner;
+    show(owner, cat=GM.CAT_ALL)
+    {
+        this.close();
+        super.show();
+        this.owner = owner;
+        this.owner.target = getPlayer();
+        getPlayer().target = this.owner;
 
-//         this.setTitle(owner.name);
-//         this.updateGrid(cat);
-//         this.layout();
-//         UiCursor.set();
+        this.setTitle(owner.name);
+        this.updateGrid(cat);
+        this.layout();
+        UiCursor.set();
         
-//         // show
-//         UiInv.show(getPlayer());
-//         // cover/closeAll/register/camera
-//         UiCover.show();
-//         Ui.closeAll(GM.UI_LEFT_P);
-//         this.register(GM.UI_LEFT);  
-//         setCamera(GM.CAM_LEFT_TOP);
-//     }
+        // show
+        UiInv.show(getPlayer());
+        // cover/closeAll/register/camera
+        UiCover.show();
+        Ui.closeAll(GM.UI_LEFT_P);
+        this.register(GM.UI_LEFT);  
+        setCamera(GM.CAM_LEFT_TOP);
+    }
 
-//     static close() {this.instance?.close();}
+    static close() {this.instance?.close();}
 
-//     static show(owner,cat) {this.instance?.show(owner,cat);}
-// }
+    static show(owner,cat) {this.instance?.show(owner,cat);}
+}
 
 export class UiInv_1 extends UiBase
 {

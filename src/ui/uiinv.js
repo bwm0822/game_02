@@ -1,6 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM} from '../setting.js'
+import Ui from './uicommon.js'
 import {Slot, EquipSlot} from '../ui.js'
 
 export default class UiInv extends UiFrame
@@ -12,23 +13,22 @@ export default class UiInv extends UiFrame
         {
             x : GM.w,
             y : 0,
-            width : 500,
-            height : 200,
+            width : 100,
+            height : 100,
             orientation : 'y',
-            space : {left:10,right:10,bottom:10,item:5},
+            space : {left:10,right:10,bottom:10,item:0},
         }
 
         super(scene, config, 'UiInv_1');
         UiInv.instance = this;
 
-        // bg/top
-        this.addBg(scene).addTop(scene,'bag')
-
-        // equips/bag
-        this.addEquips(scene).addBag(scene)
-
         // layout
-        this.setOrigin(1,0)
+        this.addBg(scene)
+            .addTop(scene,'bag')
+            .addEquips(scene)
+            .addGold(scene)
+            .addBag(scene)
+            .setOrigin(1,0)
             .layout()
             .hide()
     }
@@ -54,8 +54,21 @@ export default class UiInv extends UiFrame
     addBag(scene)
     {
         const slot = (i)=>{return new Slot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);}
-        
+
         this._bag = ui.uGrid.call(this,scene,{column:5,row:4,addItem:slot});
+        return this;
+    }
+
+    addGold(scene)
+    {
+        const p = ui.uPanel.call(this, scene, {
+            bg: {strokeColor:GM.COLOR_GRAY, strokeWidth:2},
+            space: 5,
+            ext: {expand:true}  
+        });
+        let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
+        let text = `[color=yellow][img=gold][/color] ${0}`
+        this._gold = ui.uBbc.call(p, scene, {text:text,images:images});
         return this;
     }
 
@@ -69,6 +82,7 @@ export default class UiInv extends UiFrame
     {
         this._equips.loop((elm)=>elm?.update(this._owner));
         this._bag.loop((elm)=>elm?.update(this._owner));
+        this._gold.setText(`[color=yellow][img=gold][/color] ${this._owner.gold}`)
     }
 
     toggle(owner)
@@ -77,11 +91,19 @@ export default class UiInv extends UiFrame
         else {this.show(owner);}
     }
 
+    close()
+    {
+        super.close();
+        this.unregister();
+        Ui.closeAll(GM.UI_LEFT);
+    }
+
     show(owner)
     {
         super.show();
         this._owner=owner;
         this.refresh();
+        this.register(GM.UI_RIGHT);
     }
 
     static show(owner,cat) {this.instance?.show(owner,cat);}

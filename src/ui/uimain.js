@@ -1,11 +1,9 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import Ui from './uicommon.js'
 import {GM} from '../setting.js'
-import UiQuest from '../ui/uiquest.js'
 import {UiProfile, UiAbility, UiDebuger, AbilitySlot} from '../ui.js'
 import UiInv from '../ui/uiinv.js'
-import {getPlayer} from '../roles/player.js'
+import UiQuest from '../ui/uiquest.js'
 
 export default class UiMain extends UiFrame
 {
@@ -24,25 +22,19 @@ export default class UiMain extends UiFrame
         super(scene, config, 'UiMain');
         UiMain.instance = this;
 
-        // 1. add bg
-        this.addBg(scene);
-
-        // 2. add buttons
-        this.add(ui.uButton(scene,{text:'🎒',bg:{},onclick:this._inv}),{align:'bottom'})
-            .add(ui.uButton(scene,{text:'👤',bg:{},onclick:this._profile}),{align:'bottom'})
-            .add(ui.uButton(scene,{text:'📖',bg:{},onclick:this._quest}),{align:'bottom'})
-            .add(ui.uButton(scene,{text:'🧠',bg:{},onclick:this._ability}),{align:'bottom'})
+        // layout
+        this.addBg(scene)
+            .add(ui.uButton(scene,{text:'🎒',bg:{},onclick:this._inv.bind(this)}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'👤',bg:{},onclick:this._profile.bind(this)}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'📖',bg:{},onclick:this._quest.bind(this)}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'🧠',bg:{},onclick:this._ability.bind(this)}),{align:'bottom'})
             .addCtrl(scene)
-            .add(ui.uButton(scene,{text:'⏳',bg:{},onclick:this._next}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'⏳',bg:{},onclick:this._next.bind(this)}),{align:'bottom'})
             .add(ui.uButton(scene,{text:'⚙️',bg:{},onclick:this._menu.bind(this)}),{align:'bottom'})
             .add(ui.uButton(scene,{text:'🐛',bg:{},onclick:this._debug}),{align:'bottom'})
             // .add(ui.uButton(scene,{text:'▶️',bg:{},onclick:this._profile}),{align:'bottom'})
-        
-        this.addEnableCtrl(scene)
-
-
-        //
-        this.setOrigin(0.5,1)
+            .addEnableCtrl(scene)
+            .setOrigin(0.5,1)
             .layout()
             .hide()
     }
@@ -100,21 +92,21 @@ export default class UiMain extends UiFrame
 
     // 功能鍵
     // function內沒有用到 this 參數，就不需要 bind(this)
-    _inv() {UiInv.toggle(getPlayer());}     
-    _profile() {UiProfile.toggle(getPlayer());}
-    _quest() {UiQuest.toggle(getPlayer());}
-    _ability() {UiAbility.toggle();}
-    _next() {getPlayer().next();}
-    _step() {getPlayer().dbgStep();}
     _debug() {UiDebuger.show();}
     // function有用到 this 參數，需要 bind(this)
+    _inv() {UiInv.toggle(this.player);}     
+    _profile() {UiProfile.toggle(this.player);}
+    _quest() {UiQuest.toggle(this.player);}
+    _ability() {UiAbility.toggle();}
+    _next() {this.player.next();}
+    _step() {this.player.dbgStep();}
     _menu() {this.close(); this.send('menu');} 
 
 
     refresh()
     {
         console.log('------------------ refresh')
-        let total = getPlayer().total;
+        let total = this.player.total;
         this._hp.set(total.states[GM.HP],total[GM.HPMAX]);
         this.resetAbility();
         this.updateAbility();

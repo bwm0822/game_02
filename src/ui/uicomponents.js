@@ -67,9 +67,9 @@ export function uBg(scene, config={})
 
 export function uPanel(scene, config={})
 {
-    const {color, ext, ...panelCfg} = config;
+    let {bg, ext, ...panelCfg} = config;
     const panel = scene.rexUI.add.sizer(panelCfg);
-    if(color) {uBg.call(panel, scene, {color})}
+    if(bg) {uBg.call(panel, scene, bg)}
 
     if(this&&this.add) {this.add(panel, ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return panel;

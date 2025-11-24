@@ -2,6 +2,7 @@ import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM} from '../setting.js'
 import {Slot} from '../ui.js'
+import UiInv from '../ui/uiinv.js'
 
 export default class UiStorage extends UiFrame
 {
@@ -19,18 +20,23 @@ export default class UiStorage extends UiFrame
         super(scene, config, 'UiStorage');
         UiStorage.instance = this;
 
-        // bg/top
-        this.addBg(scene).addTop(scene,'storage')
+        // layout
+        this.addBg(scene)
+            .addTop(scene,'storage')
+            .addGrid(scene)
+            .setOrigin(0,1)
+            .layout()
+            .hide()
+    }
 
-        // grid
+    addGrid(scene)
+    {
         this._grid = ui.uGrid.call(this, scene, {
             column: 4, row: 4,
             addItem: (i)=>{return new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,i);}
         })
 
-        this.setOrigin(0,1)
-            .layout()
-            .hide()
+        return this;
     }
 
     refresh()
@@ -38,11 +44,22 @@ export default class UiStorage extends UiFrame
         this._grid.loop((elm)=>elm.update(this._owner));
     }
 
+    close()
+    {
+        if(!this.visible) {return;}
+
+        super.close();
+        this.unregister();
+    }
+
     show(owner)
     {
         super.show();
         this._owner=owner;
         this.refresh();
+        this.register(GM.UI_LEFT);
+        
+        UiInv.show(this.player);
     }
 
     static show(owner,cat) {this.instance?.show(owner,cat);}

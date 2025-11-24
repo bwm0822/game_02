@@ -12,7 +12,7 @@ export default class Ui
     {
         for(let key in this._list)
         {
-            if((this._list[key].type&mode) != 0) {this._list[key].ui.close();}
+            if((this._list[key].type&mode)!==0) {this._list[key].ui.close();}
         }
     }
     static refreshAll() {for(let key in this._list){this._list[key].ui.refresh?.();}}

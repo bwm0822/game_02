@@ -21,21 +21,23 @@ export default class UiQuest extends UiFrame
         super(scene, config, 'UiQuest');
         UiQuest.instance = this;
 
-        // 1. add bg/top
-        this.addBg(scene).addTop(scene,'quest')
+        // layout
+        this.addBg(scene)
+            .addTop(scene,'quest')
+            .addTabs(scene)
+            .addPage(scene)
+            .layout()
+            .hide()
+    }
 
-        // 2. add tabs
+    addTabs(scene)
+    {
         this._tabs = ui.uTabs.call(this, scene, {
             btns: [{text:'open',name:'open'},{text:'close',name:'close'}],
             onclick:(btn)=>{this._pageName=btn.name;this.updatePage();}
         })
 
-        // 3. add page
-        this.addPage(scene);
-
-        //
-        this.layout()
-            .hide()
+        return this;
     }
 
     addPage(scene)
@@ -44,7 +46,9 @@ export default class UiQuest extends UiFrame
                     space:{left:5,right:5,top:5,bottom:5,item:10}, 
                     ext:{expand:true,proportion:1}
                 });
+
         p.scroll = ui.uScroll.call(p, scene, {bg:{},width:200,ext:{expand:true}});
+
         p.content = ui.uPanel.call(p, scene, {
                     orientation:'y',
                     color:GM.COLOR_DARK,
@@ -53,6 +57,8 @@ export default class UiQuest extends UiFrame
                 });
 
         this._page = p;
+
+        return this;
     }
 
     updateContent(q)
@@ -63,6 +69,7 @@ export default class UiQuest extends UiFrame
         this._page.content
             .removeAll(true)
             .add(ui.uBbc(scene,{text:q.fmt()}),{align:'left'})
+
         if(q.state==='close')
         {
             this._page.content
@@ -71,6 +78,7 @@ export default class UiQuest extends UiFrame
                                         onclick:remove}),
                     {align:'right'})
         }
+
         this.layout();  
     }
 
@@ -103,7 +111,7 @@ export default class UiQuest extends UiFrame
         this.layout();
     }
 
-    _refresh()
+    refresh()
     {
        this.updatePage();
     }
