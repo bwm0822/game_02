@@ -10,18 +10,19 @@ import TimeManager from './time.js';
 import Record from './record.js';
 import QuestManager from './quest.js';
 
-import InventoryService from './services/inventoryService.js';
-import PressService from './services/pressService.js';
-import DragService from './services/dragService.js';
+import InventoryService from './services/inventoryService.js'
+import PressService from './services/pressService.js'
+import DragService from './services/dragService.js'
 
-import {getPlayer} from './roles/player.js';
-import UiStorage from './ui/uistorage.js';
-import UiQuest from './ui/uiquest.js';
-import UiMain from './ui/uimain.js';
-import Ui from './ui/uicommon.js';
+import {getPlayer} from './roles/player.js'
+import Ui from './ui/uicommon.js'
 
-import UiOption from './ui/uioption.js';
-import UiInv from './ui/uiinv.js';
+import UiStorage from './ui/uistorage.js'
+import UiQuest from './ui/uiquest.js'
+import UiMain from './ui/uimain.js'
+import UiOption from './ui/uioption.js'
+import UiInv from './ui/uiinv.js'
+import UiProfile from './ui/uiprofile.js'
 
 let uiScene;
 let _mode = 0;
@@ -79,7 +80,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiInv_1(scene);
+    new UiProfile_1(scene);
 
     test();
 
@@ -2774,7 +2775,7 @@ export class UiTrade extends UiBase
 
 }
 
-export class UiProfile extends UiBase
+export class UiProfile_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -2789,7 +2790,7 @@ export class UiProfile extends UiBase
             space:{left:10,right:10,bottom:10,item:5},
         }
         super(scene, config, 'UiProfile');
-        UiProfile.instance = this; 
+        UiProfile_1.instance = this; 
 
         this.addBg_Int(scene)    
             .addTop(scene,{text:'profile'.lab()})

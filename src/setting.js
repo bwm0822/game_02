@@ -267,7 +267,11 @@ export let GM =
     PATH_BLK : 0,   // 有阻擋
     PATH_OK : 1,    // 無阻擋
 
+}
 
+export const UI_STYLE =
+{
+    BORDER : {strokeColor:GM.COLOR_GRAY, strokeWidth:2},
 }
 
 export const ROLE_ATTRS = {

@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM} from '../setting.js'
+import {GM,UI_STYLE} from '../setting.js'
 import Ui from './uicommon.js'
 import {Slot, EquipSlot} from '../ui.js'
 
@@ -62,7 +62,7 @@ export default class UiInv extends UiFrame
     addGold(scene)
     {
         const p = ui.uPanel.call(this, scene, {
-            bg: {strokeColor:GM.COLOR_GRAY, strokeWidth:2},
+            bg: UI_STYLE.BORDER,
             space: 5,
             ext: {expand:true}  
         });

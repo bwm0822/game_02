@@ -8,7 +8,7 @@ import QuestManager from  '../quest.js';
 import {Pickup} from '../items/pickup.js';
 import {GM} from '../setting.js';
 import {UiCursor, UiDialog, UiTrade, UiMessage, 
-        UiProfile, UiChangeScene, UiGameOver, UiManufacture, UiCover} from '../ui.js'
+        UiChangeScene, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
 import UiOption from '../ui/uioption.js'

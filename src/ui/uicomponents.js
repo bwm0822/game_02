@@ -1,5 +1,5 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {GM} from '../setting.js';
+import {GM, UI_STYLE} from '../setting.js';
 import ImageData from 'phaser3-rex-plugins/plugins/gameobjects/blitter/blitterbase/bob/image/ImageData.js';
 
 export function uRect(scene, config={})
@@ -172,6 +172,46 @@ export function uItem(scene, config={})
     return itm;
 }
 
+export function uProp(scene, key, value, interactive=true, onover, onout)
+{
+    const p = uPanel(scene);
+
+    if(interactive)
+    {
+        const bg = uBg.call(p, scene, {color:GM.COLOR_LIGHT})
+        bg.alpha=0;
+        p.setInteractive()
+        .on('pointerover',()=>{ bg.alpha=1; onover?.(); })
+        .on('pointerout',()=>{ bg.alpha=0; onout?.(); })
+    }
+
+    uBbc.call(p, scene, {text:key, ext:{proportion:1}});
+    uBbc.call(p, scene, {text:value});
+
+
+    if(this&&this.add) {this.add(p, {expand:true});}
+    return p;
+
+
+
+
+    // let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
+    // if(value.max) {value=`${value.cur} / ${value.max}`;}
+    // else if(value.den) {value=`${Math.floor(value.cur)} %`;}
+    // sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
+    //     .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
+    //     .add(bbcText(this.scene,{text:value}),{proportion:0})
+    // let bg = sizer.getElement('bg').setAlpha(0);
+    // if(interactive)
+    // {
+    //     sizer.p = key;
+    //     sizer.setInteractive()
+    //         .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,sizer);}) })
+    //         .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
+    // }
+    // return sizer;
+}
+
 export function uTop(scene, {text,color,onclose}={})
 {
     const row = scene.rexUI.add.overlapSizer();
@@ -263,7 +303,7 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
 {
     width = width ?? 50;
     height = height ?? 100;
-    bg = bg ?? {alpha:1,strokeColor:GM.COLOR_GRAY,strokeWidth:2};
+    bg = bg ?? UI_STYLE.BORDER;
     space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
     ext = ext ?? {expand:true, key:'scroll'};
 
@@ -297,7 +337,7 @@ export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
 {
     width = width ?? 50;
     height = height ?? 100;
-    bg = bg ?? {alpha:1,strokeColor:GM.COLOR_GRAY,strokeWidth:2};
+    bg = bg ?? UI_STYLE.BORDER;
     column = column ?? 1;
     row = row ?? 1;
     space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
@@ -331,7 +371,7 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
 {
     column = column ?? 3;
     row = row ?? 3;
-    bg = bg ?? {strokeColor:GM.COLOR_GRAY,strokeWidth:2};
+    bg = bg ?? UI_STYLE.BORDER;
     space = space ?? {column:5,row:5,left:5,right:5,top:5,bottom:5};
     if(!addItem && test)
     {
