@@ -18,6 +18,25 @@ export let GM =
     COLOR_YELLOW : 0xffff00,
     COLOR_BLUE : 0x0000ff,
     COLOR_BLACK : 0x010101,
+    COLOR:{
+        PRIMARY : 0x4e342e,
+        LIGHT : 0x7b5e57,
+        DARK : 0x260e04,
+        SLOT : 0x666666,//0xa4d4ff,
+        SLOT_OVER : 0x909090,//0x4f9ef7,
+        SLOT_DRAG : 0x557755,
+        SLOT_INVALID : 0x773333,
+        SLOT_DISABLE : 0x333333,
+        SLOT_TRADE : 0x555555,
+        COUNT : 0xff0000,//0x260e04;
+        WHITE : 0xffffff,
+        GRAY : 0x777777,
+        RED : 0xff0000,
+        GREEN : 0x00ff00,
+        YELLOW : 0xffff00,
+        BLUE : 0x0000ff,
+        BLACK : 0x010101,
+    },
 
     FONT : "Arial",
     // FONT : "Segoe UI Emoji",
@@ -48,6 +67,32 @@ export let GM =
     ICON_EQUIP : 'icons/170',
     ICON_BAG : 'icons/137',
 
+    ICON:{
+        MARK : 'buffs/108',
+
+        CLOSE : 'cursors/46',
+        NONE : 'cursors/47',
+        AIM : 'cursors/169',
+        TTACK : 'cursors/179',
+        PICKUP : 'cursors/90',
+        TALK : 'cursors/117',
+        ENTER : 'cursors/72',
+        EXIT : 'cursors/73',
+        OPEN : 'cursors/87',
+        TOOL : 'cursors/58',
+        DOOR : 'cursors/70',
+
+        WEAPON : 'icons/80',  //'weapons/5'
+        HELMET : 'icons/113', //'weapons/45'
+        CHESTPLATE : 'icons/119',//'weapons/54'
+        GLOVES : 'icons/128',
+        BOOTS : 'icons/130',
+        NECKLACE : 'icons/134',
+        RING : 'icons/133',
+        EQUIP : 'icons/170',
+        BAG : 'icons/137', 
+    },
+
     CAT_ALL         :   0b1111_1111_1111_1111,
     CAT_ARMOR       :   0b0000_0000_0001_1110,
     CAT_WEAPON      :   0b0000_0000_0000_0001,
@@ -62,10 +107,33 @@ export let GM =
     CAT_FOOD        :   0b0000_0010_0000_0000,
     CAT_ITEM        :   0b0000_0100_0000_0000,
 
+    CAT:{
+        ALL         :   0b1111_1111_1111_1111,
+        ARMOR       :   0b0000_0000_0001_1110,
+        WEAPON      :   0b0000_0000_0000_0001,
+        HELMET      :   0b0000_0000_0000_0010,
+        CHESTPLATE  :   0b0000_0000_0000_0100,
+        GLOVES      :   0b0000_0000_0000_1000,
+        BOOTS       :   0b0000_0000_0001_0000,
+        NECKLACE    :   0b0000_0000_0010_0000,
+        RING        :   0b0000_0000_0100_0000,
+        EQUIP       :   0b0000_0000_1000_0000,
+        BAG         :   0b0000_0001_0000_0000,
+        FOOD        :   0b0000_0010_0000_0000,
+        ITEM        :   0b0000_0100_0000_0000,
+    },
+
     PART_HEAD       :   0b0000_1000_0000_0000,
     PART_BODY       :   0b0001_0000_0000_0000,
     PART_HAND       :   0b0010_0000_0000_0000,
     PART_EXT        :   0b0100_0000_0000_0000,
+
+    PART:{
+        HEAD       :   0b0000_1000_0000_0000,
+        BODY       :   0b0001_0000_0000_0000,
+        HAND       :   0b0010_0000_0000_0000,
+        EXT        :   0b0100_0000_0000_0000,
+    },
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
@@ -241,6 +309,17 @@ export let GM =
     ST_DEATH : 'death',
     ST_ABILITY : 'ability',
     ST_UNDERATTACK : 'underattack',
+    
+    ST:{
+        IDLE : 'idle',
+        NEXT : 'next',
+        MOVING : 'moving',
+        SLEEP : 'sleep',
+        ATTACK : 'attack',
+        DEATH : 'death',
+        ABILITY : 'ability',
+        UNDERATTACK : 'underattack',
+    },
 
     // weight
     W_BLOCK : 1000,   
@@ -269,9 +348,10 @@ export let GM =
 
 }
 
-export const UI_STYLE =
+export const UI =
 {
-    BORDER : {strokeColor:GM.COLOR_GRAY, strokeWidth:2},
+    BG:{BORDER:{strokeColor:GM.COLOR_GRAY,strokeWidth:2}},
+    BTN:{DEF:'def',ITEM:'itm'},
 }
 
 export const ROLE_ATTRS = {

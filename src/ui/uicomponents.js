@@ -1,11 +1,11 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {GM, UI_STYLE} from '../setting.js';
+import {GM, UI} from '../setting.js';
 import ImageData from 'phaser3-rex-plugins/plugins/gameobjects/blitter/blitterbase/bob/image/ImageData.js';
 
 export function uRect(scene, config={})
 {
     const {interactive,onover,onout,ondown,...cfg}=config;
-    cfg.color = cfg.color ?? GM.COLOR_PRIMARY;
+    cfg.color = cfg.color ?? GM.COLOR.PRIMARY;
     const r = scene.rexUI.add.roundRectangle(cfg);
 
     if(interactive)
@@ -75,32 +75,6 @@ export function uPanel(scene, config={})
     return panel;
 }
 
-// export function uButton(scene,{space, bg, text, icon, 
-//                         onover, onout, onclick, ext}={})
-// {
-//     const btn = scene.rexUI.add.sizer({space});
-
-    
-//     if(bg) {uBg.call(btn, scene, bg);}
-//     if(text) {uBbc.call(btn, scene, {text});}
-//     if(icon) {uSprite.call(btn, scene, {icon});}
-
-//     let over = (on)=>{
-//         btn.children.forEach(child=>{
-//             child.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
-//             child.setFillStyle?.(child.fillColor, on? 0.5 : 1);
-//         })
-//     }
-
-//     btn.setInteractive()
-//         .on('pointerover',()=>{over(true);onover?.();})
-//         .on('pointerout',()=>{over(false);onout?.();})
-//         .on('pointerdown',()=>{onclick?.()})
-
-//     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
-//     return btn;
-// }
-
 export function uLabel(scene, config={})
 {
     const {ext,text,icon,bg,...cfg}=config;
@@ -120,56 +94,76 @@ export function uButton(scene,config={})
     // 避免 config 傳入非物件參數(如:123、null)時，產生錯誤
     if (typeof config !== 'object' || config === null) {config = {};}
 
-    const {onover, onout, onclick, ext, ...cfg}=config;
-    cfg.bg = cfg.bg ?? {color:GM.COLOR_LIGHT, radius:10}
-    cfg.space = cfg.space ?? 5;
-    const btn = uLabel(scene, cfg);
+    const cDEF=GM.COLOR.GRAY;
+    const cHL=GM.COLOR.WHITE;
+    const cBG=GM.COLOR.LIGHT;
 
-    let _over = (on)=>{
-        btn._bg?.setFillStyle(btn._bg.fillColor, on? 0.5 : 1);
-        btn._text?.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
-        btn._icon?.setTint?.(on? GM.COLOR_GRAY : GM.COLOR_WHITE);
+    const {onover, onout, ondown, onclick, ext, style=UI.BTN.DEF, ...cfg}=config;
+    
+    cfg.space = cfg.space ?? 5;
+
+    switch(style)
+    {
+        case UI.BTN.DEF:
+            cfg.bg = cfg.bg ?? {color:cBG, radius:10};
+            break;
+
+        case UI.BTN.ITEM:
+            cfg.bg = cfg.bg ?? {color:cBG};
+            break;
     }
 
+    const btn = uLabel(scene, cfg);
+
+    switch(style)
+    {
+        case UI.BTN.ITEM:
+            btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
+            btn._text?.setColor(cDEF);
+            break;
+    }
+
+    const _over = (on)=>
+    {
+        switch(style)
+        {
+            case UI.BTN.DEF:
+                btn._bg?.setFillStyle(btn._bg.fillColor,on?0.5:1);
+                btn._text?.setTint(on?cDEF:cHL);
+                btn._icon?.setTint(on?cDEF:cHL);
+                break;
+
+            case UI.BTN.ITEM:
+                btn._bg?.setAlpha(on?1:0);
+                break;
+        }
+    }
+
+     // 提供外界操作
+    btn.setHighlight = (on)=>{btn._text?.setColor(on?cHL:cDEF);}
+    btn.setText = (text)=>{btn._text?.setText(text);}
+    btn.setEnable = (on)=>{
+        if(on) {    
+            btn.setInteractive();
+            btn._text?.setAlpha(1);
+            btn._icon?.setAlpha(1);
+        }
+        else {  
+            btn.disableInteractive();
+            btn._text?.setAlpha(0.5);
+            btn._icon?.setAlpha(0.5);
+        }
+    }
+
+    // 事件偵測
     btn.setInteractive()
         .on('pointerover',()=>{_over(true);onover?.(btn);})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
+        .on('pointerdown',()=>{ondown?.(btn)})
         .on('pointerup',()=>{onclick?.(btn)})
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
-}
-
-export function uItem(scene, config={})
-{
-    const cDEF=GM.COLOR_GRAY;
-    const cHL=GM.COLOR_WHITE;
-    const cBG=GM.COLOR_LIGHT;
-
-    const {ondown, ext, ...cfg}=config;
-    cfg.bg = cfg.bg ?? {color:cBG};
-    cfg.text = cfg.text ?? {text:''}
-    const itm = uLabel(scene, cfg);
-    itm._bg.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
-    itm._text.setColor(cDEF);
-
-    // 提供外界操作
-    itm.highlight = (on)=>{itm._text.setColor(on?cHL:cDEF)}
-    itm.setText = (text)=>{itm._text.setText(text);}
-    itm.setEnable = (on)=>{
-        if(on) {itm.setInteractive();itm._text.setAlpha(1);}
-        else {itm.disableInteractive();itm._text.setAlpha(0.5);}
-    }
-    
-    // events
-    let _over = (on)=>{itm._bg.setAlpha(on?1:0);}
-    itm.setInteractive()
-        .on('pointerover',()=>{_over(true);})
-        .on('pointerout',()=>{_over(false);})
-        .on('pointerdown',()=>{ondown?.(itm)})
-    
-    if(this&&this.add) {this.add(itm, ext);}
-    return itm;
 }
 
 export function uStat(scene, key, value, interactive=true, onover, onout)
@@ -178,7 +172,7 @@ export function uStat(scene, key, value, interactive=true, onover, onout)
 
     if(interactive)
     {
-        const bg = uBg.call(p, scene, {color:GM.COLOR_LIGHT})
+        const bg = uBg.call(p, scene, {color:GM.COLOR.LIGHT})
         bg.alpha=0;
         p.setInteractive()
         .on('pointerover',()=>{ bg.alpha=1; onover?.(); })
@@ -237,7 +231,7 @@ export function uBar(scene, config={})
     const {ext, ...cfg}=config;
     cfg.height = cfg.height ?? 20;
     cfg.width = cfg.width ?? 100;
-    cfg.barColor = cfg.barColor ?? GM.COLOR_GREEN;
+    cfg.barColor = cfg.barColor ?? GM.COLOR.GREEN;
     cfg.value = cfg.value ?? 0.5;
     const bar = scene.add.rexRoundRectangleProgress(cfg);
 
@@ -251,8 +245,8 @@ export function uProgress(scene, config={})
     const {ext,...cfg}=config;
     cfg.height = cfg.height ?? 20;
     cfg.width = cfg.width ?? 100;
-    cfg.barColor = cfg.barColor ?? GM.COLOR_GREEN;
-    cfg.trackColor = cfg.trackColor ?? GM.COLOR_BLACK;
+    cfg.barColor = cfg.barColor ?? GM.COLOR.GREEN;
+    cfg.trackColor = cfg.trackColor ?? GM.COLOR.BLACK;
     //config.trackStrokeColor = config.trackStrokeColor ?? GM.COLOR_LIGHT,
     cfg.value = cfg.value ?? 0.5;
     const bar = scene.add.rexRoundRectangleProgress(cfg);
@@ -266,7 +260,7 @@ export function uTextProgress(scene, config={})
 {
     let {text,ext,...cfg}=config;
     // 建立進度條
-    cfg.barColor = cfg.barColor ?? GM.COLOR_RED;
+    cfg.barColor = cfg.barColor ?? GM.COLOR.RED;
     let bar = uProgress(scene,cfg);
     // 建立文字
     text = text ?? '0.5';
@@ -303,7 +297,7 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
 {
     width = width ?? 50;
     height = height ?? 100;
-    bg = bg ?? UI_STYLE.BORDER;
+    bg = bg ?? UI.BG.BORDER;
     space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
     ext = ext ?? {expand:true, key:'scroll'};
 
@@ -313,14 +307,14 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
         background: uRect(scene, bg),
         panel: {child:scene.rexUI.add.sizer({space,orientation:'y'})},
         slider: {
-            track: uRect(scene,{width:15,color:GM.COLOR_DARK}),
-            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+            track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
+            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
             space: 5,
             hideUnscrollableSlider: false,
             disableUnscrollableDrag: false,
             buttons: {
-                left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_DARK).setDirection('up'),
-                right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_DARK).setDirection('down'),
+                left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('up'),
+                right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('down'),
                 // step: 0.01,
             },
         },
@@ -361,7 +355,7 @@ export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
 {
     width = width ?? 50;
     height = height ?? 100;
-    bg = bg ?? UI_STYLE.BORDER;
+    bg = bg ?? UI.BG.BORDER;
     column = column ?? 1;
     row = row ?? 1;
     space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
@@ -373,8 +367,8 @@ export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
         background: uRect(scene, bg),
         panel: {child:scene.rexUI.add.gridSizer({column,row,space})},
         slider: {
-            track: uRect(scene,{width:15,color:GM.COLOR_DARK}),
-            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR_LIGHT}),
+            track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
+            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
             space: 5,
             hideUnscrollableSlider: false,
             disableUnscrollableDrag: false,
@@ -395,11 +389,11 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
 {
     column = column ?? 3;
     row = row ?? 3;
-    bg = bg ?? UI_STYLE.BORDER;
+    bg = bg ?? UI.BG.BORDER;
     space = space ?? {column:5,row:5,left:5,right:5,top:5,bottom:5};
     if(!addItem && test)
     {
-        addItem = function() {return uRect(scene,{color:GM.COLOR_GRAY,width:50,height:50})};
+        addItem = function() {return uRect(scene,{color:GM.COLOR.GRAY,width:50,height:50})};
     }
 
     // 1. 產生 grid
@@ -429,13 +423,12 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
     return grid;
 }
 
-
 export function uTabs(scene,{btns,onclick,onover,onout})
 {
     let previous;
-    const cDEF = GM.COLOR_DARK;
-    const cSEL = GM.COLOR_PRIMARY; 
-    const cBG = GM.COLOR_BLACK;
+    const cDEF = GM.COLOR.DARK;
+    const cSEL = GM.COLOR.PRIMARY; 
+    const cBG = GM.COLOR.BLACK;
     
     let config = {
         // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),

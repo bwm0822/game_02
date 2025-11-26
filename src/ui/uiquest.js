@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM} from '../setting.js'
+import {GM,UI} from '../setting.js'
 import QuestManager from '../quest.js';
 
 export default class UiQuest extends UiFrame
@@ -87,9 +87,9 @@ export default class UiQuest extends UiFrame
         const scene = this.scene;
 
         const ondown = (itm)=>{
-            if(this._itm) {this._itm.highlight(false);}
+            if(this._itm) {this._itm.setHighlight(false);}
             this._itm=itm;
-            itm.highlight(true);
+            itm.setHighlight(true);
             this.updateContent(itm.q);
         }
 
@@ -102,7 +102,10 @@ export default class UiQuest extends UiFrame
             for(let id in QuestManager.quests.opened)
             {
                 let q = QuestManager.query(id);
-                const itm = ui.uItem(scene,{text:q.title(),ondown:ondown});
+                const itm = ui.uButton(scene,{
+                                style: UI.BTN.ITEM,
+                                text: q.title(),
+                                onclick: ondown});
                 this._page.scroll.addItem(itm);
                 itm.q=q;
             }

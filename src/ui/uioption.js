@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM} from '../setting.js'
+import {GM,UI} from '../setting.js'
 import {getPlayer} from '../roles/player.js'
 
 
@@ -57,10 +57,11 @@ export default class UiOption extends UiFrame
 
     addItem(key, ondown)
     {
-        const item = ui.uItem(this.scene,{
+        const scene = this.scene;
+        const item = ui.uButton(scene,{
+                        style: UI.BTN.ITEM,
                         text: key.lab(),
-                        ondown: ()=>{(ondown??this.act.bind(this))(key);}
-                    })
+                        ondown: ()=>{(ondown??this.act.bind(this))(key);} })
         this._items[key] = item;
         this.add(item,{expand:true})
         return this;

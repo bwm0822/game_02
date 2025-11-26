@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM, UI_STYLE} from '../setting.js'
+import {GM, UI} from '../setting.js'
 import {Pic} from '../uibase.js'
 
 export default class UiProfile extends UiFrame
@@ -35,10 +35,10 @@ export default class UiProfile extends UiFrame
     addInfo(scene)
     {
         const space = {left:5,right:5,top:5,bottom:5,item:5}
-        const p = ui.uPanel.call(this, scene, {bg:UI_STYLE.BORDER, height:100, ext:{expand:true}} )
+        const p = ui.uPanel.call(this, scene, {bg:UI.BG.BORDER, height:100, ext:{expand:true}} )
 
         // 左半部
-        const pL = ui.uPanel.call(p, scene, {bg:UI_STYLE.BORDER, space:space, ext:{expand:true,proportion:1}} );
+        const pL = ui.uPanel.call(p, scene, {bg:UI.BG.BORDER, space:space, ext:{expand:true,proportion:1}} );
         // icon
         this._icon = new Pic( scene, GM.PORTRAITS_W, GM.PORTRAITS_H, {icon:'portraits/0'})
         pL.add( this._icon, {align:'top'} )
@@ -47,7 +47,7 @@ export default class UiProfile extends UiFrame
         
         // 右半部
         // base stats
-        const pR = ui.uPanel.call(p, scene, {bg:{...UI_STYLE.BORDER}, orientation:'y', space:space, ext:{expand:true, proportion:1}} )
+        const pR = ui.uPanel.call(p, scene, {bg:{...UI.BG.BORDER}, orientation:'y', space:space, ext:{expand:true, proportion:1}} )
         
         this._pR = pR;
         return this;
@@ -78,7 +78,7 @@ export default class UiProfile extends UiFrame
 
     updateInfo()
     {
-        const scene=this.scene;
+        const scene = this.scene;
 
         // Icon
         let [key,frame]=this.owner.meta.icon.split('/');
@@ -110,9 +110,9 @@ export default class UiProfile extends UiFrame
             case 'states': 
                 for(const key of GM.SURVIVAL)
                 {
-                    let max = this.total[key+'Max'];
-                    let val= this.total.states[key];
-                    let value = max ? `${val}/${max}` : `${Math.floor(val)}%`;
+                    const max = this.total[key+'Max'];
+                    const val= this.total.states[key];
+                    const value = max ? `${val}/${max}` : `${Math.floor(val)}%`;
 
                     addItem(key,value)
                 }
@@ -122,13 +122,13 @@ export default class UiProfile extends UiFrame
                 addSeg('combat');
                 for(const key of GM.COMBAT)
                 {
-                    let value = this.total[key];
+                    const value = this.total[key];
                     addItem(key,value)
                 }
                 addSeg('resist');
                 for(const key of GM.RESIST)
                 {
-                    let value = this.total.resists[key];
+                    const value = this.total.resists[key];
                     addItem(key,value)
                 }
                 break;
@@ -158,6 +158,7 @@ export default class UiProfile extends UiFrame
         this.updateInfo()
         this._tabs.init();
         this._page.mouseWheel(true);
+        this._page.setT(0);
 
         this.register(GM.UI_LEFT_P);
     }
