@@ -15,7 +15,7 @@ export default class UiProfile extends UiFrame
             width : 400,
             height : 0,
             orientation : 'y',
-            space:{left:10,right:10,bottom:10,item:5},
+            space:{left:10,right:10,bottom:10,item:0},
         }
 
         super(scene, config, 'UiProfile');
@@ -48,8 +48,6 @@ export default class UiProfile extends UiFrame
         // 右半部
         // base stats
         const pR = ui.uPanel.call(p, scene, {bg:{...UI_STYLE.BORDER}, orientation:'y', space:space, ext:{expand:true, proportion:1}} )
-        // ui.uProp.call(pR, scene, 'key', 123)
-        // ui.uProp.call(pR, scene, 'key', 123)
         
         this._pR = pR;
         return this;
@@ -73,7 +71,7 @@ export default class UiProfile extends UiFrame
             height:300,
             ext:{expand:true}
         }
-        this._p = ui.uScroll.call(this,scene,config)
+        this._page = ui.uScroll.call(this,scene,config)
 
         return this;
     }
@@ -93,7 +91,7 @@ export default class UiProfile extends UiFrame
         this._pR.removeAll(true);
         for(const key of GM.BASE)
         {
-            ui.uProp.call(this._pR,scene,key.lab(),this.total[key],true);   
+            ui.uStat.call(this._pR,scene,key.lab(),this.total[key],true);   
         }
 
         return this;
@@ -102,10 +100,10 @@ export default class UiProfile extends UiFrame
     updatePage()
     {
         const scene = this.scene;
-        const addItem = (key,val)=>{this._p.addItem(ui.uProp(scene,key.lab(),val,true))}
-        const addSeg = (seg)=>{this._p.addItem( ui.uBbc(scene,{text:`[color=yellow]${seg.lab()}[/color]`}), {} );}
+        const addItem = (key,val)=>{this._page.addItem(ui.uStat(scene,key.lab(),val,true))}
+        const addSeg = (seg)=>{this._page.addItem( ui.uBbc(scene,{text:`[color=yellow]${seg.lab()}[/color]`}), {} );}
 
-        this._p.clearAll();
+        this._page.clearAll();
 
         switch(this._tab)
         {
@@ -159,14 +157,19 @@ export default class UiProfile extends UiFrame
         this.total = this.owner.total;
         this.updateInfo()
         this._tabs.init();
+        this._page.mouseWheel(true);
+
         this.register(GM.UI_LEFT_P);
     }
 
-     close()
+
+    close()
     {
         if(!this.visible) {return;}
 
         super.close();
+        this._page.mouseWheel(false);
+
         this.unregister();
     }
     

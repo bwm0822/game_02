@@ -172,7 +172,7 @@ export function uItem(scene, config={})
     return itm;
 }
 
-export function uProp(scene, key, value, interactive=true, onover, onout)
+export function uStat(scene, key, value, interactive=true, onover, onout)
 {
     const p = uPanel(scene);
 
@@ -318,14 +318,38 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
             space: 5,
             hideUnscrollableSlider: false,
             disableUnscrollableDrag: false,
+            buttons: {
+                left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_DARK).setDirection('up'),
+                right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR_DARK).setDirection('down'),
+                // step: 0.01,
+            },
         },
     });
 
     const _panel = scroll.getElement('panel');
 
+    const wheel = (pointer, gameObjects, dx, dy)=>{
+        const x = pointer.worldX;
+            const y = pointer.worldY;
+            const bounds = scroll.getBounds();
+
+            if (!Phaser.Geom.Rectangle.Contains(bounds, x, y)) {
+                return;
+            }
+
+            console.log('wheel')
+
+            const speed = 0.001;
+            scroll.setT(Phaser.Math.Clamp(scroll.t + dy * speed, 0, 1));
+    }    
+
     // 操作介面
     scroll.addItem = (item,config={align:'left',expand:true})=>{_panel.add(item,config); return scroll;}
     scroll.clearAll = ()=>{_panel.removeAll(true); return scroll;}
+    scroll.mouseWheel = (on)=>{
+        if(on) {scene.input.on('wheel',wheel);}
+        else {scene.input.off('wheel',wheel);}
+    }
 
     scroll._panel = _panel;
 
@@ -414,7 +438,7 @@ export function uTabs(scene,{btns,onclick,onover,onout})
     const cBG = GM.COLOR_BLACK;
     
     let config = {
-        // background: uRect(scene,{alpha:0,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+        // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
         background: uRect(scene,{color:cBG}),
         topButtons: btns.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,tr:20}},...btn})}),
         space: {left:5, right:5, top:5, bottom:0, topButton:10}
