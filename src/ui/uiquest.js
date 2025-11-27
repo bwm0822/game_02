@@ -15,7 +15,7 @@ export default class UiQuest extends UiFrame
             width : 800,
             height : 500,
             orientation : 'y',
-            space:{left:5,right:5,top:5,bottom:5,item:5},
+            space:UI.SPACE.LRTBI_5,
         }
 
         super(scene, config, 'UiQuest');

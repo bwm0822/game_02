@@ -159,9 +159,9 @@ export default class Utility
         return (typeof target === 'object' && !Array.isArray(target) && target !== null); 
     }
 
-    static isEmpty(slot)
+    static isEmpty(obj)
     {
-        return !slot || Object.keys(slot).length==0;
+        return !obj || Object.keys(obj).length==0;
     }
 
     static roll(min=0,max=99)

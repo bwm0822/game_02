@@ -24,6 +24,8 @@ import UiOption from './ui/uioption.js'
 import UiInv from './ui/uiinv.js'
 import UiProfile from './ui/uiprofile.js'
 
+import UiDialog from './ui/uidialog.js'
+
 let uiScene;
 let _mode = 0;
 
@@ -80,7 +82,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    new UiProfile_1(scene);
+    // new UiDialog_1(scene);
 
     test();
 
@@ -3012,7 +3014,7 @@ export class UiProfile_1 extends UiBase
     static get shown() {this.instance?.visible;}
 }
 
-export class UiDialog extends UiBase
+export class UiDialog_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -3028,7 +3030,7 @@ export class UiDialog extends UiBase
         }
 
         super(scene, config, 'UiDialog');
-        UiDialog.instance=this;
+        UiDialog_1.instance=this;
 
         this//.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:0x777777,strokeWidth:3}),'bg')
             .addBg(scene)

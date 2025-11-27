@@ -1,11 +1,9 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {GM, UI} from '../setting.js';
-import ImageData from 'phaser3-rex-plugins/plugins/gameobjects/blitter/blitterbase/bob/image/ImageData.js';
+import {GM, UI} from '../setting.js'
 
 export function uRect(scene, config={})
 {
     const {interactive,onover,onout,ondown,...cfg}=config;
-    cfg.color = cfg.color ?? GM.COLOR.PRIMARY;
     const r = scene.rexUI.add.roundRectangle(cfg);
 
     if(interactive)
@@ -94,11 +92,16 @@ export function uButton(scene,config={})
     // 避免 config 傳入非物件參數(如:123、null)時，產生錯誤
     if (typeof config !== 'object' || config === null) {config = {};}
 
-    const cDEF=GM.COLOR.GRAY;
-    const cHL=GM.COLOR.WHITE;
-    const cBG=GM.COLOR.LIGHT;
+    // const cDEF = config.cDEF ?? GM.COLOR.GRAY;
+    // const cHL = config.cHL ?? GM.COLOR.WHITE;
+    // const cBG = config.cBG ?? GM.COLOR.LIGHT;
 
-    const {onover, onout, ondown, onclick, ext, style=UI.BTN.DEF, ...cfg}=config;
+    const {onover, onout, ondown, onclick, ext, 
+            style=UI.BTN.DEF, 
+            cDEF=GM.COLOR.GRAY,
+            cHL=GM.COLOR.WHITE,
+            cBG=GM.COLOR.LIGHT,
+            ...cfg}=config;
     
     cfg.space = cfg.space ?? 5;
 
@@ -166,7 +169,7 @@ export function uButton(scene,config={})
     return btn;
 }
 
-export function uStat(scene, key, value, interactive=true, onover, onout)
+export function uStat(scene, key, value, {interactive=true, onover, onout}={})
 {
     const p = uPanel(scene);
 
@@ -182,28 +185,8 @@ export function uStat(scene, key, value, interactive=true, onover, onout)
     uBbc.call(p, scene, {text:key, ext:{proportion:1}});
     uBbc.call(p, scene, {text:value});
 
-
     if(this&&this.add) {this.add(p, {expand:true});}
     return p;
-
-
-
-
-    // let sizer = this.scene.rexUI.add.sizer({orientation:'x'});
-    // if(value.max) {value=`${value.cur} / ${value.max}`;}
-    // else if(value.den) {value=`${Math.floor(value.cur)} %`;}
-    // sizer.addBackground(rect(this.scene,{color:GM.COLOR_LIGHT}),'bg')
-    //     .add(bbcText(this.scene,{text:key.lab()}),{proportion:1})
-    //     .add(bbcText(this.scene,{text:value}),{proportion:0})
-    // let bg = sizer.getElement('bg').setAlpha(0);
-    // if(interactive)
-    // {
-    //     sizer.p = key;
-    //     sizer.setInteractive()
-    //         .on('pointerover',()=>{ bg.alpha=1; Ui.delayCall(()=>{UiInfo.show(GM.IF_PROP,sizer);}) })
-    //         .on('pointerout',()=>{ bg.alpha=0; Ui.cancelDelayCall(); UiInfo.close();})
-    // }
-    // return sizer;
 }
 
 export function uTop(scene, {text,color,onclose}={})
@@ -298,7 +281,7 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
     width = width ?? 50;
     height = height ?? 100;
     bg = bg ?? UI.BG.BORDER;
-    space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
+    space = space ?? {...UI.SPACE.LRTB_5,column:5,row:5};
     ext = ext ?? {expand:true, key:'scroll'};
 
     const scroll = scene.rexUI.add.scrollablePanel({
@@ -324,17 +307,15 @@ export function uScroll(scene, {width,height,bg,space,ext}={})
 
     const wheel = (pointer, gameObjects, dx, dy)=>{
         const x = pointer.worldX;
-            const y = pointer.worldY;
-            const bounds = scroll.getBounds();
+        const y = pointer.worldY;
+        const bounds = scroll.getBounds();
 
-            if (!Phaser.Geom.Rectangle.Contains(bounds, x, y)) {
-                return;
-            }
-
-            console.log('wheel')
-
-            const speed = 0.001;
-            scroll.setT(Phaser.Math.Clamp(scroll.t + dy * speed, 0, 1));
+        if (!Phaser.Geom.Rectangle.Contains(bounds, x, y)) {
+            return;
+        }
+        
+        const speed = 0.001;
+        scroll.setT(Phaser.Math.Clamp(scroll.t + dy * speed, 0, 1));
     }    
 
     // 操作介面

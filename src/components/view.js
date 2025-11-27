@@ -476,14 +476,14 @@ export class RoleView extends View
     _addPart(part, type=GM.PART_BODY)
     {
         const _DEPTH = Object.freeze({
-            [GM.PART_BODY] : 0,
-            [GM.PART_HEAD] : 2,
-            [GM.PART_HAND] : 5,
-            [GM.CAT_HELMET] : 3,
-            [GM.CAT_CHESTPLATE] : 1,
-            [GM.CAT_GLOVES] : 6,
-            [GM.CAT_BOOTS] : 1,
-            [GM.CAT_WEAPON] :4,
+            [GM.PART.BODY] : 0,
+            [GM.PART.HEAD] : 2,
+            [GM.PART.HAND] : 5,
+            [GM.CAT.HELMET] : 3,
+            [GM.CAT.CHESTPLATE] : 1,
+            [GM.CAT.GLOVES] : 6,
+            [GM.CAT.BOOTS] : 1,
+            [GM.CAT.WEAPON] :4,
         });
 
         let addSp = (sprite, depth)=>

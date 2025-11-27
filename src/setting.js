@@ -123,11 +123,6 @@ export let GM =
         ITEM        :   0b0000_0100_0000_0000,
     },
 
-    PART_HEAD       :   0b0000_1000_0000_0000,
-    PART_BODY       :   0b0001_0000_0000_0000,
-    PART_HAND       :   0b0010_0000_0000_0000,
-    PART_EXT        :   0b0100_0000_0000_0000,
-
     PART:{
         HEAD       :   0b0000_1000_0000_0000,
         BODY       :   0b0001_0000_0000_0000,
@@ -292,6 +287,7 @@ export let GM =
     // 頭像大小
     PORTRAITS_W : 80,
     PORTRAITS_H : 80,
+    PORTRAITS: {W:80,H:80},
 
     // debug
     DBG_BODY :  0b001,
@@ -350,8 +346,16 @@ export let GM =
 
 export const UI =
 {
-    BG:{BORDER:{strokeColor:GM.COLOR_GRAY,strokeWidth:2}},
+    BG:{
+        BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2},
+    },
     BTN:{DEF:'def',ITEM:'itm'},
+    SPACE:{
+        LRTB_5: {left:5, right:5, top:5, bottom:5},
+        LRTBI_5: {left:5, right:5, top:5, bottom:5, item:5},
+        LRTB_10: {left:10, right:10, top:10, bottom:10},
+        LRTBI_10: {left:10, right:10, top:10, bottom:10, item:10},
+    }
 }
 
 export const ROLE_ATTRS = {

@@ -50,6 +50,7 @@ export default class UiFrame extends Sizer
             getPlayer().hidePath();
         }
 
+        config = config ?? {color:GM.COLOR.PRIMARY};
         ui.uBg.call(this,scene,{interactive:true,onover:onover,...config})
 
         return this;

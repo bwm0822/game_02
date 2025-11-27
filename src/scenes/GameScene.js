@@ -7,12 +7,15 @@ import QuestManager from  '../quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
 import {GM} from '../setting.js';
-import {UiCursor, UiDialog, UiTrade, UiMessage, 
+import {UiCursor, UiTrade, UiMessage, 
         UiChangeScene, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
 import UiOption from '../ui/uioption.js'
 import UiInv from '../ui/uiinv.js'
+import UiDialog from '../ui/uidialog.js'
+
+
 import TimeManager from '../time.js';
 import AudioManager from '../audio.js';
 import {Projectile} from '../entity';
