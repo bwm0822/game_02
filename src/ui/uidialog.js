@@ -66,8 +66,8 @@ export default class UiDialog extends UiFrame
 
         p.setIcon = (icon)=>{uIcon.setIcon(icon); return p;}
         p.setName = (name)=>{uName.setText(`[color=yellow]${name}[/color]`); return p;}
-        p.setText = (text)=>{uPage.setText(text); return p;}
-        p.next = ()=>{
+        p.setDialog = (dialog)=>{uPage.setText(dialog); return p;}
+        p.updatePage = ()=>{
             const np = uPage.getNextPage();
             uText.setText(np);
             return uPage.isLastPage;
@@ -92,7 +92,7 @@ export default class UiDialog extends UiFrame
                         ext:{expand:true,proportion:1}});
 
         p.setIcon = (icon)=>{uIcon.setIcon(icon); return p;}                  
-        p.setText = (options)=>{
+        p.setDialog = (options)=>{
             scroll.clearAll();
             options.forEach(option=>{
                 scroll.addItem(ui.uButton(scene,{
@@ -116,26 +116,24 @@ export default class UiDialog extends UiFrame
         switch(cmd)
         {
             case 'exit': this.close(); return;
-            case 'goto': this.goto(); return;
+            case 'goto': this.updateDialog(); return;
             case 'next': this.updatePage(); return;
         }
     }
 
-    goto()
+    updateDialog()
     {
         this.dialog = this.owner.getDialog(); 
-        this._spkA.setText(this.dialog.A);
+        this._spkA.setDialog(this.dialog.A);
         this.updatePage();
     }
 
     updatePage()
     {
-        const lastPage = this._spkA.next();
-        if (lastPage) {this._spkB.setText(this.dialog.B);} 
-        else {this._spkB.setText([{text:'*聆聽...*',cmds:['next']}]);}
-
+        const nxtp = [{text:'*聆聽...*',cmds:['next']}];
+        const lastPage = this._spkA.updatePage();
+        this._spkB.setDialog(lastPage ? this.dialog.B : nxtp);
         this.layout();
-
         return this;
     }
 
@@ -144,11 +142,9 @@ export default class UiDialog extends UiFrame
         this.owner = owner;
         this.dialog = owner.getDialog();
         super.show();
-        this._spkA.setIcon(owner.icon)
-                    .setName(owner.id.lab())
-                    .setText(this.dialog.A)
+        this._spkA.setIcon(owner.icon).setName(owner.id.lab())
         this._spkB.setIcon(this.player.icon)
-        this.updatePage();
+        this.updateDialog();
     }
 
     static show(owner) {if(this.instance) {this.instance.show(owner);}}
