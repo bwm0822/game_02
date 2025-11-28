@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM} from '../setting.js'
+import {GM,UI} from '../setting.js'
 import {UiAbility, UiDebuger, AbilitySlot} from '../ui.js'
 import UiInv from '../ui/uiinv.js'
 import UiQuest from '../ui/uiquest.js'
@@ -20,7 +20,7 @@ export default class UiMain extends UiFrame
             space:{left:5,right:5,top:5,bottom:5,item:5}
         }
 
-        super(scene, config, 'UiMain');
+        super(scene, config, UI.TAG.MAIN);
         UiMain.instance = this;
 
         // layout
@@ -119,14 +119,13 @@ export default class UiMain extends UiFrame
         this.unregister();   
     }
 
-    show(owner)
+    show()
     {
         super.show();
-        this._owner=owner;
         this.register(GM.UI_BOTTOM);
     }
 
-    static show(owner) {this.instance?.show(owner);}
+    static show() {this.instance?.show();}
     static enable(en) {this.instance?._enable(en);} 
 }
 

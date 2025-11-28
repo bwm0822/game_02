@@ -355,7 +355,16 @@ export const UI =
         LRTBI_5: {left:5, right:5, top:5, bottom:5, item:5},
         LRTB_10: {left:10, right:10, top:10, bottom:10},
         LRTBI_10: {left:10, right:10, top:10, bottom:10, item:10},
-    }
+    },
+    TAG:{
+        MAIN:'main',
+        PROFILE:'profile',
+        INV:'inv',
+        DIALOG:'dialog',
+        STORAGE:'storage',
+        QUEST:'quest',
+        OPTION:'option',
+    },
 }
 
 export const ROLE_ATTRS = {

@@ -18,7 +18,7 @@ export default class UiQuest extends UiFrame
             space:UI.SPACE.LRTBI_5,
         }
 
-        super(scene, config, 'UiQuest');
+        super(scene, config, UI.TAG.QUEST);
         UiQuest.instance = this;
 
         // layout

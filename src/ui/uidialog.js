@@ -16,9 +16,10 @@ export default class UiDialog extends UiFrame
             height : 300,
             orientation : 'y',
             space: 10,
+            cover: {touchClose:false,alpha:0.5},
         }
 
-        super(scene, config, 'UiDialog')
+        super(scene, config, UI.TAG.DIALOG)
         UiDialog.instance = this;
 
         this.addBg(scene)
@@ -137,6 +138,12 @@ export default class UiDialog extends UiFrame
         return this;
     }
 
+    close()
+    {
+        super.close();
+        this.on(UI.TAG.MAIN);
+    }
+
     show(owner)
     {
         this.owner = owner;
@@ -145,6 +152,7 @@ export default class UiDialog extends UiFrame
         this._spkA.setIcon(owner.icon).setName(owner.id.lab())
         this._spkB.setIcon(this.player.icon)
         this.updateDialog();
+        this.closeAll(~GM.UI_MSG);
     }
 
     static show(owner) {if(this.instance) {this.instance.show(owner);}}

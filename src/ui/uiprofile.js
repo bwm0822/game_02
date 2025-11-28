@@ -18,7 +18,7 @@ export default class UiProfile extends UiFrame
             space:{left:10,right:10,bottom:10,item:0},
         }
 
-        super(scene, config, 'UiProfile');
+        super(scene, config, UI.TAG.PROFILE);
         UiProfile.instance=this;
 
         // layout

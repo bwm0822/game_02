@@ -19,7 +19,7 @@ export default class UiInv extends UiFrame
             space : {left:10,right:10,bottom:10,item:0},
         }
 
-        super(scene, config, 'UiInv_1');
+        super(scene, config, UI.TAG.INV);
         UiInv.instance = this;
 
         // layout

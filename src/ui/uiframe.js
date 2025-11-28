@@ -17,22 +17,26 @@ import {Mark} from '../gameUi.js'
 //--------------------------------------------------
 export default class UiFrame extends Sizer
 {
-    constructor(scene, config, layername)
+    constructor(scene, config, tag)
     {
         const {cover,...cfg}=config;
         super(scene, cfg);
+
+        this._tag=tag;
+        Ui.addToList(this);
+
         if(cover)   // 產生 container,將 cover 及 UiFrame 都加入
         {
-            this.createCon(scene, layername);
+            this.genCon(scene, tag, cover);
         }
         else
         {
-            if(layername) {Ui.addLayer(scene, layername, this);}
+            if(tag) {Ui.addLayer(scene, tag, this);}
             else {scene.add.existing(this);}
         }
-        
     }
 
+    get tag() {return this._tag;}
     get player() {return getPlayer();}
 
     send(event, ...args) {this.scene.events.emit(event, ...args);}
@@ -41,6 +45,8 @@ export default class UiFrame extends Sizer
     refreshAll() {Ui.refreshAll();}
     register(type) {Ui.register(this,type);}
     unregister() {Ui.unregister(this);}
+    on(tag,...args) {Ui.on(tag,args);}
+    off(tag) {Ui.off(tag);}
 
     addBg(scene,config)
     {
@@ -64,8 +70,12 @@ export default class UiFrame extends Sizer
     }
 
     // 新增 container，將 rect 及 uiFrame 都加入這個 container 之下
-    createCon(scene, layername)
+    genCon(scene, layername, cover)
     {
+        const color = cover.color ?? GM.COLOR.PRIMARY;
+        const touchClose = cover.touchClose ?? true;
+        const alpha = cover.alpha ?? 0;
+
         // 1. 產生 container
         const con = scene.rexUI.add.container();
 
@@ -76,10 +86,10 @@ export default class UiFrame extends Sizer
             y: GM.h/2,
             width: GM.w,
             height: GM.h,
-            // color: GM.COLOR_RED,
-            alpha: 0,
+            color: color,
+            alpha: alpha,
             interactive: true,
-            ondown: ()=>{this.close()}
+            ondown: ()=>{touchClose&&this.close()}
         }
         const rect = ui.uRect(scene, config)
 

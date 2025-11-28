@@ -17,7 +17,7 @@ export default class UiOption extends UiFrame
             space: 5,
             cover: true,
         }
-        super(scene, config, 'UiOption')
+        super(scene, config, UI.TAG.OPTION);
         UiOption.instance = this;
 
         this._items = {};
