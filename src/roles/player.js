@@ -32,7 +32,7 @@ export class Player extends Role
     get acts() {return ['profile','inv']}
     get act() {return this.acts[0];}
 
-    get meta() {return this.bb.meta;}
+    // get meta() {return this.bb.meta;}
 
 
     //------------------------------------------------------

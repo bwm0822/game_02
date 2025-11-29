@@ -364,6 +364,7 @@ export const UI =
         STORAGE:'storage',
         QUEST:'quest',
         OPTION:'option',
+        TRADE:'trade',
     },
 }
 

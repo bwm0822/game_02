@@ -23,8 +23,9 @@ import UiMain from './ui/uimain.js'
 import UiOption from './ui/uioption.js'
 import UiInv from './ui/uiinv.js'
 import UiProfile from './ui/uiprofile.js'
-
 import UiDialog from './ui/uidialog.js'
+
+import UiTrade from './ui/uitrade.js'
 
 let uiScene;
 let _mode = 0;
@@ -82,7 +83,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiDialog_1(scene);
+    // new UiTrade_1(scene);
 
     test();
 
@@ -2675,7 +2676,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
 
 }
 
-export class UiTrade extends UiBase
+export class UiTrade_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -2690,7 +2691,7 @@ export class UiTrade extends UiBase
             space:{left:10,right:10,bottom:10,item:5},
         }
         super(scene, config, 'UiTrade');
-        UiTrade.instance = this;    
+        UiTrade_1.instance = this;    
 
         this.addBg(scene)    
             .addTop(scene,{text:'trade'.lab()})

@@ -58,13 +58,16 @@ export default class UiDialog extends UiFrame
         const pR= ui.uPanel.call(p,scene,{bg:UI.BG.BORDER,
                                             orientation:'y',
                                             ext:{expand:true,proportion:1}});
-        const uName = ui.uBbc.call(pR,scene,{text:`[color=yellow]阿凡達[/color]`,ext:{align:'left'}})
-        const uText = ui.uBbc.call(pR,scene,{text:'內容',wrapWidth:500,ext:{align:'left'}})
+        const uName = ui.uBbc.call(pR,scene,{text:`[color=yellow]阿凡達[/color]`,
+                                                ext:{align:'left'}})
+        const uText = ui.uBbc.call(pR,scene,{text:'內容',wrapWidth:500,
+                                                ext:{align:'left'}})
 
         // page
         const lineCnt=3;
         const uPage = scene.plugins.get('rexTextPage').add(uText,{maxLines:lineCnt});
 
+        // 操作介面
         p.setIcon = (icon)=>{uIcon.setIcon(icon); return p;}
         p.setName = (name)=>{uName.setText(`[color=yellow]${name}[/color]`); return p;}
         p.setDialog = (dialog)=>{uPage.setText(dialog); return p;}
@@ -83,16 +86,16 @@ export default class UiDialog extends UiFrame
         const p = ui.uPanel.call(this,scene,
                                     {bg:{color:GM.COLOR.DARK},
                                     space:UI.SPACE.LRTBI_10,
-                                    ext:{expand:true,proportion:1}})
+                                    ext:{expand:true,proportion:1}});
 
-        const uIcon = new Pic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,
-                                    {icon:'portraits/0'})
-        p.add(uIcon,{align:'top'})
+        const pic = ui.uPic.call(p,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
+                                        icon:'portraits/0',
+                                        ext:{align:'top'}});
 
         const scroll = ui.uScroll.call(p,scene,{
                         ext:{expand:true,proportion:1}});
 
-        p.setIcon = (icon)=>{uIcon.setIcon(icon); return p;}                  
+        p.setIcon = (icon)=>{pic.setIcon(icon); return p;}                  
         p.setDialog = (options)=>{
             scroll.clearAll();
             options.forEach(option=>{

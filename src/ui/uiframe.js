@@ -45,7 +45,7 @@ export default class UiFrame extends Sizer
     refreshAll() {Ui.refreshAll();}
     register(type) {Ui.register(this,type);}
     unregister() {Ui.unregister(this);}
-    on(tag,...args) {Ui.on(tag,args);}
+    on(tag,...args) {Ui.on(tag,...args);}
     off(tag) {Ui.off(tag);}
 
     addBg(scene,config)
@@ -53,7 +53,7 @@ export default class UiFrame extends Sizer
         const onover = ()=>{
             UiCursor.set(); 
             Mark.close();
-            getPlayer().hidePath();
+            getPlayer()?.hidePath();
         }
 
         config = config ?? {color:GM.COLOR.PRIMARY};

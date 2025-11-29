@@ -1,5 +1,6 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {GM, UI} from '../setting.js'
+import {Pic} from '../uibase.js'
 
 export function uRect(scene, config={})
 {
@@ -54,6 +55,14 @@ export function uBbc(scene, config={})
     
     if(this&&this.add) {this.add(t,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return t;
+}
+
+export function uPic(scene, config={})
+{
+    const {w,h,ext,...cfg}=config;
+    const pic = new Pic(scene,w,h,cfg);
+    if(this&&this.add) {this.add(pic,ext);}
+    return pic;
 }
 
 export function uBg(scene, config={})

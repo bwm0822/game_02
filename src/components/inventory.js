@@ -125,7 +125,14 @@ export class COM_Storage extends Com
 
     _take(content,i,isEquip)
     {
-        // console.log('take', content, i);
+        const{bb,emit}=this.ctx;
+
+        if(isEquip)
+        {
+            bb.equips[i]=content;
+            emit('equip');
+            return true;   
+        }
 
         i = i??this._findEmpty();
 

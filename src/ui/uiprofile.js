@@ -34,22 +34,29 @@ export default class UiProfile extends UiFrame
 
     addInfo(scene)
     {
-        const space = {left:5,right:5,top:5,bottom:5,item:5}
-        const p = ui.uPanel.call(this, scene, {bg:UI.BG.BORDER, height:100, ext:{expand:true}} )
+        const space = UI.SPACE.LRTBI_5;
+        const p = ui.uPanel.call(this, scene, {bg:UI.BG.BORDER, height:100, 
+                                                ext:{expand:true}} )
 
-        // 左半部
-        const pL = ui.uPanel.call(p, scene, {bg:UI.BG.BORDER, space:space, ext:{expand:true,proportion:1}} );
-        // icon
-        this._icon = new Pic( scene, GM.PORTRAITS_W, GM.PORTRAITS_H, {icon:'portraits/0'})
-        pL.add( this._icon, {align:'top'} )
-        // name / race
-        this._name = ui.uBbc.call(pL, scene, {text:'阿凡達\n精靈', ext:{align:'top'}} )
+        // 左半部 (人像、說明)
+        const pL = ui.uPanel.call(p, scene, {bg:UI.BG.BORDER, space:space, 
+                                                ext:{expand:true,proportion:1}} );
+        const pic = ui.uPic.call(pL,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
+                                                ext:{align:'top'}});
+        const bbc = ui.uBbc.call(pL, scene, {text:'阿凡達\n精靈', 
+                                                ext:{align:'top'}} )
         
-        // 右半部
-        // base stats
-        const pR = ui.uPanel.call(p, scene, {bg:{...UI.BG.BORDER}, orientation:'y', space:space, ext:{expand:true, proportion:1}} )
+        // 右半部 (基礎屬性)
+        const pR = ui.uPanel.call(p, scene, {bg:{...UI.BG.BORDER}, orientation:'y', space:space, 
+                                                ext:{expand:true, proportion:1}} )
+
+        // 操作介面
+        p.setIcon = (owner)=>{pic.setIcon(owner.icon);}
+        p.setDes = (owner)=>{bbc.setText(`${owner.id.lab()}\n${owner.job?.lab()}`);}
+        p.clear = ()=>{pR.removeAll(true);}
+        p.addItem = (key,val)=>{ui.uStat.call(pR,scene,key,val);}
         
-        this._pR = pR;
+        this._info=p;
         return this;
     }
 
@@ -81,17 +88,16 @@ export default class UiProfile extends UiFrame
         const scene = this.scene;
 
         // Icon
-        let [key,frame]=this.owner.meta.icon.split('/');
-        this._icon.setIcon(this.owner.meta.icon);
+        this._info.setIcon(this.owner);
 
         // 姓名 / 種族
-        this._name.setText(`${this.owner.id.lab()}\n${this.owner.meta.job?.lab()}`);
+        this._info.setDes(this.owner)
 
         // 基礎屬性
-        this._pR.removeAll(true);
+        this._info.clear();
         for(const key of GM.BASE)
         {
-            ui.uStat.call(this._pR,scene,key.lab(),this.total[key],true);   
+            this._info.addItem(key.lab(),this.total[key])
         }
 
         return this;

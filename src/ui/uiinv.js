@@ -66,8 +66,8 @@ export default class UiInv extends UiFrame
             space: 5,
             ext: {expand:true}  
         });
-        let images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
-        let text = `[color=yellow][img=gold][/color] ${0}`
+        const images = {gold:{key:'buffs',frame:210,width:GM.FONT_SIZE,height:GM.FONT_SIZE,tintFill:true }};
+        const text = `[color=yellow][img=gold][/color] ${0}`
         this._gold = ui.uBbc.call(p, scene, {text:text,images:images});
         return this;
     }
@@ -80,9 +80,10 @@ export default class UiInv extends UiFrame
 
     refresh()
     {
-        this._equips.loop((elm)=>elm?.update(this._owner));
-        this._bag.loop((elm)=>elm?.update(this._owner));
-        this._gold.setText(`[color=yellow][img=gold][/color] ${this._owner.gold}`)
+        const owner=this.owner;
+        this._equips.loop((elm)=>elm?.update(owner));
+        this._bag.loop((elm)=>elm?.update(owner));
+        this._gold.setText(`[color=yellow][img=gold][/color] ${owner.gold}`)
     }
 
     toggle(owner)
@@ -101,7 +102,7 @@ export default class UiInv extends UiFrame
     show(owner)
     {
         super.show();
-        this._owner=owner;
+        this.owner=owner;
         this.refresh();
         this.register(GM.UI_RIGHT);
     }

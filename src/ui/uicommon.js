@@ -21,10 +21,10 @@ export default class Ui
     // static unregister(ui) {delete this._list[ui.constructor.name];}
     static register(ui,type) {this._regs[ui.tag]={ui:ui,type:type};}
     static unregister(ui) {delete this._regs[ui.tag];}
-    static setMode(mode) {this._mode = mode;}
+    static setMode(mode) {this._mode=mode;}
     static addToList(ui) {this._list[ui.tag]=ui;}
-    static on(tag,...args) {this._list[tag]?.show(args)}
-    static off(tag) {this._list[tag]?.close()};
+    static on(tag,...args) {this._list[tag]?.show(...args);}
+    static off(tag) {this._list[tag]?.close();}
 
     static addLayer(scene, name, top)
     {

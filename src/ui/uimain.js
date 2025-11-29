@@ -106,7 +106,6 @@ export default class UiMain extends UiFrame
 
     refresh()
     {
-        console.log('------------------ refresh')
         let total = this.player.total;
         this._hp.set(total.states[GM.HP],total[GM.HPMAX]);
         this.resetAbility();
