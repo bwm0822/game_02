@@ -19,6 +19,24 @@ export function uRect(scene, config={})
     return r;
 }
 
+export function uDiv(scene,config={})
+{
+    const {ext={expand:true,padding:{top:10,bottom:10}},...cfg}=config;
+    cfg.width=cfg.width??100;
+    cfg.height=cfg.height??1;
+    cfg.color=cfg.color??GM.COLOR.GRAY;
+    const r = uRect(scene,cfg);
+    if(this&&this.add) {this.add(r,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+    return r;
+}
+
+export function uVspace(scene,height)
+{
+    const r = uRect(scene,{height:height});
+    if(this&&this.add) {this.add(r);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+    return r;
+}
+
 export function uSprite(scene, {x, y, icon, name, ext}={})
 {
     let [atlas, frame] = icon ? icon.split('/'):[];
@@ -74,8 +92,8 @@ export function uBg(scene, config={})
 
 export function uPanel(scene, config={})
 {
-    let {bg, ext, ...panelCfg} = config;
-    const panel = scene.rexUI.add.sizer(panelCfg);
+    let {bg, ext, ...cfg} = config;
+    const panel = scene.rexUI.add.sizer(cfg);
     if(bg) {uBg.call(panel, scene, bg)}
 
     if(this&&this.add) {this.add(panel, ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去

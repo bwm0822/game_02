@@ -2,7 +2,7 @@ import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'ph
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
 import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
-import {GM, ACT_TYPE} from './setting.js';
+import {GM, ACT_TYPE, UI} from './setting.js';
 
 import DB from './db.js';
 import {Mark} from './gameUi.js';
@@ -24,8 +24,10 @@ import UiOption from './ui/uioption.js'
 import UiInv from './ui/uiinv.js'
 import UiProfile from './ui/uiprofile.js'
 import UiDialog from './ui/uidialog.js'
-
 import UiTrade from './ui/uitrade.js'
+
+import UiInfo from './ui/uiinfo.js'
+
 
 let uiScene;
 let _mode = 0;
@@ -83,7 +85,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiTrade_1(scene);
+    // new UiInfo_1(scene);
 
     test();
 
@@ -407,11 +409,10 @@ export class Slot extends Icon
         }
         else if(!this.isEmpty && !UiDragged.isAbility)
         {
-            console.log(this.content)
             this.setBgColor(GM.COLOR_SLOT_OVER);
 
             // 使用 delacyCall 延遲執行 UiInfo.show()
-            Ui.delayCall(() => {UiInfo.show(GM.IF_SLOT,this);}); 
+            Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
             // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
             checkEquip && UiInv.checkEquipSlots(this.dat.cat);
         }
@@ -682,7 +683,7 @@ class AbilityItem extends Pic
 
     leave() {UiDragged.interact(true);}
     enter(gameObject) {(gameObject instanceof AbilitySlot) && UiDragged.interact(false);}
-    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_ABILITY,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() {Ui.delayCall(() => {UiInfo.show(UI.INFO.ABILITY.LR,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
 
     addListener()
@@ -1078,7 +1079,8 @@ export class UiDragged extends OverlapSizer
 
     drop()
     {
-        if(this._obj && this.owner.trade!=GM.SELLER)
+        console.log('-----trader=',this.owner.tradeType)
+        if(this._obj && this.owner.tradeType!=GM.SELLER)
         {
             this.owner.drop(this._obj);
             this.empty();
@@ -1233,7 +1235,7 @@ export class UiCover extends Sizer
     static close() {UiCover.instance?.close();}
 }
 
-export class UiInfo extends Sizer
+export class UiInfo_1 extends Sizer
 {
     static instance = null;
     static gap = 10;    // show() 有用到，不可移除
@@ -1247,7 +1249,7 @@ export class UiInfo extends Sizer
             space:{left:10,right:10,bottom:10,top:10,item:0}
         }
         super(scene, config);
-        UiInfo.instance = this;
+        UiInfo_1.instance = this;
         Ui.addLayer(scene, 'UiInfo', this);    // 產生layer，並設定layer名稱
 
         this.addBackground(rect(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3}))

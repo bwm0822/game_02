@@ -365,6 +365,15 @@ export const UI =
         QUEST:'quest',
         OPTION:'option',
         TRADE:'trade',
+        INFO:'info',
+    },
+    INFO:
+    {
+        SLOT:0,
+        PROP:1,
+        BTN:2,
+        ABILITY:{LR:3,TB:4},
+        ACTIVE:{LR:5,TB:6},
     },
 }
 
