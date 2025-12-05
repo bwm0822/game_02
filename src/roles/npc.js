@@ -91,7 +91,7 @@ export class Npc extends Role
         this.load();
         this.equip?.();
 
-        //
+        // option
         this._setAct(GM.ATTACK,true);
 
         // 檢查是否死亡

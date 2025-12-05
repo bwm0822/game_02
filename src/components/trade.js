@@ -11,6 +11,12 @@ import {getPlayer} from '../roles/player.js'
 
 export class COM_Trade extends Com
 {
+    constructor(enableAct=true)
+    {
+        super();
+        this._enableAct=enableAct;
+    }
+
     get tag() {return 'trade';}  // 回傳元件的標籤
 
     //------------------------------------------------------
@@ -83,7 +89,7 @@ export class COM_Trade extends Com
     {
         super.bind(root);
         // act
-        root._setAct(GM.TRADE, true);
+        if(this._enableAct) {root._setAct(GM.TRADE, true);}
         // init
         const {bb} = this.ctx;
         root.trade = this._trade.bind(this);

@@ -88,6 +88,7 @@ export class GameObject
     {
         let x = this.x - this.scene.cameras.main.worldView.x;
         let y = this.y - this.scene.cameras.main.worldView.y;
+        console.log(this.acts)
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 

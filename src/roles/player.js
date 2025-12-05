@@ -29,12 +29,6 @@ export function getPlayer() {return player;}
 export class Player extends Role
 {
 
-    get acts() {return ['profile','inv']}
-    get act() {return this.acts[0];}
-
-    // get meta() {return this.bb.meta;}
-
-
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -130,12 +124,16 @@ export class Player extends Role
             .addCom(new COM_Ability())
             .addCom(new COM_AbilityTree())
             .addCom(new COM_AbilitySlots())
-            .addCom(new COM_Trade())
+            .addCom(new COM_Trade(false))
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
         this.on('damage', this._damage.bind(this));
         this.on('refresh', this._refresh.bind(this));
+
+        // options
+        this._setAct(GM.PROFILE,true);
+        this._setAct(GM.INV,true);
 
         return this;
     }

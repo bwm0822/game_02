@@ -3,6 +3,8 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
 // import {getPlayer} from '../roles/player.js'
 import UiObserve from './uiobserve.js'
+import UiInv from './uiinv.js'
+import UiProfile from './uiprofile.js'
 
 
 export default class UiOption extends UiFrame
@@ -113,13 +115,13 @@ export default class UiOption extends UiFrame
     inv()
     {
         this.close();
-        UiInv.show(getPlayer());
+        UiInv.show(this.player);
     }
 
     profile()
     {
         this.close();
-        UiProfile.show(getPlayer());
+        UiProfile.show(this.player);
     }
 
     async split()
