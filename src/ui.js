@@ -27,6 +27,7 @@ import UiDialog from './ui/uidialog.js'
 import UiTrade from './ui/uitrade.js'
 
 import UiInfo from './ui/uiinfo.js'
+import UiObserve from './ui/uiobserve.js'
 
 
 let uiScene;
@@ -85,7 +86,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiInfo_1(scene);
+    // new UiObserve_1(scene);
 
     test();
 
@@ -1983,7 +1984,7 @@ class Option extends UiBase
 
 }
 
-class Block extends Pic
+export class Block extends Pic
 {
     constructor(scene, w, h, effect)
     {
@@ -2394,13 +2395,13 @@ export class UiOption_1 extends UiContainerBase
 
 }
 
-class UiObserve extends UiContainerBase
+export class UiObserve_1 extends UiContainerBase
 {
     static instance = null;
     constructor(scene)
     {
         super(scene, 'UiObserve', false);
-        UiObserve.instance = this;
+        UiObserve_1.instance = this;
         this.add(new Observe(scene))
             .close()
     }

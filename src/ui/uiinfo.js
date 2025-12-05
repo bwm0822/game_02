@@ -43,14 +43,6 @@ export default class UiInfo extends UiFrame
 
     get lang() {return Record.data.lang;}
 
-    uText({text,color=GM.COLOR_WHITE,align='left'}={})
-    {
-        ui.uBbc.call(this,this.scene,{text:text,
-                                wrapWidth:this._w,
-                                color:color,
-                                ext:{align:align}});
-    }
-
     uStat(key, val)
     {
         ui.uStat.call(this,this.scene,key,val,{interactive:false})
@@ -82,8 +74,9 @@ export default class UiInfo extends UiFrame
         {
             if(layout?.div??true) {ui.uDiv.call(this,this.scene);};
             layout?.div && (layout.div=false);
-            this.uText({text:Utility.fmt_Des(des, stats, total),
-                        color:GM.COLOR.GRAY});
+            ui.uDes.call(this,this.scene,{
+                        text:Utility.fmt_Des(des, stats, total),
+                        color:GM.COLOR.GRAY})
             layout && (layout.vspace=true);
         }
         return this;
@@ -96,7 +89,7 @@ export default class UiInfo extends UiFrame
         let key = def ? GM.DEF.lab() : GM.ATK.lab();
         if(val)
         {
-            this.uText({text:`${val} ${key}`,align:'center'})
+            ui.uBbc.call(this,this.scene,{text:`${val} ${key}`})
             ui.uDiv.call(this,this.scene);
         }
         return this;
@@ -121,7 +114,9 @@ export default class UiInfo extends UiFrame
             if(layout?.div??true) {ui.uDiv.call(this,this.scene);}
             elm.dat.procs.forEach((proc)=>{
                 if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
-                this.uText({text:Utility.fmt_Proc(proc),color:GM.COLOR_GRAY})
+                ui.uDes.call(this,this.scene,{
+                            text:Utility.fmt_Proc(proc),
+                            color:GM.COLOR_GRAY})
                 layout && (layout.vspace = true);
             })
         }
@@ -132,7 +127,9 @@ export default class UiInfo extends UiFrame
     addActive(elm)
     {
         const proc = elm.dat;
-        this.uText({text:Utility.fmt_Active(proc),color:GM.COLOR_GRAY})
+        ui.uDes.call(this,this.scene,{
+                    text:Utility.fmt_Active(proc),
+                    color:GM.COLOR_GRAY})
         return this;
     }
 
@@ -158,7 +155,7 @@ export default class UiInfo extends UiFrame
         Object.entries(elm.dat.make.items).forEach(([key,value])=>{
             text+=`- ${key.lab()} (${value})\n`;
         });
-        this.uText(this.scene,{text:text});
+        ui.uBbc.call(this,this.scene,{text:text});
         return this;
     }
 
@@ -210,9 +207,11 @@ export default class UiInfo extends UiFrame
     ifActive(elm)
     {
         let tag = elm.dat.tag;
-        this.addText(tag.lab(),{align:'center'})
-            .addDivider()
-            .addActive(elm)
+        const scene=this.scene;
+
+        ui.uBbc.call(this,scene,{text:tag.lab()});
+        ui.uDiv.call(this,scene);
+        this.addActive(elm);
     }
 
     ifSlot(elm)

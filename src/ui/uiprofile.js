@@ -23,7 +23,7 @@ export default class UiProfile extends UiFrame
 
         // layout
         this.addBg(scene)
-            .addTop(scene,'profile')
+            .addTop(scene, UI.TAG.PROFILE)
             .addInfo(scene)
             .addTabs(scene)
             .addPage(scene)

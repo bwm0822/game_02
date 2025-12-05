@@ -75,6 +75,23 @@ export function uBbc(scene, config={})
     return t;
 }
 
+export function uDes(scene, text_or_config, wrapWidth=250)    
+{
+    const config={wrapWidth:wrapWidth,ext:{align:'left'}};
+    if(typeof text_or_config === 'object')
+    {
+        Object.assign(config, text_or_config);
+    }
+    else
+    {
+        config.text=text_or_config;
+    }
+    
+    if(this&&this.add){return uBbc.call(this,scene,config);}
+    else {return uBbc(scene,config);}
+    
+}
+
 export function uPic(scene, config={})
 {
     const {w,h,ext,...cfg}=config;
@@ -139,6 +156,7 @@ export function uButton(scene,config={})
             break;
 
         case UI.BTN.ITEM:
+        case UI.BTN.OPTION:    
             cfg.bg = cfg.bg ?? {color:cBG};
             break;
     }
@@ -150,6 +168,9 @@ export function uButton(scene,config={})
         case UI.BTN.ITEM:
             btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
             btn._text?.setColor(cDEF);
+            break;
+        case UI.BTN.OPTION:  
+            btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
             break;
     }
 
@@ -164,6 +185,7 @@ export function uButton(scene,config={})
                 break;
 
             case UI.BTN.ITEM:
+            case UI.BTN.OPTION:
                 btn._bg?.setAlpha(on?1:0);
                 break;
         }
@@ -393,6 +415,16 @@ export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
     return scroll;
 }
 
+export function uFix(scene, config={})
+{
+    let {bg, ext, ...cfg} = config;
+    const fix = scene.rexUI.add.fixWidthSizer(cfg);
+    if(bg) {uBg.call(fix, scene, bg)}
+
+    if(this&&this.add) {this.add(fix, ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+    return fix;
+}
+
 export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
 {
     column = column ?? 3;
@@ -401,7 +433,8 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
     space = space ?? {column:5,row:5,left:5,right:5,top:5,bottom:5};
     if(!addItem && test)
     {
-        addItem = function() {return uRect(scene,{color:GM.COLOR.GRAY,width:50,height:50})};
+        addItem = function() {return uRect(scene,
+                {color:GM.COLOR.GRAY,width:50,height:50})};
     }
 
     // 1. 產生 grid

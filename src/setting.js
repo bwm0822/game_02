@@ -346,13 +346,22 @@ export let GM =
 
 export const UI =
 {
-    BG:{
-        BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2},
-    },
-    BTN:{DEF:'def',ITEM:'itm'},
+    BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2}},
+    BTN:{DEF:'def',ITEM:'itm',OPTION:'option'},
     SPACE:{
+        LRTB: { p5:{left:5, right:5, top:5, bottom:5},
+                p10:{left:10, right:10, top:10, bottom:10}},
+        
+        LRTBI: { p5:{left:5, right:5, top:5, bottom:5, item:5},
+                p10:{left:10, right:10, top:10, bottom:10, item:10}},
+
+        LRTBIL: {p5:{left:5, right:5, top:5, bottom:5, item:5, line:5}},
+
+        TBIL: {p5:{top:5, bottom:5, item:5, line:5}},
+
         LRTB_5: {left:5, right:5, top:5, bottom:5},
         LRTBI_5: {left:5, right:5, top:5, bottom:5, item:5},
+        
         LRTB_10: {left:10, right:10, top:10, bottom:10},
         LRTBI_10: {left:10, right:10, top:10, bottom:10, item:10},
     },
@@ -366,6 +375,7 @@ export const UI =
         OPTION:'option',
         TRADE:'trade',
         INFO:'info',
+        OBSERVE:'observe',
     },
     INFO:
     {

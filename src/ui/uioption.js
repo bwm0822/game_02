@@ -1,7 +1,8 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-import {getPlayer} from '../roles/player.js'
+// import {getPlayer} from '../roles/player.js'
+import UiObserve from './uiobserve.js'
 
 
 export default class UiOption extends UiFrame
@@ -58,12 +59,13 @@ export default class UiOption extends UiFrame
     addItem(key, ondown)
     {
         const scene = this.scene;
-        const item = ui.uButton(scene,{
-                        style: UI.BTN.ITEM,
+        const item = ui.uButton.call(this,scene,{
+                        style: UI.BTN.OPTION,
                         text: key.lab(),
-                        ondown: ()=>{(ondown??this.act.bind(this))(key);} })
+                        ondown: ()=>{(ondown??this.act.bind(this))(key);},
+                        ext:{expand:true}, 
+                    })
         this._items[key] = item;
-        this.add(item,{expand:true})
         return this;
     }
 
@@ -144,7 +146,7 @@ export default class UiOption extends UiFrame
     act(key)
     {
         this.close();
-        // getPlayer().execute({ent:this.ent,act:key});
+        this.player.execute({ent:this.ent,act:key});
     }
 
     rePos()

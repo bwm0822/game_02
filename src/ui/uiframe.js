@@ -64,7 +64,7 @@ export default class UiFrame extends Sizer
 
     addTop(scene,title)
     {
-        ui.uTop.call(this, scene, {text:title.lab(),
+        ui.uTop.call(this, scene, {text:title?.lab(),
                                     onclose:this.close.bind(this)})
         return this;
     }
@@ -97,7 +97,7 @@ export default class UiFrame extends Sizer
         con.add(rect).add(this)    
 
         // 4. 將 container 加入 layer
-        Ui.addLayer(scene, layername, con);
+        Ui.addLayer(scene, layername, [con,rect,this]);
 
         // 5. 
         this._con=con;
