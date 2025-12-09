@@ -1,10 +1,12 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-// import {getPlayer} from '../roles/player.js'
+import InventoryService from '../services/inventoryService.js'
 import UiObserve from './uiobserve.js'
 import UiInv from './uiinv.js'
 import UiProfile from './uiprofile.js'
+// import {UiCount} from '../ui.js'
+ import UiCount from '../ui/uicount.js'
 
 
 export default class UiOption extends UiFrame

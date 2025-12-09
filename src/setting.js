@@ -347,7 +347,7 @@ export let GM =
 export const UI =
 {
     BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2}},
-    BTN:{DEF:'def',ITEM:'itm',OPTION:'option'},
+    BTN:{DEF:'def',ITEM:'itm',OPTION:'option',BG:'bg'},
     SPACE:{
         LRTB: { p5:{left:5, right:5, top:5, bottom:5},
                 p10:{left:10, right:10, top:10, bottom:10}},
@@ -376,6 +376,7 @@ export const UI =
         TRADE:'trade',
         INFO:'info',
         OBSERVE:'observe',
+        COUNT:'count',
     },
     INFO:
     {

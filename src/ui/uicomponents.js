@@ -1,10 +1,11 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {GM, UI} from '../setting.js'
 import {Pic} from '../uibase.js'
+import Utility from '../utility.js'
 
 export function uRect(scene, config={})
 {
-    const {interactive,onover,onout,ondown,...cfg}=config;
+    const {interactive,onover,onout,ondown,ext,...cfg}=config;
     const r = scene.rexUI.add.roundRectangle(cfg);
 
     if(interactive)
@@ -15,7 +16,7 @@ export function uRect(scene, config={})
         if(ondown){r.on('pointerdown',()=>{ondown()})};
     }
 
-    if(this&&this.add) {this.add(r,config);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+    if(this&&this.add) {this.add(r,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return r;
 }
 
@@ -136,10 +137,6 @@ export function uButton(scene,config={})
     // 避免 config 傳入非物件參數(如:123、null)時，產生錯誤
     if (typeof config !== 'object' || config === null) {config = {};}
 
-    // const cDEF = config.cDEF ?? GM.COLOR.GRAY;
-    // const cHL = config.cHL ?? GM.COLOR.WHITE;
-    // const cBG = config.cBG ?? GM.COLOR.LIGHT;
-
     const {onover, onout, ondown, onclick, ext, 
             style=UI.BTN.DEF, 
             cDEF=GM.COLOR.GRAY,
@@ -151,6 +148,7 @@ export function uButton(scene,config={})
 
     switch(style)
     {
+        case UI.BTN.BG:
         case UI.BTN.DEF:
             cfg.bg = cfg.bg ?? {color:cBG, radius:10};
             break;
@@ -178,12 +176,14 @@ export function uButton(scene,config={})
     {
         switch(style)
         {
+            case UI.BTN.BG:
+                btn._bg?.setFillStyle(btn._bg.fillColor,on?0.5:1);
+                break;
             case UI.BTN.DEF:
                 btn._bg?.setFillStyle(btn._bg.fillColor,on?0.5:1);
                 btn._text?.setTint(on?cDEF:cHL);
                 btn._icon?.setTint(on?cDEF:cHL);
                 break;
-
             case UI.BTN.ITEM:
             case UI.BTN.OPTION:
                 btn._bg?.setAlpha(on?1:0);
@@ -502,4 +502,67 @@ export function uTabs(scene,{btns,onclick,onover,onout})
     if(this&&this.add) {this.add(tabs,{expand:true,key:'tags'});}
 
     return tabs;
+}
+
+export function uSlider(scene,{width=100,trackRadius=10,thumbRadius=20,onchange,gap,space,ext}={})
+{
+    const s = scene.rexUI.add.slider({
+        orientation: 'x',
+        width: width,
+        track: uRect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
+        thumb: uRect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
+        valuechangeCallback: function(value){onchange?.(value)},
+        gap: gap,
+        space: space,
+        //thumbOffsetY: -10,
+        //space: {top: 4,bottom: 4},
+        //input: 'drag', // 'drag'|'click'
+    })
+
+    if(this&&this.add) {this.add(s,ext);}
+
+    return s;
+}
+
+export function uValueSlider(scene,config={})
+{
+    let {ext}=config;
+    let _min=0,_max=10;
+    ext = ext??{expand:true};
+
+    const p = uPanel(scene,{space:{item:10}})
+    const lab = uLabel(scene,{  bg:{color:GM.COLOR.DARK},
+                                text:'0',width:50,height:50,
+                                align:'center'});
+    const s = uSlider(scene);
+
+    s.on('valuechange', (value) => {
+        p.value = Math.round(_min+value*(_max-_min));
+        lab.setText(p.value)
+        lab.layout();
+    })
+    p.add(lab)
+    p.add(s,{proportion:1});
+
+    // 操作介面
+    p.setRange = (min,max,value)=>{
+        _min=min;_max=max;
+        if(value)
+        {
+            value = Utility.clamp(value,min,max);
+            s.setValue((value-min)/(max-min));
+            p.value=value;   
+        }
+        else
+        {
+            s.setValue(0);
+            p.value=min;
+        }
+        lab.setText(p.value)
+        lab.layout();
+    }
+    p.setValue = (val)=>{s.setValue(val);}
+
+    if(this&&this.add) {this.add(p,ext);}
+    return p;
 }

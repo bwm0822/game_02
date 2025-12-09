@@ -28,6 +28,8 @@ import UiTrade from './ui/uitrade.js'
 
 import UiInfo from './ui/uiinfo.js'
 import UiObserve from './ui/uiobserve.js'
+import UiCount from './ui/uicount.js'
+import UiConfirm from './ui/uiconfirm.js'
 
 
 let uiScene;
@@ -86,7 +88,8 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiObserve_1(scene);
+    // new UiCount_1(scene);
+    // new UiConfirm_1(scene);
 
     test();
 
@@ -2409,13 +2412,13 @@ export class UiObserve_1 extends UiContainerBase
     static show(owner) {this.instance?.show(owner);}
 }
 
-class UiCount extends UiContainerBase
+export class UiCount_1 extends UiContainerBase
 {
     static instance = null;
     constructor(scene)
     {
         super(scene,'UiCount',false);
-        UiCount.instance = this;
+        UiCount_1.instance = this;
         this.add(new Count(scene))
             .close()
     }
@@ -3925,13 +3928,13 @@ export class Confirm extends UiBase
     }
 }
 
-export class UiConfirm extends UiContainerBase
+export class UiConfirm_1 extends UiContainerBase
 {
     static instance = null;
     constructor(scene)
     {
         super(scene, 'UiConfirm', false);
-        UiConfirm.instance = this;
+        UiConfirm_1.instance = this;
 
         this.add(new Confirm(scene)).close()
     }

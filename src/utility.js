@@ -1,4 +1,4 @@
-import {GM,ACT_TYPE} from './setting.js';
+import {GM,ACT_TYPE} from './setting.js'
 
 export default class Utility
 {
