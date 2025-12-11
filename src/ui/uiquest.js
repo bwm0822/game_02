@@ -87,9 +87,9 @@ export default class UiQuest extends UiFrame
         const scene = this.scene;
 
         const ondown = (itm)=>{
-            if(this._itm) {this._itm.setHighlight(false);}
+            if(this._itm) {this._itm.set(false);}
             this._itm=itm;
-            itm.setHighlight(true);
+            itm.set(true);
             this.updateContent(itm.q);
         }
 

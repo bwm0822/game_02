@@ -157,6 +157,10 @@ export function uButton(scene,config={})
         case UI.BTN.OPTION:    
             cfg.bg = cfg.bg ?? {color:cBG};
             break;
+
+        case UI.BTN.CHECK:
+            cfg.text = '☐ ' + (cfg.text ?? '');
+            break;
     }
 
     const btn = uLabel(scene, cfg);
@@ -169,6 +173,9 @@ export function uButton(scene,config={})
             break;
         case UI.BTN.OPTION:  
             btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
+            break;
+        case UI.BTN.CHECK:
+            btn.checked = false;
             break;
     }
 
@@ -192,7 +199,19 @@ export function uButton(scene,config={})
     }
 
      // 提供外界操作
-    btn.setHighlight = (on)=>{btn._text?.setColor(on?cHL:cDEF);}
+    btn.set = (on)=>{
+        if(style===UI.BTN.CHECK)
+        {
+            btn.checked = on;
+            const pre = on?'☐':'☑';
+            const post = on?'☑':'☐';
+            btn._text.setText(btn._text.text.replace(pre,post));
+        }
+        else
+        {
+            btn._text?.setColor(on?cHL:cDEF);
+        }
+    }
     btn.setText = (text)=>{btn._text?.setText(text);}
     btn.setEnable = (on)=>{
         if(on) {    
@@ -212,7 +231,10 @@ export function uButton(scene,config={})
         .on('pointerover',()=>{_over(true);onover?.(btn);})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
         .on('pointerdown',()=>{ondown?.(btn)})
-        .on('pointerup',()=>{onclick?.(btn)})
+        .on('pointerup',()=>{
+            if(style===UI.BTN.CHECK) {btn.set(!btn.checked);}
+            onclick?.(btn)
+        })
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
@@ -325,66 +347,6 @@ export function uTextProgress(scene, config={})
     return sizer;
 }
 
-// export function uScroll(scene, {width,height,bg,space,ext,
-//                                 hideUnscrollableSlider,
-//                                 disableUnscrollableDrag}={})
-// {
-//     width = width ?? 50;
-//     height = height ?? 100;
-//     bg = bg ?? UI.BG.BORDER;
-//     space = space ?? {...UI.SPACE.LRTB_5,column:5,row:5};
-//     ext = ext ?? {expand:true};
-//     hideUnscrollableSlider = hideUnscrollableSlider ?? false;
-//     disableUnscrollableDrag = disableUnscrollableDrag ?? false;
-
-//     const scroll = scene.rexUI.add.scrollablePanel({
-//         width: width,
-//         height: height,
-//         background: uRect(scene, bg),
-//         panel: {child:scene.rexUI.add.sizer({space,orientation:'y'})},
-//         slider: {
-//             track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
-//             thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
-//             space: 5,
-//             hideUnscrollableSlider: hideUnscrollableSlider,
-//             disableUnscrollableDrag: disableUnscrollableDrag,
-//             buttons: {
-//                 left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('up'),
-//                 right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('down'),
-//                 // step: 0.01,
-//             },
-//         },
-//     });
-
-//     const _panel = scroll.getElement('panel');
-
-//     const wheel = (pointer, gameObjects, dx, dy)=>{
-//         const x = pointer.worldX;
-//         const y = pointer.worldY;
-//         const bounds = scroll.getBounds();
-
-//         if (!Phaser.Geom.Rectangle.Contains(bounds, x, y)) {
-//             return;
-//         }
-        
-//         const speed = 0.001;
-//         scroll.setT(Phaser.Math.Clamp(scroll.t + dy * speed, 0, 1));
-//     }    
-
-//     // 操作介面
-//     scroll.addItem = (item,config={align:'left',expand:true})=>{_panel.add(item,config); return scroll;}
-//     scroll.clearAll = ()=>{_panel.removeAll(true); return scroll;}
-//     scroll.mouseWheel = (on)=>{
-//         if(on) {scene.input.on('wheel',wheel);}
-//         else {scene.input.off('wheel',wheel);}
-//     }
-
-//     scroll._panel = _panel;
-
-//     if(this&&this.add) {this.add(scroll, ext);}
-//     return scroll;
-// }
-
 export function uScroll(scene, {width, height, bg,
                                 space,
                                 ext,
@@ -472,40 +434,6 @@ export function uScroll(scene, {width, height, bg,
     if(this&&this.add) {this.add(scroll, ext);}
     return scroll;
 }
-
-// export function uGridScroll(scene, {width,height,bg,column,row,space,ext}={})
-// {
-//     width = width ?? 50;
-//     height = height ?? 100;
-//     bg = bg ?? UI.BG.BORDER;
-//     column = column ?? 1;
-//     row = row ?? 1;
-//     space = space ?? {left:5,right:5,top:5,bottom:5,column:5,row:5};
-//     ext = ext ?? {expand:true, key:'scroll'};
-
-//     const scroll = scene.rexUI.add.scrollablePanel({
-//         width: width,
-//         height: height,
-//         background: uRect(scene, bg),
-//         panel: {child:scene.rexUI.add.gridSizer({column,row,space})},
-//         slider: {
-//             track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
-//             thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
-//             space: 5,
-//             hideUnscrollableSlider: false,
-//             disableUnscrollableDrag: false,
-//         },
-//     });
-
-//     const panel = scroll.getElement('panel');
-
-//     // 操作介面
-//     scroll.addItem = (item,config={align:'left'})=>{panel.add(item,config); return scroll;}
-//     scroll.clearAll = ()=>{panel.removeAll(true); return scroll;}
-
-//     if(this&&this.add) {this.add(scroll, ext);}
-//     return scroll;
-// }
 
 export function uFix(scene, config={})
 {
@@ -657,4 +585,9 @@ export function uValueSlider(scene,config={})
 
     if(this&&this.add) {this.add(p,ext);}
     return p;
+}
+
+export function uCheck(scene, config={})
+{
+
 }

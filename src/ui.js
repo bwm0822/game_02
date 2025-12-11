@@ -32,6 +32,8 @@ import UiCount from './ui/uicount.js'
 import UiConfirm from './ui/uiconfirm.js'
 import UiAbility from './ui/uiability.js'
 
+import UiTest from './ui/uitest.js'
+
 
 let uiScene;
 let _mode = 0;
@@ -90,7 +92,7 @@ export default function createUI(scene)
     new UiConfirm(scene);
 
     // new UiCount_1(scene);
-    // new UiAbility_1(scene);
+    // new UiTest(scene);
 
     test();
 
@@ -213,8 +215,6 @@ export class Slot extends Icon
     get capacity() {return this.owner?.storage?.capacity; }
 
     get storage() {return this.content.storage;}
-
-
 
     get acts()
     {
