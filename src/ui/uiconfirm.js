@@ -14,13 +14,12 @@ export default class UiConfirm extends UiFrame
             y : GM.h/2,
             width: 250,
             orientation : 'y',
-            space : {left:10,right:10,bottom:10,top:20,item:20},
             space: {...UI.SPACE.LRTB.p10,item:20},
             cover: {interactive:true, alpha:0.5},
         }
         super(scene, config, UI.TAG.COUNT);
         UiConfirm.instance = this;
-        this.addBg(scene)
+        this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addMsg(scene)
             .addButtons(scene)
             .layout()

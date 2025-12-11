@@ -346,7 +346,9 @@ export let GM =
 
 export const UI =
 {
-    BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2}},
+    BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2},
+        BORDER_DARK:{strokeColor:GM.COLOR_DARK, strokeWidth:2},
+    },
     BTN:{DEF:'def',ITEM:'itm',OPTION:'option',BG:'bg'},
     SPACE:{
         LRTB: { p5:{left:5, right:5, top:5, bottom:5},
@@ -377,15 +379,20 @@ export const UI =
         INFO:'info',
         OBSERVE:'observe',
         COUNT:'count',
+        ABILITY:'ability',
     },
-    INFO:
-    {
+    INFO:{
         SLOT:0,
         PROP:1,
         BTN:2,
         ABILITY:{LR:3,TB:4},
         ACTIVE:{LR:5,TB:6},
     },
+    SCROLL:{
+        DEF: 'def',
+        GRID:'grid',
+        CON: 'con'
+    }
 }
 
 export const ROLE_ATTRS = {

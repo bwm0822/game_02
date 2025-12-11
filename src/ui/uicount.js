@@ -20,7 +20,7 @@ export default class UiCount extends UiFrame
         }
         super(scene, config, UI.TAG.COUNT);
         UiCount.instance = this;
-        this.addBg(scene)
+        this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addSlider(scene)
             .addButtons(scene)
             .layout()

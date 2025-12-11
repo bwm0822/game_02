@@ -30,6 +30,7 @@ import UiInfo from './ui/uiinfo.js'
 import UiObserve from './ui/uiobserve.js'
 import UiCount from './ui/uicount.js'
 import UiConfirm from './ui/uiconfirm.js'
+import UiAbility from './ui/uiability.js'
 
 
 let uiScene;
@@ -89,7 +90,7 @@ export default function createUI(scene)
     new UiConfirm(scene);
 
     // new UiCount_1(scene);
-    // new UiConfirm_1(scene);
+    // new UiAbility_1(scene);
 
     test();
 
@@ -655,7 +656,7 @@ export class AbilitySlot extends Pic
     }
 }
 
-class AbilityItem extends Pic
+export class AbilityItem extends Pic
 {
     constructor(scene, w, h, config)
     {
@@ -4252,7 +4253,7 @@ export class UiSettings extends UiContainerBase
 // }
 
 
-export class UiAbility extends UiBase
+export class UiAbility_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -4267,7 +4268,7 @@ export class UiAbility extends UiBase
             space:{left:10,right:10,bottom:10,item:5},
         }
         super(scene, config, 'UiAbility');
-        UiAbility.instance = this; 
+        UiAbility_1.instance = this; 
         this.addBg(scene) 
             .addTop(scene,{text:'ability'.lab()})
             .addMain(scene)
