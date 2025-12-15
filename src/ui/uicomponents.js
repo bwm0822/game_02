@@ -122,8 +122,8 @@ export function uLabel(scene, config={})
 {
     const {ext,text,icon,bg,...cfg}=config;
     if(bg) {cfg.background=uRect(scene, bg);}
-    if(text) {cfg.text=uBbc(scene, {text:text});}
-    if(icon) {cfg.icon=uSprite(scene, {icon:icon});}
+    if(text) {cfg.text=uBbc(scene, typeof text === 'object' ? text : {text:text});}
+    if(icon) {cfg.icon=uSprite(scene, typeof icon === 'object' ? icon : {icon:icon});}
     const lab = scene.rexUI.add.label(cfg); 
     lab._bg=cfg.background;
     lab._text=cfg.text;
@@ -415,9 +415,9 @@ export function uScroll(scene, {width, height, bg,
 
     // 操作介面    
     scroll.addItem = (item,config)=>{
-        config = config ?? style === UI.SCROLL.DEF ? {align:'left',expand:true}
+        config = config ?? (style === UI.SCROLL.DEF ? {align:'left',expand:true}
                                                     : style === UI.SCROLL.GRID ? {align:'left'}
-                                                                                : {};
+                                                                                : {});
         _panel.add(item,config); 
         return scroll;
     }
@@ -587,7 +587,106 @@ export function uValueSlider(scene,config={})
     return p;
 }
 
-export function uCheck(scene, config={})
+export function uDropdown(scene, {width=100,space={top:5,bottom:5},ext,
+                                text='----', 
+                                options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
+                                stringOption=false,
+                                onchange}={})
 {
 
+    const config = {
+        // x: 400, y: 300,
+        options: options,
+        // background: uRect(scene,{color:GM.COLOR_GRAY, radius:10, strokeColor:GM.COLOR_WHITE, strokeThickness:3}),
+        background: uRect(scene,{color:GM.COLOR.GRAY}),
+        // icon: rect(scene, {color:GM.COLOR_DARK, radius:10}),
+        text: uBbc(scene, {text:text, align:'center'}).setFixedSize(width, 0),
+        space: space,
+        list: {
+            createBackgroundCallback: function (scene) {
+                return uRect(scene, {color:GM.COLOR.GRAY,strokeColor:GM.COLOR.WHITE, strokeThickness:3});
+            },
+            createButtonCallback: function (scene, option, index, options) {
+                var txt = (stringOption) ? option : option.text;
+                var button = uLabel(scene,{ text:{text:txt,padding:5}, bg:{color:GM.COLOR.GRAY} });
+                button.value = (stringOption) ? undefined : option.value;
+                return button;
+            },
+
+            // scope: dropDownList
+            onButtonClick: function (button, index, pointer, event) {
+                // Set label text, and value
+                console.log(`Select ${button.text}, value=${button.value}\n`);
+                this.text = button.text;
+                this.value = button.value;
+                
+            },
+
+            // scope: dropDownList
+            onButtonOver: function (button, index, pointer, event) {
+                // button.getElement('background').setStrokeStyle(2, GM.COLOR_WHITE);
+                button._bg.setFillStyle(GM.COLOR.LIGHTGRAY);
+            },
+
+            // scope: dropDownList
+            onButtonOut: function (button, index, pointer, event) {
+                // button.getElement('background').setStrokeStyle();
+                button._bg.setFillStyle(GM.COLOR.GRAY);
+            },
+        
+            // expandDirection: 'up',
+        },
+        setValueCallback: function (dropDownList, value, previousValue) {
+                console.log('setValueCallback',value);
+                const option = options.find(item => item.value === value);
+                dropDownList.text = option.text;
+                onchange?.(value)
+            },
+
+        value: undefined,
+    }
+
+    const dd = scene.rexUI.add.dropDownList(config)
+
+    if(this&&this.add) {this.add(dd,ext);}
+    return dd;
+}
+
+export function uInput(scene, config={})
+{
+    const width = config.width ?? 100;
+    const height = config.height ?? 36;
+    const bg = config.bg ?? {color:GM.COLOR.LIGHT};
+    
+    const p = uPanel(scene)
+    
+    const input = uLabel.call(p,scene,{bg:bg,
+                                text:{fixedWidth:width, 
+                                        fixedHeight:height, 
+                                        valign:'center'}})
+    input.setInteractive()
+        .on('pointerdown', function () {
+            const config = {
+                enterClose: false,
+                onTextChanged: (textObject, text) =>{textObject.text=text;}
+            }
+            scene.rexUI.edit(input._text, config);
+        });
+
+    p.addSpace();
+
+    uButton.call(p, scene,{text:'送出',
+                            style:UI.BTN.BG,
+                            onclick: ()=>{
+                                config.onclick?.(p.getValue());
+                                p.clearInput();
+                    }});
+
+    if(this&&this.add) {this.add(p,config.ext);}
+
+    // 提供外界操作
+    p.clearInput = ()=>{input._text.setText('');};
+    p.getValue = ()=>{return input._text.text;};
+
+    return p;
 }

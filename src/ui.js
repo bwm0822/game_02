@@ -31,6 +31,7 @@ import UiObserve from './ui/uiobserve.js'
 import UiCount from './ui/uicount.js'
 import UiConfirm from './ui/uiconfirm.js'
 import UiAbility from './ui/uiability.js'
+import UiDebuger from './ui/uidebuger.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -91,7 +92,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiCount_1(scene);
+    // new UiDebuger_1(scene);
     // new UiTest(scene);
 
     test();
@@ -3426,7 +3427,7 @@ export class UiGameOver extends UiBase
 
 
 
-export class UiDebuger extends UiBase
+export class UiDebuger_1 extends UiBase
 {
     static instance=null;
     constructor(scene)
@@ -3440,7 +3441,7 @@ export class UiDebuger extends UiBase
         }
 
         super(scene, config, 'UiDebuger')
-        UiDebuger.instance=this;
+        UiDebuger_1.instance=this;
         this.scene=scene;
         this.addBg_Int(scene)
             .addTop(scene, {text:'除錯器'})

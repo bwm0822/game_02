@@ -13,23 +13,25 @@ export default class UiTest extends UiFrame
             x: GM.w/2,
             y: GM.h/2,
             width: 300,
-            height : 100,
+            height : 200,
             orientation: 'y',
-            // space: {...UI.SPACE.LRTB.p10,item:20},
+
+            space: {item:20},
             // cover: {interactive:true, alpha:0.5},
         }
         super(scene, config, UI.TAG.TEST);
         UiTest.instance = this;
         this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addTop(scene)
-            .layout()
+            .test()
 
-        this.test();
     }
 
     test()
     {
         const chk = ui.uButton.call(this, this.scene, {text:'check', style:UI.BTN.CHECK,ext:{align:'left'}});
+        const dp=ui.uDropdown.call(this,this.scene,{ext:{align:'left'}});
+        dp.setValue('us');
         this.layout();
     }
 }

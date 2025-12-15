@@ -15,12 +15,12 @@ export default class Local
 
     static lab(key)
     {
-        return this._local?.[key]?.[this.lang].lab ?? `[color=red]${key}[/color]`;
+        return this._local?.[key]?.[this.lang]?.lab ?? `[color=red]${key}[/color]`;
     }
 
     static des(key)
     {
-        return this._local?.[key]?.[this.lang].des ?? '';//`[color=red]${key}[/color]`;
+        return this._local?.[key]?.[this.lang]?.des ?? '';//`[color=red]${key}[/color]`;
     }
 
     

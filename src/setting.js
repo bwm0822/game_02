@@ -31,6 +31,7 @@ export let GM =
         COUNT : 0xff0000,//0x260e04;
         WHITE : 0xffffff,
         GRAY : 0x777777,
+        LIGHTGRAY : 0xAAAAAA,
         RED : 0xff0000,
         GREEN : 0x00ff00,
         YELLOW : 0xffff00,
@@ -381,6 +382,7 @@ export const UI =
         COUNT:'count',
         ABILITY:'ability',
         TEST:'test',
+        DEBUGER:'debuger',
     },
     INFO:{
         SLOT:0,
