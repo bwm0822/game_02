@@ -199,7 +199,7 @@ export default class UiDebuger extends UiFrame
         this._page.addItem(ui.uButton(this.scene, 
                 {text:name,style:UI.BTN.CHECK,
                 onclick:()=>{ obj[key] = !obj[key]; }})
-            .setValue(obj[key]));
+                .setValue(obj[key]));
 
         return this;
     }
@@ -214,7 +214,7 @@ export default class UiDebuger extends UiFrame
                     .setValue(obj[key]);
 
         this._page.addItem(p);
-        
+
         return this;
     }
     

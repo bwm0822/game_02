@@ -16,7 +16,7 @@ export default class UiTest extends UiFrame
             height : 200,
             orientation: 'y',
 
-            space: {item:20},
+            // space: {item:20},
             // cover: {interactive:true, alpha:0.5},
         }
         super(scene, config, UI.TAG.TEST);
@@ -24,14 +24,22 @@ export default class UiTest extends UiFrame
         this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addTop(scene)
             .test()
+            .layout()
 
     }
 
     test()
     {
-        const chk = ui.uButton.call(this, this.scene, {text:'check', style:UI.BTN.CHECK,ext:{align:'left'}});
-        const dp=ui.uDropdown.call(this,this.scene,{ext:{align:'left'}});
-        dp.setValue('us');
-        this.layout();
+        // const chk = ui.uButton.call(this, this.scene, {text:'check', style:UI.BTN.CHECK,ext:{align:'left'}});
+        // const dp=ui.uDropdown.call(this,this.scene,{ext:{align:'left'}});
+        // dp.setValue('us');
+        // this.layout();
+
+        // ui.uFold.call(this,this.scene,
+        //     {onclick:()=>{console.log('fold')}}
+        // );
+        ui.uFold.call(this,this.scene,{prefix:false});
+        this.add(ui.uFold(this.scene,{onclick:()=>{this.layout();}}),{expand:true});
+        return this;
     }
 }

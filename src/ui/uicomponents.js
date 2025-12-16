@@ -1,4 +1,4 @@
-import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
+import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea, AlphaMaskImage} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {GM, UI} from '../setting.js'
 import {Pic} from '../uibase.js'
 import Utility from '../utility.js'
@@ -139,27 +139,38 @@ export function uButton(scene,config={})
 
     const {onover, onout, ondown, onclick, ext, 
             style=UI.BTN.DEF, 
+            prefix=true,
             cDEF=GM.COLOR.GRAY,
             cHL=GM.COLOR.WHITE,
-            cBG=GM.COLOR.LIGHT,
+            cBG=GM.COLOR.DARK,
+            cBGH=GM.COLOR.LIGHT,
             ...cfg}=config;
     
     cfg.space = cfg.space ?? 5;
 
+    const UCHK = (style===UI.BTN.CHECK)?'☐':'▸';
+    const CHK = (style===UI.BTN.CHECK)?'☑':'▾';
+
     switch(style)
     {
-        case UI.BTN.BG:
         case UI.BTN.DEF:
             cfg.bg = cfg.bg ?? {color:cBG, radius:10};
             break;
 
         case UI.BTN.ITEM:
         case UI.BTN.OPTION:    
-            cfg.bg = cfg.bg ?? {color:cBG};
+            cfg.bg = cfg.bg ?? {color:cBGH};
             break;
 
         case UI.BTN.CHECK:
-            cfg.text = '☐ ' + (cfg.text ?? '');
+        case UI.BTN.FOLD:
+            if(prefix)
+            {
+                if(typeof cfg.text==='object')
+                    cfg.text.text = UCHK+' '+(cfg.text?.text??'');
+                else
+                    cfg.text = UCHK+' '+(cfg.text??'');
+            }
             break;
     }
 
@@ -175,7 +186,8 @@ export function uButton(scene,config={})
             btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
             break;
         case UI.BTN.CHECK:
-            btn.checked = false;
+        case UI.BTN.FOLD:
+            btn.value = false;
             break;
     }
 
@@ -183,13 +195,17 @@ export function uButton(scene,config={})
     {
         switch(style)
         {
-            case UI.BTN.BG:
-                btn._bg?.setFillStyle(btn._bg.fillColor,on?0.5:1);
-                break;
             case UI.BTN.DEF:
-                btn._bg?.setFillStyle(btn._bg.fillColor,on?0.5:1);
-                btn._text?.setTint(on?cDEF:cHL);
-                btn._icon?.setTint(on?cDEF:cHL);
+                if(btn._bg) 
+                {
+                    // btn._bg.setFillStyle(btn._bg.fillColor,on?0.5:1);
+                    btn._bg.setFillStyle(on?cBGH:cBG);
+                }
+                else
+                {
+                    btn._text?.setTint(on?cDEF:cHL);
+                    btn._icon?.setTint(on?cDEF:cHL);
+                }
                 break;
             case UI.BTN.ITEM:
             case UI.BTN.OPTION:
@@ -200,11 +216,11 @@ export function uButton(scene,config={})
 
      // 提供外界操作
     btn.setValue = (on)=>{
-        if(style===UI.BTN.CHECK)
+        if(style===UI.BTN.CHECK||style===UI.BTN.FOLD)
         {
-            btn.checked = on;
-            const pre = on?'☐':'☑';
-            const post = on?'☑':'☐';
+            btn.value = on;
+            const pre = on?UCHK:CHK;
+            const post = on?CHK:UCHK;
             btn._text.setText(btn._text.text.replace(pre,post));
         }
         else
@@ -235,7 +251,7 @@ export function uButton(scene,config={})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
         .on('pointerdown',()=>{ondown?.(btn)})
         .on('pointerup',()=>{
-            if(style===UI.BTN.CHECK) {btn.setValue(!btn.checked);}
+            if(style===UI.BTN.CHECK||style===UI.BTN.FOLD) {btn.setValue(!btn.value);}
             onclick?.(btn)
         })
 
@@ -272,7 +288,7 @@ export function uTop(scene, {text,color,onclose}={})
     //{bg:strokeColor:GM.COLOR_GRAY,strokeWidth:2}
     uButton.call(row,scene,{
                             icon: GM.ICON_CLOSE,
-                            bg: {},
+                            bg: false,
                             space: 0,
                             ext: {align:'right',expand:false},
                             onclick: onclose,
@@ -679,7 +695,6 @@ export function uInput(scene, config={})
     p.addSpace();
 
     uButton.call(p, scene,{text:'送出',
-                            style:UI.BTN.BG,
                             onclick: ()=>{
                                 config.onclick?.(p.getValue());
                                 p.clearInput();
@@ -691,5 +706,49 @@ export function uInput(scene, config={})
     p.clearInput = ()=>{input._text.setText('');};
     p.getValue = ()=>{return input._text.text;};
 
+    return p;
+}
+
+export function uFold(scene,config={})
+{
+    const {
+        title='Title', 
+        color=GM.COLOR.YELLOW, 
+        prefix=true, 
+        indent=GM.FONT_SIZE,
+        ext={expand:true}
+    } = config;
+
+    const p = uPanel(scene,{orientation:'y'});
+
+    uButton.call(p,scene,{
+        text: {text:title,color:color},
+        ext: {align:'left',expand:true},
+        style: UI.BTN.FOLD,
+        prefix: prefix,
+        onclick: (btn)=>{
+                        if(btn.value) {_content.show();}
+                        else {_content.hide();}
+                        this.layout?.();
+                        config.onclick?.(btn);
+                         }});
+    const _content = uPanel.call(p,scene,{
+                        orientation:'y',
+                        ext:{expand:true,padding:{left:indent}}})
+                    .hide();
+
+    _content.add(uBbc(scene,{text:'fold 測試。'}),{align:'left'})   // for test
+            .add(uButton(scene,{text:'fold 測試。',style:UI.BTN.ITEM}),{align:'left'})   // for test
+
+    if(this&&this.add) {this.add(p,ext);}
+
+    // 操作介面    
+    p.addItem = (item,config)=>{
+        config=config??{align:'left'};
+        _content.add(item,config); return p;
+    }
+
+    p.clearAll = ()=>{_content.removeAll(true); return p;}
+    
     return p;
 }

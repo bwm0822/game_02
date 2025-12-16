@@ -94,7 +94,7 @@ export default function createUI(scene)
     new UiConfirm(scene);
 
     // new UiDebuger_1(scene);
-    // new UiTest(scene);
+    new UiTest(scene);
 
     test();
 
