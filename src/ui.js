@@ -68,9 +68,10 @@ export default function createUI(scene)
     DragService.init(scene);
 
     new UiCover(scene);             // 1
+    new UiAbility(scene);
     new UiMain(scene);              // 2
     new UiEffect(scene);
-    new UiAbility(scene);
+
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4

@@ -1,11 +1,12 @@
-import {GM} from '../setting.js';
+import {GM,DEBUG,DBG} from '../setting.js';
 import DB from '../db.js';
 
-let DEBUG = false; // 是否開啟 debug 模式
-let DBG_TYPE = GM.DBG_ALL;
+
+// let DEBUG = true; // 是否開啟 debug 模式
+// let DBG_TYPE = GM.DBG_ALL;
 
 
-function debugDraw(type=DBG_TYPE,text)
+function debugDraw(mode=DEBUG.mode,text)
 {
     if(!this._dbgGraphics)
     {
@@ -21,7 +22,7 @@ function debugDraw(type=DBG_TYPE,text)
     }
 
     let draw_body = ()=>{
-        if((type & GM.DBG_BODY)===0) {return;}
+        if((mode & DBG.MODE.BODY)===0) {return;}
         if(this.body)
         {
             // body 的 x, y 是 body 的左上角
@@ -35,7 +36,7 @@ function debugDraw(type=DBG_TYPE,text)
     }
 
     let draw_grid = ()=>{
-        if((type & GM.DBG_GRID)===0) {return;}
+        if((mode & DBG.MODE.GRID)===0) {return;}
         if(this._grid)
         {
             // grid 的 x, y 是 body 的中心點
@@ -49,7 +50,7 @@ function debugDraw(type=DBG_TYPE,text)
     }
 
     let draw_zone = ()=>{
-        if((type & GM.DBG_ZONE)===0) {return;}
+        if((mode & DBG.MODE.ZONE)===0) {return;}
         if(this._zone)
         {
             // zone 的 x, y 是 zone 的中心點
@@ -63,7 +64,7 @@ function debugDraw(type=DBG_TYPE,text)
     }
 
     let draw_pts = ()=>{
-        if(type === GM.DBG_CLR) {return;}
+        if(mode === DBG.MODE.CLR) {return;}
         for(let p of this.pts)
         {
             this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
@@ -83,7 +84,7 @@ function debugDraw(type=DBG_TYPE,text)
     }
 
     let show_text = (text)=>{
-        if(type === GM.DBG_CLR) {return;}
+        if(mode === DBG.MODE.CLR) {return;}
         if(this._dbgText)
         {
             this._dbgText.x = this.x;
@@ -321,13 +322,13 @@ class View extends Phaser.GameObjects.Container
                 // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(true);
                 emit('over');
-                if(DEBUG){debugDraw.bind(this)();}
+                if(DEBUG.enable){debugDraw.bind(this)();}
             })
             .on('pointerout',()=>{
                 // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(false);
                 emit('out');
-                if(DEBUG){debugDraw.bind(this)(GM.DBG_CLR);}
+                if(DEBUG.enable){debugDraw.bind(this)(DBG.MODE.CLR);}
             })
             .on('pointerdown',(pointer)=>{
                 // if(!Role.getPlayer().isInteractive(this)) {return;}

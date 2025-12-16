@@ -199,7 +199,7 @@ export function uButton(scene,config={})
     }
 
      // 提供外界操作
-    btn.set = (on)=>{
+    btn.setValue = (on)=>{
         if(style===UI.BTN.CHECK)
         {
             btn.checked = on;
@@ -211,8 +211,10 @@ export function uButton(scene,config={})
         {
             btn._text?.setColor(on?cHL:cDEF);
         }
+
+        return btn;
     }
-    btn.setText = (text)=>{btn._text?.setText(text);}
+    btn.setText = (text)=>{btn._text?.setText(text); return btn;}
     btn.setEnable = (on)=>{
         if(on) {    
             btn.setInteractive();
@@ -224,6 +226,7 @@ export function uButton(scene,config={})
             btn._text?.setAlpha(0.5);
             btn._icon?.setAlpha(0.5);
         }
+        return btn;
     }
 
     // 事件偵測
@@ -232,7 +235,7 @@ export function uButton(scene,config={})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
         .on('pointerdown',()=>{ondown?.(btn)})
         .on('pointerup',()=>{
-            if(style===UI.BTN.CHECK) {btn.set(!btn.checked);}
+            if(style===UI.BTN.CHECK) {btn.setValue(!btn.checked);}
             onclick?.(btn)
         })
 

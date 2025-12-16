@@ -1,5 +1,5 @@
 
-export let GM =
+export const GM =
 {
     COLOR_PRIMARY : 0x4e342e,
     COLOR_LIGHT : 0x7b5e57,
@@ -290,13 +290,6 @@ export let GM =
     PORTRAITS_H : 80,
     PORTRAITS: {W:80,H:80},
 
-    // debug
-    DBG_BODY :  0b001,
-    DBG_GRID :  0b010,
-    DBG_ZONE :  0b100,
-    DBG_ALL :   0b111,
-    DBG_CLR :   0b000,
-
     // state
     ST_IDLE : 'idle',
     ST_NEXT : 'next',
@@ -442,3 +435,21 @@ export const ORDER = [
     GM.SPLIT,
     GM.OPENBAG,
 ];
+
+
+export const DBG = 
+{
+    MODE: {
+        BODY :  0b001,
+        GRID :  0b010,
+        ZONE :  0b100,
+        ALL :   0b111,
+        CLR :   0b000,
+    },
+}
+
+export const DEBUG = 
+{
+    enable: false,       // 是否開啟 debug 模式
+    mode: DBG.MODE.ALL, // 除錯模式
+}

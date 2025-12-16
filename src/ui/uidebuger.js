@@ -1,5 +1,5 @@
 import UiFrame from './uiframe.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI,DEBUG,DBG} from '../setting.js'
 import * as ui from './uicomponents.js'
 import {getPlayer} from '../roles/player.js'
 import TimeManager from '../time.js'
@@ -117,6 +117,42 @@ export default class UiDebuger extends UiFrame
         this.layout();
     }
 
+    ///////////////////////////////////////////////////
+    // Cmd Page
+    ///////////////////////////////////////////////////
+    page_Cmd()
+    {
+        const scene = this.scene;
+        this._page.clearAll();
+        this._area = this.createArea(scene);
+        this._input = this.addInput(scene);
+        this._page.addItem(this._area)
+                    .addItem(this._input)
+    }
+
+    print(str)
+    {
+        this._area.appendText(str);
+        this._area.scrollToBottom();
+    }
+
+    process(cmd)
+    {
+        console.log('cmd =',cmd)
+        const args = cmd.split(' ');
+        try
+        {
+            const func = eval(`cmd_${args[0]}`);
+            func.bind(this)(args);
+        }
+        catch(e)
+        {
+            this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')
+        }
+        // if(func) {func.bind(this)(args);}
+        // else {this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')}
+    }
+
     createArea(scene)
     {
         return scene.rexUI.add.textArea({
@@ -140,50 +176,54 @@ export default class UiDebuger extends UiFrame
         return input;
     }
 
-    process(cmd)
-    {
-        console.log('cmd =',cmd)
-        const args = cmd.split(' ');
-        try
-        {
-            const func = eval(`cmd_${args[0]}`);
-            func.bind(this)(args);
-        }
-        catch(e)
-        {
-            this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')
-        }
-        // if(func) {func.bind(this)(args);}
-        // else {this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')}
-    }
-
-    print(str)
-    {
-        this._area.appendText(str);
-        this._area.scrollToBottom();
-    }
-
-    page_Cmd()
-    {
-        const scene = this.scene;
-        this._page.clearAll();
-        this._area = this.createArea(scene);
-        this._input = this.addInput(scene);
-        this._page.addItem(this._area)
-                    .addItem(this._input)
-    }
-
+    ///////////////////////////////////////////////////
+    // Setting Page
+    ///////////////////////////////////////////////////
     page_Setting()
     {
+        const options_mode=
+        [
+            {text:'實體', value:DBG.MODE.BODY},
+            {text:'格線', value:DBG.MODE.GRID},
+            {text:'區域', value:DBG.MODE.ZONE},
+            {text:'全部', value:DBG.MODE.ALL},
+        ]
+
         this._page.clearAll();
-        // setting
-        this._page.addItem(ui.uButton(this.scene, {text:'重置遊戲',style:UI.BTN.CHECK}));
+        this.addCheck('除錯', DEBUG, 'enable')
+            .addDropdown('模式', DEBUG, 'mode', options_mode);
     }
+
+    addCheck(name, obj, key)
+    {
+        this._page.addItem(ui.uButton(this.scene, 
+                {text:name,style:UI.BTN.CHECK,
+                onclick:()=>{ obj[key] = !obj[key]; }})
+            .setValue(obj[key]));
+
+        return this;
+    }
+
+    addDropdown(name, obj, key, options)
+    {
+        const p = ui.uPanel(this.scene,{space:{item:10}});
+        ui.uBbc.call(p,this.scene, {text:name});
+        ui.uDropdown.call(p,this.scene, 
+                    {options:options,
+                    onchange:(v)=>{ obj[key]=v; }})
+                    .setValue(obj[key]);
+
+        this._page.addItem(p);
+        
+        return this;
+    }
+    
+    ///////////////////////////////////////////////////
 
     show()
     {
         super.show();
-        this._tabs.init();
+        !this._tab&&this._tabs.init();
         this.layout();
     }
 

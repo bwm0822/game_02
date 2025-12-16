@@ -71,10 +71,10 @@ export default class UiAbility extends UiFrame
     showMenu()
     {
         const onclick=(item)=>{
-            this._itemSel?.set(false);
+            this._itemSel?.setValue(false);
             this._itemSel = item;
             this.drawTree(this.player.abTree[item.id]);
-            item.set(true);
+            item.setValue(true);
         }
     
 
