@@ -15,7 +15,7 @@ export default class UiTime extends UiFrame
             // space:{top:10,bottom:10,left:10,right:10,item:10},
         }
 
-        super(scene, config ,'UiTime')
+        super(scene, config , UI.TAG.TIME)
         UiTime.instance=this;
         this.scene=scene;
         this.addBg(scene)

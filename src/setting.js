@@ -378,6 +378,7 @@ export const UI =
         DEBUGER:'debuger',
         EFFECT:'effect',
         TIME:'time',
+        MESSAGE:'message',
     },
     INFO:{
         SLOT:0,

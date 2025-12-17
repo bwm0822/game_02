@@ -35,6 +35,7 @@ import UiDebuger from './ui/uidebuger.js'
 import UiCursor from './ui/uicursor.js'
 import UiEffect  from './ui/uieffect.js'
 import UiTime  from './ui/uitime.js'
+import UiMessage  from './ui/uimessage.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -96,7 +97,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiEffect_1(scene);
+    // new UiMessage_1(scene);
     // new UiTest(scene);
 
     test();
@@ -3239,14 +3240,14 @@ export class UiChangeScene extends UiBase
 
 }
 
-export class UiMessage extends ContainerLite
+export class UiMessage_1 extends ContainerLite
 {
     static instance = null;
     constructor(scene)
     {
         super(scene);
         Ui.addLayer(scene, 'UiMessage', this);
-        UiMessage.instance = this;
+        UiMessage_1.instance = this;
         this.scene = scene;
 
         let config =

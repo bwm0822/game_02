@@ -95,8 +95,8 @@ export default class UiInv extends UiFrame
     close()
     {
         super.close();
-        this.unregister();
-        Ui.closeAll(GM.UI_LEFT);
+        this.unregister()
+        this.closeAll(GM.UI_LEFT);
     }
 
     show(owner)
