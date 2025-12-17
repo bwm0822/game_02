@@ -376,6 +376,8 @@ export const UI =
         ABILITY:'ability',
         TEST:'test',
         DEBUGER:'debuger',
+        EFFECT:'effect',
+        TIME:'time',
     },
     INFO:{
         SLOT:0,
@@ -450,6 +452,7 @@ export const DBG =
 
 export const DEBUG = 
 {
-    enable: false,       // 是否開啟 debug 模式
-    mode: DBG.MODE.ALL, // 除錯模式
+    enable: false,          // 是否開啟 debug 模式
+    mode: DBG.MODE.ALL,     // 除錯模式
+    loc: false,             // 顯示座標及weight
 }

@@ -44,16 +44,10 @@ export default class UiConfirm extends UiFrame
     {
         const p = ui.uPanel(scene);        
         p.add(ui.uButton(scene,{text:'❌',
-                                cBG:GM.COLOR.DARK,
-                                style:UI.BTN.BG,
-                                onclick:this.cancle.bind(this)
-                        }))
+                        onclick:this.cancle.bind(this)} ))
             .addSpace()
             .add(ui.uButton(scene,{text:'✔️',
-                            cBG:GM.COLOR.DARK,
-                            style:UI.BTN.BG,
-                            onclick:this.confirm.bind(this)
-                        }))
+                            onclick:this.confirm.bind(this)} ))
         this.add(p,{expand:true});
         return this;
     }

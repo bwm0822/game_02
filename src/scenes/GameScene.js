@@ -6,8 +6,8 @@ import Record from '../record.js'
 import QuestManager from  '../quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
-import {GM} from '../setting.js';
-import {UiCursor, UiMessage, 
+import {GM,DEBUG} from '../setting.js';
+import {UiMessage, 
         UiChangeScene, UiGameOver, UiManufacture, UiCover} from '../ui.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
@@ -15,6 +15,7 @@ import UiOption from '../ui/uioption.js'
 import UiInv from '../ui/uiinv.js'
 import UiDialog from '../ui/uidialog.js'
 import UiTrade from '../ui/uitrade.js'
+import UiCursor from '../ui/uicursor.js'
 
 
 import TimeManager from '../time.js';
@@ -211,7 +212,7 @@ export class GameScene extends Scene
             
         })
         .on('pointermove',(pointer)=>{
-            this.showMousePos();
+            if(DEBUG.loc) {this.showMousePos();}
             if(this._player.state===GM.ST_ABILITY) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};

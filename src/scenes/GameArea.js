@@ -1,12 +1,15 @@
 import { GameScene } from "./GameScene.js";
 // import {UiMain, UiTime, UiEffect} from '../ui.js';
-import {UiTime, UiEffect} from '../ui.js';
 import UiMain from '../ui/uimain.js';
+import UiEffect from '../ui/uieffect.js';
+import UiTime from '../ui/uitime.js';
 
 import TimeManager,{Schedular} from '../time.js';
 // import * as Role from '../role.js';
 // import {Avatar} from '../role.js';
 import {Player} from '../roles/player.js';
+
+
 
 let lutAmbient = [   
     0x666666	,// 0x333333    ,

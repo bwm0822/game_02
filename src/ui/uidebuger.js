@@ -5,6 +5,8 @@ import {getPlayer} from '../roles/player.js'
 import TimeManager from '../time.js'
 
 
+const E={CHK:'check',DD:'dropdown'};
+
 function cmd_get(args)
 {
     // [get] [gold/item] [id] [count]
@@ -189,22 +191,44 @@ export default class UiDebuger extends UiFrame
             {text:'全部', value:DBG.MODE.ALL},
         ]
 
+        const elm=this.element.bind(this);
+
         this._page.clearAll();
-        this.addCheck('除錯', DEBUG, 'enable')
-            .addDropdown('模式', DEBUG, 'mode', options_mode);
+
+        this.addRow(elm(E.CHK,'除錯', DEBUG, 'enable'),
+                    elm(E.DD,'模式', DEBUG, 'mode', options_mode))
+            .addElm(elm(E.CHK,'座標', DEBUG, 'loc'))
     }
 
-    addCheck(name, obj, key)
+    addRow(...options)
     {
-        this._page.addItem(ui.uButton(this.scene, 
-                {text:name,style:UI.BTN.CHECK,
-                onclick:()=>{ obj[key] = !obj[key]; }})
-                .setValue(obj[key]));
-
+        const p = ui.uPanel(this.scene,{space:{item:10}});
+        options.forEach((opt)=>{p.add(opt);});
+        this._page.addItem(p);
         return this;
     }
 
-    addDropdown(name, obj, key, options)
+    addElm(elm)
+    {
+        this._page.addItem(elm);
+        return this;
+    }
+
+    element(type, name, obj, key, options)
+    {
+        if(type===E.CHK) {return this.check(name, obj, key);}
+        else if(type===E.DD) {return this.dropdown(name, obj, key, options);}
+    }
+
+    check(name, obj, key)
+    {
+        return ui.uButton(this.scene, 
+                {text:name,style:UI.BTN.CHECK,
+                onclick:()=>{ obj[key] = !obj[key]; }})
+                .setValue(obj[key]);
+    }
+
+    dropdown(name, obj, key, options)
     {
         const p = ui.uPanel(this.scene,{space:{item:10}});
         ui.uBbc.call(p,this.scene, {text:name});
@@ -212,10 +236,7 @@ export default class UiDebuger extends UiFrame
                     {options:options,
                     onchange:(v)=>{ obj[key]=v; }})
                     .setValue(obj[key]);
-
-        this._page.addItem(p);
-
-        return this;
+        return p;
     }
     
     ///////////////////////////////////////////////////

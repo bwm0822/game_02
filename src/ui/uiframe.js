@@ -1,10 +1,10 @@
 import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
-import {UiCursor} from '../ui.js'
 import {GM} from '../setting.js'
 import {getPlayer} from '../roles/player.js'
 import {Mark} from '../gameUi.js'
+import UiCursor from './uicursor.js'
 
 //--------------------------------------------------
 // 類別 : UI 視窗框架
@@ -107,12 +107,14 @@ export default class UiFrame extends Sizer
     {
         if(this._con) {this._con.visible=false;} 
         else {super.hide();}
+        return this;
     }
 
     show()
     {
         if(this._con) {this._con.visible=true;} 
         else {super.show();}
+        return this;
     }
 
     close() {this.hide();}

@@ -32,6 +32,9 @@ import UiCount from './ui/uicount.js'
 import UiConfirm from './ui/uiconfirm.js'
 import UiAbility from './ui/uiability.js'
 import UiDebuger from './ui/uidebuger.js'
+import UiCursor from './ui/uicursor.js'
+import UiEffect  from './ui/uieffect.js'
+import UiTime  from './ui/uitime.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -93,8 +96,8 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiDebuger_1(scene);
-    new UiTest(scene);
+    // new UiEffect_1(scene);
+    // new UiTest(scene);
 
     test();
 
@@ -2596,7 +2599,7 @@ export class UiCount_1 extends UiContainerBase
 
 // }
 
-export class UiCursor extends Phaser.GameObjects.Sprite
+export class UiCursor_1 extends Phaser.GameObjects.Sprite
 {
     static icons = {
         // none :  {sprite:'cursors/cursor_none', origin:{x:0.25,y:0}, scale:1},
@@ -2628,7 +2631,7 @@ export class UiCursor extends Phaser.GameObjects.Sprite
     constructor(scene)
     {
         super(scene);
-        UiCursor.instance = this;
+        UiCursor_1.instance = this;
         this.scene = scene;
         scene.add.existing(this);
         this.setDepth(Infinity);
@@ -3579,7 +3582,7 @@ export class UiDebuger_1 extends UiBase
     static show() {UiDebuger.instance?.show();}
 }
 
-export class UiTime extends UiBase
+export class UiTime_1 extends UiBase
 {
     static instance=null;
     constructor(scene)
@@ -3593,7 +3596,7 @@ export class UiTime extends UiBase
         }
 
         super(scene, config ,'UiTime')
-        UiTime.instance=this;
+        UiTime_1.instance=this;
         this.scene=scene;
         this.addBg(scene)
             .addTime(scene)
@@ -4454,7 +4457,7 @@ export class UiAbility_1 extends UiBase
 }
 
 
-class Effect extends Pic
+export class Effect extends Pic
 {
     constructor(scene, w, h, effect, style=GM.IF_ACTIVE_TB)
     {
@@ -4480,7 +4483,7 @@ class Effect extends Pic
 
 }
 
-export class UiEffect extends UiBase
+export class UiEffect_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -4495,7 +4498,7 @@ export class UiEffect extends UiBase
             // space:{left:10,right:10,bottom:10,item:5},
         }
         super(scene, config, 'UiEffect');
-        UiEffect.instance = this;
+        UiEffect_1.instance = this;
         this.setOrigin(0.5,0);
         this//.addBg(scene,{color:GM.COLOR_WHITE,alpha:0.5}) 
             .addMain(scene)

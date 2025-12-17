@@ -3,10 +3,11 @@ import Utility from '../utility.js';
 import Record from '../record';
 import Local from '../local';
 import DB from '../db';
-import {UiSettings, UiCursor} from '../ui.js'
+import {UiSettings} from '../ui.js'
 import {GM} from '../setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
+import UiCursor from '../ui/uicursor.js'
 
 export class MainMenu extends Scene
 {
