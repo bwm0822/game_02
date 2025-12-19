@@ -120,10 +120,12 @@ export function uPanel(scene, config={})
 
 export function uLabel(scene, config={})
 {
-    const {ext,text,icon,bg,...cfg}=config;
+    const {ext,text,icon,tcon,bg,...cfg}=config;
     if(bg) {cfg.background=uRect(scene, bg);}
-    if(text) {cfg.text=uBbc(scene, typeof text === 'object' ? text : {text:text});}
-    if(icon) {cfg.icon=uSprite(scene, typeof icon === 'object' ? icon : {icon:icon});}
+    if(text!==undefined) {cfg.text=uBbc(scene, typeof text==='object'?text:{text:text});}
+    if(icon) {cfg.icon=uSprite(scene, typeof icon==='object'?icon:{icon:icon});}
+    if(tcon) {cfg.icon=uBbc(scene, typeof text==='object'?icon:{text:tcon});}
+    
     const lab = scene.rexUI.add.label(cfg); 
     lab._bg=cfg.background;
     lab._text=cfg.text;
@@ -143,10 +145,10 @@ export function uButton(scene,config={})
             cDEF=GM.COLOR.GRAY,
             cHL=GM.COLOR.WHITE,
             cBG=GM.COLOR.DARK,
-            cBGH=GM.COLOR.LIGHT,
+            cBGH=GM.COLOR.LIGHTGRAY,
             ...cfg}=config;
     
-    cfg.space = cfg.space ?? 5;
+    cfg.space = cfg.space ?? UI.SPACE.LRTBI.p10;
 
     const UCHK = (style===UI.BTN.CHECK)?'☐':'▸';
     const CHK = (style===UI.BTN.CHECK)?'☑':'▾';
@@ -156,7 +158,9 @@ export function uButton(scene,config={})
         case UI.BTN.DEF:
             cfg.bg = cfg.bg ?? {color:cBG, radius:10};
             break;
-
+        case UI.BTN.DROP:
+            cfg.bg = cfg.bg ?? {color:cDEF};
+            break;
         case UI.BTN.ITEM:
         case UI.BTN.OPTION:    
             cfg.bg = cfg.bg ?? {color:cBGH};
@@ -166,10 +170,12 @@ export function uButton(scene,config={})
         case UI.BTN.FOLD:
             if(prefix)
             {
-                if(typeof cfg.text==='object')
-                    cfg.text.text = UCHK+' '+(cfg.text?.text??'');
-                else
-                    cfg.text = UCHK+' '+(cfg.text??'');
+                cfg.tcon = UCHK;
+
+                // if(typeof cfg.text==='object')
+                //     cfg.text = UCHK+' '+(cfg.text?.text??'');
+                // else
+                //     cfg.text = UCHK+' '+(cfg.text??'');
             }
             break;
     }
@@ -219,9 +225,10 @@ export function uButton(scene,config={})
         if(style===UI.BTN.CHECK||style===UI.BTN.FOLD)
         {
             btn.value = on;
-            const pre = on?UCHK:CHK;
-            const post = on?CHK:UCHK;
-            btn._text.setText(btn._text.text.replace(pre,post));
+            // const pre = on?UCHK:CHK;
+            // const post = on?CHK:UCHK;
+            // btn._text.setText(btn._text.text.replace(pre,post));
+            btn._icon.setText(on?CHK:UCHK);
         }
         else
         {
@@ -252,7 +259,7 @@ export function uButton(scene,config={})
         .on('pointerdown',()=>{ondown?.(btn)})
         .on('pointerup',()=>{
             if(style===UI.BTN.CHECK||style===UI.BTN.FOLD) {btn.setValue(!btn.value);}
-            onclick?.(btn)
+            onclick?.(btn);            
         })
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
@@ -430,17 +437,23 @@ export function uScroll(scene, {width, height, bg,
         
         const speed = 0.001;
         scroll.setT(Phaser.Math.Clamp(scroll.t + dy * speed, 0, 1));
-    }    
+    }  
+    
+    scroll._panel = _panel;
 
-    // 操作介面    
+    if(this&&this.add) {this.add(scroll, ext);}
+
+    // 操作介面  
+     
     scroll.addItem = (item,config)=>{
-        config = config ?? (style === UI.SCROLL.DEF ? {align:'left',expand:true}
-                                                    : style === UI.SCROLL.GRID ? {align:'left'}
-                                                                                : {});
+        config = config ?? 
+                (style===UI.SCROLL.DEF ? {align:'left',expand:true}
+                                        : style === UI.SCROLL.GRID ? {align:'left'}
+                                                                    : {});
         _panel.add(item,config); 
         return scroll;
     }
-
+    scroll.add = scroll.addItem; 
     scroll.clearAll = ()=>{_panel.removeAll(true); return scroll;}
     scroll.setContentSize = (w,h)=>{_panel.setSize(w,h); return scroll;}
     scroll.mouseWheel = (on)=>{
@@ -448,9 +461,6 @@ export function uScroll(scene, {width, height, bg,
         else {scene.input.off('wheel',wheel);}
     }
 
-    scroll._panel = _panel;
-
-    if(this&&this.add) {this.add(scroll, ext);}
     return scroll;
 }
 
@@ -543,8 +553,18 @@ export function uTabs(scene,{btns,onclick,onover,onout})
     return tabs;
 }
 
-export function uSlider(scene,{width=100,trackRadius=10,thumbRadius=20,onchange,gap,space,ext}={})
+export function uSliderBase(scene,config={})
 {
+    const{
+        width=100,
+        trackRadius=10,
+        thumbRadius=20,
+        onchange,
+        gap,
+        space,
+        ext
+    }=config;
+
     const s = scene.rexUI.add.slider({
         orientation: 'x',
         width: width,
@@ -563,25 +583,113 @@ export function uSlider(scene,{width=100,trackRadius=10,thumbRadius=20,onchange,
     return s;
 }
 
+export function uSlider(scene,config={})
+{ 
+    const {
+        type=UI.SLIDER.VR,
+        ext={expand:true},
+        icon,
+        bg={color:GM.COLOR.DARK,strokeColor:GM.COLOR.WHITE,strokeWidth:2,radius:10},
+        width=100,
+        dp=0,
+    }=config;
+
+    let {min=0,max=1,gap}=config;
+
+    const C = {fSize:40,w:50,h:50};
+
+    const icons = Array.isArray(icon) ? [...icon] : [icon];
+    gap = gap ?? icons.length>1 ? 1/(icons.length-1) : 0;
+
+    // let icons=['🔇','🔈','🔉','🔊'];
+    // let gap=1/(icons.length-1);
+
+    const p = uPanel(scene,{width:width,space:{item:10}});
+
+    switch(type)
+    {
+        case UI.SLIDER.NV:
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
+            break;
+        case UI.SLIDER.VR:
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
+            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            break;
+        case UI.SLIDER.VL:
+            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            break;
+    }
+    
+    if(this&&this.add) {this.add(p,ext);}
+
+    p.s.on('valuechange', (value) => {
+        p.value = getVal(value,dp)
+        if(p.l) {p.l.setText(p.value).layout();}
+        if(p.i) {p.i.setText(getIcon(value));}
+        config.onchange?.(p.value)
+    })
+
+    const getVal=(value,dp=0)=>{
+        let f = Math.pow(10,dp);
+        let v = min+value*(max-min);
+        return Math.round(v*f)/f;
+    }
+
+    const getIcon=(value)=>{
+        let i = gap===0 ? 0 : Math.round(value/gap);
+        return icons[i];
+    }
+
+    // 操作介面
+    p.setRange = (vmin,vmax,value)=>{
+        min=vmin; max=vmax;
+        if(value)
+        {
+            value = Utility.clamp(value,min,max);
+            p.s.setValue((value-min)/(max-min));
+            p.value=value;   
+        }
+        else
+        {
+            p.s.setValue(0);
+            p.value=min;
+        }
+        p.l?.setText(p.value)?.layout();
+        return p;
+    }
+
+    p.setValue = (val)=>{p.s.setValue(val); return p;}
+
+    return p;
+    
+}
+
 export function uValueSlider(scene,config={})
 {
-    let {ext}=config;
+    let {ext,...cfg}=config;
     let _min=0,_max=10;
     ext = ext??{expand:true};
 
     const p = uPanel(scene,{space:{item:10}})
+    const s = uSliderBase(scene,cfg);
     const lab = uLabel(scene,{  bg:{color:GM.COLOR.DARK},
-                                text:'0',width:50,height:50,
+                                text:'0',
+                                width:50,height:50,
                                 align:'center'});
-    const s = uSlider(scene);
+    
 
     s.on('valuechange', (value) => {
         p.value = Math.round(_min+value*(_max-_min));
         lab.setText(p.value)
         lab.layout();
     })
-    p.add(lab)
     p.add(s,{proportion:1});
+    p.add(lab)
+    
 
     // 操作介面
     p.setRange = (min,max,value)=>{
@@ -599,14 +707,15 @@ export function uValueSlider(scene,config={})
         }
         lab.setText(p.value)
         lab.layout();
+        return p;
     }
-    p.setValue = (val)=>{s.setValue(val);}
+    p.setValue = (val)=>{s.setValue(val); return p;}
 
     if(this&&this.add) {this.add(p,ext);}
     return p;
 }
 
-export function uDropdown(scene, {width=100,space={top:5,bottom:5},ext,
+export function uuDropdown(scene, {width=100,space={top:5,bottom:5},ext,
                                 text='----', 
                                 options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
                                 stringOption=false,
@@ -619,15 +728,16 @@ export function uDropdown(scene, {width=100,space={top:5,bottom:5},ext,
         // background: uRect(scene,{color:GM.COLOR_GRAY, radius:10, strokeColor:GM.COLOR_WHITE, strokeThickness:3}),
         background: uRect(scene,{color:GM.COLOR.GRAY}),
         // icon: rect(scene, {color:GM.COLOR_DARK, radius:10}),
-        text: uBbc(scene, {text:text, align:'center'}).setFixedSize(width, 0),
+        // text: uBbc(scene, {text:text, align:'center'}).setFixedSize(width, 0),
+        text: uBbc(scene, {text:text, align:'center'}),
         space: space,
         list: {
             createBackgroundCallback: function (scene) {
-                return uRect(scene, {color:GM.COLOR.GRAY,strokeColor:GM.COLOR.WHITE, strokeThickness:3});
+                return uRect(scene, {color:GM.COLOR.GRAY,strokeColor:GM.COLOR.WHITE, strokeWidth:3});
             },
             createButtonCallback: function (scene, option, index, options) {
                 var txt = (stringOption) ? option : option.text;
-                var button = uLabel(scene,{ text:{text:txt,padding:5}, bg:{color:GM.COLOR.GRAY} });
+                var button = uLabel(scene,{ text:{text:txt,padding:5},bg:{color:GM.COLOR.GRAY},align:'center'});
                 button.value = (stringOption) ? undefined : option.value;
                 return button;
             },
@@ -659,7 +769,7 @@ export function uDropdown(scene, {width=100,space={top:5,bottom:5},ext,
                 console.log('setValueCallback',value);
                 const option = options.find(item => item.value === value);
                 dropDownList.text = option.text;
-                onchange?.(value)
+                onchange?.(value)                
             },
 
         value: undefined,
@@ -669,6 +779,96 @@ export function uDropdown(scene, {width=100,space={top:5,bottom:5},ext,
 
     if(this&&this.add) {this.add(dd,ext);}
     return dd;
+}
+
+
+export function uDropdownBase(scene,config={})
+{
+    const { text='----',
+            options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
+            align='center',
+            // parent=this,
+            parent,
+            ext,
+            onchange,
+            }=config;
+
+    let _list=null,_timer=null;
+
+    const setValue=(opt)=>{
+        dd._text.setText(opt.text);
+        onchange?.(opt.value);
+        return dd;
+    }
+    const removeList=()=>{
+        scene.input.off('pointerup',removeList);
+        _list?.destroy();
+        _list=null;
+        _timer=null;
+    }
+    const createList=(btn)=>{
+        const width = btn.right - btn.left;
+        _list = uPanel(scene,{x:btn.left,y:btn.bottom,
+                        // width:100,
+                        orientation:'y',
+                        bg:{color:GM.COLOR.GRAY,
+                            strokeColor:GM.COLOR.WHITE,
+                            strokeWidth:1}})
+                        .setOrigin(0)
+                        
+        options.forEach((opt)=>{
+            uButton.call(_list,scene,{text:opt.text,
+                                    width:width,
+                                    align:align,
+                                    style:UI.BTN.OPTION,
+                                    onclick:()=>{setValue(opt);}})
+        })
+
+        _list.layout()
+
+        // 
+        _timer && clearTimeout(_timer);
+        _timer = setTimeout(()=>{scene.input.on('pointerup',removeList);}, 100)
+    }
+    const onclick=(btn)=>{
+        if(_list===null) {createList(btn);}
+        else {removeList();}
+    }
+
+    const dd = uButton(scene,{text:text,style:UI.BTN.DROP,onclick:onclick,align:align});
+    if(this&&this.add) {this.add(dd,ext);}
+
+    // 操作介面
+    dd.setValue=(value)=>{
+        const option = options.find(item => item.value === value);
+        setValue(option);
+        return dd;
+    }
+
+    return dd;
+}
+
+export function uDropdown(scene,config={})
+{
+    const {
+        title,
+        width,
+        ext={expand:true},
+        ...cfg
+    }=config;
+
+    const p = uPanel(scene,{width:width,space:{item:10}});
+    if(title) {uBbc.call(p,scene,{text:title,fontSize:40})}
+    const ddb = uDropdownBase.call(p,scene,{...cfg,ext:{proportion:1}});
+
+    if(this&&this.add) {this.add(p,ext)}
+
+    // 操作介面
+    p.setValue=(v)=>{ddb.setValue(v); return p;}
+
+    return p;
+
+
 }
 
 export function uInput(scene, config={})

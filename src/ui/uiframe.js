@@ -53,7 +53,7 @@ export default class UiFrame extends Sizer
         const onover = ()=>{
             UiCursor.set(); 
             Mark.close();
-            getPlayer()?.hidePath();
+            this.player?.hidePath();
         }
 
         config = config ?? {color:GM.COLOR.PRIMARY};
@@ -117,6 +117,6 @@ export default class UiFrame extends Sizer
         return this;
     }
 
-    close() {this.hide();}
+    close() {this.hide(); return this;}
 
 }

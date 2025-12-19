@@ -36,6 +36,9 @@ import UiCursor from './ui/uicursor.js'
 import UiEffect  from './ui/uieffect.js'
 import UiTime  from './ui/uitime.js'
 import UiMessage  from './ui/uimessage.js'
+import UiChangeScene  from './ui/uichangescene.js'
+import UiGameOver  from './ui/uigameover.js'
+import UiSettings_1  from './ui/uisettings.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -97,7 +100,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiMessage_1(scene);
+    new UiSettings_1(scene);
     // new UiTest(scene);
 
     test();
@@ -3195,7 +3198,7 @@ export class UiDialog_1 extends UiBase
 
 }
 
-export class UiChangeScene extends UiBase
+export class UiChangeScene_1 extends UiBase
 {
     static instance = null;
     constructor(scene)
@@ -3211,7 +3214,7 @@ export class UiChangeScene extends UiBase
         }
 
         super(scene, config, 'UiChangeScene');
-        UiChangeScene.instance = this;
+        UiChangeScene_1.instance = this;
 
         this.addBg_Int(scene,{color:GM.COLOR_BLACK,alpha:1})
             .setOrigin(0)
@@ -3383,7 +3386,7 @@ export class UiMessage_1 extends ContainerLite
 }
 
 
-export class UiGameOver extends UiBase
+export class UiGameOver_1 extends UiBase
 {
     static instance=null;
     constructor(scene)
@@ -3399,7 +3402,7 @@ export class UiGameOver extends UiBase
 
         super(scene, config, 'UiGameOver')
         this.scene=scene;
-        UiGameOver.instance=this;
+        UiGameOver_1.instance=this;
         this.addBg(scene,{color:GM.COLOR_BLACK,alpha:0.5})
             .addSpace()
             .add(text(scene,{text:'遊 戲 結 束',fontSize:64}),{align:'bottom',padding:{bottom:GM.h/4}})

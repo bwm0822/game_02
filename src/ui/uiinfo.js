@@ -267,15 +267,15 @@ export default class UiInfo extends UiFrame
         super.show();
         let x=elm.x,y=elm.y;
 
-        let parent = elm.parentContainer;
+        // let parent = elm.parentContainer;
         let parentX=0, parentY=0;
-        if(parent)
-        {
-            parentX = parent.x;
-            parentY = parent.y;
-            x += parentX;
-            y += parentY;
-        }
+        // if(parent)
+        // {
+        //     parentX = parent.x;
+        //     parentY = parent.y;
+        //     x += parentX;
+        //     y += parentY;
+        // }
 
         switch(type)
         {

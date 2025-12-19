@@ -343,7 +343,10 @@ export const UI =
     BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2},
         BORDER_DARK:{strokeColor:GM.COLOR_DARK, strokeWidth:2},
     },
-    BTN:{DEF:'def',ITEM:'itm',OPTION:'option',CHECK:'check',FOLD:'fold'},
+    BTN:{
+        DEF:'def',ITEM:'itm',OPTION:'option',
+        CHECK:'check',FOLD:'fold',DROP:'drop',
+    },
     SPACE:{
         LRTB: { p5:{left:5, right:5, top:5, bottom:5},
                 p10:{left:10, right:10, top:10, bottom:10}},
@@ -379,6 +382,9 @@ export const UI =
         EFFECT:'effect',
         TIME:'time',
         MESSAGE:'message',
+        CHANGESCENE:'changescene',
+        GAMEOVER:'gameover',
+        SETTINGS:'settings',
     },
     INFO:{
         SLOT:0,
@@ -391,6 +397,11 @@ export const UI =
         DEF: 'def',
         GRID:'grid',
         CON: 'con'
+    },
+    SLIDER:{
+        NV:'none',
+        VL:'left',
+        VR:'right',
     }
 }
 
