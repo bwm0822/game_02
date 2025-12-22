@@ -90,11 +90,19 @@ export default class UiSettings_1 extends UiFrame
         //             onchange:(value)=>{this.layout()}})
         //             .setValue(Record.data.lang)
 
-        this._page.add(this.dropdown('🌐',Record.data,'lang'),{})
-        this._page.add(this.check('loc',DEBUG,'loc'))
+        // this._page.add(this.dropdown('🌐',Record.data,'lang'),{})
+        // this._page.add(this.check('loc',DEBUG,'loc'))
         this._page.add(this.slider(['🔇','🔈','🔉','🔊'],
                             Record.data,'sfxVolume'),{})
         this._page.add(this.slider('🎵',Record.data,'bgmVolume'),{})
+        // this._page.add(ui.uuBar(scene,{trackStrokeColor:GM.COLOR.RED,style:UI.BAR.DEF}))
+        this._page.add(ui.uProgressBase(scene,{style:UI.PROGRESS.NBNV,height:25}).setValue(0.9));
+        this._page.add(ui.uProgress(scene,{title:'hp',style:UI.PROGRESS.BGV,height:50}).setValue(0.9));
+
+
+        this.layout();
+
+
     }
 
     addElm(elm,config)
@@ -146,10 +154,10 @@ export default class UiSettings_1 extends UiFrame
     //     return p;
     // }
 
-    slider(name, obj, key, {type=UI.SLIDER.VR,dp=1}={})
+    slider(name, obj, key, {style=UI.SLIDER.VR,dp=1}={})
     {
         return ui.uSlider(this.scene,{
-                    type:type,
+                    style:style,
                     icon:name,
                     width:200,
                     dp:dp,

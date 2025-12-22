@@ -37,7 +37,8 @@ export default class UiCount extends UiFrame
 
     addSlider(scene)
     {
-        this._slider = ui.uValueSlider.call(this,scene)
+        // this._slider = ui.uValueSlider.call(this,scene)
+        this._slider = ui.uSlider.call(this,scene)
         return this;
     }
 

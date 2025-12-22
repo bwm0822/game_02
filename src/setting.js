@@ -32,10 +32,12 @@ export const GM =
         WHITE : 0xffffff,
         GRAY : 0x777777,
         LIGHTGRAY : 0xAAAAAA,
-        RED : 0xff0000,
-        GREEN : 0x00ff00,
-        YELLOW : 0xffff00,
-        BLUE : 0x0000ff,
+        RED : 0xAA0000,
+        GREEN : 0x00AA00,
+        YELLOW : 0xAAAA00,
+        PURPLE : 0xAA00AA,
+        CYAN : 0x00AAAA,
+        BLUE : 0x0000AA,
         BLACK : 0x010101,
     },
 
@@ -399,10 +401,16 @@ export const UI =
         CON: 'con'
     },
     SLIDER:{
-        NV:'none',
-        VL:'left',
-        VR:'right',
-    }
+        NV:'nv',    // no value
+        VL:'vl',    // value left
+        VR:'vr',    // value right
+    },
+    PROGRESS:{
+        BGNV:'bgnv',    // bg + no value
+        NBNV:'nbnv',    // no bg + no value
+        BGV:'bgv',      // bg + value
+        NBV:'nbv',      // no bg + value    
+    },
 }
 
 export const ROLE_ATTRS = {

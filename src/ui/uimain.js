@@ -67,7 +67,7 @@ export default class UiMain extends UiFrame
         
         // state
         const st = ui.uPanel.call(p, scene, {ext:{expand:true}});
-        this._hp = ui.uTextProgress.call(st,scene,{width:200});
+        this._hp = ui.uProgressBase.call(st,scene,{width:200,style:UI.PROGRESS.VAL});
 
         // ability
         const ab = ui.uPanel.call(p, scene, {space:{item:5},ext:{expand:true}});
@@ -109,7 +109,7 @@ export default class UiMain extends UiFrame
     refresh()
     {
         let total = this.player.total;
-        this._hp.set(total.states[GM.HP],total[GM.HPMAX]);
+        this._hp.setValue(total.states[GM.HP],total[GM.HPMAX]);
         this.resetAbility();
         this.updateAbility();
     }
