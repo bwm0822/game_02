@@ -67,7 +67,7 @@ export default class UiMain extends UiFrame
         
         // state
         const st = ui.uPanel.call(p, scene, {ext:{expand:true}});
-        this._hp = ui.uProgressBase.call(st,scene,{width:200,style:UI.PROGRESS.VAL});
+        this._hp = ui.uProgress.call(st,scene,{width:200,style:UI.PROGRESS.VAL});
 
         // ability
         const ab = ui.uPanel.call(p, scene, {space:{item:5},ext:{expand:true}});

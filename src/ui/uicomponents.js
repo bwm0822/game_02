@@ -322,7 +322,7 @@ function uBar(scene, config={})
 
 export function uProgressBase(scene, config={})
 {
-    const {ext,style=UI.PROGRESS.BGNV,width=100,height=20,...cfg}=config;
+    const {ext,style=UI.PROGRESS.BGV,width=100,height=20,...cfg}=config;
     // 建立 sizer，將 bar 與 text 疊在一起
     let p = scene.rexUI.add.overlapSizer({width:width, height:height})
     if(this&&this.add) {this.add(p,ext)}
@@ -380,14 +380,13 @@ export function uProgress(scene, config)
 
     // 操作介面
     p.setValue = function(...args){
-        p.p.setValue(args);
+        p.p.setValue(...args);
         p.layout();
         return p;
     }
 
     return p;
 }
-
 
 export function uScroll(scene, config={})
 {
@@ -572,6 +571,7 @@ export function uSliderBase(scene,config={})
         onchange,
         gap,
         space,
+        value=0,    // 如果沒設成undefined，create時，會呼叫valuechange(value)
         ext
     }=config;
 
@@ -580,9 +580,10 @@ export function uSliderBase(scene,config={})
         width: width,
         track: uRect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
         thumb: uRect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
-        valuechangeCallback: function(value){onchange?.(value)},
         gap: gap,
         space: space,
+        value: value,
+        valuechangeCallback: function(newValue, prevValue){onchange?.(newValue, prevValue)},
         //thumbOffsetY: -10,
         //space: {top: 4,bottom: 4},
         //input: 'drag', // 'drag'|'click'
@@ -606,47 +607,25 @@ export function uSlider(scene,config={})
         width=100,
         dp=0,
         space={item:10},
+        onchange,
     }=config;
 
     let {min=0,max=1,gap}=config;
 
     const C = {fSize:40,w:50,h:50};
 
+    // let icons=['🔇','🔈','🔉','🔊'];
+    // let gap=1/(icons.length-1);
     const icons = Array.isArray(icon) ? [...icon] : [icon];
     gap = gap ?? icons.length>1 ? 1/(icons.length-1) : 0;
 
-    // let icons=['🔇','🔈','🔉','🔊'];
-    // let gap=1/(icons.length-1);
-
-    const p = uPanel(scene,{width:width,space:space});
-
-    switch(style)
-    {
-        case UI.SLIDER.NV:
-            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
-            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
-            break;
-        case UI.SLIDER.VR:
-            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
-            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
-            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
-            break;
-        case UI.SLIDER.VL:
-            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
-            p.s=uSliderBase.call(p,scene,{gap:gap,ext:{proportion:1}})
-            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
-            break;
-    }
-    
-    if(this&&this.add) {this.add(p,ext);}
-
-    p.s.on('valuechange', (value) => {
-        p.value = getVal(value,dp)
+    const valuechange=(newValue, prevValue)=>{
+        p.value = getVal(newValue,dp)
         if(p.l) {p.l.setText(p.value).layout();}
-        if(p.i) {p.i.setText(getIcon(value));}
-        onchange?.(p.value)
-    })
-
+        if(p.i) {p.i.setText(getIcon(newValue));}
+        // 判斷prevValue，避免create時，呼叫onchange
+        if(prevValue!==undefined) {onchange?.(p.value)}
+    }
     const getVal=(value,dp=0)=>{
         let f = Math.pow(10,dp);
         let v = min+value*(max-min);
@@ -657,6 +636,31 @@ export function uSlider(scene,config={})
         let i = gap===0 ? 0 : Math.round(value/gap);
         return icons[i];
     }
+
+    const p = uPanel(scene,{width:width,space:space});
+
+    switch(style)
+    {
+        case UI.SLIDER.NV:
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            p.s=uSliderBase.call(p,scene,{gap:gap,
+                                    ext:{proportion:1},onchange:valuechange})
+            break;
+        case UI.SLIDER.VR:
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            p.s=uSliderBase.call(p,scene,{gap:gap,
+                                    ext:{proportion:1},onchange:valuechange})
+            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            break;
+        case UI.SLIDER.VL:
+            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            p.s=uSliderBase.call(p,scene,{gap:gap,
+                                    ext:{proportion:1},onchange:valuechange})
+            if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
+            break;
+    }
+    
+    if(this&&this.add) {this.add(p,ext);}
 
     // 操作介面
     p.setRange = (vmin,vmax,value)=>{
@@ -681,119 +685,6 @@ export function uSlider(scene,config={})
     return p;
     
 }
-
-// export function uValueSlider(scene,config={})
-// {
-//     let {ext,...cfg}=config;
-//     let _min=0,_max=10;
-//     ext = ext??{expand:true};
-
-//     const p = uPanel(scene,{space:{item:10}})
-//     const s = uSliderBase(scene,cfg);
-//     const lab = uLabel(scene,{  bg:{color:GM.COLOR.DARK},
-//                                 text:'0',
-//                                 width:50,height:50,
-//                                 align:'center'});
-    
-
-//     s.on('valuechange', (value) => {
-//         p.value = Math.round(_min+value*(_max-_min));
-//         lab.setText(p.value)
-//         lab.layout();
-//     })
-//     p.add(s,{proportion:1});
-//     p.add(lab)
-    
-
-//     // 操作介面
-//     p.setRange = (min,max,value)=>{
-//         _min=min;_max=max;
-//         if(value)
-//         {
-//             value = Utility.clamp(value,min,max);
-//             s.setValue((value-min)/(max-min));
-//             p.value=value;   
-//         }
-//         else
-//         {
-//             s.setValue(0);
-//             p.value=min;
-//         }
-//         lab.setText(p.value)
-//         lab.layout();
-//         return p;
-//     }
-//     p.setValue = (val)=>{s.setValue(val); return p;}
-
-//     if(this&&this.add) {this.add(p,ext);}
-//     return p;
-// }
-
-// export function uuDropdown(scene, {width=100,space={top:5,bottom:5},ext,
-//                                 text='----', 
-//                                 options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
-//                                 stringOption=false,
-//                                 onchange}={})
-// {
-
-//     const config = {
-//         // x: 400, y: 300,
-//         options: options,
-//         // background: uRect(scene,{color:GM.COLOR_GRAY, radius:10, strokeColor:GM.COLOR_WHITE, strokeThickness:3}),
-//         background: uRect(scene,{color:GM.COLOR.GRAY}),
-//         // icon: rect(scene, {color:GM.COLOR_DARK, radius:10}),
-//         // text: uBbc(scene, {text:text, align:'center'}).setFixedSize(width, 0),
-//         text: uBbc(scene, {text:text, align:'center'}),
-//         space: space,
-//         list: {
-//             createBackgroundCallback: function (scene) {
-//                 return uRect(scene, {color:GM.COLOR.GRAY,strokeColor:GM.COLOR.WHITE, strokeWidth:3});
-//             },
-//             createButtonCallback: function (scene, option, index, options) {
-//                 var txt = (stringOption) ? option : option.text;
-//                 var button = uLabel(scene,{ text:{text:txt,padding:5},bg:{color:GM.COLOR.GRAY},align:'center'});
-//                 button.value = (stringOption) ? undefined : option.value;
-//                 return button;
-//             },
-
-//             // scope: dropDownList
-//             onButtonClick: function (button, index, pointer, event) {
-//                 // Set label text, and value
-//                 console.log(`Select ${button.text}, value=${button.value}\n`);
-//                 this.text = button.text;
-//                 this.value = button.value;
-                
-//             },
-
-//             // scope: dropDownList
-//             onButtonOver: function (button, index, pointer, event) {
-//                 // button.getElement('background').setStrokeStyle(2, GM.COLOR_WHITE);
-//                 button._bg.setFillStyle(GM.COLOR.LIGHTGRAY);
-//             },
-
-//             // scope: dropDownList
-//             onButtonOut: function (button, index, pointer, event) {
-//                 // button.getElement('background').setStrokeStyle();
-//                 button._bg.setFillStyle(GM.COLOR.GRAY);
-//             },
-        
-//             // expandDirection: 'up',
-//         },
-//         setValueCallback: function (dropDownList, value, previousValue) {
-//                 console.log('setValueCallback',value);
-//                 const option = options.find(item => item.value === value);
-//                 dropDownList.text = option.text;
-//                 onchange?.(value)                
-//             },
-
-//         value: undefined,
-//     }
-
-//     const dd = scene.rexUI.add.dropDownList(config)
-
-//     if(this&&this.add) {this.add(dd,ext);}
-//     return dd;
-// }
 
 export function uDropdownBase(scene,config={})
 {

@@ -4,6 +4,7 @@ import {GM,UI,DEBUG} from '../setting.js'
 import Record from '../record.js'
 
 const E={CHK:'check',DD:'dropdown'};
+const item_width=350;
 
 export default class UiSettings_1 extends UiFrame
 {
@@ -23,7 +24,7 @@ export default class UiSettings_1 extends UiFrame
         super(scene, config , UI.TAG.SETTINGS)
         UiSettings_1.instance=this;
         this.addBg(scene)
-            .addTop(scene)
+            .addTop(scene,'setting')
             .addTabs(scene)
             .addPage(scene)
             .layout()
@@ -45,9 +46,10 @@ export default class UiSettings_1 extends UiFrame
         {
             bg:{},
             height: 300,
-            space:{...UI.SPACE.LRTB_10,item:30},
+            space:{left:10,right:10,top:30,bottom:10,item:30},
             ext:{expand:true},
-            hideUnscrollableSlider:true,
+            // hideUnscrollableSlider:true,
+            disableUnscrollableDrag:true,
         }
         this._page = ui.uScroll.call(this,scene,config)
 
@@ -62,63 +64,29 @@ export default class UiSettings_1 extends UiFrame
         this.layout();
     }
 
-
-
     page_Main()
     {
         const options = [{text:'中文',value:'tw'},
                         {text:'ENGLISH',value:'us'},]
+        const icons = ['🔇','🔈','🔉','🔊'];
         const scene = this.scene;
-        const elm=this.element.bind(this);
         this._page.clearAll();
 
-        this//.addElm(elm(E.DD,'🌐',Record.data,'lang',options),{expand:true})
-            // .addElm(ui.uValueSlider(scene,{gap:0.2}))
-            // .addElm(this.slider(['🔇','🔈','🔉','🔊'],Record.data,'sfxVolume'),{expand:false})
-            // .addElm(ui.uSlider(scene,{icon:'🔇',width:200}),{expand:false})
-            // .addElm(ui.uSlider(scene,{icon:['🔇','🔈','🔉','🔊'],type:UI.SLIDER.VR}),{expand:false})
-            // .addElm(ui.uSlider(scene,{icon:['🔇','🔈','🔉','🔊'],type:UI.SLIDER.VL}),{expand:false})
-            // .addElm(ui.uSlider(scene,{type:UI.SLIDER.VL}),{expand:false})
-            // .addElm(ui.uSlider(scene,{type:UI.SLIDER.VR}),{expand:false})
-            // .addElm(ui.uButton(scene,{text:'123',style:UI.BTN.CHECK}))
-            // .addElm(ui.uuDropdown(scene,{parent:this}))
-            // .addElm(ui.uLabel(scene,{text:'123',tcon:'🔊',space:{item:20}}))
-        // ui.uuDropdown.call(this._page,scene,{
-        //             title:'🌐',
-        //             width:300,
-        //             // ext:{align:'left'},
-        //             onchange:(value)=>{this.layout()}})
-        //             .setValue(Record.data.lang)
-
-        // this._page.add(this.dropdown('🌐',Record.data,'lang'),{})
-        // this._page.add(this.check('loc',DEBUG,'loc'))
-        this._page.add(this.slider(['🔇','🔈','🔉','🔊'],
-                            Record.data,'sfxVolume'),{})
-        this._page.add(this.slider('🎵',Record.data,'bgmVolume'),{})
-        // this._page.add(ui.uuBar(scene,{trackStrokeColor:GM.COLOR.RED,style:UI.BAR.DEF}))
-        this._page.add(ui.uProgressBase(scene,{style:UI.PROGRESS.NBNV,height:25}).setValue(0.9));
-        this._page.add(ui.uProgress(scene,{title:'hp',style:UI.PROGRESS.BGV,height:50}).setValue(0.9));
-
-
+        this._page.add(this.dropdown('🌐',Record.data,'lang',options),{align:'left'})
+        this._page.add(this.slider(icons,Record.data,'sfxVolume'),{align:'left'})
+        this._page.add(this.slider('🎵',Record.data,'bgmVolume'),{align:'left'})
+        this._page.add(this.slider('🎵',Record.data,'bgmVolume'))
+        this._page.add(this.slider('🎵',Record.data,'bgmVolume'))
         this.layout();
-
-
     }
 
-    addElm(elm,config)
+    page_Other()
     {
-        this._page.addItem(elm,config);
-        return this;
-    }
-
-    element(type, name, obj, key, options)
-    {
-        // if(type===E.CHK) {return this.check(name, obj, key);}
-        // else if(type===E.DD) {return this.dropdown(name, obj, key, options);}
-        switch(type)
-        {
-        
-        }
+        const scene = this.scene;
+        this._page.clearAll();
+        this._page.add(ui.uProgressBase(scene,{style:UI.PROGRESS.NBNV,height:25}).setValue(0.9));
+        this._page.add(ui.uProgress(scene,{title:'hp',style:UI.PROGRESS.BGV,height:50}).setValue(10,50));
+        this.layout();
 
     }
 
@@ -126,7 +94,7 @@ export default class UiSettings_1 extends UiFrame
     {
         return ui.uDropdown(this.scene,{
                         title:name,
-                        width:200,
+                        width:item_width,
                         options:options,
                         onchange:(v)=>{obj[key]=v;this.layout();}
                     })
@@ -159,7 +127,7 @@ export default class UiSettings_1 extends UiFrame
         return ui.uSlider(this.scene,{
                     style:style,
                     icon:name,
-                    width:200,
+                    width:item_width,
                     dp:dp,
                     onchange:(v)=>{obj[key]=v;}
                 })
