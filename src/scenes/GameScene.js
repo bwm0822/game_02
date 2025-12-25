@@ -100,11 +100,11 @@ export class GameScene extends Scene
 
     createRuntime()
     {
-        let objs = Record.data.scenes?.[this._data.map]?.runtime;
+        let objs = Record.game.scenes?.[this._data.map]?.runtime;
         if(objs)
         {
             objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj);});
-            Record.data.scenes[this._data.map].runtime = [];
+            Record.game.scenes[this._data.map].runtime = [];
         }
     }
 
@@ -166,10 +166,10 @@ export class GameScene extends Scene
         this._player.init_runtime('wick').load();
         this.setCameraFollow(GM.CAM_CENTER);
  
-        Record.data.pos = this._player.pos;   
-        Record.data.map = this._data.map;
-        Record.data.ambient = this._data.ambient;
-        Record.save();
+        Record.game.pos = this._player.pos;   
+        Record.game.map = this._data.map;
+        Record.game.ambient = this._data.ambient;
+        Record.saveGame();
     }
 
     initUI() 
@@ -279,11 +279,11 @@ export class GameScene extends Scene
 
     save()
     {
-        Record.data.pos = this._player.pos;   
+        Record.game.pos = this._player.pos;   
         // Record.data.player = this._player.save();
         // this._player.save();
 
-        if(Record.data[this._data.map]?.runtime) {Record.data[this._data.map].runtime = [];}
+        if(Record.game[this._data.map]?.runtime) {Record.game[this._data.map].runtime = [];}
         // console.log('objects:',this.objects)
         // this.objects.forEach((obj)=>{obj.save?.();})
         console.log('gos:',this.gos)
@@ -291,7 +291,7 @@ export class GameScene extends Scene
         // this.roles.forEach((role)=>{role.uid===-1 && role.save();})
         this.roles.forEach((role)=>{role.save();})
         TimeManager.save();
-        Record.save();
+        Record.saveGame();
     }
 
     mainMenu()

@@ -33,7 +33,7 @@ export default class UiQuest extends UiFrame
     addTabs(scene)
     {
         this._tabs = ui.uTabs.call(this, scene, {
-            btns: [{text:'open',name:'open'},{text:'close',name:'close'}],
+            top: [{text:'open',name:'open'},{text:'close',name:'close'}],
             onclick:(btn)=>{this._pageName=btn.name;this.updatePage();}
         })
 

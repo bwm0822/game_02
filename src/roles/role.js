@@ -25,8 +25,8 @@ export class Role extends GameObject
     {
         if(this.uid===-1)
         {
-            if(!Record.data.roles) {Record.data.roles={};}
-            Record.data.roles[this.id]=value;
+            if(!Record.game.roles) {Record.game.roles={};}
+            Record.game.roles[this.id]=value;
         }
         else
         {
@@ -36,7 +36,7 @@ export class Role extends GameObject
 
     _loadData()
     {
-        if(this.uid===-1) {return Record.data.roles?.[this.id];}
+        if(this.uid===-1) {return Record.game.roles?.[this.id];}
         else {return super._loadData();}
     }
 

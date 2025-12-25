@@ -3,7 +3,7 @@ import Utility from '../utility.js';
 import Record from '../record';
 import Local from '../local';
 import DB from '../db';
-import {UiSettings} from '../ui.js'
+import UiSettings from '../ui/uisettings.js'
 import {GM} from '../setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
@@ -26,7 +26,6 @@ export class MainMenu extends Scene
             this._done = true;
             this.loadData();
         }
-
         this.initUI()
 
     }
@@ -67,6 +66,7 @@ export class MainMenu extends Scene
 
     loadData()  // 注意: func 的名稱不能叫 load()
     {
+        Record.loadSetting();
         Local.load(this);
         DB.load(this);
     }

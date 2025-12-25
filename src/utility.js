@@ -133,22 +133,22 @@ export default class Utility
         localStorage.clear();
     }
 
-    static remove(key='record')
+    static remove(key='game')
     {
         localStorage.removeItem(key);
     }
 
-    static save(data,key='record')
+    static save(data,key='game')
     {
         localStorage.setItem(key,JSON.stringify(data));
     }
 
-    static delete(key='record')
+    static delete(key='game')
     {
         localStorage.removeItem(key);
     }
 
-    static load(key='record')
+    static load(key='game')
     {
         return JSON.parse(localStorage.getItem(key));
     }

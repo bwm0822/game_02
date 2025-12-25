@@ -177,12 +177,12 @@ export default class QuestManager
 
     static save()
     {
-        Record.data.quest = this.quests;
+        Record.game.quest = this.quests;
         Record.save();
     }
 
     static load()
     {
-        if(Record.data.quest) {this.quests = Record.data.quest;}
+        if(Record.game.quest) {this.quests = Record.game.quest;}
     }
 }

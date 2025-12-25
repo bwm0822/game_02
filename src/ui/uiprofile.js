@@ -63,7 +63,7 @@ export default class UiProfile extends UiFrame
     addTabs(scene)
     {
         this._tabs = ui.uTabs.call(this, scene, {
-                    btns: [{text:'🎴',name:'stats'},{text:'❤️',name:'states'}],
+                    top: [{text:'🎴',name:'stats'},{text:'❤️',name:'states'}],
                     onclick:(btn)=>{this._tab=btn.name;this.updatePage();}
                 })
         

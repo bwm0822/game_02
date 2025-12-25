@@ -14,7 +14,7 @@ export class COM_Pickable extends Com
 {
     get tag() {return 'pick';}   // 回傳元件的標籤
     get content() {return this._content;}                   // gameObject 的內容
-    get label() {return this._dat[Record.data.lang].lab;}   // gameObject 的名稱
+    get label() {return this._dat[Record.setting.lang].lab;}   // gameObject 的名稱
     get pos() {return this._root.pos;}
 
     //------------------------------------------------------

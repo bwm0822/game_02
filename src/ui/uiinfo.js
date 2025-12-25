@@ -41,7 +41,7 @@ export default class UiInfo extends UiFrame
         ui.uDiv.call(this,scene)
     }
 
-    get lang() {return Record.data.lang;}
+    get lang() {return Record.setting.lang;}
 
     uStat(key, val)
     {

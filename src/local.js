@@ -5,7 +5,7 @@ export default class Local
 {
     static _local;
 
-    static get lang() {return Record.data.lang;}
+    static get lang() {return Record.setting.lang;}
 
     static load(scene)
     {

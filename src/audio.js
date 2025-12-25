@@ -3,8 +3,8 @@ import Record from './record'
 export default class AudioManager
 {
     static scene;
-    static get bgmVolume() {return Record.data.bgmVolume;}
-    static get sfxVolume() {return Record.data.sfxVolume;}
+    static get bgmVolume() {return Record.setting.bgmVolume;}
+    static get sfxVolume() {return Record.setting.sfxVolume;}
     static _init = false;
     static bgm0;
 

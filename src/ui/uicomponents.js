@@ -396,8 +396,8 @@ export function uScroll(scene, config={})
         bg = UI.BG.BORDER,
         space = {...UI.SPACE.LRTB_5,column:5,row:5},
         ext = {expand:true},
-        hideUnscrollableSlider = false,
-        disableUnscrollableDrag = false,
+        hideUnscrollableSlider = true,
+        disableUnscrollableDrag = true,
         style = UI.SCROLL.DEF,
         column = 1,
         row = 1,
@@ -522,24 +522,28 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
     return grid;
 }
 
-export function uTabs(scene,{btns,onclick,onover,onout})
+export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,onout})
 {
     let previous;
     const cDEF = GM.COLOR.DARK;
     const cSEL = GM.COLOR.PRIMARY; 
-    const cBG = GM.COLOR.BLACK;
+    const cBG = GM.COLOR.DARK;
     
     let config = {
         // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
         background: uRect(scene,{color:cBG}),
-        topButtons: btns.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,tr:20}},...btn})}),
-        space: {left:5, right:5, top:5, bottom:0, topButton:10}
+        topButtons: top?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,tr:20}},...btn})}),
+        leftButtons: left?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,bl:20}},...btn})}),
+        rightButtons: right?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tr:20,br:20}},...btn})}),
+        bottomButtons: bottom?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{bl:20,br:20}},...btn})}),
+        space: {left:5, right:5, top:5, bottom:5, leftButton:10, rightButton:10, topButton:10, bottomButton:10},
+        panel: createpanel?.(),
     }
 
     let tabs = scene.rexUI.add.tabs(config); 
 
     // 提供給外界操作
-    tabs.init = ()=>{tabs.emitButtonClick('top',0);}
+    tabs.init = (groupName='top')=>{tabs.emitButtonClick(groupName,0);}
 
     // events
     tabs.on('button.click', (button, groupName, index)=>{

@@ -38,7 +38,7 @@ import UiTime  from './ui/uitime.js'
 import UiMessage  from './ui/uimessage.js'
 import UiChangeScene  from './ui/uichangescene.js'
 import UiGameOver  from './ui/uigameover.js'
-import UiSettings_1  from './ui/uisettings.js'
+// import UiSettings_1  from './ui/uisettings.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -100,7 +100,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    new UiSettings_1(scene);
+    // new UiSettings_1(scene);
     // new UiTest(scene);
 
     test();
@@ -4069,7 +4069,7 @@ export class Settings extends UiBase
 
 }
 
-export class UiSettings extends UiContainerBase
+export class UiSettings_1 extends UiContainerBase
 {
     static instance = null;
     constructor(scene)

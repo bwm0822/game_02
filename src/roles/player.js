@@ -37,9 +37,9 @@ export class Player extends Role
 
     _resume() {this._resolve?.();this._resolve=null;}
 
-    _loadData() {return Record.data.player;}
+    _loadData() {return Record.game.player;}
 
-    _saveData(data) {Record.data.pos = this.pos; Record.data.player = data;}
+    _saveData(data) {Record.game.pos = this.pos; Record.game.player = data;}
 
 
     async _updateTime(dt) 

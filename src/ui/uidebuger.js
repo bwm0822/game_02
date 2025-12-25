@@ -60,11 +60,10 @@ export default class UiDebuger extends UiFrame
         {
             x: GM.w/2,
             y: GM.h/2,
-            width: GM.w/2,
-            height : 200,
+            // width: GM.w/2,
+            height : 400,
             orientation: 'y',
-
-            space: {item:0},
+            space: {left:10,right:10,bottom:10,item:0},
             // cover: {interactive:true, alpha:0.5},
         }
         super(scene, config, UI.TAG.DEBUGER);
@@ -72,7 +71,7 @@ export default class UiDebuger extends UiFrame
         this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addTop(scene, UI.TAG.DEBUGER)
             .addTabs(scene)
-            .addPage(scene)
+            // .addPage(scene)
             .layout()
             .hide()
 
@@ -88,27 +87,41 @@ export default class UiDebuger extends UiFrame
     addTabs(scene)
     {
         this._tabs = ui.uTabs.call(this, scene, {
-                    btns: [{text:'指令',name:'cmd'},{text:'設定',name:'setting'}],
-                    onclick:(btn)=>{this._tab=btn.name;this.updatePage();}
+                    top: [{text:'指令',name:'cmd'},{text:'設定',name:'setting'}],
+                    onclick:(btn)=>{this._tab=btn.name;this.updatePage();},
+                    createpanel:()=>{return this.createPage(scene);}
                 })
-        
+        this._page =  this._tabs.getElement('panel');
         return this;
     }
 
-    addPage(scene)
+    createPage(scene)
     {
         const config=
         {
-            bg:{},
-            height: 300,
-            space:{...UI.SPACE.LRTB_10,item:10},
+            bg:{color:GM.COLOR.PRIMARY},
+            width: GM.w/2,
+            height: 310,
+            space:{...UI.SPACE.LRTB.p10,item:10},
             ext:{expand:true},
-            hideUnscrollableSlider:true,
         }
-        this._page = ui.uScroll.call(this,scene,config)
-
-        return this;
+        return ui.uScroll(scene,config);
     }
+
+    // addPage(scene)
+    // {
+    //     const config=
+    //     {
+    //         bg:{},
+    //         height: 300,
+    //         space:{...UI.SPACE.LRTB_10,item:10},
+    //         ext:{expand:true},
+    //         hideUnscrollableSlider:true,
+    //     }
+    //     this._page = ui.uScroll.call(this,scene,config)
+
+    //     return this;
+    // }
 
     updatePage()
     {
@@ -244,7 +257,7 @@ export default class UiDebuger extends UiFrame
     show()
     {
         super.show();
-        !this._tab&&this._tabs.init();
+        !this._tab&&this._tabs.init('top');
         this.layout();
     }
 

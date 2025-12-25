@@ -80,9 +80,9 @@ export default class TimeManager
 
     static load()
     {
-        if(Record.data.time) 
+        if(Record.game.time) 
         {
-            this.time = Record.data.time;
+            this.time = Record.game.time;
             this.ticks = this.time2Ticks(this.time);
         }
         this.list = [];
@@ -90,7 +90,7 @@ export default class TimeManager
 
     static save()
     {
-        Record.data.time = this.time;
+        Record.game.time = this.time;
     }
 
     static checkRange(day, time, range)
@@ -265,6 +265,6 @@ export class Schedular
 
     static loadRole(id)
     {
-        return Record.data.roles?.[id];
+        return Record.game.roles?.[id];
     }
 }
