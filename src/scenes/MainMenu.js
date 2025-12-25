@@ -3,7 +3,7 @@ import Utility from '../utility.js';
 import Record from '../record';
 import Local from '../local';
 import DB from '../db';
-import UiSettings from '../ui/uisettings.js'
+import UiSetting from '../ui/uisetting.js'
 import {GM} from '../setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
@@ -45,7 +45,7 @@ export class MainMenu extends Scene
         GM.w = this.sys.canvas.width;
         GM.h = this.sys.canvas.height;
         this.input.setDefaultCursor('none');    // 消除預設的游標
-        new UiSettings(this);
+        new UiSetting(this);
         new UiCursor(this);
     }
 
@@ -81,7 +81,7 @@ export class MainMenu extends Scene
     btn_setting(x, y)
     {
         this.button(x, y, '遊戲設定',()=>{
-            UiSettings.show()
+            UiSetting.show()
         });//, () => {this.scene.start('Setting');});
     }
 

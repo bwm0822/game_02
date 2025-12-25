@@ -6,7 +6,7 @@ import Record from '../record.js'
 const E={CHK:'check',DD:'dropdown'};
 const item_width=350;
 
-export default class UiSettings extends UiFrame
+export default class UiSetting extends UiFrame
 {
     static instance = null;
     constructor(scene)
@@ -22,7 +22,7 @@ export default class UiSettings extends UiFrame
         }
 
         super(scene, config , UI.TAG.SETTINGS)
-        UiSettings.instance=this;
+        UiSetting.instance=this;
         this.addBg(scene)
             .addTop(scene,'setting')
             .addTabs(scene)
