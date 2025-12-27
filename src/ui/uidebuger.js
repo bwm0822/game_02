@@ -63,7 +63,8 @@ export default class UiDebuger extends UiFrame
             // width: GM.w/2,
             height : 400,
             orientation: 'y',
-            space: {left:10,right:10,bottom:10,item:0},
+            // space: {left:10,right:10,bottom:10,item:0},
+            space:UI.SPACE.FRAME,
             // cover: {interactive:true, alpha:0.5},
         }
         super(scene, config, UI.TAG.DEBUGER);

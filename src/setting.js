@@ -350,6 +350,7 @@ export const UI =
         CHECK:'check',FOLD:'fold',DROP:'drop',
     },
     SPACE:{
+        FRAME: {left:10, right:10, top:10, bottom:10, item:10},
         LRTB: { p5:{left:5, right:5, top:5, bottom:5},
                 p10:{left:10, right:10, top:10, bottom:10}},
         

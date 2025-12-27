@@ -15,8 +15,8 @@ export default class UiObserve extends UiFrame
             width : 300,
             // height : 300,
             orientation : 'y',
-            space: 10,
-            cover: {alpha:0.5}
+            space:UI.SPACE.FRAME,
+            cover: {alpha:0.5},
         }
 
         super(scene, config, UI.TAG.OBSERVE);

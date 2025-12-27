@@ -14,7 +14,8 @@ export default class UiStorage extends UiFrame
             x:100,
             y:GM.h-150,
             orientation : 'y',
-            space:{left:5,right:5,top:5,bottom:5,item:5},
+            // space:{left:5,right:5,top:5,bottom:5,item:5},
+            space:UI.SPACE.FRAME,
         }
 
         super(scene, config, UI.TAG.STORAGE);

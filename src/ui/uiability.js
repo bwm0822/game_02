@@ -16,7 +16,8 @@ export default class UiAbility extends UiFrame
             y : GM.h/2,
             width: 250,
             orientation : 'y',
-            space:{left:10,right:10,bottom:10,item:0},
+            // space:{left:10,right:10,bottom:10,item:0},
+            space:UI.SPACE.FRAME,
             cover: {touchClose:false},
         }
         super(scene, config, UI.TAG.ABILITY);

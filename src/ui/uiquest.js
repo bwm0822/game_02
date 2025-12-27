@@ -12,10 +12,10 @@ export default class UiQuest extends UiFrame
         {
             x : GM.w/2,
             y : GM.h/2,
-            width : 800,
-            height : 500,
+            // width : 800,
+            // height : 500,
             orientation : 'y',
-            space:UI.SPACE.LRTBI_5,
+            space:UI.SPACE.FRAME,
         }
 
         super(scene, config, UI.TAG.QUEST);
@@ -25,7 +25,7 @@ export default class UiQuest extends UiFrame
         this.addBg(scene)
             .addTop(scene,'quest')
             .addTabs(scene)
-            .addPage(scene)
+            // .addPage(scene)
             .layout()
             .hide()
     }
@@ -34,31 +34,36 @@ export default class UiQuest extends UiFrame
     {
         this._tabs = ui.uTabs.call(this, scene, {
             top: [{text:'open',name:'open'},{text:'close',name:'close'}],
-            onclick:(btn)=>{this._pageName=btn.name;this.updatePage();}
+            onclick:(btn)=>{this._pageName=btn.name;this.updatePage();},
+            createpanel:()=>this.createPage(scene),
         })
-
+        this._page =  this._tabs.getElement('panel');     
         return this;
     }
 
-    addPage(scene)
+    createPage(scene)
     {
-        const p = ui.uPanel.call(this, scene, {
-                    space:{left:5,right:5,top:5,bottom:5,item:10}, 
-                    ext:{expand:true,proportion:1}
-                });
+        const config=
+        {
+            bg:{color:GM.COLOR.PRIMARY},
+            space:{left:5,right:5,top:5,bottom:5,item:10}, 
+            width:750,
+            height:400,
+            // ext:{expand:true,proportion:1}
+        }
+
+        const p = ui.uPanel(scene, config);
 
         p.scroll = ui.uScroll.call(p, scene, {bg:{},width:200,ext:{expand:true}});
 
         p.content = ui.uPanel.call(p, scene, {
                     orientation:'y',
-                    color:GM.COLOR_DARK,
+                    bg:{color:GM.COLOR_DARK},
                     space:10,
                     ext:{expand:true,proportion:1}
                 });
 
-        this._page = p;
-
-        return this;
+        return p;
     }
 
     updateContent(q)
@@ -86,10 +91,10 @@ export default class UiQuest extends UiFrame
     {
         const scene = this.scene;
 
-        const ondown = (itm)=>{
-            if(this._itm) {this._itm.set(false);}
+        const onclick = (itm)=>{
+            if(this._itm) {this._itm.setValue(false);}
             this._itm=itm;
-            itm.set(true);
+            itm.setValue(true);
             this.updateContent(itm.q);
         }
 
@@ -105,7 +110,7 @@ export default class UiQuest extends UiFrame
                 const itm = ui.uButton(scene,{
                                 style: UI.BTN.ITEM,
                                 text: q.title(),
-                                onclick: ondown});
+                                onclick: onclick});
                 this._page.scroll.addItem(itm);
                 itm.q=q;
             }

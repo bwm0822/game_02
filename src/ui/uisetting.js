@@ -18,7 +18,8 @@ export default class UiSetting extends UiFrame
             width: 500,
             // height: 500,
             orientation : 'y',
-            space : {left:10,right:10,bottom:10},
+            // space : {left:10,right:10,bottom:10},
+            space:UI.SPACE.FRAME,
         }
 
         super(scene, config , UI.TAG.SETTING)
@@ -59,7 +60,7 @@ export default class UiSetting extends UiFrame
             width: 500,
             height: 300,
             space:{left:10,right:10,top:30,bottom:0,item:30},
-            ext:{expand:true},
+            // ext:{expand:true},
             hideUnscrollableSlider:true,
             disableUnscrollableDrag:true,
         }

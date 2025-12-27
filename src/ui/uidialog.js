@@ -15,7 +15,8 @@ export default class UiDialog extends UiFrame
             width : 600,
             height : 300,
             orientation : 'y',
-            space: 10,
+            // space: 10,
+            space:UI.SPACE.FRAME,
             cover: {touchClose:false,alpha:0.5},
         }
 

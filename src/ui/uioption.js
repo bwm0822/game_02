@@ -19,7 +19,7 @@ export default class UiOption extends UiFrame
             x: 0,
             y: 0,
             orientation:'y',
-            space: 5,
+            space: 0,
             cover: true,
         }
         super(scene, config, UI.TAG.OPTION);

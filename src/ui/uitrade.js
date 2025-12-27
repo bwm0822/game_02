@@ -16,7 +16,7 @@ export default class UiTrade extends UiFrame
             // width : 500,
             // height : 500,
             orientation : 'y',
-            space:5,
+            space:UI.SPACE.FRAME,
         }
 
         super(scene, config, UI.TAG.TRADE);

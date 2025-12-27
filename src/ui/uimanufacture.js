@@ -18,7 +18,7 @@ export default class UiManufacture extends UiFrame
             width: 500,
             height : 500,
             orientation : 'y',
-            space : 0,
+            space:UI.SPACE.FRAME,
         }
         super(scene, config, UI.TAG.MANUFACTURE);
         UiManufacture.instance = this;
@@ -38,14 +38,14 @@ export default class UiManufacture extends UiFrame
             orientation:'x',
             // bg:{color:GM.COLOR.RED},
             ext:{expand:true,proportion:1},
-            space:{left:10,right:10,bottom:10,top:0},
+            space:{item:10},
         }
         let row = ui.uPanel.call(this,scene,cfg_row);
 
         // 1. menu
         const cfg_menu=
         {
-            width:150,
+            width:100,
         }
         this._menu = ui.uScroll.call(row,scene,cfg_menu);
 
@@ -54,13 +54,14 @@ export default class UiManufacture extends UiFrame
         {
             orientation:'y',
             ext:{expand:true,proportion:1},
-            bg:{color:GM.COLOR.BLACK},
-            space:{...UI.SPACE.LRTB.p10, item:50},
+            // bg:{color:GM.COLOR.BLACK},
+            space:{left:0,bottom:10,top:0,right:0,item:50},
         }
         const main = ui.uPanel.call(row,scene,cfg_main);
 
         // 3. material
-        const addItem=(i)=>{return new MatSlot(scene,80,80,i,{onset:this.check.bind(this)});}
+        const addItem=(i)=>{return new MatSlot(scene,80,80,i,
+                                                {onset:this.check.bind(this)});}
         const cfg_mat=
         {
             addItem:addItem,
@@ -69,7 +70,8 @@ export default class UiManufacture extends UiFrame
         this._mats = ui.uGrid.call(main,scene,cfg_mat);
 
         // 4. output
-        this._output = new OutputSlot(scene,80,80);
+        this._output = new OutputSlot(scene,80,80,
+                                        {onset:this.check.bind(this)});
         main.add(this._output)
 
         // 5. make
@@ -84,6 +86,7 @@ export default class UiManufacture extends UiFrame
     check()
     {
         let on = this.owner.check();
+        this._output.update();
         this._make.setEnable(on);
     }
 

@@ -506,7 +506,9 @@ export class OutputSlot extends Slot
 
     constructor(scene, w, h, config={})
     {
-        super(scene, w, h, -1, config);
+        const {onset,...cfg}=config
+        super(scene, w, h, -1, cfg);
+        this.onset = onset;
     }
 
     get dropable() {return false;}
@@ -514,7 +516,7 @@ export class OutputSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get content() {return this.owner?.output;}
-    set content(value) {this.owner.output=value; this.setSlot(value);}
+    set content(value) {this.owner.output=value; this.setSlot(value); this.onset?.();}
 
     empty() {this.content={id:this.content.id,count:0};}
 }

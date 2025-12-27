@@ -178,7 +178,7 @@ export default class QuestManager
     static save()
     {
         Record.game.quest = this.quests;
-        Record.save();
+        Record.saveGame();
     }
 
     static load()

@@ -12,10 +12,11 @@ export default class UiProfile extends UiFrame
         {
             x : 0,
             y : 0,
-            width : 400,
+            // width : 400,
             height : 0,
             orientation : 'y',
-            space:{left:10,right:10,bottom:10,item:0},
+            // space:{left:10,right:10,bottom:10,item:0},
+            space:UI.SPACE.FRAME,
         }
 
         super(scene, config, UI.TAG.PROFILE);
@@ -26,7 +27,6 @@ export default class UiProfile extends UiFrame
             .addTop(scene, UI.TAG.PROFILE)
             .addInfo(scene)
             .addTabs(scene)
-            .addPage(scene)
             .setOrigin(0)
             .layout()
             .hide()
@@ -64,23 +64,24 @@ export default class UiProfile extends UiFrame
     {
         this._tabs = ui.uTabs.call(this, scene, {
                     top: [{text:'🎴',name:'stats'},{text:'❤️',name:'states'}],
-                    onclick:(btn)=>{this._tab=btn.name;this.updatePage();}
+                    onclick:(btn)=>{this._tab=btn.name;this.updatePage()},
+                    createpanel:()=>{return this.createPage(scene)},
                 })
-        
+
+        this._page =  this._tabs.getElement('panel');        
         return this;
     }
 
-    addPage(scene)
+    createPage(scene)
     {
         const config=
         {
-            bg:{},
+            bg:{color:GM.COLOR.PRIMARY},
+            width:400,
             height:300,
-            ext:{expand:true}
+            // ext:{expand:true,proportion:1}
         }
-        this._page = ui.uScroll.call(this,scene,config)
-
-        return this;
+        return ui.uScroll(scene,config);
     }
 
     updateInfo()
