@@ -1,17 +1,17 @@
-import {Store} from './store.js';
+import {Store} from './store.js'
 // import {Entity,Port,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
-import {Entity,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
-import {Pickup} from './items/pickup.js';
 // import {Npc, Enemy} from './role.js';
-import Utility from './utility.js';
-import QuestManager from './quest.js';
-import {astar, Graph} from './astar.js';
-import {GM} from './setting.js';
-import Record from './record.js';
-import {Box} from './items/case.js';
-import {Port} from './items/port.js';
-// import {Npc as Npc_n} from './roles/npc.js';
-import {Npc} from './roles/npc.js';
+import Utility from './utility.js'
+import QuestManager from './quest.js'
+import {astar, Graph} from './astar.js'
+import {GM} from './setting.js'
+import Record from './record.js'
+import {Npc} from './roles/npc.js'
+import {Entity,Case,Node,Point,Well,Door,Bed} from './entity.js'
+import {Pickup} from './items/pickup.js'
+import Box from './items/case.js'
+import Port from './items/port.js'
+import Stove from './items/stove.js'
 
 let DEBUG = false;
 

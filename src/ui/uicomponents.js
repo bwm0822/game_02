@@ -248,6 +248,7 @@ export function uButton(scene,config={})
             btn.disableInteractive();
             btn._text?.setAlpha(0.5);
             btn._icon?.setAlpha(0.5);
+            btn._bg.setFillStyle(cBG);
         }
         return btn;
     }

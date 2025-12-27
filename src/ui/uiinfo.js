@@ -17,9 +17,9 @@ export default class UiInfo extends UiFrame
             x : 100,
             y : 100,
             width : 250,
-            height : 100,
+            // height : 100,
             orientation : 'y',
-            space:{...UI.SPACE.LRTB_5,item:0}
+            space:{...UI.SPACE.LRTB.p10,item:0}
         }
 
         super(scene, config, UI.TAG.INFO);
@@ -186,6 +186,11 @@ export default class UiInfo extends UiFrame
         return this;
     }
 
+    addText(text)
+    {
+        ui.uBbc.call(this,this.scene,{text:text,ext:{align:'center'}});
+    }
+
     ifAbility(elm)
     {
         let config = {
@@ -236,7 +241,8 @@ export default class UiInfo extends UiFrame
         {
             case UI.INFO.SLOT:
                 if(typeof elm.dat === 'object') {this.ifSlot(elm);}
-                else {this.addText(elm.dat.des(),{align:'center'});}
+                // else {this.addText(elm.dat.des(),{align:'center'});}
+                else {this.addText(elm.dat,{align:'center'});}
                 break;
 
             case UI.INFO.PROP:

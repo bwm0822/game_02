@@ -32,8 +32,6 @@ export default class InventoryService
     // 入口：處理放下
     static handleDrop({ from, to }={}) 
     {
-        console.log('---------------- handleDrop')
-
         if (!to.enabled) {return 'blocked';}
 
         // 交易

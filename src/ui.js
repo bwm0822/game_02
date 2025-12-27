@@ -38,7 +38,7 @@ import UiTime  from './ui/uitime.js'
 import UiMessage  from './ui/uimessage.js'
 import UiChangeScene  from './ui/uichangescene.js'
 import UiGameOver  from './ui/uigameover.js'
-// import UiSettings_1  from './ui/uisettings.js'
+import UiManufacture  from './ui/uimanufacture.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -100,7 +100,7 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiSettings_1(scene);
+    // new UiManufacture_1(scene);
     // new UiTest(scene);
 
     test();
@@ -173,7 +173,7 @@ export class Slot extends Icon
     // cat
     get cat() {return GM.CAT_ALL;}
     set cat(value) {}
-    get isValid() {return UiDragged.checkCat(this.cat)}
+    get isValid() {return UiDragged.checkCat(this.cat)&&this.dropable;}
     // others
     get gold() {return this.content.count*this.dat.gold;}
 
@@ -474,12 +474,18 @@ export class EquipSlot extends Slot
 
 }
 
-class MatSlot extends Slot
+export class MatSlot extends Slot
 {
-    constructor(scene, w, h, i, getOwner, config)
+    // constructor(scene, w, h, i, getOwner, config)
+    // {
+    //     super(scene, w, h, i, getOwner, config);
+    //     this.onset = config?.onset;
+    // }
+    constructor(scene, w, h, i, config)
     {
-        super(scene, w, h, i, getOwner, config);
-        this.onset = config?.onset;
+        const {onset,...cfg}=config
+        super(scene, w, h, i, cfg);
+        this.onset = onset;
     }
 
     get cat() {return this._cat;}
@@ -490,12 +496,17 @@ class MatSlot extends Slot
     set content(value) {super.content=value; this.onset?.();}
 }
 
-class OutputSlot extends Slot
+export class OutputSlot extends Slot
 {
-    constructor(scene, w, h, getOwner, config)
+    // constructor(scene, w, h, getOwner, config)
+    // {
+    //     super(scene, w, h, -1, getOwner, config);
+    //     this.onset = config?.onset;
+    // }
+
+    constructor(scene, w, h, config={})
     {
-        super(scene, w, h, -1, getOwner, config);
-        this.onset = config?.onset;
+        super(scene, w, h, -1, config);
     }
 
     get dropable() {return false;}
@@ -503,7 +514,7 @@ class OutputSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get content() {return this.owner?.output;}
-    set content(value) {this.owner.output=value; this.onset?.();}
+    set content(value) {this.owner.output=value; this.setSlot(value);}
 
     empty() {this.content={id:this.content.id,count:0};}
 }
@@ -768,7 +779,10 @@ export class UiDragged extends OverlapSizer
         else {this.disableInteractive();}
     }
 
-    checkCat(cat) {return (this.dat.cat & cat) == this.dat.cat;}
+    checkCat(cat) 
+    {
+        return (this.dat.cat & cat) === this.dat.cat;
+    }
 
     update() 
     {
@@ -1247,7 +1261,7 @@ export class Block extends Pic
 
 }
 
-export class UiManufacture extends UiBase
+export class UiManufacture_1 extends UiBase
 {
     static instance=null;
     constructor(scene)
@@ -1262,7 +1276,7 @@ export class UiManufacture extends UiBase
         }
 
         super(scene, config, 'UiManufacture')
-        UiManufacture.instance=this;
+        UiManufacture_1.instance=this;
         this.scene=scene;
         this.addBg_Int(scene)
             .addTop(scene,{text:'make'.lab()})
@@ -1384,6 +1398,7 @@ export class UiManufacture extends UiBase
 
     show(owner)
     {
+        console.log(owner)
         this.owner = owner;
         super.show();
         this.update();

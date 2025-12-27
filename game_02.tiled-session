@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/trump-inn-f1.json",
     "expandedProjectPaths": [
-        "public/assets/templates",
-        "public/assets/maps",
-        "public/assets/tiles",
-        "public",
         ".",
-        "public/assets"
+        "public/assets",
+        "public/assets/templates",
+        "public/assets/tiles",
+        "public/assets/maps",
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -225,14 +225,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                3,
-                2
+                2,
+                3
             ],
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 641
+                "y": 640.5
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -258,7 +258,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 320,
-                "y": 320.6666666666667
+                "y": 320.33333333333337
             }
         },
         "public/assets/maps/icons/buffs.tsj": {
@@ -305,7 +305,7 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 511.99999999999994,
+                "x": 513.3333333333333,
                 "y": 512.6666666666666
             }
         },
@@ -321,14 +321,14 @@
         },
         "public/assets/maps/musk-home.json": {
             "expandedObjectLayers": [
-                3,
-                4
+                4,
+                3
             ],
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 355.3333333333333,
-                "y": 157.33333333333334
+                "x": 160,
+                "y": 159.66666666666663
             }
         },
         "public/assets/maps/musk_home.json": {
@@ -395,7 +395,7 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 99.96458170999503,
+                "x": 176.12807253665795,
                 "y": 239.37097116951196
             }
         },
@@ -439,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 450,
-                "y": 640.6666666666666
+                "x": 451.33333333333337,
+                "y": 560.6666666666666
             }
         },
         "public/assets/maps/village-02.json": {
@@ -644,25 +644,22 @@
     "openFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
-        "public/assets/maps/forest-01.json",
-        "public/assets/roles.tsj",
-        "public/assets/maps/house_01.json",
-        "public/assets/maps/musk-home.json"
+        "public/assets/maps/trump-inn-f1.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/musk-home.json",
-        "public/assets/maps/house_01.json",
-        "public/assets/roles.tsj",
-        "public/assets/maps/forest-01.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/village-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/roles.tsj",
+        "public/assets/maps/house_01.json",
+        "public/assets/maps/musk-home.json",
         "public/assets/maps/village-02.json",
         "public/assets/maps/macron-home.json",
         "public/assets/maps/karen-home.json",
         "public/assets/maps/forest_01.json",
-        "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/xi-home.json"
     ],
     "resizeMap.removeObjects": false,

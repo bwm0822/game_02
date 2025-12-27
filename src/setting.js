@@ -386,7 +386,8 @@ export const UI =
         MESSAGE:'message',
         CHANGESCENE:'changescene',
         GAMEOVER:'gameover',
-        SETTINGS:'settings',
+        SETTING:'setting',
+        MANUFACTURE:'manufacture',
     },
     INFO:{
         SLOT:0,

@@ -2,7 +2,7 @@ import {GameObject} from '../core/gameobject.js';
 import {ItemView} from '../components/view.js';
 import {COM_Port} from '../components/port.js';
 
-export class Port extends GameObject
+export default class Port extends GameObject
 {
     init_prefab()
     {      

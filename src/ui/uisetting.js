@@ -21,10 +21,10 @@ export default class UiSetting extends UiFrame
             space : {left:10,right:10,bottom:10},
         }
 
-        super(scene, config , UI.TAG.SETTINGS)
+        super(scene, config , UI.TAG.SETTING)
         UiSetting.instance=this;
         this.addBg(scene)
-            .addTop(scene,'setting')
+            .addTop(scene,UI.TAG.SETTING)
             .addTabs(scene)
             // .addPage(scene)
             .layout()
