@@ -15,7 +15,6 @@ export default class UiProfile extends UiFrame
             // width : 400,
             height : 0,
             orientation : 'y',
-            // space:{left:10,right:10,bottom:10,item:0},
             space:UI.SPACE.FRAME,
         }
 

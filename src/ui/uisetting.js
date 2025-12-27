@@ -18,7 +18,6 @@ export default class UiSetting extends UiFrame
             width: 500,
             // height: 500,
             orientation : 'y',
-            // space : {left:10,right:10,bottom:10},
             space:UI.SPACE.FRAME,
         }
 
