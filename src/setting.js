@@ -390,6 +390,7 @@ export const UI =
         SETTING:'setting',
         MANUFACTURE:'manufacture',
         COVER:'cover',
+        DRAGGED:'dragged',
     },
     INFO:{
         SLOT:0,

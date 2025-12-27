@@ -1,5 +1,6 @@
-import {Scene} from 'phaser';
-import createUI,{UiDragged} from '../ui.js';
+import {Scene} from 'phaser'
+import createUI from '../ui.js'
+import UiDragged from '../ui/uidragged.js'
 // import * as Role from '../role.js';
 
 export class UI extends Scene
