@@ -1,12 +1,13 @@
 // services/dragService.js
 // import { Ui, UiInv, UiCover, UiMain, UiDragged, UiInfo } from '../ui.js';
 import InventoryService from './inventoryService.js'
-import {UiCover,UiDragged} from '../ui.js'
+import {UiDragged} from '../ui.js'
 import UiInv from '../ui/uiinv.js'
 import {GM} from '../setting.js'
 import Ui from '../ui/uicommon.js'
 import UiMain from '../ui/uimain.js'
 import UiInfo from '../ui/uiinfo.js'
+import UiCover from '../ui/uicover.js'
 
 
 export default class DragService 

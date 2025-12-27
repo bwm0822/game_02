@@ -7,7 +7,7 @@ import QuestManager from  '../quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
 import {GM,DEBUG} from '../setting.js';
-import {UiCover} from '../ui.js'
+import UiCover from '../ui/uicover.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
 import UiOption from '../ui/uioption.js'

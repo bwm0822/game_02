@@ -39,6 +39,7 @@ import UiMessage  from './ui/uimessage.js'
 import UiChangeScene  from './ui/uichangescene.js'
 import UiGameOver  from './ui/uigameover.js'
 import UiManufacture  from './ui/uimanufacture.js'
+import UiCover  from './ui/uicover.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -904,48 +905,6 @@ export class UiDragged extends OverlapSizer
 
     static interact(on) {this.instance.interact(on);}
 
-}
-
-export class UiCover extends Sizer
-{
-    static instance = null;
-    constructor(scene)
-    {
-        super(scene,0,0,GM.w,GM.h);
-        UiCover.instance = this;
-        Ui.addLayer(scene, 'UiCover', this);    // 產生layer，並設定layer名稱
-
-        this.addBackground(rect(scene,{color:GM.COLOR_DARK,alpha:0.5}))
-            .setOrigin(0,0)
-            .layout()
-            .hide()
-        // scene.add.existing(this);
-        // Ui.addLayer(scene, 'UiCover', this);
-
-
-        // this.setInteractive()
-        //     .on('pointerdown',()=>{UiDragged.drop();})
-        this.setInteractive();
-        this._cnt=0;
-    }
-
-    show()
-    {
-        super.show();
-        this._cnt++;
-    }
-
-    close()
-    {
-        if(--this._cnt<=0)
-        {
-            this.hide();
-            this._cnt=0;
-        }
-    }
-
-    static show() {UiCover.instance?.show();}
-    static close() {UiCover.instance?.close();}
 }
 
 export class Block extends Pic

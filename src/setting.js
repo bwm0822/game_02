@@ -389,6 +389,7 @@ export const UI =
         GAMEOVER:'gameover',
         SETTING:'setting',
         MANUFACTURE:'manufacture',
+        COVER:'cover',
     },
     INFO:{
         SLOT:0,
