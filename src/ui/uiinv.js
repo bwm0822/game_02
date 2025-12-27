@@ -16,7 +16,6 @@ export default class UiInv extends UiFrame
             width : 100,
             height : 100,
             orientation : 'y',
-            // space : {left:10,right:10,bottom:10,item:0},
             space:UI.SPACE.FRAME,
         }
 
