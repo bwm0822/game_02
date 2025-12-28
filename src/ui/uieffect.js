@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import {GM,UI,DEBUG,DBG} from '../setting.js'
 import * as ui from './uicomponents.js'
-import {Effect} from '../ui.js'
+import {Effect} from './uiclass.js'
 
 export default class UiEffect extends UiFrame
 {

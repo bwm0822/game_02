@@ -1,6 +1,5 @@
-import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea, AlphaMaskImage} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
+import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import {GM, UI} from '../setting.js'
-// import {Pic} from '../uibase.js'
 import Utility from '../utility.js'
 
 export class Pic extends OverlapSizer
@@ -384,14 +383,14 @@ export function uTop(scene, {text,color,onclose}={})
     return row;
 }
 
-function uBar(scene, config={})
+export function uBar(scene, config={})
 {
     const {ext,...cfg}=config;
     cfg.height = cfg.height ?? 20;
     cfg.width = cfg.width ?? 100;
-    cfg.barColor = cfg.barColor ?? GM.COLOR.RED;
-    // cfg.trackColor = cfg.trackColor ?? GM.COLOR.BLACK;
-    // cfg.trackStrokeColor = config.trackStrokeColor;
+    cfg.barColor = cfg.barColor ?? GM.COLOR.GREEN;
+    // cfg.trackColor = cfg.trackColor ?? GM.COLOR.BLACK;   // 底色
+    // cfg.trackStrokeColor = config.trackStrokeColor;      // 邊框
     cfg.value = cfg.value ?? 0.5;
     const bar = scene.add.rexRoundRectangleProgress(cfg);
 

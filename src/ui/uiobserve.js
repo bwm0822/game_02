@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-import {Block} from '../ui.js'
+import {Block} from './uiclass.js'
 
 export default class UiObserve extends UiFrame
 {

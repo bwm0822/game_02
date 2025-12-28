@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-import {MatSlot,OutputSlot,Block} from '../ui.js'
+import {MatSlot,OutputSlot} from './uiclass.js'
 import DB from '../db.js';
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'

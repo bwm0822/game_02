@@ -39,6 +39,7 @@ export const GM =
         CYAN : 0x00AAAA,
         BLUE : 0x0000AA,
         BLACK : 0x010101,
+        BAR_GREEN : 0x00ff00,
     },
 
     FONT : "Arial",

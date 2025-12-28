@@ -2,7 +2,7 @@ import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
 import Ui from './uicommon.js'
-import {Slot, EquipSlot} from '../ui.js'
+import {Slot, EquipSlot} from './uiclass.js'
 
 export default class UiInv extends UiFrame
 {

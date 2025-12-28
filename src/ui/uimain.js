@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-import {AbilitySlot} from '../ui.js'
+import {AbilitySlot} from './uiclass.js'
 import UiInv from '../ui/uiinv.js'
 import UiQuest from '../ui/uiquest.js'
 import UiProfile from '../ui/uiprofile.js'
@@ -67,7 +67,7 @@ export default class UiMain extends UiFrame
         
         // state
         const st = ui.uPanel.call(p, scene, {ext:{expand:true}});
-        this._hp = ui.uProgress.call(st,scene,{width:200,style:UI.PROGRESS.VAL});
+        this._hp = ui.uProgress.call(st,scene,{width:200,style:UI.PROGRESS.VAL,barColor:GM.COLOR.RED});
 
         // ability
         const ab = ui.uPanel.call(p, scene, {space:{item:5},ext:{expand:true}});

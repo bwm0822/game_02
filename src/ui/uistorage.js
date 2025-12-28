@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
-import {Slot} from '../ui.js'
+import {Slot} from './uiclass.js'
 import UiInv from '../ui/uiinv.js'
 
 export default class UiStorage extends UiFrame

@@ -1,8 +1,7 @@
 import UiFrame from './uiframe.js'
 import {GM,UI} from '../setting.js'
 import * as ui from './uicomponents.js'
-
-import {AbilityItem} from '../ui.js'
+import {AbilityItem} from './uiclass.js'
 
 
 export default class UiAbility extends UiFrame
