@@ -1,7 +1,85 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea, AlphaMaskImage} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {GM, UI} from '../setting.js'
-import {Pic} from '../uibase.js'
+// import {Pic} from '../uibase.js'
 import Utility from '../utility.js'
+
+export class Pic extends OverlapSizer
+{
+    constructor(scene, w, h, config={})
+    {            
+        const{
+            x, y, space=2, 
+            icon, 
+            bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
+                strokeColor:GM.COLOR.WHITE,strokeWidth:2}
+        }=config;
+
+        super(scene, x, y, w, h,{space:space});
+        this.addBackground(uRect(scene,bg),'background')
+        this._sp=uSprite.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
+        this.layout()
+
+        scene.add.existing(this);
+    }
+
+    setIcon(icon,{tint=0xffffff,alpha=1}={})
+    {
+        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        const sp=this._sp;
+        sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+        sp.rexSizer.aspectRatio = sp.width/sp.height;
+        this.layout();
+        return this;
+    }
+}
+
+export class Icon extends OverlapSizer
+{
+    constructor(scene, w, h, config={})
+    {
+        const{
+            x, y, space=10, 
+            fontSize=20,
+            count,
+            icon, 
+            bg={color:GM.COLOR.SLOT,radius:0,alpha:1},
+        }=config;
+
+        super(scene, x, y, w, h,{space:space});
+        this.addBackground(uRect(scene,bg),'background')
+        this._sp=uSprite.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
+        this._bbc=uBbc.call(this,scene,{text:count,fontSize:fontSize,color:'#fff',strokeThickness:5,
+                                        ext:{align:'right-bottom',expand:false,offsetY:space,offsetX:space}})
+        this.layout()
+
+        scene.add.existing(this);
+
+    }
+
+    setIcon(icon,{tint=0xffffff,alpha=1}={})
+    {
+        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        const sp = this._sp;
+        sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+        sp.rexSizer.aspectRatio = sp.width/sp.height;
+        this.layout();
+        return this;
+    }
+
+    setCount(count)
+    {
+        this._bbc.setText(`[stroke=#000]${count}[/stroke]`)
+        this.layout();
+        return this;
+    }
+
+    empty()
+    {
+        this._sp.setTexture();
+        this._bbc.setText('');
+    }
+
+}
 
 export function uRect(scene, config={})
 {

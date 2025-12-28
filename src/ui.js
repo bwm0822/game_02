@@ -1,7 +1,7 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import ContainerLite from 'phaser3-rex-plugins/plugins/containerlite.js';
 import Utility from './utility.js';
-import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
+import {rect, divider, sprite, text, bbcText, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
 import {GM, ACT_TYPE, UI} from './setting.js';
 
 import DB from './db.js';
@@ -41,6 +41,8 @@ import UiGameOver  from './ui/uigameover.js'
 import UiManufacture  from './ui/uimanufacture.js'
 import UiCover  from './ui/uicover.js'
 import UiDragged  from './ui/uidragged.js'
+
+import {Pic,Icon} from './ui/uicomponents.js'
 
 import UiTest from './ui/uitest.js'
 
