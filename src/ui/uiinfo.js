@@ -267,20 +267,26 @@ export default class UiInfo extends UiFrame
         this.layout()
     }
 
+    getXY(elm)
+    {
+        let x=elm.x,y=elm.y;
+        let parent = elm.parentContainer;
+        let parentX=0, parentY=0;
+        if(parent)
+        {
+            parentX = parent.x;
+            parentY = parent.y;
+            x += parentX;
+            y += parentY;
+        }
+        return [x,y,parentX,parentY];
+    }
+
     show(type, elm)
     {
         super.show();
-        let x=elm.x,y=elm.y;
 
-        // let parent = elm.parentContainer;
-        let parentX=0, parentY=0;
-        // if(parent)
-        // {
-        //     parentX = parent.x;
-        //     parentY = parent.y;
-        //     x += parentX;
-        //     y += parentY;
-        // }
+        let [x,y,parentX,parentY]=this.getXY(elm);
 
         switch(type)
         {
