@@ -343,8 +343,10 @@ export const GM =
 
 export const UI =
 {
-    BG:{BORDER:{strokeColor:GM.COLOR_GRAY, strokeWidth:2},
-        BORDER_DARK:{strokeColor:GM.COLOR_DARK, strokeWidth:2},
+    MODE:{NORMAL:0,FILL:1},
+    BG:{
+        BORDER:{strokeColor:GM.COLOR_GRAY,strokeWidth:2},
+        BORDER_DARK:{strokeColor:GM.COLOR_DARK,strokeWidth:2},
     },
     BTN:{
         DEF:'def',ITEM:'itm',OPTION:'option',

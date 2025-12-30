@@ -441,7 +441,7 @@
                          "value":1000
                         }],
                  "rotation":0,
-                 "type":"box",
+                 "type":"case",
                  "visible":true,
                  "width":32,
                  "x":448,

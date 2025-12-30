@@ -343,6 +343,11 @@ export class COM_Stats extends Com
         });
 
     }
+
+    _drink()
+    {
+        console.log('drink')
+    }
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -367,6 +372,7 @@ export class COM_Stats extends Com
         root.addProcs = this._addProcs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);
+        root.drink = this._drink.bind(this);
 
         // 註冊 event 
         root.on('heal', this._heal.bind(this) );

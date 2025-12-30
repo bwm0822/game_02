@@ -9,6 +9,7 @@ import UiInfo from './uiinfo.js'
 import UiDragged from './uidragged.js'
 import UiOption from './uioption.js'
 import UiConfirm from './uiconfirm.js'
+import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import {getPlayer} from '../roles/player.js'
 
@@ -27,6 +28,7 @@ export class Slot extends Icon
         this.addBackground(this._disabled,'disabled');
 
         this._i = i;
+        this._filter = true;
         this.addListener();
     }
 
@@ -101,16 +103,14 @@ export class Slot extends Icon
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
-    p(prop) // content,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
-    {
-        let [p,sub] = prop.split('.');
-        return sub ? this.content?.[p]?.[sub] != undefined ? this.content[p][sub] 
-                                                        : this.dat?.[p]?.[sub]
-                    : this.content?.[p] != undefined ? this.content[p] 
-                                                    : this.dat?.[p];
-    }  
-
-    fill(p) {if(this.dat[p] != undefined) {this.content[p] = this.dat[p].max;}}
+    // p(prop) // content,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
+    // {
+    //     let [p,sub] = prop.split('.');
+    //     return sub ? this.content?.[p]?.[sub] != undefined ? this.content[p][sub] 
+    //                                                     : this.dat?.[p]?.[sub]
+    //                 : this.content?.[p] != undefined ? this.content[p] 
+    //                                                 : this.dat?.[p];
+    // }  
 
     setSlot(content)
     {
@@ -145,7 +145,6 @@ export class Slot extends Icon
 
     setBar(visible, cur, max)
     {
-        // let elm = this.getElement('bar');
         const elm=this._bar;
         elm.visible=visible;
         if(visible) {elm.setValue(cur/max);}
@@ -153,7 +152,6 @@ export class Slot extends Icon
 
     setProgress(visible, cur, max)
     {
-        // let elm = this.getElement('progress');
         const elm=this._progress;
         elm.visible = visible;
         if(visible) {elm.setValue(cur/max);}
@@ -161,7 +159,6 @@ export class Slot extends Icon
 
     setTimes(visible, cur, max)
     {
-        // let elm = this.getElement('times');
         const elm=this._times;
         elm.visible=visible;
         if(visible) 
@@ -175,7 +172,6 @@ export class Slot extends Icon
             elm.setText(times);
             this.layout();  // 長度會改變，所以要加 layout()
         }
-
     }
 
     addListener()
@@ -208,12 +204,52 @@ export class Slot extends Icon
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
 
+    filter(conds)
+    {
+        conds = conds||[];
+        this._filter=true;
+        for(const cond of conds)
+        {
+            if(this.isEmpty) {this._filter=false; return}
+            if(cond.cat)
+            {
+                if((this.dat.cat&cond.cat)!==cond.cat)
+                {
+                    this._filter=false;
+                    return;
+                }
+            }
+            if(cond.p)
+            {
+                const ps= [].concat(cond.p);
+                for(const p of ps)
+                {
+                    if(this.dat[p]===undefined)
+                    {
+                        this._filter=false;
+                        return;
+                    }
+                }
+                
+            }
+            if(cond.id)
+            {
+                const ids = [].concat(cond.id);
+                if(!ids.includes(this.id))
+                {
+                    this._filter=false;
+                    return;
+                }
+            }
+        }
+    }
+
     update(owner,cat)
     {
         owner && (this.owner=owner);
         cat && (this.cat=cat);  // for MatSlot
         this.setSlot(this.content);
-        this.setEnable(this.enabled);
+        this.setEnable(this.enabled&&this._filter);
     }
 
     setEnable(on)
@@ -235,33 +271,37 @@ export class Slot extends Icon
     
     over(checkEquip=true)
     {
-        if(this.dropable && UiDragged.isSlot)
+        if(Ui.mode===UI.MODE.NORMAL)
         {
-            if(this.trading)
+            if(this.dropable && UiDragged.isSlot)
             {
-                if(this.isEmpty)
+                if(this.trading)
                 {
-                    this.setBgColor(this.isValid ? GM.COLOR.SLOT_TRADE : GM.COLOR.SLOT_INVALID);
+                    if(this.isEmpty)
+                    {
+                        this.setBgColor(this.isValid ? GM.COLOR.SLOT_TRADE : GM.COLOR.SLOT_INVALID);
+                    }
+                    else
+                    {
+                        this.setBgColor(GM.COLOR.SLOT_DISABLE);
+                    }
                 }
                 else
                 {
-                    this.setBgColor(GM.COLOR.SLOT_DISABLE);
+                    this.setBgColor(this.isValid ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT_INVALID);
                 }
             }
-            else
+            else if(!this.isEmpty && !UiDragged.isAbility)
             {
-                this.setBgColor(this.isValid ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT_INVALID);
+                this.setBgColor(GM.COLOR.SLOT_OVER);
+
+                // 使用 delacyCall 延遲執行 UiInfo.show()
+                Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
+                // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
+                checkEquip && UiInv.checkEquipSlots(this.dat.cat);
             }
         }
-        else if(!this.isEmpty && !UiDragged.isAbility)
-        {
-            this.setBgColor(GM.COLOR.SLOT_OVER);
 
-            // 使用 delacyCall 延遲執行 UiInfo.show()
-            Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
-            // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
-            checkEquip && UiInv.checkEquipSlots(this.dat.cat);
-        }
     }
 
     out(checkEquip=true)
@@ -291,7 +331,29 @@ export class Slot extends Icon
 
     leftButtonDown(x,y)
     {
-        DragService.onSlotDown(this, x, y);
+        if(Ui.mode===UI.MODE.FILL)
+        {
+            this.fill();
+        }
+        else
+        {
+            DragService.onSlotDown(this, x, y);
+        }
+    }
+
+    fill()
+    {
+        const content=this.content;
+        if(content.capacity<this.dat.capacity)
+        {
+            content.capacity=this.dat.capacity;
+            this.update()
+            UiMessage.push(`${this.owner.id} 裝水`)
+        }
+        else
+        {
+            UiMessage.push(`${this.owner.id} 水壺已滿`)
+        }
     }
 
 }

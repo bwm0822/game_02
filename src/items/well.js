@@ -1,9 +1,9 @@
 import {GM} from '../setting.js';
 import {ItemView} from '../components/view.js';
-import {COM_Storage} from '../components/inventory.js';
+import {COM_Well} from '../components/well.js';
 import {GameObject} from '../core/gameobject.js';
 
-export default class Case extends GameObject
+export default class Well extends GameObject
 {
 
     //------------------------------------------------------
@@ -20,7 +20,7 @@ export default class Case extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
-            .addCom( new COM_Storage() )
+            .addCom( new COM_Well() )
 
         // 載入
         this.load();

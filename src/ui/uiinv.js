@@ -3,6 +3,8 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../setting.js'
 import Ui from './uicommon.js'
 import {Slot, EquipSlot} from './uiclass.js'
+import UiCover from './uicover.js'
+import UiCursor from './uicursor.js'
 
 export default class UiInv extends UiFrame
 {
@@ -72,6 +74,12 @@ export default class UiInv extends UiFrame
         return this;
     }
 
+    filter(conds)
+    {
+        this._equips.loop(slot=>slot?.filter(conds));
+        this._bag.loop(slot=>slot?.filter(conds));   
+    }
+
     // 檢查所有裝備欄位，符合類別的裝備欄位，背景設置為 COLOR_SLOT_DRAG，否則設置為 COLOR_SLOT
     checkEquipSlots(cat)  
     {
@@ -97,18 +105,24 @@ export default class UiInv extends UiFrame
         super.close();
         this.unregister()
         this.closeAll(GM.UI_LEFT);
+        Ui.setMode(GM.UI_MODE_NORMAL);
+        UiCover.close();
+        UiCursor.set();
     }
 
     show(owner)
     {
         super.show();
         this.owner=owner;
+        this.filter();
         this.refresh();
         this.register(GM.UI_RIGHT);
+
     }
 
     static show(owner,cat) {this.instance?.show(owner,cat);}
     static toggle(owner) {this.instance?.toggle(owner);}
     static checkEquipSlots(cat) {this.instance?.checkEquipSlots(cat);}
+    static filter(conds) {this.instance?.filter(conds);}
 }
 

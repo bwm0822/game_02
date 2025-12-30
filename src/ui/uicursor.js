@@ -1,4 +1,5 @@
-import {GM} from '../setting.js';
+import {GM,UI} from '../setting.js'
+import Ui from './uicommon.js'
 
 export default class UiCursor extends Phaser.GameObjects.Sprite
 {
@@ -47,6 +48,7 @@ export default class UiCursor extends Phaser.GameObjects.Sprite
 
     setIcon(type)
     {
+        if(Ui.mode===UI.MODE.FILL){return;}
         let icon = UiCursor.icons[type] ?? UiCursor.icons.none;
         let [key,frame]=icon.sprite.split('/')
         this.setTexture(key,frame);

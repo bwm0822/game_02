@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/trump-inn-f1.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        ".",
-        "public/assets",
-        "public/assets/templates",
         "public/assets/tiles",
+        "public/assets/templates",
         "public/assets/maps",
-        "public"
+        "public/assets",
+        "public",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -305,8 +305,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 513.3333333333333,
-                "y": 512.6666666666666
+                "x": 512,
+                "y": 512.3333333333334
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -440,7 +440,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 451.33333333333337,
-                "y": 560.6666666666666
+                "y": 640.6666666666666
             }
         },
         "public/assets/maps/village-02.json": {
@@ -649,9 +649,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/village-01.json",
         "public/assets/maps/forest-01.json",
         "public/assets/roles.tsj",
         "public/assets/maps/house_01.json",

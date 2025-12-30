@@ -1,10 +1,10 @@
-import {GM, ACT_TYPE} from '../setting.js';
+import {GM, UI} from '../setting.js';
 
 export default class Ui
 {
     static _list = {};
     static _regs = {};
-    static _mode = GM.UI_MODE_NORMAL;
+    static _mode = UI.MODE.NORMAL;
     static _to = null;
 
     static get mode() {return this._mode;}

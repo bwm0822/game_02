@@ -6,7 +6,7 @@ import Record from '../record.js'
 import QuestManager from  '../quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
-import {GM,DEBUG} from '../setting.js';
+import {GM,UI,DEBUG} from '../setting.js';
 import UiCover from '../ui/uicover.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
@@ -362,10 +362,10 @@ export class GameScene extends Scene
     fill()
     {
         UiInv.show(this._player);
-        UiInv.filter([{type:'capacity',op:'<',value:'.max'}]);
+        UiInv.filter([{p:GM.CAPACITY}]);
         UiCursor.set('aim');
         UiCover.show();
-        Ui.setMode(GM.UI_MODE_FILL)
+        Ui.setMode(UI.MODE.FILL)
     }
 
     setEvent()

@@ -7,11 +7,12 @@ import {astar, Graph} from './astar.js'
 import {GM} from './setting.js'
 import Record from './record.js'
 import {Npc} from './roles/npc.js'
-import {Entity,Case,Node,Point,Well,Door,Bed} from './entity.js'
+import {Entity,Node,Point,Door,Bed} from './entity.js'
 import {Pickup} from './items/pickup.js'
-import Box from './items/case.js'
+import Case from './items/case.js'
 import Port from './items/port.js'
 import Stove from './items/stove.js'
+import Well from './items/well.js'
 
 let DEBUG = false;
 
@@ -312,7 +313,7 @@ class Map
                     {type:'bed',classType:Bed},
                     // {type:'enemy',classType:Enemy},
                     // {type:'npc_n',classType:Npc_n},
-                    {type:'box',classType:Box},
+                    {type:'case',classType:Case},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
             });
