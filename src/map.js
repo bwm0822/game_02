@@ -13,6 +13,7 @@ import Case from './items/case.js'
 import Port from './items/port.js'
 import Stove from './items/stove.js'
 import Well from './items/well.js'
+import {Door as Door_1} from './items/door.js'
 
 let DEBUG = false;
 
@@ -314,6 +315,7 @@ class Map
                     // {type:'enemy',classType:Enemy},
                     // {type:'npc_n',classType:Npc_n},
                     {type:'case',classType:Case},
+                    {type:'door_1',classType:Door_1},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});
             });

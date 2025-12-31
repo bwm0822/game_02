@@ -21,8 +21,8 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgText.setOrigin(0.5,1);
     }
 
-    let draw_body = ()=>{
-        if((mode & DBG.MODE.BODY)===0) {return;}
+    const draw_body = ()=>{
+        if((mode&DBG.MODE.BODY)===0) {return;}
         if(this.body)
         {
             // body 的 x, y 是 body 的左上角
@@ -35,8 +35,8 @@ function debugDraw(mode=DEBUG.mode,text)
         } 
     }
 
-    let draw_grid = ()=>{
-        if((mode & DBG.MODE.GRID)===0) {return;}
+    const draw_grid = ()=>{
+        if((mode&DBG.MODE.GRID)===0) {return;}
         if(this._grid)
         {
             // grid 的 x, y 是 body 的中心點
@@ -49,8 +49,8 @@ function debugDraw(mode=DEBUG.mode,text)
         }
     }
 
-    let draw_zone = ()=>{
-        if((mode & DBG.MODE.ZONE)===0) {return;}
+    const draw_zone = ()=>{
+        if((mode&DBG.MODE.ZONE)===0) {return;}
         if(this._zone)
         {
             // zone 的 x, y 是 zone 的中心點
@@ -63,9 +63,10 @@ function debugDraw(mode=DEBUG.mode,text)
         }
     }
 
-    let draw_pts = ()=>{
-        if(mode === DBG.MODE.CLR) {return;}
-        for(let p of this.pts)
+    const draw_pts = ()=>{
+        if((mode&DBG.MODE.POINT)===0) {return;}
+
+        for(const p of this.pts)
         {
             this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
             let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
@@ -77,14 +78,14 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgGraphics.strokeCircleShape(circle);
     }
 
-    let clr = ()=>{
+    const clr = ()=>{
         this._dbgGraphics.clear();
         if(this._dbgText) {this._dbgText.text='';}
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
     }
 
-    let show_text = (text)=>{
-        if(mode === DBG.MODE.CLR) {return;}
+    const show_text = (text)=>{
+        if(mode===DBG.MODE.CLR) {return;}
         if(this._dbgText)
         {
             this._dbgText.x = this.x;
@@ -120,7 +121,7 @@ class View extends Phaser.GameObjects.Container
         this._pGrids = [];          // grid 在地圖網格所佔據的點
         this._flipX = false;
         this._flipY = false;
-        this._pts = null;
+        // this._pts = null;
         this._hover = false;
         // 以下參數一定要給值，_setData()時，才會 assign 相對應的值
         this.wid = 0;               // container 的寬
@@ -149,8 +150,9 @@ class View extends Phaser.GameObjects.Container
     get anchor() {return this._root.pos;}          // 錨點的座標(world space)
     get cen()   {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}    // 中心點的座標(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
-    get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
-    
+    // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
+    get pts() {return this._root.pts;}
+
     get min() {return {x:-this.wid/2, y:-this.hei/2};}  // view 的左上角座標
     get max() {return {x:this.wid/2, y:this.hei/2};}    // view 的右下角座標
  
@@ -258,7 +260,7 @@ class View extends Phaser.GameObjects.Container
 
     _removeWeight(weight)
     {
-        let wei = weight ?? this.weight;
+        const wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this._grid.w,this._grid.h);
 
         return this;
@@ -266,7 +268,7 @@ class View extends Phaser.GameObjects.Container
 
     _addWeight(pt,weight)
     {
-        let wei = weight ?? this.weight;
+        const wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this._grid.w,this._grid.h);
 
         return this;
@@ -424,9 +426,22 @@ export class ItemView extends View
         return this;
     }
 
+    _setTexture(key_frame)
+    {
+        const[key,frame]=key_frame.split('/');
+        this._shape.setTexture(key,frame);
+    }
+
     //--------------------------------------------------
     // public
     //--------------------------------------------------
+    bind(root,config)
+    {
+        super.bind(root,config);
+        // 註冊 event
+        root.on('setTexture', this._setTexture.bind(this));
+
+    }
     unbind() {this._remove();}
 
 }

@@ -195,6 +195,65 @@ export const GM =
     OPENBAG : 'openbag',
     MOVE: 'move',
 
+    P:  //屬性
+    {
+        // 基礎屬性
+        BASE:["str", "dex", "con", "int", "luk"],
+        STR: "str",
+        DEX: "dex",
+        CON: "con",
+        INT: "int",
+        LUK: "luk",
+        // 戰鬥屬性 
+        COMBAT: ["atk","def","range","acc","eva","cri","crid","type"],
+        HPMAX : "hpMax",        // 生命上限
+        ATK : "atk",            // 攻擊
+        DEF : "def",            // 防禦
+        RANGE: "range",         // 攻擊半徑
+        ACC : "acc",            // 準確
+        EVA : "eva",            // 閃避
+        CRI : "cri",            // 暴率
+        CRID : "crid",          // 暴傷
+        PEN : "pen",            // 穿透
+        TYPE : "type",          // 攻擊類型: ranged/melee
+
+        // 抗性 (Resists)
+        RESIST : ["phy_res", "fire_res", "ice_res", "poison_res"],
+        PHY_RES : "phy_res",        // 物抗
+        FIRE_RES : "fire_res",      // 火炕
+        ICE_RES : "ice_res",        // 冰抗
+        POISON_RES : "poison_res",  // 毒抗
+
+        // 元素
+        ELM : "elm",            // 元素
+        PHY : "phy",            // 物理
+        FIRE : "fire",          // 火焰
+        ICE : "ice",            // 冰凍  
+        POISON : "poison",      // 毒藥
+
+        // 生存屬性
+        SURVIVAL : ["hp", "hunger", "thirst"],
+        HP      : 'hp',         // 生命
+        HUNGER  : 'hunger',     // 飢餓
+        THIRST  : 'thirst',     // 口渴
+
+        // 
+        BUFF : 'buff',
+        HEAL : 'heal',
+        DOT : 'dot',
+        HOT : 'hot',
+        CRIT : "crit",          // 暴擊
+        MISS : "miss",          // 失誤
+
+        META : ['type', 'atk','def','range'],
+
+        // 物品屬性
+        ITEMS : ['endurance','storage','capacity','times'],
+        ENDURANCE : 'endurance',
+        STORAGE : 'storage',
+        CAPACITY : 'capacity',
+    },
+
     // 基礎屬性
     BASE : ["str", "dex", "con", "int", "luk"],
     STR: "str",
@@ -312,12 +371,19 @@ export const GM =
         DEATH : 'death',
         ABILITY : 'ability',
         UNDERATTACK : 'underattack',
+        ACTION : 'action', 
     },
 
     // weight
     W_BLOCK : 1000,   
     W_DOOR : 20,
     W_NODE : 10,
+    W:
+    {
+        BLOCK : 1000,   
+        DOOR : 1,
+        NODE : 10,
+    },
 
     // schedule 延遲
     SH_LATENCY : 5, // 5 m
@@ -469,11 +535,12 @@ export const ORDER = [
 export const DBG = 
 {
     MODE: {
-        BODY :  0b001,
-        GRID :  0b010,
-        ZONE :  0b100,
-        ALL :   0b111,
-        CLR :   0b000,
+        POINT   : 0b0001,
+        BODY    : 0b0010,
+        GRID    : 0b0100,
+        ZONE    : 0b1000,
+        ALL     : 0b1111,
+        CLR     : 0b0000,
     },
 }
 

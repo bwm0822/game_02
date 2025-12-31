@@ -164,7 +164,6 @@ export class Player extends Role
 
     stop()
     {
-        console.log('------------------------- stop')
         // this.emit('clearPath');
         this.bb.path.stop = true; 
     }
@@ -175,7 +174,7 @@ export class Player extends Role
         
         const {bb,sta} = this.ctx;
 
-        if(this.state===GM.ST_ABILITY)
+        if(this.state===GM.ST.ABILITY)
         {
             if(await this.aEmit('useAbility',ent))
             {
@@ -191,7 +190,7 @@ export class Player extends Role
             if(path) { this.emit('setPath', path); }
             else { this.emit('findPath', pt??ent.pos); }
             this.emit('updatePath');
-            sta(GM.ST_MOVING);
+            sta(GM.ST.MOVING);
 
             this._resume();
         }
@@ -226,13 +225,14 @@ export class Player extends Role
                 const state = await this.aEmit('move');
                 if(state[0]==='reach'&&bb.ent)
                 {
+                    sta(GM.ST.ACTION)
                     await this._interact(bb.ent,bb.act);
                 }
             }
         }
 
-        if(bb.path) {sta(GM.ST_MOVING);}
-        else {sta(GM.ST_IDLE);}
+        if(bb.path) {sta(GM.ST.MOVING);}
+        else {sta(GM.ST.IDLE);}
     }
 
 }

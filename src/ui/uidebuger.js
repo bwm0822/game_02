@@ -199,6 +199,7 @@ export default class UiDebuger extends UiFrame
     {
         const options_mode=
         [
+            {text:'點', value:DBG.MODE.POINT},
             {text:'實體', value:DBG.MODE.BODY},
             {text:'格線', value:DBG.MODE.GRID},
             {text:'區域', value:DBG.MODE.ZONE},
