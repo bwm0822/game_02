@@ -56,6 +56,7 @@ export class Role extends GameObject
     use(ent)
     {
         // console.log(ent.content, ent.dat)
+        const{root}=this.ctx;
 
         const list=[GM.TIMES, GM.CAPACITY];
         let key = Object.keys(ent.dat).find(key=>list.includes(key));
@@ -65,7 +66,7 @@ export class Role extends GameObject
             ent.dat.effects.forEach(eff=>{
                 switch(eff.stat)
                 {
-                    case GM.HP: this.emit('heal', eff); break;
+                    case GM.HP: root.heal?.(eff); break;
                 }
             })
 

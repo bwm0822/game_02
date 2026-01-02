@@ -65,6 +65,7 @@ export class COM_Pickable extends Com
         this.addP(root, 'content', {target:this, key:'_content'});
         
         // 3.註冊(event)給其他元件或外部呼叫
+        // 外部
         root.on(GM.PICKUP, this._pickup.bind(this));
     }
 

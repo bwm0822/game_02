@@ -158,8 +158,8 @@ export class Player extends Role
 
     async act_attack()
     {
-        const {bb, emit, aEmit} = this.ctx;
-        if (emit('inAttackRange',bb.ent)) {await this.attack?.(bb.ent);}
+        const {bb, root} = this.ctx;
+        if (root.inAttackRange?.(bb.ent)) {await this.attack?.(bb.ent);}
         else { await this.move?.(); }
         delete bb.path;
     }

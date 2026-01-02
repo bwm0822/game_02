@@ -141,14 +141,14 @@ export class COM_Ability extends Com
 
     async _useAbility(target, id)
     {
-        const {root,emit,aEmit} = this.ctx;
+        const {root,emit} = this.ctx;
         if(id) {this._ability = DB.ability(id);}
         
         if(this._ability.type===GM.ACTIVE) 
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
             const amount = computeHealing(target, this._ability);
-            emit('heal', amount);
+            root.heal?.(amount);
             this._clrAbility();
             return true;
         }

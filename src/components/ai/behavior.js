@@ -39,25 +39,25 @@ export class BehAttack extends Behavior
 
     score(ctx) 
     {
-        const {bb, emit} = ctx;
-        const t = bb.target ?? emit('sensePlayer');
+        const {bb, emit, root} = ctx;
+        const t = bb.target ?? root.sensePlayer?.();
         if (!t) { return [0, 'no target']; }
-        if (!emit('canSee',t)) { return [0.1, 'target unseen']; } // 很低分：可以先追
+        if (!root.canSee?.(t)) { return [0.1, 'target unseen']; } // 很低分：可以先追
         let base = 1;
         return [Math.max(0, base * this.weight), 'none'];
     }
 
     async act(ctx) 
     {
-        const {bb, emit, aEmit, sta, root} = ctx;
-        const t = bb.target ?? emit('sensePlayer');
+        const {bb, emit, sta, root} = ctx;
+        const t = bb.target ?? root.sensePlayer?.();
         if (!t)
         {
             sta(GM.ST_IDLE);
             return { ok:false, note:'no target' };
         }
 
-        if (emit('inAttackRange',t)) 
+        if (root.inAttackRange?.(t)) 
         {
             sta(GM.ST_ATTACK);
             const ok = await root.attack?.(t);
@@ -93,11 +93,11 @@ export class BehChase extends Behavior
         }
         else
         {
-            const { bb, emit } = ctx;
-            const t = bb.target ?? emit('sensePlayer');
+            const { bb, root } = ctx;
+            const t = bb.target ?? root.sensePlayer?.();
 
             if (!t) {return [0, 'no target'];}
-            if (!emit('canSee',t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
+            if (!root.canSee?.(t)) {return [0.1, 'target unseen'];} // 很低分：可以先追
             let base = 1;
             return [Math.max(0, base * this.weight), `none`];
         }
@@ -106,7 +106,7 @@ export class BehChase extends Behavior
     async act(ctx) 
     {
         const { bb, emit, root } = ctx;a
-        const t = bb.target ?? emit('sensePlayer');
+        const t = bb.target ?? root.sensePlayer?.();
         if (!t) {return { ok:false, note:'no target' };}
 
         this._commitUse(ctx); 
@@ -129,8 +129,8 @@ export class BehTest extends Behavior
         }
         else
         {
-            const { bb, emit } = ctx;
-            bb.target = emit('sensePlayer');
+            const { bb, root } = ctx;
+            bb.target = root.sensePlayer?.();
 
             if (!bb.target) {return [0, 'no target'];}
             let base = 1;

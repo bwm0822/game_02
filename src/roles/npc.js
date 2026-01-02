@@ -30,7 +30,7 @@ export class Npc extends Role
 
     async _updateTime(dt) 
     {
-        const {aEmit, root}=this.ctx;
+        const {emit, root}=this.ctx;
 
         if(!this.isAlive) 
         { 
@@ -40,7 +40,8 @@ export class Npc extends Role
         else
         {
             // await this.aEmit('process', dt);  // await 等待事件處理完成，才繼續往下執行
-            await aEmit('update', dt);
+            // await aEmit('update', dt);
+            emit('update', dt);
         }
     }
 

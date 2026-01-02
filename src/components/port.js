@@ -35,6 +35,7 @@ export class COM_Port extends Com
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 
         // 3.註冊(event)給其他元件或外部呼叫
+        // 外部
         root.on(GM.ENTER, this._enter.bind(this));
     }
 }
