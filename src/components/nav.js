@@ -111,16 +111,24 @@ export class COM_Nav extends Com
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        // 外部
         root.showPath = this._showPath.bind(this);
         root.hidePath = this._hidePath.bind(this);
+        // 其他元件
+        root.findPath=this._findPath.bind(this);
+        root.clearPath=this._clearPath.bind(this);
+        root.updatePath=this._updatePath.bind(this);
+        root.updateDebugPath=this._updateDebugPath.bind(this);
+        root.setPath=this._setPath.bind(this);
+        root.checkPath=this._checkPath.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('findPath', this._findPath.bind(this))
-        root.on('clearPath', this._clearPath.bind(this))
-        root.on('updatePath', this._updatePath.bind(this))
-        root.on('updateDebugPath', this._updateDebugPath.bind(this))
-        root.on('setPath', this._setPath.bind(this))
-        root.on('checkPath', this._checkPath.bind(this))
+        // root.on('findPath', this._findPath.bind(this))
+        // root.on('clearPath', this._clearPath.bind(this))
+        // root.on('updatePath', this._updatePath.bind(this))
+        // root.on('updateDebugPath', this._updateDebugPath.bind(this))
+        // root.on('setPath', this._setPath.bind(this))
+        // root.on('checkPath', this._checkPath.bind(this))
 
     }
 

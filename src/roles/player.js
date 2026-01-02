@@ -189,9 +189,10 @@ export class Player extends Role
             bb.ent = ent;
             bb.act = act??ent?.act;
 
-            if(path) { this.emit('setPath', path); }
-            else { this.emit('findPath', pt??ent.pos); }
-            this.emit('updatePath');
+            if(path) { this.setPath?.(path); }
+            else { this.findPath?.(pt??ent.pos); }
+            this.updatePath?.();
+
             sta(GM.ST.MOVING);
 
             this._resume();

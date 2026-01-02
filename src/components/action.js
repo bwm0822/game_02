@@ -97,9 +97,9 @@ export class COM_Action extends Com
 
     async _moveToward(target, {maxSteps=1}={})
     {
-        const {bb,emit} = this.ctx;
+        const {bb,root} = this.ctx;
 
-        emit('findPath', target.pos); // 搜尋路徑，結果會存於 bb.path
+        root.findPath?.(target.pos); // 搜尋路徑，結果會存於 bb.path
 
         if(bb.path?.state>GM.PATH_NONE)
         {
@@ -155,7 +155,7 @@ export class COM_Action extends Com
 
     async _move()
     {
-        const {bb,emit} = this.ctx;
+        const {bb,root} = this.ctx;
 
         // const pt = bb.path?.pts[0];
         let ret = 'moving';
@@ -190,7 +190,7 @@ export class COM_Action extends Com
             }
         }
 
-        emit('updatePath');
+        root.updatePath?.();
 
         return ret;
     }

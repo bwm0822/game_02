@@ -113,10 +113,10 @@ export class Npc extends Role
 
         if(this.state!==GM.ST_MOVING && this.bb.path)
         {
-            this.emit('clearPath');
+            this.clearPath?.();
         }
 
-        if(_dbg) {this.emit('updateDebugPath');}
+        if(_dbg) {this.updateDebugPath?.();}
     }
     
 }

@@ -49,7 +49,7 @@ export class BehAttack extends Behavior
 
     async act(ctx) 
     {
-        const {bb, emit, aEmit, sta} = ctx;
+        const {bb, emit, aEmit, sta, root} = ctx;
         const t = bb.target ?? emit('sensePlayer');
         if (!t)
         {
@@ -67,8 +67,8 @@ export class BehAttack extends Behavior
         else
         {
             sta(GM.ST_MOVING);
-            emit('findPath', t.pos)
-            if(emit('checkPath')===false) {emit('findPath', t.pos);}
+            root.findPath?.(t.pos)
+            if(root.checkPath?.()===false) {root.findPath(t.pos);}
             const ok = await aEmit('move');
             return { ok:true, note:'chase' };
         }
@@ -140,20 +140,20 @@ export class BehTest extends Behavior
 
     async act(ctx) 
     {
-        const { bb, emit, aEmit, sta } = ctx;
+        const { bb, emit, aEmit, sta, root } = ctx;
 
         sta(GM.ST_MOVING);
         if(!bb.path) 
         {
             console.log('------ findPath')
-            emit('findPath', bb.target.pos??bb.target);
+            root.findPath?.(bb.target.pos??bb.target);
         }
         const ep = bb.path.ep
         let ret = await aEmit('move');
         if(ret[0]===false) 
         {
             console.log('------ rePath')
-            emit('findPath', ep);
+            root.findPath?.(ep);
             await aEmit('move');
         }
 
