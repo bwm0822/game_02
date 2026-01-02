@@ -41,7 +41,7 @@ export class Npc extends Role
         {
             // await this.aEmit('process', dt);  // await 等待事件處理完成，才繼續往下執行
             // await aEmit('update', dt);
-            emit('update', dt);
+            emit('onupdate', dt);
         }
     }
 
@@ -66,7 +66,7 @@ export class Npc extends Role
     {     
         if(!super.init_prefab()) {return;}
 
-        this._registerTimeManager();
+        this._registerTimeManager();        // 註冊 TimeManager
 
         this.bb.meta = DB.role(this.bb.id); // 取得roleD，放入bb.meta，view元件會用到
         this.bb.isStatic = false;           // 設成 dynamic body，view 元件會參考

@@ -269,10 +269,9 @@ export class COM_Inventory extends COM_Storage
 
     _equip() 
     {
-        console.log('-------- _equip')
-        const {emit,root}=this.ctx; 
+        const {root}=this.ctx; 
         root.updateEquips?.();
-        emit('dirty'); // 更新屬性
+        root.setDirty?.(); // 更新屬性
     }
 
     //------------------------------------------------------
@@ -282,19 +281,22 @@ export class COM_Inventory extends COM_Storage
     {
         super.bind(root);
 
-        // 移除 操作指令 GM.OPEN
+        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
+        root.bb.equips = this._equips;
+        this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+
+        // 1.提供 [外部操作的指令]
         root._delAct(GM.OPEN);
         root.off(GM.OPEN, this._open.bind(this));
 
-        // 在上層綁定操作介面，提供給外部使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root, 'equips', {target:this, key:'_equips'});
         this.addP(root, 'gold', {target:this, key:'_gold'});
         root.equip = this._equip.bind(this);
         root.receive = this._receive.bind(this);
 
-        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
-        root.bb.equips = this._equips;
-        this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+        // 3.註冊(event)給其他元件或外部呼叫
+
     }
 
     //------------------------------------------------------

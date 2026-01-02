@@ -45,7 +45,7 @@ export class Player extends Role
 
     async _updateTime(dt) 
     {
-        this.emit('update', dt);
+        this.emit('onupdate', dt);
         this._send('refresh');
     }
 

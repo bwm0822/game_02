@@ -32,10 +32,10 @@ export class COM_Ability extends Com
     // 學習新技能
     _learn(id)
     {
-        const {emit}= this.ctx;
+        const {root}= this.ctx;
         this._abilities[id] = {remain:0};
         // this._ability = null;
-        emit('dirty');  // 更新屬性
+        root.setDirty?.();  // 更新屬性
     }
 
     _showRange(on, range, checkBlock)
@@ -195,7 +195,7 @@ export class COM_Ability extends Com
         
         // 3.註冊(event)給其他元件或外部呼叫
         root.on('useAbility', this._useAbility.bind(this));
-        root.on('update', this._update.bind(this));
+        root.on('onupdate', this._update.bind(this));
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         root.bb.abilities = this._abilities;

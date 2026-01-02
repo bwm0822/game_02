@@ -63,8 +63,8 @@ export class COM_Sense extends Com
     _inAttackRange(target)
     {
         // let maxTiles=1;
-        const {emit}=this.ctx;
-        const total = emit('total');
+        const {root}=this.ctx;
+        const total = root.total;
         return withinTiles(this.pos, target.pos, total.range);
     }
 
