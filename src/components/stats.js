@@ -284,7 +284,7 @@ export class COM_Stats extends Com
         }
 
         emit('damage');
-        this._states[GM.HP]===0 && emit('dead');
+        this._states[GM.HP]===0 && emit('ondead');
     }
 
     // amount = number or {a,m}

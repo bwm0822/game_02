@@ -52,7 +52,7 @@ export class Player extends Role
     async _interact(ent, act) 
     {
         if(!act) {return;}
-        if(ent) {this.emit('face',ent.pos);}
+        if(ent) {this.face?.(ent.pos);}
 
         // return new Promise((resolve)=>{ent.emit(act, resolve, this);});
         await ent.aEmit(act,this);
@@ -62,7 +62,7 @@ export class Player extends Role
 
     _refresh() {this._send('refresh');}
 
-    _dead()
+    _ondead()
     {
         console.log('---- dead ----')
         this._unregisterTimeManager();
@@ -129,7 +129,7 @@ export class Player extends Role
             .addCom(new COM_Sleep())
  
         // 註冊 event
-        this.on('dead', this._dead.bind(this));
+        this.on('ondead', this._ondead.bind(this));
         this.on('damage', this._damage.bind(this));
         this.on('refresh', this._refresh.bind(this));
 

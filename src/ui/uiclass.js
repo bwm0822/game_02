@@ -390,7 +390,12 @@ export class EquipSlot extends Slot
 
     // get, set 都要 assign 才會正常 work
     get content() {return this.owner.equips[this._i];}
-    set content(value) {this.owner.equips[this._i]=value; this.setSlot(value); this.owner.equip();}
+    set content(value) {
+        this.owner.equips[this._i]=value; 
+        this.setSlot(value); 
+        this.owner.equip();
+        Ui.refreshAll();
+    }
 
     _isSameCat(cat)   {return (this.cat & cat) == cat;}  
 

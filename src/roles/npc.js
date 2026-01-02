@@ -30,12 +30,12 @@ export class Npc extends Role
 
     async _updateTime(dt) 
     {
-        const {emit, aEmit}=this.ctx;
+        const {aEmit, root}=this.ctx;
 
         if(!this.isAlive) 
         { 
             if(this._latency--<=0) {this._remove();}
-            else {emit('fadout');}
+            else {root.fadout?.();}
         }
         else
         {
@@ -52,7 +52,7 @@ export class Npc extends Role
         super._remove();
     }
 
-    _dead()
+    _ondead()
     {
         this._latency = 5;
         QuestManager.notify({type: GM.KILL, id: this.id});
@@ -85,7 +85,7 @@ export class Npc extends Role
             .addCom(new COM_Trade())
 
         // 註冊 event
-        this.on('dead', this._dead.bind(this));
+        this.on('ondead', this._ondead.bind(this));
 
         // 載入
         this.load();
@@ -95,7 +95,7 @@ export class Npc extends Role
         this._setAct(GM.ATTACK,true);
 
         // 檢查是否死亡
-        if(!this.isAlive) {this.emit('dead');}
+        if(!this.isAlive) {this.emit('ondead');}
     }
 
     init_runtime(id, schedule=false)

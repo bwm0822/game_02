@@ -22,9 +22,9 @@ export class COM_Door extends Com
     async _open(role) 
     {
         const{bb,emit,root}=this.ctx;
-        this.root._delAct(GM.OPEN_DOOR);
-        this.root._setAct(GM.CLOSE_DOOR, true);
-        emit('setTexture',bb.door_close);
+        root._delAct(GM.OPEN_DOOR);
+        root._setAct(GM.CLOSE_DOOR, true);
+        root.setTexture?.(bb.door_close);
         root.removeWeight?.();
         root.addWeight?.(undefined,GM.W.DOOR-1);
         AudioManager.doorOpen();
@@ -36,7 +36,7 @@ export class COM_Door extends Com
         const{bb,emit,root}=this.ctx;
         root._delAct(GM.CLOSE_DOOR);
         root._setAct(GM.OPEN_DOOR, true);
-        emit('setTexture',bb.door_open);
+        root.setTexture?.(bb.door_open);
         root.removeWeight?.(GM.W.DOOR-1);
         root.addWeight?.();
         AudioManager.doorClose();

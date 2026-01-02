@@ -369,8 +369,27 @@ class View extends Phaser.GameObjects.Container
     }
 
     //--------------------------------------------------
+    // virtual method
+    //--------------------------------------------------
+    _setData()
+    {
+        const {bb} = this.ctx;
+        // 從 bb 取得參數
+        for(let key in bb)
+        {
+            if(this[key]!==undefined) {this[key]=bb[key];}
+        }
+
+        return this;
+    }
+
+    _addShape() {return this;}
+
+    //--------------------------------------------------
     // public
     //--------------------------------------------------
+    isTouch() {return true;}
+
     bind(root, config)
     {
         this._root = root;
@@ -392,27 +411,6 @@ class View extends Phaser.GameObjects.Container
         // root.on('removeWeight', this._removeWeight.bind(this));
         // root.on('addWeight', this._addWeight.bind(this));
     }
-
-
-
-    isTouch() {return true;}
-    //--------------------------------------------------
-    // virtual method
-    //--------------------------------------------------
-    _setData()
-    {
-        const {bb} = this.ctx;
-        // 從 bb 取得參數
-        for(let key in bb)
-        {
-            if(this[key]!==undefined) {this[key]=bb[key];}
-        }
-
-        return this;
-    }
-
-    _addShape() {return this;}
-
 
 }
 
@@ -452,8 +450,14 @@ export class ItemView extends View
     bind(root,config)
     {
         super.bind(root,config);
-        // 註冊 event
-        root.on('setTexture', this._setTexture.bind(this));
+
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.setTexture = this._setTexture.bind(this);
+
+        // 3.註冊(event)給其他元件或外部呼叫
+        // root.on('setTexture', this._setTexture.bind(this));
 
     }
     unbind() {this._remove();}
@@ -561,7 +565,7 @@ export class RoleView extends View
         this._equips = [];
     }
 
-    _dead()
+    _ondead()
     {
         const {emit}=this.ctx;
         this._remove();
@@ -583,24 +587,7 @@ export class RoleView extends View
         this.alpha*=0.9;
     }
 
-    //--------------------------------------------------
-    // public
-    //--------------------------------------------------
-    bind(root, config)
-    {
-        super.bind(root, config);
-
-        
-        // 註冊 event
-        root.on('equip', this.equip.bind(this));
-        root.on('face', this._faceTo.bind(this));
-
-        root.on('updateDepth', this._updateDepth.bind(this));
-        root.on('dead', this._dead.bind(this));
-        root.on('fadout', this._fadout.bind(this));
-    }
-
-    equip()
+    _updateEquips()
     {
         const {bb} = this.ctx;
 
@@ -613,6 +600,30 @@ export class RoleView extends View
             }
         })
     }
+
+    //--------------------------------------------------
+    // public
+    //--------------------------------------------------
+    bind(root, config)
+    {
+        super.bind(root, config);
+
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.updateEquips = this._updateEquips.bind(this);
+        root.face = this._faceTo.bind(this);
+        root.fadout = this._fadout.bind(this);
+
+        // 3.註冊(event)給其他元件或外部呼叫
+        // root.on('equip', this.equip.bind(this));
+        // root.on('face', this._faceTo.bind(this));
+        // root.on('updateDepth', this._updateDepth.bind(this));
+        root.on('ondead', this._ondead.bind(this));
+        // root.on('fadout', this._fadout.bind(this));
+    }
+
+    
 }
 
 

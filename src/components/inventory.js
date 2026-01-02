@@ -125,12 +125,11 @@ export class COM_Storage extends Com
 
     _take(content,i,isEquip)
     {
-        const{bb,emit}=this.ctx;
-
+        const{bb,root}=this.ctx;
         if(isEquip)
         {
             bb.equips[i]=content;
-            emit('equip');
+            root.equip?.();
             return true;   
         }
 
@@ -270,8 +269,9 @@ export class COM_Inventory extends COM_Storage
 
     _equip() 
     {
-        const {emit}=this.ctx; 
-        emit('equip');
+        console.log('-------- _equip')
+        const {emit,root}=this.ctx; 
+        root.updateEquips?.();
         emit('dirty'); // 更新屬性
     }
 
@@ -304,7 +304,7 @@ export class COM_Inventory extends COM_Storage
     {
         super.load(data);
         if(data?.equips) {Object.assign(this._equips, data.equips);}
-        if(data?.gold) {this._gold=data.gold;}
+        if(data?.gold!==undefined) {this._gold=data.gold;}
     }
 
     save() {return {storage:this._storage, equips:this._equips, gold:this._gold};}

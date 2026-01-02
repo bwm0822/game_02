@@ -46,28 +46,28 @@ export class COM_Action extends Com
     {
         if(!pt) {return;}
         const {emit,root}=this.ctx
-        emit('face',pt);
+        root.face?.(pt);
         root.removeWeight?.();
         root.addWeight?.(pt);
         emit('idle',false);
         emit('walk',duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
         await this._step(pt, duration, ease);
-        emit('updateDepth');
+        root.updateDepth();
     }
 
     _attack_Melee(target, onHit)
     {
-        const {emit}=this.ctx
-        emit('face', target.pos);
+        const {root}=this.ctx
+        root.face?.(target.pos);
         let [pos,duration,ease] = [target.pos, 200, 'expo.in'];
         return this._step( pos, duration, ease, {yoyo: true, onYoyo: onHit} );  
     }
 
     _attack_Ranged(target, onHit)
     {
-        const {emit}=this.ctx
-        emit('face', target.pos);
+        const {root}=this.ctx
+        root.face?.(target.pos);
         const sprite = {img:'arrow', scl:0.25};
         return new Promise((resolve)=>{
                 new Projectile(this.scene, this.ent.x, this.ent.y, sprite)
@@ -79,8 +79,8 @@ export class COM_Action extends Com
 
     _attack_Spell(target, onHit, ability)
     {
-        const {emit}=this.ctx
-        emit('face', target.pos);
+        const {root}=this.ctx
+        root.face?.(target.pos);
         return new Promise((resolve)=>{
                 new Projectile(this.scene, this.ent.x, this.ent.y, ability.sprite)
                     .shoot( target.pos.x, target.pos.y,
