@@ -139,9 +139,9 @@ export class COM_Ability extends Com
         return false;
     }
 
-    async _useAbility(target, id)
+    async _use(target, id)
     {
-        const {root,emit} = this.ctx;
+        const {root} = this.ctx;
         if(id) {this._ability = DB.ability(id);}
         
         if(this._ability.type===GM.ACTIVE) 
@@ -192,9 +192,11 @@ export class COM_Ability extends Com
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);
         root.isInRange = this._isInRange.bind(this);
+        // 內部使用
+        root.useAb = this._use.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('useAbility', this._useAbility.bind(this));
+        // root.on('useAbility', this._useAbility.bind(this));
         root.on('onupdate', this._update.bind(this));
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)

@@ -149,7 +149,7 @@ export class Player extends Role
 
     async useAbility(target, id)
     {
-        if(await this.aEmit('useAbility', target, id))
+        if(await this.useAb?.(target, id))
         {
             this._refresh();
             this._resume();
@@ -170,7 +170,7 @@ export class Player extends Role
         this.bb.path.stop = true; 
     }
 
-    async execute({pt, ent, act, path}={})
+    execute({pt, ent, act, path}={})
     {
         if(!this.isAlive) {return;}
         
@@ -178,23 +178,16 @@ export class Player extends Role
 
         if(sta()===GM.ST.ABILITY)
         {
-            if(await this.aEmit('useAbility',ent))
-            {
-                this._refresh();
-                this._resume();
-            }
+            this.useAbility(ent);
         }
         else
         {
             bb.ent = ent;
             bb.act = act??ent?.act;
-
             if(path) { this.setPath?.(path); }
             else { this.findPath?.(pt??ent.pos); }
             this.updatePath?.();
-
             sta(GM.ST.MOVING);
-
             this._resume();
         }
     }

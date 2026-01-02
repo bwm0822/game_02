@@ -111,7 +111,7 @@ export class Npc extends Role
     {
         if(!this.isAlive) {return;}
 
-        await this.aEmit('think');
+        await this.think?.();
 
         const{sta}=this.ctx;
 

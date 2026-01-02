@@ -152,9 +152,14 @@ export class COM_AI extends Com
     bind(root) 
     {
         super.bind(root);
+
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.think = this._think.bind(this);
         
-        // 註冊 event
-        root.on('think', this._think.bind(this));
+        // 3.註冊(event)給其他元件或外部呼叫
+        // root.on('think', this._think.bind(this));
     }
 
 }

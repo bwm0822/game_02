@@ -205,7 +205,7 @@ export class COM_Action extends Com
         }
         else
         {
-            const total = this.total;
+            const total = this.root.total;
             if(total.type==='ranged') {await this._attack_Ranged(target, onDamage);}
             else {await this._attack_Melee(target, onDamage);}
         }

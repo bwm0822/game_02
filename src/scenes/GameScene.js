@@ -197,11 +197,11 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._player.state===GM.ST_MOVING)
+                if(this._player.state===GM.ST.MOVING)
                 {
                     this._player.stop();
                 }
-                else if(this._player.state===GM.ST_ABILITY)
+                else if(this._player.state===GM.ST.ABILITY)
                 {
                     this._player.execute({pt:pt,ent:this._ent});
                 }
@@ -216,15 +216,15 @@ export class GameScene extends Scene
         })
         .on('pointermove',(pointer)=>{
             if(DEBUG.loc) {this.showMousePos();}
-            if(this._player.state===GM.ST_ABILITY) 
+            if(this._player.state===GM.ST.ABILITY) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 if(this._player.isInRange(pt)) {UiCursor.set('aim');}
                 else {UiCursor.set('none');}
                 return;
             }
-            else if(this._player.state===GM.ST_SLEEP) {return;}
-            else if(this._player.state!==GM.ST_MOVING)
+            else if(this._player.state===GM.ST.SLEEP) {return;}
+            else if(this._player.state!==GM.ST.MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.showPath(pt, this._ent);
