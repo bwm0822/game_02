@@ -49,8 +49,8 @@ export class COM_Action extends Com
         root.face?.(pt);
         root.removeWeight?.();
         root.addWeight?.(pt);
-        emit('idle',false);
-        emit('walk',duration/2);
+        root.anim_idle?.(false);
+        root.anim_walk?.(duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
         await this._step(pt, duration, ease);
         root.updateDepth();

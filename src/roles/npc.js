@@ -96,6 +96,7 @@ export class Npc extends Role
 
         // 檢查是否死亡
         if(!this.isAlive) {this.emit('ondead');}
+        
     }
 
     init_runtime(id, schedule=false)
@@ -111,9 +112,12 @@ export class Npc extends Role
 
         await this.aEmit('think');
 
-        if(this.state!==GM.ST_MOVING && this.bb.path)
+        const{sta}=this.ctx;
+
+        if(sta()!==GM.ST.MOVING)
         {
-            this.clearPath?.();
+            if(this.bb.path) {this.clearPath?.();}
+            if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
         }
 
         if(_dbg) {this.updateDebugPath?.();}

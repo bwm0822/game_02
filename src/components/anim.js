@@ -65,9 +65,11 @@ export class COM_Anim extends Com
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.anim_idle = this._idle.bind(this);
+        root.anim_walk = this._walk.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('idle', this._idle.bind(this));
-        root.on('walk', this._walk.bind(this));
+        // root.on('idle', this._idle.bind(this));
+        // root.on('walk', this._walk.bind(this));
     }
 }

@@ -235,7 +235,11 @@ export class Player extends Role
         }
 
         if(bb.path) {sta(GM.ST.MOVING);}
-        else if(sta()!==GM.ST.SLEEP) {sta(GM.ST.IDLE);}
+        else if(sta()!==GM.ST.SLEEP) 
+        {
+            sta(GM.ST.IDLE);
+            this.anim_idle?.(true);
+        }
     }
 
 }
