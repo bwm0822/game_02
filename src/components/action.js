@@ -223,13 +223,14 @@ export class COM_Action extends Com
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // root.move = this._move.bind(this);
-        // root.attack = this._attack.bind(this);
+        root.move = this._move.bind(this);
+        root.moveToward = this._moveToward.bind(this);
+        root.attack = this._attack.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('move', this._move.bind(this));
-        root.on('moveToward', this._moveToward.bind(this));
-        root.on('attack', this._attack.bind(this));
+        // root.on('move', this._move.bind(this));
+        // root.on('moveToward', this._moveToward.bind(this));
+        // root.on('attack', this._attack.bind(this));
     }
 
     

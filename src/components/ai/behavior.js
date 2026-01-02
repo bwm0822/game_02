@@ -60,7 +60,7 @@ export class BehAttack extends Behavior
         if (emit('inAttackRange',t)) 
         {
             sta(GM.ST_ATTACK);
-            const ok = await aEmit('attack',t);
+            const ok = await root.attack?.(t);
             if (ok) { this._commitUse(ctx); return { ok:true, note:'attack' }; }
             else {return { ok:false, note:'attack failed' };}
         } 
@@ -69,7 +69,7 @@ export class BehAttack extends Behavior
             sta(GM.ST_MOVING);
             root.findPath?.(t.pos)
             if(root.checkPath?.()===false) {root.findPath(t.pos);}
-            const ok = await aEmit('move');
+            const ok = await root.move?.();
             return { ok:true, note:'chase' };
         }
         // else 
@@ -105,12 +105,12 @@ export class BehChase extends Behavior
 
     async act(ctx) 
     {
-        const { bb, emit, aEmit } = ctx;a
+        const { bb, emit, root } = ctx;a
         const t = bb.target ?? emit('sensePlayer');
         if (!t) {return { ok:false, note:'no target' };}
 
         this._commitUse(ctx); 
-        const ok = await aEmit('moveToward',t, { maxSteps: 2 });
+        const ok = await root.moveToward?.(t, { maxSteps: 2 });
         return { ok, note:'chase' };
         
     }
@@ -149,12 +149,12 @@ export class BehTest extends Behavior
             root.findPath?.(bb.target.pos??bb.target);
         }
         const ep = bb.path.ep
-        let ret = await aEmit('move');
+        let ret = await root.move?.();
         if(ret[0]===false) 
         {
             console.log('------ rePath')
             root.findPath?.(ep);
-            await aEmit('move');
+            await root.move?.();
         }
 
         this._commitUse(ctx); 

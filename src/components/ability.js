@@ -141,7 +141,7 @@ export class COM_Ability extends Com
 
     async _useAbility(target, id)
     {
-        const {bb,emit,aEmit} = this.ctx;
+        const {root,emit,aEmit} = this.ctx;
         if(id) {this._ability = DB.ability(id);}
         
         if(this._ability.type===GM.ACTIVE) 
@@ -156,7 +156,7 @@ export class COM_Ability extends Com
         {
             this._abilities[this._idSel]={skip:true, remain:this._ability.cd};
             this._showRange(false);
-            await aEmit('attack', target, this._ability);
+            await root.attack?.(target,this._ability);
             this._clrAbility();
             return true;
         } 

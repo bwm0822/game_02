@@ -156,11 +156,11 @@ export class Player extends Role
         }
     }
 
-    async attack()
+    async act_attack()
     {
         const {bb, emit, aEmit} = this.ctx;
-        if (emit('inAttackRange',bb.ent)) {await aEmit('attack',bb.ent);}
-        else { await this.aEmit('move'); }
+        if (emit('inAttackRange',bb.ent)) {await this.attack?.(bb.ent);}
+        else { await this.move?.(); }
         delete bb.path;
     }
 
@@ -222,11 +222,11 @@ export class Player extends Role
 
             if(bb.act === 'attack')
             {
-                await this.attack();
+                await this.act_attack();
             }
             else
             {
-                const state = await this.aEmit('move');
+                const state = await this.move?.();
                 if(state[0]==='reach'&&bb.ent)
                 {
                     sta(GM.ST.ACTION)
