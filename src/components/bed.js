@@ -64,11 +64,11 @@ export class COM_Bed extends Com
         // 1.提供 [外部操作的指令]
         root._setAct(GM.REST, true);
 
-        // 2.在上層(root)綁定API/property，提供給其他元件或外部使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root,'loc',{getter:()=>loc});
         root.setEmpty = this._setEmpty.bind(this);
  
-        // 3.提供給(event)給其他元件或外部呼叫
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.REST, this._rest.bind(this));
     }
 }

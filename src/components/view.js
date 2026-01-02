@@ -376,12 +376,14 @@ class View extends Phaser.GameObjects.Container
         this._root = root;
         const {modify} = config;
         this._init(modify);
-        
-        // 2.在上層(root)綁定API，提供給其他元件或外部使用
+
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
 
-        // 3.提供給(event)給其他元件或外部呼叫
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on('view',()=>{return this;})
         root.on('removeWeight', this._removeWeight.bind(this));
         root.on('addWeight', this._addWeight.bind(this));

@@ -108,11 +108,13 @@ export class COM_Nav extends Com
     {
         super.bind(root);
 
-        // 在上層綁定操作介面，提供給外部件使用
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.showPath = this._showPath.bind(this);
         root.hidePath = this._hidePath.bind(this);
         
-        // 註冊 event
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on('findPath', this._findPath.bind(this))
         root.on('clearPath', this._clearPath.bind(this))
         root.on('updatePath', this._updatePath.bind(this))

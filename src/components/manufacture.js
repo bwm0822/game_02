@@ -128,7 +128,7 @@ export class COM_Manu extends Com
         // 1.提供 [外部操作的指令]
         root._setAct(GM.COOK, true);
 
-        // 2.在上層(root)綁定API/property，提供給其他元件或外部使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root,'menu',{getter:()=>this._menu});
         this.addP(root,'storage',{getter:()=>this._storage});
         this.addP(root,'output',{getter:()=>this._output,
@@ -139,7 +139,7 @@ export class COM_Manu extends Com
         root.check=this.check.bind(this);
         root.make=this.make.bind(this);
 
-        // 3.提供給(event)給其他元件或外部呼叫
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.COOK, this.cook.bind(this));
     }
 

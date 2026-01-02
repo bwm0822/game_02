@@ -365,7 +365,9 @@ export class COM_Stats extends Com
     {
         super.bind(root);
 
-        // 對上層公開 API
+        // 1.提供 [外部操作的指令]
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root, 'total', {getter:this._getTotalStats.bind(this)});
         this.addP(root, 'actives', {target:this, key:'_actives'});
         this.addP(root, 'isAlive', {getter:()=>this._states[GM.HP]>0});
@@ -374,7 +376,7 @@ export class COM_Stats extends Com
         root.getTotalStats = this._getTotalStats.bind(this);
         root.drink = this._drink.bind(this);
 
-        // 註冊 event 
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on('heal', this._heal.bind(this) );
         root.on('update', this._processProcs.bind(this) );
         root.on('dirty', this._setDirty.bind(this));

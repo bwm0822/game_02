@@ -58,13 +58,11 @@ export class COM_Sleep extends Com
         // 1.提供 [外部操作的指令]
         // root._setAct(GM.REST, true);
 
-        // 2.在上層(root)綁定API，提供給其他元件或外部使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.sleepAt = this._sleepAt.bind(this);
         root.wake = this._wake.bind(this);
 
-
-        // 3.提供給(event)給其他元件或外部呼叫
+        // 3.註冊(event)給其他元件或外部呼叫
         
-
     }
 }

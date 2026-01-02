@@ -53,9 +53,9 @@ export class COM_Door extends Com
         // 1.提供 [外部操作的指令]
         root._setAct(GM.OPEN_DOOR, true);
         
-        // 2.在上層(root)綁定API，提供給其他元件或外部使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 
-        // 3.提供給(event)給其他元件或外部呼叫
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.OPEN_DOOR, this._open.bind(this));
         root.on(GM.CLOSE_DOOR, this._close.bind(this));
     }

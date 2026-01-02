@@ -38,12 +38,15 @@ export class COM_AbilitySlots extends Com
     bind(root)
     {
         super.bind(root);
-        // 在上層綁定操作介面，提供給其他元件使用
+
+        // 1.提供 [外部操作的指令]
+        
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.setSlot = this._setSlot.bind(this);
         root.getSlot = this._getSlot.bind(this);
         root.clearSlot = this._clearSlot.bind(this);
         
-        // 註冊 event
+        // 3.註冊(event)給其他元件或外部呼叫
     }
 
     //------------------------------------------------------

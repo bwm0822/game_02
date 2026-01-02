@@ -90,8 +90,8 @@ export default function createUI(scene)
     // new UiManufacture_1(scene);
     // new UiTest(scene);
     test1();
-	test2();
-
+    test2();
+    
 }
 
 async function test1()

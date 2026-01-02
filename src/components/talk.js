@@ -179,18 +179,20 @@ export class COM_Talk extends Com
     bind(root) 
     {
         super.bind(root);
-        // act
-        root._setAct(GM.TALK, true);
+
         // init
         const {bb} = this.ctx;
         this._dialog = DB.dialog(bb.id);
 
-        // this.addP(root, 'dialog', {getter:this.get_dialog.bind(this)});
+        // 1.提供 [外部操作的指令]
+        root._setAct(GM.TALK, true);
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.talk = this._talk.bind(this);
         root.select = this._select.bind(this);
         root.getDialog = this._getDialog.bind(this);
 
-        // 註冊 event
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.TALK, this._talk.bind(this));
         root.on(GM.REST, ()=>{root._setAct(GM.TALK, false);})
         root.on(GM.WAKE, ()=>{root._setAct(GM.TALK, true);})

@@ -43,10 +43,6 @@ export class COM_Pickable extends Com
     {
         super.bind(root)
 
-        // act
-        root._setAct(GM.PICKUP, true);
-
-
         const {bb} = this.ctx;
         if(bb.content)
         {
@@ -62,11 +58,13 @@ export class COM_Pickable extends Com
         
         this._dat = DB.item(this._content.id);
 
-        // 在上層綁定操作介面，提供給外部件使用
+        // 1.提供 [外部操作的指令]
+        root._setAct(GM.PICKUP, true);
+
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root, 'content', {target:this, key:'_content'});
         
-        // 註冊 event
-        // 提供給外界操作
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.PICKUP, this._pickup.bind(this));
     }
 

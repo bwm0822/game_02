@@ -183,15 +183,17 @@ export class COM_Ability extends Com
     bind(root)
     {
         super.bind(root);
+
+        // 1.提供 [外部操作的指令]
         
-        // 在上層綁定操作介面，提供給其他元件使用
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addP(root, 'abilities', {target:this, key:'_abilities'});
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);
         root.isInRange = this._isInRange.bind(this);
         
-        // 註冊 event
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on('useAbility', this._useAbility.bind(this));
         root.on('update', this._update.bind(this));
 
