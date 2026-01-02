@@ -304,8 +304,9 @@ export class COM_Inventory extends COM_Storage
     {
         super.load(data);
         if(data?.equips) {Object.assign(this._equips, data.equips);}
+        if(data?.gold) {this._gold=data.gold;}
     }
 
-    save() {return {storage:this._storage, equips:this._equips};}
+    save() {return {storage:this._storage, equips:this._equips, gold:this._gold};}
 
 }

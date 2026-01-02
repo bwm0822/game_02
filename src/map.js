@@ -315,7 +315,6 @@ class Map
                     {type:'bed',classType:Bed},
                     // {type:'enemy',classType:Enemy},
                     // {type:'npc_n',classType:Npc_n},
-                    {type:'case',classType:Case},
                     {type:'bed_1',classType:Bed_1},
                 ]);
                 objs.forEach((obj) => {obj.init_prefab?.()});

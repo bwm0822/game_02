@@ -21,24 +21,24 @@ export class COM_Door extends Com
     //------------------------------------------------------
     async _open(role) 
     {
-        const{bb,emit}=this.ctx;
+        const{bb,emit,root}=this.ctx;
         this.root._delAct(GM.OPEN_DOOR);
         this.root._setAct(GM.CLOSE_DOOR, true);
         emit('setTexture',bb.door_close);
-        emit('removeWeight');
-        emit('addWeight',undefined,GM.W.DOOR-1);
+        root.removeWeight?.();
+        root.addWeight?.(undefined,GM.W.DOOR-1);
         AudioManager.doorOpen();
         await Utility.delay(500);
     }
 
     async _close()
     {
-        const{bb,emit}=this.ctx;
-        this.root._delAct(GM.CLOSE_DOOR);
-        this.root._setAct(GM.OPEN_DOOR, true);
+        const{bb,emit,root}=this.ctx;
+        root._delAct(GM.CLOSE_DOOR);
+        root._setAct(GM.OPEN_DOOR, true);
         emit('setTexture',bb.door_open);
-        emit('removeWeight',GM.W.DOOR-1);
-        emit('addWeight');
+        root.removeWeight?.(GM.W.DOOR-1);
+        root.addWeight?.();
         AudioManager.doorClose();
         await Utility.delay(500);
     }

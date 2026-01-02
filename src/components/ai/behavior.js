@@ -150,7 +150,7 @@ export class BehTest extends Behavior
         }
         const ep = bb.path.ep
         let ret = await root.move?.();
-        if(ret[0]===false) 
+        if(ret===false) 
         {
             console.log('------ rePath')
             root.findPath?.(ep);

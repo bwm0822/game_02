@@ -305,8 +305,8 @@
             "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 338,
-                "y": 548
+                "x": 512,
+                "y": 511
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -395,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 186.6685556421336,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -439,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 594.3333333333333,
-                "y": 528
+                "x": 635.3333333333333,
+                "y": 904.3333333333333
             }
         },
         "public/assets/maps/village-02.json": {

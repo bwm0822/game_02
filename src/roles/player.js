@@ -217,7 +217,6 @@ export class Player extends Role
         
         if(bb.path)
         {
-            console.log('-------------------- path')
             await this.dbgWait();
 
             if(bb.act === 'attack')
@@ -226,8 +225,8 @@ export class Player extends Role
             }
             else
             {
-                const state = await this.move?.();
-                if(state[0]==='reach'&&bb.ent)
+                const ret = await this.move?.();
+                if((ret==='reach')&&bb.ent)
                 {
                     sta(GM.ST.ACTION)
                     await this._interact(bb.ent,bb.act);

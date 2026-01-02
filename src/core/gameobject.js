@@ -236,8 +236,10 @@ export class GameObject
 
     falling(p)
     {
-        this.emit('removeWeight');
-        this.emit('addWeight',p);
+        console.log('-------------w=',this.weight)
+        const{root}=this.ctx;
+        root.removeWeight?.();
+        root.addWeight?.(p);
 
         let tx = (this.x+p.x)/2;
         let ty = this.y-32;

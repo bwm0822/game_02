@@ -91,6 +91,7 @@ export default class UiInv extends UiFrame
         const owner=this.owner;
         this._equips.loop((elm)=>elm?.update(owner));
         this._bag.loop((elm)=>elm?.update(owner));
+        console.log(owner.gold)
         this._gold.setText(`[color=yellow][img=gold][/color] ${owner.gold}`)
     }
 

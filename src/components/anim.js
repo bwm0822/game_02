@@ -19,8 +19,8 @@ export class COM_Anim extends Com
     //------------------------------------------------------
     _idle(on)
     {
-        const {emit} = this.ctx;
-        const view = emit('view')
+        const {root} = this.ctx;
+        const view = root.view;
         if(!view) {return;}   // 判斷 this.view ，以避免在地圖上出錯
         if(on)   
         {
@@ -44,8 +44,8 @@ export class COM_Anim extends Com
 
     _walk(duration)
     {
-        const {emit} = this.ctx;
-        const view = emit('view')
+        const {root} = this.ctx;
+        const view = root.view;
         this.scene.tweens.add({
             targets: view,
             y: {from:-view.anchorY, to:-view.anchorY-10},

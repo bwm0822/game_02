@@ -45,10 +45,10 @@ export class COM_Action extends Com
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
         if(!pt) {return;}
-        const {emit}=this.ctx
+        const {emit,root}=this.ctx
         emit('face',pt);
-        emit('removeWeight');
-        emit('addWeight',pt);
+        root.removeWeight?.();
+        root.addWeight?.(pt);
         emit('idle',false);
         emit('walk',duration/2);
         // await this._step(pt,duration,ease,{onUpdate:this._setLightPos.bind(this)});
