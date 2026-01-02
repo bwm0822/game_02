@@ -6,18 +6,10 @@ import Record from '../record.js'
 
 export class Role extends GameObject
 {
-    constructor(scene,x,y)
-    {
-        super(scene,x,y);
-        this._state = GM.ST_IDLE;   // 角色狀態
-    }
-
     get id() {return this.bb.id;}
     get icon() {return this.bb.meta.icon;}
     get job() {return this.bb.meta.job;}
-    get state() {return this._state;}
 
-    get ctx() {return {...super.ctx, sta:this._setState.bind(this)}}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -39,8 +31,6 @@ export class Role extends GameObject
         if(this.uid===-1) {return Record.game.roles?.[this.id];}
         else {return super._loadData();}
     }
-
-    _setState(val) {val&&(this._state=val); return val;}
 
     _addToList() {this.scene.roles && this.scene.roles.push(this);}
     

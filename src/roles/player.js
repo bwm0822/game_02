@@ -10,6 +10,7 @@ import {COM_Ability} from '../components/ability.js'
 import {COM_AbilityTree} from '../components/abilitytree.js'
 import {COM_AbilitySlots} from '../components/abilityslots.js'
 import {COM_Trade} from '../components/trade.js'
+import {COM_Sleep} from '../components/sleep.js'
 
 import DB from '../db.js'
 import {GM} from '../setting.js'
@@ -125,6 +126,7 @@ export class Player extends Role
             .addCom(new COM_AbilityTree())
             .addCom(new COM_AbilitySlots())
             .addCom(new COM_Trade(false))
+            .addCom(new COM_Sleep())
  
         // 註冊 event
         this.on('dead', this._dead.bind(this));
@@ -174,7 +176,7 @@ export class Player extends Role
         
         const {bb,sta} = this.ctx;
 
-        if(this.state===GM.ST.ABILITY)
+        if(sta()===GM.ST.ABILITY)
         {
             if(await this.aEmit('useAbility',ent))
             {
@@ -214,6 +216,7 @@ export class Player extends Role
         
         if(bb.path)
         {
+            console.log('-------------------- path')
             await this.dbgWait();
 
             if(bb.act === 'attack')
@@ -232,7 +235,7 @@ export class Player extends Role
         }
 
         if(bb.path) {sta(GM.ST.MOVING);}
-        else {sta(GM.ST.IDLE);}
+        else if(sta()!==GM.ST.SLEEP) {sta(GM.ST.IDLE);}
     }
 
 }

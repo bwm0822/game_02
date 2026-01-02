@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/trump-inn-f2.json",
     "expandedProjectPaths": [
         "public/assets/tiles",
+        ".",
+        "public/assets",
         "public/assets/templates",
         "public/assets/maps",
-        "public/assets",
-        "public",
-        "."
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -395,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 106.7648933909471,
-                "y": 320.9747113409365
+                "x": 186.6685556421336,
+                "y": 239.37097116951196
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -406,7 +406,7 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 219.650067294751,
+                "x": 127.16582843380323,
                 "y": 239.37097116951196
             }
         },
@@ -439,7 +439,7 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 516,
+                "x": 594.3333333333333,
                 "y": 528
             }
         },
@@ -644,23 +644,25 @@
     "openFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
-        "public/assets/maps/trump-inn-f1.json"
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/trump-inn-f2.json",
+        "public/assets/3_Road.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
+        "public/assets/maps/village-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/3_Road.tsj",
+        "public/assets/maps/trump-inn-f2.json",
         "public/assets/0_Ground_LowSat.tsj",
         "public/assets/32x32GridItemsAll.tsj",
         "public/assets/4_Smallplaces.tsj",
         "public/assets/Archer_Blue.tsj",
         "public/assets/catographt.tsj",
         "public/assets/Color A Spitesheet.tsj",
-        "public/assets/houe_1.tsj",
-        "public/assets/icons.tsj",
-        "public/assets/monsters.tsj",
-        "public/assets/props.tsj",
-        "public/assets/roles.tsj",
-        "public/assets/roles_v12.tsj"
+        "public/assets/houe_1.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

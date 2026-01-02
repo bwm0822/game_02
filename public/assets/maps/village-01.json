@@ -446,54 +446,6 @@
                  "width":32,
                  "x":448,
                  "y":768
-                }, 
-                {
-                 "gid":1811,
-                 "height":64,
-                 "id":136,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":16
-                        }, 
-                        {
-                         "name":"bt",
-                         "type":"int",
-                         "value":32
-                        }, 
-                        {
-                         "name":"door_close",
-                         "type":"string",
-                         "value":"doors\/1"
-                        }, 
-                        {
-                         "name":"door_open",
-                         "type":"string",
-                         "value":"doors\/0"
-                        }, 
-                        {
-                         "name":"gt",
-                         "type":"int",
-                         "value":32
-                        }, 
-                        {
-                         "name":"json_pts",
-                         "type":"string",
-                         "value":"[{\"x\":16,\"y\":-32},{\"x\":16,\"y\":32}]"
-                        }, 
-                        {
-                         "name":"zt",
-                         "type":"int",
-                         "value":32
-                        }],
-                 "rotation":0,
-                 "type":"door_1",
-                 "visible":true,
-                 "width":64,
-                 "x":576,
-                 "y":544
                 }],
          "opacity":1,
          "type":"objectgroup",

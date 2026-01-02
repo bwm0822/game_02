@@ -43,7 +43,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.DRINK)
             .addItem(GM.FILL)
             .addItem(GM.REST)
-            .addItem(GM.WAKE)
+            .addItem(GM.WAKE, this.wake.bind(this))
             // for slot
             .addItem(GM.BUY, this.trade.bind(this))
             .addItem(GM.SELL, this.trade.bind(this))
@@ -71,6 +71,12 @@ export default class UiOption extends UiFrame
                     })
         this._items[key] = item;
         return this;
+    }
+
+    wake()
+    {
+        this.close();
+        this.ent.wake();
     }
 
     use()

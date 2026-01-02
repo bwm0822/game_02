@@ -84,12 +84,6 @@
                  "height":64,
                  "id":193,
                  "name":"door",
-                 "properties":[
-                        {
-                         "name":"zt",
-                         "type":"int",
-                         "value":32
-                        }],
                  "template":"..\/templates\/door.tj",
                  "width":64,
                  "x":224,
@@ -125,8 +119,15 @@
                 }, 
                 {
                  "id":202,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"blanket",
+                         "type":"string",
+                         "value":"blanket_v"
+                        }],
                  "template":"..\/templates\/bed.tj",
-                 "type":"bed",
+                 "type":"bed_1",
                  "x":32,
                  "y":128
                 }, 
@@ -134,12 +135,6 @@
                  "height":64,
                  "id":203,
                  "name":"door",
-                 "properties":[
-                        {
-                         "name":"zt",
-                         "type":"int",
-                         "value":32
-                        }],
                  "template":"..\/templates\/door.tj",
                  "width":64,
                  "x":64,

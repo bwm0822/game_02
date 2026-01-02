@@ -1,13 +1,13 @@
 
 import {Evt} from './event.js'
 import Record from '../record.js'
-import {ORDER} from '../setting.js'
+import {GM, ORDER} from '../setting.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
 // 功能 :
 //  1. 提供 元件庫、載入、儲存的功能
-//  2. 提供 blackboard，讓元件共享資訊
+//  2. 提供 bb(blackboard)，讓元件共享資訊
 //  3. 提供 事件監聽與觸發的功能(Evt)
 //  4. 提供 drop / falling
 //--------------------------------------------------
@@ -17,14 +17,16 @@ export class GameObject
     {
         this.scene = scene;
         this._coms = {}; // 元件庫
-        this._bb = {};  // blackboard，共享資料中心，可與各元件共享資訊
+        this._bb = {};  // bb(blackboard)，共享資料中心，可與各元件共享資訊
         this._ent = scene.add.container(x,y);    // gameObject 的實體，view 掛在其下
+
+        this._pts = null;           // 可互動的點(陣列)
+        this._acts = {};            // 可供操作的指令
+        this._state = GM.ST.IDLE;   // 狀態
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid
 
-        this._pts = null;  // 可互動的點陣列
-        this._acts = {}; // 可操作的方式
         this._init();
     }
 
@@ -37,23 +39,30 @@ export class GameObject
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     get ctx() {return { 
+                        root : this,
                         bb : this.bb, 
                         emit : this.emit.bind(this), 
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
+                        sta : this._rwState.bind(this),
                     }}
 
-    // 可操作的方式
+    // 所有可操作的指令
     get acts() {return this._acts;}
-    get act() {
-        for(let key of ORDER)
+    // 依順序取出第一個可供操作的指令
+    get act() 
+    {
+        for(const key of ORDER)
         {
             if(this._acts[key]) {return key;}
         }
     }
-
+    // 可互動的點(陣列)
     get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
                                 : [this.pos]} 
+
+    // 物件狀態
+    get state() {return this._state;}
 
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
@@ -78,9 +87,13 @@ export class GameObject
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
-    _setState(val) {val&&(this._state=val); return this._state;}
+    // 存取狀態
+    _rwState(val) {val&&(this._state=val); return this._state;}
+    // 載入紀錄
     _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
+    // 儲存紀錄
     _saveData(data) {Record.setByUid(this.mapName, this.uid, data, this.qid);}
+
     _send(type, ...args) {this.scene.events.emit(type, ...args);}
     _onover() {this._send('over',this);}
     _onout() {this._send('out',this);}
@@ -91,7 +104,9 @@ export class GameObject
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
+    // 將物件加入List
     _addToList() {this.scene.gos && this.scene.gos.push(this);}
+    // 將物件從List移除
     _removeFromList()
     {
         if(!this.scene.gos) {return;}
@@ -99,6 +114,18 @@ export class GameObject
         if(index>-1) {this.scene.gos.splice(index,1);}
     }
 
+    _isRemoved()
+    {
+        let data = this._loadData();
+        if(data?.removed) {this._remove(); return true;}
+        return false;
+    }
+
+    _setAct(key,value) {this._acts[key]=value;}
+
+    _delAct(key) {delete this._acts[key];}
+
+    // 初始化物件
     _init()
     {
         // 提供事件監聽與觸發的功能(Evt)
@@ -114,17 +141,9 @@ export class GameObject
 
         // 加入 List
         this._addToList();
-
-       
     }
 
-    _isRemoved()
-    {
-        let data = this._loadData();
-        if(data?.removed) {this._remove(); return true;}
-        return false;
-    }
-
+    // 物件消滅時，要呼叫 _remove()
     _remove()
     { 
         this._removeFromList();
@@ -146,13 +165,29 @@ export class GameObject
         this.scene = null;
     }
 
-    _setAct(key,value) {this._acts[key]=value;}
-
-    _delAct(key) {delete this._acts[key];}
-
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
+    addSprite(key_frame)
+    {
+        const [key,frame]=key_frame.split('/');
+        const sp = this.scene.add.sprite(0,0,key,frame);
+        sp.setPipeline('Light2D');
+        sp.displayWidth = this.bb.wid;
+        sp.displayHeight = this.bb.hei;
+        this.ent.add(sp);
+        return sp;
+    }
+
+    add(go)
+    {
+        this.ent.add(go.ent);
+    }
+
+    remove(go)
+    {
+        this.ent.remove(go.ent);
+    }
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}

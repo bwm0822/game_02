@@ -7,40 +7,45 @@ import {GM} from '../setting.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
-// 標籤 : door
-// 功能 : 提供開門、關門的功能
+// 標籤 : sleep
+// 功能 : 提供角色睡覺/休息的能力
 //--------------------------------------------------
-export class COM_Door extends Com
+export class COM_Sleep extends Com
 {
-    get tag() {return 'door';}   // 回傳元件的標籤
+    constructor() 
+    {
+        super();
+        this._bed;
+    }
+
+    get tag() {return 'sleep';}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
 
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    async _open(role) 
+    _sleepAt(bed) 
     {
-        const{bb,emit}=this.ctx;
-        this.root._delAct(GM.OPEN_DOOR);
-        this.root._setAct(GM.CLOSE_DOOR, true);
-        emit('setTexture',bb.door_close);
-        emit('removeWeight');
-        emit('addWeight',undefined,GM.W.DOOR-1);
-        AudioManager.doorOpen();
-        await Utility.delay(500);
+        const{root,emit,sta}=this.ctx;
+        emit('removeWeight')
+        root.setPosition(bed.loc.x,bed.loc.y)
+        sta(GM.ST.SLEEP)
+        emit(GM.REST)
+        root._setAct(GM.WAKE, true);
+        this._bed=bed;
     }
 
-    async _close()
+    async _wake()
     {
-        const{bb,emit}=this.ctx;
-        this.root._delAct(GM.CLOSE_DOOR);
-        this.root._setAct(GM.OPEN_DOOR, true);
-        emit('setTexture',bb.door_open);
-        emit('removeWeight',GM.W.DOOR-1);
-        emit('addWeight');
-        AudioManager.doorClose();
-        await Utility.delay(500);
+        const{root,emit,sta}=this.ctx;
+        const bed = this._bed;
+        bed.setEmpty();
+        root.setPosition(bed.pts[0].x,bed.pts[0].y)
+        emit('addWeight')
+        sta(GM.ST.IDLE);
+        emit(GM.WAKE)
+        root._delAct(GM.WAKE);
     }
 
     //------------------------------------------------------
@@ -51,12 +56,15 @@ export class COM_Door extends Com
         super.bind(root);
         
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.OPEN_DOOR, true);
-        
+        // root._setAct(GM.REST, true);
+
         // 2.在上層(root)綁定API，提供給其他元件或外部使用
+        root.sleepAt = this._sleepAt.bind(this);
+        root.wake = this._wake.bind(this);
+
 
         // 3.提供給(event)給其他元件或外部呼叫
-        root.on(GM.OPEN_DOOR, this._open.bind(this));
-        root.on(GM.CLOSE_DOOR, this._close.bind(this));
+        
+
     }
 }

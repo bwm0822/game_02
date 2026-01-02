@@ -192,6 +192,8 @@ export class COM_Talk extends Com
 
         // 註冊 event
         root.on(GM.TALK, this._talk.bind(this));
+        root.on(GM.REST, ()=>{root._setAct(GM.TALK, false);})
+        root.on(GM.WAKE, ()=>{root._setAct(GM.TALK, true);})
     }
 
     load(data) 

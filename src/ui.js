@@ -89,28 +89,23 @@ export default function createUI(scene)
 
     // new UiManufacture_1(scene);
     // new UiTest(scene);
-
-    test();
+    test1();
+	test2();
 
 }
 
-function test()
+async function test1()
 {
-    let str = "#var:def";
-    let [c, v, d] = str.split(/[:#]/);
-    console.log(c??v??d);
-    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+	console.log('--- 1')
+  	await Promise.resolve(1);//new Promise((resolve)=>{resolve(true)});
+  	console.log('--- 2')
 
-    str = "#var";
-    [c, v, d] = str.split(/[:#]/);
-    console.log(c??v??d);
-    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+}
 
-    
-    str = "var";
-    [c, v, d] = str.split(/[:#]/);
-    console.log(c??v??d);
-    console.log(`c:${c}, v:${v}, d:${d}`); // var def
+function test2()
+{
+	console.log('--- 3')
+
 }
 
 function setCamera(mode) 

@@ -75,6 +75,11 @@ export class Preloader extends Scene
         this.load.image('arrow', 'roles_64x64/arrow.png');
 
 
+        this.load.image('blanket_v', 'props/blanket_v.png');
+
+        
+
+
 
         // this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');
         this.load.spritesheet('cursors', 'icons/cursors.png',{ frameWidth: 33, frameHeight: 33, margin: 1, space: 0});

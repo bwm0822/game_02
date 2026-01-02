@@ -184,7 +184,7 @@ export class GameScene extends Scene
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
-            if(this._player.state==GM.ST_SLEEP) {return;}
+            if(this._player.state===GM.ST_SLEEP) {return;}
 
             if (pointer.rightButtonDown())
             {

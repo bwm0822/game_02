@@ -1,9 +1,9 @@
 import {GM} from '../setting.js';
 import {ItemView} from '../components/view.js';
-import {COM_Door} from '../components/door.js';
+import {COM_Bed} from '../components/bed.js';
 import {GameObject} from '../core/gameobject.js';
 
-export default class Door extends GameObject
+export default class Bed_1 extends GameObject
 {
 
     //------------------------------------------------------
@@ -20,7 +20,7 @@ export default class Door extends GameObject
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
-            .addCom( new COM_Door() )
+            .addCom( new COM_Bed() )
 
         // 載入
         this.load();

@@ -344,6 +344,12 @@ class View extends Phaser.GameObjects.Container
         return this;
     }
 
+    _interact(on)
+    {
+        if(on) { this._zone.setInteractive();}
+        else {this._zone.disableInteractive();this._setOutline(false);}
+    }
+
     //--------------------------------------------------
     // 初始化
     //--------------------------------------------------
@@ -371,9 +377,11 @@ class View extends Phaser.GameObjects.Container
         const {modify} = config;
         this._init(modify);
         
-        // 在上層綁定操作介面，提供給其他元件使用
+        // 2.在上層(root)綁定API，提供給其他元件或外部使用
         root.isTouch = this.isTouch;
-        // 註冊 event
+        root.interact = this._interact.bind(this);
+
+        // 3.提供給(event)給其他元件或外部呼叫
         root.on('view',()=>{return this;})
         root.on('removeWeight', this._removeWeight.bind(this));
         root.on('addWeight', this._addWeight.bind(this));
@@ -575,6 +583,7 @@ export class RoleView extends View
     bind(root, config)
     {
         super.bind(root, config);
+
         
         // 註冊 event
         root.on('equip', this.equip.bind(this));
