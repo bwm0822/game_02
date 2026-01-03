@@ -4,7 +4,8 @@ import UiMain from '../ui/uimain.js';
 import UiEffect from '../ui/uieffect.js';
 import UiTime from '../ui/uitime.js';
 
-import TimeManager,{Schedular} from '../time.js';
+import TimeSystem from '../systems/timesystem.js';
+import Schedular from '../time/schedular.js';
 // import * as Role from '../role.js';
 // import {Avatar} from '../role.js';
 import {Player} from '../roles/player.js';
@@ -70,13 +71,13 @@ export class GameArea extends GameScene
         super.initUI();
         UiMain.show();
         UiEffect.show();
-        TimeManager.register(UiTime.updateTime.bind(UiTime))
+        TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 
     initSchedule()
     {
         Schedular.init(this, this.mapName);
-        TimeManager.register(Schedular.check.bind(Schedular));
+        TimeSystem.register(Schedular.check.bind(Schedular));
     }
 
     async process()
@@ -97,7 +98,7 @@ export class GameArea extends GameScene
                     await this.roles[i].process();
                 }
             }
-            await TimeManager.inc();
+            await TimeSystem.inc();
         }
     }
 }

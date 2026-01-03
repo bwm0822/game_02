@@ -2,7 +2,7 @@ import {Store} from './store.js'
 // import {Entity,Port,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
 // import {Npc, Enemy} from './role.js';
 import Utility from './utility.js'
-import QuestManager from './quest.js'
+import QuestManager from './manager/quest.js'
 import {astar, Graph} from './astar.js'
 import {GM} from './setting.js'
 import Record from './record.js'

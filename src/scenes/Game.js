@@ -1,6 +1,6 @@
-import { Scene } from 'phaser';
-import Record from '../record';
-import QuestManager from '../quest.js';
+import { Scene } from 'phaser'
+import Record from '../record'
+import QuestManager from '../manager/quest.js'
 
 
 export class Game extends Scene

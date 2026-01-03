@@ -1,10 +1,10 @@
 import {GameObject} from '../core/gameobject.js'
-import TimeManager from '../time.js'
+import TimeSystem from '../systems/timesystem.js'
 import {GM} from '../setting.js'
 import Record from '../record.js'
 
 
-export class Role extends GameObject
+export default class Role extends GameObject
 {
     get id() {return this.bb.id;}
     get icon() {return this.bb.meta.icon;}
@@ -41,13 +41,13 @@ export class Role extends GameObject
         if(index>-1) {this.scene.roles.splice(index,1);}
     }
 
-    _registerTimeManager()
+    _registerTimeSystem()
     {
         this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
-        TimeManager.register(this._updateTimeCallback);
+        TimeSystem.register(this._updateTimeCallback);
     }
         
-    _unregisterTimeManager() {TimeManager.unregister(this._updateTimeCallback);}
+    _unregisterTimeSystem() {TimeSystem.unregister(this._updateTimeCallback);}
 
 
     //------------------------------------------------------

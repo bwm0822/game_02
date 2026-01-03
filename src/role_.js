@@ -8,13 +8,13 @@ import Utility from './utility.js';
 import Record from './record.js';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
-import {Entity, Pickup,Door, Projectile} from './entity.js';
+import {Entity, Pickup,Door,Projectile} from './entity.js';
 import {RoleDB,DialogDB,ItemDB} from './database.js';
 import DB from './db.js';
 import {text,bbcText,rect, sprite} from './uibase.js';
 import {GM, ROLE_ATTRS, RESIST_MAP} from './setting.js';
 import TimeManager from './time.js';
-import QuestManager from './quest.js';  
+import QuestManager from './manager/quest.js';  
 import { createAIFor } from './ai.js';
 
 const _dLut = {body:0, armor:1, head:2, helmet:3, weapon:4};

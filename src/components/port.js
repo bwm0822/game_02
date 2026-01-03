@@ -1,6 +1,6 @@
 import Com from './com.js'
-import {GM} from '../setting.js';
-import TimeManager from '../time'
+import {GM} from '../setting.js'
+import TimeSystem from '../systems/timesystem.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -17,7 +17,7 @@ export class COM_Port extends Com
     //------------------------------------------------------
     _enter()
     {
-        TimeManager.inc();
+        TimeSystem.inc();
         const {bb,send}=this.ctx;
         send('scene',{map:bb.map, port:bb.port, ambient:bb.ambient});
     }

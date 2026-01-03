@@ -1,7 +1,7 @@
 import Com from './com.js'
 import DB from '../db.js'
 import {GM} from '../setting.js'
-import QuestManager from '../quest.js'
+import QuestManager from '../manager/quest.js'
 import {getPlayer} from '../roles/player.js'
 
 //--------------------------------------------------

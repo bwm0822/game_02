@@ -2,7 +2,7 @@ import Record from './record.js'
 import {RoleDB,Roles} from './database.js'
 import DB from './db.js'
 import * as Role from './role_.js';
-import Utility from './utility';
+import Utility from './utility.js';
 import {Npc} from './roles/npc.js'
 
 const ticksMax = 24*60-1;

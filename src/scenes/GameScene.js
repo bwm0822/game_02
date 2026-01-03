@@ -3,7 +3,7 @@ import Map from '../map.js';
 
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
-import QuestManager from  '../quest.js';
+import QuestManager from  '../manager/quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
 import {GM,UI,DEBUG} from '../setting.js';
@@ -21,9 +21,9 @@ import UiGameOver from '../ui/uigameover.js'
 import UiManufacture from '../ui/uimanufacture.js'
 
 
-import TimeManager from '../time.js';
-import AudioManager from '../audio.js';
-import {Projectile} from '../entity';
+import TimeSystem from '../systems/timesystem.js';
+import AudioManager from '../manager/audio.js';
+// import {Projectile} from '../entity';
 
 // import * as Role from '../role.js';
 // import {setPlayer,dbg_hover_npc} from '../role.js';
@@ -68,7 +68,7 @@ export class GameScene extends Scene
         this.processInput();
 
         AudioManager.init(this);
-        TimeManager.start();
+        TimeSystem.start();
         UiMessage.clean();
         UiChangeScene.done();
         AudioManager.bgmStart();
@@ -86,7 +86,7 @@ export class GameScene extends Scene
     {
         this.lights.enable();
         if(amb) {this.lights.setAmbientColor(parseInt(amb));}
-        else {TimeManager.register(this.setAmbient.bind(this));}
+        else {TimeSystem.register(this.setAmbient.bind(this));}
     }
 
     setAmbient(dt,time)
@@ -112,7 +112,7 @@ export class GameScene extends Scene
     loadRecord()
     {
         QuestManager.load();
-        TimeManager.load();
+        TimeSystem.load();
         //Role.Player.load();
     }
 
@@ -291,7 +291,7 @@ export class GameScene extends Scene
         this.gos.forEach(go=>go.save?.())
         // this.roles.forEach((role)=>{role.uid===-1 && role.save();})
         this.roles.forEach((role)=>{role.save();})
-        TimeManager.save();
+        TimeSystem.save();
         Record.saveGame();
     }
 

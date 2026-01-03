@@ -3,7 +3,7 @@ import {ItemDB} from './database.js';
 import Utility from './utility.js';
 import { GM } from './setting.js';
 import DB from './db.js';
-import AudioManager from './audio.js';
+import AudioManager from './manager/audio.js';
 import {bbcText} from './uibase'
 
 import TimeManager from './time';

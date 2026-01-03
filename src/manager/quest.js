@@ -1,7 +1,7 @@
-import Record from './record.js'
-import DB from './db.js'
-import {GM} from './setting.js'
-import {getPlayer} from './roles/player.js'
+import Record from '../record.js'
+import DB from '../db.js'
+import {GM} from '../setting.js'
+import {getPlayer} from '../roles/player.js'
 
 
 function isDone(cond) { return cond.cur >= cond.dat.count; }

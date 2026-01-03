@@ -1,4 +1,4 @@
-import {ItemView,RoleView} from '../components/view.js'
+import {RoleView} from '../components/view.js'
 import {COM_Inventory} from '../components/inventory.js'
 import {COM_Anim} from '../components/anim.js'
 import {COM_Action} from '../components/action.js'
@@ -10,9 +10,10 @@ import {COM_Talk} from '../components/talk.js'
 import {COM_Trade} from '../components/trade.js'
 import {COM_Stats} from '../components/stats.js'
 import DB from '../db.js'
-import {GM} from '../setting.js';
-import {Role} from './role.js';
-import QuestManager from '../quest.js'
+import {GM} from '../setting.js'
+import Role from './role.js'
+import QuestManager from '../manager/quest.js'
+
 
 let _dbg = true;
 
@@ -47,7 +48,7 @@ export class Npc extends Role
 
     _remove()
     {
-        this._unregisterTimeManager();
+        this._unregisterTimeSystem();
         // 死亡時，若是 schedule，則標記為 removed
         if(this.schedule) {{this._saveData({removed:true})}}
         super._remove();
@@ -66,7 +67,7 @@ export class Npc extends Role
     {     
         if(!super.init_prefab()) {return;}
 
-        this._registerTimeManager();        // 註冊 TimeManager
+        this._registerTimeSystem();        // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id); // 取得roleD，放入bb.meta，view元件會用到
         this.bb.isStatic = false;           // 設成 dynamic body，view 元件會參考
@@ -84,6 +85,7 @@ export class Npc extends Role
             .addCom(new COM_Disp())
             .addCom(new COM_Talk())
             .addCom(new COM_Trade())
+            
 
         // 註冊 event
         this.on('ondead', this._ondead.bind(this));

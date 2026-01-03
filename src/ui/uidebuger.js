@@ -2,7 +2,7 @@ import UiFrame from './uiframe.js'
 import {GM,UI,DEBUG,DBG} from '../setting.js'
 import * as ui from './uicomponents.js'
 import {getPlayer} from '../roles/player.js'
-import TimeManager from '../time.js'
+import TimeSystem from '../systems/timesystem.js'
 
 
 const E={CHK:'check',DD:'dropdown'};
@@ -33,7 +33,7 @@ function cmd_t(args)
     //console.log(args);
     if(args.length == 1)
     {
-        let t = TimeManager.time;
+        let t = TimeSystem.time;
         let str = `d:${t.d} h:${t.h} m:${t.m}\n`;
         this.print(str)
     }
@@ -43,9 +43,9 @@ function cmd_t(args)
         {
             let [type,val]=args[i].split(':');
             console.log(type,val);
-            TimeManager.set(type,val)
+            TimeSystem.set(type,val)
         }
-        TimeManager.update();
+        TimeSystem.update();
         this.close();
     }
 }

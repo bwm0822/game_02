@@ -1,5 +1,5 @@
 import Com from './com.js'
-import {Projectile} from '../entity.js'
+import {Projectile} from '../misc/effs.js'
 import {computeDamage} from '../core/combat.js'
 import {GM} from '../setting.js'
 
@@ -45,7 +45,7 @@ export class COM_Action extends Com
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
         if(!pt) {return;}
-        const {emit,root}=this.ctx
+        const {root}=this.ctx
         root.face?.(pt);
         root.removeWeight?.();
         root.addWeight?.(pt);

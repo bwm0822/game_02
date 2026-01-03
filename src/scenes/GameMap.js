@@ -1,6 +1,6 @@
 import { GameScene } from "./GameScene";
 // import * as Role from '../role.js';
-import TimeManager from '../time.js';
+import TimeSystem from '../systems/timesystem.js';
 // import {UiMain, UiTime} from '../ui.js'
 import UiTime from '../ui/uitime.js'
 import UiMain from '../ui/uimain.js'
@@ -55,7 +55,7 @@ export class GameMap extends GameScene
     {
         super.initUI();
         UiMain.show();
-        TimeManager.register(UiTime.updateTime.bind(UiTime))
+        TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 
     async process()
@@ -63,7 +63,7 @@ export class GameMap extends GameScene
         while(true)
         {
             await this._player.process();
-            TimeManager.inc(60);
+            TimeSystem.inc(60);
         }
     }
 }

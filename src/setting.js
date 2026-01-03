@@ -1,4 +1,3 @@
-
 export const GM =
 {
     COLOR_PRIMARY : 0x4e342e,

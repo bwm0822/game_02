@@ -1,4 +1,4 @@
-import {GM} from './setting.js';
+import {GM} from './setting.js'
 
 export default class DB
 {

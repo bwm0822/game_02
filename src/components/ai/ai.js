@@ -1,14 +1,14 @@
 import Com from '../com.js'
-import TimeManager from '../../time.js'
+import TimeSystem from '../../systems/timesystem.js'
 import {BehAttack, BehChase, BehTest} from './behavior.js'
 import {GM} from '../../setting.js'
 
 
-// 回合制冷卻：以 TimeManager.ticks（回合數）判定
+// 回合制冷卻：以 TimeSystem.ticks（回合數）判定
 export class Cooldown 
 {
     constructor() { this.map = new Map(); }   // key -> nextTurn
-    ready(key, cdTurns = 1, nowTurn = TimeManager.ticks) 
+    ready(key, cdTurns = 1, nowTurn = TimeSystem.ticks) 
     {
         const nextTurn = this.map.get(key) ?? -Infinity;
         if (nowTurn >= nextTurn) 
@@ -18,7 +18,7 @@ export class Cooldown
         }
         return false;
     }
-    remaining(key, nowTurn = TimeManager.ticks) 
+    remaining(key, nowTurn = TimeSystem.ticks) 
     {
         const nextTurn = this.map.get(key) ?? -Infinity;
         return Math.max(0, nextTurn - nowTurn);
@@ -94,7 +94,7 @@ export class COM_AI extends Com
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
-    get ctx() {return {...super.ctx, cd:this.cd, tick:TimeManager.ticks};}
+    get ctx() {return {...super.ctx, cd:this.cd, tick:TimeSystem.ticks};}
 
     //------------------------------------------------------
     //  Local

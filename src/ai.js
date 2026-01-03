@@ -1,9 +1,9 @@
 // ai.js （回合制）
-// 依你的現有架構：GM / Utility / DB / TimeManager / Role/Npc 的 API
+// 依你的現有架構：GM / Utility / DB / TimeSystem / Role/Npc 的 API
 import Utility from './utility.js';
 import DB from './db.js';
 import { GM } from './setting.js';
-import TimeManager from './time.js';
+import TimeSystem from './systems/timesystem.js';
 import * as Role from './role_.js';
 
 const dist2 = (a, b) => {
@@ -18,11 +18,11 @@ const withinTiles = (a, b, tiles=5) => {
 const rnd = (min, max) => Math.random() * (max - min) + min;
 const choose = arr => arr[Math.floor(Math.random() * arr.length)];
 
-/** 回合制冷卻：以 TimeManager.ticks（回合數）判定 */
+/** 回合制冷卻：以 TimeSystem.ticks（回合數）判定 */
 export class TurnCooldown 
 {
     constructor() { this.map = new Map(); }   // key -> nextTurn
-    ready(key, cdTurns = 1, nowTurn = TimeManager.ticks) 
+    ready(key, cdTurns = 1, nowTurn = TimeSystem.ticks) 
     {
         const nextTurn = this.map.get(key) ?? -Infinity;
         if (nowTurn >= nextTurn) 
@@ -32,7 +32,7 @@ export class TurnCooldown
         }
         return false;
     }
-    remaining(key, nowTurn = TimeManager.ticks) 
+    remaining(key, nowTurn = TimeSystem.ticks) 
     {
         const nextTurn = this.map.get(key) ?? -Infinity;
         return Math.max(0, nextTurn - nowTurn);

@@ -15,7 +15,7 @@ import {COM_Sleep} from '../components/sleep.js'
 import DB from '../db.js'
 import {GM} from '../setting.js'
 import Record from '../record.js'
-import {Role} from './role.js'
+import Role from './role.js'
 
 
 
@@ -65,7 +65,7 @@ export class Player extends Role
     _ondead()
     {
         console.log('---- dead ----')
-        this._unregisterTimeManager();
+        this._unregisterTimeSystem();
         this._send('gameover');
     }
 
@@ -87,7 +87,7 @@ export class Player extends Role
 
     init_prefab()
     {     
-        this._registerTimeManager();            // 註冊 TimeManager
+        this._registerTimeSystem();            // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id);     // 取得 roleD，放入 bb，view 元件會用到
 
@@ -106,7 +106,7 @@ export class Player extends Role
 
     init_runtime(id)
     {     
-        this._registerTimeManager();    // 註冊 TimeManager
+        this._registerTimeSystem();    // 註冊 TimeSystem
 
         this.bb.id = id;
         this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
