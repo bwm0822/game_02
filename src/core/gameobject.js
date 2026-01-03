@@ -1,7 +1,7 @@
 
 import {Evt} from './event.js'
 import Record from '../record.js'
-import {GM, ORDER} from '../setting.js'
+import {GM, ORDER} from './setting.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject

@@ -1,7 +1,7 @@
 import Com from './com.js'
-import Utility from '../utility.js'
+import Utility from '../core/utility.js'
 import {text, rect} from '../uibase.js'
-import { GM } from '../setting.js'
+import { GM } from '../core/setting.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 

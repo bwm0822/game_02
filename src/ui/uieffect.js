@@ -1,5 +1,5 @@
 import UiFrame from './uiframe.js'
-import {GM,UI,DEBUG,DBG} from '../setting.js'
+import {GM,UI,DEBUG,DBG} from '../core/setting.js'
 import * as ui from './uicomponents.js'
 import {Effect} from './uiclass.js'
 

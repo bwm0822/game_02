@@ -1,4 +1,4 @@
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import Ui from './uicommon.js'
 
 export default class UiCursor extends Phaser.GameObjects.Sprite

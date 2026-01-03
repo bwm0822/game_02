@@ -1,6 +1,6 @@
 import Com from './com.js'
-import DB from '../db.js'
-import {GM} from '../setting.js'
+import DB from '../data/db.js'
+import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
 import {getPlayer} from '../roles/player.js'
 

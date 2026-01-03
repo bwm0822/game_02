@@ -12,8 +12,8 @@ import {COM_AbilitySlots} from '../components/abilityslots.js'
 import {COM_Trade} from '../components/trade.js'
 import {COM_Sleep} from '../components/sleep.js'
 
-import DB from '../db.js'
-import {GM} from '../setting.js'
+import DB from '../data/db.js'
+import {GM} from '../core/setting.js'
 import Record from '../record.js'
 import Role from './role.js'
 

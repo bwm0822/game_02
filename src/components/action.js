@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {Projectile} from '../misc/effs.js'
 import {computeDamage} from '../core/combat.js'
-import {GM} from '../setting.js'
+import {GM} from '../core/setting.js'
 
 
 //--------------------------------------------------

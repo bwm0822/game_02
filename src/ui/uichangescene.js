@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../setting.js'
-import Utility from '../utility.js'
+import {GM,UI} from '../core/setting.js'
+import Utility from '../core/utility.js'
 
 export default class UiChangeScene extends UiFrame
 {

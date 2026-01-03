@@ -406,8 +406,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 127.16582843380323,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump_inn_f1.json": {
@@ -439,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 416,
-                "y": 688
+                "x": 635.3333333333333,
+                "y": 904.3333333333333
             }
         },
         "public/assets/maps/village-02.json": {

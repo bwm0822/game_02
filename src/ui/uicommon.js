@@ -1,4 +1,4 @@
-import {GM, UI} from '../setting.js';
+import {GM, UI} from '../core/setting.js';
 
 export default class Ui
 {

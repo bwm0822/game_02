@@ -1,7 +1,7 @@
 import {FixWidthSizer, OverlapSizer, Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {sprite, text, rect} from './uibase.js';
-import {GM} from './setting.js';
-import Utility from './utility.js';
+import {GM} from './core/setting.js';
+import Utility from './core/utility.js';
 
 export class Mark
 {

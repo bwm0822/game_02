@@ -1,4 +1,4 @@
-import {GM} from './setting.js'
+import {GM} from './core/setting.js'
 
 import PressService from './services/pressService.js'
 import DragService from './services/dragService.js'

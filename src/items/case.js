@@ -1,4 +1,4 @@
-import {GM} from '../setting.js';
+import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
 import {COM_Storage} from '../components/inventory.js';
 import {GameObject} from '../core/gameobject.js';

@@ -1,4 +1,4 @@
-import {GM} from './setting.js';
+import {GM} from './core/setting.js';
 
 // export class RoleData
 // {

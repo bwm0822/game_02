@@ -1,10 +1,9 @@
-import { Scene } from 'phaser';
-import Utility from '../utility.js';
-import Record from '../record';
-import Local from '../local';
-import DB from '../db';
+import { Scene } from 'phaser'
+import Record from '../record.js'
+import Local from '../infra/local.js'
+import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
-import {GM} from '../setting.js';
+import {GM} from '../core/setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
 import UiCursor from '../ui/uicursor.js'

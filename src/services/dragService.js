@@ -1,7 +1,7 @@
 // services/dragService.js
 // import { Ui, UiInv, UiCover, UiMain, UiDragged, UiInfo } from '../ui.js';
 import InventoryService from './inventoryService.js'
-import {GM} from '../setting.js'
+import {GM} from '../core/setting.js'
 import Ui from '../ui/uicommon.js'
 import UiInv from '../ui/uiinv.js'
 import UiMain from '../ui/uimain.js'

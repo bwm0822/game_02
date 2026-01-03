@@ -1,12 +1,12 @@
 import {Scene} from 'phaser';
-import Map from '../map.js';
+import Map from '../manager/map.js';
 
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import QuestManager from  '../manager/quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
-import {GM,UI,DEBUG} from '../setting.js';
+import {GM,UI,DEBUG} from '../core/setting.js';
 import UiCover from '../ui/uicover.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'

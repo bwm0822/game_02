@@ -1,7 +1,7 @@
 import Com from './com.js'
-import DB from '../db.js'
-import {GM} from '../setting.js'
-import Utility from '../utility.js'
+import DB from '../data/db.js'
+import {GM} from '../core/setting.js'
+import Utility from '../core/utility.js'
 import {computeHealing} from '../core/combat.js'
 
 //--------------------------------------------------

@@ -1,6 +1,6 @@
 import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
-import {GM, UI} from '../setting.js'
-import Utility from '../utility.js'
+import {GM, UI} from '../core/setting.js'
+import Utility from '../core/utility.js'
 
 export class Pic extends OverlapSizer
 {

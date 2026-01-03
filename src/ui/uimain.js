@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import {AbilitySlot} from './uiclass.js'
 import UiInv from '../ui/uiinv.js'
 import UiQuest from '../ui/uiquest.js'

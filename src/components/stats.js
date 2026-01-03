@@ -1,7 +1,7 @@
 import Com from './com.js'
-import {GM} from '../setting.js';
-import DB from '../db.js';
-import Utility from '../utility.js';
+import {GM} from '../core/setting.js';
+import DB from '../data/db.js';
+import Utility from '../core/utility.js';
 
 
 function _baseHPMAX(base) {return Math.round((base[GM.CON] || 0) * 10);}     // HPMAX = CON x 10

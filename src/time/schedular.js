@@ -1,6 +1,6 @@
 import TimeSystem from '../systems/timesystem.js'
 import {Roles} from '../database.js'
-import DB from '../db.js'
+import DB from '../data/db.js'
 import Record from '../record.js'
 import {Npc} from '../roles/npc.js'
 

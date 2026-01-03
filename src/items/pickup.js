@@ -1,5 +1,5 @@
-import DB from '../db.js'
-import {GM} from '../setting.js';
+import DB from '../data/db.js'
+import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
 import {COM_Pickable} from '../components/pickable.js';
 import {GameObject} from '../core/gameobject.js';

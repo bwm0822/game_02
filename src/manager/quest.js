@@ -1,6 +1,6 @@
 import Record from '../record.js'
-import DB from '../db.js'
-import {GM} from '../setting.js'
+import DB from '../data/db.js'
+import {GM} from '../core/setting.js'
 import {getPlayer} from '../roles/player.js'
 
 

@@ -1,6 +1,6 @@
 import UiFrame from "./uiframe"
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import {Slot} from './uiclass.js'
 
 

@@ -1,8 +1,8 @@
 import Record from './record.js'
 import {ItemDB} from './database.js';
-import Utility from './utility.js';
-import { GM } from './setting.js';
-import DB from './db.js';
+import Utility from './core/utility.js';
+import { GM } from './core/setting.js';
+import DB from './data/db.js';
 import AudioManager from './manager/audio.js';
 import {bbcText} from './uibase'
 

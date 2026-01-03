@@ -1,7 +1,7 @@
 import Com from '../com.js'
 import TimeSystem from '../../systems/timesystem.js'
 import {BehAttack, BehChase, BehTest} from './behavior.js'
-import {GM} from '../../setting.js'
+import {GM} from '../../core/setting.js'
 
 
 // 回合制冷卻：以 TimeSystem.ticks（回合數）判定

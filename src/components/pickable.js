@@ -1,7 +1,7 @@
 import Com from './com.js'
-import DB from '../db.js'
+import DB from '../data/db.js'
 import Record from '../record.js'
-import {GM} from '../setting.js';
+import {GM} from '../core/setting.js';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 

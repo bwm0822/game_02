@@ -4,7 +4,7 @@ import Utility from './utility.js';
 import {rect, divider, sprite, text, bbcText, Pic, Icon, bar, progress, progress_text, scrollBar, label, slider, dropdown, vSpace} from './uibase.js';
 import {GM, ACT_TYPE, UI} from './setting.js';
 
-import DB from './db.js';
+import DB from './data/db.js';
 import {Mark} from './gameUi.js';
 import TimeManager from './time.js';
 import Record from './record.js';

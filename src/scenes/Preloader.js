@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import Map from '../map.js';
+import Map from '../manager/map.js';
 
 export class Preloader extends Scene
 {

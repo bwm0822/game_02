@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import InventoryService from '../services/inventoryService.js'
 import UiObserve from './uiobserve.js'
 import UiInv from './uiinv.js'

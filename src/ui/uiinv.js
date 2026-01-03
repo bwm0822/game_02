@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import Ui from './uicommon.js'
 import {Slot, EquipSlot} from './uiclass.js'
 import UiCover from './uicover.js'

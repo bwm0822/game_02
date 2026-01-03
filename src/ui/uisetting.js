@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI,DEBUG} from '../setting.js'
+import {GM,UI,DEBUG} from '../core/setting.js'
 import Record from '../record.js'
 
 const E={CHK:'check',DD:'dropdown'};

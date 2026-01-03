@@ -1,5 +1,5 @@
 import Com from './com.js'
-import {GM} from '../setting.js'
+import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/timesystem.js'
 
 //--------------------------------------------------

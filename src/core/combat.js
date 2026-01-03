@@ -1,4 +1,4 @@
-import {GM, RESIST_MAP} from '../setting.js';
+import {GM, RESIST_MAP} from './setting.js';
 
 // export { computeDamage };
 

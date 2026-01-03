@@ -1,5 +1,5 @@
-import {GM,DEBUG,DBG} from '../setting.js';
-import DB from '../db.js';
+import {GM,DEBUG,DBG} from '../core/setting.js';
+import DB from '../data/db.js';
 
 
 // let DEBUG = true; // 是否開啟 debug 模式

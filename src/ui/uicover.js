@@ -1,5 +1,5 @@
 import UiFrame from './uiframe.js'
-import {GM,UI} from '../setting.js'
+import {GM,UI} from '../core/setting.js'
 import * as ui from './uicomponents.js'
 
 export default class UiCover extends UiFrame
