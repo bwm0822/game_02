@@ -1,7 +1,7 @@
 import {GameObject} from '../core/gameobject.js'
 import TimeSystem from '../systems/timesystem.js'
 import {GM} from '../core/setting.js'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 
 
 export default class Role extends GameObject

@@ -1,4 +1,4 @@
-import Record from './record.js'
+import Record from './infra/record.js'
 import {RoleDB,Roles} from './database.js'
 import DB from './data/db.js'
 import * as Role from './role_.js';

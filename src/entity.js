@@ -1,4 +1,4 @@
-import Record from './record.js'
+import Record from './infra/record.js'
 import {ItemDB} from './database.js';
 import Utility from './core/utility.js';
 import { GM } from './core/setting.js';

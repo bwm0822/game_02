@@ -1,4 +1,4 @@
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import {getPlayer} from '../roles/player.js'

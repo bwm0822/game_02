@@ -1,4 +1,4 @@
-import Utility from './core/utility.js'
+import Utility from '../core/utility.js'
 
 export default class Record
 {

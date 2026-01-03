@@ -1,6 +1,6 @@
 
 import {Evt} from './event.js'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import {GM, ORDER} from './setting.js'
 
 //--------------------------------------------------

@@ -14,7 +14,7 @@ import {COM_Sleep} from '../components/sleep.js'
 
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import Role from './role.js'
 
 

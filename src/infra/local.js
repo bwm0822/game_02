@@ -1,5 +1,5 @@
 import {GM} from '../core/setting.js';
-import Record from '../record.js';
+import Record from './record.js';
 
 export default class Local
 {

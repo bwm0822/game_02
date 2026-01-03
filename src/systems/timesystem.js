@@ -1,4 +1,4 @@
-import Record from '../record.js'
+import Record from '../infra/record.js'
 
 const ticksMax = 24*60-1;
 export default class TimeSystem

@@ -5,7 +5,7 @@ import Phaser, { Time } from 'phaser';
 //import {Gun, Melee} from './weapon.js';
 import Utility from './core/utility.js';
 //import Battle from './battle.js'ST_IDLE;
-import Record from './record.js';
+import Record from './infra/record.js';
 //import {Container} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 //import Ctrl from './ctrl.js';
 import {Entity, Pickup,Door,Projectile} from './entity.js';

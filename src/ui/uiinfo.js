@@ -3,7 +3,7 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
 
-import Record from '../record.js'
+import Record from '../infra/record.js'
 
 
 export default class UiInfo extends UiFrame

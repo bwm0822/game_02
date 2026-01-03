@@ -1,5 +1,5 @@
 import { Scene } from 'phaser'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import Local from '../infra/local.js'
 import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'

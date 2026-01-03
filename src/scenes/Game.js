@@ -1,5 +1,5 @@
 import { Scene } from 'phaser'
-import Record from '../record'
+import Record from '../infra/record.js'
 import QuestManager from '../manager/quest.js'
 
 

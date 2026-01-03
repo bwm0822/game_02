@@ -1,6 +1,6 @@
 import Com from './com.js'
 import DB from '../data/db.js'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import {GM} from '../core/setting.js';
 
 //--------------------------------------------------

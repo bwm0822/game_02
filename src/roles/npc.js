@@ -9,6 +9,7 @@ import {COM_Disp} from '../components/disp.js'
 import {COM_Talk} from '../components/talk.js'
 import {COM_Trade} from '../components/trade.js'
 import {COM_Stats} from '../components/stats.js'
+import {COM_Schedule} from '../components/schedule.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
@@ -85,6 +86,7 @@ export class Npc extends Role
             .addCom(new COM_Disp())
             .addCom(new COM_Talk())
             .addCom(new COM_Trade())
+            .addCom(new COM_Schedule())
             
 
         // 註冊 event

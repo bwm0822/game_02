@@ -2,7 +2,7 @@ import {Scene} from 'phaser';
 import Map from '../manager/map.js';
 
 import {Mark} from '../gameUi.js'
-import Record from '../record.js'
+import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js';
 // import {Pickup} from '../entity.js';
 import {Pickup} from '../items/pickup.js';
