@@ -36,7 +36,7 @@ export class COM_Sense extends Com
     {
         // const player = this.role.scene?.roles?.find(r => r.isPlayer);
         // const player = Role.getPlayer();
-        const {bb,emit}=this.ctx;
+        const {bb,root}=this.ctx;
         const player = getPlayer();
         // if (!player || !player.isAlive) {return null;}
         if (!withinTiles(this.pos, player.pos, maxTiles)) 
@@ -50,7 +50,7 @@ export class COM_Sense extends Com
         }
 
         const s=needSight ? '👁️‍🗨️' : '‼️';
-        if(!bb.sensePlayer) {bb.sensePlayer=true; emit('speak',s)}
+        if(!bb.sensePlayer) {bb.sensePlayer=true; root.pop?.(s)}
         return player;
     }
 

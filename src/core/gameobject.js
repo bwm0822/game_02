@@ -179,15 +179,11 @@ export class GameObject
         return sp;
     }
 
-    add(go)
-    {
-        this.ent.add(go.ent);
-    }
+    // 加入物件
+    add(go) {this.ent.add(go.ent);}
 
-    remove(go)
-    {
-        this.ent.remove(go.ent);
-    }
+    // 移除物件
+    remove(go)  {this.ent.remove(go.ent);}
 
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}

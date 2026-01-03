@@ -263,22 +263,22 @@ export class COM_Stats extends Com
 
     _takeDamage(dmg) 
     {
-        const {emit}=this.ctx;
+        const {root,emit}=this.ctx;
         switch(dmg.type)
         {
             case GM.CRI:
-                emit('text',`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                root.popup?.(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
                 this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
-                emit('text',GM.EVA.lab(), '#0f0', '#000');
+                root.popup?.(GM.EVA.lab(), '#0f0', '#000');
                 break;
             case GM.MISS:
-                emit('text',GM.MISS.lab(), '#0f0', '#000');
+                root.popup?.(GM.MISS.lab(), '#0f0', '#000');
                 break;
             default:
-                emit('text',-dmg.amount, '#f00', '#fff');
+                root.popup?.(-dmg.amount, '#f00', '#fff');
                 this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
@@ -294,9 +294,9 @@ export class COM_Stats extends Com
         {
             amount = (amount.a??0) + (amount.m??0)*this._total[GM.HPMAX];
         }
-        const {emit}=this.ctx;
+        const {root}=this.ctx;
         this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
-        emit('text',`+${amount}`, '#0f0', '#000');
+        root.popup?.(`+${amount}`, '#0f0', '#000');
         // console.log(`${this.name} 回復 ${amount} 點生命`);
     }
 

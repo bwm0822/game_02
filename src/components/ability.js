@@ -184,6 +184,9 @@ export class COM_Ability extends Com
     {
         super.bind(root);
 
+        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
+        root.bb.abilities = this._abilities;
+
         // 1.提供 [外部操作的指令]
         
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
@@ -199,8 +202,6 @@ export class COM_Ability extends Com
         // root.on('useAbility', this._useAbility.bind(this));
         root.on('onupdate', this._update.bind(this));
 
-        // 共享資料 (有共享的資料，load()時，要用 Object.assign)
-        root.bb.abilities = this._abilities;
     }
 
     //------------------------------------------------------

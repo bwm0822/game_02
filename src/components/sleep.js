@@ -30,6 +30,7 @@ export class COM_Sleep extends Com
         const{root,emit,sta}=this.ctx;
         root.removeWeight?.();
         root.setPosition(bed.loc.x,bed.loc.y)
+        root.pop?.('💤',{duration:-1,tween:true})
         sta(GM.ST.SLEEP)
         emit(GM.REST)
         root._setAct(GM.WAKE, true);
@@ -43,6 +44,7 @@ export class COM_Sleep extends Com
         bed.setEmpty();
         root.setPosition(bed.pts[0].x,bed.pts[0].y)
         root.addWeight?.();
+        root.pop?.()
         sta(GM.ST.IDLE);
         emit(GM.WAKE)
         root._delAct(GM.WAKE);
