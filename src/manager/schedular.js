@@ -12,7 +12,8 @@ export default class Schedular
 
     static toEnts(p)
     {
-        return p.split('~').map(id=>this.scene.ents[id])
+        // return p.split('~').map(id=>this.scene.ents[id])
+        return p.split('~').map(id=>this.scene.gos[id]);
     }
 
 
@@ -20,6 +21,8 @@ export default class Schedular
     {
         this.schedules = [];
         this.scene = scene;
+
+        console.log('---------------------- init')
 
         Roles.list.forEach((id)=>{
             let role = DB.role(id);
@@ -43,6 +46,7 @@ export default class Schedular
 
     static initCheck(schedule, id, mapName)
     {
+        console.log('---------------------- initCheck')
         let role = this.loadRole(id);   
 
         if(role?.exit)   
@@ -67,9 +71,9 @@ export default class Schedular
 
                 let ents = this.toEnts(sh.p);
                 // console.log('[time] init',id, sh.t); 
-                let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
-                // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                // npc.init_runtime(id).load().initSchedule();
+                // let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
+                let ent = role?.exit && role.exit.map == mapName ? this.scene.gos[role.exit.port] : ents[0];
+
                 const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 npc.init_runtime(id,true);
                 return;
@@ -81,9 +85,8 @@ export default class Schedular
             // npc 進入這個 map，但還在離開的時間區段內，則載入 npc
             if(TimeSystem.inRange(role.exit.sh.t))
             {
-                let ent = this.scene.ents[role.exit.port];
-                // let npc = new Role.Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
-                // npc.init_runtime(id).load().initSchedule();
+                // let ent = this.scene.ents[role.exit.port];
+                let ent = this.scene.gos[role.exit.port];
                 const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
                 npc.init_runtime(id,true);
             }

@@ -21,13 +21,14 @@ import UiGameOver from '../ui/uigameover.js'
 import UiManufacture from '../ui/uimanufacture.js'
 
 
-import TimeSystem from '../systems/timesystem.js';
-import AudioManager from '../manager/audio.js';
+import TimeSystem from '../systems/timesystem.js'
+import AudioManager from '../manager/audio.js'
 // import {Projectile} from '../entity';
 
 // import * as Role from '../role.js';
 // import {setPlayer,dbg_hover_npc} from '../role.js';
-import {setPlayer, dbg_hover_npc} from '../roles/player.js';
+import {setPlayer, dbg_hover_npc} from '../roles/player.js'
+import {GameObject} from '../core/gameobject.js';
 
 
 export class GameScene extends Scene
@@ -54,7 +55,8 @@ export class GameScene extends Scene
         this._ent = null;
         this.roles = [];
         this.entities = [];
-        this.gos = [];
+        GameObject.gid=0;
+        this.gos = {};
         this.loadRecord();
         this.setEvent();
         this.initUI();
@@ -80,6 +82,7 @@ export class GameScene extends Scene
     {
         console.log("Roles:", this.roles);
         console.log("Entities:", this.entities);
+        console.log("gos:", this.gos);
     }
 
     initAmbient(amb)
@@ -157,9 +160,8 @@ export class GameScene extends Scene
     setPosition(classType)
     {
         let pos;
-        console.log('------------',this.points)
         if(this._data.pos) {pos = this._data.pos}
-        else {pos = this.points[this._data.port].pts[0];}
+        else {pos = this.gos[this._data.port].pts[0];}
 
         this._player = new classType(this,pos.x,pos.y);
         // Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()
@@ -281,16 +283,11 @@ export class GameScene extends Scene
     save()
     {
         Record.game.pos = this._player.pos;   
-        // Record.data.player = this._player.save();
-        // this._player.save();
-
         if(Record.game[this._data.map]?.runtime) {Record.game[this._data.map].runtime = [];}
-        // console.log('objects:',this.objects)
-        // this.objects.forEach((obj)=>{obj.save?.();})
         console.log('gos:',this.gos)
-        this.gos.forEach(go=>go.save?.())
-        // this.roles.forEach((role)=>{role.uid===-1 && role.save();})
-        this.roles.forEach((role)=>{role.save();})
+        // this.gos.forEach(go=>go.save?.())
+        Object.values(this.gos).forEach(go=>go.save?.())
+        this.roles.forEach(role=>role.save())
         TimeSystem.save();
         Record.saveGame();
     }

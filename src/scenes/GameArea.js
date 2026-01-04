@@ -1,14 +1,15 @@
-import { GameScene } from "./GameScene.js";
-// import {UiMain, UiTime, UiEffect} from '../ui.js';
-import UiMain from '../ui/uimain.js';
-import UiEffect from '../ui/uieffect.js';
-import UiTime from '../ui/uitime.js';
+import { GameScene } from "./GameScene.js"
+// import {UiMain, UiTime, UiEffect} from '../ui.js'
+import UiMain from '../ui/uimain.js'
+import UiEffect from '../ui/uieffect.js'
+import UiTime from '../ui/uitime.js'
 
-import TimeSystem from '../systems/timesystem.js';
-import Schedular from '../time/schedular.js';
-// import * as Role from '../role.js';
-// import {Avatar} from '../role.js';
-import {Player} from '../roles/player.js';
+import TimeSystem from '../systems/timesystem.js'
+import Schedular from '../manager/schedular.js'
+// import * as Role from '../role.js'
+// import {Avatar} from '../role.js'
+import {Player} from '../roles/player.js'
+import Utility from "../core/utility.js"
 
 
 

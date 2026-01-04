@@ -13,6 +13,7 @@ import {GM, ORDER} from './setting.js'
 //--------------------------------------------------
 export class GameObject
 {
+    static gid=0;
     constructor(scene,x,y)
     {
         this.scene = scene;
@@ -25,13 +26,14 @@ export class GameObject
         this._state = GM.ST.IDLE;   // 狀態
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
-        this.qid = '';  // map.createMap() 會自動設定 qid
+        this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
 
         this._init();
     }
 
     get mapName() {return this.scene._data.map;}    // 取得地圖名稱，存檔時，需要地圖名稱
     get pos() {return {x:this.x, y:this.y};}        // 位置
+    set pos(p) {this.x=p.x; this.y=p.y}
 
     get ent() {return this._ent;}                   // 實體
     get coms() {return this._coms;}                 // 元件庫
@@ -41,6 +43,8 @@ export class GameObject
     get ctx() {return { 
                         root : this,
                         bb : this.bb, 
+                        scene : this.scene,
+                        pos : this.pos,
                         emit : this.emit.bind(this), 
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
@@ -77,7 +81,7 @@ export class GameObject
     set x(value) {this.ent.x=value;}
     set y(value) {this.ent.y=value;}
     //---- function 
-    setName(name) {this.bb.name=name;}
+    setName(name) {name!==""&&(this.bb.name=name);}
     setPosition(x,y) {this.x=x; this.y=y;}
     setTexture(key,frame) {this.bb.key=key; this.bb.frame=frame;}
     setFlip(h,v) {console.log(h,v)}
@@ -104,14 +108,28 @@ export class GameObject
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
+    // // 將物件加入List
+    // _addToList() {this.scene.gos && this.scene.gos.push(this);}
+    // // 將物件從List移除
+    // _removeFromList()
+    // {
+    //     if(!this.scene.gos) {return;}
+    //     const index = this.scene.gos.indexOf(this);
+    //     if(index>-1) {this.scene.gos.splice(index,1);}
+    // }
+
     // 將物件加入List
-    _addToList() {this.scene.gos && this.scene.gos.push(this);}
+    _addToList()
+    {
+        this._gid = this.bb.name??GameObject.gid++;
+        this.scene.gos && (this.scene.gos[this._gid]=this);
+    }
+
     // 將物件從List移除
     _removeFromList()
     {
         if(!this.scene.gos) {return;}
-        const index = this.scene.gos.indexOf(this);
-        if(index>-1) {this.scene.gos.splice(index,1);}
+        delete this.scene.gos[this._gid];
     }
 
     _isRemoved()
@@ -139,8 +157,9 @@ export class GameObject
         // 移除 gameObject
         this.on('remove', this._remove.bind(this));
 
-        // 加入 List
-        this._addToList();
+        // // 加入 List
+        // this._addToList();
+
     }
 
     // 物件消滅時，要呼叫 _remove()
@@ -261,16 +280,9 @@ export class GameObject
         });
     }
 
-
-    // 處理傳遞給GameObject的參數
+    // 處理傳遞給 GameObject 的參數
     _processBB()
     {
-        if(this.bb.name) 
-        {
-            if(!this.scene.points) {this.scene.points={};}
-            this.scene.points[this.bb.name] = this;
-        }
-
         if(this.bb.json_pts)
         {
             this._pts = JSON.parse(this.bb.json_pts);
@@ -282,9 +294,20 @@ export class GameObject
     //------------------------------------------------------
     init_prefab() 
     {
-        if(this._isRemoved()) {return false;}
-        this._processBB();
-        return true;
+        if(this._isRemoved()) 
+        {
+            return false;
+        }
+        else
+        {
+            // 處理傳遞給 GameObject 的參數
+            this._processBB();
+
+            // 加入 List
+            this._addToList();
+
+            return true;
+        }
     }
 
 

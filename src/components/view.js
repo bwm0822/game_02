@@ -388,7 +388,7 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     // public
     //--------------------------------------------------
-    isTouch() {return true;}
+    // isTouch() {return true;}
 
     bind(root, config)
     {

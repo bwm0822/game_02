@@ -30,6 +30,7 @@ export class Pickup extends GameObject
 
     init_runtime(content)
     {      
+        if(!super.init_prefab()) {return;}
         // console.log('uid:',this.uid,'qid:',this.qid)
         this.bb.content = content;
 
