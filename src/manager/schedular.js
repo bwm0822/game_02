@@ -1,4 +1,4 @@
-import TimeSystem from '../systems/timesystem.js'
+import TimeSystem from '../systems/time.js'
 import {Roles} from '../database.js'
 import DB from '../data/db.js'
 import Record from '../infra/record.js'

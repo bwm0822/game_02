@@ -1,5 +1,5 @@
 import Com from '../com.js'
-import TimeSystem from '../../systems/timesystem.js'
+import TimeSystem from '../../systems/time.js'
 import {BehAttack, BehChase, BehTest} from './behavior.js'
 import {GM} from '../../core/setting.js'
 

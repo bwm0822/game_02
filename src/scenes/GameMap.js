@@ -1,6 +1,6 @@
 import { GameScene } from "./GameScene";
 // import * as Role from '../role.js';
-import TimeSystem from '../systems/timesystem.js';
+import TimeSystem from '../systems/time.js';
 // import {UiMain, UiTime} from '../ui.js'
 import UiTime from '../ui/uitime.js'
 import UiMain from '../ui/uimain.js'

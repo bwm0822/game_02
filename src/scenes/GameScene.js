@@ -21,7 +21,7 @@ import UiGameOver from '../ui/uigameover.js'
 import UiManufacture from '../ui/uimanufacture.js'
 
 
-import TimeSystem from '../systems/timesystem.js'
+import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
 // import {Projectile} from '../entity';
 

@@ -2,7 +2,7 @@ import UiFrame from './uiframe.js'
 import {GM,UI,DEBUG,DBG} from '../core/setting.js'
 import * as ui from './uicomponents.js'
 import {getPlayer} from '../roles/player.js'
-import TimeSystem from '../systems/timesystem.js'
+import TimeSystem from '../systems/time.js'
 
 
 const E={CHK:'check',DD:'dropdown'};

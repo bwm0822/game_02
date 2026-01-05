@@ -1,5 +1,5 @@
 import {GameObject} from '../core/gameobject.js'
-import TimeSystem from '../systems/timesystem.js'
+import TimeSystem from '../systems/time.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 

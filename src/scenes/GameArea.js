@@ -4,7 +4,7 @@ import UiMain from '../ui/uimain.js'
 import UiEffect from '../ui/uieffect.js'
 import UiTime from '../ui/uitime.js'
 
-import TimeSystem from '../systems/timesystem.js'
+import TimeSystem from '../systems/time.js'
 import Schedular from '../manager/schedular.js'
 // import * as Role from '../role.js'
 // import {Avatar} from '../role.js'

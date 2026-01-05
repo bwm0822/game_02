@@ -3,7 +3,7 @@
 import Utility from './core/utility.js'
 import DB from './data/db.js'
 import { GM } from './core/setting.js'
-import TimeSystem from './systems/timesystem.js'
+import TimeSystem from './systems/time.js'
 import * as Role from './role_.js'
 
 const dist2 = (a, b) => {
