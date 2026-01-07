@@ -65,6 +65,7 @@ export class Player extends Role
     _ondead()
     {
         console.log('---- dead ----')
+        this.ctx.sta(GM.ST.DEATH)
         this._unregisterTimeSystem();
         this._send('gameover');
     }

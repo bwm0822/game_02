@@ -277,15 +277,26 @@ class View extends Phaser.GameObjects.Container
     _remove()
     {
         this._removeWeight();
+        this.weight=0;  // 避免重複呼叫_remove()時，weight被remove兩次
+                        // ondead 會呼叫一次_remove()，
+                        // GameObject._remove()時，com.unbind()又會呼叫一次
+
         if(this._zone)
         {
             this._zone.destroy();
             this._zone=null;
         }
+
         if(this.body)
         {
             this.body.destroy();
             this.body=null;
+        }
+
+        if(this._hover)
+        {
+            this._outline_shape(false);
+            this.ctx.emit('out');
         }
     }
 
@@ -350,6 +361,15 @@ class View extends Phaser.GameObjects.Container
         else {this._zone.disableInteractive();this._setOutline(false);}
     }
 
+    _updatePos(pos)
+    {
+        const{root}=this.ctx;
+        this._removeWeight();
+        root.pos=pos;
+        this._addWeight();
+        this._updateDepth();
+    }
+
     //--------------------------------------------------
     // 初始化
     //--------------------------------------------------
@@ -405,6 +425,7 @@ class View extends Phaser.GameObjects.Container
         root.view = this;
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
+        root.updatePos = this._updatePos.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('view',()=>{return this;})
@@ -412,6 +433,7 @@ class View extends Phaser.GameObjects.Container
         // root.on('addWeight', this._addWeight.bind(this));
     }
 
+    unbind() {this._remove();}
 }
 
 
@@ -460,8 +482,6 @@ export class ItemView extends View
         // root.on('setTexture', this._setTexture.bind(this));
 
     }
-    unbind() {this._remove();}
-
 }
 
 
@@ -565,17 +585,16 @@ export class RoleView extends View
         this._equips = [];
     }
 
-    _ondead()
+    _remove()
     {
-        const {emit}=this.ctx;
-        this._remove();
-        if(this._hover)
-        {
-            this._outline_shape(false);
-            emit('out');
-        }
+        super._remove();
         // 移除 parts
         this._shape.getAll().forEach((child)=>{child.destroy();});
+    }
+
+    _ondead()
+    {
+        this._remove();
         // 新增 corpse
         this._addPart(this.meta.corpse)
     }
@@ -622,7 +641,6 @@ export class RoleView extends View
         root.on('ondead', this._ondead.bind(this));
         // root.on('fadout', this._fadout.bind(this));
     }
-
     
 }
 

@@ -81,6 +81,12 @@ export class COM_Nav extends Com
         this.bb.path = path;
     }
 
+    _getPath(sp,eps)
+    {
+        // path = {state:NONE/BLK/OK, pts:[], ep:ep cost:cost}
+        return this.map.getPath(sp, eps);
+    }
+
     _setPath(path)
     {
         this.bb.path = path;
@@ -121,6 +127,7 @@ export class COM_Nav extends Com
         root.updateDebugPath=this._updateDebugPath.bind(this);
         root.setPath=this._setPath.bind(this);
         root.checkPath=this._checkPath.bind(this);
+        root.getPath=this._getPath.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('findPath', this._findPath.bind(this))

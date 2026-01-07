@@ -50,13 +50,18 @@ export class Npc extends Role
     _remove()
     {
         this._unregisterTimeSystem();
-        // 死亡時，若是 schedule，則標記為 removed
-        if(this.schedule) {{this._saveData({removed:true})}}
+        if(this.ctx.sta()===GM.ST.DEATH)
+        {
+            // 死亡時，若是 schedule，則標記為 removed
+            if(this.bb.isSchedule) {{this._saveData({removed:true})}}
+        }
+        
         super._remove();
     }
 
     _ondead()
     {
+        this.ctx.sta(GM.ST.DEATH)
         this._latency = 5;
         QuestManager.notify({type: GM.KILL, id: this.id});
     }
@@ -104,10 +109,9 @@ export class Npc extends Role
         
     }
 
-    init_runtime(id, schedule=false)
+    init_runtime(id)
     {
         this.bb.id = id;                // 將 id 存到 bb.id
-        this.schedule = schedule;
         this.init_prefab(false); 
     }
 
@@ -115,15 +119,46 @@ export class Npc extends Role
     {
         if(!this.isAlive) {return;}
 
-        await this.think?.();
+        // await this.think?.();
 
-        const{sta}=this.ctx;
+        const{bb,sta}=this.ctx;
 
-        if(sta()!==GM.ST.MOVING)
+        if(bb.path)
         {
-            if(this.bb.path) {this.clearPath?.();}
-            if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
+            const ret = await this.move?.();
+            if(ret==='reach')
+            {
+                if(bb.go&&bb.go.act==='enter')
+                {
+                    sta(GM.ST.ACTION);
+                }
+                else
+                {
+                    sta(GM.ST.IDLE);
+                }
+            }
         }
+        else
+        {
+            if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
+            if(sta()===GM.ST.ACTION)
+            {
+                if(bb.go.act==='enter')
+                {
+                    this._remove();
+                    return;
+                }
+            }
+        }
+
+
+
+        // if(sta()!==GM.ST.MOVING)
+        // {
+        //     if(this.bb.path) {this.clearPath?.();}
+        //     if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
+        // }
+
 
         if(_dbg) {this.updateDebugPath?.();}
     }

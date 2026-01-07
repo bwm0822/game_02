@@ -31,7 +31,7 @@ function cmd_w(args)
 function cmd_t(args)
 {
     //console.log(args);
-    if(args.length == 1)
+    if(args.length === 1)
     {
         let t = TimeSystem.time;
         let str = `d:${t.d} h:${t.h} m:${t.m}\n`;

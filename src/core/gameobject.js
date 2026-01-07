@@ -13,7 +13,8 @@ import {GM, ORDER} from './setting.js'
 //--------------------------------------------------
 export class GameObject
 {
-    static gid=0;
+    static gid=0;   //id，產生一個沒有name的GO，就加1
+
     constructor(scene,x,y)
     {
         this.scene = scene;
@@ -184,6 +185,15 @@ export class GameObject
         this.scene = null;
     }
 
+    // 處理傳遞給 GameObject 的參數
+    _processBB()
+    {
+        if(this.bb.json_pts)
+        {
+            this._pts = JSON.parse(this.bb.json_pts);
+        }
+    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -280,13 +290,11 @@ export class GameObject
         });
     }
 
-    // 處理傳遞給 GameObject 的參數
-    _processBB()
+    // 是否抵達
+    isAt(go)
     {
-        if(this.bb.json_pts)
-        {
-            this._pts = JSON.parse(this.bb.json_pts);
-        }
+        for(let p of go.pts) {if(p.x===this.x && p.y===this.y){return true;}}
+        return false;
     }
 
     //------------------------------------------------------
