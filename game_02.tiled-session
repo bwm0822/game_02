@@ -649,7 +649,7 @@
         "public/assets/maps/karen-home.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",

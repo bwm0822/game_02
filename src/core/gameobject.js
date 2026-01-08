@@ -1,7 +1,7 @@
 
 import {Evt} from './event.js'
 import Record from '../infra/record.js'
-import {GM, ORDER} from './setting.js'
+import {GM, ORDER, DEBUG} from './setting.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -292,6 +292,48 @@ export class GameObject
         return false;
     }
 
+    // debug 用
+    debugDraw({clr=false}={})
+    {
+        if(clr)
+        {
+            this._dg && this._dg.clear();
+            if(this._dt) 
+            {
+                this._dt.destroy();
+                this._dt=null;
+            }
+        }
+        else
+        {
+            // debugInfo
+            const[x,y,w,h,name]=[this.x,this.y,
+                                this.bb.wid,this.bb.hei,
+                                this.bb.name];
+            if(!this._dg)
+            {
+                this._dg = this.scene.add.graphics();
+                this._dg.setDepth(Infinity);
+            }
+
+            if(name && !this._dt)
+            {
+                this._dt = this.scene.add.text(x,y-h/2,name,{
+                        fontSize: '16px',
+                        color: '#000',
+                        backgroundColor: '#fff',
+                        padding: { x: 6, y: 4 }})
+                this._dt.setDepth(Infinity);
+                this._dt.setOrigin(0.5,1.5);
+            }
+            
+            this._dg.lineStyle(2, 0xffffff, 1);
+            const rect = new Phaser.Geom.Rectangle(x-w/2,y-h/2,w,h);
+            const circle = new Phaser.Geom.Circle(x,y,5);
+            this._dg.strokeRectShape(rect);
+            this._dg.strokeCircleShape(circle);
+        }
+    }
     //------------------------------------------------------
     // mehod
     //------------------------------------------------------
@@ -303,15 +345,14 @@ export class GameObject
         }
         else
         {
-            // 處理傳遞給 GameObject 的參數
-            this._processBB();
+            if(DEBUG.rect) {this.debugDraw();}
 
-            // 加入 List
-            this._addToList();
+            this._processBB();  // 處理傳遞給 GameObject 的參數            
+            this._addToList();  // 加入 List
 
             return true;
         }
-    }
 
+    }
 
 }

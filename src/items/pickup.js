@@ -5,7 +5,7 @@ import {COM_Pickable} from '../components/pickable.js'
 import {GameObject} from '../core/gameobject.js'
 
 
-export class Pickup extends GameObject
+export default class Pickup extends GameObject
 {
     //------------------------------------------------------
     //  Public

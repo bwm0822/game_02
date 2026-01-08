@@ -191,7 +191,6 @@
                          "value":-8
                         }],
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":192,
                  "y":400
                 }, 
@@ -199,7 +198,6 @@
                  "id":95,
                  "name":"sit-2",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":256,
                  "y":400
                 }, 
@@ -207,7 +205,6 @@
                  "id":96,
                  "name":"sit-3",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":352,
                  "y":400
                 },
@@ -216,7 +213,6 @@
                  "id":97,
                  "name":"sit-4",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":416,
                  "y":400
                 }, 
@@ -224,7 +220,6 @@
                  "id":98,
                  "name":"sit-5",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":192,
                  "y":272
                 }, 
@@ -232,7 +227,6 @@
                  "id":99,
                  "name":"sit-6",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":256,
                  "y":272
                 }, 
@@ -240,7 +234,6 @@
                  "id":100,
                  "name":"sit-7",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":352,
                  "y":272
                 }, 
@@ -248,7 +241,6 @@
                  "id":101,
                  "name":"sit-8",
                  "template":"..\/templates\/chair.tj",
-                 "type":"point",
                  "x":416,
                  "y":272
                 }, 

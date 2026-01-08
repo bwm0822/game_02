@@ -126,7 +126,7 @@ class View extends Phaser.GameObjects.Container
         this.hei = 0;               // container 的高
         this.interactive = false;   // 是否可以互動
         this.en_outline = true;     // 是否開啟 outline 的功能
-        this.isPhy = true;          // 是否是物理實體
+        this.isPhy = true;          // 是否有物理實體
         this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否會阻擋
         this.weight = 1000;

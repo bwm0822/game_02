@@ -8,7 +8,7 @@ import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 import {Npc} from '../roles/npc.js'
 import {Entity,Node} from '../entity.js'
-import {Pickup} from '../items/pickup.js'
+import Pickup from '../items/pickup.js'
 import Case from '../items/case.js'
 import Port from '../items/port.js'
 import Stove from '../items/stove.js'
@@ -16,6 +16,7 @@ import Well from '../items/well.js'
 import Door from '../items/door.js'
 import Bed from '../items/bed.js'
 import Point from '../items/point.js'
+import Item from '../items/item.js'
 
 let DEBUG = false;
 
@@ -314,6 +315,7 @@ class Map
                     {type:'well',classType:Well},
                     {type:'door',classType:Door},
                     {type:'bed',classType:Bed},
+                    {type:'item',classType:Item},
                     // {type:'enemy',classType:Enemy},
                     // {type:'npc_n',classType:Npc_n},
                 ]);
@@ -357,10 +359,10 @@ class Map
     {
         let bestPath;
         eps.forEach((ep,i)=>{
-            let path = this.calcPath(sp,ep);
+            const path = this.calcPath(sp,ep);
             if(path)
             {
-                if(!bestPath&&path.state>0) {bestPath=path;}
+                if(!bestPath) {bestPath=path;}
                 else if(path.state>0 && path.cost<bestPath.cost) {bestPath=path}
             }
         })
@@ -369,20 +371,20 @@ class Map
 
     calcPath(sp,ep)
     {
-        let map = this.map;
+        const map = this.map;
 
-        let [ex,ey] =  this.worldToTile(ep.x, ep.y);
+        const [ex,ey] =  this.worldToTile(ep.x, ep.y);
 
         // 1. 終點 超出 map 範圍，(隱藏框框)
         if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
 
         // 2. 
-        let [sx,sy] =  this.worldToTile(sp.x, sp.y);
+        const [sx,sy] =  this.worldToTile(sp.x, sp.y);
 
-        let end = this.graph.grid[ey][ex];
-        let start = this.graph.grid[sy][sx];
+        const end = this.graph.grid[ey][ex];
+        const start = this.graph.grid[sy][sx];
 
-        let ept = this.tileToWorld(ex,ey);
+        const ept = this.tileToWorld(ex,ey);
 
         if(end.weight==0)   // 終點為不可通過的點，(顯示紅色框框)
         {
@@ -396,13 +398,13 @@ class Map
         {
             const result = astar.search(this.graph, start, end);
             const len = result.length;
-            if(len==0)  // 找不到路徑，(顯示紅色框框)
+            if(len===0)  // 找不到路徑，(顯示紅色框框)
             {
                 return {state:GM.PATH_NONE, ep:ept, cost:Infinity}
             }
             else
             {
-                let pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
+                const pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
                 // 如果到達目的地之前的 g >= W_BLOCK，代表有非牆壁的阻擋物(如:人、門)
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
                 const state = block ? GM.PATH_BLK : GM.PATH_OK;

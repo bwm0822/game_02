@@ -53,6 +53,8 @@ export default class Role extends GameObject
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
+    debugDraw() {}  // role 不要 debugDraw
+
     use(ent)
     {
         // console.log(ent.content, ent.dat)

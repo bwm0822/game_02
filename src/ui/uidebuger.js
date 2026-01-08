@@ -5,8 +5,6 @@ import {getPlayer} from '../roles/player.js'
 import TimeSystem from '../systems/time.js'
 
 
-const E={CHK:'check',DD:'dropdown'};
-
 function cmd_get(args)
 {
     // [get] [gold/item] [id] [count]
@@ -206,13 +204,15 @@ export default class UiDebuger extends UiFrame
             {text:'全部', value:DBG.MODE.ALL},
         ]
 
-        const elm=this.element.bind(this);
+        const CHK=this.check.bind(this);
+        const DD=this.dropdown.bind(this);
 
         this._page.clearAll();
 
-        this.addRow(elm(E.CHK,'除錯', DEBUG, 'enable'),
-                    elm(E.DD,'模式', DEBUG, 'mode', options_mode))
-            .addElm(elm(E.CHK,'座標', DEBUG, 'loc'))
+        this.addRow(CHK('除錯', DEBUG, 'enable'),
+                    DD('模式', DEBUG, 'mode', options_mode))
+            .addElm(CHK('座標', DEBUG, 'loc'))
+            .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
     }
 
     addRow(...options)
@@ -229,17 +229,11 @@ export default class UiDebuger extends UiFrame
         return this;
     }
 
-    element(type, name, obj, key, options)
-    {
-        if(type===E.CHK) {return this.check(name, obj, key);}
-        else if(type===E.DD) {return this.dropdown(name, obj, key, options);}
-    }
-
-    check(name, obj, key)
+    check(name, obj, key, cb)
     {
         return ui.uButton(this.scene, 
                 {text:name,style:UI.BTN.CHECK,
-                onclick:()=>{ obj[key] = !obj[key]; }})
+                onclick:()=>{ obj[key] = !obj[key]; cb?.()}})
                 .setValue(obj[key]);
     }
 

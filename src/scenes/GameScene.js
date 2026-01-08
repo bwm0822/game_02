@@ -3,10 +3,9 @@ import Map from '../manager/map.js';
 
 import {Mark} from '../gameUi.js'
 import Record from '../infra/record.js'
-import QuestManager from  '../manager/quest.js';
-// import {Pickup} from '../entity.js';
-import {Pickup} from '../items/pickup.js';
-import {GM,UI,DEBUG} from '../core/setting.js';
+import QuestManager from  '../manager/quest.js'
+import Pickup from '../items/pickup.js'
+import {GM,UI,DEBUG} from '../core/setting.js'
 import UiCover from '../ui/uicover.js'
 import Ui from '../ui/uicommon.js'
 import UiStorage from '../ui/uistorage.js'
@@ -255,9 +254,8 @@ export class GameScene extends Scene
     showPath(pt, ent)
     {
         if(ent===this._player) {this._path=null; return;}
-        let pts = ent?.pts ?? [pt];
-        let path = this._player.showPath(pts,!!ent);
-        // console.log('showPath:',path)
+        const pts = ent?.pts ?? [pt];
+        const path = this._player.showPath(pts,!!ent);
         if(path)
         {
             if(path.state===GM.PATH_OK)
@@ -340,20 +338,25 @@ export class GameScene extends Scene
         this._dbgPos.setPosition(x+20,y).setText(text);
     }
 
-    dbg()
+    // dbg()
+    // {
+    //     if(!this._dbg)
+    //     {
+    //         this._dbg = this.add.graphics();
+    //         this._dbg.name = 'dbg';
+    //     }
+    //     this._dbg.clear();
+    //     this._dbg.fillStyle(0xff0000);
+    //     this._dbg.lineStyle(2, 0xff0000, 1);
+    //     let x = this.input.activePointer.worldX;
+    //     let y = this.input.activePointer.worldY;
+    //     let circle = new Phaser.Geom.Circle(x,y,5);
+    //     this._dbg.strokeCircleShape(circle);
+    // }
+
+    dbgRect()
     {
-        if(!this._dbg)
-        {
-            this._dbg = this.add.graphics();
-            this._dbg.name = 'dbg';
-        }
-        this._dbg.clear();
-        this._dbg.fillStyle(0xff0000);
-        this._dbg.lineStyle(2, 0xff0000, 1);
-        let x = this.input.activePointer.worldX;
-        let y = this.input.activePointer.worldY;
-        let circle = new Phaser.Geom.Circle(x,y,5);
-        this._dbg.strokeCircleShape(circle);
+        Object.values(this.gos).forEach(go=>{go.debugDraw({clr:!DEBUG.rect})})
     }
 
     fill()
@@ -385,6 +388,7 @@ export class GameScene extends Scene
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
+                
         }
 
 
@@ -401,6 +405,7 @@ export class GameScene extends Scene
                 this.map.setWeight(p,weight)
             })
             .off('log').on('log',()=>{this.log();})
+            .off('dbgRect').on('dbgRect',()=>{this.dbgRect();})
 
     }
 

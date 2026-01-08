@@ -66,7 +66,7 @@ export class COM_Nav extends Com
 
     _showPath(eps,drawLast)
     {
-        let path = this.map.getPath(this.pos, eps);
+        const path = this.map.getPath(this.pos, eps);
         if(path)
         {
             this._drawPath(path,{drawLast:drawLast});
@@ -77,7 +77,7 @@ export class COM_Nav extends Com
     _findPath(ep)
     {
         // path = {state:NONE/BLK/OK, pts:[], ep:ep cost:cost}
-        let path = this.map.getPath(this.pos, [ep]);
+        const path = this.map.getPath(this.pos, [ep]);
         this.bb.path = path;
     }
 

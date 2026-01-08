@@ -16,6 +16,11 @@
              "value":16
             }, 
             {
+             "name":"interactive",
+             "type":"bool",
+             "value":true
+            }, 
+            {
              "name":"json_pts",
              "type":"string",
              "value":"[{\"x\":0,\"y\":24}]"
@@ -26,7 +31,7 @@
              "value":10
             }],
      "rotation":0,
-     "type":"point",
+     "type":"item",
      "visible":true,
      "width":32
     },

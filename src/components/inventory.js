@@ -1,7 +1,7 @@
 import Com from './com.js'
 import Utility from '../core/utility.js'
 import DB from '../data/db.js'
-import {Pickup} from '../items/pickup.js'
+import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
 

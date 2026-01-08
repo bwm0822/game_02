@@ -83,14 +83,10 @@ export class COM_Schedule extends Com
             bb.go = this._toGos(found.p).at(-1);
         }
 
-        console.log('------------',sta())
-
         if(sta()!==GM.ST.SLEEP)
         {
-
             if(!root.isAt(bb.go))
             {
-                console.log('-------------------- chk')
                 root.goto(bb.go)
             }
         }
