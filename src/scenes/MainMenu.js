@@ -3,6 +3,7 @@ import Record from '../infra/record.js'
 import Local from '../infra/local.js'
 import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
+import UiChangeScene from '../ui/uichangescene.js'
 import {GM} from '../core/setting.js';
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
 import {rect,sprite,text} from '../uibase.js'
@@ -73,7 +74,9 @@ export class MainMenu extends Scene
 
     btn_start(x, y) 
     {
-        this.button(x, y, '開始遊戲', () => {this.scene.start('Game');});
+        this.button(x, y, '開始遊戲', () => {
+            this.scene.start('Game');}
+        );
     }
 
 

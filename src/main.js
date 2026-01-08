@@ -86,10 +86,8 @@ const config = {
         Preloader,
         MainMenu,
         Game,
-        //GameOver,
         GameMap,
         GameArea,
-        //GameBattle,
         UI,
     ]
 };

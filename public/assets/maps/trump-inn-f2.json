@@ -90,44 +90,9 @@
                  "y":320
                 }, 
                 {
-                 "gid":581,
-                 "height":96,
-                 "id":198,
-                 "name":"bed",
-                 "properties":[
-                        {
-                         "name":"blanket",
-                         "type":"string",
-                         "value":"props\/blanket_v.png"
-                        }, 
-                        {
-                         "name":"json_pts",
-                         "type":"string",
-                         "value":"[{\"x\":48,\"y\":0}]"
-                        }, 
-                        {
-                         "name":"sleepY",
-                         "type":"int",
-                         "value":5
-                        }],
-                 "rotation":0,
-                 "type":"bed",
-                 "visible":true,
-                 "width":64,
-                 "x":192,
-                 "y":128
-                }, 
-                {
                  "id":202,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"blanket",
-                         "type":"string",
-                         "value":"blanket_v"
-                        }],
                  "template":"..\/templates\/bed.tj",
-                 "type":"bed_1",
+                 "type":"bed",
                  "x":32,
                  "y":128
                 }, 
@@ -139,6 +104,14 @@
                  "width":64,
                  "x":64,
                  "y":320
+                }, 
+                {
+                 "id":204,
+                 "name":"bed",
+                 "template":"..\/templates\/bed.tj",
+                 "type":"bed",
+                 "x":192,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -147,7 +120,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":204,
+ "nextobjectid":205,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

@@ -36,13 +36,6 @@
          "name":"layer3",
          "objects":[
                 {
-                 "id":2,
-                 "name":"bed",
-                 "template":"..\/templates\/bed.tj",
-                 "x":32,
-                 "y":128
-                }, 
-                {
                  "id":5,
                  "name":"door",
                  "properties":[
@@ -59,6 +52,13 @@
                  "template":"..\/templates\/exit_door.tj",
                  "x":128,
                  "y":320
+                }, 
+                {
+                 "id":6,
+                 "name":"bed",
+                 "template":"..\/templates\/bed.tj",
+                 "x":128,
+                 "y":128
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -67,7 +67,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":6,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

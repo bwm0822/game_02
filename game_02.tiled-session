@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/karen-home.json",
     "expandedProjectPaths": [
         "public/assets/templates",
-        "public",
+        "public/assets/tiles",
         "public/assets/maps",
-        "public/assets",
         ".",
-        "public/assets/tiles"
+        "public/assets",
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -272,7 +272,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 234,
+                "x": 563,
                 "y": -4
             }
         },
@@ -328,7 +328,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160,
-                "y": 159.66666666666663
+                "y": 159.33333333333334
             }
         },
         "public/assets/maps/musk_home.json": {
@@ -439,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 195.33333333333331,
-                "y": 768
+                "x": 640,
+                "y": 639.6666666666666
             }
         },
         "public/assets/maps/village-02.json": {
@@ -646,23 +646,23 @@
         "public/assets/maps/map.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/trump-inn-f2.json",
-        "public/assets/3_Road.tsj"
+        "public/assets/maps/karen-home.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/3_Road.tsj",
-        "public/assets/maps/trump-inn-f2.json",
-        "public/assets/maps/trump-inn-f1.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/village-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/trump-inn-f2.json",
+        "public/assets/maps/karen-home.json",
+        "public/assets/maps/musk-home.json",
+        "public/assets/maps/macron-home.json",
+        "public/assets/3_Road.tsj",
         "public/assets/0_Ground_LowSat.tsj",
         "public/assets/32x32GridItemsAll.tsj",
         "public/assets/4_Smallplaces.tsj",
-        "public/assets/Archer_Blue.tsj",
-        "public/assets/catographt.tsj",
-        "public/assets/Color A Spitesheet.tsj",
-        "public/assets/houe_1.tsj"
+        "public/assets/Archer_Blue.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

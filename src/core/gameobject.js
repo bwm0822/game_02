@@ -20,7 +20,7 @@ export class GameObject
         this.scene = scene;
         this._coms = {}; // 元件庫
         this._bb = {};  // bb(blackboard)，共享資料中心，可與各元件共享資訊
-        this._ent = scene.add.container(x,y);    // gameObject 的實體，view 掛在其下
+        this._ent = scene.add.container(x,y);    // gameObject 的可視實體，view 掛在其下
 
         this._pts = null;           // 可互動的點(陣列)
         this._acts = {};            // 可供操作的指令
@@ -33,8 +33,8 @@ export class GameObject
     }
 
     get mapName() {return this.scene._data.map;}    // 取得地圖名稱，存檔時，需要地圖名稱
-    get pos() {return {x:this.x, y:this.y};}        // 位置
-    set pos(p) {this.x=p.x; this.y=p.y}
+    get pos() {return {x:this.ent.x, y:this.ent.y};}        // 位置
+    set pos(p) {this.ent.x=p.x; this.ent.y=p.y}
 
     get ent() {return this._ent;}                   // 實體
     get coms() {return this._coms;}                 // 元件庫
@@ -55,13 +55,7 @@ export class GameObject
     // 所有可操作的指令
     get acts() {return this._acts;}
     // 依順序取出第一個可供操作的指令
-    get act() 
-    {
-        for(const key of ORDER)
-        {
-            if(this._acts[key]) {return key;}
-        }
-    }
+    get act() { return ORDER.find(key=>this._acts[key]); }
     // 可互動的點(陣列)
     get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
                                 : [this.pos]} 
@@ -85,7 +79,7 @@ export class GameObject
     setName(name) {name!==""&&(this.bb.name=name);}
     setPosition(x,y) {this.x=x; this.y=y;}
     setTexture(key,frame) {this.bb.key=key; this.bb.frame=frame;}
-    setFlip(h,v) {console.log(h,v)}
+    setFlip(h,v) {this.bb.flipX=h; this.bb.flipY=v;}
     // map.createFromObjects() 會利用 setData() 傳遞參數給 GameObject
     setData(key,value) {this.bb[key]=value;}   
 
@@ -197,6 +191,7 @@ export class GameObject
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
+    // 在ent下，加入 sprite
     addSprite(key_frame)
     {
         const [key,frame]=key_frame.split('/');

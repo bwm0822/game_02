@@ -5,7 +5,7 @@ import UiEffect from '../ui/uieffect.js'
 import UiTime from '../ui/uitime.js'
 
 import TimeSystem from '../systems/time.js'
-import Schedular from '../manager/schedular.js'
+import ScheduleManager from '../manager/schedule.js'
 // import * as Role from '../role.js'
 // import {Avatar} from '../role.js'
 import {Player} from '../roles/player.js'
@@ -77,8 +77,8 @@ export class GameArea extends GameScene
 
     initSchedule()
     {
-        Schedular.init(this, this.mapName);
-        TimeSystem.register(Schedular.check.bind(Schedular));
+        ScheduleManager.init(this, this.mapName);
+        TimeSystem.register(ScheduleManager.update.bind(ScheduleManager));
     }
 
     async process()

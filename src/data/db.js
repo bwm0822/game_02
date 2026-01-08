@@ -57,3 +57,8 @@ export default class DB
 
     
 }
+
+export class Roles
+{
+    static list = ['musk','xi','macron','trump','karen','melanie'];
+}

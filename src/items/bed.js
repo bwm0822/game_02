@@ -3,7 +3,7 @@ import {ItemView} from '../components/view.js';
 import {COM_Bed} from '../components/bed.js';
 import {GameObject} from '../core/gameobject.js';
 
-export default class Bed_1 extends GameObject
+export default class Bed extends GameObject
 {
 
     //------------------------------------------------------

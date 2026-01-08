@@ -1,7 +1,5 @@
 import UiFrame from './uiframe.js'
-import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import Utility from '../core/utility.js'
 
 export default class UiChangeScene extends UiFrame
 {
@@ -41,8 +39,15 @@ export default class UiChangeScene extends UiFrame
         this.close();
     }
 
+    show()
+    {
+        super.show();
+        console.log('----------------- show')
+    }
+
     static done() {this.instance?.done();}
     static start(changeScene) {this.instance?.start(changeScene);}
+    static show() {this.instance?.show();}
 
 }
 

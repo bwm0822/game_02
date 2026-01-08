@@ -8,7 +8,7 @@
             {
              "name":"blanket",
              "type":"string",
-             "value":"props\/blanket_v.png"
+             "value":"blanket_v"
             }, 
             {
              "name":"json_pts",

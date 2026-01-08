@@ -119,15 +119,14 @@ class View extends Phaser.GameObjects.Container
         this.scene.add.existing(this);
 
         this._pGrids = [];          // grid 在地圖網格所佔據的點
-        this._flipX = false;
-        this._flipY = false;
-        // this._pts = null;
         this._hover = false;
+
         // 以下參數一定要給值，_setData()時，才會 assign 相對應的值
         this.wid = 0;               // container 的寬
         this.hei = 0;               // container 的高
-        this.interactive = false;    // 是否可以互動
+        this.interactive = false;   // 是否可以互動
         this.en_outline = true;     // 是否開啟 outline 的功能
+        this.isPhy = true;          // 是否是物理實體
         this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否會阻擋
         this.weight = 1000;
@@ -140,6 +139,8 @@ class View extends Phaser.GameObjects.Container
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
         this.scl = null;            // sprite 的 scl, 注意:變數名稱不可為 this.scale，會跟 Phaser.GameObjects.Container 相衝
+        this.flipX = false;         // sprite 是否水平翻轉
+        this.flipY = false;         // sprite 是否垂直翻轉
     }
 
     get tag() {return 'view';}          // 回傳元件的標籤
@@ -147,7 +148,7 @@ class View extends Phaser.GameObjects.Container
     get ent() {return this._root.ent;}
     get pos() {return this._root.pos;}
 
-    get anchor() {return this._root.pos;}          // 錨點的座標(world space)
+    get anchor() {return this.pos;}          // 錨點的座標(world space)
     get cen()   {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}    // 中心點的座標(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
@@ -225,6 +226,8 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _addPhysics()
     {
+        if(!this.phy) {return this;}
+
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
         this.body.setSize(this.wid-this.bl-this.br, this.hei-this.bt-this.bb);
@@ -272,32 +275,6 @@ class View extends Phaser.GameObjects.Container
         wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this._grid.w,this._grid.h);
 
         return this;
-    }
-
-    _remove()
-    {
-        this._removeWeight();
-        this.weight=0;  // 避免重複呼叫_remove()時，weight被remove兩次
-                        // ondead 會呼叫一次_remove()，
-                        // GameObject._remove()時，com.unbind()又會呼叫一次
-
-        if(this._zone)
-        {
-            this._zone.destroy();
-            this._zone=null;
-        }
-
-        if(this.body)
-        {
-            this.body.destroy();
-            this.body=null;
-        }
-
-        if(this._hover)
-        {
-            this._outline_shape(false);
-            this.ctx.emit('out');
-        }
     }
 
     //--------------------------------------------------
@@ -361,6 +338,9 @@ class View extends Phaser.GameObjects.Container
         else {this._zone.disableInteractive();this._setOutline(false);}
     }
 
+    //--------------------------------------------------
+    // 更新位置
+    //--------------------------------------------------
     _updatePos(pos)
     {
         const{root}=this.ctx;
@@ -368,6 +348,35 @@ class View extends Phaser.GameObjects.Container
         root.pos=pos;
         this._addWeight();
         this._updateDepth();
+    }
+
+    //--------------------------------------------------
+    // 移除 view
+    //--------------------------------------------------
+    _remove()
+    {
+        this._removeWeight();
+        this.weight=0;  // 避免重複呼叫_remove()時，weight被remove兩次
+                        // ondead 會呼叫一次_remove()，
+                        // GameObject._remove()時，com.unbind()又會呼叫一次
+
+        if(this._zone)
+        {
+            this._zone.destroy();
+            this._zone=null;
+        }
+
+        if(this.body)
+        {
+            this.body.destroy();
+            this.body=null;
+        }
+
+        if(this._hover)
+        {
+            this._outline_shape(false);
+            this.ctx.emit('out');
+        }
     }
 
     //--------------------------------------------------
@@ -421,7 +430,7 @@ class View extends Phaser.GameObjects.Container
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
-        // 內部元件
+        // 給內部元件使用
         root.view = this;
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
@@ -451,8 +460,8 @@ export class ItemView extends View
                 sp.displayWidth = this.wid;
                 sp.displayHeight = this.hei;
             }
-            // sp.flipX = this._tmp.flipX;
-            // sp.flipY = this._tmp.flipY;
+            sp.flipX = this.flipX;
+            sp.flipY = this.flipY;
             this.add(sp);
             this._shape = sp;
         }

@@ -9,6 +9,7 @@ import {COM_Disp} from '../components/disp.js'
 import {COM_Talk} from '../components/talk.js'
 import {COM_Trade} from '../components/trade.js'
 import {COM_Stats} from '../components/stats.js'
+import {COM_Sleep} from '../components/sleep.js'
 import {COM_Schedule} from '../components/schedule.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
@@ -53,7 +54,7 @@ export class Npc extends Role
         if(this.ctx.sta()===GM.ST.DEATH)
         {
             // 死亡時，若是 schedule，則標記為 removed
-            if(this.bb.isSchedule) {{this._saveData({removed:true})}}
+            if(this.bb.hasSchedule) {{this._saveData({removed:true})}}
         }
         
         super._remove();
@@ -64,6 +65,19 @@ export class Npc extends Role
         this.ctx.sta(GM.ST.DEATH)
         this._latency = 5;
         QuestManager.notify({type: GM.KILL, id: this.id});
+    }
+
+    _goto(go)
+    {
+        const{root,bb}=this.ctx;
+        if(this.isAt(go))
+        {
+
+        }
+        else
+        {
+            bb.path = root.getPath?.(this.pos, go.pts);
+        }
     }
 
     //------------------------------------------------------
@@ -91,6 +105,7 @@ export class Npc extends Role
             .addCom(new COM_Disp())
             .addCom(new COM_Talk())
             .addCom(new COM_Trade())
+            .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())
             
 
@@ -128,14 +143,8 @@ export class Npc extends Role
             const ret = await this.move?.();
             if(ret==='reach')
             {
-                if(bb.go&&bb.go.act==='enter')
-                {
-                    sta(GM.ST.ACTION);
-                }
-                else
-                {
-                    sta(GM.ST.IDLE);
-                }
+                if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
+                else {sta(GM.ST.IDLE);}
             }
         }
         else
@@ -147,6 +156,11 @@ export class Npc extends Role
                 {
                     this._remove();
                     return;
+                }
+                else
+                {
+                    sta(GM.ST.IDLE);
+                    bb.go.emit(bb.go.act, this);
                 }
             }
         }
