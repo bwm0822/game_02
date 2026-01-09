@@ -358,6 +358,7 @@ class Map
     getPath(sp, eps)
     {
         let bestPath;
+        eps = Array.isArray(eps) ? eps : [eps];
         eps.forEach((ep,i)=>{
             const path = this.calcPath(sp,ep);
             if(path)
@@ -424,13 +425,16 @@ class Map
         else {return {state:-1, pt:to};}
     }
 
-    getValidPoint(p,random=true)
+    getValidPoint(p,{random=true,center=false}={})
     {
-        let lut = [ {x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1},
-                    {x:-1,y:0}, {x:1,y:0},
-                    {x:-1,y:1}, {x:0,y:1}, {x:1,y:1} ]
+        const lut = [   {x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1},
+                        {x:-1,y:0}, {x:1,y:0},
+                        {x:-1,y:1}, {x:0,y:1}, {x:1,y:1} ]
 
-        let [tx,ty] = this.worldToTile(p.x, p.y)
+        const [tx,ty] = this.worldToTile(p.x, p.y)
+
+        if(center&&this.getWeightByTile(tx,ty)==1) {return p;}
+
         let r = random ? Phaser.Math.Between(0,lut.length-1) : 1;
 
         for(let i=0;i<lut.length;i++)

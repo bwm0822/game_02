@@ -25,7 +25,7 @@ export class COM_Sleep extends Com
     {
         const{root,emit,sta}=this.ctx;
         root.removeWeight?.();
-        root.setPosition(bed.loc.x,bed.loc.y)
+        root.pos=bed.loc;
         root.pop?.('💤',{duration:-1,tween:true})
         sta(GM.ST.SLEEP)
         emit(GM.REST)
@@ -36,9 +36,8 @@ export class COM_Sleep extends Com
     async _wake()
     {
         const{root,emit,sta}=this.ctx;
-        const bed = this._bed;
-        bed.setEmpty();
-        root.setPosition(bed.pts[0].x,bed.pts[0].y)
+        this._bed.setEmpty();
+        root.pos=bed.pts[0];
         root.addWeight?.();
         root.pop?.()
         sta(GM.ST.IDLE);

@@ -155,7 +155,7 @@ export class COM_Action extends Com
 
     async _move()
     {
-        const {bb,root} = this.ctx;
+        const {bb,root,pb} = this.ctx;
 
         // const pt = bb.path?.pts[0];
         let ret = 'moving';
@@ -170,13 +170,19 @@ export class COM_Action extends Com
             const pt = bb.path.pts[0];
 
             // 判斷前面是否有障礙物
-            const blocked = this.scene.map.getWeight(pt) > GM.W_BLOCK;
+            const blocked = this.scene.map.getWeight(pt) > GM.W.BLOCK;
             
             if(blocked) // 前面有障礙物
             {
+                const go = pb(pt);
+                if(go.type===GM.TP.DOOR)
+                {
+                    console.log(GM.TP.DOOR)
+                }
                 // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
                 ret = bb.path.pts.length>1 ? 'blocked' : 'reach';
                 bb.path=null;
+                console.log('------- chk1')
             }
             else
             {

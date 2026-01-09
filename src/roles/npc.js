@@ -67,19 +67,6 @@ export class Npc extends Role
         QuestManager.notify({type: GM.KILL, id: this.id});
     }
 
-    _goto(go)
-    {
-        const{root,bb}=this.ctx;
-        if(this.isAt(go))
-        {
-
-        }
-        else
-        {
-            bb.path = root.getPath?.(this.pos, go.pts);
-        }
-    }
-
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -128,6 +115,14 @@ export class Npc extends Role
     {
         this.bb.id = id;                // 將 id 存到 bb.id
         this.init_prefab(false); 
+    }
+
+    cmd()
+    {
+        const{bb,sta}=this.ctx;
+        if(!this.isAlive) {return;}
+        if(this.isAt(bb.go)) {sta(GM.ST.ACTION);}
+        else if(!bb.path) {this.findPath?.(bb.go.pts);}
     }
 
     async process()

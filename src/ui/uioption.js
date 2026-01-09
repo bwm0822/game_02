@@ -156,7 +156,7 @@ export default class UiOption extends UiFrame
     act(key)
     {
         this.close();
-        this.player.execute({ent:this.ent,act:key});
+        this.player.cmd({ent:this.ent,act:key});
     }
 
     rePos()

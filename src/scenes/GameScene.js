@@ -204,11 +204,11 @@ export class GameScene extends Scene
                 }
                 else if(this._player.state===GM.ST.ABILITY)
                 {
-                    this._player.execute({pt:pt,ent:this._ent});
+                    this._player.cmd({pt:pt,ent:this._ent});
                 }
                 else if(this._path?.state===GM.PATH_OK)
                 {
-                    this._player.execute({pt:pt,ent:this._ent,path:this._path});
+                    this._player.cmd({pt:pt,ent:this._ent,path:this._path});
                     Mark.close();
                     this._path=null;
                 }

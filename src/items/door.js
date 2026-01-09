@@ -5,7 +5,7 @@ import {GameObject} from '../core/gameobject.js';
 
 export default class Door extends GameObject
 {
-
+    get type() {return GM.TP.DOOR;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------

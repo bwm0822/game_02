@@ -37,19 +37,21 @@ export class COM_Schedule extends Com
 
     _setInitPos()
     {
-        const{root,bb,sta}=this.ctx;
+        const{root,bb,sta,ept}=this.ctx;
 
         const gos = this._toGos(bb.routine.p);
 
+        const sp = ept(gos[0].pts[0]);  // 取得起始點(空地)
+
         if(gos.length===1) 
         {
-            root.updatePos?.(gos[0].pts[0]);
+            root.updatePos?.(sp);
             if(gos[0].act) {sta(GM.ST.ACTION);}
         }
         else
         {
             // 1. 取得路徑
-            const path = root.getPath?.(gos[0].pos, gos[1].pts);
+            const path = root.getPath?.(sp, gos[1].pts);
             
             // 2. 取得啟始時間
             const ts = bb.routine.t.split('~')[0];
@@ -61,7 +63,7 @@ export class COM_Schedule extends Com
             const i = Math.min(td, path?.pts.length-1);
 
             // 5. 更新位置
-            const pt = i===0 ? gos[0].pos : path?.pts[i-1];
+            const pt = i===0 ? sp : path?.pts[i-1];
             root.updatePos?.(pt);
             path?.pts.splice(0,i);
             if(path?.pts.length>0) {root.setPath?.(path);}
@@ -83,12 +85,11 @@ export class COM_Schedule extends Com
             bb.go = this._toGos(found.p).at(-1);
         }
 
+        console.log(sta())
+
         if(sta()!==GM.ST.SLEEP)
         {
-            if(!root.isAt(bb.go))
-            {
-                root.goto(bb.go)
-            }
+            root.cmd()   
         }
     }
 

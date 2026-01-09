@@ -33,7 +33,12 @@ export class GameObject
     }
 
     get mapName() {return this.scene._data.map;}    // 取得地圖名稱，存檔時，需要地圖名稱
-    get pos() {return {x:this.ent.x, y:this.ent.y};}        // 位置
+    // get pos() {return {x:this.ent.x, y:this.ent.y};}        // 位置
+    // 位置(world space)
+    get pos() {
+        const m = this.ent.getWorldTransformMatrix();
+        return { x: m.tx, y: m.ty };
+    }       
     set pos(p) {this.ent.x=p.x; this.ent.y=p.y}
 
     get ent() {return this._ent;}                   // 實體
@@ -50,6 +55,8 @@ export class GameObject
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
                         sta : this._rwState.bind(this),
+                        ept : this.getEmptyPt.bind(this),
+                        pb : this._probe.bind(this), 
                     }}
 
     // 所有可操作的指令
@@ -98,8 +105,9 @@ export class GameObject
     _onout() {this._send('out',this);}
     _ondown()
     {
-        let x = this.x - this.scene.cameras.main.worldView.x;
-        let y = this.y - this.scene.cameras.main.worldView.y;
+        const wp = this.pos;
+        const x = wp.x - this.scene.cameras.main.worldView.x;
+        const y = wp.y - this.scene.cameras.main.worldView.y;
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
@@ -186,6 +194,12 @@ export class GameObject
         {
             this._pts = JSON.parse(this.bb.json_pts);
         }
+    }
+
+    _probe(p)
+    {
+        const bodies = this.scene.physics.overlapCirc(p.x,p.y,0,true,true);
+        return bodies[0].gameObject.root; 
     }
 
     //------------------------------------------------------
@@ -285,6 +299,12 @@ export class GameObject
         });
     }
 
+    // 取的空地
+    getEmptyPt(pt)
+    {
+        return this.scene.map.getValidPoint(pt,{center:true});
+    }
+
     // 是否抵達
     isAt(go)
     {
@@ -334,15 +354,13 @@ export class GameObject
             this._dg.strokeCircleShape(circle);
         }
     }
+
     //------------------------------------------------------
     // mehod
     //------------------------------------------------------
     init_prefab() 
     {
-        if(this._isRemoved()) 
-        {
-            return false;
-        }
+        if(this._isRemoved()) { return false; }
         else
         {
             if(DEBUG.rect) {this.debugDraw();}

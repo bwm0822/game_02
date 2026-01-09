@@ -126,7 +126,7 @@ class View extends Phaser.GameObjects.Container
         this.hei = 0;               // container 的高
         this.interactive = false;   // 是否可以互動
         this.en_outline = true;     // 是否開啟 outline 的功能
-        this.isPhy = true;          // 是否有物理實體
+        this.hasPhy = true;         // 是否有物理實體
         this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否會阻擋
         this.weight = 1000;
@@ -144,6 +144,7 @@ class View extends Phaser.GameObjects.Container
     }
 
     get tag() {return 'view';}          // 回傳元件的標籤
+    get root() {return this._root;}
     get ctx() {return this._root.ctx;}
     get ent() {return this._root.ent;}
     get pos() {return this._root.pos;}
@@ -226,7 +227,7 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _addPhysics()
     {
-        if(!this.phy) {return this;}
+        if(!this.hasPhy) {return this;}
 
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
@@ -344,6 +345,7 @@ class View extends Phaser.GameObjects.Container
     _updatePos(pos)
     {
         const{root}=this.ctx;
+        pos=root.scene.map.getValidPoint(pos,{center:true});
         this._removeWeight();
         root.pos=pos;
         this._addWeight();

@@ -316,6 +316,7 @@ export function uButton(scene,config={})
     }
     btn.setText = (text)=>{btn._text?.setText(text); return btn;}
     btn.setEnable = (on)=>{
+        // console.log(`${btn._text.text} : ${on}`)
         if(on) {    
             btn.setInteractive();
             btn._text?.setAlpha(1);
@@ -325,7 +326,7 @@ export function uButton(scene,config={})
             btn.disableInteractive();
             btn._text?.setAlpha(0.5);
             btn._icon?.setAlpha(0.5);
-            btn._bg.setFillStyle(cBG);
+            // btn._bg.setFillStyle(cBG);
         }
         return btn;
     }

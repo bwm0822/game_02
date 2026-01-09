@@ -403,6 +403,17 @@ export const GM =
     PATH_NONE : -1, // 找不到路徑
     PATH_BLK : 0,   // 有阻擋
     PATH_OK : 1,    // 無阻擋
+    PATH:
+    {
+        NONE : -1, // 找不到路徑
+        BLK : 0,   // 有阻擋
+        OK : 1,    // 無阻擋
+    },
+
+    TP:
+    {
+        DOOR: 'door',
+    }
 
 }
 

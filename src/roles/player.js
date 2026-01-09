@@ -175,7 +175,7 @@ export class Player extends Role
         this.bb.path.stop = true; 
     }
 
-    execute({pt, ent, act, path}={})
+    cmd({pt, ent, act, path}={})
     {
         if(!this.isAlive) {return;}
         
