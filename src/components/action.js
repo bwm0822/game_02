@@ -121,26 +121,25 @@ export class COM_Action extends Com
     // 檢查是否通過door
     _checkDoor(w,pt)
     {
-        const ret={st:'moving'};
-        if(this._pre?.w===GM.W.DOOR&&w!==GM.W.DOOR)
+        const{bb,pb}=this.ctx;
+        if(bb.pre?.w===GM.W.DOOR&&w!==GM.W.DOOR)
         {
-            const go = this.ctx.pb(this._pre.pt);
-            ret.st='close_door';
-            ret.go=go;
+            const go = pb(bb.pre.pt);
+            bb.mv.st='close_door';
+            bb.mv.go=go;
         }
-        this._pre={w:w,pt:pt};
-        return ret;
+        bb.pre={w:w,pt:pt};
     }
 
     async _move()
     {
-        const {bb,root,gw} = this.ctx;
+        const {bb,root,gw,pb} = this.ctx;
 
-        let ret = {st:'moving'};
+        bb.mv = {st:'moving'};
 
         if(bb.path.pts.length===0)
         {
-            ret.st = 'reach';
+            bb.mv.st = 'reach';
             bb.path=null;
         }
         else
@@ -152,37 +151,37 @@ export class COM_Action extends Com
             
             if(w > GM.W.BLOCK) // 前面有障礙物
             {
-                const go = this.ctx.pb(pt); // 取得障礙物
-                if(go.type===GM.TP.DOOR)    // 障礙物為門
+                const obs = pb(pt);          // 取得障礙物
+                if(obs.type===GM.TP.DOOR)    // 障礙物為門
                 {
-                    ret.st='open_door';
-                    ret.go=go;
+                    bb.mv.st='open_door';
+                    bb.mv.obs=obs;
                 }
                 else
                 {
                     // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
-                    ret.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
-                    bb.path=null;
+                    bb.mv.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
+                    bb.path = null;
                 }
             }
             else
             {
                 await this._moveTo(pt);
                 
-                ret=this._checkDoor(w,pt);
+                this._checkDoor(w,pt);
 
-                if(bb.path.stop) {bb.path=null; ret.st='stopped';}
+                if(bb.path.stop) {bb.path=null; bb.mv.st='stopped';}
                 else
                 {
                     bb.path.pts.shift();    // bb.path.pts.splice(0,1);
-                    if(bb.path.pts.length===0) {bb.path=null; ret.st='reach';}
+                    if(bb.path.pts.length===0) {bb.path=null; bb.mv.st='reach';}
                 }
             }
         }
 
         root.updatePath?.();
 
-        return ret;
+        // return ret;
     }
 
     async _attack(target, ability)
