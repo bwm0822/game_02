@@ -55,8 +55,9 @@ export class GameObject
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
                         sta : this._rwState.bind(this),
-                        ept : this.getEmptyPt.bind(this),
+                        ept : this._getEmptyPt.bind(this),
                         pb : this._probe.bind(this), 
+                        gw : this._getWeight.bind(this), 
                     }}
 
     // 所有可操作的指令
@@ -196,10 +197,23 @@ export class GameObject
         }
     }
 
+    // 取得 gameObject
     _probe(p)
     {
         const bodies = this.scene.physics.overlapCirc(p.x,p.y,0,true,true);
         return bodies[0].gameObject.root; 
+    }
+
+    // 取的空地
+    _getEmptyPt(pt)
+    {
+        return this.scene.map.getValidPoint(pt,{center:true});
+    }
+
+    // 取得 weight
+    _getWeight(pt)
+    {
+        return this.scene.map.getWeight(pt)
     }
 
     //------------------------------------------------------
@@ -299,11 +313,7 @@ export class GameObject
         });
     }
 
-    // 取的空地
-    getEmptyPt(pt)
-    {
-        return this.scene.map.getValidPoint(pt,{center:true});
-    }
+
 
     // 是否抵達
     isAt(go)

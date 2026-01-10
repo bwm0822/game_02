@@ -35,9 +35,10 @@ export class COM_Sleep extends Com
 
     async _wake()
     {
-        const{root,emit,sta}=this.ctx;
+        const{root,emit,sta,ept}=this.ctx;
         this._bed.setEmpty();
-        root.pos=bed.pts[0];
+        root.pos=ept(this._bed.pts[0]);
+        root.updateDepth?.();
         root.addWeight?.();
         root.pop?.()
         sta(GM.ST.IDLE);

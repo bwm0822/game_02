@@ -108,7 +108,7 @@ export class COM_Action extends Com
                 if(bb.path.pts.length>1)
                 {
                     await this._moveTo(bb.path.pts[0])
-                    bb.path.pts.splice(0,1);  
+                    bb.path.pts.shift(); //bb.path.pts.splice(0,1);  
                 }
                 else {break;}
             }
@@ -118,51 +118,29 @@ export class COM_Action extends Com
         return false;
     }
 
-    // async _move()
-    // {
-    //     const {bb,emit} = this.ctx;
-
-    //     const pt = bb.path?.pts[0];
-    //     let ret = true;
-
-    //     if(pt)
-    //     {
-    //         // 判斷前面是否有障礙物
-    //         const blocked = this.scene.map.getWeight(pt) > GM.W_BLOCK;
-            
-    //         if(blocked) // 前面有障礙物
-    //         {
-    //             // 判斷是否是目的地，如果不是，回傳值設成 false
-    //             bb.path.pts.length>1 && (ret=false);
-    //             bb.path=null;
-    //         }
-    //         else
-    //         {
-    //             await this._moveTo(pt);
-    //             if(bb.path.stop) {bb.path=null;}
-    //             else
-    //             {
-    //                 bb.path.pts.splice(0,1);
-    //                 bb.path.pts.length===0 && (bb.path=null);
-    //             }
-    //         }
-    //     }
-
-    //     emit('updatePath');
-
-    //     return ret;
-    // }
+    // 檢查是否通過door
+    _checkDoor(w,pt)
+    {
+        const ret={st:'moving'};
+        if(this._pre?.w===GM.W.DOOR&&w!==GM.W.DOOR)
+        {
+            const go = this.ctx.pb(this._pre.pt);
+            ret.st='close_door';
+            ret.go=go;
+        }
+        this._pre={w:w,pt:pt};
+        return ret;
+    }
 
     async _move()
     {
-        const {bb,root,pb} = this.ctx;
+        const {bb,root,gw} = this.ctx;
 
-        // const pt = bb.path?.pts[0];
-        let ret = 'moving';
+        let ret = {st:'moving'};
 
         if(bb.path.pts.length===0)
         {
-            ret = 'reach';
+            ret.st = 'reach';
             bb.path=null;
         }
         else
@@ -170,28 +148,34 @@ export class COM_Action extends Com
             const pt = bb.path.pts[0];
 
             // 判斷前面是否有障礙物
-            const blocked = this.scene.map.getWeight(pt) > GM.W.BLOCK;
+            const w = gw(pt);
             
-            if(blocked) // 前面有障礙物
+            if(w > GM.W.BLOCK) // 前面有障礙物
             {
-                const go = pb(pt);
-                if(go.type===GM.TP.DOOR)
+                const go = this.ctx.pb(pt); // 取得障礙物
+                if(go.type===GM.TP.DOOR)    // 障礙物為門
                 {
-                    console.log(GM.TP.DOOR)
+                    ret.st='open_door';
+                    ret.go=go;
                 }
-                // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
-                ret = bb.path.pts.length>1 ? 'blocked' : 'reach';
-                bb.path=null;
-                console.log('------- chk1')
+                else
+                {
+                    // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
+                    ret.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
+                    bb.path=null;
+                }
             }
             else
             {
                 await this._moveTo(pt);
-                if(bb.path.stop) {bb.path=null; ret='stopped';}
+                
+                ret=this._checkDoor(w,pt);
+
+                if(bb.path.stop) {bb.path=null; ret.st='stopped';}
                 else
                 {
-                    bb.path.pts.splice(0,1);
-                    if(bb.path.pts.length===0) {bb.path=null; ret='reach';}
+                    bb.path.pts.shift();    // bb.path.pts.splice(0,1);
+                    if(bb.path.pts.length===0) {bb.path=null; ret.st='reach';}
                 }
             }
         }

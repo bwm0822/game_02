@@ -136,10 +136,18 @@ export class Npc extends Role
         if(bb.path)
         {
             const ret = await this.move?.();
-            if(ret==='reach')
+            if(ret.st==='reach')
             {
                 if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
                 else {sta(GM.ST.IDLE);}
+            }
+            else if(ret.st==='open_door')
+            {
+                await ret.go.aEmit(GM.OPEN_DOOR);
+            }
+            else if(ret.st==='close_door')
+            {
+                ret.go.emit(GM.CLOSE_DOOR)
             }
         }
         else
