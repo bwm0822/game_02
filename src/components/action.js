@@ -10,6 +10,8 @@ import {GM} from '../core/setting.js'
 // 功能 :
 //  1. 負責角色的動畫，如 : idle、walk...
 //  2. 會用到 view、anim 元件
+//  3. 提供角色移動、攻擊等行為的 API
+//  4. 透過 bb.cACT 來傳遞訊息
 //--------------------------------------------------
 
 export class COM_Action extends Com
@@ -125,8 +127,8 @@ export class COM_Action extends Com
         if(bb.pre?.w===GM.W.DOOR&&w!==GM.W.DOOR)
         {
             const go = pb(bb.pre.pt);
-            bb.mv.st='close_door';
-            bb.mv.go=go;
+            bb.cACT.st='close_door';
+            bb.cACT.go=go;
         }
         bb.pre={w:w,pt:pt};
     }
@@ -135,11 +137,11 @@ export class COM_Action extends Com
     {
         const {bb,root,gw,pb} = this.ctx;
 
-        bb.mv = {st:'moving'};
+        bb.cACT = {st:'moving'};
 
         if(bb.path.pts.length===0)
         {
-            bb.mv.st = 'reach';
+            bb.cACT.st = 'reach';
             bb.path=null;
         }
         else
@@ -154,13 +156,13 @@ export class COM_Action extends Com
                 const obs = pb(pt);          // 取得障礙物
                 if(obs.type===GM.TP.DOOR)    // 障礙物為門
                 {
-                    bb.mv.st='open_door';
-                    bb.mv.obs=obs;
+                    bb.cACT.st='open_door';
+                    bb.cACT.obs=obs;
                 }
                 else
                 {
                     // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
-                    bb.mv.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
+                    bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
                     bb.path = null;
                 }
             }
@@ -170,11 +172,11 @@ export class COM_Action extends Com
                 
                 this._checkDoor(w,pt);
 
-                if(bb.path.stop) {bb.path=null; bb.mv.st='stopped';}
+                if(bb.path.stop) {bb.path=null; bb.cACT.st='reach';}
                 else
                 {
                     bb.path.pts.shift();    // bb.path.pts.splice(0,1);
-                    if(bb.path.pts.length===0) {bb.path=null; bb.mv.st='reach';}
+                    if(bb.path.pts.length===0) {bb.path=null; bb.cACT.st='reach';}
                 }
             }
         }

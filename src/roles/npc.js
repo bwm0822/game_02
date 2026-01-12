@@ -129,25 +129,25 @@ export class Npc extends Role
     {
         if(!this.isAlive) {return;}
 
-        // await this.think?.();
+        await this.think?.();
 
         const{bb,sta}=this.ctx;
 
         if(bb.path)
         {
             await this.move?.();
-            if(bb.mv.st==='reach')
+            if(bb.cACT.st==='reach')
             {
                 if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
                 else {sta(GM.ST.IDLE);}
             }
-            else if(bb.mv.st==='open_door')
+            else if(bb.cACT.st==='open_door')
             {
-                await bb.mv.obs.aEmit(GM.OPEN_DOOR);
+                await bb.cACT.obs.aEmit(GM.OPEN_DOOR);
             }
-            else if(bb.mv.st==='close_door')
+            else if(bb.cACT.st==='close_door')
             {
-                bb.mv.obs.emit(GM.CLOSE_DOOR)
+                bb.cACT.obs.emit(GM.CLOSE_DOOR)
             }
         }
         else

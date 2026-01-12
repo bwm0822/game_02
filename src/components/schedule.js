@@ -119,9 +119,10 @@ export class COM_Schedule extends Com
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.updateSch = (this._update.bind(this));
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('onupdate', this._update.bind(this));
+        // root.on('onupdate', this._update.bind(this));
         
         
     }

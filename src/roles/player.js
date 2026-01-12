@@ -224,7 +224,7 @@ export class Player extends Role
             else
             {
                 await this.move?.();
-                if((bb.mv.st==='reach')&&bb.ent)
+                if((bb.cACT.st==='reach')&&bb.ent)
                 {
                     sta(GM.ST.ACTION)
                     await this._interact(bb.ent,bb.act);

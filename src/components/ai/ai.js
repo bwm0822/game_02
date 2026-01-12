@@ -1,6 +1,9 @@
 import Com from '../com.js'
 import TimeSystem from '../../systems/time.js'
-import {BehAttack, BehChase, BehTest} from './behavior.js'
+import {BehSchedule} from './behschedule.js'
+import {BehAttack} from './behattack.js'
+import {BehChase} from './behchase.js'
+import {BehTest} from './behtest.js'
 import {GM} from '../../core/setting.js'
 
 
@@ -68,7 +71,8 @@ class StateMachine
 // 類別 : 元件(component) 
 // 標籤 : ai
 // 功能 :
-//  控制 NPC 的行為
+//  1. 控制 NPC 的行為
+//  2. 透過 bb.cAI 來傳遞訊息
 //--------------------------------------------------
 export class COM_AI extends Com
 {
@@ -90,6 +94,7 @@ export class COM_AI extends Com
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
             // new BehTest(),
+            new BehSchedule(),
         ];
     }
 
