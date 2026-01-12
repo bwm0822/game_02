@@ -125,40 +125,13 @@ export class Npc extends Role
         else if(!bb.path) {this.findPath?.(bb.go.pts);}
     }
 
-    checkBlock()
-    {
-        const{bb,probe,sta}=this.ctx;
-        const obs = probe(bb.cACT.pt);      // 取得障礙物
-        if(obs?.type===GM.TP.DOOR)           // 障礙物為門
-        {
-            return obs.aEmit(GM.OPEN_DOOR);
-        }
-        else
-        {
-            bb.path = null;
-            sta(GM.ST.IDLE);
-        }
-    }
-
-    closeDoorIfNeed()
-    {
-        const{bb,probe}=this.ctx;
-        const act=bb.cACT;
-        console.log(act);
-        if(act.pre?.w===GM.W.DOOR&&act.cur?.w!==GM.W.DOOR)
-        {
-            const go = probe(act.pre.pt);
-            go.emit(GM.CLOSE_DOOR)
-        }
-    }
-
     async process()
     {
         if(!this.isAlive) {return;}
 
         await this.think?.();
 
-        const{bb,sta}=this.ctx;
+        const{bb,sta,root}=this.ctx;
 
         if(bb.path)
         {
@@ -170,11 +143,11 @@ export class Npc extends Role
             }
             else if(bb.cACT.st==='blocked')
             {
-                await this.checkBlock();
+                await root.checkBlock();
             }
             else
             {
-                this.closeDoorIfNeed();
+                root.closeDoorIfNeed();
             }
         }
         else

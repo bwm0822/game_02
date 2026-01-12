@@ -122,7 +122,7 @@ export class COM_Action extends Com
 
     async _move()
     {
-        const {bb,root,gw,probe} = this.ctx;
+        const {bb,root,gw} = this.ctx;
 
         bb.cACT.st='moving';
 
@@ -142,15 +142,15 @@ export class COM_Action extends Com
             {
                 // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
                 bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
-                bb.cACT.pt = pt;
+                this._pt = pt;
                 // bb.path = null;   
             }
             else
             {
                 await this._moveTo(pt);
                 
-                bb.cACT.pre=bb.cACT.cur;
-                bb.cACT.cur={w:w,pt:pt};
+                this._pre=this._cur;
+                this._cur={w:w,pt:pt};
 
                 if(bb.path.stop) {bb.path=null; bb.cACT.st='reach';}
                 else
@@ -180,6 +180,33 @@ export class COM_Action extends Com
         }
         return true;
     }
+    
+    _checkBlock()
+    {
+        const{bb,probe,st}=this.ctx;
+        const obs = probe(this._pt);      // 取得障礙物
+        if(obs?.type===GM.TP.DOOR)        // 障礙物為門
+        {
+            return obs.aEmit(GM.OPEN_DOOR);
+        }
+        else
+        {
+            bb.path = null;
+            sta(GM.ST.IDLE);
+        }
+    }
+
+    _closeDoorIfNeed()
+    {
+        const{probe}=this.ctx;
+        const pre=this._pre;
+        const cur=this._cur;
+        if(pre?.w===GM.W.DOOR&&cur?.w!==GM.W.DOOR)
+        {
+            const go = probe(pre.pt);
+            go.emit(GM.CLOSE_DOOR)
+        }
+    }
 
     //------------------------------------------------------
     //  Public
@@ -197,6 +224,8 @@ export class COM_Action extends Com
         root.move = this._move.bind(this);
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
+        root.checkBlock = this._checkBlock.bind(this);
+        root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('move', this._move.bind(this));
