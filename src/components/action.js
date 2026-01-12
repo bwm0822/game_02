@@ -120,24 +120,11 @@ export class COM_Action extends Com
         return false;
     }
 
-    // 檢查是否通過door
-    _checkDoor(w,pt)
-    {
-        const{bb,pb}=this.ctx;
-        if(bb.pre?.w===GM.W.DOOR&&w!==GM.W.DOOR)
-        {
-            const go = pb(bb.pre.pt);
-            bb.cACT.st='close_door';
-            bb.cACT.go=go;
-        }
-        bb.pre={w:w,pt:pt};
-    }
-
     async _move()
     {
-        const {bb,root,gw,pb} = this.ctx;
+        const {bb,root,gw,probe} = this.ctx;
 
-        bb.cACT = {st:'moving'};
+        bb.cACT.st='moving';
 
         if(bb.path.pts.length===0)
         {
@@ -153,24 +140,17 @@ export class COM_Action extends Com
             
             if(w > GM.W.BLOCK) // 前面有障礙物
             {
-                const obs = pb(pt);          // 取得障礙物
-                if(obs.type===GM.TP.DOOR)    // 障礙物為門
-                {
-                    bb.cACT.st='open_door';
-                    bb.cACT.obs=obs;
-                }
-                else
-                {
-                    // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
-                    bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
-                    bb.path = null;
-                }
+                // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
+                bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
+                bb.cACT.pt = pt;
+                // bb.path = null;   
             }
             else
             {
                 await this._moveTo(pt);
                 
-                this._checkDoor(w,pt);
+                bb.cACT.pre=bb.cACT.cur;
+                bb.cACT.cur={w:w,pt:pt};
 
                 if(bb.path.stop) {bb.path=null; bb.cACT.st='reach';}
                 else
@@ -182,8 +162,6 @@ export class COM_Action extends Com
         }
 
         root.updatePath?.();
-
-        // return ret;
     }
 
     async _attack(target, ability)
@@ -209,6 +187,9 @@ export class COM_Action extends Com
     bind(root)
     {
         super.bind(root);
+
+        // 0. 初始化
+        this.ctx.bb.cACT={}; 
 
         // 1.提供 [外部操作的指令]
 

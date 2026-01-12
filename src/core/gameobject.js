@@ -56,7 +56,7 @@ export class GameObject
                         send : this._send.bind(this),
                         sta : this._rwState.bind(this),
                         ept : this._getEmptyPt.bind(this),
-                        pb : this._probe.bind(this), 
+                        probe : this._probe.bind(this), 
                         gw : this._getWeight.bind(this), 
                     }}
 
@@ -201,7 +201,7 @@ export class GameObject
     _probe(p)
     {
         const bodies = this.scene.physics.overlapCirc(p.x,p.y,0,true,true);
-        return bodies[0].gameObject.root; 
+        return bodies[0]?.gameObject.root; 
     }
 
     // 取的空地
