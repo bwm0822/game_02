@@ -48,16 +48,21 @@ export class COM_Sense extends Com
             _scenePalyer=false;
         }
 
+        const fav=root.getFavor?.(player.id);
+
         if(bb.scenePlayer && !_scenePalyer)
         {
-            bb.scenePlayer = false;
-            root.pop?.('❓');
+            bb.scenePlayer = null;
+            if(fav<GM.FAV.HATE) {root.pop?.('❓');}
         }
         else if(!bb.scenePlayer && _scenePalyer)
         {
-            bb.scenePlayer = true;
-            const s=needSight ? '👁️‍🗨️' : '‼️';
-            root.pop?.(s)
+            bb.scenePlayer = player;
+            if(fav<GM.FAV.HATE)
+            {
+                const s=needSight ? '👁️‍🗨️' : '‼️';
+                root.pop?.(s)
+            }
         }
 
         return _scenePalyer ? player : null;

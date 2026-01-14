@@ -264,6 +264,9 @@ export class COM_Stats extends Com
     _takeDamage(dmg) 
     {
         const {root,emit}=this.ctx;
+
+        root.addFavor?.(dmg.attacker.id, -50);  // 受攻擊，降低好感度
+
         switch(dmg.type)
         {
             case GM.CRI:

@@ -102,7 +102,10 @@ export class COM_AI extends Com
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
-    get ctx() {return {...super.ctx, cd:this.cd, tick:TimeSystem.ticks};}
+    get ctx() {return {...super.ctx, 
+                        cd:this.cd,
+                        sm:this.sm, 
+                        tick:TimeSystem.ticks};}
 
     //------------------------------------------------------
     //  Local
@@ -119,6 +122,13 @@ export class COM_AI extends Com
         if (ctx.bb.target) ctx.bb.lastSeen.set(ctx.bb.target.id ?? ctx.bb.target, ctx.tick);
     }
 
+    _updateBB(ctx) 
+    {
+        const{bb,root}=ctx;
+        bb.scenePlayer = root.sensePlayer?.();
+        bb.seePlayer = bb.scenePlayer ? root.canSee?.(bb.scenePlayer) : false;
+    }
+
     // 回合主流程
     async _think() 
     {
@@ -133,6 +143,7 @@ export class COM_AI extends Com
 
         // 事前黑板更新（可選）
         // this._preUpdateBlackboard(ctx);
+        this._updateBB(ctx);
 
         // 決策
         const { best, logs } = this.decider.decide(ctx, this.behaviors);

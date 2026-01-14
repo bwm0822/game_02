@@ -85,7 +85,11 @@ export default class UiObserve extends UiFrame
 
         // name
         ui.uBbc.call(content,scene,{text:this.owner.id.lab()})
-        
+
+        const Fav=Math.floor(this.owner.getFavor(this.player.id));
+        ui.uBbc.call(content,scene,{text:`好感 : ${Fav}`,
+                                    color:GM.COLOR.LIGHTGRAY,
+                                    ext:{padding:{top:5}}})
         // hp
         ui.uDiv.call(content,scene,{expand:true})
         const total = this.owner.total;

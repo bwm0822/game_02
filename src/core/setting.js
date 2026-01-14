@@ -132,10 +132,18 @@ export const GM =
         HAND       :   0b0010_0000_0000_0000,
         EXT        :   0b0100_0000_0000_0000,
     },
+
+    FAV:{
+        LOVE    : 100,  
+        LIKE    : 75,   // 交易打8折
+        NEUTRAL : 50,   // 預設值
+        DISLIKE : 25,   // 無法交易
+        HATE    : 10,   // 主動攻擊
+    },
     
     SLOT_SIZE : 80,     // slot 的寬、高
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
-    PRESS_DELAY : 250,   // 按壓技能延遲時間 (unit:ms)
+    PRESS_DELAY : 250,  // 按壓技能延遲時間 (unit:ms)
     CAM_CENTER : 0b000,
     CAM_LEFT : 0b001,
     CAM_RIGHT : 0b010,
@@ -203,6 +211,7 @@ export const GM =
         CON: "con",
         INT: "int",
         LUK: "luk",
+
         // 戰鬥屬性 
         COMBAT: ["atk","def","range","acc","eva","cri","crid","type"],
         HPMAX : "hpMax",        // 生命上限

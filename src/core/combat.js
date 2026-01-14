@@ -65,7 +65,7 @@ export function computeDamage(attacker, defender, skill={})
     damage = Math.round(Math.max(1, damage))
 
 
-    return {amount:damage, type:type};
+    return {amount:damage, type:type, attacker:attacker};
 
 }
 

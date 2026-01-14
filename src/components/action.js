@@ -143,7 +143,7 @@ export class COM_Action extends Com
                 // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
                 bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
                 this._pt = pt;
-                // bb.path = null;   
+                if( bb.cACT.st==='reach') {bb.path = null;} 
             }
             else
             {

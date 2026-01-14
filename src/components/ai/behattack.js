@@ -16,23 +16,31 @@ export class BehAttack extends Behavior
     {
         // 回傳 [score, reason]；0 代表不考慮
 
-        const {bb,root,sta} = ctx;
-        const t=bb.target ?? root.sensePlayer?.();
-        this._t=t;
-        if (!t) 
+        const {bb,root} = ctx;
+        if(!bb.scenePlayer)         // 沒有目標
         {
             if(this._onAttack)
             {
-                // 攻擊不到目標時，進入待機狀態幾回合
-                this._onAttack=false;
-                bb.idleCnt=5; 
+                // 失去攻擊目標時，進入 IDLE 狀態幾回合
+                this._onAttack = false;
+                bb.idleCnt = 5;         // 設定進入 IDLE 狀態的回合數
+                bb.go = null;           // 清除目前目標點
+                root.clearPath?.();     // 清除路徑
             }  
             return [0, 'no target']; 
         }
-        if (!root.canSee?.(t)) { return [0.1, 'target unseen']; } // 很低分：可以先追
-        
-        let base = 1;
+        else 
+        {
+            if(root.getFavor(bb.scenePlayer.id)>GM.FAV.HATE)
+            {
+                return [0, 'no target']; 
+            }
+            this._t=bb.scenePlayer;
+        }        
+
+        let base = bb.sensePlayer ? 1 : 0.5;
         return [base*this.weight, 'none'];
+
     }
 
     async act(ctx) 
@@ -40,7 +48,6 @@ export class BehAttack extends Behavior
         const {bb,root} = ctx;
 
         this._onAttack=true;
-        bb.routine=null;
         const t=this._t;
 
         if (root.inAttackRange?.(t)) 

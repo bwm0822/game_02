@@ -72,12 +72,14 @@ export class COM_Schedule extends Com
         if(found && (found!==bb.routine))
         {
             bb.routine = found;                     // 紀錄目前的 routine
-            bb.go = this._toGos(found.p).at(-1);    // 取得最後一個點作為目標
-            bb.path = null;                         // 清除路徑 
+            bb.go = null;                           // 清除目前目標點
+            root.clearPath?.();                     // 清除路徑 
             if(sta()===GM.ST.SLEEP) {root.wake?.();}
         }
 
         if(sta()===GM.ST.SLEEP) {return;}
+
+        if(!bb.go) {bb.go=this._toGos(bb.routine.p).at(-1);}
 
         if(root.isAt(bb.go)) 
         {
