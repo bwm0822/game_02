@@ -63,9 +63,8 @@ export class GameScene extends Scene
         await new Map(this).createMap(this._data.map, diagonal, weight);
         this.createRuntime();
         this.initAmbient(this._data.ambient);
-        this.initSchedule();
-
         this.setPosition(classType);
+        this.initSchedule();
         this.processInput();
 
         AudioManager.init(this);
@@ -278,6 +277,15 @@ export class GameScene extends Scene
 
     clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
 
+    npcPath(on) 
+    {
+        this.roles.forEach(role=>{
+            if(role.isPlayer) {return;}
+            if(on) {role.updateDebugPath();}
+            else  {role.hidePath();}
+        });
+    }
+
     save()
     {
         Record.game.pos = this._player.pos;   
@@ -400,12 +408,10 @@ export class GameScene extends Scene
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
             .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})
-            .off('setWeight').on('setWeight',(p,weight)=>{
-                console.log(p,weight)
-                this.map.setWeight(p,weight)
-            })
+            .off('setWeight').on('setWeight',(p,weight)=>{this.map.setWeight(p,weight)})
             .off('log').on('log',()=>{this.log();})
             .off('dbgRect').on('dbgRect',()=>{this.dbgRect();})
+            .off('npcPath').on('npcPath',(on)=>{this.npcPath(on);})
 
     }
 

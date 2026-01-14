@@ -9,13 +9,7 @@ import TimeSystem from '../systems/time.js'
 //--------------------------------------------------
 export class COM_Schedule extends Com
 {
-    constructor()
-    {
-        super();
-    }
-
     get tag() {return 'schedule';}   // 回傳元件的標籤
-    // get pos() {return this._root.pos;}
 
     //------------------------------------------------------
     //  Local
@@ -37,11 +31,11 @@ export class COM_Schedule extends Com
 
     _setInitPos()
     {
-        const{root,bb,sta,ept}=this.ctx;
+        const{root,sta,ept}=this.ctx;
 
-        const gos = this._toGos(bb.routine.p);
-
-        const sp = ept(gos[0].pts[0]);  // 取得起始點(空地)
+        const rou = this._findRoutine();    // 取得 作息
+        const gos = this._toGos(rou.p);     // 取得 作息中的起訖點
+        const sp = ept(gos[0].pts[0]);      // 取得起點(空地)
 
         if(gos.length===1) 
         {
@@ -54,7 +48,7 @@ export class COM_Schedule extends Com
             const path = root.getPath?.(sp, gos[1].pts);
             
             // 2. 取得啟始時間
-            const ts = bb.routine.t.split('~')[0];
+            const ts = rou.t.split('~')[0];
             
             // 3. 計算時間差
             const td = TimeSystem.ticks - TimeSystem.time2Ticks(ts);
@@ -65,31 +59,35 @@ export class COM_Schedule extends Com
             // 5. 更新位置
             const pt = i===0 ? sp : path?.pts[i-1];
             root.updatePos?.(pt);
-            path?.pts.splice(0,i);
-            if(path?.pts.length>0) {root.setPath?.(path);}
-            else if(gos[1].act) {sta(GM.ST.ACTION);}
         }
-
-        return gos.at(-1); // 設定 bb.go
     }
 
-    _update()
+    async _update()
     {
         const{root,bb,sta}=this.ctx;
+        console.log(root.id,'------------------ schedule update');
 
         const found = this._findRoutine();
 
         if(found && (found!==bb.routine))
         {
-            bb.routine = found;
-            bb.go = this._toGos(found.p).at(-1);
+            bb.routine = found;                     // 紀錄目前的 routine
+            bb.go = this._toGos(found.p).at(-1);    // 取得最後一個點作為目標
+            bb.path = null;                         // 清除路徑 
+            if(sta()===GM.ST.SLEEP) {root.wake?.();}
         }
 
-        console.log(sta())
+        if(sta()===GM.ST.SLEEP) {return;}
 
-        if(sta()!==GM.ST.SLEEP)
+        if(root.isAt(bb.go)) 
         {
-            root.cmd()   
+            if(bb.go.act==='enter') {root.exit();}
+            else if(bb.go.act) {bb.go.emit(bb.go.act, root);}
+        }
+        else
+        {
+            if(bb.path) {await root.cmd_move();} 
+            else {root.findPath?.(bb.go.pts);}
         }
     }
 
@@ -108,13 +106,8 @@ export class COM_Schedule extends Com
         // 死亡時，會參考到
         bb.hasSchedule = true;   
 
-        // 取得 作息
-        bb.routine = this._findRoutine();
-
         // 設定 初始位置
-        bb.go = this._setInitPos();
-
-
+        this._setInitPos();
         
         // 1.提供 [外部操作的指令]
 

@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {Projectile} from '../misc/effs.js'
 import {computeDamage} from '../core/combat.js'
-import {GM} from '../core/setting.js'
+import {GM,DEBUG} from '../core/setting.js'
 
 
 //--------------------------------------------------
@@ -161,7 +161,8 @@ export class COM_Action extends Com
             }
         }
 
-        root.updatePath?.();
+        if(root.isPlayer) {root.updatePath?.();}
+        else if(DEBUG.path) {root.updateDebugPath?.();}
     }
 
     async _attack(target, ability)
@@ -183,7 +184,7 @@ export class COM_Action extends Com
     
     _checkBlock()
     {
-        const{bb,probe,st}=this.ctx;
+        const{bb,probe,sta}=this.ctx;
         const obs = probe(this._pt);      // 取得障礙物
         if(obs?.type===GM.TP.DOOR)        // 障礙物為門
         {

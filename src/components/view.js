@@ -345,7 +345,6 @@ class View extends Phaser.GameObjects.Container
     _updatePos(pos)
     {
         const{root}=this.ctx;
-        pos=root.scene.map.getValidPoint(pos,{center:true});
         this._removeWeight();
         root.pos=pos;
         this._addWeight();

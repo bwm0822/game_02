@@ -87,7 +87,7 @@ export class GameArea extends GameScene
         {
             if(this.mode=='normal')
             {
-                let roles = this.roles.map((role)=>{return role.process();});
+                const roles = this.roles.map((role)=>{return role.process();});
                 await Promise.all( roles );
             } 
             else

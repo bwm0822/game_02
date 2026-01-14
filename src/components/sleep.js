@@ -33,7 +33,7 @@ export class COM_Sleep extends Com
         this._bed=bed;
     }
 
-    async _wake()
+    _wake()
     {
         const{root,emit,sta,ept}=this.ctx;
         this._bed.setEmpty();

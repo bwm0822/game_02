@@ -34,24 +34,33 @@ export class COM_Sense extends Com
     // ---- 感知 ----
     _sensePlayer({maxTiles=8, needSight=true}={}) 
     {
-        // const player = this.role.scene?.roles?.find(r => r.isPlayer);
-        // const player = Role.getPlayer();
         const {bb,root}=this.ctx;
         const player = getPlayer();
+        let _scenePalyer=true;
         // if (!player || !player.isAlive) {return null;}
         if (!withinTiles(this.pos, player.pos, maxTiles)) 
         {
-            bb.sensePlayer=false; return;
+            _scenePalyer=false;
         }
 
         if (needSight && !this._canSee(player)) 
         {
-            bb.sensePlayer=false; return;
+            _scenePalyer=false;
         }
 
-        const s=needSight ? '👁️‍🗨️' : '‼️';
-        if(!bb.sensePlayer) {bb.sensePlayer=true; root.pop?.(s)}
-        return player;
+        if(bb.scenePlayer && !_scenePalyer)
+        {
+            bb.scenePlayer = false;
+            root.pop?.('❓');
+        }
+        else if(!bb.scenePlayer && _scenePalyer)
+        {
+            bb.scenePlayer = true;
+            const s=needSight ? '👁️‍🗨️' : '‼️';
+            root.pop?.(s)
+        }
+
+        return _scenePalyer ? player : null;
     }
 
     _canSee(target)
@@ -75,6 +84,7 @@ export class COM_Sense extends Com
     {
         super.bind(root);
 
+        this.ctx.bb.scenePlayer = false;
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用

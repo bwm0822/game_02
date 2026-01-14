@@ -2,9 +2,19 @@ import Com from '../com.js'
 import TimeSystem from '../../systems/time.js'
 import {BehSchedule} from './behschedule.js'
 import {BehAttack} from './behattack.js'
+import {BehIdle} from './behidle.js'
 import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
 import {GM} from '../../core/setting.js'
+
+// 防止被動到（Object.freeze）
+// 不能增刪屬性：AI_CD.NEW = 'x' 會失敗
+// 不能改值：AI_CD.TAUNT = 'roar' 會失敗（嚴格模式下丟錯）
+const AI_CD = Object.freeze({ 
+        FLEE:'flee', TAUNT:'taunt', PATROL:'patrol', 
+        WANDER:'wander', SENSE:'sense', SNARL:'snarl',  
+        GREET:'greet', CHIRP:'chirp', FLOCK:'flock'
+    });
 
 
 // 回合制冷卻：以 TimeSystem.ticks（回合數）判定
@@ -31,14 +41,6 @@ export class Cooldown
     clear() { this.map.clear(); }
 }
 
-// 防止被動到（Object.freeze）
-// 不能增刪屬性：AI_CD.NEW = 'x' 會失敗
-// 不能改值：AI_CD.TAUNT = 'roar' 會失敗（嚴格模式下丟錯）
-const AI_CD = Object.freeze({ 
-        FLEE:'flee', TAUNT:'taunt', PATROL:'patrol', 
-        WANDER:'wander', SENSE:'sense', SNARL:'snarl',  
-        GREET:'greet', CHIRP:'chirp', FLOCK:'flock'
-    });
 
 // --- 決策器：Utility 選最高分，然後執行 ---
 // 你也可以在這裡加上「分數門檻」、「次佳備援」等策略
@@ -90,7 +92,8 @@ export class COM_AI extends Com
         this.behaviors = [
             // new BehDrinkPotion({ weight: 1.0 }),
             // new BehFlee({ weight: 1.0 }),
-            // new BehAttack({weight:1.2}),   // 偏攻擊
+            new BehAttack({weight:2}),   // 偏攻擊
+            new BehIdle({weight:1.5}),   // 偏攻擊
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
             // new BehTest(),

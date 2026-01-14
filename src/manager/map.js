@@ -425,7 +425,7 @@ class Map
         else {return {state:-1, pt:to};}
     }
 
-    getValidPoint(p,{random=true,center=false}={})
+    getValidPoint(p,{random=false,center=true}={})
     {
         const lut = [   {x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1},
                         {x:-1,y:0}, {x:1,y:0},
@@ -433,7 +433,7 @@ class Map
 
         const [tx,ty] = this.worldToTile(p.x, p.y)
 
-        if(center&&this.getWeightByTile(tx,ty)==1) {return p;}
+        if(center&&this.getWeightByTile(tx,ty)===1) {return p;}
 
         let r = random ? Phaser.Math.Between(0,lut.length-1) : 1;
 

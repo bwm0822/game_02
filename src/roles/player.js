@@ -30,6 +30,7 @@ export function getPlayer() {return player;}
 export class Player extends Role
 {
 
+    get isPlayer() {return true;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------

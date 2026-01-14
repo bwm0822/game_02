@@ -10,7 +10,8 @@ export class BehSchedule extends Behavior
     score(ctx) 
     {
         // 回傳 [score, reason]；0 代表不考慮
-        return [1, 'always'];  // 固定分數1
+        let base = 1;
+        return [base*this.weight, 'always'];  // 固定分數1
     }
 
     async act(ctx)

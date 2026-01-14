@@ -205,9 +205,9 @@ export class GameObject
     }
 
     // 取的空地
-    _getEmptyPt(pt)
+    _getEmptyPt(pt,config={})
     {
-        return this.scene.map.getValidPoint(pt,{center:true});
+        return this.scene.map.getValidPoint(pt,config);
     }
 
     // 取得 weight
@@ -312,8 +312,6 @@ export class GameObject
                     {y:p.y, duration:100, ease:'exp.in'}]
         });
     }
-
-
 
     // 是否抵達
     isAt(go)

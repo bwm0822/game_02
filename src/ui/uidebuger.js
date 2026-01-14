@@ -213,6 +213,7 @@ export default class UiDebuger extends UiFrame
                     DD('模式', DEBUG, 'mode', options_mode))
             .addElm(CHK('座標', DEBUG, 'loc'))
             .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
+            .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
     }
 
     addRow(...options)
@@ -233,7 +234,7 @@ export default class UiDebuger extends UiFrame
     {
         return ui.uButton(this.scene, 
                 {text:name,style:UI.BTN.CHECK,
-                onclick:()=>{ obj[key] = !obj[key]; cb?.()}})
+                onclick:()=>{ obj[key] = !obj[key]; cb?.(obj[key])}})
                 .setValue(obj[key]);
     }
 

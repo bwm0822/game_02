@@ -171,7 +171,7 @@ export class COM_Storage extends Com
     _drop(ent)
     {
         console.log('drop',ent)
-        let p = this.scene.map.getValidPoint(this.pos);
+        let p = this.ctx.ept(this.pos,{random:true,center:false});
         let go = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
         go.falling(p);
         AudioManager.drop();

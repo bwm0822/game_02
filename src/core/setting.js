@@ -558,6 +558,7 @@ export const DEBUG =
 {
     enable: false,          // 是否開啟 debug 模式
     mode: DBG.MODE.ALL,     // 除錯模式
-    loc: true,             // 顯示座標及weight
+    loc: true,              // 顯示座標及weight
     rect : false,           // 顯示邊框
+    path : true,            // 顯示NPC路徑
 }

@@ -11,6 +11,7 @@ import {COM_Trade} from '../components/trade.js'
 import {COM_Stats} from '../components/stats.js'
 import {COM_Sleep} from '../components/sleep.js'
 import {COM_Schedule} from '../components/schedule.js'
+import {COM_Favor} from '../components/favor.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
@@ -74,7 +75,7 @@ export class Npc extends Role
     {     
         if(!super.init_prefab()) {return;}
 
-        this._registerTimeSystem();        // 註冊 TimeSystem
+        this._registerTimeSystem();         // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id); // 取得roleD，放入bb.meta，view元件會用到
         this.bb.isStatic = false;           // 設成 dynamic body，view 元件會參考
@@ -94,8 +95,11 @@ export class Npc extends Role
             .addCom(new COM_Trade())
             .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())
-            
+            .addCom(new COM_Favor())
 
+        // 綁定 API
+        this.exit = this._remove.bind(this);
+            
         // 註冊 event
         this.on('ondead', this._ondead.bind(this));
 
@@ -117,15 +121,36 @@ export class Npc extends Role
         this.init_prefab(false); 
     }
 
-    cmd()
+    async cmd_move()
     {
+        await this.move?.();
+        
         const{bb,sta}=this.ctx;
-        if(!this.isAlive) {return;}
-        if(this.isAt(bb.go)) {sta(GM.ST.ACTION);}
-        else if(!bb.path) {this.findPath?.(bb.go.pts);}
+
+        if(bb.cACT.st==='reach')
+        {
+            if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
+            else {sta(GM.ST.IDLE);}
+        }
+        else if(bb.cACT.st==='blocked')
+        {
+            await this.checkBlock();
+        }
+        else
+        {
+            this.closeDoorIfNeed();
+        }
     }
 
     async process()
+    {
+        if(!this.isAlive) {return;}
+
+        await this.think?.();
+    }
+
+
+    async process_old()
     {
         if(!this.isAlive) {return;}
 
@@ -135,6 +160,8 @@ export class Npc extends Role
 
         if(bb.path)
         {
+            // return;
+            console.log('------------------ process move');
             await this.move?.();
             if(bb.cACT.st==='reach')
             {
