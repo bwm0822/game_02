@@ -18,17 +18,13 @@ import Record from '../infra/record.js'
 import Role from './role.js'
 
 
-
-export let dbg_hover_npc = false;   // 是否有 npc 被 hover
-let player = null;
-
-export function setPlayer(value) {player = value;}
-
-export function getPlayer() {return player;}
-
-
 export class Player extends Role
 {
+    constructor(scene,x,y)
+    {
+        super(scene,x,y);
+        GM.player = this;
+    }
 
     get isPlayer() {return true;}
     //------------------------------------------------------

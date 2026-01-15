@@ -11,7 +11,6 @@ import UiOption from './uioption.js'
 import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
-import {getPlayer} from '../roles/player.js'
 
 
 export class Slot extends Icon
@@ -468,7 +467,7 @@ export class AbilitySlot extends Pic
         this._dat = null;       // 用來存放技能資料
     }
 
-    get owner() {return getPlayer();}
+    get owner() {return GM.player;}
     get id() {return this.owner.getSlot(this._i);}
     get remain() {return this.owner.abilities[this.id].remain;}
     get ready() {return this.remain===0;}
@@ -583,7 +582,7 @@ export class AbilityItem extends Pic
         this._dat = null;       // 用來存放技能資料
     }
 
-    get owner() {return getPlayer();}
+    get owner() {return GM.player;}
     get id() {return this._id;}
     get i() {return this._i;}
     get dat() {return this._dat;}

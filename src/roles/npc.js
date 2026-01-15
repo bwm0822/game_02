@@ -28,6 +28,9 @@ export class Npc extends Role
         this._setAct(GM.OBSERVE,true);
     }
 
+    get ctx() {return {...super.ctx,
+                        fav: this._favor.bind(this)};}
+
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -66,6 +69,11 @@ export class Npc extends Role
         this.ctx.sta(GM.ST.DEATH)
         this._latency = 5;
         QuestManager.notify({type: GM.KILL, id: this.id});
+    }
+
+    _favor()
+    {
+        return this.getFavor?.(GM.player.id);
     }
 
     //------------------------------------------------------
@@ -134,11 +142,11 @@ export class Npc extends Role
         }
         else if(bb.cACT.st==='blocked')
         {
-            await this.checkBlock();
+            await this.checkBlock?.();
         }
         else
         {
-            this.closeDoorIfNeed();
+            this.closeDoorIfNeed?.();
         }
     }
 

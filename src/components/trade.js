@@ -1,6 +1,5 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
-import {getPlayer} from '../roles/player.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -63,13 +62,13 @@ export class COM_Trade extends Com
             if(emit('take',ent.content, i, isEquip))
             {
                 bb.gold-=ent.gold;
-                if(this.root === getPlayer())
+                if(this.root === GM)
                 {
                     send('msg',name(bb.id)+`${'_buy'.lab()} ${ent.label}`);
                 }
                 else
                 {
-                    send('msg',name(getPlayer().id)+`${'_sell'.lab()} ${ent.label}`)
+                    send('msg',name(GM.player.id)+`${'_sell'.lab()} ${ent.label}`)
                 }
                 return true;
             }
@@ -82,6 +81,12 @@ export class COM_Trade extends Com
         }
     }
 
+    _actEnabled()
+    {
+        const {fav,sta} = this.ctx;
+        return sta()!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -90,10 +95,10 @@ export class COM_Trade extends Com
         super.bind(root);
 
         // init
-        const {bb} = this.ctx;
+        const en = this._actEnabled.bind(this);
 
         // 1.提供 [外部操作的指令]
-        if(this._enableAct) {root._setAct(GM.TRADE, true);}
+        if(this._enableAct) {root._setAct(GM.TRADE, ()=>en());}
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.trade = this._trade.bind(this);

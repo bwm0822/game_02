@@ -1,8 +1,6 @@
 import Com from './com.js'
 import { GM } from '../core/setting.js';
 import Utility from '../core/utility.js';
-import {getPlayer} from '../roles/player.js';
-
 
 const dist2 = (a, b) => {
   const dx = a.x - b.x, dy = a.y - b.y;
@@ -35,7 +33,7 @@ export class COM_Sense extends Com
     _sensePlayer({maxTiles=8, needSight=true}={}) 
     {
         const {bb,root}=this.ctx;
-        const player = getPlayer();
+        const player = GM.player;
         let _scenePalyer=true;
         // if (!player || !player.isAlive) {return null;}
         if (!withinTiles(this.pos, player.pos, maxTiles)) 

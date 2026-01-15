@@ -2,7 +2,6 @@ import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
 import {GM} from '../core/setting.js'
-import {getPlayer} from '../roles/player.js'
 import {Mark} from '../gameUi.js'
 import UiCursor from './uicursor.js'
 
@@ -37,7 +36,7 @@ export default class UiFrame extends Sizer
     }
 
     get tag() {return this._tag;}
-    get player() {return getPlayer();}
+    get player() {return GM.player;}
 
     send(event, ...args) {this.scene.events.emit(event, ...args);}
 

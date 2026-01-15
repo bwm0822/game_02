@@ -92,7 +92,7 @@ export class GameArea extends GameScene
             } 
             else
             {
-                await this._player.process();
+                await GM.player.process();
                 for(let i=0;i<this.roles.length;i++) 
                 {
                     if(this.roles[i].isPlayer) {continue;}

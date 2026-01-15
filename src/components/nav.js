@@ -89,7 +89,6 @@ export class COM_Nav extends Com
 
     _setPath(path)
     {
-        console.log('_setPath')
         this.bb.path = path;
     }
 

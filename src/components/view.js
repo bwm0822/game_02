@@ -310,19 +310,16 @@ class View extends Phaser.GameObjects.Container
         const {emit}=this.ctx;
         this._zone.setInteractive()
             .on('pointerover',()=>{
-                // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(true);
                 emit('over');
                 if(DEBUG.enable){debugDraw.bind(this)();}
             })
             .on('pointerout',()=>{
-                // if(!Role.getPlayer().isInteractive(this)) {return;}
                 this._setOutline(false);
                 emit('out');
                 if(DEBUG.enable){debugDraw.bind(this)(DBG.MODE.CLR);}
             })
             .on('pointerdown',(pointer)=>{
-                // if(!Role.getPlayer().isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) 
                 {
                     emit('down');

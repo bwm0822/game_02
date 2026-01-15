@@ -19,14 +19,9 @@ import UiChangeScene from '../ui/uichangescene.js'
 import UiGameOver from '../ui/uigameover.js'
 import UiManufacture from '../ui/uimanufacture.js'
 
-
 import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
-// import {Projectile} from '../entity';
 
-// import * as Role from '../role.js';
-// import {setPlayer,dbg_hover_npc} from '../role.js';
-import {setPlayer, dbg_hover_npc} from '../roles/player.js'
 import {GameObject} from '../core/gameobject.js';
 
 
@@ -150,7 +145,7 @@ export class GameScene extends Scene
         }
         else
         {
-            this.cameras.main.startFollow(this._player,true,0.01,0.01,offsetX,offsetY);
+            this.cameras.main.startFollow(GM.player,true,0.01,0.01,offsetX,offsetY);
         }
       
     }
@@ -161,13 +156,11 @@ export class GameScene extends Scene
         if(this._data.pos) {pos = this._data.pos}
         else {pos = this.gos[this._data.port].pts[0];}
 
-        this._player = new classType(this,pos.x,pos.y);
-        // Role.setPlayer(this._player); // load() 的 equip() 會呼叫 Ui.refreshAll()，所以要先 setPlayer()
-        setPlayer(this._player);
-        this._player.init_runtime('wick').load();
+        new classType(this,pos.x,pos.y).init_runtime('wick').load();
+
         this.setCameraFollow(GM.CAM_CENTER);
  
-        Record.game.pos = this._player.pos;   
+        Record.game.pos = GM.player.pos;   
         Record.game.map = this._data.map;
         Record.game.ambient = this._data.ambient;
         Record.saveGame();
@@ -184,7 +177,7 @@ export class GameScene extends Scene
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
 
-            if(this._player.state===GM.ST_SLEEP) {return;}
+            if(GM.player.state===GM.ST_SLEEP) {return;}
 
             if (pointer.rightButtonDown())
             {
@@ -197,17 +190,17 @@ export class GameScene extends Scene
             else
             {
                 let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(this._player.state===GM.ST.MOVING)
+                if(GM.player.state===GM.ST.MOVING)
                 {
-                    this._player.stop();
+                    GM.player.stop();
                 }
-                else if(this._player.state===GM.ST.ABILITY)
+                else if(GM.player.state===GM.ST.ABILITY)
                 {
-                    this._player.cmd({pt:pt,ent:this._ent});
+                    GM.player.cmd({pt:pt,ent:this._ent});
                 }
                 else if(this._path?.state===GM.PATH_OK)
                 {
-                    this._player.cmd({pt:pt,ent:this._ent,path:this._path});
+                    GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
                     Mark.close();
                     this._path=null;
                 }
@@ -216,15 +209,15 @@ export class GameScene extends Scene
         })
         .on('pointermove',(pointer)=>{
             if(DEBUG.loc) {this.showMousePos();}
-            if(this._player.state===GM.ST.ABILITY) 
+            if(GM.player.state===GM.ST.ABILITY) 
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
-                if(this._player.isInRange(pt)) {UiCursor.set('aim');}
+                if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
                 else {UiCursor.set('none');}
                 return;
             }
-            else if(this._player.state===GM.ST.SLEEP) {return;}
-            else if(this._player.state!==GM.ST.MOVING)
+            else if(GM.player.state===GM.ST.SLEEP) {return;}
+            else if(GM.player.state!==GM.ST.MOVING)
             {
                 let pt = {x:pointer.worldX,y:pointer.worldY};
                 this.showPath(pt, this._ent);
@@ -244,7 +237,7 @@ export class GameScene extends Scene
         if(this.keys.down.isDown){my++;}
         if(mx!=0||my!=0)
         {
-            this._player.stepMove(mx,my);
+            GM.player.stepMove(mx,my);
             this.clearPath();
             Mark.close();
         }
@@ -252,9 +245,9 @@ export class GameScene extends Scene
 
     showPath(pt, ent)
     {
-        if(ent===this._player) {this._path=null; return;}
+        if(ent===GM.player) {this._path=null; return;}
         const pts = ent?.pts ?? [pt];
-        const path = this._player.showPath(pts,!!ent);
+        const path = GM.player.showPath(pts,!!ent);
         if(path)
         {
             if(path.state===GM.PATH_OK)
@@ -288,7 +281,7 @@ export class GameScene extends Scene
 
     save()
     {
-        Record.game.pos = this._player.pos;   
+        Record.game.pos = GM.player.pos;   
         if(Record.game[this._data.map]?.runtime) {Record.game[this._data.map].runtime = [];}
         console.log('gos:',this.gos)
         // this.gos.forEach(go=>go.save?.())
@@ -369,7 +362,7 @@ export class GameScene extends Scene
 
     fill()
     {
-        UiInv.show(this._player);
+        UiInv.show(GM.player);
         UiInv.filter([{p:GM.CAPACITY}]);
         UiCursor.set('aim');
         UiCover.show();

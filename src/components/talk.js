@@ -2,7 +2,6 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
-import {getPlayer} from '../roles/player.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -152,7 +151,7 @@ export class COM_Talk extends Com
     _trade()
     {
         const {emit}=this.ctx;
-        emit('trade', getPlayer())  // trade.js
+        emit('trade', GM.player)  // trade.js
     }
 
     _quest(p1)
@@ -173,6 +172,13 @@ export class COM_Talk extends Com
     {
         this._rec[key]=value;
     }
+
+    _actEnabled()
+    {
+        const {fav,sta} = this.ctx;
+        return sta()!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -182,10 +188,11 @@ export class COM_Talk extends Com
 
         // init
         const {bb} = this.ctx;
+        const en = this._actEnabled.bind(this);
         this._dialog = DB.dialog(bb.id);
 
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.TALK, true);
+        root._setAct(GM.TALK, ()=>en());
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.talk = this._talk.bind(this);
@@ -194,8 +201,6 @@ export class COM_Talk extends Com
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.TALK, this._talk.bind(this));
-        root.on(GM.REST, ()=>{root._setAct(GM.TALK, false);})
-        root.on(GM.WAKE, ()=>{root._setAct(GM.TALK, true);})
     }
 
     load(data) 

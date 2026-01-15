@@ -8,7 +8,7 @@ import {bbcText} from './uibase'
 
 import TimeManager from './time';
 // import * as Role from './role';
-import {getPlayer} from './roles/player.js';
+// import {getPlayer} from './roles/player.js';
 
 let DEBUG = false; // 是否開啟 debug 模式
 let DBG_TYPE = GM.DBG_ZONE;
@@ -103,19 +103,19 @@ export class Entity extends Phaser.GameObjects.Container
         this._zone.setInteractive()
         this._zone
             .on('pointerover',()=>{
-                if(!getPlayer().isInteractive(this)) {return;}
+                if(!GM.player.isInteractive(this)) {return;}
                 this._setOutline(true);
                 this._send('over',this);
                 if(DEBUG){this._debugDraw(undefined,this.y);}
             })
             .on('pointerout',()=>{
-                if(!getPlayer().isInteractive(this)) {return;}
+                if(!GM.player.isInteractive(this)) {return;}
                 this._setOutline(false);
                 this._send('out');
                 if(DEBUG){this._debugDraw(GM.DBG_CLR);}
             })
             .on('pointerdown',(pointer)=>{
-                if(!getPlayer().isInteractive(this)) {return;}
+                if(!GM.player.isInteractive(this)) {return;}
                 if (pointer.rightButtonDown()) {this._rightButtonDown();}
             })
     }

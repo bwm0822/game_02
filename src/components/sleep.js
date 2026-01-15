@@ -28,7 +28,6 @@ export class COM_Sleep extends Com
         root.pos=bed.loc;
         root.pop?.('💤',{duration:-1,tween:true})
         sta(GM.ST.SLEEP)
-        emit(GM.REST)
         root._setAct(GM.WAKE, true);
         this._bed=bed;
     }
@@ -42,7 +41,6 @@ export class COM_Sleep extends Com
         root.addWeight?.();
         root.pop?.()
         sta(GM.ST.IDLE);
-        emit(GM.WAKE)
         root._delAct(GM.WAKE);
     }
 

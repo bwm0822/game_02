@@ -1,15 +1,13 @@
 import UiFrame from './uiframe.js'
 import {GM,UI,DEBUG,DBG} from '../core/setting.js'
 import * as ui from './uicomponents.js'
-import {getPlayer} from '../roles/player.js'
-import TimeSystem from '../systems/time.js'
 
 
 function cmd_get(args)
 {
     // [get] [gold/item] [id] [count]
     let rewards=[{type:args[1],id:args[2],count:args[3]}]
-    getPlayer().receive(rewards)
+    GM.player.receive(rewards)
 }
 
 function cmd_w(args)

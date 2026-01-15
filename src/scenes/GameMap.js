@@ -1,4 +1,5 @@
-import { GameScene } from "./GameScene";
+import { GameScene } from "./GameScene"
+import {GM,UI,DEBUG} from '../core/setting.js'
 // import * as Role from '../role.js';
 import TimeSystem from '../systems/time.js';
 // import {UiMain, UiTime} from '../ui.js'
@@ -62,7 +63,7 @@ export class GameMap extends GameScene
     {
         while(true)
         {
-            await this._player.process();
+            await GM.player.process();
             TimeSystem.inc(60);
         }
     }

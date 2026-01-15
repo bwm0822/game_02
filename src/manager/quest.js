@@ -1,7 +1,6 @@
 import Record from '../infra/record.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
-import {getPlayer} from '../roles/player.js'
 
 
 function isDone(cond) { return cond.cur >= cond.dat.count; }
@@ -166,7 +165,7 @@ export default class QuestManager
     {
         let q = this.quests.opened[id];
         let qD = DB.quest(id);
-        getPlayer().receive(qD.rewards);
+        GM.player.receive(qD.rewards);
         q.result = 'close';
     }
 
