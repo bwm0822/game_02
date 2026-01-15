@@ -16,7 +16,7 @@ export class BehSchedule extends Behavior
 
     async act(ctx)
     {
-        ctx.root.updateSch?.();
+        await ctx.root.updateSch?.();
         return { ok:true, note:'schedule update' };
     }
 }

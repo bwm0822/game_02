@@ -89,10 +89,15 @@ export class COM_Nav extends Com
 
     _setPath(path)
     {
+        // console.log(`${this.root.id} ---- _setPath`);
         this.bb.path = path;
     }
 
-    _clearPath() {delete this.bb.path;}
+    _clearPath() 
+    {
+        // console.log(`${this.root.id} ---- _clearPath`);
+        delete this.bb.path;
+    }
 
     // 檢查下一個點是否被阻擋
     _checkPath()

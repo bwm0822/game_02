@@ -512,6 +512,116 @@ export default class Utility
         return hits;
     }
 
+    // static findFreeSpiral(start, isFreeCell, maxSteps=5000)
+    static findFreeSpiral(start, isFreeCell, maxRadius=1)
+    {
+        if (isFreeCell(start)) return start;
+
+        const maxSteps=Math.pow(2*maxRadius+1,2)-1;
+
+        let x = start.x, y = start.y;
+        const dirs = [
+            {dx: 1, dy: 0},  // 右
+            {dx: 0, dy: 1},  // 下
+            {dx:-1, dy: 0},  // 左
+            {dx: 0, dy:-1},  // 上
+        ];
+
+        let dirIdx = 0;
+        let stepLen = 1;
+        let steps = 0;
+
+        while (steps < maxSteps) 
+        {
+            // 每個 stepLen 走兩個方向
+            for (let twice = 0; twice < 2; twice++) 
+            {
+                const dir = dirs[dirIdx % 4];
+                for (let i = 0; i < stepLen; i++) 
+                {
+                    x += dir.dx; y += dir.dy;
+                    steps++;
+                    const c = {x, y};
+                    if (isFreeCell(c)) return c;
+                    if (steps >= maxSteps) return null;
+                }
+                dirIdx++;
+            }
+            stepLen++;
+        }
+        return null;
+    }
+
+    static findFreeByRings(start, isFreeCell, maxRadius=1) 
+    {
+        if (isFreeCell(start)) return start;
+
+        for (let r = 1; r <= maxRadius; r++) 
+        {
+            const x0 = start.x, y0 = start.y;
+
+            // 上邊 & 下邊
+            for (let dx = -r; dx <= r; dx++) 
+            {
+                const top = {x: x0 + dx, y: y0 - r};
+                if (isFreeCell(top)) return top;
+
+                const bot = {x: x0 + dx, y: y0 + r};
+                if (isFreeCell(bot)) return bot;
+            }
+
+            // 左邊 & 右邊（扣掉角落避免重複）
+            for (let dy = -r + 1; dy <= r - 1; dy++) 
+            {
+                const left = {x: x0 - r, y: y0 + dy};
+                if (isFreeCell(left)) return left;
+
+                const right = {x: x0 + r, y: y0 + dy};
+                if (isFreeCell(right)) return right;
+            }
+        }
+        return null;
+    }
+
+    static shuffle(arr) 
+    {
+        for (let i = arr.length - 1; i > 0; i--) 
+        {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+    }
+
+    static findRandomFreeCellByRings(start, isFreeCell, maxRadius=1) 
+    {
+        for (let r = 0; r <= maxRadius; r++) 
+        {
+            const cells = [];
+
+            for (let dx = -r; dx <= r; dx++) 
+            {
+                cells.push({x: start.x + dx, y: start.y - r});
+                cells.push({x: start.x + dx, y: start.y + r});
+            }
+            for (let dy = -r + 1; dy <= r - 1; dy++) 
+            {
+                cells.push({x: start.x - r, y: start.y + dy});
+                cells.push({x: start.x + r, y: start.y + dy});
+            }
+
+            this.shuffle(cells);
+
+            for (const c of cells) 
+            {
+                if(isFreeCell(c)) return c;
+            }
+        }
+
+        return null;
+    }
+
+
+
 }
 
 

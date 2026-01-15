@@ -425,7 +425,7 @@ class Map
         else {return {state:-1, pt:to};}
     }
 
-    getValidPoint(p, {th=GM.W.BLOCK,
+    getValidPoint_old(p, {th=GM.W.BLOCK,
                         random=false,
                         includeP=true}={})
     {
@@ -459,6 +459,29 @@ class Map
 
             if(++r>=lut.length) {r=0;}
         }
+
+        return p;
+    }
+
+    getValidPoint(p, {th=GM.W.BLOCK,
+                        random=false,
+                        includeP=true}={})
+    {
+        const isValid=(g)=>{
+            const w=this.getWeightByTile(g.x,g.y);
+            return w>0 && w<=th;
+        }
+
+        const [tx,ty] = this.worldToTile(p.x, p.y)
+        const t={x:tx,y:ty}
+
+
+        // 檢查P點(中心點)
+        if(includeP&&isValid(t)) {return p;}
+
+        const c = Utility.findRandomFreeCellByRings(t, isValid);
+
+        if(c) {return this.tileToWorld(c.x,c.y);}
 
         return p;
     }

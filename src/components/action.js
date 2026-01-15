@@ -129,7 +129,8 @@ export class COM_Action extends Com
         if(bb.path.pts.length===0)
         {
             bb.cACT.st = 'reach';
-            bb.path=null;
+            // bb.path=null;
+            root.clearPath?.();
         }
         else
         {
@@ -152,11 +153,21 @@ export class COM_Action extends Com
                 this._pre=this._cur;
                 this._cur={w:w,pt:pt};
 
-                if(bb.path.stop) {bb.path=null; bb.cACT.st='reach';}
+                if(bb.path.stop) 
+                {
+                    // bb.path=null; 
+                    root.clearPath?.();
+                    bb.cACT.st='reach';
+                }
                 else
                 {
                     bb.path.pts.shift();    // bb.path.pts.splice(0,1);
-                    if(bb.path.pts.length===0) {bb.path=null; bb.cACT.st='reach';}
+                    if(bb.path.pts.length===0) 
+                    {
+                        // bb.path=null; 
+                        root.clearPath?.();
+                        bb.cACT.st='reach';
+                    }
                 }
             }
         }

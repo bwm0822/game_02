@@ -16,6 +16,7 @@ export default class Pickup extends GameObject
         if(!super.init_prefab()) {return;}
 
         this.bb.interactive = true; // 設成 可互動，view 元件會參考
+        this.bb.weight = 0;
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )
@@ -33,6 +34,7 @@ export default class Pickup extends GameObject
         if(!super.init_prefab()) {return;}
         // console.log('uid:',this.uid,'qid:',this.qid)
         this.bb.content = content;
+        this.bb.weight = 0;
 
         const dat = DB.item(content.id);
         this.bb.interactive = true;
