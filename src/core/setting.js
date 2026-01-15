@@ -391,6 +391,7 @@ export const GM =
         BLOCK : 1000,   
         DOOR : 20,
         NODE : 10,
+        EMPTY : 1,
     },
 
     // schedule 延遲

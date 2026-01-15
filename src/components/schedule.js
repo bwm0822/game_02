@@ -29,7 +29,7 @@ export class COM_Schedule extends Com
         return found;
     }
 
-    _setInitPos()
+    _init()
     {
         const{root,sta,ept}=this.ctx;
 
@@ -39,8 +39,9 @@ export class COM_Schedule extends Com
 
         if(gos.length===1) 
         {
-            root.updatePos?.(sp);
-            if(gos[0].act) {sta(GM.ST.ACTION);}
+            if(gos[0].act===GM.REST) {gos[0].emit(GM.REST, root);}
+            else {root.updatePos?.(sp);}
+            // if(gos[0].act) {sta(GM.ST.ACTION);}
         }
         else
         {
@@ -65,7 +66,7 @@ export class COM_Schedule extends Com
     async _update()
     {
         const{root,bb,sta}=this.ctx;
-        console.log(root.id,'------------------ schedule update');
+        console.log(`${root.id} ----> schedule`);
 
         const found = this._findRoutine();
 
@@ -108,8 +109,8 @@ export class COM_Schedule extends Com
         // 死亡時，會參考到
         bb.hasSchedule = true;   
 
-        // 設定 初始位置
-        this._setInitPos();
+        // 初始化
+        this._init();
         
         // 1.提供 [外部操作的指令]
 

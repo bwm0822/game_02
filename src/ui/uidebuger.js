@@ -1,6 +1,7 @@
 import UiFrame from './uiframe.js'
 import {GM,UI,DEBUG,DBG} from '../core/setting.js'
 import * as ui from './uicomponents.js'
+import TimeSystem from '../systems/time.js'
 
 
 function cmd_get(args)

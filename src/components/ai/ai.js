@@ -127,6 +127,7 @@ export class COM_AI extends Com
         const{bb,root}=ctx;
         bb.scenePlayer = root.sensePlayer?.();
         bb.seePlayer = bb.scenePlayer ? root.canSee?.(bb.scenePlayer) : false;
+
     }
 
     // 回合主流程

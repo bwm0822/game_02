@@ -32,10 +32,17 @@ export class COM_Sense extends Com
     // ---- 感知 ----
     _sensePlayer({maxTiles=8, needSight=true}={}) 
     {
-        const {bb,root}=this.ctx;
+        const {bb,root,fav,sta} = this.ctx;
         const player = GM.player;
         let _scenePalyer=true;
         // if (!player || !player.isAlive) {return null;}
+
+        if(sta()===GM.ST.SLEEP)
+        {
+            bb.scenePlayer = null;
+            return null;
+        }
+
         if (!withinTiles(this.pos, player.pos, maxTiles)) 
         {
             _scenePalyer=false;
@@ -46,17 +53,16 @@ export class COM_Sense extends Com
             _scenePalyer=false;
         }
 
-        const fav=root.getFavor?.(player.id);
-
         if(bb.scenePlayer && !_scenePalyer)
         {
             bb.scenePlayer = null;
-            if(fav<GM.FAV.HATE) {root.pop?.('❓');}
+            if(fav()<=GM.FAV.HATE) {root.pop?.('❓');}
         }
         else if(!bb.scenePlayer && _scenePalyer)
         {
             bb.scenePlayer = player;
-            if(fav<GM.FAV.HATE)
+            console.log('-------------------------------- scene player !!!');
+            if(fav()<=GM.FAV.HATE)
             {
                 const s=needSight ? '👁️‍🗨️' : '‼️';
                 root.pop?.(s)

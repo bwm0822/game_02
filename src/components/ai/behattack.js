@@ -15,8 +15,8 @@ export class BehAttack extends Behavior
     score(ctx) 
     {
         // 回傳 [score, reason]；0 代表不考慮
-
-        const {bb,root} = ctx;
+        const {bb,root,fav} = ctx;
+        
         if(!bb.scenePlayer)         // 沒有目標
         {
             if(this._onAttack)
@@ -31,10 +31,7 @@ export class BehAttack extends Behavior
         }
         else 
         {
-            if(root.getFavor(bb.scenePlayer.id)>GM.FAV.HATE)
-            {
-                return [0, 'no target']; 
-            }
+            if(fav()>GM.FAV.HATE) { return [0, 'no target']; }
             this._t=bb.scenePlayer;
         }        
 

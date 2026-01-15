@@ -425,7 +425,9 @@ class Map
         else {return {state:-1, pt:to};}
     }
 
-    getValidPoint(p,{random=false,center=true}={})
+    getValidPoint(p, {th=GM.W.BLOCK,
+                        random=false,
+                        includeP=true}={})
     {
         const lut = [   {x:-1,y:-1}, {x:0,y:-1}, {x:1,y:-1},
                         {x:-1,y:0}, {x:1,y:0},
@@ -433,15 +435,21 @@ class Map
 
         const [tx,ty] = this.worldToTile(p.x, p.y)
 
-        if(center&&this.getWeightByTile(tx,ty)===1) {return p;}
+        // 檢查P點(中心點)
+        if(includeP)
+        {
+            const w=this.getWeightByTile(tx,ty);
+            if(w>0 && w<th) {return p;}
+        }
 
+        // 檢查P周圍的點
         let r = random ? Phaser.Math.Between(0,lut.length-1) : 1;
-
         for(let i=0;i<lut.length;i++)
         {
-            let nx = tx + lut[r].x;
-            let ny = ty + lut[r].y;
-            if(this.getWeightByTile(nx,ny)==1)
+            const nx = tx + lut[r].x;
+            const ny = ty + lut[r].y;
+            const w=this.getWeightByTile(nx,ny);
+            if(w>0 && w<=th)
             {
                 let p = this.tileToWorld(nx,ny);
                 let dx = random ? Phaser.Math.Between(0, this.map.tW_p45) : 0;
@@ -450,7 +458,6 @@ class Map
             }
 
             if(++r>=lut.length) {r=0;}
-
         }
 
         return p;
