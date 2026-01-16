@@ -126,13 +126,19 @@ export class COM_Manu extends Com
         root._setAct(GM.COOK, true);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root,'menu',{getter:()=>this._menu});
-        this.addP(root,'storage',{getter:()=>this._storage});
-        this.addP(root,'output',{getter:()=>this._output,
-                                setter:(val)=>this._output=val});
-        this.addP(root,'sel',{getter:()=>this.sel,
-                                setter:(val)=>this.sel=val});
-        this.addP(root,'cat',{getter:()=>this._cat});
+        // this.addP(root,'menu',{get:()=>this._menu});
+        // this.addP(root,'storage',{get:()=>this._storage});
+        // this.addP(root,'output',{get:()=>this._output,
+        //                             set:(v)=>this._output=v});
+        // this.addP(root,'sel',{get:()=>this.sel,
+        //                         set:(v)=>this.sel=v});
+        // this.addP(root,'cat',{get:()=>this._cat});
+
+        this.addRt('menu',{ro:true});
+        this.addRt('storage',{ro:true});
+        this.addRt('output');
+        this.addRt('sel',{get:()=>this.sel, set:(v)=>this.sel=v});
+        this.addRt('cat',{ro:true})
         root.check=this.check.bind(this);
         root.make=this.make.bind(this);
 

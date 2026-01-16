@@ -61,7 +61,8 @@ export class COM_Bed extends Com
         root._setAct(GM.REST, true);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root,'loc',{getter:()=>loc});
+        // this.addP(root,'loc',{get:()=>loc});
+        this.addRt('loc',{get:()=>loc})
         root.setEmpty = this._setEmpty.bind(this);
  
         // 3.註冊(event)給其他元件或外部呼叫

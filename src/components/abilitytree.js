@@ -34,7 +34,8 @@ export class COM_AbilityTree extends Com
         // 1.提供 [外部操作的指令]
         
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root, 'abTree', {target:this, key:'_abTree'});
+        // this.addP(root, 'abTree', {target:this, key:'_abTree'});
+        this.addRt('abTree');
         
         // 3.註冊(event)給其他元件或外部呼叫
         

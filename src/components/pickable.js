@@ -62,7 +62,8 @@ export class COM_Pickable extends Com
         root._setAct(GM.PICKUP, true);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root, 'content', {target:this, key:'_content'});
+        // this.addP(root, 'content', {target:this, key:'_content'});
+        this.addRt('content');
         
         // 3.註冊(event)給其他元件或外部呼叫
         // 外部

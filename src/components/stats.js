@@ -371,9 +371,12 @@ export class COM_Stats extends Com
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root, 'total', {getter:this._getTotalStats.bind(this)});
-        this.addP(root, 'actives', {target:this, key:'_actives'});
-        this.addP(root, 'isAlive', {getter:()=>this._states[GM.HP]>0});
+        // this.addP(root, 'total', {get:this._getTotalStats.bind(this)});
+        // this.addP(root, 'actives', {target:this, key:'_actives'});
+        // this.addP(root, 'isAlive', {get:()=>this._states[GM.HP]>0});
+        this.addRt('total', {get:this._getTotalStats.bind(this)});
+        this.addRt('actives');
+        this.addRt('isAlive', {get:()=>this._states[GM.HP]>0});
         root.addProcs = this._addProcs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);

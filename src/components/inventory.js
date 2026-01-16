@@ -198,7 +198,8 @@ export class COM_Storage extends Com
         root._setAct(GM.OPEN, true);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root, 'storage', {target:this, key:'_storage'});
+        // this.addP(root, 'storage', {target:this, key:'_storage'});
+        this.addRt('storage');
         root.get = this._get.bind(this);
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);
@@ -282,16 +283,20 @@ export class COM_Inventory extends COM_Storage
         super.bind(root);
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
-        root.bb.equips = this._equips;
-        this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+        // root.bb.equips = this._equips;
+        // this.addP(root.bb, 'gold', {target:this, key:'_gold'});
+        this.addBB('gold');
+        this.addBB('equips');
 
         // 1.提供 [外部操作的指令]
         root._delAct(GM.OPEN);
         root.off(GM.OPEN, this._open.bind(this));
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        this.addP(root, 'equips', {target:this, key:'_equips'});
-        this.addP(root, 'gold', {target:this, key:'_gold'});
+        // this.addP(root, 'equips', {target:this, key:'_equips'});
+        // this.addP(root, 'gold', {target:this, key:'_gold'});
+        this.addRt('equips');
+        this.addRt('gold');
         root.equip = this._equip.bind(this);
         root.receive = this._receive.bind(this);
 

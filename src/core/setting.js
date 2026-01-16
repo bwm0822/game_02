@@ -571,6 +571,8 @@ export const DEBUG =
     loc: true,              // 顯示座標及weight
     rect : false,           // 顯示邊框
     path : true,            // 顯示NPC路徑
+    log : true,     
+    filter: [],   
 }
 
 export let player=null;     // 全域玩家物件

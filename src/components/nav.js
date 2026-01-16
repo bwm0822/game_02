@@ -96,7 +96,8 @@ export class COM_Nav extends Com
     _clearPath() 
     {
         // console.log(`${this.root.id} ---- _clearPath`);
-        delete this.bb.path;
+        // delete this.bb.path;
+        this.bb.path = null;
     }
 
     // 檢查下一個點是否被阻擋
@@ -118,6 +119,9 @@ export class COM_Nav extends Com
     bind(root)
     {
         super.bind(root);
+
+        // 0.[bb]
+        this.addBB('path');     //
 
         // 1.提供 [外部操作的指令]
 

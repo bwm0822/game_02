@@ -205,6 +205,8 @@ export default class UiDebuger extends UiFrame
 
         const CHK=this.check.bind(this);
         const DD=this.dropdown.bind(this);
+        const IN=this.textin.bind(this);
+
 
         this._page.clearAll();
 
@@ -213,6 +215,15 @@ export default class UiDebuger extends UiFrame
             .addElm(CHK('座標', DEBUG, 'loc'))
             .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
             .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
+            .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
+    }
+
+    setFilter(str)
+    {
+        DEBUG.filter = str.replace(/\s+/g, '')  // 去掉所有空白（含空格、tab、換行）
+                            .split(',')
+                            .filter(Boolean)    // 去除空的字串
+        console.log(DEBUG.filter)
     }
 
     addRow(...options)
@@ -246,6 +257,19 @@ export default class UiDebuger extends UiFrame
                     onchange:(v)=>{ obj[key]=v; }})
                     .setValue(obj[key]);
         return p;
+    }
+
+    textin(onenter)
+    {
+        const config =
+        {
+            width: 200,
+            height: 36,
+            onenter: onenter,
+            btn:false,
+        }
+        const input=ui.uInput(this.scene, config);
+        return input;
     }
     
     ///////////////////////////////////////////////////

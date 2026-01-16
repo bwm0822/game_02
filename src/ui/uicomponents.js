@@ -326,7 +326,7 @@ export function uButton(scene,config={})
             btn.disableInteractive();
             btn._text?.setAlpha(0.5);
             btn._icon?.setAlpha(0.5);
-            // btn._bg.setFillStyle(cBG);
+            style===UI.BTN.DEF&&btn._bg.setFillStyle(cBG);
         }
         return btn;
     }
@@ -861,6 +861,9 @@ export function uInput(scene, config={})
         width=100,
         height=36,
         bg={color:GM.COLOR.LIGHT},
+        btn=true,
+        onclick,
+        onenter,
     }=config;
     
     const p = uPanel(scene)
@@ -872,19 +875,22 @@ export function uInput(scene, config={})
     input.setInteractive()
         .on('pointerdown', function () {
             const config = {
-                enterClose: false,
-                onTextChanged: (textObject, text) =>{textObject.text=text;}
+                enterClose: btn?false:true,
+                onTextChanged: (textObject, text) =>{textObject.text=text;},
+                onClose: (textObject) => {onenter?.(textObject.text);}
             }
             scene.rexUI.edit(input._text, config);
         });
 
-    p.addSpace();
-
-    uButton.call(p, scene,{text:'送出',
-                            onclick: ()=>{
-                                config.onclick?.(p.getValue());
-                                p.clearInput();
-                    }});
+    if(btn)
+    {
+        p.addSpace();
+        uButton.call(p, scene,{text:'送出',
+                                onclick: ()=>{
+                                    onclick?.(p.getValue());
+                                    p.clearInput();
+                        }});
+    }
 
     if(this&&this.add) {this.add(p,config.ext);}
 
