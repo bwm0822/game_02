@@ -118,7 +118,6 @@ export class COM_Schedule extends Com
         root.updateSch = (this._update.bind(this));
 
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('onupdate', this._update.bind(this));
         
         
     }

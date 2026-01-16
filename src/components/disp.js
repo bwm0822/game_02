@@ -157,8 +157,6 @@ export class COM_Disp extends Com
         root.pop = this._pop.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('text', this._text.bind(this));
-        // root.on('speak', this._speak.bind(this));
     }
 
     

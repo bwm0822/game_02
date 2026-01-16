@@ -240,9 +240,6 @@ export class COM_Action extends Com
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('move', this._move.bind(this));
-        // root.on('moveToward', this._moveToward.bind(this));
-        // root.on('attack', this._attack.bind(this));
     }
 
     

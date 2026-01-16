@@ -69,7 +69,5 @@ export class COM_Anim extends Com
         root.anim_walk = this._walk.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('idle', this._idle.bind(this));
-        // root.on('walk', this._walk.bind(this));
     }
 }

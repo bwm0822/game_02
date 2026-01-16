@@ -382,10 +382,7 @@ export class COM_Stats extends Com
         root.setDirty = this._setDirty.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('heal', this._heal.bind(this) );
         root.on('onupdate', this._processProcs.bind(this) );
-        // root.on('dirty', this._setDirty.bind(this));
-        // root.on('total', this._getTotalStats.bind(this));
 
         // 計算總屬性
         this._getTotalStats();

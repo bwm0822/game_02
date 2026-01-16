@@ -3,14 +3,13 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/trump-inn-f2.json",
+    "activeFile": "public/assets/maps/trump-inn-f1.json",
     "expandedProjectPaths": [
         "public/assets/maps",
-        "public/assets/templates",
-        "public/assets",
-        "public",
+        ".",
         "public/assets/tiles",
-        "."
+        "public",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -653,9 +652,9 @@
     "recentFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
-        "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/karen-home.json",
         "public/assets/maps/trump-inn-f2.json",
+        "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/macron-home.json",
         "public/assets/3_Road.tsj",

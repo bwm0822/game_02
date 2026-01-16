@@ -102,9 +102,6 @@ export class COM_Sense extends Com
         root.inAttackRange = this._inAttackRange.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('sensePlayer', this._sensePlayer.bind(this));
-        // root.on('canSee', this._canSee.bind(this));
-        // root.on('inAttackRange', this._inAttackRange.bind(this));
     }
 
     
