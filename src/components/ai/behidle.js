@@ -27,7 +27,7 @@ export class BehIdle extends Behavior
     async act(ctx) 
     {
         console.log('---------------------- idle');
-        ctx.sta(GM.ST_IDLE);
+        ctx.bb.sta=GM.ST_IDLE;
         return { ok:true, note:'idle' };   
     }
 }

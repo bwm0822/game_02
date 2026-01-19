@@ -62,7 +62,7 @@ export class Player extends Role
     _ondead()
     {
         console.log('---- dead ----')
-        this.ctx.sta(GM.ST.DEATH)
+        this.ctx.bb.sta=GM.ST.DEATH;
         this._unregisterTimeSystem();
         this._send('gameover');
     }
@@ -176,9 +176,9 @@ export class Player extends Role
     {
         if(!this.isAlive) {return;}
         
-        const {bb,sta} = this.ctx;
+        const {bb} = this.ctx;
 
-        if(sta()===GM.ST.ABILITY)
+        if(bb.sta===GM.ST.ABILITY)
         {
             this.useAbility(ent);
         }
@@ -189,7 +189,7 @@ export class Player extends Role
             if(path) { this.setPath?.(path); }
             else { this.findPath?.(pt??ent.pos); }
             this.updatePath?.();
-            sta(GM.ST.MOVING);
+            bb.sta=GM.ST.MOVING;
             this._resume();
         }
     }
@@ -200,7 +200,7 @@ export class Player extends Role
         // 解構賦值 (destructuring assignment)，
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
-        const {bb,sta} = this.ctx;
+        const {bb} = this.ctx;
 
         // console.log(bb.path);
         if(!bb.path)
@@ -223,16 +223,16 @@ export class Player extends Role
                 await this.move?.();
                 if((bb.cACT.st==='reach')&&bb.ent)
                 {
-                    sta(GM.ST.ACTION)
+                    bb.sta=GM.ST.ACTION;
                     await this._interact(bb.ent,bb.act);
                 }
             }
         }
 
-        if(bb.path) {sta(GM.ST.MOVING);}
-        else if(sta()!==GM.ST.SLEEP) 
+        if(bb.path) {bb.sta=GM.ST.MOVING;}
+        else if(bb.sta!==GM.ST.SLEEP) 
         {
-            sta(GM.ST.IDLE);
+            bb.sta=GM.ST.IDLE;
             this.anim_idle?.(true);
         }
     }

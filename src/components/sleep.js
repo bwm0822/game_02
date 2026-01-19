@@ -23,24 +23,24 @@ export class COM_Sleep extends Com
     //------------------------------------------------------
     _sleepAt(bed) 
     {
-        const{root,emit,sta}=this.ctx;
+        const{root,bb}=this.ctx;
         root.removeWeight?.();
         root.pos=bed.loc;
         root.pop?.('💤',{duration:-1,tween:true})
-        sta(GM.ST.SLEEP)
+        bb.sta=GM.ST.SLEEP;
         root._setAct(GM.WAKE, true);
         this._bed=bed;
     }
 
     _wake()
     {
-        const{root,emit,sta,ept}=this.ctx;
+        const{root,bb,ept}=this.ctx;
         this._bed.setEmpty();
         root.pos=ept(this._bed.pts[0]);
         root.updateDepth?.();
         root.addWeight?.();
         root.pop?.()
-        sta(GM.ST.IDLE);
+        bb.sta=GM.ST.IDLE;
         root._delAct(GM.WAKE);
     }
 

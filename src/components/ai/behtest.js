@@ -28,9 +28,9 @@ export class BehTest extends Behavior
 
     async act(ctx) 
     {
-        const { bb, emit, aEmit, sta, root } = ctx;
+        const { bb, root } = ctx;
 
-        sta(GM.ST_MOVING);
+        bb.sta=GM.ST_MOVING;
         if(!bb.path) 
         {
             console.log('------ findPath')

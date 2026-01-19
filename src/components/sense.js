@@ -32,12 +32,12 @@ export class COM_Sense extends Com
     // ---- 感知 ----
     _sensePlayer({maxTiles=8, needSight=true}={}) 
     {
-        const {bb,root,fav,sta} = this.ctx;
+        const {bb,root,fav} = this.ctx;
         const player = GM.player;
         let _scenePalyer=true;
         // if (!player || !player.isAlive) {return null;}
 
-        if(sta()===GM.ST.SLEEP)
+        if(bb.sta===GM.ST.SLEEP)
         {
             bb.scenePlayer = null;
             return null;

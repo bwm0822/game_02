@@ -83,8 +83,8 @@ export class COM_Trade extends Com
 
     _actEnabled()
     {
-        const {fav,sta} = this.ctx;
-        return sta()!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
+        const {bb,fav} = this.ctx;
+        return bb.sta!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
     }
 
     //------------------------------------------------------

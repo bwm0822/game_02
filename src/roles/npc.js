@@ -55,7 +55,7 @@ export class Npc extends Role
     _remove()
     {
         this._unregisterTimeSystem();
-        if(this.ctx.sta()===GM.ST.DEATH)
+        if(this.bb.sta===GM.ST.DEATH)
         {
             // 死亡時，若是 schedule，則標記為 removed
             if(this.bb.hasSchedule) {{this._saveData({removed:true})}}
@@ -66,7 +66,7 @@ export class Npc extends Role
 
     _ondead()
     {
-        this.ctx.sta(GM.ST.DEATH)
+        this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
         QuestManager.notify({type: GM.KILL, id: this.id});
     }
@@ -133,12 +133,12 @@ export class Npc extends Role
     {
         await this.move?.();
         
-        const{bb,sta}=this.ctx;
+        const{bb}=this.ctx;
 
         if(bb.cACT.st==='reach')
         {
-            if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
-            else {sta(GM.ST.IDLE);}
+            if(bb.go&&bb.go.act) {bb.sta=GM.ST.ACTION;}
+            else {bb.sta=GM.ST.IDLE;}
         }
         else if(bb.cACT.st==='blocked')
         {
@@ -164,7 +164,7 @@ export class Npc extends Role
 
         await this.think?.();
 
-        const{bb,sta,root}=this.ctx;
+        const{bb,root}=this.ctx;
 
         if(bb.path)
         {
@@ -173,8 +173,8 @@ export class Npc extends Role
             await this.move?.();
             if(bb.cACT.st==='reach')
             {
-                if(bb.go&&bb.go.act) {sta(GM.ST.ACTION);}
-                else {sta(GM.ST.IDLE);}
+                if(bb.go&&bb.go.act) {bb.sta=GM.ST.ACTION;}
+                else {bb.sta=GM.ST.IDLE;}
             }
             else if(bb.cACT.st==='blocked')
             {
@@ -187,8 +187,8 @@ export class Npc extends Role
         }
         else
         {
-            if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
-            if(sta()===GM.ST.ACTION)
+            if(bb.sta!==GM.ST.SLEEP) {this.anim_idle?.(true);}
+            if(bb.sta===GM.ST.ACTION)
             {
                 if(bb.go.act==='enter')
                 {
@@ -197,19 +197,11 @@ export class Npc extends Role
                 }
                 else
                 {
-                    sta(GM.ST.IDLE);
+                    bb.sta=GM.ST.IDLE;
                     bb.go.emit(bb.go.act, this);
                 }
             }
         }
-
-
-
-        // if(sta()!==GM.ST.MOVING)
-        // {
-        //     if(this.bb.path) {this.clearPath?.();}
-        //     if(sta()!==GM.ST.SLEEP) {this.anim_idle?.(true);}
-        // }
 
 
         if(_dbg) {this.updateDebugPath?.();}

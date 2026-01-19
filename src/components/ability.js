@@ -99,8 +99,8 @@ export class COM_Ability extends Com
         this._ability = ability;
         this._idSel = id;
 
-        const {sta}=this.ctx;
-        sta(GM.ST_ABILITY);
+        const {bb}=this.ctx;
+        bb.sta=GM.ST_ABILITY;
     }
 
     // 取消選擇技能
@@ -115,8 +115,8 @@ export class COM_Ability extends Com
         this._ability = null;
         this._idSel = null;
 
-        const {sta}=this.ctx;
-        sta(GM.ST_IDLE);
+        const {bb}=this.ctx;
+        bb.sta=GM.ST_IDLE;
     }
 
     _isInRange(pos)

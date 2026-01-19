@@ -152,8 +152,8 @@ export class COM_AI extends Com
 
         if (!best || best.score <= 0) 
         {
-            const {sta}=this.ctx;
-            sta(GM.ST_IDLE);
+            const {bb}=this.ctx;
+            bb.sta=GM.ST_IDLE;
             this.debug && console.log('[AI] no viable behavior');
             return { ok:false, note:'idle' };
         }

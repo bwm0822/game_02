@@ -24,10 +24,14 @@ export class GameObject
 
         this._pts = null;           // 可互動的點(陣列)
         this._acts = {};            // 可供操作的指令
-        this._state = GM.ST.IDLE;   // 狀態
+        // this._state = GM.ST.IDLE;   // 狀態
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
+
+        // add bb.sta
+        this.addP('sta',{src:this.bb});
+        this.bb.sta= GM.ST.IDLE;
 
         this._init();
     }
@@ -54,7 +58,6 @@ export class GameObject
                         emit : this.emit.bind(this), 
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
-                        sta : this._rwState.bind(this),
                         ept : this._getEmptyPt.bind(this),
                         probe : this._probe.bind(this), 
                         gw : this._getWeight.bind(this), 
@@ -97,8 +100,6 @@ export class GameObject
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
-    // 存取狀態
-    _rwState(val) {val&&(this._state=val); return this._state;}
     // 載入紀錄
     _loadData() {return Record.getByUid(this.mapName, this.uid, this.qid);}
     // 儲存紀錄
@@ -230,7 +231,7 @@ export class GameObject
                 get: ()=>{return this[key]}, 
                 set: (v)=>{ if(ro) {this.warn(srcName,name);return;}
                             this[key]=v;
-                            this.log(srcName,name,v);
+                            this.log(this.id,srcName,name,v);
                         }, 
                 enumerable: true, 
                 configurable: true }); 
@@ -239,7 +240,7 @@ export class GameObject
         {
             Object.defineProperty(src??this, name, { 
                 get: get, 
-                set: (v)=>{set?.(v); this.log(srcName,name,v);}, 
+                set: (v)=>{set?.(v); this.log(this.id,srcName,name,v);}, 
                 enumerable: true, 
                 configurable: true }); 
         }

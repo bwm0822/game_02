@@ -65,8 +65,8 @@ export class COM_Schedule extends Com
 
     async _update()
     {
-        const{root,bb,sta}=this.ctx;
-        console.log(`${root.id} ----> schedule`);
+        const{root,bb}=this.ctx;
+        // console.log(`${root.id} ----> schedule`);
 
         const found = this._findRoutine();
 
@@ -75,10 +75,10 @@ export class COM_Schedule extends Com
             bb.routine = found;                     // 紀錄目前的 routine
             bb.go = null;                           // 清除目前目標點
             root.clearPath?.();                     // 清除路徑 
-            if(sta()===GM.ST.SLEEP) {root.wake?.();}
+            if(bb.sta===GM.ST.SLEEP) {root.wake?.();}
         }
 
-        if(sta()===GM.ST.SLEEP) {return;}
+        if(bb.sta===GM.ST.SLEEP) {return;}
 
         if(!bb.go) {bb.go=this._toGos(bb.routine.p).at(-1);}
 

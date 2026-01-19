@@ -195,7 +195,7 @@ export class COM_Action extends Com
     
     _checkBlock()
     {
-        const{bb,probe,sta}=this.ctx;
+        const{bb,probe}=this.ctx;
         const obs = probe(this._pt);      // 取得障礙物
         if(obs?.type===GM.TP.DOOR)        // 障礙物為門
         {
@@ -204,7 +204,7 @@ export class COM_Action extends Com
         else
         {
             bb.path = null;
-            sta(GM.ST.IDLE);
+            bb.sta=GM.ST.IDLE;
         }
     }
 
