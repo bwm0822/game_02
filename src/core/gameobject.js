@@ -71,6 +71,9 @@ export class GameObject
     // 物件狀態
     get state() {return this._state;}
 
+    // player/npc 會設
+    get id() {return this.bb.id;}
+
     //------------------------------------------------------
     // map.createFromObjects() 會呼叫到以下的 function
     //------------------------------------------------------
@@ -216,6 +219,48 @@ export class GameObject
         return this.scene.map.getWeight(pt)
     }
 
+    // 在 src(this/bb) 加入 get/set, ro 為 readonly
+    addP(name,{src,get,set,ro=false}={})
+    {
+        const srcName = src ? 'bb' : 'root';
+        if(!get)
+        {
+            const key='_'+name;
+            Object.defineProperty(src??this, name, { 
+                get: ()=>{return this[key]}, 
+                set: (v)=>{ if(ro) {this.warn(srcName,name);return;}
+                            this[key]=v;
+                            this.log(srcName,name,v);
+                        }, 
+                enumerable: true, 
+                configurable: true }); 
+        }
+        else
+        {
+            Object.defineProperty(src??this, name, { 
+                get: get, 
+                set: (v)=>{set?.(v); this.log(srcName,name,v);}, 
+                enumerable: true, 
+                configurable: true }); 
+        }
+    }
+
+    // debug 用
+    warn(src, name)
+    {
+        if(!DEBUG.log) {return;}
+        console.warn(`[${src}.${name}] is readonly, ignore set`);
+    }
+
+    log(id, src, name, v)
+    {
+        if(!DEBUG.log) {return;}
+        // DEBUG.filter 為空陣列或包含name時為 true
+        const pass = (DEBUG.filter.length === 0 || 
+                        DEBUG.filter.includes(name));
+        if(pass) {console.log(`---- [${id}] ${src}.${name} = ${v}`);}          
+    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -282,6 +327,7 @@ export class GameObject
         this.ent.setDepth(depth);
     }
 
+    // 掉落動畫
     falling(p)
     {
         console.log('-------------w=',this.weight)

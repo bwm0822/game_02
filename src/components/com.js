@@ -15,76 +15,34 @@ export default class Com
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    // 加入 add prop
-    // addP_old(src, name, {target, key, getter, setter}={}) 
-    // { 
-    //     Object.defineProperty(src, name, { 
-    //         get: getter ? () => getter() : () => target[key], 
-    //         set: setter ? v => setter(v) : v => { target[key] = v; }, 
-    //         enumerable: true, 
-    //         configurable: true }); 
-    // }
-
-    addP(src, name, {target, key, get, set}={}) 
-    { 
-        Object.defineProperty(src, name, { 
-            get: get ?? function(){return target[key]}, 
-            set: set ?? function(v){target[key]=v; }, 
-            enumerable: true, 
-            configurable: true }); 
-    }
-
+    
+    // 在 root 加入 get/set, ro 為 readonly
     addRt(name,{get,set,ro=false}={})
     {
-        if(!get)
+        const{root}=this.ctx;
+        if(get)
         {
-            const key='_'+name;
-            Object.defineProperty(this.root, name, { 
-                get: ()=>{return this[key]}, 
-                set: (v)=>{ if(ro) {this.warn('root',name);return;}
-                            this[key]=v;
-                            this.log('root',name,v);
-                        }, 
-                enumerable: true, 
-                configurable: true }); 
+            root.addP(name,{get:get,set:set,ro:ro});
         }
         else
         {
-            Object.defineProperty(this.root, name, { 
-                get: get, 
-                set: (v)=>{set?.(v); this.log('root',name,v);}, 
-                enumerable: true, 
-                configurable: true }); 
+            const key='_'+name;
+            root.addP(name,{get:()=>this[key],
+                            set:(v)=>this[key]=v,
+                            ro:ro});
         }
     }
 
+    // 在 bb 加入 get/set, ro 為 readonly
     addBB(name,{ro=false}={})
     {
+        const{root,bb}=this.ctx;
         const key='_'+name;
-        Object.defineProperty(this.ctx.bb, name, { 
-            get: ()=>this[key], 
-            set: (v)=>{ if(ro) {this.warn('bb',name);return;}
-                        this[key]=v;
-                        this.log('bb',name,v);
-                    }, 
-            enumerable: true, 
-            configurable: true }); 
-    }
-
-    // debug 用
-    warn(src, name)
-    {
-        if(!DEBUG.log) {return;}
-        console.warn(`[${src}.${name}] is readonly, ignore set`);
-    }
-
-    log(src, name, v)
-    {
-        if(!DEBUG.log) {return;}
-        // DEBUG.filter 為空陣列或包含name時為 true
-        const pass = (DEBUG.filter.length === 0 || 
-                        DEBUG.filter.includes(name));
-        if(pass) {console.log(`---- [${this.root.id}] ${src}.${name} = ${v}`);}          
+        root.addP(name,{src:bb,
+                        get:()=>this[key],
+                        set:(v)=>this[key]=v,
+                        ro:ro}
+                )
     }
 
     bind(root) 

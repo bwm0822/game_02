@@ -6,7 +6,6 @@ import Record from '../infra/record.js'
 
 export default class Role extends GameObject
 {
-    get id() {return this.bb.id;}
     get icon() {return this.bb.meta.icon;}
     get job() {return this.bb.meta.job;}
 
