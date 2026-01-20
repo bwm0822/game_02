@@ -1,8 +1,7 @@
 import { GameScene } from "./GameScene"
 import {GM,UI,DEBUG} from '../core/setting.js'
-// import * as Role from '../role.js';
-import TimeSystem from '../systems/time.js';
-// import {UiMain, UiTime} from '../ui.js'
+import {Player} from '../roles/player.js'
+import TimeSystem from '../systems/time.js'
 import UiTime from '../ui/uitime.js'
 import UiMain from '../ui/uimain.js'
 
@@ -43,7 +42,8 @@ export class GameMap extends GameScene
 
     async create()
     {
-        await super.create({diagonal:false,classType:Role.Target,weight:0});        
+        // await super.create({diagonal:false,classType:Role.Target,weight:0});  
+        await super.create({diagonal:false,classType:Player,weight:0});              
         this.process();
     }
 

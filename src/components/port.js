@@ -39,3 +39,23 @@ export class COM_Port extends Com
         root.on(GM.ENTER, this._enter.bind(this));
     }
 }
+
+//--------------------------------------------------
+// 類別 : 元件(component) 
+// 標籤 : node
+// 功能 : 
+//  地圖的節點
+//--------------------------------------------------
+export class COM_Node extends COM_Port
+{
+    get tag() {return 'node';}  // 回傳元件的標籤
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    bind(root) 
+    {
+        root.addText(root.bb.name);
+        super.bind(root);
+    }
+}

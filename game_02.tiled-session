@@ -3,13 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/trump-inn-f1.json",
+    "activeFile": "public/assets/maps/map.json",
     "expandedProjectPaths": [
-        "public/assets/maps",
-        ".",
         "public/assets/tiles",
+        "public/assets/templates",
+        "public/assets",
         "public",
-        "public/assets"
+        "public/assets/maps",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -272,7 +273,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160,
-                "y": 159
+                "y": 159.5
             }
         },
         "public/assets/maps/karen_home.json": {
@@ -301,11 +302,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 0.5,
+            "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 512,
-                "y": 510
+                "x": 175,
+                "y": 831.3333333333333
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -394,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 325.05489834950765,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -405,8 +406,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760712,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump_inn_f1.json": {
@@ -438,8 +439,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 640
+                "x": 367,
+                "y": 320
             }
         },
         "public/assets/maps/village-02.json": {
@@ -648,13 +649,13 @@
         "public/assets/maps/karen-home.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "bool",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/maps/village-01.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/karen-home.json",
         "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/trump-inn-f1.json",
+        "public/assets/maps/map.json",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/macron-home.json",
         "public/assets/3_Road.tsj",

@@ -24,15 +24,16 @@ export class GameObject
 
         this._pts = null;           // 可互動的點(陣列)
         this._acts = {};            // 可供操作的指令
-        // this._state = GM.ST.IDLE;   // 狀態
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
 
-        // add bb.sta
+        // 新增 property
+        // 狀態 : this._sta，this.bb.sta 指向 this._sta
         this.addP('sta',{src:this.bb});
-        this.bb.sta= GM.ST.IDLE;
+        this.bb.sta = GM.ST.IDLE;
 
+        // 初始化
         this._init();
     }
 
@@ -72,7 +73,7 @@ export class GameObject
                                 : [this.pos]} 
 
     // 物件狀態
-    get state() {return this._state;}
+    get state() {return this.bb.sta;}
 
     // player/npc 會設
     get id() {return this.bb.id;}
@@ -275,6 +276,24 @@ export class GameObject
         sp.displayHeight = this.bb.hei;
         this.ent.add(sp);
         return sp;
+    }
+
+    addText(label)
+    {
+        let lb = this.scene.add.text(
+                0, -32, label,
+                {   
+                    fontFamily:'Arial',
+                    fontSize:'24px',
+                    color:'#000',
+                    // stroke:'#fff',
+                    // strokeThickness:3,
+                    backgroundColor: '#ccc',
+                    padding: {x:1,y:1}    
+                })
+                .setOrigin(0.5,1);
+
+        this.ent.add(lb);
     }
 
     // 加入物件

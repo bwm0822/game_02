@@ -7,10 +7,11 @@ import {astar, Graph} from '../core/astar.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 import {Npc} from '../roles/npc.js'
-import {Entity,Node} from '../entity.js'
+// import {Entity,Node} from '../entity.js'
 import Pickup from '../items/pickup.js'
 import Case from '../items/case.js'
 import Port from '../items/port.js'
+import Node from '../items/node.js'
 import Stove from '../items/stove.js'
 import Well from '../items/well.js'
 import Door from '../items/door.js'
@@ -305,8 +306,8 @@ class Map
                 [
                     {type:'node',classType:Node},
                     {type:'port',classType:Port},
-                    {type:'store',classType:Store},
-                    {type:'entity',classType:Entity},
+                    // {type:'store',classType:Store},
+                    // {type:'entity',classType:Entity},
                     {type:'pickup',classType:Pickup},
                     {type:'npc',classType:Npc},
                     {type:'case',classType:Case},

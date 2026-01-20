@@ -154,7 +154,11 @@ export class GameScene extends Scene
     {
         let pos;
         if(this._data.pos) {pos = this._data.pos}
-        else {pos = this.gos[this._data.port].pts[0];}
+        else {
+            console.log('----- port=',this._data.port)
+            console.log(this.gos)
+            pos = this.gos[this._data.port].pts[0];
+        }
 
         new classType(this,pos.x,pos.y).init_runtime('wick').load();
 
