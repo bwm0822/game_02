@@ -2,12 +2,12 @@ import {Scene} from 'phaser';
 import Map from '../map.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
-import {Mark} from '../old/gameUi.js'
+import {Mark} from './gameUi.js'
 import Record from '../infra/record.js'
 import {Avatar} from '../role.js'
 import {Block} from '../entity.js'
 import {QuestManager} from '../quest.js';
-import {UI} from '../old/uibase.js'
+import {UI} from './uibase.js'
 import {UiCursor,UiCase,UiInv,UiTrade,UiDialog,UiMain,UiOption} from '../ui.js'
 
 export class GameArea extends Scene

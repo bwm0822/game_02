@@ -52,11 +52,12 @@ export default class UiDialog extends UiFrame
                                     space:UI.SPACE.LRTBI_10,
                                     ext:{expand:true,proportion:1}})
 
-        const uIcon = new ui.uPic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,{icon:'portraits/0'})
+        const uIcon = new ui.Pic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,{icon:'portraits/0'})
         p.add(uIcon,{align:'top'})
 
         const pR= ui.uPanel.call(p,scene,{bg:UI.BG.BORDER,
                                             orientation:'y',
+                                            space:UI.SPACE.LRTB_5,
                                             ext:{expand:true,proportion:1}});
         const uName = ui.uBbc.call(pR,scene,{text:`[color=yellow]阿凡達[/color]`,
                                                 ext:{align:'left'}})

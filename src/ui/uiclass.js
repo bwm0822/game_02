@@ -1,4 +1,3 @@
-// import * as ui from './uicomponents.js'
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
 import DB from '../data/db.js'
@@ -11,7 +10,6 @@ import UiOption from './uioption.js'
 import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
-
 
 export class Slot extends Icon
 {

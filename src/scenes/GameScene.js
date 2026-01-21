@@ -6,7 +6,7 @@ import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
 import {GM,UI,DEBUG} from '../core/setting.js'
 import Ui from '../ui/uicommon.js'
-import {Mark} from '../ui/uicomponents.js'
+import UiMark from '../ui/uimark.js'
 import UiCover from '../ui/uicover.js'
 import UiStorage from '../ui/uistorage.js'
 import UiOption from '../ui/uioption.js'
@@ -173,7 +173,7 @@ export class GameScene extends Scene
     initUI() 
     {
         UiCursor.set();
-        new Mark(this);
+        new UiMark(this);
     }
 
     processInput()
@@ -205,7 +205,7 @@ export class GameScene extends Scene
                 else if(this._path?.state===GM.PATH_OK)
                 {
                     GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
-                    Mark.close();
+                    UiMark.close();
                     this._path=null;
                 }
             }
@@ -243,7 +243,7 @@ export class GameScene extends Scene
         {
             GM.player.stepMove(mx,my);
             this.clearPath();
-            Mark.close();
+            UiMark.close();
         }
     }
 
@@ -256,23 +256,23 @@ export class GameScene extends Scene
         {
             if(path.state===GM.PATH_OK)
             {
-                if(this._ent) {Mark.close();}
-                else {Mark.show(path.ep,GM.COLOR_WHITE);}
+                if(this._ent) {UiMark.close();}
+                else {UiMark.show(path.ep,GM.COLOR_WHITE);}
             }
             else
             {
-                Mark.show(path.ep,GM.COLOR_RED);
+                UiMark.show(path.ep,GM.COLOR_RED);
             }
         }
         else
         {
-            Mark.close();
+            UiMark.close();
         }
 
         this._path = path;
     }
 
-    clearPath() {if(this._dbgPath){this._dbgPath.clear();Mark.close();}}
+    clearPath() {if(this._dbgPath){this._dbgPath.clear();UiMark.close();}}
 
     npcPath(on) 
     {
@@ -380,7 +380,7 @@ export class GameScene extends Scene
         {
             this._done = true;
             this.events
-                .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);Mark.close();})
+                .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);UiMark.close();})
                 .on('out', ()=>{this._ent=null;UiCursor.set();})
                 .on('storage', (owner)=>{UiStorage.show(owner);})
                 .on('talk', (owner)=>{UiDialog.show(owner);})

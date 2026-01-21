@@ -1,9 +1,9 @@
 import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import Ui from './uicommon.js'
 import * as ui from './uicomponents.js'
-import {Mark} from '../ui/uicomponents.js'
 import {GM} from '../core/setting.js'
 import UiCursor from './uicursor.js'
+import UiMark from './uimark.js'
 
 //--------------------------------------------------
 // 類別 : UI 視窗框架
@@ -51,7 +51,7 @@ export default class UiFrame extends Sizer
     {
         const onover = ()=>{
             UiCursor.set(); 
-            Mark.close();
+            UiMark.close();
             this.player?.hidePath();
         }
 

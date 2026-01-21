@@ -272,8 +272,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 159.5,
-                "y": 159
+                "x": 160,
+                "y": 159.5
             }
         },
         "public/assets/maps/karen_home.json": {
@@ -305,7 +305,7 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 175,
+                "x": 174.66666666666666,
                 "y": 831.3333333333333
             }
         },
@@ -395,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 139.7464050435645,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -406,8 +406,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.39101792165474,
-                "y": 239.37097116951196
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump_inn_f1.json": {
@@ -439,7 +439,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 176.5,
+                "x": 506,
                 "y": 385
             }
         },
