@@ -178,9 +178,8 @@ export default class UiOption extends UiFrame
         
         // 設定 options
         Object.values(this._items).forEach((item)=>{item.hide();})
-        Object.entries(options).forEach(([key,val])=>{
-            const v = typeof val === 'function'? val():val;
-            this._items[key].show().setEnable(v);
+        Object.entries(options).forEach(([k,v])=>{
+            v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
         })
 
         // 設定位置，注意要在 layout() 之後再 setPosition()，否則會有 offset 的問題

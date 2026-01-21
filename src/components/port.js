@@ -30,7 +30,7 @@ export class COM_Port extends Com
         super.bind(root);
 
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.ENTER, true);
+        root._setAct(GM.ENTER, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 

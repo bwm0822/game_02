@@ -28,7 +28,7 @@ export class COM_Sleep extends Com
         root.pos=bed.loc;
         root.pop?.('💤',{duration:-1,tween:true})
         bb.sta=GM.ST.SLEEP;
-        root._setAct(GM.WAKE, true);
+        root._setAct(GM.WAKE, ()=>GM.EN);
         this._bed=bed;
     }
 

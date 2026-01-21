@@ -123,7 +123,7 @@ export class COM_Manu extends Com
         super.bind(root);
 
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.COOK, true);
+        root._setAct(GM.COOK, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         // this.addP(root,'menu',{get:()=>this._menu});

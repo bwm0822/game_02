@@ -66,8 +66,11 @@ export class GameObject
 
     // 所有可操作的指令
     get acts() {return this._acts;}
+
     // 依順序取出第一個可供操作的指令
-    get act() { return ORDER.find(key=>this._acts[key]); }
+    get act() { return ORDER.find(key=>this._acts[key]===GM.EN &&
+                                        key!==GM.OBSERVE); }
+
     // 可互動的點(陣列)
     get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
                                 : [this.pos]} 
@@ -148,7 +151,14 @@ export class GameObject
         return false;
     }
 
-    _setAct(key,value) {this._acts[key]=value;}
+    // _setAct(key,value) {this._acts[key]=value;}
+    _setAct(key,get)
+    {
+        Object.defineProperty(this._acts, key, { 
+                get: get, 
+                enumerable: true, 
+                configurable: true }); 
+    }
 
     _delAct(key) {delete this._acts[key];}
 

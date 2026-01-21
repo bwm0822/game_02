@@ -25,7 +25,7 @@ export class Npc extends Role
     constructor(scene,x,y)
     {
         super(scene,x,y);
-        this._setAct(GM.OBSERVE,true);
+        this._setAct(GM.OBSERVE,()=>GM.EN);
     }
 
     get ctx() {return {...super.ctx,
@@ -116,7 +116,7 @@ export class Npc extends Role
         this.equip?.();
 
         // option
-        this._setAct(GM.ATTACK,true);
+        this._setAct(GM.ATTACK,()=>GM.EN);
 
         // 檢查是否死亡
         if(!this.isAlive) {this.emit('ondead');}

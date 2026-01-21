@@ -81,10 +81,12 @@ export class COM_Trade extends Com
         }
     }
 
-    _actEnabled()
+    _actMode()
     {
         const {bb,fav} = this.ctx;
-        return bb.sta!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
+        return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
+                                    :  bb.sta===GM.ST.SLEEP ? GM.DIS
+                                                            : GM.EN;
     }
 
     //------------------------------------------------------
@@ -95,10 +97,9 @@ export class COM_Trade extends Com
         super.bind(root);
 
         // init
-        const en = this._actEnabled.bind(this);
 
         // 1.提供 [外部操作的指令]
-        if(this._enableAct) {root._setAct(GM.TRADE, ()=>en());}
+        if(this._enableAct) {root._setAct(GM.TRADE, this._actMode.bind(this));}
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.trade = this._trade.bind(this);

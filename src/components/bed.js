@@ -58,7 +58,7 @@ export class COM_Bed extends Com
         const loc={x:bb.sleepX|0,y:bb.sleepY|0}
         
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.REST, true);
+        root._setAct(GM.REST, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         // this.addP(root,'loc',{get:()=>loc});

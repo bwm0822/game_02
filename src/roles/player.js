@@ -136,8 +136,8 @@ export class Player extends Role
         this.on('refresh', this._refresh.bind(this));
 
         // options
-        this._setAct(GM.PROFILE,true);
-        this._setAct(GM.INV,true);
+        this._setAct(GM.PROFILE,()=>GM.EN);
+        this._setAct(GM.INV,()=>GM.EN);
 
         return this;
     }

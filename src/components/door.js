@@ -31,7 +31,7 @@ export class COM_Door extends Com
             this._opened=true;
             const{bb,root}=this.ctx;
             root._delAct(GM.OPEN_DOOR);
-            root._setAct(GM.CLOSE_DOOR, true);
+            root._setAct(GM.CLOSE_DOOR, ()=>GM.EN);
             root.setTexture?.(bb.door_close);
             root.removeWeight?.();
             root.addWeight?.(undefined,GM.W.DOOR-1);
@@ -47,7 +47,7 @@ export class COM_Door extends Com
             this._opened=false;
             const{bb,root}=this.ctx;
             root._delAct(GM.CLOSE_DOOR);
-            root._setAct(GM.OPEN_DOOR, true);
+            root._setAct(GM.OPEN_DOOR, ()=>GM.EN);
             root.setTexture?.(bb.door_open);
             root.removeWeight?.(GM.W.DOOR-1);
             root.addWeight?.();
@@ -64,7 +64,7 @@ export class COM_Door extends Com
         super.bind(root);
         
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.OPEN_DOOR, true);
+        root._setAct(GM.OPEN_DOOR, ()=>GM.EN);
         
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 

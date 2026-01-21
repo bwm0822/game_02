@@ -173,10 +173,12 @@ export class COM_Talk extends Com
         this._rec[key]=value;
     }
 
-    _actEnabled()
+    _actMode()
     {
         const {bb,fav} = this.ctx;
-        return bb.sta!==GM.ST.SLEEP && fav()>GM.FAV.DISLIKE;
+        return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
+                                    :  bb.sta===GM.ST.SLEEP ? GM.DIS
+                                                            : GM.EN;
     }
 
     //------------------------------------------------------
@@ -188,11 +190,10 @@ export class COM_Talk extends Com
 
         // init
         const {bb} = this.ctx;
-        const en = this._actEnabled.bind(this);
         this._dialog = DB.dialog(bb.id);
 
         // 1.提供 [外部操作的指令]
-        root._setAct(GM.TALK, ()=>en());
+        root._setAct(GM.TALK, this._actMode.bind(this));
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.talk = this._talk.bind(this);

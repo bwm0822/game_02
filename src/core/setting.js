@@ -423,7 +423,11 @@ export const GM =
     TP:
     {
         DOOR: 'door',
-    }
+    },
+
+    DIS: 'dis',
+    EN: 'en',
+    HIDE: 'hide'
 
 }
 
