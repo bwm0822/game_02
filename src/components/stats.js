@@ -62,7 +62,7 @@ function _calcMods(eff, mods, condition)
     const o = scope!=='enemy' ? mods.self : mods.enemy;
     if (cond && cond !== condition) {return;} // 條件不符，跳過
 
-    console.log(scope, stat, a, m, cond)
+    // console.log(scope, stat, a, m, cond)
 
     if(GM.BASE.includes(stat)) // 基礎屬性
     {        
@@ -265,7 +265,7 @@ export class COM_Stats extends Com
     {
         const {root,emit}=this.ctx;
 
-        root.addFavor?.(dmg.attacker.id, -50);  // 受攻擊，降低好感度
+        root.addFavor?.(dmg.attacker?.id, -50);  // 受攻擊，降低好感度
 
         switch(dmg.type)
         {

@@ -42,7 +42,7 @@ export class BehAttack extends Behavior
 
     async act(ctx) 
     {
-        const {bb,root} = ctx;
+        const {root} = ctx;
 
         this._onAttack=true;
         const t=this._t;

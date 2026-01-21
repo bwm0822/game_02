@@ -20,7 +20,7 @@ export function computeDamage(attacker, defender, skill={})
     const cond = skill?.type??'attack';
     const aStats = attacker.getTotalStats({condition:cond, skill:skill});
     const dStats = defender.getTotalStats({fromEnemy:aStats.enemy});
-    console.log(aStats,dStats)
+    // console.log(aStats,dStats)
 
     // 計算是否命中
     const ret = _checkHit(aStats, dStats, skill);

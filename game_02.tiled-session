@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/map.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
-        "public/assets/templates",
-        "public/assets",
         "public",
+        "public/assets/templates",
         "public/assets/maps",
-        "."
+        "public/assets",
+        ".",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -272,8 +272,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 160,
-                "y": 159.5
+                "x": 159.5,
+                "y": 159
             }
         },
         "public/assets/maps/karen_home.json": {
@@ -303,7 +303,7 @@
                 2
             ],
             "scale": 1.5,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
                 "x": 175,
                 "y": 831.3333333333333
@@ -395,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
-                "y": 239.71098675355955
+                "x": 139.7464050435645,
+                "y": 239.37097116951196
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -406,8 +406,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
-                "y": 239.71098675355955
+                "x": 240.39101792165474,
+                "y": 239.37097116951196
             }
         },
         "public/assets/maps/trump_inn_f1.json": {
@@ -436,11 +436,11 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 1.5,
+            "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 367,
-                "y": 320
+                "x": 176.5,
+                "y": 385
             }
         },
         "public/assets/maps/village-02.json": {
@@ -651,18 +651,18 @@
     "project": "game_02.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
         "public/assets/maps/karen-home.json",
         "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/map.json",
+        "public/assets/maps/village-01.json",
+        "public/assets/Full_1.tsj",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/macron-home.json",
         "public/assets/3_Road.tsj",
         "public/assets/0_Ground_LowSat.tsj",
         "public/assets/32x32GridItemsAll.tsj",
-        "public/assets/4_Smallplaces.tsj",
-        "public/assets/Archer_Blue.tsj"
+        "public/assets/4_Smallplaces.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

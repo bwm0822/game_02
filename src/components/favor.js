@@ -22,6 +22,7 @@ export class COM_Favor extends Com
 
     _addFavor(id, value)
     {
+        if(!id) {return;}
         this._favors[id] = Utility.clamp( this._getFavor(id)+value, 0, 100);
     }
 
@@ -60,6 +61,6 @@ export class COM_Favor extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) {this._favors = data.favor || {};}   
+    load(data) {this._favors = data?.favor || {};}   
     save() {return {favor:this._favors};}
 }

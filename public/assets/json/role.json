@@ -62,7 +62,8 @@
     "icon": "head-trump",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "innkeeper",
     "gold": 200,
@@ -155,7 +156,8 @@
     "icon": "head-melanie",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "innkeeper",
     "gold": 200,
@@ -260,7 +262,8 @@
     "icon": "head-musk",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "smith",
     "gold": 200,
@@ -422,7 +425,8 @@
     "icon": "head-melanie",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "trader",
     "gold": 200,
@@ -565,7 +569,8 @@
     "icon": "head-xi",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "butcher",
     "gold": 200,
@@ -718,7 +723,8 @@
     "icon": "head-macron",
     "corpse": {
       "sprite": "rip",
-      "scale": 0.5
+      "scale": 0.5,
+      "y": 32
     },
     "job": "merchant",
     "gold": 200,
