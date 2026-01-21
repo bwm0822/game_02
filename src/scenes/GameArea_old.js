@@ -2,7 +2,7 @@ import {Scene} from 'phaser';
 import Map from '../map.js';
 import * as Role from '../role.js';
 import Utility from '../utility.js';
-import {Mark} from '../gameUi.js'
+import {Mark} from '../old/gameUi.js'
 import Record from '../infra/record.js'
 import {Avatar} from '../role.js'
 import {Block} from '../entity.js'

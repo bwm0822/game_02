@@ -1,13 +1,13 @@
 import {Scene} from 'phaser';
 import Map from '../manager/map.js';
 
-import {Mark} from '../gameUi.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
 import {GM,UI,DEBUG} from '../core/setting.js'
-import UiCover from '../ui/uicover.js'
 import Ui from '../ui/uicommon.js'
+import {Mark} from '../ui/uicomponents.js'
+import UiCover from '../ui/uicover.js'
 import UiStorage from '../ui/uistorage.js'
 import UiOption from '../ui/uioption.js'
 import UiInv from '../ui/uiinv.js'

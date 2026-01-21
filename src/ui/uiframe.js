@@ -1,8 +1,8 @@
 import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
-import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
+import * as ui from './uicomponents.js'
+import {Mark} from '../ui/uicomponents.js'
 import {GM} from '../core/setting.js'
-import {Mark} from '../gameUi.js'
 import UiCursor from './uicursor.js'
 
 //--------------------------------------------------
