@@ -5,7 +5,7 @@ import Utility from '../utility.js';
 import {Mark} from '../gameUi.js'
 import Record from '../record.js'
 import {QuestManager} from  '../quest.js';
-import {UI} from  '../uibase.js';
+import {UI} from  '../old/uibase.js';
 import {UiCursor,UiMain} from '../ui.js'
 
 export class GameMap extends Scene

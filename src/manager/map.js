@@ -1,4 +1,4 @@
-import {Store} from '../store.js'
+// import {Store} from '../store.js'
 // import {Entity,Port,Case,Node,Point,Stove,Well,Door,Bed} from './entity.js';
 // import {Npc, Enemy} from './role.js';
 import Utility from '../core/utility.js'

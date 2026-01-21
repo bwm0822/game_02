@@ -1,6 +1,6 @@
 import Com from './com.js'
 import Utility from '../core/utility.js'
-import {text, rect} from '../uibase.js'
+import {uBbc,uRect} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
 
 //--------------------------------------------------
@@ -21,7 +21,8 @@ export class COM_Disp extends Com
     //------------------------------------------------------
     _create(value, color='#fff', stroke='#000')
     {
-        let t = text(this.scene,{text:value,color:color,stroke:stroke,strokeThickness:5});
+        const text=`[stroke=${stroke}]${value}[/stroke]`;
+        let t = uBbc(this.scene,{text:text,color:color,strokeThickness:5});
         this.ent.add(t);
         t.setOrigin(0.5,0.5);
         t.setDepth(100);
@@ -70,8 +71,8 @@ export class COM_Disp extends Com
         if(!this._p)
         {
             this._p = this.scene.rexUI.add.sizer(0,-48,{space:5});
-            this._p.addBackground(rect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
-                        .add(text(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
+            this._p.addBackground(uRect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
+                        .add(uBbc(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
                         .setOrigin(0.5,1)
                         .setDepth(100)
             this.ent.add(this._p);

@@ -1,5 +1,5 @@
 import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {GM} from './core/setting.js';
+import {GM} from '../core/setting.js';
 
 
 export function rect(scene, config={})

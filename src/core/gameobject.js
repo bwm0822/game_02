@@ -120,16 +120,6 @@ export class GameObject
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
-    // // 將物件加入List
-    // _addToList() {this.scene.gos && this.scene.gos.push(this);}
-    // // 將物件從List移除
-    // _removeFromList()
-    // {
-    //     if(!this.scene.gos) {return;}
-    //     const index = this.scene.gos.indexOf(this);
-    //     if(index>-1) {this.scene.gos.splice(index,1);}
-    // }
-
     // 將物件加入List
     _addToList()
     {
@@ -257,11 +247,13 @@ export class GameObject
         }
     }
 
+    //------------------------------------------------------
     // debug 用
+    //------------------------------------------------------
     warn(src, name)
     {
         if(!DEBUG.log) {return;}
-        console.warn(`[${src}.${name}] is readonly, ignore set`);
+        console.log(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
     }
 
     log(id, src, name, v)
@@ -270,7 +262,9 @@ export class GameObject
         // DEBUG.filter 為空陣列或包含name時為 true
         const pass = (DEBUG.filter.length === 0 || 
                         DEBUG.filter.includes(name));
-        if(pass) {console.log(`---- [${id}] ${src}.${name} = ${v}`);}          
+        if(pass) {console.log(`%c[${id}]%c ${src}.${name} = ${v}`,
+                                'color:dodgerblue; font-weight:bold;',
+                                'color:inhire;');}          
     }
 
     //------------------------------------------------------

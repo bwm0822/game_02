@@ -1,5 +1,5 @@
 import {FixWidthSizer, OverlapSizer, Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {sprite, text, text_1, rect} from './ui_old.js';
+import {sprite, text, text_1, rect} from '../ui_old.js';
 import Utility from './utility.js';
 
 const ICON_SHIELD = 'buffs/32';

@@ -3,10 +3,7 @@ import Record from '../infra/record.js'
 import Local from '../infra/local.js'
 import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
-import UiChangeScene from '../ui/uichangescene.js'
 import {GM} from '../core/setting.js';
-import {Sizer, OverlapSizer, ScrollablePanel, Toast, Buttons, TextArea} from 'phaser3-rex-plugins/templates/ui/ui-components.js';
-import {rect,sprite,text} from '../uibase.js'
 import UiCursor from '../ui/uicursor.js'
 
 export class MainMenu extends Scene
@@ -101,51 +98,5 @@ export class MainMenu extends Scene
                 console.log(this)
             }
         }); 
-    }
-}
-
-
-class UiTest extends Sizer
-{
-    constructor(scene)
-    {
-        super(scene,0,0,GM.w,GM.h);
-        
-        this.addLayer(scene);
-        scene.add.existing(this);
-
-        this//.addBackground(rect(scene,{alpha:0.5}))
-            .add(sprite(scene,{icon:'buffs/0'}))
-            // .add(text(scene,{text:'123'}))
-
-        this.setOrigin(0,0)
-            .layout()
-                
-        // this.getLayer().name = 'UiTest';    // 產生layer，並設定layer名稱
-
-
-        console.log('Children:', this.getAllChildren());
-        console.log(this)
-        console.log(scene)
-    }
-
-    addLayer(scene)
-    {
-        let layer = scene.add.layer();
-        layer.name = 'UiTest';
-        layer.add(this);   
-    }
-
-    inc(scene)
-    {
-        this.add(sprite(scene,{icon:'buffs/0'}))
-            .layout()
-    }
-
-    destroy(...args) 
-    {
-
-        console.log('UiTest.destroy',args)
-        super.destroy(args)
     }
 }

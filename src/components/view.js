@@ -1,12 +1,8 @@
-import {GM,DEBUG,DBG} from '../core/setting.js';
-import DB from '../data/db.js';
+import {GM,DEBUG,DBG} from '../core/setting.js'
+import DB from '../data/db.js'
 
 
-// let DEBUG = true; // 是否開啟 debug 模式
-// let DBG_TYPE = GM.DBG_ALL;
-
-
-function debugDraw(mode=DEBUG.mode,text)
+function debugDraw(mode=DEBUG.mode)
 {
     if(!this._dbgGraphics)
     {
@@ -14,9 +10,18 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgGraphics.setDepth(Infinity);
     }
 
-    if(text && !this._dbgText)
+    if(!this._dbgText)
     {
-        this._dbgText = bbcText(this.scene,{text:'dbg'});
+        this._dbgText = this.scene.add.text(0,0,'',
+                {   
+                    fontFamily:'Arial',
+                    fontSize:'24px',
+                    color:'#000',
+                    // stroke:'#fff',
+                    // strokeThickness:3,
+                    backgroundColor: '#fff',
+                    // padding: {x:0,y:0}    
+                });
         this._dbgText.setDepth(Infinity);
         this._dbgText.setOrigin(0.5,1);
     }
@@ -84,16 +89,15 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
     }
 
-    const show_text = (text)=>{
+    const show_text = ()=>{
         if(mode===DBG.MODE.CLR) {return;}
         if(this._dbgText)
         {
-            this._dbgText.x = this.x;
-            this._dbgText.y = this.y-this.displayHeight*2/3;
-            this._dbgText.setText(`[bgcolor=white][color=black]${text}\n${this.state}[/color][/bgcolor]`)
+            this._dbgText.x = this.pos.x;
+            this._dbgText.y = this.pos.y-this.displayHeight;
+            this._dbgText.setText(this.root.bb.sta)
         }
     }
-
 
     clr();
 
@@ -101,7 +105,7 @@ function debugDraw(mode=DEBUG.mode,text)
     draw_grid();
     draw_zone();
     draw_pts();
-    show_text(text);
+    show_text();
 }
 
 //--------------------------------------------------

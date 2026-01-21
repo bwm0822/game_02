@@ -61,7 +61,6 @@ export class COM_Sense extends Com
         else if(!bb.scenePlayer && _scenePalyer)
         {
             bb.scenePlayer = player;
-            console.log('-------------------------------- scene player !!!');
             if(fav()<=GM.FAV.HATE)
             {
                 const s=needSight ? '👁️‍🗨️' : '‼️';

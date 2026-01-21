@@ -7,7 +7,7 @@ import Record from '../infra/record.js'
 import {Avatar} from '../role.js'
 import {Block} from '../entity.js'
 import {QuestManager} from '../quest.js';
-import {UI} from '../uibase.js'
+import {UI} from '../old/uibase.js'
 import {UiCursor,UiCase,UiInv,UiTrade,UiDialog,UiMain,UiOption} from '../ui.js'
 
 export class GameArea extends Scene

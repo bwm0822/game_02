@@ -1,7 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
-import {Pic} from '../uibase.js'
 
 export default class UiProfile extends UiFrame
 {

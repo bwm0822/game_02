@@ -1,12 +1,12 @@
-import Record from './infra/record.js'
+import Record from '../infra/record.js'
 import {ItemDB} from './database.js';
-import Utility from './core/utility.js';
-import { GM } from './core/setting.js';
-import DB from './data/db.js';
-import AudioManager from './manager/audio.js';
-import {bbcText} from './uibase'
+import Utility from '../core/utility.js';
+import { GM } from '../core/setting.js';
+import DB from '../data/db.js';
+import AudioManager from '../manager/audio.js';
+import {bbcText} from './uibase.js'
 
-import TimeManager from './time';
+import TimeManager from './time.js';
 // import * as Role from './role';
 // import {getPlayer} from './roles/player.js';
 

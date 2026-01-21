@@ -1,3 +1,6 @@
+
+export let player=null;     // 全域玩家物件
+
 export const GM =
 {
     COLOR_PRIMARY : 0x4e342e,
@@ -556,6 +559,9 @@ export const ORDER = [
 ];
 
 
+//--------------------------------------------------
+// debug 用
+//--------------------------------------------------
 export const DBG = 
 {
     MODE: {
@@ -576,7 +582,7 @@ export const DEBUG =
     rect : false,           // 顯示邊框
     path : true,            // 顯示NPC路徑
     log : true,     
-    filter: [],   
+    filter: [],             // log filter 
 }
 
-export let player=null;     // 全域玩家物件
+

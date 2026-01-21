@@ -1,9 +1,9 @@
 // ai.js （回合制）
 // 依你的現有架構：GM / Utility / DB / TimeSystem / Role/Npc 的 API
-import Utility from './core/utility.js'
-import DB from './data/db.js'
-import { GM } from './core/setting.js'
-import TimeSystem from './systems/time.js'
+import Utility from '../core/utility.js'
+import DB from '../data/db.js'
+import { GM } from '../core/setting.js'
+import TimeSystem from '../systems/time.js'
 import * as Role from './role_.js'
 
 const dist2 = (a, b) => {

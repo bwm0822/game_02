@@ -1,4 +1,4 @@
-import {DialogDB} from './database';
+import {DialogDB} from '../database';
 
 export class Character extends Phaser.GameObjects.Container
 {

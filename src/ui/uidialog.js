@@ -1,7 +1,6 @@
 import UiFrame from "./uiframe"
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import {Pic} from '../uibase.js'
 
 export default class UiDialog extends UiFrame
 {
@@ -53,7 +52,7 @@ export default class UiDialog extends UiFrame
                                     space:UI.SPACE.LRTBI_10,
                                     ext:{expand:true,proportion:1}})
 
-        const uIcon = new Pic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,{icon:'portraits/0'})
+        const uIcon = new ui.uPic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,{icon:'portraits/0'})
         p.add(uIcon,{align:'top'})
 
         const pR= ui.uPanel.call(p,scene,{bg:UI.BG.BORDER,
