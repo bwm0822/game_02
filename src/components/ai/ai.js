@@ -3,6 +3,7 @@ import TimeSystem from '../../systems/time.js'
 import {BehSchedule} from './behschedule.js'
 import {BehAttack} from './behattack.js'
 import {BehIdle} from './behidle.js'
+import {BehFlee} from './behflee.js'
 import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
 import {GM} from '../../core/setting.js'
@@ -91,7 +92,7 @@ export class COM_AI extends Com
         // 行為清單（可自由增刪/調整權重）
         this.behaviors = [
             // new BehDrinkPotion({ weight: 1.0 }),
-            // new BehFlee({ weight: 1.0 }),
+            new BehFlee({ weight: 3 }),
             new BehAttack({weight:2}),   // 偏攻擊
             new BehIdle({weight:1.5}),   // 偏攻擊
             // new BehChase({minInterval:2}),

@@ -460,9 +460,40 @@ class Map
         return p;
     }
 
+    flee(p,s)
+    {
+        const [tx,ty] = this.worldToTile(p.x, p.y)
+
+        const lut={
+            'lt':[{x:-1,y:-1},{x:-1,y:0},{x:0,y:-1}],
+            'rt':[{x:1,y:-1},{x:1,y:0},{x:0,y:-1}],
+            'lb':[{x:-1,y:1},{x:-1,y:0},{x:0,y:1}],
+            'rb':[{x:1,y:1},{x:1,y:0},{x:0,y:1}],
+            'l':[{x:-1,y:0},{x:-1,y:1},{x:-1,y:-1},{x:0,y:1},{x:0,y:-1}],
+            'r':[{x:1,y:0},{x:1,y:1},{x:1,y:-1},{x:0,y:1},{x:0,y:-1}],
+            't':[{x:0,y:-1},{x:-1,y:-1},{x:1,y:-1},{x:-1,y:0},{x:1,y:0}],
+            'b':[{x:0,y:1},{x:-1,y:1},{x:1,y:1},{x:-1,y:0},{x:1,y:0}]
+        }
+
+        const key = (p.x>s.x?'r':p.x<s.x?'l':'')+
+                    (p.y>s.y?'b':p.y<s.y?'t':'');
+
+        console.log(p,s,key)
+        const tbl = lut[key];
+
+        const d = tbl.find(d=>this.getWeightByTile(tx+d.x,ty+d.y)===1);
+        if(d)
+        {
+            return this.tileToWorld(tx+d.x,ty+d.y)
+        }
+
+        return null;
+    }
+
     getValidPoint(p, {th=GM.W.BLOCK,
                         random=false,
-                        includeP=true}={})
+                        includeP=true,
+                        returnnull=false}={})
     {
         const isValid=(g)=>{
             const w=this.getWeightByTile(g.x,g.y);
@@ -476,11 +507,12 @@ class Map
         // 檢查P點(中心點)
         if(includeP&&isValid(t)) {return p;}
 
-        const c = Utility.findRandomFreeCellByRings(t, isValid);
+        const c = random ? Utility.findRandomFreeCellByRings(t, isValid)
+                        : Utility.findFreeByRings(t, isValid);
 
         if(c) {return this.tileToWorld(c.x,c.y);}
 
-        return p;
+        return returnnull ? null : p;
     }
 
     tileToWorld(tx,ty)

@@ -60,6 +60,7 @@ export class GameObject
                         aEmit : this.aEmit.bind(this),
                         send : this._send.bind(this),
                         ept : this._getEmptyPt.bind(this),
+                        fpt : this._getFleePt.bind(this),
                         probe : this._probe.bind(this), 
                         gw : this._getWeight.bind(this), 
                     }}
@@ -207,6 +208,12 @@ export class GameObject
     {
         const bodies = this.scene.physics.overlapCirc(p.x,p.y,0,true,true);
         return bodies[0]?.gameObject.root; 
+    }
+
+    // 取得逃跑點
+    _getFleePt(src)
+    {
+        return this.scene.map.flee(this.pos,src);
     }
 
     // 取的空地

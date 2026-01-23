@@ -35,7 +35,7 @@ export class BehAttack extends Behavior
             this._t=bb.scenePlayer;
         }        
 
-        let base = bb.sensePlayer ? 1 : 0.5;
+        const base = bb.sensePlayer ? 1 : 0.5;
         return [base*this.weight, 'none'];
 
     }

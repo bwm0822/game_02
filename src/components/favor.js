@@ -23,7 +23,7 @@ export class COM_Favor extends Com
     _addFavor(id, value)
     {
         if(!id) {return;}
-        this._favors[id] = Utility.clamp( this._getFavor(id)+value, 0, 100);
+        this._favors[id] = Utility.clamp(this._getFavor(id)+value, 0, 100);
     }
 
     _getFavor(id) {return this._favors[id] ?? GM.FAV.NEUTRAL;}

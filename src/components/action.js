@@ -220,6 +220,16 @@ export class COM_Action extends Com
         }
     }
 
+    async _flee(pos)
+    {
+        const{root,bb,fpt}=this.ctx;
+        bb.path = null;
+        const np = fpt(pos);
+        if(np) {await this._moveTo(np);}
+        else {root.pop?.('不要殺我!!!');}
+        if(DEBUG.path) {root.updateDebugPath?.();}
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -238,6 +248,7 @@ export class COM_Action extends Com
         root.attack = this._attack.bind(this);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
+        root.flee = this._flee.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
     }

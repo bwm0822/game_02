@@ -89,6 +89,7 @@ export default class UiTrade extends UiFrame
 
     close()
     {
+        this.owner.stopTrade();
         super.close();
         this.unregister();
     }
