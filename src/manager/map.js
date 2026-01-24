@@ -1,4 +1,5 @@
 import Utility from '../core/utility.js'
+import TileMap from '../core/tilemap.js'
 import QuestManager from './quest.js'
 import {astar, Graph} from '../core/astar.js'
 import {GM} from '../core/setting.js'
@@ -15,319 +16,78 @@ import Bed from '../items/bed.js'
 import Point from '../items/point.js'
 import Item from '../items/item.js'
 
-let DEBUG = false;
-
-function debug(...args) {if(DEBUG) {console.log(args);}}
 
 class Map
-{
-    static maploaded = [];
-    static loaded = [];
-    
-    constructor(scene, mapName, diagonal, weight)
+{    
+    constructor(scene)
     {
         scene.map = this;
         this.scene = scene;
         //return this.createMap(scene, mapName, diagonal, weight);
     }
 
-    isLoaded(name)
-    {
-        if(Map.loaded.includes(name)) {return true;}
-        Map.loaded.push(name);
-        return false;
-    }
-
-    isMaploaded(name)
-    {
-        if(Map.maploaded.includes(name)) {return true;}
-        Map.maploaded.push(name);
-        return false;
-    }
-
-    // static load(scene, maps)
-    // {
-    //     let promises=[];
-    //     maps.forEach(map=>promises.push(Map.prerun(scene,map)));
-    //     return Promise.all(promises);
-    // }
-
-    // static async prerun(scene, map)
-    // {
-    //     if(Map.isMaploaded(map)) {return;}
-    //     await Map.loadTileMap(scene, map);
-    //     await Map.preload(scene, map);
-    //     await Map.preprocess(scene, map);
-    // }
-
-    loadTileMap(scene, mapName)
-    {
-        return new Promise((resolve)=>{
-            debug('loadTileMap');
-
-            scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
-            scene.load.tilemapTiledJSON(mapName, `maps/${mapName}.json`);
-            scene.load.once('complete', ()=>{resolve()});
-            scene.load.start();
-        });
-    }
-
-    // Map 無法直接處理 template(*.tj)及 外部tileset(*.tsj)，所以要先載入到cache裡,再取出來處理
-    // 1) 載入 template(*.tj) 及 外部tileset(*.tsj) 到 cache 裡
-    // 2) 載入 內部tileset(*.png)
-    preload_Template(scene, map)
-    {
-        map.data.layers.forEach((layer) => {
-            if(layer.type=='objectgroup')
-            {
-                layer.objects.forEach((obj) => {
-                    if(obj.template)    // 載入 template(*.tj) 的資料到 cache 裡
-                    {
-                        obj.template = obj.template.replace('../','');
-                        if(this.isLoaded(obj.template)) {return;}
-                        debug(`load[${obj.template}]`);
-                        scene.load.json(obj.template, obj.template);
-                    }
-                });
-            }
-        });
-    }
-
-    preload_Tileset(scene, map)
-    {
-        map.data.tilesets.forEach((tile) => {
-            if(tile.image)  // 載入 tileset(*.png) 的資料
-            {
-                tile.image = tile.image.replace('../','');
-                if(this.isLoaded(tile.image)) {return;}
-                debug(`load[${tile.image}]`);
-                scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
-            }
-            else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
-            {
-                tile.source = tile.source.replace('../','');
-                if(this.isLoaded(tile.source)) {return;}
-                debug(`load[${tile.source}]`);
-                scene.load.json(tile.source, tile.source);
-            } 
-        });
-    }
-
-    preload(scene, mapName)   
-    {
-        return new Promise((resolve)=>{
-            debug('preload');
-
-            scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
-
-            let map = scene.cache.tilemap.get(mapName);
-            this.preload_Template(scene, map);
-            this.preload_Tileset(scene, map);
-            scene.load.once('complete', ()=>{resolve()});
-            scene.load.start();
-        });
-    }
-
-    // 1) 將 cache 裡的 template(*.tj) 及 外部tileset(*.tsj) 的資料取出來，放到 object 裡
-    // 2) 載入外部 tileset(*.png)
-    preprocess_Template(scene, map)
-    {
-        map.data.layers.forEach((layer) => {
-            if(layer.type=='objectgroup')
-            {
-                layer.objects.forEach((obj,index) => {
-                    if(obj.template) // 將 template(*.tj) 的資料取出來，放到 object 裡
-                    {
-                        let template = scene.cache.json.get(obj.template);
-                        let object = Utility.deepClone(template.object);
-                        // 從 tileset 裡找到對應的 tileset，並將 gid 轉換成正確的 gid
-                        map.data.tilesets.forEach(element => {
-                            if(template.tileset?.source.includes(element.source))
-                            {
-                                object.gid = element.firstgid + object.gid - 1;
-                            }   
-                        }); 
-                        delete obj.template;
-                        //將 obj.properties 的值 覆蓋到 object.properties 上
-                        if(obj.properties)
-                        {
-                            if(!object.properties){object.properties=[];}
-                            obj.properties.forEach((p)=>
-                            {
-                                for(let value of object.properties)
-                                {
-                                    if(value.name == p.name)
-                                    {
-                                        let i = object.properties.indexOf(value);
-                                        object.properties.splice(i,1);
-                                        object.properties.push(p);
-                                        return;
-                                    }
-                                }
-                                object.properties.push(p);
-                            });
-                            delete obj.properties;
-                        }
-                        
-                        layer.objects[index] = {...object, ...obj};
-                    }
-                });
-            }
-        });
-    }
-
-    preprocess_Tileset(scene, map)
-    {
-        map.lut={};
-        // 處理外部 tileset(*.tsj) 的資料
-        map.data.tilesets.forEach((tile,index) => {
-            if(tile.source) // tile 是外部 tileset(*.tsj)
-            {
-                //let source = tile.source.split('.').shift();
-                let json = scene.cache.json.get(tile.source);
-                delete tile.source;
-                map.data.tilesets[index] = {...tile, ...json};
-                if(json.image)  // (*.tsj) 為 .png
-                {
-                    if(this.isLoaded(json.image)) {return;}
-                    debug(`load[${json.image}]`);
-                    scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
-                }
-                else    // (*.tsj) 為圖片集合
-                {
-                    json.tiles.forEach((tile) => {
-                        if(tile.image)
-                        {
-                            map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
-                            if(this.isLoaded(tile.image)) {return;}
-                            debug(`load[${tile.image}]`);
-                            scene.load.image(tile.image,tile.image);
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    preprocess(scene, mapName)  
-    {
-        return new Promise((resolve)=>{
-            debug('preprocess');
-
-            let map = scene.cache.tilemap.get(mapName);
-            this.preprocess_Template(scene, map);
-            this.preprocess_Tileset(scene, map);
-
-            scene.load.once('complete', ()=>{resolve()});
-            scene.load.start();
-        });
-    }
-
     get center() {return this._center;}
     get small() {return this._small;}
 
-    async load(scene, mapName)
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _createTileLayer(map, tilesets)
     {
-        if(this.isMaploaded(mapName)) {return;}
-        await this.loadTileMap(scene, mapName);
-        await this.preload(scene, mapName);
-        await this.preprocess(scene, mapName);
-    }
-
-    createMap(mapName, diagonal, weight)
-    {
-        let scene = this.scene;
-
-        return new Promise(async (resolve)=>{
-
-            await this.load(scene, mapName);
-
-            let lut = scene.cache.tilemap.get(mapName).lut;
-
-            this.map = scene.make.tilemap({key: mapName});
-            let map = this.map;
-            map.tW_half = map.tileWidth*0.5;
-            map.tH_half = map.tileHeight*0.5;
-            map.tW_p45 = map.tileWidth*0.45;
-            map.tH_p45 = map.tileHeight*0.45;
-            this._diagonal = diagonal;
-            this._center = {x:map.widthInPixels/2, y:map.heightInPixels/2};
-            this._small = map.widthInPixels<GM.w && map.heightInPixels<GM.h;
-
-
-            map.tilesets.forEach((tileset) => {
-                if(tileset.name in lut)
-                {
-                    tileset.tileWidth=lut[tileset.name].w;
-                    tileset.tileHeight=lut[tileset.name].h;
-                }
-                map.addTilesetImage(tileset.name);
-            });
-
-            let tilesets = map.tilesets.map(tileset=>tileset.name);
-            //debug(tilesets)
-
-            
-            map.layers.forEach((layer)=>{
-                map.createLayer(layer.name, tilesets, 0, 0).setPipeline('Light2D');
-            });
-
-            this.createGraph(diagonal, weight);
-
-            scene.objects = [];
-
-            map.objects.forEach((layer)=>{
-                
-                let qid;
-                // 如果 layer name 包含 q，代表是任務 layer，要比對 QuestManager 有沒有開啟任務
-                if(layer.name,layer.name.includes('q'))
-                {
-                    if(!QuestManager.query(layer.name))
-                    {
-                        // 如果任務完成，就移除任務的存檔
-                        Record.remove(mapName,layer.name);
-                        return;
-                    }
-                    qid = layer.name;
-                }
-
-                // 將 id,qid 加到 properties
-                layer.objects.forEach((obj)=>{
-                    if(!obj.properties){obj.properties=[]}
-                    obj.properties.push({name:'uid',type:'int',value:obj.id});
-                    if(qid) {obj.properties.push({name:'qid',type:'string',value:qid});}
-                });
-                
-                let objs = map.createFromObjects(layer.name,
-                [
-                    {type:'node',classType:Node},
-                    {type:'port',classType:Port},
-                    // {type:'store',classType:Store},
-                    // {type:'entity',classType:Entity},
-                    {type:'pickup',classType:Pickup},
-                    {type:'npc',classType:Npc},
-                    {type:'case',classType:Case},
-                    {type:'point',classType:Point},
-                    {type:'stove',classType:Stove},
-                    {type:'well',classType:Well},
-                    {type:'door',classType:Door},
-                    {type:'bed',classType:Bed},
-                    {type:'item',classType:Item},
-                    // {type:'enemy',classType:Enemy},
-                    // {type:'npc_n',classType:Npc_n},
-                ]);
-                objs.forEach((obj) => {obj.init_prefab?.()});
-            });
-
-            resolve();
+        map.layers.forEach((layer)=>{
+            map.createLayer(layer.name, tilesets, 0, 0).setPipeline('Light2D');
         });
-
     }
 
-    createGraph(diagonal=false,weight=1)
+    _createObjectLayer(scene, map, mapName)
     {
-        let map = this.map;
+        scene.objects = [];
+        map.objects.forEach((layer)=>{
+            
+            let qid;
+            // 如果 layer name 包含 q，代表是任務 layer，要比對 QuestManager 有沒有開啟任務
+            if(layer.name,layer.name.includes('q'))
+            {
+                if(!QuestManager.query(layer.name))
+                {
+                    // 如果任務完成，就移除任務的存檔
+                    Record.remove(mapName,layer.name);
+                    return;
+                }
+                qid = layer.name;
+            }
 
+            // 將 id,qid 加到 properties
+            layer.objects.forEach((obj)=>{
+                if(!obj.properties){obj.properties=[]}
+                obj.properties.push({name:'uid',type:'int',value:obj.id});
+                if(qid) {obj.properties.push({name:'qid',type:'string',value:qid});}
+            });
+            
+            let objs = map.createFromObjects(layer.name,
+            [
+                {type:'node',classType:Node},
+                {type:'port',classType:Port},
+                // {type:'store',classType:Store},
+                // {type:'entity',classType:Entity},
+                {type:'pickup',classType:Pickup},
+                {type:'npc',classType:Npc},
+                {type:'case',classType:Case},
+                {type:'point',classType:Point},
+                {type:'stove',classType:Stove},
+                {type:'well',classType:Well},
+                {type:'door',classType:Door},
+                {type:'bed',classType:Bed},
+                {type:'item',classType:Item},
+                // {type:'enemy',classType:Enemy},
+                // {type:'npc_n',classType:Npc_n},
+            ]);
+            objs.forEach((obj) => {obj.init_prefab?.()});
+        });
+    }
+
+    _createGraph(map, diagonal=false, weight=1)
+    {
         let grid = [];
         for (let y = 0; y < map.height; y++) 
         {
@@ -352,6 +112,42 @@ class Map
         this.graph = new Graph(grid,{diagonal:diagonal});
     }
 
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
+    async createMap(mapName, diagonal, weight)
+    {
+        const scene = this.scene;
+
+        // 1) 載入 tilemap 所需許的資料
+        await TileMap.load(scene, mapName);
+
+        // 2) 產生 tilemap
+        const map = scene.make.tilemap({key: mapName});
+        map.tW_half = map.tileWidth*0.5;
+        map.tH_half = map.tileHeight*0.5;
+        map.tW_p45 = map.tileWidth*0.45;
+        map.tH_p45 = map.tileHeight*0.45;
+        this._diagonal = diagonal;
+        this._center = {x:map.widthInPixels/2, y:map.heightInPixels/2};
+        this._small = map.widthInPixels<GM.w && map.heightInPixels<GM.h;
+        this.map = map;
+
+        // 3) 取得 tilesets 
+        const tilesets = TileMap.getTilesets(scene, map, mapName)
+
+        // 4) 繪製 tilelayer
+        this._createTileLayer(map, tilesets);
+
+        // 5) 產生 graph
+        this._createGraph(map, diagonal, weight);
+
+        // 6) 繪製 object layer
+        this._createObjectLayer(scene, map, mapName);
+
+    }
+
+    
     getPath(sp, eps)
     {
         let bestPath;
@@ -709,6 +505,7 @@ class Map
 
 
 }
+
 
 
 export default Map;

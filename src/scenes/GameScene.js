@@ -22,7 +22,9 @@ import UiManufacture from '../ui/uimanufacture.js'
 import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
 
-import {GameObject} from '../core/gameobject.js';
+import {GameObject} from '../core/gameobject.js'
+
+import {MiniMap} from '../manager/minimap.js'
 
 
 export class GameScene extends Scene
@@ -56,6 +58,7 @@ export class GameScene extends Scene
         this.initUI();
         
         await new Map(this).createMap(this._data.map, diagonal, weight);
+        // await new MiniMap(this).create('map');
         this.createRuntime();
         this.initAmbient(this._data.ambient);
         this.setPosition(classType);
