@@ -26,6 +26,7 @@ import UiGameOver  from './ui/uigameover.js'
 import UiManufacture  from './ui/uimanufacture.js'
 import UiCover  from './ui/uicover.js'
 import UiDragged  from './ui/uidragged.js'
+import UiMap  from './ui/uimap.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -78,12 +79,15 @@ export default function createUI(scene)
     new UiObserve(scene);           // 10
     new UiCount(scene);             // 11
     new UiDragged(scene, 80, 80);   // 12
+    new UiMap(scene);               // 19
+    
     new UiInfo(scene);              // 13
     new UiOption(scene);            // 14
     new UiMessage(scene);           // 15
     new UiGameOver(scene);          // 16
     new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
+
     
     new UiConfirm(scene);
 

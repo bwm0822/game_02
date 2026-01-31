@@ -15,7 +15,7 @@ export class Pic extends OverlapSizer
 
         super(scene, x, y, w, h,{space:space});
         this.addBackground(uRect(scene,bg),'background')
-        this._sp=uSprite.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
+        this._sp=uImage.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
         this.layout()
 
         scene.add.existing(this);
@@ -23,7 +23,7 @@ export class Pic extends OverlapSizer
 
     setIcon(icon,{tint=0xffffff,alpha=1}={})
     {
-        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        let [key,frame] = icon ? icon.split(':') : [undefined,undefined];
         const sp=this._sp;
         sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
         sp.rexSizer.aspectRatio = sp.width/sp.height;
@@ -46,7 +46,7 @@ export class Icon extends OverlapSizer
 
         super(scene, x, y, w, h,{space:space});
         this.addBackground(uRect(scene,bg),'background')
-        this._sp=uSprite.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
+        this._sp=uImage.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
         this._bbc=uBbc.call(this,scene,{text:count,fontSize:fontSize,color:'#fff',strokeThickness:5,
                                         ext:{align:'right-bottom',expand:false,offsetY:space,offsetX:space}})
         this.layout()
@@ -57,7 +57,7 @@ export class Icon extends OverlapSizer
 
     setIcon(icon,{tint=0xffffff,alpha=1}={})
     {
-        let [key,frame] = icon ? icon.split('/') : [undefined,undefined];
+        let [key,frame] = icon ? icon.split(':') : [undefined,undefined];
         const sp = this._sp;
         sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
         sp.rexSizer.aspectRatio = sp.width/sp.height;
@@ -117,7 +117,7 @@ export function uVspace(scene,height)
 
 export function uSprite(scene, {x, y, icon, name, ext}={})
 {
-    const [atlas, frame] = icon ? icon.split('/'):[];
+    const [atlas, frame] = icon ? icon.split(':'):[];
     const sprite = scene.add.sprite(x,y,atlas,frame);
     name && (sprite.name = name);
 
@@ -133,6 +133,16 @@ export function uSprite(scene, {x, y, icon, name, ext}={})
 
     if(this&&this.add) {this.add(sprite,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return sprite;
+}
+
+export function uImage(scene, {x, y, icon, name, ext}={})
+{
+    const [atlas, frame] = icon ? icon.split(':'):[];
+    const img = scene.add.image(x,y,atlas,frame);
+    name && (img.name = name);
+
+    if(this&&this.add) {this.add(img,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
+    return img;
 }
 
 export function uBbc(scene, config={})    
@@ -480,6 +490,10 @@ export function uScroll(scene, config={})
         style = UI.SCROLL.DEF,
         column = 1,
         row = 1,
+        scrollMode = 0, //0: vertical, 1: horizontal, 2: both
+        // style = UI.SCROLL.CON 時，需要設定 con_w,con_h
+        con_w = 0, 
+        con_h = 0,
     }=config
 
     const getPanel = ()=>{
@@ -490,7 +504,10 @@ export function uScroll(scene, config={})
             case UI.SCROLL.GRID:
                 return scene.rexUI.add.gridSizer({column,row,space});
             case UI.SCROLL.CON:
-                return scene.add.container();
+                const con = scene.add.container();
+                con.width = con_w;
+                con.height = con_h;
+                return con;
         }
     }
 
@@ -499,6 +516,7 @@ export function uScroll(scene, config={})
         height: height,
         background: uRect(scene, bg),
         panel: {child:getPanel()},
+        scrollMode: scrollMode,
         slider: {
             track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
             thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),

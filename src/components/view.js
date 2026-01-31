@@ -473,7 +473,7 @@ export class ItemView extends View
 
     _setTexture(key_frame)
     {
-        const[key,frame]=key_frame.split('/');
+        const[key,frame]=key_frame.split(':');
         this._shape.setTexture(key,frame);
     }
 
@@ -554,7 +554,7 @@ export class RoleView extends View
         let addSp = (sprite, depth)=>
         {
             if(!sprite) {return;}
-            let [key,frame]=sprite.split('/');
+            let [key,frame]=sprite.split(':');
             if(key)
             {
                 let sp = this.scene.add.sprite(0,0,key,frame);

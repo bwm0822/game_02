@@ -280,7 +280,7 @@ export class GameObject
     // 在ent下，加入 sprite
     addSprite(key_frame)
     {
-        const [key,frame]=key_frame.split('/');
+        const [key,frame]=key_frame.split(':');
         const sp = this.scene.add.sprite(0,0,key,frame);
         sp.setPipeline('Light2D');
         sp.displayWidth = this.bb.wid;

@@ -7,7 +7,7 @@ export default class UiMark
     {
         UiMark.instance=this;
         this.scene = scene;
-        const [key,frame]=GM.ICON_MARK.split('/');
+        const [key,frame]=GM.ICON_MARK.split(':');
         this._sp = scene.add.sprite(0,0,key,frame);
         this._sp.setScale(0.5);
         this._sp.visible=false;

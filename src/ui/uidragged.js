@@ -151,7 +151,7 @@ export default class UiDragged extends OverlapSizer
 
     setIcon(icon)
     {
-        let [key,frame]=icon.split('/');
+        let [key,frame]=icon.split(':');
         const sp=this._sp;
         sp.setTexture(key,frame);
         sp.rexSizer.aspectRatio = sp.width/sp.height;

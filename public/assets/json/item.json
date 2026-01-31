@@ -1,7 +1,7 @@
 {
   "iron": {
     "cat": "CAT_ITEM",
-    "icon": "icons/273",
+    "icon": "icons:273",
     "gold": 10,
     "tw": {
       "lab": "鐵礦",
@@ -14,7 +14,7 @@
   },
   "salt": {
     "cat": "CAT_FOOD",
-    "icon": "icons/250",
+    "icon": "icons:250",
     "gold": 10,
     "cps": 10,
     "tw": {
@@ -28,7 +28,7 @@
   },
   "bag": {
     "cat": "CAT_BAG",
-    "icon": "icons/137",
+    "icon": "icons:137",
     "gold": 10,
     "storage": 12,
     "tw": {
@@ -42,7 +42,7 @@
   },
   "raw_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons/241",
+    "icon": "icons:241",
     "gold": 10,
     "useable": true,
     "cook": {
@@ -59,7 +59,7 @@
   },
   "cooked_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons/242",
+    "icon": "icons:242",
     "gold": 15,
     "useable": true,
     "tw": {
@@ -73,7 +73,7 @@
   },
   "raw_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons/259",
+    "icon": "icons:259",
     "gold": 10,
     "useable": true,
     "tw": {
@@ -87,7 +87,7 @@
   },
   "salt_baked_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons/260",
+    "icon": "icons:260",
     "gold": 15,
     "useable": true,
     "make": {
@@ -107,10 +107,10 @@
   },
   "sword_01": {
     "cat": "CAT_WEAPON",
-    "icon": "weapons/3",
+    "icon": "weapons:3",
     "gold": 15,
     "equip": {
-      "sprite": "weapons/3",
+      "sprite": "weapons:3",
       "y": 22
     },
     "type": "melee",
@@ -131,7 +131,7 @@
         "type": "dot",
         "value": 2,
         "dur": 3,
-        "icon": "icons/0",
+        "icon": "icons:0",
         "tag": "bleed"
       }
     ],
@@ -146,7 +146,7 @@
   },
   "sword_02": {
     "cat": "CAT_WEAPON",
-    "icon": "weapons/4",
+    "icon": "weapons:4",
     "gold": 25,
     "type": "melee",
     "range": 1,
@@ -162,7 +162,7 @@
   },
   "sword_03": {
     "cat": "CAT_WEAPON",
-    "icon": "weapons/5",
+    "icon": "weapons:5",
     "gold": 35,
     "type": "melee",
     "range": 1,
@@ -178,10 +178,10 @@
   },
   "bow_01": {
     "cat": "CAT_WEAPON",
-    "icon": "weapons/22",
+    "icon": "weapons:22",
     "gold": 35,
     "equip": {
-      "sprite": "weapons/22",
+      "sprite": "weapons:22",
       "y": 24,
       "x": 15
     },
@@ -199,10 +199,10 @@
   },
   "bow_02": {
     "cat": "CAT_WEAPON",
-    "icon": "weapons/26",
+    "icon": "weapons:26",
     "gold": 35,
     "equip": {
-      "sprite": "weapons/26",
+      "sprite": "weapons:26",
       "y": -8,
       "x": 15
     },
@@ -266,7 +266,7 @@
   },
   "helmet_03": {
     "cat": "CAT_HELMET",
-    "icon": "weapons/47",
+    "icon": "weapons:47",
     "gold": 30,
     "def": 30,
     "tw": {
@@ -326,7 +326,7 @@
   },
   "chest_03": {
     "cat": "CAT_CHESTPLATE",
-    "icon": "weapons/56",
+    "icon": "weapons:56",
     "gold": 60,
     "def": 40,
     "tw": {
@@ -434,7 +434,7 @@
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
-    "icon": "icons/134",
+    "icon": "icons:134",
     "gold": 10,
     "tw": {
       "lab": "項鍊",
@@ -447,7 +447,7 @@
   },
   "ring_01": {
     "cat": "CAT_RING",
-    "icon": "icons/132",
+    "icon": "icons:132",
     "gold": 10,
     "tw": {
       "lab": "戒子",
@@ -460,7 +460,7 @@
   },
   "torch": {
     "cat": "CAT_EQUIP",
-    "icon": "icons/170",
+    "icon": "icons:170",
     "gold": 10,
     "endurance": 360,
     "tw": {
@@ -474,7 +474,7 @@
   },
   "bottle": {
     "cat": "CAT_ITEM",
-    "icon": "icons/307",
+    "icon": "icons:307",
     "gold": 10,
     "effects": [
       {

@@ -51,7 +51,7 @@ export default class UiCursor extends Phaser.GameObjects.Sprite
     {
         if(Ui.mode===UI.MODE.FILL){return;}
         let icon = UiCursor.icons[type] ?? UiCursor.icons.none;
-        let [key,frame]=icon.sprite.split('/')
+        let [key,frame]=icon.sprite.split(':')
         this.setTexture(key,frame);
         this.setOrigin(icon.origin.x,icon.origin.y);
         this.setScale(icon.scale);

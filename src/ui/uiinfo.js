@@ -232,6 +232,13 @@ export default class UiInfo extends UiFrame
             .addGold(elm)
     }
 
+    ifNode(elm)
+    {
+        console.log('--------- ifNode')
+        const scene = this.scene;
+        ui.uBbc.call(this,scene,{text:'test'});   
+    }
+
     update(type, elm)
     {
         this.removeAll(true)
@@ -262,6 +269,10 @@ export default class UiInfo extends UiFrame
             case UI.INFO.ACTIVE.TB:
                 this.ifActive(elm)
                 break;
+
+            case UI.INFO.NODE:
+                this.ifNode(elm)
+                break;
         }
 
         this.layout()
@@ -270,14 +281,15 @@ export default class UiInfo extends UiFrame
     getXY(elm)
     {
         let x=elm.x,y=elm.y;
-        let parent = elm.parentContainer;
+        let p = elm.parentContainer;
         let parentX=0, parentY=0;
-        if(parent)
+        while(p)
         {
-            parentX = parent.x;
-            parentY = parent.y;
-            x += parentX;
-            y += parentY;
+            parentX+=p.x;
+            parentY+=p.y;
+            x+=p.x;
+            y+=p.y;
+            p=p.parentContainer;
         }
         return [x,y,parentX,parentY];
     }
@@ -286,7 +298,10 @@ export default class UiInfo extends UiFrame
     {
         super.show();
 
+        console.log(elm.x,elm.y)
+
         let [x,y,parentX,parentY]=this.getXY(elm);
+        console.log(x,y,parentX,parentY);
 
         switch(type)
         {
@@ -304,7 +319,6 @@ export default class UiInfo extends UiFrame
                     y=parentY+elm.bottom+this._gap;
                 }
                 break;
-
             default:
                 if(elm.x>GM.w/2)
                 {
@@ -320,6 +334,8 @@ export default class UiInfo extends UiFrame
         }
 
         this.update(type, elm);
+
+        console.log(elm)
 
         this.setPosition(x,y).rePos();
         this.layout();

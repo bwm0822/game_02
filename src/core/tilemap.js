@@ -230,6 +230,14 @@ export default class TileMap
             })
     }
 
+    // 取得 tileset by gid
+    static getbygid(map,gid)
+    {
+        const t = map.tilesets.find(t=>gid>=t.firstgid&&gid<t.firstgid+t.total);
+        // console.log(gid,t)
+        return t;
+    }
+
     static getTilesets_name(scene, map, mapName)
     {
         const lut = scene.cache.tilemap.get(mapName).lut;

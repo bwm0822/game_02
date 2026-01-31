@@ -49,54 +49,54 @@ export const GM =
 
     FONT_SIZE: 24,
 
-    ICON_MARK : 'buffs/108',
+    ICON_MARK : 'buffs:108',
 
-    ICON_CLOSE : 'cursors/46',
-    ICON_NONE : 'cursors/47',
-    ICON_AIM : 'cursors/169',
-    ICON_ATTACK : 'cursors/179',
-    ICON_PICKUP : 'cursors/90',
-    ICON_TALK : 'cursors/117',
-    ICON_ENTER : 'cursors/72',
-    ICON_EXIT : 'cursors/73',
-    ICON_OPEN : 'cursors/87',
-    ICON_TOOL : 'cursors/58',
-    ICON_DOOR : 'cursors/70',
+    ICON_CLOSE : 'cursors:46',
+    ICON_NONE : 'cursors:47',
+    ICON_AIM : 'cursors:169',
+    ICON_ATTACK : 'cursors:179',
+    ICON_PICKUP : 'cursors:90',
+    ICON_TALK : 'cursors:117',
+    ICON_ENTER : 'cursors:72',
+    ICON_EXIT : 'cursors:73',
+    ICON_OPEN : 'cursors:87',
+    ICON_TOOL : 'cursors:58',
+    ICON_DOOR : 'cursors:70',
 
-    ICON_WEAPON : 'icons/80',  //'weapons/5'
-    ICON_HELMET : 'icons/113', //'weapons/45'
-    ICON_CHESTPLATE : 'icons/119',//'weapons/54'
-    ICON_GLOVES : 'icons/128',
-    ICON_BOOTS : 'icons/130',
-    ICON_NECKLACE : 'icons/134',
-    ICON_RING : 'icons/133',
-    ICON_EQUIP : 'icons/170',
-    ICON_BAG : 'icons/137',
+    ICON_WEAPON : 'icons:80',  //'weapons/5'
+    ICON_HELMET : 'icons:113', //'weapons/45'
+    ICON_CHESTPLATE : 'icons:119',//'weapons/54'
+    ICON_GLOVES : 'icons:128',
+    ICON_BOOTS : 'icons:130',
+    ICON_NECKLACE : 'icons:134',
+    ICON_RING : 'icons:133',
+    ICON_EQUIP : 'icons:170',
+    ICON_BAG : 'icons:137',
 
     ICON:{
-        MARK : 'buffs/108',
+        MARK : 'buffs:108',
 
-        CLOSE : 'cursors/46',
-        NONE : 'cursors/47',
-        AIM : 'cursors/169',
-        TTACK : 'cursors/179',
-        PICKUP : 'cursors/90',
-        TALK : 'cursors/117',
-        ENTER : 'cursors/72',
-        EXIT : 'cursors/73',
-        OPEN : 'cursors/87',
-        TOOL : 'cursors/58',
-        DOOR : 'cursors/70',
+        CLOSE : 'cursors:46',
+        NONE : 'cursors:47',
+        AIM : 'cursors:169',
+        TTACK : 'cursors:179',
+        PICKUP : 'cursors:90',
+        TALK : 'cursors:117',
+        ENTER : 'cursors:72',
+        EXIT : 'cursors:73',
+        OPEN : 'cursors:87',
+        TOOL : 'cursors:58',
+        DOOR : 'cursors:70',
 
-        WEAPON : 'icons/80',  //'weapons/5'
-        HELMET : 'icons/113', //'weapons/45'
-        CHESTPLATE : 'icons/119',//'weapons/54'
-        GLOVES : 'icons/128',
-        BOOTS : 'icons/130',
-        NECKLACE : 'icons/134',
-        RING : 'icons/133',
-        EQUIP : 'icons/170',
-        BAG : 'icons/137', 
+        WEAPON : 'icons:80',  //'weapons/5'
+        HELMET : 'icons:113', //'weapons/45'
+        CHESTPLATE : 'icons:119',//'weapons/54'
+        GLOVES : 'icons:128',
+        BOOTS : 'icons:130',
+        NECKLACE : 'icons:134',
+        RING : 'icons:133',
+        EQUIP : 'icons:170',
+        BAG : 'icons:137', 
     },
 
     CAT_ALL         :   0b1111_1111_1111_1111,
@@ -487,13 +487,15 @@ export const UI =
         MANUFACTURE:'manufacture',
         COVER:'cover',
         DRAGGED:'dragged',
+        MAP:'map',
     },
     INFO:{
-        SLOT:0,
-        PROP:1,
-        BTN:2,
-        ABILITY:{LR:3,TB:4},
-        ACTIVE:{LR:5,TB:6},
+        SLOT:'slot',
+        PROP:'prop',
+        BTN:'btn',
+        ABILITY:{LR:'ablr',TB:'abtb'},
+        ACTIVE:{LR:'aclr',TB:'actb'},
+        NODE:'node',
     },
     SCROLL:{
         DEF: 'def',

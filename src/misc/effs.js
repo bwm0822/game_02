@@ -7,7 +7,7 @@ export class Projectile extends Phaser.GameObjects.Sprite
 {
     constructor(scene, x, y, {img, scl=1, deg=0}={})
     {
-        let[texture, frame] = img.split('/')
+        let[texture, frame] = img.split(':')
         super(scene, x, y, texture, frame);
         scene.add.existing(this);
         this.setScale(scl);

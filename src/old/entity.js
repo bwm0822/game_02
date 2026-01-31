@@ -443,7 +443,7 @@ export class Entity extends Phaser.GameObjects.Container
         this.dat = DB.item(itm.id);
         if(this.dat.drop)
         {
-            let [key,frame] = this.dat.drop.sprite.split('/');
+            let [key,frame] = this.dat.drop.sprite.split(':');
             this.setTexture(key,frame,this.dat.drop.scale);
         }
         else

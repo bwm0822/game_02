@@ -51,7 +51,7 @@ class _Corpse extends Phaser.GameObjects.Container
 
     _addSprite(data)
     {
-        let [key,frame] = data.corpse.sprite.split('/');
+        let [key,frame] = data.corpse.sprite.split(':');
         let sp = this.scene.add.sprite(0,0,key,frame);
         sp.setScale(data.corpse.scale);
         this.add(sp);
@@ -103,7 +103,7 @@ class _Shape extends Phaser.GameObjects.Container
         let addSp = (sprite, depth)=>
         {
             if(!sprite) {return;}
-            let [key,frame]=sprite.split('/');
+            let [key,frame]=sprite.split(':');
             if(key)
             {
                 let sp = this.scene.add.sprite(0,0,key,frame);

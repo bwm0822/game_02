@@ -207,7 +207,7 @@ export class Flag extends Sizer
     set(action, role)
     {
         if(!action) return;
-        let [key,frame]=action.icon.split('/');
+        let [key,frame]=action.icon.split(':');
         this.getElement('icon',true).setTexture(key,frame);
         let num = action.id=='attack' ? role.damage : '';
         this.getElement('num').setText(num??'');
@@ -268,7 +268,7 @@ export class BuffInfo extends Sizer
         info = info.replace('%dmg',role.role.damage);
         //info = info.replace('%val',prepare.val);
         txt.setText(info);
-        let [key,frame]=prepare.icon.split('/');
+        let [key,frame]=prepare.icon.split(':');
         txt.addImage('icon', {
             key: key,
             frame: frame,

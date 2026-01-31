@@ -18,6 +18,7 @@ import UiMessage from '../ui/uimessage.js'
 import UiChangeScene from '../ui/uichangescene.js'
 import UiGameOver from '../ui/uigameover.js'
 import UiManufacture from '../ui/uimanufacture.js'
+import UiMap from '../ui/uimap.js'
 
 import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
@@ -58,7 +59,8 @@ export class GameScene extends Scene
         this.initUI();
         
         await new Map(this).createMap(this._data.map, diagonal, weight);
-        // await new MiniMap(this).create('map');
+        await MiniMap.init(this);
+        UiMap.show();
         this.createRuntime();
         this.initAmbient(this._data.ambient);
         this.setPosition(classType);

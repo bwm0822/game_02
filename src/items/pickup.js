@@ -43,14 +43,14 @@ export default class Pickup extends GameObject
 
         if(dat.drop)
         {
-            let [key,frame] = dat.drop.sprite.split('/');
+            let [key,frame] = dat.drop.sprite.split(':');
             this.bb.key = key;
             this.bb.frame = frame;
             this.bb.scl = dat.drop.scale;
         }
         else
         {
-            let [key,frame] = dat.icon.split('/');
+            let [key,frame] = dat.icon.split(':');
             this.bb.key = key;
             this.bb.frame = frame;
         }
