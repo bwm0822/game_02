@@ -469,7 +469,6 @@ export const UI =
         INV:'inv',
         DIALOG:'dialog',
         STORAGE:'storage',
-        QUEST:'quest',
         OPTION:'option',
         TRADE:'trade',
         INFO:'info',
@@ -487,7 +486,7 @@ export const UI =
         MANUFACTURE:'manufacture',
         COVER:'cover',
         DRAGGED:'dragged',
-        MAP:'map',
+        MISC:'misc',
     },
     INFO:{
         SLOT:'slot',

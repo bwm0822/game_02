@@ -4,7 +4,6 @@ import PressService from './services/pressService.js'
 import DragService from './services/dragService.js'
 
 import UiStorage from './ui/uistorage.js'
-import UiQuest from './ui/uiquest.js'
 import UiMain from './ui/uimain.js'
 import UiOption from './ui/uioption.js'
 import UiInv from './ui/uiinv.js'
@@ -26,7 +25,7 @@ import UiGameOver  from './ui/uigameover.js'
 import UiManufacture  from './ui/uimanufacture.js'
 import UiCover  from './ui/uicover.js'
 import UiDragged  from './ui/uidragged.js'
-import UiMap  from './ui/uimap.js'
+import UiMisc  from './ui/uimisc.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -74,12 +73,11 @@ export default function createUI(scene)
     new UiInv(scene);               // 6
     new UiTrade(scene);             // 7
     new UiStorage(scene);           // 8
-    new UiQuest(scene);              // 20
+    new UiMisc(scene);              // 20
     new UiDialog(scene);            // 9
     new UiObserve(scene);           // 10
     new UiCount(scene);             // 11
     new UiDragged(scene, 80, 80);   // 12
-    new UiMap(scene);               // 19
     
     new UiInfo(scene);              // 13
     new UiOption(scene);            // 14

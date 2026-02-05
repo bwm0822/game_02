@@ -494,6 +494,8 @@ export function uScroll(scene, config={})
         // style = UI.SCROLL.CON 時，需要設定 con_w,con_h
         con_w = 0, 
         con_h = 0,
+        clampChildOX=false,   // 水平不超界
+        clampChildOY=false,   // 垂直不超界
     }=config
 
     const getPanel = ()=>{
@@ -529,6 +531,8 @@ export function uScroll(scene, config={})
                 // step: 0.01,
             },
         },
+        clampChildOX: clampChildOX,
+        clampChildOY: clampChildOY,
     });
 
     const _panel = scroll.getElement('panel');

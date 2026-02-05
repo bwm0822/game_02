@@ -132,6 +132,7 @@ class Map
         this._center = {x:map.widthInPixels/2, y:map.heightInPixels/2};
         this._small = map.widthInPixels<GM.w && map.heightInPixels<GM.h;
         this.map = map;
+        GM.map = map;
 
         // 3) 取得 tilesets 
         const tilesets = TileMap.getTilesets(scene, map, mapName)

@@ -99,7 +99,11 @@ export default class TileMap
 
             scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
 
-            let map = scene.cache.tilemap.get(mapName);
+            const map = scene.cache.tilemap.get(mapName);
+
+            console.log(map)
+
+
             this._preload_Template(scene, map);
             this._preload_Tileset(scene, map);
             scene.load.once('complete', ()=>{resolve()});

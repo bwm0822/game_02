@@ -7,6 +7,7 @@ import UiQuest from '../ui/uiquest.js'
 import UiProfile from '../ui/uiprofile.js'
 import UiAbility from '../ui/uiability.js'
 import UiDebuger from '../ui/uidebuger.js'
+import UiMisc from '../ui/uimisc.js'
 
 export default class UiMain extends UiFrame
 {
@@ -29,7 +30,7 @@ export default class UiMain extends UiFrame
         this.addBg(scene)
             .add(ui.uButton(scene,{text:'🎒',onclick:this._inv.bind(this)}),{align:'bottom'})
             .add(ui.uButton(scene,{text:'👤',onclick:this._profile.bind(this)}),{align:'bottom'})
-            .add(ui.uButton(scene,{text:'📖',onclick:this._quest.bind(this)}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'📖',onclick:this._misc.bind(this)}),{align:'bottom'})
             .add(ui.uButton(scene,{text:'🧠',onclick:this._ability.bind(this)}),{align:'bottom'})
             .addCtrl(scene)
             .add(ui.uButton(scene,{text:'⏳',onclick:this._next.bind(this)}),{align:'bottom'})
@@ -100,6 +101,7 @@ export default class UiMain extends UiFrame
     _inv() {UiInv.toggle(this.player);}     
     _profile() {UiProfile.toggle(this.player);}
     _quest() {UiQuest.toggle(this.player);}
+    _misc() {UiMisc.toggle(this.player);}
     _ability() {UiAbility.toggle();}
     _next() {this.player.next();}
     _step() {this.player.dbgStep();}

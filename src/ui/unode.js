@@ -1,4 +1,5 @@
 import {GM,UI} from '../core/setting.js'
+import Utility from '../core/utility.js'
 import {uPic} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
 
@@ -12,20 +13,25 @@ function uTag(scene,{x,y,icon=GM.ICON.AIM}={})
 }
 
 
-export class UiNode extends Phaser.GameObjects.Container
+export class UNode extends Phaser.GameObjects.Container
 {
     constructor(scene, map, obj) 
     {
-        // obj.x, obj.y 是 左下角
+        const dat =  Utility.getProps(obj);
+        // obj.x,obj.y是左下角，轉成center
         const x = obj.x+obj.width/2;
         const y = obj.y-obj.height/2;
 
         super(scene, x, y);
         scene.add.existing(this); // ❗非常重要
+        this._zone = this._getZone(dat, obj);
+        this._dat = dat;
 
         this._init(map, obj);
-        // this._debugDraw(obj);
+        this._debugDraw(obj);
     }
+
+    get dat()  {return this._dat;}
 
     //------------------------------------------------------
     // Local
@@ -34,20 +40,20 @@ export class UiNode extends Phaser.GameObjects.Container
     {
         // console.log(obj)
         const scene=this.scene;
+
         const w=obj.width;
         const h=obj.height;
-        const cen = scene.add.circle(0, 0, 5)
-                                .setStrokeStyle(2, 0x00ff00);
-        const rect = scene.add.rectangle(0, 0, w, h)
-                                .setStrokeStyle(2, 0xffffff);
-        this.add(cen).add(rect);
-    }
 
-    _getbygid(map,gid)
-    {
-        const tileset = map.tilesets.find(t=>gid>=t.firstgid&&gid<t.firstgid+t.total);
-        const frame=gid-tileset.firstgid;
-        return [tileset.name,frame]
+        const z = this._zone;
+
+        const zcen = scene.add.circle(z.x, z.y, 5)
+                                .setStrokeStyle(2, 0x00ff00);
+        const zrect = scene.add.rectangle(z.x, z.y, z.w, z.h)
+                                .setStrokeStyle(2, 0xffffff);
+
+        const rect = scene.add.rectangle(0, 0, w, h)
+                            .setStrokeStyle(2, 0xffffff);
+        this.add(zcen).add(zrect).add(rect)
     }
 
     _onover()
@@ -65,20 +71,38 @@ export class UiNode extends Phaser.GameObjects.Container
         console.log('ondown')
     }
 
+    _getZone(dat, obj)
+    {
+        const l=dat.zl??0;
+        const r=dat.zr??0;
+        const t=dat.zt??0;
+        const b=dat.zb??0;
+        const w=obj.width-l-r;
+        const h=obj.height-b-t;
+
+        return {x:(l-r)/2, y:(t-b)/2, w:w, h:h};
+    }
+
     _init(map, obj)
     {
         const scene=this.scene;
 
         // image
-        const [key,frame] = this._getbygid(map,obj.gid);
+        const [key,frame] = Utility.getbygid(map,obj.gid);
         const img = scene.add.image(0,0,key,frame);
         this.add(img);
 
-        this.addTag(this.scene);
+        // this.addTag(this.scene);
 
         // event
-        this.setSize(obj.width,obj.height)
-        this.setInteractive();
+        const z = this._zone;
+        const w=obj.width;
+        const h=obj.height;
+        this.setSize(w,h)
+        // Phaser.Geom.Rectangle 的 (x, y) 是「左上角」
+        this.setInteractive(
+            new Phaser.Geom.Rectangle(z.x-z.w/2+w/2, z.y-z.h/2+h/2, z.w, z.h),
+            Phaser.Geom.Rectangle.Contains);
         this.on('pointerover', this._onover.bind(this))
         this.on('pointerout', this._onout.bind(this))
         this.on('pointerdown', this._ondown.bind(this))

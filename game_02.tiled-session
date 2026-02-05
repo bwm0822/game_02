@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/map.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets",
-        "public",
-        "public/assets/templates",
-        ".",
         "public/assets/tiles",
-        "public/assets/maps"
+        ".",
+        "public/assets/maps",
+        "public",
+        "public/assets",
+        "public/assets/templates"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -273,7 +273,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 160,
-                "y": 159.5
+                "y": 159
             }
         },
         "public/assets/maps/karen_home.json": {
@@ -302,11 +302,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1,
+            "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 105.5,
-                "y": 693
+                "x": 512,
+                "y": 512.3333333333334
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -395,8 +395,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
-                "y": 239.71098675355955
+                "x": 234.6107529928455,
+                "y": 509.3433449033081
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -406,8 +406,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
-                "y": 239.71098675355955
+                "x": 388.9778281504569,
+                "y": 239.37097116951196
             }
         },
         "public/assets/maps/trump_inn_f1.json": {
@@ -437,10 +437,10 @@
                 3
             ],
             "scale": 1,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 639.5
+                "x": 467,
+                "y": 881
             }
         },
         "public/assets/maps/village-02.json": {
@@ -450,7 +450,7 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
+                "x": 494,
                 "y": 640
             }
         },
@@ -484,7 +484,7 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 160,
+                "x": 271.99999999999994,
                 "y": 159.33333333333334
             }
         },
@@ -642,27 +642,26 @@
     "map.tileWidth": 32,
     "map.width": 40,
     "openFiles": [
-        "public/assets/maps/village-01.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/trump-inn-f1.json",
-        "public/assets/maps/trump-inn-f2.json",
-        "public/assets/maps/karen-home.json"
+        "public/assets/maps/village-01.json",
+        "public/assets/houe_1.tsj",
+        "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "int",
+    "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
-        "public/assets/maps/karen-home.json",
-        "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/map.json",
+        "public/assets/houe_1.tsj",
+        "public/assets/maps/village-01.json",
+        "public/assets/maps/trump-inn-f2.json",
+        "public/assets/maps/karen-home.json",
+        "public/assets/maps/xi-home.json",
+        "public/assets/maps/village-02.json",
         "public/assets/Full_1.tsj",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/macron-home.json",
-        "public/assets/3_Road.tsj",
-        "public/assets/0_Ground_LowSat.tsj",
-        "public/assets/32x32GridItemsAll.tsj",
-        "public/assets/4_Smallplaces.tsj"
+        "public/assets/3_Road.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

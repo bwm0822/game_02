@@ -621,6 +621,25 @@ export default class Utility
     }
 
 
+    static getbygid(map,gid)
+    {
+        const tileset = map.tilesets.find(t=>gid>=t.firstgid&&gid<t.firstgid+t.total);
+        const frame=gid-tileset.firstgid;
+        return [tileset.name,frame]
+    }
+
+    static getProps(obj)
+    {
+        return Object.fromEntries(
+            (obj.properties ?? []).map(p => [
+                p.name,
+                p.type === 'int'   ? parseInt(p.value,10) :
+                p.type === 'float' ? parseFloat(p.value) :
+                p.type === 'bool'  ? (p.value === true || p.value === 'true') :
+                p.value
+            ]))
+    }
+
 
 }
 
