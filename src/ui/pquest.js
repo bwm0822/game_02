@@ -6,12 +6,12 @@ import QuestManager from '../manager/quest.js'
 
 export class PQuest extends Sizer
 {
-    constructor(scene)
+    constructor(scene, toMap)
     {
         const config=
         {
             // bg:{color:GM.COLOR.PRIMARY},
-            space:{left:5,right:5,top:5,bottom:5,item:10}, 
+            space:{left:5,right:5,top:5,bottom:5,item:5}, 
             width:750,
             height:400,
             // ext:{expand:true,proportion:1}
@@ -19,11 +19,15 @@ export class PQuest extends Sizer
 
         super(scene, config);
 
+        this._toMap=toMap;
+
         // bg
         ui.uBg.call(this, scene, {color:GM.COLOR.PRIMARY})
 
         // scroll
-        this._scroll = ui.uScroll.call(this, scene, {bg:{},width:200,ext:{expand:true}});
+        this._scroll = ui.uScroll.call(this, scene, {bg:{},
+                                                    width:200,
+                                                    ext:{expand:true}});
 
         // content
         this._content = ui.uPanel.call(this, scene, {
@@ -44,16 +48,28 @@ export class PQuest extends Sizer
     {
         const scene = this.scene;
         const remove = ()=>{QuestManager.remove(q.dat.id);this.updatePage();}
+        const map = ()=>{this._toMap(q.dat.id);}
 
         this._content
             .removeAll(true)
             .add(ui.uBbc(scene,{text:q.fmt()}),{align:'left'})
 
+        if(q.dat.nid)
+        {
+            this._content
+                .add(ui.uButton(scene, {text:'地圖',
+                                        // bg:{color:GM.COLOR_RED},
+                                        cBG:GM.COLOR.RED,
+                                        onclick:map}),
+                    {align:'right'})
+        }
+
         if(q.state==='close')
         {
             this._content
                 .add(ui.uButton(scene, {text:'移除',
-                                        bg:{color:GM.COLOR_RED},
+                                        // bg:{color:GM.COLOR_RED},
+                                        cBG:GM.COLOR.RED,
                                         onclick:remove}),
                     {align:'right'})
         }

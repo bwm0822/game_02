@@ -3,9 +3,9 @@ import Utility from '../core/utility.js'
 import {uPic} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
 
-function uTag(scene,{x,y,icon=GM.ICON.AIM}={})
+export function uTag(scene,{x,y,icon='buffs:1',w=40,h=40}={})
 {
-    const tag = uPic(scene,{x:x,y:y,icon:icon,w:32,h:32,bg:{}})
+    const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
     tag.setInteractive()
         .on('pointerover',()=>{UiInfo.show(UI.INFO.NODE,tag);})
         .on('pointerout',()=>{UiInfo.close();})
@@ -28,10 +28,16 @@ export class UNode extends Phaser.GameObjects.Container
         this._dat = dat;
 
         this._init(map, obj);
-        this._debugDraw(obj);
+        // this._debugDraw(obj);
     }
 
-    get dat()  {return this._dat;}
+    get dat() {return this._dat;}
+    get loc() {return {x:this.x+this._zone.x, y:this.y+this._zone.y};}
+
+    get left() {return this.x-this.width/2;}
+    get right() {return this.x+this.width/2;}
+    get top() {return this.y-this.height/2;}
+    get bottom() {return this.y+this.height/2;}
 
     //------------------------------------------------------
     // Local
@@ -58,12 +64,14 @@ export class UNode extends Phaser.GameObjects.Container
 
     _onover()
     {
-        console.log('onover')
+        console.log('onover');
+        UiInfo.show(UI.INFO.NODE,this)
     }
 
     _onout()
     {
-        console.log('onout')
+        console.log('onout');
+        UiInfo.close();
     }
 
     _ondown()
@@ -109,9 +117,12 @@ export class UNode extends Phaser.GameObjects.Container
 
     }
 
-    addTag(scene)
+    //------------------------------------------------------
+    // Public
+    //------------------------------------------------------
+    addTag()
     {
-        this.add(uTag(scene,{x:0,y:-32}))
+        this.add(uTag(this.scene,{x:0,y:-32}))
     }
    
 }

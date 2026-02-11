@@ -282,6 +282,7 @@ export default class UiInfo extends UiFrame
     {
         let x=elm.x,y=elm.y;
         let p = elm.parentContainer;
+
         let parentX=0, parentY=0;
         while(p)
         {
@@ -298,8 +299,6 @@ export default class UiInfo extends UiFrame
     {
         super.show();
 
-        console.log(elm.x,elm.y)
-
         let [x,y,parentX,parentY]=this.getXY(elm);
         console.log(x,y,parentX,parentY);
 
@@ -308,7 +307,7 @@ export default class UiInfo extends UiFrame
             case UI.INFO.BTN:
             case UI.INFO.ACTIVE.TB:
             case UI.INFO.ABILITY.TB:
-                if(elm.y>GM.h/2)
+                if(y>GM.h/2)
                 {
                     this.setOrigin(0.5,1);
                     y=parentY+elm.top-this._gap;
@@ -320,7 +319,7 @@ export default class UiInfo extends UiFrame
                 }
                 break;
             default:
-                if(elm.x>GM.w/2)
+                if(x>GM.w/2)
                 {
                     this.setOrigin(1,0.5);
                     x=parentX+elm.left-this._gap;
@@ -334,8 +333,6 @@ export default class UiInfo extends UiFrame
         }
 
         this.update(type, elm);
-
-        console.log(elm)
 
         this.setPosition(x,y).rePos();
         this.layout();

@@ -40,6 +40,12 @@ export default class UiMisc extends UiFrame
         return this;
     }
 
+    toMap(qid)
+    {
+        this._tabs.emitButtonClick('top', 1);
+        this._page.setQid(qid)
+    }
+
     createPages(scene)
     {
         const config=
@@ -49,8 +55,8 @@ export default class UiMisc extends UiFrame
             height : 400,
         }
         const p=scene.rexUI.add.sizer(config);
-        this._quest = new PQuest(scene);
-        this._map= new PMap(scene)
+        this._quest = new PQuest(scene, this.toMap.bind(this));
+        this._map = new PMap(scene)
         p.add(this._quest).add(this._map)
         return p;
     }

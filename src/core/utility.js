@@ -631,7 +631,7 @@ export default class Utility
     static getProps(obj)
     {
         return Object.fromEntries(
-            (obj.properties ?? []).map(p => [
+            (Array.isArray(obj.properties) ? obj.properties : []).map(p => [
                 p.name,
                 p.type === 'int'   ? parseInt(p.value,10) :
                 p.type === 'float' ? parseFloat(p.value) :

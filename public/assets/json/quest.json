@@ -3,6 +3,7 @@
     "id": "q01",
     "title": "殺死盜賊",
     "des": "殺死郊區的盜賊",
+    "nid": "forest-01",
     "conds": [
       {
         "type": "kill",
