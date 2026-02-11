@@ -145,6 +145,8 @@ export class PMap extends Sizer
     {
         const nd = this._nds[nid];
 
+        if(!nd) {return;}
+
         const w = this._map.width;
         const h = this._map.height;
         const img_w =  this._map._panel.width;

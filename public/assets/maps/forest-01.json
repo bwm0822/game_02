@@ -108,6 +108,12 @@
  "nextlayerid":4,
  "nextobjectid":8,
  "orientation":"orthogonal",
+ "properties":[
+        {
+         "name":"nid",
+         "type":"string",
+         "value":"forest-01"
+        }],
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
  "tileheight":32,

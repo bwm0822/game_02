@@ -43,6 +43,12 @@
  "nextlayerid":3,
  "nextobjectid":2,
  "orientation":"orthogonal",
+ "properties":[
+        {
+         "name":"nid",
+         "type":"string",
+         "value":"village-02"
+        }],
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
  "tileheight":32,

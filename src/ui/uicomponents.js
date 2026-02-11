@@ -513,24 +513,28 @@ export function uScroll(scene, config={})
         }
     }
 
+    // slider 的設定，scrollMode=2 時，不顯示 slider，否則畫面左上角會有一個小方塊
+    const slider = scrollMode === 2 ? {} : 
+            {
+                track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
+                thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
+                space: 5,
+                hideUnscrollableSlider: hideUnscrollableSlider,
+                disableUnscrollableDrag: disableUnscrollableDrag,
+                buttons: {
+                    left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('up'),
+                    right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('down'),
+                    // step: 0.01,
+                },
+            };
+
     const scroll = scene.rexUI.add.scrollablePanel({
         width: width,
         height: height,
         background: uRect(scene, bg),
         panel: {child:getPanel()},
         scrollMode: scrollMode,
-        slider: {
-            track: uRect(scene,{width:15,color:GM.COLOR.DARK}),
-            thumb: uRect(scene,{width:20,height:20,radius:5,color:GM.COLOR.LIGHT}),
-            space: 5,
-            hideUnscrollableSlider: hideUnscrollableSlider,
-            disableUnscrollableDrag: disableUnscrollableDrag,
-            buttons: {
-                left: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('up'),
-                right: scene.rexUI.add.triangle(0, 0, 20, 20, GM.COLOR.DARK).setDirection('down'),
-                // step: 0.01,
-            },
-        },
+        slider: slider,
         clampChildOX: clampChildOX,
         clampChildOY: clampChildOY,
     });

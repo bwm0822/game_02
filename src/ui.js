@@ -89,7 +89,6 @@ export default function createUI(scene)
     
     new UiConfirm(scene);
 
-    // new UiManufacture_1(scene);
     // new UiTest(scene);
     UiChangeScene.show();
     test1();
