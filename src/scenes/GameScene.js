@@ -77,6 +77,9 @@ export class GameScene extends Scene
         UiChangeScene.done();
         AudioManager.bgmStart();
 
+
+
+
         
 
         this.log();
@@ -132,35 +135,10 @@ export class GameScene extends Scene
     {
         if(!Record.setting.mouseEdgeMove) return;
 
-        const p = this.input.activePointer;
-        //  console.log(p);
-        const margin=10;
-        const d=2.5;
-
-        const mx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
-        const my = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
-         
-        if (mx!==0 || my!==0) 
+        if(this._moveCam)
         {
-            this.cameras.main.scrollX += mx;
-            this.cameras.main.scrollY += my;
-            
-            if(!this._set)
-            {
-                UiCursor.set('cross');
-                this.stopCameraFollow();
-                this._set=true;
-                this._path=null;
-                this.clearPath();
-            }
-        }
-        else
-        {
-            if(this._set)
-            {
-                UiCursor.set('none');
-                this._set=false;
-            }
+            this.cameras.main.scrollX += this._mv.x;
+            this.cameras.main.scrollY += this._mv.y;
         }
     }
 
@@ -233,6 +211,31 @@ export class GameScene extends Scene
 
     processInput()
     {
+        this.game.canvas.addEventListener('mouseenter', () => {
+            this._moveCam=false;
+            UiCursor.set('none');
+        });
+
+        this.game.canvas.addEventListener('mouseleave', () => {
+            this._moveCam=true;
+            const p = this.input.activePointer;
+            //  console.log(p);
+            const margin=20;
+            const d=2.5;
+
+            const dx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
+            const dy = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
+
+            this._mv={x:dx,y:dy};
+
+            UiCursor.set('cross');
+            this.stopCameraFollow();
+            this._moveCam=true;
+            this._path=null;
+            this.clearPath();
+
+        });
+        
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
             this.onPointerDown(pointer,gameObject);
@@ -241,8 +244,13 @@ export class GameScene extends Scene
             this.onPointerMove(pointer);
         })
 
+        // this.input.mouse.requestPointerLock();
+        // this.scale.startFullscreen();
+
+
         //this.keys = this.input.keyboard.createCursorKeys();
         //this.input.keyboard.on('keydown',()=>{this.keyin();})
+
     }
 
     onPointerDown(pointer,gameObject)
