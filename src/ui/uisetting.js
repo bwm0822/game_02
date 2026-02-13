@@ -91,9 +91,7 @@ export default class UiSetting extends UiFrame
     page_Other()
     {
         this._page.clearAll();
-        // this._page.add(ui.uProgressBase(scene,{style:UI.PROGRESS.NBNV,height:25}).setValue(0.9));
-        // this._page.add(ui.uProgress(scene,{title:'hp',style:UI.PROGRESS.BGV,height:50}).setValue(10,50));
-        // this._page.add(this.check('enable',DEBUG,'enable'));
+        this._page.add(this.check('滑鼠移動到邊緣可移動鏡頭',Record.setting,'mouseEdgeMove'),{align:'left'})
 
         this.layout();
 

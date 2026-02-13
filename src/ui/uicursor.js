@@ -27,6 +27,7 @@ export default class UiCursor extends Phaser.GameObjects.Sprite
         open_door :  {sprite:GM.ICON_DOOR, origin:{x:0.5,y:0.5}, scale:1},
         close_door :  {sprite:GM.ICON_DOOR, origin:{x:0.5,y:0.5}, scale:1},
         rest :  {sprite:GM.ICON_TOOL, origin:{x:0.5,y:0.5}, scale:1},
+        cross:  {sprite:GM.ICON_CROSS, origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;

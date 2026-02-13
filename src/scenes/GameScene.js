@@ -38,6 +38,12 @@ export class GameScene extends Scene
     {
         console.log('[1] init');
         this._data = data;
+        this._mv = {x:0,y:0};
+    }
+
+    update()
+    {
+        this.moveCam();
     }
 
     async create ({diagonal,classType,weight})
@@ -70,6 +76,8 @@ export class GameScene extends Scene
         UiMessage.clean();
         UiChangeScene.done();
         AudioManager.bgmStart();
+
+        
 
         this.log();
     }
@@ -120,8 +128,52 @@ export class GameScene extends Scene
         // define in GameArea.js
     }
 
+    moveCam()
+    {
+        if(!Record.setting.mouseEdgeMove) return;
+
+        const p = this.input.activePointer;
+        //  console.log(p);
+        const margin=10;
+        const d=2.5;
+
+        const mx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
+        const my = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
+         
+        if (mx!==0 || my!==0) 
+        {
+            this.cameras.main.scrollX += mx;
+            this.cameras.main.scrollY += my;
+            
+            if(!this._set)
+            {
+                UiCursor.set('cross');
+                this.stopCameraFollow();
+                this._set=true;
+                this._path=null;
+                this.clearPath();
+            }
+        }
+        else
+        {
+            if(this._set)
+            {
+                UiCursor.set('none');
+                this._set=false;
+            }
+        }
+    }
+
+    stopCameraFollow()
+    {
+        this._follow=false;
+        this.cameras.main.stopFollow();
+    }
+
     setCameraFollow(mode)
     {
+        this._follow=true;
+        console.log('setCameraFollow:',mode)
         let offsetX=0,offsetY=0;
         if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
         else {mode&=~GM.CAM_LEFT_TOP;}
@@ -183,56 +235,80 @@ export class GameScene extends Scene
     {
         this.input
         .on('pointerdown', (pointer,gameObject)=>{
-
-            if(GM.player.state===GM.ST_SLEEP) {return;}
-
-            if (pointer.rightButtonDown())
-            {
-                console.log('right');
-            }
-            else if (pointer.middleButtonDown())
-            {
-                console.log('middle');
-            }
-            else
-            {
-                let pt = {x:pointer.worldX, y:pointer.worldY};
-                if(GM.player.state===GM.ST.MOVING)
-                {
-                    GM.player.stop();
-                }
-                else if(GM.player.state===GM.ST.ABILITY)
-                {
-                    GM.player.cmd({pt:pt,ent:this._ent});
-                }
-                else if(this._path?.state===GM.PATH_OK)
-                {
-                    GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
-                    UiMark.close();
-                    this._path=null;
-                }
-            }
-            
+            this.onPointerDown(pointer,gameObject);
         })
         .on('pointermove',(pointer)=>{
-            if(DEBUG.loc) {this.showMousePos();}
-            if(GM.player.state===GM.ST.ABILITY) 
-            {
-                let pt = {x:pointer.worldX,y:pointer.worldY};
-                if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
-                else {UiCursor.set('none');}
-                return;
-            }
-            else if(GM.player.state===GM.ST.SLEEP) {return;}
-            else if(GM.player.state!==GM.ST.MOVING)
-            {
-                let pt = {x:pointer.worldX,y:pointer.worldY};
-                this.showPath(pt, this._ent);
-            }
+            this.onPointerMove(pointer);
         })
 
         //this.keys = this.input.keyboard.createCursorKeys();
         //this.input.keyboard.on('keydown',()=>{this.keyin();})
+    }
+
+    onPointerDown(pointer,gameObject)
+    {
+        if(GM.player.state===GM.ST_SLEEP) {return;}
+
+        if (pointer.rightButtonDown())
+        {
+            console.log('right');
+        }
+        else if (pointer.middleButtonDown())
+        {
+            console.log('middle');
+        }
+        else
+        {
+            let pt = {x:pointer.worldX, y:pointer.worldY};
+            if(GM.player.state===GM.ST.MOVING)
+            {
+                GM.player.stop();
+            }
+            else if(GM.player.state===GM.ST.ABILITY)
+            {
+                GM.player.cmd({pt:pt,ent:this._ent});
+            }
+            else if(this._path?.state===GM.PATH_OK)
+            {
+                if(!this._follow)
+                {
+                    this._follow=true;  
+                    this.cameras.main.pan(GM.player.x, GM.player.y, 100, 'Power2');
+                    // pan 結束後再開始跟隨
+                    this.cameras.main.once('camerapancomplete', () => {
+                        this.setCameraFollow(GM.CAM_CENTER);
+                        GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
+                    });
+                }
+                else
+                {
+                    GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
+                }
+
+                UiMark.close();
+                this._path=null;
+
+            }
+        }
+    }
+
+    onPointerMove(pointer)
+    {
+        if(this._set) {return;}
+        if(DEBUG.loc) {this.showMousePos();}
+        if(GM.player.state===GM.ST.ABILITY) 
+        {
+            let pt = {x:pointer.worldX,y:pointer.worldY};
+            if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
+            else {UiCursor.set('none');}
+            return;
+        }
+        else if(GM.player.state===GM.ST.SLEEP) {return;}
+        else if(GM.player.state!==GM.ST.MOVING)
+        {
+            let pt = {x:pointer.worldX,y:pointer.worldY};
+            this.showPath(pt, this._ent);
+        }
     }
 
     keyin()
@@ -275,7 +351,13 @@ export class GameScene extends Scene
         this._path = path;
     }
 
-    clearPath() {if(this._dbgPath){this._dbgPath.clear();UiMark.close();}}
+    clearPath()
+    {
+        GM.player.hidePath();
+        UiMark.close();
+    }
+
+    // clearPath() {if(this._dbgPath){this._dbgPath.clear();UiMark.close();}}
 
     npcPath(on) 
     {
