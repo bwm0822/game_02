@@ -177,9 +177,6 @@ export class Slot extends Icon
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{
-
-            console.log('pointerdown',pointer,x,y)
-
             if (pointer.rightButtonDown()) {this.rightButtonDown(x,y);}
             else if(pointer.middleButtonDown()) {}
             else {this.leftButtonDown(x,y);}

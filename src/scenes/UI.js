@@ -2,6 +2,7 @@ import {Scene} from 'phaser'
 import createUI from '../ui.js'
 import {GM} from '../core/setting.js'
 import UiCursor from '../ui/uicursor.js'
+import DragService from '../services/dragService.js'
 import UiDragged from '../ui/uidragged.js'
 // import * as Role from '../role.js';
 
@@ -52,17 +53,19 @@ export class UI extends Scene
         // console.log(this.input._list);
         const list = this.input.manager.hitTest(pointer, this.input._list, this.cameras.main);
 
-        if (!list || list.length === 0) return null;
+        if (!list || list.length === 0) {return null;}
 
         // 取最上層（depth 最大）
         let best = null;
         let bestDepth = -Infinity;
-        for (const go of list) {
+        for (const go of list) 
+        {
             if (!go || !go.input || !go.visible) continue;
             const d = go.depth ?? 0;
-            if (d >= bestDepth) {
-            bestDepth = d;
-            best = go;
+            if (d >= bestDepth) 
+            {
+                bestDepth = d;
+                best = go;
             }
         }
         return best;
@@ -72,28 +75,31 @@ export class UI extends Scene
     {
         this.vp(pointer);
         const top = this._pickTopByVirtual(pointer);
+        
         if(top)
         {
             top.emit('pointerup', pointer, top);
-            return true;
         }
 
-        return false;
+        DragService._onpointerup(pointer);
+
+        return top ? true : false;
     }
 
 
     onPointerDown(pointer)
     {
-        console.log('ui pointer down')
         this.vp(pointer);
         const top = this._pickTopByVirtual(pointer);
+        
         if(top)
         {
-            top.emit('pointerdown', pointer, top);
-            return true;
+            top.emit('pointerdown', pointer, pointer.x,pointer.y);
         }
 
-        return false;
+        DragService._onpointerdown(pointer);
+
+        return top ? true : false;
     }
 
     onPointerMove(pointer)
@@ -101,7 +107,10 @@ export class UI extends Scene
         this.vp(pointer);
         const top = this._pickTopByVirtual(pointer);
 
-        //  if (top && top===this._over) {return true;}
+        UiCursor.pos(pointer.x, pointer.y);
+        DragService._onpointermove(pointer);
+        
+        if (top && top===this._over) {return true;}
 
         // pointerout
         if (this._over) 
@@ -119,8 +128,7 @@ export class UI extends Scene
             this.input.emit('gameobjectover', pointer, this._over);
         }
 
-        const p = pointer;
-        UiCursor.pos(p.x, p.y);
+
 
         return top ? true : false;
     }

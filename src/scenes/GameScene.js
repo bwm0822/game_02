@@ -257,12 +257,18 @@ export class GameScene extends Scene
 
     }
 
+    wp(pointer)
+    {
+        const p=pointer;
+        const wp = this.cameras.main.getWorldPoint(p.x, p.y);
+        p.worldX = wp.x;
+        p.worldY = wp.y;
+    }
+
     onPointerDown(pointer,gameObject)
     {
-        // const ui = this.scene.get('UI');
-        // this.vp(pointer);
-        // if(ui.onPointerDown(pointer,pointer.x,pointer.y)) {return;}
-
+        this.wp(pointer);
+        
         if(GM.player.state===GM.ST_SLEEP) {return;}
 
         if (pointer.rightButtonDown())
@@ -365,6 +371,29 @@ export class GameScene extends Scene
         return best;
     }
 
+    checkHover(pointer)
+    {
+        const top = this._pickTopByVirtual(pointer);
+
+        if (top && top===this._over) return;
+
+        // pointerout
+        if (this._over) 
+        {
+            this._over.emit('pointerout', pointer);
+            this.input.emit('gameobjectout', pointer, this._over);
+        }
+
+        this._over = top;
+
+        // pointerover
+        if (this._over) 
+        {
+            this._over.emit('pointerover', pointer);
+            this.input.emit('gameobjectover', pointer, this._over);
+        }
+    }
+
 
     onPointerMove(pointer)
     {
@@ -372,44 +401,12 @@ export class GameScene extends Scene
 
         if (this.input.mouse.locked) 
         {
-            // this.vp(pointer);
+            this.wp(pointer);
+            // console.log(p.x,p.y,'=>',p.worldX,p.worldY)
             this.checkEdge(pointer);    
-
+            this.checkHover(pointer);
             UiCursor.pos(pointer.x, pointer.y);
-
-            console.log('---- chk')
-            const ui = this.scene.get('UI');
-            if(ui.onPointerMove(pointer)) 
-            {
-                console.log('---- UI')
-                return;
-            }
-
-            console.log('---- NO UI')
-
-            const top = this._pickTopByVirtual(pointer);
-
-            if (top && top===this._over) return;
-
-            // pointerout
-            if (this._over) 
-            {
-                this._over.emit('pointerout', pointer);
-                this.input.emit('gameobjectout', pointer, this._over);
-            }
-
-            this._over = top;
-
-            // pointerover
-            if (this._over) 
-            {
-                this._over.emit('pointerover', pointer);
-                this.input.emit('gameobjectover', pointer, this._over);
-            }
-            
-            
         }
-        
 
         if(this._moveCam) {return;}
 

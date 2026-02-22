@@ -169,7 +169,8 @@ export default class DragService
         } 
         else if (!slot.isEmpty) // 無拖曳，且 slot 不為空 => 視為選取
         {
-            this._tryPickFromSlot(slot, slot.left + x, slot.top + y);
+            // this._tryPickFromSlot(slot, slot.left + x, slot.top + y);
+            this._tryPickFromSlot(slot, x, y);
         }
     }
 
