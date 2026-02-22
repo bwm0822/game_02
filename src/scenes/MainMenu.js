@@ -25,6 +25,13 @@ export class MainMenu extends Scene
         }
         this.initUI()
 
+
+         this.input.on('pointermove', (pointer) => {
+            // console.log('pointermove', pointer.x, pointer.y)
+            UiCursor.pos(pointer.x, pointer.y);
+         })
+
+
     }
 
 

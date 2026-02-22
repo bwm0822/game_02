@@ -42,11 +42,11 @@ export default class UiCursor extends Phaser.GameObjects.Sprite
         this.setIcon('none');
     }
 
-    preUpdate(time, delta)
-    {
-        //console.log(this.scene.input.x,this.scene.input.y);
-        this.setPosition(this.scene.input.x, this.scene.input.y);
-    }
+    // preUpdate(time, delta)
+    // {
+    //     //console.log(this.scene.input.x,this.scene.input.y);
+    //     this.setPosition(this.scene.input.x, this.scene.input.y);
+    // }
 
     setIcon(type)
     {

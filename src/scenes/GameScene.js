@@ -69,7 +69,7 @@ export class GameScene extends Scene
         this.initAmbient(this._data.ambient);
         this.setPosition(classType);
         this.initSchedule();
-        this.processInput();
+        // this.processInput();
 
         AudioManager.init(this);
         TimeSystem.start();
@@ -79,8 +79,6 @@ export class GameScene extends Scene
 
 
 
-
-        
 
         this.log();
     }
@@ -133,7 +131,7 @@ export class GameScene extends Scene
 
     moveCam()
     {
-        if(!Record.setting.mouseEdgeMove) return;
+        // if(!Record.setting.mouseEdgeMove) return;
 
         if(this._moveCam)
         {
@@ -211,36 +209,42 @@ export class GameScene extends Scene
 
     processInput()
     {
-        this.game.canvas.addEventListener('mouseenter', () => {
-            this._moveCam=false;
-            UiCursor.set('none');
-        });
+        // this.game.canvas.addEventListener('mouseenter', () => {
+        //     this._moveCam=false;
+        //     UiCursor.set('none');
+        // });
 
-        this.game.canvas.addEventListener('mouseleave', () => {
-            this._moveCam=true;
-            const p = this.input.activePointer;
-            //  console.log(p);
-            const margin=20;
-            const d=2.5;
+        // this.game.canvas.addEventListener('mouseleave', () => {
+        //     this._moveCam=true;
+        //     const p = this.input.activePointer;
+        //     //  console.log(p);
+        //     const margin=20;
+        //     const d=2.5;
 
-            const dx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
-            const dy = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
+        //     const dx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
+        //     const dy = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
 
-            this._mv={x:dx,y:dy};
+        //     this._mv={x:dx,y:dy};
 
-            UiCursor.set('cross');
-            this.stopCameraFollow();
-            this._moveCam=true;
-            this._path=null;
-            this.clearPath();
+        //     UiCursor.set('cross');
+        //     this.stopCameraFollow();
+        //     this._moveCam=true;
+        //     this._path=null;
+        //     this.clearPath();
 
-        });
+        // });
         
         this.input
-        .on('pointerdown', (pointer,gameObject)=>{
-            this.onPointerDown(pointer,gameObject);
+        .on('pointerdown', (pointer)=>{
+            this.onPointerDown(pointer);
         })
+        // .on('pointerup', (pointer)=>{
+        //     const ui = this.scene.get('UI');
+        //     this.vp(pointer);
+        //     ui.onPointerUp(pointer);
+        // })
         .on('pointermove',(pointer)=>{
+            // console.log('----- move')
             this.onPointerMove(pointer);
         })
 
@@ -255,6 +259,10 @@ export class GameScene extends Scene
 
     onPointerDown(pointer,gameObject)
     {
+        // const ui = this.scene.get('UI');
+        // this.vp(pointer);
+        // if(ui.onPointerDown(pointer,pointer.x,pointer.y)) {return;}
+
         if(GM.player.state===GM.ST_SLEEP) {return;}
 
         if (pointer.rightButtonDown())
@@ -267,6 +275,7 @@ export class GameScene extends Scene
         }
         else
         {
+            // this.vp(pointer);
             let pt = {x:pointer.worldX, y:pointer.worldY};
             if(GM.player.state===GM.ST.MOVING)
             {
@@ -295,14 +304,115 @@ export class GameScene extends Scene
 
                 UiMark.close();
                 this._path=null;
-
             }
         }
     }
 
+
+    checkEdge(pointer)
+    {
+        const p=pointer;
+
+        const m=5;
+        const atEdge = p.x<=m||p.x>=GM.w-m||p.y<=m||p.y>=GM.h-m;
+        const d=3.5;
+        if(atEdge)
+        {
+            // console.log('--------------- edge:',p.x,p.y)
+            this._mv={x:0,y:0};
+            this._mv.x = p.x<GM.w/2 ? -d : d;
+            this._mv.y = p.y<GM.h/2 ? -d : d;
+
+            if(!this._moveCam)
+            {
+                this._moveCam=true;
+                        
+                UiCursor.set('cross');
+                
+                this.stopCameraFollow();
+                this._moveCam=true;
+                this._path=null;
+                this.clearPath();
+            }
+            UiCursor.pos(p.x, p.y);
+        }
+        else if(this._moveCam)
+        {
+            this._moveCam=false;
+            UiCursor.set('none');
+        }
+    }
+
+
+    _pickTopByVirtual(pointer) 
+    {
+        // console.log(this.input._list);
+        const list = this.input.manager.hitTest(pointer, this.input._list, this.cameras.main);
+
+        if (!list || list.length === 0) return null;
+
+        // 取最上層（depth 最大）
+        let best = null;
+        let bestDepth = -Infinity;
+        for (const go of list) {
+            if (!go || !go.input || !go.visible) continue;
+            const d = go.depth ?? 0;
+            if (d >= bestDepth) {
+            bestDepth = d;
+            best = go;
+            }
+        }
+        return best;
+    }
+
+
     onPointerMove(pointer)
     {
-        if(this._set) {return;}
+        // if(this._set) {return;}
+
+        if (this.input.mouse.locked) 
+        {
+            // this.vp(pointer);
+            this.checkEdge(pointer);    
+
+            UiCursor.pos(pointer.x, pointer.y);
+
+            console.log('---- chk')
+            const ui = this.scene.get('UI');
+            if(ui.onPointerMove(pointer)) 
+            {
+                console.log('---- UI')
+                return;
+            }
+
+            console.log('---- NO UI')
+
+            const top = this._pickTopByVirtual(pointer);
+
+            if (top && top===this._over) return;
+
+            // pointerout
+            if (this._over) 
+            {
+                this._over.emit('pointerout', pointer);
+                this.input.emit('gameobjectout', pointer, this._over);
+            }
+
+            this._over = top;
+
+            // pointerover
+            if (this._over) 
+            {
+                this._over.emit('pointerover', pointer);
+                this.input.emit('gameobjectover', pointer, this._over);
+            }
+            
+            
+        }
+        
+
+        if(this._moveCam) {return;}
+
         if(DEBUG.loc) {this.showMousePos();}
         if(GM.player.state===GM.ST.ABILITY) 
         {
@@ -394,6 +504,9 @@ export class GameScene extends Scene
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
+
+        this.input.mouse.releasePointerLock();
+
         AudioManager.bgmPause();
     }
 
