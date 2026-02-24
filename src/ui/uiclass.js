@@ -109,6 +109,20 @@ export class Slot extends Icon
     //                                                 : this.dat?.[p];
     // }  
 
+    // setInteractive(...args)
+    // {
+    //     super.setInteractive(...args);
+    //     super.disableInteractive();
+    //     Ui.setInteractive(this);
+    //     return this;
+    // }
+
+    // disableInteractive()
+    // {
+    //     Ui.disableInteractive(this);
+    // }
+
+
     setSlot(content)
     {
         this.dat = DB.item(content?.id);
@@ -173,7 +187,8 @@ export class Slot extends Icon
 
     addListener()
     {
-        this.setInteractive({draggable:true,dropZone:true})
+        // this.setInteractive({draggable:true,dropZone:true})
+        Ui.setInteractive(this,{draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{
@@ -253,12 +268,14 @@ export class Slot extends Icon
     {
         if(on)
         {
-            this.setInteractive({draggable:true,dropZone:true});
+            // this.setInteractive({draggable:true,dropZone:true});
+            Ui.setInteractive(this,{draggable:true,dropZone:true});
             this._disabled.fillAlpha=0;
         }
         else
         {
-            this.disableInteractive();
+            // this.disableInteractive();
+            Ui.disableInteractive(this);
             this.setBgColor(GM.COLOR.SLOT);
             this._disabled.fillAlpha=0.6;
         }
@@ -305,6 +322,7 @@ export class Slot extends Icon
     { 
         Ui.cancelDelayCall();    
         this.setBgColor(GM.COLOR.SLOT);
+        console.trace('out slot');
         UiInfo.close();
         // 將裝備欄位的背景顏色設置為 COLOR_SLOT
         checkEquip && UiInv.checkEquipSlots(null);   
@@ -475,7 +493,8 @@ export class AbilitySlot extends Pic
 
     addListener()
     {
-        this.setInteractive({draggable:true,dropZone:true})
+        // this.setInteractive({draggable:true,dropZone:true})
+        Ui.setInteractive(this,{draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', (pointer,x,y)=>{this.leftButtonDown(x,y);})
@@ -602,7 +621,8 @@ export class AbilityItem extends Pic
 
     addListener()
     {
-        this.setInteractive({draggable:true,dropZone:true})
+        // this.setInteractive({draggable:true,dropZone:true})
+        Ui.setInteractive(this,{draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
         .on('pointerdown', async (pointer,x,y)=>{this.leftButtonDown(x,y);})
@@ -672,7 +692,8 @@ export class Block extends Pic
 
     addListener()
     {
-        this.setInteractive({draggable:true,dropZone:true})
+        // this.setInteractive({draggable:true,dropZone:true})
+        Ui.setInteractive(this,{draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
     }
@@ -700,7 +721,8 @@ export class Effect extends Pic
 
     addListener()
     {
-        this.setInteractive({draggable:true,dropZone:true})
+        // this.setInteractive({draggable:true,dropZone:true})
+        Ui.setInteractive(this,{draggable:true,dropZone:true})
         .on('pointerover', ()=>{this.over();})
         .on('pointerout', ()=>{this.out();})
     }

@@ -1,6 +1,9 @@
 import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import {GM, UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
+import Ui from './uicommon.js'
+
+
 
 export class Pic extends OverlapSizer
 {
@@ -87,7 +90,8 @@ export function uRect(scene, config={})
 
     if(interactive)
     {
-        r.setInteractive();
+        // r.setInteractive();
+        Ui.setInteractive(r);
         if(onover){r.on('pointerover',()=>{onover()})};
         if(onout){r.on('pointerout',()=>{onout()})};
         if(ondown){r.on('pointerdown',()=>{ondown()})};
@@ -328,12 +332,14 @@ export function uButton(scene,config={})
     btn.setEnable = (on)=>{
         // console.log(`${btn._text.text} : ${on}`)
         if(on) {    
-            btn.setInteractive();
+            // btn.setInteractive();
+            Ui.setInteractive(btn);
             btn._text?.setAlpha(1);
             btn._icon?.setAlpha(1);
         }
         else {  
-            btn.disableInteractive();
+            // btn.disableInteractive();
+            Ui.disableInteractive(btn);
             btn._text?.setAlpha(0.5);
             btn._icon?.setAlpha(0.5);
             style===UI.BTN.DEF&&btn._bg.setFillStyle(cBG);
@@ -342,7 +348,8 @@ export function uButton(scene,config={})
     }
 
     // 事件偵測
-    btn.setInteractive()
+    Ui.setInteractive(btn)
+    // btn.setInteractive()
         .on('pointerover',()=>{_over(true);onover?.(btn);})
         .on('pointerout',()=>{_over(false);onout?.(btn);})
         .on('pointerdown',()=>{ondown?.(btn)})
@@ -350,6 +357,8 @@ export function uButton(scene,config={})
             if(style===UI.BTN.CHECK||style===UI.BTN.FOLD) {btn.setValue(!btn.value);}
             onclick?.(btn);            
         })
+
+    // btn.disableInteractive();
 
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
@@ -363,7 +372,8 @@ export function uStat(scene, key, value, {interactive=true, onover, onout}={})
     {
         const bg = uBg.call(p, scene, {color:GM.COLOR.LIGHT})
         bg.alpha=0;
-        p.setInteractive()
+        // p.setInteractive()
+        Ui.setInteractive(p)
         .on('pointerover',()=>{ bg.alpha=1; onover?.(); })
         .on('pointerout',()=>{ bg.alpha=0; onout?.(); })
     }
@@ -542,8 +552,10 @@ export function uScroll(scene, config={})
     const _panel = scroll.getElement('panel');
 
     const wheel = (pointer, gameObjects, dx, dy)=>{
+
         const x = pointer.worldX;
         const y = pointer.worldY;
+
         const bounds = scroll.getBounds();
 
         if (!Phaser.Geom.Rectangle.Contains(bounds, x, y)) {
@@ -647,6 +659,19 @@ export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,on
     }
 
     let tabs = scene.rexUI.add.tabs(config); 
+
+    const groups = ['leftButtons','rightButtons','topButtons','bottomButtons'];
+
+    groups.forEach((groupName)=>{
+        const btns = tabs.getElement(groupName);
+        btns?.forEach((btn, index)=>{
+            Ui.setInteractive(btn)
+            .on('pointerover',()=>{tabs.emit('button.over', btn, groupName, index);})
+            .on('pointerout',()=>{tabs.emit('button.out', btn, groupName, index);})
+            .on('pointerdown',()=>{tabs.emit('button.click', btn, groupName, index);})
+        })
+    })
+            
 
     // 提供給外界操作
     tabs.init = (groupName='top')=>{tabs.emitButtonClick(groupName,0);}
@@ -899,7 +924,8 @@ export function uInput(scene, config={})
                                 text:{fixedWidth:width, 
                                         fixedHeight:height, 
                                         valign:'center'}})
-    input.setInteractive()
+    // input.setInteractive()
+    Ui.setInteractive(input)
         .on('pointerdown', function () {
             const config = {
                 enterClose: btn?false:true,

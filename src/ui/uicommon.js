@@ -26,6 +26,28 @@ export default class Ui
     static on(tag,...args) {this._list[tag]?.show(...args);}
     static off(tag) {this._list[tag]?.close();}
 
+
+
+    static setInteractive(ui,...args)
+    {   
+        ui.setInteractive(...args);
+        ui.disableInteractive();
+        ui._enabled=true;
+        return ui;
+    }
+
+    static disableInteractive(ui)
+    {
+        ui._enabled=false;
+        return ui;
+    }
+
+    static removeInteractive(ui)
+    {
+        ui.removeInteractive();
+        return ui;
+    }
+
     static addLayer(scene, name, top)
     {
         let layer = scene.add.layer();

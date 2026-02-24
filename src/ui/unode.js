@@ -2,11 +2,13 @@ import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {uPic} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
+import Ui from './uicommon.js'
 
 export function uTag(scene,{x,y,icon='buffs:1',w=40,h=40}={})
 {
     const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
-    tag.setInteractive()
+    // tag.setInteractive()
+    Ui.setInteractive(tag)
         .on('pointerover',()=>{UiInfo.show(UI.INFO.NODE,tag);})
         .on('pointerout',()=>{UiInfo.close();})
     return tag;
@@ -108,7 +110,10 @@ export class UNode extends Phaser.GameObjects.Container
         const h=obj.height;
         this.setSize(w,h)
         // Phaser.Geom.Rectangle 的 (x, y) 是「左上角」
-        this.setInteractive(
+        // this.setInteractive(
+        //     new Phaser.Geom.Rectangle(z.x-z.w/2+w/2, z.y-z.h/2+h/2, z.w, z.h),
+        //     Phaser.Geom.Rectangle.Contains);
+        Ui.setInteractive(this,
             new Phaser.Geom.Rectangle(z.x-z.w/2+w/2, z.y-z.h/2+h/2, z.w, z.h),
             Phaser.Geom.Rectangle.Contains);
         this.on('pointerover', this._onover.bind(this))

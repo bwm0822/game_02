@@ -300,7 +300,9 @@ export default class UiInfo extends UiFrame
         super.show();
 
         let [x,y,parentX,parentY]=this.getXY(elm);
-        console.log(x,y,parentX,parentY);
+
+        // console.trace('show')
+        // console.log(x,y,parentX,parentY);
 
         switch(type)
         {
@@ -344,7 +346,10 @@ export default class UiInfo extends UiFrame
         else if(this.top<0) {this.y-=this.top;}
     }
 
-    static close() {this.instance?.hide();}
+    static close() {
+        // console.log('close info')
+        this.instance?.hide();
+    }
 
     static show(type, elm) {this.instance?.show(type, elm);}
 
