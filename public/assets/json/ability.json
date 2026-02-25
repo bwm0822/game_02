@@ -1,6 +1,6 @@
 {
   "lunge": {
-    "icon": "icons/0",
+    "icon": "icons:0",
     "type": "attack",
     "scope": "enemy",
     "cd": 3,
@@ -37,7 +37,7 @@
     }
   },
   "fireball": {
-    "icon": "icons/1",
+    "icon": "icons:1",
     "type": "spell",
     "scope": "enemy",
     "cd": 3,
@@ -57,7 +57,7 @@
     }
   },
   "ice": {
-    "icon": "icons/8",
+    "icon": "icons:8",
     "type": "spell",
     "refs": [
       "lunge",
@@ -76,7 +76,7 @@
     }
   },
   "strong": {
-    "icon": "icons/20",
+    "icon": "icons:20",
     "type": "passive",
     "effects": [
       {
@@ -91,7 +91,7 @@
     }
   },
   "heal": {
-    "icon": "icons/16",
+    "icon": "icons:16",
     "type": "active",
     "scope": "self",
     "cd": 3,
@@ -127,7 +127,7 @@
     }
   },
   "test1": {
-    "icon": "icons/17",
+    "icon": "icons:17",
     "type": "active",
     "cd": 3,
     "range": 2,

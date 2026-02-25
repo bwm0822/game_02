@@ -65,13 +65,11 @@ export class UNode extends Phaser.GameObjects.Container
 
     _onover()
     {
-        console.log('onover');
         UiInfo.show(UI.INFO.NODE,this)
     }
 
     _onout()
     {
-        console.log('onout');
         UiInfo.close();
     }
 

@@ -370,11 +370,10 @@ export class GameScene extends Scene
 
     clearPath()
     {
+        console.log('clearpath')
         GM.player.hidePath();
         UiMark.close();
     }
-
-    // clearPath() {if(this._dbgPath){this._dbgPath.clear();UiMark.close();}}
 
     npcPath(on) 
     {

@@ -234,7 +234,6 @@ export default class UiInfo extends UiFrame
 
     ifNode(elm)
     {
-        console.log('--------- ifNode')
         const scene = this.scene;
         ui.uBbc.call(this,scene,{text:'test'});   
     }

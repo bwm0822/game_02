@@ -354,8 +354,6 @@ export function uButton(scene,config={})
             onclick?.(btn);            
         })
 
-    // btn.disableInteractive();
-
     if(this&&this.add) {this.add(btn,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
     return btn;
 }
@@ -649,7 +647,7 @@ export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,on
         leftButtons: left?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,bl:20}},...btn})}),
         rightButtons: right?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tr:20,br:20}},...btn})}),
         bottomButtons: bottom?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{bl:20,br:20}},...btn})}),
-        space: {left:5, right:5, top:5, bottom:5, leftButton:10, rightButton:10, topButton:10, bottomButton:10},
+        space: {left:10, right:10, top:10, bottom:10, leftButton:10, rightButton:10, topButton:10, bottomButton:10},
         panel: createpanel?.(),
     }
 

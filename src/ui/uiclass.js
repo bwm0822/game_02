@@ -65,31 +65,31 @@ export class Slot extends Icon
 
         if(this.owner.tradeType)    // 交易
         {
-            if(this.owner.tradeType == GM.BUYER) {acts = {'sell':true,'drop':true};}
-            else {acts = {'buy':true};}
-            if(this.content.count>1) {acts = {...acts,'split':true};}
+            if(this.owner.tradeType === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
+            else {acts = {'buy':GM.EN};}
+            if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
         }
         else
         {
             if(this.dat.useable) 
             {
                 if(this.content?.times===0 || this.content?.capacity===0)
-                    acts = {...acts,'use':false};
+                    acts = {...acts,'use':GM.DIS};
                 else
-                    acts = {...acts,'use':true};
+                    acts = {...acts,'use':GM.EN};
             }
 
             if(this.owner.target) // 打開箱子
             {
-                acts = {...acts,'transfer':true,'drop':true};
-                if(this.content.count>1) {acts = {...acts,'split':true};}
-                else if(this.content.storage) {acts = {...acts,'openbag':false};}
+                acts = {...acts,'transfer':GM.EN,'drop':GM.EN};
+                if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
+                else if(this.content.storage) {acts = {...acts,'openbag':GM.DIS};}
             }
             else 
             {
-                if(this.content.count>1) {acts = {...acts,'drop':true,'split':true};}
-                else if(this.dat.storage) {acts = {...acts,'drop':true,'openbag':true};}
-                else {acts = {...acts,'drop':true};}
+                if(this.content.count>1) {acts = {...acts,'drop':GM.EN,'split':GM.EN};}
+                else if(this.dat.storage) {acts = {...acts,'drop':GM.EN,'openbag':GM.EN};}
+                else {acts = {...acts,'drop':GM.EN};}
             }
         }
 

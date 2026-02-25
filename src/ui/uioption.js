@@ -179,6 +179,7 @@ export default class UiOption extends UiFrame
         // 設定 options
         Object.values(this._items).forEach((item)=>{item.hide();})
         Object.entries(options).forEach(([k,v])=>{
+            console.log(k,v)
             v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
         })
 
