@@ -322,7 +322,6 @@ export class Slot extends Icon
     { 
         Ui.cancelDelayCall();    
         this.setBgColor(GM.COLOR.SLOT);
-        console.trace('out slot');
         UiInfo.close();
         // 將裝備欄位的背景顏色設置為 COLOR_SLOT
         checkEquip && UiInv.checkEquipSlots(null);   

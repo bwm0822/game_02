@@ -27,15 +27,13 @@ export class UI extends Scene
         this.input.enabled = true;
         // this.input.pollAlways = false;
         // this.input.filterObjects = () => []; // 禁止 Phaser 自動處理遊戲物件的輸入事件
-
-        this._vp={x:GM.w/2,y:GM.h/2}; 
     }
 
 
 
-    vp(pointer)     // virtual pointer for mouse lock
+    _syncVirtualPointer(pointer)     // virtual pointer for mouse lock
     {
-        if(!this._vp) {this._vp={x:0,y:0};}
+        if(!this._vp) {this._vp={x:GM.w/2,y:GM.h/2};}
 
         this._vp.x += pointer.movementX;
         this._vp.y += pointer.movementY;
@@ -54,7 +52,7 @@ export class UI extends Scene
         // p.worldY = wp.y;
     }
 
-    toXY(go)
+    toWorldXY(go)
     {
         let x=go.x,y=go.y;
         let p=go.parentContainer;
@@ -72,7 +70,7 @@ export class UI extends Scene
 
     isHit(pointer, go)
     {
-        let[x,y]=this.toXY(go);
+        let[x,y]=this.toWorldXY(go);
         // 轉 local
         // console.log(go.input.hitArea, pointer.worldX, pointer.worldY);
         const localX = pointer.worldX - x + go.displayOriginX;
@@ -115,33 +113,14 @@ export class UI extends Scene
         const list = this.hitTest(pointer, this.input._list);
 
         // console.log('lits=',list)
-        // list.forEach(go => {
-        //     console.log(go.name, go.depth, go._enabled, this.isVisible(go));
-        // })
         if (!list || list.length === 0) {return null;}
 
         return list.at(-1);
-
-        // // 取最上層（depth 最大）
-        // let best = null;
-        // let bestDepth = -Infinity;
-        // for (const go of list) 
-        // {
-        //     if (!go || !go.input || !go.visible) continue;
-        //     const d = go.depth ?? 0;
-        //     if (d >= bestDepth) 
-        //     {
-        //         bestDepth = d;
-        //         best = go;
-        //     }
-        // }
-        // // console.log('best=',best)
-        // return best;
     }
 
     onPointerUp(pointer)
     {
-        this.vp(pointer);
+        this._syncVirtualPointer(pointer);
         const top = this._pickTopByVirtual(pointer);
         
         if(top)
@@ -157,7 +136,7 @@ export class UI extends Scene
 
     onPointerDown(pointer)
     {
-        this.vp(pointer);
+        this._syncVirtualPointer(pointer);
         const top = this._pickTopByVirtual(pointer);
         
         if(top)
@@ -173,7 +152,7 @@ export class UI extends Scene
     onPointerMove(pointer)
     {
         // console.log(this.input.activePointer.x, this.input.activePointer.y);
-        this.vp(pointer);
+        this._syncVirtualPointer(pointer);
         const top = this._pickTopByVirtual(pointer);
 
         UiCursor.pos(pointer.x, pointer.y);
@@ -203,22 +182,6 @@ export class UI extends Scene
         return top ? true : false;
     }
 
-    onPointerMove_old(pointer)
-    {
-        // console.log('1:',pointer.x,pointer.y)
-        this.vp(pointer);
-        // console.log('2:',pointer.x,pointer.y)
-        
-
-        UiCursor.pos(pointer.x, pointer.y);
-        DragService._onpointermove(pointer);
-        
-        
-
-
-
-        return false;
-    }
 
     processInput()
     {
@@ -243,8 +206,12 @@ export class UI extends Scene
         .on('pointermove',(pointer)=>{
             if(!this.onPointerMove(pointer)) 
             {
-                // console.log('area')
+                area.input.enabled=true;
                 area.onPointerMove(pointer);
+            }
+            else
+            {
+                area.input.enabled=false;
             }
         })
         .on('pointerdown',(pointer)=>{
@@ -257,7 +224,7 @@ export class UI extends Scene
             this.onPointerUp(pointer);
         })
         .on('wheel',(pointer, gameobject, dx, dy)=>{
-            this.vp(pointer);
+            this._syncVirtualPointer(pointer);
         })
 
     }

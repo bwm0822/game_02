@@ -237,15 +237,11 @@ export class GameScene extends Scene
         this.input
         .on('pointerdown', (pointer)=>{
             this.onPointerDown(pointer);
+            console.log('game down')
         })
-        // .on('pointerup', (pointer)=>{
-        //     const ui = this.scene.get('UI');
-        //     this.vp(pointer);
-        //     ui.onPointerUp(pointer);
-        // })
         .on('pointermove',(pointer)=>{
-            // console.log('----- move')
             this.onPointerMove(pointer);
+            console.log('game move')
         })
 
         // this.input.mouse.requestPointerLock();
@@ -259,10 +255,11 @@ export class GameScene extends Scene
 
     wp(pointer)
     {
-        const p=pointer;
-        const wp = this.cameras.main.getWorldPoint(p.x, p.y);
-        p.worldX = wp.x;
-        p.worldY = wp.y;
+        // const p=pointer;
+        // const wp = this.cameras.main.getWorldPoint(p.x, p.y);
+        // p.worldX = wp.x;
+        // p.worldY = wp.y;
+        pointer.updateWorldPoint(this.cameras.main);
     }
 
     onPointerDown(pointer,gameObject)
@@ -340,7 +337,7 @@ export class GameScene extends Scene
                 this._path=null;
                 this.clearPath();
             }
-            UiCursor.pos(p.x, p.y);
+            // UiCursor.pos(p.x, p.y);
         }
         else if(this._moveCam)
         {
@@ -404,8 +401,8 @@ export class GameScene extends Scene
             this.wp(pointer);
             // console.log(p.x,p.y,'=>',p.worldX,p.worldY)
             this.checkEdge(pointer);    
-            this.checkHover(pointer);
-            UiCursor.pos(pointer.x, pointer.y);
+            // this.checkHover(pointer);
+            // UiCursor.pos(pointer.x, pointer.y);
         }
 
         if(this._moveCam) {return;}
