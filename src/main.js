@@ -4,6 +4,7 @@ import { GameOver } from './scenes/GameOver';
 import { MainMenu } from './scenes/MainMenu';
 import { Preloader } from './scenes/Preloader';
 import { UI } from './scenes/UI';
+import { Top } from './scenes/Top';
 import { GameMap } from './scenes/GameMap';
 import { GameArea } from './scenes/GameArea';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
@@ -89,6 +90,7 @@ const config = {
         GameMap,
         GameArea,
         UI,
+        Top,
     ]
 };
 

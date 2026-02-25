@@ -314,7 +314,6 @@ class View extends Phaser.GameObjects.Container
         const {emit}=this.ctx;
         this._zone.setInteractive()
             .on('pointerover',()=>{
-                console.log('------- over')
                 this._setOutline(true);
                 emit('over');
                 if(DEBUG.enable){debugDraw.bind(this)();}

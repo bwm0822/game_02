@@ -16,6 +16,7 @@ export class Game extends Scene
         console.log('create Game')
         this.loadRecord();
         this.scene.launch('UI');
+        this.scene.launch('Top');
         this.gotoScene();
     }
 

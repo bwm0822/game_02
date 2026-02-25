@@ -24,163 +24,11 @@ export class UI extends Scene
         this.input.setDefaultCursor('none');    // 消除預設的游標
 
         this.input.mouse.requestPointerLock();
-        this.input.enabled = true;
+        // this.input.enabled = true;
         // this.input.pollAlways = false;
         // this.input.filterObjects = () => []; // 禁止 Phaser 自動處理遊戲物件的輸入事件
     }
 
-
-
-    _syncVirtualPointer(pointer)     // virtual pointer for mouse lock
-    {
-        if(!this._vp) {this._vp={x:GM.w/2,y:GM.h/2};}
-
-        this._vp.x += pointer.movementX;
-        this._vp.y += pointer.movementY;
-
-        this._vp.x = Phaser.Math.Clamp(this._vp.x, 0, this.scale.width);
-        this._vp.y = Phaser.Math.Clamp(this._vp.y, 0, this.scale.height);
-
-        const p = this.input.activePointer;
-        p.x = this._vp.x;
-        p.y = this._vp.y;
-
-        p.updateWorldPoint(this.cameras.main);
-
-        // const wp = this.cameras.main.getWorldPoint(this._vp.x, this._vp.y);
-        // p.worldX = wp.x;
-        // p.worldY = wp.y;
-    }
-
-    toWorldXY(go)
-    {
-        let x=go.x,y=go.y;
-        let p=go.parentContainer;
-        let parentX=0, parentY=0;
-        while(p)
-        {
-            parentX+=p.x;
-            parentY+=p.y;
-            x+=p.x;
-            y+=p.y;
-            p=p.parentContainer;
-        }
-        return [x,y];
-    }
-
-    isHit(pointer, go)
-    {
-        let[x,y]=this.toWorldXY(go);
-        // 轉 local
-        // console.log(go.input.hitArea, pointer.worldX, pointer.worldY);
-        const localX = pointer.worldX - x + go.displayOriginX;
-        const localY = pointer.worldY - y + go.displayOriginY;
-
-        const hit = Phaser.Geom.Rectangle.Contains(go.input.hitArea, localX, localY);
-
-        return hit;
-    }
-
-
-    hitTest(pointer, list)
-    {
-        let hits=[]
-        for (const go of list) 
-        {
-            if (!go || !go.input || !this.isVisible(go) || !go._enabled) continue;
-            if(!this.isHit(pointer, go)) continue;
-            hits.push(go);
-        }
-        return hits;    
-    }
-
-    isVisible(go)
-    {
-        let current = go;
-        while (current) 
-        {
-            if (!current.visible) return false;
-            current = current.parentContainer;
-        }
-        return true;
-    }
-
-    _pickTopByVirtual(pointer) 
-    {
-        // console.log(this.input._list);
-        // const list = this.input.hitTestPointer(pointer);
-        // const list = this.input.manager.hitTest(pointer, this.input._list, this.cameras.main);
-        const list = this.hitTest(pointer, this.input._list);
-
-        // console.log('lits=',list)
-        if (!list || list.length === 0) {return null;}
-
-        return list.at(-1);
-    }
-
-    onPointerUp(pointer)
-    {
-        this._syncVirtualPointer(pointer);
-        const top = this._pickTopByVirtual(pointer);
-        
-        if(top)
-        {
-            top.emit('pointerup', pointer, top);
-        }
-
-        DragService._onpointerup(pointer);
-
-        return top ? true : false;
-    }
-
-
-    onPointerDown(pointer)
-    {
-        this._syncVirtualPointer(pointer);
-        const top = this._pickTopByVirtual(pointer);
-        
-        if(top)
-        {
-            top.emit('pointerdown', pointer, pointer.x,pointer.y);
-        }
-
-        DragService._onpointerdown(pointer);
-
-        return top ? true : false;
-    }
-
-    onPointerMove(pointer)
-    {
-        // console.log(this.input.activePointer.x, this.input.activePointer.y);
-        this._syncVirtualPointer(pointer);
-        const top = this._pickTopByVirtual(pointer);
-
-        UiCursor.pos(pointer.x, pointer.y);
-        DragService._onpointermove(pointer);
-        
-        if (top && top===this._over) {return true;}
-
-        // pointerout
-        if (this._over) 
-        {
-            this._over.emit('pointerout', pointer);
-            this.input.emit('gameobjectout', pointer, this._over);
-        }
-
-        this._over = top;
-
-        // pointerover
-        if (this._over) 
-        {
-            // console.log('----- over');
-            this._over.emit('pointerover', pointer);
-            this.input.emit('gameobjectover', pointer, this._over);
-        }
-
-
-
-        return top ? true : false;
-    }
 
 
     processInput()
@@ -199,34 +47,11 @@ export class UI extends Scene
         //     if(UiDragged.on) {UiDragged.setPos(pointer.x,pointer.y);}
         // })
 
-        const area = this.scene.get('GameArea');
-        console.log('------------- area:', area);
-
         this.input
         .on('pointermove',(pointer)=>{
-            if(!this.onPointerMove(pointer)) 
-            {
-                area.input.enabled=true;
-                area.onPointerMove(pointer);
-            }
-            else
-            {
-                area.input.enabled=false;
-            }
+            UiCursor.pos(pointer.x, pointer.y);
+            if(UiDragged.on) {UiDragged.setPos(pointer.x,pointer.y);}
         })
-        .on('pointerdown',(pointer)=>{
-            if(!this.onPointerDown(pointer)) 
-            {
-                area.onPointerDown(pointer);
-            }
-        })
-        .on('pointerup',(pointer)=>{
-            this.onPointerUp(pointer);
-        })
-        .on('wheel',(pointer, gameobject, dx, dy)=>{
-            this._syncVirtualPointer(pointer);
-        })
-
     }
 
     stop()

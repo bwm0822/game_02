@@ -69,7 +69,7 @@ export class GameScene extends Scene
         this.initAmbient(this._data.ambient);
         this.setPosition(classType);
         this.initSchedule();
-        // this.processInput();
+        this.processInput();
 
         AudioManager.init(this);
         TimeSystem.start();
@@ -133,11 +133,47 @@ export class GameScene extends Scene
     {
         // if(!Record.setting.mouseEdgeMove) return;
 
-        if(this._moveCam)
+        if(this._atEdge)
         {
             this.cameras.main.scrollX += this._mv.x;
             this.cameras.main.scrollY += this._mv.y;
         }
+    }
+
+    isMouseAtEdge(pointer)
+    {
+        const p=pointer;
+
+        const m=5;
+        const atEdge = p.x<=m||p.x>=GM.w-m||p.y<=m||p.y>=GM.h-m;
+        const d=3.5;
+        if(atEdge)
+        {
+            // console.log('--------------- edge:',p.x,p.y)
+            this._mv={x:0,y:0};
+            this._mv.x = p.x<GM.w/2 ? -d : d;
+            this._mv.y = p.y<GM.h/2 ? -d : d;
+
+            if(!this._atEdge)
+            {
+                this._atEdge=true;
+                        
+                UiCursor.set('cross');
+                
+                this.stopCameraFollow();
+                this._atEdge=true;
+                this._path=null;
+                this.clearPath();
+            }
+            // UiCursor.pos(p.x, p.y);
+        }
+        else if(this._atEdge)
+        {
+            this._atEdge=false;
+            UiCursor.set('none');
+        }
+
+        return this._atEdge;
     }
 
     stopCameraFollow()
@@ -208,64 +244,23 @@ export class GameScene extends Scene
     }
 
     processInput()
-    {
-        // this.game.canvas.addEventListener('mouseenter', () => {
-        //     this._moveCam=false;
-        //     UiCursor.set('none');
-        // });
-
-        // this.game.canvas.addEventListener('mouseleave', () => {
-        //     this._moveCam=true;
-        //     const p = this.input.activePointer;
-        //     //  console.log(p);
-        //     const margin=20;
-        //     const d=2.5;
-
-        //     const dx = p.x<=margin ? -d : (p.x>=GM.w-margin ? d : 0);
-        //     const dy = p.y<=margin ? -d : (p.y>=GM.h-margin ? d : 0);
-
-        //     this._mv={x:dx,y:dy};
-
-        //     UiCursor.set('cross');
-        //     this.stopCameraFollow();
-        //     this._moveCam=true;
-        //     this._path=null;
-        //     this.clearPath();
-
-        // });
-        
+    {    
         this.input
         .on('pointerdown', (pointer)=>{
             this.onPointerDown(pointer);
-            console.log('game down')
+            // console.log('game down')
         })
         .on('pointermove',(pointer)=>{
             this.onPointerMove(pointer);
-            console.log('game move')
+            // console.log('game move:',pointer.x,pointer.y,pointer.worldX,pointer.worldY)
         })
-
-        // this.input.mouse.requestPointerLock();
-        // this.scale.startFullscreen();
-
 
         //this.keys = this.input.keyboard.createCursorKeys();
         //this.input.keyboard.on('keydown',()=>{this.keyin();})
-
-    }
-
-    wp(pointer)
-    {
-        // const p=pointer;
-        // const wp = this.cameras.main.getWorldPoint(p.x, p.y);
-        // p.worldX = wp.x;
-        // p.worldY = wp.y;
-        pointer.updateWorldPoint(this.cameras.main);
     }
 
     onPointerDown(pointer,gameObject)
-    {
-        this.wp(pointer);
-        
+    {        
         if(GM.player.state===GM.ST_SLEEP) {return;}
 
         if (pointer.rightButtonDown())
@@ -278,7 +273,6 @@ export class GameScene extends Scene
         }
         else
         {
-            // this.vp(pointer);
             let pt = {x:pointer.worldX, y:pointer.worldY};
             if(GM.player.state===GM.ST.MOVING)
             {
@@ -311,101 +305,12 @@ export class GameScene extends Scene
         }
     }
 
-
-    checkEdge(pointer)
-    {
-        const p=pointer;
-
-        const m=5;
-        const atEdge = p.x<=m||p.x>=GM.w-m||p.y<=m||p.y>=GM.h-m;
-        const d=3.5;
-        if(atEdge)
-        {
-            // console.log('--------------- edge:',p.x,p.y)
-            this._mv={x:0,y:0};
-            this._mv.x = p.x<GM.w/2 ? -d : d;
-            this._mv.y = p.y<GM.h/2 ? -d : d;
-
-            if(!this._moveCam)
-            {
-                this._moveCam=true;
-                        
-                UiCursor.set('cross');
-                
-                this.stopCameraFollow();
-                this._moveCam=true;
-                this._path=null;
-                this.clearPath();
-            }
-            // UiCursor.pos(p.x, p.y);
-        }
-        else if(this._moveCam)
-        {
-            this._moveCam=false;
-            UiCursor.set('none');
-        }
-    }
-
-
-    _pickTopByVirtual(pointer) 
-    {
-        // console.log(this.input._list);
-        const list = this.input.manager.hitTest(pointer, this.input._list, this.cameras.main);
-
-        if (!list || list.length === 0) return null;
-
-        // 取最上層（depth 最大）
-        let best = null;
-        let bestDepth = -Infinity;
-        for (const go of list) {
-            if (!go || !go.input || !go.visible) continue;
-            const d = go.depth ?? 0;
-            if (d >= bestDepth) {
-            bestDepth = d;
-            best = go;
-            }
-        }
-        return best;
-    }
-
-    checkHover(pointer)
-    {
-        const top = this._pickTopByVirtual(pointer);
-
-        if (top && top===this._over) return;
-
-        // pointerout
-        if (this._over) 
-        {
-            this._over.emit('pointerout', pointer);
-            this.input.emit('gameobjectout', pointer, this._over);
-        }
-
-        this._over = top;
-
-        // pointerover
-        if (this._over) 
-        {
-            this._over.emit('pointerover', pointer);
-            this.input.emit('gameobjectover', pointer, this._over);
-        }
-    }
-
-
     onPointerMove(pointer)
     {
-        // if(this._set) {return;}
-
-        if (this.input.mouse.locked) 
+        if(Record.setting.mouseEdgeMove&&this.isMouseAtEdge(pointer))
         {
-            this.wp(pointer);
-            // console.log(p.x,p.y,'=>',p.worldX,p.worldY)
-            this.checkEdge(pointer);    
-            // this.checkHover(pointer);
-            // UiCursor.pos(pointer.x, pointer.y);
+            return;
         }
-
-        if(this._moveCam) {return;}
 
         if(DEBUG.loc) {this.showMousePos();}
         if(GM.player.state===GM.ST.ABILITY) 

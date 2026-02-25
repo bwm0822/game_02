@@ -59,7 +59,7 @@ export default function createUI(scene)
     console.log('resolution:',GM.w, GM.h)
 
     PressService.bindToScene(scene);
-    // DragService.init(scene);
+    DragService.init(scene);
 
     new UiCover(scene);             // 1
     new UiAbility(scene);
