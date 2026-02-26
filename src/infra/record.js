@@ -2,17 +2,17 @@ import Utility from '../core/utility.js'
 
 export default class Record
 {
-    static game_def = { default:'entry', map:'village-01', 
+    static game_def = { default:'entry', 
+                        map:'village-01', 
                         time:{d:0,h:8,m:0},
-                        // lang:'tw',
-                        // bgmVolume:1.0,
-                        // sfxVolume:1.0
                     }
 
-    static setting_def = { lang:'tw',
-                        bgmVolume:1.0,
-                        sfxVolume:1.0
-                    }
+    static setting_def = {  lang:'tw',
+                            bgmVolume:1.0,
+                            sfxVolume:1.0,
+                            mouseEdgeMove:false,
+                            pointerLock:false,
+                        }
     static game;
     static setting;
 

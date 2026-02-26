@@ -2,10 +2,8 @@ import {Scene} from 'phaser'
 import createUI from '../ui.js'
 import {GM} from '../core/setting.js'
 import UiCursor from '../ui/uicursor.js'
-import DragService from '../services/dragService.js'
 import UiDragged from '../ui/uidragged.js'
-import Ui from '../ui/uicommon.js'
-// import * as Role from '../role.js';
+import Record from '../infra/record.js'
 
 export class UI extends Scene
 {
@@ -23,7 +21,15 @@ export class UI extends Scene
         this.processInput();
         this.input.setDefaultCursor('none');    // 消除預設的游標
 
-        this.input.mouse.requestPointerLock();
+        if(Record.setting.pointerLock)
+        {
+            if(!this.input.mouse.locked) {this.input.mouse.requestPointerLock();}
+        }
+        else if(this.input.mouse.locked)
+        {
+            this.input.mouse.releasePointerLock();
+        }
+
         // this.input.enabled = true;
         // this.input.pollAlways = false;
         // this.input.filterObjects = () => []; // 禁止 Phaser 自動處理遊戲物件的輸入事件

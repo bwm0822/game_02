@@ -92,6 +92,7 @@ export default class UiSetting extends UiFrame
     {
         this._page.clearAll();
         this._page.add(this.check('滑鼠移動到邊緣可移動鏡頭',Record.setting,'mouseEdgeMove'),{align:'left'})
+        this._page.add(this.check('滑鼠鎖定模式',Record.setting,'pointerLock'),{align:'left'})
 
         this.layout();
 

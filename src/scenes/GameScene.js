@@ -1,5 +1,5 @@
-import {Scene} from 'phaser';
-import Map from '../manager/map.js';
+import {Scene} from 'phaser'
+import Map from '../manager/map.js'
 
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
@@ -43,7 +43,7 @@ export class GameScene extends Scene
 
     update()
     {
-        this.moveCam();
+        this.cameraMove();
     }
 
     async create ({diagonal,classType,weight})
@@ -129,7 +129,7 @@ export class GameScene extends Scene
         // define in GameArea.js
     }
 
-    moveCam()
+    cameraMove()
     {
         // if(!Record.setting.mouseEdgeMove) return;
 
@@ -140,32 +140,36 @@ export class GameScene extends Scene
         }
     }
 
+    cameraPan(pt)
+    {
+        this.cameras.main.pan(GM.player.x, GM.player.y, 100, 'Power2');
+        // pan 結束後再開始跟隨
+        this.cameras.main.once('camerapancomplete', () => {
+            this.setCameraFollow(GM.CAM_CENTER);
+        });
+    }
+
     isMouseAtEdge(pointer)
     {
-        const p=pointer;
-
-        const m=5;
+        const p = pointer;
+        const m = 5;
         const atEdge = p.x<=m||p.x>=GM.w-m||p.y<=m||p.y>=GM.h-m;
-        const d=3.5;
-        if(atEdge)
+        const d = 3.5;
+
+        if(atEdge && GM.player.state!==GM.ST.MOVING)
         {
             // console.log('--------------- edge:',p.x,p.y)
-            this._mv={x:0,y:0};
-            this._mv.x = p.x<GM.w/2 ? -d : d;
-            this._mv.y = p.y<GM.h/2 ? -d : d;
+            this._mv = { x: p.x<GM.w/2?-d:d, y: p.y<GM.h/2?-d:d};
 
             if(!this._atEdge)
             {
                 this._atEdge=true;
-                        
                 UiCursor.set('cross');
-                
                 this.stopCameraFollow();
                 this._atEdge=true;
                 this._path=null;
                 this.clearPath();
             }
-            // UiCursor.pos(p.x, p.y);
         }
         else if(this._atEdge)
         {
@@ -284,21 +288,8 @@ export class GameScene extends Scene
             }
             else if(this._path?.state===GM.PATH_OK)
             {
-                if(!this._follow)
-                {
-                    this._follow=true;  
-                    this.cameras.main.pan(GM.player.x, GM.player.y, 100, 'Power2');
-                    // pan 結束後再開始跟隨
-                    this.cameras.main.once('camerapancomplete', () => {
-                        this.setCameraFollow(GM.CAM_CENTER);
-                        GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
-                    });
-                }
-                else
-                {
-                    GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
-                }
-
+                if(!this._follow) {this.cameraPan(pt);}
+                GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
                 UiMark.close();
                 this._path=null;
             }
@@ -402,9 +393,6 @@ export class GameScene extends Scene
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
-
-        this.input.mouse.releasePointerLock();
-
         AudioManager.bgmPause();
     }
 
