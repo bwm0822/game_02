@@ -49,12 +49,7 @@ export default class UiFrame extends Sizer
 
     addBg(scene,config)
     {
-        const onover = ()=>{
-            UiCursor.set(); 
-            UiMark.close();
-            this.player?.hidePath();
-        }
-
+        const onover = ()=>{this.send('clearpath');}
         config = config ?? {color:GM.COLOR.PRIMARY};
         ui.uBg.call(this,scene,{interactive:true,onover:onover,...config})
 

@@ -38,7 +38,6 @@ export class GameScene extends Scene
     {
         console.log('[1] init');
         this._data = data;
-        this._mv = {x:0,y:0};
     }
 
     update()
@@ -76,9 +75,6 @@ export class GameScene extends Scene
         UiMessage.clean();
         UiChangeScene.done();
         AudioManager.bgmStart();
-
-
-
 
         this.log();
     }
@@ -131,8 +127,6 @@ export class GameScene extends Scene
 
     cameraMove()
     {
-        // if(!Record.setting.mouseEdgeMove) return;
-
         if(this._atEdge)
         {
             this.cameras.main.scrollX += this._mv.x;
@@ -159,16 +153,19 @@ export class GameScene extends Scene
         if(atEdge && GM.player.state!==GM.ST.MOVING)
         {
             // console.log('--------------- edge:',p.x,p.y)
-            this._mv = { x: p.x<GM.w/2?-d:d, y: p.y<GM.h/2?-d:d};
+            this._mv = {x : p.x<GM.w*0.2 ? -d :
+                            p.x>GM.w*0.8 ? d : 0, 
+                        y : p.y<GM.h*0.2 ? -d :
+                            p.y>GM.h*0.8 ? d : 0};
 
             if(!this._atEdge)
             {
                 this._atEdge=true;
-                UiCursor.set('cross');
-                this.stopCameraFollow();
                 this._atEdge=true;
                 this._path=null;
+                this.stopCameraFollow();
                 this.clearPath();
+                UiCursor.set('cross');
             }
         }
         else if(this._atEdge)
@@ -330,7 +327,6 @@ export class GameScene extends Scene
         {
             GM.player.stepMove(mx,my);
             this.clearPath();
-            UiMark.close();
         }
     }
 
@@ -361,9 +357,10 @@ export class GameScene extends Scene
 
     clearPath()
     {
-        console.log('clearpath')
-        GM.player.hidePath();
+        // console.log('clearpath')
+        GM.player?.hidePath();
         UiMark.close();
+        UiCursor.set(); 
     }
 
     npcPath(on) 
@@ -485,9 +482,7 @@ export class GameScene extends Scene
                 .on('stove',(owner)=>{UiManufacture.show(owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
-                
         }
-
 
         // 切換場景時，events 不會被清除，所以重設時，須先清除之前的設定
         const ui = this.scene.get('UI');
@@ -496,7 +491,7 @@ export class GameScene extends Scene
             .off('restart').on('restart', ()=>{this.restart();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})
-            .off('clearpath').on('clearpath',(mode)=>{this.clearPath();})
+            .off('clearpath').on('clearpath',()=>{this.clearPath();})
             .off('setWeight').on('setWeight',(p,weight)=>{this.map.setWeight(p,weight)})
             .off('log').on('log',()=>{this.log();})
             .off('dbgRect').on('dbgRect',()=>{this.dbgRect();})
