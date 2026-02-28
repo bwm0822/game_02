@@ -150,7 +150,8 @@ export default class UiManufacture extends UiFrame
         super.show();
         this.owner=owner;
         this.update(owner);
-        UiInv.show(this.player);
+        //
+        this.on(GM.INV, this.player)
     }
 
     static show(owner) {this.instance.show(owner);}

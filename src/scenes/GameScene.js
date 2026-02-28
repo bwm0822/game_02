@@ -391,6 +391,8 @@ export class GameScene extends Scene
         this.scene.stop('UI');
         this.scene.start('MainMenu');
         AudioManager.bgmPause();
+        Ui.reset();
+        
     }
 
     restart()
@@ -399,8 +401,8 @@ export class GameScene extends Scene
         Record.delete();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
-        
         AudioManager.bgmPause();
+        Ui.reset();
     }
 
     gotoScene(config)

@@ -2,6 +2,7 @@ import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
+import Ui from './uicommon.js'
 
 
 export class PQuest extends Sizer
@@ -30,8 +31,7 @@ export class PQuest extends Sizer
                                                     ext:{expand:true}});
 
         // content
-        this._content = ui.uPanel.call(this, scene, {
-                    orientation:'y',
+        this._content = ui.uScroll.call(this, scene, {
                     bg:{color:GM.COLOR.DARK},
                     space:10,
                     ext:{expand:true,proportion:1}
@@ -47,12 +47,12 @@ export class PQuest extends Sizer
     _updateContent(q)
     {
         const scene = this.scene;
-        const remove = ()=>{QuestManager.remove(q.dat.id);this.updatePage();}
+        const remove = ()=>{QuestManager.remove(q.dat.id);Ui.refreshAll();}
         const map = ()=>{this._toMap(q.dat.id);}
 
         this._content
-            .removeAll(true)
-            .add(ui.uBbc(scene,{text:q.fmt()}),{align:'left'})
+            .clearAll()
+            .add(ui.uBbc(scene,{text:q.fmt(),wrapWidth:500}),{align:'left'})
 
         if(q.dat.nid)
         {
@@ -95,16 +95,27 @@ export class PQuest extends Sizer
 
         this._itm = null;
         this._scroll.clearAll();
-        this._content.removeAll(true);
+        this._content.clearAll();
         
         for(let id in QuestManager.quests.opened)
         {
             let q = QuestManager.query(id);
+
             const itm = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
-                            text: q.title(),
+                            tcon: {text:q.state==='finish'?'🗹':'☐',ext:{align:'top'}},
+                            text: {text:q.title(),wrapWidth:125},
                             onclick: onclick});
-            this._scroll.addItem(itm);
+
+            let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
+            if(!fold)
+            {
+                fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
+                this._scroll.addItem(fold);
+                fold.cat=q.cat
+            }
+
+            fold.addItem(itm);
             itm.q=q;
         }
         

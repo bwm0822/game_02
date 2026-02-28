@@ -164,8 +164,10 @@ export default class UiProfile extends UiFrame
         this._tabs.init();
         this._page.mouseWheel(true);
         this._page.setT(0);
-
+        //
+        this.closeAll(GM.UI_LEFT_P);
         this.register(GM.UI_LEFT_P);
+        this.setCamera(GM.CAM_RIGHT);
     }
 
 
@@ -177,6 +179,7 @@ export default class UiProfile extends UiFrame
         this._page.mouseWheel(false);
 
         this.unregister();
+        this.clrCamera(GM.CAM_RIGHT);
     }
     
     toggle(owner)

@@ -208,18 +208,35 @@ export function uPanel(scene, config={})
     return panel;
 }
 
-export function uLabel(scene, config={})
+export function uLabel_old(scene, config={})
 {
     const {ext,text,icon,tcon,bg,...cfg}=config;
     if(bg) {cfg.background=uRect(scene, bg);}
     if(text!==undefined) {cfg.text=uBbc(scene, typeof text==='object'?text:{text:text});}
     if(icon) {cfg.icon=uSprite(scene, typeof icon==='object'?icon:{icon:icon});}
-    if(tcon) {cfg.icon=uBbc(scene, typeof text==='object'?icon:{text:tcon});}
+    if(tcon) {cfg.icon=uBbc(scene, typeof tcon==='object'?tcon:{text:tcon});}
     
     const lab = scene.rexUI.add.label(cfg); 
     lab._bg=cfg.background;
     lab._text=cfg.text;
     lab._icon=cfg.icon;
+    if(this&&this.add) {this.add(lab, ext);}
+    return lab;
+}
+
+export function uLabel(scene, config={})
+{
+    const {ext,text,icon,tcon,bg,iconR,tconR,...cfg}=config;
+    const lab = scene.rexUI.add.sizer(cfg);
+    if(bg) {lab._bg=uBg.call(lab,scene, bg);}
+
+    if(icon) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
+    if(tcon) {lab._icon=uBbc.call(lab,scene, typeof tcon==='object'?tcon:{text:tcon});}
+    if(text!==undefined) {lab._text=uBbc.call(lab,scene, typeof text==='object'?text:{text:text});}
+    if(iconR) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
+    if(tconR) {lab._icon=uBbc.call(lab,scene, typeof tconR==='object'?tconR:{text:tconR});}
+    
+    lab.setText = (text)=>{lab._text?.setText(text);return lab;}
     if(this&&this.add) {this.add(lab, ext);}
     return lab;
 }
@@ -238,7 +255,7 @@ export function uButton(scene,config={})
             cBGH=GM.COLOR.LIGHTGRAY,
             ...cfg}=config;
     
-    cfg.space = cfg.space ?? UI.SPACE.LRTBI.p10;
+    cfg.space = cfg.space ?? UI.SPACE.LRTBI.p5;
 
     const UCHK = (style===UI.BTN.CHECK)?'☐':'▸';
     const CHK = (style===UI.BTN.CHECK)?'☑':'▾';
@@ -255,18 +272,11 @@ export function uButton(scene,config={})
         case UI.BTN.OPTION:    
             cfg.bg = cfg.bg ?? {color:cBGH};
             break;
-
         case UI.BTN.CHECK:
+            if(prefix) {cfg.tcon = UCHK;}
+            break;
         case UI.BTN.FOLD:
-            if(prefix)
-            {
-                cfg.tcon = UCHK;
-
-                // if(typeof cfg.text==='object')
-                //     cfg.text = UCHK+' '+(cfg.text?.text??'');
-                // else
-                //     cfg.text = UCHK+' '+(cfg.text??'');
-            }
+            if(prefix) {cfg.tconR = UCHK;}
             break;
     }
 
@@ -277,6 +287,7 @@ export function uButton(scene,config={})
         case UI.BTN.ITEM:
             btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
             btn._text?.setColor(cDEF);
+            btn._icon?.setColor(cDEF);
             break;
         case UI.BTN.OPTION:  
             btn._bg?.setAlpha(0);    // 不可以用setVisible(false)，因為加入scrollablePanel會被設成true
@@ -318,11 +329,12 @@ export function uButton(scene,config={})
             // const pre = on?UCHK:CHK;
             // const post = on?CHK:UCHK;
             // btn._text.setText(btn._text.text.replace(pre,post));
-            btn._icon.setText(on?CHK:UCHK);
+            if(prefix) {btn._icon?.setText(on?CHK:UCHK);}
         }
         else
         {
             btn._text?.setColor(on?cHL:cDEF);
+            btn._icon?.setColor(on?cHL:cDEF);
         }
 
         return btn;
@@ -950,9 +962,9 @@ export function uFold(scene,config={})
 {
     const {
         title='Title', 
-        color=GM.COLOR.YELLOW, 
+        color=GM.COLOR.WHITE, 
         prefix=true, 
-        indent=GM.FONT_SIZE,
+        indent=0,//GM.FONT_SIZE,
         ext={expand:true}
     } = config;
 
@@ -966,16 +978,16 @@ export function uFold(scene,config={})
         onclick: (btn)=>{
                         if(btn.value) {_content.show();}
                         else {_content.hide();}
-                        this.layout?.();
                         config.onclick?.(btn);
-                         }});
+                    }});
+
     const _content = uPanel.call(p,scene,{
                         orientation:'y',
                         ext:{expand:true,padding:{left:indent}}})
                     .hide();
 
-    _content.add(uBbc(scene,{text:'fold 測試。'}),{align:'left'})   // for test
-            .add(uButton(scene,{text:'fold 測試。',style:UI.BTN.ITEM}),{align:'left'})   // for test
+    // _content.add(uBbc(scene,{text:'fold 測試。'}),{align:'left'})   // for test
+    //         .add(uButton(scene,{text:'fold 測試。',style:UI.BTN.ITEM}),{align:'left'})   // for test
 
     if(this&&this.add) {this.add(p,ext);}
 

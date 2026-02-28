@@ -81,7 +81,8 @@ function fmt_rewards(rewards)
 
 function fmt_title(q)
 {
-    return `${q.state==='close' ? '🗹':'☐'} ${q.dat.title}`;
+    // return `${q.state==='close' ? '🗹':'☐'} ${q.dat.title}`;
+    return q.dat.title;
 }
 
 function check(q, chk)
@@ -138,6 +139,7 @@ export default class QuestManager
             if(!q.fmt) {q.fmt = ()=>{return this.fmt(id);};}
             if(!q.check) {q.check = (chk)=>{return check(q,chk);};}
             if(!q.title) {q.title = ()=>{return fmt_title(q);}}
+            if(!q.cat) {q.cat=q.dat.id.split('_')[0];}
 
         }
         return q;

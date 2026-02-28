@@ -122,9 +122,22 @@ export class PMap extends Sizer
             {
                 const btn = ui.uButton(scene,{
                                 style: UI.BTN.ITEM,
-                                text: q.title(),
+                                tcon: {text:q.state==='finish'?'🗹':'☐',ext:{align:'top'}},
+                                text: {text:q.title(),wrapWidth:125},
                                 onclick: onclick});
-                this._scroll.addItem(btn);
+
+                let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
+                if(!fold)
+                {
+                    fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
+                    this._scroll.addItem(fold);
+                    fold.cat=q.cat
+                }
+                fold.addItem(btn);
+
+                // this._scroll.addItem(btn);
+
+
                 btn.q=q;
                 btn.nid=q.dat.nid;
                 btn.qid=id;

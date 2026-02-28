@@ -61,35 +61,12 @@
                  "y":320
                 }],
          "opacity":1,
-         "type":"objectgroup",
-         "visible":true,
-         "x":0,
-         "y":0
-        }, 
-        {
-         "draworder":"topdown",
-         "id":4,
-         "name":"q01",
-         "objects":[
+         "properties":[
                 {
-                 "gid":527,
-                 "height":64,
-                 "id":6,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"rogue"
-                        }],
-                 "rotation":0,
-                 "type":"npc",
-                 "visible":true,
-                 "width":32,
-                 "x":192,
-                 "y":128
+                 "name":"nid",
+                 "type":"string",
+                 "value":"village-01"
                 }],
-         "opacity":1,
          "type":"objectgroup",
          "visible":true,
          "x":0,
@@ -98,6 +75,12 @@
  "nextlayerid":5,
  "nextobjectid":7,
  "orientation":"orthogonal",
+ "properties":[
+        {
+         "name":"nid",
+         "type":"string",
+         "value":"village-01"
+        }],
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
  "tileheight":32,

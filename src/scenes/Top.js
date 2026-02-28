@@ -19,8 +19,10 @@ export class Top extends Scene
     {
         if(!this._vp) {this._vp={x:GM.w/2,y:GM.h/2};}
 
-        this._vp.x += pointer.movementX;
-        this._vp.y += pointer.movementY;
+        const m = 1.5;
+
+        this._vp.x += m*pointer.movementX;
+        this._vp.y += m*pointer.movementY;
 
         this._vp.x = Phaser.Math.Clamp(this._vp.x, 0, this.scale.width);
         this._vp.y = Phaser.Math.Clamp(this._vp.y, 0, this.scale.height);

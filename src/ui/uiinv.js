@@ -108,16 +108,19 @@ export default class UiInv extends UiFrame
         Ui.setMode(GM.UI_MODE_NORMAL);
         UiCover.close();
         UiCursor.set();
+        this.clrCamera(GM.CAM_LEFT);
     }
 
     show(owner)
     {
+        if(this.visible) {return;}
         super.show();
         this.owner=owner;
         this.filter();
         this.refresh();
+        this.closeAll(GM.UI_RIGHT);
         this.register(GM.UI_RIGHT);
-
+        this.setCamera(GM.CAM_LEFT);
     }
 
     static show(owner,cat) {this.instance?.show(owner,cat);}

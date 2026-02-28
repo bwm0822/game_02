@@ -47,19 +47,23 @@ export default class UiStorage extends UiFrame
     close()
     {
         if(!this.visible) {return;}
-
         super.close();
         this.unregister();
+        this.clrCamera(GM.CAM_RIGHT);
+        this._owner.close();
     }
 
     show(owner)
     {
+         if(this.visible) {return;}
         super.show();
         this._owner=owner;
         this.refresh();
+        //
+        this.closeAll(GM.UI_LEFT_P);
         this.register(GM.UI_LEFT);
-        
-        UiInv.show(this.player);
+        this.setCamera(GM.CAM_RIGHT);
+        this.on(UI.TAG.INV, this.player);
     }
 
     static show(owner,cat) {this.instance?.show(owner,cat);}

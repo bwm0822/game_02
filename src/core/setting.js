@@ -149,9 +149,11 @@ export const GM =
     OVER_DELAY : 100,   // 註解延遲時間 (unit:ms)
     PRESS_DELAY : 250,  // 按壓技能延遲時間 (unit:ms)
     CAM_CENTER : 0b000,
-    CAM_LEFT : 0b001,
-    CAM_RIGHT : 0b010,
-    CAM_LEFT_TOP : 0b100,
+
+    // Camera mode
+    CAM_LEFT        : 0b001,
+    CAM_RIGHT       : 0b010,
+    CAM_LEFT_TOP    : 0b100,
 
     SELLER : 1,
     BUYER : 2,
@@ -160,14 +162,14 @@ export const GM =
     BTN_NOBG : 'nobg',
     BTN_TEXT : 'text',   
 
-    UI_LEFT :   0b000001,
-    UI_LEFT_P : 0b000010,
-    UI_RIGHT :  0b000100,
-    UI_CENTER : 0b000111,
-    UI_BOTTOM : 0b001000,
-    UI_TOP :    0b010000,
-    UI_MSG :    0b010000,
-    UI_ALL :    0b111111,
+    UI_LEFT :       0b000001,
+    UI_LEFT_P :     0b000010,
+    UI_RIGHT :      0b000100,
+    UI_CENTER :     0b000111,
+    UI_BOTTOM :     0b001000,
+    UI_TOP :        0b010000,
+    UI_MSG :        0b010000,
+    UI_ALL :        0b111111,
 
     T_CHANGE_SCENE : 500, // 轉場漸暗時間 ms
 
@@ -429,9 +431,10 @@ export const GM =
         DOOR: 'door',
     },
 
+    // 
     DIS: 'dis',
     EN: 'en',
-    HIDE: 'hide'
+    HIDE: 'hide',
 
 }
 

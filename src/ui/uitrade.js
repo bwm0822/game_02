@@ -92,6 +92,7 @@ export default class UiTrade extends UiFrame
         this.owner.stopTrade();
         super.close();
         this.unregister();
+        this.clrCamera(GM.CAM_RIGHT);
     }
 
     show(owner)
@@ -101,8 +102,10 @@ export default class UiTrade extends UiFrame
         this.updateInfo();
         this.refresh();
         //
-        this.register(GM.UI_LEFT)
-        this.on(UI.TAG.INV,this.player);
+        this.closeAll(GM.UI_LEFT);
+        this.register(GM.UI_LEFT);
+        this.setCamera(GM.CAM_RIGHT);
+        this.on(UI.TAG.INV, this.player);
     }
 
     static show(owner) {this.instance?.show(owner);} 

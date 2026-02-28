@@ -86,6 +86,15 @@ export default class UiMisc extends UiFrame
         super.show();
         this._owner=owner;
         this._tabs.init();
+        //
+        this.closeAll(GM.UI_CENTER);
+        this.register(GM.UI_CENTER);
+    }
+
+    close()
+    {
+        super.close();
+        this.unregister();
     }
 
     toggle(owner)

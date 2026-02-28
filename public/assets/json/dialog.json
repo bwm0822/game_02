@@ -4,16 +4,16 @@
       "A": "你好\n我是這村子唯一的鐵匠…\n這邊有許多武器\n想要買什麼?",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:musk_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    "musk_01": {
       "type": "quest",
       "start": {
         "A": "殺死半獸人",
         "B": [
-          "接受/quest q01",
+          "接受/quest musk_01",
           "離開/exit"
         ]
       },
@@ -26,20 +26,20 @@
       "finish": {
         "A": "...",
         "B": [
-          "任務完成了/goto none;close q01;set quest none"
+          "任務完成了/goto none;close musk_01;set quest none"
         ]
       }
     },
-    "q01_open": {
+    "musk_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "musk_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close musk_01;set quest none"
       ]
     },
     "none": {
@@ -54,27 +54,27 @@
       "A": "你好\n我是這村子唯一的屠夫…\n想要買什麼?",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:xi_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    "xi_01": {
       "A": "殺死半獸人",
       "B": [
-        "接受/quest q01",
+        "接受/quest xi_01",
         "離開/exit"
       ]
     },
-    "q01_open": {
+    "xi_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "xi_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close xi_01;set quest none"
       ]
     },
     "none": {
@@ -89,27 +89,27 @@
       "A": "你好\n我是行商…想要買什麼?",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:macron_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    "macron_01": {
       "A": "殺死半獸人",
       "B": [
-        "接受/quest q01",
+        "接受/quest macron_01",
         "離開/exit"
       ]
     },
-    "q01_open": {
+    "macron_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "macron_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close macron_01;set quest none"
       ]
     },
     "none": {
@@ -124,27 +124,27 @@
       "A": "你好\n歡迎光臨...",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:trump_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    ":trump_01": {
       "A": "殺死半獸人",
       "B": [
-        "接受/quest q01",
+        "接受/quest trump_01",
         "離開/exit"
       ]
     },
-    "q01_open": {
+    "trump_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "trump_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close trump_01;set quest none"
       ]
     },
     "none": {
@@ -159,27 +159,27 @@
       "A": "你好...",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:karen_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    "karen_01": {
       "A": "殺死半獸人",
       "B": [
-        "接受/quest q01",
+        "接受/quest karen_01",
         "離開/exit"
       ]
     },
-    "q01_open": {
+    "karen_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "karen_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close karen_01;set quest none"
       ]
     },
     "none": {
@@ -194,27 +194,27 @@
       "A": "你好...",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:q01",
+        "(#quest!=none)任務/goto #quest:melanie_01",
         "離開/exit"
       ]
     },
-    "q01": {
+    "melanie_01": {
       "A": "殺死半獸人",
       "B": [
-        "接受/quest q01",
+        "接受/quest melanie_01",
         "離開/exit"
       ]
     },
-    "q01_open": {
+    "melanie_01_open": {
       "A": "...",
       "B": [
         "離開/exit"
       ]
     },
-    "q01_finish": {
+    "melanie_01_finish": {
       "A": "...",
       "B": [
-        "任務完成了/goto none;close q01;set quest none"
+        "任務完成了/goto none;close melanie_01;set quest none"
       ]
     },
     "none": {

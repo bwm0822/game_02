@@ -382,49 +382,6 @@
                  "y":192
                 }, 
                 {
-                 "gid":1982,
-                 "height":64,
-                 "id":133,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"anchorX",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"anchorY",
-                         "type":"int",
-                         "value":0
-                        }, 
-                        {
-                         "name":"bt",
-                         "type":"int",
-                         "value":32
-                        }, 
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"rogue"
-                        }, 
-                        {
-                         "name":"interactive",
-                         "type":"bool",
-                         "value":true
-                        }, 
-                        {
-                         "name":"zt",
-                         "type":"int",
-                         "value":32
-                        }],
-                 "rotation":0,
-                 "type":"npc_n",
-                 "visible":true,
-                 "width":32,
-                 "x":704,
-                 "y":352
-                }, 
-                {
                  "gid":209,
                  "height":27,
                  "id":134,

@@ -18,12 +18,12 @@
             {
              "name":"door_close",
              "type":"string",
-             "value":"doors\/1"
+             "value":"doors:1"
             }, 
             {
              "name":"door_open",
              "type":"string",
-             "value":"doors\/0"
+             "value":"doors:0"
             }, 
             {
              "name":"gt",

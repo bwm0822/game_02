@@ -8,17 +8,23 @@ export default class Ui
     static _to = null;
 
     static get mode() {return this._mode;}
-    //static closeAll(force=false) {for(let key in Ui._list){Ui._list[key].ui.close(force);}}
-    static closeAll(mode=GM.UI_FORCE) 
+
+    static reset()
     {
-        for(let key in this._regs)
+        this._list = {};
+        this._regs = {};
+        this._mode = UI.MODE.NORMAL;
+        this._to = null;
+    }
+
+    static closeAll(mode=~GM.UI_BOTTOM) 
+    {
+        for(let tag in this._regs)
         {
-            if((this._regs[key].type&mode)!==0) {this._regs[key].ui.close();}
+            if((this._regs[tag].type&mode)!==0) {this._regs[tag].ui.close();}
         }
     }
-    static refreshAll() {for(let key in this._regs){this._regs[key].ui.refresh?.();}}
-    // static register(ui,type) {this._list[ui.constructor.name]={ui:ui,type:type};}
-    // static unregister(ui) {delete this._list[ui.constructor.name];}
+    static refreshAll() {for(let tag in this._regs){this._regs[tag].ui.refresh?.();}}
     static register(ui,type) {this._regs[ui.tag]={ui:ui,type:type};}
     static unregister(ui) {delete this._regs[ui.tag];}
     static setMode(mode) {this._mode=mode;}

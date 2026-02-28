@@ -16,6 +16,8 @@ import UiMark from './uimark.js'
 //--------------------------------------------------
 export default class UiFrame extends Sizer
 {
+    static _camMode = 0;
+
     constructor(scene, config, tag)
     {
         const {cover,...cfg}=config;
@@ -58,9 +60,22 @@ export default class UiFrame extends Sizer
 
     addTop(scene,title)
     {
-        ui.uTop.call(this, scene, {text:title?.lab(),
-                                    onclose:this.close.bind(this)})
+        ui.uTop.call(this, scene, { text: title?.lab(),
+                                    onclose: this.close.bind(this)})
         return this;
+    }
+
+    // camera
+    setCamera(mode) 
+    {
+        UiFrame._mode |= mode;
+        this.send('camera', UiFrame._mode);
+    }
+
+    clrCamera(mode) 
+    {
+        UiFrame._mode &= ~mode;
+        this.send('camera', UiFrame._mode);
     }
 
     // 新增 container，將 rect 及 uiFrame 都加入這個 container 之下
@@ -112,5 +127,6 @@ export default class UiFrame extends Sizer
     }
 
     close() {this.hide(); return this;}
+
 
 }

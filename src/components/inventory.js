@@ -187,6 +187,12 @@ export class COM_Storage extends Com
         target.target=this.root;
     }
 
+    _close()    // 提供給外界操作( UiStorage.close()會呼叫到 )
+    {
+        this.root.target.target=null;
+        this.root.target=null;
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -198,13 +204,13 @@ export class COM_Storage extends Com
         root._setAct(GM.OPEN, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // this.addP(root, 'storage', {target:this, key:'_storage'});
         this.addRt('storage');
         root.get = this._get.bind(this);
         root.take = this._take.bind(this);
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
         root.transfer = this._transfer.bind(this);
+        root.close = this._close.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         root.on('take', this._take.bind(this));
