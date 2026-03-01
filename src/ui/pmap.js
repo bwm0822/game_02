@@ -135,15 +135,14 @@ export class PMap extends Sizer
                 }
                 fold.addItem(btn);
 
-                // this._scroll.addItem(btn);
-
-
                 btn.q=q;
                 btn.nid=q.dat.nid;
                 btn.qid=id;
                 this._nds[q.dat.nid].addTag();
             }
         }
+
+        
     }
 
     _setPlayer(nid)
@@ -179,8 +178,27 @@ export class PMap extends Sizer
     //------------------------------------------------------
     setQid(qid)
     {
-        const btn = this._scroll.getChildren().find(btn=>btn.qid===qid);
-        btn.emit('pointerup')
+        const ret = this.findQid(this._scroll, qid);
+        ret.cat.unfold();
+        ret.found.emit('pointerup');
+        this.layout();
+    }
+
+    findQid(top,qid)
+    {
+        const children = top.getChildren();
+        for(var child of children)
+        {
+            if(child.cat)
+            {
+                const ret = this.findQid(child,qid);
+                if(ret) {ret.cat=child;return ret}
+            }
+            else if(child.qid===qid)
+            {
+                return {found:child};
+            }
+        }
     }
 
     update()

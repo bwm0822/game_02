@@ -37,5 +37,145 @@
         "count": 100
       }
     ]
+  },
+  "melanie_01": {
+    "id": "melanie_01",
+    "title": "森林中的盜賊威脅",
+    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "nid": "forest-01",
+    "conds": [
+      {
+        "type": "kill",
+        "id": "rogue",
+        "count": 3
+      },
+      {
+        "type": "final",
+        "des": "跟 melanie 回報"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
+      }
+    ]
+  },
+  "trump_01": {
+    "id": "trump_01",
+    "title": "森林中的盜賊威脅",
+    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "nid": "forest-01",
+    "conds": [
+      {
+        "type": "kill",
+        "id": "rogue",
+        "count": 3
+      },
+      {
+        "type": "final",
+        "des": "跟 trump 回報"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
+      }
+    ]
+  },
+  "karen_01": {
+    "id": "karen_01",
+    "title": "森林中的盜賊威脅",
+    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "nid": "forest-01",
+    "conds": [
+      {
+        "type": "kill",
+        "id": "rogue",
+        "count": 3
+      },
+      {
+        "type": "final",
+        "des": "跟 karen 回報"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
+      }
+    ]
+  },
+  "xi_01": {
+    "id": "xi_01",
+    "title": "森林中的盜賊威脅",
+    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "nid": "forest-01",
+    "conds": [
+      {
+        "type": "kill",
+        "id": "rogue",
+        "count": 3
+      },
+      {
+        "type": "final",
+        "des": "跟 xi 回報"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
+      }
+    ]
+  },
+  "macron_01": {
+    "id": "macron_01",
+    "title": "森林中的盜賊威脅",
+    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "nid": "forest-01",
+    "conds": [
+      {
+        "type": "kill",
+        "id": "rogue",
+        "count": 3
+      },
+      {
+        "type": "final",
+        "des": "跟 macron 回報"
+      }
+    ],
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "item",
+        "id": "helmet_01",
+        "count": 2
+      }
+    ]
   }
 }

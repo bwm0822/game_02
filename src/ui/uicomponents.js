@@ -326,9 +326,6 @@ export function uButton(scene,config={})
         if(style===UI.BTN.CHECK||style===UI.BTN.FOLD)
         {
             btn.value = on;
-            // const pre = on?UCHK:CHK;
-            // const post = on?CHK:UCHK;
-            // btn._text.setText(btn._text.text.replace(pre,post));
             if(prefix) {btn._icon?.setText(on?CHK:UCHK);}
         }
         else
@@ -970,24 +967,21 @@ export function uFold(scene,config={})
 
     const p = uPanel(scene,{orientation:'y'});
 
-    uButton.call(p,scene,{
-        text: {text:title,color:color},
-        ext: {align:'left',expand:true},
-        style: UI.BTN.FOLD,
-        prefix: prefix,
-        onclick: (btn)=>{
-                        if(btn.value) {_content.show();}
-                        else {_content.hide();}
-                        config.onclick?.(btn);
+    const _btn = uButton.call(p,scene,{
+                    text: {text:title,color:color},
+                    ext: {align:'left',expand:true},
+                    style: UI.BTN.FOLD,
+                    prefix: prefix,
+                    onclick: (btn)=>{
+                                    if(btn.value) {_content.show();}
+                                    else {_content.hide();}
+                                    config.onclick?.(btn);
                     }});
 
     const _content = uPanel.call(p,scene,{
                         orientation:'y',
                         ext:{expand:true,padding:{left:indent}}})
                     .hide();
-
-    // _content.add(uBbc(scene,{text:'fold 測試。'}),{align:'left'})   // for test
-    //         .add(uButton(scene,{text:'fold 測試。',style:UI.BTN.ITEM}),{align:'left'})   // for test
 
     if(this&&this.add) {this.add(p,ext);}
 
@@ -998,6 +992,12 @@ export function uFold(scene,config={})
     }
 
     p.clearAll = ()=>{_content.removeAll(true); return p;}
+
+    p.getChildren = ()=>{return _content.getChildren();}
+
+    p.fold = ()=>{_btn.setValue(true); _btn.emit('pointerup');}
+    p.unfold = ()=>{_btn.setValue(false); _btn.emit('pointerup');}
+
     
     return p;
 }

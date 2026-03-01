@@ -29,24 +29,6 @@
           "任務完成了/goto none;close musk_01;set quest none"
         ]
       }
-    },
-    "musk_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "musk_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close musk_01;set quest none"
-      ]
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
     }
   },
   "xi": {
