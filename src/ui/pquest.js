@@ -100,10 +100,10 @@ export class PQuest extends Sizer
         for(let id in QuestManager.quests.opened)
         {
             let q = QuestManager.query(id);
-
+            console.log('state=',q.state)
             const itm = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
-                            tcon: {text:q.state==='finish'?'🗹':'☐',ext:{align:'top'}},
+                            tcon: {text:q.state==='open'?'☐':'🗹',ext:{align:'top'}},
                             text: {text:q.title(),wrapWidth:125},
                             onclick: onclick});
 

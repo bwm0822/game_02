@@ -29,6 +29,12 @@
           "任務完成了/goto none;close musk_01;set quest none"
         ]
       }
+    },
+    "none": {
+      "A": "...",
+      "B": [
+        "離開/exit"
+      ]
     }
   },
   "xi": {

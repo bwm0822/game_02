@@ -65,6 +65,7 @@
                 }, 
                 {
                  "id":56,
+                 "name":"\u6697\u591c\u68ee\u6797",
                  "template":"..\/templates\/forest.tj",
                  "type":"node",
                  "x":432,

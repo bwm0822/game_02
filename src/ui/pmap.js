@@ -138,7 +138,12 @@ export class PMap extends Sizer
                 btn.q=q;
                 btn.nid=q.dat.nid;
                 btn.qid=id;
-                this._nds[q.dat.nid].addTag();
+                const margin={  left:this._map.left,
+                                right:this._map.right,
+                                top:this._map.top,
+                                bottom:this._map.bottom,
+                            }
+                this._nds[q.dat.nid].addTag(q.dat,margin);
             }
         }
 

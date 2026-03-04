@@ -84,7 +84,7 @@ export class COM_Storage extends Com
     _get(content)
     {
         let {id,count}=content;
-        delete content.count;   // 從 content 移除 count 屬性
+        // delete content.count;   // 從 content 移除 count 屬性
         let cps = DB.item(id).cps ?? 1;
 
         let i = 0;

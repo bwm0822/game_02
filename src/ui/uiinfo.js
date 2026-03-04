@@ -24,7 +24,6 @@ export default class UiInfo extends UiFrame
         super(scene, config, UI.TAG.INFO);
         UiInfo.instance = this;
         this._w = config.width;
-        this._gap = 10;
 
         this.addBg(scene,{color:GM.COLOR.DARK,...UI.BG.BORDER})
             .layout()
@@ -235,7 +234,7 @@ export default class UiInfo extends UiFrame
     ifNode(elm)
     {
         const scene = this.scene;
-        ui.uBbc.call(this,scene,{text:'test'});   
+        ui.uBbc.call(this,scene,{text:elm.dat.title});   
     }
 
     update(type, elm)
@@ -277,12 +276,13 @@ export default class UiInfo extends UiFrame
         this.layout()
     }
 
-    getXY(elm)
+    getBound(elm)
     {
+        const gap=5;
         let x=elm.x,y=elm.y;
-        let p = elm.parentContainer;
+        let p=elm.parentContainer;
+        let parentX=0,parentY=0;
 
-        let parentX=0, parentY=0;
         while(p)
         {
             parentX+=p.x;
@@ -291,58 +291,56 @@ export default class UiInfo extends UiFrame
             y+=p.y;
             p=p.parentContainer;
         }
-        return [x,y,parentX,parentY];
+        const l = parentX+elm.left-gap;
+        const r = parentX+elm.right+gap;
+        const t = parentY+elm.top-gap;
+        const b = parentY+elm.bottom+gap;
+        const m = elm.margin??{left:0,right:GM.w,top:0,bottom:GM.h};
+        return {x,y,l,r,t,b,m};
     }
 
     show(type, elm)
     {
         super.show();
-
-        let [x,y,parentX,parentY]=this.getXY(elm);
-
-        // console.trace('show')
-        // console.log(x,y,parentX,parentY);
+        let b=this.getBound(elm);
+        let [x,y]=[b.x,b.y];
 
         switch(type)
         {
             case UI.INFO.BTN:
             case UI.INFO.ACTIVE.TB:
             case UI.INFO.ABILITY.TB:
-                if(y>GM.h/2)
-                {
-                    this.setOrigin(0.5,1);
-                    y=parentY+elm.top-this._gap;
-                }
-                else
-                {
-                    this.setOrigin(0.5,0);
-                    y=parentY+elm.bottom+this._gap;
-                }
+                if(y>GM.h/2) {this.setOrigin(0.5,1); y=b.t;}
+                else {this.setOrigin(0.5,0); y=b.b;}
+                break;
+            case UI.INFO.NODE:
+                this.setOrigin(0.5,1); y=b.t;
                 break;
             default:
-                if(x>GM.w/2)
-                {
-                    this.setOrigin(1,0.5);
-                    x=parentX+elm.left-this._gap;
-                }
-                else
-                {
-                    this.setOrigin(0,0.5);
-                    x=parentX+elm.right+this._gap;
-                }
+                if(x>GM.w/2) {this.setOrigin(1,0.5); x=b.l;}
+                else {this.setOrigin(0,0.5); x=b.r;}
                 break;
         }
 
         this.update(type, elm);
-
-        this.setPosition(x,y).rePos();
+        this.setPosition(x,y).rePos(type, b);
         this.layout();
     }
 
-    rePos()
+    rePos(type, b)
     {
-        if(this.bottom>GM.h) {this.y-=this.bottom-GM.h;}
-        else if(this.top<0) {this.y-=this.top;}
+        switch(type)
+        {
+            case UI.INFO.NODE:
+                if(this.top<b.m.top) {this.setOrigin(0.5,0);this.y=b.b;}
+                break;
+        }
+
+        if(this.left<b.m.left) {this.x=b.m.left+this.width*0.5;}
+        else if(this.right>b.m.right) {this.x=b.m.right-this.width*0.5;}
+        if(this.top<b.m.top) {this.y=b.m.top+this.height*0.5;}
+        else if(this.bottom>b.m.bottom) {this.y=b.m.bottom-this.height*0.5;}
+        
     }
 
     static close() {

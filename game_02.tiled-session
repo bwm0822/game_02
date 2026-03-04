@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/map.json",
     "expandedProjectPaths": [
         "public/assets/templates",
         "public",
-        "public/assets/tiles",
         "public/assets",
-        ".",
-        "public/assets/maps"
+        "public/assets/tiles",
+        "public/assets/maps",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -229,9 +229,9 @@
                 3
             ],
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 995.3333333333333,
+                "x": 995.9999999999999,
                 "y": 205.33333333333337
             }
         },
@@ -303,9 +303,9 @@
                 2
             ],
             "scale": 1.5,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 459.66666666666663,
+                "x": 460,
                 "y": 592.6666666666666
             }
         },
@@ -438,8 +438,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 453,
-                "y": 281
+                "x": 481,
+                "y": 761
             }
         },
         "public/assets/maps/village-02.json": {
@@ -641,20 +641,22 @@
     "map.tileWidth": 32,
     "map.width": 40,
     "openFiles": [
-        "public/assets/maps/village-01.json"
+        "public/assets/maps/village-01.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
         "public/assets/maps/village-01.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/maps/map.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/xi-home.json",
         "public/assets/maps/karen-home.json",
-        "public/assets/maps/forest-01.json",
         "public/assets/maps/macron-home.json",
-        "public/assets/maps/map.json",
         "public/assets/maps/village-02.json",
         "public/assets/maps/house_01.json",
         "public/assets/houe_1.tsj"

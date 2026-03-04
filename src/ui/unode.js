@@ -1,12 +1,14 @@
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
-import {uPic} from './uicomponents.js'
+import {uPic,uBbc,uPanel} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
 import Ui from './uicommon.js'
 
-export function uTag(scene,{x,y,icon='buffs:1',w=40,h=40}={})
+export function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat,margin}={})
 {
     const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
+    tag.dat=dat;
+    tag.margin=margin;
     tag.setInteractive()
         .on('pointerover',()=>{UiInfo.show(UI.INFO.NODE,tag);})
         .on('pointerout',()=>{UiInfo.close();})
@@ -63,14 +65,23 @@ export class UNode extends Phaser.GameObjects.Container
         this.add(zcen).add(zrect).add(rect)
     }
 
+    _setOutline(on)
+    {
+        if(!this._outline) {this._outline = this.scene.plugins.get('rexOutlinePipeline');}
+        if(on) {this._outline.add(this._shape,{thickness:3, outlineColor:0xffffff});}
+        else {this._outline.remove(this._shape);}
+    }
+
     _onover()
     {
-        UiInfo.show(UI.INFO.NODE,this)
+        // UiInfo.show(UI.INFO.NODE,this)
+        this._setOutline(true);
     }
 
     _onout()
     {
-        UiInfo.close();
+        // UiInfo.close();
+        this._setOutline(false);
     }
 
     _ondown()
@@ -94,12 +105,13 @@ export class UNode extends Phaser.GameObjects.Container
     {
         const scene=this.scene;
 
-        // image
-        const [key,frame] = Utility.getbygid(map,obj.gid);
-        const img = scene.add.image(0,0,key,frame);
-        this.add(img);
+        // 1. shape
+        this._addShape(scene,map,obj);
 
-        // this.addTag(this.scene);
+        // 2. panel
+        this._addPanel(scene);
+        this._addTags(scene);
+        this._addText(this._dat.name);
 
         // event
         const z = this._zone;
@@ -116,12 +128,47 @@ export class UNode extends Phaser.GameObjects.Container
 
     }
 
+    _addShape(scene,map,obj)
+    {
+        const [key,frame] = Utility.getbygid(map,obj.gid);
+        const img = scene.add.image(0,0,key,frame);
+        this.add(img);
+        this._shape = img;  // for outline
+    }
+
+    _addPanel(scene)
+    {
+        this._p = uPanel.call(this,scene,{y:-32,
+                                        orientation:'y',
+                                        // rtl: true,
+                                        //bg:{color:'#fff'}
+                                    })
+                        .setOrigin(0.5,1)
+        return this._p;
+    }
+
+    _addTags(scene)
+    {
+        this._tags = uPanel.call(this._p,scene,{orientation:'x'})
+    }
+
+    _addText(text)
+    {
+        const bbc = uBbc(this.scene,{   text:text,
+                                        color:'#000',
+                                        backgroundColor:'#ccc',
+                                        padding:1
+                                    }).setOrigin(0.5,1);
+        this._p.add(bbc).layout();
+    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
-    addTag()
+    addTag(dat,margin)
     {
-        this.add(uTag(this.scene,{x:0,y:-32}))
+        this._tags.add(uTag(this.scene,{dat:dat,margin:margin}));
+        this._p.layout();
     }
    
 }

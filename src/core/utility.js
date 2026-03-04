@@ -630,7 +630,7 @@ export default class Utility
 
     static getProps(obj)
     {
-        return Object.fromEntries(
+        const dat =  Object.fromEntries(
             (Array.isArray(obj.properties) ? obj.properties : []).map(p => [
                 p.name,
                 p.type === 'int'   ? parseInt(p.value,10) :
@@ -638,6 +638,10 @@ export default class Utility
                 p.type === 'bool'  ? (p.value === true || p.value === 'true') :
                 p.value
             ]))
+
+        if(obj.name && !dat.name){dat.name=obj.name;}
+
+        return dat;
     }
 
 
