@@ -30,17 +30,36 @@ export class UNode extends Phaser.GameObjects.Container
         this._zone = this._getZone(dat, obj);
         this._dat = dat;
 
+        // console.log(dat)
+        this._pts = dat.json_pts && JSON.parse(dat.json_pts);
+
         this._init(map, obj);
         // this._debugDraw(obj);
+        console.log(this.width,this.height)
     }
 
     get dat() {return this._dat;}
-    get loc() {return {x:this.x+this._zone.x, y:this.y+this._zone.y};}
+    // get loc() {return {x:this.x+this._zone.x, y:this.y+this._zone.y};}
+    get pos() {return {x:this.x, y:this.y}}
+    
+    get ol() {return -this.width/2+this._dat.zl;}
+    get or() {return -this.width/2-this._dat.zr;}
+    get ot() {return -this.height/2+this._dat.zt;}
+    get ob() {return this.height/2-this._dat.zb;}
 
-    get left() {return this.x-this.width/2;}
-    get right() {return this.x+this.width/2;}
-    get top() {return this.y-this.height/2;}
-    get bottom() {return this.y+this.height/2;}
+    // get left() {return this.x-this.width/2;}
+    // get right() {return this.x+this.width/2;}
+    // get top() {return this.y-this.height/2;}
+    // get bottom() {return this.y+this.height/2;}
+
+    get left() {return this.x-this.ol;}
+    get right() {return this.x+this.or;}
+    get top() {return this.y-this.ot;}
+    get bottom() {return this.y+this.ob;}
+
+    // 可互動的點(陣列)
+    get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
+                                : [this.pos]} 
 
     //------------------------------------------------------
     // Local
@@ -104,6 +123,9 @@ export class UNode extends Phaser.GameObjects.Container
     _init(map, obj)
     {
         const scene=this.scene;
+        const w=obj.width;
+        const h=obj.height;
+        this.setSize(w,h)
 
         // 1. shape
         this._addShape(scene,map,obj);
@@ -115,9 +137,6 @@ export class UNode extends Phaser.GameObjects.Container
 
         // event
         const z = this._zone;
-        const w=obj.width;
-        const h=obj.height;
-        this.setSize(w,h)
         // Phaser.Geom.Rectangle 的 (x, y) 是「左上角」
         this.setInteractive(
             new Phaser.Geom.Rectangle(z.x-z.w/2+w/2, z.y-z.h/2+h/2, z.w, z.h),
@@ -138,7 +157,7 @@ export class UNode extends Phaser.GameObjects.Container
 
     _addPanel(scene)
     {
-        this._p = uPanel.call(this,scene,{y:-32,
+        this._p = uPanel.call(this,scene,{y:this.ot,
                                         orientation:'y',
                                         // rtl: true,
                                         //bg:{color:'#fff'}

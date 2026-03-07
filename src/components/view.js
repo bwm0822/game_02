@@ -452,6 +452,7 @@ export class ItemView extends View
 {
     _addShape()
     {
+        // console.log('_addShape=',this.key,this.frame,this.wid,this.hei)
         if(this.key)
         {
             let sp = this.scene.add.sprite(0,0,this.key,this.frame);

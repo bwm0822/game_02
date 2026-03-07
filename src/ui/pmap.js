@@ -118,32 +118,36 @@ export class PMap extends Sizer
         for(let id in QuestManager.quests.opened)
         {
             let q = QuestManager.query(id);
-            if(q.dat.nid)
+            // if(q.dat.nid)
+            if(q.nid)
             {
                 const btn = ui.uButton(scene,{
                                 style: UI.BTN.ITEM,
-                                tcon: {text:q.state==='finish'?'🗹':'☐',ext:{align:'top'}},
+                                tcon: {text:q.state==='open'?'☐':'🗹',ext:{align:'top'}},
                                 text: {text:q.title(),wrapWidth:125},
                                 onclick: onclick});
 
                 let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
                 if(!fold)
                 {
-                    fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
+                    // fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
+                    fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
                     this._scroll.addItem(fold);
                     fold.cat=q.cat
                 }
                 fold.addItem(btn);
 
                 btn.q=q;
-                btn.nid=q.dat.nid;
+                // btn.nid=q.dat.nid;
+                btn.nid=q.nid;
                 btn.qid=id;
                 const margin={  left:this._map.left,
                                 right:this._map.right,
                                 top:this._map.top,
                                 bottom:this._map.bottom,
                             }
-                this._nds[q.dat.nid].addTag(q.dat,margin);
+                // this._nds[q.dat.nid].addTag(q.dat,margin);
+                this._nds[q.nid].addTag(q.dat,margin);
             }
         }
 
@@ -154,7 +158,7 @@ export class PMap extends Sizer
     {
         const nd=this._nds[nid];
         // const tag=uTag(this.scene,{x:nd.loc.x,y:nd.loc.y})
-        const tag=ui.uPic(this.scene,{x:nd.loc.x,y:nd.loc.y,icon:'buffs:20',w:40,h:40,bg:{}})
+        const tag=ui.uPic(this.scene,{x:nd.pts[0].x,y:nd.pts[0].y,icon:'buffs:20',w:40,h:40,bg:{}})
         this._map.add(tag);
     }
 
@@ -184,7 +188,7 @@ export class PMap extends Sizer
     setQid(qid)
     {
         const ret = this.findQid(this._scroll, qid);
-        ret.cat.unfold();
+        ret.cat.unfold?.();
         ret.found.emit('pointerup');
         this.layout();
     }
@@ -212,6 +216,11 @@ export class PMap extends Sizer
         this._updateMap();
         this._updateQuest();
         this.layout();
+    }
+
+    mouseWheel(on)
+    {
+        this._scroll.mouseWheel(on);
     }
 
     

@@ -11,6 +11,7 @@ import {COM_AbilityTree} from '../components/abilitytree.js'
 import {COM_AbilitySlots} from '../components/abilityslots.js'
 import {COM_Trade} from '../components/trade.js'
 import {COM_Sleep} from '../components/sleep.js'
+import {COM_Cmd} from '../components/cmd.js'
 
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
@@ -129,6 +130,7 @@ export class Player extends Role
             .addCom(new COM_AbilitySlots())
             .addCom(new COM_Trade(false))
             .addCom(new COM_Sleep())
+            .addCom(new COM_Cmd())
  
         // 註冊 event
         this.on('ondead', this._ondead.bind(this));
@@ -171,29 +173,6 @@ export class Player extends Role
         // this.emit('clearPath');
         this.bb.path.stop = true; 
     }
-
-    cmd({pt, ent, act, path}={})
-    {
-        if(!this.isAlive) {return;}
-        
-        const {bb} = this.ctx;
-
-        if(bb.sta===GM.ST.ABILITY)
-        {
-            this.useAbility(ent);
-        }
-        else
-        {
-            bb.ent = ent;
-            bb.act = act??ent?.act;
-            if(path) { this.setPath?.(path); }
-            else { this.findPath?.(pt??ent.pos); }
-            this.updatePath?.();
-            bb.sta=GM.ST.MOVING;
-            this._resume();
-        }
-    }
-
 
     async process()
     {

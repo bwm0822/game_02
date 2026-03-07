@@ -102,7 +102,10 @@ export function uRect(scene, config={})
 
 export function uDiv(scene,config={})
 {
-    const {ext={expand:true,padding:{top:10,bottom:10}},...cfg}=config;
+    const {
+        ext={expand:true,padding:{top:10,bottom:10}},
+        ...cfg
+    }=config;
     cfg.width=cfg.width??100;
     cfg.height=cfg.height??1;
     cfg.color=cfg.color??GM.COLOR.GRAY;
@@ -200,7 +203,7 @@ export function uBg(scene, config={})
 
 export function uPanel(scene, config={})
 {
-    let {bg, ext, ...cfg} = config;
+    const {bg, ext, ...cfg} = config;
     const panel = scene.rexUI.add.sizer(cfg);
     if(bg) {uBg.call(panel, scene, bg)}
 
@@ -497,7 +500,7 @@ export function uScroll(scene, config={})
         bg = UI.BG.BORDER,
         space = {...UI.SPACE.LRTB_5,column:5,row:5},
         ext = {expand:true},
-        hideUnscrollableSlider = true,
+        hideUnscrollableSlider = false,
         disableUnscrollableDrag = true,
         style = UI.SCROLL.DEF,
         column = 1,
@@ -998,6 +1001,42 @@ export function uFold(scene,config={})
     p.fold = ()=>{_btn.setValue(true); _btn.emit('pointerup');}
     p.unfold = ()=>{_btn.setValue(false); _btn.emit('pointerup');}
 
+    
+    return p;
+}
+
+export function uGroup(scene,config={})
+{
+    const {
+        title='Title', 
+        color=GM.COLOR.WHITE, 
+        indent=0,
+        ext={expand:true}
+    } = config;
+
+    const p = uPanel(scene,{orientation:'y'});
+
+    uBbc.call(p,scene,{
+                text: title,
+                ext: {align:'left',expand:true},
+            });
+
+    uDiv.call(p,scene,{ext:{expand:true,padding:{top:0,bottom:10}}});
+
+    const _content = uPanel.call(p,scene,{
+                        orientation:'y',
+                        ext:{expand:true,padding:{left:indent}}})
+
+    if(this&&this.add) {this.add(p,ext);}
+
+    // 操作介面    
+    p.addItem = (item,config)=>{
+        config=config??{align:'left'};
+        _content.add(item,config); return p;
+    }
+
+    p.clearAll = ()=>{_content.removeAll(true); return p;}
+    p.getChildren = ()=>{return _content.getChildren();}    
     
     return p;
 }

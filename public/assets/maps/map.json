@@ -38,6 +38,17 @@
                 {
                  "height":64,
                  "id":1,
+                 "properties":[
+                        {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":0,\"y\":32}]"
+                        }, 
+                        {
+                         "name":"zt",
+                         "type":"int",
+                         "value":24
+                        }],
                  "template":"..\/templates\/village.tj",
                  "width":64,
                  "x":560,
@@ -57,6 +68,11 @@
                          "name":"port",
                          "type":"string",
                          "value":"entry"
+                        }, 
+                        {
+                         "name":"zt",
+                         "type":"int",
+                         "value":24
                         }],
                  "template":"..\/templates\/village.tj",
                  "width":64,
@@ -66,6 +82,27 @@
                 {
                  "id":56,
                  "name":"\u6697\u591c\u68ee\u6797",
+                 "properties":[
+                        {
+                         "name":"json_pts",
+                         "type":"string",
+                         "value":"[{\"x\":0,\"y\":32}]"
+                        }, 
+                        {
+                         "name":"zl",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"zr",
+                         "type":"int",
+                         "value":0
+                        }, 
+                        {
+                         "name":"zt",
+                         "type":"int",
+                         "value":0
+                        }],
                  "template":"..\/templates\/forest.tj",
                  "type":"node",
                  "x":432,

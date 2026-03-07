@@ -52,9 +52,11 @@ export class PQuest extends Sizer
 
         this._content
             .clearAll()
+            .add(ui.uBbc(scene,{text:`[color=yellow]${q.title()}[/color]`}),{align:'center'})
             .add(ui.uBbc(scene,{text:q.fmt(),wrapWidth:500}),{align:'left'})
 
-        if(q.dat.nid)
+        // if(q.dat.nid)
+        if(q.nid)
         {
             this._content
                 .add(ui.uButton(scene, {text:'地圖',
@@ -100,7 +102,6 @@ export class PQuest extends Sizer
         for(let id in QuestManager.quests.opened)
         {
             let q = QuestManager.query(id);
-            console.log('state=',q.state)
             const itm = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
                             tcon: {text:q.state==='open'?'☐':'🗹',ext:{align:'top'}},
@@ -110,7 +111,7 @@ export class PQuest extends Sizer
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
             {
-                fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
+                fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
                 this._scroll.addItem(fold);
                 fold.cat=q.cat
             }
@@ -121,5 +122,11 @@ export class PQuest extends Sizer
         
         this.layout();
 
+    }
+
+    mouseWheel(on)
+    {
+        this._scroll.mouseWheel(on);
+        this._content.mouseWheel(on);
     }
 }

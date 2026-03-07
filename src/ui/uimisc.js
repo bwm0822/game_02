@@ -64,6 +64,7 @@ export default class UiMisc extends UiFrame
     updatePage()
     {
         this._page?.hide();
+        this._page?.mouseWheel(false);
 
         switch(this._pageName)
         {
@@ -72,6 +73,7 @@ export default class UiMisc extends UiFrame
         }
 
         this._page.update();
+        this._page.mouseWheel(true);
         // this.layout();
 
     }

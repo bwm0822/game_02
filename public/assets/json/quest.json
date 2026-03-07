@@ -8,11 +8,13 @@
       {
         "type": "kill",
         "id": "rogue",
-        "count": 3
+        "count": 3,
+        "nid": "forest-01"
       },
       {
-        "type": "final",
-        "des": "跟 musk 回報"
+        "des": "跟 musk 回報",
+        "nid": "village-01",
+        "refs": 0
       }
     ],
     "rewards": [
@@ -50,8 +52,8 @@
         "count": 3
       },
       {
-        "type": "final",
-        "des": "跟 melanie 回報"
+        "des": "跟 melanie 回報",
+        "refs": 1
       }
     ],
     "rewards": [
@@ -103,11 +105,15 @@
       {
         "type": "kill",
         "id": "rogue",
-        "count": 3
+        "count": 3,
+        "nid": "forest-01"
       },
       {
-        "type": "final",
-        "des": "跟 karen 回報"
+        "des": "跟 karen 回報",
+        "refs": [
+          0
+        ],
+        "nid": "village-01"
       }
     ],
     "rewards": [

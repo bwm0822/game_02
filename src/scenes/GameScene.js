@@ -228,6 +228,7 @@ export class GameScene extends Scene
             pos = this.gos[this._data.port].pts[0];
         }
 
+        console.log('pos=',pos)
         new classType(this,pos.x,pos.y).init_runtime('wick').load();
 
         this.setCameraFollow(GM.CAM_CENTER);
