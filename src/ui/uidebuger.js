@@ -200,6 +200,8 @@ export default class UiDebuger extends UiFrame
             {text:'實體', value:DBG.MODE.BODY},
             {text:'格線', value:DBG.MODE.GRID},
             {text:'區域', value:DBG.MODE.ZONE},
+            {text:'外框', value:DBG.MODE.SHAPE},
+            {text:'文字', value:DBG.MODE.TEXT},
             {text:'全部', value:DBG.MODE.ALL},
         ]
 

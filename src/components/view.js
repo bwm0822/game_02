@@ -2,7 +2,7 @@ import {GM,DEBUG,DBG} from '../core/setting.js'
 import DB from '../data/db.js'
 
 
-function debugDraw(mode=DEBUG.mode)
+function debugDraw(mode=DEBUG.mode,text)
 {
     if(!this._dbgGraphics)
     {
@@ -64,8 +64,21 @@ function debugDraw(mode=DEBUG.mode)
             let p = {x:this.cen.x + this._zone.x - this._zone.width/2, 
                     y:this.cen.y + this._zone.y - this._zone.height/2}
             let rect = new Phaser.Geom.Rectangle(p.x,p.y,this._zone.width,this._zone.height); 
-            this._dbgGraphics.strokeRectShape(rect);            
+            this._dbgGraphics.strokeRectShape(rect);           
         }
+    }
+
+    const draw_shape = ()=>{
+        if((mode&DBG.MODE.SHAPE)===0) {return;}
+        // cen 是 shape 的中心點
+        // Phaser.Geom.Rectangle( left, top, w, h )
+        this._dbgGraphics.lineStyle(2, 0xffffff, 1);
+        const p = {x:this.cen.x-this.wid/2, y:this.cen.y-this.hei/2}
+        const rect = new Phaser.Geom.Rectangle(p.x,p.y,this.wid,this.hei); 
+        const circle = new Phaser.Geom.Circle(this.cen.x,this.cen.y,6);
+        this._dbgGraphics.strokeRectShape(rect);      
+        this._dbgGraphics.strokeCircleShape(circle);       
+        
     }
 
     const draw_pts = ()=>{
@@ -77,8 +90,7 @@ function debugDraw(mode=DEBUG.mode)
             let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
             this._dbgGraphics.strokeCircleShape(circle);
         }
-        this._dbgGraphics.lineStyle(2, 0xffffff, 1);
-        // let circle = new Phaser.Geom.Circle(this.pos.x,this.pos.y,5);
+        this._dbgGraphics.lineStyle(2, 0xff00ff, 1);
         let circle = new Phaser.Geom.Circle(this.anchor.x,this.anchor.y,5);
         this._dbgGraphics.strokeCircleShape(circle);
     }
@@ -90,12 +102,12 @@ function debugDraw(mode=DEBUG.mode)
     }
 
     const show_text = ()=>{
-        if(mode===DBG.MODE.CLR) {return;}
+        if((mode&DBG.MODE.TEXT)===0) {return;}
         if(this._dbgText)
         {
-            this._dbgText.x = this.pos.x;
-            this._dbgText.y = this.pos.y-this.displayHeight;
-            this._dbgText.setText(this.root.bb.sta)
+            this._dbgText.x = this.cen.x;
+            this._dbgText.y = this.cen.y+this.min.y;
+            this._dbgText.setText(text??this.root.bb.sta)
         }
     }
 
@@ -105,6 +117,7 @@ function debugDraw(mode=DEBUG.mode)
     draw_grid();
     draw_zone();
     draw_pts();
+    draw_shape();
     show_text();
 }
 
@@ -154,7 +167,7 @@ class View extends Phaser.GameObjects.Container
     get pos() {return this._root.pos;}
 
     get anchor() {return this.pos;}          // 錨點的座標(world space)
-    get cen()   {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}    // 中心點的座標(world space)
+    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // 中心點的座標(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
     get pts() {return this._root.pts;}
@@ -437,6 +450,9 @@ class View extends Phaser.GameObjects.Container
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
         root.updatePos = this._updatePos.bind(this);
+
+
+        root.dbg = debugDraw.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('view',()=>{return this;})

@@ -1,3 +1,4 @@
+import ShakePosition from "phaser3-rex-plugins/plugins/behaviors/shake/ShakePosition";
 
 export let player=null;     // 全域玩家物件
 
@@ -570,12 +571,14 @@ export const ORDER = [
 export const DBG = 
 {
     MODE: {
-        POINT   : 0b0001,
-        BODY    : 0b0010,
-        GRID    : 0b0100,
-        ZONE    : 0b1000,
-        ALL     : 0b1111,
-        CLR     : 0b0000,
+        POINT   : 0b000001,
+        BODY    : 0b000010,
+        GRID    : 0b000100,
+        ZONE    : 0b001000,
+        SHAPE   : 0b010000,
+        TEXT    : 0b100000,
+        ALL     : 0b111111,
+        CLR     : 0b000000,
     },
 }
 
