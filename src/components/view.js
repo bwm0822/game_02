@@ -44,7 +44,7 @@ function debugDraw(mode=DEBUG.mode)
         if((mode&DBG.MODE.GRID)===0) {return;}
         if(this._grid)
         {
-            // grid 的 x, y 是 body 的中心點
+            // grid 的 x, y 是 grid 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
             let x = this.cen.x + this.min.x + this.gl;

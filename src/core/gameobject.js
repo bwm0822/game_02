@@ -291,8 +291,9 @@ export class GameObject
 
     addText(label)
     {
+        const ot = -this.bb.hei/2+this.bb.zt;
         let lb = this.scene.add.text(
-                0, -32, label,
+                0, ot, label,
                 {   
                     fontFamily:'Arial',
                     fontSize:'24px',
@@ -445,6 +446,8 @@ export class GameObject
     //------------------------------------------------------
     init_prefab() 
     {
+        console.log('bb=',this.bb);
+
         if(this._isRemoved()) { return false; }
         else
         {
