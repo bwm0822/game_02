@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/map.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets/templates",
         "public/assets/tiles",
+        "public/assets/templates",
         "public",
         "public/assets/maps",
         ".",
@@ -225,8 +225,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 0.75,
             "selectedLayer": 2,
@@ -305,8 +305,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 644.6666666666666,
-                "y": 592.6666666666666
+                "x": 512,
+                "y": 512.3333333333334
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -648,9 +648,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
-        "public/assets/maps/forest-01.json",
         "public/assets/maps/map.json",
+        "public/assets/maps/forest-01.json",
+        "public/assets/maps/village-01.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/musk-home.json",

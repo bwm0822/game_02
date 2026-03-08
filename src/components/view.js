@@ -15,7 +15,7 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgText = this.scene.add.text(0,0,'',
                 {   
                     fontFamily:'Arial',
-                    fontSize:'24px',
+                    fontSize:'18px',
                     color:'#000',
                     // stroke:'#fff',
                     // strokeThickness:3,
@@ -25,6 +25,24 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgText.setDepth(Infinity);
         this._dbgText.setOrigin(0.5,1);
     }
+
+    if(!this._dbgPos)
+    {
+        this._dbgPos = this.scene.add.text(0,0,'',
+                {   
+                    fontFamily:'Arial',
+                    fontSize:'18px',
+                    color:'#000',
+                    // stroke:'#fff',
+                    // strokeThickness:3,
+                    backgroundColor: '#fff',
+                    // padding: {x:0,y:0}    
+                });
+        this._dbgPos.setDepth(Infinity);
+        this._dbgPos.setOrigin(0);
+    }
+
+
 
     const draw_body = ()=>{
         if((mode&DBG.MODE.BODY)===0) {return;}
@@ -73,11 +91,17 @@ function debugDraw(mode=DEBUG.mode,text)
         // cen 是 shape 的中心點
         // Phaser.Geom.Rectangle( left, top, w, h )
         this._dbgGraphics.lineStyle(2, 0xffffff, 1);
-        const p = {x:this.cen.x-this.wid/2, y:this.cen.y-this.hei/2}
-        const rect = new Phaser.Geom.Rectangle(p.x,p.y,this.wid,this.hei); 
-        const circle = new Phaser.Geom.Circle(this.cen.x,this.cen.y,6);
+        const lt = {x:this.cen.x+this.min.x, y:this.cen.y+this.min.y}   // 左上角
+        const lb = {x:this.cen.x+this.min.x,y:this.cen.y+this.max.y}    // 左下角
+        // 顯示外框及左下角
+        const rect = new Phaser.Geom.Rectangle(lt.x,lt.y,this.wid,this.hei); 
+        const circle = new Phaser.Geom.Circle(lb.x,lb.y,5);
         this._dbgGraphics.strokeRectShape(rect);      
-        this._dbgGraphics.strokeCircleShape(circle);       
+        this._dbgGraphics.strokeCircleShape(circle);  
+        // 顯示左下角的座標
+        this._dbgPos.x = lb.x;
+        this._dbgPos.y = lb.y+5;
+        this._dbgPos.setText(`(${lb.x},${lb.y})`)     
         
     }
 
@@ -91,6 +115,7 @@ function debugDraw(mode=DEBUG.mode,text)
             this._dbgGraphics.strokeCircleShape(circle);
         }
         this._dbgGraphics.lineStyle(2, 0xff00ff, 1);
+        // 顯示錨點
         let circle = new Phaser.Geom.Circle(this.anchor.x,this.anchor.y,5);
         this._dbgGraphics.strokeCircleShape(circle);
     }
@@ -98,6 +123,7 @@ function debugDraw(mode=DEBUG.mode,text)
     const clr = ()=>{
         this._dbgGraphics.clear();
         if(this._dbgText) {this._dbgText.text='';}
+        if(this._dbgPos) {this._dbgPos.text='';}
         this._dbgGraphics.lineStyle(2, 0xff0000, 1);
     }
 
@@ -107,7 +133,7 @@ function debugDraw(mode=DEBUG.mode,text)
         {
             this._dbgText.x = this.cen.x;
             this._dbgText.y = this.cen.y+this.min.y;
-            this._dbgText.setText(text??this.root.bb.sta)
+            this._dbgText.setText(text??this.root.bb.sta);
         }
     }
 
@@ -166,8 +192,8 @@ class View extends Phaser.GameObjects.Container
     get ent() {return this._root.ent;}
     get pos() {return this._root.pos;}
 
-    get anchor() {return this.pos;}          // 錨點的座標(world space)
-    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // 中心點的座標(world space)
+    get anchor() {return this.pos;}          // 錨點(world space)
+    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // view的中心點(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
     get pts() {return this._root.pts;}
