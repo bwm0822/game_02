@@ -202,7 +202,6 @@ export default class UiDebuger extends UiFrame
             {text:'區域', value:DBG.MODE.ZONE},
             {text:'外框', value:DBG.MODE.SHAPE},
             {text:'文字', value:DBG.MODE.TEXT},
-            {text:'全部', value:DBG.MODE.ALL},
         ]
 
         const CHK=this.check.bind(this);
@@ -213,7 +212,7 @@ export default class UiDebuger extends UiFrame
         this._page.clearAll();
 
         this.addRow(CHK('除錯', DEBUG, 'enable'),
-                    DD('模式', DEBUG, 'mode', options_mode))
+                    DD('模式', DEBUG, 'mode', options_mode,{multi:true}))
             .addElm(CHK('座標', DEBUG, 'loc'))
             .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
             .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
@@ -250,13 +249,14 @@ export default class UiDebuger extends UiFrame
                 .setValue(obj[key]);
     }
 
-    dropdown(name, obj, key, options)
+    dropdown(name, obj, key, options, ext)
     {
         const p = ui.uPanel(this.scene,{space:{item:10}});
         ui.uBbc.call(p,this.scene, {text:name});
         ui.uDropdown.call(p,this.scene, 
-                    {options:options,
-                    onchange:(v)=>{ obj[key]=v; }})
+                    {...ext,
+                    options:options,
+                    onchange:(v)=>{ obj[key]=v; this.layout();}})
                     .setValue(obj[key]);
         return p;
     }

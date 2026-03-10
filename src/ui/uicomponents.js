@@ -85,7 +85,7 @@ export class Icon extends OverlapSizer
 
 export function uRect(scene, config={})
 {
-    const {interactive,onover,onout,ondown,ext,...cfg}=config;
+    const {interactive,onover,onout,ondown,onup,ext,...cfg}=config;
     const r = scene.rexUI.add.roundRectangle(cfg);
 
     if(interactive)
@@ -94,6 +94,7 @@ export function uRect(scene, config={})
         if(onover){r.on('pointerover',()=>{onover()})};
         if(onout){r.on('pointerout',()=>{onout()})};
         if(ondown){r.on('pointerdown',()=>{ondown()})};
+        if(onup){r.on('pointerup',()=>{onup()})};
     }
 
     if(this&&this.add) {this.add(r,ext);}  // 如果有 this，表示是在 Sizer 裡面建立的，就加到 Sizer 裡面去
@@ -160,7 +161,7 @@ export function uBbc(scene, config={})
     cfg.strokeThickness = cfg.strokeThickness ?? 3;   // 設成3才會有明顯描邊的效果
     // wrapWidth 用來控制最大寬度，超過自動換行
     cfg.wrapWidth && (cfg.wrap = {mode:'char',width:cfg.wrapWidth}); 
-    //mode: 0|'none'|1|'word'|2|'char'|'character'|3|'mix'
+    //mode: 0:'none',1:'word',2:'char'|'character',3:'mix'
 
     let t = scene.add.rexBBCodeText(x, y, text, cfg);
     t.key = key;
@@ -790,10 +791,10 @@ export function uSlider(scene,config={})
             if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
             p.s=uSliderBase.call(p,scene,{gap:gap,
                                     ext:{proportion:1},onchange:valuechange})
-            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            p.l=uLabel.call(p,scene,{text:{text:0,align:'center',ext:{proportion:1}},bg:bg,width:C.w,height:C.h})
             break;
         case UI.SLIDER.VL:
-            p.l=uLabel.call(p,scene,{text:0,align:'center',bg:bg,width:C.w,height:C.h})
+            p.l=uLabel.call(p,scene,{text:{text:0,align:'center',ext:{proportion:1}},bg:bg,width:C.w,height:C.h})
             p.s=uSliderBase.call(p,scene,{gap:gap,
                                     ext:{proportion:1},onchange:valuechange})
             if(icon){p.i=uBbc.call(p,scene,{text:icons[0],fontSize:C.fSize});}
@@ -829,61 +830,135 @@ export function uSlider(scene,config={})
 export function uDropdownBase(scene,config={})
 {
     const { 
-        text='----',
+        text='---',
         options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
         align='center',
         ext,
         onchange,
+        multi=false,
+        width=200,
     }=config;
 
-    let _list=null,_timer=null;
+    let _menu=null,_cover=null,_val;
+
+    const parseOpt=(value)=>{
+        if(!multi) {return value;}
+        const opt={text:'', value:0};
+        const childs = _menu?.getChildren();
+        childs?.forEach((child)=>{
+            if(child.value)
+            {
+                opt.value|=child.opt.value;
+                opt.text+=child.opt.text+';';
+            }
+        })
+        return opt;
+    }
 
     const setValue=(opt)=>{
-        dd._text.setText(opt.text);
+        dd._text.setText(opt.text===''?'---':opt.text);
         onchange?.(opt.value);
+        if(!multi) {toggle();}
         return dd;
     }
-    const removeList=()=>{
-        scene.input.off('pointerup',removeList);
-        _list?.destroy();
-        _list=null;
-        _timer=null;
+
+    const setAll=(on)=>{
+        const childs = _menu?.getChildren();
+        childs?.forEach((child)=>{child.opt&&child.setValue(on)})
+        const opt=parseOpt();
+        setValue(opt);
     }
-    const createList=(btn)=>{
-        const width = btn.right - btn.left;
-        _list = uPanel(scene,{x:btn.left,y:btn.bottom,
-                        // width:100,
+
+    const toggle=()=>{
+        if(_menu)
+        {
+            if(_menu.visible)
+            {
+                _menu.hide();
+                _cover.visible=false;
+            }
+            else
+            {
+                _menu.show();
+                _cover.visible=true;
+            }
+        }
+    }
+
+    const remove=()=>{
+        _menu?.destroy();
+        _cover?.destroy();
+        _menu=null;
+        _cover=null;
+    }
+
+    const create=(btn)=>{
+        // 1) create Cover
+        _cover = uRect(scene,{x:0,y:0,width:GM.w,height:GM.h,
+                        color:GM.COLOR.GRAY,alpha:0.1,
+                        interactive:true,onup:toggle}).setOrigin(0);
+        // 2) create Menu
+        _menu = uPanel(scene,{x:btn.left,y:btn.bottom,
+                        width:btn.width,
                         orientation:'y',
                         bg:{color:GM.COLOR.GRAY,
                             strokeColor:GM.COLOR.WHITE,
                             strokeWidth:1}})
                         .setOrigin(0)
-                        
+        // 3) add options            
         options.forEach((opt)=>{
-            uButton.call(_list,scene,{text:opt.text,
-                                    width:width,
-                                    align:align,
-                                    style:UI.BTN.OPTION,
-                                    onclick:()=>{setValue(opt);}})
+            const btn=uButton.call(_menu,scene,{
+                                    text:opt.text,
+                                    style:multi?UI.BTN.CHECK:UI.BTN.OPTION,
+                                    ext:{expand:true},
+                                    onclick:(btn)=>{setValue(parseOpt(btn.opt));}})
+            btn.opt=opt;
+            if(multi) {btn.setValue((_val&opt.value)===opt.value);}
         })
+        if(multi)
+        {
+            uDiv.call(_menu,scene,{color:GM.COLOR.WHITE})
+            uButton.call(_menu,scene,{text:'清除',
+                                    style:UI.BTN.OPTION,
+                                    ext:{expand:true},
+                                    onclick:()=>setAll(false)})
+            uButton.call(_menu,scene,{text:'全選',
+                                    style:UI.BTN.OPTION,
+                                    ext:{expand:true},
+                                    onclick:()=>setAll(true)})
+        }
 
-        _list.layout()
-
-        // 
-        _timer && clearTimeout(_timer);
-        _timer = setTimeout(()=>{scene.input.on('pointerup',removeList);}, 100)
+        _menu.layout()
     }
+
     const onclick=(btn)=>{
-        if(_list===null) {createList(btn);}
-        else {removeList();}
+        if(_menu===null) {create(btn);}
+        else {toggle();}
     }
 
-    const dd = uButton(scene,{text:text,style:UI.BTN.DROP,onclick:onclick,align:align});
+    const dd = uButton(scene,{text:{text:text,fixedWidth:width,align:align},
+                                style:UI.BTN.DROP,
+                                onclick:onclick});
     if(this&&this.add) {this.add(dd,ext);}
 
     // 操作介面
     dd.setValue=(value)=>{
-        const option = options.find(item => item.value === value);
+        _val=value;
+        let option;
+        if(multi)
+        {
+            option={text:'',value:value};
+            options.forEach((opt)=>{
+                if((value&opt.value)===opt.value)
+                {
+                    option.text+=opt.text+';';
+                }
+            })
+        }
+        else
+        {
+            option = options.find(item => item.value === value);
+        }
         setValue(option);
         return dd;
     }
@@ -900,9 +975,15 @@ export function uDropdown(scene,config={})
         ...cfg
     }=config;
 
+    let bbc,wid=width
     const p = uPanel(scene,{width:width,space:{item:10}});
-    if(title) {uBbc.call(p,scene,{text:title,fontSize:40})}
-    const ddb = uDropdownBase.call(p,scene,{...cfg,ext:{proportion:1}});
+    if(title) 
+    {
+        bbc=uBbc.call(p,scene,{text:title,fontSize:40})
+        if(wid) {wid-=bbc.width;}
+    }
+
+    const ddb = uDropdownBase.call(p,scene,{width:wid,...cfg,ext:{proportion:1}});
 
     if(this&&this.add) {this.add(p,ext)}
 

@@ -11,7 +11,7 @@ export default class Item extends GameObject
         
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
-
+        
         return this;
     }
 }

@@ -189,7 +189,7 @@ class View extends Phaser.GameObjects.Container
     get tag() {return 'view';}          // 回傳元件的標籤
     get root() {return this._root;}
     get ctx() {return this._root.ctx;}
-    get ent() {return this._root.ent;}
+    // get ent() {return this._root.ent;}
     get pos() {return this._root.pos;}
 
     get anchor() {return this.pos;}          // 錨點(world space)
@@ -435,7 +435,8 @@ class View extends Phaser.GameObjects.Container
             ._addListener()
 
         // 將 view 掛在 ent 之下
-        this.ent.add(this);
+        // this.ent.add(this);
+        this.root.add(this);
     }
 
     //--------------------------------------------------

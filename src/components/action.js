@@ -19,7 +19,7 @@ export class COM_Action extends Com
 
     get tag() {return 'action';}  // 回傳元件的標籤
 
-    get ent() {return this._root.ent;}
+    get root() {return this._root;}
     get scene() {return this._root.scene;}
 
 
@@ -30,7 +30,7 @@ export class COM_Action extends Com
     {
         return new Promise((resolve)=>{
             this.scene.tweens.add({
-                targets: this.ent,
+                targets: this.root,
                 x: pos.x,
                 y: pos.y,
                 duration: duration,
@@ -72,7 +72,7 @@ export class COM_Action extends Com
         root.face?.(target.pos);
         const sprite = {img:'arrow', scl:0.25};
         return new Promise((resolve)=>{
-                new Projectile(this.scene, this.ent.x, this.ent.y, sprite)
+                new Projectile(this.scene, this.root.x, this.root.y, sprite)
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}}
                         );
@@ -84,7 +84,7 @@ export class COM_Action extends Com
         const {root}=this.ctx
         root.face?.(target.pos);
         return new Promise((resolve)=>{
-                new Projectile(this.scene, this.ent.x, this.ent.y, ability.sprite)
+                new Projectile(this.scene, this.root.x, this.root.y, ability.sprite)
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}, bias:0}
                         );
@@ -197,7 +197,7 @@ export class COM_Action extends Com
     {
         const{bb,probe}=this.ctx;
         const obs = probe(this._pt);      // 取得障礙物
-        if(obs?.type===GM.TP.DOOR)        // 障礙物為門
+        if(obs?.tag===GM.TP.DOOR)        // 障礙物為門
         {
             return obs.aEmit(GM.OPEN_DOOR);
         }

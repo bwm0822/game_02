@@ -26,7 +26,7 @@ export class COM_Bed extends Com
         const{root}=this.ctx;
         user.sleepAt?.(root);
         root.add(user);
-        root.ent.bringToTop(this._blanket);
+        root.bringToTop(this._blanket);
         root.interact(false);
         this._user=user;
     }

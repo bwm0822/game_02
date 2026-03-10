@@ -150,7 +150,7 @@ export class GameScene extends Scene
         const atEdge = p.x<=m||p.x>=GM.w-m||p.y<=m||p.y>=GM.h-m;
         const d = 3.5;
 
-        if(atEdge && GM.player.state!==GM.ST.MOVING)
+        if(atEdge && GM.player.sta!==GM.ST.MOVING)
         {
             // console.log('--------------- edge:',p.x,p.y)
             this._mv = {x : p.x<GM.w*0.2 ? -d :
@@ -228,7 +228,7 @@ export class GameScene extends Scene
             pos = this.gos[this._data.port].pts[0];
         }
 
-        console.log('pos=',pos)
+        console.log('------------ pos=',pos)
         new classType(this,pos.x,pos.y).init_runtime('wick').load();
 
         this.setCameraFollow(GM.CAM_CENTER);
@@ -263,7 +263,7 @@ export class GameScene extends Scene
 
     onPointerDown(pointer,gameObject)
     {        
-        if(GM.player.state===GM.ST_SLEEP) {return;}
+        if(GM.player.sta===GM.ST_SLEEP) {return;}
 
         if (pointer.rightButtonDown())
         {
@@ -276,11 +276,11 @@ export class GameScene extends Scene
         else
         {
             let pt = {x:pointer.worldX, y:pointer.worldY};
-            if(GM.player.state===GM.ST.MOVING)
+            if(GM.player.sta===GM.ST.MOVING)
             {
                 GM.player.stop();
             }
-            else if(GM.player.state===GM.ST.ABILITY)
+            else if(GM.player.sta===GM.ST.ABILITY)
             {
                 GM.player.cmd({pt:pt,ent:this._ent});
             }
@@ -302,15 +302,15 @@ export class GameScene extends Scene
         }
 
         if(DEBUG.loc) {this.showMousePos();}
-        if(GM.player.state===GM.ST.ABILITY) 
+        if(GM.player.sta===GM.ST.ABILITY) 
         {
             let pt = {x:pointer.worldX,y:pointer.worldY};
             if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
             else {UiCursor.set('none');}
             return;
         }
-        else if(GM.player.state===GM.ST.SLEEP) {return;}
-        else if(GM.player.state!==GM.ST.MOVING)
+        else if(GM.player.sta===GM.ST.SLEEP) {return;}
+        else if(GM.player.sta!==GM.ST.MOVING)
         {
             let pt = {x:pointer.worldX,y:pointer.worldY};
             this.showPath(pt, this._ent);
@@ -377,12 +377,13 @@ export class GameScene extends Scene
     {
         Record.game.pos = GM.player.pos;   
         if(Record.game[this._data.map]?.runtime) {Record.game[this._data.map].runtime = [];}
-        console.log('gos:',this.gos)
+        // console.log('gos:',this.gos)
         // this.gos.forEach(go=>go.save?.())
         Object.values(this.gos).forEach(go=>go.save?.())
         this.roles.forEach(role=>role.save())
         TimeSystem.save();
         Record.saveGame();
+        console.log('-------------------- chk1')
     }
 
     mainMenu()
@@ -393,6 +394,7 @@ export class GameScene extends Scene
         this.scene.start('MainMenu');
         AudioManager.bgmPause();
         Ui.reset();
+        console.log('-------------------- chk2')
         
     }
 

@@ -1,11 +1,11 @@
-import {GM} from '../core/setting.js';
-import {ItemView} from '../components/view.js';
-import {COM_Door} from '../components/door.js';
-import {GameObject} from '../core/gameobject.js';
+import {GM} from '../core/setting.js'
+import {ItemView} from '../components/view.js'
+import {COM_Door} from '../components/door.js'
+import {GameObject} from '../core/gameobject.js'
 
 export default class Door extends GameObject
 {
-    get type() {return GM.TP.DOOR;}
+    get tag() {return GM.TP.DOOR;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------

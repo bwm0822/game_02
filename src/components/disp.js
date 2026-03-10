@@ -14,7 +14,7 @@ export class COM_Disp extends Com
 {
     get tag() {return 'disp';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
-    get ent() {return this._root.ent;}
+    get root() {return this._root;}
 
     //------------------------------------------------------
     //  Local
@@ -23,7 +23,7 @@ export class COM_Disp extends Com
     {
         const text=`[stroke=${stroke}]${value}[/stroke]`;
         let t = uBbc(this.scene,{text:text,color:color,strokeThickness:5});
-        this.ent.add(t);
+        this.root.add(t);
         t.setOrigin(0.5,0.5);
         t.setDepth(100);
         // t.setText(value).setTint(color);
@@ -75,8 +75,7 @@ export class COM_Disp extends Com
                         .add(uBbc(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
                         .setOrigin(0.5,1)
                         .setDepth(100)
-            this.ent.add(this._p);
-            // this.ent.sort('depth')
+            this.root.add(this._p);
         }
 
         if(tween)
@@ -127,7 +126,7 @@ export class COM_Disp extends Com
     async skill(skill)
     {
         let sp = sprite(this._role.scene,{icon:skill.dat.icon});
-        this.ent.add(sp);
+        this.root.add(sp);
         sp.setOrigin(0.5,0.5);
         sp.setDepth(100);
         
