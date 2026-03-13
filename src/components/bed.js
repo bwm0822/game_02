@@ -42,7 +42,23 @@ export class COM_Bed extends Com
     _addBlanket()
     {
         const{bb}=this.ctx;
-        if(bb.blanket) {this._blanket = this.root.addSprite(bb.blanket);}
+        // if(bb.blanket) {this._blanket = this.root.addSprite(bb.blanket);}
+        
+        if(bb.blanket) 
+        {
+            this._blanket = this._sprite(bb)
+            this.root.add(this._blanket);
+        }
+    }
+
+    _sprite(bb)
+    {
+        const [key,frame]=bb.blanket.split(':');
+        const sp = this.scene.add.sprite(0,0,key,frame);
+        sp.setPipeline('Light2D');
+        sp.displayWidth = bb.wid;
+        sp.displayHeight = bb.hei;
+        return sp;
     }
 
     //------------------------------------------------------

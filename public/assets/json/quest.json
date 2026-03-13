@@ -14,7 +14,9 @@
       {
         "des": "跟 musk 回報",
         "nid": "village-01",
-        "refs": 0
+        "refs": [
+          0
+        ]
       }
     ],
     "rewards": [
@@ -53,7 +55,9 @@
       },
       {
         "des": "跟 melanie 回報",
-        "refs": 1
+        "refs": [
+          0
+        ]
       }
     ],
     "rewards": [

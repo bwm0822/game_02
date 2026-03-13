@@ -4,6 +4,7 @@ import {MPlayer} from '../roles/mplayer.js'
 import TimeSystem from '../systems/time.js'
 import UiTime from '../ui/uitime.js'
 import UiMain from '../ui/uimain.js'
+import QuestManager from '../manager/quest.js'
 
 let lutAmbient = [   
     0x707070    ,
@@ -40,10 +41,26 @@ export class GameMap extends GameScene
         super('GameMap');
     }
 
+    updateQuest()
+    {
+        for(let id in QuestManager.quests.opened)
+        {
+            let q = QuestManager.query(id);
+            if(q.nid)
+            {
+                const found = Object.values(this.scene.scene.gos)
+                                    .find(go=>go.map===q.nid);
+                found && found.addTag(q.dat)
+            }
+        }
+
+    }
+
     async create()
     {
         // await super.create({diagonal:false,classType:Role.Target,weight:0});  
-        await super.create({diagonal:false,classType:MPlayer,weight:0});              
+        await super.create({diagonal:false,classType:MPlayer,weight:0});  
+        this.updateQuest();            
         this.process();
     }
 

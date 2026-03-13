@@ -644,8 +644,16 @@ export default class Utility
         return dat;
     }
 
+    static worldToScreen(cam,x,y)
+    {
+        return {x:(x-cam.scrollX)*cam.zoom+cam.x,
+                y:(y-cam.scrollY)*cam.zoom+cam.y}
+    }
+
 
 }
+
+
 
 
 

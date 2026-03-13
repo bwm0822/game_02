@@ -3,8 +3,6 @@ import {GM, UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import Ui from './uicommon.js'
 
-
-
 export class Pic extends OverlapSizer
 {
     constructor(scene, w, h, config={})

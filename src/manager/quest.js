@@ -165,7 +165,7 @@ export default class QuestManager
     static query(id)
     {        
         let q = this.quests.opened[id];
-        console.log(q)
+        // console.log(q)
         if(q)
         {
             let qD = DB.quest(id);

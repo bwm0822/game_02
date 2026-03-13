@@ -1,6 +1,25 @@
 import Com from './com.js'
-import {GM} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
+import {uPanel, uPic} from '../ui/uicomponents.js'
+import UiInfo from '../ui/uiinfo.js'
+import UiMark from '../ui/uimark.js'
+
+function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat}={})
+{
+    const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
+    tag.dat=dat;
+    tag.setInteractive()
+        .on('pointerover',()=>{
+            UiMark.setEn(false);
+            UiInfo.show(UI.INFO.NODE,tag,scene.cameras.main);
+        })
+        .on('pointerout',()=>{
+            UiMark.setEn(true);
+            UiInfo.close();
+        })
+    return tag;
+}
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -49,13 +68,79 @@ export class COM_Port extends Com
 export class COM_Node extends COM_Port
 {
     get tag() {return 'node';}  // 回傳元件的標籤
+    get scene() {return this._root.scene;}
+
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _addText()
+    {
+        const {scene,bb}=this.ctx;
+
+        const x = 0;
+        const y = -bb.hei/2+bb.zt;
+
+        let lb = scene.add.text(
+                x, y, bb.name,
+                {   
+                    fontFamily:'Arial',
+                    fontSize:'24px',
+                    color:'#000',
+                    // stroke:'#fff',
+                    // strokeThickness:3,
+                    backgroundColor: '#ccc',
+                    padding: {x:1,y:1}    
+                })
+                .setOrigin(0.5,1);
+
+        this._p.add(lb).layout();
+    }
+
+    _addTags()
+    {
+        const {root,scene}=this.ctx;
+        this._tags = uPanel.call(this._p,scene,{orientation:'x'})
+        this._p.layout();
+    }
+
+    _addPanel()
+    {
+        const {root,scene,bb}=this.ctx;
+        const y=-bb.hei/2+bb.zt;
+        this._p = uPanel.call(root,scene,{
+                                        y:y,
+                                        orientation:'y',
+                                        rtl: true,
+                                        bg:{color:GM.COLOR.WHITE,alpha:0}
+                                    })
+                        .setOrigin(0.5,1).layout();
+    }
+
+    _addTag(dat)
+    {
+        const {scene}=this.ctx;
+        this._tags.add(uTag(scene,{dat:dat}));
+        this._p.layout();
+    }
 
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
     bind(root) 
     {
-        root.addText(root.bb.name);
         super.bind(root);
+
+        const {bb}=this.ctx;
+        //
+        this._addPanel();
+        this._addText();
+        this._addTags();
+
+        // 1.提供 [外部操作的指令]
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.addTag=this._addTag.bind(this);
+        root.map=bb.map;
+
+        // 3.註冊(event)給其他元件或外部呼叫
     }
 }

@@ -4,7 +4,7 @@ import {uPic,uBbc,uPanel} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
 import Ui from './uicommon.js'
 
-export function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat,margin}={})
+function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat,margin}={})
 {
     const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
     tag.dat=dat;
@@ -157,10 +157,10 @@ export class UNode extends Phaser.GameObjects.Container
 
     _addPanel(scene)
     {
-        this._p = uPanel.call(this,scene,{y:this.ot,
+        this._p = uPanel.call(this,scene,{
+                                        y:this.ot,
                                         orientation:'y',
                                         // rtl: true,
-                                        //bg:{color:'#fff'}
                                     })
                         .setOrigin(0.5,1)
         return this._p;

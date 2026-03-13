@@ -276,21 +276,27 @@ export default class UiInfo extends UiFrame
         this.layout()
     }
 
-    getBound(elm)
+    getBound(elm, cam)
     {
         const gap=5;
-        let x=elm.x,y=elm.y;
         let p=elm.parentContainer;
         let parentX=0,parentY=0;
+        // console.log('elm=',elm.x,elm.y,elm.left,elm.right,elm.top,elm.bottom)
 
         while(p)
         {
             parentX+=p.x;
             parentY+=p.y;
-            x+=p.x;
-            y+=p.y;
             p=p.parentContainer;
         }
+        if(cam) 
+        {
+            const p=Utility.worldToScreen(cam,parentX,parentY);
+            parentX=p.x;
+            parentY=p.y;
+        }
+        const x = parentX+elm.x;
+        const y = parentY+elm.y;
         const l = parentX+elm.left-gap;
         const r = parentX+elm.right+gap;
         const t = parentY+elm.top-gap;
@@ -299,12 +305,12 @@ export default class UiInfo extends UiFrame
         return {x,y,l,r,t,b,m};
     }
 
-    show(type, elm)
+    show(type, elm, cam)
     {
         super.show();
-        let b=this.getBound(elm);
+        let b=this.getBound(elm, cam);
         let [x,y]=[b.x,b.y];
-
+        
         switch(type)
         {
             case UI.INFO.BTN:
@@ -348,7 +354,7 @@ export default class UiInfo extends UiFrame
         this.instance?.hide();
     }
 
-    static show(type, elm) {this.instance?.show(type, elm);}
+    static show(type, elm, cam) {this.instance?.show(type, elm, cam);}
 
 
 

@@ -13,6 +13,7 @@ export default class UiMark
         this._sp.visible=false;
         //this._sp.setDisplaySize(32,32);
         this._sp.setDepth(Infinity);
+        this._en = true;
     }
 
     //set visible(value) {this._sp.visible = value;}
@@ -23,6 +24,7 @@ export default class UiMark
 
     show(p,color=0xffffff)
     {
+        if(!this._en) {return;}
         this._sp.visible=true;
         if(this._xp!=p.x||this._yp!=p.y)
         {
@@ -42,8 +44,12 @@ export default class UiMark
 
     hide() {this._sp.visible=false;}
 
+    setEn(en) {this._en=en; this.hide();}
+
     static show(p,color) {this.instance?.show(p,color);}
 
     static close() {this.instance?.hide();}
+
+    static setEn(en) {this.instance?.setEn(en);}
 }
 

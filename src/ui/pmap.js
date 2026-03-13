@@ -3,7 +3,7 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {MiniMap} from '../manager/minimap.js'
-import {UNode, uTag} from './unode.js'
+import {UNode} from './unode.js'
 import QuestManager from '../manager/quest.js'
 
 
@@ -127,15 +127,15 @@ export class PMap extends Sizer
                                 text: {text:q.title(),wrapWidth:125},
                                 onclick: onclick});
 
-                let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
-                if(!fold)
+                let group = this._scroll.getChildren().find(child=>child.cat===q.cat);
+                if(!group)
                 {
                     // fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
-                    fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
-                    this._scroll.addItem(fold);
-                    fold.cat=q.cat
+                    group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
+                    this._scroll.addItem(group);
+                    group.cat=q.cat
                 }
-                fold.addItem(btn);
+                group.addItem(btn);
 
                 btn.q=q;
                 // btn.nid=q.dat.nid;
@@ -157,7 +157,6 @@ export class PMap extends Sizer
     _setPlayer(nid)
     {
         const nd=this._nds[nid];
-        // const tag=uTag(this.scene,{x:nd.loc.x,y:nd.loc.y})
         const tag=ui.uPic(this.scene,{x:nd.pts[0].x,y:nd.pts[0].y,icon:'buffs:20',w:40,h:40,bg:{}})
         this._map.add(tag);
     }

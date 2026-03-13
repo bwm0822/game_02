@@ -2,6 +2,7 @@ import {GameObject} from '../core/gameobject.js'
 import {ItemView} from '../components/view.js'
 import {COM_Node} from '../components/port.js'
 
+
 export default class Node extends GameObject
 {
     init_prefab()

@@ -2,6 +2,7 @@
 import {Evt} from './event.js'
 import Record from '../infra/record.js'
 import {GM, ORDER, DEBUG, DBG} from './setting.js'
+import Utility from './utility.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -20,12 +21,11 @@ export class GameObject extends Phaser.GameObjects.Container
         super(scene,x??0,y??0);
         scene.add.existing(this);
         this.scene = scene;
-        this._coms = {}; // 元件庫
-        this._bb = {};  // bb(blackboard)，共享資料中心，可與各元件共享資訊
-        // this._ent = scene.add.container(x,y);    // gameObject 的可視實體，view 掛在其下
 
-        this._pts = null;           // 可互動的點(陣列)
-        this._acts = {};            // 可供操作的指令
+        this._coms = {};    // 元件庫
+        this._bb = {};      // bb(blackboard)，共享資料中心，可與各元件共享資訊
+        this._pts = null;   // 可互動的點(陣列)
+        this._acts = {};    // 可供操作的指令
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
@@ -40,15 +40,8 @@ export class GameObject extends Phaser.GameObjects.Container
     }
 
     get mapName() {return this.scene._data.map;}    // 取得地圖名稱，存檔時，需要地圖名稱
-    // get pos() {return {x:this.ent.x, y:this.ent.y};}        // 位置
-
-    // 位置(world space)
-    // get pos() {
-    //     const m = this.ent.getWorldTransformMatrix();
-    //     return { x: m.tx, y: m.ty };
-    // }       
-    // set pos(p) {this.ent.x=p.x; this.ent.y=p.y}
-
+    
+    // 位置 (world space)
     get pos() 
     {
         // pos 要轉成 world space，否則將 go 置於其他 go 裡面時，pos 會出錯
@@ -58,10 +51,8 @@ export class GameObject extends Phaser.GameObjects.Container
         // return {x:this.x, y:this.y};
     }       
     set pos(p) {this.x=p.x; this.y=p.y}
-
-    // get ent() {return this._ent;}                   // 實體
-    get coms() {return this._coms;}                 // 元件庫
-    get bb() {return this._bb;}                     // blackboard
+    get coms() {return this._coms;}         // 元件庫
+    get bb() {return this._bb;}             // blackboard
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     get ctx() {return { 
@@ -103,10 +94,6 @@ export class GameObject extends Phaser.GameObjects.Container
     // map.createFromObjects 要參考 originX、originY、x、y 才能算出正確的 position
     get originX() {return 0.5;}
     get originY() {return 0.5;}
-    // get x() {return this.ent.x;}
-    // get y() {return this.ent.y;}
-    // set x(value) {this.ent.x=value;}
-    // set y(value) {this.ent.y=value;}
     //---- function 
     setName(name) {name!==""&&(this.bb.name=name);}
     setPosition(x,y) {this.x=x; this.y=y;}
@@ -128,9 +115,9 @@ export class GameObject extends Phaser.GameObjects.Container
     _onout() {this._send('out',this);}
     _ondown()
     {
+        const cam = this.scene.cameras.main;
         const wp = this.pos;
-        const x = wp.x - this.scene.cameras.main.worldView.x;
-        const y = wp.y - this.scene.cameras.main.worldView.y;
+        const {x,y} = Utility.worldToScreen(cam,wp.x,wp.y);
         if(Object.keys(this.acts).length>0) {this._send('option',x,y-10,this.acts,this);}
     }
 
@@ -155,7 +142,6 @@ export class GameObject extends Phaser.GameObjects.Container
         return false;
     }
 
-    // _setAct(key,value) {this._acts[key]=value;}
     _setAct(key,get)
     {
         Object.defineProperty(this._acts, key, { 
@@ -291,45 +277,6 @@ export class GameObject extends Phaser.GameObjects.Container
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
-    // 在ent下，加入 sprite
-    addSprite(key_frame)
-    {
-        const [key,frame]=key_frame.split(':');
-        const sp = this.scene.add.sprite(0,0,key,frame);
-        sp.setPipeline('Light2D');
-        sp.displayWidth = this.bb.wid;
-        sp.displayHeight = this.bb.hei;
-        // this.ent.add(sp);
-        this.add(sp);
-        return sp;
-    }
-
-    addText(label)
-    {
-        const ot = -this.bb.hei/2+this.bb.zt;
-        let lb = this.scene.add.text(
-                0, ot, label,
-                {   
-                    fontFamily:'Arial',
-                    fontSize:'24px',
-                    color:'#000',
-                    // stroke:'#fff',
-                    // strokeThickness:3,
-                    backgroundColor: '#ccc',
-                    padding: {x:1,y:1}    
-                })
-                .setOrigin(0.5,1);
-
-        // this.ent.add(lb);
-        this.add(lb);
-    }
-
-    // 加入物件
-    // add(go) {this.ent.add(go.ent);}
-
-    // 移除物件
-    // remove(go)  {this.ent.remove(go.ent);}
-
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
     off(...args) {this._evt?.off(...args);}
@@ -372,7 +319,6 @@ export class GameObject extends Phaser.GameObjects.Container
     updateDepth()
     {
         let depth = this.y;
-        // this.ent.setDepth(depth);
         this.setDepth(depth);
     }
 
@@ -415,59 +361,10 @@ export class GameObject extends Phaser.GameObjects.Container
         return false;
     }
 
-    // debug 用
-    // debugDraw_old({clr=false}={})
-    // {
-    //     if(clr)
-    //     {
-    //         this._dg && this._dg.clear();
-    //         if(this._dt) 
-    //         {
-    //             this._dt.destroy();
-    //             this._dt=null;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         // debugInfo
-    //         const[x,y,w,h,name]=[this.x,this.y,
-    //                             this.bb.wid,this.bb.hei,
-    //                             this.bb.name];
-    //         if(!this._dg)
-    //         {
-    //             this._dg = this.scene.add.graphics();
-    //             this._dg.setDepth(Infinity);
-    //         }
-
-    //         if(name && !this._dt)
-    //         {
-    //             this._dt = this.scene.add.text(x,y-h/2,name,{
-    //                     fontSize: '16px',
-    //                     color: '#000',
-    //                     backgroundColor: '#fff',
-    //                     padding: { x: 6, y: 4 }})
-    //             this._dt.setDepth(Infinity);
-    //             this._dt.setOrigin(0.5,1.5);
-    //         }
-            
-    //         this._dg.lineStyle(2, 0xffffff, 1);
-    //         const rect = new Phaser.Geom.Rectangle(x-w/2,y-h/2,w,h);
-    //         const circle = new Phaser.Geom.Circle(x,y,5);
-    //         this._dg.strokeRectShape(rect);
-    //         this._dg.strokeCircleShape(circle);
-    //     }
-    // }
-
     debugDraw({clr=false}={})
     {
-        if(clr)
-        {
-            this.dbg?.(DBG.MODE.CLR)
-        }
-        else
-        {
-            this.dbg?.(DEBUG.mode, this.bb.name??'')
-        }
+        if(clr) {this.dbg?.(DBG.MODE.CLR);}
+        else {this.dbg?.(DEBUG.mode, this.bb.name??'');}
     }
 
     //------------------------------------------------------
