@@ -1,10 +1,11 @@
-import { GameScene } from "./GameScene"
+import {GameScene} from "./GameScene"
+import Ui from '../ui/uicommon.js'
 import {GM,UI,DEBUG} from '../core/setting.js'
 import {MPlayer} from '../roles/mplayer.js'
 import TimeSystem from '../systems/time.js'
 import UiTime from '../ui/uitime.js'
-import UiMain from '../ui/uimain.js'
 import QuestManager from '../manager/quest.js'
+
 
 let lutAmbient = [   
     0x707070    ,
@@ -53,8 +54,33 @@ export class GameMap extends GameScene
                 found && found.addTag(q.dat)
             }
         }
-
     }
+
+    showNodeTag(on)
+    {
+        console.log('---------------- showNodeTag')
+        Object.values(this.scene.scene.gos).forEach(go=>go.showTag?.(on))
+    }
+
+    showNodeName(on)
+    {
+        console.log('----------------- showNodeName')
+        Object.values(this.scene.scene.gos).forEach(go=>go.showName?.(on))
+    }
+
+    focusOnPlayer() {this.cameraPan();}
+
+    setEvent()
+    {        
+        super.setEvent();
+        const ui = this.scene.get('UI');
+        ui.events
+            .off('focusOnPlayer').on('focusOnPlayer', ()=>{this.focusOnPlayer();})
+            .off('showNodeName').on('showNodeName', (on)=>{this.showNodeName(on);})
+            .off('showNodeTag').on('showNodeTag', (on)=>{this.showNodeTag(on);})
+    }
+
+
 
     async create()
     {
@@ -72,7 +98,8 @@ export class GameMap extends GameScene
     initUI() 
     {
         super.initUI();
-        UiMain.show();
+        // UiMain.show();
+        Ui.on(UI.TAG.MAPLEGEND);
         TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 

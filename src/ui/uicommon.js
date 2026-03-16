@@ -1,4 +1,4 @@
-import {GM, UI} from '../core/setting.js';
+import {GM, UI} from '../core/setting.js'
 
 export default class Ui
 {
@@ -31,6 +31,7 @@ export default class Ui
     static addToList(ui) {this._list[ui.tag]=ui;}
     static on(tag,...args) {this._list[tag]?.show(...args);}
     static off(tag) {this._list[tag]?.close();}
+    static get(tag) {return this._list[tag];}
 
     static addLayer(scene, name, top)
     {

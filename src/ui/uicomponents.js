@@ -120,10 +120,12 @@ export function uVspace(scene,height)
     return r;
 }
 
-export function uSprite(scene, {x, y, icon, name, ext}={})
+export function uSprite(scene, {x, y, width, height, icon, name, ext}={})
 {
     const [atlas, frame] = icon ? icon.split(':'):[];
     const sprite = scene.add.sprite(x,y,atlas,frame);
+    if(width) {sprite.displayWidth=width;}
+    if(height) {sprite.displayHeight=height;}
     name && (sprite.name = name);
 
     // // 儲存原本的 destroy 方法
@@ -230,7 +232,7 @@ export function uLabel(scene, config={})
 {
     const {ext,text,icon,tcon,bg,iconR,tconR,...cfg}=config;
     const lab = scene.rexUI.add.sizer(cfg);
-    if(bg) {lab._bg=uBg.call(lab,scene, bg);}
+    if(bg&&Object.keys(bg).length!==0) {lab._bg=uBg.call(lab,scene, bg);}
 
     if(icon) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
     if(tcon) {lab._icon=uBbc.call(lab,scene, typeof tcon==='object'?tcon:{text:tcon});}
@@ -254,6 +256,7 @@ export function uButton(scene,config={})
             cDEF=GM.COLOR.GRAY,
             cHL=GM.COLOR.WHITE,
             cBG=GM.COLOR.DARK,
+            aBG=1,
             cBGH=GM.COLOR.LIGHTGRAY,
             ...cfg}=config;
     
@@ -308,7 +311,7 @@ export function uButton(scene,config={})
                 if(btn._bg) 
                 {
                     // btn._bg.setFillStyle(btn._bg.fillColor,on?0.5:1);
-                    btn._bg.setFillStyle(on?cBGH:cBG);
+                    btn._bg.setFillStyle(on?cBGH:cBG,aBG);
                 }
                 else
                 {
@@ -339,6 +342,15 @@ export function uButton(scene,config={})
         return btn;
     }
     btn.setText = (text)=>{btn._text?.setText(text); return btn;}
+    btn.setIcon = (icon)=>{
+        const[key,frame]=icon.split(':');
+        btn._icon?.setTexture(key,frame); 
+        return btn;
+    }
+    btn.setTcon = (text)=>{
+        btn._icon?.setText(text); 
+        return btn;
+    }
     btn.setEnable = (on)=>{
         // console.log(`${btn._text.text} : ${on}`)
         if(on) {    

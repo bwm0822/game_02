@@ -1,29 +1,15 @@
 import {Scene} from 'phaser'
 import Map from '../manager/map.js'
-
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
 import {GM,UI,DEBUG} from '../core/setting.js'
 import Ui from '../ui/uicommon.js'
 import UiMark from '../ui/uimark.js'
-import UiCover from '../ui/uicover.js'
-import UiStorage from '../ui/uistorage.js'
-import UiOption from '../ui/uioption.js'
-import UiInv from '../ui/uiinv.js'
-import UiDialog from '../ui/uidialog.js'
-import UiTrade from '../ui/uitrade.js'
 import UiCursor from '../ui/uicursor.js'
-import UiMessage from '../ui/uimessage.js'
-import UiChangeScene from '../ui/uichangescene.js'
-import UiGameOver from '../ui/uigameover.js'
-import UiManufacture from '../ui/uimanufacture.js'
-
 import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
-
 import {GameObject} from '../core/gameobject.js'
-
 import {MiniMap} from '../manager/minimap.js'
 
 
@@ -72,8 +58,8 @@ export class GameScene extends Scene
 
         AudioManager.init(this);
         TimeSystem.start();
-        UiMessage.clean();
-        UiChangeScene.done();
+        Ui.get(UI.TAG.MESSAGE).clean();
+        Ui.get(UI.TAG.CHANGESCENE).done();
         AudioManager.bgmStart();
 
         this.log();
@@ -134,7 +120,7 @@ export class GameScene extends Scene
         }
     }
 
-    cameraPan(pt)
+    cameraPan()
     {
         this.cameras.main.pan(GM.player.x, GM.player.y, 100, 'Power2');
         // pan 結束後再開始跟隨
@@ -419,7 +405,7 @@ export class GameScene extends Scene
     {
         this.clearPath()
         this.input.keyboard.off('keydown');
-        UiGameOver.show();
+        Ui.on(UI.TAG.GAMEOVER);
     }
 
     showMousePos()
@@ -460,15 +446,21 @@ export class GameScene extends Scene
 
     fill()
     {
-        UiInv.show(GM.player);
-        UiInv.filter([{p:GM.CAPACITY}]);
+        // UiInv.show(GM.player);
+        // UiInv.filter([{p:GM.CAPACITY}]);
+        // UiCursor.set('aim');
+        // UiCover.show();
+        // Ui.setMode(UI.MODE.FILL)
+
+        Ui.on(UI.TAG.INV,GM.player);
+        Ui.get(UI.TAG.INV).filter([{p:GM.CAPACITY}])
         UiCursor.set('aim');
-        UiCover.show();
+        Ui.on(UI.TAG.COVER)
         Ui.setMode(UI.MODE.FILL)
     }
 
     setEvent()
-    {        
+    {      
         // 切換場景時，this.events 不會被清除，所以設過後就無須再設
         if(!this._done)
         {
@@ -476,15 +468,15 @@ export class GameScene extends Scene
             this.events
                 .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);UiMark.close();})
                 .on('out', ()=>{this._ent=null;UiCursor.set();})
-                .on('storage', (owner)=>{UiStorage.show(owner);})
-                .on('talk', (owner)=>{UiDialog.show(owner);})
-                .on('trade', (owner)=>{UiTrade.show(owner);})
-                .on('option', (x,y,acts,owner)=>{UiOption.show(x,y,acts,owner)})
+                .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
+                .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
+                .on('trade', (owner)=>{Ui.on(UI.TAG.TRADE,owner);})
+                .on('option', (x,y,acts,owner)=>{Ui.on(UI.TAG.OPTION,x,y,acts,owner)})
                 .on('refresh', ()=>{Ui.refreshAll()})
-                .on('msg', (msg)=>{UiMessage.push(msg);})
-                .on('scene', (config)=>{UiChangeScene.start(()=>{this.gotoScene(config);})})
+                .on('msg', (msg)=>{Ui.get(UI.TAG.MESSAGE).push(msg);})
+                .on('scene', (config)=>{Ui.get(UI.TAG.CHANGESCENE).start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
-                .on('stove',(owner)=>{UiManufacture.show(owner);})
+                .on('stove',(owner)=>{Ui.on(UI.TAG.MANUFACTURE,owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
         }

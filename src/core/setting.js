@@ -492,6 +492,7 @@ export const UI =
         COVER:'cover',
         DRAGGED:'dragged',
         MISC:'misc',
+        MAPLEGEND:'maplegend',
     },
     INFO:{
         SLOT:'slot',

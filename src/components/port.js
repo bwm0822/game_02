@@ -73,7 +73,7 @@ export class COM_Node extends COM_Port
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _addText()
+    _addName()
     {
         const {scene,bb}=this.ctx;
 
@@ -94,6 +94,7 @@ export class COM_Node extends COM_Port
                 .setOrigin(0.5,1);
 
         this._p.add(lb).layout();
+        this._name=lb;
     }
 
     _addTags()
@@ -110,7 +111,7 @@ export class COM_Node extends COM_Port
         this._p = uPanel.call(root,scene,{
                                         y:y,
                                         orientation:'y',
-                                        rtl: true,
+                                        rtl:true,
                                         bg:{color:GM.COLOR.WHITE,alpha:0}
                                     })
                         .setOrigin(0.5,1).layout();
@@ -120,6 +121,20 @@ export class COM_Node extends COM_Port
     {
         const {scene}=this.ctx;
         this._tags.add(uTag(scene,{dat:dat}));
+        this._p.layout();
+    }
+
+    _showName(on)
+    {
+        if(!on) {this._p.hide(this._name);}
+        else {this._p.show(this._name);}
+        this._p.layout();
+    }
+
+    _showTag(on)
+    {
+        if(!on) {this._p.hide(this._tags);}
+        else {this._p.show(this._tags);}
         this._p.layout();
     }
 
@@ -133,12 +148,14 @@ export class COM_Node extends COM_Port
         const {bb}=this.ctx;
         //
         this._addPanel();
-        this._addText();
+        this._addName();
         this._addTags();
 
         // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.addTag=this._addTag.bind(this);
+        root.showName=this._showName.bind(this);
+        root.showTag=this._showTag.bind(this);
         root.map=bb.map;
 
         // 3.註冊(event)給其他元件或外部呼叫

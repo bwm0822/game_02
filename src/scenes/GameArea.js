@@ -1,13 +1,10 @@
-import { GameScene } from "./GameScene.js"
-// import {UiMain, UiTime, UiEffect} from '../ui.js'
-import UiMain from '../ui/uimain.js'
-import UiEffect from '../ui/uieffect.js'
+import {GameScene} from "./GameScene.js"
+import Ui from '../ui/uicommon.js'
+import {GM,UI,DEBUG} from '../core/setting.js'
 import UiTime from '../ui/uitime.js'
 
 import TimeSystem from '../systems/time.js'
 import ScheduleManager from '../manager/schedule.js'
-// import * as Role from '../role.js'
-// import {Avatar} from '../role.js'
 import {Player} from '../roles/player.js'
 import Utility from "../core/utility.js"
 
@@ -70,8 +67,8 @@ export class GameArea extends GameScene
     initUI() 
     {
         super.initUI();
-        UiMain.show();
-        UiEffect.show();
+        Ui.on(UI.TAG.MAIN);
+        Ui.on(UI.TAG.EFFECT)
         TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 

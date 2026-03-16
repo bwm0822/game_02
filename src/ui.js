@@ -26,6 +26,7 @@ import UiManufacture  from './ui/uimanufacture.js'
 import UiCover  from './ui/uicover.js'
 import UiDragged  from './ui/uidragged.js'
 import UiMisc  from './ui/uimisc.js'
+import UiMapLegend  from './ui/uimaplegend.js'
 
 import UiTest from './ui/uitest.js'
 
@@ -65,6 +66,7 @@ export default function createUI(scene)
     new UiAbility(scene);
     new UiMain(scene);              // 2
     new UiEffect(scene);
+    new UiMapLegend(scene);
 
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
@@ -83,18 +85,20 @@ export default function createUI(scene)
     new UiOption(scene);            // 14
     new UiMessage(scene);           // 15
     new UiGameOver(scene);          // 16
-    new UiChangeScene(scene);       // 17
     new UiDebuger(scene);           // 18
-
-    
     new UiConfirm(scene);
+
+    new UiChangeScene(scene);       // 17
+
+  
 
     // new UiTest(scene);
     UiChangeScene.show();
     test1();
     test2();
-    
 }
+
+
 
 async function test1()
 {
