@@ -124,6 +124,7 @@ export class COM_Talk extends Com
         if(dialog.type==='quest')
         {
             const sta = QuestManager.query(idx);
+            console.log(sta)
             dialog = dialog[sta?.state??'start'];
         }
         const a = dialog.A;

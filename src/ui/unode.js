@@ -4,14 +4,16 @@ import {uPic,uBbc,uPanel} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
 import Ui from './uicommon.js'
 
-function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat,margin}={})
+function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,margin,ext}={})
 {
     const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
-    tag.dat=dat;
+    if(this&&this.add) {this.add(tag,ext);}
+    tag.qs=[];
     tag.margin=margin;
     tag.setInteractive()
         .on('pointerover',()=>{UiInfo.show(UI.INFO.NODE,tag);})
         .on('pointerout',()=>{UiInfo.close();})
+    tag.add=(q)=>{tag.qs.push(q);}
     return tag;
 }
 
@@ -35,7 +37,6 @@ export class UNode extends Phaser.GameObjects.Container
 
         this._init(map, obj);
         // this._debugDraw(obj);
-        console.log(this.width,this.height)
     }
 
     get dat() {return this._dat;}
@@ -184,9 +185,14 @@ export class UNode extends Phaser.GameObjects.Container
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
-    addTag(dat,margin)
+    addTag(q,margin)
     {
-        this._tags.add(uTag(this.scene,{dat:dat,margin:margin}));
+        if(!this._tag)
+        {
+            // this._tags.add(uTag(this.scene,{q:q,margin:margin}));
+            this._tag = uTag.call(this._tags,this.scene,{margin:margin});
+        }
+        this._tag.add(q);
         this._p.layout();
     }
    

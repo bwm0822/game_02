@@ -55,7 +55,6 @@ export class PQuest extends Sizer
             .add(ui.uBbc(scene,{text:`[color=yellow]${q.title()}[/color]`}),{align:'center'})
             .add(ui.uBbc(scene,{text:q.fmt(),wrapWidth:500}),{align:'left'})
 
-        // if(q.dat.nid)
         if(q.nid)
         {
             this._content
@@ -104,7 +103,7 @@ export class PQuest extends Sizer
             let q = QuestManager.query(id);
             const itm = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
-                            tcon: {text:q.state==='open'?'☐':'🗹',ext:{align:'top'}},
+                            tcon: {text:q.state==='close'?'🗹':'☐',ext:{align:'top'}},
                             text: {text:q.title(),wrapWidth:125},
                             onclick: onclick});
 

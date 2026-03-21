@@ -1,19 +1,26 @@
 import Record from '../infra/record.js'
 import DB from '../data/db.js'
-import {GM} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
+import Ui from '../ui/uicommon.js'
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 
-function isDone(cond) { return cond.cur >= cond.dat.count; }
-
-function isShown_old(conds, cond)
+function isDone(cond) 
 {
-    if(!cond.dat.cond) {return true;}
-    for(let i of cond.dat.cond)
+    if(cond.state==='done') {return true;}
+
+    if(cond.cat===GM.INV)
     {
-        if(isDone(conds[i]) === false) {return false;}
+        cond.cur = Math.min( GM.player.query(cond.dat), cond.dat.count );  
     }
-    return true;
+
+    const done = cond.cur>=cond.dat.count
+    if(done&&!cond.state) 
+    {
+        cond.state=cond.cat===GM.INV?'check':'done';
+        Ui.get(UI.TAG.MESSAGE).push(fmt_done(cond));
+    }
+    return done;
 }
 
 function isShown(conds, cond)
@@ -21,7 +28,7 @@ function isShown(conds, cond)
     if(!cond.dat.refs) {return true;}
     for(let i of cond.dat.refs)
     {
-        if(isDone(conds[i]) === false) {return false;}
+        if(!conds[i].state) {return false;}
     }
     return true;
 }
@@ -37,27 +44,53 @@ function getState_old(conds)
 
 function getState(q)
 {
-    for(let cond of q.conds)
+    for(const cond of q.conds)
     {
-        if(isDone(cond)===false) {return 'open';}
+        if(cond.dat.type===GM.REPORT) {return GM.REPORT;}
+        if(!cond.done) {return 'open';}
     }
-    return 'finish';
+    return 'close';
 }
 
 function getNid(q)
 {
-    if(q.state!=='open') {return null;}
+    if(q.state==='close') {return null;}
     let nid;
-    for(let cond of q.conds)
+    for(const cond of q.conds)
     {
-        if(isShown(q.conds,cond)) {nid=cond.dat.nid;}
+        if(cond.shown) {nid=cond.dat.nid;}
     }
     return nid;
+}
+
+function fmt_done(cond)
+{
+    return `[完成] ${cond.dat.type.lab()} ${cond.dat.id.lab()}`;
 }
 
 function fmt_des(q)
 {
     return `\n${q.dat.des}\n`;
+}
+
+function fmt_cond(q)
+{
+    let ret='';
+    q.conds.forEach((cond) => {
+        switch (cond.dat.type) 
+        {
+            case GM.KILL:
+            case GM.TALK:
+            case GM.FIND:
+                if(cond.shown & !cond.state)
+                {ret+=`\n- ${cond.dat.type.lab()} ${cond.dat.id.lab()}`;}
+                break;
+            case GM.REPORT:
+                if (cond.shown) {ret+=`\n- ${cond.dat.des}`;}
+                break;
+        }
+    });
+    return ret;
 }
 
 function fmt_conds(q)
@@ -68,6 +101,7 @@ function fmt_conds(q)
         switch (cond.dat.type) 
         {
             case GM.KILL:
+            case GM.FIND:
                 if(cond.shown)
                 {
                     let flag = cond.done ? '🗹':'☐';
@@ -75,21 +109,9 @@ function fmt_conds(q)
                 }
                 break;
             case GM.TALK:
-                if(cond.shown)
-                {
-                    ret+=`☐ ${cond.dat.type} ${cond.dat.id}\n`;
-                }
+                if(cond.shown) {ret+=`☐ ${cond.dat.type} ${cond.dat.id}\n`;}
                 break;
-            // case GM.FINAL:
-            //     if (q.state === 'finish') {
-            //         ret += `☐ ${cond.dat.des}\n`;
-            //     }
-            //     else if(q.state === 'close') {
-            //         ret += `🗹 ${cond.dat.des}\n`;
-            //     }
-            //     break;
-
-            default:
+            case GM.REPORT:
                 if (cond.shown) 
                 {
                     if(q.state === 'close') {ret += `🗹 ${cond.dat.des}\n`;}
@@ -124,15 +146,57 @@ function fmt_title(q)
     return q.dat.title;
 }
 
-function check(q, chk)
+// function check(q, chk)
+// {
+//     q.conds.forEach(cond=>{
+//         if(!cond.done && chk.type===cond.dat.type)
+//         {
+//             if(cond.dat.id && cond.dat.id===chk.id)
+//             {
+//                 cond.cur+=1;
+//             }
+//         }
+//     })
+// }
+
+// function check(q, chk)
+// {
+//     q.conds.forEach(cond=>{
+//         if(!cond.done && chk.type===cond.dat.type)
+//         {
+//             if(cond.dat.id && cond.dat.id!==chk.id) { return;}
+//             if(cond.dat.q && cond.dat.q!==chk.tag) { return;}
+//             cond.cur+=1;
+//         }
+//     })
+// }
+
+function typeToCat(type)
+{
+    switch(type)
+    {
+        case GM.KILL: return GM.KILL;
+        default: return GM.INV;
+    }
+}
+
+
+function notify(q, chk)
 {
     q.conds.forEach(cond=>{
-        if(!cond.done && chk.type===cond.dat.type)
+        if(!cond.chk && cond.cat===chk.cat)
         {
-            if(cond.dat.id && cond.dat.id===chk.id)
+            switch (cond.dat.type)
             {
-                cond.cur+=1;
+                case GM.KILL:
+                    if(cond.dat.id && cond.dat.id!==chk.id) { break;}
+                    if(cond.dat.q && cond.dat.q!==chk.tag) { break;}
+                    cond.cur+=1;
+                    break;
             }
+
+            cond.done;
+            
         }
     })
 }
@@ -168,11 +232,12 @@ export default class QuestManager
         // console.log(q)
         if(q)
         {
-            let qD = DB.quest(id);
+            const qD = DB.quest(id);
             q.conds.forEach((cond, i) => {
                 if(!("dat" in cond)) {Object.defineProperty( cond, 'dat', {get() {return qD.conds[i];}} );}
                 if(!("done" in cond)) {Object.defineProperty( cond, 'done', {get() {return isDone(cond);}} );}
                 if(!("shown" in cond)) {Object.defineProperty( cond, 'shown', {get() {return isShown(q.conds,cond);}} );}
+                if(!("cat" in cond)) {Object.defineProperty( cond, 'cat', {get() {return typeToCat(qD.conds[i].type);}} );}
             })
 
             if(!("dat" in q)) {Object.defineProperty(q, 'dat', {get() {return qD;}});}
@@ -180,9 +245,10 @@ export default class QuestManager
             if(!("nid" in q)) {Object.defineProperty(q, 'nid', {get() {return getNid(q);}});}
 
             if(!("fmt" in q)) {q.fmt = ()=>{return this.fmt(id);};}
-            if(!("check" in q)) {q.check = (chk)=>{return check(q,chk);};}
+            if(!("notify" in q)) {q.notify = (chk)=>{return notify(q,chk);};}
             if(!("title" in q)) {q.title = ()=>{return fmt_title(q);}}
             if(!("cat" in q)) {q.cat=q.dat.id.split('_')[0];}
+            if(!("cond" in q)) {q.cond= ()=>{return fmt_cond(q);}}
 
         }
         return q;
@@ -199,20 +265,36 @@ export default class QuestManager
         
     }
 
-    static notify({type, id})
+    static notify({cat, id})
     {
-        for(let qid in this.quests.opened)
+        console.log('------------------- notify=',cat)
+        for(const qid in this.quests.opened)
         {
             const q = this.query(qid);
-            q.check({type,id});
+            q.notify({cat, id});
         }
+    }
+
+    static action(actions)
+    {
+        actions.forEach((act)=>{
+            switch(act.type)
+            {
+                case 'remove':
+                    console.log('remove')
+                    GM.player.remove(act);
+                    break;
+            }
+        })
     }
 
     static close(id)
     {
         let q = this.quests.opened[id];
+        q.conds.forEach(cond=>cond.state='done');
         let qD = DB.quest(id);
-        GM.player.receive(qD.rewards);
+        if(qD.rewards) {GM.player.reward(qD.rewards);}
+        if(qD.actions) {this.action(qD.actions)}
         q.result = 'close';
     }
 

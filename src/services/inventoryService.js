@@ -45,7 +45,6 @@ export default class InventoryService
         // 合併
         if (mergePossible(from, to)) 
         {
-            console.log(from,to)
             doMerge(from, to);
             return 'merged';
         }

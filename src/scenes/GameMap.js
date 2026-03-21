@@ -51,7 +51,7 @@ export class GameMap extends GameScene
             {
                 const found = Object.values(this.scene.scene.gos)
                                     .find(go=>go.map===q.nid);
-                found && found.addTag(q.dat)
+                found && found.addTag(q)
             }
         }
     }

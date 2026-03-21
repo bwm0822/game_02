@@ -1,7 +1,8 @@
 import Com from './com.js'
 import DB from '../data/db.js'
 import Record from '../infra/record.js'
-import {GM} from '../core/setting.js';
+import {GM} from '../core/setting.js'
+import QuestManager from '../manager/quest.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -20,11 +21,30 @@ export class COM_Pickable extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    // _pickup(taker)  // 提供給外界操作
+    // {
+    //     if(taker.take(this.content)) 
+    //     {
+    //         const {emit,send}=this.ctx;
+    //         send('msg',`${'_pickup'.lab()} ${this.label}`)
+    //         emit('out');
+    //         emit('refresh');
+    //         emit('remove');
+    //     } 
+    //     else
+    //     {
+    //         send('msg','_space_full'.lab());
+    //     }  
+
+    //     QuestManager.notify({cat:GM.INV})
+    // }
+
     _pickup(taker)  // 提供給外界操作
-    {
-        if(taker.take(this.content))
-        {
-            const {emit,send}=this.ctx;
+    { 
+        const {emit,send}=this.ctx;
+        const remain = taker.receive(this.content);
+        if(remain===0)
+        {       
             send('msg',`${'_pickup'.lab()} ${this.label}`)
             emit('out');
             emit('refresh');
@@ -32,8 +52,12 @@ export class COM_Pickable extends Com
         } 
         else
         {
+            this.content.count-=remain;
             send('msg','_space_full'.lab());
+            emit('refresh');
         }  
+
+        QuestManager.notify({cat:GM.INV})
     }
 
     //------------------------------------------------------
@@ -54,6 +78,8 @@ export class COM_Pickable extends Com
         else
         {
             this._content = {id:bb.id,count:bb.count??1};
+            bb.q && (this._content.q=bb.q);
+            
         }
         
         this._dat = DB.item(this._content.id);
@@ -62,12 +88,14 @@ export class COM_Pickable extends Com
         root._setAct(GM.PICKUP, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // this.addP(root, 'content', {target:this, key:'_content'});
+        // root.content = this._content
         this.addRt('content');
         
         // 3.註冊(event)給其他元件或外部呼叫
         // 外部
         root.on(GM.PICKUP, this._pickup.bind(this));
+
+        console.log('--------- root:',root.content)
     }
 
     save() {return {...this.pos,...this._content};}

@@ -5,10 +5,11 @@ import {uPanel, uPic} from '../ui/uicomponents.js'
 import UiInfo from '../ui/uiinfo.js'
 import UiMark from '../ui/uimark.js'
 
-function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat}={})
+function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,ext}={})
 {
     const tag = uPic(scene,{x:x,y:y,icon:icon,w:w,h:h,bg:{}})
-    tag.dat=dat;
+    if(this&&this.add) {this.add(tag,ext);}
+    tag.qs=[];
     tag.setInteractive()
         .on('pointerover',()=>{
             UiMark.setEn(false);
@@ -18,6 +19,7 @@ function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,dat}={})
             UiMark.setEn(true);
             UiInfo.close();
         })
+    tag.add=(q)=>{tag.qs.push(q);}
     return tag;
 }
 
@@ -99,7 +101,7 @@ export class COM_Node extends COM_Port
 
     _addTags()
     {
-        const {root,scene}=this.ctx;
+        const {scene}=this.ctx;
         this._tags = uPanel.call(this._p,scene,{orientation:'x'})
         this._p.layout();
     }
@@ -117,10 +119,18 @@ export class COM_Node extends COM_Port
                         .setOrigin(0.5,1).layout();
     }
 
-    _addTag(dat)
+    // _addTag(q)
+    // {
+    //     const {scene}=this.ctx;
+    //     this._tags.add(uTag(scene,{q:q}));
+    //     this._p.layout();
+    // }
+
+    _addTag(q)
     {
         const {scene}=this.ctx;
-        this._tags.add(uTag(scene,{dat:dat}));
+        if(!this._tag) {this._tag=uTag.call(this._tags,scene);}
+        this._tag.add(q);   
         this._p.layout();
     }
 

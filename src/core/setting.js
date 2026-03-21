@@ -360,7 +360,10 @@ export const GM =
     // 任務類型
     KILL : 'kill',
     TALK : 'talk',
-    FINAL : 'final',
+    FIND : 'find',
+    REPORT : 'report',
+    //
+    INV : 'inv',
 
     // 頭像大小
     PORTRAITS_W : 80,

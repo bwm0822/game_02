@@ -94,6 +94,11 @@ export class PMap extends Sizer
 
     _updateQuest()
     {
+        const margin={  left:this._map.left,
+                        right:this._map.right,
+                        top:this._map.top,
+                        bottom:this._map.bottom,}
+
         const onclick = (btn)=>{
             if(this._btn) {this._btn.setValue(false);}
             this._btn=btn;
@@ -118,7 +123,6 @@ export class PMap extends Sizer
         for(let id in QuestManager.quests.opened)
         {
             let q = QuestManager.query(id);
-            // if(q.dat.nid)
             if(q.nid)
             {
                 const btn = ui.uButton(scene,{
@@ -130,24 +134,15 @@ export class PMap extends Sizer
                 let group = this._scroll.getChildren().find(child=>child.cat===q.cat);
                 if(!group)
                 {
-                    // fold = ui.uFold(scene, {prefix:true,title:`[i]${q.cat}[/i]`,onclick:()=>this.layout()});
                     group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
                     this._scroll.addItem(group);
                     group.cat=q.cat
                 }
                 group.addItem(btn);
-
                 btn.q=q;
-                // btn.nid=q.dat.nid;
                 btn.nid=q.nid;
                 btn.qid=id;
-                const margin={  left:this._map.left,
-                                right:this._map.right,
-                                top:this._map.top,
-                                bottom:this._map.bottom,
-                            }
-                // this._nds[q.dat.nid].addTag(q.dat,margin);
-                this._nds[q.nid].addTag(q.dat,margin);
+                this._nds[q.nid].addTag(q,margin);
             }
         }
 

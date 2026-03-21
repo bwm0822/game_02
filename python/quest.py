@@ -18,6 +18,9 @@ def df_to_json(df):
             elif key == "conds":
                 fixed = "[" + val + "]"
                 obj.update({'conds': json.loads(fixed)})
+            elif key == "actions":
+                fixed = "[" + val + "]"
+                obj.update({'actions': json.loads(fixed)})
             else:
                 obj[key] = val.strip()
         if obj: output[id] = obj

@@ -152,23 +152,26 @@
       ]
     },
     "karen_01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest karen_01",
-        "離開/exit"
-      ]
-    },
-    "karen_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "karen_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close karen_01;set quest none"
-      ]
+      "type": "quest",
+      "start": {
+        "A": "找尋失落的劍",
+        "B": [
+          "接受/quest karen_01",
+          "離開/exit"
+        ]
+      },
+      "open": {
+        "A": "...",
+        "B": [
+          "離開/exit"
+        ]
+      },
+      "report": {
+        "A": "...",
+        "B": [
+          "任務完成了/goto none;close karen_01;set quest none"
+        ]
+      }
     },
     "none": {
       "A": "...",

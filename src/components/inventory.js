@@ -5,7 +5,6 @@ import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
 
-
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : inv
@@ -38,113 +37,114 @@ export class COM_Storage extends Com
         return i;
     }
 
-
-    // _put(id, count)
-    // {
-    //     let cps = DB.item(id).cps ?? 1;
-
-    //     let i = 0;
-    //     let capacity = this._storage.capacity;
-    //     let len = this._storage.items.length;
-    //     let items = this._storage.items;
-    //     while(count>0 && (capacity == -1 || i<capacity))
-    //     {
-    //         if(i<len)
-    //         {
-    //             if(Utility.isEmpty(items[i]))
-    //             {
-    //                 items[i]={id:id, count:Math.min(count,cps)}
-    //                 count-=items[i].count
-
-    //             }
-    //             else if(items[i].id==id && items[i].count<cps)
-    //             {
-    //                 let sum = items[i].count+count;
-    //                 items[i].count = Math.min(sum,cps)
-    //                 count = sum-cps;
-    //             }
-    //         }
-    //         else
-    //         {
-    //             let min = Math.min(count,cps);
-    //             items.push({id:id, count:min});
-    //             count-=min;
-    //         }
-    //         i++;
-    //     }
-
-    //     if(count>0)
-    //     {
-    //         let ent = {label:id.lab(),content:{id:id,count:count}}
-    //         this._drop(ent)
-    //     }
-        
-    // }
-
-    _get(content)
+    _remove(content)
     {
-        let {id,count}=content;
-        // delete content.count;   // 從 content 移除 count 屬性
-        let cps = DB.item(id).cps ?? 1;
+        const items = this._storage.items;
+        const len = this._storage.items.length;
+        let remain = content.count;
+        for(let i=0;i<len;i++)
+        {
+            const itm = items[i];
+            if(content.id&&itm?.id!==content.id){continue;}
+            if(content.q&&itm?.q!==content.q){continue;}
+            let cnt = Math.min(remain,itm.count);
+            itm.count-=cnt;
+            remain-=cnt;
+            if(itm.count===0){items[i]=null;}
+            if(remain==0) {break;}
+        }
 
+        return remain;
+    }
+
+    // 將 content 放到 storage，回傳剩餘的
+    _put(content)
+    {
+        const id = content.id;
+        const cps = DB.item(id).cps ?? 1;
+
+        let remain = content.count;
         let i = 0;
-        let capacity = this._storage.capacity;
-        let len = this._storage.items.length;
-        let items = this._storage.items;
-        while(count>0 && (capacity == -1 || i<capacity))
+        const capacity = this._storage.capacity;
+        const len = this._storage.items.length;
+        const items = this._storage.items;
+        while(remain>0 && (capacity == -1 || i<capacity))
         {
             if(i<len)
             {
                 if(Utility.isEmpty(items[i]))
                 {
-                    const cnt = Math.min(count,cps)
+                    const cnt = Math.min(remain,cps)
                     items[i]={...content,count:cnt};
-                    count-=cnt;
-
+                    remain-=cnt;
                 }
                 else if(items[i].id==id && items[i].count<cps)
                 {
-                    const sum = items[i].count+count;
+                    const sum = items[i].count+remain;
                     items[i]={...items[i],...content}
                     items[i].count = Math.min(sum,cps)
-                    count = sum-cps;
+                    remain = sum-cps;
                 }
             }
             else    // 新的欄位
             {
-                const cnt = Math.min(count,cps);
+                const cnt = Math.min(remain,cps);
                 items.push({...content,count:cnt});
-                count-=cnt;
+                remain-=cnt;
             }
             i++;
         }
 
-        return count;
+        return remain;
     }
 
-
-    _take(content,i,isEquip)
+    // 接收content，i為slot的編號
+    _receive(content,i,isEquip)
     {
+        // type 1 : 將content置於編號為i的slot
         const{bb,root}=this.ctx;
-        if(isEquip)
+        if(isEquip) // 置於裝備欄位
         {
             bb.equips[i]=content;
             root.equip?.();
-            return true;   
+            return 0;   // 回傳remian，為0
         }
-
-        i = i??this._findEmpty();
-
-        if(i!=-1)
+        else if(i)  // 置於物品欄位
         {
             this._storage.items[i]=content;
-            return true;
+            return 0;   // 回傳remian，為0
         }
-        else
-        {  
-            return false;
-        }
+
+        // type 2:從storage找空位，放置content
+        return this._put(content);
     }
+
+
+    // _take(content,i,isEquip)
+    // {
+    //     console.log('-------------- take',content)
+
+    //     const{bb,root}=this.ctx;
+    //     if(isEquip)
+    //     {
+    //         bb.equips[i]=content;
+    //         root.equip?.();
+    //         return true;   
+    //     }
+
+    //     i = i??this._findEmpty();
+
+    //     if(i!=-1)
+    //     {
+    //         this._storage.items[i]=content;
+            
+    //         return true;
+    //     }
+    //     else
+    //     {  
+    //         return false;
+    //     }
+    // }
 
     _split(ent, cnt)
     {
@@ -161,8 +161,7 @@ export class COM_Storage extends Com
 
     _transfer(ent)
     {
-        // console.log(ent, this.root.target);
-        const remain = this.root.target.get(ent.content);
+        const remain = this.root.target.receive(ent.content);
         if(remain===0){ent.empty();}
         else {ent.count=remain;}
         return true;
@@ -170,7 +169,6 @@ export class COM_Storage extends Com
 
     _drop(ent)
     {
-        console.log('drop',ent)
         let p = this.ctx.ept(this.pos,{th:GM.W.EMPTY,random:true,includeP:false});
         let go = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
         go.falling(p);
@@ -193,6 +191,18 @@ export class COM_Storage extends Com
         this.root.target=null;
     }
 
+    _query(dat)
+    {
+        let cnt=0;
+        this._storage.items.forEach((itm)=>{
+            if(!itm) {return;}
+            if(dat.id&&itm.id!==dat.id) {return}
+            if(dat.q&&itm.q!==dat.q) {return;}
+            cnt+=itm.count;
+        });
+        return cnt;
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -205,15 +215,17 @@ export class COM_Storage extends Com
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addRt('storage');
-        root.get = this._get.bind(this);
-        root.take = this._take.bind(this);
         root.split = this._split.bind(this);
         root.drop = this._drop.bind(this);
         root.transfer = this._transfer.bind(this);
         root.close = this._close.bind(this);
+        root.query = this._query.bind(this);
+        root.remove = this._remove.bind(this);
+        root.receive = this._receive.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('take', this._take.bind(this));
+        // root.on('take', this._take.bind(this));
+        // root.on('receive', this._take.bind(this));
         root.on(GM.OPEN, this._open.bind(this));
     }
 
@@ -252,15 +264,14 @@ export class COM_Inventory extends COM_Storage
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
-    _receive(rewards)
+    _reward(rewards)
     {
         rewards.forEach((reward)=>{
             switch(reward.type)
             {
                 case 'gold': this._gold+=reward.count; break;
                 case 'item': 
-                    // this._put(reward.id, reward.count); 
-                    let remain = this._get(reward);
+                    let remain = this._receive(reward);
                     if(remain)
                     {
                         reward.count=remain;
@@ -271,8 +282,6 @@ export class COM_Inventory extends COM_Storage
             }
         })       
     }
-
-    // _getEquipped() { return this._equips.filter(Boolean); }
 
     _equip() 
     {
@@ -289,8 +298,6 @@ export class COM_Inventory extends COM_Storage
         super.bind(root);
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
-        // root.bb.equips = this._equips;
-        // this.addP(root.bb, 'gold', {target:this, key:'_gold'});
         this.addBB('gold');
         this.addBB('equips');
 
@@ -299,12 +306,10 @@ export class COM_Inventory extends COM_Storage
         root.off(GM.OPEN, this._open.bind(this));
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // this.addP(root, 'equips', {target:this, key:'_equips'});
-        // this.addP(root, 'gold', {target:this, key:'_gold'});
         this.addRt('equips');
         this.addRt('gold');
         root.equip = this._equip.bind(this);
-        root.receive = this._receive.bind(this);
+        root.reward = this._reward.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
 

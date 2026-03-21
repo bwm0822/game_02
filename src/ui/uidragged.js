@@ -41,7 +41,9 @@ export default class UiDragged extends OverlapSizer
     get id() {return this._obj.id;}
     get i() {return this._obj.i;}
     get label() {return this.content.id.lab();}
-    get gold() {return this.content.count*this.dat.gold;}
+    get gold() {return this.dat.gold;}
+    get price() {return this.content.count*this.dat.gold;}
+    get count() {return this.content.count}
 
 
     addListener()

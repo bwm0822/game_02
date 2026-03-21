@@ -49,7 +49,8 @@ export class Slot extends Icon
     set cat(value) {}
     get isValid() {return UiDragged.checkCat(this.cat)&&this.dropable;}
     // others
-    get gold() {return this.content.count*this.dat.gold;}
+    get gold() {return this.dat.gold;}
+    get price() {return this.content.count*this.dat.gold;}
 
     get isEmpty() {return Utility.isEmpty(this.content)||this.content.count==0;}
     get capacity() {return this.owner?.storage?.capacity; }

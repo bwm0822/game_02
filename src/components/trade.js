@@ -40,39 +40,44 @@ export class COM_Trade extends Com
         delete this.root.target;
     }
 
+    // _sell(ent, i, isEquip)
+    // {
+    //     const {bb} = this.ctx;
+    //     if(this.root.target.buy(ent, i, isEquip))
+    //     {
+    //         bb.gold+=ent.gold;
+    //         ent.empty();
+    //         return true;
+    //     }
+    //     return false;
+    // }
+
+
     _sell(ent, i, isEquip)
     {
-        const {bb} = this.ctx;
-        if(this.root.target.buy(ent, i, isEquip))
-        {
-            bb.gold+=ent.gold;
-            ent.empty();
-            return true;
-        }
-        return false;
-    }
+        const {root,bb,send} = this.ctx;
+        const target = root.target;
 
-    _buy(ent, i, isEquip)
-    {
-        const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
-
-        const {bb,emit,send} = this.ctx;
-        if(bb.gold>=ent.gold)
+        if(target.gold>=ent.price)
         {
-            if(emit('take',ent.content, i, isEquip))
+            const remain = target.receive(ent.content, i, isEquip);
+            if(remain===ent.count)
             {
-                bb.gold-=ent.gold;
-                if(this.root === GM)
-                {
-                    send('msg',name(bb.id)+`${'_buy'.lab()} ${ent.label}`);
-                }
-                else
-                {
-                    send('msg',name(GM.player.id)+`${'_sell'.lab()} ${ent.label}`)
-                }
+                send('msg','_space_full'.lab());
+                return false;
+            }
+            else
+            {
+                const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
+                const gold = ent.gold*(ent.count-remain);
+                bb.gold += gold
+                target.gold -= gold; 
+                if(root===GM.player) {send('msg',name(bb.id)+`${'_sell'.lab()} ${ent.label}`);}
+                else {send('msg',name(GM.player.id)+`${'_buy'.lab()} ${ent.label}`);}
+                if(remain===0) {ent.empty();}
+                else {ent.count=remain;}
                 return true;
             }
-            return false;
         }
         else
         {
@@ -80,6 +85,35 @@ export class COM_Trade extends Com
             return false;
         }
     }
+
+    // _buy(ent, i, isEquip)
+    // {
+    //     const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
+
+    //     const {bb,emit,send} = this.ctx;
+    //     if(bb.gold>=ent.gold)
+    //     {
+    //         if(emit('take',ent.content, i, isEquip))
+    //         {
+    //             bb.gold-=ent.gold;
+    //             if(this.root === GM.player)
+    //             {
+    //                 send('msg',name(bb.id)+`${'_buy'.lab()} ${ent.label}`);
+    //             }
+    //             else
+    //             {
+    //                 send('msg',name(GM.player.id)+`${'_sell'.lab()} ${ent.label}`)
+    //             }
+    //             return true;
+    //         }
+    //         return false;
+    //     }
+    //     else
+    //     {
+    //         send('msg','_not_enough_gold'.lab());
+    //         return false;
+    //     }
+    // }
 
     _actMode()
     {
@@ -105,7 +139,7 @@ export class COM_Trade extends Com
         root.trade = this._trade.bind(this);
         root.stopTrade = this._stopTrade.bind(this);
         root.sell = this._sell.bind(this);
-        root.buy = this._buy.bind(this);
+        // root.buy = this._buy.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.TRADE, this._trade.bind(this));

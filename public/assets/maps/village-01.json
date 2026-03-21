@@ -123,6 +123,11 @@
                          "name":"id",
                          "type":"string",
                          "value":"sword_01"
+                        }, 
+                        {
+                         "name":"q",
+                         "type":"string",
+                         "value":"karen_01"
                         }],
                  "rotation":0,
                  "type":"pickup",

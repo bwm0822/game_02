@@ -102,17 +102,19 @@
   },
   "karen_01": {
     "id": "karen_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
+    "title": "遺失的劍",
+    "des": "Karen 的配劍遺失在北方森林，幫她找回。",
     "nid": "forest-01",
     "conds": [
       {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3,
+        "type": "find",
+        "id": "sword_01",
+        "count": 1,
+        "q": "karen_01",
         "nid": "forest-01"
       },
       {
+        "type": "report",
         "des": "跟 karen 回報",
         "refs": [
           0
@@ -129,6 +131,14 @@
         "type": "item",
         "id": "helmet_01",
         "count": 2
+      }
+    ],
+    "actions": [
+      {
+        "type": "remove",
+        "id": "sword_01",
+        "count": 1,
+        "q": "karen_01"
       }
     ]
   },

@@ -5,8 +5,8 @@ import InventoryService from '../services/inventoryService.js'
 import UiObserve from './uiobserve.js'
 import UiInv from './uiinv.js'
 import UiProfile from './uiprofile.js'
-// import {UiCount} from '../ui.js'
- import UiCount from '../ui/uicount.js'
+import UiCount from '../ui/uicount.js'
+import QuestManager from '../manager/quest.js'
 
 
 export default class UiOption extends UiFrame
@@ -99,7 +99,7 @@ export default class UiOption extends UiFrame
         this.close();
         if(this.owner.transfer(this.ent))
         {
-            // this.ent.empty();
+            if(this.owner.target===GM.player) {QuestManager.notify({cat:GM.INV});}
             this.refreshAll();
         }
     }

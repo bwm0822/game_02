@@ -8,6 +8,7 @@ import UiMain from '../ui/uimain.js'
 import UiInfo from '../ui/uiinfo.js'
 import UiCover from '../ui/uicover.js'
 import UiDragged from '../ui/uidragged.js'
+import QuestManager from '../manager/quest.js'
 
 
 export default class DragService 
@@ -31,9 +32,11 @@ export default class DragService
     static _dropOnSlot(slot) 
     {
         if (!slot.isValid) { return; }
-        // const from = this._active.payload.from;
         const from = UiDragged.obj;
+        // 由外部移到player時，觸發
+        const trigger = slot.owner===GM.player && slot.owner!=from.owner;
         const result = InventoryService.handleDrop({ from, to: slot });
+        if(trigger) {QuestManager.notify({cat:GM.INV});}
         this._finish(result, slot);
     }
 

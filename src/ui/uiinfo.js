@@ -2,20 +2,20 @@ import UiFrame from "./uiframe"
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
-
 import Record from '../infra/record.js'
 
-
+const WIDTH=250;
 export default class UiInfo extends UiFrame
 {
     static instance = null;
+
     constructor(scene)
     {
         let config =
         {
             x : 100,
             y : 100,
-            width : 250,
+            // width : 250,
             // height : 100,
             orientation : 'y',
             space:{...UI.SPACE.LRTB.p10,item:0}
@@ -28,6 +28,12 @@ export default class UiInfo extends UiFrame
         this.addBg(scene,{color:GM.COLOR.DARK,...UI.BG.BORDER})
             .layout()
             .hide()
+    }
+
+    setW(wid)
+    {
+        this.setMinWidth(wid)
+            .layout()
     }
 
     unit_test()
@@ -204,6 +210,7 @@ export default class UiInfo extends UiFrame
             .addStats([GM.RANGE], elm)
             .addDes(config.des, config, layout)
             .addProcs(elm, layout)
+            .setW(WIDTH)
     }
 
 
@@ -214,7 +221,8 @@ export default class UiInfo extends UiFrame
 
         ui.uBbc.call(this,scene,{text:tag.lab()});
         ui.uDiv.call(this,scene);
-        this.addActive(elm);
+        this.addActive(elm)
+            .setW(WIDTH)
     }
 
     ifSlot(elm)
@@ -229,12 +237,16 @@ export default class UiInfo extends UiFrame
             .addMake(elm)
             .addDes(elm.dat[this.lang].des)
             .addGold(elm)
+            .setW(WIDTH)
     }
 
     ifNode(elm)
     {
         const scene = this.scene;
-        ui.uBbc.call(this,scene,{text:elm.dat.title});   
+        let text='';
+        elm.qs.forEach((q)=>{text=`[color=yellow]${q.title()}[/color]${q.cond()}`;})
+        ui.uBbc.call(this,scene,{text:text,wrapWidth:150,ext:{align:'left'}}); 
+        this.setW(0)  
     }
 
     update(type, elm)
