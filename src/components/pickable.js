@@ -3,6 +3,7 @@ import DB from '../data/db.js'
 import Record from '../infra/record.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
+import {dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -95,7 +96,7 @@ export class COM_Pickable extends Com
         // 外部
         root.on(GM.PICKUP, this._pickup.bind(this));
 
-        console.log('--------- root:',root.content)
+        dlog()('--------- root:',root.content)
     }
 
     save() {return {...this.pos,...this._content};}

@@ -2,6 +2,7 @@ import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
 import * as ui from './uicomponents.js'
 import {AbilityItem} from './uiclass.js'
+import {dlog} from '../core/debug.js'
 
 
 export default class UiAbility extends UiFrame
@@ -127,7 +128,7 @@ export default class UiAbility extends UiFrame
         })
 
 
-        console.log(xMax,yMax)
+        dlog()(xMax,yMax)
         this._panel.setContentSize(xMax+50,yMax+50)
         this.layout();
     }

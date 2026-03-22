@@ -1,6 +1,7 @@
 import Record from '../infra/record.js'
 import DB from '../data/db.js'
 import {GM,UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
@@ -267,7 +268,7 @@ export default class QuestManager
 
     static notify({cat, id})
     {
-        console.log('------------------- notify=',cat)
+        dlog()('------------------- notify=',cat)
         for(const qid in this.quests.opened)
         {
             const q = this.query(qid);
@@ -281,7 +282,7 @@ export default class QuestManager
             switch(act.type)
             {
                 case 'remove':
-                    console.log('remove')
+                    dlog()('remove')
                     GM.player.remove(act);
                     break;
             }

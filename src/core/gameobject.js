@@ -1,7 +1,8 @@
 
 import {Evt} from './event.js'
 import Record from '../infra/record.js'
-import {GM, ORDER, DEBUG, DBG} from './setting.js'
+import {GM, ORDER} from './setting.js'
+import {DEBUG,DBG,dlog} from '../core/debug.js'
 import Utility from './utility.js'
 
 //--------------------------------------------------
@@ -259,17 +260,15 @@ export class GameObject extends Phaser.GameObjects.Container
     //------------------------------------------------------
     warn(src, name)
     {
-        if(!DEBUG.log) {return;}
-        console.log(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
+        dlog()(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
     }
 
     log(id, src, name, v)
     {
-        if(!DEBUG.log) {return;}
         // DEBUG.filter 為空陣列或包含name時為 true
         const pass = (DEBUG.filter.length === 0 || 
                         DEBUG.filter.includes(name));
-        if(pass) {console.log(`%c[${id}]%c ${src}.${name} = ${v}`,
+        if(pass) {dlog()(`%c[${id}]%c ${src}.${name} = ${v}`,
                                 'color:dodgerblue; font-weight:bold;',
                                 'color:inhire;');}          
     }
@@ -325,7 +324,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 掉落動畫
     falling(p)
     {
-        console.log('-------------w=',this.weight)
+        dlog()('-------------w=',this.weight)
         const{root}=this.ctx;
         root.removeWeight?.();
         root.addWeight?.(p);

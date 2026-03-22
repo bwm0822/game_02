@@ -3,7 +3,8 @@ import Map from '../manager/map.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
-import {GM,UI,DEBUG} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
+import {DEBUG,T,dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
 import UiMark from '../ui/uimark.js'
 import UiCursor from '../ui/uicursor.js'
@@ -22,7 +23,7 @@ export class GameScene extends Scene
 
     init(data) 
     {
-        console.log('[1] init');
+        dlog()('[1] init');
         this._data = data;
     }
 
@@ -33,7 +34,7 @@ export class GameScene extends Scene
 
     async create ({diagonal,classType,weight})
     {
-        console.log('[2] create')
+        dlog()('[2] create')
         this._dbgPos = null;
         this._graphics = null;
         this._dbgPath = null;
@@ -67,9 +68,9 @@ export class GameScene extends Scene
 
     log()
     {
-        console.log("Roles:", this.roles);
-        console.log("Entities:", this.entities);
-        console.log("gos:", this.gos);
+        dlog()("Roles:", this.roles);
+        dlog()("Entities:", this.entities);
+        dlog()("gos:", this.gos);
     }
 
     initAmbient(amb)
@@ -172,7 +173,7 @@ export class GameScene extends Scene
     setCameraFollow(mode)
     {
         this._follow=true;
-        console.log('setCameraFollow:',mode)
+        dlog()('setCameraFollow:',mode)
         let offsetX=0,offsetY=0;
         if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
         else {mode&=~GM.CAM_LEFT_TOP;}
@@ -209,12 +210,12 @@ export class GameScene extends Scene
         let pos;
         if(this._data.pos) {pos = this._data.pos}
         else {
-            console.log('----- port=',this._data.port)
-            console.log(this.gos)
+            dlog()('----- port=',this._data.port)
+            dlog()(this.gos)
             pos = this.gos[this._data.port].pts[0];
         }
 
-        console.log('------------ pos=',pos)
+        dlog()('------------ pos=',pos)
         new classType(this,pos.x,pos.y).init_runtime('wick').load();
 
         this.setCameraFollow(GM.CAM_CENTER);
@@ -253,11 +254,11 @@ export class GameScene extends Scene
 
         if (pointer.rightButtonDown())
         {
-            console.log('right');
+            dlog()('right');
         }
         else if (pointer.middleButtonDown())
         {
-            console.log('middle');
+            dlog()('middle');
         }
         else
         {
@@ -369,24 +370,24 @@ export class GameScene extends Scene
         this.roles.forEach(role=>role.save())
         TimeSystem.save();
         Record.saveGame();
-        console.log('-------------------- chk1')
+        dlog()('-------------------- chk1')
     }
 
     mainMenu()
     {
-        console.log('------------------------ mainMenu')
+        dlog()('------------------------ mainMenu')
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
         AudioManager.bgmPause();
         Ui.reset();
-        console.log('-------------------- chk2')
+        dlog()('-------------------- chk2')
         
     }
 
     restart()
     {
-        console.log('------------------------ restart')
+        dlog()('------------------------ restart')
         Record.delete();
         this.scene.stop('UI');
         this.scene.start('MainMenu');

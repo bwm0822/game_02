@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js';
 import DB from '../data/db.js';
+import {dlog} from '../core/debug.js'
 import Utility from '../core/utility.js';
 
 
@@ -338,7 +339,7 @@ export class COM_Stats extends Com
         // 移除過期效果
         this._actives = this._actives.filter(proc => {
             if (proc.remaining <= 0) {
-                console.log(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
+                dlog()(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
                 this._setDirty();
                 return false;
             }
@@ -349,7 +350,7 @@ export class COM_Stats extends Com
 
     _drink()
     {
-        console.log('drink')
+        dlog()('drink')
     }
     //------------------------------------------------------
     //  Public

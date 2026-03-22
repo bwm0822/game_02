@@ -1,4 +1,5 @@
 import Record from '../infra/record.js'
+import {dlog} from '../core/debug.js'
 
 const ticksMax = 24*60-1;
 export default class TimeSystem
@@ -24,7 +25,7 @@ export default class TimeSystem
 
         this.ticks = this.time2Ticks(this.time);
 
-        console.log('[time] inc')
+        dlog()('[time] inc')
         // this.emit(minutes);
         await this.aEmit(minutes);
     }
@@ -47,7 +48,7 @@ export default class TimeSystem
         if(type in this.time)
         {
             this.time[type] = parseInt(val, 10);
-            console.log(this.time);
+            dlog()(this.time);
         }
     }
 
@@ -69,7 +70,7 @@ export default class TimeSystem
 
     static start()
     {
-        console.log('[time] start')
+        dlog()('[time] start')
         this.emit(0, this.time);
     }
 

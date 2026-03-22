@@ -1,4 +1,4 @@
-import {DEBUG} from '../core/setting.js'
+import {DEBUG} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 基本元件(component) 

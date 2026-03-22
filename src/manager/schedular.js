@@ -3,6 +3,7 @@ import {Roles} from '../database.js'
 import DB from '../data/db.js'
 import Record from '../infra/record.js'
 import {Npc} from '../roles/npc.js'
+import {T,dlog} from '../core/debug.js'
 
 
 export default class Schedular
@@ -22,7 +23,7 @@ export default class Schedular
         this.schedules = [];
         this.scene = scene;
 
-        console.log('---------------------- init')
+        dlog(T.SCH)('---------------------- init')
 
         Roles.list.forEach((id)=>{
             let role = DB.role(id);
@@ -46,7 +47,7 @@ export default class Schedular
 
     static initCheck(schedule, id, mapName)
     {
-        console.log('---------------------- initCheck')
+        dlog(T.SCH)('---------------------- initCheck')
         let role = this.loadRole(id);   
 
         if(role?.exit)   
@@ -55,7 +56,7 @@ export default class Schedular
             if(TimeSystem.ticks < TimeSystem.time2Ticks(role.exit.t))
             {
                 delete role.exit;
-                console.log('[delete role.exit]')
+                dlog(T.SCH)('[delete role.exit]')
             }
         }
 

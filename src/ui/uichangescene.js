@@ -1,5 +1,6 @@
 import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
+import {T,dlog} from '../core/debug.js'
 
 export default class UiChangeScene extends UiFrame
 {
@@ -42,7 +43,7 @@ export default class UiChangeScene extends UiFrame
     show()
     {
         super.show();
-        console.log('----------------- show')
+        dlog(T.UI)('----------------- show')
     }
 
     static done() {this.instance?.done();}

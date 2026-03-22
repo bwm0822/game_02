@@ -40,19 +40,6 @@ export class COM_Trade extends Com
         delete this.root.target;
     }
 
-    // _sell(ent, i, isEquip)
-    // {
-    //     const {bb} = this.ctx;
-    //     if(this.root.target.buy(ent, i, isEquip))
-    //     {
-    //         bb.gold+=ent.gold;
-    //         ent.empty();
-    //         return true;
-    //     }
-    //     return false;
-    // }
-
-
     _sell(ent, i, isEquip)
     {
         const {root,bb,send} = this.ctx;
@@ -85,35 +72,6 @@ export class COM_Trade extends Com
             return false;
         }
     }
-
-    // _buy(ent, i, isEquip)
-    // {
-    //     const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
-
-    //     const {bb,emit,send} = this.ctx;
-    //     if(bb.gold>=ent.gold)
-    //     {
-    //         if(emit('take',ent.content, i, isEquip))
-    //         {
-    //             bb.gold-=ent.gold;
-    //             if(this.root === GM.player)
-    //             {
-    //                 send('msg',name(bb.id)+`${'_buy'.lab()} ${ent.label}`);
-    //             }
-    //             else
-    //             {
-    //                 send('msg',name(GM.player.id)+`${'_sell'.lab()} ${ent.label}`)
-    //             }
-    //             return true;
-    //         }
-    //         return false;
-    //     }
-    //     else
-    //     {
-    //         send('msg','_not_enough_gold'.lab());
-    //         return false;
-    //     }
-    // }
 
     _actMode()
     {

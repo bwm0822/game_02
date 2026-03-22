@@ -2,6 +2,7 @@ import TimeSystem from '../systems/time.js'
 import DB,{Roles} from '../data/db.js'
 import Record from '../infra/record.js'
 import {Npc} from '../roles/npc.js'
+import {T,dlog} from '../core/debug.js'
 
 
 export default class ScheduleManager
@@ -14,7 +15,7 @@ export default class ScheduleManager
         this.schedules = [];
         this.scene = scene;
 
-        console.log('---------------------- init')
+        dlog(T.SCH)('---------------------- init')
 
         Roles.list.forEach((id)=>{
             let role = DB.role(id);

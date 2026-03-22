@@ -1,5 +1,6 @@
 import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 import * as ui from './uicomponents.js'
 
 
@@ -31,7 +32,7 @@ export default class UiConfirm extends UiFrame
     async unit_test()
     {
         const ret = await this.show('測試');
-        console.log(ret)
+        dlog()(ret)
     }
 
     addMsg(scene)

@@ -569,32 +569,6 @@ export const ORDER = [
 ];
 
 
-//--------------------------------------------------
-// debug 用
-//--------------------------------------------------
-export const DBG = 
-{
-    MODE: {
-        POINT   : 0b000001,
-        BODY    : 0b000010,
-        GRID    : 0b000100,
-        ZONE    : 0b001000,
-        SHAPE   : 0b010000,
-        TEXT    : 0b100000,
-        ALL     : 0b111111,
-        CLR     : 0b000000,
-    },
-}
 
-export const DEBUG = 
-{
-    enable: false,          // 是否開啟 debug 模式
-    mode: DBG.MODE.ALL,     // 除錯模式
-    loc: true,              // 顯示座標及weight
-    rect : false,           // 顯示邊框
-    path : true,            // 顯示NPC路徑
-    log : true,     
-    filter: [],             // log filter 
-}
 
 

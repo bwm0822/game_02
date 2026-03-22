@@ -1,5 +1,6 @@
 import Behavior from './behavior.js'
 import {GM} from '../../core/setting.js'
+import {T,dlog} from '../../core/debug.js'
 
 // --- 具體行為：測試用行為 ---
 
@@ -26,7 +27,7 @@ export class BehIdle extends Behavior
 
     async act(ctx) 
     {
-        console.log('---------------------- idle');
+        dlog(T.AI)('---------------------- idle');
         ctx.bb.sta=GM.ST_IDLE;
         return { ok:true, note:'idle' };   
     }

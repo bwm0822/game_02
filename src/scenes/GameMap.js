@@ -1,6 +1,7 @@
 import {GameScene} from "./GameScene"
 import Ui from '../ui/uicommon.js'
-import {GM,UI,DEBUG} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 import {MPlayer} from '../roles/mplayer.js'
 import TimeSystem from '../systems/time.js'
 import UiTime from '../ui/uitime.js'
@@ -38,7 +39,7 @@ export class GameMap extends GameScene
 {
     constructor()
     {
-        console.log('GameMap');
+        dlog()('GameMap');
         super('GameMap');
     }
 
@@ -58,13 +59,13 @@ export class GameMap extends GameScene
 
     showNodeTag(on)
     {
-        console.log('---------------- showNodeTag')
+        dlog()('---------------- showNodeTag')
         Object.values(this.scene.scene.gos).forEach(go=>go.showTag?.(on))
     }
 
     showNodeName(on)
     {
-        console.log('----------------- showNodeName')
+        dlog()('----------------- showNodeName')
         Object.values(this.scene.scene.gos).forEach(go=>go.showName?.(on))
     }
 

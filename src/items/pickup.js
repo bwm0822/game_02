@@ -17,7 +17,6 @@ export default class Pickup extends GameObject
 
         this.bb.interactive = true; // 設成 可互動，view 元件會參考
         this.bb.weight = 0;
-        console.log('------------- bb:',this.bb)
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )

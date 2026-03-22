@@ -1,7 +1,9 @@
 import UiFrame from './uiframe.js'
-import {GM,UI,DEBUG,DBG} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
+import {DEBUG,DBG} from '../core/debug.js'
 import * as ui from './uicomponents.js'
 import TimeSystem from '../systems/time.js'
+import {T,dlog} from '../core/debug.js'
 
 
 function cmd_get(args)
@@ -27,7 +29,6 @@ function cmd_w(args)
 
 function cmd_t(args)
 {
-    //console.log(args);
     if(args.length === 1)
     {
         let t = TimeSystem.time;
@@ -39,7 +40,7 @@ function cmd_t(args)
         for(let i=1;i<args.length;i++)
         {
             let [type,val]=args[i].split(':');
-            console.log(type,val);
+            dlog(T.UI)(type,val);
             TimeSystem.set(type,val)
         }
         TimeSystem.update();
@@ -151,7 +152,7 @@ export default class UiDebuger extends UiFrame
 
     process(cmd)
     {
-        console.log('cmd =',cmd)
+        dlog(T.UI)('cmd =',cmd)
         const args = cmd.split(' ');
         try
         {
@@ -224,7 +225,7 @@ export default class UiDebuger extends UiFrame
         DEBUG.filter = str.replace(/\s+/g, '')  // 去掉所有空白（含空格、tab、換行）
                             .split(',')
                             .filter(Boolean)    // 去除空的字串
-        console.log(DEBUG.filter)
+        dlog(T.UI)(DEBUG.filter)
     }
 
     addRow(...options)

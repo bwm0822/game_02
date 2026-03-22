@@ -7,6 +7,7 @@ import {BehFlee} from './behflee.js'
 import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
 import {GM} from '../../core/setting.js'
+import {T,dlog,dtable} from '../../core/debug.js'
 
 // 防止被動到（Object.freeze）
 // 不能增刪屬性：AI_CD.NEW = 'x' 會失敗
@@ -82,7 +83,6 @@ export class COM_AI extends Com
     constructor() 
     {
         super();
-        this.debug = false;
 
         this.cd = new Cooldown();
         // this.bb = makeBlackboard(role);
@@ -137,7 +137,7 @@ export class COM_AI extends Com
         // 狀態不可行動 → 嘗試恢復/等待
         if (!this.sm.canAct()) 
         {
-            this.debug && console.log('[AI] cannot act, state=', this.sm.state);
+            dlog(T.AI)('[AI] cannot act, state=', this.sm.state);
             return { ok:false, note:'wait' };
         }
 
@@ -149,13 +149,13 @@ export class COM_AI extends Com
 
         // 決策
         const { best, logs } = this.decider.decide(ctx, this.behaviors);
-        this.debug && console.table(logs.map(([n,s,w]) => ({ behavior:n, score:s.toFixed(3), why:w })));
+        dtable(T.AI)(logs.map(([n,s,w]) => ({ behavior:n, score:s.toFixed(3), why:w })));
 
         if (!best || best.score <= 0) 
         {
             const {bb}=this.ctx;
             bb.sta=GM.ST_IDLE;
-            this.debug && console.log('[AI] no viable behavior');
+            dlog(T.AI)('[AI] no viable behavior');
             return { ok:false, note:'idle' };
         }
 
@@ -163,7 +163,7 @@ export class COM_AI extends Com
 
         // 執行
         const res = await best.beh.act(ctx);
-        this.debug && console.log(`[AI] do ${best.beh.name} ->`, res);
+        dlog(T.AI)(`[AI] do ${best.beh.name} ->`, res);
         return { ...res, chosen: best.beh.name, score: best.score };
     }
 

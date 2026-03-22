@@ -1,4 +1,5 @@
 import Record from '../infra/record'
+import {dlog} from '../core/debug.js'
 
 export default class AudioManager
 {
@@ -15,7 +16,7 @@ export default class AudioManager
         this.scene = scene;
         if(!this._init)
         {
-            console.log('[AudioManager] init')
+            dlog()('[AudioManager] init')
             this._init = true;
             this.bgm0 = this.scene.sound.add('bgm',{loop: true});
         }

@@ -1,7 +1,5 @@
 import Utility from './utility.js'
-
-const DEBUG = false;
-function debug(...args) {if(DEBUG) {console.log(args);}}
+import {T,dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 說明 : 載入 tilemap 所需的資料
@@ -35,7 +33,7 @@ export default class TileMap
     static _loadTileMap(scene, mapName)
     {
         return new Promise((resolve)=>{
-            debug('loadTileMap');
+            dlog(T.MAP)('loadTileMap');
 
             scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
             scene.load.tilemapTiledJSON(mapName, `maps/${mapName}.json`);
@@ -63,7 +61,7 @@ export default class TileMap
                     {
                         obj.template = obj.template.replace('../','');
                         if(this._isLoaded(obj.template)) {return;}
-                        debug(`load[${obj.template}]`);
+                        dlog(T.MAP)(`load[${obj.template}]`);
                         scene.load.json(obj.template, obj.template);
                     }
                 });
@@ -79,14 +77,14 @@ export default class TileMap
             {
                 tile.image = tile.image.replace('../','');
                 if(this._isLoaded(tile.image)) {return;}
-                debug(`load[${tile.image}]`);
+                dlog(T.MAP)(`load[${tile.image}]`);
                 scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
             }
             else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
             {
                 tile.source = tile.source.replace('../','');
                 if(this._isLoaded(tile.source)) {return;}
-                debug(`load[${tile.source}]`);
+                dlog(T.MAP)(`load[${tile.source}]`);
                 scene.load.json(tile.source, tile.source);
             } 
         });
@@ -95,13 +93,13 @@ export default class TileMap
     static _preload(scene, mapName)   
     {
         return new Promise((resolve)=>{
-            debug('preload');
+            dlog(T.MAP)('preload');
 
             scene.load.setPath('assets');   //Load the assets for the game - Replace with your own assets
 
             const map = scene.cache.tilemap.get(mapName);
 
-            console.log(map)
+            dlog(T.MAP)(map)
 
 
             this._preload_Template(scene, map);
@@ -175,7 +173,7 @@ export default class TileMap
                 if(json.image)  // (*.tsj) 為 .png
                 {
                     if(this._isLoaded(json.image)) {return;}
-                    debug(`load[${json.image}]`);
+                    dlog(T.MAP)(`load[${json.image}]`);
                     scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                 }
                 else    // (*.tsj) 為圖片集合
@@ -185,7 +183,7 @@ export default class TileMap
                         {
                             map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
                             if(this._isLoaded(tile.image)) {return;}
-                            debug(`load[${tile.image}]`);
+                            dlog(T.MAP)(`load[${tile.image}]`);
                             scene.load.image(tile.image,tile.image);
                         }
                     });
@@ -197,7 +195,7 @@ export default class TileMap
     static _preprocess(scene, mapName)  
     {
         return new Promise((resolve)=>{
-            debug('preprocess');
+            dlog(T.MAP)('preprocess');
 
             let map = scene.cache.tilemap.get(mapName);
             this._preprocess_Template(scene, map);

@@ -1,4 +1,5 @@
 import {GM} from './core/setting.js'
+import {T,dlog} from './core/debug.js'
 
 import PressService from './services/pressService.js'
 import DragService from './services/dragService.js'
@@ -53,11 +54,11 @@ function getRoot(obj)
 
 export default function createUI(scene)
 {
-    console.log('createUI');
+    dlog(T.T0,'createUI');
     GM.w = scene.sys.canvas.width;
     GM.h = scene.sys.canvas.height;
     uiScene = scene;
-    console.log('resolution:',GM.w, GM.h)
+    dlog(T.T0,'resolution:',GM.w, GM.h)
 
     PressService.bindToScene(scene);
     DragService.init(scene);
@@ -102,15 +103,15 @@ export default function createUI(scene)
 
 async function test1()
 {
-	console.log('--- 1')
+	dlog()('--- 1')
   	await Promise.resolve(1);//new Promise((resolve)=>{resolve(true)});
-  	console.log('--- 2')
+  	dlog()('--- 2')
 
 }
 
 function test2()
 {
-	console.log('--- 3')
+	dlog()('--- 3')
 
 }
 

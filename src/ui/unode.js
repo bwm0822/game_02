@@ -1,4 +1,5 @@
 import {GM,UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 import Utility from '../core/utility.js'
 import {uPic,uBbc,uPanel} from './uicomponents.js'
 import UiInfo from './uiinfo.js'
@@ -106,7 +107,7 @@ export class UNode extends Phaser.GameObjects.Container
 
     _ondown()
     {
-        console.log('ondown')
+        dlog()('ondown')
     }
 
     _getZone(dat, obj)

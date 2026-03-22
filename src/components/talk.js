@@ -2,6 +2,7 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
+import {dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -124,7 +125,7 @@ export class COM_Talk extends Com
         if(dialog.type==='quest')
         {
             const sta = QuestManager.query(idx);
-            console.log(sta)
+            dlog(sta)
             dialog = dialog[sta?.state??'start'];
         }
         const a = dialog.A;

@@ -17,6 +17,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 import Role from './role.js'
+import {T,dlog} from '../core/debug.js'
 
 
 export class Player extends Role
@@ -62,7 +63,7 @@ export class Player extends Role
 
     _ondead()
     {
-        console.log('---- dead ----')
+        dlog(T.ROLE)('---- dead ----')
         this.ctx.bb.sta=GM.ST.DEATH;
         this._unregisterTimeSystem();
         this._send('gameover');
@@ -78,9 +79,9 @@ export class Player extends Role
     {
         if(this._dbg)
         {
-            console.log('-------------------- debug wait 0')
+            dlog(T.ROLE)('-------------------- debug wait 0')
             await new Promise((res)=>{this._dbgRes=res;})
-            console.log('-------------------- debug wait 1')
+            dlog(T.ROLE)('-------------------- debug wait 1')
         }
     }
 
@@ -184,9 +185,9 @@ export class Player extends Role
         // console.log(bb.path);
         if(!bb.path)
         {
-            console.log('-------------------- pause 0')
+            dlog(T.ROLE)('-------------------- pause 0')
             await this._pause();
-            console.log('-------------------- pause 1')
+            dlog(T.ROLE)('-------------------- pause 1')
         }
         
         if(bb.path)

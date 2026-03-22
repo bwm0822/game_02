@@ -1,6 +1,7 @@
 import {GameScene} from "./GameScene.js"
 import Ui from '../ui/uicommon.js'
-import {GM,UI,DEBUG} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 import UiTime from '../ui/uitime.js'
 
 import TimeSystem from '../systems/time.js'
@@ -41,7 +42,7 @@ export class GameArea extends GameScene
 {
     constructor()
     {
-        console.log('GameArea');
+        dlog('GameArea');
         super('GameArea');
     }
 
