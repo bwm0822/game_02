@@ -42,7 +42,7 @@ export class GameArea extends GameScene
 {
     constructor()
     {
-        dlog('GameArea');
+        console.log('GameArea');
         super('GameArea');
     }
 

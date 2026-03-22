@@ -4,6 +4,7 @@ import {DEBUG,DBG} from '../core/debug.js'
 import * as ui from './uicomponents.js'
 import TimeSystem from '../systems/time.js'
 import {T,dlog} from '../core/debug.js'
+import Record from '../infra/record.js'
 
 
 function cmd_get(args)
@@ -107,21 +108,6 @@ export default class UiDebuger extends UiFrame
         return ui.uScroll(scene,config);
     }
 
-    // addPage(scene)
-    // {
-    //     const config=
-    //     {
-    //         bg:{},
-    //         height: 300,
-    //         space:{...UI.SPACE.LRTB_10,item:10},
-    //         ext:{expand:true},
-    //         hideUnscrollableSlider:true,
-    //     }
-    //     this._page = ui.uScroll.call(this,scene,config)
-
-    //     return this;
-    // }
-
     updatePage()
     {
         
@@ -205,6 +191,11 @@ export default class UiDebuger extends UiFrame
             {text:'文字', value:DBG.MODE.TEXT},
         ]
 
+        const options_tag = Object.entries(T).map(([key, value]) => ({
+            text: key,
+            value: value
+        }));
+
         const CHK=this.check.bind(this);
         const DD=this.dropdown.bind(this);
         const IN=this.textin.bind(this);
@@ -217,7 +208,9 @@ export default class UiDebuger extends UiFrame
             .addElm(CHK('座標', DEBUG, 'loc'))
             .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
             .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
-            .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
+            // .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
+            .addRow(CHK('log', DEBUG, 'log'), 
+                    DD('標籤', DEBUG, 'tag', options_tag,{multi:true}))
     }
 
     setFilter(str)
@@ -282,6 +275,12 @@ export default class UiDebuger extends UiFrame
         super.show();
         !this._tab&&this._tabs.init('top');
         this.layout();
+    }
+
+    close()
+    {
+        super.close();
+        Record.saveDebug();
     }
 
     static show() {UiDebuger.instance?.show();}

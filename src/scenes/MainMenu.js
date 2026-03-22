@@ -66,7 +66,9 @@ export class MainMenu extends Scene
 
     loadData()  // 注意: func 的名稱不能叫 load()
     {
+        console.log('---------------- loadData')
         Record.loadSetting();
+        Record.loadDebug();
         Local.load(this);
         DB.load(this);
     }

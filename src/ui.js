@@ -54,11 +54,11 @@ function getRoot(obj)
 
 export default function createUI(scene)
 {
-    dlog(T.T0,'createUI');
+    dlog()('createUI');
     GM.w = scene.sys.canvas.width;
     GM.h = scene.sys.canvas.height;
     uiScene = scene;
-    dlog(T.T0,'resolution:',GM.w, GM.h)
+    dlog()('resolution:',GM.w, GM.h)
 
     PressService.bindToScene(scene);
     DragService.init(scene);

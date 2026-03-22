@@ -1,4 +1,5 @@
 import Utility from '../core/utility.js'
+import {setDEBUG} from '../core/debug.js' 
 
 export default class Record
 {
@@ -13,8 +14,19 @@ export default class Record
                             mouseEdgeMove:false,
                             pointerLock:false,
                         }
+
+    static debug_def = {    enable: false,          // 是否開啟 debug 模式
+                            mode: -1,     // 除錯模式
+                            loc: true,              // 顯示座標及 weight
+                            rect : false,           // 顯示邊框
+                            path : true,            // 顯示 NPC 路徑
+                            log : true,     
+                            filter: [],             // log filter 
+                            tag: -1,
+                        }
     static game;
     static setting;
+    static debug;
 
     static delete()
     {
@@ -34,6 +46,11 @@ export default class Record
     static saveSetting()
     {
         Utility.save(Record.setting,'setting');
+    }
+
+    static saveDebug()
+    {
+        Utility.save(Record.debug,'debug');
     }
 
     static getByUid(mapName, uid, qid)
@@ -77,6 +94,15 @@ export default class Record
         let data = Utility.load('setting');
         if(data) {this.setting = data;}
         else {this.setting = Utility.deepClone(this.setting_def);}
+        return data;
+    }
+
+    static loadDebug()
+    {
+        let data = Utility.load('debug');
+        if(data) {this.debug = data;}
+        else {this.debug = Utility.deepClone(this.debug_def);}
+        setDEBUG(this.debug);
         return data;
     }
 

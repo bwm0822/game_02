@@ -4,7 +4,6 @@ import {computeDamage} from '../core/combat.js'
 import {GM} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
 
-
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : action

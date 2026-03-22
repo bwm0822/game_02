@@ -2,7 +2,6 @@ import {GM} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 
-
 function debugDraw(mode=DEBUG.mode,text)
 {
     if(!this._dbgGraphics)

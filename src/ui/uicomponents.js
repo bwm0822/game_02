@@ -889,7 +889,7 @@ export function uDropdownBase(scene,config={})
             }
             else
             {
-                _menu.show();
+                _menu.show().repos();
                 _cover.visible=true;
             }
         }
@@ -902,11 +902,14 @@ export function uDropdownBase(scene,config={})
         _cover=null;
     }
 
+    const repos=function(){if(this.bottom>GM.h){this.y-=(this.bottom-GM.h);}}
+
     const create=(btn)=>{
         // 1) create Cover
         _cover = uRect(scene,{x:0,y:0,width:GM.w,height:GM.h,
                         color:GM.COLOR.GRAY,alpha:0.1,
                         interactive:true,onup:toggle}).setOrigin(0);
+        
         // 2) create Menu
         _menu = uPanel(scene,{x:btn.left,y:btn.bottom,
                         width:btn.width,
@@ -915,6 +918,8 @@ export function uDropdownBase(scene,config={})
                             strokeColor:GM.COLOR.WHITE,
                             strokeWidth:1}})
                         .setOrigin(0)
+        _menu.repos = repos;
+
         // 3) add options            
         options.forEach((opt)=>{
             const btn=uButton.call(_menu,scene,{
@@ -925,6 +930,7 @@ export function uDropdownBase(scene,config={})
             btn.opt=opt;
             if(multi) {btn.setValue((_val&opt.value)===opt.value);}
         })
+
         if(multi)
         {
             uDiv.call(_menu,scene,{color:GM.COLOR.WHITE})
@@ -938,7 +944,8 @@ export function uDropdownBase(scene,config={})
                                     onclick:()=>setAll(true)})
         }
 
-        _menu.layout()
+        // 4) layout
+        _menu.layout().repos();
     }
 
     const onclick=(btn)=>{
@@ -950,6 +957,7 @@ export function uDropdownBase(scene,config={})
                                 style:UI.BTN.DROP,
                                 onclick:onclick});
     if(this&&this.add) {this.add(dd,ext);}
+
 
     // 操作介面
     dd.setValue=(value)=>{

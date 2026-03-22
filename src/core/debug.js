@@ -1,8 +1,5 @@
 //--------------------------------------------------
 // debug 用
-
-import { ROLE_ATTRS } from "./setting";
-
 //--------------------------------------------------
 export const DBG = 
 {
@@ -26,11 +23,9 @@ export const T =
     MAP     : 0b000_1000,
     SCH     : 0b001_0000,
     ROLE    : 0b010_0000,
-    ALL     : 0b111_1111,
-    NONE    : 0,
 }
 
-export const DEBUG = 
+export let DEBUG = 
 {
     enable: false,          // 是否開啟 debug 模式
     mode: DBG.MODE.ALL,     // 除錯模式
@@ -39,12 +34,14 @@ export const DEBUG =
     path : true,            // 顯示 NPC 路徑
     log : true,     
     filter: [],             // log filter 
-    tag: T.NONE,
+    tag: -1,
 }
 
+export function setDEBUG(value) {DEBUG=value;}
 export function dlog(tag=T.NORMAL) 
 {
     // 判斷邏輯：如果不符合條件，回傳一個空函數 (noop)
+    if(!DEBUG.log) {return ()=>{};}
     if((tag&DEBUG.tag)!==tag) {return ()=>{};}
 
     // 如果符合條件，回傳綁定好標籤的 console.log
@@ -56,6 +53,7 @@ export function dlog(tag=T.NORMAL)
 export function dtable(tag=T.T0)
 {
     // 判斷邏輯：如果不符合條件，回傳一個空函數 (noop)
+    if(!DEBUG.log) {return ()=>{};}
     if((tag&DEBUG.tag)!==tag) {return ()=>{};}
 
     // 如果符合條件，回傳綁定好標籤的 console.table
