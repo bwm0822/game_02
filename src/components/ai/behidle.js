@@ -27,8 +27,9 @@ export class BehIdle extends Behavior
 
     async act(ctx) 
     {
-        dlog(T.AI)('---------------------- idle');
-        ctx.bb.sta=GM.ST_IDLE;
+        const {bb}=ctx;
+        dlog(T.AI,bb.id)('idle:',bb.idleCnt);
+        bb.sta=GM.ST_IDLE;
         return { ok:true, note:'idle' };   
     }
 }

@@ -12,7 +12,7 @@ export class BehFlee extends Behavior
         // 回傳 [score, reason]；0 代表不考慮
         const {bb,fav} = ctx;
         
-        if(bb.scenePlayer && fav()<=GM.FAV.HATE)
+        if(bb.sensePlayer && fav()<=GM.FAV.HATE)
         {
             return [this.weight, 'flee'];
         }
@@ -24,7 +24,9 @@ export class BehFlee extends Behavior
     async act(ctx) 
     {
         const {root,bb} = ctx;
-        root.flee?.(bb.scenePlayer.pos);
+        bb.idleCnt = 5; // 重設進入IDLE狀態的回合數
+        
+        root.flee?.(bb.sensePlayer.pos);
         return { ok:true, note:'flee' };   
     }
 }

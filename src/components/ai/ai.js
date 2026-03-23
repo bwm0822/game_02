@@ -78,6 +78,11 @@ class StateMachine
 //  1. 控制 NPC 的行為
 //  2. 透過 bb.cAI 來傳遞訊息
 //--------------------------------------------------
+const wLUT=
+{
+    weak    : {flee:2.0, attack:1.0, idle:1.0},   
+    power   : {flee:1.0, attack:2.0, idle:1.0},
+}
 export class COM_AI extends Com
 {
     constructor() 
@@ -88,18 +93,6 @@ export class COM_AI extends Com
         // this.bb = makeBlackboard(role);
         this.sm = new StateMachine();
         this.decider = new UtilityDecider();
-
-        // 行為清單（可自由增刪/調整權重）
-        this.behaviors = [
-            // new BehDrinkPotion({ weight: 1.0 }),
-            new BehFlee({ weight: 3 }),
-            new BehAttack({weight:2}),   // 偏攻擊
-            new BehIdle({weight:1.5}),   // 偏攻擊
-            // new BehChase({minInterval:2}),
-            // new BehPatrol({ weight: 0.6 }),
-            // new BehTest(),
-            new BehSchedule(),
-        ];
     }
 
     get tag() {return 'ai';}  // 回傳元件的標籤
@@ -111,6 +104,26 @@ export class COM_AI extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _init()
+    {
+        // 行為清單（可自由增刪/調整權重）
+        const{bb}=this.ctx;
+        const w=wLUT['weak'];
+        dlog(T.AI,bb.id)(bb.id,w);
+
+        this.behaviors = 
+        [
+            // new BehDrinkPotion({ weight: 1.0 }),
+            new BehFlee({ weight: w.flee }),
+            new BehAttack({weight:w.attack}), 
+            new BehIdle({weight:w.idle}),
+            // new BehChase({minInterval:2}),
+            // new BehPatrol({ weight: 0.6 }),
+            // new BehTest(),
+            new BehSchedule(),
+        ];
+    }
+
     _preUpdateBlackboard(ctx) 
     {
         // 例如：若沒有 target，找一個最近敵人
@@ -126,22 +139,23 @@ export class COM_AI extends Com
     _updateBB(ctx) 
     {
         const{bb,root}=ctx;
-        bb.scenePlayer = root.sensePlayer?.();
-        bb.seePlayer = bb.scenePlayer ? root.canSee?.(bb.scenePlayer) : false;
+        bb.sensePlayer = root.sensePlayer?.();
+        bb.seePlayer = bb.sensePlayer ? root.canSee?.(bb.sensePlayer) : false;
 
     }
 
     // 回合主流程
     async _think() 
     {
+        const ctx = this.ctx;
+        const {bb} = this.ctx;
+
         // 狀態不可行動 → 嘗試恢復/等待
         if (!this.sm.canAct()) 
         {
-            dlog(T.AI)('[AI] cannot act, state=', this.sm.state);
+            dlog(T.AI,bb.id)('[AI] cannot act, state=', this.sm.state);
             return { ok:false, note:'wait' };
         }
-
-        const ctx = this.ctx;
 
         // 事前黑板更新（可選）
         // this._preUpdateBlackboard(ctx);
@@ -149,13 +163,12 @@ export class COM_AI extends Com
 
         // 決策
         const { best, logs } = this.decider.decide(ctx, this.behaviors);
-        dtable(T.AI)(logs.map(([n,s,w]) => ({ behavior:n, score:s.toFixed(3), why:w })));
+        dtable(T.AI,bb.id)(logs.map(([n,s,w]) => ({ behavior:n, score:s.toFixed(3), why:w })));
 
         if (!best || best.score <= 0) 
         {
-            const {bb}=this.ctx;
             bb.sta=GM.ST_IDLE;
-            dlog(T.AI)('[AI] no viable behavior');
+            dlog(T.AI,bb,id)('[AI] no viable behavior');
             return { ok:false, note:'idle' };
         }
 
@@ -163,7 +176,7 @@ export class COM_AI extends Com
 
         // 執行
         const res = await best.beh.act(ctx);
-        dlog(T.AI)(`[AI] do ${best.beh.name} ->`, res);
+        dlog(T.AI,bb.id)(`[AI] do ${best.beh.name} ->`, res);
         return { ...res, chosen: best.beh.name, score: best.score };
     }
 
@@ -173,6 +186,8 @@ export class COM_AI extends Com
     bind(root) 
     {
         super.bind(root);
+
+        this._init();
 
         // 1.提供 [外部操作的指令]
 

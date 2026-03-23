@@ -1,5 +1,6 @@
 import Behavior from './behavior.js'
 import {GM} from '../../core/setting.js'
+import {T,dlog} from '../../core/debug.js'
 
 // --- 具體行為：攻擊（近戰/遠程） ---
 
@@ -17,13 +18,11 @@ export class BehAttack extends Behavior
         // 回傳 [score, reason]；0 代表不考慮
         const {bb,root,fav} = ctx;
         
-        if(!bb.scenePlayer)         // 沒有目標
+        if(!bb.sensePlayer)         // 沒有目標
         {
             if(this._onAttack)
             {
-                // 失去攻擊目標時，進入 IDLE 狀態幾回合
                 this._onAttack = false;
-                bb.idleCnt = 5;         // 設定進入 IDLE 狀態的回合數
                 bb.go = null;           // 清除目前目標點
                 root.clearPath?.();     // 清除路徑
             }  
@@ -32,7 +31,7 @@ export class BehAttack extends Behavior
         else 
         {
             if(fav()>GM.FAV.HATE) { return [0, 'no target']; }
-            this._t=bb.scenePlayer;
+            this._t=bb.sensePlayer;
         }        
 
         const base = bb.sensePlayer ? 1 : 0.5;
@@ -42,7 +41,8 @@ export class BehAttack extends Behavior
 
     async act(ctx) 
     {
-        const {root} = ctx;
+        const {bb,root} = ctx;
+        bb.idleCnt = 5; // 重設進入IDLE狀態的回合數
 
         this._onAttack=true;
         const t=this._t;

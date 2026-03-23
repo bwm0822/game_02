@@ -30,6 +30,10 @@ export const T =
     SCENE   : 0b0010_0000_0000,
 }
 
+const T_REVERSE = Object.fromEntries(
+    Object.entries(T).map(([key, value]) => [value, key])
+)
+
 export let DEBUG = 
 {
     enable: false,          // 是否開啟 debug 模式
@@ -43,23 +47,31 @@ export let DEBUG =
 }
 
 export function setDEBUG(value) {DEBUG=value;}
-export function dlog(tag=T.NORMAL) 
+export function dlog(tag=T.NORMAL,id) 
 {
     // 判斷邏輯：如果不符合條件，回傳一個空函數 (noop)
     if(!DEBUG.log) {return ()=>{};}
     if((tag&DEBUG.tag)!==tag) {return ()=>{};}
+    if(id&&DEBUG.filter!==''&&!DEBUG.filter.includes(id)) {return ()=>{};}
 
     // 如果符合條件，回傳綁定好標籤的 console.log
     // bind 會確保輸出的行號指向「呼叫 dlog 的地方」
-    // return console.log.bind(console, `[${tag}]`);
-    return console.log;
+    const pfix=`%c[${T_REVERSE[tag]}]%c`+(id?`%c[${id}]%c`:'%c%c');
+
+    return console.log.bind(console, pfix,
+                                'color:dodgerblue; font-weight:bold;',
+                                'color:inhire;',
+                                'color:green;',
+                                'color:inhire;');
+    // return console.log;
 }
 
-export function dtable(tag=T.T0)
+export function dtable(tag=T.NORMAL,id)
 {
     // 判斷邏輯：如果不符合條件，回傳一個空函數 (noop)
     if(!DEBUG.log) {return ()=>{};}
     if((tag&DEBUG.tag)!==tag) {return ()=>{};}
+    if(id&&DEBUG.filter!==''&&!DEBUG.filter.includes(id)) {return ()=>{};}
 
     // 如果符合條件，回傳綁定好標籤的 console.table
     return console.table;

@@ -56,11 +56,11 @@ export class MPlayer extends Role
 
     init_runtime(id)
     {   
+        this.bb.id = id;
         if(!super.init_prefab()) {return;}
 
         this._registerTimeSystem();     // 註冊 TimeSystem
-
-        this.bb.id = id;
+        
         this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
         this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
         this.bb.interactive = false;    // 設成 可互動，view 元件會參考

@@ -33,14 +33,14 @@ export class BehTest extends Behavior
         bb.sta=GM.ST_MOVING;
         if(!bb.path) 
         {
-            dlog(T.AI)('------ findPath')
+            dlog(T.AI,bb.id)('------ findPath')
             root.findPath?.(bb.target.pos??bb.target);
         }
         const ep = bb.path.ep
         let ret = await root.move?.();
         if(ret===false) 
         {
-            dlog(T.AI)('------ rePath')
+            dlog(T.AI,bb.id)('------ rePath')
             root.findPath?.(ep);
             await root.move?.();
         }

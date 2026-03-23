@@ -31,11 +31,6 @@ export class GameObject extends Phaser.GameObjects.Container
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
 
-        // 新增 property
-        // 狀態 : this._sta，this.bb.sta 指向 this._sta
-        this.addP('sta',{src:this.bb});
-        this.bb.sta = GM.ST.IDLE;
-
         // 初始化
         this._init();
     }
@@ -167,9 +162,6 @@ export class GameObject extends Phaser.GameObjects.Container
         // 移除 gameObject
         this.on('remove', this._remove.bind(this));
 
-        // // 加入 List
-        // this._addToList();
-
     }
 
     // 物件消滅時，要呼叫 _remove()
@@ -240,7 +232,7 @@ export class GameObject extends Phaser.GameObjects.Container
                 get: ()=>{return this[key]}, 
                 set: (v)=>{ if(ro) {this.warn(srcName,name);return;}
                             this[key]=v;
-                            this.log(this.id,srcName,name,v);
+                            dlog(T.GO,this.id)(`${srcName}.${name} = ${v}`)
                         }, 
                 enumerable: true, 
                 configurable: true }); 
@@ -249,7 +241,10 @@ export class GameObject extends Phaser.GameObjects.Container
         {
             Object.defineProperty(src??this, name, { 
                 get: get, 
-                set: (v)=>{set?.(v); this.log(this.id,srcName,name,v);}, 
+                set: (v)=>{
+                    set?.(v); 
+                    dlog(T.GO,this.id)(`${srcName}.${name} = ${v}`);
+                }, 
                 enumerable: true, 
                 configurable: true }); 
         }
@@ -262,19 +257,6 @@ export class GameObject extends Phaser.GameObjects.Container
     {
         dlog(T.GO)(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
     }
-
-    log(id, src, name, v)
-    {
-        // DEBUG.filter 為''或包含id時為 true
-        const pass = (DEBUG.filter===''||DEBUG.filter.includes(id));
-        if(pass)
-        {
-            dlog(T.GO)(`%c[${id}]%c ${src}.${name} = ${v}`,
-                                'color:dodgerblue; font-weight:bold;',
-                                'color:inhire;');
-        }          
-    }
-
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -380,6 +362,11 @@ export class GameObject extends Phaser.GameObjects.Container
 
             this._processBB();  // 處理傳遞給 GameObject 的參數            
             this._addToList();  // 加入 List
+
+            // 新增 property
+            // 狀態 : this._sta，this.bb.sta 指向 this._sta
+            this.addP('sta',{src:this.bb});
+            this.bb.sta = GM.ST.IDLE;
 
             return true;
         }

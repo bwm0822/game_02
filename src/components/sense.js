@@ -1,6 +1,7 @@
 import Com from './com.js'
-import { GM } from '../core/setting.js';
-import Utility from '../core/utility.js';
+import { GM } from '../core/setting.js'
+import Utility from '../core/utility.js'
+import {T,dlog} from '../core/debug.js'
 
 const dist2 = (a, b) => {
   const dx = a.x - b.x, dy = a.y - b.y;
@@ -34,33 +35,33 @@ export class COM_Sense extends Com
     {
         const {bb,root,fav} = this.ctx;
         const player = GM.player;
-        let _scenePalyer=true;
-        // if (!player || !player.isAlive) {return null;}
+        let _isSensePalyer=true;    // 是否感知到 player
 
+        // if (!player || !player.isAlive) {return null;}
         if(bb.sta===GM.ST.SLEEP)
         {
-            bb.scenePlayer = null;
+            bb.sensePlayer = null;
             return null;
         }
 
         if (!withinTiles(this.pos, player.pos, maxTiles)) 
         {
-            _scenePalyer=false;
+            _isSensePalyer=false;
         }
 
         if (needSight && !this._canSee(player)) 
         {
-            _scenePalyer=false;
+            _isSensePalyer=false;
         }
 
-        if(bb.scenePlayer && !_scenePalyer)
+        if(bb.sensePlayer && !_isSensePalyer)
         {
-            bb.scenePlayer = null;
+            bb.sensePlayer = null;
             if(fav()<=GM.FAV.HATE) {root.pop?.('❓');}
         }
-        else if(!bb.scenePlayer && _scenePalyer)
+        else if(!bb.sensePlayer && _isSensePalyer)
         {
-            bb.scenePlayer = player;
+            bb.sensePlayer = player;
             if(fav()<=GM.FAV.HATE)
             {
                 const s=needSight ? '👁️‍🗨️' : '‼️';
@@ -68,7 +69,9 @@ export class COM_Sense extends Com
             }
         }
 
-        return _scenePalyer ? player : null;
+        dlog(T.AI,bb.id)("_isSensePalyer=",_isSensePalyer)
+
+        return _isSensePalyer ? player : null;
     }
 
     _canSee(target)
@@ -93,7 +96,8 @@ export class COM_Sense extends Com
         super.bind(root);
 
         // 0. bb
-        this.ctx.bb.scenePlayer = false;
+        this.ctx.bb.sensePlayer = null;
+
         // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.sensePlayer = this._sensePlayer.bind(this);

@@ -88,7 +88,6 @@ export class Player extends Role
     init_prefab()
     {     
         if(!super.init_prefab()) {return;}
-
         this._registerTimeSystem();             // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id);     // 取得 roleD，放入 bb，view 元件會用到
@@ -108,11 +107,11 @@ export class Player extends Role
 
     init_runtime(id)
     {   
+        this.bb.id = id;
+        
         if(!super.init_prefab()) {return;}
-
         this._registerTimeSystem();    // 註冊 TimeSystem
 
-        this.bb.id = id;
         this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
         this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
         this.bb.interactive = true;     // 設成 可互動，view 元件會參考
