@@ -1,7 +1,7 @@
 import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import Ui from './uicommon.js'
 import {GM,UI} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import {Slot} from './uiclass.js'
 import * as ui from './uicomponents.js'
@@ -51,7 +51,7 @@ export default class UiDragged extends OverlapSizer
     {
         this//.setInteractive()
             .on('pointerup',()=>{
-                dlog()('-drop-')
+                dlog(T.UI)('-drop-')
                 this.empty();
                 this.disableInteractive();
             })
@@ -106,7 +106,7 @@ export default class UiDragged extends OverlapSizer
     {
         if(content)
         {
-            dlog()(content)
+            dlog(T.UI)(content)
             this._obj.content = content;
             this._obj.dat = DB.item(content.id);
             this.setIcon(this.dat.icon)
@@ -137,7 +137,7 @@ export default class UiDragged extends OverlapSizer
         }
         else
         {
-            dlog()('ability', obj.id, obj.i)
+            dlog(T.UI)('ability', obj.id, obj.i)
             
             this._obj = {
                 dat: DB.ability(obj.id),
@@ -171,7 +171,7 @@ export default class UiDragged extends OverlapSizer
 
     drop()
     {
-        dlog()('-----trader=',this.owner.tradeType)
+        dlog(T.UI)('-----trader=',this.owner.tradeType)
         if(this._obj && this.owner.tradeType!=GM.SELLER)
         {
             this.owner.drop(this._obj);

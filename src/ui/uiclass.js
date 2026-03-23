@@ -1,6 +1,6 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
 import Ui from './uicommon.js'
@@ -63,7 +63,7 @@ export class Slot extends Icon
         let acts = {};
         // console.log('useable',this.dat.useable,this.dat)
 
-        dlog()(this.owner)
+        dlog(T.UI)(this.owner)
 
         if(this.owner.tradeType)    // 交易
         {

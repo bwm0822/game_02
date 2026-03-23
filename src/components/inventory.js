@@ -4,7 +4,7 @@ import DB from '../data/db.js'
 import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -149,15 +149,15 @@ export class COM_Storage extends Com
 
     _split(ent, cnt)
     {
-        dlog()('---- split')
+        dlog(T.UI)('---- split')
         ent.content.count -= cnt;
         let split = {id:ent.content.id,count:cnt};
         let i = this._findEmpty();
-        dlog()(i)
+        dlog(T.UI)(i)
         if(i!=-1) {
             this._storage.items[i]=split;
         }
-        dlog()( this._storage)
+        dlog(T.UI)( this._storage)
     }
 
     _transfer(ent)

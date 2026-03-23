@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 import Record from '../infra/record.js'
 
 const E={CHK:'check',DD:'dropdown'};
@@ -35,7 +35,7 @@ export default class UiSetting extends UiFrame
 
     unit_test()
     {
-        dlog()('---------------------------unit_test')
+        dlog(T.UI)('---------------------------unit_test')
         this.show()
     }
 

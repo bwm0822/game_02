@@ -1,5 +1,5 @@
 import {GM, RESIST_MAP} from './setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 
 // export { computeDamage };
 
@@ -57,7 +57,7 @@ export function computeDamage(attacker, defender, skill={})
     if (Math.random() < aStats[GM.CRITR]) 
     {
         damage *= aStats[GM.CRITD];
-        dlog()(`💥 ${attacker.name} 暴擊！`);
+        dlog(T.COMBAT)(`💥 ${attacker.name} 暴擊！`);
         type = GM.CRIT;
     }
 
@@ -74,7 +74,7 @@ export function computeHealing(healer, skill)
 {
     const cond = skill?.type??'heal';
     const stats = healer.getTotalStats({condition:cond, skill:skill});
-    dlog()(stats);
+    dlog(T.COMBAT)(stats);
 
     // 計算 Procs
     let procs = [...stats.procs.self]

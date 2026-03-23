@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 import InventoryService from '../services/inventoryService.js'
 import UiObserve from './uiobserve.js'
 import UiInv from './uiinv.js'
@@ -136,7 +136,7 @@ export default class UiOption extends UiFrame
     async split()
     {
         this.close();
-        dlog()('split',this.ent);
+        dlog(T.UI)('split',this.ent);
         let cnt = await UiCount.getCount(1, this.ent.content.count-1)
         // if(cnt==0) {return;}
         // this.owner.split(this.ent,cnt);
@@ -180,7 +180,7 @@ export default class UiOption extends UiFrame
         // 設定 options
         Object.values(this._items).forEach((item)=>{item.hide();})
         Object.entries(options).forEach(([k,v])=>{
-            dlog()(k,v)
+            dlog(T.UI)(k,v)
             v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
         })
 

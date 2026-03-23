@@ -1,5 +1,5 @@
 import Utility from '../core/utility.js'
-import {setDEBUG} from '../core/debug.js' 
+import {setDEBUG,DEBUG} from '../core/debug.js' 
 
 export default class Record
 {
@@ -15,15 +15,7 @@ export default class Record
                             pointerLock:false,
                         }
 
-    static debug_def = {    enable: false,          // 是否開啟 debug 模式
-                            mode: -1,     // 除錯模式
-                            loc: true,              // 顯示座標及 weight
-                            rect : false,           // 顯示邊框
-                            path : true,            // 顯示 NPC 路徑
-                            log : true,     
-                            filter: [],             // log filter 
-                            tag: -1,
-                        }
+    static debug_def = DEBUG;
     static game;
     static setting;
     static debug;

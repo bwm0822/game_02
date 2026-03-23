@@ -2,7 +2,7 @@
 import {Evt} from './event.js'
 import Record from '../infra/record.js'
 import {GM, ORDER} from './setting.js'
-import {DEBUG,DBG,dlog} from '../core/debug.js'
+import {DEBUG,DBG,T,dlog} from '../core/debug.js'
 import Utility from './utility.js'
 
 //--------------------------------------------------
@@ -260,17 +260,19 @@ export class GameObject extends Phaser.GameObjects.Container
     //------------------------------------------------------
     warn(src, name)
     {
-        dlog()(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
+        dlog(T.GO)(`%c[${src}.${name}] is readonly, ignore set`,'color: orange');
     }
 
     log(id, src, name, v)
     {
-        // DEBUG.filter 為空陣列或包含name時為 true
-        const pass = (DEBUG.filter.length === 0 || 
-                        DEBUG.filter.includes(name));
-        if(pass) {dlog()(`%c[${id}]%c ${src}.${name} = ${v}`,
+        // DEBUG.filter 為''或包含id時為 true
+        const pass = (DEBUG.filter===''||DEBUG.filter.includes(id));
+        if(pass)
+        {
+            dlog(T.GO)(`%c[${id}]%c ${src}.${name} = ${v}`,
                                 'color:dodgerblue; font-weight:bold;',
-                                'color:inhire;');}          
+                                'color:inhire;');
+        }          
     }
 
     //------------------------------------------------------
@@ -324,7 +326,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 掉落動畫
     falling(p)
     {
-        dlog()('-------------w=',this.weight)
+        dlog(T.GO)('-------------w=',this.weight)
         const{root}=this.ctx;
         root.removeWeight?.();
         root.addWeight?.(p);
@@ -362,7 +364,7 @@ export class GameObject extends Phaser.GameObjects.Container
 
     debugDraw({clr=false}={})
     {
-        if(clr) {this.dbg?.(DBG.MODE.CLR);}
+        if(clr) {this.dbg?.(0);}
         else {this.dbg?.(DEBUG.mode, this.bb.name??'');}
     }
 

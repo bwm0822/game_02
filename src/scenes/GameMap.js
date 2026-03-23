@@ -1,7 +1,7 @@
 import {GameScene} from "./GameScene"
 import Ui from '../ui/uicommon.js'
 import {GM,UI} from '../core/setting.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 import {MPlayer} from '../roles/mplayer.js'
 import TimeSystem from '../systems/time.js'
 import UiTime from '../ui/uitime.js'
@@ -59,13 +59,13 @@ export class GameMap extends GameScene
 
     showNodeTag(on)
     {
-        dlog()('---------------- showNodeTag')
+        dlog(T.SCENE)('---------------- showNodeTag')
         Object.values(this.scene.scene.gos).forEach(go=>go.showTag?.(on))
     }
 
     showNodeName(on)
     {
-        dlog()('----------------- showNodeName')
+        dlog(T.SCENE)('----------------- showNodeName')
         Object.values(this.scene.scene.gos).forEach(go=>go.showName?.(on))
     }
 

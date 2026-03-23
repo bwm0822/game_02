@@ -63,7 +63,7 @@ export class Player extends Role
 
     _ondead()
     {
-        dlog(T.ROLE)('---- dead ----')
+        dlog(T.PLAYER)('---- dead ----')
         this.ctx.bb.sta=GM.ST.DEATH;
         this._unregisterTimeSystem();
         this._send('gameover');
@@ -79,9 +79,9 @@ export class Player extends Role
     {
         if(this._dbg)
         {
-            dlog(T.ROLE)('-------------------- debug wait 0')
+            dlog(T.PLAYER)('-------------------- debug wait 0')
             await new Promise((res)=>{this._dbgRes=res;})
-            dlog(T.ROLE)('-------------------- debug wait 1')
+            dlog(T.PLAYER)('-------------------- debug wait 1')
         }
     }
 
@@ -185,9 +185,9 @@ export class Player extends Role
         // console.log(bb.path);
         if(!bb.path)
         {
-            dlog(T.ROLE)('-------------------- pause 0')
+            dlog(T.PLAYER)('-------------------- pause 0')
             await this._pause();
-            dlog(T.ROLE)('-------------------- pause 1')
+            dlog(T.PLAYER)('-------------------- pause 1')
         }
         
         if(bb.path)

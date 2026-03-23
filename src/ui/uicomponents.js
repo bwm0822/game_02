@@ -1053,6 +1053,7 @@ export function uInput(scene, config={})
     // 提供外界操作
     p.clearInput = ()=>{input._text.setText('');};
     p.getValue = ()=>{return input._text.text;};
+    p.setValue = (value)=>{return input._text.text=value;};
 
     return p;
 }

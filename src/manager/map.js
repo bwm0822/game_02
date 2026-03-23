@@ -15,7 +15,7 @@ import Door from '../items/door.js'
 import Bed from '../items/bed.js'
 import Point from '../items/point.js'
 import Item from '../items/item.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 
 
 class Map
@@ -276,7 +276,7 @@ class Map
         const key = (p.x>s.x?'r':p.x<s.x?'l':'')+
                     (p.y>s.y?'b':p.y<s.y?'t':'');
 
-        dlog()(p,s,key)
+        dlog(T.MAP)(p,s,key)
         const tbl = lut[key];
 
         const d = tbl.find(d=>this.getWeightByTile(tx+d.x,ty+d.y)===1);

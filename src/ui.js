@@ -54,11 +54,11 @@ function getRoot(obj)
 
 export default function createUI(scene)
 {
-    dlog()('createUI');
+    dlog(T.UI)('createUI');
     GM.w = scene.sys.canvas.width;
     GM.h = scene.sys.canvas.height;
     uiScene = scene;
-    dlog()('resolution:',GM.w, GM.h)
+    dlog(T.UI)('resolution:',GM.w, GM.h)
 
     PressService.bindToScene(scene);
     DragService.init(scene);
@@ -91,29 +91,10 @@ export default function createUI(scene)
 
     new UiChangeScene(scene);       // 17
 
-  
-
     // new UiTest(scene);
     UiChangeScene.show();
-    test1();
-    test2();
 }
 
-
-
-async function test1()
-{
-	dlog()('--- 1')
-  	await Promise.resolve(1);//new Promise((resolve)=>{resolve(true)});
-  	dlog()('--- 2')
-
-}
-
-function test2()
-{
-	dlog()('--- 3')
-
-}
 
 function setCamera(mode) 
 {

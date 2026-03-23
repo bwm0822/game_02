@@ -360,7 +360,7 @@ class View extends Phaser.GameObjects.Container
             .on('pointerout',()=>{
                 this._setOutline(false);
                 emit('out');
-                if(DEBUG.enable){debugDraw.bind(this)(DBG.MODE.CLR);}
+                if(DEBUG.enable){debugDraw.bind(this)(0);}
             })
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) 

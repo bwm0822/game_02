@@ -1,40 +1,45 @@
 //--------------------------------------------------
 // debug 用
+
+import ComponentBase from "phaser3-rex-plugins/plugins/utils/componentbase/ComponentBase";
+
 //--------------------------------------------------
 export const DBG = 
 {
     MODE: {
-        POINT   : 0b000001,
-        BODY    : 0b000010,
-        GRID    : 0b000100,
-        ZONE    : 0b001000,
-        SHAPE   : 0b010000,
-        TEXT    : 0b100000,
-        ALL     : 0b111111,
-        CLR     : 0b000000,
+        POINT   : 0b00_0001,
+        BODY    : 0b00_0010,
+        GRID    : 0b00_0100,
+        ZONE    : 0b00_1000,
+        SHAPE   : 0b01_0000,
+        TEXT    : 0b10_0000,
     },
 }
 
 export const T =
 {
-    NORMAL  : 0b000_0001,
-    UI      : 0b000_0010, 
-    AI      : 0b000_0100,
-    MAP     : 0b000_1000,
-    SCH     : 0b001_0000,
-    ROLE    : 0b010_0000,
+    NORMAL  : 0b0000_0000_0001,
+    UI      : 0b0000_0000_0010, 
+    AI      : 0b0000_0000_0100,
+    MAP     : 0b0000_0000_1000,
+    SCH     : 0b0000_0001_0000,
+    PLAYER  : 0b0000_0010_0000,
+    NPC     : 0b0000_0100_0000,
+    COMBAT  : 0b0000_1000_0000,
+    GO      : 0b0001_0000_0000,
+    SCENE   : 0b0010_0000_0000,
 }
 
 export let DEBUG = 
 {
     enable: false,          // 是否開啟 debug 模式
-    mode: DBG.MODE.ALL,     // 除錯模式
+    mode: -1,               // 除錯模式
     loc: true,              // 顯示座標及 weight
     rect : false,           // 顯示邊框
     path : true,            // 顯示 NPC 路徑
     log : true,     
-    filter: [],             // log filter 
-    tag: -1,
+    tag: T.NORMAL,
+    filter: '',             // log filter 
 }
 
 export function setDEBUG(value) {DEBUG=value;}

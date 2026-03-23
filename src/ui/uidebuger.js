@@ -181,15 +181,11 @@ export default class UiDebuger extends UiFrame
     ///////////////////////////////////////////////////
     page_Setting()
     {
-        const options_mode=
-        [
-            {text:'點', value:DBG.MODE.POINT},
-            {text:'實體', value:DBG.MODE.BODY},
-            {text:'格線', value:DBG.MODE.GRID},
-            {text:'區域', value:DBG.MODE.ZONE},
-            {text:'外框', value:DBG.MODE.SHAPE},
-            {text:'文字', value:DBG.MODE.TEXT},
-        ]
+        
+        const options_mode = Object.entries(DBG.MODE).map(([key, value]) => ({
+            text: key,
+            value: value
+        }));
 
         const options_tag = Object.entries(T).map(([key, value]) => ({
             text: key,
@@ -210,15 +206,9 @@ export default class UiDebuger extends UiFrame
             .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
             // .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
             .addRow(CHK('log', DEBUG, 'log'), 
-                    DD('標籤', DEBUG, 'tag', options_tag,{multi:true}))
-    }
-
-    setFilter(str)
-    {
-        DEBUG.filter = str.replace(/\s+/g, '')  // 去掉所有空白（含空格、tab、換行）
-                            .split(',')
-                            .filter(Boolean)    // 去除空的字串
-        dlog(T.UI)(DEBUG.filter)
+                    DD('標籤', DEBUG, 'tag', options_tag,{multi:true}),
+                    IN(DEBUG,'filter')
+                )
     }
 
     addRow(...options)
@@ -255,16 +245,18 @@ export default class UiDebuger extends UiFrame
         return p;
     }
 
-    textin(onenter)
+    textin(obj, key)
     {
         const config =
         {
             width: 200,
             height: 36,
-            onenter: onenter,
+            onenter: (value)=>{obj[key]=value;},
             btn:false,
         }
+
         const input=ui.uInput(this.scene, config);
+        input.setValue(obj[key]);
         return input;
     }
     

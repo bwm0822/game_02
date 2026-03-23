@@ -17,7 +17,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 import Role from './role.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 
 export class MPlayer extends Role
 {
@@ -71,7 +71,7 @@ export class MPlayer extends Role
         this.bb.wid=32;
         this.bb.hei=32;
 
-        dlog()(key,frame);
+        dlog(T.PLAYER)(key,frame);
 
         // 加入元件
         this.addCom(new ItemView(this.scene),{modify:false})
@@ -104,9 +104,9 @@ export class MPlayer extends Role
         // console.log(bb.path);
         if(!bb.path)
         {
-            dlog()('-------------------- pause 0')
+            dlog(T.PLAYER)('-------------------- pause 0')
             await this._pause();
-            dlog()('-------------------- pause 1')
+            dlog(T.PLAYER)('-------------------- pause 1')
         }
         
         if(bb.path)

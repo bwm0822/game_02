@@ -23,7 +23,7 @@ export class GameScene extends Scene
 
     init(data) 
     {
-        dlog()('[1] init');
+        dlog(T.SCENE)('[1] init');
         this._data = data;
     }
 
@@ -34,7 +34,7 @@ export class GameScene extends Scene
 
     async create ({diagonal,classType,weight})
     {
-        dlog()('[2] create')
+        dlog(T.SCENE)('[2] create')
         this._dbgPos = null;
         this._graphics = null;
         this._dbgPath = null;
@@ -68,9 +68,9 @@ export class GameScene extends Scene
 
     log()
     {
-        dlog()("Roles:", this.roles);
-        dlog()("Entities:", this.entities);
-        dlog()("gos:", this.gos);
+        dlog(T.SCENE)("Roles:", this.roles);
+        dlog(T.SCENE)("Entities:", this.entities);
+        dlog(T.SCENE)("gos:", this.gos);
     }
 
     initAmbient(amb)
@@ -173,7 +173,7 @@ export class GameScene extends Scene
     setCameraFollow(mode)
     {
         this._follow=true;
-        dlog()('setCameraFollow:',mode)
+        dlog(T.SCENE)('setCameraFollow:',mode)
         let offsetX=0,offsetY=0;
         if((mode&GM.CAM_LEFT_TOP)==GM.CAM_LEFT_TOP) {mode=GM.CAM_LEFT_TOP;}
         else {mode&=~GM.CAM_LEFT_TOP;}
@@ -210,12 +210,12 @@ export class GameScene extends Scene
         let pos;
         if(this._data.pos) {pos = this._data.pos}
         else {
-            dlog()('----- port=',this._data.port)
-            dlog()(this.gos)
+            dlog(T.SCENE)('----- port=',this._data.port)
+            dlog(T.SCENE)(this.gos)
             pos = this.gos[this._data.port].pts[0];
         }
 
-        dlog()('------------ pos=',pos)
+        dlog(T.SCENE)('------------ pos=',pos)
         new classType(this,pos.x,pos.y).init_runtime('wick').load();
 
         this.setCameraFollow(GM.CAM_CENTER);
@@ -254,11 +254,11 @@ export class GameScene extends Scene
 
         if (pointer.rightButtonDown())
         {
-            dlog()('right');
+            dlog(T.SCENE)('right');
         }
         else if (pointer.middleButtonDown())
         {
-            dlog()('middle');
+            dlog(T.SCENE)('middle');
         }
         else
         {
@@ -370,24 +370,21 @@ export class GameScene extends Scene
         this.roles.forEach(role=>role.save())
         TimeSystem.save();
         Record.saveGame();
-        dlog()('-------------------- chk1')
     }
 
     mainMenu()
     {
-        dlog()('------------------------ mainMenu')
+        dlog(T.SCENE)('------------------------ mainMenu')
         this.save();
         this.scene.stop('UI');
         this.scene.start('MainMenu');
         AudioManager.bgmPause();
         Ui.reset();
-        dlog()('-------------------- chk2')
-        
     }
 
     restart()
     {
-        dlog()('------------------------ restart')
+        dlog(T.SCENE)('------------------------ restart')
         Record.delete();
         this.scene.stop('UI');
         this.scene.start('MainMenu');

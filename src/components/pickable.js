@@ -95,8 +95,6 @@ export class COM_Pickable extends Com
         // 3.註冊(event)給其他元件或外部呼叫
         // 外部
         root.on(GM.PICKUP, this._pickup.bind(this));
-
-        dlog()('--------- root:',root.content)
     }
 
     save() {return {...this.pos,...this._content};}

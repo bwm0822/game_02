@@ -16,7 +16,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
 import QuestManager from '../manager/quest.js'
-import {dlog} from '../core/debug.js'
+import {T,dlog} from '../core/debug.js'
 
 let _dbg = true;
 
@@ -169,7 +169,7 @@ export class Npc extends Role
         if(bb.path)
         {
             // return;
-            dlog()('------------------ process move');
+            dlog(T.NPC)('------------------ process move');
             await this.move?.();
             if(bb.cACT.st==='reach')
             {
