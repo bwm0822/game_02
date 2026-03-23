@@ -213,19 +213,20 @@ export default class QuestManager
         qD.conds.forEach(() => {conds.push({cur:0})});
         this.quests.opened[id] = {conds:conds}
         this.save();
+        this.notify({cat:GM.INV})
         // let quest = DB.quest(id);
         // QuestManager.process(quest.act);
     }
 
-    static process(act)
-    {
-        switch(act.type)
-        {
-            case 'add': 
-                Record.add(act.map,act.id,act.x,act.y);
-                break;
-        }
-    }
+    // static process(act)
+    // {
+    //     switch(act.type)
+    //     {
+    //         case 'add': 
+    //             Record.add(act.map,act.id,act.x,act.y);
+    //             break;
+    //     }
+    // }
 
     static query(id)
     {        

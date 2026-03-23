@@ -1,5 +1,5 @@
 import {Scene} from 'phaser'
-import createUI from '../ui.js'
+import createUI from '../ui/ui.js'
 import {GM} from '../core/setting.js'
 import UiCursor from '../ui/uicursor.js'
 import UiDragged from '../ui/uidragged.js'
