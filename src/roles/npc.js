@@ -79,15 +79,16 @@ export class Npc extends Role
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    init_prefab(modify=true)
+    init_prefab(id,modify=true)
     {     
-        if(!super.init_prefab()) {return;}
+        if(!super.init_prefab(id)) {return;}
+        this._registerTimeSystem();     // 註冊 TimeSystem
 
-        this._registerTimeSystem();         // 註冊 TimeSystem
-
-        this.bb.meta = DB.role(this.bb.id); // 取得roleD，放入bb.meta，view元件會用到
-        this.bb.isStatic = false;           // 設成 dynamic body，view 元件會參考
-        this.bb.interactive = true;         // 設成 可互動，view 元件會參考
+        // 設定 bb
+        const{bb}=this.ctx;
+        bb.meta = DB.role(this.bb.id);  // 取得roleD，放入bb.meta，view元件會用到
+        bb.isStatic = false;            // 設成 dynamic body，view 元件會參考
+        bb.interactive = true;          // 設成 可互動，view 元件會參考
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:modify})
@@ -123,11 +124,7 @@ export class Npc extends Role
         
     }
 
-    init_runtime(id)
-    {
-        this.bb.id = id;                // 將 id 存到 bb.id
-        this.init_prefab(false); 
-    }
+    init_runtime(id) { this.init_prefab(id,false); }
 
     async cmd_move()
     {

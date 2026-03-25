@@ -244,8 +244,8 @@ export default class UiInfo extends UiFrame
     {
         const scene = this.scene;
         let text='';
-        elm.qs.forEach((q)=>{text=`[color=yellow]${q.title()}[/color]${q.cond()}`;})
-        ui.uBbc.call(this,scene,{text:text,wrapWidth:150,ext:{align:'left'}}); 
+        elm.qs.forEach((q)=>{text+=`[color=yellow]${q.title()}[/color]${q.cond()}\n\n`;})
+        ui.uBbc.call(this,scene,{text:text,wrapWidth:250,ext:{align:'left'}}); 
         this.setW(0)  
     }
 

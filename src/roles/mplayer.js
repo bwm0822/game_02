@@ -56,21 +56,20 @@ export class MPlayer extends Role
 
     init_runtime(id)
     {   
-        this.bb.id = id;
-        if(!super.init_prefab()) {return;}
-
-        this._registerTimeSystem();     // 註冊 TimeSystem
+        if(!super.init_prefab(id)) {return;}
+        this._registerTimeSystem(); // 註冊 TimeSystem
         
-        this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
-        this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
-        this.bb.interactive = false;    // 設成 可互動，view 元件會參考
-
+        // 設定 bb
+        const{bb}=this.ctx;
+        bb.meta = DB.role(bb.id);   // 取得 roleD，放入bb，view 元件會用到
+        bb.isStatic = false;        // 設成 dynamic body，view 元件會參考
+        bb.interactive = false;     // 設成 可互動，view 元件會參考
+        // 取得 圖像
         const [key,frame] = 'buffs:20'.split(':');
-        this.bb.key = key;
-        this.bb.frame = frame;
-        this.bb.wid=32;
-        this.bb.hei=32;
-
+        bb.key = key;
+        bb.frame = frame;
+        bb.wid = 32;
+        bb.hei = 32;
         dlog(T.PLAYER)(key,frame);
 
         // 加入元件

@@ -190,10 +190,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 處理傳遞給 GameObject 的參數
     _processBB()
     {
-        if(this.bb.json_pts)
-        {
-            this._pts = JSON.parse(this.bb.json_pts);
-        }
+        if(this.bb.json_pts) {this._pts = JSON.parse(this.bb.json_pts);}
     }
 
     // 取得 gameObject
@@ -353,18 +350,19 @@ export class GameObject extends Phaser.GameObjects.Container
     //------------------------------------------------------
     // mehod
     //------------------------------------------------------
-    init_prefab() 
+    init_prefab(id) 
     {
         if(this._isRemoved()) { return false; }
         else
         {
             if(DEBUG.rect) {this.debugDraw();}
 
-            this._processBB();  // 處理傳遞給 GameObject 的參數            
-            this._addToList();  // 加入 List
+            this._processBB();      // 處理傳遞給 GameObject 的參數            
+            this._addToList();      // 加入 List
 
-            // 新增 property
-            // 狀態 : this._sta，this.bb.sta 指向 this._sta
+            // 1) 設定 bb.id，在 bb.sta 之前設定 bb.id，dlog() 才可顯示 id
+            if(id) {this.bb.id=id;} // 設定 bb.id
+            // 2) 新增 bb.sta(狀態) : this._sta，this.bb.sta 指向 this._sta
             this.addP('sta',{src:this.bb});
             this.bb.sta = GM.ST.IDLE;
 

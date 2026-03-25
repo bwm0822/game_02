@@ -161,6 +161,7 @@
     },
     "job": "innkeeper",
     "gold": 200,
+    "style": "weak",
     "body": {
       "sprite": "melanie",
       "scale": 0.25,
@@ -430,6 +431,7 @@
     },
     "job": "trader",
     "gold": 200,
+    "style": "weak",
     "body": {
       "sprite": "melanie",
       "scale": 0.25,

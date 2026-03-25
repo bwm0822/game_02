@@ -85,9 +85,9 @@ export class Player extends Role
         }
     }
 
-    init_prefab()
+    init_prefab(id)
     {     
-        if(!super.init_prefab()) {return;}
+        if(!super.init_prefab(id)) {return;}
         this._registerTimeSystem();             // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id);     // 取得 roleD，放入 bb，view 元件會用到
@@ -106,15 +106,15 @@ export class Player extends Role
     }
 
     init_runtime(id)
-    {   
-        this.bb.id = id;
-        
-        if(!super.init_prefab()) {return;}
-        this._registerTimeSystem();    // 註冊 TimeSystem
+    {           
+        if(!super.init_prefab(id)) {return;}
+        this._registerTimeSystem(); // 註冊 TimeSystem
 
-        this.bb.meta = DB.role(id);     // 取得 roleD，放入bb，view 元件會用到
-        this.bb.isStatic = false;       // 設成 dynamic body，view 元件會參考
-        this.bb.interactive = true;     // 設成 可互動，view 元件會參考
+        // 設定 bb
+        const{bb}=this.ctx;
+        bb.meta = DB.role(bb.id);   // 取得 roleD，放入bb，view 元件會用到
+        bb.isStatic = false;        // 設成 dynamic body，view 元件會參考
+        bb.interactive = true;      // 設成 可互動，view 元件會參考
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:false})

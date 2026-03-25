@@ -4,7 +4,7 @@ import {T,dlog} from '../core/debug.js'
 //--------------------------------------------------
 // 說明 : 載入 tilemap 所需的資料
 // 功能 :
-//  1. 處理 phaser3 tilemap 無法處理的 template(*.tj)及 外部 tileset(*.tsj)
+//  1. 處理 phaser3 tilemap 無法處理的 template(*.tj) 及 外部 tileset(*.tsj)
 //  2. 分析 tilemap，自動載入所需的資料
 //  3. 記錄已經載入的資料，不浪費時間重複載入
 //--------------------------------------------------
@@ -209,7 +209,7 @@ export default class TileMap
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    // 載入 tilemap 所需許的資料
+    // 載入 tilemap 所需要的資料
     static async load(scene, mapName)
     {
         if(this._isMaploaded(mapName)) {return;}

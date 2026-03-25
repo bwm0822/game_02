@@ -70,7 +70,6 @@ class StateMachine
     set(s) { this.state = s; }
 }
 
-
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : ai
@@ -78,11 +77,13 @@ class StateMachine
 //  1. 控制 NPC 的行為
 //  2. 透過 bb.cAI 來傳遞訊息
 //--------------------------------------------------
-const wLUT=
+// 行為權重表
+const wTBL =
 {
     weak    : {flee:2.0, attack:1.0, idle:1.0},   
-    power   : {flee:1.0, attack:2.0, idle:1.0},
+    default : {flee:1.0, attack:2.0, idle:1.0},
 }
+
 export class COM_AI extends Com
 {
     constructor() 
@@ -106,15 +107,15 @@ export class COM_AI extends Com
     //------------------------------------------------------
     _init()
     {
-        // 行為清單（可自由增刪/調整權重）
-        const{bb}=this.ctx;
-        const w=wLUT['weak'];
-        dlog(T.AI,bb.id)(bb.id,w);
+        // 取得 behavior 權重
+        const{bb} = this.ctx;
+        const w = this._getBehWeight(bb);
 
+        // 行為清單（可自由增刪/調整權重）
         this.behaviors = 
         [
             // new BehDrinkPotion({ weight: 1.0 }),
-            new BehFlee({ weight: w.flee }),
+            new BehFlee({weight:w.flee}),
             new BehAttack({weight:w.attack}), 
             new BehIdle({weight:w.idle}),
             // new BehChase({minInterval:2}),
@@ -123,6 +124,8 @@ export class COM_AI extends Com
             new BehSchedule(),
         ];
     }
+
+    _getBehWeight(bb) {return wTBL[bb.meta.style]??wTBL.default;}
 
     _preUpdateBlackboard(ctx) 
     {
