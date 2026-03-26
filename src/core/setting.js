@@ -314,9 +314,10 @@ export const GM =
     ICE : "ice",            // 冰凍  
     POISON : "poison",      // 毒藥
 
-    // 生存屬性
-    SURVIVAL : ["hp", "hunger", "thirst"],
+    // 生命
     HP : 'hp',
+    // 生存相關屬性
+    SURVIVAL : ["hunger", "thirst"],
     HUNGER : 'hunger',
     THIRST : 'thirst',
 

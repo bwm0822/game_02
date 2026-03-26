@@ -28,14 +28,15 @@ export class COM_Favor extends Com
 
     _getFavor(id) {return this._favors[id] ?? GM.FAV.NEUTRAL;}
 
-    _update()
+    _update(dt=1)
     {
-        // 每回合增加 1 好感度直到 50 為止
+        // 每回合增加 0.1 好感度直到 50 為止
+        const fav=0.1*dt;
         for(const id in this._favors)
         {
             if(this._favors[id]<GM.FAV.NEUTRAL)
             {
-                this._favors[id] = Math.min( this._favors[id]+0.1, GM.FAV.NEUTRAL);
+                this._favors[id] = Math.min( this._favors[id]+fav, GM.FAV.NEUTRAL);
             }
         }
     }

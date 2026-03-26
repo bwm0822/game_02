@@ -1,6 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
+import {dlog} from '../core/debug.js'
 
 export default class UiProfile extends UiFrame
 {
@@ -113,12 +114,13 @@ export default class UiProfile extends UiFrame
         switch(this._tab)
         {
             case 'states': 
-                for(const key of GM.SURVIVAL)
+                const survival=this.owner.bb.meta.survival;
+                const keys = survival?[GM.HP,...GM.SURVIVAL]:[GM.HP]
+                for(const key of keys)
                 {
                     const max = this.total[key+'Max'];
                     const val= this.total.states[key];
                     const value = max ? `${val}/${max}` : `${Math.floor(val)}%`;
-
                     addItem(key,value)
                 }
                 break;

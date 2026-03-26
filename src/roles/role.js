@@ -57,10 +57,11 @@ export default class Role extends GameObject
     use(ent)
     {
         // console.log(ent.content, ent.dat)
+
         const{root}=this.ctx;
 
         const list=[GM.TIMES, GM.CAPACITY];
-        let key = Object.keys(ent.dat).find(key=>list.includes(key));
+        const key = Object.keys(ent.dat).find(key=>list.includes(key));
 
         if(!key || ent.content[key]>0)
         {
@@ -68,6 +69,8 @@ export default class Role extends GameObject
                 switch(eff.stat)
                 {
                     case GM.HP: root.heal?.(eff); break;
+                    case GM.HUNGER: root.eat?.(eff); break;
+                    case GM.THIRST: root.drink?.(eff); break;
                 }
             })
 

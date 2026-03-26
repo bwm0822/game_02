@@ -187,7 +187,11 @@ export class COM_Stats extends Com
             [GM.CON] : 5, [GM.LUK] : 5,
         }
 
-        this._states = {[GM.HP]:_baseHPMAX(this.baseStats)};
+        this._states = {
+            [GM.HP]:_baseHPMAX(this.baseStats),
+            [GM.HUNGER]:0,  // max:100%
+            [GM.THIRST]:0,  // max:100%
+        };
         this._actives = [];
         this._dirty = true;  // 標記屬性需要重算
     }
@@ -291,18 +295,7 @@ export class COM_Stats extends Com
         this._states[GM.HP]===0 && emit('ondead');
     }
 
-    // amount = number or {a,m}
-    _heal(amount)
-    {
-        if(typeof amount!=='number')
-        {
-            amount = (amount.a??0) + (amount.m??0)*this._total[GM.HPMAX];
-        }
-        const {root}=this.ctx;
-        this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
-        root.popup?.(`+${amount}`, '#0f0', '#000');
-        // console.log(`${this.name} 回復 ${amount} 點生命`);
-    }
+    
 
     _addProcs(procs)
     {
@@ -348,10 +341,61 @@ export class COM_Stats extends Com
 
     }
 
-    _drink()
+    _updateStates()
     {
-        dlog()('drink')
+        const{bb}=this.ctx;
+        if(bb.meta.survival)
+        {
+            this._states[GM.HUNGER]=Math.min(this._states[GM.HUNGER]+0.05,100);
+            this._states[GM.THIRST]=Math.min(this._states[GM.THIRST]+0.25,100);
+        }
     }
+
+    _update(dt=1)
+    {
+        while(dt>0)
+        {
+            this._processProcs();
+            this._updateStates();
+            dt--;
+        }
+    }
+
+    // amount = number or {a,m}
+    _heal(amount)
+    {
+        if(typeof amount!=='number')
+        {
+            amount = (amount.a??0) + (amount.m??0)*this._total[GM.HPMAX];
+        }
+        const {root}=this.ctx;
+        this._states[GM.HP] = Math.min(this._total[GM.HPMAX], this._states[GM.HP]+amount); 
+        root.popup?.(`+${amount}`, '#0f0', '#000');
+        // console.log(`${this.name} 回復 ${amount} 點生命`);
+    }
+
+    _eat(amount)
+    {
+        if(typeof amount!=='number')
+        {
+            amount = (amount.a??0) + (amount.m??0)*100;
+        }
+        const {send,bb}=this.ctx;
+        this._states[GM.HUNGER] = Math.max(0, this._states[GM.HUNGER]+amount); 
+        send('msg',`${bb.id} ${amount}% 飢餓`)
+    }
+
+    _drink(amount=-50)
+    {
+        if(typeof amount!=='number')
+        {
+            amount = (amount.a??0) + (amount.m??0)*100;
+        }
+        const {send,bb}=this.ctx;
+        this._states[GM.THIRST] = Math.max(0, this._states[GM.THIRST]+amount);
+        send('msg',`${bb.id} ${amount}% 口渴`)
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -386,7 +430,7 @@ export class COM_Stats extends Com
         root.setDirty = this._setDirty.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('onupdate', this._processProcs.bind(this) );
+        root.on('onupdate', this._update.bind(this) );
 
         // 計算總屬性
         this._getTotalStats();

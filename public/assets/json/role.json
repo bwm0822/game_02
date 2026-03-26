@@ -8,6 +8,7 @@
     },
     "job": "ranger",
     "gold": 100,
+    "survival": true,
     "body": {
       "sprite": "body-man",
       "scale": 0.25,

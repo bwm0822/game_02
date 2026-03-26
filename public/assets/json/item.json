@@ -44,6 +44,13 @@
     "cat": "CAT_FOOD",
     "icon": "icons:241",
     "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "hunger",
+        "m": 0.1
+      }
+    ],
     "useable": true,
     "cook": {
       "id": "cooked_meat"
@@ -61,6 +68,13 @@
     "cat": "CAT_FOOD",
     "icon": "icons:242",
     "gold": 15,
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "hunger",
+        "m": 0.2
+      }
+    ],
     "useable": true,
     "tw": {
       "lab": "熟肉",
@@ -75,6 +89,13 @@
     "cat": "CAT_FOOD",
     "icon": "icons:259",
     "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "hunger",
+        "m": 0.1
+      }
+    ],
     "useable": true,
     "tw": {
       "lab": "生魚",
@@ -89,6 +110,13 @@
     "cat": "CAT_FOOD",
     "icon": "icons:260",
     "gold": 15,
+    "effects": [
+      {
+        "scope": "self",
+        "stat": "hunger",
+        "m": 0.2
+      }
+    ],
     "useable": true,
     "make": {
       "items": {
@@ -479,8 +507,8 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "hp",
-        "m": 0.1
+        "stat": "thirst",
+        "m": -0.5
       }
     ],
     "useable": true,
