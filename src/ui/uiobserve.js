@@ -1,7 +1,7 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import {Block} from './uiclass.js'
+import {Block, Effect} from './uiclass.js'
 
 export default class UiObserve extends UiFrame
 {
@@ -109,8 +109,8 @@ export default class UiObserve extends UiFrame
             }
             const fix=ui.uFix.call(content,scene,config);
 
-            this.owner.actives.forEach(effect=>{
-                if(effect.icon){fix.add(new Block(this.scene,size,size,effect));}
+            this.owner.actives.forEach(eff=>{
+                if(eff.icon||eff.tcon){fix.add(new Effect(this.scene,size,size,eff));}
             })
         }
 

@@ -130,9 +130,9 @@ export default class UiInfo extends UiFrame
 
     addActive(elm)
     {
-        const proc = elm.dat;
+        const eff = elm.dat;
         ui.uDes.call(this,this.scene,{
-                    text:Utility.fmt_Active(proc),
+                    text:Utility.fmt_Active(eff),
                     color:GM.COLOR_GRAY})
         return this;
     }
@@ -216,10 +216,10 @@ export default class UiInfo extends UiFrame
 
     ifActive(elm)
     {
-        let tag = elm.dat.tag;
         const scene=this.scene;
+        const id = elm.dat.id;
 
-        ui.uBbc.call(this,scene,{text:tag.lab()});
+        ui.uBbc.call(this,scene,{text:id.lab()});
         ui.uDiv.call(this,scene);
         this.addActive(elm)
             .setW(WIDTH)
@@ -249,11 +249,11 @@ export default class UiInfo extends UiFrame
         this.setW(0)  
     }
 
-    update(type, elm)
+    update(style, elm)
     {
-        this.removeAll(true)
+        this.removeAll(true);
 
-        switch(type)
+        switch(style)
         {
             case UI.INFO.SLOT:
                 if(typeof elm.dat === 'object') {this.ifSlot(elm);}
@@ -317,13 +317,13 @@ export default class UiInfo extends UiFrame
         return {x,y,l,r,t,b,m};
     }
 
-    show(type, elm, cam)
+    show(style, elm, cam)
     {
         super.show();
         let b=this.getBound(elm, cam);
         let [x,y]=[b.x,b.y];
         
-        switch(type)
+        switch(style)
         {
             case UI.INFO.BTN:
             case UI.INFO.ACTIVE.TB:
@@ -340,14 +340,14 @@ export default class UiInfo extends UiFrame
                 break;
         }
 
-        this.update(type, elm);
-        this.setPosition(x,y).rePos(type, b);
+        this.update(style, elm);
+        this.setPosition(x,y).rePos(style, b);
         this.layout();
     }
 
-    rePos(type, b)
+    rePos(style, b)
     {
-        switch(type)
+        switch(style)
         {
             case UI.INFO.NODE:
                 if(this.top<b.m.top) {this.setOrigin(0.5,0);this.y=b.b;}

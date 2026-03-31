@@ -19,16 +19,17 @@ function _checkHit(aStats, dStats, skill)
 export function computeDamage(attacker, defender, skill={}) 
 {
     const cond = skill?.type??'attack';
-    const aStats = attacker.getTotalStats({stage:'atk', skill:skill});
-    const dStats = defender.getTotalStats({attacker:aStats});
-    dlog(T.COMBAT)(aStats,dStats)
+    const aStats = attacker.getTotalStats({condition:cond, skill:skill});
+    const dStats = defender.getTotalStats({fromEnemy:aStats.enemy});
+    // console.log(aStats,dStats)
 
     // 計算是否命中
     const ret = _checkHit(aStats, dStats, skill);
     if(ret) {return ret;}
 
-    // 計算 effs
-    defender.addEffs(aStats.effs, 'target', 'hit');
+    // 計算 Procs
+    let procs = [...aStats.procs.enemy]
+    procs.forEach((proc)=>{defender.addProcs(proc);});
 
     // 計算傷害
     let type = GM.HIT;
@@ -53,9 +54,9 @@ export function computeDamage(attacker, defender, skill={})
     damage *= 1 - resist;
 
     // 5. 計算暴擊
-    if (Math.random() < aStats[GM.CRI]) 
+    if (Math.random() < aStats[GM.CRITR]) 
     {
-        damage *= aStats[GM.CRD];
+        damage *= aStats[GM.CRITD];
         dlog(T.COMBAT)(`💥 ${attacker.name} 暴擊！`);
         type = GM.CRIT;
     }
@@ -64,10 +65,8 @@ export function computeDamage(attacker, defender, skill={})
     damage *= 0.95 + Math.random() * 0.1;
     damage = Math.round(Math.max(1, damage))
 
-    attacker.addEffs(aStats.effs, 'self', 'hit', {dmg:damage});
 
-
-    return {amount:-damage, type:type, attacker:attacker};
+    return {amount:damage, type:type, attacker:attacker};
 
 }
 

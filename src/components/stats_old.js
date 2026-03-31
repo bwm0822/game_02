@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js';
 import DB from '../data/db.js';
-import {T,dlog} from '../core/debug.js'
+import {dlog} from '../core/debug.js'
 import Utility from '../core/utility.js';
 
 
@@ -11,9 +11,22 @@ function _baseDEF(base) {return (base[GM.CON] || 0);}                        // 
 function _baseACC(base) {return 1;}                                          // 準確 = 1
 function _baseEVA(base) {return (base[GM.DEX] || 0) * 0.01;}                 // 閃避 = DEX x 0.01
 function _baseCRI(base) {return Math.min(0.5, (base[GM.DEX] || 0) * 0.01);}  // 每點 DEX +1% 暴擊，上限 50%
-function _baseCRD(base) {return 1.5;}                                       // 基礎暴擊傷害倍率 = 1.5
+function _baseCRID(base) {return 1.5;}                                       // 基礎暴擊傷害倍率 = 1.5
 function _baseRES(base) {return { [GM.FIRE_RES]: 0, [GM.ICE_RES]: 0, [GM.POISON_RES]: 0, [GM.PHY_RES]: 0 };}
 
+function _initMod(fromEnemy)
+{
+    const mod={};
+    // 基礎屬性(加),基礎屬性(乘),次級屬性(加),次級屬性(乘)
+    mod.self = fromEnemy ?? { basA:{}, basM:{}, derA:{}, derM:{} };
+    mod.enemy = { basA:{}, basM:{}, derA:{}, derM:{} };
+    return mod;
+}
+
+function _initProcs(fromEnemy)
+{
+    return {self:[], enemy: fromEnemy ? [...fromEnemy.procs] : [] };
+}
 
 function _derivedStats(base, meta) 
 {
@@ -36,7 +49,7 @@ function _derivedStats(base, meta)
     
     // 3) Critical
     if (base[GM.CRI]===undefined) {out[GM.CRI] = _baseCRI(base);}             
-    if (base[GM.CRD]===undefined) {out[GM.CRD] = _baseCRD(base);}                                                
+    if (base[GM.CRID]===undefined) {out[GM.CRID] = _baseCRID(base);}                                                
 
     // 4) Resistances
     if (base.resists===undefined) {out.resists = _baseRES(base);}
@@ -44,22 +57,23 @@ function _derivedStats(base, meta)
     return out;
 }
 
-function _calcMods(eff, mods, {_scope, _stage, _type}={})
+function _calcMods(eff, mods, condition)
 {
-    const {scope, stage, key, a, m, type} = eff;
-    if (scope && scope !== _scope) {return;} // 條件不符，跳過
-    if (stage && stage !== _stage) {return;} // 條件不符，跳過
-    if (_type && type !== _type) {return;} // 條件不符，跳過
+    const { scope, stat, a, m, cond } = eff;
+    const o = scope!=='enemy' ? mods.self : mods.enemy;
+    if (cond && cond !== condition) {return;} // 條件不符，跳過
 
-    if(GM.BASE.includes(key)) // 基礎屬性
+    // console.log(scope, stat, a, m, cond)
+
+    if(GM.BASE.includes(stat)) // 基礎屬性
     {        
-        if(a) { mods.basA[key] = (mods.basA[key] || 0) + a };
-        if(m) { mods.basM[key] = (mods.basM[key] || 0) + m };
+        if(a) { o.basA[stat] = (o.basA[stat] || 0) + a };
+        if(m) { o.basM[stat] = (o.basM[stat] || 0) + m };
     }
     else    // 次級屬性、抗性
     {
-        if(a) { mods.derA[key] = (mods.derA[key] || 0) + a };
-        if(m) { mods.derM[key] = (mods.derM[key] || 0) + m };
+        if(a) { o.derA[stat] = (o.derA[stat] || 0) + a };
+        if(m) { o.derM[stat] = (o.derM[stat] || 0) + m };
     }
 }
 
@@ -85,44 +99,6 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
 
     return meta;
 }
-
-function _getMods(bb, attacker, skill, stage)
-{
-    const mods={ basA:{}, basM:{}, derA:{}, derM:{} }
-
-    // 1. from equips
-    bb.equips.forEach(eq=>{
-        if(!eq) {return;}
-        const dat = DB.item(eq.id??eq);
-        dat?.mods?.forEach(eff=>_calcMods(eff, mods,{_scope:'self'}))
-        dat?.effects?.forEach(eff=>_calcMods(eff, mods, {_scope:'self', _stage:stage, _type:'mod'}));
-    });
-
-    // 2. from active effects
-    bb.actives.forEach(eff=>_calcMods(eff, mods));
-
-    // 3. from attacker
-    attacker?.effs.forEach(eff=>_calcMods(eff, mods, {_scope:'target', _stage:'atk', _type:'mod'}));
-
-    return mods;
-}
-
-function _getEffs(bb, skill)
-{
-    const effs=[];
-    // from equips
-    bb.equips.forEach(eq=>{
-        if(!eq) {return;}
-        const dat = DB.item(eq.id??eq);
-        dat?.effects?.forEach(eff=>effs.push(eff));
-    });
-
-    // from skill
-    skill?.effects?.forEach(eff=>effs.push(eff));
-
-    return effs;
-}
-
     
 function _modsFromEquips(equips, mods, condition)
 {
@@ -183,32 +159,14 @@ function _modsFromUsingSkill(skill, mods)
 
 function _adjustBase(base, mods)
 {
-    for (const [k, v] of Object.entries(mods.basA)) {base[k] = (base[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.basM)) {base[k] = (base[k] || 0) * (1 + v);}
+    for (const [k, v] of Object.entries(mods.self.basA)) {base[k] = (base[k] || 0) + v;}
+    for (const [k, v] of Object.entries(mods.self.basM)) {base[k] = (base[k] || 0) * (1 + v);}
 }
 
 function _adjustDerived(total, mods)
 {
-    for (const [k, v] of Object.entries(mods.derA)) {total[k] = (total[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.derM)) {total[k] = (total[k] || 0) * (1 + v);}
-}
-
-function _getStats(base, mods, meta, effs)
-{
-    // 1. adjust Base
-    for (const [k, v] of Object.entries(mods.basA)) {base[k] = (base[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.basM)) {base[k] = (base[k] || 0) * (1 + v);}
-
-    // 2. get Derived from adjusted Base
-    const derived = _derivedStats(base,meta);
-
-    // 3. adjust Derived
-    for (const [k, v] of Object.entries(mods.derA)) {derived[k] = (derived[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.derM)) {derived[k] = (derived[k] || 0) * (1 + v);}
-
-    // 4. 合併：base 值優先，derived 補空位
-    return {...derived,...base, effs};
-
+    for (const [k, v] of Object.entries(mods.self.derA)) {total[k] = (total[k] || 0) + v;}
+    for (const [k, v] of Object.entries(mods.self.derM)) {total[k] = (total[k] || 0) * (1 + v);}
 }
 
 
@@ -233,10 +191,9 @@ export class COM_Stats extends Com
             [GM.HP]:_baseHPMAX(this.baseStats),
             [GM.HUNGER]:0,  // max:100%
             [GM.THIRST]:0,  // max:100%
-            [GM.STUN]: false,
         };
-        this._actives = [];     // 作用中的 effects
-        this._dirty = true;     // 標記屬性需要重算
+        this._actives = [];
+        this._dirty = true;  // 標記屬性需要重算
     }
 
     get tag() { return 'stats'; }
@@ -247,52 +204,29 @@ export class COM_Stats extends Com
     //------------------------------------------------------
     _setDirty() {this._dirty = true;}
 
-
-    _getTotalStats({attacker, stage, skill}={})
+    _getTotalStats({fromEnemy, condition, skill}={})
     {
-        // stage: attack/hit
+        // console.log('-------- getTotalStats',fromEnemy, condition, skill);
+        // console.trace();
 
         // 有參數傳入，強制重算
-        if(attacker || stage || skill) {this._dirty = true;} 
+        if(fromEnemy || condition || skill) {this._dirty = true;} 
         // 已經是最新的，直接回傳
         if(!this._dirty) {return this._total;} 
         // 重算後，標記為最新
         this._dirty = false; 
 
         const {bb} = this.ctx;
+
+        // 初始化 mod
+        const mods = _initMod(fromEnemy?.mods);
+        const procs = _initProcs(fromEnemy?.procs);
         
         // 取得裝備基本屬性，如:攻擊、防禦、攻擊類型、距離...等
         const meta = _metaOfEquips(bb.equips);
 
         // 1) 淺層拷貝 [基礎屬性]
         const base = {...this.baseStats};
-
-        // 2) 計算 [裝備/技能] mods
-        dlog(T.NORMAL,bb.id)('stage:', stage,'attacker:', attacker);
-        const mods = _getMods(bb, attacker, skill, stage);
-
-        // 3) 取得 [裝備/技能] effs
-        const effs = _getEffs(bb, skill, stage);
-
-        // 6) 取得 stats
-        const stats = _getStats(base, mods, meta, effs);
-
-        // 10) 最後合併狀態，並確保當前生命值不超過最大值
-        this._states[GM.HP] = Math.min(stats[GM.HPMAX], this._states[GM.HP]);
-        stats.states = this._states;
-        
-        // 11) 儲存 stats
-        this._total = stats;
-
-        dlog(T.NORMAL,bb.id)(mods, effs, stats);
-        
-        return stats;
-
-
-
-
-
-
 
         // 2) 計算 [裝備] 加成
         _modsFromEquips(bb.equips, mods, condition);
@@ -341,8 +275,8 @@ export class COM_Stats extends Com
         switch(dmg.type)
         {
             case GM.CRI:
-                root.popup?.(`${'暴擊'} ${dmg.amount}`, '#f00', '#fff');
-                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount); 
+                root.popup?.(`${'暴擊'} -${dmg.amount}`, '#f00', '#fff');
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
@@ -352,14 +286,16 @@ export class COM_Stats extends Com
                 root.popup?.(GM.MISS.lab(), '#0f0', '#000');
                 break;
             default:
-                root.popup?.(dmg.amount, '#f00', '#fff');
-                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount); 
+                root.popup?.(-dmg.amount, '#f00', '#fff');
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]-dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
 
         emit('damage');
         this._states[GM.HP]===0 && emit('ondead');
     }
+
+    
 
     _addProcs(procs)
     {
@@ -405,76 +341,6 @@ export class COM_Stats extends Com
 
     }
 
-    _addEffs(effs,scope,stage,ctx)
-    {
-        effs.forEach(eff=>{
-            if(eff.type==='mod') {return;}                  // mod，跳過
-            if(eff.scope && eff.scope!==scope) {return;}    // scope 條件不符，跳過
-            if(eff.stage && eff.stage!==stage) {return;}    // stage 條件不符，跳過
-            if(eff.type === 'action')
-            {
-                if(eff.id==='lifesteal')
-                {
-                    const heal = Math.floor(ctx.dmg * (eff.m ?? 0))  ;
-                    this._heal(heal);
-                }
-            }
-            else
-            {
-                const { stage, scope, ...rest} = eff;
-                this._actives.push({...rest,remaining:eff.dur});
-                if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
-            }
-        });
-    }
-
-    _processEffs()
-    {
-        const{root}=this.ctx;
-
-        // 1. 每回合開始先清除眩暈狀態，確保角色不會永久眩暈
-        this._states[GM.STUN] = false;
-        root.pop?.();
-
-        // 2. 處理作用中的效果
-        this._actives.forEach((eff)=>{
-            if (eff.type === GM.DOT) 
-            {
-                let dmg = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
-                if (eff.elm) 
-                {
-                    const resist = this._total.resists?.[RESIST_MAP[eff.elm]] || 0;
-                    dmg *= 1 - resist;
-                }
-                this._takeDamage({amount:dmg});
-            }
-            else if (eff.type === GM.HOT) 
-            {
-                const heal = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
-                this._heal(heal);
-            }
-            else if (eff.id === 'stun')
-            {
-                // 眩暈：跳過下一次行動
-                root.pop?.('💫',{duration:0});
-                this._states[GM.STUN] = true;
-            }
-            eff.remaining -= 1;
-        });
-
-        // 移除過期效果
-        const{bb}=this.ctx;
-        this._actives = this._actives.filter(eff => {
-            if (eff.remaining <= 0) {
-                dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
-                if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
-                return false;
-            }
-            return true;
-        });
-
-    }
-
     _updateStates()
     {
         const{bb}=this.ctx;
@@ -489,10 +355,7 @@ export class COM_Stats extends Com
     {
         while(dt>0)
         {
-            // this._processProcs();
-            const{bb}=this.ctx;
-            dlog(T.NORMAL,bb.id)('update');
-            this._processEffs();
+            this._processProcs();
             this._updateStates();
             dt--;
         }
@@ -558,10 +421,8 @@ export class COM_Stats extends Com
         // this.addP(root, 'isAlive', {get:()=>this._states[GM.HP]>0});
         this.addRt('total', {get:this._getTotalStats.bind(this)});
         this.addRt('actives');
-        this.addBB('actives');
         this.addRt('isAlive', {get:()=>this._states[GM.HP]>0});
         root.addProcs = this._addProcs.bind(this);
-        root.addEffs = this._addEffs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);
         root.drink = this._drink.bind(this);

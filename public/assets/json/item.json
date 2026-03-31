@@ -146,10 +146,65 @@
     "atk": 15,
     "effects": [
       {
-        "cond": "attack",
+        "stage": "atk",
         "scope": "self",
-        "stat": "atk",
-        "m": 0.05
+        "type": "mod",
+        "key": "acc",
+        "m": 0.1
+      },
+      {
+        "stage": "atk",
+        "scope": "target",
+        "type": "mod",
+        "key": "eva",
+        "m": -0.1
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "dot",
+        "a": -1,
+        "dur": 3,
+        "id": "poison",
+        "tcon": "🩸"
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "dot",
+        "m": -0.1,
+        "dur": 3,
+        "id": "fire",
+        "tcon": "🔥"
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "debuff",
+        "chance": 0.5,
+        "dur": 1,
+        "id": "stun",
+        "tcon": "💫"
+      },
+      {
+        "stage": "hit",
+        "scope": "self",
+        "type": "action",
+        "chance": 0.25,
+        "key": "hp",
+        "m": 0.25,
+        "id": "lifesteal"
+      },
+      {
+        "stage": "hit",
+        "scope": "self",
+        "type": "buff",
+        "chance": 0.25,
+        "key": "str",
+        "a": 1,
+        "dur": 3,
+        "id": "strong",
+        "tcon": "💪"
       }
     ],
     "procs": [

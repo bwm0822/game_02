@@ -278,19 +278,15 @@ export const GM =
     LUK: "luk",
 
     // 戰鬥屬性 
-    COMBAT: ["atk","def","range","acc","eva","cri","crid","type"],
+    COMBAT: ["atk","def","range","acc","eva","cri","crd","type"],
     HPMAX : "hpMax",        // 生命上限
     ATK : "atk",            // 攻擊
     DEF : "def",            // 防禦
     RANGE: "range",         // 攻擊半徑
-    // HIT : "hit",            // 命中
-    // DODGE : "dodge",        // 閃避
-    // CRITR : "critRate",     // 暴擊率
-    // CRITD : "critDmg",      // 暴擊率
     ACC : "acc",        // 準確
     EVA : "eva",        // 閃避
     CRI : "cri",        // 暴率
-    CRID : "crid",      // 暴傷
+    CRD : "crd",        // 暴傷
     PEN : "pen",        // 穿透
     TYPE : "type",      // 攻擊類型: ranged/melee
     // 攻擊類型
@@ -314,17 +310,20 @@ export const GM =
     ICE : "ice",            // 冰凍  
     POISON : "poison",      // 毒藥
 
-    // 生命
-    HP : 'hp',
+    // 狀態
+    HP : 'hp',              // 生命
+    STUN : 'stun',          // 眩暈
     // 生存相關屬性
-    SURVIVAL : ["hunger", "thirst"],
-    HUNGER : 'hunger',
-    THIRST : 'thirst',
+    SURVIVAL : ["hunger", "thirst"],    
+    HUNGER : 'hunger',      // 飢餓
+    THIRST : 'thirst',      // 口渴
 
+    // eff 類型
     BUFF : 'buff',
     HEAL : 'heal',
     DOT : 'dot',
     HOT : 'hot',
+    // 其他
     CRIT : "crit",          // 暴擊
     MISS : "miss",          // 失誤
 

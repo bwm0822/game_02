@@ -310,7 +310,23 @@ export default class Utility
     static fmt_Proc(proc) {return this.fmt_Des(proc.type.des(),proc);}
 
     // 作用中 buff / dot
-    static fmt_Active(proc) {return this.fmt_Des(ACT_TYPE[proc.type].des(),proc);}
+    // static fmt_Active(proc) {return this.fmt_Des(ACT_TYPE[proc.type].des(),proc);}
+
+    static fmt_Active(eff) 
+    {
+        const sign= eff.a>=0||eff.m>=0 ? '[color=lime]+' : '[color=white]';
+        const val = eff.a ?? (eff.m !== undefined ? `${eff.m*100}%` : '');
+        switch(eff.type)
+        {
+            case 'dot': 
+            case 'hot':
+                return `每回合 ${sign}${val}[/color] 血量`;
+            case 'buff':
+            case 'debuff':
+                return `回合內 ${sign}${val}[/color] ${eff.key.lab()}`;
+        }
+
+    }
 
 
     // static fmt_Eff(str, obj, self, target) 

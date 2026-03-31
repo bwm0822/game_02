@@ -18,6 +18,7 @@ import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
 import Role from './role.js'
 import {T,dlog} from '../core/debug.js'
+import UiEffect from '../ui/uieffect.js'
 
 
 export class Player extends Role
@@ -44,7 +45,7 @@ export class Player extends Role
 
     async _updateTime(dt) 
     {
-        this.emit('onupdate', dt);
+        // this.emit('onupdate', dt);
         this._send('refresh');
     }
 
@@ -179,7 +180,9 @@ export class Player extends Role
         // 解構賦值 (destructuring assignment)，
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
-        const {bb} = this.ctx;
+        const {bb,emit} = this.ctx;
+        emit('onupdate');
+        // UiEffect.show();
 
         // console.log(bb.path);
         if(!bb.path)

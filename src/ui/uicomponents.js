@@ -33,6 +33,60 @@ export class Pic extends OverlapSizer
     }
 }
 
+
+export class TPic extends OverlapSizer
+{
+    constructor(scene, w, h, config={})
+    {            
+        const{
+            x, y, space=2, 
+            icon, 
+            tcon,
+            bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
+                // strokeColor:GM.COLOR.WHITE,strokeWidth:2
+            }
+        }=config;
+
+        super(scene, x, y, w, h,{space:space});
+        this.addBackground(uRect(scene,bg),'background');
+        if(icon)
+        {
+            this._sp=uImage.call(this,scene,
+                                {   icon:icon,
+                                    ext:{aspectRatio:true,padding:0}})
+        }
+        else if(tcon)
+        {
+            this._bbc = uBbc.call(this,scene,
+                                {   text:tcon,
+                                    fontSize:w*0.7,
+                                    ext:{align:'center',expand:false}})
+        }
+
+        this.layout()
+
+        scene.add.existing(this);
+    }
+
+    setIcon(icon,{tint=0xffffff,alpha=1}={})
+    {
+        if(this._sp)
+        {
+            const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
+            this._sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+            this._sp.rexSizer.aspectRatio = sp.width/sp.height;
+        }
+        else if(this._bbc)
+        {
+            this._bbc.setText(icon);
+        }
+        
+        this.layout();
+        return this;
+    }
+}
+
+
 export class Icon extends OverlapSizer
 {
     constructor(scene, w, h, config={})

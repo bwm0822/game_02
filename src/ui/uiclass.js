@@ -1,4 +1,4 @@
-import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+import {TPic, Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
@@ -661,14 +661,17 @@ export class AbilityItem extends Pic
 
 }
 
-export class Block extends Pic
+export class Block extends TPic//Pic
 {
-    constructor(scene, w, h, effect)
+    constructor(scene, w, h, eff)
     {
-        super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
+        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, strokeWidth:0, space:0});
+        uBbc.call(this,scene,{text:`[stroke=#000]${eff.remaining}[/stroke]`,
+                                fontSize:20,color:'#fff',
+                                ext:{align:'bottom-right',expand:false}})
         this.layout()
             .addListener()
-        this._dat=effect;
+        this._dat=eff;
     }
 
     get dat() {return this._dat;}
@@ -685,17 +688,17 @@ export class Block extends Pic
 
 }
 
-export class Effect extends Pic
+export class Effect extends TPic//Pic
 {
-    constructor(scene, w, h, effect, style=GM.IF_ACTIVE_TB)
+    constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {icon:effect.icon, strokeWidth:0, space:0});
-        uBbc.call(this,scene,{text:`[stroke=#000]${effect.remaining}[/stroke]`,
+        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, strokeWidth:0, space:0});
+        uBbc.call(this,scene,{text:`[stroke=#000]${eff.remaining}[/stroke]`,
                                 fontSize:20,color:'#fff',
-                                ext:{align:'bottom-center',expand:false}})
+                                ext:{align:'bottom-right',expand:false}})
         this.layout()
         this.addListener()
-        this._dat=effect;
+        this._dat=eff;
         this._style=style;
     }
 

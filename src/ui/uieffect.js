@@ -60,8 +60,8 @@ export default class UiEffect extends UiFrame
         let effects = this.player?.actives;
         if(effects)
         {
-            effects.forEach(effect=>{
-                if(effect.icon){this._main.add(new Effect(this.scene,50,50,effect));}
+            effects.forEach(eff=>{
+                if(eff.icon||eff.tcon){this._main.add(new Effect(this.scene,50,50,eff));}
             })
         }
 

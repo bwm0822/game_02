@@ -48,7 +48,7 @@ export class Npc extends Role
         {
             // await this.aEmit('process', dt);  // await 等待事件處理完成，才繼續往下執行
             // await aEmit('update', dt);
-            emit('onupdate', dt);
+            // emit('onupdate', dt);
         }
     }
 
@@ -149,9 +149,10 @@ export class Npc extends Role
 
     async process()
     {
+        const{emit}=this.ctx;
+        emit('onupdate');
         if(!this.isAlive) {return;}
-
-        await this.think?.();
+        if(!this.total.states.stun) {await this.think?.();}
     }
 
 
