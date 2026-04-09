@@ -18,7 +18,7 @@ export default class UiInfo extends UiFrame
             // width : 250,
             // height : 100,
             orientation : 'y',
-            space:{...UI.SPACE.LRTB.p10,item:0}
+            space:{...UI.SPACE.LRTB.p10,item:10}
         }
 
         super(scene, config, UI.TAG.INFO);
@@ -99,28 +99,78 @@ export default class UiInfo extends UiFrame
         return this;
     }
 
+    // addMods(elm)
+    // {
+    //     if(elm.dat.effects)
+    //     {
+    //         elm.dat.effects.forEach((eff)=>{
+    //             this.uStat(eff.stat,Utility.fmt_Mod(eff));
+    //         })
+    //     }
+
+    //     return this;
+    // }
+
     addMods(elm)
     {
         if(elm.dat.effects)
         {
             elm.dat.effects.forEach((eff)=>{
-                this.uStat(eff.stat,Utility.fmt_Mod(eff));
+                if(!eff.stage)
+                {
+                    this.uStat(eff.key.lab(),Utility.fmt_Mod(eff));
+                }
             })
         }
 
         return this;
     }
 
+    // addProcs(elm, layout)
+    // {
+    //     if(elm.dat.procs)
+    //     {
+    //         if(layout?.div??true) {ui.uDiv.call(this,this.scene);}
+    //         elm.dat.procs.forEach((proc)=>{
+    //             if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
+    //             ui.uDes.call(this,this.scene,{
+    //                         text:Utility.fmt_Proc(proc),
+    //                         color:GM.COLOR_GRAY})
+    //             layout && (layout.vspace = true);
+    //         })
+    //     }
+
+    //     return this;
+    // }
+
     addProcs(elm, layout)
     {
         if(elm.dat.procs)
         {
             if(layout?.div??true) {ui.uDiv.call(this,this.scene);}
-            elm.dat.procs.forEach((proc)=>{
+            elm.dat.effects.forEach((eff)=>{
                 if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
                 ui.uDes.call(this,this.scene,{
-                            text:Utility.fmt_Proc(proc),
+                            text:Utility.fmt_Proc(eff),
                             color:GM.COLOR_GRAY})
+                layout && (layout.vspace = true);
+            })
+        }
+
+        return this;
+    }
+
+    addEffs(elm, layout)
+    {
+        if(elm.dat.procs)
+        {
+            if(layout?.div??true) {ui.uDiv.call(this,this.scene);}
+            elm.dat.effects.forEach((eff)=>{
+                if(!eff.stage) {return;}
+                if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
+                ui.uDes.call(this,this.scene,{
+                            text:Utility.fmt_Eff(eff),
+                            color:GM.COLOR_GRAY},300)
                 layout && (layout.vspace = true);
             })
         }
@@ -144,7 +194,7 @@ export default class UiInfo extends UiFrame
             let value = elm.dat[key];
             if(value)
             {            
-                this.uStat(key,Utility.fmt_Stat(key,value,elm));
+                this.uStat(key.lab(),Utility.fmt_Stat(key,value,elm));
             }
         }
         
@@ -209,7 +259,8 @@ export default class UiInfo extends UiFrame
             .addCd(elm)
             .addStats([GM.RANGE], elm)
             .addDes(config.des, config, layout)
-            .addProcs(elm, layout)
+            // .addProcs(elm, layout)
+            .addEffs(elm, layout)
             .setW(WIDTH)
     }
 
@@ -233,7 +284,8 @@ export default class UiInfo extends UiFrame
             .addStats([GM.RANGE], elm)
             .addMods(elm)
             .addStats(GM.ITEMS, elm)
-            .addProcs(elm)
+            // .addProcs(elm)
+            .addEffs(elm)
             .addMake(elm)
             .addDes(elm.dat[this.lang].des)
             .addGold(elm)

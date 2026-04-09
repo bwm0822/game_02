@@ -47,7 +47,7 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "hunger",
+        "key": "hunger",
         "m": 0.1
       }
     ],
@@ -71,7 +71,7 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "hunger",
+        "key": "hunger",
         "m": 0.2
       }
     ],
@@ -92,7 +92,7 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "hunger",
+        "key": "hunger",
         "m": 0.1
       }
     ],
@@ -113,7 +113,7 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "hunger",
+        "key": "hunger",
         "m": 0.2
       }
     ],
@@ -145,6 +145,11 @@
     "range": 1,
     "atk": 15,
     "effects": [
+      {
+        "type": "mod",
+        "key": "str",
+        "a": 1
+      },
       {
         "stage": "atk",
         "scope": "self",
@@ -562,7 +567,7 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "thirst",
+        "key": "thirst",
         "m": -0.5
       }
     ],

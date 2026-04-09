@@ -319,6 +319,7 @@ export const GM =
     THIRST : 'thirst',      // 口渴
 
     // eff 類型
+    DEBUFF : 'debuff',
     BUFF : 'buff',
     HEAL : 'heal',
     DOT : 'dot',

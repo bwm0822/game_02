@@ -407,6 +407,7 @@ export class COM_Stats extends Com
 
     _addEffs(effs,scope,stage,ctx)
     {
+        this._tmp=[];
         effs.forEach(eff=>{
             if(eff.type==='mod') {return;}                  // mod，跳過
             if(eff.scope && eff.scope!==scope) {return;}    // scope 條件不符，跳過
@@ -421,14 +422,15 @@ export class COM_Stats extends Com
             }
             else
             {
+                // 先暫存，等回合結束再加入 _actives，避免剛加入就被處理
                 const { stage, scope, ...rest} = eff;
-                this._actives.push({...rest,remaining:eff.dur});
-                if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
+                const active = {...rest, remaining:eff.dur};
+                this._tmp.push(active); 
             }
         });
     }
 
-    _processEffs()
+    _processEffs_TurnStart()
     {
         const{root}=this.ctx;
 
@@ -438,28 +440,39 @@ export class COM_Stats extends Com
 
         // 2. 處理作用中的效果
         this._actives.forEach((eff)=>{
-            if (eff.type === GM.DOT) 
+            switch(eff.type)
             {
-                let dmg = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
-                if (eff.elm) 
+                case GM.DOT:
                 {
-                    const resist = this._total.resists?.[RESIST_MAP[eff.elm]] || 0;
-                    dmg *= 1 - resist;
+                    let dmg = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
+                    if (eff.elm) 
+                    {
+                        const resist = this._total.resists?.[RESIST_MAP[eff.elm]] || 0;
+                        dmg *= 1 - resist;
+                    }
+                    this._takeDamage({amount:dmg});
+                    eff.remaining -= 1;
+                    break;
                 }
-                this._takeDamage({amount:dmg});
+                case GM.HOT:
+                {
+                    const heal = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
+                    this._heal(heal);
+                    eff.remaining -= 1;
+                    break;
+                }
+                case GM.DEBUFF:
+                case GM.BUFF:
+                {
+                    if (eff.id === 'stun')
+                    {
+                        // 眩暈：跳過下一次行動
+                        root.pop?.('💫',{duration:0});
+                        this._states[GM.STUN] = true;
+                    }
+                    break;
+                }
             }
-            else if (eff.type === GM.HOT) 
-            {
-                const heal = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
-                this._heal(heal);
-            }
-            else if (eff.id === 'stun')
-            {
-                // 眩暈：跳過下一次行動
-                root.pop?.('💫',{duration:0});
-                this._states[GM.STUN] = true;
-            }
-            eff.remaining -= 1;
         });
 
         // 移除過期效果
@@ -475,6 +488,31 @@ export class COM_Stats extends Com
 
     }
 
+    _processEffs_TurnEnd()
+    {
+        // 回合結束處理
+
+        // remaining-1 及 移除過期效果
+        const{bb}=this.ctx;
+        this._actives = this._actives.filter(eff => {
+            if(eff.type===GM.BUFF||eff.type===GM.DEBUFF) {eff.remaining -= 1;}
+            if (eff.remaining <= 0) 
+            {
+                dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
+                if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
+                return false;
+            }
+            return true;
+        });
+
+        // 處理新加入的效果
+        this._tmp?.forEach(eff=>{
+            this._setDirty();
+            this._actives.push(eff);
+        });
+        this._tmp=[];
+    }
+
     _updateStates()
     {
         const{bb}=this.ctx;
@@ -485,17 +523,32 @@ export class COM_Stats extends Com
         }
     }
 
-    _update(dt=1)
+    // _update(dt=1)
+    // {
+    //     while(dt>0)
+    //     {
+    //         // this._processProcs();
+    //         const{bb}=this.ctx;
+    //         dlog(T.NORMAL,bb.id)('update');
+    //         this._processEffs_TurnStart();
+    //         this._updateStates();
+    //         dt--;
+    //     }
+    // }
+
+    _turnStart()
     {
-        while(dt>0)
-        {
-            // this._processProcs();
-            const{bb}=this.ctx;
-            dlog(T.NORMAL,bb.id)('update');
-            this._processEffs();
-            this._updateStates();
-            dt--;
-        }
+        const{bb}=this.ctx;
+        dlog(T.NORMAL,bb.id)('turnStart');
+        this._processEffs_TurnStart();
+        this._updateStates();   
+    }
+
+    _turnEnd()
+    {
+        const{bb}=this.ctx;
+        dlog(T.NORMAL,bb.id)('turnEnd');
+        this._processEffs_TurnEnd();
     }
 
     // amount = number or {a,m}
@@ -569,7 +622,8 @@ export class COM_Stats extends Com
         root.setDirty = this._setDirty.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('onupdate', this._update.bind(this) );
+        root.on('turnstart', this._turnStart.bind(this) );
+        root.on('turnend', this._turnEnd.bind(this) );
 
         // 計算總屬性
         this._getTotalStats();

@@ -41,6 +41,19 @@ export class COM_Favor extends Com
         }
     }
 
+    _turnStart()
+    {
+        // 每回合增加 0.1 好感度直到 50 為止
+        const fav=0.1;
+        for(const id in this._favors)
+        {
+            if(this._favors[id]<GM.FAV.NEUTRAL)
+            {
+                this._favors[id] = Math.min( this._favors[id]+fav, GM.FAV.NEUTRAL);
+            }
+        }
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -56,7 +69,7 @@ export class COM_Favor extends Com
         root.addFavor = this._addFavor.bind(this);      // 更新好感度
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('onupdate', this._update.bind(this) );
+        root.on('turnstart', this._turnStart.bind(this) );
     }
 
     //------------------------------------------------------

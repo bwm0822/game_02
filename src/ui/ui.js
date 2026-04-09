@@ -1,5 +1,6 @@
 import {GM} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+import Utility from '../core/utility.js'
 
 import PressService from '../services/pressService.js'
 import DragService from '../services/dragService.js'
@@ -91,8 +92,21 @@ export default function createUI(scene)
 
     new UiChangeScene(scene);       // 17
 
-    // new UiTest(scene);
     UiChangeScene.show();
+    
+    //
+    test();
+}
+
+
+function test() 
+{
+    let str='🌍';
+    console.log(str,Utility.hasEmoji(str));
+    str='buffs:1';
+    console.log(str,Utility.hasEmoji(str));
+
+    console.log('---------------------------- lifesteal=','lifesteal'.des({num: 25}));
 }
 
 

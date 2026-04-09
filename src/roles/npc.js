@@ -35,7 +35,7 @@ export class Npc extends Role
     //  Local
     //------------------------------------------------------
 
-    async _updateTime(dt) 
+    async _updateTime() 
     {
         const {emit, root}=this.ctx;
 
@@ -46,9 +46,7 @@ export class Npc extends Role
         }
         else
         {
-            // await this.aEmit('process', dt);  // await 等待事件處理完成，才繼續往下執行
-            // await aEmit('update', dt);
-            // emit('onupdate', dt);
+            emit('turnend');
         }
     }
 
@@ -150,7 +148,8 @@ export class Npc extends Role
     async process()
     {
         const{emit}=this.ctx;
-        emit('onupdate');
+        // emit('onupdate');
+        emit('turnstart');
         if(!this.isAlive) {return;}
         if(!this.total.states.stun) {await this.think?.();}
     }

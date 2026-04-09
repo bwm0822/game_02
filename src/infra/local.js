@@ -23,6 +23,23 @@ export default class Local
         return this._local?.[key]?.[this.lang]?.des ?? '';//`[color=red]${key}[/color]`;
     }
 
+
+    static des(key,{num}={})
+    {
+        
+        let str = this._local?.[key]?.[this.lang]?.des ?? '';
+
+        console.log(str,num);
+
+        return str.replace(/{#(\w+)}/g, (match, arg) => {
+            switch(arg)
+            {
+                case 'num': return `${num}`;
+            }}
+        );
+
+    }
+
     
 
     static lut(key)
@@ -46,6 +63,6 @@ export default class Local
 }
 
 String.prototype.lab = function(){ return Local.lab(this); };
-String.prototype.des = function(){ return Local.des(this); };
+String.prototype.des = function(args){ return Local.des(this, args); };
 Number.prototype.lab = function(){ return Local.lab(Local.lut(this)); };
 

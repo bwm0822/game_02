@@ -35,7 +35,11 @@ export class MPlayer extends Role
 
     async _updateTime(dt) 
     {
-        this.emit('onupdate', dt);
+        while(dt>0)
+        {
+            this.emit('turnstart');
+            dt--;
+        }
         this._send('refresh');
     }
 

@@ -312,20 +312,87 @@ export default class Utility
     // 作用中 buff / dot
     // static fmt_Active(proc) {return this.fmt_Des(ACT_TYPE[proc.type].des(),proc);}
 
-    static fmt_Active(eff) 
+
+    static fmt_Sign(eff)
     {
-        const sign= eff.a>=0||eff.m>=0 ? '[color=lime]+' : '[color=white]';
-        const val = eff.a ?? (eff.m !== undefined ? `${eff.m*100}%` : '');
+        let sign='';
+        if(eff.a!==undefined||eff.m!==undefined)
+        {
+            sign= eff.a>=0||eff.m>=0 ? '[color=lime]+[/color]' : '[color=red]-[/color]';
+        }
+        return sign;
+    }
+
+    static fmt_Num(eff)
+    {
+        let num='';
+        if(eff.a!==undefined||eff.m!==undefined)
+        {
+            const sign= eff.a>=0||eff.m>=0 ? '[color=lime]+' : '[color=red]-';
+            const val = eff.a!==undefined ? Math.abs(eff.a) 
+                        : eff.m!==undefined ? (Math.abs(eff.m)*100)+'%' : '';
+            num= `${sign}${val}[/color]`;
+        }
+        return num;
+    }
+
+    static fmt_Abs(eff)
+    {
+        let num='';
+        if(eff.a!==undefined||eff.m!==undefined)
+        {
+            const val = eff.a!==undefined ? Math.abs(eff.a) 
+                        : eff.m!==undefined ? (Math.abs(eff.m)*100)+'%' : '';
+            num=`[color=white]${val}[/color]`;
+        }
+        return num;
+    }
+
+    static fmt_Eff(eff)
+    {
+        // .replace(/，+/g, '，')       //將多個連續逗號替換為一個逗號
+        const stage = eff.stage ? `${eff.stage.lab()}時，` : '';
+        const scope = eff.scope ? `[color=white]${eff.scope.lab()}[/color]` : '';
+        const id = eff.id ?`觸發[color=skyblue]${eff.id.lab()}[/color]，`:'';
+        const dur = eff.dur ? `，持續[color=white]${eff.dur}[/color]回合`: '';
+        const key = eff.key ? `${eff.key.lab()}` : '';
+        const num = this.fmt_Num(eff);
+        
         switch(eff.type)
         {
             case 'dot': 
             case 'hot':
-                return `每回合 ${sign}${val}[/color] 血量`;
+                return `${stage}${scope}${id}每回合${num}血量${dur}`.replace(/，+/g, '，');
             case 'buff':
             case 'debuff':
-                return `回合內 ${sign}${val}[/color] ${eff.key.lab()}`;
+                return `${stage}${scope}${id}${key}${num}${dur}`.replace(/，+/g, '，');
+            case 'mod':
+                return `${stage}${scope}${eff.key?.lab()}${num}`.replace(/，+/g, '，');
+            case 'action':
+                const abs = this.fmt_Abs(eff);
+                return `${stage}${id}${eff.id.des({num:abs})}`.replace(/，+/g, '，');
         }
+    }
 
+    static fmt_Active(eff) 
+    {
+        const num = this.fmt_Num(eff);
+        switch(eff.type)
+        {
+            case 'dot': 
+            case 'hot':
+                return `每回合${num}血量`;
+            case 'buff':
+            case 'debuff':
+                if(eff.key) 
+                {
+                    return `有效回合內，${eff.key.lab()}${num}`;
+                }
+                else
+                {
+                    return `有效回合內，${eff.id.lab()}`;
+                }
+        }
     }
 
 
@@ -664,6 +731,12 @@ export default class Utility
     {
         return {x:(x-cam.scrollX)*cam.zoom+cam.x,
                 y:(y-cam.scrollY)*cam.zoom+cam.y}
+    }
+
+
+    static hasEmoji(str) 
+    {
+        return /[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(str);
     }
 
 

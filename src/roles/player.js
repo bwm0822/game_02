@@ -42,12 +42,7 @@ export class Player extends Role
 
     _saveData(data) {Record.game.pos = this.pos; Record.game.player = data;}
 
-
-    async _updateTime(dt) 
-    {
-        // this.emit('onupdate', dt);
-        this._send('refresh');
-    }
+    async _updateTime() {this.emit('turnend');}
 
     async _interact(ent, act) 
     {
@@ -181,8 +176,8 @@ export class Player extends Role
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
         const {bb,emit} = this.ctx;
-        emit('onupdate');
-        // UiEffect.show();
+        emit('turnstart');
+        this._refresh();
 
         // console.log(bb.path);
         if(!bb.path)
@@ -217,6 +212,7 @@ export class Player extends Role
             bb.sta=GM.ST.IDLE;
             this.anim_idle?.(true);
         }
+
     }
 
 }

@@ -177,6 +177,14 @@ export class COM_Ability extends Com
         });
     }
 
+    _turnStart()
+    {
+        Object.values(this._abilities).forEach(s=>{
+            if(s.skip) {s.skip=false;}
+            else if(s.remain>0) {s.remain--;}
+        });
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -200,7 +208,7 @@ export class COM_Ability extends Com
         root.useAb = this._use.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('onupdate', this._update.bind(this));
+        root.on('turnstart', this._turnStart.bind(this));
 
     }
 

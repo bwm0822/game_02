@@ -1,40 +1,8 @@
 import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import {GM, UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
-import Ui from './uicommon.js'
 
 export class Pic extends OverlapSizer
-{
-    constructor(scene, w, h, config={})
-    {            
-        const{
-            x, y, space=2, 
-            icon, 
-            bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
-                strokeColor:GM.COLOR.WHITE,strokeWidth:2}
-        }=config;
-
-        super(scene, x, y, w, h,{space:space});
-        this.addBackground(uRect(scene,bg),'background')
-        this._sp=uImage.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
-        this.layout()
-
-        scene.add.existing(this);
-    }
-
-    setIcon(icon,{tint=0xffffff,alpha=1}={})
-    {
-        let [key,frame] = icon ? icon.split(':') : [undefined,undefined];
-        const sp=this._sp;
-        sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
-        sp.rexSizer.aspectRatio = sp.width/sp.height;
-        this.layout();
-        return this;
-    }
-}
-
-
-export class TPic extends OverlapSizer
 {
     constructor(scene, w, h, config={})
     {            
@@ -49,38 +17,61 @@ export class TPic extends OverlapSizer
 
         super(scene, x, y, w, h,{space:space});
         this.addBackground(uRect(scene,bg),'background');
-        if(icon)
-        {
-            this._sp=uImage.call(this,scene,
-                                {   icon:icon,
-                                    ext:{aspectRatio:true,padding:0}})
-        }
-        else if(tcon)
-        {
-            this._bbc = uBbc.call(this,scene,
-                                {   text:tcon,
-                                    fontSize:w*0.7,
-                                    ext:{align:'center',expand:false}})
-        }
-
+        if(icon) {this._createImg(icon);}
+        else if(tcon) {this._createBbc(tcon,w);}
         this.layout()
-
         scene.add.existing(this);
     }
 
+    //------------------------------------------------------
+    //  Local
+    //------------------------------------------------------
+    _createImg(icon)
+    {
+        this._img=uImage.call(this,this.scene,{
+                                    icon:icon,
+                                    ext:{aspectRatio:true,padding:0}
+                                })
+    }
+
+    _createBbc(tcon,w)
+    {
+        w = w ?? this.width;
+        this._bbc = uBbc.call(this,this.scene,{   
+                                    text:tcon,
+                                    fontSize:w*0.7,
+                                    ext:{align:'center',expand:false}
+                                })
+    }
+
+    //------------------------------------------------------
+    //  Public
+    //------------------------------------------------------
     setIcon(icon,{tint=0xffffff,alpha=1}={})
     {
-        if(this._sp)
+        const emoji = Utility.hasEmoji(icon);
+
+        if(emoji)
         {
-            const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
-            this._sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
-            this._sp.rexSizer.aspectRatio = sp.width/sp.height;
+            if(!this._bbc) {this._createBbc(icon);}
+            else {this._bbc.setText(icon);}
         }
-        else if(this._bbc)
+        else
         {
-            this._bbc.setText(icon);
+            if(!this._img)
+            {
+                this._createImg(icon);
+                this._img.setTint(tint).setAlpha(alpha);
+            }
+            else
+            {
+                const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
+                const img = this._img;
+                img.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+                img.rexSizer.aspectRatio = img.width/img.height;
+            }
         }
-        
+
         this.layout();
         return this;
     }
@@ -156,7 +147,7 @@ export function uRect(scene, config={})
 export function uDiv(scene,config={})
 {
     const {
-        ext={expand:true,padding:{top:10,bottom:10}},
+        ext={expand:true,padding:{top:5,bottom:5}},
         ...cfg
     }=config;
     cfg.width=cfg.width??100;

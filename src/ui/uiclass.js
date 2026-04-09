@@ -1,4 +1,4 @@
-import {TPic, Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
@@ -661,40 +661,16 @@ export class AbilityItem extends Pic
 
 }
 
-export class Block extends TPic//Pic
-{
-    constructor(scene, w, h, eff)
-    {
-        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, strokeWidth:0, space:0});
-        uBbc.call(this,scene,{text:`[stroke=#000]${eff.remaining}[/stroke]`,
-                                fontSize:20,color:'#fff',
-                                ext:{align:'bottom-right',expand:false}})
-        this.layout()
-            .addListener()
-        this._dat=eff;
-    }
-
-    get dat() {return this._dat;}
-
-    addListener()
-    {
-        this.setInteractive({draggable:true,dropZone:true})
-        .on('pointerover', ()=>{this.over();})
-        .on('pointerout', ()=>{this.out();})
-    }
-
-    over() {Ui.delayCall(() => {UiInfo.show(GM.IF_ACTIVE,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
-    out() {Ui.cancelDelayCall();UiInfo.close();}
-
-}
-
-export class Effect extends TPic//Pic
+export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, strokeWidth:0, space:0});
-        uBbc.call(this,scene,{text:`[stroke=#000]${eff.remaining}[/stroke]`,
-                                fontSize:20,color:'#fff',
+        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, 
+                            strokeWidth:0, space:0});
+
+        uBbc.call(this,scene,{  text:`[stroke=#000]${eff.remaining}[/stroke]`,
+                                fontSize:20,
+                                color:'#fff',
                                 ext:{align:'bottom-right',expand:false}})
         this.layout()
         this.addListener()
