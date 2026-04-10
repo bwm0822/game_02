@@ -263,45 +263,60 @@ export default class Utility
     }
 
     // 效果
-    static fmt_Effs(effs)
+    // static fmt_Effs(effs)
+    // {
+    //     if(!effs) {return '';}
+
+    //     let self='',enemy='';
+
+    //     effs.filter(eff=>!eff.scope || eff.scope==='self').forEach((eff,i)=>{
+    //         if(i!==0) {self+='、'}
+    //         self+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
+    //     });
+
+    //     effs.filter(eff=>eff.scope==='enemy').forEach((eff,i)=>{
+    //         if(i===0) {enemy+='目標'}
+    //         if(i!==0) {enemy+='、'}
+    //         enemy+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
+    //     });
+
+    //     let split = self&&enemy?'，':'';
+
+    //     return self+split+enemy;
+    // }
+
+    // static fmt_Des(str, obj, total) 
+    // {
+    //     let fmt = function(obj, total) {return obj.pow * total[obj.src] + obj.flat;}
+    //     let val = function(obj, key) {
+    //         let val = obj[key];
+    //         return typeof val==='string' ? val.lab() : val;
+    //     }
+
+    //     return str.replace(/{#(\w+)}/g, (match, key) => {
+    //         switch(key)
+    //         {
+    //             case 'fmt': return `[color=white] ${fmt(obj,total)} [/color]`; 
+    //             case 'tag': return `[color=deepskyblue] ${val(obj,key)} [/color]`;
+    //             case 'eff': return this.fmt_Effs(obj.effects);
+    //             default:
+    //                 if(!obj[key]) return ''; 
+    //                 return `[color=white] ${val(obj,key)} [/color]`;
+    //         }}
+    //     );
+    // }
+
+
+    static fmt_Des(des, elm) 
     {
-        if(!effs) {return '';}
-
-        let self='',enemy='';
-
-        effs.filter(eff=>!eff.scope || eff.scope==='self').forEach((eff,i)=>{
-            if(i!==0) {self+='、'}
-            self+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
-        });
-
-        effs.filter(eff=>eff.scope==='enemy').forEach((eff,i)=>{
-            if(i===0) {enemy+='目標'}
-            if(i!==0) {enemy+='、'}
-            enemy+=`${eff.stat.lab()} ${this.fmt_Mod(eff)}`
-        });
-
-        let split = self&&enemy?'，':'';
-
-        return self+split+enemy;
-    }
-
-    static fmt_Des(str, obj, total) 
-    {
-        let fmt = function(obj, total) {return obj.pow * total[obj.src] + obj.flat;}
-        let val = function(obj, key) {
-            let val = obj[key];
-            return typeof val==='string' ? val.lab() : val;
-        }
-
-        return str.replace(/{#(\w+)}/g, (match, key) => {
+        const val = (v)=>{return typeof v==='string' ? v.lab() : v;}
+        
+        return des.replace(/{#(\w+)}/g, (match, key) => {
             switch(key)
             {
-                case 'fmt': return `[color=white] ${fmt(obj,total)} [/color]`; 
-                case 'tag': return `[color=deepskyblue] ${val(obj,key)} [/color]`;
-                case 'eff': return this.fmt_Effs(obj.effects);
                 default:
-                    if(!obj[key]) return ''; 
-                    return `[color=white] ${val(obj,key)} [/color]`;
+                    if(!elm.dat[key]) return ''; 
+                    return `[color=white]${val(elm.dat[key])}[/color]`;
             }}
         );
     }

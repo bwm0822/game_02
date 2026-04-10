@@ -72,14 +72,28 @@ export default class UiInfo extends UiFrame
         return this;
     }
 
-    addDes(des, {stats,total}={}, layout)
+    // addDes(des, {stats,total}={}, layout)
+    // {
+    //     if(des)
+    //     {
+    //         if(layout?.div??true) {ui.uDiv.call(this,this.scene);};
+    //         layout?.div && (layout.div=false);
+    //         ui.uDes.call(this,this.scene,{
+    //                     text:Utility.fmt_Des(des, stats, total),
+    //                     color:GM.COLOR.GRAY})
+    //         layout && (layout.vspace=true);
+    //     }
+    //     return this;
+    // }
+
+    addDes(elm, layout)
     {
-        if(des)
+        if(elm)
         {
             if(layout?.div??true) {ui.uDiv.call(this,this.scene);};
             layout?.div && (layout.div=false);
             ui.uDes.call(this,this.scene,{
-                        text:Utility.fmt_Des(des, stats, total),
+                        text:Utility.fmt_Des(elm.dat[this.lang]?.des, elm),
                         color:GM.COLOR.GRAY})
             layout && (layout.vspace=true);
         }
@@ -152,7 +166,7 @@ export default class UiInfo extends UiFrame
                 if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
                 ui.uDes.call(this,this.scene,{
                             text:Utility.fmt_Proc(eff),
-                            color:GM.COLOR_GRAY})
+                            color:GM.COLOR_GRAY});
                 layout && (layout.vspace = true);
             })
         }
@@ -162,7 +176,7 @@ export default class UiInfo extends UiFrame
 
     addEffs(elm, layout)
     {
-        if(elm.dat.procs)
+        if(elm.dat.effects)
         {
             if(layout?.div??true) {ui.uDiv.call(this,this.scene);}
             elm.dat.effects.forEach((eff)=>{
@@ -170,11 +184,10 @@ export default class UiInfo extends UiFrame
                 if(layout?.vspace) {ui.uVspace.call(this,this.scene,15);}
                 ui.uDes.call(this,this.scene,{
                             text:Utility.fmt_Eff(eff),
-                            color:GM.COLOR_GRAY},300)
+                            color:GM.COLOR_GRAY},300);
                 layout && (layout.vspace = true);
             })
         }
-
         return this;
     }
 
@@ -253,14 +266,15 @@ export default class UiInfo extends UiFrame
             total : this.player.total,
         }
 
-        let layout = {div:true, vspace:false}
+        // let layout = {div:true, vspace:false}
 
         this.addTitle(elm)
             .addCd(elm)
             .addStats([GM.RANGE], elm)
-            .addDes(config.des, config, layout)
+            // .addDes(config.des, config, layout)
+            .addDes(elm)
             // .addProcs(elm, layout)
-            .addEffs(elm, layout)
+            .addEffs(elm)
             .setW(WIDTH)
     }
 
@@ -287,7 +301,8 @@ export default class UiInfo extends UiFrame
             // .addProcs(elm)
             .addEffs(elm)
             .addMake(elm)
-            .addDes(elm.dat[this.lang].des)
+            // .addDes(elm.dat[this.lang].des)
+            .addDes(elm)
             .addGold(elm)
             .setW(WIDTH)
     }
