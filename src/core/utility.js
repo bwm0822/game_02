@@ -754,6 +754,11 @@ export default class Utility
         return /[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(str);
     }
 
+    static isASCIIString(str) 
+    {
+        return /^[\x00-\x7F]*$/.test(str);
+    }
+
 
 }
 

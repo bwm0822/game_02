@@ -2,6 +2,7 @@ import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import * as ui from './uicomponents.js'
+import Ui from './uicommon.js'
 
 
 export default class UiConfirm extends UiFrame
@@ -67,6 +68,7 @@ export default class UiConfirm extends UiFrame
 
     show(msg)
     {
+        Ui.off(UI.TAG.INFO);
         super.show();
         this._msg.setText(msg);
         this.layout();

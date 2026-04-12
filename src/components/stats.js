@@ -592,11 +592,12 @@ export class COM_Stats extends Com
     load(data) 
     {
         if(data?.states) {Object.assign(this._states, data.states);}
+        if(data?.actives) {Object.assign(this._actives, data.actives);}
     }
 
     save() 
     {
-        return {states:this._states};
+        return {states:this._states, actives:this._actives};
     }
 
     bind(root) 

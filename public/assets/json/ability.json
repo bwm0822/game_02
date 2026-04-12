@@ -1,6 +1,6 @@
 {
   "lunge": {
-    "icon": "icons:0",
+    "icon": "🗡️",
     "type": "attack",
     "scope": "target",
     "cd": 3,
@@ -37,7 +37,7 @@
     ],
     "tw": {
       "lab": "突刺",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。{#eff}"
+      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
     }
   },
   "fireball": {
@@ -57,7 +57,7 @@
     },
     "tw": {
       "lab": "火球術",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。{#eff}"
+      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
     }
   },
   "ice": {
@@ -81,7 +81,7 @@
     },
     "tw": {
       "lab": "冰凍術",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。{#eff}"
+      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
     }
   },
   "strong": {
@@ -90,13 +90,14 @@
     "effects": [
       {
         "scope": "self",
-        "stat": "str",
+        "type": "mod",
+        "key": "str",
         "a": 1
       }
     ],
     "tw": {
       "lab": "強化",
-      "des": "{#eff}"
+      "des": ""
     }
   },
   "heal": {
@@ -107,6 +108,27 @@
     "pow": 2,
     "flat": 10,
     "src": "int",
+    "effects": [
+      {
+        "stage": "cast",
+        "scope": "self",
+        "type": "hot",
+        "a": 5,
+        "dur": 5,
+        "icon": "❤️",
+        "id": "heal"
+      },
+      {
+        "stage": "cast",
+        "scope": "self",
+        "type": "buff",
+        "key": "str",
+        "a": 1,
+        "dur": 100,
+        "icon": "💪",
+        "id": "strong"
+      }
+    ],
     "procs": [
       {
         "scope": "self",
@@ -132,7 +154,7 @@
     ],
     "tw": {
       "lab": "回復術",
-      "des": "回復{#fmt}點生命"
+      "des": "回復{#pow}倍{#src}的生命"
     }
   },
   "test1": {

@@ -71,15 +71,13 @@ export function computeDamage(attacker, defender, skill={})
 
 }
 
-export function computeHealing(healer, skill) 
+export function computeHealing(caster, skill) 
 {
-    const cond = skill?.type??'heal';
-    const stats = healer.getTotalStats({condition:cond, skill:skill});
+    const stats = caster.getTotalStats({stage:'cast', skill:skill});
     dlog(T.COMBAT)(stats);
 
-    // 計算 Procs
-    let procs = [...stats.procs.self]
-    procs.forEach((proc)=>{healer.addProcs(proc);});
+    // 計算 effs
+    caster.addEffs(stats.effs, 'self', 'cast');
 
     // 計算治療量
     let base = stats[skill?.src??GM.INT] || 0;  // 基本治療
@@ -89,6 +87,25 @@ export function computeHealing(healer, skill)
 
     return amount;
 }
+
+// export function computeHealing(healer, skill) 
+// {
+//     const cond = skill?.type??'heal';
+//     const stats = healer.getTotalStats({condition:cond, skill:skill});
+//     dlog(T.COMBAT)(stats);
+
+//     // 計算 Procs
+//     let procs = [...stats.procs.self]
+//     procs.forEach((proc)=>{healer.addProcs(proc);});
+
+//     // 計算治療量
+//     let base = stats[skill?.src??GM.INT] || 0;  // 基本治療
+//     let pow = skill?.pow ?? 1;                  // 治療倍率
+//     let flat = skill?.flat ?? 0;                // 固定治療
+//     let amount = base * pow + flat;
+
+//     return amount;
+// }
 
 
 

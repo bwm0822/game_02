@@ -9,7 +9,6 @@ export class Pic extends OverlapSizer
         const{
             x, y, space=2, 
             icon, 
-            tcon,
             bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
                 // strokeColor:GM.COLOR.WHITE,strokeWidth:2
             }
@@ -17,8 +16,12 @@ export class Pic extends OverlapSizer
 
         super(scene, x, y, w, h,{space:space});
         this.addBackground(uRect(scene,bg),'background');
-        if(icon) {this._createImg(icon);}
-        else if(tcon) {this._createBbc(tcon,w);}
+        if(icon) 
+        {
+            const ascii = Utility.isASCIIString(icon);
+            if(ascii) {this._createImg(icon);}
+            else {this._createBbc(icon,w);}       
+        }
         this.layout()
         scene.add.existing(this);
     }
@@ -34,11 +37,11 @@ export class Pic extends OverlapSizer
                                 })
     }
 
-    _createBbc(tcon,w)
+    _createBbc(icon,w)
     {
         w = w ?? this.width;
         this._bbc = uBbc.call(this,this.scene,{   
-                                    text:tcon,
+                                    text:icon,
                                     fontSize:w*0.7,
                                     ext:{align:'center',expand:false}
                                 })
@@ -49,26 +52,34 @@ export class Pic extends OverlapSizer
     //------------------------------------------------------
     setIcon(icon,{tint=0xffffff,alpha=1}={})
     {
-        const emoji = Utility.hasEmoji(icon);
+        const ascii = Utility.isASCIIString(icon);
 
-        if(emoji)
+        if(ascii)
         {
-            if(!this._bbc) {this._createBbc(icon);}
-            else {this._bbc.setText(icon);}
-        }
-        else
-        {
+            if(this._bbc) {this.hide(this._bbc);}
             if(!this._img)
             {
+                console.log('-------- chk',tint,alpha)
                 this._createImg(icon);
                 this._img.setTint(tint).setAlpha(alpha);
             }
             else
             {
+                this.show(this._img);
                 const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
                 const img = this._img;
                 img.setTexture(key,frame).setTint(tint).setAlpha(alpha);
                 img.rexSizer.aspectRatio = img.width/img.height;
+            }
+        }
+        else
+        {
+            if(this._img) {this.hide(this._img);}
+            if(!this._bbc) {this._createBbc(icon);}
+            else 
+            {
+                this.show(this._bbc);
+                this._bbc.setText(icon);
             }
         }
 
@@ -257,33 +268,27 @@ export function uPanel(scene, config={})
     return panel;
 }
 
-export function uLabel_old(scene, config={})
-{
-    const {ext,text,icon,tcon,bg,...cfg}=config;
-    if(bg) {cfg.background=uRect(scene, bg);}
-    if(text!==undefined) {cfg.text=uBbc(scene, typeof text==='object'?text:{text:text});}
-    if(icon) {cfg.icon=uSprite(scene, typeof icon==='object'?icon:{icon:icon});}
-    if(tcon) {cfg.icon=uBbc(scene, typeof tcon==='object'?tcon:{text:tcon});}
-    
-    const lab = scene.rexUI.add.label(cfg); 
-    lab._bg=cfg.background;
-    lab._text=cfg.text;
-    lab._icon=cfg.icon;
-    if(this&&this.add) {this.add(lab, ext);}
-    return lab;
-}
-
 export function uLabel(scene, config={})
 {
-    const {ext,text,icon,tcon,bg,iconR,tconR,...cfg}=config;
+    const {ext,text,icon,bg,iconR,...cfg}=config;
     const lab = scene.rexUI.add.sizer(cfg);
     if(bg&&Object.keys(bg).length!==0) {lab._bg=uBg.call(lab,scene, bg);}
 
-    if(icon) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
-    if(tcon) {lab._icon=uBbc.call(lab,scene, typeof tcon==='object'?tcon:{text:tcon});}
+    if(icon)
+    {
+        const ascii = Utility.isASCIIString(icon);
+        if(ascii) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
+        else {lab._icon=uBbc.call(lab,scene,{text:icon,ext:{align:'center',expand:false}});}
+    }
+
     if(text!==undefined) {lab._text=uBbc.call(lab,scene, typeof text==='object'?text:{text:text});}
-    if(iconR) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
-    if(tconR) {lab._icon=uBbc.call(lab,scene, typeof tconR==='object'?tconR:{text:tconR});}
+
+    if(iconR)
+    {
+        const ascii = Utility.isASCIIString(iconR);
+        if(ascii) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
+        else {lab._icon=uBbc.call(lab,scene,{text:iconR,ext:{align:'center',expand:false}});}
+    }
     
     lab.setText = (text)=>{lab._text?.setText(text);return lab;}
     if(this&&this.add) {this.add(lab, ext);}
@@ -323,10 +328,10 @@ export function uButton(scene,config={})
             cfg.bg = cfg.bg ?? {color:cBGH};
             break;
         case UI.BTN.CHECK:
-            if(prefix) {cfg.tcon = UCHK;}
+            if(prefix) {cfg.icon = UCHK;}
             break;
         case UI.BTN.FOLD:
-            if(prefix) {cfg.tconR = UCHK;}
+            if(prefix) {cfg.iconR = UCHK;}
             break;
     }
 

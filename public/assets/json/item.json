@@ -171,7 +171,7 @@
         "a": -1,
         "dur": 3,
         "id": "poison",
-        "tcon": "🩸"
+        "icon": "🩸"
       },
       {
         "stage": "hit",
@@ -180,7 +180,7 @@
         "m": -0.1,
         "dur": 3,
         "id": "fire",
-        "tcon": "🔥"
+        "icon": "🔥"
       },
       {
         "stage": "hit",
@@ -189,7 +189,7 @@
         "chance": 0.5,
         "dur": 1,
         "id": "stun",
-        "tcon": "💫"
+        "icon": "💫"
       },
       {
         "stage": "hit",
@@ -209,7 +209,7 @@
         "a": 1,
         "dur": 3,
         "id": "strong",
-        "tcon": "💪"
+        "icon": "💪"
       }
     ],
     "procs": [

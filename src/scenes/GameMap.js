@@ -101,6 +101,7 @@ export class GameMap extends GameScene
         super.initUI();
         // UiMain.show();
         Ui.on(UI.TAG.MAPLEGEND);
+        Ui.on(UI.TAG.EFFECT);
         TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 

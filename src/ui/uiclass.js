@@ -461,7 +461,7 @@ export class AbilitySlot extends Pic
         this._disabled=uRect(scene,{color:GM.COLOR.BLACK, alpha:0})
         this.addBackground(this._disabled);
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
-                                            ext:{align:'center-center',expand:false}})
+                                            ext:{align:'right-bottom',expand:false}})
         this.setIcon(config?.icon);
         this.addListener();
         this._i = i;            // 技能欄位索引
@@ -572,8 +572,7 @@ export class AbilityItem extends Pic
     constructor(scene, w, h, config)
     {
         super(scene, w, h, config);
-        this._disabled=uRect(scene,{color:GM.COLOR.BLACK, alpha:0})
-        this.addBackground(this._disabled);
+        this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0});
         this._locked=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                         ext:{align:'center-center',expand:false}})
         this.setIcon(config?.icon);
@@ -643,7 +642,6 @@ export class AbilityItem extends Pic
     {
         this._locked.setText(this.locked?'🔒':'');
         this._disabled.fillAlpha=this.en?0:0.7;
-
     }
 
     set(id, x, y)
@@ -656,6 +654,8 @@ export class AbilityItem extends Pic
         this.setIcon(this._dat.icon);
         this._locked.setText(this.locked?'🔒':'');
         this._disabled.fillAlpha=this.en?0:0.7;
+        this.bringChildToTop(this._disabled);
+        this.bringChildToTop(this._locked);
         this.layout();
     }
 

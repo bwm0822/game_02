@@ -38,9 +38,11 @@ export class MPlayer extends Role
         while(dt>0)
         {
             this.emit('turnstart');
+            this.emit('turnend');
             dt--;
         }
         this._send('refresh');
+        
     }
 
     async _interact(ent, act) 
