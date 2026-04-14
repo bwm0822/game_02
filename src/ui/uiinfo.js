@@ -83,7 +83,7 @@ export default class UiInfo extends UiFrame
                 div && ui.uDiv.call(this,scene);
                 ui.uDes.call(this,scene,{
                         text:Utility.fmt_Des(des, elm),
-                        color:GM.COLOR.GRAY})
+                        color:GM.COLOR.GRAY},300)
             }
         }
         return this;
@@ -138,8 +138,9 @@ export default class UiInfo extends UiFrame
     addActive(elm)
     {
         const eff = elm.dat;
+        const stack = elm.stack;
         ui.uDes.call(this,this.scene,{
-                    text:Utility.fmt_Active(eff),
+                    text:Utility.fmt_Active(eff, stack),
                     color:GM.COLOR_GRAY})
         return this;
     }

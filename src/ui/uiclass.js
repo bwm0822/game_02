@@ -665,20 +665,30 @@ export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {icon:eff.icon, tcon:eff.tcon, 
-                            strokeWidth:0, space:0});
+        super(scene, w, h, {icon:eff.icon, strokeWidth:0, space:0});
 
-        uBbc.call(this,scene,{  text:`[stroke=#000]${eff.remaining}[/stroke]`,
+        this._dat=eff;
+        this._style=style;
+        this._stackCnt=1;
+
+        this._remaining=uBbc.call(this,scene,{  
+                                text:`[stroke=#000]${eff.remaining}[/stroke]`,
                                 fontSize:20,
                                 color:'#fff',
                                 ext:{align:'bottom-right',expand:false}})
+
+        this._stack=uBbc.call(this,scene,{  
+                                text:`[stroke=#000]${this._stackCnt}x[/stroke]`,
+                                fontSize:20,
+                                color:'#fff',
+                                ext:{align:'top-left',expand:false}})
         this.layout()
         this.addListener()
-        this._dat=eff;
-        this._style=style;
-    }
+
+    } 
 
     get dat() {return this._dat;}
+    get stack() {return this._stackCnt;}
 
     addListener()
     {
@@ -689,6 +699,13 @@ export class Effect extends Pic
 
     over() {Ui.delayCall(() => {UiInfo.show(this._style,this);});} // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() {Ui.cancelDelayCall();UiInfo.close();}
+
+    set(eff)
+    {
+        this._stackCnt++;
+        this._stack.setText(`[stroke=#000]${this._stackCnt}x[/stroke]`);
+        this._remaining.setText(`[stroke=#000]${eff.remaining}[/stroke]`);
+    }
 
 }
 

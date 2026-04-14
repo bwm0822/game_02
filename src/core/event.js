@@ -30,7 +30,7 @@ export class Evt
     }
     async aEmit(k, ...a) 
     {
-        let promises=[];
+        const promises=[];
         this.map.get(k)?.forEach(fn=>promises.push(fn(...a)));
         return Promise.all(promises);
     }

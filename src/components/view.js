@@ -1,6 +1,7 @@
 import {GM} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
+import {T,dlog} from '../core/debug.js'
 
 function debugDraw(mode=DEBUG.mode,text)
 {
@@ -647,10 +648,14 @@ export class RoleView extends View
         this._shape.getAll().forEach((child)=>{child.destroy();});
     }
 
-    _ondead()
+    async _ondead()
     {
+        const {root} = this.ctx;
+        // 1. 等待所有彈出完成，才繼續下一步
+        await root.wait?.();
+        // 2. 移除原本圖像
         this._remove();
-        // 新增 corpse
+        // 3. 改顯示死亡的圖像
         this._addPart(this.meta.corpse)
     }
 

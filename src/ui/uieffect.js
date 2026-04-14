@@ -41,7 +41,7 @@ export default class UiEffect extends UiFrame
 
     addMain(scene)
     {
-        let config = 
+        const config = 
         {
             width : (50+5)*10,
             orientation : 'x',
@@ -52,16 +52,32 @@ export default class UiEffect extends UiFrame
         return this;
     }
 
+    findEff(id)
+    {
+        return this._main.getElement('items').find(elm=>elm.dat.id===id);
+    }
+    
+    addEff(effect)
+    {
+        const elm = new Effect(this.scene,50,50,effect);
+        this._main.add(elm);
+        return elm;
+    }
+
     refresh()
     {
         this._main.removeAll(true);
 
-        // let effects = this.getOwner()?.rec?.activeEffects;
-        let effects = this.player?.actives;
-        if(effects)
+        const actives = this.player?.actives;
+        if(actives)
         {
-            effects.forEach(eff=>{
-                if(eff.icon||eff.tcon){this._main.add(new Effect(this.scene,50,50,eff));}
+            actives.forEach(eff=>{
+                if(eff.icon)
+                {
+                    const found = this.findEff(eff.id);
+                    if(!found) {this.addEff(eff);}
+                    else {found.set(eff);}
+                }
             })
         }
 

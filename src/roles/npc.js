@@ -147,61 +147,10 @@ export class Npc extends Role
 
     async process()
     {
-        const{emit}=this.ctx;
-        // emit('onupdate');
-        emit('turnstart');
+        const{aEmit,bb}=this.ctx;
         if(!this.isAlive) {return;}
-        if(!this.total.states.stun) {await this.think?.();}
-    }
-
-
-    async process_old()
-    {
-        if(!this.isAlive) {return;}
-
-        await this.think?.();
-
-        const{bb,root}=this.ctx;
-
-        if(bb.path)
-        {
-            // return;
-            dlog(T.NPC)('------------------ process move');
-            await this.move?.();
-            if(bb.cACT.st==='reach')
-            {
-                if(bb.go&&bb.go.act) {bb.sta=GM.ST.ACTION;}
-                else {bb.sta=GM.ST.IDLE;}
-            }
-            else if(bb.cACT.st==='blocked')
-            {
-                await root.checkBlock();
-            }
-            else
-            {
-                root.closeDoorIfNeed();
-            }
-        }
-        else
-        {
-            if(bb.sta!==GM.ST.SLEEP) {this.anim_idle?.(true);}
-            if(bb.sta===GM.ST.ACTION)
-            {
-                if(bb.go.act==='enter')
-                {
-                    this._remove();
-                    return;
-                }
-                else
-                {
-                    bb.sta=GM.ST.IDLE;
-                    bb.go.emit(bb.go.act, this);
-                }
-            }
-        }
-
-
-        if(_dbg) {this.updateDebugPath?.();}
+        await aEmit('turnstart');
+        if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
     }
     
 }

@@ -54,23 +54,14 @@ export class COM_Nav extends Com
         this._graph.clear();
     }
 
-    _updatePath()
-    {
-        this._drawPath(this.bb.path);
-    }
+    _updatePath() {this._drawPath(this.bb.path);}
 
-    _updateDebugPath()
-    {
-        this._drawPath(this.bb.path,{alpha:0.5,size:10});
-    }
+    _updateDebugPath() {this._drawPath(this.bb.path,{alpha:0.5,size:10});}
 
     _showPath(eps,drawLast)
     {
         const path = this.map.getPath(this.pos, eps);
-        if(path)
-        {
-            this._drawPath(path,{drawLast:drawLast});
-        }
+        if(path) {this._drawPath(path,{drawLast:drawLast});}
         return path;
     }
 
@@ -87,18 +78,9 @@ export class COM_Nav extends Com
         return this.map.getPath(sp, eps);
     }
 
-    _setPath(path)
-    {
-        // console.log(`${this.root.id} ---- _setPath`);
-        this.bb.path = path;
-    }
+    _setPath(path) {this.bb.path = path;}
 
-    _clearPath() 
-    {
-        // console.log(`${this.root.id} ---- _clearPath`);
-        // delete this.bb.path;
-        this.bb.path = null;
-    }
+    _clearPath() {this.bb.path = null;}
 
     // 檢查下一個點是否被阻擋
     _checkPath()
@@ -112,6 +94,9 @@ export class COM_Nav extends Com
         }
         return true;
     }
+
+    // 角色死亡時，清除路徑
+    _ondead() {this._graph && this._graph.destroy();}
 
     //------------------------------------------------------
     //  Public
@@ -139,6 +124,7 @@ export class COM_Nav extends Com
         root.getPath=this._getPath.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
+        root.on('ondead', this._ondead.bind(this));
 
     }
 

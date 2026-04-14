@@ -23,13 +23,9 @@ export default class Local
         return this._local?.[key]?.[this.lang]?.des ?? '';//`[color=red]${key}[/color]`;
     }
 
-
     static des(key,{num}={})
     {
-        
-        let str = this._local?.[key]?.[this.lang]?.des ?? '';
-
-        console.log(str,num);
+        const str = this._local?.[key]?.[this.lang]?.des ?? '';
 
         return str.replace(/{#(\w+)}/g, (match, arg) => {
             switch(arg)
@@ -37,10 +33,7 @@ export default class Local
                 case 'num': return `${num}`;
             }}
         );
-
     }
-
-    
 
     static lut(key)
     {

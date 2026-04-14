@@ -402,7 +402,6 @@ export class COM_Stats extends Com
             }
             return true;
         });
-
     }
 
     _addEffs(effs,scope,stage,ctx)
@@ -430,9 +429,9 @@ export class COM_Stats extends Com
         });
     }
 
-    _processEffs_TurnStart()
+    async _processEffs_TurnStart()
     {
-        const{root}=this.ctx;
+        const{root,bb}=this.ctx;
 
         // 1. 每回合開始先清除眩暈狀態，確保角色不會永久眩暈
         this._states[GM.STUN] = false;
@@ -447,7 +446,8 @@ export class COM_Stats extends Com
                     let dmg = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
                     if (eff.elm) 
                     {
-                        const resist = this._total.resists?.[RESIST_MAP[eff.elm]] || 0;
+                        const res = `${eff.elm}_res`;
+                        const resist = this._total.resists?.[res] || 0;
                         dmg *= 1 - resist;
                     }
                     this._takeDamage({amount:dmg});
@@ -475,10 +475,13 @@ export class COM_Stats extends Com
             }
         });
 
-        // 移除過期效果
-        const{bb}=this.ctx;
+        // 3. 等待所有彈出完成，才繼續下一步
+        await root.wait?.();   
+
+        // 4. 移除過期效果
         this._actives = this._actives.filter(eff => {
-            if (eff.remaining <= 0) {
+            if (eff.remaining <= 0) 
+            {
                 dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
                 if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
                 return false;
@@ -507,8 +510,22 @@ export class COM_Stats extends Com
 
         // 處理新加入的效果
         this._tmp?.forEach(eff=>{
-            this._setDirty();
+            if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
+            {
+                const existing = this._actives.filter(e=>e.id === eff.id);
+                if(existing.length >= eff.stack) 
+                {
+                    // 超過堆疊上限，移除最早的效果
+                    const idx = this._actives.findIndex(e=>e.id === eff.id);
+                    if(idx!==-1)
+                    {
+                        this._actives.splice(idx, 1);
+                        dlog(T.NORMAL,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
+                    }
+                }
+            }
             this._actives.push(eff);
+            this._setDirty();
         });
         this._tmp=[];
     }
@@ -536,11 +553,11 @@ export class COM_Stats extends Com
     //     }
     // }
 
-    _turnStart()
+    async _turnStart()
     {
         const{bb}=this.ctx;
         dlog(T.NORMAL,bb.id)('turnStart');
-        this._processEffs_TurnStart();
+        await this._processEffs_TurnStart();
         this._updateStates();   
     }
 

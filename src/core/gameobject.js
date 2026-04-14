@@ -262,7 +262,6 @@ export class GameObject extends Phaser.GameObjects.Container
     off(...args) {this._evt?.off(...args);}
     emit(...args) {return this._evt?.emit(...args);}
     aEmit(...args) {return this._evt?.aEmit(...args);}
-    // aEmit(k,...args) {return new Promise(resolve=>this._evt?.emit(k,resolve,...args));}
     
     // 插入元件(component)
     addCom(com, config={})

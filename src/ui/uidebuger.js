@@ -10,8 +10,8 @@ import Record from '../infra/record.js'
 function cmd_get(args)
 {
     // [get] [gold/item] [id] [count]
-    let rewards=[{type:args[1],id:args[2],count:args[3]}]
-    GM.player.receive(rewards)
+    const rewards=[{type:args[1],id:args[2],count:args[3]}];
+    GM.player.reward(rewards)
 }
 
 function cmd_w(args)

@@ -76,6 +76,18 @@ export default class UiObserve extends UiFrame
         return this;
     }
 
+    findEff(parent, id)
+    {
+        return parent.getElement('items').find(elm=>elm.dat.id===id);
+    }
+    
+    addEff(parent, effect)
+    {
+        const elm = new Effect(this.scene,50,50,effect);
+        parent.add(elm);
+        return elm;
+    }
+
     update()
     {
         const content=this._content;
@@ -86,6 +98,7 @@ export default class UiObserve extends UiFrame
         // name
         ui.uBbc.call(content,scene,{text:this.owner.id.lab()})
 
+        // favor
         const Fav=Math.floor(this.owner.getFavor(this.player.id));
         ui.uBbc.call(content,scene,{text:`好感 : ${Fav}`,
                                     color:GM.COLOR.LIGHTGRAY,
@@ -97,7 +110,8 @@ export default class UiObserve extends UiFrame
         ui.uStat.call(content,scene,GM.HP.lab(),value,{interactive:false})
 
         // actives
-        if(this.owner.actives?.length>0)
+        const actives = this.owner.actives;
+        if(actives?.length>0)
         {
             ui.uBbc.call(content,scene,{text:'效果'});
             ui.uDiv.call(content,scene);
@@ -107,10 +121,16 @@ export default class UiObserve extends UiFrame
                 width : (size+5)*5,
                 space: {item:5, line:5},
             }
+
             const fix=ui.uFix.call(content,scene,config);
 
-            this.owner.actives.forEach(eff=>{
-                if(eff.icon||eff.tcon){fix.add(new Effect(this.scene,size,size,eff));}
+            actives.forEach(eff=>{
+                if(eff.icon)
+                {
+                    const found = this.findEff(fix, eff.id);
+                    if(!found) {this.addEff(fix, eff);}
+                    else {found.set(eff);}
+                }
             })
         }
 

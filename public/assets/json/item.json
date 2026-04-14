@@ -236,12 +236,29 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons:4",
     "gold": 25,
+    "equip": {
+      "sprite": "weapons:3",
+      "y": 22
+    },
     "type": "melee",
     "range": 1,
-    "atk": 25,
+    "atk": 5,
+    "effects": [
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "dot",
+        "a": -1,
+        "dur": 5,
+        "stack": 3,
+        "elm": "poison",
+        "id": "posion",
+        "icon": "☠️"
+      }
+    ],
     "tw": {
-      "lab": "鐵劍",
-      "des": "鐵劍"
+      "lab": "焠毒短劍",
+      "des": "用毒液浸泡過的短劍，可使目標中毒"
     },
     "us": {
       "lab": "Iron Sword",
@@ -252,6 +269,10 @@
     "cat": "CAT_WEAPON",
     "icon": "weapons:5",
     "gold": 35,
+    "equip": {
+      "sprite": "weapons:3",
+      "y": 22
+    },
     "type": "melee",
     "range": 1,
     "atk": 35,

@@ -2,6 +2,7 @@ import Com from './com.js'
 import Utility from '../core/utility.js'
 import {uBbc,uRect} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
+import {T,dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -14,7 +15,6 @@ export class COM_Disp extends Com
 {
     get tag() {return 'disp';}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
-    get root() {return this._root;}
 
     //------------------------------------------------------
     //  Local
@@ -22,11 +22,10 @@ export class COM_Disp extends Com
     _create(value, color='#fff', stroke='#000')
     {
         const text=`[stroke=${stroke}]${value}[/stroke]`;
-        let t = uBbc(this.scene,{text:text,color:color,strokeThickness:5});
-        this.root.add(t);
+        const t = uBbc(this.scene,{text:text,color:color,strokeThickness:5});
+        this.ctx.root.add(t);
         t.setOrigin(0.5,0.5);
         t.setDepth(100);
-        // t.setText(value).setTint(color);
         let x = Phaser.Math.Between(10, -10);
         return new Promise((resolve)=>{
             this.scene.tweens.add({
@@ -75,7 +74,7 @@ export class COM_Disp extends Com
                         .add(uBbc(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
                         .setOrigin(0.5,1)
                         .setDepth(100)
-            this.root.add(this._p);
+            this.ctx.root.add(this._p);
         }
 
         if(tween)
@@ -111,22 +110,45 @@ export class COM_Disp extends Com
             this._p.hide();
             this._p.tw?.stop();
         }
-
     }
 
-    // 等待 所有 disp 都結束
-    async wait()
+    // 等待所有彈出完成，才繼續下一步
+    async _waitAll() 
     {
-        if(!this._promises || this._promises.length===0) {return;}
-        await Promise.all(this._promises);    
-        this._queue=[]; 
-        this._promises=[];
+        if (!this._promises || 
+            this._promises.length === 0 && !this._currentWait) 
+        {
+            return;
+        }
+
+        // 如果已經有人在 wait 了，就直接 await 那個正在進行的 process
+        if (this._currentWait) {return await this._currentWait;}
+
+        // 建立一個新的等待程序並存起來，確保同一時間只有一個等待程序在運行
+        this._currentWait = (async () => {
+            try 
+            {
+                while (this._promises.length > 0) 
+                {
+                    const currentBatch = [...this._promises];
+                    this._promises = [];
+                    await Promise.all(currentBatch);
+                }
+            } 
+            finally 
+            {
+                this._currentWait = null; // 確保發生錯誤也會清空，避免鎖死
+            }
+        })();
+
+        return await this._currentWait;
     }
+
 
     async skill(skill)
     {
-        let sp = sprite(this._role.scene,{icon:skill.dat.icon});
-        this.root.add(sp);
+        const sp = sprite(this._role.scene,{icon:skill.dat.icon});
+        this.ctx.root.add(sp);
         sp.setOrigin(0.5,0.5);
         sp.setDepth(100);
         
@@ -155,6 +177,7 @@ export class COM_Disp extends Com
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.popup = this._popup.bind(this);
         root.pop = this._pop.bind(this);
+        root.wait = this._waitAll.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
     }

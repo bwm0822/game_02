@@ -371,16 +371,17 @@ export default class Utility
         const id = eff.id ?`觸發[color=skyblue]${eff.id.lab()}[/color]，`:'';
         const dur = eff.dur ? `，持續[color=white]${eff.dur}[/color]回合`: '';
         const key = eff.key ? `${eff.key.lab()}` : '';
+        const stack = eff.stack ? `，最多疊加[color=white]${eff.stack}[/color]層` : '';
         const num = this.fmt_Num(eff);
         
         switch(eff.type)
         {
             case 'dot': 
             case 'hot':
-                return `${stage}${scope}${id}每回合${num}血量${dur}`.replace(/，+/g, '，');
+                return `${stage}${scope}${id}每回合${num}血量${dur}${stack}`.replace(/，+/g, '，');
             case 'buff':
             case 'debuff':
-                return `${stage}${scope}${id}${key}${num}${dur}`.replace(/，+/g, '，');
+                return `${stage}${scope}${id}${key}${num}${dur}${stack}`.replace(/，+/g, '，');
             case 'mod':
                 return `${stage}${scope}${eff.key?.lab()}${num}`.replace(/，+/g, '，');
             case 'action':
@@ -389,23 +390,24 @@ export default class Utility
         }
     }
 
-    static fmt_Active(eff) 
+    static fmt_Active(eff, stack) 
     {
         const num = this.fmt_Num(eff);
+        const cnt = stack ? `，疊加[color=white]${stack}[/color]層` : '';
         switch(eff.type)
         {
             case 'dot': 
             case 'hot':
-                return `每回合${num}血量`;
+                return `每回合${num}血量${cnt}`;
             case 'buff':
             case 'debuff':
                 if(eff.key) 
                 {
-                    return `有效回合內，${eff.key.lab()}${num}`;
+                    return `有效回合內，${eff.key.lab()}${num}${cnt}`;
                 }
                 else
                 {
-                    return `有效回合內，${eff.id.lab()}`;
+                    return `有效回合內，${eff.id.lab()}${cnt}`;
                 }
         }
     }
