@@ -494,7 +494,7 @@ export class COM_Stats extends Com
     _processEffs_TurnEnd()
     {
         // 回合結束處理
-
+        
         // remaining-1 及 移除過期效果
         const{bb}=this.ctx;
         this._actives = this._actives.filter(eff => {
@@ -520,7 +520,7 @@ export class COM_Stats extends Com
                     if(idx!==-1)
                     {
                         this._actives.splice(idx, 1);
-                        dlog(T.NORMAL,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
+                        dlog(T.NPC,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
                     }
                 }
             }

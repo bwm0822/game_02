@@ -13,10 +13,10 @@ import {computeHealing} from '../core/combat.js'
 
 export class COM_Ability extends Com
 {
-    constructor()
+    constructor(abilities)
     {
         super();
-        this._abilities = {}; // 可用的技能
+        this._abilities = this._toObj(abilities); // 可用的技能
         this._ability = null; // 當前選擇的技能
         this._idSel = null;
     }
@@ -29,6 +29,14 @@ export class COM_Ability extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _toObj(abilities)
+    {
+        if(!abilities) {return {};}
+        return Object.fromEntries(
+            abilities.map(ability => [ability, { skip: false, remain: 0 }])
+        );
+    }
+
     // 學習新技能
     _learn(id)
     {

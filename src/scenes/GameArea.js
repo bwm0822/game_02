@@ -81,14 +81,13 @@ export class GameArea extends GameScene
 
     async process()
     {
+        await GM.player.process();
+        await TimeSystem.inc();
+        
         while(true)
         {
             if(this.mode=='normal')
             {
-                // const roles = this.roles.map(role=>role.process());
-                // console.log(roles)
-                // await Promise.all( roles );
-
                 const ps = this.roles.map(role=>role.process());
                 const rs = await Promise.allSettled(ps);
                 // console.log(rs);

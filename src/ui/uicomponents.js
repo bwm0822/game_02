@@ -59,7 +59,6 @@ export class Pic extends OverlapSizer
             if(this._bbc) {this.hide(this._bbc);}
             if(!this._img)
             {
-                console.log('-------- chk',tint,alpha)
                 this._createImg(icon);
                 this._img.setTint(tint).setAlpha(alpha);
             }

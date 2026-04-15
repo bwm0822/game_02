@@ -661,6 +661,44 @@ export class AbilityItem extends Pic
 
 }
 
+export class Ability extends Pic
+{
+    static selected = null; // 用來記錄目前選擇的技能
+    constructor(scene, w, h, ability, config)
+    {
+        super(scene, w, h, config);
+        this._disabled=uRect(scene,{color:GM.COLOR.BLACK, alpha:0})
+        this.addBackground(this._disabled);
+        this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
+                                            ext:{align:'right-bottom',expand:false}})
+        this.addListener();
+        this.set(ability)
+    }
+
+    get dat() {return this._dat;}
+
+    addListener()
+    {
+        this.setInteractive({draggable:true,dropZone:true})
+        .on('pointerover', ()=>{this.over();})
+        .on('pointerout', ()=>{this.out();})
+    }
+
+    setBgColor(color) {this.getElement('background').fillColor = color;}
+    setStrokeColor(color) {this.getElement('background').strokeColor = color;}
+    over() { this.scale=1.1;Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
+
+    set(ability)
+    {
+        this._dat = DB.ability(ability.id);
+        this.setIcon(this._dat.icon);
+        this._remain.setText(ability.remain>0 ? ability.remain : '');
+        this._disabled.fillAlpha = ability.remain>0 ? 0.5 : 0;
+        this.layout();
+    }
+}
+
 export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)

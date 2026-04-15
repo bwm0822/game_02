@@ -577,6 +577,10 @@
     },
     "job": "butcher",
     "gold": 200,
+    "abilities": [
+      "fireball",
+      "heal"
+    ],
     "body": {
       "sprite": "xi",
       "scale": 0.25,

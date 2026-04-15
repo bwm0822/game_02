@@ -12,13 +12,12 @@ import {COM_Stats} from '../components/stats.js'
 import {COM_Sleep} from '../components/sleep.js'
 import {COM_Schedule} from '../components/schedule.js'
 import {COM_Favor} from '../components/favor.js'
+import {COM_Ability} from '../components/ability.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
 import QuestManager from '../manager/quest.js'
 import {T,dlog} from '../core/debug.js'
-
-let _dbg = true;
 
 export class Npc extends Role
 {
@@ -103,6 +102,7 @@ export class Npc extends Role
             .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())
             .addCom(new COM_Favor())
+            .addCom(new COM_Ability(bb.meta.abilities))
 
         // 綁定 API
         this.exit = this._remove.bind(this);
@@ -147,7 +147,7 @@ export class Npc extends Role
 
     async process()
     {
-        const{aEmit,bb}=this.ctx;
+        const{aEmit}=this.ctx;
         if(!this.isAlive) {return;}
         await aEmit('turnstart');
         if(this.isAlive&&!this.total.states.stun) {await this.think?.();}

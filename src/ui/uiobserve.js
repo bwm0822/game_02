@@ -1,7 +1,9 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
+import {Ability} from './uiclass.js'
 import {GM,UI} from '../core/setting.js'
 import {Effect} from './uiclass.js'
+import Utility from '../core/utility.js'
 
 export default class UiObserve extends UiFrame
 {
@@ -88,6 +90,25 @@ export default class UiObserve extends UiFrame
         return elm;
     }
 
+    addAbilities(parent, abilities)
+    {
+        if(Utility.isEmpty(abilities)) {return;}
+        const content=this._content;
+        const scene=this.scene;
+        ui.uBbc.call(parent,scene,{text:'能力'});
+        ui.uDiv.call(content,scene);
+        const size=50;
+        const config=
+        {
+            width : (size+5)*5,
+            space: {item:5, line:5},
+        }
+        const fix=ui.uFix.call(content,scene,config);
+        Object.entries(abilities).forEach(([id, props]) =>{
+            fix.add(new Ability(scene,size,size,{id, ...props}));
+        });
+    }
+
     update()
     {
         const content=this._content;
@@ -108,6 +129,10 @@ export default class UiObserve extends UiFrame
         const total = this.owner.total;
         let value = `${total.states[GM.HP]}/${total[GM.HPMAX]}`;
         ui.uStat.call(content,scene,GM.HP.lab(),value,{interactive:false})
+
+        // abilities
+        const abilities = this.owner.abilities;
+        this.addAbilities(content, abilities);
 
         // actives
         const actives = this.owner.actives;
