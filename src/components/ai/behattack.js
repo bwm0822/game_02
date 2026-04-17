@@ -47,6 +47,32 @@ export class BehAttack extends Behavior
         this._onAttack=true;
         const t=this._t;
 
+        // check HP
+        dlog(T.NPC,bb.id)(root.total);
+        const hpMax = root.total.hpMax;
+        const hp = root.total.states.hp;
+        if(hp < hpMax*0.5) 
+        {
+            dlog(T.NPC,bb.id)('HP低於50%'); 
+            const ab = root.queryAb?.('heal')?.[0];
+            if(ab)
+            {
+                const ok = await root.useAb?.(root, ab);
+                if(ok) { this._commitUse(ctx); return { ok:true, note:'heal' }; }
+                else {return { ok:false, note:'heal failed' };}
+            }
+        }
+        
+        
+        const ab = root.queryAb?.('atk')?.[0];
+        if(ab)
+        {
+            console.log('chk1');
+            const ok = await root.useAb?.(t, ab);
+            if(ok) { console.log('chk2'); this._commitUse(ctx); return { ok:true, note:'attack' }; }
+            // else {return { ok:false, note:'attack failed' };}
+        }
+
         if (root.inAttackRange?.(t)) 
         {
             const ok = await root.attack?.(t);

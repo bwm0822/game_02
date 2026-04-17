@@ -7,15 +7,18 @@ export class Pic extends OverlapSizer
     constructor(scene, w, h, config={})
     {            
         const{
-            x, y, space=2, 
+            x, y, space=0, 
             icon, 
             bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
-                // strokeColor:GM.COLOR.WHITE,strokeWidth:2
+                // strokeColor:GM.COLOR.WHITE,strokeWidth:2 
             }
         }=config;
 
         super(scene, x, y, w, h,{space:space});
-        this.addBackground(uRect(scene,bg),'background');
+        if(!Utility.isEmpty(bg)) 
+        {
+            this.addBackground(uRect(scene,bg),'background');
+        }
         if(icon) 
         {
             const ascii = Utility.isASCIIString(icon);
@@ -42,7 +45,7 @@ export class Pic extends OverlapSizer
         w = w ?? this.width;
         this._bbc = uBbc.call(this,this.scene,{   
                                     text:icon,
-                                    fontSize:w*0.7,
+                                    fontSize:w*0.65,
                                     ext:{align:'center',expand:false}
                                 })
     }

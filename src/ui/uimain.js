@@ -14,7 +14,7 @@ export default class UiMain extends UiFrame
     static instance = null;
     constructor(scene)
     {
-        let config = {
+        const config = {
             x: GM.w/2,
             y: GM.h,
             width: 400,

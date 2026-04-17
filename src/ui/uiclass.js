@@ -455,14 +455,12 @@ export class OutputSlot extends Slot
 export class AbilitySlot extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
-    constructor(scene, w, h, i, config)
+    constructor(scene, w, h, i)
     {
-        super(scene, w, h, config);
-        this._disabled=uRect(scene,{color:GM.COLOR.BLACK, alpha:0})
-        this.addBackground(this._disabled);
+        super(scene, w, h);
+        this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                             ext:{align:'right-bottom',expand:false}})
-        this.setIcon(config?.icon);
         this.addListener();
         this._i = i;            // 技能欄位索引
         this._dat = null;       // 用來存放技能資料
@@ -528,7 +526,8 @@ export class AbilitySlot extends Pic
     select()
     {
         AbilitySlot.selected = this; // 設定目前選擇的技能
-        this.setStrokeColor(GM.COLOR_RED);
+        // this.setBgColor(GM.COLOR.BLACK);
+        this.setStrokeColor(GM.COLOR.RED);
         this.owner.selectAbility(this.id); // 設定角色的技能
 
     }
@@ -536,14 +535,15 @@ export class AbilitySlot extends Pic
     unselect()
     {
         AbilitySlot.selected = null; // 清除目前選擇的技能
-        this.setStrokeColor(GM.COLOR_WHITE);
+        // this.setBgColor(GM.COLOR.SLOT);
+        this.setStrokeColor(GM.COLOR.WHITE);
         this.owner.unselectAbility();// 清除角色的技能
     }
 
     reset() // call by role.resetAbility()
     {
         AbilitySlot.selected = null; // 清除目前選擇的技能
-        this.setStrokeColor(GM.COLOR_WHITE);
+        this.setStrokeColor(GM.COLOR.WHITE);
         this.update();
     }
 
@@ -553,6 +553,8 @@ export class AbilitySlot extends Pic
         this.setIcon(this._dat.icon);
         this._remain.setText(this.remain>0 ? this.remain : '');
         this._disabled.fillAlpha = this.remain>0 ? 0.5 : 0;
+        this.bringChildToTop(this._disabled);
+        this.bringChildToTop(this._remain);
         this.layout();
     }
 
@@ -561,21 +563,23 @@ export class AbilitySlot extends Pic
         this._dat = null
         this.setIcon();
         this._remain.setText('');
-        this.setBgColor(GM.COLOR.SLOT);
         this._disabled.fillAlpha = 0;
+        this.bringChildToTop(this._disabled);
+        this.bringChildToTop(this._remain);
         this.owner.clearSlot(this.i); // 清除技能欄位   
     }
 }
 
 export class AbilityItem extends Pic
 {
-    constructor(scene, w, h, config)
+    constructor(scene, w, h)
     {
+        const config = {bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
         super(scene, w, h, config);
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0});
         this._locked=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                         ext:{align:'center-center',expand:false}})
-        this.setIcon(config?.icon);
+        // this.setIcon(config?.icon);
         this.addListener();
         this._id = null;
         this._ability = null;     // 用來存放技能狀態
@@ -664,15 +668,15 @@ export class AbilityItem extends Pic
 export class Ability extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
-    constructor(scene, w, h, ability, config)
+    constructor(scene, w, h, ability)
     {
+        const config = {bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
         super(scene, w, h, config);
-        this._disabled=uRect(scene,{color:GM.COLOR.BLACK, alpha:0})
-        this.addBackground(this._disabled);
+        this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})        
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                             ext:{align:'right-bottom',expand:false}})
         this.addListener();
-        this.set(ability)
+        this.set(ability);
     }
 
     get dat() {return this._dat;}
@@ -684,8 +688,6 @@ export class Ability extends Pic
         .on('pointerout', ()=>{this.out();})
     }
 
-    setBgColor(color) {this.getElement('background').fillColor = color;}
-    setStrokeColor(color) {this.getElement('background').strokeColor = color;}
     over() { this.scale=1.1;Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
@@ -693,8 +695,11 @@ export class Ability extends Pic
     {
         this._dat = DB.ability(ability.id);
         this.setIcon(this._dat.icon);
-        this._remain.setText(ability.remain>0 ? ability.remain : '');
-        this._disabled.fillAlpha = ability.remain>0 ? 0.5 : 0;
+        const rem = ability.skip ? ability.remain : ability.remain-1;
+        this._remain.setText(rem>0 ? rem : '');
+        this._disabled.fillAlpha = rem>0 ? 0.5 : 0;
+        this.bringChildToTop(this._disabled);
+        this.bringChildToTop(this._remain);
         this.layout();
     }
 }
@@ -703,7 +708,7 @@ export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {icon:eff.icon, strokeWidth:0, space:0});
+        super(scene, w, h, {icon:eff.icon});
 
         this._dat=eff;
         this._style=style;

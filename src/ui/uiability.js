@@ -60,6 +60,7 @@ export default class UiAbility extends UiFrame
                                                 hideUnscrollableSlider:true});
 
         this._panel = ui.uScroll.call(p, scene, {width:300,
+                                                scrollMode:2,
                                                 hideUnscrollableSlider:true,
                                                 ext:{expand:true,padding:10},
                                                 bg:{color:GM.COLOR.DARK,},
@@ -110,7 +111,7 @@ export default class UiAbility extends UiFrame
         tree.forEach(dat=>{
             if(dat.type==='skill')
             {
-                let slot = new AbilityItem(this.scene,50,50);
+                const slot = new AbilityItem(this.scene,50,50);
                 slot.set(dat.id,dat.x,dat.y)
                 this._panel.addItem(slot)
                 xMax = Math.max(xMax, dat.x);
@@ -129,7 +130,7 @@ export default class UiAbility extends UiFrame
 
 
         dlog(T.UI)(xMax,yMax)
-        this._panel.setContentSize(xMax+50,yMax+50)
+        this._panel.setContentSize(xMax+50,yMax+50);
         this.layout();
     }
 

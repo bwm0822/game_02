@@ -334,6 +334,8 @@ export class COM_Stats extends Com
 
     _takeDamage(dmg) 
     {
+        const alive = this._states[GM.HP] > 0;
+
         const {root,emit}=this.ctx;
 
         root.addFavor?.(dmg.attacker?.id, -50);  // 受攻擊，降低好感度
@@ -358,51 +360,51 @@ export class COM_Stats extends Com
         }
 
         emit('damage');
-        this._states[GM.HP]===0 && emit('ondead');
+        alive && this._states[GM.HP]<=0 && emit('ondead');
     }
 
-    _addProcs(procs)
-    {
-        this._actives.push({...procs,skip:true,remaining:procs.dur});
-    }
+    // _addProcs(procs)
+    // {
+    //     this._actives.push({...procs,skip:true,remaining:procs.dur});
+    // }
 
-    _processProcs()
-    {
-        this._actives.forEach((proc)=>{
-            if(proc.skip) 
-            {
-                proc.skip=false; 
-                this._setDirty(); 
-                return;
-            }
-            if (proc.type === GM.DOT) 
-            {
-                let finalDamage = proc.value;
-                if (proc.elm) 
-                {
-                    const resist = this._total.resists?.[RESIST_MAP[proc.elm]] || 0;
-                    finalDamage *= 1 - resist;
-                }
-                this._takeDamage({amount:finalDamage});
-            }
-            else if (proc.type === GM.HOT) 
-            {
-                let finalHeal = proc.value;
-                this._heal(finalHeal);
-            }
-            proc.remaining -= 1;
-        });
+    // _processProcs()
+    // {
+    //     this._actives.forEach((proc)=>{
+    //         if(proc.skip) 
+    //         {
+    //             proc.skip=false; 
+    //             this._setDirty(); 
+    //             return;
+    //         }
+    //         if (proc.type === GM.DOT) 
+    //         {
+    //             let finalDamage = proc.value;
+    //             if (proc.elm) 
+    //             {
+    //                 const resist = this._total.resists?.[RESIST_MAP[proc.elm]] || 0;
+    //                 finalDamage *= 1 - resist;
+    //             }
+    //             this._takeDamage({amount:finalDamage});
+    //         }
+    //         else if (proc.type === GM.HOT) 
+    //         {
+    //             let finalHeal = proc.value;
+    //             this._heal(finalHeal);
+    //         }
+    //         proc.remaining -= 1;
+    //     });
 
-        // 移除過期效果
-        this._actives = this._actives.filter(proc => {
-            if (proc.remaining <= 0) {
-                dlog()(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
-                this._setDirty();
-                return false;
-            }
-            return true;
-        });
-    }
+    //     // 移除過期效果
+    //     this._actives = this._actives.filter(proc => {
+    //         if (proc.remaining <= 0) {
+    //             dlog()(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
+    //             this._setDirty();
+    //             return false;
+    //         }
+    //         return true;
+    //     });
+    // }
 
     _addEffs(effs,scope,stage,ctx)
     {
@@ -476,9 +478,12 @@ export class COM_Stats extends Com
         });
 
         // 3. 等待所有彈出完成，才繼續下一步
-        await root.wait?.();   
+        await root.wait?.();
 
-        // 4. 移除過期效果
+        // 4. 如果角色已經死亡，清除 pop 效果，結束後續處理
+        if(this._states[GM.HP] <= 0) { root.pop?.(); return; }
+
+        // 5. 移除過期效果
         this._actives = this._actives.filter(eff => {
             if (eff.remaining <= 0) 
             {
@@ -539,19 +544,6 @@ export class COM_Stats extends Com
             this._states[GM.THIRST]=Math.min(this._states[GM.THIRST]+0.25,100);
         }
     }
-
-    // _update(dt=1)
-    // {
-    //     while(dt>0)
-    //     {
-    //         // this._processProcs();
-    //         const{bb}=this.ctx;
-    //         dlog(T.NORMAL,bb.id)('update');
-    //         this._processEffs_TurnStart();
-    //         this._updateStates();
-    //         dt--;
-    //     }
-    // }
 
     async _turnStart()
     {
@@ -631,7 +623,7 @@ export class COM_Stats extends Com
         this.addRt('actives');
         this.addBB('actives');
         this.addRt('isAlive', {get:()=>this._states[GM.HP]>0});
-        root.addProcs = this._addProcs.bind(this);
+        // root.addProcs = this._addProcs.bind(this);
         root.addEffs = this._addEffs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);

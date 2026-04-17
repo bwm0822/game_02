@@ -167,6 +167,15 @@
       {
         "stage": "hit",
         "scope": "target",
+        "type": "debuff",
+        "chance": 0.5,
+        "dur": 1,
+        "id": "stun",
+        "icon": "💫"
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
         "type": "dot",
         "a": -1,
         "dur": 3,
@@ -181,15 +190,6 @@
         "dur": 3,
         "id": "fire",
         "icon": "🔥"
-      },
-      {
-        "stage": "hit",
-        "scope": "target",
-        "type": "debuff",
-        "chance": 0.5,
-        "dur": 1,
-        "id": "stun",
-        "icon": "💫"
       },
       {
         "stage": "hit",

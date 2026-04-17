@@ -18,7 +18,7 @@ export class COM_Ability extends Com
         super();
         this._abilities = this._toObj(abilities); // 可用的技能
         this._ability = null; // 當前選擇的技能
-        this._idSel = null;
+        this._id = null;
     }
 
     get tag() {return 'ability';}   // 回傳元件的標籤
@@ -46,27 +46,99 @@ export class COM_Ability extends Com
         root.setDirty?.();  // 更新屬性
     }
 
+    // _showRange(on, range, checkBlock)
+    // {
+    //     this._graphics?.clear();
+    //     if(!on) {return;}
+    //     if(!this._graphics) {this._graphics = this.scene.add.graphics();}
+
+    //     let n = range;
+    //     let rows = 2*n+1;
+    //     let cols = 2*n+1;
+    //     let a = Array.from({ length: rows }, () => Array(cols));
+    //     let [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+
+    //     for(let x=0; x<=2*n; x++)
+    //     {
+    //         for(let y=0; y<=2*n; y++)
+    //         {
+    //             let px = this.x + (x-n)*w;
+    //             let py = this.y + (y-n)*h;
+    //             let wei = this.scene.map.getWeight({x:px,y:py});
+    //             let hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
+    //             let block = wei<=0 || hits.length>0;
+    //             a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:block};
+    //         }
+    //     }
+
+    //     for(let x=0; x<=2*n; x++)
+    //     {
+    //         for(let y=0; y<=2*n; y++)
+    //         {
+    //             a[y][x].l = a[y][x-1]?.block===false ? false : true;
+    //             a[y][x].r = a[y][x+1]?.block===false ? false : true;
+    //             a[y][x].t = a[y-1]?.[x]?.block===false ? false : true;
+    //             a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
+    //         }
+    //     }
+
+    //     for(let y=0; y<=2*n; y++)
+    //     {
+    //         for(let x=0; x<=2*n; x++)
+    //         {
+    //             let rect = a[y][x];
+    //             if(!rect.block)
+    //             {
+    //                 Utility.drawBlock(this._graphics, rect);
+    //             }
+    //         }
+    //     }
+
+    //     this.a=a;
+    // }
+
     _showRange(on, range, checkBlock)
     {
         this._graphics?.clear();
         if(!on) {return;}
         if(!this._graphics) {this._graphics = this.scene.add.graphics();}
 
-        let n = range;
-        let rows = 2*n+1;
-        let cols = 2*n+1;
-        let a = Array.from({ length: rows }, () => Array(cols));
-        let [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        if(!this._a) {this._genA(range, checkBlock);}
+
+        const n = range;
+        const a = this._a;
+
+        for(let y=0; y<=2*n; y++)
+        {
+            for(let x=0; x<=2*n; x++)
+            {
+                let rect = a[y][x];
+                if(!rect.block)
+                {
+                    Utility.drawBlock(this._graphics, rect);
+                }
+            }
+        }
+
+    }
+
+    _genA(range, checkBlock)
+    {
+        const n = range;
+        const rows = 2*n+1;
+        const cols = 2*n+1;
+        const a = Array.from({ length: rows }, () => Array(cols));
+        const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
 
         for(let x=0; x<=2*n; x++)
         {
             for(let y=0; y<=2*n; y++)
             {
-                let px = this.x + (x-n)*w;
-                let py = this.y + (y-n)*h;
-                let wei = this.scene.map.getWeight({x:px,y:py});
-                let hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
-                let block = wei<=0 || hits.length>0;
+                const px = this.x + (x-n)*w;
+                const py = this.y + (y-n)*h;
+                const wei = this.scene.map.getWeight({x:px,y:py});
+                const hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
+                const block = wei<=0 || hits.length>0;
                 a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:block};
             }
         }
@@ -81,20 +153,8 @@ export class COM_Ability extends Com
                 a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
             }
         }
-
-        for(let y=0; y<=2*n; y++)
-        {
-            for(let x=0; x<=2*n; x++)
-            {
-                let rect = a[y][x];
-                if(!rect.block)
-                {
-                    Utility.drawBlock(this._graphics, rect);
-                }
-            }
-        }
-
-        this.a=a;
+        
+        this._a = a;
     }
 
     // 選擇技能
@@ -105,7 +165,7 @@ export class COM_Ability extends Com
         this._showRange(true, ability.range, false);
 
         this._ability = ability;
-        this._idSel = id;
+        this._id = id;
 
         const {bb}=this.ctx;
         bb.sta=GM.ST_ABILITY;
@@ -121,20 +181,22 @@ export class COM_Ability extends Com
     _clrAbility()
     {
         this._ability = null;
-        this._idSel = null;
+        this._id = null;
 
         const {bb}=this.ctx;
         bb.sta=GM.ST_IDLE;
     }
 
-    _isInRange(pos)
+    _isInRange(pos, checkBlock=true)
     {
-        let n = this._ability.range;
+        !this._a && this._genA(this._ability.range, checkBlock);
+        const n = this._ability.range;
+        const a = this._a;
         for(let x=0; x<=2*n; x++)
         {
             for(let y=0; y<=2*n; y++)
             {
-                let rect = this.a[y][x];
+                let rect = a[y][x];
                 if( !rect.block && 
                     pos.x>=rect.x && pos.x<rect.x+rect.width &&
                     pos.y>=rect.y && pos.y<rect.y+rect.height)
@@ -143,14 +205,21 @@ export class COM_Ability extends Com
                 }
             }
         }
-
         return false;
+    }
+
+    _query(tag)
+    {
+        return Object.keys(this._abilities).filter(id => 
+            DB.ability(id).tag===tag&& this._abilities[id].remain===0);
     }
 
     async _use(target, id)
     {
         const {root} = this.ctx;
+
         if(id) {this._ability = DB.ability(id);}
+        else {id = this._id;}
         
         if(this._ability.type===GM.ACTIVE) 
         {
@@ -162,35 +231,23 @@ export class COM_Ability extends Com
         }
         else if(target && this._isInRange(target.pos))
         {
-            this._abilities[this._idSel]={skip:true, remain:this._ability.cd};
+            this._abilities[id]={skip:true, remain:this._ability.cd};
             this._showRange(false);
             await root.attack?.(target,this._ability);
             this._clrAbility();
             return true;
         } 
-
         return false;
     }
 
     // 更新技能冷卻時間
-    _update(dt)
-    {
-        Object.values(this._abilities).forEach(s=>{
-            if(s.skip) {s.skip=false; dt--;}
-            if(dt>0 && s.remain>0) 
-            {
-                s.remain -= dt;
-                if(s.remain<0) {s.remain=0;}
-            }
-        });
-    }
-
     _turnStart()
     {
         Object.values(this._abilities).forEach(s=>{
             if(s.skip) {s.skip=false;}
             else if(s.remain>0) {s.remain--;}
         });
+        this._a=null;
     }
 
     //------------------------------------------------------
@@ -214,6 +271,7 @@ export class COM_Ability extends Com
         root.isInRange = this._isInRange.bind(this);
         // 內部使用
         root.useAb = this._use.bind(this);
+        root.queryAb = this._query.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         root.on('turnstart', this._turnStart.bind(this));

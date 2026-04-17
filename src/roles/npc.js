@@ -147,8 +147,8 @@ export class Npc extends Role
 
     async process()
     {
-        const{aEmit}=this.ctx;
         if(!this.isAlive) {return;}
+        const{aEmit}=this.ctx;
         await aEmit('turnstart');
         if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
     }

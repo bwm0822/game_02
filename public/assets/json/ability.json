@@ -1,7 +1,8 @@
 {
   "lunge": {
     "icon": "🗡️",
-    "type": "attack",
+    "type": "skill",
+    "tag": "atk",
     "scope": "target",
     "cd": 3,
     "range": 2,
@@ -43,6 +44,7 @@
   "fireball": {
     "icon": "icons:1",
     "type": "spell",
+    "tag": "atk",
     "scope": "target",
     "cd": 3,
     "range": 5,
@@ -63,6 +65,7 @@
   "ice": {
     "icon": "icons:8",
     "type": "spell",
+    "tag": "atk",
     "refs": [
       "lunge",
       "fireball"
@@ -103,6 +106,7 @@
   "heal": {
     "icon": "icons:16",
     "type": "active",
+    "tag": "heal",
     "scope": "self",
     "cd": 3,
     "pow": 2,

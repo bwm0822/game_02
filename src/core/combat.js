@@ -66,7 +66,6 @@ export function computeDamage(attacker, defender, skill={})
 
     attacker.addEffs(aStats.effs, 'self', 'hit', {dmg:damage});
 
-
     return {amount:-damage, type:type, attacker:attacker};
 
 }

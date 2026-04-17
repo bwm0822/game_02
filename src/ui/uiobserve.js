@@ -105,7 +105,7 @@ export default class UiObserve extends UiFrame
         }
         const fix=ui.uFix.call(content,scene,config);
         Object.entries(abilities).forEach(([id, props]) =>{
-            fix.add(new Ability(scene,size,size,{id, ...props}));
+            fix.add(new Ability(scene,size,size,{id, ...props},{bg:{}}));
         });
     }
 
