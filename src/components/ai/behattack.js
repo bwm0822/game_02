@@ -67,9 +67,8 @@ export class BehAttack extends Behavior
         const ab = root.queryAb?.('atk')?.[0];
         if(ab)
         {
-            console.log('chk1');
             const ok = await root.useAb?.(t, ab);
-            if(ok) { console.log('chk2'); this._commitUse(ctx); return { ok:true, note:'attack' }; }
+            if(ok) { this._commitUse(ctx); return { ok:true, note:'attack' }; }
             // else {return { ok:false, note:'attack failed' };}
         }
 

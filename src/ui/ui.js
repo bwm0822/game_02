@@ -98,15 +98,17 @@ export default function createUI(scene)
     test();
 }
 
-
-function test() 
+async function w1()
 {
-    let str='🌍';
-    console.log(str,Utility.hasEmoji(str));
-    str='buffs:1';
-    console.log(str,Utility.hasEmoji(str));
+    console.log('--- 1');
+    await Utility.delay(1000);
+}
 
-    console.log('---------------------------- lifesteal=','lifesteal'.des({num: 25}));
+
+async function test() 
+{
+    w1();
+    console.log('--- 2');
 }
 
 

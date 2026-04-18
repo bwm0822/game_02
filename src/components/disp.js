@@ -1,6 +1,6 @@
 import Com from './com.js'
 import Utility from '../core/utility.js'
-import {uBbc,uRect} from '../ui/uicomponents.js'
+import {uBbc,uRect,uImage,Pic} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 
@@ -145,9 +145,10 @@ export class COM_Disp extends Com
     }
 
 
-    async skill(skill)
+    async _skill(skill)
     {
-        const sp = sprite(this._role.scene,{icon:skill.dat.icon});
+        // const sp = uImage(this.scene,{icon:skill.icon});
+        const sp = new Pic(this.scene,30,30,{icon:skill.icon});
         this.ctx.root.add(sp);
         sp.setOrigin(0.5,0.5);
         sp.setDepth(100);
@@ -155,9 +156,9 @@ export class COM_Disp extends Com
         return new Promise((resolve)=>{
             this.scene.tweens.add({
                 targets: sp,
-                y: {from:-32, to:-64},
+                y: {from:-32, to:-32},
                 scale:{from:1, to:2},
-                duration: 300,
+                duration: 500,
                 ease: 'linear',
                 onStart: ()=>{},
                 onComplete: (tween, targets, gameObject)=>{sp.destroy();resolve()}         
@@ -178,6 +179,7 @@ export class COM_Disp extends Com
         root.popup = this._popup.bind(this);
         root.pop = this._pop.bind(this);
         root.wait = this._waitAll.bind(this);
+        root.skill = this._skill.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
     }

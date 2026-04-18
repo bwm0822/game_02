@@ -423,12 +423,37 @@ export class COM_Stats extends Com
             }
             else
             {
-                // 先暫存，等回合結束再加入 _actives，避免剛加入就被處理
                 const { stage, scope, ...rest} = eff;
-                const active = {...rest, remaining:eff.dur};
-                this._tmp.push(active); 
+                const newEff = {...rest, remaining:eff.dur};
+
+                // 先暫存，等到 TurnEnd() 再處理，避免剛加入就被處理
+                if(scope==='self') {this._tmp.push(newEff);}
+                // 回合已經結束，直接加入 _actives
+                else {this._addToActives(newEff);}
             }
         });
+    }
+
+    _addToActives(eff)
+    {
+        const{bb}=this.ctx;
+        // 處理新加入的效果
+        if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
+        {
+            const existing = this._actives.filter(e=>e.id === eff.id);
+            if(existing.length >= eff.stack) 
+            {
+                // 超過堆疊上限，移除最早的效果
+                const idx = this._actives.findIndex(e=>e.id === eff.id);
+                if(idx!==-1)
+                {
+                    this._actives.splice(idx, 1);
+                    dlog(T.NPC,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
+                }
+            }
+        }
+        this._actives.push(eff);
+        this._setDirty();
     }
 
     async _processEffs_TurnStart()
@@ -477,13 +502,8 @@ export class COM_Stats extends Com
             }
         });
 
-        // 3. 等待所有彈出完成，才繼續下一步
-        await root.wait?.();
 
-        // 4. 如果角色已經死亡，清除 pop 效果，結束後續處理
-        if(this._states[GM.HP] <= 0) { root.pop?.(); return; }
-
-        // 5. 移除過期效果
+        // 3. 移除 DOT/HOT 過期效果
         this._actives = this._actives.filter(eff => {
             if (eff.remaining <= 0) 
             {
@@ -494,13 +514,18 @@ export class COM_Stats extends Com
             return true;
         });
 
+        // 4. 等待所有彈出完成，才繼續下一步
+        await root.wait?.();
+
+        // 5. 如果角色已經死亡，清除 pop 效果
+        if(this._states[GM.HP] <= 0) { root.pop?.(); }
     }
 
     _processEffs_TurnEnd()
     {
         // 回合結束處理
         
-        // remaining-1 及 移除過期效果
+        // BUFF/DEBUFF的remaining-1 及 移除BUFF/DEBUFF過期效果
         const{bb}=this.ctx;
         this._actives = this._actives.filter(eff => {
             if(eff.type===GM.BUFF||eff.type===GM.DEBUFF) {eff.remaining -= 1;}
@@ -513,25 +538,7 @@ export class COM_Stats extends Com
             return true;
         });
 
-        // 處理新加入的效果
-        this._tmp?.forEach(eff=>{
-            if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
-            {
-                const existing = this._actives.filter(e=>e.id === eff.id);
-                if(existing.length >= eff.stack) 
-                {
-                    // 超過堆疊上限，移除最早的效果
-                    const idx = this._actives.findIndex(e=>e.id === eff.id);
-                    if(idx!==-1)
-                    {
-                        this._actives.splice(idx, 1);
-                        dlog(T.NPC,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
-                    }
-                }
-            }
-            this._actives.push(eff);
-            this._setDirty();
-        });
+        this._tmp?.forEach(eff=>this._addToActives(eff));
         this._tmp=[];
     }
 

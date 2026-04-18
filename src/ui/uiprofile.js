@@ -41,7 +41,7 @@ export default class UiProfile extends UiFrame
         const pL = ui.uPanel.call(p, scene, {bg:UI.BG.BORDER, space:space, 
                                                 ext:{expand:true,proportion:1}} );
         const pic = ui.uPic.call(pL,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
-                                                ext:{align:'top'}});
+                                            bg:UI.BG.SLOT,ext:{align:'top'}});
         const bbc = ui.uBbc.call(pL, scene, {text:'阿凡達\n精靈', 
                                                 ext:{align:'top'}} )
         

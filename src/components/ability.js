@@ -225,6 +225,7 @@ export class COM_Ability extends Com
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
             const amount = computeHealing(target, this._ability);
+            await   root.skill?.(this._ability);
             root.heal?.(amount);
             this._clrAbility();
             return true;

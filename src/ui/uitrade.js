@@ -41,7 +41,7 @@ export default class UiTrade extends UiFrame
                     space:UI.SPACE.LRTBI_10,
                     ext:{expand:true}
                 })
-        const pic = ui.uPic.call(p,scene,{w:GM.PORTRAITS_W,h:GM.PORTRAITS_H,icon:'portraits/0'})
+        const pic = ui.uPic.call(p,scene,{w:GM.PORTRAITS_W,h:GM.PORTRAITS_H,bg:UI.BG.SLOT,icon:'portraits/0'})
         const bbc = ui.uBbc.call(p,scene,{text:'阿凡達\n精靈',ext:{align:'top'}})
 
         // 操作介面

@@ -204,7 +204,7 @@
         "stage": "hit",
         "scope": "self",
         "type": "buff",
-        "chance": 0.25,
+        "stack": 1,
         "key": "str",
         "a": 1,
         "dur": 3,

@@ -81,7 +81,7 @@ export class GameArea extends GameScene
 
     async process()
     {
-        await GM.player.process();
+        await GM.player.process({skipTurnStart:true});
         await TimeSystem.inc();
         
         while(true)

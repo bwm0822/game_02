@@ -129,6 +129,7 @@
         "key": "str",
         "a": 1,
         "dur": 100,
+        "stack": 1,
         "icon": "💪",
         "id": "strong"
       }

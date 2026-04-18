@@ -457,7 +457,7 @@ export class AbilitySlot extends Pic
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, i)
     {
-        super(scene, w, h);
+        super(scene, w, h, {bg:UI.BG.SLOT});
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                             ext:{align:'right-bottom',expand:false}})
@@ -708,7 +708,7 @@ export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {icon:eff.icon});
+        super(scene, w, h, {bg:UI.BG.SLOT_NB,icon:eff.icon});
 
         this._dat=eff;
         this._style=style;
@@ -721,17 +721,18 @@ export class Effect extends Pic
                                 ext:{align:'bottom-right',expand:false}})
 
         this._stack=uBbc.call(this,scene,{  
-                                text:`[stroke=#000]${this._stackCnt}x[/stroke]`,
+                                text:`[stroke=#000]${this.tStack}[/stroke]`,
                                 fontSize:20,
                                 color:'#fff',
                                 ext:{align:'top-left',expand:false}})
         this.layout()
         this.addListener()
-
     } 
 
     get dat() {return this._dat;}
-    get stack() {return this._stackCnt;}
+    get stack() {return this._dat.stack===1 ? null : this._stackCnt;}
+    get tStack() {return this._dat.stack===1 ? '' : this._stackCnt+'x'}
+
 
     addListener()
     {
@@ -746,7 +747,7 @@ export class Effect extends Pic
     set(eff)
     {
         this._stackCnt++;
-        this._stack.setText(`[stroke=#000]${this._stackCnt}x[/stroke]`);
+        this._stack.setText(`[stroke=#000]${this.tStack}[/stroke]`);
         this._remaining.setText(`[stroke=#000]${eff.remaining}[/stroke]`);
     }
 

@@ -42,7 +42,7 @@ export class Player extends Role
 
     _saveData(data) {Record.game.pos = this.pos; Record.game.player = data;}
 
-    async _updateTime() {this.emit('turnend');}
+    async _updateTime() {}//this.emit('turnend');this._refresh();}
 
     async _interact(ent, act) 
     {
@@ -170,13 +170,13 @@ export class Player extends Role
         this.bb.path.stop = true; 
     }
 
-    async process()
+    async process({skipTurnStart=false}={})
     {
         // 解構賦值 (destructuring assignment)，
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
-        const {bb,emit} = this.ctx;
-        emit('turnstart');
+        const {bb,emit,aEmit} = this.ctx;
+        if(!skipTurnStart) {await aEmit('turnstart');}
         this._refresh();
 
         // console.log(bb.path);
@@ -213,6 +213,8 @@ export class Player extends Role
             this.anim_idle?.(true);
         }
 
+        emit('turnend');
+        this._refresh();
     }
 
 }

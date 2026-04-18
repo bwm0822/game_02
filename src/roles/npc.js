@@ -45,7 +45,7 @@ export class Npc extends Role
         }
         else
         {
-            emit('turnend');
+            // emit('turnend');
         }
     }
 
@@ -148,9 +148,10 @@ export class Npc extends Role
     async process()
     {
         if(!this.isAlive) {return;}
-        const{aEmit}=this.ctx;
+        const{emit,aEmit}=this.ctx;
         await aEmit('turnstart');
         if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
+        emit('turnend');
     }
     
 }

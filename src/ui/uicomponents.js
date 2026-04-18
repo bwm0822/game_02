@@ -8,10 +8,10 @@ export class Pic extends OverlapSizer
     {            
         const{
             x, y, space=0, 
-            icon, 
-            bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
-                // strokeColor:GM.COLOR.WHITE,strokeWidth:2 
-            }
+            icon, bg
+            // bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
+            //     strokeColor:GM.COLOR.WHITE,strokeWidth:2 
+            // }
         }=config;
 
         super(scene, x, y, w, h,{space:space});
@@ -45,7 +45,7 @@ export class Pic extends OverlapSizer
         w = w ?? this.width;
         this._bbc = uBbc.call(this,this.scene,{   
                                     text:icon,
-                                    fontSize:w*0.65,
+                                    fontSize:w*0.5,
                                     ext:{align:'center',expand:false}
                                 })
     }
