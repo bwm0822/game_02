@@ -289,39 +289,10 @@ export default class UiInfo extends UiFrame
         this.layout()
     }
 
-    getBound(elm, cam)
-    {
-        const gap=5;
-        let p=elm.parentContainer;
-        let parentX=0,parentY=0;
-        // console.log('elm=',elm.x,elm.y,elm.left,elm.right,elm.top,elm.bottom)
-
-        while(p)
-        {
-            parentX+=p.x;
-            parentY+=p.y;
-            p=p.parentContainer;
-        }
-        if(cam) 
-        {
-            const p=Utility.worldToScreen(cam,parentX,parentY);
-            parentX=p.x;
-            parentY=p.y;
-        }
-        const x = parentX+elm.x;
-        const y = parentY+elm.y;
-        const l = parentX+elm.left-gap;
-        const r = parentX+elm.right+gap;
-        const t = parentY+elm.top-gap;
-        const b = parentY+elm.bottom+gap;
-        const m = elm.margin??{left:0,right:GM.w,top:0,bottom:GM.h};
-        return {x,y,l,r,t,b,m};
-    }
-
     show(style, elm, cam)
     {
         super.show();
-        let b=this.getBound(elm, cam);
+        let b=Utility.getBound(elm, cam);
         let [x,y]=[b.x,b.y];
         
         switch(style)
@@ -343,7 +314,6 @@ export default class UiInfo extends UiFrame
 
         this.update(style, elm);
         this.setPosition(x,y).rePos(style, b);
-        this.layout();
     }
 
     rePos(style, b)
@@ -354,12 +324,7 @@ export default class UiInfo extends UiFrame
                 if(this.top<b.m.top) {this.setOrigin(0.5,0);this.y=b.b;}
                 break;
         }
-
-        if(this.left<b.m.left) {this.x=b.m.left+this.width*0.5;}
-        else if(this.right>b.m.right) {this.x=b.m.right-this.width*0.5;}
-        if(this.top<b.m.top) {this.y=b.m.top+this.height*0.5;}
-        else if(this.bottom>b.m.bottom) {this.y=b.m.bottom-this.height*0.5;}
-        
+        super.rePos(b.m);
     }
 
     static close() {

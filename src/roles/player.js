@@ -14,7 +14,7 @@ import {COM_Sleep} from '../components/sleep.js'
 import {COM_Cmd} from '../components/cmd.js'
 
 import DB from '../data/db.js'
-import {GM} from '../core/setting.js'
+import {GM,GS} from '../core/setting.js'
 import Record from '../infra/record.js'
 import Role from './role.js'
 import {T,dlog} from '../core/debug.js'
@@ -176,7 +176,13 @@ export class Player extends Role
         // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
         // 讓後面程式可以直接取用，讓程式更方便、簡潔
         const {bb,emit,aEmit} = this.ctx;
-        if(!skipTurnStart) {await aEmit('turnstart');}
+        if(!skipTurnStart)
+        {
+            if(GS.mode===GM.MODE.NORMAL)
+                emit('turnstart');
+            else
+                await aEmit('turnstart');
+        }
         this._refresh();
 
         // console.log(bb.path);

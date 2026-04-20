@@ -1,6 +1,6 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
-import {GM,UI} from '../core/setting.js'
+import {GM,UI,GS} from '../core/setting.js'
 import {AbilitySlot} from './uiclass.js'
 import UiInv from '../ui/uiinv.js'
 import UiQuest from '../ui/uiquest.js'
@@ -8,6 +8,7 @@ import UiProfile from '../ui/uiprofile.js'
 import UiAbility from '../ui/uiability.js'
 import UiDebuger from '../ui/uidebuger.js'
 import UiMisc from '../ui/uimisc.js'
+import Ui from './uicommon.js'
 
 export default class UiMain extends UiFrame
 {
@@ -34,7 +35,7 @@ export default class UiMain extends UiFrame
             .add(ui.uButton(scene,{text:'🧠',onclick:this._ability.bind(this)}),{align:'bottom'})
             .addCtrl(scene)
             .add(ui.uButton(scene,{text:'⏳',onclick:this._next.bind(this)}),{align:'bottom'})
-            .add(ui.uButton(scene,{text:'⚙️',onclick:this._menu.bind(this)}),{align:'bottom'})
+            .add(ui.uButton(scene,{text:'⚙️',onclick:this._option.bind(this)}),{align:'bottom'})
             .add(ui.uButton(scene,{text:'🐛',onclick:this._debug}),{align:'bottom'})
             // .add(ui.uButton(scene,{text:'▶️',onclick:this._profile}),{align:'bottom'})
             .addEnableCtrl(scene)
@@ -106,6 +107,15 @@ export default class UiMain extends UiFrame
     _next() {this.player.next();}
     _step() {this.player.dbgStep();}
     _menu() {this.close(); this.send('menu');} 
+    _mode() {GS.mode = GS.mode===GM.MODE.NORMAL? GM.MODE.COMBAT : GM.MODE.NORMAL;}
+    _option(btn) 
+    {
+        const options = [
+            {text:`模式:${GS.mode}`,onclick:()=>this._mode()},
+            {text:'離開',onclick:()=>this._menu()},
+        ]
+        Ui.on(UI.TAG.BUTTONS,btn,options);
+    }
 
 
     refresh()

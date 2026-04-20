@@ -119,6 +119,16 @@ export default class UiFrame extends Sizer
         return this;
     }
 
+    // 重新定位，確保不會超出邊界
+    rePos(m={left:0,top:0,right:GM.w,bottom:GM.h})
+    {
+        if(this.left<m.left) {this.x=m.left+this.width*0.5;}
+        else if(this.right>m.right) {this.x=m.right-this.width*0.5;}
+        if(this.top<m.top) {this.y=m.top+this.height*0.5;}
+        else if(this.bottom>m.bottom) {this.y=m.bottom-this.height*0.5;}  
+        this.layout();      
+    }
+    
     show()
     {
         if(this._con) {this._con.visible=true;} 

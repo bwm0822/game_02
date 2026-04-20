@@ -762,6 +762,36 @@ export default class Utility
     }
 
 
+    static getBound(elm, cam)
+    {
+        const gap=5;
+        let p=elm.parentContainer;
+        let parentX=0,parentY=0;
+        // console.log('elm=',elm.x,elm.y,elm.left,elm.right,elm.top,elm.bottom)
+
+        while(p)
+        {
+            parentX+=p.x;
+            parentY+=p.y;
+            p=p.parentContainer;
+        }
+        if(cam) 
+        {
+            const p=Utility.worldToScreen(cam,parentX,parentY);
+            parentX=p.x;
+            parentY=p.y;
+        }
+        const x = parentX+elm.x;
+        const y = parentY+elm.y;
+        const l = parentX+elm.left-gap;
+        const r = parentX+elm.right+gap;
+        const t = parentY+elm.top-gap;
+        const b = parentY+elm.bottom+gap;
+        const m = elm.margin??{left:0,right:GM.w,top:0,bottom:GM.h};
+        return {x,y,l,r,t,b,m};
+    }
+
+
 }
 
 

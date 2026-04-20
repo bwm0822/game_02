@@ -1,6 +1,6 @@
 import {GameScene} from "./GameScene.js"
 import Ui from '../ui/uicommon.js'
-import {GM,UI} from '../core/setting.js'
+import {GM,UI,GS} from '../core/setting.js'
 import {dlog} from '../core/debug.js'
 import UiTime from '../ui/uitime.js'
 
@@ -52,7 +52,7 @@ export class GameArea extends GameScene
     {
         this.dynGroup = this.physics.add.group();
         this.staGroup = this.physics.add.staticGroup();
-        this.mode = 'normal';
+        GS.mode = GM.MODE.NORMAL;
         //this.mode = 'combat';
         // await super.create({diagonal:true,classType:Avatar});   
         await super.create({diagonal:true,classType:Player});        
@@ -86,7 +86,7 @@ export class GameArea extends GameScene
         
         while(true)
         {
-            if(this.mode=='normal')
+            if(GS.mode===GM.MODE.NORMAL)
             {
                 const ps = this.roles.map(role=>role.process());
                 const rs = await Promise.allSettled(ps);
@@ -94,12 +94,12 @@ export class GameArea extends GameScene
             } 
             else
             {
-                await GM.player.process();
                 for(let i=0;i<this.roles.length;i++) 
                 {
                     if(this.roles[i].isPlayer) {continue;}
                     await this.roles[i].process();
                 }
+                await GM.player.process();
             }
             await TimeSystem.inc();
         }

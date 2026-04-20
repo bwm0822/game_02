@@ -29,6 +29,7 @@ import UiCover  from './uicover.js'
 import UiDragged  from './uidragged.js'
 import UiMisc  from './uimisc.js'
 import UiMapLegend  from './uimaplegend.js'
+import UiButtons from './uibuttons.js'
 
 import UiTest from './uitest.js'
 
@@ -90,7 +91,10 @@ export default function createUI(scene)
     new UiDebuger(scene);           // 18
     new UiConfirm(scene);
 
+    new UiButtons(scene);
+
     new UiChangeScene(scene);       // 17
+    
 
     UiChangeScene.show();
     

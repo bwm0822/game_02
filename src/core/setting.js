@@ -441,6 +441,12 @@ export const GM =
     EN: 'en',
     HIDE: 'hide',
 
+    MODE:
+    {
+        NORMAL : 'normal',
+        COMBAT : 'combat',
+    }
+
 }
 
 export const UI =
@@ -499,6 +505,7 @@ export const UI =
         DRAGGED:'dragged',
         MISC:'misc',
         MAPLEGEND:'maplegend',
+        BUTTONS:'buttons',
     },
     INFO:{
         SLOT:'slot',
@@ -570,6 +577,11 @@ export const ORDER = [
     GM.SPLIT,
     GM.OPENBAG,
 ];
+
+export const GS = {
+    mode: GM.MODE.NORMAL
+};
+
 
 
 
