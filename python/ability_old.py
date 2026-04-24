@@ -2,7 +2,10 @@ import pandas as pd
 import json
 
 
-def df_to_json(df):
+def df_to_json(input_excel_path, output_json_path):
+
+    # 讀取 Excel
+    df = pd.read_excel(input_excel_path)
 
     # 準備轉換格式
     output = {}
@@ -12,7 +15,7 @@ def df_to_json(df):
         for key, val in row.items():
             if key.startswith("Unnamed:") or pd.isna(val) or val == "":
                 continue
-            # print(key,val)
+            print(key,val)
 
             if key == 'id':
                 id = val
@@ -27,33 +30,20 @@ def df_to_json(df):
         if obj:
             output[id] = obj
 
-    return output
+    # print(output)
 
-def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
-    output = {}
-    if all_sheets:
-        # xls = pd.ExcelFile(input_excel_path)
-        # for sheet_name in xls.sheet_names:
-        #     df = pd.read_excel(xls, sheet_name=sheet_name, header=None, sheet_name=None)
-        #     output[sheet_name] = df_to_json(df)
-        excel_data = pd.read_excel(input_excel_path, sheet_name=None)
-        for sheet_name, df in excel_data.items():
-            output.update(df_to_json(df))
-    else:
-        df = pd.read_excel(input_excel_path)
-        output = df_to_json(df)
-
-    # 儲存為 JSON
+    # 儲存成 JSON 檔案
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    print("轉換完成！🥰")
+    print("item 轉換完成 ✅")
+
 
 def unit_test():
     # 設定檔案路徑
     input_excel_path = "./xls/ability.xlsx"                    # 你的 Excel 
     output_json_path = "./public/assets/json/ability.json"     # 輸出的 JSON 檔案名稱
-    excel_to_json(input_excel_path, output_json_path)
+    df_to_json(input_excel_path, output_json_path)
 
 
 if __name__ == "__main__":

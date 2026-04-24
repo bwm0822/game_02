@@ -1,182 +1,153 @@
 {
-  "normal": [
+  "geneeral": [
     {
-      "type": "skill",
-      "id": "lunge",
-      "x": 25,
-      "y": 25
+      "id": "stealing",
+      "x": 1,
+      "y": 1
     },
     {
-      "type": "skill",
-      "id": "fireball",
-      "x": 125,
-      "y": 25
+      "id": "lockpicking",
+      "x": 3,
+      "y": 1
     },
     {
-      "type": "link",
-      "pts": [
-        {
-          "x": 25,
-          "y": 50
-        },
-        {
-          "x": 25,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 75
-        }
-      ],
-      "refs": [
-        "lunge"
-      ]
+      "id": "skinning",
+      "x": 5,
+      "y": 1
     },
     {
-      "type": "link",
-      "pts": [
-        {
-          "x": 75,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 100
-        }
-      ],
-      "refs": [
-        "lunge",
-        "fireball"
-      ]
+      "id": "stealth",
+      "x": 1,
+      "y": 3
     },
     {
-      "type": "link",
-      "pts": [
-        {
-          "x": 125,
-          "y": 50
-        },
-        {
-          "x": 125,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 75
-        }
-      ],
-      "refs": [
-        "fireball"
-      ]
-    },
-    {
-      "type": "skill",
-      "id": "ice",
-      "x": 75,
-      "y": 125
+      "id": "barter",
+      "x": 3,
+      "y": 3
     }
   ],
-  "test": [
+  "sword": [
     {
-      "type": "skill",
-      "id": "strong",
-      "x": 25,
-      "y": 25
+      "id": "slash",
+      "x": 1,
+      "y": 1
     },
     {
-      "type": "skill",
+      "id": "thrust",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "whirlwind",
+      "x": 2,
+      "y": 3
+    }
+  ],
+  "archery": [
+    {
+      "id": "snipe",
+      "x": 1,
+      "y": 1
+    }
+  ],
+  "fire": [
+    {
+      "id": "fireball",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "firewall",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "combustion",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "meteorshower",
+      "x": 2,
+      "y": 5
+    }
+  ],
+  "ice": [
+    {
+      "id": "icebolt",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "icewall",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "deepfreeze",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "blizzard",
+      "x": 2,
+      "y": 5
+    }
+  ],
+  "poison": [
+    {
+      "id": "poisondart",
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "poisonmist",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "venomburst",
+      "x": 2,
+      "y": 3
+    }
+  ],
+  "support": [
+    {
       "id": "heal",
-      "x": 125,
-      "y": 25
+      "x": 1,
+      "y": 1
     },
     {
-      "type": "skill",
-      "id": "test1",
-      "x": 225,
-      "y": 25
+      "id": "cure",
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "holylight",
+      "x": 5,
+      "y": 1
+    },
+    {
+      "id": "purify",
+      "x": 4,
+      "y": 3
     }
   ],
-  "Sheet1": [
+  "enhancement": [
     {
-      "type": "skill",
-      "id": "lunge",
-      "x": 25,
-      "y": 25
+      "id": "strboost",
+      "x": 1,
+      "y": 1
     },
     {
-      "type": "skill",
-      "id": "fireball",
-      "x": 125,
-      "y": 25
+      "id": "agiboost",
+      "x": 3,
+      "y": 1
     },
     {
-      "type": "skill",
-      "id": "test1",
-      "x": 225,
-      "y": 25
-    },
-    {
-      "type": "link",
-      "pts": [
-        {
-          "x": 25,
-          "y": 50
-        },
-        {
-          "x": 25,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 75
-        }
-      ],
-      "refs": [
-        "lunge"
-      ]
-    },
-    {
-      "type": "link",
-      "pts": [
-        {
-          "x": 75,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 100
-        }
-      ],
-      "refs": [
-        "lunge",
-        "fireball"
-      ]
-    },
-    {
-      "type": "link",
-      "pts": [
-        {
-          "x": 125,
-          "y": 50
-        },
-        {
-          "x": 125,
-          "y": 75
-        },
-        {
-          "x": 75,
-          "y": 75
-        }
-      ],
-      "refs": [
-        "fireball"
-      ]
-    },
-    {
-      "type": "skill",
-      "id": "ice",
-      "x": 75,
-      "y": 125
+      "id": "intboost",
+      "x": 5,
+      "y": 1
     }
   ]
 }

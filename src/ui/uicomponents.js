@@ -654,7 +654,7 @@ export function uScroll(scene, config={})
         if(on) {scene.input.on('wheel',wheel);}
         else {scene.input.off('wheel',wheel);}
     }
-    scroll.getChildren =()=>{return _panel.getChildren()??_panel.list;}
+    scroll.getChildren =()=>{return _panel.getChildren?.()??_panel.list;}
 
     return scroll;
 }

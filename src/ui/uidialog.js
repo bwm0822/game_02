@@ -52,8 +52,11 @@ export default class UiDialog extends UiFrame
                                     space:UI.SPACE.LRTBI_10,
                                     ext:{expand:true,proportion:1}})
 
-        const uIcon = new ui.Pic(scene,GM.PORTRAITS.W,GM.PORTRAITS.H,{icon:'portraits/0'})
-        p.add(uIcon,{align:'top'})
+        const uIcon = ui.uPic.call(p,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
+                                        icon:'portraits/0',
+                                        bg:UI.BG.SLOT,
+                                        // ext:{align:'top'}
+                                    });
 
         const pR= ui.uPanel.call(p,scene,{bg:UI.BG.BORDER,
                                             orientation:'y',
@@ -91,7 +94,9 @@ export default class UiDialog extends UiFrame
 
         const pic = ui.uPic.call(p,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
                                         icon:'portraits/0',
-                                        ext:{align:'top'}});
+                                        bg:UI.BG.SLOT,
+                                        // ext:{align:'top'} 
+                                    });
 
         const scroll = ui.uScroll.call(p,scene,{
                         ext:{expand:true,proportion:1}});

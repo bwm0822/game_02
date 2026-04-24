@@ -1,175 +1,352 @@
 {
-  "lunge": {
+  "stealing": {
+    "icon": "🧤",
+    "type": "active",
+    "tw": {
+      "lab": "偷竊",
+      "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
+    },
+    "us": {
+      "lab": "Stealing",
+      "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
+    }
+  },
+  "lockpicking": {
+    "icon": "🗝️",
+    "type": "active",
+    "tw": {
+      "lab": "開鎖",
+      "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
+    },
+    "us": {
+      "lab": "Lockpicking",
+      "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
+    }
+  },
+  "skinning": {
+    "icon": "🔪",
+    "type": "active",
+    "tw": {
+      "lab": "剝皮",
+      "des": "從野獸屍體獲取皮革。增加素材掉落率。"
+    },
+    "us": {
+      "lab": "Skinning",
+      "des": "從野獸屍體獲取皮革。增加素材掉落率。"
+    }
+  },
+  "stealth": {
+    "icon": "👤",
+    "type": "active",
+    "tw": {
+      "lab": "潛行",
+      "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
+    },
+    "us": {
+      "lab": "Stealth",
+      "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
+    }
+  },
+  "barter": {
+    "icon": "💰",
+    "type": "active",
+    "tw": {
+      "lab": "討價還價",
+      "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
+    },
+    "us": {
+      "lab": "Barter",
+      "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
+    }
+  },
+  "slash": {
     "icon": "🗡️",
-    "type": "skill",
-    "tag": "atk",
-    "scope": "target",
-    "cd": 3,
-    "range": 2,
-    "pow": 1.5,
-    "flat": 0,
-    "elm": "phy",
-    "src": "atk",
-    "effects": [
-      {
-        "stage": "atk",
-        "scope": "self",
-        "type": "mod",
-        "key": "pen",
-        "a": 0.1
-      },
-      {
-        "stage": "atk",
-        "scope": "target",
-        "type": "mod",
-        "key": "def",
-        "m": -0.1
-      }
-    ],
-    "procs": [
-      {
-        "scope": "self",
-        "type": "dot",
-        "value": 2,
-        "dur": 3,
-        "icon": "icons:0",
-        "tag": "bleed"
-      }
+    "type": "active",
+    "tw": {
+      "lab": "斬擊",
+      "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
+    },
+    "us": {
+      "lab": "Slash",
+      "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
+    }
+  },
+  "thrust": {
+    "icon": "📍",
+    "type": "active",
+    "tw": {
+      "lab": "刺擊",
+      "des": "直線突刺。無視目標 20% 物理防禦。"
+    },
+    "us": {
+      "lab": "Thrust",
+      "des": "直線突刺。無視目標 20% 物理防禦。"
+    }
+  },
+  "whirlwind": {
+    "icon": "🌪️",
+    "type": "active",
+    "refs": [
+      "slash",
+      "thrust"
     ],
     "tw": {
-      "lab": "突刺",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
+      "lab": "旋風斬",
+      "des": "旋轉劍身，對周圍全體造成多段傷害。"
+    },
+    "us": {
+      "lab": "Whirlwind",
+      "des": "旋轉劍身，對周圍全體造成多段傷害。"
+    }
+  },
+  "snipe": {
+    "icon": "🎯",
+    "type": "active",
+    "tw": {
+      "lab": "狙擊",
+      "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
+    },
+    "us": {
+      "lab": "Snipe",
+      "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
     }
   },
   "fireball": {
-    "icon": "icons:1",
-    "type": "spell",
-    "tag": "atk",
-    "scope": "target",
-    "cd": 3,
-    "range": 5,
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "fire",
-    "src": "int",
-    "sprite": {
-      "img": "icons:1",
-      "scl": 1,
-      "deg": -45
-    },
+    "icon": "🔥",
+    "type": "active",
     "tw": {
       "lab": "火球術",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
-    }
-  },
-  "ice": {
-    "icon": "icons:8",
-    "type": "spell",
-    "tag": "atk",
-    "refs": [
-      "lunge",
-      "fireball"
-    ],
-    "scope": "target",
-    "cd": 3,
-    "range": 5,
-    "pow": 2,
-    "flat": 10,
-    "elm": "ice",
-    "src": "int",
-    "sprite": {
-      "img": "icons:8",
-      "scl": 1,
-      "deg": -45
+      "des": "投擲火球。造成基礎火屬性爆炸傷害。"
     },
-    "tw": {
-      "lab": "冰凍術",
-      "des": "對{#scope}造成{#pow}倍{#src}的{#elm}傷害。"
+    "us": {
+      "lab": "Fireball",
+      "des": "投擲火球。造成基礎火屬性爆炸傷害。"
     }
   },
-  "strong": {
-    "icon": "icons:20",
-    "type": "passive",
-    "effects": [
-      {
-        "scope": "self",
-        "type": "mod",
-        "key": "str",
-        "a": 1
-      }
+  "firewall": {
+    "icon": "🧱",
+    "type": "active",
+    "tw": {
+      "lab": "火牆術",
+      "des": "召喚火焰地帶。對經過者施加持續灼燒。"
+    },
+    "us": {
+      "lab": "Fire Wall",
+      "des": "召喚火焰地帶。對經過者施加持續灼燒。"
+    }
+  },
+  "combustion": {
+    "icon": "🌋",
+    "type": "active",
+    "refs": [
+      "fireball",
+      "firewall"
     ],
     "tw": {
-      "lab": "強化",
-      "des": ""
+      "lab": "燃燒術",
+      "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
+    },
+    "us": {
+      "lab": "Combustion",
+      "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
+    }
+  },
+  "meteorshower": {
+    "icon": "☄️",
+    "type": "active",
+    "refs": [
+      "combustion"
+    ],
+    "tw": {
+      "lab": "流星雨",
+      "des": "大範圍隕石轟炸，摧毀範圍內一切。"
+    },
+    "us": {
+      "lab": "Meteor Shower",
+      "des": "大範圍隕石轟炸，摧毀範圍內一切。"
+    }
+  },
+  "icebolt": {
+    "icon": "❄️",
+    "type": "active",
+    "tw": {
+      "lab": "冰箭術",
+      "des": "單體冰錐。造成傷害並減速 30%。"
+    },
+    "us": {
+      "lab": "Ice Bolt",
+      "des": "單體冰錐。造成傷害並減速 30%。"
+    }
+  },
+  "icewall": {
+    "icon": "🧊",
+    "type": "active",
+    "tw": {
+      "lab": "冰牆術",
+      "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
+    },
+    "us": {
+      "lab": "Ice Wall",
+      "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
+    }
+  },
+  "deepfreeze": {
+    "icon": "🥶",
+    "type": "active",
+    "refs": [
+      "icebolt",
+      "icewall"
+    ],
+    "tw": {
+      "lab": "冰封術",
+      "des": "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。"
+    },
+    "us": {
+      "lab": "Deep Freeze",
+      "des": "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。"
+    }
+  },
+  "blizzard": {
+    "icon": "🌨️",
+    "type": "active",
+    "refs": [
+      "deepfreeze"
+    ],
+    "tw": {
+      "lab": "暴風雪",
+      "des": "大範圍持續性傷害，並有 10% 機率直接凍結敵人。"
+    },
+    "us": {
+      "lab": "Blizzard",
+      "des": "大範圍持續性傷害，並有 10% 機率直接凍結敵人。"
+    }
+  },
+  "poisondart": {
+    "icon": "🐍",
+    "type": "active",
+    "tw": {
+      "lab": "毒箭術",
+      "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
+    },
+    "us": {
+      "lab": "毒箭術",
+      "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
+    }
+  },
+  "poisonmist": {
+    "icon": "🌫️",
+    "type": "active",
+    "tw": {
+      "lab": "毒霧術",
+      "des": "在指定區域散佈致命毒氣。"
+    },
+    "us": {
+      "lab": "毒霧術",
+      "des": "在指定區域散佈致命毒氣。"
+    }
+  },
+  "venomburst": {
+    "icon": "🍄",
+    "type": "active",
+    "refs": [
+      "poisondart",
+      "poisonmist"
+    ],
+    "tw": {
+      "lab": "毒素引爆",
+      "des": "使受毒者爆炸，將毒素噴濺至周圍目標。"
+    },
+    "us": {
+      "lab": "毒素引爆",
+      "des": "使受毒者爆炸，將毒素噴濺至周圍目標。"
     }
   },
   "heal": {
-    "icon": "icons:16",
+    "icon": "💖",
     "type": "active",
-    "tag": "heal",
-    "scope": "self",
-    "cd": 3,
-    "pow": 2,
-    "flat": 10,
-    "src": "int",
-    "effects": [
-      {
-        "stage": "cast",
-        "scope": "self",
-        "type": "hot",
-        "a": 5,
-        "dur": 5,
-        "icon": "❤️",
-        "id": "heal"
-      },
-      {
-        "stage": "cast",
-        "scope": "self",
-        "type": "buff",
-        "key": "str",
-        "a": 1,
-        "dur": 100,
-        "stack": 1,
-        "icon": "💪",
-        "id": "strong"
-      }
-    ],
-    "procs": [
-      {
-        "scope": "self",
-        "type": "hot",
-        "value": 5,
-        "dur": 5,
-        "icon": "icons:16",
-        "tag": "heal"
-      },
-      {
-        "scope": "self",
-        "type": "buff",
-        "effects": [
-          {
-            "stat": "str",
-            "a": 1
-          }
-        ],
-        "dur": 5,
-        "icon": "icons:16",
-        "tag": "strong"
-      }
-    ],
     "tw": {
-      "lab": "回復術",
-      "des": "回復{#pow}倍{#src}的生命"
+      "lab": "治療",
+      "des": "恢復目標生命值。"
+    },
+    "us": {
+      "lab": "Heal",
+      "des": "恢復目標生命值。"
     }
   },
-  "test1": {
-    "icon": "icons:17",
+  "cure": {
+    "icon": "🧪",
     "type": "active",
-    "cd": 3,
-    "range": 2,
     "tw": {
-      "lab": "測試1",
-      "des": "測試1"
+      "lab": "解毒",
+      "des": "清除體內毒素。"
+    },
+    "us": {
+      "lab": "Cure",
+      "des": "清除體內毒素。"
+    }
+  },
+  "holylight": {
+    "icon": "☀️",
+    "type": "active",
+    "tw": {
+      "lab": "聖光",
+      "des": "移除 1 個負面狀態。"
+    },
+    "us": {
+      "lab": "Holy Light",
+      "des": "移除 1 個負面狀態。"
+    }
+  },
+  "purify": {
+    "icon": "✨",
+    "type": "active",
+    "refs": [
+      "cure",
+      "holylight"
+    ],
+    "tw": {
+      "lab": "淨化",
+      "des": "清除體內毒素，移除所有負面狀態。"
+    },
+    "us": {
+      "lab": "Purify",
+      "des": "清除體內毒素，移除所有負面狀態。"
+    }
+  },
+  "strboost": {
+    "icon": "💪",
+    "type": "active",
+    "tw": {
+      "lab": "力量增強",
+      "des": "增加力量，可提升近戰傷害。"
+    },
+    "us": {
+      "lab": "Strength Boost",
+      "des": "增加力量，可提升近戰傷害。"
+    }
+  },
+  "agiboost": {
+    "icon": "👟",
+    "type": "active",
+    "tw": {
+      "lab": "敏捷增強",
+      "des": "增加敏捷，可提升閃避。"
+    },
+    "us": {
+      "lab": "Agility Boost",
+      "des": "增加敏捷，可提升閃避。"
+    }
+  },
+  "intboost": {
+    "icon": "🧠",
+    "type": "active",
+    "tw": {
+      "lab": "智力增強",
+      "des": "增加智力，可提升法術效果。"
+    },
+    "us": {
+      "lab": "Intelligence Boost",
+      "des": "增加智力，可提升法術效果。"
     }
   }
 }
