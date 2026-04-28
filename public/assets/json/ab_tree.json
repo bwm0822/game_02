@@ -1,153 +1,153 @@
 {
-  "geneeral": [
+  "General": [
     {
       "id": "stealing",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "lockpicking",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "skinning",
-      "x": 5,
-      "y": 1
+      "x": 4,
+      "y": 0
     },
     {
       "id": "stealth",
-      "x": 1,
-      "y": 3
+      "x": 0,
+      "y": 2
     },
     {
       "id": "barter",
-      "x": 3,
-      "y": 3
+      "x": 2,
+      "y": 2
     }
   ],
-  "sword": [
+  "Sword": [
     {
       "id": "slash",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "thrust",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "whirlwind",
-      "x": 2,
-      "y": 3
+      "x": 1,
+      "y": 2
     }
   ],
-  "archery": [
+  "Archery": [
     {
       "id": "snipe",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     }
   ],
-  "fire": [
+  "Fire": [
     {
       "id": "fireball",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "firewall",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "combustion",
-      "x": 2,
-      "y": 3
+      "x": 1,
+      "y": 2
     },
     {
       "id": "meteorshower",
-      "x": 2,
-      "y": 5
+      "x": 1,
+      "y": 4
     }
   ],
-  "ice": [
+  "Ice": [
     {
       "id": "icebolt",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "icewall",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "deepfreeze",
-      "x": 2,
-      "y": 3
+      "x": 1,
+      "y": 2
     },
     {
       "id": "blizzard",
-      "x": 2,
-      "y": 5
+      "x": 1,
+      "y": 4
     }
   ],
-  "poison": [
+  "Poison": [
     {
       "id": "poisondart",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "poisonmist",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "venomburst",
-      "x": 2,
-      "y": 3
+      "x": 1,
+      "y": 2
     }
   ],
-  "support": [
+  "Support": [
     {
       "id": "heal",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "cure",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "holylight",
-      "x": 5,
-      "y": 1
+      "x": 4,
+      "y": 0
     },
     {
       "id": "purify",
-      "x": 4,
-      "y": 3
+      "x": 3,
+      "y": 2
     }
   ],
-  "enhancement": [
+  "Enhancement": [
     {
       "id": "strboost",
-      "x": 1,
-      "y": 1
+      "x": 0,
+      "y": 0
     },
     {
       "id": "agiboost",
-      "x": 3,
-      "y": 1
+      "x": 2,
+      "y": 0
     },
     {
       "id": "intboost",
-      "x": 5,
-      "y": 1
+      "x": 4,
+      "y": 0
     }
   ]
 }

@@ -50,6 +50,7 @@ export class Player extends Role
         if(ent) {this.face?.(ent.pos);}
 
         // return new Promise((resolve)=>{ent.emit(act, resolve, this);});
+        console.log(act)
         await ent.aEmit(act,this);
     }
 

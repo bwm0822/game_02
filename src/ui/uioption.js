@@ -45,9 +45,10 @@ export default class UiOption extends UiFrame
             .addItem(GM.FILL)
             .addItem(GM.REST)
             .addItem(GM.WAKE, this.wake.bind(this))
+            .addItem(GM.STEALING)
             // for slot
-            .addItem(GM.BUY, this.trade.bind(this))
-            .addItem(GM.SELL, this.trade.bind(this))
+            .addItem(GM.BUY, this.sell.bind(this))
+            .addItem(GM.SELL, this.sell.bind(this))
             .addItem(GM.TRANSFER, this.transfer.bind(this))
             .addItem(GM.USE, this.use.bind(this))
             .addItem(GM.DROP, this.drop.bind(this))
@@ -74,25 +75,68 @@ export default class UiOption extends UiFrame
         return this;
     }
 
+    checkItem(k,v)
+    {
+        // v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
+        if(v!==GM.HIDE)
+        {
+            if(k===GM.STEALING)
+            {
+                if(GM.player.abilities[k])
+                {
+                    this._items[k].show();
+                }
+            }
+            else
+            {
+                this._items[k].show().setEnable(v===GM.EN);
+            }
+        }
+    }
+
+    act(key)
+    {
+        this.close();
+        this.player.cmd({ent:this.ent,act:key});
+    }
+
     wake()
     {
         this.close();
         this.ent.wake();
     }
 
-    use()
+    observe()
     {
         this.close();
-        this.owner.use(this.ent);
-        this.refreshAll();
+        UiObserve.show(this.ent);
     }
 
-    drop()
+    inv()
+    {
+        console.trace()
+        // this.close();
+        // UiInv.show(this.player);
+    }
+
+    profile()
     {
         this.close();
-        this.owner.drop(this.ent);
-        this.ent.empty();
-        this.refreshAll();
+        UiProfile.show(this.player);
+    }
+
+
+    //////////////////////////////////////////////////
+    // for slot
+    //////////////////////////////////////////////////
+    sell()
+    {
+        this.close();
+        if(this.owner.sell(this.ent))
+        {
+            this.ent.empty();
+            this.refreshAll();
+        }
     }
 
     transfer()
@@ -105,32 +149,11 @@ export default class UiOption extends UiFrame
         }
     }
 
-    trade()
+    use()
     {
         this.close();
-        if(this.owner.sell(this.ent))
-        {
-            this.ent.empty();
-            this.refreshAll();
-        }
-    }
-
-    observe()
-    {
-        this.close();
-        UiObserve.show(this.ent);
-    }
-
-    inv()
-    {
-        this.close();
-        UiInv.show(this.player);
-    }
-
-    profile()
-    {
-        this.close();
-        UiProfile.show(this.player);
+        this.owner.use(this.ent);
+        this.refreshAll();
     }
 
     async split()
@@ -147,6 +170,14 @@ export default class UiOption extends UiFrame
         if (ok) this.refreshAll();
     }
 
+    drop()
+    {
+        this.close();
+        this.owner.drop(this.ent);
+        this.ent.empty();
+        this.refreshAll();
+    }
+
     openbag()
     {
         this.close();        
@@ -154,11 +185,6 @@ export default class UiOption extends UiFrame
         this.ent.setEnable(false);
     }
 
-    act(key)
-    {
-        this.close();
-        this.player.cmd({ent:this.ent,act:key});
-    }
 
     rePos()
     {
@@ -169,19 +195,19 @@ export default class UiOption extends UiFrame
         return this;
     }
 
-
     show(x,y,options,ent)
     {
         super.show();
         
         //
         this.ent = ent;
+        console.log(GM.player.abilities)
         
         // 設定 options
         Object.values(this._items).forEach((item)=>{item.hide();})
         Object.entries(options).forEach(([k,v])=>{
             dlog(T.UI)(k,v)
-            v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
+            this.checkItem(k,v);
         })
 
         // 設定位置，注意要在 layout() 之後再 setPosition()，否則會有 offset 的問題

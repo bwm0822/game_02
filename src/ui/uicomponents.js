@@ -8,13 +8,16 @@ export class Pic extends OverlapSizer
     {            
         const{
             x, y, space=0, 
-            icon, bg
+            icon, bg,
+            scl=1,
             // bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
             //     strokeColor:GM.COLOR.WHITE,strokeWidth:2 
             // }
         }=config;
 
         super(scene, x, y, w, h,{space:space});
+        this._fontSize=w*scl;
+
         if(!Utility.isEmpty(bg)) 
         {
             this.addBackground(uRect(scene,bg),'background');
@@ -23,10 +26,11 @@ export class Pic extends OverlapSizer
         {
             const ascii = Utility.isASCIIString(icon);
             if(ascii) {this._createImg(icon);}
-            else {this._createBbc(icon,w);}       
+            else {this._createBbc(icon);}       
         }
         this.layout()
         scene.add.existing(this);
+
     }
 
     //------------------------------------------------------
@@ -40,12 +44,11 @@ export class Pic extends OverlapSizer
                                 })
     }
 
-    _createBbc(icon,w)
+    _createBbc(icon)
     {
-        w = w ?? this.width;
         this._bbc = uBbc.call(this,this.scene,{   
                                     text:icon,
-                                    fontSize:w*0.5,
+                                    fontSize:this._fontSize,
                                     ext:{align:'center',expand:false}
                                 })
     }

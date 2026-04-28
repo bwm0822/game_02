@@ -457,7 +457,7 @@ export class AbilitySlot extends Pic
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, i)
     {
-        super(scene, w, h, {bg:UI.BG.SLOT});
+        super(scene, w, h, {scl:0.5,bg:UI.BG.SLOT});
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                             ext:{align:'right-bottom',expand:false}})
@@ -574,7 +574,7 @@ export class AbilityItem extends Pic
 {
     constructor(scene, w, h)
     {
-        const config = {bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
+        const config = {scl:0.5,bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
         super(scene, w, h, config);
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0});
         this._locked=uBbc.call(this,scene,{fontSize:20,color:'#fff',
@@ -670,7 +670,7 @@ export class Ability extends Pic
     static selected = null; // 用來記錄目前選擇的技能
     constructor(scene, w, h, ability)
     {
-        const config = {bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
+        const config = {scl:0.5,bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
         super(scene, w, h, config);
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})        
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
@@ -708,7 +708,7 @@ export class Effect extends Pic
 {
     constructor(scene, w, h, eff, style=UI.INFO.ACTIVE.TB)
     {
-        super(scene, w, h, {bg:UI.BG.SLOT_NB,icon:eff.icon});
+        super(scene, w, h, {scl:0.5,bg:UI.BG.SLOT_NB,icon:eff.icon});
 
         this._dat=eff;
         this._style=style;

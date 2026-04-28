@@ -199,6 +199,7 @@ export const GM =
     CLOSE_DOOR: 'close_door',
     REST : 'rest',
     WAKE : 'wake',
+    STEALING : 'stealing',
     // for slot
     BUY : 'buy',
     SELL : 'sell',

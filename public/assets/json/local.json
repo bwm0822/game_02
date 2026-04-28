@@ -1035,5 +1035,50 @@
     "tw": {
       "lab": "殺死"
     }
+  },
+  "General": {
+    "tw": {
+      "lab": "一般"
+    }
+  },
+  "Sword": {
+    "tw": {
+      "lab": "劍技"
+    }
+  },
+  "Archery": {
+    "tw": {
+      "lab": "弓技"
+    }
+  },
+  "Fire": {
+    "tw": {
+      "lab": "火系"
+    }
+  },
+  "Ice": {
+    "tw": {
+      "lab": "冰系"
+    }
+  },
+  "Poison": {
+    "tw": {
+      "lab": "毒系"
+    }
+  },
+  "Support": {
+    "tw": {
+      "lab": "支援"
+    }
+  },
+  "Enhancement": {
+    "tw": {
+      "lab": "強化"
+    }
+  },
+  "stealing": {
+    "tw": {
+      "lab": "偷竊"
+    }
   }
 }

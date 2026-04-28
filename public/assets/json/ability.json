@@ -113,7 +113,20 @@
   },
   "fireball": {
     "icon": "🔥",
-    "type": "active",
+    "type": "spell",
+    "tag": "atk",
+    "scope": "target",
+    "cd": 3,
+    "range": 5,
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "fire",
+    "src": "int",
+    "sprite": {
+      "img": "🔥",
+      "size": 25,
+      "deg": -90
+    },
     "tw": {
       "lab": "火球術",
       "des": "投擲火球。造成基礎火屬性爆炸傷害。"
@@ -126,6 +139,18 @@
   "firewall": {
     "icon": "🧱",
     "type": "active",
+    "scope": "target",
+    "cd": 3,
+    "range": 5,
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "fire",
+    "src": "int",
+    "sprite": {
+      "img": "icons:1",
+      "scl": 1,
+      "deg": -45
+    },
     "tw": {
       "lab": "火牆術",
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"

@@ -70,7 +70,7 @@ export class COM_Action extends Com
     {
         const {root}=this.ctx
         root.face?.(target.pos);
-        const sprite = {img:'arrow', scl:0.25};
+        const sprite = {img:'arrow', deg:0};
         return new Promise((resolve)=>{
                 new Projectile(this.scene, this.root.x, this.root.y, sprite)
                     .shoot( target.pos.x, target.pos.y,

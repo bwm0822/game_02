@@ -83,7 +83,8 @@ export default class UiAbility extends UiFrame
         this._menu.clearAll();
         Object.keys(this.player.abTree).forEach((tree,i)=>{
 
-            const item = ui.uButton(this.scene,{text:tree,
+            
+            const item = ui.uButton(this.scene,{text:tree.lab(),
                                                 style:UI.BTN.ITEM,
                                                 onclick:()=>{onclick(item);}});
             item.id = tree;
@@ -128,12 +129,12 @@ export default class UiAbility extends UiFrame
         //
         let xMax=0, yMax=0;
         const slots=[];
-        tree.forEach(dat=>{
+        tree.forEach(ab=>{
             const slot = new AbilityItem(this.scene,50,50);
             slots.push(slot);
-            const x = 25+(dat.x-1)*50;
-            const y = 25+(dat.y-1)*50
-            slot.set(dat.id,x,y)
+            const x = 25+ab.x*50;
+            const y = 25+ab.y*50
+            slot.set(ab.id,x,y)
             this._panel.addItem(slot)
             xMax = Math.max(xMax, x);
             yMax = Math.max(yMax, y);

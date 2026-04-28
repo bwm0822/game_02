@@ -264,8 +264,7 @@ export class COM_Ability extends Com
         // 1.提供 [外部操作的指令]
         
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // this.addP(root, 'abilities', {target:this, key:'_abilities'});
-        this.addRt('abilities');
+        this.addRt('abilities');    // abilities 屬性
         root.learnAbility = this._learn.bind(this);
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);

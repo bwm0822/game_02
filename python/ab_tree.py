@@ -13,7 +13,11 @@ def excel_to_json(input_excel_path, output_json_path,):
             for col in df.columns:
                 val = df.at[row, col]
                 if pd.notna(val):  # 忽略空值
-                    items.append(json.loads(f"{{{val}}}"))
+                    # print(f"{sheet_name}, x:{col}, y:{row} = {val}")
+                    # items.append(json.loads(f"{{{val}}}"))
+                    js = {"id": str(val),"x": col,"y": row}
+                    items.append(js)
+                
         output[sheet_name] = items
 
     # 儲存 JSON
