@@ -65,10 +65,17 @@ export class Slot extends Icon
 
         dlog(T.UI)(this.owner)
 
-        if(this.owner.tradeType)    // 交易
+       
+
+        if(this.owner.info.act===GM.TRADE)    // 交易
         {
-            if(this.owner.tradeType === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
+            if(this.owner.info.type === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
             else {acts = {'buy':GM.EN};}
+            if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
+        }
+        else if(this.owner.info.act===GM.STEAL)    // 偷竊
+        {
+            if(this.owner.info.type === GM.VICTIM) {acts = {'steal':GM.EN};}
             if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
         }
         else
@@ -81,7 +88,7 @@ export class Slot extends Icon
                     acts = {...acts,'use':GM.EN};
             }
 
-            if(this.owner.target) // 打開箱子
+            if(this.owner.info.target) // 打開箱子
             {
                 acts = {...acts,'transfer':GM.EN,'drop':GM.EN};
                 if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
@@ -98,7 +105,8 @@ export class Slot extends Icon
         return acts;
     }
 
-    get trading() {return this.owner.tradeType !== UiDragged.owner.tradeType;}
+    // get trading() {return this.owner.tradeType !== UiDragged.owner.tradeType;}
+    get trade() {return this.owner.info.act===GM.TRADE && this.owner!==UiDragged.owner;}
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
@@ -275,7 +283,7 @@ export class Slot extends Icon
         {
             if(this.dropable && UiDragged.isSlot)
             {
-                if(this.trading)
+                if(this.trade)
                 {
                     if(this.isEmpty)
                     {

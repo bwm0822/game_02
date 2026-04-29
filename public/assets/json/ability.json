@@ -1,5 +1,5 @@
 {
-  "stealing": {
+  "steal": {
     "icon": "🧤",
     "type": "active",
     "tw": {
@@ -11,7 +11,7 @@
       "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
     }
   },
-  "lockpicking": {
+  "lockpick": {
     "icon": "🗝️",
     "type": "active",
     "tw": {
@@ -23,7 +23,7 @@
       "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
     }
   },
-  "skinning": {
+  "skin": {
     "icon": "🔪",
     "type": "active",
     "tw": {

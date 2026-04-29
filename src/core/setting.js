@@ -156,8 +156,10 @@ export const GM =
     CAM_RIGHT       : 0b010,
     CAM_LEFT_TOP    : 0b100,
 
-    SELLER : 1,
-    BUYER : 2,
+    SELLER : 'seller',
+    BUYER : 'buyer',
+    VICTIM : 'victim',
+    THIEF: 'thief',
 
     BTN_NORMAL : 'normal',
     BTN_NOBG : 'nobg',
@@ -199,7 +201,7 @@ export const GM =
     CLOSE_DOOR: 'close_door',
     REST : 'rest',
     WAKE : 'wake',
-    STEALING : 'stealing',
+    STEAL : 'steal',
     // for slot
     BUY : 'buy',
     SELL : 'sell',

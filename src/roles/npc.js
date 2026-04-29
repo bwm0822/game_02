@@ -26,7 +26,7 @@ export class Npc extends Role
     {
         super(scene,x,y);
         this._setAct(GM.OBSERVE,()=>GM.EN);
-        this._setAct(GM.STEALING,()=>GM.EN);
+        this._setAct(GM.STEAL,()=>GM.EN);
     }
 
     get ctx() {return {...super.ctx,

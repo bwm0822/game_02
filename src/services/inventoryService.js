@@ -1,4 +1,5 @@
 // services/inventoryService.js
+import {GM} from '../core/setting.js'
 
 function sameItem(a, b) {return a?.content && b?.content && a.content.id === b.content.id;}
 
@@ -25,7 +26,8 @@ function swap(from, to)
     to.content = tmp;
 }
 
-function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
+// function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
+function trading(from, to) {return from.owner.info.act===GM.TRADE && from.owner!==to.owner;}
 
 export default class InventoryService 
 {

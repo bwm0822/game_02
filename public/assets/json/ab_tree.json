@@ -1,17 +1,17 @@
 {
   "General": [
     {
-      "id": "stealing",
+      "id": "steal",
       "x": 0,
       "y": 0
     },
     {
-      "id": "lockpicking",
+      "id": "lockpick",
       "x": 2,
       "y": 0
     },
     {
-      "id": "skinning",
+      "id": "skin",
       "x": 4,
       "y": 0
     },

@@ -155,8 +155,11 @@ export default class UiDragged extends ui.Pic
 
     drop()
     {
-        dlog(T.UI)('-----trader=',this.owner.tradeType)
-        if(this._obj && this.owner.tradeType!=GM.SELLER)
+        // dlog(T.UI)('-----trader=',this.owner.tradeType)
+        // if(this._obj && this.owner.tradeType!=GM.SELLER)
+        dlog(T.UI)('-----trader=',this.owner.info)
+        // 不可將 seller 的物品丟掉
+        if(this._obj && this.owner.info.type!==GM.SELLER)
         {
             this.owner.drop(this._obj);
             this.empty();

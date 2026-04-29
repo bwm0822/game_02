@@ -45,7 +45,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.FILL)
             .addItem(GM.REST)
             .addItem(GM.WAKE, this.wake.bind(this))
-            .addItem(GM.STEALING)
+            .addItem(GM.STEAL)
             // for slot
             .addItem(GM.BUY, this.sell.bind(this))
             .addItem(GM.SELL, this.sell.bind(this))
@@ -80,7 +80,7 @@ export default class UiOption extends UiFrame
         // v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
         if(v!==GM.HIDE)
         {
-            if(k===GM.STEALING)
+            if(k===GM.STEAL)
             {
                 if(GM.player.abilities[k])
                 {

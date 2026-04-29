@@ -27,6 +27,7 @@ export class GameObject extends Phaser.GameObjects.Container
         this._bb = {};      // bb(blackboard)，共享資料中心，可與各元件共享資訊
         this._pts = null;   // 可互動的點(陣列)
         this._acts = {};    // 可供操作的指令
+        this._info = {};    // 存放可供外界(如:slot)參考的資訊
 
         this.uid = -1;  // map.createMap() 會自動設定 uid
         this.qid = '';  // map.createMap() 會自動設定 qid, (questid)
@@ -49,6 +50,8 @@ export class GameObject extends Phaser.GameObjects.Container
     set pos(p) {this.x=p.x; this.y=p.y}
     get coms() {return this._coms;}         // 元件庫
     get bb() {return this._bb;}             // blackboard
+    get info() {return this._info;}
+    set info(v) {this._info=v;}
 
     // ctx 這個縮寫在程式裡很常見，它通常是 context 的縮寫，意思就是「上下文」或「語境」。
     get ctx() {return { 
