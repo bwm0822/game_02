@@ -19,7 +19,7 @@ export default class UiConfirm extends UiFrame
             space: {...UI.SPACE.LRTB.p10,item:20},
             cover: {interactive:true, alpha:0.5},
         }
-        super(scene, config, UI.TAG.COUNT);
+        super(scene, config, UI.TAG.CONFIRM);
         UiConfirm.instance = this;
         this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addMsg(scene)

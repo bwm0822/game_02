@@ -164,9 +164,11 @@ export default class Utility
         return !obj || Object.keys(obj).length==0;
     }
 
-    static roll(min=0,max=99)
+    static roll(chance,min=0,max=99)
     {
-        return Phaser.Math.Between(min,max);
+        const r=Phaser.Math.Between(min,max);
+        // console.log(`${r}(${chance}):${r<chance}`)
+        return r<chance;
     }
 
     // static random(s,e)

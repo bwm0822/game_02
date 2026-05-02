@@ -13,7 +13,7 @@ import {COM_Sleep} from '../components/sleep.js'
 import {COM_Schedule} from '../components/schedule.js'
 import {COM_Favor} from '../components/favor.js'
 import {COM_Ability} from '../components/ability.js'
-import {COM_Steal} from '../components/steal.js'
+import {COM_Stolen} from '../components/stolen.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
@@ -105,7 +105,7 @@ export class Npc extends Role
             .addCom(new COM_Schedule())
             .addCom(new COM_Favor())
             .addCom(new COM_Ability(bb.meta.abilities))
-            .addCom(new COM_Steal())
+            .addCom(new COM_Stolen())
 
         // 綁定 API
         this.exit = this._remove.bind(this);

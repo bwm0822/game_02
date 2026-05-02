@@ -154,15 +154,13 @@ export class COM_Storage extends Com
         let split = {id:ent.content.id,count:cnt};
         let i = this._findEmpty();
         dlog(T.UI)(i)
-        if(i!=-1) {
-            this._storage.items[i]=split;
-        }
+        if(i!=-1) {this._storage.items[i]=split;}
         dlog(T.UI)( this._storage)
     }
 
     _transfer(ent)
     {
-        const remain = this.root.target.receive(ent.content);
+        const remain = this.root.info.target.receive(ent.content);
         if(remain===0){ent.empty();}
         else {ent.count=remain;}
         return true;
@@ -182,14 +180,14 @@ export class COM_Storage extends Com
     {
         const {send}=this.ctx;
         send('storage', this.root); 
-        this.root.target=target;
-        target.target=this.root;
+        this.root.info.target=target;
+        target.info.target=this.root;
     }
 
     _close()    // 提供給外界操作( UiStorage.close()會呼叫到 )
     {
-        this.root.target.target=null;
-        this.root.target=null;
+        this.root.info.target.info={}
+        this.root.info={};
     }
 
     _query(dat)

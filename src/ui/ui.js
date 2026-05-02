@@ -33,6 +33,8 @@ import UiButtons from './uibuttons.js'
 
 import UiTest from './uitest.js'
 
+import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+
 
 let uiScene;
 let _mode = 0;
@@ -74,7 +76,7 @@ export default function createUI(scene)
     new UiTime(scene);              // 19
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4
-    new UiCursor(scene);            // 5
+    
     new UiInv(scene);               // 6
     new UiTrade(scene);             // 7
     new UiStorage(scene);           // 8
@@ -83,7 +85,9 @@ export default function createUI(scene)
     new UiObserve(scene);           // 10
     new UiCount(scene);             // 11
     new UiDragged(scene, 80, 80);   // 12
-    
+
+    new UiCursor(scene);            // 5
+   
     new UiInfo(scene);              // 13
     new UiOption(scene);            // 14
     new UiMessage(scene);           // 15
@@ -93,27 +97,23 @@ export default function createUI(scene)
 
     new UiButtons(scene);
 
+    
+
     new UiChangeScene(scene);       // 17
     
 
     UiChangeScene.show();
+
+    // w1(scene);
     
-    //
-    test();
 }
 
-async function w1()
+function w1(scene)
 {
-    console.log('--- 1');
-    await Utility.delay(1000);
+    const pic = new Pic(scene,50,50,{x:100,y:100})
+    pic.setIcon('icons:1')
 }
 
-
-async function test() 
-{
-    w1();
-    console.log('--- 2');
-}
 
 
 function setCamera(mode) 

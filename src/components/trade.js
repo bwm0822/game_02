@@ -21,17 +21,6 @@ export class COM_Trade extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    // _trade(target)
-    // {
-    //     const {send} = this.ctx;
-
-    //     this.root.tradeType = GM.SELLER;
-    //     this.root.target = target;
-    //     this.root.target.tradeType = GM.BUYER;
-    //     this.root.target.target = this.root;
-    //     send('trade',this.root);    // 開啟 交易UI
-    // }
-
     _trade(target)
     {
         const {send} = this.ctx;
@@ -40,14 +29,6 @@ export class COM_Trade extends Com
         target.info = {act:GM.TRADE, type:GM.BUYER, target:this.root};
         send('trade',this.root);    // 開啟 交易UI
     }
-
-    // _stopTrade()
-    // {
-    //     delete this.root.target.tradeType;
-    //     delete this.root.target.target;
-    //     delete this.root.tradeType;
-    //     delete this.root.target;
-    // }
 
     _stopTrade()
     {

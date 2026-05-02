@@ -11,6 +11,7 @@ import UiOption from './uioption.js'
 import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
+import UiCursor from './uicursor.js'
 
 export class Slot extends Icon
 {
@@ -60,27 +61,19 @@ export class Slot extends Icon
 
     get acts()
     {
-        let acts = {};
-        // console.log('useable',this.dat.useable,this.dat)
-
         dlog(T.UI)(this.owner)
 
-       
+        let acts = {};
 
-        if(this.owner.info.act===GM.TRADE)    // 交易
+        if(this.mode_Trade)    // 交易
         {
             if(this.owner.info.type === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
             else {acts = {'buy':GM.EN};}
             if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
         }
-        else if(this.owner.info.act===GM.STEAL)    // 偷竊
-        {
-            if(this.owner.info.type === GM.VICTIM) {acts = {'steal':GM.EN};}
-            if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
-        }
         else
         {
-            if(this.dat.useable) 
+            if(this.dat.useable) // 可使用的
             {
                 if(this.content?.times===0 || this.content?.capacity===0)
                     acts = {...acts,'use':GM.DIS};
@@ -88,7 +81,7 @@ export class Slot extends Icon
                     acts = {...acts,'use':GM.EN};
             }
 
-            if(this.owner.info.target) // 打開箱子
+            if(this.owner.info.target) // 有target，可以transfer，如:打開箱子
             {
                 acts = {...acts,'transfer':GM.EN,'drop':GM.EN};
                 if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
@@ -105,19 +98,12 @@ export class Slot extends Icon
         return acts;
     }
 
-    // get trading() {return this.owner.tradeType !== UiDragged.owner.tradeType;}
-    get trade() {return this.owner.info.act===GM.TRADE && this.owner!==UiDragged.owner;}
+    get trading() {return this.owner.info.act===GM.TRADE && this.owner!==UiDragged.owner;}
+    get mode_Trade() {return this.owner.info.act===GM.TRADE;}
+    get mode_Steal() {return this.owner.info.act===GM.STEAL;}
+    get isVictim() {return this.owner.info.type===GM.VICTIM;}
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
-
-    // p(prop) // content,dat 有可能會是 null/undefined (例如:EquipSlot的第10個)
-    // {
-    //     let [p,sub] = prop.split('.');
-    //     return sub ? this.content?.[p]?.[sub] != undefined ? this.content[p][sub] 
-    //                                                     : this.dat?.[p]?.[sub]
-    //                 : this.content?.[p] != undefined ? this.content[p] 
-    //                                                 : this.dat?.[p];
-    // }  
 
 
     setSlot(content)
@@ -279,37 +265,47 @@ export class Slot extends Icon
     
     over(checkEquip=true)
     {
-        if(Ui.mode===UI.MODE.NORMAL)
+        if(Ui.mode!==UI.MODE.NORMAL) {return;}
+
+        if(this.mode_Steal)
         {
-            if(this.dropable && UiDragged.isSlot)
+            if(this.isEmpty) {UiCursor.set();}
+            else if(this.isVictim) 
             {
-                if(this.trade)
+                this.setBgColor(GM.COLOR.SLOT_OVER);
+                const chance=`${this.owner.stolenRate(this)}%`;
+                UiCursor.set('pickup',chance);
+                // 使用 delacyCall 延遲執行 UiInfo.show()
+                Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
+            }
+        }
+        else if(this.dropable && UiDragged.isSlot)
+        {
+            if(this.trading)
+            {
+                if(this.isEmpty)
                 {
-                    if(this.isEmpty)
-                    {
-                        this.setBgColor(this.isValid ? GM.COLOR.SLOT_TRADE : GM.COLOR.SLOT_INVALID);
-                    }
-                    else
-                    {
-                        this.setBgColor(GM.COLOR.SLOT_DISABLE);
-                    }
+                    this.setBgColor(this.isValid ? GM.COLOR.SLOT_TRADE : GM.COLOR.SLOT_INVALID);
                 }
                 else
                 {
-                    this.setBgColor(this.isValid ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT_INVALID);
+                    this.setBgColor(GM.COLOR.SLOT_DISABLE);
                 }
             }
-            else if(!this.isEmpty && !UiDragged.isAbility)
+            else
             {
-                this.setBgColor(GM.COLOR.SLOT_OVER);
-
-                // 使用 delacyCall 延遲執行 UiInfo.show()
-                Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
-                // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
-                checkEquip && UiInv.checkEquipSlots(this.dat.cat);
+                this.setBgColor(this.isValid ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT_INVALID);
             }
         }
+        else if(!this.isEmpty && !UiDragged.isAbility)
+        {
+            this.setBgColor(GM.COLOR.SLOT_OVER);
 
+            // 使用 delacyCall 延遲執行 UiInfo.show()
+            Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
+            // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
+            checkEquip && UiInv.checkEquipSlots(this.dat.cat);
+        }
     }
 
     out(checkEquip=true)
@@ -317,7 +313,7 @@ export class Slot extends Icon
         Ui.cancelDelayCall();    
         this.setBgColor(GM.COLOR.SLOT);
         UiInfo.close();
-        // 將裝備欄位的背景顏色設置為 COLOR_SLOT
+        // 將裝備欄位的背景顏色設置為 COLOR.SLOT
         checkEquip && UiInv.checkEquipSlots(null);   
     }
 
@@ -334,18 +330,29 @@ export class Slot extends Icon
     rightButtonDown(x,y)
     {
         // if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
+        if(this.mode_Steal) {return;}
         if(!this.isEmpty) {UiOption.show(this.left+x+20,this.top+y-20, this.acts, this);}
     }
 
     leftButtonDown(x,y)
     {
-        if(Ui.mode===UI.MODE.FILL)
+        if(this.mode_Steal) {this.stolen();}
+        else if(Ui.mode===UI.MODE.FILL) {this.fill();}
+        else {DragService.onSlotDown(this, x, y);}
+    }
+
+    async stolen()
+    {
+        if(this.isVictim && await Ui.on(UI.TAG.CONFIRM,'偷竊嗎?'))
         {
-            this.fill();
-        }
-        else
-        {
-            DragService.onSlotDown(this, x, y);
+            if(this.owner.stolen(this))
+            {
+                Ui.refreshAll();
+            }
+            else
+            {
+                Ui.off(UI.TAG.TRADE);
+            }
         }
     }
 

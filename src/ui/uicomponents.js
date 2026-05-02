@@ -8,9 +8,10 @@ export class Pic extends OverlapSizer
     {            
         const{
             x, y, space=0, 
-            icon, bg,
+            icon,
             scl=1,
-            // bg={color:GM.COLOR.GRAY,radius:0,alpha:1,
+            bg,
+            // bg={color:GM.COLOR.RED,radius:0,alpha:1,
             //     strokeColor:GM.COLOR.WHITE,strokeWidth:2 
             // }
         }=config;
@@ -28,6 +29,7 @@ export class Pic extends OverlapSizer
             if(ascii) {this._createImg(icon);}
             else {this._createBbc(icon);}       
         }
+
         this.layout()
         scene.add.existing(this);
 

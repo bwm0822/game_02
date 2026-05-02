@@ -444,12 +444,6 @@ export class GameScene extends Scene
 
     fill()
     {
-        // UiInv.show(GM.player);
-        // UiInv.filter([{p:GM.CAPACITY}]);
-        // UiCursor.set('aim');
-        // UiCover.show();
-        // Ui.setMode(UI.MODE.FILL)
-
         Ui.on(UI.TAG.INV,GM.player);
         Ui.get(UI.TAG.INV).filter([{p:GM.CAPACITY}])
         UiCursor.set('aim');

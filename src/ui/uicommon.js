@@ -29,15 +29,16 @@ export default class Ui
     static unregister(ui) {delete this._regs[ui.tag];}
     static setMode(mode) {this._mode=mode;}
     static addToList(ui) {this._list[ui.tag]=ui;}
-    static on(tag,...args) {this._list[tag]?.show(...args);}
+    static on(tag,...args) {return this._list[tag]?.show(...args);}
     static off(tag) {this._list[tag]?.close();}
     static get(tag) {return this._list[tag];}
 
     static addLayer(scene, name, top)
     {
-        let layer = scene.add.layer();
+        const layer = scene.add.layer();
         layer.name = name;
         layer.add(top);     // 把 top 加入 layer
+        return layer;
     }
 
     static delayCall(func, delay=GM.OVER_DELAY)

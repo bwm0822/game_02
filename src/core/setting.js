@@ -493,6 +493,7 @@ export const UI =
         TRADE:'trade',
         INFO:'info',
         OBSERVE:'observe',
+        CONFIRM:'confirm',
         COUNT:'count',
         ABILITY:'ability',
         TEST:'test',
@@ -509,6 +510,7 @@ export const UI =
         MISC:'misc',
         MAPLEGEND:'maplegend',
         BUTTONS:'buttons',
+        CURSOR:'cursor',
     },
     INFO:{
         SLOT:'slot',

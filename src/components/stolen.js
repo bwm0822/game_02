@@ -1,29 +1,28 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+import Utility from '../core/utility.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
-// 標籤 : trade
+// 標籤 : stolen
 // 功能 : 
-//  交易
+//  可被偷竊
 //--------------------------------------------------
 
-export class COM_Steal extends Com
+export class COM_Stolen extends Com
 {
     constructor()
     {
         super();
     }
 
-    get tag() {return 'steal';}  // 回傳元件的標籤
+    get tag() {return 'stolen';}  // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _steal(target)
+    _stolenBy(target)
     {
-        console.log('------ steal')
-
         const {send} = this.ctx;
 
         // this.root 是 被竊者
@@ -34,6 +33,23 @@ export class COM_Steal extends Com
         send('trade',this.root);    // 開啟 交易UI
     }
 
+    _stolen(ent)
+    {
+        const {send} = this.ctx;
+        const chance=this._stolenRate(ent);
+        if(Utility.roll(chance))    // 成功
+        {
+            send('msg',`${this.root.info.target.id} 成功偷竊 ${ent.label}`);
+            this.root?.transfer(ent);
+            return true;
+        }
+        else
+        {
+            send('msg',`${this.root.info.target.id} 偷竊失敗`);
+            return false;
+        }
+    }
+
     _stopSteal()
     {
         this.root.info.target={};
@@ -41,6 +57,15 @@ export class COM_Steal extends Com
     }
 
     _actMode() {return GM.EN;}
+
+    // 偷竊成功率
+    _stolenRate(ent)
+    {
+        const dex1=this.root.total.dex;
+        const dex2=this.root.info.target.total.dex;
+        const p=Math.floor(dex2/dex1*50);
+        return p;
+    }
 
     //------------------------------------------------------
     //  Public
@@ -53,10 +78,11 @@ export class COM_Steal extends Com
         root._setAct(GM.STEAL, this._actMode.bind(this));
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        root.steal = this._steal.bind(this);
         root.stopSteal = this._stopSteal.bind(this);
+        root.stolen = this._stolen.bind(this);
+        root.stolenRate = this._stolenRate.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.STEAL, this._steal.bind(this));
+        root.on(GM.STEAL, this._stolenBy.bind(this));
     }
 }

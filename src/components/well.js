@@ -18,10 +18,7 @@ export class COM_Well extends Com
     //  Local
     //------------------------------------------------------
     _drink(role) {role.drink?.();}
-    _fill(role) {
-        const{send}=this.ctx;
-        send('fill');
-    }
+    _fill(role) {this.ctx.send('fill');}
 
     //------------------------------------------------------
     //  Public
