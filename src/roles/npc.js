@@ -111,7 +111,7 @@ export class Npc extends Role
         this.exit = this._remove.bind(this);
             
         // 註冊 event
-        this.on('ondead', this._ondead.bind(this));
+        this.on(GM.EVT.ONDEAD, this._ondead.bind(this));
 
         // 載入
         this.load();
@@ -152,9 +152,9 @@ export class Npc extends Role
     {
         if(!this.isAlive) {return;}
         const{emit,aEmit}=this.ctx;
-        await aEmit('turnstart');
+        await aEmit(GM.EVT.TURNSTART);
         if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
-        emit('turnend');
+        emit(GM.EVT.TURNEND);
     }
     
 }

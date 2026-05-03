@@ -448,6 +448,16 @@ export const GM =
     {
         NORMAL : 'normal',
         COMBAT : 'combat',
+    },
+
+    EVT:{
+        REFRESH:'refresh',
+        ONDEAD:'ondead',
+        UNDERATK:'underatk',
+        STOLEN:'stolen',
+        DAMAGE:'damage',
+        TURNSTART:'turnstart',
+        TURNEND:'turnend',
     }
 
 }
@@ -536,6 +546,7 @@ export const UI =
         BGV:'bgv',      // bg + value
         NBV:'nbv',      // no bg + value    
     },
+    
 }
 
 export const ROLE_ATTRS = {

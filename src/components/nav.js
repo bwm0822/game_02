@@ -19,7 +19,7 @@ export class COM_Nav extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _drawPath(path,{drawLast,color=0xffffff,alpha=1,size=5}={})
+    _drawPath(path,{drawLast=true,color=0xffffff,alpha=1,size=5}={})
     {    
         if(!this._graph)
         {
@@ -30,13 +30,13 @@ export class COM_Nav extends Com
         }
         this._graph.clear();
 
-        if(!path || path.state===GM.PATH_NONE || !path.pts) {return;}  
+        if(!path || path.state===GM.PATH.NONE || !path.pts) {return;}  
 
-        let len = (drawLast??path.drawLast) ? path.pts.length : path.pts.length-1;
+        const len = drawLast ? path.pts.length : path.pts.length-1;
         path.pts.forEach((node,i)=>{
             if(i<len)
             {
-                let circle = new Phaser.Geom.Circle(node.x, node.y, size);
+                const circle = new Phaser.Geom.Circle(node.x, node.y, size);
                 this._graph.fillStyle(color,alpha).fillCircleShape(circle);
             }
         })
@@ -58,24 +58,24 @@ export class COM_Nav extends Com
 
     _updateDebugPath() {this._drawPath(this.bb.path,{alpha:0.5,size:10});}
 
-    _showPath(eps,drawLast)
+    _showPath(eps, ent)
     {
-        const path = this.map.getPath(this.pos, eps);
-        if(path) {this._drawPath(path,{drawLast:drawLast});}
+        const path = this.map.getPath(this.pos, eps, ent?.act);
+        if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
     }
 
-    _findPath(eps)
+    _findPath(eps, ent)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        const path = this.map.getPath(this.pos, eps);
+        const path = this.map.getPath(this.pos, eps, ent?.act);
         this.bb.path = path;
     }
 
-    _getPath(sp, eps)
+    _getPath(sp, eps, ent)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        return this.map.getPath(sp, eps);
+        return this.map.getPath(sp, eps, ent?.act);
     }
 
     _setPath(path) {this.bb.path = path;}
@@ -124,7 +124,7 @@ export class COM_Nav extends Com
         root.getPath=this._getPath.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('ondead', this._ondead.bind(this));
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
 
     }
 

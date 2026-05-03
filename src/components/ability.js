@@ -274,7 +274,7 @@ export class COM_Ability extends Com
         root.queryAb = this._query.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('turnstart', this._turnStart.bind(this));
+        root.on(GM.EVT.TURNSTART, this._turnStart.bind(this));
 
     }
 

@@ -44,15 +44,7 @@ export class Player extends Role
 
     async _updateTime() {}//this.emit('turnend');this._refresh();}
 
-    async _interact(ent, act) 
-    {
-        if(!act) {return;}
-        if(ent) {this.face?.(ent.pos);}
-
-        // return new Promise((resolve)=>{ent.emit(act, resolve, this);});
-        console.log(act)
-        await ent.aEmit(act,this);
-    }
+    
 
     _damage() {this._send('refresh');}
 
@@ -66,7 +58,6 @@ export class Player extends Role
         this._send('gameover');
     }
 
-   
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -130,9 +121,9 @@ export class Player extends Role
             .addCom(new COM_Cmd())
  
         // 註冊 event
-        this.on('ondead', this._ondead.bind(this));
-        this.on('damage', this._damage.bind(this));
-        this.on('refresh', this._refresh.bind(this));
+        this.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+        this.on(GM.EVT.DAMAGE, this._damage.bind(this));
+        this.on(GM.EVT.REFRESH, this._refresh.bind(this));
 
         // options
         this._setAct(GM.PROFILE,()=>GM.EN);
@@ -179,10 +170,8 @@ export class Player extends Role
         const {bb,emit,aEmit} = this.ctx;
         if(!skipTurnStart)
         {
-            if(GS.mode===GM.MODE.NORMAL)
-                emit('turnstart');
-            else
-                await aEmit('turnstart');
+            if(GS.mode===GM.MODE.NORMAL) {emit(GM.EVT.TURNSTART);}
+            else {await aEmit(GM.EVT.TURNSTART);}
         }
         this._refresh();
 
@@ -208,7 +197,7 @@ export class Player extends Role
                 if((bb.cACT.st==='reach')&&bb.ent)
                 {
                     bb.sta=GM.ST.ACTION;
-                    await this._interact(bb.ent,bb.act);
+                    await this.interact?.(bb.ent,bb.act);
                 }
             }
         }
@@ -220,7 +209,7 @@ export class Player extends Role
             this.anim_idle?.(true);
         }
 
-        emit('turnend');
+        emit(GM.EVT.TURNEND);
         this._refresh();
     }
 

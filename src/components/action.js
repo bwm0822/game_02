@@ -129,7 +129,6 @@ export class COM_Action extends Com
         if(bb.path.pts.length===0)
         {
             bb.cACT.st = 'reach';
-            // bb.path=null;
             root.clearPath?.();
         }
         else
@@ -144,7 +143,7 @@ export class COM_Action extends Com
                 // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
                 bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';
                 this._pt = pt;
-                if( bb.cACT.st==='reach') {bb.path = null;} 
+                if( bb.cACT.st==='reach') {root.clearPath?.();} 
             }
             else
             {
@@ -155,7 +154,6 @@ export class COM_Action extends Com
 
                 if(bb.path.stop) 
                 {
-                    // bb.path=null; 
                     root.clearPath?.();
                     bb.cACT.st='reach';
                 }
@@ -164,7 +162,6 @@ export class COM_Action extends Com
                     bb.path.pts.shift();    // bb.path.pts.splice(0,1);
                     if(bb.path.pts.length===0) 
                     {
-                        // bb.path=null; 
                         root.clearPath?.();
                         bb.cACT.st='reach';
                     }

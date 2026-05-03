@@ -48,7 +48,7 @@ export class COM_Pickable extends Com
         {       
             send('msg',`${'_pickup'.lab()} ${this.label}`)
             emit('out');
-            emit('refresh');
+            emit(GM.EVT.REFRESH);
             emit('remove');
         } 
         else

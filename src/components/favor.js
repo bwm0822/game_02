@@ -54,6 +54,12 @@ export class COM_Favor extends Com
         }
     }
 
+    _updateFav(id)
+    {
+        console.log('_updateFav=',id)
+        this._addFavor(id, -50);  // 受攻擊，降低好感度
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -69,7 +75,9 @@ export class COM_Favor extends Com
         root.addFavor = this._addFavor.bind(this);      // 更新好感度
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('turnstart', this._turnStart.bind(this) );
+        root.on(GM.EVT.TURNSTART, this._turnStart.bind(this) );
+        root.on(GM.EVT.UNDERATK, this._updateFav.bind(this) );
+        root.on(GM.EVT.STOLEN, this._updateFav.bind(this) );
     }
 
     //------------------------------------------------------

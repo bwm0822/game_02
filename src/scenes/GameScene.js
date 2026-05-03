@@ -322,7 +322,7 @@ export class GameScene extends Scene
     {
         if(ent===GM.player) {this._path=null; return;}
         const pts = ent?.pts ?? [pt];
-        const path = GM.player.showPath(pts,!!ent);
+        const path = GM.player.showPath(pts,ent);
         if(path)
         {
             if(path.state===GM.PATH_OK)

@@ -35,17 +35,20 @@ export class COM_Stolen extends Com
 
     _stolen(ent)
     {
-        const {send} = this.ctx;
+        const {send,emit} = this.ctx;
         const chance=this._stolenRate(ent);
+        const thief=this.root.info.target;
         if(Utility.roll(chance))    // 成功
         {
-            send('msg',`${this.root.info.target.id} 成功偷竊 ${ent.label}`);
+            send('msg',`${thief.id} 成功偷竊 ${ent.label}`);
             this.root?.transfer(ent);
             return true;
         }
         else
         {
-            send('msg',`${this.root.info.target.id} 偷竊失敗`);
+            send('msg',`${thief.id} 偷竊失敗`);
+            emit(GM.EVT.STOLEN, thief.id);
+            thief.next();
             return false;
         }
     }

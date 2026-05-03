@@ -338,8 +338,6 @@ export class COM_Stats extends Com
 
         const {root,emit}=this.ctx;
 
-        root.addFavor?.(dmg.attacker?.id, -50);  // 受攻擊，降低好感度
-
         switch(dmg.type)
         {
             case GM.CRI:
@@ -359,8 +357,8 @@ export class COM_Stats extends Com
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
 
-        emit('damage');
-        alive && this._states[GM.HP]<=0 && emit('ondead');
+        emit(GM.EVT.DAMAGE);
+        alive && this._states[GM.HP]<=0 && emit(GM.EVT.ONDEAD);
     }
 
     // _addProcs(procs)
@@ -639,8 +637,8 @@ export class COM_Stats extends Com
         root.setDirty = this._setDirty.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('turnstart', this._turnStart.bind(this) );
-        root.on('turnend', this._turnEnd.bind(this) );
+        root.on(GM.EVT.TURNSTART, this._turnStart.bind(this) );
+        root.on(GM.EVT.TURNEND, this._turnEnd.bind(this) );
 
         // 計算總屬性
         this._getTotalStats();

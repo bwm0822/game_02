@@ -150,12 +150,12 @@ class Map
     }
 
     
-    getPath(sp, eps)
+    getPath(sp, eps, act)
     {
         let bestPath;
         eps = Array.isArray(eps) ? eps : [eps];
         eps.forEach((ep,i)=>{
-            const path = this.calcPath(sp,ep);
+            const path = this.calcPath(sp,ep,act);
             if(path)
             {
                 if(!bestPath) {bestPath=path;}
@@ -165,7 +165,7 @@ class Map
         return bestPath;
     }
 
-    calcPath(sp,ep)
+    calcPath(sp,ep,act)
     {
         const map = this.map;
 
@@ -182,13 +182,13 @@ class Map
 
         const ept = this.tileToWorld(ex,ey);
 
-        if(end.weight==0)   // 終點為不可通過的點，(顯示紅色框框)
+        if(end.weight===0)   // 終點為不可通過的點，(顯示紅色框框)
         {
-            return {state:GM.PATH_NONE, ep:ept, cost:Infinity}
+            return {state:GM.PATH.NONE, ep:ept, cost:Infinity}
         }
-        else if(start==end) // 起點 = 終點
+        else if(start===end) // 起點 = 終點
         {
-            return {state:GM.PATH_OK, ep:ept, pts:[], cost:0}
+            return {state:GM.PATH.OK, ep:ept, pts:[], cost:0}
         }
         else
         {
@@ -196,17 +196,17 @@ class Map
             const len = result.length;
             if(len===0)  // 找不到路徑，(顯示紅色框框)
             {
-                return {state:GM.PATH_NONE, ep:ept, cost:Infinity}
+                return {state:GM.PATH.NONE, ep:ept, cost:Infinity}
             }
             else
             {
                 const pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
                 // 如果到達目的地之前的 g >= W_BLOCK，代表有非牆壁的阻擋物(如:人、門)
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
-                const state = block ? GM.PATH_BLK : GM.PATH_OK;
+                const state = block ? GM.PATH.BLK : GM.PATH.OK;
                 const cost = result.at(-1).g;   // 用於判斷最佳路徑
-                const drawLast = this.getWeight(ept) <= GM.W_BLOCK;
-                return {state:state, ep:ept, pts:pts, cost:cost, drawLast:drawLast}
+                if(this.getWeight(ept)>GM.W_BLOCK||act===GM.PICKUP) {pts.pop();}
+                return {state:state, ep:ept, pts:pts, cost:cost}
             }
         }
     }

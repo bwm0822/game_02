@@ -24,6 +24,7 @@ export function computeDamage(attacker, defender, skill={})
     dlog(T.COMBAT)(aStats,dStats)
 
     // 計算是否命中
+    defender.emit(GM.EVT.UNDERATK, attacker.id)
     const ret = _checkHit(aStats, dStats, skill);
     if(ret) {return ret;}
 
