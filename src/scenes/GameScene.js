@@ -297,7 +297,7 @@ export class GameScene extends Scene
             return;
         }
         else if(GM.player.sta===GM.ST.SLEEP) {return;}
-        else if(GM.player.sta!==GM.ST.MOVING)
+        else if(GM.player.sta===GM.ST.IDLE)
         {
             let pt = {x:pointer.worldX,y:pointer.worldY};
             this.showPath(pt, this._ent);
@@ -444,8 +444,7 @@ export class GameScene extends Scene
 
     fill()
     {
-        Ui.on(UI.TAG.INV,GM.player);
-        Ui.get(UI.TAG.INV).filter([{p:GM.CAPACITY}])
+        Ui.on(UI.TAG.INV,GM.player,[{p:GM.CAPACITY}]);
         UiCursor.set('aim');
         Ui.on(UI.TAG.COVER)
         Ui.setMode(UI.MODE.FILL)

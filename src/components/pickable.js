@@ -22,42 +22,25 @@ export class COM_Pickable extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    // _pickup(taker)  // 提供給外界操作
-    // {
-    //     if(taker.take(this.content)) 
-    //     {
-    //         const {emit,send}=this.ctx;
-    //         send('msg',`${'_pickup'.lab()} ${this.label}`)
-    //         emit('out');
-    //         emit('refresh');
-    //         emit('remove');
-    //     } 
-    //     else
-    //     {
-    //         send('msg','_space_full'.lab());
-    //     }  
-
-    //     QuestManager.notify({cat:GM.INV})
-    // }
-
-    _pickup(taker)  // 提供給外界操作
+    
+    _pickupBy(taker)  // 提供給外界操作
     { 
         const {emit,send}=this.ctx;
         const remain = taker.receive(this.content);
+        send(GM.EVT.REFRESH);   // 要在 emit('remove')之前執行，否則會出錯，
+                                // 因為 emit('remove')會將 this.scene 設成 null
         if(remain===0)
         {       
             send('msg',`${'_pickup'.lab()} ${this.label}`)
             emit('out');
-            emit(GM.EVT.REFRESH);
             emit('remove');
         } 
         else
         {
             this.content.count-=remain;
             send('msg','_space_full'.lab());
-            emit('refresh');
         }  
-
+        
         QuestManager.notify({cat:GM.INV})
     }
 
@@ -94,7 +77,7 @@ export class COM_Pickable extends Com
         
         // 3.註冊(event)給其他元件或外部呼叫
         // 外部
-        root.on(GM.PICKUP, this._pickup.bind(this));
+        root.on(GM.PICKUP, this._pickupBy.bind(this));
     }
 
     save() {return {...this.pos,...this._content};}

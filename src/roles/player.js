@@ -148,13 +148,13 @@ export class Player extends Role
         }
     }
 
-    async act_attack()
-    {
-        const {bb, root} = this.ctx;
-        if (root.inAttackRange?.(bb.ent)) {await this.attack?.(bb.ent);}
-        else { await this.move?.(); }
-        delete bb.path;
-    }
+    // async act_attack()
+    // {
+    //     const {bb, root} = this.ctx;
+    //     if (root.inAttackRange?.(bb.ent)) {await this.attack?.(bb.ent);}
+    //     else { await this.move?.(); }
+    //     delete bb.path;
+    // }
 
     stop()
     {
@@ -175,42 +175,82 @@ export class Player extends Role
         }
         this._refresh();
 
-        // console.log(bb.path);
-        if(!bb.path)
+        if(bb.sta!==GM.ST.MOVING)
         {
             dlog(T.PLAYER)('-------------------- pause 0')
             await this._pause();
             dlog(T.PLAYER)('-------------------- pause 1')
         }
         
-        if(bb.path)
+        if(bb.sta===GM.ST.MOVING)
         {
             await this.dbgWait();
-
-            if(bb.act === 'attack')
+            await this.move?.();
+            if(bb.cACT.st==='reach')
             {
-                await this.act_attack();
-            }
-            else
-            {
-                await this.move?.();
-                if((bb.cACT.st==='reach')&&bb.ent)
-                {
-                    bb.sta=GM.ST.ACTION;
-                    await this.interact?.(bb.ent,bb.act);
-                }
-            }
+                if(bb.ent) {await this.interact?.(bb.ent,bb.act);}
+                bb.sta=GM.ST.IDLE;
+            }            
         }
 
-        if(bb.path) {bb.sta=GM.ST.MOVING;}
-        else if(bb.sta!==GM.ST.SLEEP) 
-        {
-            bb.sta=GM.ST.IDLE;
-            this.anim_idle?.(true);
-        }
+        if(bb.sta===GM.ST.IDLE) {this.anim_idle?.(true);}
 
         emit(GM.EVT.TURNEND);
         this._refresh();
     }
+
+
+    // async process({skipTurnStart=false}={})
+    // {
+    //     // 解構賦值 (destructuring assignment)，
+    //     // 它的作用就是：從物件 ctx 中直接取出需要的屬性，變成同名變數，
+    //     // 讓後面程式可以直接取用，讓程式更方便、簡潔
+    //     const {bb,emit,aEmit} = this.ctx;
+    //     if(!skipTurnStart)
+    //     {
+    //         if(GS.mode===GM.MODE.NORMAL) {emit(GM.EVT.TURNSTART);}
+    //         else {await aEmit(GM.EVT.TURNSTART);}
+    //     }
+    //     this._refresh();
+
+    //     // console.log(bb.path);
+    //     if(!bb.path)
+    //     {
+    //         dlog(T.PLAYER)('-------------------- pause 0')
+    //         await this._pause();
+    //         dlog(T.PLAYER)('-------------------- pause 1')
+    //     }
+
+    //     console.log('path=',bb.path)
+        
+    //     if(bb.path)
+    //     {
+    //         await this.dbgWait();
+
+    //         if(bb.act === GM.ATTACK)
+    //         {
+    //             await this.act_attack();
+    //         }
+    //         else
+    //         {
+    //             await this.move?.();
+    //             if((bb.cACT.st==='reach')&&bb.ent)
+    //             {
+    //                 bb.sta=GM.ST.ACTION;
+    //                 await this.interact?.(bb.ent,bb.act);
+    //             }
+    //         }
+    //     }
+
+    //     if(bb.path) {bb.sta=GM.ST.MOVING;}
+    //     else if(bb.sta!==GM.ST.SLEEP) 
+    //     {
+    //         bb.sta=GM.ST.IDLE;
+    //         this.anim_idle?.(true);
+    //     }
+
+    //     emit(GM.EVT.TURNEND);
+    //     this._refresh();
+    // }
 
 }

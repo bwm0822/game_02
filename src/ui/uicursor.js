@@ -28,7 +28,14 @@ export default class UiCursor extends Phaser.GameObjects.Container
     {
         super(scene,x,y);
         UiCursor.instance = this;
-        const layer = Ui.addLayer(scene, UI.TAG.CURSOR, this);
+
+        //加入 UiList
+        this.tag=UI.TAG.CURSOR;
+        Ui.addToList(this);
+
+        // 在產生 layer 之後再加入的元件，才會加入 layer 的 list，
+        // 所以 setIcon()、setText() 要在 addLayer() 之後執行
+        const layer = Ui.addLayer(scene, this.tag, this);
         layer.setDepth(Infinity);
         this.setIcon('none');
         this.setText('');
@@ -85,26 +92,27 @@ export default class UiCursor extends Phaser.GameObjects.Container
                         .strokeCircleShape(circle);
     }
 
-    setPos(x,y)
+    pos(x,y)
     {
         this.setPosition(x,y);
         this.debugDraw();
     }
 
+    set(key='none',text='')
+    {
+        if(Ui.mode===UI.MODE.FILL){return;}
+        this.setIcon(key);
+        this.setText(text);
+    }
+
     static pos(x,y)
     {
-        if(this.instance) {this.instance.setPos(x,y);}
+        if(this.instance) {this.instance.pos(x,y);}
     }
 
     static set(key='none',text='')
     {
-        if(this.instance) 
-        {
-            if(Ui.mode===UI.MODE.FILL){return;}
-
-            this.instance.setIcon(key);
-            this.instance.setText(text);
-        }
+        if(this.instance) {this.instance.set(key,text);}
     }
 
 

@@ -1,11 +1,14 @@
 import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
+import Ui from './uicommon.js'
 import {GM,UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+
 import InventoryService from '../services/inventoryService.js'
-import UiObserve from './uiobserve.js'
-import UiInv from './uiinv.js'
-import UiProfile from './uiprofile.js'
+
+// import UiObserve from './uiobserve.js'
+// import UiInv from './uiinv.js'
+// import UiProfile from './uiprofile.js'
 import UiCount from '../ui/uicount.js'
 import QuestManager from '../manager/quest.js'
 
@@ -109,20 +112,19 @@ export default class UiOption extends UiFrame
     observe()
     {
         this.close();
-        UiObserve.show(this.ent);
+        this.on(UI.TAG.OBSERVE, this.ent);
     }
 
     inv()
     {
-        console.trace()
-        // this.close();
-        // UiInv.show(this.player);
+        this.close();
+        this.on(UI.TAG.INV,this.player);
     }
 
     profile()
     {
         this.close();
-        UiProfile.show(this.player);
+        this.on(UI.TAG.PROFILE,this.player);
     }
 
 
@@ -198,10 +200,11 @@ export default class UiOption extends UiFrame
     show(x,y,options,ent)
     {
         super.show();
+
+        Ui.get(UI.TAG.CURSOR).set()
         
         //
         this.ent = ent;
-        console.log(GM.player.abilities)
         
         // 設定 options
         Object.values(this._items).forEach((item)=>{item.hide();})

@@ -223,7 +223,7 @@ export class COM_Action extends Com
         bb.path = null;
         const np = fpt(pos);
         if(np) {await this._moveTo(np);}
-        else {root.pop?.('不要殺我!!!');}
+        else {root.speak?.('不要殺我!!!');}
         if(DEBUG.path) {root.updateDebugPath?.();}
     }
 

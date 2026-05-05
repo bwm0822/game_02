@@ -257,7 +257,7 @@ export class Slot extends Icon
         {
             this.disableInteractive();
             this.setBgColor(GM.COLOR.SLOT);
-            this._disabled.fillAlpha=0.6;
+            this._disabled.fillAlpha=0.35;
         }
     }
 

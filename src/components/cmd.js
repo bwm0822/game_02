@@ -23,26 +23,25 @@ export class COM_Cmd extends Com
         else
         {
             act=act??ent?.act;
-
             if(path) { root.setPath?.(path); }
             else { root.findPath?.(pt??ent.pos, act); }
 
             if(bb.path.state===GM.PATH_OK)
             {
-                // 已抵達目的地
-                if(bb.path.pts.length===0)
+                bb.ent = ent;
+                bb.act = act;
+                if(act===GM.ATTACK)
                 {
-                    bb.sta=GM.ST.ACTION;
+                    await this._attack();
+                }
+                else if(bb.path.pts.length===0)  // 已抵達目的地
+                {
                     await this._interact(ent,act);
                 }
-                // 還未抵達目的地
-                else
+                else    // 還未抵達目的地
                 {
-                    bb.ent = ent;
-                    bb.act = act;
-                    root.updatePath?.();
                     bb.sta=GM.ST.MOVING;
-                    root._resume();
+                    root._resume();   
                 }
             }
         }
@@ -54,6 +53,23 @@ export class COM_Cmd extends Com
         const {root,bb} = this.ctx;
         if(ent) {root.face?.(ent.pos);}
         await ent.aEmit(act,root);
+    }
+
+    async _attack()
+    {
+        const {bb, root} = this.ctx;
+        if (root.inAttackRange?.(bb.ent)) 
+        {
+            await root.attack?.(bb.ent);    
+        }
+        else 
+        { 
+            await root.move?.();
+        }
+
+        root.clearPath?.();
+        root._resume(); 
+          
     }
 
     //------------------------------------------------------

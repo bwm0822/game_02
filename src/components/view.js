@@ -419,6 +419,10 @@ class View extends Phaser.GameObjects.Container
             this._outline_shape(false);
             this.ctx.emit('out');
         }
+
+        if(this._dbgGraphics) {this._dbgGraphics.destroy();this._dbgGraphics=null;}
+        if(this._dbgText) {this._dbgText.destroy();this._dbgText=null;}
+        if(this._dbgPos) {this._dbgPos.destroy();this._dbgPos=null;}
     }
 
     //--------------------------------------------------

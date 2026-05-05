@@ -30,7 +30,6 @@ export class BehTest extends Behavior
     {
         const { bb, root } = ctx;
 
-        bb.sta=GM.ST_MOVING;
         if(!bb.path) 
         {
             dlog(T.AI,bb.id)('------ findPath')

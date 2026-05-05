@@ -119,7 +119,6 @@ export class MPlayer extends Role
             await this.move?.();
             if((bb.cACT.st==='reach')&&bb.ent)
             {
-                bb.sta=GM.ST.ACTION;
                 await this._interact(bb.ent,bb.act);
             }
         }

@@ -3,8 +3,8 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Ui from './uicommon.js'
 import {Slot, EquipSlot} from './uiclass.js'
-import UiCover from './uicover.js'
-import UiCursor from './uicursor.js'
+// import UiCover from './uicover.js'
+// import UiCursor from './uicursor.js'
 
 export default class UiInv extends UiFrame
 {
@@ -77,7 +77,8 @@ export default class UiInv extends UiFrame
     filter(conds)
     {
         this._equips.loop(slot=>slot?.filter(conds));
-        this._bag.loop(slot=>slot?.filter(conds));   
+        this._bag.loop(slot=>slot?.filter(conds));  
+        this.refresh(); 
     }
 
     // 檢查所有裝備欄位，符合類別的裝備欄位，背景設置為 COLOR_SLOT_DRAG，否則設置為 COLOR_SLOT
@@ -106,18 +107,20 @@ export default class UiInv extends UiFrame
         this.unregister()
         this.closeAll(GM.UI_LEFT);
         Ui.setMode(GM.UI_MODE_NORMAL);
-        UiCover.close();
-        UiCursor.set();
+        // UiCover.close();
+        // UiCursor.set();
+        Ui.off(UI.TAG.COVER);
+        Ui.get(UI.TAG.CURSOR).set();
         this.clrCamera(GM.CAM_LEFT);
     }
 
-    show(owner)
+    show(owner,conds=[])
     {
         if(this.visible) {return;}
         super.show();
         this.owner=owner;
-        this.filter();
-        this.refresh();
+        this.refresh(); 
+        this.filter(conds); //呼叫 filter() 之前，至少要先執行過一次 refresh()
         this.closeAll(GM.UI_RIGHT);
         this.register(GM.UI_RIGHT);
         this.setCamera(GM.CAM_LEFT);

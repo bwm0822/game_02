@@ -65,10 +65,10 @@ export class COM_Nav extends Com
         return path;
     }
 
-    _findPath(eps, ent)
+    _findPath(eps, act)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        const path = this.map.getPath(this.pos, eps, ent?.act);
+        const path = this.map.getPath(this.pos, eps, act);
         this.bb.path = path;
     }
 
