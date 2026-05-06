@@ -30,7 +30,7 @@ export class COM_Stolen extends Com
         // target 是 thief
         target.info = {act:GM.STEAL, type:GM.THIEF, target:this.root}
 
-        send('trade',this.root);    // 開啟 交易UI
+        send('steal',this.root);    // 開啟 竊取UI
     }
 
     _stolen(ent)

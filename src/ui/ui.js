@@ -30,6 +30,7 @@ import UiDragged  from './uidragged.js'
 import UiMisc  from './uimisc.js'
 import UiMapLegend  from './uimaplegend.js'
 import UiButtons from './uibuttons.js'
+import UiSteal from './uisteal.js'
 
 import UiTest from './uitest.js'
 
@@ -79,6 +80,7 @@ export default function createUI(scene)
     
     new UiInv(scene);               // 6
     new UiTrade(scene);             // 7
+    new UiSteal(scene);
     new UiStorage(scene);           // 8
     new UiMisc(scene);              // 20
     new UiDialog(scene);            // 9

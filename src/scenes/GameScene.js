@@ -462,6 +462,7 @@ export class GameScene extends Scene
                 .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
                 .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
                 .on('trade', (owner)=>{Ui.on(UI.TAG.TRADE,owner);})
+                .on('steal', (owner)=>{Ui.on(UI.TAG.STEAL,owner);})
                 .on('option', (x,y,acts,owner)=>{Ui.on(UI.TAG.OPTION,x,y,acts,owner)})
                 .on('refresh', ()=>{Ui.refreshAll()})
                 .on('msg', (msg)=>{Ui.get(UI.TAG.MESSAGE).push(msg);})

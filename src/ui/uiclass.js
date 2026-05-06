@@ -351,7 +351,7 @@ export class Slot extends Icon
             }
             else
             {
-                Ui.off(UI.TAG.TRADE);
+                Ui.off(UI.TAG.STEAL);
             }
         }
     }

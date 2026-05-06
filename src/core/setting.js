@@ -521,6 +521,7 @@ export const UI =
         MAPLEGEND:'maplegend',
         BUTTONS:'buttons',
         CURSOR:'cursor',
+        STEAL:'steal',
     },
     INFO:{
         SLOT:'slot',
