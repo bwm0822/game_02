@@ -173,7 +173,7 @@ export class COM_Storage extends Com
         go.falling(p);
         AudioManager.drop();
         const {send}=this.ctx;
-        send('msg',`${'_drop'.lab()} ${ent.dat['tw'].lab}`);
+        send('msg',`${'drop'.lab()} ${ent.label}`);
     }
 
     _open(target) // 提供給外界操作

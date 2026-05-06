@@ -376,62 +376,6 @@
       "lab": "Setting"
     }
   },
-  "_pickup": {
-    "tw": {
-      "lab": "拾取"
-    },
-    "us": {
-      "lab": "picks up"
-    }
-  },
-  "_drop": {
-    "tw": {
-      "lab": "丟棄"
-    },
-    "us": {
-      "lab": "drops"
-    }
-  },
-  "_kill": {
-    "tw": {
-      "lab": "擊殺"
-    },
-    "us": {
-      "lab": "kills"
-    }
-  },
-  "_die": {
-    "tw": {
-      "lab": "死亡"
-    },
-    "us": {
-      "lab": "died"
-    }
-  },
-  "_buy": {
-    "tw": {
-      "lab": "購買"
-    },
-    "us": {
-      "lab": "buys"
-    }
-  },
-  "_sell": {
-    "tw": {
-      "lab": "出售"
-    },
-    "us": {
-      "lab": "sells"
-    }
-  },
-  "_drink": {
-    "tw": {
-      "lab": "喝水"
-    },
-    "us": {
-      "lab": "drinks water"
-    }
-  },
   "_space_full": {
     "tw": {
       "lab": "空間已滿 !!!"
@@ -1079,6 +1023,14 @@
   "steal": {
     "tw": {
       "lab": "偷竊"
+    }
+  },
+  "pickup": {
+    "tw": {
+      "lab": "拾取"
+    },
+    "us": {
+      "lab": "Pickup"
     }
   }
 }

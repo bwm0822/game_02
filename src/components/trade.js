@@ -55,8 +55,8 @@ export class COM_Trade extends Com
                 const gold = ent.gold*(ent.count-remain);
                 bb.gold += gold
                 target.gold -= gold; 
-                if(root===GM.player) {send('msg',name(bb.id)+`${'_sell'.lab()} ${ent.label}`);}
-                else {send('msg',name(GM.player.id)+`${'_buy'.lab()} ${ent.label}`);}
+                if(root===GM.player) {send('msg',name(bb.id)+`${'sell'.lab()} ${ent.label}`);}
+                else {send('msg',name(GM.player.id)+`${'buy'.lab()} ${ent.label}`);}
                 if(remain===0) {ent.empty();}
                 else {ent.count=remain;}
                 return true;
