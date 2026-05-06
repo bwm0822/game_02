@@ -604,5 +604,20 @@
       "lab": "Bottle",
       "des": ""
     }
+  },
+  "key": {
+    "cat": "CAT_ITEM",
+    "icon": "🔑",
+    "drop": {
+      "scale": 0.5
+    },
+    "tw": {
+      "lab": "鑰匙",
+      "des": "可以開鎖"
+    },
+    "us": {
+      "lab": "key",
+      "des": ""
+    }
   }
 }

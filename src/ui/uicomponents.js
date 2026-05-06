@@ -13,7 +13,6 @@ export class Pic extends OverlapSizer
             bg,
             // bg={color:GM.COLOR.RED,radius:0,alpha:1,
             //     strokeColor:GM.COLOR.WHITE,strokeWidth:2 
-            // }
         }=config;
 
         super(scene, x, y, w, h,{space:space});
@@ -55,6 +54,20 @@ export class Pic extends OverlapSizer
                                 })
     }
 
+    _updateImg(icon)
+    {
+        this.show(this._img);
+        const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
+        this._img.setTexture(key,frame);
+        this._img.rexSizer.aspectRatio = this._img.width/this._img.height;
+    }
+
+    _updateBbc(icon)
+    {
+        this.show(this._bbc);
+        this._bbc.setText(icon);
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -65,84 +78,113 @@ export class Pic extends OverlapSizer
         if(ascii)
         {
             if(this._bbc) {this.hide(this._bbc);}
-            if(!this._img)
-            {
-                this._createImg(icon);
-                this._img.setTint(tint).setAlpha(alpha);
-            }
-            else
-            {
-                this.show(this._img);
-                const [key,frame] = icon ? icon.split(':') : [undefined,undefined];
-                const img = this._img;
-                img.setTexture(key,frame).setTint(tint).setAlpha(alpha);
-                img.rexSizer.aspectRatio = img.width/img.height;
-            }
+            if(!this._img) {this._createImg(icon);}
+            else {this._updateImg(icon);}
+            this._img.setTint(tint).setAlpha(alpha);
         }
         else
         {
             if(this._img) {this.hide(this._img);}
             if(!this._bbc) {this._createBbc(icon);}
-            else 
-            {
-                this.show(this._bbc);
-                this._bbc.setText(icon);
-            }
+            else {this._updateBbc(icon);}
         }
 
-        this.layout();
-        return this;
-    }
-}
-
-
-export class Icon extends OverlapSizer
-{
-    constructor(scene, w, h, config={})
-    {
-        const{
-            x, y, space=10, 
-            fontSize=20,
-            count,
-            icon, 
-            bg={color:GM.COLOR.SLOT,radius:0,alpha:1},
-        }=config;
-
-        super(scene, x, y, w, h,{space:space});
-        this.addBackground(uRect(scene,bg),'background')
-        this._sp=uImage.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
-        this._bbc=uBbc.call(this,scene,{text:count,fontSize:fontSize,color:'#fff',strokeThickness:5,
-                                        ext:{align:'right-bottom',expand:false,offsetY:space,offsetX:space}})
-        this.layout()
-
-        scene.add.existing(this);
-
-    }
-
-    setIcon(icon,{tint=0xffffff,alpha=1}={})
-    {
-        let [key,frame] = icon ? icon.split(':') : [undefined,undefined];
-        const sp = this._sp;
-        sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
-        sp.rexSizer.aspectRatio = sp.width/sp.height;
-        this.layout();
-        return this;
-    }
-
-    setCount(count)
-    {
-        this._bbc.setText(`[stroke=#000]${count}[/stroke]`)
         this.layout();
         return this;
     }
 
     empty()
     {
-        this._sp.setTexture();
-        this._bbc.setText('');
+        if(this._img) {this.hide(this._img);}
+        if(this._bbc) {this.hide(this._bbc);}
+    }
+}
+
+export class Icon extends Pic
+{
+    constructor(scene, w, h, config={})
+    {
+        const
+        {
+            fontSize=20,
+            count,
+            ...cfg
+        }=config;
+
+        cfg.space = cfg.space || 10;
+        cfg.bg = cfg.bg || {color:GM.COLOR.SLOT,radius:0,alpha:1};
+        cfg.scl = cfg.scl || 0.5;
+
+        super(scene, w, h, cfg);
+        this._cnt=uBbc.call(this,scene,{text:count,fontSize:fontSize,color:'#fff',strokeThickness:5,
+                                        ext:{align:'right-bottom',expand:false,offsetY:cfg.space,offsetX:cfg.space}})
+        this.layout();
+
+    }
+
+    setCount(count)
+    {
+        this._cnt.setText(`[stroke=#000]${count}[/stroke]`)
+        this.layout();
+        return this;
+    }
+
+    empty()
+    {
+        super.empty();
+        this._cnt.setText('');
     }
 
 }
+
+
+// export class Icon extends OverlapSizer
+// {
+//     constructor(scene, w, h, config={})
+//     {
+//         const{
+//             x, y, space=10, 
+//             fontSize=20,
+//             count,
+//             icon, 
+//             bg={color:GM.COLOR.SLOT,radius:0,alpha:1},
+//         }=config;
+
+//         super(scene, x, y, w, h,{space:space});
+//         this.addBackground(uRect(scene,bg),'background')
+//         this._sp=uImage.call(this,scene,{icon:icon,ext:{aspectRatio:true,padding:0}})
+//         this._bbc=uBbc.call(this,scene,{text:count,fontSize:fontSize,color:'#fff',strokeThickness:5,
+//                                         ext:{align:'right-bottom',expand:false,offsetY:space,offsetX:space}})
+//         this.layout()
+
+//         scene.add.existing(this);
+
+//     }
+
+//     setIcon(icon,{tint=0xffffff,alpha=1}={})
+//     {
+//         let [key,frame] = icon ? icon.split(':') : [undefined,undefined];
+//         const sp = this._sp;
+//         sp.setTexture(key,frame).setTint(tint).setAlpha(alpha);
+//         sp.rexSizer.aspectRatio = sp.width/sp.height;
+//         this.layout();
+//         return this;
+//     }
+
+//     setCount(count)
+//     {
+//         this._bbc.setText(`[stroke=#000]${count}[/stroke]`)
+//         this.layout();
+//         return this;
+//     }
+
+//     empty()
+//     {
+//         this._sp.setTexture();
+//         this._bbc.setText('');
+//     }
+
+// }
 
 export function uRect(scene, config={})
 {

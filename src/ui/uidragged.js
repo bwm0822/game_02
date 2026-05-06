@@ -14,7 +14,7 @@ export default class UiDragged extends ui.Pic
     static instance = null;
     constructor(scene, w, h)
     {
-        const config={bg:{}}
+        const config={scl:0.7}
         super(scene, w, h, config);
         UiDragged.instance = this;
         Ui.addLayer(scene, UI.TAG.DRAGGED, this);    // 產生layer，並設定layer名稱

@@ -2,6 +2,8 @@ import {GM} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
+import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
+import Utility from '../core/utility.js'
 
 function debugDraw(mode=DEBUG.mode,text)
 {
@@ -498,23 +500,40 @@ class View extends Phaser.GameObjects.Container
 
 export class ItemView extends View
 {
+
     _addShape()
     {
         // console.log('_addShape=',this.key,this.frame,this.wid,this.hei)
+
         if(this.key)
         {
-            let sp = this.scene.add.sprite(0,0,this.key,this.frame);
-            sp.setPipeline('Light2D');
-            if(this.scl) { sp.setScale(this.scl); }
+            const ascii = Utility.isASCIIString(this.key);
+
+            if(ascii)
+            {
+                const icon=`${this.key}:${this.frame}`;
+                const sp = uImage.call(this,this.scene,{icon:icon})
+                sp.setPipeline('Light2D');
+                if(this.scl) { sp.setScale(this.scl); }
+                else
+                {
+                    sp.displayWidth = this.wid;
+                    sp.displayHeight = this.hei;
+                }
+                sp.flipX = this.flipX;
+                sp.flipY = this.flipY;
+                this._shape = sp;
+            }
             else
             {
-                sp.displayWidth = this.wid;
-                sp.displayHeight = this.hei;
+                const scl=this.scl??1;
+                const sp = uBbc.call(this,this.scene,{   
+                                    text:this.key,
+                                    fontSize:this.wid*scl,
+                                })
+                sp.setOrigin(0.5);
+                this._shape = sp;
             }
-            sp.flipX = this.flipX;
-            sp.flipY = this.flipY;
-            this.add(sp);
-            this._shape = sp;
         }
 
         return this;

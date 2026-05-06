@@ -41,19 +41,11 @@ export default class Pickup extends GameObject
         this.bb.wid = GM.TILE_W;
         this.bb.hei = GM.TILE_H;
 
-        if(dat.drop)
-        {
-            let [key,frame] = dat.drop.sprite.split(':');
-            this.bb.key = key;
-            this.bb.frame = frame;
-            this.bb.scl = dat.drop.scale;
-        }
-        else
-        {
-            let [key,frame] = dat.icon.split(':');
-            this.bb.key = key;
-            this.bb.frame = frame;
-        }
+        const icon = dat.drop?.sprite??dat.icon;
+        const [key,frame] = dat.icon.split(':');
+        this.bb.key = key;
+        this.bb.frame = frame;
+        if(dat.drop?.scale) {this.bb.scl=dat.drop.scale;}
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )
