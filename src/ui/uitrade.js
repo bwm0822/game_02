@@ -17,6 +17,7 @@ export default class UiTrade extends UiFrame
             // height : 500,
             orientation : 'y',
             space:UI.SPACE.FRAME,
+            cover: {touchClose:false,alpha:0.5},
         }
 
         super(scene, config, UI.TAG.TRADE);
@@ -67,9 +68,7 @@ export default class UiTrade extends UiFrame
 
     addBag(scene)
     {
-        const slot = (i)=>{return new Slot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);}
-
-        this._bag = ui.uGrid.call(this,scene,{column:5,row:6,addItem:slot});
+        this._bag = ui.uStorage.call(this, scene, {column:4, row:5});
         return this;
     }
 
@@ -78,6 +77,14 @@ export default class UiTrade extends UiFrame
         const owner=this.owner;
         this._info.setIcon(owner)
         this._info.setDes(owner)
+    }
+
+    init(owner)
+    {
+        const addItem = (i) => new Slot(this.scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);
+        this._bag.init(addItem, owner.storage);
+        this.refresh();
+        this.layout();
     }
 
     refresh()
@@ -100,7 +107,7 @@ export default class UiTrade extends UiFrame
         super.show();
         this.owner=owner;
         this.updateInfo();
-        this.refresh();
+        this.init(owner);
         //
         this.closeAll(GM.UI_LEFT);
         this.register(GM.UI_LEFT);

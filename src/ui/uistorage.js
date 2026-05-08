@@ -11,10 +11,11 @@ export default class UiStorage extends UiFrame
     {
         const config =
         {
-            x:100,
+            x:0,
             y:GM.h-150,
             orientation : 'y',
             space:10,//UI.SPACE.FRAME,
+            cover: {touchClose:false,alpha:0.5},
         }
 
         super(scene, config, UI.TAG.STORAGE);

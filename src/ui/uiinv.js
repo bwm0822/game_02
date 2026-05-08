@@ -55,9 +55,7 @@ export default class UiInv extends UiFrame
 
     addBag(scene)
     {
-        const slot = (i)=>{return new Slot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);}
-
-        this._bag = ui.uGrid.call(this,scene,{column:5,row:4,addItem:slot});
+        this._bag = ui.uStorage.call(this, scene, {column:5, row:4});
         return this;
     }
 
@@ -72,6 +70,14 @@ export default class UiInv extends UiFrame
         const text = `[color=yellow][img=gold][/color] ${0}`
         this._gold = ui.uBbc.call(p, scene, {text:text,images:images});
         return this;
+    }
+
+    init(owner)
+    {
+        const addItem = (i) => new Slot(this.scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);
+        this._bag.init(addItem, owner.storage);
+        this.refresh();
+        this.layout();
     }
 
     filter(conds)
@@ -119,7 +125,7 @@ export default class UiInv extends UiFrame
         if(this.visible) {return;}
         super.show();
         this.owner=owner;
-        this.refresh(); 
+        this.init(owner);
         this.filter(conds); //呼叫 filter() 之前，至少要先執行過一次 refresh()
         this.closeAll(GM.UI_RIGHT);
         this.register(GM.UI_RIGHT);

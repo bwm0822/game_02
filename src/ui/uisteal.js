@@ -15,6 +15,7 @@ export default class UiSteal extends UiFrame
             y: GM.h/2,
             orientation: 'y',
             space: UI.SPACE.FRAME,
+            cover: {touchClose:false,alpha:0.5},
         }
         super(scene, config, UI.TAG.STEAL);
         UiSteal.instance = this;
@@ -73,7 +74,8 @@ export default class UiSteal extends UiFrame
 
     close()
     {
-        this.owner?.stopSteal?.();
+        this.owner.stopSteal();
+        this.unregister();
         super.close();
     }
 
@@ -83,6 +85,7 @@ export default class UiSteal extends UiFrame
         this.owner = owner;
         this.updateInfo();
         this.init(owner);
+        this.register(GM.UI_CENTER);
     }
 
     static show(owner) {this.instance?.show(owner);}

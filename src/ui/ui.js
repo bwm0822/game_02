@@ -78,10 +78,11 @@ export default function createUI(scene)
     new UiManufacture(scene);       // 3
     new UiProfile(scene);           // 4
     
-    new UiInv(scene);               // 6
+    
     new UiTrade(scene);             // 7
     new UiSteal(scene);
     new UiStorage(scene);           // 8
+    new UiInv(scene);               // 6
     new UiMisc(scene);              // 20
     new UiDialog(scene);            // 9
     new UiObserve(scene);           // 10

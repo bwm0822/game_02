@@ -55,7 +55,7 @@ export class COM_Stolen extends Com
 
     _stopSteal()
     {
-        this.root.info.target={};
+        this.root.info.target.info={};
         this.root.info={};
     }
 
