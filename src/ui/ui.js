@@ -106,14 +106,16 @@ export default function createUI(scene)
 
     UiChangeScene.show();
 
-    // w1(scene);
+    w1(scene);
     
 }
 
 function w1(scene)
 {
-    const pic = new Pic(scene,50,50,{x:100,y:100})
-    pic.setIcon('icons:1')
+    // const pic = new Pic(scene,50,50,{x:100,y:100})
+    // pic.setIcon('icons:1')
+    let num;
+    console.log('---- max=',Math.max(num||0,10))
 }
 
 

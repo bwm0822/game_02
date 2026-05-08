@@ -11,8 +11,8 @@ export default class UiSteal extends UiFrame
     constructor(scene)
     {
         const config = {
-            x: 0,
-            y: 0,
+            x: GM.w/2,
+            y: GM.h/2,
             orientation: 'y',
             space: UI.SPACE.FRAME,
         }
@@ -48,8 +48,7 @@ export default class UiSteal extends UiFrame
 
     addBag(scene)
     {
-        const slot = (i) => new Slot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);
-        this._bag = ui.uGrid.call(this, scene, {column: 5, row: 5, addItem: slot});
+        this._bag = ui.uStorage.call(this, scene);
         return this;
     }
 
@@ -64,6 +63,14 @@ export default class UiSteal extends UiFrame
         this._bag.loop((elm) => elm?.update(this.owner));
     }
 
+    init(owner)
+    {
+        const addItem = (i) => new Slot(this.scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);
+        this._bag.init(addItem, owner.storage);
+        this.refresh();
+        this.layout();
+    }
+
     close()
     {
         this.owner?.stopSteal?.();
@@ -75,8 +82,7 @@ export default class UiSteal extends UiFrame
         super.show();
         this.owner = owner;
         this.updateInfo();
-        this.refresh();
-        this.setPosition(GM.w/2, GM.h/2);
+        this.init(owner);
     }
 
     static show(owner) {this.instance?.show(owner);}

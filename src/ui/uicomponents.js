@@ -706,6 +706,57 @@ export function uScroll(scene, config={})
     return scroll;
 }
 
+export function uStorage(scene, config={})
+{
+    const {
+        column = 4,
+        row = 4,
+        slotSize = GM.SLOT_SIZE,
+        space = {...UI.SPACE.LRTB_5,column:5,row:5},
+        ext,
+    } = config;
+
+    const w = slotSize + (column-1) * (slotSize + space.column) + space.left + space.right;
+    const h = slotSize + (row-1) * (slotSize + space.row) + space.top + space.bottom;
+    const innerPanel = scene.rexUI.add.gridSizer({ column, row, space });
+
+    const scroll = scene.rexUI.add.scrollablePanel({
+        width: w,
+        height: h,
+        background: uRect(scene, UI.BG.BORDER),
+        panel: { child: innerPanel },
+        scrollMode: 0,
+        slider: {
+            track: uRect(scene, { width: 15, color: GM.COLOR.DARK }),
+            thumb: uRect(scene, { width: 20, height: 20, radius: 5, color: GM.COLOR.LIGHT }),
+            space: 5,
+        },
+    });
+
+    // 操作介面  
+    // 初始化
+    scroll.init = (addItem, storage)=>{
+
+        const num = Math.max(storage.capacity||0,storage.items.length);
+        const len = Math.max(num, column*row);
+
+        innerPanel.removeAll(true);
+        
+        for(let i = 0; i < len; i++)
+        {
+            const itm = addItem(i)
+            itm&&innerPanel.add(itm);
+        }
+        scroll.layout();
+    }
+
+    // 遍歷所有child
+    scroll.loop = (cb)=>{innerPanel.getElement('items').forEach((item)=>{cb(item);})}
+
+    if(this && this.add) { this.add(scroll, ext); }
+    return scroll;
+}
+
 export function uFix(scene, config={})
 {
     let {bg, ext, ...cfg} = config;

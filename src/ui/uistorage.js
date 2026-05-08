@@ -9,12 +9,12 @@ export default class UiStorage extends UiFrame
     static instance = null;
     constructor(scene)
     {
-        let config =
+        const config =
         {
             x:100,
             y:GM.h-150,
             orientation : 'y',
-            space:UI.SPACE.FRAME,
+            space:10,//UI.SPACE.FRAME,
         }
 
         super(scene, config, UI.TAG.STORAGE);
@@ -23,25 +23,21 @@ export default class UiStorage extends UiFrame
         // layout
         this.addBg(scene)
             .addTop(scene,'storage')
-            .addGrid(scene)
+            .addStorage(scene)
             .setOrigin(0,1)
             .layout()
             .hide()
     }
 
-    addGrid(scene)
+    addStorage(scene)
     {
-        this._grid = ui.uGrid.call(this, scene, {
-            column: 4, row: 4,
-            addItem: (i)=>{return new Slot(scene,GM.SLOT_SIZE,GM.SLOT_SIZE,i);}
-        })
-
+        this._storage = ui.uStorage.call(this, scene, {column:4,row:3});
         return this;
     }
 
     refresh()
     {
-        this._grid.loop((elm)=>elm.update(this._owner));
+        this._storage.loop((elm)=>{elm?.update(this.owner);});
     }
 
     close()
@@ -50,15 +46,23 @@ export default class UiStorage extends UiFrame
         super.close();
         this.unregister();
         this.clrCamera(GM.CAM_RIGHT);
-        this._owner.close();
+        this.owner.close();
+    }
+
+    init(owner)
+    {
+        const addItem = (i) => new Slot(this.scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i);
+        this._storage.init(addItem, owner.storage);
+        this.refresh();
+        this.layout();
     }
 
     show(owner)
     {
-         if(this.visible) {return;}
+        if(this.visible) {return;}
         super.show();
-        this._owner=owner;
-        this.refresh();
+        this.owner=owner;
+        this.init(owner);
         //
         this.closeAll(GM.UI_LEFT_P);
         this.register(GM.UI_LEFT);

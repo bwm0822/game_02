@@ -140,21 +140,22 @@ export class Slot extends Icon
     setBar(visible, cur, max)
     {
         const elm=this._bar;
-        elm.visible=visible;
+        // 用 alpha 取代 visible，因為 scrollablePanel 滑動時，會去設 visible
+        elm.alpha=visible?1:0   // elm.visible=visible;
         if(visible) {elm.setValue(cur/max);}
     }
 
     setProgress(visible, cur, max)
     {
         const elm=this._progress;
-        elm.visible = visible;
+        // 用 alpha 取代 visible，因為 scrollablePanel 滑動時，會去設 visible
+        elm.alpha=visible?1:0   // elm.visible = visible;
         if(visible) {elm.setValue(cur/max);}
     }
 
     setTimes(visible, cur, max)
     {
         const elm=this._times;
-        elm.visible=visible;
         if(visible) 
         {
             let times = '';
@@ -343,16 +344,11 @@ export class Slot extends Icon
 
     async stolen()
     {
+        if(this.isEmpty) {return;}
         if(this.isVictim && await Ui.on(UI.TAG.CONFIRM,'偷竊嗎?'))
         {
-            if(this.owner.stolen(this))
-            {
-                Ui.refreshAll();
-            }
-            else
-            {
-                Ui.off(UI.TAG.STEAL);
-            }
+            if(this.owner.stolen(this)) {Ui.refreshAll();}
+            else {Ui.off(UI.TAG.STEAL);}
         }
     }
 
