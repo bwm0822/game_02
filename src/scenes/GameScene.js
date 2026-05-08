@@ -186,9 +186,13 @@ export class GameScene extends Scene
                 offsetX = -this.cameras.main.width/4; offsetY = 0; break;
             case GM.CAM_RIGHT: 
                 offsetX = this.cameras.main.width/4; offsetY = 0; break;
-            case GM.CAM_LEFT_TOP: 
-                offsetX = -this.cameras.main.width/4; 
+            case GM.CAM_LEFT_TOP:
+                offsetX = -this.cameras.main.width/4;
                 offsetY = this.map.small ? 0 : -this.cameras.main.width/4; break;
+            case GM.CAM_TOP:
+                offsetX = 0; offsetY = -this.cameras.main.height/3; break;
+            case GM.CAM_BOTTOM:
+                offsetX = 0; offsetY = this.cameras.main.height/3; break;
             default:
                 offsetX = 0; offsetY = 0; break;
         }

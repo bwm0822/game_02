@@ -49,7 +49,7 @@ export default class UiSteal extends UiFrame
 
     addBag(scene)
     {
-        this._bag = ui.uStorage.call(this, scene);
+        this._bag = ui.uStorage.call(this, scene, {row:3});
         return this;
     }
 
@@ -77,6 +77,7 @@ export default class UiSteal extends UiFrame
         this.owner.stopSteal();
         this.unregister();
         super.close();
+        this.clrCamera(GM.CAM_TOP);
     }
 
     show(owner)
@@ -85,7 +86,9 @@ export default class UiSteal extends UiFrame
         this.owner = owner;
         this.updateInfo();
         this.init(owner);
+        this.closeAll();
         this.register(GM.UI_CENTER);
+        this.setCamera(GM.CAM_TOP);
     }
 
     static show(owner) {this.instance?.show(owner);}

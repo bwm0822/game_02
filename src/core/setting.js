@@ -152,9 +152,11 @@ export const GM =
     CAM_CENTER : 0b000,
 
     // Camera mode
-    CAM_LEFT        : 0b001,
-    CAM_RIGHT       : 0b010,
-    CAM_LEFT_TOP    : 0b100,
+    CAM_LEFT        : 0b0_0001,
+    CAM_RIGHT       : 0b0_0010,
+    CAM_LEFT_TOP    : 0b0_0100,
+    CAM_TOP         : 0b0_1000,
+    CAM_BOTTOM      : 0b1_0000,
 
     SELLER : 'seller',
     BUYER : 'buyer',
