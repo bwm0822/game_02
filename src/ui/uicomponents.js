@@ -613,11 +613,9 @@ export function uScroll(scene, config={})
         hideUnscrollableSlider = false,
         disableUnscrollableDrag = true,
         style = UI.SCROLL.DEF,
-        column = 1,
-        row = 1,
         scrollMode = 0, //0: vertical, 1: horizontal, 2: both
         // style = UI.SCROLL.CON 時，需要設定 con_w,con_h
-        con_w = 0, 
+        con_w = 0,
         con_h = 0,
         clampChildOX=false,   // 水平不超界
         clampChildOY=false,   // 垂直不超界
@@ -628,8 +626,6 @@ export function uScroll(scene, config={})
         {
             case UI.SCROLL.DEF:
                 return scene.rexUI.add.sizer({space,orientation:'y'});
-            case UI.SCROLL.GRID:
-                return scene.rexUI.add.gridSizer({column,row,space});
             case UI.SCROLL.CON:
                 const con = scene.add.container();
                 con.width = con_w;
@@ -688,9 +684,7 @@ export function uScroll(scene, config={})
     // 操作介面  
     scroll.addItem = (item,config)=>{
         config = config ?? 
-                (style===UI.SCROLL.DEF ? {align:'left',expand:true}
-                                        : style === UI.SCROLL.GRID ? {align:'left'}
-                                                                    : {});
+                (style===UI.SCROLL.DEF ? {align:'left',expand:true} : {});
         _panel.add(item,config); 
         return scroll;
     }

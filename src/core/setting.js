@@ -533,7 +533,6 @@ export const UI =
     },
     SCROLL:{
         DEF: 'def',
-        GRID:'grid',
         CON: 'con'
     },
     SLIDER:{
