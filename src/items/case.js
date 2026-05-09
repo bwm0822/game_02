@@ -1,7 +1,8 @@
-import {GM} from '../core/setting.js';
-import {ItemView} from '../components/view.js';
-import {COM_Storage} from '../components/inventory.js';
-import {GameObject} from '../core/gameobject.js';
+import {GM} from '../core/setting.js'
+import {ItemView} from '../components/view.js'
+import {COM_Storage} from '../components/inventory.js'
+import {COM_Lock} from '../components/lock.js'
+import {GameObject} from '../core/gameobject.js'
 
 export default class Case extends GameObject
 {
@@ -21,6 +22,7 @@ export default class Case extends GameObject
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:true} )
             .addCom( new COM_Storage() )
+            .addCom( new COM_Lock() )
 
         // 載入
         this.load();

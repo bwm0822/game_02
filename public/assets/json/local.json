@@ -1032,5 +1032,21 @@
     "us": {
       "lab": "Pickup"
     }
+  },
+  "lock": {
+    "tw": {
+      "lab": "上鎖"
+    },
+    "us": {
+      "lab": "Lock"
+    }
+  },
+  "unlock": {
+    "tw": {
+      "lab": "解鎖"
+    },
+    "us": {
+      "lab": "Unlock"
+    }
   }
 }

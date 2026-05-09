@@ -63,6 +63,8 @@ export const GM =
     ICON_OPEN : 'cursors:87',
     ICON_TOOL : 'cursors:58',
     ICON_DOOR : 'cursors:70',
+    ICON_LOCK : 'cursors:36',
+    ICON_UNLOCK : 'cursors:50',
     ICON_CROSS : 'cursors:150',
 
     ICON_WEAPON : 'icons:80',  //'weapons/5'
@@ -204,6 +206,8 @@ export const GM =
     REST : 'rest',
     WAKE : 'wake',
     STEAL : 'steal',
+    LOCK : 'lock',
+    UNLOCK : 'unlock',
     // for slot
     BUY : 'buy',
     SELL : 'sell',
@@ -594,6 +598,8 @@ export const ORDER = [
     GM.DROP,
     GM.SPLIT,
     GM.OPENBAG,
+    GM.LOCK,
+    GM.UNLOCK,
 ];
 
 export const GS = {
