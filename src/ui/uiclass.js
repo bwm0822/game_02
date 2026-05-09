@@ -12,6 +12,7 @@ import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
+import Record from '../infra/record.js'
 
 export class Slot extends Icon
 {
@@ -36,7 +37,8 @@ export class Slot extends Icon
     get count() {return this.content.count;}
     set count(value) {return this.content.count=value;}
     get props() {return this.dat.props;}
-    get label() {return this.content.id.lab();}
+    // get label() {return this.content.id.lab();}
+    get label() {return this.dat[Record.setting.lang].lab;}
     get tp() {return GM.IF_SLOT;}
 
     get id() {return this.content?.id;}

@@ -8,6 +8,7 @@ import * as ui from './uicomponents.js'
 import UiCover  from './uicover.js'
 import UiMain  from './uimain.js'
 import Utility from '../core/utility.js'
+import Record from '../infra/record.js'
 
 export default class UiDragged extends ui.Pic
 {
@@ -41,7 +42,8 @@ export default class UiDragged extends ui.Pic
     get dat() {return this._obj.dat;}
     get id() {return this._obj.id;}
     get i() {return this._obj.i;}
-    get label() {return this.content.id.lab();}
+    // get label() {return this.content.id.lab();}
+    get label() {return this.dat[Record.setting.lang].lab;}
     get gold() {return this.dat.gold;}
     get price() {return this.content.count*this.dat.gold;}
     get count() {return this.content.count}
@@ -161,7 +163,8 @@ export default class UiDragged extends ui.Pic
         // 不可將 seller 的物品丟掉
         if(this._obj && this.owner.info.type!==GM.SELLER)
         {
-            this.owner.drop(this._obj);
+            // this.owner.drop(this._obj);
+             this.owner.drop(this);
             this.empty();
         }
     }
