@@ -30,6 +30,21 @@ export class GameScene extends Scene
     update()
     {
         this.cameraMove();
+        this._refreshCursor();
+    }
+
+    _refreshCursor()
+    {
+        if(this._atEdge) {return;}
+        if(GM.player?.sta === GM.ST.ABILITY) {return;}
+        if(!this._ent) {return;}
+
+        const act = this._ent.act;
+        if(act !== this._lastAct)
+        {
+            this._lastAct = act;
+            UiCursor.set(act);
+        }
     }
 
     async create ({diagonal,classType,weight})
@@ -41,6 +56,7 @@ export class GameScene extends Scene
         this._pos = null;
         this._act = 'go';
         this._ent = null;
+        this._lastAct = null;
         this.roles = [];
         this.entities = [];
         GameObject.gid=0;
@@ -280,7 +296,7 @@ export class GameScene extends Scene
                 if(!this._follow) {this.cameraPan(pt);}
                 GM.player.cmd({pt:pt,ent:this._ent,path:this._path});
                 UiMark.close();
-                this._path=null;
+                // this._path=null;
             }
         }
     }
@@ -462,7 +478,7 @@ export class GameScene extends Scene
             this._done = true;
             this.events
                 .on('over', (ent)=>{this._ent=ent;UiCursor.set(this._ent.act);UiMark.close();})
-                .on('out', ()=>{this._ent=null;UiCursor.set();})
+                .on('out', ()=>{this._ent=null;this._lastAct=null;UiCursor.set();})
                 .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
                 .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
                 .on('trade', (owner)=>{Ui.on(UI.TAG.TRADE,owner);})
