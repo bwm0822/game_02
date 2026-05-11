@@ -179,8 +179,8 @@ class View extends Phaser.GameObjects.Container
         this.bl=0, this.br=0, this.bt=0, this.bb=0;     // body 的 left, right, top, bottom，物理 body 方塊
         this.gl=0, this.gr=0, this.gt=0, this.gb=0;     // grid 的 left, right, top, bottom，地圖網格方塊
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;     // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
-        this.anchorX = 0;           // 錨點與中心點的差距，(0,0)代表在中心點，(-w/2,-h/2) 代表在左上角
-        this.anchorY = 0;           // 錨點與中心點的差距，(0,0)代表在中心點，(w/2,h/2) 代表在右下角 
+        this.anchorX = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetX，(0,0)代表 gameobject 的中心點，(-w/2,-h/2) 代表在左上角
+        this.anchorY = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetY，(0,0)代表 gameobject 在中心點，(w/2,h/2) 代表在右下角 
         
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
@@ -192,10 +192,9 @@ class View extends Phaser.GameObjects.Container
     get tag() {return 'view';}          // 回傳元件的標籤
     get root() {return this._root;}
     get ctx() {return this._root.ctx;}
-    // get ent() {return this._root.ent;}
     get pos() {return this._root.pos;}
 
-    get anchor() {return this.pos;}          // 錨點(world space)
+    get anchor() {return this.pos;}          // 錨點=gameobject中心點(world space)
     get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // view的中心點(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
@@ -249,6 +248,13 @@ class View extends Phaser.GameObjects.Container
         this._rect.visible = on;
     }
 
+    setOcclude(on)
+    {
+        if(this._occluded === on) {return;}
+        this._occluded = on;
+        this._shape?.setAlpha(on ? 0.5 : 1.0);
+    }
+    
     //--------------------------------------------------
     // faceTo
     //--------------------------------------------------
@@ -441,8 +447,7 @@ class View extends Phaser.GameObjects.Container
             ._addWeight()
             ._addListener()
 
-        // 將 view 掛在 ent 之下
-        // this.ent.add(this);
+        // 將 view 加到 gameobject
         this.root.add(this);
     }
 

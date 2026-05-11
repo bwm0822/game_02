@@ -5,12 +5,11 @@
     },
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets",
         ".",
-        "public/assets/maps",
         "public",
-        "public/assets/tiles",
-        "public/assets/templates"
+        "public/assets/templates",
+        "public/assets",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -232,7 +231,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 640.6666666666667
+                "y": 640.6666666666666
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -306,7 +305,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 512,
-                "y": 512.3333333333334
+                "y": 512.3333333333333
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -438,8 +437,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 646,
-                "y": 917
+                "x": 190,
+                "y": 190
             }
         },
         "public/assets/maps/village-02.json": {

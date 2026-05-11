@@ -31,6 +31,44 @@ export class GameScene extends Scene
     {
         this.cameraMove();
         this._refreshCursor();
+        this._checkOcclusion();
+    }
+
+    _checkOcclusion()
+    {
+        if(!GM.player) {return;}
+        const player = GM.player;
+        const gos = [...Object.values(this.gos),...this.roles];
+
+        const hw = GM.TILE_W * 3;
+        const hh = GM.TILE_H * 3;
+        const nearby = gos.filter(go =>
+            Math.abs(go.x - player.x) <= hw &&
+            Math.abs(go.y - player.y) <= hh
+        );
+
+        for(const go of gos)
+        {
+            const view = go.coms?.view;
+            if(!view || !view.wid || !view.hei) {continue;}
+
+            if(!nearby.includes(go)) {view.setOcclude(false); continue;}
+
+            const rect = new Phaser.Geom.Rectangle(
+                view.cen.x - view.wid / 2,
+                view.cen.y - view.hei / 2,
+                view.wid,
+                view.hei
+            );
+
+            const occluding = nearby.some(t =>
+                t !== go &&
+                go.depth > t.depth &&
+                rect.contains(t.x, t.y)
+            );
+
+            view.setOcclude(occluding);
+        }
     }
 
     _refreshCursor()
@@ -58,7 +96,7 @@ export class GameScene extends Scene
         this._ent = null;
         this._lastAct = null;
         this.roles = [];
-        this.entities = [];
+        // this.entities = [];
         GameObject.gid=0;
         this.gos = {};
         this.loadRecord();
@@ -85,7 +123,7 @@ export class GameScene extends Scene
     log()
     {
         dlog(T.SCENE)("Roles:", this.roles);
-        dlog(T.SCENE)("Entities:", this.entities);
+        // dlog(T.SCENE)("Entities:", this.entities);
         dlog(T.SCENE)("gos:", this.gos);
     }
 
