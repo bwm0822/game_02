@@ -7,6 +7,7 @@ import {GameObject} from '../core/gameobject.js'
 
 export default class Pickup extends GameObject
 {
+    get occludeType() {return GM.OCCLUDE.DROP;}
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -18,7 +19,7 @@ export default class Pickup extends GameObject
         this.bb.interactive = true; // 設成 可互動，view 元件會參考
         this.bb.weight = 0;
 
-        // 加入元件  
+        // 加入元件
         this.addCom( new ItemView(this.scene), {modify:false} )
             .addCom( new COM_Pickable() )
 
@@ -35,6 +36,7 @@ export default class Pickup extends GameObject
         // console.log('uid:',this.uid,'qid:',this.qid)
         this.bb.content = content;
         this.bb.weight = 0;
+        this.bb.occludeType = GM.OCCLUDE.DROP;
 
         const dat = DB.item(content.id);
         this.bb.interactive = true;

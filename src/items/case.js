@@ -7,6 +7,7 @@ import {GameObject} from '../core/gameobject.js'
 export default class Case extends GameObject
 {
 
+    get occludeType() {return GM.OCCLUDE.DEVICE;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -19,7 +20,7 @@ export default class Case extends GameObject
 
         this.bb.interactive = true; // 設成 可互動，view 元件會參考
 
-        // 加入元件  
+        // 加入元件
         this.addCom( new ItemView(this.scene), {modify:true} )
             .addCom( new COM_Storage() )
             .addCom( new COM_Lock() )

@@ -1,8 +1,11 @@
 import {GameObject} from '../core/gameobject.js'
 import {ItemView} from '../components/view.js'
+import {GM} from '../core/setting.js'
 
 export default class Point extends GameObject
 {
+    get occludeType() {return GM.OCCLUDE.NONE;}
+
     init_prefab()
     {        
         if(!super.init_prefab()) {return;}

@@ -8,7 +8,7 @@ export default class Role extends GameObject
 {
     get icon() {return this.bb.meta.icon;}
     get job() {return this.bb.meta.job;}
-
+    get occludeType() {return GM.OCCLUDE.ROLE;}
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------

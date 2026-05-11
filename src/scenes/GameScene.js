@@ -3,7 +3,7 @@ import Map from '../manager/map.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
-import {GM,UI} from '../core/setting.js'
+import {GM,UI,OCCLUDE_TBL} from '../core/setting.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
 import UiMark from '../ui/uimark.js'
@@ -38,36 +38,37 @@ export class GameScene extends Scene
     {
         if(!GM.player) {return;}
         const player = GM.player;
-        const gos = [...Object.values(this.gos),...this.roles];
-
         const hw = GM.TILE_W * 3;
         const hh = GM.TILE_H * 3;
-        const nearby = gos.filter(go =>
+
+        const allGos = [...Object.values(this.gos), ...this.roles];
+
+        const nearby = allGos.filter(go =>
             Math.abs(go.x - player.x) <= hw &&
-            Math.abs(go.y - player.y) <= hh
+            Math.abs(go.y - player.y) <= hh &&
+            go.occludeType !== GM.OCCLUDE.NONE
         );
 
-        for(const go of gos)
+        // Reset all objects first
+        for(const go of allGos) { go.setOcclude(false); }
+
+        // For each nearby occludee, find the occluder covering it and make the OCCLUDER semi-transparent
+        for(const go of nearby)
         {
-            const view = go.coms?.view;
-            if(!view || !view.wid || !view.hei) {continue;}
+            // const view = go.coms.view;
+            const occluderMask = OCCLUDE_TBL[go.occludeType];
+            if(occluderMask===GM.OCCLUDE.NONE) {continue;}
 
-            if(!nearby.includes(go)) {view.setOcclude(false); continue;}
+            const rect = go.getShapeRect();
 
-            const rect = new Phaser.Geom.Rectangle(
-                view.cen.x - view.wid / 2,
-                view.cen.y - view.hei / 2,
-                view.wid,
-                view.hei
-            );
+            for(const t of nearby)
+            {
+                if(!(occluderMask&t.occludeType)) {continue;}
 
-            const occluding = nearby.some(t =>
-                t !== go &&
-                go.depth > t.depth &&
-                rect.contains(t.x, t.y)
-            );
-
-            view.setOcclude(occluding);
+                if(t === go || t.depth >= go.depth) {continue;}
+                if(rect.contains(t.x, t.y)) { go.setOcclude(true); }
+                
+            }
         }
     }
 

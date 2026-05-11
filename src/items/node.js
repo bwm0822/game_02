@@ -5,6 +5,8 @@ import {COM_Node} from '../components/port.js'
 
 export default class Node extends GameObject
 {
+    get occludeType() {return GM.OCCLUDE.NONE;}
+    
     init_prefab()
     {      
         if(!super.init_prefab()) {return;}

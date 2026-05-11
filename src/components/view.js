@@ -248,11 +248,21 @@ class View extends Phaser.GameObjects.Container
         this._rect.visible = on;
     }
 
-    setOcclude(on)
+    _setOcclude(on)
     {
         if(this._occluded === on) {return;}
         this._occluded = on;
         this._shape?.setAlpha(on ? 0.5 : 1.0);
+    }
+
+    _getShapeRect()
+    {
+        return new Phaser.Geom.Rectangle(
+                        this.cen.x - this.wid / 2,
+                        this.cen.y - this.hei / 2,
+                        this.wid,
+                        this.hei
+                    );
     }
     
     //--------------------------------------------------
@@ -489,6 +499,9 @@ class View extends Phaser.GameObjects.Container
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
         root.updatePos = this._updatePos.bind(this);
+        // 給外部使用
+        root.setOcclude = this._setOcclude.bind(this);
+        root.getShapeRect = this._getShapeRect.bind(this);
 
 
         root.dbg = debugDraw.bind(this);

@@ -141,7 +141,7 @@ export const GM =
     },
 
     FAV:{
-        LOVE    : 100,  
+        LOVE    : 100,
         LIKE    : 75,   // 交易打8折
         NEUTRAL : 50,   // 預設值
         DISLIKE : 25,   // 無法交易
@@ -464,8 +464,28 @@ export const GM =
         DAMAGE:'damage',
         TURNSTART:'turnstart',
         TURNEND:'turnend',
-    }
+    },
 
+    // 物件遮蔽類型
+    OCCLUDE: { 
+        NONE:   0b00_0000, 
+        DROP:   0b00_0001, 
+        DEVICE: 0b00_0010, 
+        ROLE:   0b00_0100, 
+        SOLID:  0b00_1000, 
+    },
+
+}
+
+export const OCCLUDE_TBL =
+{
+    [GM.OCCLUDE.NONE]:  GM.OCCLUDE.NONE,    // 不遮蔽任何物品，也不被檢查遮蔽
+    [GM.OCCLUDE.DROP]:  GM.OCCLUDE.NONE,    // 掉落物不遮蔽任何物品
+    [GM.OCCLUDE.DEVICE]:GM.OCCLUDE.DROP,    // 裝置遮蔽掉落物，但不遮蔽角色和建物
+    [GM.OCCLUDE.ROLE]:  GM.OCCLUDE.DROP,    // 角色遮蔽掉落物和裝置，但不遮蔽建物
+    [GM.OCCLUDE.SOLID]: GM.OCCLUDE.DROP|
+                        GM.OCCLUDE.DEVICE|
+                        GM.OCCLUDE.ROLE     // 建物遮蔽掉落物、裝置和角色
 }
 
 export const UI =
