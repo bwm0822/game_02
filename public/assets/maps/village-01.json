@@ -67,24 +67,6 @@
                  "y":320
                 }, 
                 {
-                 "gid":209,
-                 "height":27,
-                 "id":94,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"items",
-                         "type":"string",
-                         "value":"[\"boots_01\",\"helmet_01\",\"chest_01\",\"gloves_01\",\"boots_02\",\"helmet_02\",\"chest_02\",\"gloves_02\"]"
-                        }],
-                 "rotation":0,
-                 "type":"case",
-                 "visible":true,
-                 "width":32,
-                 "x":128,
-                 "y":384
-                }, 
-                {
                  "id":95,
                  "template":"..\/templates\/house.tj",
                  "x":64,
@@ -393,6 +375,11 @@
                  "name":"",
                  "properties":[
                         {
+                         "name":"lock",
+                         "type":"string",
+                         "value":"{\"keyid\":\"key_0000\"}"
+                        }, 
+                        {
                          "name":"storage",
                          "type":"string",
                          "value":"[\"boots_01\",\"helmet_01\",\"chest_01\",\"gloves_01\",\"boots_02\",\"helmet_02\",\"chest_02\",\"gloves_02\",\"torch\",\"bottle\"]"
@@ -403,6 +390,24 @@
                  "width":32,
                  "x":480,
                  "y":768
+                }, 
+                {
+                 "gid":209,
+                 "height":27,
+                 "id":138,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"storage",
+                         "type":"string",
+                         "value":"[\"key_0000\",\"lockpick\",{\"id\":\"salt\",\"count\":5}]"
+                        }],
+                 "rotation":0,
+                 "type":"case",
+                 "visible":true,
+                 "width":32,
+                 "x":544,
+                 "y":704
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -411,7 +416,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":137,
+ "nextobjectid":139,
  "orientation":"orthogonal",
  "properties":[
         {

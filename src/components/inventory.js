@@ -190,16 +190,44 @@ export class COM_Storage extends Com
         this.root.info={};
     }
 
+    // _query(dat)
+    // {
+    //     let cnt=0;
+    //     this._storage.items.forEach((itm)=>{
+    //         if(!itm) {return;}
+    //         if(dat.id&&itm.id!==dat.id) {return}
+    //         if(dat.q&&itm.q!==dat.q) {return;}
+    //         cnt+=itm.count;
+    //     });
+    //     return cnt;
+    // }
+
     _query(dat)
     {
-        let cnt=0;
-        this._storage.items.forEach((itm)=>{
+        return this._storage.items.filter((itm)=>{
             if(!itm) {return;}
             if(dat.id&&itm.id!==dat.id) {return}
             if(dat.q&&itm.q!==dat.q) {return;}
-            cnt+=itm.count;
+            return true;
         });
-        return cnt;
+    }
+
+    _find(dat)
+    {
+        return this._storage.items.find((itm)=>{
+            if(!itm) {return;}
+            if(dat.id&&itm.id!==dat.id) {return;}
+            if(dat.q&&itm.q!==dat.q) {return;}
+            return true;
+        });
+    }
+
+    _delete(itm)
+    {
+        const index = this._storage.items.indexOf(itm);
+        if (index > -1) {
+            this._storage.items.splice(index, 1);
+        }
     }
 
     //------------------------------------------------------
@@ -218,7 +246,9 @@ export class COM_Storage extends Com
         root.drop = this._drop.bind(this);
         root.transfer = this._transfer.bind(this);
         root.close = this._close.bind(this);
-        root.query = this._query.bind(this);
+        root.queryItem = this._query.bind(this);
+        root.findItem = this._find.bind(this);
+        root.removeItem = this._delete.bind(this);
         // 上層root已經有remove()了，如果綁定了root.remove，就會被誤認為是COM_Storage的remove，導致錯誤
         // root.remove = this._remove.bind(this);
         root.receive = this._receive.bind(this);
@@ -257,8 +287,8 @@ export class COM_Inventory extends COM_Storage
     constructor(config)
     {
         super(config?.capacity??-1);
-        this._equips = config?.equips??[];
-        this._gold = config?.gold??0;
+        // this._equips = config?.equips??[];
+        // this._gold = config?.gold??0;
     }
    
     //------------------------------------------------------
@@ -296,6 +326,11 @@ export class COM_Inventory extends COM_Storage
     bind(root)
     {
         super.bind(root);
+
+        // 初始化資料
+        const{bb}=this.ctx;
+        this._equips = bb.meta?.equips??[];
+        this._gold = bb.meta?.gold??0;
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         this.addBB('gold');

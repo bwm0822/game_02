@@ -23,7 +23,8 @@ export class Slot extends Icon
                                             ext:{align:'bottom',expand:{width:true},offsetY:5}})
         this._progress=uBar.call(this,scene,{width:0,height:5,value:0,barColor:GM.COLOR.BAR_GREEN,trackColor:GM.COLOR.BLACK,
                                             ext:{align:'bottom',expand:{width:true},offsetY:5}})
-        this._times=uBbc.call(this,scene,{text:'',fontSize:16, lineSpacing:-8,color:'#fff'})
+        this._times=uBbc.call(this,scene,{text:'',fontSize:16, lineSpacing:-8,color:'#fff',
+                                            ext:{align:'left-bottom',expand:false,offsetY:5}})
         this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})
         this.addBackground(this._disabled,'disabled');
 
@@ -158,6 +159,7 @@ export class Slot extends Icon
     setTimes(visible, cur, max)
     {
         const elm=this._times;
+        elm.alpha=visible?1:0   // elm.visible = visible;
         if(visible) 
         {
             let times = '';

@@ -269,8 +269,12 @@ export class GameObject extends Phaser.GameObjects.Container
     // 插入元件(component)
     addCom(com, config={})
     {   
-        this.coms[com.tag] = com;
-        com.bind?.(this, config);
+        const {enable=true} = config;
+        if(enable) 
+        {
+            this.coms[com.tag] = com;
+            com.bind?.(this, config);
+        }
         return this;
     }
 

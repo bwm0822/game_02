@@ -91,7 +91,7 @@ export class Npc extends Role
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:modify})
-            .addCom(new COM_Inventory(this.bb.meta))
+            .addCom(new COM_Inventory())
             .addCom(new COM_Anim())
             .addCom(new COM_Action())
             .addCom(new COM_Nav())

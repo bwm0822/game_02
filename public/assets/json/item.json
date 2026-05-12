@@ -605,9 +605,10 @@
       "des": ""
     }
   },
-  "key": {
+  "key_0000": {
     "cat": "CAT_ITEM",
     "icon": "🔑",
+    "gold": 10,
     "drop": {
       "scale": 0.5
     },
@@ -618,6 +619,23 @@
     "us": {
       "lab": "key",
       "des": ""
+    }
+  },
+  "lockpick": {
+    "cat": "CAT_ITEM",
+    "icon": "🪛",
+    "gold": 15,
+    "drop": {
+      "scale": 0.5
+    },
+    "times": 3,
+    "tw": {
+      "lab": "開鎖工具",
+      "des": "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數"
+    },
+    "us": {
+      "lab": "Lockpick",
+      "des": "Used with the lockpicking skill to pick locks."
     }
   }
 }
