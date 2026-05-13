@@ -593,19 +593,17 @@ export class RoleView extends View
     //--------------------------------------------------
     _setData()
     {
-        this.meta={};      // 新增 meta(roleD)
-        super._setData();   // 從 bb 取得 meta(releD)
-        
+        super._setData();
+
+        // 從 bb.meta 取得參數
+        this.meta = this.ctx.bb.meta??{};
         this._faceR = this.meta.faceR;
-
-        let b = this.meta.b;
-        let g = this.meta.g;
-        let z = this.meta.z;
-
+        const b = this.meta.b;
+        const g = this.meta.g;
+        const z = this.meta.z;
         if(b) {this.bl=b.l; this.br=b.r; this.bt=b.t; this.bb=b.b;}
         if(g) {this.gl=g.l; this.gr=g.r; this.gt=g.t; this.gb=g.b;}
         if(z) {this.zl=z.l; this.zr=z.r; this.zt=z.t; this.zb=z.b;}
-
         this.wid = this.meta.w; 
         this.hei = this.meta.h;
         this.anchorX = this.meta.anchor.x;

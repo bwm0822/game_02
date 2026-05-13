@@ -1,11 +1,6 @@
 {
   "wick": {
     "icon": "head-wick",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "ranger",
     "gold": 100,
     "survival": true,
@@ -23,6 +18,11 @@
       "sprite": "head-wick",
       "scale": 0.25,
       "y": 3.5
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
     },
     "faceR": true,
     "anchor": {
@@ -61,16 +61,16 @@
   },
   "trump": {
     "icon": "head-trump",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "innkeeper",
     "gold": 200,
     "body": {
       "sprite": "trump",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -155,17 +155,17 @@
   },
   "melanie": {
     "icon": "head-melanie",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "innkeeper",
     "gold": 200,
     "style": "weak",
     "body": {
       "sprite": "melanie",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -262,11 +262,6 @@
   },
   "musk": {
     "icon": "head-musk",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "smith",
     "gold": 200,
     "weapon": "sword_01",
@@ -278,6 +273,11 @@
     "hand": {
       "sprite": "hand-man",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -425,17 +425,17 @@
   },
   "karen": {
     "icon": "head-melanie",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "trader",
     "gold": 200,
     "style": "weak",
     "body": {
       "sprite": "melanie",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -570,11 +570,6 @@
   },
   "xi": {
     "icon": "head-xi",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "butcher",
     "gold": 200,
     "abilities": [
@@ -584,6 +579,11 @@
     "body": {
       "sprite": "xi",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -728,16 +728,16 @@
   },
   "macron": {
     "icon": "head-macron",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "merchant",
     "gold": 200,
     "body": {
       "sprite": "macron",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
@@ -882,11 +882,6 @@
   },
   "rogue": {
     "icon": "head-trump",
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "job": "rogue",
     "gold": 200,
     "type": "enemy",
@@ -898,6 +893,11 @@
     "hand": {
       "sprite": "hand-man",
       "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
       "y": 32
     },
     "faceR": true,
