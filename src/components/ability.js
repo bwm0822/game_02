@@ -13,14 +13,6 @@ import {computeHealing} from '../core/combat.js'
 
 export class COM_Ability extends Com
 {
-    constructor(abilities)
-    {
-        super();
-        this._abilities = this._toObj(abilities); // 可用的技能
-        this._ability = null; // 當前選擇的技能
-        this._id = null;
-    }
-
     get tag() {return 'ability';}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get x() {return this._root.x;}
@@ -258,8 +250,15 @@ export class COM_Ability extends Com
     {
         super.bind(root);
 
+        const {bb} = this.ctx;
+
+        // 初始化技能資料
+        this._abilities = this._toObj(bb.meta.abilities); // 可用的技能
+        this._ability = null; // 當前選擇的技能
+        this._id = null;
+        
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
-        root.bb.abilities = this._abilities;
+        bb.abilities = this._abilities;
 
         // 1.提供 [外部操作的指令]
         

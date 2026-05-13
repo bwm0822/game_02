@@ -100,7 +100,7 @@ export class Npc extends Role
             .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())
             .addCom(new COM_Favor())
-            .addCom(new COM_Ability(bb.meta.abilities))
+            .addCom(new COM_Ability())
             .addCom(new COM_Stolen())
 
         // 綁定 API
