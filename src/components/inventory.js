@@ -337,8 +337,7 @@ export class COM_Inventory extends COM_Storage
 
     _ondead()
     {
-        const{root}=this.ctx;
-        root._setAct(GM.OPEN, ()=>GM.EN);
+        this.root._setAct(GM.OPEN, ()=>GM.EN);
     }
 
     //------------------------------------------------------

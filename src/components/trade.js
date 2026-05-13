@@ -77,7 +77,7 @@ export class COM_Trade extends Com
                                                             : GM.EN;
     }
 
-    _ondead() { this.root.rmCom(this.tag); }
+    _ondead() { if(this._enableAct) {this.root._delAct(GM.TRADE);} }
 
     //------------------------------------------------------
     //  Public
@@ -98,14 +98,7 @@ export class COM_Trade extends Com
         // root.buy = this._buy.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        this._tradeBind = this._trade.bind(this);
-        root.on(GM.TRADE, this._tradeBind);
+        root.on(GM.TRADE, this._trade.bind(this));
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
-    }
-
-    unbind(root)
-    {
-        if(this._enableAct) {root._delAct(GM.TRADE);}
-        root.off(GM.TRADE, this._tradeBind);
     }
 }

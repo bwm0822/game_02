@@ -56,7 +56,7 @@ export class COM_Anim extends Com
         });
     }
 
-    _ondead() {this.root.rmCom(this.tag);}
+    _ondead() { this._idle(false); }
 
     //------------------------------------------------------
     //  Public
@@ -74,7 +74,5 @@ export class COM_Anim extends Com
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
     }
-
-    unbind(root) {this._idle(false);}
 
 }

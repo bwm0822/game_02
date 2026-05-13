@@ -73,10 +73,7 @@ export class COM_Stolen extends Com
         return p;
     }
 
-    _ondead()
-    {
-        this.root.rmCom(this.tag);
-    }
+    _ondead() {this.root._delAct(GM.STEAL);}
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -93,14 +90,7 @@ export class COM_Stolen extends Com
         root.stolenRate = this._stolenRate.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        this._stolenByBind = this._stolenBy.bind(this);
-        root.on(GM.STEAL, this._stolenByBind);
+        root.on(GM.STEAL, this._stolenBy.bind(this));
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
-    }
-
-    unbind(root)
-    {
-        root._delAct(GM.STEAL);
-        root.off(GM.STEAL, this._stolenByBind);
     }
 }
