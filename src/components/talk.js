@@ -182,6 +182,11 @@ export class COM_Talk extends Com
                                                             : GM.EN;
     }
 
+    _ondead()
+    {
+        this.root.rmCom(this.tag);
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -202,7 +207,15 @@ export class COM_Talk extends Com
         root.getDialog = this._getDialog.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.TALK, this._talk.bind(this));
+        this._talkBind = this._talk.bind(this);
+        root.on(GM.TALK, this._talkBind);
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+    }
+
+    unbind(root)
+    {
+        root._delAct(GM.TALK);
+        root.off(GM.TALK, this._talkBind);
     }
 
     load(data) 

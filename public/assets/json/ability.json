@@ -2,6 +2,7 @@
   "steal": {
     "icon": "🧤",
     "type": "active",
+    "tag": "steal",
     "tw": {
       "lab": "偷竊",
       "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
@@ -27,6 +28,7 @@
   "skin": {
     "icon": "🔪",
     "type": "active",
+    "tag": "skin",
     "tw": {
       "lab": "剝皮",
       "des": "從野獸屍體獲取皮革。增加素材掉落率。"

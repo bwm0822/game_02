@@ -22,13 +22,6 @@ import {T,dlog} from '../core/debug.js'
 
 export class Npc extends Role
 {
-    constructor(scene,x,y)
-    {
-        super(scene,x,y);
-        this._setAct(GM.OBSERVE,()=>GM.EN);
-        this._setAct(GM.STEAL,()=>GM.EN);
-    }
-
     get ctx() {return {...super.ctx,
                         fav: this._favor.bind(this)};}
 
@@ -68,6 +61,9 @@ export class Npc extends Role
         this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
         QuestManager.notify({cat: GM.KILL, id: this.id});
+        // option
+        this._delAct(GM.OBSERVE);
+        this._delAct(GM.ATTACK);
     }
 
     _favor()
@@ -118,6 +114,7 @@ export class Npc extends Role
         this.equip?.();
 
         // option
+        this._setAct(GM.OBSERVE,()=>GM.EN);
         this._setAct(GM.ATTACK,()=>GM.EN);
 
         // 檢查是否死亡

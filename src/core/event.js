@@ -34,4 +34,6 @@ export class Evt
         this.map.get(k)?.forEach(fn=>promises.push(fn(...a)));
         return Promise.all(promises);
     }
+    
+    getMap() { return this.map; }
 }

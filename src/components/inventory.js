@@ -254,7 +254,8 @@ export class COM_Storage extends Com
         root.receive = this._receive.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.OPEN, this._open.bind(this));
+        this._openBind = this._open.bind(this);
+        root.on(GM.OPEN, this._openBind);
     }
 
     //------------------------------------------------------
@@ -285,8 +286,6 @@ export class COM_Inventory extends COM_Storage
     constructor(config)
     {
         super(config?.capacity??-1);
-        // this._equips = config?.equips??[];
-        // this._gold = config?.gold??0;
     }
    
     //------------------------------------------------------
@@ -336,6 +335,12 @@ export class COM_Inventory extends COM_Storage
         if (changed) {root.equip?.();}
     }
 
+    _ondead()
+    {
+        const{root}=this.ctx;
+        root._setAct(GM.OPEN, ()=>GM.EN);
+    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -343,10 +348,14 @@ export class COM_Inventory extends COM_Storage
     {
         super.bind(root);
 
-        // 初始化資料
         const{bb}=this.ctx;
+
+        // 初始化資料
         this._equips = bb.meta?.equips??[];
         this._gold = bb.meta?.gold??0;
+
+        // 死亡後仍可互動
+        bb.interactiveAfterDead = true;    
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         this.addBB('gold');
@@ -354,8 +363,7 @@ export class COM_Inventory extends COM_Storage
 
         // 1.提供 [外部操作的指令]
         root._delAct(GM.OPEN);
-        root.off(GM.OPEN, this._open.bind(this));
-
+        
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         this.addRt('equips');
         this.addRt('gold');
@@ -364,6 +372,7 @@ export class COM_Inventory extends COM_Storage
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UPDATETIME, this._updateTime.bind(this));
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
     }
 
     //------------------------------------------------------
@@ -376,6 +385,11 @@ export class COM_Inventory extends COM_Storage
         if(data?.gold!==undefined) {this._gold=data.gold;}
     }
 
-    save() {return {storage:this._storage, equips:this._equips, gold:this._gold};}
+    save() 
+    {
+        return {storage:this._storage, 
+                equips:this._equips, 
+                gold:this._gold};
+    }
 
 }

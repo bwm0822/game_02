@@ -415,15 +415,22 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _remove()
     {
+        const{bb}=this.ctx;
         this._removeWeight();
         this.weight=0;  // 避免重複呼叫_remove()時，weight被remove兩次
                         // ondead 會呼叫一次_remove()，
                         // GameObject._remove()時，com.unbind()又會呼叫一次
 
-        if(this._zone)
+        if(!bb.interactiveAfterDead && this._zone)
         {
+            console.log('destroy zone');
             this._zone.destroy();
             this._zone=null;
+            if(this._hover)
+            {
+                this._outline_shape(false);
+                this.ctx.emit('out');
+            }
         }
 
         if(this.body)
@@ -432,11 +439,7 @@ class View extends Phaser.GameObjects.Container
             this.body=null;
         }
 
-        if(this._hover)
-        {
-            this._outline_shape(false);
-            this.ctx.emit('out');
-        }
+        
 
         if(this._dbgGraphics) {this._dbgGraphics.destroy();this._dbgGraphics=null;}
         if(this._dbgText) {this._dbgText.destroy();this._dbgText=null;}

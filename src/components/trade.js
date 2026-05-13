@@ -72,15 +72,17 @@ export class COM_Trade extends Com
     _actMode()
     {
         const {bb,fav} = this.ctx;
-        return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
+        return fav()<=GM.FAV.DISLIKE ? GM.HIDE
                                     :  bb.sta===GM.ST.SLEEP ? GM.DIS
                                                             : GM.EN;
     }
 
+    _ondead() { this.root.rmCom(this.tag); }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    bind(root) 
+    bind(root)
     {
         super.bind(root);
 
@@ -96,6 +98,14 @@ export class COM_Trade extends Com
         // root.buy = this._buy.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.TRADE, this._trade.bind(this));
+        this._tradeBind = this._trade.bind(this);
+        root.on(GM.TRADE, this._tradeBind);
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+    }
+
+    unbind(root)
+    {
+        if(this._enableAct) {root._delAct(GM.TRADE);}
+        root.off(GM.TRADE, this._tradeBind);
     }
 }

@@ -175,8 +175,8 @@ export class GameObject extends Phaser.GameObjects.Container
         // 1) 如果是 prefab，將 removed 設成 true
         if(this.uid!==-1) {this._saveData({removed:true})}
 
-        // 2) 銷毀所有元件（如果元件有自帶 unbind 方法）
-        for (let key in this._coms) {this._coms[key].unbind?.();}
+        // 2) 銷毀所有元件
+        Object.keys(this._coms).forEach(key=>this.rmCom(key));
         this._coms = null;
         
         // 3) 清空共享資料（可選）
@@ -263,6 +263,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 事件監聽與觸發
     on(...args) {this._evt?.on(...args);}
     off(...args) {this._evt?.off(...args);}
+    getEvts() { return this._evt.getMap(); }
     emit(...args) {return this._evt?.emit(...args);}
     aEmit(...args) {return this._evt?.aEmit(...args);}
     

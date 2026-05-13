@@ -59,7 +59,10 @@ export class COM_Stolen extends Com
         this.root.info={};
     }
 
-    _actMode() {return GM.EN;}
+    _actMode() 
+    {
+        return GM.player.queryAb('steal').length>0 ? GM.EN : GM.HIDE;
+    }
 
     // 偷竊成功率
     _stolenRate(ent)
@@ -70,6 +73,10 @@ export class COM_Stolen extends Com
         return p;
     }
 
+    _ondead()
+    {
+        this.root.rmCom(this.tag);
+    }
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -86,6 +93,14 @@ export class COM_Stolen extends Com
         root.stolenRate = this._stolenRate.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.STEAL, this._stolenBy.bind(this));
+        this._stolenByBind = this._stolenBy.bind(this);
+        root.on(GM.STEAL, this._stolenByBind);
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+    }
+
+    unbind(root)
+    {
+        root._delAct(GM.STEAL);
+        root.off(GM.STEAL, this._stolenByBind);
     }
 }

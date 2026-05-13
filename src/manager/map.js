@@ -205,7 +205,7 @@ class Map
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
                 const state = block ? GM.PATH.BLK : GM.PATH.OK;
                 const cost = result.at(-1).g;   // 用於判斷最佳路徑
-                if(this.getWeight(ept)>GM.W_BLOCK||act===GM.PICKUP) {pts.pop();}
+                if(act&&act!==GM.ENTER) {pts.pop();}
                 return {state:state, ep:ept, pts:pts, cost:cost}
             }
         }

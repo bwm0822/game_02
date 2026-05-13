@@ -82,21 +82,7 @@ export default class UiOption extends UiFrame
 
     checkItem(k,v)
     {
-        // v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
-        if(v!==GM.HIDE)
-        {
-            if(k===GM.STEAL)
-            {
-                if(GM.player.abilities[k])
-                {
-                    this._items[k].show();
-                }
-            }
-            else
-            {
-                this._items[k].show().setEnable(v===GM.EN);
-            }
-        }
+        v!==GM.HIDE && this._items[k].show().setEnable(v===GM.EN);
     }
 
     act(key)
