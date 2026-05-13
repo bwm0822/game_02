@@ -464,6 +464,7 @@ export const GM =
         DAMAGE:'damage',
         TURNSTART:'turnstart',
         TURNEND:'turnend',
+        UPDATETIME:'updatetime',
     },
 
     // 物件遮蔽類型

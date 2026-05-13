@@ -19,6 +19,7 @@ import Record from '../infra/record.js'
 import Role from './role.js'
 import {T,dlog} from '../core/debug.js'
 import UiEffect from '../ui/uieffect.js'
+import { UP } from 'phaser'
 
 
 export class Player extends Role
@@ -42,9 +43,11 @@ export class Player extends Role
 
     _saveData(data) {Record.game.pos = this.pos; Record.game.player = data;}
 
-    async _updateTime() {}//this.emit('turnend');this._refresh();}
-
-    
+    _updateTime() 
+    {
+        this.emit(GM.EVT.UPDATETIME);
+        this._refresh();
+    }
 
     _damage() {this._send('refresh');}
 

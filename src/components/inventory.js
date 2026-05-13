@@ -46,12 +46,12 @@ export class COM_Storage extends Com
         for(let i=0;i<len;i++)
         {
             const itm = items[i];
-            if(content.id&&itm?.id!==content.id){continue;}
-            if(content.q&&itm?.q!==content.q){continue;}
+            if(content.id&&itm?.id!==content.id) {continue;}
+            if(content.q&&itm?.q!==content.q) {continue;}
             let cnt = Math.min(remain,itm.count);
             itm.count-=cnt;
             remain-=cnt;
-            if(itm.count===0){items[i]=null;}
+            if(itm.count===0) {items[i]=null;}
             if(remain==0) {break;}
         }
 
@@ -254,8 +254,6 @@ export class COM_Storage extends Com
         root.receive = this._receive.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('take', this._take.bind(this));
-        // root.on('receive', this._take.bind(this));
         root.on(GM.OPEN, this._open.bind(this));
     }
 
@@ -313,11 +311,29 @@ export class COM_Inventory extends COM_Storage
         })       
     }
 
-    _equip() 
+    _equip()
     {
-        const {root}=this.ctx; 
+        const {root}=this.ctx;
         root.updateEquips?.();
         root.setDirty?.(); // 更新屬性
+    }
+
+    _updateTime()
+    {
+        const {root} = this.ctx;
+        let changed = false;
+        this._equips.forEach((content, i) => {
+            if (!content) {return;}
+            const dat = DB.item(content.id);
+            if (!dat?.[GM.ENDURANCE]) {return;}
+            if (content[GM.ENDURANCE] === undefined) {content[GM.ENDURANCE] = dat[GM.ENDURANCE];}
+            if (--content[GM.ENDURANCE] <= 0) 
+            {
+                this._equips[i] = null;
+                changed = true;
+            }
+        });
+        if (changed) {root.equip?.();}
     }
 
     //------------------------------------------------------
@@ -347,7 +363,7 @@ export class COM_Inventory extends COM_Storage
         root.reward = this._reward.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-
+        root.on(GM.EVT.UPDATETIME, this._updateTime.bind(this));
     }
 
     //------------------------------------------------------
