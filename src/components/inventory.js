@@ -344,6 +344,7 @@ export class COM_Inventory extends COM_Storage
         const{bb}=this.ctx;
 
         // 初始化資料
+        Object.assign(this._storage,Utility.toStorage(bb.meta?.storage));
         this._equips = bb.meta?.equips??[];
         this._gold = bb.meta?.gold??0;
 

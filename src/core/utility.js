@@ -492,6 +492,13 @@ export default class Utility
     // }
 
 
+    static toStorage(storage)
+    {
+        if(!storage) {return;}
+        storage.items?.forEach((item,i)=>{storage.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
+        return storage;
+    }
+
     static json2Storage(jsonData)
     {
         const dat = JSON.parse(jsonData);
