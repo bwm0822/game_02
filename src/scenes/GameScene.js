@@ -536,6 +536,7 @@ export class GameScene extends Scene
         const ui = this.scene.get('UI');
         ui.events
             .off('menu').on('menu', ()=>{this.mainMenu();})
+            .off('save').on('save', ()=>{this.save();})
             .off('restart').on('restart', ()=>{this.restart();})
             .off('goto').on('goto',(pos,act)=>{this.setDes(pos,act);})
             .off('camera').on('camera',(mode)=>{this.setCameraFollow(mode)})

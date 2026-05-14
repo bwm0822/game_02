@@ -25,7 +25,7 @@ export default class Case extends GameObject
         // 加入元件
         this.addCom( new ItemView(this.scene), {modify:true} )
             .addCom( new COM_Storage() )
-            .addCom( new COM_Lock(), {enable:!!this.bb.lock} );
+            .addCom( new COM_Lock() );
 
         // 載入
         this.load();

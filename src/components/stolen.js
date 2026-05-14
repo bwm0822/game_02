@@ -11,11 +11,6 @@ import Utility from '../core/utility.js'
 
 export class COM_Stolen extends Com
 {
-    constructor()
-    {
-        super();
-    }
-
     get tag() {return 'stolen';}  // 回傳元件的標籤
 
     //------------------------------------------------------

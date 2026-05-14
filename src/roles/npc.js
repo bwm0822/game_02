@@ -14,6 +14,7 @@ import {COM_Schedule} from '../components/schedule.js'
 import {COM_Favor} from '../components/favor.js'
 import {COM_Ability} from '../components/ability.js'
 import {COM_Stolen} from '../components/stolen.js'
+import {COM_Loot} from '../components/loot.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
@@ -102,6 +103,7 @@ export class Npc extends Role
             .addCom(new COM_Favor())
             .addCom(new COM_Ability())
             .addCom(new COM_Stolen())
+            .addCom(new COM_Loot())
 
         // 綁定 API
         this.exit = this._remove.bind(this);

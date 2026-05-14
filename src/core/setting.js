@@ -208,6 +208,7 @@ export const GM =
     STEAL : 'steal',
     LOCK : 'lock',
     UNLOCK : 'unlock',
+    BUTCHER : 'butcher',
     // for slot
     BUY : 'buy',
     SELL : 'sell',

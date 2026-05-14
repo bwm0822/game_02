@@ -90,8 +90,10 @@ export class COM_Lock extends Com
     {
         super.bind(root);
 
-        // 從bb.lock讀取設定，並存入this._dat，供內部使用
         const {bb} = this.ctx;
+        if(!bb.lock) {return;}
+
+        // 從bb.lock讀取設定，並存入this._dat，供內部使用
         if(bb.lock) {this._dat = JSON.parse(bb.lock);}
         this._dat = {diff:5, keyid:'key_0000', ...this._dat};
 
