@@ -224,8 +224,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                3,
-                2
+                2,
+                3
             ],
             "scale": 0.75,
             "selectedLayer": 2,
@@ -437,8 +437,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 356,
-                "y": 573
+                "x": 656,
+                "y": 663.5
             }
         },
         "public/assets/maps/village-02.json": {

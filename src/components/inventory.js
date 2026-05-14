@@ -13,12 +13,6 @@ import {T,dlog} from '../core/debug.js'
 //--------------------------------------------------
 export class COM_Storage extends Com
 {
-    constructor(capacity=-1)
-    {
-        super();
-        this._storage = {capacity:capacity,items:[]}
-    }
-
     get tag() {return 'inv';}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
@@ -237,6 +231,11 @@ export class COM_Storage extends Com
     {
         super.bind(root);
 
+        // 初始化資料
+        const{bb}=this.ctx;
+        if(bb.storage) {this._storage = Utility.json2Storage(bb.storage);}
+        else {this._storage = {capacity:-1,items:[]};}
+
         // 1.提供 [外部操作的指令]
         root._setAct(GM.OPEN, ()=>root.isLocked?.() ? GM.HIDE : GM.EN);
 
@@ -264,11 +263,6 @@ export class COM_Storage extends Com
     load(data) 
     {
         if(data) {this._storage = data.storage;}
-        else
-        {
-            const {bb} = this.ctx;
-            if(bb.storage) {this._storage = Utility.json2Storage(bb.storage);}
-        }
     }
     save() {return {storage:this._storage};}
 

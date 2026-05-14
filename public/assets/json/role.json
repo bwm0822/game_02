@@ -4,6 +4,31 @@
     "job": "ranger",
     "gold": 100,
     "survival": true,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
     "body": {
       "sprite": "body-man",
       "scale": 0.25,
@@ -24,32 +49,7 @@
       "scale": 0.5,
       "y": 32
     },
-    "faceR": true,
-    "anchor": {
-      "x": 0,
-      "y": 16
-    },
-    "w": 32,
-    "h": 64,
-    "b": {
-      "l": 0,
-      "r": 0,
-      "t": 32,
-      "b": 0
-    },
-    "g": {
-      "l": 0,
-      "r": 0,
-      "t": 32,
-      "b": 0
-    },
-    "z": {
-      "l": 0,
-      "r": 0,
-      "t": 32,
-      "b": 0
-    },
-    "bag": {
+    "storage": {
       "capacity": 20
     },
     "stats": {
@@ -63,16 +63,6 @@
     "icon": "head-trump",
     "job": "innkeeper",
     "gold": 200,
-    "body": {
-      "sprite": "trump",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -98,7 +88,17 @@
       "t": 32,
       "b": 0
     },
-    "bag": {
+    "body": {
+      "sprite": "trump",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "storage": {
       "capacity": -1,
       "items": [
         "sword_01",
@@ -158,16 +158,6 @@
     "job": "innkeeper",
     "gold": 200,
     "style": "weak",
-    "body": {
-      "sprite": "melanie",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -193,7 +183,17 @@
       "t": 32,
       "b": 0
     },
-    "bag": {
+    "body": {
+      "sprite": "melanie",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "storage": {
       "capacity": -1,
       "items": [
         "sword_01",
@@ -265,21 +265,6 @@
     "job": "smith",
     "gold": 200,
     "weapon": "sword_01",
-    "body": {
-      "sprite": "musk",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -305,7 +290,22 @@
       "t": 32,
       "b": 0
     },
-    "bag": {
+    "body": {
+      "sprite": "musk",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "storage": {
       "capacity": -1,
       "items": [
         "sword_01",
@@ -428,16 +428,6 @@
     "job": "trader",
     "gold": 200,
     "style": "weak",
-    "body": {
-      "sprite": "melanie",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -462,6 +452,16 @@
       "r": 0,
       "t": 32,
       "b": 0
+    },
+    "body": {
+      "sprite": "melanie",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
     },
     "stats": {
       "str": 10,
@@ -576,16 +576,6 @@
       "fireball",
       "heal"
     ],
-    "body": {
-      "sprite": "xi",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -611,7 +601,17 @@
       "t": 32,
       "b": 0
     },
-    "bag": {
+    "body": {
+      "sprite": "xi",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "storage": {
       "capacity": -1,
       "items": [
         "sword_01",
@@ -730,16 +730,6 @@
     "icon": "head-macron",
     "job": "merchant",
     "gold": 200,
-    "body": {
-      "sprite": "macron",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -765,7 +755,17 @@
       "t": 32,
       "b": 0
     },
-    "bag": {
+    "body": {
+      "sprite": "macron",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "storage": {
       "capacity": -1,
       "items": [
         "sword_01",
@@ -885,21 +885,6 @@
     "job": "rogue",
     "gold": 200,
     "type": "enemy",
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -924,6 +909,21 @@
       "r": 0,
       "t": 32,
       "b": 0
+    },
+    "body": {
+      "sprite": "rogue",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
     },
     "equips": [
       "sword_01"

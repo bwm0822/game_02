@@ -492,21 +492,13 @@ export default class Utility
     // }
 
 
-    static toStorage(capacity=-1,items)
+    static json2Storage(jsonData)
     {
-        // if(capacity === undefined) {capacity = -1;}
-        // capacity = capacity??-1;
-        if(!items) {items = [];}
-        let bag={capacity:capacity??-1,items:items??[]};
-        items.forEach((item,i)=>{bag.items[i] = typeof item === 'object' ? item : {id:item,count:1};})
-        return bag;
-    }
-
-    static json2Storage(jsonData,capacity=-1)
-    {
-        let items = JSON.parse(jsonData);
-        items?.forEach((item,i)=>{items[i] = typeof item==='object' ? item : {id:item,count:1};});
-        return {capacity:capacity, items:items??[]};;
+        const dat = JSON.parse(jsonData);
+        const items = Array.isArray(dat) ? dat : (dat.items ?? []);
+        const capacity = Array.isArray(dat) ? -1 : (dat.capacity ?? -1);
+        items.forEach((item, i) => { items[i] = typeof item === 'object' ? item : {id: item, count: 1}; });
+        return {capacity, items};
     }
 
     static rotate(x, y, rad) 
