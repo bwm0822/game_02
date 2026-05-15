@@ -51,6 +51,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.STEAL)
             .addItem(GM.LOCK)
             .addItem(GM.UNLOCK)
+            .addItem(GM.BUTCHER)
             // for slot
             .addItem(GM.BUY, this.sell.bind(this))
             .addItem(GM.SELL, this.sell.bind(this))

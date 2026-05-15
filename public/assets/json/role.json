@@ -576,6 +576,7 @@
       "fireball",
       "heal"
     ],
+    "meat": "raw_meat",
     "faceR": true,
     "anchor": {
       "x": 0,

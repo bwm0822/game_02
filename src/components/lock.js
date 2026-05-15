@@ -23,19 +23,19 @@ export class COM_Lock extends Com
         const {bb, send} = this.ctx;
         const keyid = this._dat.keyid;
 
-        if(keyid && opener.queryItem?.({id: keyid}).length>0)
+        if(keyid && opener.queryItem?.((e)=>e.id===keyid).length > 0)
         {
             this._doUnlock(opener.id);
             return;
         }
 
-        if(opener.queryAb?.('lockpick').length===0)
+        if(!opener.findAb?.('lockpick'))
         {
             send('msg', '缺少開鎖技能');
             return;
         }
 
-        const tool = opener.findItem?.({id: 'lockpick'});
+        const tool = opener.findItem?.((e)=>e.id==='lockpick');
         if(!tool)
         {
             send('msg', '缺少開鎖工具');

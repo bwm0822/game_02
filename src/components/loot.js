@@ -2,6 +2,7 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
+import DB from '../data/db.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -18,12 +19,50 @@ export class COM_Loot extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _butcher(taker)
+    {
+        const {root,bb,send} = this.ctx;
+
+        const cb = (e) => DB.item(e.id).cat_sub?.includes('sword');
+
+        // 1. 檢查有無刀具
+        if(!taker.findEquip?.(cb) && !taker.findItem?.(cb))
+        {
+            send('msg', '沒有刀具，無法解剖');
+            return;
+        }
+
+        // 2. 獲得皮革/肉
+        if(bb.meta.skin) 
+        {
+            taker.receive?.({id: bb.meta.skin, count: 1});
+            send('msg', `${taker.id} 獲得 ${bb.meta.skin}`);
+        }
+
+        if(bb.meta.meat) 
+        {
+            taker.receive?.({id: bb.meta.meat, count: 1});
+            send('msg', `${taker.id} 獲得 ${bb.meta.meat}`);
+        }
+
+        // 3. 關閉互動
+        root._delAct(GM.BUTCHER);
+        root.setZone(false, this.tag);
+    }
+
     _ondead()
     {
         const {root,bb} = this.ctx;
         if(bb.meta.skin||bb.meta.meat) 
         {
-            root._setAct(GM.BUTCHER, ()=>GM.EN);
+            // 檢查有無解剖技能
+            root._setAct(GM.BUTCHER, ()=>
+                GM.player.findAb?.(GM.BUTCHER) ? GM.EN: GM.DIS);
+
+            root.on(GM.BUTCHER, this._butcher.bind(this));
+
+            // 開啟互動
+            root.setZone(true, this.tag);
         }
     }
     

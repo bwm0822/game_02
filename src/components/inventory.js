@@ -96,7 +96,8 @@ export class COM_Storage extends Com
     // 接收content，i為slot的編號
     _receive(content,i,isEquip)
     {
-        // type 1 : 將content置於編號為i的slot
+        // case 1 : slot 置換
+        // i 或 isEquip有值，代表是 slot，將 content 置於編號為i的slot
         const{bb,root}=this.ctx;
         if(isEquip) // 置於裝備欄位
         {
@@ -110,7 +111,8 @@ export class COM_Storage extends Com
             return 0;   // 回傳remian，為0
         }
 
-        // type 2:從storage找空位，放置content
+        // case 2
+        // 從 storage 找空位，放置content
         return this._put(content);
     }
 
@@ -184,37 +186,9 @@ export class COM_Storage extends Com
         this.root.info={};
     }
 
-    // _query(dat)
-    // {
-    //     let cnt=0;
-    //     this._storage.items.forEach((itm)=>{
-    //         if(!itm) {return;}
-    //         if(dat.id&&itm.id!==dat.id) {return}
-    //         if(dat.q&&itm.q!==dat.q) {return;}
-    //         cnt+=itm.count;
-    //     });
-    //     return cnt;
-    // }
+    _query(cb) { return this._storage.items.filter((itm) => itm && cb(itm)); }
 
-    _query(dat)
-    {
-        return this._storage.items.filter((itm)=>{
-            if(!itm) {return;}
-            if(dat.id&&itm.id!==dat.id) {return}
-            if(dat.q&&itm.q!==dat.q) {return;}
-            return true;
-        });
-    }
-
-    _find(dat)
-    {
-        return this._storage.items.find((itm)=>{
-            if(!itm) {return;}
-            if(dat.id&&itm.id!==dat.id) {return;}
-            if(dat.q&&itm.q!==dat.q) {return;}
-            return true;
-        });
-    }
+    _find(cb) { return this._storage.items.find((itm) => itm && cb(itm)); }
 
     _delete(itm)
     {
@@ -253,8 +227,7 @@ export class COM_Storage extends Com
         root.receive = this._receive.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
-        this._openBind = this._open.bind(this);
-        root.on(GM.OPEN, this._openBind);
+        root.on(GM.OPEN, this._open.bind(this));
     }
 
     //------------------------------------------------------
@@ -276,12 +249,7 @@ export class COM_Storage extends Com
 // 功能 : 提供裝備、儲存物品的功能
 //--------------------------------------------------
 export class COM_Inventory extends COM_Storage
-{
-    constructor(config)
-    {
-        super(config?.capacity??-1);
-    }
-   
+{   
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
@@ -329,9 +297,16 @@ export class COM_Inventory extends COM_Storage
         if (changed) {root.equip?.();}
     }
 
+    _queryEquip(cb) { return this._equips.filter((itm) => itm && cb(itm)); }
+
+    _findEquip(cb) { return this._equips.find((itm) => itm && cb(itm)); }
+
     _ondead()
     {
-        this.root._setAct(GM.OPEN, ()=>GM.EN);
+        const {root}=this.ctx;
+        root._setAct(GM.OPEN, ()=>GM.EN);
+        // 開啟互動
+        root.setZone(true, this.tag);
     }
 
     //------------------------------------------------------
@@ -348,9 +323,6 @@ export class COM_Inventory extends COM_Storage
         this._equips = bb.meta?.equips??[];
         this._gold = bb.meta?.gold??0;
 
-        // 死亡後仍可互動
-        bb.interactiveAfterDead = true;    
-
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
         this.addBB('gold');
         this.addBB('equips');
@@ -363,6 +335,8 @@ export class COM_Inventory extends COM_Storage
         this.addRt('gold');
         root.equip = this._equip.bind(this);
         root.reward = this._reward.bind(this);
+        root.queryEquip = this._queryEquip.bind(this);
+        root.findEquip = this._findEquip.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UPDATETIME, this._updateTime.bind(this));

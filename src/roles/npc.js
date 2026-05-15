@@ -37,7 +37,7 @@ export class Npc extends Role
         if(!this.isAlive) 
         { 
             if(this._latency--<=0) {this._remove();}
-            else {root.fadout?.();}
+            // else {root.fadout?.();}
         }
         else
         {

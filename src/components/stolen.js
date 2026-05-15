@@ -56,7 +56,7 @@ export class COM_Stolen extends Com
 
     _actMode() 
     {
-        return GM.player.queryAb('steal').length>0 ? GM.EN : GM.HIDE;
+        return GM.player.findAb('steal') ? GM.EN : GM.HIDE;
     }
 
     // 偷竊成功率

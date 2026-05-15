@@ -223,6 +223,9 @@
         "tag": "bleed"
       }
     ],
+    "cat_sub": [
+      "sword"
+    ],
     "tw": {
       "lab": "匕首",
       "des": "常用近戰武器"

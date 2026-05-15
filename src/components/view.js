@@ -421,17 +421,16 @@ class View extends Phaser.GameObjects.Container
                         // ondead 會呼叫一次_remove()，
                         // GameObject._remove()時，com.unbind()又會呼叫一次
 
-        if(!bb.interactiveAfterDead && this._zone)
-        {
-            console.log('destroy zone');
-            this._zone.destroy();
-            this._zone=null;
-            if(this._hover)
-            {
-                this._outline_shape(false);
-                this.ctx.emit('out');
-            }
-        }
+        // if(this._zone)
+        // {
+        //     this._zone.destroy();
+        //     this._zone=null;
+        //     if(this._hover)
+        //     {
+        //         this._outline_shape(false);
+        //         this.ctx.emit('out');
+        //     }
+        // }
 
         if(this.body)
         {
@@ -439,11 +438,18 @@ class View extends Phaser.GameObjects.Container
             this.body=null;
         }
 
-        
-
         if(this._dbgGraphics) {this._dbgGraphics.destroy();this._dbgGraphics=null;}
         if(this._dbgText) {this._dbgText.destroy();this._dbgText=null;}
         if(this._dbgPos) {this._dbgPos.destroy();this._dbgPos=null;}
+    }
+
+    // 死亡時，設定是否互動
+    _setZone(en, tag)
+    {
+        this._en = this._en||0;
+        this._en += en ? 1 : -1;
+        // console.log('setZone',tag, en, this._en);
+        this._interact(this._en>=0);
     }
 
     //--------------------------------------------------
@@ -502,6 +508,7 @@ class View extends Phaser.GameObjects.Container
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
         root.updatePos = this._updatePos.bind(this);
+        root.setZone = this._setZone.bind(this);
         // 給外部使用
         root.setOcclude = this._setOcclude.bind(this);
         root.getShapeRect = this._getShapeRect.bind(this);
@@ -690,17 +697,7 @@ export class RoleView extends View
         this._shape.getAll().forEach((child)=>{child.destroy();});
     }
 
-    async _ondead()
-    {
-        const {root} = this.ctx;
-        // 1. 等待所有彈出完成，才繼續下一步
-        await root.wait?.();
-        // 2. 移除原本圖像
-        this._remove();
-        // 3. 改顯示死亡的圖像
-        this._addPart(this.meta.corpse)
-    }
-
+   
     _fadout()
     {
         this._alpha = this.alpha??1;
@@ -720,6 +717,20 @@ export class RoleView extends View
                 this._addEquip(dat);
             }
         })
+    }
+
+    async _ondead()
+    {
+        const {root} = this.ctx;
+        // 1. 關閉互動
+        this._setZone(false, this.tag);
+        // 2. 等待所有彈出完成，才繼續下一步
+        await root.wait?.();
+        // 3. 移除原本圖像
+        this._remove();
+        // 4. 改顯示死亡的圖像
+        this._addPart(this.meta.corpse);
+
     }
 
     //--------------------------------------------------

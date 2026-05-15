@@ -203,8 +203,11 @@ export class COM_Ability extends Com
     _query(tag)
     {
         return Object.keys(this._abilities).filter(id => 
-            DB.ability(id).tag===tag&& this._abilities[id].remain===0);
+            DB.ability(id).tag===tag && 
+            this._abilities[id].remain===0);
     }
+
+    _find(id) {return this._abilities[id];}
 
     async _use(target, id)
     {
@@ -271,6 +274,7 @@ export class COM_Ability extends Com
         // 內部使用
         root.useAb = this._use.bind(this);
         root.queryAb = this._query.bind(this);
+        root.findAb = this._find.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.TURNSTART, this._turnStart.bind(this));

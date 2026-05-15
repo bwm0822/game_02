@@ -281,6 +281,14 @@ export class COM_Disp extends Com
         this._speak('有小偷!!!')
     }
 
+    _ondead()
+    {
+        this._queue = [];
+        this._busy = false;
+        this._speak(null);
+        this._pop(null);
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -299,8 +307,9 @@ export class COM_Disp extends Com
         root.skill = this._skill.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.EVT.UNDERATK, this._underAtk.bind(this) );
-        root.on(GM.EVT.STOLEN, this._stolen.bind(this) );
+        root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));
+        root.on(GM.EVT.STOLEN, this._stolen.bind(this));
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
     }
 
     
