@@ -173,7 +173,7 @@ export default class TileMap
                 if(json.image)  // (*.tsj) 為 .png
                 {
                     if(this._isLoaded(json.image)) {return;}
-                    dlog(T.MAP)(`load[${json.image}]`);
+                    dlog(T.MAP)(`load[${json.image}] => ${json.name}`);
                     scene.load.spritesheet(json.name, json.image, { frameWidth: json.tilewidth, frameHeight: json.tileheight });
                 }
                 else    // (*.tsj) 為圖片集合

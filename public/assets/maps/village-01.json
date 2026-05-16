@@ -408,6 +408,24 @@
                  "width":32,
                  "x":544,
                  "y":704
+                }, 
+                {
+                 "gid":968,
+                 "height":64,
+                 "id":143,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"orc"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":64,
+                 "x":352,
+                 "y":1216
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -416,7 +434,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":139,
+ "nextobjectid":144,
  "orientation":"orthogonal",
  "properties":[
         {

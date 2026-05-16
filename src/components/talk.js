@@ -177,6 +177,9 @@ export class COM_Talk extends Com
     _actMode()
     {
         const {bb,fav} = this.ctx;
+
+        if(!this._dialog) {return GM.HIDE;}
+
         return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
                                     :  bb.sta===GM.ST.SLEEP ? GM.DIS
                                                             : GM.EN;
