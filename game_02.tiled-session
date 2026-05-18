@@ -7,8 +7,8 @@
     "expandedProjectPaths": [
         "public",
         "public/assets",
-        ".",
         "public/assets/tiles",
+        ".",
         "public/assets/templates"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
@@ -437,8 +437,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 639.5
+                "x": 445.5,
+                "y": 1125
             }
         },
         "public/assets/maps/village-02.json": {

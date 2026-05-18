@@ -60,7 +60,7 @@ export class COM_Nav extends Com
 
     _showPath(eps, ent)
     {
-        const path = this.map.getPath(this.pos, eps, ent?.act);
+        const path = this.map.getPath(this.pos, eps, ent?.act, this.bb.footprint);
         if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
     }
@@ -68,14 +68,14 @@ export class COM_Nav extends Com
     _findPath(eps, act)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        const path = this.map.getPath(this.pos, eps, act);
+        const path = this.map.getPath(this.pos, eps, act, this.bb.footprint);
         this.bb.path = path;
     }
 
     _getPath(sp, eps, ent)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        return this.map.getPath(sp, eps, ent?.act);
+        return this.map.getPath(sp, eps, ent?.act, this.bb.footprint);
     }
 
     _setPath(path) {this.bb.path = path;}

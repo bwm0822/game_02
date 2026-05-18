@@ -90,7 +90,7 @@ class Map
     _createGraph(map, diagonal=false, weight=1)
     {
         let grid = [];
-        for (let y = 0; y < map.height; y++) 
+        for (let y = 0; y < map.height; y++)
         {
             let row = [];
             for (let x = 0; x < map.width; x++) {row.push(weight);}
@@ -111,6 +111,67 @@ class Map
         });
 
         this.graph = new Graph(grid,{diagonal:diagonal});
+    }
+
+    _buildWideGraph(fw=2, fh=1)
+    {
+        const rows = this.map.height, cols = this.map.width;
+        this._wideFW = fw;
+        this._wideFH = fh;
+
+        const wideGrid = [];
+        for (let ty = 0; ty < rows; ty++)
+        {
+            const row = [];
+            for (let tx = 0; tx < cols; tx++)
+            {
+                let passable = true, maxW = 0;
+                outer:
+                for (let dy = 0; dy < fh; dy++)
+                {
+                    for (let dx = 0; dx < fw; dx++)
+                    {
+                        const ny = ty+dy, nx = tx+dx;
+                        if (ny>=rows || nx>=cols) {passable=false; break outer;}
+                        const w = this.graph.grid[ny][nx].weight;
+                        if (w===0) {passable=false; break outer;}
+                        if (w>maxW) maxW=w;
+                    }
+                }
+                row.push(passable ? maxW : 0);
+            }
+            wideGrid.push(row);
+        }
+        this.wideGraph = new Graph(wideGrid, {diagonal:this._diagonal});
+    }
+
+    _updateWideCell(tx, ty)
+    {
+        if (!this.wideGraph) return;
+        const fw = this._wideFW, fh = this._wideFH;
+        const rows = this.map.height, cols = this.map.width;
+
+        for (let ay = ty-(fh-1); ay<=ty; ay++)
+        {
+            for (let ax = tx-(fw-1); ax<=tx; ax++)
+            {
+                if (ax<0 || ay<0 || ax>=cols || ay>=rows) continue;
+                let passable = true, maxW = 0;
+                outer:
+                for (let dy = 0; dy<fh; dy++)
+                {
+                    for (let dx = 0; dx<fw; dx++)
+                    {
+                        const ny = ay+dy, nx = ax+dx;
+                        if (ny>=rows || nx>=cols) {passable=false; break outer;}
+                        const w = this.graph.grid[ny][nx].weight;
+                        if (w===0) {passable=false; break outer;}
+                        if (w>maxW) maxW=w;
+                    }
+                }
+                this.wideGraph.grid[ay][ax].weight = passable ? maxW : 0;
+            }
+        }
     }
 
     //------------------------------------------------------
@@ -143,19 +204,19 @@ class Map
 
         // 5) 產生 graph
         this._createGraph(map, diagonal, weight);
+        this._buildWideGraph(2, 1);
 
         // 6) 繪製 object layer
         this._createObjectLayer(scene, map, mapName);
 
     }
-
     
-    getPath(sp, eps, act)
+    getPath(sp, eps, act, footprint)
     {
         let bestPath;
         eps = Array.isArray(eps) ? eps : [eps];
         eps.forEach((ep,i)=>{
-            const path = this.calcPath(sp,ep,act);
+            const path = this.calcPath(sp,ep,act,footprint);
             if(path)
             {
                 if(!bestPath) {bestPath=path;}
@@ -165,20 +226,21 @@ class Map
         return bestPath;
     }
 
-    calcPath(sp,ep,act)
+    calcPath(sp, ep, act, footprint)
     {
         const map = this.map;
 
-        const [ex,ey] =  this.worldToTile(ep.x, ep.y);
+        const [ex,ey] = this.worldToTile(ep.x, ep.y);
 
         // 1. 終點 超出 map 範圍，(隱藏框框)
         if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
 
-        // 2. 
-        const [sx,sy] =  this.worldToTile(sp.x, sp.y);
+        // 2.
+        const [sx,sy] = this.worldToTile(sp.x, sp.y);
 
-        const end = this.graph.grid[ey][ex];
-        const start = this.graph.grid[sy][sx];
+        const graph = (footprint && this.wideGraph) ? this.wideGraph : this.graph;
+        const end   = graph.grid[ey][ex];
+        const start = graph.grid[sy][sx];
 
         const ept = this.tileToWorld(ex,ey);
 
@@ -192,7 +254,7 @@ class Map
         }
         else
         {
-            const result = astar.search(this.graph, start, end);
+            const result = astar.search(graph, start, end);
             const len = result.length;
             if(len===0)  // 找不到路徑，(顯示紅色框框)
             {
@@ -200,7 +262,7 @@ class Map
             }
             else
             {
-                const pts = result.map( (node)=>{return this.tileToWorld(node.y,node.x);} ); //注意:node.x/y位置要對調
+                const pts = result.map((node)=>this.tileToWorld(node.y,node.x)); //注意:node.x/y位置要對調
                 // 如果到達目的地之前的 g >= W_BLOCK，代表有非牆壁的阻擋物(如:人、門)
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
                 const state = block ? GM.PATH.BLK : GM.PATH.OK;
@@ -334,8 +396,8 @@ class Map
         let pts=[];
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
-            let w_2 = Math.floor(w/2)-1;
-            let h_2 = Math.floor(h/2)-1;
+            let w_2 = Math.floor(w/2)-2;
+            let h_2 = Math.floor(h/2)-2;
 
             let [tx0,ty0] = this.worldToTile(p.x-w_2, p.y-h_2);
             let [tx1,ty1] = this.worldToTile(p.x+w_2, p.y+h_2);
@@ -345,6 +407,7 @@ class Map
                 for(let ty=ty0;ty<=ty1;ty++)
                 {
                     this.graph.grid[ty][tx].weight += weight;
+                    this._updateWideCell(tx, ty);
                     pts.push(this.tileToWorld(tx,ty))
                 }
             }
@@ -353,6 +416,7 @@ class Map
         {
             let [tx,ty] = this.worldToTile(p.x, p.y);
             this.graph.grid[ty][tx].weight += weight;
+            this._updateWideCell(tx, ty);
             pts.push(p)
         }
         return pts;
@@ -405,6 +469,7 @@ class Map
     {
         let [tx,ty] = this.worldToTile(p.x,p.y);
         this.graph.grid[ty][tx].weight = weight;
+        this._updateWideCell(tx, ty);
     }
 
     getWeightByTile(tx,ty)
