@@ -39,7 +39,7 @@ export class GameMap extends GameScene
 {
     constructor()
     {
-        console.log('GameMap');
+        console.log('[GameMap]');
         super('GameMap');
     }
 

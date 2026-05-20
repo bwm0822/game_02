@@ -47,7 +47,8 @@ export class COM_Action extends Com
     async _moveTo(pt,{duration=200,ease='expo.in'}={})
     {
         if(!pt) {return;}
-        const {root}=this.ctx
+        const {root,bb}=this.ctx
+        // pt.x=bb.meta.w>32?pt.x+16:pt.x;// 如果格子寬度大於角色寬度，則讓角色的座標對齊到格子中心
         root.face?.(pt);
         root.removeWeight?.();
         root.addWeight?.(pt);
@@ -122,7 +123,7 @@ export class COM_Action extends Com
 
     async _move()
     {
-        const {bb,root,gw} = this.ctx;
+        const {bb,root,gw,gw2} = this.ctx;
 
         bb.cACT.st='moving';
 
@@ -135,10 +136,11 @@ export class COM_Action extends Com
         {
             const pt = bb.path.pts[0];
 
-            // 判斷前面是否有障礙物
-            const w = gw(pt);
+            // 判斷前面是否有障礙物（寬角色只查新進入的 tile，避免自擋）
+            const w = gw2(pt);
             
-            if(w > GM.W.BLOCK) // 前面有障礙物
+            // if(w > GM.W.BLOCK) // 前面有障礙物
+            if(false) // 先不處理障礙物，直接嘗試移動，移動失敗再處理
             {
                 // 判斷是否是目的地，如果不是，回傳值設成 'blocked'
                 bb.cACT.st = bb.path.pts.length>1 ? 'blocked' : 'reach';

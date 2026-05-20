@@ -7,7 +7,7 @@ export class Game extends Scene
 {
     constructor ()
     {
-        console.log('Game');
+        console.log('[Game]');
         super('Game');
     }
 

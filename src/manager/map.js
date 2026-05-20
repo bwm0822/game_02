@@ -210,6 +210,14 @@ class Map
         this._createObjectLayer(scene, map, mapName);
 
     }
+
+    // 讓角色最左邊對齊格子，回傳修正後的p的座標
+    align(p,w)
+    {
+        const tw = this.map.tileWidth;
+        const tx = Math.floor((p.x-w/2) / tw);
+        return {x: tx * tw + w / 2, y: p.y};
+    }
     
     getPath(sp, eps, act, footprint)
     {
@@ -233,7 +241,7 @@ class Map
         const [ex,ey] = this.worldToTile(ep.x, ep.y);
 
         // 1. 終點 超出 map 範圍，(隱藏框框)
-        if(ex<0||ex>=map.width||ey<0||ey>=map.height){return;}
+        if(ex<0||ex>=map.width||ey<0||ey>=map.height) {return;}
 
         // 2.
         const [sx,sy] = this.worldToTile(sp.x, sp.y);

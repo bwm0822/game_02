@@ -5,12 +5,13 @@ import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
 import {GM} from '../core/setting.js';
 import UiCursor from '../ui/uicursor.js'
+import {DEBUG,T,dlog} from '../core/debug.js'
 
 export class MainMenu extends Scene
 {
     constructor ()
     {
-        console.log('MainMenu');
+        console.log('[MainMenu]');
         super('MainMenu');
         this._done = false;
     }
@@ -66,7 +67,7 @@ export class MainMenu extends Scene
 
     loadData()  // 注意: func 的名稱不能叫 load()
     {
-        console.log('---------------- loadData')
+        console.log('[MainMenu] loadData')
         Record.loadSetting();
         Record.loadDebug();
         Local.load(this);

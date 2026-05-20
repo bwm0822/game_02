@@ -68,10 +68,13 @@ function debugDraw(mode=DEBUG.mode,text)
             // grid 的 x, y 是 grid 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
-            let x = this.cen.x + this.min.x + this.gl;
-            let y = this.cen.y + this.min.y + this.gt;
-            let rect = new Phaser.Geom.Rectangle( x, y, this._grid.w, this._grid.h );
+            const x = this.cen.x + this.min.x + this.gl;
+            const y = this.cen.y + this.min.y + this.gt;
+            const rect = new Phaser.Geom.Rectangle( x, y, this._grid.w, this._grid.h );
             this._dbgGraphics.strokeRectShape(rect);
+            // 顯示 grid 中心點
+            const circle = new Phaser.Geom.Circle(this.posG.x,this.posG.y,5);
+            this._dbgGraphics.strokeCircleShape(circle);
         }
     }
 
@@ -98,14 +101,15 @@ function debugDraw(mode=DEBUG.mode,text)
         const lb = {x:this.cen.x+this.min.x,y:this.cen.y+this.max.y}    // 左下角
         // 顯示外框及左下角
         const rect = new Phaser.Geom.Rectangle(lt.x,lt.y,this.wid,this.hei); 
-        const circle = new Phaser.Geom.Circle(lb.x,lb.y,5);
+        const clb = new Phaser.Geom.Circle(lb.x,lb.y,5);
+        const cc = new Phaser.Geom.Circle(this.cen.x,this.cen.y,5);
         this._dbgGraphics.strokeRectShape(rect);      
-        this._dbgGraphics.strokeCircleShape(circle);  
+        this._dbgGraphics.strokeCircleShape(clb);  
+        this._dbgGraphics.strokeCircleShape(cc); 
         // 顯示左下角的座標
         this._dbgPos.x = lb.x;
         this._dbgPos.y = lb.y+5;
-        this._dbgPos.setText(`(${lb.x},${lb.y})`)     
-        
+        this._dbgPos.setText(`(${lb.x},${lb.y})`)   
     }
 
     const draw_pts = ()=>{
@@ -194,7 +198,7 @@ class View extends Phaser.GameObjects.Container
     get ctx() {return this._root.ctx;}
     get pos() {return this._root.pos;}
 
-    get anchor() {return this.pos;}          // 錨點=gameobject中心點(world space)
+    get anchor() {return this.pos;}          // 錨點=gameobject的原點(world space)
     get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // view的中心點(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
@@ -335,9 +339,17 @@ class View extends Phaser.GameObjects.Container
     _addWeight(pt,weight)
     {
         const wei = weight ?? this.weight;
-        wei!=0 && this.scene.map.updateGrid(pt??this.posG,wei,this._grid.w,this._grid.h);
+        const p = pt?this._pos2posG(pt):this.posG;
+        wei!=0 && this.scene.map.updateGrid(p,wei,this._grid.w,this._grid.h);
 
         return this;
+    }
+    
+    //將 錨點 轉換成 grid的中心點 (world space)
+    _pos2posG(p)
+    {
+        return {x:p.x+this.x+this._grid.x,
+                y:p.y+this.y+this._grid.y}
     }
 
     //--------------------------------------------------

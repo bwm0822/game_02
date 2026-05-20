@@ -66,6 +66,7 @@ export class GameObject extends Phaser.GameObjects.Container
                         fpt : this._getFleePt.bind(this),
                         probe : this._probe.bind(this), 
                         gw : this._getWeight.bind(this), 
+                        gw2 : this._getWeight2.bind(this), 
                     }}
 
     // 所有可操作的指令
@@ -219,6 +220,19 @@ export class GameObject extends Phaser.GameObjects.Container
     _getWeight(pt)
     {
         return this.scene.map.getWeight(pt)
+    }
+
+    _getWeight2(pt)
+    {
+        const p={...pt};
+        const{bb}=this.ctx;
+        if(bb.meta.w>32&&p.y===this.y)
+        {
+            if(p.x>this.x) {p.x=p.x+16;}
+            else if(p.x<this.x) {p.x=p.x-16;}
+        }
+
+        return this.scene.map.getWeight(p)
     }
 
     // 在 src(this/bb) 加入 get/set, ro 為 readonly
