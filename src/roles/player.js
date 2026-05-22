@@ -107,12 +107,6 @@ export class Player extends Role
         bb.meta = DB.role(bb.id);   // 取得 roleD，放入bb，view 元件會用到
         bb.isStatic = false;        // 設成 dynamic body，view 元件會參考
         bb.interactive = true;      // 設成 可互動，view 元件會參考
-        bb.footprint = {fw:2, fh:1}; // 2-tile 寬，使用 wideGraph 尋路
-
-        // const p = {x:this.x, y:this.y};
-        // const np = this.scene.map.align(p, bb.meta.w); 
-        // this.x=np.x;
-        // this.y=np.y;
 
         // 加入元件
         this.addCom(new RoleView(this.scene),{modify:false})

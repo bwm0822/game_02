@@ -89,11 +89,12 @@ class Map
 
     _createGraph(map, diagonal=false, weight=1)
     {
-        let grid = [];
-        for (let y = 0; y < map.height; y++)
+        const rows = this.map.height, cols = this.map.width;
+        const grid = [];
+        for (let ty = 0; ty < rows; ty++)
         {
             let row = [];
-            for (let x = 0; x < map.width; x++) {row.push(weight);}
+            for (let tx = 0; tx < cols; tx++) {row.push(weight);}
             grid.push(row);
         }
 
@@ -113,13 +114,10 @@ class Map
         this.graph = new Graph(grid,{diagonal:diagonal});
     }
 
-    _buildWideGraph(fw=2, fh=1)
+    _createGraphExt({tw,th}={})
     {
         const rows = this.map.height, cols = this.map.width;
-        this._wideFW = fw;
-        this._wideFH = fh;
-
-        const wideGrid = [];
+        const grid = [];
         for (let ty = 0; ty < rows; ty++)
         {
             const row = [];
@@ -127,51 +125,27 @@ class Map
             {
                 let passable = true, maxW = 0;
                 outer:
-                for (let dy = 0; dy < fh; dy++)
+                for (let dy = 0; dy < th; dy++)
                 {
-                    for (let dx = 0; dx < fw; dx++)
+                    for (let dx = 0; dx < tw; dx++)
                     {
-                        const ny = ty+dy, nx = tx+dx;
-                        if (ny>=rows || nx>=cols) {passable=false; break outer;}
+                        const ny = ty-dy, nx = tx+dx;
+                        if (ny<0 || nx>=cols) {passable=false; break outer;}
                         const w = this.graph.grid[ny][nx].weight;
                         if (w===0) {passable=false; break outer;}
-                        if (w>maxW) maxW=w;
+                        if (w>maxW) {maxW=w;}
                     }
                 }
                 row.push(passable ? maxW : 0);
             }
-            wideGrid.push(row);
+            grid.push(row);
         }
-        this.wideGraph = new Graph(wideGrid, {diagonal:this._diagonal});
-    }
+        if(!this.graphExt) {this.graphExt={};}
+        const key = `${tw}x${th}`;
+        this.graphExt[key]=new Graph(grid, {diagonal:this._diagonal});
+        this.graphExt[key].tw=tw;
+        this.graphExt[key].th=th;
 
-    _updateWideCell(tx, ty)
-    {
-        if (!this.wideGraph) return;
-        const fw = this._wideFW, fh = this._wideFH;
-        const rows = this.map.height, cols = this.map.width;
-
-        for (let ay = ty-(fh-1); ay<=ty; ay++)
-        {
-            for (let ax = tx-(fw-1); ax<=tx; ax++)
-            {
-                if (ax<0 || ay<0 || ax>=cols || ay>=rows) continue;
-                let passable = true, maxW = 0;
-                outer:
-                for (let dy = 0; dy<fh; dy++)
-                {
-                    for (let dx = 0; dx<fw; dx++)
-                    {
-                        const ny = ay+dy, nx = ax+dx;
-                        if (ny>=rows || nx>=cols) {passable=false; break outer;}
-                        const w = this.graph.grid[ny][nx].weight;
-                        if (w===0) {passable=false; break outer;}
-                        if (w>maxW) maxW=w;
-                    }
-                }
-                this.wideGraph.grid[ay][ax].weight = passable ? maxW : 0;
-            }
-        }
     }
 
     //------------------------------------------------------
@@ -202,29 +176,22 @@ class Map
         // 4) 繪製 tilelayer
         this._createTileLayer(map, tilesets);
 
-        // 5) 產生 graph
+        // 5) 產生 graphs
         this._createGraph(map, diagonal, weight);
-        this._buildWideGraph(2, 1);
+        this._createGraphExt({tw:2, th:1});
+        this.graphs={'1x1':this.graph,...this.graphExt};
 
         // 6) 繪製 object layer
         this._createObjectLayer(scene, map, mapName);
 
     }
-
-    // 讓角色最左邊對齊格子，回傳修正後的p的座標
-    align(p,w)
-    {
-        const tw = this.map.tileWidth;
-        const tx = Math.floor((p.x-w/2) / tw);
-        return {x: tx * tw + w / 2, y: p.y};
-    }
     
-    getPath(sp, eps, act, footprint)
+    getPath(sp, eps, act, tile)
     {
         let bestPath;
         eps = Array.isArray(eps) ? eps : [eps];
         eps.forEach((ep,i)=>{
-            const path = this.calcPath(sp,ep,act,footprint);
+            const path = this.calcPath(sp,ep,act,tile);
             if(path)
             {
                 if(!bestPath) {bestPath=path;}
@@ -234,7 +201,7 @@ class Map
         return bestPath;
     }
 
-    calcPath(sp, ep, act, footprint)
+    calcPath(sp, ep, act, tile)
     {
         const map = this.map;
 
@@ -246,7 +213,8 @@ class Map
         // 2.
         const [sx,sy] = this.worldToTile(sp.x, sp.y);
 
-        const graph = (footprint && this.wideGraph) ? this.wideGraph : this.graph;
+        const key = `${tile.tw}x${tile.th}`;
+        const graph = this.graphs[key];
         const end   = graph.grid[ey][ex];
         const start = graph.grid[sy][sx];
 
@@ -399,13 +367,13 @@ class Map
         return this.tileToWorld(tx,ty);
     }
 
-    updateGrid(p,weight,w,h)
+    updateGrid(p,weight,{w,h})
     {
         let pts=[];
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
-            let w_2 = Math.floor(w/2)-2;
-            let h_2 = Math.floor(h/2)-2;
+            const w_2 = Math.floor(w/2)-2;
+            const h_2 = Math.floor(h/2)-2;
 
             let [tx0,ty0] = this.worldToTile(p.x-w_2, p.y-h_2);
             let [tx1,ty1] = this.worldToTile(p.x+w_2, p.y+h_2);
@@ -415,7 +383,7 @@ class Map
                 for(let ty=ty0;ty<=ty1;ty++)
                 {
                     this.graph.grid[ty][tx].weight += weight;
-                    this._updateWideCell(tx, ty);
+                    this._updateGridExt(tx,ty);
                     pts.push(this.tileToWorld(tx,ty))
                 }
             }
@@ -424,10 +392,48 @@ class Map
         {
             let [tx,ty] = this.worldToTile(p.x, p.y);
             this.graph.grid[ty][tx].weight += weight;
-            this._updateWideCell(tx, ty);
+            this._updateGridExt(tx,ty);
             pts.push(p)
         }
         return pts;
+    }
+
+    _updateGridExt(tx,ty)
+    {
+        const gExt = this.graphExt;
+        for(let key in gExt)
+        {
+            this._setGridExt(gExt[key],tx,ty);
+        }
+    }
+
+    _setGridExt(graph,tx,ty)
+    {
+        if (!graph) return;
+        const rows = this.map.height, cols = this.map.width;
+        const tw=graph.tw, th=graph.th;
+
+        for (let ay = ty+(th-1); ay<=ty; ay++)
+        {
+            for (let ax = tx-(tw-1); ax<=tx; ax++)
+            {
+                if (ax<0 || ay<0 || ax>=cols || ay>=rows) continue;
+                let passable = true, maxW = 0;
+                outer:
+                for (let dy = 0; dy<th; dy++)
+                {
+                    for (let dx = 0; dx<tw; dx++)
+                    {
+                        const ny = ay-dy, nx = ax+dx;
+                        if (ny>=rows || nx>=cols) {passable=false; break outer;}
+                        const w = this.graph.grid[ny][nx].weight;
+                        if (w===0) {passable=false; break outer;}
+                        if (w>maxW) {maxW=w;}
+                    }
+                }
+                graph.grid[ay][ax].weight = passable ? maxW : 0;
+            }
+        }
     }
 
     isTouch(c,w,h,p)
@@ -467,23 +473,25 @@ class Map
     //     return dx<=tw && dy<=th;
     // }
 
-    getWeight(p)
+    getWeight(p,tile)
     {
-        let [tx,ty] = this.worldToTile(p.x,p.y);
-        return this.getWeightByTile(tx,ty);
+        const [tx,ty] = this.worldToTile(p.x,p.y);
+        return this.getWeightByTile(tx,ty,tile);
     }
 
     setWeight(p,weight)
     {
         let [tx,ty] = this.worldToTile(p.x,p.y);
         this.graph.grid[ty][tx].weight = weight;
-        this._updateWideCell(tx, ty);
+        this._updateGridExt(tx,ty);
     }
 
-    getWeightByTile(tx,ty)
+    getWeightByTile(tx,ty,{tw=1,th=1}={})
     {
         if(!this.isInside(tx,ty)){return -1;}
-        return this.graph.grid[ty][tx].weight; 
+        let key = `${tw}x${th}`;
+        const graph = this.graphs[key];
+        return graph.grid[ty][tx].weight; 
     }
 
     processMap(map)

@@ -331,7 +331,7 @@ class View extends Phaser.GameObjects.Container
     _removeWeight(weight)
     {
         const wei = weight ?? this.weight;
-        wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this._grid.w,this._grid.h);
+        wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this._grid);
 
         return this;
     }
@@ -340,7 +340,7 @@ class View extends Phaser.GameObjects.Container
     {
         const wei = weight ?? this.weight;
         const p = pt?this._pos2posG(pt):this.posG;
-        wei!=0 && this.scene.map.updateGrid(p,wei,this._grid.w,this._grid.h);
+        wei!=0 && this.scene.map.updateGrid(p,wei,this._grid);
 
         return this;
     }
@@ -507,11 +507,17 @@ class View extends Phaser.GameObjects.Container
     bind(root, config)
     {
         this._root = root;
+
+        // 初始化
         const {modify} = config;
         this._init(modify);
 
-        // 1.提供 [外部操作的指令]
+        // 算出 grid 所佔的 tile，尋路 會用到
+        const{bb} = this.ctx;
+        bb.tile = { tw : Math.ceil(this._grid.w/GM.TILE_W),
+                    th : Math.ceil(this._grid.h/GM.TILE_H) };
 
+        // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
@@ -524,14 +530,9 @@ class View extends Phaser.GameObjects.Container
         // 給外部使用
         root.setOcclude = this._setOcclude.bind(this);
         root.getShapeRect = this._getShapeRect.bind(this);
-
-
         root.dbg = debugDraw.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        // root.on('view',()=>{return this;})
-        // root.on('removeWeight', this._removeWeight.bind(this));
-        // root.on('addWeight', this._addWeight.bind(this));
     }
 
     unbind() {this._remove();}

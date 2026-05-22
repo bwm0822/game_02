@@ -61,7 +61,7 @@ export class COM_Nav extends Com
     _showPath(eps, ent)
     {
         this._root.removeWeight?.();
-        const path = this.map.getPath(this.pos, eps, ent?.act, this.bb.footprint);
+        const path = this.map.getPath(this.pos, eps, ent?.act, this.bb.tile);
         this._root.addWeight?.();
         if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
@@ -71,7 +71,7 @@ export class COM_Nav extends Com
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
         this._root.removeWeight?.();
-        const path = this.map.getPath(this.pos, eps, act, this.bb.footprint);
+        const path = this.map.getPath(this.pos, eps, act, this.bb.tile);
         this._root.addWeight?.();
         this.bb.path = path;
     }
@@ -79,7 +79,7 @@ export class COM_Nav extends Com
     _getPath(sp, eps, ent)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        return this.map.getPath(sp, eps, ent?.act, this.bb.footprint);
+        return this.map.getPath(sp, eps, ent?.act, this.bb.tile);
     }
 
     _setPath(path) {this.bb.path = path;}

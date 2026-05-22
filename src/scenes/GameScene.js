@@ -473,10 +473,11 @@ export class GameScene extends Scene
             this._dbgPos.setDepth(Infinity);
         }
 
-        let x = this.input.activePointer.worldX;
-        let y = this.input.activePointer.worldY;
-        let w = this.map.getWeight({x:x,y:y});
-        let text = `${x.toFixed(0)},${y.toFixed(0)},(${w})`;
+        const x = this.input.activePointer.worldX;
+        const y = this.input.activePointer.worldY;
+        const w = this.map.getWeight({x:x,y:y});
+        const w2 = this.map.getWeight({x:x,y:y},{tw:2,th:1});
+        const text = `${x.toFixed(0)},${y.toFixed(0)},(${w},${w2})`;
         this._dbgPos.setPosition(x+20,y).setText(text);
     }
 
