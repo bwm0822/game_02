@@ -41,6 +41,7 @@ export let DEBUG =
     loc: true,              // 顯示座標及 weight
     rect : false,           // 顯示邊框
     path : true,            // 顯示 NPC 路徑
+    approach : false,       // 顯示 getApproachEps 靠近點
     log : true,     
     tag: T.NORMAL,
     filter: '',             // log filter 

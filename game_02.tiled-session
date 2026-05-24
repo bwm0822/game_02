@@ -6,10 +6,10 @@
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
         "public",
-        "public/assets",
         "public/assets/tiles",
+        "public/assets/templates",
         ".",
-        "public/assets/templates"
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -437,8 +437,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 656,
-                "y": 663.5
+                "x": 370.5,
+                "y": 1125
             }
         },
         "public/assets/maps/village-02.json": {

@@ -58,8 +58,13 @@ export class COM_Nav extends Com
 
     _updateDebugPath() {this._drawPath(this.bb.path,{alpha:0.5,size:10});}
 
-    _showPath(eps, ent)
+    _showPath(ep, ent)
     {
+        // const eps = this.map.getApproachEps(target.pos, target.bb?.tile, this.bb.tile);
+        const{bb}=this.ctx;
+        const eps = ent ? this.map.getApproachEps(ent.pos, ent.bb?.tile, bb.tile)
+                        : ep;
+        // const eps=ep;
         this._root.removeWeight?.();
         const path = this.map.getPath(this.pos, eps, ent?.act, this.bb.tile);
         this._root.addWeight?.();
@@ -72,6 +77,16 @@ export class COM_Nav extends Com
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
         this._root.removeWeight?.();
         const path = this.map.getPath(this.pos, eps, act, this.bb.tile);
+        this._root.addWeight?.();
+        this.bb.path = path;
+    }
+
+    // 依 mover 自身的 tile size 計算正確靠近位置，不依賴 pts.pop()
+    _findPathTo(target)
+    {
+        const eps = this.map.getApproachEps(target.pos, target.bb?.tile, this.bb.tile);
+        this._root.removeWeight?.();
+        const path = this.map.getPath(this.pos, eps, GM.ENTER, this.bb.tile);
         this._root.addWeight?.();
         this.bb.path = path;
     }
@@ -120,6 +135,7 @@ export class COM_Nav extends Com
         root.hidePath = this._hidePath.bind(this);
         // 其他元件
         root.findPath=this._findPath.bind(this);
+        root.findPathTo=this._findPathTo.bind(this);
         root.clearPath=this._clearPath.bind(this);
         root.updatePath=this._updatePath.bind(this);
         root.updateDebugPath=this._updateDebugPath.bind(this);

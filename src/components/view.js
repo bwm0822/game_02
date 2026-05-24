@@ -7,6 +7,25 @@ import Utility from '../core/utility.js'
 
 function debugDraw(mode=DEBUG.mode,text)
 {
+    const draw_approach = () => {
+        if(!this.scene._approachGfx)
+        {
+            this.scene._approachGfx = this.scene.add.graphics().setDepth(Infinity);
+        }
+        this.scene._approachGfx.clear();
+        if(!DEBUG.approach || mode===0 || !GM.player) { return; }
+        const map = this.scene.map;
+        const tw = map.map.tileWidth, th = map.map.tileHeight;
+        const eps = map.getApproachEps(this.ctx.root.pos, this.ctx.bb.tile, GM.player.bb?.tile);
+        this.scene._approachGfx.lineStyle(2, 0x0000ff, 1);
+        const o=5;
+        const d=o*2;
+        eps.forEach(ep => { this.scene._approachGfx.strokeRect(ep.x - tw/2+o, ep.y - th/2+o, tw-d, th-d); });
+    }
+
+    draw_approach();
+    if(!DEBUG.enable) { return; }
+
     if(!this._dbgGraphics)
     {
         this._dbgGraphics = this.scene.add.graphics();
@@ -386,12 +405,12 @@ class View extends Phaser.GameObjects.Container
             .on('pointerover',()=>{
                 this._setOutline(true);
                 emit('over');
-                if(DEBUG.enable){debugDraw.bind(this)();}
+                if(DEBUG.enable||DEBUG.approach){debugDraw.bind(this)();}
             })
             .on('pointerout',()=>{
                 this._setOutline(false);
                 emit('out');
-                if(DEBUG.enable){debugDraw.bind(this)(0);}
+                if(DEBUG.enable||DEBUG.approach){debugDraw.bind(this)(0);}
             })
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) 

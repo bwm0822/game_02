@@ -502,6 +502,11 @@ export class GameScene extends Scene
         Object.values(this.gos).forEach(go=>{go.debugDraw({clr:!DEBUG.rect})})
     }
 
+    dbgApproach(on)
+    {
+        if(!on) {this._approachGfx?.clear();}
+    }
+
     fill()
     {
         Ui.on(UI.TAG.INV,GM.player,[{p:GM.CAPACITY}]);
@@ -546,6 +551,7 @@ export class GameScene extends Scene
             .off('log').on('log',()=>{this.log();})
             .off('dbgRect').on('dbgRect',()=>{this.dbgRect();})
             .off('npcPath').on('npcPath',(on)=>{this.npcPath(on);})
+            .off('dbgApproach').on('dbgApproach',(on)=>{this.dbgApproach(on);})
 
     }
 

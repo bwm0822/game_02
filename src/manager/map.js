@@ -243,7 +243,7 @@ class Map
                 const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
                 const state = block ? GM.PATH.BLK : GM.PATH.OK;
                 const cost = result.at(-1).g;   // 用於判斷最佳路徑
-                if(act&&act!==GM.ENTER) {pts.pop();}
+                // if(act&&act!==GM.ENTER) {pts.pop();}
                 return {state:state, ep:ept, pts:pts, cost:cost}
             }
         }
@@ -349,6 +349,34 @@ class Map
         if(c) {return this.tileToWorld(c.x,c.y);}
 
         return returnnull ? null : p;
+    }
+
+    // 計算 mover 靠近 target 時，mover anchor 的所有合法候選位置
+    // targetTile/moverTile = {tw, th}，anchor 在左下角 tile
+    getApproachEps(targetPos, targetTile, moverTile)
+    {
+        const ttw = targetTile?.tw ?? 1, tth = targetTile?.th ?? 1;
+        const tw  = moverTile?.tw  ?? 1, th  = moverTile?.th  ?? 1;
+        const [Tx, Ty] = this.worldToTile(targetPos.x, targetPos.y);
+        const eps = [];
+
+        // 左: anchor.x = Tx-tw，y 遍歷 target 的 anchor y 範圍
+        for (let j = 0; j < tth; j++)
+            eps.push(this.tileToWorld(Tx - tw, Ty - tth + 1 + j));
+
+        // 右: anchor.x = Tx+ttw
+        for (let j = 0; j < tth; j++)
+            eps.push(this.tileToWorld(Tx + ttw, Ty - tth + 1 + j));
+
+        // 上: anchor.y = Ty-tth，x 遍歷左右重疊範圍
+        for (let i = 0; i < ttw + tw - 1; i++)
+            eps.push(this.tileToWorld(Tx - tw + 1 + i, Ty - tth));
+
+        // 下: anchor.y = Ty+th (mover 的底部在 target 底部+1 的下方)
+        for (let i = 0; i < ttw + tw - 1; i++)
+            eps.push(this.tileToWorld(Tx - tw + 1 + i, Ty + th));
+
+        return eps;
     }
 
     tileToWorld(tx,ty)

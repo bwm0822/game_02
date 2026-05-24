@@ -204,6 +204,7 @@ export default class UiDebuger extends UiFrame
             .addElm(CHK('座標', DEBUG, 'loc'))
             .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
             .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
+            .addElm(CHK('靠近點', DEBUG, 'approach', (on)=>{this.send('dbgApproach',on)}))
             // .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
             .addRow(CHK('log', DEBUG, 'log'), 
                     DD('標籤', DEBUG, 'tag', options_tag,{multi:true}),

@@ -24,7 +24,8 @@ export class COM_Cmd extends Com
         {
             act=act??ent?.act;
             if(path) { root.setPath?.(path); }
-            else { root.findPath?.(pt??ent.pos, act); }
+            else if(ent && !pt) { root.findPathTo?.(ent); }
+            else { root.findPath?.(pt??ent?.pos, act); }
 
             if(bb.path.state===GM.PATH_OK)
             {
