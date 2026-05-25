@@ -7,29 +7,11 @@ import Utility from '../core/utility.js'
 
 function debugDraw(mode=DEBUG.mode,text)
 {
-    const draw_approach = () => {
-        if(!this.scene._approachGfx)
-        {
-            this.scene._approachGfx = this.scene.add.graphics().setDepth(Infinity);
-        }
-        this.scene._approachGfx.clear();
-        if(!DEBUG.approach || mode===0 || !GM.player) { return; }
-        const map = this.scene.map;
-        const tw = map.map.tileWidth, th = map.map.tileHeight;
-        const eps = map.getApproachEps(this.ctx.root.pos, this.ctx.bb.tile, GM.player.bb?.tile);
-        this.scene._approachGfx.lineStyle(2, 0x0000ff, 1);
-        const o=5;
-        const d=o*2;
-        eps.forEach(ep => { this.scene._approachGfx.strokeRect(ep.x - tw/2+o, ep.y - th/2+o, tw-d, th-d); });
-    }
-
-    draw_approach();
     if(!DEBUG.enable) { return; }
 
     if(!this._dbgGraphics)
     {
-        this._dbgGraphics = this.scene.add.graphics();
-        this._dbgGraphics.setDepth(Infinity);
+        this._dbgGraphics = this.scene.add.graphics().setDepth(Infinity);
     }
 
     if(!this._dbgText)
@@ -63,8 +45,6 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgPos.setDepth(Infinity);
         this._dbgPos.setOrigin(0);
     }
-
-
 
     const draw_body = ()=>{
         if((mode&DBG.MODE.BODY)===0) {return;}
@@ -163,6 +143,17 @@ function debugDraw(mode=DEBUG.mode,text)
         }
     }
 
+    const draw_approach = () => {
+        if((mode&DBG.MODE.APRCH)===0) {return;}
+        const map = this.scene.map;
+        const tw = map.map.tileWidth, th = map.map.tileHeight;
+        const eps = map.getApproachEps(this.posG, this.ctx.bb.tile, GM.player.bb?.tile);
+        this._dbgGraphics.lineStyle(2, 0xffff00, 1);
+        const o=5;
+        const d=o*2;
+        eps.forEach(ep => { this._dbgGraphics.strokeRect(ep.x - tw/2+o, ep.y - th/2+o, tw-d, th-d); });
+    }
+
     clr();
 
     draw_body();
@@ -171,6 +162,7 @@ function debugDraw(mode=DEBUG.mode,text)
     draw_pts();
     draw_shape();
     show_text();
+    draw_approach();
 }
 
 //--------------------------------------------------
@@ -405,12 +397,12 @@ class View extends Phaser.GameObjects.Container
             .on('pointerover',()=>{
                 this._setOutline(true);
                 emit('over');
-                if(DEBUG.enable||DEBUG.approach){debugDraw.bind(this)();}
+                if(DEBUG.enable){debugDraw.bind(this)();}
             })
             .on('pointerout',()=>{
                 this._setOutline(false);
                 emit('out');
-                if(DEBUG.enable||DEBUG.approach){debugDraw.bind(this)(0);}
+                if(DEBUG.enable){debugDraw.bind(this)(0);}
             })
             .on('pointerdown',(pointer)=>{
                 if (pointer.rightButtonDown()) 
@@ -538,6 +530,7 @@ class View extends Phaser.GameObjects.Container
 
         // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        root.addP('posG',{get:()=>this.posG});  // 在 root 新增 ger，指向 posG
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
         // 給內部元件使用

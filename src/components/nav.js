@@ -62,7 +62,7 @@ export class COM_Nav extends Com
     {
         // const eps = this.map.getApproachEps(target.pos, target.bb?.tile, this.bb.tile);
         const{bb}=this.ctx;
-        const eps = ent ? this.map.getApproachEps(ent.pos, ent.bb?.tile, bb.tile)
+        const eps = ent ? this.map.getApproachEps(ent.posG, ent.bb.tile, bb.tile)
                         : ep;
         // const eps=ep;
         this._root.removeWeight?.();

@@ -357,7 +357,17 @@ class Map
     {
         const ttw = targetTile?.tw ?? 1, tth = targetTile?.th ?? 1;
         const tw  = moverTile?.tw  ?? 1, th  = moverTile?.th  ?? 1;
-        const [Tx, Ty] = this.worldToTile(targetPos.x, targetPos.y);
+        // const tW = this.map.tileWidth, tH = this.map.tileHeight;
+        const tW_2 = this.map.tW_half, tH_2 = this.map.tH_half;
+        // targetPos 是 posG (grid 中心)，換算成 anchor (左下 tile 中心)
+        const [Tx, Ty] = this.worldToTile(
+            // targetPos.x - (ttw - 1) * tW / 2,
+            // targetPos.y + (tth - 1) * tH / 2
+            targetPos.x - (ttw - 1) * tW_2,
+            targetPos.y + (tth - 1) * tH_2
+        );
+
+        // const [Tx, Ty] = this.worldToTile(targetPos.x, targetPos.y);
         const eps = [];
 
         // 左: anchor.x = Tx-tw，y 遍歷 target 的 anchor y 範圍

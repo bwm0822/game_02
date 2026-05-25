@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
+import {T,dlog,dtable} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -66,7 +67,7 @@ export class COM_Schedule extends Com
     async _update()
     {
         const{root,bb}=this.ctx;
-        // console.log(`${root.id} ----> schedule`);
+        dlog(T.SCH,root.id)('updateSch');
 
         const found = this._findRoutine();
 
