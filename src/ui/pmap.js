@@ -152,7 +152,7 @@ export class PMap extends Sizer
     _setPlayer(nid)
     {
         const nd=this._nds[nid];
-        const tag=ui.uPic(this.scene,{x:nd.pts[0].x,y:nd.pts[0].y,icon:'buffs:20',w:40,h:40,bg:{}})
+        const tag=ui.uPic(this.scene,{x:nd.getPts()[0].x,y:nd.getPts()[0].y,icon:'buffs:20',w:40,h:40,bg:{}})
         this._map.add(tag);
     }
 

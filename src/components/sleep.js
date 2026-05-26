@@ -36,7 +36,7 @@ export class COM_Sleep extends Com
     {
         const{root,bb,ept}=this.ctx;
         this._bed.setEmpty();
-        root.pos=ept(this._bed.pts[0]);
+        root.pos=ept(this._bed.getPts(root)[0]);
         root.updateDepth?.();
         root.addWeight?.();
         root.pop?.()

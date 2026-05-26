@@ -75,7 +75,7 @@ export default class Schedular
                 // let ent = role?.exit && role.exit.map == mapName ? this.scene.ents[role.exit.port] : ents[0];
                 let ent = role?.exit && role.exit.map == mapName ? this.scene.gos[role.exit.port] : ents[0];
 
-                const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                const npc = new Npc(this.scene, ent.getPts()[0].x, ent.getPts(null)[0].y);
                 npc.init_runtime(id,true);
                 return;
             }
@@ -88,7 +88,7 @@ export default class Schedular
             {
                 // let ent = this.scene.ents[role.exit.port];
                 let ent = this.scene.gos[role.exit.port];
-                const npc = new Npc(this.scene, ent.pts[0].x, ent.pts[0].y);
+                const npc = new Npc(this.scene, ent.getPts(null)[0].x, ent.getPts(null)[0].y);
                 npc.init_runtime(id,true);
             }
         }

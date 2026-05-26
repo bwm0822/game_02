@@ -202,7 +202,7 @@ class View extends Phaser.GameObjects.Container
     get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // view的中心點(world space)
     get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
     // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
-    get pts() {return this._root.pts;}
+    // getPts(mover) {return this._root.getPts(mover);}
 
     get min() {return {x:-this.wid/2, y:-this.hei/2};}  // view 的左上角座標
     get max() {return {x:this.wid/2, y:this.hei/2};}    // view 的右下角座標

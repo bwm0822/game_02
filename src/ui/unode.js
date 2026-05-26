@@ -60,8 +60,8 @@ export class UNode extends Phaser.GameObjects.Container
     get bottom() {return this.y+this.ob;}
 
     // 可互動的點(陣列)
-    get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
-                                : [this.pos]} 
+    getPts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
+                                    : [this.pos]}
 
     //------------------------------------------------------
     // Local

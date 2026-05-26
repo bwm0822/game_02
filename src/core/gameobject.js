@@ -375,7 +375,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 是否抵達
     isAt(go)
     {
-        for(let p of go.pts) {if(p.x===this.x && p.y===this.y){return true;}}
+        for(let p of go.getPts(this)) {if(p.x===this.x && p.y===this.y){return true;}}
         return false;
     }
 

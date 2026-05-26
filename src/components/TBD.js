@@ -26,7 +26,7 @@ export class Test_1 extends Phaser.GameObjects.Container
 
     get pos()   {return {x:this.x,y:this.y}}    // 錨點的座標(world space)
     get posG() {return {x:this.x+this._grid.x, y:this.y+this._grid.y}} // grid 的中心點(world space)
-    get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}}):[this.pos]} 
+    getPts(mover) {return this._pts?this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}}):[this.pos]}
     
     get min() {return {x:-this.displayWidth/2-this.anchorX, y:-this.displayHeight/2-this.anchorY};} // view 的左上角座標
     get max() {return {x:this.displayWidth/2-this.anchorX, y:this.displayHeight/2-this.anchorY};} // view 的右下角座標
@@ -309,7 +309,7 @@ export class Test_1 extends Phaser.GameObjects.Container
 
         let draw_pts = ()=>{
             if(type === GM.DBG_CLR) {return;}
-            for(let p of this.pts)
+            for(let p of this.getPts())
             {
                 this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
                 let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);

@@ -48,7 +48,7 @@ export class COM_Schedule extends Com
         else
         {
             // 1. 取得路徑
-            const path = root.getPath?.(sp, gos[1].pts);
+            const path = root.getPath?.(sp, gos[1].getPts(root));
             
             // 2. 取得啟始時間
             const ts = rou.t.split('~')[0];
@@ -92,7 +92,7 @@ export class COM_Schedule extends Com
         else
         {
             if(bb.path) {await root.cmd_move();} 
-            else {root.findPath?.(bb.go.pts);}
+            else {root.findPath?.(bb.go.getPts(root));}
         }
     }
 
