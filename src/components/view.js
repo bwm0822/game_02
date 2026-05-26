@@ -111,19 +111,19 @@ function debugDraw(mode=DEBUG.mode,text)
         this._dbgPos.setText(`(${lb.x},${lb.y})`)   
     }
 
+    const draw_anchor = ()=>{
+        if((mode&DBG.MODE.ANCHOR)===0) {return;}
+        // 顯示錨點
+        this._dbgGraphics.lineStyle(2, 0xff00ff, 1);
+        this._dbgGraphics.strokeCircle(this.anchor.x,this.anchor.y,5);
+    }
+
     const draw_pts = ()=>{
         if((mode&DBG.MODE.POINT)===0) {return;}
-
-        for(const p of this.pts)
-        {
-            this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
-            let circle = new Phaser.Geom.Circle(p.x,p.y,2.5);
-            this._dbgGraphics.strokeCircleShape(circle);
-        }
-        this._dbgGraphics.lineStyle(2, 0xff00ff, 1);
-        // 顯示錨點
-        let circle = new Phaser.Geom.Circle(this.anchor.x,this.anchor.y,5);
-        this._dbgGraphics.strokeCircleShape(circle);
+        // 顯示 pts
+        this._dbgGraphics.lineStyle(2, 0x00ff00, 1);
+        this.root.getPts(GM.player).forEach(ep => { 
+            this._dbgGraphics.strokeCircle(ep.x, ep.y, 10); });
     }
 
     const clr = ()=>{
@@ -143,26 +143,15 @@ function debugDraw(mode=DEBUG.mode,text)
         }
     }
 
-    const draw_approach = () => {
-        if((mode&DBG.MODE.APRCH)===0) {return;}
-        const map = this.scene.map;
-        const tw = map.map.tileWidth, th = map.map.tileHeight;
-        const eps = map.getApproachEps(this.posG, this.ctx.bb.tile, GM.player.bb?.tile);
-        this._dbgGraphics.lineStyle(2, 0xffff00, 1);
-        const o=5;
-        const d=o*2;
-        eps.forEach(ep => { this._dbgGraphics.strokeRect(ep.x - tw/2+o, ep.y - th/2+o, tw-d, th-d); });
-    }
-
     clr();
 
     draw_body();
     draw_grid();
     draw_zone();
+    draw_anchor();
     draw_pts();
     draw_shape();
     show_text();
-    draw_approach();
 }
 
 //--------------------------------------------------

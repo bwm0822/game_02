@@ -1,6 +1,7 @@
 import {GameObject} from '../core/gameobject.js'
 import {ItemView} from '../components/view.js'
 import {COM_Node} from '../components/port.js'
+import {GM} from '../core/setting.js'
 
 
 export default class Node extends GameObject

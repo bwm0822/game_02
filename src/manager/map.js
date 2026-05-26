@@ -353,38 +353,40 @@ class Map
 
     // 計算 mover 靠近 target 時，mover anchor 的所有合法候選位置
     // targetTile/moverTile = {tw, th}，anchor 在左下角 tile
+    // checkWeight=false 時只做幾何計算，不過濾動態權重（供 isAt 判斷用）
     getApproachEps(targetPos, targetTile, moverTile)
     {
         const ttw = targetTile?.tw ?? 1, tth = targetTile?.th ?? 1;
         const tw  = moverTile?.tw  ?? 1, th  = moverTile?.th  ?? 1;
-        // const tW = this.map.tileWidth, tH = this.map.tileHeight;
         const tW_2 = this.map.tW_half, tH_2 = this.map.tH_half;
         // targetPos 是 posG (grid 中心)，換算成 anchor (左下 tile 中心)
         const [Tx, Ty] = this.worldToTile(
-            // targetPos.x - (ttw - 1) * tW / 2,
-            // targetPos.y + (tth - 1) * tH / 2
             targetPos.x - (ttw - 1) * tW_2,
             targetPos.y + (tth - 1) * tH_2
         );
 
-        // const [Tx, Ty] = this.worldToTile(targetPos.x, targetPos.y);
         const eps = [];
+        const tile = moverTile ?? {tw:1,th:1};
+        const push = (tx, ty) => {
+            const w = this.getWeightByTile(tx, ty, tile);
+            if (w!==0) {eps.push(this.tileToWorld(tx, ty));}
+        };
 
         // 左: anchor.x = Tx-tw，y 遍歷 target 的 anchor y 範圍
         for (let j = 0; j < tth; j++)
-            eps.push(this.tileToWorld(Tx - tw, Ty - tth + 1 + j));
+            push(Tx - tw, Ty - tth + 1 + j);
 
         // 右: anchor.x = Tx+ttw
         for (let j = 0; j < tth; j++)
-            eps.push(this.tileToWorld(Tx + ttw, Ty - tth + 1 + j));
+            push(Tx + ttw, Ty - tth + 1 + j);
 
         // 上: anchor.y = Ty-tth，x 遍歷左右重疊範圍
         for (let i = 0; i < ttw + tw - 1; i++)
-            eps.push(this.tileToWorld(Tx - tw + 1 + i, Ty - tth));
+            push(Tx - tw + 1 + i, Ty - tth);
 
         // 下: anchor.y = Ty+th (mover 的底部在 target 底部+1 的下方)
         for (let i = 0; i < ttw + tw - 1; i++)
-            eps.push(this.tileToWorld(Tx - tw + 1 + i, Ty + th));
+            push(Tx - tw + 1 + i, Ty + th);
 
         return eps;
     }

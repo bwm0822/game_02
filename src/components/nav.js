@@ -60,14 +60,12 @@ export class COM_Nav extends Com
 
     _showPath(ep, ent)
     {
-        // const eps = this.map.getApproachEps(target.pos, target.bb?.tile, this.bb.tile);
-        const{bb}=this.ctx;
-        const eps = ent ? this.map.getApproachEps(ent.posG, ent.bb.tile, bb.tile)
-                        : ep;
-        // const eps=ep;
-        this._root.removeWeight?.();
-        const path = this.map.getPath(this.pos, eps, ent?.act, this.bb.tile);
-        this._root.addWeight?.();
+        // const eps = ent ? ent.pts : ep;
+        const{root,bb}=this.ctx;
+        const eps = ent ? ent.getPts(this) : [ep];
+        root.removeWeight?.();
+        const path = this.map.getPath(root.posG, eps, ent?.act, bb.tile);
+        root.addWeight?.();
         if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
     }
@@ -75,26 +73,31 @@ export class COM_Nav extends Com
     _findPath(eps, act)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        this._root.removeWeight?.();
-        const path = this.map.getPath(this.pos, eps, act, this.bb.tile);
-        this._root.addWeight?.();
-        this.bb.path = path;
+        const{root,bb}=this.ctx;
+        root.removeWeight?.();
+        const path = this.map.getPath(root.posG, eps, act, bb.tile);
+        root.addWeight?.();
+        bb.path = path;
     }
 
     // 依 mover 自身的 tile size 計算正確靠近位置，不依賴 pts.pop()
     _findPathTo(target)
     {
-        const eps = this.map.getApproachEps(target.pos, target.bb?.tile, this.bb.tile);
-        this._root.removeWeight?.();
-        const path = this.map.getPath(this.pos, eps, GM.ENTER, this.bb.tile);
-        this._root.addWeight?.();
-        this.bb.path = path;
+        console.log('_findPathTo')
+        const{root,bb}=this.ctx;
+        // const eps = this.map.getApproachEps(target.pos, target.bb?.tile, bb.tile);
+
+        root.removeWeight?.();
+        const path = this.map.getPath(root.posG, target.getPts(root), GM.ENTER, bb.tile);
+        root.addWeight?.();
+        bb.path = path;
     }
 
     _getPath(sp, eps, ent)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
-        return this.map.getPath(sp, eps, ent?.act, this.bb.tile);
+        const{bb}=this.ctx;
+        return this.map.getPath(sp, eps, ent?.act, bb.tile);
     }
 
     _setPath(path) {this.bb.path = path;}
@@ -104,7 +107,8 @@ export class COM_Nav extends Com
     // 檢查下一個點是否被阻擋
     _checkPath()
     {
-        const pt = this.bb.path?.pts[0];
+        const{bb}=this.ctx;
+        const pt = bb.path?.pts[0];
         if(pt)
         {
             let w = this.scene.map.getWeight(pt);

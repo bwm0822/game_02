@@ -36,7 +36,8 @@ export class COM_Schedule extends Com
 
         const rou = this._findRoutine();    // 取得 作息
         const gos = this._toGos(rou.p);     // 取得 作息中的起訖點
-        const sp = ept(gos[0].pts[0]);      // 取得起點(空地)
+        // const sp = ept(gos[0].pts[0]);      // 取得起點(空地)
+        const sp = ept(gos[0].getPts(root)[0]);      // 取得起點(空地)
 
         if(gos.length===1) 
         {

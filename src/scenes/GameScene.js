@@ -271,7 +271,8 @@ export class GameScene extends Scene
         else {
             dlog(T.SCENE)('----- port=',this._data.port)
             dlog(T.SCENE)(this.gos)
-            pos = this.gos[this._data.port].pts[0];
+            // pos = this.gos[this._data.port].pts[0];
+            pos = this.gos[this._data.port].getPts(GM.player)[0];
         }
 
         dlog(T.SCENE)('------------ pos=',pos)
@@ -380,8 +381,10 @@ export class GameScene extends Scene
     showPath(pt, ent)
     {
         if(ent===GM.player) {this._path=null; return;}
-        const pts = ent?.pts ?? [pt];
-        const path = GM.player.showPath(pts,ent);
+        // const pts = ent?.pts ?? [pt];
+        // const pts = ent?.getPts(GM.player) ?? [pt];
+        // const path = GM.player.showPath(pts,ent);
+        const path = GM.player.showPath(pt,ent);
         if(path)
         {
             if(path.state===GM.PATH_OK)

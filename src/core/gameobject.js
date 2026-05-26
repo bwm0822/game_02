@@ -76,8 +76,27 @@ export class GameObject extends Phaser.GameObjects.Container
                                         key!==GM.OBSERVE); }
 
     // 可互動的點(陣列)
-    get pts() {return this._pts ? this._pts.map((p)=>{return {x:p.x+this.pos.x,y:p.y+this.pos.y}})
-                                : [this.pos]} 
+    // get pts()
+    // {
+    //     if (this._pts) {return this._pts.map((p) => ({x: p.x + this.pos.x, y: p.y + this.pos.y}));}
+    //     if (this.posG && this.bb?.tile && (this.bb.tile.tw > 1 || this.bb.tile.th > 1))
+    //         {return this.scene.map.getApproachEps(this.posG, this.bb.tile, null, false);}
+    //     return [this.pos];
+    // }
+
+    // get pts()
+    // {
+    //     if (this._pts) {return this._pts.map((p) => ({x: p.x + this.pos.x, y: p.y + this.pos.y}));}
+    //     if(this.occludeType!==GM.OCCLUDE.NONE) {return this.scene.map.getApproachEps(this.posG, this.bb.tile, null, false);}
+    //     return [this.posG];
+    // }
+
+    getPts(mover)
+    {
+        if (this._pts) {return this._pts.map((p) => ({x: p.x + this.pos.x, y: p.y + this.pos.y}));}
+        if(this.occludeType!==GM.OCCLUDE.NONE) {return this.scene.map.getApproachEps(this.posG, this.bb.tile, mover?.bb.tile);}
+        return [this.posG];
+    }
 
     // 物件狀態
     get sta() {return this.bb.sta;}

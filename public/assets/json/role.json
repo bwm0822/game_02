@@ -6,10 +6,10 @@
     "survival": true,
     "faceR": true,
     "anchor": {
-      "x": 0,
+      "x": -16,
       "y": 16
     },
-    "w": 32,
+    "w": 64,
     "h": 64,
     "b": {
       "l": 0,

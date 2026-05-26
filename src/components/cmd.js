@@ -15,6 +15,7 @@ export class COM_Cmd extends Com
     //------------------------------------------------------
     async _cmd({pt, ent, act, path}={})
     {
+        console.log('---cmd')
         const {root,bb} = this.ctx;
 
         if(!root.isAlive) {return;}
@@ -23,9 +24,12 @@ export class COM_Cmd extends Com
         else
         {
             act=act??ent?.act;
-            if(path) { root.setPath?.(path); }
-            else if(ent && !pt) { root.findPathTo?.(ent); }
-            else { root.findPath?.(pt??ent?.pos, act); }
+            if(path) { console.log('---chk0=',path);root.setPath?.(path); }
+            else if(ent && !pt) { 
+                console.log('---chk1')
+                root.findPathTo?.(ent);
+            }
+            else { console.log('---chk2');root.findPath?.(pt??ent?.pos, act); }
 
             if(bb.path.state===GM.PATH_OK)
             {

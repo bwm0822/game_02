@@ -13,7 +13,7 @@ export const DBG =
         ZONE    : 0b000_1000,
         SHAPE   : 0b001_0000,
         TEXT    : 0b010_0000,
-        APRCH   : 0b100_0000,
+        ANCHOR  : 0b100_0000,
     },
 }
 
