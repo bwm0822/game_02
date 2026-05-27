@@ -92,7 +92,8 @@ export class COM_Schedule extends Com
         else
         {
             if(bb.path) {await root.cmd_move();} 
-            else {root.findPath?.(bb.go.getPts(root));}
+            // else {root.findPath?.(bb.go.getPts(root));}
+            else {root.findPath?.({ent:bb.go});}
         }
     }
 

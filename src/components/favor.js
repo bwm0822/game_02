@@ -1,6 +1,7 @@
 import Com from './com.js'
 import Utility from '../core/utility.js'
-import { GM } from '../core/setting.js';
+import { GM } from '../core/setting.js'
+import {T,dlog} from '../core/debug.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -56,7 +57,6 @@ export class COM_Favor extends Com
 
     _updateFav(id)
     {
-        console.log('_updateFav=',id)
         this._addFavor(id, -50);  // 受攻擊，降低好感度
     }
 

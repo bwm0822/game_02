@@ -359,8 +359,8 @@ export class GameScene extends Scene
         else if(GM.player.sta===GM.ST.SLEEP) {return;}
         else if(GM.player.sta===GM.ST.IDLE)
         {
-            let pt = {x:pointer.worldX,y:pointer.worldY};
-            this.showPath(pt, this._ent);
+            const ep = {x:pointer.worldX,y:pointer.worldY};
+            this.showPath(ep, this._ent);
         }
     }
 
@@ -378,13 +378,13 @@ export class GameScene extends Scene
         }
     }
 
-    showPath(pt, ent)
+    showPath(ep, ent)
     {
         if(ent===GM.player) {this._path=null; return;}
         // const pts = ent?.pts ?? [pt];
         // const pts = ent?.getPts(GM.player) ?? [pt];
         // const path = GM.player.showPath(pts,ent);
-        const path = GM.player.showPath(pt,ent);
+        const path = GM.player.showPath({ep,ent});
         if(path)
         {
             if(path.state===GM.PATH_OK)

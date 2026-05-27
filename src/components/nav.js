@@ -58,46 +58,32 @@ export class COM_Nav extends Com
 
     _updateDebugPath() {this._drawPath(this.bb.path,{alpha:0.5,size:10});}
 
-    _showPath(ep, ent)
+    _showPath({ep,ent})
     {
-        // const eps = ent ? ent.pts : ep;
         const{root,bb}=this.ctx;
-        const eps = ent ? ent.getPts(this) : [ep];
+        const eps = ent ? ent.getPts(root) : [ep];
         root.removeWeight?.();
-        const path = this.map.getPath(root.posG, eps, ent?.act, bb.tile);
+        const path = this._getPath(root.posG, eps)
         root.addWeight?.();
         if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
     }
 
-    _findPath(eps, act)
+    _findPath({ep,ent})
     {
-        // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
         const{root,bb}=this.ctx;
         root.removeWeight?.();
-        const path = this.map.getPath(root.posG, eps, act, bb.tile);
+        const eps = ent ? ent.getPts(root) : [ep];
+        const path = this._getPath(root.posG, eps)
         root.addWeight?.();
         bb.path = path;
     }
 
-    // 依 mover 自身的 tile size 計算正確靠近位置，不依賴 pts.pop()
-    _findPathTo(target)
-    {
-        console.log('_findPathTo')
-        const{root,bb}=this.ctx;
-        // const eps = this.map.getApproachEps(target.pos, target.bb?.tile, bb.tile);
-
-        root.removeWeight?.();
-        const path = this.map.getPath(root.posG, target.getPts(root), GM.ENTER, bb.tile);
-        root.addWeight?.();
-        bb.path = path;
-    }
-
-    _getPath(sp, eps, ent)
+    _getPath(sp, eps)
     {
         // path 的格式 = { state:NONE/BLK/OK, pts:[], ep:ep cost:cost }
         const{bb}=this.ctx;
-        return this.map.getPath(sp, eps, ent?.act, bb.tile);
+        return this.map.getPath(sp, eps, bb.tile);
     }
 
     _setPath(path) {this.bb.path = path;}
@@ -139,7 +125,7 @@ export class COM_Nav extends Com
         root.hidePath = this._hidePath.bind(this);
         // 其他元件
         root.findPath=this._findPath.bind(this);
-        root.findPathTo=this._findPathTo.bind(this);
+        // root.findPathTo=this._findPathTo.bind(this);
         root.clearPath=this._clearPath.bind(this);
         root.updatePath=this._updatePath.bind(this);
         root.updateDebugPath=this._updateDebugPath.bind(this);

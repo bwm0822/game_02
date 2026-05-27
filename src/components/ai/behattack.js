@@ -80,8 +80,8 @@ export class BehAttack extends Behavior
         } 
         else
         {
-            root.findPath?.(t.pos)
-            if(root.checkPath?.()===false) {root.findPath(t.pos);}
+            root.findPath?.({ent:t})
+            if(root.checkPath?.()===false) {root.findPath?.({ent:t});}
             const ok = await root.move?.();
             return { ok:true, note:'chase' };
         }

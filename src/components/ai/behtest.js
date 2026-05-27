@@ -1,5 +1,6 @@
 import Behavior from './behavior.js'
 import {GM} from '../../core/setting.js'
+import {T,dlog} from '../../core/debug.js'
 
 // --- 具體行為：測試用行為 ---
 
@@ -30,22 +31,21 @@ export class BehTest extends Behavior
     {
         const { bb, root } = ctx;
 
-        if(!bb.path) 
+        if(!bb.path)
         {
             dlog(T.AI,bb.id)('------ findPath')
-            root.findPath?.(bb.target.pos??bb.target);
+            root.findPath?.({ent:bb.target});
         }
         const ep = bb.path.ep
         let ret = await root.move?.();
-        if(ret===false) 
+        if(ret===false)
         {
             dlog(T.AI,bb.id)('------ rePath')
-            root.findPath?.(ep);
+            root.findPath?.({ep:ep});
             await root.move?.();
         }
 
-        this._commitUse(ctx); 
-        // const ok = await aEmit('move');
+        this._commitUse(ctx);
         return { ok:true, note:'chase' };
         
     }

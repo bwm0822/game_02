@@ -102,7 +102,8 @@ export class COM_Action extends Com
     {
         const {bb,root} = this.ctx;
 
-        root.findPath?.(target.pos); // 搜尋路徑，結果會存於 bb.path
+        // root.findPath?.(target.pos); // 搜尋路徑，結果會存於 bb.path
+        root.findPath?.({ent:target}); // 搜尋路徑，結果會存於 bb.path
 
         if(bb.path?.state>GM.PATH_NONE)
         {

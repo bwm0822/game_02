@@ -186,12 +186,12 @@ class Map
 
     }
     
-    getPath(sp, eps, act, tile)
+    getPath(sp, eps, tile)
     {
         let bestPath;
         eps = Array.isArray(eps) ? eps : [eps];
         eps.forEach((ep,i)=>{
-            const path = this.calcPath(sp,ep,act,tile);
+            const path = this.calcPath(sp,ep,tile);
             if(path)
             {
                 if(!bestPath) {bestPath=path;}
@@ -201,7 +201,7 @@ class Map
         return bestPath;
     }
 
-    calcPath(sp, ep, act, tile)
+    calcPath(sp, ep, tile)
     {
         const map = this.map;
 
