@@ -63,7 +63,7 @@ export class COM_Nav extends Com
         const{root,bb}=this.ctx;
         const eps = ent ? ent.getPts(root) : [ep];
         root.removeWeight?.();
-        const path = this._getPath(root.posG, eps)
+        const path = this._getPath(root.pos, eps)
         root.addWeight?.();
         if(path) {this._drawPath(path,{drawLast:!!ent});}
         return path;
@@ -74,7 +74,7 @@ export class COM_Nav extends Com
         const{root,bb}=this.ctx;
         root.removeWeight?.();
         const eps = ent ? ent.getPts(root) : [ep];
-        const path = this._getPath(root.posG, eps)
+        const path = this._getPath(root.pos, eps)
         root.addWeight?.();
         bb.path = path;
     }
