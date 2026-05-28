@@ -1006,5 +1006,119 @@
         "max": 100
       }
     }
+  },
+  "wolf": {
+    "icon": "animals:42",
+    "meat": "raw_meat",
+    "faceR": false,
+    "anchor": {
+      "x": -16,
+      "y": 16
+    },
+    "w": 64,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "animals:42",
+      "scale": 2,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "horse": {
+    "icon": "animals:82",
+    "meat": "raw_meat",
+    "faceR": false,
+    "anchor": {
+      "x": -16,
+      "y": 16
+    },
+    "w": 64,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "animals:82",
+      "scale": 2,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
   }
 }

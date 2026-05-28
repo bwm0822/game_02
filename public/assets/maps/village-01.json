@@ -426,6 +426,42 @@
                  "width":64,
                  "x":352,
                  "y":1216
+                }, 
+                {
+                 "gid":2025,
+                 "height":64,
+                 "id":146,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"wolf"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":64,
+                 "x":256,
+                 "y":1120
+                }, 
+                {
+                 "gid":2065,
+                 "height":64,
+                 "id":147,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"horse"
+                        }],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":64,
+                 "x":384,
+                 "y":1088
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -434,7 +470,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":144,
+ "nextobjectid":148,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -493,6 +529,10 @@
         {
          "firstgid":1977,
          "source":"..\/roles.tsj"
+        }, 
+        {
+         "firstgid":1983,
+         "source":"..\/animals.tsj"
         }],
  "tilewidth":32,
  "type":"map",

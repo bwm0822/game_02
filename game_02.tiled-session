@@ -5,11 +5,11 @@
     },
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        ".",
         "public",
-        "public/assets/templates",
+        "public/assets/tiles",
+        "public/assets/maps",
         "public/assets",
-        "public/assets/tiles"
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -82,6 +82,10 @@
         },
         "public/assets/Warrior_Blue.tsj": {
             "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "public/assets/animals.tsj": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -215,6 +219,10 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "public/assets/maps/animals.tsj": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
         "public/assets/maps/cursors.tsj": {
             "dynamicWrapping": true,
             "scaleInDock": 1
@@ -231,7 +239,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 640.6666666666666
+                "y": 641.3333333333333
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -304,8 +312,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 512,
-                "y": 512.3333333333333
+                "x": 606,
+                "y": 544
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -437,8 +445,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 648,
-                "y": 1089
+                "x": 8,
+                "y": 969
             }
         },
         "public/assets/maps/village-02.json": {
@@ -626,7 +634,7 @@
         }
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
-    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/roles_64x64",
+    "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/32rogues",
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
@@ -647,18 +655,18 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "public/assets/animals.tsj",
         "public/assets/maps/map.json",
         "public/assets/maps/forest-01.json",
         "public/assets/maps/village-01.json",
+        "public/assets/maps/animals.tsj",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/trump-inn-f2.json",
         "public/assets/maps/musk-home.json",
         "public/assets/maps/xi-home.json",
         "public/assets/maps/karen-home.json",
         "public/assets/maps/macron-home.json",
-        "public/assets/maps/village-02.json",
-        "public/assets/maps/house_01.json",
-        "public/assets/houe_1.tsj"
+        "public/assets/maps/village-02.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
@@ -669,6 +677,6 @@
         "width": 32
     },
     "tileset.transparentColor": "#0c1317",
-    "tileset.type": 1,
+    "tileset.type": 0,
     "tileset.useTransparentColor": true
 }

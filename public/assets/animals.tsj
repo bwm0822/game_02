@@ -1,0 +1,15 @@
+{ "columns":9,
+ "image":"32rogues\/animals.png",
+ "imageheight":512,
+ "imagewidth":288,
+ "margin":0,
+ "name":"animals",
+ "spacing":0,
+ "tilecount":144,
+ "tiledversion":"1.11.0",
+ "tileheight":32,
+ "tilewidth":32,
+ "transparentcolor":"#0c1317",
+ "type":"tileset",
+ "version":"1.10"
+}
