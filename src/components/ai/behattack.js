@@ -13,11 +13,11 @@ export class BehAttack extends Behavior
         this._t=null;
     }
 
-    score(ctx) 
+    score(ctx)
     {
         // 回傳 [score, reason]；0 代表不考慮
         const {bb,root,fav} = ctx;
-        
+
         if(!bb.sensePlayer)         // 沒有目標
         {
             if(this._onAttack)
@@ -25,17 +25,20 @@ export class BehAttack extends Behavior
                 this._onAttack = false;
                 bb.go = null;           // 清除目前目標點
                 root.clearPath?.();     // 清除路徑
-            }  
-            return [0, 'no target']; 
+            }
+            return [0, 'no target'];
         }
-        else 
-        {
-            if(fav()>GM.FAV.HATE) { return [0, 'no target']; }
-            this._t=bb.sensePlayer;
-        }        
 
-        const base = bb.sensePlayer ? 1 : 0.5;
-        return [base*this.weight, 'none'];
+        const style = bb.meta?.style;
+        if(style === 'aggressive')
+        {
+            this._t = bb.sensePlayer;
+            return [this.weight, 'aggressive'];
+        }
+
+        if(fav() > GM.FAV.HATE) { return [0, 'not hated']; }
+        this._t = bb.sensePlayer;
+        return [this.weight, 'hated'];
 
     }
 

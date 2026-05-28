@@ -80,8 +80,12 @@ class StateMachine
 // 行為權重表
 const wTBL =
 {
-    weak    : {flee:2.0, attack:1.0, idle:1.0},   
-    default : {flee:1.0, attack:2.0, idle:1.0},
+    aggressive      : {flee:0,   attack:3.0, idle:1.0},   // wolf: 主動攻擊
+    skittish        : {flee:3.0, attack:0,   idle:1.0},   // horse: 看到就逃
+    passive_fighter : {flee:0,   attack:2.0, idle:1.0},   // 村民: 反擊不逃
+    passive_coward  : {flee:2.0, attack:0,   idle:1.0},   // 村民: 逃跑不反擊
+    // weak            : {flee:2.0, attack:1.0, idle:1.0},
+    // default         : {flee:1.0, attack:2.0, idle:1.0},
 }
 
 export class COM_AI extends Com
@@ -125,7 +129,7 @@ export class COM_AI extends Com
         ];
     }
 
-    _getBehWeight(bb) {return wTBL[bb.meta.style]??wTBL.default;}
+    _getBehWeight(bb) {return wTBL[bb.meta.style]??wTBL.passive_fighter;}
 
     _preUpdateBlackboard(ctx) 
     {

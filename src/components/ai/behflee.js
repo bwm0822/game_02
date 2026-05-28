@@ -7,15 +7,17 @@ export class BehFlee extends Behavior
 {
     constructor(opts={}) { super('Flee', { minInterval: opts.minInterval ?? 1, ...opts }); }
 
-    score(ctx) 
+    score(ctx)
     {
         // 回傳 [score, reason]；0 代表不考慮
         const {bb,fav} = ctx;
-        
-        if(bb.sensePlayer && fav()<=GM.FAV.HATE)
-        {
-            return [this.weight, 'flee'];
-        }
+
+        if(!bb.sensePlayer) { return [0, 'none']; }
+
+        const style = bb.meta?.style;
+        if(style === 'skittish') { return [this.weight, 'skittish']; }
+
+        if(fav() <= GM.FAV.HATE) { return [this.weight, 'flee']; }
 
         return [0, 'none'];
 

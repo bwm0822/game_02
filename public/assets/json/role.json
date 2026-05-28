@@ -157,7 +157,7 @@
     "icon": "head-melanie",
     "job": "innkeeper",
     "gold": 200,
-    "style": "weak",
+    "style": "passive_coward",
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -1010,6 +1010,7 @@
   "wolf": {
     "icon": "animals:42",
     "meat": "raw_meat",
+    "style": "aggressive",
     "faceR": false,
     "anchor": {
       "x": -16,
@@ -1067,6 +1068,7 @@
   "horse": {
     "icon": "animals:82",
     "meat": "raw_meat",
+    "style": "skittish",
     "faceR": false,
     "anchor": {
       "x": -16,
