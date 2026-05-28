@@ -23,17 +23,17 @@ export class COM_Anim extends Com
         const {root} = this.ctx;
         const view = root.view;
         if(!view) {return;}   // 判斷 this.view ，以避免在地圖上出錯
-        if(on)   
+        if(on)
         {
             if(!this._twIdle)
             {
                 this._twIdle = this.scene.tweens.add({
                         targets: view.shape,
-                        y: {from:0, to:-1.5},
-                        // ease:'sin.out',
-                        duration: 500,
+                        scaleY: {from:1, to:1.05},
+                        ease: 'sine.inOut',
+                        duration: 600,
                         yoyo: true,
-                        loop:-1,     
+                        loop: -1,
                     });
             }
         }
@@ -49,11 +49,11 @@ export class COM_Anim extends Com
         const view = root.view;
         this.scene.tweens.add({
             targets: view.shape,
-            // y: {from:-view.anchorY, to:-view.anchorY-10},
-            y: {from:0, to:-10},
-            ease:'quint.in',
+            angle: {from: -10, to: 10},
+            ease: 'sine.inOut',
             duration: duration,
-            yoyo: true,  
+            yoyo: true,
+            onComplete: () => { view.shape.angle = 0; },
         });
     }
 
