@@ -126,6 +126,16 @@ function debugDraw(mode=DEBUG.mode,text)
             this._dbgGraphics.strokeCircle(ep.x, ep.y, 10); });
     }
 
+    const draw_sense=()=>{
+        if((mode&DBG.MODE.SCESE)===0) {return;}
+        const bb = this.root.senseBB?.(8);
+        if(bb)
+        {
+            this._dbgGraphics.lineStyle(2, 0xffff00, 0.8);
+            this._dbgGraphics.strokeRect(bb.x - bb.hw, bb.y - bb.hh, bb.hw * 2, bb.hh * 2);
+        }
+    }
+
     const clr = ()=>{
         this._dbgGraphics.clear();
         if(this._dbgText) {this._dbgText.text='';}
@@ -152,6 +162,7 @@ function debugDraw(mode=DEBUG.mode,text)
     draw_pts();
     draw_shape();
     show_text();
+    draw_sense();
 }
 
 //--------------------------------------------------
@@ -168,7 +179,6 @@ class View extends Phaser.GameObjects.Container
         super(scene);
         this.scene.add.existing(this);
 
-        this._pGrids = [];          // grid 在地圖網格所佔據的點
         this._hover = false;
 
         // 以下參數一定要給值，_setData()時，才會 assign 相對應的值
@@ -198,18 +208,25 @@ class View extends Phaser.GameObjects.Container
     get ctx() {return this._root.ctx;}
     get pos() {return this._root.pos;}
 
-    get anchor() {return this.pos;}          // 錨點=gameobject的原點(world space)
-    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  // view的中心點(world space)
-    get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} // grid 的中心點(world space)
-    // get pts() {return this._pts?this._pts.map((p)=>{return {x:p.x+this.cen.x,y:p.y+this.cen.y}}):[this.anchor]} 
-    // getPts(mover) {return this._root.getPts(mover);}
-
-    get min() {return {x:-this.wid/2, y:-this.hei/2};}  // view 的左上角座標
-    get max() {return {x:this.wid/2, y:this.hei/2};}    // view 的右下角座標
+    // 錨點=gameobject的原點(world space)
+    get anchor() {return this.pos;}          
+    // view的中心點(world space)
+    get cen() {return {x:this.anchor.x+this.x,y:this.anchor.y+this.y}}  
+    // grid 的中心點(world space)
+    get posG() {return {x:this.cen.x+this._grid.x, y:this.cen.y+this._grid.y}} 
+    // grid的BBox=>{x,y,h,w,hh,hw}，x,y為BBox中心點(world space)
+    get gridBB() {return {...this._grid,...this.posG}}  
+    // view 的左上角座標
+    get min() {return {x:-this.wid/2, y:-this.hei/2};}  
+    // view 的右下角座標
+    get max() {return {x:this.wid/2, y:this.hei/2};}    
  
     // _addPhysics 會用到，不然 body 的位置會有問題
     get displayWidth() {return this.wid;}
     get displayHeight() {return this.hei;}
+
+    // anim.js 會用到
+    get shape() {return this._shape;}
 
     //--------------------------------------------------
     // outline
@@ -321,6 +338,8 @@ class View extends Phaser.GameObjects.Container
 
         this._grid.w = this.wid - this.gl - this.gr;
         this._grid.h = this.hei - this.gt - this.gb;
+        this._grid.hw= this._grid.w/2;
+        this._grid.hh = this._grid.h/2;
 
         this._grid.x = (this.min.x + this.gl + this.max.x - this.gr)/2; 
         this._grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
@@ -519,7 +538,8 @@ class View extends Phaser.GameObjects.Container
 
         // 1.提供 [外部操作的指令]
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        root.addP('posG',{get:()=>this.posG});  // 在 root 新增 ger，指向 posG
+        root.addP('posG',{get:()=>this.posG});  // 在 root 新增 get，指向 posG
+        root.addP('gridBB',{get:()=>this.gridBB});    // 在 root 新增 get，指向 gridBB
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
         // 給內部元件使用
@@ -608,7 +628,6 @@ export class ItemView extends View
 
 export class RoleView extends View
 {
-    
     //--------------------------------------------------
     // Local
     //--------------------------------------------------

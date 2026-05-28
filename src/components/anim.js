@@ -28,8 +28,8 @@ export class COM_Anim extends Com
             if(!this._twIdle)
             {
                 this._twIdle = this.scene.tweens.add({
-                        targets: view,
-                        y: {from:-view.anchorY, to:-view.anchorY-1.5},
+                        targets: view.shape,
+                        y: {from:0, to:-1.5},
                         // ease:'sin.out',
                         duration: 500,
                         yoyo: true,
@@ -48,8 +48,9 @@ export class COM_Anim extends Com
         const {root} = this.ctx;
         const view = root.view;
         this.scene.tweens.add({
-            targets: view,
-            y: {from:-view.anchorY, to:-view.anchorY-10},
+            targets: view.shape,
+            // y: {from:-view.anchorY, to:-view.anchorY-10},
+            y: {from:0, to:-10},
             ease:'quint.in',
             duration: duration,
             yoyo: true,  

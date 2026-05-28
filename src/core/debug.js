@@ -7,13 +7,14 @@ import ComponentBase from "phaser3-rex-plugins/plugins/utils/componentbase/Compo
 export const DBG = 
 {
     MODE: {
-        POINT   : 0b000_0001,
-        BODY    : 0b000_0010,
-        GRID    : 0b000_0100,
-        ZONE    : 0b000_1000,
-        SHAPE   : 0b001_0000,
-        TEXT    : 0b010_0000,
-        ANCHOR  : 0b100_0000,
+        POINT   : 0b0000_0001,
+        BODY    : 0b0000_0010,
+        GRID    : 0b0000_0100,
+        ZONE    : 0b0000_1000,
+        SHAPE   : 0b0001_0000,
+        TEXT    : 0b0010_0000,
+        ANCHOR  : 0b0100_0000,
+        SCESE   : 0b1000_0000,
     },
 }
 
