@@ -6,6 +6,7 @@ import {BehIdle} from './behidle.js'
 import {BehFlee} from './behflee.js'
 import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
+import {BehInvestigate} from './behinvestigate.js'
 import {GM} from '../../core/setting.js'
 import {T,dlog,dtable} from '../../core/debug.js'
 
@@ -116,11 +117,12 @@ export class COM_AI extends Com
         const w = this._getBehWeight(bb);
 
         // 行為清單（可自由增刪/調整權重）
-        this.behaviors = 
+        this.behaviors =
         [
             // new BehDrinkPotion({ weight: 1.0 }),
             new BehFlee({weight:w.flee}),
-            new BehAttack({weight:w.attack}), 
+            new BehAttack({weight:w.attack}),
+            new BehInvestigate({weight:1.5}),
             new BehIdle({weight:w.idle}),
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),

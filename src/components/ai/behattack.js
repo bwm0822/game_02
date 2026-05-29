@@ -49,6 +49,7 @@ export class BehAttack extends Behavior
 
         this._onAttack=true;
         const t=this._t;
+        bb.lastKnownPos = {x: t.x, y: t.y};
 
         // check HP
         dlog(T.NPC,bb.id)(root.total);
