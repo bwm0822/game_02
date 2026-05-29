@@ -239,7 +239,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 640,
-                "y": 641.3333333333333
+                "y": 640.6666666666666
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -312,8 +312,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 606,
-                "y": 544
+                "x": 512,
+                "y": 512.3333333333333
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -445,7 +445,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 306.5,
+                "x": 306,
                 "y": 969
             }
         },

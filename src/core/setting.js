@@ -466,6 +466,7 @@ export const GM =
         TURNSTART:'turnstart',
         TURNEND:'turnend',
         UPDATETIME:'updatetime',
+        UPDATEEQUIP:'updatequip',
     },
 
     // 物件遮蔽類型

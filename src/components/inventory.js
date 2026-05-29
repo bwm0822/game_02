@@ -274,14 +274,14 @@ export class COM_Inventory extends COM_Storage
 
     _equip()
     {
-        const {root}=this.ctx;
-        root.updateEquips?.();
+        const {root,emit}=this.ctx;
         root.setDirty?.(); // 更新屬性
+        emit(GM.EVT.UPDATEEQUIP);
     }
 
     _updateTime()
     {
-        const {root} = this.ctx;
+        const {root,emit} = this.ctx;
         let changed = false;
         this._equips.forEach((content, i) => {
             if (!content) {return;}
@@ -294,7 +294,7 @@ export class COM_Inventory extends COM_Storage
                 changed = true;
             }
         });
-        if (changed) {root.equip?.();}
+        if (changed) {emit(GM.EVT.UPDATEEQUIP);}
     }
 
     _queryEquip(cb) { return this._equips.filter((itm) => itm && cb(itm)); }

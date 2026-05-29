@@ -593,6 +593,7 @@ export class ItemView extends View
                                     text:this.key,
                                     fontSize:this.wid*scl,
                                 })
+                sp.setPipeline('Light2D');
                 sp.setOrigin(0.5);
                 this._shape = sp;
             }
@@ -776,12 +777,12 @@ export class RoleView extends View
         // 1.提供 [外部操作的指令]
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        root.updateEquips = this._updateEquips.bind(this);
         root.face = this._faceTo.bind(this);
         root.fadout = this._fadout.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on('ondead', this._ondead.bind(this));
+        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+        root.on(GM.EVT.UPDATEEQUIP, this._updateEquips.bind(this))
     }
     
 }

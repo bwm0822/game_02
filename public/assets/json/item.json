@@ -575,6 +575,7 @@
     "icon": "icons:170",
     "gold": 10,
     "endurance": 360,
+    "light": {"color": 16755200, "radius": 300},
     "tw": {
       "lab": "火把",
       "des": "可以照明"
