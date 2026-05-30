@@ -237,6 +237,19 @@
                  "template":"..\/templates\/tree.tj",
                  "x":256,
                  "y":320
+                }, 
+                {
+                 "id":44,
+                 "template":"..\/templates\/animals\/wolf.tj",
+                 "x":512,
+                 "y":512
+                }, 
+                {
+                 "gid":2147484127,
+                 "id":47,
+                 "template":"..\/templates\/animals\/horse.tj",
+                 "x":880,
+                 "y":896
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -247,7 +260,7 @@
         {
          "draworder":"topdown",
          "id":2,
-         "name":"musk_01",
+         "name":"q_musk_01",
          "objects":[
                 {
                  "gid":348,
@@ -305,12 +318,12 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":42,
+ "nextobjectid":52,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -337,6 +350,14 @@
         {
          "firstgid":349,
          "source":"..\/group.tsj"
+        }, 
+        {
+         "firstgid":397,
+         "source":"..\/animals.tsj"
+        }, 
+        {
+         "firstgid":541,
+         "source":"..\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,
  "type":"map",

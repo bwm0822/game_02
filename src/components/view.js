@@ -562,7 +562,6 @@ class View extends Phaser.GameObjects.Container
 
 export class ItemView extends View
 {
-
     _addShape()
     {
         // console.log('_addShape=',this.key,this.frame,this.wid,this.hei)
@@ -582,8 +581,8 @@ export class ItemView extends View
                     sp.displayWidth = this.wid;
                     sp.displayHeight = this.hei;
                 }
-                sp.flipX = this.flipX;
-                sp.flipY = this.flipY;
+                // sp.flipX = this.flipX;
+                // sp.flipY = this.flipY;
                 this._shape = sp;
             }
             else
@@ -597,6 +596,9 @@ export class ItemView extends View
                 sp.setOrigin(0.5);
                 this._shape = sp;
             }
+
+            // set flipX
+            this._shape.scaleX = this.bb.flipX ? -1 : 1;
         }
 
         return this;
@@ -655,6 +657,7 @@ export class RoleView extends View
 
     _addShape()
     {
+        const {bb}=this.ctx;
         const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
@@ -662,6 +665,9 @@ export class RoleView extends View
         if(meta.head) {this._addPart(meta.head, GM.PART_HEAD);}
         if(meta.hand) {this._addPart(meta.hand, GM.PART_HAND);}
         this._equips = []; 
+        
+        // set flipX
+        this._shape.scaleX = bb.flipX ? -1 : 1;
         
         return this;
     }

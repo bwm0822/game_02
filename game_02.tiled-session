@@ -3,13 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
-        "public/assets",
-        "public",
-        ".",
         "public/assets/tiles",
-        "public/assets/maps"
+        "public/assets/templates/animals",
+        "public/assets/maps",
+        ".",
+        "public/assets/templates",
+        "public/assets",
+        "public"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -232,14 +234,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 0.75,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
-                "y": 640.6666666666666
+                "x": 1046,
+                "y": 778.6666666666667
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -312,8 +314,8 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 512,
-                "y": 512.3333333333333
+                "x": 512.3333333333333,
+                "y": 512
             }
         },
         "public/assets/maps/map.json#RPG Nature Tileset": {
@@ -445,8 +447,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 306,
-                "y": 969
+                "x": 395.5,
+                "y": 1194
             }
         },
         "public/assets/maps/village-02.json": {
@@ -635,7 +637,7 @@
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
     "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/32rogues",
-    "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates",
+    "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates/animals",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
         "C:/Personal/projects/web/game_02/public/assets/maps/1.world"
@@ -655,9 +657,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
         "public/assets/maps/forest-01.json",
-        "public/assets/maps/village-01.json",
         "public/assets/animals.tsj",
         "public/assets/maps/animals.tsj",
         "public/assets/maps/trump-inn-f1.json",

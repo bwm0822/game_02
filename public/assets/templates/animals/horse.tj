@@ -1,0 +1,24 @@
+{ "object":
+    {
+     "gid":83,
+     "height":64,
+     "id":45,
+     "name":"",
+     "properties":[
+            {
+             "name":"id",
+             "type":"string",
+             "value":"horse"
+            }],
+     "rotation":0,
+     "type":"npc",
+     "visible":true,
+     "width":64
+    },
+ "tileset":
+    {
+     "firstgid":1,
+     "source":"..\/..\/animals.tsj"
+    },
+ "type":"template"
+}

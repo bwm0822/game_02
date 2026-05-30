@@ -46,16 +46,18 @@ class Map
         map.objects.forEach((layer)=>{
             
             let qid;
-            // 如果 layer name 包含 q，代表是任務 layer，要比對 QuestManager 有沒有開啟任務
-            if(layer.name,layer.name.includes('q'))
+            // 如果 layer name 開頭是 'q_'，代表是任務 layer，
+            // layer.name 移除'q_'當成 qid，比對 QuestManager 有沒有開啟任務
+            if(layer.name.startsWith('q_'))
             {
-                if(!QuestManager.query(layer.name))
+                const questId = layer.name.slice(2);
+                if(!QuestManager.query(questId))
                 {
                     // 如果任務完成，就移除任務的存檔
                     Record.remove(mapName,layer.name);
                     return;
                 }
-                qid = layer.name;
+                qid = questId;
             }
 
             // 將 id,qid 加到 properties
