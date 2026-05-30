@@ -1,6 +1,6 @@
 import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
-import {COM_Manu} from '../components/manufacture.js';
+import {COM_Manu} from '../components/com_manufacture.js';
 import {GameObject} from '../core/gameobject.js';
 
 export default class Stove extends GameObject

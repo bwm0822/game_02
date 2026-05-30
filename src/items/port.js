@@ -1,7 +1,7 @@
 import {GM} from '../core/setting.js'
 import {GameObject} from '../core/gameobject.js'
 import {ItemView} from '../components/view.js'
-import {COM_Port} from '../components/port.js'
+import {COM_Port} from '../components/com_port.js'
 
 export default class Port extends GameObject
 {

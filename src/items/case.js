@@ -1,7 +1,7 @@
 import {GM} from '../core/setting.js'
 import {ItemView} from '../components/view.js'
-import {COM_Storage} from '../components/inventory.js'
-import {COM_Lock} from '../components/lock.js'
+import {COM_Storage} from '../components/com_inventory.js'
+import {COM_Lock} from '../components/com_lock.js'
 import {GameObject} from '../core/gameobject.js'
 import Utility from '../core/utility.js'
 

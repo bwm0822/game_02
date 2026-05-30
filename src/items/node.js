@@ -1,6 +1,6 @@
 import {GameObject} from '../core/gameobject.js'
 import {ItemView} from '../components/view.js'
-import {COM_Node} from '../components/port.js'
+import {COM_Node} from '../components/com_port.js'
 import {GM} from '../core/setting.js'
 
 

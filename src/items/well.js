@@ -1,6 +1,6 @@
 import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
-import {COM_Well} from '../components/well.js';
+import {COM_Well} from '../components/com_well.js';
 import {GameObject} from '../core/gameobject.js';
 
 export default class Well extends GameObject
