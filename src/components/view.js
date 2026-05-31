@@ -291,9 +291,15 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _faceTo(pt)
     {
-        if(pt.x===this.pos.x) {return;}
-       
-        if(this._shape) {this._shape.scaleX = (pt.x>this.pos.x) != this._faceR ? -1 : 1;}
+        const myX = this.pos.x;
+        if(pt.x === myX) {return;}
+        if(!this._shape) {return;}
+        // _faceR: 原始圖像預設朝向，true=朝右，false=朝左
+        // flip: 是否需要翻轉 —— 目標在右但預設朝左，或目標在左但預設朝右，才需要翻轉
+        const flip = (pt.x > myX) !== this._faceR;
+        const isFlipped = this._shape.scaleX < 0;
+        // 只在方向改變時才動，*=-1 保留原有縮放比例，避免強制覆寫成 ±1
+        if(flip !== isFlipped) {this._shape.scaleX *= -1;}
     }
 
     //--------------------------------------------------
@@ -598,7 +604,7 @@ export class ItemView extends View
             }
 
             // set flipX
-            this._shape.scaleX = this.bb.flipX ? -1 : 1;
+            if(this.flipX) {this._shape.scaleX *= -1;}
         }
 
         return this;
@@ -667,7 +673,7 @@ export class RoleView extends View
         this._equips = []; 
         
         // set flipX
-        this._shape.scaleX = bb.flipX ? -1 : 1;
+        if(this.flipX) {this._shape.scaleX *= -1;}
         
         return this;
     }
