@@ -248,8 +248,20 @@
                  "gid":2147484127,
                  "id":47,
                  "template":"..\/templates\/animals\/horse.tj",
-                 "x":880,
-                 "y":896
+                 "x":864,
+                 "y":928
+                }, 
+                {
+                 "gid":569,
+                 "height":64,
+                 "id":53,
+                 "name":"",
+                 "rotation":0,
+                 "type":"lamp",
+                 "visible":true,
+                 "width":64,
+                 "x":544,
+                 "y":1024
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -323,7 +335,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":52,
+ "nextobjectid":55,
  "orientation":"orthogonal",
  "properties":[
         {

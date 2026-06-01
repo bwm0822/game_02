@@ -180,7 +180,7 @@ export const GM =
 
     T_CHANGE_SCENE : 500, // 轉場漸暗時間 ms
 
-    LIGHT : 1.2,    // 火炬光源強度
+    LIGHT : 1.0,    // 火炬光源強度
 
     HUNGER_INC : 0.1, // 飢餓每分鐘增加量
     THIRST_INC : 0.1, // 口渴每分鐘增加量
@@ -203,6 +203,8 @@ export const GM =
     FILL : 'fill',      // 裝滿水
     OPEN_DOOR: 'open_door',
     CLOSE_DOOR: 'close_door',
+    TURN_ON: 'turn_on',
+    TURN_OFF: 'turn_off',
     REST : 'rest',
     WAKE : 'wake',
     STEAL : 'steal',
