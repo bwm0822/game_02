@@ -64,7 +64,8 @@ export class MPlayer extends Role
     init_runtime(id)
     {   
         if(!super.init_prefab(id)) {return;}
-        this._registerTimeSystem(); // 註冊 TimeSystem
+        // this._registerTimeSystem(); // 註冊 TimeSystem
+        this.regTS();                   // 註冊 TimeSystem
         
         // 設定 bb
         const{bb}=this.ctx;

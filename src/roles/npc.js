@@ -33,6 +33,8 @@ export class Npc extends Role
 
     async _updateTime() 
     {
+        super._updateTime();
+
         const {emit, root}=this.ctx;
 
         if(!this.isAlive) 
@@ -48,7 +50,7 @@ export class Npc extends Role
 
     _remove()
     {
-        this._unregisterTimeSystem();
+        this.unregTS();
         if(this.bb.sta===GM.ST.DEATH)
         {
             // 死亡時，若是 schedule，則標記為 removed
@@ -79,7 +81,8 @@ export class Npc extends Role
     init_prefab(id,modify=true)
     {     
         if(!super.init_prefab(id)) {return;}
-        this._registerTimeSystem();     // 註冊 TimeSystem
+        // this._registerTimeSystem();     // 註冊 TimeSystem
+        this.regTS();     // 註冊 TimeSystem
 
         // 設定 bb
         const{bb}=this.ctx;

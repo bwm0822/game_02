@@ -47,7 +47,8 @@ export class Player extends Role
 
     _updateTime() 
     {
-        this.emit(GM.EVT.UPDATETIME);
+        // this.emit(GM.EVT.UPDATETIME);
+        super._updateTime()
         this._refresh();
     }
 
@@ -59,7 +60,7 @@ export class Player extends Role
     {
         dlog(T.PLAYER)('---- dead ----')
         this.ctx.bb.sta=GM.ST.DEATH;
-        this._unregisterTimeSystem();
+        this.unregTS();
         this._send('gameover');
     }
 
@@ -81,7 +82,8 @@ export class Player extends Role
     init_prefab(id)
     {     
         if(!super.init_prefab(id)) {return;}
-        this._registerTimeSystem();             // 註冊 TimeSystem
+        // this._registerTimeSystem();             // 註冊 TimeSystem
+        this.regTS();                               // 註冊 TimeSystem
 
         this.bb.meta = DB.role(this.bb.id);     // 取得 roleD，放入 bb，view 元件會用到
 
@@ -102,7 +104,7 @@ export class Player extends Role
     init_runtime(id)
     {           
         if(!super.init_prefab(id)) {return;}
-        this._registerTimeSystem(); // 註冊 TimeSystem
+        this.regTS();               // 註冊 TimeSystem
 
         // 設定 bb
         const{bb}=this.ctx;

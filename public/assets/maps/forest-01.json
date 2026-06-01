@@ -247,6 +247,12 @@
                 {
                  "gid":2147484127,
                  "id":47,
+                 "properties":[
+                        {
+                         "name":"respawn",
+                         "type":"int",
+                         "value":1440
+                        }],
                  "template":"..\/templates\/animals\/horse.tj",
                  "x":864,
                  "y":928

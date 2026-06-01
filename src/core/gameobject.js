@@ -4,6 +4,7 @@ import Record from '../infra/record.js'
 import {GM, ORDER} from './setting.js'
 import {DEBUG,DBG,T,dlog} from '../core/debug.js'
 import Utility from './utility.js'
+import TimeSystem from '../systems/time.js'
 
 //--------------------------------------------------
 // 遊戲場景中的物件都繼承 GameObject
@@ -133,9 +134,21 @@ export class GameObject extends Phaser.GameObjects.Container
     _isRemoved()
     {
         let data = this._loadData();
-        if(data?.removed) {this._remove(); return true;}
-        return false;
+        if(!data?.removed) {return false;}
+
+        // 若有設定重生時間，且已到達，則清除紀錄讓物件重生
+        if(data.respawnAt)
+        {
+            const now = TimeSystem.toTotalMinutes(TimeSystem.time);
+            const at  = TimeSystem.toTotalMinutes(data.respawnAt);
+            if(now >= at) { this._clearData(); return false; }
+        }
+
+        this._remove();
+        return true;
     }
+
+    _clearData() { Record.deleteByUid(this.mapName, this.uid, this.qid); }
 
     _setAct(key,get)
     {
@@ -168,8 +181,19 @@ export class GameObject extends Phaser.GameObjects.Container
     { 
         this._removeFromList();
 
-        // 1) 如果是 prefab，將 removed 設成 true
-        if(this.uid!==-1) {this._saveData({removed:true})}
+        // 1) 如果是 prefab，將 removed 設成 true；有 respawn 屬性則記錄重生時間
+        //    若已有 respawnAt（場景重載時再次 _remove），保留原有時間，不重設
+        if(this.uid!==-1)
+        {
+            const respawn = this._bb?.respawn;
+            if(respawn > 0)
+            {
+                const existing = this._loadData();
+                const respawnAt = existing?.respawnAt ?? TimeSystem.timeAfter(respawn);
+                this._saveData({removed:true, respawnAt});
+            }
+            else { this._saveData({removed:true}); }
+        }
 
         // 2) 銷毀所有元件
         Object.keys(this._coms).forEach(key=>this.rmCom(key));
@@ -369,6 +393,28 @@ export class GameObject extends Phaser.GameObjects.Container
         if(clr) {this.dbg?.(0);}
         else {this.dbg?.(DEBUG.mode, this.bb.name??'');}
     }
+
+    // 註冊 TimeSystem
+    regTS()
+    {
+        if(!this._updateTimeCallback)
+        {
+            this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
+            TimeSystem.register(this._updateTimeCallback);
+        }
+        else
+        {
+            dlog(T.WARN)('已經註冊TS...')
+        }
+    }
+        
+    unregTS() 
+    {
+        TimeSystem.unregister(this._updateTimeCallback);
+        this._updateTimeCallback = null;
+    }
+
+    _updateTime() {this.emit(GM.EVT.UPDATETIME);}
 
     //------------------------------------------------------
     // mehod

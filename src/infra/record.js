@@ -103,6 +103,12 @@ export default class Record
         delete Record.game.scenes[mapName]?.[qid];
     }
 
+    static deleteByUid(mapName, uid, qid)
+    {
+        if(qid) { delete Record.game.scenes?.[mapName]?.[qid]?.[uid]; }
+        else { delete Record.game.scenes?.[mapName]?.prefab?.[uid]; }
+    }
+
     // static add(map,id,x,y)
     // {
     //     if(!Record.data[map]){Record.data[map]={remove:[],add:[]};}

@@ -151,4 +151,17 @@ export default class TimeSystem
         if(typeof time == 'string') {return this.str2Ticks(time);}
         else {return time.h * 60 + time.m;}
     }
+
+    // 計算 minutes 分鐘後的遊戲時間
+    static timeAfter(minutes)
+    {
+        const total = this.time.d * 1440 + this.time.h * 60 + this.time.m + minutes;
+        return { d: Math.floor(total / 1440), h: Math.floor((total % 1440) / 60), m: total % 60 };
+    }
+
+    // 將 {d,h,m} 轉換為總分鐘數
+    static toTotalMinutes(time)
+    {
+        return time.d * 1440 + time.h * 60 + time.m;
+    }
 }

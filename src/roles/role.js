@@ -39,16 +39,6 @@ export default class Role extends GameObject
         const index = this.scene.roles.indexOf(this);
         if(index>-1) {this.scene.roles.splice(index,1);}
     }
-
-    _registerTimeSystem()
-    {
-        this._updateTimeCallback = this._updateTime.bind(this); // 保存回调函数引用
-        TimeSystem.register(this._updateTimeCallback);
-    }
-        
-    _unregisterTimeSystem() {TimeSystem.unregister(this._updateTimeCallback);}
-
-
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------

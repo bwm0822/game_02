@@ -103,11 +103,11 @@ export class GameScene extends Scene
         this.loadRecord();
         this.setEvent();
         this.initUI();
-        
+        this.initAmbient(this._data.ambient);
+
         await new Map(this).createMap(this._data.map, diagonal, weight);
         await MiniMap.init(this);
         this.createRuntime();
-        this.initAmbient(this._data.ambient);
         this.setPosition(classType);
         this.initSchedule();
         this.processInput();

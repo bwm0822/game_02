@@ -1,5 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+// import TimeSystem from '../systems/time.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -30,9 +31,7 @@ export class COM_Lamp extends Com
         const radius = bb.radius ?? 200;
         const pos = root.pos;
         this._light = this.scene.lights.addLight(pos.x, pos.y, radius, color, this._calcIntensity());
-
-        root.on(GM.EVT.UPDATETIME, this._onUpdateTime);
-
+        root.regTS();
         if (bb.lamp_on) {root.setTexture?.(bb.lamp_on);}
     }
 
@@ -46,7 +45,7 @@ export class COM_Lamp extends Com
         {
             this.scene.lights.removeLight(this._light);
             this._light = null;
-            root.off(GM.EVT.UPDATETIME, this._onUpdateTime);
+            root.regTS();
         }
 
         if (bb.lamp_off) {root.setTexture?.(bb.lamp_off);}
@@ -85,8 +84,10 @@ export class COM_Lamp extends Com
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
 
         // 3.註冊(event)給其他元件或外部呼叫
+        root.on(GM.EVT.UPDATETIME, this._onUpdateTime)
         root.on(GM.TURN_ON,  this._turnOn.bind(this));
         root.on(GM.TURN_OFF, this._turnOff.bind(this));
+        
 
 
     }
@@ -97,7 +98,7 @@ export class COM_Lamp extends Com
         {
             this.scene.lights.removeLight(this._light);
             this._light = null;
-            this._root.off(GM.EVT.UPDATETIME, this._onUpdateTime);
+            this.root.unregTS();
         }
     }
 }
