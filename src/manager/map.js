@@ -300,7 +300,7 @@ class Map
         return p;
     }
 
-    flee(p,s)
+    flee(p,s,tile={tw:1,th:1})
     {
         const [tx,ty] = this.worldToTile(p.x, p.y)
 
@@ -321,7 +321,7 @@ class Map
         dlog(T.MAP)(p,s,key)
         const tbl = lut[key];
 
-        const d = tbl.find(d=>this.getWeightByTile(tx+d.x,ty+d.y)===1);
+        const d = tbl.find(d=>this.getWeightByTile(tx+d.x,ty+d.y,tile)>0);
         if(d)
         {
             return this.tileToWorld(tx+d.x,ty+d.y)
@@ -413,6 +413,8 @@ class Map
 
     updateGrid(p,weight,{w,h})
     {
+        const rows = this.map.height, cols = this.map.width;
+        const inBounds = (tx,ty) => tx>=0 && tx<cols && ty>=0 && ty<rows;
         let pts=[];
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
@@ -426,6 +428,7 @@ class Map
             {
                 for(let ty=ty0;ty<=ty1;ty++)
                 {
+                    if(!inBounds(tx,ty)) {continue;}
                     this.graph.grid[ty][tx].weight += weight;
                     this._updateGridExt(tx,ty);
                     pts.push(this.tileToWorld(tx,ty))
@@ -435,9 +438,12 @@ class Map
         else
         {
             let [tx,ty] = this.worldToTile(p.x, p.y);
-            this.graph.grid[ty][tx].weight += weight;
-            this._updateGridExt(tx,ty);
-            pts.push(p)
+            if(inBounds(tx,ty))
+            {
+                this.graph.grid[ty][tx].weight += weight;
+                this._updateGridExt(tx,ty);
+                pts.push(p)
+            }
         }
         return pts;
     }

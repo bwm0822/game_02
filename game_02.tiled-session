@@ -241,8 +241,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 853.3333333333333,
-                "y": 778.6666666666667
+                "x": 640,
+                "y": 640.6666666666667
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -657,7 +657,7 @@
         "public/assets/32x32GridItemsAll.tsj"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/32x32GridItemsAll.tsj",

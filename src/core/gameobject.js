@@ -202,7 +202,7 @@ export class GameObject extends Phaser.GameObjects.Container
     // 取得逃跑點
     _getFleePt(src)
     {
-        return this.scene.map.flee(this.pos,src);
+        return this.scene.map.flee(this.pos,src,this.bb.tile);
     }
 
     // 取的空地

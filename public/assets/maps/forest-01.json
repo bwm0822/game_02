@@ -256,6 +256,12 @@
                  "height":64,
                  "id":53,
                  "name":"",
+                 "properties":[
+                        {
+                         "name":"lit",
+                         "type":"bool",
+                         "value":true
+                        }],
                  "rotation":0,
                  "type":"lamp",
                  "visible":true,
