@@ -1,138 +1,4 @@
 {
-  "iron": {
-    "cat": "CAT_ITEM",
-    "icon": "icons:273",
-    "gold": 10,
-    "tw": {
-      "lab": "鐵礦",
-      "des": "鐵礦"
-    },
-    "us": {
-      "lab": "Iron ore",
-      "des": ""
-    }
-  },
-  "salt": {
-    "cat": "CAT_FOOD",
-    "icon": "icons:250",
-    "gold": 10,
-    "cps": 10,
-    "tw": {
-      "lab": "鹽",
-      "des": "鹽"
-    },
-    "us": {
-      "lab": "Salt",
-      "des": ""
-    }
-  },
-  "bag": {
-    "cat": "CAT_BAG",
-    "icon": "icons:137",
-    "gold": 10,
-    "storage": 12,
-    "tw": {
-      "lab": "背包",
-      "des": "可以裝物品"
-    },
-    "us": {
-      "lab": "Bag",
-      "des": ""
-    }
-  },
-  "raw_meat": {
-    "cat": "CAT_FOOD",
-    "icon": "icons:241",
-    "gold": 10,
-    "effects": [
-      {
-        "scope": "self",
-        "key": "hunger",
-        "m": 0.1
-      }
-    ],
-    "useable": true,
-    "cook": {
-      "id": "cooked_meat"
-    },
-    "tw": {
-      "lab": "生肉",
-      "des": "可烹煮"
-    },
-    "us": {
-      "lab": "Raw meat",
-      "des": ""
-    }
-  },
-  "cooked_meat": {
-    "cat": "CAT_FOOD",
-    "icon": "icons:242",
-    "gold": 15,
-    "effects": [
-      {
-        "scope": "self",
-        "key": "hunger",
-        "m": 0.2
-      }
-    ],
-    "useable": true,
-    "tw": {
-      "lab": "熟肉",
-      "des": "熟肉"
-    },
-    "us": {
-      "lab": "Cooked meat",
-      "des": ""
-    }
-  },
-  "raw_fish": {
-    "cat": "CAT_FOOD",
-    "icon": "icons:259",
-    "gold": 10,
-    "effects": [
-      {
-        "scope": "self",
-        "key": "hunger",
-        "m": 0.1
-      }
-    ],
-    "useable": true,
-    "tw": {
-      "lab": "生魚",
-      "des": "可烹煮"
-    },
-    "us": {
-      "lab": "Raw fish",
-      "des": ""
-    }
-  },
-  "salt_baked_fish": {
-    "cat": "CAT_FOOD",
-    "icon": "icons:260",
-    "gold": 15,
-    "effects": [
-      {
-        "scope": "self",
-        "key": "hunger",
-        "m": 0.2
-      }
-    ],
-    "useable": true,
-    "make": {
-      "items": {
-        "raw_fish": 1,
-        "salt": 2
-      }
-    },
-    "tw": {
-      "lab": "鹽烤魚",
-      "des": "鹽烤魚"
-    },
-    "us": {
-      "lab": "Salt-baked fish",
-      "des": ""
-    }
-  },
   "sword_01": {
     "cat": "CAT_WEAPON",
     "icon": "weapons:3",
@@ -570,6 +436,33 @@
       "des": ""
     }
   },
+  "iron": {
+    "cat": "CAT_ITEM",
+    "icon": "icons:273",
+    "gold": 10,
+    "tw": {
+      "lab": "鐵礦",
+      "des": "鐵礦"
+    },
+    "us": {
+      "lab": "Iron ore",
+      "des": ""
+    }
+  },
+  "bag": {
+    "cat": "CAT_BAG",
+    "icon": "icons:137",
+    "gold": 10,
+    "storage": 12,
+    "tw": {
+      "lab": "背包",
+      "des": "可以裝物品"
+    },
+    "us": {
+      "lab": "Bag",
+      "des": ""
+    }
+  },
   "torch": {
     "cat": "CAT_EQUIP",
     "icon": "icons:170",
@@ -643,6 +536,113 @@
     "us": {
       "lab": "Lockpick",
       "des": "Used with the lockpicking skill to pick locks."
+    }
+  },
+  "raw_meat": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:241",
+    "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.1
+      }
+    ],
+    "useable": true,
+    "cook": {
+      "id": "cooked_meat"
+    },
+    "tw": {
+      "lab": "生肉",
+      "des": "可烹煮"
+    },
+    "us": {
+      "lab": "Raw meat",
+      "des": ""
+    }
+  },
+  "cooked_meat": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:242",
+    "gold": 15,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.2
+      }
+    ],
+    "useable": true,
+    "tw": {
+      "lab": "熟肉",
+      "des": "熟肉"
+    },
+    "us": {
+      "lab": "Cooked meat",
+      "des": ""
+    }
+  },
+  "raw_fish": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:259",
+    "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.1
+      }
+    ],
+    "useable": true,
+    "tw": {
+      "lab": "生魚",
+      "des": "可烹煮"
+    },
+    "us": {
+      "lab": "Raw fish",
+      "des": ""
+    }
+  },
+  "salt_baked_fish": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:260",
+    "gold": 15,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.2
+      }
+    ],
+    "useable": true,
+    "make": {
+      "items": {
+        "raw_fish": 1,
+        "salt": 2
+      }
+    },
+    "tw": {
+      "lab": "鹽烤魚",
+      "des": "鹽烤魚"
+    },
+    "us": {
+      "lab": "Salt-baked fish",
+      "des": ""
+    }
+  },
+  "salt": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:250",
+    "gold": 10,
+    "cps": 10,
+    "tw": {
+      "lab": "鹽",
+      "des": "鹽"
+    },
+    "us": {
+      "lab": "Salt",
+      "des": ""
     }
   }
 }

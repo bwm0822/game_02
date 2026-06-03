@@ -2,12 +2,8 @@ import pandas as pd
 import json
 
 
-def item_to_json(input_excel_path, output_json_path):
+def df_to_json(df):
 
-    # 讀取 Excel
-    df = pd.read_excel(input_excel_path)
-
-    # 準備轉換格式
     output = {}
 
     for _, row in df.iterrows():
@@ -15,7 +11,6 @@ def item_to_json(input_excel_path, output_json_path):
         for key, val in row.items():
             if key.startswith("Unnamed:") or pd.isna(val) or val == "":
                 continue
-            # print(key,val)
 
             if key == 'id':
                 id = val
@@ -32,27 +27,19 @@ def item_to_json(input_excel_path, output_json_path):
         if obj:
             output[id] = obj
 
+    return output
 
-        # id = row['id']
-        # cat = row['cat']
-        # icon = row['icon']
-        # gold = row['gold']
-        # row_data = row.get('props')
-        # props = json.loads(f"{{{row_data}}}") if isinstance(row_data, str) and row_data.strip() else None
-        # row_data = row.get('others')
-        # others = json.loads(f"{{{row_data}}}") if isinstance(row_data, str) and row_data.strip() else None
-        # values = {}
-        # if pd.notna(cat): values['cat'] = cat
-        # if pd.notna(icon): values['icon'] = icon
-        # if pd.notna(gold): values['gold'] = int(gold)
-        # if pd.notna(props): values['props'] = props
-        # if pd.notna(others): values.update(others)
-        # if values:
-        #     output[id] = values
 
-    # print(output)
+def excel_to_json(input_excel_path, output_json_path, all_sheets=True):
+    output = {}
+    if all_sheets:
+        excel_data = pd.read_excel(input_excel_path, sheet_name=None)
+        for _, df in excel_data.items():
+            output.update(df_to_json(df))
+    else:
+        df = pd.read_excel(input_excel_path)
+        output = df_to_json(df)
 
-    # 儲存成 JSON 檔案
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
@@ -60,12 +47,10 @@ def item_to_json(input_excel_path, output_json_path):
 
 
 def unit_test():
-    # 設定檔案路徑
-    input_excel_path = "./xls/item.xlsx"                    # 你的 Excel 
-    output_json_path = "./public/assets/json/item.json"     # 輸出的 JSON 檔案名稱
-    item_to_json(input_excel_path, output_json_path)
+    input_excel_path = "./xls/item.xlsx"
+    output_json_path = "./public/assets/json/item.json"
+    excel_to_json(input_excel_path, output_json_path)
 
 
 if __name__ == "__main__":
     unit_test()
-

@@ -5,13 +5,13 @@
     },
     "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
-        "public/assets",
-        ".",
-        "public",
         "public/assets/templates/animals",
         "public/assets/tiles",
-        "public/assets/maps",
-        "public/assets/templates"
+        "public",
+        "public/assets",
+        ".",
+        "public/assets/templates",
+        "public/assets/maps"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -241,8 +241,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
-                "y": 640.6666666666667
+                "x": 869.3333333333333,
+                "y": 781.3333333333333
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -448,8 +448,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 656,
-                "y": 709.5
+                "x": 640,
+                "y": 639.5
             }
         },
         "public/assets/maps/village-02.json": {

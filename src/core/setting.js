@@ -211,6 +211,8 @@ export const GM =
     LOCK : 'lock',
     UNLOCK : 'unlock',
     BUTCHER : 'butcher',
+    CHOP : 'chop',
+    HARVEST : 'harvest',
     // for slot
     BUY : 'buy',
     SELL : 'sell',
@@ -614,6 +616,8 @@ export const ORDER = [
     GM.COOK,
     GM.DRINK,
     GM.FILL,
+    GM.CHOP,
+    GM.HARVEST,
     GM.REST,
     GM.WAKE,
     GM.BUY,
