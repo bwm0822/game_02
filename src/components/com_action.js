@@ -246,6 +246,7 @@ export class COM_Action extends Com
         root.move = this._move.bind(this);
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
+        root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
         root.flee = this._flee.bind(this);

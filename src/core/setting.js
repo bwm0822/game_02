@@ -66,6 +66,7 @@ export const GM =
     ICON_LOCK : 'cursors:36',
     ICON_UNLOCK : 'cursors:50',
     ICON_CROSS : 'cursors:150',
+    ICON_AXE : 'cursors:170',
 
     ICON_WEAPON : 'icons:80',  //'weapons/5'
     ICON_HELMET : 'icons:113', //'weapons/45'
