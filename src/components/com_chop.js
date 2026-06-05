@@ -2,6 +2,7 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
+import Pickup from '../items/pickup.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -26,21 +27,31 @@ export class COM_Chop extends Com
     {
         const {bb, send} = this.ctx;
 
-        if(bb.meta?.tool)
+        if(bb.tool)
         {
-            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.meta.tool);
+            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
             if(!taker.findEquip?.(hasTool) && !taker.findItem?.(hasTool))
             {
-                send('msg', `需要 ${bb.meta.tool} 才能砍伐`);
+                send('msg', `需要 ${bb.tool} 才能砍伐`);
                 return;
             }
         }
 
-        if(bb.meta?.wood)
+        if(bb.harvest)
         {
-            const count = bb.meta.count ?? 1;
-            taker.receive?.({id: bb.meta.wood, count});
-            send('msg', `獲得 ${bb.meta.wood} x${count}`);
+            const count = bb.harvest.count ?? 1;
+            if(bb.harvest.drop)
+            {
+                const {root} = this.ctx;
+                const pos = root.pos;
+                const p = this.ctx.ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
+                new Pickup(root.scene, pos.x, pos.y - 32).init_runtime({id: bb.harvest.id, count}).falling(p);
+            }
+            else
+            {
+                taker.receive?.({id: bb.harvest.id, count});
+            }
+            send('msg', `獲得 ${bb.harvest.id} x${count}`);
         }
 
         this._setHarvest(true);
@@ -48,7 +59,7 @@ export class COM_Chop extends Com
     }
 
     _setHarvest(on)
-    {
+     {
         const {root, bb} = this.ctx;
         this._harvest = on;
 
@@ -117,12 +128,12 @@ export class COM_Chop extends Com
         const {root, bb} = this.ctx;
         root._delAct(GM.CHOP);
         root.setZone(false, this.tag);
-        if(bb.meta?.harvest_tex) {root.setTexture?.(bb.meta.harvest_tex);}
+        if(bb.harvest_tex) {root.setShape?.(bb.harvest_tex);}
     }
 
     save()
     {
-        if(!this._harvest) {return {};}
+        if(!this._harvest) {return {}};
 
         const now = TimeSystem.toTotalMinutes(TimeSystem.time);
         const at  = TimeSystem.toTotalMinutes(this._respawnAt);

@@ -666,6 +666,11 @@
       },
       "full_tex": {
         "sprite": "assets_spritesheet_v2_free/001.png"
+      },
+      "harvest": {
+        "id": "wood",
+        "count": 1,
+        "drop": true
       }
     }
   },
@@ -673,6 +678,7 @@
     "cat": "CAT_ITEM",
     "icon": "assets_spritesheet_v2_free/028.png",
     "gold": 1,
+    "cps": 10,
     "tw": {
       "lab": "木材",
       "des": "有用的資源"

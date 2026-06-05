@@ -22,8 +22,7 @@ def df_to_json(df):
             elif key == 'icon':
                 obj[key] = val
             elif key.startswith("_"):
-                fixed = "{" + val + "}"
-                obj.update(json.loads(fixed))
+                obj.update(json.loads("{" + val + "}"))
             elif key == "equips":
                 obj[key] = json.loads(val)
             elif key == "schedule":

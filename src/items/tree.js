@@ -14,10 +14,7 @@ export default class Tree extends GameObject
 
         this.bb.interactive = true;
         const dat=DB.item(this.id);
-        console.log(dat)
         Object.assign(this.bb, dat.bb);
-        console.log('bb=',this.bb)
-        
 
         this.addCom(new ItemView(this.scene), {modify:true})
             .addCom(new COM_Chop());

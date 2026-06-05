@@ -18,7 +18,8 @@ def df_to_json(df):
                 obj[key] = int(val)
             elif key == 'icon' or key == 'cat':
                 obj[key] = val
-            elif key == 'others' or key == 'meta':
+            # elif key == 'others' or key == 'meta':
+            elif key.startswith("_"):
                 obj.update(json.loads(f"{{{val}}}"))
             elif key == 'effects' or key == 'procs':
                 obj[key] = json.loads(f"[{val}]")

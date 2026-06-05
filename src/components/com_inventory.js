@@ -78,7 +78,7 @@ export class COM_Storage extends Com
                     const sum = items[i].count+remain;
                     items[i]={...items[i],...content}
                     items[i].count = Math.min(sum,cps)
-                    remain = sum-cps;
+                    remain = Math.max(0, sum-cps);
                 }
             }
             else    // 新的欄位
