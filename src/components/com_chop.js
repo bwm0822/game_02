@@ -26,7 +26,7 @@ export class COM_Chop extends Com
     //------------------------------------------------------
     async _chop(taker)
     {
-        const {bb, send} = this.ctx;
+        const {scene,root,bb,send,ept} = this.ctx;
 
         if(bb.tool)
         {
@@ -39,12 +39,12 @@ export class COM_Chop extends Com
         }
 
         this._chopCur--;
-        await taker.anim_melee?.(this.ctx.root);
+        await taker.anim_melee?.(root);
 
         if(this._chopCur > 0)
         {
             send('msg', `砍了 ${this._chopHp - this._chopCur}/${this._chopHp} 下`);
-            this.ctx.root.save();
+            // this.ctx.root.save();
             return;
         }
 
@@ -53,10 +53,9 @@ export class COM_Chop extends Com
             const count = bb.harvest.count ?? 1;
             if(bb.harvest.drop)
             {
-                const {root} = this.ctx;
                 const pos = root.pos;
-                const p = this.ctx.ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
-                new Pickup(root.scene, pos.x, pos.y - 32).init_runtime({id: bb.harvest.id, count}).falling(p);
+                const p = ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
+                new Pickup(scene, pos.x, pos.y - 32).init_runtime({id: bb.harvest.id, count}).falling(p);
             }
             else
             {
@@ -66,7 +65,7 @@ export class COM_Chop extends Com
         }
 
         this._setHarvest(true);
-        this.ctx.root.save();
+        // this.ctx.root.save();
     }
 
     _setHarvest(on)
@@ -94,9 +93,9 @@ export class COM_Chop extends Com
     _restoreAct()
     {
         const {root, bb} = this.ctx;
-        if(bb.meta?.tool)
+        if(bb.tool)
         {
-            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.meta.tool);
+            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
             root._setAct(GM.CHOP, () =>
                 (GM.player?.findEquip?.(hasTool) || GM.player?.findItem?.(hasTool))
                 ? GM.EN : GM.DIS
