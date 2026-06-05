@@ -7,15 +7,15 @@ import TimeSystem from '../systems/time.js'
 // 類別 : 元件(component)
 // 標籤 : tree
 // 功能 : 可砍伐的樹木，砍後留下樹根，定時重生
-//  bb.meta.wood      : 木材 item id
-//  bb.meta.count     : 掉落數量 (預設 1)
-//  bb.meta.tool      : 所需工具的 cat_sub (選填；不填則無工具需求)
-//  bb.meta.stump_tex : 樹根貼圖 "key:frame"
-//  bb.meta.full_tex  : 重生後的貼圖 "key:frame"
-//  bb.respawn        : 重生時間 (遊戲分鐘，預設 120)
+//  bb.meta.wood         : 木材 item id
+//  bb.meta.count        : 掉落數量 (預設 1)
+//  bb.meta.tool         : 所需工具的 cat_sub (選填；不填則無工具需求)
+//  bb.meta.harvest_tex : 樹根貼圖 "key:frame"
+//  bb.meta.full_tex     : 重生後的貼圖 "key:frame"
+//  bb.respawn           : 重生時間 (遊戲分鐘，預設 120)
 //--------------------------------------------------
 
-export class COM_Tree extends Com
+export class COM_Chop extends Com
 {
     get tag() {return 'tree';}
 
@@ -43,28 +43,28 @@ export class COM_Tree extends Com
             send('msg', `獲得 ${bb.meta.wood} x${count}`);
         }
 
-        this._setStump(true);
+        this._setHarvest(true);
         this.ctx.root.save();
     }
 
-    _setStump(on)
+    _setHarvest(on)
     {
         const {root, bb} = this.ctx;
-        this._stump = on;
+        this._harvest = on;
 
         if(on)
         {
             this._respawnAt = TimeSystem.timeAfter(bb.respawn ?? 120);
             root._delAct(GM.CHOP);
             root.setZone(false, this.tag);
-            if(bb.meta?.stump_tex) {root.setTexture?.(bb.meta.stump_tex);}
+            if(bb.harvest_tex) {root.setShape?.(bb.harvest_tex);}
         }
         else
         {
             this._respawnAt = null;
             this._restoreAct();
             root.setZone(true, this.tag);
-            if(bb.meta?.full_tex) {root.setTexture?.(bb.meta.full_tex);}
+            if(bb.full_tex) {root.setShape?.(bb.full_tex);}
         }
     }
 
@@ -92,39 +92,42 @@ export class COM_Tree extends Com
     {
         super.bind(root);
 
-        this._stump = false;
+        this._harvest = false;
         this._respawnAt = null;
-
+        // 1.提供 [外部操作的指令]
         this._restoreAct();
+        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
+        this.addRt('harvest', {get: () => this._harvest});
+        // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.CHOP, this._chop.bind(this));
     }
 
     load(data)
     {
-        if(!data?.stump) {return;}
+        if(!data?.harvest) {return;}
 
         const now = TimeSystem.toTotalMinutes(TimeSystem.time);
         const at  = TimeSystem.toTotalMinutes(data.respawnAt);
 
         if(now >= at) {return;}
 
-        this._stump = true;
+        this._harvest = true;
         this._respawnAt = data.respawnAt;
 
         const {root, bb} = this.ctx;
         root._delAct(GM.CHOP);
         root.setZone(false, this.tag);
-        if(bb.meta?.stump_tex) {root.setTexture?.(bb.meta.stump_tex);}
+        if(bb.meta?.harvest_tex) {root.setTexture?.(bb.meta.harvest_tex);}
     }
 
     save()
     {
-        if(!this._stump) {return {};}
+        if(!this._harvest) {return {};}
 
         const now = TimeSystem.toTotalMinutes(TimeSystem.time);
         const at  = TimeSystem.toTotalMinutes(this._respawnAt);
         if(now >= at) {return {};}
 
-        return {stump: true, respawnAt: this._respawnAt};
+        return {harvest: true, respawnAt: this._respawnAt};
     }
 }

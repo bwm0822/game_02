@@ -584,8 +584,17 @@ export class ItemView extends View
                 if(this.scl) { sp.setScale(this.scl); }
                 else
                 {
-                    sp.displayWidth = this.wid;
-                    sp.displayHeight = this.hei;
+                    const ratio = sp.width / sp.height;
+                    if (this.wid / this.hei > ratio)
+                    {
+                        sp.displayHeight = this.hei;
+                        sp.displayWidth = this.hei * ratio;
+                    }
+                    else
+                    {
+                        sp.displayWidth = this.wid;
+                        sp.displayHeight = this.wid / ratio;
+                    }
                 }
                 // sp.flipX = this.flipX;
                 // sp.flipY = this.flipY;
@@ -616,6 +625,16 @@ export class ItemView extends View
         this._shape.setTexture(key,frame);
     }
 
+    _setShape({sprite,x=0,y=0,scl=1,origin={x:0.5,y:0.5}}={})
+    {
+        const[key,frame]=sprite.split(':');
+        this._shape.setTexture(key,frame);
+        this._shape.setOrigin(origin.x,origin.y);
+        this._shape.setScale(scl);
+        this._shape.x = x;
+        this._shape.y = y;
+    }
+
     //--------------------------------------------------
     // public
     //--------------------------------------------------
@@ -627,6 +646,7 @@ export class ItemView extends View
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.setTexture = this._setTexture.bind(this);
+        root.setShape = this._setShape.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('setTexture', this._setTexture.bind(this));

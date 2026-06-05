@@ -22,6 +22,8 @@ def df_to_json(df):
                 obj.update(json.loads(f"{{{val}}}"))
             elif key == 'effects' or key == 'procs':
                 obj[key] = json.loads(f"[{val}]")
+            elif key == 'bb' or key.startswith('bb_'):
+                obj.setdefault('bb', {}).update(json.loads(f"{{{val}}}"))
             else:
                 obj[key] = json.loads(f"{{{val}}}")
         if obj:

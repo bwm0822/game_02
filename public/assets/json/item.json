@@ -644,5 +644,42 @@
       "lab": "Salt",
       "des": ""
     }
+  },
+  "tree": {
+    "bb": {
+      "anchorX": 0,
+      "anchorY": 48,
+      "bl": 10,
+      "br": 10,
+      "bt": 96,
+      "gl": 10,
+      "gr": 10,
+      "gt": 96,
+      "zl": 10,
+      "zr": 10,
+      "zt": 96,
+      "isBlock": true,
+      "weight": -1,
+      "harvest_tex": {
+        "sprite": "assets_spritesheet_v2_free/012.png",
+        "y": 40
+      },
+      "full_tex": {
+        "sprite": "assets_spritesheet_v2_free/001.png"
+      }
+    }
+  },
+  "wood": {
+    "cat": "CAT_ITEM",
+    "icon": "assets_spritesheet_v2_free/028.png",
+    "gold": 1,
+    "tw": {
+      "lab": "木材",
+      "des": "有用的資源"
+    },
+    "us": {
+      "lab": "Wood",
+      "des": ""
+    }
   }
 }

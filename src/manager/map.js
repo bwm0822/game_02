@@ -16,6 +16,7 @@ import Bed from '../items/bed.js'
 import Lamp from '../items/lamp.js'
 import Point from '../items/point.js'
 import Item from '../items/item.js'
+import Tree from '../items/tree.js'
 import {T,dlog} from '../core/debug.js'
 
 
@@ -84,6 +85,7 @@ class Map
                 {type:'bed',classType:Bed},
                 {type:'lamp',classType:Lamp},
                 {type:'item',classType:Item},
+                {type:'tree',classType:Tree},
                 // {type:'enemy',classType:Enemy},
                 // {type:'npc_n',classType:Npc_n},
             ]);
