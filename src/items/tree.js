@@ -1,6 +1,6 @@
 import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
-import {COM_Chop} from '../components/com_chop.js';
+import {COM_Harvest} from '../components/com_harvest.js';
 import {GameObject} from '../core/gameobject.js';
 import DB from '../data/db.js';
 
@@ -17,7 +17,7 @@ export default class Tree extends GameObject
         Object.assign(this.bb, dat.bb);
 
         this.addCom(new ItemView(this.scene), {modify:true})
-            .addCom(new COM_Chop());
+            .addCom(new COM_Harvest());
 
         this.load();
     }

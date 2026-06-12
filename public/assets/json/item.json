@@ -647,6 +647,10 @@
   },
   "tree": {
     "bb": {
+      "act": "chop",
+      "zone": "tree",
+      "chops": 3,
+      "anim": "melee",
       "anchorX": 0,
       "anchorY": 48,
       "bl": 10,

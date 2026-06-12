@@ -3,15 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/forest-01.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
-        "public/assets/tiles",
         "public/assets",
-        ".",
+        "public/assets/templates/animals",
         "public/assets/maps",
         "public",
         "public/assets/templates",
-        "public/assets/templates/animals"
+        "public/assets/tiles",
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -448,8 +448,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 656,
-                "y": 709.5
+                "x": 544,
+                "y": 794
             }
         },
         "public/assets/maps/village-02.json": {
@@ -659,10 +659,10 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
         "public/assets/32x32GridItemsAll.tsj",
         "public/assets/maps/map.json",
         "public/assets/maps/forest-01.json",
+        "public/assets/maps/village-01.json",
         "public/assets/animals.tsj",
         "public/assets/maps/animals.tsj",
         "public/assets/maps/trump-inn-f1.json",
