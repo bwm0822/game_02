@@ -9,7 +9,6 @@ import Pickup from '../items/pickup.js'
 // 標籤 : 由 bb.tag 決定
 // 功能 : 可採集的世界物件，採後進入耗盡狀態，定時重生
 //  bb.act         : GM action key (e.g., GM.CHOP, GM.HARVEST) - 必填
-//  bb.zone        : 互動標籤 - 必填
 //  bb.tool        : 所需工具的 cat_sub (選填)
 //  bb.chops       : 需要採集幾次 (預設 1)
 //  bb.anim        : 動畫類型 'melee' | undefined
@@ -21,7 +20,7 @@ import Pickup from '../items/pickup.js'
 
 export class COM_Harvest extends Com
 {
-    get tag() {return this._tag ?? '';}
+    get tag() {return 'harvest';}
 
     //------------------------------------------------------
     //  Local
@@ -116,7 +115,6 @@ export class COM_Harvest extends Com
         super.bind(root);
 
         const {bb} = this.ctx;
-        this._tag = bb.zone;
         this._harvested = false;
         this._respawnAt = null;
         this._chopHp = bb.chops ?? 1;

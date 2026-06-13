@@ -68,15 +68,15 @@ export const GM =
     ICON_CROSS : 'cursors:150',
     ICON_AXE : 'cursors:170',
 
-    ICON_WEAPON : 'icons:80',  //'weapons/5'
-    ICON_HELMET : 'icons:113', //'weapons/45'
-    ICON_CHESTPLATE : 'icons:119',//'weapons/54'
-    ICON_GLOVES : 'icons:128',
-    ICON_BOOTS : 'icons:130',
-    ICON_NECKLACE : 'icons:134',
-    ICON_RING : 'icons:133',
-    ICON_EQUIP : 'icons:170',
-    ICON_BAG : 'icons:137',
+    ICON_WEAPON : 'icons:shield',
+    ICON_HELMET : 'icons:helmet',
+    ICON_CHESTPLATE : 'icons:chestplate',
+    ICON_GLOVES : 'icons:gloves',
+    ICON_BOOTS : 'icons:boots',
+    ICON_NECKLACE : 'icons:necklace',
+    ICON_RING : 'icons:ring_gem',
+    ICON_EQUIP : 'icons:torch',
+    ICON_BAG : 'icons:bag',
 
     ICON:{
         MARK : 'buffs:108',
@@ -93,15 +93,15 @@ export const GM =
         TOOL : 'cursors:58',
         DOOR : 'cursors:70',
 
-        WEAPON : 'icons:80',  //'weapons/5'
-        HELMET : 'icons:113', //'weapons/45'
-        CHESTPLATE : 'icons:119',//'weapons/54'
-        GLOVES : 'icons:128',
-        BOOTS : 'icons:130',
-        NECKLACE : 'icons:134',
-        RING : 'icons:133',
-        EQUIP : 'icons:170',
-        BAG : 'icons:137', 
+        WEAPON : 'icons:shield',
+        HELMET : 'icons:helmet',
+        CHESTPLATE : 'icons:chestplate',
+        GLOVES : 'icons:gloves',
+        BOOTS : 'icons:boots',
+        NECKLACE : 'icons:necklace',
+        RING : 'icons:ring_gem',
+        EQUIP : 'icons:torch',
+        BAG : 'icons:bag',
     },
 
     CAT_ALL         :   0b1111_1111_1111_1111,

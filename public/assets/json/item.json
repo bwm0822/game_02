@@ -412,7 +412,7 @@
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
-    "icon": "icons:134",
+    "icon": "icons:necklace",
     "gold": 10,
     "tw": {
       "lab": "項鍊",
@@ -425,7 +425,7 @@
   },
   "ring_01": {
     "cat": "CAT_RING",
-    "icon": "icons:132",
+    "icon": "icons:ring",
     "gold": 10,
     "tw": {
       "lab": "戒子",
@@ -438,7 +438,7 @@
   },
   "iron": {
     "cat": "CAT_ITEM",
-    "icon": "icons:273",
+    "icon": "icons:iron",
     "gold": 10,
     "tw": {
       "lab": "鐵礦",
@@ -451,7 +451,7 @@
   },
   "bag": {
     "cat": "CAT_BAG",
-    "icon": "icons:137",
+    "icon": "icons:bag",
     "gold": 10,
     "storage": 12,
     "tw": {
@@ -465,7 +465,7 @@
   },
   "torch": {
     "cat": "CAT_EQUIP",
-    "icon": "icons:170",
+    "icon": "icons:torch",
     "gold": 10,
     "endurance": 360,
     "light": {
@@ -483,7 +483,7 @@
   },
   "bottle": {
     "cat": "CAT_ITEM",
-    "icon": "icons:307",
+    "icon": "icons:bottle",
     "gold": 10,
     "effects": [
       {
@@ -540,7 +540,7 @@
   },
   "raw_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons:241",
+    "icon": "icons:raw_meat",
     "gold": 10,
     "effects": [
       {
@@ -564,7 +564,7 @@
   },
   "cooked_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons:242",
+    "icon": "icons:cooked_meat",
     "gold": 15,
     "effects": [
       {
@@ -585,7 +585,7 @@
   },
   "raw_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons:259",
+    "icon": "icons:raw_fish",
     "gold": 10,
     "effects": [
       {
@@ -606,7 +606,7 @@
   },
   "salt_baked_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons:260",
+    "icon": "icons:salt_baked_fish",
     "gold": 15,
     "effects": [
       {
@@ -633,7 +633,7 @@
   },
   "salt": {
     "cat": "CAT_FOOD",
-    "icon": "icons:250",
+    "icon": "icons:salt",
     "gold": 10,
     "cps": 10,
     "tw": {
@@ -645,10 +645,53 @@
       "des": ""
     }
   },
+  "apple": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:apple",
+    "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.1
+      }
+    ],
+    "cps": 5,
+    "useable": true,
+    "tw": {
+      "lab": "頻果",
+      "des": "可食用"
+    },
+    "us": {
+      "lab": "Apple",
+      "des": ""
+    }
+  },
+  "grapes": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:grapes",
+    "gold": 10,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.1
+      }
+    ],
+    "cps": 5,
+    "useable": true,
+    "tw": {
+      "lab": "葡萄",
+      "des": "可食用"
+    },
+    "us": {
+      "lab": "Strawberry",
+      "des": ""
+    }
+  },
   "tree": {
     "bb": {
       "act": "chop",
-      "zone": "tree",
       "chops": 3,
       "anim": "melee",
       "anchorX": 0,
@@ -675,6 +718,38 @@
         "id": "wood",
         "count": 1,
         "drop": true
+      }
+    }
+  },
+  "appletree": {
+    "bb": {
+      "act": "harvest",
+      "zone": "plant",
+      "harvest_tex": {
+        "sprite": "assets_spritesheet_v2_free/005.png"
+      },
+      "full_tex": {
+        "sprite": "assets_spritesheet_v2_free/006.png"
+      },
+      "harvest": {
+        "id": "apple",
+        "count": 1
+      }
+    }
+  },
+  "grapetree": {
+    "bb": {
+      "act": "harvest",
+      "zone": "plant",
+      "harvest_tex": {
+        "sprite": "assets_spritesheet_v2_free/011.png"
+      },
+      "full_tex": {
+        "sprite": "assets_spritesheet_v2_free/010.png"
+      },
+      "harvest": {
+        "id": "grapes",
+        "count": 1
       }
     }
   },

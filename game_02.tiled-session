@@ -3,15 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/village-01.json",
+    "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
-        "public/assets",
-        "public/assets/templates/animals",
-        "public/assets/maps",
-        "public",
         "public/assets/templates",
-        "public/assets/tiles",
-        "."
+        "public/assets",
+        ".",
+        "public/assets/maps",
+        "public/assets/icons",
+        "public",
+        "public/assets/templates/animals",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -235,14 +236,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 782.6666666666667,
-                "y": 781.3333333333333
+                "x": 640,
+                "y": 640.6666666666667
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -448,8 +449,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 544,
-                "y": 794
+                "x": 656,
+                "y": 709.5
             }
         },
         "public/assets/maps/village-02.json": {
@@ -653,16 +654,15 @@
     "openFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/forest-01.json",
-        "public/assets/maps/map.json",
-        "public/assets/32x32GridItemsAll.tsj"
+        "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/32x32GridItemsAll.tsj",
+        "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",
         "public/assets/maps/forest-01.json",
-        "public/assets/maps/village-01.json",
+        "public/assets/32x32GridItemsAll.tsj",
         "public/assets/animals.tsj",
         "public/assets/maps/animals.tsj",
         "public/assets/maps/trump-inn-f1.json",

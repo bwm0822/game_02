@@ -287,11 +287,48 @@
                          "value":"tree"
                         }],
                  "rotation":0,
-                 "type":"tree",
+                 "type":"plant",
                  "visible":true,
                  "width":80,
                  "x":736,
                  "y":1056
+                }, 
+                {
+                 "gid":354,
+                 "height":32,
+                 "id":67,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"appletree"
+                        }],
+                 "rotation":0,
+                 "type":"plant",
+                 "visible":true,
+                 "width":32,
+                 "x":352,
+                 "y":1088
+                },
+            
+                {
+                 "gid":358,
+                 "height":32,
+                 "id":68,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"grapetree"
+                        }],
+                 "rotation":0,
+                 "type":"plant",
+                 "visible":true,
+                 "width":32,
+                 "x":224,
+                 "y":992
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -365,7 +402,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":63,
+ "nextobjectid":69,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -400,6 +437,10 @@
         {
          "firstgid":541,
          "source":"..\/32x32GridItemsAll.tsj"
+        }, 
+        {
+         "firstgid":865,
+         "source":"..\/icons.tsj"
         }],
  "tilewidth":32,
  "type":"map",
