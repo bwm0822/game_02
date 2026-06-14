@@ -329,6 +329,24 @@
                  "width":32,
                  "x":224,
                  "y":992
+                }, 
+                {
+                 "gid":382,
+                 "height":13,
+                 "id":69,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"id",
+                         "type":"string",
+                         "value":"mushtree"
+                        }],
+                 "rotation":0,
+                 "type":"plant",
+                 "visible":true,
+                 "width":11,
+                 "x":416,
+                 "y":1024
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -402,7 +420,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":69,
+ "nextobjectid":70,
  "orientation":"orthogonal",
  "properties":[
         {

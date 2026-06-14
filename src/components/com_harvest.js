@@ -6,14 +6,16 @@ import Pickup from '../items/pickup.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component)
-// 標籤 : 由 bb.tag 決定
 // 功能 : 可採集的世界物件，採後進入耗盡狀態，定時重生
-//  bb.act         : GM action key (e.g., GM.CHOP, GM.HARVEST) - 必填
+//  三種類型由 bb.act 與 bb.harvest_tex 決定：
+//    tree     (GM.CHOP)    : 砍 bb.chopCnt 次，每次播動畫，最後掉落物品
+//    apple    (GM.HARVEST) : 摘 bb.harvest.count 次，每次得 1 個，摘完換 harvest_tex
+//    mushroom (GM.HARVEST) : 摘 bb.harvest.count 次，每次得 1 個，摘完消失（無 harvest_tex）
+//  bb.act         : GM.CHOP | GM.HARVEST - 必填
 //  bb.tool        : 所需工具的 cat_sub (選填)
-//  bb.chops       : 需要採集幾次 (預設 1)
-//  bb.anim        : 動畫類型 'melee' | undefined
-//  bb.harvest     : { id, count, drop } - 採集物品
-//  bb.harvest_tex : 採集後的貼圖
+//  bb.chopCnt     : chop 模式需砍幾次才能完成 (預設 1)
+//  bb.harvest     : { id, count } - 採集物品；pick 模式 count = 可摘次數
+//  bb.harvest_tex : 耗盡後的貼圖（無此欄位 + pick 模式 = 消失）
 //  bb.full_tex    : 重生後的貼圖
 //  bb.respawn     : 重生時間 (遊戲分鐘，預設 60)
 //--------------------------------------------------
@@ -46,21 +48,24 @@ export class COM_Harvest extends Com
     {
         const {root, bb} = this.ctx;
         this._harvested = on;
+        const isPick = bb.act === GM.HARVEST;
 
         if(on)
         {
             this._respawnAt = TimeSystem.timeAfter(bb.respawn ?? 60);
             root._delAct(bb.act);
             root.setZone(false, this.tag);
-            if(bb.harvest_tex) {root.setShape?.(bb.harvest_tex);}
+            if(bb.harvest_tex)  {root.setShape?.(bb.harvest_tex);}
+            else if(isPick)     {root.setVisible(false);}
         }
         else
         {
             this._respawnAt = null;
-            this._chopCur = this._chopHp;
+            this._cur = this._hp;
             this._restoreAct();
             root.setZone(true, this.tag);
-            if(bb.full_tex) {root.setShape?.(bb.full_tex);}
+            if(bb.full_tex)     {root.setShape?.(bb.full_tex);}
+            else if(isPick)     {root.setVisible(true);}
         }
     }
 
@@ -78,29 +83,33 @@ export class COM_Harvest extends Com
             }
         }
 
-        this._chopCur--;
-        if(bb.anim === 'melee') {await taker.anim_melee?.(root);}
+        this._cur--;
 
-        if(this._chopCur > 0)
+        if(bb.act === GM.CHOP)
         {
-            send('msg', `砍了 ${this._chopHp - this._chopCur}/${this._chopHp} 下`);
-            return;
-        }
-
-        if(bb.harvest)
-        {
-            const count = bb.harvest.count ?? 1;
-            if(bb.harvest.drop)
+            await taker.anim_melee?.(root);
+            if(this._cur > 0)
             {
+                send('msg', `砍了 ${this._hp - this._cur}/${this._hp} 下`);
+                return;
+            }
+            if(bb.harvest)
+            {
+                const {id, count = 1} = bb.harvest;
                 const pos = root.pos;
                 const p = ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
-                new Pickup(scene, pos.x, pos.y - 32).init_runtime({id: bb.harvest.id, count}).falling(p);
+                new Pickup(scene, pos.x, pos.y - 32).init_runtime({id, count}).falling(p);
+                send('msg', `掉落 ${id} x${count}`);
             }
-            else
+        }
+        else // GM.HARVEST (pick)
+        {
+            if(bb.harvest)
             {
-                taker.receive?.({id: bb.harvest.id, count});
+                taker.receive?.({id: bb.harvest.id, count: 1});
+                send('msg', `獲得 ${bb.harvest.id}`);
             }
-            send('msg', `獲得 ${bb.harvest.id} x${count}`);
+            if(this._cur > 0) {return;}
         }
 
         this._setHarvested(true);
@@ -117,8 +126,10 @@ export class COM_Harvest extends Com
         const {bb} = this.ctx;
         this._harvested = false;
         this._respawnAt = null;
-        this._chopHp = bb.chops ?? 1;
-        this._chopCur = this._chopHp;
+        this._hp = bb.act === GM.CHOP
+            ? (bb.chopCnt ?? 1)
+            : (bb.harvest?.count ?? 1);
+        this._cur = this._hp;
 
         this._restoreAct();
         this.addRt('harvest', {get: () => this._harvested});
@@ -129,7 +140,7 @@ export class COM_Harvest extends Com
     {
         if(!data) {return;}
 
-        if(data.chopCur !== undefined) {this._chopCur = data.chopCur;}
+        if(data.cur !== undefined) {this._cur = data.cur;}
 
         if(!data.harvested) {return;}
 
@@ -142,14 +153,16 @@ export class COM_Harvest extends Com
         this._respawnAt = data.respawnAt;
 
         const {root, bb} = this.ctx;
+        const isPick = bb.act === GM.HARVEST;
         root._delAct(bb.act);
         root.setZone(false, this.tag);
-        if(bb.harvest_tex) {root.setShape?.(bb.harvest_tex);}
+        if(bb.harvest_tex)  {root.setShape?.(bb.harvest_tex);}
+        else if(isPick)     {root.setVisible(false);}
     }
 
     save()
     {
-        const partial = this._chopCur < this._chopHp && !this._harvested;
+        const partial = this._cur < this._hp && !this._harvested;
 
         if(!this._harvested && !partial) {return {};}
 
@@ -161,6 +174,6 @@ export class COM_Harvest extends Com
             return {harvested: true, respawnAt: this._respawnAt};
         }
 
-        return {chopCur: this._chopCur};
+        return {cur: this._cur};
     }
 }

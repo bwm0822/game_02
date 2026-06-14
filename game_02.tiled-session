@@ -6,13 +6,13 @@
     "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
         "public/assets/templates",
-        "public/assets",
         ".",
-        "public/assets/maps",
-        "public/assets/icons",
+        "public/assets",
         "public",
         "public/assets/templates/animals",
-        "public/assets/tiles"
+        "public/assets/tiles",
+        "public/assets/icons",
+        "public/assets/maps"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -236,8 +236,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                3,
-                2
+                2,
+                3
             ],
             "scale": 0.75,
             "selectedLayer": 1,

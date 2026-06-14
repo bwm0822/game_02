@@ -689,11 +689,30 @@
       "des": ""
     }
   },
+  "mushroom": {
+    "cat": "CAT_FOOD",
+    "icon": "icons:mushroom",
+    "gold": 5,
+    "effects": [
+      {
+        "scope": "self",
+        "key": "hunger",
+        "m": 0.1
+      }
+    ],
+    "cps": 10,
+    "useable": true,
+    "tw": {
+      "lab": "蘑菇",
+      "des": "可食用"
+    },
+    "us": {
+      "lab": "Mushroom",
+      "des": ""
+    }
+  },
   "tree": {
     "bb": {
-      "act": "chop",
-      "chops": 3,
-      "anim": "melee",
       "anchorX": 0,
       "anchorY": 48,
       "bl": 10,
@@ -707,6 +726,8 @@
       "zt": 96,
       "isBlock": true,
       "weight": -1,
+      "act": "chop",
+      "chopCnt": 3,
       "harvest_tex": {
         "sprite": "assets_spritesheet_v2_free/012.png",
         "y": 40
@@ -724,7 +745,6 @@
   "appletree": {
     "bb": {
       "act": "harvest",
-      "zone": "plant",
       "harvest_tex": {
         "sprite": "assets_spritesheet_v2_free/005.png"
       },
@@ -733,14 +753,13 @@
       },
       "harvest": {
         "id": "apple",
-        "count": 1
+        "count": 3
       }
     }
   },
   "grapetree": {
     "bb": {
       "act": "harvest",
-      "zone": "plant",
       "harvest_tex": {
         "sprite": "assets_spritesheet_v2_free/011.png"
       },
@@ -749,6 +768,18 @@
       },
       "harvest": {
         "id": "grapes",
+        "count": 3
+      }
+    }
+  },
+  "mushtree": {
+    "bb": {
+      "act": "harvest",
+      "full_tex": {
+        "sprite": "assets_spritesheet_v2_free/034.png"
+      },
+      "harvest": {
+        "id": "mushroom",
         "count": 1
       }
     }
