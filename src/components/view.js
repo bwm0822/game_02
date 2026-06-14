@@ -432,7 +432,12 @@ class View extends Phaser.GameObjects.Container
     _interact(on)
     {
         if(on) { this._zone.setInteractive();}
-        else {this._zone.disableInteractive();this._setOutline(false);}
+        else {
+            this._zone.disableInteractive();
+            this._setOutline(false);
+            this.ctx.emit('out');
+            if(DEBUG.enable){debugDraw.bind(this)(0);}
+        }
     }
 
     //--------------------------------------------------
