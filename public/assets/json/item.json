@@ -436,6 +436,29 @@
       "des": ""
     }
   },
+  "axe_01": {
+    "cat": "CAT_WEAPON",
+    "icon": "weapons:6",
+    "gold": 10,
+    "equip": {
+      "sprite": "weapons:3",
+      "y": 22
+    },
+    "type": "melee",
+    "range": 1,
+    "atk": 15,
+    "cat_sub": [
+      "axe"
+    ],
+    "tw": {
+      "lab": "斧頭",
+      "des": ""
+    },
+    "us": {
+      "lab": "Axe",
+      "des": ""
+    }
+  },
   "iron": {
     "cat": "CAT_ITEM",
     "icon": "icons:iron",
@@ -728,6 +751,7 @@
       "weight": -1,
       "act": "chop",
       "chopCnt": 3,
+      "tool": "axe",
       "harvest_tex": {
         "sprite": "assets_spritesheet_v2_free/012.png",
         "y": 40

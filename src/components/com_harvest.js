@@ -35,18 +35,7 @@ export class COM_Harvest extends Com
     _restoreAct()
     {
         const {root, bb} = this.ctx;
-        if(bb.tool)
-        {
-            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
-            root._setAct(bb.act, () =>
-                (GM.player?.findEquip?.(hasTool) || GM.player?.findItem?.(hasTool))
-                ? GM.EN : GM.DIS
-            );
-        }
-        else
-        {
-            root._setAct(bb.act, () => GM.EN);
-        }
+        root._setAct(bb.act, () => GM.EN);
     }
 
     _setHarvested(on)
@@ -78,20 +67,18 @@ export class COM_Harvest extends Com
     {
         const {scene, root, bb, send, ept} = this.ctx;
 
-        if(bb.tool)
-        {
-            const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
-            if(!taker.findEquip?.(hasTool) && !taker.findItem?.(hasTool))
-            {
-                send('msg', `需要 ${bb.tool} 才能採集`);
-                return;
-            }
-        }
-
-        this._cur--;
-
         if(bb.act === GM.CHOP)
         {
+            if(bb.tool)
+            {
+                const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
+                if(!taker.findEquip?.(hasTool) && !taker.findItem?.(hasTool))
+                {
+                    send('msg', `需要 ${bb.tool} 才能採集`);
+                    return;
+                }
+            }
+            this._cur--;
             AudioManager.chop();
             await taker.anim_melee?.(root);
             if(this._cur > 0)
@@ -110,6 +97,8 @@ export class COM_Harvest extends Com
         }
         else // GM.HARVEST (pick)
         {
+            this._cur--;
+            AudioManager.harvest();
             if(bb.harvest)
             {
                 taker.receive?.({id: bb.harvest.id, count: 1});
