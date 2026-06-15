@@ -41,4 +41,5 @@ export default class AudioManager
     static doorOpen() {this.playSfx('doorOpen');}
     static doorClose() {this.playSfx('doorClose');}
     static drop() {this.playSfx('drop');}
+    static chop() {this.playSfx('chop');}
 }

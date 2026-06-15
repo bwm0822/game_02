@@ -5,14 +5,14 @@
     },
     "activeFile": "public/assets/maps/forest-01.json",
     "expandedProjectPaths": [
-        "public/assets/templates",
-        ".",
-        "public/assets",
-        "public",
         "public/assets/templates/animals",
+        "public/assets/templates",
         "public/assets/tiles",
         "public/assets/icons",
-        "public/assets/maps"
+        ".",
+        "public",
+        "public/assets/maps",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -242,8 +242,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
-                "y": 640.6666666666667
+                "x": 788.6666666666665,
+                "y": 893.3333333333333
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -657,7 +657,7 @@
         "public/assets/maps/map.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
         "public/assets/maps/village-01.json",
         "public/assets/maps/map.json",

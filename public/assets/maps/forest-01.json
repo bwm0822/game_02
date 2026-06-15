@@ -264,9 +264,24 @@
                  "name":"",
                  "properties":[
                         {
+                         "name":"bt",
+                         "type":"int",
+                         "value":32
+                        }, 
+                        {
+                         "name":"gt",
+                         "type":"int",
+                         "value":32
+                        }, 
+                        {
                          "name":"lit",
                          "type":"bool",
                          "value":true
+                        }, 
+                        {
+                         "name":"zt",
+                         "type":"int",
+                         "value":32
                         }],
                  "rotation":0,
                  "type":"lamp",

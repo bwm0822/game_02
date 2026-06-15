@@ -3,6 +3,8 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Pickup from '../items/pickup.js'
+import Record from '../infra/record.js'
+import AudioManager from '../manager/audio.js'
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -19,6 +21,7 @@ import Pickup from '../items/pickup.js'
 //  bb.full_tex    : 重生後的貼圖
 //  bb.respawn     : 重生時間 (遊戲分鐘，預設 60)
 //--------------------------------------------------
+function _lab(id) {return DB.item(id)?.[Record.setting.lang]?.lab || id;}
 
 export class COM_Harvest extends Com
 {
@@ -27,6 +30,8 @@ export class COM_Harvest extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+
+
     _restoreAct()
     {
         const {root, bb} = this.ctx;
@@ -87,6 +92,7 @@ export class COM_Harvest extends Com
 
         if(bb.act === GM.CHOP)
         {
+            AudioManager.chop();
             await taker.anim_melee?.(root);
             if(this._cur > 0)
             {
@@ -99,7 +105,7 @@ export class COM_Harvest extends Com
                 const pos = root.pos;
                 const p = ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
                 new Pickup(scene, pos.x, pos.y - 32).init_runtime({id, count}).falling(p);
-                send('msg', `掉落 ${id} x${count}`);
+                send('msg', `掉落 ${_lab(id)} x${count}`);
             }
         }
         else // GM.HARVEST (pick)
@@ -107,7 +113,7 @@ export class COM_Harvest extends Com
             if(bb.harvest)
             {
                 taker.receive?.({id: bb.harvest.id, count: 1});
-                send('msg', `獲得 ${bb.harvest.id}`);
+                send('msg', `獲得 ${_lab(bb.harvest.id)}`);
             }
             if(this._cur > 0) {return;}
         }
