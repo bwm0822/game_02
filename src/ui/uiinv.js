@@ -38,8 +38,8 @@ export default class UiInv extends UiFrame
     addEquips(scene)
     {
         const cats=[
-            GM.CAT_WEAPON, GM.CAT_HELMET, GM.CAT_CHESTPLATE, GM.CAT_GLOVES,GM.CAT_BOOTS, 
-            GM.CAT_NECKLACE, GM.CAT_RING, GM.CAT_RING, GM.CAT_EQUIP|GM.CAT_BAG
+            GM.CAT.WEAPON, GM.CAT.HELMET, GM.CAT.CHESTPLATE, GM.CAT.GLOVES,GM.CAT.BOOTS,
+            GM.CAT.NECKLACE, GM.CAT.RING, GM.CAT.RING, GM.CAT.EQUIP|GM.CAT.BAG
         ];
 
         const equip = (i)=>

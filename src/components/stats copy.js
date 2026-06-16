@@ -245,7 +245,7 @@ export class Stats
                 calc(self, mSelf);
                 calc(target, mTarget);
                 addEffs(effs, mTarget)
-                if(eq.cat === GM.CAT_WEAPON) {base.type = self.type;}
+                if(eq.cat === GM.CAT.WEAPON) {base.type = self.type;}
             }
         }
 

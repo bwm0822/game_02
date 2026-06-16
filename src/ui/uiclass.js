@@ -50,7 +50,7 @@ export class Slot extends Icon
     get dat() {return this._dat;}
     set dat(value) {return this._dat=value;}
     // cat
-    get cat() {return GM.CAT_ALL;}
+    get cat() {return GM.CAT.ALL;}
     set cat(value) {}
     get isValid() {return UiDragged.checkCat(this.cat)&&this.dropable;}
     // others
@@ -380,14 +380,14 @@ export class EquipSlot extends Slot
     {
         switch(cat)
         {
-            case GM.CAT_WEAPON: return GM.ICON.WEAPON;
-            case GM.CAT_HELMET: return GM.ICON.HELMET;
-            case GM.CAT_CHESTPLATE: return GM.ICON.CHESTPLATE;
-            case GM.CAT_GLOVES: return GM.ICON.GLOVES;
-            case GM.CAT_BOOTS: return GM.ICON.BOOTS;
-            case GM.CAT_NECKLACE: return GM.ICON.NECKLACE;
-            case GM.CAT_RING: return GM.ICON.RING;
-            case GM.CAT_EQUIP|GM.CAT_BAG: return GM.ICON.BAG;
+            case GM.CAT.WEAPON: return GM.ICON.WEAPON;
+            case GM.CAT.HELMET: return GM.ICON.HELMET;
+            case GM.CAT.CHESTPLATE: return GM.ICON.CHESTPLATE;
+            case GM.CAT.GLOVES: return GM.ICON.GLOVES;
+            case GM.CAT.BOOTS: return GM.ICON.BOOTS;
+            case GM.CAT.NECKLACE: return GM.ICON.NECKLACE;
+            case GM.CAT.RING: return GM.ICON.RING;
+            case GM.CAT.EQUIP|GM.CAT.BAG: return GM.ICON.BAG;
         }
     }
 

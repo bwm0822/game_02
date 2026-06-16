@@ -30,18 +30,18 @@ export default class DB
     {
         switch(key)
         {
-            case 'CAT_WEAPON':         return GM.CAT_WEAPON;  
-            case 'CAT_HELMET':         return GM.CAT_HELMET;    
-            case 'CAT_CHESTPLATE':     return GM.CAT_CHESTPLATE;
-            case 'CAT_GLOVES':         return GM.CAT_GLOVES;    
-            case 'CAT_BOOTS':          return GM.CAT_BOOTS;    
-            case 'CAT_NECKLACE':       return GM.CAT_NECKLACE;  
-            case 'CAT_RING':           return GM.CAT_RING;      
-            case 'CAT_EQUIP':          return GM.CAT_EQUIP;     
-            case 'CAT_BAG':            return GM.CAT_BAG;       
-            case 'CAT_ITEM':           return GM.CAT_ITEM;      
-            case 'CAT_FOOD':           return GM.CAT_FOOD;      
-            default:                   console.error(`can't find ${key}`); return GM.CAT_ITEM;
+            case 'CAT_WEAPON':         return GM.CAT.WEAPON;
+            case 'CAT_HELMET':         return GM.CAT.HELMET;
+            case 'CAT_CHESTPLATE':     return GM.CAT.CHESTPLATE;
+            case 'CAT_GLOVES':         return GM.CAT.GLOVES;
+            case 'CAT_BOOTS':          return GM.CAT.BOOTS;
+            case 'CAT_NECKLACE':       return GM.CAT.NECKLACE;
+            case 'CAT_RING':           return GM.CAT.RING;
+            case 'CAT_EQUIP':          return GM.CAT.EQUIP;
+            case 'CAT_BAG':            return GM.CAT.BAG;
+            case 'CAT_ITEM':           return GM.CAT.ITEM;
+            case 'CAT_FOOD':           return GM.CAT.FOOD;
+            default:                   console.error(`can't find ${key}`); return GM.CAT.ITEM;
         }
     }
 

@@ -16,7 +16,7 @@ export class COM_Manu extends Com
         this._menu=['cook','salt_baked_fish'];
         this._storage = {capacity:-1,items:[]}; 
         this._output = {};
-        this._cat = GM.CAT_FOOD;
+        this._cat = GM.CAT.FOOD;
     }
 
     get tag() {return 'manu';}   // 回傳元件的標籤

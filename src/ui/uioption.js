@@ -175,7 +175,7 @@ export default class UiOption extends UiFrame
     openbag()
     {
         this.close();        
-        UiStorage.show(this.ent, ~GM.CAT_BAG);
+        UiStorage.show(this.ent, ~GM.CAT.BAG);
         this.ent.setEnable(false);
     }
 
