@@ -39,8 +39,9 @@ export default class DB
             case 'CAT_RING':           return GM.CAT.RING;
             case 'CAT_EQUIP':          return GM.CAT.EQUIP;
             case 'CAT_BAG':            return GM.CAT.BAG;
-            case 'CAT_ITEM':           return GM.CAT.ITEM;
             case 'CAT_FOOD':           return GM.CAT.FOOD;
+            case 'CAT_ITEM':           return GM.CAT.ITEM;
+            case 'CAT_DEVICE':         return GM.CAT.DEVICE;
             default:                   console.error(`can't find ${key}`); return GM.CAT.ITEM;
         }
     }
