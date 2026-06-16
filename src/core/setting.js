@@ -33,41 +33,13 @@ export const GM =
 
     FONT_SIZE: 24,
 
-    ICON_MARK : 'buffs:108',
-
-    ICON_CLOSE : 'cursors:46',
-    ICON_NONE : 'cursors:47',
-    ICON_AIM : 'cursors:169',
-    ICON_ATTACK : 'cursors:179',
-    ICON_PICKUP : 'cursors:90',
-    ICON_TALK : 'cursors:117',
-    ICON_ENTER : 'cursors:72',
-    ICON_EXIT : 'cursors:73',
-    ICON_OPEN : 'cursors:87',
-    ICON_TOOL : 'cursors:58',
-    ICON_DOOR : 'cursors:70',
-    ICON_LOCK : 'cursors:36',
-    ICON_UNLOCK : 'cursors:50',
-    ICON_CROSS : 'cursors:150',
-    ICON_AXE : 'cursors:170',
-
-    ICON_WEAPON : 'icons:80',
-    ICON_HELMET : 'icons:113',
-    ICON_CHESTPLATE : 'icons:119',
-    ICON_GLOVES : 'icons:128',
-    ICON_BOOTS : 'icons:130',
-    ICON_NECKLACE : 'icons:134',
-    ICON_RING : 'icons:133',
-    ICON_EQUIP : 'icons:170',
-    ICON_BAG : 'icons:137',
-
     ICON:{
         MARK : 'buffs:108',
 
         CLOSE : 'cursors:46',
         NONE : 'cursors:47',
         AIM : 'cursors:169',
-        TTACK : 'cursors:179',
+        ATTACK : 'cursors:179',
         PICKUP : 'cursors:90',
         TALK : 'cursors:117',
         ENTER : 'cursors:72',
@@ -75,6 +47,10 @@ export const GM =
         OPEN : 'cursors:87',
         TOOL : 'cursors:58',
         DOOR : 'cursors:70',
+        LOCK : 'cursors:36',
+        UNLOCK : 'cursors:50',
+        CROSS : 'cursors:150',
+        AXE : 'cursors:170',
 
         WEAPON : 'icons:80',
         HELMET : 'icons:113',

@@ -508,7 +508,7 @@ export function uTop(scene, {text,color,onclose}={})
 
     //{bg:strokeColor:GM.COLOR.GRAY,strokeWidth:2}
     uButton.call(row,scene,{
-                            icon: GM.ICON_CLOSE,
+                            icon: GM.ICON.CLOSE,
                             bg: false,
                             space: 0,
                             ext: {align:'right',expand:false},

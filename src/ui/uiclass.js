@@ -380,14 +380,14 @@ export class EquipSlot extends Slot
     {
         switch(cat)
         {
-            case GM.CAT_WEAPON: return GM.ICON_WEAPON;
-            case GM.CAT_HELMET: return GM.ICON_HELMET;
-            case GM.CAT_CHESTPLATE: return GM.ICON_CHESTPLATE;
-            case GM.CAT_GLOVES: return GM.ICON_GLOVES;
-            case GM.CAT_BOOTS: return GM.ICON_BOOTS;
-            case GM.CAT_NECKLACE: return GM.ICON_NECKLACE;
-            case GM.CAT_RING: return GM.ICON_RING;
-            case GM.CAT_EQUIP|GM.CAT_BAG: return GM.ICON_BAG;
+            case GM.CAT_WEAPON: return GM.ICON.WEAPON;
+            case GM.CAT_HELMET: return GM.ICON.HELMET;
+            case GM.CAT_CHESTPLATE: return GM.ICON.CHESTPLATE;
+            case GM.CAT_GLOVES: return GM.ICON.GLOVES;
+            case GM.CAT_BOOTS: return GM.ICON.BOOTS;
+            case GM.CAT_NECKLACE: return GM.ICON.NECKLACE;
+            case GM.CAT_RING: return GM.ICON.RING;
+            case GM.CAT_EQUIP|GM.CAT_BAG: return GM.ICON.BAG;
         }
     }
 
