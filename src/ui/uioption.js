@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
 import {GM,UI} from '../core/setting.js'
@@ -31,7 +31,7 @@ export default class UiOption extends UiFrame
 
         this._items = {};
 
-        this.addBg(scene,{color:GM.COLOR_DARK,strokeColor:GM.COLOR_GRAY,strokeWidth:3})
+        this.addBg(scene,{color:GM.COLOR.DARK,strokeColor:GM.COLOR.GRAY,strokeWidth:3})
             .addItem(GM.TALK)
             .addItem(GM.TRADE)
             .addItem(GM.OBSERVE, this.observe.bind(this))
@@ -231,7 +231,7 @@ export default class UiOption extends UiFrame
 //             y: GM.h/2,
 //             width: GM.w,
 //             height: GM.h,
-//             color: GM.COLOR_RED,
+//             color: GM.COLOR.RED,
 //             alpha: 0.1,
 //             interactive: true,
 //             ondown: ()=>{console.log('down')}
@@ -252,7 +252,7 @@ export default class UiOption extends UiFrame
 //             width: 150,
 //             height: 150,
 //             orientation:'y',
-//             color: GM.COLOR_WHITE,
+//             color: GM.COLOR.WHITE,
 //         }
 
 //         const p = ui.uPanel.call(this,scene,config);

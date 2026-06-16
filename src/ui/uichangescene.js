@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 
@@ -18,7 +18,7 @@ export default class UiChangeScene extends UiFrame
         super(scene, config , UI.TAG.CHANGESCENE)
         UiChangeScene.instance=this;
 
-        this.addBg(scene,{color:GM.COLOR_BLACK,alpha:1})
+        this.addBg(scene,{color:GM.COLOR.BLACK,alpha:1})
             .setOrigin(0)
             .layout()
             .hide()

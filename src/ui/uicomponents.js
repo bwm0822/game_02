@@ -1,4 +1,4 @@
-import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
+﻿import {OverlapSizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import {GM, UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 
@@ -506,7 +506,7 @@ export function uTop(scene, {text,color,onclose}={})
     if(color) { uBg.call(row, scene, {color}); }
     if(text) { uBbc.call(row, scene, {text, ext:{align:'center',expand:false,key:'label'}}) }
 
-    //{bg:strokeColor:GM.COLOR_GRAY,strokeWidth:2}
+    //{bg:strokeColor:GM.COLOR.GRAY,strokeWidth:2}
     uButton.call(row,scene,{
                             icon: GM.ICON_CLOSE,
                             bg: false,
@@ -809,7 +809,7 @@ export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,on
     const cBG = GM.COLOR.DARK;
     
     let config = {
-        // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR_GRAY,strokeWidth:2}),
+        // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR.GRAY,strokeWidth:2}),
         background: uRect(scene,{color:cBG}),
         topButtons: top?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,tr:20}},...btn})}),
         leftButtons: left?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{tl:20,bl:20}},...btn})}),
@@ -874,8 +874,8 @@ export function uSliderBase(scene,config={})
     const s = scene.rexUI.add.slider({
         orientation: 'x',
         width: width,
-        track: uRect(scene,{color:GM.COLOR_DARK,radius:trackRadius}),
-        thumb: uRect(scene,{color:GM.COLOR_LIGHT,radius:thumbRadius}),
+        track: uRect(scene,{color:GM.COLOR.DARK,radius:trackRadius}),
+        thumb: uRect(scene,{color:GM.COLOR.LIGHT,radius:thumbRadius}),
         gap: gap,
         space: space,
         value: value,

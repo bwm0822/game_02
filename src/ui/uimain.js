@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI,GS} from '../core/setting.js'
 import {AbilitySlot} from './uiclass.js'
@@ -75,8 +75,8 @@ export default class UiMain extends UiFrame
         const ab = ui.uPanel.call(p, scene, {space:{item:5},ext:{expand:true}});
         for(let i=0;i<10;i++)
         {
-            // ui.uRect.call(ab,scene,{width:50,height:50,color:GM.COLOR_GRAY})
-            ab.add(new AbilitySlot(scene,50,50,i,{color:GM.COLOR_SLOT}))
+            // ui.uRect.call(ab,scene,{width:50,height:50,color:GM.COLOR.GRAY})
+            ab.add(new AbilitySlot(scene,50,50,i,{color:GM.COLOR.SLOT}))
         }
 
         return this;

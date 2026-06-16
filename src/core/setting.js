@@ -4,23 +4,6 @@ export let player=null;     // 全域玩家物件
 
 export const GM =
 {
-    COLOR_PRIMARY : 0x4e342e,
-    COLOR_LIGHT : 0x7b5e57,
-    COLOR_DARK : 0x260e04,
-    COLOR_SLOT : 0x666666,//0xa4d4ff,
-    COLOR_SLOT_OVER : 0x909090,//0x4f9ef7,
-    COLOR_SLOT_DRAG : 0x557755,
-    COLOR_SLOT_INVALID : 0x773333,
-    COLOR_SLOT_DISABLE : 0x333333,
-    COLOR_SLOT_TRADE : 0x555555,
-    COLOR_COUNT : 0xff0000,//0x260e04;
-    COLOR_WHITE : 0xffffff,
-    COLOR_GRAY : 0x777777,
-    COLOR_RED : 0xff0000,
-    COLOR_GREEN : 0x00ff00,
-    COLOR_YELLOW : 0xffff00,
-    COLOR_BLUE : 0x0000ff,
-    COLOR_BLACK : 0x010101,
     COLOR:{
         PRIMARY : 0x4e342e,
         LIGHT : 0x7b5e57,

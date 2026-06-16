@@ -1,4 +1,4 @@
-import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
+﻿import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
@@ -59,7 +59,7 @@ export class PQuest extends Sizer
         {
             this._content
                 .add(ui.uButton(scene, {text:'地圖',
-                                        // bg:{color:GM.COLOR_RED},
+                                        // bg:{color:GM.COLOR.RED},
                                         cBG:GM.COLOR.RED,
                                         onclick:map}),
                     {align:'right'})
@@ -69,7 +69,7 @@ export class PQuest extends Sizer
         {
             this._content
                 .add(ui.uButton(scene, {text:'移除',
-                                        // bg:{color:GM.COLOR_RED},
+                                        // bg:{color:GM.COLOR.RED},
                                         cBG:GM.COLOR.RED,
                                         onclick:remove}),
                     {align:'right'})

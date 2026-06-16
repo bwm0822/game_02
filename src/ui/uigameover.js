@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 
@@ -20,7 +20,7 @@ export default class UiGameOver extends UiFrame
         super(scene, config , UI.TAG.GAMEOVER)
         UiGameOver.instance=this;
 
-        this.addBg(scene,{color:GM.COLOR_BLACK,alpha:0.5,ondown:this.ondown.bind(this)})
+        this.addBg(scene,{color:GM.COLOR.BLACK,alpha:0.5,ondown:this.ondown.bind(this)})
             .addSpace()
             .add(ui.uBbc(scene,{text:'GameOver',fontSize:64}),{align:'bottom',padding:{bottom:GM.h/4}})
             .addSpace()

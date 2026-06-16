@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
 
 export default class UiCover extends UiFrame
@@ -13,7 +13,7 @@ export default class UiCover extends UiFrame
         super(scene, config, UI.TAG.COVER);
         UiCover.instance = this;
 
-        this.addBg(scene,{color:GM.COLOR_DARK,alpha:0.5})
+        this.addBg(scene,{color:GM.COLOR.DARK,alpha:0.5})
             .setOrigin(0)
             .layout()
             .hide()

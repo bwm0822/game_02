@@ -1,4 +1,4 @@
-import UiFrame from "./uiframe"
+﻿import UiFrame from "./uiframe"
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
@@ -129,7 +129,7 @@ export default class UiInfo extends UiFrame
                 if(div&&!hasDiv) {ui.uDiv.call(this,this.scene);hasDiv=true;}
                 ui.uDes.call(this,this.scene,{
                             text:Utility.fmt_Eff(eff),
-                            color:GM.COLOR_GRAY},300);
+                            color:GM.COLOR.GRAY},300);
             })
         }
         return this;
@@ -141,7 +141,7 @@ export default class UiInfo extends UiFrame
         const stack = elm.stack;
         ui.uDes.call(this,this.scene,{
                     text:Utility.fmt_Active(eff, stack),
-                    color:GM.COLOR_GRAY})
+                    color:GM.COLOR.GRAY})
         return this;
     }
 

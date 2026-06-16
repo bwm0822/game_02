@@ -1,4 +1,4 @@
-import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+﻿import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
@@ -421,7 +421,7 @@ export class EquipSlot extends Slot
     // 檢查裝備欄位，是否有是符合類別的裝備，是，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
     checkIfSameCat(cat)
     {
-        this.setBgColor( this._isSameCat(cat) ? GM.COLOR_SLOT_DRAG : GM.COLOR_SLOT);
+        this.setBgColor( this._isSameCat(cat) ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT);
     }
 
     setIcon(icon)

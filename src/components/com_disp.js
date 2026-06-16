@@ -1,4 +1,4 @@
-import Com from './com.js'
+﻿import Com from './com.js'
 import Utility from '../core/utility.js'
 import {uBbc,uRect,uImage,Pic,uPanel} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
@@ -171,7 +171,7 @@ export class COM_Disp extends Com
     //     if(!this._p)
     //     {
     //         this._p = this.scene.rexUI.add.sizer(0,-48,{space:5});
-    //         this._p.addBackground(uRect(this.scene,{color:GM.COLOR_WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
+    //         this._p.addBackground(uRect(this.scene,{color:GM.COLOR.WHITE,radius:10,strokeColor:0x0,strokeWidth:0}))
     //                     .add(uBbc(this.scene,{color:'#000',wrapWidth:5*GM.FONT_SIZE}),{key:'text'})
     //                     .setOrigin(0.5,1)
     //                     .setDepth(100)

@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import {GM,UI} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import * as ui from './uicomponents.js'
@@ -158,7 +158,7 @@ export default class UiDebuger extends UiFrame
         return scene.rexUI.add.textArea({
                     width: GM.w/2-50,
                     height: 230,
-                    background: ui.uRect(scene,{color:GM.COLOR_LIGHT}),
+                    background: ui.uRect(scene,{color:GM.COLOR.LIGHT}),
                     text: ui.uBbc(scene),
                     //content: '123\n456\n789\n1111\n777\n888\n999\n111'
                 })

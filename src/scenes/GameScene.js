@@ -1,4 +1,4 @@
-import {Scene} from 'phaser'
+﻿import {Scene} from 'phaser'
 import Map from '../manager/map.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
@@ -390,11 +390,11 @@ export class GameScene extends Scene
             if(path.state===GM.PATH_OK)
             {
                 if(this._ent) {UiMark.close();}
-                else {UiMark.show(path.ep,GM.COLOR_WHITE);}
+                else {UiMark.show(path.ep,GM.COLOR.WHITE);}
             }
             else
             {
-                UiMark.show(path.ep,GM.COLOR_RED);
+                UiMark.show(path.ep,GM.COLOR.RED);
             }
         }
         else

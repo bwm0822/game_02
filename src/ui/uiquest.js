@@ -1,4 +1,4 @@
-import UiFrame from './uiframe.js'
+﻿import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import QuestManager from '../manager/quest.js';
@@ -58,7 +58,7 @@ export default class UiQuest extends UiFrame
 
         p.content = ui.uPanel.call(p, scene, {
                     orientation:'y',
-                    bg:{color:GM.COLOR_DARK},
+                    bg:{color:GM.COLOR.DARK},
                     space:10,
                     ext:{expand:true,proportion:1}
                 });
@@ -79,7 +79,7 @@ export default class UiQuest extends UiFrame
         {
             this._page.content
                 .add(ui.uButton(scene, {text:'移除',
-                                        bg:{color:GM.COLOR_RED},
+                                        bg:{color:GM.COLOR.RED},
                                         onclick:remove}),
                     {align:'right'})
         }
