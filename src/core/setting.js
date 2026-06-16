@@ -332,15 +332,6 @@ export const GM =
     PORTRAITS: {W:80,H:80},
 
     // state
-    ST_IDLE : 'idle',
-    ST_NEXT : 'next',
-    ST_MOVING : 'moving',
-    ST_SLEEP : 'sleep',
-    ST_ATTACK : 'attack',
-    ST_DEATH : 'death',
-    ST_ABILITY : 'ability',
-    ST_UNDERATTACK : 'underattack',
-    
     ST:{
         IDLE : 'idle',
         NEXT : 'next',

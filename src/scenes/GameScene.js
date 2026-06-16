@@ -310,7 +310,7 @@ export class GameScene extends Scene
 
     onPointerDown(pointer,gameObject)
     {        
-        if(GM.player.sta===GM.ST_SLEEP) {return;}
+        if(GM.player.sta===GM.ST.SLEEP) {return;}
 
         if (pointer.rightButtonDown())
         {

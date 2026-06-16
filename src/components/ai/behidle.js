@@ -29,7 +29,7 @@ export class BehIdle extends Behavior
     {
         const {bb}=ctx;
         dlog(T.AI,bb.id)('idle:',bb.idleCnt);
-        bb.sta=GM.ST_IDLE;
+        bb.sta=GM.ST.IDLE;
         return { ok:true, note:'idle' };   
     }
 }

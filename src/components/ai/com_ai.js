@@ -176,7 +176,7 @@ export class COM_AI extends Com
 
         if (!best || best.score <= 0) 
         {
-            bb.sta=GM.ST_IDLE;
+            bb.sta=GM.ST.IDLE;
             dlog(T.AI,bb,id)('[AI] no viable behavior');
             return { ok:false, note:'idle' };
         }

@@ -160,7 +160,7 @@ export class COM_Ability extends Com
         this._id = id;
 
         const {bb}=this.ctx;
-        bb.sta=GM.ST_ABILITY;
+        bb.sta=GM.ST.ABILITY;
     }
 
     // 取消選擇技能
@@ -176,7 +176,7 @@ export class COM_Ability extends Com
         this._id = null;
 
         const {bb}=this.ctx;
-        bb.sta=GM.ST_IDLE;
+        bb.sta=GM.ST.IDLE;
     }
 
     _isInRange(pos, checkBlock=true)
