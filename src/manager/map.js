@@ -246,7 +246,7 @@ class Map
             {
                 const pts = result.map((node)=>this.tileToWorld(node.y,node.x)); //注意:node.x/y位置要對調
                 // 如果到達目的地之前的 g >= W_BLOCK，代表有非牆壁的阻擋物(如:人、門)
-                const block = len>=2 && result.at(-2).g>=GM.W_BLOCK;
+                const block = len>=2 && result.at(-2).g>=GM.W.BLOCK;
                 const state = block ? GM.PATH.BLK : GM.PATH.OK;
                 const cost = result.at(-1).g;   // 用於判斷最佳路徑
                 // if(act&&act!==GM.ENTER) {pts.pop();}
@@ -495,7 +495,7 @@ class Map
         return p.x>=min.x && p.x<=max.x && p.y>=min.y && p.y<=max.y;
     }
 
-    isWalkable(p,w=GM.W_BLOCK)
+    isWalkable(p,w=GM.W.BLOCK)
     {
         let [tx,ty] = this.worldToTile(p.x,p.y)
         return this.graph.grid[ty][tx].weight<w;

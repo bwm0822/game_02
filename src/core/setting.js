@@ -345,9 +345,6 @@ export const GM =
     },
 
     // weight
-    W_BLOCK : 1000,   
-    W_DOOR : 20,
-    W_NODE : 10,
     W:
     {
         BLOCK : 1000,   

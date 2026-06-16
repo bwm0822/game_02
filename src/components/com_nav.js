@@ -99,7 +99,7 @@ export class COM_Nav extends Com
         {
             let w = this.scene.map.getWeight(pt);
             // 被阻擋，就清除路徑 
-            if(w > GM.W_BLOCK) {this._clearPath(); return false;}
+            if(w > GM.W.BLOCK) {this._clearPath(); return false;}
         }
         return true;
     }
