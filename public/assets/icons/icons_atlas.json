@@ -4057,7 +4057,7 @@
                                   }
                    },
                    {
-                       "filename":  "pot_sm",
+                       "filename":  "pot_fire",
                        "frame":  {
                                      "x":  256,
                                      "y":  608,
@@ -4070,7 +4070,7 @@
                                   }
                    },
                    {
-                       "filename":  "pot_lg",
+                       "filename":  "pot",
                        "frame":  {
                                      "x":  288,
                                      "y":  608,

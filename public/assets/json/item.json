@@ -412,7 +412,7 @@
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
-    "icon": "icons:necklace",
+    "icon": "icons:134",
     "gold": 10,
     "tw": {
       "lab": "項鍊",
@@ -425,7 +425,7 @@
   },
   "ring_01": {
     "cat": "CAT_RING",
-    "icon": "icons:ring",
+    "icon": "icons:132",
     "gold": 10,
     "tw": {
       "lab": "戒子",
@@ -461,7 +461,7 @@
   },
   "iron": {
     "cat": "CAT_ITEM",
-    "icon": "icons:iron",
+    "icon": "icons:273",
     "gold": 10,
     "tw": {
       "lab": "鐵礦",
@@ -474,7 +474,7 @@
   },
   "bag": {
     "cat": "CAT_BAG",
-    "icon": "icons:bag",
+    "icon": "icons:237",
     "gold": 10,
     "storage": 12,
     "tw": {
@@ -488,7 +488,7 @@
   },
   "torch": {
     "cat": "CAT_EQUIP",
-    "icon": "icons:torch",
+    "icon": "icons:170",
     "gold": 10,
     "endurance": 360,
     "light": {
@@ -506,7 +506,7 @@
   },
   "bottle": {
     "cat": "CAT_ITEM",
-    "icon": "icons:bottle",
+    "icon": "icons:307",
     "gold": 10,
     "effects": [
       {
@@ -561,9 +561,23 @@
       "des": "Used with the lockpicking skill to pick locks."
     }
   },
+  "pot": {
+    "cat": "CAT_ITEM",
+    "icon": "icons:313",
+    "gold": 100,
+    "device": "dev_pot",
+    "tw": {
+      "lab": "鍋子",
+      "des": "可烹煮食物"
+    },
+    "us": {
+      "lab": "Pot",
+      "des": ""
+    }
+  },
   "raw_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons:raw_meat",
+    "icon": "icons:241",
     "gold": 10,
     "effects": [
       {
@@ -587,7 +601,7 @@
   },
   "cooked_meat": {
     "cat": "CAT_FOOD",
-    "icon": "icons:cooked_meat",
+    "icon": "icons:242",
     "gold": 15,
     "effects": [
       {
@@ -608,7 +622,7 @@
   },
   "raw_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons:raw_fish",
+    "icon": "icons:259",
     "gold": 10,
     "effects": [
       {
@@ -629,7 +643,7 @@
   },
   "salt_baked_fish": {
     "cat": "CAT_FOOD",
-    "icon": "icons:salt_baked_fish",
+    "icon": "icons:260",
     "gold": 15,
     "effects": [
       {
@@ -656,7 +670,7 @@
   },
   "salt": {
     "cat": "CAT_FOOD",
-    "icon": "icons:salt",
+    "icon": "icons:250",
     "gold": 10,
     "cps": 10,
     "tw": {
@@ -670,7 +684,7 @@
   },
   "apple": {
     "cat": "CAT_FOOD",
-    "icon": "icons:apple",
+    "icon": "icons:224",
     "gold": 10,
     "effects": [
       {
@@ -692,7 +706,7 @@
   },
   "grapes": {
     "cat": "CAT_FOOD",
-    "icon": "icons:grapes",
+    "icon": "icons:229",
     "gold": 10,
     "effects": [
       {
@@ -714,7 +728,7 @@
   },
   "mushroom": {
     "cat": "CAT_FOOD",
-    "icon": "icons:mushroom",
+    "icon": "icons:236",
     "gold": 5,
     "effects": [
       {
@@ -733,6 +747,10 @@
       "lab": "Mushroom",
       "des": ""
     }
+  },
+  "dev_pot": {
+    "cat": "CAT_ITEM",
+    "class": "pot"
   },
   "tree": {
     "bb": {
@@ -800,7 +818,7 @@
     "bb": {
       "act": "harvest",
       "full_tex": {
-        "sprite": "assets_spritesheet_v2_free/034.png"
+        "sprite": "icons:236"
       },
       "harvest": {
         "id": "mushroom",
