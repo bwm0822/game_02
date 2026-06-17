@@ -17,6 +17,7 @@ import Lamp from '../items/lamp.js'
 import Point from '../items/point.js'
 import Item from '../items/item.js'
 import Plant from '../items/plant.js'
+import Pot from '../items/pot.js'
 import {T,dlog} from '../core/debug.js'
 
 
@@ -25,6 +26,7 @@ class Map
     static classMap = {
         pickup: Pickup,
         stove:  Stove,
+        pot:    Pot,
         well:   Well,
         bed:    Bed,
         case:   Case,
@@ -94,6 +96,7 @@ class Map
                 {type:'case',classType:Case},
                 {type:'point',classType:Point},
                 {type:'stove',classType:Stove},
+                {type:'pot',classType:Pot},
                 {type:'well',classType:Well},
                 {type:'door',classType:Door},
                 {type:'bed',classType:Bed},
