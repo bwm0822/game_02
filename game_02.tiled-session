@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/forest-01.json",
+    "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
         "public/assets/templates",
-        "public/assets/tiles",
-        "public/assets",
-        "public/assets/maps",
+        "public",
         ".",
-        "public"
+        "public/assets/maps",
+        "public/assets",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -447,7 +447,7 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 527,
+                "x": 418,
                 "y": 710
             }
         },
@@ -657,9 +657,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/village-01.json",
         "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/forest-01.json",
+        "public/assets/maps/village-01.json",
         "public/assets/icons.tsj",
         "public/assets/free.tsj",
         "public/assets/roles_v12.tsj",

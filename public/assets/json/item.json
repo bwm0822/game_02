@@ -562,10 +562,12 @@
     }
   },
   "pot": {
-    "cat": "CAT_ITEM",
+    "cat": "CAT_DEVICE",
     "icon": "icons:313",
     "gold": 100,
-    "device": "dev_pot",
+    "device": {
+      "class": "stove"
+    },
     "tw": {
       "lab": "鍋子",
       "des": "可烹煮食物"
@@ -749,8 +751,11 @@
     }
   },
   "dev_pot": {
-    "cat": "CAT_ITEM",
-    "class": "pot"
+    "class": "pot",
+    "bb": {
+      "wid": 32,
+      "hei": 32
+    }
   },
   "tree": {
     "bb": {

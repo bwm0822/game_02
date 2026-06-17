@@ -433,6 +433,18 @@
                  "type":"npc",
                  "x":256,
                  "y":1088
+                }, 
+                {
+                 "gid":848,
+                 "height":32,
+                 "id":151,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":32,
+                 "x":672,
+                 "y":864
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -441,7 +453,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":151,
+ "nextobjectid":152,
  "orientation":"orthogonal",
  "properties":[
         {

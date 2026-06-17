@@ -168,6 +168,7 @@ export const GM =
     DROP : 'drop',
     SPLIT : 'split',
     OPENBAG : 'openbag',
+    PLACE : 'place',
     MOVE: 'move',
 
     P:  //屬性
@@ -562,6 +563,7 @@ export const ORDER = [
     GM.DROP,
     GM.SPLIT,
     GM.OPENBAG,
+    GM.PLACE,
     GM.LOCK,
     GM.UNLOCK,
 ];

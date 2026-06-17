@@ -50,6 +50,7 @@ export default class Local
             case GM.CAT.BAG: return 'bag';
             case GM.CAT.ITEM: return 'item';
             case GM.CAT.FOOD: return 'food';
+            case GM.CAT.DEVICE: return 'device';
             default: return key.toString();
         }
     }

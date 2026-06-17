@@ -90,12 +90,14 @@ export class Slot extends Icon
                 if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
                 else if(this.content.storage) {acts = {...acts,'openbag':GM.DIS};}
             }
-            else 
+            else
             {
                 if(this.content.count>1) {acts = {...acts,'drop':GM.EN,'split':GM.EN};}
                 else if(this.dat.storage) {acts = {...acts,'drop':GM.EN,'openbag':GM.EN};}
                 else {acts = {...acts,'drop':GM.EN};}
             }
+
+            if(this.dat.cat & GM.CAT.DEVICE) {acts = {...acts,'place':GM.EN};}
         }
 
         return acts;

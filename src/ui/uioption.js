@@ -63,6 +63,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.DROP, this.drop.bind(this))
             .addItem(GM.SPLIT, this.split.bind(this))
             .addItem(GM.OPENBAG, this.openbag.bind(this))
+            .addItem(GM.PLACE, this.place.bind(this))
             .setOrigin(0)
             .layout()
             .hide();
@@ -174,9 +175,15 @@ export default class UiOption extends UiFrame
 
     openbag()
     {
-        this.close();        
+        this.close();
         UiStorage.show(this.ent, ~GM.CAT.BAG);
         this.ent.setEnable(false);
+    }
+
+    place()
+    {
+        this.close();
+        this.player.cmd({ent:this.ent, act:GM.PLACE});
     }
 
 
