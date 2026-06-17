@@ -566,7 +566,8 @@
     "icon": "icons:313",
     "gold": 100,
     "device": {
-      "class": "stove"
+      "class": "stove",
+      "id": "dev_pot"
     },
     "tw": {
       "lab": "鍋子",
@@ -751,11 +752,13 @@
     }
   },
   "dev_pot": {
-    "class": "pot",
     "bb": {
       "wid": 32,
-      "hei": 32
-    }
+      "hei": 32,
+      "key": "icons",
+      "frame": "313"
+    },
+    "class": "stove"
   },
   "tree": {
     "bb": {

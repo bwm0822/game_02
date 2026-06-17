@@ -21,7 +21,20 @@ import {T,dlog} from '../core/debug.js'
 
 
 class Map
-{    
+{
+    static classMap = {
+        stove: Stove,
+        well:  Well,
+        bed:   Bed,
+        case:  Case,
+        door:  Door,
+        lamp:  Lamp,
+        item:  Item,
+        plant: Plant,
+        node:  Node,
+        port:  Port,
+    };
+
     constructor(scene)
     {
         scene.map = this;

@@ -323,7 +323,11 @@ export class GameScene extends Scene
         else
         {
             let pt = {x:pointer.worldX, y:pointer.worldY};
-            if(GM.player.sta===GM.ST.MOVING)
+            if(Ui.mode===UI.MODE.PLACE)
+            {
+                this.doPlace(pt);
+            }
+            else if(GM.player.sta===GM.ST.MOVING)
             {
                 GM.player.stop();
             }
@@ -513,6 +517,37 @@ export class GameScene extends Scene
         Ui.setMode(UI.MODE.FILL)
     }
 
+    enterPlaceMode(dat, ent)
+    {
+        this._placeData = {dat, ent};
+        Ui.setMode(UI.MODE.PLACE);
+        UiCursor.instance.setIcon('aim');
+        this._onPlaceEsc = ()=>{this.exitPlaceMode();};
+        this.input.keyboard.on('keydown-ESC', this._onPlaceEsc);
+    }
+
+    exitPlaceMode()
+    {
+        this.input.keyboard.off('keydown-ESC', this._onPlaceEsc);
+        delete this._onPlaceEsc;
+        delete this._placeData;
+        Ui.setMode(UI.MODE.NORMAL);
+        UiCursor.set();
+    }
+
+    doPlace(pt)
+    {
+        const w = this.map.getWeight(pt);
+        if(w !== GM.W.EMPTY) {return;}
+        const {dat, ent} = this._placeData;
+        const cls = Map.classMap[dat.device.class];
+        if(!cls) {return;}
+        new cls(this, pt.x, pt.y).init_runtime(dat.device.id);
+        ent.empty();
+        Ui.refreshAll();
+        this.exitPlaceMode();
+    }
+
     setEvent()
     {      
         // 切換場景時，this.events 不會被清除，所以設過後就無須再設
@@ -534,6 +569,7 @@ export class GameScene extends Scene
                 .on('stove',(owner)=>{Ui.on(UI.TAG.MANUFACTURE,owner);})
                 .on('clearpath',()=>{this.clearPath();})
                 .on('fill',()=>{this.fill();})
+                .on('place',(dat,ent)=>{this.enterPlaceMode(dat,ent);})
         }
 
         // 切換場景時，events 不會被清除，所以重設時，須先清除之前的設定

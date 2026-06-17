@@ -240,8 +240,8 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 361.3333333333333,
-                "y": 893.3333333333333
+                "x": 640,
+                "y": 640.6666666666667
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -403,8 +403,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 26.521215555712985,
-                "y": 240.05100233760712
+                "x": 240.05100233760714,
+                "y": 239.71098675355955
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -447,8 +447,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 418,
-                "y": 710
+                "x": 656,
+                "y": 709.5
             }
         },
         "public/assets/maps/village-02.json": {

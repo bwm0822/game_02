@@ -183,7 +183,7 @@ export default class UiOption extends UiFrame
     place()
     {
         this.close();
-        this.player.cmd({ent:this.ent, act:GM.PLACE});
+        GM.player.scene.events.emit('place', this.ent.dat, this.ent);
     }
 
 

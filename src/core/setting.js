@@ -433,7 +433,7 @@ export const OCCLUDE_TBL =
 
 export const UI =
 {
-    MODE:{NORMAL:0,FILL:1},
+    MODE:{NORMAL:0,FILL:1,PLACE:2},
     BG:{
         BORDER:{strokeColor:GM.COLOR.GRAY,strokeWidth:2},
         BORDER_DARK:{strokeColor:GM.COLOR.DARK,strokeWidth:2},

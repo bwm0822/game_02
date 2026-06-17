@@ -104,7 +104,7 @@ export default class UiCursor extends Phaser.GameObjects.Container
 
     set(key='none',text='')
     {
-        if(Ui.mode===UI.MODE.FILL){return;}
+        if(Ui.mode===UI.MODE.FILL||Ui.mode===UI.MODE.PLACE){return;}
         this.setIcon(key);
         this.setText(text);
     }
