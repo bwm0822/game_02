@@ -353,7 +353,13 @@ export class GameScene extends Scene
         }
 
         if(DEBUG.loc) {this.showMousePos();}
-        if(GM.player.sta===GM.ST.ABILITY) 
+        if(Ui.mode===UI.MODE.PLACE)
+        {
+            const pt = {x:pointer.worldX, y:pointer.worldY};
+            UiCursor.instance.setIcon(this.isPlaceable(pt) ? 'aim' : 'close');
+            return;
+        }
+        if(GM.player.sta===GM.ST.ABILITY)
         {
             let pt = {x:pointer.worldX,y:pointer.worldY};
             if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
@@ -535,14 +541,24 @@ export class GameScene extends Scene
         UiCursor.set();
     }
 
+    isPlaceable(pt)
+    {
+        if(this.map.getWeight(pt) !== GM.W.EMPTY) {return false;}
+        const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
+        const [px, py] = this.map.worldToTile(GM.player.x, GM.player.y);
+        return Math.abs(tx - px) <= 1 && Math.abs(ty - py) <= 1;
+    }
+
     doPlace(pt)
     {
-        const w = this.map.getWeight(pt);
-        if(w !== GM.W.EMPTY) {return;}
+        if(!this.isPlaceable(pt)) {return;}
         const {dat, ent} = this._placeData;
         const cls = Map.classMap[dat.device.class];
         if(!cls) {return;}
-        new cls(this, pt.x, pt.y).init_runtime(dat.device.id);
+        const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
+        const cx = this.map.map.tileToWorldX(tx) + this.map.map.tileWidth  / 2;
+        const cy = this.map.map.tileToWorldY(ty) + this.map.map.tileHeight / 2;
+        new cls(this, cx, cy).init_runtime(dat.device.id);
         ent.empty();
         Ui.refreshAll();
         this.exitPlaceMode();

@@ -24,6 +24,7 @@ export default class UiCursor extends Phaser.GameObjects.Container
         cross:  {sprite:GM.ICON.CROSS, origin:{x:0.5,y:0.5}, scale:1},
         chop:   {sprite:GM.ICON.AXE,    origin:{x:0.5,y:0.5}, scale:1},
         harvest:{sprite:GM.ICON.PICKUP, origin:{x:0.5,y:0.5}, scale:1},
+        close:  {sprite:GM.ICON.CLOSE, origin:{x:0.5,y:0.5}, scale:1},
     }
 
     static instance = null;

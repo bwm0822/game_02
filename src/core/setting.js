@@ -49,7 +49,8 @@ export const GM =
         DOOR : 'cursors:70',
         LOCK : 'cursors:36',
         UNLOCK : 'cursors:50',
-        CROSS : 'cursors:150',
+        // CROSS : 'cursors:150',
+        CROSS : 'cursors:32',
         AXE : 'cursors:170',
 
         WEAPON : 'icons:80',
