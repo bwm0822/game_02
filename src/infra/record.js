@@ -60,6 +60,7 @@ export default class Record
         if(uid===-1) {Record.game.scenes[mapName].runtime.push(value); }
         else 
         {
+            // qid 代表是 quest id
             if(qid) {Record.game.scenes[mapName][qid][uid] = value;}
             else {Record.game.scenes[mapName].prefab[uid] = value;} 
         }

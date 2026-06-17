@@ -30,21 +30,25 @@ export default class Stove extends GameObject
         // 提供給外界操作
     }
 
-    init_runtime(id)
+    init_runtime(obj)
     {
         if(!super.init_prefab()) {return;}
 
-        this.bb.interactive = true; // 設成 可互動，view 元件會參考
+        this._rtId = obj.id;
+        this.bb.interactive = true;
 
-        const dat=DB.item(id);
+        const dat=DB.item(obj.id);
         Object.assign(this.bb, dat.bb);
 
-        // 加入元件
         this.addCom( new ItemView(this.scene), {modify:true} )
             .addCom( new COM_Manu() )
 
-        // 載入
-        this.load();
+        this.load(obj);
+    }
+
+    save()
+    {
+        super.save({...this.pos, class:'stove', id:this._rtId});
     }
 
     

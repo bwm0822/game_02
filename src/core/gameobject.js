@@ -327,10 +327,9 @@ export class GameObject extends Phaser.GameObjects.Container
     }
 
     // 載入資料
-    load()
+    load(extData=null)
     {
-        let data = this._loadData();
-        // if(data) {for(let com of Object.values(this.coms)) {com.load?.(data);}}
+        let data = extData ?? this._loadData();
         for(let com of Object.values(this.coms)) {com.load?.(data);}
     }
 

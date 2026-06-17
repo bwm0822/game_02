@@ -150,7 +150,10 @@ export class GameScene extends Scene
         let objs = Record.game.scenes?.[this._data.map]?.runtime;
         if(objs)
         {
-            objs.forEach((obj)=>{new Pickup(this,obj.x,obj.y,obj.angle).init_runtime(obj);});
+            objs.forEach((obj)=>{
+                const cls = Map.classMap[obj.class];
+                if(cls) {new cls(this,obj.x,obj.y).init_runtime(obj);}
+            });
             Record.game.scenes[this._data.map].runtime = [];
         }
     }
@@ -558,7 +561,7 @@ export class GameScene extends Scene
         const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
         const cx = this.map.map.tileToWorldX(tx) + this.map.map.tileWidth  / 2;
         const cy = this.map.map.tileToWorldY(ty) + this.map.map.tileHeight / 2;
-        new cls(this, cx, cy).init_runtime(dat.device.id);
+        new cls(this, cx, cy).init_runtime({id: dat.device.id});
         ent.empty();
         Ui.refreshAll();
         this.exitPlaceMode();
