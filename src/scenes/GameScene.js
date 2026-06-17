@@ -556,14 +556,12 @@ export class GameScene extends Scene
     {
         if(!this.isPlaceable(pt)) {return;}
         const {dat, ent} = this._placeData;
-        console.log('class:', dat.device.class);
         const cls = Map.classMap[dat.device.class];
         if(!cls) {return;}
-        console.log('chk');
         const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
         const cx = this.map.map.tileToWorldX(tx) + this.map.map.tileWidth  / 2;
         const cy = this.map.map.tileToWorldY(ty) + this.map.map.tileHeight / 2;
-        new cls(this, cx, cy).init_runtime({id: dat.device.id});
+        new cls(this, cx, cy).init_runtime({id: ent.id});
         ent.empty();
         Ui.refreshAll();
         this.exitPlaceMode();

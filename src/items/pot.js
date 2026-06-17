@@ -25,8 +25,9 @@ export default class Pot extends GameObject
         this._rtId = obj.id;
         this.bb.interactive = true;
         this.bb.id = obj.id;
-        const dat = DB.item(obj.id);
-        Object.assign(this.bb, dat.bb);
+        const itemDat = DB.item(obj.id);
+        const bbDat = DB.item(itemDat?.device?.id);
+        if(bbDat?.bb) {Object.assign(this.bb, bbDat.bb);}
         this.addCom(new ItemView(this.scene), {modify:true})
             .addCom(new COM_Manu())
             .addCom(new COM_Pickable())
