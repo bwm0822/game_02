@@ -561,23 +561,6 @@
       "des": "Used with the lockpicking skill to pick locks."
     }
   },
-  "pot": {
-    "cat": "CAT_DEVICE",
-    "icon": "icons:313",
-    "gold": 100,
-    "device": {
-      "class": "pot",
-      "id": "dev_pot"
-    },
-    "tw": {
-      "lab": "鍋子",
-      "des": "可烹煮食物"
-    },
-    "us": {
-      "lab": "Pot",
-      "des": ""
-    }
-  },
   "raw_meat": {
     "cat": "CAT_FOOD",
     "icon": "icons:241",
@@ -751,12 +734,26 @@
       "des": ""
     }
   },
-  "dev_pot": {
+  "pot": {
+    "cat": "CAT_DEVICE",
+    "icon": "icons:313",
+    "gold": 100,
     "bb": {
       "wid": 32,
       "hei": 32,
       "key": "icons",
-      "frame": "313"
+      "frame": "312"
+    },
+    "device": {
+      "class": "pot"
+    },
+    "tw": {
+      "lab": "鍋子",
+      "des": "可烹煮食物"
+    },
+    "us": {
+      "lab": "Pot",
+      "des": ""
     }
   },
   "tree": {
