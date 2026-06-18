@@ -543,7 +543,6 @@ export const ORDER = [
     GM.TRADE,
     GM.OBSERVE,
     GM.ATTACK,
-    GM.PICKUP,
     GM.OPEN,
     GM.ENTER,
     GM.OPEN_DOOR,
@@ -567,6 +566,7 @@ export const ORDER = [
     GM.PLACE,
     GM.LOCK,
     GM.UNLOCK,
+    GM.PICKUP,
 ];
 
 export const GS = {

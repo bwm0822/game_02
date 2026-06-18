@@ -36,7 +36,6 @@ export default class UiOption extends UiFrame
             .addItem(GM.TRADE)
             .addItem(GM.OBSERVE, this.observe.bind(this))
             .addItem(GM.ATTACK)
-            .addItem(GM.PICKUP)
             .addItem(GM.OPEN)
             .addItem(GM.ENTER)
             .addItem(GM.OPEN_DOOR)
@@ -55,6 +54,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.CHOP)
             .addItem(GM.TURN_ON)
             .addItem(GM.TURN_OFF)
+            .addItem(GM.PICKUP)
             // for slot
             .addItem(GM.BUY, this.sell.bind(this))
             .addItem(GM.SELL, this.sell.bind(this))

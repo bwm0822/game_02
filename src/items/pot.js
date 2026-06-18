@@ -2,6 +2,7 @@ import {GM} from '../core/setting.js';
 import {ItemView} from '../components/view.js';
 import {COM_Manu} from '../components/com_manufacture.js';
 import {COM_Pickable} from '../components/com_pickable.js';
+import {COM_Lamp} from '../components/com_lamp.js';
 import {GameObject} from '../core/gameobject.js';
 import DB from '../data/db.js';
 
@@ -15,6 +16,7 @@ export default class Pot extends GameObject
         this.bb.interactive = true;
         this.addCom(new ItemView(this.scene), {modify:true})
             .addCom(new COM_Manu())
+            .addCom(new COM_Lamp())
             .addCom(new COM_Pickable())
         this.load();
     }
@@ -29,6 +31,7 @@ export default class Pot extends GameObject
         if(itemDat?.bb) {Object.assign(this.bb, itemDat.bb);}
         this.addCom(new ItemView(this.scene), {modify:true})
             .addCom(new COM_Manu())
+            .addCom(new COM_Lamp())
             .addCom(new COM_Pickable())
         this.load(obj);
     }

@@ -80,7 +80,7 @@ export class COM_Pickable extends Com
         root.on(GM.PICKUP, this._pickupBy.bind(this));
     }
 
-    save() {return {class:'pickup', ...this.pos, ...this._content};}
+    save() {return {...this.pos, ...this._content};}
 
 
 

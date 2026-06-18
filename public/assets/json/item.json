@@ -742,7 +742,8 @@
       "wid": 32,
       "hei": 32,
       "key": "icons",
-      "frame": "312"
+      "frame": "312",
+      "lit": true
     },
     "device": {
       "class": "pot"

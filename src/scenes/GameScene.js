@@ -151,7 +151,7 @@ export class GameScene extends Scene
         if(objs)
         {
             objs.forEach((obj)=>{
-                const cls = Map.classMap[obj.class];
+                const cls = Map.classMap[obj.class??'pickup'];
                 if(cls) {new cls(this,obj.x,obj.y).init_runtime(obj);}
             });
             Record.game.scenes[this._data.map].runtime = [];

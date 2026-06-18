@@ -126,14 +126,6 @@ export class COM_Manu extends Com
         root._setAct(GM.COOK, ()=>GM.EN);
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        // this.addP(root,'menu',{get:()=>this._menu});
-        // this.addP(root,'storage',{get:()=>this._storage});
-        // this.addP(root,'output',{get:()=>this._output,
-        //                             set:(v)=>this._output=v});
-        // this.addP(root,'sel',{get:()=>this.sel,
-        //                         set:(v)=>this.sel=v});
-        // this.addP(root,'cat',{get:()=>this._cat});
-
         this.addRt('menu',{ro:true});
         this.addRt('storage',{ro:true});
         this.addRt('output');
