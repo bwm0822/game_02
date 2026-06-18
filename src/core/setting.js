@@ -408,6 +408,7 @@ export const GM =
         TURNEND:'turnend',
         UPDATETIME:'updatetime',
         UPDATEEQUIP:'updatequip',
+        ONPICKUP:'onpickup',
     },
 
     // 物件遮蔽類型

@@ -561,7 +561,7 @@ export class GameScene extends Scene
         const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
         const cx = this.map.map.tileToWorldX(tx) + this.map.map.tileWidth  / 2;
         const cy = this.map.map.tileToWorldY(ty) + this.map.map.tileHeight / 2;
-        new cls(this, cx, cy).init_runtime({id: ent.id});
+        new cls(this, cx, cy).init_runtime(ent.content);
         ent.empty();
         Ui.refreshAll();
         this.exitPlaceMode();

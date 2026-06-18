@@ -115,6 +115,12 @@ export class COM_Manu extends Com
         }
     }
 
+    onpickup()
+    {
+        const{root}=this.ctx;
+        Object.assign(root.content, this.save());
+    }
+
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
@@ -136,6 +142,7 @@ export class COM_Manu extends Com
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.COOK, this.cook.bind(this));
+        root.on(GM.EVT.ONPICKUP, this.onpickup.bind(this));
     }
 
     //------------------------------------------------------
