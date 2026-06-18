@@ -115,10 +115,11 @@ export class COM_Manu extends Com
         }
     }
 
-    onpickup()
+    // 拾取前將製造狀態寫入 record，
+    // 放置時 init_runtime 會透過 load() 還原
+    onpickup(record)
     {
-        const{root}=this.ctx;
-        Object.assign(root.content, this.save());
+        record && Object.assign(record, this.save());
     }
 
     //------------------------------------------------------

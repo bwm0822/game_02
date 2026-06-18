@@ -26,7 +26,11 @@ export class COM_Pickable extends Com
     _pickupBy(taker)  // 提供給外界操作
     { 
         const {emit,send}=this.ctx;
-        emit(GM.EVT.ONPICKUP);  // 通知各元件，物品即將被拾取
+        
+        emit(GM.EVT.ONPICKUP, this.content);    // 通知各元件，物品即將被拾取，
+                                                // 讓它們有機會在 record 上寫入狀態，
+                                                // 以便放置時還原
+                                                
         const remain = taker.receive(this.content);
         send(GM.EVT.REFRESH);   // 要在 emit('remove')之前執行，否則會出錯，
                                 // 因為 emit('remove')會將 this.scene 設成 null
