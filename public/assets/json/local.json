@@ -172,7 +172,7 @@
   "life": {
     "tw": {
       "lab": "生命",
-      "des": "生命值\n降到 0，就死亡"
+      "des": "生命值\r\n降到 0，就死亡"
     },
     "us": {
       "lab": "Life"
@@ -821,19 +821,19 @@
   "hp": {
     "tw": {
       "lab": "生命",
-      "des": "生命值\n降到 0，就死亡"
+      "des": "生命值\r\n降到 0，就死亡"
     }
   },
   "hunger": {
     "tw": {
       "lab": "飢餓",
-      "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
+      "des": "飢餓度\r\n大於[color=red]50%[/color]，生命開始流逝"
     }
   },
   "thirst": {
     "tw": {
       "lab": "口渴",
-      "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
+      "des": "口渴度\r\n大於[color=red]50%[/color]，生命開始流逝"
     }
   },
   "hot": {

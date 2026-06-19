@@ -234,8 +234,8 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
             "scale": 0.75,
             "selectedLayer": 1,
@@ -404,7 +404,7 @@
             "selectedLayer": 2,
             "viewCenter": {
                 "x": 240.05100233760714,
-                "y": 239.71098675355955
+                "y": 239.71098675355952
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -447,8 +447,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 656,
-                "y": 709.5
+                "x": 640,
+                "y": 639.5
             }
         },
         "public/assets/maps/village-02.json": {
