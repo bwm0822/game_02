@@ -1,8 +1,9 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'trade';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : trade
 // 功能 : 
 //  交易
@@ -16,7 +17,7 @@ export class COM_Trade extends Com
         this._enableAct=enableAct;
     }
 
-    get tag() {return 'trade';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local

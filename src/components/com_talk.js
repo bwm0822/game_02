@@ -3,6 +3,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
 import {dlog} from '../core/debug.js'
+const _tag = 'talk';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -89,7 +90,7 @@ export class COM_Talk extends Com
         this._rec={};
     }
 
-    get tag() {return 'talk';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
@@ -211,10 +212,10 @@ export class COM_Talk extends Com
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
     }
 
-    load(data) 
+    load(data)
     {
-        if(data?.talk) {Object.assign(this._rec, data.talk);}
+        if(data?.[_tag]) {Object.assign(this._rec, data[_tag]);}
     }
 
-    save() {return {talk:this._rec};}
+    save() {return {[_tag]:this._rec};}
 }

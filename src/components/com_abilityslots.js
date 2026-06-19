@@ -1,4 +1,5 @@
 import Com from './com.js'
+const _tag = 'abilityslots';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -15,7 +16,7 @@ export class COM_AbilitySlots extends Com
         this._slots = []; // 能力槽資料
     }
 
-    get tag() {return 'abilityslots';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
@@ -52,6 +53,6 @@ export class COM_AbilitySlots extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) { if(data?.slots) {this._slots = data.slots;}}
-    save() {return {slots:this._slots};}
+    load(data) { if(data?.[_tag]) {this._slots = data[_tag];}}
+    save() {return {[_tag]:this._slots};}
 }

@@ -23,6 +23,7 @@ const checkBB = (source, target, range) => {
 
 const rnd = (min, max) => Math.random() * (max - min) + min;
 const choose = arr => arr[Math.floor(Math.random() * arr.length)];
+const _tag = 'sense';
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : sense
@@ -31,7 +32,7 @@ const choose = arr => arr[Math.floor(Math.random() * arr.length)];
 //--------------------------------------------------
 export class COM_Sense extends Com
 {
-    get tag() {return 'sense';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
     get root() {return this._root;}

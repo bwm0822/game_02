@@ -89,6 +89,7 @@ const wTBL =
     // default         : {flee:1.0, attack:2.0, idle:1.0},
 }
 
+const _tag = 'ai';
 export class COM_AI extends Com
 {
     constructor() 
@@ -101,7 +102,7 @@ export class COM_AI extends Com
         this.decider = new UtilityDecider();
     }
 
-    get tag() {return 'ai';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
     get ctx() {return {...super.ctx, 
                         cd:this.cd,
                         sm:this.sm, 

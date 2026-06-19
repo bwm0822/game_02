@@ -5,6 +5,7 @@ import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+const _tag = 'inv';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -13,7 +14,7 @@ import {T,dlog} from '../core/debug.js'
 //--------------------------------------------------
 export class COM_Storage extends Com
 {
-    get tag() {return 'inv';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
     get storage() {return this._storage;}
@@ -233,11 +234,12 @@ export class COM_Storage extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) 
+    load(data)
     {
-        if(data) {this._storage = data.storage;}
+        const d = data?.[_tag];
+        if(d) {this._storage = d.storage;}
     }
-    save() {return {storage:this._storage};}
+    save() {return {[_tag]:{storage:this._storage}};}
 
 }
 
@@ -346,18 +348,19 @@ export class COM_Inventory extends COM_Storage
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) 
+    load(data)
     {
         super.load(data);
-        if(data?.equips) {Object.assign(this._equips, data.equips);}
-        if(data?.gold!==undefined) {this._gold=data.gold;}
+        const d = data?.[_tag];
+        if(d?.equips) {Object.assign(this._equips, d.equips);}
+        if(d?.gold!==undefined) {this._gold=d.gold;}
     }
 
-    save() 
+    save()
     {
-        return {storage:this._storage, 
-                equips:this._equips, 
-                gold:this._gold};
+        return {[_tag]:{storage:this._storage,
+                equips:this._equips,
+                gold:this._gold}};
     }
 
 }

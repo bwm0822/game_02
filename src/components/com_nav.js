@@ -1,8 +1,9 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'nav';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : nav
 // 功能 : 
 //  尋找路徑
@@ -10,7 +11,7 @@ import {GM} from '../core/setting.js'
 
 export class COM_Nav extends Com
 {
-    get tag() {return 'nav';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get pos() {return this._root.pos;}
     get bb() {return this._root.bb;}
     get scene() {return this._root.scene;}

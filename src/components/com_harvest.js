@@ -5,6 +5,7 @@ import TimeSystem from '../systems/time.js'
 import Pickup from '../items/pickup.js'
 import Record from '../infra/record.js'
 import AudioManager from '../manager/audio.js'
+const _tag = 'harvest';
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -25,7 +26,7 @@ function _lab(id) {return DB.item(id)?.[Record.setting.lang]?.lab || id;}
 
 export class COM_Harvest extends Com
 {
-    get tag() {return 'harvest';}
+    get tag() {return _tag;}
 
     //------------------------------------------------------
     //  Local
@@ -133,19 +134,20 @@ export class COM_Harvest extends Com
 
     load(data)
     {
-        if(!data) {return;}
+        const d = data?.[_tag];
+        if(!d) {return;}
 
-        if(data.cur !== undefined) {this._cur = data.cur;}
+        if(d.cur !== undefined) {this._cur = d.cur;}
 
-        if(!data.harvested) {return;}
+        if(!d.harvested) {return;}
 
         const now = TimeSystem.toTotalMinutes(TimeSystem.time);
-        const at  = TimeSystem.toTotalMinutes(data.respawnAt);
+        const at  = TimeSystem.toTotalMinutes(d.respawnAt);
 
         if(now >= at) {return;}
 
         this._harvested = true;
-        this._respawnAt = data.respawnAt;
+        this._respawnAt = d.respawnAt;
 
         const {root, bb} = this.ctx;
         const isPick = bb.act === GM.HARVEST;
@@ -166,9 +168,9 @@ export class COM_Harvest extends Com
             const now = TimeSystem.toTotalMinutes(TimeSystem.time);
             const at  = TimeSystem.toTotalMinutes(this._respawnAt);
             if(now >= at) {return {};}
-            return {harvested: true, respawnAt: this._respawnAt};
+            return {[_tag]:{harvested: true, respawnAt: this._respawnAt}};
         }
 
-        return {cur: this._cur};
+        return {[_tag]:{cur: this._cur}};
     }
 }

@@ -1,14 +1,15 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'cmd';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : cmd
 // 功能 : 提供外界對Role下指令的功能
 //--------------------------------------------------
 export class COM_Cmd extends Com
 {
-    get tag() {return 'cmd';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local

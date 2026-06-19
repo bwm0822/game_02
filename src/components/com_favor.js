@@ -2,6 +2,7 @@ import Com from './com.js'
 import Utility from '../core/utility.js'
 import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+const _tag = 'favor';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -11,7 +12,7 @@ import {T,dlog} from '../core/debug.js'
 export class COM_Favor extends Com
 {
 
-    get tag() {return 'favor';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
@@ -83,6 +84,6 @@ export class COM_Favor extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) {this._favors = data?.favor || {};}   
-    save() {return {favor:this._favors};}
+    load(data) {this._favors = data?.[_tag] || {};}
+    save() {return {[_tag]:this._favors};}
 }

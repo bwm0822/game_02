@@ -1,8 +1,9 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'bed';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : bed
 // 功能 : 提供休息的功能
 //--------------------------------------------------
@@ -14,7 +15,7 @@ export class COM_Bed extends Com
         this._user=null;
     }
 
-    get tag() {return 'bed';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
 

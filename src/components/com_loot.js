@@ -3,6 +3,7 @@ import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
 import DB from '../data/db.js'
+const _tag = 'loot';
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -14,7 +15,7 @@ import DB from '../data/db.js'
 
 export class COM_Loot extends Com
 {
-    get tag() {return 'loot';}
+    get tag() {return _tag;}
 
     //------------------------------------------------------
     //  Local

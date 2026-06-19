@@ -1,6 +1,7 @@
 import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
+const _tag = 'light';
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -10,7 +11,7 @@ import {GM} from '../core/setting.js'
 //--------------------------------------------------
 export class COM_Light extends Com
 {
-    get tag() {return 'light';}
+    get tag() {return _tag;}
     get scene() {return this._root.scene;}
 
     //------------------------------------------------------

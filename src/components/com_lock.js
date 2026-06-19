@@ -2,6 +2,7 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
+const _tag = 'lock';
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -13,7 +14,7 @@ import UiConfirm from '../ui/uiconfirm.js'
 
 export class COM_Lock extends Com
 {
-    get tag() {return 'lock';}
+    get tag() {return _tag;}
 
     //------------------------------------------------------
     //  Local
@@ -111,9 +112,9 @@ export class COM_Lock extends Com
 
     load(data)
     {
-        if(data) {this._locked = data.locked;}
+        if(data?.[_tag] !== undefined) {this._locked = data[_tag];}
         else {this._locked = true;}
     }
 
-    save() { return {locked: this._locked}; }
+    save() { return {[_tag]: this._locked}; }
 }

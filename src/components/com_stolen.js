@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
+const _tag = 'stolen';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -11,7 +12,7 @@ import Utility from '../core/utility.js'
 
 export class COM_Stolen extends Com
 {
-    get tag() {return 'stolen';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local

@@ -3,6 +3,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {computeHealing} from '../core/combat.js'
+const _tag = 'ability';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -13,7 +14,7 @@ import {computeHealing} from '../core/combat.js'
 
 export class COM_Ability extends Com
 {
-    get tag() {return 'ability';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get x() {return this._root.x;}
     get y() {return this._root.y;}
@@ -284,6 +285,6 @@ export class COM_Ability extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) { if(data?.abilities) {Object.assign(this._abilities,data.abilities);} }
-    save() {return {abilities:this._abilities};}
+    load(data) { if(data?.[_tag]) {Object.assign(this._abilities, data[_tag]);} }
+    save() {return {[_tag]:this._abilities};}
 }

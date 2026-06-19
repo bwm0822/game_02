@@ -1,5 +1,6 @@
 import Com from './com.js'
 import DB from '../data/db.js'
+const _tag = 'abilitytree';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -16,7 +17,7 @@ export class COM_AbilityTree extends Com
         this._abTree = {}; // 技能樹資料
     }
 
-    get tag() {return 'abilitytree';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local

@@ -4,6 +4,7 @@ import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
+const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
 {
@@ -203,7 +204,7 @@ class View extends Phaser.GameObjects.Container
         this.flipY = false;         // sprite 是否垂直翻轉
     }
 
-    get tag() {return 'view';}          // 回傳元件的標籤
+    get tag() {return _tag;}          // 回傳元件的標籤
     get root() {return this._root;}
     get ctx() {return this._root.ctx;}
     get pos() {return this._root.pos;}

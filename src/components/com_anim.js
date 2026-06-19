@@ -1,8 +1,9 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'anim';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : anim
 // 功能 :
 //  1. 負責角色的動畫，如 : idle、walk...
@@ -11,7 +12,7 @@ import {GM} from '../core/setting.js'
 
 export class COM_Anim extends Com
 {
-    get tag() {return 'anim';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
 
 

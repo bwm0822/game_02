@@ -3,6 +3,7 @@ import {GM} from '../core/setting.js';
 import DB from '../data/db.js';
 import {T,dlog} from '../core/debug.js'
 import Utility from '../core/utility.js';
+const _tag = 'stats';
 
 
 function _baseHPMAX(base) {return Math.round((base[GM.CON] || 0) * 10);}     // HPMAX = CON x 10
@@ -239,7 +240,7 @@ export class COM_Stats extends Com
         this._dirty = true;     // 標記屬性需要重算
     }
 
-    get tag() { return 'stats'; }
+    get tag() { return _tag; }
 
 
     //------------------------------------------------------
@@ -603,15 +604,16 @@ export class COM_Stats extends Com
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    load(data) 
+    load(data)
     {
-        if(data?.states) {Object.assign(this._states, data.states);}
-        if(data?.actives) {Object.assign(this._actives, data.actives);}
+        const d = data?.[_tag];
+        if(d?.states) {Object.assign(this._states, d.states);}
+        if(d?.actives) {Object.assign(this._actives, d.actives);}
     }
 
-    save() 
+    save()
     {
-        return {states:this._states, actives:this._actives};
+        return {[_tag]:{states:this._states, actives:this._actives}};
     }
 
     bind(root) 

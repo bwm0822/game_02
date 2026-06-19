@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 // import TimeSystem from '../systems/time.js'
+const _tag = 'lamp';
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -15,7 +16,7 @@ import {GM} from '../core/setting.js'
 //--------------------------------------------------
 export class COM_Lamp extends Com
 {
-    get tag() {return 'lamp';}
+    get tag() {return _tag;}
     get scene() {return this._root.scene;}
 
     //------------------------------------------------------

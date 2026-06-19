@@ -2,6 +2,7 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import {T,dlog,dtable} from '../core/debug.js'
+const _tag = 'schedule';
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -10,7 +11,7 @@ import {T,dlog,dtable} from '../core/debug.js'
 //--------------------------------------------------
 export class COM_Schedule extends Com
 {
-    get tag() {return 'schedule';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local

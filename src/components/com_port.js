@@ -4,6 +4,8 @@ import TimeSystem from '../systems/time.js'
 import {uPanel, uPic} from '../ui/uicomponents.js'
 import UiInfo from '../ui/uiinfo.js'
 import UiMark from '../ui/uimark.js'
+const _tag = 'port';
+const _tagNode = 'node';
 
 function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,ext}={})
 {
@@ -31,7 +33,7 @@ function uTag(scene,{x,y,icon='buffs:1',w=40,h=40,ext}={})
 //--------------------------------------------------
 export class COM_Port extends Com
 {
-    get tag() {return 'port';}  // 回傳元件的標籤
+    get tag() {return _tag;}  // 回傳元件的標籤
 
     //------------------------------------------------------
     //  Local
@@ -69,7 +71,7 @@ export class COM_Port extends Com
 //--------------------------------------------------
 export class COM_Node extends COM_Port
 {
-    get tag() {return 'node';}  // 回傳元件的標籤
+    get tag() {return _tagNode;}  // 回傳元件的標籤
     get scene() {return this._root.scene;}
 
     //------------------------------------------------------

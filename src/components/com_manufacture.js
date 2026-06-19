@@ -1,6 +1,7 @@
 import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
+const _tag = 'manu';
 
 
 //--------------------------------------------------
@@ -19,7 +20,7 @@ export class COM_Manu extends Com
         this._cat = GM.CAT.FOOD;
     }
 
-    get tag() {return 'manu';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
     //
@@ -149,16 +150,17 @@ export class COM_Manu extends Com
     //------------------------------------------------------
     // 提供 載入、儲存的功能，上層會呼叫
     //------------------------------------------------------
-    load(data) 
+    load(data)
     {
-        if(data?.manu) 
+        const d = data?.[_tag];
+        if(d)
         {
             // Object.assign(obj, val) => obj, val 不可為 null 或 undefined，
             // 否則會error
-            Object.assign(this._storage, data.manu.storage||{});
-            Object.assign(this._output, data.manu.output||{});
+            Object.assign(this._storage, d.storage||{});
+            Object.assign(this._output, d.output||{});
         }
     }
 
-    save() {return {manu:{storage:this._storage, output:this._output}};}
+    save() {return {[_tag]:{storage:this._storage, output:this._output}};}
 }

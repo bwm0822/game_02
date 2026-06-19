@@ -1,8 +1,9 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+const _tag = 'sleep';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : sleep
 // 功能 : 提供角色睡覺/休息的能力
 //--------------------------------------------------
@@ -14,7 +15,7 @@ export class COM_Sleep extends Com
         this._bed;
     }
 
-    get tag() {return 'sleep';}   // 回傳元件的標籤
+    get tag() {return _tag;}   // 回傳元件的標籤
     get scene() {return this._root.scene;}
     get pos() {return this._root.pos;}
 
