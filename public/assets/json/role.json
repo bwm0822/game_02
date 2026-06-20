@@ -49,8 +49,10 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": 20
+    "inv": {
+      "storage": {
+        "capacity": 20
+      }
     },
     "stats": {
       "str": 10,
@@ -63,6 +65,7 @@
     "icon": "head-trump",
     "job": "innkeeper",
     "gold": 200,
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -98,15 +101,17 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        {
-          "id": "helmet_01",
-          "count": 1
-        }
-      ]
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": [
+          "sword_01",
+          {
+            "id": "helmet_01",
+            "count": 1
+          }
+        ]
+      }
     },
     "stats": {
       "str": 10,
@@ -158,6 +163,7 @@
     "job": "innkeeper",
     "gold": 200,
     "style": "passive_coward",
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -193,15 +199,17 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        {
-          "id": "helmet_01",
-          "count": 1
-        }
-      ]
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": [
+          "sword_01",
+          {
+            "id": "helmet_01",
+            "count": 1
+          }
+        ]
+      }
     },
     "stats": {
       "str": 10,
@@ -265,6 +273,7 @@
     "job": "smith",
     "gold": 200,
     "weapon": "sword_01",
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -305,18 +314,20 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        "chest_01",
-        "gloves_01",
-        "chest_02",
-        {
-          "id": "helmet_01",
-          "count": 1
-        }
-      ]
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": [
+          "sword_01",
+          "chest_01",
+          "gloves_01",
+          "chest_02",
+          {
+            "id": "helmet_01",
+            "count": 1
+          }
+        ]
+      }
     },
     "stats": {
       "str": 10,
@@ -428,6 +439,7 @@
     "job": "trader",
     "gold": 200,
     "style": "weak",
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -577,6 +589,7 @@
       "heal"
     ],
     "meat": "raw_meat",
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -612,15 +625,17 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        {
-          "id": "helmet_01",
-          "count": 1
-        }
-      ]
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": [
+          "sword_01",
+          {
+            "id": "helmet_01",
+            "count": 1
+          }
+        ]
+      }
     },
     "stats": {
       "str": 10,
@@ -731,6 +746,7 @@
     "icon": "head-macron",
     "job": "merchant",
     "gold": 200,
+    "trade": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -766,15 +782,17 @@
       "scale": 0.5,
       "y": 32
     },
-    "storage": {
-      "capacity": -1,
-      "items": [
-        "sword_01",
-        {
-          "id": "helmet_01",
-          "count": 1
-        }
-      ]
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": [
+          "sword_01",
+          {
+            "id": "helmet_01",
+            "count": 1
+          }
+        ]
+      }
     },
     "stats": {
       "str": 10,
@@ -926,9 +944,11 @@
       "scale": 0.5,
       "y": 32
     },
-    "equips": [
-      "sword_01"
-    ],
+    "inv": {
+      "equips": [
+        "sword_01"
+      ]
+    },
     "attrs": {
       "attack": 5,
       "defense": 0

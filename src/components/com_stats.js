@@ -67,6 +67,7 @@ function _calcMods(eff, mods, {_scope, _stage, _type}={})
 function _metaOfEquips(equips)   // 取得裝備基本屬性
 {
     const meta={};
+    if(!equips) {return meta;}
     for(let equip of equips)
     {
         if(!equip) {continue;}
@@ -77,7 +78,7 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
             {
                 meta[k] = (meta[k]||0)+ v;
             }
-            else if(GM.COMBAT.includes(k)) 
+            else if(GM.COMBAT.includes(k))
             {
                 meta[k] = v;
             }
@@ -92,7 +93,7 @@ function _getMods(bb, attacker, skill, stage)
     const mods={ basA:{}, basM:{}, derA:{}, derM:{} }
 
     // 1. from equips
-    bb.equips.forEach(eq=>{
+    bb.equips?.forEach(eq=>{
         if(!eq) {return;}
         const dat = DB.item(eq.id??eq);
         dat?.mods?.forEach(eff=>_calcMods(eff, mods,{_scope:'self'}))
@@ -100,7 +101,7 @@ function _getMods(bb, attacker, skill, stage)
     });
 
     // 2. from active effects
-    bb.actives.forEach(eff=>_calcMods(eff, mods));
+    bb.actives?.forEach(eff=>_calcMods(eff, mods));
 
     // 3. from attacker
     attacker?.effs.forEach(eff=>_calcMods(eff, mods, {_scope:'target', _stage:'atk', _type:'mod'}));
@@ -112,7 +113,7 @@ function _getEffs(bb, skill)
 {
     const effs=[];
     // from equips
-    bb.equips.forEach(eq=>{
+    bb.equips?.forEach(eq=>{
         if(!eq) {return;}
         const dat = DB.item(eq.id??eq);
         dat?.effects?.forEach(eff=>effs.push(eff));
