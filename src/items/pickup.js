@@ -48,6 +48,7 @@ export default class Pickup extends GameObject
         this.bb.key = key;
         this.bb.frame = frame;
         if(dat.drop?.scale) {this.bb.scl=dat.drop.scale;}
+        this.bb.keepRatio = true;
 
         // 加入元件  
         this.addCom( new ItemView(this.scene), {modify:false} )

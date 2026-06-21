@@ -200,6 +200,7 @@ class View extends Phaser.GameObjects.Container
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
         this.scl = null;            // sprite 的 scl, 注意:變數名稱不可為 this.scale，會跟 Phaser.GameObjects.Container 相衝
+        this.keepRatio = false;     // sprite 是否保持寬高比
         this.flipX = false;         // sprite 是否水平翻轉
         this.flipY = false;         // sprite 是否垂直翻轉
     }
@@ -588,7 +589,7 @@ export class ItemView extends View
                 const sp = uImage.call(this,this.scene,{icon:icon})
                 sp.setPipeline('Light2D');
                 if(this.scl) { sp.setScale(this.scl); }
-                else
+                else if(this.keepRatio)
                 {
                     const ratio = sp.width / sp.height;
                     if (this.wid / this.hei > ratio)
@@ -601,6 +602,11 @@ export class ItemView extends View
                         sp.displayWidth = this.wid;
                         sp.displayHeight = this.wid / ratio;
                     }
+                }
+                else
+                {
+                    sp.displayHeight = this.hei;
+                    sp.displayWidth = this.wid;
                 }
                 // sp.flipX = this.flipX;
                 // sp.flipY = this.flipY;
