@@ -33,12 +33,12 @@ export class COM_Schedule extends Com
 
     _init()
     {
-        const{root,sta,ept}=this.ctx;
+        const{root,sta,ept,bb}=this.ctx;
 
         const rou = this._findRoutine();    // 取得 作息
         const gos = this._toGos(rou.p);     // 取得 作息中的起訖點
-        // const sp = ept(gos[0].pts[0]);      // 取得起點(空地)
         const sp = ept(gos[0].getPts(root)[0]);      // 取得起點(空地)
+        bb.routine = rou;                     // 紀錄目前的 routine
 
         if(gos.length===1) 
         {

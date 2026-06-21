@@ -462,7 +462,7 @@ export class COM_Stats extends Com
 
         // 1. 每回合開始先清除眩暈狀態，確保角色不會永久眩暈
         this._states[GM.STUN] = false;
-        root.pop?.();
+        if(bb.sta!==GM.ST.SLEEP) {root.pop?.();}
 
         // 2. 處理作用中的效果
         this._actives.forEach((eff)=>{
