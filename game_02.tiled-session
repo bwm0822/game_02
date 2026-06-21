@@ -5,12 +5,12 @@
     },
     "activeFile": "public/assets/maps/village-01.json",
     "expandedProjectPaths": [
+        "public/assets/maps",
         "public/assets/tiles",
-        "public/assets/templates",
-        "public/assets",
-        ".",
         "public",
-        "public/assets/maps"
+        ".",
+        "public/assets/templates",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -447,8 +447,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 639.5
+                "x": 391,
+                "y": 719
             }
         },
         "public/assets/maps/village-02.json": {

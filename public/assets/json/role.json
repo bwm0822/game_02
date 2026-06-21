@@ -1030,6 +1030,7 @@
   "wolf": {
     "icon": "animals:42",
     "meat": "raw_meat",
+    "skin": "plet",
     "style": "aggressive",
     "faceR": false,
     "anchor": {

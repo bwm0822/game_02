@@ -52,6 +52,7 @@ export const GM =
         // CROSS : 'cursors:150',
         CROSS : 'cursors:32',
         AXE : 'cursors:170',
+        BUTCHER : 'cursors:170',
 
         WEAPON : 'icons:80',
         HELMET : 'icons:113',
@@ -555,6 +556,7 @@ export const ORDER = [
     GM.FILL,
     GM.CHOP,
     GM.HARVEST,
+    GM.BUTCHER,
     GM.REST,
     GM.WAKE,
     GM.BUY,

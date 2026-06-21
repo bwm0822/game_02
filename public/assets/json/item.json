@@ -844,5 +844,19 @@
       "lab": "Wood",
       "des": ""
     }
+  },
+  "plet": {
+    "cat": "CAT_ITEM",
+    "icon": "icons:280",
+    "gold": 10,
+    "cps": 5,
+    "tw": {
+      "lab": "毛皮",
+      "des": "從動物身上剝下來、帶有毛髮的完整皮毛。"
+    },
+    "us": {
+      "lab": "Plet",
+      "des": ""
+    }
   }
 }

@@ -24,6 +24,7 @@ export default class UiCursor extends Phaser.GameObjects.Container
         cross:  {sprite:GM.ICON.CROSS, origin:{x:0.5,y:0.5}, scale:1},
         chop:   {sprite:GM.ICON.AXE,    origin:{x:0.5,y:0.5}, scale:1},
         harvest:{sprite:GM.ICON.PICKUP, origin:{x:0.5,y:0.5}, scale:1},
+        butcher:{sprite:GM.ICON.BUTCHER, origin:{x:0.5,y:0.5}, scale:1},
         close:  {sprite:GM.ICON.CLOSE, origin:{x:0.5,y:0.5}, scale:1},
     }
 
@@ -54,10 +55,10 @@ export default class UiCursor extends Phaser.GameObjects.Container
         {
             this._pic=uPic.call(this,this.scene,{
                             w:30,h:30,
-                            // bg:{strokeColor:GM.COLOR.RED,strokeWidth:3} 
+                            // bg:{strokeColor:GM.COLOR.RED,strokeWidth:3}
                         })
         }
-        
+
         this._pic.setIcon(icon.sprite)
                     .setOrigin(icon.origin.x,icon.origin.y)
                     // .setScale(icon.scale)
