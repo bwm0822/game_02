@@ -77,7 +77,17 @@
       "A": "你好\n我是行商…想要買什麼?",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:macron_01",
+        "離開/exit"
+      ],
+      "cmds": [
+        "sete macron top1"
+      ]
+    },
+    "top1": {
+      "A": "你好",
+      "B": [
+        "交易/trade",
+        "[opt]",
         "離開/exit"
       ]
     },
@@ -104,6 +114,20 @@
       "A": "...",
       "B": [
         "離開/exit"
+      ]
+    },
+    "karen_01": {
+      "opt": "Tony在哪裡/goto karen_01_01"
+    },
+    "karen_01_01": {
+      "A": "可能躲在小木屋中",
+      "B": [
+        "交易/trade",
+        "[opt]",
+        "離開/exit"
+      ],
+      "cmds": [
+        "rm macron karen_01"
       ]
     }
   },
@@ -147,31 +171,23 @@
       "A": "你好...",
       "B": [
         "交易/trade",
-        "(#quest!=none)任務/goto #quest:karen_01",
+        "(#quest!=none)有需要幫助的嗎?/goto #quest:karen_01",
+        "[opt]",
         "離開/exit"
       ]
     },
     "karen_01": {
-      "type": "quest",
-      "start": {
-        "A": "找尋失落的劍",
-        "B": [
-          "接受/quest karen_01",
-          "離開/exit"
-        ]
-      },
-      "open": {
-        "A": "...",
-        "B": [
-          "離開/exit"
-        ]
-      },
-      "report": {
-        "A": "...",
-        "B": [
-          "任務完成了/goto none;close karen_01;set quest none"
-        ]
-      }
+      "A": "找尋失落的劍",
+      "B": [
+        "接受/quest karen_01;set quest karen_01_1;add macron karen_01;goto karen_01_1",
+        "離開/exit"
+      ]
+    },
+    "karen_01_1": {
+      "A": "去問一下馬克宏",
+      "B": [
+        "離開/goto 0"
+      ]
     },
     "none": {
       "A": "...",

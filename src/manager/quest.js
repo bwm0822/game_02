@@ -6,13 +6,15 @@ import Ui from '../ui/uicommon.js'
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 
-function isDone(cond) 
+function isDone(cond)
 {
     if(cond.state==='done') {return true;}
 
     if(cond.cat===GM.INV)
     {
-        cond.cur = Math.min( GM.player.query(cond.dat), cond.dat.count );  
+        const items = GM.player.queryItem((itm) => itm.id === cond.dat.id);
+        const total = items.reduce((sum, itm) => sum + itm.count, 0);
+        cond.cur = Math.min(total, cond.dat.count);
     }
 
     const done = cond.cur>=cond.dat.count

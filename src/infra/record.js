@@ -6,6 +6,7 @@ export default class Record
     static game_def = { default:'entry', 
                         map:'village-01', 
                         time:{d:0,h:8,m:0},
+                        vars:{}
                     }
 
     static setting_def = {  lang:'tw',
@@ -109,6 +110,35 @@ export default class Record
         if(qid) { delete Record.game.scenes?.[mapName]?.[qid]?.[uid]; }
         else { delete Record.game.scenes?.[mapName]?.prefab?.[uid]; }
     }
+
+    static setEntry(key, value)
+    {
+        if(!Record.game.vars[key]) {Record.game.vars[key]={opts:[]};}
+        Record.game.vars[key].entry = value;
+    }
+
+    static addOpt(key, value)
+    {
+        if(!Record.game.vars[key]) {Record.game.vars[key]={opts:[]};}
+        Record.game.vars[key].opts.push(value);
+    }
+
+    static rmOpt(key, value)
+    {
+        if(Record.game.vars?.[key]?.opts)
+        {
+            const idx = Record.game.vars[key].opts.indexOf(value);
+            if(idx!==-1) { Record.game.vars[key].opts.splice(idx,1); }
+        }
+    }
+
+    static getVar(key)
+    {
+        if(!Record.game.vars[key]) {Record.game.vars[key]={opts:[]};}
+        return Record.game.vars[key];
+    }
+
+
 
     // static add(map,id,x,y)
     // {

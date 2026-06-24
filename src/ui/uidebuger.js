@@ -49,6 +49,68 @@ function cmd_t(args)
     }
 }
 
+function cmd_setEntry(args)
+{
+    // setEntry <key> <value>
+    if(args.length < 3)
+    {
+        this.print('[color=yellow][用法] setEntry <key> <value>[/color]\n');
+    }
+    else
+    {
+        Record.setEntry(args[1], args[2]);
+        this.print(`✓ setEntry('${args[1]}', '${args[2]}')\n`);
+        const v = Record.getVar(args[1]);
+        this.print(`  entry: ${v.entry}, opt: [${v.opt.join(', ')}]\n`);
+    }
+}
+
+function cmd_addOpt(args)
+{
+    // addOpt <key> <value>
+    if(args.length < 3)
+    {
+        this.print('[color=yellow][用法] addOpt <key> <value>[/color]\n');
+    }
+    else
+    {
+        Record.addOpt(args[1], args[2]);
+        this.print(`✓ addOpt('${args[1]}', '${args[2]}')\n`);
+        const v = Record.getVar(args[1]);
+        this.print(`  entry: ${v.entry}, opt: [${v.opt.join(', ')}]\n`);
+    }
+}
+
+function cmd_rmOpt(args)
+{
+    // rmOpt <key> <value>
+    if(args.length < 3)
+    {
+        this.print('[color=yellow][用法] rmOpt <key> <value>[/color]\n');
+    }
+    else
+    {
+        Record.rmOpt(args[1], args[2]);
+        this.print(`✓ rmOpt('${args[1]}', '${args[2]}')\n`);
+        const v = Record.getVar(args[1]);
+        this.print(`  entry: ${v.entry}, opt: [${v.opt.join(', ')}]\n`);
+    }
+}
+
+function cmd_getVar(args)
+{
+    // getVar <key>
+    if(args.length < 2)
+    {
+        this.print('[color=yellow][用法] getVar <key>[/color]\n');
+    }
+    else
+    {
+        const v = Record.getVar(args[1]);
+        this.print(`[color=cyan]${args[1]}[/color]: entry=${v.entry}, opt=[${v.opt.join(', ')}]\n`);
+    }
+}
+
 
 export default class UiDebuger extends UiFrame
 {

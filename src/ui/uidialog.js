@@ -156,7 +156,7 @@ export default class UiDialog extends UiFrame
     show(owner)
     {
         this.owner = owner;
-        this.dialog = owner.getDialog();
+        // this.dialog = owner.getDialog();
         super.show();
         this._spkA.setIcon(owner.icon).setName(owner.id.lab())
         this._spkB.setIcon(this.player.icon)

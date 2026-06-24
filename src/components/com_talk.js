@@ -3,6 +3,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
 import {dlog} from '../core/debug.js'
+import Record from '../infra/record.js'
 const _tag = 'talk';
 
 //--------------------------------------------------
@@ -20,6 +21,7 @@ function parseOption(str, rec)
     opt.cmds = opt.cmds ? opt.cmds.split(';').map(s => s.trim()) : [];
     return opt;
 }
+
 
 function extractOption(str) 
 {
@@ -78,7 +80,7 @@ function parseP(str, rec)
     // 3. str='#key:def' 回傳 rec[key]，若無則回傳 def
     
     if(!str) {return null;}
-    const [val, key, def] = str.split(/[:#]/);
+    const [val, key, def] = str.split(/[#:]/);
     return val!=''?val:rec[key]??def;
 }
 
@@ -95,16 +97,9 @@ export class COM_Talk extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _talk()
+    _execute(cmds, cb)
     {
-        const{send} = this.ctx;
-        this._idx = this._rec.idx ?? 0;
-        send('talk', this.root); // 開啟 對話UI
-    }
-
-    _select(option, cb)
-    {
-        option.cmds.forEach(cmd=>{
+        cmds?.forEach(cmd=>{
             const [op,p1,p2]=cmd.split(' ');
             switch(op)
             {
@@ -112,43 +107,61 @@ export class COM_Talk extends Com
                 case 'exit': cb?.(op); break;
                 case 'trade': this._trade(); cb?.('exit'); break;
                 case 'goto': this._goto(p1); cb?.(op); break;
-                case 'quest': this._quest(p1); cb?.('exit'); break;
+                // case 'quest': this._quest(p1); cb?.('exit'); break;
+                case 'quest': this._quest(p1); break;
                 case 'close': this._close_quest(p1); break;
                 case 'set': this._set(p1,p2); break;
+                case 'sete': Record.setEntry(p1,p2); break;
+                case 'add': Record.addOpt(p1,p2); break;
+                case 'rm': Record.rmOpt(p1,p2); break;
             }
         })
     }
 
-    _getDialog()
-    {
-        const idx = this._idx;
-        let dialog = this._dialog[idx];
-        if(dialog.type==='quest')
-        {
-            const sta = QuestManager.query(idx);
-            dialog = dialog[sta?.state??'start'];
-        }
-        const a = dialog.A;
-        const b = this._processOptions(dialog.B);
-
-        const out = {A:a, B:b};
-        return out;
-    }
-
     _processOptions(options)
     {
-        // options的格式 : "(cond)text/cmds"
+        // options的格式 : "(cond)text/cmd0;cmd1"
 
         let opts=[];
         options.forEach(option=>{
-            const opt = parseOption(option, this._rec);
-            if(opt.cond) {opts.push(opt);}
+            if(option==='[opt]')
+            {
+                Record.getVar(this.ctx.bb.id)?.opts?.forEach(id=>{
+                    const dialog = this._dialog[id];
+                    if(dialog) 
+                    {
+                        const opt = parseOption(dialog.opt);
+                        if(opt.cond) {opts.push(opt);}
+                    }
+                });
+            }
+            else
+            {
+                const opt = parseOption(option, this._rec);
+                if(opt.cond) {opts.push(opt);}
+            }
         });
 
         return opts;
     }
 
-    _goto(p1) {this._idx = parseP(p1,this._rec);}
+    _addOptions(opts)
+    {
+        Record.getVar(this.ctx.bb.id)?.opt?.forEach(id=>{
+            const dialog = this._dialog[id];
+            if(dialog) 
+            {
+                const opt = parseOption(dialog.opt);
+                if(opt.cond) {opts.push(opt);}
+            }
+        });
+    }
+
+    _goto(p1) 
+    {
+        this._idx = parseP(p1,this._rec);
+        console.log('idx=',this._idx)
+    }
 
     _trade()
     {
@@ -184,6 +197,40 @@ export class COM_Talk extends Com
         return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
                                     :  bb.sta===GM.ST.SLEEP ? GM.DIS
                                                             : GM.EN;
+    }
+
+    _talk()
+    {
+        const{send,root} = this.ctx;
+        this._idx = Record.getVar(root.id).entry??0;
+        send('talk', root); // 開啟 對話UI
+    }
+
+    _select(option, cb)
+    {
+        this._execute(option.cmds, cb);
+    }
+
+    _getDialog()
+    {
+        const{bb} = this.ctx;
+        const dat = Record.getVar(bb.id);
+
+        const idx = this._idx;
+        let dialog = this._dialog[idx];
+        console.log(idx, dialog)
+
+        if(dialog.type==='quest')
+        {
+            const sta = QuestManager.query(idx);
+            dialog = dialog[sta?.state??'start'];
+        }
+
+        this._execute(dialog.cmds);
+        const a = dialog.A;
+        const b = this._processOptions(dialog.B);
+        const out = {A:a, B:b};
+        return out;
     }
 
     _ondead() {this.root._delAct(GM.TALK);}
