@@ -24,11 +24,19 @@ export class COM_Trade extends Com
     //------------------------------------------------------
     _trade(target)
     {
-        const {send} = this.ctx;
+        const {root,send,msg} = this.ctx;
 
-        this.root.info = {act:GM.TRADE, type:GM.SELLER, target};
-        target.info = {act:GM.TRADE, type:GM.BUYER, target:this.root};
-        send('trade',this.root);    // 開啟 交易UI
+        if (!root.storage) 
+        {
+            send('msg','無法交易');
+        }
+        else
+        {
+
+            this.root.info = {act:GM.TRADE, type:GM.SELLER, target};
+            target.info = {act:GM.TRADE, type:GM.BUYER, target:this.root};
+            send('trade',this.root);    // 開啟 交易UI
+        }
     }
 
     _stopTrade()
@@ -86,8 +94,6 @@ export class COM_Trade extends Com
     bind(root)
     {
         super.bind(root);
-
-        // init
 
         // 1.提供 [外部操作的指令]
         if(this._enableAct) {root._setAct(GM.TRADE, this._actMode.bind(this));}

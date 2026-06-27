@@ -7,6 +7,7 @@ import {COM_AI} from '../components/ai/com_ai.js'
 import {COM_Sense} from '../components/com_sense.js'
 import {COM_Disp} from '../components/com_disp.js'
 import {COM_Talk} from '../components/com_talk.js'
+import {COM_Talk_V2} from '../components/com_talk_v2.js'
 import {COM_Trade} from '../components/com_trade.js'
 import {COM_Stats} from '../components/com_stats.js'
 import {COM_Sleep} from '../components/com_sleep.js'
@@ -101,7 +102,8 @@ export class Npc extends Role
             .addCom(new COM_Sense())
             .addCom(new COM_Stats())
             .addCom(new COM_Disp())
-            .addCom(new COM_Talk())
+            // .addCom(new COM_Talk())
+            .addCom(new COM_Talk_V2())
             .addCom(new COM_Trade(),{enable:bb.meta.trade===true})
             .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())

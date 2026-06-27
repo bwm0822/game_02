@@ -1,0 +1,111 @@
+{
+  "npc_a": {
+    "id": "npc_a",
+    "entries": [
+      {
+        "nodeId": "npc_a_after_quest",
+        "order": 1,
+        "condition": {
+          "type": "hasFlag",
+          "flag": "quest_done"
+        }
+      },
+      {
+        "nodeId": "first_meet",
+        "order": 2,
+        "condition": {
+          "type": "notFlag",
+          "flag": "met_npc_a"
+        }
+      },
+      {
+        "nodeId": "default",
+        "order": 3,
+        "condition": null
+      }
+    ],
+    "nodes": {
+      "first_meet": {
+        "textKeys": [
+          "很高興認識你，我是NPC A"
+        ],
+        "effect": {
+          "setFlag": "met_npc_a"
+        },
+        "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 0,
+            "action": "openShop"
+          },
+          {
+            "labelKey": "聊天",
+            "priority": 0,
+            "next": "chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "action": "close"
+          }
+        ]
+      },
+      "default": {
+        "textKeys": [
+          "你好;\r\n需要幫助嗎?"
+        ],
+        "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 0,
+            "action": "openShop"
+          },
+          {
+            "labelKey": "聊天",
+            "priority": 0,
+            "next": "chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "action": "close"
+          }
+        ]
+      },
+      "chat": {
+        "textKeys": [
+          "你想要聊什麼?"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "default"
+          }
+        ]
+      }
+    }
+  },
+  "npc_b": {
+    "id": "npc_b",
+    "entries": [],
+    "nodes": {}
+  },
+  "npc_c": {
+    "id": "npc_c",
+    "entries": [],
+    "nodes": {}
+  }
+}
