@@ -7,11 +7,11 @@ export default class UiDialog extends UiFrame
     static instance = null;
     constructor(scene)
     {
-        let config =
+        const config =
         {
             x : GM.w/2,
             y : GM.h,
-            width : 600,
+            width : 650,
             height : 300,
             orientation : 'y',
             // space: 10,
@@ -101,7 +101,7 @@ export default class UiDialog extends UiFrame
         const scroll = ui.uScroll.call(p,scene,{
                         ext:{expand:true,proportion:1}});
 
-        p.setIcon = (icon)=>{pic.setIcon(icon); return p;}                  
+        p.setIcon = (icon)=>{pic.setIcon(icon); return p;}
         p.setDialog = (options)=>{
             scroll.clearAll();
             options.forEach(option=>{
@@ -112,11 +112,12 @@ export default class UiDialog extends UiFrame
                     space:0,
                     style:UI.BTN.ITEM}));
             })
-            
+
             return p;
         }
 
         this._spkB=p;
+        this._scroll=scroll;
         return this;
 
     }
@@ -125,6 +126,7 @@ export default class UiDialog extends UiFrame
     {
         switch(cmd)
         {
+            case 'close':
             case 'exit': this.close(); return;
             case 'goto': this.updateDialog(); return;
             case 'next': this.updatePage(); return;
@@ -150,6 +152,7 @@ export default class UiDialog extends UiFrame
 
     close()
     {
+        this._scroll.mouseWheel(false);
         super.close();
         this.on(UI.TAG.MAIN);
     }
@@ -161,6 +164,8 @@ export default class UiDialog extends UiFrame
         super.show();
         this._spkA.setIcon(owner.icon).setName(owner.id.lab())
         this._spkB.setIcon(this.player.icon)
+        this._scroll.mouseWheel(true);
+        this._scroll.setT(0);
         this.updateDialog();
         this.closeAll(~GM.UI_MSG);
     }

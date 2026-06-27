@@ -149,11 +149,13 @@ export class COM_Talk_V2 extends Com
         this._applyEffect(node);
 
         const A = (node.textKeys || []).map(t => this._pickText(t)).join('\n');
-        const B = (node.choices || []).map(c => ({
-            text: c.labelKey,
-            action: c.action || null,
-            next: c.next || null
-        }));
+        const B = (node.choices || [])
+            .filter(c => this._matchCond(c.condition))
+            .map(c => ({
+                text: c.labelKey,
+                action: c.action || null,
+                next: c.next || null
+            }));
 
         return {A, B};
     }
