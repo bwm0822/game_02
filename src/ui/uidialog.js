@@ -140,7 +140,8 @@ export default class UiDialog extends UiFrame
 
     updatePage()
     {
-        const nxtp = [{text:'*聆聽...*',cmds:['next']}];
+        // const nxtp = [{text:'*聆聽...*',cmds:['next']}];
+        const nxtp = [{text:'*聆聽...*',action:'next',cmds:['next']}];
         const lastPage = this._spkA.updatePage();
         this._spkB.setDialog(lastPage ? this.dialog.B : nxtp);
         this.layout();

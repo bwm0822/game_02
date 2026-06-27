@@ -27,7 +27,7 @@
     "nodes": {
       "first_meet": {
         "textKeys": [
-          "很高興認識你，我是NPC A"
+          "很高興認識你，我是Karen"
         ],
         "effect": {
           "setFlag": "met_npc_a"
@@ -35,17 +35,17 @@
         "choices": [
           {
             "labelKey": "交易",
-            "priority": 0,
+            "priority": 10,
             "action": "openShop"
           },
           {
             "labelKey": "聊天",
-            "priority": 0,
+            "priority": 20,
             "next": "chat"
           },
           {
             "labelKey": "離開",
-            "priority": 0,
+            "priority": 99,
             "action": "close"
           }
         ]
@@ -57,17 +57,17 @@
         "choices": [
           {
             "labelKey": "交易",
-            "priority": 0,
+            "priority": 10,
             "action": "openShop"
           },
           {
             "labelKey": "聊天",
-            "priority": 0,
+            "priority": 20,
             "next": "chat"
           },
           {
             "labelKey": "離開",
-            "priority": 0,
+            "priority": 99,
             "action": "close"
           }
         ]
@@ -78,16 +78,85 @@
         ],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
-            "priority": 0
-          },
-          {
             "labelKey": "哪裡可以買武器?",
-            "priority": 0
+            "priority": 0,
+            "next": "weapon"
           },
           {
             "labelKey": "哪裡可以買吃的?",
-            "priority": 0
+            "priority": 0,
+            "next": "eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "default"
+          }
+        ]
+      },
+      "weapon": {
+        "textKeys": [
+          "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        ],
+        "choices": [
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "default"
+          }
+        ]
+      },
+      "eat": {
+        "textKeys": [
+          "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        ],
+        "choices": [
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "weapon"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "default"
+          }
+        ]
+      },
+      "rest": {
+        "textKeys": [
+          "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        ],
+        "choices": [
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "eat"
           },
           {
             "labelKey": "沒事",
