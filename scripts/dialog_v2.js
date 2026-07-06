@@ -36,59 +36,114 @@ function splitTables(raw)
 
 // ── 工具函式 ──
 function buildEntry(row) {
-  return {
+  const entry = {
     nodeId: row.node_id,
-    order:  Number(row.order),
-    condition: row.condition_type
-      ? { type: row.condition_type, flag: row.condition_flag }
-      : null
+    order:  Number(row.priority)
   };
+  if (row.condition)    entry.condition = row.condition;
+  if (row.setFlag)      entry.effect    = row.setFlag;
+  return entry;
 }
 
 function buildEffect(row) {
-  const e = {};
-  if (row.effect_setFlag)    e.setFlag    = row.effect_setFlag;
-  if (row.effect_startQuest) e.startQuest = row.effect_startQuest;
-  return Object.keys(e).length ? e : undefined;
+    if (row.setFlag === '') return undefined;
+
+    // Parse "cond:setflag" format into {condition, setFlag} object
+    if (row.setFlag.includes(':')) {
+        const [condition, setFlag] = row.setFlag.split(':').map(s => s.trim());
+        return {[condition]:setFlag};
+    }
+
+    return row.setFlag;
 }
 
 function buildChoice(row) {
   const c = {
     labelKey: row.label_key,
-    priority: Number(row.priority)
+    priority: Number(row.priority),
   };
-  if (row.action)          c.action    = row.action;
-  if (row.next)            c.next      = row.next;
-  if (row.condition_type)  c.condition = {
-    type: row.condition_type,
-    flag: row.condition_flag
-  };
+  if (row.setFlag)      c.effect    = buildEffect(row);
+  if (row.action)       c.action    = row.action;
+  if (row.next)         c.next      = row.next;
+  if (row.condition)    c.condition = row.condition;
   return c;
+}
+
+// function buildPost(row) {
+//   const e = {};
+//   if (row.setFlag) {
+//     // Parse "cond:setflag" format into {condition, setFlag} object
+//     if (row.setFlag.includes(':')) {
+//       const [condition, setFlag] = row.setFlag.split(':').map(s => s.trim());
+//       e.condition = condition;
+//       e.setFlag = setFlag;
+//     } else {
+//       e.setFlag = row.setFlag;
+//     }
+//   }
+//   if (row.condition)    e.condition = row.condition;
+//   return Object.keys(e).length ? e : undefined;
+// }
+
+function buildTextKeys(text_keys_str) {
+  if (!text_keys_str) return {};
+
+  // 如果包含 ':' 表示有條件映射
+  if (text_keys_str.includes(':')) {
+    const textKeys = {};
+    const lines = text_keys_str.split('\n').map(s => s.trim()).filter(s => s);
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes(':')) {
+        const [cond, text] = lines[i].split(':').map(s => s.trim());
+        // 如果下一行不是條件行，併入文本
+        let fullText = text || '';
+        while (i + 1 < lines.length && !lines[i + 1].includes(':')) {
+          i++;
+          fullText += '\n' + lines[i];
+        }
+        textKeys[cond] = fullText;
+      }
+    }
+    return textKeys;
+  }
+
+  // 簡單文本形式（向後相容）
+  return { "true": text_keys_str };
 }
 
 function buildNpc(sheetName, rows)
 {
-    const npc  = { id: sheetName, entries: [], nodes: {} };
+    const npc  = { id: sheetName, effects: [], entries: [], nodes: {},  };
     var currentNode = null;
 
     for (const row of rows) 
     {
-        if (row.section === 'entry') 
+        if(row.section === 'effect')
+        {
+            npc.effects.push(buildEffect(row));
+        }
+        else if (row.section === 'entry') 
         {
             npc.entries.push(buildEntry(row));
         }
-        else if (row.section === 'node') 
+        else if (row.section === 'node')
         {
             currentNode = {
-                textKeys: row.text_keys.split(',').map(s => s.trim()),
+                textKeys: buildTextKeys(row.text_keys),
                 effect:   buildEffect(row),
-                choices:  []
+                choices:  [],
+                posts:  []
             };
             npc.nodes[row.node_id] = currentNode;
         }
         else if (row.section === 'choice' && currentNode) 
         {
             currentNode.choices.push(buildChoice(row));
+        }
+        else if (row.section === 'post' && currentNode)
+        {
+            currentNode.posts.push(buildEffect(row));
         }
     }
 
@@ -123,8 +178,6 @@ function excelToJson(inputPath, outputPath)
 
         // 2. 根據表頭標記分割出多個資料表
         const tables = splitTables(raw);
-        // console.log(sheetName, tables)
-        // result[sheetName] = tables;
         npcs[sheetName] = buildNpc(sheetName, tables)
     }
 

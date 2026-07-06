@@ -104,7 +104,7 @@ export default class UiQuest extends UiFrame
         
         if(this._pageName==='open')
         {
-            for(let id in QuestManager.quests.opened)
+            for(let id in QuestManager.quests.active)
             {
                 let q = QuestManager.query(id);
                 const itm = ui.uButton(scene,{
