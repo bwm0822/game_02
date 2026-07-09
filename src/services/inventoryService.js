@@ -1,5 +1,6 @@
 // services/inventoryService.js
 import {GM} from '../core/setting.js'
+import QuestManager from '../manager/quest.js'
 
 function sameItem(a, b) {return a?.content && b?.content && a.content.id === b.content.id;}
 
@@ -17,13 +18,19 @@ function doMerge(from, to)
     const remain = dragged - (merged - toCount);
     to.content.count = merged;
     from.content.count = remain;
+    if(from.owner!==to.owner) {QuestManager.onCollect('doMerge');}
+    return 'merged';
 }
 
-function swap(from, to) 
+function doSwap(from, to) 
 {
+    const ret = to.isEmpty ? 'moved' : 'swapped';
+    const trigger = from.owner!==to.owner;  // 要先判斷，因為下面會改變from.owner 
     const tmp = from.content;
     from.content = to.content;
     to.content = tmp;
+    if(trigger) {QuestManager.onCollect('swap');}
+    return ret;
 }
 
 // function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
@@ -43,26 +50,10 @@ export default class InventoryService
             const ok = from.owner.sell(from, to.i, to.isEquip);
             return ok ? 'traded' : 'blocked';
         }
-
         // 合併
-        if (mergePossible(from, to)) 
-        {
-            doMerge(from, to);
-            return 'merged';
-        }
-
+        else if (mergePossible(from, to)) {return doMerge(from, to);}
         // 移動 / 互換 
-        if (to.isEmpty) // 目標空 => 移動
-        {
-            to.content = from.content;
-            from.content = null;
-            return 'moved';
-        } 
-        else // 互換位置
-        {
-            swap(from, to); 
-            return 'swapped';
-        }
+        else {return doSwap(from, to);}
     }
 
     // 分堆（給 Option.split 呼叫）

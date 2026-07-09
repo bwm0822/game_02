@@ -80,14 +80,31 @@ function buildComplete(row)
     return complete;
 }
 
+function buildAction(row)
+{
+    const action={};
+    if(row.action_start) action.start=row.action_start;
+    if(row.action_complete) action.complete =row.action_complete;
+    return action;
+}
+
+function buildReward(row)
+{
+    return {
+                gold:  Number(row.reward_gold),
+                exp:   Number(row.reward_exp),
+                items: row.reward_items
+                        ? row.reward_items.split(',').map(s => s.trim())
+                        : []
+            };
+}
+
 function buildQuest(sheetName, tables)
 {
     const allQuests = {}
 
     const infoRows = tables[0].rows;   // 任務基本資料
     const stepRows = tables[1].rows;   // 任務步驟
-
-    console.log(tables)
 
     // 先把所有任務基本資料建好
     for (const info of infoRows) 
@@ -98,13 +115,8 @@ function buildQuest(sheetName, tables)
             titleKey: info.titleKey,
             descKey:  info.descKey,
             steps:    {},
-            reward: {
-                gold:  Number(info.reward_gold),
-                exp:   Number(info.reward_exp),
-                items: info.reward_items
-                ? info.reward_items.split(',').map(s => s.trim())
-                : []
-            }
+            reward:   buildReward(info),
+            action:   buildAction(info)
         };
     }
 
@@ -144,7 +156,7 @@ function excelToJson(inputPath, outputPath)
 
         // 2. 根據表頭標記分割出多個資料表
         const tables = splitTables(raw);
-        npcs[sheetName] = buildQuest(sheetName, tables)
+        Object.assign(npcs, buildQuest(sheetName, tables));
     }
 
     fs.writeFileSync(outputPath, JSON.stringify(npcs, null, 2), 'utf-8');

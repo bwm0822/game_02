@@ -17,11 +17,14 @@ export default class DB
 
         this._roleDB = scene.cache.json.get('role');
 
-        this._dialogDB = scene.cache.json.get('dialog');
+        // this._dialogDB = scene.cache.json.get('dialog');
 
-        this._dialogDB_v2 = scene.cache.json.get('dialog_v2');
+        this._dialogDB = scene.cache.json.get('dialog_v2');
 
-        this._questDB = scene.cache.json.get('quest');
+        // this._questDB = scene.cache.json.get('quest');
+
+        this._questDB = scene.cache.json.get('quest_v2');
+        console.log('questDB=',this._questDB)
 
         this._abilityDB = scene.cache.json.get('skill');
 
@@ -54,9 +57,7 @@ export default class DB
 
     static dialog(id) { return this._dialogDB?.[id]; }
 
-    static dialog_v2(id) { return this._dialogDB_v2?.[id]; }
-
-    static quest(id) { return this._questDB?.[id];}
+    static quest(id) { return this._questDB?.[id]; }
 
     static ability(id) { return this._abilityDB?.[id]; }
 

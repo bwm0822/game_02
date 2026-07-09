@@ -5,6 +5,7 @@ import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+import QuestManager from '../manager/quest.js'
 const _tag = 'inv';
 
 //--------------------------------------------------
@@ -91,58 +92,43 @@ export class COM_Storage extends Com
             i++;
         }
 
+        QuestManager.onCollect('put');
         return remain;
     }
 
-    // 接收content，i為slot的編號
+    // 接收content，i為slot的編號, isEquip為是否放在裝備欄位，回傳剩餘的
     _receive(content,i,isEquip)
     {
-        // case 1 : slot 置換
-        // i 或 isEquip有值，代表是 slot，將 content 置於編號為i的slot
         const{bb,root}=this.ctx;
-        if(isEquip) // 置於裝備欄位
+        if(isEquip||i) // 置於裝備或背包欄位
         {
-            bb.equips[i]=content;
-            root.equip?.();
+            // case 1 : slot 置換
+            // i 或 isEquip有值，代表是 slot，將 content 置於編號為i的slot
+
+            if(isEquip) // 置於裝備欄位
+            {
+                bb.equips[i]=content;
+                root.equip?.();
+            }
+            else        // 置於背包欄位
+            {
+                this._storage.items[i]=content;
+            }
+
+            QuestManager.onCollect('receive');
+
             return 0;   // 回傳remian，為0
         }
-        else if(i)  // 置於物品欄位
+        else
         {
-            this._storage.items[i]=content;
-            return 0;   // 回傳remian，為0
+            // case 2
+            // 從 storage 找空位，放置content
+           
+            return this._put(content);
         }
 
-        // case 2
-        // 從 storage 找空位，放置content
-        return this._put(content);
+        
     }
-
-
-    // _take(content,i,isEquip)
-    // {
-    //     console.log('-------------- take',content)
-
-    //     const{bb,root}=this.ctx;
-    //     if(isEquip)
-    //     {
-    //         bb.equips[i]=content;
-    //         root.equip?.();
-    //         return true;   
-    //     }
-
-    //     i = i??this._findEmpty();
-
-    //     if(i!=-1)
-    //     {
-    //         this._storage.items[i]=content;
-            
-    //         return true;
-    //     }
-    //     else
-    //     {  
-    //         return false;
-    //     }
-    // }
 
     _split(ent, cnt)
     {
@@ -168,9 +154,11 @@ export class COM_Storage extends Com
         let p = this.ctx.ept(this.pos,{th:GM.W.EMPTY,random:true,includeP:false});
         let go = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
         go.falling(p);
-        AudioManager.drop();
         const {send}=this.ctx;
         send('msg',`${'drop'.lab()} ${ent.label}`);
+        ent.empty();
+        AudioManager.drop();
+        QuestManager.onCollect('drop');
     }
 
     _open(target) // 提供給外界操作

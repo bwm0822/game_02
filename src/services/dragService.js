@@ -34,9 +34,7 @@ export default class DragService
         if (!slot.isValid) { return; }
         const from = UiDragged.obj;
         // 由外部移到player時，觸發
-        const trigger = slot.owner===GM.player && slot.owner!=from.owner;
         const result = InventoryService.handleDrop({ from, to: slot });
-        if(trigger) {QuestManager.notify({cat:GM.INV});}
         this._finish(result, slot);
     }
 

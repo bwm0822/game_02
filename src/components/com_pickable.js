@@ -46,8 +46,6 @@ export class COM_Pickable extends Com
             this.content.count-=remain;
             send('msg','_space_full'.lab());
         }  
-        
-        QuestManager.notify({cat:GM.INV})
     }
 
     //------------------------------------------------------

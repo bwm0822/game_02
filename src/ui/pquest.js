@@ -52,8 +52,8 @@ export class PQuest extends Sizer
 
         this._content
             .clearAll()
-            .add(ui.uBbc(scene,{text:`[color=yellow]${q.title()}[/color]`}),{align:'center'})
-            .add(ui.uBbc(scene,{text:q.fmt(),wrapWidth:500}),{align:'left'})
+            .add(ui.uBbc(scene,{text:QuestManager.title(q)}),{align:'center'})
+            .add(ui.uBbc(scene,{text:QuestManager.content(q),wrapWidth:500}),{align:'left'})
 
         if(q.nid)
         {
@@ -98,19 +98,26 @@ export class PQuest extends Sizer
         this._scroll.clearAll();
         this._content.clearAll();
         
-        for(let id in QuestManager.quests.opened)
+        for(let id in QuestManager.quests.active)
         {
-            let q = QuestManager.query(id);
+            const q = QuestManager.query(id);
+            // const itm = ui.uButton(scene,{
+            //                 style: UI.BTN.ITEM,
+            //                 tcon: {text:q.state==='close'?'🗹':'☐',ext:{align:'top'}},
+            //                 text: {text:q.title(),wrapWidth:125},
+            //                 onclick: onclick});
+
             const itm = ui.uButton(scene,{
-                            style: UI.BTN.ITEM,
-                            tcon: {text:q.state==='close'?'🗹':'☐',ext:{align:'top'}},
-                            text: {text:q.title(),wrapWidth:125},
-                            onclick: onclick});
+                style: UI.BTN.ITEM,
+                // tcon: {text:'☐',ext:{align:'top'}},
+                text: {text:`${q.sta==='close' ? '🗹':'☐'} `+q.dat.titleKey,wrapWidth:125},
+                onclick: onclick});
 
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
             {
-                fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
+                // fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+20}]${q.cat}[/size]`});
+                fold = ui.uGroup(scene, {title:`${q.cat}`,fontSize:GM.FONT_SIZE+4});
                 this._scroll.addItem(fold);
                 fold.cat=q.cat
             }

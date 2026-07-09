@@ -28,6 +28,16 @@ export class COM_Talk_V2 extends Com
     //------------------------------------------------------
     //  私有方法
     //------------------------------------------------------
+    // 取得 flag 值（根據 _ 字首判斷 local 或 global）
+    _getVar(flag)
+    {
+        if (flag.startsWith('_')) {
+            return this._rec[flag];
+        } else {
+            return Record.getVar(flag);
+        }
+    }
+
     // 檢查是否可以進行交談（好感度、睡眠狀態）
     _canAct()
     {
@@ -48,7 +58,7 @@ export class COM_Talk_V2 extends Com
         }
 
         const {type, flag} = cond;
-        const val = this._rec[flag];
+        const val = this._getVar(flag);
         return type === 'hasFlag' ? !!val : !val;
     }
 
@@ -76,13 +86,13 @@ export class COM_Talk_V2 extends Com
         // 處理 NOT (!)
         if (expr.startsWith('!')) {
             const flag = expr.substring(1).trim();
-            return !this._rec[flag];
+            return !this._getVar(flag);
         }
 
         // 處理不相等 (!=)
         if (expr.includes('!=')) {
             const [flag, value] = expr.split('!=').map(s => s.trim());
-            const recVal = this._rec[flag];
+            const recVal = this._getVar(flag);
             if (value === 'true') return recVal !== true;
             if (value === 'false') return recVal !== false;
             return recVal != value;
@@ -91,14 +101,14 @@ export class COM_Talk_V2 extends Com
         // 處理相等 (==)
         if (expr.includes('==')) {
             const [flag, value] = expr.split('==').map(s => s.trim());
-            const recVal = this._rec[flag];
+            const recVal = this._getVar(flag);
             if (value === 'true') return recVal === true;
             if (value === 'false') return recVal === false;
             return recVal == value;
         }
 
         // 簡單 flag 名稱 - 檢查是否為真
-        return !!this._rec[expr];
+        return !!this._getVar(expr);
     }
 
     // 取得初始入口節點（按 order 排序，找第一個符合條件的）
@@ -158,12 +168,30 @@ export class COM_Talk_V2 extends Com
         for (const flag of flags) {
             if (flag.includes('=')) {
                 const [name, value] = flag.split('=').map(s => s.trim());
-                if (value === 'true') this._rec[name] = true;
-                else if (value === 'false') this._rec[name] = false;
-                else this._rec[name] = value;
+                const val = value === 'true' ? true : value === 'false' ? false : value;
+                if (name.startsWith('_')) {
+                    this._rec[name] = val;
+                } else {
+                    Record.setVar(name, val);
+                }
             } else {
-                this._rec[flag] = true;
+                if (flag.startsWith('_')) {
+                    this._rec[flag] = true;
+                } else {
+                    Record.setVar(flag, true);
+                }
             }
+        }
+    }
+
+    _rmFlags(flag)
+    {
+        if (!flag || typeof flag !== 'string') return;
+
+        const flags = flag.split(';').map(f => f.trim()).filter(f => f);
+        for (const f of flags) {
+            if (f.startsWith('_')) {delete this._rec[f];} 
+            else {Record.rmVar(f);}
         }
     }
 
@@ -199,7 +227,7 @@ export class COM_Talk_V2 extends Com
             case 'quest': QuestManager.add(p1); this._rec.quest = p1; break;
             case 'close': this.ctx.send('msg', '任務完成！'); QuestManager.close(p1); break;
             case 'set': this._rec[p1] = p2; break;
-            case 'sete': Record.setEntry(p1, p2); break;
+            case 'sete': Record.setVar(p1, p2); break;
             case 'add': Record.addOpt(p1, p2); break;
             case 'rm': Record.rmOpt(p1, p2); break;
         }
@@ -218,26 +246,30 @@ export class COM_Talk_V2 extends Com
         // 應用選項效果（設置旗標）
         this._applyEffect(choice.effect);
 
-        // 執行選項動作（trade, quest, close, set 等）
+        // 執行選項動作（用 ; 分離多個 action）
         if(choice.action)
         {
-            switch(choice.action) 
+            const cmds = choice.action.split(';').map(a => a.trim()).filter(a => a);
+            for (const cmd of cmds) 
             {
-                case 'trade':
-                    this.ctx.emit('trade', GM.player);
-                    cb?.('exit');
-                    break;
-                case 'quest':
-                    break;
-                default:
-                    cb?.(choice.action);
-                    break;
-                // case 'close':
-                //     cb?.('exit');
-                //     return;
-                // case 'update':
-                //     cb?.('update');
-                //     return;
+                const [op, ...args] = cmd.split(/\s+/);
+                const [p1, p2] = args;
+
+                switch(op)
+                {
+                    case 'trade':
+                        this.ctx.emit('trade', GM.player);
+                        cb?.('exit');
+                        break;
+                    case 'quest':   QuestManager.start(p1); break;
+                    case 'exit':
+                    case 'next':
+                    case 'update':
+                    case 'close':   cb?.(op); break;
+                    case 'set':     this._setFlags(p1,p2); break;
+                    case 'rm':      this._rmFlags(p1); break;
+                    default:        cb?.(op); break;
+                }
             }
         }
 
@@ -330,7 +362,7 @@ export class COM_Talk_V2 extends Com
         super.bind(root);
 
         // 1.載入對話資料
-        this._data = DB.dialog_v2(this.ctx.bb.id) || {};
+        this._data = DB.dialog(this.ctx.bb.id) || {};
 
         // 2.設定外部操作界面（方法 & 事件）
         root._setAct(GM.TALK, this._canAct.bind(this));

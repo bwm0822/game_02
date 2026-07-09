@@ -1,51 +1,39 @@
 {
-  "karen": {
-    "quest_kill_wolves": {
-      "id": "quest_kill_wolves",
-      "npcId": "karen",
-      "titleKey": "黑森林討伐",
-      "descKey": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
-      "steps": {
-        "step_talk_elder": {
-          "descKey": "與長老對話了解情況",
-          "complete": {
-            "type": "flag",
-            "flag": "talked_to_elder"
-          }
-        },
-        "step_kill_wolves": {
-          "descKey": "前往黑森林，擊殺黑森林的野狼 ({current}/5)",
-          "complete": {
-            "type": "kill",
-            "required": 5
-          }
-        },
-        "step_collect_pelt": {
-          "descKey": "收集狼皮 ({current}/5)",
-          "complete": {
-            "type": "collect",
-            "required": 5
-          }
-        },
-        "step_craft_cloak": {
-          "descKey": "用狼皮製作披風",
-          "complete": {
-            "type": "craft"
-          }
-        },
-        "step_report": {
-          "descKey": "回報任務",
-          "complete": {
-            "type": "flag",
-            "flag": "quest_reported"
-          }
+  "q_karen_01": {
+    "id": "q_karen_01",
+    "npcId": "karen",
+    "titleKey": "黑森林討伐",
+    "descKey": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
+    "steps": {
+      "step_talk_elder": {
+        "descKey": "與xi對話了解情況",
+        "complete": {
+          "type": "flag",
+          "flag": "qk01_talk_xi"
         }
       },
-      "reward": {
-        "gold": 100,
-        "exp": 100,
-        "items": []
+      "step_kill_wolves": {
+        "descKey": "前往黑森林，擊殺黑森林的野狼 ({current}/{required})",
+        "complete": {
+          "type": "kill",
+          "required": 1
+        }
+      },
+      "step_report": {
+        "descKey": "回報任務",
+        "complete": {
+          "type": "flag",
+          "flag": "quest_reported"
+        }
       }
+    },
+    "reward": {
+      "gold": 100,
+      "exp": 100,
+      "items": []
+    },
+    "action": {
+      "start": "set qk01_start"
     }
   }
 }

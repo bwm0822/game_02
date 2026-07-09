@@ -1,5 +1,6 @@
 import Utility from '../core/utility.js'
 import {setDEBUG,DEBUG} from '../core/debug.js' 
+import QuestManager from '../manager/quest.js'
 
 export default class Record
 {
@@ -132,10 +133,26 @@ export default class Record
         }
     }
 
+    // static getVar(key)
+    // {
+    //     if(!Record.game.vars[key]) {Record.game.vars[key]={opts:[]};}
+    //     return Record.game.vars[key];
+    // }
+
+    static setVar(key, value)
+    {
+        Record.game.vars[key]=value;
+        QuestManager.onFlag();
+    }
+
+    static rmVar(key)
+    {
+        delete Record.game.vars[key];
+    }
+
     static getVar(key)
     {
-        if(!Record.game.vars[key]) {Record.game.vars[key]={opts:[]};}
-        return Record.game.vars[key];
+        return Record.game?.vars[key];
     }
 
 

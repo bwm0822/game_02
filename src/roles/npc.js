@@ -65,7 +65,7 @@ export class Npc extends Role
     {
         this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
-        QuestManager.notify({cat: GM.KILL, id: this.id});
+        QuestManager.onKill(this.id);
         // option
         this._delAct(GM.OBSERVE);
         this._delAct(GM.ATTACK);

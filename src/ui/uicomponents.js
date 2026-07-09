@@ -1253,9 +1253,10 @@ export function uFold(scene,config={})
 export function uGroup(scene,config={})
 {
     const {
-        title='Title', 
-        color=GM.COLOR.WHITE, 
+        title='Title',
+        color=GM.COLOR.WHITE,
         indent=0,
+        fontSize=GM.FONT_SIZE,
         ext={expand:true}
     } = config;
 
@@ -1263,6 +1264,7 @@ export function uGroup(scene,config={})
 
     uBbc.call(p,scene,{
                 text: title,
+                fontSize: fontSize,
                 ext: {align:'left',expand:true},
             });
 
@@ -1277,7 +1279,8 @@ export function uGroup(scene,config={})
     // 操作介面    
     p.addItem = (item,config)=>{
         config=config??{align:'left'};
-        _content.add(item,config); return p;
+        _content.add(item,config); 
+        return p;
     }
 
     p.clearAll = ()=>{_content.removeAll(true); return p;}

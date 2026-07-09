@@ -139,7 +139,6 @@ export default class UiOption extends UiFrame
         this.close();
         if(this.owner.transfer(this.ent))
         {
-            if(this.owner.target===GM.player) {QuestManager.notify({cat:GM.INV});}
             this.refreshAll();
         }
     }
@@ -169,7 +168,6 @@ export default class UiOption extends UiFrame
     {
         this.close();
         this.owner.drop(this.ent);
-        this.ent.empty();
         this.refreshAll();
     }
 
