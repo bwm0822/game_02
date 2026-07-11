@@ -177,6 +177,13 @@ export default class Utility
     //     return s+d;
     // }
 
+    static str2Array(str)
+    {
+        return str.split(';')
+                .map(s => s.trim())
+                .filter(Boolean); // 過濾掉空字串
+    }
+
     static str2Func(str)
     {
         try 

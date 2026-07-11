@@ -5,6 +5,30 @@ import {dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
+function _checkCond(state, step)
+{
+    return !step.conds || step.conds.every(id=>state?.steps?.[id]);
+}
+
+function _exec(actions)
+{
+    if(!actions||actions===[]) return; 
+
+    actions.forEach((action)=>{
+
+        const [op, ...args] = action.split(/\s+/);
+        const [p1, p2] = args;
+
+        switch(op)
+        {
+            case 'set':
+                Record.setVar(p1, p2??true);
+                break;
+        }
+        
+    });
+    
+}
 
 export default class QuestManager
 {
@@ -21,11 +45,12 @@ export default class QuestManager
             if (!quest) continue;
 
             const state = this.quests.active[questId];
-            for (const stepId in quest.steps) 
+            for (const stepId in quest.steps)
             {
                 const step = quest.steps[stepId];
-                if (state.completedSteps[stepId]) continue;
+                if (state.steps[stepId]) continue;
                 if (step.complete.type !== type) continue;
+                if (!_checkCond(state, step)) continue;
 
                 switch (type)
                 {
@@ -35,19 +60,27 @@ export default class QuestManager
                             state.counters[stepId] = (state.counters[stepId] ?? 0) + 1;
                             if (state.counters[stepId] >= step.complete.required)
                             {
-                                state.completedSteps[stepId] = true;
+                                state.steps[stepId] = true;
                             }
                         } 
                         break;
 
                     case 'collect':
+                        const sum = GM.player.queryItem(itm=>itm.id===step.complete.id)
+                                            .reduce((sum, itm) => sum + itm.count, 0);
+                        const required = step.complete.required;
+                        state.counters[stepId] = Math.min(sum,required)
+                        if (sum >= required)
+                        {
+                            state.steps[stepId] = true;
+                            _exec(step.actons);
+                        }
                         break;
 
                     case 'flag':
                         if (Record.getVar(step.complete.flag))
                         {
-                            state.completedSteps[stepId] = true;
-                            console.log(`Quest ${questId} step ${stepId} completed due to flag ${step.complete.flag}`);
+                            state.steps[stepId] = true;
                         }
                         break; 
                 }
@@ -55,25 +88,9 @@ export default class QuestManager
         }
     }
 
-    static _exec(action)
-    {
-        if(action)
-        {
-            const cmds = action.split(';').map(a => a.trim()).filter(a => a);
-            for (const cmd of cmds) 
-            {
-                const [op, ...args] = cmd.split(/\s+/);
-                const [p1, p2] = args;
+    
 
-                switch(op)
-                {
-                    case 'set':
-                        Record.setVar(p1, true);
-                        break;
-                }
-            }
-        }
-    }
+
     //------------------------------------------------------
     // Public
     //------------------------------------------------------
@@ -81,10 +98,10 @@ export default class QuestManager
     static start(id)
     {
         var qD = DB.quest(id);
-        this.quests.active[id] = {completedSteps: {},counters: {}};
-        this._exec(qD.action?.start);
+        this.quests.active[id] = {steps: {},counters: {}};
+        _exec(qD.action?.start);
         this.save();
-        // this.notify({cat:GM.INV}) 
+        // this.notify({cat:GM.INV})
     }
 
     // 完成任務
@@ -111,9 +128,12 @@ export default class QuestManager
     // 取得任務內容
     static content(q)
     {
-        let des = `\n${q.dat.descKey}\n`; 
+        let des = `\n${q.dat.descKey}\n`;
         Object.entries(q.dat.steps).forEach(([stepId, step]) => {
-            const done = q.sta?.completedSteps?.[stepId] ? '🗹' : '☐';
+            // 
+            if (!_checkCond(q.sta,step)) return;
+            
+            const done = q.sta?.steps?.[stepId] ? '🗹' : '☐';
             let stepDesc = step.descKey;
 
             // 替換 {current} 為實際計數值
@@ -146,7 +166,6 @@ export default class QuestManager
     static notify({cat, id})
     {
         return; // 暫時關閉通知
-        dlog()('------------------- notify=',cat)
         for(const qid in this.quests.active)
         {
             const q = this.query(qid);
@@ -170,8 +189,7 @@ export default class QuestManager
     
     static onKill(id) {this._checkSteps('kill', id);}
     static onCollect(dbg) {
-        console.log('collect...',dbg);
-        // this._checkSteps('collect', id);
+        this._checkSteps('collect');
     }
     static onFlag() {this._checkSteps('flag');}
 

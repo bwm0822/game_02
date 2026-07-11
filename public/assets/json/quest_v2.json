@@ -5,26 +5,55 @@
     "titleKey": "黑森林討伐",
     "descKey": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
     "steps": {
-      "step_talk_elder": {
+      "step_01": {
         "descKey": "與xi對話了解情況",
         "complete": {
           "type": "flag",
           "flag": "qk01_talk_xi"
-        }
+        },
+        "actions": [
+          "rm qk01_talk_xi"
+        ]
       },
-      "step_kill_wolves": {
+      "step_02": {
         "descKey": "前往黑森林，擊殺黑森林的野狼 ({current}/{required})",
         "complete": {
           "type": "kill",
-          "required": 1
-        }
+          "required": 1,
+          "id": "wolf"
+        },
+        "conds": [
+          "step_01"
+        ]
       },
-      "step_report": {
-        "descKey": "回報任務",
+      "step_03": {
+        "descKey": "收集刀子 ({current}/{required})",
+        "complete": {
+          "type": "collect",
+          "required": 1,
+          "id": "sword_01"
+        },
+        "conds": [
+          "step_02"
+        ],
+        "actions": [
+          "set qk01 done"
+        ]
+      },
+      "step_05": {
+        "descKey": "任務完成，跟 karen 回報任務",
         "complete": {
           "type": "flag",
-          "flag": "quest_reported"
-        }
+          "flag": "qk01_report"
+        },
+        "conds": [
+          "step_03"
+        ],
+        "actions": [
+          "rm qk01_report",
+          "set qk01 close",
+          "complete"
+        ]
       }
     },
     "reward": {
@@ -33,7 +62,10 @@
       "items": []
     },
     "action": {
-      "start": "set qk01_start"
+      "start": [
+        "set qk01_start",
+        "set qk01 going"
+      ]
     }
   }
 }

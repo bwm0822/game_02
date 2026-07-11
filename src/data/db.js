@@ -24,7 +24,6 @@ export default class DB
         // this._questDB = scene.cache.json.get('quest');
 
         this._questDB = scene.cache.json.get('quest_v2');
-        console.log('questDB=',this._questDB)
 
         this._abilityDB = scene.cache.json.get('skill');
 

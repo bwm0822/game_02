@@ -1,5 +1,7 @@
-import XLSX from 'xlsx';
-import fs from 'fs';
+import XLSX from 'xlsx'
+import fs from 'fs'
+import {toArray} from './tools.js'
+
 
 // 將原始行資料按表頭分割成多個資料表
 // 表頭行以 # 開頭的單元格標識（# 會被移除），後續行為該表的資料
@@ -41,20 +43,8 @@ function buildEntry(row) {
     order:  Number(row.priority)
   };
   if (row.condition)    entry.condition = row.condition;
-  if (row.setFlag)      entry.effect    = row.setFlag;
+  if (row.actions)      entry.actions   = toArray(row.actions);
   return entry;
-}
-
-function buildEffect(row) {
-    if (row.setFlag === '') return undefined;
-
-    // Parse "cond:setflag" format into {condition, setFlag} object
-    if (row.setFlag.includes(':')) {
-        const [condition, setFlag] = row.setFlag.split(':').map(s => s.trim());
-        return {[condition]:setFlag};
-    }
-
-    return row.setFlag;
 }
 
 function buildChoice(row) {
@@ -62,66 +52,36 @@ function buildChoice(row) {
     labelKey: row.label_key,
     priority: Number(row.priority),
   };
-  if (row.setFlag)      c.effect    = buildEffect(row);
-  if (row.action)       c.action    = row.action;
+  if (row.actions)      c.actions   = toArray(row.actions);
   if (row.next)         c.next      = row.next;
   if (row.condition)    c.condition = row.condition;
   return c;
 }
 
-// function buildPost(row) {
-//   const e = {};
-//   if (row.setFlag) {
-//     // Parse "cond:setflag" format into {condition, setFlag} object
-//     if (row.setFlag.includes(':')) {
-//       const [condition, setFlag] = row.setFlag.split(':').map(s => s.trim());
-//       e.condition = condition;
-//       e.setFlag = setFlag;
-//     } else {
-//       e.setFlag = row.setFlag;
-//     }
-//   }
-//   if (row.condition)    e.condition = row.condition;
-//   return Object.keys(e).length ? e : undefined;
-// }
-
-function buildTextKeys(text_keys_str) {
+function buildTextKeys(text_keys_str)
+{
   if (!text_keys_str) return {};
+  const ret={};
+  toArray(text_keys_str).forEach((str)=>{
+    const [cond, text] = str.includes(':')
+                        ? str.split(':').map(s => s.trim())
+                        : [true, str];
+    ret[cond] = text;
+  })
 
-  // 如果包含 ':' 表示有條件映射
-  if (text_keys_str.includes(':')) {
-    const textKeys = {};
-    const lines = text_keys_str.split('\n').map(s => s.trim()).filter(s => s);
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes(':')) {
-        const [cond, text] = lines[i].split(':').map(s => s.trim());
-        // 如果下一行不是條件行，併入文本
-        let fullText = text || '';
-        while (i + 1 < lines.length && !lines[i + 1].includes(':')) {
-          i++;
-          fullText += '\n' + lines[i];
-        }
-        textKeys[cond] = fullText;
-      }
-    }
-    return textKeys;
-  }
-
-  // 簡單文本形式（向後相容）
-  return { "true": text_keys_str };
+  return ret;
 }
 
 function buildNpc(sheetName, rows)
 {
-    const npc  = { id: sheetName, effects: [], entries: [], nodes: {},  };
+    const npc  = { id: sheetName, actions: [], entries: [], nodes: {},  };
     var currentNode = null;
 
     for (const row of rows) 
     {
-        if(row.section === 'effect')
+        if(row.section === 'action')
         {
-            npc.effects.push(buildEffect(row));
+            npc.actions.push(...toArray(row.actions));
         }
         else if (row.section === 'entry') 
         {
@@ -131,7 +91,7 @@ function buildNpc(sheetName, rows)
         {
             currentNode = {
                 textKeys: buildTextKeys(row.text_keys),
-                effect:   buildEffect(row),
+                actions:   toArray(row.actions),
                 choices:  [],
                 posts:  []
             };
@@ -143,7 +103,7 @@ function buildNpc(sheetName, rows)
         }
         else if (row.section === 'post' && currentNode)
         {
-            currentNode.posts.push(buildEffect(row));
+            currentNode.posts.push(...toArray(row.actions));
         }
     }
 

@@ -1,10 +1,8 @@
 {
   "karen": {
     "id": "karen",
-    "effects": [
-      {
-        "!_first_meet": "_quest=n_quest_01"
-      }
+    "actions": [
+      "!_first_meet : set _quest n_quest_01"
     ],
     "entries": [
       {
@@ -15,20 +13,28 @@
       {
         "nodeId": "n_default",
         "order": 3,
-        "effect": "_where=false;\r\n_weapon=false;\r\n_eat=false;\r\n_rest=false"
+        "actions": [
+          "clr _where",
+          "clr _weapon",
+          "clr _eat",
+          "clr _rest"
+        ]
       }
     ],
     "nodes": {
       "n_default": {
         "textKeys": {
-          "!_first_meet": "\n很高興認識你，我是Karen",
-          "true": "\n你好;需要幫助嗎?"
+          "!_first_meet": "很高興認識你，我是Karen",
+          "true": "需要幫助嗎?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "交易",
             "priority": 10,
-            "action": "trade"
+            "actions": [
+              "trade"
+            ]
           },
           {
             "labelKey": "聊天",
@@ -43,17 +49,20 @@
           {
             "labelKey": "離開",
             "priority": 99,
-            "action": "close"
+            "actions": [
+              "close"
+            ]
           }
         ],
         "posts": [
-          "_first_meet=true"
+          "set _first_meet"
         ]
       },
       "n_chat": {
         "textKeys": {
           "true": "你想要聊什麼?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -91,7 +100,9 @@
         "textKeys": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
-        "effect": "_weapon=true",
+        "actions": [
+          "set _weapon"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -129,7 +140,9 @@
         "textKeys": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
-        "effect": "_eat=true",
+        "actions": [
+          "set _eat"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -167,7 +180,9 @@
         "textKeys": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
-        "effect": "_rest=true",
+        "actions": [
+          "set _rest"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -205,7 +220,9 @@
         "textKeys": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
-        "effect": "_where=true",
+        "actions": [
+          "set _where"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -243,11 +260,15 @@
         "textKeys": {
           "true": "要黑森林討伐?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "接受",
             "priority": 0,
-            "action": "quest q_karen_01",
+            "actions": [
+              "quest q_karen_01",
+              "set _quest n_quest_01_2"
+            ],
             "next": "n_quest_01_1"
           },
           {
@@ -262,7 +283,7 @@
         "textKeys": {
           "true": "先去找xi了解詳情"
         },
-        "effect": "_quest=n_quest_01_2",
+        "actions": [],
         "choices": [
           {
             "labelKey": "好",
@@ -274,13 +295,31 @@
       },
       "n_quest_01_2": {
         "textKeys": {
-          "true": "任務如何了?"
+          "qk01==going": "任務如何了?",
+          "qk01==done": "很好，這是你的獎勵"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "處理中",
             "priority": 0,
-            "next": "n_default"
+            "next": "n_default",
+            "condition": "qk01==going"
+          },
+          {
+            "labelKey": "完成了",
+            "priority": 0,
+            "actions": [
+              "set qk01_report"
+            ],
+            "next": "n_quest_01_01",
+            "condition": "qk01==done"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "next": "n_default",
+            "condition": "qk01==close"
           }
         ],
         "posts": []
@@ -289,10 +328,8 @@
   },
   "xi": {
     "id": "xi",
-    "effects": [
-      {
-        "!_first_meet": "_quest=n_quest_01"
-      }
+    "actions": [
+      "!_first_meet : set _quest n_quest_01"
     ],
     "entries": [
       {
@@ -303,20 +340,28 @@
       {
         "nodeId": "n_default",
         "order": 3,
-        "effect": "_where=false;\r\n_weapon=false;\r\n_eat=false;\r\n_rest=false"
+        "actions": [
+          "clr _where",
+          "clr _weapon",
+          "clr _eat",
+          "clr _rest"
+        ]
       }
     ],
     "nodes": {
       "n_default": {
         "textKeys": {
-          "!_first_meet": "\n很高興認識你，我是Karen",
-          "true": "\n你好;需要幫助嗎?"
+          "!_first_meet": "很高興認識你，我是Karen\r\ntrue",
+          "true": "需要幫助嗎?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "交易",
             "priority": 10,
-            "action": "trade"
+            "actions": [
+              "trade"
+            ]
           },
           {
             "labelKey": "聊天",
@@ -332,22 +377,25 @@
             "labelKey": "關於黑森林討伐",
             "priority": 40,
             "next": "n_qk01_start",
-            "condition": "qk01_start==true"
+            "condition": "qk01_start"
           },
           {
             "labelKey": "離開",
             "priority": 99,
-            "action": "close"
+            "actions": [
+              "close"
+            ]
           }
         ],
         "posts": [
-          "_first_meet=true"
+          "set _first_meet"
         ]
       },
       "n_chat": {
         "textKeys": {
           "true": "你想要聊什麼?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -385,7 +433,9 @@
         "textKeys": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
-        "effect": "_weapon=true",
+        "actions": [
+          "set _weapon"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -423,7 +473,9 @@
         "textKeys": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
-        "effect": "_eat=true",
+        "actions": [
+          "set _eat"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -461,7 +513,9 @@
         "textKeys": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
-        "effect": "_rest=true",
+        "actions": [
+          "set _rest"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -499,7 +553,9 @@
         "textKeys": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
-        "effect": "_where=true",
+        "actions": [
+          "set _where"
+        ],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -537,12 +593,15 @@
         "textKeys": {
           "true": "要黑森林討伐?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "接受",
             "priority": 0,
-            "effect": "_quest=n_quest_01_1",
-            "action": "quest q_karen_01",
+            "actions": [
+              "quest q_karen_01",
+              "set _quest n_quest_01_1"
+            ],
             "next": "n_default"
           },
           {
@@ -557,6 +616,7 @@
         "textKeys": {
           "true": "任務如何了?"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "…",
@@ -570,12 +630,15 @@
         "textKeys": {
           "true": "前往黑森林，擊殺黑森林的野狼"
         },
+        "actions": [],
         "choices": [
           {
             "labelKey": "了解",
             "priority": 0,
-            "effect": "qk01_talk_xi=true",
-            "action": "rm qk01_start",
+            "actions": [
+              "rm qk01_start",
+              "set qk01_talk_xi"
+            ],
             "next": "n_default"
           }
         ],
@@ -585,7 +648,7 @@
   },
   "npc_c": {
     "id": "npc_c",
-    "effects": [],
+    "actions": [],
     "entries": [],
     "nodes": {}
   }

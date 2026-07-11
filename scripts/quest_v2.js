@@ -1,5 +1,6 @@
 import XLSX from 'xlsx';
 import fs from 'fs';
+import {toArray} from './tools.js';
 
 // 將原始行資料按表頭分割成多個資料表
 // 表頭行以 # 開頭的單元格標識（# 會被移除），後續行為該表的資料
@@ -48,34 +49,14 @@ function splitTables(raw)
 }
 
 // ── 工具函式 ──
-// function buildComplete(row) {
-//   switch (row.complete_type) {
-//     case 'counter':
-//       return {
-//         type:     'counter',
-//         counter:  row.complete_counter,
-//         required: Number(row.complete_required)
-//       };
-//     case 'hasFlag':
-//     case 'notFlag':
-//       return {
-//         type: row.complete_type,
-//         flag: row.complete_flag
-//       };
-//     default:
-//       return null;
-//   }
-// }
 
 function buildComplete(row) 
 {
-    const complete={
-        type:       row.complete_type,
-        counter:    row.complete_counter,
-    }
+    const complete = {type: row.complete_type};
 
-    if(row.complete_required) complete.required=row.complete_required;
+    if(row.complete_required) complete.required=Number(row.complete_required);
     if(row.complete_flag) complete.flag=row.complete_flag;
+    if(row.complete_id) complete.id=row.complete_id;
 
     return complete;
 }
@@ -83,8 +64,8 @@ function buildComplete(row)
 function buildAction(row)
 {
     const action={};
-    if(row.action_start) action.start=row.action_start;
-    if(row.action_complete) action.complete =row.action_complete;
+    if(row.actions_start) action.start = toArray(row.actions_start);
+    if(row.actions_complete) action.complete = toArray(row.actions_complete);
     return action;
 }
 
@@ -93,9 +74,7 @@ function buildReward(row)
     return {
                 gold:  Number(row.reward_gold),
                 exp:   Number(row.reward_exp),
-                items: row.reward_items
-                        ? row.reward_items.split(',').map(s => s.trim())
-                        : []
+                items: toArray(row.reward_items)
             };
 }
 
@@ -124,14 +103,23 @@ function buildQuest(sheetName, tables)
     for (const row of stepRows) 
     {
         const quest = allQuests[row.quest_id];
-        if (!quest) {
+        if (!quest) 
+        {
             console.warn(`找不到任務 ${row.quest_id}，跳過步驟 ${row.step_id}`);
             continue;
         }
         quest.steps[row.step_id] = {
-        descKey:  row.descKey,
-        complete: buildComplete(row)
+            descKey:  row.descKey,
+            complete: buildComplete(row)
         };
+
+        if(row.conds) {
+            quest.steps[row.step_id].conds = toArray(row.conds);
+        }
+
+        if(row.actions) {
+            quest.steps[row.step_id].actions = toArray(row.actions);
+        }
     }
 
     return allQuests;
