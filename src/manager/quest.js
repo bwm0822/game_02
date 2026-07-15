@@ -112,11 +112,16 @@ export default class QuestManager
     // 完成任務
     static close(id)
     {
-        let state = this.quests.active[id];
+        console.log('------------ close')
+        const state = this.quests.active[id];
         state.sta = 'close';
         const qD = DB.quest(id);
         if(qD.rewards) {GM.player.reward(qD.rewards);}
         if(qD.actions) {this.action(qD.actions)}
+
+        this.quests.close[id] = state;
+        delete this.quests.active[id];
+        this.save();
     }
 
     // 移除任務

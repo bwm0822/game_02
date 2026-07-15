@@ -52,7 +52,7 @@
         "actions": [
           "rm qk01_report",
           "set qk01 close",
-          "complete"
+          "close q_karen_01"
         ]
       }
     },

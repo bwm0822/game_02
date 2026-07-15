@@ -2,6 +2,7 @@
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
+import DB from '../data/db.js'
 import Ui from './uicommon.js'
 
 
@@ -97,26 +98,40 @@ export class PQuest extends Sizer
         this._itm = null;
         this._scroll.clearAll();
         this._content.clearAll();
-        
+
+        if(Object.keys(QuestManager.quests.close).length > 0)
+        {
+            const closeFold = ui.uGroup(scene, {title:'已完成任務',fontSize:GM.FONT_SIZE+4});
+            this._scroll.addItem(closeFold);
+            closeFold.cat='已完成任務';
+
+            for(let id in QuestManager.quests.close)
+            {
+                const qD = DB.quest(id);
+                const state = QuestManager.quests.close[id];
+                const q = {cat:'已完成任務', dat:qD, sta:state};
+
+                const itm = ui.uButton(scene,{
+                    style: UI.BTN.ITEM,
+                    text: {text:qD.titleKey,wrapWidth:125},
+                    onclick: onclick});
+
+                closeFold.addItem(itm);
+                itm.q=q;
+            }
+        }
+
         for(let id in QuestManager.quests.active)
         {
             const q = QuestManager.query(id);
-            // const itm = ui.uButton(scene,{
-            //                 style: UI.BTN.ITEM,
-            //                 tcon: {text:q.state==='close'?'🗹':'☐',ext:{align:'top'}},
-            //                 text: {text:q.title(),wrapWidth:125},
-            //                 onclick: onclick});
-
             const itm = ui.uButton(scene,{
                 style: UI.BTN.ITEM,
-                // tcon: {text:'☐',ext:{align:'top'}},
                 text: {text:q.dat.titleKey,wrapWidth:125},
                 onclick: onclick});
 
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
             {
-                // fold = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+20}]${q.cat}[/size]`});
                 fold = ui.uGroup(scene, {title:`${q.cat}`,fontSize:GM.FONT_SIZE+4});
                 this._scroll.addItem(fold);
                 fold.cat=q.cat
@@ -125,7 +140,9 @@ export class PQuest extends Sizer
             fold.addItem(itm);
             itm.q=q;
         }
+
         
+
         this.layout();
 
     }
