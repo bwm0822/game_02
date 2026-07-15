@@ -110,7 +110,7 @@ export class PQuest extends Sizer
             const itm = ui.uButton(scene,{
                 style: UI.BTN.ITEM,
                 // tcon: {text:'☐',ext:{align:'top'}},
-                text: {text:`${q.sta==='close' ? '🗹':'☐'} `+q.dat.titleKey,wrapWidth:125},
+                text: {text:q.dat.titleKey,wrapWidth:125},
                 onclick: onclick});
 
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);

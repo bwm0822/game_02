@@ -25,7 +25,7 @@
       "n_default": {
         "textKeys": {
           "!_first_meet": "很高興認識你，我是Karen",
-          "true": "需要幫助嗎?"
+          "true": "你好/需要幫助嗎?"
         },
         "actions": [],
         "choices": [
@@ -44,7 +44,8 @@
           {
             "labelKey": "關於任務",
             "priority": 30,
-            "next": "#_quest"
+            "next": "#_quest",
+            "condition": "_quest"
           },
           {
             "labelKey": "離開",
@@ -296,7 +297,8 @@
       "n_quest_01_2": {
         "textKeys": {
           "qk01==going": "任務如何了?",
-          "qk01==done": "很好，這是你的獎勵"
+          "qk01==done": "任務如何了?",
+          "qk01==close": "很好，這是你的獎勵"
         },
         "actions": [],
         "choices": [
@@ -312,12 +314,15 @@
             "actions": [
               "set qk01_report"
             ],
-            "next": "n_quest_01_01",
+            "next": "n_quest_01_2",
             "condition": "qk01==done"
           },
           {
             "labelKey": "離開",
             "priority": 0,
+            "actions": [
+              "rm _quest"
+            ],
             "next": "n_default",
             "condition": "qk01==close"
           }
@@ -351,8 +356,8 @@
     "nodes": {
       "n_default": {
         "textKeys": {
-          "!_first_meet": "很高興認識你，我是Karen\r\ntrue",
-          "true": "需要幫助嗎?"
+          "!_first_meet": "很高興認識你，我是Xi",
+          "true": "你好/需要幫助嗎?"
         },
         "actions": [],
         "choices": [

@@ -12,7 +12,7 @@ function _checkCond(state, step)
 
 function _exec(actions)
 {
-    if(!actions||actions===[]) return; 
+    if(!actions||actions.length===0) return; 
 
     actions.forEach((action)=>{
 
@@ -23,6 +23,9 @@ function _exec(actions)
         {
             case 'set':
                 Record.setVar(p1, p2??true);
+                break;
+            case 'close':
+                QuestManager.close(p1);
                 break;
         }
         
@@ -61,6 +64,7 @@ export default class QuestManager
                             if (state.counters[stepId] >= step.complete.required)
                             {
                                 state.steps[stepId] = true;
+                                _exec(step.actions);
                             }
                         } 
                         break;
@@ -73,7 +77,7 @@ export default class QuestManager
                         if (sum >= required)
                         {
                             state.steps[stepId] = true;
-                            _exec(step.actons);
+                            _exec(step.actions);
                         }
                         break;
 
@@ -81,6 +85,7 @@ export default class QuestManager
                         if (Record.getVar(step.complete.flag))
                         {
                             state.steps[stepId] = true;
+                            _exec(step.actions);
                         }
                         break; 
                 }
@@ -97,8 +102,8 @@ export default class QuestManager
     // 開啟任務
     static start(id)
     {
-        var qD = DB.quest(id);
-        this.quests.active[id] = {steps: {},counters: {}};
+        const qD = DB.quest(id);
+        this.quests.active[id] = {steps: {},counters: {}, sta:'open'};
         _exec(qD.action?.start);
         this.save();
         // this.notify({cat:GM.INV})
@@ -107,7 +112,8 @@ export default class QuestManager
     // 完成任務
     static close(id)
     {
-        var q = this.quests.opened[id];
+        let state = this.quests.active[id];
+        state.sta = 'close';
         const qD = DB.quest(id);
         if(qD.rewards) {GM.player.reward(qD.rewards);}
         if(qD.actions) {this.action(qD.actions)}
@@ -188,9 +194,7 @@ export default class QuestManager
 
     
     static onKill(id) {this._checkSteps('kill', id);}
-    static onCollect(dbg) {
-        this._checkSteps('collect');
-    }
+    static onCollect(dbg) {this._checkSteps('collect');}
     static onFlag() {this._checkSteps('flag');}
 
 }

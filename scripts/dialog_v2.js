@@ -63,9 +63,8 @@ function buildTextKeys(text_keys_str)
   if (!text_keys_str) return {};
   const ret={};
   toArray(text_keys_str).forEach((str)=>{
-    const [cond, text] = str.includes(':')
-                        ? str.split(':').map(s => s.trim())
-                        : [true, str];
+    const [cond, text] = str.includes(':') ? str.split(':').map(s => s.trim())
+                                            : [true, str];
     ret[cond] = text;
   })
 
