@@ -101,22 +101,25 @@ export class PQuest extends Sizer
 
         if(Object.keys(QuestManager.quests.close).length > 0)
         {
-            const closeFold = ui.uGroup(scene, {title:'已完成任務',fontSize:GM.FONT_SIZE+4});
-            this._scroll.addItem(closeFold);
-            closeFold.cat='已完成任務';
+            const fold = ui.uFold(scene, {title:'已完成',
+                                                fontSize:GM.FONT_SIZE+4, 
+                                                onclick: ()=>{this.layout();}
+                                            });
+            this._scroll.addItem(fold);
+            fold.cat='close';
 
             for(let id in QuestManager.quests.close)
             {
                 const qD = DB.quest(id);
                 const state = QuestManager.quests.close[id];
-                const q = {cat:'已完成任務', dat:qD, sta:state};
+                const q = {cat:`${fold.cat}`, dat:qD, sta:state};
 
                 const itm = ui.uButton(scene,{
                     style: UI.BTN.ITEM,
                     text: {text:qD.titleKey,wrapWidth:125},
                     onclick: onclick});
 
-                closeFold.addItem(itm);
+                fold.addItem(itm);
                 itm.q=q;
             }
         }
@@ -132,7 +135,10 @@ export class PQuest extends Sizer
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
             {
-                fold = ui.uGroup(scene, {title:`${q.cat}`,fontSize:GM.FONT_SIZE+4});
+                fold = ui.uFold(scene, {title:`${q.cat}`,
+                                        fontSize:GM.FONT_SIZE+4,
+                                        onclick: ()=>{this.layout();}
+                                    });
                 this._scroll.addItem(fold);
                 fold.cat=q.cat
             }
@@ -140,8 +146,6 @@ export class PQuest extends Sizer
             fold.addItem(itm);
             itm.q=q;
         }
-
-        
 
         this.layout();
 

@@ -1210,13 +1210,14 @@ export function uFold(scene,config={})
         color=GM.COLOR.WHITE, 
         prefix=true, 
         indent=0,//GM.FONT_SIZE,
+        fontSize=GM.FONT_SIZE,
         ext={expand:true}
     } = config;
 
     const p = uPanel(scene,{orientation:'y'});
 
     const _btn = uButton.call(p,scene,{
-                    text: {text:title,color:color},
+                    text: {text:title,color:color,fontSize:fontSize},
                     ext: {align:'left',expand:true},
                     style: UI.BTN.FOLD,
                     prefix: prefix,
@@ -1265,7 +1266,7 @@ export function uGroup(scene,config={})
     uBbc.call(p,scene,{
                 text: title,
                 fontSize: fontSize,
-                ext: {align:'left',expand:true},
+                ext: {align:'left',expand:true,padding:{top:10}},
             });
 
     uDiv.call(p,scene,{ext:{expand:true,padding:{top:0,bottom:10}}});
