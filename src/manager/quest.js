@@ -33,6 +33,8 @@ function _exec(actions)
     
 }
 
+function _popup(msg) {Ui.get(UI.TAG.POPUP).push(msg);}
+
 export default class QuestManager
 {
     static quests={active:{}, close:{}};
@@ -65,6 +67,7 @@ export default class QuestManager
                             {
                                 state.steps[stepId] = true;
                                 _exec(step.actions);
+                                _popup(`更新任務`);
                             }
                         } 
                         break;
@@ -78,14 +81,17 @@ export default class QuestManager
                         {
                             state.steps[stepId] = true;
                             _exec(step.actions);
+                            _popup(`更新任務`);
                         }
                         break;
 
                     case 'flag':
                         if (Record.getVar(step.complete.flag))
                         {
+                            UiPopup.push()
                             state.steps[stepId] = true;
                             _exec(step.actions);
+                            _popup(`更新任務`);
                         }
                         break; 
                 }
@@ -106,6 +112,7 @@ export default class QuestManager
         this.quests.active[id] = {steps: {},counters: {}, sta:'open'};
         _exec(qD.action?.start);
         this.save();
+        _popup(`更新任務`);
         // this.notify({cat:GM.INV})
     }
 

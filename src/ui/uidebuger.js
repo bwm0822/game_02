@@ -5,6 +5,7 @@ import * as ui from './uicomponents.js'
 import TimeSystem from '../systems/time.js'
 import {T,dlog} from '../core/debug.js'
 import Record from '../infra/record.js'
+import UiPopup from './uipopup.js'
 
 
 function cmd_get(args)
@@ -109,6 +110,13 @@ function cmd_getVar(args)
         const v = Record.getVar(args[1]);
         this.print(`[color=cyan]${args[1]}[/color]: entry=${v.entry}, opt=[${v.opt.join(', ')}]\n`);
     }
+}
+
+function cmd_pop(args)
+{
+    const msg = args.slice(1).join(' ') || '測試訊息';
+    UiPopup.push(msg, {duration: 2000, animDuration: 300});
+    this.print(`[color=blue]✓ 彈出訊息: ${msg}[/color]\n`);
 }
 
 

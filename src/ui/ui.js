@@ -22,6 +22,7 @@ import UiCursor from './uicursor.js'
 import UiEffect  from './uieffect.js'
 import UiTime  from './uitime.js'
 import UiMessage  from './uimessage.js'
+import UiPopup  from './uipopup.js'
 import UiChangeScene  from './uichangescene.js'
 import UiGameOver  from './uigameover.js'
 import UiManufacture  from './uimanufacture.js'
@@ -94,6 +95,7 @@ export default function createUI(scene)
     new UiInfo(scene);              // 13
     new UiOption(scene);            // 14
     new UiMessage(scene);           // 15
+    new UiPopup(scene);             // popup
     new UiGameOver(scene);          // 16
     new UiDebuger(scene);           // 18
     new UiConfirm(scene);

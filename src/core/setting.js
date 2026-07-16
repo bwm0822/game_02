@@ -494,6 +494,7 @@ export const UI =
         BUTTONS:'buttons',
         CURSOR:'cursor',
         STEAL:'steal',
+        POPUP:'popup',
     },
     INFO:{
         SLOT:'slot',

@@ -583,6 +583,7 @@ export class GameScene extends Scene
                 .on('option', (x,y,acts,owner)=>{Ui.on(UI.TAG.OPTION,x,y,acts,owner)})
                 .on('refresh', ()=>{Ui.refreshAll()})
                 .on('msg', (msg)=>{Ui.get(UI.TAG.MESSAGE).push(msg);})
+                .on('pop', (msg)=>{Ui.get(UI.TAG.POPUP).push(msg);})
                 .on('scene', (config)=>{Ui.get(UI.TAG.CHANGESCENE).start(()=>{this.gotoScene(config);})})
                 .on('gameover',()=>{this.gameOver();})
                 .on('stove',(owner)=>{Ui.on(UI.TAG.MANUFACTURE,owner);})
