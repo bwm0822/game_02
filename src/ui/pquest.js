@@ -89,10 +89,19 @@ export class PQuest extends Sizer
         const scene = this.scene;
 
         const onclick = (itm)=>{
-            if(this._itm) {this._itm.setValue(false);}
-            this._itm=itm;
-            itm.setValue(true);
-            this._updateContent(itm.q);
+            if(this._itm === itm)
+            {
+                this._itm.setValue(false);
+                this._itm=null;
+                this._content.clearAll();
+            }
+            else
+            {
+                if(this._itm) {this._itm.setValue(false);}
+                this._itm=itm;
+                itm.setValue(true);
+                this._updateContent(itm.q);
+            }
         }
 
         this._itm = null;
