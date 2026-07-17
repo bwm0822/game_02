@@ -38,6 +38,7 @@ function _popup(msg) {Ui.get(UI.TAG.POPUP).push(msg);}
 export default class QuestManager
 {
     static quests={active:{}, close:{}};
+    static updated=new Set(); // 追蹤有更新的 quest
 
     //------------------------------------------------------
     // Local
@@ -59,17 +60,18 @@ export default class QuestManager
 
                 switch (type)
                 {
-                    case 'kill':   
+                    case 'kill':
                         if (step.complete.id === id)
                         {
                             state.counters[stepId] = (state.counters[stepId] ?? 0) + 1;
                             if (state.counters[stepId] >= step.complete.required)
                             {
                                 state.steps[stepId] = true;
+                                this.updated.add(questId);
                                 _exec(step.actions);
                                 _popup(`更新任務`);
                             }
-                        } 
+                        }
                         break;
 
                     case 'collect':
@@ -80,6 +82,7 @@ export default class QuestManager
                         if (sum >= required)
                         {
                             state.steps[stepId] = true;
+                            this.updated.add(questId);
                             _exec(step.actions);
                             _popup(`更新任務`);
                         }
@@ -88,12 +91,12 @@ export default class QuestManager
                     case 'flag':
                         if (Record.getVar(step.complete.flag))
                         {
-                            UiPopup.push()
                             state.steps[stepId] = true;
+                            this.updated.add(questId);
                             _exec(step.actions);
                             _popup(`更新任務`);
                         }
-                        break; 
+                        break;
                 }
             }
         }
@@ -111,6 +114,7 @@ export default class QuestManager
         const qD = DB.quest(id);
         this.quests.active[id] = {steps: {},counters: {}, sta:'open'};
         _exec(qD.action?.start);
+        this.updated.add(id);
         this.save();
         _popup(`更新任務`);
         // this.notify({cat:GM.INV})
@@ -119,7 +123,6 @@ export default class QuestManager
     // 完成任務
     static close(id)
     {
-        console.log('------------ close')
         const state = this.quests.active[id];
         state.sta = 'close';
         const qD = DB.quest(id);

@@ -209,7 +209,6 @@ export class COM_Talk_V2 extends Com
         // 2. 跳到到下一節點(若有指定)
         if (choice.next)
         {
-            console.log('next=',choice.next)
             this._nodeId = this._getNext(choice.next);
             cb?.('goto');
         }

@@ -134,7 +134,8 @@ export class PQuest extends Sizer
                 itm.setValue(true);
                 this._updateContent(itm.q);
             }
-            itm.setDot(false)
+            itm.setDot(false);
+            QuestManager.updated.delete(itm.q.dat.id);
         }
 
         this._itm = null;
@@ -144,7 +145,7 @@ export class PQuest extends Sizer
         if(Object.keys(QuestManager.quests.close).length > 0)
         {
             const fold = ui.uFold(scene, {title:'已完成',
-                                                fontSize:GM.FONT_SIZE+4, 
+                                                fontSize:GM.FONT_SIZE+4,
                                                 onclick: ()=>{this.layout();}
                                             });
             this._scroll.addItem(fold);
@@ -179,6 +180,11 @@ export class PQuest extends Sizer
 
             fold.addItem(itm,{align:'left',padding:{left:10}});
             itm.q=q;
+
+            if(QuestManager.updated.has(id))
+            {
+                itm.setDot(true);
+            }
         }
 
         this.layout();
