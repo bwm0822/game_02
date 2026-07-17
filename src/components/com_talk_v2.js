@@ -294,7 +294,7 @@ export class COM_Talk_V2 extends Com
         super.bind(root);
 
         // 1.載入對話資料
-        this._data = DB.dialog(this.ctx.bb.id) || {};
+        this._data = DB.dialog(this.ctx.bb.id);
 
         // 2.設定外部操作界面（方法 & 事件）
         root._setAct(GM.TALK, this._canAct.bind(this));

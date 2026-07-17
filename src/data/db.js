@@ -54,7 +54,7 @@ export default class DB
 
     static role(id) { return this._roleDB?.[id]; }
 
-    static dialog(id) { return this._dialogDB?.[id]; }
+    static dialog(id) {return this._dialogDB?.[id]; }
 
     static quest(id) { return this._questDB?.[id]; }
 

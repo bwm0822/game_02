@@ -11,6 +11,7 @@ export default class UiCursor extends Phaser.GameObjects.Container
         attack :  {sprite:GM.ICON.ATTACK, origin:{x:0.5,y:0.5}, scale:0.7},
         pickup :  {sprite:GM.ICON.PICKUP, origin:{x:0.5,y:0.5}, scale:1},
         talk :  {sprite:GM.ICON.TALK, origin:{x:0.5,y:0.5}, scale:0.7},
+        trade :  {sprite:GM.ICON.TRADE, origin:{x:0.5,y:0.5}, scale:0.7},
         enter :  {sprite:GM.ICON.ENTER, origin:{x:0.5,y:0.5}, scale:1},
         exit :  {sprite:GM.ICON.EXIT, origin:{x:0.5,y:0.5}, scale:1},
         open :  {sprite:GM.ICON.OPEN, origin:{x:0.5,y:0.5}, scale:1},

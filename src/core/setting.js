@@ -42,6 +42,7 @@ export const GM =
         ATTACK : 'cursors:179',
         PICKUP : 'cursors:90',
         TALK : 'cursors:117',
+        TRADE : 'cursors:118',
         ENTER : 'cursors:72',
         EXIT : 'cursors:73',
         OPEN : 'cursors:87',

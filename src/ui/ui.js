@@ -99,21 +99,14 @@ export default function createUI(scene)
     new UiGameOver(scene);          // 16
     new UiDebuger(scene);           // 18
     new UiConfirm(scene);
-
     new UiButtons(scene);
-
-    
-
     new UiChangeScene(scene);       // 17
     
-
     UiChangeScene.show();
-
-    w1(scene);
-    
+    // test(scene);
 }
 
-function w1(scene)
+function test(scene)
 {
     // const pic = new Pic(scene,50,50,{x:100,y:100})
     // pic.setIcon('icons:1')
