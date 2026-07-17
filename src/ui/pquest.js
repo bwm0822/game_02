@@ -45,6 +45,38 @@ export class PQuest extends Sizer
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    _createQuestItem(scene, titleKey, q, onclick)
+    {
+        const wrapper = scene.rexUI.add.overlapSizer();
+
+        const btn = ui.uButton(scene, {
+            style: UI.BTN.ITEM,
+            text: {text: titleKey, wrapWidth: 125},
+            onclick: () => onclick(wrapper)
+        });
+        // btn.q = q;
+        wrapper.q = q;
+        // wrapper._btn = btn;
+        wrapper.add(btn, {key: 'btn'});
+
+        const dot = ui.uBbc(scene, {
+            text: '🔴',
+            fontSize: 18,
+            color: GM.COLOR.RED,
+            ext: {align: 'left-top', expand: false}
+        });
+
+        dot.setAlpha(0);
+        wrapper.add(dot, {key: 'dot', align: 'left-top', offsetX: -10, offsetY: -10});
+        wrapper.layout();
+
+        // method
+        wrapper.setDot = (on) => {dot.setAlpha(on?1:0);return wrapper;};
+        wrapper.setValue = (on) => {btn.setValue(on);return wrapper;};
+
+        return wrapper;
+    }
+
     _updateContent(q)
     {
         const scene = this.scene;
@@ -102,6 +134,7 @@ export class PQuest extends Sizer
                 itm.setValue(true);
                 this._updateContent(itm.q);
             }
+            itm.setDot(false)
         }
 
         this._itm = null;
@@ -123,23 +156,15 @@ export class PQuest extends Sizer
                 const state = QuestManager.quests.close[id];
                 const q = {cat:`${fold.cat}`, dat:qD, sta:state};
 
-                const itm = ui.uButton(scene,{
-                    style: UI.BTN.ITEM,
-                    text: {text:qD.titleKey,wrapWidth:125},
-                    onclick: onclick});
-
-                fold.addItem(itm);
-                itm.q=q;
+                const itm = this._createQuestItem(scene, qD.titleKey, q, onclick);
+                fold.addItem(itm,{align:'left',padding:{left:10}});
             }
         }
 
         for(let id in QuestManager.quests.active)
         {
             const q = QuestManager.query(id);
-            const itm = ui.uButton(scene,{
-                style: UI.BTN.ITEM,
-                text: {text:q.dat.titleKey,wrapWidth:125},
-                onclick: onclick});
+            const itm = this._createQuestItem(scene, q.dat.titleKey, q, onclick);
 
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
@@ -152,7 +177,7 @@ export class PQuest extends Sizer
                 fold.cat=q.cat
             }
 
-            fold.addItem(itm);
+            fold.addItem(itm,{align:'left',padding:{left:10}});
             itm.q=q;
         }
 

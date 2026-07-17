@@ -1,4 +1,4 @@
-import {GM} from '../core/setting.js'
+import {GM,UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import Utility from '../core/utility.js'
 
@@ -35,7 +35,7 @@ import UiSteal from './uisteal.js'
 
 import UiTest from './uitest.js'
 
-import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+import {Pic, Icon, uRect, uBbc, uBar, uButton,uBg} from './uicomponents.js'
 
 
 let uiScene;
@@ -117,8 +117,14 @@ function w1(scene)
 {
     // const pic = new Pic(scene,50,50,{x:100,y:100})
     // pic.setIcon('icons:1')
-    let num;
-    console.log('---- max=',Math.max(num||0,10))
+    // let num;
+    // console.log('---- max=',Math.max(num||0,10))
+    const con = scene.add.container(100,100);
+    const btn=uButton(scene,{text:'test',style:UI.BTN.ITEM,onclick:()=>{console.log('test')}})
+    con.add(btn)
+    btn.layout();
+    
+
 }
 
 
