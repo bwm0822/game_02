@@ -44,7 +44,7 @@
           {
             "labelKey": "關於任務",
             "priority": 30,
-            "next": "#_quest",
+            "next": "[_quest]",
             "condition": "_quest"
           },
           {
@@ -267,7 +267,7 @@
             "labelKey": "接受",
             "priority": 0,
             "actions": [
-              "quest q_karen_01",
+              "qstart QK01",
               "set _quest n_quest_01_2"
             ],
             "next": "n_quest_01_1"
@@ -296,9 +296,9 @@
       },
       "n_quest_01_2": {
         "textKeys": {
-          "qk01==going": "任務如何了?",
-          "qk01==done": "任務如何了?",
-          "qk01==close": "很好，這是你的獎勵"
+          "#QK01==open": "任務如何了?",
+          "#QK01==done": "任務如何了?",
+          "#QK01==close": "很好，這是你的獎勵"
         },
         "actions": [],
         "choices": [
@@ -306,16 +306,16 @@
             "labelKey": "處理中",
             "priority": 0,
             "next": "n_default",
-            "condition": "qk01==going"
+            "condition": "#QK01==open"
           },
           {
             "labelKey": "完成了",
             "priority": 0,
             "actions": [
-              "set qk01_report"
+              "qclose QK01"
             ],
             "next": "n_quest_01_2",
-            "condition": "qk01==done"
+            "condition": "#QK01==done"
           },
           {
             "labelKey": "離開",
@@ -324,7 +324,7 @@
               "rm _quest"
             ],
             "next": "n_default",
-            "condition": "qk01==close"
+            "condition": "#QK01==close"
           }
         ],
         "posts": []
@@ -376,7 +376,7 @@
           {
             "labelKey": "關於任務",
             "priority": 30,
-            "next": "#_quest"
+            "next": "[_quest]"
           },
           {
             "labelKey": "關於黑森林討伐",

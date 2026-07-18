@@ -45,18 +45,16 @@ export class PQuest extends Sizer
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _createQuestItem(scene, titleKey, q, onclick)
+    _createQuestItem(scene, q, onclick)
     {
         const wrapper = scene.rexUI.add.overlapSizer();
 
         const btn = ui.uButton(scene, {
             style: UI.BTN.ITEM,
-            text: {text: titleKey, wrapWidth: 125},
+            text: {text: q.dat.titleKey, wrapWidth: 125},
             onclick: () => onclick(wrapper)
         });
-        // btn.q = q;
         wrapper.q = q;
-        // wrapper._btn = btn;
         wrapper.add(btn, {key: 'btn'});
 
         const dot = ui.uBbc(scene, {
@@ -153,19 +151,17 @@ export class PQuest extends Sizer
 
             for(let id in QuestManager.quests.close)
             {
-                const qD = DB.quest(id);
-                const state = QuestManager.quests.close[id];
-                const q = {cat:`${fold.cat}`, dat:qD, sta:state};
-
-                const itm = this._createQuestItem(scene, qD.titleKey, q, onclick);
+                const q = QuestManager.queryClose(id)
+                const itm = this._createQuestItem(scene, q, onclick);
                 fold.addItem(itm,{align:'left',padding:{left:10}});
             }
         }
 
         for(let id in QuestManager.quests.active)
         {
-            const q = QuestManager.query(id);
-            const itm = this._createQuestItem(scene, q.dat.titleKey, q, onclick);
+            const q = QuestManager.queryActive(id);
+            if (!q || !q.dat) continue;
+            const itm = this._createQuestItem(scene, q, onclick);
 
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)

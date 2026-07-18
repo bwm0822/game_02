@@ -28,11 +28,22 @@ export class COM_Talk_V2 extends Com
     //------------------------------------------------------
     //  私有方法
     //------------------------------------------------------
-    // 取得 flag 值（根據 _ 字首判斷 local 或 global）
+    // 取得 flag 值
     _getVar(flag)
     {
-        if (flag.startsWith('_')) {return this._rec[flag];} 
-        else {return Record.getVar(flag);}
+        if (flag?.startsWith('#'))          // 字首 '#'，為 Quest 的 State
+        {
+            const qid=flag.slice(1);
+            return QuestManager.getState(qid);
+        }
+        else if (flag?.startsWith('_'))     // 字首 '_'，為 local
+        {
+            return this._rec[flag];
+        }
+        else 
+        {
+            return Record.getVar(flag);
+        }
     }
 
     // 設定 flag 值（根據 _ 字首判斷 local 或 global）
@@ -183,7 +194,8 @@ export class COM_Talk_V2 extends Com
                     this.ctx.emit('trade', GM.player);
                     cb?.('exit');
                     break;
-                case 'quest':   QuestManager.start(p1); break;
+                case 'qstart':  QuestManager.start(p1); break;
+                case 'qclose':  QuestManager.close(p1); break;
                 case 'close':   cb?.(op); break;
                 case 'set':     this._setVar(p1,p2??true); break;
                 case 'clr':     this._setVar(p1,false); break;
@@ -216,9 +228,10 @@ export class COM_Talk_V2 extends Com
 
     _getNext(next)
     {
-        if (next && next.startsWith('#')) {
-            const varName = next.substring(1);
-            return this._rec[varName];
+        if (next?.startsWith('[') && next.endsWith(']')) {
+            const varName = next.slice(1, -1);
+            // return this._rec[varName];
+            return this._getVar(varName);
         }
         return next;
     }

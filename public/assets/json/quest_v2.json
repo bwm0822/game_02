@@ -1,6 +1,6 @@
 {
-  "q_karen_01": {
-    "id": "q_karen_01",
+  "QK01": {
+    "id": "QK01",
     "npcId": "karen",
     "titleKey": "黑森林討伐",
     "descKey": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
@@ -43,16 +43,10 @@
       "step_05": {
         "descKey": "任務完成，跟 karen 回報任務",
         "complete": {
-          "type": "flag",
-          "flag": "qk01_report"
+          "type": "none"
         },
         "conds": [
           "step_03"
-        ],
-        "actions": [
-          "rm qk01_report",
-          "set qk01 close",
-          "close q_karen_01"
         ]
       }
     },
