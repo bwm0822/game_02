@@ -49,19 +49,10 @@ function _isQuestDone(q)
 
 function _isStepDone(q, stepId, step)
 {
-    // q = {cat:{}, dat:{}, sta:{}}
-    // return step.complete.type==='collect' ? _queryCount(step.complete.id)
-    //                                         : q.sta.steps[stepId];
-
-
     const type = step.complete.type;
-    let ret;
-    if(type==='collect') {ret= _queryCount(step.complete.id);}
-    else if(type==='none') {ret= true;}
-    else {ret= q.sta.steps[stepId];}
-    console.log(type,ret)
-    return ret;
-
+    if(type==='collect') return _queryCount(step.complete.id) >= step.complete.required;
+    if(type==='none') return true;
+    return q.sta.steps[stepId];
 }
 
 export default class QuestManager
@@ -155,11 +146,15 @@ export default class QuestManager
     static close(id)
     {
         const q = this.quests.active[id];
+        if (!q) return;
+
         q.sta = 'close';
         q.close = true;
         const qD = DB.quest(id);
-        if(qD.rewards) {GM.player.reward(qD.rewards);}
-        if(qD.actions) {this.action(qD.actions)}
+        if (qD) {
+            if(qD.rewards) {GM.player.reward(qD.rewards);}
+            if(qD.actions) {_exec(qD.actions);}
+        }
 
         this.quests.close[id] = q;
         delete this.quests.active[id];
@@ -231,19 +226,21 @@ export default class QuestManager
     }
 
     static queryClose(id)
-    {        
+    {
         if(!this.quests.close[id]) {return null;}
         const qD = DB.quest(id);
-        const q={cat:'已完成', dat:DB.quest(id), sta:this.quests.close[id]};
+        if (!qD) {return null;}
+        const q={cat:'已完成', dat:qD, sta:this.quests.close[id]};
         return q;
     }
 
     
     static queryActive(id)
-    {        
+    {
         if(!this.quests.active[id]) {return null;}
         const qD = DB.quest(id);
-        const q={cat:'一般任務', dat:DB.quest(id), sta:this.quests.active[id]};
+        if (!qD) {return null;}
+        const q={cat:'一般任務', dat:qD, sta:this.quests.active[id]};
         return q;
     }
 

@@ -2,7 +2,7 @@
   "karen": {
     "id": "karen",
     "actions": [
-      "!_first_meet : set _quest n_quest_01"
+      "!_first_meet : set _quest n_QK01"
     ],
     "entries": [
       {
@@ -257,7 +257,7 @@
         ],
         "posts": []
       },
-      "n_quest_01": {
+      "n_QK01": {
         "textKeys": {
           "true": "要黑森林討伐?"
         },
@@ -268,9 +268,9 @@
             "priority": 0,
             "actions": [
               "qstart QK01",
-              "set _quest n_quest_01_2"
+              "set _quest n_QK01-2"
             ],
-            "next": "n_quest_01_1"
+            "next": "n_QK01-1"
           },
           {
             "labelKey": "拒絕",
@@ -280,7 +280,7 @@
         ],
         "posts": []
       },
-      "n_quest_01_1": {
+      "n_QK01-1": {
         "textKeys": {
           "true": "先去找xi了解詳情"
         },
@@ -294,7 +294,7 @@
         ],
         "posts": []
       },
-      "n_quest_01_2": {
+      "n_QK01-2": {
         "textKeys": {
           "#QK01==open": "任務如何了?",
           "#QK01==done": "任務如何了?",
@@ -314,7 +314,7 @@
             "actions": [
               "qclose QK01"
             ],
-            "next": "n_quest_01_2",
+            "next": "n_QK01-2",
             "condition": "#QK01==done"
           },
           {
@@ -333,9 +333,7 @@
   },
   "xi": {
     "id": "xi",
-    "actions": [
-      "!_first_meet : set _quest n_quest_01"
-    ],
+    "actions": [],
     "entries": [
       {
         "nodeId": "npc_a_after_quest",
@@ -376,12 +374,13 @@
           {
             "labelKey": "關於任務",
             "priority": 30,
-            "next": "[_quest]"
+            "next": "[_quest]",
+            "condition": "_quest"
           },
           {
             "labelKey": "關於黑森林討伐",
             "priority": 40,
-            "next": "n_qk01_start",
+            "next": "n_QK01_start",
             "condition": "qk01_start"
           },
           {
@@ -594,44 +593,7 @@
         ],
         "posts": []
       },
-      "n_quest_01": {
-        "textKeys": {
-          "true": "要黑森林討伐?"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "labelKey": "接受",
-            "priority": 0,
-            "actions": [
-              "quest q_karen_01",
-              "set _quest n_quest_01_1"
-            ],
-            "next": "n_default"
-          },
-          {
-            "labelKey": "拒絕",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_quest_01_1": {
-        "textKeys": {
-          "true": "任務如何了?"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "labelKey": "…",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_qk01_start": {
+      "n_QK01_start": {
         "textKeys": {
           "true": "前往黑森林，擊殺黑森林的野狼"
         },

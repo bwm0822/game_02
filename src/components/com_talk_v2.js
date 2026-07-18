@@ -49,6 +49,7 @@ export class COM_Talk_V2 extends Com
     // 設定 flag 值（根據 _ 字首判斷 local 或 global）
     _setVar(flag, val)
     {
+        if (!flag) return;
         if (flag.startsWith('_')) {this._rec[flag] = val;}
         else {Record.setVar(flag, val);}
     }
@@ -56,7 +57,8 @@ export class COM_Talk_V2 extends Com
     // 移除 flag 值（根據 _ 字首判斷 local 或 global）
     _rmVar(flag)
     {
-        if (flag.startsWith('_')) {delete this._rec[flag];} 
+        if (!flag) return;
+        if (flag.startsWith('_')) {delete this._rec[flag];}
         else {Record.rmVar(flag);}
     }
 
@@ -287,10 +289,8 @@ export class COM_Talk_V2 extends Com
         if (Array.isArray(textKeys)) {
             return textKeys.map(t => this._pickText(t)).join('\n');
         }
-        else
-            return this._pickText(textKeys);
 
-        return '';
+        return this._pickText(textKeys);
     }
 
     // 角色死亡時清除交談行為
