@@ -35,6 +35,12 @@ function _exec(actions)
 
 function _popup(msg) {Ui.get(UI.TAG.POPUP).push(msg);}
 
+function _queryCount(id)
+{
+    return GM.player.queryItem(itm=>itm.id===id)
+                    .reduce((sum, itm) => sum + itm.count, 0);
+}
+
 export default class QuestManager
 {
     static quests={active:{}, close:{}};
@@ -75,8 +81,9 @@ export default class QuestManager
                         break;
 
                     case 'collect':
-                        const sum = GM.player.queryItem(itm=>itm.id===step.complete.id)
-                                            .reduce((sum, itm) => sum + itm.count, 0);
+                        // const sum = GM.player.queryItem(itm=>itm.id===step.complete.id)
+                        //                     .reduce((sum, itm) => sum + itm.count, 0);
+                        const sum = _queryCount(step.complete.id);
                         const required = step.complete.required;
                         state.counters[stepId] = Math.min(sum,required)
                         if (sum >= required)
@@ -154,7 +161,10 @@ export default class QuestManager
             // 
             if (!_checkCond(q.sta,step)) return;
             
-            const done = q.sta?.steps?.[stepId] ? '🗹' : '☐';
+            // const done = q.sta?.steps?.[stepId] ? '🗹' : '☐';
+            const done = step.complete.type==='collect' ? _queryCount(step.complete.id) 
+                                                        : q.sta?.steps?.[stepId];
+
             let stepDesc = step.descKey;
 
             // 替換 {current} 為實際計數值
@@ -169,7 +179,7 @@ export default class QuestManager
                 stepDesc = stepDesc.replace('{required}', required);
             }
 
-            des += `${done} ${stepDesc}\n`;
+            des += `${done?'🗹':'☐'} ${stepDesc}\n`;
         });
 
         return des;
