@@ -175,7 +175,7 @@ export default class UiOption extends UiFrame
     openbag()
     {
         this.close();
-        this.on(UI.TAG.STORAGE, this.ent, ~GM.CAT.BAG);
+        this.on(UI.TAG.STORAGE, InventoryService.asOwner(this.ent), ~GM.CAT.BAG);
         this.ent.setEnable(false);
     }
 

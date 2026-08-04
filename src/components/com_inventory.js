@@ -8,15 +8,6 @@ import {T,dlog} from '../core/debug.js'
 import QuestManager from '../manager/quest.js'
 const _tag = 'inv';
 
-// 將 content 放入 storage 指定的 slot 索引，供 COM_Storage._receive() 及 Slot.receive()（uiclass.js）共用，
-// 避免「放入指定 slot」這個邏輯在遊戲邏輯層與 UI 層各自實作一份而分歧
-export function setStorageItem(storage, i, content)
-{
-    storage.items[i] = content;
-    QuestManager.onCollect('receive');
-    return 0;
-}
-
 //--------------------------------------------------
 // 類別 : 元件(component) 
 // 標籤 : inv
@@ -118,13 +109,15 @@ export class COM_Storage extends Com
             {
                 bb.equips[i]=content;
                 root.equip?.();
-                QuestManager.onCollect('receive');
-                return 0;   // 回傳remian，為0
             }
             else        // 置於背包欄位
             {
-                return setStorageItem(this._storage, i, content);
+                this._storage.items[i]=content;
             }
+
+            QuestManager.onCollect('receive');
+
+            return 0;   // 回傳remian，為0
         }
         else
         {

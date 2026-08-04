@@ -57,10 +57,28 @@ export default class InventoryService
     }
 
     // 分堆（給 Option.split 呼叫）
-    static split(slot, count) 
+    static split(slot, count)
     {
         if (!slot?.content?.count || count <= 0 || count >= slot.content.count) return false;
         slot.owner.split(slot, count);
         return true;
+    }
+
+    // 供 openbag 使用：把 ent（背包裡的包包 Slot）包裝成擁有 storage 的虛擬 owner，
+    // 讓 UiStorage 可以顯示、寫入這個包包的內容，而不需要讓 Slot 本身混入 owner 專屬介面
+    static asOwner(ent)
+    {
+        const storage = ent.storage;
+        return {
+            info: {},
+            storage,
+            receive(content, i)
+            {
+                storage.items[i] = content;
+                QuestManager.onCollect('receive');
+                return 0;
+            },
+            close: () => ent.setEnable(true),
+        };
     }
 }

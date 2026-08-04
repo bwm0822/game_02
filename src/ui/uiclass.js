@@ -13,7 +13,6 @@ import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
 import Record from '../infra/record.js'
-import {setStorageItem} from '../components/com_inventory.js'
 
 export class Slot extends Icon
 {
@@ -62,9 +61,6 @@ export class Slot extends Icon
     get capacity() {return this.owner?.storage?.capacity; }
 
     get storage() {return this.content.storage;}
-
-    // 讓 Slot 可以被當成擁有 storage 的 owner 使用（例如: openbag 開啟包包內的 storage 面板）
-    receive(content, i) {return setStorageItem(this.storage, i, content);}
 
     get acts()
     {

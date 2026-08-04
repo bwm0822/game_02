@@ -48,7 +48,6 @@ export default class UiStorage extends UiFrame
         this.unregister();
         this.clrCamera(GM.CAM_RIGHT);
         this.owner.close?.();
-        this.owner.setEnable?.(true);
     }
 
     init(owner)
