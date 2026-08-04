@@ -45,7 +45,7 @@ export class Slot extends Icon
     get id() {return this.content?.id;}
     // content
     get content() {return this.owner.storage.items[this._i];}
-    set content(value) {this.owner.storage.items[this._i]=value; this.setSlot(value);}
+    set content(value) {this.owner.receive(value, this._i, this.isEquip); this.setSlot(value);}
     // dat
     get dat() {return this._dat;}
     set dat(value) {return this._dat=value;}
@@ -407,9 +407,8 @@ export class EquipSlot extends Slot
     // get, set 都要 assign 才會正常 work
     get content() {return this.owner.equips[this._i];}
     set content(value) {
-        this.owner.equips[this._i]=value; 
-        this.setSlot(value); 
-        this.owner.equip();
+        this.owner.receive(value, this._i, this.isEquip);
+        this.setSlot(value);
         Ui.refreshAll();
     }
 

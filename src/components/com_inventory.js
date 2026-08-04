@@ -100,7 +100,7 @@ export class COM_Storage extends Com
     _receive(content,i,isEquip)
     {
         const{bb,root}=this.ctx;
-        if(isEquip||i) // 置於裝備或背包欄位
+        if(isEquip||i!==undefined) // 置於裝備或背包欄位
         {
             // case 1 : slot 置換
             // i 或 isEquip有值，代表是 slot，將 content 置於編號為i的slot
