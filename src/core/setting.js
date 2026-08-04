@@ -542,6 +542,17 @@ export const ACT_TYPE = {
     [GM.BUFF] : 'act_buff',
 };
 
+export const CAT2ICON = {
+    [GM.CAT.WEAPON] : GM.ICON.WEAPON,
+    [GM.CAT.HELMET] : GM.ICON.HELMET,
+    [GM.CAT.CHESTPLATE] : GM.ICON.CHESTPLATE,
+    [GM.CAT.GLOVES] : GM.ICON.GLOVES,
+    [GM.CAT.BOOTS] : GM.ICON.BOOTS,
+    [GM.CAT.NECKLACE] : GM.ICON.NECKLACE,
+    [GM.CAT.RING] : GM.ICON.RING,
+    [GM.CAT.EQUIP|GM.CAT.BAG] : GM.ICON.BAG,
+};
+
 export const ORDER = [
     GM.TALK,
     GM.TRADE,

@@ -1,5 +1,5 @@
 ﻿import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI} from '../core/setting.js'
+import {GM, UI, CAT2ICON} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
@@ -376,20 +376,7 @@ export class Slot extends Icon
 
 export class EquipSlot extends Slot
 {
-    static cat2Icon(cat)
-    {
-        switch(cat)
-        {
-            case GM.CAT.WEAPON: return GM.ICON.WEAPON;
-            case GM.CAT.HELMET: return GM.ICON.HELMET;
-            case GM.CAT.CHESTPLATE: return GM.ICON.CHESTPLATE;
-            case GM.CAT.GLOVES: return GM.ICON.GLOVES;
-            case GM.CAT.BOOTS: return GM.ICON.BOOTS;
-            case GM.CAT.NECKLACE: return GM.ICON.NECKLACE;
-            case GM.CAT.RING: return GM.ICON.RING;
-            case GM.CAT.EQUIP|GM.CAT.BAG: return GM.ICON.BAG;
-        }
-    }
+    static cat2Icon(cat) {return CAT2ICON[cat];}
 
     constructor(scene, w, h, i, config)
     {
