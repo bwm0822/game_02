@@ -34,7 +34,7 @@ function doSwap(from, to)
 }
 
 // function trading(from, to) {return from.owner.tradeType !== to.owner.tradeType;}
-function trading(from, to) {return from.owner.info.act===GM.TRADE && from.owner!==to.owner;}
+function trading(from, to) {return from.owner.info?.act===GM.TRADE && from.owner!==to.owner;}
 
 export default class InventoryService 
 {

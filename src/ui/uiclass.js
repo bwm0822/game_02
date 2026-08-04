@@ -13,6 +13,7 @@ import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
 import Record from '../infra/record.js'
+import {setStorageItem} from '../components/com_inventory.js'
 
 export class Slot extends Icon
 {
@@ -62,6 +63,9 @@ export class Slot extends Icon
 
     get storage() {return this.content.storage;}
 
+    // 讓 Slot 可以被當成擁有 storage 的 owner 使用（例如: openbag 開啟包包內的 storage 面板）
+    receive(content, i) {return setStorageItem(this.storage, i, content);}
+
     get acts()
     {
         dlog(T.UI)(this.owner)
@@ -70,7 +74,7 @@ export class Slot extends Icon
 
         if(this.mode_Trade)    // 交易
         {
-            if(this.owner.info.type === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
+            if(this.owner.info?.type === GM.BUYER) {acts = {'sell':GM.EN,'drop':GM.EN};}
             else {acts = {'buy':GM.EN};}
             if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
         }
@@ -84,7 +88,7 @@ export class Slot extends Icon
                     acts = {...acts,'use':GM.EN};
             }
 
-            if(this.owner.info.target) // 有target，可以transfer，如:打開箱子
+            if(this.owner.info?.target) // 有target，可以transfer，如:打開箱子
             {
                 acts = {...acts,'transfer':GM.EN,'drop':GM.EN};
                 if(this.content.count>1) {acts = {...acts,'split':GM.EN};}
@@ -103,10 +107,10 @@ export class Slot extends Icon
         return acts;
     }
 
-    get trading() {return this.owner.info.act===GM.TRADE && this.owner!==UiDragged.owner;}
-    get mode_Trade() {return this.owner.info.act===GM.TRADE;}
-    get mode_Steal() {return this.owner.info.act===GM.STEAL;}
-    get isVictim() {return this.owner.info.type===GM.VICTIM;}
+    get trading() {return this.owner.info?.act===GM.TRADE && this.owner!==UiDragged.owner;}
+    get mode_Trade() {return this.owner.info?.act===GM.TRADE;}
+    get mode_Steal() {return this.owner.info?.act===GM.STEAL;}
+    get isVictim() {return this.owner.info?.type===GM.VICTIM;}
     get enabled() {return this.capacity==-1 || this._i<this.capacity;}
     get dropable() {return true;}
 
