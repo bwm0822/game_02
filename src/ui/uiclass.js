@@ -107,7 +107,7 @@ export class Slot extends Icon
     get mode_Trade() {return this.owner.info?.act===GM.TRADE;}
     get mode_Steal() {return this.owner.info?.act===GM.STEAL;}
     get isVictim() {return this.owner.info?.type===GM.VICTIM;}
-    get enabled() {return this.capacity==-1 || this._i<this.capacity;}
+    get enabled() {return this._on!==false;}
     get dropable() {return true;}
 
 
@@ -250,19 +250,22 @@ export class Slot extends Icon
         owner && (this.owner=owner);
         cat && (this.cat=cat);  // for MatSlot
         this.setSlot(this.content);
-        this.setEnable(this.enabled&&this._filter);
+        const fit = this.capacity==-1 || this._i<this.capacity;
+        this.setEnable(fit&&this._filter);
     }
 
+    // 只切換視覺/邏輯上的 enabled 狀態，slot 本身仍保持 interactive，
+    // 讓點擊/放開事件依然會落在 slot 上（避免被 DragService 誤判成點在背景，觸發丟到地上）
+    // 實際的權限判斷交給呼叫端檢查 this.enabled（見 InventoryService.handleDrop、DragService._tryPickFromSlot）
     setEnable(on)
     {
+        this._on = on;
         if(on)
         {
-            this.setInteractive({draggable:true,dropZone:true});
             this._disabled.fillAlpha=0;
         }
         else
         {
-            this.disableInteractive();
             this.setBgColor(GM.COLOR.SLOT);
             this._disabled.fillAlpha=0.35;
             this.bringChildToTop(this._disabled);
@@ -273,7 +276,7 @@ export class Slot extends Icon
     
     over(checkEquip=true)
     {
-        if(Ui.mode!==UI.MODE.NORMAL) {return;}
+        if(Ui.mode!==UI.MODE.NORMAL || !this.enabled) {return;}
 
         if(this.mode_Steal)
         {
@@ -338,7 +341,7 @@ export class Slot extends Icon
     rightButtonDown(x,y)
     {
         // if(!this.isEmpty) {UiOption.show(this.left+x-20,this.top+y-20, this.acts, this);}
-        if(this.mode_Steal) {return;}
+        if(this.mode_Steal || !this.enabled) {return;}
         if(!this.isEmpty) {UiOption.show(this.left+x+20,this.top+y-20, this.acts, this);}
     }
 

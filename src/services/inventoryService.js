@@ -79,6 +79,7 @@ export default class InventoryService
                 return 0;
             },
             close: () => ent.setEnable(true),
+            drop: (dragged) => GM.player.drop(dragged),
         };
     }
 }

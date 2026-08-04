@@ -16,9 +16,9 @@ export default class DragService
     static _downOnSlot = false;
     
     // ---  拖曳 Slot ---
-    static _tryPickFromSlot(slot, pointerX, pointerY) 
+    static _tryPickFromSlot(slot, pointerX, pointerY)
     {
-        if (slot.isEmpty) {return false;}
+        if (slot.isEmpty || !slot.enabled) {return false;}
         // 1. 顯示拖曳影像
         UiDragged.set(slot);           
         UiDragged.setPos(pointerX, pointerY);
