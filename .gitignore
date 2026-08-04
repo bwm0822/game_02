@@ -29,3 +29,6 @@ venv
 __pycache__
 ~*.xlsx
 ~*.xlsm
+
+# claude code local settings
+.claude/settings.local.json

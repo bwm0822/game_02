@@ -127,10 +127,10 @@ export default class UiMain extends UiFrame
         this.updateAbility();
     }
 
-    colse()
+    close()
     {
         super.close();
-        this.unregister();   
+        this.unregister();
     }
 
     show()

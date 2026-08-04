@@ -9,6 +9,7 @@ import InventoryService from '../services/inventoryService.js'
 // import UiObserve from './uiobserve.js'
 // import UiInv from './uiinv.js'
 // import UiProfile from './uiprofile.js'
+// import UiStorage from './uistorage.js'
 import UiCount from '../ui/uicount.js'
 import QuestManager from '../manager/quest.js'
 
@@ -174,7 +175,7 @@ export default class UiOption extends UiFrame
     openbag()
     {
         this.close();
-        UiStorage.show(this.ent, ~GM.CAT.BAG);
+        this.on(UI.TAG.STORAGE, this.ent, ~GM.CAT.BAG);
         this.ent.setEnable(false);
     }
 

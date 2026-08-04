@@ -60,10 +60,10 @@ export default class UiMapLegend extends UiFrame
         return this;
     }
 
-    colse()
+    close()
     {
         super.close();
-        this.unregister();   
+        this.unregister();
     }
 
     reset()

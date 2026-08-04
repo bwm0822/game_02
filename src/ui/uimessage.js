@@ -116,7 +116,7 @@ export default class UiMessage extends UiFrame
     show()
     {
         super.show();
-        this.register(this,GM.UI_MSG);
+        this.register(GM.UI_MSG);
     }
 
     static clean() {this.instance?.clean();}
