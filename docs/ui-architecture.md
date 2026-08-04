@@ -109,7 +109,6 @@ export default class UiInv extends UiFrame {
 **特殊**：`uimark.js`（`UiMark`——不是 `UiFrame` 子類，是遊戲世界座標的移動目的地標記，在 `GameScene` 而非 `UI` scene 中建立，命名容易誤導）
 
 **⚠️ 已知死代碼（暫未清除，需要時再處理）**：
-- `uiquest.js`（`UiQuest`）：`createUI()` 未 new 它，`UI.TAG` 也已無 `QUEST`，功能已被 `uimisc.js`+`pquest.js`+`pmap.js` 取代。`uimain.js` 仍殘留 `import`與 `_quest()` 死方法（按鈕清單中未綁定）。
 - `uitest.js`（`UiTest`）：`ui.js` 有 import 但 `createUI()` 從未 new，屬開發期試驗殘留。
 - `uiframe.js` 有未使用的 `import UiMark from './uimark.js'`。
 - `uidragged.js`／`uicursor.js`／`uicomponents.js`（`Icon`）內留有大段被註解掉的舊版實作。

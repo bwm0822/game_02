@@ -17,13 +17,9 @@ export default class DB
 
         this._roleDB = scene.cache.json.get('role');
 
-        // this._dialogDB = scene.cache.json.get('dialog');
+        this._dialogDB = scene.cache.json.get('dialog');
 
-        this._dialogDB = scene.cache.json.get('dialog_v2');
-
-        // this._questDB = scene.cache.json.get('quest');
-
-        this._questDB = scene.cache.json.get('quest_v2');
+        this._questDB = scene.cache.json.get('quest');
 
         this._abilityDB = scene.cache.json.get('skill');
 

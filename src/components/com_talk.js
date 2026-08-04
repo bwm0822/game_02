@@ -2,267 +2,332 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import QuestManager from '../manager/quest.js'
-import {dlog} from '../core/debug.js'
 import Record from '../infra/record.js'
 const _tag = 'talk';
 
 //--------------------------------------------------
-// 類別 : 元件(component) 
+// 類別 : 元件(component)
 // 標籤 : talk
-// 功能 : 
-//  交談
+// 功能 :
+//  對話系統
 //--------------------------------------------------
-
-function parseOption(str, rec) 
-{
-    // options 的格式 : "(cond)text/cmds"
-    const opt = extractOption(str);
-    opt.cond = opt.cond ? checkCond(opt.cond, rec) : true;
-    opt.cmds = opt.cmds ? opt.cmds.split(';').map(s => s.trim()) : [];
-    return opt;
-}
-
-
-function extractOption(str) 
-{
-    // 1. 嘗試有 (cond) 的格式 : (cond)text/cmds
-    let m = str.match(/^\((.*?)\)([^\/]*)(?:\/(.*))?$/);
-    if (m) {return {cond: m[1],text:m[2],cmds:m[3]};}
-
-    // 2. 沒有 (cond) 的格式： text/cmds
-    m = str.match(/^([^\/]*)(?:\/(.*))?$/);
-    if (m) {return {cond: null,text: m[1],cmds: m[2]};}
-
-    return {cond: null,text: str,cmds: null};
-}
-
-function extractCond(str) 
-{
-    str = str.trim();
-
-    // 1. A op B 形式
-    let m = str.match(/^(\S+)\s*(!=|==|>=|<=|>|<)\s*(\S+)$/);
-    if (m) {return { A: m[1], op: m[2], B: m[3] };}
-
-    // 2. op A 形式
-    m = str.match(/^(!)\s*(\S+)$/);
-    if (m) {return { A: m[2], op: m[1], B: null };}
-
-    return null; // 不符合格式
-}
-
-function checkCond(cond, rec)
-{
-    const c = extractCond(cond);
-    if(!c) {return true;}  // 無條件
-
-    const valA = parseP(c.A, rec);
-    const valB = parseP(c.B, rec);
-    // const valB = c.B !== null ? (isNaN(c.B) ? rec[c.B] : Number(c.B)) : null;
-    switch(c.op)
-    {
-        case '==': return valA == valB;
-        case '!=': return valA != valB;
-        case '>=': return valA >= valB;
-        case '<=': return valA <= valB;
-        case '>':  return valA > valB;
-        case '<':  return valA < valB;
-        case '!':  return !valA;
-        default:   return false;
-    }
-}
-
-function parseP(str, rec)
-{
-    // 格式 : 'val#key:def'
-    // 1. str='val' 回傳 val
-    // 2. str='#key' 回傳 rec[key]
-    // 3. str='#key:def' 回傳 rec[key]，若無則回傳 def
-    
-    if(!str) {return null;}
-    const [val, key, def] = str.split(/[#:]/);
-    return val!=''?val:rec[key]??def;
-}
 
 export class COM_Talk extends Com
 {
     constructor()
     {
         super();
-        this._rec={};
+        this._rec = {};
+        this._nodeId = null;
+        this._data = null;
+        this._textIndexes = {};
     }
 
-    get tag() {return _tag;}  // 回傳元件的標籤
+    get tag() {return _tag;}
 
     //------------------------------------------------------
-    //  Local
+    //  私有方法
     //------------------------------------------------------
-    _execute(cmds, cb)
+    // 取得 flag 值
+    _getVar(flag)
     {
-        cmds?.forEach(cmd=>{
-            const [op,p1,p2]=cmd.split(' ');
-            switch(op)
-            {
-                case 'next': 
-                case 'exit': cb?.(op); break;
-                case 'trade': this._trade(); cb?.('exit'); break;
-                case 'goto': this._goto(p1); cb?.(op); break;
-                // case 'quest': this._quest(p1); cb?.('exit'); break;
-                case 'quest': this._quest(p1); break;
-                case 'close': this._close_quest(p1); break;
-                case 'set': this._set(p1,p2); break;
-                case 'sete': Record.setEntry(p1,p2); break;
-                case 'add': Record.addOpt(p1,p2); break;
-                case 'rm': Record.rmOpt(p1,p2); break;
-            }
-        })
-    }
-
-    _processOptions(options)
-    {
-        // options的格式 : "(cond)text/cmd0;cmd1"
-
-        let opts=[];
-        options.forEach(option=>{
-            if(option==='[opt]')
-            {
-                Record.getVar(this.ctx.bb.id)?.opts?.forEach(id=>{
-                    const dialog = this._dialog[id];
-                    if(dialog) 
-                    {
-                        const opt = parseOption(dialog.opt);
-                        if(opt.cond) {opts.push(opt);}
-                    }
-                });
-            }
-            else
-            {
-                const opt = parseOption(option, this._rec);
-                if(opt.cond) {opts.push(opt);}
-            }
-        });
-
-        return opts;
-    }
-
-    _addOptions(opts)
-    {
-        Record.getVar(this.ctx.bb.id)?.opt?.forEach(id=>{
-            const dialog = this._dialog[id];
-            if(dialog) 
-            {
-                const opt = parseOption(dialog.opt);
-                if(opt.cond) {opts.push(opt);}
-            }
-        });
-    }
-
-    _goto(p1) 
-    {
-        this._idx = parseP(p1,this._rec);
-        console.log('idx=',this._idx)
-    }
-
-    _trade()
-    {
-        const {emit}=this.ctx;
-        emit('trade', GM.player)  // trade.js
-    }
-
-    _quest(p1)
-    {
-        QuestManager.add(p1);
-        this._set('quest', p1);
-    }
-
-    _close_quest(p1)
-    {
-        const {send}=this.ctx;
-        
-        send('msg', '任務完成！');
-        QuestManager.close(p1);
-    }
-
-    _set(key, value)
-    {
-        this._rec[key]=value;
-    }
-
-    _actMode()
-    {
-        const {bb,fav} = this.ctx;
-
-        if(!this._dialog) {return GM.HIDE;}
-
-        return fav()<=GM.FAV.DISLIKE ? GM.HIDE  
-                                    :  bb.sta===GM.ST.SLEEP ? GM.DIS
-                                                            : GM.EN;
-    }
-
-    _talk()
-    {
-        const{send,root} = this.ctx;
-        this._idx = Record.getVar(root.id).entry??0;
-        send('talk', root); // 開啟 對話UI
-    }
-
-    _select(option, cb)
-    {
-        this._execute(option.cmds, cb);
-    }
-
-    _getDialog()
-    {
-        const{bb} = this.ctx;
-        const dat = Record.getVar(bb.id);
-
-        const idx = this._idx;
-        let dialog = this._dialog[idx];
-        console.log(idx, dialog)
-
-        if(dialog.type==='quest')
+        if (flag?.startsWith('#'))          // 字首 '#'，為 Quest 的 State
         {
-            const sta = QuestManager.query(idx);
-            dialog = dialog[sta?.state??'start'];
+            const qid=flag.slice(1);
+            return QuestManager.getState(qid);
+        }
+        else if (flag?.startsWith('_'))     // 字首 '_'，為 local
+        {
+            return this._rec[flag];
+        }
+        else 
+        {
+            return Record.getVar(flag);
+        }
+    }
+
+    // 設定 flag 值（根據 _ 字首判斷 local 或 global）
+    _setVar(flag, val)
+    {
+        if (!flag) return;
+        if (flag.startsWith('_')) {this._rec[flag] = val;}
+        else {Record.setVar(flag, val);}
+    }
+
+    // 移除 flag 值（根據 _ 字首判斷 local 或 global）
+    _rmVar(flag)
+    {
+        if (!flag) return;
+        if (flag.startsWith('_')) {delete this._rec[flag];}
+        else {Record.rmVar(flag);}
+    }
+
+    // 檢查是否可以進行交談（好感度、睡眠狀態）
+    _canAct()
+    {
+        const {bb, fav} = this.ctx;
+        if (!this._data) return GM.HIDE;
+        if (fav() <= GM.FAV.DISLIKE) return GM.HIDE;
+        if (bb.sta === GM.ST.SLEEP) return GM.DIS;
+        return GM.EN;
+    }
+
+    // 評估條件表達式（支援 "flag==value"、"!flag" 等格式）
+    _matchCond(cond)
+    {
+        if (!cond || cond === '') return true;
+        return this._evalCond(cond);
+    }
+
+    // 評估字符串條件表達式（支援 &&、||、==、!=）
+    _evalCond(expr)
+    {
+        if (!expr || expr === '') return true;
+
+        expr = expr.trim();
+
+        // 特殊值：true/false 字面值
+        if (expr === 'true') return true;
+        if (expr === 'false') return false;
+
+        // 處理 OR (||) - 若存在多個則任一為真即返回真
+        if (expr.includes('||')) {
+            return expr.split('||').some(e => this._evalCond(e.trim()));
         }
 
-        this._execute(dialog.cmds);
-        const a = dialog.A;
-        const b = this._processOptions(dialog.B);
-        const out = {A:a, B:b};
-        return out;
+        // 處理 AND (&&) - 若存在多個則全部為真才返回真
+        if (expr.includes('&&')) {
+            return expr.split('&&').every(e => this._evalCond(e.trim()));
+        }
+
+        // 處理 NOT (!)
+        if (expr.startsWith('!')) {
+            const flag = expr.substring(1).trim();
+            return !this._getVar(flag);
+        }
+
+        // 處理不相等 (!=)
+        if (expr.includes('!=')) {
+            const [flag, value] = expr.split('!=').map(s => s.trim());
+            const recVal = this._getVar(flag);
+            if (value === 'true') return recVal !== true;
+            if (value === 'false') return recVal !== false;
+            return recVal != value;
+        }
+
+        // 處理相等 (==)
+        if (expr.includes('==')) {
+            const [flag, value] = expr.split('==').map(s => s.trim());
+            const recVal = this._getVar(flag);
+            if (value === 'true') return recVal === true;
+            if (value === 'false') return recVal === false;
+            return recVal == value;
+        }
+
+        // 簡單 flag 名稱 - 檢查是否為真
+        return !!this._getVar(expr);
     }
 
-    _ondead() {this.root._delAct(GM.TALK);}
+    // 取得初始入口節點（按 order 排序，找第一個符合條件的）
+    _getEntryNode()
+    {
+        // 應用全局效果（設置旗標）
+        if (this._data?.actions) {this._exec(this._data.actions);}
+        if (!this._data?.entries) return null;
+        const sorted = [...this._data.entries].sort((a, b) => a.order - b.order);
+        const entry = sorted.find(e => this._matchCond(e.condition));
+        // 應用入口效果（設置旗標）
+        if (entry?.actions) {this._exec(entry.actions);}
+        
+        return entry?.nodeId || null;
+    }
+
+    // 取得指定節點的資料
+    _getNode(nodeId = this._nodeId)
+    {
+        if (!nodeId || !this._data?.nodes) return null;
+        const node = this._data.nodes[nodeId] || null;
+
+        // 應用節點效果
+        this._exec(node?.actions);
+
+        return node;
+    }
+
+
+    // 第一次隨機選擇，之後依序顯示
+    _pickText(text)
+    {
+        const options = text.split('/').map(t => t.trim()).filter(t => t);
+        if (options.length <= 1) return text;
+
+        const key = text;
+        if (!(key in this._textIndexes)) {
+            this._textIndexes[key] = Math.floor(Math.random() * options.length);
+        }
+
+        const idx = this._textIndexes[key];
+        const result = options[idx];
+        this._textIndexes[key] = (idx + 1) % options.length;
+
+        return result || text;
+    }
+
+    // 執行對話指令（next, exit, trade, goto, quest, close, set 等）
+    _exec(actions, cb)
+    {
+        if(!actions||actions.length===0) return;
+
+        actions.forEach((action)=>{
+            // 1.判斷是否執行
+            const [cond, cmd] = action.includes(':')
+                        ? action.split(':').map(s => s.trim())
+                        : ['', action];
+
+            if (cond && !this._matchCond(cond)) return;
+
+            // 2.取出 op, p1, p2
+            const [op, ...args] = cmd.split(/\s+/);
+            const [p1, p2] = args;
+
+            switch(op)
+            {
+                case 'trade':
+                    this.ctx.emit('trade', GM.player);
+                    cb?.('exit');
+                    break;
+                case 'qstart':  QuestManager.start(p1); break;
+                case 'qclose':  QuestManager.close(p1); break;
+                case 'close':   cb?.(op); break;
+                case 'set':     this._setVar(p1,p2??true); break;
+                case 'clr':     this._setVar(p1,false); break;
+                case 'rm':      this._rmVar(p1); break;
+                default:        cb?.(op); break;
+            }
+        });
+    }
+
+    // 開始對話（重置節點，發送事件開啟對話UI）
+    _onTalk()
+    {
+        this._nodeId = null;
+        this.ctx.send('talk', this.root);
+    }
+
+    // 選擇選項（處理 action、導航節點）
+    _onSelect(choice, cb)
+    {
+        // 1. 執行選項動作
+        if(choice.actions) {this._exec(choice.actions, cb);}
+        
+        // 2. 跳到到下一節點(若有指定)
+        if (choice.next)
+        {
+            this._nodeId = this._getNext(choice.next);
+            cb?.('goto');
+        }
+    }
+
+    _getNext(next)
+    {
+        if (next?.startsWith('[') && next.endsWith(']')) {
+            const varName = next.slice(1, -1);
+            // return this._rec[varName];
+            return this._getVar(varName);
+        }
+        return next;
+    }
+
+    // 取得對話內容（文本 + 選項）
+    _onGetDialog()
+    {
+        // 取得當前節點ID，若不存在則尋找入口節點
+        if (!this._nodeId)
+        {
+            this._nodeId = this._getEntryNode();
+            if (!this._nodeId) return {A: '', B: []};
+        }
+
+        // 取得當前節點
+        const node = this._getNode();
+        if (!node) return {A: '', B: []};
+
+        // 取得文本與選項
+        const A = this._getNodeText(node);
+        const B = (node.choices || [])
+            .filter(c => this._matchCond(c.condition))
+            .map(c => ({
+                text: c.labelKey,
+                actions: c.actions || null,
+                next: c.next || null,
+            }));
+
+        // 應用後置效果（設置旗標）
+        if(node.posts) {this._exec(node.posts);}
+
+        // 返回對話內容
+        return {A, B};
+    }
+
+    // 根據條件從 textKeys 選擇文本
+    _getNodeText(node)
+    {
+        const textKeys = node.textKeys;
+        if (!textKeys) return '';
+
+        // 若 textKeys 是對象（條件映射）
+        if (typeof textKeys === 'object' && !Array.isArray(textKeys)) {
+            for (const [cond, text] of Object.entries(textKeys)) {
+                if (this._matchCond(cond)) {
+                    return this._pickText(text);
+                }
+            }
+            return '';
+        }
+
+        // 若 textKeys 是數組（原始格式）
+        if (Array.isArray(textKeys)) {
+            return textKeys.map(t => this._pickText(t)).join('\n');
+        }
+
+        return this._pickText(textKeys);
+    }
+
+    // 角色死亡時清除交談行為
+    _onDead()
+    {
+        this.root._delAct(GM.TALK);
+    }
 
     //------------------------------------------------------
-    //  Public
+    //  公開方法
     //------------------------------------------------------
-    bind(root) 
+    bind(root)
     {
         super.bind(root);
 
-        // init
-        const {bb} = this.ctx;
-        this._dialog = DB.dialog(bb.id);
+        // 1.載入對話資料
+        this._data = DB.dialog(this.ctx.bb.id);
 
-        // 1.提供 [外部操作的指令]
-        root._setAct(GM.TALK, this._actMode.bind(this));
+        // 2.設定外部操作界面（方法 & 事件）
+        root._setAct(GM.TALK, this._canAct.bind(this));
+        root.talk = this._onTalk.bind(this);
+        root.select = this._onSelect.bind(this);
+        root.getDialog = this._onGetDialog.bind(this);
 
-        // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
-        root.talk = this._talk.bind(this);
-        root.select = this._select.bind(this);
-        root.getDialog = this._getDialog.bind(this);
-
-        // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.TALK, this._talk.bind(this));
-        root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+        root.on(GM.TALK, this._onTalk.bind(this));
+        root.on(GM.EVT.ONDEAD, this._onDead.bind(this));
     }
 
+    // 讀取存檔資料（運行時狀態）
     load(data)
     {
-        if(data?.[_tag]) {Object.assign(this._rec, data[_tag]);}
+        if(data?.[_tag]) Object.assign(this._rec, data[_tag]);
     }
 
-    save() {return {[_tag]:this._rec};}
+    // 保存運行時狀態
+    save()
+    {
+        return {[_tag]: this._rec};
+    }
 }

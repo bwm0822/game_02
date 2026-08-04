@@ -3,7 +3,6 @@ import * as ui from './uicomponents.js'
 import {GM,UI,GS} from '../core/setting.js'
 import {AbilitySlot} from './uiclass.js'
 import UiInv from '../ui/uiinv.js'
-import UiQuest from '../ui/uiquest.js'
 import UiProfile from '../ui/uiprofile.js'
 import UiAbility from '../ui/uiability.js'
 import UiDebuger from '../ui/uidebuger.js'
@@ -101,7 +100,6 @@ export default class UiMain extends UiFrame
     // function有用到 this 參數，需要 bind(this)
     _inv() {UiInv.toggle(this.player);}     
     _profile() {UiProfile.toggle(this.player);}
-    _quest() {UiQuest.toggle(this.player);}
     _misc() {UiMisc.toggle(this.player);}
     _ability() {UiAbility.toggle();}
     _next() {this.player.next();}

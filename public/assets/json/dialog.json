@@ -1,218 +1,622 @@
 {
-  "musk": {
-    "0": {
-      "A": "你好\n我是這村子唯一的鐵匠…\n這邊有許多武器\n想要買什麼?",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:musk_01",
-        "離開/exit"
-      ]
-    },
-    "musk_01": {
-      "type": "quest",
-      "start": {
-        "A": "殺死半獸人",
-        "B": [
-          "接受/quest musk_01",
-          "離開/exit"
-        ]
+  "karen": {
+    "id": "karen",
+    "actions": [
+      "!_first_meet : set _quest n_QK01"
+    ],
+    "entries": [
+      {
+        "nodeId": "npc_a_after_quest",
+        "order": 1,
+        "condition": "quest_done==true"
       },
-      "open": {
-        "A": "...",
-        "B": [
-          "離開/exit"
-        ]
-      },
-      "finish": {
-        "A": "...",
-        "B": [
-          "任務完成了/goto none;close musk_01;set quest none"
+      {
+        "nodeId": "n_default",
+        "order": 3,
+        "actions": [
+          "clr _where",
+          "clr _weapon",
+          "clr _eat",
+          "clr _rest"
         ]
       }
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
+    ],
+    "nodes": {
+      "n_default": {
+        "textKeys": {
+          "!_first_meet": "很高興認識你，我是Karen",
+          "true": "你好/需要幫助嗎?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ]
+          },
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "關於任務",
+            "priority": 30,
+            "next": "[_quest]",
+            "condition": "_quest"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "set _first_meet"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "set _weapon"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "set _eat"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "set _rest"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "set _where"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QK01": {
+        "textKeys": {
+          "true": "要黑森林討伐?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "接受",
+            "priority": 0,
+            "actions": [
+              "qstart QK01",
+              "set _quest n_QK01-2"
+            ],
+            "next": "n_QK01-1"
+          },
+          {
+            "labelKey": "拒絕",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QK01-1": {
+        "textKeys": {
+          "true": "先去找xi了解詳情"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "好",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QK01-2": {
+        "textKeys": {
+          "#QK01==open": "任務如何了?",
+          "#QK01==done": "任務如何了?",
+          "#QK01==close": "很好，這是你的獎勵"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "處理中",
+            "priority": 0,
+            "next": "n_default",
+            "condition": "#QK01==open"
+          },
+          {
+            "labelKey": "完成了",
+            "priority": 0,
+            "actions": [
+              "qclose QK01"
+            ],
+            "next": "n_QK01-2",
+            "condition": "#QK01==done"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "actions": [
+              "rm _quest"
+            ],
+            "next": "n_default",
+            "condition": "#QK01==close"
+          }
+        ],
+        "posts": []
+      }
     }
   },
   "xi": {
-    "0": {
-      "A": "你好\n我是這村子唯一的屠夫…\n想要買什麼?",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:xi_01",
-        "離開/exit"
-      ]
-    },
-    "xi_01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest xi_01",
-        "離開/exit"
-      ]
-    },
-    "xi_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "xi_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close xi_01;set quest none"
-      ]
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    }
-  },
-  "macron": {
-    "0": {
-      "A": "你好\n我是行商…想要買什麼?",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:macron_01",
-        "離開/exit"
-      ]
-    },
-    "macron_01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest macron_01",
-        "離開/exit"
-      ]
-    },
-    "macron_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "macron_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close macron_01;set quest none"
-      ]
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    }
-  },
-  "trump": {
-    "0": {
-      "A": "你好\n歡迎光臨...",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:trump_01",
-        "離開/exit"
-      ]
-    },
-    ":trump_01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest trump_01",
-        "離開/exit"
-      ]
-    },
-    "trump_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "trump_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close trump_01;set quest none"
-      ]
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    }
-  },
-  "karen": {
-    "0": {
-      "A": "你好...",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:karen_01",
-        "離開/exit"
-      ]
-    },
-    "karen_01": {
-      "type": "quest",
-      "start": {
-        "A": "找尋失落的劍",
-        "B": [
-          "接受/quest karen_01",
-          "離開/exit"
-        ]
+    "id": "xi",
+    "actions": [],
+    "entries": [
+      {
+        "nodeId": "npc_a_after_quest",
+        "order": 1,
+        "condition": "quest_done==true"
       },
-      "open": {
-        "A": "...",
-        "B": [
-          "離開/exit"
-        ]
-      },
-      "report": {
-        "A": "...",
-        "B": [
-          "任務完成了/goto none;close karen_01;set quest none"
+      {
+        "nodeId": "n_default",
+        "order": 3,
+        "actions": [
+          "clr _where",
+          "clr _weapon",
+          "clr _eat",
+          "clr _rest"
         ]
       }
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
+    ],
+    "nodes": {
+      "n_default": {
+        "textKeys": {
+          "!_first_meet": "很高興認識你，我是Xi",
+          "true": "你好/需要幫助嗎?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ]
+          },
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "關於任務",
+            "priority": 30,
+            "next": "[_quest]",
+            "condition": "_quest"
+          },
+          {
+            "labelKey": "關於黑森林討伐",
+            "priority": 40,
+            "next": "n_QK01_start",
+            "condition": "qk01_start"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "set _first_meet"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "set _weapon"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "set _eat"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "set _rest"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "set _where"
+        ],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "_where!=true"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "_weapon!=true"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "_eat!=true"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "_rest!=true"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QK01_start": {
+        "textKeys": {
+          "true": "前往黑森林，擊殺黑森林的野狼"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "了解",
+            "priority": 0,
+            "actions": [
+              "rm qk01_start",
+              "set qk01_talk_xi"
+            ],
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      }
     }
   },
-  "melanie": {
-    "0": {
-      "A": "你好...",
-      "B": [
-        "交易/trade",
-        "(#quest!=none)任務/goto #quest:melanie_01",
-        "離開/exit"
-      ]
-    },
-    "melanie_01": {
-      "A": "殺死半獸人",
-      "B": [
-        "接受/quest melanie_01",
-        "離開/exit"
-      ]
-    },
-    "melanie_01_open": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    },
-    "melanie_01_finish": {
-      "A": "...",
-      "B": [
-        "任務完成了/goto none;close melanie_01;set quest none"
-      ]
-    },
-    "none": {
-      "A": "...",
-      "B": [
-        "離開/exit"
-      ]
-    }
+  "npc_c": {
+    "id": "npc_c",
+    "actions": [],
+    "entries": [],
+    "nodes": {}
   }
 }

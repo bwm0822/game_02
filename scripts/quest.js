@@ -1,54 +1,169 @@
 import XLSX from 'xlsx';
-import { writeFileSync } from 'fs';
+import fs from 'fs';
+import {toArray} from './tools.js';
 
-const ARRAY_COLS = new Set(['rewards', 'conds', 'actions']);
+// 將原始行資料按表頭分割成多個資料表
+// 表頭行以 # 開頭的單元格標識（# 會被移除），後續行為該表的資料
+function splitTables(raw) 
+{
+    const tables = [];
+    let currentHeader = null;
+    let currentRows   = [];
 
-function sheetToJson(ws) {
-  const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-  if (!allRows.length) return {};
-  const headers = allRows[0].map(h => (h !== null && h !== undefined ? String(h) : null));
-  const output = {};
+    for (const row of raw) 
+    {
+        const isEmpty = row.every(cell => cell === '');
+        if (isEmpty) continue;
 
-  for (let r = 1; r < allRows.length; r++) {
-    const row = allRows[r];
-    const obj = {};
-    let id;
+        const firstCell = String(row[0] ?? '');
+        if (firstCell.startsWith('//')) continue;       // 註解行直接跳過
 
-    for (let i = 0; i < headers.length; i++) {
-      const key = headers[i];
-      if (!key) continue;
-      const val = row[i];
-      if (val === null || val === undefined || val === '') continue;
+        if (firstCell.startsWith('#')) 
+        {
+            if (currentHeader) 
+            {
+                tables.push({ header: currentHeader, rows: currentRows });
+                currentRows = [];
+            }
 
-      if (key === 'id') {
-        id = val;
-        obj[key] = val;
-      } else if (ARRAY_COLS.has(key)) {
-        obj[key] = JSON.parse('[' + val + ']');
-      } else {
-        obj[key] = typeof val === 'string' ? val.trim() : val;
-      }
+            // 表頭行：去掉 # 符號，保留欄位名稱
+            currentHeader = row.map(n => n.startsWith('#')?'':n);
+        } 
+        else if (currentHeader) 
+        {
+            const obj = Object.fromEntries(
+                currentHeader
+                .map((h, i) => [h, row[i] ?? ''])
+                .filter(([h]) => h !== '')
+            );
+            currentRows.push(obj);
+        }
     }
 
-    if (id !== undefined && Object.keys(obj).length > 0) output[id] = obj;
-  }
-  return output;
-}
-
-function excelToJson(inputPath, outputPath, allSheets = true) {
-  const wb = XLSX.readFile(inputPath);
-  const output = {};
-
-  if (allSheets) {
-    for (const name of wb.SheetNames) {
-      output[name] = sheetToJson(wb.Sheets[name]);
+    if (currentHeader) 
+    {
+        tables.push({ header: currentHeader, rows: currentRows });
     }
-  } else {
-    Object.assign(output, sheetToJson(wb.Sheets[wb.SheetNames[0]]));
-  }
 
-  writeFileSync(outputPath, JSON.stringify(output, null, 2), 'utf-8');
-  console.log('轉換完成！');
+    return tables;
 }
 
-excelToJson('./xls/quest.xlsx', './public/assets/json/quest.json', false);
+// ── 工具函式 ──
+
+function buildComplete(row) 
+{
+    const complete = {type: row.complete_type};
+
+    if(row.complete_required) complete.required=Number(row.complete_required);
+    if(row.complete_flag) complete.flag=row.complete_flag;
+    if(row.complete_id) complete.id=row.complete_id;
+
+    return complete;
+}
+
+function buildAction(row)
+{
+    const action={};
+    if(row.actions_start) action.start = toArray(row.actions_start);
+    if(row.actions_complete) action.complete = toArray(row.actions_complete);
+    return action;
+}
+
+function buildReward(row)
+{
+    return {
+                gold:  Number(row.reward_gold),
+                exp:   Number(row.reward_exp),
+                items: toArray(row.reward_items)
+            };
+}
+
+function buildQuest(sheetName, tables)
+{
+    const allQuests = {}
+
+    const infoRows = tables[0].rows;   // 任務基本資料
+    const stepRows = tables[1].rows;   // 任務步驟
+
+    // 先把所有任務基本資料建好
+    for (const info of infoRows) 
+    {
+        allQuests[info.quest_id] = {
+            id:       info.quest_id,
+            npcId:    sheetName,            // 記錄是哪個 NPC 的任務
+            titleKey: info.titleKey,
+            descKey:  info.descKey,
+            steps:    {},
+            reward:   buildReward(info),
+            action:   buildAction(info)
+        };
+    }
+
+    // 再把步驟塞進對應任務
+    for (const row of stepRows) 
+    {
+        const quest = allQuests[row.quest_id];
+        if (!quest) 
+        {
+            console.warn(`找不到任務 ${row.quest_id}，跳過步驟 ${row.step_id}`);
+            continue;
+        }
+        quest.steps[row.step_id] = {
+            descKey:  row.descKey,
+            complete: buildComplete(row)
+        };
+
+        if(row.conds) {
+            quest.steps[row.step_id].conds = toArray(row.conds);
+        }
+
+        if(row.actions) {
+            quest.steps[row.step_id].actions = toArray(row.actions);
+        }
+    }
+
+    return allQuests;
+}
+
+// 讀取 Excel 檔案並將每個工作表轉換為 JSON 資料表，輸出到指定路徑
+function excelToJson(inputPath, outputPath)
+{
+    const npcs = {};
+    const wb = XLSX.readFile(inputPath);
+    const SKIP_SHEETS = ['locales', '說明'];  // 不是 NPC 的 sheet
+
+    for (const sheetName of wb.SheetNames)
+    {
+        if (SKIP_SHEETS.includes(sheetName)) continue;
+
+        // 1. 將工作表轉為二維陣列（header:1 表示以陣列形式而非物件形式返回）
+        const raw = XLSX.utils.sheet_to_json(
+                        wb.Sheets[sheetName],
+                        {header:1, defval:''}
+                    );
+
+        // 2. 根據表頭標記分割出多個資料表
+        const tables = splitTables(raw);
+        Object.assign(npcs, buildQuest(sheetName, tables));
+    }
+
+    fs.writeFileSync(outputPath, JSON.stringify(npcs, null, 2), 'utf-8');
+    console.log(`Output written to ${outputPath}`);
+}
+
+// 只轉換第一個 sheet
+function test(input, output)
+{
+    const wb = XLSX.readFile(input);
+    const firstSheetName = wb.SheetNames[0];
+    const raw = XLSX.utils.sheet_to_json(
+        wb.Sheets[firstSheetName],
+        {header:1, defval:''}
+    );
+    const tables = splitTables(raw);
+    fs.writeFileSync(output, JSON.stringify(tables, null, 2), 'utf-8');
+    console.log(`Output first sheet "${firstSheetName}" to ${output}`);
+}
+
+// 執行轉換
+excelToJson('./xls/quest.xlsx', './public/assets/json/quest.json');

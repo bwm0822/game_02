@@ -1,201 +1,65 @@
 {
-  "musk_01": {
-    "id": "musk_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\r\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3,
-        "nid": "forest-01"
-      },
-      {
-        "des": "跟 musk 回報",
-        "nid": "village-01",
-        "refs": [
-          0
+  "QK01": {
+    "id": "QK01",
+    "npcId": "karen",
+    "titleKey": "黑森林討伐",
+    "descKey": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
+    "steps": {
+      "step_01": {
+        "descKey": "與xi對話了解情況",
+        "complete": {
+          "type": "flag",
+          "flag": "qk01_talk_xi"
+        },
+        "actions": [
+          "rm qk01_talk_xi"
         ]
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
       },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
-      }
-    ]
-  },
-  "musk_02": {
-    "id": "musk_02",
-    "title": "殺死野狼",
-    "des": "殺死郊區的野狼",
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
-      }
-    ]
-  },
-  "melanie_01": {
-    "id": "melanie_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\r\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3
-      },
-      {
-        "des": "跟 melanie 回報",
-        "refs": [
-          0
+      "step_02": {
+        "descKey": "前往黑森林，擊殺黑森林的野狼 ({current}/{required})",
+        "complete": {
+          "type": "kill",
+          "required": 1,
+          "id": "wolf"
+        },
+        "conds": [
+          "step_01"
         ]
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
       },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
-      }
-    ]
-  },
-  "trump_01": {
-    "id": "trump_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\r\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3
-      },
-      {
-        "type": "final",
-        "des": "跟 trump 回報"
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
-      },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
-      }
-    ]
-  },
-  "karen_01": {
-    "id": "karen_01",
-    "title": "遺失的劍",
-    "des": "Karen 的配劍遺失在北方森林，幫她找回。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "find",
-        "id": "sword_01",
-        "count": 1,
-        "q": "karen_01",
-        "nid": "forest-01"
-      },
-      {
-        "type": "report",
-        "des": "跟 karen 回報",
-        "refs": [
-          0
+      "step_03": {
+        "descKey": "收集刀子 ({current}/{required})",
+        "complete": {
+          "type": "collect",
+          "required": 1,
+          "id": "sword_01"
+        },
+        "conds": [
+          "step_02"
         ],
-        "nid": "village-01"
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
+        "actions": [
+          "set qk01 done"
+        ]
       },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
+      "step_05": {
+        "descKey": "任務完成，跟 karen 回報任務",
+        "complete": {
+          "type": "none"
+        },
+        "conds": [
+          "step_03"
+        ]
       }
-    ],
-    "actions": [
-      {
-        "type": "remove",
-        "id": "sword_01",
-        "count": 1,
-        "q": "karen_01"
-      }
-    ]
-  },
-  "xi_01": {
-    "id": "xi_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\r\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3
-      },
-      {
-        "type": "final",
-        "des": "跟 xi 回報"
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
-      },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
-      }
-    ]
-  },
-  "macron_01": {
-    "id": "macron_01",
-    "title": "森林中的盜賊威脅",
-    "des": "最近有一群盜賊盤踞在北方森林，他們襲擊路過的商隊與村民。\r\n請前往森林深處，消滅盜賊首領，恢復森林的安全。",
-    "nid": "forest-01",
-    "conds": [
-      {
-        "type": "kill",
-        "id": "rogue",
-        "count": 3
-      },
-      {
-        "type": "final",
-        "des": "跟 macron 回報"
-      }
-    ],
-    "rewards": [
-      {
-        "type": "gold",
-        "count": 100
-      },
-      {
-        "type": "item",
-        "id": "helmet_01",
-        "count": 2
-      }
-    ]
+    },
+    "reward": {
+      "gold": 100,
+      "exp": 100,
+      "items": []
+    },
+    "action": {
+      "start": [
+        "set qk01_start",
+        "set qk01 going"
+      ]
+    }
   }
 }
