@@ -79,4 +79,11 @@ export default class Role extends GameObject
 
         if(ent.content.count<=0) {ent.empty();}
     }
+
+    fill(ent)
+    {
+        if(ent.content.capacity>=ent.dat.capacity) {return false;}
+        ent.content.capacity = ent.dat.capacity;
+        return true;
+    }
 }

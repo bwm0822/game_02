@@ -361,11 +361,9 @@ export class Slot extends Icon
 
     fill()
     {
-        const content=this.content;
-        if(content.capacity<this.dat.capacity)
+        if(this.owner.fill(this))
         {
-            content.capacity=this.dat.capacity;
-            this.update()
+            this.update();
             UiMessage.push(`${this.owner.id} 裝水`)
         }
         else
