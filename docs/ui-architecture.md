@@ -76,6 +76,22 @@ export default class UiInv extends UiFrame {
 | `pquest.js`（`PQuest`） | 任務列表（非 `UiFrame`），資料來源 `QuestManager` | `UiMisc` 內嵌使用 |
 | `unode.js`（`UNode`） | 地圖上可互動地點的容器，非「UI 面板」而是小地圖裡的節點物件 | `PMap._addNode()` 建立 |
 
+### 2.1 `Slot.owner` 的隱性契約與虛擬 owner 模式
+
+`Slot`（uiclass.js）的 `owner` 不一定要是真正的角色/容器 GameObject，只要滿足 `Slot` 當下用到的介面即可，常見成員：`info`（`{act,type,target}`）、`storage`（`{capacity,items}`）、`receive(content,i)`、`close()`、`drop(dragged)`、`setEnable(on)`、`sell()`/`split()`。
+
+需要讓某個非 GameObject 的來源（例如背包裡的另一個道具本身也有 storage）當成 `owner` 時，**不要**把這些方法加到 `Slot` 類別本身（會讓 UI 格子跟 owner 模擬邏輯混在一起）。改成寫一個小型 adapter 工廠，只實作用得到的介面——參考 `InventoryService.asOwner(ent)`（openbag 開啟背包內的包包時使用）。
+
+### 2.2 `Slot.setEnable(on)` / `get enabled()` 的語意
+
+`setEnable()` **不會**呼叫 `setInteractive()`/`disableInteractive()`——slot 永遠保持可互動，只切換 `_on` 旗標（`get enabled()` 回傳它）與灰階視覺（`_disabled` 遮罩）。因此任何要尊重「disabled」狀態的互動邏輯都必須自己檢查 `.enabled`，不能假設 disabled 的 slot 不會收到 pointer 事件：
+
+- 拖曳放入：`InventoryService.handleDrop` 檢查 `to.enabled`
+- 拖曳撿取：`DragService._tryPickFromSlot` 檢查 `slot.enabled`
+- hover／右鍵選單：`Slot.over()`/`rightButtonDown()` 開頭檢查 `this.enabled`
+
+新增互動路徑時，記得比照上面幾個加上 `enabled` 檢查，否則 disabled 的 slot 該擋的操作不會被擋。
+
 ## 3. 既有面板分類
 
 > 全數 `extends UiFrame`，在 `ui.js` 的 `createUI()` 中 new 出來，除非特別註明。
