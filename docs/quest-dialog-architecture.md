@@ -209,3 +209,59 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 2. 執行 `node scripts/dialog.js` 重新產生 `public/assets/json/dialog.json`。
 3. 新節點要被走到，得從某個既有節點的 `choice.next` 連過去，或加一筆新的 `entries`（記得排 `order`、設 `condition`）。
 4. 對話中要暫存「這個 NPC 是不是講過這句話了」之類的旗標，用 `_` 開頭的變數名（存在對話元件自己的 runtime 資料，不會污染全域 `Record`）。
+
+## 8. `xls/quest.xlsx`、`xls/dialog.xlsx` 格式規範
+
+用程式編輯這兩份 xlsx 時**一律用 `exceljs`**，不要用 `xlsx`（SheetJS）套件寫入——`xlsx` 套件的 community 版寫入時不支援儲存格樣式，且曾經在寫入時把 `sheetFormatPr` 弄壞成 `zeroHeight="1"`（所有未明確指定列高的列會被當成高度 0/隱藏，導致表格看起來只到某一列就斷掉、在最上方插入整列也像沒作用），還會弄丟凍結窗格設定。`xlsx` 套件本身仍保留給 `scripts/quest.js`/`scripts/dialog.js` 的讀取轉換用途（那邊只讀不寫，不受影響）。
+
+以 `dialog.xlsx` 目前的格式為準（`quest.xlsx` 應對齊此規範；`quest.xlsx` 的表頭列目前還沒套用 bold，屬已知落差）：
+
+### 8.1 字型
+
+所有儲存格：`微軟正黑體 Light`、size 12、`color: {theme: 1}`。表頭列（`#` 開頭那列）額外加 `bold: true`。
+
+### 8.2 欄寬（依欄位語意，非固定值）
+
+- id/簡短欄位（`quest_id`/`step_id`/`nodeId`/`priority` 等）：窄，約 9\~20
+- 說明/文本欄位（`descKey`/`text_keys`）：寬，約 40\~58，並開 `wrapText: true`
+- actions/next/condition 等指令欄：中等，約 15\~34
+- 超出資料範圍的欄（其餘所有列）：維持預設寬度（quest.xlsx 約 9.14，dialog.xlsx 約 9）
+
+新增欄位時，寬度抓同類型欄位的現有值即可，不需要精算。
+
+### 8.3 凍結窗格
+
+兩份檔案都凍結「首列＋首欄」：
+
+```js
+sheet.views = [{
+    state: 'frozen',
+    xSplit: 1,
+    ySplit: 1,
+    topLeftCell: 'C2',       // 依實際內容欄位調整
+    activePane: 'bottomRight',
+}];
+```
+
+### 8.4 外框
+
+每個有值的儲存格都畫細框線（`{style:'thin'}`），讓整張表看起來像網格；表格最外圍效果上等同每格上下左右都有 thin border（Excel 會自動合併相鄰儲存格的重複框線，不需要手動避開）。
+
+### 8.5 底色（依列類型，僅套在有值的儲存格，跳過空字串）
+
+| 用途 | fill |
+|---|---|
+| 表頭列（第一格是 `#`） | `{theme: 9}` |
+| 第一張資料表的資料列（quest 基本資料 / dialog entries+action） | `{theme: 7, tint: 0.7999816888943144}` |
+| 第二張資料表·特殊列（dialog 的 `n_default` 節點區塊，唯一有這個特例） | `{theme: 8, tint: 0.3999755851924192}` |
+| 第二張資料表·一般列（dialog 其他節點/choice/post，quest 的所有 step 列） | `{theme: 8, tint: 0.7999816888943144}` |
+
+`xlsx` 開頭那種 `//` 說明列（僅 `quest.xlsx` 有）不上色。
+
+### 8.6 `sheetFormatPr`
+
+務必確保 `sheet.properties.defaultRowHeight` 有明確設成非 0 的值（例如 `15.75`），避免 exceljs 依原檔案殘留的 0 值往下傳導、間接被判定成需要 zeroHeight。寫入前後可用以下方式快速檢查有沒有壞掉：
+
+```js
+// 解壓 .xlsx（其實是 zip）看 xl/worksheets/sheet1.xml 有沒有 zeroHeight="1"
+```
