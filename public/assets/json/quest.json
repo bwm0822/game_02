@@ -68,7 +68,7 @@
         "descKey": "前往黑森林狩獵，擊殺野狼 ({current}/{required})",
         "complete": {
           "type": "kill",
-          "required": 3,
+          "required": 1,
           "id": "wolf"
         }
       },
@@ -76,14 +76,11 @@
         "descKey": "剝下狼皮 ({current}/{required})",
         "complete": {
           "type": "collect",
-          "required": 3,
+          "required": 1,
           "id": "plet"
         },
         "conds": [
           "step_01"
-        ],
-        "actions": [
-          "set qx01_pelt_ready"
         ]
       },
       "step_03": {

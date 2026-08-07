@@ -50,7 +50,6 @@ function _isQuestDone(q)
 function _isStepDone(q, stepId, step)
 {
     const type = step.complete.type;
-    if(type==='collect') return _queryCount(step.complete.id) >= step.complete.required;
     if(type==='none') return true;
     return q.sta.steps[stepId];
 }

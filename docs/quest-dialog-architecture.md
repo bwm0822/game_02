@@ -54,8 +54,11 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 ```
 
 - `steps[stepId].complete.type`：`collect`（持有數量）/`kill`（擊殺數）/`flag`（Record flag）/`none`（純顯示，不會自動完成，通常是「回報任務」提示）
+  - 三種都是**一次性**判定：`state.steps[stepId]` 一旦達成就永久記住（`_checkSteps` 開頭 `if (state.steps[stepId]) continue`），之後不會因為狀態改變而復原——`collect` 也不例外，玩家達標當下的持有量事後被丟掉/賣掉/交出去，清單上的勾勾跟凍結住的 `{current}/{required}` 數字都不會變回未完成
+  - ⚠️ 曾經試過把 `collect` 改成即時重算（不凍結），結果在「收集→拿去交給 NPC 換東西（NPC 那邊用 `consume` 扣掉道具）」這種常見流程裡會出包：東西一交出去，`collect` 步驟因為背包歸零又變回未完成，導致清單上出現「前面的收集步驟未完成、後面依賴它的步驟卻已完成」這種邏輯倒退的畫面，已改回一次性判定。**真正需要「當下必須持有才能過」的門檻，交給 dialog 的 `item:<id>:<count>` 條件去擋（見 1.5/1.6），跟 `QuestManager` 的 `state.steps` 是兩條獨立的判斷路徑，不要混在一起**
+  - ⚠️ 順著上面那個坑還挖出一個更早就存在的既有 bug：`content()` 畫勾勾用的 `_isStepDone()`（[quest.js:50](../src/manager/quest.js#L50)）原本對 `collect` 類型是**另外自己即時查庫存**，完全沒管 `_checkSteps` 存的 `state.steps[stepId]`——兩邊各算各的，只是因為以前沒有任何 `collect` 道具真的被消耗掉，才一直沒被踩到。已經修成 `_isStepDone` 一律直接讀 `state.steps[stepId]`（`none` 除外），跟 `_checkSteps` 用同一份數字
 - `steps[stepId].conds`：前置 step id 陣列，未達成前這個 step 不會被檢查
-- `steps[stepId].actions`：該 step 完成時執行的指令（見 1.5）
+- `steps[stepId].actions`：該 step 完成時執行的指令（見 1.5），只在「未達成→達成」那個瞬間執行一次
 - `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.content()` 替換
 - `action.start`：`QuestManager.start(id)` 時執行的指令
 
@@ -92,16 +95,21 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 - `nodes[nodeId].choices[].condition`：選項是否顯示的條件
 - `nodes[nodeId].choices[].next`：下一個 `nodeId`；`[varName]` 語法代表動態導向——實際節點 id 存在 flag/Record 變數裡（例如 `next:"[_quest]"` 搭配 `set _quest n_QK01`）
 - `nodes[nodeId].posts`：顯示完這個節點後執行的指令（設旗標用，例如記錄「已見過第一次」）
-- **actions 指令集**（`COM_Talk._exec`）：`trade`（開交易面板）、`qstart <id>`（開始任務）、`qclose <id>`（完成任務）、`close`（關閉對話框）、`set <flag> [val]`、`clr <flag>`、`rm <flag>`；指令前面可加 `條件:` 前綴做條件執行，例如 `"!_first_meet : set _quest n_QK01"`
-- **條件表達式**（`_evalCond`）：支援 `&&`/`||`/`!flag`/`flag==val`/`flag!=val`/純 flag 名稱；flag 依字首判斷來源：`#questId` 讀 `QuestManager.getState(questId)`、`_xxx` 讀元件自己的 runtime `_rec`（存檔）、其他讀全域 `Record.getVar()`
+- **actions 指令集**（`COM_Talk._exec`）：`trade`（開交易面板）、`qstart <id>`（開始任務）、`qclose <id>`（完成任務）、`close`（關閉對話框）、`set <flag> [val]`、`clr <flag>`、`rm <flag>`、`consume <itemId> <count>`（從玩家背包扣除數量，見下方）；指令前面可加 `條件:` 前綴做條件執行，例如 `"!_first_meet : set _quest n_QK01"`
+- **條件表達式**（`_evalCond`）：支援 `&&`/`||`/`!flag`/`flag==val`/`flag!=val`/純 flag 名稱；flag 依字首判斷來源：`#questId` 讀 `QuestManager.getState(questId)`、`_xxx` 讀元件自己的 runtime `_rec`（存檔）、`item:<id>:<count>` 即時查玩家背包持有量、其他讀全域 `Record.getVar()`
 
-### 1.5 flag 三種來源整理
+### 1.5 flag 四種來源整理
 
 | 前綴 | 讀取方式 | 用途 |
 |---|---|---|
 | `#questId` | `QuestManager.getState(questId)` → `'open'/'done'/'close'/undefined` | 依任務狀態分支對話 |
 | `_xxx` | `COM_Talk._rec`（隨對話元件存檔，NPC 各自獨立） | 該 NPC 專屬的對話進度旗標 |
+| `item:<id>:<count>` | 即時 `GM.player.queryItem()` 加總 | 判斷玩家目前是否持有至少 count 個該道具（不是旗標，每次都重新查） |
 | 其他 | `Record.getVar()`（全域） | 跨 NPC/跨系統共用的旗標 |
+
+### 1.6 `consume <itemId> <count>`：扣除玩家道具
+
+`COM_Talk._exec` 的 `consume` 指令呼叫 `GM.player.consumeItem?.({id, count})`，實際實作是 `COM_Storage._remove()`（[com_inventory.js:37-55](../src/components/com_inventory.js#L37-L55)），綁在 `root.consumeItem`（[com_inventory.js:216](../src/components/com_inventory.js#L216)，特意取名 `consumeItem` 而非 `remove`，避免跟 `GameObject` 自己的 `remove()` 撞名，同一份程式碼裡已有註解說明這個坑）。呼叫前**不會**自動檢查數量是否足夠，若道具不夠會扣到剩 0 為止、不會報錯——實務上都是搭配 `item:<id>:<count>` 條件先擋在選項的可見性上，確保按下去之前數量一定夠。
 
 ## 2. 對話元件：COM_Talk（src/components/com_talk.js）
 

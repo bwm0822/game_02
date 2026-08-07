@@ -51,7 +51,7 @@
             "labelKey": "關於黑森林的狼皮",
             "priority": 35,
             "next": "n_QX01_karen",
-            "condition": "qx01_pelt_ready"
+            "condition": "item:plet:1"
           },
           {
             "labelKey": "離開",
@@ -345,7 +345,7 @@
             "labelKey": "好的",
             "priority": 0,
             "actions": [
-              "rm qx01_pelt_ready",
+              "consume plet 1",
               "set qx01_karen_done"
             ],
             "next": "n_default"

@@ -213,6 +213,7 @@ export class COM_Storage extends Com
         root.removeItem = this._delete.bind(this);
         // 上層root已經有remove()了，如果綁定了root.remove，就會被誤認為是COM_Storage的remove，導致錯誤
         // root.remove = this._remove.bind(this);
+        root.consumeItem = this._remove.bind(this);
         root.receive = this._receive.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫

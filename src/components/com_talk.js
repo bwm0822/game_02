@@ -40,7 +40,13 @@ export class COM_Talk extends Com
         {
             return this._rec[flag];
         }
-        else 
+        else if (flag?.startsWith('item:')) // 'item:<id>:<count>'，玩家目前是否持有至少 count 個該道具
+        {
+            const [, id, count] = flag.split(':');
+            const sum = GM.player.queryItem(itm=>itm.id===id).reduce((s,itm)=>s+itm.count, 0);
+            return sum >= Number(count);
+        }
+        else
         {
             return Record.getVar(flag);
         }
@@ -202,6 +208,7 @@ export class COM_Talk extends Com
                 case 'set':     this._setVar(p1,p2??true); break;
                 case 'clr':     this._setVar(p1,false); break;
                 case 'rm':      this._rmVar(p1); break;
+                case 'consume': GM.player.consumeItem?.({id:p1, count:Number(p2)}); break;
                 default:        cb?.(op); break;
             }
         });
