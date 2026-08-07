@@ -48,6 +48,12 @@
             "condition": "_quest"
           },
           {
+            "labelKey": "關於黑森林的狼皮",
+            "priority": 35,
+            "next": "n_QX01_karen",
+            "condition": "qx01_pelt_ready"
+          },
+          {
             "labelKey": "離開",
             "priority": 99,
             "actions": [
@@ -328,12 +334,32 @@
           }
         ],
         "posts": []
+      },
+      "n_QX01_karen": {
+        "textKeys": {
+          "true": "這批狼皮品質不錯，這批貨我收了！幫我跟 xi 說一聲喔。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "好的",
+            "priority": 0,
+            "actions": [
+              "rm qx01_pelt_ready",
+              "set qx01_karen_done"
+            ],
+            "next": "n_default"
+          }
+        ],
+        "posts": []
       }
     }
   },
   "xi": {
     "id": "xi",
-    "actions": [],
+    "actions": [
+      "!_first_meet : set _quest n_QX01"
+    ],
     "entries": [
       {
         "nodeId": "npc_a_after_quest",
@@ -607,6 +633,64 @@
               "set qk01_talk_xi"
             ],
             "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QX01": {
+        "textKeys": {
+          "true": "最近黑森林的狼變多了，肉舖都要沒貨了……能幫我獵些狼皮回來嗎？"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "接受",
+            "priority": 0,
+            "actions": [
+              "qstart QX01",
+              "set _quest n_QX01-2"
+            ],
+            "next": "n_default"
+          },
+          {
+            "labelKey": "拒絕",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QX01-2": {
+        "textKeys": {
+          "#QX01==open": "狼皮收集得如何了?",
+          "#QX01==done": "都準備好了嗎？太好了!",
+          "#QX01==close": "謝謝你，這是你的獎勵"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "處理中",
+            "priority": 0,
+            "next": "n_default",
+            "condition": "#QX01==open"
+          },
+          {
+            "labelKey": "完成了",
+            "priority": 0,
+            "actions": [
+              "qclose QX01"
+            ],
+            "next": "n_QX01-2",
+            "condition": "#QX01==done"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "actions": [
+              "rm _quest"
+            ],
+            "next": "n_default",
+            "condition": "#QX01==close"
           }
         ],
         "posts": []

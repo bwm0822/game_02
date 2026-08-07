@@ -57,5 +57,62 @@
         "set qk01_start"
       ]
     }
+  },
+  "QX01": {
+    "id": "QX01",
+    "npcId": "xi",
+    "titleKey": "屠夫的生意經",
+    "descKey": "黑森林的野狼氾濫，xi 的肉舖快沒貨了，想找人幫忙獵狼取皮，順便帶個口信給城裡的商人 karen。",
+    "steps": {
+      "step_01": {
+        "descKey": "前往黑森林狩獵，擊殺野狼 ({current}/{required})",
+        "complete": {
+          "type": "kill",
+          "required": 3,
+          "id": "wolf"
+        }
+      },
+      "step_02": {
+        "descKey": "剝下狼皮 ({current}/{required})",
+        "complete": {
+          "type": "collect",
+          "required": 3,
+          "id": "plet"
+        },
+        "conds": [
+          "step_01"
+        ],
+        "actions": [
+          "set qx01_pelt_ready"
+        ]
+      },
+      "step_03": {
+        "descKey": "帶著狼皮去找商人 karen 談談",
+        "complete": {
+          "type": "flag",
+          "flag": "qx01_karen_done"
+        },
+        "conds": [
+          "step_02"
+        ]
+      },
+      "step_04": {
+        "descKey": "任務完成，回去跟 xi 回報",
+        "complete": {
+          "type": "none"
+        },
+        "conds": [
+          "step_03"
+        ]
+      }
+    },
+    "reward": {
+      "gold": 120,
+      "exp": 120,
+      "items": [
+        "axe_01"
+      ]
+    },
+    "action": {}
   }
 }

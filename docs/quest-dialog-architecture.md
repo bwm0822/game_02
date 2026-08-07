@@ -214,16 +214,20 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 
 用程式編輯這兩份 xlsx 時**一律用 `exceljs`**，不要用 `xlsx`（SheetJS）套件寫入——`xlsx` 套件的 community 版寫入時不支援儲存格樣式，且曾經在寫入時把 `sheetFormatPr` 弄壞成 `zeroHeight="1"`（所有未明確指定列高的列會被當成高度 0/隱藏，導致表格看起來只到某一列就斷掉、在最上方插入整列也像沒作用），還會弄丟凍結窗格設定。`xlsx` 套件本身仍保留給 `scripts/quest.js`/`scripts/dialog.js` 的讀取轉換用途（那邊只讀不寫，不受影響）。
 
-以 `dialog.xlsx` 目前的格式為準（`quest.xlsx` 應對齊此規範；`quest.xlsx` 的表頭列目前還沒套用 bold，屬已知落差）：
+以 `dialog.xlsx` 目前的格式為準，`quest.xlsx` 應對齊此規範（少數已知落差見 8.1、8.5 附註）：
 
-### 8.1 字型
+### 8.1 字型與換行
 
-所有儲存格：`微軟正黑體 Light`、size 12、`color: {theme: 1}`。表頭列（`#` 開頭那列）額外加 `bold: true`。
+所有儲存格：`微軟正黑體 Light`、size 12、`color: {theme: 1}`。表頭列（`#` 開頭那列）額外加 `bold: true`（`quest.xlsx` 表頭目前還沒套用，屬已知落差，見 8.5 附註）。
+
+**所有有上底色的儲存格（表頭列 + 資料列，見 8.4/8.5）一律加 `alignment: {wrapText: true, vertical: 'middle'}`**，不限 `descKey`/`text_keys` 這類長文本欄位——即使是 `priority`、`step_id` 這種短欄位也要開，維持整份檔案一致。
+
+> ⚠️ **`wrapText` 開了之後一定要連 `row.height` 一起處理**，否則列高還是預設的一行高（`sheetFormatPr.defaultRowHeight`），文字會在儲存格邊界換行、但多出來的行被裁掉看不到（儲存格的值本身沒事，只是視覺上被藏起來，容易被誤認為資料壞掉）。exceljs 沒有「自動依內容調整列高」的 API，只能自己估算：依每個欄位目前的 `column.width`、儲存格文字長度（CJK 字元抓 2 個寬度單位、ASCII 抓 1 個，明確的 `\n` 也要算進換行數）估出需要幾行，`row.height = 行數 * 15.75`，同一列取所有欄位估算出的最大值。這個估算沒辦法百分之百精準對齊 Excel 實際的斷行結果（字型跟預設字型的字寬不同、又是依單字斷行不是依字元），寧可估保守一點（欄寬抓 7\~8 成、留緩衝），寫完拿 Excel 實際打開再看一次有沒有被裁到。
 
 ### 8.2 欄寬（依欄位語意，非固定值）
 
 - id/簡短欄位（`quest_id`/`step_id`/`nodeId`/`priority` 等）：窄，約 9\~20
-- 說明/文本欄位（`descKey`/`text_keys`）：寬，約 40\~58，並開 `wrapText: true`
+- 說明/文本欄位（`descKey`/`text_keys`）：寬，約 40\~58
 - actions/next/condition 等指令欄：中等，約 15\~34
 - 超出資料範圍的欄（其餘所有列）：維持預設寬度（quest.xlsx 約 9.14，dialog.xlsx 約 9）
 
@@ -243,20 +247,27 @@ sheet.views = [{
 }];
 ```
 
-### 8.4 外框
+### 8.4 外框與底色範圍
 
-每個有值的儲存格都畫細框線（`{style:'thin'}`），讓整張表看起來像網格；表格最外圍效果上等同每格上下左右都有 thin border（Excel 會自動合併相鄰儲存格的重複框線，不需要手動避開）。
+底色跟框線是**依「列」套用，範圍是該列所屬表格的 header 欄位範圍**（B 欄到該表 header 最後一個有標籤的欄位，例如 quest.xlsx 第一張表到 I 欄、第二張表到 J 欄；dialog.xlsx 兩張表都到 I 欄）——只要那一列有內容（不是空白列），範圍內的儲存格**不論自己有沒有值都要上底色＋畫框線**，不是只上在有值的儲存格（這點 2026-08 前的版本做錯過，曾經只在有值的儲存格上色，導致同一列裡空白欄位看起來像斷開的，已修正）。欄 A（`#`/`//` 標記欄）跟超出 header 範圍的欄一律不上色、不畫框線。
 
-### 8.5 底色（依列類型，僅套在有值的儲存格，跳過空字串）
+框線規則（`{style:'thin'}`）：
+- 表頭列：只有 `bottom`（不畫 `top`，讓上一列的底色/前一區塊視覺上是開放的）
+- 資料列：一律畫 `top`；`bottom` 則除了**該色塊區間的最後一列**（下一列是空白列或已到表尾）以外都畫——最後一列不畫 `bottom`，讓區塊底部維持開放
+- 每格的 `left`/`right`：除了該列最左邊的資料欄（B 欄）不畫 `left` 以外，其餘都畫
+
+Excel 會自動合併相鄰儲存格的重複框線，不需要手動避開重疊。
+
+### 8.5 底色（依列類型）
 
 | 用途 | fill |
 |---|---|
-| 表頭列（第一格是 `#`） | `{theme: 9}` |
-| 第一張資料表的資料列（quest 基本資料 / dialog entries+action） | `{theme: 7, tint: 0.7999816888943144}` |
+| 表頭列（第一格是 `#`，`quest.xlsx` 的 `//` 說明列也套用同樣底色） | `{theme: 9}` |
+| 第一張資料表的資料列（quest 基本資料 / dialog entries+action） | dialog.xlsx: `{theme: 7, tint: 0.7999816888943144}`；quest.xlsx: `{theme: 9, tint: 0.7999816888943144}`（跟本表寫的 `theme:7` 不同，是目前 `karen` sheet 的實際樣式，新增分頁請跟著用 `theme:9` 以維持同檔案視覺一致，不要照本表數字用 `theme:7`） |
 | 第二張資料表·特殊列（dialog 的 `n_default` 節點區塊，唯一有這個特例） | `{theme: 8, tint: 0.3999755851924192}` |
 | 第二張資料表·一般列（dialog 其他節點/choice/post，quest 的所有 step 列） | `{theme: 8, tint: 0.7999816888943144}` |
 
-`xlsx` 開頭那種 `//` 說明列（僅 `quest.xlsx` 有）不上色。
+`dialog.xlsx` 裡 `//` 開頭的純註解列（例如「解說」那種單一儲存格提示，跟 quest.xlsx 的 `//` 說明列不同）維持不上色、不套用本節規則。
 
 ### 8.6 `sheetFormatPr`
 
