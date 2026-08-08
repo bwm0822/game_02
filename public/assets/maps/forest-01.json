@@ -372,7 +372,7 @@
         {
          "draworder":"topdown",
          "id":2,
-         "name":"#QX01",
+         "name":"#QX01_map",
          "objects":[
                 {
                  "id":77,
@@ -401,7 +401,7 @@
         {
          "draworder":"topdown",
          "id":4,
-         "name":"#QK01",
+         "name":"#QK01_map",
          "objects":[
                 {
                  "gid":348,

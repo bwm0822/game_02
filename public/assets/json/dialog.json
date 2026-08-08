@@ -51,7 +51,13 @@
             "labelKey": "關於黑森林的狼皮",
             "priority": 35,
             "next": "n_QX01_karen",
-            "condition": "item:plet:1 && !qx01_karen_done"
+            "condition": "item:plet:1 && QX01_karen"
+          },
+          {
+            "labelKey": "轉達 xi 的提案",
+            "priority": 35,
+            "next": "n_QX02_karen",
+            "condition": "QX02_karen"
           },
           {
             "labelKey": "離開",
@@ -346,7 +352,26 @@
             "priority": 0,
             "actions": [
               "consume plet 1",
-              "set qx01_karen_done"
+              "rm QX01_karen",
+              "set QX01_karen_done"
+            ],
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QX02_karen": {
+        "textKeys": {
+          "true": "長期收購？聽起來不錯，價錢我可以再加一點，你回去跟 xi 說一聲，這筆生意我接了。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "好的",
+            "priority": 0,
+            "actions": [
+              "rm QX02_karen",
+              "set QX02_karen_done"
             ],
             "next": "n_default"
           }
@@ -406,8 +431,8 @@
           {
             "labelKey": "關於黑森林討伐",
             "priority": 40,
-            "next": "n_QK01_start",
-            "condition": "qk01_start"
+            "next": "n_QK01_xi",
+            "condition": "QK01_xi"
           },
           {
             "labelKey": "離開",
@@ -619,7 +644,7 @@
         ],
         "posts": []
       },
-      "n_QK01_start": {
+      "n_QK01_xi": {
         "textKeys": {
           "true": "前往黑森林，擊殺黑森林的野狼"
         },
@@ -629,8 +654,8 @@
             "labelKey": "了解",
             "priority": 0,
             "actions": [
-              "rm qk01_start",
-              "set qk01_talk_xi"
+              "rm QK01_xi",
+              "set QK01_talk_xi"
             ],
             "next": "n_default"
           }
@@ -687,10 +712,68 @@
             "labelKey": "離開",
             "priority": 0,
             "actions": [
-              "rm _quest"
+              "set _quest n_QX02"
             ],
             "next": "n_default",
             "condition": "#QX01==close"
+          }
+        ],
+        "posts": []
+      },
+      "n_QX02": {
+        "textKeys": {
+          "true": "森林安靜多了，這下該跟 karen 把長期收購狼皮的事情談攏。你能不能幫我帶個提案去，跟她把價錢跟數量談好？"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "接受",
+            "priority": 0,
+            "actions": [
+              "qstart QX02",
+              "set _quest n_QX02-2"
+            ],
+            "next": "n_default"
+          },
+          {
+            "labelKey": "拒絕",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_QX02-2": {
+        "textKeys": {
+          "#QX02==open": "跟 karen 談得怎麼樣了?",
+          "#QX02==done": "都談好了嗎？太好了!",
+          "#QX02==close": "這趟辛苦你了，這是謝禮"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "處理中",
+            "priority": 0,
+            "next": "n_default",
+            "condition": "#QX02==open"
+          },
+          {
+            "labelKey": "完成了",
+            "priority": 0,
+            "actions": [
+              "qclose QX02"
+            ],
+            "next": "n_QX02-2",
+            "condition": "#QX02==done"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 0,
+            "actions": [
+              "rm _quest"
+            ],
+            "next": "n_default",
+            "condition": "#QX02==close"
           }
         ],
         "posts": []

@@ -9,10 +9,10 @@
         "descKey": "與xi對話了解情況",
         "complete": {
           "type": "flag",
-          "flag": "qk01_talk_xi"
+          "flag": "QK01_talk_xi"
         },
         "actions": [
-          "rm qk01_talk_xi"
+          "rm QK01_talk_xi"
         ]
       },
       "step_02": {
@@ -59,7 +59,11 @@
     ],
     "action": {
       "start": [
-        "set qk01_start"
+        "set QK01_xi",
+        "set QK01_map"
+      ],
+      "complete": [
+        "rm QK01_map"
       ]
     }
   },
@@ -86,13 +90,16 @@
         },
         "conds": [
           "step_01"
+        ],
+        "actions": [
+          "set QX01_karen"
         ]
       },
       "step_03": {
         "descKey": "帶著狼皮去找商人 karen 談談",
         "complete": {
           "type": "flag",
-          "flag": "qx01_karen_done"
+          "flag": "QX01_karen_done"
         },
         "conds": [
           "step_02"
@@ -125,10 +132,49 @@
     ],
     "action": {
       "start": [
-        "set QX01"
+        "set QX01_map"
       ],
       "complete": [
-        "rm QX01"
+        "rm QX01_map"
+      ]
+    }
+  },
+  "QX02": {
+    "id": "QX02",
+    "npcId": "xi",
+    "titleKey": "跑腿的交涉",
+    "descKey": "黑森林的野狼問題解決後，xi 想跟 karen 談長期收購狼皮的生意，請你幫忙帶提案去交涉。",
+    "steps": {
+      "step_01": {
+        "descKey": "帶著提案去找商人 karen 談交涉條件",
+        "complete": {
+          "type": "flag",
+          "flag": "QX02_karen_done"
+        }
+      },
+      "step_02": {
+        "descKey": "任務完成，回去跟 xi 回報",
+        "complete": {
+          "type": "none"
+        },
+        "conds": [
+          "step_01"
+        ]
+      }
+    },
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "exp",
+        "count": 100
+      }
+    ],
+    "action": {
+      "start": [
+        "set QX02_karen"
       ]
     }
   }

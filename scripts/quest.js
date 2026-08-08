@@ -88,43 +88,51 @@ function buildQuest(sheetName, tables)
 {
     const allQuests = {}
 
-    const infoRows = tables[0].rows;   // 任務基本資料
-    const stepRows = tables[1].rows;   // 任務步驟
-
-    // 先把所有任務基本資料建好
-    for (const info of infoRows) 
-    {
-        allQuests[info.quest_id] = {
-            id:       info.quest_id,
-            npcId:    sheetName,            // 記錄是哪個 NPC 的任務
-            titleKey: info.titleKey,
-            descKey:  info.descKey,
-            steps:    {},
-            rewards:  buildReward(info),
-            action:   buildAction(info)
-        };
+    if (tables.length % 2 !== 0) {
+        console.warn(`${sheetName}: 表格數量是奇數（${tables.length}），最後一個表格沒有配對，已忽略`);
     }
 
-    // 再把步驟塞進對應任務
-    for (const row of stepRows) 
+    // 一個 sheet 可以有多組 (任務基本資料表, 任務步驟表) 配對，依序處理每一組
+    for (let i = 0; i + 1 < tables.length; i += 2)
     {
-        const quest = allQuests[row.quest_id];
-        if (!quest) 
+        const infoRows = tables[i].rows;       // 任務基本資料
+        const stepRows = tables[i + 1].rows;   // 任務步驟
+
+        // 先把所有任務基本資料建好
+        for (const info of infoRows)
         {
-            console.warn(`找不到任務 ${row.quest_id}，跳過步驟 ${row.step_id}`);
-            continue;
+            allQuests[info.quest_id] = {
+                id:       info.quest_id,
+                npcId:    sheetName,            // 記錄是哪個 NPC 的任務
+                titleKey: info.titleKey,
+                descKey:  info.descKey,
+                steps:    {},
+                rewards:  buildReward(info),
+                action:   buildAction(info)
+            };
         }
-        quest.steps[row.step_id] = {
-            descKey:  row.descKey,
-            complete: buildComplete(row)
-        };
 
-        if(row.conds) {
-            quest.steps[row.step_id].conds = toArray(row.conds);
-        }
+        // 再把步驟塞進對應任務
+        for (const row of stepRows)
+        {
+            const quest = allQuests[row.quest_id];
+            if (!quest)
+            {
+                console.warn(`找不到任務 ${row.quest_id}，跳過步驟 ${row.step_id}`);
+                continue;
+            }
+            quest.steps[row.step_id] = {
+                descKey:  row.descKey,
+                complete: buildComplete(row)
+            };
 
-        if(row.actions) {
-            quest.steps[row.step_id].actions = toArray(row.actions);
+            if(row.conds) {
+                quest.steps[row.step_id].conds = toArray(row.conds);
+            }
+
+            if(row.actions) {
+                quest.steps[row.step_id].actions = toArray(row.actions);
+            }
         }
     }
 
