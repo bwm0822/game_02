@@ -99,6 +99,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 - `nodes[nodeId].posts`：顯示完這個節點後執行的指令（設旗標用，例如記錄「已見過第一次」）
 - **actions 指令集**（`COM_Talk._exec`）：`trade`（開交易面板）、`qstart <id>`（開始任務）、`qclose <id>`（完成任務）、`close`（關閉對話框）、`set <flag> [val]`、`clr <flag>`、`rm <flag>`、`consume <itemId> <count>`（從玩家背包扣除數量，見下方）；指令前面可加 `條件:` 前綴做條件執行，例如 `"!_first_meet : set _quest n_QK01"`
 - **條件表達式**（`_evalCond`）：支援 `&&`/`||`/`!flag`/`flag==val`/`flag!=val`/純 flag 名稱；flag 依字首判斷來源：`#questId` 讀 `QuestManager.getState(questId)`、`_xxx` 讀元件自己的 runtime `_rec`（存檔）、`item:<id>:<count>` 即時查玩家背包持有量、其他讀全域 `Record.getVar()`
+- **`choice:<node_id>`（動態掛載的選項）**：xlsx 的 `section` 欄除了固定的 `action`/`entry`/`node`/`choice`/`post`，也可以寫成 `choice:<node_id>`——這種列不需要緊接在對應的 `node` 列後面，可以放在 sheet 任何位置（例如集中放在 sheet 最底端），`buildNpc()`（[dialog.js:74](../scripts/dialog.js#L74)）轉檔時一律會把它掛進 `<node_id>` 那個節點的 `choices`（跟該節點本來緊鄰的 `choice` 列一起依 `priority` 排序，順序跟物理位置無關）；`node_id` 對應不到任何節點時只會印 console 警告、不會中斷轉檔，該列會被跳過。用途是把某些選項（例如跟任務相關、之後可能會重複出現在多個節點的選項）集中管理，不用分散寫在每個 `node` 區塊底下。`section` 欄若寫其他不認得的值（例如純粹在 sheet 上做視覺提醒用的 `dynamic`）會被靜默忽略，不影響轉檔結果。
 
 ### 1.5 flag 四種來源整理
 

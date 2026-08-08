@@ -75,14 +75,15 @@ function buildNpc(sheetName, rows)
 {
     const npc  = { id: sheetName, actions: [], entries: [], nodes: {},  };
     var currentNode = null;
+    const dynamicChoices = []; // {nodeId, row}，section 寫 'choice:<node_id>' 的列，不受物理位置限制
 
-    for (const row of rows) 
+    for (const row of rows)
     {
         if(row.section === 'action')
         {
             npc.actions.push(...toArray(row.actions));
         }
-        else if (row.section === 'entry') 
+        else if (row.section === 'entry')
         {
             npc.entries.push(buildEntry(row));
         }
@@ -96,9 +97,14 @@ function buildNpc(sheetName, rows)
             };
             npc.nodes[row.node_id] = currentNode;
         }
-        else if (row.section === 'choice' && currentNode) 
+        else if (row.section === 'choice' && currentNode)
         {
             currentNode.choices.push(buildChoice(row));
+        }
+        else if (row.section?.startsWith('choice:'))
+        {
+            const nodeId = row.section.slice('choice:'.length).trim();
+            dynamicChoices.push({nodeId, row});
         }
         else if (row.section === 'post' && currentNode)
         {
@@ -106,11 +112,23 @@ function buildNpc(sheetName, rows)
         }
     }
 
+    // choice:<node_id> 的列，不管實際填在 sheet 哪裡，都掛到 section 指定的 node
+    for (const {nodeId, row} of dynamicChoices)
+    {
+        const node = npc.nodes[nodeId];
+        if (!node)
+        {
+            console.warn(`[${sheetName}] 找不到節點 ${nodeId}，跳過動態掛載的選項「${row.label_key}」`);
+            continue;
+        }
+        node.choices.push(buildChoice(row));
+    }
+
     // entries 依 order 排序
     npc.entries.sort((a, b) => a.order - b.order);
 
     // choices 依 priority 排序
-    for (const node of Object.values(npc.nodes)) 
+    for (const node of Object.values(npc.nodes))
     {
         node.choices.sort((a, b) => a.priority - b.priority);
     }
