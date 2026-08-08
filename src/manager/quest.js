@@ -151,7 +151,7 @@ export default class QuestManager
         q.close = true;
         const qD = DB.quest(id);
         if (qD) {
-            if(qD.rewards) {GM.player.reward(qD.rewards);}
+            if(qD.rewards?.length) {GM.player.reward(qD.rewards);}
             if(qD.actions) {_exec(qD.actions);}
         }
 

@@ -71,11 +71,17 @@ function buildAction(row)
 
 function buildReward(row)
 {
-    return {
-                gold:  Number(row.reward_gold),
-                exp:   Number(row.reward_exp),
-                items: toArray(row.reward_items)
-            };
+    const rewards = [];
+
+    const gold = Number(row.rewards_gold);
+    if (gold) rewards.push({type:'gold', count:gold});
+
+    const exp = Number(row.rewards_exp);
+    if (exp) rewards.push({type:'exp', count:exp});
+
+    toArray(row.rewards_items).forEach(id=>rewards.push({type:'item', id, count:1}));
+
+    return rewards;
 }
 
 function buildQuest(sheetName, tables)
@@ -94,7 +100,7 @@ function buildQuest(sheetName, tables)
             titleKey: info.titleKey,
             descKey:  info.descKey,
             steps:    {},
-            reward:   buildReward(info),
+            rewards:  buildReward(info),
             action:   buildAction(info)
         };
     }

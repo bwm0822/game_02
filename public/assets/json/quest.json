@@ -47,11 +47,16 @@
         ]
       }
     },
-    "reward": {
-      "gold": 100,
-      "exp": 100,
-      "items": []
-    },
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 100
+      },
+      {
+        "type": "exp",
+        "count": 100
+      }
+    ],
     "action": {
       "start": [
         "set qk01_start"
@@ -103,13 +108,21 @@
         ]
       }
     },
-    "reward": {
-      "gold": 120,
-      "exp": 120,
-      "items": [
-        "axe_01"
-      ]
-    },
+    "rewards": [
+      {
+        "type": "gold",
+        "count": 120
+      },
+      {
+        "type": "exp",
+        "count": 120
+      },
+      {
+        "type": "item",
+        "id": "axe_01",
+        "count": 1
+      }
+    ],
     "action": {}
   }
 }

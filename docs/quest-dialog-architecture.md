@@ -47,7 +47,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
         "actions": ["set qk01 done"]
       }
     },
-    "reward": {"gold": 100, "exp": 100, "items": []},
+    "rewards": [{"type": "gold", "count": 100}, {"type": "exp", "count": 100}],
     "action": {"start": ["set qk01_start"]}
   }
 }
@@ -61,6 +61,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 - `steps[stepId].actions`：該 step 完成時執行的指令（見 1.5），只在「未達成→達成」那個瞬間執行一次
 - `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.content()` 替換
 - `action.start`：`QuestManager.start(id)` 時執行的指令
+- `rewards`：`QuestManager.close(id)` 時直接丟給 `GM.player.reward()`（`COM_Inventory._reward`，[com_inventory.js:247](../src/components/com_inventory.js#L247)）的陣列，格式是 `{type:'gold'|'item'|'exp', count, id?}`——`scripts/quest.js` 的 `buildReward()` 已經把 xlsx 的 `rewards_gold`/`rewards_exp`/`rewards_items` 三欄組成這個格式，不用手動拼。⚠️ `type:'exp'` 目前遊戲沒有等級/經驗系統可以吃，`_reward()` 的 switch 沒有對應 case，所以填了 `rewards_exp` 也只是靜默被忽略，不會噴錯
 
 ### 1.4 dialog.json 結構
 
@@ -136,7 +137,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 | 方法 | 用途 |
 |---|---|
 | `start(id)` | 開啟任務，寫入 `quests.active[id]`，執行 `quest.action.start` |
-| `close(id)` | 完成任務，發放 `reward`，執行 `quest.actions`，從 `active` 移到 `close` |
+| `close(id)` | 完成任務，發放 `rewards`（陣列，見 1.3，直接丟給 `GM.player.reward()`），執行 `quest.actions`，從 `active` 移到 `close` |
 | `remove(id)` | 從 `active` 移除（用於玩家在任務列表手動移除已完成任務） |
 | `title(q)` / `content(q)` | 產生任務列表顯示用的標題/內容 BBCode 文字（`q = {cat, dat, sta}`） |
 | `queryActive(id)` / `queryClose(id)` | 依 id 組出 `{cat, dat, sta}` 給 UI 用；查不到回傳 `null` |
@@ -206,7 +207,7 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 
 ### 新增一個任務
 
-1. 在 `xls/quest.xlsx` 對應 NPC 的 sheet 加一列任務基本資料（`quest_id`/`titleKey`/`descKey`/`reward_*`/`actions_start`）與對應的步驟列（`step_id`/`descKey`/`complete_type`/`complete_required`/`complete_id`/`conds`/`actions`）。
+1. 在 `xls/quest.xlsx` 對應 NPC 的 sheet 加一列任務基本資料（`quest_id`/`titleKey`/`descKey`/`rewards_*`/`actions_start`）與對應的步驟列（`step_id`/`descKey`/`complete_type`/`complete_required`/`complete_id`/`conds`/`actions`）。
 2. 執行 `node scripts/quest.js` 重新產生 `public/assets/json/quest.json`。
 3. 在對話（dialog.json）某個 `choice.actions` 加上 `qstart <quest_id>` 觸發任務開始；任務最後一步通常是 `type:'none'`，靠玩家跟 NPC 對話時另一個 `choice.actions` 的 `qclose <quest_id>` 手動回報完成。
 4. 需要依任務狀態分支對話時，條件寫 `#quest_id==open` / `#quest_id==done` / `#quest_id==close`。

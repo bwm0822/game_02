@@ -441,7 +441,7 @@
     "icon": "weapons:6",
     "gold": 10,
     "equip": {
-      "sprite": "weapons:3",
+      "sprite": "weapons:6",
       "y": 22
     },
     "type": "melee",
