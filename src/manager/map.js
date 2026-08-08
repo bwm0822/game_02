@@ -1,6 +1,5 @@
 import Utility from '../core/utility.js'
 import TileMap from '../core/tilemap.js'
-import QuestManager from './quest.js'
 import {astar, Graph} from '../core/astar.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
@@ -64,18 +63,18 @@ class Map
         map.objects.forEach((layer)=>{
             
             let qid;
-            // 如果 layer name 開頭是 'q_'，代表是任務 layer，
-            // layer.name 移除'q_'當成 qid，比對 QuestManager 有沒有開啟任務
-            if(layer.name.startsWith('q_'))
+            // 如果 layer name 開頭是 '#'，代表是條件 layer，
+            // layer.name 移除 '#' 當成 flag 名稱，檢查 Record 的 var 是否成立
+            if(layer.name.startsWith('#'))
             {
-                const questId = layer.name.slice(2);
-                if(!QuestManager.query(questId))
+                const flagName = layer.name.slice(1);
+                if(!Record.getVar(flagName))
                 {
-                    // 如果任務完成，就移除任務的存檔
-                    Record.remove(mapName,layer.name);
+                    // 條件不成立，移除這個 layer 的存檔
+                    Record.remove(mapName,flagName);
                     return;
                 }
-                qid = questId;
+                qid = flagName;
             }
 
             // 將 id,qid 加到 properties

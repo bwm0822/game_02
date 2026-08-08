@@ -24,6 +24,9 @@ function _exec(actions)
             case 'set':
                 Record.setVar(p1, p2??true);
                 break;
+            case 'rm':
+                Record.rmVar(p1);
+                break;
             case 'close':
                 QuestManager.close(p1);
                 break;
@@ -152,7 +155,7 @@ export default class QuestManager
         const qD = DB.quest(id);
         if (qD) {
             if(qD.rewards?.length) {GM.player.reward(qD.rewards);}
-            if(qD.actions) {_exec(qD.actions);}
+            if(qD.action?.complete) {_exec(qD.action.complete);}
         }
 
         this.quests.close[id] = q;

@@ -241,8 +241,8 @@
                 {
                  "id":44,
                  "template":"..\/templates\/animals\/wolf.tj",
-                 "x":512,
-                 "y":512
+                 "x":128,
+                 "y":704
                 }, 
                 {
                  "gid":2147484127,
@@ -372,12 +372,41 @@
         {
          "draworder":"topdown",
          "id":2,
-         "name":"q_musk_01",
+         "name":"#QX01",
+         "objects":[
+                {
+                 "id":77,
+                 "template":"..\/templates\/animals\/wolf.tj",
+                 "x":512,
+                 "y":224
+                }, 
+                {
+                 "id":78,
+                 "template":"..\/templates\/animals\/wolf.tj",
+                 "x":256,
+                 "y":160
+                }, 
+                {
+                 "id":79,
+                 "template":"..\/templates\/animals\/wolf.tj",
+                 "x":32,
+                 "y":288
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":4,
+         "name":"#QK01",
          "objects":[
                 {
                  "gid":348,
                  "height":64,
-                 "id":3,
+                 "id":74,
                  "name":"",
                  "properties":[
                         {
@@ -395,7 +424,7 @@
                 {
                  "gid":348,
                  "height":64,
-                 "id":6,
+                 "id":75,
                  "name":"",
                  "properties":[
                         {
@@ -413,7 +442,7 @@
                 {
                  "gid":348,
                  "height":64,
-                 "id":7,
+                 "id":76,
                  "name":"",
                  "properties":[
                         {
@@ -434,8 +463,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":4,
- "nextobjectid":74,
+ "nextlayerid":5,
+ "nextobjectid":80,
  "orientation":"orthogonal",
  "properties":[
         {

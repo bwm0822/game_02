@@ -58,9 +58,10 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
   - ⚠️ 曾經試過把 `collect` 改成即時重算（不凍結），結果在「收集→拿去交給 NPC 換東西（NPC 那邊用 `consume` 扣掉道具）」這種常見流程裡會出包：東西一交出去，`collect` 步驟因為背包歸零又變回未完成，導致清單上出現「前面的收集步驟未完成、後面依賴它的步驟卻已完成」這種邏輯倒退的畫面，已改回一次性判定。**真正需要「當下必須持有才能過」的門檻，交給 dialog 的 `item:<id>:<count>` 條件去擋（見 1.5/1.6），跟 `QuestManager` 的 `state.steps` 是兩條獨立的判斷路徑，不要混在一起**
   - ⚠️ 順著上面那個坑還挖出一個更早就存在的既有 bug：`content()` 畫勾勾用的 `_isStepDone()`（[quest.js:50](../src/manager/quest.js#L50)）原本對 `collect` 類型是**另外自己即時查庫存**，完全沒管 `_checkSteps` 存的 `state.steps[stepId]`——兩邊各算各的，只是因為以前沒有任何 `collect` 道具真的被消耗掉，才一直沒被踩到。已經修成 `_isStepDone` 一律直接讀 `state.steps[stepId]`（`none` 除外），跟 `_checkSteps` 用同一份數字
 - `steps[stepId].conds`：前置 step id 陣列，未達成前這個 step 不會被檢查
-- `steps[stepId].actions`：該 step 完成時執行的指令（見 1.5），只在「未達成→達成」那個瞬間執行一次
+- `steps[stepId].actions`：該 step 完成時執行的指令，只在「未達成→達成」那個瞬間執行一次；跟 `action.start`/`action.complete` 共用同一個 `QuestManager` 內部的 `_exec()`（[quest.js:13](../src/manager/quest.js#L13)），指令集是**獨立於** `COM_Talk._exec`（1.4 的「actions 指令集」）的小得多的子集：`set <flag> [val]`（`Record.setVar`）、`rm <flag>`（`Record.rmVar`）、`close <questId>`（`QuestManager.close`）——沒有 `qstart`/`clr`/`consume`/`條件:` 前綴這些 dialog 才有的功能
 - `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.content()` 替換
-- `action.start`：`QuestManager.start(id)` 時執行的指令
+- `action.start`：`QuestManager.start(id)` 時執行的指令，對應 xlsx 的 `actions_start` 欄
+- `action.complete`：`QuestManager.close(id)` 時執行的指令，對應 xlsx 的 `actions_complete` 欄（⚠️ 這條路徑之前有 bug：`close()` 原本讀的是不存在的 `qD.actions`，`action.complete` 一直是死資料，已修正為讀 `qD.action?.complete`）
 - `rewards`：`QuestManager.close(id)` 時直接丟給 `GM.player.reward()`（`COM_Inventory._reward`，[com_inventory.js:247](../src/components/com_inventory.js#L247)）的陣列，格式是 `{type:'gold'|'item'|'exp', count, id?}`——`scripts/quest.js` 的 `buildReward()` 已經把 xlsx 的 `rewards_gold`/`rewards_exp`/`rewards_items` 三欄組成這個格式，不用手動拼。⚠️ `type:'exp'` 目前遊戲沒有等級/經驗系統可以吃，`_reward()` 的 switch 沒有對應 case，所以填了 `rewards_exp` 也只是靜默被忽略，不會噴錯
 
 ### 1.4 dialog.json 結構
@@ -137,7 +138,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 | 方法 | 用途 |
 |---|---|
 | `start(id)` | 開啟任務，寫入 `quests.active[id]`，執行 `quest.action.start` |
-| `close(id)` | 完成任務，發放 `rewards`（陣列，見 1.3，直接丟給 `GM.player.reward()`），執行 `quest.actions`，從 `active` 移到 `close` |
+| `close(id)` | 完成任務，發放 `rewards`（陣列，見 1.3，直接丟給 `GM.player.reward()`），執行 `quest.action.complete`，從 `active` 移到 `close` |
 | `remove(id)` | 從 `active` 移除（用於玩家在任務列表手動移除已完成任務） |
 | `title(q)` / `content(q)` | 產生任務列表顯示用的標題/內容 BBCode 文字（`q = {cat, dat, sta}`） |
 | `queryActive(id)` / `queryClose(id)` | 依 id 組出 `{cat, dat, sta}` 給 UI 用；查不到回傳 `null` |
@@ -186,6 +187,12 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 ```
 
 因為 `for...in undefined` 在 JS 不會拋錯、只是不執行，這段程式碼會靜默失效——地圖上永遠不會出現任務標記、`_focusOn`/`setQid` 這條「從任務列表跳到地圖」的路徑也永遠用不到。連帶地，`pquest.js` 的「地圖」按鈕（`if(q.nid) {...}`）也永遠不會顯示，因為 `queryActive`/`queryClose` 回傳的物件、以及 `quest.json` 資料本身都沒有 `nid` 欄位。看起來是 `quest.js` 從舊版（`add`/`query`/`opened` 那套 API）重寫成現在的 `active`/`close`/`queryActive`/`queryClose` 之後，`pmap.js` 沒有同步更新。
+
+`src/scenes/GameMap.js` 的 `updateQuest()`（`GameMap.create()` 每次都會呼叫）也是一模一樣的殘留寫法（`for(let id in QuestManager.quests.opened)` + `QuestManager.query(id)`），同樣因為 `quests.opened` 是 `undefined` 而永遠不執行、不會拋錯，暫未修正。
+
+⚠️ `src/manager/map.js`（`_createObjectLayer`）原本也呼叫同一個不存在的 `QuestManager.query()`，用來判斷 `q_<questId>` 這種任務專屬 tilemap layer 要不要生成物件；但這裡**不是** `for...in`、是直接呼叫，會直接丟出 `TypeError: QuestManager.query is not a function` 讓遊戲整個進不去（`GameArea.create()`/`Map.createMap()` 起始就炸掉）。
+
+已改成更通用的機制：layer 名稱開頭是 `#`（例如 `#qx01_map`），把 `#` 去掉當成 flag 名稱，直接檢查 `Record.getVar(flagName)`——flag 不成立就跳過該 layer（不生成物件，並清掉 `Record.game.scenes[mapName][flagName]` 底下該 layer 物件的存檔）、成立才生成，且生成的物件會被打上 `qid:flagName` 屬性（沿用 `Record.getByUid`/`setByUid` 用 `qid` 當存檔命名空間的既有機制）。比起舊的「綁定任務 active 狀態」，這樣可以用任意 `Record` flag（不限任務用的 flag）控制 tilemap layer 的顯示，不需要另外呼叫 `QuestManager`。
 
 ### 6.2 `onFlag()` 疑似沒有實際呼叫點
 

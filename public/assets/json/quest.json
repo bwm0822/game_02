@@ -73,7 +73,7 @@
         "descKey": "前往黑森林狩獵，擊殺野狼 ({current}/{required})",
         "complete": {
           "type": "kill",
-          "required": 1,
+          "required": 3,
           "id": "wolf"
         }
       },
@@ -123,6 +123,13 @@
         "count": 1
       }
     ],
-    "action": {}
+    "action": {
+      "start": [
+        "set QX01"
+      ],
+      "complete": [
+        "rm QX01"
+      ]
+    }
   }
 }
