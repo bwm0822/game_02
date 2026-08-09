@@ -97,7 +97,7 @@ export class PQuest extends Sizer
                     {align:'right'})
         }
 
-        if(q.state==='close')
+        if(q.sta.close)
         {
             this._content
                 .add(ui.uButton(scene, {text:'移除',

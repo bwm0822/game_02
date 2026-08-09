@@ -3,6 +3,7 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
 import Record from '../infra/record.js'
+import QuestManager from '../manager/quest.js'
 
 const WIDTH=250;
 export default class UiInfo extends UiFrame
@@ -245,7 +246,7 @@ export default class UiInfo extends UiFrame
     {
         const scene = this.scene;
         let text='';
-        elm.qs.forEach((q)=>{text+=`[color=yellow]${q.title()}[/color]${q.cond()}\n\n`;})
+        elm.qs.forEach((q)=>{text+=`[color=yellow]${QuestManager.title(q)}[/color]\n\n`;})
         ui.uBbc.call(this,scene,{text:text,wrapWidth:250,ext:{align:'left'}}); 
         this.setW(0)  
     }
