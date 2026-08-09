@@ -44,7 +44,8 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
         "descKey": "前往黑森林，擊殺黑森林的野狼 ({current}/{required})",
         "complete": {"type": "kill", "required": 1, "id": "wolf"},
         "conds": ["step_01"],
-        "actions": ["set qk01 done"]
+        "actions": ["set qk01 done"],
+        "pos": "forest-01"
       }
     },
     "rewards": [{"type": "gold", "count": 100}, {"type": "exp", "count": 100}],
@@ -58,6 +59,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
   - ⚠️ 曾經試過把 `collect` 改成即時重算（不凍結），結果在「收集→拿去交給 NPC 換東西（NPC 那邊用 `consume` 扣掉道具）」這種常見流程裡會出包：東西一交出去，`collect` 步驟因為背包歸零又變回未完成，導致清單上出現「前面的收集步驟未完成、後面依賴它的步驟卻已完成」這種邏輯倒退的畫面，已改回一次性判定。**真正需要「當下必須持有才能過」的門檻，交給 dialog 的 `item:<id>:<count>` 條件去擋（見 1.5/1.6），跟 `QuestManager` 的 `state.steps` 是兩條獨立的判斷路徑，不要混在一起**
   - ⚠️ 順著上面那個坑還挖出一個更早就存在的既有 bug：`content()` 畫勾勾用的 `_isStepDone()`（[quest.js:50](../src/manager/quest.js#L50)）原本對 `collect` 類型是**另外自己即時查庫存**，完全沒管 `_checkSteps` 存的 `state.steps[stepId]`——兩邊各算各的，只是因為以前沒有任何 `collect` 道具真的被消耗掉，才一直沒被踩到。已經修成 `_isStepDone` 一律直接讀 `state.steps[stepId]`（`none` 除外），跟 `_checkSteps` 用同一份數字
 - `steps[stepId].conds`：前置 step id 陣列，未達成前這個 step 不會被檢查
+- `steps[stepId].pos`：這個 step 對應到世界地圖（`public/assets/maps/map.json`）上哪個節點，對應 xlsx 步驟表的 `pos` 欄，值是節點的 `map` 屬性字串（例如 `forest-01`）；用途見 5.1「任務步驟的地點跳轉」
 - `steps[stepId].actions`：該 step 完成時執行的指令，只在「未達成→達成」那個瞬間執行一次；跟 `action.start`/`action.complete` 共用同一個 `QuestManager` 內部的 `_exec()`（[quest.js:13](../src/manager/quest.js#L13)），指令集是**獨立於** `COM_Talk._exec`（1.4 的「actions 指令集」）的小得多的子集：`set <flag> [val]`（`Record.setVar`）、`rm <flag>`（`Record.rmVar`）、`close <questId>`（`QuestManager.close`）——沒有 `qstart`/`clr`/`consume`/`條件:` 前綴這些 dialog 才有的功能
 - `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.content()` 替換
 - `action.start`：`QuestManager.start(id)` 時執行的指令，對應 xlsx 的 `actions_start` 欄
@@ -171,13 +173,17 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 `UiMisc`（[uimisc.js](src/ui/uimisc.js)）是頁籤容器（任務/地圖兩頁），內容分別委派給：
 
 - **`PQuest`**（[pquest.js](src/ui/pquest.js)）：左側依分類（`已完成`/`一般任務`）摺疊的任務按鈕清單，右側顯示 `QuestManager.title()`/`content()`；有新進度的任務會顯示紅點（`QuestManager.updated` 這個 Set）。
-- **`PMap`**（[pmap.js](src/ui/pmap.js)）：讀 `MiniMap.map` 的 Tiled object layer 產生地圖節點 `UNode`，理論上還會在地圖上標出任務所在地——但這部分目前是壞的，見第 6 節。
+- **`PMap`**（[pmap.js](src/ui/pmap.js)）：讀 `MiniMap.map`（`public/assets/maps/map.json`，整個遊戲世界的總覽地圖，由 `MiniMap.init()` 載入一次）的 Tiled object layer 產生地圖節點 `UNode`，`UNode.dat.map` 是節點的地點名稱（例如 `village-01`/`forest-01`，剛好對應各別場景的 map 檔名），`_focusOn(pos)` 把地圖捲動到 `this._nds[pos]` 這個節點的位置。
+
+### 5.1 任務步驟的地點跳轉（`pos`）
+
+`quest.json` 的 `steps[stepId].pos`（對應 xlsx 步驟表的 `pos` 欄）可以指定這個 step 對應到世界地圖上的哪個節點（值就是 `map.json` 裡該節點的 `map` 屬性字串，例如 `forest-01`）。`QuestManager.pos(q)`（[quest.js](src/manager/quest.js)，`content()` 下方）依 `steps` 的順序找出**第一個「條件已符合、尚未完成、且有填 `pos`」的 step**，回傳它的 `pos`；`pquest.js._updateContent()` 用這個值決定要不要在任務說明右下角顯示「地圖」按鈕，點下去會呼叫 `UiMisc.toMap(pos)`（[uimisc.js](src/ui/uimisc.js)）→ 切到地圖分頁 → `PMap.focusOn(pos)`（[pmap.js](src/ui/pmap.js)）把地圖捲到那個節點。任務已經全部完成、或目前可執行的 step 都沒填 `pos` 時，`pos(q)` 回傳 `null`，按鈕就不會出現。
 
 ## 6. 已知問題
 
-### 6.1 ⚠️ 地圖任務標記功能已失效（真正的功能性 bug，非純死代碼）
+### 6.1 ⚠️ 地圖分頁自己的任務標記清單仍然失效（真正的功能性 bug，非純死代碼）
 
-`PMap._updateQuest()`（[pmap.js:123](src/ui/pmap.js#L123)）用的是舊版 API，跟現在的 `QuestManager` 對不上：
+`PMap._updateQuest()`（[pmap.js:95](src/ui/pmap.js#L95)，地圖分頁左側清單，跟上面 5.1 講的「任務說明的地圖按鈕」是不同的兩塊 UI）用的還是舊版 API，跟現在的 `QuestManager` 對不上：
 
 ```js
 for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {active, close}，沒有 opened
@@ -187,7 +193,7 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 }
 ```
 
-因為 `for...in undefined` 在 JS 不會拋錯、只是不執行，這段程式碼會靜默失效——地圖上永遠不會出現任務標記、`_focusOn`/`setQid` 這條「從任務列表跳到地圖」的路徑也永遠用不到。連帶地，`pquest.js` 的「地圖」按鈕（`if(q.nid) {...}`）也永遠不會顯示，因為 `queryActive`/`queryClose` 回傳的物件、以及 `quest.json` 資料本身都沒有 `nid` 欄位。看起來是 `quest.js` 從舊版（`add`/`query`/`opened` 那套 API）重寫成現在的 `active`/`close`/`queryActive`/`queryClose` 之後，`pmap.js` 沒有同步更新。
+因為 `for...in undefined` 在 JS 不會拋錯、只是不執行，這段程式碼會靜默失效——地圖分頁左側永遠不會列出任務清單、地圖上也不會有 `addTag` 標記。看起來是 `quest.js` 從舊版（`add`/`query`/`opened` 那套 API）重寫成現在的 `active`/`close`/`queryActive`/`queryClose` 之後，`pmap.js` 沒有同步更新，尚未修正（5.1 的「地圖按鈕」已經改用 `steps[].pos` + `QuestManager.pos()` 走另一條可用的路徑，不依賴這段壞掉的程式碼）。
 
 `src/scenes/GameMap.js` 的 `updateQuest()`（`GameMap.create()` 每次都會呼叫）也是一模一樣的殘留寫法（`for(let id in QuestManager.quests.opened)` + `QuestManager.query(id)`），同樣因為 `quests.opened` 是 `undefined` 而永遠不執行、不會拋錯，暫未修正。
 
@@ -211,7 +217,7 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 
 ### 新增一個任務
 
-1. 在 `xls/quest.xlsx` 對應 NPC 的 sheet 加一列任務基本資料（`quest_id`/`titleKey`/`descKey`/`rewards_*`/`actions_start`）與對應的步驟列（`step_id`/`descKey`/`complete_type`/`complete_required`/`complete_id`/`conds`/`actions`）。
+1. 在 `xls/quest.xlsx` 對應 NPC 的 sheet 加一列任務基本資料（`quest_id`/`titleKey`/`descKey`/`rewards_*`/`actions_start`）與對應的步驟列（`step_id`/`descKey`/`complete_type`/`complete_required`/`complete_id`/`conds`/`actions`/`pos`）。`pos` 是選填，只有需要在任務說明顯示「地圖」按鈕、跳到地圖上特定地點時才填（見 5.1），值要對應 `public/assets/maps/map.json` 裡某個節點的 `map` 屬性。
 2. 執行 `node scripts/quest.js` 重新產生 `public/assets/json/quest.json`。
 3. 在對話（dialog.json）某個 `choice.actions` 加上 `qstart <quest_id>` 觸發任務開始；任務最後一步通常是 `type:'none'`，靠玩家跟 NPC 對話時另一個 `choice.actions` 的 `qclose <quest_id>` 手動回報完成。
 4. 需要依任務狀態分支對話時，條件寫 `#quest_id==open` / `#quest_id==done` / `#quest_id==close`。

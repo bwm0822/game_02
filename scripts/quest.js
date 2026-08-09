@@ -133,6 +133,12 @@ function buildQuest(sheetName, tables)
             if(row.actions) {
                 quest.steps[row.step_id].actions = toArray(row.actions);
             }
+
+            // pos：對應到 public/assets/maps/map.json（世界地圖）node 物件的 map 屬性，
+            // 給 PMap.focusOn() 用來把地圖捲動到這個 step 相關的地點
+            if(row.pos) {
+                quest.steps[row.step_id].pos = row.pos;
+            }
         }
     }
 

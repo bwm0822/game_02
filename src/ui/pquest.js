@@ -79,14 +79,15 @@ export class PQuest extends Sizer
     {
         const scene = this.scene;
         const remove = ()=>{QuestManager.remove(q.dat.id);Ui.refreshAll();}
-        const map = ()=>{this._toMap(q.dat.id);}
+        const pos = QuestManager.pos(q);
+        const map = ()=>{this._toMap(pos);}
 
         this._content
             .clearAll()
             .add(ui.uBbc(scene,{text:QuestManager.title(q)}),{align:'center'})
             .add(ui.uBbc(scene,{text:QuestManager.content(q),wrapWidth:500}),{align:'left'})
 
-        if(q.nid)
+        if(pos)
         {
             this._content
                 .add(ui.uButton(scene, {text:'地圖',

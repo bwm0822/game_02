@@ -227,6 +227,18 @@ export default class QuestManager
         return des;
     }
 
+    // 取得目前該去的地點：第一個「條件已符合、尚未完成、且有 pos」的 step
+    static pos(q)
+    {
+        for (const [stepId, step] of Object.entries(q.dat.steps))
+        {
+            if (!_checkCond(q.sta, step)) continue;
+            if (_isStepDone(q, stepId, step)) continue;
+            if (step.pos) return step.pos;
+        }
+        return null;
+    }
+
     static queryClose(id)
     {
         if(!this.quests.close[id]) {return null;}

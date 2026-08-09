@@ -25,7 +25,8 @@
         },
         "conds": [
           "step_01"
-        ]
+        ],
+        "pos": "forest-01"
       },
       "step_03": {
         "descKey": "收集刀子 ({current}/{required})",
@@ -80,7 +81,8 @@
           "type": "kill",
           "required": 3,
           "id": "wolf"
-        }
+        },
+        "pos": "forest-01"
       },
       "step_02": {
         "descKey": "剝下狼皮 ({current}/{required})",
