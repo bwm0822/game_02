@@ -154,7 +154,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 ### 3.4 `onKill`/`onFlag` 觸發點
 
 - `onKill(id)`：`Npc._ondead()`（[npc.js:68](src/roles/npc.js#L68)），角色死亡時以自己的 id 觸發
-- `onFlag()`：搜尋 `_exec` 的 `set` 指令（對話/任務 actions 都會呼叫 `Record.setVar`），目前在 `src/manager/quest.js` 的 `_exec` 及 `com_talk.js` 的 `_setVar` 都有 `set` 指令，但檢查後兩處都沒有主動呼叫 `QuestManager.onFlag()`——需要另外找呼叫點（如果找不到，代表 `flag` 類型的任務步驟目前不會被動觸發檢查，只能等下次其他事件觸發 `_checkSteps` 時順便被檢查到其他 type，實際上 `flag` 類型只能靠自己被排入某個確實有呼叫的檢查路徑）
+- `onFlag()`：不用另外找呼叫點——`Record.setVar()`（[record.js:142-146](../src/infra/record.js#L142-L146)）本身就會在設值後直接呼叫 `QuestManager.onFlag()`。`quest.js` 的 `_exec` 的 `set`、`com_talk.js` 的 `_setVar`（非 `_` 開頭的全域 flag）最終都會走到 `Record.setVar()`，所以任何地方 `set` 一個全域 flag，都會立刻觸發一次 `_checkSteps('flag')`，掃描所有 active quest 的 `flag` 類型 step。`_`開頭的 local flag（存在 `COM_Talk._rec`，走 `this._rec[flag]=val`）不會觸發，但這類 flag 本來就不會拿來當 quest step 的 `complete.flag` 用
 
 ## 4. UiDialog（src/ui/uidialog.js）
 
@@ -195,11 +195,7 @@ for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {activ
 
 已改成更通用的機制：layer 名稱開頭是 `#`（例如 `#qx01_map`），把 `#` 去掉當成 flag 名稱，直接檢查 `Record.getVar(flagName)`——flag 不成立就跳過該 layer（不生成物件，並清掉 `Record.game.scenes[mapName][flagName]` 底下該 layer 物件的存檔）、成立才生成，且生成的物件會被打上 `qid:flagName` 屬性（沿用 `Record.getByUid`/`setByUid` 用 `qid` 當存檔命名空間的既有機制）。比起舊的「綁定任務 active 狀態」，這樣可以用任意 `Record` flag（不限任務用的 flag）控制 tilemap layer 的顯示，不需要另外呼叫 `QuestManager`。
 
-### 6.2 `onFlag()` 疑似沒有實際呼叫點
-
-見 3.4，`flag` 類型的任務完成條件，觸發路徑不明確，需要進一步確認（也可能是設計上預期靠其他類型事件觸發時「順便」檢查到，因為 `_checkSteps` 是掃描全部 active quest，不限定觸發來源）。
-
-### 6.3 死代碼清理（已完成）
+### 6.2 死代碼清理（已完成）
 
 以下項目確認為死代碼後已整批移除，`_v2` 命名也同步拿掉（見 1.1）：
 

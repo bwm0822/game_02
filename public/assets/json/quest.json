@@ -9,10 +9,11 @@
         "descKey": "與xi對話了解情況",
         "complete": {
           "type": "flag",
-          "flag": "QK01_talk_xi"
+          "flag": "QK01_s01_done"
         },
         "actions": [
-          "rm QK01_talk_xi"
+          "rm QK01_s01",
+          "rm QK01_s01_done"
         ]
       },
       "step_02": {
@@ -59,7 +60,7 @@
     ],
     "action": {
       "start": [
-        "set QK01_xi",
+        "set QK01_s01",
         "set QK01_map"
       ],
       "complete": [
@@ -92,17 +93,21 @@
           "step_01"
         ],
         "actions": [
-          "set QX01_karen"
+          "set QX01_s03"
         ]
       },
       "step_03": {
         "descKey": "帶著狼皮去找商人 karen 談談",
         "complete": {
           "type": "flag",
-          "flag": "QX01_karen_done"
+          "flag": "QX01_s03_done"
         },
         "conds": [
           "step_02"
+        ],
+        "actions": [
+          "rm QX01_s03",
+          "rm QX01_s03_done"
         ]
       },
       "step_04": {
@@ -149,8 +154,12 @@
         "descKey": "帶著提案去找商人 karen 談交涉條件",
         "complete": {
           "type": "flag",
-          "flag": "QX02_karen_done"
-        }
+          "flag": "QX02_s01_done"
+        },
+        "actions": [
+          "rm QX02_s01",
+          "rm QX02_s01_done"
+        ]
       },
       "step_02": {
         "descKey": "任務完成，回去跟 xi 回報",
@@ -174,7 +183,7 @@
     ],
     "action": {
       "start": [
-        "set QX02_karen"
+        "set QX02_s01"
       ]
     }
   }

@@ -51,13 +51,13 @@
             "labelKey": "關於黑森林的狼皮",
             "priority": 35,
             "next": "n_QX01_karen",
-            "condition": "item:plet:1 && QX01_karen"
+            "condition": "item:plet:1 && QX01_s03"
           },
           {
             "labelKey": "轉達 xi 的提案",
             "priority": 35,
             "next": "n_QX02_karen",
-            "condition": "QX02_karen"
+            "condition": "QX02_s01"
           },
           {
             "labelKey": "離開",
@@ -352,8 +352,7 @@
             "priority": 0,
             "actions": [
               "consume plet 1",
-              "rm QX01_karen",
-              "set QX01_karen_done"
+              "set QX01_s03_done"
             ],
             "next": "n_default"
           }
@@ -370,8 +369,7 @@
             "labelKey": "好的",
             "priority": 0,
             "actions": [
-              "rm QX02_karen",
-              "set QX02_karen_done"
+              "set QX02_s01_done"
             ],
             "next": "n_default"
           }
@@ -432,7 +430,7 @@
             "labelKey": "關於黑森林討伐",
             "priority": 40,
             "next": "n_QK01_xi",
-            "condition": "QK01_xi"
+            "condition": "QK01_s01"
           },
           {
             "labelKey": "離開",
@@ -654,8 +652,8 @@
             "labelKey": "了解",
             "priority": 0,
             "actions": [
-              "rm QK01_xi",
-              "set QK01_talk_xi"
+              "rm QK01_s01",
+              "set QK01_s01_done"
             ],
             "next": "n_default"
           }
