@@ -120,30 +120,31 @@ export class PMap extends Sizer
         btn.emit('pointerup');
         
         // 2. 任務
-        for(let id in QuestManager.quests.opened)
+        for(let id in QuestManager.quests.active)
         {
-            let q = QuestManager.query(id);
-            if(q.nid)
-            {
-                const btn = ui.uButton(scene,{
-                                style: UI.BTN.ITEM,
-                                tcon: {text:q.state==='open'?'☐':'🗹',ext:{align:'top'}},
-                                text: {text:q.title(),wrapWidth:125},
-                                onclick: onclick});
+            const q = QuestManager.queryActive(id);
+            if (!q || !q.dat) continue;
 
-                let group = this._scroll.getChildren().find(child=>child.cat===q.cat);
-                if(!group)
-                {
-                    group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
-                    this._scroll.addItem(group);
-                    group.cat=q.cat
-                }
-                group.addItem(btn);
-                btn.q=q;
-                btn.nid=q.nid;
-                btn.qid=id;
-                this._nds[q.nid].addTag(q,margin);
+            const pos = QuestManager.pos(q);
+            if (!pos || !this._nds[pos]) continue;
+
+            const btn = ui.uButton(scene,{
+                            style: UI.BTN.ITEM,
+                            text: {text:QuestManager.title(q),wrapWidth:125},
+                            onclick: onclick});
+
+            let group = this._scroll.getChildren().find(child=>child.cat===q.cat);
+            if(!group)
+            {
+                group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
+                this._scroll.addItem(group);
+                group.cat=q.cat
             }
+            group.addItem(btn);
+            btn.q=q;
+            btn.nid=pos;
+            btn.qid=id;
+            this._nds[pos].addTag(q,margin);
         }
 
         

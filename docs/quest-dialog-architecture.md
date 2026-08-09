@@ -181,21 +181,11 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 
 ## 6. 已知問題
 
-### 6.1 ⚠️ 地圖分頁自己的任務標記清單仍然失效（真正的功能性 bug，非純死代碼）
+### 6.1 `src/scenes/GameMap.js` 的 `updateQuest()` 仍未修正
 
-`PMap._updateQuest()`（[pmap.js:95](src/ui/pmap.js#L95)，地圖分頁左側清單，跟上面 5.1 講的「任務說明的地圖按鈕」是不同的兩塊 UI）用的還是舊版 API，跟現在的 `QuestManager` 對不上：
+`GameMap.js` 的 `updateQuest()`（`GameMap.create()` 每次都會呼叫）用的是舊版 API：`for(let id in QuestManager.quests.opened)` + `QuestManager.query(id)`，`QuestManager.quests` 只有 `{active, close}`、沒有 `opened`，`QuestManager` 也沒有 `query()`（只有 `queryActive`/`queryClose`）。因為 `for...in undefined` 在 JS 不會拋錯、只是不執行，這段程式碼會靜默失效，暫未修正。
 
-```js
-for(let id in QuestManager.quests.opened)   // QuestManager.quests 只有 {active, close}，沒有 opened
-{
-    let q = QuestManager.query(id);          // QuestManager 沒有 query()，只有 queryActive/queryClose
-    if(q.nid) { ... q.state ... q.title() ...}  // 這幾個成員現在的 q={cat,dat,sta} 也沒有
-}
-```
-
-因為 `for...in undefined` 在 JS 不會拋錯、只是不執行，這段程式碼會靜默失效——地圖分頁左側永遠不會列出任務清單、地圖上也不會有 `addTag` 標記。看起來是 `quest.js` 從舊版（`add`/`query`/`opened` 那套 API）重寫成現在的 `active`/`close`/`queryActive`/`queryClose` 之後，`pmap.js` 沒有同步更新，尚未修正（5.1 的「地圖按鈕」已經改用 `steps[].pos` + `QuestManager.pos()` 走另一條可用的路徑，不依賴這段壞掉的程式碼）。
-
-`src/scenes/GameMap.js` 的 `updateQuest()`（`GameMap.create()` 每次都會呼叫）也是一模一樣的殘留寫法（`for(let id in QuestManager.quests.opened)` + `QuestManager.query(id)`），同樣因為 `quests.opened` 是 `undefined` 而永遠不執行、不會拋錯，暫未修正。
+`PMap._updateQuest()`（[pmap.js:95](src/ui/pmap.js#L95)，地圖分頁左側的任務清單，跟 5.1「任務說明的地圖按鈕」是不同的兩塊 UI）原本也是同樣的殘留寫法，已修正成 `QuestManager.quests.active` + `QuestManager.queryActive(id)`，並把 `q.nid`/`q.state`/`q.title()` 這幾個現在的 `q={cat,dat,sta}` 沒有的成員，分別換成 `QuestManager.pos(q)`（見 5.1）、`QuestManager.getState(id)`、`QuestManager.title(q)`——跟 5.1 的地圖按鈕共用同一套 `pos` 機制，只有目前「條件已符合、尚未完成、且有填 `pos`」的 step 存在時，這個任務才會出現在地圖分頁的清單跟地圖標記上。
 
 ⚠️ `src/manager/map.js`（`_createObjectLayer`）原本也呼叫同一個不存在的 `QuestManager.query()`，用來判斷 `q_<questId>` 這種任務專屬 tilemap layer 要不要生成物件；但這裡**不是** `for...in`、是直接呼叫，會直接丟出 `TypeError: QuestManager.query is not a function` 讓遊戲整個進不去（`GameArea.create()`/`Map.createMap()` 起始就炸掉）。
 

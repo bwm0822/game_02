@@ -174,7 +174,7 @@ export default class QuestManager
     // 取得任務 title
     static title(q)
     {
-        return `[color=yellow]${q.dat.titleKey}[/color]`;
+        return q.dat.titleKey;
     }
 
     // 取得任務內容
