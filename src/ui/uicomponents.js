@@ -801,13 +801,13 @@ export function uGrid(scene, {column,row,bg,space,addItem,ext,test}={})
     return grid;
 }
 
-export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,onout})
+export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,onout,fill=false})
 {
     let previous;
     const cDEF = GM.COLOR.DARK;
-    const cSEL = GM.COLOR.PRIMARY; 
+    const cSEL = GM.COLOR.PRIMARY;
     const cBG = GM.COLOR.DARK;
-    
+
     let config = {
         // background: uRect(scene,{color:cBG,strokeColor:GM.COLOR.GRAY,strokeWidth:2}),
         background: uRect(scene,{color:cBG}),
@@ -817,6 +817,8 @@ export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,on
         bottomButtons: bottom?.map((btn)=>{return uLabel(scene,{space:10,bg:{color:cDEF,radius:{bl:20,br:20}},...btn})}),
         space: {left:10, right:10, top:10, bottom:10, leftButton:10, rightButton:10, topButton:10, bottomButton:10},
         panel: createpanel?.(),
+        // fill:true 時，panel 隨 tabs 剩餘空間撐開，而非固定在 panel 自身宣告的大小
+        expand: {panel:fill},
     }
 
     let tabs = scene.rexUI.add.tabs(config); 
@@ -853,7 +855,7 @@ export function uTabs(scene,{top,bottom,left,right,onclick,createpanel,onover,on
         onout?.();
     })
 
-    if(this&&this.add) {this.add(tabs,{expand:true,key:'tags'});}
+    if(this&&this.add) {this.add(tabs,{expand:true,proportion:fill?1:0,key:'tags'});}
 
     return tabs;
 }

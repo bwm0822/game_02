@@ -12,16 +12,11 @@ export class PMap extends Sizer
     constructor(scene)
     {
         const config = {
-            space:{left:5,right:5,top:5,bottom:5,item:5}, 
-            width:750,
-            height:400,
+            space:{left:5,right:5,top:5,bottom:5,item:5},
         }
 
         super(scene, config);
 
-        this._map_w = config.width-config.space.left-config.space.right;
-        this._map_h = config.height-config.space.top-config.space.bottom;
-        
         // bg
         ui.uBg.call(this, scene, {color:GM.COLOR.PRIMARY})
 
@@ -39,6 +34,15 @@ export class PMap extends Sizer
 
 
         this.layout().hide();
+    }
+
+    // UiMisc 撐開後的大小是由父層 expand 決定，內部 relayout 若呼叫無參數的
+    // layout()，rexUI 會以子物件內容大小重新計算，導致尺寸縮回去，所以這裡
+    // 固定沿用目前已解析出的大小
+    layout()
+    {
+        if(this.width && this.height) {return this.runLayout(undefined, this.width, this.height);}
+        return super.layout();
     }
 
     //------------------------------------------------------

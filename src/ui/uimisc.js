@@ -13,8 +13,8 @@ export default class UiMisc extends UiFrame
         {
             x : GM.w/2,
             y : GM.h/2,
-            // width : 800,
-            // height : 500,
+            width : GM.w,
+            height : GM.h,
             orientation : 'y',
             space:UI.SPACE.FRAME,
         }
@@ -36,7 +36,8 @@ export default class UiMisc extends UiFrame
             top: [{text:'任務',name:'quest'},{text:'地圖',name:'map'}],
             onclick:(btn)=>{this._pageName=btn.name;this.updatePage();},
             createpanel:()=>this.createPages(scene),
-        }) 
+            fill:true,
+        })
         return this;
     }
 
@@ -51,13 +52,11 @@ export default class UiMisc extends UiFrame
         const config=
         {
             orientation : 'y',
-            width : 750,
-            height : 400,
         }
         const p=scene.rexUI.add.sizer(config);
         this._quest = new PQuest(scene, this.toMap.bind(this));
         this._map = new PMap(scene)
-        p.add(this._quest).add(this._map)
+        p.add(this._quest,{expand:true,proportion:1}).add(this._map,{expand:true,proportion:1})
         return p;
     }
 
@@ -72,10 +71,13 @@ export default class UiMisc extends UiFrame
             case 'map': this._page=this._map; break;
         }
 
+        // 先 show + layout 撐開到正確大小，update() 內（例如 PMap 一進來對玩家 focus）
+        // 才不會拿到撐開前的舊尺寸算錯位置
+        this._page.show();
+        this.layout();
+
         this._page.update();
         this._page.mouseWheel(true);
-        // this.layout();
-
     }
 
     refresh()

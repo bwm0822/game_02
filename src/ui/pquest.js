@@ -13,10 +13,7 @@ export class PQuest extends Sizer
         const config=
         {
             // bg:{color:GM.COLOR.PRIMARY},
-            space:{left:5,right:5,top:5,bottom:5,item:5}, 
-            width:750,
-            height:400,
-            // ext:{expand:true,proportion:1}
+            space:{left:5,right:5,top:5,bottom:5,item:5},
         }
 
         super(scene, config);
@@ -41,7 +38,15 @@ export class PQuest extends Sizer
         this.layout().hide();
     }
 
-    
+    // UiMisc 撐開後的大小是由父層 expand 決定，內部（fold 展開/收合、切換任務內容）
+    // 觸發的 relayout 若呼叫無參數的 layout()，rexUI 會以子物件內容大小重新計算，
+    // 導致尺寸縮回去，所以這裡固定沿用目前已解析出的大小
+    layout()
+    {
+        if(this.width && this.height) {return this.runLayout(undefined, this.width, this.height);}
+        return super.layout();
+    }
+
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
@@ -84,8 +89,8 @@ export class PQuest extends Sizer
 
         this._content
             .clearAll()
-            .add(ui.uBbc(scene,{text:QuestManager.title(q)}),{align:'center'})
-            .add(ui.uBbc(scene,{text:QuestManager.content(q),wrapWidth:500}),{align:'left'})
+            .add(ui.uBbc(scene,{text:`[color=yellow]${QuestManager.title(q)}[/color]`}),{align:'center'})
+            .add(ui.uBbc(scene,{text:QuestManager.content(q),wrapWidth:480}),{align:'left'})
 
         if(pos)
         {
