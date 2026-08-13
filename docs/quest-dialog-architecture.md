@@ -61,7 +61,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 - `steps[stepId].conds`：前置 step id 陣列，未達成前這個 step 不會被檢查
 - `steps[stepId].pos`：這個 step 對應到世界地圖（`public/assets/maps/map.json`）上哪個節點，對應 xlsx 步驟表的 `pos` 欄，值是節點的 `map` 屬性字串（例如 `forest-01`）；用途見 5.1「任務步驟的地點跳轉」
 - `steps[stepId].actions`：該 step 完成時執行的指令，只在「未達成→達成」那個瞬間執行一次；跟 `action.start`/`action.complete` 共用同一個 `QuestManager` 內部的 `_exec()`（[quest.js:13](../src/manager/quest.js#L13)），指令集是**獨立於** `COM_Talk._exec`（1.4 的「actions 指令集」）的小得多的子集：`set <flag> [val]`（`Record.setVar`）、`rm <flag>`（`Record.rmVar`）、`close <questId>`（`QuestManager.close`）——沒有 `qstart`/`clr`/`consume`/`條件:` 前綴這些 dialog 才有的功能
-- `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.content()` 替換
+- `descKey` 支援 `{current}`/`{required}` 佔位符，顯示時由 `QuestManager.progress()` 替換
 - `action.start`：`QuestManager.start(id)` 時執行的指令，對應 xlsx 的 `actions_start` 欄
 - `action.complete`：`QuestManager.close(id)` 時執行的指令，對應 xlsx 的 `actions_complete` 欄（⚠️ 這條路徑之前有 bug：`close()` 原本讀的是不存在的 `qD.actions`，`action.complete` 一直是死資料，已修正為讀 `qD.action?.complete`）
 - `rewards`：`QuestManager.close(id)` 時直接丟給 `GM.player.reward()`（`COM_Inventory._reward`，[com_inventory.js:247](../src/components/com_inventory.js#L247)）的陣列，格式是 `{type:'gold'|'item'|'exp', count, id?}`——`scripts/quest.js` 的 `buildReward()` 已經把 xlsx 的 `rewards_gold`/`rewards_exp`/`rewards_items` 三欄組成這個格式，不用手動拼。⚠️ `type:'exp'` 目前遊戲沒有等級/經驗系統可以吃，`_reward()` 的 switch 沒有對應 case，所以填了 `rewards_exp` 也只是靜默被忽略，不會噴錯
@@ -143,7 +143,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 | `start(id)` | 開啟任務，寫入 `quests.active[id]`，執行 `quest.action.start` |
 | `close(id)` | 完成任務，發放 `rewards`（陣列，見 1.3，直接丟給 `GM.player.reward()`），執行 `quest.action.complete`，從 `active` 移到 `close` |
 | `remove(id)` | 從 `active` 移除（用於玩家在任務列表手動移除已完成任務） |
-| `title(q)` / `content(q)` | 產生任務列表顯示用的標題/內容 BBCode 文字（`q = {cat, dat, sta}`） |
+| `title(q)` / `description(q)` / `rewards(q)` / `progress(q)` | 產生任務列表顯示用的標題/說明/獎勵/進度 BBCode 文字（`q = {cat, dat, sta}`），對應 `PQuest._updateContent()` 的「說明」「獎勵」「進度」三個區塊 |
 | `queryActive(id)` / `queryClose(id)` | 依 id 組出 `{cat, dat, sta}` 給 UI 用；查不到回傳 `null` |
 | `getState(id)` | 回傳 `'open'`（active 但步驟未全部完成）/`'done'`（active 且步驟全完成，尚未回報）/`'close'`（已完成）/`undefined`（從未開始） |
 | `onKill(id)` / `onCollect()` / `onFlag()` | 由外部觸發，檢查所有 active quest 中對應 `complete.type` 的 step 是否達成 |
@@ -172,7 +172,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 
 `UiMisc`（[uimisc.js](src/ui/uimisc.js)）是頁籤容器（任務/地圖兩頁），內容分別委派給：
 
-- **`PQuest`**（[pquest.js](src/ui/pquest.js)）：左側依分類（`已完成`/`一般任務`）摺疊的任務按鈕清單，右側顯示 `QuestManager.title()`/`content()`；有新進度的任務會顯示紅點（`QuestManager.updated` 這個 Set）。
+- **`PQuest`**（[pquest.js](src/ui/pquest.js)）：左側依分類（`已完成`/`一般任務`）分組的任務按鈕清單，右側顯示 `QuestManager.title()`，內容分「說明」「獎勵」「進度」三個 `uGroup` 區塊，分別對應 `QuestManager.description()`/`rewards()`/`progress()`；有新進度的任務會顯示紅點（`QuestManager.updated` 這個 Set）。
 - **`PMap`**（[pmap.js](src/ui/pmap.js)）：讀 `MiniMap.map`（`public/assets/maps/map.json`，整個遊戲世界的總覽地圖，由 `MiniMap.init()` 載入一次）的 Tiled object layer 產生地圖節點 `UNode`，`UNode.dat.map` 是節點的地點名稱（例如 `village-01`/`forest-01`，剛好對應各別場景的 map 檔名），`_focusOn(pos)` 把地圖捲動到 `this._nds[pos]` 這個節點的位置。
 
 ### 5.1 任務步驟的地點跳轉（`pos`）

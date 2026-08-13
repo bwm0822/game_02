@@ -177,14 +177,46 @@ export default class QuestManager
         return q.dat.titleKey;
     }
 
-    // 取得任務內容
-    static content(q)
+    // 取得任務說明
+    static description(q)
+    {
+        // q = {cat:{}, dat:{}, sta:{}}
+        return `${q.dat.descKey}\n`;
+    }
+
+    // 取得任務獎勵
+    static rewards(q)
+    {
+        const rewards = q.dat.rewards ?? [];
+        if(rewards.length===0) return '無\n';
+
+        let des = '';
+        rewards.forEach((reward)=>{
+            switch(reward.type)
+            {
+                case 'gold':
+                    des += `金幣 x${reward.count}\n`;
+                    break;
+                case 'item':
+                    des += `${DB.item(reward.id)?.tw?.lab ?? reward.id} x${reward.count}\n`;
+                    break;
+                case 'exp':
+                    des += `經驗值 x${reward.count}\n`;
+                    break;
+            }
+        });
+
+        return des;
+    }
+
+    // 取得任務進度（各步驟完成狀況）
+    static progress(q)
     {
         // q = {cat:{}, dat:{}, sta:{}}
 
-        let des = `\n${q.dat.descKey}\n`;
+        let des = '';
         Object.entries(q.dat.steps).forEach(([stepId, step]) => {
-            // 
+            //
             if (!_checkCond(q.sta,step)) return;
 
             let prefix='';
@@ -192,19 +224,16 @@ export default class QuestManager
             {
                 if(step.complete.type!=='none')
                 {
-                    prefix = q.sta.steps[stepId] ?'🗹 ':'☐ ';  
+                    prefix = q.sta.steps[stepId] ?'🗹 ':'☐ ';
                 }
             }
             else
             {
                 if(step.complete.type!=='none')
                 {
-                    prefix = _isStepDone(q, stepId, step) ?'🗹 ':'☐ ';   
+                    prefix = _isStepDone(q, stepId, step) ?'🗹 ':'☐ ';
                 }
             }
-
-            // const done = q.sta.close ? q.sta.steps[stepId] 
-            //                          : _isStepDone(q, stepId, step);
 
             let stepDesc = step.descKey;
 
@@ -220,7 +249,6 @@ export default class QuestManager
                 stepDesc = stepDesc.replace('{required}', required);
             }
 
-            // des += `${done?'🗹':'☐'} ${stepDesc}\n`;
             des += `${prefix}${stepDesc}\n`;
         });
 

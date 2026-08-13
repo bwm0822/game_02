@@ -103,9 +103,9 @@ export class PQuest extends Sizer
 
             // 「地圖」按鈕不管有沒有 pos 都固定加入、保留版面空間，沒有 pos 時只是
             // 隱藏＋不能點擊，避免標題欄寬度隨任務有無地點而跳動
-            const mapBtn = ui.uButton(scene, {text:'地圖',
-                                            // bg:{color:GM.COLOR.RED},
-                                            cBG:GM.COLOR.RED,
+            const mapBtn = ui.uButton(scene, {icon:'🗺️',
+                                            cBG:GM.COLOR.GRAY,
+                                            bg:{color:GM.COLOR.GRAY, radius:0},
                                             onclick:map});
             mapBtn.setAlpha(pos?1:0);
             pos ? mapBtn.setInteractive() : mapBtn.disableInteractive();
@@ -120,7 +120,12 @@ export class PQuest extends Sizer
                 .add(mapBtn,{align:'right'})
 
             this._content
-                .add(ui.uBbc(scene,{text:QuestManager.content(q),wrapWidth:480}),{align:'left'})
+                .add(ui.uGroup(scene,{title:'說明',fontSize:GM.FONT_SIZE})
+                        .addItem(ui.uBbc(scene,{text:QuestManager.description(q),wrapWidth:480})),{align:'left',expand:true})
+                .add(ui.uGroup(scene,{title:'獎勵',fontSize:GM.FONT_SIZE})
+                        .addItem(ui.uBbc(scene,{text:QuestManager.rewards(q),wrapWidth:480})),{align:'left',expand:true})
+                .add(ui.uGroup(scene,{title:'進度',fontSize:GM.FONT_SIZE})
+                        .addItem(ui.uBbc(scene,{text:QuestManager.progress(q),wrapWidth:480})),{align:'left',expand:true})
         }
 
         this.layout();
@@ -184,9 +189,8 @@ export class PQuest extends Sizer
             let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!fold)
             {
-                fold = ui.uFold(scene, {title:`${q.cat}`,
-                                        fontSize:GM.FONT_SIZE+4,
-                                        onclick: ()=>{this.layout();}
+                fold = ui.uGroup(scene, {title:`${q.cat}`,
+                                        fontSize:GM.FONT_SIZE+4
                                     });
                 this._scroll.addItem(fold);
                 fold.cat=q.cat
