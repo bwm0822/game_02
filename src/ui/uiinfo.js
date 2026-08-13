@@ -245,10 +245,15 @@ export default class UiInfo extends UiFrame
     ifNode(elm)
     {
         const scene = this.scene;
-        let text='';
-        elm.qs.forEach((q)=>{text+=`[color=yellow]${QuestManager.title(q)}[/color]\n\n`;})
-        ui.uBbc.call(this,scene,{text:text,wrapWidth:250,ext:{align:'left'}}); 
-        this.setW(0)  
+        elm.qs.forEach((q)=>{
+            const itm = ui.uPanel(scene,{orientation:'x',space:{item:5}});
+            ui.uBbc.call(itm,scene,{text:'-',ext:{align:'left-top'}});
+            ui.uBbc.call(itm,scene,{text:QuestManager.curStepDesc(q),wrapWidth:230,ext:{align:'left',expand:true}});
+
+            ui.uGroup.call(this,scene,{title:`[color=yellow]${QuestManager.title(q)}[/color]`,divider:false})
+                .addItem(itm);
+        })
+        this.setW(0)
     }
 
     update(style, elm)

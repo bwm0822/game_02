@@ -12,6 +12,7 @@ export class PQuest extends Sizer
         const config=
         {
             // bg:{color:GM.COLOR.PRIMARY},
+            orientation:'y',
             space:{left:5,right:5,top:5,bottom:5,item:5},
         }
 
@@ -22,13 +23,19 @@ export class PQuest extends Sizer
         // bg
         ui.uBg.call(this, scene, {color:GM.COLOR.PRIMARY})
 
+        // 主要區塊：左側任務清單 + 右側內容
+        const mainRow = ui.uPanel.call(this, scene, {
+                    orientation:'x',
+                    ext:{expand:true,proportion:1}
+                });
+
         // scroll
-        this._scroll = ui.uScroll.call(this, scene, {bg:{},
+        this._scroll = ui.uScroll.call(mainRow, scene, {bg:{},
                                                     width:200,
                                                     ext:{expand:true}});
 
         // content：title 欄（不捲動）+ 內容（可捲動）
-        const contentPanel = ui.uPanel.call(this, scene, {
+        const contentPanel = ui.uPanel.call(mainRow, scene, {
                     orientation:'y',
                     ext:{expand:true,proportion:1}
                 });
@@ -44,6 +51,22 @@ export class PQuest extends Sizer
                     space:10,
                     ext:{expand:true,proportion:1}
                 });
+
+        // 底部：地圖按鈕，跟 title/content 同一個 sizer（contentPanel），固定在右側內容區的右下角
+        const footer = ui.uPanel.call(contentPanel, scene, {
+                    orientation:'x',
+                    bg:{color:GM.COLOR.DARK},
+                    ext:{expand:true}
+                });
+
+        // 「地圖」按鈕不管有沒有選任務、選到的任務有沒有 pos 都固定加入、保留版面
+        // 空間，沒有 pos 時只是隱藏＋不能點擊，避免面板高度跳動
+        this._mapBtn = ui.uButton(scene, {text:{text:'🗺️', fontSize:GM.FONT_SIZE+12},
+                                        space:UI.SPACE.LRTBI.p5,
+                                        cBG:GM.COLOR.DARK,
+                                        bg:{color:GM.COLOR.DARK, radius:0},
+                                        onclick:()=>{this._toMap(this._pos);}});
+        footer.addSpace().add(this._mapBtn,{align:'right'});
 
         this.layout().hide();
     }
@@ -95,20 +118,13 @@ export class PQuest extends Sizer
         this._title.removeAll(true);
         this._content.clearAll();
 
+        this._pos = q ? QuestManager.pos(q) : null;
+        this._mapBtn.setAlpha(this._pos?1:0);
+        this._pos ? this._mapBtn.setInteractive() : this._mapBtn.disableInteractive();
+
         if(q)
         {
             const scene = this.scene;
-            const pos = QuestManager.pos(q);
-            const map = ()=>{this._toMap(pos);}
-
-            // 「地圖」按鈕不管有沒有 pos 都固定加入、保留版面空間，沒有 pos 時只是
-            // 隱藏＋不能點擊，避免標題欄寬度隨任務有無地點而跳動
-            const mapBtn = ui.uButton(scene, {icon:'🗺️',
-                                            cBG:GM.COLOR.GRAY,
-                                            bg:{color:GM.COLOR.GRAY, radius:0},
-                                            onclick:map});
-            mapBtn.setAlpha(pos?1:0);
-            pos ? mapBtn.setInteractive() : mapBtn.disableInteractive();
 
             // _title 是 x 軸排列，cross axis（高度）本來就是滿版，垂直置中不用
             // 額外處理；水平置中則用左右各一個 addSpace() 撐開空間，讓標題文字
@@ -117,7 +133,6 @@ export class PQuest extends Sizer
                 .addSpace()
                 .add(ui.uBbc(scene,{text:`[color=yellow]${QuestManager.title(q)}[/color]`}),{align:'center'})
                 .addSpace()
-                .add(mapBtn,{align:'right'})
 
             this._content
                 .add(ui.uGroup(scene,{title:'說明',fontSize:GM.FONT_SIZE})
@@ -160,8 +175,7 @@ export class PQuest extends Sizer
 
         this._itm = null;
         this._scroll.clearAll();
-        this._title.removeAll(true);
-        this._content.clearAll();
+        this._updateContent(null);
 
         if(Object.keys(QuestManager.quests.close).length > 0)
         {

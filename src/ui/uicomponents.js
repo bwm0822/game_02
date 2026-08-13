@@ -338,7 +338,7 @@ export function uLabel(scene, config={})
         if(ascii) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
         else {lab._icon=uBbc.call(lab,scene,{text:iconR,ext:{align:'center',expand:false}});}
     }
-    
+
     lab.setText = (text)=>{lab._text?.setText(text);return lab;}
     if(this&&this.add) {this.add(lab, ext);}
     return lab;
@@ -1260,6 +1260,7 @@ export function uGroup(scene,config={})
         color=GM.COLOR.WHITE,
         indent=0,
         fontSize=GM.FONT_SIZE,
+        divider=true,
         ext={expand:true}
     } = config;
 
@@ -1271,7 +1272,7 @@ export function uGroup(scene,config={})
                 ext: {align:'left',expand:true,padding:{top:10}},
             });
 
-    uDiv.call(p,scene,{ext:{expand:true,padding:{top:0,bottom:10}}});
+    if(divider) {uDiv.call(p,scene,{ext:{expand:true,padding:{top:0,bottom:10}}});}
 
     const _content = uPanel.call(p,scene,{
                         orientation:'y',

@@ -57,6 +57,42 @@ function _isStepDone(q, stepId, step)
     return q.sta.steps[stepId];
 }
 
+// 替換 step.descKey 裡的 {current}/{required} 佔位符
+function _stepDesc(q, stepId, step)
+{
+    let stepDesc = step.descKey;
+
+    if (stepDesc.includes('{current}')) {
+        const current = q.sta?.counters?.[stepId] ?? 0;
+        stepDesc = stepDesc.replace('{current}', current);
+    }
+
+    if (stepDesc.includes('{required}')) {
+        const required = step.complete?.required ?? 0;
+        stepDesc = stepDesc.replace('{required}', required);
+    }
+
+    return stepDesc;
+}
+
+// 移除 descKey 裡帶有 {current}/{required} 佔位符的括號區段（不顯示數量）
+function _stepDescNoCount(descKey)
+{
+    return descKey.replace(/\s*\([^)]*\{(?:current|required)\}[^)]*\)/g, '').trim();
+}
+
+// 目前該執行的 step：第一個「條件已符合、尚未完成、且有 pos」的 step
+function _currentStep(q)
+{
+    for (const [stepId, step] of Object.entries(q.dat.steps))
+    {
+        if (!_checkCond(q.sta, step)) continue;
+        if (_isStepDone(q, stepId, step)) continue;
+        if (step.pos) return {stepId, step};
+    }
+    return null;
+}
+
 export default class QuestManager
 {
     static quests={active:{}, close:{}};
@@ -235,21 +271,7 @@ export default class QuestManager
                 }
             }
 
-            let stepDesc = step.descKey;
-
-            // 替換 {current} 為實際計數值
-            if (stepDesc.includes('{current}')) {
-                const current = q.sta?.counters?.[stepId] ?? 0;
-                stepDesc = stepDesc.replace('{current}', current);
-            }
-
-            // 替換 {required} 為實際需求值
-            if (stepDesc.includes('{required}')) {
-                const required = step.complete?.required ?? 0;
-                stepDesc = stepDesc.replace('{required}', required);
-            }
-
-            des += `${prefix}${stepDesc}\n`;
+            des += `${prefix}${_stepDesc(q, stepId, step)}\n`;
         });
 
         return des;
@@ -258,13 +280,14 @@ export default class QuestManager
     // 取得目前該去的地點：第一個「條件已符合、尚未完成、且有 pos」的 step
     static pos(q)
     {
-        for (const [stepId, step] of Object.entries(q.dat.steps))
-        {
-            if (!_checkCond(q.sta, step)) continue;
-            if (_isStepDone(q, stepId, step)) continue;
-            if (step.pos) return step.pos;
-        }
-        return null;
+        return _currentStep(q)?.step.pos ?? null;
+    }
+
+    // 取得目前該執行 step 的描述文字（跟 pos() 是同一個 step，供地圖節點提示使用；不顯示數量）
+    static curStepDesc(q)
+    {
+        const cur = _currentStep(q);
+        return cur ? _stepDescNoCount(cur.step.descKey) : '';
     }
 
     static queryClose(id)
