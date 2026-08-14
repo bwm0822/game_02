@@ -41,8 +41,7 @@ export class PQuest extends Sizer
                 });
 
         this._title = ui.uPanel.call(contentPanel, scene, {
-                    bg:{color:GM.COLOR.GRAY},
-                    // space:{left:5,right:5,top:5,bottom:5,item:10},
+                    bg:{color:GM.COLOR.DARK},
                     ext:{expand:true}
                 });
 
@@ -65,7 +64,7 @@ export class PQuest extends Sizer
                                         space:UI.SPACE.LRTBI.p5,
                                         cBG:GM.COLOR.DARK,
                                         bg:{color:GM.COLOR.DARK, radius:0},
-                                        onclick:()=>{this._toMap(this._pos);}});
+                                        onclick:()=>{this._toMap(this._pos, this._qid);}});
         footer.addSpace().add(this._mapBtn,{align:'right'});
 
         this.layout().hide();
@@ -119,6 +118,7 @@ export class PQuest extends Sizer
         this._content.clearAll();
 
         this._pos = q ? QuestManager.pos(q) : null;
+        this._qid = q ? q.dat.id : null;
         this._mapBtn.setAlpha(this._pos?1:0);
         this._pos ? this._mapBtn.setInteractive() : this._mapBtn.disableInteractive();
 
@@ -131,7 +131,7 @@ export class PQuest extends Sizer
             // 維持原尺寸夾在中間，不會像給 proportion 撐開那樣被硬改 displayWidth
             this._title
                 .addSpace()
-                .add(ui.uBbc(scene,{text:`[color=yellow]${QuestManager.title(q)}[/color]`}),{align:'center'})
+                .add(ui.uBbc(scene,{text:`[color=yellow]${QuestManager.title(q)}[/color]`}),{align:'center',padding:{top:10,bottom:10}})
                 .addSpace()
 
             this._content

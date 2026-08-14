@@ -161,6 +161,20 @@ export class PMap extends Sizer
         this._map.add(tag);
     }
 
+    _findQuestBtn(questId)
+    {
+        for(const child of this._scroll.getChildren())
+        {
+            if(child.qid===questId) {return child;}
+            if(child.getChildren)
+            {
+                const found = child.getChildren().find(btn=>btn.qid===questId);
+                if(found) {return found;}
+            }
+        }
+        return null;
+    }
+
     _focusOn(nid)
     {
         const nd = this._nds[nid];
@@ -184,9 +198,11 @@ export class PMap extends Sizer
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    focusOn(pos)
+    focusOn(pos, questId)
     {
-        this._focusOn(pos);
+        const btn = questId ? this._findQuestBtn(questId) : null;
+        if(btn) {btn.emit('pointerup');}
+        else {this._focusOn(pos);}
     }
 
     update()

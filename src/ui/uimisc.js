@@ -41,10 +41,10 @@ export default class UiMisc extends UiFrame
         return this;
     }
 
-    toMap(pos)
+    toMap(pos, questId)
     {
         this._tabs.emitButtonClick('top', 1);
-        this._page.focusOn(pos);
+        this._page.focusOn(pos, questId);
     }
 
     createPages(scene)
