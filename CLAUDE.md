@@ -83,6 +83,7 @@ dist/           # 建置輸出（勿手動修改）
 - **場景類別**：放於 `src/scenes/`，名稱以大寫字母開頭
 - **UI 類別**：放於 `src/ui/`，繼承自 `src/ui/uiframe.js` 的 `UiFrame` 基底類別（`uicommon.js` 的 `Ui` 是靜態全域註冊表，非繼承用基底類別）；修改或新增 UI 面板前請先參考 [docs/ui-architecture.md](docs/ui-architecture.md)
 - **Quest/Dialog**：資料為 `public/assets/json/quest.json`/`dialog.json`（由 `xls/quest.xlsx`/`xls/dialog.xlsx` 透過 `node scripts/quest.js`/`scripts/dialog.js` 產生，非 npm script）；對話元件為 `com_talk.js`（`COM_Talk`）；修改任務或對話前請先參考 [docs/quest-dialog-architecture.md](docs/quest-dialog-architecture.md)
+- **地圖無縫邊界切換**：`public/assets/maps/main.world`（Tiled World 檔）定義地圖間的相對座標，`GameScene.js` 的 `_checkMapEdge()`/`_findAdjacentMap()` 依此在玩家走到地圖邊界時自動切換場景；修改邊界轉場邏輯前請先參考 [docs/map-seamless-transition.md](docs/map-seamless-transition.md)
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
 - **`src/old/`**：廢棄程式碼，不可引用也不可修改

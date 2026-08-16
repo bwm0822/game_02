@@ -3,14 +3,14 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/forest-01.json",
+    "activeFile": "public/assets/maps/trump-inn-f1.json",
     "expandedProjectPaths": [
         ".",
-        "public/assets/templates",
-        "public/assets",
         "public",
         "public/assets/tiles",
-        "public/assets/maps"
+        "public/assets",
+        "public/assets/maps",
+        "public/assets/templates"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -234,14 +234,14 @@
         },
         "public/assets/maps/forest-01.json": {
             "expandedObjectLayers": [
-                2,
-                3
+                3,
+                2
             ],
-            "scale": 0.75,
-            "selectedLayer": 2,
+            "scale": 0.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 640,
-                "y": 640.6666666666667
+                "x": 330,
+                "y": -390
             }
         },
         "public/assets/maps/forest_01.json": {
@@ -314,7 +314,7 @@
             "scale": 1.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 512.3333333333333,
+                "x": 585.3333333333333,
                 "y": 512
             }
         },
@@ -403,8 +403,8 @@
             "scale": 1.4705208333333333,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 240.05100233760714,
-                "y": 239.71098675355952
+                "x": 240.73103350570233,
+                "y": 239.37097116951196
             }
         },
         "public/assets/maps/trump-inn-f2.json": {
@@ -444,11 +444,11 @@
             "expandedObjectLayers": [
                 3
             ],
-            "scale": 1,
+            "scale": 0.5,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 640,
-                "y": 639.5
+                "x": 330,
+                "y": 1394
             }
         },
         "public/assets/maps/village-02.json": {
@@ -640,7 +640,7 @@
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates/animals",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
-        "C:/Personal/projects/web/game_02/public/assets/maps/1.world"
+        "C:/Personal/projects/web/game_02/public/assets/maps/main.world"
     ],
     "map.fixedSize": true,
     "map.height": 40,
@@ -658,17 +658,17 @@
     "property.type": "string",
     "recentFiles": [
         "public/assets/maps/village-01.json",
-        "public/assets/maps/trump-inn-f1.json",
         "public/assets/maps/forest-01.json",
+        "public/assets/maps/map.json",
+        "public/assets/maps/trump-inn-f1.json",
+        "public/assets/group.tsj",
         "public/assets/icons.tsj",
         "public/assets/free.tsj",
         "public/assets/roles_v12.tsj",
         "public/assets/houe_1.tsj",
         "public/assets/fence_tiles.tsj",
-        "public/assets/maps/map.json",
         "public/assets/32x32GridItemsAll.tsj",
-        "public/assets/animals.tsj",
-        "public/assets/maps/animals.tsj"
+        "public/assets/animals.tsj"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

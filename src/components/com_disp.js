@@ -112,7 +112,12 @@ export class COM_Disp extends Com
             if(duration>0)
             {
                 if (this._toSpk) {clearTimeout(this._toSpk);this._toSpk=null;}
-                this._toSpk = setTimeout(()=>{this._spk?.hide();this._toSpk=null;this._sz.layout();}, duration);
+                this._toSpk = setTimeout(()=>{
+                    this._toSpk=null;
+                    if(!this._sz?.active) {return;}
+                    this._spk?.hide();
+                    this._sz.layout();
+                }, duration);
             }
             else
             {
@@ -150,7 +155,12 @@ export class COM_Disp extends Com
             if(duration>0)
             {
                 if (this._to) {clearTimeout(this._to);this._to=null;}
-                this._to = setTimeout(()=>{this._p?.hide();this._to=null;this._sz.layout();}, duration);
+                this._to = setTimeout(()=>{
+                    this._to=null;
+                    if(!this._sz?.active) {return;}
+                    this._p?.hide();
+                    this._sz.layout();
+                }, duration);
             }
             else
             {

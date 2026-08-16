@@ -36,25 +36,6 @@
          "name":"layer3",
          "objects":[
                 {
-                 "id":49,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":576,
-                 "y":1280
-                }, 
-                {
-                 "id":50,
-                 "name":"entry",
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":608,
-                 "y":1280
-                }, 
-                {
-                 "id":51,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":640,
-                 "y":1280
-                }, 
-                {
                  "gid":187,
                  "height":32,
                  "id":93,
@@ -289,30 +270,6 @@
                  "type":"well",
                  "x":432,
                  "y":864
-                }, 
-                {
-                 "id":123,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":672,
-                 "y":1280
-                }, 
-                {
-                 "id":124,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":544,
-                 "y":1280
-                }, 
-                {
-                 "id":125,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":704,
-                 "y":1280
-                }, 
-                {
-                 "id":126,
-                 "template":"..\/templates\/exit_b.tj",
-                 "x":512,
-                 "y":1280
                 }, 
                 {
                  "id":127,

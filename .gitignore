@@ -32,3 +32,4 @@ __pycache__
 
 # claude code local settings
 .claude/settings.local.json
+inbox/
