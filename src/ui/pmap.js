@@ -3,8 +3,8 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {MiniMap} from '../manager/minimap.js'
-import {UNode} from './unode.js'
 import QuestManager from '../manager/quest.js'
+import Record from '../infra/record.js'
 
 
 export class PMap extends Sizer
@@ -48,37 +48,6 @@ export class PMap extends Sizer
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _processObjectLayer()
-    {
-        const map = MiniMap.map;
-        const scene = this.scene;
-        this._nds={};
-
-        map.objects.forEach((layer)=>{
-            // map.createFromObjects(layer.name,[{type:'node',classType:Test}]);
-            const objs = map.getObjectLayer(layer.name).objects;
-            objs.forEach(obj=>{
-                if(obj.type==='node') {this._addNode(map,obj);}
-                else {this._addImage(map,obj);}
-            })
-        })
-    }
-
-    _addNode(map,obj)
-    {
-        const nd = new UNode(this.scene,map,obj);
-        this._map.add(nd);
-        this._nds[nd.dat.map]=nd;
-    }
-
-    _addImage(map,obj)
-    {
-        const [key,frame] = Utility.getbygid(map,obj.gid);
-        const icon = key+':'+frame;
-        const img = ui.uImage(this.scene,{x:obj.x,y:obj.y,icon:icon}).setOrigin(0,1);
-        this._map.add(img);
-    }
-
     _updateMap()
     {
         //
@@ -86,14 +55,24 @@ export class PMap extends Sizer
         this._map.setContentSize(img.displayWidth,img.displayHeight);
         this._map.clearAll();
         this._map.add(img);
-        this._processObjectLayer();
 
-        // 取出目前地圖所在地的nid
+        // 節點/裝飾物件層暫時關閉，只顯示地圖縮圖背景
+        this._nds = {};
         this._props = Utility.getProps(GM.map);
-        if(this._props.nid) 
+    }
+
+    // 把玩家目前所在地圖的縮圖置中顯示，玩家標記畫在縮圖裡對應的實際相對位置
+    // 一定要在 this.layout() 之後呼叫，不然剛設好的捲動位置會被 layout() 重新排版蓋掉
+    _updatePlayerMark()
+    {
+        const cur = MiniMap.layout[Record.game.map];
+        if(cur)
         {
-            this._setPlayer(this._props.nid);
+            this._centerOn({x:cur.x+cur.w/2, y:cur.y+cur.h/2});
+            const pt = MiniMap.worldToTex(Record.game.map, GM.player.x, GM.player.y);
+            if(pt) {this._setPlayer(pt);}
         }
+        else {console.warn(`[PMap] MiniMap.layout 找不到 Record.game.map="${Record.game.map}"，可用的 key:`, Object.keys(MiniMap.layout));}
     }
 
     _updateQuest()
@@ -107,7 +86,8 @@ export class PMap extends Sizer
             if(this._btn) {this._btn.setValue(false);}
             this._btn=btn;
             btn.setValue(true);
-            this._focusOn(btn.nid)
+            if(btn.isPlayer) {this._updatePlayerMark();}
+            else {this._focusOn(btn.nid)}
         }
 
         const scene = this.scene;
@@ -120,7 +100,7 @@ export class PMap extends Sizer
                                         text:'玩家',
                                         onclick:onclick});
         this._scroll.addItem(btn);
-        btn.nid=this._props.nid;
+        btn.isPlayer = true;
         btn.emit('pointerup');
         
         // 2. 任務
@@ -154,10 +134,9 @@ export class PMap extends Sizer
         
     }
 
-    _setPlayer(nid)
+    _setPlayer(pt)
     {
-        const nd=this._nds[nid];
-        const tag=ui.uPic(this.scene,{x:nd.getPts()[0].x,y:nd.getPts()[0].y,icon:'buffs:20',w:40,h:40,bg:{}})
+        const tag=ui.uPic(this.scene,{x:pt.x,y:pt.y,icon:'buffs:20',w:25,h:25,bg:{}})
         this._map.add(tag);
     }
 
@@ -178,9 +157,13 @@ export class PMap extends Sizer
     _focusOn(nid)
     {
         const nd = this._nds[nid];
-
         if(!nd) {return;}
+        this._centerOn({x:nd.x, y:nd.y});
+    }
 
+    // 把地圖捲動到讓 pt（縮圖背景座標系）置中顯示
+    _centerOn(pt)
+    {
         const w = this._map.width;
         const h = this._map.height;
         const img_w =  this._map._panel.width;
@@ -188,8 +171,9 @@ export class PMap extends Sizer
         const min = {x:w-img_w,y:h-img_h};
 
         // 設置範圍，不要超過邊界
-        const ox = Utility.clamp(-nd.x+w/2,min.x,0);
-        const oy = Utility.clamp(-nd.y+h/2,min.y,0);
+        // 縮圖比面板大時 min<0，比面板小時 min>0（無需限制，clamp 範圍要照大小排好，不然 min>max 會恆為 0）
+        const ox = Utility.clamp(-pt.x+w/2, Math.min(min.x,0), Math.max(min.x,0));
+        const oy = Utility.clamp(-pt.y+h/2, Math.min(min.y,0), Math.max(min.y,0));
 
         this._map.childOX = ox;
         this._map.childOY = oy;
@@ -211,6 +195,7 @@ export class PMap extends Sizer
         this._updateMap();
         this._updateQuest();
         this.layout();
+        this._updatePlayerMark();
     }
 
     mouseWheel(on)

@@ -3,14 +3,15 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/vil_00x00.json",
+    "activeFile": "public/assets/maps/for_00x01.json",
     "expandedProjectPaths": [
-        "public/assets/maps",
-        "public/assets/templates/animals",
-        "public",
-        "public/assets",
         ".",
-        "public/assets/tiles"
+        "public",
+        "public/assets/tiles",
+        "public/assets/templates/animals",
+        "public/assets",
+        "public/assets/templates",
+        "public/assets/maps"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -254,12 +255,28 @@
         "public/assets/maps/dirtpath_tiles.tsj": {
             "scaleInDock": 1
         },
-        "public/assets/maps/for_00x01.json": {
-            "scale": 0.5,
+        "public/assets/maps/for_(01,-01).json": {
+            "scale": 1,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1196,
-                "y": -1876
+                "x": -0.5,
+                "y": 0
+            }
+        },
+        "public/assets/maps/for_00x-01.json": {
+            "scale": 0.0625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 568,
+                "y": 4224
+            }
+        },
+        "public/assets/maps/for_00x01.json": {
+            "scale": 0.0625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": -2568,
+                "y": -2248
             }
         },
         "public/assets/maps/forest-01.json": {
@@ -324,6 +341,86 @@
             "viewCenter": {
                 "x": 147.33333333333331,
                 "y": 147.33333333333334
+            }
+        },
+        "public/assets/maps/m00x00.json": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 0,
+                "y": 0
+            }
+        },
+        "public/assets/maps/m_00x-01.json": {
+            "scale": 0.0625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2720,
+                "y": 3424
+            }
+        },
+        "public/assets/maps/m_00x00.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 14816,
+                "y": 15616
+            }
+        },
+        "public/assets/maps/m_00x01.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 14688,
+                "y": 6976
+            }
+        },
+        "public/assets/maps/m_01x00.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 11616,
+                "y": 10240
+            }
+        },
+        "public/assets/maps/m_01x01.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 11616,
+                "y": 7040
+            }
+        },
+        "public/assets/maps/m_02x05.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 8416,
+                "y": -384
+            }
+        },
+        "public/assets/maps/m_03x05.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 5216,
+                "y": -384
+            }
+        },
+        "public/assets/maps/m_04x05.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2016,
+                "y": -384
+            }
+        },
+        "public/assets/maps/m_05x05.json": {
+            "scale": 0.015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": -1184,
+                "y": -384
             }
         },
         "public/assets/maps/macron-home.json": {
@@ -471,11 +568,14 @@
             }
         },
         "public/assets/maps/vil_00x00.json": {
-            "scale": 0.5,
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 0.0625,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 1224,
-                "y": 1324
+                "x": 568,
+                "y": 1024
             }
         },
         "public/assets/maps/vil_00x00.json#ground_tiles": {
@@ -683,7 +783,7 @@
     "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates/animals",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
-        "C:/Personal/projects/web/game_02/public/assets/maps/map.world"
+        "C:/Personal/projects/web/game_02/public/assets/maps/main.world"
     ],
     "map.fixedSize": true,
     "map.height": 100,
@@ -694,23 +794,24 @@
     "map.width": 100,
     "openFiles": [
         "public/assets/maps/vil_00x00.json",
-        "public/assets/group.tsj"
+        "public/assets/maps/for_00x-01.json",
+        "public/assets/maps/for_00x01.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "public/assets/maps/for_00x01.json",
-        "public/assets/houe_1.tsj",
-        "public/assets/maps/village-01.json",
+        "public/assets/maps/m_00x00.json",
+        "public/assets/maps/m_01x00.json",
+        "public/assets/maps/m_01x01.json",
+        "public/assets/maps/m_00x01.json",
+        "public/assets/maps/m00x00.json",
+        "public/assets/maps/m_00x-01.json",
         "public/assets/maps/vil_00x00.json",
-        "public/assets/terrain_tiles_v2.tsj",
-        "public/assets/spr_fencePost.tsj",
-        "public/assets/free.tsj",
-        "public/assets/fence_tiles.tsj",
-        "public/assets/Full_1.tsj",
-        "public/assets/ground_tiles.tsj",
-        "public/assets/group.tsj",
-        "public/assets/monsters.tsj"
+        "public/assets/maps/for_00x-01.json",
+        "public/assets/maps/for_00x01.json",
+        "public/assets/maps/for_(01,-01).json",
+        "public/assets/houe_1.tsj",
+        "public/assets/maps/village-01.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,

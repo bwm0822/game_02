@@ -19,13 +19,13 @@ const SOURCE_TILE_PX = 8;
 // 輸出圖片「長邊」要縮成幾像素，可以是任意值（不受 tmxrasterizer 只吃整數的限制）。
 // 地圖的寬/高比例會依實際 tile 數（width/height）等比例縮放，長邊對齊這個值、短邊照比例算，
 // 所有地圖共用同一個值，縮圖跟 main.world/map.world 的相對位置才不會走樣。
-const OUTPUT_SIZE = 50;
+const OUTPUT_SIZE = 100;
 
 // 只畫圖層名稱以此開頭的圖層（不分大小寫），其餘圖層一律排除
 // tmxrasterizer 沒有「只顯示」選項，靠先讀出地圖實際圖層、把不符合前綴的都丟進 --hide-layer 做到
 const SHOW_LAYER_PREFIX = 'map';
 
-const WORLD_PATH = './public/assets/maps/map.world';
+const WORLD_PATH = './public/assets/maps/main.world';
 const OUT_DIR = './public/assets/textures/minimap';
 
 // 讀地圖 json，回傳地圖的 tile 寬高，以及「名稱不是以 SHOW_LAYER_PREFIX 開頭」的圖層名稱清單（要被排除的）
