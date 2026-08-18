@@ -16,13 +16,15 @@
          "id":0,
          "image":"assets_spritesheet_v2_free\/001.png",
          "imageheight":128,
-         "imagewidth":80
+         "imagewidth":80,
+         "probability":0.5
         }, 
         {
          "id":1,
          "image":"assets_spritesheet_v2_free\/002.png",
          "imageheight":95,
-         "imagewidth":61
+         "imagewidth":61,
+         "probability":0.100000001490116
         }, 
         {
          "id":2,

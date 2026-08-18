@@ -4,8 +4,8 @@ import QuestManager from '../manager/quest.js'
 
 export default class Record
 {
-    static game_def = { default:'entry', 
-                        map:'village-01', 
+    static game_def = { default:'entry',
+                        map:'vil_00x00',
                         time:{d:0,h:8,m:0},
                         vars:{}
                     }

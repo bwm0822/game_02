@@ -1,0 +1,20 @@
+{
+    "maps": [
+        {
+            "fileName": "vil_00x00.json",
+            "height": 3200,
+            "width": 3200,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "fileName": "for_00x01.json",
+            "height": 3200,
+            "width": 3200,
+            "x": 0,
+            "y": 3200
+        }
+    ],
+    "onlyShowAdjacentMaps": false,
+    "type": "world"
+}
