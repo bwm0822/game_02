@@ -1,7 +1,10 @@
 @echo off
 cd /d "%~dp0.."
+
 for %%f in (scripts\*.js) do (
-    echo Running %%f...
-    node "%%f"
+    if /I not "%%~nxf"=="minimap.js" (
+        echo Running %%f...
+        node "%%f"
+    )
 )
 echo Done.

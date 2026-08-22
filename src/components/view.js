@@ -192,7 +192,7 @@ class View extends Phaser.GameObjects.Container
         this.isBlock = false;       // 是否會阻擋
         this.weight = 1000;
         this.bl=0, this.br=0, this.bt=0, this.bb=0;     // body 的 left, right, top, bottom，物理 body 方塊
-        this.gl=0, this.gr=0, this.gt=0, this.gb=0;     // grid 的 left, right, top, bottom，地圖網格方塊
+        this.gl=0, this.gr=0, this.gt=0, this.gb=0; this.gw=null; this.gh=null;   // grid 的 left, right, top, bottom，地圖網格方塊
         this.zl=0, this.zr=0, this.zt=0, this.zb=0;     // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
         this.anchorX = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetX，(0,0)代表 gameobject 的中心點，(-w/2,-h/2) 代表在左上角
         this.anchorY = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetY，(0,0)代表 gameobject 在中心點，(w/2,h/2) 代表在右下角 
@@ -344,8 +344,8 @@ class View extends Phaser.GameObjects.Container
     {
         this._grid = {};
 
-        this._grid.w = this.wid - this.gl - this.gr;
-        this._grid.h = this.hei - this.gt - this.gb;
+        this._grid.w = this.gw ?? this.wid - this.gl - this.gr;
+        this._grid.h = this.gh ?? this.hei - this.gt - this.gb;
         this._grid.hw= this._grid.w/2;
         this._grid.hh = this._grid.h/2;
 
@@ -524,6 +524,7 @@ class View extends Phaser.GameObjects.Container
         for(let key in bb)
         {
             if(this[key]!==undefined) {this[key]=bb[key];}
+            if(key==='gw') {console.log('gw=',bb[key]);}
         }
 
         return this;

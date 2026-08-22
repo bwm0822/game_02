@@ -51,6 +51,7 @@ export class GameObject extends Phaser.GameObjects.Container
     set pos(p) {this.x=p.x; this.y=p.y}
     get coms() {return this._coms;}         // 元件庫
     get bb() {return this._bb;}             // blackboard
+    set bb(v) {this._bb.bb=v;}              // 避免 Tiled 物件的自訂屬性剛好叫 "bb" 時，Phaser 直接賦值撞到唯讀 getter；寫進 _bb.bb，不覆蓋整個 blackboard 參考
     get info() {return this._info;}
     set info(v) {this._info=v;}
 
@@ -380,10 +381,16 @@ export class GameObject extends Phaser.GameObjects.Container
         });
     }
 
-    // 是否抵達
+    // 是否抵達（跟目標在同一格 tile 內就算抵達，不用座標完全相等）
     isAt(go)
     {
-        for(let p of go.getPts(this)) {if(p.x===this.x && p.y===this.y){return true;}}
+        const map = this.scene.map;
+        const [tx,ty] = map.worldToTile(this.x, this.y);
+        for(let p of go.getPts(this))
+        {
+            const [px,py] = map.worldToTile(p.x, p.y);
+            if(px===tx && py===ty) {return true;}
+        }
         return false;
     }
 

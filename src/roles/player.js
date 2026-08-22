@@ -204,7 +204,12 @@ export class Player extends Role
             {
                 console.log('path blocked');
                 bb.sta=GM.ST.IDLE;
-            }            
+            }
+            else if(bb.cACT.st==='stopped')
+            {
+                bb.ent = null;   // 玩家自己取消移動，不要互動、也不要留著舊目標
+                bb.sta=GM.ST.IDLE;
+            }
         }
 
         if(bb.sta===GM.ST.IDLE) {this.anim_idle?.(true);}

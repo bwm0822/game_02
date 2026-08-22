@@ -39,8 +39,8 @@ export class GameScene extends Scene
     {
         if(!GM.player) {return;}
         const player = GM.player;
-        const hw = GM.TILE_W * 3;
-        const hh = GM.TILE_H * 3;
+        const hw = GM.TILE_W * 5;
+        const hh = GM.TILE_H * 5;
 
         const allGos = [...Object.values(this.gos), ...this.roles];
 
@@ -67,8 +67,8 @@ export class GameScene extends Scene
                 if(!(occluderMask&t.occludeType)) {continue;}
 
                 if(t === go || t.depth >= go.depth) {continue;}
-                if(rect.contains(t.x, t.y)) { go.setOcclude(true); }
-                
+                if(Phaser.Geom.Rectangle.ContainsRect(rect, t.getShapeRect())) { go.setOcclude(true); }
+
             }
         }
     }

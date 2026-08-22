@@ -777,11 +777,5 @@
         "posts": []
       }
     }
-  },
-  "npc_c": {
-    "id": "npc_c",
-    "actions": [],
-    "entries": [],
-    "nodes": {}
   }
 }

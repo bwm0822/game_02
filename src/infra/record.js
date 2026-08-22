@@ -5,7 +5,7 @@ import QuestManager from '../manager/quest.js'
 export default class Record
 {
     static game_def = { default:'entry',
-                        map:'m_00x00',
+                        map:'m/m_04x05',
                         time:{d:0,h:8,m:0},
                         vars:{}
                     }

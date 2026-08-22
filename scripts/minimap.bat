@@ -7,6 +7,6 @@ if not exist "%TMXRASTERIZER%" (
     set "TMXRASTERIZER=tmxrasterizer"
 )
 
-node scripts\minimap.js
+node scripts\minimap.js %*
 
 pause

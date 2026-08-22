@@ -59,7 +59,7 @@ export default class TileMap
                 layer.objects.forEach((obj) => {
                     if(obj.template)    // 載入 template(*.tj) 的資料到 cache 裡
                     {
-                        obj.template = obj.template.replace('../','');
+                        obj.template = obj.template.replace(/^(\.\.\/)+/, '');
                         if(this._isLoaded(obj.template)) {return;}
                         dlog(T.MAP)(`load[${obj.template}]`);
                         scene.load.json(obj.template, obj.template);
@@ -75,14 +75,14 @@ export default class TileMap
         map.data.tilesets.forEach((tile) => {
             if(tile.image)  // 載入 tileset(*.png) 的資料
             {
-                tile.image = tile.image.replace('../','');
+                tile.image = tile.image.replace(/^(\.\.\/)+/, '');
                 if(this._isLoaded(tile.image)) {return;}
                 dlog(T.MAP)(`load[${tile.image}]`);
                 scene.load.spritesheet(tile.name, tile.image, { frameWidth: tile.tilewidth, frameHeight: tile.tileheight });
             }
             else if(tile.source) // 載入 外部tileset(*.tsj) 到 cache 裡
             {
-                tile.source = tile.source.replace('../','');
+                tile.source = tile.source.replace(/^(\.\.\/)+/, '');
                 if(this._isLoaded(tile.source)) {return;}
                 dlog(T.MAP)(`load[${tile.source}]`);
                 scene.load.json(tile.source, tile.source);

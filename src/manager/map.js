@@ -61,7 +61,7 @@ class Map
     {
         scene.objects = [];
         map.objects.forEach((layer)=>{
-            
+
             let qid;
             // 如果 layer name 開頭是 '#'，代表是條件 layer，
             // layer.name 移除 '#' 當成 flag 名稱，檢查 Record 的 var 是否成立
@@ -83,7 +83,7 @@ class Map
                 obj.properties.push({name:'uid',type:'int',value:obj.id});
                 if(qid) {obj.properties.push({name:'qid',type:'string',value:qid});}
             });
-            
+
             let objs = map.createFromObjects(layer.name,
             [
                 {type:'node',classType:Node},

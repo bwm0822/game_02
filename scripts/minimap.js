@@ -4,10 +4,13 @@ import { execFileSync } from 'child_process';
 import sharp from 'sharp';
 
 // 讀 map.world，把每張地圖用 tmxrasterizer 縮圖成小地圖 png，供拼總覽地圖用
-// 用法：node scripts/minimap.js
+// 用法：node scripts/minimap.js            全部地圖都跑
+//      node scripts/minimap.js m_04x05    只跑指定的一張（可加不加 .json 都行）
 // 需求：系統要能找到 tmxrasterizer(隨 Tiled 安裝，Windows 通常在 Tiled 安裝資料夾底下）
 //      找不到的話用環境變數指定路徑，例如：
 //      $env:TMXRASTERIZER = 'C:\Program Files\Tiled\tmxrasterizer.exe'; node scripts/minimap.js
+
+const ONLY_MAP = process.argv[2] ? process.argv[2].replace(/\.json$/, '') : null;
 
 const TMXRASTERIZER = process.env.TMXRASTERIZER || 'tmxrasterizer';
 
@@ -43,11 +46,21 @@ async function main()
 {
     const world = JSON.parse(fs.readFileSync(WORLD_PATH, 'utf-8'));
 
+    const maps = ONLY_MAP
+        ? world.maps.filter(m => m.fileName.replace(/\.json$/, '') === ONLY_MAP)
+        : world.maps;
+
+    if(ONLY_MAP && maps.length === 0)
+    {
+        console.error(`找不到地圖 "${ONLY_MAP}"，main.world 裡有：`, world.maps.map(m => m.fileName).join(', '));
+        return;
+    }
+
     fs.mkdirSync(OUT_DIR, { recursive: true });
 
     let ok = 0, fail = 0;
 
-    for (const m of world.maps)
+    for (const m of maps)
     {
         const input = path.join('./public/assets/maps', m.fileName);
         const output = path.join(OUT_DIR, m.fileName.replace(/\.json$/, '.png'));
@@ -55,6 +68,7 @@ async function main()
 
         try
         {
+            fs.mkdirSync(path.dirname(output), { recursive: true });
             const { width, height, hideLayers } = getMapInfo(input);
             const hideArgs = hideLayers.flatMap(name => ['--hide-layer', name]);
 

@@ -156,10 +156,10 @@ export class COM_Action extends Com
                 this._pre=this._cur;
                 this._cur={w:w,pt:pt};
 
-                if(bb.path.stop) 
+                if(bb.path.stop)
                 {
                     root.clearPath?.();
-                    bb.cACT.st='reach';
+                    bb.cACT.st='stopped';   // 玩家中途取消，不是真的抵達，不能跟 'reach' 混在一起
                 }
                 else
                 {

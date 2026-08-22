@@ -37,6 +37,13 @@ export class COM_Schedule extends Com
 
         const rou = this._findRoutine();    // 取得 作息
         const gos = this._toGos(rou.p);     // 取得 作息中的起訖點
+
+        if(gos.some(g=>!g))
+        {
+            console.warn(`[COM_Schedule] 作息物件不存在，map=${rou.map} p="${rou.p}"，這個 NPC 這次不會被正確定位`, gos);
+            return;
+        }
+
         const sp = ept(gos[0].getPts(root)[0]);      // 取得起點(空地)
         bb.routine = rou;                     // 紀錄目前的 routine
 
@@ -83,9 +90,17 @@ export class COM_Schedule extends Com
 
         if(bb.sta===GM.ST.SLEEP) {return;}
 
+        if(!bb.routine) {return;}   // _init() 當初因為作息物件缺漏而放棄了，這裡也沒東西可更新
+
         if(!bb.go) {bb.go=this._toGos(bb.routine.p).at(-1);}
 
-        if(root.isAt(bb.go)) 
+        if(!bb.go)
+        {
+            console.warn(`[COM_Schedule] 作息物件不存在，map=${bb.routine.map} p="${bb.routine.p}"，這個 NPC 這次不會更新`);
+            return;
+        }
+
+        if(root.isAt(bb.go))
         {
             if(bb.go.act==='enter') {root.exit();}
             else if(bb.go.act) {bb.go.emit(bb.go.act, root);}
