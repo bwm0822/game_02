@@ -67,7 +67,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":7,
+ "nextobjectid":11,
  "orientation":"orthogonal",
  "properties":[
         {
@@ -86,6 +86,10 @@
         {
          "firstgid":505,
          "source":"..\/..\/props.tsj"
+        }, 
+        {
+         "firstgid":522,
+         "source":"..\/..\/group.tsj"
         }],
  "tilewidth":32,
  "type":"map",

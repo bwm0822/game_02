@@ -69,18 +69,6 @@
                  "y":1536
                 }, 
                 {
-                 "id":85,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":832,
-                 "y":2176
-                }, 
-                {
-                 "id":89,
-                 "template":"..\/..\/templates\/plants\/tree-2.tj",
-                 "x":1120,
-                 "y":1920
-                }, 
-                {
                  "id":93,
                  "template":"..\/..\/templates\/buildings\/house-1.tj",
                  "x":1856,
@@ -137,36 +125,6 @@
                  "y":1680
                 }, 
                 {
-                 "id":109,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":1312,
-                 "y":1712
-                }, 
-                {
-                 "id":110,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":1776,
-                 "y":1840
-                }, 
-                {
-                 "id":111,
-                 "template":"..\/..\/templates\/plants\/tree-2.tj",
-                 "x":1664,
-                 "y":2016
-                }, 
-                {
-                 "id":112,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":2144,
-                 "y":1280
-                }, 
-                {
-                 "id":113,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":2240,
-                 "y":960
-                }, 
-                {
                  "id":114,
                  "template":"..\/..\/templates\/buildings\/house-1.tj",
                  "x":1472,
@@ -202,34 +160,16 @@
                  "y":2032
                 }, 
                 {
-                 "id":120,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":2144,
-                 "y":2112
-                }, 
-                {
-                 "id":121,
-                 "template":"..\/..\/templates\/plants\/tree-2.tj",
-                 "x":2112,
-                 "y":992
-                }, 
-                {
-                 "id":122,
-                 "template":"..\/..\/templates\/plants\/tree-1.tj",
-                 "x":800,
-                 "y":864
-                }, 
-                {
-                 "id":123,
-                 "template":"..\/..\/templates\/plants\/tree-2.tj",
-                 "x":1024,
-                 "y":928
-                }, 
-                {
                  "id":124,
                  "template":"..\/..\/templates\/buildings\/house-1.tj",
                  "x":944,
                  "y":2000
+                }, 
+                {
+                 "id":128,
+                 "template":"..\/..\/templates\/plants\/tree-1.tj",
+                 "x":864,
+                 "y":2144
                 }],
          "opacity":1,
          "properties":[
@@ -282,7 +222,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m_04x05\/karen-home"
+                         "value":"m\/m_04x05\/karen-home"
                         }, 
                         {
                          "name":"port",
@@ -305,7 +245,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m_04x05\/xi-home"
+                         "value":"m\/m_04x05\/xi-home"
                         }, 
                         {
                          "name":"port",
@@ -324,8 +264,8 @@
                  "type":"point",
                  "visible":true,
                  "width":32,
-                 "x":1408,
-                 "y":1600
+                 "x":1440,
+                 "y":1536
                 }, 
                 {
                  "height":32,
@@ -350,7 +290,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m_04x05\/musk-home"
+                         "value":"m\/m_04x05\/musk-home"
                         }, 
                         {
                          "name":"port",
@@ -373,7 +313,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m_04x05\/macron-home"
+                         "value":"m\/m_04x05\/macron-home"
                         }, 
                         {
                          "name":"port",
@@ -397,7 +337,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m_04x05\/trump-inn-f1"
+                         "value":"m\/m_04x05\/trump-inn-f1"
                         }, 
                         {
                          "name":"offsetY",
@@ -433,12 +373,12 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":125,
+ "nextobjectid":129,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

@@ -68,8 +68,10 @@ function debugDraw(mode=DEBUG.mode,text)
             // grid 的 x, y 是 grid 的中心點
             // Phaser.Geom.Rectangle( left, top, w, h )
             this._dbgGraphics.lineStyle(4, 0x00ff00, 1);
-            const x = this.cen.x + this.min.x + this.gl;
-            const y = this.cen.y + this.min.y + this.gt;
+            // const x = this.cen.x + this.min.x + this.gl;
+            // const y = this.cen.y + this.min.y + this.gt;
+            const x = this.cen.x + this._grid.x - this._grid.hw;
+            const y = this.cen.y + this._grid.y - this._grid.hh;
             const rect = new Phaser.Geom.Rectangle( x, y, this._grid.w, this._grid.h );
             this._dbgGraphics.strokeRectShape(rect);
             // 顯示 grid 中心點
@@ -191,11 +193,12 @@ class View extends Phaser.GameObjects.Container
         this.isStatic = true;       // true: static body, false: dynamic body
         this.isBlock = false;       // 是否會阻擋
         this.weight = 1000;
-        this.bl=0, this.br=0, this.bt=0, this.bb=0;     // body 的 left, right, top, bottom，物理 body 方塊
-        this.gl=0, this.gr=0, this.gt=0, this.gb=0; this.gw=null; this.gh=null;   // grid 的 left, right, top, bottom，地圖網格方塊
-        this.zl=0, this.zr=0, this.zt=0, this.zb=0;     // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
+        this.bl=null, this.br=null, this.bt=null, this.bb=null; this.bw=null; this.bh=null;   // body 的 left, right, top, bottom，物理 body 方塊
+        this.gl=null, this.gr=null, this.gt=null, this.gb=null; this.gw=null; this.gh=null;   // grid 的 left, right, top, bottom，地圖網格方塊
+        this.zl=null, this.zr=null, this.zt=null, this.zb=null; this.zw=null; this.zh=null;   // zone 的 left, right, top, bottom，可互動的方塊，interactive=true 才有作用，
         this.anchorX = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetX，(0,0)代表 gameobject 的中心點，(-w/2,-h/2) 代表在左上角
-        this.anchorY = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetY，(0,0)代表 gameobject 在中心點，(w/2,h/2) 代表在右下角 
+        this.anchorY = 0;           // 錨點(即gameobject中心點)跟view中心點的offsetY，(0,0)代表 gameobject 在中心點，(w/2,h/2) 代表在右下角
+        this.al=null, this.ar=null, this.at=null, this.ab=null;   // 錨點跟 view 左/右/上/下邊界的距離，可取代直接給 anchorX/anchorY(al/at 優先於 ar/ab)
         
         this.key = null;            // sprite 的 key
         this.frame = null;          // sprite 的 frame
@@ -320,21 +323,37 @@ class View extends Phaser.GameObjects.Container
     {
         if(!this.hasPhy) {return this;}
 
+        const h = this._resolveAxis(this.bl, this.br, this.bw, this.wid);
+        const v = this._resolveAxis(this.bt, this.bb, this.bh, this.hei);
+
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
-        this.body.setSize(this.wid-this.bl-this.br, this.hei-this.bt-this.bb);
-        if(this.isStatic) 
+        this.body.setSize(h.size, v.size);
+        if(this.isStatic)
         {
-            this.body.setOffset(this.anchor.x+this.bl, this.anchor.y+this.bt);
+            this.body.setOffset(this.anchor.x+h.a, this.anchor.y+v.a);
             this.isBlock && this.scene.staGroup.add(this);
         }
-        else 
+        else
         {
-            this.body.setOffset(this.min.x+this.bl, this.min.y+this.bt);
+            this.body.setOffset(this.min.x+h.a, this.min.y+v.a);
             this.isBlock && this.scene.dynGroup.add(this);
         }
 
         return this;
+    }
+
+    // a,b(邊界),size(寬/高) 三選二推算；a,b 都給時以 a,b 為準重算 size
+    // 只有 1 個給的話：缺的邊界當 0，size 缺的話用剩下兩個推算
+    _resolveAxis(a, b, size, total)
+    {
+        if(a!=null && b!=null) {}
+        else if(a!=null) {b = (size!=null) ? total-a-size : 0;}
+        else if(b!=null) {a = (size!=null) ? total-b-size : 0;}
+        else {b = 0; a = (size!=null) ? total-b-size : 0;}
+
+        size = total-a-b;
+        return {a, b, size};
     }
 
     //--------------------------------------------------
@@ -342,17 +361,21 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _addGrid()
     {
+        const h = this._resolveAxis(this.gl, this.gr, this.gw, this.wid);
+        const v = this._resolveAxis(this.gt, this.gb, this.gh, this.hei);
+
         this._grid = {};
 
-        this._grid.w = this.gw ?? this.wid - this.gl - this.gr;
-        this._grid.h = this.gh ?? this.hei - this.gt - this.gb;
-        this._grid.hw= this._grid.w/2;
+        this._grid.w = h.size;
+        this._grid.h = v.size;
+        this._grid.hw = this._grid.w/2;
         this._grid.hh = this._grid.h/2;
 
-        this._grid.x = (this.min.x + this.gl + this.max.x - this.gr)/2; 
-        this._grid.y = (this.min.y + this.gt + this.max.y - this.gb)/2;
+        this._grid.x = this.min.x + h.a + h.size/2;
+        this._grid.y = this.min.y + v.a + v.size/2;
 
         return this;
+
     }
 
     _removeWeight(weight)
@@ -384,6 +407,12 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     _setAnchor(modify)
     {
+        if(this.al!=null) {this.anchorX = this.min.x + this.al;}
+        else if(this.ar!=null) {this.anchorX = this.max.x - this.ar;}
+
+        if(this.at!=null) {this.anchorY = this.min.y + this.at;}
+        else if(this.ab!=null) {this.anchorY = this.max.y - this.ab;}
+
         this.x = -this.anchorX;
         this.y = -this.anchorY;
         if(modify)
@@ -402,9 +431,11 @@ class View extends Phaser.GameObjects.Container
         if(!this.interactive) {return this;}
 
         // 產生 zone 方塊
-        let cx = (this.min.x + this.zl + this.max.x - this.zr)/2;
-        let cy = (this.min.y + this.zt + this.max.y - this.zb)/2;
-        this._zone = this.scene.add.zone(cx, cy, this.wid-this.zl-this.zr, this.hei-this.zt-this.zb)
+        const h = this._resolveAxis(this.zl, this.zr, this.zw, this.wid);
+        const v = this._resolveAxis(this.zt, this.zb, this.zh, this.hei);
+        const cx = this.min.x + h.a + h.size/2;
+        const cy = this.min.y + v.a + v.size/2;
+        this._zone = this.scene.add.zone(cx, cy, h.size, v.size)
         this.add(this._zone)
 
         // 將 zone 方塊設成可互動的
@@ -524,7 +555,6 @@ class View extends Phaser.GameObjects.Container
         for(let key in bb)
         {
             if(this[key]!==undefined) {this[key]=bb[key];}
-            if(key==='gw') {console.log('gw=',bb[key]);}
         }
 
         return this;
@@ -586,7 +616,9 @@ export class ItemView extends View
 
             if(ascii)
             {
-                const icon=`${this.key}:${this.frame}`;
+                // frame 為 null(例如 image-collection tileset 沒有數字 frame)時不能拼成字串，
+                // "key:null" 這種字串仍然會去查一個叫 "null" 的 frame，要整段省略掉才會落回 base frame
+                const icon = (this.frame!=null) ? `${this.key}:${this.frame}` : this.key;
                 const sp = uImage.call(this,this.scene,{icon:icon})
                 sp.setPipeline('Light2D');
                 if(this.scl) { sp.setScale(this.scl); }
@@ -638,12 +670,12 @@ export class ItemView extends View
         this._shape.setTexture(key,frame);
     }
 
-    _setShape({sprite,x=0,y=0,scl=1,origin={x:0.5,y:0.5}}={})
+    _setShape({sprite,x=0,y=0,scl,origin={x:0.5,y:0.5}}={})
     {
         const[key,frame]=sprite.split(':');
         this._shape.setTexture(key,frame);
         this._shape.setOrigin(origin.x,origin.y);
-        this._shape.setScale(scl);
+        if(scl!=null) {this._shape.setScale(scl);}
         this._shape.x = x;
         this._shape.y = y;
     }

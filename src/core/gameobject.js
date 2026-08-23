@@ -94,7 +94,13 @@ export class GameObject extends Phaser.GameObjects.Container
     //---- function 
     setName(name) {name!==""&&(this.bb.name=name);}
     setPosition(x,y) {this.x=x; this.y=y;}
-    setTexture(key,frame) {this.bb.key=key; this.bb.frame=frame;}
+    // Phaser 從 gid 算 frame 時假設 tileset 是共用一張 spritesheet；image-collection tileset(每個 tile 各自一張獨立圖)沒有數字 frame，
+    // 算出來的 frame 會是無效值，這裡驗證一次，無效就丟掉，讓下游改用整張圖(base frame)
+    setTexture(key,frame)
+    {
+        if(key && frame!=null && !this.scene.textures.get(key).has(frame)) {frame=null;}
+        this.bb.key=key; this.bb.frame=frame;
+    }
     setFlip(h,v) {this.bb.flipX=h; this.bb.flipY=v;}
     // map.createFromObjects() 會利用 setData() 傳遞參數給 GameObject
     setData(key,value) {this.bb[key]=value;}   

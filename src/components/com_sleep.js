@@ -22,7 +22,7 @@ export class COM_Sleep extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    _sleepAt(bed) 
+    _sleepAt(bed)
     {
         const{root,bb}=this.ctx;
         root.removeWeight?.();

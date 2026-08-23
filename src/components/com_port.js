@@ -82,6 +82,8 @@ export class COM_Node extends COM_Port
         const {scene,bb}=this.ctx;
 
         const x = 0;
+        // 注意：這裡讀的是 Tiled 原始屬性 bb.zt，不是 View._resolveAxis() 算出來的值；
+        // 若改用 zh+zb 設定 zone、不給 zt，這裡會是 undefined 導致 NaN
         const y = -bb.hei/2+bb.zt;
 
         let lb = scene.add.text(
@@ -111,7 +113,7 @@ export class COM_Node extends COM_Port
     _addPanel()
     {
         const {root,scene,bb}=this.ctx;
-        const y=-bb.hei/2+bb.zt;
+        const y=-bb.hei/2+bb.zt;   // 同 _addName()，讀的是原始 bb.zt，不經過 View._resolveAxis()
         this._p = uPanel.call(root,scene,{
                                         y:y,
                                         orientation:'y',
