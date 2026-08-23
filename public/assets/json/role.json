@@ -340,7 +340,7 @@
         "i": 14,
         "t": "07:40~07:50",
         "p": "bed~door",
-        "map": "musk-home"
+        "map": "m_04x05/musk-home"
       },
       {
         "i": 15,
@@ -424,13 +424,13 @@
         "i": 28,
         "t": "20:20~20:30",
         "p": "door~bed",
-        "map": "musk-home"
+        "map": "m_04x05/musk-home"
       },
       {
         "i": 29,
         "t": "20:30~07:40",
         "p": "bed",
-        "map": "musk-home"
+        "map": "m_04x05/musk-home"
       }
     ]
   },
@@ -648,7 +648,7 @@
         "i": 46,
         "t": "07:40~07:50",
         "p": "bed~door",
-        "map": "xi-home"
+        "map": "m_04x05/xi-home"
       },
       {
         "i": 47,
@@ -732,13 +732,13 @@
         "i": 60,
         "t": "20:20~20:30",
         "p": "door~bed",
-        "map": "xi-home"
+        "map": "m_04x05/xi-home"
       },
       {
         "i": 61,
         "t": "20:30~07:40",
         "p": "bed",
-        "map": "xi-home"
+        "map": "m_04x05/xi-home"
       }
     ]
   },
@@ -805,7 +805,7 @@
         "i": 62,
         "t": "07:40~07:50",
         "p": "bed~door",
-        "map": "macron-home"
+        "map": "m_04x05/macron-home"
       },
       {
         "i": 63,
@@ -889,13 +889,13 @@
         "i": 76,
         "t": "20:20~20:30",
         "p": "door~bed",
-        "map": "macron-home"
+        "map": "m_04x05/macron-home"
       },
       {
         "i": 77,
         "t": "20:30~07:40",
         "p": "bed",
-        "map": "macron-home"
+        "map": "m_04x05/macron-home"
       }
     ]
   },

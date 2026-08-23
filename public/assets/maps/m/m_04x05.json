@@ -222,7 +222,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m\/m_04x05\/karen-home"
+                         "value":"m_04x05\/karen-home"
                         }, 
                         {
                          "name":"port",
@@ -245,7 +245,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m\/m_04x05\/xi-home"
+                         "value":"m_04x05\/xi-home"
                         }, 
                         {
                          "name":"port",
@@ -290,7 +290,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m\/m_04x05\/musk-home"
+                         "value":"m_04x05\/musk-home"
                         }, 
                         {
                          "name":"port",
@@ -313,7 +313,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m\/m_04x05\/macron-home"
+                         "value":"m_04x05\/macron-home"
                         }, 
                         {
                          "name":"port",
@@ -337,7 +337,7 @@
                         {
                          "name":"map",
                          "type":"string",
-                         "value":"m\/m_04x05\/trump-inn-f1"
+                         "value":"m_04x05\/trump-inn-f1"
                         }, 
                         {
                          "name":"offsetY",
