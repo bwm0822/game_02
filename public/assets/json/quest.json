@@ -26,7 +26,7 @@
         "conds": [
           "step_01"
         ],
-        "pos": "forest-01"
+        "pos": "m/m_03x05"
       },
       "step_03": {
         "descKey": "收集刀子 ({current}/{required})",
@@ -82,7 +82,7 @@
           "required": 3,
           "id": "wolf"
         },
-        "pos": "forest-01"
+        "pos": "m/m_03x05"
       },
       "step_02": {
         "descKey": "剝下狼皮 ({current}/{required})",

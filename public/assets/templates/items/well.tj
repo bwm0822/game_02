@@ -1,19 +1,14 @@
 { "object":
     {
-     "gid":61,
-     "height":64,
-     "id":122,
+     "gid":32,
+     "height":62,
+     "id":51,
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"gh",
              "type":"int",
-             "value":16
-            }, 
-            {
-             "name":"gl",
-             "type":"int",
-             "value":16
+             "value":32
             }, 
             {
              "name":"gr",
@@ -21,34 +16,24 @@
              "value":16
             }, 
             {
-             "name":"gt",
+             "name":"zh",
              "type":"int",
              "value":32
-            }, 
-            {
-             "name":"zl",
-             "type":"int",
-             "value":16
             }, 
             {
              "name":"zr",
              "type":"int",
              "value":16
-            }, 
-            {
-             "name":"zt",
-             "type":"int",
-             "value":32
             }],
      "rotation":0,
      "type":"well",
      "visible":true,
-     "width":64
+     "width":48
     },
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/32x32GridItemsAll.tsj"
+     "source":"..\/..\/buildings.tsj"
     },
  "type":"template"
 }

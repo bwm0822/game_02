@@ -5,6 +5,7 @@ import Utility from '../core/utility.js'
 import {MiniMap} from '../manager/minimap.js'
 import QuestManager from '../manager/quest.js'
 import Record from '../infra/record.js'
+import UiInfo from './uiinfo.js'
 
 
 export class PMap extends Sizer
@@ -56,7 +57,8 @@ export class PMap extends Sizer
         this._map.clearAll();
         this._map.add(img);
 
-        // 節點/裝飾物件層暫時關閉，只顯示地圖縮圖背景
+        // 舊的裝飾物件層（讀 map.json 畫節點/裝飾圖）已移除，不恢復；
+        // 這裡的 _nds 只用來放任務地點標記，由 _updateQuest() 依 MiniMap.layout 動態建立
         this._nds = {};
         this._props = Utility.getProps(GM.map);
     }
@@ -77,11 +79,6 @@ export class PMap extends Sizer
 
     _updateQuest()
     {
-        const margin={  left:this._map.left,
-                        right:this._map.right,
-                        top:this._map.top,
-                        bottom:this._map.bottom,}
-
         const onclick = (btn)=>{
             if(this._btn) {this._btn.setValue(false);}
             this._btn=btn;
@@ -110,7 +107,10 @@ export class PMap extends Sizer
             if (!q || !q.dat) continue;
 
             const pos = QuestManager.pos(q);
-            if (!pos || !this._nds[pos]) continue;
+            if (!pos) continue;
+
+            const nd = this._getNode(pos);
+            if (!nd) continue;
 
             const btn = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
@@ -128,10 +128,32 @@ export class PMap extends Sizer
             btn.q=q;
             btn.nid=pos;
             btn.qid=id;
-            this._nds[pos].addTag(q,margin);
+            nd.qs.push(q);
         }
 
-        
+
+    }
+
+    // 取得（必要時建立）pos 對應地圖 tile 中心的標記，hover 時列出這一格所有任務
+    // pos 是網格地圖檔名（例如 "m_03x05"），直接查 MiniMap.layout 換算成合成貼圖座標，
+    // 查不到（例如舊資料殘留非網格地名）就當作沒有節點，安靜跳過
+    _getNode(pos)
+    {
+        let nd = this._nds[pos];
+        if(nd) {return nd;}
+
+        const l = MiniMap.layout[pos];
+        if(!l) {return null;}
+
+        const scene = this.scene;
+        nd = ui.uPic(scene,{x:l.x+l.w/2, y:l.y+l.h/2, icon:'buffs:1', w:25, h:25, bg:{}});
+        nd.qs = [];
+        nd.setInteractive()
+            .on('pointerover', ()=>UiInfo.show(UI.INFO.NODE, nd, scene.cameras.main))
+            .on('pointerout', ()=>UiInfo.close());
+        this._map.add(nd);
+        this._nds[pos] = nd;
+        return nd;
     }
 
     _setPlayer(pt)

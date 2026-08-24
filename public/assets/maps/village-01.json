@@ -265,35 +265,16 @@
                  "y":672
                 }, 
                 {
-                 "id":122,
-                 "template":"..\/templates\/well.tj",
-                 "type":"well",
-                 "x":432,
-                 "y":864
-                }, 
-                {
                  "id":127,
                  "template":"..\/templates\/plants\/tree.tj",
                  "x":192,
                  "y":256
                 }, 
                 {
-                 "id":128,
-                 "template":"..\/templates\/plants\/tree.tj",
-                 "x":1120,
-                 "y":1216
-                }, 
-                {
                  "id":129,
                  "template":"..\/templates\/plants\/tree.tj",
                  "x":64,
                  "y":1216
-                }, 
-                {
-                 "id":130,
-                 "template":"..\/templates\/plants\/tree.tj",
-                 "x":320,
-                 "y":864
                 }, 
                 {
                  "id":131,
