@@ -6,9 +6,9 @@
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"ab",
              "type":"int",
-             "value":64
+             "value":16
             }, 
             {
              "name":"gb",
@@ -16,9 +16,14 @@
              "value":16
             }, 
             {
-             "name":"gt",
+             "name":"gh",
              "type":"int",
-             "value":96
+             "value":32
+            }, 
+            {
+             "name":"gl",
+             "type":"int",
+             "value":16
             }, 
             {
              "name":"weight",

@@ -2,13 +2,13 @@
     {
      "gid":5,
      "height":129,
-     "id":49,
+     "id":124,
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"ab",
              "type":"int",
-             "value":32
+             "value":16
             }, 
             {
              "name":"gb",
@@ -16,9 +16,14 @@
              "value":16
             }, 
             {
-             "name":"gt",
+             "name":"gh",
+             "type":"string",
+             "value":"32"
+            }, 
+            {
+             "name":"gl",
              "type":"int",
-             "value":64
+             "value":16
             }, 
             {
              "name":"weight",
@@ -28,7 +33,7 @@
      "rotation":0,
      "type":"item",
      "visible":true,
-     "width":128
+     "width":111
     },
  "tileset":
     {

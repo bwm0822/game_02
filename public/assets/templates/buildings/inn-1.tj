@@ -1,24 +1,24 @@
 { "object":
     {
      "gid":15,
-     "height":256,
+     "height":230,
      "id":1,
      "name":"",
      "properties":[
             {
-             "name":"anchorY",
+             "name":"ab",
              "type":"int",
-             "value":80
+             "value":48
             }, 
             {
              "name":"gb",
              "type":"int",
-             "value":32
+             "value":16
             }, 
             {
-             "name":"gt",
+             "name":"gh",
              "type":"int",
-             "value":96
+             "value":64
             }, 
             {
              "name":"weight",

@@ -5,15 +5,16 @@
     },
     "activeFile": "public/assets/maps/m/m_04x05.json",
     "expandedProjectPaths": [
-        "public",
-        "public/assets/maps/m/m_04x05",
-        "public/assets/maps",
-        ".",
-        "public/assets/templates/plants",
-        "public/assets/templates/buildings",
-        "public/assets/tiles",
         "public/assets",
-        "public/assets/templates"
+        "public/assets/maps/m/m_04x05",
+        "public/assets/templates/plants",
+        "public/assets/maps/m",
+        ".",
+        "public/assets/templates",
+        "public/assets/tiles",
+        "public/assets/maps/m_04x05",
+        "public",
+        "public/assets/maps"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -363,14 +364,14 @@
         },
         "public/assets/maps/m/m_04x05.json": {
             "expandedObjectLayers": [
-                3,
-                5
+                5,
+                3
             ],
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 1.5,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 1067,
-                "y": 2136
+                "x": 964.6666666666665,
+                "y": 1220
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -457,6 +458,17 @@
                 "y": 80
             }
         },
+        "public/assets/maps/m_04x05/house-01.json": {
+            "expandedObjectLayers": [
+                3
+            ],
+            "scale": 1.5,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 155.33333333333334,
+                "y": 156.66666666666666
+            }
+        },
         "public/assets/maps/m_04x05/karen-home.json": {
             "expandedObjectLayers": [
                 3
@@ -464,8 +476,8 @@
             "scale": 1.4042187499999998,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 118.57126961166128,
-                "y": 160.23144542116393
+                "x": 148.8372093023256,
+                "y": 159.51930566373653
             }
         },
         "public/assets/maps/m_04x05/macron-home.json": {
@@ -497,8 +509,8 @@
             "scale": 1.1518749999999998,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 235.26858383071087,
-                "y": 458.3830710797613
+                "x": 235.26858383071084,
+                "y": 312.53391209983727
             }
         },
         "public/assets/maps/m_04x05/trump-inn-f2.json": {
@@ -896,7 +908,7 @@
     },
     "last.externalTilesetPath": "C:/Personal/projects/web/game_02/public/assets",
     "last.imagePath": "C:/Personal/projects/web/game_02/public/assets/tiles",
-    "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates/plants",
+    "last.objectTemplatePath": "C:/Personal/projects/web/game_02/public/assets/templates/items",
     "last.worldFilePath": "C:/Personal/projects/web/game_02/public/assets/maps",
     "loadedWorlds": [
         "C:/Personal/projects/web/game_02/public/assets/maps/main.world"
@@ -910,24 +922,23 @@
     "map.width": 20,
     "openFiles": [
         "public/assets/maps/m/m_04x05.json",
-        "public/assets/maps/m_04x05/home.json",
-        "public/assets/maps/m_04x05/trump-inn-f1.json"
+        "public/assets/maps/m_04x05/karen-home.json"
     ],
     "project": "game_02.tiled-project",
-    "property.type": "string",
+    "property.type": "int",
     "recentFiles": [
+        "public/assets/maps/m_04x05/karen-home.json",
+        "public/assets/maps/m_04x05/house-01.json",
+        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/forest-01.json",
         "public/assets/maps/_m_00x00.json",
         "public/assets/maps/m_04x05/home.json",
-        "public/assets/maps/m_04x05/karen-home.json",
         "public/assets/maps/m_04x05/trump-inn-f1.json",
-        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m_04x05/macron-home.json",
         "public/assets/maps/m_04x05/musk-home.json",
         "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m_04x05/xi-home.json",
-        "public/assets/maps/m/m_00x00.json",
-        "public/assets/maps/m_04x05.json"
+        "public/assets/maps/m/m_00x00.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
