@@ -48,7 +48,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/tiles.tsj"
+     "source":"..\/..\/tiles.tsj"
     },
  "type":"template"
 }

@@ -56,7 +56,7 @@
                 {
                  "id":6,
                  "name":"bed",
-                 "template":"..\/..\/templates\/bed.tj",
+                 "template":"..\/..\/templates\/items\/bed.tj",
                  "x":128,
                  "y":128
                 }],

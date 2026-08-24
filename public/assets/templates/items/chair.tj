@@ -38,7 +38,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/props.tsj"
+     "source":"..\/..\/props.tsj"
     },
  "type":"template"
 }

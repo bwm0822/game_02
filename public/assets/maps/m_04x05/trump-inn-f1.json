@@ -111,27 +111,27 @@
                 {
                  "height":48,
                  "id":54,
-                 "template":"..\/..\/templates\/table.tj",
+                 "template":"..\/..\/templates\/items\/table.tj",
                  "width":96,
                  "x":192,
                  "y":448
                 }, 
                 {
                  "id":55,
-                 "template":"..\/..\/templates\/cabinet.tj",
+                 "template":"..\/..\/templates\/items\/cabinet.tj",
                  "x":32,
                  "y":64
                 }, 
                 {
                  "id":56,
-                 "template":"..\/..\/templates\/cabinet.tj",
+                 "template":"..\/..\/templates\/items\/cabinet.tj",
                  "x":96,
                  "y":64
                 }, 
                 {
                  "height":48,
                  "id":58,
-                 "template":"..\/..\/templates\/table.tj",
+                 "template":"..\/..\/templates\/items\/table.tj",
                  "width":128,
                  "x":32,
                  "y":128
@@ -144,7 +144,7 @@
                          "type":"string",
                          "value":"[{\"x\":-16,\"y\":48},{\"x\":16,\"y\":48}]"
                         }],
-                 "template":"..\/..\/templates\/stove.tj",
+                 "template":"..\/..\/templates\/items\/stove.tj",
                  "type":"stove",
                  "x":224,
                  "y":64
@@ -152,7 +152,7 @@
                 {
                  "height":48,
                  "id":71,
-                 "template":"..\/..\/templates\/table.tj",
+                 "template":"..\/..\/templates\/items\/table.tj",
                  "width":96,
                  "x":352,
                  "y":448
@@ -167,7 +167,7 @@
                 {
                  "height":48,
                  "id":81,
-                 "template":"..\/..\/templates\/table.tj",
+                 "template":"..\/..\/templates\/items\/table.tj",
                  "width":96,
                  "x":192,
                  "y":320
@@ -175,7 +175,7 @@
                 {
                  "height":48,
                  "id":84,
-                 "template":"..\/..\/templates\/table.tj",
+                 "template":"..\/..\/templates\/items\/table.tj",
                  "width":96,
                  "x":352,
                  "y":320
@@ -189,21 +189,21 @@
                          "type":"int",
                          "value":-8
                         }],
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":192,
                  "y":400
                 }, 
                 {
                  "id":95,
                  "name":"sit-2",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":256,
                  "y":400
                 }, 
                 {
                  "id":96,
                  "name":"sit-3",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":352,
                  "y":400
                 },
@@ -211,35 +211,35 @@
                 {
                  "id":97,
                  "name":"sit-4",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":416,
                  "y":400
                 }, 
                 {
                  "id":98,
                  "name":"sit-5",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":192,
                  "y":272
                 }, 
                 {
                  "id":99,
                  "name":"sit-6",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":256,
                  "y":272
                 }, 
                 {
                  "id":100,
                  "name":"sit-7",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":352,
                  "y":272
                 }, 
                 {
                  "id":101,
                  "name":"sit-8",
-                 "template":"..\/..\/templates\/chair.tj",
+                 "template":"..\/..\/templates\/items\/chair.tj",
                  "x":416,
                  "y":272
                 }, 

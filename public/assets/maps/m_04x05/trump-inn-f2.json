@@ -84,14 +84,14 @@
                  "height":64,
                  "id":193,
                  "name":"door",
-                 "template":"..\/..\/templates\/door.tj",
+                 "template":"..\/..\/templates\/items\/door.tj",
                  "width":64,
                  "x":224,
                  "y":320
                 }, 
                 {
                  "id":202,
-                 "template":"..\/..\/templates\/bed.tj",
+                 "template":"..\/..\/templates\/items\/bed.tj",
                  "type":"bed",
                  "x":32,
                  "y":128
@@ -100,7 +100,7 @@
                  "height":64,
                  "id":203,
                  "name":"door",
-                 "template":"..\/..\/templates\/door.tj",
+                 "template":"..\/..\/templates\/items\/door.tj",
                  "width":64,
                  "x":64,
                  "y":320
@@ -108,7 +108,7 @@
                 {
                  "id":204,
                  "name":"bed",
-                 "template":"..\/..\/templates\/bed.tj",
+                 "template":"..\/..\/templates\/items\/bed.tj",
                  "type":"bed",
                  "x":192,
                  "y":128

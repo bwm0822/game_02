@@ -1,29 +1,24 @@
 { "object":
     {
-     "gid":9,
-     "height":48,
-     "id":28,
+     "gid":60,
+     "height":64,
+     "id":69,
      "name":"",
      "properties":[
             {
              "name":"gt",
              "type":"int",
-             "value":16
-            }, 
-            {
-             "name":"weight",
-             "type":"int",
-             "value":-1
+             "value":32
             }],
      "rotation":0,
-     "type":"item",
+     "type":"stove",
      "visible":true,
      "width":64
     },
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/props.tsj"
+     "source":"..\/..\/32x32GridItemsAll.tsj"
     },
  "type":"template"
 }
