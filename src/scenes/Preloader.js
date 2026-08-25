@@ -117,7 +117,6 @@ export class Preloader extends Scene
         this.load.json('skill', 'json/ability.json');
         this.load.json('sk_tree', 'json/ab_tree.json');
         this.load.json('world', 'maps/main.world');
-        this.load.image('edgeArrow', 'textures/cartography/arrowHead.png');
 
         // audios
         this.load.audio('doorClose', 'audios/scene/doorClose_1.ogg');

@@ -127,6 +127,17 @@ export class COM_Action extends Com
     {
         const {bb,root,gw} = this.ctx;
 
+        // stop() 只是設旗標，這裡要在「開始移動這一步之前」就攔下來，
+        // 不然旗標設定的當下如果已經跑完上一步，還是會多走一步才停（下面 159 行那個檢查點太晚）
+        if(bb.path.stop)
+        {
+            root.clearPath?.();
+            bb.cACT.st='stopped';
+            if(root.isPlayer) {root.updatePath?.();}
+            else if(DEBUG.path) {root.updateDebugPath?.();}
+            return;
+        }
+
         bb.cACT.st='moving';
 
         if(bb.path.pts.length===0)

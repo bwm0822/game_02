@@ -5,8 +5,7 @@ import { MainMenu } from './scenes/MainMenu';
 import { Preloader } from './scenes/Preloader';
 import { UI } from './scenes/UI';
 import { Top } from './scenes/Top';
-import { GameMap } from './scenes/GameMap';
-import { GameArea } from './scenes/GameArea';
+import { GameScene } from './scenes/GameScene';
 import UIPlugin from 'phaser3-rex-plugins/templates/ui/ui-plugin.js';
 import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
 import TextTypingPlugin from 'phaser3-rex-plugins/plugins/texttyping-plugin.js';
@@ -87,8 +86,7 @@ const config = {
         Preloader,
         MainMenu,
         Game,
-        GameMap,
-        GameArea,
+        GameScene,
         UI,
         Top,
     ]

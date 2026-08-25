@@ -3,23 +3,57 @@ import Map from '../manager/map.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
 import Pickup from '../items/pickup.js'
-import {GM,UI,OCCLUDE_TBL} from '../core/setting.js'
+import {GM,UI,GS,OCCLUDE_TBL} from '../core/setting.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
 import UiMark from '../ui/uimark.js'
 import UiCursor from '../ui/uicursor.js'
+import UiTime from '../ui/uitime.js'
 import TimeSystem from '../systems/time.js'
 import AudioManager from '../manager/audio.js'
 import {GameObject} from '../core/gameobject.js'
 import {MiniMap} from '../manager/minimap.js'
+import ScheduleManager from '../manager/schedule.js'
+import {Player} from '../roles/player.js'
 
+
+// 依當下時鐘小時決定環境光顏色（0~23 對應 lutAmbient 的 index）
+let lutAmbient = [
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333    ,
+    0x666666	,// 0x333333	,
+    0x666666	,
+    0x999999	,
+    0xcccccc	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xffffff	,
+    0xf0f0f0	,
+    0xcccccc	,
+    0x999999	,
+    0x666666	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    0x666666	,// 0x333333	,
+    ]
 
 export class GameScene extends Scene
 {
-    constructor (name)
+    constructor ()
     {
-        super(name);
+        console.log('[GameScene]');
+        super('GameScene');
     }
+
+    get mapName() {return this._data.map;}
 
     init(data) 
     {
@@ -32,7 +66,6 @@ export class GameScene extends Scene
         this.cameraMove();
         this._refreshCursor();
         this._checkOcclusion();
-        this._checkMapEdge();
     }
 
     _checkOcclusion()
@@ -86,25 +119,30 @@ export class GameScene extends Scene
         if(!this._worldMap) {return;}
 
         const cols = this.map.map.width, rows = this.map.map.height;
+        // frame 對照 icons/cursors_atlas.json 的座標換算成 cursors spritesheet(33x33,margin 1,14 欄) 的 index：
+        // arrow_n=1, arrow_s=2, arrow_e=0, arrow_w=29
         const dirCfg = {
-            t: {angle:0,   tiles:()=>Array.from({length:cols},(_,tx)=>[tx,0])},
-            b: {angle:180, tiles:()=>Array.from({length:cols},(_,tx)=>[tx,rows-1])},
-            l: {angle:-90, tiles:()=>Array.from({length:rows},(_,ty)=>[0,ty])},
-            r: {angle:90,  tiles:()=>Array.from({length:rows},(_,ty)=>[cols-1,ty])},
+            t: {frame:1,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,0])},
+            b: {frame:2,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,rows-1])},
+            l: {frame:29, tiles:()=>Array.from({length:rows},(_,ty)=>[0,ty])},
+            r: {frame:0,  tiles:()=>Array.from({length:rows},(_,ty)=>[cols-1,ty])},
         };
 
         for(const dir in dirCfg)
         {
             if(!this._findAdjacentMap(dir)) {continue;}
 
-            const {angle,tiles} = dirCfg[dir];
+            const {frame,tiles} = dirCfg[dir];
             tiles().forEach(([tx,ty])=>{
                 if(this.map.getWeightByTile(tx,ty)===0) {return;}   // 碰撞格不放箭頭
                 const {x,y} = this.map.tileToWorld(tx,ty);
-                this.add.image(x,y,'edgeArrow')
+                const arrow = this.add.image(x,y,'cursors',frame)
                     .setDisplaySize(32,32)
-                    .setAngle(angle)
-                    .setDepth(1);   // 比 tile layer(depth 0)高，但比所有角色/物件(depth=y座標)都低
+                    .setDepth(1)   // 比 tile layer(depth 0)高，但比所有角色/物件(depth=y座標)都低
+                    .setAlpha(0.5)
+                    .setInteractive();
+                arrow.on('pointerover', ()=>arrow.setAlpha(1));
+                arrow.on('pointerout', ()=>arrow.setAlpha(0.5));
             });
         }
     }
@@ -187,8 +225,12 @@ export class GameScene extends Scene
         }
     }
 
-    async create ({diagonal,classType,weight})
+    async create ()
     {
+        this.dynGroup = this.physics.add.group();
+        this.staGroup = this.physics.add.staticGroup();
+        GS.mode = GM.MODE.NORMAL;
+
         dlog(T.SCENE)('[2] create')
         this._dbgPos = null;
         this._graphics = null;
@@ -209,12 +251,12 @@ export class GameScene extends Scene
         this.initUI();
         this.initAmbient(this._data.ambient);
 
-        await new Map(this).createMap(this._data.map, diagonal, weight);
+        await new Map(this).createMap(this._data.map, true);
         this._worldMap = this._findWorldMap(this._data.map);
         this._showEdgeArrows();
         await MiniMap.init(this);
         this.createRuntime();
-        this.setPosition(classType);
+        this.setPosition(Player);
         if(this._worldMap)
         {
             const [tx,ty] = this.map.worldToTile(GM.player.x, GM.player.y);
@@ -230,6 +272,37 @@ export class GameScene extends Scene
         AudioManager.bgmStart();
 
         this.log();
+
+        this.process();
+    }
+
+    async process()
+    {
+        await GM.player.process({skipTurnStart:true});
+        this._checkMapEdge();
+        await TimeSystem.inc();
+
+        while(true)
+        {
+            if(GS.mode===GM.MODE.NORMAL)
+            {
+                const playerProcess = GM.player.process().then(()=>this._checkMapEdge());
+                const others = this.roles.filter(role=>!role.isPlayer).map(role=>role.process());
+                const rs = await Promise.allSettled([playerProcess, ...others]);
+                // console.log(rs);
+            }
+            else
+            {
+                for(let i=0;i<this.roles.length;i++)
+                {
+                    if(this.roles[i].isPlayer) {continue;}
+                    await this.roles[i].process();
+                }
+                await GM.player.process();
+                this._checkMapEdge();
+            }
+            await TimeSystem.inc();
+        }
     }
 
     log()
@@ -253,7 +326,7 @@ export class GameScene extends Scene
 
     getAmbientColor(time)
     {
-        return 0x808080;
+        return lutAmbient[time.h];
     }
 
     createRuntime()
@@ -278,7 +351,8 @@ export class GameScene extends Scene
 
     initSchedule()
     {
-        // define in GameArea.js
+        ScheduleManager.init(this, this.mapName);
+        TimeSystem.register(ScheduleManager.update.bind(ScheduleManager));
     }
 
     cameraMove()
@@ -405,10 +479,13 @@ export class GameScene extends Scene
         Record.saveGame();
     }
 
-    initUI() 
+    initUI()
     {
         UiCursor.set();
         new UiMark(this);
+        Ui.on(UI.TAG.MAIN);
+        Ui.on(UI.TAG.EFFECT)
+        TimeSystem.register(UiTime.updateTime.bind(UiTime))
     }
 
     processInput()
@@ -587,7 +664,7 @@ export class GameScene extends Scene
     {
         this.save();
         Ui.closeAll(GM.UI_ALL);
-        this.scene.start(config.map=='map'?'GameMap':'GameArea',config);
+        this.scene.start('GameScene',config);
     }
 
     gameOver()
@@ -703,6 +780,7 @@ export class GameScene extends Scene
                 .on('scene', (config)=>{
                     if(this._transitioning) {return;}
                     this._transitioning = true;
+                    GM.player.stop();
                     Ui.get(UI.TAG.CHANGESCENE).start(()=>{this.gotoScene(config);})
                 })
                 .on('gameover',()=>{this.gameOver();})

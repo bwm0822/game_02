@@ -87,7 +87,7 @@ nty = 1;                                        // 跨越軸：鄰圖內側第 1
 
 ## 4. 素材
 
-- `edgeArrow`（[Preloader.js](../src/scenes/Preloader.js)）：`public/assets/textures/cartography/arrowHead.png`，手繪地圖風格箭頭。專案裡另外還有一個 `'arrow'`（`roles_64x64/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。
+- 箭頭圖示用 `cursors` spritesheet（`icons/cursors.png`，Preloader 已載入）依方向挑對應 frame：`t`=1(`arrow_n`)、`b`=2(`arrow_s`)、`l`=29(`arrow_w`)、`r`=0(`arrow_e`)——frame index 是照 `icons/cursors_atlas.json` 的座標換算成 spritesheet(33x33、margin 1、14 欄) 位置算出來的。專案裡另外還有一個 `'arrow'`（`roles_64x64/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。舊的 `edgeArrow`（`textures/cartography/arrowHead.png`，靠 `.setAngle()` 旋轉單一圖案）已改用這套方向專屬 frame 取代，不再載入。
 - 箭頭 `setDisplaySize(32,32)`、`setDepth(1)`——比 tile layer（depth 預設 0）高、比所有角色/物件（`GameObject.updateDepth()` 用 `depth = this.y`，見 [gameobject.js:345](../src/core/gameobject.js#L345)）都低，維持在地面上不蓋到任何東西。
 
 ## 5. 除錯踩過的坑（照時間順序）

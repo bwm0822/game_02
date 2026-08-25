@@ -69,7 +69,7 @@ export class UI extends Scene
     uiEvent()
     {
         console.log('UI_event');
-        const area = this.scene.get('GameArea');
+        const area = this.scene.get('GameScene');
         area.events
             .off('stop_ui').on('stop_ui', ()=>{this.stop();})
     }

@@ -32,7 +32,7 @@ export class Game extends Scene
         if(Record.game.pos) {config.pos = Record.game.pos;}
         else {config.port = Record.game.default;}
 
-        this.scene.start(Record.game.map=='map'?'GameMap':'GameArea',config);
+        this.scene.start('GameScene',config);
     }
 
 

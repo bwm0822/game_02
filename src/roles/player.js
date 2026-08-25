@@ -168,7 +168,7 @@ export class Player extends Role
     stop()
     {
         // this.emit('clearPath');
-        this.bb.path.stop = true; 
+        if(this.bb.path) {this.bb.path.stop = true;}
     }
 
     async process({skipTurnStart=false}={})
