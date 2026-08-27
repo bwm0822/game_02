@@ -15,6 +15,7 @@ import {GameObject} from '../core/gameobject.js'
 import {MiniMap} from '../manager/minimap.js'
 import ScheduleManager from '../manager/schedule.js'
 import {Player} from '../roles/player.js'
+import Port from '../items/port.js'
 
 
 // 依當下時鐘小時決定環境光顏色（0~23 對應 lutAmbient 的 index）
@@ -113,38 +114,14 @@ export class GameScene extends Scene
         return world?.maps.find(m=>m.fileName===`${mapName}.json`);
     }
 
-    // 在有鄰圖的邊界上，每一格可通行的 tile 都顯示箭頭，提示玩家可以往該方向走到下一張圖
-    _showEdgeArrows()
+    // 地圖四個角同時符合兩個方向的邊界條件(例如左上角 tx<=0 也 ty<=0)，乾脆設成不可走(weight=0)，
+    // 玩家永遠站不到那格，就不用煩惱出口物件該建在哪個方向、會不會兩個方向都建、疊在一起
+    _blockCorners()
     {
-        if(!this._worldMap) {return;}
-
         const cols = this.map.map.width, rows = this.map.map.height;
-        // frame 對照 icons/cursors_atlas.json 的座標換算成 cursors spritesheet(33x33,margin 1,14 欄) 的 index：
-        // arrow_n=1, arrow_s=2, arrow_e=0, arrow_w=29
-        const dirCfg = {
-            t: {frame:1,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,0])},
-            b: {frame:2,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,rows-1])},
-            l: {frame:29, tiles:()=>Array.from({length:rows},(_,ty)=>[0,ty])},
-            r: {frame:0,  tiles:()=>Array.from({length:rows},(_,ty)=>[cols-1,ty])},
-        };
-
-        for(const dir in dirCfg)
-        {
-            if(!this._findAdjacentMap(dir)) {continue;}
-
-            const {frame,tiles} = dirCfg[dir];
-            tiles().forEach(([tx,ty])=>{
-                if(this.map.getWeightByTile(tx,ty)===0) {return;}   // 碰撞格不放箭頭
-                const {x,y} = this.map.tileToWorld(tx,ty);
-                const arrow = this.add.image(x,y,'cursors',frame)
-                    .setDisplaySize(32,32)
-                    .setDepth(1)   // 比 tile layer(depth 0)高，但比所有角色/物件(depth=y座標)都低
-                    .setAlpha(0.5)
-                    .setInteractive();
-                arrow.on('pointerover', ()=>arrow.setAlpha(1));
-                arrow.on('pointerout', ()=>arrow.setAlpha(0.5));
-            });
-        }
+        [[0,0],[cols-1,0],[0,rows-1],[cols-1,rows-1]].forEach(([tx,ty])=>{
+            this.map.setWeight(this.map.tileToWorld(tx,ty), 0);
+        });
     }
 
     // 依方向('l'/'r'/'t'/'b')找出 main.world 裡與目前地圖邊界相接的鄰圖
@@ -167,48 +144,53 @@ export class GameScene extends Scene
         });
     }
 
-    // 玩家走到地圖邊界時，依 main.world 判斷鄰圖並觸發場景切換
-    _checkMapEdge()
+    // 在有鄰圖的邊界上，每一格可通行的 tile 建立一個 Port 出口物件，點擊後切到鄰圖對應座標(不用走到才判斷)
+    _createEdgeExits()
     {
-        if(!this._worldMap || this._transitioning || !GM.player) {return;}
+        if(!this._worldMap) {return;}
 
-        const [tx,ty] = this.map.worldToTile(GM.player.x, GM.player.y);
-
-        // tile 沒變(含剛從鄰圖傳送過來、還站在邊界那格)就不重複判斷，避免來回彈
-        const same = this._lastTile && this._lastTile.tx===tx && this._lastTile.ty===ty;
-        this._lastTile = {tx,ty};
-        if(same) {return;}
+        this._blockCorners();
 
         const cols = this.map.map.width, rows = this.map.map.height;
-
-        let dir;
-        if(tx<=0) {dir='l';}
-        else if(tx>=cols-1) {dir='r';}
-        else if(ty<=0) {dir='t';}
-        else if(ty>=rows-1) {dir='b';}
-        else {return;}
-
-        const next = this._findAdjacentMap(dir);
-        if(!next) {return;}
-
-        // 跨越邊界的那一軸落在鄰圖邊界「內側一格」，避免一過去又站在邊界上；平行邊界的那一軸依世界座標換算
         const tw = this.map.map.tileWidth, th = this.map.map.tileHeight;
-        let ntx, nty;
-        if(dir==='b'||dir==='t')
-        {
-            ntx = tx + (this._worldMap.x-next.x)/tw;
-            nty = dir==='b' ? 1 : next.height/th-2;
-        }
-        else
-        {
-            nty = ty + (this._worldMap.y-next.y)/th;
-            ntx = dir==='r' ? 1 : next.width/tw-2;
-        }
+        // frame 對照 icons/cursors_atlas.json 的座標換算成 cursors spritesheet(33x33,margin 1,14 欄) 的 index：
+        // arrow_n=1, arrow_s=2, arrow_e=0, arrow_w=29
+        const dirCfg = {
+            t: {frame:1,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,0])},
+            b: {frame:2,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,rows-1])},
+            l: {frame:29, tiles:()=>Array.from({length:rows},(_,ty)=>[0,ty])},
+            r: {frame:0,  tiles:()=>Array.from({length:rows},(_,ty)=>[cols-1,ty])},
+        };
 
-        const pos = {x:ntx*tw+tw/2, y:nty*th+th/2};
-        const map = next.fileName.replace(/\.json$/,'');
+        for(const dir in dirCfg)
+        {
+            const next = this._findAdjacentMap(dir);
+            if(!next) {continue;}
 
-        this.events.emit('scene', {map, pos, ambient:this._data.ambient});
+            const map = next.fileName.replace(/\.json$/,'');
+            const {frame,tiles} = dirCfg[dir];
+
+            tiles().forEach(([tx,ty])=>{
+                if(this.map.getWeightByTile(tx,ty)===0) {return;}   // 碰撞格不放出口
+
+                // 跨越邊界的那一軸落在鄰圖邊界「內側一格」，避免一過去又站在邊界上；平行邊界的那一軸依世界座標換算
+                let ntx, nty;
+                if(dir==='b'||dir==='t')
+                {
+                    ntx = tx + (this._worldMap.x-next.x)/tw;
+                    nty = dir==='b' ? 1 : next.height/th-2;
+                }
+                else
+                {
+                    nty = ty + (this._worldMap.y-next.y)/th;
+                    ntx = dir==='r' ? 1 : next.width/tw-2;
+                }
+                const pos = {x:ntx*tw+tw/2, y:nty*th+th/2};
+
+                const {x,y} = this.map.tileToWorld(tx,ty);
+                new Port(this,x,y).init_runtime({icon:`cursors:${frame}`, map, dest:pos, ambient:this._data.ambient});
+            });
+        }
     }
 
     _refreshCursor()
@@ -241,7 +223,6 @@ export class GameScene extends Scene
         this._lastAct = null;
         this._transitioning = false;
         this._worldMap = null;
-        this._lastTile = null;
         this.roles = [];
         // this.entities = [];
         GameObject.gid=0;
@@ -253,15 +234,10 @@ export class GameScene extends Scene
 
         await new Map(this).createMap(this._data.map, true);
         this._worldMap = this._findWorldMap(this._data.map);
-        this._showEdgeArrows();
+        this._createEdgeExits();
         await MiniMap.init(this);
         this.createRuntime();
         this.setPosition(Player);
-        if(this._worldMap)
-        {
-            const [tx,ty] = this.map.worldToTile(GM.player.x, GM.player.y);
-            this._lastTile = {tx,ty};
-        }
         this.initSchedule();
         this.processInput();
 
@@ -279,16 +255,14 @@ export class GameScene extends Scene
     async process()
     {
         await GM.player.process({skipTurnStart:true});
-        this._checkMapEdge();
         await TimeSystem.inc();
 
         while(true)
         {
             if(GS.mode===GM.MODE.NORMAL)
             {
-                const playerProcess = GM.player.process().then(()=>this._checkMapEdge());
-                const others = this.roles.filter(role=>!role.isPlayer).map(role=>role.process());
-                const rs = await Promise.allSettled([playerProcess, ...others]);
+                const ps = this.roles.map(role=>role.process());
+                const rs = await Promise.allSettled(ps);
                 // console.log(rs);
             }
             else
@@ -299,7 +273,6 @@ export class GameScene extends Scene
                     await this.roles[i].process();
                 }
                 await GM.player.process();
-                this._checkMapEdge();
             }
             await TimeSystem.inc();
         }

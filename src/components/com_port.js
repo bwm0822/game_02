@@ -42,7 +42,9 @@ export class COM_Port extends Com
     {
         TimeSystem.inc();
         const {bb,send}=this.ctx;
-        send('scene',{map:bb.map, port:bb.port, ambient:bb.ambient});
+        // pos 優先於 port(GameScene.setPosition() 的規則)：地圖邊界的出口是直接算座標，沒有具名 port
+        // bb 用 dest 而非 pos 存目的地座標，避免跟 View 元件自己的 pos getter 撞名(見 port.js)
+        send('scene',{map:bb.map, port:bb.port, pos:bb.dest, ambient:bb.ambient});
     }
 
     //------------------------------------------------------

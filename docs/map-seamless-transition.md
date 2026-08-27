@@ -1,15 +1,17 @@
-# 地圖無縫邊界切換筆記
+# 地圖邊界切換筆記
 
-修改地圖邊界轉場（`main.world`、`GameScene.js` 的 `_checkMapEdge` 相關方法）之前先看這份筆記。涵蓋設計決策、Tiled World 檔案用法、程式架構、以及除錯過程中踩過的坑。
+修改地圖邊界轉場（`main.world`、`GameScene.js` 的 `_createEdgeExits`/`_findAdjacentMap` 相關方法、`items/port.js`）之前先看這份筆記。涵蓋設計決策、Tiled World 檔案用法、程式架構、以及除錯過程中踩過的坑。
+
+> ⚠️ **架構已改版**：原本「玩家走到邊界 tile 自動偵測切換」（`_checkMapEdge()`，每幀/每回合輪詢玩家座標)的做法已經**整個拿掉**，改成「在邊界每個可走的 tile 建立一個 `Port` 出口物件，玩家要點擊才會觸發切換」（見 §1/§3 新版說明)。§5 的除錯記錄大部分是針對**舊版**（輪詢自動偵測)踩過的坑，原理（座標計算、競態防護)大多還適用，但引用的方法名稱/呼叫時機已經對不上目前程式碼，讀的時候要對照目前原始碼、不要照抄行號。
 
 ## 1. 設計決策
 
-**目標**：玩家走到地圖邊緣時自動切換到相鄰地圖，不用透過 Port 物件手動互動。
+**目標**：玩家走到地圖邊緣時，出現可點擊的出口，點下去切換到相鄰地圖對應座標——**改版後用點擊觸發**（原本是走到邊界自動觸發，不用點擊；改版原因：自動觸發衍生出「動畫跑完才判定 vs 判定太早」「觸發後角色還會多走幾步」「地圖四個角同時符合兩個方向」等一系列時機/邊界問題，改用點擊式的 `Port` 物件可以直接重用既有的互動系統，不用自己重新發明一套觸發時機)。
 
 **範圍界定**（刻意不做的事，避免過度工程）：
 - **場景切換機制不變**：仍然是 `scene.start()` 整個 Scene 重啟 + `UiChangeScene` 黑幕淡入，**不是**同一個 Scene 內部換資料的真無縫（那個方案需要改 `Map` 的 teardown、camera 跨圖渲染等，工作量大很多，目前沒有採用）。
 - **一次只載入一張地圖**：不做兩張地圖同時渲染、camera 跨地圖的機制。
-- 「無縫」指的是**觸發方式**（走到邊界自動觸發，不用按互動鍵）+ **落點座標連續**（進新地圖後出現在對應位置，不是傳送到固定點），不是畫面完全不間斷。
+- **落點座標連續**：進新地圖後出現在對應位置（依 `main.world` 座標換算),不是傳送到固定點；這點改版後維持不變。
 
 ## 2. Tiled World 檔案（`public/assets/maps/main.world`）
 
@@ -35,31 +37,35 @@ Tiled 內建的 World 功能：純**編輯器輔助**用途，記錄多張地圖
 
 `x`/`y`/`width`/`height` 都是像素。village-01 在 `(0,0)`、forest-01 在 `(0,1280)`（南邊），兩張都 40×40 tile、32px 一格 = 1280×1280px，剛好無縫相接。
 
-## 3. 程式架構（`src/scenes/GameScene.js`）
+## 3. 程式架構（`src/scenes/GameScene.js` + `src/items/port.js`）
 
 ### 3.1 整體流程
 
 ```
-update() 每幀呼叫 _checkMapEdge()
-  → 玩家站在邊界 tile 且該方向有鄰圖
-  → 算出鄰圖 + 對應落點座標
-  → emit('scene', {map, pos, ambient})
+create() 時執行一次 _createEdgeExits()
+  → 對每個方向('l'/'r'/'t'/'b')先查有沒有鄰圖(_findAdjacentMap)，沒有就跳過整個方向
+  → 該方向邊界上每一個「可走的 tile」(weight!==0，角落已被 _blockCorners() 擋掉)
+    算出鄰圖 + 對應落點座標，建立一個 new Port(this,x,y).init_runtime({icon,map,pos,ambient,weight})
+  → 玩家點擊這個 Port 物件（跟點門、點樓梯同一套互動系統）
+  → COM_Port._enter() → emit('scene', {map, port, pos, ambient})
   → setEvent() 的 'scene' handler（統一入口，見 3.4）
   → UiChangeScene 黑幕淡入 → gotoScene(config)
-  → scene.start('GameArea', config)   ← 跟 Port 走同一條路，完全複用
-  → 新 Scene 的 create() → setPosition() 讀 this._data.pos（見 GameScene.js:381-395）
+  → scene.start('GameScene', config)
+  → 新 Scene 的 create() → setPosition() 讀 this._data.pos（見 GameScene.js 的 setPosition()）
 ```
 
-`setPosition()` 本來就有 `this._data.pos` 這個分支（給固定座標用），邊界系統直接餵座標進去，`gotoScene()`/`scene.start()` 完全不用改。
+跟舊版（`_checkMapEdge()` 輪詢)最大的差異：出口的「有沒有、通往哪裡」在 `create()` 當下就一次算完、變成實體物件，之後純粹靠玩家點擊觸發，`update()`/`process()` 完全不用再管地圖邊界的事。
 
 ### 3.2 關鍵方法
 
 | 方法 | 位置 | 用途 |
 |---|---|---|
-| `_findWorldMap(mapName)` | [GameScene.js:77](../src/scenes/GameScene.js#L77) | 依地圖檔名查 `main.world`，回傳該圖的 `{x,y,width,height}` |
-| `_findAdjacentMap(dir)` | [GameScene.js:113](../src/scenes/GameScene.js#L113) | 依方向（`'l'/'r'/'t'/'b'`）找矩形邊界剛好相接、且有重疊的鄰圖 |
-| `_checkMapEdge()` | [GameScene.js:133](../src/scenes/GameScene.js#L133) | 每幀檢查玩家是否站在邊界 tile，是則算落點座標並 `emit('scene', ...)` |
-| `_showEdgeArrows()` | [GameScene.js:84](../src/scenes/GameScene.js#L84) | `create()` 時執行一次，在有鄰圖的邊界上、每個可通行 tile 放一個方向箭頭提示 |
+| `_findWorldMap(mapName)` | `GameScene.js` `_findWorldMap` | 依地圖檔名查 `main.world`，回傳該圖的 `{x,y,width,height}` |
+| `_findAdjacentMap(dir)` | `GameScene.js` `_findAdjacentMap` | 依方向（`'l'/'r'/'t'/'b'`）找矩形邊界剛好相接、且有重疊的鄰圖 |
+| `_blockCorners()` | `GameScene.js` `_blockCorners` | 把地圖 4 個角的 tile weight 設成 0（不可走），避免角落同時符合兩個方向、出口物件重疊 |
+| `_createEdgeExits()` | `GameScene.js` `_createEdgeExits` | `create()` 時執行一次，在有鄰圖的邊界上、每個可通行 tile 建立一個 `Port` 出口物件 |
+| `Port.init_runtime({icon,map,port,pos,ambient,weight})` | `src/items/port.js` | 讓 `Port` 可以像 `Pickup` 一樣用程式動態建立（不用先在 Tiled 裡放物件），`icon` 是 `"spritesheet:frame"` 字串（例如 `"cursors:1"`），會直接設 `bb.key`/`bb.frame`，繞過 Tiled tileset 的 gid 系統 |
+| `COM_Port._enter()` | `src/components/com_port.js` | 點擊觸發，`send('scene',{map,port,pos,ambient})`——多送一個 `pos`，讓「沒有具名 port、只有算出來的座標」這種出口也能用同一套機制 |
 
 ### 3.3 落點座標怎麼算
 
@@ -71,24 +77,25 @@ ntx = tx + (this._worldMap.x - next.x) / tw;   // 平行軸：世界座標換算
 nty = 1;                                        // 跨越軸：鄰圖內側第 1 格（不是第 0 格）
 ```
 
+這段公式改版前後沒變，只是舊版在玩家「走到」邊界的當下才算一次，新版在 `create()` 時就對每個邊界 tile 各算一次、直接烤進 `Port` 物件的 `bb.pos`。
+
 ### 3.4 轉場統一入口（防競態）
 
-`setEvent()`（[GameScene.js:682](../src/scenes/GameScene.js#L682)）裡的 `'scene'` event handler 是**所有**轉場來源（邊界自動偵測 + Port 手動互動）共用的唯一入口，用 `this._transitioning` 擋住重複觸發：
+`setEvent()`（`GameScene.js` 的 `setEvent()`）裡的 `'scene'` event handler 是**所有**轉場來源（邊界出口 Port + 一般門/樓梯 Port）共用的唯一入口，用 `this._transitioning` 擋住重複觸發，同時呼叫 `GM.player.stop()` 避免玩家點擊當下手上還有排隊中的移動路徑繼續跑：
 
 ```js
 .on('scene', (config)=>{
     if(this._transitioning) {return;}
     this._transitioning = true;
+    GM.player.stop();
     Ui.get(UI.TAG.CHANGESCENE).start(()=>{this.gotoScene(config);})
 })
 ```
 
-守衛**只能放在這裡**，不能放在 `_checkMapEdge()` 自己身上（見 5.5 為什麼）。
-
 ## 4. 素材
 
-- 箭頭圖示用 `cursors` spritesheet（`icons/cursors.png`，Preloader 已載入）依方向挑對應 frame：`t`=1(`arrow_n`)、`b`=2(`arrow_s`)、`l`=29(`arrow_w`)、`r`=0(`arrow_e`)——frame index 是照 `icons/cursors_atlas.json` 的座標換算成 spritesheet(33x33、margin 1、14 欄) 位置算出來的。專案裡另外還有一個 `'arrow'`（`roles_64x64/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。舊的 `edgeArrow`（`textures/cartography/arrowHead.png`，靠 `.setAngle()` 旋轉單一圖案）已改用這套方向專屬 frame 取代，不再載入。
-- 箭頭 `setDisplaySize(32,32)`、`setDepth(1)`——比 tile layer（depth 預設 0）高、比所有角色/物件（`GameObject.updateDepth()` 用 `depth = this.y`，見 [gameobject.js:345](../src/core/gameobject.js#L345)）都低，維持在地面上不蓋到任何東西。
+- 出口圖示用 `cursors` spritesheet（`icons/cursors.png`，Preloader 已載入）依方向挑對應 frame：`t`=1(`arrow_n`)、`b`=2(`arrow_s`)、`l`=29(`arrow_w`)、`r`=0(`arrow_e`)——frame index 是照 `icons/cursors_atlas.json` 的座標換算成 spritesheet(33x33、margin 1、14 欄) 位置算出來的。專案裡另外還有一個 `'arrow'`（`roles_64x64/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。
+- 圖示走 `Port`/`ItemView` 的標準顯示+互動系統，hover 時的高亮是 `View._addListener()` 內建的 outline 效果（`rexOutlinePipeline`），跟遊戲裡其他可互動物件（門、樓梯、NPC）一致，**不是**自己刻的半透明/hover 特效（舊版曾經自己刻過 `setAlpha(0.5)` + hover 變不透明，改版後拿掉了，統一交給既有的互動系統處理）。
 
 ## 5. 除錯踩過的坑（照時間順序）
 

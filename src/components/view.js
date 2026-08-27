@@ -310,9 +310,10 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     // Z depth
     //--------------------------------------------------
-    _updateDepth()
+    _updateDepth(depth)
     {
-        this._root.updateDepth();
+        if(depth != null) {this._root.setDepth(depth);}
+        else {this._root.updateDepth();}
         return this;
     }
 
@@ -530,14 +531,14 @@ class View extends Phaser.GameObjects.Container
     //--------------------------------------------------
     // 初始化
     //--------------------------------------------------
-    _init(modify)
+    _init(modify, depth, alpha)
     {
         this._setData()
             ._setAnchor(modify)
-            ._addShape()
+            ._addShape(alpha)
             ._addPhysics()
             ._addGrid()
-            ._updateDepth()
+            ._updateDepth(depth)
             ._addWeight()
             ._addListener()
 
@@ -560,7 +561,7 @@ class View extends Phaser.GameObjects.Container
         return this;
     }
 
-    _addShape() {return this;}
+    _addShape(alpha) {return this;}
 
     //--------------------------------------------------
     // public
@@ -572,8 +573,8 @@ class View extends Phaser.GameObjects.Container
         this._root = root;
 
         // 初始化
-        const {modify} = config;
-        this._init(modify);
+        const {modify, depth, alpha} = config;
+        this._init(modify, depth, alpha);
 
         // 算出 grid 所佔的 tile，尋路 會用到
         const{bb} = this.ctx;
@@ -606,7 +607,7 @@ class View extends Phaser.GameObjects.Container
 
 export class ItemView extends View
 {
-    _addShape()
+    _addShape(alpha)
     {
         // console.log('_addShape=',this.key,this.frame,this.wid,this.hei)
 
@@ -659,6 +660,8 @@ export class ItemView extends View
 
             // set flipX
             if(this.flipX) {this._shape.scaleX *= -1;}
+
+            if(alpha!=null) {this._shape.setAlpha(alpha);}
         }
 
         return this;
