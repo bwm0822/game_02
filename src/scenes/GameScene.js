@@ -2,7 +2,6 @@
 import Map from '../manager/map.js'
 import Record from '../infra/record.js'
 import QuestManager from  '../manager/quest.js'
-import Pickup from '../items/pickup.js'
 import {GM,UI,GS,OCCLUDE_TBL} from '../core/setting.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
@@ -603,8 +602,10 @@ export class GameScene extends Scene
 
     save()
     {
-        Record.game.pos = GM.player.pos;   
-        if(Record.game[this._data.map]?.runtime) {Record.game[this._data.map].runtime = [];}
+        Record.game.pos = GM.player.pos;
+        // 先清空 runtime，下面 go.save?.() 才會重新 push 目前場上還有的物件；不清的話同一次
+        // 進地圖存檔存好幾次，每次都疊加一份，離開再回來 createRuntime() 就會重複生成掉落物
+        if(Record.game.scenes?.[this._data.map]?.runtime) {Record.game.scenes[this._data.map].runtime = [];}
         // console.log('gos:',this.gos)
         // this.gos.forEach(go=>go.save?.())
         Object.values(this.gos).forEach(go=>go.save?.())
