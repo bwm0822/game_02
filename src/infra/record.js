@@ -34,7 +34,24 @@ export default class Record
 
     static saveGame()
     {
+        Record._pruneScenes();
         Utility.save(Record.game,'game');
+    }
+
+    // 存檔前清掉空的 scenes 資料：prefab/runtime 空了就刪掉該 key，
+    // 整個地圖的 scenes[mapName] 完全沒有任何 key（包含任務用的 qid 命名空間）才整個刪掉
+    static _pruneScenes()
+    {
+        const scenes = Record.game.scenes;
+        if(!scenes) {return;}
+
+        for(const mapName in scenes)
+        {
+            const s = scenes[mapName];
+            if(s.prefab && Object.keys(s.prefab).length===0) {delete s.prefab;}
+            if(s.runtime && s.runtime.length===0) {delete s.runtime;}
+            if(Object.keys(s).length===0) {delete scenes[mapName];}
+        }
     }
 
     static saveSetting()
@@ -50,21 +67,32 @@ export default class Record
     static getByUid(mapName, uid, qid)
     {
         if(qid) {return Record.game.scenes?.[mapName]?.[qid]?.[uid];}
-        else {return Record.game.scenes?.[mapName]?.prefab[uid];}
+        else {return Record.game.scenes?.[mapName]?.prefab?.[uid];}
     }
 
+    // _pruneScenes() 存檔時可能把 prefab/runtime 個別刪掉(地圖整個物件還在，只是空的
+    // key 被清掉)，所以這裡不能只檢查 scenes[mapName] 存不存在，prefab/runtime 也要各自補回來
     static setByUid(mapName, uid, value, qid)
     {
         if(!Record.game.scenes) { Record.game.scenes = {}; }
-        if(!Record.game.scenes[mapName]) { Record.game.scenes[mapName] = { prefab:{}, runtime:[] };}
-        if(qid && !Record.game.scenes[mapName][qid] ) { Record.game.scenes[mapName][qid] = {};}
-    
-        if(uid===-1) {Record.game.scenes[mapName].runtime.push(value); }
-        else 
+        if(!Record.game.scenes[mapName]) { Record.game.scenes[mapName] = {};}
+        const s = Record.game.scenes[mapName];
+        if(qid && !s[qid]) { s[qid] = {};}
+
+        if(uid===-1)
+        {
+            if(!s.runtime) {s.runtime = [];}
+            s.runtime.push(value);
+        }
+        else
         {
             // qid 代表是 quest id
-            if(qid) {Record.game.scenes[mapName][qid][uid] = value;}
-            else {Record.game.scenes[mapName].prefab[uid] = value;} 
+            if(qid) {s[qid][uid] = value;}
+            else
+            {
+                if(!s.prefab) {s.prefab = {};}
+                s.prefab[uid] = value;
+            }
         }
     }
 
