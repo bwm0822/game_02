@@ -341,11 +341,13 @@ export class GameObject extends Phaser.GameObjects.Container
     }
 
     // 儲存資料
-    save(data={}) 
-    { 
+    save(data={})
+    {
         for(let com of Object.values(this.coms)) {data = {...data,...com.save?.()}}
-        this._saveData(data); 
-        
+        // 沒有任何元件提供資料就不存：uid===-1 的物件會直接 push 進 runtime 陣列，
+        // 空物件也會被 push 進去，之後 createRuntime() 讀到會因為缺資料而崩潰
+        if(Object.keys(data).length===0) {return;}
+        this._saveData(data);
     }
 
     // 更新 Z depth
