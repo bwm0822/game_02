@@ -309,9 +309,9 @@ export class COM_Inventory extends COM_Storage
 
         const{bb}=this.ctx;
 
-        // 初始化資料
-        Object.assign(this._storage,Utility.toStorage(bb.meta?.storage));
-        this._equips = bb.meta?.equips??[];
+        // 初始化資料(role.json 的裝備/背包資料包在 inv 底下，不是 meta 頂層)
+        Object.assign(this._storage,Utility.toStorage(bb.meta?.inv?.storage));
+        this._equips = bb.meta?.inv?.equips??[];
         this._gold = bb.meta?.gold??0;
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)

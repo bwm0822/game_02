@@ -899,7 +899,7 @@
       }
     ]
   },
-  "rogue": {
+  "rogue-1": {
     "icon": "head-trump",
     "job": "rogue",
     "gold": 200,
@@ -947,6 +947,75 @@
     "inv": {
       "equips": [
         "sword_01"
+      ]
+    },
+    "attrs": {
+      "attack": 5,
+      "defense": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "rogue-2": {
+    "icon": "head-trump",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "rogue",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "corpse": {
+      "sprite": "rip",
+      "scale": 0.5,
+      "y": 32
+    },
+    "inv": {
+      "equips": [
+        "bow_01"
       ]
     },
     "attrs": {
