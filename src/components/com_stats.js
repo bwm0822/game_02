@@ -342,7 +342,7 @@ export class COM_Stats extends Com
 
         switch(dmg.type)
         {
-            case GM.CRI:
+            case GM.CRIT:
                 root.popup?.(`${'暴擊'} ${dmg.amount}`, '#f00', '#fff');
                 this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount); 
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
