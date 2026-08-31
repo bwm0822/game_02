@@ -620,6 +620,20 @@
                  "template":"..\/..\/templates\/port.tj",
                  "x":992,
                  "y":1600
+                }, 
+                {
+                 "id":173,
+                 "template":"..\/..\/templates\/roles\/rogues-1.tj",
+                 "type":"npc",
+                 "x":1216,
+                 "y":2368
+                }, 
+                {
+                 "id":175,
+                 "template":"..\/..\/templates\/roles\/rogues-2.tj",
+                 "type":"npc",
+                 "x":1088,
+                 "y":2464
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -628,7 +642,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":172,
+ "nextobjectid":176,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -649,6 +663,10 @@
         {
          "firstgid":202,
          "source":"..\/..\/group.tsj"
+        }, 
+        {
+         "firstgid":250,
+         "source":"..\/..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",

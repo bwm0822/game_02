@@ -1,0 +1,24 @@
+{ "object":
+    {
+     "gid":6,
+     "height":64,
+     "id":175,
+     "name":"",
+     "properties":[
+            {
+             "name":"id",
+             "type":"string",
+             "value":"rogue-2"
+            }],
+     "rotation":0,
+     "type":"npc",
+     "visible":true,
+     "width":32
+    },
+ "tileset":
+    {
+     "firstgid":1,
+     "source":"..\/..\/roles.tsj"
+    },
+ "type":"template"
+}
