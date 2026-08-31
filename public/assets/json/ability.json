@@ -65,6 +65,7 @@
   "slash": {
     "icon": "🗡️",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "斬擊",
       "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
@@ -77,6 +78,7 @@
   "thrust": {
     "icon": "📍",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "刺擊",
       "des": "直線突刺。無視目標 20% 物理防禦。"
@@ -89,6 +91,7 @@
   "whirlwind": {
     "icon": "🌪️",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "slash",
       "thrust"
@@ -105,6 +108,7 @@
   "snipe": {
     "icon": "🎯",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "狙擊",
       "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
@@ -116,7 +120,7 @@
   },
   "fireball": {
     "icon": "🔥",
-    "type": "spell",
+    "type": "active",
     "tag": "atk",
     "scope": "target",
     "cd": 3,
@@ -130,6 +134,7 @@
       "size": 25,
       "deg": -90
     },
+    "cast": "spell",
     "tw": {
       "lab": "火球術",
       "des": "投擲火球。造成基礎火屬性爆炸傷害。"
@@ -142,6 +147,7 @@
   "firewall": {
     "icon": "🧱",
     "type": "active",
+    "tag": "atk",
     "scope": "target",
     "cd": 3,
     "range": 5,
@@ -154,6 +160,7 @@
       "scl": 1,
       "deg": -45
     },
+    "cast": "spell",
     "tw": {
       "lab": "火牆術",
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"
@@ -166,6 +173,7 @@
   "combustion": {
     "icon": "🌋",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "fireball",
       "firewall"
@@ -182,6 +190,7 @@
   "meteorshower": {
     "icon": "☄️",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "combustion"
     ],
@@ -197,6 +206,7 @@
   "icebolt": {
     "icon": "❄️",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "冰箭術",
       "des": "單體冰錐。造成傷害並減速 30%。"
@@ -209,6 +219,7 @@
   "icewall": {
     "icon": "🧊",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "冰牆術",
       "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
@@ -221,6 +232,7 @@
   "deepfreeze": {
     "icon": "🥶",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "icebolt",
       "icewall"
@@ -237,6 +249,7 @@
   "blizzard": {
     "icon": "🌨️",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "deepfreeze"
     ],
@@ -252,6 +265,7 @@
   "poisondart": {
     "icon": "🐍",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "毒箭術",
       "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
@@ -264,6 +278,7 @@
   "poisonmist": {
     "icon": "🌫️",
     "type": "active",
+    "tag": "atk",
     "tw": {
       "lab": "毒霧術",
       "des": "在指定區域散佈致命毒氣。"
@@ -276,6 +291,7 @@
   "venomburst": {
     "icon": "🍄",
     "type": "active",
+    "tag": "atk",
     "refs": [
       "poisondart",
       "poisonmist"
@@ -292,6 +308,7 @@
   "heal": {
     "icon": "💖",
     "type": "active",
+    "tag": "heal",
     "tw": {
       "lab": "治療",
       "des": "恢復目標生命值。"
@@ -304,6 +321,7 @@
   "cure": {
     "icon": "🧪",
     "type": "active",
+    "tag": "heal",
     "tw": {
       "lab": "解毒",
       "des": "清除體內毒素。"
@@ -316,6 +334,7 @@
   "holylight": {
     "icon": "☀️",
     "type": "active",
+    "tag": "heal",
     "tw": {
       "lab": "聖光",
       "des": "移除 1 個負面狀態。"
@@ -328,6 +347,7 @@
   "purify": {
     "icon": "✨",
     "type": "active",
+    "tag": "heal",
     "refs": [
       "cure",
       "holylight"
@@ -344,6 +364,7 @@
   "strboost": {
     "icon": "💪",
     "type": "active",
+    "tag": "buff",
     "tw": {
       "lab": "力量增強",
       "des": "增加力量，可提升近戰傷害。"
@@ -356,6 +377,7 @@
   "agiboost": {
     "icon": "👟",
     "type": "active",
+    "tag": "buff",
     "tw": {
       "lab": "敏捷增強",
       "des": "增加敏捷，可提升閃避。"
@@ -368,6 +390,7 @@
   "intboost": {
     "icon": "🧠",
     "type": "active",
+    "tag": "buff",
     "tw": {
       "lab": "智力增強",
       "des": "增加智力，可提升法術效果。"

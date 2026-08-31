@@ -87,6 +87,7 @@ dist/           # 建置輸出（勿手動修改）
 - **總覽地圖（縮圖拼接）**：選單「地圖」頁籤（`PMap`）用 `scripts/minimap.js` 產生的各地圖縮圖，依 `main.world` 座標合成顯示（`MiniMap`），不是獨立設計的地圖；修改總覽地圖顯示或縮圖產生流程前請先參考 [docs/minimap-overview.md](docs/minimap-overview.md)
 - **存讀檔**：`Record.game.scenes` 分 `prefab`（Tiled 物件層、固定 uid）跟 `runtime`（動態建立、`uid===-1`，用陣列)兩種資料；修改存讀檔相關程式碼前請先參考 [docs/record-save-architecture.md](docs/record-save-architecture.md)
 - **戰鬥系統**：傷害公式在 `src/core/combat.js`（`computeDamage()`）、屬性計算在 `src/components/com_stats.js`（`getTotalStats()`）、技能資料為 `public/assets/json/ability.json`（`DB.ability()`，目前只有 `fireball`/`firewall` 有完整戰鬥數值，其餘是文案佔位）；修改戰鬥相關程式碼前請先參考 [docs/combat-architecture.md](docs/combat-architecture.md)
+- **Ability**：`ability.json` 跟 quest/dialog 一樣是產出檔，來源是 `xls/ability.xlsx`（多分頁：general/sword/archery/fire/ice/poison/support/enhancement），透過 `node scripts/ability.js` 產生（非 npm script）；xlsx 的 `meta` 欄位是物件字面量字串，轉檔時會展開合併進技能物件最上層（`cd`/`range`/`pow`/`flat`/`elm`/`src`/`sprite`/`cast` 等純量或物件欄位都走這裡），新增這類欄位優先塞進 `meta`、不要新開 xlsx 欄位（除非是 `icon`/`type`/`tag` 這種每筆都會填的簡單字串欄，才需要改 `scripts/ability.js` 的 `STR_COLS`）；程式編輯這份 xlsx 一律用 `exceljs` 寫入，不要用 `xlsx`（SheetJS），理由同 [quest-dialog-architecture.md §8](docs/quest-dialog-architecture.md) 提到的 `zeroHeight` corruption 問題
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
 - **`src/old/`**：廢棄程式碼，不可引用也不可修改

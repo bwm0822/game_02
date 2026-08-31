@@ -217,23 +217,23 @@ export class COM_Ability extends Com
         if(id) {this._ability = DB.ability(id);}
         else {id = this._id;}
         
-        if(this._ability.type===GM.ACTIVE) 
+        if(this._ability.tag===GM.HEAL)
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
             const amount = computeHealing(target, this._ability);
-            await   root.skill?.(this._ability);
-            root.heal?.(amount);
+            await   root.skill?.(this._ability);    // 播放技能動畫, com_disp.js
+            root.heal?.(amount);                    // 治療量, com_stats.js
             this._clrAbility();
             return true;
         }
-        else if(target && this._isInRange(target.pos))
+        else if(this._ability.tag===GM.ATK && target && this._isInRange(target.pos))
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
             this._showRange(false);
-            await root.attack?.(target,this._ability);
+            await root.attack?.(target,this._ability);  // 播放攻擊動畫, com_action.js
             this._clrAbility();
             return true;
-        } 
+        }
         return false;
     }
 

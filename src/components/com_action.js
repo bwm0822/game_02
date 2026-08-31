@@ -192,7 +192,7 @@ export class COM_Action extends Com
     {
         const onDamage = this._onDamage.bind(this, target, ability);
 
-        if(ability?.type==='spell')
+        if(ability?.cast==='spell')
         {
             await this._attack_Spell(target, onDamage, ability);
         }
