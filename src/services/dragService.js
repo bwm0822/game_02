@@ -75,7 +75,7 @@ export default class DragService
         }
         else if(!abilitySlot.isEmpty) // 點擊 AbilitySlot
         {
-            if(abilitySlot.dat.type === GM.ACTIVE) 
+            if(abilitySlot.dat.mode === GM.ACTIVE)
             {
                 abilitySlot.use();  // 使用技能
             }

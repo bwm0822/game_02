@@ -1,7 +1,7 @@
 {
   "steal": {
     "icon": "🧤",
-    "type": "active",
+    "mode": "active",
     "tag": "steal",
     "tw": {
       "lab": "偷竊",
@@ -14,7 +14,7 @@
   },
   "lockpick": {
     "icon": "🗝️",
-    "type": "active",
+    "mode": "active",
     "tag": "lockpick",
     "tw": {
       "lab": "開鎖",
@@ -27,7 +27,7 @@
   },
   "butcher": {
     "icon": "🔪",
-    "type": "active",
+    "mode": "active",
     "tag": "butcher",
     "tw": {
       "lab": "解剖",
@@ -40,7 +40,7 @@
   },
   "stealth": {
     "icon": "👤",
-    "type": "active",
+    "mode": "active",
     "tw": {
       "lab": "潛行",
       "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
@@ -52,7 +52,7 @@
   },
   "barter": {
     "icon": "💰",
-    "type": "active",
+    "mode": "active",
     "tw": {
       "lab": "討價還價",
       "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
@@ -64,7 +64,7 @@
   },
   "slash": {
     "icon": "🗡️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "斬擊",
@@ -77,7 +77,7 @@
   },
   "thrust": {
     "icon": "📍",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "刺擊",
@@ -90,7 +90,7 @@
   },
   "whirlwind": {
     "icon": "🌪️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "slash",
@@ -107,7 +107,7 @@
   },
   "snipe": {
     "icon": "🎯",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "狙擊",
@@ -120,7 +120,7 @@
   },
   "fireball": {
     "icon": "🔥",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "scope": "target",
     "cd": 3,
@@ -146,7 +146,7 @@
   },
   "firewall": {
     "icon": "🧱",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "scope": "target",
     "cd": 3,
@@ -172,7 +172,7 @@
   },
   "combustion": {
     "icon": "🌋",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "fireball",
@@ -189,7 +189,7 @@
   },
   "meteorshower": {
     "icon": "☄️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "combustion"
@@ -205,7 +205,7 @@
   },
   "icebolt": {
     "icon": "❄️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "冰箭術",
@@ -218,7 +218,7 @@
   },
   "icewall": {
     "icon": "🧊",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "冰牆術",
@@ -231,7 +231,7 @@
   },
   "deepfreeze": {
     "icon": "🥶",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "icebolt",
@@ -248,7 +248,7 @@
   },
   "blizzard": {
     "icon": "🌨️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "deepfreeze"
@@ -264,7 +264,7 @@
   },
   "poisondart": {
     "icon": "🐍",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "毒箭術",
@@ -277,7 +277,7 @@
   },
   "poisonmist": {
     "icon": "🌫️",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "tw": {
       "lab": "毒霧術",
@@ -290,7 +290,7 @@
   },
   "venomburst": {
     "icon": "🍄",
-    "type": "active",
+    "mode": "active",
     "tag": "atk",
     "refs": [
       "poisondart",
@@ -307,7 +307,7 @@
   },
   "heal": {
     "icon": "💖",
-    "type": "active",
+    "mode": "active",
     "tag": "heal",
     "tw": {
       "lab": "治療",
@@ -320,7 +320,7 @@
   },
   "cure": {
     "icon": "🧪",
-    "type": "active",
+    "mode": "active",
     "tag": "heal",
     "tw": {
       "lab": "解毒",
@@ -333,7 +333,7 @@
   },
   "holylight": {
     "icon": "☀️",
-    "type": "active",
+    "mode": "active",
     "tag": "heal",
     "tw": {
       "lab": "聖光",
@@ -346,7 +346,7 @@
   },
   "purify": {
     "icon": "✨",
-    "type": "active",
+    "mode": "active",
     "tag": "heal",
     "refs": [
       "cure",
@@ -363,7 +363,7 @@
   },
   "strboost": {
     "icon": "💪",
-    "type": "active",
+    "mode": "active",
     "tag": "buff",
     "tw": {
       "lab": "力量增強",
@@ -376,7 +376,7 @@
   },
   "agiboost": {
     "icon": "👟",
-    "type": "active",
+    "mode": "active",
     "tag": "buff",
     "tw": {
       "lab": "敏捷增強",
@@ -389,7 +389,7 @@
   },
   "intboost": {
     "icon": "🧠",
-    "type": "active",
+    "mode": "active",
     "tag": "buff",
     "tw": {
       "lab": "智力增強",

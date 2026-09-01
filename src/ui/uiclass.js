@@ -635,7 +635,7 @@ export class AbilityItem extends Pic
                 Ui.refreshAll();
             }
         }
-        else if(this.dat.type !== GM.PASSIVE)
+        else if(this.dat.mode !== GM.PASSIVE)
         {
             Ui.delayCall(() => {DragService.onAbilityDown(this);}, GM.PRESS_DELAY) ;
         }

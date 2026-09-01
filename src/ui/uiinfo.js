@@ -189,7 +189,7 @@ export default class UiInfo extends UiFrame
         const scene=this.scene;
         div && ui.uDiv.call(this,scene);
         const p = ui.uPanel.call(this,scene,{ext:{expand:true}});
-        ui.uBbc.call(p,scene,{text:ability.dat.type.lab()});
+        ui.uBbc.call(p,scene,{text:ability.dat.mode.lab()});
         p.addSpace();
         if(ability.dat.cd)
         {

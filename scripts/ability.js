@@ -1,7 +1,7 @@
 import XLSX from 'xlsx';
 import { writeFileSync } from 'fs';
 
-const STR_COLS = new Set(['icon', 'type', 'tag']);
+const STR_COLS = new Set(['icon', 'mode', 'tag']);
 const ARR_COLS = new Set(['refs', 'effects', 'procs']);
 
 function sheetToJson(ws) {
