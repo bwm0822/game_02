@@ -267,7 +267,11 @@ export default class Utility
     static fmt_Mod(mod)
     {
         let sign = function(val) {return val>0?'+':'';}
-        if(mod.a !== undefined) {return `[color=white]${sign(mod.a)}${mod.a}[/color]`;}
+        if(mod.a !== undefined)
+        {
+            const val = GM.PCT.includes(mod.key) ? `${mod.a*100}%` : mod.a;
+            return `[color=white]${sign(mod.a)}${val}[/color]`;
+        }
         if(mod.m !== undefined) {return `[color=white]${sign(mod.m)}${mod.m*100}%[/color]`;}
     }
 
@@ -353,7 +357,7 @@ export default class Utility
         if(eff.a!==undefined||eff.m!==undefined)
         {
             const sign= eff.a>=0||eff.m>=0 ? '[color=lime]+' : '[color=red]-';
-            const val = eff.a!==undefined ? Math.abs(eff.a) 
+            const val = eff.a!==undefined ? (GM.PCT.includes(eff.key) ? `${Math.abs(eff.a)*100}%` : Math.abs(eff.a))
                         : eff.m!==undefined ? (Math.abs(eff.m)*100)+'%' : '';
             num= `${sign}${val}[/color]`;
         }
