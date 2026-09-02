@@ -125,20 +125,27 @@ export default class UiProfile extends UiFrame
                 }
                 break;
 
-            case 'stats': 
+            case 'stats':
+            {
                 addSeg('combat');
+                const pctKeys = [GM.ACC, GM.EVA, GM.CRI];
+                const intKeys = [GM.ATK, GM.DEF, GM.RANGE];
                 for(const key of GM.COMBAT)
                 {
-                    const value = this.total[key];
+                    const raw = this.total[key];
+                    const value = pctKeys.includes(key) ? `${Math.round(raw*100)}%`
+                        : intKeys.includes(key) ? Math.round(raw)
+                        : raw;
                     addItem(key,value)
                 }
                 addSeg('resist');
                 for(const key of GM.RESIST)
                 {
-                    const value = this.total.resists[key];
+                    const value = `${Math.round((this.total.resists[key]??0)*100)}%`;
                     addItem(key,value)
                 }
                 break;
+            }
         }
 
         this.layout();
