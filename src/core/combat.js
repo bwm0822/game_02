@@ -9,7 +9,7 @@ import {T,dlog} from '../core/debug.js'
 
 function _checkHit(aStats, dStats, skill)
 {   
-    let acc = Math.min(0.99, aStats[GM.ACC] + (skill?.dat?.self?.hit??0)); // 命中率封頂99%，永遠留一點意外
+    let acc = aStats[GM.ACC] + (skill?.dat?.self?.hit??0); 
     let eva = dStats[GM.EVA] + (skill?.dat?.target?.dodge??0);
     let rnd = Math.random();
     if(rnd >= acc) {return {amount:0, type:GM.MISS};}

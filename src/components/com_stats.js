@@ -9,7 +9,7 @@ const _tag = 'stats';
 function _baseHPMAX(base) {return Math.round((base[GM.CON] || 0) * 10);}     // HPMAX = CON x 10
 function _baseATK(base) {return (base[GM.STR] || 0) * 1.5;}                  // 攻擊 = STR x 1.5
 function _baseDEF(base) {return (base[GM.CON] || 0);}                        // 物防 = CON
-function _baseACC(base) {return 0.9;}                                        // 準確 = 90%基礎命中，留空間給命中加成
+function _baseACC(base) {return 1;}                                          // 準確 = 1
 function _baseEVA(base) {return (base[GM.DEX] || 0) * 0.01;}                 // 閃避 = DEX x 0.01
 function _baseCRI(base) {return Math.min(0.5, (base[GM.DEX] || 0) * 0.01);}  // 每點 DEX +1% 暴擊，上限 50%
 function _baseCRD(base) {return 1.5;}                                       // 基礎暴擊傷害倍率 = 1.5
