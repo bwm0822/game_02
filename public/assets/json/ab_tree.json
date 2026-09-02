@@ -38,8 +38,18 @@
       "y": 0
     },
     {
+      "id": "swordmastery",
+      "x": 4,
+      "y": 0
+    },
+    {
       "id": "whirlwind",
       "x": 1,
+      "y": 2
+    },
+    {
+      "id": "swordmaster",
+      "x": 4,
       "y": 2
     }
   ],
@@ -48,6 +58,16 @@
       "id": "snipe",
       "x": 0,
       "y": 0
+    },
+    {
+      "id": "archeryexpert",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "archerymaster",
+      "x": 2,
+      "y": 2
     }
   ],
   "Fire": [

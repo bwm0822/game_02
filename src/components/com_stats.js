@@ -45,12 +45,13 @@ function _derivedStats(base, meta)
     return out;
 }
 
-function _calcMods(eff, mods, {_scope, _stage, _type}={})
+function _calcMods(eff, mods, {_scope, _stage, _type, _weaponSub}={})
 {
-    const {scope, stage, key, a, m, type} = eff;
+    const {scope, stage, key, a, m, type, reqClass} = eff;
     if (scope && scope !== _scope) {return;} // 條件不符，跳過
     if (stage && stage !== _stage) {return;} // 條件不符，跳過
     if (_type && type !== _type) {return;} // 條件不符，跳過
+    if (reqClass && !_weaponSub?.includes(reqClass)) {return;} // 裝備武器的 cat_sub 不含要求的類別，跳過
 
     if(GM.BASE.includes(key)) // 基礎屬性
     {        
@@ -62,6 +63,18 @@ function _calcMods(eff, mods, {_scope, _stage, _type}={})
         if(a) { mods.derA[key] = (mods.derA[key] || 0) + a };
         if(m) { mods.derM[key] = (mods.derM[key] || 0) + m };
     }
+}
+
+function _equippedWeaponSub(equips)   // 取得目前裝備武器的 cat_sub（如 ['sword']）
+{
+    if(!equips) {return [];}
+    for(let equip of equips)
+    {
+        if(!equip) {continue;}
+        let eq = DB.item(equip.id??equip);
+        if(eq?.cat===GM.CAT.WEAPON) {return eq.cat_sub ?? [];}
+    }
+    return [];
 }
 
 function _metaOfEquips(equips)   // 取得裝備基本屬性
@@ -91,6 +104,7 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
 function _getMods(bb, attacker, skill, stage)
 {
     const mods={ basA:{}, basM:{}, derA:{}, derM:{} }
+    const weaponSub = _equippedWeaponSub(bb.equips);
 
     // 1. from equips
     bb.equips?.forEach(eq=>{
@@ -105,6 +119,13 @@ function _getMods(bb, attacker, skill, stage)
 
     // 3. from attacker
     attacker?.effs.forEach(eff=>_calcMods(eff, mods, {_scope:'target', _stage:'atk', _type:'mod'}));
+
+    // 4. from learned passive abilities
+    bb.abilities && Object.keys(bb.abilities).forEach(id=>{
+        const ab = DB.ability(id);
+        if(ab?.mode!=='passive') {return;}
+        ab.effects?.forEach(eff=>_calcMods(eff, mods, {_weaponSub:weaponSub}));
+    });
 
     return mods;
 }

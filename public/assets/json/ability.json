@@ -105,6 +105,63 @@
       "des": "旋轉劍身，對周圍全體造成多段傷害。"
     }
   },
+  "swordmastery": {
+    "icon": "⚔️",
+    "mode": "passive",
+    "tag": "buff",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "acc",
+        "a": 0.1,
+        "reqClass": "sword"
+      },
+      {
+        "type": "mod",
+        "key": "atk",
+        "m": 0.1,
+        "reqClass": "sword"
+      }
+    ],
+    "tw": {
+      "lab": "劍術專家",
+      "des": "精通劍術。裝備劍類武器時，命中+10%、攻擊力+10%。"
+    },
+    "us": {
+      "lab": "Sword Expertise",
+      "des": "Mastery of swordsmanship. +10% accuracy and +10% attack power while wielding a sword."
+    }
+  },
+  "swordmaster": {
+    "icon": "👑",
+    "mode": "passive",
+    "tag": "buff",
+    "refs": [
+      "swordmastery"
+    ],
+    "effects": [
+      {
+        "type": "mod",
+        "key": "acc",
+        "a": 0.15,
+        "reqClass": "sword"
+      },
+      {
+        "type": "mod",
+        "key": "atk",
+        "m": 0.15,
+        "reqClass": "sword"
+      }
+    ],
+    "tw": {
+      "lab": "劍術大師",
+      "des": "劍術造詣爐火純青。裝備劍類武器時，命中與攻擊力再進一步大幅提升。"
+    },
+    "us": {
+      "lab": "Sword Mastery",
+      "des": "Peak swordsmanship. Further boosts accuracy and attack power while wielding a sword."
+    }
+  },
   "snipe": {
     "icon": "🎯",
     "mode": "active",
@@ -116,6 +173,63 @@
     "us": {
       "lab": "Snipe",
       "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
+    }
+  },
+  "archeryexpert": {
+    "icon": "🏹",
+    "mode": "passive",
+    "tag": "buff",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "acc",
+        "a": 0.1,
+        "reqClass": "bow"
+      },
+      {
+        "type": "mod",
+        "key": "atk",
+        "m": 0.1,
+        "reqClass": "bow"
+      }
+    ],
+    "tw": {
+      "lab": "弓箭專家",
+      "des": "精通弓術。裝備弓類武器時，命中+10%、攻擊力+10%。"
+    },
+    "us": {
+      "lab": "Archery Expertise",
+      "des": "Mastery of archery. +10% accuracy and +10% attack power while wielding a bow."
+    }
+  },
+  "archerymaster": {
+    "icon": "🎖️",
+    "mode": "passive",
+    "tag": "buff",
+    "refs": [
+      "archeryexpert"
+    ],
+    "effects": [
+      {
+        "type": "mod",
+        "key": "acc",
+        "a": 0.15,
+        "reqClass": "bow"
+      },
+      {
+        "type": "mod",
+        "key": "atk",
+        "m": 0.15,
+        "reqClass": "bow"
+      }
+    ],
+    "tw": {
+      "lab": "弓箭大師",
+      "des": "弓術造詣爐火純青。裝備弓類武器時，命中與攻擊力再進一步大幅提升。"
+    },
+    "us": {
+      "lab": "Archery Mastery",
+      "des": "Peak archery. Further boosts accuracy and attack power while wielding a bow."
     }
   },
   "fireball": {

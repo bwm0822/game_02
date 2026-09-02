@@ -125,6 +125,9 @@
         "icon": "☠️"
       }
     ],
+    "cat_sub": [
+      "sword"
+    ],
     "tw": {
       "lab": "焠毒短劍",
       "des": "用毒液浸泡過的短劍，可使目標中毒"
@@ -145,6 +148,9 @@
     "type": "melee",
     "range": 1,
     "atk": 35,
+    "cat_sub": [
+      "sword"
+    ],
     "tw": {
       "lab": "鋼劍",
       "des": ""
@@ -166,6 +172,9 @@
     "type": "ranged",
     "range": 5,
     "atk": 15,
+    "cat_sub": [
+      "bow"
+    ],
     "tw": {
       "lab": "弓",
       "des": ""
@@ -187,6 +196,9 @@
     "type": "ranged",
     "range": 5,
     "atk": 25,
+    "cat_sub": [
+      "bow"
+    ],
     "tw": {
       "lab": "高級弓",
       "des": ""
