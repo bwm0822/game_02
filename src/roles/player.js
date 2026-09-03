@@ -148,9 +148,9 @@ export class Player extends Role
 
     isInteractive() {return true;}
 
-    async useAbility(target, id)
+    async useAbility(target, id, pt)
     {
-        if(await this.useAb?.(target, id))
+        if(await this.useAb?.(target, id, pt))
         {
             this._refresh();
             this._resume();

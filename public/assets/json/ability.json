@@ -96,6 +96,8 @@
       "slash",
       "thrust"
     ],
+    "scope": "group",
+    "radius": 1,
     "tw": {
       "lab": "旋風斬",
       "des": "旋轉劍身，對周圍全體造成多段傷害。"
@@ -236,7 +238,7 @@
     "icon": "🔥",
     "mode": "active",
     "tag": "atk",
-    "scope": "target",
+    "scope": "single",
     "cd": 3,
     "range": 5,
     "pow": 1.5,
@@ -262,7 +264,7 @@
     "icon": "🧱",
     "mode": "active",
     "tag": "atk",
-    "scope": "target",
+    "scope": "single",
     "cd": 3,
     "range": 5,
     "pow": 1.5,

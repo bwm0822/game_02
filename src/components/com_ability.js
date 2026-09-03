@@ -155,6 +155,14 @@ export class COM_Ability extends Com
     {
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
+
+        if(ability.scope===GM.GROUP)   // 群體技能：以自己為中心，選了立刻生效，不用等點擊
+        {
+            const {root}=this.ctx;
+            root.useAbility?.(null, id);
+            return true;
+        }
+
         this._showRange(true, ability.range, false);
 
         this._ability = ability;
@@ -210,13 +218,13 @@ export class COM_Ability extends Com
 
     _find(id) {return this._abilities[id];}
 
-    async _use(target, id)
+    async _use(target, id, pt)
     {
         const {root} = this.ctx;
 
         if(id) {this._ability = DB.ability(id);}
         else {id = this._id;}
-        
+
         if(this._ability.tag===GM.HEAL)
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
@@ -226,15 +234,58 @@ export class COM_Ability extends Com
             this._clrAbility();
             return true;
         }
-        else if(this._ability.tag===GM.ATK && target && this._isInRange(target.pos))
+        else if(this._ability.tag===GM.ATK)
         {
+            const targets = this._resolveTargets(target, pt);
+            if(!targets) {return false;}
+
             this._abilities[id]={skip:true, remain:this._ability.cd};
             this._showRange(false);
-            await root.attack?.(target,this._ability);  // 播放攻擊動畫, com_action.js
+            for(const t of targets) {await root.attack?.(t,this._ability);}  // 播放攻擊動畫, com_action.js
             this._clrAbility();
             return true;
         }
         return false;
+    }
+
+    // 依技能 scope(single/group/area) 解析出這次要打的目標清單；找不到有效目標回傳 null
+    _resolveTargets(target, pt)
+    {
+        const scope = this._ability.scope ?? GM.SINGLE;
+
+        if(scope===GM.SINGLE)
+        {
+            return (target && this._isInRange(target.pos)) ? [target] : null;
+        }
+        if(scope===GM.GROUP)   // 以自己為中心
+        {
+            return this._findTargets({x:this.x, y:this.y}, this._ability.radius, this._ability.checkBlock);
+        }
+        if(scope===GM.AREA)    // 以點擊位置(或點到的角色座標)為中心，且中心點需在施法距離內
+        {
+            const center = target ? target.pos : pt;
+            if(!center || !this._isInRange(center)) {return null;}
+            return this._findTargets(center, this._ability.radius, this._ability.checkBlock);
+        }
+        return null;
+    }
+
+    // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除自己、排除已死亡)
+    _findTargets(center, radius, checkBlock=true)
+    {
+        const {root} = this.ctx;
+        const radiusPx = (radius??0) * GM.TILE_W;
+
+        return this.scene.roles.filter(role=>{
+            if(role===root || !role.isAlive) {return false;}
+            if(Phaser.Math.Distance.Between(center.x, center.y, role.x, role.y) > radiusPx) {return false;}
+            if(checkBlock!==false)
+            {
+                const hits = Utility.raycast(center.x, center.y, role.x, role.y, [this.scene.staGroup]);
+                if(hits.length>0) {return false;}
+            }
+            return true;
+        });
     }
 
     // 更新技能冷卻時間

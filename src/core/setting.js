@@ -373,6 +373,11 @@ export const GM =
     SELF : 'self',
     ENEMY : 'enemy',
 
+    // ability scope
+    SINGLE : 'single',
+    GROUP : 'group',
+    AREA : 'area',
+
     // path
     PATH_NONE : -1, // 找不到路徑
     PATH_BLK : 0,   // 有阻擋

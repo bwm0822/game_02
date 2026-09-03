@@ -20,7 +20,7 @@ export class COM_Cmd extends Com
 
         if(!root.isAlive) {return;}
 
-        if(bb.sta===GM.ST.ABILITY) {root.useAbility(ent);}
+        if(bb.sta===GM.ST.ABILITY) {root.useAbility(ent, undefined, pt);}
         else
         {
             act=act??ent?.act;
