@@ -12,7 +12,7 @@ function _checkHit(aStats, dStats, skill)
     let acc = aStats[GM.ACC] + (skill?.dat?.self?.hit??0); 
     let eva = dStats[GM.EVA] + (skill?.dat?.target?.dodge??0);
     let rnd = Math.random();
-    if(rnd >= acc) {return {amount:0, type:GM.MISS};}
+    if(rnd >= Math.max(0.99, acc)) {return {amount:0, type:GM.MISS};}
     else if(rnd >= (acc-eva)) {return {amount:0, type:GM.EVA};}
 }
 

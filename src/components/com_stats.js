@@ -123,7 +123,7 @@ function _getMods(bb, attacker, skill, stage)
     // 4. from learned passive abilities
     bb.abilities && Object.keys(bb.abilities).forEach(id=>{
         const ab = DB.ability(id);
-        if(ab?.mode!=='passive') {return;}
+        if(ab?.mode!==GM.PASSIVE) {return;}
         ab.effects?.forEach(eff=>_calcMods(eff, mods, {_weaponSub:weaponSub}));
     });
 
