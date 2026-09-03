@@ -12,7 +12,7 @@ function _checkHit(aStats, dStats, skill)
     let acc = aStats[GM.ACC] + (skill?.dat?.self?.hit??0); 
     let eva = dStats[GM.EVA] + (skill?.dat?.target?.dodge??0);
     let rnd = Math.random();
-    if(rnd >= Math.max(0.99, acc)) {return {amount:0, type:GM.MISS};}
+    if(rnd >= Math.min(0.99, acc)) {return {amount:0, type:GM.MISS};} // acc封頂99%，永遠留1%失誤空間；acc-eva不封頂，命中加成仍能蓋過閃避
     else if(rnd >= (acc-eva)) {return {amount:0, type:GM.EVA};}
 }
 
