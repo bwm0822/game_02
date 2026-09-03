@@ -1,7 +1,7 @@
 {
   "steal": {
     "icon": "🧤",
-    "mode": "active",
+    "mode": "passive",
     "tag": "steal",
     "tw": {
       "lab": "偷竊",
@@ -14,7 +14,7 @@
   },
   "lockpick": {
     "icon": "🗝️",
-    "mode": "active",
+    "mode": "passive",
     "tag": "lockpick",
     "tw": {
       "lab": "開鎖",
@@ -27,7 +27,7 @@
   },
   "butcher": {
     "icon": "🔪",
-    "mode": "active",
+    "mode": "passive",
     "tag": "butcher",
     "tw": {
       "lab": "解剖",
@@ -40,7 +40,7 @@
   },
   "stealth": {
     "icon": "👤",
-    "mode": "active",
+    "mode": "passive",
     "tw": {
       "lab": "潛行",
       "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
@@ -52,7 +52,7 @@
   },
   "barter": {
     "icon": "💰",
-    "mode": "active",
+    "mode": "passive",
     "tw": {
       "lab": "討價還價",
       "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
