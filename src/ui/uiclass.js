@@ -511,11 +511,6 @@ export class AbilitySlot extends Pic
         else {this.empty();}
     }
 
-    use()
-    {
-        if(this.ready) {this.owner.useAbility(this.owner, this.id);}
-    }
-
     toggle()
     {
         if(AbilitySlot.selected)

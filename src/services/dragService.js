@@ -75,14 +75,7 @@ export default class DragService
         }
         else if(!abilitySlot.isEmpty) // 點擊 AbilitySlot
         {
-            if(abilitySlot.dat.mode === GM.ACTIVE)
-            {
-                abilitySlot.use();  // 使用技能
-            }
-            else 
-            {
-                abilitySlot.toggle();
-            }
+            abilitySlot.toggle();  // 進入選取狀態(group技能會在_select()裡立刻生效，其餘等待點擊目標)
         }
     }
 
