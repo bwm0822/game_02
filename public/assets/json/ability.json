@@ -312,8 +312,9 @@
     "flat": 15,
     "elm": "fire",
     "src": "int",
-    "range": 5,
     "cd": 4,
+    "scope": "group",
+    "radius": 2,
     "tw": {
       "lab": "燃燒術",
       "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
