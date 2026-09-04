@@ -66,6 +66,7 @@
     "icon": "🗡️",
     "mode": "active",
     "tag": "atk",
+    "range": 1,
     "cd": 1,
     "tw": {
       "lab": "斬擊",
@@ -80,6 +81,7 @@
     "icon": "📍",
     "mode": "active",
     "tag": "atk",
+    "range": 1,
     "cd": 1,
     "tw": {
       "lab": "刺擊",
@@ -171,6 +173,7 @@
     "icon": "🎯",
     "mode": "active",
     "tag": "atk",
+    "range": 5,
     "cd": 3,
     "tw": {
       "lab": "狙擊",
@@ -298,6 +301,7 @@
       "fireball",
       "firewall"
     ],
+    "range": 5,
     "cd": 4,
     "tw": {
       "lab": "燃燒術",
@@ -315,6 +319,7 @@
     "refs": [
       "combustion"
     ],
+    "range": 5,
     "cd": 6,
     "tw": {
       "lab": "流星雨",
@@ -329,6 +334,7 @@
     "icon": "❄️",
     "mode": "active",
     "tag": "atk",
+    "range": 5,
     "cd": 3,
     "tw": {
       "lab": "冰箭術",
@@ -343,6 +349,7 @@
     "icon": "🧊",
     "mode": "active",
     "tag": "atk",
+    "range": 5,
     "cd": 3,
     "tw": {
       "lab": "冰牆術",
@@ -361,6 +368,7 @@
       "icebolt",
       "icewall"
     ],
+    "range": 5,
     "cd": 4,
     "tw": {
       "lab": "冰封術",
@@ -378,6 +386,7 @@
     "refs": [
       "deepfreeze"
     ],
+    "range": 5,
     "cd": 6,
     "tw": {
       "lab": "暴風雪",
@@ -392,6 +401,7 @@
     "icon": "🐍",
     "mode": "active",
     "tag": "atk",
+    "range": 5,
     "cd": 3,
     "tw": {
       "lab": "毒箭術",
@@ -406,6 +416,7 @@
     "icon": "🌫️",
     "mode": "active",
     "tag": "atk",
+    "range": 5,
     "cd": 3,
     "tw": {
       "lab": "毒霧術",
@@ -424,6 +435,7 @@
       "poisondart",
       "poisonmist"
     ],
+    "range": 5,
     "cd": 4,
     "tw": {
       "lab": "毒素引爆",
