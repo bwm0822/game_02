@@ -66,6 +66,8 @@
     "icon": "🗡️",
     "mode": "active",
     "tag": "atk",
+    "pow": 1.15,
+    "flat": 0,
     "range": 1,
     "cd": 1,
     "tw": {
@@ -81,6 +83,9 @@
     "icon": "📍",
     "mode": "active",
     "tag": "atk",
+    "pow": 1,
+    "flat": 0,
+    "pen": 0.2,
     "range": 1,
     "cd": 1,
     "tw": {
@@ -173,6 +178,8 @@
     "icon": "🎯",
     "mode": "active",
     "tag": "atk",
+    "pow": 2.5,
+    "flat": 0,
     "range": 5,
     "cd": 3,
     "tw": {
@@ -301,6 +308,10 @@
       "fireball",
       "firewall"
     ],
+    "pow": 2,
+    "flat": 15,
+    "elm": "fire",
+    "src": "int",
     "range": 5,
     "cd": 4,
     "tw": {
@@ -319,6 +330,10 @@
     "refs": [
       "combustion"
     ],
+    "pow": 2.5,
+    "flat": 20,
+    "elm": "fire",
+    "src": "int",
     "range": 5,
     "cd": 6,
     "tw": {
@@ -334,6 +349,10 @@
     "icon": "❄️",
     "mode": "active",
     "tag": "atk",
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "ice",
+    "src": "int",
     "range": 5,
     "cd": 3,
     "tw": {
@@ -349,6 +368,10 @@
     "icon": "🧊",
     "mode": "active",
     "tag": "atk",
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "ice",
+    "src": "int",
     "range": 5,
     "cd": 3,
     "tw": {
@@ -368,6 +391,10 @@
       "icebolt",
       "icewall"
     ],
+    "pow": 2,
+    "flat": 15,
+    "elm": "ice",
+    "src": "int",
     "range": 5,
     "cd": 4,
     "tw": {
@@ -386,6 +413,10 @@
     "refs": [
       "deepfreeze"
     ],
+    "pow": 2.5,
+    "flat": 20,
+    "elm": "ice",
+    "src": "int",
     "range": 5,
     "cd": 6,
     "tw": {
@@ -401,6 +432,10 @@
     "icon": "🐍",
     "mode": "active",
     "tag": "atk",
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "poison",
+    "src": "int",
     "range": 5,
     "cd": 3,
     "tw": {
@@ -416,6 +451,10 @@
     "icon": "🌫️",
     "mode": "active",
     "tag": "atk",
+    "pow": 1.5,
+    "flat": 10,
+    "elm": "poison",
+    "src": "int",
     "range": 5,
     "cd": 3,
     "tw": {
@@ -435,6 +474,10 @@
       "poisondart",
       "poisonmist"
     ],
+    "pow": 2,
+    "flat": 15,
+    "elm": "poison",
+    "src": "int",
     "range": 5,
     "cd": 4,
     "tw": {
