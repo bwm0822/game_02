@@ -105,6 +105,7 @@
       "slash",
       "thrust"
     ],
+    "range": 1,
     "cd": 3,
     "scope": "group",
     "radius": 1,
@@ -308,6 +309,7 @@
       "fireball",
       "firewall"
     ],
+    "range": 5,
     "pow": 2,
     "flat": 15,
     "elm": "fire",

@@ -156,13 +156,6 @@ export class COM_Ability extends Com
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
 
-        if(ability.scope===GM.GROUP)   // 群體技能：以自己為中心，選了立刻生效，不用等點擊
-        {
-            const {root}=this.ctx;
-            root.useAbility?.(null, id);
-            return true;
-        }
-
         this._showRange(true, ability.range, false);
 
         this._ability = ability;
@@ -257,8 +250,10 @@ export class COM_Ability extends Com
         {
             return (target && this._isInRange(target.pos)) ? [target] : null;
         }
-        if(scope===GM.GROUP)   // 以自己為中心
+        if(scope===GM.GROUP)   // 點擊只是確認手勢(需落在施法距離內)，爆炸中心永遠是自己，與點擊位置無關
         {
+            const clickPos = target ? target.pos : pt;
+            if(!clickPos || !this._isInRange(clickPos)) {return null;}
             return this._findTargets({x:this.x, y:this.y}, this._ability.radius, this._ability.checkBlock);
         }
         if(scope===GM.AREA)    // 以點擊位置(或點到的角色座標)為中心，且中心點需在施法距離內
