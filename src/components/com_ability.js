@@ -150,13 +150,19 @@ export class COM_Ability extends Com
         this._a = a;
     }
 
+    // group 技能爆炸中心固定是自己、範圍=radius，所以顯示/點擊判定都改用 radius，而非施法距離 range
+    _castN(ability)
+    {
+        return ability.scope===GM.GROUP ? ability.radius : ability.range;
+    }
+
     // 選擇技能
     _select(id)
     {
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
 
-        this._showRange(true, ability.range, false);
+        this._showRange(true, this._castN(ability), false);
 
         this._ability = ability;
         this._id = id;
@@ -183,8 +189,8 @@ export class COM_Ability extends Com
 
     _isInRange(pos, checkBlock=true)
     {
-        !this._a && this._genA(this._ability.range, checkBlock);
-        const n = this._ability.range;
+        const n = this._castN(this._ability);
+        !this._a && this._genA(n, checkBlock);
         const a = this._a;
         for(let x=0; x<=2*n; x++)
         {
@@ -266,14 +272,17 @@ export class COM_Ability extends Com
     }
 
     // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除自己、排除已死亡)
+    // 距離判定為方格(Chebyshev)，跟施法範圍格線(_genA)的判定方式一致，而非直線距離
     _findTargets(center, radius, checkBlock=true)
     {
         const {root} = this.ctx;
-        const radiusPx = (radius??0) * GM.TILE_W;
+        const n = radius??0;
 
         return this.scene.roles.filter(role=>{
             if(role===root || !role.isAlive) {return false;}
-            if(Phaser.Math.Distance.Between(center.x, center.y, role.x, role.y) > radiusPx) {return false;}
+            const dx = Math.abs(role.x-center.x)/GM.TILE_W;
+            const dy = Math.abs(role.y-center.y)/GM.TILE_H;
+            if(Math.max(dx,dy) > n) {return false;}
             if(checkBlock!==false)
             {
                 const hits = Utility.raycast(center.x, center.y, role.x, role.y, [this.scene.staGroup]);
