@@ -81,22 +81,25 @@ export class COM_Action extends Com
             })
     }
 
-    _attack_Spell(target, onHit, ability)
+    _attack_Spell(target, onHit, sprite)
     {
         const {root}=this.ctx
         root.face?.(target.pos);
         return new Promise((resolve)=>{
-                new Projectile(this.scene, this.root.x, this.root.y, ability.sprite)
+                new Projectile(this.scene, this.root.x, this.root.y, sprite)
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}, bias:0}
                         );
-            })  
+            })
     }
 
-    _onDamage(target, ability)
+    _castIcon(ability) {return ability.cast.icon ?? ability.icon;}
+
+    async _onDamage(target, ability)
     {
         const dmg = computeDamage(this._root, target, ability);
         target.takeDamage(dmg, this._root);
+        if(ability) {await target.skill?.({icon: ability.fx?.icon ?? ability.icon});}   // stage3: 命中特效
     }
 
     async _moveToward(target, {maxSteps=1}={})
@@ -190,18 +193,32 @@ export class COM_Action extends Com
 
     async _attack(target, ability)
     {
-        const onDamage = this._onDamage.bind(this, target, ability);
+        const {root} = this.ctx;
+        const onHit = ()=>this._onDamage(target, ability);
 
-        if(ability?.cast==='spell')
+        if(!ability)   // 純武器普攻(沒使用技能)，依武器類型決定動畫
         {
-            await this._attack_Spell(target, onDamage, ability);
+            if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit);}
+            else {await this._attack_Melee(target, onHit);}
+            return true;
         }
-        else
-        {
-            const total = this.root.total;
-            if(total.type==='ranged') {await this._attack_Ranged(target, onDamage);}
-            else {await this._attack_Melee(target, onDamage);}
-        }
+
+        if(ability.cast) {await root.skill?.({icon:this._castIcon(ability)});}   // stage1: 施法動作
+
+        const travel = ability.travel;
+        if(!travel)                     {await onHit();}                            // 無 stage2，直接命中
+        else if(travel.type==='spell')  {await this._attack_Spell(target, onHit, travel);}
+        else if(travel.type==='ranged') {await this._attack_Ranged(target, onHit);}
+        else if(travel.type==='melee')  {await this._attack_Melee(target, onHit);}
+
+        return true;
+    }
+
+    async _attackAll(targets, ability)   // 給無 travel 的技能：施法動畫只播一次，之後全部目標同時命中
+    {
+        const {root} = this.ctx;
+        if(ability.cast) {await root.skill?.({icon:this._castIcon(ability)});}
+        await Promise.all(targets.map(t=>this._onDamage(t, ability)));
         return true;
     }
     
@@ -258,6 +275,7 @@ export class COM_Action extends Com
         root.move = this._move.bind(this);
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
+        root.attackAll = this._attackAll.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);

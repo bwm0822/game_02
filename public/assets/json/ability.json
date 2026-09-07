@@ -70,6 +70,9 @@
     "flat": 0,
     "range": 1,
     "cd": 1,
+    "travel": {
+      "type": "melee"
+    },
     "tw": {
       "lab": "斬擊",
       "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
@@ -88,6 +91,9 @@
     "pen": 0.2,
     "range": 1,
     "cd": 1,
+    "travel": {
+      "type": "melee"
+    },
     "tw": {
       "lab": "刺擊",
       "des": "直線突刺。無視目標 20% 物理防禦。"
@@ -109,6 +115,7 @@
     "cd": 3,
     "scope": "group",
     "radius": 1,
+    "cast": {},
     "tw": {
       "lab": "旋風斬",
       "des": "旋轉劍身，對周圍全體造成多段傷害。"
@@ -183,6 +190,9 @@
     "flat": 0,
     "range": 5,
     "cd": 3,
+    "travel": {
+      "type": "ranged"
+    },
     "tw": {
       "lab": "狙擊",
       "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
@@ -260,12 +270,12 @@
     "flat": 10,
     "elm": "fire",
     "src": "int",
-    "sprite": {
+    "travel": {
+      "type": "spell",
       "img": "🔥",
       "size": 25,
       "deg": -90
     },
-    "cast": "spell",
     "tw": {
       "lab": "火球術",
       "des": "投擲火球。造成基礎火屬性爆炸傷害。"
@@ -286,12 +296,12 @@
     "flat": 10,
     "elm": "fire",
     "src": "int",
-    "sprite": {
+    "travel": {
+      "type": "spell",
       "img": "icons:1",
       "scl": 1,
       "deg": -45
     },
-    "cast": "spell",
     "tw": {
       "lab": "火牆術",
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"
@@ -317,6 +327,7 @@
     "cd": 4,
     "scope": "group",
     "radius": 2,
+    "cast": {},
     "tw": {
       "lab": "燃燒術",
       "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"

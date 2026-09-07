@@ -240,7 +240,10 @@ export class COM_Ability extends Com
 
             this._abilities[id]={skip:true, remain:this._ability.cd};
             this._showRange(false);
-            for(const t of targets) {await root.attack?.(t,this._ability);}  // 播放攻擊動畫, com_action.js
+
+            if(!this._ability.travel) {await root.attackAll?.(targets, this._ability);}  // 無 stage2，施法動畫播一次、全部目標同時命中
+            else {for(const t of targets) {await root.attack?.(t,this._ability);}}         // 逐一播放攻擊動畫, com_action.js
+
             this._clrAbility();
             return true;
         }
