@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {Projectile} from '../misc/effs.js'
 import {computeDamage} from '../core/combat.js'
-import {GM} from '../core/setting.js'
+import {GM, GS} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
 const _tag = 'action';
 
@@ -97,9 +97,10 @@ export class COM_Action extends Com
 
     async _onDamage(target, ability)
     {
+        GS.mode = GM.MODE.COMBAT;   // 任何一方發動攻擊，強制進入戰鬥模式
         const dmg = computeDamage(this._root, target, ability);
         target.takeDamage(dmg, this._root);
-        if(ability) {await target.skill?.({icon: ability.fx?.icon ?? ability.icon});}   // stage3: 命中特效
+        if(ability) {await target.fx?.({icon: ability.fx?.icon ?? ability.icon});}   // stage3: 命中特效
     }
 
     async _moveToward(target, {maxSteps=1}={})
@@ -203,7 +204,7 @@ export class COM_Action extends Com
             return true;
         }
 
-        if(ability.cast) {await root.skill?.({icon:this._castIcon(ability)});}   // stage1: 施法動作
+        if(ability.cast) {await root.fx?.({icon:this._castIcon(ability)});}   // stage1: 施法動作
 
         const travel = ability.travel;
         if(!travel)                     {await onHit();}                            // 無 stage2，直接命中
@@ -217,7 +218,7 @@ export class COM_Action extends Com
     async _attackAll(targets, ability)   // 給無 travel 的技能：施法動畫只播一次，之後全部目標同時命中
     {
         const {root} = this.ctx;
-        if(ability.cast) {await root.skill?.({icon:this._castIcon(ability)});}
+        if(ability.cast) {await root.fx?.({icon:this._castIcon(ability)});}
         await Promise.all(targets.map(t=>this._onDamage(t, ability)));
         return true;
     }

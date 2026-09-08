@@ -228,7 +228,7 @@ export class COM_Ability extends Com
         {
             this._abilities[id]={skip:true, remain:this._ability.cd};
             const amount = computeHealing(target, this._ability);
-            await   root.skill?.(this._ability);    // 播放技能動畫, com_disp.js
+            await   root.fx?.(this._ability);    // 播放技能動畫, com_disp.js
             root.heal?.(amount);                    // 治療量, com_stats.js
             this._clrAbility();
             return true;

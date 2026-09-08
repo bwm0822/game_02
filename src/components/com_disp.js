@@ -261,10 +261,9 @@ export class COM_Disp extends Com
     }
 
 
-    async _skill(skill)
+    async _fx(cfg)
     {
-        // const sp = uImage(this.scene,{icon:skill.icon});
-        const sp = new Pic(this.scene,30,30,{icon:skill.icon});
+        const sp = new Pic(this.scene,30,30,{icon:cfg.icon});
         this.ctx.root.add(sp);
         sp.setOrigin(0.5,0.5);
         sp.setDepth(100);
@@ -315,7 +314,7 @@ export class COM_Disp extends Com
         root.pop = this._pop.bind(this);
         root.speak = this._speak.bind(this);
         root.wait = this._waitAll.bind(this);
-        root.skill = this._skill.bind(this);
+        root.fx = this._fx.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));
