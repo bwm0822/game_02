@@ -100,7 +100,7 @@ export class COM_Action extends Com
         GS.mode = GM.MODE.COMBAT;   // 任何一方發動攻擊，強制進入戰鬥模式
         const dmg = computeDamage(this._root, target, ability);
         target.takeDamage(dmg, this._root);
-        if(ability) {await target.fx?.({icon: ability.fx?.img ?? ability.icon});}   // stage3: 命中特效
+        if(ability?.fx) {await target.fx?.({icon: ability.fx.img ?? ability.icon});}   // stage3: 命中特效，需明確設定 fx 才會顯示
     }
 
     async _moveToward(target, {maxSteps=1}={})

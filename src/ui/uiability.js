@@ -104,14 +104,23 @@ export default class UiAbility extends UiFrame
 
         if(p0.x===p1.x)
         {
-            const s0={x:p1.x, y:p0.y===p1.y?p1.y-50:p0.y+25};
-            const s1={x:p1.x, y:p0.y===p1.y?p1.y-25:p0.y+50};
-            this._graphic.lineBetween(s0.x,s0.y,s1.x,s1.y);
+            if(p0.y===p1.y)   // 自我標記(鎖定狀態小短線)
+            {
+                const s0={x:p1.x, y:p1.y-50};
+                const s1={x:p1.x, y:p1.y-25};
+                this._graphic.lineBetween(s0.x,s0.y,s1.x,s1.y);
+            }
+            else              // 同欄父子連線，依實際間距延伸
+            {
+                const s0={x:p1.x, y:p0.y+25};
+                const s1={x:p1.x, y:p1.y-25};
+                this._graphic.lineBetween(s0.x,s0.y,s1.x,s1.y);
+            }
         }
         else
         {
             const s0={x:p0.x, y:p0.y+25};
-            const s1={x:p0.x, y:p0.y+50};
+            const s1={x:p0.x, y:p1.y-50};
             const s2={x:p1.x, y:p1.y-50};
             this._graphic.lineBetween(s0.x,s0.y,s1.x,s1.y);
             this._graphic.lineBetween(s1.x,s1.y,s2.x,s2.y);

@@ -82,14 +82,19 @@
       "y": 0
     },
     {
+      "id": "fireballvolley",
+      "x": 0,
+      "y": 2
+    },
+    {
       "id": "combustion",
       "x": 1,
-      "y": 2
+      "y": 4
     },
     {
       "id": "meteorshower",
       "x": 1,
-      "y": 4
+      "y": 6
     }
   ],
   "Ice": [

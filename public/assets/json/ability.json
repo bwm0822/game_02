@@ -116,6 +116,7 @@
     "scope": "group",
     "radius": 1,
     "cast": {},
+    "fx": {},
     "tw": {
       "lab": "旋風斬",
       "des": "旋轉劍身，對周圍全體造成多段傷害。"
@@ -276,6 +277,7 @@
       "size": 25,
       "deg": -90
     },
+    "fx": {},
     "tw": {
       "lab": "火球術",
       "des": "投擲火球。造成基礎火屬性爆炸傷害。"
@@ -302,6 +304,7 @@
       "scl": 1,
       "deg": -45
     },
+    "fx": {},
     "tw": {
       "lab": "火牆術",
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"
@@ -311,12 +314,42 @@
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"
     }
   },
+  "fireballvolley": {
+    "icon": "🔥",
+    "mode": "active",
+    "tag": "atk",
+    "refs": [
+      "fireball"
+    ],
+    "scope": "group",
+    "radius": 2,
+    "pow": 1.8,
+    "flat": 10,
+    "elm": "fire",
+    "src": "int",
+    "cd": 5,
+    "travel": {
+      "type": "spell",
+      "img": "🔥",
+      "size": 25,
+      "deg": -90
+    },
+    "fx": {},
+    "tw": {
+      "lab": "高級火球術",
+      "des": "對自身周圍範圍內的敵人各自發射火球，造成範圍傷害。"
+    },
+    "us": {
+      "lab": "Greater Fireball",
+      "des": "Fires a fireball at each enemy within range around yourself."
+    }
+  },
   "combustion": {
     "icon": "🌋",
     "mode": "active",
     "tag": "atk",
     "refs": [
-      "fireball",
+      "fireballvolley",
       "firewall"
     ],
     "range": 5,
@@ -328,6 +361,7 @@
     "scope": "group",
     "radius": 2,
     "cast": {},
+    "fx": {},
     "tw": {
       "lab": "燃燒術",
       "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
