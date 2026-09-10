@@ -78,7 +78,7 @@ export class BehAttack extends Behavior
 
         if (root.inAttackRange?.(t)) 
         {
-            const ok = await root.attack?.(t);
+            const ok = await root.attack?.([t]);
             if (ok) { this._commitUse(ctx); return { ok:true, note:'attack' }; }
             else {return { ok:false, note:'attack failed' };}
         } 

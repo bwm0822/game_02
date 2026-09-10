@@ -64,7 +64,7 @@ export class COM_Cmd extends Com
         const {bb, root} = this.ctx;
         if (root.inAttackRange?.(bb.ent)) 
         {
-            await root.attack?.(bb.ent);    
+            await root.attack?.([bb.ent]);
         }
         else 
         { 

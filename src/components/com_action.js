@@ -192,34 +192,40 @@ export class COM_Action extends Com
         else if(DEBUG.path) {root.updateDebugPath?.();}
     }
 
-    async _attack(target, ability)
+    async _attack(targets, ability)
     {
         const {root} = this.ctx;
-        const onHit = ()=>this._onDamage(target, ability);
 
-        if(!ability)   // 純武器普攻(沒使用技能)，依武器類型決定動畫
+        if(!ability)   // 純武器普攻(沒使用技能)，targets 一定只有一個，依武器類型決定動畫
         {
+            const target = targets[0];
+            const onHit = ()=>this._onDamage(target, ability);
             if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit);}
             else {await this._attack_Melee(target, onHit);}
             return true;
         }
 
-        if(ability.cast) {await root.fx?.({icon:this._castImg(ability)});}   // stage1: 施法動作
+        if(ability.cast) {await root.fx?.({icon:this._castImg(ability)});}   // stage1: 施法動作，只播一次
 
         const travel = ability.travel;
-        if(!travel)                     {await onHit();}                            // 無 stage2，直接命中
-        else if(travel.type==='spell')  {await this._attack_Spell(target, onHit, travel);}
-        else if(travel.type==='ranged') {await this._attack_Ranged(target, onHit);}
-        else if(travel.type==='melee')  {await this._attack_Melee(target, onHit);}
+        const doOne = (target)=>
+        {
+            const onHit = ()=>this._onDamage(target, ability);
+            if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
+            if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
+            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit);}
+            if(travel.type==='melee')       {return this._attack_Melee(target, onHit);}
+        };
 
-        return true;
-    }
+        if(targets.length>1 && travel?.parallel===false)   // 多目標且明確設定依序執行
+        {
+            for(const t of targets) {await doOne(t);}
+        }
+        else   // 預設：多目標同時執行(單一目標也走這裡，Promise.all 一個 promise 沒差)
+        {
+            await Promise.all(targets.map(doOne));
+        }
 
-    async _attackAll(targets, ability)   // 給無 travel 的技能：施法動畫只播一次，之後全部目標同時命中
-    {
-        const {root} = this.ctx;
-        if(ability.cast) {await root.fx?.({icon:this._castImg(ability)});}
-        await Promise.all(targets.map(t=>this._onDamage(t, ability)));
         return true;
     }
     
@@ -276,7 +282,6 @@ export class COM_Action extends Com
         root.move = this._move.bind(this);
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
-        root.attackAll = this._attackAll.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
