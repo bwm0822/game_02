@@ -51,9 +51,9 @@ export class COM_Cmd extends Com
         }
     }
 
-    async _interact(ent, act) 
+    async _interact(ent, act)
     {
-        if(!act) {return;}
+        if(!act || !ent.scene) {return;}   // ent.scene===null 代表已被 _remove()，走過去的路上可能已經消失(如屍體腐爛移除)
         const {root,bb} = this.ctx;
         if(ent) {root.face?.(ent.pos);}
         await ent.aEmit(act,root);
