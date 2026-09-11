@@ -532,6 +532,7 @@ export class GameScene extends Scene
             let pt = {x:pointer.worldX,y:pointer.worldY};
             if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
             else {UiCursor.set('none');}
+            GM.player.previewArea?.(pt);
             return;
         }
         else if(GM.player.sta===GM.ST.SLEEP) {return;}

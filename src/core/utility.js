@@ -553,6 +553,31 @@ export default class Utility
         if(b) {graphics.lineBetween(x, y+height, x+width, y+height);}
     }
 
+    // AREA 技能的可點擊範圍：只畫外框虛線，不填滿(跟裡面跟著游標的爆炸預覽區分開)
+    static drawBlockDashed(graphics, rect)
+    {
+        const [x,y,width,height] = [rect.x, rect.y, rect.width, rect.height];
+        const [l,r,t,b] = [rect.l, rect.r, rect.t, rect.b];
+        graphics.lineStyle(2, 0xffffff);
+        if(l) {Utility._dashLine(graphics, x, y, x, y+height);}
+        if(r) {Utility._dashLine(graphics, x+width, y, x+width, y+height);}
+        if(t) {Utility._dashLine(graphics, x, y, x+width, y);}
+        if(b) {Utility._dashLine(graphics, x, y+height, x+width, y+height);}
+    }
+
+    static _dashLine(graphics, x1, y1, x2, y2, dash=4, gap=4)
+    {
+        const dx = x2-x1, dy = y2-y1;
+        const len = Math.hypot(dx,dy);
+        if(len===0) {return;}
+        const [ux,uy] = [dx/len, dy/len];
+        for(let pos=0; pos<len; pos+=dash+gap)
+        {
+            const end = Math.min(pos+dash, len);
+            graphics.lineBetween(x1+ux*pos, y1+uy*pos, x1+ux*end, y1+uy*end);
+        }
+    }
+
     static parseDes(des, stats, self, target)
     {
         // 範例:

@@ -384,6 +384,17 @@
     "src": "int",
     "range": 5,
     "cd": 6,
+    "scope": "area",
+    "radius": 3,
+    "travel": {
+      "type": "fall",
+      "img": "☄️",
+      "size": 25,
+      "deg": -135
+    },
+    "fx": {
+      "img": "🔥"
+    },
     "tw": {
       "lab": "流星雨",
       "des": "大範圍隕石轟炸，摧毀範圍內一切。"

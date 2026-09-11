@@ -93,6 +93,18 @@ export class COM_Action extends Com
             })
     }
 
+    _attack_Fall(target, onHit, sprite)   // 從目標正上方墜落(流星雨用)，跟 _attack_Spell 差在起點不是施法者
+    {
+        const startX = target.pos.x;
+        const startY = target.pos.y - 300;
+        return new Promise((resolve)=>{
+                new Projectile(this.scene, startX, startY, sprite)
+                    .shoot( target.pos.x, target.pos.y,
+                            {onComplete:()=>{onHit?.();resolve();}, bias:0}
+                        );
+            })
+    }
+
     _castImg(ability) {return ability.cast.img ?? ability.icon;}
 
     async _onDamage(target, ability)
@@ -213,6 +225,7 @@ export class COM_Action extends Com
             const onHit = ()=>this._onDamage(target, ability);
             if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
             if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
+            if(travel.type==='fall')        {return this._attack_Fall(target, onHit, travel);}
             if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit);}
             if(travel.type==='melee')       {return this._attack_Melee(target, onHit);}
         };

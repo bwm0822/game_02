@@ -90,7 +90,7 @@ export class COM_Ability extends Com
     //     this.a=a;
     // }
 
-    _showRange(on, range, checkBlock)
+    _showRange(on, range, checkBlock, scope)
     {
         this._graphics?.clear();
         if(!on) {return;}
@@ -100,6 +100,7 @@ export class COM_Ability extends Com
 
         const n = range;
         const a = this._a;
+        const draw = scope===GM.AREA ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA 用虛線無填滿，跟裡面的爆炸預覽區分
 
         for(let y=0; y<=2*n; y++)
         {
@@ -108,7 +109,7 @@ export class COM_Ability extends Com
                 let rect = a[y][x];
                 if(!rect.block)
                 {
-                    Utility.drawBlock(this._graphics, rect);
+                    draw(this._graphics, rect);
                 }
             }
         }
@@ -162,7 +163,7 @@ export class COM_Ability extends Com
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
 
-        this._showRange(true, this._castN(ability), false);
+        this._showRange(true, this._castN(ability), false, ability.scope);
 
         this._ability = ability;
         this._id = id;
@@ -180,11 +181,50 @@ export class COM_Ability extends Com
 
     _clrAbility()
     {
+        this._previewGraphics?.clear();
         this._ability = null;
         this._id = null;
 
         const {bb}=this.ctx;
         bb.sta=GM.ST.IDLE;
+    }
+
+    // AREA 技能專用：跟著游標顯示會被炸到的範圍(radius)，不做遮蔽檢查，純視覺預覽
+    _previewArea(pt)
+    {
+        if(!this._previewGraphics) {this._previewGraphics = this.scene.add.graphics();}
+        this._previewGraphics.clear();
+
+        if(this._ability?.scope!==GM.AREA) {return;}
+        if(!this._isInRange(pt)) {return;}
+
+        const n = this._ability.radius ?? 0;
+        const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        const cx = this.x + Math.round((pt.x-this.x)/w)*w;
+        const cy = this.y + Math.round((pt.y-this.y)/h)*h;
+
+        const rows = 2*n+1;
+        const a = Array.from({ length: rows }, () => Array(rows));
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                const px = cx + (x-n)*w;
+                const py = cy + (y-n)*h;
+                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:false};
+            }
+        }
+        for(let x=0; x<=2*n; x++)
+        {
+            for(let y=0; y<=2*n; y++)
+            {
+                a[y][x].l = a[y][x-1]?.block===false ? false : true;
+                a[y][x].r = a[y][x+1]?.block===false ? false : true;
+                a[y][x].t = a[y-1]?.[x]?.block===false ? false : true;
+                a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
+                Utility.drawBlock(this._previewGraphics, a[y][x]);
+            }
+        }
     }
 
     _isInRange(pos, checkBlock=true)
@@ -235,15 +275,16 @@ export class COM_Ability extends Com
         }
         else if(this._ability.tag===GM.ATK)
         {
+            const ability = this._ability;
             const targets = this._resolveTargets(target, pt);
             if(!targets) {return false;}
 
-            this._abilities[id]={skip:true, remain:this._ability.cd};
+            this._abilities[id]={skip:true, remain:ability.cd};
             this._showRange(false);
+            this._clrAbility();   // 先歸零選取狀態(含 bb.sta)，避免攻擊動畫播放期間滑鼠移動還一直觸發範圍預覽
 
-            await root.attack?.(targets, this._ability);   // 播放攻擊動畫, com_action.js
+            await root.attack?.(targets, ability);   // 播放攻擊動畫, com_action.js
 
-            this._clrAbility();
             return true;
         }
         return false;
@@ -329,6 +370,7 @@ export class COM_Ability extends Com
         root.selectAbility = this._select.bind(this);
         root.unselectAbility = this._unselect.bind(this);
         root.isInRange = this._isInRange.bind(this);
+        root.previewArea = this._previewArea.bind(this);
         // 內部使用
         root.useAb = this._use.bind(this);
         root.queryAb = this._query.bind(this);
