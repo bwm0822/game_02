@@ -513,13 +513,14 @@ export class AbilitySlot extends Pic
 
     toggle()
     {
-        if(AbilitySlot.selected)
+        if(AbilitySlot.selected===this)   // 點同一格，取消選取
         {
-            AbilitySlot.selected===this && AbilitySlot.selected.unselect();
+            this.unselect();
         }
-        else if(this.ready)
+        else                              // 點別格，直接切換過去(不用先取消)
         {
-            this.select();
+            AbilitySlot.selected?.unselect();
+            if(this.ready) {this.select();}
         }
     }
 

@@ -96,10 +96,10 @@ export class COM_Ability extends Com
         if(!on) {return;}
         if(!this._graphics) {this._graphics = this.scene.add.graphics();}
 
-        if(!this._a) {this._genA(range, checkBlock);}
+        if(!this._rangeGrid) {this._genRangeGrid(range, checkBlock);}
 
         const n = range;
-        const a = this._a;
+        const a = this._rangeGrid;
         const draw = scope===GM.AREA ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA 用虛線無填滿，跟裡面的爆炸預覽區分
 
         for(let y=0; y<=2*n; y++)
@@ -116,7 +116,10 @@ export class COM_Ability extends Com
 
     }
 
-    _genA(range, checkBlock)
+    // 以自己為中心，產生 (2*range+1)^2 的施法範圍網格(存到 this._rangeGrid)：
+    // 每格記錄世界座標、是否可通行/被遮蔽(block)，以及依鄰格開放與否算出的外框線標記(l/r/t/b)，
+    // 讓 _showRange()(畫格線)、_isInRange()(判斷點擊/滑鼠位置是否在範圍內)可以共用同一份資料，不必每次重算
+    _genRangeGrid(range, checkBlock)
     {
         const n = range;
         const rows = 2*n+1;
@@ -148,7 +151,7 @@ export class COM_Ability extends Com
             }
         }
         
-        this._a = a;
+        this._rangeGrid = a;
     }
 
     // group 技能爆炸中心固定是自己、範圍=radius，所以顯示/點擊判定都改用 radius，而非施法距離 range
@@ -163,6 +166,7 @@ export class COM_Ability extends Com
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
 
+        this._rangeGrid = null;   // 不同技能的 range/radius 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
         this._showRange(true, this._castN(ability), false, ability.scope);
 
         this._ability = ability;
@@ -230,8 +234,8 @@ export class COM_Ability extends Com
     _isInRange(pos, checkBlock=true)
     {
         const n = this._castN(this._ability);
-        !this._a && this._genA(n, checkBlock);
-        const a = this._a;
+        !this._rangeGrid && this._genRangeGrid(n, checkBlock);
+        const a = this._rangeGrid;
         for(let x=0; x<=2*n; x++)
         {
             for(let y=0; y<=2*n; y++)
@@ -315,7 +319,7 @@ export class COM_Ability extends Com
     }
 
     // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除自己、排除已死亡)
-    // 距離判定為方格(Chebyshev)，跟施法範圍格線(_genA)的判定方式一致，而非直線距離
+    // 距離判定為方格(Chebyshev)，跟施法範圍格線(_genRangeGrid)的判定方式一致，而非直線距離
     _findTargets(center, radius, checkBlock=true)
     {
         const {root} = this.ctx;
@@ -342,7 +346,7 @@ export class COM_Ability extends Com
             if(s.skip) {s.skip=false;}
             else if(s.remain>0) {s.remain--;}
         });
-        this._a=null;
+        this._rangeGrid=null;
     }
 
     //------------------------------------------------------
