@@ -639,9 +639,12 @@ export class AbilityItem extends Pic
 
     leftButtonUp(x,y)
     {
-        Ui.cancelDelayCall();   
+        Ui.cancelDelayCall();
         UiDragged.empty();
     }
+
+    // 技能樹節點只是「指派到熱鍵」，不是「拿走」，拖曳時不該清空圖示(蓋掉繼承自 Pic.empty() 的隱藏行為)
+    empty() {}
 
     update()
     {
