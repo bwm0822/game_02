@@ -136,13 +136,14 @@ export default class UiAbility extends UiFrame
         this._graphic.lineStyle(4, 0x808080, 1);
 
         //
+        const M = 5;   // 邊界留白，避免最外圈技能格的框線貼齊面板邊緣被裁切/遮住
         let xMax=0, yMax=0;
         const slots=[];
         tree.forEach(ab=>{
             const slot = new AbilityItem(this.scene,50,50);
             slots.push(slot);
-            const x = 25+ab.x*50;
-            const y = 25+ab.y*50
+            const x = 25+M+ab.x*50;
+            const y = 25+M+ab.y*50
             slot.set(ab.id,x,y)
             this._panel.addItem(slot)
             xMax = Math.max(xMax, x);
@@ -158,7 +159,7 @@ export default class UiAbility extends UiFrame
         });
 
         dlog(T.UI)(xMax,yMax)
-        this._panel.setContentSize(xMax+25,yMax+25);
+        this._panel.setContentSize(xMax+25+M,yMax+25+M);
         this.layout();
     }
 
@@ -175,6 +176,7 @@ export default class UiAbility extends UiFrame
         this.closeAll(GM.UI_CENTER);
         this.register(GM.UI_CENTER);
         this._menu.mouseWheel(true);
+        this._panel.mouseWheel(true);
 
     }
 
@@ -183,6 +185,7 @@ export default class UiAbility extends UiFrame
         super.close();
         this.unregister();
         this._menu.mouseWheel(false);
+        this._panel.mouseWheel(false);
     }
 
     toggle()
