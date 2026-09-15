@@ -278,6 +278,21 @@
       "deg": -90
     },
     "fx": {},
+    "effects": [
+      {
+        "type": "dot",
+        "scope": "target",
+        "stage": "hit",
+        "elm": "fire",
+        "a": -5,
+        "dur": 3,
+        "icon": "🔥",
+        "id": "burn",
+        "fx": {
+          "img": "🔥"
+        }
+      }
+    ],
     "tw": {
       "lab": "火球術",
       "des": "投擲火球。造成基礎火屬性爆炸傷害。"
@@ -305,6 +320,21 @@
       "deg": -45
     },
     "fx": {},
+    "effects": [
+      {
+        "type": "dot",
+        "scope": "target",
+        "stage": "hit",
+        "elm": "fire",
+        "a": -5,
+        "dur": 3,
+        "icon": "🔥",
+        "id": "burn",
+        "fx": {
+          "img": "🔥"
+        }
+      }
+    ],
     "tw": {
       "lab": "火牆術",
       "des": "召喚火焰地帶。對經過者施加持續灼燒。"
@@ -335,6 +365,21 @@
       "deg": -90
     },
     "fx": {},
+    "effects": [
+      {
+        "type": "dot",
+        "scope": "target",
+        "stage": "hit",
+        "elm": "fire",
+        "a": -5,
+        "dur": 3,
+        "icon": "🔥",
+        "id": "burn",
+        "fx": {
+          "img": "🔥"
+        }
+      }
+    ],
     "tw": {
       "lab": "高級火球術",
       "des": "對自身周圍範圍內的敵人各自發射火球，造成範圍傷害。"
@@ -362,6 +407,21 @@
     "radius": 2,
     "cast": {},
     "fx": {},
+    "effects": [
+      {
+        "type": "dot",
+        "scope": "target",
+        "stage": "hit",
+        "elm": "fire",
+        "a": -5,
+        "dur": 3,
+        "icon": "🔥",
+        "id": "burn",
+        "fx": {
+          "img": "🔥"
+        }
+      }
+    ],
     "tw": {
       "lab": "燃燒術",
       "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
@@ -395,6 +455,21 @@
     "fx": {
       "img": "🔥"
     },
+    "effects": [
+      {
+        "type": "dot",
+        "scope": "target",
+        "stage": "hit",
+        "elm": "fire",
+        "a": -5,
+        "dur": 3,
+        "icon": "🔥",
+        "id": "burn",
+        "fx": {
+          "img": "🔥"
+        }
+      }
+    ],
     "tw": {
       "lab": "流星雨",
       "des": "大範圍隕石轟炸，摧毀範圍內一切。"

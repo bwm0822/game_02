@@ -5,13 +5,13 @@
     },
     "activeFile": "public/assets/maps/m/m_04x05.json",
     "expandedProjectPaths": [
+        "public/assets",
         ".",
-        "public/assets/tiles",
-        "public",
         "public/assets/templates",
         "public/assets/templates/roles",
         "public/assets/maps/m/m_04x05",
-        "public/assets"
+        "public",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -375,7 +375,7 @@
             "scale": 1,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 1059.5,
+                "x": 1060,
                 "y": 2364
             }
         },

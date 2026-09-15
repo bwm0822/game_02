@@ -281,6 +281,30 @@ export class COM_Disp extends Com
         });
     }
 
+    // 持續效果(buff/dot...)用的常駐特效icon，跟 _fx() 的一次性動畫不同，顯示到 _fxOff(id) 被呼叫才消失
+    // cfg: {img, alpha=0.7, align='bottom'('top'|'bottom'), oy=0(align基準位置上的額外偏移)}
+    _fxOn(id, cfg)
+    {
+        if(this._fxMap?.[id]) {return;}
+        this._fxMap ??= {};
+        const {root} = this.ctx;
+        const {img, alpha=0.7, align='bottom', oy=0} = cfg;
+
+        const sp = new Pic(this.scene,30,30,{icon:img});
+        root.add(sp);
+        sp.setOrigin(0.5,1).layout();          // 圖示底部對齊
+        sp.y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
+        sp.setDepth(100);
+        sp.setAlpha(alpha);
+        this._fxMap[id] = sp;
+    }
+
+    _fxOff(id)
+    {
+        this._fxMap?.[id]?.destroy();
+        if(this._fxMap) {delete this._fxMap[id];}
+    }
+
     _underAtk(id)
     {
         this._speak('找死!!!')
@@ -297,6 +321,7 @@ export class COM_Disp extends Com
         this._busy = false;
         this._speak(null);
         this._pop(null);
+        Object.keys(this._fxMap??{}).forEach(id=>this._fxOff(id));   // 死亡時常駐特效全部清除，不等效果自然到期
     }
 
     //------------------------------------------------------
@@ -315,6 +340,8 @@ export class COM_Disp extends Com
         root.speak = this._speak.bind(this);
         root.wait = this._waitAll.bind(this);
         root.fx = this._fx.bind(this);
+        root.fxOn = this._fxOn.bind(this);
+        root.fxOff = this._fxOff.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));

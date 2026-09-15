@@ -225,7 +225,12 @@ class View extends Phaser.GameObjects.Container
     get min() {return {x:-this.wid/2, y:-this.hei/2};}  
     // view 的右下角座標
     get max() {return {x:this.wid/2, y:this.hei/2};}    
- 
+
+    // view 的左上角座標
+    get Min() {return {x:-this.anchorX-this.wid/2, y:-this.anchorY-this.hei/2};}  
+    // view 的右下角座標
+    get Max() {return {x:-this.anchorX+this.wid/2, y:-this.anchorY+this.hei/2};}   
+
     // _addPhysics 會用到，不然 body 的位置會有問題
     get displayWidth() {return this.wid;}
     get displayHeight() {return this.hei;}

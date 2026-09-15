@@ -457,12 +457,12 @@ export class COM_Stats extends Com
 
     _addToActives(eff)
     {
-        const{bb}=this.ctx;
+        const{root,bb}=this.ctx;
         // 處理新加入的效果
         if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
         {
             const existing = this._actives.filter(e=>e.id === eff.id);
-            if(existing.length >= eff.stack) 
+            if(existing.length >= eff.stack)
             {
                 // 超過堆疊上限，移除最早的效果
                 const idx = this._actives.findIndex(e=>e.id === eff.id);
@@ -474,6 +474,7 @@ export class COM_Stats extends Com
             }
         }
         this._actives.push(eff);
+        if(eff.fx) {root.fxOn?.(eff.id, eff.fx);}   // 常駐特效，持續到效果結束才消失
         this._setDirty();
     }
 
@@ -492,7 +493,7 @@ export class COM_Stats extends Com
                 case GM.DOT:
                 {
                     let dmg = eff.a ?? (eff.m ?? 0) * this._total[GM.HPMAX];
-                    if (eff.elm) 
+                    if (eff.elm)
                     {
                         const res = `${eff.elm}_res`;
                         const resist = this._total.resists?.[res] || 0;
@@ -526,10 +527,11 @@ export class COM_Stats extends Com
 
         // 3. 移除 DOT/HOT 過期效果
         this._actives = this._actives.filter(eff => {
-            if (eff.remaining <= 0) 
+            if (eff.remaining <= 0)
             {
                 dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
                 if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
+                if(eff.fx) {root.fxOff?.(eff.id);}   // 常駐特效隨效果結束一起清除
                 return false;
             }
             return true;
