@@ -1,5 +1,7 @@
 import Com from './com.js'
 import {Projectile} from '../misc/effs.js'
+import {Pic} from '../ui/uicomponents.js'
+import Utility from '../core/utility.js'
 import {computeDamage} from '../core/combat.js'
 import {GM, GS} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
@@ -220,8 +222,9 @@ export class COM_Action extends Com
         if(ability.cast) {await root.fx?.({icon:this._castImg(ability)});}   // stage1: 施法動作，只播一次
 
         const travel = ability.travel;
-        const doOne = (target)=>
+        const doOne = async (target)=>
         {
+            if(travel?.randomDelay) {await Utility.delay(Math.random()*travel.randomDelay);}   // 隨機延遲起始時間，避免整批同時/固定順序落下
             const onHit = ()=>this._onDamage(target, ability);
             if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
             if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
@@ -241,7 +244,46 @@ export class COM_Action extends Com
 
         return true;
     }
-    
+
+    async _attackDecor(tiles, ability)   // carpet:true 用：純視覺，對空格播放 travel 動畫+命中特效，不造成傷害
+    {
+        const travel = ability.travel;
+        if(!travel) {return;}
+
+        const doOne = async (tile)=>
+        {
+            if(travel.randomDelay) {await Utility.delay(Math.random()*travel.randomDelay);}
+            if(travel.type==='spell')      {await this._attack_Spell(tile, null, travel);}
+            else if(travel.type==='fall')  {await this._attack_Fall(tile, null, travel);}
+            if(ability.fx) {await this._fxAt(tile.pos, ability.fx.img ?? ability.icon);}
+        };
+
+        if(tiles.length>1 && travel.parallel===false)   // 多個空格且明確設定依序執行
+        {
+            for(const t of tiles) {await doOne(t);}
+        }
+        else
+        {
+            await Promise.all(tiles.map(doOne));
+        }
+    }
+
+    // 在指定世界座標(而非角色身上)播放一次性 icon 特效，給沒有角色的空格用
+    _fxAt(pos, icon)
+    {
+        const sp = new Pic(this.scene, 30, 30, {icon, x:pos.x, y:pos.y});
+        sp.setDepth(100);
+        return new Promise((resolve)=>{
+            this.scene.tweens.add({
+                targets: sp,
+                scale: {from:1, to:2},
+                duration: 500,
+                ease: 'linear',
+                onComplete: ()=>{sp.destroy();resolve();}
+            });
+        });
+    }
+
     _checkBlock()
     {
         const{bb,probe}=this.ctx;
@@ -295,6 +337,7 @@ export class COM_Action extends Com
         root.move = this._move.bind(this);
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
+        root.attackDecor = this._attackDecor.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);

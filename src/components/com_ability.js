@@ -282,12 +282,16 @@ export class COM_Ability extends Com
             const ability = this._ability;
             const targets = this._resolveTargets(target, pt);
             if(!targets) {return false;}
+            const emptyTiles = this._emptyTiles;
 
             this._abilities[id]={skip:true, remain:ability.cd};
             this._showRange(false);
             this._clrAbility();   // 先歸零選取狀態(含 bb.sta)，避免攻擊動畫播放期間滑鼠移動還一直觸發範圍預覽
 
-            await root.attack?.(targets, ability);   // 播放攻擊動畫, com_action.js
+            await Promise.all([
+                root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
+                emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
+            ]);
 
             return true;
         }
@@ -313,20 +317,46 @@ export class COM_Ability extends Com
         {
             const center = target ? target.pos : pt;
             if(!center || !this._isInRange(center)) {return null;}
-            return this._findTargets(center, this._ability.radius, this._ability.checkBlock);
+            const targets = this._findTargets(center, this._ability.radius, this._ability.checkBlock, false);   // AREA 不排除自己，站在範圍內也會受傷
+            this._emptyTiles = this._ability.carpet ? this._genEmptyTiles(center, this._ability.radius, targets) : null;
+            return targets;
         }
         return null;
     }
 
-    // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除自己、排除已死亡)
+    // carpet:true 的技能，算出範圍內沒有目標的空格座標，讓 _use() 也對空格播放動畫(地毯式轟炸的視覺效果)
+    _genEmptyTiles(center, radius, targets)
+    {
+        const n = radius??0;
+        const [h,w] = [GM.TILE_H, GM.TILE_W];
+        const occupied = new Set(targets.map(t=>{
+            const tx = Math.round((t.x-center.x)/w);
+            const ty = Math.round((t.y-center.y)/h);
+            return `${tx},${ty}`;
+        }));
+
+        const tiles = [];
+        for(let x=-n; x<=n; x++)
+        {
+            for(let y=-n; y<=n; y++)
+            {
+                if(Math.max(Math.abs(x),Math.abs(y)) > n) {continue;}
+                if(occupied.has(`${x},${y}`)) {continue;}
+                tiles.push({pos:{x:center.x+x*w, y:center.y+y*h}});
+            }
+        }
+        return tiles;
+    }
+
+    // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除已死亡；excludeSelf 決定要不要排除施法者自己)
     // 距離判定為方格(Chebyshev)，跟施法範圍格線(_genRangeGrid)的判定方式一致，而非直線距離
-    _findTargets(center, radius, checkBlock=true)
+    _findTargets(center, radius, checkBlock=true, excludeSelf=true)
     {
         const {root} = this.ctx;
         const n = radius??0;
 
         return this.scene.roles.filter(role=>{
-            if(role===root || !role.isAlive) {return false;}
+            if((excludeSelf && role===root) || !role.isAlive) {return false;}
             const dx = Math.abs(role.x-center.x)/GM.TILE_W;
             const dy = Math.abs(role.y-center.y)/GM.TILE_H;
             if(Math.max(dx,dy) > n) {return false;}
