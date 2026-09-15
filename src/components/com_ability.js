@@ -3,6 +3,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {computeHealing} from '../core/combat.js'
+import HazardZone from '../items/hazardzone.js'
 const _tag = 'ability';
 
 //--------------------------------------------------
@@ -90,7 +91,19 @@ export class COM_Ability extends Com
     //     this.a=a;
     // }
 
-    _showRange(on, range, checkBlock, scope)
+    // AREA scope 或 SUMMON tag(如召喚地面區域的技能)，都是「點擊位置決定作用範圍中心」，用虛線可點擊範圍+游標處實心作用範圍預覽
+    _isAreaLike(ability)
+    {
+        return ability.scope===GM.AREA || ability.tag===GM.SUMMON;
+    }
+
+    // 取得游標預覽/作用範圍半徑：AREA 用 radius，SUMMON 用 zoneRadius
+    _previewRadius(ability)
+    {
+        return ability.scope===GM.AREA ? (ability.radius??0) : (ability.zoneRadius??0);
+    }
+
+    _showRange(on, range, checkBlock, ability)
     {
         this._graphics?.clear();
         if(!on) {return;}
@@ -100,7 +113,7 @@ export class COM_Ability extends Com
 
         const n = range;
         const a = this._rangeGrid;
-        const draw = scope===GM.AREA ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA 用虛線無填滿，跟裡面的爆炸預覽區分
+        const draw = ability && this._isAreaLike(ability) ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA/SUMMON 用虛線無填滿，跟裡面的作用範圍預覽區分
 
         for(let y=0; y<=2*n; y++)
         {
@@ -167,7 +180,7 @@ export class COM_Ability extends Com
         const ability = DB.ability(id);
 
         this._rangeGrid = null;   // 不同技能的 range/radius 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
-        this._showRange(true, this._castN(ability), false, ability.scope);
+        this._showRange(true, this._castN(ability), false, ability);
 
         this._ability = ability;
         this._id = id;
@@ -193,16 +206,16 @@ export class COM_Ability extends Com
         bb.sta=GM.ST.IDLE;
     }
 
-    // AREA 技能專用：跟著游標顯示會被炸到的範圍(radius)，不做遮蔽檢查，純視覺預覽
+    // AREA scope / SUMMON tag 技能專用：跟著游標顯示會被影響的範圍，不做遮蔽檢查，純視覺預覽
     _previewArea(pt)
     {
         if(!this._previewGraphics) {this._previewGraphics = this.scene.add.graphics();}
         this._previewGraphics.clear();
 
-        if(this._ability?.scope!==GM.AREA) {return;}
+        if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {return;}
 
-        const n = this._ability.radius ?? 0;
+        const n = this._previewRadius(this._ability);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
         const cx = this.x + Math.round((pt.x-this.x)/w)*w;
         const cy = this.y + Math.round((pt.y-this.y)/h)*h;
@@ -292,6 +305,21 @@ export class COM_Ability extends Com
                 root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
                 emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
             ]);
+
+            return true;
+        }
+        else if(this._ability.tag===GM.SUMMON)
+        {
+            const ability = this._ability;
+            const pos = target ? target.pos : pt;
+            if(!pos || !this._isInRange(pos)) {return false;}
+
+            this._abilities[id]={skip:true, remain:ability.cd};
+            this._showRange(false);
+            this._clrAbility();
+
+            if(ability.cast) {await root.fx?.({icon: ability.cast.img ?? ability.icon});}   // stage1: 施法動作
+            new HazardZone(this.scene, pos.x, pos.y).init_runtime(ability);
 
             return true;
         }

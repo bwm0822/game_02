@@ -290,7 +290,8 @@
         "id": "burn",
         "fx": {
           "img": "🔥"
-        }
+        },
+        "stack": 3
       }
     ],
     "tw": {
@@ -305,21 +306,13 @@
   "firewall": {
     "icon": "🧱",
     "mode": "active",
-    "tag": "atk",
-    "scope": "single",
+    "tag": "summon",
     "cd": 3,
     "range": 5,
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "fire",
-    "src": "int",
-    "travel": {
-      "type": "spell",
-      "img": "icons:1",
-      "scl": 1,
-      "deg": -45
-    },
-    "fx": {},
+    "cast": {},
+    "zoneRadius": 1,
+    "zoneDur": 4,
+    "zoneImg": "🔥",
     "effects": [
       {
         "type": "dot",
@@ -332,7 +325,8 @@
         "id": "burn",
         "fx": {
           "img": "🔥"
-        }
+        },
+        "stack": 3
       }
     ],
     "tw": {
@@ -377,7 +371,8 @@
         "id": "burn",
         "fx": {
           "img": "🔥"
-        }
+        },
+        "stack": 3
       }
     ],
     "tw": {
@@ -419,7 +414,8 @@
         "id": "burn",
         "fx": {
           "img": "🔥"
-        }
+        },
+        "stack": 3
       }
     ],
     "tw": {
@@ -469,7 +465,8 @@
         "id": "burn",
         "fx": {
           "img": "🔥"
-        }
+        },
+        "stack": 3
       }
     ],
     "tw": {

@@ -287,6 +287,7 @@ export const GM =
     DEBUFF : 'debuff',
     BUFF : 'buff',
     HEAL : 'heal',
+    SUMMON : 'summon',     // 技能 tag：召喚類(如放置持續存在的地面區域)
     DOT : 'dot',
     HOT : 'hot',
     // 其他
