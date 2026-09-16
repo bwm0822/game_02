@@ -2,7 +2,7 @@ import {GM} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
-import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
+import {uPic,uBbc,uImage,Pic} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 const _tag = 'view';
 
@@ -704,6 +704,34 @@ export class ItemView extends View
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('setTexture', this._setTexture.bind(this));
 
+    }
+}
+
+
+// 跨多格顯示的區域類物件(如持續存在的地面法陣)：每一格各放一個 icon(emoji)，
+// weight/物理/地圖權重登記完全沿用 View 既有機制(wid/hei 設成整個範圍的大小即可)
+export class ZoneView extends View
+{
+    constructor(scene)
+    {
+        super(scene);
+        this.radiusN = 0;   // 範圍半徑(格數)
+        this.zoneImg = null;   // 每格要顯示的 icon(emoji)
+    }
+
+    _addShape()
+    {
+        const n = this.radiusN ?? 0;
+        const [w,h] = [GM.TILE_W, GM.TILE_H];
+        for(let x=-n; x<=n; x++)
+        {
+            for(let y=-n; y<=n; y++)
+            {
+                if(Math.max(Math.abs(x),Math.abs(y)) > n) {continue;}
+                this.add(new Pic(this.scene, w, h, {icon:this.zoneImg, x:x*w, y:y*h}));
+            }
+        }
+        return this;
     }
 }
 

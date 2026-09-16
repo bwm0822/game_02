@@ -206,6 +206,12 @@ export class COM_Ability extends Com
         bb.sta=GM.ST.IDLE;
     }
 
+    // 把世界座標對齊到地圖的絕對格線中心點(不是相對施法者自己，避免施法者本身沒對齊格子時連帶偏移)
+    _snapToGrid(pos)
+    {
+        return this.scene.map.getPt(pos);
+    }
+
     // AREA scope / SUMMON tag 技能專用：跟著游標顯示會被影響的範圍，不做遮蔽檢查，純視覺預覽
     _previewArea(pt)
     {
@@ -217,8 +223,7 @@ export class COM_Ability extends Com
 
         const n = this._previewRadius(this._ability);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
-        const cx = this.x + Math.round((pt.x-this.x)/w)*w;
-        const cy = this.y + Math.round((pt.y-this.y)/h)*h;
+        const {x:cx, y:cy} = this._snapToGrid(pt);
 
         const rows = 2*n+1;
         const a = Array.from({ length: rows }, () => Array(rows));
@@ -319,7 +324,8 @@ export class COM_Ability extends Com
             this._clrAbility();
 
             if(ability.cast) {await root.fx?.({icon: ability.cast.img ?? ability.icon});}   // stage1: 施法動作
-            new HazardZone(this.scene, pos.x, pos.y).init_runtime(ability);
+            const snapped = this._snapToGrid(pos);
+            new HazardZone(this.scene, snapped.x, snapped.y).init_runtime(ability, root);
 
             return true;
         }
