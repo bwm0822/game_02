@@ -97,27 +97,37 @@ export class COM_Ability extends Com
         return ability.scope===GM.AREA || ability.tag===GM.SUMMON;
     }
 
-    // 取得游標預覽/作用範圍半徑：AREA 用 radius，SUMMON 用 zoneRadius
-    _previewRadius(ability)
+    // 依總格數 count 算出以中心為準的偏移範圍(start,end 皆為inclusive)；格數為偶數時，中心點偏向負向那格
+    _axisRange(count)
     {
-        return ability.scope===GM.AREA ? (ability.radius??0) : (ability.zoneRadius??0);
+        const start = -Math.floor(count/2);
+        return {start, end: start+count-1};
     }
 
-    _showRange(on, range, checkBlock, ability)
+    // 取得作用範圍的橫/縱總格數(w/h，不是半徑)：SUMMON 用 zoneW/zoneH，其餘(GROUP/AREA)用 w/h
+    _resolveSize(ability)
+    {
+        if(ability.tag===GM.SUMMON)
+        {
+            return {w: ability.zoneW ?? 1, h: ability.zoneH ?? 1};
+        }
+        return {w: ability.w ?? 1, h: ability.h ?? 1};
+    }
+
+    _showRange(on, w, h, checkBlock, ability)
     {
         this._graphics?.clear();
         if(!on) {return;}
         if(!this._graphics) {this._graphics = this.scene.add.graphics();}
 
-        if(!this._rangeGrid) {this._genRangeGrid(range, checkBlock);}
+        if(!this._rangeGrid) {this._genRangeGrid(w, h, checkBlock);}
 
-        const n = range;
         const a = this._rangeGrid;
         const draw = ability && this._isAreaLike(ability) ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA/SUMMON 用虛線無填滿，跟裡面的作用範圍預覽區分
 
-        for(let y=0; y<=2*n; y++)
+        for(let y=0; y<h; y++)
         {
-            for(let x=0; x<=2*n; x++)
+            for(let x=0; x<w; x++)
             {
                 let rect = a[y][x];
                 if(!rect.block)
@@ -129,48 +139,49 @@ export class COM_Ability extends Com
 
     }
 
-    // 以自己為中心，產生 (2*range+1)^2 的施法範圍網格(存到 this._rangeGrid)：
+    // 以自己為中心，產生 w x h 的施法範圍網格(存到 this._rangeGrid)：
     // 每格記錄世界座標、是否可通行/被遮蔽(block)，以及依鄰格開放與否算出的外框線標記(l/r/t/b)，
     // 讓 _showRange()(畫格線)、_isInRange()(判斷點擊/滑鼠位置是否在範圍內)可以共用同一份資料，不必每次重算
-    _genRangeGrid(range, checkBlock)
+    _genRangeGrid(w, h, checkBlock)
     {
-        const n = range;
-        const rows = 2*n+1;
-        const cols = 2*n+1;
-        const a = Array.from({ length: rows }, () => Array(cols));
-        const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        const {start:xs} = this._axisRange(w);
+        const {start:ys} = this._axisRange(h);
+        const a = Array.from({ length: h }, () => Array(w));
+        const [th,tw,th_2,tw_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
 
-        for(let x=0; x<=2*n; x++)
+        for(let xi=0; xi<w; xi++)
         {
-            for(let y=0; y<=2*n; y++)
+            for(let yi=0; yi<h; yi++)
             {
-                const px = this.x + (x-n)*w;
-                const py = this.y + (y-n)*h;
+                const px = this.x + (xs+xi)*tw;
+                const py = this.y + (ys+yi)*th;
                 const wei = this.scene.map.getWeight({x:px,y:py});
                 const hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
                 const block = wei<=0 || hits.length>0;
-                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:block};
+                a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
 
-        for(let x=0; x<=2*n; x++)
+        for(let xi=0; xi<w; xi++)
         {
-            for(let y=0; y<=2*n; y++)
+            for(let yi=0; yi<h; yi++)
             {
-                a[y][x].l = a[y][x-1]?.block===false ? false : true;
-                a[y][x].r = a[y][x+1]?.block===false ? false : true;
-                a[y][x].t = a[y-1]?.[x]?.block===false ? false : true;
-                a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
+                a[yi][xi].l = a[yi][xi-1]?.block===false ? false : true;
+                a[yi][xi].r = a[yi][xi+1]?.block===false ? false : true;
+                a[yi][xi].t = a[yi-1]?.[xi]?.block===false ? false : true;
+                a[yi][xi].b = a[yi+1]?.[xi]?.block===false ? false : true;
             }
         }
-        
+
         this._rangeGrid = a;
     }
 
-    // group 技能爆炸中心固定是自己、範圍=radius，所以顯示/點擊判定都改用 radius，而非施法距離 range
-    _castN(ability)
+    // group 技能爆炸中心固定是自己、範圍=w/h，所以顯示/點擊判定都改用 w/h，而非施法距離 range(range 一律對稱，換算成 2*range+1 格)
+    _castRange(ability)
     {
-        return ability.scope===GM.GROUP ? ability.radius : ability.range;
+        if(ability.scope===GM.GROUP) {return this._resolveSize(ability);}
+        const count = 2*ability.range+1;
+        return {w:count, h:count};
     }
 
     // 選擇技能
@@ -179,8 +190,9 @@ export class COM_Ability extends Com
         if(!this._abilities[id]) {return false;}
         const ability = DB.ability(id);
 
-        this._rangeGrid = null;   // 不同技能的 range/radius 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
-        this._showRange(true, this._castN(ability), false, ability);
+        this._rangeGrid = null;   // 不同技能的 range/w/h 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
+        const {w,h} = this._castRange(ability);
+        this._showRange(true, w, h, false, ability);
 
         this._ability = ability;
         this._id = id;
@@ -221,42 +233,43 @@ export class COM_Ability extends Com
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {return;}
 
-        const n = this._previewRadius(this._ability);
+        const {w:pw, h:ph} = this._resolveSize(this._ability);
+        const {start:xs} = this._axisRange(pw);
+        const {start:ys} = this._axisRange(ph);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
         const {x:cx, y:cy} = this._snapToGrid(pt);
 
-        const rows = 2*n+1;
-        const a = Array.from({ length: rows }, () => Array(rows));
-        for(let x=0; x<=2*n; x++)
+        const a = Array.from({ length: ph }, () => Array(pw));
+        for(let xi=0; xi<pw; xi++)
         {
-            for(let y=0; y<=2*n; y++)
+            for(let yi=0; yi<ph; yi++)
             {
-                const px = cx + (x-n)*w;
-                const py = cy + (y-n)*h;
-                a[y][x] = {x:px-w_2, y:py-h_2, width:w, height:h, block:false};
+                const px = cx + (xs+xi)*w;
+                const py = cy + (ys+yi)*h;
+                a[yi][xi] = {x:px-w_2, y:py-h_2, width:w, height:h, block:false};
             }
         }
-        for(let x=0; x<=2*n; x++)
+        for(let xi=0; xi<pw; xi++)
         {
-            for(let y=0; y<=2*n; y++)
+            for(let yi=0; yi<ph; yi++)
             {
-                a[y][x].l = a[y][x-1]?.block===false ? false : true;
-                a[y][x].r = a[y][x+1]?.block===false ? false : true;
-                a[y][x].t = a[y-1]?.[x]?.block===false ? false : true;
-                a[y][x].b = a[y+1]?.[x]?.block===false ? false : true;
-                Utility.drawBlock(this._previewGraphics, a[y][x]);
+                a[yi][xi].l = a[yi][xi-1]?.block===false ? false : true;
+                a[yi][xi].r = a[yi][xi+1]?.block===false ? false : true;
+                a[yi][xi].t = a[yi-1]?.[xi]?.block===false ? false : true;
+                a[yi][xi].b = a[yi+1]?.[xi]?.block===false ? false : true;
+                Utility.drawBlock(this._previewGraphics, a[yi][xi]);
             }
         }
     }
 
     _isInRange(pos, checkBlock=true)
     {
-        const n = this._castN(this._ability);
-        !this._rangeGrid && this._genRangeGrid(n, checkBlock);
+        const {w:nW, h:nH} = this._castRange(this._ability);
+        !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock);
         const a = this._rangeGrid;
-        for(let x=0; x<=2*n; x++)
+        for(let x=0; x<nW; x++)
         {
-            for(let y=0; y<=2*n; y++)
+            for(let y=0; y<nH; y++)
             {
                 let rect = a[y][x];
                 if( !rect.block && 
@@ -345,55 +358,58 @@ export class COM_Ability extends Com
         {
             const clickPos = target ? target.pos : pt;
             if(!clickPos || !this._isInRange(clickPos)) {return null;}
-            return this._findTargets({x:this.x, y:this.y}, this._ability.radius, this._ability.checkBlock);
+            const {w,h} = this._resolveSize(this._ability);
+            return this._findTargets({x:this.x, y:this.y}, w, h, this._ability.checkBlock);
         }
         if(scope===GM.AREA)    // 以點擊位置(或點到的角色座標)為中心，且中心點需在施法距離內
         {
             const center = target ? target.pos : pt;
             if(!center || !this._isInRange(center)) {return null;}
-            const targets = this._findTargets(center, this._ability.radius, this._ability.checkBlock, false);   // AREA 不排除自己，站在範圍內也會受傷
-            this._emptyTiles = this._ability.carpet ? this._genEmptyTiles(center, this._ability.radius, targets) : null;
+            const {w,h} = this._resolveSize(this._ability);
+            const targets = this._findTargets(center, w, h, this._ability.checkBlock, false);   // AREA 不排除自己，站在範圍內也會受傷
+            this._emptyTiles = this._ability.carpet ? this._genEmptyTiles(center, w, h, targets) : null;
             return targets;
         }
         return null;
     }
 
     // carpet:true 的技能，算出範圍內沒有目標的空格座標，讓 _use() 也對空格播放動畫(地毯式轟炸的視覺效果)
-    _genEmptyTiles(center, radius, targets)
+    _genEmptyTiles(center, w, h, targets)
     {
-        const n = radius??0;
-        const [h,w] = [GM.TILE_H, GM.TILE_W];
+        const {start:xs, end:xe} = this._axisRange(w);
+        const {start:ys, end:ye} = this._axisRange(h);
+        const [th,tw] = [GM.TILE_H, GM.TILE_W];
         const occupied = new Set(targets.map(t=>{
-            const tx = Math.round((t.x-center.x)/w);
-            const ty = Math.round((t.y-center.y)/h);
+            const tx = Math.round((t.x-center.x)/tw);
+            const ty = Math.round((t.y-center.y)/th);
             return `${tx},${ty}`;
         }));
 
         const tiles = [];
-        for(let x=-n; x<=n; x++)
+        for(let x=xs; x<=xe; x++)
         {
-            for(let y=-n; y<=n; y++)
+            for(let y=ys; y<=ye; y++)
             {
-                if(Math.max(Math.abs(x),Math.abs(y)) > n) {continue;}
                 if(occupied.has(`${x},${y}`)) {continue;}
-                tiles.push({pos:{x:center.x+x*w, y:center.y+y*h}});
+                tiles.push({pos:{x:center.x+x*tw, y:center.y+y*th}});
             }
         }
         return tiles;
     }
 
-    // 找出以 center 為圓心、radius(格)範圍內的所有目標(排除已死亡；excludeSelf 決定要不要排除施法者自己)
-    // 距離判定為方格(Chebyshev)，跟施法範圍格線(_genRangeGrid)的判定方式一致，而非直線距離
-    _findTargets(center, radius, checkBlock=true, excludeSelf=true)
+    // 找出以 center 為中心、寬 w/高 h(格)矩形範圍內的所有目標(排除已死亡；excludeSelf 決定要不要排除施法者自己)
+    // 距離判定為方格，跟施法範圍格線(_genRangeGrid)的判定方式一致，而非直線距離
+    _findTargets(center, w, h, checkBlock=true, excludeSelf=true)
     {
         const {root} = this.ctx;
-        const n = radius??0;
+        const {start:xs, end:xe} = this._axisRange(w);
+        const {start:ys, end:ye} = this._axisRange(h);
 
         return this.scene.roles.filter(role=>{
             if((excludeSelf && role===root) || !role.isAlive) {return false;}
-            const dx = Math.abs(role.x-center.x)/GM.TILE_W;
-            const dy = Math.abs(role.y-center.y)/GM.TILE_H;
-            if(Math.max(dx,dy) > n) {return false;}
+            const ox = Math.round((role.x-center.x)/GM.TILE_W);
+            const oy = Math.round((role.y-center.y)/GM.TILE_H);
+            if(ox<xs || ox>xe || oy<ys || oy>ye) {return false;}
             if(checkBlock!==false)
             {
                 const hits = Utility.raycast(center.x, center.y, role.x, role.y, [this.scene.staGroup]);

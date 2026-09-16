@@ -715,19 +715,23 @@ export class ZoneView extends View
     constructor(scene)
     {
         super(scene);
-        this.radiusN = 0;   // 範圍半徑(格數)
+        this.zoneW = 1;   // 橫向總格數
+        this.zoneH = 1;   // 縱向總格數
         this.zoneImg = null;   // 每格要顯示的 icon(emoji)
     }
 
+    // 格數為偶數時，中心點偏向負向那格(跟 com_ability.js 的 _axisRange 邏輯一致)
     _addShape()
     {
-        const n = this.radiusN ?? 0;
+        const cw = this.zoneW ?? 1;
+        const ch = this.zoneH ?? 1;
+        const xs = -Math.floor(cw/2), xe = xs+cw-1;
+        const ys = -Math.floor(ch/2), ye = ys+ch-1;
         const [w,h] = [GM.TILE_W, GM.TILE_H];
-        for(let x=-n; x<=n; x++)
+        for(let x=xs; x<=xe; x++)
         {
-            for(let y=-n; y<=n; y++)
+            for(let y=ys; y<=ye; y++)
             {
-                if(Math.max(Math.abs(x),Math.abs(y)) > n) {continue;}
                 this.add(new Pic(this.scene, w, h, {icon:this.zoneImg, x:x*w, y:y*h}));
             }
         }

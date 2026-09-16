@@ -114,7 +114,8 @@
     "range": 1,
     "cd": 3,
     "scope": "group",
-    "radius": 1,
+    "w": 3,
+    "h": 3,
     "cast": {},
     "fx": {},
     "tw": {
@@ -310,7 +311,8 @@
     "cd": 3,
     "range": 5,
     "cast": {},
-    "zoneRadius": 1,
+    "zoneW": 5,
+    "zoneH": 1,
     "zoneDur": 4,
     "zoneImg": "🔥",
     "effects": [
@@ -346,7 +348,8 @@
       "fireball"
     ],
     "scope": "group",
-    "radius": 2,
+    "w": 5,
+    "h": 5,
     "pow": 1.8,
     "flat": 10,
     "elm": "fire",
@@ -399,7 +402,8 @@
     "src": "int",
     "cd": 4,
     "scope": "group",
-    "radius": 2,
+    "w": 5,
+    "h": 5,
     "cast": {},
     "fx": {},
     "effects": [
@@ -441,7 +445,8 @@
     "range": 5,
     "cd": 6,
     "scope": "area",
-    "radius": 3,
+    "w": 7,
+    "h": 7,
     "travel": {
       "type": "fall",
       "img": "☄️",
