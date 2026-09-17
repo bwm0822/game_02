@@ -455,6 +455,7 @@ export class COM_Ability extends Com
         root.unselectAbility = this._unselect.bind(this);
         root.isInRange = this._isInRange.bind(this);
         root.previewArea = this._previewArea.bind(this);
+        root.isSelAreaLike = () => this._ability && this._isAreaLike(this._ability);   // 目前選取的技能是不是 AREA/SUMMON 這種靠 previewArea 顯示範圍的技能
         // 內部使用
         root.useAb = this._use.bind(this);
         root.queryAb = this._query.bind(this);

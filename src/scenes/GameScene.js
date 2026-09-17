@@ -530,7 +530,12 @@ export class GameScene extends Scene
         if(GM.player.sta===GM.ST.ABILITY)
         {
             let pt = {x:pointer.worldX,y:pointer.worldY};
-            if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
+            if(GM.player.isSelAreaLike?.())   // AREA/SUMMON 在有效範圍內已經有範圍預覽(previewArea)可以看，不用再疊準星；範圍外還是要顯示 none 提示不能點
+            {
+                if(GM.player.isInRange(pt)) {UiCursor.hide();}
+                else {UiCursor.set('none');}
+            }
+            else if(GM.player.isInRange(pt)) {UiCursor.set('aim');}
             else {UiCursor.set('none');}
             GM.player.previewArea?.(pt);
             return;
