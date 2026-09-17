@@ -640,9 +640,13 @@ export class COM_Stats extends Com
         return {[_tag]:{states:this._states, actives:this._actives}};
     }
 
-    bind(root) 
+    bind(root)
     {
         super.bind(root);
+
+        // 角色天生自帶屬性(role.json 的 attrs 欄位)，有定義的欄位直接覆蓋 baseStats，略過對應公式算出來的預設值
+        const {bb} = this.ctx;
+        for(const [k, v] of Object.entries(bb.meta?.attrs ?? {})) {this.baseStats[k] = v;}
 
         // 1.提供 [外部操作的指令]
 

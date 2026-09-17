@@ -950,8 +950,8 @@
       ]
     },
     "attrs": {
-      "attack": 5,
-      "defense": 0
+      "atk": 5,
+      "def": 0
     },
     "states": {
       "life": {
@@ -1019,8 +1019,11 @@
       ]
     },
     "attrs": {
-      "attack": 5,
-      "defense": 0
+      "atk": 5,
+      "def": 0,
+      "resists": {
+        "fire_res": 0.5
+      }
     },
     "states": {
       "life": {
@@ -1078,8 +1081,8 @@
       "y": 32
     },
     "attrs": {
-      "attack": 5,
-      "defense": 0
+      "atk": 5,
+      "def": 0
     },
     "states": {
       "life": {
@@ -1137,8 +1140,8 @@
       "y": 32
     },
     "attrs": {
-      "attack": 5,
-      "defense": 0
+      "atk": 5,
+      "def": 0
     },
     "states": {
       "life": {
@@ -1195,8 +1198,8 @@
       "y": 32
     },
     "attrs": {
-      "attack": 5,
-      "defense": 0
+      "atk": 5,
+      "def": 0
     },
     "states": {
       "life": {
