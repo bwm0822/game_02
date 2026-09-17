@@ -233,11 +233,15 @@ export class COM_Ability extends Com
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {return;}
 
-        const {w:pw, h:ph} = this._resolveSize(this._ability);
-        const {start:xs} = this._axisRange(pw);
-        const {start:ys} = this._axisRange(ph);
+        let {w:pw, h:ph} = this._resolveSize(this._ability);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
         const {x:cx, y:cy} = this._snapToGrid(pt);
+
+        // 游標在自己左右方向(水平偏移>垂直偏移)時，w/h 對調，讓矩形範圍轉向跟指向方向垂直(跟 _use() 的 SUMMON 分支一致)
+        if(Math.abs(cx-this.x) > Math.abs(cy-this.y)) {[pw,ph] = [ph,pw];}
+
+        const {start:xs} = this._axisRange(pw);
+        const {start:ys} = this._axisRange(ph);
 
         const a = Array.from({ length: ph }, () => Array(pw));
         for(let xi=0; xi<pw; xi++)
@@ -338,7 +342,10 @@ export class COM_Ability extends Com
 
             if(ability.cast) {await root.fx?.({icon: ability.cast.img ?? ability.icon});}   // stage1: 施法動作
             const snapped = this._snapToGrid(pos);
-            new HazardZone(this.scene, snapped.x, snapped.y).init_runtime(ability, root);
+            // 點擊位置在左右方向(水平偏移>垂直偏移)時，zoneW/zoneH 對調，讓矩形範圍轉向跟點擊方向垂直(不修改原始 ability 資料)
+            const dx = Math.abs(snapped.x-this.x), dy = Math.abs(snapped.y-this.y);
+            const zoneAbility = dx>dy ? {...ability, zoneW:ability.zoneH, zoneH:ability.zoneW} : ability;
+            new HazardZone(this.scene, snapped.x, snapped.y).init_runtime(zoneAbility, root);
 
             return true;
         }
