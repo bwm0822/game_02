@@ -4,6 +4,7 @@ import {Ability} from './uiclass.js'
 import {GM,UI} from '../core/setting.js'
 import {Effect} from './uiclass.js'
 import Utility from '../core/utility.js'
+import {DEBUG} from '../core/debug.js'
 
 export default class UiObserve extends UiFrame
 {
@@ -109,12 +110,33 @@ export default class UiObserve extends UiFrame
         });
     }
 
+    // debug: 顯示所有屬性(固定高度、捲動)
+    addDebug(parent, total)
+    {
+        if(!DEBUG.enable) {return;}
+        const scene=this.scene;
+
+        ui.uDiv.call(parent,scene);
+        ui.uBbc.call(parent,scene,{text:'[debug] 所有屬性',color:GM.COLOR.LIGHTGRAY})
+
+        const scroll = ui.uScroll.call(parent,scene,{bg:{},height:200,space:5,ext:{expand:true}});
+        this._statScroll = scroll;
+        for(const key of GM.BASE) {ui.uStat.call(scroll,scene,key.lab(),total[key],{interactive:false})}
+        for(const key of GM.COMBAT) {ui.uStat.call(scroll,scene,key.lab(),total[key],{interactive:false})}
+        for(const key of GM.RESIST)
+        {
+            const value = `${Math.round((total.resists?.[key]??0)*100)}%`;
+            ui.uStat.call(scroll,scene,key.lab(),value,{interactive:false})
+        }
+    }
+
     update()
     {
         const content=this._content;
         const scene=this.scene;
 
         content.removeAll(true)
+        this._statScroll = null;
 
         // name
         ui.uBbc.call(content,scene,{text:this.owner.id.lab()})
@@ -163,6 +185,9 @@ export default class UiObserve extends UiFrame
         ui.uDiv.call(content,scene,{expand:true})
         ui.uDes.call(content,scene,this.owner.id.des());
 
+        // debug(放最下面)
+        this.addDebug(content, total);
+
         // layout
         this.layout();
     }
@@ -172,6 +197,16 @@ export default class UiObserve extends UiFrame
         super.show();
         this.owner = owner;
         this.update();
+        this._statScroll?.setT(0);
+        this._statScroll?.mouseWheel(true);
+    }
+
+    close()
+    {
+        if(!this.visible) {return;}
+
+        super.close();
+        this._statScroll?.mouseWheel(false);
     }
 
     static show(owner) {this.instance?.show(owner);}
