@@ -1,0 +1,67 @@
+{
+  "burn": {
+    "img": "🔥",
+    "cell": {
+      "size": 20,
+      "alpha": 0.8,
+      "align": "bottom",
+      "oy": 0
+    },
+    "spawn": {
+      "scale": {
+        "from": 0,
+        "to": 1
+      },
+      "duration": 200,
+      "ease": "Back.Out"
+    },
+    "idle": {
+      "scaleX": {
+        "from": 0.9,
+        "to": 1.1
+      },
+      "scaleY": {
+        "from": 1.1,
+        "to": 0.9
+      },
+      "duration": 350,
+      "yoyo": true,
+      "repeat": -1,
+      "ease": "Sine.InOut",
+      "randDelay": 350
+    },
+    "tick": {
+      "scale": {
+        "from": 1,
+        "to": 1.5
+      },
+      "y": "-=4",
+      "duration": 150,
+      "yoyo": true,
+      "ease": "Quad.Out"
+    },
+    "end": {
+      "alpha": 0,
+      "scale": 0.3,
+      "duration": 300,
+      "ease": "Quad.In"
+    }
+  },
+  "stun": {
+    "img": "💫",
+    "cell": {
+      "size": 20,
+      "align": "top"
+    },
+    "idle": {
+      "angle": {
+        "from": -15,
+        "to": 15
+      },
+      "duration": 400,
+      "yoyo": true,
+      "repeat": -1,
+      "ease": "Sine.InOut"
+    }
+  }
+}

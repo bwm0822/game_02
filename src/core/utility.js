@@ -320,15 +320,70 @@ export default class Utility
     // }
 
 
-    static fmt_Des(des, elm) 
+    // pow * 施放者屬性(src) + flat 這條公式用的屬性欄位，跟 combat.js 的傷害/治療公式預設值一致
+    static _fmtSrcKey(tag, src)
+    {
+        return src ?? (tag===GM.HEAL ? GM.INT : GM.ATK);
+    }
+
+    // 技能可能有多筆傷害成分(ability.hits)；沒有 hits 的技能(例如治療)沿用單一 pow/flat/src 欄位，視為第 0 筆
+    static _fmtHit(dat, idx)
+    {
+        if(dat.hits) {return dat.hits[idx] ?? {};}
+        return idx===0 ? dat : {};
+    }
+
+    static fmt_Des(des, elm)
     {
         const val = (v)=>{return typeof v==='string' ? v.lab() : v;}
-        
-        return des.replace(/{#(\w+)}/g, (match, key) => {
+
+        // {#key} 沒帶索引視為第 0 筆；多成分技能可用 {#fmt0}/{#fmt1}... 指定第幾筆 hit
+        return des.replace(/{#([a-zA-Z]+)(\d*)}/g, (match, key, idxStr) => {
+            const idx = idxStr==='' ? 0 : parseInt(idxStr);
             switch(key)
             {
+                // 實際作用值：pow * 施放者屬性(src) + flat，跟 combat.js 的傷害/治療公式一致(不含對方防禦/抗性)
+                case 'fmt':
+                {
+                    const hit = this._fmtHit(elm.dat, idx);
+                    const {pow=1, flat=0} = hit;
+                    const stats = elm.owner?.total;
+                    if(!stats) {return '';}
+                    const statKey = this._fmtSrcKey(elm.dat.tag, hit.src);
+                    const value = Math.round((stats[statKey]||0) * pow + flat);
+                    return `[color=white]${value}[/color]`;
+                }
+                // 計算公式文字，例如「10+1.5×智慧」，省略沒作用的 +0 / ×1；運算符號用灰色，數值/屬性名用白色
+                case 'formula':
+                {
+                    const hit = this._fmtHit(elm.dat, idx);
+                    const {pow=1, flat=0} = hit;
+                    const statKey = this._fmtSrcKey(elm.dat.tag, hit.src);
+                    const parts = [];
+                    if(flat) {parts.push(`[color=white]${flat}[/color]`);}
+                    let powSrc = '';
+                    if(pow!==1) {powSrc += `[color=white]${pow}[/color][color=#AAAAAA]×[/color]`;}
+                    powSrc += `[color=white]${statKey.lab()}[/color]`;
+                    parts.push(powSrc);
+                    return parts.join('[color=#AAAAAA]+[/color]');
+                }
+                // 該筆 hit 的傷害屬性，預設物理
+                case 'elm':
+                {
+                    const hit = this._fmtHit(elm.dat, idx);
+                    return `[color=white]${(hit.elm ?? GM.PHY).lab()}[/color]`;
+                }
+                // 作用範圍尺寸，例如「7×7」；group/area scope 用 w/h，summon 標籤的地帶技能用 zoneW/zoneH。全部用白色(不像 formula 那樣把運算符號調暗)
+                case 'wh':
+                {
+                    const w = elm.dat.w ?? elm.dat.zoneW;
+                    const h = elm.dat.h ?? elm.dat.zoneH;
+                    if(w===undefined || h===undefined) {return '';}
+                    return `[color=white]${w}×${h}[/color]`;
+                }
                 default:
-                    if(!elm.dat[key]) return ''; 
+                    if(idxStr!=='') {return '';}  // 一般欄位不支援索引
+                    if(!elm.dat[key]) return '';
                     return `[color=white]${val(elm.dat[key])}[/color]`;
             }}
         );

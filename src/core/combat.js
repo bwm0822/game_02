@@ -31,30 +31,37 @@ export function computeDamage(attacker, defender, skill={})
     // 計算 effs
     defender.addEffs(aStats.effs, 'target', 'hit');
 
-    // 計算傷害
+    // 計算傷害：技能可能同時包含多種屬性的傷害成分(hits)，每個成分各自算基礎傷害/防禦/抗性後加總，
+    // 再對「總傷害」套用一次暴擊/浮動談差(不分屬性各自判定，符合單一攻擊的直覺)
     let type = GM.HIT;
-    let dmg = aStats[skill?.src??GM.ATK] || 0; // 基本攻擊
-    let elm = skill?.elm ?? GM.PHY;    // 攻擊屬性
-    let pow = skill?.pow ?? 1;         // 傷害倍率
-    let pen = skill?.pen ?? 0;         // 防禦穿透率(penetrate)
-    let flat = skill?.flat ?? 0;       // 固定傷害
+    let damage = 0;
+    for(const hit of skill.hits ?? [{}])  // 沒有 hits 的技能(還沒補戰鬥數值的佔位技能)沿用舊行為：當作一筆預設物理成分
+    {
+        const dmg = aStats[hit.src??GM.ATK] || 0;  // 基本攻擊
+        const elm = hit.elm ?? GM.PHY;             // 攻擊屬性
+        const pow = hit.pow ?? 1;                  // 傷害倍率
+        const pen = hit.pen ?? 0;                  // 防禦穿透率(penetrate)
+        const flat = hit.flat ?? 0;                // 固定傷害
 
-    // 1. 計算基礎傷害
-    let baseDamage = dmg * pow + flat;
+        // 1. 計算基礎傷害
+        const baseDamage = dmg * pow + flat;
 
-    // 2. 計算防禦係數
-    const effectiveDef = dStats.def * (1 - pen);
-    let defFactor = baseDamage / (baseDamage + effectiveDef);
+        // 2. 計算防禦係數
+        const effectiveDef = dStats.def * (1 - pen);
+        const defFactor = baseDamage / (baseDamage + effectiveDef);
 
-    // 3. 計算實際傷害
-    let damage = baseDamage * defFactor;
+        // 3. 計算實際傷害
+        let hitDamage = baseDamage * defFactor;
 
-    // 4. 計算抗性
-    const resist = dStats.resists?.[RESIST_MAP[elm]] || 0;
-    damage *= 1 - resist;
+        // 4. 計算抗性
+        const resist = dStats.resists?.[RESIST_MAP[elm]] || 0;
+        hitDamage *= 1 - resist;
+
+        damage += hitDamage;
+    }
 
     // 5. 計算暴擊
-    if (Math.random() < aStats[GM.CRI]) 
+    if (Math.random() < aStats[GM.CRI])
     {
         damage *= aStats[GM.CRD];
         dlog(T.COMBAT)(`💥 ${attacker.name} 暴擊！`);

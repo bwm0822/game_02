@@ -2,8 +2,9 @@ import {GM} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
-import {uPic,uBbc,uImage,Pic} from '../ui/uicomponents.js'
+import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
+import FxCell from '../core/fxcell.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -718,9 +719,13 @@ export class ZoneView extends View
         this.zoneW = 1;   // 橫向總格數
         this.zoneH = 1;   // 縱向總格數
         this.zoneImg = null;   // 每格要顯示的 icon(emoji)
+        this.zoneAnim = null;  // {cell, spawn, idle, tick, end}，spawn/idle/tick/end 是 Phaser tween 設定
+        this.zoneSrc = null;   // 施法者位置(world)，spawn.from='near' 用
+        this._cells = [];
     }
 
     // 格數為偶數時，中心點偏向負向那格(跟 com_ability.js 的 _axisRange 邏輯一致)
+    // 單格的外觀/動畫交給 FxCell，這裡只負責多格排列(jitter)跟 spawn 的先後順序(stagger/from)
     _addShape()
     {
         const cw = this.zoneW ?? 1;
@@ -728,14 +733,56 @@ export class ZoneView extends View
         const xs = -Math.floor(cw/2), xe = xs+cw-1;
         const ys = -Math.floor(ch/2), ye = ys+ch-1;
         const [w,h] = [GM.TILE_W, GM.TILE_H];
+        const {jitter=0} = this.zoneAnim?.cell ?? {};
         for(let x=xs; x<=xe; x++)
         {
             for(let y=ys; y<=ye; y++)
             {
-                this.add(new Pic(this.scene, w, h, {icon:this.zoneImg, x:x*w, y:y*h}));
+                const jx = Phaser.Math.FloatBetween(-jitter, jitter);
+                const jy = Phaser.Math.FloatBetween(-jitter, jitter);
+                const fx = new FxCell(this.scene, this, this.zoneImg, this.zoneAnim, {x:x*w+jx, y:y*h+jy, size:w});
+                this._cells.push({gx:x, gy:y, fx});
             }
         }
         return this;
+    }
+
+    _spawnDelays(stagger, from)
+    {
+        if(from==='random') {return this._cells.map(()=>Math.random()*stagger*(this._cells.length-1));}
+        if(from==='near' && this.zoneSrc)
+        {
+            const {x,y} = this.zoneSrc;
+            const dist = this._cells.map(c=>Phaser.Math.Distance.Between(x, y, this.root.x+c.gx*GM.TILE_W, this.root.y+c.gy*GM.TILE_H));
+            const order = [...dist].sort((a,b)=>a-b);
+            return dist.map(d=>order.indexOf(d)*stagger);
+        }
+        return this._cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
+    }
+
+    _playSpawn()
+    {
+        const {stagger=0, from='center'} = this.zoneAnim?.spawn ?? {};
+        const delays = this._spawnDelays(stagger, from);
+        return Promise.all(this._cells.map((c,i)=>c.fx.spawn(delays[i])));
+    }
+
+    _playTick(gx, gy)
+    {
+        this._cells.find(c=>c.gx===gx && c.gy===gy)?.fx.tick();
+    }
+
+    _playEnd()
+    {
+        return Promise.all(this._cells.map(c=>c.fx.end()));
+    }
+
+    bind(root, config)
+    {
+        super.bind(root, config);
+        root.playSpawn = this._playSpawn.bind(this);
+        root.playTick = this._playTick.bind(this);
+        root.playEnd = this._playEnd.bind(this);
     }
 }
 

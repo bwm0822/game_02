@@ -490,7 +490,7 @@ export class AbilitySlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this.scale=1.1;this._id && Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() { this.scale=1.1;this.id && Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
     leftButtonDown(x,y)
@@ -672,18 +672,20 @@ export class AbilityItem extends Pic
 export class Ability extends Pic
 {
     static selected = null; // 用來記錄目前選擇的技能
-    constructor(scene, w, h, ability)
+    constructor(scene, w, h, ability, owner)
     {
         const config = {scl:0.5,bg:{color:GM.COLOR.SLOT,strokeColor:GM.COLOR.WHITE}};
         super(scene, w, h, config);
-        this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})        
+        this._disabled=uRect.call(this,scene,{color:GM.COLOR.BLACK, alpha:0})
         this._remain=uBbc.call(this,scene,{fontSize:20,color:'#fff',
                                             ext:{align:'right-bottom',expand:false}})
+        this._owner = owner;
         this.addListener();
         this.set(ability);
     }
 
     get dat() {return this._dat;}
+    get owner() {return this._owner;}
 
     addListener()
     {

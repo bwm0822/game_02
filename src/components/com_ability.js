@@ -345,7 +345,8 @@ export class COM_Ability extends Com
             // 點擊位置在左右方向(水平偏移>垂直偏移)時，zoneW/zoneH 對調，讓矩形範圍轉向跟點擊方向垂直(不修改原始 ability 資料)
             const dx = Math.abs(snapped.x-this.x), dy = Math.abs(snapped.y-this.y);
             const zoneAbility = dx>dy ? {...ability, zoneW:ability.zoneH, zoneH:ability.zoneW} : ability;
-            new HazardZone(this.scene, snapped.x, snapped.y).init_runtime(zoneAbility, root);
+            const zone = new HazardZone(this.scene, snapped.x, snapped.y).init_runtime(zoneAbility, root);
+            await zone?.playSpawn();   // 等地帶動畫長完才結束回合
 
             return true;
         }

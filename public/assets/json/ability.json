@@ -66,8 +66,12 @@
     "icon": "🗡️",
     "mode": "active",
     "tag": "atk",
-    "pow": 1.15,
-    "flat": 0,
+    "hits": [
+      {
+        "pow": 1.15,
+        "flat": 0
+      }
+    ],
     "range": 1,
     "cd": 1,
     "travel": {
@@ -86,9 +90,13 @@
     "icon": "📍",
     "mode": "active",
     "tag": "atk",
-    "pow": 1,
-    "flat": 0,
-    "pen": 0.2,
+    "hits": [
+      {
+        "pow": 1,
+        "flat": 0,
+        "pen": 0.2
+      }
+    ],
     "range": 1,
     "cd": 1,
     "travel": {
@@ -120,11 +128,11 @@
     "fx": {},
     "tw": {
       "lab": "旋風斬",
-      "des": "旋轉劍身，對周圍全體造成多段傷害。"
+      "des": "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。"
     },
     "us": {
       "lab": "Whirlwind",
-      "des": "旋轉劍身，對周圍全體造成多段傷害。"
+      "des": "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。"
     }
   },
   "swordmastery": {
@@ -188,8 +196,12 @@
     "icon": "🎯",
     "mode": "active",
     "tag": "atk",
-    "pow": 2.5,
-    "flat": 0,
+    "hits": [
+      {
+        "pow": 2.5,
+        "flat": 0
+      }
+    ],
     "range": 5,
     "cd": 3,
     "travel": {
@@ -268,10 +280,14 @@
     "scope": "single",
     "cd": 3,
     "range": 5,
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "fire",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "fire",
+        "pow": 1.5,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "travel": {
       "type": "spell",
       "img": "🔥",
@@ -289,19 +305,16 @@
         "dur": 3,
         "icon": "🔥",
         "id": "burn",
-        "fx": {
-          "img": "🔥"
-        },
         "stack": 3
       }
     ],
     "tw": {
       "lab": "火球術",
-      "des": "投擲火球。造成基礎火屬性爆炸傷害。"
+      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害({#formula})。"
     },
     "us": {
       "lab": "Fireball",
-      "des": "投擲火球。造成基礎火屬性爆炸傷害。"
+      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害({#formula})。"
     }
   },
   "firewall": {
@@ -315,6 +328,59 @@
     "zoneH": 1,
     "zoneDur": 4,
     "zoneImg": "🔥",
+    "zoneAnim": {
+      "cell": {
+        "size": 30,
+        "jitter": 3,
+        "scale": [
+          0.85,
+          1.15
+        ],
+        "alpha": 0.9,
+        "flipX": "random"
+      },
+      "spawn": {
+        "scale": {
+          "from": 0,
+          "to": 1
+        },
+        "duration": 250,
+        "ease": "Back.Out",
+        "stagger": 70,
+        "from": "center"
+      },
+      "idle": {
+        "scaleX": {
+          "from": 0.75,
+          "to": 1.25
+        },
+        "scaleY": {
+          "from": 0.75,
+          "to": 1.25
+        },
+        "y": "-=2",
+        "duration": 450,
+        "yoyo": true,
+        "repeat": -1,
+        "ease": "Sine.InOut",
+        "randDelay": 450
+      },
+      "tick": {
+        "scale": {
+          "from": 1,
+          "to": 1.4
+        },
+        "duration": 150,
+        "yoyo": true,
+        "ease": "Quad.Out"
+      },
+      "end": {
+        "alpha": 0,
+        "scale": 0.3,
+        "duration": 350,
+        "ease": "Quad.In"
+      }
+    },
     "effects": [
       {
         "type": "dot",
@@ -325,19 +391,16 @@
         "dur": 3,
         "icon": "🔥",
         "id": "burn",
-        "fx": {
-          "img": "🔥"
-        },
         "stack": 3
       }
     ],
     "tw": {
       "lab": "火牆術",
-      "des": "召喚火焰地帶。對經過者施加持續灼燒。"
+      "des": "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。"
     },
     "us": {
       "lab": "Fire Wall",
-      "des": "召喚火焰地帶。對經過者施加持續灼燒。"
+      "des": "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。"
     }
   },
   "fireballvolley": {
@@ -350,10 +413,14 @@
     "scope": "group",
     "w": 5,
     "h": 5,
-    "pow": 1.8,
-    "flat": 10,
-    "elm": "fire",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "fire",
+        "pow": 1.8,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "cd": 5,
     "travel": {
       "type": "spell",
@@ -372,19 +439,16 @@
         "dur": 3,
         "icon": "🔥",
         "id": "burn",
-        "fx": {
-          "img": "🔥"
-        },
         "stack": 3
       }
     ],
     "tw": {
       "lab": "高級火球術",
-      "des": "對自身周圍範圍內的敵人各自發射火球，造成範圍傷害。"
+      "des": "對自身周圍範圍{#wh}方格內的敵人各自發射火球，每發造成 {#fmt} 點{#elm}傷害({#formula})。"
     },
     "us": {
       "lab": "Greater Fireball",
-      "des": "Fires a fireball at each enemy within range around yourself."
+      "des": "Fires a fireball at each enemy within a {#wh} tile range around yourself, dealing {#fmt} {#elm} damage each ({#formula})."
     }
   },
   "combustion": {
@@ -396,10 +460,14 @@
       "firewall"
     ],
     "range": 5,
-    "pow": 2,
-    "flat": 15,
-    "elm": "fire",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "fire",
+        "pow": 2,
+        "flat": 15,
+        "src": "int"
+      }
+    ],
     "cd": 4,
     "scope": "group",
     "w": 5,
@@ -416,19 +484,16 @@
         "dur": 3,
         "icon": "🔥",
         "id": "burn",
-        "fx": {
-          "img": "🔥"
-        },
         "stack": 3
       }
     ],
     "tw": {
       "lab": "燃燒術",
-      "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
+      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害({#formula})。"
     },
     "us": {
       "lab": "Combustion",
-      "des": "引爆目標身上的灼燒狀態，造成瞬間大傷害。"
+      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害({#formula})。"
     }
   },
   "meteorshower": {
@@ -438,10 +503,20 @@
     "refs": [
       "combustion"
     ],
-    "pow": 2.5,
-    "flat": 20,
-    "elm": "fire",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "fire",
+        "pow": 2.5,
+        "flat": 20,
+        "src": "int"
+      },
+      {
+        "elm": "phy",
+        "pow": 2,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 6,
     "scope": "area",
@@ -468,29 +543,30 @@
         "dur": 3,
         "icon": "🔥",
         "id": "burn",
-        "fx": {
-          "img": "🔥"
-        },
         "stack": 3
       }
     ],
     "tw": {
       "lab": "流星雨",
-      "des": "大範圍隕石轟炸，摧毀範圍內一切。"
+      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害({#formula0})及 {#fmt1} 點{#elm1}傷害({#formula1})，摧毀範圍內一切。"
     },
     "us": {
       "lab": "Meteor Shower",
-      "des": "大範圍隕石轟炸，摧毀範圍內一切。"
+      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害({#formula0})及 {#fmt1} 點{#elm1}傷害({#formula1})，摧毀範圍內一切。"
     }
   },
   "icebolt": {
     "icon": "❄️",
     "mode": "active",
     "tag": "atk",
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "ice",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "ice",
+        "pow": 1.5,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 3,
     "tw": {
@@ -506,10 +582,14 @@
     "icon": "🧊",
     "mode": "active",
     "tag": "atk",
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "ice",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "ice",
+        "pow": 1.5,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 3,
     "tw": {
@@ -529,10 +609,14 @@
       "icebolt",
       "icewall"
     ],
-    "pow": 2,
-    "flat": 15,
-    "elm": "ice",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "ice",
+        "pow": 2,
+        "flat": 15,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 4,
     "tw": {
@@ -551,10 +635,14 @@
     "refs": [
       "deepfreeze"
     ],
-    "pow": 2.5,
-    "flat": 20,
-    "elm": "ice",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "ice",
+        "pow": 2.5,
+        "flat": 20,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 6,
     "tw": {
@@ -570,10 +658,14 @@
     "icon": "🐍",
     "mode": "active",
     "tag": "atk",
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "poison",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "poison",
+        "pow": 1.5,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 3,
     "tw": {
@@ -589,10 +681,14 @@
     "icon": "🌫️",
     "mode": "active",
     "tag": "atk",
-    "pow": 1.5,
-    "flat": 10,
-    "elm": "poison",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "poison",
+        "pow": 1.5,
+        "flat": 10,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 3,
     "tw": {
@@ -612,10 +708,14 @@
       "poisondart",
       "poisonmist"
     ],
-    "pow": 2,
-    "flat": 15,
-    "elm": "poison",
-    "src": "int",
+    "hits": [
+      {
+        "elm": "poison",
+        "pow": 2,
+        "flat": 15,
+        "src": "int"
+      }
+    ],
     "range": 5,
     "cd": 4,
     "tw": {

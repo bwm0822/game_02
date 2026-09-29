@@ -24,6 +24,8 @@ export default class DB
         this._abilityDB = scene.cache.json.get('skill');
 
         this._abTree = scene.cache.json.get('sk_tree');
+
+        this._fxDB = scene.cache.json.get('fx');
     }
 
     static lut(key)
@@ -55,6 +57,8 @@ export default class DB
     static quest(id) { return this._questDB?.[id]; }
 
     static ability(id) { return this._abilityDB?.[id]; }
+
+    static fx(id) { return this._fxDB?.[id]; }
 
     
 }

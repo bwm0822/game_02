@@ -84,7 +84,7 @@ export default class UiInfo extends UiFrame
                 div && ui.uDiv.call(this,scene);
                 ui.uDes.call(this,scene,{
                         text:Utility.fmt_Des(des, elm),
-                        color:GM.COLOR.GRAY},300)
+                        color:GM.COLOR.LIGHTGRAY},300)
             }
         }
         return this;
@@ -130,7 +130,7 @@ export default class UiInfo extends UiFrame
                 if(div&&!hasDiv) {ui.uDiv.call(this,this.scene);hasDiv=true;}
                 ui.uDes.call(this,this.scene,{
                             text:Utility.fmt_Eff(eff),
-                            color:GM.COLOR.GRAY},300);
+                            color:GM.COLOR.LIGHTGRAY},300);
             })
         }
         return this;
@@ -142,7 +142,7 @@ export default class UiInfo extends UiFrame
         const stack = elm.stack;
         ui.uDes.call(this,this.scene,{
                     text:Utility.fmt_Active(eff, stack),
-                    color:GM.COLOR.GRAY})
+                    color:GM.COLOR.LIGHTGRAY})
         return this;
     }
 
@@ -208,7 +208,7 @@ export default class UiInfo extends UiFrame
     {
         this.addTitle(elm)
             .addCd(elm)
-            .addStats([GM.RANGE], elm)
+            .addStats([GM.RANGE, GM.SCOPE], elm)
             .addMods(elm)
             .addDes(elm)
             .addEffs(elm,false)

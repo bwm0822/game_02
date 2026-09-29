@@ -3,6 +3,8 @@ import Utility from '../core/utility.js'
 import {uBbc,uRect,uImage,Pic,uPanel} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+import DB from '../data/db.js'
+import FxCell from '../core/fxcell.js'
 const _tag = 'disp';
 
 //--------------------------------------------------
@@ -281,28 +283,37 @@ export class COM_Disp extends Com
         });
     }
 
-    // 持續效果(buff/dot...)用的常駐特效icon，跟 _fx() 的一次性動畫不同，顯示到 _fxOff(id) 被呼叫才消失
-    // cfg: {img, alpha=0.7, align='bottom'('top'|'bottom'), oy=0(align基準位置上的額外偏移)}
-    _fxOn(id, cfg)
+    // 持續效果(buff/dot...)的常駐特效，外觀/動畫由 fx.json 依效果 id 決定(查不到就不顯示)，顯示到 _fxOff(id) 才消失
+    // 同 id 疊層只顯示一個，用引用計數，最後一層結束才播 end
+    // cell.align='bottom'('top'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
+    _fxOn(id, {skipSpawn=false}={})
     {
-        if(this._fxMap?.[id]) {return;}
         this._fxMap ??= {};
-        const {root} = this.ctx;
-        const {img, alpha=0.7, align='bottom', oy=0} = cfg;
+        const cur = this._fxMap[id];
+        if(cur) {cur.ref++; return;}
+        const cfg = DB.fx(id);
+        if(!cfg) {return;}
 
-        const sp = new Pic(this.scene,30,30,{icon:img});
-        root.add(sp);
-        sp.setOrigin(0.5,1).layout();          // 圖示底部對齊
-        sp.y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
-        sp.setDepth(100);
-        sp.setAlpha(alpha);
-        this._fxMap[id] = sp;
+        const {root} = this.ctx;
+        const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
+        const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
+        const cell = new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
+        if(skipSpawn) {cell.startIdle();} else {cell.spawn();}
+        this._fxMap[id] = {cell, ref:1};
     }
 
-    _fxOff(id)
+    _fxOff(id, force=false)
     {
-        this._fxMap?.[id]?.destroy();
-        if(this._fxMap) {delete this._fxMap[id];}
+        const cur = this._fxMap?.[id];
+        if(!cur) {return;}
+        if(--cur.ref>0 && !force) {return;}
+        delete this._fxMap[id];
+        cur.cell.end().then(()=>cur.cell.destroy());
+    }
+
+    _fxTick(id)
+    {
+        this._fxMap?.[id]?.cell.tick();
     }
 
     _underAtk(id)
@@ -321,7 +332,7 @@ export class COM_Disp extends Com
         this._busy = false;
         this._speak(null);
         this._pop(null);
-        Object.keys(this._fxMap??{}).forEach(id=>this._fxOff(id));   // 死亡時常駐特效全部清除，不等效果自然到期
+        Object.keys(this._fxMap??{}).forEach(id=>this._fxOff(id, true));   // 死亡時常駐特效全部播 end 收掉，不等效果自然到期
     }
 
     //------------------------------------------------------
@@ -342,6 +353,7 @@ export class COM_Disp extends Com
         root.fx = this._fx.bind(this);
         root.fxOn = this._fxOn.bind(this);
         root.fxOff = this._fxOff.bind(this);
+        root.fxTick = this._fxTick.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));

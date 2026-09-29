@@ -469,12 +469,13 @@ export class COM_Stats extends Com
                 if(idx!==-1)
                 {
                     this._actives.splice(idx, 1);
+                    root.fxOff?.(eff.id);
                     dlog(T.NPC,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
                 }
             }
         }
         this._actives.push(eff);
-        if(eff.fx) {root.fxOn?.(eff.id, eff.fx);}   // 常駐特效，持續到效果結束才消失
+        root.fxOn?.(eff.id);   // 常駐特效(fx.json 依 id 查表)，持續到效果結束才消失
         this._setDirty();
     }
 
@@ -487,7 +488,9 @@ export class COM_Stats extends Com
         if(bb.sta!==GM.ST.SLEEP) {root.pop?.();}
 
         // 2. 處理作用中的效果
+        const ticked = new Set();   // 同 id 疊多層時 tick 動畫每回合只播一次
         this._actives.forEach((eff)=>{
+            if(eff.type===GM.DOT || eff.type===GM.HOT) {ticked.add(eff.id);}
             switch(eff.type)
             {
                 case GM.DOT:
@@ -516,13 +519,13 @@ export class COM_Stats extends Com
                     if (eff.id === 'stun')
                     {
                         // 眩暈：跳過下一次行動
-                        root.pop?.('💫',{duration:0});
                         this._states[GM.STUN] = true;
                     }
                     break;
                 }
             }
         });
+        ticked.forEach(id=>root.fxTick?.(id));
 
 
         // 3. 移除 DOT/HOT 過期效果
@@ -531,7 +534,7 @@ export class COM_Stats extends Com
             {
                 dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
                 if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
-                if(eff.fx) {root.fxOff?.(eff.id);}   // 常駐特效隨效果結束一起清除
+                root.fxOff?.(eff.id);   // 常駐特效隨效果結束一起清除(引用計數，最後一層才真的消失)
                 return false;
             }
             return true;
@@ -549,13 +552,14 @@ export class COM_Stats extends Com
         // 回合結束處理
         
         // BUFF/DEBUFF的remaining-1 及 移除BUFF/DEBUFF過期效果
-        const{bb}=this.ctx;
+        const{root,bb}=this.ctx;
         this._actives = this._actives.filter(eff => {
             if(eff.type===GM.BUFF||eff.type===GM.DEBUFF) {eff.remaining -= 1;}
-            if (eff.remaining <= 0) 
+            if (eff.remaining <= 0)
             {
                 dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
                 if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
+                root.fxOff?.(eff.id);
                 return false;
             }
             return true;
@@ -632,7 +636,11 @@ export class COM_Stats extends Com
     {
         const d = data?.[_tag];
         if(d?.states) {Object.assign(this._states, d.states);}
-        if(d?.actives) {Object.assign(this._actives, d.actives);}
+        if(d?.actives)
+        {
+            Object.assign(this._actives, d.actives);
+            this._actives.forEach(eff=>this.ctx.root.fxOn?.(eff.id, {skipSpawn:true}));   // 讀檔時狀態本來就在，直接進 idle
+        }
     }
 
     save()

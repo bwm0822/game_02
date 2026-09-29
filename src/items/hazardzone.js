@@ -32,6 +32,8 @@ export default class HazardZone extends GameObject
         this.bb.zoneW = this._w;            // 給 ZoneView._addShape() 畫每一格用
         this.bb.zoneH = this._h;
         this.bb.zoneImg = ability.zoneImg;
+        this.bb.zoneAnim = ability.zoneAnim;
+        this.bb.zoneSrc = caster ? {x:caster.x, y:caster.y} : null;
 
         this.addCom(new ZoneView(this.scene), {modify:false});
 
@@ -54,10 +56,19 @@ export default class HazardZone extends GameObject
             if(ox<xs || ox>xe || oy<ys || oy>ye) {return;}
             role.emit(GM.EVT.UNDERATK, this._caster?.id);   // 觸發好感度下降/AI 仇恨判定，跟一般攻擊命中一致
             role.addEffs?.(this._ability.effects, 'target', 'hit');
+            this.playTick(ox, oy);
         });
 
         this._remaining -= 1;
-        if(this._remaining<=0) {this._remove();}
+        if(this._remaining<=0) {this._expire();}
+    }
+
+    // end 動畫不卡回合：先停止回合結算，播完才真正銷毀；播放途中場景被關掉(this.scene 變 null)就不再 _remove
+    async _expire()
+    {
+        this.unregTS();
+        await this.playEnd();
+        if(this.scene) {this._remove();}
     }
 
     _remove()

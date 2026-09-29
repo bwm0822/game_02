@@ -375,6 +375,7 @@ export const GM =
     ENEMY : 'enemy',
 
     // ability scope
+    SCOPE : 'scope',
     SINGLE : 'single',
     GROUP : 'group',
     AREA : 'area',
