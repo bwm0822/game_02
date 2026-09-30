@@ -379,6 +379,7 @@ export const GM =
     SINGLE : 'single',
     GROUP : 'group',
     AREA : 'area',
+    CONE : 'cone',
 
     // path
     PATH_NONE : -1, // 找不到路徑

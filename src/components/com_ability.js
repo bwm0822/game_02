@@ -94,7 +94,50 @@ export class COM_Ability extends Com
     // AREA scope 或 SUMMON tag(如召喚地面區域的技能)，都是「點擊位置決定作用範圍中心」，用虛線可點擊範圍+游標處實心作用範圍預覽
     _isAreaLike(ability)
     {
-        return ability.scope===GM.AREA || ability.tag===GM.SUMMON;
+        return ability.scope===GM.AREA || ability.scope===GM.CONE || ability.tag===GM.SUMMON;
+    }
+
+    _isSelfTile(pos)
+    {
+        return Math.round((pos.x-this.x)/GM.TILE_W)===0 && Math.round((pos.y-this.y)/GM.TILE_H)===0;
+    }
+
+    // CONE 技能：以自己為原點、朝 dirPt 方向，列出格中心落在扇形內(歐式距離<=range、夾角<=angle/2)且可通行、沒被遮擋的格子偏移
+    _coneTiles(dirPt)
+    {
+        const {range, angle, checkBlock} = this._ability;
+        const [tw,th] = [GM.TILE_W, GM.TILE_H];
+        const dir = Math.atan2(dirPt.y-this.y, dirPt.x-this.x);
+        const half = Phaser.Math.DegToRad(angle/2);
+        const tiles = [];
+        for(let ox=-range; ox<=range; ox++)
+        {
+            for(let oy=-range; oy<=range; oy++)
+            {
+                if((ox===0 && oy===0) || Math.hypot(ox,oy)>range) {continue;}
+                const px = this.x+ox*tw, py = this.y+oy*th;
+                const diff = Phaser.Math.Angle.Wrap(Math.atan2(py-this.y, px-this.x)-dir);
+                if(Math.abs(diff)>half) {continue;}
+                if(this.scene.map.getWeight({x:px,y:py})<=0) {continue;}
+                if(checkBlock!==false && Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]).length>0) {continue;}
+                tiles.push({ox,oy,x:px,y:py});
+            }
+        }
+        return tiles;
+    }
+
+    _previewCone(pt)
+    {
+        const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        const tiles = this._coneTiles(pt);
+        const keys = new Set(tiles.map(t=>`${t.ox},${t.oy}`));
+        const has = (ox,oy) => keys.has(`${ox},${oy}`);
+        tiles.forEach(({ox,oy,x,y})=>{
+            Utility.drawBlock(this._previewGraphics, {
+                x:x-w_2, y:y-h_2, width:w, height:h,
+                l:!has(ox-1,oy), r:!has(ox+1,oy), t:!has(ox,oy-1), b:!has(ox,oy+1),
+            });
+        });
     }
 
     // 依總格數 count 算出以中心為準的偏移範圍(start,end 皆為inclusive)；格數為偶數時，中心點偏向負向那格
@@ -191,8 +234,11 @@ export class COM_Ability extends Com
         const ability = DB.ability(id);
 
         this._rangeGrid = null;   // 不同技能的 range/w/h 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
-        const {w,h} = this._castRange(ability);
-        this._showRange(true, w, h, false, ability);
+        if(ability.scope!==GM.CONE)
+        {
+            const {w,h} = this._castRange(ability);
+            this._showRange(true, w, h, false, ability);
+        }
 
         this._ability = ability;
         this._id = id;
@@ -232,6 +278,7 @@ export class COM_Ability extends Com
 
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {return;}
+        if(this._ability.scope===GM.CONE) {this._previewCone(pt); return;}
 
         let {w:pw, h:ph} = this._resolveSize(this._ability);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
@@ -268,6 +315,7 @@ export class COM_Ability extends Com
 
     _isInRange(pos, checkBlock=true)
     {
+        if(this._ability.scope===GM.CONE) {return !this._isSelfTile(pos);}   // CONE 點哪都往該方向發射，只排除點自己
         const {w:nW, h:nH} = this._castRange(this._ability);
         !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock);
         const a = this._rangeGrid;
@@ -357,6 +405,7 @@ export class COM_Ability extends Com
     _resolveTargets(target, pt)
     {
         const scope = this._ability.scope ?? GM.SINGLE;
+        this._emptyTiles = null;
 
         if(scope===GM.SINGLE)
         {
@@ -377,6 +426,20 @@ export class COM_Ability extends Com
             const targets = this._findTargets(center, w, h, this._ability.checkBlock, false);   // AREA 不排除自己，站在範圍內也會受傷
             this._emptyTiles = this._ability.carpet ? this._genEmptyTiles(center, w, h, targets) : null;
             return targets;
+        }
+        if(scope===GM.CONE)    // 方向優先用游標原始座標(跟預覽一致)，AI 沒有 pt 才朝目標；扇形內沒人就不發射、不吃 CD
+        {
+            const dirPt = pt ?? target?.pos;
+            if(!dirPt || this._isSelfTile(dirPt)) {return null;}
+            const {root} = this.ctx;
+            const keys = new Set(this._coneTiles(dirPt).map(t=>`${t.ox},${t.oy}`));
+            const targets = this.scene.roles.filter(role=>{
+                if(role===root || !role.isAlive) {return false;}
+                const ox = Math.round((role.x-this.x)/GM.TILE_W);
+                const oy = Math.round((role.y-this.y)/GM.TILE_H);
+                return keys.has(`${ox},${oy}`);
+            });
+            return targets.length ? targets : null;
         }
         return null;
     }

@@ -410,9 +410,9 @@
     "refs": [
       "fireball"
     ],
-    "scope": "group",
-    "w": 5,
-    "h": 5,
+    "scope": "cone",
+    "range": 5,
+    "angle": 45,
     "hits": [
       {
         "elm": "fire",
@@ -444,11 +444,11 @@
     ],
     "tw": {
       "lab": "高級火球術",
-      "des": "對自身周圍範圍{#wh}方格內的敵人各自發射火球，每發造成 {#fmt} 點{#elm}傷害({#formula})。"
+      "des": "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害({#formula})。"
     },
     "us": {
       "lab": "Greater Fireball",
-      "des": "Fires a fireball at each enemy within a {#wh} tile range around yourself, dealing {#fmt} {#elm} damage each ({#formula})."
+      "des": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each ({#formula})."
     }
   },
   "combustion": {
