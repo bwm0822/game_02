@@ -192,7 +192,7 @@ class View extends Phaser.GameObjects.Container
         this.en_outline = true;     // 是否開啟 outline 的功能
         this.hasPhy = true;         // 是否有物理實體
         this.isStatic = true;       // true: static body, false: dynamic body
-        this.isBlock = false;       // 是否會阻擋
+        this.isBlock = false;       // 是否擋視線/攻擊(登記到 map.blockGrid)
         this.weight = 1000;
         this.bl=null, this.br=null, this.bt=null, this.bb=null; this.bw=null; this.bh=null;   // body 的 left, right, top, bottom，物理 body 方塊
         this.gl=null, this.gr=null, this.gt=null, this.gb=null; this.gw=null; this.gh=null;   // grid 的 left, right, top, bottom，地圖網格方塊
@@ -351,16 +351,8 @@ class View extends Phaser.GameObjects.Container
         // (body.x, body.y) 是 body 的左上角，body.center 才是中心點
         this.scene.physics.add.existing(this, this.isStatic);
         this.body.setSize(h.size, v.size);
-        if(this.isStatic)
-        {
-            this.body.setOffset(this.anchor.x+h.a, this.anchor.y+v.a);
-            this.isBlock && this.scene.staGroup.add(this);
-        }
-        else
-        {
-            this.body.setOffset(this.min.x+h.a, this.min.y+v.a);
-            this.isBlock && this.scene.dynGroup.add(this);
-        }
+        if(this.isStatic) {this.body.setOffset(this.anchor.x+h.a, this.anchor.y+v.a);}
+        else {this.body.setOffset(this.min.x+h.a, this.min.y+v.a);}
 
         return this;
     }
@@ -404,6 +396,7 @@ class View extends Phaser.GameObjects.Container
     {
         const wei = weight ?? this.weight;
         wei!=0 && this.scene.map.updateGrid(this.posG,-wei,this._grid);
+        this.isBlock && this.scene.map.updateBlock(this.posG,-1,this._grid);
 
         return this;
     }
@@ -413,8 +406,17 @@ class View extends Phaser.GameObjects.Container
         const wei = weight ?? this.weight;
         const p = pt?this._pos2posG(pt):this.posG;
         wei!=0 && this.scene.map.updateGrid(p,wei,this._grid);
+        this.isBlock && this.scene.map.updateBlock(p,1,this._grid);
 
         return this;
+    }
+
+    // 已登記在地圖上時才呼叫(如門開關)，直接增減 blockGrid
+    _setBlock(on)
+    {
+        if(this.isBlock === on) {return;}
+        this.isBlock = on;
+        this.scene.map.updateBlock(this.posG,on?1:-1,this._grid);
     }
     
     //將 錨點 轉換成 grid的中心點 (world space)
@@ -514,7 +516,8 @@ class View extends Phaser.GameObjects.Container
     {
         const{bb}=this.ctx;
         this._removeWeight();
-        this.weight=0;  // 避免重複呼叫_remove()時，weight被remove兩次
+        this.weight=0;  // 避免重複呼叫_remove()時，weight/block被remove兩次
+        this.isBlock=false;
                         // ondead 會呼叫一次_remove()，
                         // GameObject._remove()時，com.unbind()又會呼叫一次
 
@@ -613,6 +616,7 @@ class View extends Phaser.GameObjects.Container
         root.view = this;
         root.removeWeight = this._removeWeight.bind(this);
         root.addWeight = this._addWeight.bind(this);
+        root.setBlock = this._setBlock.bind(this);
         root.updatePos = this._updatePos.bind(this);
         root.setZone = this._setZone.bind(this);
         // 給外部使用

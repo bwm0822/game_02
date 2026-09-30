@@ -31,6 +31,11 @@
              "value":32
             }, 
             {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
+            }, 
+            {
              "name":"json_pts",
              "type":"string",
              "value":"[{\"x\":16,\"y\":-32},{\"x\":16,\"y\":32}]"

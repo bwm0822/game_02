@@ -16,6 +16,11 @@
              "value":16
             }, 
             {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
+            }, 
+            {
              "name":"zh",
              "type":"int",
              "value":32

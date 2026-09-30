@@ -9,6 +9,11 @@
              "name":"id",
              "type":"string",
              "value":"tree"
+            }, 
+            {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
             }],
      "rotation":0,
      "type":"plant",

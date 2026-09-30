@@ -208,8 +208,6 @@ export class GameScene extends Scene
 
     async create ()
     {
-        this.dynGroup = this.physics.add.group();
-        this.staGroup = this.physics.add.staticGroup();
         GS.mode = GM.MODE.NORMAL;
 
         dlog(T.SCENE)('[2] create')

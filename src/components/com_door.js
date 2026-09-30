@@ -36,6 +36,7 @@ export class COM_Door extends Com
             root.setTexture?.(bb.door_close);
             root.removeWeight?.();
             root.addWeight?.(undefined,GM.W.DOOR-1);
+            root.setBlock?.(false);
             AudioManager.doorOpen();
             await Utility.delay(200);
         }
@@ -52,6 +53,7 @@ export class COM_Door extends Com
             root.setTexture?.(bb.door_open);
             root.removeWeight?.(GM.W.DOOR-1);
             root.addWeight?.();
+            root.setBlock?.(true);
             AudioManager.doorClose();
             await Utility.delay(200);
         }

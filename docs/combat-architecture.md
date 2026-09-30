@@ -160,6 +160,17 @@ else if(target && this._isInRange(target.pos))
 
 `ab_tree.json`（`DB.abTree`）是技能樹的節點座標＋前置技能 `refs`（例如 `whirlwind` refs `slash`/`thrust`），沒有解鎖花費/等級需求欄位——這塊解鎖規則（如果有）應該在 UI 端（`uiability.js`），沒在這次調查範圍內確認。
 
+### 5.1 遮擋（視線/攻擊）
+
+「擋不擋」跟「能不能走」(weight) 是分開的兩套資料：
+
+- `map.blockGrid[ty][tx]`：整數計數，`>0` 就擋。`map.isBlocked(tx,ty)` = 地圖外 ‖ `blockGrid>0`
+- Tile：`collide` 或 `weight=0` 預設擋；tile 屬性 `block`（bool）可明確覆寫
+- 物件：View 的 `isBlock`（Tiled 屬性，預設 false）為 true 時，`_addWeight`/`_removeWeight` 會在 `gridTiles` 範圍 ±1；門開關用 `root.setBlock(on)` 切換。目前設 `isBlock=true` 的 template：建築、cabinet、stove、well、tree、door；桌椅床箱不擋（桌子 `weight=-1` 不可走，但不擋）
+- 角色不進 blockGrid：`map.los(from,to,{roles})` 在 `roles:true` 時另外檢查活著的角色所在格
+- 用到的地方：`map.los()`（技能遮擋、NPC 感知 `com_sense._canSee`）、`com_ability` 的 cone 格子跟施法範圍格（`isBlocked` 的格子不能選）
+- 火牆（`ZoneView`）：`weight<=0 || isBlocked` 的格子不生成、不登記 weight、不燒人
+
 ## 6. 裝備數值（`public/assets/json/item.json`）
 
 武器（`cat:"CAT_WEAPON"`）的 `type`（`melee`/`ranged`）、`range`、`atk`、`effects`（`{type:"mod", key:"str", a:1}` 這種修正值陣列，餵給 `com_stats.js` 的 `_metaOfEquips`/`_getMods`）目前是實際在跑的部分——現階段角色的戰鬥力主要由裝備決定，技能系統（除了 fireball/firewall）幾乎不影響數值。

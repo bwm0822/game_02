@@ -11,6 +11,11 @@
              "value":32
             }, 
             {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
+            }, 
+            {
              "name":"weight",
              "type":"int",
              "value":-1

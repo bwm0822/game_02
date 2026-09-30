@@ -113,13 +113,16 @@ class Map
     {
         const rows = this.map.height, cols = this.map.width;
         const grid = [];
+        const block = [];
         for (let ty = 0; ty < rows; ty++)
         {
             let row = [];
             for (let tx = 0; tx < cols; tx++) {row.push(weight);}
             grid.push(row);
+            block.push(new Array(cols).fill(0));
         }
 
+        // tile 不可走(collide/weight=0)預設會擋視線，tile 的 block 屬性可明確覆寫
         map.layers.forEach((layer)=>{
             map.setLayer(layer.name);
             map.forEachTile((tile)=>{
@@ -129,11 +132,14 @@ class Map
                 {
                     if(p.collide) {grid[tile.y][tile.x]=0;}
                     else if(p.weight!=undefined) {grid[tile.y][tile.x]=p.weight;}
+                    const blk = p.block ?? (p.collide ? true : p.weight!=undefined ? p.weight===0 : undefined);
+                    if(blk!==undefined) {block[tile.y][tile.x] = blk ? 1 : 0;}
                 }
             });
         });
 
         this.graph = new Graph(grid,{diagonal:diagonal});
+        this.blockGrid = block;
     }
 
     _createGraphExt({tw,th}={})
@@ -520,28 +526,35 @@ class Map
         return !(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height);
     }
 
-    // 視線判定：supercover 走過 from→to 經過的格子(起終點不檢查)，weight<=0(牆/地圖外) 或 >=W.BLOCK(家具/關門/角色) 就擋；
-    // 剛好穿過角點時，兩側都擋才算擋；roles:false 時扣掉活著角色登記的權重，只讓牆跟家具擋
+    updateBlock(p,cnt,{w,h})
+    {
+        this.gridTiles(p,{w,h}).forEach(([tx,ty])=>{
+            if(this.isInside(tx,ty)) {this.blockGrid[ty][tx] += cnt;}
+        });
+    }
+
+    isBlocked(tx,ty)
+    {
+        return !this.isInside(tx,ty) || this.blockGrid[ty][tx]>0;
+    }
+
+    // 視線判定：supercover 走過 from→to 經過的格子(起終點不檢查)，isBlocked(地圖外/牆/isBlock 物件) 就擋；
+    // 剛好穿過角點時，兩側都擋才算擋；roles:true 時活著的角色也會擋
     los(from, to, {roles=true}={})
     {
         const [x0,y0] = this.worldToTile(from.x, from.y);
         const [x1,y1] = this.worldToTile(to.x, to.y);
 
-        const occ = {};
-        if(!roles)
+        const occ = new Set();
+        if(roles)
         {
             this.scene.roles.forEach(role=>{
                 if(!role.isAlive) {return;}
                 const [tx,ty] = this.worldToTile(role.x, role.y);
-                const k = `${tx},${ty}`;
-                occ[k] = (occ[k]??0)+1;
+                occ.add(`${tx},${ty}`);
             });
         }
-        const blocked = (tx,ty)=>{
-            const w = this.getWeightByTile(tx,ty);
-            if(w<=0) {return true;}
-            return w-(occ[`${tx},${ty}`]??0)*GM.W.BLOCK >= GM.W.BLOCK;
-        };
+        const blocked = (tx,ty)=>this.isBlocked(tx,ty) || occ.has(`${tx},${ty}`);
 
         const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
         const sx = Math.sign(x1-x0), sy = Math.sign(y1-y0);

@@ -9,6 +9,11 @@
              "name":"gt",
              "type":"int",
              "value":32
+            }, 
+            {
+             "name":"isBlock",
+             "type":"bool",
+             "value":true
             }],
      "rotation":0,
      "type":"stove",

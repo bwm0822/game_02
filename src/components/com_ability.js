@@ -118,8 +118,9 @@ export class COM_Ability extends Com
                 const px = this.x+ox*tw, py = this.y+oy*th;
                 const diff = Phaser.Math.Angle.Wrap(Math.atan2(py-this.y, px-this.x)-dir);
                 if(Math.abs(diff)>half) {continue;}
-                if(this.scene.map.getWeight({x:px,y:py})<=0) {continue;}
-                if(checkBlock!==false && !this.scene.map.los(this, {x:px,y:py})) {continue;}
+                const map = this.scene.map;
+                if(map.isBlocked(...map.worldToTile(px,py))) {continue;}
+                if(checkBlock!==false && !map.los(this, {x:px,y:py})) {continue;}
                 tiles.push({ox,oy,x:px,y:py});
             }
         }
@@ -198,8 +199,8 @@ export class COM_Ability extends Com
             {
                 const px = this.x + (xs+xi)*tw;
                 const py = this.y + (ys+yi)*th;
-                const wei = this.scene.map.getWeight({x:px,y:py});
-                const block = wei<=0 || (checkBlock && !this.scene.map.los(this, {x:px,y:py}, {roles:false}));
+                const map = this.scene.map;
+                const block = map.isBlocked(...map.worldToTile(px,py)) || (checkBlock && !map.los(this, {x:px,y:py}, {roles:false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
