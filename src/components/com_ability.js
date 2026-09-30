@@ -186,14 +186,14 @@ export class COM_Ability extends Com
     // 以自己為中心，產生 w x h 的施法範圍網格(存到 this._rangeGrid)：
     // 每格記錄世界座標、是否可通行/被遮蔽(block)，以及依鄰格開放與否算出的外框線標記(l/r/t/b)，
     // 讓 _showRange()(畫格線)、_isInRange()(判斷點擊/滑鼠位置是否在範圍內)可以共用同一份資料，不必每次重算
-    // SUMMON 只排除地圖外(不看遮擋/LOS)，中心格能不能生成交給 _zoneCells() 判斷
+    // SUMMON/AREA 只排除地圖外(不看遮擋/LOS)，SUMMON 中心格能不能生成交給 _zoneCells() 判斷
     _genRangeGrid(w, h, checkBlock, ability)
     {
         const {start:xs} = this._axisRange(w);
         const {start:ys} = this._axisRange(h);
         const a = Array.from({ length: h }, () => Array(w));
         const [th,tw,th_2,tw_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
-        const summon = ability?.tag===GM.SUMMON;
+        const loose = ability?.tag===GM.SUMMON || ability?.scope===GM.AREA;
         const map = this.scene.map;
 
         for(let xi=0; xi<w; xi++)
@@ -203,7 +203,7 @@ export class COM_Ability extends Com
                 const px = this.x + (xs+xi)*tw;
                 const py = this.y + (ys+yi)*th;
                 const [tx,ty] = map.worldToTile(px,py);
-                const block = summon ? !map.isInside(tx,ty)
+                const block = loose ? !map.isInside(tx,ty)
                                     : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, {x:px,y:py}, {roles:false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
