@@ -1,6 +1,5 @@
 import Com from './com.js'
 import { GM } from '../core/setting.js'
-import Utility from '../core/utility.js'
 import {T,dlog,DEBUG} from '../core/debug.js'
 
 const dist2 = (a, b) => {
@@ -97,8 +96,7 @@ export class COM_Sense extends Com
 
     _canSee(target)
     {
-        const hits = Utility.raycast(this.pos.x, this.pos.y, target.x, target.y, [this.scene.staGroup]);
-        return hits.length === 0;
+        return this.scene.map.los(this.pos, target, {roles:false});
     }
 
     _inAttackRange(target)

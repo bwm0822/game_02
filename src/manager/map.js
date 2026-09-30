@@ -522,6 +522,47 @@ class Map
         return !(tx<0||tx>=this.map.width||ty<0||ty>=this.map.height);
     }
 
+    // 視線判定：supercover 走過 from→to 經過的格子(起終點不檢查)，weight<=0(牆/地圖外) 或 >=W.BLOCK(家具/關門/角色) 就擋；
+    // 剛好穿過角點時，兩側都擋才算擋；roles:false 時扣掉活著角色登記的權重，只讓牆跟家具擋
+    los(from, to, {roles=true}={})
+    {
+        const [x0,y0] = this.worldToTile(from.x, from.y);
+        const [x1,y1] = this.worldToTile(to.x, to.y);
+
+        const occ = {};
+        if(!roles)
+        {
+            this.scene.roles.forEach(role=>{
+                if(!role.isAlive) {return;}
+                const [tx,ty] = this.worldToTile(role.x, role.y);
+                const k = `${tx},${ty}`;
+                occ[k] = (occ[k]??0)+1;
+            });
+        }
+        const blocked = (tx,ty)=>{
+            const w = this.getWeightByTile(tx,ty);
+            if(w<=0) {return true;}
+            return w-(occ[`${tx},${ty}`]??0)*GM.W.BLOCK >= GM.W.BLOCK;
+        };
+
+        const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
+        const sx = Math.sign(x1-x0), sy = Math.sign(y1-y0);
+        let x=x0, y=y0, ix=0, iy=0;
+        while(ix<dx || iy<dy)
+        {
+            const d = (1+2*ix)*dy - (1+2*iy)*dx;
+            if(d===0)
+            {
+                if(blocked(x+sx,y) && blocked(x,y+sy)) {return false;}
+                x+=sx; y+=sy; ix++; iy++;
+            }
+            else if(d<0) {x+=sx; ix++;}
+            else {y+=sy; iy++;}
+            if((x!==x1 || y!==y1) && blocked(x,y)) {return false;}
+        }
+        return true;
+    }
+
     // isNearby(a,b)
     // {
     //     let [tx_a,ty_a] = this.worldToTile(a.x,a.y);

@@ -119,7 +119,7 @@ export class COM_Ability extends Com
                 const diff = Phaser.Math.Angle.Wrap(Math.atan2(py-this.y, px-this.x)-dir);
                 if(Math.abs(diff)>half) {continue;}
                 if(this.scene.map.getWeight({x:px,y:py})<=0) {continue;}
-                if(checkBlock!==false && Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]).length>0) {continue;}
+                if(checkBlock!==false && !this.scene.map.los(this, {x:px,y:py})) {continue;}
                 tiles.push({ox,oy,x:px,y:py});
             }
         }
@@ -199,8 +199,7 @@ export class COM_Ability extends Com
                 const px = this.x + (xs+xi)*tw;
                 const py = this.y + (ys+yi)*th;
                 const wei = this.scene.map.getWeight({x:px,y:py});
-                const hits = checkBlock ? Utility.raycast(this.x,this.y,px,py,[this.scene.staGroup]) : [];
-                const block = wei<=0 || hits.length>0;
+                const block = wei<=0 || (checkBlock && !this.scene.map.los(this, {x:px,y:py}, {roles:false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
@@ -517,12 +516,7 @@ export class COM_Ability extends Com
             const ox = Math.round((role.x-center.x)/GM.TILE_W);
             const oy = Math.round((role.y-center.y)/GM.TILE_H);
             if(ox<xs || ox>xe || oy<ys || oy>ye) {return false;}
-            if(checkBlock!==false)
-            {
-                const hits = Utility.raycast(center.x, center.y, role.x, role.y, [this.scene.staGroup]);
-                if(hits.length>0) {return false;}
-            }
-            return true;
+            return checkBlock===false || this.scene.map.los(center, role, {roles:false});
         });
     }
 
