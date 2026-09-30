@@ -730,7 +730,7 @@ export class ItemView extends View
 
 
 // 跨多格顯示的區域類物件(如持續存在的地面法陣)：每一格各放一個 icon(emoji)，
-// weight/物理/地圖權重登記完全沿用 View 既有機制(wid/hei 設成整個範圍的大小即可)
+// 不可走或 isBlocked 的格子不生成(牆、桌子)，地圖權重只登記有生成的格子
 export class ZoneView extends View
 {
     constructor(scene)
@@ -754,10 +754,14 @@ export class ZoneView extends View
         const ys = -Math.floor(ch/2), ye = ys+ch-1;
         const [w,h] = [GM.TILE_W, GM.TILE_H];
         const {jitter=0} = this.zoneAnim?.cell ?? {};
+        const map = this.scene.map;
+        const cen = this.cen;
         for(let x=xs; x<=xe; x++)
         {
             for(let y=ys; y<=ye; y++)
             {
+                const [tx,ty] = map.worldToTile(cen.x+x*w, cen.y+y*h);
+                if(map.getWeightByTile(tx,ty)<=0 || map.isBlocked(tx,ty)) {continue;}
                 const jx = Phaser.Math.FloatBetween(-jitter, jitter);
                 const jy = Phaser.Math.FloatBetween(-jitter, jitter);
                 const fx = new FxCell(this.scene, this, this.zoneImg, this.zoneAnim, {x:x*w+jx, y:y*h+jy, size:w});
@@ -778,6 +782,34 @@ export class ZoneView extends View
             return dist.map(d=>order.indexOf(d)*stagger);
         }
         return this._cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
+    }
+
+    // 只登記有生成的格子(牆、桌子這類被跳過的格子不加權重，否則會變成可通行)
+    _updateCellWeight(wei)
+    {
+        if(wei==0) {return;}
+        const cen = this.cen;
+        const size = {w:GM.TILE_W, h:GM.TILE_H};
+        this._cells.forEach(c=>{
+            this.scene.map.updateGrid({x:cen.x+c.gx*GM.TILE_W, y:cen.y+c.gy*GM.TILE_H}, wei, size);
+        });
+    }
+
+    _removeWeight(weight)
+    {
+        this._updateCellWeight(-(weight ?? this.weight));
+        return this;
+    }
+
+    _addWeight(pt,weight)
+    {
+        this._updateCellWeight(weight ?? this.weight);
+        return this;
+    }
+
+    _hasCell(gx, gy)
+    {
+        return this._cells.some(c=>c.gx===gx && c.gy===gy);
     }
 
     _playSpawn()
@@ -803,6 +835,7 @@ export class ZoneView extends View
         root.playSpawn = this._playSpawn.bind(this);
         root.playTick = this._playTick.bind(this);
         root.playEnd = this._playEnd.bind(this);
+        root.hasCell = this._hasCell.bind(this);
     }
 }
 

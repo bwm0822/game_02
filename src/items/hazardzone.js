@@ -27,7 +27,7 @@ export default class HazardZone extends GameObject
 
         this.bb.hasPhy = false;             // 不掛物理碰撞體，角色要能走進來才會生效
         this.bb.weight = 100;               // 路徑權重，讓 AI 盡量繞開但不是完全擋死
-        this.bb.wid = this._w*GM.TILE_W;    // 範圍的整體寬高，_addGrid()/_addWeight() 靠這個算出要登記的地圖範圍
+        this.bb.wid = this._w*GM.TILE_W;    // 範圍的整體寬高，_addGrid() 靠這個算出 grid 範圍
         this.bb.hei = this._h*GM.TILE_H;
         this.bb.zoneW = this._w;            // 給 ZoneView._addShape() 畫每一格用
         this.bb.zoneH = this._h;
@@ -46,14 +46,11 @@ export default class HazardZone extends GameObject
     {
         super._updateTime();
 
-        // 格數為偶數時，中心點偏向負向那格(跟 ZoneView._addShape() 一致)
-        const xs = -Math.floor(this._w/2), xe = xs+this._w-1;
-        const ys = -Math.floor(this._h/2), ye = ys+this._h-1;
         this.scene.roles.forEach(role=>{
             if(!role.isAlive) {return;}
             const ox = Math.round((role.x-this.x)/GM.TILE_W);
             const oy = Math.round((role.y-this.y)/GM.TILE_H);
-            if(ox<xs || ox>xe || oy<ys || oy>ye) {return;}
+            if(!this.hasCell(ox,oy)) {return;}
             role.emit(GM.EVT.UNDERATK, this._caster?.id);   // 觸發好感度下降/AI 仇恨判定，跟一般攻擊命中一致
             role.addEffs?.(this._ability.effects, 'target', 'hit');
             this.playTick(ox, oy);
