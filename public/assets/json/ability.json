@@ -411,7 +411,7 @@
       "fireball"
     ],
     "scope": "cone",
-    "range": 5,
+    "range": 10,
     "angle": 45,
     "hits": [
       {
