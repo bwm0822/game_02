@@ -245,18 +245,33 @@ class View extends Phaser.GameObjects.Container
     _setOutline(on)
     {
         this._hover = on;
-        if(!this.en_outline) {return;}
-        (this._shape ? this._outline_shape.bind(this) : this._outline_rect.bind(this))(on);
+        this._refreshOutline();
     }
 
-    _outline_shape(on)
+    // 技能範圍內的目標(紅框)，優先於 hover(白框)
+    _setTargeted(on)
+    {
+        if(this._targeted === on) {return;}
+        this._targeted = on;
+        this._refreshOutline();
+    }
+
+    _refreshOutline()
+    {
+        if(!this.en_outline) {return;}
+        const color = this._targeted ? GM.COLOR.TARGET : this._hover ? GM.COLOR.WHITE : null;
+        if(this._shape) {this._outline_shape(color);}
+        else {this._outline_rect(color!==null);}
+    }
+
+    _outline_shape(color)
     {
         let shape = this._shape;
 
         if(!this._outline) {this._outline = this.scene.plugins.get('rexOutlinePipeline');}
 
-        if(on) {this._outline.add(shape,{thickness:3, outlineColor:0xffffff});}
-        else {this._outline.remove(shape);}
+        this._outline.remove(shape);
+        if(color!==null) {this._outline.add(shape,{thickness:3, outlineColor:color});}
     }
 
     _outline_rect(on)
@@ -593,6 +608,7 @@ class View extends Phaser.GameObjects.Container
         root.addP('gridBB',{get:()=>this.gridBB});    // 在 root 新增 get，指向 gridBB
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
+        root.setTargeted = this._setTargeted.bind(this);
         // 給內部元件使用
         root.view = this;
         root.removeWeight = this._removeWeight.bind(this);

@@ -26,6 +26,7 @@ export const GM =
         BLUE : 0x0000AA,
         BLACK : 0x010101,
         BAR_GREEN : 0x00ff00,
+        TARGET : 0xff4040,
     },
 
     FONT : "Arial",

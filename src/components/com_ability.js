@@ -245,6 +245,8 @@ export class COM_Ability extends Com
 
         const {bb}=this.ctx;
         bb.sta=GM.ST.ABILITY;
+
+        if(ability.tag===GM.ATK && ability.scope===GM.GROUP) {this._highlight(this._groupTargets());}   // group 目標跟游標無關，選取時就亮
     }
 
     // 取消選擇技能
@@ -257,6 +259,7 @@ export class COM_Ability extends Com
     _clrAbility()
     {
         this._previewGraphics?.clear();
+        this._highlight([]);
         this._ability = null;
         this._id = null;
 
@@ -277,7 +280,12 @@ export class COM_Ability extends Com
         this._previewGraphics.clear();
 
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
-        if(!this._isInRange(pt)) {return;}
+        if(!this._isInRange(pt)) {this._highlight([]); return;}
+        if(this._ability.tag===GM.ATK)
+        {
+            const scope = this._ability.scope;
+            this._highlight((scope===GM.CONE ? this._coneTargets(pt) : this._areaTargets(pt)) ?? []);
+        }
         if(this._ability.scope===GM.CONE) {this._previewCone(pt); return;}
 
         let {w:pw, h:ph} = this._resolveSize(this._ability);
@@ -415,33 +423,61 @@ export class COM_Ability extends Com
         {
             const clickPos = target ? target.pos : pt;
             if(!clickPos || !this._isInRange(clickPos)) {return null;}
-            const {w,h} = this._resolveSize(this._ability);
-            return this._findTargets({x:this.x, y:this.y}, w, h, this._ability.checkBlock);
+            return this._groupTargets();
         }
         if(scope===GM.AREA)    // 以點擊位置(或點到的角色座標)為中心，且中心點需在施法距離內
         {
             const center = target ? target.pos : pt;
             if(!center || !this._isInRange(center)) {return null;}
-            const {w,h} = this._resolveSize(this._ability);
-            const targets = this._findTargets(center, w, h, this._ability.checkBlock, false);   // AREA 不排除自己，站在範圍內也會受傷
-            this._emptyTiles = this._ability.carpet ? this._genEmptyTiles(center, w, h, targets) : null;
+            const targets = this._areaTargets(center);
+            if(this._ability.carpet)
+            {
+                const {w,h} = this._resolveSize(this._ability);
+                this._emptyTiles = this._genEmptyTiles(this._snapToGrid(center), w, h, targets);
+            }
             return targets;
         }
         if(scope===GM.CONE)    // 方向優先用游標原始座標(跟預覽一致)，AI 沒有 pt 才朝目標；扇形內沒人就不發射、不吃 CD
         {
             const dirPt = pt ?? target?.pos;
             if(!dirPt || this._isSelfTile(dirPt)) {return null;}
-            const {root} = this.ctx;
-            const keys = new Set(this._coneTiles(dirPt).map(t=>`${t.ox},${t.oy}`));
-            const targets = this.scene.roles.filter(role=>{
-                if(role===root || !role.isAlive) {return false;}
-                const ox = Math.round((role.x-this.x)/GM.TILE_W);
-                const oy = Math.round((role.y-this.y)/GM.TILE_H);
-                return keys.has(`${ox},${oy}`);
-            });
-            return targets.length ? targets : null;
+            return this._coneTargets(dirPt);
         }
         return null;
+    }
+
+    _groupTargets()
+    {
+        const {w,h} = this._resolveSize(this._ability);
+        return this._findTargets({x:this.x, y:this.y}, w, h, this._ability.checkBlock);
+    }
+
+    // 中心對齊格子，跟 _previewArea() 畫的範圍一致；AREA 不排除自己，站在範圍內也會受傷
+    _areaTargets(pt)
+    {
+        const {w,h} = this._resolveSize(this._ability);
+        return this._findTargets(this._snapToGrid(pt), w, h, this._ability.checkBlock, false);
+    }
+
+    _coneTargets(dirPt)
+    {
+        const {root} = this.ctx;
+        const keys = new Set(this._coneTiles(dirPt).map(t=>`${t.ox},${t.oy}`));
+        const targets = this.scene.roles.filter(role=>{
+            if(role===root || !role.isAlive) {return false;}
+            const ox = Math.round((role.x-this.x)/GM.TILE_W);
+            const oy = Math.round((role.y-this.y)/GM.TILE_H);
+            return keys.has(`${ox},${oy}`);
+        });
+        return targets.length ? targets : null;
+    }
+
+    _highlight(targets)
+    {
+        const next = new Set(targets);
+        this._highlighted?.forEach(role=>{ if(!next.has(role)) {role.setTargeted?.(false);} });
+        next.forEach(role=>role.setTargeted?.(true));
+        this._highlighted = next;
     }
 
     // carpet:true 的技能，算出範圍內沒有目標的空格座標，讓 _use() 也對空格播放動畫(地毯式轟炸的視覺效果)
