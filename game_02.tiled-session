@@ -3,15 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m/m_04x05.json",
+    "activeFile": "public/assets/maps/m_04x05/trump-inn-f2.json",
     "expandedProjectPaths": [
-        "public/assets",
-        ".",
-        "public/assets/templates",
-        "public/assets/templates/roles",
         "public/assets/maps/m/m_04x05",
+        "public/assets/tiles",
+        "public/assets/maps/m",
+        "public/assets/maps",
+        "public/assets/maps/m_04x05",
+        "public/assets",
         "public",
-        "public/assets/tiles"
+        "."
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -375,8 +376,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 891,
-                "y": 2364
+                "x": 873.5,
+                "y": 2028
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -525,9 +526,13 @@
             "scale": 1.1518749999999998,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 430.1682040151927,
+                "x": 145.41508410200763,
                 "y": 239.60933260987528
             }
+        },
+        "public/assets/maps/m_04x05/trump-inn-f2.json#tiles": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "public/assets/maps/m_04x05/xi-home.json": {
             "expandedObjectLayers": [
@@ -927,13 +932,15 @@
     "map.width": 20,
     "openFiles": [
         "public/assets/maps/m/m_04x05.json",
-        "public/assets/maps/m/m_03x05.json"
+        "public/assets/maps/m/m_03x05.json",
+        "public/assets/maps/m_04x05/trump-inn-f2.json"
     ],
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/m/m_03x05.json",
         "public/assets/maps/m/m_04x05.json",
+        "public/assets/maps/m/m_03x05.json",
+        "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m_04x05/house-01.json",
         "public/assets/maps/m_04x05/trump-inn-f1.json",
         "public/assets/maps/village-01.json",
@@ -942,8 +949,7 @@
         "public/assets/maps/_m_00x00.json",
         "public/assets/maps/m_04x05/home.json",
         "public/assets/maps/m_04x05/macron-home.json",
-        "public/assets/maps/m_04x05/musk-home.json",
-        "public/assets/maps/m_04x05/trump-inn-f2.json"
+        "public/assets/maps/m_04x05/musk-home.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
