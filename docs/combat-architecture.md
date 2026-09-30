@@ -169,7 +169,7 @@ else if(target && this._isInRange(target.pos))
 - 物件：View 的 `isBlock`（Tiled 屬性，預設 false）為 true 時，`_addWeight`/`_removeWeight` 會在 `gridTiles` 範圍 ±1；門開關用 `root.setBlock(on)` 切換。目前設 `isBlock=true` 的 template：建築、cabinet、stove、well、tree、door；桌椅床箱不擋（桌子 `weight=-1` 不可走，但不擋）
 - 角色不進 blockGrid：`map.los(from,to,{roles})` 在 `roles:true` 時另外檢查活著的角色所在格
 - 用到的地方：`map.los()`（技能遮擋、NPC 感知 `com_sense._canSee`）、`com_ability` 的 cone 格子跟施法範圍格（`isBlocked` 的格子不能選）
-- 火牆（`ZoneView`）：`weight<=0 || isBlocked` 的格子不生成、不登記 weight、不燒人
+- 火牆（`ZoneView`）：`map.isOpenGround()`（可走且不擋）以外的格子不生成、不登記 weight、不燒人，施放預覽也不畫；每格火焰直接放在 scene 上，depth = 該格中心 y+1（蓋過同格角色）
 
 ## 6. 裝備數值（`public/assets/json/item.json`）
 

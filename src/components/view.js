@@ -746,6 +746,7 @@ export class ZoneView extends View
 
     // 格數為偶數時，中心點偏向負向那格(跟 com_ability.js 的 _axisRange 邏輯一致)
     // 單格的外觀/動畫交給 FxCell，這裡只負責多格排列(jitter)跟 spawn 的先後順序(stagger/from)
+    // 每格直接放在 scene 上各自設 depth(該格中心 y+1，蓋過站在同一格的角色、被下一排的物件蓋住)
     _addShape()
     {
         const cw = this.zoneW ?? 1;
@@ -760,15 +761,22 @@ export class ZoneView extends View
         {
             for(let y=ys; y<=ye; y++)
             {
-                const [tx,ty] = map.worldToTile(cen.x+x*w, cen.y+y*h);
-                if(map.getWeightByTile(tx,ty)<=0 || map.isBlocked(tx,ty)) {continue;}
+                const px = cen.x+x*w, py = cen.y+y*h;
+                if(!map.isOpenGround(...map.worldToTile(px,py))) {continue;}
                 const jx = Phaser.Math.FloatBetween(-jitter, jitter);
                 const jy = Phaser.Math.FloatBetween(-jitter, jitter);
-                const fx = new FxCell(this.scene, this, this.zoneImg, this.zoneAnim, {x:x*w+jx, y:y*h+jy, size:w});
+                const fx = new FxCell(this.scene, null, this.zoneImg, this.zoneAnim, {x:px+jx, y:py+jy, size:w});
+                fx.holder.setDepth(py+1);
                 this._cells.push({gx:x, gy:y, fx});
             }
         }
         return this;
+    }
+
+    _remove()
+    {
+        super._remove();
+        this._cells.forEach(c=>c.fx.destroy());
     }
 
     _spawnDelays(stagger, from)

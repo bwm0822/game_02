@@ -538,6 +538,12 @@ class Map
         return !this.isInside(tx,ty) || this.blockGrid[ty][tx]>0;
     }
 
+    // 地面區域(火牆)可生成的格子：可走且不擋
+    isOpenGround(tx,ty)
+    {
+        return this.getWeightByTile(tx,ty)>0 && !this.isBlocked(tx,ty);
+    }
+
     // 視線判定：supercover 走過 from→to 經過的格子(起終點不檢查)，isBlocked(地圖外/牆/isBlock 物件) 就擋；
     // 剛好穿過角點時，兩側都擋才算擋；roles:true 時活著的角色也會擋
     los(from, to, {roles=true}={})

@@ -298,6 +298,9 @@ export class COM_Ability extends Com
         const {start:xs} = this._axisRange(pw);
         const {start:ys} = this._axisRange(ph);
 
+        // SUMMON(火牆)跟 ZoneView 一致：不可生成的格子不畫
+        const map = this.scene.map;
+        const summon = this._ability.tag===GM.SUMMON;
         const a = Array.from({ length: ph }, () => Array(pw));
         for(let xi=0; xi<pw; xi++)
         {
@@ -305,13 +308,15 @@ export class COM_Ability extends Com
             {
                 const px = cx + (xs+xi)*w;
                 const py = cy + (ys+yi)*h;
-                a[yi][xi] = {x:px-w_2, y:py-h_2, width:w, height:h, block:false};
+                const block = summon && !map.isOpenGround(...map.worldToTile(px,py));
+                a[yi][xi] = {x:px-w_2, y:py-h_2, width:w, height:h, block};
             }
         }
         for(let xi=0; xi<pw; xi++)
         {
             for(let yi=0; yi<ph; yi++)
             {
+                if(a[yi][xi].block) {continue;}
                 a[yi][xi].l = a[yi][xi-1]?.block===false ? false : true;
                 a[yi][xi].r = a[yi][xi+1]?.block===false ? false : true;
                 a[yi][xi].t = a[yi-1]?.[xi]?.block===false ? false : true;

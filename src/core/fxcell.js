@@ -6,6 +6,7 @@ import {Pic} from '../ui/uicomponents.js'
 //  anim = {cell, spawn, idle, tick, end}，spawn/idle/tick/end 是 Phaser tween 設定(另支援 idle.randDelay)
 //  holder(container) 包一個 Pic：cell 的隨機大小/翻轉/alpha 設在 Pic 上，tween 只動 holder，兩者才不會互相覆蓋
 //  originY=1 時 Pic 底部對齊 holder 原點，holder 縮放會以底部為支點
+//  parent=null 時 holder 直接放在 scene 上(x,y 為世界座標)，可以自己設 depth
 //--------------------------------------------------
 
 const rand = (v)=>Array.isArray(v) ? Phaser.Math.FloatBetween(v[0],v[1]) : v;
@@ -27,7 +28,7 @@ export default class FxCell
         pic.setScale(s*flip, s).setAlpha(alpha);
 
         this.holder = scene.add.container(x, y, [pic]);
-        parent.add(this.holder);
+        parent?.add(this.holder);
         if(this.anim.spawn) {this.holder.setVisible(false);}
     }
 
