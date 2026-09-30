@@ -194,8 +194,16 @@ export class GameScene extends Scene
 
     _refreshCursor()
     {
+        // 選取/取消 area-like 技能時，目前 hover 中物件的白框要立即熄滅/恢復
+        const selArea = !!GM.player?.isSelAreaLike?.();
+        if(selArea !== this._selArea)
+        {
+            this._selArea = selArea;
+            this._ent?.refreshOutline?.();
+        }
+
         if(this._atEdge) {return;}
-        if(GM.player?.sta === GM.ST.ABILITY) {return;}
+        if(GM.player?.sta === GM.ST.ABILITY) {this._lastAct = null; return;}   // 清掉，取消技能後才會恢復成物件的互動游標
         if(!this._ent) {return;}
 
         const act = this._ent.act;

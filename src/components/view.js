@@ -256,10 +256,12 @@ class View extends Phaser.GameObjects.Container
         this._refreshOutline();
     }
 
+    // area-like 技能(火牆/範圍/扇形)選取中不顯示 hover 白框，範圍靠預覽跟紅框表示
     _refreshOutline()
     {
         if(!this.en_outline) {return;}
-        const color = this._targeted ? GM.COLOR.TARGET : this._hover ? GM.COLOR.WHITE : null;
+        const hover = this._hover && !GM.player?.isSelAreaLike?.();
+        const color = this._targeted ? GM.COLOR.TARGET : hover ? GM.COLOR.WHITE : null;
         if(this._shape) {this._outline_shape(color);}
         else {this._outline_rect(color!==null);}
     }
@@ -612,6 +614,7 @@ class View extends Phaser.GameObjects.Container
         root.isTouch = this.isTouch;
         root.interact = this._interact.bind(this);
         root.setTargeted = this._setTargeted.bind(this);
+        root.refreshOutline = this._refreshOutline.bind(this);
         // 給內部元件使用
         root.view = this;
         root.removeWeight = this._removeWeight.bind(this);

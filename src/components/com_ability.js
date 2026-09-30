@@ -164,7 +164,7 @@ export class COM_Ability extends Com
         if(!on) {return;}
         if(!this._graphics) {this._graphics = this.scene.add.graphics();}
 
-        if(!this._rangeGrid) {this._genRangeGrid(w, h, checkBlock);}
+        if(!this._rangeGrid) {this._genRangeGrid(w, h, checkBlock, ability);}
 
         const a = this._rangeGrid;
         const draw = ability && this._isAreaLike(ability) ? Utility.drawBlockDashed : Utility.drawBlock;   // AREA/SUMMON 用虛線無填滿，跟裡面的作用範圍預覽區分
@@ -186,12 +186,15 @@ export class COM_Ability extends Com
     // 以自己為中心，產生 w x h 的施法範圍網格(存到 this._rangeGrid)：
     // 每格記錄世界座標、是否可通行/被遮蔽(block)，以及依鄰格開放與否算出的外框線標記(l/r/t/b)，
     // 讓 _showRange()(畫格線)、_isInRange()(判斷點擊/滑鼠位置是否在範圍內)可以共用同一份資料，不必每次重算
-    _genRangeGrid(w, h, checkBlock)
+    // SUMMON 只排除地圖外(不看遮擋/LOS)，中心格能不能生成交給 _zoneCells() 判斷
+    _genRangeGrid(w, h, checkBlock, ability)
     {
         const {start:xs} = this._axisRange(w);
         const {start:ys} = this._axisRange(h);
         const a = Array.from({ length: h }, () => Array(w));
         const [th,tw,th_2,tw_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        const summon = ability?.tag===GM.SUMMON;
+        const map = this.scene.map;
 
         for(let xi=0; xi<w; xi++)
         {
@@ -199,8 +202,9 @@ export class COM_Ability extends Com
             {
                 const px = this.x + (xs+xi)*tw;
                 const py = this.y + (ys+yi)*th;
-                const map = this.scene.map;
-                const block = map.isBlocked(...map.worldToTile(px,py)) || (checkBlock && !map.los(this, {x:px,y:py}, {roles:false}));
+                const [tx,ty] = map.worldToTile(px,py);
+                const block = summon ? !map.isInside(tx,ty)
+                                    : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, {x:px,y:py}, {roles:false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
@@ -330,22 +334,43 @@ export class COM_Ability extends Com
     {
         if(this._ability.scope===GM.CONE) {return !this._isSelfTile(pos);}   // CONE 點哪都往該方向發射，只排除點自己
         const {w:nW, h:nH} = this._castRange(this._ability);
-        !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock);
+        !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock, this._ability);
         const a = this._rangeGrid;
         for(let x=0; x<nW; x++)
         {
             for(let y=0; y<nH; y++)
             {
                 let rect = a[y][x];
-                if( !rect.block && 
+                if( !rect.block &&
                     pos.x>=rect.x && pos.x<rect.x+rect.width &&
                     pos.y>=rect.y && pos.y<rect.y+rect.height)
                 {
-                    return true
+                    return this._ability.tag!==GM.SUMMON || this._zoneCells(pos).length>0;   // 火牆一格都生不出來就不算範圍內
                 }
             }
         }
         return false;
+    }
+
+    // SUMMON 以 pos 為中心會生成的格子(世界座標，格中心)：跟 _use() 一樣依方向對調 w/h，只留 isOpenGround 的格子(規則同 ZoneView)
+    _zoneCells(pos)
+    {
+        const map = this.scene.map;
+        const {x:cx, y:cy} = this._snapToGrid(pos);
+        let {w:cw, h:ch} = this._resolveSize(this._ability);
+        if(Math.abs(cx-this.x) > Math.abs(cy-this.y)) {[cw,ch] = [ch,cw];}
+        const {start:xs} = this._axisRange(cw);
+        const {start:ys} = this._axisRange(ch);
+        const cells = [];
+        for(let xi=0; xi<cw; xi++)
+        {
+            for(let yi=0; yi<ch; yi++)
+            {
+                const x = cx+(xs+xi)*GM.TILE_W, y = cy+(ys+yi)*GM.TILE_H;
+                if(map.isOpenGround(...map.worldToTile(x,y))) {cells.push({x,y});}
+            }
+        }
+        return cells;
     }
 
     _query(tag)
@@ -394,7 +419,7 @@ export class COM_Ability extends Com
         else if(this._ability.tag===GM.SUMMON)
         {
             const ability = this._ability;
-            const pos = target ? target.pos : pt;
+            const pos = pt ?? target?.pos;   // 玩家點擊用游標位置(跟預覽一致)，AI 沒有 pt 才用目標
             if(!pos || !this._isInRange(pos)) {return false;}
 
             this._abilities[id]={skip:true, remain:ability.cd};
@@ -430,9 +455,9 @@ export class COM_Ability extends Com
             if(!clickPos || !this._isInRange(clickPos)) {return null;}
             return this._groupTargets();
         }
-        if(scope===GM.AREA)    // 以點擊位置(或點到的角色座標)為中心，且中心點需在施法距離內
+        if(scope===GM.AREA)    // 以游標位置為中心(跟預覽一致，AI 沒有 pt 才用目標座標)，且中心點需在施法距離內
         {
-            const center = target ? target.pos : pt;
+            const center = pt ?? target?.pos;
             if(!center || !this._isInRange(center)) {return null;}
             const targets = this._areaTargets(center);
             if(this._ability.carpet)
