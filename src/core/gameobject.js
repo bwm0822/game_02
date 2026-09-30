@@ -125,10 +125,17 @@ export class GameObject extends Phaser.GameObjects.Container
     }
 
     // 將物件加入List
+    // gos 用唯一 gid 當 key，保證每個物件都登記；named 給作息/port 用名字查
     _addToList()
     {
-        this._gid = this.bb.name??GameObject.gid++;
-        this.scene.gos && (this.scene.gos[this._gid]=this);
+        if(!this.scene.gos) {return;}
+        this._gid = GameObject.gid++;
+        this.scene.gos[this._gid] = this;
+
+        const name = this.bb.name;
+        if(name == null) {return;}
+        if(this.scene.named[name]) {dlog(T.WARN)(`[GameObject] 同一張地圖有重複的名字 "${name}"，作息/port 只會查到最後一個`);}
+        this.scene.named[name] = this;
     }
 
     // 將物件從List移除
@@ -136,6 +143,8 @@ export class GameObject extends Phaser.GameObjects.Container
     {
         if(!this.scene.gos) {return;}
         delete this.scene.gos[this._gid];
+        const name = this.bb.name;
+        if(name != null && this.scene.named[name] === this) {delete this.scene.named[name];}
     }
 
     _isRemoved()
@@ -226,8 +235,12 @@ export class GameObject extends Phaser.GameObjects.Container
     // 取得 gameObject
     _probe(p)
     {
-        const bodies = this.scene.physics.overlapCirc(p.x,p.y,0,true,true);
-        return bodies[0]?.gameObject.root; 
+        const map = this.scene.map;
+        const [tx,ty] = map.worldToTile(p.x,p.y);
+        return Object.values(this.scene.gos).find(go=>
+            go.view?.weight &&
+            map.gridTiles(go.posG, go.gridBB).some(([x,y])=>x===tx && y===ty)
+        );
     }
 
     // 取得逃跑點

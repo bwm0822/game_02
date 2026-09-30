@@ -226,6 +226,7 @@ export class GameScene extends Scene
         // this.entities = [];
         GameObject.gid=0;
         this.gos = {};
+        this.named = {};
         this.loadRecord();
         this.setEvent();
         this.initUI();
@@ -431,7 +432,7 @@ export class GameScene extends Scene
         else {
             dlog(T.SCENE)('----- port=',this._data.port)
             dlog(T.SCENE)(this.gos)
-            const target = this.gos[this._data.port];
+            const target = this.named[this._data.port];
             if(!target)
             {
                 console.warn(`[setPosition] map=${this._data.map} 找不到 port(uid=${this._data.port})，改用地圖中心點`);

@@ -429,40 +429,38 @@ class Map
         return this.tileToWorld(tx,ty);
     }
 
-    updateGrid(p,weight,{w,h})
+    // grid(中心 p、寬高 w,h) 登記 weight 時佔用的 tiles
+    gridTiles(p,{w,h})
     {
-        const rows = this.map.height, cols = this.map.width;
-        const inBounds = (tx,ty) => tx>=0 && tx<cols && ty>=0 && ty<rows;
-        let pts=[];
         if(w>this.map.tileWidth || h>this.map.tileHeight)
         {
             const w_2 = Math.floor(w/2)-2;
             const h_2 = Math.floor(h/2)-2;
 
-            let [tx0,ty0] = this.worldToTile(p.x-w_2, p.y-h_2);
-            let [tx1,ty1] = this.worldToTile(p.x+w_2, p.y+h_2);
+            const [tx0,ty0] = this.worldToTile(p.x-w_2, p.y-h_2);
+            const [tx1,ty1] = this.worldToTile(p.x+w_2, p.y+h_2);
 
+            const tiles = [];
             for(let tx=tx0;tx<=tx1;tx++)
             {
-                for(let ty=ty0;ty<=ty1;ty++)
-                {
-                    if(!inBounds(tx,ty)) {continue;}
-                    this.graph.grid[ty][tx].weight += weight;
-                    this._updateGridExt(tx,ty);
-                    pts.push(this.tileToWorld(tx,ty))
-                }
+                for(let ty=ty0;ty<=ty1;ty++) {tiles.push([tx,ty]);}
             }
+            return tiles;
         }
-        else
-        {
-            let [tx,ty] = this.worldToTile(p.x, p.y);
-            if(inBounds(tx,ty))
-            {
-                this.graph.grid[ty][tx].weight += weight;
-                this._updateGridExt(tx,ty);
-                pts.push(p)
-            }
-        }
+        return [this.worldToTile(p.x, p.y)];
+    }
+
+    updateGrid(p,weight,{w,h})
+    {
+        const rows = this.map.height, cols = this.map.width;
+        const big = w>this.map.tileWidth || h>this.map.tileHeight;
+        let pts=[];
+        this.gridTiles(p,{w,h}).forEach(([tx,ty])=>{
+            if(tx<0 || tx>=cols || ty<0 || ty>=rows) {return;}
+            this.graph.grid[ty][tx].weight += weight;
+            this._updateGridExt(tx,ty);
+            pts.push(big ? this.tileToWorld(tx,ty) : p);
+        });
         return pts;
     }
 

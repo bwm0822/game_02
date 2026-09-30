@@ -19,7 +19,7 @@ export class COM_Schedule extends Com
     _toGos(p)
     {
         const{scene}=this.ctx;
-        return p.split('~').map(id=>scene.gos[id]);
+        return p.split('~').map(id=>scene.named[id]);
     }
 
     _findRoutine()

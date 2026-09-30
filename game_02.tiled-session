@@ -363,19 +363,19 @@
             "scale": 0.125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1600,
-                "y": 1596
+                "x": 1596,
+                "y": 1592
             }
         },
         "public/assets/maps/m/m_04x05.json": {
             "expandedObjectLayers": [
-                3,
-                5
+                5,
+                3
             ],
             "scale": 1,
-            "selectedLayer": 3,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 1060,
+                "x": 891,
                 "y": 2364
             }
         },

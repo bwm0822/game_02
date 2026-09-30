@@ -557,7 +557,7 @@ class View extends Phaser.GameObjects.Container
         this._setData()
             ._setAnchor(modify)
             ._addShape(alpha)
-            ._addPhysics()
+            // ._addPhysics()
             ._addGrid()
             ._updateDepth(depth)
             ._addWeight()

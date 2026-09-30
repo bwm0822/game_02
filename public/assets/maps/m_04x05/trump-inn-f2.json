@@ -83,7 +83,7 @@
                 {
                  "height":64,
                  "id":193,
-                 "name":"door",
+                 "name":"",
                  "template":"..\/..\/templates\/items\/door.tj",
                  "width":64,
                  "x":224,
@@ -99,7 +99,7 @@
                 {
                  "height":64,
                  "id":203,
-                 "name":"door",
+                 "name":"",
                  "template":"..\/..\/templates\/items\/door.tj",
                  "width":64,
                  "x":64,
