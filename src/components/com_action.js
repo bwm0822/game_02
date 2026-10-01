@@ -75,6 +75,8 @@ export class COM_Action extends Com
     {
         const {root}=this.ctx
         root.face?.(target.pos);
+        root.anim_lunge?.(target.pos, -4, {duration:60, ease:'quad.out'})
+            ?.then(ok=>ok && root.anim_rest?.({duration:120, ease:'quad.inOut'}));
         const sprite = {img:'arrow', deg:0};
         return new Promise((resolve)=>{
                 new Projectile(this.scene, this.root.x, this.root.y, sprite)
