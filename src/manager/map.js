@@ -544,9 +544,16 @@ class Map
         return this.getWeightByTile(tx,ty)>0 && !this.isBlocked(tx,ty);
     }
 
+    // 角色可以站上去：可走、不擋，且沒被角色/物件佔用(角色 weight=BLOCK)
+    isStandable(p)
+    {
+        const [tx,ty] = this.worldToTile(p.x,p.y);
+        return this.isOpenGround(tx,ty) && this.getWeightByTile(tx,ty)<GM.W.BLOCK;
+    }
+
     // 視線判定：supercover 走過 from→to 經過的格子(起終點不檢查)，isBlocked(地圖外/牆/isBlock 物件) 就擋；
-    // 剛好穿過角點時，兩側都擋才算擋；roles:true 時活著的角色也會擋
-    los(from, to, {roles=true}={})
+    // 剛好穿過角點時，兩側都擋才算擋；roles:true 時活著的角色也會擋；walk:true 時站不上去的格子(桌子等)也會擋
+    los(from, to, {roles=true, walk=false}={})
     {
         const [x0,y0] = this.worldToTile(from.x, from.y);
         const [x1,y1] = this.worldToTile(to.x, to.y);
@@ -560,7 +567,8 @@ class Map
                 occ.add(`${tx},${ty}`);
             });
         }
-        const blocked = (tx,ty)=>this.isBlocked(tx,ty) || occ.has(`${tx},${ty}`);
+        const blocked = (tx,ty)=>this.isBlocked(tx,ty) || occ.has(`${tx},${ty}`) ||
+                                 (walk && !this.isStandable(this.tileToWorld(tx,ty)));
 
         const dx = Math.abs(x1-x0), dy = Math.abs(y1-y0);
         const sx = Math.sign(x1-x0), sy = Math.sign(y1-y0);

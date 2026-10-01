@@ -67,8 +67,43 @@ export class COM_Action extends Com
         const {root}=this.ctx
         root.face?.(target.pos);
         const ok = await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
-        onHit?.();
+        const hit = onHit?.();
         if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
+        await hit;
+    }
+
+    async _dashTo(pt)
+    {
+        const {root} = this.ctx;
+        const tiles = Math.round(Math.max(Math.abs(pt.x-root.x)/GM.TILE_W, Math.abs(pt.y-root.y)/GM.TILE_H));
+        if(tiles===0) {return;}
+        await this._moveTo(pt, {duration:60*tiles, ease:'quad.in'});
+    }
+
+    // 沿「自己→目標」方向把目標往後推 tiles 格(真的換格子)，遇到站不上去的格子就停在前一格
+    async _knock(target, tiles)
+    {
+        const map = this.scene.map;
+        const [tw,th] = [GM.TILE_W, GM.TILE_H];
+        const sx = Math.sign(Math.round((target.x-this.root.x)/tw));
+        const sy = Math.sign(Math.round((target.y-this.root.y)/th));
+        if(!sx && !sy) {return;}
+
+        let pt = null;
+        for(let i=1; i<=tiles; i++)
+        {
+            const p = {x:target.x+sx*tw*i, y:target.y+sy*th*i};
+            if(!map.isStandable(p)) {break;}
+            pt = p;
+        }
+        if(!pt) {return;}
+
+        target.removeWeight?.();
+        target.addWeight?.(pt);
+        await new Promise((resolve)=>{
+            this.scene.tweens.add({targets:target, x:pt.x, y:pt.y, duration:120, ease:'quad.out', onComplete:resolve});
+        });
+        target.updateDepth();
     }
 
     async _attack_Ranged(target, onHit)
@@ -119,7 +154,10 @@ export class COM_Action extends Com
         GS.mode = GM.MODE.COMBAT;   // 任何一方發動攻擊，強制進入戰鬥模式
         const dmg = computeDamage(this._root, target, ability);
         target.takeDamage(dmg, this._root);
+        const knock = ability?.knock && target.isAlive && dmg.type!==GM.MISS && dmg.type!==GM.EVA
+                    ? this._knock(target, ability.knock) : null;
         if(ability?.fx) {await target.fx?.({icon: ability.fx.img ?? ability.icon});}   // stage3: 命中特效，需明確設定 fx 才會顯示
+        await knock;
     }
 
     async _moveToward(target, {maxSteps=1}={})
@@ -343,6 +381,7 @@ export class COM_Action extends Com
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
         root.attackDecor = this._attackDecor.bind(this);
+        root.dashTo = this._dashTo.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);

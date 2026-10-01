@@ -284,6 +284,7 @@ export class COM_Ability extends Com
         if(!this._previewGraphics) {this._previewGraphics = this.scene.add.graphics();}
         this._previewGraphics.clear();
 
+        if(this._ability?.scope===GM.DASH) {this._previewDash(pt); return;}
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {this._highlight([]); return;}
         if(this._ability.tag===GM.ATK)
@@ -331,8 +332,64 @@ export class COM_Ability extends Com
         }
     }
 
+    // DASH：游標所在格的目標有落點才亮紅框，落點畫實心方塊
+    _previewDash(pt)
+    {
+        const target = this._roleAt(pt);
+        const landing = this._dashLanding(target);
+        if(!landing) {this._highlight([]); return;}
+        this._highlight([target]);
+        const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
+        Utility.drawBlock(this._previewGraphics, {x:landing.x-w_2, y:landing.y-h_2, width:w, height:h, l:true, r:true, t:true, b:true});
+    }
+
+    _roleAt(pos)
+    {
+        const {root} = this.ctx;
+        const map = this.scene.map;
+        const [tx,ty] = map.worldToTile(pos.x, pos.y);
+        return this.scene.roles.find(role=>{
+            if(role===root || !role.isAlive) {return false;}
+            const [rx,ry] = map.worldToTile(role.x, role.y);
+            return rx===tx && ry===ty;
+        });
+    }
+
+    // DASH 落點：目標周圍 8 格中站得上去、直線衝得到(路徑可走且沒被地形/角色擋)、距離自己不超過 range 的格子，取歐式距離最近的；
+    // 同距離取「落點→目標」跟「自己→目標」方向最接近的；已經貼身就是原地
+    _dashLanding(target)
+    {
+        const {root} = this.ctx;
+        if(!target?.isAlive || target===root) {return null;}
+        const map = this.scene.map;
+        const range = this._ability.range;
+        const [tw,th] = [GM.TILE_W, GM.TILE_H];
+        const me = map.getPt(this), t = map.getPt(target.pos);
+        const cheb = (p)=>Math.max(Math.abs(Math.round((p.x-me.x)/tw)), Math.abs(Math.round((p.y-me.y)/th)));
+        const dist = cheb(t);
+        if(dist>range) {return null;}
+        if(dist<=1) {return me;}
+
+        const dir = Math.atan2(t.y-me.y, t.x-me.x);
+        let best = null;
+        for(let ox=-1; ox<=1; ox++)
+        {
+            for(let oy=-1; oy<=1; oy++)
+            {
+                if(!ox && !oy) {continue;}
+                const p = {x:t.x+ox*tw, y:t.y+oy*th};
+                if(cheb(p)>range || !map.isStandable(p) || !map.los(me, p, {walk:true})) {continue;}
+                const d = Math.hypot(p.x-me.x, p.y-me.y);
+                const diff = Math.abs(Phaser.Math.Angle.Wrap(Math.atan2(t.y-p.y, t.x-p.x)-dir));
+                if(!best || d<best.d-0.001 || (Math.abs(d-best.d)<=0.001 && diff<best.diff)) {best = {x:p.x, y:p.y, d, diff};}
+            }
+        }
+        return best && {x:best.x, y:best.y};
+    }
+
     _isInRange(pos, checkBlock=true)
     {
+        if(this._ability.scope===GM.DASH) {return !!this._dashLanding(this._roleAt(pos));}
         if(this._ability.scope===GM.CONE) {return !this._isSelfTile(pos);}   // CONE 點哪都往該方向發射，只排除點自己
         const {w:nW, h:nH} = this._castRange(this._ability);
         !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock, this._ability);
@@ -405,11 +462,13 @@ export class COM_Ability extends Com
             const targets = this._resolveTargets(target, pt);
             if(!targets) {return false;}
             const emptyTiles = this._emptyTiles;
+            const landing = this._landing;
 
             this._abilities[id]={skip:true, remain:ability.cd};
             this._showRange(false);
             this._clrAbility();   // 先歸零選取狀態(含 bb.sta)，避免攻擊動畫播放期間滑鼠移動還一直觸發範圍預覽
 
+            if(landing) {await root.dashTo?.(landing);}
             await Promise.all([
                 root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
                 emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
@@ -445,10 +504,16 @@ export class COM_Ability extends Com
     {
         const scope = this._ability.scope ?? GM.SINGLE;
         this._emptyTiles = null;
+        this._landing = null;
 
         if(scope===GM.SINGLE)
         {
             return (target?.isAlive && this._isInRange(target.pos)) ? [target] : null;
+        }
+        if(scope===GM.DASH)    // 先衝到落點(_use 處理)，再近戰打目標
+        {
+            this._landing = this._dashLanding(target);
+            return this._landing ? [target] : null;
         }
         if(scope===GM.GROUP)   // 點擊只是確認手勢(需落在施法距離內)，爆炸中心永遠是自己，與點擊位置無關
         {

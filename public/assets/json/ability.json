@@ -86,29 +86,30 @@
       "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
     }
   },
-  "thrust": {
+  "dash": {
     "icon": "📍",
     "mode": "active",
     "tag": "atk",
     "hits": [
       {
-        "pow": 1,
-        "flat": 0,
-        "pen": 0.2
+        "pow": 1.5,
+        "flat": 0
       }
     ],
-    "range": 1,
-    "cd": 1,
+    "range": 3,
+    "cd": 3,
+    "scope": "dash",
+    "knock": 1,
     "travel": {
       "type": "melee"
     },
     "tw": {
-      "lab": "刺擊",
-      "des": "直線突刺。無視目標 20% 物理防禦。"
+      "lab": "衝刺",
+      "des": "衝向敵人，造成 1.5 倍傷害並擊退 1 格。"
     },
     "us": {
-      "lab": "Thrust",
-      "des": "直線突刺。無視目標 20% 物理防禦。"
+      "lab": "Dash",
+      "des": "Dash to an enemy, dealing 1.5x damage and knocking it back 1 tile."
     }
   },
   "whirlwind": {
@@ -117,7 +118,7 @@
     "tag": "atk",
     "refs": [
       "slash",
-      "thrust"
+      "dash"
     ],
     "range": 1,
     "cd": 3,

@@ -141,9 +141,9 @@ Utility AI（不是狀態機/行為樹）：`com_ai.js` 的 `UtilityDecider.deci
 }
 ```
 
-其他技能（`slash`、`thrust`、`whirlwind`、`heal`、`cure`、`steal`、`lockpick`、`butcher`、`stealth`、`barter`...）都只有 `icon`/`type`/`tw`/`us`（圖示+中英文說明文字），**沒有 `pow`/`flat`/`elm`/`src`/`tag`/`cd`/`range` 這些實際跑戰鬥計算需要的欄位**——`slash` 的說明文字寫「造成 115% 傷害」，但完全沒有對應資料，純粹是文案佔位。
+其他技能（`slash`、`dash`、`whirlwind`、`heal`、`cure`、`steal`、`lockpick`、`butcher`、`stealth`、`barter`...）都只有 `icon`/`type`/`tw`/`us`（圖示+中英文說明文字），**沒有 `pow`/`flat`/`elm`/`src`/`tag`/`cd`/`range` 這些實際跑戰鬥計算需要的欄位**——`slash` 的說明文字寫「造成 115% 傷害」，但完全沒有對應資料，純粹是文案佔位。
 
-⚠️ **`COM_Ability._use(target, id)`（[com_ability.js:213](../src/components/com_ability.js#L213)）目前用 `type` 分流,但 `type:"active"` 同時被攻擊技能（`slash`/`thrust`）跟治療技能（`heal`/`cure`）共用**：
+⚠️ **`COM_Ability._use(target, id)`（[com_ability.js:213](../src/components/com_ability.js#L213)）目前用 `type` 分流,但 `type:"active"` 同時被攻擊技能（`slash`/`dash`）跟治療技能（`heal`/`cure`）共用**：
 
 ```js
 if(this._ability.type===GM.ACTIVE)     // GM.ACTIVE === 'active'
@@ -156,9 +156,9 @@ else if(target && this._isInRange(target.pos))
     root.attack?.(target, this._ability);
 }
 ```
-實際驗證過：`slash`/`thrust`（近戰攻擊技能）跟 `heal`/`cure`（治療技能）的 `type` 值都是 `"active"`，兩者現在完全走同一條「治療」分支——用 `slash` 只會嘗試治療目標，不會攻擊。目前唯一能正常造成傷害的技能路徑是 `type:"spell"` 的 fireball/firewall。要修的話，分流依據應該換成 `tag`（`atk`/`heal`/...）而不是 `type`，但目前 `tag` 欄位在資料裡也幾乎沒填（只有 `fireball` 有 `tag:"atk"`），兩件事要一起補。
+實際驗證過：`slash`/`dash`（近戰攻擊技能）跟 `heal`/`cure`（治療技能）的 `type` 值都是 `"active"`，兩者現在完全走同一條「治療」分支——用 `slash` 只會嘗試治療目標，不會攻擊。目前唯一能正常造成傷害的技能路徑是 `type:"spell"` 的 fireball/firewall。要修的話，分流依據應該換成 `tag`（`atk`/`heal`/...）而不是 `type`，但目前 `tag` 欄位在資料裡也幾乎沒填（只有 `fireball` 有 `tag:"atk"`），兩件事要一起補。
 
-`ab_tree.json`（`DB.abTree`）是技能樹的節點座標＋前置技能 `refs`（例如 `whirlwind` refs `slash`/`thrust`），沒有解鎖花費/等級需求欄位——這塊解鎖規則（如果有）應該在 UI 端（`uiability.js`），沒在這次調查範圍內確認。
+`ab_tree.json`（`DB.abTree`）是技能樹的節點座標＋前置技能 `refs`（例如 `whirlwind` refs `slash`/`dash`），沒有解鎖花費/等級需求欄位——這塊解鎖規則（如果有）應該在 UI 端（`uiability.js`），沒在這次調查範圍內確認。
 
 ### 5.1 遮擋（視線/攻擊）
 
@@ -171,6 +171,7 @@ else if(target && this._isInRange(target.pos))
 - 用到的地方：`map.los()`（技能遮擋、NPC 感知 `com_sense._canSee`）、`com_ability` 的 cone 格子跟施法範圍格（`isBlocked` 的格子不能選）
 - 施法範圍格：SUMMON/AREA 只排除地圖外、不看遮擋/LOS（可以隔牆放、中心可以指在爐子上），SUMMON 另外要 `_zoneCells()` 至少一格可生成才算範圍內；其他技能排除 `isBlocked` 的格子
 - area-like 技能（SUMMON/AREA/CONE）的中心/方向 = `pt ?? target?.pos`（玩家用游標、AI 用目標），選取中 hover 物件不顯示白框
+- DASH scope（衝刺）：點 Chebyshev ≤range 內的角色，落點 = 目標周圍 8 格中 `map.isStandable()`、`map.los(me,p,{walk:true})` 直線可達且距離 ≤range 的最近格（已貼身就原地），`_use()` 先 `root.dashTo(landing)` 再走一般 `root.attack()`；技能的 `knock`（格數）在 `_onDamage` 命中（非 MISS/EVA）且目標沒死時，沿「攻擊者→目標」方向真的換格子推開，推不動就不推
 - 火牆（`ZoneView`）：`map.isOpenGround()`（可走且不擋）以外的格子不生成、不登記 weight、不燒人，施放預覽也不畫；每格火焰直接放在 scene 上，depth = 該格中心 y+1（蓋過同格角色）
 
 ## 6. 裝備數值（`public/assets/json/item.json`）
@@ -186,7 +187,7 @@ else if(target && this._isInRange(target.pos))
 
 ## 8. 已知缺口總結（依影響排序）
 
-1. `COM_Ability._use()` 用 `type` 分流攻擊/治療，但 `slash`/`thrust` 這類攻擊技能跟 `heal`/`cure` 治療技能的 `type` 都是 `"active"`，現在用非 spell 技能一律會被當成治療處理，不會造成傷害
+1. `COM_Ability._use()` 用 `type` 分流攻擊/治療，但 `slash`/`dash` 這類攻擊技能跟 `heal`/`cure` 治療技能的 `type` 都是 `"active"`，現在用非 spell 技能一律會被當成治療處理，不會造成傷害
 2. `ability.json` 24 個技能只有 2 個（`fireball`/`firewall`）填了 `pow`/`flat`/`elm`/`src` 等戰鬥數值，其餘都是圖示+文案佔位
 3. `com_cmd.js` 呼叫 `root.useAbility(ent)`，但沒有任何元件綁定這個方法名（只有 `selectAbility`/`unselectAbility`/`useAb`），選技能點擊目標這條路徑疑似會直接噴錯，需要實測確認
 4. AI 的 `queryAb('atk')`/`queryAb('heal')` 依賴 `tag` 欄位，資料裡幾乎沒填，AI 實質上只能用 fireball 施法

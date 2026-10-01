@@ -381,6 +381,7 @@ export const GM =
     GROUP : 'group',
     AREA : 'area',
     CONE : 'cone',
+    DASH : 'dash',
 
     // path
     PATH_NONE : -1, // 找不到路徑
