@@ -153,9 +153,11 @@ export class COM_Action extends Com
     {
         GS.mode = GM.MODE.COMBAT;   // 任何一方發動攻擊，強制進入戰鬥模式
         const dmg = computeDamage(this._root, target, ability);
+        const canKnock = ability?.knock && dmg.type!==GM.MISS && dmg.type!==GM.EVA;
+        const lethal = target.total.states[GM.HP]+dmg.amount<=0;
+        if(canKnock && lethal) {await this._knock(target, ability.knock);}   // 致命一擊先擊退再扣血，讓目標在被推到的位置死亡、換屍體
         target.takeDamage(dmg, this._root);
-        const knock = ability?.knock && target.isAlive && dmg.type!==GM.MISS && dmg.type!==GM.EVA
-                    ? this._knock(target, ability.knock) : null;
+        const knock = canKnock && !lethal ? this._knock(target, ability.knock) : null;
         if(ability?.fx) {await target.fx?.({icon: ability.fx.img ?? ability.icon});}   // stage3: 命中特效，需明確設定 fx 才會顯示
         await knock;
     }
