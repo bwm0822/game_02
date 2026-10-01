@@ -492,7 +492,11 @@ export class GameScene extends Scene
 
     onPointerDown(pointer,gameObject)
     {        
-        if(GM.player.sta===GM.ST.SLEEP) {return;}
+        if(GM.player.sta===GM.ST.SLEEP)
+        {
+            if(pointer.leftButtonDown() && this._ent===GM.player) {GM.player.wake();}
+            return;
+        }
 
         if (pointer.rightButtonDown())
         {
