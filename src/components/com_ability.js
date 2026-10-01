@@ -242,7 +242,7 @@ export class COM_Ability extends Com
         if(ability.scope!==GM.CONE)
         {
             const {w,h} = this._castRange(ability);
-            this._showRange(true, w, h, false, ability);
+            this._showRange(true, w, h, ability.checkBlock!==false, ability);
         }
 
         this._ability = ability;
