@@ -118,6 +118,7 @@ export class GameObject extends Phaser.GameObjects.Container
     _onout() {this._send('out',this);}
     _ondown()
     {
+        if(GM.player?.sta===GM.ST.SLEEP && this!==GM.player) {return;}
         const cam = this.scene.cameras.main;
         const wp = this.pos;
         const {x,y} = Utility.worldToScreen(cam,wp.x,wp.y);
