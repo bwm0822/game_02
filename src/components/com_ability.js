@@ -448,7 +448,7 @@ export class COM_Ability extends Com
 
         if(scope===GM.SINGLE)
         {
-            return (target && this._isInRange(target.pos)) ? [target] : null;
+            return (target?.isAlive && this._isInRange(target.pos)) ? [target] : null;
         }
         if(scope===GM.GROUP)   // 點擊只是確認手勢(需落在施法距離內)，爆炸中心永遠是自己，與點擊位置無關
         {
