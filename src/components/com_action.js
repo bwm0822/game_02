@@ -62,12 +62,13 @@ export class COM_Action extends Com
         root.updateDepth();
     }
 
-    _attack_Melee(target, onHit)
+    async _attack_Melee(target, onHit)
     {
         const {root}=this.ctx
         root.face?.(target.pos);
-        let [pos,duration,ease] = [target.pos, 200, 'expo.in'];
-        return this._step( pos, duration, ease, {yoyo: true, onYoyo: onHit} );  
+        await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
+        onHit?.();
+        await root.anim_rest?.({duration:150, ease:'quad.out'});
     }
 
     _attack_Ranged(target, onHit)

@@ -58,6 +58,45 @@ export class COM_Anim extends Com
         });
     }
 
+    // 同一個 shape 的位移表演(前撲/後座/擊退)共用一個 tween 槽：新的蓋掉舊的，
+    // _base 只在沒有位移進行中時記錄，避免從偏移中的位置當成原位而累積漂移
+    _offset(dx, dy, {duration, ease})
+    {
+        const shape = this.ctx.root.view?.shape;
+        if(!shape) {return Promise.resolve();}
+        if(!this._twPos) {this._base = {x:shape.x, y:shape.y};}
+        this._twPos?.stop();
+        if(dx!==0 || dy!==0) {shape.setPosition(this._base.x, this._base.y);}
+        return new Promise((resolve)=>{
+            const tw = this.scene.tweens.add({
+                targets: shape,
+                x: this._base.x + dx,
+                y: this._base.y + dy,
+                duration: duration,
+                ease: ease,
+                onComplete: ()=>{
+                    if(dx===0 && dy===0 && this._twPos===tw) {this._twPos=null;}
+                    resolve();
+                },
+                onStop: resolve,
+            });
+            this._twPos = tw;
+        });
+    }
+
+    _lunge(pt, dist, {duration=100, ease='cubic.in'}={})
+    {
+        const {root} = this.ctx;
+        const ang = Math.atan2(pt.y-root.pos.y, pt.x-root.pos.x);
+        return this._offset(Math.cos(ang)*dist, Math.sin(ang)*dist, {duration, ease});
+    }
+
+    _rest({duration=150, ease='quad.out'}={})
+    {
+        if(!this._twPos) {return Promise.resolve();}
+        return this._offset(0, 0, {duration, ease});
+    }
+
     _ondead() { this._idle(false); }
 
     //------------------------------------------------------
@@ -72,6 +111,8 @@ export class COM_Anim extends Com
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.anim_idle = this._idle.bind(this);
         root.anim_walk = this._walk.bind(this);
+        root.anim_lunge = this._lunge.bind(this);
+        root.anim_rest = this._rest.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
