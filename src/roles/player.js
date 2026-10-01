@@ -198,7 +198,7 @@ export class Player extends Role
             if(bb.cACT.st==='reach')
             {
                 if(bb.ent) {await this.interact?.(bb.ent,bb.act);}
-                bb.sta=GM.ST.IDLE;
+                if(bb.sta===GM.ST.MOVING) {bb.sta=GM.ST.IDLE;}
             }
             else if(bb.cACT.st==='blocked')
             {
