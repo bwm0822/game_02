@@ -355,7 +355,7 @@ export class COM_Stats extends Com
         return total;
     }
 
-    _takeDamage(dmg) 
+    _takeDamage(dmg, attacker)
     {
         const alive = this._states[GM.HP] > 0;
 
@@ -365,7 +365,8 @@ export class COM_Stats extends Com
         {
             case GM.CRIT:
                 root.popup?.(`${'暴擊'} ${dmg.amount}`, '#f00', '#fff');
-                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount); 
+                root.anim_hit?.(attacker);
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount);
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
                 break;
             case GM.EVA:
@@ -376,7 +377,8 @@ export class COM_Stats extends Com
                 break;
             default:
                 root.popup?.(dmg.amount, '#f00', '#fff');
-                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount); 
+                root.anim_hit?.(attacker);
+                this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount);
                 // console.log(`${this.name} 受到 ${dmg.amount} 傷害`);
         }
 

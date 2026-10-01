@@ -66,9 +66,9 @@ export class COM_Action extends Com
     {
         const {root}=this.ctx
         root.face?.(target.pos);
-        await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
+        const ok = await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
         onHit?.();
-        await root.anim_rest?.({duration:150, ease:'quad.out'});
+        if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
     }
 
     _attack_Ranged(target, onHit)

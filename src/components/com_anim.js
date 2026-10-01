@@ -76,9 +76,9 @@ export class COM_Anim extends Com
                 ease: ease,
                 onComplete: ()=>{
                     if(dx===0 && dy===0 && this._twPos===tw) {this._twPos=null;}
-                    resolve();
+                    resolve(true);
                 },
-                onStop: resolve,
+                onStop: ()=>resolve(false),   // 被新的位移蓋掉，呼叫端不該再接 _rest，不然會把新的也停掉
             });
             this._twPos = tw;
         });
@@ -97,6 +97,33 @@ export class COM_Anim extends Com
         return this._offset(0, 0, {duration, ease});
     }
 
+    _flash(duration=80)
+    {
+        const shape = this.ctx.root.view?.shape;
+        if(!shape) {return;}
+        const sps = shape.list ?? [shape];
+        sps.forEach(sp=>sp.setTintFill?.(0xffffff));
+        this._twFlash?.remove();
+        this._twFlash = this.scene.time.delayedCall(duration, ()=>{
+            sps.forEach(sp=>sp.clearTint?.());
+            this._twFlash = null;
+        });
+    }
+
+    async _hit(attacker)
+    {
+        this._flash();
+        if(!attacker) {return;}
+        const {root} = this.ctx;
+        const [p, a] = [root.pos, attacker.pos];
+        if(p.x===a.x && p.y===a.y) {return;}
+        const pt = {x:p.x*2-a.x, y:p.y*2-a.y};
+        if(await this._lunge(pt, 6, {duration:60, ease:'quad.out'}))
+        {
+            await this._rest({duration:120, ease:'quad.inOut'});
+        }
+    }
+
     _ondead() { this._idle(false); }
 
     //------------------------------------------------------
@@ -113,6 +140,7 @@ export class COM_Anim extends Com
         root.anim_walk = this._walk.bind(this);
         root.anim_lunge = this._lunge.bind(this);
         root.anim_rest = this._rest.bind(this);
+        root.anim_hit = this._hit.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
