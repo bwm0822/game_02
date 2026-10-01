@@ -20,6 +20,7 @@ export default class UiCursor extends Phaser.GameObjects.Container
         open_door :  {sprite:GM.ICON.DOOR, origin:{x:0.5,y:0.5}, scale:1},
         close_door :  {sprite:GM.ICON.DOOR, origin:{x:0.5,y:0.5}, scale:1},
         rest :  {sprite:GM.ICON.TOOL, origin:{x:0.5,y:0.5}, scale:1},
+        wake :  {sprite:GM.ICON.TOOL, origin:{x:0.5,y:0.5}, scale:1},
         lock :  {sprite:GM.ICON.LOCK, origin:{x:0.5,y:0.5}, scale:1},
         unlock :  {sprite:GM.ICON.UNLOCK, origin:{x:0.5,y:0.5}, scale:1},
         cross:  {sprite:GM.ICON.CROSS, origin:{x:0.5,y:0.5}, scale:1},

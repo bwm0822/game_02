@@ -203,15 +203,22 @@ export class GameScene extends Scene
         }
 
         if(this._atEdge) {return;}
-        if(GM.player?.sta === GM.ST.ABILITY || GM.player?.sta === GM.ST.SLEEP) {this._lastAct = null; return;}   // 清掉，取消技能後才會恢復成物件的互動游標
+        if(GM.player?.sta === GM.ST.ABILITY) {this._lastAct = null; return;}   // 清掉，取消技能後才會恢復成物件的互動游標
         if(!this._ent) {return;}
 
-        const act = this._ent.act;
+        const act = this._cursorAct(this._ent);
         if(act !== this._lastAct)
         {
             this._lastAct = act;
             UiCursor.set(act);
         }
+    }
+
+    // 睡覺時只有自己(右鍵起床)可互動，其他物件維持預設游標
+    _cursorAct(ent)
+    {
+        if(GM.player.sta===GM.ST.SLEEP) {return ent===GM.player ? GM.WAKE : undefined;}
+        return ent.act;
     }
 
     async create ()
@@ -755,7 +762,7 @@ export class GameScene extends Scene
         {
             this._done = true;
             this.events
-                .on('over', (ent)=>{this._ent=ent;if(GM.player.sta!==GM.ST.ABILITY&&GM.player.sta!==GM.ST.SLEEP){UiCursor.set(this._ent.act);}UiMark.close();})
+                .on('over', (ent)=>{this._ent=ent;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set(this._cursorAct(ent));}UiMark.close();})
                 .on('out', ()=>{this._ent=null;this._lastAct=null;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set();}})
                 .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
                 .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
