@@ -19,6 +19,7 @@ export class COM_Cmd extends Com
         const {root,bb} = this.ctx;
 
         if(!root.isAlive) {return;}
+        root.wake?.();
 
         if(bb.sta===GM.ST.ABILITY) {root.useAbility(ent, undefined, pt);}
         else

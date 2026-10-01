@@ -85,7 +85,7 @@ export class COM_Schedule extends Com
             bb.routine = found;                     // 紀錄目前的 routine
             bb.go = null;                           // 清除目前目標點
             root.clearPath?.();                     // 清除路徑 
-            if(bb.sta===GM.ST.SLEEP) {root.wake?.();}
+            root.wake?.();
         }
 
         if(bb.sta===GM.ST.SLEEP) {return;}

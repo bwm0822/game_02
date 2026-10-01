@@ -235,6 +235,7 @@ export class COM_Ability extends Com
     _select(id)
     {
         if(!this._abilities[id]) {return false;}
+        this.ctx.root.wake?.();
         const ability = DB.ability(id);
 
         this._rangeGrid = null;   // 不同技能的 range/w/h 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸

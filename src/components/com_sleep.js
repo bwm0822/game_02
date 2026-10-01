@@ -36,6 +36,7 @@ export class COM_Sleep extends Com
     _wake()
     {
         const{root,bb,ept}=this.ctx;
+        if(bb.sta!==GM.ST.SLEEP) {return;}
         this._bed.setEmpty();
         root.pos=ept(this._bed.getPts(root)[0]);
         root.updateDepth?.();

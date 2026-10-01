@@ -708,6 +708,7 @@ export class GameScene extends Scene
 
     enterPlaceMode(dat, ent)
     {
+        GM.player.wake?.();
         this._placeData = {dat, ent};
         Ui.setMode(UI.MODE.PLACE);
         UiCursor.instance.setIcon('aim');
@@ -754,7 +755,7 @@ export class GameScene extends Scene
         {
             this._done = true;
             this.events
-                .on('over', (ent)=>{this._ent=ent;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set(this._ent.act);}UiMark.close();})
+                .on('over', (ent)=>{this._ent=ent;if(GM.player.sta!==GM.ST.ABILITY&&GM.player.sta!==GM.ST.SLEEP){UiCursor.set(this._ent.act);}UiMark.close();})
                 .on('out', ()=>{this._ent=null;this._lastAct=null;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set();}})
                 .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
                 .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
