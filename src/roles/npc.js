@@ -112,7 +112,7 @@ export class Npc extends Role
         
 
         // 綁定 API
-        this.exit = this._remove.bind(this);
+        this.exit = ()=>{this._exiting=true;};   // exit 是在自己的 think() 裡被呼叫，要等回合跑完(TURNEND)才能 _remove()
             
         // 註冊 event
         this.on(GM.EVT.ONDEAD, this._ondead.bind(this));
@@ -161,6 +161,7 @@ export class Npc extends Role
         if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
         if(bb.sta===GM.ST.IDLE) {this.anim_idle?.(true);}
         emit(GM.EVT.TURNEND);
+        if(this._exiting) {this._remove();}
     }
     
 }
