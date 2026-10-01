@@ -124,6 +124,51 @@ export class COM_Anim extends Com
         }
     }
 
+    // pt 為 null 表示還原；以圖片中心為支點旋轉(origin 是底部中心，所以要同步補償 x/y)
+    _aim(pt, {duration=60, ease='quad.out'}={})
+    {
+        const {root} = this.ctx;
+        const aimer = root.view?.aimer;
+        if(!aimer) {return Promise.resolve(false);}
+        const sp = aimer.sp;
+        aimer.base ??= {x:sp.x, y:sp.y, angle:sp.angle};
+        const base = aimer.base;
+        this._twAim?.stop();
+
+        let to = base.angle;
+        if(pt)
+        {
+            const sign = Math.sign(root.view.shape.scaleX) || 1;
+            const deg = Phaser.Math.RadToDeg(Math.atan2(pt.y-root.pos.y, (pt.x-root.pos.x)*sign));
+            to = sp.angle + Phaser.Math.Angle.ShortestBetween(sp.angle, deg - aimer.aim);
+        }
+
+        const h = sp.displayHeight/2;
+        const r0 = Phaser.Math.DegToRad(base.angle);
+        const [cx, cy] = [base.x + Math.sin(r0)*h, base.y - Math.cos(r0)*h];
+        const place = (angle)=>{
+            const r = Phaser.Math.DegToRad(angle);
+            sp.setAngle(angle).setPosition(cx - Math.sin(r)*h, cy + Math.cos(r)*h);
+        };
+
+        const proxy = {angle:sp.angle};
+        return new Promise((resolve)=>{
+            const tw = this.scene.tweens.add({
+                targets: proxy,
+                angle: to,
+                duration: duration,
+                ease: ease,
+                onUpdate: ()=>place(proxy.angle),
+                onComplete: ()=>{
+                    if(!pt && this._twAim===tw) {this._twAim=null; aimer.base=null;}
+                    resolve(true);
+                },
+                onStop: ()=>resolve(false),
+            });
+            this._twAim = tw;
+        });
+    }
+
     _ondead() { this._idle(false); }
 
     //------------------------------------------------------
@@ -141,6 +186,7 @@ export class COM_Anim extends Com
         root.anim_lunge = this._lunge.bind(this);
         root.anim_rest = this._rest.bind(this);
         root.anim_hit = this._hit.bind(this);
+        root.anim_aim = this._aim.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));

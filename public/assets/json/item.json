@@ -167,7 +167,8 @@
     "equip": {
       "sprite": "weapons:22",
       "y": 24,
-      "x": 15
+      "x": 15,
+      "aim": 45
     },
     "type": "ranged",
     "range": 5,
@@ -191,7 +192,8 @@
     "equip": {
       "sprite": "weapons:26",
       "y": -8,
-      "x": 15
+      "x": 15,
+      "aim": 45
     },
     "type": "ranged",
     "range": 5,

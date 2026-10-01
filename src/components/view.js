@@ -238,6 +238,7 @@ class View extends Phaser.GameObjects.Container
 
     // anim.js 會用到
     get shape() {return this._shape;}
+    get aimer() {return this._aimer;}   // 可瞄準的裝備 {sp, aim}，aim 是圖片原生朝向(度)
 
     //--------------------------------------------------
     // outline
@@ -944,12 +945,14 @@ export class RoleView extends View
         let sps = this._addPart(item.equip, item.cat);
         this._sortParts();
         this._equips.push(...sps);
+        if(item.equip.aim!=null && sps[0]) {this._aimer = {sp:sps[0], aim:item.equip.aim};}
     }
 
     _removeEquips()
     {
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
+        this._aimer = null;
     }
 
     _remove()
