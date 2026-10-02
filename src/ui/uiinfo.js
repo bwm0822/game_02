@@ -4,7 +4,6 @@ import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
 import Record from '../infra/record.js'
 import QuestManager from '../manager/quest.js'
-import {equippedWeaponSub} from '../components/com_stats.js'
 
 const WIDTH=250;
 export default class UiInfo extends UiFrame
@@ -205,7 +204,7 @@ export default class UiInfo extends UiFrame
         const req = elm.dat.reqClass;
         if(req)
         {
-            const ok = equippedWeaponSub(GM.player?.equips).includes(req);
+            const ok = GM.player.equippedWeaponSub().includes(req);
             const text = `${'reqClass'.lab()}：${req.lab()}`;
             ui.uBbc.call(this,this.scene,{text:ok ? text : `[color=red]${text}[/color]`});
         }

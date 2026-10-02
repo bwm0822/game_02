@@ -65,7 +65,7 @@ function _calcMods(eff, mods, {_scope, _stage, _type, _weaponSub}={})
     }
 }
 
-export function equippedWeaponSub(equips)   // 取得目前裝備武器的 cat_sub（如 ['sword']）
+function equippedWeaponSub(equips)   // 取得目前裝備武器的 cat_sub（如 ['sword']）
 {
     if(!equips) {return [];}
     for(let equip of equips)
@@ -675,6 +675,7 @@ export class COM_Stats extends Com
         root.drink = this._drink.bind(this);
         root.heal = this._heal.bind(this);
         root.setDirty = this._setDirty.bind(this);
+        root.equippedWeaponSub = () => equippedWeaponSub(this.ctx.bb.equips);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.TURNSTART, this._turnStart.bind(this) );

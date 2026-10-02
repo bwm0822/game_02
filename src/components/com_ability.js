@@ -4,7 +4,6 @@ import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {computeHealing} from '../core/combat.js'
 import HazardZone from '../items/hazardzone.js'
-import {equippedWeaponSub} from './com_stats.js'
 const _tag = 'ability';
 
 //--------------------------------------------------
@@ -235,7 +234,7 @@ export class COM_Ability extends Com
     _canUse(id)
     {
         const req = DB.ability(id)?.reqClass;
-        return !req || equippedWeaponSub(this.ctx.bb.equips).includes(req);
+        return !req || this.root.equippedWeaponSub().includes(req);
     }
 
     // 選擇技能

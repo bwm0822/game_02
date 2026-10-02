@@ -64,6 +64,8 @@ dist/           # 建置輸出（勿手動修改）
 
 ### 元件系統（src/components/）
 功能以元件形式附加在 `GameObject` 上，例如 AI、睡眠、製造、感知等。元件透過 `bb`（blackboard）共享資料，不直接耦合。
+- com 之間禁止互相 import；要用其他元件的功能，由該元件在 `bind()` 掛到 root（`root.xxx = ...`），呼叫端走 `this.root.xxx()`
+- com 以外的程式（ui、scene、manager…）禁止 import com，一律透過 GameObject 呼叫（如 `GM.player.xxx()`）；唯一例外是 `roles/`、`items/` 這些組裝者 import `COM_*` 來 `addCom()`
 
 ### 場景流程
 `Boot` → `Preloader` → `MainMenu` → `Game`（讀取存檔）→ `GameMap` 或 `GameArea`  
