@@ -1018,7 +1018,7 @@ export class RoleView extends View
             this.scene.tweens.chain({
                 targets: shape,
                 tweens: [
-                    {angle, y, duration:300, ease:'quad.in', onUpdate:(tw)=>this._tintDead(tw.progress)},
+                    {angle, y, duration:100, ease:'quad.in', onUpdate:(tw)=>this._tintDead(tw.progress)},
                     {y:y-3, duration:60, ease:'quad.out', yoyo:true},
                 ],
                 onComplete: ()=>resolve(),
