@@ -205,8 +205,8 @@ export default class UiInfo extends UiFrame
         if(req)
         {
             const ok = GM.player.equippedWeaponSub().includes(req);
-            const text = `${'reqClass'.lab()}：${req.lab()}`;
-            ui.uBbc.call(this,this.scene,{text:ok ? text : `[color=red]${text}[/color]`});
+            const color = (text)=>ok ? text : `[color=red]${text}[/color]`;
+            this.uStat(color('reqClass'.lab()), color(req.lab()));
         }
         return this;
     }
@@ -220,9 +220,9 @@ export default class UiInfo extends UiFrame
     {
         this.addTitle(elm)
             .addCd(elm)
-            .addReqClass(elm)
             .addStats([GM.RANGE, GM.SCOPE], elm)
             .addMods(elm)
+            .addReqClass(elm)
             .addDes(elm)
             .addEffs(elm,false)
             .setW(WIDTH)
