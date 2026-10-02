@@ -19,6 +19,7 @@ import {COM_Light} from '../components/com_light.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
+import Remains from '../items/remains.js'
 import QuestManager from '../manager/quest.js'
 import {T,dlog} from '../core/debug.js'
 
@@ -55,13 +56,23 @@ export class Npc extends Role
         {
             // 死亡時，若是 schedule，則標記為 removed
             if(this.bb.hasSchedule) {{this._saveData({removed:true})}}
+            this._leaveRemains();
         }
         
         super._remove();
     }
 
+    _leaveRemains()
+    {
+        const items = this.storage?.items.filter(itm=>itm && itm.count>0);
+        if(!items?.length) {return;}
+        const p = this.posG;
+        new Remains(this.scene,p.x,p.y).init_runtime({inv:{storage:{capacity:-1,items}}});
+    }
+
     _ondead()
     {
+        this.strip?.();
         this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
         QuestManager.onKill(this.id);

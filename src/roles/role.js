@@ -50,6 +50,14 @@ export default class Role extends GameObject
 
         const{root}=this.ctx;
 
+        if(ent.id==='gold')
+        {
+            root.gold += ent.content.count;
+            this._send('msg', `${'gold'.lab()} +${ent.content.count}`);
+            ent.empty();
+            return;
+        }
+
         const list=[GM.TIMES, GM.CAPACITY];
         const key = Object.keys(ent.dat).find(key=>list.includes(key));
 

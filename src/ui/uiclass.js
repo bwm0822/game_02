@@ -76,7 +76,7 @@ export class Slot extends Icon
         }
         else
         {
-            if(this.dat.useable) // 可使用的
+            if(this.dat.useable && this.owner===GM.player) // 可使用的(只有自己背包裡的才能用)
             {
                 if(this.content?.times===0 || this.content?.capacity===0)
                     acts = {...acts,'use':GM.DIS};

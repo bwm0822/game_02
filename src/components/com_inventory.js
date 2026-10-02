@@ -270,8 +270,44 @@ export class COM_Inventory extends COM_Storage
         emit(GM.EVT.UPDATEEQUIP);
     }
 
+    // 屍體被翻動時，裝備外觀只畫「原本穿在身上、還沒被拿走」的物品
+    _receive(content,i,isEquip)
+    {
+        const remain = super._receive(content,i,isEquip);
+        if(this._worn) {this._wear();}
+        return remain;
+    }
+
+    _wear()
+    {
+        const items = this._storage.items;
+        this._equips = this._worn.filter(w=>items[w.i]?.id===w.id && items[w.i].count>0)
+                                 .map(w=>items[w.i]);
+        this._equip();
+    }
+
+    // 死後把裝備、金錢倒進 storage 讓人搜刮；讀檔時已倒過(_worn 有值)就只重畫外觀
+    _strip()
+    {
+        if(!this._worn)
+        {
+            this._storage.capacity = -1;
+            this._worn = [];
+            this._equips.forEach((eq)=>{
+                if(!eq) {return;}
+                const i = this._findEmpty();
+                this._storage.items[i] = typeof eq === 'object' ? eq : {id:eq,count:1};
+                this._worn.push({i, id:this._storage.items[i].id});
+            });
+            if(this._gold>0) {this._put({id:'gold',count:this._gold});}
+            this._gold = 0;
+        }
+        this._wear();
+    }
+
     _updateTime()
     {
+        if(this._worn) {return;}
         const {root,emit} = this.ctx;
         let changed = false;
         this._equips.forEach((content, i) => {
@@ -310,8 +346,9 @@ export class COM_Inventory extends COM_Storage
         const{bb}=this.ctx;
 
         // 初始化資料(role.json 的裝備/背包資料包在 inv 底下，不是 meta 頂層)
-        Object.assign(this._storage,Utility.toStorage(bb.meta?.inv?.storage));
-        this._equips = bb.meta?.inv?.equips??[];
+        // 要複製一份，bb.meta 是 DB 共用的資料，同種角色會共用同一個陣列
+        Object.assign(this._storage,Utility.toStorage(structuredClone(bb.meta?.inv?.storage)));
+        this._equips = structuredClone(bb.meta?.inv?.equips??[]);
         this._gold = bb.meta?.gold??0;
 
         // 共享資料 (有共享的資料，load()時，要用 Object.assign)
@@ -328,6 +365,7 @@ export class COM_Inventory extends COM_Storage
         root.reward = this._reward.bind(this);
         root.queryEquip = this._queryEquip.bind(this);
         root.findEquip = this._findEquip.bind(this);
+        root.strip = this._strip.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.UPDATETIME, this._updateTime.bind(this));
@@ -343,13 +381,15 @@ export class COM_Inventory extends COM_Storage
         const d = data?.[_tag];
         if(d?.equips) {Object.assign(this._equips, d.equips);}
         if(d?.gold!==undefined) {this._gold=d.gold;}
+        if(d?.worn) {this._worn=d.worn;}
     }
 
     save()
     {
         return {[_tag]:{storage:this._storage,
                 equips:this._equips,
-                gold:this._gold}};
+                gold:this._gold,
+                worn:this._worn}};
     }
 
 }

@@ -575,6 +575,21 @@
       "des": "Used with the lockpicking skill to pick locks."
     }
   },
+  "gold": {
+    "cat": "CAT_ITEM",
+    "icon": "icons:200",
+    "gold": 1,
+    "cps": 1000,
+    "useable": true,
+    "tw": {
+      "lab": "金幣",
+      "des": "可兌換成金錢"
+    },
+    "us": {
+      "lab": "Gold",
+      "des": ""
+    }
+  },
   "raw_meat": {
     "cat": "CAT_FOOD",
     "icon": "icons:241",

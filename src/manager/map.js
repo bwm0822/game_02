@@ -17,6 +17,7 @@ import Point from '../items/point.js'
 import Item from '../items/item.js'
 import Plant from '../items/plant.js'
 import Pot from '../items/pot.js'
+import Remains from '../items/remains.js'
 import {T,dlog} from '../core/debug.js'
 
 
@@ -35,6 +36,7 @@ class Map
         plant:  Plant,
         node:   Node,
         port:   Port,
+        remains: Remains,
     };
 
     constructor(scene)
