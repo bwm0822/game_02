@@ -271,18 +271,20 @@ export class COM_Inventory extends COM_Storage
     }
 
     // 屍體被翻動時，裝備外觀只畫「原本穿在身上、還沒被拿走」的物品
+    // 第 i 格被寫入(拿走/換物/放回)就把它從 _worn 移除，之後放回同件也不重畫
     _receive(content,i,isEquip)
     {
         const remain = super._receive(content,i,isEquip);
-        if(this._worn) {this._wear();}
+        this._wear(i);
         return remain;
     }
 
-    _wear()
+    _wear(i)
     {
+        if(!this._worn||this._worn.length===0) {return;}
         const items = this._storage.items;
-        this._equips = this._worn.filter(w=>items[w.i]?.id===w.id && items[w.i].count>0)
-                                 .map(w=>items[w.i]);
+        if(i!==undefined) {this._worn=this._worn.filter((w)=>w.i!==i);}
+        this._equips=this._worn.map((w)=>items[w.i]);
         this._equip();
     }
 
