@@ -66,6 +66,7 @@
     "icon": "🗡️",
     "mode": "active",
     "tag": "atk",
+    "reqClass": "sword",
     "hits": [
       {
         "pow": 1.15,
@@ -90,6 +91,7 @@
     "icon": "📍",
     "mode": "active",
     "tag": "atk",
+    "reqClass": "sword",
     "hits": [
       {
         "pow": 1.5,
@@ -120,6 +122,7 @@
       "slash",
       "dash"
     ],
+    "reqClass": "sword",
     "range": 1,
     "cd": 3,
     "scope": "group",
@@ -197,6 +200,7 @@
     "icon": "🎯",
     "mode": "active",
     "tag": "atk",
+    "reqClass": "bow",
     "hits": [
       {
         "pow": 2.5,

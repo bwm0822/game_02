@@ -4,6 +4,7 @@ import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {computeHealing} from '../core/combat.js'
 import HazardZone from '../items/hazardzone.js'
+import {equippedWeaponSub} from './com_stats.js'
 const _tag = 'ability';
 
 //--------------------------------------------------
@@ -231,10 +232,16 @@ export class COM_Ability extends Com
         return {w:count, h:count};
     }
 
+    _canUse(id)
+    {
+        const req = DB.ability(id)?.reqClass;
+        return !req || equippedWeaponSub(this.ctx.bb.equips).includes(req);
+    }
+
     // 選擇技能
     _select(id)
     {
-        if(!this._abilities[id]) {return false;}
+        if(!this._abilities[id] || !this._canUse(id)) {return false;}
         this.ctx.root.wake?.();
         const ability = DB.ability(id);
 
@@ -434,8 +441,9 @@ export class COM_Ability extends Com
     _query(tag)
     {
         return Object.keys(this._abilities).filter(id => 
-            DB.ability(id).tag===tag && 
-            this._abilities[id].remain===0);
+            DB.ability(id).tag===tag &&
+            this._abilities[id].remain===0 &&
+            this._canUse(id));
     }
 
     _find(id) {return this._abilities[id];}
@@ -446,6 +454,7 @@ export class COM_Ability extends Com
 
         if(id) {this._ability = DB.ability(id);}
         else {id = this._id;}
+        if(!this._canUse(id)) {this._unselect(); return false;}   // 選取後才換掉武器，順便解除選取狀態
 
         if(this._ability.tag===GM.HEAL)
         {
@@ -658,6 +667,7 @@ export class COM_Ability extends Com
         root.useAb = this._use.bind(this);
         root.queryAb = this._query.bind(this);
         root.findAb = this._find.bind(this);
+        root.canUseAb = this._canUse.bind(this);
         
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.TURNSTART, this._turnStart.bind(this));

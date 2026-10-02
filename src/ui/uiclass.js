@@ -474,7 +474,7 @@ export class AbilitySlot extends Pic
     get owner() {return GM.player;}
     get id() {return this.owner.getSlot(this._i);}
     get remain() {return this.owner.abilities[this.id].remain;}
-    get ready() {return this.remain===0;}
+    get ready() {return this.remain===0 && this.owner.canUseAb(this.id);}
     get i() {return this._i;}
     get dat() {return this._dat;}
     get isEmpty() {return this._dat===null;}
@@ -553,7 +553,7 @@ export class AbilitySlot extends Pic
         this._dat = DB.ability(this.id);
         this.setIcon(this._dat.icon);
         this._remain.setText(this.remain>0 ? this.remain : '');
-        this._disabled.fillAlpha = this.remain>0 ? 0.5 : 0;
+        this._disabled.fillAlpha = this.ready ? 0 : 0.5;
         this.bringChildToTop(this._disabled);
         this.bringChildToTop(this._remain);
         this.layout();

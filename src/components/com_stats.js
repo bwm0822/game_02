@@ -65,7 +65,7 @@ function _calcMods(eff, mods, {_scope, _stage, _type, _weaponSub}={})
     }
 }
 
-function _equippedWeaponSub(equips)   // 取得目前裝備武器的 cat_sub（如 ['sword']）
+export function equippedWeaponSub(equips)   // 取得目前裝備武器的 cat_sub（如 ['sword']）
 {
     if(!equips) {return [];}
     for(let equip of equips)
@@ -104,7 +104,7 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
 function _getMods(bb, attacker, skill, stage)
 {
     const mods={ basA:{}, basM:{}, derA:{}, derM:{} }
-    const weaponSub = _equippedWeaponSub(bb.equips);
+    const weaponSub = equippedWeaponSub(bb.equips);
 
     // 1. from equips
     bb.equips?.forEach(eq=>{
