@@ -126,7 +126,7 @@ export class Npc extends Role
         this._setAct(GM.ATTACK,()=>GM.EN);
 
         // 檢查是否死亡
-        if(!this.isAlive) {this.emit('ondead');}
+        if(!this.isAlive) {this.emit(GM.EVT.ONDEAD, null, true);}
         
     }
 

@@ -922,6 +922,7 @@ export class RoleView extends View
                 sp.y = part.y ?? 0;
                 sp.angle = part.a ?? 0;
                 sp.depth = depth;
+                this._deadTint != null && sp.setTint(this._deadTint);
                 this._shape.add(sp);
                 sps.push(sp);
             }
@@ -973,6 +974,7 @@ export class RoleView extends View
     _updateEquips()
     {
         const {bb} = this.ctx;
+        if(this._isCorpse) {return;}
 
         this._removeEquips();
         bb.equips?.forEach((eq)=>{
@@ -984,18 +986,68 @@ export class RoleView extends View
         })
     }
 
-    async _ondead()
+    // 往背對攻擊者的方向倒(+1:頭朝右)；沒有攻擊者時往面向的反方向倒
+    _fallDir(attacker)
+    {
+        const x = this.pos.x;
+        if(attacker && attacker.pos.x !== x) {return attacker.pos.x < x ? 1 : -1;}
+        const faceRight = (this._shape.scaleX < 0) !== this._faceR;
+        return faceRight ? -1 : 1;
+    }
+
+    _tintDead(t)
+    {
+        const g = Math.round(255 - t*(255-0x88));
+        this._deadTint = (g<<16)|(g<<8)|g;
+        this._shape.getAll().forEach(sp=>sp.setTint?.(this._deadTint));
+    }
+
+    // shape 的原點是 view 中心，以它為支點轉，再移到 grid 中心，屍體就會置中躺在自己那格
+    _fall(attacker, instant)
+    {
+        const shape = this._shape;
+        const angle = (this.meta.fall ?? 90) * this._fallDir(attacker);
+        const y = this._grid.y;
+        if(instant)
+        {
+            shape.setAngle(angle).setY(y);
+            this._tintDead(1);
+            return Promise.resolve();
+        }
+        return new Promise((resolve)=>{
+            this.scene.tweens.chain({
+                targets: shape,
+                tweens: [
+                    {angle, y, duration:300, ease:'quad.in', onUpdate:(tw)=>this._tintDead(tw.progress)},
+                    {y:y-3, duration:60, ease:'quad.out', yoyo:true},
+                ],
+                onComplete: ()=>resolve(),
+            });
+        });
+    }
+
+    async _die(attacker, instant)
     {
         const {root} = this.ctx;
-        // 1. 關閉互動
-        this._setZone(false, this.tag);
-        // 2. 等待所有彈出完成，才繼續下一步
-        await root.wait?.();
-        // 3. 移除原本圖像
-        this._remove();
-        // 4. 改顯示死亡的圖像
-        this._addPart(this.meta.corpse);
+        if(!instant) {await root.wait?.();}
+        root.setDepth(root.y - GM.TILE_H/2);
+        if(this.meta.corpse)
+        {
+            this._remove();
+            this._isCorpse = true;
+            this._addPart(this.meta.corpse);
+        }
+        else
+        {
+            super._remove();
+            await this._fall(attacker, instant);
+        }
+    }
 
+    _ondead(attacker, instant=false)
+    {
+        this._setZone(false, this.tag);
+        this._dying = this._die(attacker, instant);
     }
 
     //--------------------------------------------------
@@ -1010,6 +1062,7 @@ export class RoleView extends View
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.face = this._faceTo.bind(this);
         root.fadout = this._fadout.bind(this);
+        root.waitDying = ()=>this._dying ?? Promise.resolve();
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));

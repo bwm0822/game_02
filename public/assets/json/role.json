@@ -44,11 +44,6 @@
       "scale": 0.25,
       "y": 3.5
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "inv": {
       "storage": {
         "capacity": 20
@@ -94,11 +89,6 @@
     "body": {
       "sprite": "trump",
       "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
       "y": 32
     },
     "inv": {
@@ -192,11 +182,6 @@
     "body": {
       "sprite": "melanie",
       "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
       "y": 32
     },
     "inv": {
@@ -307,11 +292,6 @@
     "hand": {
       "sprite": "hand-man",
       "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
       "y": 32
     },
     "inv": {
@@ -470,11 +450,6 @@
       "scale": 0.25,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "stats": {
       "str": 10,
       "dex": 10,
@@ -618,11 +593,6 @@
     "body": {
       "sprite": "xi",
       "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
       "y": 32
     },
     "inv": {
@@ -775,11 +745,6 @@
     "body": {
       "sprite": "macron",
       "scale": 0.25,
-      "y": 32
-    },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
       "y": 32
     },
     "inv": {
@@ -939,11 +904,6 @@
       "scale": 0.25,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "inv": {
       "equips": [
         "sword_01"
@@ -1008,11 +968,6 @@
       "scale": 0.25,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "inv": {
       "equips": [
         "bow_01"
@@ -1075,11 +1030,6 @@
       "scale": 2,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
     "attrs": {
       "atk": 5,
       "def": 0
@@ -1134,11 +1084,7 @@
       "scale": 2,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
+    "fall": 180,
     "attrs": {
       "atk": 5,
       "def": 0
@@ -1192,11 +1138,7 @@
       "scale": 2,
       "y": 32
     },
-    "corpse": {
-      "sprite": "rip",
-      "scale": 0.5,
-      "y": 32
-    },
+    "fall": 180,
     "attrs": {
       "atk": 5,
       "def": 0

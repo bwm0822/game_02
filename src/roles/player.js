@@ -19,6 +19,7 @@ import {GM,GS} from '../core/setting.js'
 import Record from '../infra/record.js'
 import Role from './role.js'
 import {T,dlog} from '../core/debug.js'
+import Utility from '../core/utility.js'
 import UiEffect from '../ui/uieffect.js'
 import { UP } from 'phaser'
 import Map from '../manager/map.js'
@@ -56,11 +57,13 @@ export class Player extends Role
 
     _refresh() {this._send('refresh');}
 
-    _ondead()
+    async _ondead()
     {
         dlog(T.PLAYER)('---- dead ----')
         this.ctx.bb.sta=GM.ST.DEATH;
         this.unregTS();
+        await this.waitDying?.();
+        await Utility.delay(500);
         this._send('gameover');
     }
 

@@ -112,6 +112,7 @@ export class COM_Anim extends Com
 
     async _hit(attacker)
     {
+        if(this._dead) {return;}
         this._flash();
         if(!attacker) {return;}
         const {root} = this.ctx;
@@ -169,7 +170,7 @@ export class COM_Anim extends Com
         });
     }
 
-    _ondead() { this._idle(false); }
+    _ondead() { this._idle(false); this._dead = true; }
 
     //------------------------------------------------------
     //  Public

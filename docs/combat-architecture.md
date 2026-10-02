@@ -93,18 +93,21 @@ root.attack(target, ability)                          // com_action.js _attack()
       → computeDamage(attacker, target, ability)       // combat.js
       → target.takeDamage(dmg, attacker)                // com_stats.js _takeDamage
           → 扣血、噴彈窗、emit(GM.EVT.DAMAGE)
-          → HP 歸零 → emit(GM.EVT.ONDEAD)（只觸發一次）
+          → HP 歸零 → emit(GM.EVT.ONDEAD, attacker)（只觸發一次）
 ```
+
+讀檔時已死的 NPC 由 `npc.js` 補發 `emit(GM.EVT.ONDEAD, null, true)`，第二個參數 `instant` 讓 view 直接擺成屍體、不播動畫。
 
 ### 3.4 `ONDEAD` 之後的收尾（事件驅動，各元件各自處理）
 
 | 元件 | 動作 |
 |---|---|
-| `view.js` `_ondead` | 關互動 zone、等彈窗跑完、移除活體 sprite、換上 `meta.corpse` 屍體圖 |
+| `view.js` `_ondead` | 關互動 zone、等彈窗跑完、移除 weight/block、depth 降半格(墊在活人下面)；有 `meta.corpse` 就換成該圖(之後不再重畫裝備)，沒有就「躺平」：整個 shape 以 view 中心為支點轉 `meta.fall`(預設 90，四足動物填 180)度並移到 grid 中心、往背對攻擊者方向倒(沒攻擊者就往面向的反方向)、漸變灰色 tint；死亡演出的 promise 由 `root.waitDying()` 取得 |
 | `com_loot.js` `_ondead` | 有 `meta.skin`/`meta.meat` 就開「解剖」互動（需要持有 sword 類武器） |
 | `npc.js` `_ondead` | 狀態改 `GM.ST.DEATH`、`QuestManager.onKill(id)`、關閉 observe/attack 互動、5 個 tick 後移除（有排程的話改標 `removed:true` 存檔） |
-| `player.js` `_ondead` | 狀態改 DEATH、取消回合註冊、送出 `'gameover'` |
-| `com_stolen`/`com_trade`/`com_talk`/`com_disp`/`com_inventory`/`com_anim`/`com_nav` | 各自收掉自己的互動/路徑資源 |
+| `player.js` `_ondead` | 狀態改 DEATH、取消回合註冊、等 `waitDying()` 倒地播完再停 500ms 才送出 `'gameover'` |
+| `com_anim.js` `_ondead` | 停 idle、標記死亡，之後 `anim_hit` 不再閃白/後退(不然 clearTint 會洗掉屍體的灰色) |
+| `com_stolen`/`com_trade`/`com_talk`/`com_disp`/`com_inventory`/`com_nav` | 各自收掉自己的互動/路徑資源 |
 
 ## 4. AI 決策（`src/components/ai/`）
 

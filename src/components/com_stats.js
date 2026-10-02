@@ -383,7 +383,7 @@ export class COM_Stats extends Com
         }
 
         emit(GM.EVT.DAMAGE);
-        alive && this._states[GM.HP]<=0 && emit(GM.EVT.ONDEAD);
+        alive && this._states[GM.HP]<=0 && emit(GM.EVT.ONDEAD, attacker);
     }
 
     // _addProcs(procs)
