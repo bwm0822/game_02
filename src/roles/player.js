@@ -187,6 +187,14 @@ export class Player extends Role
         }
         this._refresh();
 
+        // 走到目標那一步的時間要先結算(TimeSystem.inc)才互動，互動開的 UI 才會停在 _pause() 期間
+        if(this._pending)
+        {
+            const {ent,act} = this._pending;
+            this._pending = null;
+            if(ent.scene && this.isAt(ent)) {await this.interact?.(ent,act);}
+        }
+
         if(bb.sta!==GM.ST.MOVING)
         {
             dlog(T.PLAYER)('-------------------- pause 0')
@@ -200,8 +208,8 @@ export class Player extends Role
             await this.move?.();
             if(bb.cACT.st==='reach')
             {
-                if(bb.ent) {await this.interact?.(bb.ent,bb.act);}
-                if(bb.sta===GM.ST.MOVING) {bb.sta=GM.ST.IDLE;}
+                if(bb.ent) {this._pending = {ent:bb.ent, act:bb.act}; bb.ent = null;}
+                bb.sta=GM.ST.IDLE;
             }
             else if(bb.cACT.st==='blocked')
             {
