@@ -164,6 +164,7 @@ export const GM =
     BUTCHER : 'butcher',
     CHOP : 'chop',
     HARVEST : 'harvest',
+    RESTORE : 'restore',
     // for slot
     BUY : 'buy',
     SELL : 'sell',
@@ -413,6 +414,7 @@ export const GM =
     EVT:{
         REFRESH:'refresh',
         ONDEAD:'ondead',
+        ONREVIVE:'onrevive',
         UNDERATK:'underatk',
         STOLEN:'stolen',
         DAMAGE:'damage',
@@ -592,6 +594,7 @@ export const ORDER = [
     GM.PLACE,
     GM.LOCK,
     GM.UNLOCK,
+    GM.RESTORE,
     GM.PICKUP,
 ];
 

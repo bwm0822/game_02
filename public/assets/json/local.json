@@ -569,6 +569,15 @@
       "lab": "Wick"
     }
   },
+  "dummy": {
+    "tw": {
+      "lab": "木樁",
+      "des": "練習攻擊用"
+    },
+    "us": {
+      "lab": "Training Dummy"
+    }
+  },
   "musk": {
     "tw": {
       "lab": "馬斯克",
@@ -1086,6 +1095,14 @@
     },
     "us": {
       "lab": "Unlock"
+    }
+  },
+  "restore": {
+    "tw": {
+      "lab": "恢復"
+    },
+    "us": {
+      "lab": "Restore"
     }
   }
 }

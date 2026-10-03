@@ -55,6 +55,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.CHOP)
             .addItem(GM.TURN_ON)
             .addItem(GM.TURN_OFF)
+            .addItem(GM.RESTORE)
             .addItem(GM.PICKUP)
             // for slot
             .addItem(GM.BUY, this.sell.bind(this))

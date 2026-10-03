@@ -814,6 +814,22 @@
       "des": ""
     }
   },
+  "dummy": {
+    "cat": "CAT_DEVICE",
+    "icon": "rogue",
+    "gold": 50,
+    "device": {
+      "class": "dummy"
+    },
+    "tw": {
+      "lab": "木樁",
+      "des": "練習攻擊用的木樁，可放置、可拿取"
+    },
+    "us": {
+      "lab": "Training Dummy",
+      "des": ""
+    }
+  },
   "tree": {
     "bb": {
       "ab": 32,
