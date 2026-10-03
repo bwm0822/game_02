@@ -477,7 +477,14 @@
     "gold": 10,
     "equip": {
       "sprite": "weapons:6",
-      "y": 22
+      "y": 22,
+      "swing": {
+        "aim": -45,
+        "grip": {
+          "x": 5,
+          "y": 23
+        }
+      }
     },
     "type": "melee",
     "range": 1,

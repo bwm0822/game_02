@@ -70,18 +70,25 @@ export class COM_Harvest extends Com
 
         if(bb.act === GM.CHOP)
         {
+            let putDown = null;
             if(bb.tool)
             {
                 const hasTool = (e) => DB.item(e.id)?.cat_sub?.includes(bb.tool);
-                if(!taker.findEquip?.(hasTool) && !taker.findItem?.(hasTool))
+                if(!taker.findEquip?.(hasTool))
                 {
-                    send('msg', `需要 ${bb.tool} 才能採集`);
-                    return;
+                    const tool = taker.findItem?.(hasTool);
+                    if(!tool)
+                    {
+                        send('msg', `需要 ${bb.tool} 才能採集`);
+                        return;
+                    }
+                    putDown = taker.hold?.(tool.id);
                 }
             }
             this._cur--;
             AudioManager.chop();
             await taker.anim_melee?.(root);
+            putDown?.();
             if(this._cur > 0)
             {
                 send('msg', `砍了 ${this._hp - this._cur}/${this._hp} 下`);

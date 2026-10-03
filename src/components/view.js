@@ -948,14 +948,37 @@ export class RoleView extends View
         this._equips.push(...sps);
         if(item.equip.aim!=null && sps[0]) {this._aimer = {sp:sps[0], aim:item.equip.aim};}
         if(item.equip.swing && sps[0]) {this._swinger = {sp:sps[0], ...item.equip.swing};}
+        if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
     }
 
     _removeEquips()
     {
+        this._held?.sps.forEach((sp)=>{sp.destroy();});
+        this._held = null;
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
         this._aimer = null;
         this._swinger = null;
+        this._weapon = null;
+    }
+
+    // 暫時把背包裡的工具拿在手上(蓋過原本的武器，不動裝備欄)，回傳放下用的函式
+    _hold(id)
+    {
+        const dat = DB.item(id);
+        if(!dat?.equip) {return ()=>{};}
+        const held = {sps:this._addPart(dat.equip, dat.cat), aimer:this._aimer, swinger:this._swinger};
+        this._sortParts();
+        this._weapon?.forEach((sp)=>{sp.setVisible(false);});
+        this._aimer = null;
+        this._swinger = dat.equip.swing && held.sps[0] ? {sp:held.sps[0], ...dat.equip.swing} : null;
+        this._held = held;
+        return ()=>{
+            if(this._held!==held) {return;}
+            held.sps.forEach((sp)=>{sp.destroy();});
+            this._weapon?.forEach((sp)=>{sp.setVisible(true);});
+            [this._aimer, this._swinger, this._held] = [held.aimer, held.swinger, null];
+        };
     }
 
     _remove()
@@ -1065,6 +1088,7 @@ export class RoleView extends View
         root.face = this._faceTo.bind(this);
         root.fadout = this._fadout.bind(this);
         root.waitDying = ()=>this._dying ?? Promise.resolve();
+        root.hold = this._hold.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
