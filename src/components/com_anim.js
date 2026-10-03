@@ -170,7 +170,66 @@ export class COM_Anim extends Com
         });
     }
 
-    _ondead() { this._idle(false); this._dead = true; }
+    // phase: 'raise' 舉到目標方向-arc/2、'strike' 砍過 arc、null 收回原角度；以 grip 為支點旋轉
+    _swing(pt, phase=null)
+    {
+        const {root} = this.ctx;
+        const swinger = root.view?.swinger;
+        if(!swinger) {return Promise.resolve(false);}
+        const {sp, aim, grip, arc} = swinger;
+        swinger.base ??= {x:sp.x, y:sp.y, angle:sp.angle};
+        const base = swinger.base;
+        this._twSwing?.stop();
+
+        let [to, duration, ease] = [base.angle, 150, 'quad.out'];
+        if(phase)
+        {
+            const sign = Math.sign(root.view.shape.scaleX) || 1;
+            const deg = Phaser.Math.RadToDeg(Math.atan2(pt.y-root.pos.y, (pt.x-root.pos.x)*sign));
+            const start = sp.angle + Phaser.Math.Angle.ShortestBetween(sp.angle, deg - aim - arc/2);
+            if(phase==='raise') {[to, duration, ease] = [start, 80, 'quad.out'];}
+            else {[to, duration, ease] = [start + arc, 100, 'cubic.in'];}
+        }
+
+        const ox = (grip.x - sp.width*sp.originX) * sp.scaleX;
+        const oy = (grip.y - sp.height*sp.originY) * sp.scaleY;
+        const rot = (angle)=>{
+            const r = Phaser.Math.DegToRad(angle);
+            return [ox*Math.cos(r) - oy*Math.sin(r), ox*Math.sin(r) + oy*Math.cos(r)];
+        };
+        const [gx, gy] = rot(base.angle);
+        const [cx, cy] = [base.x + gx, base.y + gy];
+        const place = (angle)=>{
+            const [dx, dy] = rot(angle);
+            sp.setAngle(angle).setPosition(cx - dx, cy - dy);
+        };
+
+        if(this._dead) {place(base.angle); swinger.base = null; return Promise.resolve(false);}
+
+        const proxy = {angle:sp.angle};
+        return new Promise((resolve)=>{
+            const tw = this.scene.tweens.add({
+                targets: proxy,
+                angle: to,
+                duration: duration,
+                ease: ease,
+                onUpdate: ()=>place(proxy.angle),
+                onComplete: ()=>{
+                    if(!phase && this._twSwing===tw) {this._twSwing=null; swinger.base=null;}
+                    resolve(true);
+                },
+                onStop: ()=>resolve(false),
+            });
+            this._twSwing = tw;
+        });
+    }
+
+    _ondead()
+    {
+        this._idle(false);
+        this._dead = true;
+        this._swing(null);
+    }
 
     //------------------------------------------------------
     //  Public
@@ -188,6 +247,7 @@ export class COM_Anim extends Com
         root.anim_rest = this._rest.bind(this);
         root.anim_hit = this._hit.bind(this);
         root.anim_aim = this._aim.bind(this);
+        root.anim_swing = this._swing.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));

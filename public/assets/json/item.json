@@ -5,7 +5,14 @@
     "gold": 15,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22
+      "y": 22,
+      "swing": {
+        "aim": -45,
+        "grip": {
+          "x": 3,
+          "y": 28
+        }
+      }
     },
     "type": "melee",
     "range": 1,
@@ -107,7 +114,14 @@
     "gold": 25,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22
+      "y": 22,
+      "swing": {
+        "aim": -45,
+        "grip": {
+          "x": 3,
+          "y": 28
+        }
+      }
     },
     "type": "melee",
     "range": 1,
@@ -143,7 +157,14 @@
     "gold": 35,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22
+      "y": 22,
+      "swing": {
+        "aim": -45,
+        "grip": {
+          "x": 3,
+          "y": 28
+        }
+      }
     },
     "type": "melee",
     "range": 1,
