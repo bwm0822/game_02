@@ -66,9 +66,9 @@ export class COM_Action extends Com
     {
         const {root}=this.ctx
         root.face?.(target.pos);
-        await root.anim_swing?.(target.pos, 'raise');
+        await root.anim_swing?.('raise');
         const ok = await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
-        await root.anim_swing?.(target.pos, 'strike');
+        await root.anim_swing?.('strike');
         const hit = onHit?.();
         root.anim_swing?.(null);
         if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
