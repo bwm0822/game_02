@@ -28,7 +28,7 @@ export class COM_Bed extends Com
         user.sleepAt?.(root);
         root.add(user);
         root.bringToTop(this._blanket);
-        root.interact(false);
+        root.setZone(false, this.tag);
         this._user=user;
     }
 
@@ -36,7 +36,7 @@ export class COM_Bed extends Com
     {
         const{root}=this.ctx;
         root.remove(this._user);
-        root.interact(true);
+        root.setZone(true, this.tag);
         this._user=null;
     }
 

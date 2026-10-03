@@ -613,7 +613,6 @@ class View extends Phaser.GameObjects.Container
         root.addP('posG',{get:()=>this.posG});  // 在 root 新增 get，指向 posG
         root.addP('gridBB',{get:()=>this.gridBB});    // 在 root 新增 get，指向 gridBB
         root.isTouch = this.isTouch;
-        root.interact = this._interact.bind(this);
         root.setTargeted = this._setTargeted.bind(this);
         root.refreshOutline = this._refreshOutline.bind(this);
         // 給內部元件使用
