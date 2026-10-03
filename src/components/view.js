@@ -239,7 +239,7 @@ class View extends Phaser.GameObjects.Container
     // anim.js 會用到
     get shape() {return this._shape;}
     get aimer() {return this._aimer;}   // 可瞄準的裝備 {sp, aim}，aim 是圖片原生朝向(度)
-    get swinger() {return this._swinger;}   // 可揮砍的裝備 {sp, aim, grip, arc}，grip 是圖格內握柄像素座標(左上為原點)
+    get swinger() {return this._swinger;}   // 可揮砍的裝備 {sp, aim, grip}，grip 是圖格內握柄像素座標(左上為原點)
 
     //--------------------------------------------------
     // outline
@@ -947,7 +947,7 @@ export class RoleView extends View
         this._sortParts();
         this._equips.push(...sps);
         if(item.equip.aim!=null && sps[0]) {this._aimer = {sp:sps[0], aim:item.equip.aim};}
-        if(item.equip.swing && sps[0]) {this._swinger = {sp:sps[0], arc:120, ...item.equip.swing};}
+        if(item.equip.swing && sps[0]) {this._swinger = {sp:sps[0], ...item.equip.swing};}
     }
 
     _removeEquips()
