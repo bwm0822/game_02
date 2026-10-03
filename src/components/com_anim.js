@@ -271,6 +271,7 @@ export class COM_Anim extends Com
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+        root.on(GM.EVT.ONREVIVE, ()=>{this._dead = false;});
     }
 
 }

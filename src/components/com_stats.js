@@ -609,6 +609,16 @@ export class COM_Stats extends Com
         // console.log(`${this.name} 回復 ${amount} 點生命`);
     }
 
+    _clearEffs()
+    {
+        const {root} = this.ctx;
+        this._actives.forEach(eff=>root.fxOff?.(eff.id, true));
+        this._actives = [];
+        this._tmp = [];
+        this._states[GM.STUN] = false;
+        this._setDirty();
+    }
+
     _eat(amount)
     {
         if(typeof amount!=='number')
@@ -674,6 +684,7 @@ export class COM_Stats extends Com
         root.getTotalStats = this._getTotalStats.bind(this);
         root.drink = this._drink.bind(this);
         root.heal = this._heal.bind(this);
+        root.clearEffs = this._clearEffs.bind(this);
         root.setDirty = this._setDirty.bind(this);
         root.equippedWeaponSub = () => equippedWeaponSub(this.ctx.bb.equips);
 
@@ -681,9 +692,10 @@ export class COM_Stats extends Com
         root.on(GM.EVT.TURNSTART, this._turnStart.bind(this) );
         root.on(GM.EVT.TURNEND, this._turnEnd.bind(this) );
 
-        // 計算總屬性
+        // 計算總屬性；初始 HP 補滿(建構時是用預設 CON 估的，attrs 有給 hpMax 時會對不上)，有存檔的話 load() 會再蓋掉
         this._getTotalStats();
-   
+        this._states[GM.HP] = this._total[GM.HPMAX];
+
     }
 
     

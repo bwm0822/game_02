@@ -1071,8 +1071,22 @@ export class RoleView extends View
 
     _ondead(attacker, instant=false)
     {
+        this._alive = {weight:this.weight, isBlock:this.isBlock};   // _die() 的 View._remove() 會把 weight/isBlock 歸零，復活時要還原
         this._setZone(false, this.tag);
         this._dying = this._die(attacker, instant);
+    }
+
+    // 只支援沒有 corpse 的角色(_die 走 _fall 那條)；互動區不動，由呼叫端在倒地時自己 setZone(true)
+    async _revive()
+    {
+        await this._dying;
+        this._dying = null;
+        this._deadTint = null;
+        this._shape.getAll().forEach(sp=>sp.clearTint?.());
+        this._shape.setAngle(0).setY(0);
+        ({weight:this.weight, isBlock:this.isBlock} = this._alive);
+        this._addWeight();
+        this._updateDepth();
     }
 
     //--------------------------------------------------
@@ -1092,6 +1106,7 @@ export class RoleView extends View
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
+        root.on(GM.EVT.ONREVIVE, this._revive.bind(this));
         root.on(GM.EVT.UPDATEEQUIP, this._updateEquips.bind(this))
     }
     

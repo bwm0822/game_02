@@ -338,7 +338,7 @@ export class COM_Disp extends Com
     //------------------------------------------------------
     //  Public
     //------------------------------------------------------
-    bind(root)
+    bind(root, {mute=false}={})
     {
         super.bind(root);
         this._init();
@@ -356,8 +356,11 @@ export class COM_Disp extends Com
         root.fxTick = this._fxTick.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
-        root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));
-        root.on(GM.EVT.STOLEN, this._stolen.bind(this));
+        if(!mute)
+        {
+            root.on(GM.EVT.UNDERATK, this._underAtk.bind(this));
+            root.on(GM.EVT.STOLEN, this._stolen.bind(this));
+        }
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));
     }
 
