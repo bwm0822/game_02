@@ -47,7 +47,7 @@ export default class Remains extends GameObject
         const close = this.close;
         this.close = ()=>{
             close();
-            if(this._isEmpty()) {this.emit('out'); this._remove();}
+            if(this._isEmpty()) {this._remove();}
         };
 
         return this;

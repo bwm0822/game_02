@@ -195,7 +195,8 @@ export class GameObject extends Phaser.GameObjects.Container
 
     // 物件消滅時，要呼叫 _remove()
     _remove()
-    { 
+    {
+        this._send('out', this);    // 滑鼠停在上面時被移除不會觸發 pointerout，要手動通知場景放掉 hover 引用
         this._removeFromList();
 
         // 1) 如果是 prefab，將 removed 設成 true；有 respawn 屬性則記錄重生時間

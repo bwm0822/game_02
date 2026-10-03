@@ -767,7 +767,7 @@ export class GameScene extends Scene
             this._done = true;
             this.events
                 .on('over', (ent)=>{this._ent=ent;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set(this._cursorAct(ent));}UiMark.close();})
-                .on('out', ()=>{this._ent=null;this._lastAct=null;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set();}})
+                .on('out', (ent)=>{if(ent!==this._ent){return;}this._ent=null;this._lastAct=null;if(GM.player.sta!==GM.ST.ABILITY){UiCursor.set();}})
                 .on('storage', (owner)=>{Ui.on(UI.TAG.STORAGE,owner);})
                 .on('talk', (owner)=>{Ui.on(UI.TAG.DIALOG,owner);})
                 .on('trade', (owner)=>{Ui.on(UI.TAG.TRADE,owner);})
