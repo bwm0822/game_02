@@ -544,7 +544,7 @@
     "fx": {
       "img": "🔥"
     },
-    "minCount": 5,
+    "minCount": 7,
     "effects": [
       {
         "type": "dot",
