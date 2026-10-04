@@ -300,9 +300,37 @@ export class COM_Disp extends Com
         const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
         const cell = new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
         if(skipSpawn) {cell.startIdle();} else {cell.spawn();}
-        const shape = root.view?.shape;
-        const body = cfg.body && shape ? this.scene.tweens.add({...cfg.body, targets:shape}) : null;
+        const body = cfg.body ? this._bodyTween(cfg.body, cell.holder) : null;
         this._fxMap[id] = {cell, body, ref:1};
+    }
+
+    // shape 原點是 view 中心，要以底部為支點轉就得同步補償 x/y；特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
+    // 補償只加差值不寫絕對值，被打時的擊退位移(COM_Anim._offset)、圖示的 spawn/tick 才不會被蓋掉
+    _bodyTween(cfg, holder)
+    {
+        const view = this.ctx.root.view;
+        const shape = view?.shape;
+        if(!shape) {return null;}
+        const base = {x:shape.x, y:shape.y};
+        const [px, py] = [base.x, base.y + view.max.y];
+        const orbit = (obj, px, py, spin)=>{
+            const d = {x:obj.x-px, y:obj.y-py};
+            let off = {x:0, y:0, a:0};
+            return (a)=>{
+                const r = Phaser.Math.DegToRad(a);
+                const [c, s] = [Math.cos(r), Math.sin(r)];
+                const next = {x:d.x*c - d.y*s - d.x, y:d.x*s + d.y*c - d.y, a};
+                obj.x += next.x - off.x;
+                obj.y += next.y - off.y;
+                if(spin) {obj.angle += next.a - off.a;}
+                off = next;
+            };
+        };
+        const body = orbit(shape, px, py, false);
+        const icon = orbit(holder, view.x+px, view.y+py, true);
+        const pivot = ()=>{body(shape.angle); icon(shape.angle);};
+        const tween = this.scene.tweens.add({...cfg, targets:shape, onUpdate:pivot});
+        return {tween, base};
     }
 
     _fxOff(id, force=false)
@@ -314,9 +342,10 @@ export class COM_Disp extends Com
         cur.cell.end().then(()=>cur.cell.destroy());
         if(cur.body)
         {
-            cur.body.stop();
-            // body 只支援 angle(擺動)；死亡時倒地動畫會接手 angle，不能轉回正
-            if(this.ctx.root.isAlive) {this.ctx.root.view?.shape?.setAngle(0);}
+            cur.body.tween.stop();
+            // body 只支援 angle(擺動)；死亡時倒地動畫會接手 angle/y，不能轉回正
+            const {x, y} = cur.body.base;
+            if(this.ctx.root.isAlive) {this.ctx.root.view?.shape?.setAngle(0).setPosition(x, y);}
         }
     }
 
