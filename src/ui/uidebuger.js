@@ -11,7 +11,7 @@ import UiPopup from './uipopup.js'
 function cmd_get(args)
 {
     // [get] [gold/item] [id] [count]
-    const rewards=[{type:args[1],id:args[2],count:args[3]}];
+    const rewards=[{type:args[1],id:args[2],count:Number(args[3])}];
     GM.player.reward(rewards)
 }
 
