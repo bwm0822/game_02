@@ -287,18 +287,16 @@ export class COM_Disp extends Com
     // 同 id 疊層只顯示一個，用引用計數，最後一層結束才播 end
     // cell.align='bottom'('top'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
     // body 是套在角色身體(view.shape)上的 tween，跟著特效開關
+    // cell.flash=true 的特效不常駐，只在 _fxTick 時閃一下(見 _fxFlash)
     _fxOn(id, {skipSpawn=false}={})
     {
         this._fxMap ??= {};
         const cur = this._fxMap[id];
         if(cur) {cur.ref++; return;}
         const cfg = DB.fx(id);
-        if(!cfg) {return;}
+        if(!cfg || cfg.cell?.flash) {return;}
 
-        const {root} = this.ctx;
-        const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
-        const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
-        const cell = new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
+        const cell = this._fxCell(cfg);
         if(skipSpawn) {cell.startIdle();} else {cell.spawn();}
         const body = cfg.body ? this._bodyTween(cfg.body, cell.holder) : null;
         this._fxMap[id] = {cell, body, ref:1};
@@ -349,9 +347,28 @@ export class COM_Disp extends Com
         }
     }
 
+    _fxCell(cfg)
+    {
+        const {root} = this.ctx;
+        const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
+        const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
+        return new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
+    }
+
     _fxTick(id)
     {
-        this._fxMap?.[id]?.cell.tick();
+        const cur = this._fxMap?.[id];
+        if(cur) {cur.cell.tick(); return;}
+        const cfg = DB.fx(id);
+        if(cfg?.cell?.flash) {this._fxFlash(cfg);}
+    }
+
+    // 播 spawn → tick → end 後銷毀，不播 idle；丟進 _promises 讓 root.wait() 跟扣血 popup 一起等
+    _fxFlash(cfg)
+    {
+        const cell = this._fxCell({...cfg, idle:null});
+        const p = cell.spawn().then(()=>cell.tick()).then(()=>cell.end()).then(()=>cell.destroy());
+        (this._promises ??= []).push(p);
     }
 
     _underAtk(id)

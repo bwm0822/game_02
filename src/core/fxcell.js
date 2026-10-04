@@ -61,10 +61,10 @@ export default class FxCell
     tick()
     {
         const cfg = this.anim.tick;
-        if(!cfg || this.ticking) {return;}
+        if(!cfg || this.ticking) {return Promise.resolve();}
         this.ticking = true;
         this.idle?.pause();
-        this._tween(cfg).then(()=>{
+        return this._tween(cfg).then(()=>{
             this.ticking = false;
             this.idle?.resume();
         });
