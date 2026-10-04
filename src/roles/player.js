@@ -187,6 +187,16 @@ export class Player extends Role
         }
         this._refresh();
 
+        // 被控制：打斷移動/互動，這回合不等輸入直接結束
+        const ctrl = this.total.states.ctrl;
+        if(ctrl)
+        {
+            this.stop();
+            this._pending = null;
+            bb.ent = null;
+            bb.sta = GM.ST.IDLE;
+        }
+
         // 走到目標那一步的時間要先結算(TimeSystem.inc)才互動，互動開的 UI 才會停在 _pause() 期間
         if(this._pending)
         {
@@ -195,7 +205,7 @@ export class Player extends Role
             if(ent.scene && this.isAt(ent)) {await this.interact?.(ent,act);}
         }
 
-        if(bb.sta!==GM.ST.MOVING)
+        if(!ctrl && bb.sta!==GM.ST.MOVING)
         {
             dlog(T.PLAYER)('-------------------- pause 0')
             await this._pause();
