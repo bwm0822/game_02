@@ -75,12 +75,28 @@ export class COM_Action extends Com
         await hit;
     }
 
-    async _dashTo(pt)
+    // 舉刀完才直線衝到目標身前(停在目標中心前 20px)，抵達就揮砍，命中後跟擊退同時滑回落點；邏輯格子出發時就佔落點
+    async _dashAttack(target, landing, ability)
     {
         const {root} = this.ctx;
-        const tiles = Math.round(Math.max(Math.abs(pt.x-root.x)/GM.TILE_W, Math.abs(pt.y-root.y)/GM.TILE_H));
-        if(tiles===0) {return;}
-        await this._moveTo(pt, {duration:60*tiles, ease:'quad.in'});
+        const [sx, sy] = [root.x, root.y];
+        const [tx, ty] = [target.pos.x, target.pos.y];
+        const len = Math.hypot(tx-sx, ty-sy);
+        const reach = Math.max(0, len-20);
+        const contact = len ? {x:sx+(tx-sx)/len*reach, y:sy+(ty-sy)/len*reach} : {x:sx, y:sy};
+        const onUpdate = ()=>root.updateDepth();
+
+        root.face?.(target.pos);
+        root.removeWeight?.();
+        root.addWeight?.(landing);
+        root.anim_idle?.(false);
+        await root.anim_swing?.('raise');
+        await this._step(contact, Math.max(60, 60*reach/GM.TILE_W), 'quad.in', {onUpdate});
+        await root.anim_swing?.('strike');
+        const hit = this._onDamage(target, ability);
+        root.anim_swing?.(null);
+        await Promise.all([this._step(landing, 150, 'quad.out', {onUpdate}), hit]);
+        root.updateDepth();
     }
 
     // 沿「自己→目標」方向把目標往後推 tiles 格(真的換格子)，遇到站不上去的格子就停在前一格
@@ -88,9 +104,10 @@ export class COM_Action extends Com
     {
         const map = this.scene.map;
         const [tw,th] = [GM.TILE_W, GM.TILE_H];
-        const sx = Math.sign(Math.round((target.x-this.root.x)/tw));
-        const sy = Math.sign(Math.round((target.y-this.root.y)/th));
-        if(!sx && !sy) {return;}
+        const [dx, dy] = [(target.x-this.root.x)/tw, (target.y-this.root.y)/th];
+        const m = Math.max(Math.abs(dx), Math.abs(dy));
+        if(!m) {return;}
+        const [sx, sy] = [Math.round(dx/m), Math.round(dy/m)];   // 量化成 8 方向；衝刺時攻擊者停在目標前不到一格，不能用格數四捨五入
 
         let pt = null;
         for(let i=1; i<=tiles; i++)
@@ -386,7 +403,7 @@ export class COM_Action extends Com
         root.moveToward = this._moveToward.bind(this);
         root.attack = this._attack.bind(this);
         root.attackDecor = this._attackDecor.bind(this);
-        root.dashTo = this._dashTo.bind(this);
+        root.dashAttack = this._dashAttack.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);

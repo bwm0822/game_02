@@ -484,7 +484,7 @@ export class COM_Ability extends Com
             this._showRange(false);
             this._clrAbility();   // 先歸零選取狀態(含 bb.sta)，避免攻擊動畫播放期間滑鼠移動還一直觸發範圍預覽
 
-            if(landing) {await root.dashTo?.(landing);}
+            if(landing) {await root.dashAttack?.(targets[0], landing, ability); return true;}
             await Promise.all([
                 root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
                 emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
@@ -526,7 +526,7 @@ export class COM_Ability extends Com
         {
             return (target?.isAlive && this._isInRange(target.pos)) ? [target] : null;
         }
-        if(scope===GM.DASH)    // 先衝到落點(_use 處理)，再近戰打目標
+        if(scope===GM.DASH)    // 衝向目標揮砍後回到落點(_use 交給 root.dashAttack)
         {
             this._landing = this._dashLanding(target);
             return this._landing ? [target] : null;

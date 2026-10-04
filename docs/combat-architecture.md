@@ -174,7 +174,7 @@ else if(target && this._isInRange(target.pos))
 - 用到的地方：`map.los()`（技能遮擋、NPC 感知 `com_sense._canSee`）、`com_ability` 的 cone 格子跟施法範圍格（`isBlocked` 的格子不能選）
 - 施法範圍格：SUMMON/AREA 只排除地圖外、不看遮擋/LOS（可以隔牆放、中心可以指在爐子上），SUMMON 另外要 `_zoneCells()` 至少一格可生成才算範圍內；其他技能排除 `isBlocked` 的格子
 - area-like 技能（SUMMON/AREA/CONE）的中心/方向 = `pt ?? target?.pos`（玩家用游標、AI 用目標），選取中 hover 物件不顯示白框
-- DASH scope（衝刺）：點 Chebyshev ≤range 內的角色，落點 = 目標周圍 8 格中 `map.isStandable()`、`map.los(me,p,{walk:true})` 直線可達且距離 ≤range 的最近格（已貼身就原地），`_use()` 先 `root.dashTo(landing)` 再走一般 `root.attack()`；技能的 `knock`（格數）在 `_onDamage` 命中（非 MISS/EVA）且目標沒死時，沿「攻擊者→目標」方向真的換格子推開，推不動就不推
+- DASH scope（衝刺）：點 Chebyshev ≤range 內的角色，落點 = 目標周圍 8 格中 `map.isStandable()`、`map.los(me,p,{walk:true})` 直線可達且距離 ≤range 的最近格（已貼身就原地），`_use()` 改走 `root.dashAttack(target, landing, ability)`（不經 `root.attack()`）：出發就佔落點格子、舉刀完才直線衝到目標中心前 20px，抵達揮砍命中，接著跟擊退同時滑回落點；技能的 `knock`（格數）在 `_onDamage` 命中（非 MISS/EVA）且目標沒死時，沿「攻擊者→目標」方向真的換格子推開，推不動就不推
 - 火牆（`ZoneView`）：`map.isOpenGround()`（可走且不擋）以外的格子不生成、不登記 weight、不燒人，施放預覽也不畫；每格火焰直接放在 scene 上，depth = 該格中心 y+1（蓋過同格角色）
 
 ## 6. 裝備數值（`public/assets/json/item.json`）
