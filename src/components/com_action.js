@@ -154,7 +154,7 @@ export class COM_Action extends Com
 
     async _onDamage(target, ability)
     {
-        GS.mode = GM.MODE.COMBAT;   // 任何一方發動攻擊，強制進入戰鬥模式
+        if(!target.bb?.noCombat) {GS.mode = GM.MODE.COMBAT;}   // 任何一方發動攻擊，強制進入戰鬥模式(練習木樁除外)
         const dmg = computeDamage(this._root, target, ability);
         const canKnock = ability?.knock && dmg.type!==GM.MISS && dmg.type!==GM.EVA;
         const lethal = target.total.states[GM.HP]+dmg.amount<=0;

@@ -40,6 +40,7 @@ export default class Dummy extends Role
         bb.meta = DB.role(bb.id);
         bb.isStatic = false;
         bb.interactive = true;
+        bb.noCombat = true;
 
         this.addCom(new RoleView(this.scene), {modify:false})
             .addCom(new COM_Anim())
