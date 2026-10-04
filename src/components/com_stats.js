@@ -256,7 +256,7 @@ export class COM_Stats extends Com
             [GM.HP]:_baseHPMAX(this.baseStats),
             [GM.HUNGER]:0,  // max:100%
             [GM.THIRST]:0,  // max:100%
-            [GM.STUN]: false,
+            [GM.CTRL]: false,
         };
         this._actives = [];     // 作用中的 effects
         this._dirty = true;     // 標記屬性需要重算
@@ -462,6 +462,16 @@ export class COM_Stats extends Com
     {
         const{root,bb}=this.ctx;
         // 處理新加入的效果
+        if(eff.ctrl)    // 控制效果同 id 不疊加，只刷新剩餘回合
+        {
+            const cur = this._actives.find(e=>e.id === eff.id);
+            if(cur)
+            {
+                cur.remaining = Math.max(cur.remaining, eff.remaining);
+                root.fxTick?.(eff.id);
+                return;
+            }
+        }
         if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
         {
             const existing = this._actives.filter(e=>e.id === eff.id);
@@ -486,9 +496,17 @@ export class COM_Stats extends Com
     {
         const{root,bb}=this.ctx;
 
-        // 1. 每回合開始先清除眩暈狀態，確保角色不會永久眩暈
-        this._states[GM.STUN] = false;
+        // 1. 每回合開始先清除控制狀態；控制效果在 TurnStart 扣回合(TurnEnd 不扣)，
+        //    剩餘 0 代表已經跳過 dur 次行動，這回合恢復，圖示才會一路顯示到能行動為止
+        this._states[GM.CTRL] = false;
         if(bb.sta!==GM.ST.SLEEP) {root.pop?.();}
+        this._actives = this._actives.filter(eff => {
+            if(!eff.ctrl || eff.remaining > 0) {return true;}
+            dlog(T.NORMAL,bb.id)(`${eff.id} 控制效果結束`);
+            this._setDirty();
+            root.fxOff?.(eff.id);
+            return false;
+        });
 
         // 2. 處理作用中的效果
         const ticked = new Set();   // 同 id 疊多層時 tick 動畫每回合只播一次
@@ -519,10 +537,11 @@ export class COM_Stats extends Com
                 case GM.DEBUFF:
                 case GM.BUFF:
                 {
-                    if (eff.id === 'stun')
+                    if (eff.ctrl)
                     {
-                        // 眩暈：跳過下一次行動
-                        this._states[GM.STUN] = true;
+                        this._states[GM.CTRL] = true;
+                        eff.remaining -= 1;
+                        ticked.add(eff.id);
                     }
                     break;
                 }
@@ -533,7 +552,7 @@ export class COM_Stats extends Com
 
         // 3. 移除 DOT/HOT 過期效果
         this._actives = this._actives.filter(eff => {
-            if (eff.remaining <= 0)
+            if (!eff.ctrl && eff.remaining <= 0)
             {
                 dlog(T.NORMAL,bb.id)(`${eff.key || eff.id} ${eff.type} 效果結束`);
                 if(eff.type==='buff'||eff.type==='debuff') {this._setDirty();}
@@ -557,6 +576,7 @@ export class COM_Stats extends Com
         // BUFF/DEBUFF的remaining-1 及 移除BUFF/DEBUFF過期效果
         const{root,bb}=this.ctx;
         this._actives = this._actives.filter(eff => {
+            if(eff.ctrl) {return true;}
             if(eff.type===GM.BUFF||eff.type===GM.DEBUFF) {eff.remaining -= 1;}
             if (eff.remaining <= 0)
             {
@@ -616,7 +636,7 @@ export class COM_Stats extends Com
         this._actives.forEach(eff=>root.fxOff?.(eff.id, true));
         this._actives = [];
         this._tmp = [];
-        this._states[GM.STUN] = false;
+        this._states[GM.CTRL] = false;
         this._setDirty();
     }
 

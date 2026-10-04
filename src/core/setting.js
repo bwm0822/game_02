@@ -279,7 +279,7 @@ export const GM =
 
     // 狀態
     HP : 'hp',              // 生命
-    STUN : 'stun',          // 眩暈
+    CTRL : 'ctrl',          // 被控制(無法行動)
     // 生存相關屬性
     SURVIVAL : ["hunger", "thirst"],    
     HUNGER : 'hunger',      // 飢餓

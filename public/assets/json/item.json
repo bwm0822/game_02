@@ -41,6 +41,7 @@
         "stage": "hit",
         "scope": "target",
         "type": "debuff",
+        "ctrl": true,
         "chance": 0.5,
         "dur": 1,
         "id": "stun",

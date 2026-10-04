@@ -169,7 +169,7 @@ export class Npc extends Role
         if(!this.isAlive) {return;}
         const{emit,aEmit,bb}=this.ctx;
         await aEmit(GM.EVT.TURNSTART);
-        if(this.isAlive&&!this.total.states.stun) {await this.think?.();}
+        if(this.isAlive&&!this.total.states.ctrl) {await this.think?.();}
         if(bb.sta===GM.ST.IDLE) {this.anim_idle?.(true);}
         emit(GM.EVT.TURNEND);
         if(this._exiting) {this._remove();}
