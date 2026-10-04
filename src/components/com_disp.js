@@ -286,6 +286,7 @@ export class COM_Disp extends Com
     // 持續效果(buff/dot...)的常駐特效，外觀/動畫由 fx.json 依效果 id 決定(查不到就不顯示)，顯示到 _fxOff(id) 才消失
     // 同 id 疊層只顯示一個，用引用計數，最後一層結束才播 end
     // cell.align='bottom'('top'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
+    // body 是套在角色身體(view.shape)上的 tween，跟著特效開關
     _fxOn(id, {skipSpawn=false}={})
     {
         this._fxMap ??= {};
@@ -299,7 +300,9 @@ export class COM_Disp extends Com
         const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
         const cell = new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
         if(skipSpawn) {cell.startIdle();} else {cell.spawn();}
-        this._fxMap[id] = {cell, ref:1};
+        const shape = root.view?.shape;
+        const body = cfg.body && shape ? this.scene.tweens.add({...cfg.body, targets:shape}) : null;
+        this._fxMap[id] = {cell, body, ref:1};
     }
 
     _fxOff(id, force=false)
@@ -309,6 +312,12 @@ export class COM_Disp extends Com
         if(--cur.ref>0 && !force) {return;}
         delete this._fxMap[id];
         cur.cell.end().then(()=>cur.cell.destroy());
+        if(cur.body)
+        {
+            cur.body.stop();
+            // body 只支援 angle(擺動)；死亡時倒地動畫會接手 angle，不能轉回正
+            if(this.ctx.root.isAlive) {this.ctx.root.view?.shape?.setAngle(0);}
+        }
     }
 
     _fxTick(id)

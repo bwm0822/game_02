@@ -61,16 +61,6 @@
       "duration": 200,
       "ease": "Back.Out"
     },
-    "idle": {
-      "angle": {
-        "from": -15,
-        "to": 15
-      },
-      "duration": 400,
-      "yoyo": true,
-      "repeat": -1,
-      "ease": "Sine.InOut"
-    },
     "tick": {
       "scale": {
         "from": 1,
@@ -85,6 +75,16 @@
       "scale": 0.3,
       "duration": 300,
       "ease": "Quad.In"
+    },
+    "body": {
+      "angle": {
+        "from": -8,
+        "to": 8
+      },
+      "duration": 400,
+      "yoyo": true,
+      "repeat": -1,
+      "ease": "Sine.InOut"
     }
   }
 }
