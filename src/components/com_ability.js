@@ -187,6 +187,7 @@ export class COM_Ability extends Com
     // 每格記錄世界座標、是否可通行/被遮蔽(block)，以及依鄰格開放與否算出的外框線標記(l/r/t/b)，
     // 讓 _showRange()(畫格線)、_isInRange()(判斷點擊/滑鼠位置是否在範圍內)可以共用同一份資料，不必每次重算
     // SUMMON/AREA 只排除地圖外(不看遮擋/LOS)，SUMMON 中心格能不能生成交給 _zoneCells() 判斷
+    // DASH 只畫「敵人站得上去(空地或現有角色)、且假設敵人在那格時衝得到」的格子
     _genRangeGrid(w, h, checkBlock, ability)
     {
         const {start:xs} = this._axisRange(w);
@@ -194,6 +195,7 @@ export class COM_Ability extends Com
         const a = Array.from({ length: h }, () => Array(w));
         const [th,tw,th_2,tw_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
         const loose = ability?.tag===GM.SUMMON || ability?.scope===GM.AREA;
+        const dash = ability?.scope===GM.DASH;
         const map = this.scene.map;
 
         for(let xi=0; xi<w; xi++)
@@ -203,8 +205,10 @@ export class COM_Ability extends Com
                 const px = this.x + (xs+xi)*tw;
                 const py = this.y + (ys+yi)*th;
                 const [tx,ty] = map.worldToTile(px,py);
+                const p = {x:px, y:py};
                 const block = loose ? !map.isInside(tx,ty)
-                                    : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, {x:px,y:py}, {roles:false}));
+                            : dash  ? !(map.isStandable(p) || this._roleAt(p)) || !this._dashLandingAt(p, ability.range)
+                                    : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, p, {roles:false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
@@ -361,19 +365,23 @@ export class COM_Ability extends Com
         });
     }
 
-    // DASH 落點：目標周圍 8 格中站得上去、直線衝得到(路徑可走且沒被地形/角色擋)、距離自己不超過 range 的格子，取歐式距離最近的；
+    // DASH 落點：自己→目標直線被擋(地形/角色/站不上去的格子)就不能衝；目標周圍 8 格中站得上去、直線衝得到(路徑可走且沒被地形/角色擋)、距離自己不超過 range 的格子，取歐式距離最近的；
     // 同距離取「落點→目標」跟「自己→目標」方向最接近的；已經貼身就是原地
     _dashLanding(target)
     {
         const {root} = this.ctx;
         if(!target?.isAlive || target===root) {return null;}
+        return this._dashLandingAt(target.pos, this._ability.range);
+    }
+
+    _dashLandingAt(pos, range)
+    {
         const map = this.scene.map;
-        const range = this._ability.range;
         const [tw,th] = [GM.TILE_W, GM.TILE_H];
-        const me = map.getPt(this), t = map.getPt(target.pos);
+        const me = map.getPt(this), t = map.getPt(pos);
         const cheb = (p)=>Math.max(Math.abs(Math.round((p.x-me.x)/tw)), Math.abs(Math.round((p.y-me.y)/th)));
         const dist = cheb(t);
-        if(dist>range) {return null;}
+        if(dist>range || !map.los(me, t, {walk:true})) {return null;}
         if(dist<=1) {return me;}
 
         const dir = Math.atan2(t.y-me.y, t.x-me.x);
