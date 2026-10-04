@@ -53,8 +53,9 @@
         "type": "dot",
         "a": -1,
         "dur": 3,
+        "elm": "poison",
         "id": "poison",
-        "icon": "🩸"
+        "icon": "☠️"
       },
       {
         "stage": "hit",
@@ -136,7 +137,7 @@
         "dur": 5,
         "stack": 3,
         "elm": "poison",
-        "id": "posion",
+        "id": "poison",
         "icon": "☠️"
       }
     ],

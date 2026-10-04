@@ -5,7 +5,8 @@
       "size": 20,
       "alpha": 0.8,
       "align": "bottom",
-      "oy": 0
+      "oy": 0,
+      "flash": true
     },
     "spawn": {
       "scale": {
@@ -85,6 +86,33 @@
       "yoyo": true,
       "repeat": -1,
       "ease": "Sine.InOut"
+    }
+  },
+  "poison": {
+    "img": "☠️",
+    "cell": {
+      "size": 20,
+      "align": "bottom",
+      "flash": true
+    },
+    "spawn": {
+      "scale": {
+        "from": 0.3,
+        "to": 1
+      },
+      "alpha": {
+        "from": 0,
+        "to": 1
+      },
+      "y": "-=24",
+      "duration": 500,
+      "ease": "Sine.Out"
+    },
+    "end": {
+      "y": "-=8",
+      "alpha": 0,
+      "duration": 300,
+      "ease": "Quad.In"
     }
   }
 }
