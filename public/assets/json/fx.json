@@ -53,6 +53,14 @@
       "size": 20,
       "align": "top"
     },
+    "spawn": {
+      "scale": {
+        "from": 0,
+        "to": 1
+      },
+      "duration": 200,
+      "ease": "Back.Out"
+    },
     "idle": {
       "angle": {
         "from": -15,
@@ -62,6 +70,21 @@
       "yoyo": true,
       "repeat": -1,
       "ease": "Sine.InOut"
+    },
+    "tick": {
+      "scale": {
+        "from": 1,
+        "to": 1.4
+      },
+      "duration": 150,
+      "yoyo": true,
+      "ease": "Quad.Out"
+    },
+    "end": {
+      "alpha": 0,
+      "scale": 0.3,
+      "duration": 300,
+      "ease": "Quad.In"
     }
   }
 }
