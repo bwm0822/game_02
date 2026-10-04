@@ -285,7 +285,7 @@ export class COM_Disp extends Com
 
     // 持續效果(buff/dot...)的常駐特效，外觀/動畫由 fx.json 依效果 id 決定(查不到就不顯示)，顯示到 _fxOff(id) 才消失
     // 同 id 疊層只顯示一個，用引用計數，最後一層結束才播 end
-    // cell.align='bottom'('top'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
+    // cell.align='bottom'('top'|'center'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
     // body 是套在角色身體(view.shape)上的 tween，跟著特效開關
     // cell.flash=true 的特效不常駐，只在 _fxTick 時閃一下(見 _fxFlash)
     _fxOn(id, {skipSpawn=false}={})
@@ -351,8 +351,9 @@ export class COM_Disp extends Com
     {
         const {root} = this.ctx;
         const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
-        const y = (align==='top' ? (root.view?.Min.y ?? 0) : (root.view?.Max.y ?? 0)) + oy;
-        return new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y, size:30, originY:1});
+        const [top, bottom] = [root.view?.Min.y ?? 0, root.view?.Max.y ?? 0];
+        const y = {top, center:(top+bottom)/2}[align] ?? bottom;
+        return new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y:y+oy, size:30, originY:1});
     }
 
     _fxTick(id)

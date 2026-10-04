@@ -92,7 +92,7 @@
     "img": "☠️",
     "cell": {
       "size": 20,
-      "align": "bottom",
+      "align": "center",
       "flash": true
     },
     "spawn": {
