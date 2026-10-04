@@ -533,12 +533,18 @@
       "img": "☄️",
       "size": 25,
       "deg": -135,
+      "angle": 45,
+      "dist": 300,
+      "scale": [
+        2,
+        5
+      ],
       "randomDelay": 800
     },
     "fx": {
       "img": "🔥"
     },
-    "carpet": true,
+    "minCount": 5,
     "effects": [
       {
         "type": "dot",

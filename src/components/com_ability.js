@@ -516,7 +516,7 @@ export class COM_Ability extends Com
             if(arcPt) {await root.sweepAttack?.(targets, arcPt, ability); return true;}
             await Promise.all([
                 root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
-                emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
+                emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // minCount 補位的空格也播放動畫(無傷害)
             ]);
 
             return true;
@@ -572,10 +572,11 @@ export class COM_Ability extends Com
             const center = pt ?? target?.pos;
             if(!center || !this._isInRange(center)) {return null;}
             const targets = this._areaTargets(center);
-            if(this._ability.carpet)
+            const fill = (this._ability.minCount ?? 0) - targets.length;
+            if(fill>0)
             {
                 const {w,h} = this._resolveSize(this._ability);
-                this._emptyTiles = this._genEmptyTiles(this._snapToGrid(center), w, h, targets);
+                this._emptyTiles = this._genEmptyTiles(this._snapToGrid(center), w, h, targets, fill);
             }
             return targets;
         }
@@ -632,8 +633,8 @@ export class COM_Ability extends Com
         this._highlighted = next;
     }
 
-    // carpet:true 的技能，算出範圍內沒有目標的空格座標，讓 _use() 也對空格播放動畫(地毯式轟炸的視覺效果)
-    _genEmptyTiles(center, w, h, targets)
+    // minCount 的技能，目標數不足時從範圍內沒有目標的空格隨機挑 count 格，讓 _use() 也對空格播放動畫(純視覺)
+    _genEmptyTiles(center, w, h, targets, count)
     {
         const {start:xs, end:xe} = this._axisRange(w);
         const {start:ys, end:ye} = this._axisRange(h);
@@ -653,7 +654,8 @@ export class COM_Ability extends Com
                 tiles.push({pos:{x:center.x+x*tw, y:center.y+y*th}});
             }
         }
-        return tiles;
+        Utility.shuffle(tiles);
+        return tiles.slice(0, count);
     }
 
     // 找出以 center 為中心、寬 w/高 h(格)矩形範圍內的所有目標(排除已死亡；excludeSelf 決定要不要排除施法者自己)

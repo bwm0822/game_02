@@ -175,12 +175,14 @@ export class COM_Action extends Com
             })
     }
 
-    _attack_Fall(target, onHit, sprite)   // 從目標正上方墜落(流星雨用)，跟 _attack_Spell 差在起點不是施法者
+    _attack_Fall(target, onHit, sprite)   // 從目標右上方 angle 度(與地平線夾角)、高 dist 處斜落(流星雨用)，跟 _attack_Spell 差在起點不是施法者
     {
-        const startX = target.pos.x;
-        const startY = target.pos.y - 300;
+        const {angle=90, dist=300, scale} = sprite;
+        const startX = target.pos.x + dist/Math.tan(Phaser.Math.DegToRad(angle));
+        const startY = target.pos.y - dist;
+        const pic = scale ? {...sprite, size:sprite.size*Phaser.Math.FloatBetween(scale[0], scale[1])} : sprite;
         return new Promise((resolve)=>{
-                new Projectile(this.scene, startX, startY, sprite)
+                new Projectile(this.scene, startX, startY, pic)
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}, bias:0}
                         );
@@ -330,7 +332,7 @@ export class COM_Action extends Com
         return true;
     }
 
-    async _attackDecor(tiles, ability)   // carpet:true 用：純視覺，對空格播放 travel 動畫+命中特效，不造成傷害
+    async _attackDecor(tiles, ability)   // minCount 補位用：純視覺，對空格播放 travel 動畫+命中特效，不造成傷害
     {
         const travel = ability.travel;
         if(!travel) {return;}
