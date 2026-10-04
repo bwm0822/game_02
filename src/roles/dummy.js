@@ -52,7 +52,8 @@ export default class Dummy extends Role
 
         this.load(obj);
 
-        this._setAct(GM.ATTACK, ()=>this.isAlive ? GM.EN : GM.HIDE);
+        this._setAct(GM.OBSERVE, ()=>GM.EN);
+        this._setAct(GM.ATTACK,()=>this.isAlive ? GM.EN : GM.HIDE);
         this._setAct(GM.RESTORE, ()=>{
             const {states, [GM.HPMAX]:max} = this.total;
             return states[GM.HP] < max || this.actives.length>0 ? GM.EN : GM.DIS;
