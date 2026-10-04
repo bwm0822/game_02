@@ -436,6 +436,7 @@ export class COM_Stats extends Com
             if(eff.type==='mod') {return;}                  // mod，跳過
             if(eff.scope && eff.scope!==scope) {return;}    // scope 條件不符，跳過
             if(eff.stage && eff.stage!==stage) {return;}    // stage 條件不符，跳過
+            if(eff.chance!==undefined && Math.random()>=eff.chance) {return;}
             if(eff.type === 'action')
             {
                 if(eff.id==='lifesteal')
