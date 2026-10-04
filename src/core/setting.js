@@ -383,6 +383,7 @@ export const GM =
     AREA : 'area',
     CONE : 'cone',
     DASH : 'dash',
+    ARC : 'arc',
 
     // path
     PATH_NONE : -1, // 找不到路徑

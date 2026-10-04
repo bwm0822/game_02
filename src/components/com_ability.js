@@ -94,7 +94,12 @@ export class COM_Ability extends Com
     // AREA scope 或 SUMMON tag(如召喚地面區域的技能)，都是「點擊位置決定作用範圍中心」，用虛線可點擊範圍+游標處實心作用範圍預覽
     _isAreaLike(ability)
     {
-        return ability.scope===GM.AREA || ability.scope===GM.CONE || ability.tag===GM.SUMMON;
+        return ability.scope===GM.AREA || ability.scope===GM.CONE || ability.scope===GM.ARC || ability.tag===GM.SUMMON;
+    }
+
+    _isAimed(ability)
+    {
+        return ability.scope===GM.CONE || ability.scope===GM.ARC;
     }
 
     _isSelfTile(pos)
@@ -127,10 +132,32 @@ export class COM_Ability extends Com
         return tiles;
     }
 
-    _previewCone(pt)
+    // ARC 技能：游標方向吸附到 8 方向，取那格＋周圍 8 格環上的左右鄰格(排除 isBlocked)；center 是吸附方向那格(不管有沒有被擋)
+    _arcDir(dirPt)
+    {
+        const k = Math.round(Math.atan2(dirPt.y-this.y, dirPt.x-this.x)/(Math.PI/4));
+        const tile = (i)=>{
+            const a = i*Math.PI/4;
+            const [ox, oy] = [Math.round(Math.cos(a)), Math.round(Math.sin(a))];
+            return {ox, oy, x:this.x+ox*GM.TILE_W, y:this.y+oy*GM.TILE_H};
+        };
+        return {center:tile(k), tiles:[k-1, k, k+1].map(tile)};
+    }
+
+    _arcTiles(dirPt)
+    {
+        const map = this.scene.map;
+        return this._arcDir(dirPt).tiles.filter(t=>!map.isBlocked(...map.worldToTile(t.x, t.y)));
+    }
+
+    _aimedTiles(dirPt)
+    {
+        return this._ability.scope===GM.ARC ? this._arcTiles(dirPt) : this._coneTiles(dirPt);
+    }
+
+    _previewTiles(tiles)
     {
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
-        const tiles = this._coneTiles(pt);
         const keys = new Set(tiles.map(t=>`${t.ox},${t.oy}`));
         const has = (ox,oy) => keys.has(`${ox},${oy}`);
         tiles.forEach(({ox,oy,x,y})=>{
@@ -249,7 +276,7 @@ export class COM_Ability extends Com
         const ability = DB.ability(id);
 
         this._rangeGrid = null;   // 不同技能的 range/w/h 可能不同，強制重建網格，避免沿用上一個技能的舊網格尺寸
-        if(ability.scope!==GM.CONE)
+        if(!this._isAimed(ability))
         {
             const {w,h} = this._castRange(ability);
             this._showRange(true, w, h, ability.checkBlock!==false, ability);
@@ -297,12 +324,12 @@ export class COM_Ability extends Com
         if(this._ability?.scope===GM.DASH) {this._previewDash(pt); return;}
         if(!this._ability || !this._isAreaLike(this._ability)) {return;}
         if(!this._isInRange(pt)) {this._highlight([]); return;}
+        const aimed = this._isAimed(this._ability);
         if(this._ability.tag===GM.ATK)
         {
-            const scope = this._ability.scope;
-            this._highlight((scope===GM.CONE ? this._coneTargets(pt) : this._areaTargets(pt)) ?? []);
+            this._highlight((aimed ? this._aimedTargets(pt) : this._areaTargets(pt)) ?? []);
         }
-        if(this._ability.scope===GM.CONE) {this._previewCone(pt); return;}
+        if(aimed) {this._previewTiles(this._aimedTiles(pt)); return;}
 
         let {w:pw, h:ph} = this._resolveSize(this._ability);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
@@ -404,7 +431,7 @@ export class COM_Ability extends Com
     _isInRange(pos, checkBlock=true)
     {
         if(this._ability.scope===GM.DASH) {return !!this._dashLanding(this._roleAt(pos));}
-        if(this._ability.scope===GM.CONE) {return !this._isSelfTile(pos);}   // CONE 點哪都往該方向發射，只排除點自己
+        if(this._isAimed(this._ability)) {return !this._isSelfTile(pos);}   // CONE/ARC 點哪都往該方向發射，只排除點自己
         const {w:nW, h:nH} = this._castRange(this._ability);
         !this._rangeGrid && this._genRangeGrid(nW, nH, checkBlock, this._ability);
         const a = this._rangeGrid;
@@ -479,12 +506,14 @@ export class COM_Ability extends Com
             if(!targets) {return false;}
             const emptyTiles = this._emptyTiles;
             const landing = this._landing;
+            const arcPt = this._arcPt;
 
             this._abilities[id]={skip:true, remain:ability.cd};
             this._showRange(false);
             this._clrAbility();   // 先歸零選取狀態(含 bb.sta)，避免攻擊動畫播放期間滑鼠移動還一直觸發範圍預覽
 
             if(landing) {await root.dashAttack?.(targets[0], landing, ability); return true;}
+            if(arcPt) {await root.sweepAttack?.(targets, arcPt, ability); return true;}
             await Promise.all([
                 root.attack?.(targets, ability),               // 播放攻擊動畫, com_action.js
                 emptyTiles?.length ? root.attackDecor?.(emptyTiles, ability) : null,   // carpet:true 時，空格也播放動畫(無傷害)
@@ -521,6 +550,7 @@ export class COM_Ability extends Com
         const scope = this._ability.scope ?? GM.SINGLE;
         this._emptyTiles = null;
         this._landing = null;
+        this._arcPt = null;
 
         if(scope===GM.SINGLE)
         {
@@ -553,7 +583,15 @@ export class COM_Ability extends Com
         {
             const dirPt = pt ?? target?.pos;
             if(!dirPt || this._isSelfTile(dirPt)) {return null;}
-            return this._coneTargets(dirPt);
+            return this._aimedTargets(dirPt);
+        }
+        if(scope===GM.ARC)     // 同 CONE，揮砍方向吸附到 8 方向(_use 交給 root.sweepAttack)
+        {
+            const dirPt = pt ?? target?.pos;
+            if(!dirPt || this._isSelfTile(dirPt)) {return null;}
+            const targets = this._aimedTargets(dirPt);
+            if(targets) {this._arcPt = this._arcDir(dirPt).center;}
+            return targets;
         }
         return null;
     }
@@ -571,10 +609,12 @@ export class COM_Ability extends Com
         return this._findTargets(this._snapToGrid(pt), w, h, this._ability.checkBlock, false);
     }
 
-    _coneTargets(dirPt)
+    _aimedTargets(dirPt) {return this._tileTargets(this._aimedTiles(dirPt));}
+
+    _tileTargets(tiles)
     {
         const {root} = this.ctx;
-        const keys = new Set(this._coneTiles(dirPt).map(t=>`${t.ox},${t.oy}`));
+        const keys = new Set(tiles.map(t=>`${t.ox},${t.oy}`));
         const targets = this.scene.roles.filter(role=>{
             if(role===root || !role.isAlive) {return false;}
             const ox = Math.round((role.x-this.x)/GM.TILE_W);

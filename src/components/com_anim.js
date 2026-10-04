@@ -171,10 +171,11 @@ export class COM_Anim extends Com
     }
 
     // phase: 'raise' 握把上提、劍繞握把往後轉；'strike' 手臂(軸心→握把)繞軸心往前砍，劍同時甩到跟手臂一直線；null 收回原狀
-    // 都是 shape 本地座標(面向右)，面向左時 shape 已鏡像；姿勢固定，不看目標方向
-    _swing(phase=null)
+    // 'sweepRaise' 手臂(角色中心→握把)跟劍連成一直線，轉到 pt 方向 -90°；'sweep' 從那裡順時針掃 180°
+    // 都是 shape 本地座標(面向右)，面向左時 shape 已鏡像；raise/strike 姿勢固定，不看目標方向
+    _swing(phase=null, pt=null)
     {
-        const SWING = {LIFT:12, RAISE:-90, ARM:6, CHOP:120};
+        const SWING = {LIFT:12, RAISE:-90, ARM:6, CHOP:120, SWEEP:180, SWEEP_ARM:14};
         const {root} = this.ctx;
         const swinger = root.view?.swinger;
         if(!swinger) {return Promise.resolve(false);}
@@ -218,6 +219,27 @@ export class COM_Anim extends Com
                 return [{x:p.x + Math.cos(r)*SWING.ARM, y:p.y + Math.sin(r)*SWING.ARM}, lerp(a0, a1, t)];
             };
             [duration, ease] = [80, 'cubic.in'];
+        }
+        else if(phase==='sweepRaise' || phase==='sweep')
+        {
+            const sign = Math.sign(root.view.shape.scaleX) || 1;
+            const dir = Phaser.Math.RadToDeg(Math.atan2(pt.y-root.pos.y, (pt.x-root.pos.x)*sign));
+            const from = dir - SWING.SWEEP/2;
+            const arm = (deg)=>{
+                const r = Phaser.Math.DegToRad(deg);
+                return {x:Math.cos(r)*SWING.SWEEP_ARM, y:Math.sin(r)*SWING.SWEEP_ARM};
+            };
+            if(phase==='sweepRaise')
+            {
+                const a1 = a0 + Phaser.Math.Angle.ShortestBetween(a0, from - aim);
+                pose = (t)=>[lerpG(g0, arm(from), t), lerp(a0, a1, t)];
+                [duration, ease] = [120, 'quad.out'];
+            }
+            else
+            {
+                pose = (t)=>[arm(from + SWING.SWEEP*t), a0 + SWING.SWEEP*t];
+                [duration, ease] = [300, 'cubic.in'];
+            }
         }
         else
         {

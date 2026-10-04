@@ -74,6 +74,7 @@
       }
     ],
     "range": 1,
+    "scope": "arc",
     "cd": 1,
     "travel": {
       "type": "melee"

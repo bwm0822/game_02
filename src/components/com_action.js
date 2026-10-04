@@ -6,6 +6,7 @@ import {computeDamage} from '../core/combat.js'
 import {GM, GS} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
 const _tag = 'action';
+const FRONT = 0.5;   // 近戰攻擊期間 depth 墊高(不到一格)，同一排(y 相同)時攻擊者畫在目標上面
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -66,6 +67,7 @@ export class COM_Action extends Com
     {
         const {root}=this.ctx
         root.face?.(target.pos);
+        root.setDepth(root.y+FRONT);
         await root.anim_swing?.('raise');
         const ok = await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
         await root.anim_swing?.('strike');
@@ -73,6 +75,23 @@ export class COM_Action extends Com
         root.anim_swing?.(null);
         if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
         await hit;
+        root.updateDepth();
+    }
+
+    // 斬擊：起手轉到 dirPt 方向 -90°，前衝 12px 到位才順時針掃 180°，掃完所有目標同時命中
+    async _sweepAttack(targets, dirPt, ability)
+    {
+        const {root}=this.ctx
+        root.face?.(dirPt);
+        root.setDepth(root.y+FRONT);
+        await root.anim_swing?.('sweepRaise', dirPt);
+        const ok = await root.anim_lunge?.(dirPt, 12, {duration:100, ease:'cubic.in'});
+        await root.anim_swing?.('sweep', dirPt);
+        const hits = targets.map(t=>this._onDamage(t, ability));
+        root.anim_swing?.(null);
+        if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
+        await Promise.all(hits);
+        root.updateDepth();
     }
 
     // 舉刀完才直線衝到目標身前(停在目標中心前 20px)，抵達就揮砍，命中後跟擊退同時滑回落點；邏輯格子出發時就佔落點
@@ -84,9 +103,10 @@ export class COM_Action extends Com
         const len = Math.hypot(tx-sx, ty-sy);
         const reach = Math.max(0, len-20);
         const contact = len ? {x:sx+(tx-sx)/len*reach, y:sy+(ty-sy)/len*reach} : {x:sx, y:sy};
-        const onUpdate = ()=>root.updateDepth();
+        const onUpdate = ()=>root.setDepth(root.y+FRONT);
 
         root.face?.(target.pos);
+        onUpdate();
         root.removeWeight?.();
         root.addWeight?.(landing);
         root.anim_idle?.(false);
@@ -404,6 +424,7 @@ export class COM_Action extends Com
         root.attack = this._attack.bind(this);
         root.attackDecor = this._attackDecor.bind(this);
         root.dashAttack = this._dashAttack.bind(this);
+        root.sweepAttack = this._sweepAttack.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
