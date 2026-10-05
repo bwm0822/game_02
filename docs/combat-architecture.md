@@ -171,6 +171,7 @@ else if(target && this._isInRange(target.pos))
 - Tile：`collide` 或 `weight=0` 預設擋；tile 屬性 `block`（bool）可明確覆寫
 - 物件：View 的 `isBlock`（Tiled 屬性，預設 false）為 true 時，`_addWeight`/`_removeWeight` 會在 `gridTiles` 範圍 ±1；門開關用 `root.setBlock(on)` 切換。目前設 `isBlock=true` 的 template：建築、cabinet、stove、well、tree、door；桌椅床箱不擋（桌子 `weight=-1` 不可走，但不擋）
 - 角色不進 blockGrid：`map.los(from,to,{roles})` 在 `roles:true` 時另外檢查活著的角色所在格
+- 技能會不會被角色擋由技能的 `roles`（填在 `ability.xlsx` 的 `meta`，預設 `false`，不分敵我）決定，套用在施法範圍格（`_genRangeGrid`）、cone 格子（`_coneTiles`）、group/area 找目標（`_findTargets`）；目前沒有技能填 `roles:true`（火球、弓箭都不被人擋）
 - 用到的地方：`map.los()`（技能遮擋、NPC 感知 `com_sense._canSee`）、`com_ability` 的 cone 格子跟施法範圍格（`isBlocked` 的格子不能選）
 - 施法範圍格：SUMMON/AREA 只排除地圖外、不看遮擋/LOS（可以隔牆放、中心可以指在爐子上），SUMMON 另外要 `_zoneCells()` 至少一格可生成才算範圍內；其他技能排除 `isBlocked` 的格子
 - area-like 技能（SUMMON/AREA/CONE）的中心/方向 = `pt ?? target?.pos`（玩家用游標、AI 用目標），選取中 hover 物件不顯示白框

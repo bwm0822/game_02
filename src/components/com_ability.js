@@ -110,7 +110,7 @@ export class COM_Ability extends Com
     // CONE 技能：以自己為原點、朝 dirPt 方向，列出格中心落在扇形內(歐式距離<=range、夾角<=angle/2)且可通行、沒被遮擋的格子偏移
     _coneTiles(dirPt)
     {
-        const {range, angle, checkBlock} = this._ability;
+        const {range, angle, checkBlock, roles=false} = this._ability;
         const [tw,th] = [GM.TILE_W, GM.TILE_H];
         const dir = Math.atan2(dirPt.y-this.y, dirPt.x-this.x);
         const half = Phaser.Math.DegToRad(angle/2);
@@ -125,7 +125,7 @@ export class COM_Ability extends Com
                 if(Math.abs(diff)>half) {continue;}
                 const map = this.scene.map;
                 if(map.isBlocked(...map.worldToTile(px,py))) {continue;}
-                if(checkBlock!==false && !map.los(this, {x:px,y:py})) {continue;}
+                if(checkBlock!==false && !map.los(this, {x:px,y:py}, {roles})) {continue;}
                 tiles.push({ox,oy,x:px,y:py});
             }
         }
@@ -235,7 +235,7 @@ export class COM_Ability extends Com
                 const p = {x:px, y:py};
                 const block = loose ? !map.isInside(tx,ty)
                             : dash  ? !(map.isStandable(p) || this._roleAt(p)) || !this._dashLandingAt(p, ability.range)
-                                    : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, p, {roles:false}));
+                                    : map.isBlocked(tx,ty) || (checkBlock && !map.los(this, p, {roles:ability?.roles ?? false}));
                 a[yi][xi] = {x:px-tw_2, y:py-th_2, width:tw, height:th, block:block};
             }
         }
@@ -671,7 +671,7 @@ export class COM_Ability extends Com
             const ox = Math.round((role.x-center.x)/GM.TILE_W);
             const oy = Math.round((role.y-center.y)/GM.TILE_H);
             if(ox<xs || ox>xe || oy<ys || oy>ye) {return false;}
-            return checkBlock===false || this.scene.map.los(center, role, {roles:false});
+            return checkBlock===false || this.scene.map.los(center, role, {roles:this._ability.roles ?? false});
         });
     }
 
