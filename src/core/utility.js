@@ -458,24 +458,23 @@ export default class Utility
         }
     }
 
-    static fmt_Active(eff, stack) 
+    static fmt_Active(eff)
     {
         const num = this.fmt_Num(eff);
-        const cnt = stack ? `，疊加[color=white]${stack}[/color]層` : '';
         switch(eff.type)
         {
-            case 'dot': 
+            case 'dot':
             case 'hot':
-                return `每回合${num}血量${cnt}`;
+                return `每回合${num}血量`;
             case 'buff':
             case 'debuff':
-                if(eff.key) 
+                if(eff.key)
                 {
-                    return `有效回合內，${eff.key.lab()}${num}${cnt}`;
+                    return `有效回合內，${eff.key.lab()}${num}`;
                 }
                 else
                 {
-                    return `有效回合內，${eff.id.lab()}${cnt}`;
+                    return `有效回合內，${eff.id.lab()}`;
                 }
         }
     }

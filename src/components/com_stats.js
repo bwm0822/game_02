@@ -154,76 +154,6 @@ function _getEffs(bb, skill)
     return effs;
 }
 
-    
-function _modsFromEquips(equips, mods, condition)
-{
-    for(let equip of equips)
-    {
-        if(!equip) {continue;}
-        let eq = DB.item(equip.id??equip);
-        eq?.effects?.forEach((eff)=>{_calcMods(eff, mods, condition);});
-    }
-}
-
-function _procsFromEquips(equips, procs, condition)
-{
-    for(let equip of equips)
-    {
-        if(!equip) {continue;}
-        let eq = DB.item(equip.id??equip);
-        eq?.procs?.forEach((proc)=>{
-            const {cond, scope} = proc;
-            if(cond && cond !== condition) {return;}   // 條件不符，跳過
-            scope===GM.ENEMY && procs.enemy.push(proc)
-        });
-    }
-}
-
-function _procsFromUsingSkill(skill, procs)
-{
-    skill?.procs?.forEach((proc)=>{
-        const {scope} = proc;
-        scope===GM.SELF && procs.self.push(proc)
-    });
-}
-
-function _modsFromActives(actives, mods)
-{
-    for(let proc of actives)
-    {
-        proc.effects?.forEach((eff)=>{_calcMods(eff, mods);});   
-    }
-}
-
-function _modsFromPassiveSkills(skills, mods)
-{
-    for(const id in skills)
-    {
-        let sk = DB.skill(id);
-        if(sk.type === GM.PASSIVE)
-        {
-            sk.effects?.forEach((eff)=>{_calcMods(eff, mods);});
-        }
-    }
-}
-
-function _modsFromUsingSkill(skill, mods)
-{
-    skill?.effects?.forEach((eff)=>{_calcMods(eff, mods);}); 
-}
-
-function _adjustBase(base, mods)
-{
-    for (const [k, v] of Object.entries(mods.basA)) {base[k] = (base[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.basM)) {base[k] = (base[k] || 0) * (1 + v);}
-}
-
-function _adjustDerived(total, mods)
-{
-    for (const [k, v] of Object.entries(mods.derA)) {total[k] = (total[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.derM)) {total[k] = (total[k] || 0) * (1 + v);}
-}
-
 function _getStats(base, mods, meta, effs)
 {
     // 1. adjust Base
@@ -318,49 +248,6 @@ export class COM_Stats extends Com
         dlog(T.NORMAL,bb.id)(mods, effs, stats);
         
         return stats;
-
-
-
-
-
-
-
-        // 2) 計算 [裝備] 加成
-        _modsFromEquips(bb.equips, mods, condition);
-
-        // 3) 取得 [裝備] procs
-        _procsFromEquips(bb.equips, procs, condition);
-
-        // 4) 計算 [技能] 加成
-        _modsFromPassiveSkills(bb.skills, mods);
-        _modsFromUsingSkill(skill, mods);
-        _procsFromUsingSkill(skill, procs);
-
-        // 5) 計算 [作用中效果] 的加成
-        _modsFromActives(this._actives, mods);
-
-        // 6) 修正 base
-        _adjustBase(base, mods);
-
-        // 7) 修正後的 base 推導 derived
-        const derived = _derivedStats(base, meta);
-
-        // 8) 合併：base 值優先，derived 補空位
-        const total = {...derived, ...base};
-        total.mods = mods.enemy;
-        total.procs = procs;
-
-        // 9) 修正 derived
-        _adjustDerived(total, mods);
-
-        // 10) 最後合併狀態，並確保當前生命值不超過最大值
-        this._states[GM.HP] = Math.min(total[GM.HPMAX], this._states[GM.HP]);
-        total.states = this._states;
-        
-        // 11) 儲存 local
-        this._total = total;
-        
-        return total;
     }
 
     _takeDamage(dmg, attacker)
@@ -393,49 +280,6 @@ export class COM_Stats extends Com
         emit(GM.EVT.DAMAGE);
         alive && this._states[GM.HP]<=0 && emit(GM.EVT.ONDEAD, attacker);
     }
-
-    // _addProcs(procs)
-    // {
-    //     this._actives.push({...procs,skip:true,remaining:procs.dur});
-    // }
-
-    // _processProcs()
-    // {
-    //     this._actives.forEach((proc)=>{
-    //         if(proc.skip) 
-    //         {
-    //             proc.skip=false; 
-    //             this._setDirty(); 
-    //             return;
-    //         }
-    //         if (proc.type === GM.DOT) 
-    //         {
-    //             let finalDamage = proc.value;
-    //             if (proc.elm) 
-    //             {
-    //                 const resist = this._total.resists?.[RESIST_MAP[proc.elm]] || 0;
-    //                 finalDamage *= 1 - resist;
-    //             }
-    //             this._takeDamage({amount:finalDamage});
-    //         }
-    //         else if (proc.type === GM.HOT) 
-    //         {
-    //             let finalHeal = proc.value;
-    //             this._heal(finalHeal);
-    //         }
-    //         proc.remaining -= 1;
-    //     });
-
-    //     // 移除過期效果
-    //     this._actives = this._actives.filter(proc => {
-    //         if (proc.remaining <= 0) {
-    //             dlog()(`${this.name} 的 ${proc.stat || proc.tag} ${proc.type} 效果結束`);
-    //             this._setDirty();
-    //             return false;
-    //         }
-    //         return true;
-    //     });
-    // }
 
     _addEffs(effs,scope,stage,ctx)
     {
@@ -707,7 +551,6 @@ export class COM_Stats extends Com
         this.addRt('actives');
         this.addBB('actives');
         this.addRt('isAlive', {get:()=>this._states[GM.HP]>0});
-        // root.addProcs = this._addProcs.bind(this);
         root.addEffs = this._addEffs.bind(this);
         root.takeDamage = this._takeDamage.bind(this);
         root.getTotalStats = this._getTotalStats.bind(this);

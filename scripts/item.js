@@ -2,7 +2,7 @@ import XLSX from 'xlsx';
 import { writeFileSync } from 'fs';
 
 const STR_COLS = new Set(['icon', 'cat']);
-const ARR_COLS = new Set(['effects', 'procs']);
+const ARR_COLS = new Set(['effects']);
 
 function sheetToJson(ws) {
   const allRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });

@@ -62,8 +62,10 @@
         "scope": "target",
         "type": "dot",
         "m": -0.1,
+        "elm": "fire",
         "dur": 3,
-        "id": "fire",
+        "id": "burn",
+        "stack": 3,
         "icon": "🔥"
       },
       {
@@ -85,17 +87,6 @@
         "dur": 3,
         "id": "strong",
         "icon": "💪"
-      }
-    ],
-    "procs": [
-      {
-        "cond": "attack",
-        "scope": "enemy",
-        "type": "dot",
-        "value": 2,
-        "dur": 3,
-        "icon": "icons:0",
-        "tag": "bleed"
       }
     ],
     "cat_sub": [

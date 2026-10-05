@@ -138,10 +138,11 @@ export default class UiInfo extends UiFrame
 
     addActive(elm)
     {
-        const eff = elm.dat;
-        const stack = elm.stack;
+        const layers = elm.layers;
+        const text = layers.length===1 ? Utility.fmt_Active(layers[0])
+                    : layers.map(eff=>`${Utility.fmt_Active(eff)}，剩[color=white]${eff.remaining}[/color]回合`).join('\n');
         ui.uDes.call(this,this.scene,{
-                    text:Utility.fmt_Active(eff, stack),
+                    text:text,
                     color:GM.COLOR.LIGHTGRAY})
         return this;
     }

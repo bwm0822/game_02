@@ -718,7 +718,7 @@ export class Effect extends Pic
 
         this._dat=eff;
         this._style=style;
-        this._stackCnt=1;
+        this._layers=[eff];
 
         this._remaining=uBbc.call(this,scene,{  
                                 text:`[stroke=#000]${eff.remaining}[/stroke]`,
@@ -736,8 +736,8 @@ export class Effect extends Pic
     } 
 
     get dat() {return this._dat;}
-    get stack() {return this._dat.stack===1 ? null : this._stackCnt;}
-    get tStack() {return this._dat.stack===1 ? '' : this._stackCnt+'x'}
+    get layers() {return this._layers;}
+    get tStack() {return this._dat.stack===1 ? '' : this._layers.length+'x'}
 
 
     addListener()
@@ -752,9 +752,10 @@ export class Effect extends Pic
 
     set(eff)
     {
-        this._stackCnt++;
+        this._layers.push(eff);
+        const remaining = Math.max(...this._layers.map(e=>e.remaining));
         this._stack.setText(`[stroke=#000]${this.tStack}[/stroke]`);
-        this._remaining.setText(`[stroke=#000]${eff.remaining}[/stroke]`);
+        this._remaining.setText(`[stroke=#000]${remaining}[/stroke]`);
     }
 
 }
