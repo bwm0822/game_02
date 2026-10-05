@@ -324,20 +324,10 @@ export class COM_Stats extends Com
                 return;
             }
         }
-        if(eff.stack)   // 有堆疊上限的效果，檢查目前已存在的同類效果數量
+        if(eff.stack && this._actives.filter(e=>e.id === eff.id).length >= eff.stack)
         {
-            const existing = this._actives.filter(e=>e.id === eff.id);
-            if(existing.length >= eff.stack)
-            {
-                // 超過堆疊上限，移除最早的效果
-                const idx = this._actives.findIndex(e=>e.id === eff.id);
-                if(idx!==-1)
-                {
-                    this._actives.splice(idx, 1);
-                    root.fxOff?.(eff.id);
-                    dlog(T.NPC,bb.id)(`${eff.id} 超過堆疊上限，移除最早的效果`);
-                }
-            }
+            dlog(T.NPC,bb.id)(`${eff.id} 已達堆疊上限，不加入`);
+            return;
         }
         this._actives.push(eff);
         root.fxOn?.(eff.id);   // 常駐特效(fx.json 依 id 查表)，持續到效果結束才消失
