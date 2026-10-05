@@ -4,7 +4,7 @@
 
 ## 1. 傷害公式（`src/core/combat.js`）
 
-`computeDamage(attacker, defender, skill={})` 是唯一的傷害計算入口：
+`computeDamage(attacker, defender, skill)` 是唯一的傷害計算入口（普攻時 `skill` 是 `undefined`，見 §6 武器攻擊 vs 施法）：
 
 ```js
 // 1. 命中/閃避判定（_checkHit）
@@ -181,6 +181,8 @@ else if(target && this._isInRange(target.pos))
 ## 6. 裝備數值（`public/assets/json/item.json`）
 
 武器（`cat:"CAT_WEAPON"`）的 `type`（`melee`/`ranged`）、`range`、`atk`、`effects`（`{type:"mod", key:"str", a:1}` 這種修正值陣列，餵給 `com_stats.js` 的 `_metaOfEquips`/`_getMods`）目前是實際在跑的部分——現階段角色的戰鬥力主要由裝備決定，技能系統（除了 fireball/firewall）幾乎不影響數值。
+
+**武器攻擊 vs 施法**：武器 `effects` 裡帶 `stage` 的效果（`atk` 的命中/閃避修正、`hit` 的附加 debuff/DOT/吸血/自我 buff）只在「武器攻擊」時生效——普攻（`computeDamage` 的 `skill` 為 `undefined`）或技能有 `weapon:true`（填在 `ability.xlsx` 的 `meta`，目前 `slash`/`dash`/`whirlwind`/`snipe`）。其他技能算施法，這些效果由 `com_stats.js` 的 `_equipEffects()` 濾掉；武器上沒有 `stage` 的常駐 mod、非武器裝備的效果不受影響。`weapon` 跟 `reqClass` 是兩回事：`reqClass` 只管能不能用，新增武器技能要兩個都記得填。
 
 ## 7. `GM` 常數（`src/core/setting.js`）值得注意的地方
 

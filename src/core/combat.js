@@ -16,7 +16,7 @@ function _checkHit(aStats, dStats, skill)
     else if(rnd >= (acc-eva)) {return {amount:0, type:GM.EVA};}
 }
 
-export function computeDamage(attacker, defender, skill={}) 
+export function computeDamage(attacker, defender, skill)
 {
     const cond = skill?.type??'attack';
     const aStats = attacker.getTotalStats({stage:'atk', skill:skill});
@@ -35,7 +35,7 @@ export function computeDamage(attacker, defender, skill={})
     // 再對「總傷害」套用一次暴擊/浮動談差(不分屬性各自判定，符合單一攻擊的直覺)
     let type = GM.HIT;
     let damage = 0;
-    for(const hit of skill.hits ?? [{}])  // 沒有 hits 的技能(還沒補戰鬥數值的佔位技能)沿用舊行為：當作一筆預設物理成分
+    for(const hit of skill?.hits ?? [{}])  // 沒有 hits 的技能(還沒補戰鬥數值的佔位技能)沿用舊行為：當作一筆預設物理成分
     {
         const dmg = aStats[hit.src??GM.ATK] || 0;  // 基本攻擊
         const elm = hit.elm ?? GM.PHY;             // 攻擊屬性

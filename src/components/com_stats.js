@@ -101,6 +101,14 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
     return meta;
 }
 
+// 施法(技能沒設 weapon)時，武器身上帶 stage 的效果(atk 的命中修正、hit 的附加效果)不生效；普攻(沒有 skill)算武器攻擊
+function _equipEffects(dat, skill)
+{
+    const effects = dat?.effects ?? [];
+    if(dat?.cat!==GM.CAT.WEAPON || !skill || skill.weapon) {return effects;}
+    return effects.filter(eff=>!eff.stage);
+}
+
 function _getMods(bb, attacker, skill, stage)
 {
     const mods={ basA:{}, basM:{}, derA:{}, derM:{} }
@@ -111,7 +119,7 @@ function _getMods(bb, attacker, skill, stage)
         if(!eq) {return;}
         const dat = DB.item(eq.id??eq);
         dat?.mods?.forEach(eff=>_calcMods(eff, mods,{_scope:'self'}))
-        dat?.effects?.forEach(eff=>_calcMods(eff, mods, {_scope:'self', _stage:stage, _type:'mod'}));
+        _equipEffects(dat, skill).forEach(eff=>_calcMods(eff, mods, {_scope:'self', _stage:stage, _type:'mod'}));
     });
 
     // 2. from active effects
@@ -137,7 +145,7 @@ function _getEffs(bb, skill)
     bb.equips?.forEach(eq=>{
         if(!eq) {return;}
         const dat = DB.item(eq.id??eq);
-        dat?.effects?.forEach(eff=>effs.push(eff));
+        _equipEffects(dat, skill).forEach(eff=>effs.push(eff));
     });
 
     // from skill

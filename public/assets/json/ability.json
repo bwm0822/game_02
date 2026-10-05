@@ -67,6 +67,7 @@
     "mode": "active",
     "tag": "atk",
     "reqClass": "sword",
+    "weapon": true,
     "hits": [
       {
         "pow": 1.15,
@@ -93,6 +94,7 @@
     "mode": "active",
     "tag": "atk",
     "reqClass": "sword",
+    "weapon": true,
     "hits": [
       {
         "pow": 1.5,
@@ -124,6 +126,7 @@
       "dash"
     ],
     "reqClass": "sword",
+    "weapon": true,
     "range": 1,
     "cd": 3,
     "scope": "group",
@@ -202,6 +205,7 @@
     "mode": "active",
     "tag": "atk",
     "reqClass": "bow",
+    "weapon": true,
     "hits": [
       {
         "pow": 2.5,
