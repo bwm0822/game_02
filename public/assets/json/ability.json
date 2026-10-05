@@ -82,11 +82,11 @@
     },
     "tw": {
       "lab": "斬擊",
-      "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
+      "des": "基本橫劈，對前方弧形範圍造成 {#fmt} 點{#elm}傷害。{#formula}"
     },
     "us": {
       "lab": "Slash",
-      "des": "基本橫劈，對前方弧形範圍造成 115% 傷害。"
+      "des": "A basic horizontal cut, dealing {#fmt} {#elm} damage in an arc ahead.{#formula}"
     }
   },
   "dash": {
@@ -110,11 +110,11 @@
     },
     "tw": {
       "lab": "衝刺",
-      "des": "衝向敵人，造成 1.5 倍傷害並擊退 1 格。"
+      "des": "衝向敵人，造成 {#fmt} 點{#elm}傷害並擊退 {#knock} 格。{#formula}"
     },
     "us": {
       "lab": "Dash",
-      "des": "Dash to an enemy, dealing 1.5x damage and knocking it back 1 tile."
+      "des": "Dash to an enemy, dealing {#fmt} {#elm} damage and knocking it back {#knock} tile(s).{#formula}"
     }
   },
   "whirlwind": {
@@ -163,11 +163,11 @@
     ],
     "tw": {
       "lab": "劍術專家",
-      "des": "精通劍術。裝備劍類武器時，命中+10%、攻擊力+10%。"
+      "des": "精通劍術。裝備劍類武器時，提升命中與攻擊力。"
     },
     "us": {
       "lab": "Sword Expertise",
-      "des": "Mastery of swordsmanship. +10% accuracy and +10% attack power while wielding a sword."
+      "des": "Mastery of swordsmanship. Boosts accuracy and attack power while wielding a sword."
     }
   },
   "swordmaster": {
