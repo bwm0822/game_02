@@ -320,11 +320,11 @@
     ],
     "tw": {
       "lab": "火球術",
-      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害({#formula})。"
+      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}"
     },
     "us": {
       "lab": "Fireball",
-      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害({#formula})。"
+      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}"
     }
   },
   "firewall": {
@@ -454,11 +454,11 @@
     ],
     "tw": {
       "lab": "高級火球術",
-      "des": "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害({#formula})。"
+      "des": "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害。{#formula}"
     },
     "us": {
       "lab": "Greater Fireball",
-      "des": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each ({#formula})."
+      "des": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each.{#formula}"
     }
   },
   "combustion": {
@@ -499,11 +499,11 @@
     ],
     "tw": {
       "lab": "燃燒術",
-      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害({#formula})。"
+      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}"
     },
     "us": {
       "lab": "Combustion",
-      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害({#formula})。"
+      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}"
     }
   },
   "meteorshower": {
@@ -564,11 +564,11 @@
     ],
     "tw": {
       "lab": "流星雨",
-      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害({#formula0})及 {#fmt1} 點{#elm1}傷害({#formula1})，摧毀範圍內一切。"
+      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}"
     },
     "us": {
       "lab": "Meteor Shower",
-      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害({#formula0})及 {#fmt1} 點{#elm1}傷害({#formula1})，摧毀範圍內一切。"
+      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}"
     }
   },
   "icebolt": {

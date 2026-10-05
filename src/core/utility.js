@@ -333,6 +333,11 @@ export default class Utility
         return idx===0 ? dat : {};
     }
 
+    static _chip(text)
+    {
+        return `[bgcolor=#99DDDD][color=black] ${text} [/color][/bgcolor]`;
+    }
+
     static fmt_Des(des, elm)
     {
         const val = (v)=>{return typeof v==='string' ? v.lab() : v;}
@@ -351,21 +356,18 @@ export default class Utility
                     if(!stats) {return '';}
                     const statKey = this._fmtSrcKey(elm.dat.tag, hit.src);
                     const value = Math.round((stats[statKey]||0) * pow + flat);
-                    return `[color=white]${value}[/color]`;
+                    return this._chip(value);
                 }
-                // 計算公式文字，例如「10+1.5×智慧」，省略沒作用的 +0 / ×1；運算符號用灰色，數值/屬性名用白色
+                // 自成一行的計算公式，例如「火焰 10+1.5×智慧」，省略沒作用的 +0 / ×1
                 case 'formula':
                 {
                     const hit = this._fmtHit(elm.dat, idx);
                     const {pow=1, flat=0} = hit;
                     const statKey = this._fmtSrcKey(elm.dat.tag, hit.src);
                     const parts = [];
-                    if(flat) {parts.push(`[color=white]${flat}[/color]`);}
-                    let powSrc = '';
-                    if(pow!==1) {powSrc += `[color=white]${pow}[/color][color=#AAAAAA]×[/color]`;}
-                    powSrc += `[color=white]${statKey.lab()}[/color]`;
-                    parts.push(powSrc);
-                    return parts.join('[color=#AAAAAA]+[/color]');
+                    if(flat) {parts.push(flat);}
+                    parts.push(pow!==1 ? `${pow}×${statKey.lab()}` : statKey.lab());
+                    return `\n${this._chip(`${(hit.elm ?? GM.PHY).lab()} ${parts.join('+')}`)}`;
                 }
                 // 該筆 hit 的傷害屬性，預設物理
                 case 'elm':
