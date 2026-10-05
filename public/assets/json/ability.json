@@ -219,11 +219,11 @@
     },
     "tw": {
       "lab": "狙擊",
-      "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
+      "des": "瞄準敵人的弱點射擊，造成 {#fmt} 點{#elm}傷害。{#formula}"
     },
     "us": {
       "lab": "Snipe",
-      "des": "瞄準敵人的弱點射擊，造成 250% 的傷害。"
+      "des": "Aims at an enemy's weak spot, dealing {#fmt} {#elm} damage.{#formula}"
     }
   },
   "archeryexpert": {
@@ -246,11 +246,11 @@
     ],
     "tw": {
       "lab": "弓箭專家",
-      "des": "精通弓術。裝備弓類武器時，命中+10%、攻擊力+10%。"
+      "des": "精通弓術。裝備弓類武器時，提升命中與攻擊力。"
     },
     "us": {
       "lab": "Archery Expertise",
-      "des": "Mastery of archery. +10% accuracy and +10% attack power while wielding a bow."
+      "des": "Mastery of archery. Boosts accuracy and attack power while wielding a bow."
     }
   },
   "archerymaster": {
