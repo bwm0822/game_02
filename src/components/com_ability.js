@@ -158,13 +158,8 @@ export class COM_Ability extends Com
     _previewTiles(tiles)
     {
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
-        const keys = new Set(tiles.map(t=>`${t.ox},${t.oy}`));
-        const has = (ox,oy) => keys.has(`${ox},${oy}`);
-        tiles.forEach(({ox,oy,x,y})=>{
-            Utility.drawBlock(this._previewGraphics, {
-                x:x-w_2, y:y-h_2, width:w, height:h,
-                l:!has(ox-1,oy), r:!has(ox+1,oy), t:!has(ox,oy-1), b:!has(ox,oy+1),
-            });
+        tiles.forEach(({x,y})=>{
+            Utility.drawBlock(this._previewGraphics, {x:x-w_2, y:y-h_2, width:w, height:h});
         });
     }
 
@@ -344,27 +339,14 @@ export class COM_Ability extends Com
         // SUMMON(火牆)跟 ZoneView 一致：不可生成的格子不畫
         const map = this.scene.map;
         const summon = this._ability.tag===GM.SUMMON;
-        const a = Array.from({ length: ph }, () => Array(pw));
         for(let xi=0; xi<pw; xi++)
         {
             for(let yi=0; yi<ph; yi++)
             {
                 const px = cx + (xs+xi)*w;
                 const py = cy + (ys+yi)*h;
-                const block = summon && !map.isOpenGround(...map.worldToTile(px,py));
-                a[yi][xi] = {x:px-w_2, y:py-h_2, width:w, height:h, block};
-            }
-        }
-        for(let xi=0; xi<pw; xi++)
-        {
-            for(let yi=0; yi<ph; yi++)
-            {
-                if(a[yi][xi].block) {continue;}
-                a[yi][xi].l = a[yi][xi-1]?.block===false ? false : true;
-                a[yi][xi].r = a[yi][xi+1]?.block===false ? false : true;
-                a[yi][xi].t = a[yi-1]?.[xi]?.block===false ? false : true;
-                a[yi][xi].b = a[yi+1]?.[xi]?.block===false ? false : true;
-                Utility.drawBlock(this._previewGraphics, a[yi][xi]);
+                if(summon && !map.isOpenGround(...map.worldToTile(px,py))) {continue;}
+                Utility.drawBlock(this._previewGraphics, {x:px-w_2, y:py-h_2, width:w, height:h});
             }
         }
     }
@@ -377,7 +359,7 @@ export class COM_Ability extends Com
         if(!landing) {this._highlight([]); return;}
         this._highlight([target]);
         const [h,w,h_2,w_2] = [GM.TILE_H, GM.TILE_W, GM.TILE_H/2, GM.TILE_W/2];
-        Utility.drawBlock(this._previewGraphics, {x:landing.x-w_2, y:landing.y-h_2, width:w, height:h, l:true, r:true, t:true, b:true});
+        Utility.drawBlock(this._previewGraphics, {x:landing.x-w_2, y:landing.y-h_2, width:w, height:h});
     }
 
     _roleAt(pos)

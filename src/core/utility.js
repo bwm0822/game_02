@@ -593,18 +593,13 @@ export default class Utility
         graphics.strokePoints(polygon.points, true);
     }
 
-    static drawBlock(graphics, rect)
+    // 每格各自內縮畫底色＋外框，格子之間留空隙
+    static drawBlock(graphics, {x, y, width, height})
     {
-        let [x,y,width,height] = [rect.x, rect.y, rect.width, rect.height];
-        let [l,r,t,b] = [rect.l, rect.r, rect.t, rect.b];
-        // graphics.clear();
-        graphics.fillStyle(0xffffff, 0.5);
-        graphics.fillRect(x, y, width, height);
-        graphics.lineStyle(2, 0xffffff);
-        if(l) {graphics.lineBetween(x, y, x, y+height);}
-        if(r) {graphics.lineBetween(x+width, y, x+width, y+height);}
-        if(t) {graphics.lineBetween(x, y, x+width, y);}
-        if(b) {graphics.lineBetween(x, y+height, x+width, y+height);}
+        graphics.fillStyle(0xffffff, 0.3)
+            .fillRect(x+2, y+2, width-4, height-4)
+            .lineStyle(2, 0xffffff, 0.8)
+            .strokeRect(x+2, y+2, width-4, height-4);
     }
 
     // AREA 技能的可點擊範圍：只畫外框虛線，不填滿(跟裡面跟著游標的爆炸預覽區分開)

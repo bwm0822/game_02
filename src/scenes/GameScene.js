@@ -15,7 +15,9 @@ import {MiniMap} from '../manager/minimap.js'
 import ScheduleManager from '../manager/schedule.js'
 import {Player} from '../roles/player.js'
 import Port from '../items/port.js'
+import Utility from '../core/utility.js'
 
+const PLACE_RANGE = 2;  // 放置範圍：玩家周圍 ±2 格(5x5)
 
 // 依當下時鐘小時決定環境光顏色（0~23 對應 lutAmbient 的 index）
 let lutAmbient = [
@@ -501,6 +503,7 @@ export class GameScene extends Scene
         if (pointer.rightButtonDown())
         {
             dlog(T.SCENE)('right');
+            if(Ui.mode===UI.MODE.PLACE) {this.exitPlaceMode();}
         }
         else if (pointer.middleButtonDown())
         {
@@ -541,8 +544,7 @@ export class GameScene extends Scene
         if(DEBUG.loc) {this.showMousePos();}
         if(Ui.mode===UI.MODE.PLACE)
         {
-            const pt = {x:pointer.worldX, y:pointer.worldY};
-            UiCursor.instance.setIcon(this.isPlaceable(pt) ? 'aim' : 'close');
+            this.previewPlace({x:pointer.worldX, y:pointer.worldY});
             return;
         }
         if(GM.player.sta===GM.ST.ABILITY)
@@ -610,6 +612,13 @@ export class GameScene extends Scene
     clearPath()
     {
         // console.log('clearpath')
+        // 放置模式下滑鼠移到 HUD 上：收起殘影、游標回來
+        if(Ui.mode===UI.MODE.PLACE)
+        {
+            this._placeGhost?.setVisible(false);
+            UiCursor.show();
+            return;
+        }
         GM.player?.hidePath();
         UiMark.close();
         UiCursor.set(); 
@@ -720,20 +729,48 @@ export class GameScene extends Scene
     enterPlaceMode(dat, ent)
     {
         GM.player.wake?.();
+        Ui.closeAll();
+        this.clearPath();
         this._placeData = {dat, ent};
         Ui.setMode(UI.MODE.PLACE);
-        UiCursor.instance.setIcon('aim');
+        UiCursor.hide();
         this._onPlaceEsc = ()=>{this.exitPlaceMode();};
         this.input.keyboard.on('keydown-ESC', this._onPlaceEsc);
+
+        this._placeRange = this.add.graphics().setDepth(1);
+        const [px, py] = this.map.worldToTile(GM.player.x, GM.player.y);
+        for(let ty=py-PLACE_RANGE; ty<=py+PLACE_RANGE; ty++)
+        {
+            for(let tx=px-PLACE_RANGE; tx<=px+PLACE_RANGE; tx++)
+            {
+                const {cx, cy} = this._tileCenter(tx, ty);
+                if(this.map.getWeight({x:cx, y:cy}) !== GM.W.EMPTY) {continue;}
+                const {tileWidth:w, tileHeight:h} = this.map.map;
+                Utility.drawBlock(this._placeRange, {x:cx-w/2, y:cy-h/2, width:w, height:h});
+            }
+        }
+
+        this._placeGhost = Map.classMap[dat.device.class]?.ghost(this, ent.content)
+            .setDepth(Infinity).setAlpha(0.5).setVisible(false);
     }
 
     exitPlaceMode()
     {
         this.input.keyboard.off('keydown-ESC', this._onPlaceEsc);
+        this._placeRange?.destroy();
+        this._placeGhost?.destroy();
         delete this._onPlaceEsc;
         delete this._placeData;
+        delete this._placeRange;
+        delete this._placeGhost;
         Ui.setMode(UI.MODE.NORMAL);
         UiCursor.set();
+    }
+
+    _tileCenter(tx, ty)
+    {
+        const m = this.map.map;
+        return {cx:m.tileToWorldX(tx)+m.tileWidth/2, cy:m.tileToWorldY(ty)+m.tileHeight/2};
     }
 
     isPlaceable(pt)
@@ -741,7 +778,17 @@ export class GameScene extends Scene
         if(this.map.getWeight(pt) !== GM.W.EMPTY) {return false;}
         const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
         const [px, py] = this.map.worldToTile(GM.player.x, GM.player.y);
-        return Math.abs(tx - px) <= 1 && Math.abs(ty - py) <= 1;
+        return Math.abs(tx - px) <= PLACE_RANGE && Math.abs(ty - py) <= PLACE_RANGE;
+    }
+
+    previewPlace(pt)
+    {
+        UiCursor.hide();
+        const ghost = this._placeGhost;
+        if(!ghost) {return;}
+        const {cx, cy} = this._tileCenter(...this.map.worldToTile(pt.x, pt.y));
+        const tint = this.isPlaceable(pt) ? 0xffffff : 0xff4040;
+        ghost.setPosition(cx, cy).setVisible(true).each(sp=>sp.setTint(tint));
     }
 
     doPlace(pt)
@@ -750,9 +797,7 @@ export class GameScene extends Scene
         const {dat, ent} = this._placeData;
         const cls = Map.classMap[dat.device.class];
         if(!cls) {return;}
-        const [tx, ty] = this.map.worldToTile(pt.x, pt.y);
-        const cx = this.map.map.tileToWorldX(tx) + this.map.map.tileWidth  / 2;
-        const cy = this.map.map.tileToWorldY(ty) + this.map.map.tileHeight / 2;
+        const {cx, cy} = this._tileCenter(...this.map.worldToTile(pt.x, pt.y));
         new cls(this, cx, cy).init_runtime(ent.content);
         ent.empty();
         Ui.refreshAll();

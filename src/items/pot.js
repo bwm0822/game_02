@@ -37,4 +37,10 @@ export default class Pot extends GameObject
     }
 
     save() {super.save({...this.pos, class:'pot', id:this._rtId});}
+
+    static ghost(scene, obj)
+    {
+        const {key, frame, wid, hei} = DB.item(obj.id).bb;
+        return scene.add.container(0, 0, [scene.add.image(0, 0, key, frame).setDisplaySize(wid, hei)]);
+    }
 }

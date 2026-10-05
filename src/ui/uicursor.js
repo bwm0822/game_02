@@ -116,6 +116,12 @@ export default class UiCursor extends Phaser.GameObjects.Container
 
     hide() {this._pic?.setVisible(false);}
 
+    show(key='none')
+    {
+        this._pic?.setVisible(true);
+        this.setIcon(key);
+    }
+
     static pos(x,y)
     {
         if(this.instance) {this.instance.pos(x,y);}
@@ -127,6 +133,8 @@ export default class UiCursor extends Phaser.GameObjects.Container
     }
 
     static hide() {this.instance?.hide();}
+
+    static show(key='none') {this.instance?.show(key);}
 
 
 }

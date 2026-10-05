@@ -74,4 +74,16 @@ export default class Dummy extends Role
     }
 
     save() {super.save({class:'dummy'});}
+
+    // 跟 RoleView._addPart 同樣的組法，view 會被 anchor 往回偏移，所以 y 要扣 anchor.y
+    static ghost(scene, obj)
+    {
+        const meta = DB.role(obj.id);
+        const sps = [meta.body, meta.head, meta.hand].filter(p=>p?.sprite).map(p=>{
+            const [key, frame] = p.sprite.split(':');
+            return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
+                .setScale(p.scale).setOrigin(0.5,1).setAngle(p.a??0);
+        });
+        return scene.add.container(0, 0, sps);
+    }
 }
