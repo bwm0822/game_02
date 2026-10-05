@@ -490,7 +490,7 @@ export class AbilitySlot extends Pic
 
     setBgColor(color) {this.getElement('background').fillColor = color;}
     setStrokeColor(color) {this.getElement('background').strokeColor = color;}
-    over() { this.scale=1.1;this.id && Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
+    over() { this.scale=1.1;this.id && !UiDragged.on && Ui.delayCall(()=>{UiInfo.show(UI.INFO.ABILITY.TB,this);}); } // 使用 delacyCall 延遲執行 UiInfo.show()}
     out() { this.scale=1;Ui.cancelDelayCall();UiInfo.close(); }
 
     leftButtonDown(x,y)
