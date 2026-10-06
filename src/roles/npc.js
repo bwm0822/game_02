@@ -52,12 +52,7 @@ export class Npc extends Role
     _remove()
     {
         this.unregTS();
-        if(this.bb.sta===GM.ST.DEATH)
-        {
-            // 死亡時，若是 schedule，則標記為 removed
-            if(this.bb.hasSchedule) {{this._saveData({removed:true})}}
-            this._leaveRemains();
-        }
+        if(this.bb.sta===GM.ST.DEATH) {this._leaveRemains();}
         
         super._remove();
     }
@@ -172,7 +167,7 @@ export class Npc extends Role
         if(this.isAlive&&!this.total.states.ctrl) {await this.think?.();}
         if(bb.sta===GM.ST.IDLE) {this.anim_idle?.(true);}
         emit(GM.EVT.TURNEND);
-        if(this._exiting) {this._remove();}
+        if(this._exiting) {this.save(); this._remove();}   // 走出地圖前先存(背包、好感度…)，不然離開期間的變動會遺失
     }
     
 }

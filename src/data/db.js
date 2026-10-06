@@ -26,6 +26,8 @@ export default class DB
         this._abTree = scene.cache.json.get('sk_tree');
 
         this._fxDB = scene.cache.json.get('fx');
+
+        this._navDB = scene.cache.json.get('navgraph');
     }
 
     static lut(key)
@@ -52,6 +54,8 @@ export default class DB
 
     static role(id) { return this._roleDB?.[id]; }
 
+    static roleIds() { return Object.keys(this._roleDB ?? {}); }
+
     static dialog(id) {return this._dialogDB?.[id]; }
 
     static quest(id) { return this._questDB?.[id]; }
@@ -60,10 +64,5 @@ export default class DB
 
     static fx(id) { return this._fxDB?.[id]; }
 
-    
-}
-
-export class Roles
-{
-    static list = ['musk','xi','macron','trump','karen','melanie'];
+    static navgraph() { return this._navDB; }
 }

@@ -339,7 +339,7 @@ export class GameScene extends Scene
 
     initSchedule()
     {
-        ScheduleManager.init(this, this.mapName);
+        ScheduleManager.init(this);
         TimeSystem.register(ScheduleManager.update.bind(ScheduleManager));
     }
 
