@@ -258,6 +258,10 @@ function main()
             if(sh.go==null) {continue;}
             const key = `${sh.map}:${sh.go}`;
             if(!nodes[key]) {console.warn(`WARN 角色 ${id} 的作息目的地 ${key} 不在路網裡`); warn++;}
+            for(const name of sh.route??[])
+            {
+                if(!nodes[`${sh.map}:${name}`]) {console.warn(`WARN 角色 ${id} 的巡邏路點 ${sh.map}:${name} 不在路網裡`); warn++;}
+            }
         }
     }
 

@@ -68,6 +68,10 @@ function checkSchedule(roles) {
     for (const sh of role.schedule ?? []) {
       const key = `${sh.map}:${sh.go}`;
       if (!nodes[key]) console.warn(`WARN 角色 ${id} 的作息目的地 ${key} 不在路網裡`);
+      if (sh.do === 'patrol' && !sh.route?.length) console.warn(`WARN 角色 ${id} 的巡邏沒有 route`);
+      for (const name of sh.route ?? []) {
+        if (!nodes[`${sh.map}:${name}`]) console.warn(`WARN 角色 ${id} 的巡邏路點 ${sh.map}:${name} 不在路網裡`);
+      }
     }
   }
 }

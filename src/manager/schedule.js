@@ -11,7 +11,7 @@ const mod = (m)=>((m % DAY) + DAY) % DAY;
 //--------------------------------------------------
 // 所有有作息 NPC 的「抽象狀態」(存在 Record.game.schedule[id])：
 //  { i:目前執行的作息, node:最後到達的節點, path:[剩下要經過的節點], eta:到達 path[0] 的時間,
-//    due:下一筆作息的出發時間, pos?:途中交棒的位置, t:最後處理的時間, dead? }
+//    due:下一筆作息的出發時間, at?:抵達目的地的時間(巡邏推算位置用), pos?:途中交棒的位置, t:最後處理的時間, dead? }
 // 時間都是絕對分鐘(TimeSystem.toTotalMinutes)
 // NPC 在玩家所在地圖有實體時，移動由實體(COM_Schedule)推進；沒有實體時由這裡依 eta 推進
 //--------------------------------------------------
@@ -75,6 +75,13 @@ export default class ScheduleManager
         const keys = sch.map(s=>`${s.map}:${s.go}`);
         const bad = keys.filter(k=>!NavGraph.has(k));
         if(bad.length) {console.warn(`[Schedule] ${id} 的作息目的地不在路網裡：${bad.join(', ')}`); return null;}
+        for(const s of sch.filter(s=>s.do==='patrol'))
+        {
+            const route = (s.route ?? []).map(name=>`${s.map}:${name}`);
+            if(!route.length) {console.warn(`[Schedule] ${id} 的巡邏沒有 route`); return null;}
+            const broken = route.filter((k,i)=>NavGraph.cost(k, route[(i+1)%route.length])===Infinity && k!==route[(i+1)%route.length]);
+            if(broken.length) {console.warn(`[Schedule] ${id} 的巡邏路點不在路網裡或走不到下一點：${broken.join(', ')}`); return null;}
+        }
 
         const plan = sch.map((s,i)=>{
             const arrive = s.t.startsWith('@');
@@ -125,6 +132,7 @@ export default class ScheduleManager
 
         const st = {i, node, path, eta:path.length ? t + NavGraph.cost(node, path[0]) : null,
                     due:depAt + this._gap(plan, i), t:now};
+        if(!path.length) {st.at = t;}
         if(old?.dead || Record.game.roles?.[id]?.removed) {st.dead = true;}   // removed 是舊版存檔的死亡標記
         dlog(T.SCH)(`[rebuild] ${id}`, st);
 
@@ -141,6 +149,7 @@ export default class ScheduleManager
         if(!r) {console.warn(`[Schedule] ${id} 從 ${st.node} 走不到 ${plan[st.i].key}，留在原地`);}
         st.path = r?.path ?? [];
         delete st.pos;
+        if(!st.path.length) {st.at = at;}
         st.eta = st.path.length ? at + NavGraph.cost(st.node, st.path[0]) : null;
         st.due = at + this._gap(plan, st.i);
         dlog(T.SCH)(`[depart] ${id} -> ${plan[st.i].key}`, st.path);
@@ -150,6 +159,7 @@ export default class ScheduleManager
     {
         st.node = st.path.shift();
         delete st.pos;
+        if(!st.path.length) {st.at = st.eta;}
         st.eta = st.path.length ? st.eta + NavGraph.cost(st.node, st.path[0]) : null;
     }
 
