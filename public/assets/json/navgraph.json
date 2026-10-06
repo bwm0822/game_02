@@ -1,0 +1,3161 @@
+{
+  "nodes": {
+    "m/m_04x05:karen-p1": {},
+    "m/m_04x05:xi-p1": {},
+    "m/m_04x05:karen-home": {},
+    "m/m_04x05:xi-home": {},
+    "m/m_04x05:macron-p1": {},
+    "m/m_04x05:musk-p1": {},
+    "m/m_04x05:musk-home": {},
+    "m/m_04x05:macron-home": {},
+    "m/m_04x05:trump-inn": {},
+    "m/m_04x05:house-01": {},
+    "m/m_04x05:house-02": {},
+    "m/m_04x05:house-03": {},
+    "m/m_04x05:house-04": {},
+    "m/m_04x05:house-09": {},
+    "m/m_04x05:house-05": {},
+    "m/m_04x05:house-06": {},
+    "m/m_04x05:house-07": {},
+    "m/m_04x05:house-08": {},
+    "m/m_04x05:house-12": {},
+    "m/m_04x05:house-11": {},
+    "m/m_04x05:house-10": {},
+    "m_04x05/karen-home:door": {},
+    "m_04x05/karen-home:bed": {},
+    "m_04x05/xi-home:bed": {},
+    "m_04x05/xi-home:door": {},
+    "m_04x05/musk-home:bed": {},
+    "m_04x05/musk-home:door": {},
+    "m_04x05/macron-home:bed": {},
+    "m_04x05/macron-home:door": {},
+    "m_04x05/trump-inn-f1:stair-up": {},
+    "m_04x05/trump-inn-f1:door": {},
+    "m_04x05/trump-inn-f1:trump-p1": {},
+    "m_04x05/trump-inn-f1:sit-1": {},
+    "m_04x05/trump-inn-f1:sit-2": {},
+    "m_04x05/trump-inn-f1:sit-3": {},
+    "m_04x05/trump-inn-f1:sit-4": {},
+    "m_04x05/trump-inn-f1:sit-5": {},
+    "m_04x05/trump-inn-f1:sit-6": {},
+    "m_04x05/trump-inn-f1:sit-7": {},
+    "m_04x05/trump-inn-f1:sit-8": {},
+    "m_04x05/trump-inn-f1:melanie-p1": {},
+    "m_04x05/house-01:door": {},
+    "m_04x05/house-02:door": {},
+    "m_04x05/house-03:door": {},
+    "m_04x05/house-04:door": {},
+    "m_04x05/house-09:door": {},
+    "m_04x05/house-05:door": {},
+    "m_04x05/house-06:door": {},
+    "m_04x05/house-07:door": {},
+    "m_04x05/house-08:door": {},
+    "m_04x05/house-12:door": {},
+    "m_04x05/house-11:door": {},
+    "m_04x05/house-10:door": {},
+    "m_04x05/trump-inn-f2:stair-dn": {},
+    "m_04x05/trump-inn-f2:bed": {}
+  },
+  "edges": {
+    "m/m_04x05:karen-home": [
+      {
+        "to": "m_04x05/karen-home:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 28,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:xi-home": [
+      {
+        "to": "m_04x05/xi-home:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 28,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:musk-home": [
+      {
+        "to": "m_04x05/musk-home:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:macron-home": [
+      {
+        "to": "m_04x05/macron-home:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:trump-inn": [
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 19,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-01": [
+      {
+        "to": "m_04x05/house-01:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 21,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-02": [
+      {
+        "to": "m_04x05/house-02:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 34,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 32,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-03": [
+      {
+        "to": "m_04x05/house-03:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 26,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-04": [
+      {
+        "to": "m_04x05/house-04:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 37,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 36,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-09": [
+      {
+        "to": "m_04x05/house-09:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 34,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 37,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 40,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 16,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-05": [
+      {
+        "to": "m_04x05/house-05:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 37,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 35,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-06": [
+      {
+        "to": "m_04x05/house-06:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 33,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-07": [
+      {
+        "to": "m_04x05/house-07:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 40,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 34,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 38,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-08": [
+      {
+        "to": "m_04x05/house-08:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 24,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-12": [
+      {
+        "to": "m_04x05/house-12:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 34,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-11": [
+      {
+        "to": "m_04x05/house-11:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 37,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:house-10": [
+      {
+        "to": "m_04x05/house-10:door",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 28,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 32,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:karen-p1": [
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 23,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:xi-p1": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 23,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:macron-p1": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 14,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:musk-p1": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 23,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 13,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/karen-home:door": [
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/karen-home:bed",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/karen-home:bed": [
+      {
+        "to": "m_04x05/karen-home:door",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/xi-home:door": [
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/xi-home:bed",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/xi-home:bed": [
+      {
+        "to": "m_04x05/xi-home:door",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/musk-home:door": [
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/musk-home:bed",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/musk-home:bed": [
+      {
+        "to": "m_04x05/musk-home:door",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/macron-home:door": [
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/macron-home:bed",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/macron-home:bed": [
+      {
+        "to": "m_04x05/macron-home:door",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:stair-up": [
+      {
+        "to": "m_04x05/trump-inn-f2:stair-dn",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 10,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:door": [
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 5,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:trump-p1": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 7,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-1": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 5,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-2": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 7,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-3": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 10,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-4": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-5": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 5,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-6": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 7,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-7": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 10,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:sit-8": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 2,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:melanie-p1",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f1:melanie-p1": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:door",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:trump-p1",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-2",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-3",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-4",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-5",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-6",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-7",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/trump-inn-f1:sit-8",
+        "cost": 12,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/house-01:door": [
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-02:door": [
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-03:door": [
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-04:door": [
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-09:door": [
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-05:door": [
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-06:door": [
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-07:door": [
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-08:door": [
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-12:door": [
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-11:door": [
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/house-10:door": [
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 1,
+        "type": "port"
+      }
+    ],
+    "m_04x05/trump-inn-f2:stair-dn": [
+      {
+        "to": "m_04x05/trump-inn-f1:stair-up",
+        "cost": 1,
+        "type": "port"
+      },
+      {
+        "to": "m_04x05/trump-inn-f2:bed",
+        "cost": 18,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/trump-inn-f2:bed": [
+      {
+        "to": "m_04x05/trump-inn-f2:stair-dn",
+        "cost": 18,
+        "type": "walk"
+      }
+    ]
+  }
+}
