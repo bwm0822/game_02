@@ -524,6 +524,178 @@
       }
     ]
   },
+  "guard-1": {
+    "icon": "head-trump",
+    "job": "guard",
+    "gold": 50,
+    "style": "passive_fighter",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "rogue",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "inv": {
+      "equips": [
+        "sword_01",
+        "helmet_01",
+        "chest_01"
+      ]
+    },
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
+    },
+    "schedule": [
+      {
+        "t": "@08:00",
+        "go": "guard-p1",
+        "map": "m/m_04x05",
+        "do": "patrol",
+        "route": [
+          "guard-p1",
+          "guard-p2",
+          "guard-p3",
+          "guard-p2",
+          "guard-p4"
+        ],
+        "wait": 3
+      },
+      {
+        "t": "20:00",
+        "go": "sit-2",
+        "map": "m_04x05/trump-inn-f1"
+      },
+      {
+        "t": "21:02",
+        "go": "bed",
+        "map": "m_04x05/house-08"
+      },
+      {
+        "t": "05:41",
+        "go": "guard-room-p1",
+        "map": "m_04x05/house-08",
+        "do": "idle"
+      }
+    ]
+  },
+  "guard-2": {
+    "icon": "head-trump",
+    "job": "guard",
+    "gold": 50,
+    "style": "passive_fighter",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "rogue",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "inv": {
+      "equips": [
+        "sword_01",
+        "helmet_01",
+        "chest_01"
+      ]
+    },
+    "stats": {
+      "str": 10,
+      "dex": 10,
+      "con": 10,
+      "int": 10
+    },
+    "schedule": [
+      {
+        "t": "@20:00",
+        "go": "guard-p1",
+        "map": "m/m_04x05",
+        "do": "patrol",
+        "route": [
+          "guard-p1",
+          "guard-p2",
+          "guard-p3",
+          "guard-p2",
+          "guard-p4"
+        ],
+        "wait": 3
+      },
+      {
+        "t": "08:00",
+        "go": "sit-4",
+        "map": "m_04x05/trump-inn-f1"
+      },
+      {
+        "t": "09:07",
+        "go": "bed",
+        "map": "m_04x05/house-08"
+      },
+      {
+        "t": "17:51",
+        "go": "guard-room-p1",
+        "map": "m_04x05/house-08",
+        "do": "idle"
+      }
+    ]
+  },
   "rogue-1": {
     "icon": "head-trump",
     "job": "rogue",

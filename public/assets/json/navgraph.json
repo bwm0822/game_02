@@ -6,6 +6,10 @@
     "m/m_04x05:xi-home": {},
     "m/m_04x05:macron-p1": {},
     "m/m_04x05:musk-p1": {},
+    "m/m_04x05:guard-p1": {},
+    "m/m_04x05:guard-p2": {},
+    "m/m_04x05:guard-p3": {},
+    "m/m_04x05:guard-p4": {},
     "m/m_04x05:musk-home": {},
     "m/m_04x05:macron-home": {},
     "m/m_04x05:trump-inn": {},
@@ -49,6 +53,8 @@
     "m_04x05/house-05:door": {},
     "m_04x05/house-06:door": {},
     "m_04x05/house-07:door": {},
+    "m_04x05/house-08:bed": {},
+    "m_04x05/house-08:guard-room-p1": {},
     "m_04x05/house-08:door": {},
     "m_04x05/house-12:door": {},
     "m_04x05/house-11:door": {},
@@ -86,6 +92,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 11,
         "type": "walk"
       },
       {
@@ -193,6 +219,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 11,
         "type": "walk"
       },
       {
@@ -308,6 +354,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:macron-home",
         "cost": 11,
         "type": "walk"
@@ -412,6 +478,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 33,
         "type": "walk"
       },
       {
@@ -522,6 +608,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 23,
         "type": "walk"
@@ -626,6 +732,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 30,
         "type": "walk"
       },
       {
@@ -736,6 +862,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 33,
         "type": "walk"
@@ -840,6 +986,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 22,
         "type": "walk"
       },
       {
@@ -950,6 +1116,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 39,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 27,
         "type": "walk"
@@ -1054,6 +1240,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 41,
         "type": "walk"
       },
       {
@@ -1164,6 +1370,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 25,
         "type": "walk"
@@ -1268,6 +1494,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 7,
         "type": "walk"
       },
       {
@@ -1378,6 +1624,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 41,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 28,
         "type": "walk"
@@ -1482,6 +1748,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 16,
         "type": "walk"
       },
       {
@@ -1592,6 +1878,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 6,
         "type": "walk"
@@ -1696,6 +2002,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 40,
         "type": "walk"
       },
       {
@@ -1806,6 +2132,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 39,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 12,
         "type": "walk"
@@ -1900,6 +2246,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 16,
         "type": "walk"
       },
       {
@@ -2005,6 +2371,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 16,
         "type": "walk"
@@ -2104,6 +2490,26 @@
       {
         "to": "m/m_04x05:musk-p1",
         "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 25,
         "type": "walk"
       },
       {
@@ -2209,6 +2615,26 @@
         "type": "walk"
       },
       {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
         "to": "m/m_04x05:musk-home",
         "cost": 6,
         "type": "walk"
@@ -2281,6 +2707,494 @@
       {
         "to": "m/m_04x05:house-10",
         "cost": 13,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:guard-p1": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 8,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 15,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 18,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:guard-p2": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 10,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 12,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 13,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 5,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 14,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 18,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 19,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:guard-p3": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 17,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p4",
+        "cost": 42,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 24,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 35,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 29,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 39,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 9,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 38,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 41,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 27,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 19,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 8,
+        "type": "walk"
+      }
+    ],
+    "m/m_04x05:guard-p4": [
+      {
+        "to": "m/m_04x05:karen-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-p1",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:karen-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:xi-home",
+        "cost": 11,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-p1",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-p1",
+        "cost": 26,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p1",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p2",
+        "cost": 20,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:guard-p3",
+        "cost": 42,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:musk-home",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:macron-home",
+        "cost": 33,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:trump-inn",
+        "cost": 21,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-01",
+        "cost": 30,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-02",
+        "cost": 31,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-03",
+        "cost": 22,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-04",
+        "cost": 25,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-09",
+        "cost": 41,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-05",
+        "cost": 4,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-06",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-07",
+        "cost": 7,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-08",
+        "cost": 16,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-12",
+        "cost": 36,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-11",
+        "cost": 40,
+        "type": "walk"
+      },
+      {
+        "to": "m/m_04x05:house-10",
+        "cost": 39,
         "type": "walk"
       }
     ],
@@ -3115,6 +4029,40 @@
         "to": "m/m_04x05:house-08",
         "cost": 1,
         "type": "port"
+      },
+      {
+        "to": "m_04x05/house-08:bed",
+        "cost": 6,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/house-08:guard-room-p1",
+        "cost": 5,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/house-08:bed": [
+      {
+        "to": "m_04x05/house-08:guard-room-p1",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/house-08:door",
+        "cost": 6,
+        "type": "walk"
+      }
+    ],
+    "m_04x05/house-08:guard-room-p1": [
+      {
+        "to": "m_04x05/house-08:bed",
+        "cost": 3,
+        "type": "walk"
+      },
+      {
+        "to": "m_04x05/house-08:door",
+        "cost": 5,
+        "type": "walk"
       }
     ],
     "m_04x05/house-12:door": [

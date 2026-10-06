@@ -263,7 +263,51 @@
                  "width":32,
                  "x":1408,
                  "y":1824
-                }, 
+                },
+                {
+                 "height":32,
+                 "id":177,
+                 "name":"guard-p1",
+                 "rotation":0,
+                 "type":"point",
+                 "visible":true,
+                 "width":32,
+                 "x":1568,
+                 "y":2112
+                },
+                {
+                 "height":32,
+                 "id":178,
+                 "name":"guard-p2",
+                 "rotation":0,
+                 "type":"point",
+                 "visible":true,
+                 "width":32,
+                 "x":1600,
+                 "y":1440
+                },
+                {
+                 "height":32,
+                 "id":179,
+                 "name":"guard-p3",
+                 "rotation":0,
+                 "type":"point",
+                 "visible":true,
+                 "width":32,
+                 "x":896,
+                 "y":1408
+                },
+                {
+                 "height":32,
+                 "id":180,
+                 "name":"guard-p4",
+                 "rotation":0,
+                 "type":"point",
+                 "visible":true,
+                 "width":32,
+                 "x":2240,
+                 "y":1664
+                },
                 {
                  "id":13,
                  "name":"musk-home",
@@ -642,7 +686,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":176,
+ "nextobjectid":181,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
