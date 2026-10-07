@@ -85,8 +85,10 @@ export class BehAttack extends Behavior
         else
         {
             root.findPath?.({ent:t})
-            if(root.checkPath?.()===false) {root.findPath?.({ent:t});}
-            const ok = await root.move?.();
+            // 找不到路就原地盯著，下回合再判斷；路徑要清掉，不然 Schedule 會拿這個沒有 pts 的 path 去 move
+            if(bb.path?.state===GM.PATH.NONE) {root.clearPath?.(); return { ok:true, note:'unreachable' };}
+            await root.move?.();
+            if(bb.cACT.st==='blocked') {await this._onBlocked(ctx);}
             return { ok:true, note:'chase' };
         }
     }

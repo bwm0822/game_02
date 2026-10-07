@@ -1,4 +1,4 @@
-
+import {GM} from '../../core/setting.js'
 
 // --- 行為介面 ---
 export default class Behavior 
@@ -29,5 +29,13 @@ export default class Behavior
     {
         this.lastUsedTick = ctx.tick;
         // 若你想把 minInterval 寫進 Cooldown，可用：ctx.cd.set(this.coolKey, this.minInterval);
+    }
+
+    // move() 回傳 blocked 後呼叫：人類會開門(其他障礙物下回合重新找路)；回傳 true 代表是動物被門擋住、過不去
+    async _onBlocked(ctx)
+    {
+        const {bb,root,probe} = ctx;
+        if(!bb.meta.animal) {await root.checkBlock?.(); return false;}
+        return probe(bb.path.pts[0])?.tag===GM.TP.DOOR;
     }
 }

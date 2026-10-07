@@ -1,4 +1,5 @@
 import Behavior from './behavior.js'
+import {GM} from '../../core/setting.js'
 import {T,dlog} from '../../core/debug.js'
 
 // --- 具體行為：追蹤到最後已知位置 ---
@@ -22,18 +23,24 @@ export class BehInvestigate extends Behavior
         if (!pos) return { ok: false, note: 'no pos' };
 
         root.findPath?.({ep: pos});
-        if (root.checkPath?.() === false) { root.findPath?.({ep: pos}); }
+        if (bb.path?.state === GM.PATH.NONE) { return this._giveUp(ctx, 'unreachable'); }
 
         await root.move?.();
 
-        if (bb.cACT.st === 'reach')
-        {
-            bb.lastKnownPos = null;
-            root.clearPath?.();
-            dlog(T.AI, bb.id)('[INVESTIGATE] reached last known pos, giving up');
-        }
+        if (bb.cACT.st === 'reach') { return this._giveUp(ctx, 'reached last known pos'); }
+        if (bb.cACT.st === 'blocked' && await this._onBlocked(ctx)) { return this._giveUp(ctx, 'blocked by door'); }
 
         this._commitUse(ctx);
         return { ok: true, note: 'investigate' };
+    }
+
+    _giveUp(ctx, why)
+    {
+        const {bb, root} = ctx;
+        bb.lastKnownPos = null;
+        root.clearPath?.();
+        dlog(T.AI, bb.id)(`[INVESTIGATE] ${why}, giving up`);
+        this._commitUse(ctx);
+        return { ok: true, note: `investigate: ${why}` };
     }
 }

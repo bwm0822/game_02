@@ -886,6 +886,7 @@
     "meat": "raw_meat",
     "skin": "plet",
     "style": "aggressive",
+    "animal": true,
     "faceR": false,
     "anchor": {
       "x": -16,
@@ -940,6 +941,7 @@
     "icon": "animals:82",
     "meat": "raw_meat",
     "style": "skittish",
+    "animal": true,
     "faceR": false,
     "anchor": {
       "x": -16,
