@@ -453,8 +453,6 @@ export class GameObject extends Phaser.GameObjects.Container
         if(this._isRemoved()) { return false; }
         else
         {
-            if(DEBUG.rect) {this.debugDraw();}
-
             this._processBB();      // 處理傳遞給 GameObject 的參數            
             this._addToList();      // 加入 List
 

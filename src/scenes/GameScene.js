@@ -254,6 +254,7 @@ export class GameScene extends Scene
         this.createRuntime();
         this.setPosition(Player);
         this.initSchedule();
+        this.dbgRect();
         this.processInput();
 
         AudioManager.init(this);
@@ -541,7 +542,7 @@ export class GameScene extends Scene
             return;
         }
 
-        if(DEBUG.loc) {this.showMousePos();}
+        if(DEBUG.enable&&DEBUG.loc) {this.showMousePos();}
         if(Ui.mode===UI.MODE.PLACE)
         {
             this.previewPlace({x:pointer.worldX, y:pointer.worldY});
@@ -718,6 +719,13 @@ export class GameScene extends Scene
         Object.values(this.gos).forEach(go=>{go.debugDraw({clr:!DEBUG.rect})})
     }
 
+    dbgRefresh()
+    {
+        this.dbgRect();
+        this.npcPath(DEBUG.enable&&DEBUG.path);
+        if(!(DEBUG.enable&&DEBUG.loc)) {this._dbgPos?.setText('');}
+    }
+
     fill()
     {
         Ui.on(UI.TAG.INV,GM.player,[{p:GM.CAPACITY}]);
@@ -845,8 +853,7 @@ export class GameScene extends Scene
             .off('clearpath').on('clearpath',()=>{this.clearPath();})
             .off('setWeight').on('setWeight',(p,weight)=>{this.map.setWeight(p,weight)})
             .off('log').on('log',()=>{this.log();})
-            .off('dbgRect').on('dbgRect',()=>{this.dbgRect();})
-            .off('npcPath').on('npcPath',(on)=>{this.npcPath(on);})
+            .off('dbgRefresh').on('dbgRefresh',()=>{this.dbgRefresh();})
 
     }
 

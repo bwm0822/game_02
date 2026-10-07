@@ -9,7 +9,13 @@ const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
 {
-    if(!DEBUG.enable) { return; }
+    if(!DEBUG.enable)
+    {
+        this._dbgGraphics?.clear();
+        if(this._dbgText) {this._dbgText.text='';}
+        if(this._dbgPos) {this._dbgPos.text='';}
+        return;
+    }
 
     if(!this._dbgGraphics)
     {

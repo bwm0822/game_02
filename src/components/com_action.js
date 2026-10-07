@@ -239,7 +239,7 @@ export class COM_Action extends Com
             root.clearPath?.();
             bb.cACT.st='stopped';
             if(root.isPlayer) {root.updatePath?.();}
-            else if(DEBUG.path) {root.updateDebugPath?.();}
+            else if(DEBUG.enable&&DEBUG.path) {root.updateDebugPath?.();}
             return;
         }
 
@@ -290,7 +290,7 @@ export class COM_Action extends Com
         }
 
         if(root.isPlayer) {root.updatePath?.();}
-        else if(DEBUG.path) {root.updateDebugPath?.();}
+        else if(DEBUG.enable&&DEBUG.path) {root.updateDebugPath?.();}
     }
 
     async _attack(targets, ability)
@@ -405,7 +405,7 @@ export class COM_Action extends Com
         const np = fpt(pos);
         if(np) {await this._moveTo(np);}
         else {root.speak?.('不要殺我!!!');}
-        if(DEBUG.path) {root.updateDebugPath?.();}
+        if(DEBUG.enable&&DEBUG.path) {root.updateDebugPath?.();}
     }
 
     //------------------------------------------------------

@@ -269,11 +269,12 @@ export default class UiDebuger extends UiFrame
 
         this._page.clearAll();
 
-        this.addRow(CHK('除錯', DEBUG, 'enable'),
+        const refresh = ()=>{this.send('dbgRefresh')};
+        this.addRow(CHK('除錯', DEBUG, 'enable', refresh),
                     DD('模式', DEBUG, 'mode', options_mode,{multi:true}))
-            .addElm(CHK('座標', DEBUG, 'loc'))
-            .addElm(CHK('邊框', DEBUG, 'rect', ()=>{this.send('dbgRect')}))
-            .addElm(CHK('路徑', DEBUG, 'path', (on)=>{this.send('npcPath',on)}))
+            .addElm(CHK('座標', DEBUG, 'loc', refresh))
+            .addElm(CHK('邊框', DEBUG, 'rect', refresh))
+            .addElm(CHK('路徑', DEBUG, 'path', refresh))
             // .addRow(CHK('log', DEBUG, 'log'), IN(this.setFilter.bind(this)))
             .addRow(CHK('log', DEBUG, 'log'), 
                     DD('標籤', DEBUG, 'tag', options_tag,{multi:true}),
