@@ -3,16 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m_04x05/trump-inn-f2.json",
+    "activeFile": "public/assets/maps/m/m_04x05.json",
     "expandedProjectPaths": [
+        "public",
+        ".",
+        "public/assets",
+        "public/assets/maps/m_04x05",
+        "public/assets/maps",
         "public/assets/maps/m/m_04x05",
         "public/assets/tiles",
-        "public/assets/maps/m",
-        "public/assets/maps",
-        "public/assets/maps/m_04x05",
-        "public/assets",
-        "public",
-        "."
+        "public/assets/maps/m"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -364,8 +364,8 @@
             "scale": 0.125,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1596,
-                "y": 1592
+                "x": 1600,
+                "y": 1596
             }
         },
         "public/assets/maps/m/m_04x05.json": {
@@ -373,11 +373,11 @@
                 5,
                 3
             ],
-            "scale": 1,
-            "selectedLayer": 2,
+            "scale": 0.75,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 873.5,
-                "y": 2028
+                "x": 1936,
+                "y": 2293.333333333333
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -526,8 +526,8 @@
             "scale": 1.1518749999999998,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 145.41508410200763,
-                "y": 239.60933260987528
+                "x": 239.60933260987525,
+                "y": 240.04340748779168
             }
         },
         "public/assets/maps/m_04x05/trump-inn-f2.json#tiles": {
@@ -938,9 +938,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/m/m_04x05.json",
-        "public/assets/maps/m/m_03x05.json",
         "public/assets/maps/m_04x05/trump-inn-f2.json",
+        "public/assets/maps/m/m_03x05.json",
+        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m_04x05/house-01.json",
         "public/assets/maps/m_04x05/trump-inn-f1.json",
         "public/assets/maps/village-01.json",
