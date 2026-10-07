@@ -61,6 +61,7 @@
     "job": "innkeeper",
     "gold": 200,
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -131,6 +132,7 @@
     "gold": 200,
     "style": "passive_coward",
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -203,6 +205,7 @@
     "gold": 200,
     "weapon": "sword_01",
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -293,6 +296,7 @@
     "gold": 200,
     "style": "weak",
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -367,6 +371,7 @@
     ],
     "meat": "raw_meat",
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -448,6 +453,7 @@
     "job": "merchant",
     "gold": 200,
     "trade": true,
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -529,6 +535,7 @@
     "job": "guard",
     "gold": 50,
     "style": "passive_fighter",
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,
@@ -615,6 +622,7 @@
     "job": "guard",
     "gold": 50,
     "style": "passive_fighter",
+    "unique": true,
     "faceR": true,
     "anchor": {
       "x": 0,

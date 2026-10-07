@@ -1,0 +1,64 @@
+{
+  "qualities": {
+    "好感": {
+      "scope": "npc",
+      "default": 50,
+      "show": true,
+      "label": "好感度"
+    },
+    "QK01_s01": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QK01_s01"
+    },
+    "QK01_s01_done": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QK01_s01_done"
+    },
+    "QK01_map": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QK01_map"
+    },
+    "QX01_s03": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QX01_s03"
+    },
+    "QX01_s03_done": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QX01_s03_done"
+    },
+    "QX01_map": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QX01_map"
+    },
+    "QX02_s01": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QX02_s01"
+    },
+    "QX02_s01_done": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "QX02_s01_done"
+    },
+    "quest_done": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "quest_done"
+    }
+  }
+}
