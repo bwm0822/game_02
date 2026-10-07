@@ -127,16 +127,21 @@ export class COM_Sense extends Com
         if(on === !!this._dbgGfx) {return;}
         if(on)
         {
-            this._dbgGfx = this.scene.add.graphics().setDepth(Infinity);
+            this._dbgScene = this.scene;
+            this._dbgGfx = this._dbgScene.add.graphics().setDepth(Infinity);
             this._dbgKey = null;
             this._dbgUpdate = this._drawDbg.bind(this);
-            this.scene.events.on('update', this._dbgUpdate);
+            this._dbgOff = () => this._setDbg(false);
+            this._dbgScene.events.on('update', this._dbgUpdate);
+            // 場景關閉時 Phaser 直接 destroy root、不會走 rmCom/unbind，要自己收掉 update listener
+            this._dbgScene.events.once('shutdown', this._dbgOff);
         }
         else
         {
-            this.scene?.events.off('update', this._dbgUpdate);
+            this._dbgScene.events.off('update', this._dbgUpdate);
+            this._dbgScene.events.off('shutdown', this._dbgOff);
             this._dbgGfx.destroy();
-            this._dbgGfx = null;
+            this._dbgGfx = this._dbgScene = null;
         }
     }
 
