@@ -69,8 +69,14 @@ export class COM_Sense extends Com
             return null;
         }
 
-        const see = checkBB(root, player, maxTiles) && this._canSee(player);
+        const inSight = checkBB(root, player, maxTiles);
         const hear = checkBB(root, player, hearTiles);
+        let see = inSight && this._canSee(player);
+        if(hear && !see)
+        {
+            root.face?.(player.pos);
+            see = inSight && this._canSee(player);
+        }
         const sensed = see || hear;
         this._see = see;
         this._hear = hear;
