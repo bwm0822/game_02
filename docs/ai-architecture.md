@@ -37,7 +37,8 @@ Npc.process()                       src/roles/npc.js
 
 | 欄位 | 誰寫 | 誰讀 |
 |---|---|---|
-| `sensePlayer` | `COM_Sense._sensePlayer()`（範圍 8 格＋視線；睡覺時 null） | Flee / Attack / Investigate |
+| `sensePlayer` | `COM_Sense._sensePlayer()`（看到或聽到；睡覺時 null，見 §3.1） | Flee / Attack / Investigate |
+| `seePlayer` | `COM_AI._updateBB()`：`sensePlayer` 而且 `canSee()`（只聽到時是 false） | 目前沒人讀 |
 | `lastKnownPos` | Attack.act 寫入；Investigate 放棄時清掉 | Investigate |
 | `idleCnt` | Flee / Attack 設成 5，Respond 抵達時設成 3；Idle.score 每次被評分就減 1 | Idle |
 | `beh` | `COM_AI._think()`：這回合選到的行為名稱（`SCHEDULE`/`ATTACK`…），還沒想過是 undefined | `COM_Alarm` |
@@ -45,6 +46,14 @@ Npc.process()                       src/roles/npc.js
 | `go` | `COM_Schedule`；Attack 失去目標時清掉 | Schedule |
 | `path` | `COM_Nav.findPath()` | `COM_Action.move()` |
 | `cACT.st` | `COM_Action.move()`：`reach`/`moving`/`blocked`/`stopped` | 各行為 |
+
+### 3.1 感知（`COM_Sense`）
+
+- **看**（`canSee()`）：`senseBB` 方框 8 格內 ＋ 不在死角 ＋ `map.los()`（牆擋、角色不擋）。跳 `👁️‍🗨️`
+- **死角**：角色只有左右兩個面向（`root.faceDir()`：`View` 提供，+1 右 / −1 左），正背後 ±60 度看不到（跟面向夾角 > 120 度）。同一格、或沒有 `View` 的物件不算死角
+- **聽**：2 格內（`hearTiles`）不管方向、可以穿牆。跳 `‼️`
+- 圖示只有對玩家好感度 ≤ `HATE` 才跳；`COM_Alarm.witness()` 也走 `canSee()`，所以背對著的人不算目擊
+- **除錯顯示**：debug 模式（`DEBUG.enable`）下右鍵 NPC，選單最下面有「感知除錯」勾選（`root.dbgSense(on)`）。實心格子 = 看得到的格子（範圍＋死角＋視線），方框 = 聽覺範圍；這回合有看到／聽到玩家就變紅色，不然是灰色。NPC 換格子、轉向或每次 `sensePlayer()` 後才重畫
 
 ## 4. 跟作息的交接
 
@@ -70,12 +79,12 @@ Npc.process()                       src/roles/npc.js
 
 ## 6. 呼救與目擊（`COM_Alarm`）
 
-只掛在人類 NPC（`npc.js` 用 `enable:!bb.meta.animal`），所以動物不會呼救、不會目擊、也不會回應。範圍都是 8 格（`senseBB` 方框）。
+只掛在人類 NPC（`npc.js` 用 `enable:!bb.meta.animal`），所以動物不會呼救、不會目擊、也不會回應。範圍都是 15 格（`senseBB` 方框）。
 
 受害者收到 `UNDERATK`、攻擊者是玩家時：
 1. 受害者對玩家好感度 ≤ `HATE` → 當作正當防衛，什麼都不做
-2. **目擊**：對 `scene.roles` 每個人呼叫 `witness()`；醒著、8 格內、看得到玩家的人 → 對玩家好感度 −45
-3. **呼救**：只有受害者 `bb.beh` 是 `SCHEDULE`（或 undefined）才喊（`root.speak()` 隨機台詞）；對每個人呼叫 `hearAlarm(受害者)`，8 格內（可穿牆）、`bb.beh` 不是 `ATTACK`/`FLEE`/`INVESTIGATE` 的人 → 睡著的先 `wake()`，設定 `bb.alarmPos`（新的蓋舊的），跳 `❗`。**聽到不扣好感度**，要到現場目擊才扣
+2. **目擊**：對 `scene.roles` 每個人呼叫 `witness()`；醒著、15 格內、看得到玩家（含死角判斷）的人 → 對玩家好感度 −45
+3. **呼救**：只有受害者 `bb.beh` 是 `SCHEDULE`（或 undefined）才喊（`root.speak()` 隨機台詞）；對每個人呼叫 `hearAlarm(受害者)`，15 格內（可穿牆）、`bb.beh` 不是 `ATTACK`/`FLEE`/`INVESTIGATE` 的人 → 睡著的先 `wake()`，設定 `bb.alarmPos`（新的蓋舊的），跳 `❗`。**聽到不扣好感度**，要到現場目擊才扣
 
 - `COM_Alarm` 必須在 `COM_Favor` **前面** `addCom`：兩者都聽 `UNDERATK`，正當防衛要讀 `COM_Favor` 扣 50 之前的好感度
 - `alarmPos`、`beh` 不存檔
@@ -84,6 +93,5 @@ Npc.process()                       src/roles/npc.js
 
 - `BehIdle.score()` 有副作用（`idleCnt--`），所以就算這回合贏的是別的行為，發呆次數也會被扣掉
 - `Cooldown`、`AI_CD`、`minInterval`、`StateMachine` 都沒接上：線上的行為沒呼叫 `_isOnCooldown()`，也沒有任何地方呼叫 `sm.set()`，所以 `canAct()` 永遠是 true
-- `bb.seePlayer` 多餘，因為 `sensePlayer` 預設已經檢查過視線
 - `com_ai.js` 的 `dlog(T.AI,bb,id)` 寫錯了（`id` 沒定義）。目前 Schedule 永遠拿 1 分，所以走不到這行
 - `ai_tmp.js`、`behtest.js`、`behchase.js` 沒在用

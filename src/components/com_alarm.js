@@ -2,7 +2,7 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 
-const RANGE = 8;            // 呼救/目擊範圍(格)
+const RANGE = 15;          // 呼救/目擊範圍(格)
 const WITNESS_FAV = -45;    // 目擊玩家攻擊人類時扣的好感度
 const SHOUTS = ['救命啊！', '來人啊！', '有人要殺我！'];
 const BUSY = ['ATTACK', 'FLEE', 'INVESTIGATE'];

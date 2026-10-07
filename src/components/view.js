@@ -1011,13 +1011,14 @@ export class RoleView extends View
         })
     }
 
+    _isFaceRight() {return (this._shape.scaleX < 0) !== this._faceR;}
+
     // 往背對攻擊者的方向倒(+1:頭朝右)；沒有攻擊者時往面向的反方向倒
     _fallDir(attacker)
     {
         const x = this.pos.x;
         if(attacker && attacker.pos.x !== x) {return attacker.pos.x < x ? 1 : -1;}
-        const faceRight = (this._shape.scaleX < 0) !== this._faceR;
-        return faceRight ? -1 : 1;
+        return this._isFaceRight() ? -1 : 1;
     }
 
     _tintDead(t)
@@ -1100,6 +1101,7 @@ export class RoleView extends View
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.face = this._faceTo.bind(this);
+        root.faceDir = ()=>this._shape ? (this._isFaceRight() ? 1 : -1) : 0;
         root.fadout = this._fadout.bind(this);
         root.waitDying = ()=>this._dying ?? Promise.resolve();
         root.hold = this._hold.bind(this);

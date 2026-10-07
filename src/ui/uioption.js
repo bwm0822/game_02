@@ -2,7 +2,7 @@
 import * as ui from './uicomponents.js'
 import Ui from './uicommon.js'
 import {GM,UI} from '../core/setting.js'
-import {T,dlog} from '../core/debug.js'
+import {T,dlog,DEBUG} from '../core/debug.js'
 
 import InventoryService from '../services/inventoryService.js'
 
@@ -66,6 +66,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.SPLIT, this.split.bind(this))
             .addItem(GM.OPENBAG, this.openbag.bind(this))
             .addItem(GM.PLACE, this.place.bind(this))
+            .addDbgSense()
             .setOrigin(0)
             .layout()
             .hide();
@@ -84,6 +85,20 @@ export default class UiOption extends UiFrame
                         ext:{expand:true}, 
                     })
         this._items[key] = item;
+        return this;
+    }
+
+    addDbgSense()
+    {
+        this._dbgSense = ui.uButton.call(this,this.scene,{
+                        style: UI.BTN.OPTION,
+                        text: '',
+                        ondown: ()=>{
+                            this.close();
+                            this.ent.dbgSense(!this.ent.dbgSense());
+                        },
+                        ext:{expand:true},
+                    })
         return this;
     }
 
@@ -211,6 +226,12 @@ export default class UiOption extends UiFrame
             dlog(T.UI)(k,v)
             this.checkItem(k,v);
         })
+
+        if(DEBUG.enable && ent?.dbgSense)
+        {
+            this._dbgSense.show().setText(`${ent.dbgSense() ? '☑' : '☐'} 感知除錯`);
+        }
+        else {this._dbgSense.hide();}
 
         // 設定位置，注意要在 layout() 之後再 setPosition()，否則會有 offset 的問題
         this.layout()
