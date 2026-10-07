@@ -11,6 +11,7 @@ import {COM_Trade} from '../components/com_trade.js'
 import {COM_Stats} from '../components/com_stats.js'
 import {COM_Sleep} from '../components/com_sleep.js'
 import {COM_Schedule} from '../components/com_schedule.js'
+import {COM_Alarm} from '../components/com_alarm.js'
 import {COM_Favor} from '../components/com_favor.js'
 import {COM_Ability} from '../components/com_ability.js'
 import {COM_Stolen} from '../components/com_stolen.js'
@@ -111,6 +112,7 @@ export class Npc extends Role
             .addCom(new COM_Trade(),{enable:bb.meta.trade===true})
             .addCom(new COM_Sleep())
             .addCom(new COM_Schedule())
+            .addCom(new COM_Alarm(),{enable:!bb.meta.animal})   // 要排在 COM_Favor 前面：UNDERATK 判斷正當防衛要讀扣分前的好感度
             .addCom(new COM_Favor())
             .addCom(new COM_Ability())
             .addCom(new COM_Stolen(),{enable:bb.meta.inv!==undefined})

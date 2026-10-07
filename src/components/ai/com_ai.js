@@ -7,6 +7,7 @@ import {BehFlee} from './behflee.js'
 import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
 import {BehInvestigate} from './behinvestigate.js'
+import {BehRespond} from './behrespond.js'
 import {GM} from '../../core/setting.js'
 import {T,dlog,dtable} from '../../core/debug.js'
 
@@ -124,6 +125,7 @@ export class COM_AI extends Com
             new BehFlee({weight:w.flee}),
             new BehAttack({weight:w.attack}),
             new BehInvestigate({weight:1.5}),
+            new BehRespond({weight:1.4}),
             new BehIdle({weight:w.idle}),
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
@@ -182,7 +184,7 @@ export class COM_AI extends Com
             return { ok:false, note:'idle' };
         }
 
-        // this.bb.intent = best.beh.name;
+        bb.beh = best.beh.name;
 
         // 執行
         const res = await best.beh.act(ctx);
