@@ -28,6 +28,8 @@ export default class DB
         this._fxDB = scene.cache.json.get('fx');
 
         this._navDB = scene.cache.json.get('navgraph');
+
+        this._storyDB = scene.cache.json.get('story');
     }
 
     static lut(key)
@@ -65,4 +67,6 @@ export default class DB
     static fx(id) { return this._fxDB?.[id]; }
 
     static navgraph() { return this._navDB; }
+
+    static qualities() { return this._storyDB?.qualities ?? {}; }
 }

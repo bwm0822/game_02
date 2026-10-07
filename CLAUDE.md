@@ -84,6 +84,7 @@ dist/           # 建置輸出（勿手動修改）
 - **檔案命名**：小寫無底線（`uiprofile.js`、`gameobject.js`）；UI 檔以 `ui` 開頭
 - **場景類別**：放於 `src/scenes/`，名稱以大寫字母開頭
 - **UI 類別**：放於 `src/ui/`，繼承自 `src/ui/uiframe.js` 的 `UiFrame` 基底類別（`uicommon.js` 的 `Ui` 是靜態全域註冊表，非繼承用基底類別）；修改或新增 UI 面板前請先參考 [docs/ui-architecture.md](docs/ui-architecture.md)
+- **Story（storylet + quality，取代 Quest/Dialog 中）**：劇情狀態統一存在 quality 庫（`src/systems/quality.js`，`Record.game.q`），條件／指令由 `src/systems/script.js` 共用；quality 名稱要先在 `xls/story.xlsx` 的 `qualities` sheet 宣告，`node scripts/story.js` 轉成 `story.json` 並檢查未宣告名稱；分 5 階段實作，修改任務、對話、好感度或劇情相關程式碼前請先參考 [docs/story-architecture.md](docs/story-architecture.md)
 - **Quest/Dialog**：資料為 `public/assets/json/quest.json`/`dialog.json`（由 `xls/quest.xlsx`/`xls/dialog.xlsx` 透過 `node scripts/quest.js`/`scripts/dialog.js` 產生，非 npm script）；對話元件為 `com_talk.js`（`COM_Talk`）；修改任務或對話前請先參考 [docs/quest-dialog-architecture.md](docs/quest-dialog-architecture.md)
 - **地圖邊界出口**：`public/assets/maps/main.world`（Tiled World 檔）定義地圖間的相對座標，`GameScene.js` 的 `_createEdgeExits()`/`_findAdjacentMap()` 依此在地圖邊界建立可點擊的 `Port` 出口物件（點擊觸發切換，不是自動偵測）；修改邊界轉場邏輯前請先參考 [docs/map-seamless-transition.md](docs/map-seamless-transition.md)
 - **總覽地圖（縮圖拼接）**：選單「地圖」頁籤（`PMap`）用 `scripts/minimap.js` 產生的各地圖縮圖，依 `main.world` 座標合成顯示（`MiniMap`），不是獨立設計的地圖；修改總覽地圖顯示或縮圖產生流程前請先參考 [docs/minimap-overview.md](docs/minimap-overview.md)

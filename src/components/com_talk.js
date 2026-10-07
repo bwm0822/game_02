@@ -1,8 +1,8 @@
 import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
-import QuestManager from '../manager/quest.js'
-import Record from '../infra/record.js'
+import Quality from '../systems/quality.js'
+import {exec, evalCond} from '../systems/script.js'
 const _tag = 'talk';
 
 //--------------------------------------------------
@@ -17,7 +17,6 @@ export class COM_Talk extends Com
     constructor()
     {
         super();
-        this._rec = {};
         this._nodeId = null;
         this._data = null;
         this._textIndexes = {};
@@ -28,45 +27,7 @@ export class COM_Talk extends Com
     //------------------------------------------------------
     //  私有方法
     //------------------------------------------------------
-    // 取得 flag 值
-    _getVar(flag)
-    {
-        if (flag?.startsWith('#'))          // 字首 '#'，為 Quest 的 State
-        {
-            const qid=flag.slice(1);
-            return QuestManager.getState(qid);
-        }
-        else if (flag?.startsWith('_'))     // 字首 '_'，為 local
-        {
-            return this._rec[flag];
-        }
-        else if (flag?.startsWith('item:')) // 'item:<id>:<count>'，玩家目前是否持有至少 count 個該道具
-        {
-            const [, id, count] = flag.split(':');
-            const sum = GM.player.queryItem(itm=>itm.id===id).reduce((s,itm)=>s+itm.count, 0);
-            return sum >= Number(count);
-        }
-        else
-        {
-            return Record.getVar(flag);
-        }
-    }
-
-    // 設定 flag 值（根據 _ 字首判斷 local 或 global）
-    _setVar(flag, val)
-    {
-        if (!flag) return;
-        if (flag.startsWith('_')) {this._rec[flag] = val;}
-        else {Record.setVar(flag, val);}
-    }
-
-    // 移除 flag 值（根據 _ 字首判斷 local 或 global）
-    _rmVar(flag)
-    {
-        if (!flag) return;
-        if (flag.startsWith('_')) {delete this._rec[flag];}
-        else {Record.rmVar(flag);}
-    }
+    get _sctx() {return {npc:this.ctx.bb.id};}
 
     // 檢查是否可以進行交談（好感度、睡眠狀態）
     _canAct()
@@ -78,61 +39,7 @@ export class COM_Talk extends Com
         return GM.EN;
     }
 
-    // 評估條件表達式（支援 "flag==value"、"!flag" 等格式）
-    _matchCond(cond)
-    {
-        if (!cond || cond === '') return true;
-        return this._evalCond(cond);
-    }
-
-    // 評估字符串條件表達式（支援 &&、||、==、!=）
-    _evalCond(expr)
-    {
-        if (!expr || expr === '') return true;
-
-        expr = expr.trim();
-
-        // 特殊值：true/false 字面值
-        if (expr === 'true') return true;
-        if (expr === 'false') return false;
-
-        // 處理 OR (||) - 若存在多個則任一為真即返回真
-        if (expr.includes('||')) {
-            return expr.split('||').some(e => this._evalCond(e.trim()));
-        }
-
-        // 處理 AND (&&) - 若存在多個則全部為真才返回真
-        if (expr.includes('&&')) {
-            return expr.split('&&').every(e => this._evalCond(e.trim()));
-        }
-
-        // 處理 NOT (!)
-        if (expr.startsWith('!')) {
-            const flag = expr.substring(1).trim();
-            return !this._getVar(flag);
-        }
-
-        // 處理不相等 (!=)
-        if (expr.includes('!=')) {
-            const [flag, value] = expr.split('!=').map(s => s.trim());
-            const recVal = this._getVar(flag);
-            if (value === 'true') return recVal !== true;
-            if (value === 'false') return recVal !== false;
-            return recVal != value;
-        }
-
-        // 處理相等 (==)
-        if (expr.includes('==')) {
-            const [flag, value] = expr.split('==').map(s => s.trim());
-            const recVal = this._getVar(flag);
-            if (value === 'true') return recVal === true;
-            if (value === 'false') return recVal === false;
-            return recVal == value;
-        }
-
-        // 簡單 flag 名稱 - 檢查是否為真
-        return !!this._getVar(expr);
-    }
+    _matchCond(cond) {return evalCond(cond, this._sctx);}
 
     // 取得初始入口節點（按 order 排序，找第一個符合條件的）
     _getEntryNode()
@@ -179,39 +86,17 @@ export class COM_Talk extends Com
         return result || text;
     }
 
-    // 執行對話指令（next, exit, trade, goto, quest, close, set 等）
+    // 執行對話指令；對話控制類(trade/close…)在這裡處理，其餘交給共用指令模組
     _exec(actions, cb)
     {
-        if(!actions||actions.length===0) return;
-
-        actions.forEach((action)=>{
-            // 1.判斷是否執行
-            const [cond, cmd] = action.includes(':')
-                        ? action.split(':').map(s => s.trim())
-                        : ['', action];
-
-            if (cond && !this._matchCond(cond)) return;
-
-            // 2.取出 op, p1, p2
-            const [op, ...args] = cmd.split(/\s+/);
-            const [p1, p2] = args;
-
-            switch(op)
+        exec(actions, {...this._sctx, cb:(op)=>{
+            if(op === 'trade')
             {
-                case 'trade':
-                    this.ctx.emit('trade', GM.player);
-                    cb?.('exit');
-                    break;
-                case 'qstart':  QuestManager.start(p1); break;
-                case 'qclose':  QuestManager.close(p1); break;
-                case 'close':   cb?.(op); break;
-                case 'set':     this._setVar(p1,p2??true); break;
-                case 'clr':     this._setVar(p1,false); break;
-                case 'rm':      this._rmVar(p1); break;
-                case 'consume': GM.player.consumeItem?.({id:p1, count:Number(p2)}); break;
-                default:        cb?.(op); break;
+                this.ctx.emit('trade', GM.player);
+                cb?.('exit');
             }
-        });
+            else {cb?.(op);}
+        }});
     }
 
     // 開始對話（重置節點，發送事件開啟對話UI）
@@ -238,9 +123,7 @@ export class COM_Talk extends Com
     _getNext(next)
     {
         if (next?.startsWith('[') && next.endsWith(']')) {
-            const varName = next.slice(1, -1);
-            // return this._rec[varName];
-            return this._getVar(varName);
+            return Quality.get(Quality.resolve(next.slice(1, -1), this.ctx.bb.id));
         }
         return next;
     }
@@ -324,17 +207,5 @@ export class COM_Talk extends Com
 
         root.on(GM.TALK, this._onTalk.bind(this));
         root.on(GM.EVT.ONDEAD, this._onDead.bind(this));
-    }
-
-    // 讀取存檔資料（運行時狀態）
-    load(data)
-    {
-        if(data?.[_tag]) Object.assign(this._rec, data[_tag]);
-    }
-
-    // 保存運行時狀態
-    save()
-    {
-        return {[_tag]: this._rec};
     }
 }

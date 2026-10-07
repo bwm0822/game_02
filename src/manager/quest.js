@@ -3,6 +3,8 @@ import DB from '../data/db.js'
 import {GM,UI} from '../core/setting.js'
 import {dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
+import Quality from '../systems/quality.js'
+import {exec, evalCond} from '../systems/script.js'
 import RenderTexture from 'phaser3-rex-plugins/plugins/gameobjects/mesh/perspective/rendertexture/RenderTexture.js';
 
 function _checkCond(state, step)
@@ -12,28 +14,7 @@ function _checkCond(state, step)
 
 function _exec(actions)
 {
-    if(!actions||actions.length===0) return; 
-
-    actions.forEach((action)=>{
-
-        const [op, ...args] = action.split(/\s+/);
-        const [p1, p2] = args;
-
-        switch(op)
-        {
-            case 'set':
-                Record.setVar(p1, p2??true);
-                break;
-            case 'rm':
-                Record.rmVar(p1);
-                break;
-            case 'close':
-                QuestManager.close(p1);
-                break;
-        }
-        
-    });
-    
+    exec(actions, {cb:(op,[p1])=>{if(op==='close') {QuestManager.close(p1);}}});
 }
 
 function _popup(msg) {Ui.get(UI.TAG.POPUP).push(msg);}
@@ -98,6 +79,8 @@ export default class QuestManager
     static quests={active:{}, close:{}};
     static updated=new Set(); // 追蹤有更新的 quest
 
+    static { Quality.onChange(()=>this.onFlag()); }
+
     //------------------------------------------------------
     // Local
     //------------------------------------------------------
@@ -148,7 +131,7 @@ export default class QuestManager
                         break;
 
                     case 'flag':
-                        if (Record.getVar(step.complete.flag))
+                        if (evalCond(step.complete.flag))
                         {
                             state.steps[stepId] = true;
                             this.updated.add(questId);

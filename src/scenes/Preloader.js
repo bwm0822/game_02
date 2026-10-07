@@ -118,6 +118,7 @@ export class Preloader extends Scene
         this.load.json('sk_tree', 'json/ab_tree.json');
         this.load.json('fx', 'json/fx.json');
         this.load.json('navgraph', 'json/navgraph.json');
+        this.load.json('story', 'json/story.json');
         this.load.json('world', 'maps/main.world');
 
         // audios

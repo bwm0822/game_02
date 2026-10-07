@@ -2,6 +2,14 @@
 
 修改任務或對話系統之前先看這份筆記。涵蓋資料格式、xlsx→json 建置流程、對話元件、QuestManager、以及兩者的串接流程。
 
+> ⚠️ 這套系統正在被 [story-architecture.md](story-architecture.md)（storylet + quality）分階段取代。**階段 1 已完成**，以下內容已過時：
+> - `Record.getVar/setVar/rmVar`、`Record.game.vars` 已移除，全域旗標與 `_xxx` 都改存在 quality 庫 `Record.game.q`（`_xxx` 存成 `<npcId>._xxx`，`COM_Talk._rec` 已移除）
+> - 條件與指令改由共用模組 `src/systems/script.js` 解析（`COM_Talk` 與 `QuestManager` 共用同一套）；`set` 不帶值存的是 `1` 而不是 `true`，`clr`/`rm` 都是設回預設值（刪除）
+> - `onFlag()` 改由 `Quality.onChange` 觸發（任何 quality 改變都會檢查），地圖 `#flag` layer 改讀 `Quality.get()`
+> - 新增的旗標名稱要先在 `xls/story.xlsx` 的 `qualities` sheet 宣告，否則 `node scripts/story.js` 會報錯
+>
+> 其餘（資料格式、任務步驟、對話節點）在階段 2 搬家前仍然有效。
+
 ## 1. 資料層
 
 ### 1.1 資料存取

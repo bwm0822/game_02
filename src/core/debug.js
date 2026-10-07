@@ -31,6 +31,7 @@ export const T =
     GO      : 0b0001_0000_0000,
     SCENE   : 0b0010_0000_0000,
     WARN    : 0b0100_0000_0000,
+    STORY   : 0b1000_0000_0000,
 }
 
 const T_REVERSE = Object.fromEntries(

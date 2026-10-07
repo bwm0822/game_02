@@ -1,6 +1,6 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
-> 狀態：**設計定案、尚未實作**（2026-10-07）。實作分 5 個階段（見 §12），完成前現行系統仍以 [quest-dialog-architecture.md](quest-dialog-architecture.md) 為準；全部完成後那份文件要改寫或退休，CLAUDE.md 的 Quest/Dialog 段落也要同步更新。
+> 狀態：**階段 1（地基）已完成**，階段 2～5 尚未實作（2026-10-07）。實作分 5 個階段（見 §12），完成前現行系統仍以 [quest-dialog-architecture.md](quest-dialog-architecture.md) 為準；全部完成後那份文件要改寫或退休，CLAUDE.md 的 Quest/Dialog 段落也要同步更新。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。
 
@@ -45,7 +45,8 @@ Record.game.q = {
 `<npc>.好感` 就是現有 `COM_Favor` 的好感度（0～100，預設 50，門檻沿用 `GM.FAV`：`LOVE 100`／`LIKE 75`／`NEUTRAL 50`／`DISLIKE 25`／`HATE 10`）。
 
 - `COM_Favor` 保留邏輯（低於 50 每回合回復 0.1、受攻擊／被偷扣分），**對玩家的好感度**改成讀寫 `Record.game.q`
-- NPC 對其他 NPC 的好感度照舊存在 `COM_Favor` 自己身上
+- 只有 `role.json` 標了 `unique:true` 的 NPC（來源 `xls/role.xlsx` 的 `_others` 列）才存進 quality 庫——狼、馬這類同 id 會有很多隻的生物如果共用 `wolf.好感`，打一隻全世界的狼都會恨你。目前標記的是 brooklyn 分頁的 8 個 NPC（trump、melanie、musk、karen、xi、macron、guard-1、guard-2）
+- 沒標 `unique` 的、以及 NPC 對其他 NPC 的好感度，照舊存在 `COM_Favor` 自己身上；storylet 讀到這類 NPC 的 `好感` 一律是預設值 50
 - 對話只在 `HATE`（≤10）以下隱藏；≤25 走 `n_cold` 冷淡入口（見 §6.3）；交易規則不變（≤25 不能交易）
 
 ### 2.2 qualities 宣告表（story.xlsx 的 `qualities` sheet）
@@ -223,7 +224,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 ## 10. Debug
 
 - **右鍵 NPC →「劇情除錯」**：列出 `who` 對得上的所有卡，標示 ✅ 成立／🔒 tease 中／❌ 不成立，並標出卡住的條件與目前值；列出各 concept 的 line 分數與命中的那一條
-- **quality 檢視器**：列出所有 quality，可直接修改
+- **quality 檢視器**：debug 面板「指令」頁的 `q` 指令——`q` 列出全部、`q 關鍵字` 篩選、`q 狼患=2`／`q karen.好感+10` 直接修改（名稱要寫完整，沒有 NPC 情境）
 - **`T.STORY`**：`dlog` 印出事件卡觸發與 quality 變動
 
 ## 11. 轉檔靜態檢查
@@ -237,7 +238,10 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 
 每個階段結束遊戲都要能正常玩：
 
-1. **地基**：quality 庫、共用條件／指令模組、`qualities` 表與名稱檢查、好感度搬進 q；`COM_Talk` 與地圖 `#flag` layer 改讀 quality；quality 檢視器、`T.STORY`
+1. ✅ **地基**：quality 庫、共用條件／指令模組、`qualities` 表與名稱檢查、好感度搬進 q；`COM_Talk` 與地圖 `#flag` layer 改讀 quality；quality 檢視器、`T.STORY`
+   - 程式：`src/systems/quality.js`（`Quality`）、`src/systems/script.js`（`evalCond()`／`exec()`）；轉檔：`scripts/story.js`（`xls/story.xlsx` → `story.json`，`DB.qualities()`）
+   - 過渡期：舊任務還在跑 QuestManager，所以 `script.js` 暫時保留 `set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId` 條件與字串值（`_quest` 指標），`qualities` 表也先宣告了舊任務旗標；階段 2 搬家後一起刪掉
+   - 未宣告 quality 的檢查也涵蓋 dialog.json、quest.json 與地圖的 `#flag` layer；節點 id／`who` 的檢查留到階段 2
 2. **storylet 主體**：story.xlsx 轉檔、對話卡插入、`tease`／`hint`、thread 日誌與 PQuest 改版、右鍵 NPC 劇情除錯；QK01／QX01／QX02 **1:1 照搬**（quality 改用世界事件命名，名稱搬的時候再取）；QuestManager 與 quest.xlsx 退休
 3. **事件卡**：`kill`／`item`／`enter`／`time`／`quality`、`count`／`stop`
 4. **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line
