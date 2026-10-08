@@ -90,6 +90,10 @@
         "4": {
           "journal": "任務完成，回去跟 xi 回報"
         },
+        "9": {
+          "journal": "你把狼皮直接賣給了 xi",
+          "end": true
+        },
         "10": {
           "journal": "已向 xi 回報，領取獎勵",
           "end": true
@@ -199,9 +203,35 @@
     {
       "id": "wolf_report",
       "who": "xi",
-      "requires": "狼患>=1 && 狼患<10",
+      "requires": "狼患>=1 && 狼患<9",
       "label": "關於任務",
       "text": "@n_wolf_report"
+    },
+    {
+      "id": "wolf_sell",
+      "who": "xi",
+      "tease": "狼患==2",
+      "requires": "狼患==3 && item:plet:1",
+      "label": "把狼皮直接賣給你",
+      "hint": "需要狼皮",
+      "text": "……也好，省得你跑一趟，那我自己收了。",
+      "effects": [
+        "take plet 1",
+        "狼患=9",
+        "gold+80"
+      ]
+    },
+    {
+      "id": "wolf_grudge",
+      "who": "karen",
+      "requires": "狼患==9 && !_grudge",
+      "text": "喂！你給我過來！",
+      "on": [
+        "see"
+      ],
+      "effects": [
+        "approach n_wolf_grudge"
+      ]
     },
     {
       "id": "trade_ask",
@@ -308,6 +338,33 @@
             "actions": [
               "take plet 1",
               "狼患=4"
+            ],
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_wolf_grudge": {
+        "textKeys": {
+          "true": "聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "抱歉，下次一定先找你",
+            "priority": 0,
+            "actions": [
+              "_grudge=1",
+              "好感-5"
+            ],
+            "next": "n_default"
+          },
+          {
+            "labelKey": "我想賣給誰就賣給誰",
+            "priority": 0,
+            "actions": [
+              "_grudge=1",
+              "好感-15"
             ],
             "next": "n_default"
           }
@@ -467,6 +524,6 @@
   },
   "spawns": {
     "盜賊": "討伐令>=2 && 討伐令<10",
-    "狼群": "狼患 && 狼患<10"
+    "狼群": "狼患 && 狼患<9"
   }
 }

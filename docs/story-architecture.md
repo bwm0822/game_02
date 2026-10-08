@@ -288,4 +288,5 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 程式：`Story.onSee()`／`Story.playerBusy`、`Story.fire()` 多了 `{say, cb}` 選項；`COM_AI._updateBB()` 觸發 see、`root.approach()`；`src/components/ai/behapproach.js`；`COM_Talk` 的 `root.talkAt(node)`；`UiFrame.isOpen`；測試 `scripts/test/approach.mjs`（測試卡與節點在執行期塞進 `DB.story()`）
    - 無頭測試的 `gotoMap()` 改成等到新的玩家物件出現：起始地圖就是 `m/m_04x05`，原本切到同一張地圖時會在舊場景還沒重啟前就回報載入完成
 
-岔路（例如 `wolf_sell`、`wolf_grudge`）等階段 2 穩定後，再用獨立 commit 加。
+岔路：
+- ✅ `wolf_sell`／`wolf_grudge`（狼患 sheet）：`狼患==3` 時可以把狼皮直接賣給 xi（`take plet 1; 狼患=9; gold+80`，`狼患==2` 時 tease），任務結束在 9，拿不到斧頭跟後續的狼皮生意；karen 之後看到你會喊「喂！你給我過來！」並 `approach n_wolf_grudge`，道歉 `好感-5`、嗆回去 `好感-15`，都設 `_grudge=1`。`wolf_report` 跟狼群 spawn 改成 `<9`。測試 `scripts/test/wolf.mjs`
