@@ -63,7 +63,7 @@ function readStorylets(sheet, rows, story)
     {
         if (!r.id) continue;
         const s = {id: r.id, sheet, row: r._row};
-        for (const k of ['who', 'tease', 'requires', 'label', 'hint', 'text']) {if (r[k] !== '') s[k] = String(r[k]);}
+        for (const k of ['who', 'tease', 'requires', 'label', 'hint', 'text', 'mood']) {if (r[k] !== undefined && r[k] !== '') s[k] = String(r[k]);}
         if (r.on) s.on = toArray(r.on);
         if (r.effects) s.effects = toArray(r.effects);
         story.storylets.push(s);
@@ -273,6 +273,8 @@ function checkStory(ctx)
         }
         if (!s.who && !s.on) err(`storylet 沒有 who 也沒有 on @ ${where}`);
         if (!s.on && !s.label) err(`對話卡沒有 label @ ${where}`);
+        if (s.mood && s.on) err(`事件卡不能填 mood @ ${where}`);
+        if (s.mood && !ctx.moods.has(s.mood)) err(`dialog.xlsx 沒有 storylets 列收 mood「${s.mood}」的卡 @ ${where}`);
         (s.on ?? []).forEach(e => {if (!EVENTS.includes(e)) err(`認不得的事件「${e}」 @ ${where}`);});
         checkCond(s.requires, where, ctx);
         checkCond(s.tease, where, ctx);
@@ -334,7 +336,9 @@ fs.writeFileSync(OUT_JSON, JSON.stringify({qualities, ...strip(story)}, null, 2)
 console.log(`Output written to ${OUT_JSON}`);
 
 const roles = readJson(ROLE_JSON);
-const ctx = {qualities, story, roles, roleIds: new Set(Object.keys(roles)), dialog: readJson(DIALOG_JSON), usedGroups: new Set()};
+const dialog = readJson(DIALOG_JSON);
+const moods = new Set(Object.values(dialog).flatMap(d => Object.values(d.nodes ?? {}).map(n => n.mood).filter(Boolean)));
+const ctx = {qualities, story, roles, roleIds: new Set(Object.keys(roles)), dialog, moods, usedGroups: new Set()};
 checkDialog(ctx);
 checkStory(ctx);
 checkMaps(MAP_DIR, ctx);

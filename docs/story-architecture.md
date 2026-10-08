@@ -133,6 +133,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 - **`who`**：`karen`（單一 NPC）／`job:guard`（`role.json` 的 `job`）／`*`（任何 NPC）；同一個 `id` 有多張卡時，越具體的壓過越籠統的
 - **`tease`**：選填。`tease` 成立但 `requires` 不成立時，顯示成灰色選項並附上 `hint`；沒填就完全隱藏
 - **`text`**：一句話，或 `@節點id` 跳進長對話節點
+- **`mood`**：選填（K 欄）。空白＝一般對話卡；`cold`＝只在 NPC 冷淡（`n_cold`）時出現，見 §6.4
 - 不重複出現靠 quality 擋（例如 `!_grudge`），不另外設 once 欄
 
 ### 5.3 長對話節點表
@@ -201,7 +202,8 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 - 預設：插進**entry 節點**，priority 30
 - 節點底下有 `section: storylets` 列時：插進那個節點、用那一列的 `priority`（`n_cold` 是 10）
 - 其他節點不會被插
-- `n_cold` 會插入**所有**成立的對話卡（包含任務卡），要只給「挽回好感」的卡，得在其他卡的 `requires` 自己擋
+- **mood**：`storylets` 列的 `node_id` 欄可以填一個情境名稱（`n_cold` 填 `cold`），這個節點只收 storylet 表 `mood` 欄相同的卡；沒填 mood 的節點（含預設的 entry 節點）只收 `mood` 空白的卡。所以 NPC 冷淡時只會出現挽回好感的卡（`mood=cold`），任務卡不會跑進來，好感回來後挽回卡也不會出現
+- 轉檔檢查：事件卡不能填 `mood`；`mood` 填了 dialog.xlsx 沒有任何 storylets 列收的值會報錯
 
 ### 6.5 節點沿用選項
 

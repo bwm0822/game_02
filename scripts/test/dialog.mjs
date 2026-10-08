@@ -49,11 +49,17 @@ run('dialog 改版', async t => {
     r = await open(t, 'karen', '聊天', '這是哪裡?', '沒事');
     t.check('回到 n_default', r.B.includes('聊天'), r.B.join('/'));
 
-    await t.eval(d => d.DB.story().storylets.push({id:'t_sorry', who:'karen', requires:'好感<=25', label:'道歉'}));
+    await t.eval(d => d.DB.story().storylets.push(
+        {id:'t_sorry', who:'karen', label:'道歉', mood:'cold'},
+        {id:'t_job', who:'karen', label:'一般卡'},
+    ));
+    r = await open(t, 'karen');
+    t.check('一般時有一般卡、沒有 cold 卡', r.B.includes('一般卡') && !r.B.includes('道歉'), r.B.join('/'));
+
     await t.setQ('karen.好感', 20);
     r = await open(t, 'karen');
     t.eq('好感 <=25 走 n_cold', r.A, '……又是你。');
-    t.check('n_cold 插了對話卡、沒有交易/聊天', r.B.includes('道歉') && r.B.at(-1) === '離開' && !r.B.includes('交易') && !r.B.includes('聊天'), r.B.join('/'));
+    t.eq('n_cold 只有 mood=cold 的卡 + 離開', r.B.join('/'), '道歉/離開');
 
     const canTalk = await t.eval(d => {
         d.Quality.set('karen.好感', 5);

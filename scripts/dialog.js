@@ -37,7 +37,11 @@ function readSheet(sheet, rows)
         else if (sec === 'node') {node = buildNode(row); d.nodes[row.node_id] = node;}
         else if (sec === 'choice' && node) node.choices.push(buildChoice(row));
         else if (sec === 'post' && node) node.posts.push(...toArray(row.actions));
-        else if (sec === 'storylets' && node) node.cards = Number(row.priority);
+        else if (sec === 'storylets' && node)
+        {
+            node.cards = Number(row.priority);
+            if (row.node_id) node.mood = row.node_id;
+        }
         else if (sec?.startsWith('choice:')) d.dynamic.push({nodeId: sec.slice('choice:'.length).trim(), row});
         else if (sec) console.warn(`WARN dialog.xlsx/${sheet}!${row._row} 認不得的 section「${sec}」`);
     }

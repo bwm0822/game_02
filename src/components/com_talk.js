@@ -129,9 +129,9 @@ export class COM_Talk extends Com
         cb?.('goto');
     }
 
-    _cardChoices(priority)
+    _cardChoices(priority, mood)
     {
-        return Story.talkCards(this._npc).map(({card, enabled}) => ({
+        return Story.talkCards(this._npc, mood).map(({card, enabled}) => ({
             labelKey: card.label,
             priority,
             card, enabled,
@@ -150,7 +150,7 @@ export class COM_Talk extends Com
         const priority = node.cards ?? (nodeId === this._entryId ? CARD_PRIORITY : null);
         if (priority !== null)
         {
-            choices = [...choices, ...this._cardChoices(priority)].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+            choices = [...choices, ...this._cardChoices(priority, node.mood ?? '')].sort((a, b) => (a.priority || 0) - (b.priority || 0));
         }
         return choices;
     }

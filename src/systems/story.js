@@ -63,11 +63,12 @@ export default class Story
     //  對話卡
     //------------------------------------------------------
     // 回傳 [{card, enabled}]，enabled=false 是 tease 中（灰色選項）
-    static talkCards(npc)
+    // mood：節點 storylets 列標的情境（例如 n_cold 是 cold），只收 mood 相同的卡；一般節點收沒填 mood 的卡
+    static talkCards(npc, mood='')
     {
         const ctx = {npc, facts:worldFacts()};
         const out = [];
-        for(const s of this._forNpc(this._storylets.filter(s=>!s.on), npc))
+        for(const s of this._forNpc(this._storylets.filter(s=>!s.on && (s.mood ?? '') === mood), npc))
         {
             if(evalCond(s.requires, ctx)) {out.push({card:s, enabled:true});}
             else if(s.tease && evalCond(s.tease, ctx)) {out.push({card:s, enabled:false});}
@@ -185,7 +186,7 @@ export default class Story
             const ok = evalCond(s.requires, ctx);
             const tease = !ok && s.tease && evalCond(s.tease, ctx);
             const mark = ok ? '✅' : tease ? '🔒' : '❌';
-            const kind = s.on ? `on:${s.on.join('/')}` : `「${s.label}」`;
+            const kind = s.on ? `on:${s.on.join('/')}` : `「${s.label}」${s.mood ? ` mood:${s.mood}` : ''}`;
             out += `${mark} ${s.id} ${kind}\n`;
             if(!ok && s.requires) {out += `    requires: ${this._explain(s.requires, ctx)}\n`;}
             if(!ok && !tease && s.tease) {out += `    tease: ${this._explain(s.tease, ctx)}\n`;}
