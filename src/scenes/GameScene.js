@@ -12,6 +12,7 @@ import AudioManager from '../manager/audio.js'
 import {GameObject} from '../core/gameobject.js'
 import {MiniMap} from '../manager/minimap.js'
 import ScheduleManager from '../manager/schedule.js'
+import Story from '../systems/story.js'
 import {Player} from '../roles/player.js'
 import Port from '../items/port.js'
 import Utility from '../core/utility.js'
@@ -253,6 +254,8 @@ export class GameScene extends Scene
         this.createRuntime();
         this.setPosition(Player);
         this.initSchedule();
+        TimeSystem.register(Story.onTime.bind(Story));
+        Story.onEnter();
         this.dbgRect();
         this.processInput();
 

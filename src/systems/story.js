@@ -1,6 +1,7 @@
 import DB from '../data/db.js'
 import Record from '../infra/record.js'
 import Quality from './quality.js'
+import TimeSystem from './time.js'
 import {exec, evalCond, valueOf} from './script.js'
 import Ui from '../ui/uicommon.js'
 import {UI} from '../core/setting.js'
@@ -17,6 +18,12 @@ function _popup(msg) {Ui.get(UI.TAG.POPUP)?.push(msg);}
 
 // 日誌文字的 {quality名} 換成目前的值
 function _fill(text) {return String(text ?? '').replace(/\{([^}]+)\}/g, (_, n)=>Quality.get(n));}
+
+// 跟 GameScene 的 lutAmbient 暗下來的時段一致
+function _timeFacts(h) {return {hour:h, time: h<6 || h>=18 ? 'night' : 'day'};}
+
+// 所有查詢都附帶的情境事實
+function _world() {return {map:Record.game.map, ..._timeFacts(TimeSystem.time.h)};}
 
 export default class Story
 {
@@ -58,7 +65,7 @@ export default class Story
     // 回傳 [{card, enabled}]，enabled=false 是 tease 中（灰色選項）
     static talkCards(npc)
     {
-        const ctx = {npc};
+        const ctx = {npc, facts:_world()};
         const out = [];
         for(const s of this._forNpc(this._storylets.filter(s=>!s.on), npc))
         {
@@ -77,6 +84,7 @@ export default class Story
     {
         const outer = !this._fired;
         if(outer) {this._fired = new Set();}
+        facts = {..._world(), ...facts};
         try
         {
             for(const s of this._storylets)
@@ -105,6 +113,16 @@ export default class Story
     }
 
     static onItem() {this.fire('item');}
+
+    static onEnter() {this.fire('enter');}
+
+    // TimeSystem 的 callback；一次跳好幾小時（睡覺）時，每跨過一個整點觸發一次
+    static onTime(dt, time)
+    {
+        if(!(dt > 0)) {return;}
+        const now = TimeSystem.toTotalMinutes(time);
+        for(let h = Math.floor((now-dt)/60)+1; h*60 <= now; h++) {this.fire('time', _timeFacts(h%24));}
+    }
 
     static _onQuality(name, v)
     {
@@ -158,7 +176,7 @@ export default class Story
 
     static debug(npc)
     {
-        const ctx = {npc};
+        const ctx = {npc, facts:_world()};
         const cards = this._forNpc(this._storylets, npc);
         if(cards.length === 0) {return `${npc}：沒有 who 對得上的卡\n`;}
         let out = `[color=yellow]${npc} 的劇情卡[/color]\n`;

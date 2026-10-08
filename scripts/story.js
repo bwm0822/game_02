@@ -10,7 +10,7 @@ const DIALOG_JSON = './public/assets/json/dialog.json';
 const MAP_DIR   = './public/assets/maps';
 
 // 條件裡由查詢方提供的情境事實，不是 quality
-const FACTS = ['time', 'map', 'hp', 'job', 'style', 'dead', 'true', 'false'];
+const FACTS = ['time', 'hour', 'map', 'hp', 'job', 'style', 'dead', 'true', 'false'];
 const EVENTS = ['kill', 'item', 'enter', 'time', 'quality', 'see'];
 
 function readQualities(wb)
