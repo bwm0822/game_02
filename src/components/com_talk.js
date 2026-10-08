@@ -96,7 +96,13 @@ export class COM_Talk extends Com
     }
 
     // 開始對話（重置節點，發送事件開啟對話UI）
-    _onTalk() {this._start(null);}
+    // 玩家先開口：NPC 有要主動找玩家的事（approach）就直接進那個節點，AI 也不用再走過來
+    _onTalk()
+    {
+        const node = Story.onTalk(this._npc);
+        if (node) {this.ctx.bb.approach = null;}
+        this._start(node);
+    }
 
     // startNode：NPC 主動搭話（approach）時直接進的節點；entry 節點照算，對話卡才插得到
     _start(startNode)

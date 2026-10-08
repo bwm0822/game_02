@@ -127,6 +127,19 @@ export default class Story
         });
     }
 
+    // 玩家先找 NPC 說話：本來要 approach 的 see 卡直接套用，回傳要進的節點
+    static onTalk(npc)
+    {
+        const ctx = {npc, facts:{...worldFacts(), who:npc}};
+        const s = this._storylets.find(s=>s.on?.includes('see') && this._rank(s.who, npc) >= 0
+            && s.effects?.some(e=>e.startsWith('approach')) && evalCond(s.requires, ctx));
+        if(!s) {return null;}
+        dlog(T.STORY)(`[S] talk → ${s.id}`);
+        let node = null;
+        exec(s.effects, {...ctx, cb:(op, [n])=>{if(op === 'approach') {node = n;}}});
+        return node;
+    }
+
     // 玩家正在對話或交易：NPC 不主動過來搭話
     static get playerBusy() {return [UI.TAG.DIALOG, UI.TAG.TRADE].some(tag=>Ui.get(tag)?.isOpen);}
 

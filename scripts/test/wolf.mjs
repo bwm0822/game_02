@@ -43,6 +43,18 @@ run('狼患岔路', async t => {
     t.check('xi 不再有任務選項', !B.some(b => b.text === '關於任務'), B.map(b => b.text).join('/'));
     t.check('karen 沒有交狼皮的選項', !(await options(t, 'karen')).some(b => b.text === '關於黑森林的狼皮'), '');
 
+    const first = await t.eval(d => {
+        const karen = d.objs().find(g => g.id === 'karen');
+        karen.bb.approach = 'n_wolf_grudge';
+        karen.talk();
+        const dlg = d.Ui.get(d.UI.TAG.DIALOG);
+        const r = {A: dlg.dialog.A, approach: karen.bb.approach ?? null};
+        dlg.close();
+        return r;
+    });
+    t.eq('玩家先開口也進 n_wolf_grudge', first.A, '聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。');
+    t.eq('玩家先開口後 karen 不再走過來', first.approach, null);
+
     const walk = await t.eval(async d => {
         const karen = d.objs().find(g => g.id === 'karen');
         d.Story.onSee(karen);
