@@ -40,4 +40,12 @@ run('事件卡 enter/time', async t => {
         return d.Story.talkCards('karen').map(c => c.card.id);
     });
     t.check('白天沒有夜間對話卡', !day.includes('t_talk'), day.join('/'));
+
+    const queued = await t.eval(async d => {
+        const p = d.Ui.get(d.UI.TAG.POPUP);
+        await new Promise(r => {const w = () => p._busy ? setTimeout(w, 100) : r(); w();});
+        ['甲', '乙', '乙'].forEach(m => p.push(m));
+        return p._queue.map(i => i.msg).join('/');
+    });
+    t.eq('提示框排隊：甲顯示中、乙排一則', queued, '乙');
 });

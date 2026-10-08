@@ -18,6 +18,8 @@ export default class UiPopup extends UiFrame
         super(scene, config, UI.TAG.POPUP);
 
         UiPopup.instance = this;
+        this._queue = [];
+        this._busy = false;
 
         this.addBg(scene, {color: GM.COLOR.PRIMARY});
 
@@ -26,7 +28,23 @@ export default class UiPopup extends UiFrame
             .hide();
     }
 
-    push(msg, {wrapWidth=300, duration=3000, animDuration=300}={})
+    // 排隊輪流顯示；跟隊伍最後一則相同的訊息不重複排
+    push(msg, options)
+    {
+        if(this._queue.at(-1)?.msg !== msg) {this._queue.push({msg, options});}
+        if(!this._busy) {this._next();}
+        return this;
+    }
+
+    _next()
+    {
+        const item = this._queue.shift();
+        this._busy = !!item;
+        if(item) {this._show(item.msg, item.options);}
+        else {this.hide();}
+    }
+
+    _show(msg, {wrapWidth=300, duration=3000, animDuration=300}={})
     {
         this.removeAll(true);
 
@@ -41,35 +59,29 @@ export default class UiPopup extends UiFrame
         // 所以順序會影響結果：
         this.show().layout();   // 先 show()，再layout()，才會正確
 
-        if (this._tween) {this._tween.stop();}
-
         this.scene.time.delayedCall(0, () => {
             const startY = -this.height;
             const endY = 10;
 
             this.y = startY;
 
-            this._tween = this.scene.tweens.add({
+            this.scene.tweens.add({
                 targets: this,
                 y: endY,
                 duration: animDuration,
                 ease: 'Quad.easeOut',
                 onComplete: () => {
-                    this._closeTween = this.scene.tweens.add({
+                    this.scene.tweens.add({
                         targets: this,
                         y: startY,
                         duration: animDuration,
                         delay: duration,
                         ease: 'Quad.easeIn',
-                        onComplete: () => {
-                            this.hide();
-                        }
+                        onComplete: () => this._next(),
                     });
                 }
             });
         });
-
-        return this;
     }
 
     static push(msg, options)
