@@ -17,6 +17,7 @@ import RoundRectangleProgressPlugin from 'phaser3-rex-plugins/plugins/roundrecta
 import Record from './infra/record.js';
 import Quality from './systems/quality.js';
 import Story from './systems/story.js';
+import Line from './systems/line.js';
 import TimeSystem from './systems/time.js';
 import DB from './data/db.js';
 import Ui from './ui/uicommon.js';
@@ -102,6 +103,6 @@ const config = {
 const game = new Phaser.Game(config);
 
 // 開發版才掛到 window，給 scripts/test/ 的無頭瀏覽器測試讀寫遊戲狀態
-if(import.meta.env.DEV) {window.__dbg = {game, Record, Quality, Story, TimeSystem, DB, Ui, GM, UI:UI_DEF};}
+if(import.meta.env.DEV) {window.__dbg = {game, Record, Quality, Story, Line, TimeSystem, DB, Ui, GM, UI:UI_DEF};}
 
 export default game;

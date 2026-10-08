@@ -29,7 +29,7 @@ npm run dist
 npm run deploy
 
 # 無頭瀏覽器測試（自己開 vite + 無頭 Chrome，只印 ✔/✘，失敗時截圖到 scripts/test/out/）
-node scripts/test/rogue.mjs
+node scripts/test/rogue.mjs     # 另有 events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）
 ```
 
 無頭測試：`scripts/test/harness.mjs` 提供 `newGame()`／`gotoMap()`／`talk()`／`kill()`／`give()`／`q()` 等工具，透過 `src/main.js` 只在開發版掛的 `window.__dbg` 操作遊戲（不走路、不戰鬥，直接呼叫遊戲函式）；角色在 `scene.roles`、其他物件在 `scene.gos`，工具裡的 `d.objs()` 兩者都包含。用的是電腦裡現有的 Chrome（`puppeteer-core`，不下載 Chromium）。改了劇情、地圖生成相關的東西後，優先跑對應的測試而不是請使用者手動玩。
@@ -89,8 +89,8 @@ dist/           # 建置輸出（勿手動修改）
 - **檔案命名**：小寫無底線（`uiprofile.js`、`gameobject.js`）；UI 檔以 `ui` 開頭
 - **場景類別**：放於 `src/scenes/`，名稱以大寫字母開頭
 - **UI 類別**：放於 `src/ui/`，繼承自 `src/ui/uiframe.js` 的 `UiFrame` 基底類別（`uicommon.js` 的 `Ui` 是靜態全域註冊表，非繼承用基底類別）；修改或新增 UI 面板前請先參考 [docs/ui-architecture.md](docs/ui-architecture.md)
-- **Story（storylet + quality，取代 Quest/Dialog 中）**：劇情狀態統一存在 quality 庫（`src/systems/quality.js`，`Record.game.q`），條件／指令由 `src/systems/script.js` 共用；quality 名稱要先在 `xls/story.xlsx` 的 `qualities` sheet 宣告，`node scripts/story.js` 轉成 `story.json` 並檢查未宣告名稱／節點／who；任務（thread 日誌）、對話卡、事件卡都寫在 `xls/story.xlsx`（一條劇情線一個 sheet），執行期是 `src/systems/story.js`（`Story`），舊的 QuestManager/quest.xlsx 已退休；分 5 階段實作（階段 1、2 已完成），修改任務、對話、好感度或劇情相關程式碼前請先參考 [docs/story-architecture.md](docs/story-architecture.md)
-- **Dialog**：資料為 `public/assets/json/dialog.json`（由 `xls/dialog.xlsx` 透過 `node scripts/dialog.js` 產生，非 npm script，要在 `scripts/story.js` 之前跑）；對話元件為 `com_talk.js`（`COM_Talk`），會把 story 的對話卡插進 entry 節點；dialog 節點格式與 xlsx 格式規範見 [docs/quest-dialog-architecture.md](docs/quest-dialog-architecture.md)（任務部分已過時）
+- **Story（storylet + quality，取代 Quest/Dialog 中）**：劇情狀態統一存在 quality 庫（`src/systems/quality.js`，`Record.game.q`），條件／指令由 `src/systems/script.js` 共用；quality 名稱要先在 `xls/story.xlsx` 的 `qualities` sheet 宣告，`node scripts/story.js` 轉成 `story.json` 並檢查未宣告名稱／節點／who；任務（thread 日誌）、對話卡、事件卡都寫在 `xls/story.xlsx`（一條劇情線一個 sheet），執行期是 `src/systems/story.js`（`Story`），舊的 QuestManager/quest.xlsx 已退休；分 5 階段實作（階段 1～4 已完成），修改任務、對話、好感度或劇情相關程式碼前請先參考 [docs/story-architecture.md](docs/story-architecture.md)
+- **Dialog**：資料為 `public/assets/json/dialog.json`（由 `xls/dialog.xlsx` 透過 `node scripts/dialog.js` 產生，非 npm script，要在 `scripts/story.js` 之前跑）；對話元件為 `com_talk.js`（`COM_Talk`），會把 story 的對話卡插進 entry 節點；`_common` sheet 是所有 NPC 共用的節點與 rule-based 台詞（`line`，`src/systems/line.js`），格式見 [docs/story-architecture.md §6](docs/story-architecture.md)，xlsx 樣式規範見 [docs/quest-dialog-architecture.md §8](docs/quest-dialog-architecture.md)
 - **地圖邊界出口**：`public/assets/maps/main.world`（Tiled World 檔）定義地圖間的相對座標，`GameScene.js` 的 `_createEdgeExits()`/`_findAdjacentMap()` 依此在地圖邊界建立可點擊的 `Port` 出口物件（點擊觸發切換，不是自動偵測）；修改邊界轉場邏輯前請先參考 [docs/map-seamless-transition.md](docs/map-seamless-transition.md)
 - **總覽地圖（縮圖拼接）**：選單「地圖」頁籤（`PMap`）用 `scripts/minimap.js` 產生的各地圖縮圖，依 `main.world` 座標合成顯示（`MiniMap`），不是獨立設計的地圖；修改總覽地圖顯示或縮圖產生流程前請先參考 [docs/minimap-overview.md](docs/minimap-overview.md)
 - **存讀檔**：`Record.game.scenes` 分 `prefab`（Tiled 物件層、固定 uid）跟 `runtime`（動態建立、`uid===-1`，用陣列)兩種資料；修改存讀檔相關程式碼前請先參考 [docs/record-save-architecture.md](docs/record-save-architecture.md)

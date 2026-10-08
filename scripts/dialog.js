@@ -1,152 +1,94 @@
 import XLSX from 'xlsx'
 import fs from 'fs'
-import {toArray, buildChoice, buildNode} from './tools.js'
+import {splitTables, toArray, buildChoice, buildNode} from './tools.js'
 
+// 格式見 docs/story-architecture.md §6
+const IN_XLSX   = './xls/dialog.xlsx';
+const OUT_JSON  = './public/assets/json/dialog.json';
+const ROLE_JSON = './public/assets/json/role.json';
+const COMMON    = '_common';
+const SKIP_SHEETS = ['locales', '說明'];
 
-// 將原始行資料按表頭分割成多個資料表
-// 表頭行以 # 開頭的單元格標識（# 會被移除），後續行為該表的資料
-function splitTables(raw)
+function buildEntry(row)
 {
-    const tables = [];
-    var currentHeader = null;
-
-    for (const row of raw)
-    {
-        const isEmpty = row.every(cell => cell === '');
-        if (isEmpty) continue;                          // 空行直接跳過
-
-        const firstCell = String(row[0] ?? '');
-        if (firstCell.startsWith('//')) continue;       // 註解行直接跳過
-
-        if (firstCell.startsWith('#'))
-        {
-            // 表頭行：去掉 # 符號，保留欄位名稱
-            currentHeader = row.map(n => n.startsWith('#')?'':n);
-        }
-        else if (currentHeader)
-        {
-            // 資料行：將表頭與該行資料對應成物件，過濾掉空欄位名稱
-            const obj = Object.fromEntries(
-                currentHeader.map((h, i) => [h, row[i] ?? '']).filter(([h]) => h !== '')
-            )
-            tables.push(obj)
-        }
-    }
-
-    return tables;
+    const entry = {nodeId: row.node_id, order: Number(row.priority)};
+    if (row.condition) entry.condition = row.condition;
+    if (row.actions)   entry.actions   = toArray(row.actions);
+    return entry;
 }
 
-// ── 工具函式 ──
-function buildEntry(row) {
-  const entry = {
-    nodeId: row.node_id,
-    order:  Number(row.priority)
-  };
-  if (row.condition)    entry.condition = row.condition;
-  if (row.actions)      entry.actions   = toArray(row.actions);
-  return entry;
+function buildLine(row)
+{
+    const line = {concept: row.node_id, text: String(row.text_keys)};
+    if (row.condition) line.condition = String(row.condition);
+    return line;
 }
 
-function buildNpc(sheetName, rows)
+// dynamic：section 寫 'choice:<node_id>' 的列，合併 _common 之後才掛上去
+function readSheet(sheet, rows)
 {
-    const npc  = { id: sheetName, actions: [], entries: [], nodes: {},  };
-    var currentNode = null;
-    const dynamicChoices = []; // {nodeId, row}，section 寫 'choice:<node_id>' 的列，不受物理位置限制
-
+    const d = {entries: [], nodes: {}, lines: [], dynamic: []};
+    let node = null;
     for (const row of rows)
     {
-        if(row.section === 'action')
-        {
-            npc.actions.push(...toArray(row.actions));
-        }
-        else if (row.section === 'entry')
-        {
-            npc.entries.push(buildEntry(row));
-        }
-        else if (row.section === 'node')
-        {
-            currentNode = buildNode(row);
-            npc.nodes[row.node_id] = currentNode;
-        }
-        else if (row.section === 'choice' && currentNode)
-        {
-            currentNode.choices.push(buildChoice(row));
-        }
-        else if (row.section?.startsWith('choice:'))
-        {
-            const nodeId = row.section.slice('choice:'.length).trim();
-            dynamicChoices.push({nodeId, row});
-        }
-        else if (row.section === 'post' && currentNode)
-        {
-            currentNode.posts.push(...toArray(row.actions));
-        }
+        const sec = row.section;
+        if (sec === 'entry') d.entries.push(buildEntry(row));
+        else if (sec === 'line') d.lines.push(buildLine(row));
+        else if (sec === 'node') {node = buildNode(row); d.nodes[row.node_id] = node;}
+        else if (sec === 'choice' && node) node.choices.push(buildChoice(row));
+        else if (sec === 'post' && node) node.posts.push(...toArray(row.actions));
+        else if (sec === 'storylets' && node) node.cards = Number(row.priority);
+        else if (sec?.startsWith('choice:')) d.dynamic.push({nodeId: sec.slice('choice:'.length).trim(), row});
+        else if (sec) console.warn(`WARN dialog.xlsx/${sheet}!${row._row} 認不得的 section「${sec}」`);
     }
-
-    // choice:<node_id> 的列，不管實際填在 sheet 哪裡，都掛到 section 指定的 node
-    for (const {nodeId, row} of dynamicChoices)
-    {
-        const node = npc.nodes[nodeId];
-        if (!node)
-        {
-            console.warn(`[${sheetName}] 找不到節點 ${nodeId}，跳過動態掛載的選項「${row.label_key}」`);
-            continue;
-        }
-        node.choices.push(buildChoice(row));
-    }
-
-    // entries 依 order 排序
-    npc.entries.sort((a, b) => a.order - b.order);
-
-    // choices 依 priority 排序
-    for (const node of Object.values(npc.nodes))
-    {
-        node.choices.sort((a, b) => a.priority - b.priority);
-    }
-
-    return npc;
+    return d;
 }
 
-// 讀取 Excel 檔案並將每個工作表轉換為 JSON 資料表，輸出到指定路徑
-function excelToJson(inputPath, outputPath)
+// own 蓋過 common：同名節點用自己的、同 nodeId 的 entry 用自己的；line 兩邊都留，自己的標 own（挑選時 +1 分）
+function merge(sheet, own, common)
 {
-    const npcs = {};
-    const wb = XLSX.readFile(inputPath);
-    const SKIP_SHEETS = ['locales', '說明'];  // 不是 NPC 的 sheet
-
-    for (const sheetName of wb.SheetNames)
+    const nodes = structuredClone({...common.nodes, ...own.nodes});
+    for (const {nodeId, row} of [...common.dynamic, ...own.dynamic])
     {
-        if (SKIP_SHEETS.includes(sheetName)) continue;
+        if (!nodes[nodeId]) {console.warn(`WARN dialog.xlsx/${sheet}!${row._row} 找不到節點 ${nodeId}，跳過選項「${row.label_key}」`); continue;}
+        nodes[nodeId].choices.push(buildChoice(row));
+    }
+    for (const n of Object.values(nodes)) n.choices.sort((a, b) => (a.priority || 0) - (b.priority || 0));
 
-        // 1. 將工作表轉為二維陣列（header:1 表示以陣列形式而非物件形式返回）
-        const raw = XLSX.utils.sheet_to_json(
-                        wb.Sheets[sheetName],
-                        {header:1, defval:''}
-                    );
+    const mine = new Set(own.entries.map(e => e.nodeId));
+    const entries = [...common.entries.filter(e => !mine.has(e.nodeId)), ...own.entries]
+                        .sort((a, b) => a.order - b.order);
+    const lines = [...own.lines.map(l => ({...l, own: true})), ...common.lines];
+    return {id: sheet, entries, nodes, lines};
+}
 
-        // 2. 根據表頭標記分割出多個資料表
-        const tables = splitTables(raw);
-        npcs[sheetName] = buildNpc(sheetName, tables)
+function excelToJson()
+{
+    const wb = XLSX.readFile(IN_XLSX);
+    const sheets = {};
+    for (const sheet of wb.SheetNames)
+    {
+        if (SKIP_SHEETS.includes(sheet)) continue;
+        const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheet], {header:1, defval:''});
+        sheets[sheet] = readSheet(sheet, splitTables(raw).flatMap(t => t.rows));
     }
 
-    fs.writeFileSync(outputPath, JSON.stringify(npcs, null, 2), 'utf-8');
-    console.log(`Output written to ${outputPath}`);
+    const empty = {entries: [], nodes: {}, lines: [], dynamic: []};
+    const common = sheets[COMMON] ?? empty;
+    const out = {[COMMON]: merge(COMMON, empty, common)};
+
+    // 有自己 sheet 的 NPC，加上 unique NPC（沒 sheet 就只用 _common）才能對話；其他角色只吃 _common 的 line
+    const roles = fs.existsSync(ROLE_JSON) ? JSON.parse(fs.readFileSync(ROLE_JSON, 'utf-8')) : {};
+    const ids = new Set([...Object.keys(sheets), ...Object.keys(roles).filter(id => roles[id].unique)]);
+    ids.delete(COMMON);
+    for (const id of ids)
+    {
+        if (!roles[id]) console.warn(`WARN dialog.xlsx sheet「${id}」不是 NPC id`);
+        out[id] = merge(id, sheets[id] ?? empty, common);
+    }
+
+    fs.writeFileSync(OUT_JSON, JSON.stringify(out, null, 2), 'utf-8');
+    console.log(`Output written to ${OUT_JSON}`);
 }
 
-// 只轉換第一個 sheet
-function test(input, output)
-{
-    const wb = XLSX.readFile(input);
-    const firstSheetName = wb.SheetNames[0];
-    const raw = XLSX.utils.sheet_to_json(
-        wb.Sheets[firstSheetName],
-        {header:1, defval:''}
-    );
-    const tables = splitTables(raw);
-    fs.writeFileSync(output, JSON.stringify(tables, null, 2), 'utf-8');
-    console.log(`Output first sheet "${firstSheetName}" to ${output}`);
-}
-
-// 執行轉換
-excelToJson('./xls/dialog.xlsx', './public/assets/json/dialog.json');
-// test('./xls/roles.xlsx', './public/assets/json/test.json');
+excelToJson();

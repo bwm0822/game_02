@@ -1,11 +1,15 @@
 {
-  "karen": {
-    "id": "karen",
-    "actions": [],
+  "_common": {
+    "id": "_common",
     "entries": [
       {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
         "nodeId": "n_default",
-        "order": 3,
+        "order": 9,
         "actions": [
           "_where=0",
           "_weapon=0",
@@ -15,11 +19,186 @@
       }
     ],
     "nodes": {
-      "n_default": {
+      "n_cold": {
         "textKeys": {
-          "!_first_meet": "很高興認識你，我是Karen",
-          "true": "你好/需要幫助嗎?"
+          "true": "……又是你。"
         },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "!_where"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "!_weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "!_eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "!_rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "karen": {
+    "id": "karen",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
         "actions": [],
         "choices": [
           {
@@ -91,38 +270,9 @@
         "actions": [
           "_weapon=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       },
       "n_eat": {
         "textKeys": {
@@ -131,38 +281,9 @@
         "actions": [
           "_eat=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       },
       "n_rest": {
         "textKeys": {
@@ -171,38 +292,9 @@
         "actions": [
           "_rest=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       },
       "n_where": {
         "textKeys": {
@@ -211,48 +303,48 @@
         "actions": [
           "_where=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       }
-    }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "很高興認識你，我是Karen",
+        "condition": "!_first_meet",
+        "own": true
+      },
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
   },
   "xi": {
     "id": "xi",
-    "actions": [],
     "entries": [
       {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
         "nodeId": "n_default",
-        "order": 3,
+        "order": 9,
         "actions": [
           "_where=0",
           "_weapon=0",
@@ -262,11 +354,25 @@
       }
     ],
     "nodes": {
-      "n_default": {
+      "n_cold": {
         "textKeys": {
-          "!_first_meet": "很高興認識你，我是Xi",
-          "true": "你好/需要幫助嗎?"
+          "true": "……又是你。"
         },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
         "actions": [],
         "choices": [
           {
@@ -338,38 +444,9 @@
         "actions": [
           "_weapon=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       },
       "n_eat": {
         "textKeys": {
@@ -378,38 +455,9 @@
         "actions": [
           "_eat=1"
         ],
-        "choices": [
-          {
-            "labelKey": "這是哪裡?",
-            "priority": 0,
-            "next": "n_where",
-            "condition": "!_where"
-          },
-          {
-            "labelKey": "哪裡可以買武器?",
-            "priority": 0,
-            "next": "n_weapon",
-            "condition": "!_weapon"
-          },
-          {
-            "labelKey": "哪裡可以買吃的?",
-            "priority": 0,
-            "next": "n_eat",
-            "condition": "!_eat"
-          },
-          {
-            "labelKey": "哪裡可以休息?",
-            "priority": 0,
-            "next": "n_rest",
-            "condition": "!_rest"
-          },
-          {
-            "labelKey": "沒事",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       },
       "n_rest": {
         "textKeys": {
@@ -418,6 +466,111 @@
         "actions": [
           "_rest=1"
         ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "很高興認識你，我是Xi",
+        "condition": "!_first_meet",
+        "own": true
+      },
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "trump": {
+    "id": "trump",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -451,6 +604,39 @@
         ],
         "posts": []
       },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
       "n_where": {
         "textKeys": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
@@ -458,6 +644,94 @@
         "actions": [
           "_where=1"
         ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "melanie": {
+    "id": "melanie",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
         "choices": [
           {
             "labelKey": "這是哪裡?",
@@ -490,7 +764,714 @@
           }
         ],
         "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
       }
-    }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "musk": {
+    "id": "musk",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "!_where"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "!_weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "!_eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "!_rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "macron": {
+    "id": "macron",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "!_where"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "!_weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "!_eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "!_rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "guard-1": {
+    "id": "guard-1",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "!_where"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "!_weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "!_eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "!_rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
+  },
+  "guard-2": {
+    "id": "guard-2",
+    "entries": [
+      {
+        "nodeId": "n_cold",
+        "order": 1,
+        "condition": "好感<=25"
+      },
+      {
+        "nodeId": "n_default",
+        "order": 9,
+        "actions": [
+          "_where=0",
+          "_weapon=0",
+          "_eat=0",
+          "_rest=0"
+        ]
+      }
+    ],
+    "nodes": {
+      "n_cold": {
+        "textKeys": {
+          "true": "……又是你。"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [],
+        "cards": 10
+      },
+      "n_default": {
+        "textKeys": {},
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "聊天",
+            "priority": 20,
+            "next": "n_chat"
+          },
+          {
+            "labelKey": "離開",
+            "priority": 99,
+            "actions": [
+              "close"
+            ]
+          }
+        ],
+        "posts": [
+          "_first_meet=1"
+        ]
+      },
+      "n_chat": {
+        "textKeys": {
+          "true": "你想要聊什麼?"
+        },
+        "actions": [],
+        "choices": [
+          {
+            "labelKey": "這是哪裡?",
+            "priority": 0,
+            "next": "n_where",
+            "condition": "!_where"
+          },
+          {
+            "labelKey": "哪裡可以買武器?",
+            "priority": 0,
+            "next": "n_weapon",
+            "condition": "!_weapon"
+          },
+          {
+            "labelKey": "哪裡可以買吃的?",
+            "priority": 0,
+            "next": "n_eat",
+            "condition": "!_eat"
+          },
+          {
+            "labelKey": "哪裡可以休息?",
+            "priority": 0,
+            "next": "n_rest",
+            "condition": "!_rest"
+          },
+          {
+            "labelKey": "沒事",
+            "priority": 0,
+            "next": "n_default"
+          }
+        ],
+        "posts": []
+      },
+      "n_weapon": {
+        "textKeys": {
+          "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
+        },
+        "actions": [
+          "_weapon=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_eat": {
+        "textKeys": {
+          "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
+        },
+        "actions": [
+          "_eat=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_rest": {
+        "textKeys": {
+          "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
+        },
+        "actions": [
+          "_rest=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      },
+      "n_where": {
+        "textKeys": {
+          "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
+        },
+        "actions": [
+          "_where=1"
+        ],
+        "choices": [],
+        "posts": [],
+        "next": "n_chat"
+      }
+    },
+    "lines": [
+      {
+        "concept": "greet",
+        "text": "你好/需要幫助嗎?"
+      },
+      {
+        "concept": "greet",
+        "text": "這麼晚了還在外面晃？",
+        "condition": "time=night"
+      },
+      {
+        "concept": "underAtk",
+        "text": "找死!!!"
+      },
+      {
+        "concept": "stolen",
+        "text": "有小偷!!!"
+      }
+    ]
   }
 }

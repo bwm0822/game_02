@@ -9,6 +9,7 @@ import UiPopup from './uipopup.js'
 import Quality from '../systems/quality.js'
 import {exec} from '../systems/script.js'
 import Story from '../systems/story.js'
+import Line from '../systems/line.js'
 
 
 function cmd_get(args)
@@ -77,6 +78,7 @@ function cmd_story(args)
     // story <npcId>     列出 who 對得上的對話卡與事件卡，標示成立與否
     if(!args[1]) {this.print('[color=yellow]用法: story <npcId>[/color]\n'); return;}
     this.print(Story.debug(args[1]));
+    this.print(Line.debug(args[1]));
 }
 
 function cmd_pop(args)

@@ -60,12 +60,15 @@ export function buildTextKeys(text_keys_str)
     return ret;
 }
 
+// next 有值、底下沒有 choice 列時，執行期沿用 next 節點的選項
 export function buildNode(row)
 {
-    return {
+    const node = {
         textKeys: buildTextKeys(row.text_keys),
         actions:  toArray(row.actions),
         choices:  [],
         posts:    []
     };
+    if (row.next) node.next = row.next;
+    return node;
 }

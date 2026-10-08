@@ -10,6 +10,8 @@
 >
 >
 > **階段 2 已完成**（2026-10-08）：`QuestManager`、`quest.xlsx`、`quest.json`、`scripts/quest.js` 已刪除，任務改寫在 `xls/story.xlsx`（thread/storylet/長對話節點）；`set`/`clr`/`rm`/`qstart`/`qclose`/`consume`、`#questId` 條件、`[var]` 動態 next、dialog 的 `action` 列都已淘汰。本文件的任務部分（§1.3、§1.5～§1.6、§3、§5.1、§6.1、§7「新增一個任務」）只剩歷史參考價值，dialog 節點格式（§1.4、§4）與 xlsx 格式規範（§8）在階段 4 改版前仍然有效。
+>
+> **階段 4 已完成**（2026-10-08）：dialog.xlsx 新增 `_common` sheet、`line`／`storylets` section、節點 `next` 沿用選項，`action` section 已移除，格式改看 [story-architecture.md §6](story-architecture.md)。本文件只剩 §8 xlsx 樣式規範有效（dialog.xlsx 目前三個 sheet 共用一張表，entry/line 列用 `theme:7`、其他列用 `theme:8`）。
 
 ## 1. 資料層
 

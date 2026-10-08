@@ -200,6 +200,7 @@ function checkDialogNodes(npc, nodes, at, ctx)
         const where = at(id, node);
         if (node.textKeys && typeof node.textKeys === 'object') Object.keys(node.textKeys).forEach(c => checkCond(c, where, ctx));
         checkActions([...(node.actions ?? []), ...(node.posts ?? [])], where, ctx, [npc]);
+        checkNode(npc, node.next, `${where} next`, ctx);
         for (const c of node.choices ?? [])
         {
             const w = `${where} choice「${c.labelKey}」`;
@@ -215,7 +216,7 @@ function checkDialog(ctx)
     for (const [npc, d] of Object.entries(ctx.dialog))
     {
         const at = s => `dialog.xlsx/${npc} ${s}`;
-        checkActions(d.actions, at('action'), ctx, [npc]);
+        for (const l of d.lines ?? []) checkCond(l.condition, at(`line ${l.concept}`), ctx);
         for (const e of d.entries ?? [])
         {
             checkCond(e.condition, at(`entry ${e.nodeId}`), ctx);

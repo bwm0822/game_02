@@ -2,10 +2,11 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Story from '../systems/story.js'
+import Line from '../systems/line.js'
 import {exec, evalCond} from '../systems/script.js'
 const _tag = 'talk';
 
-// storylet 插進 entry 節點的 priority，見 docs/story-architecture.md §6.4
+// 沒有 storylets 列時，storylet 插進 entry 節點的 priority，見 docs/story-architecture.md §6.4
 const CARD_PRIORITY = 30;
 
 //--------------------------------------------------
@@ -40,7 +41,7 @@ export class COM_Talk extends Com
     {
         const {bb, fav} = this.ctx;
         if (!this._data) return GM.HIDE;
-        if (fav() <= GM.FAV.DISLIKE) return GM.HIDE;
+        if (fav() <= GM.FAV.HATE) return GM.HIDE;
         if (bb.sta === GM.ST.SLEEP) return GM.DIS;
         return GM.EN;
     }
@@ -128,13 +129,30 @@ export class COM_Talk extends Com
         cb?.('goto');
     }
 
-    _cardChoices()
+    _cardChoices(priority)
     {
         return Story.talkCards(this._npc).map(({card, enabled}) => ({
             labelKey: card.label,
-            priority: CARD_PRIORITY,
+            priority,
             card, enabled,
         }));
+    }
+
+    // 節點沒有 choice 列、但有 next 時，沿用 next 節點的選項（連同插在那裡的對話卡）
+    _choices(nodeId, node)
+    {
+        if (!node.choices?.length && node.next)
+        {
+            const src = this._findNode(node.next);
+            if (src) {return this._choices(node.next, src);}
+        }
+        let choices = (node.choices || []).filter(c => this._matchCond(c.condition));
+        const priority = node.cards ?? (nodeId === this._entryId ? CARD_PRIORITY : null);
+        if (priority !== null)
+        {
+            choices = [...choices, ...this._cardChoices(priority)].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+        }
+        return choices;
     }
 
     // 取得對話內容（文本 + 選項）
@@ -157,13 +175,8 @@ export class COM_Talk extends Com
         if (!say) {this._exec(node.actions);}
 
         // 取得文本與選項
-        const A = say ?? this._getNodeText(node);
-        let choices = (node.choices || []).filter(c => this._matchCond(c.condition));
-        if (this._nodeId === this._entryId)
-        {
-            choices = [...choices, ...this._cardChoices()].sort((a, b) => (a.priority || 0) - (b.priority || 0));
-        }
-        const B = choices.map(c => ({
+        const A = say ?? this._nodeText(node);
+        const B = this._choices(this._nodeId, node).map(c => ({
             text: c.labelKey,
             actions: c.actions || null,
             next: c.next || null,
@@ -177,6 +190,15 @@ export class COM_Talk extends Com
 
         // 返回對話內容
         return {A, B};
+    }
+
+    // entry 節點的 text_keys 空白時，開場白用 greet line
+    _nodeText(node)
+    {
+        const text = this._getNodeText(node);
+        if (text || this._nodeId !== this._entryId) {return text;}
+        const greet = Line.pick(this._npc, 'greet', Line.facts(this._npc, this.root));
+        return greet ? this._pickText(greet) : '';
     }
 
     // 根據條件從 textKeys 選擇文本

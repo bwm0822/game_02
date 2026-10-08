@@ -5,7 +5,9 @@ import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import FxCell from '../core/fxcell.js'
+import Line from '../systems/line.js'
 const _tag = 'disp';
+const BUBBLE_CD = 3000;
 
 //--------------------------------------------------
 // 類別 : 元件(component) 
@@ -372,14 +374,26 @@ export class COM_Disp extends Com
         (this._promises ??= []).push(p);
     }
 
+    // 查 dialog 的 line 冒泡泡；同一個 concept 冷卻 BUBBLE_CD 毫秒，連續挨打不會每下都喊
+    _say(concept)
+    {
+        const now = this.scene.time.now;
+        if(now < (this._sayCd[concept] ?? 0)) {return;}
+        const id = this.ctx.bb.id;
+        const text = Line.pick(id, concept, Line.facts(id, this.root));
+        if(!text) {return;}
+        this._sayCd[concept] = now + BUBBLE_CD;
+        this._speak(Phaser.Utils.Array.GetRandom(text.split('/')));
+    }
+
     _underAtk(id)
     {
-        this._speak('找死!!!')
+        this._say('underAtk');
     }
 
     _stolen(id)
     {
-        this._speak('有小偷!!!')
+        this._say('stolen');
     }
 
     _ondead()
@@ -398,6 +412,7 @@ export class COM_Disp extends Com
     {
         super.bind(root);
         this._init();
+        this._sayCd = {};
 
         // 1.提供 [外部操作的指令]
 

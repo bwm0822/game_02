@@ -1,6 +1,6 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
-> 狀態：**階段 1～3 已完成**（2026-10-08），階段 4、5 尚未實作。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的節點格式在階段 4 改版前仍參考 [quest-dialog-architecture.md](quest-dialog-architecture.md) 的 dialog 部分。
+> 狀態：**階段 1～4 已完成**（2026-10-08），階段 5 尚未實作。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的格式以本文 §6 為準，[quest-dialog-architecture.md](quest-dialog-architecture.md) 只剩 xlsx 樣式規範（§8）有效。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。
 
@@ -160,6 +160,10 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 所有 NPC 共用的 line／entry／node；NPC 自己的 sheet 有同名節點就用自己的。裡面的 `好感`、`_xxx` 自動解析成當下那個 NPC 的。
 
+- 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上（例如 karen 的 `choice:n_default 交易`，不用複製整個 n_default）
+- **能對話的 NPC** = 有自己 sheet 的 + `role.json` 標 `unique:true` 的（沒 sheet 就整套用 `_common`）；其他角色（狼、盜賊…）沒有對話，但 line 泡泡照樣吃 `_common` 的
+- dialog.json 的 `_common` key 是合併前的共用資料，給沒有對話的角色查 line 用
+
 ### 6.2 `section: line`（rule-based 台詞）
 
 ```
@@ -171,10 +175,12 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 - `node_id` 欄填 concept：`greet`（開對話時 NPC 的第一句）、`underAtk`、`stolen`、`hearPlayer`、`seePlayer`…
 - 挑選：所有條件成立的 line 中，**條件數最多的勝出**；寫在 NPC 自己 sheet 的 line **+1 分**；同分隨機
-- 泡泡類 concept 同一個 NPC 有冷卻時間
+- 條件數 = `condition` 用 `&&` 切出的段數；`text_keys` 可以用 `/` 分隔多句隨機挑
+- 泡泡類 concept 同一個 NPC 有冷卻時間（`COM_Disp` 的 `BUBBLE_CD`，3 秒）
 - entry 節點的 `text_keys` 空白時，開場白使用 `greet` 命中的 line
 - `text_keys` 的 `條件: 文字` 映射寫法保留給一般節點，開場白改用 line
-- [com_disp.js](../src/components/com_disp.js) 寫死的 `'找死!!!'`／`'有小偷!!!'` 改成查 line
+- [com_disp.js](../src/components/com_disp.js) 的 `underAtk`／`stolen` 泡泡查 line（`_common` 裡是 `找死!!!`／`有小偷!!!`）
+- 程式：`src/systems/line.js`（`Line.pick(npc, concept, facts)`、`Line.facts(npc, root)` 附帶 `map`/`hour`/`time`/`job`/`style`，有 root 時加 `hp`（血量比例 0～1））
 
 ### 6.3 entry 與冷淡入口
 
@@ -193,8 +199,9 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 ### 6.4 storylet 插入位置
 
 - 預設：插進**entry 節點**，priority 30
-- sheet 裡有 `section: storylets` 列時：照那一列所在的節點、`priority` 插入
+- 節點底下有 `section: storylets` 列時：插進那個節點、用那一列的 `priority`（`n_cold` 是 10）
 - 其他節點不會被插
+- `n_cold` 會插入**所有**成立的對話卡（包含任務卡），要只給「挽回好感」的卡，得在其他卡的 `requires` 自己擋
 
 ### 6.5 節點沿用選項
 
@@ -221,7 +228,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 
 - 同一輪每張卡最多觸發一次，避免 `quality` 事件連鎖爆炸
 - 情境事實（`time`、`map`、`hp`、`job`、`style`…）由查詢方提供，line 與 storylet 共用
-- 所有查詢（事件卡、對話卡、劇情除錯）都自動附帶 `map`（目前地圖）、`hour`（0～23）、`time`（`day`／`night`，18:00～06:00 是 night，跟 `lutAmbient` 變暗的時段一致），見 `Story` 的 `_world()`
+- 所有查詢（事件卡、對話卡、line、劇情除錯）都自動附帶 `map`（目前地圖）、`hour`（0～23）、`time`（`day`／`night`，18:00～06:00 是 night，跟 `lutAmbient` 變暗的時段一致），見 `story.js` 的 `worldFacts()`
 
 ## 8. NPC 主動（`see` + `approach`）
 
@@ -266,7 +273,10 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - debug：右鍵 NPC「劇情除錯」＝ debug 面板指令 `story <npcId>`；line 的分數顯示留到階段 4
 3. ✅ **事件卡**：`enter`／`time`（`kill`／`item`／`quality`、`count`／`stop` 已在階段 2 完成）
    - 程式：`Story.onEnter()`（`GameScene.create()`）、`Story.onTime()`（註冊在 `TimeSystem`）；測試 `scripts/test/events.mjs`（測試卡在執行期塞進 `DB.story()`，不動 xlsx）
-4. **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line
+4. ✅ **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line
+   - 程式：`scripts/dialog.js`（轉檔時合併 `_common`）、`src/systems/line.js`（`Line`）、`COM_Talk`（`_nodeText()` 開場白、`_choices()` 沿用選項＋插卡）、`COM_Disp._say()`；測試 `scripts/test/dialog.mjs`
+   - 對話隱藏門檻從 `DISLIKE`（25）改成 `HATE`（10）；karen／xi 的閒聊節點搬進 `_common`，自己 sheet 只剩 greet 跟交易
+   - 劇情除錯（`story <npcId>`）多印各 concept 的 line 分數，▶ 是會勝出的、★ 是自己 sheet 的
 5. **NPC 主動**：`on: see`、`approach`、`BehApproach`
 
 岔路（例如 `wolf_sell`、`wolf_grudge`）等階段 2 穩定後，再用獨立 commit 加。

@@ -22,8 +22,8 @@ function _fill(text) {return String(text ?? '').replace(/\{([^}]+)\}/g, (_, n)=>
 // 跟 GameScene 的 lutAmbient 暗下來的時段一致
 function _timeFacts(h) {return {hour:h, time: h<6 || h>=18 ? 'night' : 'day'};}
 
-// 所有查詢都附帶的情境事實
-function _world() {return {map:Record.game.map, ..._timeFacts(TimeSystem.time.h)};}
+// 所有查詢都附帶的情境事實（line 也用）
+export function worldFacts() {return {map:Record.game.map, ..._timeFacts(TimeSystem.time.h)};}
 
 export default class Story
 {
@@ -65,7 +65,7 @@ export default class Story
     // 回傳 [{card, enabled}]，enabled=false 是 tease 中（灰色選項）
     static talkCards(npc)
     {
-        const ctx = {npc, facts:_world()};
+        const ctx = {npc, facts:worldFacts()};
         const out = [];
         for(const s of this._forNpc(this._storylets.filter(s=>!s.on), npc))
         {
@@ -84,7 +84,7 @@ export default class Story
     {
         const outer = !this._fired;
         if(outer) {this._fired = new Set();}
-        facts = {..._world(), ...facts};
+        facts = {...worldFacts(), ...facts};
         try
         {
             for(const s of this._storylets)
@@ -176,7 +176,7 @@ export default class Story
 
     static debug(npc)
     {
-        const ctx = {npc, facts:_world()};
+        const ctx = {npc, facts:worldFacts()};
         const cards = this._forNpc(this._storylets, npc);
         if(cards.length === 0) {return `${npc}：沒有 who 對得上的卡\n`;}
         let out = `[color=yellow]${npc} 的劇情卡[/color]\n`;
