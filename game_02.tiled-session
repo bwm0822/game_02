@@ -5,14 +5,14 @@
     },
     "activeFile": "public/assets/maps/m/m_03x05.json",
     "expandedProjectPaths": [
-        "public/assets/maps",
-        ".",
-        "public/assets/maps/m_04x05",
-        "public/assets/tiles",
         "public",
         "public/assets/maps/m/m_04x05",
         "public/assets/maps/m",
-        "public/assets"
+        ".",
+        "public/assets/maps",
+        "public/assets/maps/m_04x05",
+        "public/assets",
+        "public/assets/tiles"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
