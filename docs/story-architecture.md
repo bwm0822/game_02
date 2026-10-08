@@ -1,6 +1,6 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
-> 狀態：**階段 1（地基）已完成**，階段 2～5 尚未實作（2026-10-07）。實作分 5 個階段（見 §12），完成前現行系統仍以 [quest-dialog-architecture.md](quest-dialog-architecture.md) 為準；全部完成後那份文件要改寫或退休，CLAUDE.md 的 Quest/Dialog 段落也要同步更新。
+> 狀態：**階段 1、2 已完成**（2026-10-08），階段 3～5 尚未實作。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的節點格式在階段 4 改版前仍參考 [quest-dialog-architecture.md](quest-dialog-architecture.md) 的 dialog 部分。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。
 
@@ -127,6 +127,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
    wolf_grudge  karen      see             狼患==9 && !_grudge                                            聽說你把狼皮都賣給 xi 了？哼   _grudge=1, 好感-10
 ```
 
+- 上表是示意，實際 xlsx 裡多個效果／事件用 `;` 分隔（同 dialog.xlsx）
 - **對話卡**：有 `who`、沒有 `on`。跟該 NPC 對話時，`requires` 成立就變成選項（插入位置見 §6.4）
 - **事件卡**：有 `on`。事件發生時檢查 `requires`，成立就套用 `effects`；`text` 有值就顯示成畫面提示，或冒在 NPC 頭上的泡泡；空白就默默套用
 - **`who`**：`karen`（單一 NPC）／`job:guard`（`role.json` 的 `job`）／`*`（任何 NPC）；同一個 `id` 有多張卡時，越具體的壓過越籠統的
@@ -240,10 +241,16 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 
 1. ✅ **地基**：quality 庫、共用條件／指令模組、`qualities` 表與名稱檢查、好感度搬進 q；`COM_Talk` 與地圖 `#flag` layer 改讀 quality；quality 檢視器、`T.STORY`
    - 程式：`src/systems/quality.js`（`Quality`）、`src/systems/script.js`（`evalCond()`／`exec()`）；轉檔：`scripts/story.js`（`xls/story.xlsx` → `story.json`，`DB.qualities()`）
-   - 過渡期：舊任務還在跑 QuestManager，所以 `script.js` 暫時保留 `set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId` 條件與字串值（`_quest` 指標），`qualities` 表也先宣告了舊任務旗標；階段 2 搬家後一起刪掉
-   - 未宣告 quality 的檢查也涵蓋 dialog.json、quest.json 與地圖的 `#flag` layer；節點 id／`who` 的檢查留到階段 2
-2. **storylet 主體**：story.xlsx 轉檔、對話卡插入、`tease`／`hint`、thread 日誌與 PQuest 改版、右鍵 NPC 劇情除錯；QK01／QX01／QX02 **1:1 照搬**（quality 改用世界事件命名，名稱搬的時候再取）；QuestManager 與 quest.xlsx 退休
-3. **事件卡**：`kill`／`item`／`enter`／`time`／`quality`、`count`／`stop`
+   - 未宣告 quality 的檢查也涵蓋 dialog.json 與地圖的 `#` layer；節點 id／`who` 的檢查在階段 2 補上
+2. ✅ **storylet 主體**：story.xlsx 轉檔、對話卡插入、`tease`／`hint`、thread 日誌與 PQuest 改版、右鍵 NPC 劇情除錯；QK01／QX01／QX02 **1:1 照搬**；QuestManager 與 quest.xlsx 退休
+   - 程式：`src/systems/story.js`（`Story`：`talkCards()`／`fire()`／`onKill()`／`onItem()`／`thread()`／`debug()`），`COM_Talk` 把對話卡插進 entry 節點、找不到的節點去 story 節點表找
+   - quality 命名：QK01→`討伐令`、QX01→`狼患`、QX02→`狼皮生意`（各一個 sheet），值 1～4 是進行中、10 是完成；殺狼用 `討伐令.殺狼`／`狼患.殺狼` 計數器
+   - 為了 1:1 搬家，**階段 3 的 `kill`／`item`／`quality` 事件與 `count`／`stop` 提前在這階段做了**（`Story.onKill` 在 `Npc._ondead`、`Story.onItem` 在原本 `QuestManager.onCollect` 的位置）；`kill` 事件附帶 `dead`（死者 id）情境事實
+   - 過渡期指令（`set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId`、`[var]` 動態 next、dialog 的 `action` 列）已刪除，dialog.xlsx 改用 `_x=1`／`_x=0`／`!_x`
+   - 實作細節：xlsx 裡多個指令／事件用 `;` 分隔（跟 dialog.xlsx 一致，不是逗號）；`on` 可以填多個（例如 `item;quality`，避免「先拿到道具、才到這一步」時卡住）；`reward_hint` 取日誌走過的值中最後一個有填的；`text` 是一句話的對話卡，選完後 NPC 回那句話、選項留在 entry 節點
+   - 地圖 `#` layer 的名稱改成**條件式**（同 `requires` 語法），forest-01（已棄用）的兩個任務圖層搬到 `m/m_03x05.json`：`#狼患 && 狼患<10`（狼）、`#討伐令 && 討伐令<10`（rogue）
+   - debug：右鍵 NPC「劇情除錯」＝ debug 面板指令 `story <npcId>`；line 的分數顯示留到階段 4
+3. **事件卡**：`enter`／`time`（`kill`／`item`／`quality`、`count`／`stop` 已在階段 2 完成）
 4. **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line
 5. **NPC 主動**：`on: see`、`approach`、`BehApproach`
 

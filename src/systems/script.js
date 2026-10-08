@@ -1,5 +1,5 @@
 import Quality from './quality.js'
-import QuestManager from '../manager/quest.js'
+import Record from '../infra/record.js'
 import {GM} from '../core/setting.js'
 
 //--------------------------------------------------
@@ -36,9 +36,10 @@ function _countItem(id)
     return GM.player.queryItem(itm=>itm.id===id).reduce((s,itm)=>s+itm.count, 0);
 }
 
+export function valueOf(name, ctx={}) {return _value(name.trim(), ctx);}
+
 function _value(name, ctx)
 {
-    if(name.startsWith('#')) {return QuestManager.getState(name.slice(1));}
     if(name.startsWith('item:'))
     {
         const [, id, count] = name.split(':');
@@ -102,14 +103,10 @@ function _run(cmd, ctx)
     switch(op)
     {
         case 'give':    GM.player.reward([{type:'item', id:p1, count:Number(p2 ?? 1)}]); break;
-        case 'take':
-        case 'consume': GM.player.consumeItem?.({id:p1, count:Number(p2 ?? 1)}); break;
-        // 舊指令，任務/對話搬到 story.xlsx 後移除
-        case 'set':     _set(p1, p2 === undefined ? 1 : _literal(p2), ctx); break;
-        case 'clr':
-        case 'rm':      _set(p1, Quality.default(Quality.resolve(p1, ctx.npc)), ctx); break;
-        case 'qstart':  QuestManager.start(p1); break;
-        case 'qclose':  QuestManager.close(p1); break;
+        case 'take':    GM.player.consumeItem?.({id:p1, count:Number(p2 ?? 1)}); break;
+        // 計數器的值本身就是 quality，Record.game.counters 只記「哪個 quality 在數什麼」
+        case 'count':   (Record.game.counters ??= {})[p1] = p2; break;
+        case 'stop':    delete Record.game.counters?.[p1]; break;
         default:        ctx.cb?.(op, args); break;
     }
 }

@@ -2,7 +2,6 @@ import Com from './com.js'
 import DB from '../data/db.js'
 import Record from '../infra/record.js'
 import {GM} from '../core/setting.js'
-import QuestManager from '../manager/quest.js'
 import {dlog} from '../core/debug.js'
 const _tag = 'pick';
 

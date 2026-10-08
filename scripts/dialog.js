@@ -1,6 +1,6 @@
 import XLSX from 'xlsx'
 import fs from 'fs'
-import {toArray} from './tools.js'
+import {toArray, buildChoice, buildNode} from './tools.js'
 
 
 // 將原始行資料按表頭分割成多個資料表
@@ -47,30 +47,6 @@ function buildEntry(row) {
   return entry;
 }
 
-function buildChoice(row) {
-  const c = {
-    labelKey: row.label_key,
-    priority: Number(row.priority),
-  };
-  if (row.actions)      c.actions   = toArray(row.actions);
-  if (row.next)         c.next      = row.next;
-  if (row.condition)    c.condition = row.condition;
-  return c;
-}
-
-function buildTextKeys(text_keys_str)
-{
-  if (!text_keys_str) return {};
-  const ret={};
-  toArray(text_keys_str).forEach((str)=>{
-    const [cond, text] = str.includes(':') ? str.split(':').map(s => s.trim())
-                                            : [true, str];
-    ret[cond] = text;
-  })
-
-  return ret;
-}
-
 function buildNpc(sheetName, rows)
 {
     const npc  = { id: sheetName, actions: [], entries: [], nodes: {},  };
@@ -89,12 +65,7 @@ function buildNpc(sheetName, rows)
         }
         else if (row.section === 'node')
         {
-            currentNode = {
-                textKeys: buildTextKeys(row.text_keys),
-                actions:   toArray(row.actions),
-                choices:  [],
-                posts:  []
-            };
+            currentNode = buildNode(row);
             npc.nodes[row.node_id] = currentNode;
         }
         else if (row.section === 'choice' && currentNode)

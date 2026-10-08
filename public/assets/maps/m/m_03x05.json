@@ -15,9 +15,88 @@
          "width":100,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":3,
+         "name":"#狼患 && 狼患<10",
+         "objects":[
+                {
+                 "id":1,
+                 "template":"..\/..\/templates\/animals\/wolf.tj",
+                 "x":512,
+                 "y":224
+                }, 
+                {
+                 "id":2,
+                 "template":"..\/..\/templates\/animals\/wolf.tj",
+                 "x":256,
+                 "y":160
+                }, 
+                {
+                 "id":3,
+                 "template":"..\/..\/templates\/animals\/wolf.tj",
+                 "x":32,
+                 "y":288
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":4,
+         "name":"#討伐令 && 討伐令<10",
+         "objects":[
+                {
+                 "gid":166,
+                 "height":64,
+                 "id":4,
+                 "name":"",
+                 "properties":[{"name":"id","type":"string","value":"rogue"}],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":32,
+                 "x":512,
+                 "y":672
+                }, 
+                {
+                 "gid":166,
+                 "height":64,
+                 "id":5,
+                 "name":"",
+                 "properties":[{"name":"id","type":"string","value":"rogue"}],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":32,
+                 "x":32,
+                 "y":224
+                }, 
+                {
+                 "gid":166,
+                 "height":64,
+                 "id":6,
+                 "name":"",
+                 "properties":[{"name":"id","type":"string","value":"rogue"}],
+                 "rotation":0,
+                 "type":"npc",
+                 "visible":true,
+                 "width":32,
+                 "x":1120,
+                 "y":96
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":3,
- "nextobjectid":1,
+ "nextlayerid":5,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
@@ -26,6 +105,10 @@
         {
          "firstgid":1,
          "source":"..\/..\/terrain_tiles_v2.tsj"
+        }, 
+        {
+         "firstgid":161,
+         "source":"..\/..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",

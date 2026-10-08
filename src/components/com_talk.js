@@ -1,9 +1,12 @@
 import Com from './com.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
-import Quality from '../systems/quality.js'
+import Story from '../systems/story.js'
 import {exec, evalCond} from '../systems/script.js'
 const _tag = 'talk';
+
+// storylet 插進 entry 節點的 priority，見 docs/story-architecture.md §6.4
+const CARD_PRIORITY = 30;
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -18,6 +21,8 @@ export class COM_Talk extends Com
     {
         super();
         this._nodeId = null;
+        this._entryId = null;
+        this._say = null;
         this._data = null;
         this._textIndexes = {};
     }
@@ -27,7 +32,8 @@ export class COM_Talk extends Com
     //------------------------------------------------------
     //  私有方法
     //------------------------------------------------------
-    get _sctx() {return {npc:this.ctx.bb.id};}
+    get _npc() {return this.ctx.bb.id;}
+    get _sctx() {return {npc:this._npc};}
 
     // 檢查是否可以進行交談（好感度、睡眠狀態）
     _canAct()
@@ -44,29 +50,17 @@ export class COM_Talk extends Com
     // 取得初始入口節點（按 order 排序，找第一個符合條件的）
     _getEntryNode()
     {
-        // 應用全局效果（設置旗標）
-        if (this._data?.actions) {this._exec(this._data.actions);}
         if (!this._data?.entries) return null;
         const sorted = [...this._data.entries].sort((a, b) => a.order - b.order);
         const entry = sorted.find(e => this._matchCond(e.condition));
         // 應用入口效果（設置旗標）
         if (entry?.actions) {this._exec(entry.actions);}
-        
+
         return entry?.nodeId || null;
     }
 
-    // 取得指定節點的資料
-    _getNode(nodeId = this._nodeId)
-    {
-        if (!nodeId || !this._data?.nodes) return null;
-        const node = this._data.nodes[nodeId] || null;
-
-        // 應用節點效果
-        this._exec(node?.actions);
-
-        return node;
-    }
-
+    // NPC 自己的 dialog 節點優先，沒有再找 story.xlsx 的長對話節點
+    _findNode(nodeId) {return this._data?.nodes?.[nodeId] ?? Story.node(this._npc, nodeId) ?? null;}
 
     // 第一次隨機選擇，之後依序顯示
     _pickText(text)
@@ -103,29 +97,44 @@ export class COM_Talk extends Com
     _onTalk()
     {
         this._nodeId = null;
+        this._entryId = null;
+        this._say = null;
         this.ctx.send('talk', this.root);
     }
 
     // 選擇選項（處理 action、導航節點）
     _onSelect(choice, cb)
     {
+        if (choice.card) {this._selectCard(choice, cb); return;}
+
         // 1. 執行選項動作
         if(choice.actions) {this._exec(choice.actions, cb);}
-        
+
         // 2. 跳到到下一節點(若有指定)
         if (choice.next)
         {
-            this._nodeId = this._getNext(choice.next);
+            this._nodeId = choice.next;
             cb?.('goto');
         }
     }
 
-    _getNext(next)
+    // 對話卡：套用 effects，text 是 @節點 就跳過去，否則把那句話當成 NPC 的回應、留在 entry 節點
+    _selectCard({card, enabled}, cb)
     {
-        if (next?.startsWith('[') && next.endsWith(']')) {
-            return Quality.get(Quality.resolve(next.slice(1, -1), this.ctx.bb.id));
-        }
-        return next;
+        if (!enabled) return;
+        this._exec(card.effects, cb);
+        if (card.text?.startsWith('@')) {this._nodeId = card.text.slice(1);}
+        else {this._say = card.text ?? null;}
+        cb?.('goto');
+    }
+
+    _cardChoices()
+    {
+        return Story.talkCards(this._npc).map(({card, enabled}) => ({
+            labelKey: card.label,
+            priority: CARD_PRIORITY,
+            card, enabled,
+        }));
     }
 
     // 取得對話內容（文本 + 選項）
@@ -134,26 +143,37 @@ export class COM_Talk extends Com
         // 取得當前節點ID，若不存在則尋找入口節點
         if (!this._nodeId)
         {
-            this._nodeId = this._getEntryNode();
+            this._nodeId = this._entryId = this._getEntryNode();
             if (!this._nodeId) return {A: '', B: []};
         }
 
         // 取得當前節點
-        const node = this._getNode();
+        const node = this._findNode(this._nodeId);
         if (!node) return {A: '', B: []};
 
+        // 對話卡的一句話回應：只換掉 NPC 的台詞，不重跑節點效果
+        const say = this._say;
+        this._say = null;
+        if (!say) {this._exec(node.actions);}
+
         // 取得文本與選項
-        const A = this._getNodeText(node);
-        const B = (node.choices || [])
-            .filter(c => this._matchCond(c.condition))
-            .map(c => ({
-                text: c.labelKey,
-                actions: c.actions || null,
-                next: c.next || null,
-            }));
+        const A = say ?? this._getNodeText(node);
+        let choices = (node.choices || []).filter(c => this._matchCond(c.condition));
+        if (this._nodeId === this._entryId)
+        {
+            choices = [...choices, ...this._cardChoices()].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+        }
+        const B = choices.map(c => ({
+            text: c.labelKey,
+            actions: c.actions || null,
+            next: c.next || null,
+            card: c.card,
+            enabled: c.enabled,
+            hint: c.card?.hint,
+        }));
 
         // 應用後置效果（設置旗標）
-        if(node.posts) {this._exec(node.posts);}
+        if(!say && node.posts) {this._exec(node.posts);}
 
         // 返回對話內容
         return {A, B};

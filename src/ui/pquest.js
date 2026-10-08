@@ -1,8 +1,7 @@
 ﻿import {Sizer} from 'phaser3-rex-plugins/templates/ui/ui-components.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
-import QuestManager from '../manager/quest.js'
-import DB from '../data/db.js'
+import Story from '../systems/story.js'
 
 
 export class PQuest extends Sizer
@@ -88,7 +87,7 @@ export class PQuest extends Sizer
 
         const btn = ui.uButton(scene, {
             style: UI.BTN.ITEM,
-            text: {text: q.dat.titleKey, wrapWidth: 125},
+            text: {text: q.title, wrapWidth: 125},
             onclick: () => onclick(wrapper)
         });
         wrapper.q = q;
@@ -117,8 +116,8 @@ export class PQuest extends Sizer
         this._title.removeAll(true);
         this._content.clearAll();
 
-        this._pos = q ? QuestManager.pos(q) : null;
-        this._qid = q ? q.dat.id : null;
+        this._pos = q?.pos ?? null;
+        this._qid = q?.id ?? null;
         this._mapBtn.setAlpha(this._pos?1:0);
         this._pos ? this._mapBtn.setInteractive() : this._mapBtn.disableInteractive();
 
@@ -131,16 +130,24 @@ export class PQuest extends Sizer
             // 維持原尺寸夾在中間，不會像給 proportion 撐開那樣被硬改 displayWidth
             this._title
                 .addSpace()
-                .add(ui.uBbc(scene,{text:`[color=yellow]${QuestManager.title(q)}[/color]`}),{align:'center',padding:{top:10,bottom:10}})
+                .add(ui.uBbc(scene,{text:`[color=yellow]${q.title}[/color]`}),{align:'center',padding:{top:10,bottom:10}})
                 .addSpace()
+
+            // 走過的路 ✔、目前這一行 ▸；沒走到的值不列出（不劇透岔路）
+            const progress = q.lines.map(l=>`${l.cur?'▸':'✔'} ${l.text}`).join('\n');
 
             this._content
                 .add(ui.uGroup(scene,{title:'說明',fontSize:GM.FONT_SIZE})
-                        .addItem(ui.uBbc(scene,{text:QuestManager.description(q),wrapWidth:480})),{align:'left',expand:true})
-                .add(ui.uGroup(scene,{title:'獎勵',fontSize:GM.FONT_SIZE})
-                        .addItem(ui.uBbc(scene,{text:QuestManager.rewards(q),wrapWidth:480})),{align:'left',expand:true})
+                        .addItem(ui.uBbc(scene,{text:q.desc ?? '',wrapWidth:480})),{align:'left',expand:true})
+            if(q.reward)
+            {
+                this._content
+                    .add(ui.uGroup(scene,{title:'獎勵',fontSize:GM.FONT_SIZE})
+                            .addItem(ui.uBbc(scene,{text:q.reward,wrapWidth:480})),{align:'left',expand:true})
+            }
+            this._content
                 .add(ui.uGroup(scene,{title:'進度',fontSize:GM.FONT_SIZE})
-                        .addItem(ui.uBbc(scene,{text:QuestManager.progress(q),wrapWidth:480})),{align:'left',expand:true})
+                        .addItem(ui.uBbc(scene,{text:progress,wrapWidth:480})),{align:'left',expand:true})
         }
 
         this.layout();
@@ -170,52 +177,44 @@ export class PQuest extends Sizer
                 this._updateContent(itm.q);
             }
             itm.setDot(false);
-            QuestManager.updated.delete(itm.q.dat.id);
+            Story.updated.delete(itm.q.id);
         }
 
         this._itm = null;
         this._scroll.clearAll();
         this._updateContent(null);
 
-        if(Object.keys(QuestManager.quests.close).length > 0)
+        const threads = Story.threads();
+        const done = threads.filter(q=>q.done);
+        const active = threads.filter(q=>!q.done);
+
+        if(done.length > 0)
         {
             const fold = ui.uFold(scene, {title:'已完成',
                                                 fontSize:GM.FONT_SIZE+4,
                                                 onclick: ()=>{this.layout();}
                                             });
             this._scroll.addItem(fold);
-            fold.cat='close';
 
-            for(let id in QuestManager.quests.close)
+            for(const q of done)
             {
-                const q = QuestManager.queryClose(id)
                 const itm = this._createQuestItem(scene, q, onclick);
                 fold.addItem(itm,{align:'left',padding:{left:10}});
             }
         }
 
-        for(let id in QuestManager.quests.active)
+        if(active.length > 0)
         {
-            const q = QuestManager.queryActive(id);
-            if (!q || !q.dat) continue;
-            const itm = this._createQuestItem(scene, q, onclick);
+            const group = ui.uGroup(scene, {title:'一般任務',
+                                            fontSize:GM.FONT_SIZE+4
+                                        });
+            this._scroll.addItem(group);
 
-            let fold = this._scroll.getChildren().find(child=>child.cat===q.cat);
-            if(!fold)
+            for(const q of active)
             {
-                fold = ui.uGroup(scene, {title:`${q.cat}`,
-                                        fontSize:GM.FONT_SIZE+4
-                                    });
-                this._scroll.addItem(fold);
-                fold.cat=q.cat
-            }
-
-            fold.addItem(itm,{align:'left',padding:{left:10}});
-            itm.q=q;
-
-            if(QuestManager.updated.has(id))
-            {
-                itm.setDot(true);
+                const itm = this._createQuestItem(scene, q, onclick);
+                group.addItem(itm,{align:'left',padding:{left:10}});
+                if(Story.updated.has(q.id)) {itm.setDot(true);}
             }
         }
 

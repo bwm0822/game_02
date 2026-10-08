@@ -8,6 +8,7 @@ import Record from '../infra/record.js'
 import UiPopup from './uipopup.js'
 import Quality from '../systems/quality.js'
 import {exec} from '../systems/script.js'
+import Story from '../systems/story.js'
 
 
 function cmd_get(args)
@@ -69,6 +70,13 @@ function cmd_q(args)
     if(arg && rows.length===0) {rows.push([arg, `${Quality.get(arg)} (預設)`]);}
     if(rows.length===0) {this.print('(沒有 quality)\n'); return;}
     rows.forEach(([k,v])=>this.print(`[color=cyan]${k}[/color] = ${v}\n`));
+}
+
+function cmd_story(args)
+{
+    // story <npcId>     列出 who 對得上的對話卡與事件卡，標示成立與否
+    if(!args[1]) {this.print('[color=yellow]用法: story <npcId>[/color]\n'); return;}
+    this.print(Story.debug(args[1]));
 }
 
 function cmd_pop(args)
@@ -292,10 +300,12 @@ export default class UiDebuger extends UiFrame
     
     ///////////////////////////////////////////////////
 
-    show()
+    // cmd：打開後切到指令頁直接執行（右鍵選單的劇情除錯用）
+    show(cmd)
     {
         super.show();
-        !this._tab&&this._tabs.init('top');
+        if(cmd) {this._tabs.init('top'); this.process(cmd);}
+        else if(!this._tab) {this._tabs.init('top');}
         this.layout();
     }
 
@@ -305,5 +315,5 @@ export default class UiDebuger extends UiFrame
         Record.saveDebug();
     }
 
-    static show() {UiDebuger.instance?.show();}
+    static show(cmd) {UiDebuger.instance?.show(cmd);}
 }

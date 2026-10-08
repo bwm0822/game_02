@@ -8,7 +8,6 @@ import UiMain from '../ui/uimain.js'
 import UiInfo from '../ui/uiinfo.js'
 import UiCover from '../ui/uicover.js'
 import UiDragged from '../ui/uidragged.js'
-import QuestManager from '../manager/quest.js'
 
 
 export default class DragService 

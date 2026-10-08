@@ -21,7 +21,7 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import Role from './role.js'
 import Remains from '../items/remains.js'
-import QuestManager from '../manager/quest.js'
+import Story from '../systems/story.js'
 import {T,dlog} from '../core/debug.js'
 
 export class Npc extends Role
@@ -71,7 +71,7 @@ export class Npc extends Role
         this.strip?.();
         this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
-        QuestManager.onKill(this.id);
+        Story.onKill(this.id);
         // option
         this._delAct(GM.OBSERVE);
         this._delAct(GM.ATTACK);

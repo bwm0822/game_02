@@ -105,6 +105,13 @@ export default class UiDialog extends UiFrame
         p.setDialog = (options)=>{
             scroll.clearAll();
             options.forEach(option=>{
+                // tease 中的對話卡：灰色、不能點，附上 hint
+                if(option.enabled === false)
+                {
+                    const hint = option.hint ? `（${option.hint}）` : '';
+                    scroll.addItem(ui.uBbc(scene,{text:`[color=gray]${option.text}${hint}[/color]`}));
+                    return;
+                }
                 scroll.addItem(ui.uButton(scene,{
                     text:option.text,
                     ondown:()=>{this.owner.select(option, this.cb.bind(this))},

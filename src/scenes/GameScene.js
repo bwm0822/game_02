@@ -1,7 +1,6 @@
 ﻿import {Scene} from 'phaser'
 import Map from '../manager/map.js'
 import Record from '../infra/record.js'
-import QuestManager from  '../manager/quest.js'
 import {GM,UI,GS,OCCLUDE_TBL} from '../core/setting.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
 import Ui from '../ui/uicommon.js'
@@ -333,7 +332,6 @@ export class GameScene extends Scene
 
     loadRecord()
     {
-        QuestManager.load();
         TimeSystem.load();
         //Role.Player.load();
     }

@@ -3,7 +3,7 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import {MiniMap} from '../manager/minimap.js'
-import QuestManager from '../manager/quest.js'
+import Story from '../systems/story.js'
 import Record from '../infra/record.js'
 import UiInfo from './uiinfo.js'
 
@@ -101,33 +101,28 @@ export class PMap extends Sizer
         btn.emit('pointerup');
         
         // 2. 任務
-        for(let id in QuestManager.quests.active)
+        let group;
+        for(const q of Story.threads())
         {
-            const q = QuestManager.queryActive(id);
-            if (!q || !q.dat) continue;
+            if (!q.pos) continue;
 
-            const pos = QuestManager.pos(q);
-            if (!pos) continue;
-
-            const nd = this._getNode(pos);
+            const nd = this._getNode(q.pos);
             if (!nd) continue;
 
             const btn = ui.uButton(scene,{
                             style: UI.BTN.ITEM,
-                            text: {text:QuestManager.title(q),wrapWidth:125},
+                            text: {text:q.title,wrapWidth:125},
                             onclick: onclick});
 
-            let group = this._scroll.getChildren().find(child=>child.cat===q.cat);
             if(!group)
             {
-                group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${q.cat}[/size]`});
+                group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]一般任務[/size]`});
                 this._scroll.addItem(group);
-                group.cat=q.cat
             }
             group.addItem(btn);
             btn.q=q;
-            btn.nid=pos;
-            btn.qid=id;
+            btn.nid=q.pos;
+            btn.qid=q.id;
             nd.qs.push(q);
         }
 

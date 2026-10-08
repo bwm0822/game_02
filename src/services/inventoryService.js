@@ -1,6 +1,6 @@
 // services/inventoryService.js
 import {GM} from '../core/setting.js'
-import QuestManager from '../manager/quest.js'
+import Story from '../systems/story.js'
 
 function sameItem(a, b) {return a?.content && b?.content && a.content.id === b.content.id;}
 
@@ -18,7 +18,7 @@ function doMerge(from, to)
     const remain = dragged - (merged - toCount);
     to.content.count = merged;
     from.content.count = remain;
-    if(from.owner!==to.owner) {QuestManager.onCollect('doMerge');}
+    if(from.owner!==to.owner) {Story.onItem();}
     return 'merged';
 }
 
@@ -29,7 +29,7 @@ function doSwap(from, to)
     const tmp = from.content;
     from.content = to.content;
     to.content = tmp;
-    if(trigger) {QuestManager.onCollect('swap');}
+    if(trigger) {Story.onItem();}
     return ret;
 }
 
@@ -75,7 +75,7 @@ export default class InventoryService
             receive(content, i)
             {
                 storage.items[i] = content;
-                QuestManager.onCollect('receive');
+                Story.onItem();
                 return 0;
             },
             close: () => ent.setEnable(true),

@@ -19,8 +19,6 @@ export default class DB
 
         this._dialogDB = scene.cache.json.get('dialog');
 
-        this._questDB = scene.cache.json.get('quest');
-
         this._abilityDB = scene.cache.json.get('skill');
 
         this._abTree = scene.cache.json.get('sk_tree');
@@ -60,13 +58,13 @@ export default class DB
 
     static dialog(id) {return this._dialogDB?.[id]; }
 
-    static quest(id) { return this._questDB?.[id]; }
-
     static ability(id) { return this._abilityDB?.[id]; }
 
     static fx(id) { return this._fxDB?.[id]; }
 
     static navgraph() { return this._navDB; }
+
+    static story() { return this._storyDB; }
 
     static qualities() { return this._storyDB?.qualities ?? {}; }
 }

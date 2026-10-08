@@ -8,7 +8,8 @@
 > - `onFlag()` 改由 `Quality.onChange` 觸發（任何 quality 改變都會檢查），地圖 `#flag` layer 改讀 `Quality.get()`
 > - 新增的旗標名稱要先在 `xls/story.xlsx` 的 `qualities` sheet 宣告，否則 `node scripts/story.js` 會報錯
 >
-> 其餘（資料格式、任務步驟、對話節點）在階段 2 搬家前仍然有效。
+>
+> **階段 2 已完成**（2026-10-08）：`QuestManager`、`quest.xlsx`、`quest.json`、`scripts/quest.js` 已刪除，任務改寫在 `xls/story.xlsx`（thread/storylet/長對話節點）；`set`/`clr`/`rm`/`qstart`/`qclose`/`consume`、`#questId` 條件、`[var]` 動態 next、dialog 的 `action` 列都已淘汰。本文件的任務部分（§1.3、§1.5～§1.6、§3、§5.1、§6.1、§7「新增一個任務」）只剩歷史參考價值，dialog 節點格式（§1.4、§4）與 xlsx 格式規範（§8）在階段 4 改版前仍然有效。
 
 ## 1. 資料層
 

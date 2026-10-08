@@ -11,7 +11,6 @@ import InventoryService from '../services/inventoryService.js'
 // import UiProfile from './uiprofile.js'
 // import UiStorage from './uistorage.js'
 import UiCount from '../ui/uicount.js'
-import QuestManager from '../manager/quest.js'
 
 
 export default class UiOption extends UiFrame
@@ -67,6 +66,7 @@ export default class UiOption extends UiFrame
             .addItem(GM.OPENBAG, this.openbag.bind(this))
             .addItem(GM.PLACE, this.place.bind(this))
             .addDbgSense()
+            .addDbgStory()
             .setOrigin(0)
             .layout()
             .hide();
@@ -96,6 +96,20 @@ export default class UiOption extends UiFrame
                         ondown: ()=>{
                             this.close();
                             this.ent.dbgSense(!this.ent.dbgSense());
+                        },
+                        ext:{expand:true},
+                    })
+        return this;
+    }
+
+    addDbgStory()
+    {
+        this._dbgStory = ui.uButton.call(this,this.scene,{
+                        style: UI.BTN.OPTION,
+                        text: '劇情除錯',
+                        ondown: ()=>{
+                            this.close();
+                            this.on(UI.TAG.DEBUGER, `story ${this.ent.id}`);
                         },
                         ext:{expand:true},
                     })
@@ -232,6 +246,9 @@ export default class UiOption extends UiFrame
             this._dbgSense.show().setText(`${ent.dbgSense() ? '☑' : '☐'} 感知除錯`);
         }
         else {this._dbgSense.hide();}
+
+        if(DEBUG.enable && ent?.getDialog) {this._dbgStory.show();}
+        else {this._dbgStory.hide();}
 
         // 設定位置，注意要在 layout() 之後再 setPosition()，否則會有 offset 的問題
         this.layout()

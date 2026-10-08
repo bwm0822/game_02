@@ -3,7 +3,7 @@ import TileMap from '../core/tilemap.js'
 import {astar, Graph} from '../core/astar.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
-import Quality from '../systems/quality.js'
+import {evalCond} from '../systems/script.js'
 import {Npc} from '../roles/npc.js'
 import Pickup from '../items/pickup.js'
 import Case from '../items/case.js'
@@ -69,11 +69,11 @@ class Map
 
             let qid;
             // 如果 layer name 開頭是 '#'，代表是條件 layer，
-            // layer.name 移除 '#' 當成 quality 名稱，非 0 才生成
+            // layer.name 移除 '#' 當成條件式（語法同 storylet 的 requires），成立才生成
             if(layer.name.startsWith('#'))
             {
                 const flagName = layer.name.slice(1);
-                if(!Quality.get(flagName))
+                if(!evalCond(flagName))
                 {
                     // 條件不成立，移除這個 layer 的存檔
                     Record.remove(mapName,flagName);

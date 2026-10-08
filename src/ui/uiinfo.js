@@ -3,7 +3,7 @@ import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
 import Record from '../infra/record.js'
-import QuestManager from '../manager/quest.js'
+import Story from '../systems/story.js'
 
 const WIDTH=250;
 export default class UiInfo extends UiFrame
@@ -262,9 +262,9 @@ export default class UiInfo extends UiFrame
         elm.qs.forEach((q)=>{
             const itm = ui.uPanel(scene,{orientation:'x',space:{item:5}});
             ui.uBbc.call(itm,scene,{text:'-',ext:{align:'left-top'}});
-            ui.uBbc.call(itm,scene,{text:QuestManager.curStepDesc(q),wrapWidth:230,ext:{align:'left',expand:true}});
+            ui.uBbc.call(itm,scene,{text:Story.curLine(q.id),wrapWidth:230,ext:{align:'left',expand:true}});
 
-            ui.uGroup.call(this,scene,{title:`[color=yellow]${QuestManager.title(q)}[/color]`,divider:false})
+            ui.uGroup.call(this,scene,{title:`[color=yellow]${q.title}[/color]`,divider:false})
                 .addItem(itm);
         })
         this.setW(0)

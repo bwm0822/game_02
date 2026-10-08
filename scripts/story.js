@@ -1,19 +1,17 @@
 import XLSX from 'xlsx'
 import fs from 'fs'
 import path from 'path'
-import {splitTables} from './tools.js'
+import {splitTables, toArray, buildChoice, buildNode} from './tools.js'
 
 const IN_XLSX   = './xls/story.xlsx';
 const OUT_JSON  = './public/assets/json/story.json';
 const ROLE_JSON = './public/assets/json/role.json';
 const DIALOG_JSON = './public/assets/json/dialog.json';
-const QUEST_JSON  = './public/assets/json/quest.json';
 const MAP_DIR   = './public/assets/maps';
 
 // 條件裡由查詢方提供的情境事實，不是 quality
-const FACTS = ['time', 'map', 'hp', 'job', 'style', 'true', 'false'];
-// 不帶 quality 名稱的指令
-const PLAIN_OPS = ['trade', 'close', 'goto', 'give', 'take', 'consume', 'qstart', 'qclose', 'approach', 'count', 'stop'];
+const FACTS = ['time', 'map', 'hp', 'job', 'style', 'dead', 'true', 'false'];
+const EVENTS = ['kill', 'item', 'enter', 'time', 'quality', 'see'];
 
 function readQualities(wb)
 {
@@ -39,7 +37,83 @@ function readQualities(wb)
     return out;
 }
 
+// ── 劇情線 sheet：thread / storylet / 長對話節點三種表，依表頭欄位判斷 ──
+function readThreads(sheet, rows, story)
+{
+    let cur = null;
+    for (const r of rows)
+    {
+        if (r.thread)
+        {
+            cur = {id: r.thread, sheet, row: r._row, title: r.title, desc: r.desc, quality: r.quality, values: {}};
+            story.threads[r.thread] = cur;
+        }
+        if (!cur || r.value === '') continue;
+        const v = {journal: r.journal, row: r._row};
+        if (r.pos) v.pos = r.pos;
+        if (r.end === 'Y') v.end = true;
+        if (r.reward_hint) v.reward = r.reward_hint;
+        cur.values[Number(r.value)] = v;
+    }
+}
+
+function readStorylets(sheet, rows, story)
+{
+    for (const r of rows)
+    {
+        if (!r.id) continue;
+        const s = {id: r.id, sheet, row: r._row};
+        for (const k of ['who', 'tease', 'requires', 'label', 'hint', 'text']) {if (r[k] !== '') s[k] = String(r[k]);}
+        if (r.on) s.on = toArray(r.on);
+        if (r.effects) s.effects = toArray(r.effects);
+        story.storylets.push(s);
+    }
+}
+
+function readNodes(sheet, rows, story)
+{
+    let node = null;
+    for (const r of rows)
+    {
+        if (r.section === 'node')
+        {
+            if (!r.who) {err(`${sheet}!${r._row} 節點 ${r.node_id} 沒填 who`); node = null; continue;}
+            node = buildNode(r);
+            node.sheet = sheet;
+            node.row = r._row;
+            (story.nodes[r.who] ??= {})[r.node_id] = node;
+        }
+        else if (r.section === 'choice' && node) {node.choices.push(buildChoice(r));}
+        else if (r.section === 'post' && node) {node.posts.push(...toArray(r.actions));}
+    }
+    for (const npc of Object.values(story.nodes))
+    {
+        for (const n of Object.values(npc)) {n.choices.sort((a, b) => (a.priority || 0) - (b.priority || 0));}
+    }
+}
+
+function readStory(wb)
+{
+    const story = {threads: {}, storylets: [], nodes: {}};
+    for (const sheet of wb.SheetNames)
+    {
+        if (sheet === 'qualities') continue;
+        const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheet], {header:1, defval:''});
+        for (const {header, rows} of splitTables(raw))
+        {
+            if (header.includes('thread')) readThreads(sheet, rows, story);
+            else if (header.includes('section')) readNodes(sheet, rows, story);
+            else if (header.includes('requires')) readStorylets(sheet, rows, story);
+            else console.warn(`WARN ${sheet} 有認不得的表頭：${header.filter(Boolean).join(',')}`);
+        }
+    }
+    return story;
+}
+
 // ── 名稱檢查 ──
+let errors = 0;
+function err(msg) {console.error(`ERROR ${msg}`); errors++;}
+
 function isDeclared(name, qualities, roleIds)
 {
     if (qualities[name]) return true;
@@ -61,8 +135,8 @@ function condNames(expr)
         .filter(Boolean);
 }
 
-// 跟 src/systems/script.js 的 splitAction/ASSIGN 同一套規則
-function actionNames(action)
+// 跟 src/systems/script.js 的 COND_PREFIX/ASSIGN 同一套規則
+function parseAction(action)
 {
     const names = [];
     const m0 = action.match(/^(.*?)\s+:\s+(.*)$/);
@@ -73,62 +147,126 @@ function actionNames(action)
         cmd = m0[2].trim();
     }
     const m = cmd.match(/^(\S+?)(?:=(\S*)|([+-])(\d+(?:\.\d+)?))$/);
-    if (m) {names.push(m[1]); return names;}
-    const [op, p1] = cmd.split(/\s+/);
-    if (['set', 'clr', 'rm'].includes(op) && p1) names.push(p1);
-    return names;
+    if (m) {names.push(m[1]); return {names};}
+    const [op, ...args] = cmd.split(/\s+/);
+    if (['count', 'stop'].includes(op) && args[0]) names.push(args[0]);
+    return {names, op, args};
 }
 
 function checkName(name, where, ctx)
 {
-    if (name.startsWith('_') || name.startsWith('item:') || name.startsWith('#')) return;
+    if (name.startsWith('_') || name.startsWith('item:')) return;
     if (FACTS.includes(name) || /^-?\d+(\.\d+)?$/.test(name) || name === 'gold') return;
-    if (!isDeclared(name, ctx.qualities, ctx.roleIds))
+    if (!isDeclared(name, ctx.qualities, ctx.roleIds)) err(`未宣告的 quality「${name}」 @ ${where}`);
+}
+
+function checkCond(expr, where, ctx) {condNames(expr).forEach(n => checkName(n, where, ctx));}
+
+// npcs：這段動作可能發生在哪些 NPC 身上（goto 要檢查節點存在）；null = 不在對話中
+function checkActions(actions, where, ctx, npcs)
+{
+    for (const a of actions ?? [])
     {
-        console.error(`ERROR 未宣告的 quality「${name}」 @ ${where}`);
-        ctx.errors++;
+        const {names, op, args} = parseAction(a);
+        names.forEach(n => checkName(n, where, ctx));
+        if ((op === 'goto' || op === 'approach') && npcs) npcs.forEach(npc => checkNode(npc, args[0], where, ctx));
     }
 }
 
-function checkDialog(dialog, ctx)
+function nodeExists(npc, id, ctx) {return !!(ctx.story.nodes[npc]?.[id] || ctx.dialog[npc]?.nodes?.[id]);}
+
+function checkNode(npc, id, where, ctx)
 {
-    for (const [npc, d] of Object.entries(dialog))
+    if (!id || id.startsWith('[')) return;
+    if (!nodeExists(npc, id, ctx)) err(`${npc} 沒有節點「${id}」 @ ${where}`);
+}
+
+function checkDialogNodes(npc, nodes, at, ctx)
+{
+    for (const [id, node] of Object.entries(nodes ?? {}))
+    {
+        const where = at(id, node);
+        if (node.textKeys && typeof node.textKeys === 'object') Object.keys(node.textKeys).forEach(c => checkCond(c, where, ctx));
+        checkActions([...(node.actions ?? []), ...(node.posts ?? [])], where, ctx, [npc]);
+        for (const c of node.choices ?? [])
+        {
+            const w = `${where} choice「${c.labelKey}」`;
+            checkCond(c.condition, w, ctx);
+            checkActions(c.actions, w, ctx, [npc]);
+            checkNode(npc, c.next, w, ctx);
+        }
+    }
+}
+
+function checkDialog(ctx)
+{
+    for (const [npc, d] of Object.entries(ctx.dialog))
     {
         const at = s => `dialog.xlsx/${npc} ${s}`;
-        (d.actions ?? []).forEach(a => actionNames(a).forEach(n => checkName(n, at('action'), ctx)));
+        checkActions(d.actions, at('action'), ctx, [npc]);
         for (const e of d.entries ?? [])
         {
-            condNames(e.condition).forEach(n => checkName(n, at(`entry ${e.nodeId}`), ctx));
-            (e.actions ?? []).forEach(a => actionNames(a).forEach(n => checkName(n, at(`entry ${e.nodeId}`), ctx)));
+            checkCond(e.condition, at(`entry ${e.nodeId}`), ctx);
+            checkActions(e.actions, at(`entry ${e.nodeId}`), ctx, [npc]);
+            checkNode(npc, e.nodeId, at('entry'), ctx);
         }
-        for (const [id, node] of Object.entries(d.nodes ?? {}))
-        {
-            const where = at(`node ${id}`);
-            if (node.textKeys && typeof node.textKeys === 'object')
-            {
-                Object.keys(node.textKeys).forEach(c => condNames(c).forEach(n => checkName(n, where, ctx)));
-            }
-            [...(node.actions ?? []), ...(node.posts ?? [])].forEach(a => actionNames(a).forEach(n => checkName(n, where, ctx)));
-            for (const c of node.choices ?? [])
-            {
-                const w = `${where} choice「${c.labelKey}」`;
-                condNames(c.condition).forEach(n => checkName(n, w, ctx));
-                (c.actions ?? []).forEach(a => actionNames(a).forEach(n => checkName(n, w, ctx)));
-            }
-        }
+        checkDialogNodes(npc, d.nodes, id => at(`node ${id}`), ctx);
     }
 }
 
-function checkQuest(quest, ctx)
+// who 對得上的 NPC id 清單；寫錯回傳 null
+function whoNpcs(who, ctx)
 {
-    for (const [id, q] of Object.entries(quest))
+    if (who === '*') return [...ctx.roleIds];
+    if (who.startsWith('job:'))
     {
-        const at = s => `quest.xlsx/${q.npcId} ${id} ${s}`;
-        [...(q.action?.start ?? []), ...(q.action?.complete ?? [])].forEach(a => actionNames(a).forEach(n => checkName(n, at('actions'), ctx)));
-        for (const [sid, st] of Object.entries(q.steps ?? {}))
+        const job = who.slice(4);
+        const ids = Object.entries(ctx.roles).filter(([, r]) => r.job === job).map(([id]) => id);
+        return ids.length ? ids : null;
+    }
+    return ctx.roleIds.has(who) ? [who] : null;
+}
+
+function checkStory(ctx)
+{
+    const {story} = ctx;
+    for (const [npc, nodes] of Object.entries(story.nodes))
+    {
+        if (!ctx.roleIds.has(npc)) err(`story.xlsx 節點的 who「${npc}」不是 NPC id`);
+        checkDialogNodes(npc, nodes, (id, n) => `story.xlsx/${n.sheet}!${n.row} node ${id}`, ctx);
+    }
+    for (const t of Object.values(story.threads))
+    {
+        const at = r => `story.xlsx/${t.sheet}!${r} thread ${t.id}`;
+        checkName(t.quality, at(t.row), ctx);
+        for (const v of Object.values(t.values))
         {
-            if (st.complete?.type === 'flag') checkName(st.complete.flag, at(sid), ctx);
-            (st.actions ?? []).forEach(a => actionNames(a).forEach(n => checkName(n, at(sid), ctx)));
+            for (const [, n] of String(v.journal ?? '').matchAll(/\{([^}]+)\}/g)) checkName(n, at(v.row), ctx);
+        }
+    }
+    const ids = new Set();
+    for (const s of story.storylets)
+    {
+        const where = `story.xlsx/${s.sheet}!${s.row} storylet ${s.id}`;
+        const key = `${s.id}|${s.who ?? ''}`;
+        if (ids.has(key)) err(`storylet id+who 重複 @ ${where}`);
+        ids.add(key);
+        let npcs = null;
+        if (s.who)
+        {
+            npcs = whoNpcs(s.who, ctx);
+            if (!npcs) {err(`who「${s.who}」對不到任何 NPC @ ${where}`); npcs = null;}
+        }
+        if (!s.who && !s.on) err(`storylet 沒有 who 也沒有 on @ ${where}`);
+        if (!s.on && !s.label) err(`對話卡沒有 label @ ${where}`);
+        (s.on ?? []).forEach(e => {if (!EVENTS.includes(e)) err(`認不得的事件「${e}」 @ ${where}`);});
+        checkCond(s.requires, where, ctx);
+        checkCond(s.tease, where, ctx);
+        checkActions(s.effects, where, ctx, s.on ? null : npcs);
+        if (s.text?.startsWith('@'))
+        {
+            if (s.on) err(`事件卡的 text 不能跳節點 @ ${where}`);
+            else npcs?.forEach(npc => checkNode(npc, s.text.slice(1), where, ctx));
         }
     }
 }
@@ -137,7 +275,7 @@ function walkLayers(layers, file, ctx)
 {
     for (const l of layers ?? [])
     {
-        if (l.name?.startsWith('#')) checkName(l.name.slice(1), `${file} layer ${l.name}`, ctx);
+        if (l.name?.startsWith('#')) checkCond(l.name.slice(1), `${file} layer ${l.name}`, ctx);
         walkLayers(l.layers, file, ctx);
     }
 }
@@ -156,14 +294,28 @@ function checkMaps(dir, ctx)
 
 function readJson(p) {return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf-8')) : {};}
 
+function strip(story)
+{
+    // sheet/row 只給檢查報錯用，不輸出
+    const clean = o => {const {sheet, row, ...rest} = o; return rest;};
+    const threads = Object.fromEntries(Object.entries(story.threads).map(([k, t]) => [k, {
+        ...clean(t), values: Object.fromEntries(Object.entries(t.values).map(([v, d]) => [v, clean(d)])),
+    }]));
+    const nodes = Object.fromEntries(Object.entries(story.nodes).map(([npc, ns]) => [npc,
+        Object.fromEntries(Object.entries(ns).map(([id, n]) => [id, clean(n)]))]));
+    return {threads, storylets: story.storylets.map(clean), nodes};
+}
+
 const wb = XLSX.readFile(IN_XLSX);
 const qualities = readQualities(wb);
-fs.writeFileSync(OUT_JSON, JSON.stringify({qualities}, null, 2), 'utf-8');
+const story = readStory(wb);
+fs.writeFileSync(OUT_JSON, JSON.stringify({qualities, ...strip(story)}, null, 2), 'utf-8');
 console.log(`Output written to ${OUT_JSON}`);
 
-const ctx = {qualities, roleIds: new Set(Object.keys(readJson(ROLE_JSON))), errors: 0};
-checkDialog(readJson(DIALOG_JSON), ctx);
-checkQuest(readJson(QUEST_JSON), ctx);
+const roles = readJson(ROLE_JSON);
+const ctx = {qualities, story, roles, roleIds: new Set(Object.keys(roles)), dialog: readJson(DIALOG_JSON)};
+checkDialog(ctx);
+checkStory(ctx);
 checkMaps(MAP_DIR, ctx);
-if (ctx.errors) {console.error(`story 檢查：${ctx.errors} 個錯誤`); process.exitCode = 1;}
+if (errors) {console.error(`story 檢查：${errors} 個錯誤`); process.exitCode = 1;}
 else {console.log('story 檢查：OK');}

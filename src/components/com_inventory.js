@@ -5,7 +5,7 @@ import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
 import {GM} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
-import QuestManager from '../manager/quest.js'
+import Story from '../systems/story.js'
 const _tag = 'inv';
 
 //--------------------------------------------------
@@ -92,7 +92,7 @@ export class COM_Storage extends Com
             i++;
         }
 
-        QuestManager.onCollect('put');
+        Story.onItem();
         return remain;
     }
 
@@ -115,7 +115,7 @@ export class COM_Storage extends Com
                 this._storage.items[i]=content;
             }
 
-            QuestManager.onCollect('receive');
+            Story.onItem();
 
             return 0;   // 回傳remian，為0
         }
@@ -158,7 +158,7 @@ export class COM_Storage extends Com
         send('msg',`${'drop'.lab()} ${ent.label}`);
         ent.empty();
         AudioManager.drop();
-        QuestManager.onCollect('drop');
+        Story.onItem();
     }
 
     _open(target) // 提供給外界操作

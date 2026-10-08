@@ -1,6 +1,5 @@
 import { Scene } from 'phaser'
 import Record from '../infra/record.js'
-import QuestManager from '../manager/quest.js'
 
 
 export class Game extends Scene
@@ -23,7 +22,6 @@ export class Game extends Scene
     loadRecord()
     {
         Record.loadGame();// 執行後，其他 scene 不用再執行 Record.loadGame()
-        QuestManager.load();
     }
 
     gotoScene() 
