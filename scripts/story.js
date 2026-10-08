@@ -70,6 +70,17 @@ function readStorylets(sheet, rows, story)
     }
 }
 
+// 地圖 @群組 圖層的出現條件
+function readSpawns(sheet, rows, story)
+{
+    for (const r of rows)
+    {
+        if (!r.group) continue;
+        if (story.spawns[r.group]) err(`${sheet}!${r._row} spawn 群組「${r.group}」重複（另一個在 ${story.spawns[r.group].sheet}）`);
+        story.spawns[r.group] = {requires: String(r.requires), sheet, row: r._row};
+    }
+}
+
 function readNodes(sheet, rows, story)
 {
     let node = null;
@@ -94,7 +105,7 @@ function readNodes(sheet, rows, story)
 
 function readStory(wb)
 {
-    const story = {threads: {}, storylets: [], nodes: {}};
+    const story = {threads: {}, storylets: [], nodes: {}, spawns: {}};
     for (const sheet of wb.SheetNames)
     {
         if (sheet === 'qualities') continue;
@@ -103,6 +114,7 @@ function readStory(wb)
         {
             if (header.includes('thread')) readThreads(sheet, rows, story);
             else if (header.includes('section')) readNodes(sheet, rows, story);
+            else if (header.includes('group')) readSpawns(sheet, rows, story);
             else if (header.includes('requires')) readStorylets(sheet, rows, story);
             else console.warn(`WARN ${sheet} 有認不得的表頭：${header.filter(Boolean).join(',')}`);
         }
@@ -244,6 +256,7 @@ function checkStory(ctx)
             for (const [, n] of String(v.journal ?? '').matchAll(/\{([^}]+)\}/g)) checkName(n, at(v.row), ctx);
         }
     }
+    for (const [g, s] of Object.entries(story.spawns)) checkCond(s.requires, `story.xlsx/${s.sheet}!${s.row} spawn ${g}`, ctx);
     const ids = new Set();
     for (const s of story.storylets)
     {
@@ -275,7 +288,13 @@ function walkLayers(layers, file, ctx)
 {
     for (const l of layers ?? [])
     {
-        if (l.name?.startsWith('#')) checkCond(l.name.slice(1), `${file} layer ${l.name}`, ctx);
+        if (l.name?.startsWith('#')) err(`${file} layer ${l.name}：條件圖層改用 @群組，條件寫在 story.xlsx 的 spawn 表`);
+        if (l.name?.startsWith('@'))
+        {
+            const g = l.name.slice(1);
+            if (!ctx.story.spawns[g]) err(`${file} layer ${l.name}：story.xlsx 沒有宣告 spawn 群組「${g}」`);
+            ctx.usedGroups.add(g);
+        }
         walkLayers(l.layers, file, ctx);
     }
 }
@@ -303,7 +322,8 @@ function strip(story)
     }]));
     const nodes = Object.fromEntries(Object.entries(story.nodes).map(([npc, ns]) => [npc,
         Object.fromEntries(Object.entries(ns).map(([id, n]) => [id, clean(n)]))]));
-    return {threads, storylets: story.storylets.map(clean), nodes};
+    const spawns = Object.fromEntries(Object.entries(story.spawns).map(([g, s]) => [g, s.requires]));
+    return {threads, storylets: story.storylets.map(clean), nodes, spawns};
 }
 
 const wb = XLSX.readFile(IN_XLSX);
@@ -313,9 +333,11 @@ fs.writeFileSync(OUT_JSON, JSON.stringify({qualities, ...strip(story)}, null, 2)
 console.log(`Output written to ${OUT_JSON}`);
 
 const roles = readJson(ROLE_JSON);
-const ctx = {qualities, story, roles, roleIds: new Set(Object.keys(roles)), dialog: readJson(DIALOG_JSON)};
+const ctx = {qualities, story, roles, roleIds: new Set(Object.keys(roles)), dialog: readJson(DIALOG_JSON), usedGroups: new Set()};
 checkDialog(ctx);
 checkStory(ctx);
 checkMaps(MAP_DIR, ctx);
+Object.entries(story.spawns).filter(([g]) => !ctx.usedGroups.has(g))
+    .forEach(([g, s]) => console.warn(`WARN story.xlsx/${s.sheet}!${s.row} spawn 群組「${g}」沒有任何地圖用到`));
 if (errors) {console.error(`story 檢查：${errors} 個錯誤`); process.exitCode = 1;}
 else {console.log('story 檢查：OK');}

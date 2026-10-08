@@ -3,6 +3,7 @@ import TileMap from '../core/tilemap.js'
 import {astar, Graph} from '../core/astar.js'
 import {GM} from '../core/setting.js'
 import Record from '../infra/record.js'
+import DB from '../data/db.js'
 import {evalCond} from '../systems/script.js'
 import {Npc} from '../roles/npc.js'
 import Pickup from '../items/pickup.js'
@@ -68,18 +69,18 @@ class Map
         map.objects.forEach((layer)=>{
 
             let qid;
-            // 如果 layer name 開頭是 '#'，代表是條件 layer，
-            // layer.name 移除 '#' 當成條件式（語法同 storylet 的 requires），成立才生成
-            if(layer.name.startsWith('#'))
+            // @群組 layer：出現條件寫在 story.xlsx 的 spawn 表，只在進地圖時判斷；
+            // 群組名稱同時是存檔命名空間，改條件不會讓存檔對不上
+            if(layer.name.startsWith('@'))
             {
-                const flagName = layer.name.slice(1);
-                if(!evalCond(flagName))
+                const group = layer.name.slice(1);
+                if(!evalCond(DB.spawn(group) ?? 'false'))
                 {
                     // 條件不成立，移除這個 layer 的存檔
-                    Record.remove(mapName,flagName);
+                    Record.remove(mapName,group);
                     return;
                 }
-                qid = flagName;
+                qid = group;
             }
 
             // 將 id,qid 加到 properties

@@ -139,6 +139,19 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 `text` 填 `@n_xxx` 時跳進的節點，放在**同一個劇情線 sheet**，欄位與 dialog.xlsx 的 node/choice 相同（加 `who` 欄標示屬於哪個 NPC），讓一條劇情的所有內容都在同一頁。
 
+### 5.4 spawn 表（地圖 `@群組` 圖層）
+
+劇情期間才出現的物件（怪、NPC、道具）在 Tiled 裡放進名稱是 `@群組` 的物件圖層，出現條件寫在劇情線 sheet 的 spawn 表：
+
+```
+#  group   requires              desc
+   狼群     狼患 && 狼患<10        狼患進行中，m_03x05 出現 3 隻狼
+```
+
+- `src/manager/map.js` 只在**進地圖時**判斷（`DB.spawn(group)`）：不成立就不生成，並清掉該群組的存檔；即時生成／移除刻意不做（2026-10-08 決定）
+- 群組名稱同時是存檔命名空間（`qid`），條件怎麼改都不影響存檔；群組名稱全域唯一
+- 轉檔檢查：地圖的 `@` 圖層沒宣告 → 錯誤；宣告了但沒地圖用 → 警告；舊的 `#` 條件圖層 → 錯誤
+
 ## 6. dialog.xlsx
 
 欄位不變（`section`／`node_id`／`priority`／`condition`／`text_keys`／`label_key`／`next`／`actions`），只負責 NPC 的日常與個性。
@@ -248,7 +261,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 為了 1:1 搬家，**階段 3 的 `kill`／`item`／`quality` 事件與 `count`／`stop` 提前在這階段做了**（`Story.onKill` 在 `Npc._ondead`、`Story.onItem` 在原本 `QuestManager.onCollect` 的位置）；`kill` 事件附帶 `dead`（死者 id）情境事實
    - 過渡期指令（`set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId`、`[var]` 動態 next、dialog 的 `action` 列）已刪除，dialog.xlsx 改用 `_x=1`／`_x=0`／`!_x`
    - 實作細節：xlsx 裡多個指令／事件用 `;` 分隔（跟 dialog.xlsx 一致，不是逗號）；`on` 可以填多個（例如 `item;quality`，避免「先拿到道具、才到這一步」時卡住）；`reward_hint` 取日誌走過的值中最後一個有填的；`text` 是一句話的對話卡，選完後 NPC 回那句話、選項留在 entry 節點
-   - 地圖 `#` layer 的名稱改成**條件式**（同 `requires` 語法），forest-01（已棄用）的兩個任務圖層搬到 `m/m_03x05.json`：`#狼患 && 狼患<10`（狼）、`#討伐令 && 討伐令<10`（rogue）
+   - forest-01（已棄用）的兩個任務圖層搬到 `m/m_03x05.json`，改成 `@群組` 圖層（見 §5.4）：`@狼群`、`@盜賊`（rogue-1）
    - debug：右鍵 NPC「劇情除錯」＝ debug 面板指令 `story <npcId>`；line 的分數顯示留到階段 4
 3. **事件卡**：`enter`／`time`（`kill`／`item`／`quality`、`count`／`stop` 已在階段 2 完成）
 4. **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line

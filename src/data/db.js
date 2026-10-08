@@ -66,5 +66,7 @@ export default class DB
 
     static story() { return this._storyDB; }
 
+    static spawn(group) { return this._storyDB?.spawns?.[group]; }
+
     static qualities() { return this._storyDB?.qualities ?? {}; }
 }

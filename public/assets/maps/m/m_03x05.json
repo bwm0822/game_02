@@ -19,7 +19,7 @@
         {
          "draworder":"topdown",
          "id":3,
-         "name":"#狼患 && 狼患<10",
+         "name":"@狼群",
          "objects":[
                 {
                  "id":1,
@@ -48,7 +48,7 @@
         {
          "draworder":"topdown",
          "id":4,
-         "name":"#討伐令 && 討伐令<10",
+         "name":"@盜賊",
          "objects":[
                 {
                  "id":4,
