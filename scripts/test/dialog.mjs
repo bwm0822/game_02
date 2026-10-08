@@ -71,6 +71,8 @@ run('dialog 改版', async t => {
 
     t.check('沒 sheet 的 unique NPC 也有 _common 對話', await t.eval(d => !!d.DB.dialog('trump')?.nodes.n_default), '');
     t.check('狼沒有對話', await t.eval(d => !d.DB.dialog('wolf')), '');
+    t.eq('trump 是商人：trade 事實成立（_common 的交易選項會出現）', await t.eval(d => d.Line.facts('trump').trade), 1);
+    t.eq('守衛不是商人：沒有交易選項', await t.eval(d => d.Line.facts('guard-1').trade), 0);
     t.eq('狼挨打吃 _common 的 line', await t.eval(d => d.Line.pick('wolf', 'underAtk', d.Line.facts('wolf'))), '找死!!!');
     t.eq('被偷的 line', await t.eval(d => d.Line.pick('xi', 'stolen', d.Line.facts('xi'))), '有小偷!!!');
 });

@@ -16,11 +16,11 @@ function _conds(cond) {return cond ? String(cond).split('&&').length : 0;}
 
 export default class Line
 {
-    // root 有給才有 hp（血量比例 0～1）
+    // NPC 的情境事實（line 跟 dialog 條件共用）；root 有給才有 hp（血量比例 0～1）
     static facts(npc, root)
     {
         const meta = DB.role(npc);
-        const f = {...worldFacts(), job:meta?.job, style:meta?.style};
+        const f = {...worldFacts(), job:meta?.job, style:meta?.style, trade:meta?.trade ? 1 : 0};
         const t = root?.total;
         if(t?.hpMax) {f.hp = t.states.hp / t.hpMax;}
         return f;

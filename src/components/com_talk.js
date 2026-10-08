@@ -34,7 +34,7 @@ export class COM_Talk extends Com
     //  私有方法
     //------------------------------------------------------
     get _npc() {return this.ctx.bb.id;}
-    get _sctx() {return {npc:this._npc};}
+    get _sctx() {return {npc:this._npc, facts:Line.facts(this._npc, this.root)};}
 
     // 檢查是否可以進行交談（好感度、睡眠狀態）
     _canAct()

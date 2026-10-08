@@ -42,6 +42,14 @@
         "actions": [],
         "choices": [
           {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
+          {
             "labelKey": "聊天",
             "priority": 20,
             "next": "n_chat"
@@ -208,7 +216,8 @@
             "priority": 10,
             "actions": [
               "trade"
-            ]
+            ],
+            "condition": "trade"
           },
           {
             "labelKey": "聊天",
@@ -383,7 +392,8 @@
             "priority": 10,
             "actions": [
               "trade"
-            ]
+            ],
+            "condition": "trade"
           },
           {
             "labelKey": "聊天",
@@ -554,6 +564,14 @@
         "actions": [],
         "choices": [
           {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
+          {
             "labelKey": "聊天",
             "priority": 20,
             "next": "n_chat"
@@ -715,6 +733,14 @@
         "textKeys": {},
         "actions": [],
         "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
           {
             "labelKey": "聊天",
             "priority": 20,
@@ -878,6 +904,14 @@
         "actions": [],
         "choices": [
           {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
+          {
             "labelKey": "聊天",
             "priority": 20,
             "next": "n_chat"
@@ -1039,6 +1073,14 @@
         "textKeys": {},
         "actions": [],
         "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
           {
             "labelKey": "聊天",
             "priority": 20,
@@ -1202,6 +1244,14 @@
         "actions": [],
         "choices": [
           {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
+          {
             "labelKey": "聊天",
             "priority": 20,
             "next": "n_chat"
@@ -1363,6 +1413,14 @@
         "textKeys": {},
         "actions": [],
         "choices": [
+          {
+            "labelKey": "交易",
+            "priority": 10,
+            "actions": [
+              "trade"
+            ],
+            "condition": "trade"
+          },
           {
             "labelKey": "聊天",
             "priority": 20,

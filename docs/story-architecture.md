@@ -161,7 +161,9 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 所有 NPC 共用的 line／entry／node；NPC 自己的 sheet 有同名節點就用自己的。裡面的 `好感`、`_xxx` 自動解析成當下那個 NPC 的。
 
-- 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上（例如 karen 的 `choice:n_default 交易`，不用複製整個 n_default）
+- 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上，不用複製整個節點
+- `_common` 的 n_default 有 `交易` 選項，條件是 `trade` 事實（`role.json` 的 `trade:true`），所有商人自動都有
+- dialog 的條件（choice、entry、textKeys）跟 line 一樣附帶 NPC 情境事實（`Line.facts()`：`map`/`hour`/`time`/`job`/`style`/`trade`/`hp`）
 - **能對話的 NPC** = 有自己 sheet 的 + `role.json` 標 `unique:true` 的（沒 sheet 就整套用 `_common`）；其他角色（狼、盜賊…）沒有對話，但 line 泡泡照樣吃 `_common` 的
 - dialog.json 的 `_common` key 是合併前的共用資料，給沒有對話的角色查 line 用
 
@@ -277,7 +279,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 程式：`Story.onEnter()`（`GameScene.create()`）、`Story.onTime()`（註冊在 `TimeSystem`）；測試 `scripts/test/events.mjs`（測試卡在執行期塞進 `DB.story()`，不動 xlsx）
 4. ✅ **dialog 改版**：`_common`、`line` + rule-based、`next` 沿用選項、`storylets` 插入位置、`n_cold`；泡泡改查 line
    - 程式：`scripts/dialog.js`（轉檔時合併 `_common`）、`src/systems/line.js`（`Line`）、`COM_Talk`（`_nodeText()` 開場白、`_choices()` 沿用選項＋插卡）、`COM_Disp._say()`；測試 `scripts/test/dialog.mjs`
-   - 對話隱藏門檻從 `DISLIKE`（25）改成 `HATE`（10）；karen／xi 的閒聊節點搬進 `_common`，自己 sheet 只剩 greet 跟交易
+   - 對話隱藏門檻從 `DISLIKE`（25）改成 `HATE`（10）；karen／xi 的閒聊節點與交易選項搬進 `_common`，自己 sheet 只剩 greet
    - 劇情除錯（`story <npcId>`）多印各 concept 的 line 分數，▶ 是會勝出的、★ 是自己 sheet 的
 5. **NPC 主動**：`on: see`、`approach`、`BehApproach`
 
