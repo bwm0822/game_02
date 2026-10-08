@@ -10,13 +10,13 @@
       "scope": "global",
       "default": 0,
       "show": false,
-      "label": "黑森林討伐"
+      "label": "盜賊討伐"
     },
-    "討伐令.殺狼": {
+    "討伐令.殺盜賊": {
       "scope": "global",
       "default": 0,
       "show": false,
-      "label": "討伐令.殺狼"
+      "label": "討伐令.殺盜賊"
     },
     "狼患": {
       "scope": "global",
@@ -46,8 +46,8 @@
   "threads": {
     "討伐令": {
       "id": "討伐令",
-      "title": "黑森林討伐",
-      "desc": "黑森林的野狼越來越猖獗，長老需要你的幫助。",
+      "title": "盜賊討伐",
+      "desc": "黑森林裡出現了一群盜賊，商隊都不敢上路，商人 karen 需要你的幫助。",
       "quality": "討伐令",
       "values": {
         "1": {
@@ -55,11 +55,11 @@
           "reward": "金幣 x100"
         },
         "2": {
-          "journal": "前往黑森林，擊殺黑森林的野狼 ({討伐令.殺狼}/1)",
+          "journal": "前往黑森林，擊殺盜賊 ({討伐令.殺盜賊}/1)",
           "pos": "m/m_03x05"
         },
         "3": {
-          "journal": "收集匕首"
+          "journal": "從盜賊身上取得匕首"
         },
         "4": {
           "journal": "任務完成，跟 karen 回報任務"
@@ -128,18 +128,18 @@
       "id": "hunt_xi",
       "who": "xi",
       "requires": "討伐令==1",
-      "label": "關於黑森林討伐",
+      "label": "關於盜賊",
       "text": "@n_hunt_xi"
     },
     {
       "id": "hunt_kill",
-      "requires": "討伐令==2 && 討伐令.殺狼>=1",
+      "requires": "討伐令==2 && 討伐令.殺盜賊>=1",
       "on": [
         "kill"
       ],
       "effects": [
         "討伐令=3",
-        "stop 討伐令.殺狼"
+        "stop 討伐令.殺盜賊"
       ]
     },
     {
@@ -229,7 +229,7 @@
     "karen": {
       "n_hunt_ask": {
         "textKeys": {
-          "true": "要黑森林討伐?"
+          "true": "最近黑森林有盜賊出沒，商隊都不敢走了……能幫忙討伐嗎?"
         },
         "actions": [],
         "choices": [
@@ -335,7 +335,7 @@
     "xi": {
       "n_hunt_xi": {
         "textKeys": {
-          "true": "前往黑森林，擊殺黑森林的野狼"
+          "true": "盜賊就躲在黑森林裡，他們身上都帶著匕首，拿一把回來給 karen 當證明吧。"
         },
         "actions": [],
         "choices": [
@@ -344,7 +344,7 @@
             "priority": 0,
             "actions": [
               "討伐令=2",
-              "count 討伐令.殺狼 kill:wolf"
+              "count 討伐令.殺盜賊 kill:rogue-1"
             ],
             "next": "n_default"
           }

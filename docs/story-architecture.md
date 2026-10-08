@@ -257,7 +257,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 未宣告 quality 的檢查也涵蓋 dialog.json 與地圖的 `#` layer；節點 id／`who` 的檢查在階段 2 補上
 2. ✅ **storylet 主體**：story.xlsx 轉檔、對話卡插入、`tease`／`hint`、thread 日誌與 PQuest 改版、右鍵 NPC 劇情除錯；QK01／QX01／QX02 **1:1 照搬**；QuestManager 與 quest.xlsx 退休
    - 程式：`src/systems/story.js`（`Story`：`talkCards()`／`fire()`／`onKill()`／`onItem()`／`thread()`／`debug()`），`COM_Talk` 把對話卡插進 entry 節點、找不到的節點去 story 節點表找
-   - quality 命名：QK01→`討伐令`、QX01→`狼患`、QX02→`狼皮生意`（各一個 sheet），值 1～4 是進行中、10 是完成；殺狼用 `討伐令.殺狼`／`狼患.殺狼` 計數器
+   - quality 命名：QK01→`討伐令`、QX01→`狼患`、QX02→`狼皮生意`（各一個 sheet），值 1～4 是進行中、10 是完成；擊殺用 `討伐令.殺盜賊`（rogue-1）／`狼患.殺狼` 計數器；討伐令搬家後改成盜賊討伐（原本 QK01 殺狼是放錯，rogue-1 身上就帶著要收集的匕首）
    - 為了 1:1 搬家，**階段 3 的 `kill`／`item`／`quality` 事件與 `count`／`stop` 提前在這階段做了**（`Story.onKill` 在 `Npc._ondead`、`Story.onItem` 在原本 `QuestManager.onCollect` 的位置）；`kill` 事件附帶 `dead`（死者 id）情境事實
    - 過渡期指令（`set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId`、`[var]` 動態 next、dialog 的 `action` 列）已刪除，dialog.xlsx 改用 `_x=1`／`_x=0`／`!_x`
    - 實作細節：xlsx 裡多個指令／事件用 `;` 分隔（跟 dialog.xlsx 一致，不是逗號）；`on` 可以填多個（例如 `item;quality`，避免「先拿到道具、才到這一步」時卡住）；`reward_hint` 取日誌走過的值中最後一個有填的；`text` 是一句話的對話卡，選完後 NPC 回那句話、選項留在 entry 節點
