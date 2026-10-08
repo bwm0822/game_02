@@ -14,6 +14,12 @@ import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-p
 //import ContainerLitePlugin from 'phaser3-rex-plugins/plugins/containerlite-plugin.js';
 //import TextEditPlugin from 'phaser3-rex-plugins/plugins/textedit-plugin.js';
 import RoundRectangleProgressPlugin from 'phaser3-rex-plugins/plugins/roundrectangleprogress-plugin.js';
+import Record from './infra/record.js';
+import Quality from './systems/quality.js';
+import Story from './systems/story.js';
+import DB from './data/db.js';
+import Ui from './ui/uicommon.js';
+import {GM, UI as UI_DEF} from './core/setting.js';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -92,4 +98,9 @@ const config = {
     ]
 };
 
-export default new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// 開發版才掛到 window，給 scripts/test/ 的無頭瀏覽器測試讀寫遊戲狀態
+if(import.meta.env.DEV) {window.__dbg = {game, Record, Quality, Story, DB, Ui, GM, UI:UI_DEF};}
+
+export default game;
