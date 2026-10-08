@@ -3,16 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m/m_04x05.json",
+    "activeFile": "public/assets/maps/m/m_03x05.json",
     "expandedProjectPaths": [
-        "public",
-        ".",
-        "public/assets",
-        "public/assets/maps/m_04x05",
         "public/assets/maps",
-        "public/assets/maps/m/m_04x05",
+        ".",
+        "public/assets/maps/m_04x05",
         "public/assets/tiles",
-        "public/assets/maps/m"
+        "public",
+        "public/assets/maps/m/m_04x05",
+        "public/assets/maps/m",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -360,24 +360,32 @@
                 "y": 1597.1844504879218
             }
         },
-        "public/assets/maps/m/m_03x05.json": {
-            "scale": 0.125,
+        "public/assets/maps/m/m_00x09.json": {
+            "scale": 0.015625,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1600,
-                "y": 1596
+                "x": 13472,
+                "y": -20224
+            }
+        },
+        "public/assets/maps/m/m_03x05.json": {
+            "scale": 0.33,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 669.6969696969697,
+                "y": 160.6060606060605
             }
         },
         "public/assets/maps/m/m_04x05.json": {
             "expandedObjectLayers": [
-                5,
-                3
+                3,
+                5
             ],
-            "scale": 0.75,
-            "selectedLayer": 3,
+            "scale": 2,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 1621.3333333333333,
-                "y": 1692.6666666666665
+                "x": 1608,
+                "y": 1634.75
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -938,9 +946,10 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
+        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m/m_03x05.json",
-        "public/assets/maps/m/m_04x05.json",
+        "public/assets/maps/m/m_00x09.json",
         "public/assets/maps/m_04x05/house-01.json",
         "public/assets/maps/m_04x05/trump-inn-f1.json",
         "public/assets/maps/village-01.json",
@@ -948,8 +957,7 @@
         "public/assets/maps/forest-01.json",
         "public/assets/maps/_m_00x00.json",
         "public/assets/maps/m_04x05/home.json",
-        "public/assets/maps/m_04x05/macron-home.json",
-        "public/assets/maps/m_04x05/musk-home.json"
+        "public/assets/maps/m_04x05/macron-home.json"
     ],
     "resizeMap.removeObjects": false,
     "tileset.embedInMap": false,
