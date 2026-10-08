@@ -138,5 +138,7 @@ export default class UiFrame extends Sizer
 
     close() {this.hide(); return this;}
 
+    get isOpen() {return this._con ? this._con.visible : this.visible;}
+
 
 }

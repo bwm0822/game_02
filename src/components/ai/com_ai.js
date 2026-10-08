@@ -8,6 +8,8 @@ import {BehChase} from './behchase.js'
 import {BehTest} from './behtest.js'
 import {BehInvestigate} from './behinvestigate.js'
 import {BehRespond} from './behrespond.js'
+import {BehApproach} from './behapproach.js'
+import Story from '../../systems/story.js'
 import {GM} from '../../core/setting.js'
 import {T,dlog,dtable} from '../../core/debug.js'
 
@@ -126,6 +128,7 @@ export class COM_AI extends Com
             new BehAttack({weight:w.attack}),
             new BehInvestigate({weight:1.5}),
             new BehRespond({weight:1.4}),
+            new BehApproach({weight:1.3}),
             new BehIdle({weight:w.idle}),
             // new BehChase({minInterval:2}),
             // new BehPatrol({ weight: 0.6 }),
@@ -148,12 +151,13 @@ export class COM_AI extends Com
         if (ctx.bb.target) ctx.bb.lastSeen.set(ctx.bb.target.id ?? ctx.bb.target, ctx.tick);
     }
 
-    _updateBB(ctx) 
+    _updateBB(ctx)
     {
         const{bb,root}=ctx;
+        const saw = bb.seePlayer;
         bb.sensePlayer = root.sensePlayer?.();
         bb.seePlayer = bb.sensePlayer ? root.canSee?.(bb.sensePlayer) : false;
-
+        if(bb.seePlayer && !saw) {Story.onSee(root);}
     }
 
     // 回合主流程
@@ -205,7 +209,8 @@ export class COM_AI extends Com
 
         // 2.在上層(root)綁定API/Property，提供給其他元件或外部使用
         root.think = this._think.bind(this);
-        
+        root.approach = (node)=>{this.ctx.bb.approach = node;};
+
         // 3.註冊(event)給其他元件或外部呼叫
         // root.on('think', this._think.bind(this));
     }

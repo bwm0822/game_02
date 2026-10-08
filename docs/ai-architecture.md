@@ -27,6 +27,7 @@ Npc.process()                       src/roles/npc.js
 | `BehAttack` | `w.attack` | 感知到玩家，且（`aggressive` 或 `fav() ≤ HATE`） | 血量低於 50% 先補血 → `useAb('atk')` → 在攻擊範圍就 `attack`，不然追擊；記錄 `lastKnownPos`，`idleCnt=5` |
 | `BehInvestigate` | 1.5 | 沒感知到玩家，但有 `lastKnownPos` | 走到最後看到玩家的位置 |
 | `BehRespond` | 1.4 | 有 `alarmPos`（看到玩家也繼續） | 走到呼救地點；抵達或走不到 → 清掉 `alarmPos`，`idleCnt=3` |
+| `BehApproach` | 1.3 | 有 `approach`（storylet 的 `approach` 指令），且好感 > `HATE`、NORMAL 模式、沒睡覺、玩家沒在對話／交易 | 走到玩家旁邊 → `root.talkAt(node)`，打斷玩家移動，`idleCnt=2`；見 [story-architecture.md §8](story-architecture.md) |
 | `BehIdle` | `w.idle` | `idleCnt > 0` | 站著 |
 | `BehSchedule` | 1 | 一定成立 | `root.updateSch()`（沒有作息的 NPC 是 no-op） |
 
@@ -38,7 +39,8 @@ Npc.process()                       src/roles/npc.js
 | 欄位 | 誰寫 | 誰讀 |
 |---|---|---|
 | `sensePlayer` | `COM_Sense._sensePlayer()`（看到或聽到；睡覺時 null，見 §3.1） | Flee / Attack / Investigate |
-| `seePlayer` | `COM_AI._updateBB()`：`sensePlayer` 而且 `canSee()`（只聽到時是 false） | 目前沒人讀 |
+| `seePlayer` | `COM_AI._updateBB()`：`sensePlayer` 而且 `canSee()`（只聽到時是 false） | `_updateBB()` 自己：false→true 時觸發 storylet 的 `see` 事件 |
+| `approach` | `root.approach(node)`（`Story.onSee` 的 `approach` 指令）；Approach 抵達／放棄時清掉 | Approach |
 | `lastKnownPos` | Attack.act 寫入；Investigate 放棄時清掉 | Investigate |
 | `idleCnt` | Flee / Attack 設成 5，Respond 抵達時設成 3；Idle.score 每次被評分就減 1 | Idle |
 | `beh` | `COM_AI._think()`：這回合選到的行為名稱（`SCHEDULE`/`ATTACK`…），還沒想過是 undefined | `COM_Alarm` |

@@ -24,6 +24,7 @@ export class COM_Talk extends Com
         this._nodeId = null;
         this._entryId = null;
         this._say = null;
+        this._startNode = null;
         this._data = null;
         this._textIndexes = {};
     }
@@ -95,12 +96,23 @@ export class COM_Talk extends Com
     }
 
     // 開始對話（重置節點，發送事件開啟對話UI）
-    _onTalk()
+    _onTalk() {this._start(null);}
+
+    // startNode：NPC 主動搭話（approach）時直接進的節點；entry 節點照算，對話卡才插得到
+    _start(startNode)
     {
         this._nodeId = null;
         this._entryId = null;
         this._say = null;
+        this._startNode = startNode;
         this.ctx.send('talk', this.root);
+    }
+
+    _talkAt(nodeId)
+    {
+        if (this._canAct() !== GM.EN) return false;
+        this._start(nodeId);
+        return true;
     }
 
     // 選擇選項（處理 action、導航節點）
@@ -162,6 +174,7 @@ export class COM_Talk extends Com
         if (!this._nodeId)
         {
             this._nodeId = this._entryId = this._getEntryNode();
+            if (this._startNode) {this._nodeId = this._startNode; this._startNode = null;}
             if (!this._nodeId) return {A: '', B: []};
         }
 
@@ -244,6 +257,7 @@ export class COM_Talk extends Com
         // 2.設定外部操作界面（方法 & 事件）
         root._setAct(GM.TALK, this._canAct.bind(this));
         root.talk = this._onTalk.bind(this);
+        root.talkAt = this._talkAt.bind(this);
         root.select = this._onSelect.bind(this);
         root.getDialog = this._onGetDialog.bind(this);
 

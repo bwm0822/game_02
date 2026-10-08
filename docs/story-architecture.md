@@ -1,6 +1,6 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
-> 狀態：**階段 1～4 已完成**（2026-10-08），階段 5 尚未實作。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的格式以本文 §6 為準，[quest-dialog-architecture.md](quest-dialog-architecture.md) 只剩 xlsx 樣式規範（§8）有效。
+> 狀態：**階段 1～5 全部完成**（2026-10-08）。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的格式以本文 §6 為準，[quest-dialog-architecture.md](quest-dialog-architecture.md) 只剩 xlsx 樣式規範（§8）有效。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。
 
@@ -236,9 +236,12 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 
 ## 8. NPC 主動（`see` + `approach`）
 
-- 沒有 `approach`：只在 NPC 頭上冒 `text` 泡泡
-- 有 `approach n_xxx`：AI 新增 `BehApproach`，NPC 走到玩家旁邊、自動打開對話並進入 `n_xxx`；評分要壓過作息
-- NPC 正在戰鬥、交易、睡覺，或玩家正在對話／交易時不觸發
+- 觸發點：`COM_AI._updateBB()` 裡 `bb.seePlayer` 由 false 變 true 的那一刻（`Story.onSee(npc)`）；一直看著不會重複觸發，看不到再看到才會再觸發。只聽到不算
+- `see` 卡的 `text` 冒在 NPC 頭上（`root.speak`，2 秒），不是畫面提示
+- 有 `approach n_xxx`：記到 `bb.approach`，`BehApproach`（1.3 分，壓過作息跟發呆、輸給 Respond／Investigate／戰鬥）走到玩家旁邊，抵達後 `root.talkAt(n_xxx)` 開對話直接進 `n_xxx`（entry 節點照算，`next` 回 entry 時對話卡照插）；玩家的移動被 `stop()` 打斷，NPC 發呆 2 回合不走開
+- 不觸發／暫停：好感 ≤ `HATE`（放棄、清掉 `bb.approach`）、戰鬥模式（`GS.mode` 不是 NORMAL）、NPC 睡覺、玩家正在對話或交易（`Story.playerBusy`）；後三種先去做作息，條件解除後繼續走過來；走不到也放棄
+- `bb.approach` 不存檔：玩家在 NPC 走到之前離開地圖，這次搭話就沒了。所以 `see` 卡只放「打招呼」這類效果，推進劇情的 quality 寫在 `n_xxx` 節點裡，下次看到還會再來
+- 轉檔檢查：`approach` 只能用在 `on` 含 `see`、有填 `who` 的卡，`n_xxx` 要是 who 對到的 NPC 的節點
 
 ## 9. 任務日誌（PQuest）
 
@@ -281,6 +284,8 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 程式：`scripts/dialog.js`（轉檔時合併 `_common`）、`src/systems/line.js`（`Line`）、`COM_Talk`（`_nodeText()` 開場白、`_choices()` 沿用選項＋插卡）、`COM_Disp._say()`；測試 `scripts/test/dialog.mjs`
    - 對話隱藏門檻從 `DISLIKE`（25）改成 `HATE`（10）；karen／xi 的閒聊節點與交易選項搬進 `_common`，自己 sheet 只剩 greet
    - 劇情除錯（`story <npcId>`）多印各 concept 的 line 分數，▶ 是會勝出的、★ 是自己 sheet 的
-5. **NPC 主動**：`on: see`、`approach`、`BehApproach`
+5. ✅ **NPC 主動**：`on: see`、`approach`、`BehApproach`
+   - 程式：`Story.onSee()`／`Story.playerBusy`、`Story.fire()` 多了 `{say, cb}` 選項；`COM_AI._updateBB()` 觸發 see、`root.approach()`；`src/components/ai/behapproach.js`；`COM_Talk` 的 `root.talkAt(node)`；`UiFrame.isOpen`；測試 `scripts/test/approach.mjs`（測試卡與節點在執行期塞進 `DB.story()`）
+   - 無頭測試的 `gotoMap()` 改成等到新的玩家物件出現：起始地圖就是 `m/m_04x05`，原本切到同一張地圖時會在舊場景還沒重啟前就回報載入完成
 
 岔路（例如 `wolf_sell`、`wolf_grudge`）等階段 2 穩定後，再用獨立 commit 加。

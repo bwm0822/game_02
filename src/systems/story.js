@@ -81,7 +81,8 @@ export default class Story
     //------------------------------------------------------
     //  事件卡
     //------------------------------------------------------
-    static fire(on, facts={})
+    // say：text 顯示的方式（預設是畫面提示）；cb：認不得的指令（approach…）交給呼叫方
+    static fire(on, facts={}, {say=_popup, cb}={})
     {
         const outer = !this._fired;
         if(outer) {this._fired = new Set();}
@@ -96,8 +97,8 @@ export default class Story
                 if(!evalCond(s.requires, ctx)) {continue;}
                 this._fired.add(s);
                 dlog(T.STORY)(`[S] ${on} → ${s.id}`);
-                exec(s.effects, ctx);
-                if(s.text) {_popup(s.text);}
+                exec(s.effects, {...ctx, cb});
+                if(s.text) {say(s.text);}
             }
         }
         finally {if(outer) {this._fired = null;}}
@@ -116,6 +117,18 @@ export default class Story
     static onItem() {this.fire('item');}
 
     static onEnter() {this.fire('enter');}
+
+    // NPC 看到玩家的那一刻（COM_AI）：text 冒在 NPC 頭上，approach 交給 NPC 的 AI 走過來
+    static onSee(npc)
+    {
+        this.fire('see', {who:npc.id}, {
+            say: (text)=>npc.speak?.(text, {duration:2000}),
+            cb: (op, [node])=>{if(op === 'approach') {npc.approach?.(node);}},
+        });
+    }
+
+    // 玩家正在對話或交易：NPC 不主動過來搭話
+    static get playerBusy() {return [UI.TAG.DIALOG, UI.TAG.TRADE].some(tag=>Ui.get(tag)?.isOpen);}
 
     // TimeSystem 的 callback；一次跳好幾小時（睡覺）時，每跨過一個整點觸發一次
     static onTime(dt, time)

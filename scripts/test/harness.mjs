@@ -92,18 +92,19 @@ class Tester
         await this.waitReady(await this.eval(d => d.Record.game_def.map));
     }
 
+    // 切到跟目前同一張地圖時，舊場景也符合條件，所以要等到換了新的玩家物件（window.__oldPlayer）
     async waitReady(map)
     {
         await this.waitFor((d, map) => {
             const gs = d.game.scene.getScene('GameScene');
-            return gs?.sys.isActive() && gs._data?.map === map && d.GM.player?.scene === gs;
+            return gs?.sys.isActive() && gs._data?.map === map && d.GM.player?.scene === gs && d.GM.player !== window.__oldPlayer;
         }, {what:`地圖 ${map} 載入`}, map);
     }
 
     // 直接切地圖（不走路），沒給 port 就放在地圖中心
     async gotoMap(map)
     {
-        await this.eval((d, map) => d.game.scene.getScene('GameScene').gotoScene({map}), map);
+        await this.eval((d, map) => {window.__oldPlayer = d.GM.player; d.game.scene.getScene('GameScene').gotoScene({map});}, map);
         await this.waitReady(map);
     }
 

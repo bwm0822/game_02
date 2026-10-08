@@ -279,6 +279,14 @@ function checkStory(ctx)
         checkCond(s.requires, where, ctx);
         checkCond(s.tease, where, ctx);
         checkActions(s.effects, where, ctx, s.on ? null : npcs);
+        for (const a of s.effects ?? [])
+        {
+            const {op, args} = parseAction(a);
+            if (op !== 'approach') continue;
+            if (!s.on?.includes('see')) err(`approach 只能用在 on=see 的事件卡 @ ${where}`);
+            else if (!s.who) err(`approach 的卡要填 who @ ${where}`);
+            else npcs?.forEach(npc => checkNode(npc, args[0], where, ctx));
+        }
         if (s.text?.startsWith('@'))
         {
             if (s.on) err(`事件卡的 text 不能跳節點 @ ${where}`);
