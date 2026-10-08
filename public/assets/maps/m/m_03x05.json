@@ -51,41 +51,20 @@
          "name":"#討伐令 && 討伐令<10",
          "objects":[
                 {
-                 "gid":166,
-                 "height":64,
                  "id":4,
-                 "name":"",
-                 "properties":[{"name":"id","type":"string","value":"rogue"}],
-                 "rotation":0,
-                 "type":"npc",
-                 "visible":true,
-                 "width":32,
+                 "template":"..\/..\/templates\/roles\/rogues-1.tj",
                  "x":512,
                  "y":672
                 }, 
                 {
-                 "gid":166,
-                 "height":64,
                  "id":5,
-                 "name":"",
-                 "properties":[{"name":"id","type":"string","value":"rogue"}],
-                 "rotation":0,
-                 "type":"npc",
-                 "visible":true,
-                 "width":32,
+                 "template":"..\/..\/templates\/roles\/rogues-1.tj",
                  "x":32,
                  "y":224
                 }, 
                 {
-                 "gid":166,
-                 "height":64,
                  "id":6,
-                 "name":"",
-                 "properties":[{"name":"id","type":"string","value":"rogue"}],
-                 "rotation":0,
-                 "type":"npc",
-                 "visible":true,
-                 "width":32,
+                 "template":"..\/..\/templates\/roles\/rogues-1.tj",
                  "x":1120,
                  "y":96
                 }],
@@ -105,10 +84,6 @@
         {
          "firstgid":1,
          "source":"..\/..\/terrain_tiles_v2.tsj"
-        }, 
-        {
-         "firstgid":161,
-         "source":"..\/..\/roles.tsj"
         }],
  "tilewidth":32,
  "type":"map",
