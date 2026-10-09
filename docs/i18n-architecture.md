@@ -37,8 +37,8 @@
   | `好感` | `favor` |
   | `討伐令` | `bandit_hunt` |
   | `討伐令.殺盜賊` | `bandit_hunt.kills` |
-  | `狼患` | `wolf` |
-  | `狼患.殺狼` | `wolf.kills` |
+  | `狼患` | `wolf_hunt` |
+  | `狼患.殺狼` | `wolf_hunt.kills` |
   | `狼皮生意` | `pelt_trade` |
   | `殺.*` | `kill.*` |
 

@@ -21,22 +21,22 @@ run('狼患岔路', async t => {
     await t.eval(d => Object.assign(d.TimeSystem.time, {h:12, m:0}));
     t.ok('開新遊戲、到小鎮');
 
-    await t.setQ('wolf', 2);
+    await t.setQ('wolf_hunt', 2);
     let B = await options(t, 'xi');
     const sell = B.find(b => b.text === '把狼皮直接賣給你');
     t.check('還沒有狼皮：灰色選項＋提示', sell && !sell.enabled && sell.hint === '需要狼皮', JSON.stringify(sell));
 
     await t.give('plet', 1);
-    t.eq('撿到狼皮自動進到 3', await t.q('wolf'), 3);
+    t.eq('撿到狼皮自動進到 3', await t.q('wolf_hunt'), 3);
 
     const gold = await t.eval(d => d.GM.player.gold);
     const said = await t.talk('xi', '把狼皮直接賣給你');
     t.eq('xi 收下狼皮', said.at(-1), '……也好，省得你跑一趟，那我自己收了。');
-    t.eq('狼患=9', await t.q('wolf'), 9);
+    t.eq('狼患=9', await t.q('wolf_hunt'), 9);
     t.eq('拿到 80 金幣', await t.eval(d => d.GM.player.gold) - gold, 80);
     t.eq('狼皮被拿走', await t.eval(d => d.GM.player.queryItem(i => i.id === 'plet').length), 0);
 
-    const j = await t.journal('wolf');
+    const j = await t.journal('wolf_hunt');
     t.check('日誌結束在「賣給 xi」', j?.done && j.lines.at(-1).text === '你把狼皮直接賣給了 xi', JSON.stringify(j?.lines));
 
     B = await options(t, 'xi');

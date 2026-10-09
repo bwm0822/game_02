@@ -18,17 +18,17 @@
       "show": false,
       "label": "bandit_hunt.kills"
     },
-    "wolf": {
+    "wolf_hunt": {
       "scope": "global",
       "default": 0,
       "show": false,
       "label": "屠夫的生意經"
     },
-    "wolf.kills": {
+    "wolf_hunt.kills": {
       "scope": "global",
       "default": 0,
       "show": false,
-      "label": "wolf.kills"
+      "label": "wolf_hunt.kills"
     },
     "pelt_trade": {
       "scope": "global",
@@ -70,14 +70,14 @@
         }
       }
     },
-    "wolf": {
-      "id": "wolf",
+    "wolf_hunt": {
+      "id": "wolf_hunt",
       "title": "屠夫的生意經",
       "desc": "黑森林的野狼氾濫，xi 的肉舖快沒貨了，想找人幫忙獵狼取皮，順便帶個口信給城裡的商人 karen。",
-      "quality": "wolf",
+      "quality": "wolf_hunt",
       "values": {
         "1": {
-          "journal": "前往黑森林狩獵，擊殺野狼 ({wolf.kills}/3)",
+          "journal": "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)",
           "pos": "m/m_03x05",
           "reward": "金幣 x120、斧頭 x1"
         },
@@ -167,64 +167,64 @@
     {
       "id": "wolf_ask",
       "who": "xi",
-      "requires": "wolf==0",
+      "requires": "wolf_hunt==0",
       "label": "關於任務",
       "text": "@n_wolf_ask"
     },
     {
       "id": "wolf_kill",
-      "requires": "wolf==1 && wolf.kills>=3",
+      "requires": "wolf_hunt==1 && wolf_hunt.kills>=3",
       "on": [
         "kill"
       ],
       "effects": [
-        "wolf=2",
-        "stop wolf.kills"
+        "wolf_hunt=2",
+        "stop wolf_hunt.kills"
       ]
     },
     {
       "id": "wolf_pelt",
-      "requires": "wolf==2 && item:plet:1",
+      "requires": "wolf_hunt==2 && item:plet:1",
       "on": [
         "item",
         "quality"
       ],
       "effects": [
-        "wolf=3"
+        "wolf_hunt=3"
       ]
     },
     {
       "id": "wolf_karen",
       "who": "karen",
-      "requires": "wolf==3 && item:plet:1",
+      "requires": "wolf_hunt==3 && item:plet:1",
       "label": "關於黑森林的狼皮",
       "text": "@n_wolf_karen"
     },
     {
       "id": "wolf_report",
       "who": "xi",
-      "requires": "wolf>=1 && wolf<9",
+      "requires": "wolf_hunt>=1 && wolf_hunt<9",
       "label": "關於任務",
       "text": "@n_wolf_report"
     },
     {
       "id": "wolf_sell",
       "who": "xi",
-      "tease": "wolf==2",
-      "requires": "wolf==3 && item:plet:1",
+      "tease": "wolf_hunt==2",
+      "requires": "wolf_hunt==3 && item:plet:1",
       "label": "把狼皮直接賣給你",
       "hint": "需要狼皮",
       "text": "……也好，省得你跑一趟，那我自己收了。",
       "effects": [
         "take plet 1",
-        "wolf=9",
+        "wolf_hunt=9",
         "gold+80"
       ]
     },
     {
       "id": "wolf_grudge",
       "who": "karen",
-      "requires": "wolf==9 && !_grudge",
+      "requires": "wolf_hunt==9 && !_grudge",
       "text": "喂！你給我過來！",
       "on": [
         "see"
@@ -236,7 +236,7 @@
     {
       "id": "trade_ask",
       "who": "xi",
-      "requires": "wolf==10 && pelt_trade==0",
+      "requires": "wolf_hunt==10 && pelt_trade==0",
       "label": "關於任務",
       "text": "@n_trade_ask"
     },
@@ -337,7 +337,7 @@
             "priority": 0,
             "actions": [
               "take plet 1",
-              "wolf=4"
+              "wolf_hunt=4"
             ],
             "next": "n_default"
           }
@@ -418,8 +418,8 @@
             "labelKey": "接受",
             "priority": 0,
             "actions": [
-              "wolf=1",
-              "count wolf.kills kill:wolf"
+              "wolf_hunt=1",
+              "count wolf_hunt.kills kill:wolf"
             ],
             "next": "n_default"
           },
@@ -433,9 +433,9 @@
       },
       "n_wolf_report": {
         "textKeys": {
-          "wolf<4": "狼皮收集得如何了?",
-          "wolf==4": "都準備好了嗎？太好了!",
-          "wolf==10": "謝謝你，這是你的獎勵"
+          "wolf_hunt<4": "狼皮收集得如何了?",
+          "wolf_hunt==4": "都準備好了嗎？太好了!",
+          "wolf_hunt==10": "謝謝你，這是你的獎勵"
         },
         "actions": [],
         "choices": [
@@ -443,24 +443,24 @@
             "labelKey": "處理中",
             "priority": 0,
             "next": "n_default",
-            "condition": "wolf<4"
+            "condition": "wolf_hunt<4"
           },
           {
             "labelKey": "完成了",
             "priority": 0,
             "actions": [
-              "wolf=10",
+              "wolf_hunt=10",
               "gold+120",
               "give axe_01 1"
             ],
             "next": "n_wolf_report",
-            "condition": "wolf==4"
+            "condition": "wolf_hunt==4"
           },
           {
             "labelKey": "離開",
             "priority": 0,
             "next": "n_default",
-            "condition": "wolf==10"
+            "condition": "wolf_hunt==10"
           }
         ],
         "posts": []
@@ -524,6 +524,6 @@
   },
   "spawns": {
     "bandits": "bandit_hunt>=2 && bandit_hunt<10",
-    "wolves": "wolf && wolf<9"
+    "wolves": "wolf_hunt && wolf_hunt<9"
   }
 }
