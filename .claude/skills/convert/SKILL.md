@@ -7,7 +7,7 @@ description: Use when the user says to "convert", "run_all", regenerate all gene
 
 ## Overview
 
-Runs `scripts/run_all.bat`, which executes every `.js` file in `scripts/` **except `minimap.js`** in sequence via `node`: `local.js`, `ability.js`, `ab_tree.js`, `role.js`, `item.js`, `dialog.js`, `quest.js` (each script's own inputs/outputs are documented at its own top comment). Map thumbnails are excluded on purpose — they're a separate, slower step; use the [minimap](../minimap/SKILL.md) skill for those.
+Runs `scripts/run_all.bat`, which executes every `.js` file in `scripts/` **except `minimap.js`** in alphabetical order via `node` (`dialog.js` must precede `story.js`, which it does), then runs `lang.js` **last** because it extracts text from the other scripts' outputs and merges it into `xls/lang/<lang>.xlsx` / `public/assets/lang/<lang>.json`. Each script's own inputs/outputs are documented at its own top comment. Map thumbnails are excluded on purpose — they're a separate, slower step; use the [minimap](../minimap/SKILL.md) skill for those.
 
 ## When to Use
 

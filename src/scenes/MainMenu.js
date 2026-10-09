@@ -71,7 +71,7 @@ export class MainMenu extends Scene
         console.log('[MainMenu] loadData')
         Record.loadSetting();
         Record.loadDebug();
-        Lang.load();
+        Lang.load(Lang.needsTable ? this.cache.json.get('lang') : null);
         Local.load(this);
         DB.load(this);
     }

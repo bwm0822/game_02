@@ -98,4 +98,15 @@ run('多國語言', async t => {
     t.check('qps 對話台詞有括號', q[0].startsWith('【'), q[0]);
     t.check('qps 日誌有括號', (await t.journal('bandit_hunt')).title.startsWith('【'), '');
     await t.eval(d => {d.Record.setting.lang = 'zh-TW'; d.Lang.load();});
+
+    // 真的翻譯檔：存設定 → 重新載入頁面 → Preloader 讀 lang/en.json
+    await t.eval(d => {d.Record.setting.lang = 'en'; d.Record.saveSetting();});
+    await t.page.reload();
+    await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單（英文）'});
+    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, untranslated: d.Local.lab('_lock_no_skill')}));
+    t.eq('en.json 的 item 譯文', en.item, 'Ordinary knife');
+    t.eq('en.json 的 ui 譯文', en.ui, 'Weapon');
+    t.eq('en 字型來自 _meta.font', en.font, 'Arial, sans-serif');
+    t.eq('沒翻的退回原文', en.untranslated, '缺少開鎖技能');
+    await t.eval(d => {d.Record.setting.lang = 'zh-TW'; d.Record.saveSetting();});
 });

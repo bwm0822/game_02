@@ -16,6 +16,9 @@ export default class Lang
 
     static get code() {return Record.setting.lang;}
 
+    // 原文語言跟偽語系不需要翻譯檔（public/assets/lang/<code>.json，由 scripts/lang.js 產生）
+    static get needsTable() {return this.code !== this.SOURCE && this.code !== this.PSEUDO;}
+
     static load(tbl)
     {
         this._tbl = tbl ?? null;
@@ -39,10 +42,13 @@ export default class Lang
         return str.replace(/{#(\w+)}/g, (m, k) => (k in args ? `${args[k]}` : m));
     }
 
+    // 以 / 分段各自處理：對話的 / 隨機變體挑出來後每段都要有括號
     static _pseudo(src)
     {
-        const visible = src.replace(/\[[^\]]*\]|{[^}]*}/g, '');
-        return `【${src}${visible}】`;
+        return src.split(/\/(?![^[\]]*\])/).map(part => {
+            const visible = part.replace(/\[[^\]]*\]|{[^}]*}/g, '');
+            return `【${part}${visible}】`;
+        }).join('/');
     }
 }
 

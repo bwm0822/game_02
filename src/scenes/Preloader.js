@@ -1,5 +1,7 @@
 import { Scene } from 'phaser';
 import Map from '../manager/map.js';
+import Record from '../infra/record.js';
+import Lang from '../infra/lang.js';
 
 export class Preloader extends Scene
 {
@@ -118,6 +120,8 @@ export class Preloader extends Scene
         this.load.json('fx', 'json/fx.json');
         this.load.json('navgraph', 'json/navgraph.json');
         this.load.json('story', 'json/story.json');
+        Record.loadSetting();
+        if(Lang.needsTable) {this.load.json('lang', `lang/${Lang.code}.json`);}
         this.load.json('world', 'maps/main.world');
 
         // audios

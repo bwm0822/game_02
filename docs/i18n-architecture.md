@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～4 階段已完成。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～5 階段已完成。
 
 ## 已定案
 
@@ -94,6 +94,16 @@
   - 執行期規則：有譯文且檢查欄空白就使用。
 - 加新語言：`node scripts/lang.js --add ja`。
 - 終端機印統計：`en: 312 ok / 15 new / 3 orphan / 1 error`。
+- 實作（第 5 階段）：
+  - 抽取直接讀 json 裡轉檔寫好的 `ctx`（§15）；item/ability 沒有 `lab` 的不抽（執行期顯示 id）。
+  - `new` 的意思是「還沒有譯文」：列一直是 `new`，直到譯文欄填了東西；填了就重算成空白或 `error`。
+  - `shared` 分頁：同一句原文出現在 3 個以上情境就自動列成候選（`_shared` 列）；也可以手動加。shared 有譯文時，各情境沒填譯文的列算 ok，「建議」欄顯示 `shared: …`。原文完全消失時 shared 列才會變 orphan。
+  - `meta` 分頁：`font` 等設定，輸出成 json 的 `_meta`；`en` 預設 `Arial, sans-serif`。
+  - xlsx 是**整份重建**（每次依抽取順序重排、套統一樣式），所以在 Excel 裡手動調的欄寬、顏色不會保留；人只動「譯文」「審核」兩欄。
+  - 執行期：`Preloader` 先 `Record.loadSetting()`，目前語言需要翻譯表（不是 `zh-TW`／`qps`）才載 `lang/<code>.json`；`MainMenu.loadData()` 交給 `Lang.load()`。
+  - 舊英文 166 句已匯入 `en.xlsx`（審核欄空白，品質沒保證，例如 `焠毒短劍`→`Iron Sword` 明顯是改名前的舊譯文），`_legacy_en.json` 已刪。
+  - qps 以 `/` 分段各自加括號（BBCode 裡的 `/` 不切），對話的隨機變體挑出來每段都有括號。
+  - 已知：`COM_Talk._pickText` 跟 `com_disp` 的冒泡台詞用 `split('/')` 切變體，原文或譯文若出現 `[/color]` 這類 BBCode 會被切壞；目前 dialog/story 沒有 BBCode，之後要用再改。
 
 ### 12. 英文由誰翻
 - Claude 先全部翻完，審核欄標 `mt`；使用者實玩看到怪句子再改並標 `ok`。
@@ -105,7 +115,7 @@
 2. ✅ 核心 `tr()`＋item/ability/local 拿掉語言欄＋`[lang].lab` 改走 `tr()`；開發版設定頁可選 `qps`；測試 `scripts/test/lang.mjs`
 3. ✅ 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔、字型收斂
 4. ✅ 劇情文字（對話節點、line、storylet、thread 日誌）接上 `tr()`；順便補了第 3 階段漏掉的交易/丟棄/拾取拼接句
-5. `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
+5. ✅ `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
 6. 英文上線（Claude 翻譯標 mt、語言切換流程、切英文實玩找爆版）
 
 - 1~4 是純重構：中文畫面完全不變，每階段跑現有無頭測試驗證，一階段一組 commit。
