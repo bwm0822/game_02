@@ -1,6 +1,7 @@
 import { Scene } from 'phaser'
 import Record from '../infra/record.js'
 import Local from '../infra/local.js'
+import Lang from '../infra/lang.js'
 import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
 import {GM} from '../core/setting.js';
@@ -70,6 +71,7 @@ export class MainMenu extends Scene
         console.log('[MainMenu] loadData')
         Record.loadSetting();
         Record.loadDebug();
+        Lang.load();
         Local.load(this);
         DB.load(this);
     }
@@ -77,7 +79,7 @@ export class MainMenu extends Scene
 
     btn_start(x, y) 
     {
-        this.button(x, y, '開始遊戲', () => {
+        this.button(x, y, 'start_game'.lab(), () => {
             this.scene.start('Game');}
         );
     }
@@ -85,7 +87,7 @@ export class MainMenu extends Scene
 
     btn_setting(x, y)
     {
-        this.button(x, y, '遊戲設定',()=>{
+        this.button(x, y, 'game_setting'.lab(),()=>{
             UiSetting.show()
         });//, () => {this.scene.start('Setting');});
     }

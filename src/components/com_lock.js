@@ -2,6 +2,7 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
+import Local from '../infra/local.js'
 const _tag = 'lock';
 
 //--------------------------------------------------
@@ -32,19 +33,19 @@ export class COM_Lock extends Com
 
         if(!opener.findAb?.('lockpick'))
         {
-            send('msg', '缺少開鎖技能');
+            send('msg', '_lock_no_skill'.lab());
             return;
         }
 
         const tool = opener.findItem?.((e)=>e.id==='lockpick');
         if(!tool)
         {
-            send('msg', '缺少開鎖工具');
+            send('msg', '_lock_no_tool'.lab());
             return;
         }
 
         const rate = this._pickRate(opener);
-        const confirmed = await UiConfirm.msg(`用開鎖工具開鎖？\n成功率 ${rate}%`);
+        const confirmed = await UiConfirm.msg('_lock_confirm'.lab({rate}));
         if(!confirmed) {return;}
 
         if(Utility.roll(rate))
@@ -53,11 +54,11 @@ export class COM_Lock extends Com
         }
         else
         {
-            send('msg', `${opener.id} 開鎖失敗`);
+            send('msg', '_lock_fail'.lab({who:Local.name(opener.id)}));
             if(--tool.times<=0) 
             {
                 opener.removeItem?.(tool);
-                send('msg', '開鎖工具損壞了');
+                send('msg', '_lock_tool_broken'.lab());
             }
         }
     }
@@ -66,14 +67,14 @@ export class COM_Lock extends Com
     {
         const {send} = this.ctx;
         this._locked = true;
-        send('msg', `${locker.id} 上鎖`);
+        send('msg', '_lock_locked'.lab({who:Local.name(locker.id)}));
     }
 
     _doUnlock(id)
     {
         const {send} = this.ctx;
         this._locked = false;
-        send('msg', `${id} 開鎖`);
+        send('msg', '_lock_unlocked'.lab({who:Local.name(id)}));
     }
 
     // 撬鎖成功率：dex 越高越好，diff 越高越難，上限 90%

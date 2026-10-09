@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1、2 階段已完成。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～3 階段已完成。
 
 ## 已定案
 
@@ -61,10 +61,16 @@
 - 一律搬進 `local.xlsx`，用 ASCII id 取（延續 `'weapon'.lab()` 習慣），local.xlsx 是「UI 原文表」。
 - 豁免（可留中文）：`dlog()`、註解、`uidebuger.js`、`manager/test.js` 等開發者專用；`src/old/`。
 - 順便刪掉 `src/old/` 以外的舊檔：`*_old.js`、`cmbat copy.js`、`stats copy.js`（刪前確認沒被 import）。
+- 實作（第 3 階段）：
+  - UI 標籤加在 `general` 分頁；訊息與句子模板放新的 `msg` 分頁，key 用 `_` 開頭（延續 `_space_full`）。
+  - 帶參數：`'_lock_fail'.lab({who})`（`String.prototype.lab(args)` → `tr('ui.<key>', 原文, args)`）。
+  - 塞進模板的角色名用 `Local.name(id)`：查不到就顯示 id，不像 `.lab()` 標紅字（`rogue-1` 這類沒列在 local 的）；物品名用 `DB.item(id).lab`。
+  - 目前還留著的中文都屬於豁免：除錯介面（`劇情除錯`、`感知除錯`、`[debug] 所有屬性`、line/story 的除錯傾印）、`unit_test()`／`測試`、建構時會被蓋掉的佔位文字（`阿凡達`、`內容`、`['交談','交易','離開']`）、語言自稱（`中文`）、偽語系本身、音樂檔名。
 
 ### 9. 文字格式規則
 1. 佔位符沿用 `{#name}`，統一由 `tr()` 替換（合併 `local.js:30` 與 `utility.js:346` 兩套）；塞進去的值本身也要先翻譯。
-2. **禁止程式拼接句子**：一句話是一個完整模板，可有可無的片段也各自是自帶標點的完整模板。例：`utility.js` 的 `fmt_Eff` 改成 `tr('eff.dot', {stage, id, num, dur, stack})`，`eff.stage`=`{#v}時，`/`On {#v}, `，並拿掉 `.replace(/，+/g,'，')` 補丁。
+2. **禁止程式拼接句子**：一句話是一個完整模板，可有可無的片段也各自是自帶標點的完整模板。例：`utility.js` 的 `fmt_Eff` 改成 `'_eff_dot'.lab({stage, scope, trigger, num, dur, stack})`，`_eff_stage`=`{#v}時，`/`On {#v}, `，並拿掉 `.replace(/，+/g,'，')` 補丁。觸發片段分 `_eff_trigger`（後面還有字，結尾帶逗號）跟 `_eff_trigger_end`（在句尾）兩種，取代原本靠補丁收掉的雙逗號。
+   - `fmt_Des`（技能說明的 `{#fmt}`/`{#elm}`…）是算數值的另一層，維持原樣，吃的是已經 `tr()` 過的說明文字。
 3. 轉檔檢查：譯文的佔位符集合、BBCode 標籤須與原文一致，否則標 error、執行期退回原文。
 4. 複數／量詞暫不支援（英文先寫 `tile(s)`），需要時再加語法。
 5. `_common.lines` 的 `/` 隨機變體整串一起翻，變體數可與原文不同。
@@ -97,7 +103,7 @@
 1. ✅ 識別字 ASCII 化（quality/spawn 改名、轉檔 ASCII 檢查、`tw`→`zh-TW`）
    - item/ability/local.xlsx 的語言欄標頭先改成 `zh-TW`/`en`（json 的 `dat[lang]` 照舊能用），第 2 階段整欄拿掉
 2. ✅ 核心 `tr()`＋item/ability/local 拿掉語言欄＋`[lang].lab` 改走 `tr()`；開發版設定頁可選 `qps`；測試 `scripts/test/lang.mjs`
-3. 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔
+3. ✅ 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔、字型收斂
 4. 劇情文字（uidialog、line、story 的 thread/storylet/quality label）接上 `tr()`
 5. `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
 6. 英文上線（Claude 翻譯標 mt、語言切換流程、切英文實玩找爆版）
@@ -136,3 +142,4 @@
   - 原文語言 `zh-TW` 沒有翻譯檔，預設值寫在 `setting.js`：`Arial, "Microsoft JhengHei", sans-serif`
   - 其他語言寫在翻譯檔的 `_meta.font`（來源是 `xls/lang/<lang>.xlsx` 的 `meta` sheet），維持「加語言不動程式」
 - 第 3 階段順便把散落各處寫死的 `fontFamily` 收斂到 `GM.FONT`（`src/old/` 不動）。
+- 實作：`Lang.load(tbl)` 設定 `GM.FONT`（在 `MainMenu.loadData()` 呼叫）；`com_port`、`view.js` 改用 `GM.FONT`。主選單／GameOver 標題的 `'Arial Black'` 是刻意的粗體標題字，保留（中日韓字會自動退到系統字型）。

@@ -1,5 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js';
+import Local from '../infra/local.js'
 import DB from '../data/db.js';
 import {T,dlog} from '../core/debug.js'
 import Utility from '../core/utility.js';
@@ -259,7 +260,7 @@ export class COM_Stats extends Com
         switch(dmg.type)
         {
             case GM.CRIT:
-                root.popup?.(`${'暴擊'} ${dmg.amount}`, '#f00', '#fff');
+                root.popup?.(`${'crit'.lab()} ${dmg.amount}`, '#f00', '#fff');
                 root.anim_hit?.(attacker);
                 this._states[GM.HP] = Math.max(0, this._states[GM.HP]+dmg.amount);
                 // console.log(`${this.name} 受到 ${dmg.amount} 暴擊傷害`);
@@ -490,7 +491,7 @@ export class COM_Stats extends Com
         }
         const {send,bb}=this.ctx;
         this._states[GM.HUNGER] = Math.max(0, this._states[GM.HUNGER]+amount); 
-        send('msg',`${bb.id} ${amount}% 飢餓`)
+        send('msg','_hunger'.lab({who:Local.name(bb.id), pct:amount}))
     }
 
     _drink(amount=-50)
@@ -501,7 +502,7 @@ export class COM_Stats extends Com
         }
         const {send,bb}=this.ctx;
         this._states[GM.THIRST] = Math.max(0, this._states[GM.THIRST]+amount);
-        send('msg',`${bb.id} ${amount}% 口渴`)
+        send('msg','_thirst'.lab({who:Local.name(bb.id), pct:amount}))
     }
 
     //------------------------------------------------------

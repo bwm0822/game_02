@@ -1,4 +1,7 @@
 import Record from './record.js';
+import {GM} from '../core/setting.js';
+
+const SOURCE_FONT = GM.FONT;
 
 //--------------------------------------------------
 // 多國語言：設計見 docs/i18n-architecture.md
@@ -13,7 +16,11 @@ export default class Lang
 
     static get code() {return Record.setting.lang;}
 
-    static load(tbl) {this._tbl = tbl ?? null;}
+    static load(tbl)
+    {
+        this._tbl = tbl ?? null;
+        GM.FONT = this._tbl?._meta?.font ?? SOURCE_FONT;
+    }
 
     static tr(ctx, src, args)
     {

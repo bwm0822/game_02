@@ -96,7 +96,7 @@ export default class UiObserve extends UiFrame
         if(Utility.isEmpty(abilities)) {return;}
         const content=this._content;
         const scene=this.scene;
-        ui.uBbc.call(parent,scene,{text:'能力'});
+        ui.uBbc.call(parent,scene,{text:'ability'.lab()});
         ui.uDiv.call(content,scene);
         const size=50;
         const config=
@@ -145,7 +145,7 @@ export default class UiObserve extends UiFrame
         if(this.owner.getFavor)
         {
             const Fav=Math.floor(this.owner.getFavor(this.player.id));
-            ui.uBbc.call(content,scene,{text:`好感 : ${Fav}`,
+            ui.uBbc.call(content,scene,{text:'_favor_value'.lab({v:Fav}),
                                         color:GM.COLOR.LIGHTGRAY,
                                         ext:{padding:{top:5}}})
         }
@@ -163,7 +163,7 @@ export default class UiObserve extends UiFrame
         const actives = this.owner.actives;
         if(actives?.length>0)
         {
-            ui.uBbc.call(content,scene,{text:'效果'});
+            ui.uBbc.call(content,scene,{text:'effect'.lab()});
             ui.uDiv.call(content,scene);
             const size=50;
             const config=

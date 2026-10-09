@@ -2,23 +2,6 @@ import {GM,ACT_TYPE} from './setting.js'
 
 export default class Utility
 {
-    static _local={ weapon:'武器',armor:'防具',item:'道具',skill:'技能', 
-                    helmet:'頭盔',chestplate:'胸甲',gloves:'手套',boots:'靴子',food:'食物',
-                    necklace:'項鍊',ring:'戒子',bag:'背包',equip:'裝備',
-                    other:'其他',storage:'儲量',endurance:'耐久',durability:'耐久',times:'次數',
-                    attrs:'屬性',states:'狀態',
-                    attack:'攻擊',
-                    damage:'傷害',magazine:'彈匣',rof:'射速',range:'射程',
-                    life:'生命',speed:'速度',attack:'攻擊',defense:'防禦',
-                    hunger:'飢餓',thirst:'口渴',
-                    shield:'護盾',defend:'防禦',heal:'回復',strong:'強壯',
-                    poison:'下毒',weak:'虛弱',
-                    use:'使用',drop:'丟棄',talk:'交談',trade:'交易',buy:'買',sell:'賣',split:'拆分',
-                    open:'開啟',observe:'觀察',transfer:'移動',openbag:'開啟',inv:'背包',profile:'個人',
-                    drink:'喝水',fill:'取水',cook:'烹煮',
-                    dodge:'閃避',block:'擋格',
-                    };
-                    
     static wait_r()     {this._wid=0;}
     static wait_s()     
     {
@@ -40,11 +23,6 @@ export default class Utility
     {
         return;
         console.trace();
-    }
-
-    static local(key)
-    {
-        return Utility._local[key]??key;
     }
 
     static lut(key)
@@ -433,30 +411,36 @@ export default class Utility
         return num;
     }
 
+    // 每個可有可無的片段都是自帶標點的完整模板（docs/i18n-architecture.md §9）；
+    // 觸發片段分「後面還有字」(_eff_trigger，結尾帶逗號) 跟「放在句尾」(_eff_trigger_end) 兩種
     static fmt_Eff(eff)
     {
-        // .replace(/，+/g, '，')       //將多個連續逗號替換為一個逗號
-        const stage = eff.stage ? `${eff.stage.lab()}時，` : '';
-        const scope = eff.scope ? `[color=white]${eff.scope.lab()}[/color]` : '';
-        const id = eff.id ?`觸發[color=skyblue]${eff.id.lab()}[/color]，`:'';
-        const dur = eff.dur ? `，持續[color=white]${eff.dur}[/color]回合`: '';
-        const key = eff.key ? `${eff.key.lab()}` : '';
-        const stack = eff.stack ? `，最多疊加[color=white]${eff.stack}[/color]層` : '';
-        const num = this.fmt_Num(eff);
-        
+        const part = (key, v) => (v ? key.lab({v}) : '');
+        const trigger = (atEnd) => part(atEnd ? '_eff_trigger_end' : '_eff_trigger', eff.id?.lab());
+        const args = {
+            stage: part('_eff_stage', eff.stage?.lab()),
+            scope: eff.scope ? `[color=white]${eff.scope.lab()}[/color]` : '',
+            key: eff.key ? eff.key.lab() : '',
+            num: this.fmt_Num(eff),
+            dur: part('_eff_dur', eff.dur),
+            stack: part('_eff_stack', eff.stack),
+        };
+
         switch(eff.type)
         {
-            case 'dot': 
+            case 'dot':
             case 'hot':
-                return `${stage}${scope}${id}每回合${num}血量${dur}${stack}`.replace(/，+/g, '，');
+                return '_eff_dot'.lab({...args, trigger:trigger(false)});
             case 'buff':
             case 'debuff':
-                return `${stage}${scope}${id}${key}${num}${dur}${stack}`.replace(/，+/g, '，');
+                return '_eff_buff'.lab({...args, trigger:trigger(!args.key && !args.num)});
             case 'mod':
-                return `${stage}${scope}${eff.key?.lab()}${num}`.replace(/，+/g, '，');
+                return '_eff_mod'.lab(args);
             case 'action':
-                const abs = this.fmt_Abs(eff);
-                return `${stage}${id}${eff.id.des({num:abs})}`.replace(/，+/g, '，');
+            {
+                const des = eff.id.des({num:this.fmt_Abs(eff)});
+                return '_eff_action'.lab({...args, trigger:trigger(!des), des});
+            }
         }
     }
 
@@ -467,17 +451,11 @@ export default class Utility
         {
             case 'dot':
             case 'hot':
-                return `每回合${num}血量`;
+                return '_active_dot'.lab({num});
             case 'buff':
             case 'debuff':
-                if(eff.key)
-                {
-                    return `有效回合內，${eff.key.lab()}${num}`;
-                }
-                else
-                {
-                    return `有效回合內，${eff.id.lab()}`;
-                }
+                return eff.key ? '_active_buff_key'.lab({key:eff.key.lab(), num})
+                               : '_active_buff'.lab({id:eff.id.lab()});
         }
     }
 
@@ -841,8 +819,6 @@ export default class Utility
 
 
 
-// String.prototype.local = function(){ return Utility.local(this); };
-// Number.prototype.local = function(){ return Utility.local(Utility.lut(this)); };
 
 
 

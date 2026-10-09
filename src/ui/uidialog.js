@@ -108,7 +108,7 @@ export default class UiDialog extends UiFrame
                 // tease 中的對話卡：灰色、不能點，附上 hint
                 if(option.enabled === false)
                 {
-                    const hint = option.hint ? `（${option.hint}）` : '';
+                    const hint = option.hint ? '_dlg_hint'.lab({hint:option.hint}) : '';
                     scroll.addItem(ui.uBbc(scene,{text:`[color=gray]${option.text}${hint}[/color]`}));
                     return;
                 }
@@ -149,7 +149,7 @@ export default class UiDialog extends UiFrame
 
     updatePage()
     {
-        const nxtp = [{text:'*聆聽...*',actions:['next']}];
+        const nxtp = [{text:'_dlg_listen'.lab(),actions:['next']}];
         const lastPage = this._spkA.updatePage();
         this._spkB.setDialog(lastPage ? this.dialog.B : nxtp);
         this.layout();

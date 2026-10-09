@@ -404,7 +404,7 @@ export class COM_Action extends Com
         bb.path = null;
         const np = fpt(pos);
         if(np) {await this._moveTo(np);}
-        else {root.speak?.('不要殺我!!!');}
+        else {root.speak?.('_beg_mercy'.lab());}
         if(DEBUG.enable&&DEBUG.path) {root.updateDebugPath?.();}
     }
 

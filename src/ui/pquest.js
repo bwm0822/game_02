@@ -137,16 +137,16 @@ export class PQuest extends Sizer
             const progress = q.lines.map(l=>`${l.cur?'▸':'✔'} ${l.text}`).join('\n');
 
             this._content
-                .add(ui.uGroup(scene,{title:'說明',fontSize:GM.FONT_SIZE})
+                .add(ui.uGroup(scene,{title:'description'.lab(),fontSize:GM.FONT_SIZE})
                         .addItem(ui.uBbc(scene,{text:q.desc ?? '',wrapWidth:480})),{align:'left',expand:true})
             if(q.reward)
             {
                 this._content
-                    .add(ui.uGroup(scene,{title:'獎勵',fontSize:GM.FONT_SIZE})
+                    .add(ui.uGroup(scene,{title:'rewards'.lab(),fontSize:GM.FONT_SIZE})
                             .addItem(ui.uBbc(scene,{text:q.reward,wrapWidth:480})),{align:'left',expand:true})
             }
             this._content
-                .add(ui.uGroup(scene,{title:'進度',fontSize:GM.FONT_SIZE})
+                .add(ui.uGroup(scene,{title:'progress'.lab(),fontSize:GM.FONT_SIZE})
                         .addItem(ui.uBbc(scene,{text:progress,wrapWidth:480})),{align:'left',expand:true})
         }
 
@@ -190,7 +190,7 @@ export class PQuest extends Sizer
 
         if(done.length > 0)
         {
-            const fold = ui.uFold(scene, {title:'已完成',
+            const fold = ui.uFold(scene, {title:'completed'.lab(),
                                                 fontSize:GM.FONT_SIZE+4,
                                                 onclick: ()=>{this.layout();}
                                             });
@@ -205,7 +205,7 @@ export class PQuest extends Sizer
 
         if(active.length > 0)
         {
-            const group = ui.uGroup(scene, {title:'一般任務',
+            const group = ui.uGroup(scene, {title:'quest_general'.lab(),
                                             fontSize:GM.FONT_SIZE+4
                                         });
             this._scroll.addItem(group);

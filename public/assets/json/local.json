@@ -149,6 +149,69 @@
   "_not_enough_gold": {
     "lab": "金幣不足 !!!"
   },
+  "player": {
+    "lab": "玩家"
+  },
+  "quest_general": {
+    "lab": "一般任務"
+  },
+  "description": {
+    "lab": "說明"
+  },
+  "progress": {
+    "lab": "進度"
+  },
+  "completed": {
+    "lab": "已完成"
+  },
+  "clear": {
+    "lab": "清除"
+  },
+  "select_all": {
+    "lab": "全選"
+  },
+  "submit": {
+    "lab": "送出"
+  },
+  "save": {
+    "lab": "存檔"
+  },
+  "leave": {
+    "lab": "離開"
+  },
+  "mode_toggle": {
+    "lab": "模式:{#v}"
+  },
+  "manufacture": {
+    "lab": "製造"
+  },
+  "map": {
+    "lab": "地圖"
+  },
+  "effect": {
+    "lab": "效果"
+  },
+  "main": {
+    "lab": "主要"
+  },
+  "mouse_edge_move": {
+    "lab": "滑鼠移動到邊緣可移動鏡頭"
+  },
+  "pointer_lock": {
+    "lab": "滑鼠鎖定模式"
+  },
+  "start_game": {
+    "lab": "開始遊戲"
+  },
+  "game_setting": {
+    "lab": "遊戲設定"
+  },
+  "map_show_names": {
+    "lab": "顯示地名"
+  },
+  "map_show_quests": {
+    "lab": "顯示任務"
+  },
   "iron": {
     "lab": "鐵礦"
   },
@@ -534,5 +597,134 @@
   },
   "restore": {
     "lab": "恢復"
+  },
+  "_beg_mercy": {
+    "lab": "不要殺我!!!"
+  },
+  "_shout_help": {
+    "lab": "救命啊！"
+  },
+  "_shout_come": {
+    "lab": "來人啊！"
+  },
+  "_shout_murder": {
+    "lab": "有人要殺我！"
+  },
+  "_harvest_need_tool": {
+    "lab": "需要 {#tool} 才能採集"
+  },
+  "_harvest_chop": {
+    "lab": "砍了 {#cur}/{#max} 下"
+  },
+  "_harvest_drop": {
+    "lab": "掉落 {#item} x{#count}"
+  },
+  "_harvest_get": {
+    "lab": "獲得 {#item}"
+  },
+  "_lock_no_skill": {
+    "lab": "缺少開鎖技能"
+  },
+  "_lock_no_tool": {
+    "lab": "缺少開鎖工具"
+  },
+  "_lock_confirm": {
+    "lab": "用開鎖工具開鎖？\n成功率 {#rate}%"
+  },
+  "_lock_fail": {
+    "lab": "{#who} 開鎖失敗"
+  },
+  "_lock_tool_broken": {
+    "lab": "開鎖工具損壞了"
+  },
+  "_lock_locked": {
+    "lab": "{#who} 上鎖"
+  },
+  "_lock_unlocked": {
+    "lab": "{#who} 開鎖"
+  },
+  "_loot_no_knife": {
+    "lab": "沒有刀具，無法解剖"
+  },
+  "_loot_get": {
+    "lab": "{#who} 獲得 {#item}"
+  },
+  "_hunger": {
+    "lab": "{#who} {#pct}% 飢餓"
+  },
+  "_thirst": {
+    "lab": "{#who} {#pct}% 口渴"
+  },
+  "_steal_ok": {
+    "lab": "{#who} 成功偷竊 {#item}"
+  },
+  "_steal_fail": {
+    "lab": "{#who} 偷竊失敗"
+  },
+  "_steal_confirm": {
+    "lab": "偷竊嗎?"
+  },
+  "_trade_refuse": {
+    "lab": "無法交易"
+  },
+  "_fill_water": {
+    "lab": "{#who} 裝水"
+  },
+  "_bottle_full": {
+    "lab": "{#who} 水壺已滿"
+  },
+  "_learn_confirm": {
+    "lab": "學習此技能?"
+  },
+  "_quest_updated": {
+    "lab": "更新任務"
+  },
+  "_dlg_hint": {
+    "lab": "（{#hint}）"
+  },
+  "_dlg_listen": {
+    "lab": "*聆聽...*"
+  },
+  "_favor_value": {
+    "lab": "好感 : {#v}"
+  },
+  "_eff_stage": {
+    "lab": "{#v}時，"
+  },
+  "_eff_trigger": {
+    "lab": "觸發[color=skyblue]{#v}[/color]，"
+  },
+  "_eff_trigger_end": {
+    "lab": "觸發[color=skyblue]{#v}[/color]"
+  },
+  "_eff_dur": {
+    "lab": "，持續[color=white]{#v}[/color]回合"
+  },
+  "_eff_stack": {
+    "lab": "，最多疊加[color=white]{#v}[/color]層"
+  },
+  "_eff_dot": {
+    "lab": "{#stage}{#scope}{#trigger}每回合{#num}血量{#dur}{#stack}"
+  },
+  "_eff_buff": {
+    "lab": "{#stage}{#scope}{#trigger}{#key}{#num}{#dur}{#stack}"
+  },
+  "_eff_mod": {
+    "lab": "{#stage}{#scope}{#key}{#num}"
+  },
+  "_eff_action": {
+    "lab": "{#stage}{#trigger}{#des}"
+  },
+  "_active_dot": {
+    "lab": "每回合{#num}血量"
+  },
+  "_active_buff_key": {
+    "lab": "有效回合內，{#key}{#num}"
+  },
+  "_active_buff": {
+    "lab": "有效回合內，{#id}"
+  },
+  "_active_remaining": {
+    "lab": "{#eff}，剩[color=white]{#n}[/color]回合"
   }
 }

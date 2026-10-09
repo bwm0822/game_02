@@ -29,8 +29,8 @@ export const GM =
         TARGET : 0xff4040,
     },
 
-    FONT : "Arial",
-    // FONT : "Segoe UI Emoji",
+    // 原文語言(zh-TW)的字型；其他語言由翻譯檔 _meta.font 覆蓋（Lang.load）
+    FONT : 'Arial, "Microsoft JhengHei", sans-serif',
 
     FONT_SIZE: 24,
 

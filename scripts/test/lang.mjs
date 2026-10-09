@@ -40,4 +40,32 @@ run('多國語言', async t => {
 
     await t.newGame();
     t.ok('開新遊戲沒有錯誤');
+
+    // 預期值是舊版字串拼接＋.replace(/，+/g,'，') 的結果，模板化後要一模一樣
+    const eff = await t.eval(async d => {
+        const {default:U} = await import('/src/core/utility.js');
+        return {
+            dot: U.fmt_Eff({type:'dot', stage:'hit', scope:'target', id:'burn', a:-5, dur:3, stack:3}),
+            buffNoKey: U.fmt_Eff({type:'buff', id:'stun', dur:2}),
+            buffKey: U.fmt_Eff({type:'buff', id:'stun', key:'str', a:2, dur:2}),
+            mod: U.fmt_Eff({type:'mod', key:'str', a:1}),
+            active: U.fmt_Active({type:'buff', key:'str', a:2}),
+            activeId: U.fmt_Active({type:'debuff', id:'stun'}),
+        };
+    });
+    t.eq('dot 效果句', eff.dot, '命中時，[color=white]目標[/color]觸發[color=skyblue]灼燒[/color]，每回合[color=red]-5[/color]血量，持續[color=white]3[/color]回合，最多疊加[color=white]3[/color]層');
+    t.eq('buff 沒 key 不會出現兩個逗號', eff.buffNoKey, '觸發[color=skyblue]昏眩[/color]，持續[color=white]2[/color]回合');
+    t.eq('buff 有 key', eff.buffKey, '觸發[color=skyblue]昏眩[/color]，力量[color=lime]+2[/color]，持續[color=white]2[/color]回合');
+    t.eq('mod 效果句', eff.mod, '力量[color=lime]+1[/color]');
+    t.eq('作用中 buff', eff.active, '有效回合內，力量[color=lime]+2[/color]');
+    t.eq('作用中 debuff', eff.activeId, '有效回合內，昏眩');
+
+    const msg = await t.eval(d => ({
+        lock: '_lock_fail'.lab({who:d.Local.name('wick')}),
+        noName: d.Local.name('rogue-1'),
+        confirm: '_lock_confirm'.lab({rate:40}),
+    }));
+    t.eq('訊息模板帶名字', msg.lock, '維克 開鎖失敗');
+    t.eq('沒列在 local 的 id 顯示原樣', msg.noName, 'rogue-1');
+    t.eq('多行模板', msg.confirm, '用開鎖工具開鎖？\n成功率 40%');
 });

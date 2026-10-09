@@ -65,10 +65,6 @@ if(Math.random() < 攻擊方.cri) damage *= 攻擊方.crd
 
 `_takeDamage(dmg)`（[com_stats.js:337](../src/components/com_stats.js#L337)）：套用 HP 變化、依 `dmg.type`（`GM.CRIT`/`GM.MISS`/`GM.EVA`/`GM.HIT`）噴對應的傷害數字彈窗、`emit(GM.EVT.DAMAGE)`；HP 第一次歸零時（`alive && hp<=0`）額外 `emit(GM.EVT.ONDEAD)`，之後不會重複觸發。
 
-### 2.3 `com_stats_old.js` 是死代碼
-
-`player.js`/`npc.js`/`role.js` 都只 import `com_stats.js`，`com_stats_old.js` 沒有任何地方引用。它是舊版設計（用字串事件名、`mods.self/enemy` 形狀、每次命中扣好感度)，留著純粹是設計歷史紀錄，改東西不要照抄它的寫法。
-
 ## 3. 攻擊流程
 
 ### 3.1 玩家點擊

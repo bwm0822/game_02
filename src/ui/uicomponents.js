@@ -1081,11 +1081,11 @@ export function uDropdownBase(scene,config={})
         if(multi)
         {
             uDiv.call(_menu,scene,{color:GM.COLOR.WHITE})
-            uButton.call(_menu,scene,{text:'清除',
+            uButton.call(_menu,scene,{text:'clear'.lab(),
                                     style:UI.BTN.OPTION,
                                     ext:{expand:true},
                                     onclick:()=>setAll(false)})
-            uButton.call(_menu,scene,{text:'全選',
+            uButton.call(_menu,scene,{text:'select_all'.lab(),
                                     style:UI.BTN.OPTION,
                                     ext:{expand:true},
                                     onclick:()=>setAll(true)})
@@ -1188,7 +1188,7 @@ export function uInput(scene, config={})
     if(btn)
     {
         p.addSpace();
-        uButton.call(p, scene,{text:'送出',
+        uButton.call(p, scene,{text:'submit'.lab(),
                                 onclick: ()=>{
                                     onclick?.(p.getValue());
                                     p.clearInput();

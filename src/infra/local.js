@@ -11,10 +11,17 @@ export default class Local
         this._local = scene.cache.json.get('local');
     }
 
-    static lab(key)
+    static lab(key, args)
     {
         const src = this._local?.[key]?.lab;
-        return src === undefined ? `[color=red]${key}[/color]` : tr(`ui.${key}`, src);
+        return src === undefined ? `[color=red]${key}[/color]` : tr(`ui.${key}`, src, args);
+    }
+
+    // 角色 id 這類不一定有列在 local.xlsx 的，查不到就顯示 id 本身
+    static name(id)
+    {
+        const src = this._local?.[id]?.lab;
+        return src === undefined ? `${id}` : tr(`ui.${id}`, src);
     }
 
     static des(key, args)
@@ -43,7 +50,7 @@ export default class Local
     }
 }
 
-String.prototype.lab = function(){ return Local.lab(this); };
+String.prototype.lab = function(args){ return Local.lab(this, args); };
 String.prototype.des = function(args){ return Local.des(this, args); };
 Number.prototype.lab = function(){ return Local.lab(Local.lut(this)); };
 

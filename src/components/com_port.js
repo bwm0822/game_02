@@ -91,7 +91,7 @@ export class COM_Node extends COM_Port
         let lb = scene.add.text(
                 x, y, bb.name,
                 {   
-                    fontFamily:'Arial',
+                    fontFamily:GM.FONT,
                     fontSize:'24px',
                     color:'#000',
                     // stroke:'#fff',

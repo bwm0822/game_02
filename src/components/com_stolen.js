@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
+import Local from '../infra/local.js'
 const _tag = 'stolen';
 
 //--------------------------------------------------
@@ -36,13 +37,13 @@ export class COM_Stolen extends Com
         const thief=this.root.info.target;
         if(Utility.roll(chance))    // 成功
         {
-            send('msg',`${thief.id} 成功偷竊 ${ent.label}`);
+            send('msg','_steal_ok'.lab({who:Local.name(thief.id), item:ent.label}));
             this.root?.transfer(ent);
             return true;
         }
         else
         {
-            send('msg',`${thief.id} 偷竊失敗`);
+            send('msg','_steal_fail'.lab({who:Local.name(thief.id)}));
             emit(GM.EVT.STOLEN, thief.id);
             thief.next();
             return false;

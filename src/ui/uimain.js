@@ -109,9 +109,9 @@ export default class UiMain extends UiFrame
     _option(btn) 
     {
         const options = [
-            {text:`模式:${GS.mode}`,onclick:()=>this._mode()},
-            {text:'存檔',onclick:()=>this.send('save')},
-            {text:'離開',onclick:()=>this._menu()},
+            {text:'mode_toggle'.lab({v:GS.mode}),onclick:()=>this._mode()},
+            {text:'save'.lab(),onclick:()=>this.send('save')},
+            {text:'leave'.lab(),onclick:()=>this._menu()},
         ]
         Ui.on(UI.TAG.BUTTONS,btn,options);
     }

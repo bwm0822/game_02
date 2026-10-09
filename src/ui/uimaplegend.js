@@ -50,11 +50,11 @@ export default class UiMapLegend extends UiFrame
                                         space:{top:10,bottom:10,right:10}});
         this._p=p;
 
-        uButton.call(p,scene,{style:UI.BTN.OPTION,text:'玩家',ext:{expand:true},
+        uButton.call(p,scene,{style:UI.BTN.OPTION,text:'player'.lab(),ext:{expand:true},
                                 onclick:()=>{this.send('focusOnPlayer')}});
-        this._ndName = uButton.call(p,scene,{style:UI.BTN.CHECK,text:'🏷️顯示地名',ext:{expand:true},
+        this._ndName = uButton.call(p,scene,{style:UI.BTN.CHECK,text:`🏷️${'map_show_names'.lab()}`,ext:{expand:true},
                                 onclick:(btn)=>{this.send('showNodeName',btn.value)}})
-        this._ndTag = uButton.call(p,scene,{style:UI.BTN.CHECK,text:'📜顯示任務',ext:{expand:true},
+        this._ndTag = uButton.call(p,scene,{style:UI.BTN.CHECK,text:`📜${'map_show_quests'.lab()}`,ext:{expand:true},
                                 onclick:(btn)=>{this.send('showNodeTag',btn.value)}})
 
         return this;

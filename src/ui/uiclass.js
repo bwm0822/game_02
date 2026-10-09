@@ -12,6 +12,7 @@ import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
+import Local from '../infra/local.js'
 
 export class Slot extends Icon
 {
@@ -354,7 +355,7 @@ export class Slot extends Icon
     async stolen()
     {
         if(this.isEmpty) {return;}
-        if(this.isVictim && await Ui.on(UI.TAG.CONFIRM,'偷竊嗎?'))
+        if(this.isVictim && await Ui.on(UI.TAG.CONFIRM,'_steal_confirm'.lab()))
         {
             if(this.owner.stolen(this)) {Ui.refreshAll();}
             else {Ui.off(UI.TAG.STEAL);}
@@ -366,11 +367,11 @@ export class Slot extends Icon
         if(this.owner.fill(this))
         {
             this.update();
-            UiMessage.push(`${this.owner.id} 裝水`)
+            UiMessage.push('_fill_water'.lab({who:Local.name(this.owner.id)}))
         }
         else
         {
-            UiMessage.push(`${this.owner.id} 水壺已滿`)
+            UiMessage.push('_bottle_full'.lab({who:Local.name(this.owner.id)}))
         }
     }
 
@@ -623,7 +624,7 @@ export class AbilityItem extends Pic
        
         if(!this._ability)
         {
-            let ret = await UiConfirm.msg('學習此技能?');
+            let ret = await UiConfirm.msg('_learn_confirm'.lab());
             if(ret)
             {
                 this.owner.learnAbility(this._id);

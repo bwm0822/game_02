@@ -4,7 +4,7 @@ import {T,dlog} from '../core/debug.js'
 
 const RANGE = 15;          // 呼救/目擊範圍(格)
 const WITNESS_FAV = -45;    // 目擊玩家攻擊人類時扣的好感度
-const SHOUTS = ['救命啊！', '來人啊！', '有人要殺我！'];
+const SHOUTS = ['_shout_help', '_shout_come', '_shout_murder'];
 const BUSY = ['ATTACK', 'FLEE', 'INVESTIGATE'];
 
 const inRange = (source, target) => {
@@ -40,7 +40,7 @@ export class COM_Alarm extends Com
         others.forEach(r=>r.witness?.());
 
         if(bb.beh && bb.beh !== 'SCHEDULE') {return;}
-        root.speak?.(SHOUTS[Math.floor(Math.random()*SHOUTS.length)], {duration:1500});
+        root.speak?.(SHOUTS[Math.floor(Math.random()*SHOUTS.length)].lab(), {duration:1500});
         others.forEach(r=>r.hearAlarm?.(root));
     }
 

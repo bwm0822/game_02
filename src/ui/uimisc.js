@@ -33,7 +33,7 @@ export default class UiMisc extends UiFrame
     addTabs(scene)
     {
         this._tabs = ui.uTabs.call(this, scene, {
-            top: [{text:'任務',name:'quest'},{text:'地圖',name:'map'}],
+            top: [{text:'quest'.lab(),name:'quest'},{text:'map'.lab(),name:'map'}],
             onclick:(btn)=>{this._pageName=btn.name;this.updatePage();},
             createpanel:()=>this.createPages(scene),
             fill:true,

@@ -94,7 +94,7 @@ export class PMap extends Sizer
 
         // 1. 玩家
         const btn = ui.uButton(scene, {style:UI.BTN.ITEM,
-                                        text:'玩家',
+                                        text:'player'.lab(),
                                         onclick:onclick});
         this._scroll.addItem(btn);
         btn.isPlayer = true;
@@ -116,7 +116,7 @@ export class PMap extends Sizer
 
             if(!group)
             {
-                group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]一般任務[/size]`});
+                group = ui.uGroup(scene, {title:`[size=${GM.FONT_SIZE+4}]${'quest_general'.lab()}[/size]`});
                 this._scroll.addItem(group);
             }
             group.addItem(btn);

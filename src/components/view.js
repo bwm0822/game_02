@@ -26,7 +26,7 @@ function debugDraw(mode=DEBUG.mode,text)
     {
         this._dbgText = this.scene.add.text(0,0,'',
                 {   
-                    fontFamily:'Arial',
+                    fontFamily:GM.FONT,
                     fontSize:'18px',
                     color:'#000',
                     // stroke:'#fff',
@@ -42,7 +42,7 @@ function debugDraw(mode=DEBUG.mode,text)
     {
         this._dbgPos = this.scene.add.text(0,0,'',
                 {   
-                    fontFamily:'Arial',
+                    fontFamily:GM.FONT,
                     fontSize:'18px',
                     color:'#000',
                     // stroke:'#fff',

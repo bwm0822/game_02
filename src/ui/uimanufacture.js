@@ -76,7 +76,7 @@ export default class UiManufacture extends UiFrame
 
         // 5. make
         this._make = ui.uButton.call(main, scene, 
-                                        {text:'製造',
+                                        {text:'manufacture'.lab(),
                                         onclick:this.make.bind(this)})
                             .setEnable(false);
 

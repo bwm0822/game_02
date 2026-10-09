@@ -28,7 +28,7 @@ export class COM_Trade extends Com
 
         if (!root.storage) 
         {
-            send('msg','無法交易');
+            send('msg','_trade_refuse'.lab());
         }
         else
         {

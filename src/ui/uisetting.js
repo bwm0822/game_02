@@ -42,7 +42,7 @@ export default class UiSetting extends UiFrame
     addTabs(scene)
     {
         this._tabs = ui.uTabs.call(this, scene, {
-                    left:[{text:'主要',name:'main'},{text:'其他',name:'other'}],
+                    left:[{text:'main'.lab(),name:'main'},{text:'other'.lab(),name:'other'}],
                     onclick:(btn)=>{this._tab=btn.name;this.updatePage();},
                     createpanel:()=>{return this.createPage(scene)},
                 })
@@ -93,8 +93,8 @@ export default class UiSetting extends UiFrame
     page_Other()
     {
         this._page.clearAll();
-        this._page.add(this.check('滑鼠移動到邊緣可移動鏡頭',Record.setting,'mouseEdgeMove'),{align:'left'})
-        this._page.add(this.check('滑鼠鎖定模式',Record.setting,'pointerLock'),{align:'left'})
+        this._page.add(this.check('mouse_edge_move'.lab(),Record.setting,'mouseEdgeMove'),{align:'left'})
+        this._page.add(this.check('pointer_lock'.lab(),Record.setting,'pointerLock'),{align:'left'})
 
         this.layout();
 

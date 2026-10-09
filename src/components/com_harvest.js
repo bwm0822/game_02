@@ -4,6 +4,7 @@ import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Pickup from '../items/pickup.js'
 import AudioManager from '../manager/audio.js'
+import Local from '../infra/local.js'
 const _tag = 'harvest';
 
 //--------------------------------------------------
@@ -78,7 +79,7 @@ export class COM_Harvest extends Com
                     const tool = taker.findItem?.(hasTool);
                     if(!tool)
                     {
-                        send('msg', `需要 ${bb.tool} 才能採集`);
+                        send('msg', '_harvest_need_tool'.lab({tool:Local.name(bb.tool)}));
                         return;
                     }
                     putDown = taker.hold?.(tool.id);
@@ -90,7 +91,7 @@ export class COM_Harvest extends Com
             putDown?.();
             if(this._cur > 0)
             {
-                send('msg', `砍了 ${this._hp - this._cur}/${this._hp} 下`);
+                send('msg', '_harvest_chop'.lab({cur:this._hp - this._cur, max:this._hp}));
                 return;
             }
             if(bb.harvest)
@@ -99,7 +100,7 @@ export class COM_Harvest extends Com
                 const pos = root.pos;
                 const p = ept(pos, {th:GM.W.EMPTY, random:true, includeP:false});
                 new Pickup(scene, pos.x, pos.y - 32).init_runtime({id, count}).falling(p);
-                send('msg', `掉落 ${_lab(id)} x${count}`);
+                send('msg', '_harvest_drop'.lab({item:_lab(id), count}));
             }
         }
         else // GM.HARVEST (pick)
@@ -109,7 +110,7 @@ export class COM_Harvest extends Com
             if(bb.harvest)
             {
                 taker.receive?.({id: bb.harvest.id, count: 1});
-                send('msg', `獲得 ${_lab(bb.harvest.id)}`);
+                send('msg', '_harvest_get'.lab({item:_lab(bb.harvest.id)}));
             }
             if(this._cur > 0) {return;}
         }

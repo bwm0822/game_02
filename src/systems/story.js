@@ -160,7 +160,7 @@ export default class Story
             if(log.at(-1) === v) {continue;}
             log.push(v);
             this.updated.add(t.id);
-            _popup('更新任務');
+            _popup('_quest_updated'.lab());
         }
         this.fire('quality');
     }
