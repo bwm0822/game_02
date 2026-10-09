@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～3 階段已完成。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～4 階段已完成。
 
 ## 已定案
 
@@ -104,7 +104,7 @@
    - item/ability/local.xlsx 的語言欄標頭先改成 `zh-TW`/`en`（json 的 `dat[lang]` 照舊能用），第 2 階段整欄拿掉
 2. ✅ 核心 `tr()`＋item/ability/local 拿掉語言欄＋`[lang].lab` 改走 `tr()`；開發版設定頁可選 `qps`；測試 `scripts/test/lang.mjs`
 3. ✅ 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔、字型收斂
-4. 劇情文字（uidialog、line、story 的 thread/storylet/quality label）接上 `tr()`
+4. ✅ 劇情文字（對話節點、line、storylet、thread 日誌）接上 `tr()`；順便補了第 3 階段漏掉的交易/丟棄/拾取拼接句
 5. `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
 6. 英文上線（Claude 翻譯標 mt、語言切換流程、切英文實玩找爆版）
 
@@ -123,12 +123,14 @@
 | local.xlsx | `ui.<localId>` |
 | item.xlsx | `item.<id>` |
 | ability.xlsx | `ability.<id>` |
-| dialog.json 節點 | `dlg.<npc>.<node>`（共用的是 `dlg._common.<node>`） |
-| `_common` 的 line | `line.<id>` |
-| story thread（title/desc/journal） | `story.thread.<id>` |
-| storylet（label/text） | `story.let.<id>` |
+| dialog.json 節點 | `dlg.<sheet>.<node>`（共用的是 `dlg._common.<node>`） |
+| line | `line.<sheet>.<concept>`（line 沒有 id，同一 sheet 同一 concept 的多句靠原文區分） |
+| story thread（title/desc/journal/reward） | `story.thread.<id>` |
+| storylet（label/hint/text） | `story.let.<id>` |
 | story 節點 | `story.node.<node>` |
-| quality label | `story.quality.<id>` |
+
+- 實作（第 4 階段）：節點、line 的情境由轉檔腳本（`scripts/tools.js` 的 `buildNode`、`scripts/dialog.js` 的 `buildLine`）寫進 json 的 `ctx` 欄，執行期直接 `tr(node.ctx, …)`；`_common` 合併進各 NPC 後仍保留 `dlg._common.*`，所以共用台詞只翻一次。`choice:<node>` 掛到別張 sheet 節點上的選項自帶 `ctx`（來源 sheet），其他選項沿用節點的。storylet／thread 的情境在執行期組（`Story.cardCtx()`、`Story._threadCtx()`）。
+- quality 的 `label` 執行期沒有顯示的地方（只在 xlsx/除錯用），不翻譯；原本表上的 `story.quality.<id>` 拿掉。
 
 ### 16. textKeys / labelKey 改名
 - 實際存的是原文，名字會跟「情境＋原文」的 key 混淆；第 4 階段順便改成 `texts` / `label`（com_talk、scripts/story.js、scripts/tools.js、approach.mjs）。

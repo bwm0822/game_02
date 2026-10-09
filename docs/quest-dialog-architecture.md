@@ -91,12 +91,12 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
     ],
     "nodes": {
       "n_default": {
-        "textKeys": {"!_first_meet": "很高興認識你，我是Karen", "true": "你好/需要幫助嗎?"},
+        "ctx": "dlg.karen.n_default", "texts": {"!_first_meet": "很高興認識你，我是Karen", "true": "你好/需要幫助嗎?"},
         "choices": [
-          {"labelKey": "交易", "priority": 10, "actions": ["trade"]},
-          {"labelKey": "聊天", "priority": 20, "next": "n_chat"},
-          {"labelKey": "關於任務", "priority": 30, "next": "[_quest]", "condition": "_quest"},
-          {"labelKey": "離開", "priority": 99, "actions": ["close"]}
+          {"label": "交易", "priority": 10, "actions": ["trade"]},
+          {"label": "聊天", "priority": 20, "next": "n_chat"},
+          {"label": "關於任務", "priority": 30, "next": "[_quest]", "condition": "_quest"},
+          {"label": "離開", "priority": 99, "actions": ["close"]}
         ],
         "posts": ["set _first_meet"]
       }
@@ -106,7 +106,7 @@ node scripts/dialog.js   # xls/dialog.xlsx -> public/assets/json/dialog.json
 ```
 
 - `entries`：對話入口，依 `order` 排序，取第一個 `condition` 成立的 `nodeId`；`actions`/entry 上的 `actions` 會先執行（設旗標用）
-- `nodes[nodeId].textKeys`：字串，或 `{condition: text}` 的條件映射（由上而下找第一個成立的），值裡用 `/` 分隔多個文本會隨機挑一個、之後依序輪替（`_pickText`）
+- `nodes[nodeId].texts`：字串，或 `{condition: text}` 的條件映射（由上而下找第一個成立的），值裡用 `/` 分隔多個文本會隨機挑一個、之後依序輪替（`_pickText`）；`ctx` 是轉檔產生的翻譯情境，見 [i18n-architecture.md §15](i18n-architecture.md)
 - `nodes[nodeId].choices[].condition`：選項是否顯示的條件
 - `nodes[nodeId].choices[].next`：下一個 `nodeId`；`[varName]` 語法代表動態導向——實際節點 id 存在 flag/Record 變數裡（例如 `next:"[_quest]"` 搭配 `set _quest n_QK01`）
 - `nodes[nodeId].posts`：顯示完這個節點後執行的指令（設旗標用，例如記錄「已見過第一次」）
@@ -225,7 +225,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 
 ### 新增一段對話
 
-1. 在 `xls/dialog.xlsx` 對應 NPC 的 sheet 新增節點列（`nodeId`/`textKeys`/`choices`...，實際欄位對照請看 `scripts/dialog.js` 怎麼組資料，跟 `quest.js` 讀表方式一致）。
+1. 在 `xls/dialog.xlsx` 對應 NPC 的 sheet 新增節點列（`nodeId`/`texts`/`choices`...，實際欄位對照請看 `scripts/dialog.js` 怎麼組資料，跟 `quest.js` 讀表方式一致）。
 2. 執行 `node scripts/dialog.js` 重新產生 `public/assets/json/dialog.json`。
 3. 新節點要被走到，得從某個既有節點的 `choice.next` 連過去，或加一筆新的 `entries`（記得排 `order`、設 `condition`）。
 4. 對話中要暫存「這個 NPC 是不是講過這句話了」之類的旗標，用 `_` 開頭的變數名（存在對話元件自己的 runtime 資料，不會污染全域 `Record`）。

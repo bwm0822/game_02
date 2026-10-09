@@ -17,9 +17,9 @@ function buildEntry(row)
     return entry;
 }
 
-function buildLine(row)
+function buildLine(sheet, row)
 {
-    const line = {concept: row.node_id, text: String(row.text_keys)};
+    const line = {concept: row.node_id, text: String(row.text_keys), ctx: `line.${sheet}.${row.node_id}`};
     if (row.condition) line.condition = String(row.condition);
     return line;
 }
@@ -33,8 +33,8 @@ function readSheet(sheet, rows)
     {
         const sec = row.section;
         if (sec === 'entry') d.entries.push(buildEntry(row));
-        else if (sec === 'line') d.lines.push(buildLine(row));
-        else if (sec === 'node') {node = buildNode(row); d.nodes[row.node_id] = node;}
+        else if (sec === 'line') d.lines.push(buildLine(sheet, row));
+        else if (sec === 'node') {node = buildNode(row, `dlg.${sheet}.${row.node_id}`); d.nodes[row.node_id] = node;}
         else if (sec === 'choice' && node) node.choices.push(buildChoice(row));
         else if (sec === 'post' && node) node.posts.push(...toArray(row.actions));
         else if (sec === 'storylets' && node)
@@ -42,7 +42,7 @@ function readSheet(sheet, rows)
             node.cards = Number(row.priority);
             if (row.node_id) node.mood = row.node_id;
         }
-        else if (sec?.startsWith('choice:')) d.dynamic.push({nodeId: sec.slice('choice:'.length).trim(), row});
+        else if (sec?.startsWith('choice:')) d.dynamic.push({nodeId: sec.slice('choice:'.length).trim(), row, sheet});
         else if (sec) console.warn(`WARN dialog.xlsx/${sheet}!${row._row} 認不得的 section「${sec}」`);
     }
     return d;
@@ -52,10 +52,11 @@ function readSheet(sheet, rows)
 function merge(sheet, own, common)
 {
     const nodes = structuredClone({...common.nodes, ...own.nodes});
-    for (const {nodeId, row} of [...common.dynamic, ...own.dynamic])
+    for (const {nodeId, row, sheet: from} of [...common.dynamic, ...own.dynamic])
     {
         if (!nodes[nodeId]) {console.warn(`WARN dialog.xlsx/${sheet}!${row._row} 找不到節點 ${nodeId}，跳過選項「${row.label_key}」`); continue;}
-        nodes[nodeId].choices.push(buildChoice(row));
+        const ctx = `dlg.${from}.${nodeId}`;
+        nodes[nodeId].choices.push(buildChoice(row, ctx === nodes[nodeId].ctx ? undefined : ctx));
     }
     for (const n of Object.values(nodes)) n.choices.sort((a, b) => (a.priority || 0) - (b.priority || 0));
 

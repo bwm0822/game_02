@@ -163,7 +163,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 - 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上，不用複製整個節點
 - `_common` 的 n_default 有 `交易` 選項，條件是 `trade` 事實（`role.json` 的 `trade:true`），所有商人自動都有
-- dialog 的條件（choice、entry、textKeys）跟 line 一樣附帶 NPC 情境事實（`Line.facts()`：`map`/`hour`/`time`/`job`/`style`/`trade`/`hp`）
+- dialog 的條件（choice、entry、texts）跟 line 一樣附帶 NPC 情境事實（`Line.facts()`：`map`/`hour`/`time`/`job`/`style`/`trade`/`hp`）
 - **能對話的 NPC** = 有自己 sheet 的 + `role.json` 標 `unique:true` 的（沒 sheet 就整套用 `_common`）；其他角色（狼、盜賊…）沒有對話，但 line 泡泡照樣吃 `_common` 的
 - dialog.json 的 `_common` key 是合併前的共用資料，給沒有對話的角色查 line 用
 

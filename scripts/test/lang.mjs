@@ -68,4 +68,34 @@ run('多國語言', async t => {
     t.eq('訊息模板帶名字', msg.lock, '維克 開鎖失敗');
     t.eq('沒列在 local 的 id 顯示原樣', msg.noName, 'rogue-1');
     t.eq('多行模板', msg.confirm, '用開鎖工具開鎖？\n成功率 40%');
+
+    // 假的翻譯表：驗證對話節點、選項、_shared 後備、storylet、日誌都有帶到情境
+    await t.eval(d => {
+        d.Record.setting.lang = 'en';
+        d.Lang.load({
+            'dlg._common.n_cold': {'……又是你。': '...You again.'},
+            'story.let.hunt_ask': {'關於任務': 'About the job'},
+            'story.thread.bandit_hunt': {'盜賊討伐': 'Bandit Hunt', '與 xi 對話了解情況': 'Talk to xi'},
+            _shared: {'離開': 'Leave', '聊天': 'Chat'},
+        });
+    });
+    await t.setQ('karen.favor', 20);
+    const cold = await t.talk('karen');
+    t.eq('節點台詞照 dlg._common 情境翻', cold[0], '...You again.');
+    const coldOpts = await t.eval(d => {d.objs().find(g => g.id === 'karen').talk(); const dlg = d.Ui.get(d.UI.TAG.DIALOG); const b = dlg.dialog.B.map(b => b.text); dlg.close(); return b;});
+    t.check('選項走 _shared 後備', coldOpts.includes('Leave'), JSON.stringify(coldOpts));
+    await t.setQ('karen.favor', 50);
+    const opts = await t.eval(d => {d.objs().find(g => g.id === 'karen').talk(); const dlg = d.Ui.get(d.UI.TAG.DIALOG); const b = dlg.dialog.B.map(b => b.text); dlg.close(); return b;});
+    t.check('storylet 選項照 story.let 情境翻', opts.includes('About the job') && opts.includes('Chat'), JSON.stringify(opts));
+    t.check('沒有譯文的選項退回原文', opts.includes('交易'), JSON.stringify(opts));
+    await t.talk('karen', 'About the job', '接受');
+    const j = await t.journal('bandit_hunt');
+    t.eq('日誌標題', j?.title, 'Bandit Hunt');
+    t.eq('日誌內容', j?.lines[0]?.text, 'Talk to xi');
+
+    await t.eval(d => {d.Record.setting.lang = 'qps'; d.Lang.load();});
+    const q = await t.talk('karen');
+    t.check('qps 對話台詞有括號', q[0].startsWith('【'), q[0]);
+    t.check('qps 日誌有括號', (await t.journal('bandit_hunt')).title.startsWith('【'), '');
+    await t.eval(d => {d.Record.setting.lang = 'zh-TW'; d.Lang.load();});
 });

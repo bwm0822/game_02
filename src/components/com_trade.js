@@ -1,5 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+import Local from '../infra/local.js'
 const _tag = 'trade';
 
 //--------------------------------------------------
@@ -60,12 +61,11 @@ export class COM_Trade extends Com
             }
             else
             {
-                const name = function(id) {return `[weight=900]${id.lab()}[/weight] `}
                 const gold = ent.gold*(ent.count-remain);
                 bb.gold += gold
                 target.gold -= gold; 
-                if(root===GM.player) {send('msg',name(bb.id)+`${'sell'.lab()} ${ent.label}`);}
-                else {send('msg',name(GM.player.id)+`${'buy'.lab()} ${ent.label}`);}
+                if(root===GM.player) {send('msg','_trade_sell'.lab({who:Local.name(bb.id), item:ent.label}));}
+                else {send('msg','_trade_buy'.lab({who:Local.name(GM.player.id), item:ent.label}));}
                 if(remain===0) {ent.empty();}
                 else {ent.count=remain;}
                 return true;

@@ -726,5 +726,17 @@
   },
   "_active_remaining": {
     "lab": "{#eff}，剩[color=white]{#n}[/color]回合"
+  },
+  "_trade_sell": {
+    "lab": "[weight=900]{#who}[/weight] 賣 {#item}"
+  },
+  "_trade_buy": {
+    "lab": "[weight=900]{#who}[/weight] 買 {#item}"
+  },
+  "_drop_item": {
+    "lab": "丟棄 {#item}"
+  },
+  "_pickup_item": {
+    "lab": "拾取 {#item}"
   }
 }

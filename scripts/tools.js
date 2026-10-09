@@ -36,12 +36,14 @@ export function splitTables(raw)
 }
 
 // ── 對話節點（dialog.xlsx 與 story.xlsx 的長對話節點共用） ──
-export function buildChoice(row)
+// ctx 是翻譯情境（docs/i18n-architecture.md §15）：節點自己帶；選項只有跟節點不同來源時（choice:<node_id>）才帶
+export function buildChoice(row, ctx)
 {
     const c = {
-        labelKey: row.label_key,
+        label: row.label_key,
         priority: Number(row.priority),
     };
+    if (ctx)              c.ctx       = ctx;
     if (row.actions)      c.actions   = toArray(row.actions);
     if (row.next)         c.next      = row.next;
     if (row.condition)    c.condition = row.condition;
@@ -61,10 +63,11 @@ export function buildTextKeys(text_keys_str)
 }
 
 // next 有值、底下沒有 choice 列時，執行期沿用 next 節點的選項
-export function buildNode(row)
+export function buildNode(row, ctx)
 {
     const node = {
-        textKeys: buildTextKeys(row.text_keys),
+        ctx,
+        texts:    buildTextKeys(row.text_keys),
         actions:  toArray(row.actions),
         choices:  [],
         posts:    []

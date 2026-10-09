@@ -258,13 +258,14 @@
   "nodes": {
     "karen": {
       "n_hunt_ask": {
-        "textKeys": {
+        "ctx": "story.node.n_hunt_ask",
+        "texts": {
           "true": "最近黑森林有盜賊出沒，商隊都不敢走了……能幫忙討伐嗎?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "接受",
+            "label": "接受",
             "priority": 0,
             "actions": [
               "bandit_hunt=1"
@@ -272,7 +273,7 @@
             "next": "n_hunt_ask2"
           },
           {
-            "labelKey": "拒絕",
+            "label": "拒絕",
             "priority": 0,
             "next": "n_default"
           }
@@ -280,13 +281,14 @@
         "posts": []
       },
       "n_hunt_ask2": {
-        "textKeys": {
+        "ctx": "story.node.n_hunt_ask2",
+        "texts": {
           "true": "先去找xi了解詳情"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "好",
+            "label": "好",
             "priority": 0,
             "next": "n_default"
           }
@@ -294,7 +296,8 @@
         "posts": []
       },
       "n_hunt_report": {
-        "textKeys": {
+        "ctx": "story.node.n_hunt_report",
+        "texts": {
           "bandit_hunt<4": "任務如何了?",
           "bandit_hunt==4": "任務如何了?",
           "bandit_hunt==10": "很好，這是你的獎勵"
@@ -302,13 +305,13 @@
         "actions": [],
         "choices": [
           {
-            "labelKey": "處理中",
+            "label": "處理中",
             "priority": 0,
             "next": "n_default",
             "condition": "bandit_hunt<4"
           },
           {
-            "labelKey": "完成了",
+            "label": "完成了",
             "priority": 0,
             "actions": [
               "bandit_hunt=10",
@@ -318,7 +321,7 @@
             "condition": "bandit_hunt==4"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 0,
             "next": "n_default",
             "condition": "bandit_hunt==10"
@@ -327,13 +330,14 @@
         "posts": []
       },
       "n_wolf_karen": {
-        "textKeys": {
+        "ctx": "story.node.n_wolf_karen",
+        "texts": {
           "true": "這批狼皮品質不錯，這批貨我收了！幫我跟 xi 說一聲喔。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "好的",
+            "label": "好的",
             "priority": 0,
             "actions": [
               "take plet 1",
@@ -345,13 +349,14 @@
         "posts": []
       },
       "n_wolf_grudge": {
-        "textKeys": {
+        "ctx": "story.node.n_wolf_grudge",
+        "texts": {
           "true": "聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "抱歉，下次一定先找你",
+            "label": "抱歉，下次一定先找你",
             "priority": 0,
             "actions": [
               "_grudge=1",
@@ -360,7 +365,7 @@
             "next": "n_default"
           },
           {
-            "labelKey": "我想賣給誰就賣給誰",
+            "label": "我想賣給誰就賣給誰",
             "priority": 0,
             "actions": [
               "_grudge=1",
@@ -372,13 +377,14 @@
         "posts": []
       },
       "n_trade_karen": {
-        "textKeys": {
+        "ctx": "story.node.n_trade_karen",
+        "texts": {
           "true": "長期收購？聽起來不錯，價錢我可以再加一點，你回去跟 xi 說一聲，這筆生意我接了。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "好的",
+            "label": "好的",
             "priority": 0,
             "actions": [
               "pelt_trade=2"
@@ -391,13 +397,14 @@
     },
     "xi": {
       "n_hunt_xi": {
-        "textKeys": {
+        "ctx": "story.node.n_hunt_xi",
+        "texts": {
           "true": "盜賊就躲在黑森林裡，他們身上都帶著匕首，拿一把回來給 karen 當證明吧。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "了解",
+            "label": "了解",
             "priority": 0,
             "actions": [
               "bandit_hunt=2",
@@ -409,13 +416,14 @@
         "posts": []
       },
       "n_wolf_ask": {
-        "textKeys": {
+        "ctx": "story.node.n_wolf_ask",
+        "texts": {
           "true": "最近黑森林的狼變多了，肉舖都要沒貨了……能幫我獵些狼皮回來嗎？"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "接受",
+            "label": "接受",
             "priority": 0,
             "actions": [
               "wolf_hunt=1",
@@ -424,7 +432,7 @@
             "next": "n_default"
           },
           {
-            "labelKey": "拒絕",
+            "label": "拒絕",
             "priority": 0,
             "next": "n_default"
           }
@@ -432,7 +440,8 @@
         "posts": []
       },
       "n_wolf_report": {
-        "textKeys": {
+        "ctx": "story.node.n_wolf_report",
+        "texts": {
           "wolf_hunt<4": "狼皮收集得如何了?",
           "wolf_hunt==4": "都準備好了嗎？太好了!",
           "wolf_hunt==10": "謝謝你，這是你的獎勵"
@@ -440,13 +449,13 @@
         "actions": [],
         "choices": [
           {
-            "labelKey": "處理中",
+            "label": "處理中",
             "priority": 0,
             "next": "n_default",
             "condition": "wolf_hunt<4"
           },
           {
-            "labelKey": "完成了",
+            "label": "完成了",
             "priority": 0,
             "actions": [
               "wolf_hunt=10",
@@ -457,7 +466,7 @@
             "condition": "wolf_hunt==4"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 0,
             "next": "n_default",
             "condition": "wolf_hunt==10"
@@ -466,13 +475,14 @@
         "posts": []
       },
       "n_trade_ask": {
-        "textKeys": {
+        "ctx": "story.node.n_trade_ask",
+        "texts": {
           "true": "森林安靜多了，這下該跟 karen 把長期收購狼皮的事情談攏。你能不能幫我帶個提案去，跟她把價錢跟數量談好？"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "接受",
+            "label": "接受",
             "priority": 0,
             "actions": [
               "pelt_trade=1"
@@ -480,7 +490,7 @@
             "next": "n_default"
           },
           {
-            "labelKey": "拒絕",
+            "label": "拒絕",
             "priority": 0,
             "next": "n_default"
           }
@@ -488,7 +498,8 @@
         "posts": []
       },
       "n_trade_report": {
-        "textKeys": {
+        "ctx": "story.node.n_trade_report",
+        "texts": {
           "pelt_trade==1": "跟 karen 談得怎麼樣了?",
           "pelt_trade==2": "都談好了嗎？太好了!",
           "pelt_trade==10": "這趟辛苦你了，這是謝禮"
@@ -496,13 +507,13 @@
         "actions": [],
         "choices": [
           {
-            "labelKey": "處理中",
+            "label": "處理中",
             "priority": 0,
             "next": "n_default",
             "condition": "pelt_trade==1"
           },
           {
-            "labelKey": "完成了",
+            "label": "完成了",
             "priority": 0,
             "actions": [
               "pelt_trade=10",
@@ -512,7 +523,7 @@
             "condition": "pelt_trade==2"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 0,
             "next": "n_default",
             "condition": "pelt_trade==10"

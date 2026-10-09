@@ -16,7 +16,7 @@ run('NPC 主動', async t => {
             {id:'t_wave', who:'xi', on:['see'], requires:'!_t_wave', text:'嗨～', effects:['_t_wave=1']},
             {id:'t_call', who:'karen', on:['see'], requires:'!_t_call', text:'喂！等一下！', effects:['_t_call=1', 'approach n_t_call']},
         );
-        (s.nodes.karen ??= {}).n_t_call = {textKeys:'我有話跟你說', next:'n_default'};
+        (s.nodes.karen ??= {}).n_t_call = {texts:'我有話跟你說', next:'n_default'};
     });
 
     const wave = await t.eval(d => {

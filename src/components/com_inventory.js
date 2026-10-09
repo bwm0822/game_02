@@ -155,7 +155,7 @@ export class COM_Storage extends Com
         let go = new Pickup(this.scene,this.pos.x,this.pos.y-32).init_runtime(ent.content);
         go.falling(p);
         const {send}=this.ctx;
-        send('msg',`${'drop'.lab()} ${ent.label}`);
+        send('msg','_drop_item'.lab({item:ent.label}));
         ent.empty();
         AudioManager.drop();
         Story.onItem();

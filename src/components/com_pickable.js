@@ -35,7 +35,7 @@ export class COM_Pickable extends Com
                                 // 因為 emit('remove')會將 this.scene 設成 null
         if(remain===0)
         {       
-            send('msg',`${'pickup'.lab()} ${this.label}`)
+            send('msg','_pickup_item'.lab({item:this.label}))
             emit('out');
             emit('remove');
         } 

@@ -6,6 +6,7 @@ import {exec, evalCond, valueOf} from './script.js'
 import Ui from '../ui/uicommon.js'
 import {UI} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
+import {tr} from '../infra/lang.js'
 
 //--------------------------------------------------
 // storylet 與任務日誌，設計見 docs/story-architecture.md §5、§7、§9
@@ -78,6 +79,9 @@ export default class Story
 
     static node(npc, id) {return DB.story()?.nodes?.[npc]?.[id];}
 
+    // storylet 的 label/hint/text 的翻譯情境
+    static cardCtx(s) {return `story.let.${s.id}`;}
+
     //------------------------------------------------------
     //  事件卡
     //------------------------------------------------------
@@ -98,7 +102,7 @@ export default class Story
                 this._fired.add(s);
                 dlog(T.STORY)(`[S] ${on} → ${s.id}`);
                 exec(s.effects, {...ctx, cb});
-                if(s.text) {say(s.text);}
+                if(s.text) {say(tr(this.cardCtx(s), s.text));}
             }
         }
         finally {if(outer) {this._fired = null;}}
@@ -177,13 +181,16 @@ export default class Story
         const vals = log.map(v=>t.values[v]).filter(Boolean);
         const last = vals.at(-1);
         const done = !!last?.end;
+        const ctx = this._threadCtx(id);
         return {
-            id, title:t.title, desc:t.desc, done,
+            id, title:tr(ctx, t.title), desc:tr(ctx, t.desc), done,
             pos: done ? null : last?.pos ?? null,
-            reward: vals.findLast(v=>v.reward)?.reward,
-            lines: vals.map((v,i)=>({text:_fill(v.journal), cur:!done && i===vals.length-1})),
+            reward: tr(ctx, vals.findLast(v=>v.reward)?.reward),
+            lines: vals.map((v,i)=>({text:_fill(tr(ctx, v.journal)), cur:!done && i===vals.length-1})),
         };
     }
+
+    static _threadCtx(id) {return `story.thread.${id}`;}
 
     static threads() {return Object.keys(this.journal).map(id=>this.thread(id)).filter(Boolean);}
 
@@ -225,6 +232,6 @@ export default class Story
     {
         const t = this._threads[id];
         const v = t?.values[this.journal[id]?.at(-1)];
-        return v ? String(v.journal ?? '').replace(/\s*\([^)]*\{[^}]*\}[^)]*\)/g, '').trim() : '';
+        return v ? String(tr(this._threadCtx(id), v.journal) ?? '').replace(/\s*\([^)]*\{[^}]*\}[^)]*\)/g, '').trim() : '';
     }
 }

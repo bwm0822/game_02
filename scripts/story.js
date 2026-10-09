@@ -89,7 +89,7 @@ function readNodes(sheet, rows, story)
         if (r.section === 'node')
         {
             if (!r.who) {err(`${sheet}!${r._row} 節點 ${r.node_id} 沒填 who`); node = null; continue;}
-            node = buildNode(r);
+            node = buildNode(r, `story.node.${r.node_id}`);
             node.sheet = sheet;
             node.row = r._row;
             (story.nodes[r.who] ??= {})[r.node_id] = node;
@@ -206,12 +206,12 @@ function checkDialogNodes(npc, nodes, at, ctx)
     {
         const where = at(id, node);
         checkId('節點', id, where);
-        if (node.textKeys && typeof node.textKeys === 'object') Object.keys(node.textKeys).forEach(c => checkCond(c, where, ctx));
+        if (node.texts && typeof node.texts === 'object') Object.keys(node.texts).forEach(c => checkCond(c, where, ctx));
         checkActions([...(node.actions ?? []), ...(node.posts ?? [])], where, ctx, [npc]);
         checkNode(npc, node.next, `${where} next`, ctx);
         for (const c of node.choices ?? [])
         {
-            const w = `${where} choice「${c.labelKey}」`;
+            const w = `${where} choice「${c.label}」`;
             checkCond(c.condition, w, ctx);
             checkActions(c.actions, w, ctx, [npc]);
             checkNode(npc, c.next, w, ctx);

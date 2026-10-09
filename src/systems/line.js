@@ -1,6 +1,7 @@
 import DB from '../data/db.js'
 import {evalCond} from './script.js'
 import {worldFacts} from './story.js'
+import {tr} from '../infra/lang.js'
 
 //--------------------------------------------------
 // rule-based 台詞（dialog.xlsx 的 section: line），見 docs/story-architecture.md §6.2
@@ -41,7 +42,8 @@ export default class Line
         const ok = this.score(npc, concept, facts).filter(s=>s.score>=0);
         const best = Math.max(...ok.map(s=>s.score));
         const top = ok.filter(s=>s.score===best);
-        return top.length ? top[Math.floor(Math.random()*top.length)].line.text : null;
+        const line = top.length ? top[Math.floor(Math.random()*top.length)].line : null;
+        return line ? tr(line.ctx, line.text) : null;
     }
 
     static debug(npc)

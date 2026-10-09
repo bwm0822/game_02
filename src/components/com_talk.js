@@ -4,6 +4,7 @@ import {GM} from '../core/setting.js'
 import Story from '../systems/story.js'
 import Line from '../systems/line.js'
 import {exec, evalCond} from '../systems/script.js'
+import {tr} from '../infra/lang.js'
 const _tag = 'talk';
 
 // 沒有 storylets 列時，storylet 插進 entry 節點的 priority，見 docs/story-architecture.md §6.4
@@ -143,14 +144,15 @@ export class COM_Talk extends Com
         if (!enabled) return;
         this._exec(card.effects, cb);
         if (card.text?.startsWith('@')) {this._nodeId = card.text.slice(1);}
-        else {this._say = card.text ?? null;}
+        else {this._say = card.text ? tr(Story.cardCtx(card), card.text) : null;}
         cb?.('goto');
     }
 
     _cardChoices(priority, mood)
     {
         return Story.talkCards(this._npc, mood).map(({card, enabled}) => ({
-            labelKey: card.label,
+            label: card.label,
+            ctx: Story.cardCtx(card),
             priority,
             card, enabled,
         }));
@@ -164,7 +166,8 @@ export class COM_Talk extends Com
             const src = this._findNode(node.next);
             if (src) {return this._choices(node.next, src);}
         }
-        let choices = (node.choices || []).filter(c => this._matchCond(c.condition));
+        let choices = (node.choices || []).filter(c => this._matchCond(c.condition))
+                                           .map(c => ({...c, ctx: c.ctx ?? node.ctx}));
         const priority = node.cards ?? (nodeId === this._entryId ? CARD_PRIORITY : null);
         if (priority !== null)
         {
@@ -196,12 +199,12 @@ export class COM_Talk extends Com
         // 取得文本與選項
         const A = say ?? this._nodeText(node);
         const B = this._choices(this._nodeId, node).map(c => ({
-            text: c.labelKey,
+            text: tr(c.ctx, c.label),
             actions: c.actions || null,
             next: c.next || null,
             card: c.card,
             enabled: c.enabled,
-            hint: c.card?.hint,
+            hint: tr(c.ctx, c.card?.hint),
         }));
 
         // 應用後置效果（設置旗標）
@@ -220,28 +223,29 @@ export class COM_Talk extends Com
         return greet ? this._pickText(greet) : '';
     }
 
-    // 根據條件從 textKeys 選擇文本
+    // 根據條件從 texts 選擇文本；/ 隨機變體是整串一起翻譯，所以先 tr() 再挑
     _getNodeText(node)
     {
-        const textKeys = node.textKeys;
-        if (!textKeys) return '';
+        const texts = node.texts;
+        if (!texts) return '';
+        const pick = (t) => this._pickText(tr(node.ctx, t));
 
-        // 若 textKeys 是對象（條件映射）
-        if (typeof textKeys === 'object' && !Array.isArray(textKeys)) {
-            for (const [cond, text] of Object.entries(textKeys)) {
+        // 若 texts 是對象（條件映射）
+        if (typeof texts === 'object' && !Array.isArray(texts)) {
+            for (const [cond, text] of Object.entries(texts)) {
                 if (this._matchCond(cond)) {
-                    return this._pickText(text);
+                    return pick(text);
                 }
             }
             return '';
         }
 
-        // 若 textKeys 是數組（原始格式）
-        if (Array.isArray(textKeys)) {
-            return textKeys.map(t => this._pickText(t)).join('\n');
+        // 若 texts 是數組（原始格式）
+        if (Array.isArray(texts)) {
+            return texts.map(pick).join('\n');
         }
 
-        return this._pickText(textKeys);
+        return pick(texts);
     }
 
     // 角色死亡時清除交談行為

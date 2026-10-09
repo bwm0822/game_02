@@ -20,13 +20,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -38,11 +39,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -50,12 +52,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -67,37 +69,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -105,7 +108,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -116,7 +120,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -127,7 +132,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -138,7 +144,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -152,20 +159,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -190,13 +201,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -208,11 +220,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -220,12 +233,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -237,37 +250,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -275,7 +289,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -286,7 +301,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -297,7 +313,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -308,7 +325,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -323,25 +341,30 @@
       {
         "concept": "greet",
         "text": "很高興認識你，我是Karen",
+        "ctx": "line.karen.greet",
         "condition": "!_first_meet",
         "own": true
       },
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -366,13 +389,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -384,11 +408,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -396,12 +421,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -413,37 +438,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -451,7 +477,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -462,7 +489,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -473,7 +501,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -484,7 +513,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -499,25 +529,30 @@
       {
         "concept": "greet",
         "text": "很高興認識你，我是Xi",
+        "ctx": "line.xi.greet",
         "condition": "!_first_meet",
         "own": true
       },
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -542,13 +577,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -560,11 +596,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -572,12 +609,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -589,37 +626,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -627,7 +665,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -638,7 +677,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -649,7 +689,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -660,7 +701,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -674,20 +716,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -712,13 +758,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -730,11 +777,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -742,12 +790,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -759,37 +807,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -797,7 +846,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -808,7 +858,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -819,7 +870,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -830,7 +882,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -844,20 +897,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -882,13 +939,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -900,11 +958,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -912,12 +971,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -929,37 +988,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -967,7 +1027,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -978,7 +1039,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -989,7 +1051,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -1000,7 +1063,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -1014,20 +1078,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -1052,13 +1120,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1070,11 +1139,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -1082,12 +1152,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1099,37 +1169,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -1137,7 +1208,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -1148,7 +1220,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -1159,7 +1232,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -1170,7 +1244,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -1184,20 +1259,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -1222,13 +1301,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1240,11 +1320,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -1252,12 +1333,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1269,37 +1350,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -1307,7 +1389,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -1318,7 +1401,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -1329,7 +1413,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -1340,7 +1425,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -1354,20 +1440,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   },
@@ -1392,13 +1482,14 @@
     ],
     "nodes": {
       "n_cold": {
-        "textKeys": {
+        "ctx": "dlg._common.n_cold",
+        "texts": {
           "true": "……又是你。"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1410,11 +1501,12 @@
         "mood": "cold"
       },
       "n_default": {
-        "textKeys": {},
+        "ctx": "dlg._common.n_default",
+        "texts": {},
         "actions": [],
         "choices": [
           {
-            "labelKey": "交易",
+            "label": "交易",
             "priority": 10,
             "actions": [
               "trade"
@@ -1422,12 +1514,12 @@
             "condition": "trade"
           },
           {
-            "labelKey": "聊天",
+            "label": "聊天",
             "priority": 20,
             "next": "n_chat"
           },
           {
-            "labelKey": "離開",
+            "label": "離開",
             "priority": 99,
             "actions": [
               "close"
@@ -1439,37 +1531,38 @@
         ]
       },
       "n_chat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_chat",
+        "texts": {
           "true": "你想要聊什麼?"
         },
         "actions": [],
         "choices": [
           {
-            "labelKey": "這是哪裡?",
+            "label": "這是哪裡?",
             "priority": 0,
             "next": "n_where",
             "condition": "!_where"
           },
           {
-            "labelKey": "哪裡可以買武器?",
+            "label": "哪裡可以買武器?",
             "priority": 0,
             "next": "n_weapon",
             "condition": "!_weapon"
           },
           {
-            "labelKey": "哪裡可以買吃的?",
+            "label": "哪裡可以買吃的?",
             "priority": 0,
             "next": "n_eat",
             "condition": "!_eat"
           },
           {
-            "labelKey": "哪裡可以休息?",
+            "label": "哪裡可以休息?",
             "priority": 0,
             "next": "n_rest",
             "condition": "!_rest"
           },
           {
-            "labelKey": "沒事",
+            "label": "沒事",
             "priority": 0,
             "next": "n_default"
           }
@@ -1477,7 +1570,8 @@
         "posts": []
       },
       "n_weapon": {
-        "textKeys": {
+        "ctx": "dlg._common.n_weapon",
+        "texts": {
           "true": "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！"
         },
         "actions": [
@@ -1488,7 +1582,8 @@
         "next": "n_chat"
       },
       "n_eat": {
-        "textKeys": {
+        "ctx": "dlg._common.n_eat",
+        "texts": {
           "true": "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。"
         },
         "actions": [
@@ -1499,7 +1594,8 @@
         "next": "n_chat"
       },
       "n_rest": {
-        "textKeys": {
+        "ctx": "dlg._common.n_rest",
+        "texts": {
           "true": "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。"
         },
         "actions": [
@@ -1510,7 +1606,8 @@
         "next": "n_chat"
       },
       "n_where": {
-        "textKeys": {
+        "ctx": "dlg._common.n_where",
+        "texts": {
           "true": "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。"
         },
         "actions": [
@@ -1524,20 +1621,24 @@
     "lines": [
       {
         "concept": "greet",
-        "text": "你好/需要幫助嗎?"
+        "text": "你好/需要幫助嗎?",
+        "ctx": "line._common.greet"
       },
       {
         "concept": "greet",
         "text": "這麼晚了還在外面晃？",
+        "ctx": "line._common.greet",
         "condition": "time=night"
       },
       {
         "concept": "underAtk",
-        "text": "找死!!!"
+        "text": "找死!!!",
+        "ctx": "line._common.underAtk"
       },
       {
         "concept": "stolen",
-        "text": "有小偷!!!"
+        "text": "有小偷!!!",
+        "ctx": "line._common.stolen"
       }
     ]
   }
