@@ -23,6 +23,8 @@ export async function run(name, scenario)
     });
     const page = await browser.newPage();
     await page.setViewport({width:1024, height:768});
+    // 第一次啟動的語言看 navigator.language（Record.defaultLang），測試的預期值都是中文
+    await page.evaluateOnNewDocument(() => Object.defineProperty(navigator, 'language', {get: () => 'zh-TW'}));
 
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));

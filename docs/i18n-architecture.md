@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～5 階段已完成。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～6 階段已完成；英文為 Claude 機翻（審核欄 `mt`），待實玩修句子與爆版。
 
 ## 已定案
 
@@ -79,6 +79,8 @@
 - 重新載入才生效：設定頁改語言 → 存設定 → 回主選單重啟場景（遊戲中先自動存檔）。
 - 首次啟動依 `navigator.language`：`zh*` → `zh-TW`，其他 → `en`。
 - 只載當前語言的翻譯檔。
+- 實作（第 6 階段）：設定頁只能從主選單進，所以不用處理遊戲中存檔；選了不同語言就 `Record.saveSetting()` 後 `window.location.reload()`（瀏覽器、Electron 都適用，DB/UI 文字整個重建）。dropdown 建立時會用目前值呼叫一次 onchange，值沒變就不動。
+- 首次啟動預設在 `Record.defaultLang()`；無頭測試的 harness 把 `navigator.language` 固定成 `zh-TW`，測試預期值才會是中文。
 
 ### 11. 翻譯流程
 - 新增 `scripts/lang.js`，排在 `run_all` 最後；從**產出的 json**（item/ability/local/dialog/story）抽出「情境＋原文」。
@@ -116,7 +118,9 @@
 3. ✅ 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔、字型收斂
 4. ✅ 劇情文字（對話節點、line、storylet、thread 日誌）接上 `tr()`；順便補了第 3 階段漏掉的交易/丟棄/拾取拼接句
 5. ✅ `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
-6. 英文上線（Claude 翻譯標 mt、語言切換流程、切英文實玩找爆版）
+6. ✅ 英文上線（Claude 翻譯標 mt、語言切換流程；切英文實玩找爆版交給使用者）
+   - 英文名沿用 local.xlsx 舊 `us` 欄：凱倫→Gilly、習近平→Xi Jinping…；劇情內文提到 karen/xi 時也寫 Gilly/Xi，跟顯示名一致
+   - 舊 `us` 欄明顯過時的譯文已改掉並標 mt（匕首→Dagger、焠毒短劍→Venom Shortsword、葡萄→Grapes、毛皮→Pelt、高級X→Fine X…）
 
 - 1~4 是純重構：中文畫面完全不變，每階段跑現有無頭測試驗證，一階段一組 commit。
 

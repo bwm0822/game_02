@@ -52,22 +52,27 @@
     "耐久": "Durability"
   },
   "ui.times": {
-    "次數": "Times"
+    "次數": "Uses"
   },
   "ui.capacity": {
     "容量": "Capacity"
   },
   "ui.attrs": {
-    "屬性": "Attrs"
+    "屬性": "Attributes"
   },
   "ui.states": {
-    "狀態": "States"
+    "狀態": "Status"
   },
   "ui.life": {
-    "生命": "Life"
+    "生命": "Life",
+    "生命值\n降到 0，就死亡": "Health\nYou die when it reaches 0"
+  },
+  "ui.attack": {
+    "攻擊": "Attack"
   },
   "ui.defense": {
-    "防禦": "Defense"
+    "防禦": "Defense",
+    "可吸收的傷害": "Damage you can absorb"
   },
   "ui.use": {
     "使用": "Use"
@@ -100,13 +105,13 @@
     "觀察": "Observe"
   },
   "ui.transfer": {
-    "移動": "Transfer"
+    "移動": "Move"
   },
   "ui.openbag": {
-    "開啟": "Openbag"
+    "開啟": "Open"
   },
   "ui.inv": {
-    "背包": "Inv"
+    "背包": "Bag"
   },
   "ui.profile": {
     "個人": "Profile"
@@ -136,13 +141,76 @@
     "起床": "Wake"
   },
   "ui.setting": {
-    "設定": "Setting"
+    "設定": "Settings"
   },
   "ui._space_full": {
     "空間已滿 !!!": "Space is full !!!"
   },
   "ui._not_enough_gold": {
     "金幣不足 !!!": "Not enough coins !!!"
+  },
+  "ui.player": {
+    "玩家": "Player"
+  },
+  "ui.quest_general": {
+    "一般任務": "Quests"
+  },
+  "ui.description": {
+    "說明": "Description"
+  },
+  "ui.progress": {
+    "進度": "Progress"
+  },
+  "ui.completed": {
+    "已完成": "Completed"
+  },
+  "ui.clear": {
+    "清除": "Clear"
+  },
+  "ui.select_all": {
+    "全選": "Select All"
+  },
+  "ui.submit": {
+    "送出": "Submit"
+  },
+  "ui.save": {
+    "存檔": "Save"
+  },
+  "ui.leave": {
+    "離開": "Quit"
+  },
+  "ui.mode_toggle": {
+    "模式:{#v}": "Mode: {#v}"
+  },
+  "ui.manufacture": {
+    "製造": "Craft"
+  },
+  "ui.map": {
+    "地圖": "Map"
+  },
+  "ui.effect": {
+    "效果": "Effects"
+  },
+  "ui.main": {
+    "主要": "General"
+  },
+  "ui.mouse_edge_move": {
+    "滑鼠移動到邊緣可移動鏡頭": "Move camera with screen edges"
+  },
+  "ui.pointer_lock": {
+    "滑鼠鎖定模式": "Lock mouse pointer"
+  },
+  "ui.start_game": {
+    "開始遊戲": "Start Game"
+  },
+  "ui.game_setting": {
+    "遊戲設定": "Settings"
+  },
+  "ui.map_show_names": {
+    "顯示地名": "Place names"
+  },
+  "ui.map_show_quests": {
+    "顯示任務": "Quests"
   },
   "ui.iron": {
     "鐵礦": "Iron ore"
@@ -163,7 +231,7 @@
     "鹽烤魚": "Salt-baked fish"
   },
   "ui.sword_01": {
-    "普通刀": "Ordinary knife"
+    "普通刀": "Common Knife"
   },
   "ui.sword_02": {
     "鐵劍": "Iron Sword"
@@ -187,7 +255,7 @@
     "麻布衣": "Linen Clothes"
   },
   "ui.chest_03": {
-    "皮衣": "Leather"
+    "皮衣": "Leather Armor"
   },
   "ui.gloves_01": {
     "手套": "Gloves"
@@ -208,55 +276,315 @@
     "水壺": "Bottle"
   },
   "ui.wick": {
-    "維克": "Wick"
+    "維克": "Wick",
+    "冒險者": "Adventurer"
   },
   "ui.dummy": {
-    "木樁": "Training Dummy"
+    "木樁": "Training Dummy",
+    "練習攻擊用": "For combat practice"
   },
   "ui.musk": {
-    "馬斯克": "Musk"
+    "馬斯克": "Musk",
+    "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席": "A quiet but dependable man of middle years and a first-rate smith. Rumor has it he once ran the royal armory in the capital."
   },
   "ui.trump": {
-    "川普": "Trump"
+    "川普": "Trump",
+    "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。": "A plump, good-natured fellow who loves jokes and gossip. If there's news in the village, he's heard it first."
   },
   "ui.karen": {
-    "凱倫": "Gilly"
+    "凱倫": "Gilly",
+    "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～": "Every day she brings the freshest produce in from the fields and woods and hawks it from her cart, her voice sweet and loud~"
   },
   "ui.xi": {
-    "習近平": "Xi Jinping"
+    "習近平": "Xi Jinping",
+    "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……": "Handles all the village's slaughtering and butchery. They say his cleaver comes down cleaner than the smith's hammer..."
   },
   "ui.macron": {
-    "馬克宏": "Macron"
+    "馬克宏": "Macron",
+    "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。": "A short, wrinkled old man who always seems to have \"something you didn't know you needed.\""
   },
   "ui.melanie": {
-    "梅蘭妮": "Melanie"
+    "梅蘭妮": "Melanie",
+    "漂亮大方的女士，跟川普共同經營一家旅館": "A charming, generous lady who runs the inn with Trump."
+  },
+  "ui.rogue": {
+    "盜賊": "Bandit"
   },
   "ui.guard-1": {
-    "守衛": "Guard"
+    "守衛": "Guard",
+    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
   },
   "ui.guard-2": {
-    "守衛": "Guard"
+    "守衛": "Guard",
+    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
   },
   "ui.ranger": {
-    "遊俠": "Ranger"
+    "遊俠": "Ranger",
+    "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺": "A master archer, forest hunter and wilderness survivor. Light-footed as the wind and harder to notice than a ghost."
   },
   "ui.smith": {
-    "鐵匠": "Smith"
+    "鐵匠": "Smith",
+    "打造武器、防具與工具的鍛造高手。": "A skilled smith who forges weapons, armor and tools."
   },
   "ui.innkeeper": {
-    "旅館老闆": "Innkeeper"
+    "旅館老闆": "Innkeeper",
+    "經營旅館與酒館，消息靈通的熱情招待。": "Runs the inn and tavern; a warm host who always knows the latest news."
   },
   "ui.trader": {
-    "小販": "Trader"
+    "小販": "Trader",
+    "村內攤商，賣日用品或冒險裝備。": "A village stallholder selling everyday goods and adventuring gear."
   },
   "ui.butcher": {
     "解剖": "Butcher"
   },
   "ui.merchant": {
-    "行商": "Merchant"
+    "行商": "Merchant",
+    "來去自如的商旅，販售異地貨品。": "A traveling merchant selling goods from distant lands."
   },
   "ui.guard": {
-    "守衛": "Guard"
+    "守衛": "Guard",
+    "巡邏村莊、維持治安。": "Patrols the village and keeps the peace."
+  },
+  "ui.str": {
+    "力量": "STR",
+    "影響近戰攻擊": "Affects melee attack"
+  },
+  "ui.dex": {
+    "敏捷": "DEX",
+    "影響閃避": "Affects evasion"
+  },
+  "ui.con": {
+    "體質": "CON",
+    "影響生命": "Affects health"
+  },
+  "ui.int": {
+    "智慧": "INT",
+    "影響法術效力": "Affects spell power"
+  },
+  "ui.luk": {
+    "幸運": "LUK",
+    "影響判定": "Affects checks"
+  },
+  "ui.combat": {
+    "戰鬥": "Combat"
+  },
+  "ui.atk": {
+    "攻擊": "ATK",
+    "物理傷害": "Physical damage"
+  },
+  "ui.def": {
+    "防禦": "DEF",
+    "物理防禦": "Physical defense"
+  },
+  "ui.range": {
+    "距離": "Range",
+    "攻擊半徑": "Attack radius"
+  },
+  "ui.acc": {
+    "命中": "ACC",
+    "命中率": "Hit chance"
+  },
+  "ui.eva": {
+    "閃避": "EVA",
+    "閃避率": "Evasion chance"
+  },
+  "ui.cri": {
+    "暴率": "CRIT",
+    "暴擊率": "Critical hit chance"
+  },
+  "ui.crd": {
+    "暴傷": "CRIT DMG",
+    "暴擊傷害倍率": "Critical damage multiplier"
+  },
+  "ui.pen": {
+    "穿透": "PEN",
+    "無視防禦": "Ignores defense"
+  },
+  "ui.resist": {
+    "抗性": "Resistances"
+  },
+  "ui.phy_res": {
+    "物抗": "Phys Res",
+    "物理抗性": "Physical resistance"
+  },
+  "ui.fire_res": {
+    "火抗": "Fire Res",
+    "火焰抗性": "Fire resistance"
+  },
+  "ui.ice_res": {
+    "冰抗": "Ice Res",
+    "冰凍抗性": "Ice resistance"
+  },
+  "ui.poison_res": {
+    "毒抗": "Poison Res",
+    "中毒抗性": "Poison resistance"
+  },
+  "ui.elm": {
+    "元素": "Element"
+  },
+  "ui.phy": {
+    "物理": "Physical"
+  },
+  "ui.fire": {
+    "火焰": "Fire"
+  },
+  "ui.ice": {
+    "冰凍": "Ice"
+  },
+  "ui.poison": {
+    "中毒": "Poison"
+  },
+  "ui.hp": {
+    "生命": "HP",
+    "生命值\n降到 0，就死亡": "Health\nYou die when it reaches 0"
+  },
+  "ui.hunger": {
+    "飢餓": "Hunger",
+    "飢餓度\n大於[color=red]50%[/color]，生命開始流逝": "Hunger\nAbove [color=red]50%[/color], you start losing health"
+  },
+  "ui.thirst": {
+    "口渴": "Thirst",
+    "口渴度\n大於[color=red]50%[/color]，生命開始流逝": "Thirst\nAbove [color=red]50%[/color], you start losing health"
+  },
+  "ui.hot": {
+    "持續回復": "Regen",
+    "觸發{#tag}，每回合增加{#value}點生命，持續{#dur}回合 ": "Triggers {#tag}: restores {#value} HP per turn for {#dur} turns "
+  },
+  "ui.dot": {
+    "持續傷害": "Damage over Time",
+    "觸發{#tag}，每回合受到{#value}點{#elm}傷害，持續{#dur}回合 ": "Triggers {#tag}: takes {#value} {#elm} damage per turn for {#dur} turns "
+  },
+  "ui.buff": {
+    "增益": "Buff",
+    "觸發{#tag}，{#eff}，持續{#dur}回合 ": "Triggers {#tag}: {#eff} for {#dur} turns "
+  },
+  "ui.act_hot": {
+    "持續回復": "Regen",
+    "每回合增加{#value}點生命 ": "Restores {#value} HP per turn "
+  },
+  "ui.act_dot": {
+    "持續傷害": "Damage over Time",
+    "每回合受到{#value}點{#elm}傷害": "Takes {#value} {#elm} damage per turn"
+  },
+  "ui.act_buff": {
+    "增益": "Buff",
+    "{#eff}": "{#eff}"
+  },
+  "ui.crit": {
+    "暴擊": "Critical"
+  },
+  "ui.miss": {
+    "失誤": "Miss"
+  },
+  "ui.hit": {
+    "命中": "Hit"
+  },
+  "ui.cast": {
+    "施法": "Cast"
+  },
+  "ui.self": {
+    "自身": "Self"
+  },
+  "ui.target": {
+    "目標": "Target"
+  },
+  "ui.stun": {
+    "昏眩": "Stun"
+  },
+  "ui.lifesteal": {
+    "吸血": "Lifesteal",
+    "造成傷害的{#num}轉換為生命值": "Converts {#num} of damage dealt into HP"
+  },
+  "ui.burn": {
+    "灼燒": "Burn"
+  },
+  "ui.scope": {
+    "類型": "Scope"
+  },
+  "ui.single": {
+    "單體": "Single"
+  },
+  "ui.group": {
+    "群體": "Group"
+  },
+  "ui.area": {
+    "範圍": "Area"
+  },
+  "ui.bleed": {
+    "出血": "Bleed"
+  },
+  "ui.heal": {
+    "治療": "Heal"
+  },
+  "ui.strong": {
+    "強化": "Empower"
+  },
+  "ui.active": {
+    "主動": "Active"
+  },
+  "ui.passive": {
+    "被動": "Passive"
+  },
+  "ui.type": {
+    "類型": "Type",
+    "戰鬥類型": "Combat type"
+  },
+  "ui.melee": {
+    "近戰": "Melee"
+  },
+  "ui.ranged": {
+    "遠距": "Ranged"
+  },
+  "ui.reqClass": {
+    "需求": "Requires"
+  },
+  "ui.sword": {
+    "劍": "Sword"
+  },
+  "ui.bow": {
+    "弓": "Bow"
+  },
+  "ui.quest": {
+    "任務": "Quests"
+  },
+  "ui.conditions": {
+    "條件": "Conditions"
+  },
+  "ui.rewards": {
+    "獎勵": "Rewards"
+  },
+  "ui.gold": {
+    "金幣": "Gold"
+  },
+  "ui.kill": {
+    "殺死": "Kill"
+  },
+  "ui.General": {
+    "一般": "General"
+  },
+  "ui.Sword": {
+    "劍技": "Sword"
+  },
+  "ui.Archery": {
+    "弓技": "Archery"
+  },
+  "ui.Fire": {
+    "火系": "Fire"
+  },
+  "ui.Ice": {
+    "冰系": "Ice"
+  },
+  "ui.Poison": {
+    "毒系": "Poison"
+  },
+  "ui.Support": {
+    "支援": "Support"
+  },
+  "ui.Enhancement": {
+    "強化": "Enhancement"
+  },
+  "ui.steal": {
+    "偷竊": "Steal"
   },
   "ui.pickup": {
     "拾取": "Pickup"
@@ -270,11 +598,154 @@
   "ui.restore": {
     "恢復": "Restore"
   },
+  "ui._beg_mercy": {
+    "不要殺我!!!": "Please, don't kill me!!!"
+  },
+  "ui._shout_help": {
+    "救命啊！": "Help!"
+  },
+  "ui._shout_come": {
+    "來人啊！": "Someone, help!"
+  },
+  "ui._shout_murder": {
+    "有人要殺我！": "Murder! Someone's trying to kill me!"
+  },
+  "ui._harvest_need_tool": {
+    "需要 {#tool} 才能採集": "Requires {#tool} to gather"
+  },
+  "ui._harvest_chop": {
+    "砍了 {#cur}/{#max} 下": "Chopped {#cur}/{#max}"
+  },
+  "ui._harvest_drop": {
+    "掉落 {#item} x{#count}": "Dropped {#item} x{#count}"
+  },
+  "ui._harvest_get": {
+    "獲得 {#item}": "Got {#item}"
+  },
+  "ui._lock_no_skill": {
+    "缺少開鎖技能": "You don't know how to pick locks"
+  },
+  "ui._lock_no_tool": {
+    "缺少開鎖工具": "You need a lockpick"
+  },
+  "ui._lock_confirm": {
+    "用開鎖工具開鎖？\n成功率 {#rate}%": "Pick the lock?\nChance of success: {#rate}%"
+  },
+  "ui._lock_fail": {
+    "{#who} 開鎖失敗": "{#who} failed to pick the lock"
+  },
+  "ui._lock_tool_broken": {
+    "開鎖工具損壞了": "The lockpick broke"
+  },
+  "ui._lock_locked": {
+    "{#who} 上鎖": "{#who} locked it"
+  },
+  "ui._lock_unlocked": {
+    "{#who} 開鎖": "{#who} unlocked it"
+  },
+  "ui._loot_no_knife": {
+    "沒有刀具，無法解剖": "You need a blade to butcher this"
+  },
+  "ui._loot_get": {
+    "{#who} 獲得 {#item}": "{#who} got {#item}"
+  },
+  "ui._hunger": {
+    "{#who} {#pct}% 飢餓": "{#who} hunger {#pct}%"
+  },
+  "ui._thirst": {
+    "{#who} {#pct}% 口渴": "{#who} thirst {#pct}%"
+  },
+  "ui._steal_ok": {
+    "{#who} 成功偷竊 {#item}": "{#who} stole {#item}"
+  },
+  "ui._steal_fail": {
+    "{#who} 偷竊失敗": "{#who} was caught stealing"
+  },
+  "ui._steal_confirm": {
+    "偷竊嗎?": "Steal?"
+  },
+  "ui._trade_refuse": {
+    "無法交易": "Can't trade"
+  },
+  "ui._fill_water": {
+    "{#who} 裝水": "{#who} filled the bottle"
+  },
+  "ui._bottle_full": {
+    "{#who} 水壺已滿": "{#who}'s bottle is already full"
+  },
+  "ui._learn_confirm": {
+    "學習此技能?": "Learn this skill?"
+  },
+  "ui._quest_updated": {
+    "更新任務": "Quest updated"
+  },
+  "ui._dlg_hint": {
+    "（{#hint}）": " ({#hint})"
+  },
+  "ui._dlg_listen": {
+    "*聆聽...*": "*Listen...*"
+  },
+  "ui._favor_value": {
+    "好感 : {#v}": "Favor: {#v}"
+  },
+  "ui._eff_stage": {
+    "{#v}時，": "On {#v}: "
+  },
+  "ui._eff_trigger": {
+    "觸發[color=skyblue]{#v}[/color]，": "[color=skyblue]{#v}[/color]: "
+  },
+  "ui._eff_trigger_end": {
+    "觸發[color=skyblue]{#v}[/color]": "[color=skyblue]{#v}[/color]"
+  },
+  "ui._eff_dur": {
+    "，持續[color=white]{#v}[/color]回合": ", lasts [color=white]{#v}[/color] turns"
+  },
+  "ui._eff_stack": {
+    "，最多疊加[color=white]{#v}[/color]層": ", stacks up to [color=white]{#v}[/color]"
+  },
+  "ui._eff_dot": {
+    "{#stage}{#scope}{#trigger}每回合{#num}血量{#dur}{#stack}": "{#stage}{#scope} {#trigger}{#num} HP per turn{#dur}{#stack}"
+  },
+  "ui._eff_buff": {
+    "{#stage}{#scope}{#trigger}{#key}{#num}{#dur}{#stack}": "{#stage}{#scope} {#trigger}{#key} {#num}{#dur}{#stack}"
+  },
+  "ui._eff_mod": {
+    "{#stage}{#scope}{#key}{#num}": "{#stage}{#scope} {#key} {#num}"
+  },
+  "ui._eff_action": {
+    "{#stage}{#trigger}{#des}": "{#stage}{#trigger}{#des}"
+  },
+  "ui._active_dot": {
+    "每回合{#num}血量": "{#num} HP per turn"
+  },
+  "ui._active_buff_key": {
+    "有效回合內，{#key}{#num}": "While active: {#key} {#num}"
+  },
+  "ui._active_buff": {
+    "有效回合內，{#id}": "While active: {#id}"
+  },
+  "ui._active_remaining": {
+    "{#eff}，剩[color=white]{#n}[/color]回合": "{#eff}, [color=white]{#n}[/color] turns left"
+  },
+  "ui._trade_sell": {
+    "[weight=900]{#who}[/weight] 賣 {#item}": "[weight=900]{#who}[/weight] sold {#item}"
+  },
+  "ui._trade_buy": {
+    "[weight=900]{#who}[/weight] 買 {#item}": "[weight=900]{#who}[/weight] bought {#item}"
+  },
+  "ui._drop_item": {
+    "丟棄 {#item}": "Dropped {#item}"
+  },
+  "ui._pickup_item": {
+    "拾取 {#item}": "Picked up {#item}"
+  },
   "item.sword_01": {
-    "匕首": "Ordinary knife"
+    "匕首": "Dagger",
+    "常用近戰武器": "A common melee weapon"
   },
   "item.sword_02": {
-    "焠毒短劍": "Iron Sword"
+    "焠毒短劍": "Venom Shortsword",
+    "用毒液浸泡過的短劍，可使目標中毒": "A shortsword steeped in venom. Can poison its target."
   },
   "item.sword_03": {
     "鋼劍": "Steel Sword"
@@ -283,7 +754,7 @@
     "弓": "Bow"
   },
   "item.bow_02": {
-    "高級弓": "Bow"
+    "高級弓": "Fine Bow"
   },
   "item.helmet_01": {
     "草帽": "Straw hat"
@@ -301,19 +772,19 @@
     "麻布衣": "Linen Clothes"
   },
   "item.chest_03": {
-    "皮衣": "Leather"
+    "皮衣": "Leather Armor"
   },
   "item.gloves_01": {
     "手套": "Gloves"
   },
   "item.gloves_02": {
-    "高級手套": "Gloves"
+    "高級手套": "Fine Gloves"
   },
   "item.boots_01": {
     "靴子": "Boots"
   },
   "item.boots_02": {
-    "高級靴子": "Boots"
+    "高級靴子": "Fine Boots"
   },
   "item.neck_01": {
     "項鍊": "Necklace"
@@ -328,32 +799,39 @@
     "鐵礦": "Iron ore"
   },
   "item.bag": {
-    "背包": "Bag"
+    "背包": "Bag",
+    "可以裝物品": "Holds items"
   },
   "item.torch": {
-    "火把": "Torch"
+    "火把": "Torch",
+    "可以照明": "Lights the way"
   },
   "item.bottle": {
-    "水壺": "Bottle"
+    "水壺": "Bottle",
+    "可以裝水": "Holds water"
   },
   "item.key_0000": {
-    "鑰匙": "key"
+    "鑰匙": "Key",
+    "可以開鎖": "Opens a lock"
   },
   "item.lockpick": {
     "開鎖工具": "Lockpick",
-    "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數": "Used with the lockpicking skill to pick locks."
+    "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數": "A tool for picking locks. Requires the Lockpicking skill; each failed attempt uses it up."
   },
   "item.gold": {
-    "金幣": "Gold"
+    "金幣": "Gold",
+    "可兌換成金錢": "Can be exchanged for money"
   },
   "item.raw_meat": {
-    "生肉": "Raw meat"
+    "生肉": "Raw meat",
+    "可烹煮": "Can be cooked"
   },
   "item.cooked_meat": {
     "熟肉": "Cooked meat"
   },
   "item.raw_fish": {
-    "生魚": "Raw fish"
+    "生魚": "Raw fish",
+    "可烹煮": "Can be cooked"
   },
   "item.salt_baked_fish": {
     "鹽烤魚": "Salt-baked fish"
@@ -365,37 +843,46 @@
     "頻果": "Apple"
   },
   "item.grapes": {
-    "葡萄": "Strawberry"
+    "葡萄": "Grapes"
   },
   "item.mushroom": {
     "蘑菇": "Mushroom"
   },
   "item.pot": {
-    "鍋子": "Pot"
+    "鍋子": "Pot",
+    "可烹煮食物": "For cooking food"
   },
   "item.dummy": {
-    "木樁": "Training Dummy"
+    "木樁": "Training Dummy",
+    "練習攻擊用的木樁，可放置、可拿取": "A wooden dummy for combat practice. Can be placed and picked up."
   },
   "item.wood": {
-    "木材": "Wood"
+    "木材": "Wood",
+    "有用的資源": "A useful resource"
   },
   "item.plet": {
-    "毛皮": "Plet"
+    "毛皮": "Pelt",
+    "從動物身上剝下來、帶有毛髮的完整皮毛。": "A whole hide with the fur still on, skinned from an animal."
   },
   "ability.steal": {
-    "偷竊": "Stealing"
+    "偷竊": "Stealing",
+    "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。": "Take valuables from NPCs or monsters. Success depends on DEX."
   },
   "ability.lockpick": {
-    "開鎖": "Lockpicking"
+    "開鎖": "Lockpicking",
+    "破解寶箱或門鎖。解鎖更高難度的鎖具。": "Pick the locks on chests and doors. Unlocks harder locks as you improve."
   },
   "ability.butcher": {
-    "解剖": "Butcher"
+    "解剖": "Butcher",
+    "分解動物屍體，取得肉類、皮毛與骨頭...等可用素材。": "Carve up animal carcasses for meat, pelts, bones and other useful materials."
   },
   "ability.stealth": {
-    "潛行": "Stealth"
+    "潛行": "Stealth",
+    "進入半透明狀態，大幅降低敵方偵測範圍。": "Turn semi-transparent and greatly reduce how far enemies can detect you."
   },
   "ability.barter": {
-    "討價還價": "Barter"
+    "討價還價": "Barter",
+    "交易時獲得更好價格。商店售價 -15%，回收價 +15%。": "Get better prices when trading. Shop prices -15%, sell prices +15%."
   },
   "ability.slash": {
     "斬擊": "Slash",
@@ -406,7 +893,8 @@
     "衝向敵人，造成 {#fmt} 點{#elm}傷害並擊退 {#knock} 格。{#formula}": "Dash to an enemy, dealing {#fmt} {#elm} damage and knocking it back {#knock} tile(s).{#formula}"
   },
   "ability.whirlwind": {
-    "旋風斬": "Whirlwind"
+    "旋風斬": "Whirlwind",
+    "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。": "Spin your blade, dealing multiple hits to everything in a {#wh} area around you."
   },
   "ability.swordmastery": {
     "劍術專家": "Sword Expertise",
@@ -429,53 +917,263 @@
     "弓術造詣爐火純青。裝備弓類武器時，命中與攻擊力再進一步大幅提升。": "Peak archery. Further boosts accuracy and attack power while wielding a bow."
   },
   "ability.fireball": {
-    "火球術": "Fireball"
+    "火球術": "Fireball",
+    "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}": "Hurl a fireball that explodes for {#fmt} {#elm} damage.{#formula}"
   },
   "ability.firewall": {
-    "火牆術": "Fire Wall"
+    "火牆術": "Fire Wall",
+    "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。": "Summon a {#wh} field of fire that burns anyone passing through."
   },
   "ability.fireballvolley": {
     "高級火球術": "Greater Fireball",
     "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害。{#formula}": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each.{#formula}"
   },
   "ability.combustion": {
-    "燃燒術": "Combustion"
+    "燃燒術": "Combustion",
+    "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}": "Detonate Burn on targets in a {#wh} area, dealing {#fmt} {#elm} damage at once.{#formula}"
   },
   "ability.meteorshower": {
-    "流星雨": "Meteor Shower"
+    "流星雨": "Meteor Shower",
+    "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}": "Rain meteors on a {#wh} area. Each deals {#fmt0} {#elm0} damage and {#fmt1} {#elm1} damage, destroying everything within.{#formula0}{#formula1}"
   },
   "ability.icebolt": {
-    "冰箭術": "Ice Bolt"
+    "冰箭術": "Ice Bolt",
+    "單體冰錐。造成傷害並減速 30%。": "A single ice shard that deals damage and slows by 30%."
   },
   "ability.icewall": {
-    "冰牆術": "Ice Wall"
+    "冰牆術": "Ice Wall",
+    "召喚可抵擋飛行道具的冰塊物理障礙物。": "Summon a wall of ice that blocks projectiles."
   },
   "ability.deepfreeze": {
-    "冰封術": "Deep Freeze"
+    "冰封術": "Deep Freeze",
+    "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。": "Turn Slow into Freeze, leaving the enemy unable to act for 3 seconds."
   },
   "ability.blizzard": {
-    "暴風雪": "Blizzard"
+    "暴風雪": "Blizzard",
+    "大範圍持續性傷害，並有 10% 機率直接凍結敵人。": "Deals damage over time in a wide area with a 10% chance to freeze enemies outright."
+  },
+  "ability.poisondart": {
+    "毒箭術": "Poison Dart",
+    "遠程發射毒針，使目標進入每秒扣血的中毒狀態。": "Fire a poison needle from range, poisoning the target so it loses health every second."
+  },
+  "ability.poisonmist": {
+    "毒霧術": "Poison Mist",
+    "在指定區域散佈致命毒氣。": "Spread deadly poison gas over an area."
+  },
+  "ability.venomburst": {
+    "毒素引爆": "Venom Burst",
+    "使受毒者爆炸，將毒素噴濺至周圍目標。": "Make a poisoned target burst, spraying venom onto those nearby."
   },
   "ability.heal": {
-    "治療": "Heal"
+    "治療": "Heal",
+    "恢復目標生命值。": "Restore the target's health."
   },
   "ability.cure": {
-    "解毒": "Cure"
+    "解毒": "Cure",
+    "清除體內毒素。": "Remove poison."
   },
   "ability.holylight": {
-    "聖光": "Holy Light"
+    "聖光": "Holy Light",
+    "移除 1 個負面狀態。": "Remove 1 negative effect."
   },
   "ability.purify": {
-    "淨化": "Purify"
+    "淨化": "Purify",
+    "清除體內毒素，移除所有負面狀態。": "Remove poison and all negative effects."
   },
   "ability.strboost": {
-    "力量增強": "Strength Boost"
+    "力量增強": "Strength Boost",
+    "增加力量，可提升近戰傷害。": "Increases STR, raising melee damage."
   },
   "ability.agiboost": {
-    "敏捷增強": "Agility Boost"
+    "敏捷增強": "Agility Boost",
+    "增加敏捷，可提升閃避。": "Increases DEX, raising evasion."
   },
   "ability.intboost": {
-    "智力增強": "Intelligence Boost"
+    "智力增強": "Intelligence Boost",
+    "增加智力，可提升法術效果。": "Increases INT, raising spell power."
+  },
+  "dlg._common.n_cold": {
+    "……又是你。": "...You again.",
+    "離開": "Leave"
+  },
+  "dlg._common.n_default": {
+    "交易": "Trade",
+    "聊天": "Chat",
+    "離開": "Leave"
+  },
+  "dlg._common.n_chat": {
+    "你想要聊什麼?": "What do you want to talk about?",
+    "這是哪裡?": "Where am I?",
+    "哪裡可以買武器?": "Where can I buy weapons?",
+    "哪裡可以買吃的?": "Where can I get something to eat?",
+    "哪裡可以休息?": "Where can I rest?",
+    "沒事": "Never mind"
+  },
+  "dlg._common.n_weapon": {
+    "要買武器？那你得去鎮東邊的『烈焰鍛造坊』！老布隆克的手藝全鎮最好，從短劍到戰斧應有盡有。記住，開門時間是早上日出到傍晚日落。哦，帶足金幣——好貨不便宜！": "Looking for weapons? Head to the Blazing Forge on the east side of town! Old Bronk does the finest work around, everything from shortswords to battle axes. Mind you, he's only open from sunrise to sunset. Oh, and bring plenty of gold - good steel isn't cheap!"
+  },
+  "dlg._common.n_eat": {
+    "餓了嗎？去鎮中央的『胖母雞酒館』！瑪格達大嬸的燉肉鍋湯底用了三天三夜熬製，配上剛出爐的黑麥麵包，保管你吃飽還想再來一碗。若是要帶路的乾糧，後院的市集也有各種蠟封肉乾和果醬。": "Hungry? Go to the Plump Hen Tavern in the middle of town! Auntie Magda simmers her stew for three days and nights, and with fresh rye bread on the side, you'll be back for a second bowl. Need rations for the road? The market out back sells wax-sealed jerky and jam."
+  },
+  "dlg._common.n_rest": {
+    "需要歇腳？鎮西的『銀月旅館』是你最好的選擇。掌櫃艾莉亞小姐會為你安排乾淨的房間和熱水澡。一夜住宿含早點只需 5 枚銀幣。若是錢包緊，也可以去酒館角落打地鋪，不過……就別奢望睡得多好了。": "Need somewhere to rest? The Silver Moon Inn on the west side is your best bet. Miss Aria at the counter will set you up with a clean room and a hot bath. A night with breakfast is just 5 silver. If your purse is light, you can bed down in a corner of the tavern... just don't expect to sleep well."
+  },
+  "dlg._common.n_where": {
+    "哦，你連這裡是哪都不知道？看來你是迷路了！這裡是『晨曦小鎮』，坐落於霧谷平原與古松森林之間，是往來東西商旅的必經之地。小鎮雖小，但五臟俱全——鐵匠、酒館、旅館樣樣不缺。據說百年前，一位英雄在此地擊退了黑龍，才讓這片土地得以安居樂業。": "Oh, you don't even know where you are? You must be lost! This is Dawnlight, a little town between the Mistvale plains and the Old Pine Forest, where every trader heading east or west passes through. It's small, but it has everything - a smith, a tavern, an inn. They say a hundred years ago a hero drove off a black dragon here, and folk have lived in peace ever since."
+  },
+  "line._common.greet": {
+    "你好/需要幫助嗎?": "Hello!/Need any help?",
+    "這麼晚了還在外面晃？": "Still wandering around this late?"
+  },
+  "line._common.underAtk": {
+    "找死!!!": "You'll pay for that!!!"
+  },
+  "line._common.stolen": {
+    "有小偷!!!": "Thief!!!"
+  },
+  "line.karen.greet": {
+    "很高興認識你，我是Karen": "Hi there, nice to meet you! I'm Gilly~"
+  },
+  "line.xi.greet": {
+    "很高興認識你，我是Xi": "Name's Xi. Good to meet you."
+  },
+  "story.node.n_hunt_ask": {
+    "最近黑森林有盜賊出沒，商隊都不敢走了……能幫忙討伐嗎?": "Bandits have been showing up in the Black Forest lately, and the caravans are too scared to travel... Could you deal with them?",
+    "接受": "Accept",
+    "拒絕": "Decline"
+  },
+  "story.node.n_hunt_ask2": {
+    "先去找xi了解詳情": "Go see Xi first, he knows the details.",
+    "好": "Okay"
+  },
+  "story.node.n_hunt_report": {
+    "任務如何了?": "How's the job going?",
+    "很好，這是你的獎勵": "Wonderful! Here's your reward~",
+    "處理中": "Working on it",
+    "完成了": "It's done",
+    "離開": "Leave"
+  },
+  "story.node.n_wolf_karen": {
+    "這批狼皮品質不錯，這批貨我收了！幫我跟 xi 說一聲喔。": "Ooh, these pelts are good quality! I'll take the lot. Tell Xi for me, okay?",
+    "好的": "Sure"
+  },
+  "story.node.n_wolf_grudge": {
+    "聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。": "I heard you sold all the pelts to Xi? Hmph. Good stuff comes along and you don't even come to me first - you let that butcher have it.",
+    "抱歉，下次一定先找你": "Sorry, I'll come to you first next time",
+    "我想賣給誰就賣給誰": "I'll sell to whoever I want"
+  },
+  "story.node.n_trade_karen": {
+    "長期收購？聽起來不錯，價錢我可以再加一點，你回去跟 xi 說一聲，這筆生意我接了。": "A long-term deal? Sounds good! I can even pay a bit more. Go tell Xi he's got himself a deal.",
+    "好的": "Sure"
+  },
+  "story.node.n_hunt_xi": {
+    "盜賊就躲在黑森林裡，他們身上都帶著匕首，拿一把回來給 karen 當證明吧。": "The bandits hide in the Black Forest. They all carry daggers. Bring one back to Gilly as proof.",
+    "了解": "Got it"
+  },
+  "story.node.n_wolf_ask": {
+    "最近黑森林的狼變多了，肉舖都要沒貨了……能幫我獵些狼皮回來嗎？": "Wolves are multiplying in the Black Forest, and my shop's running out of meat... Hunt some for me and bring back the pelts?",
+    "接受": "Accept",
+    "拒絕": "Decline"
+  },
+  "story.node.n_wolf_report": {
+    "狼皮收集得如何了?": "How are the pelts coming?",
+    "都準備好了嗎？太好了!": "All set? Good.",
+    "謝謝你，這是你的獎勵": "Thanks. Here's your pay.",
+    "處理中": "Working on it",
+    "完成了": "It's done",
+    "離開": "Leave"
+  },
+  "story.node.n_trade_ask": {
+    "森林安靜多了，這下該跟 karen 把長期收購狼皮的事情談攏。你能不能幫我帶個提案去，跟她把價錢跟數量談好？": "The forest's quieter now. Time to settle a long-term pelt deal with Gilly. Can you take her my offer and work out the price and quantity?",
+    "接受": "Accept",
+    "拒絕": "Decline"
+  },
+  "story.node.n_trade_report": {
+    "跟 karen 談得怎麼樣了?": "How did it go with Gilly?",
+    "都談好了嗎？太好了!": "Settled? Good.",
+    "這趟辛苦你了，這是謝禮": "Thanks for the legwork. This is for you.",
+    "處理中": "Working on it",
+    "完成了": "It's done",
+    "離開": "Leave"
+  },
+  "story.let.hunt_ask": {
+    "關於任務": "About the job"
+  },
+  "story.let.hunt_xi": {
+    "關於盜賊": "About the bandits"
+  },
+  "story.let.hunt_report": {
+    "關於任務": "About the job"
+  },
+  "story.let.wolf_ask": {
+    "關於任務": "About the job"
+  },
+  "story.let.wolf_karen": {
+    "關於黑森林的狼皮": "About the Black Forest pelts"
+  },
+  "story.let.wolf_report": {
+    "關於任務": "About the job"
+  },
+  "story.let.wolf_sell": {
+    "把狼皮直接賣給你": "Sell you the pelts directly",
+    "需要狼皮": "Requires a pelt",
+    "……也好，省得你跑一趟，那我自己收了。": "...Fine. Saves you the trip. I'll take them myself."
+  },
+  "story.let.wolf_grudge": {
+    "喂！你給我過來！": "Hey! You! Get over here!"
+  },
+  "story.let.trade_ask": {
+    "關於任務": "About the job"
+  },
+  "story.let.trade_karen": {
+    "轉達 xi 的提案": "Deliver Xi's offer"
+  },
+  "story.let.trade_report": {
+    "關於任務": "About the job"
+  },
+  "story.thread.bandit_hunt": {
+    "盜賊討伐": "Bandit Hunt",
+    "黑森林裡出現了一群盜賊，商隊都不敢上路，商人 karen 需要你的幫助。": "A gang of bandits has appeared in the Black Forest and the caravans won't set out. The merchant Gilly needs your help.",
+    "與 xi 對話了解情況": "Talk to Xi to learn more",
+    "金幣 x100": "Gold x100",
+    "前往黑森林，清光盜賊 ({bandit_hunt.kills}/3)": "Go to the Black Forest and clear out the bandits ({bandit_hunt.kills}/3)",
+    "從盜賊身上取得匕首": "Take a dagger from the bandits",
+    "任務完成，跟 karen 回報任務": "Done. Report back to Gilly",
+    "已向 karen 回報，領取獎勵": "Reported to Gilly and collected the reward"
+  },
+  "story.thread.wolf_hunt": {
+    "屠夫的生意經": "The Butcher's Business",
+    "黑森林的野狼氾濫，xi 的肉舖快沒貨了，想找人幫忙獵狼取皮，順便帶個口信給城裡的商人 karen。": "Wolves are overrunning the Black Forest and Xi's butcher shop is running low. He wants someone to hunt wolves for their pelts and carry a message to Gilly, the merchant in town.",
+    "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)": "Hunt wolves in the Black Forest ({wolf_hunt.kills}/3)",
+    "金幣 x120、斧頭 x1": "Gold x120, Axe x1",
+    "剝下狼皮": "Skin the wolves",
+    "帶著狼皮去找商人 karen 談談": "Take the pelts to Gilly the merchant",
+    "任務完成，回去跟 xi 回報": "Done. Report back to Xi",
+    "你把狼皮直接賣給了 xi": "You sold the pelts straight to Xi",
+    "已向 xi 回報，領取獎勵": "Reported to Xi and collected the reward"
+  },
+  "story.thread.pelt_trade": {
+    "跑腿的交涉": "The Go-Between",
+    "黑森林的野狼問題解決後，xi 想跟 karen 談長期收購狼皮的生意，請你幫忙帶提案去交涉。": "With the wolf problem solved, Xi wants a long-term pelt deal with Gilly and has asked you to take her his offer.",
+    "帶著提案去找商人 karen 談交涉條件": "Take the offer to Gilly and negotiate terms",
+    "金幣 x100": "Gold x100",
+    "任務完成，回去跟 xi 回報": "Done. Report back to Xi",
+    "已向 xi 回報，領取謝禮": "Reported to Xi and received his thanks"
+  },
+  "_shared": {
+    "手套": "Gloves",
+    "靴子": "Boots",
+    "項鍊": "Necklace",
+    "戒子": "Ring",
+    "背包": "Bag",
+    "離開": "Leave",
+    "守衛": "Guard",
+    "可食用": "Edible",
+    "接受": "Accept",
+    "拒絕": "Decline",
+    "處理中": "Working on it",
+    "完成了": "It's done",
+    "關於任務": "About the job"
   },
   "_meta": {
     "font": "Arial, sans-serif"

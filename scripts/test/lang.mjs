@@ -103,10 +103,16 @@ run('多國語言', async t => {
     await t.eval(d => {d.Record.setting.lang = 'en'; d.Record.saveSetting();});
     await t.page.reload();
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單（英文）'});
-    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, untranslated: d.Local.lab('_lock_no_skill')}));
-    t.eq('en.json 的 item 譯文', en.item, 'Ordinary knife');
+    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, shared: d.Lang.tr('item.apple', '可食用')}));
+    t.eq('en.json 的 item 譯文', en.item, 'Dagger');
     t.eq('en.json 的 ui 譯文', en.ui, 'Weapon');
     t.eq('en 字型來自 _meta.font', en.font, 'Arial, sans-serif');
-    t.eq('沒翻的退回原文', en.untranslated, '缺少開鎖技能');
+    t.eq('情境沒譯文走 _shared', en.shared, 'Edible');
+
+    await t.newGame();
+    const enTalk = await t.talk('karen');
+    t.check('英文對話', /^[\x00-\x7f~]+$/.test(enTalk[0]), enTalk[0]);
+    t.eq('預設語言：中文系統', await t.eval(d => d.Record.defaultLang('zh-HK')), 'zh-TW');
+    t.eq('預設語言：其他系統', await t.eval(d => d.Record.defaultLang('ja-JP')), 'en');
     await t.eval(d => {d.Record.setting.lang = 'zh-TW'; d.Record.saveSetting();});
 });

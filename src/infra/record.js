@@ -9,7 +9,10 @@ export default class Record
                         q:{}
                     }
 
-    static setting_def = {  lang:'zh-TW',
+    // 第一次啟動依系統語言：中文用 zh-TW，其他一律 en
+    static defaultLang(nav=globalThis.navigator?.language) {return nav?.toLowerCase().startsWith('zh') ? 'zh-TW' : 'en';}
+
+    static setting_def = {  lang:Record.defaultLang(),
                             bgmVolume:1.0,
                             sfxVolume:1.0,
                             mouseEdgeMove:false,

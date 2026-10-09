@@ -82,7 +82,7 @@ export default class UiSetting extends UiFrame
         const icons = ['🔇','🔈','🔉','🔊'];
         this._page.clearAll();
 
-        this._page.add(this.dropdown('🌐',Record.setting,'lang',options),{align:'left'})
+        this._page.add(this.dropdown('🌐',Record.setting,'lang',options,(v)=>this._setLang(v)),{align:'left'})
         this._page.add(this.slider(icons,Record.setting,'sfxVolume'),{align:'left'})
         this._page.add(this.slider('🎵',Record.setting,'bgmVolume'),{align:'left'})
         // this._page.add(this.slider('🎵',Record.data,'bgmVolume'))
@@ -100,15 +100,25 @@ export default class UiSetting extends UiFrame
 
     }
 
-    dropdown(name, obj, key, options)
+    dropdown(name, obj, key, options, onchange)
     {
         return ui.uDropdown(this.scene,{
                         title:name,
                         width:item_width,
                         options:options,
-                        onchange:(v)=>{obj[key]=v;this.layout();}
+                        onchange:onchange ?? ((v)=>{obj[key]=v;this.layout();})
                     })
                     .setValue(obj[key]);
+    }
+
+    // 顯示文字在載入時就換成目前語言（DB.load、UI 建構），所以換語言直接重新載入頁面；
+    // dropdown 建立時也會用目前的值呼叫一次 onchange，值沒變就不動
+    _setLang(v)
+    {
+        if(v === Record.setting.lang) {return;}
+        Record.setting.lang = v;
+        Record.saveSetting();
+        window.location.reload();
     }
 
     check(name, obj, key)
