@@ -78,6 +78,7 @@ export default class UiSetting extends UiFrame
     {
         const options = [{text:'中文',value:'zh-TW'},
                         {text:'ENGLISH',value:'en'},]
+        if(import.meta.env.DEV) {options.push({text:'【偽翻譯】',value:'qps'});}
         const icons = ['🔇','🔈','🔉','🔊'];
         this._page.clearAll();
 

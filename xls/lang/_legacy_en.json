@@ -1,0 +1,480 @@
+{
+  "item.sword_01": {
+    "匕首": "Ordinary knife"
+  },
+  "item.sword_02": {
+    "焠毒短劍": "Iron Sword"
+  },
+  "item.sword_03": {
+    "鋼劍": "Steel Sword"
+  },
+  "item.bow_01": {
+    "弓": "Bow"
+  },
+  "item.bow_02": {
+    "高級弓": "Bow"
+  },
+  "item.helmet_01": {
+    "草帽": "Straw hat"
+  },
+  "item.helmet_02": {
+    "麻布帽": "Linen hat"
+  },
+  "item.helmet_03": {
+    "皮帽": "Leather hat"
+  },
+  "item.chest_01": {
+    "草衣": "Grass Clothes"
+  },
+  "item.chest_02": {
+    "麻布衣": "Linen Clothes"
+  },
+  "item.chest_03": {
+    "皮衣": "Leather"
+  },
+  "item.gloves_01": {
+    "手套": "Gloves"
+  },
+  "item.gloves_02": {
+    "高級手套": "Gloves"
+  },
+  "item.boots_01": {
+    "靴子": "Boots"
+  },
+  "item.boots_02": {
+    "高級靴子": "Boots"
+  },
+  "item.neck_01": {
+    "項鍊": "Necklace"
+  },
+  "item.ring_01": {
+    "戒子": "Ring"
+  },
+  "item.axe_01": {
+    "斧頭": "Axe"
+  },
+  "item.iron": {
+    "鐵礦": "Iron ore"
+  },
+  "item.bag": {
+    "背包": "Bag"
+  },
+  "item.torch": {
+    "火把": "Torch"
+  },
+  "item.bottle": {
+    "水壺": "Bottle"
+  },
+  "item.key_0000": {
+    "鑰匙": "key"
+  },
+  "item.lockpick": {
+    "開鎖工具": "Lockpick",
+    "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數": "Used with the lockpicking skill to pick locks."
+  },
+  "item.gold": {
+    "金幣": "Gold"
+  },
+  "item.raw_meat": {
+    "生肉": "Raw meat"
+  },
+  "item.cooked_meat": {
+    "熟肉": "Cooked meat"
+  },
+  "item.raw_fish": {
+    "生魚": "Raw fish"
+  },
+  "item.salt_baked_fish": {
+    "鹽烤魚": "Salt-baked fish"
+  },
+  "item.salt": {
+    "鹽": "Salt"
+  },
+  "item.apple": {
+    "頻果": "Apple"
+  },
+  "item.grapes": {
+    "葡萄": "Strawberry"
+  },
+  "item.mushroom": {
+    "蘑菇": "Mushroom"
+  },
+  "item.pot": {
+    "鍋子": "Pot"
+  },
+  "item.dummy": {
+    "木樁": "Training Dummy"
+  },
+  "item.wood": {
+    "木材": "Wood"
+  },
+  "item.plet": {
+    "毛皮": "Plet"
+  },
+  "ability.steal": {
+    "偷竊": "Stealing"
+  },
+  "ability.lockpick": {
+    "開鎖": "Lockpicking"
+  },
+  "ability.butcher": {
+    "解剖": "Butcher"
+  },
+  "ability.stealth": {
+    "潛行": "Stealth"
+  },
+  "ability.barter": {
+    "討價還價": "Barter"
+  },
+  "ability.slash": {
+    "斬擊": "Slash",
+    "基本橫劈，對前方弧形範圍造成 {#fmt} 點{#elm}傷害。{#formula}": "A basic horizontal cut, dealing {#fmt} {#elm} damage in an arc ahead.{#formula}"
+  },
+  "ability.dash": {
+    "衝刺": "Dash",
+    "衝向敵人，造成 {#fmt} 點{#elm}傷害並擊退 {#knock} 格。{#formula}": "Dash to an enemy, dealing {#fmt} {#elm} damage and knocking it back {#knock} tile(s).{#formula}"
+  },
+  "ability.whirlwind": {
+    "旋風斬": "Whirlwind"
+  },
+  "ability.swordmastery": {
+    "劍術專家": "Sword Expertise",
+    "精通劍術。裝備劍類武器時，提升命中與攻擊力。": "Mastery of swordsmanship. Boosts accuracy and attack power while wielding a sword."
+  },
+  "ability.swordmaster": {
+    "劍術大師": "Sword Mastery",
+    "劍術造詣爐火純青。裝備劍類武器時，命中與攻擊力再進一步大幅提升。": "Peak swordsmanship. Further boosts accuracy and attack power while wielding a sword."
+  },
+  "ability.snipe": {
+    "狙擊": "Snipe",
+    "瞄準敵人的弱點射擊，造成 {#fmt} 點{#elm}傷害。{#formula}": "Aims at an enemy's weak spot, dealing {#fmt} {#elm} damage.{#formula}"
+  },
+  "ability.archeryexpert": {
+    "弓箭專家": "Archery Expertise",
+    "精通弓術。裝備弓類武器時，提升命中與攻擊力。": "Mastery of archery. Boosts accuracy and attack power while wielding a bow."
+  },
+  "ability.archerymaster": {
+    "弓箭大師": "Archery Mastery",
+    "弓術造詣爐火純青。裝備弓類武器時，命中與攻擊力再進一步大幅提升。": "Peak archery. Further boosts accuracy and attack power while wielding a bow."
+  },
+  "ability.fireball": {
+    "火球術": "Fireball"
+  },
+  "ability.firewall": {
+    "火牆術": "Fire Wall"
+  },
+  "ability.fireballvolley": {
+    "高級火球術": "Greater Fireball",
+    "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害。{#formula}": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each.{#formula}"
+  },
+  "ability.combustion": {
+    "燃燒術": "Combustion"
+  },
+  "ability.meteorshower": {
+    "流星雨": "Meteor Shower"
+  },
+  "ability.icebolt": {
+    "冰箭術": "Ice Bolt"
+  },
+  "ability.icewall": {
+    "冰牆術": "Ice Wall"
+  },
+  "ability.deepfreeze": {
+    "冰封術": "Deep Freeze"
+  },
+  "ability.blizzard": {
+    "暴風雪": "Blizzard"
+  },
+  "ability.heal": {
+    "治療": "Heal"
+  },
+  "ability.cure": {
+    "解毒": "Cure"
+  },
+  "ability.holylight": {
+    "聖光": "Holy Light"
+  },
+  "ability.purify": {
+    "淨化": "Purify"
+  },
+  "ability.strboost": {
+    "力量增強": "Strength Boost"
+  },
+  "ability.agiboost": {
+    "敏捷增強": "Agility Boost"
+  },
+  "ability.intboost": {
+    "智力增強": "Intelligence Boost"
+  },
+  "ui.weapon": {
+    "武器": "Weapon",
+    "攻擊用": "Attack"
+  },
+  "ui.armor": {
+    "防具": "Armor"
+  },
+  "ui.item": {
+    "道具": "Item"
+  },
+  "ui.skill": {
+    "技能": "Skill"
+  },
+  "ui.ability": {
+    "能力": "Ability"
+  },
+  "ui.helmet": {
+    "頭盔": "Helmet"
+  },
+  "ui.chestplate": {
+    "胸甲": "Chestplate"
+  },
+  "ui.gloves": {
+    "手套": "Gloves"
+  },
+  "ui.boots": {
+    "靴子": "Boots"
+  },
+  "ui.necklace": {
+    "項鍊": "Necklace"
+  },
+  "ui.ring": {
+    "戒子": "Ring"
+  },
+  "ui.bag": {
+    "背包": "Bag"
+  },
+  "ui.equip": {
+    "裝備": "Equip"
+  },
+  "ui.other": {
+    "其他": "Other"
+  },
+  "ui.storage": {
+    "儲量": "Storage"
+  },
+  "ui.endurance": {
+    "耐久": "Endurance"
+  },
+  "ui.durability": {
+    "耐久": "Durability"
+  },
+  "ui.times": {
+    "次數": "Times"
+  },
+  "ui.capacity": {
+    "容量": "Capacity"
+  },
+  "ui.attrs": {
+    "屬性": "Attrs"
+  },
+  "ui.states": {
+    "狀態": "States"
+  },
+  "ui.life": {
+    "生命": "Life"
+  },
+  "ui.defense": {
+    "防禦": "Defense"
+  },
+  "ui.use": {
+    "使用": "Use"
+  },
+  "ui.drop": {
+    "丟棄": "Drop"
+  },
+  "ui.take": {
+    "拿": "Take"
+  },
+  "ui.talk": {
+    "交談": "Talk"
+  },
+  "ui.trade": {
+    "交易": "Trade"
+  },
+  "ui.buy": {
+    "買": "Buy"
+  },
+  "ui.sell": {
+    "賣": "Sell"
+  },
+  "ui.split": {
+    "拆分": "Split"
+  },
+  "ui.open": {
+    "開啟": "Open"
+  },
+  "ui.observe": {
+    "觀察": "Observe"
+  },
+  "ui.transfer": {
+    "移動": "Transfer"
+  },
+  "ui.openbag": {
+    "開啟": "Openbag"
+  },
+  "ui.inv": {
+    "背包": "Inv"
+  },
+  "ui.profile": {
+    "個人": "Profile"
+  },
+  "ui.drink": {
+    "喝水": "Drink"
+  },
+  "ui.fill": {
+    "取水": "Fill"
+  },
+  "ui.cook": {
+    "烹煮": "Cook"
+  },
+  "ui.open_door": {
+    "打開": "Open"
+  },
+  "ui.close_door": {
+    "關閉": "Close"
+  },
+  "ui.make": {
+    "製作": "Make"
+  },
+  "ui.rest": {
+    "休息": "Rest"
+  },
+  "ui.wake": {
+    "起床": "Wake"
+  },
+  "ui.setting": {
+    "設定": "Setting"
+  },
+  "ui._space_full": {
+    "空間已滿 !!!": "Space is full !!!"
+  },
+  "ui._not_enough_gold": {
+    "金幣不足 !!!": "Not enough coins !!!"
+  },
+  "ui.iron": {
+    "鐵礦": "Iron ore"
+  },
+  "ui.salt": {
+    "鹽": "Salt"
+  },
+  "ui.raw_meat": {
+    "生肉": "Raw meat"
+  },
+  "ui.cooked_meat": {
+    "熟肉": "Cooked meat"
+  },
+  "ui.raw_fish": {
+    "生魚": "Raw fish"
+  },
+  "ui.salt_baked_fish": {
+    "鹽烤魚": "Salt-baked fish"
+  },
+  "ui.sword_01": {
+    "普通刀": "Ordinary knife"
+  },
+  "ui.sword_02": {
+    "鐵劍": "Iron Sword"
+  },
+  "ui.sword_03": {
+    "鋼劍": "Steel Sword"
+  },
+  "ui.helmet_01": {
+    "草帽": "Straw hat"
+  },
+  "ui.helmet_02": {
+    "麻布帽": "Linen hat"
+  },
+  "ui.helmet_03": {
+    "皮帽": "Leather hat"
+  },
+  "ui.chest_01": {
+    "草衣": "Grass Clothes"
+  },
+  "ui.chest_02": {
+    "麻布衣": "Linen Clothes"
+  },
+  "ui.chest_03": {
+    "皮衣": "Leather"
+  },
+  "ui.gloves_01": {
+    "手套": "Gloves"
+  },
+  "ui.boots_01": {
+    "靴子": "Boots"
+  },
+  "ui.neck_01": {
+    "項鍊": "Necklace"
+  },
+  "ui.ring_01": {
+    "戒子": "Ring"
+  },
+  "ui.torch": {
+    "火把": "Torch"
+  },
+  "ui.bottle": {
+    "水壺": "Bottle"
+  },
+  "ui.wick": {
+    "維克": "Wick"
+  },
+  "ui.dummy": {
+    "木樁": "Training Dummy"
+  },
+  "ui.musk": {
+    "馬斯克": "Musk"
+  },
+  "ui.trump": {
+    "川普": "Trump"
+  },
+  "ui.karen": {
+    "凱倫": "Gilly"
+  },
+  "ui.xi": {
+    "習近平": "Xi Jinping"
+  },
+  "ui.macron": {
+    "馬克宏": "Macron"
+  },
+  "ui.melanie": {
+    "梅蘭妮": "Melanie"
+  },
+  "ui.guard-1": {
+    "守衛": "Guard"
+  },
+  "ui.guard-2": {
+    "守衛": "Guard"
+  },
+  "ui.ranger": {
+    "遊俠": "Ranger"
+  },
+  "ui.smith": {
+    "鐵匠": "Smith"
+  },
+  "ui.innkeeper": {
+    "旅館老闆": "Innkeeper"
+  },
+  "ui.trader": {
+    "小販": "Trader"
+  },
+  "ui.butcher": {
+    "解剖": "Butcher"
+  },
+  "ui.merchant": {
+    "行商": "Merchant"
+  },
+  "ui.guard": {
+    "守衛": "Guard"
+  },
+  "ui.pickup": {
+    "拾取": "Pickup"
+  },
+  "ui.lock": {
+    "上鎖": "Lock"
+  },
+  "ui.unlock": {
+    "解鎖": "Unlock"
+  },
+  "ui.restore": {
+    "恢復": "Restore"
+  }
+}

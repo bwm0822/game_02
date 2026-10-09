@@ -3,7 +3,6 @@ import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Pickup from '../items/pickup.js'
-import Record from '../infra/record.js'
 import AudioManager from '../manager/audio.js'
 const _tag = 'harvest';
 
@@ -22,7 +21,7 @@ const _tag = 'harvest';
 //  bb.full_tex    : 重生後的貼圖
 //  bb.respawn     : 重生時間 (遊戲分鐘，預設 60)
 //--------------------------------------------------
-function _lab(id) {return DB.item(id)?.[Record.setting.lang]?.lab || id;}
+function _lab(id) {return DB.item(id)?.lab || id;}
 
 export class COM_Harvest extends Com
 {

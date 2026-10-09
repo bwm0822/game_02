@@ -1,4 +1,4 @@
-﻿import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
+import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
 import {GM, UI, CAT2ICON} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
@@ -12,7 +12,6 @@ import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
-import Record from '../infra/record.js'
 
 export class Slot extends Icon
 {
@@ -39,7 +38,7 @@ export class Slot extends Icon
     set count(value) {return this.content.count=value;}
     get props() {return this.dat.props;}
     // get label() {return this.content.id.lab();}
-    get label() {return this.dat[Record.setting.lang].lab;}
+    get label() {return this.dat.lab;}
     get tp() {return GM.IF_SLOT;}
 
     get id() {return this.content?.id;}

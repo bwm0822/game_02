@@ -1,4 +1,5 @@
 import {GM} from '../core/setting.js'
+import {tr} from '../infra/lang.js'
 
 export default class DB
 {
@@ -7,19 +8,32 @@ export default class DB
     static get abilities() {return this._abilityDB;}
     static get abTree() {return this._abTree;}
 
+    // 顯示文字在載入時換成目前語言；MainMenu 每次進來都會重跑，所以原文另存在 _src
+    static _localize(db, domain)
+    {
+        for(const [id, val] of Object.entries(db))
+        {
+            val._src ??= {lab:val.lab ?? id, des:val.des};
+            val.lab = tr(`${domain}.${id}`, val._src.lab);
+            val.des = tr(`${domain}.${id}`, val._src.des);
+        }
+    }
+
     static load(scene)
     {
         this._itemDB = scene.cache.json.get('item');
-        for (let val of Object.values(this._itemDB)) 
+        for (let val of Object.values(this._itemDB))
         {
-            if(val.cat) {val.cat = this.lut(val.cat);}
+            if(typeof val.cat === 'string') {val.cat = this.lut(val.cat);}
         }
+        this._localize(this._itemDB, 'item');
 
         this._roleDB = scene.cache.json.get('role');
 
         this._dialogDB = scene.cache.json.get('dialog');
 
         this._abilityDB = scene.cache.json.get('skill');
+        this._localize(this._abilityDB, 'ability');
 
         this._abTree = scene.cache.json.get('sk_tree');
 

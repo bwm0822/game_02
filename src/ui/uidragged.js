@@ -8,7 +8,6 @@ import * as ui from './uicomponents.js'
 import UiCover  from './uicover.js'
 import UiMain  from './uimain.js'
 import Utility from '../core/utility.js'
-import Record from '../infra/record.js'
 
 export default class UiDragged extends ui.Pic
 {
@@ -43,7 +42,7 @@ export default class UiDragged extends ui.Pic
     get id() {return this._obj.id;}
     get i() {return this._obj.i;}
     // get label() {return this.content.id.lab();}
-    get label() {return this.dat[Record.setting.lang].lab;}
+    get label() {return this.dat.lab;}
     get gold() {return this.dat.gold;}
     get price() {return this.content.count*this.dat.gold;}
     get count() {return this.content.count}

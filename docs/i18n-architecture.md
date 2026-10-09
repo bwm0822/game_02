@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1 階段已完成。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1、2 階段已完成。
 
 ## 已定案
 
@@ -51,9 +51,11 @@
 - 存檔版本號等正式發布前再加。
 
 ### 7. 既有 tw/us 欄位統一
-- item.xlsx / ability.xlsx / local.xlsx 的 `tw`/`us` 欄拿掉，改成單一 `lab`/`des`（原文）。
-- 現有英文（item、local 的 `us`）一次性匯入 `en.xlsx`；ability 的 `us` 多為中文佔位，「譯文＝原文」的列跳過。
-- 程式約 120 處 `dat[lang].lab` 這類寫法全改成走 `T()`。
+- item.xlsx / ability.xlsx 的語言欄改成 `lab`/`des` 兩欄純文字（原文）；local.xlsx 維持兩列表頭 `key | text(lab, des)`。
+- 現有英文（「譯文＝原文」的跳過）已抽到 `xls/lang/_legacy_en.json`（`{情境: {原文: 譯文}}`），第 5 階段匯入 `en.xlsx` 後刪掉。
+- 翻譯函式叫 `tr(ctx, src, args)`（`src/infra/lang.js`；`T` 已被 debug 旗標佔用）。
+- item/ability 的 `lab`/`des` 在 `DB.load()` 就換成目前語言（原文另存 `_src`，重跑不會疊兩次），程式直接讀 `dat.lab`/`dat.des`；local 是每次 `'key'.lab()` 時才 `tr('ui.<key>', …)`。所以換語言後要重新跑 `DB.load()`（#10 的重新載入）。
+- 實際要改的 `dat[lang].lab` 只有約 10 處；其餘 ~110 處 `'xxx'.lab()` 走 `Local`，不用動。
 
 ### 8. 程式寫死的顯示字串
 - 一律搬進 `local.xlsx`，用 ASCII id 取（延續 `'weapon'.lab()` 習慣），local.xlsx 是「UI 原文表」。
@@ -61,8 +63,8 @@
 - 順便刪掉 `src/old/` 以外的舊檔：`*_old.js`、`cmbat copy.js`、`stats copy.js`（刪前確認沒被 import）。
 
 ### 9. 文字格式規則
-1. 佔位符沿用 `{#name}`，統一由 `T()` 替換（合併 `local.js:30` 與 `utility.js:346` 兩套）；塞進去的值本身也要先翻譯。
-2. **禁止程式拼接句子**：一句話是一個完整模板，可有可無的片段也各自是自帶標點的完整模板。例：`utility.js` 的 `fmt_Eff` 改成 `T('eff.dot', {stage, id, num, dur, stack})`，`eff.stage`=`{#v}時，`/`On {#v}, `，並拿掉 `.replace(/，+/g,'，')` 補丁。
+1. 佔位符沿用 `{#name}`，統一由 `tr()` 替換（合併 `local.js:30` 與 `utility.js:346` 兩套）；塞進去的值本身也要先翻譯。
+2. **禁止程式拼接句子**：一句話是一個完整模板，可有可無的片段也各自是自帶標點的完整模板。例：`utility.js` 的 `fmt_Eff` 改成 `tr('eff.dot', {stage, id, num, dur, stack})`，`eff.stage`=`{#v}時，`/`On {#v}, `，並拿掉 `.replace(/，+/g,'，')` 補丁。
 3. 轉檔檢查：譯文的佔位符集合、BBCode 標籤須與原文一致，否則標 error、執行期退回原文。
 4. 複數／量詞暫不支援（英文先寫 `tile(s)`），需要時再加語法。
 5. `_common.lines` 的 `/` 隨機變體整串一起翻，變體數可與原文不同。
@@ -94,16 +96,16 @@
 ### 13. 實作分階段
 1. ✅ 識別字 ASCII 化（quality/spawn 改名、轉檔 ASCII 檢查、`tw`→`zh-TW`）
    - item/ability/local.xlsx 的語言欄標頭先改成 `zh-TW`/`en`（json 的 `dat[lang]` 照舊能用），第 2 階段整欄拿掉
-2. 核心 `T()`＋item/ability/local 拿掉語言欄＋120 處 `[lang].lab` 改走 `T()`
+2. ✅ 核心 `tr()`＋item/ability/local 拿掉語言欄＋`[lang].lab` 改走 `tr()`；開發版設定頁可選 `qps`；測試 `scripts/test/lang.mjs`
 3. 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔
-4. 劇情文字（uidialog、line、story 的 thread/storylet/quality label）接上 `T()`
+4. 劇情文字（uidialog、line、story 的 thread/storylet/quality label）接上 `tr()`
 5. `scripts/lang.js`（抽取、merge、匯入舊 `us`、產出 json、加進 run_all）
 6. 英文上線（Claude 翻譯標 mt、語言切換流程、切英文實玩找爆版）
 
 - 1~4 是純重構：中文畫面完全不變，每階段跑現有無頭測試驗證，一階段一組 commit。
 
 ### 14. UI 爆版
-- 開發版加偽語系 `qps`（不出現在正式版語言選單）：`T()` 把原文拉長約 2 倍並加括號（`【裝備裝備】`），第 2 階段起就能看出哪裡會爆、哪些字串漏接 `T()`（沒括號的就是漏的）。
+- 開發版加偽語系 `qps`（不出現在正式版語言選單）：`tr()` 把原文拉長約 2 倍並加括號（`【裝備裝備】`），第 2 階段起就能看出哪裡會爆、哪些字串漏接 `tr()`（沒括號的就是漏的）。
 - 爆了個案修：加寬、換行或縮短譯文；不做通用自動縮字。
 
 ### 15. 情境命名規則
@@ -126,8 +128,8 @@
 - 實際存的是原文，名字會跟「情境＋原文」的 key 混淆；第 4 階段順便改成 `texts` / `label`（com_talk、scripts/story.js、scripts/tools.js、approach.mjs）。
 
 ### 17. NPC 顯示名稱
-- `role.xlsx` 加 `name` 欄填中文原文（凱倫、守衛、狼…），情境 `role.<id>`，跟 item 一樣走 `T()`；沒填就退回 id。`guard-1`/`guard-2` 可以填同一個名字。
-- 屬於第 2 階段（資料領域，跟 item/ability 一起）；lang.js 的 sheet 加 `role`。
+- ~~`role.xlsx` 加 `name` 欄~~：實作時發現名字早就在 local.xlsx 的 `roles` 分頁（`karen`→凱倫…），顯示走 `owner.id.lab()`，情境 `ui.<roleId>`，不用另開欄位。
+- 待補：`rogue-1`、`wolf` 等沒有列在 `roles` 分頁的角色會顯示紅字 key，之後補進 local.xlsx。
 
 ### 18. 字型
 - 字型依語言決定：啟動時依當前語言設定 `GM.FONT`（font stack，不內嵌字型檔）。

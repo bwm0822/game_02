@@ -20,6 +20,8 @@ import Story from './systems/story.js';
 import Line from './systems/line.js';
 import TimeSystem from './systems/time.js';
 import DB from './data/db.js';
+import Lang from './infra/lang.js';
+import Local from './infra/local.js';
 import Ui from './ui/uicommon.js';
 import {GM, UI as UI_DEF} from './core/setting.js';
 
@@ -103,6 +105,6 @@ const config = {
 const game = new Phaser.Game(config);
 
 // 開發版才掛到 window，給 scripts/test/ 的無頭瀏覽器測試讀寫遊戲狀態
-if(import.meta.env.DEV) {window.__dbg = {game, Record, Quality, Story, Line, TimeSystem, DB, Ui, GM, UI:UI_DEF};}
+if(import.meta.env.DEV) {window.__dbg = {game, Record, Quality, Story, Line, TimeSystem, DB, Lang, Local, Ui, GM, UI:UI_DEF};}
 
 export default game;

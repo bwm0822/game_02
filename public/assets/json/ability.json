@@ -3,64 +3,34 @@
     "icon": "🧤",
     "mode": "passive",
     "tag": "steal",
-    "zh-TW": {
-      "lab": "偷竊",
-      "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
-    },
-    "en": {
-      "lab": "Stealing",
-      "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
-    }
+    "lab": "偷竊",
+    "des": "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。"
   },
   "lockpick": {
     "icon": "🗝️",
     "mode": "passive",
     "tag": "lockpick",
-    "zh-TW": {
-      "lab": "開鎖",
-      "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
-    },
-    "en": {
-      "lab": "Lockpicking",
-      "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
-    }
+    "lab": "開鎖",
+    "des": "破解寶箱或門鎖。解鎖更高難度的鎖具。"
   },
   "butcher": {
     "icon": "🔪",
     "mode": "passive",
     "tag": "butcher",
-    "zh-TW": {
-      "lab": "解剖",
-      "des": "分解動物屍體，取得肉類、皮毛與骨頭...等可用素材。"
-    },
-    "en": {
-      "lab": "Butcher",
-      "des": "分解動物屍體，取得肉類、皮毛與骨頭...等可用素材。"
-    }
+    "lab": "解剖",
+    "des": "分解動物屍體，取得肉類、皮毛與骨頭...等可用素材。"
   },
   "stealth": {
     "icon": "👤",
     "mode": "passive",
-    "zh-TW": {
-      "lab": "潛行",
-      "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
-    },
-    "en": {
-      "lab": "Stealth",
-      "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
-    }
+    "lab": "潛行",
+    "des": "進入半透明狀態，大幅降低敵方偵測範圍。"
   },
   "barter": {
     "icon": "💰",
     "mode": "passive",
-    "zh-TW": {
-      "lab": "討價還價",
-      "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
-    },
-    "en": {
-      "lab": "Barter",
-      "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
-    }
+    "lab": "討價還價",
+    "des": "交易時獲得更好價格。商店售價 -15%，回收價 +15%。"
   },
   "slash": {
     "icon": "🗡️",
@@ -80,14 +50,8 @@
     "travel": {
       "type": "melee"
     },
-    "zh-TW": {
-      "lab": "斬擊",
-      "des": "基本橫劈，對前方弧形範圍造成 {#fmt} 點{#elm}傷害。{#formula}"
-    },
-    "en": {
-      "lab": "Slash",
-      "des": "A basic horizontal cut, dealing {#fmt} {#elm} damage in an arc ahead.{#formula}"
-    }
+    "lab": "斬擊",
+    "des": "基本橫劈，對前方弧形範圍造成 {#fmt} 點{#elm}傷害。{#formula}"
   },
   "dash": {
     "icon": "📍",
@@ -108,14 +72,8 @@
     "travel": {
       "type": "melee"
     },
-    "zh-TW": {
-      "lab": "衝刺",
-      "des": "衝向敵人，造成 {#fmt} 點{#elm}傷害並擊退 {#knock} 格。{#formula}"
-    },
-    "en": {
-      "lab": "Dash",
-      "des": "Dash to an enemy, dealing {#fmt} {#elm} damage and knocking it back {#knock} tile(s).{#formula}"
-    }
+    "lab": "衝刺",
+    "des": "衝向敵人，造成 {#fmt} 點{#elm}傷害並擊退 {#knock} 格。{#formula}"
   },
   "whirlwind": {
     "icon": "🌪️",
@@ -134,14 +92,8 @@
     "h": 3,
     "cast": {},
     "fx": {},
-    "zh-TW": {
-      "lab": "旋風斬",
-      "des": "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。"
-    },
-    "en": {
-      "lab": "Whirlwind",
-      "des": "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。"
-    }
+    "lab": "旋風斬",
+    "des": "旋轉劍身，對周圍範圍{#wh}方格造成多段傷害。"
   },
   "swordmastery": {
     "icon": "⚔️",
@@ -161,14 +113,8 @@
         "reqClass": "sword"
       }
     ],
-    "zh-TW": {
-      "lab": "劍術專家",
-      "des": "精通劍術。裝備劍類武器時，提升命中與攻擊力。"
-    },
-    "en": {
-      "lab": "Sword Expertise",
-      "des": "Mastery of swordsmanship. Boosts accuracy and attack power while wielding a sword."
-    }
+    "lab": "劍術專家",
+    "des": "精通劍術。裝備劍類武器時，提升命中與攻擊力。"
   },
   "swordmaster": {
     "icon": "👑",
@@ -191,14 +137,8 @@
         "reqClass": "sword"
       }
     ],
-    "zh-TW": {
-      "lab": "劍術大師",
-      "des": "劍術造詣爐火純青。裝備劍類武器時，命中與攻擊力再進一步大幅提升。"
-    },
-    "en": {
-      "lab": "Sword Mastery",
-      "des": "Peak swordsmanship. Further boosts accuracy and attack power while wielding a sword."
-    }
+    "lab": "劍術大師",
+    "des": "劍術造詣爐火純青。裝備劍類武器時，命中與攻擊力再進一步大幅提升。"
   },
   "snipe": {
     "icon": "🎯",
@@ -217,14 +157,8 @@
     "travel": {
       "type": "ranged"
     },
-    "zh-TW": {
-      "lab": "狙擊",
-      "des": "瞄準敵人的弱點射擊，造成 {#fmt} 點{#elm}傷害。{#formula}"
-    },
-    "en": {
-      "lab": "Snipe",
-      "des": "Aims at an enemy's weak spot, dealing {#fmt} {#elm} damage.{#formula}"
-    }
+    "lab": "狙擊",
+    "des": "瞄準敵人的弱點射擊，造成 {#fmt} 點{#elm}傷害。{#formula}"
   },
   "archeryexpert": {
     "icon": "🏹",
@@ -244,14 +178,8 @@
         "reqClass": "bow"
       }
     ],
-    "zh-TW": {
-      "lab": "弓箭專家",
-      "des": "精通弓術。裝備弓類武器時，提升命中與攻擊力。"
-    },
-    "en": {
-      "lab": "Archery Expertise",
-      "des": "Mastery of archery. Boosts accuracy and attack power while wielding a bow."
-    }
+    "lab": "弓箭專家",
+    "des": "精通弓術。裝備弓類武器時，提升命中與攻擊力。"
   },
   "archerymaster": {
     "icon": "🎖️",
@@ -274,14 +202,8 @@
         "reqClass": "bow"
       }
     ],
-    "zh-TW": {
-      "lab": "弓箭大師",
-      "des": "弓術造詣爐火純青。裝備弓類武器時，命中與攻擊力再進一步大幅提升。"
-    },
-    "en": {
-      "lab": "Archery Mastery",
-      "des": "Peak archery. Further boosts accuracy and attack power while wielding a bow."
-    }
+    "lab": "弓箭大師",
+    "des": "弓術造詣爐火純青。裝備弓類武器時，命中與攻擊力再進一步大幅提升。"
   },
   "fireball": {
     "icon": "🔥",
@@ -318,14 +240,8 @@
         "stack": 3
       }
     ],
-    "zh-TW": {
-      "lab": "火球術",
-      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}"
-    },
-    "en": {
-      "lab": "Fireball",
-      "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}"
-    }
+    "lab": "火球術",
+    "des": "投擲火球，造成 {#fmt} 點{#elm}爆炸傷害。{#formula}"
   },
   "firewall": {
     "icon": "🧱",
@@ -404,14 +320,8 @@
         "stack": 3
       }
     ],
-    "zh-TW": {
-      "lab": "火牆術",
-      "des": "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。"
-    },
-    "en": {
-      "lab": "Fire Wall",
-      "des": "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。"
-    }
+    "lab": "火牆術",
+    "des": "召喚{#wh}方格的火焰地帶。對經過者施加持續灼燒。"
   },
   "fireballvolley": {
     "icon": "🔥",
@@ -452,14 +362,8 @@
         "stack": 3
       }
     ],
-    "zh-TW": {
-      "lab": "高級火球術",
-      "des": "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害。{#formula}"
-    },
-    "en": {
-      "lab": "Greater Fireball",
-      "des": "Fires a fireball at each character within a {#angle}° cone up to {#range} tiles in the chosen direction, dealing {#fmt} {#elm} damage each.{#formula}"
-    }
+    "lab": "高級火球術",
+    "des": "朝指定方向 {#angle}° 扇形、{#range} 格內的每個角色各自發射火球，每發造成 {#fmt} 點{#elm}傷害。{#formula}"
   },
   "combustion": {
     "icon": "🌋",
@@ -497,14 +401,8 @@
         "stack": 3
       }
     ],
-    "zh-TW": {
-      "lab": "燃燒術",
-      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}"
-    },
-    "en": {
-      "lab": "Combustion",
-      "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}"
-    }
+    "lab": "燃燒術",
+    "des": "引爆範圍{#wh}方格內目標身上的灼燒狀態，造成 {#fmt} 點{#elm}瞬間大傷害。{#formula}"
   },
   "meteorshower": {
     "icon": "☄️",
@@ -562,14 +460,8 @@
         "stack": 3
       }
     ],
-    "zh-TW": {
-      "lab": "流星雨",
-      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}"
-    },
-    "en": {
-      "lab": "Meteor Shower",
-      "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}"
-    }
+    "lab": "流星雨",
+    "des": "大範圍{#wh}方格隕石轟炸，每顆造成 {#fmt0} 點{#elm0}傷害及 {#fmt1} 點{#elm1}傷害，摧毀範圍內一切。{#formula0}{#formula1}"
   },
   "icebolt": {
     "icon": "❄️",
@@ -585,14 +477,8 @@
     ],
     "range": 5,
     "cd": 3,
-    "zh-TW": {
-      "lab": "冰箭術",
-      "des": "單體冰錐。造成傷害並減速 30%。"
-    },
-    "en": {
-      "lab": "Ice Bolt",
-      "des": "單體冰錐。造成傷害並減速 30%。"
-    }
+    "lab": "冰箭術",
+    "des": "單體冰錐。造成傷害並減速 30%。"
   },
   "icewall": {
     "icon": "🧊",
@@ -608,14 +494,8 @@
     ],
     "range": 5,
     "cd": 3,
-    "zh-TW": {
-      "lab": "冰牆術",
-      "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
-    },
-    "en": {
-      "lab": "Ice Wall",
-      "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
-    }
+    "lab": "冰牆術",
+    "des": "召喚可抵擋飛行道具的冰塊物理障礙物。"
   },
   "deepfreeze": {
     "icon": "🥶",
@@ -635,14 +515,8 @@
     ],
     "range": 5,
     "cd": 4,
-    "zh-TW": {
-      "lab": "冰封術",
-      "des": "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。"
-    },
-    "en": {
-      "lab": "Deep Freeze",
-      "des": "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。"
-    }
+    "lab": "冰封術",
+    "des": "將減速狀態轉為凍結，使敵方完全無法行動 3 秒。"
   },
   "blizzard": {
     "icon": "🌨️",
@@ -661,14 +535,8 @@
     ],
     "range": 5,
     "cd": 6,
-    "zh-TW": {
-      "lab": "暴風雪",
-      "des": "大範圍持續性傷害，並有 10% 機率直接凍結敵人。"
-    },
-    "en": {
-      "lab": "Blizzard",
-      "des": "大範圍持續性傷害，並有 10% 機率直接凍結敵人。"
-    }
+    "lab": "暴風雪",
+    "des": "大範圍持續性傷害，並有 10% 機率直接凍結敵人。"
   },
   "poisondart": {
     "icon": "🐍",
@@ -684,14 +552,8 @@
     ],
     "range": 5,
     "cd": 3,
-    "zh-TW": {
-      "lab": "毒箭術",
-      "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
-    },
-    "en": {
-      "lab": "毒箭術",
-      "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
-    }
+    "lab": "毒箭術",
+    "des": "遠程發射毒針，使目標進入每秒扣血的中毒狀態。"
   },
   "poisonmist": {
     "icon": "🌫️",
@@ -707,14 +569,8 @@
     ],
     "range": 5,
     "cd": 3,
-    "zh-TW": {
-      "lab": "毒霧術",
-      "des": "在指定區域散佈致命毒氣。"
-    },
-    "en": {
-      "lab": "毒霧術",
-      "des": "在指定區域散佈致命毒氣。"
-    }
+    "lab": "毒霧術",
+    "des": "在指定區域散佈致命毒氣。"
   },
   "venomburst": {
     "icon": "🍄",
@@ -734,56 +590,32 @@
     ],
     "range": 5,
     "cd": 4,
-    "zh-TW": {
-      "lab": "毒素引爆",
-      "des": "使受毒者爆炸，將毒素噴濺至周圍目標。"
-    },
-    "en": {
-      "lab": "毒素引爆",
-      "des": "使受毒者爆炸，將毒素噴濺至周圍目標。"
-    }
+    "lab": "毒素引爆",
+    "des": "使受毒者爆炸，將毒素噴濺至周圍目標。"
   },
   "heal": {
     "icon": "💖",
     "mode": "active",
     "tag": "heal",
     "cd": 2,
-    "zh-TW": {
-      "lab": "治療",
-      "des": "恢復目標生命值。"
-    },
-    "en": {
-      "lab": "Heal",
-      "des": "恢復目標生命值。"
-    }
+    "lab": "治療",
+    "des": "恢復目標生命值。"
   },
   "cure": {
     "icon": "🧪",
     "mode": "active",
     "tag": "heal",
     "cd": 3,
-    "zh-TW": {
-      "lab": "解毒",
-      "des": "清除體內毒素。"
-    },
-    "en": {
-      "lab": "Cure",
-      "des": "清除體內毒素。"
-    }
+    "lab": "解毒",
+    "des": "清除體內毒素。"
   },
   "holylight": {
     "icon": "☀️",
     "mode": "active",
     "tag": "heal",
     "cd": 3,
-    "zh-TW": {
-      "lab": "聖光",
-      "des": "移除 1 個負面狀態。"
-    },
-    "en": {
-      "lab": "Holy Light",
-      "des": "移除 1 個負面狀態。"
-    }
+    "lab": "聖光",
+    "des": "移除 1 個負面狀態。"
   },
   "purify": {
     "icon": "✨",
@@ -794,52 +626,28 @@
       "holylight"
     ],
     "cd": 5,
-    "zh-TW": {
-      "lab": "淨化",
-      "des": "清除體內毒素，移除所有負面狀態。"
-    },
-    "en": {
-      "lab": "Purify",
-      "des": "清除體內毒素，移除所有負面狀態。"
-    }
+    "lab": "淨化",
+    "des": "清除體內毒素，移除所有負面狀態。"
   },
   "strboost": {
     "icon": "💪",
     "mode": "active",
     "tag": "buff",
-    "zh-TW": {
-      "lab": "力量增強",
-      "des": "增加力量，可提升近戰傷害。"
-    },
-    "en": {
-      "lab": "Strength Boost",
-      "des": "增加力量，可提升近戰傷害。"
-    }
+    "lab": "力量增強",
+    "des": "增加力量，可提升近戰傷害。"
   },
   "agiboost": {
     "icon": "👟",
     "mode": "active",
     "tag": "buff",
-    "zh-TW": {
-      "lab": "敏捷增強",
-      "des": "增加敏捷，可提升閃避。"
-    },
-    "en": {
-      "lab": "Agility Boost",
-      "des": "增加敏捷，可提升閃避。"
-    }
+    "lab": "敏捷增強",
+    "des": "增加敏捷，可提升閃避。"
   },
   "intboost": {
     "icon": "🧠",
     "mode": "active",
     "tag": "buff",
-    "zh-TW": {
-      "lab": "智力增強",
-      "des": "增加智力，可提升法術效果。"
-    },
-    "en": {
-      "lab": "Intelligence Boost",
-      "des": "增加智力，可提升法術效果。"
-    }
+    "lab": "智力增強",
+    "des": "增加智力，可提升法術效果。"
   }
 }

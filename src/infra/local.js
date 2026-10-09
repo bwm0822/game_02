@@ -1,38 +1,25 @@
 import {GM} from '../core/setting.js';
-import Record from './record.js';
+import {tr} from './lang.js';
 
+// local.xlsx 是 UI 原文表，情境 ui.<key>
 export default class Local
 {
     static _local;
 
-    static get lang() {return Record.setting.lang;}
-
     static load(scene)
     {
         this._local = scene.cache.json.get('local');
-        // console.log(this._local)
     }
 
     static lab(key)
     {
-        return this._local?.[key]?.[this.lang]?.lab ?? `[color=red]${key}[/color]`;
+        const src = this._local?.[key]?.lab;
+        return src === undefined ? `[color=red]${key}[/color]` : tr(`ui.${key}`, src);
     }
 
-    static des(key)
+    static des(key, args)
     {
-        return this._local?.[key]?.[this.lang]?.des ?? '';//`[color=red]${key}[/color]`;
-    }
-
-    static des(key,{num}={})
-    {
-        const str = this._local?.[key]?.[this.lang]?.des ?? '';
-
-        return str.replace(/{#(\w+)}/g, (match, arg) => {
-            switch(arg)
-            {
-                case 'num': return `${num}`;
-            }}
-        );
+        return tr(`ui.${key}`, this._local?.[key]?.des ?? '', args);
     }
 
     static lut(key)

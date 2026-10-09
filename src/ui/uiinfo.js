@@ -1,8 +1,7 @@
-﻿import UiFrame from "./uiframe"
+import UiFrame from "./uiframe"
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Utility from '../core/utility.js';
-import Record from '../infra/record.js'
 import Story from '../systems/story.js'
 
 const WIDTH=250;
@@ -46,8 +45,6 @@ export default class UiInfo extends UiFrame
         ui.uDiv.call(this,scene)
     }
 
-    get lang() {return Record.setting.lang;}
-
     uStat(key, val)
     {
         ui.uStat.call(this,this.scene,key,val,{interactive:false})
@@ -56,8 +53,7 @@ export default class UiInfo extends UiFrame
     addTitle(elm)
     {
         const scene = this.scene;
-        let title = elm.dat[this.lang]?.lab
-        ui.uBbc.call(this,scene,{text:title??elm.dat.id});   
+        ui.uBbc.call(this,scene,{text:elm.dat.lab});
         return this;
     }
 
@@ -78,7 +74,7 @@ export default class UiInfo extends UiFrame
         if(elm)
         {
             const scene=this.scene;
-            const des = elm.dat[this.lang]?.des;
+            const des = elm.dat.des;
             if(des)
             {
                 div && ui.uDiv.call(this,scene);

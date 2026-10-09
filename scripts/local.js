@@ -9,7 +9,7 @@ function sheetToJson(ws) {
   const row1 = rows[1];
   const numCols = Math.max(row0.length, row1 ? row1.length : 0);
 
-  // Fill-forward language names across merged/blank columns
+  // 第 1 列是欄群組（key / text），第 2 列是 lab / des；只有原文，譯文在 xls/lang/
   const cols = [];
   let curLang = null;
   for (let c = 0; c < numCols; c++) {
@@ -32,8 +32,7 @@ function sheetToJson(ws) {
       if (sub !== 'lab' && sub !== 'des') continue;
       const val = row[c];
       if (val === null || val === undefined) continue;
-      if (!entry[lang]) entry[lang] = {};
-      entry[lang][sub] = val;
+      entry[sub] = val;
     }
 
     if (Object.keys(entry).length > 0) output[String(key)] = entry;

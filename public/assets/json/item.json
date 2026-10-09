@@ -92,14 +92,8 @@
     "cat_sub": [
       "sword"
     ],
-    "zh-TW": {
-      "lab": "匕首",
-      "des": "常用近戰武器"
-    },
-    "en": {
-      "lab": "Ordinary knife",
-      "des": ""
-    }
+    "lab": "匕首",
+    "des": "常用近戰武器"
   },
   "sword_02": {
     "cat": "CAT_WEAPON",
@@ -135,14 +129,8 @@
     "cat_sub": [
       "sword"
     ],
-    "zh-TW": {
-      "lab": "焠毒短劍",
-      "des": "用毒液浸泡過的短劍，可使目標中毒"
-    },
-    "en": {
-      "lab": "Iron Sword",
-      "des": ""
-    }
+    "lab": "焠毒短劍",
+    "des": "用毒液浸泡過的短劍，可使目標中毒"
   },
   "sword_03": {
     "cat": "CAT_WEAPON",
@@ -165,14 +153,7 @@
     "cat_sub": [
       "sword"
     ],
-    "zh-TW": {
-      "lab": "鋼劍",
-      "des": ""
-    },
-    "en": {
-      "lab": "Steel Sword",
-      "des": ""
-    }
+    "lab": "鋼劍"
   },
   "bow_01": {
     "cat": "CAT_WEAPON",
@@ -190,14 +171,7 @@
     "cat_sub": [
       "bow"
     ],
-    "zh-TW": {
-      "lab": "弓",
-      "des": ""
-    },
-    "en": {
-      "lab": "Bow",
-      "des": ""
-    }
+    "lab": "弓"
   },
   "bow_02": {
     "cat": "CAT_WEAPON",
@@ -215,14 +189,7 @@
     "cat_sub": [
       "bow"
     ],
-    "zh-TW": {
-      "lab": "高級弓",
-      "des": ""
-    },
-    "en": {
-      "lab": "Bow",
-      "des": ""
-    }
+    "lab": "高級弓"
   },
   "helmet_01": {
     "cat": "CAT_HELMET",
@@ -238,14 +205,7 @@
       "scale": 0.25
     },
     "def": 10,
-    "zh-TW": {
-      "lab": "草帽",
-      "des": ""
-    },
-    "en": {
-      "lab": "Straw hat",
-      "des": ""
-    }
+    "lab": "草帽"
   },
   "helmet_02": {
     "cat": "CAT_HELMET",
@@ -261,28 +221,14 @@
       "scale": 0.25
     },
     "def": 20,
-    "zh-TW": {
-      "lab": "麻布帽",
-      "des": ""
-    },
-    "en": {
-      "lab": "Linen hat",
-      "des": ""
-    }
+    "lab": "麻布帽"
   },
   "helmet_03": {
     "cat": "CAT_HELMET",
     "icon": "weapons:47",
     "gold": 30,
     "def": 30,
-    "zh-TW": {
-      "lab": "皮帽",
-      "des": ""
-    },
-    "en": {
-      "lab": "Leather hat",
-      "des": ""
-    }
+    "lab": "皮帽"
   },
   "chest_01": {
     "cat": "CAT_CHESTPLATE",
@@ -298,14 +244,7 @@
       "scale": 0.25
     },
     "def": 20,
-    "zh-TW": {
-      "lab": "草衣",
-      "des": ""
-    },
-    "en": {
-      "lab": "Grass Clothes",
-      "des": ""
-    }
+    "lab": "草衣"
   },
   "chest_02": {
     "cat": "CAT_CHESTPLATE",
@@ -321,28 +260,14 @@
       "scale": 0.25
     },
     "def": 30,
-    "zh-TW": {
-      "lab": "麻布衣",
-      "des": ""
-    },
-    "en": {
-      "lab": "Linen Clothes",
-      "des": ""
-    }
+    "lab": "麻布衣"
   },
   "chest_03": {
     "cat": "CAT_CHESTPLATE",
     "icon": "weapons:56",
     "gold": 60,
     "def": 40,
-    "zh-TW": {
-      "lab": "皮衣",
-      "des": ""
-    },
-    "en": {
-      "lab": "Leather",
-      "des": ""
-    }
+    "lab": "皮衣"
   },
   "gloves_01": {
     "cat": "CAT_GLOVES",
@@ -358,14 +283,7 @@
       "scale": 0.25
     },
     "def": 5,
-    "zh-TW": {
-      "lab": "手套",
-      "des": ""
-    },
-    "en": {
-      "lab": "Gloves",
-      "des": ""
-    }
+    "lab": "手套"
   },
   "gloves_02": {
     "cat": "CAT_GLOVES",
@@ -381,14 +299,7 @@
       "scale": 0.25
     },
     "def": 10,
-    "zh-TW": {
-      "lab": "高級手套",
-      "des": ""
-    },
-    "en": {
-      "lab": "Gloves",
-      "des": ""
-    }
+    "lab": "高級手套"
   },
   "boots_01": {
     "cat": "CAT_BOOTS",
@@ -405,14 +316,7 @@
       "scale": 0.25
     },
     "def": 5,
-    "zh-TW": {
-      "lab": "靴子",
-      "des": ""
-    },
-    "en": {
-      "lab": "Boots",
-      "des": ""
-    }
+    "lab": "靴子"
   },
   "boots_02": {
     "cat": "CAT_BOOTS",
@@ -429,40 +333,19 @@
       "scale": 0.25
     },
     "def": 10,
-    "zh-TW": {
-      "lab": "高級靴子",
-      "des": ""
-    },
-    "en": {
-      "lab": "Boots",
-      "des": ""
-    }
+    "lab": "高級靴子"
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",
     "icon": "icons:134",
     "gold": 10,
-    "zh-TW": {
-      "lab": "項鍊",
-      "des": ""
-    },
-    "en": {
-      "lab": "Necklace",
-      "des": ""
-    }
+    "lab": "項鍊"
   },
   "ring_01": {
     "cat": "CAT_RING",
     "icon": "icons:132",
     "gold": 10,
-    "zh-TW": {
-      "lab": "戒子",
-      "des": ""
-    },
-    "en": {
-      "lab": "Ring",
-      "des": ""
-    }
+    "lab": "戒子"
   },
   "axe_01": {
     "cat": "CAT_WEAPON",
@@ -485,41 +368,22 @@
     "cat_sub": [
       "axe"
     ],
-    "zh-TW": {
-      "lab": "斧頭",
-      "des": ""
-    },
-    "en": {
-      "lab": "Axe",
-      "des": ""
-    }
+    "lab": "斧頭"
   },
   "iron": {
     "cat": "CAT_ITEM",
     "icon": "icons:273",
     "gold": 10,
-    "zh-TW": {
-      "lab": "鐵礦",
-      "des": "鐵礦"
-    },
-    "en": {
-      "lab": "Iron ore",
-      "des": ""
-    }
+    "lab": "鐵礦",
+    "des": "鐵礦"
   },
   "bag": {
     "cat": "CAT_BAG",
     "icon": "icons:137",
     "gold": 10,
     "storage": 12,
-    "zh-TW": {
-      "lab": "背包",
-      "des": "可以裝物品"
-    },
-    "en": {
-      "lab": "Bag",
-      "des": ""
-    }
+    "lab": "背包",
+    "des": "可以裝物品"
   },
   "torch": {
     "cat": "CAT_EQUIP",
@@ -530,14 +394,8 @@
       "color": 16755200,
       "radius": 300
     },
-    "zh-TW": {
-      "lab": "火把",
-      "des": "可以照明"
-    },
-    "en": {
-      "lab": "Torch",
-      "des": ""
-    }
+    "lab": "火把",
+    "des": "可以照明"
   },
   "bottle": {
     "cat": "CAT_ITEM",
@@ -554,14 +412,8 @@
     "keep": true,
     "capacity": 10,
     "dft": 3,
-    "zh-TW": {
-      "lab": "水壺",
-      "des": "可以裝水"
-    },
-    "en": {
-      "lab": "Bottle",
-      "des": ""
-    }
+    "lab": "水壺",
+    "des": "可以裝水"
   },
   "key_0000": {
     "cat": "CAT_ITEM",
@@ -570,14 +422,8 @@
     "drop": {
       "scale": 0.5
     },
-    "zh-TW": {
-      "lab": "鑰匙",
-      "des": "可以開鎖"
-    },
-    "en": {
-      "lab": "key",
-      "des": ""
-    }
+    "lab": "鑰匙",
+    "des": "可以開鎖"
   },
   "lockpick": {
     "cat": "CAT_ITEM",
@@ -587,14 +433,8 @@
       "scale": 0.5
     },
     "times": 3,
-    "zh-TW": {
-      "lab": "開鎖工具",
-      "des": "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數"
-    },
-    "en": {
-      "lab": "Lockpick",
-      "des": "Used with the lockpicking skill to pick locks."
-    }
+    "lab": "開鎖工具",
+    "des": "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數"
   },
   "gold": {
     "cat": "CAT_ITEM",
@@ -602,14 +442,8 @@
     "gold": 1,
     "cps": 1000,
     "useable": true,
-    "zh-TW": {
-      "lab": "金幣",
-      "des": "可兌換成金錢"
-    },
-    "en": {
-      "lab": "Gold",
-      "des": ""
-    }
+    "lab": "金幣",
+    "des": "可兌換成金錢"
   },
   "raw_meat": {
     "cat": "CAT_FOOD",
@@ -626,14 +460,8 @@
     "cook": {
       "id": "cooked_meat"
     },
-    "zh-TW": {
-      "lab": "生肉",
-      "des": "可烹煮"
-    },
-    "en": {
-      "lab": "Raw meat",
-      "des": ""
-    }
+    "lab": "生肉",
+    "des": "可烹煮"
   },
   "cooked_meat": {
     "cat": "CAT_FOOD",
@@ -647,14 +475,8 @@
       }
     ],
     "useable": true,
-    "zh-TW": {
-      "lab": "熟肉",
-      "des": "熟肉"
-    },
-    "en": {
-      "lab": "Cooked meat",
-      "des": ""
-    }
+    "lab": "熟肉",
+    "des": "熟肉"
   },
   "raw_fish": {
     "cat": "CAT_FOOD",
@@ -668,14 +490,8 @@
       }
     ],
     "useable": true,
-    "zh-TW": {
-      "lab": "生魚",
-      "des": "可烹煮"
-    },
-    "en": {
-      "lab": "Raw fish",
-      "des": ""
-    }
+    "lab": "生魚",
+    "des": "可烹煮"
   },
   "salt_baked_fish": {
     "cat": "CAT_FOOD",
@@ -695,28 +511,16 @@
         "salt": 2
       }
     },
-    "zh-TW": {
-      "lab": "鹽烤魚",
-      "des": "鹽烤魚"
-    },
-    "en": {
-      "lab": "Salt-baked fish",
-      "des": ""
-    }
+    "lab": "鹽烤魚",
+    "des": "鹽烤魚"
   },
   "salt": {
     "cat": "CAT_FOOD",
     "icon": "icons:250",
     "gold": 10,
     "cps": 10,
-    "zh-TW": {
-      "lab": "鹽",
-      "des": "鹽"
-    },
-    "en": {
-      "lab": "Salt",
-      "des": ""
-    }
+    "lab": "鹽",
+    "des": "鹽"
   },
   "apple": {
     "cat": "CAT_FOOD",
@@ -731,14 +535,8 @@
     ],
     "cps": 5,
     "useable": true,
-    "zh-TW": {
-      "lab": "頻果",
-      "des": "可食用"
-    },
-    "en": {
-      "lab": "Apple",
-      "des": ""
-    }
+    "lab": "頻果",
+    "des": "可食用"
   },
   "grapes": {
     "cat": "CAT_FOOD",
@@ -753,14 +551,8 @@
     ],
     "cps": 5,
     "useable": true,
-    "zh-TW": {
-      "lab": "葡萄",
-      "des": "可食用"
-    },
-    "en": {
-      "lab": "Strawberry",
-      "des": ""
-    }
+    "lab": "葡萄",
+    "des": "可食用"
   },
   "mushroom": {
     "cat": "CAT_FOOD",
@@ -775,14 +567,8 @@
     ],
     "cps": 10,
     "useable": true,
-    "zh-TW": {
-      "lab": "蘑菇",
-      "des": "可食用"
-    },
-    "en": {
-      "lab": "Mushroom",
-      "des": ""
-    }
+    "lab": "蘑菇",
+    "des": "可食用"
   },
   "pot": {
     "cat": "CAT_DEVICE",
@@ -798,14 +584,8 @@
     "device": {
       "class": "pot"
     },
-    "zh-TW": {
-      "lab": "鍋子",
-      "des": "可烹煮食物"
-    },
-    "en": {
-      "lab": "Pot",
-      "des": ""
-    }
+    "lab": "鍋子",
+    "des": "可烹煮食物"
   },
   "dummy": {
     "cat": "CAT_DEVICE",
@@ -814,14 +594,8 @@
     "device": {
       "class": "dummy"
     },
-    "zh-TW": {
-      "lab": "木樁",
-      "des": "練習攻擊用的木樁，可放置、可拿取"
-    },
-    "en": {
-      "lab": "Training Dummy",
-      "des": ""
-    }
+    "lab": "木樁",
+    "des": "練習攻擊用的木樁，可放置、可拿取"
   },
   "tree": {
     "bb": {
@@ -900,27 +674,15 @@
     "icon": "assets_spritesheet_v2_free/028.png",
     "gold": 1,
     "cps": 10,
-    "zh-TW": {
-      "lab": "木材",
-      "des": "有用的資源"
-    },
-    "en": {
-      "lab": "Wood",
-      "des": ""
-    }
+    "lab": "木材",
+    "des": "有用的資源"
   },
   "plet": {
     "cat": "CAT_ITEM",
     "icon": "icons:280",
     "gold": 10,
     "cps": 5,
-    "zh-TW": {
-      "lab": "毛皮",
-      "des": "從動物身上剝下來、帶有毛髮的完整皮毛。"
-    },
-    "en": {
-      "lab": "Plet",
-      "des": ""
-    }
+    "lab": "毛皮",
+    "des": "從動物身上剝下來、帶有毛髮的完整皮毛。"
   }
 }
