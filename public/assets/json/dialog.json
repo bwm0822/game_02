@@ -5,7 +5,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -175,7 +175,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -351,7 +351,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -527,7 +527,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -697,7 +697,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -867,7 +867,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -1037,7 +1037,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -1207,7 +1207,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",
@@ -1377,7 +1377,7 @@
       {
         "nodeId": "n_cold",
         "order": 1,
-        "condition": "好感<=25"
+        "condition": "favor<=25"
       },
       {
         "nodeId": "n_default",

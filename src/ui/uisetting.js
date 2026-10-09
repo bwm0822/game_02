@@ -76,8 +76,8 @@ export default class UiSetting extends UiFrame
 
     page_Main()
     {
-        const options = [{text:'中文',value:'tw'},
-                        {text:'ENGLISH',value:'us'},]
+        const options = [{text:'中文',value:'zh-TW'},
+                        {text:'ENGLISH',value:'en'},]
         const icons = ['🔇','🔈','🔉','🔊'];
         this._page.clearAll();
 

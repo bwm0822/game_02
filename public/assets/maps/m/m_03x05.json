@@ -19,7 +19,7 @@
         {
          "draworder":"topdown",
          "id":3,
-         "name":"@狼群",
+         "name":"@wolves",
          "objects":[
                 {
                  "id":1,
@@ -48,7 +48,7 @@
         {
          "draworder":"topdown",
          "id":4,
-         "name":"@盜賊",
+         "name":"@bandits",
          "objects":[
                 {
                  "id":4,

@@ -56,18 +56,18 @@ run('dialog 改版', async t => {
     r = await open(t, 'karen');
     t.check('一般時有一般卡、沒有 cold 卡', r.B.includes('一般卡') && !r.B.includes('道歉'), r.B.join('/'));
 
-    await t.setQ('karen.好感', 20);
+    await t.setQ('karen.favor', 20);
     r = await open(t, 'karen');
     t.eq('好感 <=25 走 n_cold', r.A, '……又是你。');
     t.eq('n_cold 只有 mood=cold 的卡 + 離開', r.B.join('/'), '道歉/離開');
 
     const canTalk = await t.eval(d => {
-        d.Quality.set('karen.好感', 5);
+        d.Quality.set('karen.favor', 5);
         const who = d.objs().find(g => g.id === 'karen');
         return who.coms.talk._canAct();
     });
     t.eq('好感 <=10 不能對話', canTalk, await t.eval(d => d.GM.HIDE));
-    await t.setQ('karen.好感', 50);
+    await t.setQ('karen.favor', 50);
 
     t.check('沒 sheet 的 unique NPC 也有 _common 對話', await t.eval(d => !!d.DB.dialog('trump')?.nodes.n_default), '');
     t.check('狼沒有對話', await t.eval(d => !d.DB.dialog('wolf')), '');

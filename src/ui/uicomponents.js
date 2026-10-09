@@ -988,7 +988,7 @@ export function uDropdownBase(scene,config={})
 {
     const { 
         text='---',
-        options=[{text:'中文',value:'tw'},{text:'English',value:'us'}],
+        options=[{text:'中文',value:'zh-TW'},{text:'English',value:'en'}],
         align='center',
         ext,
         onchange,

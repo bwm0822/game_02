@@ -126,6 +126,12 @@ function readStory(wb)
 let errors = 0;
 function err(msg) {console.error(`ERROR ${msg}`); errors++;}
 
+// 識別字一律 ASCII，中文只能出現在顯示文字（docs/i18n-architecture.md §5）
+function checkId(kind, id, where)
+{
+    if (!/^[\x21-\x7e]+$/.test(id)) err(`${kind}「${id}」必須是 ASCII @ ${where}`);
+}
+
 function isDeclared(name, qualities, roleIds)
 {
     if (qualities[name]) return true;
@@ -167,6 +173,7 @@ function parseAction(action)
 
 function checkName(name, where, ctx)
 {
+    checkId('quality', name, where);
     if (name.startsWith('_') || name.startsWith('item:')) return;
     if (FACTS.includes(name) || /^-?\d+(\.\d+)?$/.test(name) || name === 'gold') return;
     if (!isDeclared(name, ctx.qualities, ctx.roleIds)) err(`未宣告的 quality「${name}」 @ ${where}`);
@@ -198,6 +205,7 @@ function checkDialogNodes(npc, nodes, at, ctx)
     for (const [id, node] of Object.entries(nodes ?? {}))
     {
         const where = at(id, node);
+        checkId('節點', id, where);
         if (node.textKeys && typeof node.textKeys === 'object') Object.keys(node.textKeys).forEach(c => checkCond(c, where, ctx));
         checkActions([...(node.actions ?? []), ...(node.posts ?? [])], where, ctx, [npc]);
         checkNode(npc, node.next, `${where} next`, ctx);
@@ -251,17 +259,21 @@ function checkStory(ctx)
     for (const t of Object.values(story.threads))
     {
         const at = r => `story.xlsx/${t.sheet}!${r} thread ${t.id}`;
+        checkId('thread', t.id, at(t.row));
         checkName(t.quality, at(t.row), ctx);
         for (const v of Object.values(t.values))
         {
             for (const [, n] of String(v.journal ?? '').matchAll(/\{([^}]+)\}/g)) checkName(n, at(v.row), ctx);
         }
     }
+    for (const name of Object.keys(ctx.qualities)) checkId('quality', name, 'story.xlsx/qualities');
+    for (const [g, s] of Object.entries(story.spawns)) checkId('spawn 群組', g, `story.xlsx/${s.sheet}!${s.row}`);
     for (const [g, s] of Object.entries(story.spawns)) checkCond(s.requires, `story.xlsx/${s.sheet}!${s.row} spawn ${g}`, ctx);
     const ids = new Set();
     for (const s of story.storylets)
     {
         const where = `story.xlsx/${s.sheet}!${s.row} storylet ${s.id}`;
+        checkId('storylet', s.id, where);
         const key = `${s.id}|${s.who ?? ''}`;
         if (ids.has(key)) err(`storylet id+who 重複 @ ${where}`);
         ids.add(key);

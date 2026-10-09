@@ -58,7 +58,7 @@ function cmd_q(args)
 {
     // q                 列出所有存著的 quality
     // q <關鍵字>         列出名稱含關鍵字的 quality
-    // q <name>=<v>      設值，也可以 q <name>+<n> / q <name>-<n>（名稱要寫完整，例如 karen.好感+10）
+    // q <name>=<v>      設值，也可以 q <name>+<n> / q <name>-<n>（名稱要寫完整，例如 karen.favor+10）
     const arg = args.slice(1).join('');
     const m = arg.match(/^(\S+?)(?:=\S*|[+-]\d+(?:\.\d+)?)$/);
     if(m)

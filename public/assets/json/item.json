@@ -92,11 +92,11 @@
     "cat_sub": [
       "sword"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "匕首",
       "des": "常用近戰武器"
     },
-    "us": {
+    "en": {
       "lab": "Ordinary knife",
       "des": ""
     }
@@ -135,11 +135,11 @@
     "cat_sub": [
       "sword"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "焠毒短劍",
       "des": "用毒液浸泡過的短劍，可使目標中毒"
     },
-    "us": {
+    "en": {
       "lab": "Iron Sword",
       "des": ""
     }
@@ -165,11 +165,11 @@
     "cat_sub": [
       "sword"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "鋼劍",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Steel Sword",
       "des": ""
     }
@@ -190,11 +190,11 @@
     "cat_sub": [
       "bow"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "弓",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Bow",
       "des": ""
     }
@@ -215,11 +215,11 @@
     "cat_sub": [
       "bow"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "高級弓",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Bow",
       "des": ""
     }
@@ -238,11 +238,11 @@
       "scale": 0.25
     },
     "def": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "草帽",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Straw hat",
       "des": ""
     }
@@ -261,11 +261,11 @@
       "scale": 0.25
     },
     "def": 20,
-    "tw": {
+    "zh-TW": {
       "lab": "麻布帽",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Linen hat",
       "des": ""
     }
@@ -275,11 +275,11 @@
     "icon": "weapons:47",
     "gold": 30,
     "def": 30,
-    "tw": {
+    "zh-TW": {
       "lab": "皮帽",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Leather hat",
       "des": ""
     }
@@ -298,11 +298,11 @@
       "scale": 0.25
     },
     "def": 20,
-    "tw": {
+    "zh-TW": {
       "lab": "草衣",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Grass Clothes",
       "des": ""
     }
@@ -321,11 +321,11 @@
       "scale": 0.25
     },
     "def": 30,
-    "tw": {
+    "zh-TW": {
       "lab": "麻布衣",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Linen Clothes",
       "des": ""
     }
@@ -335,11 +335,11 @@
     "icon": "weapons:56",
     "gold": 60,
     "def": 40,
-    "tw": {
+    "zh-TW": {
       "lab": "皮衣",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Leather",
       "des": ""
     }
@@ -358,11 +358,11 @@
       "scale": 0.25
     },
     "def": 5,
-    "tw": {
+    "zh-TW": {
       "lab": "手套",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Gloves",
       "des": ""
     }
@@ -381,11 +381,11 @@
       "scale": 0.25
     },
     "def": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "高級手套",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Gloves",
       "des": ""
     }
@@ -405,11 +405,11 @@
       "scale": 0.25
     },
     "def": 5,
-    "tw": {
+    "zh-TW": {
       "lab": "靴子",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Boots",
       "des": ""
     }
@@ -429,11 +429,11 @@
       "scale": 0.25
     },
     "def": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "高級靴子",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Boots",
       "des": ""
     }
@@ -442,11 +442,11 @@
     "cat": "CAT_NECKLACE",
     "icon": "icons:134",
     "gold": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "項鍊",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Necklace",
       "des": ""
     }
@@ -455,11 +455,11 @@
     "cat": "CAT_RING",
     "icon": "icons:132",
     "gold": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "戒子",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Ring",
       "des": ""
     }
@@ -485,11 +485,11 @@
     "cat_sub": [
       "axe"
     ],
-    "tw": {
+    "zh-TW": {
       "lab": "斧頭",
       "des": ""
     },
-    "us": {
+    "en": {
       "lab": "Axe",
       "des": ""
     }
@@ -498,11 +498,11 @@
     "cat": "CAT_ITEM",
     "icon": "icons:273",
     "gold": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "鐵礦",
       "des": "鐵礦"
     },
-    "us": {
+    "en": {
       "lab": "Iron ore",
       "des": ""
     }
@@ -512,11 +512,11 @@
     "icon": "icons:137",
     "gold": 10,
     "storage": 12,
-    "tw": {
+    "zh-TW": {
       "lab": "背包",
       "des": "可以裝物品"
     },
-    "us": {
+    "en": {
       "lab": "Bag",
       "des": ""
     }
@@ -530,11 +530,11 @@
       "color": 16755200,
       "radius": 300
     },
-    "tw": {
+    "zh-TW": {
       "lab": "火把",
       "des": "可以照明"
     },
-    "us": {
+    "en": {
       "lab": "Torch",
       "des": ""
     }
@@ -554,11 +554,11 @@
     "keep": true,
     "capacity": 10,
     "dft": 3,
-    "tw": {
+    "zh-TW": {
       "lab": "水壺",
       "des": "可以裝水"
     },
-    "us": {
+    "en": {
       "lab": "Bottle",
       "des": ""
     }
@@ -570,11 +570,11 @@
     "drop": {
       "scale": 0.5
     },
-    "tw": {
+    "zh-TW": {
       "lab": "鑰匙",
       "des": "可以開鎖"
     },
-    "us": {
+    "en": {
       "lab": "key",
       "des": ""
     }
@@ -587,11 +587,11 @@
       "scale": 0.5
     },
     "times": 3,
-    "tw": {
+    "zh-TW": {
       "lab": "開鎖工具",
       "des": "開鎖的工具，需搭配開鎖技能，開鎖失敗會減少使用次數"
     },
-    "us": {
+    "en": {
       "lab": "Lockpick",
       "des": "Used with the lockpicking skill to pick locks."
     }
@@ -602,11 +602,11 @@
     "gold": 1,
     "cps": 1000,
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "金幣",
       "des": "可兌換成金錢"
     },
-    "us": {
+    "en": {
       "lab": "Gold",
       "des": ""
     }
@@ -626,11 +626,11 @@
     "cook": {
       "id": "cooked_meat"
     },
-    "tw": {
+    "zh-TW": {
       "lab": "生肉",
       "des": "可烹煮"
     },
-    "us": {
+    "en": {
       "lab": "Raw meat",
       "des": ""
     }
@@ -647,11 +647,11 @@
       }
     ],
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "熟肉",
       "des": "熟肉"
     },
-    "us": {
+    "en": {
       "lab": "Cooked meat",
       "des": ""
     }
@@ -668,11 +668,11 @@
       }
     ],
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "生魚",
       "des": "可烹煮"
     },
-    "us": {
+    "en": {
       "lab": "Raw fish",
       "des": ""
     }
@@ -695,11 +695,11 @@
         "salt": 2
       }
     },
-    "tw": {
+    "zh-TW": {
       "lab": "鹽烤魚",
       "des": "鹽烤魚"
     },
-    "us": {
+    "en": {
       "lab": "Salt-baked fish",
       "des": ""
     }
@@ -709,11 +709,11 @@
     "icon": "icons:250",
     "gold": 10,
     "cps": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "鹽",
       "des": "鹽"
     },
-    "us": {
+    "en": {
       "lab": "Salt",
       "des": ""
     }
@@ -731,11 +731,11 @@
     ],
     "cps": 5,
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "頻果",
       "des": "可食用"
     },
-    "us": {
+    "en": {
       "lab": "Apple",
       "des": ""
     }
@@ -753,11 +753,11 @@
     ],
     "cps": 5,
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "葡萄",
       "des": "可食用"
     },
-    "us": {
+    "en": {
       "lab": "Strawberry",
       "des": ""
     }
@@ -775,11 +775,11 @@
     ],
     "cps": 10,
     "useable": true,
-    "tw": {
+    "zh-TW": {
       "lab": "蘑菇",
       "des": "可食用"
     },
-    "us": {
+    "en": {
       "lab": "Mushroom",
       "des": ""
     }
@@ -798,11 +798,11 @@
     "device": {
       "class": "pot"
     },
-    "tw": {
+    "zh-TW": {
       "lab": "鍋子",
       "des": "可烹煮食物"
     },
-    "us": {
+    "en": {
       "lab": "Pot",
       "des": ""
     }
@@ -814,11 +814,11 @@
     "device": {
       "class": "dummy"
     },
-    "tw": {
+    "zh-TW": {
       "lab": "木樁",
       "des": "練習攻擊用的木樁，可放置、可拿取"
     },
-    "us": {
+    "en": {
       "lab": "Training Dummy",
       "des": ""
     }
@@ -900,11 +900,11 @@
     "icon": "assets_spritesheet_v2_free/028.png",
     "gold": 1,
     "cps": 10,
-    "tw": {
+    "zh-TW": {
       "lab": "木材",
       "des": "有用的資源"
     },
-    "us": {
+    "en": {
       "lab": "Wood",
       "des": ""
     }
@@ -914,11 +914,11 @@
     "icon": "icons:280",
     "gold": 10,
     "cps": 5,
-    "tw": {
+    "zh-TW": {
       "lab": "毛皮",
       "des": "從動物身上剝下來、帶有毛髮的完整皮毛。"
     },
-    "us": {
+    "en": {
       "lab": "Plet",
       "des": ""
     }

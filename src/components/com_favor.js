@@ -18,11 +18,11 @@ export class COM_Favor extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
-    // unique NPC 對玩家的好感度存在 quality 庫(<npcId>.好感)，劇情才讀得到；其餘(生物、對其他 NPC)存在自己身上
+    // unique NPC 對玩家的好感度存在 quality 庫(<npcId>.favor)，劇情才讀得到；其餘(生物、對其他 NPC)存在自己身上
     _qName(id)
     {
         const {bb} = this.ctx;
-        return bb.meta?.unique && id === GM.player?.id ? `${bb.id}.好感` : null;
+        return bb.meta?.unique && id === GM.player?.id ? `${bb.id}.favor` : null;
     }
 
     _setFavor(id, value)

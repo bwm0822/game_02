@@ -9,7 +9,7 @@ export default class Record
                         q:{}
                     }
 
-    static setting_def = {  lang:'tw',
+    static setting_def = {  lang:'zh-TW',
                             bgmVolume:1.0,
                             sfxVolume:1.0,
                             mouseEdgeMove:false,
@@ -116,6 +116,8 @@ export default class Record
         let data = Utility.load('setting');
         if(data) {this.setting = data;}
         else {this.setting = Utility.deepClone(this.setting_def);}
+        const OLD_LANG = {tw:'zh-TW', us:'en'};
+        if(OLD_LANG[this.setting.lang]) {this.setting.lang = OLD_LANG[this.setting.lang];}
         return data;
     }
 

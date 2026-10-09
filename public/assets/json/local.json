@@ -1,1134 +1,1134 @@
 {
   "weapon": {
-    "tw": {
+    "zh-TW": {
       "lab": "武器",
       "des": "攻擊用"
     },
-    "us": {
+    "en": {
       "lab": "Weapon",
       "des": "Attack"
     }
   },
   "armor": {
-    "tw": {
+    "zh-TW": {
       "lab": "防具"
     },
-    "us": {
+    "en": {
       "lab": "Armor"
     }
   },
   "item": {
-    "tw": {
+    "zh-TW": {
       "lab": "道具"
     },
-    "us": {
+    "en": {
       "lab": "Item"
     }
   },
   "skill": {
-    "tw": {
+    "zh-TW": {
       "lab": "技能"
     },
-    "us": {
+    "en": {
       "lab": "Skill"
     }
   },
   "ability": {
-    "tw": {
+    "zh-TW": {
       "lab": "能力"
     },
-    "us": {
+    "en": {
       "lab": "Ability"
     }
   },
   "helmet": {
-    "tw": {
+    "zh-TW": {
       "lab": "頭盔"
     },
-    "us": {
+    "en": {
       "lab": "Helmet"
     }
   },
   "chestplate": {
-    "tw": {
+    "zh-TW": {
       "lab": "胸甲"
     },
-    "us": {
+    "en": {
       "lab": "Chestplate"
     }
   },
   "gloves": {
-    "tw": {
+    "zh-TW": {
       "lab": "手套"
     },
-    "us": {
+    "en": {
       "lab": "Gloves"
     }
   },
   "boots": {
-    "tw": {
+    "zh-TW": {
       "lab": "靴子"
     },
-    "us": {
+    "en": {
       "lab": "Boots"
     }
   },
   "necklace": {
-    "tw": {
+    "zh-TW": {
       "lab": "項鍊"
     },
-    "us": {
+    "en": {
       "lab": "Necklace"
     }
   },
   "ring": {
-    "tw": {
+    "zh-TW": {
       "lab": "戒子"
     },
-    "us": {
+    "en": {
       "lab": "Ring"
     }
   },
   "bag": {
-    "tw": {
+    "zh-TW": {
       "lab": "背包"
     },
-    "us": {
+    "en": {
       "lab": "Bag"
     }
   },
   "equip": {
-    "tw": {
+    "zh-TW": {
       "lab": "裝備"
     },
-    "us": {
+    "en": {
       "lab": "Equip"
     }
   },
   "other": {
-    "tw": {
+    "zh-TW": {
       "lab": "其他"
     },
-    "us": {
+    "en": {
       "lab": "Other"
     }
   },
   "storage": {
-    "tw": {
+    "zh-TW": {
       "lab": "儲量"
     },
-    "us": {
+    "en": {
       "lab": "Storage"
     }
   },
   "endurance": {
-    "tw": {
+    "zh-TW": {
       "lab": "耐久"
     },
-    "us": {
+    "en": {
       "lab": "Endurance"
     }
   },
   "durability": {
-    "tw": {
+    "zh-TW": {
       "lab": "耐久"
     },
-    "us": {
+    "en": {
       "lab": "Durability"
     }
   },
   "times": {
-    "tw": {
+    "zh-TW": {
       "lab": "次數"
     },
-    "us": {
+    "en": {
       "lab": "Times"
     }
   },
   "capacity": {
-    "tw": {
+    "zh-TW": {
       "lab": "容量"
     },
-    "us": {
+    "en": {
       "lab": "Capacity"
     }
   },
   "attrs": {
-    "tw": {
+    "zh-TW": {
       "lab": "屬性"
     },
-    "us": {
+    "en": {
       "lab": "Attrs"
     }
   },
   "states": {
-    "tw": {
+    "zh-TW": {
       "lab": "狀態"
     },
-    "us": {
+    "en": {
       "lab": "States"
     }
   },
   "life": {
-    "tw": {
+    "zh-TW": {
       "lab": "生命",
       "des": "生命值\n降到 0，就死亡"
     },
-    "us": {
+    "en": {
       "lab": "Life"
     }
   },
   "attack": {
-    "tw": {
+    "zh-TW": {
       "lab": "攻擊"
     }
   },
   "defense": {
-    "tw": {
+    "zh-TW": {
       "lab": "防禦",
       "des": "可吸收的傷害"
     },
-    "us": {
+    "en": {
       "lab": "Defense"
     }
   },
   "use": {
-    "tw": {
+    "zh-TW": {
       "lab": "使用"
     },
-    "us": {
+    "en": {
       "lab": "Use"
     }
   },
   "drop": {
-    "tw": {
+    "zh-TW": {
       "lab": "丟棄"
     },
-    "us": {
+    "en": {
       "lab": "Drop"
     }
   },
   "take": {
-    "tw": {
+    "zh-TW": {
       "lab": "拿"
     },
-    "us": {
+    "en": {
       "lab": "Take"
     }
   },
   "talk": {
-    "tw": {
+    "zh-TW": {
       "lab": "交談"
     },
-    "us": {
+    "en": {
       "lab": "Talk"
     }
   },
   "trade": {
-    "tw": {
+    "zh-TW": {
       "lab": "交易"
     },
-    "us": {
+    "en": {
       "lab": "Trade"
     }
   },
   "buy": {
-    "tw": {
+    "zh-TW": {
       "lab": "買"
     },
-    "us": {
+    "en": {
       "lab": "Buy"
     }
   },
   "sell": {
-    "tw": {
+    "zh-TW": {
       "lab": "賣"
     },
-    "us": {
+    "en": {
       "lab": "Sell"
     }
   },
   "split": {
-    "tw": {
+    "zh-TW": {
       "lab": "拆分"
     },
-    "us": {
+    "en": {
       "lab": "Split"
     }
   },
   "open": {
-    "tw": {
+    "zh-TW": {
       "lab": "開啟"
     },
-    "us": {
+    "en": {
       "lab": "Open"
     }
   },
   "observe": {
-    "tw": {
+    "zh-TW": {
       "lab": "觀察"
     },
-    "us": {
+    "en": {
       "lab": "Observe"
     }
   },
   "transfer": {
-    "tw": {
+    "zh-TW": {
       "lab": "移動"
     },
-    "us": {
+    "en": {
       "lab": "Transfer"
     }
   },
   "openbag": {
-    "tw": {
+    "zh-TW": {
       "lab": "開啟"
     },
-    "us": {
+    "en": {
       "lab": "Openbag"
     }
   },
   "inv": {
-    "tw": {
+    "zh-TW": {
       "lab": "背包"
     },
-    "us": {
+    "en": {
       "lab": "Inv"
     }
   },
   "profile": {
-    "tw": {
+    "zh-TW": {
       "lab": "個人"
     },
-    "us": {
+    "en": {
       "lab": "Profile"
     }
   },
   "drink": {
-    "tw": {
+    "zh-TW": {
       "lab": "喝水"
     },
-    "us": {
+    "en": {
       "lab": "Drink"
     }
   },
   "fill": {
-    "tw": {
+    "zh-TW": {
       "lab": "取水"
     },
-    "us": {
+    "en": {
       "lab": "Fill"
     }
   },
   "cook": {
-    "tw": {
+    "zh-TW": {
       "lab": "烹煮"
     },
-    "us": {
+    "en": {
       "lab": "Cook"
     }
   },
   "open_door": {
-    "tw": {
+    "zh-TW": {
       "lab": "打開"
     },
-    "us": {
+    "en": {
       "lab": "Open"
     }
   },
   "close_door": {
-    "tw": {
+    "zh-TW": {
       "lab": "關閉"
     },
-    "us": {
+    "en": {
       "lab": "Close"
     }
   },
   "make": {
-    "tw": {
+    "zh-TW": {
       "lab": "製作"
     },
-    "us": {
+    "en": {
       "lab": "Make"
     }
   },
   "rest": {
-    "tw": {
+    "zh-TW": {
       "lab": "休息"
     },
-    "us": {
+    "en": {
       "lab": "Rest"
     }
   },
   "wake": {
-    "tw": {
+    "zh-TW": {
       "lab": "起床"
     },
-    "us": {
+    "en": {
       "lab": "Wake"
     }
   },
   "setting": {
-    "tw": {
+    "zh-TW": {
       "lab": "設定"
     },
-    "us": {
+    "en": {
       "lab": "Setting"
     }
   },
   "_space_full": {
-    "tw": {
+    "zh-TW": {
       "lab": "空間已滿 !!!"
     },
-    "us": {
+    "en": {
       "lab": "Space is full !!!"
     }
   },
   "_not_enough_gold": {
-    "tw": {
+    "zh-TW": {
       "lab": "金幣不足 !!!"
     },
-    "us": {
+    "en": {
       "lab": "Not enough coins !!!"
     }
   },
   "iron": {
-    "tw": {
+    "zh-TW": {
       "lab": "鐵礦"
     },
-    "us": {
+    "en": {
       "lab": "Iron ore"
     }
   },
   "salt": {
-    "tw": {
+    "zh-TW": {
       "lab": "鹽"
     },
-    "us": {
+    "en": {
       "lab": "Salt"
     }
   },
   "raw_meat": {
-    "tw": {
+    "zh-TW": {
       "lab": "生肉"
     },
-    "us": {
+    "en": {
       "lab": "Raw meat"
     }
   },
   "cooked_meat": {
-    "tw": {
+    "zh-TW": {
       "lab": "熟肉"
     },
-    "us": {
+    "en": {
       "lab": "Cooked meat"
     }
   },
   "raw_fish": {
-    "tw": {
+    "zh-TW": {
       "lab": "生魚"
     },
-    "us": {
+    "en": {
       "lab": "Raw fish"
     }
   },
   "salt_baked_fish": {
-    "tw": {
+    "zh-TW": {
       "lab": "鹽烤魚"
     },
-    "us": {
+    "en": {
       "lab": "Salt-baked fish"
     }
   },
   "sword_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "普通刀"
     },
-    "us": {
+    "en": {
       "lab": "Ordinary knife"
     }
   },
   "sword_02": {
-    "tw": {
+    "zh-TW": {
       "lab": "鐵劍"
     },
-    "us": {
+    "en": {
       "lab": "Iron Sword"
     }
   },
   "sword_03": {
-    "tw": {
+    "zh-TW": {
       "lab": "鋼劍"
     },
-    "us": {
+    "en": {
       "lab": "Steel Sword"
     }
   },
   "helmet_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "草帽"
     },
-    "us": {
+    "en": {
       "lab": "Straw hat"
     }
   },
   "helmet_02": {
-    "tw": {
+    "zh-TW": {
       "lab": "麻布帽"
     },
-    "us": {
+    "en": {
       "lab": "Linen hat"
     }
   },
   "helmet_03": {
-    "tw": {
+    "zh-TW": {
       "lab": "皮帽"
     },
-    "us": {
+    "en": {
       "lab": "Leather hat"
     }
   },
   "chest_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "草衣"
     },
-    "us": {
+    "en": {
       "lab": "Grass Clothes"
     }
   },
   "chest_02": {
-    "tw": {
+    "zh-TW": {
       "lab": "麻布衣"
     },
-    "us": {
+    "en": {
       "lab": "Linen Clothes"
     }
   },
   "chest_03": {
-    "tw": {
+    "zh-TW": {
       "lab": "皮衣"
     },
-    "us": {
+    "en": {
       "lab": "Leather"
     }
   },
   "gloves_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "手套"
     },
-    "us": {
+    "en": {
       "lab": "Gloves"
     }
   },
   "boots_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "靴子"
     },
-    "us": {
+    "en": {
       "lab": "Boots"
     }
   },
   "neck_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "項鍊"
     },
-    "us": {
+    "en": {
       "lab": "Necklace"
     }
   },
   "ring_01": {
-    "tw": {
+    "zh-TW": {
       "lab": "戒子"
     },
-    "us": {
+    "en": {
       "lab": "Ring"
     }
   },
   "torch": {
-    "tw": {
+    "zh-TW": {
       "lab": "火把"
     },
-    "us": {
+    "en": {
       "lab": "Torch"
     }
   },
   "bottle": {
-    "tw": {
+    "zh-TW": {
       "lab": "水壺"
     },
-    "us": {
+    "en": {
       "lab": "Bottle"
     }
   },
   "wick": {
-    "tw": {
+    "zh-TW": {
       "lab": "維克",
       "des": "冒險者"
     },
-    "us": {
+    "en": {
       "lab": "Wick"
     }
   },
   "dummy": {
-    "tw": {
+    "zh-TW": {
       "lab": "木樁",
       "des": "練習攻擊用"
     },
-    "us": {
+    "en": {
       "lab": "Training Dummy"
     }
   },
   "musk": {
-    "tw": {
+    "zh-TW": {
       "lab": "馬斯克",
       "des": "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席"
     },
-    "us": {
+    "en": {
       "lab": "Musk"
     }
   },
   "trump": {
-    "tw": {
+    "zh-TW": {
       "lab": "川普",
       "des": "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。"
     },
-    "us": {
+    "en": {
       "lab": "Trump"
     }
   },
   "karen": {
-    "tw": {
+    "zh-TW": {
       "lab": "凱倫",
       "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～"
     },
-    "us": {
+    "en": {
       "lab": "Gilly"
     }
   },
   "xi": {
-    "tw": {
+    "zh-TW": {
       "lab": "習近平",
       "des": "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……"
     },
-    "us": {
+    "en": {
       "lab": "Xi Jinping"
     }
   },
   "macron": {
-    "tw": {
+    "zh-TW": {
       "lab": "馬克宏",
       "des": "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。"
     },
-    "us": {
+    "en": {
       "lab": "Macron"
     }
   },
   "melanie": {
-    "tw": {
+    "zh-TW": {
       "lab": "梅蘭妮",
       "des": "漂亮大方的女士，跟川普共同經營一家旅館"
     },
-    "us": {
+    "en": {
       "lab": "Melanie"
     }
   },
   "rogue": {
-    "tw": {
+    "zh-TW": {
       "lab": "盜賊"
     }
   },
   "guard-1": {
-    "tw": {
+    "zh-TW": {
       "lab": "守衛",
       "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子"
     },
-    "us": {
+    "en": {
       "lab": "Guard"
     }
   },
   "guard-2": {
-    "tw": {
+    "zh-TW": {
       "lab": "守衛",
       "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子"
     },
-    "us": {
+    "en": {
       "lab": "Guard"
     }
   },
   "ranger": {
-    "tw": {
+    "zh-TW": {
       "lab": "遊俠",
       "des": "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺"
     },
-    "us": {
+    "en": {
       "lab": "Ranger"
     }
   },
   "smith": {
-    "tw": {
+    "zh-TW": {
       "lab": "鐵匠",
       "des": "打造武器、防具與工具的鍛造高手。"
     },
-    "us": {
+    "en": {
       "lab": "Smith"
     }
   },
   "innkeeper": {
-    "tw": {
+    "zh-TW": {
       "lab": "旅館老闆",
       "des": "經營旅館與酒館，消息靈通的熱情招待。"
     },
-    "us": {
+    "en": {
       "lab": "Innkeeper"
     }
   },
   "trader": {
-    "tw": {
+    "zh-TW": {
       "lab": "小販",
       "des": "村內攤商，賣日用品或冒險裝備。"
     },
-    "us": {
+    "en": {
       "lab": "Trader"
     }
   },
   "butcher": {
-    "tw": {
+    "zh-TW": {
       "lab": "解剖"
     },
-    "us": {
+    "en": {
       "lab": "Butcher"
     }
   },
   "merchant": {
-    "tw": {
+    "zh-TW": {
       "lab": "行商",
       "des": "來去自如的商旅，販售異地貨品。"
     },
-    "us": {
+    "en": {
       "lab": "Merchant"
     }
   },
   "guard": {
-    "tw": {
+    "zh-TW": {
       "lab": "守衛",
       "des": "巡邏村莊、維持治安。"
     },
-    "us": {
+    "en": {
       "lab": "Guard"
     }
   },
   "str": {
-    "tw": {
+    "zh-TW": {
       "lab": "力量",
       "des": "影響近戰攻擊"
     }
   },
   "dex": {
-    "tw": {
+    "zh-TW": {
       "lab": "敏捷",
       "des": "影響閃避"
     }
   },
   "con": {
-    "tw": {
+    "zh-TW": {
       "lab": "體質",
       "des": "影響生命"
     }
   },
   "int": {
-    "tw": {
+    "zh-TW": {
       "lab": "智慧",
       "des": "影響法術效力"
     }
   },
   "luk": {
-    "tw": {
+    "zh-TW": {
       "lab": "幸運",
       "des": "影響判定"
     }
   },
   "combat": {
-    "tw": {
+    "zh-TW": {
       "lab": "戰鬥"
     }
   },
   "atk": {
-    "tw": {
+    "zh-TW": {
       "lab": "攻擊",
       "des": "物理傷害"
     }
   },
   "def": {
-    "tw": {
+    "zh-TW": {
       "lab": "防禦",
       "des": "物理防禦"
     }
   },
   "range": {
-    "tw": {
+    "zh-TW": {
       "lab": "距離",
       "des": "攻擊半徑"
     }
   },
   "acc": {
-    "tw": {
+    "zh-TW": {
       "lab": "命中",
       "des": "命中率"
     }
   },
   "eva": {
-    "tw": {
+    "zh-TW": {
       "lab": "閃避",
       "des": "閃避率"
     }
   },
   "cri": {
-    "tw": {
+    "zh-TW": {
       "lab": "暴率",
       "des": "暴擊率"
     }
   },
   "crd": {
-    "tw": {
+    "zh-TW": {
       "lab": "暴傷",
       "des": "暴擊傷害倍率"
     }
   },
   "pen": {
-    "tw": {
+    "zh-TW": {
       "lab": "穿透",
       "des": "無視防禦"
     }
   },
   "resist": {
-    "tw": {
+    "zh-TW": {
       "lab": "抗性"
     }
   },
   "phy_res": {
-    "tw": {
+    "zh-TW": {
       "lab": "物抗",
       "des": "物理抗性"
     }
   },
   "fire_res": {
-    "tw": {
+    "zh-TW": {
       "lab": "火抗",
       "des": "火焰抗性"
     }
   },
   "ice_res": {
-    "tw": {
+    "zh-TW": {
       "lab": "冰抗",
       "des": "冰凍抗性"
     }
   },
   "poison_res": {
-    "tw": {
+    "zh-TW": {
       "lab": "毒抗",
       "des": "中毒抗性"
     }
   },
   "elm": {
-    "tw": {
+    "zh-TW": {
       "lab": "元素"
     }
   },
   "phy": {
-    "tw": {
+    "zh-TW": {
       "lab": "物理"
     }
   },
   "fire": {
-    "tw": {
+    "zh-TW": {
       "lab": "火焰"
     }
   },
   "ice": {
-    "tw": {
+    "zh-TW": {
       "lab": "冰凍"
     }
   },
   "poison": {
-    "tw": {
+    "zh-TW": {
       "lab": "中毒"
     }
   },
   "hp": {
-    "tw": {
+    "zh-TW": {
       "lab": "生命",
       "des": "生命值\n降到 0，就死亡"
     }
   },
   "hunger": {
-    "tw": {
+    "zh-TW": {
       "lab": "飢餓",
       "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
     }
   },
   "thirst": {
-    "tw": {
+    "zh-TW": {
       "lab": "口渴",
       "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
     }
   },
   "hot": {
-    "tw": {
+    "zh-TW": {
       "lab": "持續回復",
       "des": "觸發{#tag}，每回合增加{#value}點生命，持續{#dur}回合 "
     }
   },
   "dot": {
-    "tw": {
+    "zh-TW": {
       "lab": "持續傷害",
       "des": "觸發{#tag}，每回合受到{#value}點{#elm}傷害，持續{#dur}回合 "
     }
   },
   "buff": {
-    "tw": {
+    "zh-TW": {
       "lab": "增益",
       "des": "觸發{#tag}，{#eff}，持續{#dur}回合 "
     }
   },
   "act_hot": {
-    "tw": {
+    "zh-TW": {
       "lab": "持續回復",
       "des": "每回合增加{#value}點生命 "
     }
   },
   "act_dot": {
-    "tw": {
+    "zh-TW": {
       "lab": "持續傷害",
       "des": "每回合受到{#value}點{#elm}傷害"
     }
   },
   "act_buff": {
-    "tw": {
+    "zh-TW": {
       "lab": "增益",
       "des": "{#eff}"
     }
   },
   "crit": {
-    "tw": {
+    "zh-TW": {
       "lab": "暴擊"
     }
   },
   "miss": {
-    "tw": {
+    "zh-TW": {
       "lab": "失誤"
     }
   },
   "hit": {
-    "tw": {
+    "zh-TW": {
       "lab": "命中"
     }
   },
   "cast": {
-    "tw": {
+    "zh-TW": {
       "lab": "施法"
     }
   },
   "self": {
-    "tw": {
+    "zh-TW": {
       "lab": "自身"
     }
   },
   "target": {
-    "tw": {
+    "zh-TW": {
       "lab": "目標"
     }
   },
   "stun": {
-    "tw": {
+    "zh-TW": {
       "lab": "昏眩"
     }
   },
   "lifesteal": {
-    "tw": {
+    "zh-TW": {
       "lab": "吸血",
       "des": "造成傷害的{#num}轉換為生命值"
     }
   },
   "burn": {
-    "tw": {
+    "zh-TW": {
       "lab": "灼燒"
     }
   },
   "scope": {
-    "tw": {
+    "zh-TW": {
       "lab": "類型"
     }
   },
   "single": {
-    "tw": {
+    "zh-TW": {
       "lab": "單體"
     }
   },
   "group": {
-    "tw": {
+    "zh-TW": {
       "lab": "群體"
     }
   },
   "area": {
-    "tw": {
+    "zh-TW": {
       "lab": "範圍"
     }
   },
   "bleed": {
-    "tw": {
+    "zh-TW": {
       "lab": "出血"
     }
   },
   "heal": {
-    "tw": {
+    "zh-TW": {
       "lab": "治療"
     }
   },
   "strong": {
-    "tw": {
+    "zh-TW": {
       "lab": "強化"
     }
   },
   "active": {
-    "tw": {
+    "zh-TW": {
       "lab": "主動"
     }
   },
   "passive": {
-    "tw": {
+    "zh-TW": {
       "lab": "被動"
     }
   },
   "type": {
-    "tw": {
+    "zh-TW": {
       "lab": "類型",
       "des": "戰鬥類型"
     }
   },
   "melee": {
-    "tw": {
+    "zh-TW": {
       "lab": "近戰"
     }
   },
   "ranged": {
-    "tw": {
+    "zh-TW": {
       "lab": "遠距"
     }
   },
   "reqClass": {
-    "tw": {
+    "zh-TW": {
       "lab": "需求"
     }
   },
   "sword": {
-    "tw": {
+    "zh-TW": {
       "lab": "劍"
     }
   },
   "bow": {
-    "tw": {
+    "zh-TW": {
       "lab": "弓"
     }
   },
   "quest": {
-    "tw": {
+    "zh-TW": {
       "lab": "任務"
     }
   },
   "conditions": {
-    "tw": {
+    "zh-TW": {
       "lab": "條件"
     }
   },
   "rewards": {
-    "tw": {
+    "zh-TW": {
       "lab": "獎勵"
     }
   },
   "gold": {
-    "tw": {
+    "zh-TW": {
       "lab": "金幣"
     }
   },
   "kill": {
-    "tw": {
+    "zh-TW": {
       "lab": "殺死"
     }
   },
   "General": {
-    "tw": {
+    "zh-TW": {
       "lab": "一般"
     }
   },
   "Sword": {
-    "tw": {
+    "zh-TW": {
       "lab": "劍技"
     }
   },
   "Archery": {
-    "tw": {
+    "zh-TW": {
       "lab": "弓技"
     }
   },
   "Fire": {
-    "tw": {
+    "zh-TW": {
       "lab": "火系"
     }
   },
   "Ice": {
-    "tw": {
+    "zh-TW": {
       "lab": "冰系"
     }
   },
   "Poison": {
-    "tw": {
+    "zh-TW": {
       "lab": "毒系"
     }
   },
   "Support": {
-    "tw": {
+    "zh-TW": {
       "lab": "支援"
     }
   },
   "Enhancement": {
-    "tw": {
+    "zh-TW": {
       "lab": "強化"
     }
   },
   "steal": {
-    "tw": {
+    "zh-TW": {
       "lab": "偷竊"
     }
   },
   "pickup": {
-    "tw": {
+    "zh-TW": {
       "lab": "拾取"
     },
-    "us": {
+    "en": {
       "lab": "Pickup"
     }
   },
   "lock": {
-    "tw": {
+    "zh-TW": {
       "lab": "上鎖"
     },
-    "us": {
+    "en": {
       "lab": "Lock"
     }
   },
   "unlock": {
-    "tw": {
+    "zh-TW": {
       "lab": "解鎖"
     },
-    "us": {
+    "en": {
       "lab": "Unlock"
     }
   },
   "restore": {
-    "tw": {
+    "zh-TW": {
       "lab": "恢復"
     },
-    "us": {
+    "en": {
       "lab": "Restore"
     }
   }

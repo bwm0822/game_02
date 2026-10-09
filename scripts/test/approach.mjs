@@ -74,9 +74,9 @@ run('NPC 主動', async t => {
     const hate = await t.eval(d => {
         const karen = d.objs().find(g => g.id === 'karen');
         const ai = karen.coms.ai;
-        d.Quality.set('karen.好感', 5);
+        d.Quality.set('karen.favor', 5);
         const r = ai.behaviors.find(b => b.name === 'APPROACH').score(ai.ctx);
-        d.Quality.set('karen.好感', 50);
+        d.Quality.set('karen.favor', 50);
         return {why: r[1], approach: karen.bb.approach ?? null};
     });
     t.eq('好感 <=10 放棄搭話', hate.why, 'hates player');

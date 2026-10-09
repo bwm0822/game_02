@@ -106,7 +106,7 @@ export default class Story
 
     static onKill(id)
     {
-        Quality.add(`殺.${id}`, 1);
+        Quality.add(`kill.${id}`, 1);
         for(const [name, src] of Object.entries(this.counters))
         {
             if(src === `kill:${id}`) {Quality.add(name, 1);}

@@ -1,6 +1,6 @@
 # 多國語言（i18n）架構
 
-> 狀態：2026-10-09 設計討論全部定案（共 18 題），尚未動工；實作照 §13 分階段進行。
+> 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1 階段已完成。
 
 ## 已定案
 
@@ -92,7 +92,8 @@
 - 翻劇情前先向使用者確認各 NPC 人設口吻。之後新增劇情時順手把 `new` 列翻掉。
 
 ### 13. 實作分階段
-1. 識別字 ASCII 化（quality/spawn 改名、轉檔 ASCII 檢查、`tw`→`zh-TW`）
+1. ✅ 識別字 ASCII 化（quality/spawn 改名、轉檔 ASCII 檢查、`tw`→`zh-TW`）
+   - item/ability/local.xlsx 的語言欄標頭先改成 `zh-TW`/`en`（json 的 `dat[lang]` 照舊能用），第 2 階段整欄拿掉
 2. 核心 `T()`＋item/ability/local 拿掉語言欄＋120 處 `[lang].lab` 改走 `T()`
 3. 程式寫死字串搬進 local.xlsx、拼接改模板、刪舊檔
 4. 劇情文字（uidialog、line、story 的 thread/storylet/quality label）接上 `T()`

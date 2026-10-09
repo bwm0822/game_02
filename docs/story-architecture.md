@@ -26,38 +26,38 @@ storylet（story.xlsx）               thread（story.xlsx）
 
 ```js
 Record.game.q = {
-  "狼患": 2,                 // global
-  "karen.好感": 60,          // scope=npc，對玩家的好感度
+  "wolf": 2,                 // global
+  "karen.favor": 60,          // scope=npc，對玩家的好感度
   "karen._first_meet": 1,    // NPC 私有旗標（_ 開頭）
-  "殺.wolf": 7,              // 全域擊殺累計，自動維護
-  "狼患.殺狼": 2,            // count 開的專屬計數器
+  "kill.wolf": 7,              // 全域擊殺累計，自動維護
+  "wolf.kills": 2,            // count 開的專屬計數器
 }
 ```
 
 - **不存在 = 0**：`!x` 與 `x==0` 等價；`x=0` 等同刪除
-- **命名慣例**：quality 代表「世界的某件事」（`狼患`、`狼皮生意`），不是「某個任務」（`QX01`），方便跨任務、跨 NPC 共用
-- **NPC 前綴解析**：在某個 NPC 的情境下（該 NPC 的 dialog sheet、`_common`、`who` 對到該 NPC 的卡），`好感`／`_xxx` 這種 scope=npc 或 `_` 開頭的名稱自動補成 `<npcId>.好感`／`<npcId>._xxx`；要指定別的 NPC 就寫完整名稱 `karen.好感`
+- **命名慣例**：quality 代表「世界的某件事」（`wolf`、`pelt_trade`），不是「某個任務」（`QX01`），方便跨任務、跨 NPC 共用；quality／thread／storylet／節點／spawn 群組名稱一律 ASCII（`scripts/story.js` 檢查，見 [i18n-architecture.md §5](i18n-architecture.md)）
+- **NPC 前綴解析**：在某個 NPC 的情境下（該 NPC 的 dialog sheet、`_common`、`who` 對到該 NPC 的卡），`favor`／`_xxx` 這種 scope=npc 或 `_` 開頭的名稱自動補成 `<npcId>.favor`／`<npcId>._xxx`；要指定別的 NPC 就寫完整名稱 `karen.favor`
 - 取代：`Record.game.vars`、`COM_Talk._rec`、`QuestManager.quests` 三處狀態；地圖 `#flag` layer（`src/manager/map.js`）改讀 quality
 - **舊存檔不相容**，直接放棄
 
 ### 2.1 好感度
 
-`<npc>.好感` 就是現有 `COM_Favor` 的好感度（0～100，預設 50，門檻沿用 `GM.FAV`：`LOVE 100`／`LIKE 75`／`NEUTRAL 50`／`DISLIKE 25`／`HATE 10`）。
+`<npc>.favor` 就是現有 `COM_Favor` 的好感度（0～100，預設 50，門檻沿用 `GM.FAV`：`LOVE 100`／`LIKE 75`／`NEUTRAL 50`／`DISLIKE 25`／`HATE 10`）。
 
 - `COM_Favor` 保留邏輯（低於 50 每回合回復 0.1、受攻擊／被偷扣分），**對玩家的好感度**改成讀寫 `Record.game.q`
-- 只有 `role.json` 標了 `unique:true` 的 NPC（來源 `xls/role.xlsx` 的 `_others` 列）才存進 quality 庫——狼、馬這類同 id 會有很多隻的生物如果共用 `wolf.好感`，打一隻全世界的狼都會恨你。目前標記的是 brooklyn 分頁的 8 個 NPC（trump、melanie、musk、karen、xi、macron、guard-1、guard-2）
-- 沒標 `unique` 的、以及 NPC 對其他 NPC 的好感度，照舊存在 `COM_Favor` 自己身上；storylet 讀到這類 NPC 的 `好感` 一律是預設值 50
+- 只有 `role.json` 標了 `unique:true` 的 NPC（來源 `xls/role.xlsx` 的 `_others` 列）才存進 quality 庫——狼、馬這類同 id 會有很多隻的生物如果共用 `wolf.favor`，打一隻全世界的狼都會恨你。目前標記的是 brooklyn 分頁的 8 個 NPC（trump、melanie、musk、karen、xi、macron、guard-1、guard-2）
+- 沒標 `unique` 的、以及 NPC 對其他 NPC 的好感度，照舊存在 `COM_Favor` 自己身上；storylet 讀到這類 NPC 的 `favor` 一律是預設值 50
 - 對話只在 `HATE`（≤10）以下隱藏；≤25 走 `n_cold` 冷淡入口（見 §6.3）；交易規則不變（≤25 不能交易）
 
 ### 2.2 qualities 宣告表（story.xlsx 的 `qualities` sheet）
 
 ```
 #  name    scope   default  show  label   desc
-   狼患     global  0        no
-   好感     npc     50       yes   好感度
+   wolf     global  0        no
+   favor     npc     50       yes   好感度
    懷疑     npc     0        no
    通緝     global  0        no
-   殺.*     global  0        no            ← 萬用字元
+   kill.*     global  0        no            ← 萬用字元
 ```
 
 - 轉檔時掃過 story.xlsx 與 dialog.xlsx 所有條件／效果／thread，**遇到沒宣告的名稱就報錯**（sheet + 列號）
@@ -85,10 +85,10 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 | 指令 | 意思 |
 |---|---|
 | `x=1`、`x+1`、`x-2` | quality 設值／加減 |
-| `karen.好感+10` | 指定 NPC |
+| `karen.favor+10` | 指定 NPC |
 | `give axe_01 1`、`take plet 3` | 給玩家／拿走玩家的道具（`take` 取代 `consume`，不檢查數量，搭配 `item:` 條件先擋） |
 | `gold+120`、`gold-50` | 金錢 |
-| `count 狼患.殺狼 kill:wolf`、`stop 狼患.殺狼` | 開／停專屬計數器 |
+| `count wolf.kills kill:wolf`、`stop wolf.kills` | 開／停專屬計數器 |
 | `trade`、`close`、`goto n_xxx` | 對話控制（只在對話中有效） |
 | `approach n_xxx` | NPC 走到玩家身邊並打開對話（見 §8） |
 | `條件 : 指令` | 條件執行 |
@@ -103,7 +103,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 ```
 #  thread  title        desc                              quality  value  journal                          pos        end  reward_hint
-   QX01    屠夫的生意經   黑森林的狼氾濫，xi 的肉舖快沒貨了……   狼患     1      獵殺黑森林的野狼 ({狼患.殺狼}/3)   m/m_03x05
+   QX01    屠夫的生意經   黑森林的狼氾濫，xi 的肉舖快沒貨了……   wolf     1      獵殺黑森林的野狼 ({wolf.kills}/3)   m/m_03x05
                                                                    2      剝下狼皮，帶去給商人 karen
                                                                    3      回去跟 xi 回報
                                                                    9      你把狼皮直接賣給了 xi                       Y
@@ -119,12 +119,12 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 ```
 #  id           who        on    tease    requires                     label             hint          text                         effects
-   wolf_ask     xi                         狼患==0                       關於黑森林                       最近狼變多了……能幫我獵些狼皮嗎？  狼患=1, count 狼患.殺狼 kill:wolf
-   wolf_enough             kill            狼患==1 && 狼患.殺狼>=3                                         已經獵到足夠的狼了             狼患=2, stop 狼患.殺狼
-   wolf_pelt    karen                      狼患==2 && item:plet:1        關於黑森林的狼皮                  這批狼皮品質不錯……             take plet 1, 狼患=3, 好感+5
-   wolf_sell    xi               狼患==2   狼患==2 && item:plet:3        直接把狼皮賣給你   需要 3 張狼皮   ……也好，那我自己收了           take plet 3, 狼患=9, gold+80
-   wolf_report  xi                         狼患==3                       回報                             @n_wolf_report               狼患=10, gold+120, give axe_01 1
-   wolf_grudge  karen      see             狼患==9 && !_grudge                                            聽說你把狼皮都賣給 xi 了？哼   _grudge=1, 好感-10
+   wolf_ask     xi                         wolf==0                       關於黑森林                       最近狼變多了……能幫我獵些狼皮嗎？  wolf=1, count wolf.kills kill:wolf
+   wolf_enough             kill            wolf==1 && wolf.kills>=3                                         已經獵到足夠的狼了             wolf=2, stop wolf.kills
+   wolf_pelt    karen                      wolf==2 && item:plet:1        關於黑森林的狼皮                  這批狼皮品質不錯……             take plet 1, wolf=3, favor+5
+   wolf_sell    xi               wolf==2   wolf==2 && item:plet:3        直接把狼皮賣給你   需要 3 張狼皮   ……也好，那我自己收了           take plet 3, wolf=9, gold+80
+   wolf_report  xi                         wolf==3                       回報                             @n_wolf_report               wolf=10, gold+120, give axe_01 1
+   wolf_grudge  karen      see             wolf==9 && !_grudge                                            聽說你把狼皮都賣給 xi 了？哼   _grudge=1, favor-10
 ```
 
 - 上表是示意，實際 xlsx 裡多個效果／事件用 `;` 分隔（同 dialog.xlsx）
@@ -146,7 +146,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 ```
 #  group   requires              desc
-   狼群     狼患 && 狼患<10        狼患進行中，m_03x05 出現 3 隻狼
+   wolves   wolf && wolf<10        狼患進行中，m_03x05 出現 3 隻狼
 ```
 
 - `src/manager/map.js` 只在**進地圖時**判斷（`DB.spawn(group)`）：不成立就不生成，並清掉該群組的存檔；即時生成／移除刻意不做（2026-10-08 決定）
@@ -159,7 +159,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 ### 6.1 `_common` sheet
 
-所有 NPC 共用的 line／entry／node；NPC 自己的 sheet 有同名節點就用自己的。裡面的 `好感`、`_xxx` 自動解析成當下那個 NPC 的。
+所有 NPC 共用的 line／entry／node；NPC 自己的 sheet 有同名節點就用自己的。裡面的 `favor`、`_xxx` 自動解析成當下那個 NPC 的。
 
 - 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上，不用複製整個節點
 - `_common` 的 n_default 有 `交易` 選項，條件是 `trade` 事實（`role.json` 的 `trade:true`），所有商人自動都有
@@ -190,7 +190,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 ```
 _common
 #  section  node_id   priority  condition   text_keys
-   entry    n_cold    1         好感<=25
+   entry    n_cold    1         favor<=25
    entry    n_default 9
    node     n_cold                          ……又是你。
    storylets          10                                         ← 能挽回好感的卡插在這
@@ -223,7 +223,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 
 | `on` | 觸發時機 | 查詢時附帶的事實 |
 |---|---|---|
-| `kill` | 任何角色死亡（`殺.<id>` 與 count 計數器在檢查前先更新） | 死者 id |
+| `kill` | 任何角色死亡（`kill.<id>` 與 count 計數器在檢查前先更新） | 死者 id |
 | `item` | 玩家背包變動 | — |
 | `enter` | 進入地圖（`GameScene.create()` 放好玩家之後；讀檔進地圖也算） | — |
 | `time` | 遊戲時間跨過整點；一次跳好幾小時（睡覺）時每個整點各觸發一次 | `hour`／`time` 是那個整點的 |
@@ -253,7 +253,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 ## 10. Debug
 
 - **右鍵 NPC →「劇情除錯」**：列出 `who` 對得上的所有卡，標示 ✅ 成立／🔒 tease 中／❌ 不成立，並標出卡住的條件與目前值；列出各 concept 的 line 分數與命中的那一條
-- **quality 檢視器**：debug 面板「指令」頁的 `q` 指令——`q` 列出全部、`q 關鍵字` 篩選、`q 狼患=2`／`q karen.好感+10` 直接修改（名稱要寫完整，沒有 NPC 情境）
+- **quality 檢視器**：debug 面板「指令」頁的 `q` 指令——`q` 列出全部、`q 關鍵字` 篩選、`q wolf=2`／`q karen.favor+10` 直接修改（名稱要寫完整，沒有 NPC 情境）
 - **`T.STORY`**：`dlog` 印出事件卡觸發與 quality 變動
 
 ## 11. 轉檔靜態檢查
@@ -272,11 +272,11 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 未宣告 quality 的檢查也涵蓋 dialog.json 與地圖的 `#` layer；節點 id／`who` 的檢查在階段 2 補上
 2. ✅ **storylet 主體**：story.xlsx 轉檔、對話卡插入、`tease`／`hint`、thread 日誌與 PQuest 改版、右鍵 NPC 劇情除錯；QK01／QX01／QX02 **1:1 照搬**；QuestManager 與 quest.xlsx 退休
    - 程式：`src/systems/story.js`（`Story`：`talkCards()`／`fire()`／`onKill()`／`onItem()`／`thread()`／`debug()`），`COM_Talk` 把對話卡插進 entry 節點、找不到的節點去 story 節點表找
-   - quality 命名：QK01→`討伐令`、QX01→`狼患`、QX02→`狼皮生意`（各一個 sheet），值 1～4 是進行中、10 是完成；擊殺用 `討伐令.殺盜賊`（rogue-1）／`狼患.殺狼` 計數器；討伐令搬家後改成盜賊討伐（原本 QK01 殺狼是放錯，rogue-1 身上就帶著要收集的匕首）
+   - quality 命名：QK01→`bandit_hunt`、QX01→`wolf`、QX02→`pelt_trade`（各一個 sheet），值 1～4 是進行中、10 是完成；擊殺用 `bandit_hunt.kills`（rogue-1）／`wolf.kills` 計數器；討伐令搬家後改成盜賊討伐（原本 QK01 殺狼是放錯，rogue-1 身上就帶著要收集的匕首）
    - 為了 1:1 搬家，**階段 3 的 `kill`／`item`／`quality` 事件與 `count`／`stop` 提前在這階段做了**（`Story.onKill` 在 `Npc._ondead`、`Story.onItem` 在原本 `QuestManager.onCollect` 的位置）；`kill` 事件附帶 `dead`（死者 id）情境事實
    - 過渡期指令（`set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`#questId`、`[var]` 動態 next、dialog 的 `action` 列）已刪除，dialog.xlsx 改用 `_x=1`／`_x=0`／`!_x`
    - 實作細節：xlsx 裡多個指令／事件用 `;` 分隔（跟 dialog.xlsx 一致，不是逗號）；`on` 可以填多個（例如 `item;quality`，避免「先拿到道具、才到這一步」時卡住）；`reward_hint` 取日誌走過的值中最後一個有填的；`text` 是一句話的對話卡，選完後 NPC 回那句話、選項留在 entry 節點
-   - forest-01（已棄用）的兩個任務圖層搬到 `m/m_03x05.json`，改成 `@群組` 圖層（見 §5.4）：`@狼群`、`@盜賊`（rogue-1）
+   - forest-01（已棄用）的兩個任務圖層搬到 `m/m_03x05.json`，改成 `@群組` 圖層（見 §5.4）：`@wolves`、`@bandits`（rogue-1）
    - debug：右鍵 NPC「劇情除錯」＝ debug 面板指令 `story <npcId>`；line 的分數顯示留到階段 4
 3. ✅ **事件卡**：`enter`／`time`（`kill`／`item`／`quality`、`count`／`stop` 已在階段 2 完成）
    - 程式：`Story.onEnter()`（`GameScene.create()`）、`Story.onTime()`（註冊在 `TimeSystem`）；測試 `scripts/test/events.mjs`（測試卡在執行期塞進 `DB.story()`，不動 xlsx）
@@ -289,4 +289,4 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
    - 無頭測試的 `gotoMap()` 改成等到新的玩家物件出現：起始地圖就是 `m/m_04x05`，原本切到同一張地圖時會在舊場景還沒重啟前就回報載入完成
 
 岔路：
-- ✅ `wolf_sell`／`wolf_grudge`（狼患 sheet）：`狼患==3` 時可以把狼皮直接賣給 xi（`take plet 1; 狼患=9; gold+80`，`狼患==2` 時 tease），任務結束在 9，拿不到斧頭跟後續的狼皮生意；karen 之後看到你會喊「喂！你給我過來！」並 `approach n_wolf_grudge`，道歉 `好感-5`、嗆回去 `好感-15`，都設 `_grudge=1`。`wolf_report` 跟狼群 spawn 改成 `<9`。測試 `scripts/test/wolf.mjs`
+- ✅ `wolf_sell`／`wolf_grudge`（狼患 sheet）：`wolf==3` 時可以把狼皮直接賣給 xi（`take plet 1; wolf=9; gold+80`，`wolf==2` 時 tease），任務結束在 9，拿不到斧頭跟後續的狼皮生意；karen 之後看到你會喊「喂！你給我過來！」並 `approach n_wolf_grudge`，道歉 `favor-5`、嗆回去 `favor-15`，都設 `_grudge=1`。`wolf_report` 跟狼群 spawn 改成 `<9`。測試 `scripts/test/wolf.mjs`
