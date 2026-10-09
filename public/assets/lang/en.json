@@ -318,6 +318,21 @@
     "守衛": "Guard",
     "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
   },
+  "ui.rogue-1": {
+    "盜賊": "Bandit"
+  },
+  "ui.rogue-2": {
+    "盜賊": "Bandit"
+  },
+  "ui.orc": {
+    "獸人": "Orc"
+  },
+  "ui.wolf": {
+    "狼": "Wolf"
+  },
+  "ui.horse": {
+    "馬": "Horse"
+  },
   "ui.ranger": {
     "遊俠": "Ranger",
     "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺": "A master archer, forest hunter and wilderness survivor. Light-footed as the wind and harder to notice than a ghost."
@@ -1167,6 +1182,7 @@
     "戒子": "Ring",
     "背包": "Bag",
     "離開": "Leave",
+    "盜賊": "Bandit",
     "守衛": "Guard",
     "可食用": "Edible",
     "接受": "Accept",

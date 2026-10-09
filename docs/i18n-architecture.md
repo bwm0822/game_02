@@ -151,7 +151,7 @@
 
 ### 17. NPC 顯示名稱
 - ~~`role.xlsx` 加 `name` 欄~~：實作時發現名字早就在 local.xlsx 的 `roles` 分頁（`karen`→凱倫…），顯示走 `owner.id.lab()`，情境 `ui.<roleId>`，不用另開欄位。
-- 待補：`rogue-1`、`wolf` 等沒有列在 `roles` 分頁的角色會顯示紅字 key，之後補進 local.xlsx。
+- `rogue-1`/`rogue-2`/`orc`/`wolf`/`horse` 已補進 `roles` 分頁（只有名字，說明待補）。
 
 ### 18. 字型
 - 字型依語言決定：啟動時依當前語言設定 `GM.FONT`（font stack，不內嵌字型檔）。

@@ -62,11 +62,13 @@ run('多國語言', async t => {
 
     const msg = await t.eval(d => ({
         lock: '_lock_fail'.lab({who:d.Local.name('wick')}),
-        noName: d.Local.name('rogue-1'),
+        noName: d.Local.name('no_such_role'),
+        rogue: d.Local.name('rogue-1'),
         confirm: '_lock_confirm'.lab({rate:40}),
     }));
     t.eq('訊息模板帶名字', msg.lock, '維克 開鎖失敗');
-    t.eq('沒列在 local 的 id 顯示原樣', msg.noName, 'rogue-1');
+    t.eq('沒列在 local 的 id 顯示原樣', msg.noName, 'no_such_role');
+    t.eq('盜賊有名字', msg.rogue, '盜賊');
     t.eq('多行模板', msg.confirm, '用開鎖工具開鎖？\n成功率 40%');
 
     // 假的翻譯表：驗證對話節點、選項、_shared 後備、storylet、日誌都有帶到情境
