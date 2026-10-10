@@ -679,7 +679,7 @@
       },
       {
         "to": "m/m_04x05:house-08",
-        "cost": 27,
+        "cost": 26,
         "type": "walk"
       },
       {
@@ -1314,7 +1314,7 @@
       },
       {
         "to": "m/m_04x05:house-08",
-        "cost": 31,
+        "cost": 30,
         "type": "walk"
       },
       {
@@ -1742,7 +1742,7 @@
       },
       {
         "to": "m/m_04x05:macron-p1",
-        "cost": 19,
+        "cost": 18,
         "type": "walk"
       },
       {
@@ -1757,7 +1757,7 @@
       },
       {
         "to": "m/m_04x05:guard-p2",
-        "cost": 22,
+        "cost": 21,
         "type": "walk"
       },
       {
@@ -1782,7 +1782,7 @@
       },
       {
         "to": "m/m_04x05:trump-inn",
-        "cost": 27,
+        "cost": 26,
         "type": "walk"
       },
       {
@@ -1807,7 +1807,7 @@
       },
       {
         "to": "m/m_04x05:house-09",
-        "cost": 31,
+        "cost": 30,
         "type": "walk"
       },
       {
@@ -2569,7 +2569,7 @@
       },
       {
         "to": "m/m_04x05:house-08",
-        "cost": 19,
+        "cost": 18,
         "type": "walk"
       },
       {
@@ -2935,7 +2935,7 @@
       },
       {
         "to": "m/m_04x05:house-08",
-        "cost": 22,
+        "cost": 21,
         "type": "walk"
       },
       {
