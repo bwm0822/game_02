@@ -923,7 +923,7 @@ export class RoleView extends View
                 let sp = this.scene.add.sprite(0,0,key,frame);
                 sp.setScale(part.scale);
                 sp.setPipeline('Light2D');
-                sp.setOrigin(0.5,1);
+                sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
                 sp.x = part.x ?? 0;
                 sp.y = part.y ?? 0;
                 sp.angle = part.a ?? 0;

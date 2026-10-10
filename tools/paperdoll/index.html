@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>紙娃娃編輯器</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+    <button id="btnRoot">選擇工作資料夾</button>
+    <button id="btnReauth" hidden></button>
+    <span id="rootName" class="dim">（未選擇）</span>
+    <span class="sep"></span>
+    <button id="btnSaveProj" title="Ctrl+S 直接存回目前的專案">存專案…</button>
+    <span id="projName" class="dim">（未命名專案）</span>
+    <span class="sep"></span>
+    <label>scale <input id="scale" type="number" step="0.05" min="0.01" value="0.25"></label>
+    <label><input id="applyScale" type="checkbox"> 套用 scale</label>
+    <label><input id="showOrigin" type="checkbox" checked> 顯示 origin</label>
+    <span class="sep"></span>
+    <label>tile <input id="tw" type="number" value="32">×<input id="th" type="number" value="32"></label>
+    <label>角色框 <input id="rw" type="number" value="32">×<input id="rh" type="number" value="64"></label>
+    <label>anchor <input id="ax" type="number" value="0">,<input id="ay" type="number" value="16"></label>
+    <span class="sep"></span>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <button id="btnFit">置中</button>
+    <span class="sep"></span>
+    <label>icon <input id="iconSize" type="number" min="1" value="32" list="iconSizes"></label>
+    <datalist id="iconSizes"><option value="32"><option value="64"><option value="128"></datalist>
+    <button id="btnIcon">匯出 icon</button>
+</header>
+
+<main>
+    <aside id="left">
+        <div class="title">檔案 <button id="btnRefresh" title="重新整理">⟳</button></div>
+        <div id="tree" class="tree"></div>
+    </aside>
+
+    <section id="stage">
+        <canvas id="cv"></canvas>
+        <div id="status"></div>
+    </section>
+
+    <aside id="right">
+        <div class="title">圖層</div>
+        <div id="layers"></div>
+
+        <div class="title">工具</div>
+        <div class="tools">
+            <button data-mode="move" class="on">移動</button>
+            <button data-mode="crop">裁切</button>
+            <button data-mode="scale">縮放</button>
+            <button data-mode="alpha">清除透明</button>
+            <button data-mode="warp">變形</button>
+            <button id="btnTrim">裁到剛好</button>
+            <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
+        </div>
+
+        <div id="modeCrop" class="mode" hidden>
+            <div class="hint">在圖層上拖曳框選範圍</div>
+            <div id="cropInfo" class="dim"></div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
+        </div>
+
+        <div id="modeScale" class="mode" hidden>
+            <label>% <input id="scPct" type="number" step="1"></label>
+            <label>寬 <input id="scW" type="number" step="1"></label>
+            <label>高 <input id="scH" type="number" step="1"></label>
+            <label><input id="scLock" type="checkbox" checked> 鎖定長寬比</label>
+            <label><input id="scSmooth" type="checkbox" checked> 平滑（不勾＝最近鄰）</label>
+            <div class="hint">拖角落把手縮放、拖圖層平移</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
+        </div>
+
+        <div id="modeAlpha" class="mode" hidden>
+            <label>alpha &lt; <input id="alT" type="range" min="0" max="255" value="32"> <span id="alV">32</span> 清除</label>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
+        </div>
+
+        <div id="modeWarp" class="mode" hidden>
+            <label>格數 <input id="wpCols" type="number" min="1" max="12" value="3">×<input id="wpRows" type="number" min="1" max="12" value="3"></label>
+            <div class="hint">拖控制點變形；Shift+點／Shift+拖曳框選多點；方向鍵微調選取的點。開始拖之後要先「重設」才能改格數</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="wpReset">重設</button></div>
+        </div>
+
+        <div class="title">屬性</div>
+        <div id="props">
+            <div id="pName" class="dim">（沒有選取圖層）</div>
+            <label>x <input id="pX" type="number" step="any"></label>
+            <label>y <input id="pY" type="number" step="any"></label>
+            <label>a <input id="pA" type="number" step="any"></label>
+            <label>ox <input id="pOx" type="number" step="0.05"></label>
+            <label>oy <input id="pOy" type="number" step="0.05"></label>
+            <label>透明度 <input id="pOp" type="range" min="0" max="100" value="100"></label>
+            <label><input id="autoTrim" type="checkbox"> 存檔時自動 trim</label>
+            <button id="btnSave">存檔…</button>
+        </div>
+        <div class="hint">
+            拖曳：移動　R+拖曳：旋轉（Shift 鎖 15°）<br>
+            方向鍵 1px／Shift 10px（圖片像素）<br>
+            滾輪：縮放視角　中鍵拖曳：平移視角<br>
+            可從檔案總管拖 PNG（和同名 .json）進來
+        </div>
+    </aside>
+</main>
+
+<dialog id="dlgSave">
+    <form method="dialog">
+        <div id="dlgTitle" class="title"></div>
+        <div id="dlgTree" class="tree"></div>
+        <div>目錄：<span id="dlgPath"></span></div>
+        <label>檔名 <input id="dlgName" size="30"> <span id="dlgExt">.png</span></label>
+        <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

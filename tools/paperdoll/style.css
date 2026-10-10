@@ -1,0 +1,50 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { display: flex; flex-direction: column; font: 13px system-ui, sans-serif; background: #1e1f22; color: #ddd; }
+button { background: #3a3d44; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 3px 8px; cursor: pointer; }
+button:hover { background: #4a4e57; }
+button.on { background: #2f6db5; border-color: #4a8be0; }
+input[type=number] { width: 56px; background: #2b2d31; color: #ddd; border: 1px solid #555; }
+input:not([type]) { background: #2b2d31; color: #ddd; border: 1px solid #555; }
+label { white-space: nowrap; }
+.dim { color: #888; }
+.hint { color: #888; font-size: 12px; margin: 4px 0; }
+.title { font-weight: bold; margin: 8px 0 4px; display: flex; justify-content: space-between; align-items: center; }
+.sep { width: 1px; height: 18px; background: #555; }
+.row2 { display: flex; gap: 6px; margin-top: 6px; }
+
+header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 8px; background: #2b2d31; border-bottom: 1px solid #111; }
+main { flex: 1; display: flex; min-height: 0; }
+aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
+#left { width: 230px; border-right: 1px solid #111; }
+#right { width: 290px; border-left: 1px solid #111; }
+#stage { flex: 1; position: relative; min-width: 0;
+    background-color: #666;
+    background-image: linear-gradient(45deg, #777 25%, transparent 25%, transparent 75%, #777 75%),
+                      linear-gradient(45deg, #777 25%, transparent 25%, transparent 75%, #777 75%);
+    background-size: 16px 16px; background-position: 0 0, 8px 8px; }
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#status { position: absolute; left: 6px; bottom: 4px; color: #fff; text-shadow: 0 0 3px #000; pointer-events: none; }
+
+.tree .row { padding: 2px 4px; cursor: pointer; white-space: nowrap; border-radius: 3px; }
+.tree .row:hover { background: #33363c; }
+.tree .row.sel { background: #2f6db5; }
+.tree .file { color: #bcd; }
+.tree .file.proj { color: #fc8; }
+
+#layers .layer { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-radius: 3px; cursor: pointer; }
+#layers .layer:hover { background: #33363c; }
+#layers .layer.sel { background: #2f6db5; }
+#layers .layer .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#layers .layer .ico { width: 20px; text-align: center; opacity: .9; }
+#layers .layer .ico.off { opacity: .25; }
+#layers .layer.drop { box-shadow: inset 0 2px 0 #4a8be0; }
+
+.tools { display: flex; flex-wrap: wrap; gap: 4px; }
+.mode { margin-top: 6px; padding: 6px; background: #2b2d31; border-radius: 4px; display: flex; flex-direction: column; gap: 4px; }
+.mode[hidden] { display: none; }
+#props { display: flex; flex-direction: column; gap: 4px; }
+
+dialog { background: #25272b; color: #ddd; border: 1px solid #555; width: 420px; }
+dialog::backdrop { background: rgba(0,0,0,.5); }
+#dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
