@@ -44,7 +44,7 @@
     </section>
 
     <aside id="right">
-        <div class="title">圖層</div>
+        <div class="title">圖層 <span><button id="btnDup" title="Ctrl+J">複製</button> <button id="btnMergeDown" title="Ctrl+E">向下合併</button> <button id="btnMergeVisible" title="Ctrl+Shift+E">合併可見</button></span></div>
         <div id="layers"></div>
 
         <div class="title">工具</div>
@@ -59,6 +59,8 @@
         </div>
 
         <div id="modeCrop" class="mode" hidden>
+            <label><input id="cropKeep" name="cropMode" type="radio" checked> 保留框內（裁掉外面）</label>
+            <label><input id="cropCut" name="cropMode" type="radio"> 移除框內（挖成透明）</label>
             <div class="hint">在圖層上拖曳框選範圍</div>
             <div id="cropInfo" class="dim"></div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
@@ -112,6 +114,7 @@
         <div id="dlgTree" class="tree"></div>
         <div>目錄：<span id="dlgPath"></span></div>
         <label>檔名 <input id="dlgName" size="30"> <span id="dlgExt">.png</span></label>
+        <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
     </form>
 </dialog>

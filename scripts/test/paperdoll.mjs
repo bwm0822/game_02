@@ -62,6 +62,18 @@ run('paperdoll', async t => {
         const N = pd.addLayer(await img(100, 50, g => {g.fillRect(40, 10, 20, 30); g.fillStyle = 'rgba(0,0,0,0.02)'; g.fillRect(0, 0, 1, 1);}), 'n', null, null, null);
         pd.trimLayer(N);
         out.noise = [N.canvas.width, N.canvas.height];
+
+        const E = pd.addLayer(await img(10, 10, g => g.fillRect(0, 0, 10, 10)), 'e', null, null, null);
+        const ex = E.x, ey = E.y;
+        document.getElementById('cropCut').checked = true;
+        pd.setMode('crop');
+        pd.S.mode.rect = {ax: 2, ay: 3, bx: 6, by: 8};
+        pd.applyMode();
+        document.getElementById('cropKeep').checked = true;
+        const a = (x, y) => E.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        out.erase = [E.canvas.width, E.canvas.height, E.x === ex && E.y === ey, a(2, 3), a(5, 7), a(6, 7), a(1, 3), E.ops.at(-1)?.type];
+        pd.undo();
+        out.eraseUndo = [E.ops.length, a(2, 3)];
         return out;
     });
 
@@ -147,6 +159,100 @@ run('paperdoll', async t => {
     t.eq('專案：重開還原圖層、步驟、位置，undo 清空', JSON.stringify(p.reopen), JSON.stringify([1, 7, 20, 1, 'img/a.png', false, 0]));
     t.check('專案：有拖進來的圖層時擋下存檔', p.looseBlocked);
 
+    const o = await ev(async () => {
+        const pd = window.__pd, out = {};
+        const root = await navigator.storage.getDirectory(), img = await root.getDirectoryHandle('img');
+        const alphaOf = async (c) => {c = c instanceof Blob ? await createImageBitmap(c) : c; const k = document.createElement('canvas'); k.width = c.width; k.height = c.height; const g = k.getContext('2d'); g.drawImage(c, 0, 0); return Math.max(...g.getImageData(0, 0, k.width, k.height).data.filter((_, i) => i % 4 === 3));};
+        const save = async (name, bake) => {
+            const p = pd.saveLayer();
+            const dlg = document.getElementById('dlgSave');
+            await new Promise(r => {const f = () => dlg.open ? r() : requestAnimationFrame(f); f();});
+            out.shown = !document.getElementById('dlgBakeRow').hidden;
+            document.getElementById('dlgName').value = name;
+            document.getElementById('dlgBake').checked = bake;
+            dlg.close('ok');
+            await p;
+            return alphaOf(await (await img.getFileHandle(`${name}.png`)).getFile());
+        };
+        Object.assign(pd.S, {layers: [], active: null, project: null, projSig: null});
+        await pd.loadHandle(await img.getFileHandle('a.png'), img, 'img');
+        const L = pd.S.active;
+        L.opacity = 0.5;
+        out.baked = await save('b', true);
+        out.keep = [out.shown, L.opacity, L.srcPath];
+        out.solid = await save('c', false);
+        out.icon = [await alphaOf(pd.iconCanvas(32, true)), await alphaOf(pd.iconCanvas(32))];
+        out.self = [await save('a', true), L.opacity, L.ops.length, await alphaOf(L.canvas)];
+        out.hidden = !(await save('d', true), out.shown);
+        return out;
+    });
+    t.check('不透明度：勾選烘入，PNG 變半透明', Math.abs(o.baked - 128) <= 1, `alpha=${o.baked}`);
+    t.eq('不透明度：存成別的檔，勾選有出現、opacity 不變', JSON.stringify(o.keep), JSON.stringify([true, 0.5, 'img/a.png']));
+    t.eq('不透明度：沒勾就存實心', o.solid, 255);
+    t.check('不透明度：icon 勾選烘入才變淡', Math.abs(o.icon[0] - 128) <= 1 && o.icon[1] === 255, JSON.stringify(o.icon));
+    t.check('不透明度：覆蓋原圖後 opacity 歸 1，不會乘兩次', Math.abs(o.self[0] - 128) <= 1 && o.self[1] === 1 && o.self[2] === 0 && o.self[3] === o.self[0], JSON.stringify(o.self));
+    t.check('不透明度：100% 時不顯示勾選', o.hidden);
+
+    // 合併：dialog 一律 accept，所以有半透明時會烘入
+    const m = await ev(async () => {
+        const pd = window.__pd, out = {};
+        const sq = (n, color) => {const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, n, n); return createImageBitmap(c);};
+        const at = (L, wx, wy) => [...L.canvas.getContext('2d').getImageData(Math.floor(wx - L.x + L.ox * L.canvas.width), Math.floor(wy - L.y + L.oy * L.canvas.height), 1, 1).data];
+        const names = () => pd.S.layers.map(L => L.name).join();
+        Object.assign(pd.S, {layers: [], active: null, project: null, projSig: null});
+        pd.hist.undos.length = pd.hist.redos.length = 0;
+        const A = pd.addLayer(await sq(20, '#f00'), 'A', null, null, null);
+        const B = pd.addLayer(await sq(10, '#00f'), 'B', null, null, null);
+        const C = pd.addLayer(await sq(10, '#0f0'), 'C', null, null, null);
+        B.x = 30;
+        C.visible = false;
+
+        pd.mergeDown();
+        out.hidden = names();
+        pd.select(B);
+        pd.mergeDown();
+        const M = pd.S.active;
+        out.down = [names(), M.x, M.y, M.a, M.canvas.width, M.canvas.height, M.oy, M.srcPath ?? null];
+        out.pix = [at(M, 0, -10).join(), at(M, 30, -5).join()];
+        pd.undo();
+        out.undo = [names(), pd.S.layers[1] === B];
+        pd.redo();
+        out.redo = pd.S.layers[0] === M;
+        pd.undo();
+
+        C.visible = true;
+        C.locked = true;
+        B.opacity = 0.5;
+        pd.mergeVisible();
+        out.visible = [names(), at(pd.S.layers[0], 30, -5)[3]];
+
+        pd.undo();
+        pd.removeLayer(C);
+        pd.redo();
+        pd.undo();
+        out.removed = names();
+
+        pd.select(A);
+        pd.duplicateLayer();
+        const D = pd.S.active, samePos = D.x === A.x && D.y === A.y;
+        pd.setMode('crop');
+        pd.S.mode.rect = {ax: 0, ay: 0, bx: 5, by: 5};
+        pd.applyMode();
+        out.dup = [names(), samePos, D.canvas.width, A.canvas.width];
+        pd.undo(); pd.undo();
+        out.dupUndo = names();
+        return out;
+    });
+    t.eq('合併：向下合併遇到隱藏的圖層會拒絕', m.hidden, 'A,B,C');
+    t.eq('合併：新圖層在底層位置、沿用底層中心點、旋轉歸零、沒有原圖', JSON.stringify(m.down), JSON.stringify(['A-merged,C', 0, 0, 0, 45, 20, 1, null]));
+    t.eq('合併：像素位置不變', JSON.stringify(m.pix), JSON.stringify(['255,0,0,255', '0,0,255,255']));
+    t.eq('合併：undo 換回原本的圖層', JSON.stringify(m.undo), JSON.stringify(['A,B,C', true]));
+    t.check('合併：redo 換回合併後的圖層', m.redo);
+    t.check('合併可見：跳過鎖定的圖層、烘入不透明度', m.visible[0] === 'A-merged,C' && Math.abs(m.visible[1] - 128) <= 1, JSON.stringify(m.visible));
+    t.eq('合併：刪掉的圖層不會被 undo 合併復活', m.removed, 'A,B');
+    t.eq('複製：放在原圖層上面、位置相同、改副本不影響原圖層', JSON.stringify(m.dup), JSON.stringify(['A,A-copy,B', true, 5, 20]));
+    t.eq('複製：undo 拿掉副本', m.dupUndo, 'A,B');
+
     t.eq('載入時套用 json（遊戲單位 ÷ scale）', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
     t.eq('trim 後內容不跳位', JSON.stringify(r.trim), JSON.stringify({w: 80, h: 40, x: 8, y: 27}));
     t.eq('裁切後內容不跳位', JSON.stringify(r.crop), JSON.stringify({w: 40, h: 40, x: -12, y: 27}));
@@ -160,4 +266,6 @@ run('paperdoll', async t => {
     t.eq('sidecar 的 xlsx 字串', r.xlsx, '"sprite":"foo","scale":0.25,"x":-3,"y":6.75,"a":30');
     t.eq('icon 是 32×32', JSON.stringify(r.icon), JSON.stringify([32, 32, 2]));
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
+    t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
+    t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));
 });

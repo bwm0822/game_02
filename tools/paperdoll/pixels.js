@@ -168,7 +168,15 @@ export function replay(src, ops)
 {
     let c = src;
     for (const op of ops)
-        c = op.type === 'alpha' ? alphaClear(c, op.t) : op.type === 'warp' ? warp(c, op).canvas : xform(c, op);
+        c = op.type === 'alpha' ? alphaClear(c, op.t) : op.type === 'warp' ? warp(c, op).canvas
+          : op.type === 'erase' ? erase(c, op) : xform(c, op);
+    return c;
+}
+
+export function erase(src, {x, y, w, h})
+{
+    const c = clone(src);
+    c.getContext('2d').clearRect(x, y, w, h);
     return c;
 }
 
@@ -181,6 +189,15 @@ export function alphaClear(src, t)
     for (let i = 3; i < d.length; i += 4)
         if (d[i] < t) d[i - 3] = d[i - 2] = d[i - 1] = d[i] = 0;
     g.putImageData(img, 0, 0);
+    return c;
+}
+
+export function fade(src, k)
+{
+    const c = newCanvas(src.width, src.height);
+    const g = c.getContext('2d');
+    g.globalAlpha = k;
+    g.drawImage(src, 0, 0);
     return c;
 }
 

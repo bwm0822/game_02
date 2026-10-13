@@ -6,9 +6,11 @@
 
 ## 設計原則
 
-- **像素操作永遠從原圖算**：每層保留原圖 `src` 和步驟清單 `ops`，畫面是「原圖依序重播 ops」的結果，存檔時才把結果烘進 PNG。步驟有三種：`xform`（取輸入的小數範圍縮放成 w×h，裁切／縮放／trim 都是它）、`alpha`（清除 alpha < t）、`warp`（網格變形）。相鄰的 `xform` 會合成一個（`compose()`），相鄰的 `alpha` 取較大的 t，所以「縮放 → trim → 再縮放」只會從原圖取樣一次；只有中間夾著其他種步驟時才會分成兩段。
+- **像素操作永遠從原圖算**：每層保留原圖 `src` 和步驟清單 `ops`，畫面是「原圖依序重播 ops」的結果，存檔時才把結果烘進 PNG。步驟有四種：`xform`（取輸入的小數範圍縮放成 w×h，「保留框內」裁切／縮放／trim 都是它）、`erase`（把 x,y,w,h 挖成透明，「移除框內」裁切，尺寸與 `x`／`y` 不變）、`alpha`（清除 alpha < t）、`warp`（網格變形）。相鄰的 `xform` 會合成一個（`compose()`），相鄰的 `alpha` 取較大的 t，所以「縮放 → trim → 再縮放」只會從原圖取樣一次；只有中間夾著其他種步驟時才會分成兩段。
 - **網格變形**：`warp` 記 `cols`×`rows` 格與每個格點變形後的位置 `pts`（變形前那張圖的座標，可超出原圖，輸出畫布依 `pts` 的範圍擴大，(0,0) 對應 `warpBounds()` 的 `bx,by`）。每格拆兩個三角形，逐像素以仿射反查原圖、預乘 alpha 雙線性取樣。最後一步是 `warp` 時再按「變形」會拿掉它、重播出變形前的圖並接著編輯同一張網格（變形前的 `x`/`y` 由 `bx,by` 反推），所以不會累積取樣；但勾了存檔自動 trim 時會在後面加一個 `xform`，之後再變形就是新的一層 `warp`。編輯中的預覽就是最後結果（直接改圖層的 canvas／x／y），取消時用模式開始時的快照還原。
-- **undo**：Ctrl+Z／Ctrl+Y，快照只存 `ops`、`canvas` 的參照和擺放數字；兩者都不會被就地修改（每次操作換新的），所以快照不用複製像素。
+- **undo**：Ctrl+Z／Ctrl+Y，快照只存 `ops`、`canvas` 的參照和擺放數字；兩者都不會被就地修改（每次操作換新的），所以快照不用複製像素。合併用「結構快照」（`snapList`：`S.layers` 複本＋`S.active`），被合併的圖層物件原封不動、也不 `forget`，換回清單就還原；刪除圖層時會把它從結構快照裡拿掉（不然 undo 合併會讓它復活）。刪除、拖曳排序本身仍不能 undo。
+- **合併圖層**：「向下合併」（Ctrl+E，選取層＋正下方那層）、「合併可見」（Ctrl+Shift+E，顯示中且沒鎖定的全部）。用 `flatten()` 壓成一張新圖層，放在最底層的位置、名字 `底層名-merged`、沿用底層的 `dir`/`path`；旋轉烘進像素（`a=0`），中心點的世界座標沿用最底層的（`x`/`y` 不變、重算 `ox`/`oy`）。有半透明圖層時用 `confirm` 問要不要烘入不透明度（取消＝照 100% 合）。向下合併遇到隱藏／鎖定的圖層會拒絕。新圖層沒有原圖路徑，跟拖進來的圖一樣要先存檔才能存專案。
+- **複製圖層**：「複製」（Ctrl+J）把選取層淺拷貝一份（`ops`／`canvas`／`src` 共用參照，反正不會就地修改），放在它正上方、名字 `原名-copy`、原圖路徑相同；用結構快照所以能 undo。
 - **擺放是數字**：`x`／`y`／`a`（角度）／`ox`／`oy`（中心點）不烘進圖，存在同名 `.json`，由人手動抄進 `xls/role.xlsx`／`xls/item.xlsx`。
 - **世界座標＝圖片像素**；遊戲單位＝世界座標 × scale（全域，預設 0.25）。「套用 scale」只切換顯示的數字單位與預覽大小，不動像素。
 - **內容不跳位**：裁切、trim、改中心點時會自動補償 `x`／`y`；縮放以中心點為基準，`x`／`y` 不變。
@@ -29,6 +31,7 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 - 開檔：先「選擇工作資料夾」（handle 存在 IndexedDB，重開 Chrome 後按「重新授權」），從左側清單點 PNG；或從檔案總管拖 PNG（可連同名 `.json`）進畫布。有同名 `.json` 就套用裡面的擺放。
 - 存檔：每層各自存，內建對話框只能存在工作資料夾底下，預設檔名 `原檔名-copy`，同名會問是否覆蓋；同時寫 PNG 和 `.json`。「存檔時自動 trim」預設不勾。
+- 不透明度：平常只影響顯示（存在專案裡，不進 `.json`）。圖層不透明度 < 100% 時，存檔對話框多一個「烘入不透明度」勾選（預設勾），勾了 PNG 的 alpha 會乘上它；自動 trim 在烘入之前做，所以裁切範圍照實心像素算。存檔觸發「改以剛存的檔當原圖」且有烘入時，opacity 會歸 1（不然會乘兩次）。匯出 icon 時只要有顯示中的半透明圖層也會出現同一個勾選。
 - `.json`（給人看的，遊戲不讀）：
 
   ```json
@@ -48,10 +51,10 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 | 檔案 | 內容 |
 |---|---|
 | `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／變形）、UI 同步、開存檔 |
-| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、alphaClear、opaqueBounds；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
-| `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照） |
+| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、alphaClear、opaqueBounds；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
+| `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
 | `fs.js` | 工作資料夾 handle、列目錄、讀寫檔 |
 
-測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、變形、sidecar、icon；專案存讀用 OPFS 當工作資料夾，因為無頭 Chrome 開不了資料夾選擇視窗）。
+測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、變形、合併、sidecar、icon；專案存讀用 OPFS 當工作資料夾，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
 不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、圖層分組、橡皮擦。

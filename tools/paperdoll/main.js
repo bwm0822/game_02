@@ -86,9 +86,56 @@ function removeLayer(L)
 {
     if (S.mode.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
-    hist.forget(L);
+    hist.forget(L, true);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
+}
+
+// 合成一張新圖層放在最底層的位置；中心點的世界座標沿用最底層的，旋轉烘進像素
+function mergeLayers(layers)
+{
+    cancelMode();
+    const base = layers[0];
+    const bake = layers.some(L => L.opacity < 1) && confirm('有半透明圖層，要烘入不透明度嗎？（取消＝照 100% 合併）');
+    const {big, minX, minY} = flatten(layers, bake);
+    hist.push(hist.snapList(S));
+    const L = {id: ++uid, name: `${base.name}-merged`, dir: base.dir, path: base.path, src: big, ops: [], canvas: big,
+               x: base.x, y: base.y, a: 0, ox: (base.x - minX) / big.width, oy: (base.y - minY) / big.height,
+               visible: true, opacity: 1, locked: false};
+    const i = S.layers.indexOf(base);
+    S.layers = S.layers.filter(M => !layers.includes(M));
+    S.layers.splice(i, 0, L);
+    select(L);
+    status(`合併 ${layers.length} 個圖層 → ${L.name}`);
+}
+
+// ops 跟 canvas 都不會被就地修改，直接共用參照
+function duplicateLayer()
+{
+    const L = S.active;
+    if (!L) return status('先選一個圖層');
+    cancelMode();
+    hist.push(hist.snapList(S));
+    const C = {...L, id: ++uid, name: `${L.name}-copy`};
+    S.layers.splice(S.layers.indexOf(L) + 1, 0, C);
+    select(C);
+    status(`複製圖層 ${L.name} → ${C.name}`);
+}
+
+function mergeDown()
+{
+    const L = S.active, below = S.layers[S.layers.indexOf(L) - 1];
+    if (!L || !below) return status('向下合併需要選取的圖層下面還有一層');
+    if (!L.visible || !below.visible) return status('向下合併需要兩層都顯示');
+    if (L.locked || below.locked) return status('有鎖定的圖層，不能合併');
+    mergeLayers([below, L]);
+}
+
+function mergeVisible()
+{
+    const layers = S.layers.filter(L => L.visible && !L.locked);
+    if (layers.length < 2) return status('顯示中、沒鎖定的圖層不到兩層');
+    mergeLayers(layers);
 }
 
 function select(L)
@@ -244,7 +291,7 @@ function drawOverlay(K)
     if (m.type === 'crop' && m.rect)
     {
         const {x0, y0, x1, y1} = cropRect(m.rect, L);
-        g.strokeStyle = '#0f0';
+        g.strokeStyle = $('cropCut').checked ? '#f44' : '#0f0';
         poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => toWorld(L, x, y)));
     }
     if (m.type === 'scale')
@@ -310,7 +357,8 @@ function applyMode()
         const {x0, y0, x1, y1} = cropRect(m.rect, L);
         if (x1 - x0 < 1 || y1 - y0 < 1) return;
         hist.record(L);
-        applyCrop(L, x0, y0, x1 - x0, y1 - y0);
+        if ($('cropCut').checked) pushOp(L, {type: 'erase', x: x0, y: y0, w: x1 - x0, h: y1 - y0});
+        else applyCrop(L, x0, y0, x1 - x0, y1 - y0);
     }
     else if (m.type === 'scale')
     {
@@ -638,6 +686,18 @@ window.addEventListener('keydown', e => {
         (key === 'y' || e.shiftKey) ? redo() : undo();
         return;
     }
+    if (e.ctrlKey && key === 'j')
+    {
+        e.preventDefault();
+        duplicateLayer();
+        return;
+    }
+    if (e.ctrlKey && key === 'e')
+    {
+        e.preventDefault();
+        e.shiftKey ? mergeVisible() : mergeDown();
+        return;
+    }
     if (e.key === 'Enter') applyMode();
     else if (e.key === 'Escape') cancelMode();
     const d = ARROWS[e.key], L = S.active;
@@ -666,15 +726,13 @@ window.addEventListener('blur', () => S.keys.clear());
 function undo()
 {
     cancelMode();
-    const L = hist.undo();
-    if (L) select(L);
+    select(hist.undo() ?? S.active);
 }
 
 function redo()
 {
     cancelMode();
-    const L = hist.redo();
-    if (L) select(L);
+    select(hist.redo() ?? S.active);
 }
 
 // ---------- UI 同步 ----------
@@ -849,13 +907,17 @@ function needRoot()
     return !!S.root;
 }
 
-function saveDialog(title, dir, path, name, ext = '.png')
+// bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾
+function saveDialog(title, dir, path, name, ext = '.png', bake = null)
 {
     const dlg = $('dlgSave');
     let sel = {dir, path};
     const showPath = () => {$('dlgPath').textContent = join(S.root.name, sel.path);};
     $('dlgTitle').textContent = title;
     $('dlgExt').textContent = ext;
+    $('dlgBakeRow').hidden = !bake;
+    $('dlgBakeLab').textContent = bake ?? '';
+    $('dlgBake').checked = true;
     buildTree($('dlgTree'), {onDir: (d, p, row) => {
         sel = {dir: d, path: p};
         $('dlgTree').querySelectorAll('.sel').forEach(r => r.classList.remove('sel'));
@@ -872,7 +934,7 @@ function saveDialog(title, dir, path, name, ext = '.png')
         if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
         if (dlg.returnValue !== 'ok' || !n) return res(null);
         if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？`)) return res(null);
-        res({...sel, name: n});
+        res({...sel, name: n, bake: !!bake && $('dlgBake').checked});
     }, {once: true}));
 }
 
@@ -894,19 +956,24 @@ async function saveLayer()
     if (!L || !needRoot()) return;
     cancelMode();
     if ($('autoTrim').checked && trimLayer(L)) refreshAll();
-    const r = await saveDialog(`存檔：${L.name}`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-copy`);
+    const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
+    const r = await saveDialog(`存檔：${L.name}`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-copy`, '.png', bake);
     if (!r) return;
-    await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(L.canvas));
+    const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
+    await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
     Object.assign(L, {dir: r.dir, path: r.path});
     // 拖進來的圖（沒有原圖路徑）或覆蓋了自己的原圖：改以剛存的檔當原圖，步驟歸零（舊 undo 對不上新原圖，一起清掉）
+    // 新原圖已經烘了不透明度，opacity 要歸 1，不然會乘兩次
     const saved = join(r.path, `${r.name}.png`);
     if (!L.srcPath || L.srcPath === saved)
     {
         hist.forget(L);
-        Object.assign(L, {src: L.canvas, ops: [], srcPath: saved});
+        Object.assign(L, {src: out, canvas: out, ops: [], srcPath: saved});
+        if (r.bake) L.opacity = 1;
     }
     refreshProps();
+    dirty();
     status(`已存 ${saved}／.json`);
 }
 
@@ -1008,7 +1075,7 @@ async function openProject(fh, dir, path)
     if (warns.length) alert(warns.join('\n'));
 }
 
-function flatten(layers)
+function flatten(layers, bake)
 {
     const pts = layers.flatMap(corners);
     const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
@@ -1021,14 +1088,15 @@ function flatten(layers)
         bg.setTransform(1, 0, 0, 1, -minX, -minY);
         bg.translate(L.x, L.y);
         bg.rotate(L.a * RAD);
+        bg.globalAlpha = bake ? L.opacity : 1;
         bg.drawImage(L.canvas, -L.ox * L.canvas.width, -L.oy * L.canvas.height);
     }
-    return big;
+    return {big, minX, minY};
 }
 
-function iconCanvas(N)
+function iconCanvas(N, bake = false)
 {
-    const big = flatten(S.layers.filter(L => L.visible));
+    const {big} = flatten(S.layers.filter(L => L.visible), bake);
     const b = PX.opaqueBounds(big, trimT());
     if (!b) return null;
     const f = Math.min(N / b.w, N / b.h);
@@ -1043,11 +1111,14 @@ async function exportIcon()
     if (!needRoot()) return;
     cancelMode();
     const N = Math.max(1, Math.round(+$('iconSize').value || 32));
-    const icon = S.layers.some(L => L.visible) && iconCanvas(N);
-    if (!icon) return status('沒有可匯出的不透明像素');
+    const solid = S.layers.some(L => L.visible) && iconCanvas(N);
+    if (!solid) return status('沒有可匯出的不透明像素');
     const L = S.active ?? S.layers.at(-1);
-    const r = await saveDialog(`匯出 icon（${N}×${N}）`, L.dir ?? S.root, L.dir ? L.path : '', `icon-${L.name}`);
+    const bake = S.layers.some(L => L.visible && L.opacity < 1) ? '烘入不透明度（有半透明圖層）' : null;
+    const r = await saveDialog(`匯出 icon（${N}×${N}）`, L.dir ?? S.root, L.dir ? L.path : '', `icon-${L.name}`, '.png', bake);
     if (!r) return;
+    const icon = r.bake ? iconCanvas(N, true) : solid;
+    if (!icon) return status('沒有可匯出的不透明像素');
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(icon));
     status(`已匯出 ${join(r.path, r.name)}.png`);
 }
@@ -1063,6 +1134,9 @@ $('btnReauth').onclick = async () => {
 };
 $('btnRefresh').onclick = () => buildTree($('tree'), treeOpt);
 $('btnSaveProj').onclick = () => saveProject(true).catch(e => status(e.message));
+$('btnDup').onclick = duplicateLayer;
+$('btnMergeDown').onclick = mergeDown;
+$('btnMergeVisible').onclick = mergeVisible;
 $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
 $('btnFit').onclick = fitView;
@@ -1140,6 +1214,7 @@ $('wpCols').onchange = warpReset;
 $('wpRows').onchange = warpReset;
 $('wpReset').onclick = warpReset;
 $('showOrigin').onchange = dirty;
+$('cropKeep').onchange = $('cropCut').onchange = dirty;
 
 $('alT').oninput = () => {
     $('alV').textContent = $('alT').value;
@@ -1175,4 +1250,4 @@ new ResizeObserver(dirty).observe(cv);
 
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
-               setRoot, loadHandle, saveProject, openProject, isUnsaved};
+               setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer};
