@@ -164,12 +164,19 @@ export function warp(src, op, sd = src.getContext('2d').getImageData(0, 0, src.w
     return {canvas: out, bx: B.bx, by: B.by};
 }
 
+const OPS = {
+    alpha: (c, op) => alphaClear(c, op.t),
+    warp: (c, op) => warp(c, op).canvas,
+    erase: (c, op) => erase(c, op),
+    fill: (c, op) => fill(c, op),
+    key: (c, op) => key(c, op),
+    xform: (c, op) => xform(c, op),
+};
+
 export function replay(src, ops)
 {
     let c = src;
-    for (const op of ops)
-        c = op.type === 'alpha' ? alphaClear(c, op.t) : op.type === 'warp' ? warp(c, op).canvas
-          : op.type === 'erase' ? erase(c, op) : xform(c, op);
+    for (const op of ops) c = OPS[op.type](c, op);
     return c;
 }
 
@@ -180,16 +187,36 @@ export function erase(src, {x, y, w, h})
     return c;
 }
 
-export function alphaClear(src, t)
+// f(d, i)：i 是像素的 R 位置，就地改 d
+function eachPixel(src, f)
 {
     const c = clone(src);
     const g = c.getContext('2d');
     const img = g.getImageData(0, 0, c.width, c.height);
     const d = img.data;
-    for (let i = 3; i < d.length; i += 4)
-        if (d[i] < t) d[i - 3] = d[i - 2] = d[i - 1] = d[i] = 0;
+    for (let i = 0; i < d.length; i += 4) f(d, i);
     g.putImageData(img, 0, 0);
     return c;
+}
+
+export const alphaClear = (src, t) => eachPixel(src, (d, i) => {
+    if (d[i + 3] < t) d[i] = d[i + 1] = d[i + 2] = d[i + 3] = 0;
+});
+
+// alpha >= t 的像素整組換成 (r,g,b,a)
+export const fill = (src, {r, g, b, a, t}) => eachPixel(src, (d, i) => {
+    if (d[i + 3] >= t) {d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = a;}
+});
+
+// RGB 完全相等的像素變透明；只比 RGB，alpha 已經是 0 的跳過
+export const key = (src, {r, g, b}) => eachPixel(src, (d, i) => {
+    if (d[i + 3] && d[i] === r && d[i + 1] === g && d[i + 2] === b) d[i] = d[i + 1] = d[i + 2] = d[i + 3] = 0;
+});
+
+export function pixelAt(src, x, y)
+{
+    if (x < 0 || y < 0 || x >= src.width || y >= src.height) return null;
+    return [...src.getContext('2d').getImageData(Math.floor(x), Math.floor(y), 1, 1).data];
 }
 
 export function fade(src, k)
@@ -201,10 +228,6 @@ export function fade(src, k)
     return c;
 }
 
-export function alphaAt(src, x, y)
-{
-    if (x < 0 || y < 0 || x >= src.width || y >= src.height) return 0;
-    return src.getContext('2d').getImageData(Math.floor(x), Math.floor(y), 1, 1).data[3];
-}
+export const alphaAt = (src, x, y) => pixelAt(src, x, y)?.[3] ?? 0;
 
 export const toPng = (c) => new Promise(res => c.toBlob(res, 'image/png'));

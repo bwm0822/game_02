@@ -6,11 +6,13 @@
 
 ## 設計原則
 
-- **像素操作永遠從原圖算**：每層保留原圖 `src` 和步驟清單 `ops`，畫面是「原圖依序重播 ops」的結果，存檔時才把結果烘進 PNG。步驟有四種：`xform`（取輸入的小數範圍縮放成 w×h，「保留框內」裁切／縮放／trim 都是它）、`erase`（把 x,y,w,h 挖成透明，「移除框內」裁切，尺寸與 `x`／`y` 不變）、`alpha`（清除 alpha < t）、`warp`（網格變形）。相鄰的 `xform` 會合成一個（`compose()`），相鄰的 `alpha` 取較大的 t，所以「縮放 → trim → 再縮放」只會從原圖取樣一次；只有中間夾著其他種步驟時才會分成兩段。
+- **像素操作永遠從原圖算**：每層保留原圖 `src` 和步驟清單 `ops`，畫面是「原圖依序重播 ops」的結果，存檔時才把結果烘進 PNG。步驟有六種：`xform`（取輸入的小數範圍縮放成 w×h，「保留框內」裁切／縮放／trim 都是它）、`erase`（把 x,y,w,h 挖成透明，「移除框內」裁切，尺寸與 `x`／`y` 不變）、`alpha`（清除 alpha < t）、`fill`（alpha ≥ t 的像素整組換成 r,g,b,a）、`key`（RGB 完全等於 r,g,b 的像素變透明，不看 alpha）、`warp`（網格變形）。相鄰的 `xform` 會合成一個（`compose()`），相鄰的 `alpha` 取較大的 t（`fill`／`key` 不合併，顏色不同就是不同步驟），所以「縮放 → trim → 再縮放」只會從原圖取樣一次；只有中間夾著其他種步驟時才會分成兩段。
 - **網格變形**：`warp` 記 `cols`×`rows` 格與每個格點變形後的位置 `pts`（變形前那張圖的座標，可超出原圖，輸出畫布依 `pts` 的範圍擴大，(0,0) 對應 `warpBounds()` 的 `bx,by`）。每格拆兩個三角形，逐像素以仿射反查原圖、預乘 alpha 雙線性取樣。最後一步是 `warp` 時再按「變形」會拿掉它、重播出變形前的圖並接著編輯同一張網格（變形前的 `x`/`y` 由 `bx,by` 反推），所以不會累積取樣；但勾了存檔自動 trim 時會在後面加一個 `xform`，之後再變形就是新的一層 `warp`。編輯中的預覽就是最後結果（直接改圖層的 canvas／x／y），取消時用模式開始時的快照還原。
 - **undo**：Ctrl+Z／Ctrl+Y，快照只存 `ops`、`canvas` 的參照和擺放數字；兩者都不會被就地修改（每次操作換新的），所以快照不用複製像素。合併用「結構快照」（`snapList`：`S.layers` 複本＋`S.active`），被合併的圖層物件原封不動、也不 `forget`，換回清單就還原；刪除圖層時會把它從結構快照裡拿掉（不然 undo 合併會讓它復活）。刪除、拖曳排序本身仍不能 undo。
 - **合併圖層**：「向下合併」（Ctrl+E，選取層＋正下方那層）、「合併可見」（Ctrl+Shift+E，顯示中且沒鎖定的全部）。用 `flatten()` 壓成一張新圖層，放在最底層的位置、名字 `底層名-merged`、沿用底層的 `dir`/`path`；旋轉烘進像素（`a=0`），中心點的世界座標沿用最底層的（`x`/`y` 不變、重算 `ox`/`oy`）。有半透明圖層時用 `confirm` 問要不要烘入不透明度（取消＝照 100% 合）。向下合併遇到隱藏／鎖定的圖層會拒絕。新圖層沒有原圖路徑，跟拖進來的圖一樣要先存檔才能存專案。
 - **複製圖層**：「複製」（Ctrl+J）把選取層淺拷貝一份（`ops`／`canvas`／`src` 共用參照，反正不會就地修改），放在它正上方、名字 `原名-copy`、原圖路徑相同；用結構快照所以能 undo。
+- **裁切四種模式**：保留框內（`xform`）、移除框內（`erase`）、移到新圖層、複製到新圖層。後兩者先複製一層（同上，名字 `原名-crop`）再對副本做 `xform`，所以副本也是從原圖只取樣一次、內容不跳位；「移到」另外在原圖層加 `erase`。這一步同時改圖層清單和原圖層像素，用群組快照（`{group: [snapList, snap]}`），一次 undo 全部還原。
+- **顏色模式**：「填色」「去色」共用一個色票，即時預覽、確定才寫入步驟。點畫布是滴管，吸選取圖層（目前步驟的結果）的 RGB 填進色票；填色的 alpha 欄不跟著吸，免得吸到半透明邊緣把它改掉。去色是完全相等，所以背景色要用滴管吸，不要用色票挑。
 - **擺放是數字**：`x`／`y`／`a`（角度）／`ox`／`oy`（中心點）不烘進圖，存在同名 `.json`，由人手動抄進 `xls/role.xlsx`／`xls/item.xlsx`。
 - **世界座標＝圖片像素**；遊戲單位＝世界座標 × scale（全域，預設 0.25）。「套用 scale」只切換顯示的數字單位與預覽大小，不動像素。
 - **內容不跳位**：裁切、trim、改中心點時會自動補償 `x`／`y`；縮放以中心點為基準，`x`／`y` 不變。
@@ -50,11 +52,11 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 | 檔案 | 內容 |
 |---|---|
-| `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／變形）、UI 同步、開存檔 |
-| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、alphaClear、opaqueBounds；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
+| `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／變形）、UI 同步、開存檔 |
+| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、alphaClear、fill、key、opaqueBounds；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
 | `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
 | `fs.js` | 工作資料夾 handle、列目錄、讀寫檔 |
 
-測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、變形、合併、sidecar、icon；專案存讀用 OPFS 當工作資料夾，因為無頭 Chrome 開不了資料夾選擇視窗）。
+測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、變形、合併、sidecar、icon；專案存讀用 OPFS 當工作資料夾，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
 不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、圖層分組、橡皮擦。

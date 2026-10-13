@@ -54,6 +54,31 @@ run('paperdoll', async t => {
         pd.applyMode();
         out.alpha = [...A.canvas.getContext('2d').getImageData(0, 0, 4, 1).data].filter((_, i) => i % 4 === 3);
 
+        const rgba = (L) => [...L.canvas.getContext('2d').getImageData(0, 0, L.canvas.width, 1).data].join();
+        const strip = () => img(4, 1, g => [[0, 255, 0, 10], [255, 0, 0, 255], [10, 20, 30, 255]].forEach(([r, gg, b, a], i) => {g.fillStyle = `rgba(${r},${gg},${b},${a / 255})`; g.fillRect(i + 1, 0, 1, 1);}));
+        const F = pd.addLayer(await strip(), 'f', null, null, null);
+        const fBefore = rgba(F);
+        Object.assign(document.getElementById('colRgb'), {value: '#0000ff'});
+        document.getElementById('colA').value = 200;
+        document.getElementById('colT').value = 20;
+        document.getElementById('colFill').checked = true;
+        pd.setMode('color');
+        pd.applyMode();
+        out.fill = [rgba(F).split(',').filter((_, i) => i % 4 === 3).join(), rgba(F).split(',').slice(8, 12).join(), F.ops.at(-1).type];
+        pd.undo();
+        out.fillUndo = rgba(F) === fBefore;
+
+        const K = pd.addLayer(await strip(), 'k', null, null, null);
+        document.getElementById('colKey').checked = true;
+        pd.setMode('color');
+        pd.pickColor(pd.toWorld(K, 2.5, 0.5));
+        out.picked = document.getElementById('colRgb').value;
+        pd.applyMode();
+        out.key = rgba(K).split(',').filter((_, i) => i % 4 === 3).join();
+        document.getElementById('colFill').checked = true;
+        pd.S.layers.splice(pd.S.layers.indexOf(F), 2);
+        pd.select(A);
+
         L.a = 30;
         out.xlsx = pd.sidecar(L, 'foo').xlsx;
         const icon = pd.iconCanvas(32);
@@ -74,6 +99,26 @@ run('paperdoll', async t => {
         out.erase = [E.canvas.width, E.canvas.height, E.x === ex && E.y === ey, a(2, 3), a(5, 7), a(6, 7), a(1, 3), E.ops.at(-1)?.type];
         pd.undo();
         out.eraseUndo = [E.ops.length, a(2, 3)];
+
+        const toNew = (how) => {
+            pd.select(E);
+            document.getElementById(how).checked = true;
+            pd.setMode('crop');
+            pd.S.mode.rect = {ax: 2, ay: 3, bx: 6, by: 8};
+            pd.applyMode();
+            document.getElementById('cropKeep').checked = true;
+            const C = pd.S.active, i = pd.S.layers.indexOf(E);
+            const p = pd.toWorld(C, 0, 0), q = pd.toWorld(E, 2, 3);
+            return [C !== E && pd.S.layers[i + 1] === C, C.canvas.width, C.canvas.height, p.x === q.x && p.y === q.y, a(2, 3)];
+        };
+        const n0 = pd.S.layers.length;
+        out.copyNew = toNew('cropCopy');
+        pd.undo();
+        out.moveNew = toNew('cropMove');
+        pd.undo();
+        out.moveUndo = [pd.S.layers.length === n0, pd.S.active === E, a(2, 3)];
+        pd.redo();
+        out.moveRedo = [pd.S.layers.length === n0 + 1, a(2, 3)];
         return out;
     });
 
@@ -137,6 +182,10 @@ run('paperdoll', async t => {
         await pd.loadHandle(fh, img, 'img');
         const L = pd.S.active;
         pd.setMode('scale'); pd.S.mode.sx = pd.S.mode.sy = 0.5; pd.applyMode();
+        document.getElementById('colRgb').value = '#ff0000';
+        document.getElementById('colA').value = 128;
+        document.getElementById('colT').value = 1;
+        pd.setMode('color'); pd.applyMode();
         L.x = 7;
         pd.S.project = {dir: root, path: '', name: 't'};
         await pd.saveProject(false);
@@ -147,6 +196,7 @@ run('paperdoll', async t => {
         await pd.openProject(await root.getFileHandle('t.pdproj.json'), root, '');
         const M = pd.S.layers[0];
         out.reopen = [pd.S.layers.length, M.x, M.canvas.width, M.ops.length, M.srcPath, pd.isUnsaved(), pd.hist.undos.length];
+        out.reopenPix = [...M.canvas.getContext('2d').getImageData(5, 5, 1, 1).data].join();
 
         const before = await (await (await root.getFileHandle('t.pdproj.json')).getFile()).text();
         pd.addLayer(await createImageBitmap(c), 'dropped', null, null, null);
@@ -156,7 +206,8 @@ run('paperdoll', async t => {
     });
     t.check('專案：存完沒有未存修改', p.savedClean);
     t.check('專案：改了就標記未存', p.dirty);
-    t.eq('專案：重開還原圖層、步驟、位置，undo 清空', JSON.stringify(p.reopen), JSON.stringify([1, 7, 20, 1, 'img/a.png', false, 0]));
+    t.eq('專案：重開還原圖層、步驟、位置，undo 清空', JSON.stringify(p.reopen), JSON.stringify([1, 7, 20, 2, 'img/a.png', false, 0]));
+    t.eq('專案：重開後重播填色', p.reopenPix, '255,0,0,128');
     t.check('專案：有拖進來的圖層時擋下存檔', p.looseBlocked);
 
     const o = await ev(async () => {
@@ -263,9 +314,17 @@ run('paperdoll', async t => {
     t.check('縮兩次 50% 跟直接縮 25% 像素相同（都從原圖取樣）', r.fromSrc);
     t.check('改中心點時內容不跳位', r.originKeep);
     t.eq('alpha < 60 清除', JSON.stringify(r.alpha), JSON.stringify([0, 0, 200, 255]));
+    t.eq('填色：alpha >= 門檻的整組換掉，其餘不動', JSON.stringify(r.fill), JSON.stringify(['0,10,200,200', '0,0,255,200', 'fill']));
+    t.check('填色：undo 還原', r.fillUndo);
+    t.eq('去色：滴管吸 RGB', r.picked, '#ff0000');
+    t.eq('去色：RGB 完全相等的變透明', r.key, '0,10,0,255');
     t.eq('sidecar 的 xlsx 字串', r.xlsx, '"sprite":"foo","scale":0.25,"x":-3,"y":6.75,"a":30');
     t.eq('icon 是 32×32', JSON.stringify(r.icon), JSON.stringify([32, 32, 2]));
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
     t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
     t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));
+    t.eq('裁切（複製到新圖層）：新層在上面、內容不跳位、原圖不變', JSON.stringify(r.copyNew), JSON.stringify([true, 4, 5, true, 255]));
+    t.eq('裁切（移到新圖層）：原圖框內變透明', JSON.stringify(r.moveNew), JSON.stringify([true, 4, 5, true, 0]));
+    t.eq('裁切（移到新圖層）：一次 undo 拿掉新層＋還原原圖', JSON.stringify(r.moveUndo), JSON.stringify([true, true, 255]));
+    t.eq('裁切（移到新圖層）：redo', JSON.stringify(r.moveRedo), JSON.stringify([true, 0]));
 });

@@ -53,14 +53,17 @@
             <button data-mode="crop">裁切</button>
             <button data-mode="scale">縮放</button>
             <button data-mode="alpha">清除透明</button>
+            <button data-mode="color">顏色</button>
             <button data-mode="warp">變形</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
 
         <div id="modeCrop" class="mode" hidden>
-            <label><input id="cropKeep" name="cropMode" type="radio" checked> 保留框內（裁掉外面）</label>
-            <label><input id="cropCut" name="cropMode" type="radio"> 移除框內（挖成透明）</label>
+            <label><input id="cropKeep" name="cropMode" type="radio" value="keep" checked> 保留框內（裁掉外面）</label>
+            <label><input id="cropCut" name="cropMode" type="radio" value="cut"> 移除框內（挖成透明）</label>
+            <label><input id="cropMove" name="cropMode" type="radio" value="move"> 移到新圖層</label>
+            <label><input id="cropCopy" name="cropMode" type="radio" value="copy"> 複製到新圖層</label>
             <div class="hint">在圖層上拖曳框選範圍</div>
             <div id="cropInfo" class="dim"></div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
@@ -78,6 +81,16 @@
 
         <div id="modeAlpha" class="mode" hidden>
             <label>alpha &lt; <input id="alT" type="range" min="0" max="255" value="32"> <span id="alV">32</span> 清除</label>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
+        </div>
+
+        <div id="modeColor" class="mode" hidden>
+            <label><input id="colFill" name="colorMode" type="radio" value="fill" checked> 填色（有東西的像素整組換成指定 RGBA）</label>
+            <label><input id="colKey" name="colorMode" type="radio" value="key"> 去色（RGB 完全相等的變透明）</label>
+            <label>顏色 <input id="colRgb" type="color" value="#000000"></label>
+            <label class="colFillOnly">alpha <input id="colA" type="number" min="0" max="255" value="255"></label>
+            <label class="colFillOnly">alpha &gt;= <input id="colT" type="range" min="1" max="255" value="1"> <span id="colTV">1</span> 才換</label>
+            <div class="hint">點畫布吸取選取圖層的顏色</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
         </div>
 

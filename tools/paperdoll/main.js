@@ -35,7 +35,7 @@ const status = (msg) => {$('status').textContent = msg;};
 // ---------- 座標轉換 ----------
 
 const modeScale = (L) => S.mode.type === 'scale' && S.mode.layer === L ? [S.mode.sx, S.mode.sy] : [1, 1];
-const layerImg = (L) => S.mode.type === 'alpha' && S.mode.layer === L && S.mode.preview ? S.mode.preview : L.canvas;
+const layerImg = (L) => S.mode.layer === L && S.mode.preview ? S.mode.preview : L.canvas;
 
 function toWorld(L, px, py, [sx, sy] = modeScale(L))
 {
@@ -110,14 +110,20 @@ function mergeLayers(layers)
 }
 
 // ops 跟 canvas 都不會被就地修改，直接共用參照
+function cloneAbove(L, name)
+{
+    const C = {...L, id: ++uid, name};
+    S.layers.splice(S.layers.indexOf(L) + 1, 0, C);
+    return C;
+}
+
 function duplicateLayer()
 {
     const L = S.active;
     if (!L) return status('先選一個圖層');
     cancelMode();
     hist.push(hist.snapList(S));
-    const C = {...L, id: ++uid, name: `${L.name}-copy`};
-    S.layers.splice(S.layers.indexOf(L) + 1, 0, C);
+    const C = cloneAbove(L, `${L.name}-copy`);
     select(C);
     status(`複製圖層 ${L.name} → ${C.name}`);
 }
@@ -291,7 +297,7 @@ function drawOverlay(K)
     if (m.type === 'crop' && m.rect)
     {
         const {x0, y0, x1, y1} = cropRect(m.rect, L);
-        g.strokeStyle = $('cropCut').checked ? '#f44' : '#0f0';
+        g.strokeStyle = {keep: '#0f0', cut: '#f44', move: '#f0f', copy: '#0cf'}[cropHow()];
         poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => toWorld(L, x, y)));
     }
     if (m.type === 'scale')
@@ -320,7 +326,7 @@ function fitView()
     dirty();
 }
 
-// ---------- 模式：移動 / 裁切 / 縮放 / 清除透明 ----------
+// ---------- 模式：移動 / 裁切 / 縮放 / 清除透明 / 顏色 ----------
 
 function setMode(type)
 {
@@ -334,6 +340,7 @@ function setMode(type)
     if (type === 'crop') S.mode = {type, layer: L, rect: null};
     else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, lock: $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
+    else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
     else if (type === 'warp') S.mode = warpStart(L);
     else S.mode = {type: 'move'};
     refreshAll();
@@ -356,9 +363,18 @@ function applyMode()
         if (!m.rect) return;
         const {x0, y0, x1, y1} = cropRect(m.rect, L);
         if (x1 - x0 < 1 || y1 - y0 < 1) return;
-        hist.record(L);
-        if ($('cropCut').checked) pushOp(L, {type: 'erase', x: x0, y: y0, w: x1 - x0, h: y1 - y0});
-        else applyCrop(L, x0, y0, x1 - x0, y1 - y0);
+        const how = cropHow(), w = x1 - x0, h = y1 - y0;
+        const erase = () => pushOp(L, {type: 'erase', x: x0, y: y0, w, h});
+        if (how === 'keep') {hist.record(L); applyCrop(L, x0, y0, w, h);}
+        else if (how === 'cut') {hist.record(L); erase();}
+        else
+        {
+            hist.push({group: [hist.snapList(S), hist.snap(L)]});
+            const C = cloneAbove(L, `${L.name}-crop`);
+            applyCrop(C, x0, y0, w, h);
+            if (how === 'move') erase();
+            S.active = C;
+        }
     }
     else if (m.type === 'scale')
     {
@@ -375,6 +391,11 @@ function applyMode()
     {
         hist.record(L);
         pushOp(L, {type: 'alpha', t: m.t});
+    }
+    else if (m.type === 'color')
+    {
+        hist.record(L);
+        pushOp(L, colorOp());
     }
     else if (m.type === 'warp')
     {
@@ -399,6 +420,8 @@ function applyMode()
     refreshAll();
 }
 
+const cropHow = () => document.querySelector('[name=cropMode]:checked').value;
+
 function cropRect(r, L)
 {
     const cl = (v, max) => Math.min(max, Math.max(0, Math.round(v)));
@@ -412,6 +435,34 @@ function updateAlpha()
     const m = S.mode;
     m.preview = PX.alphaClear(m.layer.canvas, m.t);
     dirty();
+}
+
+const colorHow = () => document.querySelector('[name=colorMode]:checked').value;
+const byte = (id, min) => Math.min(255, Math.max(min, Math.round(+$(id).value || 0)));
+
+function colorOp()
+{
+    const v = parseInt($('colRgb').value.slice(1), 16);
+    const rgb = {r: v >> 16, g: (v >> 8) & 255, b: v & 255};
+    return colorHow() === 'fill' ? {type: 'fill', ...rgb, a: byte('colA', 0), t: byte('colT', 1)} : {type: 'key', ...rgb};
+}
+
+function updateColor()
+{
+    const m = S.mode, op = colorOp();
+    m.preview = op.type === 'fill' ? PX.fill(m.layer.canvas, op) : PX.key(m.layer.canvas, op);
+    dirty();
+}
+
+// 滴管只吸 RGB，填色的 alpha 不跟著變（不然吸到半透明邊緣會被改掉）
+function pickColor(w)
+{
+    const m = S.mode, p = toLocal(m.layer, w.x, w.y);
+    const px = PX.pixelAt(m.layer.canvas, p.x, p.y);
+    if (!px) return;
+    $('colRgb').value = '#' + px.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('');
+    status(`吸取 rgba(${px.join(',')})`);
+    updateColor();
 }
 
 // 把手位置投影到「未旋轉、以中心點為原點」的座標，跟角落原本的位置比出倍率
@@ -590,6 +641,7 @@ cv.addEventListener('pointerdown', e => {
         drag = i >= 0 ? {type: 'handle', corner: [[0, 0], [1, 0], [1, 1], [0, 1]][i]}
                       : {type: 'move', L, wx: w.x, wy: w.y, x: L.x, y: L.y};
     }
+    else if (m.type === 'color') pickColor(w);
     else if (m.type === 'warp')
     {
         drag = warpPointerDown(m, w, e.shiftKey);
@@ -814,7 +866,9 @@ function refreshModePanel()
     $('modeCrop').hidden = m.type !== 'crop';
     $('modeScale').hidden = m.type !== 'scale';
     $('modeAlpha').hidden = m.type !== 'alpha';
+    $('modeColor').hidden = m.type !== 'color';
     $('modeWarp').hidden = m.type !== 'warp';
+    if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
     if (m.type === 'warp')
     {
         $('wpCols').value = m.cols;
@@ -1214,12 +1268,20 @@ $('wpCols').onchange = warpReset;
 $('wpRows').onchange = warpReset;
 $('wpReset').onclick = warpReset;
 $('showOrigin').onchange = dirty;
-$('cropKeep').onchange = $('cropCut').onchange = dirty;
+document.querySelectorAll('[name=cropMode]').forEach(r => {r.onchange = dirty;});
 
 $('alT').oninput = () => {
     $('alV').textContent = $('alT').value;
     if (S.mode.type === 'alpha') {S.mode.t = +$('alT').value; updateAlpha();}
 };
+
+const colorChanged = () => {
+    $('colTV').textContent = $('colT').value;
+    if (S.mode.type !== 'color') return;
+    refreshModePanel();
+    updateColor();
+};
+for (const id of ['colFill', 'colKey', 'colRgb', 'colA', 'colT']) $(id).oninput = colorChanged;
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
@@ -1250,4 +1312,4 @@ new ResizeObserver(dirty).observe(cv);
 
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
-               setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer};
+               setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor};
