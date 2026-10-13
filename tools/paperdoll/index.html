@@ -60,11 +60,15 @@
         </div>
 
         <div id="modeCrop" class="mode" hidden>
+            <div class="row2" style="margin: 0 0 4px">
+                <label><input id="cropRectShape" name="cropShape" type="radio" value="rect" checked> 矩形</label>
+                <label><input id="cropPolyShape" name="cropShape" type="radio" value="poly"> 多邊形</label>
+            </div>
             <label><input id="cropKeep" name="cropMode" type="radio" value="keep" checked> 保留框內（裁掉外面）</label>
             <label><input id="cropCut" name="cropMode" type="radio" value="cut"> 移除框內（挖成透明）</label>
             <label><input id="cropMove" name="cropMode" type="radio" value="move"> 移到新圖層</label>
             <label><input id="cropCopy" name="cropMode" type="radio" value="copy"> 複製到新圖層</label>
-            <div class="hint">在圖層上拖曳框選範圍</div>
+            <div id="cropHint" class="hint"></div>
             <div id="cropInfo" class="dim"></div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
         </div>

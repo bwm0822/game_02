@@ -294,12 +294,7 @@ function drawOverlay(K)
 
     const m = S.mode;
     if (m.type === 'warp') drawWarp(m, K);
-    if (m.type === 'crop' && m.rect)
-    {
-        const {x0, y0, x1, y1} = cropRect(m.rect, L);
-        g.strokeStyle = {keep: '#0f0', cut: '#f44', move: '#f0f', copy: '#0cf'}[cropHow()];
-        poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => toWorld(L, x, y)));
-    }
+    if (m.type === 'crop') drawCrop(m, L, K);
     if (m.type === 'scale')
     {
         g.fillStyle = '#fff';
@@ -337,7 +332,7 @@ function setMode(type)
         status('先選一個沒鎖定的圖層');
         type = 'move';
     }
-    if (type === 'crop') S.mode = {type, layer: L, rect: null};
+    if (type === 'crop') S.mode = {type, layer: L, rect: null, poly: null};
     else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, lock: $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
@@ -360,19 +355,17 @@ function applyMode()
     const m = S.mode, L = m.layer;
     if (m.type === 'crop')
     {
-        if (!m.rect) return;
-        const {x0, y0, x1, y1} = cropRect(m.rect, L);
-        if (x1 - x0 < 1 || y1 - y0 < 1) return;
-        const how = cropHow(), w = x1 - x0, h = y1 - y0;
-        const erase = () => pushOp(L, {type: 'erase', x: x0, y: y0, w, h});
-        if (how === 'keep') {hist.record(L); applyCrop(L, x0, y0, w, h);}
-        else if (how === 'cut') {hist.record(L); erase();}
+        const sel = cropSel(m);
+        if (!sel) return;
+        const how = cropHow();
+        if (how === 'keep') {hist.record(L); sel.keep(L);}
+        else if (how === 'cut') {hist.record(L); sel.cut(L);}
         else
         {
             hist.push({group: [hist.snapList(S), hist.snap(L)]});
             const C = cloneAbove(L, `${L.name}-crop`);
-            applyCrop(C, x0, y0, w, h);
-            if (how === 'move') erase();
+            sel.keep(C);
+            if (how === 'move') sel.cut(L);
             S.active = C;
         }
     }
@@ -421,6 +414,7 @@ function applyMode()
 }
 
 const cropHow = () => document.querySelector('[name=cropMode]:checked').value;
+const cropShape = () => document.querySelector('[name=cropShape]:checked').value;
 
 function cropRect(r, L)
 {
@@ -428,6 +422,145 @@ function cropRect(r, L)
     const W = L.canvas.width, H = L.canvas.height;
     return {x0: cl(Math.min(r.ax, r.bx), W), y0: cl(Math.min(r.ay, r.by), H),
             x1: cl(Math.max(r.ax, r.bx), W), y1: cl(Math.max(r.ay, r.by), H)};
+}
+
+// 外接矩形往外取整，限制在圖內（頂點可以點在圖外）
+function polyRect(pts, L)
+{
+    const cl = (v, max) => Math.min(max, Math.max(0, v));
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    return {x0: cl(Math.floor(Math.min(...xs)), L.canvas.width), y0: cl(Math.floor(Math.min(...ys)), L.canvas.height),
+            x1: cl(Math.ceil(Math.max(...xs)), L.canvas.width), y1: cl(Math.ceil(Math.max(...ys)), L.canvas.height)};
+}
+
+// 目前的選取範圍：keep(T) 只留範圍內並裁到外接矩形，cut(T) 挖掉範圍內
+function cropSel(m)
+{
+    const L = m.layer;
+    if (cropShape() === 'rect')
+    {
+        if (!m.rect) return null;
+        const {x0, y0, x1, y1} = cropRect(m.rect, L), w = x1 - x0, h = y1 - y0;
+        if (w < 1 || h < 1) return null;
+        return {keep: T => applyCrop(T, x0, y0, w, h), cut: T => pushOp(T, {type: 'erase', x: x0, y: y0, w, h})};
+    }
+    if (!m.poly?.closed) return null;
+    const pts = m.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
+    const {x0, y0, x1, y1} = polyRect(pts, L);
+    if (x1 - x0 < 1 || y1 - y0 < 1) return null;
+    return {keep: T => {pushOp(T, {type: 'mask', pts, keep: true}); applyCrop(T, x0, y0, x1 - x0, y1 - y0);},
+            cut: T => pushOp(T, {type: 'mask', pts, keep: false})};
+}
+
+// ---------- 多邊形裁切（頂點存圖層本地座標；裁切模式下圖層沒縮放，本地距離＝世界距離） ----------
+
+const polyTol = () => 8 / zoomK();
+
+// Shift：從 from 出發的方向鎖在 45° 的倍數
+function snap45(from, p)
+{
+    const d = Math.hypot(p.x - from.x, p.y - from.y), a = Math.round(Math.atan2(p.y - from.y, p.x - from.x) / (Math.PI / 4)) * Math.PI / 4;
+    return {x: from.x + d * Math.cos(a), y: from.y + d * Math.sin(a)};
+}
+
+function polyEdgeHit(P, p)
+{
+    const n = P.pts.length;
+    let best = null;
+    for (let i = 0; i < n; i++)
+    {
+        const a = P.pts[i], b = P.pts[(i + 1) % n];
+        const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy;
+        const t = len2 ? Math.min(1, Math.max(0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2)) : 0;
+        const q = {x: a.x + t * dx, y: a.y + t * dy}, d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < polyTol() && (!best || d < best.d)) best = {i, q, d};
+    }
+    return best;
+}
+
+const polyVertexHit = (P, p) => P.pts.findIndex(v => Math.hypot(v.x - p.x, v.y - p.y) < polyTol());
+const polyNearFirst = (P, p) => P.pts.length >= 3 && Math.hypot(P.pts[0].x - p.x, P.pts[0].y - p.y) < polyTol();
+
+function polyPointerDown(m, e)
+{
+    const w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y), P = m.poly;
+    if (!P) {m.poly = {pts: [raw], closed: false, cursor: raw}; return null;}
+    if (!P.closed)
+    {
+        if (e.detail >= 2) P.closed = P.pts.length >= 3;
+        else if (polyNearFirst(P, raw)) P.closed = true;
+        else P.pts = [...P.pts, e.shiftKey ? snap45(P.pts.at(-1), raw) : raw];
+        return null;
+    }
+    const i = polyVertexHit(P, raw);
+    if (i >= 0) return {type: 'polyPt', i};
+    const hit = polyEdgeHit(P, raw);
+    if (!hit) return null;
+    P.pts = [...P.pts.slice(0, hit.i + 1), hit.q, ...P.pts.slice(hit.i + 1)];
+    P.edge = null;
+    return {type: 'polyPt', i: hit.i + 1};
+}
+
+function polyDrag(m, e, i)
+{
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y);
+    const prev = P.pts[(i - 1 + P.pts.length) % P.pts.length];
+    P.pts = P.pts.map((v, k) => k === i ? (e.shiftKey ? snap45(prev, raw) : raw) : v);
+}
+
+function polyHover(m, e)
+{
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y);
+    if (!P.closed) P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
+    else P.edge = polyVertexHit(P, raw) < 0 ? polyEdgeHit(P, raw)?.i ?? null : null;
+}
+
+// Backspace：刪最後一點；已閉合就先解開閉合
+function polyBack(m)
+{
+    const P = m.poly;
+    if (P.closed) P.closed = false;
+    else if (P.pts.length > 1) P.pts = P.pts.slice(0, -1);
+    else m.poly = null;
+}
+
+function drawCrop(m, L, K)
+{
+    g.strokeStyle = {keep: '#0f0', cut: '#f44', move: '#f0f', copy: '#0cf'}[cropHow()];
+    if (cropShape() === 'rect')
+    {
+        if (!m.rect) return;
+        const {x0, y0, x1, y1} = cropRect(m.rect, L);
+        poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => toWorld(L, x, y)));
+        return;
+    }
+    const P = m.poly;
+    if (!P) return;
+    const wp = P.pts.map(p => toWorld(L, p.x, p.y));
+    if (P.closed)
+    {
+        poly(wp);
+        if (P.edge != null)
+        {
+            const a = wp[P.edge], b = wp[(P.edge + 1) % wp.length];
+            g.lineWidth = 3 / K;
+            g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
+            g.lineWidth = 1 / K;
+        }
+    }
+    else
+    {
+        const c = toWorld(L, P.cursor.x, P.cursor.y);
+        g.beginPath();
+        [...wp, c].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+        g.stroke();
+    }
+    g.fillStyle = '#fff';
+    wp.forEach((p, i) => {
+        const r = (i === 0 && !P.closed && polyNearFirst(P, P.cursor) ? 6 : 3) / K;
+        g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+        g.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
+    });
 }
 
 function updateAlpha()
@@ -629,7 +762,13 @@ cv.addEventListener('pointerdown', e => {
         return;
     }
     if (e.button !== 0) return;
-    if (m.type === 'crop')
+    if (m.type === 'crop' && cropShape() === 'poly')
+    {
+        drag = polyPointerDown(m, e);
+        refreshModePanel();
+        dirty();
+    }
+    else if (m.type === 'crop')
     {
         const p = toLocal(L, w.x, w.y);
         m.rect = {ax: p.x, ay: p.y, bx: p.x, by: p.y};
@@ -663,7 +802,11 @@ cv.addEventListener('pointerdown', e => {
 });
 
 cv.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag)
+    {
+        if (S.mode.type === 'crop' && S.mode.poly) {polyHover(S.mode, e); dirty();}
+        return;
+    }
     const w = screenToWorld(e);
     if (drag.type === 'pan')
     {
@@ -686,6 +829,7 @@ cv.addEventListener('pointermove', e => {
         const p = toLocal(S.active, w.x, w.y);
         Object.assign(S.mode.rect, {bx: p.x, by: p.y});
     }
+    else if (drag.type === 'polyPt') polyDrag(S.mode, e, drag.i);
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
     else if (drag.type === 'warp')
     {
@@ -750,8 +894,11 @@ window.addEventListener('keydown', e => {
         e.shiftKey ? mergeVisible() : mergeDown();
         return;
     }
+    const m = S.mode;
     if (e.key === 'Enter') applyMode();
+    else if (e.key === 'Escape' && m.type === 'crop' && (m.rect || m.poly)) {m.rect = m.poly = null; refreshModePanel(); dirty();}
     else if (e.key === 'Escape') cancelMode();
+    else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     const d = ARROWS[e.key], L = S.active;
     if (d && S.mode.type === 'warp' && S.mode.sel.size)
     {
@@ -877,8 +1024,13 @@ function refreshModePanel()
     }
     if (m.type === 'crop')
     {
-        const r = m.rect && cropRect(m.rect, m.layer);
-        $('cropInfo').textContent = r ? `${r.x0},${r.y0} → ${r.x1},${r.y1}（${r.x1 - r.x0}×${r.y1 - r.y0}）` : '';
+        const isPoly = cropShape() === 'poly', P = m.poly;
+        $('cropHint').textContent = isPoly
+            ? '單擊加點，點第一點或雙擊閉合；Backspace 倒退、Shift 鎖 45°；閉合後拖頂點、點邊加點；Esc 清掉重畫'
+            : '在圖層上拖曳框選範圍';
+        const r = isPoly ? P?.closed && polyRect(P.pts.map(p => [p.x, p.y]), m.layer) : m.rect && cropRect(m.rect, m.layer);
+        const pts = isPoly && P ? `${P.pts.length} 點${P.closed ? '' : '（未閉合）'}　` : '';
+        $('cropInfo').textContent = pts + (r ? `${r.x0},${r.y0} → ${r.x1},${r.y1}（${r.x1 - r.x0}×${r.y1 - r.y0}）` : '');
     }
     if (m.type === 'scale')
     {
@@ -1269,6 +1421,11 @@ $('wpRows').onchange = warpReset;
 $('wpReset').onclick = warpReset;
 $('showOrigin').onchange = dirty;
 document.querySelectorAll('[name=cropMode]').forEach(r => {r.onchange = dirty;});
+document.querySelectorAll('[name=cropShape]').forEach(r => {r.onchange = () => {
+    if (S.mode.type === 'crop') S.mode.rect = S.mode.poly = null;
+    refreshModePanel();
+    dirty();
+};});
 
 $('alT').oninput = () => {
     $('alV').textContent = $('alT').value;

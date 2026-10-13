@@ -168,6 +168,7 @@ const OPS = {
     alpha: (c, op) => alphaClear(c, op.t),
     warp: (c, op) => warp(c, op).canvas,
     erase: (c, op) => erase(c, op),
+    mask: (c, op) => mask(c, op),
     fill: (c, op) => fill(c, op),
     key: (c, op) => key(c, op),
     xform: (c, op) => xform(c, op),
@@ -184,6 +185,18 @@ export function erase(src, {x, y, w, h})
 {
     const c = clone(src);
     c.getContext('2d').clearRect(x, y, w, h);
+    return c;
+}
+
+// keep：只留多邊形內（destination-in 會清掉整張畫布的多邊形外）；否則挖掉多邊形內
+export function mask(src, {pts, keep})
+{
+    const c = clone(src), g = c.getContext('2d');
+    g.globalCompositeOperation = keep ? 'destination-in' : 'destination-out';
+    g.beginPath();
+    pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+    g.closePath();
+    g.fill();
     return c;
 }
 
