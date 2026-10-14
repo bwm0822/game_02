@@ -12,8 +12,8 @@
     <button id="btnReauth" hidden></button>
     <span id="rootName" class="dim">（未選擇）</span>
     <span class="sep"></span>
-    <button id="btnSaveProj" title="Ctrl+S 直接存回目前的專案">存專案…</button>
-    <span id="projName" class="dim">（未命名專案）</span>
+    <button id="btnSaveProj" title="把 💾 打勾的圖層存成專案">存專案…</button>
+    <span id="projName" class="dim">（未命名）</span>
     <span class="sep"></span>
     <label>scale <input id="scale" type="number" step="0.05" min="0.01" value="0.25"></label>
     <label><input id="applyScale" type="checkbox"> 套用 scale</label>
@@ -133,6 +133,14 @@
         <label>檔名 <input id="dlgName" size="30"> <span id="dlgExt">.png</span></label>
         <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
+    </form>
+</dialog>
+
+<dialog id="dlgOpen">
+    <form method="dialog">
+        <div id="dlgOpenTitle" class="title"></div>
+        <div>畫布上已經有圖層了：加入＝疊在目前圖層上面；取代＝清掉目前的圖層</div>
+        <div class="row2"><button value="add">加入</button><button value="replace">取代</button><button value="cancel">取消</button></div>
     </form>
 </dialog>
 

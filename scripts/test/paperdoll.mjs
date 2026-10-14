@@ -109,7 +109,7 @@ run('paperdoll', async t => {
             document.getElementById('cropKeep').checked = true;
             const C = pd.S.active, i = pd.S.layers.indexOf(E);
             const p = pd.toWorld(C, 0, 0), q = pd.toWorld(E, 2, 3);
-            return [C !== E && pd.S.layers[i + 1] === C, C.canvas.width, C.canvas.height, p.x === q.x && p.y === q.y, a(2, 3)];
+            return [C !== E && pd.S.layers[i + 1] === C, C.canvas.width, C.canvas.height, p.x === q.x && p.y === q.y, a(2, 3), C.name === E.name];
         };
         const n0 = pd.S.layers.length;
         out.copyNew = toNew('cropCopy');
@@ -255,38 +255,110 @@ run('paperdoll', async t => {
         const fh = await img.getFileHandle('a.png', {create: true});
         const w = await fh.createWritable(); await w.write(await new Promise(r => c.toBlob(r))); await w.close();
 
-        Object.assign(pd.S, {layers: [], active: null, project: null, projSig: null});
+        const log = [], {confirm, alert} = window;
+        window.confirm = (m) => {log.push(m); return confirm.call(window, m);};
+        window.alert = (m) => {log.push(m); return alert.call(window, m);};
+        const $ = (id) => document.getElementById(id);
+        const text = async (name) => (await (await root.getFileHandle(`${name}.pdproj.json`)).getFile()).text();
+        const shown = (id, p) => Promise.race([p.then(() => false), new Promise(r => {const f = () => $(id).open ? r(true) : requestAnimationFrame(f); f();})]);
+        // 回傳對話框預設檔名；沒跳對話框（被擋下）回傳 null
+        const saveProj = async (name) => {
+            const p = pd.saveProject();
+            if (!await shown('dlgSave', p)) return p.then(() => null);
+            const def = $('dlgName').value;
+            $('dlgName').value = name;
+            $('dlgSave').close('ok');
+            await p;
+            return def;
+        };
+        const openProj = async (name, how) => {
+            const p = pd.openProject(await root.getFileHandle(`${name}.pdproj.json`), root, '');
+            if (await shown('dlgOpen', p)) $('dlgOpen').close(how);
+            await p;
+        };
+        const title = () => new Promise(r => requestAnimationFrame(() => r($('projName').textContent)));
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.hist.undos.length = pd.hist.redos.length = 0;
         await pd.setRoot(root);
         await pd.loadHandle(fh, img, 'img');
         const L = pd.S.active;
         pd.setMode('scale'); pd.S.mode.sx = pd.S.mode.sy = 0.5; pd.applyMode();
-        document.getElementById('colRgb').value = '#ff0000';
-        document.getElementById('colA').value = 128;
-        document.getElementById('colT').value = 1;
+        $('colRgb').value = '#ff0000';
+        $('colA').value = 128;
+        $('colT').value = 1;
         pd.setMode('color'); pd.applyMode();
         L.x = 7;
-        pd.S.project = {dir: root, path: '', name: 't'};
-        await pd.saveProject(false);
-        out.savedClean = !pd.isUnsaved();
+        out.defNew = await saveProj('t');
+        out.savedClean = [!pd.isUnsaved(), L.proj, await title()];
         L.x = 9;
         out.dirty = pd.isUnsaved();
 
-        await pd.openProject(await root.getFileHandle('t.pdproj.json'), root, '');
+        await openProj('t', 'replace');
         const M = pd.S.layers[0];
-        out.reopen = [pd.S.layers.length, M.x, M.canvas.width, M.ops.length, M.srcPath, pd.isUnsaved(), pd.hist.undos.length];
+        out.reopen = [pd.S.layers.length, M.x, M.canvas.width, M.ops.length, M.srcPath, pd.isUnsaved(), pd.hist.undos.length, M.proj?.name, await title()];
         out.reopenPix = [...M.canvas.getContext('2d').getImageData(5, 5, 1, 1).data].join();
 
-        const before = await (await (await root.getFileHandle('t.pdproj.json')).getFile()).text();
-        pd.addLayer(await createImageBitmap(c), 'dropped', null, null, null);
-        await pd.saveProject(false);
-        out.looseBlocked = before === await (await (await root.getFileHandle('t.pdproj.json')).getFile()).text();
+        log.length = 0;
+        out.defOwn = [await saveProj('t'), log.length === 1 && !log[0].includes('不同')];
+
+        pd.duplicateLayer();
+        const D = pd.S.active;
+        out.dupTag = D.proj === M.proj;
+        M.save = false;
+        await saveProj('u');
+        M.save = true;
+        pd.removeLayer(D);
+
+        log.length = 0;
+        pd.S.scale = 0.5;
+        await openProj('u', 'add');
+        pd.S.scale = 0.25;
+        const U = pd.S.layers.at(-1);
+        out.add = [pd.S.layers.length, U.proj?.name, pd.S.active === U, U.x === M.x, await title(), log.some(m => m.includes('scale'))];
+        await openProj('u', 'add');
+        out.addTwice = pd.S.layers.length;
+        pd.undo();
+        out.addUndo = [pd.S.layers.length, (await title()).replace(' *', '')];
+        pd.redo();
+
+        log.length = 0;
+        out.defMulti = await saveProj('t');
+        out.diffNote = log.some(m => m.includes('不同'));
+        out.tagKeep = [M.proj.name, U.proj.name, JSON.parse(await text('t')).layers.length];
+        U.save = false;
+        await saveProj('only');
+        out.onlySaved = JSON.parse(await text('only')).layers.length;
+        U.save = true;
+
+        pd.select(M);
+        const before = await text('t');
+        const X = pd.addLayer(await createImageBitmap(c), 'dropped', null, null, null);
+        out.dropTag = X.proj === M.proj;
+        out.looseBlocked = await saveProj('t') === null && before === await text('t');
+        for (const K of pd.S.layers) K.save = false;
+        pd.select(M);
+        out.btnOff = $('btnSaveProj').disabled;
+        Object.assign(window, {confirm, alert});
         return out;
     });
-    t.check('專案：存完沒有未存修改', p.savedClean);
+    t.eq('專案：沒有專案時預設存成新專案', p.defNew, 'project');
+    t.eq('專案：存完沒有未存修改、存檔不改圖層歸屬', JSON.stringify(p.savedClean), JSON.stringify([true, null, '（未命名）']));
     t.check('專案：改了就標記未存', p.dirty);
-    t.eq('專案：重開還原圖層、步驟、位置，undo 清空', JSON.stringify(p.reopen), JSON.stringify([1, 7, 20, 2, 'img/a.png', false, 0]));
+    t.eq('專案：重開還原圖層、步驟、位置，undo 清空、記得歸屬', JSON.stringify(p.reopen), JSON.stringify([1, 7, 20, 2, 'img/a.png', false, 0, 't', 't']));
     t.eq('專案：重開後重播填色', p.reopenPix, '255,0,0,128');
+    t.eq('專案：只開一個專案時預設存回它，圖層相同不提示', JSON.stringify(p.defOwn), JSON.stringify(['t', true]));
+    t.check('專案：複製的圖層沿用歸屬', p.dupTag);
+    t.eq('專案：加入疊在上面、選取加入的圖層、座標不變、scale 不同會警告', JSON.stringify(p.add), JSON.stringify([2, 'u', true, true, 't + u *', true]));
+    t.eq('專案：同一個專案不能加入兩次', p.addTwice, 2);
+    t.eq('專案：undo 拿掉加入的圖層', JSON.stringify(p.addUndo), JSON.stringify([1, 't']));
+    t.eq('專案：多個專案時預設新專案', p.defMulti, 'project');
+    t.check('專案：存進舊專案但圖層不同時，確認視窗會提示', p.diffNote);
+    t.eq('專案：存進別的專案不改歸屬', JSON.stringify(p.tagKeep), JSON.stringify(['t', 'u', 2]));
+    t.eq('專案：只存 💾 打勾的圖層', p.onlySaved, 1);
+    t.check('專案：新圖層歸選取圖層的專案', p.dropTag);
     t.check('專案：有拖進來的圖層時擋下存檔', p.looseBlocked);
+    t.check('專案：💾 全關時存專案按鈕不能按', p.btnOff);
 
     const o = await ev(async () => {
         const pd = window.__pd, out = {};
@@ -303,7 +375,7 @@ run('paperdoll', async t => {
             await p;
             return alphaOf(await (await img.getFileHandle(`${name}.png`)).getFile());
         };
-        Object.assign(pd.S, {layers: [], active: null, project: null, projSig: null});
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
         await pd.loadHandle(await img.getFileHandle('a.png'), img, 'img');
         const L = pd.S.active;
         L.opacity = 0.5;
@@ -328,7 +400,7 @@ run('paperdoll', async t => {
         const sq = (n, color) => {const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d'); g.fillStyle = color; g.fillRect(0, 0, n, n); return createImageBitmap(c);};
         const at = (L, wx, wy) => [...L.canvas.getContext('2d').getImageData(Math.floor(wx - L.x + L.ox * L.canvas.width), Math.floor(wy - L.y + L.oy * L.canvas.height), 1, 1).data];
         const names = () => pd.S.layers.map(L => L.name).join();
-        Object.assign(pd.S, {layers: [], active: null, project: null, projSig: null});
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
         pd.hist.undos.length = pd.hist.redos.length = 0;
         const A = pd.addLayer(await sq(20, '#f00'), 'A', null, null, null);
         const B = pd.addLayer(await sq(10, '#00f'), 'B', null, null, null);
@@ -401,8 +473,8 @@ run('paperdoll', async t => {
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
     t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
     t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));
-    t.eq('裁切（複製到新圖層）：新層在上面、內容不跳位、原圖不變', JSON.stringify(r.copyNew), JSON.stringify([true, 4, 5, true, 255]));
-    t.eq('裁切（移到新圖層）：原圖框內變透明', JSON.stringify(r.moveNew), JSON.stringify([true, 4, 5, true, 0]));
+    t.eq('裁切（複製到新圖層）：新層在上面、內容不跳位、原圖不變、名字沿用', JSON.stringify(r.copyNew), JSON.stringify([true, 4, 5, true, 255, true]));
+    t.eq('裁切（移到新圖層）：原圖框內變透明', JSON.stringify(r.moveNew), JSON.stringify([true, 4, 5, true, 0, true]));
     t.eq('裁切（移到新圖層）：一次 undo 拿掉新層＋還原原圖', JSON.stringify(r.moveUndo), JSON.stringify([true, true, 255]));
     t.eq('裁切（移到新圖層）：redo', JSON.stringify(r.moveRedo), JSON.stringify([true, 0]));
 });

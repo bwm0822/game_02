@@ -14,8 +14,7 @@ const cv = $('cv'), g = cv.getContext('2d');
 const S = {
     root: null,
     pendingRoot: null,
-    project: null,      // {dir, path, name}：目前專案檔的位置
-    projSig: null,      // 上次存／開專案時的內容，跟現在比對出有沒有沒存的修改
+    projSig: null,      // 上次存／開專案時整個畫布的內容，跟現在比對出有沒有沒存的修改
     layers: [],
     active: null,
     scale: 0.25,
@@ -70,7 +69,7 @@ function addLayer(img, name, dir, path, meta)
 {
     const src = PX.fromImage(img);
     const L = {id: ++uid, name, dir, path, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1,
-               visible: true, opacity: 1, locked: false};
+               visible: true, opacity: 1, locked: false, save: true, proj: S.active?.proj ?? null};
     if (meta)
     {
         const f = meta.scale || S.scale;
@@ -101,7 +100,7 @@ function mergeLayers(layers)
     hist.push(hist.snapList(S));
     const L = {id: ++uid, name: `${base.name}-merged`, dir: base.dir, path: base.path, src: big, ops: [], canvas: big,
                x: base.x, y: base.y, a: 0, ox: (base.x - minX) / big.width, oy: (base.y - minY) / big.height,
-               visible: true, opacity: 1, locked: false};
+               visible: true, opacity: 1, locked: false, save: true, proj: base.proj};
     const i = S.layers.indexOf(base);
     S.layers = S.layers.filter(M => !layers.includes(M));
     S.layers.splice(i, 0, L);
@@ -363,7 +362,7 @@ function applyMode()
         else
         {
             hist.push({group: [hist.snapList(S), hist.snap(L)]});
-            const C = cloneAbove(L, `${L.name}-crop`);
+            const C = cloneAbove(L, L.name);
             sel.keep(C);
             if (how === 'move') sel.cut(L);
             S.active = C;
@@ -867,13 +866,7 @@ cv.addEventListener('wheel', e => {
 const ARROWS = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]};
 
 window.addEventListener('keydown', e => {
-    if (e.ctrlKey && e.key.toLowerCase() === 's')
-    {
-        e.preventDefault();
-        if (!$('dlgSave').open) saveProject(false).catch(err => status(err.message));
-        return;
-    }
-    if ($('dlgSave').open || e.target.matches('input')) return;
+    if (document.querySelector('dialog[open]') || e.target.matches('input')) return;
     const key = e.key.toLowerCase();
     S.keys.add(key);
     if (e.ctrlKey && (key === 'z' || key === 'y'))
@@ -950,6 +943,7 @@ function refreshLayers()
 {
     const box = $('layers');
     box.innerHTML = '';
+    $('btnSaveProj').disabled = !S.layers.some(L => L.save);
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
@@ -964,6 +958,7 @@ function refreshLayers()
         name.textContent = `${L.name} (${L.canvas.width}×${L.canvas.height})`;
         name.title = join(L.path ?? '', L.name);
         row.append(
+            ico('💾', L.save, `專案：${L.proj?.name ?? '（無）'}（點一下切換要不要存進專案）`, () => {L.save = !L.save; refreshAll();}),
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
             name,
@@ -1113,8 +1108,8 @@ function needRoot()
     return !!S.root;
 }
 
-// bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾
-function saveDialog(title, dir, path, name, ext = '.png', bake = null)
+// bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾；note(path, name)：覆蓋確認時多加的文字
+function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null)
 {
     const dlg = $('dlgSave');
     let sel = {dir, path};
@@ -1139,7 +1134,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null)
         let n = $('dlgName').value.trim();
         if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
         if (dlg.returnValue !== 'ok' || !n) return res(null);
-        if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？`)) return res(null);
+        if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
         res({...sel, name: n, bake: !!bake && $('dlgBake').checked});
     }, {once: true}));
 }
@@ -1185,27 +1180,31 @@ async function saveLayer()
 
 // ---------- 專案 ----------
 // 只記原圖路徑（相對工作資料夾）＋步驟清單，開啟時從原圖重播；undo 紀錄不存
+// 圖層的 proj 只在開專案時設定，存專案只是把 💾 打勾的圖層寫出去，不改歸屬
 
-function projectData()
+function projectData(layers)
 {
     return {
         version: 1,
         settings: {scale: S.scale, applyScale: S.applyScale, showOrigin: $('showOrigin').checked, ref: {...S.ref},
                    trimT: trimT(), iconSize: +$('iconSize').value, autoTrim: $('autoTrim').checked},
-        active: S.layers.indexOf(S.active),
-        layers: S.layers.map(L => ({
+        active: layers.indexOf(S.active),
+        layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, visible: L.visible, opacity: L.opacity, locked: L.locked,
         })),
     };
 }
 
-const projectSig = () => JSON.stringify(projectData());
+const projectSig = () => JSON.stringify(projectData(S.layers));
 const isUnsaved = () => S.projSig ? projectSig() !== S.projSig : S.layers.length > 0;
+const projKey = (path, name) => join(path, name).toLowerCase();
+const projects = () => [...new Set(S.layers.map(L => L.proj).filter(Boolean))];
+const projLayers = (key) => S.layers.filter(L => L.proj && projKey(L.proj.path, L.proj.name) === key);
 
 function updateTitle()
 {
-    const name = S.project?.name ?? '（未命名專案）', mark = isUnsaved() ? ' *' : '';
+    const name = projects().map(p => p.name).join(' + ') || '（未命名）', mark = isUnsaved() ? ' *' : '';
     $('projName').textContent = name + mark;
     document.title = `${name}${mark} — 紙娃娃編輯器`;
 }
@@ -1224,33 +1223,48 @@ function applySettings(s)
     $('autoTrim').checked = !!s.autoTrim;
 }
 
-async function saveProject(saveAs)
+async function saveProject()
 {
     if (!needRoot()) return;
-    const loose = S.layers.filter(L => !L.srcPath);
+    const layers = S.layers.filter(L => L.save);
+    if (!layers.length) return status('沒有 💾 打勾的圖層');
+    const loose = layers.filter(L => !L.srcPath);
     if (loose.length) return alert(`這些圖層是拖進來的，沒有原圖路徑，先「存檔…」存進工作資料夾：\n${loose.map(L => L.name).join('\n')}`);
     cancelMode();
-    let target = !saveAs && S.project;
-    if (!target)
-    {
-        const p = S.project;
-        target = await saveDialog('存專案', p?.dir ?? S.root, p?.path ?? '', p?.name ?? 'project', PROJ_EXT);
-        if (!target) return;
-    }
-    const sig = projectSig();
-    await FS.writeFile(target.dir, target.name + PROJ_EXT, new Blob([JSON.stringify(projectData(), null, 2) + '\n']));
-    S.project = target;
-    S.projSig = sig;
+    const ps = projects(), p = ps.length === 1 ? ps[0] : null;
+    const differs = (path, name) => {
+        const own = projLayers(projKey(path, name));
+        return own.length !== layers.length || own.some(L => !L.save) ? '\n（💾 打勾的圖層跟原專案的圖層不同）' : '';
+    };
+    const target = await saveDialog(`存專案（${layers.length} 個圖層）`, p?.dir ?? S.root, p?.path ?? '', p?.name ?? 'project', PROJ_EXT, null, differs);
+    if (!target) return;
+    await FS.writeFile(target.dir, target.name + PROJ_EXT, new Blob([JSON.stringify(projectData(layers), null, 2) + '\n']));
+    S.projSig = projectSig();
     updateTitle();
     status(`已存專案 ${join(target.path, target.name + PROJ_EXT)}`);
 }
 
+function askOpen(name)
+{
+    const dlg = $('dlgOpen');
+    $('dlgOpenTitle').textContent = `開啟專案 ${name}`;
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => res(dlg.returnValue), {once: true}));
+}
+
 async function openProject(fh, dir, path)
 {
-    if (isUnsaved() && !confirm('目前有沒存的修改，要放棄嗎？')) return;
+    const name = fh.name.slice(0, -PROJ_EXT.length);
+    const how = S.layers.length ? await askOpen(join(path, fh.name)) : 'replace';
+    if (how !== 'add' && how !== 'replace') return;
+    const add = how === 'add';
+    if (add && projLayers(projKey(path, name)).length) return status(`${name} 已經開著了`);
+    if (!add && isUnsaved() && !confirm('目前有沒存的修改，要放棄嗎？')) return;
     const data = await readJson(await fh.getFile());
     if (!data?.layers) return;
     cancelMode();
+    const wasClean = !isUnsaved(), proj = {dir, path, name};
     const layers = [], warns = [];
     for (const d of data.layers)
     {
@@ -1267,17 +1281,28 @@ async function openProject(fh, dir, path)
         const saveDir = await FS.resolveDir(S.root, d.path).catch(() => srcDir);
         layers.push({id: ++uid, name: d.name, dir: saveDir, path: d.path, srcPath: d.src, src, ops: d.ops,
                      canvas: PX.replay(src, d.ops), x: d.x, y: d.y, a: d.a, ox: d.ox, oy: d.oy,
-                     visible: d.visible, opacity: d.opacity, locked: d.locked});
+                     visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj});
     }
-    hist.undos.length = hist.redos.length = 0;
-    applySettings(data.settings ?? {});
-    S.layers = layers;
-    S.active = layers[data.active] ?? layers.at(-1) ?? null;
-    S.project = {dir, path, name: fh.name.slice(0, -PROJ_EXT.length)};
-    S.projSig = warns.length ? null : projectSig();
+    const lossy = warns.length > 0;
+    if (add)
+    {
+        const scale = data.settings?.scale ?? 0.25;
+        if (scale !== S.scale) warns.unshift(`${name} 的 scale 是 ${scale}，沿用目前的 ${S.scale}（疊圖對位與匯出數字會跟原本不同）`);
+        hist.push(hist.snapList(S));
+        S.layers = [...S.layers, ...layers];
+        S.active = layers[data.active] ?? layers.at(-1) ?? S.active;
+    }
+    else
+    {
+        hist.undos.length = hist.redos.length = 0;
+        applySettings(data.settings ?? {});
+        S.layers = layers;
+        S.active = layers[data.active] ?? layers.at(-1) ?? null;
+    }
+    S.projSig = (!add || wasClean) && !lossy ? projectSig() : null;
     refreshAll();
-    fitView();
-    status(`開啟專案 ${join(path, fh.name)}`);
+    if (!add) fitView();
+    status(`${add ? '加入' : '開啟'}專案 ${join(path, fh.name)}`);
     if (warns.length) alert(warns.join('\n'));
 }
 
@@ -1339,7 +1364,7 @@ $('btnReauth').onclick = async () => {
     if (S.pendingRoot && await FS.askPermission(S.pendingRoot)) setRoot(S.pendingRoot);
 };
 $('btnRefresh').onclick = () => buildTree($('tree'), treeOpt);
-$('btnSaveProj').onclick = () => saveProject(true).catch(e => status(e.message));
+$('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
 $('btnDup').onclick = duplicateLayer;
 $('btnMergeDown').onclick = mergeDown;
 $('btnMergeVisible').onclick = mergeVisible;
