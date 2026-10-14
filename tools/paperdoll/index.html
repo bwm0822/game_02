@@ -54,6 +54,7 @@
             <button data-mode="scale">縮放</button>
             <button data-mode="alpha">清除透明</button>
             <button data-mode="color">顏色</button>
+            <button data-mode="removeGreen">移除綠色</button>
             <button data-mode="warp">變形</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
@@ -102,6 +103,15 @@
             <label>格數 <input id="wpCols" type="number" min="1" max="12" value="3">×<input id="wpRows" type="number" min="1" max="12" value="3"></label>
             <div class="hint">拖控制點變形；Shift+點／Shift+拖曳框選多點；方向鍵微調選取的點。開始拖之後要先「重設」才能改格數</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="wpReset">重設</button></div>
+        </div>
+
+        <div id="modeRemoveGreen" class="mode" hidden>
+            <label>H 範圍 <input id="rgH1" type="number" min="0" max="180" value="45">~<input id="rgH2" type="number" min="0" max="180" value="85"></label>
+            <label>S 範圍 <input id="rgS1" type="number" min="0" max="255" value="60">~<input id="rgS2" type="number" min="0" max="255" value="255"></label>
+            <label>V 範圍 <input id="rgV1" type="number" min="0" max="255" value="20">~<input id="rgV2" type="number" min="0" max="255" value="255"></label>
+            <label>RGB 判斷 <input id="rgRgbThr" type="number" min="0" max="255" value="40"> (G > R+thr AND G > B+thr)</label>
+            <div class="hint">使用 HSV + RGB 雙重判斷移除綠色背景，保留衣服和黑色描邊</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
         </div>
 
         <div class="title">屬性</div>

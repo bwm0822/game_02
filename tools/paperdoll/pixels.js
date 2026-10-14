@@ -172,6 +172,7 @@ const OPS = {
     fill: (c, op) => fill(c, op),
     key: (c, op) => key(c, op),
     xform: (c, op) => xform(c, op),
+    removeGreen: (c, op) => removeGreen(c, op.h1, op.h2, op.s1, op.s2, op.v1, op.v2, op.rgbThr),
 };
 
 export function replay(src, ops)
@@ -225,6 +226,59 @@ export const fill = (src, {r, g, b, a, t}) => eachPixel(src, (d, i) => {
 export const key = (src, {r, g, b}) => eachPixel(src, (d, i) => {
     if (d[i + 3] && d[i] === r && d[i + 1] === g && d[i + 2] === b) d[i] = d[i + 1] = d[i + 2] = d[i + 3] = 0;
 });
+
+// RGB to HSV 轉換
+function rgbToHsv(r, g, b)
+{
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const delta = max - min;
+
+    let h = 0;
+    if (delta !== 0)
+    {
+        if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+        else if (max === g) h = ((b - r) / delta + 2) / 6;
+        else h = ((r - g) / delta + 4) / 6;
+    }
+
+    const s = max === 0 ? 0 : delta / max;
+    const v = max;
+
+    return {h: h * 180, s: s * 255, v: v * 255};
+}
+
+// 移除綠色背景：HSV + RGB 雙重判斷
+export function removeGreen(src, h1, h2, s1, s2, v1, v2, rgbThr)
+{
+    const c = clone(src);
+    const g = c.getContext('2d');
+    const img = g.getImageData(0, 0, c.width, c.height);
+    const d = img.data;
+
+    for (let i = 0; i < d.length; i += 4)
+    {
+        const r = d[i], g_val = d[i + 1], b = d[i + 2], a = d[i + 3];
+
+        // RGB 判斷：G > R+rgbThr AND G > B+rgbThr
+        const isGreenRGB = g_val > 100 && g_val > r + rgbThr && g_val > b + rgbThr;
+
+        let isGreen = isGreenRGB;
+
+        // HSV 判斷
+        if (!isGreen && a > 200)
+        {
+            const hsv = rgbToHsv(r, g_val, b);
+            isGreen = hsv.h >= h1 && hsv.h <= h2 &&
+                      hsv.s >= s1 && hsv.s <= s2 &&
+                      hsv.v >= v1 && hsv.v <= v2;
+        }
+
+        if (isGreen) d[i + 3] = 0;  // 設為透明
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+}
 
 export function pixelAt(src, x, y)
 {

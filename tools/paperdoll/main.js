@@ -335,6 +335,10 @@ function setMode(type)
     else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, lock: $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
+    else if (type === 'removeGreen') {
+        S.mode = {type, layer: L, h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, preview: null};
+        updateRemoveGreen();
+    }
     else if (type === 'warp') S.mode = warpStart(L);
     else S.mode = {type: 'move'};
     refreshAll();
@@ -388,6 +392,11 @@ function applyMode()
     {
         hist.record(L);
         pushOp(L, colorOp());
+    }
+    else if (m.type === 'removeGreen')
+    {
+        hist.record(L);
+        pushOp(L, {type: 'removeGreen', h1: m.h1, h2: m.h2, s1: m.s1, s2: m.s2, v1: m.v1, v2: m.v2, rgbThr: m.rgbThr});
     }
     else if (m.type === 'warp')
     {
@@ -583,6 +592,20 @@ function updateColor()
 {
     const m = S.mode, op = colorOp();
     m.preview = op.type === 'fill' ? PX.fill(m.layer.canvas, op) : PX.key(m.layer.canvas, op);
+    dirty();
+}
+
+function updateRemoveGreen()
+{
+    const m = S.mode;
+    m.h1 = +$('rgH1').value || 45;
+    m.h2 = +$('rgH2').value || 85;
+    m.s1 = +$('rgS1').value || 60;
+    m.s2 = +$('rgS2').value || 255;
+    m.v1 = +$('rgV1').value || 20;
+    m.v2 = +$('rgV2').value || 255;
+    m.rgbThr = +$('rgRgbThr').value || 40;
+    m.preview = PX.removeGreen(m.layer.canvas, m.h1, m.h2, m.s1, m.s2, m.v1, m.v2, m.rgbThr);
     dirty();
 }
 
@@ -1010,6 +1033,16 @@ function refreshModePanel()
     $('modeAlpha').hidden = m.type !== 'alpha';
     $('modeColor').hidden = m.type !== 'color';
     $('modeWarp').hidden = m.type !== 'warp';
+    $('modeRemoveGreen').hidden = m.type !== 'removeGreen';
+    if (m.type === 'removeGreen' && m.preview) {
+        $('rgH1').value = m.h1;
+        $('rgH2').value = m.h2;
+        $('rgS1').value = m.s1;
+        $('rgS2').value = m.s2;
+        $('rgV1').value = m.v1;
+        $('rgV2').value = m.v2;
+        $('rgRgbThr').value = m.rgbThr;
+    }
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
     if (m.type === 'warp')
     {
@@ -1464,6 +1497,13 @@ const colorChanged = () => {
     updateColor();
 };
 for (const id of ['colFill', 'colKey', 'colRgb', 'colA', 'colT']) $(id).oninput = colorChanged;
+
+const removeGreenChanged = () => {
+    if (S.mode.type !== 'removeGreen') return;
+    refreshModePanel();
+    updateRemoveGreen();
+};
+for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
