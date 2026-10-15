@@ -857,12 +857,12 @@ function updateWarp(m)
 function drawWarpFrame(m, f, K, cur)
 {
     g.setLineDash([4 / K, 4 / K]);
-    g.strokeStyle = cur ? '#fff' : 'rgba(150,150,150,.9)';
+    g.strokeStyle = cur ? '#fff' : 'rgba(215,215,215,.95)';
     poly(warpRectPts(m, f));
     g.setLineDash([]);
 
     const P = (i, j) => warpWorld(m, f.pts[j * (f.cols + 1) + i]);
-    g.strokeStyle = cur ? 'rgba(0,255,200,.8)' : 'rgba(150,150,150,.5)';
+    g.strokeStyle = cur ? 'rgba(0,255,200,.8)' : 'rgba(200,200,200,.8)';
     g.beginPath();
     for (let j = 0; j <= f.rows; j++)
         for (let i = 0; i <= f.cols; i++)
