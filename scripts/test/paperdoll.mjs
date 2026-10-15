@@ -149,6 +149,8 @@ run('paperdoll', async t => {
         out.resume = pd.S.mode.frames.length === 1 && pd.S.mode.frames[0].pts[0].x === -10 && !pd.S.mode.changed;
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
         out.undoAtStart = [pd.S.mode.type, pd.S.mode.frames.length, L.canvas.width];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'y', ctrlKey: true, bubbles: true}));
+        out.redoAtStart = [pd.S.mode.type, pd.S.mode.frames.length, L.canvas.width, pd.S.mode.frames[0]?.pts[0].x];
         pd.applyMode();
         out.resumeSame = L.ops.length === n1 && Math.abs(L.x - x1) < 1e-6 && Math.abs(L.y - y1) < 1e-6;
 
@@ -307,7 +309,8 @@ run('paperdoll', async t => {
     t.check('變形：沒動到的點留在原地（含旋轉）', w.centerKeep);
     t.check('變形：拉出去的角有像素', w.corner > 0, `alpha=${w.corner}`);
     t.check('變形：再按一次接著編輯同一組框', w.resume);
-    t.eq('變形：重新進模式時 Ctrl+Z 沒步驟可退，停在上次確定的樣子', JSON.stringify(w.undoAtStart), JSON.stringify(['warp', 1, 50]));
+    t.eq('變形：重新進模式後 Ctrl+Z 退回上次確定前、留在變形模式', JSON.stringify(w.undoAtStart), JSON.stringify(['warp', 0, 40]));
+    t.eq('變形：接著 Ctrl+Y 回到確定後、框出現', JSON.stringify(w.redoAtStart), JSON.stringify(['warp', 1, 50, -10]));
     t.check('變形：不改直接確定，結果不變', w.resumeSame);
     t.check('變形：重設後確定＝拿掉變形、位置還原', w.reset);
     t.check('變形：undo 回到變形後', w.undo);

@@ -1099,21 +1099,32 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => S.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => S.keys.clear());
 
-// 變形模式裡只退模式自己的步驟，退到底停在進模式時（上次確定）的樣子，不走全域 undo
+// 變形模式裡先退模式自己的步驟；退完再走全域 undo，然後留在變形模式（那一步的框會接著出現）
+// 模式裡有新修改時 redo 沒東西可做，不能往下走（cancelMode 會丟掉修改）
 function undo()
 {
     const m = S.mode;
-    if (m.type === 'warp') return warpStep(m, m.undos, m.redos) && refreshAll();
+    if (m.type === 'warp' && warpStep(m, m.undos, m.redos)) return refreshAll();
     cancelMode();
     select(hist.undo() ?? S.active);
+    if (m.type === 'warp') warpReenter();
 }
 
 function redo()
 {
     const m = S.mode;
-    if (m.type === 'warp') return warpStep(m, m.redos, m.undos) && refreshAll();
+    if (m.type === 'warp' && (warpStep(m, m.redos, m.undos) || m.changed)) return refreshAll();
     cancelMode();
     select(hist.redo() ?? S.active);
+    if (m.type === 'warp') warpReenter();
+}
+
+function warpReenter()
+{
+    const L = S.active;
+    if (!L || L.locked) return;
+    S.mode = warpStart(L);
+    refreshAll();
 }
 
 // ---------- UI 同步 ----------
