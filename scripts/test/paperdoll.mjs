@@ -181,9 +181,9 @@ run('paperdoll', async t => {
         out.onlyCur = [M.ops[0].frames[0].pts[4].x, m2.changed];
         pd.cancelMode();
         out.cancelKeep = [M.canvas.width, M.ops.length, M.ops[0].frames[0].pts[4].x];
-        pd.undo(); pd.undo();
+        pd.undo();
         out.undoOne = [M.canvas.width, M.ops.length, M.ops[0].frames.length];
-        pd.redo(); pd.redo();
+        pd.redo();
 
         // Delete 刪框；有沒套用的修改時切換模式會問
         pd.setMode('warp');
@@ -227,6 +227,16 @@ run('paperdoll', async t => {
         const n = m.frames.length;
         fire('pointerdown', [20, 20], {}); fire('pointerup', [20, 20], {});
         out.switch = [n, m.cur];
+        const key = (k, extra) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
+        key('z', {ctrlKey: true});
+        const u1 = m.frames.length;
+        key('z', {ctrlKey: true});
+        const u2 = m.frames[0].x;
+        key('y', {ctrlKey: true});
+        pd.warpApplyFrame(m);
+        const u3 = m.frames[0].saved?.x;
+        key('z', {ctrlKey: true});
+        out.modeUndo = [u1, u2, m.frames[0].x, u3, m.frames[0].saved ?? null, pd.S.mode.type];
         pd.cancelMode();
         pd.S.layers.splice(pd.S.layers.indexOf(Q), 1);
         return out;
@@ -329,6 +339,7 @@ run('paperdoll', async t => {
     t.eq('變形互動：拖點時 Shift 只沿水平', w.lock, '39,20 39,28 39,36');
     t.eq('變形互動：拖把手調框大小，點等比例跟著', JSON.stringify(w.resize), JSON.stringify([2, 4, 34, 32, 39.1875]));
     t.eq('變形互動：點另一個框切換', JSON.stringify(w.switch), JSON.stringify([2, 0]));
+    t.eq('變形：模式裡 Ctrl+Z／Ctrl+Y 一步一步退，套用此框也能退', JSON.stringify(w.modeUndo), JSON.stringify([1, 4, 2, 2, null, 'warp']));
 
     // 專案存讀：用 OPFS 當工作資料夾（無頭 Chrome 開不了資料夾選擇視窗）
     t.page.on('dialog', d => d.accept());

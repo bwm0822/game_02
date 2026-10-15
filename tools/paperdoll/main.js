@@ -357,6 +357,7 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
+    if (m.type === 'warp' && m.snap !== m.snap0) hist.push(m.snap0);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -413,9 +414,9 @@ function applyMode()
         else
         {
             if (m.stale) updateWarp(m);
-            hist.push(m.snap);
             L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
         }
+        if (L.ops !== m.snap0.ops || L.canvas !== m.snap0.canvas) hist.push(m.snap0);
     }
     else return;
     S.mode = {type: 'move'};
@@ -659,9 +660,31 @@ const warpCopy = ({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pt
 const warpOp = (frames) => ({type: 'warp', frames: frames.map(warpCopy)});
 const warpSame = (a, b) => JSON.stringify(warpCopy(a)) === JSON.stringify(warpCopy(b));
 
+// 模式內自己的 undo：每次修改前記下框的狀態；snap 是取消時回到的樣子（套用此框會更新它），snap0 是進模式時的，
+// 離開模式時整段只記一筆全域 undo
+const warpState = (m) => ({cur: m.cur, snap: m.snap, changed: m.changed,
+    frames: m.frames.map(f => ({...warpCopy(f), saved: f.saved && warpCopy(f.saved), sel: new Set(f.sel), edited: f.edited}))});
+
+function warpRecord(m)
+{
+    m.undos.push(warpState(m));
+    if (m.undos.length > 100) m.undos.shift();
+    m.redos.length = 0;
+}
+
+function warpStep(m, from, to)
+{
+    const s = from.pop();
+    if (!s) return false;
+    to.push(warpState(m));
+    Object.assign(m, warpState(s), {stale: true});
+    return true;
+}
+
 function warpStart(L)
 {
-    const m = {type: 'warp', layer: L, snap: hist.snap(L), frames: [], cur: -1, stale: false, changed: false};
+    const snap = hist.snap(L);
+    const m = {type: 'warp', layer: L, snap, snap0: snap, undos: [], redos: [], frames: [], cur: -1, stale: false, changed: false};
     const last = L.ops.at(-1);
     if (last?.type !== 'warp')
     {
@@ -682,6 +705,7 @@ function warpStart(L)
 
 function warpAddFrame(m, r)
 {
+    warpRecord(m);
     const f = {...r, cols: wpN('wpCols'), rows: wpN('wpRows'), sel: new Set(), edited: false};
     f.pts = warpGridOf(f);
     m.frames.push(f);
@@ -693,20 +717,21 @@ function warpAddFrame(m, r)
 function warpDeleteFrame(m)
 {
     if (!warpCur(m)) return;
+    warpRecord(m);
     m.frames.splice(m.cur, 1);
     m.cur = m.frames.length - 1;
     m.changed = m.stale = true;
 }
 
-// 套用目前的框：框留著可以繼續改。每個框記 saved（套用過的樣子），圖層寫進所有框的 saved 並記一個 undo 點，
+// 套用目前的框：框留著可以繼續改。每個框記 saved（套用過的樣子），snap 換成所有框 saved 的結果，
 // 之後按取消只退回沒套用的修改；其他框沒套用的修改不會跟著寫進去
 function warpApplyFrame(m)
 {
     const f = warpCur(m), L = m.layer;
     if (!f) return;
+    warpRecord(m);
     f.saved = warpCopy(f);
     const saved = m.frames.map(g => g.saved).filter(Boolean);
-    hist.push(m.snap);
     warpRender(m, saved);
     const frames = saved.filter(s => !warpIsIdentity(s));
     L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
@@ -872,6 +897,7 @@ function warpPointerDown(m, w, e)
 function warpPointerMove(m, e, w)
 {
     if (drag.type === 'warpNew') {drag.b = w; return;}
+    if (!drag.recorded) {warpRecord(m); drag.recorded = true;}
     const f = drag.f;
     if (drag.type === 'warpPt')
     {
@@ -922,6 +948,7 @@ function warpNudge(m, dx, dy)
 {
     const f = warpCur(m), c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
     const lx = dx * c - dy * s, ly = dx * s + dy * c;
+    warpRecord(m);
     for (const k of f.sel) f.pts[k] = {x: f.pts[k].x + lx, y: f.pts[k].y + ly};
     f.edited = m.changed = m.stale = true;
 }
@@ -1100,14 +1127,19 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => S.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => S.keys.clear());
 
+// 變形模式裡先退模式自己的步驟，退完才走全域 undo
 function undo()
 {
+    const m = S.mode;
+    if (m.type === 'warp' && warpStep(m, m.undos, m.redos)) return refreshAll();
     cancelMode();
     select(hist.undo() ?? S.active);
 }
 
 function redo()
 {
+    const m = S.mode;
+    if (m.type === 'warp' && warpStep(m, m.redos, m.undos)) return refreshAll();
     cancelMode();
     select(hist.redo() ?? S.active);
 }
@@ -1640,6 +1672,7 @@ const warpButton = (fn) => () => {
     refreshAll();
 };
 const warpRegrid = warpButton((m, f) => {
+    warpRecord(m);
     Object.assign(f, {cols: wpN('wpCols'), rows: wpN('wpRows'), sel: new Set(), edited: false});
     f.pts = warpGridOf(f);
     m.changed = m.stale = true;
