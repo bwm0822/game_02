@@ -149,18 +149,18 @@ run('paperdoll', async t => {
         out.resume = pd.S.mode.frames.length === 1 && pd.S.mode.frames[0].pts[0].x === -10 && !pd.S.mode.changed;
         const ctl = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, ctrlKey: true, bubbles: true}));
         ctl('z');
-        out.undoAtStart = [pd.S.mode.type, pd.S.mode.frames.length, L.canvas.width, pd.S.mode.frames[0]?.pts[0].x];
+        out.undoAtStart = [pd.S.mode.type, pd.S.mode.frames.length];
         ctl('z');
         out.undoAtStart2 = [pd.S.mode.type, pd.S.mode.frames.length];
-        ctl('y'); ctl('y');
-        out.redoAtStart = [pd.S.mode.type, pd.S.mode.frames.length, L.canvas.width, pd.S.mode.frames[0]?.pts[0].x];
+        ctl('y');
+        out.redoAtStart = [pd.S.mode.frames.length, pd.S.mode.frames[0]?.pts[0].x];
         pd.applyMode();
         out.resumeSame = L.ops.length === n1 && Math.abs(L.x - x1) < 1e-6 && Math.abs(L.y - y1) < 1e-6;
 
         pd.setMode('warp');
         $('wpReset').click();
         pd.applyMode();
-        out.reset = L.ops.length === ops0 && L.canvas.width === 40 && Math.abs(L.x - x0) < 1e-6 && Math.abs(L.y - y0) < 1e-6;
+        out.reset = L.ops.length === ops0 + 1 && L.ops.at(-1).frames[0].hist.length === 1 && L.canvas.width === 40 && Math.abs(L.x - x0) < 1e-6 && Math.abs(L.y - y0) < 1e-6;
         pd.undo();
         out.undo = L.canvas.width === 50 && L.ops.at(-1)?.type === 'warp';
         pd.S.layers.splice(pd.S.layers.indexOf(L), 1);
@@ -179,6 +179,9 @@ run('paperdoll', async t => {
         const m3 = pd.S.mode;
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}));
         out.del = [m3.frames.length, m3.cur];
+        ctl('z');
+        out.delUndo = [m3.frames.length, m3.cur];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}));
         let asked = 0;
         const conf = window.confirm;
         window.confirm = () => (asked++, true);
@@ -218,13 +221,28 @@ run('paperdoll', async t => {
         const n = m.frames.length;
         fire('pointerdown', [20, 20], {}); fire('pointerup', [20, 20], {});
         out.switch = [n, m.cur];
-        const key = (k, extra) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
-        key('z', {ctrlKey: true});
-        const u1 = m.frames.length;
-        key('z', {ctrlKey: true});
-        const u2 = m.frames[0].x;
-        key('y', {ctrlKey: true});
-        out.modeUndo = [u1, u2, m.frames[0].x, pd.S.mode.type];
+        // 目前是第一個框：Ctrl+Z 只退它（調大小 → 拖點 → 拿掉框），第二個框不動
+        ctl('z');
+        const u1 = f1.x;
+        ctl('z');
+        const u2 = r4(f1.pts[24].x);
+        ctl('z');
+        const u3 = [m.frames.length, m.frames[0].x];
+        ctl('y');
+        const u4 = [m.frames.length, m.cur];
+        ctl('y');
+        out.modeUndo = [u1, u2, ...u3, ...u4, r4(f1.pts[24].x), m.frames[1].x];
+
+        // 步驟跟著框寫進 op（存專案也在），重新進來還能退
+        pd.applyMode();
+        const op = Q.ops.at(-1);
+        pd.setMode('warp');
+        const m4 = pd.S.mode;
+        out.persist = [m4.frames.length, m4.frames[0].hist.length, JSON.parse(JSON.stringify(op)).frames[0].hist.length];
+        ctl('z');
+        const p1 = r4(m4.frames[0].pts[24].x);
+        ctl('z'); ctl('z');
+        out.persistUndo = [p1, m4.frames.length, pd.S.mode.type];
         pd.cancelMode();
         pd.S.layers.splice(pd.S.layers.indexOf(Q), 1);
         return out;
@@ -312,14 +330,15 @@ run('paperdoll', async t => {
     t.check('變形：沒動到的點留在原地（含旋轉）', w.centerKeep);
     t.check('變形：拉出去的角有像素', w.corner > 0, `alpha=${w.corner}`);
     t.check('變形：再按一次接著編輯同一組框', w.resume);
-    t.eq('變形：重新進模式後 Ctrl+Z 退回沒變形、框先留著', JSON.stringify(w.undoAtStart), JSON.stringify(['warp', 1, 40, 0]));
-    t.eq('變形：再按 Ctrl+Z 才拿掉框', JSON.stringify(w.undoAtStart2), JSON.stringify(['warp', 0]));
-    t.eq('變形：Ctrl+Y 兩次回到確定後的變形', JSON.stringify(w.redoAtStart), JSON.stringify(['warp', 1, 50, -10]));
+    t.eq('變形：框沒有步驟時 Ctrl+Z 拿掉框', JSON.stringify(w.undoAtStart), JSON.stringify(['warp', 0]));
+    t.eq('變形：沒東西可退時 Ctrl+Z 停住、留在變形模式', JSON.stringify(w.undoAtStart2), JSON.stringify(['warp', 0]));
+    t.eq('變形：Ctrl+Y 把框加回來', JSON.stringify(w.redoAtStart), JSON.stringify([1, -10]));
     t.check('變形：不改直接確定，結果不變', w.resumeSame);
-    t.check('變形：重設後確定＝拿掉變形、位置還原', w.reset);
+    t.check('變形：重設後確定＝拿掉變形、位置還原（框和步驟留著）', w.reset);
     t.check('變形：undo 回到變形後', w.undo);
     t.eq('變形：局部框只動框內、框外不變', JSON.stringify(w.local), JSON.stringify([40, 40, true, 255, 0, 255, 255]));
     t.eq('變形：Delete 刪掉目前的框', JSON.stringify(w.del), JSON.stringify([0, -1]));
+    t.eq('變形：沒有框時 Ctrl+Z 救回刪掉的框', JSON.stringify(w.delUndo), JSON.stringify([1, 0]));
     t.eq('變形：有沒套用的修改時切換模式會問，確定就套用', JSON.stringify(w.leave), JSON.stringify([1, 0, 40]));
     t.eq('變形：離開模式後整段一筆 undo', w.leaveUndo, 1);
     t.eq('變形互動：拖曳拉出 4×4 的框', JSON.stringify(w.made), JSON.stringify([1, 4, 4, 32, 32, 4, 25]));
@@ -327,7 +346,9 @@ run('paperdoll', async t => {
     t.eq('變形互動：拖點時 Shift 只沿水平', w.lock, '39,20 39,28 39,36');
     t.eq('變形互動：拖把手調框大小，點等比例跟著', JSON.stringify(w.resize), JSON.stringify([2, 4, 34, 32, 39.1875]));
     t.eq('變形互動：點另一個框切換', JSON.stringify(w.switch), JSON.stringify([2, 0]));
-    t.eq('變形：模式裡 Ctrl+Z／Ctrl+Y 一步一步退', JSON.stringify(w.modeUndo), JSON.stringify([1, 4, 2, 'warp']));
+    t.eq('變形：每個框各自 Ctrl+Z／Ctrl+Y，退到底拿掉框', JSON.stringify(w.modeUndo), JSON.stringify([4, 36, 1, 0, 2, 0, 39, 0]));
+    t.eq('變形：步驟跟著框寫進 op，重新進來還能退', JSON.stringify(w.persist), JSON.stringify([1, 1, 1]));
+    t.eq('變形：重新進來退到沒變形、再拿掉框、再按停住', JSON.stringify(w.persistUndo), JSON.stringify([36, 0, 'warp']));
 
     // 專案存讀：用 OPFS 當工作資料夾（無頭 Chrome 開不了資料夾選擇視窗）
     t.page.on('dialog', d => d.accept());

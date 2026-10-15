@@ -408,7 +408,7 @@ function applyMode()
     }
     else if (m.type === 'warp')
     {
-        const frames = m.frames.filter(f => !warpIsIdentity(f));
+        const frames = warpKept(m.frames);
         if (!m.changed) History.restore(m.snap);
         else
         {
@@ -656,30 +656,88 @@ function warpIsIdentity(f)
 }
 
 const warpCopy = ({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pts: pts.map(p => ({x: p.x, y: p.y}))});
-const warpOp = (frames) => ({type: 'warp', frames: frames.map(warpCopy)});
-// 模式內自己的 undo：每次修改前記下框的狀態；離開模式時整段只記一筆全域 undo
-const warpState = (m) => ({cur: m.cur, changed: m.changed,
-    frames: m.frames.map(f => ({...warpCopy(f), sel: new Set(f.sel), edited: f.edited}))});
+
+// 每個框有自己的步驟 hist（改之前的樣子）跟 fut（redo），hist 跟著框寫進 op，確定後、存專案再開都還能退
+// 沒變形也沒步驟的框不寫
+const WARP_HIST = 50;
+const warpOp = (frames) => ({type: 'warp', frames: frames.map(f => f.hist.length ? {...warpCopy(f), hist: f.hist.map(warpCopy)} : warpCopy(f))});
+const warpKept = (frames) => frames.filter(f => f.hist.length || !warpIsIdentity(f));
+const warpFrame = (g) => ({...warpCopy(g), hist: (g.hist ?? []).map(warpCopy), fut: [], sel: new Set(), edited: !warpIsIdentity(g)});
 
 function warpRecord(m)
 {
-    m.undos.push(warpState(m));
-    if (m.undos.length > 100) m.undos.shift();
-    m.redos.length = 0;
+    const f = warpCur(m);
+    f.hist.push(warpCopy(f));
+    if (f.hist.length > WARP_HIST) f.hist.shift();
+    f.fut.length = 0;
+    m.frameRedo.length = 0;
+    m.changed = true;
 }
 
-function warpStep(m, from, to)
+function warpSetGeom(f, s)
 {
-    const s = from.pop();
-    if (!s) return false;
-    to.push(warpState(m));
-    Object.assign(m, warpState(s), {stale: true});
+    Object.assign(f, warpCopy(s));
+    f.sel.clear();
+    f.edited = !warpIsIdentity(f);
+}
+
+// Ctrl+Z：退目前這框；這框退到剛拉出來的樣子再按就拿掉它；一個框都沒有時依序救回 Delete 掉的框
+function warpUndo(m)
+{
+    const f = warpCur(m);
+    if (f?.hist.length)
+    {
+        f.fut.push(warpCopy(f));
+        warpSetGeom(f, f.hist.pop());
+    }
+    else if (f)
+    {
+        m.frameRedo.push({add: f, i: m.cur});
+        m.frames.splice(m.cur, 1);
+        m.cur = m.frames.length - 1;
+    }
+    else if (m.deleted.length)
+    {
+        const {f: g, i} = m.deleted.pop();
+        m.frames.splice(i, 0, g);
+        m.cur = m.frames.indexOf(g);
+        m.frameRedo.push({del: g});
+    }
+    else return false;
+    m.changed = m.stale = true;
+    return true;
+}
+
+function warpRedo(m)
+{
+    const f = warpCur(m), r = m.frameRedo.at(-1);
+    if (f?.fut.length)
+    {
+        f.hist.push(warpCopy(f));
+        warpSetGeom(f, f.fut.pop());
+    }
+    else if (r?.add)
+    {
+        m.frameRedo.pop();
+        m.frames.splice(r.i, 0, r.add);
+        m.cur = m.frames.indexOf(r.add);
+    }
+    else if (r?.del)
+    {
+        m.frameRedo.pop();
+        const i = m.frames.indexOf(r.del);
+        m.frames.splice(i, 1);
+        m.deleted.push({f: r.del, i});
+        m.cur = m.frames.length - 1;
+    }
+    else return false;
+    m.changed = m.stale = true;
     return true;
 }
 
 function warpStart(L)
 {
-    const m = {type: 'warp', layer: L, snap: hist.snap(L), undos: [], redos: [], frames: [], cur: -1, stale: false, changed: false};
+    const m = {type: 'warp', layer: L, snap: hist.snap(L), deleted: [], frameRedo: [], frames: [], cur: -1, stale: false, changed: false};
     const last = L.ops.at(-1);
     if (last?.type !== 'warp')
     {
@@ -692,19 +750,19 @@ function warpStart(L)
     const frames = last.frames ?? [{x: 0, y: 0, w: W, h: H, cols: last.cols, rows: last.rows, pts: last.pts}];
     const b = last.frames ? PX.warpFramesBounds(frames, W, H) : PX.warpBounds(last);
     m.base = toWorld(L, L.ox * W - b.bx, L.oy * H - b.by, [1, 1]);
-    m.frames = frames.map(f => ({...warpCopy(f), sel: new Set()}));
-    m.frames.forEach(f => {f.edited = !warpIsIdentity(f);});
+    m.frames = frames.map(warpFrame);
     m.cur = m.frames.length - 1;
     return m;
 }
 
 function warpAddFrame(m, r)
 {
-    warpRecord(m);
-    const f = {...r, cols: wpN('wpCols'), rows: wpN('wpRows'), sel: new Set(), edited: false};
+    const f = warpFrame({...r, cols: wpN('wpCols'), rows: wpN('wpRows'), pts: []});
     f.pts = warpGridOf(f);
+    f.edited = false;
     m.frames.push(f);
     m.cur = m.frames.length - 1;
+    m.frameRedo.length = 0;
     m.changed = m.stale = true;
     return f;
 }
@@ -712,9 +770,10 @@ function warpAddFrame(m, r)
 function warpDeleteFrame(m)
 {
     if (!warpCur(m)) return;
-    warpRecord(m);
+    m.deleted.push({f: warpCur(m), i: m.cur});
     m.frames.splice(m.cur, 1);
     m.cur = m.frames.length - 1;
+    m.frameRedo.length = 0;
     m.changed = m.stale = true;
 }
 
@@ -1099,39 +1158,29 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => S.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => S.keys.clear());
 
-// 變形模式裡先退模式自己的步驟；退完再走全域 undo，然後留在變形模式（那一步的框會接著出現）
-// 模式裡有新修改時 redo 沒東西可做，不能往下走（cancelMode 會丟掉修改）
+// 變形模式裡只退框的步驟（每框各自的），退到底就停住；要退更早的操作先離開變形
 function undo()
 {
     const m = S.mode;
-    if (m.type === 'warp' && warpStep(m, m.undos, m.redos)) return refreshAll();
+    if (m.type === 'warp')
+    {
+        if (!warpUndo(m)) status('變形沒有步驟可以退了；要退更早的操作請先離開變形');
+        return refreshAll();
+    }
     cancelMode();
     select(hist.undo() ?? S.active);
-    if (m.type === 'warp') warpReenter(m);
 }
 
 function redo()
 {
     const m = S.mode;
-    if (m.type === 'warp' && (warpStep(m, m.redos, m.undos) || m.changed)) return refreshAll();
+    if (m.type === 'warp')
+    {
+        warpRedo(m);
+        return refreshAll();
+    }
     cancelMode();
     select(hist.redo() ?? S.active);
-    if (m.type === 'warp') warpReenter();
-}
-
-// undo 退到沒有變形時，原本的框先留著（網格歸位、沒變形），再按一次 Ctrl+Z 才拿掉
-function warpReenter(old)
-{
-    const L = S.active;
-    if (!L || L.locked) return;
-    const m = S.mode = warpStart(L);
-    if (old?.frames.length && !m.frames.length && old.layer === L && old.input.width === m.input.width && old.input.height === m.input.height)
-    {
-        m.undos.push(warpState(m));
-        m.frames = old.frames.map(f => ({...warpCopy(f), pts: warpGridOf(f), sel: new Set(), edited: false}));
-        m.cur = m.frames.length - 1;
-    }
-    refreshAll();
 }
 
 // ---------- UI 同步 ----------
@@ -1235,7 +1284,7 @@ function refreshModePanel()
         if (f) {$('wpCols').value = f.cols; $('wpRows').value = f.rows;}
         $('wpCols').disabled = $('wpRows').disabled = !!f?.edited;
         $('wpDelete').disabled = $('wpReset').disabled = !f;
-        $('wpInfo').textContent = f ? `框 ${m.cur + 1}／${m.frames.length}　${f.w}×${f.h}，選 ${f.sel.size} 點` : '還沒有變形框：在圖層上拖曳拉一個';
+        $('wpInfo').textContent = f ? `框 ${m.cur + 1}／${m.frames.length}　${f.w}×${f.h}，選 ${f.sel.size} 點，可退 ${f.hist.length} 步` : '還沒有變形框：在圖層上拖曳拉一個';
     }
     if (m.type === 'crop')
     {
