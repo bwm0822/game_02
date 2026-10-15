@@ -1332,12 +1332,13 @@ function treeNode(dir, label, path, depth, opt, open)
         const {dirs, files} = await FS.listDir(dir);
         for (const d of dirs) kids.append(treeNode(d, d.name, join(path, d.name), depth + 1, opt, false));
         if (!opt.onFile) return;
-        for (const f of files.filter(f => /\.png$/i.test(f.name) || isProj(f.name)))
+        const show = opt.filter ?? (n => /\.png$/i.test(n) || isProj(n));
+        for (const f of files.filter(f => show(f.name)))
         {
             const r = el('div', isProj(f.name) ? 'row file proj' : 'row file');
             r.textContent = f.name;
             r.style.paddingLeft = `${depth * 12 + 28}px`;
-            r.onclick = () => opt.onFile(f, dir, path);
+            r.onclick = () => opt.onFile(f, dir, path, r);
             kids.append(r);
         }
     };
@@ -1388,12 +1389,17 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     $('dlgBakeRow').hidden = !bake;
     $('dlgBakeLab').textContent = bake ?? '';
     $('dlgBake').checked = true;
-    buildTree($('dlgTree'), {onDir: (d, p, row) => {
+    const pick = (d, p, row) => {
         sel = {dir: d, path: p};
         $('dlgTree').querySelectorAll('.sel').forEach(r => r.classList.remove('sel'));
         row.classList.add('sel');
         showPath();
-    }});
+    };
+    buildTree($('dlgTree'), {
+        onDir: pick,
+        filter: (n) => n.toLowerCase().endsWith(ext),
+        onFile: (f, d, p, row) => {pick(d, p, row); $('dlgName').value = f.name.slice(0, -ext.length);},
+    });
     $('dlgName').value = name;
     showPath();
     dlg.returnValue = '';
