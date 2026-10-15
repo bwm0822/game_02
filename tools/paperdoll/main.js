@@ -1107,7 +1107,7 @@ function undo()
     if (m.type === 'warp' && warpStep(m, m.undos, m.redos)) return refreshAll();
     cancelMode();
     select(hist.undo() ?? S.active);
-    if (m.type === 'warp') warpReenter();
+    if (m.type === 'warp') warpReenter(m);
 }
 
 function redo()
@@ -1119,11 +1119,18 @@ function redo()
     if (m.type === 'warp') warpReenter();
 }
 
-function warpReenter()
+// undo 退到沒有變形時，原本的框先留著（網格歸位、沒變形），再按一次 Ctrl+Z 才拿掉
+function warpReenter(old)
 {
     const L = S.active;
     if (!L || L.locked) return;
-    S.mode = warpStart(L);
+    const m = S.mode = warpStart(L);
+    if (old?.frames.length && !m.frames.length && old.layer === L && old.input.width === m.input.width && old.input.height === m.input.height)
+    {
+        m.undos.push(warpState(m));
+        m.frames = old.frames.map(f => ({...warpCopy(f), pts: warpGridOf(f), sel: new Set(), edited: false}));
+        m.cur = m.frames.length - 1;
+    }
     refreshAll();
 }
 
