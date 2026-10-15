@@ -357,7 +357,6 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
-    if (m.type === 'warp' && m.snap !== m.snap0) hist.push(m.snap0);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -416,7 +415,7 @@ function applyMode()
             if (m.stale) updateWarp(m);
             L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
         }
-        if (L.ops !== m.snap0.ops || L.canvas !== m.snap0.canvas) hist.push(m.snap0);
+        if (L.ops !== m.snap.ops || L.canvas !== m.snap.canvas) hist.push(m.snap);
     }
     else return;
     S.mode = {type: 'move'};
@@ -658,12 +657,9 @@ function warpIsIdentity(f)
 
 const warpCopy = ({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pts: pts.map(p => ({x: p.x, y: p.y}))});
 const warpOp = (frames) => ({type: 'warp', frames: frames.map(warpCopy)});
-const warpSame = (a, b) => JSON.stringify(warpCopy(a)) === JSON.stringify(warpCopy(b));
-
-// 模式內自己的 undo：每次修改前記下框的狀態；snap 是取消時回到的樣子（套用此框會更新它），snap0 是進模式時的，
-// 離開模式時整段只記一筆全域 undo
-const warpState = (m) => ({cur: m.cur, snap: m.snap, changed: m.changed,
-    frames: m.frames.map(f => ({...warpCopy(f), saved: f.saved && warpCopy(f.saved), sel: new Set(f.sel), edited: f.edited}))});
+// 模式內自己的 undo：每次修改前記下框的狀態；離開模式時整段只記一筆全域 undo
+const warpState = (m) => ({cur: m.cur, changed: m.changed,
+    frames: m.frames.map(f => ({...warpCopy(f), sel: new Set(f.sel), edited: f.edited}))});
 
 function warpRecord(m)
 {
@@ -683,8 +679,7 @@ function warpStep(m, from, to)
 
 function warpStart(L)
 {
-    const snap = hist.snap(L);
-    const m = {type: 'warp', layer: L, snap, snap0: snap, undos: [], redos: [], frames: [], cur: -1, stale: false, changed: false};
+    const m = {type: 'warp', layer: L, snap: hist.snap(L), undos: [], redos: [], frames: [], cur: -1, stale: false, changed: false};
     const last = L.ops.at(-1);
     if (last?.type !== 'warp')
     {
@@ -697,7 +692,7 @@ function warpStart(L)
     const frames = last.frames ?? [{x: 0, y: 0, w: W, h: H, cols: last.cols, rows: last.rows, pts: last.pts}];
     const b = last.frames ? PX.warpFramesBounds(frames, W, H) : PX.warpBounds(last);
     m.base = toWorld(L, L.ox * W - b.bx, L.oy * H - b.by, [1, 1]);
-    m.frames = frames.map(f => ({...warpCopy(f), saved: warpCopy(f), sel: new Set()}));
+    m.frames = frames.map(f => ({...warpCopy(f), sel: new Set()}));
     m.frames.forEach(f => {f.edited = !warpIsIdentity(f);});
     m.cur = m.frames.length - 1;
     return m;
@@ -721,23 +716,6 @@ function warpDeleteFrame(m)
     m.frames.splice(m.cur, 1);
     m.cur = m.frames.length - 1;
     m.changed = m.stale = true;
-}
-
-// 套用目前的框：框留著可以繼續改。每個框記 saved（套用過的樣子），snap 換成所有框 saved 的結果，
-// 之後按取消只退回沒套用的修改；其他框沒套用的修改不會跟著寫進去
-function warpApplyFrame(m)
-{
-    const f = warpCur(m), L = m.layer;
-    if (!f) return;
-    warpRecord(m);
-    f.saved = warpCopy(f);
-    const saved = m.frames.map(g => g.saved).filter(Boolean);
-    warpRender(m, saved);
-    const frames = saved.filter(s => !warpIsIdentity(s));
-    L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
-    m.snap = hist.snap(L);
-    m.stale = true;
-    m.changed = m.frames.some(g => g.saved ? !warpSame(g, g.saved) : !warpIsIdentity(g));
 }
 
 // 世界座標拖出來的範圍換成 input 座標的整數矩形，限制在圖內
@@ -810,13 +788,7 @@ function warpLocal(m, w)
 function updateWarp(m)
 {
     m.stale = false;
-    warpRender(m, m.frames);
-}
-
-function warpRender(m, frames)
-{
-    const L = m.layer;
-    frames = frames.filter(f => !warpIsIdentity(f));
+    const L = m.layer, frames = m.frames.filter(f => !warpIsIdentity(f));
     if (!frames.length) return Object.assign(L, {canvas: m.input, x: m.base.x, y: m.base.y});
     const r = PX.warpFrames(m.input, warpOp(frames));
     const p = warpWorld(m, {x: r.bx + L.ox * r.canvas.width, y: r.by + L.oy * r.canvas.height});
@@ -1244,7 +1216,7 @@ function refreshModePanel()
         const f = warpCur(m);
         if (f) {$('wpCols').value = f.cols; $('wpRows').value = f.rows;}
         $('wpCols').disabled = $('wpRows').disabled = !!f?.edited;
-        $('wpApplyOne').disabled = $('wpDelete').disabled = $('wpReset').disabled = !f;
+        $('wpDelete').disabled = $('wpReset').disabled = !f;
         $('wpInfo').textContent = f ? `框 ${m.cur + 1}／${m.frames.length}　${f.w}×${f.h}，選 ${f.sel.size} 點` : '還沒有變形框：在圖層上拖曳拉一個';
     }
     if (m.type === 'crop')
@@ -1680,9 +1652,7 @@ const warpRegrid = warpButton((m, f) => {
 $('wpCols').onchange = warpRegrid;
 $('wpRows').onchange = warpRegrid;
 $('wpReset').onclick = warpRegrid;
-$('wpDelete').onclick = warpButton(warpDeleteFrame);
-$('wpApplyOne').onclick = warpButton(warpApplyFrame);
-window.addEventListener('beforeunload', e => {if (S.mode.type === 'warp' && S.mode.changed) e.preventDefault();});
+$('wpDelete').onclick = warpButton(warpDeleteFrame);window.addEventListener('beforeunload', e => {if (S.mode.type === 'warp' && S.mode.changed) e.preventDefault();});
 $('showOrigin').onchange = dirty;
 document.querySelectorAll('[name=cropMode]').forEach(r => {r.onchange = dirty;});
 document.querySelectorAll('[name=cropShape]').forEach(r => {r.onchange = () => {
@@ -1741,4 +1711,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, warpApplyFrame};
+               warpAddFrame};
