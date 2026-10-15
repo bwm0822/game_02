@@ -1062,7 +1062,15 @@ cv.addEventListener('pointermove', e => {
     else if (drag.type === 'move')
     {
         let dx = Math.round(w.x - drag.wx), dy = Math.round(w.y - drag.wy);
-        if (e.shiftKey) Math.abs(dx) >= Math.abs(dy) ? dy = 0 : dx = 0;
+        if (!e.shiftKey) drag.lock = null;
+        else
+        {
+            const k = drag.lock ??= {dx, dy, axis: null};
+            const mx = Math.abs(dx - k.dx), my = Math.abs(dy - k.dy);
+            if (!k.axis && Math.max(mx, my) >= 2) k.axis = mx >= my ? 'x' : 'y';
+            if (k.axis !== 'x') dx = k.dx;
+            if (k.axis !== 'y') dy = k.dy;
+        }
         drag.L.x = drag.x + dx;
         drag.L.y = drag.y + dy;
     }
