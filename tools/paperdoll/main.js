@@ -1099,11 +1099,11 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => S.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => S.keys.clear());
 
-// 變形模式裡先退模式自己的步驟，退完才走全域 undo
+// 變形模式裡只退模式自己的步驟，退到底停在進模式時（上次確定）的樣子，不走全域 undo
 function undo()
 {
     const m = S.mode;
-    if (m.type === 'warp' && warpStep(m, m.undos, m.redos)) return refreshAll();
+    if (m.type === 'warp') return warpStep(m, m.undos, m.redos) && refreshAll();
     cancelMode();
     select(hist.undo() ?? S.active);
 }
@@ -1111,7 +1111,7 @@ function undo()
 function redo()
 {
     const m = S.mode;
-    if (m.type === 'warp' && warpStep(m, m.redos, m.undos)) return refreshAll();
+    if (m.type === 'warp') return warpStep(m, m.redos, m.undos) && refreshAll();
     cancelMode();
     select(hist.redo() ?? S.active);
 }
