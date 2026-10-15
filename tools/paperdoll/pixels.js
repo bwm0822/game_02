@@ -164,9 +164,39 @@ export function warp(src, op, sd = src.getContext('2d').getImageData(0, 0, src.w
     return {canvas: out, bx: B.bx, by: B.by};
 }
 
+// 局部變形：frames 每個 {x,y,w,h,cols,rows,pts}，矩形和 pts 都是輸入圖座標（矩形是整數、在圖內）
+// 輸出畫布涵蓋原圖和所有 pts，(0,0) 對應輸入座標 (bx,by)
+export function warpFramesBounds(frames, W, H)
+{
+    let x0 = 0, y0 = 0, x1 = W, y1 = H;
+    for (const p of frames.flatMap(f => f.pts))
+    {
+        x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y);
+        x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y);
+    }
+    const bx = Math.floor(x0), by = Math.floor(y0);
+    return {bx, by, w: Math.ceil(x1) - bx, h: Math.ceil(y1) - by};
+}
+
+// 依序處理每個框：從目前結果取出框內、挖掉，再貼上框內變形後的圖（重疊的框吃前一個框的結果）
+export function warpFrames(src, {frames})
+{
+    const B = warpFramesBounds(frames, src.width, src.height);
+    const out = newCanvas(B.w, B.h), g = out.getContext('2d');
+    g.drawImage(src, -B.bx, -B.by);
+    for (const f of frames)
+    {
+        const x = f.x - B.bx, y = f.y - B.by;
+        const r = warp(crop(out, x, y, f.w, f.h), {cols: f.cols, rows: f.rows, pts: f.pts.map(p => ({x: p.x - f.x, y: p.y - f.y}))});
+        g.clearRect(x, y, f.w, f.h);
+        g.drawImage(r.canvas, x + r.bx, y + r.by);
+    }
+    return {canvas: out, bx: B.bx, by: B.by};
+}
+
 const OPS = {
     alpha: (c, op) => alphaClear(c, op.t),
-    warp: (c, op) => warp(c, op).canvas,
+    warp: (c, op) => (op.frames ? warpFrames(c, op) : warp(c, op)).canvas,
     erase: (c, op) => erase(c, op),
     mask: (c, op) => mask(c, op),
     fill: (c, op) => fill(c, op),

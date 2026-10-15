@@ -124,37 +124,109 @@ run('paperdoll', async t => {
 
     const w = await ev(async () => {
         const pd = window.__pd, out = {};
-        const c = document.createElement('canvas'); c.width = c.height = 40;
-        c.getContext('2d').fillRect(0, 0, 40, 40);
-        const L = pd.addLayer(await createImageBitmap(c), 'w', null, null, {x: 5, y: 7, scale: 1});
+        const $ = (id) => document.getElementById(id);
+        const sq = (n) => {const c = document.createElement('canvas'); c.width = c.height = n; c.getContext('2d').fillRect(0, 0, n, n); return createImageBitmap(c);};
+        const alpha = (L, x, y) => L.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        const L = pd.addLayer(await sq(40), 'w', null, null, {x: 5, y: 7, scale: 1});
         L.a = 30;
         const x0 = L.x, y0 = L.y, ops0 = L.ops.length;
         const center0 = pd.toWorld(L, 20, 20);
 
-        document.getElementById('wpCols').value = 2;
-        document.getElementById('wpRows').value = 2;
+        $('wpCols').value = 2;
+        $('wpRows').value = 2;
         pd.setMode('warp');
-        pd.S.mode.pts[0] = {x: -10, y: -10};
-        pd.S.mode.stale = true;
+        out.empty = pd.S.mode.frames.length;
+        let f = pd.warpAddFrame(pd.S.mode, {x: 0, y: 0, w: 40, h: 40});
+        f.pts[0] = {x: -10, y: -10};
         pd.applyMode();
         const center1 = pd.toWorld(L, 30, 30);
         out.size = [L.canvas.width, L.canvas.height, L.ops.at(-1)?.type];
         out.centerKeep = Math.hypot(center0.x - center1.x, center0.y - center1.y) < 1e-6;
-        out.corner = L.canvas.getContext('2d').getImageData(1, 1, 1, 1).data[3];
+        out.corner = alpha(L, 1, 1);
 
         const x1 = L.x, y1 = L.y, n1 = L.ops.length;
         pd.setMode('warp');
-        out.resume = pd.S.mode.edited && pd.S.mode.pts[0].x === -10;
+        out.resume = pd.S.mode.frames.length === 1 && pd.S.mode.frames[0].pts[0].x === -10 && !pd.S.mode.changed;
         pd.applyMode();
         out.resumeSame = L.ops.length === n1 && Math.abs(L.x - x1) < 1e-6 && Math.abs(L.y - y1) < 1e-6;
 
         pd.setMode('warp');
-        document.getElementById('wpReset').click();
+        $('wpReset').click();
         pd.applyMode();
         out.reset = L.ops.length === ops0 && L.canvas.width === 40 && Math.abs(L.x - x0) < 1e-6 && Math.abs(L.y - y0) < 1e-6;
         pd.undo();
         out.undo = L.canvas.width === 50 && L.ops.at(-1)?.type === 'warp';
         pd.S.layers.splice(pd.S.layers.indexOf(L), 1);
+
+        // 局部框：右邊一排點往左推 5，框外不動、框內右側空出來
+        const M = pd.addLayer(await sq(40), 'm', null, null, null);
+        const mx = M.x, my = M.y;
+        pd.setMode('warp');
+        f = pd.warpAddFrame(pd.S.mode, {x: 10, y: 10, w: 20, h: 20});
+        for (const k of [2, 5, 8]) f.pts[k] = {x: 25, y: f.pts[k].y};
+        pd.applyMode();
+        out.local = [M.canvas.width, M.canvas.height, M.x === mx && M.y === my, alpha(M, 20, 20), alpha(M, 27, 20), alpha(M, 35, 20), alpha(M, 27, 5)];
+
+        // 套用此框：寫進圖層、剩下的框跟著新座標；之後取消不會還原它
+        pd.setMode('warp');
+        const m2 = pd.S.mode;
+        const g2 = pd.warpAddFrame(m2, {x: 0, y: 0, w: 10, h: 10});
+        g2.pts[0] = {x: -5, y: 0};
+        m2.stale = true;
+        pd.warpApplyFrame(m2);
+        out.applyOne = [M.canvas.width, M.ops.length, M.ops.map(o => o.frames.length).join(), m2.frames.length, m2.frames[0].x, m2.changed];
+        m2.frames[0].pts[4] = {x: 99, y: 99};
+        m2.stale = m2.changed = true;
+        pd.cancelMode();
+        out.cancelKeep = [M.canvas.width, M.ops.length];
+        pd.undo();
+        out.undoOne = [M.canvas.width, M.ops.length];
+        pd.redo();
+
+        // Delete 刪框；有沒套用的修改時切換模式會問
+        pd.setMode('warp');
+        const m3 = pd.S.mode;
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}));
+        out.del = [m3.frames.length, m3.cur];
+        let asked = 0;
+        const conf = window.confirm;
+        window.confirm = () => (asked++, true);
+        pd.setMode('move');
+        window.confirm = conf;
+        out.leave = [asked, M.ops.length, M.canvas.width];
+        pd.S.layers.splice(pd.S.layers.indexOf(M), 1);
+
+        // 互動：真的派 pointer 事件
+        const Q = pd.addLayer(await sq(40), 'q', null, null, null);
+        $('wpCols').value = 4;
+        $('wpRows').value = 4;
+        pd.setMode('warp');
+        pd.S.view.zoom = 10;
+        const m = pd.S.mode, cv = $('cv'), rc = cv.getBoundingClientRect(), o = pd.toWorld(Q, 0, 0), K = pd.S.view.zoom;
+        const at = (x, y) => ({clientX: rc.left + pd.S.view.px + (o.x + x) * K, clientY: rc.top + pd.S.view.py + (o.y + y) * K, pointerId: 1, button: 0, bubbles: true});
+        const fire = (type, [x, y], extra) => cv.dispatchEvent(new PointerEvent(type, {...at(x, y), ...extra}));
+        const drag = (a, b, extra = {}) => {fire('pointerdown', a, extra); fire('pointermove', b, {buttons: 1, ...extra}); fire('pointerup', b, extra);};
+        drag([4, 4], [36, 36]);
+        const f1 = m.frames[0];
+        out.made = [m.frames.length, f1.x, f1.y, f1.w, f1.h, f1.cols, f1.pts.length];
+        drag([34, 0], [39, 39], {shiftKey: true});
+        const n1sel = f1.sel.size;
+        drag([34, 0], [39, 6], {ctrlKey: true});
+        const n2sel = f1.sel.size;
+        fire('pointerdown', [36, 12], {ctrlKey: true}); fire('pointerup', [36, 12], {ctrlKey: true});
+        out.sel = [n1sel, n2sel, f1.sel.size];
+        drag([36, 20], [39, 21], {shiftKey: true});
+        const r4 = (v) => Math.round(v * 1e4) / 1e4;
+        out.lock = [...f1.sel].sort((a, b) => a - b).map(k => `${r4(f1.pts[k].x)},${r4(f1.pts[k].y)}`).join(' ');
+        const hx = 4 - Math.SQRT1_2, hy = 4 - Math.SQRT1_2;
+        drag([hx, hy], [hx - 2, hy]);
+        out.resize = [f1.x, f1.y, f1.w, f1.h, r4(f1.pts[24].x)];
+        drag([0, 30], [3, 39]);
+        const n = m.frames.length;
+        fire('pointerdown', [20, 20], {}); fire('pointerup', [20, 20], {});
+        out.switch = [n, m.cur];
+        pd.cancelMode();
+        pd.S.layers.splice(pd.S.layers.indexOf(Q), 1);
         return out;
     });
     const pg = await ev(async () => {
@@ -235,13 +307,25 @@ run('paperdoll', async t => {
     t.check('多邊形互動：Backspace 解開閉合', pg.reopen === false);
     t.eq('多邊形互動：Esc 清掉多邊形、留在裁切模式', JSON.stringify(pg.esc), JSON.stringify(['crop', null]));
 
+    t.eq('變形：一開始沒有框', w.empty, 0);
     t.eq('變形：拉出左上角，畫布擴大', JSON.stringify(w.size), JSON.stringify([50, 50, 'warp']));
     t.check('變形：沒動到的點留在原地（含旋轉）', w.centerKeep);
     t.check('變形：拉出去的角有像素', w.corner > 0, `alpha=${w.corner}`);
-    t.check('變形：再按一次接著編輯同一張網格', w.resume);
+    t.check('變形：再按一次接著編輯同一組框', w.resume);
     t.check('變形：不改直接確定，結果不變', w.resumeSame);
     t.check('變形：重設後確定＝拿掉變形、位置還原', w.reset);
     t.check('變形：undo 回到變形後', w.undo);
+    t.eq('變形：局部框只動框內、框外不變', JSON.stringify(w.local), JSON.stringify([40, 40, true, 255, 0, 255, 255]));
+    t.eq('變形：套用此框寫進圖層、剩下的框改用新座標', JSON.stringify(w.applyOne), JSON.stringify([45, 2, '1,1', 1, 15, false]));
+    t.eq('變形：套用此框後取消，不會還原它', JSON.stringify(w.cancelKeep), JSON.stringify([45, 2]));
+    t.eq('變形：undo 拿掉套用的框', JSON.stringify(w.undoOne), JSON.stringify([40, 1]));
+    t.eq('變形：Delete 刪掉目前的框', JSON.stringify(w.del), JSON.stringify([0, -1]));
+    t.eq('變形：有沒套用的修改時切換模式會問，確定就套用', JSON.stringify(w.leave), JSON.stringify([1, 1, 45]));
+    t.eq('變形互動：拖曳拉出 4×4 的框', JSON.stringify(w.made), JSON.stringify([1, 4, 4, 32, 32, 4, 25]));
+    t.eq('變形互動：Shift 拖曳選點、Ctrl 拖曳／點取消', JSON.stringify(w.sel), JSON.stringify([5, 4, 3]));
+    t.eq('變形互動：拖點時 Shift 只沿水平', w.lock, '39,20 39,28 39,36');
+    t.eq('變形互動：拖把手調框大小，點等比例跟著', JSON.stringify(w.resize), JSON.stringify([2, 4, 34, 32, 39.1875]));
+    t.eq('變形互動：點另一個框切換', JSON.stringify(w.switch), JSON.stringify([2, 0]));
 
     // 專案存讀：用 OPFS 當工作資料夾（無頭 Chrome 開不了資料夾選擇視窗）
     t.page.on('dialog', d => d.accept());

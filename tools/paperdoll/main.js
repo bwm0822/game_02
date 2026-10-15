@@ -145,7 +145,7 @@ function mergeVisible()
 
 function select(L)
 {
-    if (S.mode.layer && S.mode.layer !== L) cancelMode();
+    if (S.mode.layer && S.mode.layer !== L) leaveMode();
     S.active = L;
     refreshAll();
 }
@@ -322,9 +322,17 @@ function fitView()
 
 // ---------- 模式：移動 / 裁切 / 縮放 / 清除透明 / 顏色 ----------
 
+// 切換圖層／模式時，變形有沒套用的修改先問
+function leaveMode()
+{
+    const m = S.mode;
+    if (m.type === 'warp' && m.changed && confirm('有未套用的變形框，要套用嗎？（取消＝放棄）')) applyMode();
+    else cancelMode();
+}
+
 function setMode(type)
 {
-    cancelMode();
+    leaveMode();
     const L = S.active;
     if (type !== 'move' && (!L || L.locked))
     {
@@ -400,20 +408,13 @@ function applyMode()
     }
     else if (m.type === 'warp')
     {
-        if (warpIsIdentity(m))
-        {
-            if (m.baseOps === m.snap.ops) History.restore(m.snap);
-            else
-            {
-                hist.push(m.snap);
-                Object.assign(L, {ops: m.baseOps, canvas: m.input, x: m.base.x, y: m.base.y});
-            }
-        }
+        const frames = m.frames.filter(f => !warpIsIdentity(f));
+        if (!m.changed) History.restore(m.snap);
         else
         {
             if (m.stale) updateWarp(m);
             hist.push(m.snap);
-            L.ops = [...m.baseOps, warpOp(m)];
+            L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
         }
     }
     else return;
@@ -640,43 +641,138 @@ function scaleByHandle(w, [cx, cy])
 }
 
 // ---------- 變形 ----------
-// 編輯中的網格點都在「變形前那張圖（input）」的座標；base 是 input 的中心點在世界座標的位置
-// 最後一步就是 warp 時接著編輯同一張網格：拿掉它重播出 input，再從它的 bounds 反推變形前的 x/y
+// 框的矩形和網格點都在「變形前那張圖（input）」的座標；base 是 input 的中心點在世界座標的位置
+// 最後一步就是 warp 時接著編輯同一組框：拿掉它重播出 input，再從它的 bounds 反推變形前的 x/y
+// changed：這次進模式後有動過，切換圖層／模式時才要問
+
+const wpN = (id) => Math.min(12, Math.max(1, Math.round(+$(id).value || 1)));
+const warpCur = (m) => m.frames[m.cur] ?? null;
+const warpGridOf = (f) => PX.warpGrid(f.cols, f.rows, f.w, f.h).map(p => ({x: p.x + f.x, y: p.y + f.y}));
+
+function warpIsIdentity(f)
+{
+    const grid = warpGridOf(f);
+    return f.pts.every((p, k) => Math.abs(p.x - grid[k].x) < 1e-6 && Math.abs(p.y - grid[k].y) < 1e-6);
+}
+
+const warpOp = (frames) => ({type: 'warp', frames: frames.map(({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pts: pts.map(p => ({x: p.x, y: p.y}))}))});
 
 function warpStart(L)
 {
-    const m = {type: 'warp', layer: L, snap: hist.snap(L), sel: new Set()};
+    const m = {type: 'warp', layer: L, snap: hist.snap(L), frames: [], cur: -1, stale: false, changed: false};
     const last = L.ops.at(-1);
-    if (last?.type === 'warp')
-    {
-        m.baseOps = L.ops.slice(0, -1);
-        m.input = PX.replay(L.src, m.baseOps);
-        const b = PX.warpBounds(last);
-        m.base = toWorld(L, L.ox * m.input.width - b.bx, L.oy * m.input.height - b.by, [1, 1]);
-        Object.assign(m, {cols: last.cols, rows: last.rows, pts: last.pts.map(p => ({...p})), edited: true, stale: false});
-    }
-    else
+    if (last?.type !== 'warp')
     {
         Object.assign(m, {baseOps: L.ops, input: L.canvas, base: {x: L.x, y: L.y}});
-        warpInit(m);
-        m.stale = false;
+        return m;
     }
+    m.baseOps = L.ops.slice(0, -1);
+    m.input = PX.replay(L.src, m.baseOps);
+    const W = m.input.width, H = m.input.height;
+    const frames = last.frames ?? [{x: 0, y: 0, w: W, h: H, cols: last.cols, rows: last.rows, pts: last.pts}];
+    const b = last.frames ? PX.warpFramesBounds(frames, W, H) : PX.warpBounds(last);
+    m.base = toWorld(L, L.ox * W - b.bx, L.oy * H - b.by, [1, 1]);
+    m.frames = frames.map(f => ({...f, pts: f.pts.map(p => ({x: p.x, y: p.y})), sel: new Set()}));
+    m.frames.forEach(f => {f.edited = !warpIsIdentity(f);});
+    m.cur = m.frames.length - 1;
     return m;
 }
 
-function warpInit(m)
+function warpAddFrame(m, r)
 {
-    const n = (id) => Math.min(12, Math.max(1, Math.round(+$(id).value || 1)));
-    Object.assign(m, {cols: n('wpCols'), rows: n('wpRows'), sel: new Set(), edited: false, stale: true});
-    m.pts = PX.warpGrid(m.cols, m.rows, m.input.width, m.input.height);
+    const f = {...r, cols: wpN('wpCols'), rows: wpN('wpRows'), sel: new Set(), edited: false};
+    f.pts = warpGridOf(f);
+    m.frames.push(f);
+    m.cur = m.frames.length - 1;
+    m.changed = m.stale = true;
+    return f;
 }
 
-const warpOp = (m) => ({type: 'warp', cols: m.cols, rows: m.rows, pts: m.pts.map(p => ({x: p.x, y: p.y}))});
-
-function warpIsIdentity(m)
+function warpDeleteFrame(m)
 {
-    const grid = PX.warpGrid(m.cols, m.rows, m.input.width, m.input.height);
-    return m.pts.every((p, k) => Math.abs(p.x - grid[k].x) < 1e-6 && Math.abs(p.y - grid[k].y) < 1e-6);
+    if (!warpCur(m)) return;
+    m.frames.splice(m.cur, 1);
+    m.cur = m.frames.length - 1;
+    m.changed = m.stale = true;
+}
+
+// 套用目前的框：烘進 input 不能再改，剩下的框改用新 input 的座標繼續編輯
+// 同時記一個 undo 點，之後按取消只回到這裡（接著編輯的舊框本來就已經在圖層上，不能只存這一框）
+function warpApplyFrame(m)
+{
+    const f = warpCur(m), L = m.layer;
+    if (!f) return;
+    m.frames.splice(m.cur, 1);
+    m.cur = m.frames.length - 1;
+    if (!warpIsIdentity(f))
+    {
+        const op = warpOp([f]), r = PX.warpFrames(m.input, op);
+        const base = warpWorld(m, {x: r.bx + L.ox * r.canvas.width, y: r.by + L.oy * r.canvas.height});
+        for (const g of m.frames)
+        {
+            g.x -= r.bx; g.y -= r.by;
+            g.pts = g.pts.map(p => ({x: p.x - r.bx, y: p.y - r.by}));
+        }
+        Object.assign(m, {baseOps: [...m.baseOps, op], input: r.canvas, base});
+    }
+    updateWarp(m);
+    const rest = m.frames.filter(g => !warpIsIdentity(g));
+    hist.push(m.snap);
+    L.ops = rest.length ? [...m.baseOps, warpOp(rest)] : m.baseOps;
+    m.snap = hist.snap(L);
+    m.changed = false;
+}
+
+// 世界座標拖出來的範圍換成 input 座標的整數矩形，限制在圖內
+function warpRectFrom(m, a, b)
+{
+    const p = warpLocal(m, a), q = warpLocal(m, b), W = m.input.width, H = m.input.height;
+    const cl = (v, max) => Math.min(max, Math.max(0, Math.round(v)));
+    const x0 = cl(Math.min(p.x, q.x), W), x1 = cl(Math.max(p.x, q.x), W);
+    const y0 = cl(Math.min(p.y, q.y), H), y1 = cl(Math.max(p.y, q.y), H);
+    return x1 - x0 >= 2 && y1 - y0 >= 2 ? {x: x0, y: y0, w: x1 - x0, h: y1 - y0} : null;
+}
+
+const warpRectPts = (m, r) => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, v]) => warpWorld(m, {x: r.x + u * r.w, y: r.y + v * r.h}));
+
+// 調整大小的把手放在框外 10 螢幕 px，避開剛好在框邊上的網格點；sx/sy：-1 動左／上邊、1 動右／下邊
+const HANDLES = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]];
+
+function warpHandles(m, f, K)
+{
+    const a = m.layer.a * RAD, c = Math.cos(a), s = Math.sin(a), d = 10 / K;
+    return HANDLES.map(([sx, sy]) => {
+        const p = warpWorld(m, {x: f.x + (sx + 1) / 2 * f.w, y: f.y + (sy + 1) / 2 * f.h});
+        const n = Math.hypot(sx, sy), ux = sx / n * d, uy = sy / n * d;
+        return {sx, sy, x: p.x + ux * c - uy * s, y: p.y + ux * s + uy * c};
+    });
+}
+
+function warpHit(m, w)
+{
+    const f = warpCur(m), K = zoomK();
+    if (!f) return null;
+    let best = -1, bd = 8;
+    f.pts.forEach((pt, k) => {
+        const p = warpWorld(m, pt), d = Math.hypot(p.x - w.x, p.y - w.y) * K;
+        if (d < bd) {bd = d; best = k;}
+    });
+    if (best >= 0) return {pt: best};
+    const h = warpHandles(m, f, K).find(h => Math.hypot(h.x - w.x, h.y - w.y) * K < 7);
+    return h ? {handle: h} : null;
+}
+
+// 點一下（沒拖）：點在框裡就切到那個框，重疊時從上面往下輪；點空白取消選點
+function warpClick(m, w)
+{
+    const p = warpLocal(m, w);
+    const hits = m.frames.map((_, i) => i).reverse().filter(i => {
+        const f = m.frames[i];
+        return p.x >= f.x && p.x <= f.x + f.w && p.y >= f.y && p.y <= f.y + f.h;
+    });
+    const i = hits[(hits.indexOf(m.cur) + 1) % hits.length];
+    if (hits.length && i !== m.cur) m.cur = i;
+    else warpCur(m)?.sel.clear();
 }
 
 function warpWorld(m, p)
@@ -693,81 +789,152 @@ function warpLocal(m, w)
     return {x: dx * c - dy * s + L.ox * m.input.width, y: dx * s + dy * c + L.oy * m.input.height};
 }
 
+// 預覽就是最後結果：直接改圖層的 canvas／x／y
 function updateWarp(m)
 {
     m.stale = false;
-    m.inputData ??= m.input.getContext('2d').getImageData(0, 0, m.input.width, m.input.height).data;
-    const L = m.layer, r = PX.warp(m.input, warpOp(m), m.inputData);
+    const L = m.layer, frames = m.frames.filter(f => !warpIsIdentity(f));
+    if (!frames.length) return Object.assign(L, {canvas: m.input, x: m.base.x, y: m.base.y});
+    const r = PX.warpFrames(m.input, warpOp(frames));
     const p = warpWorld(m, {x: r.bx + L.ox * r.canvas.width, y: r.by + L.oy * r.canvas.height});
     Object.assign(L, {canvas: r.canvas, x: p.x, y: p.y});
 }
 
-function drawWarp(m, K)
+function drawWarpFrame(m, f, K, cur)
 {
-    const P = (i, j) => warpWorld(m, m.pts[j * (m.cols + 1) + i]);
-    g.strokeStyle = 'rgba(0,255,200,.8)';
+    g.setLineDash([4 / K, 4 / K]);
+    g.strokeStyle = cur ? '#fff' : 'rgba(150,150,150,.9)';
+    poly(warpRectPts(m, f));
+    g.setLineDash([]);
+
+    const P = (i, j) => warpWorld(m, f.pts[j * (f.cols + 1) + i]);
+    g.strokeStyle = cur ? 'rgba(0,255,200,.8)' : 'rgba(150,150,150,.5)';
     g.beginPath();
-    for (let j = 0; j <= m.rows; j++)
-        for (let i = 0; i <= m.cols; i++)
+    for (let j = 0; j <= f.rows; j++)
+        for (let i = 0; i <= f.cols; i++)
         {
             const p = P(i, j);
-            if (i < m.cols) {const q = P(i + 1, j); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y);}
-            if (j < m.rows) {const q = P(i, j + 1); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y);}
+            if (i < f.cols) {const q = P(i + 1, j); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y);}
+            if (j < f.rows) {const q = P(i, j + 1); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y);}
         }
     g.stroke();
+    if (!cur) return;
+
     const r = 4 / K;
-    m.pts.forEach((pt, k) => {
+    g.strokeStyle = '#000';
+    f.pts.forEach((pt, k) => {
         const p = warpWorld(m, pt);
-        g.fillStyle = m.sel.has(k) ? '#f0f' : '#fff';
-        g.strokeStyle = '#000';
+        g.fillStyle = f.sel.has(k) ? '#f0f' : '#fff';
         g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
         g.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
     });
+    const h = 3 / K;
+    g.strokeStyle = '#fff';
+    for (const p of warpHandles(m, f, K)) g.strokeRect(p.x - h, p.y - h, h * 2, h * 2);
+}
+
+function drawWarp(m, K)
+{
+    m.frames.forEach((f, i) => {if (i !== m.cur) drawWarpFrame(m, f, K, false);});
+    if (warpCur(m)) drawWarpFrame(m, warpCur(m), K, true);
+    const r = drag?.type === 'warpNew' && warpRectFrom(m, drag.a, drag.b);
+    if (r)
+    {
+        g.setLineDash([4 / K, 4 / K]);
+        g.strokeStyle = '#fff';
+        poly(warpRectPts(m, r));
+        g.setLineDash([]);
+    }
     if (drag?.type === 'band')
     {
         g.setLineDash([3 / K, 3 / K]);
-        g.strokeStyle = '#f0f';
+        g.strokeStyle = drag.add ? '#f0f' : '#f80';
         g.strokeRect(drag.a.x, drag.a.y, drag.b.x - drag.a.x, drag.b.y - drag.a.y);
         g.setLineDash([]);
     }
 }
 
-function warpPointerDown(m, w, shift)
+// 點：Ctrl 取消選、Shift 加選；把手：調框大小；其他地方 Shift／Ctrl 拖曳框選點，不然拖出新的框（沒拖就是點一下）
+function warpPointerDown(m, w, e)
 {
-    const K = zoomK();
-    let best = -1, bd = 8;
-    m.pts.forEach((pt, k) => {
-        const p = warpWorld(m, pt), d = Math.hypot(p.x - w.x, p.y - w.y) * K;
-        if (d < bd) {bd = d; best = k;}
-    });
-    if (best < 0)
+    const f = warpCur(m), hit = warpHit(m, w), ctrl = e.ctrlKey || e.metaKey;
+    if (hit?.pt !== undefined)
     {
-        if (shift) return {type: 'band', a: w, b: w};
-        m.sel.clear();
-        return null;
+        const k = hit.pt;
+        if (ctrl) {f.sel.delete(k); return null;}
+        if (e.shiftKey) f.sel.add(k);
+        else if (!f.sel.has(k)) f.sel = new Set([k]);
+        return {type: 'warpPt', f, w0: w, orig: new Map([...f.sel].map(k => [k, f.pts[k]]))};
     }
-    if (shift) m.sel.has(best) ? m.sel.delete(best) : m.sel.add(best);
-    else if (!m.sel.has(best)) m.sel = new Set([best]);
-    if (!m.sel.has(best)) return null;
-    return {type: 'warp', start: warpLocal(m, w), orig: new Map([...m.sel].map(k => [k, {...m.pts[k]}]))};
+    if (hit?.handle) return {type: 'warpSize', f, h: hit.handle, p0: warpLocal(m, w), r0: {x: f.x, y: f.y, w: f.w, h: f.h}, pts0: f.pts};
+    if (f && (e.shiftKey || ctrl)) return {type: 'band', a: w, b: w, add: !ctrl};
+    return {type: 'warpNew', a: w, b: w};
 }
 
-function warpBandSelect(m, a, b)
+function warpPointerMove(m, e, w)
 {
+    if (drag.type === 'warpNew') {drag.b = w; return;}
+    const f = drag.f;
+    if (drag.type === 'warpPt')
+    {
+        let dx = w.x - drag.w0.x, dy = w.y - drag.w0.y;
+        if (e.shiftKey) Math.abs(dx) >= Math.abs(dy) ? dy = 0 : dx = 0;
+        const c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
+        const lx = dx * c - dy * s, ly = dx * s + dy * c;
+        for (const [k, p] of drag.orig) f.pts[k] = {x: p.x + lx, y: p.y + ly};
+        f.edited = true;
+    }
+    else if (drag.type === 'warpSize')
+    {
+        // 點跟著框等比例移動，已經做的變形保留
+        const p = warpLocal(m, w), {r0, h} = drag, W = m.input.width, H = m.input.height;
+        const cl = (v, max) => Math.min(max, Math.max(0, Math.round(v)));
+        let x0 = r0.x, x1 = r0.x + r0.w, y0 = r0.y, y1 = r0.y + r0.h;
+        if (h.sx < 0) x0 = Math.min(cl(x0 + p.x - drag.p0.x, W), x1 - 2);
+        if (h.sx > 0) x1 = Math.max(cl(x1 + p.x - drag.p0.x, W), x0 + 2);
+        if (h.sy < 0) y0 = Math.min(cl(y0 + p.y - drag.p0.y, H), y1 - 2);
+        if (h.sy > 0) y1 = Math.max(cl(y1 + p.y - drag.p0.y, H), y0 + 2);
+        Object.assign(f, {x: x0, y: y0, w: x1 - x0, h: y1 - y0});
+        f.pts = drag.pts0.map(q => ({x: x0 + (q.x - r0.x) * f.w / r0.w, y: y0 + (q.y - r0.y) * f.h / r0.h}));
+    }
+    m.changed = m.stale = true;
+}
+
+function warpPointerUp(m)
+{
+    if (drag.type === 'band') warpBandSelect(m, drag.a, drag.b, drag.add);
+    if (drag.type !== 'warpNew') return;
+    if (Math.hypot(drag.b.x - drag.a.x, drag.b.y - drag.a.y) * zoomK() < 4) return warpClick(m, drag.a);
+    const r = warpRectFrom(m, drag.a, drag.b);
+    if (r) warpAddFrame(m, r);
+}
+
+function warpBandSelect(m, a, b, add)
+{
+    const f = warpCur(m);
     const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
-    m.pts.forEach((pt, k) => {
+    f.pts.forEach((pt, k) => {
         const p = warpWorld(m, pt);
-        if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1) m.sel.add(k);
+        if (p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1) add ? f.sel.add(k) : f.sel.delete(k);
     });
 }
 
 // 世界座標的位移轉成 input 座標（圖層有旋轉時方向要轉回去）
 function warpNudge(m, dx, dy)
 {
-    const c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
+    const f = warpCur(m), c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
     const lx = dx * c - dy * s, ly = dx * s + dy * c;
-    for (const k of m.sel) m.pts[k] = {x: m.pts[k].x + lx, y: m.pts[k].y + ly};
-    Object.assign(m, {edited: true, stale: true});
+    for (const k of f.sel) f.pts[k] = {x: f.pts[k].x + lx, y: f.pts[k].y + ly};
+    f.edited = m.changed = m.stale = true;
+}
+
+function warpCursor(m, w)
+{
+    const h = warpHit(m, w);
+    if (h?.pt !== undefined) return 'move';
+    if (!h) return 'crosshair';
+    const {sx, sy} = h.handle;
+    return !sx ? 'ns-resize' : !sy ? 'ew-resize' : sx === sy ? 'nwse-resize' : 'nesw-resize';
 }
 
 // ---------- 滑鼠 / 鍵盤 ----------
@@ -805,7 +972,7 @@ cv.addEventListener('pointerdown', e => {
     else if (m.type === 'color') pickColor(w);
     else if (m.type === 'warp')
     {
-        drag = warpPointerDown(m, w, e.shiftKey);
+        drag = warpPointerDown(m, w, e);
         refreshModePanel();
         dirty();
     }
@@ -827,6 +994,7 @@ cv.addEventListener('pointermove', e => {
     if (!drag)
     {
         if (S.mode.type === 'crop' && S.mode.poly) {polyHover(S.mode, e); dirty();}
+        if (S.mode.type === 'warp') cv.style.cursor = warpCursor(S.mode, screenToWorld(e));
         return;
     }
     const w = screenToWorld(e);
@@ -853,13 +1021,8 @@ cv.addEventListener('pointermove', e => {
     }
     else if (drag.type === 'polyPt') polyDrag(S.mode, e, drag.i);
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
-    else if (drag.type === 'warp')
-    {
-        const m = S.mode, c = warpLocal(m, w), dx = c.x - drag.start.x, dy = c.y - drag.start.y;
-        for (const [k, p] of drag.orig) m.pts[k] = {x: p.x + dx, y: p.y + dy};
-        Object.assign(m, {edited: true, stale: true});
-    }
     else if (drag.type === 'band') drag.b = w;
+    else if (S.mode.type === 'warp') warpPointerMove(S.mode, e, w);
     refreshProps();
     refreshModePanel();
     dirty();
@@ -868,7 +1031,7 @@ cv.addEventListener('pointermove', e => {
 cv.addEventListener('pointerup', () => {
     const s = drag?.snap;
     if (s && (s.x !== s.layer.x || s.y !== s.layer.y || s.a !== s.layer.a)) hist.push(s);
-    if (drag?.type === 'band') warpBandSelect(S.mode, drag.a, drag.b);
+    if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
     drag = null;
     dirty();
 });
@@ -915,8 +1078,9 @@ window.addEventListener('keydown', e => {
     else if (e.key === 'Escape' && m.type === 'crop' && (m.rect || m.poly)) {m.rect = m.poly = null; refreshModePanel(); dirty();}
     else if (e.key === 'Escape') cancelMode();
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
     const d = ARROWS[e.key], L = S.active;
-    if (d && S.mode.type === 'warp' && S.mode.sel.size)
+    if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
     {
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;
@@ -1044,11 +1208,14 @@ function refreshModePanel()
         $('rgRgbThr').value = m.rgbThr;
     }
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
+    if (m.type !== 'warp') cv.style.cursor = '';
     if (m.type === 'warp')
     {
-        $('wpCols').value = m.cols;
-        $('wpRows').value = m.rows;
-        $('wpCols').disabled = $('wpRows').disabled = m.edited;
+        const f = warpCur(m);
+        if (f) {$('wpCols').value = f.cols; $('wpRows').value = f.rows;}
+        $('wpCols').disabled = $('wpRows').disabled = !!f?.edited;
+        $('wpApplyOne').disabled = $('wpDelete').disabled = $('wpReset').disabled = !f;
+        $('wpInfo').textContent = f ? `框 ${m.cur + 1}／${m.frames.length}　${f.w}×${f.h}，選 ${f.sel.size} 點` : '還沒有變形框：在圖層上拖曳拉一個';
     }
     if (m.type === 'crop')
     {
@@ -1468,15 +1635,23 @@ $('scLock').onchange = () => {
     refreshModePanel();
     dirty();
 };
-const warpReset = () => {
-    if (S.mode.type !== 'warp') return;
-    warpInit(S.mode);
-    refreshModePanel();
-    dirty();
+const warpButton = (fn) => () => {
+    const m = S.mode;
+    if (m.type !== 'warp' || !warpCur(m)) return;
+    fn(m, warpCur(m));
+    refreshAll();
 };
-$('wpCols').onchange = warpReset;
-$('wpRows').onchange = warpReset;
-$('wpReset').onclick = warpReset;
+const warpRegrid = warpButton((m, f) => {
+    Object.assign(f, {cols: wpN('wpCols'), rows: wpN('wpRows'), sel: new Set(), edited: false});
+    f.pts = warpGridOf(f);
+    m.changed = m.stale = true;
+});
+$('wpCols').onchange = warpRegrid;
+$('wpRows').onchange = warpRegrid;
+$('wpReset').onclick = warpRegrid;
+$('wpDelete').onclick = warpButton(warpDeleteFrame);
+$('wpApplyOne').onclick = warpButton(warpApplyFrame);
+window.addEventListener('beforeunload', e => {if (S.mode.type === 'warp' && S.mode.changed) e.preventDefault();});
 $('showOrigin').onchange = dirty;
 document.querySelectorAll('[name=cropMode]').forEach(r => {r.onchange = dirty;});
 document.querySelectorAll('[name=cropShape]').forEach(r => {r.onchange = () => {
@@ -1534,4 +1709,5 @@ new ResizeObserver(dirty).observe(cv);
 
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
-               setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor};
+               setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
+               warpAddFrame, warpApplyFrame};
