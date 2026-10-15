@@ -1061,8 +1061,10 @@ cv.addEventListener('pointermove', e => {
     }
     else if (drag.type === 'move')
     {
-        drag.L.x = drag.x + Math.round(w.x - drag.wx);
-        drag.L.y = drag.y + Math.round(w.y - drag.wy);
+        let dx = Math.round(w.x - drag.wx), dy = Math.round(w.y - drag.wy);
+        if (e.shiftKey) Math.abs(dx) >= Math.abs(dy) ? dy = 0 : dx = 0;
+        drag.L.x = drag.x + dx;
+        drag.L.y = drag.y + dy;
     }
     else if (drag.type === 'rotate')
     {
