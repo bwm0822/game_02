@@ -655,7 +655,9 @@ function warpIsIdentity(f)
     return f.pts.every((p, k) => Math.abs(p.x - grid[k].x) < 1e-6 && Math.abs(p.y - grid[k].y) < 1e-6);
 }
 
-const warpOp = (frames) => ({type: 'warp', frames: frames.map(({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pts: pts.map(p => ({x: p.x, y: p.y}))}))});
+const warpCopy = ({x, y, w, h, cols, rows, pts}) => ({x, y, w, h, cols, rows, pts: pts.map(p => ({x: p.x, y: p.y}))});
+const warpOp = (frames) => ({type: 'warp', frames: frames.map(warpCopy)});
+const warpSame = (a, b) => JSON.stringify(warpCopy(a)) === JSON.stringify(warpCopy(b));
 
 function warpStart(L)
 {
@@ -672,7 +674,7 @@ function warpStart(L)
     const frames = last.frames ?? [{x: 0, y: 0, w: W, h: H, cols: last.cols, rows: last.rows, pts: last.pts}];
     const b = last.frames ? PX.warpFramesBounds(frames, W, H) : PX.warpBounds(last);
     m.base = toWorld(L, L.ox * W - b.bx, L.oy * H - b.by, [1, 1]);
-    m.frames = frames.map(f => ({...f, pts: f.pts.map(p => ({x: p.x, y: p.y})), sel: new Set()}));
+    m.frames = frames.map(f => ({...warpCopy(f), saved: warpCopy(f), sel: new Set()}));
     m.frames.forEach(f => {f.edited = !warpIsIdentity(f);});
     m.cur = m.frames.length - 1;
     return m;
@@ -696,31 +698,21 @@ function warpDeleteFrame(m)
     m.changed = m.stale = true;
 }
 
-// 套用目前的框：烘進 input 不能再改，剩下的框改用新 input 的座標繼續編輯
-// 同時記一個 undo 點，之後按取消只回到這裡（接著編輯的舊框本來就已經在圖層上，不能只存這一框）
+// 套用目前的框：框留著可以繼續改。每個框記 saved（套用過的樣子），圖層寫進所有框的 saved 並記一個 undo 點，
+// 之後按取消只退回沒套用的修改；其他框沒套用的修改不會跟著寫進去
 function warpApplyFrame(m)
 {
     const f = warpCur(m), L = m.layer;
     if (!f) return;
-    m.frames.splice(m.cur, 1);
-    m.cur = m.frames.length - 1;
-    if (!warpIsIdentity(f))
-    {
-        const op = warpOp([f]), r = PX.warpFrames(m.input, op);
-        const base = warpWorld(m, {x: r.bx + L.ox * r.canvas.width, y: r.by + L.oy * r.canvas.height});
-        for (const g of m.frames)
-        {
-            g.x -= r.bx; g.y -= r.by;
-            g.pts = g.pts.map(p => ({x: p.x - r.bx, y: p.y - r.by}));
-        }
-        Object.assign(m, {baseOps: [...m.baseOps, op], input: r.canvas, base});
-    }
-    updateWarp(m);
-    const rest = m.frames.filter(g => !warpIsIdentity(g));
+    f.saved = warpCopy(f);
+    const saved = m.frames.map(g => g.saved).filter(Boolean);
     hist.push(m.snap);
-    L.ops = rest.length ? [...m.baseOps, warpOp(rest)] : m.baseOps;
+    warpRender(m, saved);
+    const frames = saved.filter(s => !warpIsIdentity(s));
+    L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
     m.snap = hist.snap(L);
-    m.changed = false;
+    m.stale = true;
+    m.changed = m.frames.some(g => g.saved ? !warpSame(g, g.saved) : !warpIsIdentity(g));
 }
 
 // 世界座標拖出來的範圍換成 input 座標的整數矩形，限制在圖內
@@ -793,7 +785,13 @@ function warpLocal(m, w)
 function updateWarp(m)
 {
     m.stale = false;
-    const L = m.layer, frames = m.frames.filter(f => !warpIsIdentity(f));
+    warpRender(m, m.frames);
+}
+
+function warpRender(m, frames)
+{
+    const L = m.layer;
+    frames = frames.filter(f => !warpIsIdentity(f));
     if (!frames.length) return Object.assign(L, {canvas: m.input, x: m.base.x, y: m.base.y});
     const r = PX.warpFrames(m.input, warpOp(frames));
     const p = warpWorld(m, {x: r.bx + L.ox * r.canvas.width, y: r.by + L.oy * r.canvas.height});

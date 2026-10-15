@@ -167,21 +167,23 @@ run('paperdoll', async t => {
         pd.applyMode();
         out.local = [M.canvas.width, M.canvas.height, M.x === mx && M.y === my, alpha(M, 20, 20), alpha(M, 27, 20), alpha(M, 35, 20), alpha(M, 27, 5)];
 
-        // 套用此框：寫進圖層、剩下的框跟著新座標；之後取消不會還原它
+        // 套用此框：寫進圖層、框留著；只寫目前這框，其他框沒套用的修改不寫；之後取消回到套用時
         pd.setMode('warp');
         const m2 = pd.S.mode;
         const g2 = pd.warpAddFrame(m2, {x: 0, y: 0, w: 10, h: 10});
         g2.pts[0] = {x: -5, y: 0};
         m2.stale = true;
         pd.warpApplyFrame(m2);
-        out.applyOne = [M.canvas.width, M.ops.length, M.ops.map(o => o.frames.length).join(), m2.frames.length, m2.frames[0].x, m2.changed];
+        out.applyOne = [M.canvas.width, M.ops.length, M.ops[0].frames.length, m2.frames.length, m2.cur, m2.changed];
         m2.frames[0].pts[4] = {x: 99, y: 99};
         m2.stale = m2.changed = true;
+        pd.warpApplyFrame(m2);
+        out.onlyCur = [M.ops[0].frames[0].pts[4].x, m2.changed];
         pd.cancelMode();
-        out.cancelKeep = [M.canvas.width, M.ops.length];
-        pd.undo();
-        out.undoOne = [M.canvas.width, M.ops.length];
-        pd.redo();
+        out.cancelKeep = [M.canvas.width, M.ops.length, M.ops[0].frames[0].pts[4].x];
+        pd.undo(); pd.undo();
+        out.undoOne = [M.canvas.width, M.ops.length, M.ops[0].frames.length];
+        pd.redo(); pd.redo();
 
         // Delete 刪框；有沒套用的修改時切換模式會問
         pd.setMode('warp');
@@ -316,11 +318,12 @@ run('paperdoll', async t => {
     t.check('變形：重設後確定＝拿掉變形、位置還原', w.reset);
     t.check('變形：undo 回到變形後', w.undo);
     t.eq('變形：局部框只動框內、框外不變', JSON.stringify(w.local), JSON.stringify([40, 40, true, 255, 0, 255, 255]));
-    t.eq('變形：套用此框寫進圖層、剩下的框改用新座標', JSON.stringify(w.applyOne), JSON.stringify([45, 2, '1,1', 1, 15, false]));
-    t.eq('變形：套用此框後取消，不會還原它', JSON.stringify(w.cancelKeep), JSON.stringify([45, 2]));
-    t.eq('變形：undo 拿掉套用的框', JSON.stringify(w.undoOne), JSON.stringify([40, 1]));
-    t.eq('變形：Delete 刪掉目前的框', JSON.stringify(w.del), JSON.stringify([0, -1]));
-    t.eq('變形：有沒套用的修改時切換模式會問，確定就套用', JSON.stringify(w.leave), JSON.stringify([1, 1, 45]));
+    t.eq('變形：套用此框寫進圖層、框留著', JSON.stringify(w.applyOne), JSON.stringify([45, 1, 2, 2, 1, false]));
+    t.eq('變形：套用此框只寫目前的框，其他框沒套用的修改不寫', JSON.stringify(w.onlyCur), JSON.stringify([20, true]));
+    t.eq('變形：套用此框後取消，回到套用時', JSON.stringify(w.cancelKeep), JSON.stringify([45, 1, 20]));
+    t.eq('變形：undo 拿掉套用的框', JSON.stringify(w.undoOne), JSON.stringify([40, 1, 1]));
+    t.eq('變形：Delete 刪掉目前的框', JSON.stringify(w.del), JSON.stringify([1, 0]));
+    t.eq('變形：有沒套用的修改時切換模式會問，確定就套用', JSON.stringify(w.leave), JSON.stringify([1, 1, 40]));
     t.eq('變形互動：拖曳拉出 4×4 的框', JSON.stringify(w.made), JSON.stringify([1, 4, 4, 32, 32, 4, 25]));
     t.eq('變形互動：Shift 拖曳選點、Ctrl 拖曳／點取消', JSON.stringify(w.sel), JSON.stringify([5, 4, 3]));
     t.eq('變形互動：拖點時 Shift 只沿水平', w.lock, '39,20 39,28 39,36');
