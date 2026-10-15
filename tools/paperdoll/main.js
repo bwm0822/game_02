@@ -925,6 +925,16 @@ function warpPointerDown(m, w, e)
     return {type: 'warpNew', a: w, b: w};
 }
 
+// 按住 Shift 時鎖在先拖動的方向，放開再按才重新決定；一開始就按著的話以按下滑鼠的位置為起點（lock 還是 undefined）
+function shiftLock(e, dx, dy)
+{
+    if (!e.shiftKey) {drag.lock = null; return [dx, dy];}
+    const k = drag.lock ??= drag.lock === undefined ? {dx: 0, dy: 0, axis: null} : {dx, dy, axis: null};
+    const mx = Math.abs(dx - k.dx), my = Math.abs(dy - k.dy);
+    if (!k.axis && Math.max(mx, my) >= 2) k.axis = mx >= my ? 'x' : 'y';
+    return [k.axis === 'x' ? dx : k.dx, k.axis === 'y' ? dy : k.dy];
+}
+
 function warpPointerMove(m, e, w)
 {
     if (drag.type === 'warpNew') {drag.b = w; return;}
@@ -932,8 +942,7 @@ function warpPointerMove(m, e, w)
     const f = drag.f;
     if (drag.type === 'warpPt')
     {
-        let dx = w.x - drag.w0.x, dy = w.y - drag.w0.y;
-        if (e.shiftKey) Math.abs(dx) >= Math.abs(dy) ? dy = 0 : dx = 0;
+        const [dx, dy] = shiftLock(e, w.x - drag.w0.x, w.y - drag.w0.y);
         const c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
         const lx = dx * c - dy * s, ly = dx * s + dy * c;
         for (const [k, p] of drag.orig) f.pts[k] = {x: p.x + lx, y: p.y + ly};
@@ -1061,16 +1070,7 @@ cv.addEventListener('pointermove', e => {
     }
     else if (drag.type === 'move')
     {
-        let dx = Math.round(w.x - drag.wx), dy = Math.round(w.y - drag.wy);
-        if (!e.shiftKey) drag.lock = null;
-        else
-        {
-            const k = drag.lock ??= {dx, dy, axis: null};
-            const mx = Math.abs(dx - k.dx), my = Math.abs(dy - k.dy);
-            if (!k.axis && Math.max(mx, my) >= 2) k.axis = mx >= my ? 'x' : 'y';
-            if (k.axis !== 'x') dx = k.dx;
-            if (k.axis !== 'y') dy = k.dy;
-        }
+        const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
         drag.L.x = drag.x + dx;
         drag.L.y = drag.y + dy;
     }

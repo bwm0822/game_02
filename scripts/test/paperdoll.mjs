@@ -213,7 +213,18 @@ run('paperdoll', async t => {
         out.sel = [n1sel, n2sel, f1.sel.size];
         drag([36, 20], [39, 21], {shiftKey: true});
         const r4 = (v) => Math.round(v * 1e4) / 1e4;
-        out.lock = [...f1.sel].sort((a, b) => a - b).map(k => `${r4(f1.pts[k].x)},${r4(f1.pts[k].y)}`).join(' ');
+        const selPts = () => [...f1.sel].sort((a, b) => a - b).map(k => `${r4(f1.pts[k].x)},${r4(f1.pts[k].y)}`).join(' ');
+        out.lock = selPts();
+        fire('pointerdown', [39, 28], {shiftKey: true});
+        fire('pointermove', [42, 29], {buttons: 1, shiftKey: true});
+        fire('pointermove', [43, 40], {buttons: 1, shiftKey: true});
+        const keep = selPts();
+        fire('pointermove', [43, 40], {buttons: 1});
+        const free = selPts();
+        fire('pointermove', [43, 46], {buttons: 1, shiftKey: true});
+        fire('pointerup', [43, 46], {});
+        out.relock = [keep, free, selPts()];
+        ctl('z');
         const hx = 4 - Math.SQRT1_2, hy = 4 - Math.SQRT1_2;
         drag([hx, hy], [hx - 2, hy]);
         out.resize = [f1.x, f1.y, f1.w, f1.h, r4(f1.pts[24].x)];
@@ -344,6 +355,8 @@ run('paperdoll', async t => {
     t.eq('變形互動：拖曳拉出 4×4 的框', JSON.stringify(w.made), JSON.stringify([1, 4, 4, 32, 32, 4, 25]));
     t.eq('變形互動：Shift 拖曳選點、Ctrl 拖曳／點取消', JSON.stringify(w.sel), JSON.stringify([5, 4, 3]));
     t.eq('變形互動：拖點時 Shift 只沿水平', w.lock, '39,20 39,28 39,36');
+    t.eq('變形互動：Shift 方向拖到一半不換，放開再按才重新決定', JSON.stringify(w.relock),
+         JSON.stringify(['43,20 43,28 43,36', '43,32 43,40 43,48', '43,38 43,46 43,54']));
     t.eq('變形互動：拖把手調框大小，點等比例跟著', JSON.stringify(w.resize), JSON.stringify([2, 4, 34, 32, 39.1875]));
     t.eq('變形互動：點另一個框切換', JSON.stringify(w.switch), JSON.stringify([2, 0]));
     t.eq('變形：每個框各自 Ctrl+Z／Ctrl+Y，退到底拿掉框', JSON.stringify(w.modeUndo), JSON.stringify([4, 36, 1, 0, 2, 0, 39, 0]));
