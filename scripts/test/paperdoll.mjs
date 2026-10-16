@@ -604,7 +604,8 @@ run('paperdoll', async t => {
         const g = c.getContext('2d');
         g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
         g.fillStyle = '#ff0000'; g.fillRect(20, 30, 60, 40);
-        g.fillStyle = '#0000ff'; g.fillRect(10, 120, 80, 50);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        g.fillRect(150, 150, 2, 2);
         g.clearRect(95, 5, 1, 1); g.fillStyle = 'rgba(255,0,0,0.04)'; g.fillRect(95, 5, 1, 1);
         const S = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
         const before = pd.S.layers.length;
@@ -628,9 +629,9 @@ run('paperdoll', async t => {
     });
     t.eq('自動：數字寫進 localStorage', au.stored, 50);
     t.eq('自動：零件疊在原圖上（由下往上 護甲、頭盔）', au.layers, 'src,src-armor,src-helmet');
-    t.check('自動：去綠後空的象限略過', !au.boots);
-    t.eq('自動：頭盔＝左上象限去綠裁到剛好再縮放、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,xform']));
-    t.eq('自動：護甲＝左下象限、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 10, 0.25, 27, '0,0,255,255']));
+    t.check('自動：象限裡只有雜點就略過', !au.boots);
+    t.eq('自動：頭盔＝左上的塊去綠裁到剛好再縮放、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,xform']));
+    t.eq('自動：護甲跨過中線也整塊留下、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 16, 0.25, 27, '0,0,255,255']));
     t.eq('自動：原圖隱藏、選取頭盔', JSON.stringify(au.hidden), JSON.stringify([false, true]));
     t.eq('自動：一次 undo 全部還原', JSON.stringify(au.undo), JSON.stringify([true, true, 0]));
     t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([22, '22']));

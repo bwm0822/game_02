@@ -44,6 +44,46 @@ export function opaqueBounds(src, t = 1)
     return x1 < 0 ? null : {x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1};
 }
 
+// alpha >= t 的像素依 8 方向相連分塊，回傳每塊的像素數、外接矩形、重心
+export function blobs(src, t = 1)
+{
+    const w = src.width, h = src.height;
+    const d = src.getContext('2d').getImageData(0, 0, w, h).data;
+    const seen = new Uint8Array(w * h), stack = new Int32Array(w * h), out = [];
+    for (let i = 0; i < w * h; i++)
+    {
+        if (seen[i] || d[i * 4 + 3] < t) continue;
+        const b = {n: 0, x: w, y: h, x1: -1, y1: -1, cx: 0, cy: 0};
+        let top = 0;
+        stack[top++] = i;
+        seen[i] = 1;
+        while (top)
+        {
+            const j = stack[--top], x = j % w, y = (j - x) / w;
+            b.n++; b.cx += x; b.cy += y;
+            if (x < b.x) b.x = x;
+            if (x > b.x1) b.x1 = x;
+            if (y < b.y) b.y = y;
+            if (y > b.y1) b.y1 = y;
+            for (let dy = -1; dy <= 1; dy++)
+            {
+                const ny = y + dy;
+                if (ny < 0 || ny >= h) continue;
+                for (let dx = -1; dx <= 1; dx++)
+                {
+                    const nx = x + dx, k = ny * w + nx;
+                    if (nx < 0 || nx >= w || seen[k] || d[k * 4 + 3] < t) continue;
+                    seen[k] = 1;
+                    stack[top++] = k;
+                }
+            }
+        }
+        b.cx /= b.n; b.cy /= b.n;
+        out.push(b);
+    }
+    return out;
+}
+
 function draw(src, w, h, smooth)
 {
     const c = newCanvas(w, h);

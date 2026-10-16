@@ -192,11 +192,13 @@ function trimLayer(L)
 }
 
 // ---------- 自動模式 ----------
-// 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 依中線取象限、裁到剛好 → 縮放
+// 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 裁到零件的範圍 → 縮放
+// 零件可能跨過中線，所以不切象限：去綠後分連通塊，依重心歸到象限，零件範圍＝它所有塊的外接矩形
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
+const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_PARTS = [
     {key: 'helmet', name: '頭盔', quad: '左上', qx: 0, qy: 0},
     {key: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
@@ -226,22 +228,25 @@ function autoRun(L)
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
     pushOp(T, {type: 'removeGreen', ...GREEN});
-    const W = T.canvas.width, H = T.canvas.height, hw = Math.floor(W / 2), hh = Math.floor(H / 2);
+    const W = T.canvas.width, H = T.canvas.height;
+    const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
+    const parts = all.filter(b => b.n >= big * AUTO_NOISE);
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const made = [], skipped = [];
     for (const P of AUTO_PARTS)
     {
-        const qx = P.qx ? hw : 0, qy = P.qy ? hh : 0;
-        const b = PX.opaqueBounds(PX.crop(T.canvas, qx, qy, P.qx ? W - hw : hw, P.qy ? H - hh : hh), trimT());
-        if (!b) {skipped.push(P.name); continue;}
+        const mine = parts.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
+        if (!mine.length) {skipped.push(P.name); continue;}
+        const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
+        const bw = Math.max(...mine.map(b => b.x1)) + 1 - x0, bh = Math.max(...mine.map(b => b.y1)) + 1 - y0;
         const v = S.auto[P.key], k = v.pct / 100;
         const C = cloneAbove(L, `${L.name}-${P.key}`);
         Object.assign(C, {ops: T.ops, canvas: T.canvas, x: v.x / S.scale, y: v.y / S.scale, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
-        pushOp(C, {type: 'xform', sx: qx + b.x, sy: qy + b.y, sw: b.w, sh: b.h,
-                   w: Math.max(1, Math.round(b.w * k)), h: Math.max(1, Math.round(b.h * k)), smooth: true});
+        pushOp(C, {type: 'xform', sx: x0, sy: y0, sw: bw, sh: bh,
+                   w: Math.max(1, Math.round(bw * k)), h: Math.max(1, Math.round(bh * k)), smooth: true});
         made.push(C);
     }
-    if (!made.length) return status('四個象限去綠之後都是空的'), false;
+    if (!made.length) return status('去綠之後找不到零件'), false;
     hist.push(undo);
     L.visible = false;
     S.active = made[0];
