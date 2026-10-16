@@ -7,10 +7,11 @@ export class History
 {
     constructor() {this.undos = []; this.redos = [];}
 
-    snap(layer)
+    // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）
+    snap(layer, vis = false)
     {
         const {x, y, a, ox, oy, ops, canvas} = layer;
-        return {layer, x, y, a, ox, oy, ops, canvas};
+        return vis ? {layer, x, y, a, ox, oy, ops, canvas, visible: layer.visible} : {layer, x, y, a, ox, oy, ops, canvas};
     }
 
     snapList(state) {return {state, layers: [...state.layers], active: state.active};}
@@ -46,7 +47,7 @@ export class History
     _again(s)
     {
         if (s.group) return {group: s.group.map(m => this._again(m))};
-        return s.state ? this.snapList(s.state) : this.snap(s.layer);
+        return s.state ? this.snapList(s.state) : this.snap(s.layer, 'visible' in s);
     }
 
     _swap(from, to)
@@ -65,5 +66,6 @@ export class History
         if (s.state) return Object.assign(s.state, {layers: [...s.layers], active: s.active});
         const {x, y, a, ox, oy, ops, canvas} = s;
         Object.assign(s.layer, {x, y, a, ox, oy, ops, canvas});
+        if ('visible' in s) s.layer.visible = s.visible;
     }
 }

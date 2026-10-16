@@ -191,6 +191,64 @@ function trimLayer(L)
     return true;
 }
 
+// ---------- 自動模式 ----------
+// 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 依中線取象限、裁到剛好 → 縮放
+// 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
+
+const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
+const AUTO_ALPHA = 32;
+const AUTO_PARTS = [
+    {key: 'helmet', name: '頭盔', quad: '左上', qx: 0, qy: 0},
+    {key: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
+    {key: 'boots', name: '靴子', quad: '右下', qx: 1, qy: 1},
+];
+const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33}};
+const AUTO_KEY = 'paperdoll.auto';
+const autoFrom = (v) => Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}]));
+
+function autoLoad()
+{
+    try {return JSON.parse(localStorage.getItem(AUTO_KEY));}
+    catch {return null;}
+}
+
+function autoSet(v)
+{
+    S.auto = autoFrom(v);
+    try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
+    catch {}
+    for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+}
+
+// 每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；整段一筆 undo
+function autoRun(L)
+{
+    const T = {src: L.src, ops: L.ops};
+    pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
+    pushOp(T, {type: 'removeGreen', ...GREEN});
+    const W = T.canvas.width, H = T.canvas.height, hw = Math.floor(W / 2), hh = Math.floor(H / 2);
+    const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
+    const made = [], skipped = [];
+    for (const P of AUTO_PARTS)
+    {
+        const qx = P.qx ? hw : 0, qy = P.qy ? hh : 0;
+        const b = PX.opaqueBounds(PX.crop(T.canvas, qx, qy, P.qx ? W - hw : hw, P.qy ? H - hh : hh), trimT());
+        if (!b) {skipped.push(P.name); continue;}
+        const v = S.auto[P.key], k = v.pct / 100;
+        const C = cloneAbove(L, `${L.name}-${P.key}`);
+        Object.assign(C, {ops: T.ops, canvas: T.canvas, x: v.x / S.scale, y: v.y / S.scale, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
+        pushOp(C, {type: 'xform', sx: qx + b.x, sy: qy + b.y, sw: b.w, sh: b.h,
+                   w: Math.max(1, Math.round(b.w * k)), h: Math.max(1, Math.round(b.h * k)), smooth: true});
+        made.push(C);
+    }
+    if (!made.length) return status('四個象限去綠之後都是空的'), false;
+    hist.push(undo);
+    L.visible = false;
+    S.active = made[0];
+    status(`自動拆出 ${made.map(C => C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
+    return true;
+}
+
 function setOrigin(L, ox, oy)
 {
     const p = toWorld(L, ox * L.canvas.width, oy * L.canvas.height, [1, 1]);
@@ -344,10 +402,11 @@ function setMode(type)
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
     else if (type === 'removeGreen') {
-        S.mode = {type, layer: L, h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, preview: null};
+        S.mode = {type, layer: L, ...GREEN, preview: null};
         updateRemoveGreen();
     }
     else if (type === 'warp') S.mode = warpStart(L);
+    else if (type === 'auto') S.mode = {type, layer: L};
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -416,6 +475,10 @@ function applyMode()
             L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
         }
         if (L.ops !== m.snap.ops || L.canvas !== m.snap.canvas) hist.push(m.snap);
+    }
+    else if (m.type === 'auto')
+    {
+        if (!autoRun(L)) return;
     }
     else return;
     S.mode = {type: 'move'};
@@ -1277,6 +1340,7 @@ function refreshModePanel()
     $('modeColor').hidden = m.type !== 'color';
     $('modeWarp').hidden = m.type !== 'warp';
     $('modeRemoveGreen').hidden = m.type !== 'removeGreen';
+    $('modeAuto').hidden = m.type !== 'auto';
     if (m.type === 'removeGreen' && m.preview) {
         $('rgH1').value = m.h1;
         $('rgH2').value = m.h2;
@@ -1472,7 +1536,7 @@ function projectData(layers)
     return {
         version: 1,
         settings: {scale: S.scale, applyScale: S.applyScale, showOrigin: $('showOrigin').checked, ref: {...S.ref},
-                   trimT: trimT(), iconSize: +$('iconSize').value, autoTrim: $('autoTrim').checked},
+                   trimT: trimT(), iconSize: +$('iconSize').value, autoTrim: $('autoTrim').checked, auto: S.auto},
         active: layers.indexOf(S.active),
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
@@ -1506,6 +1570,7 @@ function applySettings(s)
     if (s.trimT) $('trimT').value = s.trimT;
     if (s.iconSize) $('iconSize').value = s.iconSize;
     $('autoTrim').checked = !!s.autoTrim;
+    if (s.auto) autoSet(s.auto);
 }
 
 async function saveProject()
@@ -1764,6 +1829,24 @@ const removeGreenChanged = () => {
 };
 for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
 
+$('auTable').append(...['', '象限', 'scale%', 'x', 'y'].map(t => Object.assign(el('span', 'dim'), {textContent: t})));
+for (const P of AUTO_PARTS)
+{
+    $('auTable').append(Object.assign(el('span'), {textContent: P.name}), Object.assign(el('span', 'dim'), {textContent: P.quad}));
+    for (const f of ['pct', 'x', 'y'])
+    {
+        const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
+        inp.onchange = () => {
+            const v = +inp.value;
+            if (Number.isFinite(v) && (f !== 'pct' || v > 0)) S.auto[P.key][f] = v;
+            autoSet(S.auto);
+        };
+        $('auTable').append(inp);
+    }
+}
+autoSet(autoLoad());
+$('auReset').onclick = () => autoSet(null);
+
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
     e.preventDefault();
@@ -1794,4 +1877,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame};
+               warpAddFrame, autoSet};

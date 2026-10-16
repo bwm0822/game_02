@@ -56,6 +56,7 @@
             <button data-mode="color">顏色</button>
             <button data-mode="removeGreen">移除綠色</button>
             <button data-mode="warp">變形</button>
+            <button data-mode="auto">自動</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
@@ -113,6 +114,12 @@
             <label>RGB 判斷 <input id="rgRgbThr" type="number" min="0" max="255" value="40"> (G > R+thr AND G > B+thr)</label>
             <div class="hint">使用 HSV + RGB 雙重判斷移除綠色背景，保留衣服和黑色描邊</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button></div>
+        </div>
+
+        <div id="modeAuto" class="mode" hidden>
+            <div id="auTable" class="autoGrid"></div>
+            <div class="hint">清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、裁到剛好 → 縮放；x／y 是遊戲單位。產生的圖層疊在原圖上，原圖隱藏</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="auReset">還原預設</button></div>
         </div>
 
         <div class="title">屬性</div>
