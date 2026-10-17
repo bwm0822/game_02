@@ -1188,7 +1188,7 @@ function pixelDown(m, w, e)
     if (e.altKey)
     {
         const px = PX.pixelAt(m.preview, p.x, p.y);
-        if (px) setRgb(px);
+        if (px) {setRgb(px); $('pxA').value = px[3];}
         return null;
     }
     m.before = new Map(m.map);

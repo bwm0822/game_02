@@ -410,8 +410,9 @@ run('paperdoll', async t => {
         out.modeUndo = [...u, m.map.size];
 
         $('pxRgb').value = '#00ff00';
+        $('pxA').value = 255;
         stroke([[2.5, 1.5]], {altKey: true});
-        out.pick = [$('pxRgb').value, $('colRgb').value, m.map.size];
+        out.pick = [$('pxRgb').value, $('colRgb').value, +$('pxA').value, m.map.size];
 
         const n0 = pd.hist.undos.length;
         pd.applyMode();
@@ -462,7 +463,7 @@ run('paperdoll', async t => {
     t.eq('像素：E 切橡皮擦、] 放大筆刷，2px 筆刷擦成透明', JSON.stringify(px.erase), JSON.stringify([true, 2, '0,0,0,0', '0,0,0,255', 8]));
     t.eq('像素：點在圖外不記筆畫', px.outside, 2);
     t.eq('像素：模式內 Ctrl+Z／Ctrl+Y 一筆一筆', JSON.stringify(px.modeUndo), JSON.stringify([4, '0,0,0,255', 8]));
-    t.eq('像素：Alt+點吸 RGB，跟顏色模式共用色票，不算筆畫', JSON.stringify(px.pick), JSON.stringify(['#ff0000', '#ff0000', 8]));
+    t.eq('像素：Alt+點吸 RGB 連 alpha，跟顏色模式共用色票，不算筆畫', JSON.stringify(px.pick), JSON.stringify(['#ff0000', '#ff0000', 128, 8]));
     t.eq('像素：確定寫成一步 paint、一筆 undo', JSON.stringify(px.apply), JSON.stringify(['move', 'paint', '255,0,0,128', '0,0,0,0', 1]));
     t.eq('像素：最後一步是 paint 時接著編輯', px.resume, 8);
     t.eq('像素：再畫併進同一步', JSON.stringify(px.merged), JSON.stringify(['paint', 9]));
