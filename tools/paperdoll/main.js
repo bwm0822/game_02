@@ -376,6 +376,7 @@ function drawOverlay(K)
     const m = S.mode;
     if (m.type === 'warp') drawWarp(m, K);
     if (m.type === 'crop') drawCrop(m, L, K);
+    if (m.type === 'pixel') drawPixel(m, L, K);
     if (m.type === 'scale')
     {
         g.fillStyle = '#fff';
@@ -409,6 +410,7 @@ function leaveMode()
 {
     const m = S.mode;
     if (m.type === 'warp' && m.changed && confirm('有未套用的變形框，要套用嗎？（取消＝放棄）')) applyMode();
+    else if (m.type === 'pixel' && m.changed && confirm('有未套用的像素修補，要套用嗎？（取消＝放棄）')) applyMode();
     else cancelMode();
 }
 
@@ -421,6 +423,16 @@ function setMode(type)
         status('先選一個沒鎖定的圖層');
         type = 'move';
     }
+    else if (type === 'pixel' && !L.visible)
+    {
+        status('選取的圖層隱藏中，先打開顯示');
+        type = 'move';
+    }
+    else if ((type === 'scale' || type === 'warp' || type === 'auto') && hasPaint(L))
+    {
+        alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」');
+        type = 'move';
+    }
     if (type === 'crop') S.mode = {type, layer: L, rect: null, poly: null};
     else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, k: srcScale(L), lock: $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
@@ -431,6 +443,7 @@ function setMode(type)
     }
     else if (type === 'warp') S.mode = warpStart(L);
     else if (type === 'auto') S.mode = autoStart(L) ?? {type: 'move'};
+    else if (type === 'pixel') S.mode = pixelStart(L);
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -503,6 +516,15 @@ function applyMode()
             L.ops = frames.length ? [...m.baseOps, warpOp(frames)] : m.baseOps;
         }
         if (L.ops !== m.snap.ops || L.canvas !== m.snap.canvas) hist.push(m.snap);
+    }
+    else if (m.type === 'pixel')
+    {
+        if (m.changed)
+        {
+            const px = pixelList(m);
+            Object.assign(L, px.length ? {ops: [...m.baseOps, {type: 'paint', px}], canvas: PX.paint(m.base, {px})} : {ops: m.baseOps, canvas: m.base});
+            hist.push(m.snap);
+        }
     }
     else if (m.type === 'auto')
     {
@@ -708,8 +730,7 @@ function pickColor(w)
     const m = S.mode, p = toLocal(m.layer, w.x, w.y);
     const px = PX.pixelAt(m.layer.canvas, p.x, p.y);
     if (!px) return;
-    $('colRgb').value = '#' + px.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('');
-    status(`吸取 rgba(${px.join(',')})`);
+    setRgb(px);
     updateColor();
 }
 
@@ -1094,6 +1115,153 @@ function warpCursor(m, w)
     return !sx ? 'ns-resize' : !sy ? 'ew-resize' : sx === sy ? 'nwse-resize' : 'nesw-resize';
 }
 
+// ---------- 像素 ----------
+// 修補記成一步 paint（座標是前面步驟跑完那張圖的像素）；最後一步就是 paint 時拿掉它接著編輯，筆畫併進同一步
+// 畫在 m.preview 上（每筆只 putImageData 筆刷範圍），m.map（y*W+x → rgba）是要寫進 op 的內容
+// 有 paint 的圖層不能再縮放／變形（座標會對不上），要先清除修補
+
+const PIXEL_HIST = 50;
+const PIXEL_GRID = 8;
+const pxN = () => Math.min(8, Math.max(1, Math.round(+$('pxSize').value || 1)));
+const pxTool = () => document.querySelector('[name=pxTool]:checked').value;
+const hasPaint = (L) => L.ops.some(o => o.type === 'paint');
+
+function pxColor()
+{
+    if (pxTool() === 'erase') return [0, 0, 0, 0];
+    const v = parseInt($('pxRgb').value.slice(1), 16);
+    return [v >> 16, (v >> 8) & 255, v & 255, byte('pxA', 0)];
+}
+
+function pixelStart(L)
+{
+    const last = L.ops.at(-1), resume = last?.type === 'paint';
+    const baseOps = resume ? L.ops.slice(0, -1) : L.ops;
+    const base = resume ? PX.replay(L.src, baseOps) : L.canvas;
+    const m = {type: 'pixel', layer: L, snap: hist.snap(L), baseOps, base, map: new Map(), hist: [], fut: [], changed: false, cursor: null};
+    if (resume) for (const [x, y, ...c] of last.px) m.map.set(y * base.width + x, c);
+    pixelRebuild(m);
+    return m;
+}
+
+function pixelList(m)
+{
+    const W = m.base.width;
+    return [...m.map].sort((a, b) => a[0] - b[0]).map(([k, c]) => [k % W, Math.floor(k / W), ...c]);
+}
+
+const pixelRebuild = (m) => {m.preview = PX.paint(m.base, {px: pixelList(m)});};
+
+// 筆刷左上角：n 是偶數時中心落在格線上
+const brushAt = (p, n) => ({x: Math.floor(p.x - (n - 1) / 2), y: Math.floor(p.y - (n - 1) / 2)});
+
+function pixelStamp(m, p)
+{
+    const n = pxN(), W = m.base.width, H = m.base.height, b = brushAt(p, n);
+    const x0 = Math.max(0, b.x), y0 = Math.max(0, b.y), x1 = Math.min(W, b.x + n), y1 = Math.min(H, b.y + n);
+    if (x1 <= x0 || y1 <= y0) return;
+    // 一筆真的畫到圖上才記進模式內的 undo
+    if (m.before)
+    {
+        m.hist.push(m.before);
+        if (m.hist.length > PIXEL_HIST) m.hist.shift();
+        m.fut.length = 0;
+        m.before = null;
+    }
+    const c = pxColor(), img = new ImageData(x1 - x0, y1 - y0);
+    for (let i = 0; i < img.data.length; i += 4) img.data.set(c, i);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) m.map.set(y * W + x, c);
+    m.preview.getContext('2d').putImageData(img, x0, y0);
+    m.changed = true;
+}
+
+// 拖很快時兩次 pointermove 之間補點，線才不會斷
+function pixelLine(m, a, b)
+{
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y))));
+    for (let i = 1; i <= n; i++) pixelStamp(m, {x: a.x + (b.x - a.x) * i / n, y: a.y + (b.y - a.y) * i / n});
+}
+
+function pixelDown(m, w, e)
+{
+    const p = toLocal(m.layer, w.x, w.y);
+    if (e.altKey)
+    {
+        const px = PX.pixelAt(m.preview, p.x, p.y);
+        if (px) setRgb(px);
+        return null;
+    }
+    m.before = new Map(m.map);
+    pixelStamp(m, p);
+    m.cursor = p;
+    return {type: 'paint', p};
+}
+
+function pixelUndo(m, from, to)
+{
+    if (!from.length) return false;
+    to.push(m.map);
+    m.map = from.pop();
+    m.changed = true;
+    pixelRebuild(m);
+    return true;
+}
+
+// 拿掉這層所有 paint，記一筆 undo；模式裡還沒確定的筆畫一起丟掉
+function pixelClear()
+{
+    const m = S.mode, L = m.layer;
+    if (m.type !== 'pixel') return;
+    const ops = L.ops.filter(o => o.type !== 'paint');
+    if (ops.length !== L.ops.length)
+    {
+        hist.record(L);
+        Object.assign(L, {ops, canvas: PX.replay(L.src, ops)});
+        status(`清除 ${L.name} 的像素修補`);
+    }
+    S.mode = pixelStart(L);
+    refreshAll();
+}
+
+function drawPixel(m, L, K)
+{
+    const W = m.preview.width, H = m.preview.height;
+    g.save();
+    g.translate(L.x, L.y);
+    g.rotate(L.a * RAD);
+    g.translate(-L.ox * W, -L.oy * H);
+    if (K >= PIXEL_GRID)
+    {
+        g.strokeStyle = 'rgba(255,255,255,.15)';
+        g.beginPath();
+        for (let x = 0; x <= W; x++) {g.moveTo(x, 0); g.lineTo(x, H);}
+        for (let y = 0; y <= H; y++) {g.moveTo(0, y); g.lineTo(W, y);}
+        g.stroke();
+    }
+    if (m.cursor)
+    {
+        const n = pxN(), b = brushAt(m.cursor, n);
+        g.strokeStyle = pxTool() === 'erase' ? '#fff' : $('pxRgb').value;
+        g.lineWidth = 2 / K;
+        g.strokeRect(b.x, b.y, n, n);
+    }
+    g.restore();
+}
+
+const PIXEL_KEYS = {
+    b: () => {$('pxPen').checked = true;},
+    e: () => {$('pxErase').checked = true;},
+    '[': () => {$('pxSize').value = pxN() - 1 || 1;},
+    ']': () => {$('pxSize').value = Math.min(8, pxN() + 1);},
+};
+
+// 鉛筆跟填色／去色共用色票
+function setRgb(px)
+{
+    $('colRgb').value = $('pxRgb').value = '#' + px.slice(0, 3).map(v => v.toString(16).padStart(2, '0')).join('');
+    status(`吸取 rgba(${px.join(',')})`);
+}
+
 // ---------- 滑鼠 / 鍵盤 ----------
 
 let drag = null;
@@ -1127,6 +1295,12 @@ cv.addEventListener('pointerdown', e => {
                       : {type: 'move', L, wx: w.x, wy: w.y, x: L.x, y: L.y};
     }
     else if (m.type === 'color') pickColor(w);
+    else if (m.type === 'pixel')
+    {
+        drag = pixelDown(m, w, e);
+        refreshModePanel();
+        dirty();
+    }
     else if (m.type === 'warp')
     {
         drag = warpPointerDown(m, w, e);
@@ -1152,6 +1326,7 @@ cv.addEventListener('pointermove', e => {
     {
         if (S.mode.type === 'crop' && S.mode.poly) {polyHover(S.mode, e); dirty();}
         if (S.mode.type === 'warp') cv.style.cursor = warpCursor(S.mode, screenToWorld(e));
+        if (S.mode.type === 'pixel') {const w = screenToWorld(e); S.mode.cursor = toLocal(S.mode.layer, w.x, w.y); dirty();}
         return;
     }
     const w = screenToWorld(e);
@@ -1180,6 +1355,12 @@ cv.addEventListener('pointermove', e => {
     else if (drag.type === 'polyPt') polyDrag(S.mode, e, drag.i);
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
     else if (drag.type === 'band') drag.b = w;
+    else if (drag.type === 'paint')
+    {
+        const p = toLocal(S.mode.layer, w.x, w.y);
+        pixelLine(S.mode, drag.p, p);
+        drag.p = S.mode.cursor = p;
+    }
     else if (S.mode.type === 'warp') warpPointerMove(S.mode, e, w);
     refreshProps();
     refreshModePanel();
@@ -1192,6 +1373,10 @@ cv.addEventListener('pointerup', () => {
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
     drag = null;
     dirty();
+});
+
+cv.addEventListener('pointerleave', () => {
+    if (S.mode.type === 'pixel' && !drag) {S.mode.cursor = null; dirty();}
 });
 
 // 中鍵拖曳平移時，擋掉 Chrome 的中鍵自動捲動
@@ -1237,6 +1422,8 @@ window.addEventListener('keydown', e => {
     else if (e.key === 'Escape') cancelMode();
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
+    else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
+    if (m.type === 'pixel' && e.key === 'Alt') e.preventDefault();
     const d = ARROWS[e.key], L = S.active;
     if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
     {
@@ -1269,6 +1456,11 @@ function undo()
         if (!warpUndo(m)) status('變形沒有步驟可以退了；要退更早的操作請先離開變形');
         return refreshAll();
     }
+    if (m.type === 'pixel')
+    {
+        if (!pixelUndo(m, m.hist, m.fut)) status('像素沒有筆畫可以退了；要退更早的操作請先離開像素模式');
+        return refreshAll();
+    }
     cancelMode();
     select(hist.undo() ?? S.active);
 }
@@ -1279,6 +1471,11 @@ function redo()
     if (m.type === 'warp')
     {
         warpRedo(m);
+        return refreshAll();
+    }
+    if (m.type === 'pixel')
+    {
+        pixelUndo(m, m.fut, m.hist);
         return refreshAll();
     }
     cancelMode();
@@ -1370,6 +1567,8 @@ function refreshModePanel()
     $('modeWarp').hidden = m.type !== 'warp';
     $('modeRemoveGreen').hidden = m.type !== 'removeGreen';
     $('modeAuto').hidden = m.type !== 'auto';
+    $('modePixel').hidden = m.type !== 'pixel';
+    if (m.type === 'pixel') $('pxInfo').textContent = `修補 ${m.map.size} 像素，可退 ${m.hist.length} 筆`;
     if (m.type === 'removeGreen' && m.preview) {
         $('rgH1').value = m.h1;
         $('rgH2').value = m.h2;
@@ -1380,7 +1579,7 @@ function refreshModePanel()
         $('rgRgbThr').value = m.rgbThr;
     }
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
-    if (m.type !== 'warp') cv.style.cursor = '';
+    if (m.type !== 'warp') cv.style.cursor = m.type === 'pixel' ? 'crosshair' : '';
     if (m.type === 'warp')
     {
         const f = warpCur(m);
@@ -1829,7 +2028,11 @@ const warpRegrid = warpButton((m, f) => {
 $('wpCols').onchange = warpRegrid;
 $('wpRows').onchange = warpRegrid;
 $('wpReset').onclick = warpRegrid;
-$('wpDelete').onclick = warpButton(warpDeleteFrame);window.addEventListener('beforeunload', e => {if (S.mode.type === 'warp' && S.mode.changed) e.preventDefault();});
+$('wpDelete').onclick = warpButton(warpDeleteFrame);
+window.addEventListener('beforeunload', e => {if ((S.mode.type === 'warp' || S.mode.type === 'pixel') && S.mode.changed) e.preventDefault();});
+$('pxClear').onclick = pixelClear;
+$('pxRgb').oninput = () => {$('colRgb').value = $('pxRgb').value; dirty();};
+for (const id of ['pxPen', 'pxErase', 'pxSize']) $(id).oninput = dirty;
 $('showOrigin').onchange = dirty;
 document.querySelectorAll('[name=cropMode]').forEach(r => {r.onchange = dirty;});
 document.querySelectorAll('[name=cropShape]').forEach(r => {r.onchange = () => {
@@ -1845,6 +2048,7 @@ $('alT').oninput = () => {
 
 const colorChanged = () => {
     $('colTV').textContent = $('colT').value;
+    $('pxRgb').value = $('colRgb').value;
     if (S.mode.type !== 'color') return;
     refreshModePanel();
     updateColor();

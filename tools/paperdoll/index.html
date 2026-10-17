@@ -57,6 +57,7 @@
             <button data-mode="removeGreen">移除綠色</button>
             <button data-mode="warp">變形</button>
             <button data-mode="auto">自動</button>
+            <button data-mode="pixel">像素</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
@@ -120,6 +121,19 @@
             <div id="auTable" class="autoGrid"></div>
             <div class="hint">進模式就清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、裁到剛好 → 縮放，零件疊在原圖上預覽、原圖隱藏；改數字即時更新（只改 x／y 不重新縮放），x／y 是遊戲單位</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="auReset">還原預設</button></div>
+        </div>
+
+        <div id="modePixel" class="mode" hidden>
+            <div class="row2" style="margin: 0 0 4px">
+                <label><input id="pxPen" name="pxTool" type="radio" value="pen" checked> 鉛筆（B）</label>
+                <label><input id="pxErase" name="pxTool" type="radio" value="erase"> 橡皮擦（E）</label>
+            </div>
+            <label>筆刷 <input id="pxSize" type="number" min="1" max="8" value="1"> px（[ ]）</label>
+            <label>顏色 <input id="pxRgb" type="color" value="#000000"></label>
+            <label>alpha <input id="pxA" type="number" min="0" max="255" value="255"></label>
+            <div id="pxInfo" class="dim"></div>
+            <div class="hint">拖曳畫在選取圖層上（那格直接換成這個顏色，不混色）；Alt+點吸取顏色（只吸 RGB）；Ctrl+Z／Ctrl+Y 一筆一筆退。有修補的圖層不能再縮放、變形，要先「清除修補」</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="pxClear">清除修補</button></div>
         </div>
 
         <div class="title">屬性</div>

@@ -243,6 +243,7 @@ const OPS = {
     key: (c, op) => key(c, op),
     xform: (c, op) => xform(c, op),
     removeGreen: (c, op) => removeGreen(c, op.h1, op.h2, op.s1, op.s2, op.v1, op.v2, op.rgbThr),
+    paint: (c, op) => paint(c, op),
 };
 
 export function replay(src, ops)
@@ -256,6 +257,20 @@ export function erase(src, {x, y, w, h})
 {
     const c = clone(src);
     c.getContext('2d').clearRect(x, y, w, h);
+    return c;
+}
+
+// px：[[x,y,r,g,b,a]…]，那格直接換成這組 RGBA（不跟底下混色），圖外的略過
+export function paint(src, {px})
+{
+    const c = clone(src), W = c.width, H = c.height;
+    const ok = px.filter(([x, y]) => x >= 0 && y >= 0 && x < W && y < H);
+    if (!ok.length) return c;
+    const xs = ok.map(p => p[0]), ys = ok.map(p => p[1]);
+    const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) + 1 - x0, h = Math.max(...ys) + 1 - y0;
+    const g = c.getContext('2d'), img = g.getImageData(x0, y0, w, h);
+    for (const [x, y, ...rgba] of ok) img.data.set(rgba, ((y - y0) * w + x - x0) * 4);
+    g.putImageData(img, x0, y0);
     return c;
 }
 

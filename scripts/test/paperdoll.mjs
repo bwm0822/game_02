@@ -367,6 +367,114 @@ run('paperdoll', async t => {
     t.eq('變形：步驟跟著框寫進 op，重新進來還能退', JSON.stringify(w.persist), JSON.stringify([1, 1, 1]));
     t.eq('變形：重新進來退到沒變形、再拿掉框、再按停住', JSON.stringify(w.persistUndo), JSON.stringify([36, 0, 'warp']));
 
+    const px = await ev(async () => {
+        const pd = window.__pd, out = {};
+        const $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = c.height = 10;
+        c.getContext('2d').fillRect(0, 0, 10, 10);
+        const L = pd.addLayer(await createImageBitmap(c), 'px', null, null, null);
+        const at = (cv, x, y) => [...cv.getContext('2d').getImageData(x, y, 1, 1).data].join();
+        const key = (k, extra = {}) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
+        const cv = $('cv'), rc = cv.getBoundingClientRect();
+        const scr = (x, y) => {const w = pd.toWorld(L, x, y), K = pd.S.view.zoom; return {clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true};};
+        const fire = (type, x, y, extra) => cv.dispatchEvent(new PointerEvent(type, {...scr(x, y), ...extra}));
+        const stroke = (pts, extra = {}) => {
+            fire('pointerdown', ...pts[0], extra);
+            for (const p of pts.slice(1)) fire('pointermove', ...p, {buttons: 1, ...extra});
+            fire('pointerup', ...pts.at(-1), extra);
+        };
+        const types = () => L.ops.map(o => o.type).join();
+        const {alert, confirm} = window;
+        let alerts = 0, asked = 0;
+        window.alert = () => {alerts++;};
+        window.confirm = () => (asked++, true);
+
+        $('pxPen').checked = true;
+        $('pxSize').value = 1;
+        $('pxRgb').value = '#ff0000';
+        $('pxA').value = 128;
+        pd.setMode('pixel');
+        pd.S.view.zoom = 10;
+        const m = pd.S.mode;
+        stroke([[1.5, 1.5], [4.5, 1.5]]);
+        out.stroke = [at(m.preview, 2, 1), at(m.preview, 4, 1), at(L.canvas, 2, 1), m.map.size];
+
+        key('e'); key(']');
+        stroke([[7.5, 7.5]]);
+        out.erase = [$('pxErase').checked, +$('pxSize').value, at(m.preview, 8, 8), at(m.preview, 6, 6), m.map.size];
+        stroke([[20, 20]]);
+        out.outside = m.hist.length;
+        key('z', {ctrlKey: true});
+        const u = [m.map.size, at(m.preview, 8, 8)];
+        key('y', {ctrlKey: true});
+        out.modeUndo = [...u, m.map.size];
+
+        $('pxRgb').value = '#00ff00';
+        stroke([[2.5, 1.5]], {altKey: true});
+        out.pick = [$('pxRgb').value, $('colRgb').value, m.map.size];
+
+        const n0 = pd.hist.undos.length;
+        pd.applyMode();
+        out.apply = [pd.S.mode.type, types(), at(L.canvas, 2, 1), at(L.canvas, 7, 7), pd.hist.undos.length - n0];
+
+        pd.setMode('pixel');
+        key('b'); key('[');
+        out.resume = pd.S.mode.map.size;
+        stroke([[5.5, 5.5]]);
+        pd.applyMode();
+        out.merged = [types(), L.ops.at(-1).px.length];
+
+        pd.setMode('scale');
+        const s1 = pd.S.mode.type;
+        pd.setMode('warp');
+        out.blocked = [s1, pd.S.mode.type, alerts];
+
+        pd.setMode('crop');
+        pd.S.mode.rect = {ax: 0, ay: 0, bx: 6, by: 6};
+        pd.applyMode();
+        out.crop = [types(), L.canvas.width, at(L.canvas, 2, 1)];
+        const {replay} = await import('./pixels.js');
+        out.replay = at(replay(L.src, JSON.parse(JSON.stringify(L.ops))), 2, 1) === at(L.canvas, 2, 1);
+
+        pd.setMode('pixel');
+        $('pxClear').click();
+        out.clear = [pd.S.mode.type, types(), at(L.canvas, 2, 1), pd.S.mode.map.size];
+        pd.cancelMode();
+        pd.undo();
+        out.clearUndo = [types(), at(L.canvas, 2, 1)];
+
+        pd.setMode('pixel');
+        stroke([[0.5, 0.5]]);
+        pd.setMode('move');
+        out.leave = [asked, types(), L.ops.at(-1).px.length];
+        pd.undo();
+        out.leaveUndo = types();
+
+        L.visible = false;
+        pd.setMode('pixel');
+        out.hidden = pd.S.mode.type;
+        Object.assign(window, {alert, confirm});
+        $('pxA').value = 255;
+        pd.S.layers.splice(pd.S.layers.indexOf(L), 1);
+        return out;
+    });
+    t.eq('像素：拖曳畫線（取代成色票 RGBA），確定前只改預覽', JSON.stringify(px.stroke), JSON.stringify(['255,0,0,128', '255,0,0,128', '0,0,0,255', 4]));
+    t.eq('像素：E 切橡皮擦、] 放大筆刷，2px 筆刷擦成透明', JSON.stringify(px.erase), JSON.stringify([true, 2, '0,0,0,0', '0,0,0,255', 8]));
+    t.eq('像素：點在圖外不記筆畫', px.outside, 2);
+    t.eq('像素：模式內 Ctrl+Z／Ctrl+Y 一筆一筆', JSON.stringify(px.modeUndo), JSON.stringify([4, '0,0,0,255', 8]));
+    t.eq('像素：Alt+點吸 RGB，跟顏色模式共用色票，不算筆畫', JSON.stringify(px.pick), JSON.stringify(['#ff0000', '#ff0000', 8]));
+    t.eq('像素：確定寫成一步 paint、一筆 undo', JSON.stringify(px.apply), JSON.stringify(['move', 'paint', '255,0,0,128', '0,0,0,0', 1]));
+    t.eq('像素：最後一步是 paint 時接著編輯', px.resume, 8);
+    t.eq('像素：再畫併進同一步', JSON.stringify(px.merged), JSON.stringify(['paint', 9]));
+    t.eq('像素：有修補時擋下縮放、變形', JSON.stringify(px.blocked), JSON.stringify(['move', 'move', 2]));
+    t.eq('像素：裁切放行，照順序疊在後面', JSON.stringify(px.crop), JSON.stringify(['paint,xform', 6, '255,0,0,128']));
+    t.check('像素：步驟 JSON 來回後重播結果相同（專案存讀）', px.replay);
+    t.eq('像素：清除修補拿掉所有 paint、留在像素模式', JSON.stringify(px.clear), JSON.stringify(['pixel', 'xform', '0,0,0,255', 0]));
+    t.eq('像素：清除修補可以 undo', JSON.stringify(px.clearUndo), JSON.stringify(['paint,xform', '255,0,0,128']));
+    t.eq('像素：有沒套用的筆畫時切換模式會問，確定就套用', JSON.stringify(px.leave), JSON.stringify([1, 'paint,xform,paint', 1]));
+    t.eq('像素：undo 拿掉這次的修補', px.leaveUndo, 'paint,xform');
+    t.eq('像素：圖層隱藏時不能進模式', px.hidden, 'move');
+
     // 專案存讀：用 OPFS 當工作資料夾（無頭 Chrome 開不了資料夾選擇視窗）
     t.page.on('dialog', d => d.accept());
     const p = await ev(async () => {
