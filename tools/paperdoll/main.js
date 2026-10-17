@@ -83,10 +83,17 @@ function addLayer(img, name, dir, path, meta)
 
 function removeLayer(L)
 {
-    if (S.mode.parts?.some(p => p.C === L)) return cancelMode();
-    if (S.mode.layer === L) cancelMode();
+    const m = S.mode;
+    if (m.type === 'auto' && m.parts)
+    {
+        if (m.src === L) m.src = null;
+        m.parts = m.parts.filter(p => p.C !== L);
+        if (!m.parts.length) cancelMode();
+    }
+    else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
+    if (S.mode.type === 'auto' && S.mode.parts && !S.mode.changed) S.mode.snap = autoSnap(S.mode.parts);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
 }
@@ -109,10 +116,11 @@ function mergeLayers(layers)
     status(`合併 ${layers.length} 個圖層 → ${L.name}`);
 }
 
-// ops 跟 canvas 都不會被就地修改，直接共用參照
+// ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件
 function cloneAbove(L, name)
 {
-    const C = {...L, id: ++uid, name};
+    const {auto, autoSrc, ...rest} = L;
+    const C = {...rest, id: ++uid, name};
     S.layers.splice(S.layers.indexOf(L) + 1, 0, C);
     return C;
 }
@@ -146,7 +154,8 @@ function mergeVisible()
 
 function select(L)
 {
-    if (S.mode.layer && S.mode.layer !== L && S.mode.type !== 'auto') leaveMode();
+    const m = S.mode;
+    if (m.type === 'auto' ? !autoKeeps(m, L) : m.layer && m.layer !== L) leaveMode();
     S.active = L;
     refreshAll();
 }
@@ -215,36 +224,85 @@ function autoLoad()
     catch {return null;}
 }
 
-// 預覽中改數字：scale 變了才從快取的去綠圖重新取樣，x/y 只搬位置
 function autoSet(v)
 {
-    const prev = S.auto;
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
     for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
-    const m = S.mode;
-    if (m.type !== 'auto') return;
-    for (const part of m.parts)
-    {
-        if (prev[part.P.key].pct !== S.auto[part.P.key].pct) autoScale(m.T, part);
-        autoPlace(part);
-    }
-    refreshAll();
 }
 
-function autoScale(T, {P, C, box})
+// 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；scale% 記在自動產生的 xform 上（pct），
+// 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, xform(pct), ...paint] 才能再調
+const autoGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+function autoBase(C)
 {
-    const k = S.auto[P.key].pct / 100;
-    const op = {type: 'xform', ...box, w: Math.max(1, Math.round(box.sw * k)), h: Math.max(1, Math.round(box.sh * k)), smooth: true};
+    let i = C.ops.length - 1;
+    while (C.ops[i]?.type === 'paint') i--;
+    return C.ops[i]?.type === 'xform' && C.ops[i].pct && C.ops[i - 1]?.type === 'removeGreen' ? i : -1;
+}
+
+function autoGroup(L)
+{
+    const gid = L.auto?.gid ?? L.autoSrc;
+    const parts = gid ? S.layers.filter(C => C.auto?.gid === gid) : [];
+    return parts.length ? {gid, parts, src: S.layers.find(M => M.autoSrc === gid) ?? null} : null;
+}
+
+const autoSnap = (parts) => ({group: [hist.snapList(S), ...parts.map(p => hist.snap(p.C))]});
+const autoRow = ({C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale)});
+
+function autoScale(T, part, pct)
+{
+    const {C, box} = part, k = pct / 100;
+    const op = {type: 'xform', ...box, w: Math.max(1, Math.round(box.sw * k)), h: Math.max(1, Math.round(box.sh * k)), smooth: true, pct};
     Object.assign(C, {ops: [...T.ops, op], canvas: PX.xform(T.canvas, op)});
 }
 
-const autoPlace = ({P, C}) => Object.assign(C, {x: S.auto[P.key].x / S.scale, y: S.auto[P.key].y / S.scale});
+const autoPlace = ({C}, {x, y}) => Object.assign(C, {x: x / S.scale, y: y / S.scale});
 
-// 進模式就去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；確定才記成一筆 undo，取消整段還原
-function autoStart(L)
+// 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置；這次進模式的第一個修改才記 undo
+function autoApply(m, part, row)
 {
+    const cur = autoRow(part);
+    if (row.pct === cur.pct && row.x === cur.x && row.y === cur.y) return;
+    if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
+    if (!m.changed) {hist.push(m.snap); m.changed = true;}
+    if (row.pct !== cur.pct)
+    {
+        m.T.canvas ??= PX.replay(m.T.src, m.T.ops);
+        autoScale(m.T, part, row.pct);
+    }
+    autoPlace(part, row);
+    autoSet({...S.auto, [part.P.key]: autoRow(part)});
+}
+
+// 沒拆過：先只調數字，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
+function autoEnter(L)
+{
+    const g = autoGroup(L);
+    if (!g)
+    {
+        if (hasPaint(L)) return alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」'), null;
+        return {type: 'auto', layer: L, parts: null};
+    }
+    const bad = g.parts.filter(C => autoBase(C) < 0);
+    if (bad.length) return status(`${bad.map(C => C.name).join('、')} 拆完後改過，不能再自動調整；要重拆先取消自動`), null;
+    const C0 = g.parts[0];
+    const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0)), canvas: null};
+    const parts = AUTO_PARTS.map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
+        const {sx, sy, sw, sh} = C.ops[autoBase(C)];
+        return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}};
+    });
+    status(`調整 ${parts.map(p => p.C.name).join('、')}`);
+    return {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, snap: autoSnap(parts), changed: false};
+}
+
+// 去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；記一筆 undo，留在模式裡繼續調
+function autoSplit(m)
+{
+    const L = m.layer;
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
     pushOp(T, {type: 'removeGreen', ...GREEN});
@@ -252,6 +310,7 @@ function autoStart(L)
     const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
     const blobs = all.filter(b => b.n >= big * AUTO_NOISE);
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
+    const gid = L.autoSrc ?? autoGid();
     const parts = [], skipped = [];
     for (const P of AUTO_PARTS)
     {
@@ -260,17 +319,40 @@ function autoStart(L)
         const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
         const box = {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0};
         const C = cloneAbove(L, `${L.name}-${P.key}`);
-        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid}});
         const part = {P, C, box};
-        autoScale(T, part);
-        autoPlace(part);
+        autoScale(T, part, S.auto[P.key].pct);
+        autoPlace(part, S.auto[P.key]);
         parts.push(part);
     }
-    if (!parts.length) return status('去綠之後找不到零件'), null;
+    if (!parts.length) return status('去綠之後找不到零件');
+    L.autoSrc = gid;
     L.visible = false;
     S.active = parts[0].C;
-    status(`預覽 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
-    return {type: 'auto', layer: L, T, parts, undo};
+    hist.push(undo);
+    Object.assign(m, {layer: null, gid, src: L, T, parts, changed: true});
+    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
+}
+
+// 取消自動：刪掉這組零件、原圖重新顯示，記一筆 undo；還沒拆就只是離開
+function autoRevoke()
+{
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts) return cancelMode();
+    const parts = S.layers.filter(C => C.auto?.gid === m.gid), src = m.src;
+    hist.push({group: [hist.snapList(S), ...(src ? [hist.snap(src, true)] : [])]});
+    S.layers = S.layers.filter(C => !parts.includes(C));
+    if (src) src.visible = true;
+    S.active = src ?? S.layers.at(-1) ?? null;
+    S.mode = {type: 'move'};
+    status(`取消自動，刪掉 ${parts.map(C => C.name).join('、')}`);
+    refreshAll();
+}
+
+function autoKeeps(m, L)
+{
+    if (!m.parts) return L === m.layer;
+    return L === m.src || m.parts.some(p => p.C === L);
 }
 
 function setOrigin(L, ox, oy)
@@ -428,7 +510,7 @@ function setMode(type)
         status('選取的圖層隱藏中，先打開顯示');
         type = 'move';
     }
-    else if ((type === 'scale' || type === 'warp' || type === 'auto') && hasPaint(L))
+    else if ((type === 'scale' || type === 'warp') && hasPaint(L))
     {
         alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」');
         type = 'move';
@@ -442,7 +524,7 @@ function setMode(type)
         updateRemoveGreen();
     }
     else if (type === 'warp') S.mode = warpStart(L);
-    else if (type === 'auto') S.mode = autoStart(L) ?? {type: 'move'};
+    else if (type === 'auto') S.mode = autoEnter(L) ?? {type: 'move'};
     else if (type === 'pixel') S.mode = pixelStart(L);
     else S.mode = {type: 'move'};
     refreshAll();
@@ -456,7 +538,6 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
-    else if (m.type === 'auto') History.restore(m.undo);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -528,8 +609,8 @@ function applyMode()
     }
     else if (m.type === 'auto')
     {
-        hist.push(m.undo);
-        status(`自動拆出 ${m.parts.map(p => p.C.name).join('、')}`);
+        if (!m.parts) autoSplit(m);
+        return refreshAll();
     }
     else return;
     S.mode = {type: 'move'};
@@ -1556,6 +1637,22 @@ function refreshProps()
     set('pOp', Math.round(L.opacity * 100));
 }
 
+// 拆完後面板顯示這組零件的實際值，沒有零件的那行反灰
+function refreshAuto(m)
+{
+    $('modeAuto').querySelector('.ok').disabled = !!m.parts;
+    for (const P of AUTO_PARTS)
+    {
+        const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : S.auto[P.key];
+        for (const f of ['pct', 'x', 'y'])
+        {
+            const inp = $(`au-${P.key}-${f}`);
+            inp.value = row[f];
+            inp.disabled = !!m.parts && !part;
+        }
+    }
+}
+
 function refreshModePanel()
 {
     const m = S.mode;
@@ -1567,6 +1664,7 @@ function refreshModePanel()
     $('modeWarp').hidden = m.type !== 'warp';
     $('modeRemoveGreen').hidden = m.type !== 'removeGreen';
     $('modeAuto').hidden = m.type !== 'auto';
+    if (m.type === 'auto') refreshAuto(m);
     $('modePixel').hidden = m.type !== 'pixel';
     if (m.type === 'pixel') $('pxInfo').textContent = `修補 ${m.map.size} 像素，可退 ${m.hist.length} 筆`;
     if (m.type === 'removeGreen' && m.preview) {
@@ -1733,7 +1831,6 @@ async function saveLayer()
     const L = S.active;
     if (!L || !needRoot()) return;
     cancelMode();
-    if ($('autoTrim').checked && trimLayer(L)) refreshAll();
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
     const r = await saveDialog(`存檔：${L.name}`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-copy`, '.png', bake);
     if (!r) return;
@@ -1764,11 +1861,12 @@ function projectData(layers)
     return {
         version: 1,
         settings: {scale: S.scale, applyScale: S.applyScale, showOrigin: $('showOrigin').checked, ref: {...S.ref},
-                   trimT: trimT(), iconSize: +$('iconSize').value, autoTrim: $('autoTrim').checked, auto: S.auto},
+                   trimT: trimT(), iconSize: +$('iconSize').value, auto: S.auto},
         active: layers.indexOf(S.active),
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, visible: L.visible, opacity: L.opacity, locked: L.locked,
+            ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}),
         })),
     };
 }
@@ -1797,7 +1895,6 @@ function applySettings(s)
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
     if (s.iconSize) $('iconSize').value = s.iconSize;
-    $('autoTrim').checked = !!s.autoTrim;
     if (s.auto) autoSet(s.auto);
 }
 
@@ -1859,7 +1956,8 @@ async function openProject(fh, dir, path)
         const saveDir = await FS.resolveDir(S.root, d.path).catch(() => srcDir);
         layers.push({id: ++uid, name: d.name, dir: saveDir, path: d.path, srcPath: d.src, src, ops: d.ops,
                      canvas: PX.replay(src, d.ops), x: d.x, y: d.y, a: d.a, ox: d.ox, oy: d.oy,
-                     visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj});
+                     visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
+                     ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc})});
     }
     const lossy = warns.length > 0;
     if (add)
@@ -2070,15 +2168,24 @@ for (const P of AUTO_PARTS)
     {
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
         inp.onchange = () => {
-            const v = +inp.value;
+            const v = +inp.value, m = S.mode, part = m.parts?.find(p => p.P === P);
             const ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
-            autoSet(ok ? {...S.auto, [P.key]: {...S.auto[P.key], [f]: v}} : S.auto);
+            if (ok && part) autoApply(m, part, {...autoRow(part), [f]: v});
+            else autoSet(ok ? {...S.auto, [P.key]: {...S.auto[P.key], [f]: v}} : S.auto);
+            refreshAll();
         };
         $('auTable').append(inp);
     }
 }
 autoSet(autoLoad());
-$('auReset').onclick = () => autoSet(null);
+$('auReset').onclick = () => {
+    const m = S.mode;
+    for (const part of m.parts ?? []) autoApply(m, part, AUTO_DEF[part.P.key]);
+    autoSet(null);
+    refreshAll();
+};
+$('auCancel').onclick = autoRevoke;
+$('auLeave').onclick = cancelMode;
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
@@ -2110,4 +2217,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet};
+               warpAddFrame, autoSet, autoRevoke};
