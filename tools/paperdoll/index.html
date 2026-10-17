@@ -11,6 +11,9 @@
     <button id="btnRoot">選擇工作資料夾</button>
     <button id="btnReauth" hidden></button>
     <span id="rootName" class="dim">（未選擇）</span>
+    <button id="btnAssets" title="遊戲的 public/assets：存到 item.json 用">選擇遊戲資料夾</button>
+    <button id="btnAssetsReauth" hidden></button>
+    <span id="assetsName" class="dim">（未選擇）</span>
     <span class="sep"></span>
     <button id="btnSaveProj" title="把 💾 打勾的圖層存成專案">存專案…</button>
     <span id="projName" class="dim">（未命名）</span>
@@ -165,7 +168,6 @@
         <div id="dlgItemRow" hidden>
             <label id="dlgItemLab"><input id="dlgItem" type="checkbox"> 存到 item.json</label>
             <span id="dlgItemIds"></span>
-            <button type="button" id="dlgAssets" hidden></button>
         </div>
         <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>

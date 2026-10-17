@@ -662,7 +662,7 @@ run('paperdoll', async t => {
         const open = async () => {
             const p = pd.saveLayer();
             await until(() => $('dlgSave').open);
-            await until(() => !$('dlgItem').disabled || !$('dlgAssets').hidden || $('dlgItemLab').title);
+            await until(() => !$('dlgItem').disabled || $('dlgItemLab').title);
             return {p};
         };
         const rename = async (n) => {$('dlgName').value = n; $('dlgName').dispatchEvent(new Event('input')); await frame();};
@@ -671,10 +671,11 @@ run('paperdoll', async t => {
         await pd.loadHandle(await img.getFileHandle('a.png'), img, 'img');
         const L = pd.S.active;
         let {p} = await open();
-        out.noAssets = [!$('dlgItemRow').hidden, $('dlgItem').disabled, !$('dlgAssets').hidden, $('dlgName').value];
+        out.noAssets = [!$('dlgItemRow').hidden, $('dlgItem').disabled, $('dlgItemLab').title.includes('遊戲資料夾'), $('dlgName').value];
         $('dlgSave').close('cancel'); await p;
 
         await pd.setAssets(assets);
+        out.header = [$('assetsName').textContent, $('btnAssetsReauth').hidden];
         L.name = 'hat';
         L.x = 8; L.y = 0; L.a = 0;
         ({p} = await open());
@@ -700,7 +701,8 @@ run('paperdoll', async t => {
         out.cap = [JSON.stringify(cap.h2.equip), JSON.stringify(cap.h3.equip)];
         return out;
     });
-    t.eq('item.json：沒選 public/assets 時反灰、顯示選擇按鈕、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
+    t.eq('item.json：沒選遊戲資料夾時反灰、提示去上方選、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
+    t.eq('item.json：選了遊戲資料夾，上方顯示名稱', JSON.stringify(it.header), JSON.stringify(['assets', true]));
     t.eq('item.json：檔名配對得到時預設勾、存進 roles_64x64', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/roles_64x64', true, 'h1']));
     t.eq('item.json：只改擺放欄位、預設值刪掉、其他不動、不寫 sidecar、原圖不換', JSON.stringify(it.hat),
          JSON.stringify(['{"sprite":"hat","scale":0.25,"y":0,"aim":1,"x":2}', '{"sprite":"hat","scale":0.25}', true, false, 'img/a.png']));

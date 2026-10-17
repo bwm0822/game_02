@@ -48,8 +48,8 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 - 開檔：先「選擇工作資料夾」（handle 存在 IndexedDB，重開 Chrome 後按「重新授權」），從左側清單點 PNG；或從檔案總管拖 PNG（可連同名 `.json`）進畫布。有同名 `.json` 就套用裡面的擺放。
 - 存檔：每層各自存，內建對話框只能存在工作資料夾底下，預設目錄是工作資料夾的 `output/`（沒有就用圖層所在目錄）、預設檔名 `原檔名-copy`，同名會問是否覆蓋；同時寫 PNG 和 `.json`。存檔不會自動 trim（以前的「存檔時自動 trim」拿掉了，舊專案的 `settings.autoTrim` 直接忽略），要裁就先按「裁到剛好」。
 - **存到 item.json**：`item.json` 是手寫的來源檔（`run_all` 不跑 `scripts/item.js`，`xls/item.xlsx` 已不同步，手動跑會蓋掉），裝備的擺放由工具直接寫進去。存檔對話框的「存到 item.json」勾選：
-  - 第一次要選遊戲的 `public/assets` 資料夾（要有 `json/item.json` 和 `roles_64x64/`），handle 跟工作資料夾一樣存在 IndexedDB（`assets`），重開 Chrome 後在對話框按「重新授權」。
-  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite` 才能勾，預設勾、檔名預設就是圖層名；配不到或還沒授權就反灰，hover 看原因。配到好幾筆（共用 sprite）時列出 id 各自勾。spritesheet 的 sprite（`weapons:3`）配不到，武器不走這條。
+  - 上方工具列有兩個資料夾：「工作資料夾」（例如 `images/`，開圖、存專案、一般存檔）和「遊戲資料夾」（`public/assets`，要有 `json/item.json` 和 `roles_64x64/`，不對就 alert）。兩個 handle 都存在 IndexedDB（`root`／`assets`），重開 Chrome 後各自按「重新授權」。
+  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite` 才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選遊戲資料夾就反灰，hover 看原因。配到好幾筆（共用 sprite）時列出 id 各自勾。spritesheet 的 sprite（`weapons:3`）配不到，武器不走這條。
   - 勾了：PNG 覆蓋 `roles_64x64/<sprite>.png`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 `item.json`，勾選的 item 的 `equip` 寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
   - 沒勾：照一般存檔（PNG＋sidecar）。
   - 新的 sprite 名稱還要手動在 `src/scenes/Preloader.js` 加 `this.load.image(...)`，遊戲才載得到。

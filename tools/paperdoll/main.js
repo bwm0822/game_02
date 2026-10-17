@@ -1877,10 +1877,8 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         const ids = itemIds(), box = $('dlgItem'), was = !box.disabled;
         box.disabled = !ids.length;
         box.checked = ids.length > 0 && (was ? box.checked : true);
-        $('dlgItemLab').title = !S.assets ? '還沒選遊戲的 public/assets 資料夾'
+        $('dlgItemLab').title = !S.assets ? '先在上方選擇遊戲資料夾（public/assets）'
                               : ids.length ? '' : '沒有 item 的 equip.sprite 跟檔名一樣';
-        $('dlgAssets').hidden = !!S.assets;
-        $('dlgAssets').textContent = S.pendingAssets ? `重新授權「${S.pendingAssets.name}」` : '選 public/assets…';
         $('dlgItemIds').replaceChildren(...(ids.length > 1 ? ids.map(id => {
             const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: id});
             lab.append(c, ` ${id} `);
@@ -1897,11 +1895,9 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     {
         Object.assign($('dlgItem'), {disabled: true, checked: false});
         $('dlgItemIds').replaceChildren();
-        $('dlgAssets').hidden = true;
         $('dlgItemLab').title = '';
         $('dlgItem').onchange = refreshItem;
         $('dlgName').oninput = refreshItem;
-        $('dlgAssets').onclick = () => assetsDir().then(loadItems).catch(e => {if (e.name !== 'AbortError') alert(e.message);});
         loadItems().catch(e => status(e.message));
     }
     else $('dlgName').oninput = null;
@@ -1958,14 +1954,10 @@ async function setAssets(h)
     if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 json/item.json 和 roles_64x64/，要選遊戲的 public/assets`);
     S.assets = {dir: h, json, roles};
     S.pendingAssets = null;
+    $('btnAssetsReauth').hidden = true;
+    $('assetsName').textContent = h.name;
+    $('assetsName').classList.remove('dim');
     return S.assets;
-}
-
-async function assetsDir()
-{
-    if (S.assets) return S.assets;
-    const h = S.pendingAssets;
-    return setAssets(h && await FS.askPermission(h) ? h : await FS.pickAssets());
 }
 
 const readItems = async () => JSON.parse(await (await (await S.assets.json.getFileHandle('item.json')).getFile()).text());
@@ -1996,7 +1988,7 @@ async function saveLayer()
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
     if (r.item)
     {
-        const A = await assetsDir(), items = await readItems();
+        const A = S.assets, items = await readItems();
         const ids = r.item.filter(id => items[id]?.equip?.sprite === r.name);
         if (!ids.length) return alert(`item.json 裡已經沒有 equip.sprite 是「${r.name}」的 item，沒有存檔`);
         await FS.writeFile(A.roles, `${r.name}.png`, await PX.toPng(out));
@@ -2208,7 +2200,14 @@ $('btnRoot').onclick = async () => {
 $('btnReauth').onclick = async () => {
     if (S.pendingRoot && await FS.askPermission(S.pendingRoot)) setRoot(S.pendingRoot);
 };
-$('btnRefresh').onclick = () => buildTree($('tree'), treeOpt);
+$('btnAssets').onclick = async () => {
+    try {await setAssets(await FS.pickAssets());}
+    catch (e) {if (e.name !== 'AbortError') alert(e.message);}
+};
+$('btnAssetsReauth').onclick = async () => {
+    if (S.pendingAssets && await FS.askPermission(S.pendingAssets)) setAssets(S.pendingAssets).catch(e => alert(e.message));
+};
+$('btnRefresh').onclick =() => buildTree($('tree'), treeOpt);
 $('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
 $('btnDup').onclick = duplicateLayer;
 $('btnMergeDown').onclick = mergeDown;
@@ -2376,8 +2375,13 @@ new ResizeObserver(dirty).observe(cv);
     S.view.py = cv.clientHeight / 2;
     refreshAll();
     const ah = await FS.savedAssets();
-    if (ah && await FS.hasPermission(ah)) await setAssets(ah).catch(() => {});
-    else S.pendingAssets = ah ?? null;
+    if (ah && await FS.hasPermission(ah)) await setAssets(ah).catch(e => status(e.message));
+    else if (ah)
+    {
+        S.pendingAssets = ah;
+        $('btnAssetsReauth').textContent = `重新授權「${ah.name}」`;
+        $('btnAssetsReauth').hidden = false;
+    }
     const h = await FS.savedRoot();
     if (!h) return;
     if (await FS.hasPermission(h)) return setRoot(h);
