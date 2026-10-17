@@ -83,6 +83,7 @@ function addLayer(img, name, dir, path, meta)
 
 function removeLayer(L)
 {
+    if (S.mode.parts?.some(p => p.C === L)) return cancelMode();
     if (S.mode.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
@@ -145,7 +146,7 @@ function mergeVisible()
 
 function select(L)
 {
-    if (S.mode.layer && S.mode.layer !== L) leaveMode();
+    if (S.mode.layer && S.mode.layer !== L && S.mode.type !== 'auto') leaveMode();
     S.active = L;
     refreshAll();
 }
@@ -214,44 +215,62 @@ function autoLoad()
     catch {return null;}
 }
 
+// 預覽中改數字：scale 變了才從快取的去綠圖重新取樣，x/y 只搬位置
 function autoSet(v)
 {
+    const prev = S.auto;
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
     for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+    const m = S.mode;
+    if (m.type !== 'auto') return;
+    for (const part of m.parts)
+    {
+        if (prev[part.P.key].pct !== S.auto[part.P.key].pct) autoScale(m.T, part);
+        autoPlace(part);
+    }
+    refreshAll();
 }
 
-// 每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；整段一筆 undo
-function autoRun(L)
+function autoScale(T, {P, C, box})
+{
+    const k = S.auto[P.key].pct / 100;
+    const op = {type: 'xform', ...box, w: Math.max(1, Math.round(box.sw * k)), h: Math.max(1, Math.round(box.sh * k)), smooth: true};
+    Object.assign(C, {ops: [...T.ops, op], canvas: PX.xform(T.canvas, op)});
+}
+
+const autoPlace = ({P, C}) => Object.assign(C, {x: S.auto[P.key].x / S.scale, y: S.auto[P.key].y / S.scale});
+
+// 進模式就去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；確定才記成一筆 undo，取消整段還原
+function autoStart(L)
 {
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
     pushOp(T, {type: 'removeGreen', ...GREEN});
     const W = T.canvas.width, H = T.canvas.height;
     const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
-    const parts = all.filter(b => b.n >= big * AUTO_NOISE);
+    const blobs = all.filter(b => b.n >= big * AUTO_NOISE);
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
-    const made = [], skipped = [];
+    const parts = [], skipped = [];
     for (const P of AUTO_PARTS)
     {
-        const mine = parts.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
+        const mine = blobs.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
         if (!mine.length) {skipped.push(P.name); continue;}
         const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
-        const bw = Math.max(...mine.map(b => b.x1)) + 1 - x0, bh = Math.max(...mine.map(b => b.y1)) + 1 - y0;
-        const v = S.auto[P.key], k = v.pct / 100;
+        const box = {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0};
         const C = cloneAbove(L, `${L.name}-${P.key}`);
-        Object.assign(C, {ops: T.ops, canvas: T.canvas, x: v.x / S.scale, y: v.y / S.scale, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
-        pushOp(C, {type: 'xform', sx: x0, sy: y0, sw: bw, sh: bh,
-                   w: Math.max(1, Math.round(bw * k)), h: Math.max(1, Math.round(bh * k)), smooth: true});
-        made.push(C);
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
+        const part = {P, C, box};
+        autoScale(T, part);
+        autoPlace(part);
+        parts.push(part);
     }
-    if (!made.length) return status('去綠之後找不到零件'), false;
-    hist.push(undo);
+    if (!parts.length) return status('去綠之後找不到零件'), null;
     L.visible = false;
-    S.active = made[0];
-    status(`自動拆出 ${made.map(C => C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
-    return true;
+    S.active = parts[0].C;
+    status(`預覽 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
+    return {type: 'auto', layer: L, T, parts, undo};
 }
 
 function setOrigin(L, ox, oy)
@@ -411,7 +430,7 @@ function setMode(type)
         updateRemoveGreen();
     }
     else if (type === 'warp') S.mode = warpStart(L);
-    else if (type === 'auto') S.mode = {type, layer: L};
+    else if (type === 'auto') S.mode = autoStart(L) ?? {type: 'move'};
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -421,6 +440,7 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
+    else if (m.type === 'auto') History.restore(m.undo);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -483,7 +503,8 @@ function applyMode()
     }
     else if (m.type === 'auto')
     {
-        if (!autoRun(L)) return;
+        hist.push(m.undo);
+        status(`自動拆出 ${m.parts.map(p => p.C.name).join('、')}`);
     }
     else return;
     S.mode = {type: 'move'};
