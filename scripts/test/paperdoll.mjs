@@ -39,6 +39,10 @@ run('paperdoll', async t => {
         scaleBy(G1, 0.5); scaleBy(G1, 0.5);
         scaleBy(G2, 0.25);
         out.fromSrc = G1.ops.length === 1 && pix(G1) === pix(G2);
+        pd.select(G1); pd.setMode('scale');
+        const pct = document.getElementById('scPct'), shown = pct.value;
+        pct.value = 50; pct.dispatchEvent(new Event('input')); pd.applyMode();
+        out.srcPct = [shown, G1.canvas.width];
         pd.S.layers.splice(pd.S.layers.indexOf(G1), 2);
         pd.select(L);
 
@@ -582,6 +586,7 @@ run('paperdoll', async t => {
     t.eq('縮放以中心點為準，x/y 不變', JSON.stringify(r.scale), JSON.stringify({w: 20, h: 20, x: -12, y: 27}));
     t.eq('trim＋裁切＋縮放合成一步', r.ops, 1);
     t.check('縮兩次 50% 跟直接縮 25% 像素相同（都從原圖取樣）', r.fromSrc);
+    t.eq('縮放的 % 以原圖為 100', JSON.stringify(r.srcPct), JSON.stringify(['25', 32]));
     t.check('改中心點時內容不跳位', r.originKeep);
     t.eq('alpha < 60 清除', JSON.stringify(r.alpha), JSON.stringify([0, 0, 200, 255]));
     t.eq('填色：alpha >= 門檻的整組換掉，其餘不動', JSON.stringify(r.fill), JSON.stringify(['0,10,200,200', '0,0,255,200', 'fill']));

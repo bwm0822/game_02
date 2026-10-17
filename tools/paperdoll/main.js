@@ -422,7 +422,7 @@ function setMode(type)
         type = 'move';
     }
     if (type === 'crop') S.mode = {type, layer: L, rect: null, poly: null};
-    else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, lock: $('scLock').checked, snap: hist.snap(L)};
+    else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, k: srcScale(L), lock: $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
     else if (type === 'removeGreen') {
@@ -434,6 +434,9 @@ function setMode(type)
     else S.mode = {type: 'move'};
     refreshAll();
 }
+
+// 目前的圖相對原圖縮了多少（只看 xform，裁切不算縮放）；縮放面板的 % 以原圖為 100
+const srcScale = (L) => L.ops.reduce((k, o) => o.type === 'xform' ? k * o.w / o.sw : k, 1);
 
 function cancelMode()
 {
@@ -1399,7 +1402,7 @@ function refreshModePanel()
     if (m.type === 'scale')
     {
         const set = (id, v) => {if (document.activeElement !== $(id)) $(id).value = v;};
-        set('scPct', round(m.sx * 100, 10));
+        set('scPct', round(m.sx * m.k * 100, 10));
         set('scW', Math.round(m.layer.canvas.width * m.sx));
         set('scH', Math.round(m.layer.canvas.height * m.sy));
     }
@@ -1800,7 +1803,7 @@ const scaleInput = (id, fn) => {
         dirty();
     };
 };
-scaleInput('scPct', (m, v) => {m.sx = m.sy = v / 100;});
+scaleInput('scPct', (m, v) => {m.sx = m.sy = v / 100 / m.k;});
 scaleInput('scW', (m, v) => {m.sx = v / m.layer.canvas.width;});
 scaleInput('scH', (m, v) => {m.sy = v / m.layer.canvas.height; if (m.lock) m.sx = m.sy;});
 $('scLock').onchange = () => {
