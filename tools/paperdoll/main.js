@@ -160,12 +160,12 @@ function select(L)
     refreshAll();
 }
 
-function pick(w)
+function pick(w, only = null)
 {
     for (let i = S.layers.length - 1; i >= 0; i--)
     {
         const L = S.layers[i];
-        if (!L.visible || L.locked) continue;
+        if (!L.visible || L.locked || (only && !only.includes(L))) continue;
         const p = toLocal(L, w.x, w.y, [1, 1]);
         if (PX.alphaAt(L.canvas, p.x, p.y) > 0) return L;
     }
@@ -275,8 +275,19 @@ function autoApply(m, part, row)
         autoScale(m.T, part, row.pct);
     }
     autoPlace(part, row);
-    autoSet({...S.auto, [part.P.key]: autoRow(part)});
+    autoSave(part);
 }
+
+// 畫布拖曳／方向鍵搬零件：跟面板改 x/y 同一筆 undo，拖完（每按一次方向鍵）寫回全域預設
+function autoMove(m, part, x, y)
+{
+    const {C} = part;
+    if (x === C.x && y === C.y) return;
+    if (!m.changed) {hist.push(m.snap); m.changed = true;}
+    Object.assign(C, {x, y});
+}
+
+const autoSave = (part) => autoSet({...S.auto, [part.P.key]: autoRow(part)});
 
 // 沒拆過：先只調數字，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
 function autoEnter(L)
@@ -1388,6 +1399,13 @@ cv.addEventListener('pointerdown', e => {
         refreshModePanel();
         dirty();
     }
+    else if (m.type === 'auto' && m.parts)
+    {
+        const hit = pick(w, m.parts.map(p => p.C));
+        if (!hit) return;
+        if (hit !== L) select(hit);
+        drag = {type: 'autoMove', part: m.parts.find(p => p.C === hit), wx: w.x, wy: w.y, x: hit.x, y: hit.y};
+    }
     else if (m.type === 'move')
     {
         if (S.keys.has('r') && L && !L.locked)
@@ -1422,6 +1440,11 @@ cv.addEventListener('pointermove', e => {
         drag.L.x = drag.x + dx;
         drag.L.y = drag.y + dy;
     }
+    else if (drag.type === 'autoMove')
+    {
+        const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
+        autoMove(S.mode, drag.part, drag.x + dx, drag.y + dy);
+    }
     else if (drag.type === 'rotate')
     {
         let a = drag.a0 + (Math.atan2(w.y - drag.L.y, w.x - drag.L.x) - drag.ang0) / RAD;
@@ -1452,6 +1475,7 @@ cv.addEventListener('pointerup', () => {
     const s = drag?.snap;
     if (s && (s.x !== s.layer.x || s.y !== s.layer.y || s.a !== s.layer.a)) hist.push(s);
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
+    if (drag?.type === 'autoMove') autoSave(drag.part);
     drag = null;
     dirty();
 });
@@ -1506,7 +1530,17 @@ window.addEventListener('keydown', e => {
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
     if (m.type === 'pixel' && e.key === 'Alt') e.preventDefault();
     const d = ARROWS[e.key], L = S.active;
-    if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
+    const part = m.type === 'auto' && L?.visible && !L.locked ? m.parts?.find(p => p.C === L) : null;
+    if (d && part)
+    {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        autoMove(m, part, L.x + d[0] * step, L.y + d[1] * step);
+        autoSave(part);
+        refreshProps();
+        dirty();
+    }
+    else if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
     {
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;

@@ -785,6 +785,36 @@ run('paperdoll', async t => {
         pd.undo();
         out.resumeUndone = [H.x * pd.S.scale, H.y * pd.S.scale, !!find('src-helmet')];
 
+        // 畫布拖曳：真的派 pointer 事件；cover 疊在頭盔上面，要穿過它抓頭盔
+        const cv = $('cv'), rc = cv.getBoundingClientRect();
+        const atW = (w) => ({clientX: rc.left + pd.S.view.px + w.x * pd.S.view.zoom, clientY: rc.top + pd.S.view.py + w.y * pd.S.view.zoom, pointerId: 1, button: 0, bubbles: true});
+        const fireW = (type, w, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...atW(w), ...extra}));
+        const dragW = (a, b) => {fireW('pointerdown', a); fireW('pointermove', b, {buttons: 1}); fireW('pointerup', b);};
+        const arrow = (k, extra = {}) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
+        const cover = pd.addLayer(await createImageBitmap(c), 'cover', null, null, null);
+        const h0 = pd.toWorld(H, 7, 1), Hx = H.x;
+        pd.setMode('auto');
+        out.dragBefore = [pd.S.mode.parts, (dragW(h0, {x: h0.x + 8, y: h0.y}), cover.x)];
+        pd.cancelMode();
+        pd.select(S);
+        pd.setMode('auto');
+        const n2 = pd.hist.undos.length;
+        dragW(h0, {x: h0.x + 8, y: h0.y + 4});
+        out.drag = [pd.S.mode.type, pd.S.active === H, cover.x, H.x * pd.S.scale, H.y * pd.S.scale, $('au-helmet-x').value, pd.S.auto.helmet.x, pd.hist.undos.length - n2];
+        arrow('ArrowRight', {shiftKey: true});
+        arrow('ArrowUp');
+        out.arrow = [H.x * pd.S.scale, H.y * pd.S.scale, $('au-helmet-y').value, pd.S.auto.helmet.x, pd.hist.undos.length - n2];
+        const Hx1 = H.x;
+        dragW({x: 1000, y: 1000}, {x: 1010, y: 1000});
+        H.locked = true;
+        dragW(pd.toWorld(H, 7, 1), {x: h0.x + 30, y: h0.y});
+        H.locked = false;
+        out.dragMiss = [pd.S.mode.type, pd.S.active === H, H.x === Hx1];
+        pd.cancelMode();
+        pd.undo();
+        out.dragUndo = [H.x === Hx, H.y * pd.S.scale];
+        pd.removeLayer(cover);
+
         H.ops = [...H.ops, {type: 'paint', px: [[0, 0, 0, 255, 0, 255]]}];
         pd.select(H);
         pd.setMode('auto');
@@ -845,6 +875,11 @@ run('paperdoll', async t => {
     t.eq('自動：調整中改兩次只記一筆 undo', au.resumeUndo, 1);
     t.eq('自動：Esc＝離開、保留結果', JSON.stringify(au.esc), JSON.stringify(['move', true, 6]));
     t.eq('自動：undo 退回這次調整', JSON.stringify(au.resumeUndone), JSON.stringify([4, 2, true]));
+    t.eq('自動：還沒拆時拖畫布不做事', JSON.stringify(au.dragBefore), JSON.stringify([null, 0]));
+    t.eq('自動：拖零件（穿過上面的圖層）、面板跟預設跟著改、只記一筆 undo', JSON.stringify(au.drag), JSON.stringify(['auto', true, 0, 6, 3, '6', 6, 1]));
+    t.eq('自動：方向鍵微調（Shift 10px）、併進同一筆 undo', JSON.stringify(au.arrow), JSON.stringify([8.5, 2.75, '2.75', 8.5, 1]));
+    t.eq('自動：點空白／鎖定的零件不動、不離開模式', JSON.stringify(au.dragMiss), JSON.stringify(['auto', true, true]));
+    t.eq('自動：undo 退回拖曳', JSON.stringify(au.dragUndo), JSON.stringify([true, 2]));
     t.eq('自動：有 paint 的零件可以進來調', au.paintEnter, 'auto');
     t.eq('自動：改 scale 問清除修補，否＝數字退回', JSON.stringify(au.paintNo), JSON.stringify([15, 'paint', '25']));
     t.eq('自動：是＝清掉 paint 再縮放', JSON.stringify(au.paintYes), JSON.stringify([18, 'alpha,removeGreen,xform']));
