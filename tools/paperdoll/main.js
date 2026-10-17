@@ -89,11 +89,15 @@ function removeLayer(L)
         if (m.src === L) m.src = null;
         m.parts = m.parts.filter(p => p.C !== L);
         if (!m.parts.length) cancelMode();
+        else
+        {
+            const drop = (list) => list.map(s => History.drop(s, L, true)).filter(Boolean);
+            Object.assign(m, {snap: History.drop(m.snap, L, true), hist: drop(m.hist), fut: drop(m.fut)});
+        }
     }
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
-    if (S.mode.type === 'auto' && S.mode.parts && !S.mode.changed) S.mode.snap = autoSnap(S.mode.parts);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
 }
@@ -251,6 +255,7 @@ function autoGroup(L)
 }
 
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...parts.map(p => hist.snap(p.C))]});
+const AUTO_STEPS = 50;
 const autoRow = ({C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale)});
 
 function autoScale(T, part, pct)
@@ -262,13 +267,31 @@ function autoScale(T, part, pct)
 
 const autoPlace = ({C}, {x, y}) => Object.assign(C, {x: x / S.scale, y: y / S.scale});
 
-// 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置；這次進模式的第一個修改才記 undo
+// 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵）記零件改之前的樣子；離開時還有步驟才記一筆全域 undo
+function autoStep(m)
+{
+    m.hist.push({group: m.parts.map(p => hist.snap(p.C))});
+    if (m.hist.length > AUTO_STEPS) m.hist.shift();
+    m.fut = [];
+}
+
+function autoUndo(m, from, to)
+{
+    const s = from.pop();
+    if (!s) return false;
+    to.push({group: m.parts.map(p => hist.snap(p.C))});
+    History.restore(s);
+    autoSet({...S.auto, ...Object.fromEntries(m.parts.map(p => [p.P.key, autoRow(p)]))});
+    return true;
+}
+
+// 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置
 function autoApply(m, part, row)
 {
     const cur = autoRow(part);
     if (row.pct === cur.pct && row.x === cur.x && row.y === cur.y) return;
     if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
-    if (!m.changed) {hist.push(m.snap); m.changed = true;}
+    autoStep(m);
     if (row.pct !== cur.pct)
     {
         m.T.canvas ??= PX.replay(m.T.src, m.T.ops);
@@ -278,13 +301,14 @@ function autoApply(m, part, row)
     autoSave(part);
 }
 
-// 畫布拖曳／方向鍵搬零件：跟面板改 x/y 同一筆 undo，拖完（每按一次方向鍵）寫回全域預設
-function autoMove(m, part, x, y)
+// 畫布拖曳／方向鍵搬零件：一次拖曳只在第一次真的移動時記步驟，拖完（每按一次方向鍵）寫回全域預設
+function autoMove(m, part, x, y, step = true)
 {
     const {C} = part;
-    if (x === C.x && y === C.y) return;
-    if (!m.changed) {hist.push(m.snap); m.changed = true;}
+    if (x === C.x && y === C.y) return false;
+    if (step) autoStep(m);
     Object.assign(C, {x, y});
+    return true;
 }
 
 const autoSave = (part) => autoSet({...S.auto, [part.P.key]: autoRow(part)});
@@ -307,7 +331,7 @@ function autoEnter(L)
         return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}};
     });
     status(`調整 ${parts.map(p => p.C.name).join('、')}`);
-    return {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, snap: autoSnap(parts), changed: false};
+    return {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, snap: autoSnap(parts), hist: [], fut: []};
 }
 
 // 去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；記一筆 undo，留在模式裡繼續調
@@ -341,7 +365,7 @@ function autoSplit(m)
     L.visible = false;
     S.active = parts[0].C;
     hist.push(undo);
-    Object.assign(m, {layer: null, gid, src: L, T, parts, changed: true});
+    Object.assign(m, {layer: null, gid, src: L, T, parts, snap: autoSnap(parts), hist: [], fut: []});
     status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
 }
 
@@ -351,6 +375,7 @@ function autoRevoke()
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts) return cancelMode();
     const parts = S.layers.filter(C => C.auto?.gid === m.gid), src = m.src;
+    if (m.hist.length) hist.push(m.snap);
     hist.push({group: [hist.snapList(S), ...(src ? [hist.snap(src, true)] : [])]});
     S.layers = S.layers.filter(C => !parts.includes(C));
     if (src) src.visible = true;
@@ -549,6 +574,7 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
+    if (m.type === 'auto' && m.hist?.length) hist.push(m.snap);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -1443,7 +1469,7 @@ cv.addEventListener('pointermove', e => {
     else if (drag.type === 'autoMove')
     {
         const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
-        autoMove(S.mode, drag.part, drag.x + dx, drag.y + dy);
+        if (autoMove(S.mode, drag.part, drag.x + dx, drag.y + dy, !drag.moved)) drag.moved = true;
     }
     else if (drag.type === 'rotate')
     {
@@ -1576,6 +1602,11 @@ function undo()
         if (!pixelUndo(m, m.hist, m.fut)) status('像素沒有筆畫可以退了；要退更早的操作請先離開像素模式');
         return refreshAll();
     }
+    if (m.type === 'auto')
+    {
+        if (!m.parts || !autoUndo(m, m.hist, m.fut)) status('自動沒有步驟可以退了；要退更早的操作請先離開自動模式');
+        return refreshAll();
+    }
     cancelMode();
     select(hist.undo() ?? S.active);
 }
@@ -1591,6 +1622,11 @@ function redo()
     if (m.type === 'pixel')
     {
         pixelUndo(m, m.fut, m.hist);
+        return refreshAll();
+    }
+    if (m.type === 'auto')
+    {
+        if (m.parts) autoUndo(m, m.fut, m.hist);
         return refreshAll();
     }
     cancelMode();

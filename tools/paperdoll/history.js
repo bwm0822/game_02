@@ -28,17 +28,19 @@ export class History
     // removed：圖層被刪掉，結構快照也要拿掉它，不然 undo 合併會把它復活
     forget(layer, removed = false)
     {
-        const fix = (s) => {
-            if (s.group)
-            {
-                const group = s.group.map(fix).filter(Boolean);
-                return group.length ? {group} : null;
-            }
-            if (s.layer === layer) return null;
-            return !removed || !s.state ? s : {...s, layers: s.layers.filter(L => L !== layer), active: s.active === layer ? null : s.active};
-        };
-        this.undos = this.undos.map(fix).filter(Boolean);
-        this.redos = this.redos.map(fix).filter(Boolean);
+        this.undos = this.undos.map(s => History.drop(s, layer, removed)).filter(Boolean);
+        this.redos = this.redos.map(s => History.drop(s, layer, removed)).filter(Boolean);
+    }
+
+    static drop(s, layer, removed = false)
+    {
+        if (s.group)
+        {
+            const group = s.group.map(m => History.drop(m, layer, removed)).filter(Boolean);
+            return group.length ? {group} : null;
+        }
+        if (s.layer === layer) return null;
+        return !removed || !s.state ? s : {...s, layers: s.layers.filter(L => L !== layer), active: s.active === layer ? null : s.active};
     }
 
     undo() {return this._swap(this.undos, this.redos);}

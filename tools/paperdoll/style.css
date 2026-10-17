@@ -2,7 +2,8 @@
 html, body { margin: 0; height: 100%; }
 body { display: flex; flex-direction: column; font: 13px system-ui, sans-serif; background: #1e1f22; color: #ddd; }
 button { background: #3a3d44; color: #ddd; border: 1px solid #555; border-radius: 3px; padding: 3px 8px; cursor: pointer; }
-button:hover { background: #4a4e57; }
+button:hover:not(:disabled) { background: #4a4e57; }
+button:disabled { opacity: 0.4; cursor: default; }
 button.on { background: #2f6db5; border-color: #4a8be0; }
 input[type=number] { width: 56px; background: #2b2d31; color: #ddd; border: 1px solid #555; }
 input:not([type]) { background: #2b2d31; color: #ddd; border: 1px solid #555; }
