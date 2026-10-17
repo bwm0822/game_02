@@ -84,6 +84,7 @@ function addLayer(img, name, dir, path, meta)
 function removeLayer(L)
 {
     if (S.mode.layer === L) cancelMode();
+    if (S.mode.parts) S.mode.parts = S.mode.parts.filter(p => p.C !== L);
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
@@ -145,7 +146,7 @@ function mergeVisible()
 
 function select(L)
 {
-    if (S.mode.layer && S.mode.layer !== L) leaveMode();
+    if (S.mode.layer && S.mode.layer !== L && !S.mode.parts) leaveMode();
     S.active = L;
     refreshAll();
 }
@@ -214,13 +215,26 @@ function autoLoad()
     catch {return null;}
 }
 
+// 拆完還在模式裡時改數字直接套到零件：scale 變了才從快取的去綠圖重新取樣，x/y 只搬位置
 function autoSet(v)
 {
+    const prev = S.auto;
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
     for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts) return;
+    for (const part of m.parts)
+    {
+        if (prev[part.P.key].pct !== S.auto[part.P.key].pct) autoScale(m.T, part);
+        autoPlace(part);
+    }
+    refreshAll();
 }
+
+// 一張圖只拆一次：還有它拆出來的零件就不能再拆（undo 或刪掉零件後才可以）
+const autoDone = (L) => S.layers.some(C => C.autoSrc === L);
 
 function autoScale(T, {P, C, box})
 {
@@ -232,8 +246,10 @@ function autoScale(T, {P, C, box})
 const autoPlace = ({P, C}) => Object.assign(C, {x: S.auto[P.key].x / S.scale, y: S.auto[P.key].y / S.scale});
 
 // 按確定才去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；整段一筆 undo
-function autoSplit(L)
+// 拆完留在模式裡，去綠圖（m.T）跟零件（m.parts）留著給改數字用
+function autoSplit(m)
 {
+    const L = m.layer;
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
     pushOp(T, {type: 'removeGreen', ...GREEN});
@@ -249,7 +265,7 @@ function autoSplit(L)
         const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
         const box = {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0};
         const C = cloneAbove(L, `${L.name}-${P.key}`);
-        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1});
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, autoSrc: L});
         const part = {P, C, box};
         autoScale(T, part);
         autoPlace(part);
@@ -259,6 +275,7 @@ function autoSplit(L)
     L.visible = false;
     S.active = parts[0].C;
     hist.push(undo);
+    Object.assign(m, {T, parts});
     status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
 }
 
@@ -417,6 +434,11 @@ function setMode(type)
         status('選取的圖層隱藏中，先打開顯示');
         type = 'move';
     }
+    else if (type === 'auto' && autoDone(L))
+    {
+        status('這張圖已經自動拆過了（undo 或刪掉拆出的零件才能再拆）');
+        type = 'move';
+    }
     else if ((type === 'scale' || type === 'warp' || type === 'auto') && hasPaint(L))
     {
         alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」');
@@ -514,7 +536,11 @@ function applyMode()
             hist.push(m.snap);
         }
     }
-    else if (m.type === 'auto') autoSplit(L);
+    else if (m.type === 'auto')
+    {
+        if (!m.parts) autoSplit(m);
+        return refreshAll();
+    }
     else return;
     S.mode = {type: 'move'};
     refreshAll();
@@ -1551,6 +1577,7 @@ function refreshModePanel()
     $('modeWarp').hidden = m.type !== 'warp';
     $('modeRemoveGreen').hidden = m.type !== 'removeGreen';
     $('modeAuto').hidden = m.type !== 'auto';
+    $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     $('modePixel').hidden = m.type !== 'pixel';
     if (m.type === 'pixel') $('pxInfo').textContent = `修補 ${m.map.size} 像素，可退 ${m.hist.length} 筆`;
     if (m.type === 'removeGreen' && m.preview) {
