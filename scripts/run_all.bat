@@ -2,7 +2,8 @@
 cd /d "%~dp0.."
 
 for %%f in (scripts\*.js) do (
-    if /I not "%%~nxf"=="minimap.js" if /I not "%%~nxf"=="lang.js" (
+    rem item.json is hand-edited (paperdoll tool writes equip placement); item.js would overwrite it
+    if /I not "%%~nxf"=="minimap.js" if /I not "%%~nxf"=="lang.js" if /I not "%%~nxf"=="item.js" (
         echo Running %%f...
         node "%%f"
     )

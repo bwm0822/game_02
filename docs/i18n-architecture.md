@@ -135,7 +135,7 @@
 | 來源 | 情境 |
 |---|---|
 | local.xlsx | `ui.<localId>` |
-| item.xlsx | `item.<id>` |
+| item.json（手寫，item.xlsx 已不轉檔） | `item.<id>` |
 | ability.xlsx | `ability.<id>` |
 | dialog.json 節點 | `dlg.<sheet>.<node>`（共用的是 `dlg._common.<node>`） |
 | line | `line.<sheet>.<concept>`（line 沒有 id，同一 sheet 同一 concept 的多句靠原文區分） |

@@ -51,3 +51,5 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 dialog { background: #25272b; color: #ddd; border: 1px solid #555; width: 420px; }
 dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
+#dlgTree.off { opacity: .4; pointer-events: none; }
+#dlgItemLab:has(input:disabled) { color: #888; }

@@ -20,13 +20,17 @@ async function kv(mode, fn)
 }
 
 export const savedRoot = () => kv('readonly', s => s.get('root'));
+export const savedAssets = () => kv('readonly', s => s.get('assets'));
 
-export async function pickRoot()
+async function pickDir(key)
 {
-    const h = await window.showDirectoryPicker({id: 'paperdoll', mode: 'readwrite'});
-    await kv('readwrite', s => s.put(h, 'root'));
+    const h = await window.showDirectoryPicker({id: `paperdoll-${key}`, mode: 'readwrite'});
+    await kv('readwrite', s => s.put(h, key));
     return h;
 }
+
+export const pickRoot = () => pickDir('root');
+export const pickAssets = () => pickDir('assets');
 
 export const hasPermission = async (h) => (await h.queryPermission({mode: 'readwrite'})) === 'granted';
 export const askPermission = async (h) => (await h.requestPermission({mode: 'readwrite'})) === 'granted';
@@ -57,6 +61,12 @@ export async function resolveFile(root, path)
 export async function tryFile(dir, name)
 {
     try {return await dir.getFileHandle(name);}
+    catch {return null;}
+}
+
+export async function tryDir(dir, name)
+{
+    try {return await dir.getDirectoryHandle(name);}
     catch {return null;}
 }
 

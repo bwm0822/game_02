@@ -639,6 +639,77 @@ run('paperdoll', async t => {
     t.check('不透明度：覆蓋原圖後 opacity 歸 1，不會乘兩次', Math.abs(o.self[0] - 128) <= 1 && o.self[1] === 1 && o.self[2] === 0 && o.self[3] === o.self[0], JSON.stringify(o.self));
     t.check('不透明度：100% 時不顯示勾選', o.hidden);
 
+    // 存到 item.json：OPFS 底下建一份假的 public/assets
+    const it = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), img = await root.getDirectoryHandle('img');
+        const assets = await root.getDirectoryHandle('assets', {create: true});
+        const json = await assets.getDirectoryHandle('json', {create: true});
+        const roles = await assets.getDirectoryHandle('roles_64x64', {create: true});
+        const output = await root.getDirectoryHandle('output', {create: true});
+        const items = {
+            h1: {cat: 'CAT_HELMET', equip: {sprite: 'hat', scale: 0.25, y: -6, a: 30, aim: 1}, drop: {sprite: 'hat', scale: 0.25}},
+            h2: {equip: {sprite: 'cap', scale: 0.25}},
+            h3: {equip: {sprite: 'cap', scale: 0.25}},
+            x1: {cat: 'CAT_FOOD'},
+        };
+        const fh = await json.getFileHandle('item.json', {create: true});
+        const w = await fh.createWritable(); await w.write(JSON.stringify(items, null, 2)); await w.close();
+        const readItems = async () => (await (await json.getFileHandle('item.json')).getFile()).text();
+        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const open = async () => {
+            const p = pd.saveLayer();
+            await until(() => $('dlgSave').open);
+            await until(() => !$('dlgItem').disabled || !$('dlgAssets').hidden || $('dlgItemLab').title);
+            return {p};
+        };
+        const rename = async (n) => {$('dlgName').value = n; $('dlgName').dispatchEvent(new Event('input')); await frame();};
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null, assets: null, pendingAssets: null});
+        await pd.loadHandle(await img.getFileHandle('a.png'), img, 'img');
+        const L = pd.S.active;
+        let {p} = await open();
+        out.noAssets = [!$('dlgItemRow').hidden, $('dlgItem').disabled, !$('dlgAssets').hidden, $('dlgName').value];
+        $('dlgSave').close('cancel'); await p;
+
+        await pd.setAssets(assets);
+        L.name = 'hat';
+        L.x = 8; L.y = 0; L.a = 0;
+        ({p} = await open());
+        out.def = [$('dlgName').value, $('dlgItem').checked, $('dlgPath').textContent, $('dlgTree').classList.contains('off'), $('dlgItemIds').textContent];
+        $('dlgSave').close('ok'); await p;
+        const after = JSON.parse(await readItems());
+        out.hat = [JSON.stringify(after.h1.equip), JSON.stringify(after.h1.drop), await has(roles, 'hat.png'), await has(roles, 'hat.json'), L.srcPath];
+        out.format = (await readItems()) === JSON.stringify(after, null, 2);
+
+        ({p} = await open());
+        await rename('nope');
+        out.nope = [$('dlgItem').disabled, $('dlgItem').checked, $('dlgItemLab').title, $('dlgPath').textContent];
+        $('dlgSave').close('ok'); await p;
+        out.nopeSaved = [await has(output, 'nope.png'), await has(output, 'nope.json'), await has(roles, 'nope.png')];
+
+        ({p} = await open());
+        await rename('cap');
+        const boxes = [...$('dlgItemIds').querySelectorAll('input')];
+        out.capBoxes = boxes.map(c => `${c.value}:${c.checked}`).join();
+        boxes[1].checked = false;
+        $('dlgSave').close('ok'); await p;
+        const cap = JSON.parse(await readItems());
+        out.cap = [JSON.stringify(cap.h2.equip), JSON.stringify(cap.h3.equip)];
+        return out;
+    });
+    t.eq('item.json：沒選 public/assets 時反灰、顯示選擇按鈕、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
+    t.eq('item.json：檔名配對得到時預設勾、存進 roles_64x64', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/roles_64x64', true, 'h1']));
+    t.eq('item.json：只改擺放欄位、預設值刪掉、其他不動、不寫 sidecar、原圖不換', JSON.stringify(it.hat),
+         JSON.stringify(['{"sprite":"hat","scale":0.25,"y":0,"aim":1,"x":2}', '{"sprite":"hat","scale":0.25}', true, false, 'img/a.png']));
+    t.check('item.json：照 2 格縮排重寫', it.format);
+    t.eq('item.json：配不到時反灰、說明原因、存到 output', JSON.stringify(it.nope), JSON.stringify([true, false, '沒有 item 的 equip.sprite 跟檔名一樣', 'output']));
+    t.eq('item.json：沒勾就存 output 的 PNG＋sidecar', JSON.stringify(it.nopeSaved), JSON.stringify([true, true, false]));
+    t.eq('item.json：好幾筆共用 sprite 時列出來各自勾', it.capBoxes, 'h2:true,h3:true');
+    t.eq('item.json：只寫有勾的', JSON.stringify(it.cap), JSON.stringify(['{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"cap","scale":0.25}']));
+
     // 合併：dialog 一律 accept，所以有半透明時會烘入
     const m = await ev(async () => {
         const pd = window.__pd, out = {};

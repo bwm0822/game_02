@@ -14,6 +14,8 @@ const cv = $('cv'), g = cv.getContext('2d');
 const S = {
     root: null,
     pendingRoot: null,
+    assets: null,           // 遊戲的 public/assets：{dir, json, roles}
+    pendingAssets: null,
     projSig: null,      // 上次存／開專案時整個畫布的內容，跟現在比對出有沒有沒存的修改
     layers: [],
     active: null,
@@ -1849,16 +1851,60 @@ function needRoot()
 }
 
 // bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾；note(path, name)：覆蓋確認時多加的文字
-function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null)
+// item：顯示「存到 item.json」，結果的 item 是勾選的 item id（沒勾＝null），勾了就不看選的目錄
+function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null, item = false)
 {
     const dlg = $('dlgSave');
     let sel = {dir, path};
-    const showPath = () => {$('dlgPath').textContent = join(S.root.name, sel.path);};
+    const toItem = () => item && $('dlgItem').checked;
+    const showPath = () => {
+        $('dlgPath').textContent = toItem() ? `${S.assets.dir.name}/roles_64x64` : join(S.root.name, sel.path);
+        $('dlgTree').classList.toggle('off', toItem());
+    };
     $('dlgTitle').textContent = title;
     $('dlgExt').textContent = ext;
     $('dlgBakeRow').hidden = !bake;
     $('dlgBakeLab').textContent = bake ?? '';
     $('dlgBake').checked = true;
+    $('dlgItemRow').hidden = !item;
+    let items = null;
+    const itemIds = () => {
+        let n = $('dlgName').value.trim();
+        if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
+        return items ? equipIds(items, n) : [];
+    };
+    const refreshItem = () => {
+        const ids = itemIds(), box = $('dlgItem'), was = !box.disabled;
+        box.disabled = !ids.length;
+        box.checked = ids.length > 0 && (was ? box.checked : true);
+        $('dlgItemLab').title = !S.assets ? '還沒選遊戲的 public/assets 資料夾'
+                              : ids.length ? '' : '沒有 item 的 equip.sprite 跟檔名一樣';
+        $('dlgAssets').hidden = !!S.assets;
+        $('dlgAssets').textContent = S.pendingAssets ? `重新授權「${S.pendingAssets.name}」` : '選 public/assets…';
+        $('dlgItemIds').replaceChildren(...(ids.length > 1 ? ids.map(id => {
+            const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: id});
+            lab.append(c, ` ${id} `);
+            return lab;
+        }) : ids.map(id => Object.assign(el('span', 'dim'), {textContent: id}))));
+        $('dlgItemIds').hidden = !box.checked;
+        showPath();
+    };
+    const loadItems = async () => {
+        items = S.assets ? await readItems() : null;
+        refreshItem();
+    };
+    if (item)
+    {
+        Object.assign($('dlgItem'), {disabled: true, checked: false});
+        $('dlgItemIds').replaceChildren();
+        $('dlgAssets').hidden = true;
+        $('dlgItemLab').title = '';
+        $('dlgItem').onchange = refreshItem;
+        $('dlgName').oninput = refreshItem;
+        $('dlgAssets').onclick = () => assetsDir().then(loadItems).catch(e => {if (e.name !== 'AbortError') alert(e.message);});
+        loadItems().catch(e => status(e.message));
+    }
+    else $('dlgName').oninput = null;
     const pick = (d, p, row) => {
         sel = {dir: d, path: p};
         $('dlgTree').querySelectorAll('.sel').forEach(r => r.classList.remove('sel'));
@@ -1879,8 +1925,15 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         let n = $('dlgName').value.trim();
         if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
         if (dlg.returnValue !== 'ok' || !n) return res(null);
+        const bk = !!bake && $('dlgBake').checked;
+        if (toItem())
+        {
+            const ids = itemIds(), boxes = [...$('dlgItemIds').querySelectorAll('input')];
+            const pick = boxes.length ? boxes.filter(c => c.checked).map(c => c.value) : ids;
+            return res(pick.length ? {name: n, bake: bk, item: pick} : null);
+        }
         if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
-        res({...sel, name: n, bake: !!bake && $('dlgBake').checked});
+        res({...sel, name: n, bake: bk, item: null});
     }, {once: true}));
 }
 
@@ -1896,15 +1949,61 @@ function sidecar(L, name)
     return o;
 }
 
+// ---------- item.json ----------
+// 遊戲的 public/assets：存到 item.json 時 PNG 寫進 roles_64x64/、擺放寫進 json/item.json 的 equip
+
+async function setAssets(h)
+{
+    const json = await FS.tryDir(h, 'json'), roles = await FS.tryDir(h, 'roles_64x64');
+    if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 json/item.json 和 roles_64x64/，要選遊戲的 public/assets`);
+    S.assets = {dir: h, json, roles};
+    S.pendingAssets = null;
+    return S.assets;
+}
+
+async function assetsDir()
+{
+    if (S.assets) return S.assets;
+    const h = S.pendingAssets;
+    return setAssets(h && await FS.askPermission(h) ? h : await FS.pickAssets());
+}
+
+const readItems = async () => JSON.parse(await (await (await S.assets.json.getFileHandle('item.json')).getFile()).text());
+const equipIds = (items, sprite) => Object.keys(items).filter(id => items[id].equip?.sprite === sprite);
+
+function writeEquip(e, L)
+{
+    const o = sidecar(L, e.sprite);
+    Object.assign(e, {scale: o.scale, x: o.x, y: o.y});
+    for (const [k, def] of [['a', 0], ['ox', 0.5], ['oy', 1]])
+    {
+        if (o[k] === def) delete e[k];
+        else e[k] = o[k];
+    }
+}
+
 async function saveLayer()
 {
     const L = S.active;
     if (!L || !needRoot()) return;
     cancelMode();
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
-    const r = await saveDialog(`存檔：${L.name}`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-copy`, '.png', bake);
+    const matched = S.assets && equipIds(await readItems().catch(() => ({})), L.name).length;
+    const output = await FS.tryDir(S.root, 'output');
+    const [dir, path] = output ? [output, 'output'] : [L.dir ?? S.root, L.dir ? L.path : ''];
+    const r = await saveDialog(`存檔：${L.name}`, dir, path, matched ? L.name : `${L.name}-copy`, '.png', bake, null, true);
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
+    if (r.item)
+    {
+        const A = await assetsDir(), items = await readItems();
+        const ids = r.item.filter(id => items[id]?.equip?.sprite === r.name);
+        if (!ids.length) return alert(`item.json 裡已經沒有 equip.sprite 是「${r.name}」的 item，沒有存檔`);
+        await FS.writeFile(A.roles, `${r.name}.png`, await PX.toPng(out));
+        for (const id of ids) writeEquip(items[id].equip, L);
+        await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
+        return status(`已存 roles_64x64/${r.name}.png，item.json 更新 ${ids.join('、')}`);
+    }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
     Object.assign(L, {dir: r.dir, path: r.path});
@@ -2276,6 +2375,9 @@ new ResizeObserver(dirty).observe(cv);
     S.view.px = cv.clientWidth / 2;
     S.view.py = cv.clientHeight / 2;
     refreshAll();
+    const ah = await FS.savedAssets();
+    if (ah && await FS.hasPermission(ah)) await setAssets(ah).catch(() => {});
+    else S.pendingAssets = ah ?? null;
     const h = await FS.savedRoot();
     if (!h) return;
     if (await FS.hasPermission(h)) return setRoot(h);
@@ -2287,4 +2389,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke};
+               warpAddFrame, autoSet, autoRevoke, setAssets};

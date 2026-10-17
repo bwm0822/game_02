@@ -162,6 +162,11 @@
         <div id="dlgTree" class="tree"></div>
         <div>目錄：<span id="dlgPath"></span></div>
         <label>檔名 <input id="dlgName" size="30"> <span id="dlgExt">.png</span></label>
+        <div id="dlgItemRow" hidden>
+            <label id="dlgItemLab"><input id="dlgItem" type="checkbox"> 存到 item.json</label>
+            <span id="dlgItemIds"></span>
+            <button type="button" id="dlgAssets" hidden></button>
+        </div>
         <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
     </form>
