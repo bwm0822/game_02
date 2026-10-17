@@ -614,9 +614,10 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         const m = pd.S.mode, pv = pd.S.layers.find(L => L.name === 'src-helmet'), T = m.T.canvas, c0 = pv.canvas;
         out.preview = [m.type, !!pv, S.visible];
-        pd.autoSet({...pd.S.auto, helmet: {pct: 50, x: 4, y: 2}});
+        const type = (id, v) => {const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        type('au-helmet-x', 4);
         out.moved = [pv.canvas === c0, pv.x * pd.S.scale];
-        pd.autoSet({...pd.S.auto, helmet: {pct: 25, x: 4, y: 2}});
+        type('au-helmet-pct', 25);
         out.rescaled = [pv.canvas.width, m.T.canvas === T, pd.S.mode === m];
         pd.select(S);
         out.keepMode = pd.S.mode === m;

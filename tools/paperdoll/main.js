@@ -1864,8 +1864,8 @@ for (const P of AUTO_PARTS)
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
         inp.onchange = () => {
             const v = +inp.value;
-            if (Number.isFinite(v) && (f !== 'pct' || v > 0)) S.auto[P.key][f] = v;
-            autoSet(S.auto);
+            const ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
+            autoSet(ok ? {...S.auto, [P.key]: {...S.auto[P.key], [f]: v}} : S.auto);
         };
         $('auTable').append(inp);
     }
