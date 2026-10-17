@@ -83,7 +83,6 @@ function addLayer(img, name, dir, path, meta)
 
 function removeLayer(L)
 {
-    if (S.mode.parts?.some(p => p.C === L)) return cancelMode();
     if (S.mode.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
@@ -146,7 +145,7 @@ function mergeVisible()
 
 function select(L)
 {
-    if (S.mode.layer && S.mode.layer !== L && S.mode.type !== 'auto') leaveMode();
+    if (S.mode.layer && S.mode.layer !== L) leaveMode();
     S.active = L;
     refreshAll();
 }
@@ -215,22 +214,12 @@ function autoLoad()
     catch {return null;}
 }
 
-// 預覽中改數字：scale 變了才從快取的去綠圖重新取樣，x/y 只搬位置
 function autoSet(v)
 {
-    const prev = S.auto;
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
     for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
-    const m = S.mode;
-    if (m.type !== 'auto') return;
-    for (const part of m.parts)
-    {
-        if (prev[part.P.key].pct !== S.auto[part.P.key].pct) autoScale(m.T, part);
-        autoPlace(part);
-    }
-    refreshAll();
 }
 
 function autoScale(T, {P, C, box})
@@ -242,8 +231,8 @@ function autoScale(T, {P, C, box})
 
 const autoPlace = ({P, C}) => Object.assign(C, {x: S.auto[P.key].x / S.scale, y: S.auto[P.key].y / S.scale});
 
-// 進模式就去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；確定才記成一筆 undo，取消整段還原
-function autoStart(L)
+// 按確定才去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；整段一筆 undo
+function autoSplit(L)
 {
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
@@ -266,11 +255,11 @@ function autoStart(L)
         autoPlace(part);
         parts.push(part);
     }
-    if (!parts.length) return status('去綠之後找不到零件'), null;
+    if (!parts.length) return status('去綠之後找不到零件');
     L.visible = false;
     S.active = parts[0].C;
-    status(`預覽 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
-    return {type: 'auto', layer: L, T, parts, undo};
+    hist.push(undo);
+    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
 }
 
 function setOrigin(L, ox, oy)
@@ -442,7 +431,7 @@ function setMode(type)
         updateRemoveGreen();
     }
     else if (type === 'warp') S.mode = warpStart(L);
-    else if (type === 'auto') S.mode = autoStart(L) ?? {type: 'move'};
+    else if (type === 'auto') S.mode = {type, layer: L};
     else if (type === 'pixel') S.mode = pixelStart(L);
     else S.mode = {type: 'move'};
     refreshAll();
@@ -456,7 +445,6 @@ function cancelMode()
     const m = S.mode;
     if (m.type === 'move') return;
     if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
-    else if (m.type === 'auto') History.restore(m.undo);
     S.mode = {type: 'move'};
     refreshAll();
 }
@@ -526,11 +514,7 @@ function applyMode()
             hist.push(m.snap);
         }
     }
-    else if (m.type === 'auto')
-    {
-        hist.push(m.undo);
-        status(`自動拆出 ${m.parts.map(p => p.C.name).join('、')}`);
-    }
+    else if (m.type === 'auto') autoSplit(L);
     else return;
     S.mode = {type: 'move'};
     refreshAll();
