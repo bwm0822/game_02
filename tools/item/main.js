@@ -1,6 +1,7 @@
 import * as FS from '../common/fs.js';
 import * as SC from './schema.js';
 import * as IC from './icons.js';
+import * as JE from './jsonedit.js';
 
 const $ = (id) => document.getElementById(id);
 const DIRS = FS.dirStore('item');
@@ -17,6 +18,7 @@ const S = {
     sort: null,             // {col, dir}
     search: '',
     extra: {},              // id → Set：使用者用「加欄位」叫出來、還沒填值的欄位
+    drafts: {}, draftsOf: null,   // JSON 框有錯沒套用的原文（data-k → text），只留目前這個道具的
     hist: [], hi: -1,
     fx: [],
 };
@@ -162,7 +164,8 @@ async function reload()
     S.saved = JSON.parse(text);
     S.items = JSON.parse(text);
     S.extra = {};
-    S.hist = [{items: str(S.items), before: S.sel, after: S.sel}];
+    S.drafts = {};
+    S.hist =[{items: str(S.items), before: S.sel, after: S.sel}];
     S.hi = 0;
     if (!S.items[S.sel]) S.sel = Object.keys(S.items)[0] ?? null;
     status(`讀入 ${Object.keys(S.items).length} 個道具`);
@@ -202,7 +205,7 @@ async function save()
         if (r !== 'merge' && r !== 'overwrite') return status('取消存檔');
         if (r === 'merge') commit(() => {S.items = m.items;});
     }
-    const warns = validateAll();
+    const warns = [...Object.keys(S.drafts).map(k => `${S.sel}：JSON 有錯還沒套用（${k}）`), ...validateAll()];
     if (warns.length)
     {
         const r = await ask(`有 ${warns.length} 個問題`, ul(warns), [['save', '仍然存檔'], ['cancel', '取消']]);
@@ -452,14 +455,9 @@ function rawArea(obj, isKnown, put, k)
 {
     const raw = Object.fromEntries(Object.entries(obj).filter(([key]) => !isKnown(key)));
     const text = Object.keys(raw).length ? JSON.stringify(raw, null, 2) : '';
-    return h('textarea', {class: 'raw', dataset: {k}, rows: Math.min(14, Math.max(2, text.split('\n').length)), value: text, placeholder: '{ }',
-        onchange: e => {
-            let v;
-            try {v = e.target.value.trim() ? JSON.parse(e.target.value) : {};}
-            catch (err) {return status(`JSON 格式錯誤，沒有套用：${err.message}`);}
-            if (!isObj(v)) return status('要是 { } 物件，沒有套用');
-            put(v);
-        }});
+    return JE.jsonEdit({k, text: S.drafts[k] ?? text, draft: k in S.drafts, placeholder: '{ }',
+        onApply: v => {delete S.drafts[k]; put(v);},
+        onDraft: (t, msg) => {S.drafts[k] = t; status(`JSON 有錯，沒有套用：${msg}`);}});
 }
 
 function mapEditor(id, path, val)
@@ -680,6 +678,7 @@ function renderDatalists()
 function render()
 {
     const focus = document.activeElement?.dataset?.k;
+    if (S.draftsOf !== S.sel) {S.drafts = {}; S.draftsOf = S.sel;}
     renderDatalists();
     renderList();
     if (S.view === 'form') renderForm();
@@ -715,7 +714,8 @@ $('search').oninput = (e) => {S.search = e.target.value; render();};
 
 addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
-    if (e.ctrlKey && k === 's') {e.preventDefault(); save(); return;}
+    // 先失焦讓正在打的欄位觸發 change 套用
+    if (e.ctrlKey && k === 's') {e.preventDefault(); document.activeElement?.blur(); save(); return;}
     if (e.target.matches?.('input, textarea, select') || document.querySelector('dialog[open]')) return;
     if (e.ctrlKey && k === 'z' && !e.shiftKey) {e.preventDefault(); undo();}
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
@@ -737,4 +737,4 @@ addEventListener('beforeunload', (e) => {if (isDirty()) e.preventDefault();});
 })();
 
 // 給無頭測試用
-window.__ie = {S, setAssets, reload, save, commit, set, undo, redo, add, dup, rename, remove, addEff, delEff, scanRefs, innerRefs, validate, validateAll, render, IC};
+window.__ie = {S, setAssets, reload, save, commit, set, undo, redo, add, dup, rename, remove, addEff, delEff, scanRefs, innerRefs, validate, validateAll, render, IC, JE};

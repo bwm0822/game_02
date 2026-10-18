@@ -128,6 +128,97 @@ run('item', async t => {
         return out;
     });
 
+    // JSON 框：解析／上色
+    const je = await t.page.evaluate(() => {
+        const {parse, tokenize, paint} = window.__ie.JE, out = {};
+        const at = (src) => {const p = parse(src); return p.err && [src.slice(p.err.tok.s, p.err.tok.e), p.err.msg, p.err.line];};
+        out.lenient = JSON.stringify(parse('{a: 1, "b": [1, 2,], c: {},}').value);
+        out.empty = JSON.stringify(parse('  ').value);
+        out.comma = at('{\n  "a": 1\n  "b": 2\n}');
+        out.unclosed = at('{"a": [1, 2}');
+        out.eof = at('{"a": 1');
+        out.badNum = at('{"a": 01}');
+        out.bareVal = at('{"a": abc}');
+        out.notObj = at('[1]');
+        out.dup = at('{"a": 1, a: 2}');
+        out.str = at('{"a": "x}');
+        const src = '{"k": ["s", 1, true]}', toks = tokenize(src);
+        out.paint = [...paint(src, toks).matchAll(/class="je-(\w+)">([^<]*)/g)].map(m => `${m[1]}:${m[2]}`).join(' ');
+        return out;
+    });
+    t.eq('寬鬆：裸 key、結尾逗號', je.lenient, '{"a":1,"b":[1,2],"c":{}}');
+    t.eq('空白當 {}', je.empty, '{}');
+    t.eq('少逗號標在下一個 key、第幾行', JSON.stringify(je.comma), JSON.stringify(['"b"', '前面少了 ,', 3]));
+    t.eq('陣列沒關標在 }', je.unclosed?.[0], '}');
+    t.eq('結尾沒關標在 {', JSON.stringify(je.eof), JSON.stringify(['{', '這個 { 沒有關起來', 1]));
+    t.eq('不合法數字', je.badNum?.[0], '01');
+    t.eq('值沒加引號', je.bareVal?.[0], 'abc');
+    t.eq('最外層要是物件', je.notObj?.[1], '要是 { } 物件');
+    t.eq('key 重複', je.dup?.[1], 'key 重複：a');
+    t.eq('字串沒結尾', je.str?.[1], '字串沒有結尾的 "');
+    t.eq('上色分類', je.paint, 'brace:{ key:"k" punc:: bracket:[ str:"s" punc:, num:1 punc:, lit:true bracket:] brace:}');
+
+    // JSON 框：真的打字
+    const ta = '#view [data-k="#raw"]';
+    await t.page.evaluate(() => {const ie = window.__ie; ie.S.sel = 'tree'; ie.S.view = 'form'; ie.render();});
+    await t.page.focus(ta);
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('a'); await t.page.keyboard.up('Control');
+    await t.page.keyboard.press('Backspace');
+    await t.page.keyboard.type('{');
+    await t.page.keyboard.press('Enter');
+    await t.page.keyboard.type('foo: "it\'s",');
+    await t.page.keyboard.press('Enter');
+    await t.page.keyboard.type("bar: [1, 'x'],");
+    const val = () => t.page.$eval(ta, el => el.value);
+    const around = () => t.page.$eval(ta, el => el.value.slice(el.selectionStart - 2, el.selectionStart) + '|' + el.value.slice(el.selectionStart, el.selectionStart + 2));
+    const typed = await t.page.$eval(ta, el => [el.value, el.closest('.je').querySelectorAll('.je-err').length]);
+    t.eq('自動配對、補 key 引號、單引號換雙引號', typed[0], '{\n  "foo": "it\'s",\n  "bar": [1, "x"],\n}');
+    t.eq('結尾逗號打字時不標紅', typed[1], 0);
+    await t.page.keyboard.press('Tab');
+    t.check('Tab 插兩個空白', (await val()).includes('"x"],  \n'));
+    await t.page.keyboard.down('Shift'); await t.page.keyboard.press('Tab'); await t.page.keyboard.up('Shift');
+    t.check('Shift+Tab 退一層', (await val()).includes('\n"bar"'));
+    await t.page.keyboard.press('Backspace'); await t.page.keyboard.press('Backspace');
+    await t.page.keyboard.type('[');
+    t.eq('[ 自動補 ]', await around(), ',[|]\n');
+    await t.page.keyboard.press('Backspace');
+    t.eq('空配對中間 Backspace 一起刪', await around(), '],|\n}');
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('z'); await t.page.keyboard.up('Control');
+    t.check('Ctrl+Z 退得回去', (await val()).includes(',[]'));
+    await t.page.keyboard.press('Backspace');
+    await t.page.$eval(ta, el => el.blur());
+    const applied = await t.page.evaluate(() => {const it = window.__ie.S.items.tree; return [it.foo, JSON.stringify(it.bar), 'bb' in it, document.querySelector('#view [data-k="#raw"]').value];});
+    t.eq('失焦套用', JSON.stringify(applied.slice(0, 3)), JSON.stringify(["it's", '[1,"x"]', false]));
+    t.check('套用後整理成標準 JSON', !applied[3].includes(',\n}'));
+
+    // JSON 框：有錯失焦留草稿
+    await t.page.focus(ta);
+    await t.page.evaluate(() => {document.execCommand('selectAll'); document.execCommand('insertText', false, '{"bb": 1 2}');});
+    await t.page.$eval(ta, el => el.blur());
+    const draft = await t.page.evaluate(async () => {
+        const ie = window.__ie, S = ie.S, q = () => document.querySelector('#view [data-k="#raw"]');
+        const keep = 'foo' in S.items.tree;
+        ie.render();
+        const box = q().closest('.je');
+        const out = [keep, q().value, box.classList.contains('draft'), [...box.querySelectorAll('.je-err')].map(e => e.textContent).join(), box.title];
+        const p = ie.save();
+        for (let i = 0; i < 100 && !document.getElementById('dlgAsk').open; i++) await new Promise(r => setTimeout(r, 20));
+        out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用'));
+        document.getElementById('dlgAsk').close('cancel');
+        await p;
+        S.sel = 'sword_01'; ie.render(); S.sel = 'tree'; ie.render();
+        out.push(q().value.includes('"bb": 1 2'), Object.keys(S.drafts).length);
+        ie.undo();
+        return out;
+    });
+    t.check('有錯不套用', draft[0]);
+    t.eq('重繪後草稿還在', draft[1], '{"bb": 1 2}');
+    t.check('標示未套用', draft[2]);
+    t.eq('只有出錯的 token 紅', draft[3], '2');
+    t.eq('滑鼠停留看原因', draft[4], '第 1 行：前面少了 ,');
+    t.check('存檔時警告有未套用的草稿', draft[5]);
+    t.eq('換道具草稿丟掉', JSON.stringify(draft.slice(6)), JSON.stringify([false, 0]));
+
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
     t.eq('表頭顯示資料夾名', r.load[1], 'assets');
