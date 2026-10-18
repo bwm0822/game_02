@@ -75,7 +75,7 @@ Npc.process()                       src/roles/npc.js
 | `reach` | 清掉 `lastKnownPos` | — |
 
 - `PATH.NONE` 的路徑**一定要清掉**，不能留在 `bb.path`：`COM_Nav.checkPath()` 和 `COM_Action.move()` 都會直接讀 `pts`，留著會丟 TypeError
-- 動物 = `role.json` 的 `animal:true`（`xls/role.xlsx` animals 分頁的 `_others` 列）。判斷寫在 `Behavior._onBlocked()`
+- 動物 = `role.json` 的 `animal:true`（跟 `kind:"animal"` 無關，`kind` 只給編輯器分類）。判斷寫在 `Behavior._onBlocked()`
 - 追擊時不關門（作息才會 `closeDoorIfNeed()`）
 - 門沒有上鎖機制（`COM_Lock` 只用在容器上），所以人類一定開得了門
 

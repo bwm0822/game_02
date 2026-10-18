@@ -4,7 +4,7 @@
 
 ## 1. 資料：作息 = 「時間 → 目的地」
 
-來源 `xls/role.xlsx`（`brooklyn` 等分頁的 `schedule` 列，一列一筆），`node scripts/role.js` 轉成 `role.json`：
+寫在 `role.json`（手寫來源檔，`xls/role.xlsx` 已不同步）的 `schedule` 陣列：
 
 ```js
 "schedule": [
@@ -17,7 +17,7 @@
 - `map` + `go`：目的地是哪張地圖的哪個具名物件（Tiled 物件名稱只在單張圖內唯一，所以一定要帶 `map`）
 - `do`（選填）：抵達後的活動。沒寫就觸發目的地物件預設的 act（床 → `rest`）；`idle` = 只站著；`patrol` = 巡邏（見下）。`enter`（port）永遠不觸發，那是玩家切場景用的
 - 中途怎麼走（哪個門、哪座樓梯）**不寫**，由路網算
-- 依 xlsx 的順序循環：第一筆的「上一筆」是最後一筆
+- 依陣列順序循環：第一筆的「上一筆」是最後一筆
 
 ### 巡邏（`do:"patrol"`）
 
@@ -27,10 +27,10 @@
 ```
 
 - `go` 是巡邏入口，抵達後依 `route` **循環**走（要來回就把點重複寫），每個路點停 `wait` 回合（沒寫 = 不停）
-- `route` 只能是 `map` 這張圖裡的物件名稱（不跨圖）；`scripts/role.js`、`navgraph.js`、`ScheduleManager._buildPlan()` 都會檢查
+- `route` 只能是 `map` 這張圖裡的物件名稱（不跨圖）；`scripts/navgraph.js`、`ScheduleManager._buildPlan()` 都會檢查（patrol 沒寫 `route` 也會警告）
 - 抽象狀態不追蹤走到第幾個路點，只記抵達入口的時間 `at`；實體化時 `COM_Schedule._initPatrol()` 用路網花費＋`wait` 繞圈取餘數推算此刻位置（決定性，進出地圖不會亂跳）
 - 實體在場時路點進度存在元件裡（`_pi`/`_wait`），被對話/戰鬥拖住就繼續走原本的下一點，不重新推算
-- 範例：`guard-1`/`guard-2`（`role.xlsx` brooklyn 分頁）兩人日夜輪班，守衛室是 `m_04x05/house-08`（一張床共用，換班時間保證床先空出來）
+- 範例：`guard-1`/`guard-2`兩人日夜輪班，守衛室是 `m_04x05/house-08`（一張床共用，換班時間保證床先空出來）
 
 ## 2. 路網：`navgraph.json`
 
@@ -39,7 +39,7 @@
 - 節點 key = `"地圖:物件名稱"`，例如 `"m_04x05/trump-inn-f1:door"`
 - 邊 `{to, cost, type}`：`walk` = 同圖兩節點間 A* 步數（1 步 = 1 分鐘）；`port` = 物件的 `map`/`port` 屬性連到別張圖，花 1 分鐘。邊界出口（`main.world` 相鄰大地圖）目前**沒有**算進來，之後要加就是新的 `type`
 - 腳本在 node 裡模擬地圖的格子權重：tile 的 `collide`/`weight` + 物件依 `View` 規則算出來的 footprint（預設 1000 = 擋住、`point`/`pickup` 0、門當可通行）。跟遊戲內實際 A* 會有 ±幾步誤差，不影響
-- 地圖從 `main.world` 列的地圖出發，沿 port 找到所有室內地圖；`scripts/role.js` 跟 `navgraph.js` 都會檢查作息目的地在不在路網裡
+- 地圖從 `main.world` 列的地圖出發，沿 port 找到所有室內地圖；`navgraph.js` 產生完會檢查 `role.json` 的作息目的地跟巡邏路點在不在路網裡
 - 執行期查詢走 `src/core/navgraph.js`（`NavGraph.route()`/`cost()`/`mapOf()`）
 
 ## 3. 執行期：抽象狀態 + 實體

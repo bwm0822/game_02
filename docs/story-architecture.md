@@ -45,7 +45,7 @@ Record.game.q = {
 `<npc>.favor` 就是現有 `COM_Favor` 的好感度（0～100，預設 50，門檻沿用 `GM.FAV`：`LOVE 100`／`LIKE 75`／`NEUTRAL 50`／`DISLIKE 25`／`HATE 10`）。
 
 - `COM_Favor` 保留邏輯（低於 50 每回合回復 0.1、受攻擊／被偷扣分），**對玩家的好感度**改成讀寫 `Record.game.q`
-- 只有 `role.json` 標了 `unique:true` 的 NPC（來源 `xls/role.xlsx` 的 `_others` 列）才存進 quality 庫——狼、馬這類同 id 會有很多隻的生物如果共用 `wolf_hunt.favor`，打一隻全世界的狼都會恨你。目前標記的是 brooklyn 分頁的 8 個 NPC（trump、melanie、musk、karen、xi、macron、guard-1、guard-2）
+- 只有 `role.json` 標了 `unique:true` 的 NPC才存進 quality 庫——狼、馬這類同 id 會有很多隻的生物如果共用 `wolf_hunt.favor`，打一隻全世界的狼都會恨你。目前標記的是 `loc:"brooklyn"` 的 8 個 NPC（trump、melanie、musk、karen、xi、macron、guard-1、guard-2）
 - 沒標 `unique` 的、以及 NPC 對其他 NPC 的好感度，照舊存在 `COM_Favor` 自己身上；storylet 讀到這類 NPC 的 `favor` 一律是預設值 50
 - 對話只在 `HATE`（≤10）以下隱藏；≤25 走 `n_cold` 冷淡入口（見 §6.3）；交易規則不變（≤25 不能交易）
 

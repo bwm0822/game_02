@@ -1,5 +1,6 @@
 {
   "wick": {
+    "kind": "player",
     "icon": "head-wick",
     "job": "ranger",
     "gold": 100,
@@ -42,7 +43,8 @@
     "head": {
       "sprite": "head-wick",
       "scale": 0.25,
-      "y": 3.5
+      "x": -2,
+      "y": 3
     },
     "inv": {
       "storage": {
@@ -57,6 +59,8 @@
     }
   },
   "trump": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-trump",
     "job": "innkeeper",
     "gold": 200,
@@ -127,6 +131,8 @@
     ]
   },
   "melanie": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-melanie",
     "job": "innkeeper",
     "gold": 200,
@@ -200,6 +206,8 @@
     ]
   },
   "musk": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-musk",
     "job": "smith",
     "gold": 200,
@@ -291,6 +299,8 @@
     ]
   },
   "karen": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-melanie",
     "job": "trader",
     "gold": 200,
@@ -362,6 +372,8 @@
     ]
   },
   "xi": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-xi",
     "job": "butcher",
     "gold": 200,
@@ -449,6 +461,8 @@
     ]
   },
   "macron": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-macron",
     "job": "merchant",
     "gold": 200,
@@ -531,6 +545,8 @@
     ]
   },
   "guard-1": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-trump",
     "job": "guard",
     "gold": 50,
@@ -618,6 +634,8 @@
     ]
   },
   "guard-2": {
+    "kind": "npc",
+    "loc": "brooklyn",
     "icon": "head-trump",
     "job": "guard",
     "gold": 50,
@@ -705,6 +723,7 @@
     ]
   },
   "rogue-1": {
+    "kind": "rogue",
     "icon": "head-trump",
     "job": "rogue",
     "gold": 200,
@@ -769,6 +788,7 @@
     }
   },
   "rogue-2": {
+    "kind": "rogue",
     "icon": "head-trump",
     "job": "rogue",
     "gold": 200,
@@ -836,6 +856,7 @@
     }
   },
   "orc": {
+    "kind": "monster",
     "icon": "monsters:0",
     "job": "rogue",
     "gold": 200,
@@ -890,6 +911,7 @@
     }
   },
   "wolf": {
+    "kind": "animal",
     "icon": "animals:42",
     "meat": "raw_meat",
     "skin": "plet",
@@ -946,6 +968,7 @@
     }
   },
   "horse": {
+    "kind": "animal",
     "icon": "animals:82",
     "meat": "raw_meat",
     "style": "skittish",

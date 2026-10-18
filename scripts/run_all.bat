@@ -3,6 +3,7 @@ cd /d "%~dp0.."
 
 for %%f in (scripts\*.js) do (
     rem item.json is hand-edited (paperdoll tool writes equip placement); item.js would overwrite it
+    rem role.json is hand-edited too and has no converter (xls/role.xlsx is out of sync)
     if /I not "%%~nxf"=="minimap.js" if /I not "%%~nxf"=="lang.js" if /I not "%%~nxf"=="item.js" (
         echo Running %%f...
         node "%%f"
