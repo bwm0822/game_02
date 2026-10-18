@@ -230,10 +230,12 @@ function onKey(ta, e)
 export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
 {
     const box = document.createElement('div');
+    const area = document.createElement('div');
     const pre = document.createElement('pre');
     const ta = document.createElement('textarea');
-    const tag = document.createElement('span');
+    const tag = document.createElement('div');
     box.className = 'je';
+    area.className = 'je-area';
     pre.className = 'je-hl';
     ta.className = 'je-ta';
     tag.className = 'je-tag';
@@ -242,7 +244,8 @@ export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
     ta.spellcheck = false;
     ta.placeholder = placeholder ?? '';
     ta.value = text;
-    box.append(pre, ta, tag);
+    area.append(pre, ta);
+    box.append(area, tag);
 
     let last;
     const sync = () => {pre.scrollTop = ta.scrollTop; pre.scrollLeft = ta.scrollLeft;};
