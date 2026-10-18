@@ -457,7 +457,7 @@ function rawArea(obj, isKnown, put, k)
     const text = Object.keys(raw).length ? JSON.stringify(raw, null, 2) : '';
     return JE.jsonEdit({k, text: S.drafts[k]?.text ?? text, placeholder: '{ }',
         onApply: v => {delete S.drafts[k]; put(v);},
-        onDraft: (t, msg) => {S.drafts[k] = {text: t, msg}; status(`JSON 有錯，沒有套用：${msg}`);}});
+        onDraft: (t, msg) => {S.drafts[k] = {text: t, msg};}});
 }
 
 function mapEditor(id, path, val)
