@@ -225,7 +225,7 @@ run('item', async t => {
     const setText = (s) => t.page.evaluate((s) => {document.execCommand('selectAll'); document.execCommand('insertText', false, s);}, s);
     const btnState = () => t.page.$eval(btn, el => {
         const r = el.getBoundingClientRect(), box = el.parentNode.querySelector('textarea').getBoundingClientRect(), off = getComputedStyle(el).visibility === 'hidden';
-        return [off ? '' : el.textContent, el.title, !off && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el && r.left >= box.right];
+        return [off ? '' : el.textContent, el.title, !off && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el && r.bottom <= box.top && Math.abs(r.right - box.right) < 1];
     });
     await t.page.focus(ta);
     await setText('{"bb": 1}');
