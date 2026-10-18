@@ -251,6 +251,7 @@ export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
         pre.innerHTML = paint(ta.value, last.toks, last.err?.tok);
         box.title = last.err ? `第 ${last.err.line} 行：${last.err.msg}` : '';
         tag.textContent = last.err ? `未套用：${box.title}` : '未套用';
+        box.classList.toggle('bad', !!last.err);
         ta.rows = Math.min(30, Math.max(2, ta.value.split('\n').length));
         sync();
     };

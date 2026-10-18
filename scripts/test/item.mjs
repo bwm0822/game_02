@@ -194,6 +194,8 @@ run('item', async t => {
     // JSON 框：有錯失焦留草稿
     await t.page.focus(ta);
     await t.page.evaluate(() => {document.execCommand('selectAll'); document.execCommand('insertText', false, '{"bb": 1 2}');});
+    const live = await t.page.$eval(ta, el => {const tag = el.closest('.je').querySelector('.je-tag'); return [getComputedStyle(tag).display, tag.textContent];});
+    t.eq('打字中有錯就顯示未套用和原因', JSON.stringify(live), JSON.stringify(['block', '未套用：第 1 行：前面少了 ,']));
     await t.page.$eval(ta, el => el.blur());
     const draft = await t.page.evaluate(async () => {
         const ie = window.__ie, S = ie.S, q = () => document.querySelector('#view [data-k="#raw"]');
