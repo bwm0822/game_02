@@ -320,6 +320,34 @@ run('item', async t => {
     t.eq('hover 中文欄位名看得到 key', JSON.stringify(fold.tips), JSON.stringify(['價格', 'class']));
     t.eq('內容變多不會自己收起來', JSON.stringify(fold.freeze), JSON.stringify(['▼', '▼', true]));
 
+    // 下拉選單：有值也列全部、打字才篩選
+    const key = '#view input[data-combo="dl-key"]';
+    await t.page.evaluate(() => {const ie = window.__ie; ie.S.sel = 'raw_meat'; ie.S.view = 'form'; ie.render(); ie.S.open.effects = true; ie.render();});
+    await t.page.click(key);
+    const pop = () => t.page.evaluate(() => {
+        const p = document.querySelector('.combo');
+        return {shown: !p.hidden, n: p.children.length, total: document.getElementById('dl-key').options.length,
+                cur: p.querySelector('.cur')?.firstChild.textContent, all: [...p.children].map(c => c.firstChild.textContent)};
+    });
+    let p = await pop();
+    t.check('有值時點開列出全部選項', p.shown && p.n === p.total && p.n > 5);
+    t.eq('目前的值有標出來', p.cur, 'hunger');
+    await t.page.keyboard.press('Escape');
+    t.eq('Esc 關掉', (await pop()).shown, false);
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('a'); await t.page.keyboard.up('Control');
+    await t.page.keyboard.type('max');
+    p = await pop();
+    t.check('打字才篩選', p.shown && p.n < p.total && p.all.every(v => v.toLowerCase().includes('max')));
+    await t.page.keyboard.press('ArrowDown');
+    await t.page.keyboard.press('Enter');
+    t.eq('上下鍵＋Enter 選了就套用', await t.page.evaluate(() => window.__ie.S.items.raw_meat.effects[0].key), p.all[0]);
+    t.eq('選完關掉', (await pop()).shown, false);
+    await t.page.evaluate(() => window.__ie.undo());
+    await t.page.evaluate(() => {const ie = window.__ie; ie.S.sel = 'salt_baked_fish'; ie.render();});
+    await t.page.click('#view input[data-combo="dl-items"][placeholder]');
+    t.check('選道具時附名稱', await t.page.evaluate(() => [...document.querySelectorAll('.combo .opt')].some(o => o.querySelector('.lab')?.textContent === '生肉')));
+    await t.page.keyboard.press('Escape');
+
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
     t.eq('表頭顯示資料夾名', r.load[1], 'assets');

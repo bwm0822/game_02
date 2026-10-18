@@ -2,6 +2,7 @@ import * as FS from '../common/fs.js';
 import * as SC from './schema.js';
 import * as IC from './icons.js';
 import * as JE from './jsonedit.js';
+import './combo.js';
 
 const $ = (id) => document.getElementById(id);
 const DIRS = FS.dirStore('item');
@@ -428,7 +429,7 @@ function fieldInput(def, val, put, k)
         case 'int': case 'num':
             return h('input', {class: 'num', inputmode: 'decimal', dataset: data, value: val ?? '', onchange: e => put(parseNum(e.target.value))});
         case 'tags':
-            return h('input', {dataset: data, list: `dl-${k.split('.').at(-1)}`, value: (val ?? []).join(', '),
+            return h('input', {dataset: {...data, combo: `dl-${k.split('.').at(-1)}`, tags: ''}, value: (val ?? []).join(', '),
                 onchange: e => {const a = e.target.value.split(',').map(s => s.trim()).filter(Boolean); put(a.length ? a : undefined);}});
         case 'color':
         {
@@ -444,9 +445,9 @@ function fieldInput(def, val, put, k)
                 h('input', {dataset: data, value: val ?? '', onchange: e => put(e.target.value.trim() || undefined)}),
                 h('button', {type: 'button', onclick: async () => {const v = await IC.pickIcon(val); if (v !== null) put(v || undefined);}}, '選圖…'));
         case 'itemref':
-            return h('input', {dataset: data, list: 'dl-items', value: val ?? '', onchange: e => put(e.target.value.trim() || undefined)});
+            return h('input', {dataset: {...data, combo: 'dl-items'}, value: val ?? '', onchange: e => put(e.target.value.trim() || undefined)});
         case 'list':
-            return h('input', {dataset: data, list: `dl-${k.split('.').at(-1)}`, value: val ?? '', onchange: e => put(e.target.value.trim() || undefined)});
+            return h('input', {dataset: {...data, combo: `dl-${k.split('.').at(-1)}`}, value: val ?? '', onchange: e => put(e.target.value.trim() || undefined)});
         default:
             return h('input', {dataset: data, value: val ?? '', onchange: e => put(e.target.value || undefined)});
     }
@@ -466,12 +467,12 @@ function mapEditor(id, path, val)
     val = isObj(val) ? val : {};
     const k = path.join('.');
     const rekey = (from, to) => set(id, path, Object.fromEntries(Object.entries(val).map(([a, b]) => [a === from ? to : a, b]).filter(([a]) => a)));
-    const blankId = h('input', {list: 'dl-items', dataset: {k: `${k}.+`}, placeholder: '加材料…',
+    const blankId = h('input', {dataset: {k: `${k}.+`, combo: 'dl-items'}, placeholder: '加材料…',
         onchange: e => {const v = e.target.value.trim(); if (v && !(v in val)) set(id, [...path, v], 1);}});
     return h('div', {class: 'sub'},
         Object.entries(val).map(([mid, n]) => h('label', null,
             IC.iconEl(S.items[mid]?.icon, 20),
-            h('input', {list: 'dl-items', size: 12, dataset: {k: `${k}.${mid}#id`}, value: mid, onchange: e => rekey(mid, e.target.value.trim())}),
+            h('input', {size: 12, dataset: {k: `${k}.${mid}#id`, combo: 'dl-items'}, value: mid, onchange: e => rekey(mid, e.target.value.trim())}),
             '×', h('input', {class: 'num', dataset: {k: `${k}.${mid}`}, value: n, onchange: e => set(id, [...path, mid], parseNum(e.target.value))}))),
         blankId);
 }
@@ -693,8 +694,9 @@ function renderDatalists()
         key: [...SC.STATS, ...effs.map(e => e.key)],
         id: [...SC.EFF_FIELDS.id.suggest, ...S.fx, ...effs.map(e => e.id)],
     };
+    // 只當 combo.js 的選項來源；道具附上名稱
     $('datalists').replaceChildren(...Object.entries(lists).map(([k, v]) =>
-        h('datalist', {id: `dl-${k}`}, [...new Set(v.filter(Boolean))].map(o => h('option', {value: o})))));
+        h('datalist', {id: `dl-${k}`}, [...new Set(v.filter(Boolean))].map(o => h('option', {value: o, label: k === 'items' ? S.items[o]?.lab : null})))));
 }
 
 function render()
