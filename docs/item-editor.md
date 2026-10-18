@@ -19,6 +19,7 @@
   - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`swing`、`ext`…）放框裡的「其他」JSON。
   - effects 一條一張卡片：標題是 `effSummary()` 的一行人話（不是遊戲內說明文字），欄位依 `type` 決定（`EFF_BY_TYPE`），schema 沒有的 key 在「額外欄位（JSON）」。
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
+  - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅、原因在 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、框角標「未套用」、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。
 - icon／sprite 選圖器：`icons.js` 用 `?raw` 讀 `src/scenes/Preloader.js`，解析 `load.image`／`load.spritesheet`（frameWidth/Height、margin、spacing）／`load.atlas`，註解掉的行不算；新增 sheet 不用改工具。四種寫法：`sheet:格子`、單張圖 key、相對 `public/assets` 的路徑（含 `/`）、emoji（不是 ASCII 識別字就當文字）。atlas 只認 key 不畫圖。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
 
