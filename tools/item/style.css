@@ -8,7 +8,7 @@ button.on { background: #2f6db5; border-color: #4a8be0; }
 input, textarea, select { background: #2b2d31; color: #ddd; border: 1px solid #555; font: inherit; }
 input.num { width: 64px; }
 textarea { width: 100%; resize: vertical; }
-.je-area { position: relative; }
+.je { position: relative; }
 .je-hl, .je-ta { margin: 0; font: 12px/1.45 ui-monospace, Consolas, monospace; padding: 4px 6px; border: 1px solid #555; white-space: pre; tab-size: 2; }
 /* 右下多留空間：textarea 的捲軸會吃掉可視範圍，pre 要捲得比它遠才對得齊 */
 .je-hl { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: #2b2d31; color: #ddd; border-color: transparent; padding: 4px 40px 40px 6px; }
@@ -23,8 +23,11 @@ textarea { width: 100%; resize: vertical; }
 .je-lit { color: #569cd6; }
 .je-punc { color: #888; }
 .je-err { color: #ff5555; }
-.je-tag { display: none; margin-top: 2px; font-size: 12px; color: #ff5555; }
-.je.draft .je-tag, .je.bad .je-tag { display: block; }
+.je > button { position: absolute; top: 3px; right: 18px; padding: 0 6px; font-size: 11px; }
+.je > button[hidden] { display: none; }
+.je-fix { background: #2f6db5; border-color: #4a8be0; }
+.je-bad { background: #5a2626; border-color: #ff5555; color: #ff8888; cursor: help; }
+.je > button.je-bad:hover { background: #5a2626; }
 label { white-space: nowrap; }
 .dim { color: #888; }
 .hint { color: #888; font-size: 12px; margin: 4px 0; }

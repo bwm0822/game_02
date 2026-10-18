@@ -1,4 +1,4 @@
-// JSON 文字框：透明 textarea 疊在上色的 <pre> 上，打字即時檢查（只把第一個出錯的 token 標紅，原因放 title）
+// JSON 文字框：透明 textarea 疊在上色的 <pre> 上，打字即時檢查（只把第一個出錯的 token 標紅），右上角 [修正]／[錯誤]
 // 寬鬆：裸 key、結尾多餘逗號不算錯，套用時用解析出來的值所以自然變標準 JSON
 const WS = /\s+/y;
 const STR = /"((?:[^"\\\n]|\\.)*)("?)/y;
@@ -7,6 +7,16 @@ const NUM_OK = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/;
 const WORD = /[A-Za-z_$][\w$]*/y;
 const LIT = {true: true, false: false, null: null};
 const PAIR = {'{': '}', '[': ']', '"': '"'};
+
+// 修正 = 把 [s, e) 換成 text
+const ins = (at, text) => ({s: at, e: at, text, label: `補上 ${text}`});
+const rep = (tok, text, label) => ({s: tok.s, e: tok.e, text, label: label ?? `改成 ${text}`});
+
+function badNumFix(tok, t)
+{
+    const n = Number(t);
+    return /^-?[\d.]+(?:[eE][+-]?\d+)?$/.test(t) && Number.isFinite(n) ? rep(tok, String(n)) : rep(tok, `"${t}"`);
+}
 
 export function tokenize(src)
 {
@@ -22,42 +32,51 @@ export function tokenize(src)
         {
             m = at(STR, i);
             tok = {t: 'str', e: i + m[0].length};
-            if (!m[2]) tok = {t: 'bad', e: tok.e, msg: '字串沒有結尾的 "'};
+            if (!m[2]) tok = {t: 'bad', e: tok.e, msg: '字串沒有結尾的 "', fix: ins(tok.e, '"')};
             else try {tok.v = JSON.parse(m[0]);} catch {tok = {t: 'bad', e: tok.e, msg: '字串裡有不合法的字元或跳脫'};}
         }
-        else if (c === '-' || (c >= '0' && c <= '9'))
+        else if (c === '-' || (c >= '0' && c <= '9') || (c === '.' && /\d/.test(src[i + 1])))
         {
             m = at(NUM, i);
-            tok = NUM_OK.test(m[0]) ? {t: 'num', v: Number(m[0]), e: i + m[0].length} : {t: 'bad', e: i + Math.max(1, m[0].length), msg: `不是合法的數字：${m[0]}`};
+            tok = NUM_OK.test(m[0]) ? {t: 'num', v: Number(m[0]), e: i + m[0].length} : {t: 'bad', e: i + Math.max(1, m[0].length), msg: `不是合法的數字：${m[0]}`, num: m[0]};
         }
         else if ((m = at(WORD, i))) tok = m[0] in LIT ? {t: 'lit', v: LIT[m[0]], e: i + m[0].length} : {t: 'id', v: m[0], e: i + m[0].length};
-        else tok = {t: 'bad', e: i + 1, msg: `多了不認識的字元 ${c}`};
+        else tok = {t: 'bad', e: i + 1, msg: `多了不認識的字元 ${c}`, fix: {s: i, e: i + 1, text: '', label: `刪掉 ${c}`}};
         tok.s = i;
+        if (tok.num !== undefined) tok.fix = badNumFix(tok, tok.num);
         out.push(tok);
     }
     return out;
 }
 
-// 回傳 {value, err: {tok, msg, line} | null, toks}；空白當 {}，最外層要是物件
+// 回傳 {value, err: {tok, msg, line, fix?: {s, e, text, label}} | null, toks}；空白當 {}，最外層要是物件
 export function parse(src)
 {
     const toks = tokenize(src);
     let i = 0;
     const isP = (tok, c) => tok?.t === 'p' && tok.v === c;
-    const fail = (tok, msg) => {throw {tok, msg};};
+    const fail = (tok, msg, fix) => {throw {tok, msg, fix};};
     const peek = (open) => {
         const tok = toks[i];
-        if (!tok) fail(open, `這個 ${open.v} 沒有關起來`);
-        if (tok.t === 'bad') fail(tok, tok.msg);
+        if (!tok) fail(open, `這個 ${open.v} 沒有關起來`, ins(toks.at(-1).e, PAIR[open.v]));
+        if (tok.t === 'bad') fail(tok, tok.msg, tok.fix);
         return tok;
     };
     const next = (open) => {const tok = peek(open); i++; return tok;};
+    // 值後面接的不是 , 也不是自己的右括號：別種右括號就是少關，其他當作少逗號
+    const sep = (open, tok) => {
+        const close = PAIR[open.v];
+        if (isP(tok, close)) return true;
+        if (isP(tok, ',')) return false;
+        if (isP(tok, '}') || isP(tok, ']')) fail(tok, `這裡應該是 ${close}`, ins(tok.s, close));
+        fail(tok, '前面少了 ,', ins(toks[i - 2].e, ','));
+    };
     const value = (open) => {
         const tok = next(open);
         if (isP(tok, '{')) return obj(tok);
         if (isP(tok, '[')) return arr(tok);
         if (tok.t === 'str' || tok.t === 'num' || tok.t === 'lit') return tok.v;
-        if (tok.t === 'id') fail(tok, `${tok.v} 不是合法的值（字串要加 "）`);
+        if (tok.t === 'id') fail(tok, `${tok.v} 不是合法的值（字串要加 "）`, rep(tok, `"${tok.v}"`));
         fail(tok, '這裡應該是值');
     };
     const obj = (open) => {
@@ -66,13 +85,12 @@ export function parse(src)
         {
             if (isP(peek(open), '}')) {i++; return o;}
             const key = next(open);
+            if (key.t === 'num' || key.t === 'lit') fail(key, 'key 要是字串', rep(key, `"${src.slice(key.s, key.e)}"`));
             if (key.t !== 'str' && key.t !== 'id') fail(key, '這裡應該是 key');
             if (Object.hasOwn(o, key.v)) fail(key, `key 重複：${key.v}`);
-            if (!isP(next(open), ':')) fail(toks[i - 1], 'key 後面少了 :');
+            if (!isP(next(open), ':')) fail(toks[i - 1], 'key 後面少了 :', ins(key.e, ':'));
             Object.defineProperty(o, key.v, {value: value(open), enumerable: true, writable: true, configurable: true});
-            const tok = next(open);
-            if (isP(tok, '}')) return o;
-            if (!isP(tok, ',')) fail(tok, '前面少了 ,');
+            if (sep(open, next(open))) return o;
         }
     };
     const arr = (open) => {
@@ -81,9 +99,7 @@ export function parse(src)
         {
             if (isP(peek(open), ']')) {i++; return a;}
             a.push(value(open));
-            const tok = next(open);
-            if (isP(tok, ']')) return a;
-            if (!isP(tok, ',')) fail(tok, '前面少了 ,');
+            if (sep(open, next(open))) return a;
         }
     };
     try
@@ -227,46 +243,50 @@ function onKey(ta, e)
 
 // ---------- 元件 ----------
 // onApply(value)：失焦時沒錯就套用；onDraft(text, msg)：失焦時有錯，呼叫端自己留草稿
-export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
+export function jsonEdit({text, k, placeholder, onApply, onDraft})
 {
     const box = document.createElement('div');
-    const area = document.createElement('div');
     const pre = document.createElement('pre');
     const ta = document.createElement('textarea');
-    const tag = document.createElement('div');
+    const btn = document.createElement('button');
     box.className = 'je';
-    area.className = 'je-area';
     pre.className = 'je-hl';
     ta.className = 'je-ta';
-    tag.className = 'je-tag';
+    btn.type = 'button';
     ta.dataset.k = k;
     ta.wrap = 'off';
     ta.spellcheck = false;
     ta.placeholder = placeholder ?? '';
     ta.value = text;
-    area.append(pre, ta);
-    box.append(area, tag);
+    box.append(pre, ta, btn);
 
     let last;
+    const reason = () => `第 ${last.err.line} 行：${last.err.msg}`;
     const sync = () => {pre.scrollTop = ta.scrollTop; pre.scrollLeft = ta.scrollLeft;};
     const refresh = () => {
         last = parse(ta.value);
         pre.innerHTML = paint(ta.value, last.toks, last.err?.tok);
-        box.title = last.err ? `第 ${last.err.line} 行：${last.err.msg}` : '';
-        tag.textContent = last.err ? `未套用：${box.title}` : '未套用';
-        box.classList.toggle('bad', !!last.err);
+        const fix = last.err?.fix;
+        btn.hidden = !last.err;
+        btn.className = fix ? 'je-fix' : 'je-bad';
+        btn.textContent = fix ? '修正' : '錯誤';
+        btn.title = !last.err ? '' : fix ? `${fix.label}（${reason()}）` : reason();
         ta.rows = Math.min(30, Math.max(2, ta.value.split('\n').length));
         sync();
     };
     ta.addEventListener('input', refresh);
     ta.addEventListener('scroll', sync);
     ta.addEventListener('keydown', e => onKey(ta, e));
-    ta.addEventListener('change', () => {
-        box.classList.toggle('draft', !!last.err);
-        if (last.err) onDraft(ta.value, box.title);
-        else onApply(last.value);
+    ta.addEventListener('change', () => last.err ? onDraft(ta.value, reason()) : onApply(last.value));
+    // 不讓按鈕搶走焦點，修正才進得了 textarea 的復原紀錄、也不會先觸發 change
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', () => {
+        const fix = last.err?.fix;
+        if (!fix) return;
+        ta.focus();
+        ta.setSelectionRange(fix.s, fix.e);
+        insert(ta, fix.text);
     });
-    box.classList.toggle('draft', !!draft);
     refresh();
     return box;
 }

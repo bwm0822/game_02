@@ -191,42 +191,88 @@ run('item', async t => {
     t.eq('失焦套用', JSON.stringify(applied.slice(0, 3)), JSON.stringify(["it's", '[1,"x"]', false]));
     t.check('套用後整理成標準 JSON', !applied[3].includes(',\n}'));
 
-    // JSON 框：有錯失焦留草稿
-    await t.page.focus(ta);
-    await t.page.evaluate(() => {document.execCommand('selectAll'); document.execCommand('insertText', false, '{"bb": 1 2}');});
-    const live = await t.page.$eval(ta, el => {
-        const tag = el.closest('.je').querySelector('.je-tag');
-        tag.scrollIntoView({block: 'center'});
-        const r = tag.getBoundingClientRect();
-        return [r.height > 0 && document.elementFromPoint(r.left + 5, r.top + r.height / 2) === tag, tag.textContent];
+    // JSON 框：修正規則
+    const fx = await t.page.evaluate(() => {
+        const {parse} = window.__ie.JE;
+        const once = (src) => {const f = parse(src).err?.fix; return f ? src.slice(0, f.s) + f.text + src.slice(f.e) : null;};
+        const all = (src) => {for (let n = 0, s; n < 10 && (s = once(src)) !== null; n++) src = s; return src;};
+        return {
+            comma: [once('{"a": 1 "b": 2}'), parse('{"a": 1 "b": 2}').err.fix.label],
+            closer: [parse('{"a": [1, 2}').err.msg, once('{"a": [1, 2}')],
+            colon: once('{"a" 1}'),
+            eof: all('{"a": [1'),
+            bare: once('{"a": abc}'),
+            numKey: once('{1: 2}'),
+            str: once('{"a": "x\n}'),
+            junk: [once('{"a": 1;}'), parse('{"a": 1;}').err.fix.label],
+            nums: all('{"a": 01, "b": 1., "c": .5, "d": 1x}'),
+            none: ['{"a": ,}', '{"a": 1, a: 2}', '{} 1', '[1]', '{"a": "\\q"}'].map(once),
+        };
     });
-    t.eq('打字中有錯就顯示未套用和原因（沒被蓋住）', JSON.stringify(live), JSON.stringify([true, '未套用：第 1 行：前面少了 ,']));
+    t.eq('修正：補 ,', JSON.stringify(fx.comma), JSON.stringify(['{"a": 1, "b": 2}', '補上 ,']));
+    t.eq('括號種類錯：這裡應該是 ]', JSON.stringify(fx.closer), JSON.stringify(['這裡應該是 ]', '{"a": [1, 2]}']));
+    t.eq('修正：補 :', fx.colon, '{"a": 1}');
+    t.eq('修正：沒關的一層一層補', fx.eof, '{"a": [1]}');
+    t.eq('修正：值加引號', fx.bare, '{"a": "abc"}');
+    t.eq('修正：數字 key 加引號', fx.numKey, '{"1": 2}');
+    t.eq('修正：字串在行尾補 "', fx.str, '{"a": "x"\n}');
+    t.eq('修正：刪掉不認識的字元', JSON.stringify(fx.junk), JSON.stringify(['{"a": 1}', '刪掉 ;']));
+    t.eq('修正：不合法數字', fx.nums, '{"a": 1, "b": 1, "c": 0.5, "d": "1x"}');
+    t.eq('修不了的沒有修正', JSON.stringify(fx.none), JSON.stringify([null, null, null, null, null]));
+
+    // JSON 框：右上角按鈕
+    const btn = '#view [data-k="#raw"] ~ button';
+    const setText = (s) => t.page.evaluate((s) => {document.execCommand('selectAll'); document.execCommand('insertText', false, s);}, s);
+    const btnState = () => t.page.$eval(btn, el => {
+        const r = el.getBoundingClientRect();
+        return [el.hidden ? '' : el.textContent, el.title, !el.hidden && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el];
+    });
+    await t.page.focus(ta);
+    await setText('{"bb": 1}');
+    t.eq('沒錯不顯示按鈕', (await btnState())[0], '');
+    await setText('{"bb": 1 2}');
+    let b = await btnState();
+    t.eq('修得了顯示 [修正]、提示怎麼改', JSON.stringify(b), JSON.stringify(['修正', '補上 ,（第 1 行：前面少了 ,）', true]));
+    t.eq('只有出錯的 token 紅', await t.page.$eval(ta, el => [...el.closest('.je').querySelectorAll('.je-err')].map(e => e.textContent).join()), '2');
+    await t.page.click(btn);
+    t.eq('按修正', JSON.stringify(await t.page.$eval(ta, el => [el.value, document.activeElement === el])), JSON.stringify(['{"bb": 1, 2}', true]));
+    await t.page.click(btn); await t.page.click(btn);
+    b = await btnState();
+    t.eq('一次修一個、修到修不了變 [錯誤]', JSON.stringify([await val(), b[0], b[1]]), JSON.stringify(['{"bb": 1, "2":}', '錯誤', '第 1 行：這裡應該是值']));
+    await t.page.click(btn);
+    t.eq('[錯誤] 按了不會動', await val(), '{"bb": 1, "2":}');
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('z'); await t.page.keyboard.press('z'); await t.page.keyboard.up('Control');
+    t.eq('修正可以 Ctrl+Z', await val(), '{"bb": 1, 2}');
+
+    // JSON 框：有錯失焦留草稿
+    await setText('{"bb": 1 2}');
     await t.page.$eval(ta, el => el.blur());
     const draft = await t.page.evaluate(async () => {
         const ie = window.__ie, S = ie.S, q = () => document.querySelector('#view [data-k="#raw"]');
         const keep = 'foo' in S.items.tree;
         ie.render();
-        const box = q().closest('.je');
-        const out = [keep, q().value, box.classList.contains('draft'), [...box.querySelectorAll('.je-err')].map(e => e.textContent).join(), box.title];
+        const out = [keep, q().value, q().parentNode.querySelector('button').hidden];
         const p = ie.save();
         for (let i = 0; i < 100 && !document.getElementById('dlgAsk').open; i++) await new Promise(r => setTimeout(r, 20));
         out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用（#raw）第 1 行：前面少了 ,'));
-        out.tag = box.querySelector('.je-tag').textContent;
         document.getElementById('dlgAsk').close('cancel');
         await p;
         S.sel = 'sword_01'; ie.render(); S.sel = 'tree'; ie.render();
         out.push(q().value.includes('"bb": 1 2'), Object.keys(S.drafts).length);
-        ie.undo();
-        return [...out, out.tag];
+        return out;
     });
     t.check('有錯不套用', draft[0]);
     t.eq('重繪後草稿還在', draft[1], '{"bb": 1 2}');
-    t.check('標示未套用', draft[2]);
-    t.eq('只有出錯的 token 紅', draft[3], '2');
-    t.eq('滑鼠停留看原因', draft[4], '第 1 行：前面少了 ,');
-    t.check('存檔時警告有未套用的草稿和原因', draft[5]);
-    t.eq('換道具草稿丟掉', JSON.stringify(draft.slice(6, 8)), JSON.stringify([false, 0]));
-    t.eq('未套用旁邊寫原因', draft[8], '未套用：第 1 行：前面少了 ,');
+    t.eq('草稿的按鈕還在', draft[2], false);
+    t.check('存檔時警告有未套用的草稿和原因', draft[3]);
+    t.eq('換道具草稿丟掉', JSON.stringify(draft.slice(4)), JSON.stringify([false, 0]));
+    await t.page.focus(ta);
+    await setText('{"bb": 1 2}');
+    await t.page.$eval(ta, el => el.blur());
+    await t.page.click(btn);
+    t.eq('失焦後按修正會回到框裡', JSON.stringify(await t.page.$eval(ta, el => [el.value, document.activeElement === el])), JSON.stringify(['{"bb": 1, 2}', true]));
+    await t.page.$eval(ta, el => el.blur());
+    await t.page.evaluate(() => window.__ie.undo());
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
