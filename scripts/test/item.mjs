@@ -304,6 +304,7 @@ run('item', async t => {
         go('pot');
         const raw0 = st('其他欄位');
         ie.set('pot', ['zz'], 1); ie.set('pot', ['zz2'], 2);
+        out.tips = [document.querySelector('#view .fields > .k[title="gold"]')?.textContent, document.querySelector('#view .fields > .k[title="device.class"]')?.textContent];
         out.freeze = [raw0, st('其他欄位'), box('其他欄位').querySelector('.bar').textContent.includes('（3）')];
         ie.undo(); ie.undo();
         return out;
@@ -316,6 +317,7 @@ run('item', async t => {
     t.eq('超過一個 key 收合', JSON.stringify(fold.equip), JSON.stringify(['▶', true]));
     t.eq('沒建立的不能收、按建立自動展開', JSON.stringify(fold.create), JSON.stringify(['-', '▼']));
     t.eq('新增效果自動展開', JSON.stringify(fold.addEff), JSON.stringify(['▼', 2]));
+    t.eq('hover 中文欄位名看得到 key', JSON.stringify(fold.tips), JSON.stringify(['價格', 'class']));
     t.eq('內容變多不會自己收起來', JSON.stringify(fold.freeze), JSON.stringify(['▼', '▼', true]));
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);

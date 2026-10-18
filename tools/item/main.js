@@ -490,7 +490,7 @@ function effCard(id, effs, i)
             h('button', {type: 'button', title: '複製', onclick: () => commit(() => S.items[id].effects.splice(i + 1, 0, structuredClone(e)))}, '⧉'),
             h('button', {type: 'button', title: '刪除', onclick: () => delEff(id, i)}, '×')),
         h('div', {class: 'sub'},
-            SC.effFields(e).map(f => h('label', null, SC.EFF_FIELDS[f].label,
+            SC.effFields(e).map(f => h('label', null, h('span', {title: f}, SC.EFF_FIELDS[f].label),
                 fieldInput(SC.EFF_FIELDS[f], e[f], v => set(id, [...path, f], v), `effects.${i}.${f}`)))),
         h('details', {open: Object.keys(e).some(k => !known(k))}, h('summary', {class: 'dim'}, '額外欄位（JSON）'),
             rawArea(e, known, v => commit(() => replaceRaw(S.items[id].effects[i], known, v)), `effects.${i}.#raw`)));
@@ -521,7 +521,7 @@ function delEff(id, i)
 function fieldRow(id, it, k)
 {
     const def = SC.FIELDS[k], v = it[k];
-    const label = h('span', {class: 'k' + (v === undefined ? ' unset' : '')}, def.label);
+    const label = h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label);
     if (def.type === 'obj')
     {
         const known = (f) => !!def.fields[f];
@@ -533,7 +533,7 @@ function fieldRow(id, it, k)
                                 : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
             open && h('div', {class: 'fields'},
                 Object.entries(def.fields).map(([f, d]) => [
-                    h('span', {class: 'k' + (o[f] === undefined ? ' unset' : '')}, d.label),
+                    h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
                     d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d, o[f], val => set(id, [k, f], val), `${k}.${f}`),
                 ]),
                 h('span', {class: 'k unset'}, '其他'),
@@ -634,7 +634,7 @@ function renderTable()
             return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y))) * dir;
         });
     }
-    const th = (col, text) => h('th', {onclick: () => {S.sort = S.sort?.col === col ? (S.sort.dir > 0 ? {col, dir: -1} : null) : {col, dir: 1}; render();}},
+    const th = (col, text) => h('th', {title: col.startsWith('#') ? null : col, onclick:() => {S.sort = S.sort?.col === col ? (S.sort.dir > 0 ? {col, dir: -1} : null) : {col, dir: 1}; render();}},
         text, S.sort?.col === col ? (S.sort.dir > 0 ? ' ▲' : ' ▼') : '');
     $('view').replaceChildren(
         h('div', {class: 'tabs'}, SC.TABS.map((t, i) => h('button', {type: 'button', class: i === S.tab ? 'on' : '', onclick: () => {S.tab = i; render();}},
