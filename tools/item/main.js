@@ -528,7 +528,7 @@ function fieldRow(id, it, k)
         const o = isObj(v) ? v : {};
         const open = v !== undefined && isOpen(k, v);
         return h('div', {class: 'box'},
-            boxBar(k, open, v !== undefined, `${def.label}`, h('span', {class: 'dim'}, v === undefined ? k : `${k}（${Object.keys(o).length}）`), h('span', {class: 'grow'}),
+            boxBar(k, open, v !== undefined, h('span', {title: k}, def.label), v !== undefined && h('span', {class: 'dim'}, `（${Object.keys(o).length}）`), h('span', {class: 'grow'}),
                 v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], {});}}, '建立')
                                 : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
             open && h('div', {class: 'fields'},
@@ -544,7 +544,7 @@ function fieldRow(id, it, k)
         const effs = Array.isArray(v) ? v : [];
         const open = isOpen(k, effs);
         return h('div', {class: 'box'},
-            boxBar(k, open, effs.length > 0, `效果`, h('span', {class: 'dim'}, `effects（${effs.length}）`), h('span', {class: 'grow'}),
+            boxBar(k, open, effs.length > 0, h('span', {title: k}, '效果'), h('span', {class: 'dim'}, `（${effs.length}）`), h('span', {class: 'grow'}),
                 h('button', {type: 'button', onclick: () => addEff(id)}, '＋ 新增效果')),
             open && effs.map((_, i) => effCard(id, effs, i)));
     }

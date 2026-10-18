@@ -281,7 +281,7 @@ run('item', async t => {
         const st = (label) => {const b = box(label); return b && (b.querySelector('.bar .arrow')?.textContent ?? '-');};
         const go = (id) => {S.sel = id; S.view = 'form'; ie.render();};
         go('raw_meat');
-        out.def = [st('烹煮成'), st('效果'), box('效果').querySelectorAll('.card').length, box('效果').querySelector('.bar').textContent.includes('effects（1）')];
+        out.def = [st('烹煮成'), st('效果'), box('效果').querySelectorAll('.card').length, box('效果').querySelector('.bar').textContent.includes('效果（1）')];
         box('效果').querySelector('.bar').click();
         out.click = [st('效果'), box('效果').querySelectorAll('.card').length];
         ie.set('raw_meat', ['gold'], 7);
@@ -292,7 +292,7 @@ run('item', async t => {
         go('sword_02'); go('raw_meat');
         out.reset = [st('效果'), st('烹煮成')];
         go('sword_02');
-        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.includes('equip（3）')];
+        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith('裝備圖（3）'), box('裝備圖').querySelector('.bar [title]')?.title, box('效果').querySelector('.bar [title]')?.title];
         ie.addEff('sword_02');
         out.addEff = [st('效果'), box('效果').querySelectorAll('.card').length];
         ie.undo();
@@ -314,7 +314,7 @@ run('item', async t => {
     t.eq('改欄位後還開著', fold.keep, '▼');
     t.eq('點標題列收合', JSON.stringify(fold.close), JSON.stringify(['▶', false]));
     t.eq('換道具照規則重算', JSON.stringify(fold.reset), JSON.stringify(['▶', '▼']));
-    t.eq('超過一個 key 收合', JSON.stringify(fold.equip), JSON.stringify(['▶', true]));
+    t.eq('超過一個 key 收合、標題不寫 key、hover 才看得到', JSON.stringify(fold.equip), JSON.stringify(['▶', true, 'equip', 'effects']));
     t.eq('沒建立的不能收、按建立自動展開', JSON.stringify(fold.create), JSON.stringify(['-', '▼']));
     t.eq('新增效果自動展開', JSON.stringify(fold.addEff), JSON.stringify(['▼', 2]));
     t.eq('hover 中文欄位名看得到 key', JSON.stringify(fold.tips), JSON.stringify(['價格', 'class']));
