@@ -1,7 +1,8 @@
 import {History} from './history.js';
 import * as PX from './pixels.js';
-import * as FS from './fs.js';
+import * as FS from '../common/fs.js';
 
+const DIRS = FS.dirStore('paperdoll');
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
 const RAD = Math.PI / 180;
@@ -2194,14 +2195,14 @@ async function exportIcon()
 // ---------- 綁定 ----------
 
 $('btnRoot').onclick = async () => {
-    try {await setRoot(await FS.pickRoot());}
+    try {await setRoot(await DIRS.pick('root'));}
     catch (e) {if (e.name !== 'AbortError') status(e.message);}
 };
 $('btnReauth').onclick = async () => {
     if (S.pendingRoot && await FS.askPermission(S.pendingRoot)) setRoot(S.pendingRoot);
 };
 $('btnAssets').onclick = async () => {
-    try {await setAssets(await FS.pickAssets());}
+    try {await setAssets(await DIRS.pick('assets'));}
     catch (e) {if (e.name !== 'AbortError') alert(e.message);}
 };
 $('btnAssetsReauth').onclick = async () => {
@@ -2374,7 +2375,7 @@ new ResizeObserver(dirty).observe(cv);
     S.view.px = cv.clientWidth / 2;
     S.view.py = cv.clientHeight / 2;
     refreshAll();
-    const ah = await FS.savedAssets();
+    const ah = await DIRS.saved('assets');
     if (ah && await FS.hasPermission(ah)) await setAssets(ah).catch(e => status(e.message));
     else if (ah)
     {
@@ -2382,7 +2383,7 @@ new ResizeObserver(dirty).observe(cv);
         $('btnAssetsReauth').textContent = `重新授權「${ah.name}」`;
         $('btnAssetsReauth').hidden = false;
     }
-    const h = await FS.savedRoot();
+    const h = await DIRS.saved('root');
     if (!h) return;
     if (await FS.hasPermission(h)) return setRoot(h);
     S.pendingRoot = h;

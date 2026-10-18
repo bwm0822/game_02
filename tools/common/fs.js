@@ -1,17 +1,17 @@
-// File System Access API：工作資料夾的 handle 存在 IndexedDB，Chrome 重開後只要重新授權
-function idb()
+// File System Access API：資料夾 handle 存在 IndexedDB（每個工具一個 db），Chrome 重開後只要重新授權
+function idb(app)
 {
     return new Promise((res, rej) => {
-        const r = indexedDB.open('paperdoll', 1);
+        const r = indexedDB.open(app, 1);
         r.onupgradeneeded = () => r.result.createObjectStore('kv');
         r.onsuccess = () => res(r.result);
         r.onerror = () => rej(r.error);
     });
 }
 
-async function kv(mode, fn)
+async function kv(app, mode, fn)
 {
-    const db = await idb();
+    const db = await idb(app);
     return new Promise(res => {
         const q = fn(db.transaction('kv', mode).objectStore('kv'));
         q.onsuccess = () => res(q.result);
@@ -19,18 +19,19 @@ async function kv(mode, fn)
     });
 }
 
-export const savedRoot = () => kv('readonly', s => s.get('root'));
-export const savedAssets = () => kv('readonly', s => s.get('assets'));
-
-async function pickDir(key)
+// dirStore('paperdoll').pick('root')：選資料夾並記住；.saved('root')：上次選的
+export function dirStore(app)
 {
-    const h = await window.showDirectoryPicker({id: `paperdoll-${key}`, mode: 'readwrite'});
-    await kv('readwrite', s => s.put(h, key));
-    return h;
+    return {
+        saved: (key) => kv(app, 'readonly', s => s.get(key)),
+        async pick(key)
+        {
+            const h = await window.showDirectoryPicker({id: `${app}-${key}`, mode: 'readwrite'});
+            await kv(app, 'readwrite', s => s.put(h, key));
+            return h;
+        },
+    };
 }
-
-export const pickRoot = () => pickDir('root');
-export const pickAssets = () => pickDir('assets');
 
 export const hasPermission = async (h) => (await h.queryPermission({mode: 'readwrite'})) === 'granted';
 export const askPermission = async (h) => (await h.requestPermission({mode: 'readwrite'})) === 'granted';
@@ -68,6 +69,11 @@ export async function tryDir(dir, name)
 {
     try {return await dir.getDirectoryHandle(name);}
     catch {return null;}
+}
+
+export async function readText(dir, name)
+{
+    return (await (await dir.getFileHandle(name)).getFile()).text();
 }
 
 export async function writeFile(dir, name, blob)

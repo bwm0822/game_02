@@ -79,7 +79,9 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 | `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／移除綠色／變形／自動／像素）、UI 同步、開存檔 |
 | `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、mask、alphaClear、fill、key、removeGreen、paint、opaqueBounds、blobs（連通塊）；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
 | `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
-| `fs.js` | 工作資料夾 handle、列目錄、讀寫檔 |
+| `../common/fs.js` | 資料夾 handle（IndexedDB `paperdoll`）、列目錄、讀寫檔；跟道具編輯器共用 |
+
+`item.json` 的其他欄位用道具編輯器改（[item-editor.md](item-editor.md)）；兩邊同時開著也沒關係，道具編輯器存檔前會偵測紙娃娃寫過的 `equip` 並合併。
 
 測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、多邊形裁切（含派 pointer 事件測互動）、變形、像素修補（畫／擦／模式內 undo／接著編輯／擋縮放／清除）、合併、sidecar、icon；專案存讀、存到 item.json 用 OPFS 當工作資料夾和假的 `public/assets`，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
