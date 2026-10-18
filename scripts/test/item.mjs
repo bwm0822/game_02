@@ -221,18 +221,18 @@ run('item', async t => {
     t.eq('修不了的沒有修正', JSON.stringify(fx.none), JSON.stringify([null, null, null, null, null]));
 
     // JSON 框：右上角按鈕
-    const btn = '#view [data-k="#raw"] ~ button';
+    const btn = '#view .je:has([data-k="#raw"]) > button';
     const setText = (s) => t.page.evaluate((s) => {document.execCommand('selectAll'); document.execCommand('insertText', false, s);}, s);
     const btnState = () => t.page.$eval(btn, el => {
-        const r = el.getBoundingClientRect();
-        return [el.hidden ? '' : el.textContent, el.title, !el.hidden && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el];
+        const r = el.getBoundingClientRect(), box = el.parentNode.querySelector('textarea').getBoundingClientRect(), off = getComputedStyle(el).visibility === 'hidden';
+        return [off ? '' : el.textContent, el.title, !off && document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === el && r.left >= box.right];
     });
     await t.page.focus(ta);
     await setText('{"bb": 1}');
     t.eq('沒錯不顯示按鈕', (await btnState())[0], '');
     await setText('{"bb": 1 2}');
     let b = await btnState();
-    t.eq('修得了顯示 [修正]、提示怎麼改', JSON.stringify(b), JSON.stringify(['修正', '補上 ,（第 1 行：前面少了 ,）', true]));
+    t.eq('修得了顯示 [修正]（在框外）、提示怎麼改',JSON.stringify(b), JSON.stringify(['修正', '補上 ,（第 1 行：前面少了 ,）', true]));
     t.eq('只有出錯的 token 紅', await t.page.$eval(ta, el => [...el.closest('.je').querySelectorAll('.je-err')].map(e => e.textContent).join()), '2');
     await t.page.click(btn);
     t.eq('按修正', JSON.stringify(await t.page.$eval(ta, el => [el.value, document.activeElement === el])), JSON.stringify(['{"bb": 1, 2}', true]));
@@ -251,7 +251,7 @@ run('item', async t => {
         const ie = window.__ie, S = ie.S, q = () => document.querySelector('#view [data-k="#raw"]');
         const keep = 'foo' in S.items.tree;
         ie.render();
-        const out = [keep, q().value, q().parentNode.querySelector('button').hidden];
+        const out = [keep, q().value, q().closest('.je').querySelector('button').classList.contains('off')];
         const p = ie.save();
         for (let i = 0; i < 100 && !document.getElementById('dlgAsk').open; i++) await new Promise(r => setTimeout(r, 20));
         out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用（#raw）第 1 行：前面少了 ,'));

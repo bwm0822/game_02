@@ -246,10 +246,12 @@ function onKey(ta, e)
 export function jsonEdit({text, k, placeholder, onApply, onDraft})
 {
     const box = document.createElement('div');
+    const area = document.createElement('div');
     const pre = document.createElement('pre');
     const ta = document.createElement('textarea');
     const btn = document.createElement('button');
     box.className = 'je';
+    area.className = 'je-area';
     pre.className = 'je-hl';
     ta.className = 'je-ta';
     btn.type = 'button';
@@ -258,7 +260,8 @@ export function jsonEdit({text, k, placeholder, onApply, onDraft})
     ta.spellcheck = false;
     ta.placeholder = placeholder ?? '';
     ta.value = text;
-    box.append(pre, ta, btn);
+    area.append(pre, ta);
+    box.append(area, btn);
 
     let last;
     const reason = () => `第 ${last.err.line} 行：${last.err.msg}`;
@@ -267,8 +270,8 @@ export function jsonEdit({text, k, placeholder, onApply, onDraft})
         last = parse(ta.value);
         pre.innerHTML = paint(ta.value, last.toks, last.err?.tok);
         const fix = last.err?.fix;
-        btn.hidden = !last.err;
         btn.className = fix ? 'je-fix' : 'je-bad';
+        btn.classList.toggle('off', !last.err);
         btn.textContent = fix ? '修正' : '錯誤';
         btn.title = !last.err ? '' : fix ? `${fix.label}（${reason()}）` : reason();
         ta.rows = Math.min(30, Math.max(2, ta.value.split('\n').length));
