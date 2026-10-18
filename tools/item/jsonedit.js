@@ -237,7 +237,6 @@ export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
     pre.className = 'je-hl';
     ta.className = 'je-ta';
     tag.className = 'je-tag';
-    tag.textContent = '未套用';
     ta.dataset.k = k;
     ta.wrap = 'off';
     ta.spellcheck = false;
@@ -251,6 +250,7 @@ export function jsonEdit({text, k, draft, placeholder, onApply, onDraft})
         last = parse(ta.value);
         pre.innerHTML = paint(ta.value, last.toks, last.err?.tok);
         box.title = last.err ? `第 ${last.err.line} 行：${last.err.msg}` : '';
+        tag.textContent = last.err ? `未套用：${box.title}` : '未套用';
         ta.rows = Math.min(30, Math.max(2, ta.value.split('\n').length));
         sync();
     };

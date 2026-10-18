@@ -18,7 +18,7 @@ const S = {
     sort: null,             // {col, dir}
     search: '',
     extra: {},              // id → Set：使用者用「加欄位」叫出來、還沒填值的欄位
-    drafts: {}, draftsOf: null,   // JSON 框有錯沒套用的原文（data-k → text），只留目前這個道具的
+    drafts: {}, draftsOf: null,   // JSON 框有錯沒套用的原文（data-k → {text, msg}），只留目前這個道具的
     hist: [], hi: -1,
     fx: [],
 };
@@ -205,7 +205,7 @@ async function save()
         if (r !== 'merge' && r !== 'overwrite') return status('取消存檔');
         if (r === 'merge') commit(() => {S.items = m.items;});
     }
-    const warns = [...Object.keys(S.drafts).map(k => `${S.sel}：JSON 有錯還沒套用（${k}）`), ...validateAll()];
+    const warns = [...Object.entries(S.drafts).map(([k, d]) => `${S.sel}：JSON 有錯還沒套用（${k}）${d.msg}`), ...validateAll()];
     if (warns.length)
     {
         const r = await ask(`有 ${warns.length} 個問題`, ul(warns), [['save', '仍然存檔'], ['cancel', '取消']]);
@@ -455,9 +455,9 @@ function rawArea(obj, isKnown, put, k)
 {
     const raw = Object.fromEntries(Object.entries(obj).filter(([key]) => !isKnown(key)));
     const text = Object.keys(raw).length ? JSON.stringify(raw, null, 2) : '';
-    return JE.jsonEdit({k, text: S.drafts[k] ?? text, draft: k in S.drafts, placeholder: '{ }',
+    return JE.jsonEdit({k, text: S.drafts[k]?.text ?? text, draft: k in S.drafts, placeholder: '{ }',
         onApply: v => {delete S.drafts[k]; put(v);},
-        onDraft: (t, msg) => {S.drafts[k] = t; status(`JSON 有錯，沒有套用：${msg}`);}});
+        onDraft: (t, msg) => {S.drafts[k] = {text: t, msg}; status(`JSON 有錯，沒有套用：${msg}`);}});
 }
 
 function mapEditor(id, path, val)

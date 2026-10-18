@@ -23,7 +23,7 @@ textarea { width: 100%; resize: vertical; }
 .je-lit { color: #569cd6; }
 .je-punc { color: #888; }
 .je-err { color: #ff5555; }
-.je-tag { display: none; position: absolute; top: 2px; right: 18px; font-size: 11px; color: #ff5555; pointer-events: none; }
+.je-tag { display: none; margin-top: 2px; font-size: 12px; color: #ff5555; }
 .je.draft .je-tag { display: block; }
 label { white-space: nowrap; }
 .dim { color: #888; }

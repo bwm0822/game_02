@@ -203,21 +203,23 @@ run('item', async t => {
         const out = [keep, q().value, box.classList.contains('draft'), [...box.querySelectorAll('.je-err')].map(e => e.textContent).join(), box.title];
         const p = ie.save();
         for (let i = 0; i < 100 && !document.getElementById('dlgAsk').open; i++) await new Promise(r => setTimeout(r, 20));
-        out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用'));
+        out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用（#raw）第 1 行：前面少了 ,'));
+        out.tag = box.querySelector('.je-tag').textContent;
         document.getElementById('dlgAsk').close('cancel');
         await p;
         S.sel = 'sword_01'; ie.render(); S.sel = 'tree'; ie.render();
         out.push(q().value.includes('"bb": 1 2'), Object.keys(S.drafts).length);
         ie.undo();
-        return out;
+        return [...out, out.tag];
     });
     t.check('有錯不套用', draft[0]);
     t.eq('重繪後草稿還在', draft[1], '{"bb": 1 2}');
     t.check('標示未套用', draft[2]);
     t.eq('只有出錯的 token 紅', draft[3], '2');
     t.eq('滑鼠停留看原因', draft[4], '第 1 行：前面少了 ,');
-    t.check('存檔時警告有未套用的草稿', draft[5]);
-    t.eq('換道具草稿丟掉', JSON.stringify(draft.slice(6)), JSON.stringify([false, 0]));
+    t.check('存檔時警告有未套用的草稿和原因', draft[5]);
+    t.eq('換道具草稿丟掉', JSON.stringify(draft.slice(6, 8)), JSON.stringify([false, 0]));
+    t.eq('未套用旁邊寫原因', draft[8], '未套用：第 1 行：前面少了 ,');
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
