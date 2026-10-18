@@ -122,6 +122,9 @@ run('item', async t => {
         out.table = [document.querySelectorAll('#view tbody tr').length, Object.values(S.items).filter(it => it.cat === 'CAT_WEAPON').length];
         S.view = 'form'; ie.render();
         out.form = !!document.querySelector('#view .fields');
+        S.sel = 'sword_03'; ie.render();
+        out.dom = [document.body.innerText.includes('[object'), document.querySelectorAll('#list .item').length === Object.keys(S.items).length,
+                   [...document.querySelector('#view').childNodes].some(n => n.nodeType === Node.TEXT_NODE)];
         return out;
     });
 
@@ -173,4 +176,7 @@ run('item', async t => {
     t.eq('sheet:格子 沒問題', r.icons[5], '');
     t.eq('總覽表武器頁', r.table[0], r.table[1]);
     t.check('表單有畫出來', r.form);
+    t.eq('畫面沒有 [object …]', r.dom[0], false);
+    t.check('清單每個道具一列', r.dom[1]);
+    t.eq('表單沒有多出來的文字（例如 0）', r.dom[2], false);
 });

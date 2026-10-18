@@ -33,7 +33,8 @@ function h(tag, props, ...kids)
         else if (k.startsWith('on') || k === 'value' || k === 'checked') el[k] = v;
         else el.setAttribute(k, v === true ? '' : v);
     }
-    el.append(...kids.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false));
+    // 0 也跳過：讓 `list.length && …` 可以直接當子節點
+    el.append(...kids.flat(Infinity).filter(c => c !== null && c !== undefined && c !== false && c !== 0));
     return el;
 }
 
@@ -546,7 +547,7 @@ function renderForm()
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.includes(k));
     const warns = validate(id);
     const known = (k) => !!SC.FIELDS[k];
-    view.replaceChildren(
+    view.replaceChildren(...[
         h('div', {class: 'head'},
             IC.iconEl(it.icon, 48),
             h('span', {class: 'bigid'}, id),
@@ -568,7 +569,8 @@ function renderForm()
                 }}, h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
             h('div', {class: 'box'},
                 h('div', {class: 'bar'}, '其他欄位', h('span', {class: 'dim'}, '（原始 JSON，工具不認識的 key，例如 bb）')),
-                rawArea(it, known, raw => commit(() => replaceRaw(S.items[id], known, raw)), '#raw'))));
+                rawArea(it, known, raw => commit(() => replaceRaw(S.items[id], known, raw)), '#raw'))),
+    ].filter(Boolean));
 }
 
 // ---------- 總覽表 ----------
@@ -646,9 +648,9 @@ function renderList()
     const groups = [...SC.CATS, ''].map(c => [c, Object.keys(S.items).filter(id => (S.items[id].cat ?? '') === c && matchSearch(id))]);
     const strays = Object.keys(S.items).filter(id => S.items[id].cat && !SC.CATS.includes(S.items[id].cat) && matchSearch(id));
     if (strays.length) groups.push(['?', strays]);
-    $('list').replaceChildren(...groups.filter(([, ids]) => ids.length).map(([c, ids]) => [
+    $('list').replaceChildren(...groups.filter(([, ids]) => ids.length).flatMap(([c, ids]) => [
         h('div', {class: 'group'}, c === '?' ? '不認識的分類' : c ? `${SC.CAT_NAMES[c]}（${ids.length}）` : `無分類（${ids.length}）`),
-        ids.map(id => {
+        ...ids.map(id => {
             const w = validate(id);
             return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, onclick: () => {S.sel = id; S.view = 'form'; render();}},
                 IC.iconEl(S.items[id].icon, 20),
@@ -656,7 +658,7 @@ function renderList()
                 h('span', {class: 'lab'}, S.items[id].lab ?? ''),
                 h('span', {class: 'mark'}, itemDirty(id) && h('span', {class: 'dirty', title: '未存檔'}, '●'), w.length && h('span', {class: 'warn', title: w.join('\n')}, '⚠')));
         }),
-    ]).flat());
+    ]));
     $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
 }
 
