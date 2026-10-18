@@ -66,6 +66,10 @@ main { flex: 1; display: flex; min-height: 0; }
 .box { grid-column: 1 / -1; background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 6px 10px 10px; }
 .box > .bar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: bold; }
 .box .fields { grid-template-columns: 100px 1fr; }
+.box > .bar.fold { cursor: pointer; user-select: none; }
+.box > .bar .arrow { width: 1em; color: #888; font-size: .8em; }
+.box:has(> .bar:only-child) { padding-bottom: 6px; }
+.box > .bar:only-child { margin-bottom: 0; }
 .sub { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .sub label { display: inline-flex; align-items: center; gap: 4px; color: #aaa; }
 .card { background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; }

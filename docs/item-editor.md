@@ -17,6 +17,7 @@
 - 左：依 cat 分組的清單（可搜尋 id／名稱）、＋新道具。
 - 表單：依 `schema.js` 畫。顯示的欄位＝基本（lab/cat/icon/gold/des）＋該 cat 建議的＋已經有值的已知欄位；其他已知欄位從「加欄位」叫出來。
   - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`swing`、`ext`…）放框裡的「其他」JSON。
+  - 框（obj 欄位、效果、其他欄位）點標題列收合，標題只顯示個數；道具第一次畫到時決定預設（array 或超過一個 key 收合），之後記在 `S.open`，改內容不會自己收起來，換道具才重算；按「建立」「＋ 新增效果」會自動展開。
   - effects 一條一張卡片：標題是 `effSummary()` 的一行人話（不是遊戲內說明文字），欄位依 `type` 決定（`EFF_BY_TYPE`），schema 沒有的 key 在「額外欄位（JSON）」。
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
   - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅；有錯時右上角出現 `[修正]`（`parse()` 的 `err.fix` 有修法：補 `,` `:` 右括號 `"`、裸值／數字 key 加引號、刪怪字元、修數字，一次修一個，走 `insertText` 可 Ctrl+Z，不自動套用）或 `[錯誤]`（修不了，不能按），原因都在按鈕的 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。

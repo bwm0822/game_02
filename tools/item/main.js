@@ -18,7 +18,8 @@ const S = {
     sort: null,             // {col, dir}
     search: '',
     extra: {},              // id → Set：使用者用「加欄位」叫出來、還沒填值的欄位
-    drafts: {}, draftsOf: null,   // JSON 框有錯沒套用的原文（data-k → {text, msg}），只留目前這個道具的
+    // 只留目前這個道具的（換道具就清）：JSON 框有錯沒套用的原文（data-k → {text, msg}）、手動開關過的框（key → bool）
+    drafts: {}, open: {}, formOf: null,
     hist: [], hi: -1,
     fx: [],
 };
@@ -497,7 +498,19 @@ function effCard(id, effs, i)
 
 function addEff(id, eff = {type: 'mod'})
 {
+    S.open.effects = true;
     commit(() => {const it = S.items[id]; (it.effects ??= []).push(eff);});
+}
+
+// ---------- 框的收合 ----------
+// 這個道具第一次畫到時看內容決定（array 或超過一個 key 收起來），之後記住，免得改了內容框自己收起來
+const isOpen = (key, v) => S.open[key] ??= !(Array.isArray(v) || (isObj(v) && Object.keys(v).length > 1));
+
+// 點標題列（按鈕以外）開關；fold=false 表示沒有內容可收
+function boxBar(key, open, fold, ...kids)
+{
+    return h('div', {class: 'bar' + (fold ? ' fold' : ''), onclick: fold && (e => {if (!e.target.closest('button')) {S.open[key] = !open; render();}})},
+        fold && h('span', {class: 'arrow'}, open ? '▼' : '▶'), ...kids);
 }
 
 function delEff(id, i)
@@ -513,11 +526,12 @@ function fieldRow(id, it, k)
     {
         const known = (f) => !!def.fields[f];
         const o = isObj(v) ? v : {};
+        const open = v !== undefined && isOpen(k, v);
         return h('div', {class: 'box'},
-            h('div', {class: 'bar'}, `${def.label}`, h('span', {class: 'dim'}, k), h('span', {class: 'grow'}),
-                v === undefined ? h('button', {type: 'button', onclick: () => set(id, [k], {})}, '建立')
+            boxBar(k, open, v !== undefined, `${def.label}`, h('span', {class: 'dim'}, v === undefined ? k : `${k}（${Object.keys(o).length}）`), h('span', {class: 'grow'}),
+                v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], {});}}, '建立')
                                 : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
-            v !== undefined && h('div', {class: 'fields'},
+            open && h('div', {class: 'fields'},
                 Object.entries(def.fields).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : '')}, d.label),
                     d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d, o[f], val => set(id, [k, f], val), `${k}.${f}`),
@@ -528,12 +542,22 @@ function fieldRow(id, it, k)
     if (def.type === 'effects')
     {
         const effs = Array.isArray(v) ? v : [];
+        const open = isOpen(k, effs);
         return h('div', {class: 'box'},
-            h('div', {class: 'bar'}, `效果`, h('span', {class: 'dim'}, `effects（${effs.length}）`), h('span', {class: 'grow'}),
+            boxBar(k, open, effs.length > 0, `效果`, h('span', {class: 'dim'}, `effects（${effs.length}）`), h('span', {class: 'grow'}),
                 h('button', {type: 'button', onclick: () => addEff(id)}, '＋ 新增效果')),
-            effs.map((_, i) => effCard(id, effs, i)));
+            open && effs.map((_, i) => effCard(id, effs, i)));
     }
     return [label, fieldInput(def, v, val => set(id, [k], val), k)];
+}
+
+function otherBox(id, it, known)
+{
+    const raw = Object.fromEntries(Object.entries(it).filter(([k]) => !known(k)));
+    const open = isOpen('#raw', raw), n = Object.keys(raw).length;
+    return h('div', {class: 'box'},
+        boxBar('#raw', open, n > 0, '其他欄位', h('span', {class: 'dim'}, `（${n}）原始 JSON，工具不認識的 key，例如 bb`)),
+        open && rawArea(it, known, raw => commit(() => replaceRaw(S.items[id], known, raw)), '#raw'));
 }
 
 function renderForm()
@@ -560,14 +584,12 @@ function renderForm()
             rest.length && [h('span', {class: 'k unset'}, '加欄位'),
                 h('select', {onchange: e => {
                     const k = e.target.value, def = SC.FIELDS[k];
-                    if (def.type === 'obj') return set(id, [k], {});
+                    if (def.type === 'obj') {S.open[k] = true; return set(id, [k], {});}
                     if (def.type === 'effects') return addEff(id);
                     (S.extra[id] ??= new Set()).add(k);
                     render();
                 }}, h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
-            h('div', {class: 'box'},
-                h('div', {class: 'bar'}, '其他欄位', h('span', {class: 'dim'}, '（原始 JSON，工具不認識的 key，例如 bb）')),
-                rawArea(it, known, raw => commit(() => replaceRaw(S.items[id], known, raw)), '#raw'))),
+            otherBox(id, it, known)),
     ].filter(Boolean));
 }
 
@@ -678,7 +700,7 @@ function renderDatalists()
 function render()
 {
     const focus = document.activeElement?.dataset?.k;
-    if (S.draftsOf !== S.sel) {S.drafts = {}; S.draftsOf = S.sel;}
+    if (S.formOf !== S.sel) {S.drafts = {}; S.open = {}; S.formOf = S.sel;}
     renderDatalists();
     renderList();
     if (S.view === 'form') renderForm();

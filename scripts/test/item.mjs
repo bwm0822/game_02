@@ -257,7 +257,7 @@ run('item', async t => {
         out.push(document.getElementById('dlgAsk').textContent.includes('還沒套用（#raw）第 1 行：前面少了 ,'));
         document.getElementById('dlgAsk').close('cancel');
         await p;
-        S.sel = 'sword_01'; ie.render(); S.sel = 'tree'; ie.render();
+        S.sel = 'sword_01'; ie.render(); S.sel = 'tree'; ie.render(); S.open['#raw'] = true; ie.render();
         out.push(q().value.includes('"bb": 1 2'), Object.keys(S.drafts).length);
         return out;
     });
@@ -273,6 +273,50 @@ run('item', async t => {
     t.eq('失焦後按修正會回到框裡', JSON.stringify(await t.page.$eval(ta, el => [el.value, document.activeElement === el])), JSON.stringify(['{"bb": 1, 2}', true]));
     await t.page.$eval(ta, el => el.blur());
     await t.page.evaluate(() => window.__ie.undo());
+
+    // 框的收合
+    const fold = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const box = (label) => [...document.querySelectorAll('#view .box')].find(b => b.querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith(label));
+        const st = (label) => {const b = box(label); return b && (b.querySelector('.bar .arrow')?.textContent ?? '-');};
+        const go = (id) => {S.sel = id; S.view = 'form'; ie.render();};
+        go('raw_meat');
+        out.def = [st('烹煮成'), st('效果'), box('效果').querySelectorAll('.card').length, box('效果').querySelector('.bar').textContent.includes('effects（1）')];
+        box('效果').querySelector('.bar').click();
+        out.click = [st('效果'), box('效果').querySelectorAll('.card').length];
+        ie.set('raw_meat', ['gold'], 7);
+        out.keep = st('效果');
+        ie.undo();
+        box('烹煮成').querySelector('.bar').click();
+        out.close = [st('烹煮成'), !!box('烹煮成').querySelector('.fields')];
+        go('sword_02'); go('raw_meat');
+        out.reset = [st('效果'), st('烹煮成')];
+        go('sword_02');
+        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.includes('equip（3）')];
+        ie.addEff('sword_02');
+        out.addEff = [st('效果'), box('效果').querySelectorAll('.card').length];
+        ie.undo();
+        go('raw_meat');
+        const make0 = st('製作材料');
+        box('製作材料').querySelector('button').click();
+        out.create = [make0, st('製作材料')];
+        ie.undo();
+        go('pot');
+        const raw0 = st('其他欄位');
+        ie.set('pot', ['zz'], 1); ie.set('pot', ['zz2'], 2);
+        out.freeze = [raw0, st('其他欄位'), box('其他欄位').querySelector('.bar').textContent.includes('（3）')];
+        ie.undo(); ie.undo();
+        return out;
+    });
+    t.eq('預設：1 個 key 展開、array 收合、收合時看得到個數', JSON.stringify(fold.def), JSON.stringify(['▼', '▶', 0, true]));
+    t.eq('點標題列展開', JSON.stringify(fold.click), JSON.stringify(['▼', 1]));
+    t.eq('改欄位後還開著', fold.keep, '▼');
+    t.eq('點標題列收合', JSON.stringify(fold.close), JSON.stringify(['▶', false]));
+    t.eq('換道具照規則重算', JSON.stringify(fold.reset), JSON.stringify(['▶', '▼']));
+    t.eq('超過一個 key 收合', JSON.stringify(fold.equip), JSON.stringify(['▶', true]));
+    t.eq('沒建立的不能收、按建立自動展開', JSON.stringify(fold.create), JSON.stringify(['-', '▼']));
+    t.eq('新增效果自動展開', JSON.stringify(fold.addEff), JSON.stringify(['▼', 2]));
+    t.eq('內容變多不會自己收起來', JSON.stringify(fold.freeze), JSON.stringify(['▼', '▼', true]));
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
