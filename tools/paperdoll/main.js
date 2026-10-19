@@ -1,8 +1,8 @@
 import {History} from './history.js';
 import * as PX from './pixels.js';
 import * as FS from '../common/fs.js';
+import * as SH from '../common/shell.js';
 
-const DIRS = FS.dirStore('paperdoll');
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
 const RAD = Math.PI / 180;
@@ -13,10 +13,8 @@ const cv = $('cv'), g = cv.getContext('2d');
 
 // 世界座標 = 圖片像素；遊戲單位 = 世界座標 × scale
 const S = {
-    root: null,
-    pendingRoot: null,
+    root: null,             // 工作資料夾：專案的 images/
     assets: null,           // 遊戲的 public/assets：{dir, json, roles}
-    pendingAssets: null,
     projSig: null,      // 上次存／開專案時整個畫布的內容，跟現在比對出有沒有沒存的修改
     layers: [],
     active: null,
@@ -1838,16 +1836,12 @@ async function loadHandle(fh, dir, path)
 async function setRoot(h)
 {
     S.root = h;
-    S.pendingRoot = null;
-    $('btnReauth').hidden = true;
-    $('rootName').textContent = h.name;
-    $('rootName').classList.remove('dim');
     buildTree($('tree'), treeOpt);
 }
 
 function needRoot()
 {
-    if (!S.root) status('先選擇工作資料夾');
+    if (!S.root) status('先在上方選擇專案資料夾（工作資料夾是裡面的 images/）');
     return !!S.root;
 }
 
@@ -1878,7 +1872,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         const ts = targets(), box = $('dlgItem'), was = !box.disabled;
         box.disabled = !ts.length;
         box.checked = ts.length > 0 && (was ? box.checked : true);
-        $('dlgItemLab').title = !S.assets ? '先在上方選擇遊戲資料夾（public/assets）'
+        $('dlgItemLab').title = !S.assets ? '先在上方選擇專案資料夾'
                               : ts.length ? '' : `沒有 item 的 equip.sprite${S.assets.hasRole ? '、角色的 body/head/hand/corpse' : ''} 跟檔名一樣`;
         $('dlgItemIds').replaceChildren(...(ts.length > 1 ? ts.map(t => {
             const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: t.tag});
@@ -1952,15 +1946,13 @@ function sidecar(L, name)
 
 const PARTS = ['body', 'head', 'hand', 'corpse'];
 
+// h：專案根目錄，或直接給 public/assets（無頭測試）
 async function setAssets(h)
 {
-    const json = await FS.tryDir(h, 'json'), roles = await FS.tryDir(h, 'roles_64x64');
-    if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 json/item.json 和 roles_64x64/，要選遊戲的 public/assets`);
-    S.assets = {dir: h, json, roles, hasRole: !!await FS.tryFile(json, 'role.json')};
-    S.pendingAssets = null;
-    $('btnAssetsReauth').hidden = true;
-    $('assetsName').textContent = h.name;
-    $('assetsName').classList.remove('dim');
+    const dir = await FS.tryDir(await FS.tryDir(h, 'public'), 'assets') ?? h;
+    const json = await FS.tryDir(dir, 'json'), roles = await FS.tryDir(dir, 'roles_64x64');
+    if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 public/assets/json/item.json 和 roles_64x64/`);
+    S.assets = {dir, json, roles, hasRole: !!await FS.tryFile(json, 'role.json')};
     return S.assets;
 }
 
@@ -2007,7 +1999,11 @@ async function saveLayer()
         await FS.writeFile(A.roles, `${r.name}.png`, await PX.toPng(out));
         for (const t of ts) writeEquip(game[t.file][t.id][t.key], L);
         for (const f of ['item', 'role'])
-            if (ts.some(t => t.file === f)) await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
+            if (ts.some(t => t.file === f))
+            {
+                await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
+                SH.notifySaved(`${f}.json`);
+            }
         return status(`已存 roles_64x64/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
@@ -2056,6 +2052,7 @@ function updateTitle()
 {
     const name = projects().map(p => p.name).join(' + ') || '（未命名）', mark = isUnsaved() ? ' *' : '';
     $('projName').textContent = name + mark;
+    SH.setDirty(!!mark);
     document.title = `${name}${mark} — 紙娃娃編輯器`;
 }
 
@@ -2207,20 +2204,6 @@ async function exportIcon()
 
 // ---------- 綁定 ----------
 
-$('btnRoot').onclick = async () => {
-    try {await setRoot(await DIRS.pick('root'));}
-    catch (e) {if (e.name !== 'AbortError') status(e.message);}
-};
-$('btnReauth').onclick = async () => {
-    if (S.pendingRoot && await FS.askPermission(S.pendingRoot)) setRoot(S.pendingRoot);
-};
-$('btnAssets').onclick = async () => {
-    try {await setAssets(await DIRS.pick('assets'));}
-    catch (e) {if (e.name !== 'AbortError') alert(e.message);}
-};
-$('btnAssetsReauth').onclick = async () => {
-    if (S.pendingAssets && await FS.askPermission(S.pendingAssets)) setAssets(S.pendingAssets).catch(e => alert(e.message));
-};
 $('btnRefresh').onclick =() => buildTree($('tree'), treeOpt);
 $('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
 $('btnDup').onclick = duplicateLayer;
@@ -2388,20 +2371,12 @@ new ResizeObserver(dirty).observe(cv);
     S.view.px = cv.clientWidth / 2;
     S.view.py = cv.clientHeight / 2;
     refreshAll();
-    const ah = await DIRS.saved('assets');
-    if (ah && await FS.hasPermission(ah)) await setAssets(ah).catch(e => status(e.message));
-    else if (ah)
-    {
-        S.pendingAssets = ah;
-        $('btnAssetsReauth').textContent = `重新授權「${ah.name}」`;
-        $('btnAssetsReauth').hidden = false;
-    }
-    const h = await DIRS.saved('root');
-    if (!h) return;
-    if (await FS.hasPermission(h)) return setRoot(h);
-    S.pendingRoot = h;
-    $('btnReauth').textContent = `重新授權「${h.name}」`;
-    $('btnReauth').hidden = false;
+    SH.onProject(async (dir) => {
+        await setAssets(dir).catch(e => status(e.message));
+        const img = await FS.tryDir(dir, 'images');
+        if (img) setRoot(img);
+        else status(`「${dir.name}」裡沒有 images/（紙娃娃的工作資料夾）`);
+    });
 })();
 
 // 給無頭測試用
