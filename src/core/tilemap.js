@@ -158,7 +158,7 @@ export default class TileMap
         });
     }
 
-    // *.tsj 裡的 image 是相對 *.tsj 的路徑（Tiled 規定），轉成相對 assets 的路徑，集合型 tileset 也拿它當 texture key
+    // *.tsj 裡的 image 是相對 *.tsj 的路徑（Tiled 規定），轉成相對 assets 的路徑
     static _resolve(source, image)
     {
         const segs = source.split('/').slice(0, -1);
@@ -169,6 +169,8 @@ export default class TileMap
         }
         return segs.join('/');
     }
+
+    static _key(image) {return image.split('/').pop().replace(/\.[^.]+$/, '');}
 
     // 外部tileset(*.tsj) 的資料取出來，載入外部 tileset(*.png)
     static _preprocess_Tileset(scene, map)
@@ -181,7 +183,8 @@ export default class TileMap
                 const raw = scene.cache.json.get(tile.source);
                 const json = {...raw};
                 if(raw.image) {json.image = this._resolve(tile.source, raw.image);}
-                if(raw.tiles) {json.tiles = raw.tiles.map(t => t.image ? {...t, image: this._resolve(tile.source, t.image)} : t);}
+                // 集合型 tileset 的 tile.image 會被 Phaser 當 texture key，換成檔名（跟 Preloader 的 textures.json 同一套 key，已載過就不重載）
+                if(raw.tiles) {json.tiles = raw.tiles.map(t => t.image ? {...t, url: this._resolve(tile.source, t.image), image: this._key(t.image)} : t);}
                 delete tile.source;
                 map.data.tilesets[index] = {...tile, ...json};
                 if(json.image)  // (*.tsj) 為 .png
@@ -196,9 +199,9 @@ export default class TileMap
                         if(tile.image)
                         {
                             map.lut[tile.image]={w:tile.imagewidth,h:tile.imageheight};
-                            if(this._isLoaded(tile.image)) {return;}
-                            dlog(T.MAP)(`load[${tile.image}]`);
-                            scene.load.image(tile.image,tile.image);
+                            if(this._isLoaded(tile.url)) {return;}
+                            dlog(T.MAP)(`load[${tile.url}] => ${tile.image}`);
+                            scene.load.image(tile.image,tile.url);
                         }
                     });
                 }

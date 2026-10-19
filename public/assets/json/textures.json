@@ -1,0 +1,192 @@
+{
+  "image": {
+    "cloth-armor": "textures/equips/cloth-armor.png",
+    "cloth-boots": "textures/equips/cloth-boots.png",
+    "cloth-gloves": "textures/equips/cloth-gloves.png",
+    "cloth-hood": "textures/equips/cloth-hood.png",
+    "leather-armor": "textures/equips/leather-armor.png",
+    "leather-boots": "textures/equips/leather-boots.png",
+    "leather-gloves": "textures/equips/leather-gloves.png",
+    "leather-helmet": "textures/equips/leather-helmet.png",
+    "icon_karen_m": "textures/icons/icon_karen_m.png",
+    "icon_macron_m": "textures/icons/icon_macron_m.png",
+    "icon_musk_m": "textures/icons/icon_musk_m.png",
+    "icon_trump_m": "textures/icons/icon_trump_m.png",
+    "icon_xi_m": "textures/icons/icon_xi_m.png",
+    "free_001": "textures/items/assets_spritesheet_v2_free/free_001.png",
+    "free_002": "textures/items/assets_spritesheet_v2_free/free_002.png",
+    "free_003": "textures/items/assets_spritesheet_v2_free/free_003.png",
+    "free_004": "textures/items/assets_spritesheet_v2_free/free_004.png",
+    "free_005": "textures/items/assets_spritesheet_v2_free/free_005.png",
+    "free_006": "textures/items/assets_spritesheet_v2_free/free_006.png",
+    "free_007": "textures/items/assets_spritesheet_v2_free/free_007.png",
+    "free_008": "textures/items/assets_spritesheet_v2_free/free_008.png",
+    "free_009": "textures/items/assets_spritesheet_v2_free/free_009.png",
+    "free_010": "textures/items/assets_spritesheet_v2_free/free_010.png",
+    "free_011": "textures/items/assets_spritesheet_v2_free/free_011.png",
+    "free_012": "textures/items/assets_spritesheet_v2_free/free_012.png",
+    "free_013": "textures/items/assets_spritesheet_v2_free/free_013.png",
+    "free_014": "textures/items/assets_spritesheet_v2_free/free_014.png",
+    "free_015": "textures/items/assets_spritesheet_v2_free/free_015.png",
+    "free_016": "textures/items/assets_spritesheet_v2_free/free_016.png",
+    "free_017": "textures/items/assets_spritesheet_v2_free/free_017.png",
+    "free_018": "textures/items/assets_spritesheet_v2_free/free_018.png",
+    "free_019": "textures/items/assets_spritesheet_v2_free/free_019.png",
+    "free_020": "textures/items/assets_spritesheet_v2_free/free_020.png",
+    "free_021": "textures/items/assets_spritesheet_v2_free/free_021.png",
+    "free_022": "textures/items/assets_spritesheet_v2_free/free_022.png",
+    "free_023": "textures/items/assets_spritesheet_v2_free/free_023.png",
+    "free_024": "textures/items/assets_spritesheet_v2_free/free_024.png",
+    "free_025": "textures/items/assets_spritesheet_v2_free/free_025.png",
+    "free_026": "textures/items/assets_spritesheet_v2_free/free_026.png",
+    "free_027": "textures/items/assets_spritesheet_v2_free/free_027.png",
+    "free_028": "textures/items/assets_spritesheet_v2_free/free_028.png",
+    "free_029": "textures/items/assets_spritesheet_v2_free/free_029.png",
+    "free_030": "textures/items/assets_spritesheet_v2_free/free_030.png",
+    "free_031": "textures/items/assets_spritesheet_v2_free/free_031.png",
+    "free_032": "textures/items/assets_spritesheet_v2_free/free_032.png",
+    "free_033": "textures/items/assets_spritesheet_v2_free/free_033.png",
+    "free_034": "textures/items/assets_spritesheet_v2_free/free_034.png",
+    "free_035": "textures/items/assets_spritesheet_v2_free/free_035.png",
+    "free_036": "textures/items/assets_spritesheet_v2_free/free_036.png",
+    "free_037": "textures/items/assets_spritesheet_v2_free/free_037.png",
+    "free_038": "textures/items/assets_spritesheet_v2_free/free_038.png",
+    "free_039": "textures/items/assets_spritesheet_v2_free/free_039.png",
+    "free_040": "textures/items/assets_spritesheet_v2_free/free_040.png",
+    "free_041": "textures/items/assets_spritesheet_v2_free/free_041.png",
+    "free_042": "textures/items/assets_spritesheet_v2_free/free_042.png",
+    "free_043": "textures/items/assets_spritesheet_v2_free/free_043.png",
+    "free_044": "textures/items/assets_spritesheet_v2_free/free_044.png",
+    "free_045": "textures/items/assets_spritesheet_v2_free/free_045.png",
+    "free_046": "textures/items/assets_spritesheet_v2_free/free_046.png",
+    "free_047": "textures/items/assets_spritesheet_v2_free/free_047.png",
+    "free_048": "textures/items/assets_spritesheet_v2_free/free_048.png",
+    "arrow": "textures/others/arrow.png",
+    "bg": "textures/others/bg.png",
+    "logo": "textures/others/logo.png",
+    "rip": "textures/others/rip.png",
+    "Barrel": "textures/props/Barrel.png",
+    "bed_h": "textures/props/bed_h.png",
+    "bed_v": "textures/props/bed_v.png",
+    "blanket_h": "textures/props/blanket_h.png",
+    "blanket_v": "textures/props/blanket_v.png",
+    "Bookshelf": "textures/props/Bookshelf.png",
+    "Chair ( Side )": "textures/props/Chair ( Side ).png",
+    "Chair": "textures/props/Chair.png",
+    "Crate": "textures/props/Crate.png",
+    "Door ( Opened )": "textures/props/Door ( Opened ).png",
+    "Door": "textures/props/Door.png",
+    "Rug": "textures/props/Rug.png",
+    "Table": "textures/props/Table.png",
+    "macron": "textures/roles/npcs/macron.png",
+    "melanie": "textures/roles/npcs/melanie.png",
+    "musk": "textures/roles/npcs/musk.png",
+    "rogue": "textures/roles/npcs/rogue.png",
+    "trump": "textures/roles/npcs/trump.png",
+    "xi": "textures/roles/npcs/xi.png",
+    "body-man": "textures/roles/parts/body-man.png",
+    "hand-man": "textures/roles/parts/hand-man.png",
+    "head-macron": "textures/roles/parts/head-macron.png",
+    "head-melanie": "textures/roles/parts/head-melanie.png",
+    "head-musk": "textures/roles/parts/head-musk.png",
+    "head-trump": "textures/roles/parts/head-trump.png",
+    "head-wick": "textures/roles/parts/head-wick.png",
+    "head-xi": "textures/roles/parts/head-xi.png"
+  },
+  "sheet": {
+    "buffs": {
+      "url": "textures/icons/buffs.png",
+      "w": 64,
+      "h": 64,
+      "margin": 0,
+      "spacing": 0
+    },
+    "cursors": {
+      "url": "textures/icons/cursors.png",
+      "w": 33,
+      "h": 33,
+      "margin": 1,
+      "spacing": 0
+    },
+    "icons": {
+      "url": "textures/icons/icons.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "portraits": {
+      "url": "textures/icons/portraits.png",
+      "w": 64,
+      "h": 64,
+      "margin": 0,
+      "spacing": 0
+    },
+    "items": {
+      "url": "textures/items/32rogues/items.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "weapons": {
+      "url": "textures/items/weapons.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "doors": {
+      "url": "textures/props/doors.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "animals": {
+      "url": "textures/roles/animals/32rogues/animals.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "monsters": {
+      "url": "textures/roles/monsters/32rogues/monsters.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "rogues": {
+      "url": "textures/roles/npcs/32rogues/rogues.png",
+      "w": 32,
+      "h": 32,
+      "margin": 0,
+      "spacing": 0
+    },
+    "Color A Spitesheet": {
+      "url": "textures/roles/npcs/Color A Spitesheet.png",
+      "w": 90,
+      "h": 64,
+      "margin": 0,
+      "spacing": 0
+    },
+    "Warrior_Red": {
+      "url": "textures/roles/npcs/tiny/Warrior_Red.png",
+      "w": 192,
+      "h": 192,
+      "margin": 0,
+      "spacing": 0
+    }
+  },
+  "atlas": {
+    "hero": {
+      "url": "textures/roles/npcs/hero.png",
+      "json": "textures/roles/npcs/hero_atlas.json"
+    },
+    "roles_v12": {
+      "url": "textures/roles/npcs/roles_v12.png",
+      "json": "textures/roles/npcs/roles_v12_atlas.json"
+    }
+  }
+}

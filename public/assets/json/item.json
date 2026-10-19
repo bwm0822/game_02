@@ -616,11 +616,11 @@
       "chopCnt": 3,
       "tool": "axe",
       "harvest_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/012.png",
+        "sprite": "free_012",
         "y": 40
       },
       "full_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/001.png"
+        "sprite": "free_001"
       },
       "harvest": {
         "id": "wood",
@@ -633,10 +633,10 @@
     "bb": {
       "act": "harvest",
       "harvest_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/005.png"
+        "sprite": "free_005"
       },
       "full_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/006.png"
+        "sprite": "free_006"
       },
       "harvest": {
         "id": "apple",
@@ -648,10 +648,10 @@
     "bb": {
       "act": "harvest",
       "harvest_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/011.png"
+        "sprite": "free_011"
       },
       "full_tex": {
-        "sprite": "textures/items/assets_spritesheet_v2_free/010.png"
+        "sprite": "free_010"
       },
       "harvest": {
         "id": "grapes",
@@ -673,7 +673,7 @@
   },
   "wood": {
     "cat": "CAT_ITEM",
-    "icon": "textures/items/assets_spritesheet_v2_free/028.png",
+    "icon": "free_028",
     "gold": 1,
     "cps": 10,
     "lab": "木材",
