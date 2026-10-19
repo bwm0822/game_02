@@ -1852,12 +1852,12 @@ function needRoot()
 }
 
 // bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾；note(path, name)：覆蓋確認時多加的文字
-// item：顯示「存到 item.json」，結果的 item 是勾選的 item id（沒勾＝null），勾了就不看選的目錄
-function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null, item = false)
+// game：顯示「存到遊戲資料」，結果的 game 是勾選的擺放 tag（`id.equip`、`id.body`…；沒勾＝null），勾了就不看選的目錄
+function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null, game = false)
 {
     const dlg = $('dlgSave');
     let sel = {dir, path};
-    const toItem = () => item && $('dlgItem').checked;
+    const toItem = () => game && $('dlgItem').checked;
     const showPath = () => {
         $('dlgPath').textContent = toItem() ? `${S.assets.dir.name}/roles_64x64` : join(S.root.name, sel.path);
         $('dlgTree').classList.toggle('off', toItem());
@@ -1867,39 +1867,40 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     $('dlgBakeRow').hidden = !bake;
     $('dlgBakeLab').textContent = bake ?? '';
     $('dlgBake').checked = true;
-    $('dlgItemRow').hidden = !item;
-    let items = null;
-    const itemIds = () => {
+    $('dlgItemRow').hidden = !game;
+    let data = null;
+    const targets = () => {
         let n = $('dlgName').value.trim();
         if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
-        return items ? equipIds(items, n) : [];
+        return data ? targetsOf(data, n) : [];
     };
     const refreshItem = () => {
-        const ids = itemIds(), box = $('dlgItem'), was = !box.disabled;
-        box.disabled = !ids.length;
-        box.checked = ids.length > 0 && (was ? box.checked : true);
+        const ts = targets(), box = $('dlgItem'), was = !box.disabled;
+        box.disabled = !ts.length;
+        box.checked = ts.length > 0 && (was ? box.checked : true);
         $('dlgItemLab').title = !S.assets ? '先在上方選擇遊戲資料夾（public/assets）'
-                              : ids.length ? '' : '沒有 item 的 equip.sprite 跟檔名一樣';
-        $('dlgItemIds').replaceChildren(...(ids.length > 1 ? ids.map(id => {
-            const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: id});
-            lab.append(c, ` ${id} `);
+                              : ts.length ? '' : `沒有 item 的 equip.sprite${S.assets.hasRole ? '、角色的 body/head/hand/corpse' : ''} 跟檔名一樣`;
+        $('dlgItemIds').replaceChildren(...(ts.length > 1 ? ts.map(t => {
+            const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: t.tag});
+            lab.append(c, ` ${t.tag} `);
+            lab.title = `${t.file}.json`;
             return lab;
-        }) : ids.map(id => Object.assign(el('span', 'dim'), {textContent: id}))));
+        }) : ts.map(t => Object.assign(el('span', 'dim'), {textContent: t.tag, title: `${t.file}.json`}))));
         $('dlgItemIds').hidden = !box.checked;
         showPath();
     };
-    const loadItems = async () => {
-        items = S.assets ? await readItems() : null;
+    const loadGame = async () => {
+        data = S.assets ? await readGame() : null;
         refreshItem();
     };
-    if (item)
+    if (game)
     {
         Object.assign($('dlgItem'), {disabled: true, checked: false});
         $('dlgItemIds').replaceChildren();
         $('dlgItemLab').title = '';
         $('dlgItem').onchange = refreshItem;
         $('dlgName').oninput = refreshItem;
-        loadItems().catch(e => status(e.message));
+        loadGame().catch(e => status(e.message));
     }
     else $('dlgName').oninput = null;
     const pick = (d, p, row) => {
@@ -1925,12 +1926,12 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         const bk = !!bake && $('dlgBake').checked;
         if (toItem())
         {
-            const ids = itemIds(), boxes = [...$('dlgItemIds').querySelectorAll('input')];
-            const pick = boxes.length ? boxes.filter(c => c.checked).map(c => c.value) : ids;
-            return res(pick.length ? {name: n, bake: bk, item: pick} : null);
+            const boxes = [...$('dlgItemIds').querySelectorAll('input')];
+            const pick = boxes.length ? boxes.filter(c => c.checked).map(c => c.value) : targets().map(t => t.tag);
+            return res(pick.length ? {name: n, bake: bk, game: pick} : null);
         }
         if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
-        res({...sel, name: n, bake: bk, item: null});
+        res({...sel, name: n, bake: bk, game: null});
     }, {once: true}));
 }
 
@@ -1946,14 +1947,16 @@ function sidecar(L, name)
     return o;
 }
 
-// ---------- item.json ----------
-// 遊戲的 public/assets：存到 item.json 時 PNG 寫進 roles_64x64/、擺放寫進 json/item.json 的 equip
+// ---------- 存到遊戲資料 ----------
+// 遊戲的 public/assets：PNG 寫進 roles_64x64/、擺放寫進 json/item.json 的 equip 或 json/role.json 的 body/head/hand/corpse
+
+const PARTS = ['body', 'head', 'hand', 'corpse'];
 
 async function setAssets(h)
 {
     const json = await FS.tryDir(h, 'json'), roles = await FS.tryDir(h, 'roles_64x64');
     if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 json/item.json 和 roles_64x64/，要選遊戲的 public/assets`);
-    S.assets = {dir: h, json, roles};
+    S.assets = {dir: h, json, roles, hasRole: !!await FS.tryFile(json, 'role.json')};
     S.pendingAssets = null;
     $('btnAssetsReauth').hidden = true;
     $('assetsName').textContent = h.name;
@@ -1961,8 +1964,17 @@ async function setAssets(h)
     return S.assets;
 }
 
-const readItems = async () => JSON.parse(await (await (await S.assets.json.getFileHandle('item.json')).getFile()).text());
-const equipIds = (items, sprite) => Object.keys(items).filter(id => items[id].equip?.sprite === sprite);
+const readGameJson = async (name) => JSON.parse(await (await (await S.assets.json.getFileHandle(name)).getFile()).text());
+const readGame = async () => ({item: await readGameJson('item.json'), role: S.assets.hasRole ? await readGameJson('role.json') : {}});
+
+// 檔名配得到的擺放：item 的 equip、角色的 body/head/hand/corpse（spritesheet 的 sprite 配不到）
+function targetsOf(game, sprite)
+{
+    return [
+        ...Object.keys(game.item).filter(id => game.item[id].equip?.sprite === sprite).map(id => ({file: 'item', id, key: 'equip'})),
+        ...Object.entries(game.role).flatMap(([id, r]) => PARTS.filter(p => r[p]?.sprite === sprite).map(p => ({file: 'role', id, key: p}))),
+    ].map(t => ({...t, tag: `${t.id}.${t.key}`}));
+}
 
 function writeEquip(e, L)
 {
@@ -1981,21 +1993,22 @@ async function saveLayer()
     if (!L || !needRoot()) return;
     cancelMode();
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
-    const matched = S.assets && equipIds(await readItems().catch(() => ({})), L.name).length;
+    const matched = S.assets && targetsOf(await readGame().catch(() => ({item: {}, role: {}})), L.name).length;
     const output = await FS.tryDir(S.root, 'output');
     const [dir, path] = output ? [output, 'output'] : [L.dir ?? S.root, L.dir ? L.path : ''];
     const r = await saveDialog(`存檔：${L.name}`, dir, path, matched ? L.name : `${L.name}-copy`, '.png', bake, null, true);
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
-    if (r.item)
+    if (r.game)
     {
-        const A = S.assets, items = await readItems();
-        const ids = r.item.filter(id => items[id]?.equip?.sprite === r.name);
-        if (!ids.length) return alert(`item.json 裡已經沒有 equip.sprite 是「${r.name}」的 item，沒有存檔`);
+        const A = S.assets, game = await readGame();
+        const ts = targetsOf(game, r.name).filter(t => r.game.includes(t.tag));
+        if (!ts.length) return alert(`item.json／role.json 裡已經沒有 sprite 是「${r.name}」的擺放，沒有存檔`);
         await FS.writeFile(A.roles, `${r.name}.png`, await PX.toPng(out));
-        for (const id of ids) writeEquip(items[id].equip, L);
-        await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
-        return status(`已存 roles_64x64/${r.name}.png，item.json 更新 ${ids.join('、')}`);
+        for (const t of ts) writeEquip(game[t.file][t.id][t.key], L);
+        for (const f of ['item', 'role'])
+            if (ts.some(t => t.file === f)) await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
+        return status(`已存 roles_64x64/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));

@@ -699,18 +699,43 @@ run('paperdoll', async t => {
         $('dlgSave').close('ok'); await p;
         const cap = JSON.parse(await readItems());
         out.cap = [JSON.stringify(cap.h2.equip), JSON.stringify(cap.h3.equip)];
+
+        // 存到 role.json：同一個檔名也配角色的 body/head/hand/corpse
+        const roleTxt = JSON.stringify({r1: {kind: 'npc', body: {sprite: 'cap', scale: 0.25, y: 32}, head: {sprite: 'hat2', scale: 0.25}, hand: {sprite: 'cap'}}}, null, 2);
+        const rw = await (await json.getFileHandle('role.json', {create: true})).createWritable(); await rw.write(roleTxt); await rw.close();
+        const readRoles = async () => (await (await json.getFileHandle('role.json')).getFile()).text();
+        await pd.setAssets(assets);
+        L.x = 8; L.y = 0;
+        ({p} = await open());
+        await rename('cap');
+        const rb = [...$('dlgItemIds').querySelectorAll('input')];
+        out.roleBoxes = rb.map(c => c.value).join();
+        rb.filter(c => c.value.endsWith('.equip')).forEach(c => {c.checked = false;});
+        const itemsBefore = await readItems();
+        $('dlgSave').close('ok'); await p;
+        const role = JSON.parse(await readRoles());
+        out.role = [JSON.stringify(role.r1.body), JSON.stringify(role.r1.hand), JSON.stringify(role.r1.head), role.r1.kind, (await readRoles()) === JSON.stringify(role, null, 2), (await readItems()) === itemsBefore];
+        ({p} = await open());
+        await rename('nope');
+        out.roleNope = $('dlgItemLab').title;
+        $('dlgSave').close('cancel'); await p;
         return out;
     });
     t.eq('item.json：沒選遊戲資料夾時反灰、提示去上方選、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
     t.eq('item.json：選了遊戲資料夾，上方顯示名稱', JSON.stringify(it.header), JSON.stringify(['assets', true]));
-    t.eq('item.json：檔名配對得到時預設勾、存進 roles_64x64', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/roles_64x64', true, 'h1']));
+    t.eq('item.json：檔名配對得到時預設勾、存進 roles_64x64', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/roles_64x64', true, 'h1.equip']));
     t.eq('item.json：只改擺放欄位、預設值刪掉、其他不動、不寫 sidecar、原圖不換', JSON.stringify(it.hat),
          JSON.stringify(['{"sprite":"hat","scale":0.25,"y":0,"aim":1,"x":2}', '{"sprite":"hat","scale":0.25}', true, false, 'img/a.png']));
     t.check('item.json：照 2 格縮排重寫', it.format);
     t.eq('item.json：配不到時反灰、說明原因、存到 output', JSON.stringify(it.nope), JSON.stringify([true, false, '沒有 item 的 equip.sprite 跟檔名一樣', 'output']));
     t.eq('item.json：沒勾就存 output 的 PNG＋sidecar', JSON.stringify(it.nopeSaved), JSON.stringify([true, true, false]));
-    t.eq('item.json：好幾筆共用 sprite 時列出來各自勾', it.capBoxes, 'h2:true,h3:true');
+    t.eq('item.json：好幾筆共用 sprite 時列出來各自勾', it.capBoxes, 'h2.equip:true,h3.equip:true');
     t.eq('item.json：只寫有勾的', JSON.stringify(it.cap), JSON.stringify(['{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"cap","scale":0.25}']));
+    t.eq('role.json：同檔名的角色部件也列出來', it.roleBoxes, 'h2.equip,h3.equip,r1.body,r1.hand');
+    t.eq('role.json：只改勾的部件的擺放、其他不動', JSON.stringify(it.role.slice(0, 4)),
+         JSON.stringify(['{"sprite":"cap","scale":0.25,"y":0,"x":2}', '{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"hat2","scale":0.25}', 'npc']));
+    t.check('role.json：照 2 格縮排重寫、沒勾 item 就不動 item.json', it.role[4] && it.role[5]);
+    t.check('role.json：配不到時說明也提到角色部件', it.roleNope.includes('body/head/hand/corpse'), it.roleNope);
 
     // 合併：dialog 一律 accept，所以有半透明時會烘入
     const m = await ev(async () => {

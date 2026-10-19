@@ -27,7 +27,7 @@
   - **undo**：模式內有自己的步驟（`mode.hist`／`mode.fut`，最多 50 步，`autoStep()` 記這組零件改之前的樣子），改一個數字、拖一次（真的動到才算）、按一下方向鍵各一步；Ctrl+Z／Ctrl+Y 一步一步退／重做，並把零件現在的數字寫回全域預設，退到底停住、不走全域 undo（剛拆完按也不會退掉拆）。離開模式時還有步驟才記一筆全域 undo（進調整時的快照 `mode.snap`），拆本身是另一筆，所以離開後先退調整、再退拆；「取消」前有步驟也先記這筆。
 - **像素模式**：修縮小後成品的細節（雜點、殘綠、斷線），不是拿來從零畫圖。鉛筆（B）／橡皮擦（E）、方形筆刷 1～8px（`[`／`]`），鉛筆是**取代**成色票的 RGBA（不混色）、橡皮擦是 alpha 0，畫到圖外的直接裁掉；色票跟顏色模式共用（`pxRgb`↔`colRgb` 同步，alpha 是自己的 `pxA`），Alt+點吸 RGB 連 alpha（跟顏色模式不同：修補要的是一模一樣的像素，顏色模式的填色 alpha 則不跟著吸）。筆畫畫在模式的 `preview` 上（每筆只 `putImageData` 筆刷範圍），`map`（`y*W+x → rgba`）是要寫進步驟的內容；確定（Enter）寫成**一步** `paint`、全域 undo 一筆，座標是前面所有步驟跑完那張圖的像素座標；最後一步就是 `paint` 時再進模式會拿掉它、筆畫併進同一步。模式內 Ctrl+Z／Ctrl+Y 一筆一筆退（按下到放開＝一筆，真的畫到圖上才算，最多 50 筆），退到底停住，不走全域 undo；切換圖層／模式時有沒套用的筆畫 `confirm` 問要不要套用，關分頁也會擋。一格像素 ≥ 8 螢幕 px 才畫像素格線，游標畫出對齊格子的筆刷框（鉛筆用色票色、橡皮擦白色）。選取圖層鎖定或隱藏時不能進模式。
   - **有 `paint` 的圖層不能再縮放、變形、自動拆**（`setMode`／`autoEnter` 擋下並 alert；自動拆出的零件有 `paint` 可以再進自動調，見上）：`paint` 記的是某個尺寸下的格子，換尺寸就對不上，而且縮放的 `xform` 會被 `paint` 隔開、合不回前面的 `xform`，修過的像素會被重新取樣。純裁切（保留框內、trim、移到／複製到新圖層）跟其他不重取樣的步驟照順序疊在後面就好。要再縮放就按「清除修補」：拿掉這層所有 `paint`、重播、記一筆全域 undo，模式內還沒確定的筆畫一起丟掉。
-- **擺放是數字**：`x`／`y`／`a`（角度）／`ox`／`oy`（中心點）不烘進圖。裝備直接寫進 `item.json`（見下方「存到 item.json」）；其他零件（身體、頭）存在同名 `.json`，由人手動抄進 `role.json`（手寫來源檔）。
+- **擺放是數字**：`x`／`y`／`a`（角度）／`ox`／`oy`（中心點）不烘進圖。裝備直接寫進 `item.json`、角色的身體／頭／手／屍體直接寫進 `role.json`（見下方「存到遊戲資料」）；配不到的零件存在同名 `.json`。
 - **世界座標＝圖片像素**；遊戲單位＝世界座標 × scale（全域，預設 0.25）。「套用 scale」只切換顯示的數字單位與預覽大小，不動像素。
 - **內容不跳位**：裁切、trim、改中心點時會自動補償 `x`／`y`；縮放以中心點為基準，`x`／`y` 不變。縮放面板的 % 以原圖為 100（`srcScale()`＝ops 裡所有 `xform` 的 `w/sw` 連乘，裁切不算），寬／高是目前的像素。
 
@@ -47,10 +47,11 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 - 開檔：先「選擇工作資料夾」（handle 存在 IndexedDB，重開 Chrome 後按「重新授權」），從左側清單點 PNG；或從檔案總管拖 PNG（可連同名 `.json`）進畫布。有同名 `.json` 就套用裡面的擺放。
 - 存檔：每層各自存，內建對話框只能存在工作資料夾底下，預設目錄是工作資料夾的 `output/`（沒有就用圖層所在目錄）、預設檔名 `原檔名-copy`，同名會問是否覆蓋；同時寫 PNG 和 `.json`。存檔不會自動 trim（以前的「存檔時自動 trim」拿掉了，舊專案的 `settings.autoTrim` 直接忽略），要裁就先按「裁到剛好」。
-- **存到 item.json**：`item.json` 是手寫的來源檔（`run_all` 不跑 `scripts/item.js`，`xls/item.xlsx` 已不同步，手動跑會蓋掉），裝備的擺放由工具直接寫進去。存檔對話框的「存到 item.json」勾選：
-  - 上方工具列有兩個資料夾：「工作資料夾」（例如 `images/`，開圖、存專案、一般存檔）和「遊戲資料夾」（`public/assets`，要有 `json/item.json` 和 `roles_64x64/`，不對就 alert）。兩個 handle 都存在 IndexedDB（`root`／`assets`），重開 Chrome 後各自按「重新授權」。
-  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite` 才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選遊戲資料夾就反灰，hover 看原因。配到好幾筆（共用 sprite）時列出 id 各自勾。spritesheet 的 sprite（`weapons:3`）配不到，武器不走這條。
-  - 勾了：PNG 覆蓋 `roles_64x64/<sprite>.png`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 `item.json`，勾選的 item 的 `equip` 寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
+- **存到遊戲資料**（item.json／role.json）：兩個都是手寫的來源檔（`xls/item.xlsx`、`xls/role.xlsx` 已不同步），擺放由工具直接寫進去。存檔對話框的「存到遊戲資料」勾選：
+  - 上方工具列有兩個資料夾：「工作資料夾」（例如 `images/`，開圖、存專案、一般存檔）和「遊戲資料夾」（`public/assets`，要有 `json/item.json` 和 `roles_64x64/`，不對就 alert；`json/role.json` 有就一起配）。兩個 handle 都存在 IndexedDB（`root`／`assets`），重開 Chrome 後各自按「重新授權」。
+  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選遊戲資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
+  - 勾了：PNG 覆蓋 `roles_64x64/<sprite>.png`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 json，勾選的那些物件寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，有改到的檔才整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
+  - 道具編輯器、角色編輯器開著也沒關係，它們存檔前會偵測到這裡寫過並三方合併。
   - 沒勾：照一般存檔（PNG＋sidecar）。
   - 新的 sprite 名稱還要手動在 `src/scenes/Preloader.js` 加 `this.load.image(...)`，遊戲才載得到。
 - 不透明度：平常只影響顯示（存在專案裡，不進 `.json`）。圖層不透明度 < 100% 時，存檔對話框多一個「烘入不透明度」勾選（預設勾），勾了 PNG 的 alpha 會乘上它。存檔觸發「改以剛存的檔當原圖」且有烘入時，opacity 會歸 1（不然會乘兩次）。匯出 icon 時只要有顯示中的半透明圖層也會出現同一個勾選。
@@ -85,4 +86,4 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、多邊形裁切（含派 pointer 事件測互動）、變形、像素修補（畫／擦／模式內 undo／接著編輯／擋縮放／清除）、合併、sidecar、icon；專案存讀、存到 item.json 用 OPFS 當工作資料夾和假的 `public/assets`，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
-不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、寫 `role.json`、自動加 `Preloader`、圖層分組、油漆桶／線段／選取搬移這類繪圖工具（像素模式只做鉛筆和橡皮擦）。
+不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、自動加 `Preloader`、圖層分組、油漆桶／線段／選取搬移這類繪圖工具（像素模式只做鉛筆和橡皮擦）。
