@@ -154,7 +154,7 @@ export class GameScene extends Scene
 
         const cols = this.map.map.width, rows = this.map.map.height;
         const tw = this.map.map.tileWidth, th = this.map.map.tileHeight;
-        // frame 對照 icons/cursors_atlas.json 的座標換算成 cursors spritesheet(33x33,margin 1,14 欄) 的 index：
+        // frame 對照 textures/icons/cursors_atlas.json 的座標換算成 cursors spritesheet(33x33,margin 1,14 欄) 的 index：
         // arrow_n=1, arrow_s=2, arrow_e=0, arrow_w=29
         const dirCfg = {
             t: {frame:1,  tiles:()=>Array.from({length:cols},(_,tx)=>[tx,0])},

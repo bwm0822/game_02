@@ -37,76 +37,76 @@ export class Preloader extends Scene
     {
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
-        this.load.image('logo', 'logo.png');
-        this.load.image('rip', 'rip.png');
+        this.load.image('logo', 'textures/others/logo.png');
+        this.load.image('rip', 'textures/others/rip.png');
 
-        this.load.image('icon_musk', 'portraits/icon_musk_m.png');
-        this.load.image('icon_trump', 'portraits/icon_trump_m.png');
-        this.load.image('icon_xi', 'portraits/icon_xi_m.png');
-        this.load.image('icon_macron', 'portraits/icon_macron_m.png');
-        this.load.image('icon_karen', 'portraits/icon_karen_m.png');
+        this.load.image('icon_musk', 'textures/icons/icon_musk_m.png');
+        this.load.image('icon_trump', 'textures/icons/icon_trump_m.png');
+        this.load.image('icon_xi', 'textures/icons/icon_xi_m.png');
+        this.load.image('icon_macron', 'textures/icons/icon_macron_m.png');
+        this.load.image('icon_karen', 'textures/icons/icon_karen_m.png');
 
-        this.load.image('body-man', 'roles_64x64/body-man.png');
-        this.load.image('hand-man', 'roles_64x64/hand-man.png');
+        this.load.image('body-man', 'textures/roles/parts/body-man.png');
+        this.load.image('hand-man', 'textures/roles/parts/hand-man.png');
 
-        this.load.image('head-trump', 'roles_64x64/head-trump.png');
-        this.load.image('head-wick', 'roles_64x64/head-wick.png');
-        this.load.image('head-musk', 'roles_64x64/head-musk.png');
-        this.load.image('head-xi', 'roles_64x64/head-xi.png');
-        this.load.image('head-macron', 'roles_64x64/head-macron.png');
-        this.load.image('head-melanie', 'roles_64x64/head-melanie.png');
+        this.load.image('head-trump', 'textures/roles/parts/head-trump.png');
+        this.load.image('head-wick', 'textures/roles/parts/head-wick.png');
+        this.load.image('head-musk', 'textures/roles/parts/head-musk.png');
+        this.load.image('head-xi', 'textures/roles/parts/head-xi.png');
+        this.load.image('head-macron', 'textures/roles/parts/head-macron.png');
+        this.load.image('head-melanie', 'textures/roles/parts/head-melanie.png');
 
-        this.load.image('cloth-hood', 'roles_64x64/cloth-hood.png');
-        this.load.image('cloth-armor', 'roles_64x64/cloth-armor.png');
-        this.load.image('cloth-boots', 'roles_64x64/cloth-boots.png');
-        this.load.image('cloth-gloves', 'roles_64x64/cloth-gloves.png');
+        this.load.image('cloth-hood', 'textures/equips/cloth-hood.png');
+        this.load.image('cloth-armor', 'textures/equips/cloth-armor.png');
+        this.load.image('cloth-boots', 'textures/equips/cloth-boots.png');
+        this.load.image('cloth-gloves', 'textures/equips/cloth-gloves.png');
 
-        this.load.image('leather-helmet', 'roles_64x64/leather-helmet.png');
-        this.load.image('leather-armor', 'roles_64x64/leather-armor.png');
-        this.load.image('leather-boots', 'roles_64x64/leather-boots.png');
-        this.load.image('leather-gloves', 'roles_64x64/leather-gloves.png');
+        this.load.image('leather-helmet', 'textures/equips/leather-helmet.png');
+        this.load.image('leather-armor', 'textures/equips/leather-armor.png');
+        this.load.image('leather-boots', 'textures/equips/leather-boots.png');
+        this.load.image('leather-gloves', 'textures/equips/leather-gloves.png');
 
-        this.load.image('trump', 'roles_64x64/trump.png');
-        this.load.image('musk', 'roles_64x64/musk.png');
-        this.load.image('xi', 'roles_64x64/xi.png');
-        this.load.image('macron', 'roles_64x64/macron.png');
-        this.load.image('melanie', 'roles_64x64/melanie.png');
+        this.load.image('trump', 'textures/roles/npcs/trump.png');
+        this.load.image('musk', 'textures/roles/npcs/musk.png');
+        this.load.image('xi', 'textures/roles/npcs/xi.png');
+        this.load.image('macron', 'textures/roles/npcs/macron.png');
+        this.load.image('melanie', 'textures/roles/npcs/melanie.png');
         
-        this.load.image('rogue', 'roles_64x64/rogue.png');
+        this.load.image('rogue', 'textures/roles/npcs/rogue.png');
 
-        this.load.image('arrow', 'roles_64x64/arrow.png');
+        this.load.image('arrow', 'textures/others/arrow.png');
 
 
-        this.load.image('blanket_v', 'props/blanket_v.png');
+        this.load.image('blanket_v', 'textures/props/blanket_v.png');
 
         
 
 
 
-        // this.load.atlas('cursors', 'icons/cursors.png', 'icons/cursors_atlas.json');
-        this.load.spritesheet('cursors', 'icons/cursors.png',{ frameWidth: 33, frameHeight: 33, margin: 1, space: 0});
-        this.load.spritesheet('buffs', 'icons/buffs.png', { frameWidth: 64, frameHeight: 64 });
-        this.load.spritesheet('portraits', 'icons/portraits.png', { frameWidth: 64, frameHeight: 64 });
+        // this.load.atlas('cursors', 'textures/icons/cursors.png', 'textures/icons/cursors_atlas.json');
+        this.load.spritesheet('cursors', 'textures/icons/cursors.png',{ frameWidth: 33, frameHeight: 33, margin: 1, space: 0});
+        this.load.spritesheet('buffs', 'textures/icons/buffs.png', { frameWidth: 64, frameHeight: 64 });
+        this.load.spritesheet('portraits', 'textures/icons/portraits.png', { frameWidth: 64, frameHeight: 64 });
 
-        this.load.spritesheet('items1', '32rogues/items.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('monsters', '32rogues/monsters.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('animals', '32rogues/animals.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('rogues', '32rogues/rogues.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('Warrior_Red', 'tiny/Warrior_Red.png', { frameWidth: 192, frameHeight: 192 });
+        this.load.spritesheet('items1', 'textures/items/32rogues/items.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('monsters', 'textures/roles/monsters/32rogues/monsters.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('animals', 'textures/roles/animals/32rogues/animals.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('rogues', 'textures/roles/npcs/32rogues/rogues.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('Warrior_Red', 'textures/roles/npcs/tiny/Warrior_Red.png', { frameWidth: 192, frameHeight: 192 });
 
-        this.load.spritesheet('doors', 'props/doors.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('doors', 'textures/props/doors.png', { frameWidth: 32, frameHeight: 32 });
         
         //this.load.spritesheet('knight', 'Knight/Idle.png', { frameWidth: 128, frameHeight: 128 });
         // this.load.atlas('knight', 'Knight/knight.png', 'Knight/knight_atlas.json');
         // this.load.animation('knight_anim', 'Knight/knight_anim.json');
 
-        // this.load.atlas('icons', 'icons/icons.png', 'icons/icons_atlas.json');
-        this.load.spritesheet('icons', 'icons/icons.png', { frameWidth: 32, frameHeight: 32 });
-        this.load.spritesheet('weapons', 'items/weapons.png', { frameWidth: 32, frameHeight: 32 });
+        // this.load.atlas('icons', 'textures/icons/icons.png', 'textures/icons/icons_atlas.json');
+        this.load.spritesheet('icons', 'textures/icons/icons.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('weapons', 'textures/items/weapons.png', { frameWidth: 32, frameHeight: 32 });
 
-        this.load.atlas('roles_v12', 'roles/roles_v12.png', 'roles/roles_v12_atlas.json');
-        this.load.atlas('hero', 'roles/hero.png', 'roles/hero_atlas.json');
-        this.load.spritesheet('role', 'roles/Color A Spitesheet.png', { frameWidth: 90, frameHeight: 64 });
+        this.load.atlas('roles_v12', 'textures/roles/npcs/roles_v12.png', 'textures/roles/npcs/roles_v12_atlas.json');
+        this.load.atlas('hero', 'textures/roles/npcs/hero.png', 'textures/roles/npcs/hero_atlas.json');
+        this.load.spritesheet('role', 'textures/roles/npcs/Color A Spitesheet.png', { frameWidth: 90, frameHeight: 64 });
 
         // this.load.plugin('rexbbcodetextplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rexbbcodetextplugin.min.js', true);
         // this.load.plugin('rextexteditplugin', 'https://raw.githubusercontent.com/rexrainbow/phaser3-rex-notes/master/dist/rextexteditplugin.min.js', true);

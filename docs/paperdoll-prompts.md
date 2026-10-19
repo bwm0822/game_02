@@ -26,10 +26,10 @@
 2. **每個零件開一個新對話**，不要在同一串裡連續畫（畫風會漂、錯誤會延續；ChatGPT 的記憶功能也會把舊設定帶進來，必要時用臨時對話）。
 3. 每次上傳參考圖：
    - `base-mannequin.png`（比例、朝向）
-   - `public/assets/roles_64x64/rogue.png`（畫風）
+   - `public/assets/textures/roles/npcs/rogue.png`（畫風）
    - 同類型已完成的零件 1 張（有的話；第一件沒有就省略）
 4. Prompt = §1 風格段落 ＋ 該零件模板，`{{ }}` 換成想要的內容。
-5. 拿到透明 PNG 後：裁到剛好 → 放進 `public/assets/roles_64x64/` → 在 `role.json`／`item.json` 調 `y`（必要時 `scale`）對齊。
+5. 拿到透明 PNG 後：裁到剛好 → 放進 `public/assets/textures/equips/`（裝備）或 `textures/roles/parts/`（身體零件）→ 在 `role.json`／`item.json` 調 `y`（必要時 `scale`）對齊。
 6. 畫不好時，**追加修正**比整段重寫有效，例如：`Same image, but remove the arms.`、`Keep everything, make the boots shorter.`
 
 ---
@@ -119,7 +119,7 @@ Draw ONLY a {{leather helmet / cloth hood}}, designed to be worn on the attached
 - Design: {{worn brown leather with stitching and a metal rim}}.
 ```
 
-說明：可以附 `public/assets/roles_64x64/cloth-hood.png` 當「挖空臉」的範例（它是正面的，要特別寫 `but in 3/4 view facing right`）。
+說明：可以附 `public/assets/textures/equips/cloth-hood.png` 當「挖空臉」的範例（它是正面的，要特別寫 `but in 3/4 view facing right`）。
 
 ### 盔甲（armor）
 

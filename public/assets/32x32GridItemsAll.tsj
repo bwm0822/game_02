@@ -1,5 +1,5 @@
 { "columns":18,
- "image":"tiles\/32x32GridItemsAll.png",
+ "image":"textures\/tiles\/32x32GridItemsAll.png",
  "imageheight":600,
  "imagewidth":576,
  "margin":0,

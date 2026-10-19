@@ -1850,10 +1850,10 @@ function needRoot()
 function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null, game = false)
 {
     const dlg = $('dlgSave');
-    let sel = {dir, path};
+    let sel = {dir, path}, png = '…';
     const toItem = () => game && $('dlgItem').checked;
     const showPath = () => {
-        $('dlgPath').textContent = toItem() ? `${S.assets.dir.name}/roles_64x64` : join(S.root.name, sel.path);
+        $('dlgPath').textContent = toItem() ? `${S.assets.dir.name}/textures/${png}` : join(S.root.name, sel.path);
         $('dlgTree').classList.toggle('off', toItem());
     };
     $('dlgTitle').textContent = title;
@@ -1863,11 +1863,11 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     $('dlgBake').checked = true;
     $('dlgItemRow').hidden = !game;
     let data = null;
-    const targets = () => {
-        let n = $('dlgName').value.trim();
-        if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
-        return data ? targetsOf(data, n) : [];
+    const curName = () => {
+        const n = $('dlgName').value.trim();
+        return n.toLowerCase().endsWith(ext) ? n.slice(0, -ext.length) : n;
     };
+    const targets = () => data ? targetsOf(data, curName()) : [];
     const refreshItem = () => {
         const ts = targets(), box = $('dlgItem'), was = !box.disabled;
         box.disabled = !ts.length;
@@ -1881,6 +1881,8 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
             return lab;
         }) : ts.map(t => Object.assign(el('span', 'dim'), {textContent: t.tag, title: `${t.file}.json`}))));
         $('dlgItemIds').hidden = !box.checked;
+        png = '…';
+        if (ts.length) pngDir(curName(), ts).then(p => {png = p; showPath();});
         showPath();
     };
     const loadGame = async () => {
@@ -1914,8 +1916,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     dlg.showModal();
     $('dlgName').select();
     return new Promise(res => dlg.addEventListener('close', async () => {
-        let n = $('dlgName').value.trim();
-        if (n.toLowerCase().endsWith(ext)) n = n.slice(0, -ext.length);
+        const n = curName();
         if (dlg.returnValue !== 'ok' || !n) return res(null);
         const bk = !!bake && $('dlgBake').checked;
         if (toItem())
@@ -1942,18 +1943,38 @@ function sidecar(L, name)
 }
 
 // ---------- 存到遊戲資料 ----------
-// 遊戲的 public/assets：PNG 寫進 roles_64x64/、擺放寫進 json/item.json 的 equip 或 json/role.json 的 body/head/hand/corpse
+// 遊戲的 public/assets：PNG 寫進 textures/ 底下、擺放寫進 json/item.json 的 equip 或 json/role.json 的 body/head/hand/corpse
 
 const PARTS = ['body', 'head', 'hand', 'corpse'];
+// 已經有同名 PNG 就覆蓋那張（例如 body 用的是 roles/npcs/ 的整隻角色圖），沒有才照擺放種類放
+const PNG_FIND = ['equips', 'roles/parts', 'roles/npcs'];
+const PNG_NEW = {item: 'equips', role: 'roles/parts'};
 
 // h：專案根目錄，或直接給 public/assets（無頭測試）
 async function setAssets(h)
 {
     const dir = await FS.tryDir(await FS.tryDir(h, 'public'), 'assets') ?? h;
-    const json = await FS.tryDir(dir, 'json'), roles = await FS.tryDir(dir, 'roles_64x64');
-    if (!json || !roles || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 public/assets/json/item.json 和 roles_64x64/`);
-    S.assets = {dir, json, roles, hasRole: !!await FS.tryFile(json, 'role.json')};
+    const json = await FS.tryDir(dir, 'json'), tex = await FS.tryDir(dir, 'textures');
+    if (!json || !tex || !await FS.tryFile(json, 'item.json')) throw new Error(`「${h.name}」裡沒有 public/assets/json/item.json 和 textures/`);
+    S.assets = {dir, json, tex, hasRole: !!await FS.tryFile(json, 'role.json')};
     return S.assets;
+}
+
+async function pngDir(name, ts)
+{
+    for (const p of PNG_FIND)
+    {
+        const d = await FS.resolveDir(S.assets.tex, p).catch(() => null);
+        if (d && await FS.tryFile(d, `${name}.png`)) return p;
+    }
+    return PNG_NEW[ts[0].file];
+}
+
+async function mkDir(root, path)
+{
+    let d = root;
+    for (const seg of path.split('/')) d = await d.getDirectoryHandle(seg, {create: true});
+    return d;
 }
 
 const readGameJson = async (name) => JSON.parse(await (await (await S.assets.json.getFileHandle(name)).getFile()).text());
@@ -1996,7 +2017,8 @@ async function saveLayer()
         const A = S.assets, game = await readGame();
         const ts = targetsOf(game, r.name).filter(t => r.game.includes(t.tag));
         if (!ts.length) return alert(`item.json／role.json 裡已經沒有 sprite 是「${r.name}」的擺放，沒有存檔`);
-        await FS.writeFile(A.roles, `${r.name}.png`, await PX.toPng(out));
+        const png = await pngDir(r.name, ts);
+        await FS.writeFile(await mkDir(A.tex, png), `${r.name}.png`, await PX.toPng(out));
         for (const t of ts) writeEquip(game[t.file][t.id][t.key], L);
         for (const f of ['item', 'role'])
             if (ts.some(t => t.file === f))
@@ -2004,7 +2026,7 @@ async function saveLayer()
                 await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
                 SH.notifySaved(`${f}.json`);
             }
-        return status(`已存 roles_64x64/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}`);
+        return status(`已存 textures/${png}/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));

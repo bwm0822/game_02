@@ -14,79 +14,79 @@
  "tiles":[
         {
          "id":0,
-         "image":"props\/Barrel.png",
+         "image":"textures\/props\/Barrel.png",
          "imageheight":22,
          "imagewidth":17
         }, 
         {
          "id":1,
-         "image":"props\/Bookshelf.png",
+         "image":"textures\/props\/Bookshelf.png",
          "imageheight":33,
          "imagewidth":33
         }, 
         {
          "id":2,
-         "image":"props\/Chair ( Side ).png",
+         "image":"textures\/props\/Chair ( Side ).png",
          "imageheight":21,
          "imagewidth":14
         }, 
         {
          "id":4,
-         "image":"props\/Crate.png",
+         "image":"textures\/props\/Crate.png",
          "imageheight":23,
          "imagewidth":16
         }, 
         {
          "id":5,
-         "image":"props\/Door ( Opened ).png",
+         "image":"textures\/props\/Door ( Opened ).png",
          "imageheight":30,
          "imagewidth":24
         }, 
         {
          "id":6,
-         "image":"props\/Door.png",
+         "image":"textures\/props\/Door.png",
          "imageheight":30,
          "imagewidth":24
         }, 
         {
          "id":7,
-         "image":"props\/Rug.png",
+         "image":"textures\/props\/Rug.png",
          "imageheight":50,
          "imagewidth":72
         }, 
         {
          "id":8,
-         "image":"props\/Table.png",
+         "image":"textures\/props\/Table.png",
          "imageheight":29,
          "imagewidth":38
         }, 
         {
          "id":11,
-         "image":"props\/bed_h.png",
+         "image":"textures\/props\/bed_h.png",
          "imageheight":22,
          "imagewidth":32
         }, 
         {
          "id":12,
-         "image":"props\/bed_v.png",
+         "image":"textures\/props\/bed_v.png",
          "imageheight":32,
          "imagewidth":20
         }, 
         {
          "id":13,
-         "image":"props\/blanket_h.png",
+         "image":"textures\/props\/blanket_h.png",
          "imageheight":22,
          "imagewidth":32
         }, 
         {
          "id":14,
-         "image":"props\/blanket_v.png",
+         "image":"textures\/props\/blanket_v.png",
          "imageheight":32,
          "imagewidth":20
         }, 
         {
          "id":16,
-         "image":"props\/Chair.png",
+         "image":"textures\/props\/Chair.png",
          "imageheight":23,
          "imagewidth":19
         }],

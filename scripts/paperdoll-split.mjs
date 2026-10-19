@@ -66,7 +66,7 @@ async function main() {
         console.error('用法: node scripts/paperdoll-split.mjs <輸入圖> [輸出目錄]');
         process.exit(1);
     }
-    const outDir = process.argv[3] || path.join(projectRoot, 'public/assets/roles_64x64');
+    const outDir = process.argv[3] || path.join(projectRoot, 'public/assets/textures/roles/parts');
     const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     const W = info.width, H = info.height;
 

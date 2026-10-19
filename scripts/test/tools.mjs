@@ -19,7 +19,7 @@ run('tools', async t => {
         const items = {apple: {cat: 'CAT_FOOD', gold: 1}, pear: {cat: 'CAT_FOOD', gold: 2}};
         const proj = await dir(opfs, 'game');
         const json = await dir(proj, 'public', 'assets', 'json');
-        await dir(proj, 'public', 'assets', 'roles_64x64');
+        await dir(proj, 'public', 'assets', 'textures');
         await dir(proj, 'images');
         await write(json, 'item.json', JSON.stringify(items, null, 2));
         await write(json, 'role.json', JSON.stringify({r1: {kind: 'npc'}}, null, 2));

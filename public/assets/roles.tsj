@@ -14,37 +14,37 @@
  "tiles":[
         {
          "id":0,
-         "image":"roles_64x64\/macron.png",
+         "image":"textures\/roles\/npcs\/macron.png",
          "imageheight":249,
          "imagewidth":129
         }, 
         {
          "id":1,
-         "image":"roles_64x64\/melanie.png",
+         "image":"textures\/roles\/npcs\/melanie.png",
          "imageheight":256,
          "imagewidth":126
         }, 
         {
          "id":2,
-         "image":"roles_64x64\/musk.png",
+         "image":"textures\/roles\/npcs\/musk.png",
          "imageheight":244,
          "imagewidth":116
         }, 
         {
          "id":3,
-         "image":"roles_64x64\/trump.png",
+         "image":"textures\/roles\/npcs\/trump.png",
          "imageheight":254,
          "imagewidth":122
         }, 
         {
          "id":4,
-         "image":"roles_64x64\/xi.png",
+         "image":"textures\/roles\/npcs\/xi.png",
          "imageheight":249,
          "imagewidth":126
         }, 
         {
          "id":5,
-         "image":"roles_64x64\/rogue.png",
+         "image":"textures\/roles\/npcs\/rogue.png",
          "imageheight":250,
          "imagewidth":141
         }],

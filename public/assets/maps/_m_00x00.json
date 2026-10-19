@@ -95,10 +95,6 @@
          "source":"..\/group.tsj"
         }, 
         {
-         "firstgid":241,
-         "source":"..\/ground_tiles.tsj"
-        }, 
-        {
          "firstgid":397,
          "source":"..\/spr_fencePost.tsj"
         }],

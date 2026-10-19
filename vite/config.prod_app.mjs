@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import path from 'path';
+import { dropTbd } from './droptbd.mjs';
 
 const phasermsg = () => {
     return {
@@ -28,6 +29,7 @@ export default defineConfig({
         port: 8080
     },
     plugins: [
-        phasermsg()
+        phasermsg(),
+        dropTbd()
     ]
 });

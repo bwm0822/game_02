@@ -436,10 +436,6 @@
          "source":"..\/32x32GridItemsAll.tsj"
         }, 
         {
-         "firstgid":1448,
-         "source":"..\/fence_tiles.tsj"
-        }, 
-        {
          "firstgid":1464,
          "source":"..\/spr_fencePost.tsj"
         }, 

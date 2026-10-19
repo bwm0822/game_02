@@ -645,7 +645,8 @@ run('paperdoll', async t => {
         const root = await navigator.storage.getDirectory(), img = await root.getDirectoryHandle('img');
         const assets = await root.getDirectoryHandle('assets', {create: true});
         const json = await assets.getDirectoryHandle('json', {create: true});
-        const roles = await assets.getDirectoryHandle('roles_64x64', {create: true});
+        const tex = await assets.getDirectoryHandle('textures', {create: true});
+        const equips = await tex.getDirectoryHandle('equips', {create: true});
         const output = await root.getDirectoryHandle('output', {create: true});
         const items = {
             h1: {cat: 'CAT_HELMET', equip: {sprite: 'hat', scale: 0.25, y: -6, a: 30, aim: 1}, drop: {sprite: 'hat', scale: 0.25}},
@@ -678,17 +679,18 @@ run('paperdoll', async t => {
         L.name = 'hat';
         L.x = 8; L.y = 0; L.a = 0;
         ({p} = await open());
+        await until(() => !$('dlgPath').textContent.endsWith('…'));
         out.def = [$('dlgName').value, $('dlgItem').checked, $('dlgPath').textContent, $('dlgTree').classList.contains('off'), $('dlgItemIds').textContent];
         $('dlgSave').close('ok'); await p;
         const after = JSON.parse(await readItems());
-        out.hat = [JSON.stringify(after.h1.equip), JSON.stringify(after.h1.drop), await has(roles, 'hat.png'), await has(roles, 'hat.json'), L.srcPath];
+        out.hat = [JSON.stringify(after.h1.equip), JSON.stringify(after.h1.drop), await has(equips, 'hat.png'), await has(equips, 'hat.json'), L.srcPath];
         out.format = (await readItems()) === JSON.stringify(after, null, 2);
 
         ({p} = await open());
         await rename('nope');
         out.nope = [$('dlgItem').disabled, $('dlgItem').checked, $('dlgItemLab').title, $('dlgPath').textContent];
         $('dlgSave').close('ok'); await p;
-        out.nopeSaved = [await has(output, 'nope.png'), await has(output, 'nope.json'), await has(roles, 'nope.png')];
+        out.nopeSaved = [await has(output, 'nope.png'), await has(output, 'nope.json'), await has(equips, 'nope.png')];
 
         ({p} = await open());
         await rename('cap');
@@ -721,7 +723,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('item.json：沒選專案資料夾時反灰、提示去上方選、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
-    t.eq('item.json：檔名配對得到時預設勾、存進 roles_64x64', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/roles_64x64', true, 'h1.equip']));
+    t.eq('item.json：檔名配對得到時預設勾、存進 textures/equips', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/textures/equips', true, 'h1.equip']));
     t.eq('item.json：只改擺放欄位、預設值刪掉、其他不動、不寫 sidecar、原圖不換', JSON.stringify(it.hat),
          JSON.stringify(['{"sprite":"hat","scale":0.25,"y":0,"aim":1,"x":2}', '{"sprite":"hat","scale":0.25}', true, false, 'img/a.png']));
     t.check('item.json：照 2 格縮排重寫', it.format);
