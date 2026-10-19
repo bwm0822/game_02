@@ -8,6 +8,8 @@ export default class Role extends GameObject
 {
     get icon() {return this.bb.meta.icon;}
     get job() {return this.bb.meta.job;}
+    get label() {return this.bb.meta?.lab ?? this.id;}
+    get des() {return this.bb.meta?.des ?? '';}
     get occludeType() {return GM.OCCLUDE.ROLE;}
     //------------------------------------------------------
     //  Local

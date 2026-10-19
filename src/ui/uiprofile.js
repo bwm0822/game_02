@@ -51,7 +51,7 @@ export default class UiProfile extends UiFrame
 
         // 操作介面
         p.setIcon = (owner)=>{pic.setIcon(owner.icon);}
-        p.setDes = (owner)=>{bbc.setText(`${owner.id.lab()}\n${owner.job?.lab()}`);}
+        p.setDes = (owner)=>{bbc.setText(`${owner.label}\n${owner.job?.lab()}`);}
         p.clear = ()=>{pR.removeAll(true);}
         p.addItem = (key,val)=>{ui.uStat.call(pR,scene,key,val);}
         

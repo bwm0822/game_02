@@ -12,7 +12,6 @@ import UiConfirm from './uiconfirm.js'
 import UiMessage from './uimessage.js'
 import DragService from '../services/dragService.js'
 import UiCursor from './uicursor.js'
-import Local from '../infra/local.js'
 
 export class Slot extends Icon
 {
@@ -367,11 +366,11 @@ export class Slot extends Icon
         if(this.owner.fill(this))
         {
             this.update();
-            UiMessage.push('_fill_water'.lab({who:Local.name(this.owner.id)}))
+            UiMessage.push('_fill_water'.lab({who:this.owner.label}))
         }
         else
         {
-            UiMessage.push('_bottle_full'.lab({who:Local.name(this.owner.id)}))
+            UiMessage.push('_bottle_full'.lab({who:this.owner.label}))
         }
     }
 

@@ -168,7 +168,7 @@ export default class UiDialog extends UiFrame
         this.owner = owner;
         // this.dialog = owner.getDialog();
         super.show();
-        this._spkA.setIcon(owner.icon).setName(owner.id.lab())
+        this._spkA.setIcon(owner.icon).setName(owner.label)
         this._spkB.setIcon(this.player.icon)
         this._scroll.mouseWheel(true);
         this._scroll.setT(0);

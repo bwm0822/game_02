@@ -136,6 +136,7 @@
 |---|---|
 | local.xlsx | `ui.<localId>` |
 | item.json（手寫，item.xlsx 已不轉檔） | `item.<id>` |
+| role.json（手寫） | `role.<id>` |
 | ability.xlsx | `ability.<id>` |
 | dialog.json 節點 | `dlg.<sheet>.<node>`（共用的是 `dlg._common.<node>`） |
 | line | `line.<sheet>.<concept>`（line 沒有 id，同一 sheet 同一 concept 的多句靠原文區分） |
@@ -152,6 +153,7 @@
 ### 17. NPC 顯示名稱
 - ~~`role.xlsx` 加 `name` 欄~~：實作時發現名字早就在 local.xlsx 的 `roles` 分頁（`karen`→凱倫…），顯示走 `owner.id.lab()`，情境 `ui.<roleId>`，不用另開欄位。
 - `rogue-1`/`rogue-2`/`orc`/`wolf`/`horse` 已補進 `roles` 分頁（只有名字，說明待補）。
+- 2026-10-19 改版（角色編輯器第 3 步）：名字／說明搬進 `role.json` 的 `lab`/`des`，情境改 `role.<id>`（en.xlsx 另開 `role` 分頁，舊 `ui.<角色>` 譯文已原樣搬過去）；local.xlsx 的 `roles` 分頁刪掉，混在裡面的職業 `rogue` 移到 `jobs`。`DB.load()` 跟 item 一樣 `_localize(roleDB, 'role')`，顯示走 `Role` 的 `label`／`des` getter（沒有 `lab` 就顯示 id）；`Local.name()` 只剩給不一定列在 local 的 key 用（採集工具的 `cat_sub`）。
 
 ### 18. 字型
 - 字型依語言決定：啟動時依當前語言設定 `GM.FONT`（font stack，不內嵌字型檔）。

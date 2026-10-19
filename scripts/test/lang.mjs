@@ -25,6 +25,7 @@ run('多國語言', async t => {
         d.DB.load(d.game.scene.getScene('MainMenu'));
         const r = {
             item: d.DB.item('sword_01').lab,
+            role: d.DB.role('karen').lab,
             ui: d.Local.lab('weapon'),
             bbc: d.Lang.tr('x', '[color=red]火[/color]{#n}'),
         };
@@ -34,6 +35,7 @@ run('多國語言', async t => {
         return r;
     });
     t.eq('qps 拉長加括號（DB.load 重跑不會疊兩層）', qps.item, '【匕首匕首】');
+    t.eq('qps 角色名', qps.role, '【凱倫凱倫】');
     t.eq('qps local', qps.ui, '【武器武器】');
     t.eq('qps 只重複看得到的字', qps.bbc, '【[color=red]火[/color]{#n}火】');
     t.eq('切回原文', qps.back, '匕首');
@@ -61,15 +63,18 @@ run('多國語言', async t => {
     t.eq('作用中 debuff', eff.activeId, '有效回合內，昏眩');
 
     const msg = await t.eval(d => ({
-        lock: '_lock_fail'.lab({who:d.Local.name('wick')}),
-        noName: d.Local.name('no_such_role'),
-        rogue: d.Local.name('rogue-1'),
-        confirm: '_lock_confirm'.lab({rate:40}),
+        lock: '_lock_fail'.lab({who:d.GM.player.label}),
+        noName: d.Local.name('no_such_key'),
+        rogue: d.DB.role('rogue-1').lab,
+        job: 'rogue'.lab(),
+        des: d.objs().find(g => g.id === 'karen').des,
     }));
     t.eq('訊息模板帶名字', msg.lock, '維克 開鎖失敗');
-    t.eq('沒列在 local 的 id 顯示原樣', msg.noName, 'no_such_role');
+    t.eq('Local.name 查不到顯示原樣', msg.noName, 'no_such_key');
     t.eq('盜賊有名字', msg.rogue, '盜賊');
-    t.eq('多行模板', msg.confirm, '用開鎖工具開鎖？\n成功率 40%');
+    t.eq('職業 rogue 還在 local', msg.job, '盜賊');
+    t.check('角色說明來自 role.json', msg.des.startsWith('每天從村外'), msg.des);
+    t.eq('多行模板', await t.eval(() => '_lock_confirm'.lab({rate:40})), '用開鎖工具開鎖？\n成功率 40%');
 
     // 假的翻譯表：驗證對話節點、選項、_shared 後備、storylet、日誌都有帶到情境
     await t.eval(d => {
@@ -105,8 +110,9 @@ run('多國語言', async t => {
     await t.eval(d => {d.Record.setting.lang = 'en'; d.Record.saveSetting();});
     await t.page.reload();
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單（英文）'});
-    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, shared: d.Lang.tr('item.apple', '可食用')}));
+    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, role: d.DB.role('karen').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, shared: d.Lang.tr('item.apple', '可食用')}));
     t.eq('en.json 的 item 譯文', en.item, 'Dagger');
+    t.eq('en.json 的 role 譯文', en.role, 'Gilly');
     t.eq('en.json 的 ui 譯文', en.ui, 'Weapon');
     t.eq('en 字型來自 _meta.font', en.font, 'Arial, sans-serif');
     t.eq('情境沒譯文走 _shared', en.shared, 'Edible');

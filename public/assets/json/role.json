@@ -1,6 +1,8 @@
 {
   "wick": {
     "kind": "player",
+    "lab": "維克",
+    "des": "冒險者",
     "icon": "head-wick",
     "job": "ranger",
     "gold": 100,
@@ -61,6 +63,8 @@
   "trump": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "川普",
+    "des": "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。",
     "icon": "head-trump",
     "job": "innkeeper",
     "gold": 200,
@@ -133,6 +137,8 @@
   "melanie": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "梅蘭妮",
+    "des": "漂亮大方的女士，跟川普共同經營一家旅館",
     "icon": "head-melanie",
     "job": "innkeeper",
     "gold": 200,
@@ -208,6 +214,8 @@
   "musk": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "馬斯克",
+    "des": "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席",
     "icon": "head-musk",
     "job": "smith",
     "gold": 200,
@@ -301,6 +309,8 @@
   "karen": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "凱倫",
+    "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～",
     "icon": "head-melanie",
     "job": "trader",
     "gold": 200,
@@ -374,6 +384,8 @@
   "xi": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "習近平",
+    "des": "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……",
     "icon": "head-xi",
     "job": "butcher",
     "gold": 200,
@@ -463,6 +475,8 @@
   "macron": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "馬克宏",
+    "des": "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。",
     "icon": "head-macron",
     "job": "merchant",
     "gold": 200,
@@ -547,6 +561,8 @@
   "guard-1": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "守衛",
+    "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
     "icon": "head-trump",
     "job": "guard",
     "gold": 50,
@@ -636,6 +652,8 @@
   "guard-2": {
     "kind": "npc",
     "loc": "brooklyn",
+    "lab": "守衛",
+    "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
     "icon": "head-trump",
     "job": "guard",
     "gold": 50,
@@ -724,6 +742,7 @@
   },
   "rogue-1": {
     "kind": "rogue",
+    "lab": "盜賊",
     "icon": "head-trump",
     "job": "rogue",
     "gold": 200,
@@ -789,6 +808,7 @@
   },
   "rogue-2": {
     "kind": "rogue",
+    "lab": "盜賊",
     "icon": "head-trump",
     "job": "rogue",
     "gold": 200,
@@ -857,6 +877,7 @@
   },
   "orc": {
     "kind": "monster",
+    "lab": "獸人",
     "icon": "monsters:0",
     "job": "rogue",
     "gold": 200,
@@ -912,6 +933,7 @@
   },
   "wolf": {
     "kind": "animal",
+    "lab": "狼",
     "icon": "animals:42",
     "meat": "raw_meat",
     "skin": "plet",
@@ -969,6 +991,7 @@
   },
   "horse": {
     "kind": "animal",
+    "lab": "馬",
     "icon": "animals:82",
     "meat": "raw_meat",
     "style": "skittish",
@@ -1024,6 +1047,8 @@
     }
   },
   "dummy": {
+    "lab": "木樁",
+    "des": "練習攻擊用",
     "icon": "rogue",
     "faceR": true,
     "anchor": {

@@ -1,6 +1,5 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js';
-import Local from '../infra/local.js'
 import DB from '../data/db.js';
 import {T,dlog} from '../core/debug.js'
 import Utility from '../core/utility.js';
@@ -489,9 +488,9 @@ export class COM_Stats extends Com
         {
             amount = (amount.a??0) + (amount.m??0)*100;
         }
-        const {send,bb}=this.ctx;
+        const {send}=this.ctx;
         this._states[GM.HUNGER] = Math.max(0, this._states[GM.HUNGER]+amount); 
-        send('msg','_hunger'.lab({who:Local.name(bb.id), pct:amount}))
+        send('msg','_hunger'.lab({who:this.root.label, pct:amount}))
     }
 
     _drink(amount=-50)
@@ -500,9 +499,9 @@ export class COM_Stats extends Com
         {
             amount = (amount.a??0) + (amount.m??0)*100;
         }
-        const {send,bb}=this.ctx;
+        const {send}=this.ctx;
         this._states[GM.THIRST] = Math.max(0, this._states[GM.THIRST]+amount);
-        send('msg','_thirst'.lab({who:Local.name(bb.id), pct:amount}))
+        send('msg','_thirst'.lab({who:this.root.label, pct:amount}))
     }
 
     //------------------------------------------------------

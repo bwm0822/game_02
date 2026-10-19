@@ -139,7 +139,7 @@ export default class UiObserve extends UiFrame
         this._statScroll = null;
 
         // name
-        ui.uBbc.call(content,scene,{text:this.owner.id.lab()})
+        ui.uBbc.call(content,scene,{text:this.owner.label})
 
         // favor
         if(this.owner.getFavor)
@@ -186,7 +186,7 @@ export default class UiObserve extends UiFrame
 
         // des
         ui.uDiv.call(content,scene,{expand:true})
-        ui.uDes.call(content,scene,this.owner.id.des());
+        ui.uDes.call(content,scene,this.owner.des);
 
         // debug(放最下面)
         this.addDebug(content, total);

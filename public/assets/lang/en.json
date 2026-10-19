@@ -275,64 +275,6 @@
   "ui.bottle": {
     "水壺": "Bottle"
   },
-  "ui.wick": {
-    "維克": "Wick",
-    "冒險者": "Adventurer"
-  },
-  "ui.dummy": {
-    "木樁": "Training Dummy",
-    "練習攻擊用": "For combat practice"
-  },
-  "ui.musk": {
-    "馬斯克": "Musk",
-    "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席": "A quiet but dependable man of middle years and a first-rate smith. Rumor has it he once ran the royal armory in the capital."
-  },
-  "ui.trump": {
-    "川普": "Trump",
-    "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。": "A plump, good-natured fellow who loves jokes and gossip. If there's news in the village, he's heard it first."
-  },
-  "ui.karen": {
-    "凱倫": "Gilly",
-    "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～": "Every day she brings the freshest produce in from the fields and woods and hawks it from her cart, her voice sweet and loud~"
-  },
-  "ui.xi": {
-    "習近平": "Xi Jinping",
-    "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……": "Handles all the village's slaughtering and butchery. They say his cleaver comes down cleaner than the smith's hammer..."
-  },
-  "ui.macron": {
-    "馬克宏": "Macron",
-    "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。": "A short, wrinkled old man who always seems to have \"something you didn't know you needed.\""
-  },
-  "ui.melanie": {
-    "梅蘭妮": "Melanie",
-    "漂亮大方的女士，跟川普共同經營一家旅館": "A charming, generous lady who runs the inn with Trump."
-  },
-  "ui.rogue": {
-    "盜賊": "Bandit"
-  },
-  "ui.guard-1": {
-    "守衛": "Guard",
-    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
-  },
-  "ui.guard-2": {
-    "守衛": "Guard",
-    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
-  },
-  "ui.rogue-1": {
-    "盜賊": "Bandit"
-  },
-  "ui.rogue-2": {
-    "盜賊": "Bandit"
-  },
-  "ui.orc": {
-    "獸人": "Orc"
-  },
-  "ui.wolf": {
-    "狼": "Wolf"
-  },
-  "ui.horse": {
-    "馬": "Horse"
-  },
   "ui.ranger": {
     "遊俠": "Ranger",
     "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺": "A master archer, forest hunter and wilderness survivor. Light-footed as the wind and harder to notice than a ghost."
@@ -359,6 +301,9 @@
   "ui.guard": {
     "守衛": "Guard",
     "巡邏村莊、維持治安。": "Patrols the village and keeps the peace."
+  },
+  "ui.rogue": {
+    "盜賊": "Bandit"
   },
   "ui.str": {
     "力量": "STR",
@@ -879,6 +824,61 @@
     "毛皮": "Pelt",
     "從動物身上剝下來、帶有毛髮的完整皮毛。": "A whole hide with the fur still on, skinned from an animal."
   },
+  "role.wick": {
+    "維克": "Wick",
+    "冒險者": "Adventurer"
+  },
+  "role.trump": {
+    "川普": "Trump",
+    "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。": "A plump, good-natured fellow who loves jokes and gossip. If there's news in the village, he's heard it first."
+  },
+  "role.melanie": {
+    "梅蘭妮": "Melanie",
+    "漂亮大方的女士，跟川普共同經營一家旅館": "A charming, generous lady who runs the inn with Trump."
+  },
+  "role.musk": {
+    "馬斯克": "Musk",
+    "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席": "A quiet but dependable man of middle years and a first-rate smith. Rumor has it he once ran the royal armory in the capital."
+  },
+  "role.karen": {
+    "凱倫": "Gilly",
+    "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～": "Every day she brings the freshest produce in from the fields and woods and hawks it from her cart, her voice sweet and loud~"
+  },
+  "role.xi": {
+    "習近平": "Xi Jinping",
+    "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……": "Handles all the village's slaughtering and butchery. They say his cleaver comes down cleaner than the smith's hammer..."
+  },
+  "role.macron": {
+    "馬克宏": "Macron",
+    "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。": "A short, wrinkled old man who always seems to have \"something you didn't know you needed.\""
+  },
+  "role.guard-1": {
+    "守衛": "Guard",
+    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
+  },
+  "role.guard-2": {
+    "守衛": "Guard",
+    "駐守南門的守衛，跟搭檔輪流日夜巡邏村子": "A guard posted at the south gate. Takes turns with a partner patrolling the village day and night."
+  },
+  "role.rogue-1": {
+    "盜賊": "Bandit"
+  },
+  "role.rogue-2": {
+    "盜賊": "Bandit"
+  },
+  "role.orc": {
+    "獸人": "Orc"
+  },
+  "role.wolf": {
+    "狼": "Wolf"
+  },
+  "role.horse": {
+    "馬": "Horse"
+  },
+  "role.dummy": {
+    "木樁": "Training Dummy",
+    "練習攻擊用": "For combat practice"
+  },
   "ability.steal": {
     "偷竊": "Stealing",
     "從 NPC 或怪物身上獲取財物。成功率視敏捷而定。": "Take valuables from NPCs or monsters. Success depends on DEX."
@@ -1182,8 +1182,8 @@
     "戒子": "Ring",
     "背包": "Bag",
     "離開": "Leave",
-    "盜賊": "Bandit",
     "守衛": "Guard",
+    "盜賊": "Bandit",
     "可食用": "Edible",
     "接受": "Accept",
     "拒絕": "Decline",

@@ -29,6 +29,7 @@ export default class DB
         this._localize(this._itemDB, 'item');
 
         this._roleDB = scene.cache.json.get('role');
+        this._localize(this._roleDB, 'role');
 
         this._dialogDB = scene.cache.json.get('dialog');
 

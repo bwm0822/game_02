@@ -41,7 +41,7 @@ export default class UiSteal extends UiFrame
         const bbc = ui.uBbc.call(p, scene, {text: '', ext: {align: 'top'}})
 
         p.setIcon = (owner) => {pic.setIcon(owner.icon);}
-        p.setDes = (owner) => {bbc.setText(`${owner.id.lab()}\n${owner.job?.lab()}`);}
+        p.setDes = (owner) => {bbc.setText(`${owner.label}\n${owner.job?.lab()}`);}
         this._info = p;
 
         return this;

@@ -3,7 +3,6 @@ import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
 import DB from '../data/db.js'
-import Local from '../infra/local.js'
 const _tag = 'loot';
 
 //--------------------------------------------------
@@ -38,13 +37,13 @@ export class COM_Loot extends Com
         if(bb.meta.skin) 
         {
             taker.receive?.({id: bb.meta.skin, count: 1});
-            send('msg', '_loot_get'.lab({who:Local.name(taker.id), item:DB.item(bb.meta.skin)?.lab ?? bb.meta.skin}));
+            send('msg', '_loot_get'.lab({who:taker.label, item:DB.item(bb.meta.skin)?.lab ?? bb.meta.skin}));
         }
 
         if(bb.meta.meat) 
         {
             taker.receive?.({id: bb.meta.meat, count: 1});
-            send('msg', '_loot_get'.lab({who:Local.name(taker.id), item:DB.item(bb.meta.meat)?.lab ?? bb.meta.meat}));
+            send('msg', '_loot_get'.lab({who:taker.label, item:DB.item(bb.meta.meat)?.lab ?? bb.meta.meat}));
         }
 
         // 3. 關閉互動

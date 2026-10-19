@@ -11,7 +11,7 @@ const JSON_DIR = './public/assets/json';
 const XLS_DIR  = './xls/lang';
 const OUT_DIR  = './public/assets/lang';
 const LEGACY   = `${XLS_DIR}/_legacy_%s.json`;
-const SHEETS   = ['ui', 'item', 'ability', 'dialog', 'story', 'shared'];
+const SHEETS   = ['ui', 'item', 'role', 'ability', 'dialog', 'story', 'shared'];
 const COLS     = ['情境', '原文', '譯文', '檢查', '審核', '建議'];
 const WIDTHS   = [28, 50, 50, 16, 8, 30];
 const SHARED_MIN = 3;           // 同一句出現在幾個情境以上，就列進 shared 當候選
@@ -24,7 +24,7 @@ function sheetOf(ctx)
 {
     if (ctx === '_shared') return 'shared';
     const dom = ctx.split('.')[0];
-    return {ui: 'ui', item: 'item', ability: 'ability', dlg: 'dialog', line: 'dialog', story: 'story'}[dom];
+    return {ui: 'ui', item: 'item', role: 'role', ability: 'ability', dlg: 'dialog', line: 'dialog', story: 'story'}[dom];
 }
 
 // ── 抽取 ──
@@ -36,7 +36,7 @@ function extract()
         out.set(`${ctx}\u0000${src}`, {ctx, src});
     };
     for (const [id, v] of Object.entries(read('local'))) {add(`ui.${id}`, v.lab); add(`ui.${id}`, v.des);}
-    for (const [dom, file] of [['item', 'item'], ['ability', 'ability']])
+    for (const [dom, file] of [['item', 'item'], ['role', 'role'], ['ability', 'ability']])
         for (const [id, v] of Object.entries(read(file))) {add(`${dom}.${id}`, v.lab); add(`${dom}.${id}`, v.des);}
 
     const nodes = list => {

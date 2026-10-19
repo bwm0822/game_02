@@ -2,7 +2,6 @@ import Com from './com.js'
 import {GM} from '../core/setting.js'
 import Utility from '../core/utility.js'
 import UiConfirm from '../ui/uiconfirm.js'
-import Local from '../infra/local.js'
 const _tag = 'lock';
 
 //--------------------------------------------------
@@ -27,7 +26,7 @@ export class COM_Lock extends Com
 
         if(keyid && opener.queryItem?.((e)=>e.id===keyid).length > 0)
         {
-            this._doUnlock(opener.id);
+            this._doUnlock(opener);
             return;
         }
 
@@ -50,11 +49,11 @@ export class COM_Lock extends Com
 
         if(Utility.roll(rate))
         {
-            this._doUnlock(opener.id);
+            this._doUnlock(opener);
         }
         else
         {
-            send('msg', '_lock_fail'.lab({who:Local.name(opener.id)}));
+            send('msg', '_lock_fail'.lab({who:opener.label}));
             if(--tool.times<=0) 
             {
                 opener.removeItem?.(tool);
@@ -67,14 +66,14 @@ export class COM_Lock extends Com
     {
         const {send} = this.ctx;
         this._locked = true;
-        send('msg', '_lock_locked'.lab({who:Local.name(locker.id)}));
+        send('msg', '_lock_locked'.lab({who:locker.label}));
     }
 
-    _doUnlock(id)
+    _doUnlock(opener)
     {
         const {send} = this.ctx;
         this._locked = false;
-        send('msg', '_lock_unlocked'.lab({who:Local.name(id)}));
+        send('msg', '_lock_unlocked'.lab({who:opener.label}));
     }
 
     // 撬鎖成功率：dex 越高越好，diff 越高越難，上限 90%

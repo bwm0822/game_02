@@ -47,7 +47,7 @@ export default class UiTrade extends UiFrame
 
         // 操作介面
         p.setIcon = (owner)=>{pic.setIcon(owner.icon);}
-        p.setDes = (owner)=>{bbc.setText(`${owner.id.lab()}\n${owner.job?.lab()}`);}
+        p.setDes = (owner)=>{bbc.setText(`${owner.label}\n${owner.job?.lab()}`);}
         this._info=p;
 
         return this;

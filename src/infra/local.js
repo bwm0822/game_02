@@ -17,7 +17,7 @@ export default class Local
         return src === undefined ? `[color=red]${key}[/color]` : tr(`ui.${key}`, src, args);
     }
 
-    // 角色 id 這類不一定有列在 local.xlsx 的，查不到就顯示 id 本身
+    // 不一定有列在 local.xlsx 的 key（例如採集工具的 cat_sub），查不到就顯示 key 本身；角色名稱用 role.label
     static name(id)
     {
         const src = this._local?.[id]?.lab;
