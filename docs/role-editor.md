@@ -25,7 +25,7 @@
 
 ## 檢查
 
-`lab`、`w`/`h`/`anchor`（RoleView 直接讀，沒有會出錯）、數字／布林型別、kind、style、sprite／icon 在 Preloader、`meat`/`skin`/物品欄／裝備的道具存在（裝備還要有 `equip`）、物品數超過容量、技能存在、作息（上面）。只警告不擋存檔。
+`lab`、`w`/`h`/`anchor`（RoleView 直接讀，沒有會出錯）、數字／布林型別、kind、style、sprite／icon 在 textures.json、`meat`/`skin`/物品欄／裝備的道具存在（裝備還要有 `equip`）、物品數超過容量、技能存在、作息（上面）。只警告不擋存檔。
 
 ## 程式結構
 

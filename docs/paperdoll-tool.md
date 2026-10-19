@@ -53,7 +53,7 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
   - 勾了：PNG 寫進 `textures/` 底下——`equips/`、`roles/parts/`、`roles/npcs/` 哪個已有 `<sprite>.png` 就覆蓋那張（`pngDir()`，例如 `body` 用的整隻角色圖在 `roles/npcs/`），都沒有才照第一個勾選的擺放放：item → `equips/`、角色 → `roles/parts/`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 json，勾選的那些物件寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，有改到的檔才整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
   - 道具編輯器、角色編輯器開著也沒關係，它們存檔前會偵測到這裡寫過並三方合併。
   - 沒勾：照一般存檔（PNG＋sidecar）。
-  - 新的 sprite 名稱還要手動在 `src/scenes/Preloader.js` 加 `this.load.image(...)`，遊戲才載得到。
+  - PNG 是新建的（原本沒有同名檔）時狀態列提示：要按殼的「更新圖片清單」重產 `textures.json`，遊戲才載得到（不自動按）。檔名就是 texture key，整個 `textures/` 不能撞名，撞了更新清單會報錯。
 - 不透明度：平常只影響顯示（存在專案裡，不進 `.json`）。圖層不透明度 < 100% 時，存檔對話框多一個「烘入不透明度」勾選（預設勾），勾了 PNG 的 alpha 會乘上它。存檔觸發「改以剛存的檔當原圖」且有烘入時，opacity 會歸 1（不然會乘兩次）。匯出 icon 時只要有顯示中的半透明圖層也會出現同一個勾選。
 - `.json`（sidecar，給人看的，遊戲不讀）：
 
@@ -87,4 +87,4 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、多邊形裁切（含派 pointer 事件測互動）、變形、像素修補（畫／擦／模式內 undo／接著編輯／擋縮放／清除）、合併、sidecar、icon；專案存讀、存到 item.json 用 OPFS 當工作資料夾和假的 `public/assets`，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
-不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、自動加 `Preloader`、圖層分組、油漆桶／線段／選取搬移這類繪圖工具（像素模式只做鉛筆和橡皮擦）。
+不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、自動更新圖片清單、圖層分組、油漆桶／線段／選取搬移這類繪圖工具（像素模式只做鉛筆和橡皮擦）。

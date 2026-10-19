@@ -14,6 +14,10 @@
 - 交接：iframe 載入後 `postMessage({type:'ready'})` 給殼，殼回 `{type:'project', dir}`（handle 可以 structured clone；同 origin，殼授權過工具就能直接用）。殼重選資料夾時會再送給所有已載入的 iframe。
 - 各工具往下找：道具／角色 `public/assets`（改名／刪除會掃 `xls/`、`src/`）；紙娃娃遊戲資料 `public/assets`、工作資料夾固定 `images/`（沒有就在狀態列提示）。
 
+## 更新圖片清單
+
+殼上方的「更新圖片清單」：`POST /__tools/textures`（`vite/config.dev.mjs` 的 `tools-api` plugin，server 端直接呼叫 `scripts/textures.js` 的 `run()`），成功就廣播 `{type:'saved', file:'textures.json'}`，各工具的選圖器（`icons.js`）重讀；失敗（撞名、格子衝突…）把錯誤顯示在狀態列，不寫檔。不用專案資料夾。遊戲要重新整理才會載到新圖。
+
 ## 存檔廣播與未存檔
 
 - `BroadcastChannel('tools')`，訊息 `{type:'saved', file}`，`file` 是 `public/assets/json` 底下的檔名。發送：`doc.js` 存檔後、紙娃娃「存到遊戲資料」寫了 `item.json`／`role.json` 後。

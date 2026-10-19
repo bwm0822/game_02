@@ -23,7 +23,7 @@
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
   - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅；有錯時右上角出現 `[修正]`（`parse()` 的 `err.fix` 有修法：補 `,` `:` 右括號 `"`、裸值／數字 key 加引號、刪怪字元、修數字，一次修一個，走 `insertText` 可 Ctrl+Z，不自動套用）或 `[錯誤]`（修不了，不能按），原因都在按鈕的 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。
-- icon／sprite 選圖器：`icons.js` 用 `?raw` 讀 `src/scenes/Preloader.js`，解析 `load.image`／`load.spritesheet`（frameWidth/Height、margin、spacing）／`load.atlas`，註解掉的行不算；新增 sheet 不用改工具。四種寫法：`sheet:格子`、單張圖 key、相對 `public/assets` 的路徑（含 `/`）、emoji（不是 ASCII 識別字就當文字）。atlas 只認 key 不畫圖。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
+- icon／sprite 選圖器：`icons.js` 讀遊戲開機載的 `/assets/json/textures.json`（`scripts/textures.js` 產生，見 CLAUDE.md「圖片載入」），殼按「更新圖片清單」後收到 `saved: textures.json` 廣播就重讀。三種寫法：`sheet:格子`、單張圖 key（檔名）、emoji（不是 ASCII 識別字就當文字）；不再接受路徑。格子數照 Phaser spritesheet 算（margin 只扣一次）。atlas 只認 key 不畫圖。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
 
 ## 新增／複製／改名／刪除
 
@@ -35,7 +35,7 @@
 
 ## 檢查（validate）
 
-數字欄位不是數字／該整數不是整數、enum 不認識的值、`itemref`／`make.items`／`bb.harvest.id` 指到不存在的道具、icon／sprite 的 key 沒在 Preloader、sheet 格子超出範圍（圖載完才判斷）、路徑圖載入失敗、有 cat 卻沒 lab／icon。
+數字欄位不是數字／該整數不是整數、enum 不認識的值、`itemref`／`make.items`／`bb.harvest.id` 指到不存在的道具、icon／sprite 的 key 沒在 textures.json、sheet 格子超出範圍（圖載完才判斷）、有 cat 卻沒 lab／icon。
 
 ## 程式結構
 
@@ -46,11 +46,11 @@
 | `../common/doc.js` | `createDoc(opt)`：編輯一份 `{id: 資料}` json 的核心（接殼給的資料夾、讀寫、undo、存前三方合併、複製／改名／刪除、掃 assets 引用、快捷鍵），角色編輯器共用 |
 | `../common/form.js` | `fieldInput()` 依欄位定義畫輸入框；`createForm()` 的原始 JSON 框、可收合的框 |
 | `../common/views.js` | `createViews()` 左邊清單、總覽表、雙擊編輯；`renderDatalists()` |
-| `../common/icons.js` | 解析 Preloader、`resolve()`／`check()`／`iconEl()`、選圖器 `pickIcon()` |
+| `../common/icons.js` | 讀 textures.json、`resolve()`／`check()`／`iconEl()`、選圖器 `pickIcon()` |
 | `../common/jsonedit.js`、`combo.js`、`dom.js`、`obj.js`、`style.css` | JSON 框、下拉選單、`h()`／`ask()`、`setAt()`／`merge3()` 等小工具、共用樣式 |
 | `../common/fs.js` | 跟紙娃娃、殼共用的 File System Access 工具（`dirStore(app)` 只剩殼在用） |
 | `../common/shell.js` | 跟殼的接線：收專案資料夾、存檔廣播、回報未存狀態 |
 
-測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、Preloader 解析、總覽表）。
+測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、textures.json 解析、總覽表）。
 
 不做的：翻譯（`lab`/`des` 的譯文還是 `xls/lang/en.xlsx`＋`scripts/lang.js`）、裝備疊圖預覽（紙娃娃的事）、改其他 json、自動改外部引用。
