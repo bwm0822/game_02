@@ -29,7 +29,7 @@ npm run dist
 npm run deploy
 
 # 無頭瀏覽器測試（自己開 vite + 無頭 Chrome，只印 ✔/✘，失敗時截圖到 scripts/test/out/）
-node scripts/test/rogue.mjs     # 另有 events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）
+node scripts/test/rogue.mjs     # 另有 events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、tools.mjs（工具殼接線）
 ```
 
 無頭測試：`scripts/test/harness.mjs` 提供 `newGame()`／`gotoMap()`／`talk()`／`kill()`／`give()`／`q()` 等工具，透過 `src/main.js` 只在開發版掛的 `window.__dbg` 操作遊戲（不走路、不戰鬥，直接呼叫遊戲函式）；角色在 `scene.roles`、其他物件在 `scene.gos`，工具裡的 `d.objs()` 兩者都包含。用的是電腦裡現有的 Chrome（`puppeteer-core`，不下載 Chromium）。改了劇情、地圖生成相關的東西後，優先跑對應的測試而不是請使用者手動玩。
@@ -101,9 +101,10 @@ dist/           # 建置輸出（勿手動修改）
 - **NPC 作息**：`role.json` 的 `schedule` 是「時間（`HH:MM` 出發 / `@HH:MM` 抵達）→ `map`+`go` 目的地」，路線由 `scripts/navgraph.js` 產生的 `navgraph.json` 算（改了 Tiled 地圖要重跑）；`ScheduleManager` 在背景推進所有 NPC 的抽象狀態（`Record.game.schedule`），NPC 在玩家地圖時才由 `COM_Schedule` 實體負責走路；修改作息相關程式碼前請先參考 [docs/schedule-architecture.md](docs/schedule-architecture.md)
 - **NPC AI**：`src/components/ai/` 的 `COM_AI` 每回合讓各 `Beh*` 用 `score()` 評分、取最高分的那個執行 `act()`（平手時陣列中排前面的贏）；感知是 `COM_Sense` 寫入 `bb.sensePlayer`；性格權重依 `role.json` 的 `style`，動物用 `animal:true`（不會開門）；行為裡移動用 `findPath`+`move`，不用 `cmd_move`，而且要處理 `PATH.NONE`（沒有 `pts`）；修改 AI 相關程式碼前請先參考 [docs/ai-architecture.md](docs/ai-architecture.md)
 - **多國語言**：資料 xlsx 只寫原文（中文），顯示文字一律走 `tr(情境, 原文, args)`（`src/infra/lang.js`）或 `'key'.lab()`（local.xlsx）；識別字（quality、節點、storylet、spawn…）一律 ASCII；開發版設定頁可切偽語系 `qps` 抓爆版與漏接；譯文在 `xls/lang/<lang>.xlsx`（人只填「譯文」「審核」欄），`node scripts/lang.js` 抽原文、merge、產出 `public/assets/lang/<lang>.json`（run_all 最後一步；`--add <lang>` 加語言、`--prune` 刪 orphan）；分階段實作中，修改顯示文字或語言相關程式碼前請先參考 [docs/i18n-architecture.md](docs/i18n-architecture.md)
-- **紙娃娃編輯器**：`tools/paperdoll/`（純 HTML + Canvas 2D，`npm run dev` 後開 `/tools/paperdoll/`）調整零件圖的裁切／縮放／透明清除，擺放數字由存檔對話框「存到遊戲資料」直接寫進 `item.json` 的 `equip` 或 `role.json` 的 `body`/`head`/`hand`/`corpse`（檔名配 sprite，PNG 同時覆蓋 `roles_64x64/`），配不到的零件存成同名 `.json`；**`item.json` 是手寫來源檔**，`run_all` 不跑 `scripts/item.js`，`xls/item.xlsx` 已不同步，其他欄位用道具編輯器改；遊戲零件的 origin 讀 `part.ox ?? 0.5`、`part.oy ?? 1`；修改前請先參考 [docs/paperdoll-tool.md](docs/paperdoll-tool.md)
-- **道具編輯器**：`tools/item/`（`npm run dev` 後開 `/tools/item/`）視覺化編輯 `item.json`，欄位定義在 `tools/item/schema.js`（遊戲加新欄位改這裡，沒列到的 key 會原樣保留），icon 選圖器解析 `Preloader.js`；存檔保留 key 順序、存前偵測外部修改做道具層級合併、檢查只警告不擋；`tools/common/`（`doc.js` 讀寫/undo/合併/改名核心、`form.js`、`views.js`、icon 選圖器、JSON 框…）給各編輯器共用，`fs.js` 紙娃娃也用；修改前請先參考 [docs/item-editor.md](docs/item-editor.md)
-- **角色編輯器**：`tools/role/`（`npm run dev` 後開 `/tools/role/`）視覺化編輯 `role.json`，欄位定義在 `tools/role/schema.js`，性格選項從 `com_ai.js` 的 `wTBL` 解析、作息選項從 `navgraph.json`；右側是照 `RoleView` 規則的靜態合成預覽；選專案根目錄時改名／刪除會多掃 `xls/`、`src/`（只列不改）；修改前請先參考 [docs/role-editor.md](docs/role-editor.md)
+- **工具殼**：`tools/index.html`（`npm run dev` 後開 `/tools/`）用分頁＋iframe 裝道具／角色／紙娃娃編輯器，專案根目錄只在殼選一次（工具頁不再有選資料夾 UI，直接開只會提示從 `/tools/` 開），存 json 用 `BroadcastChannel('tools')` 通知其他分頁重讀，工具端接線在 `tools/common/shell.js`；修改前請先參考 [docs/tools-shell.md](docs/tools-shell.md)
+- **紙娃娃編輯器**：`tools/paperdoll/`（純 HTML + Canvas 2D，殼的「紙娃娃」分頁，工作資料夾固定是專案的 `images/`）調整零件圖的裁切／縮放／透明清除，擺放數字由存檔對話框「存到遊戲資料」直接寫進 `item.json` 的 `equip` 或 `role.json` 的 `body`/`head`/`hand`/`corpse`（檔名配 sprite，PNG 同時覆蓋 `roles_64x64/`），配不到的零件存成同名 `.json`；**`item.json` 是手寫來源檔**，`run_all` 不跑 `scripts/item.js`，`xls/item.xlsx` 已不同步，其他欄位用道具編輯器改；遊戲零件的 origin 讀 `part.ox ?? 0.5`、`part.oy ?? 1`；修改前請先參考 [docs/paperdoll-tool.md](docs/paperdoll-tool.md)
+- **道具編輯器**：`tools/item/`（殼的「道具」分頁）視覺化編輯 `item.json`，欄位定義在 `tools/item/schema.js`（遊戲加新欄位改這裡，沒列到的 key 會原樣保留），icon 選圖器解析 `Preloader.js`；存檔保留 key 順序、存前偵測外部修改做道具層級合併、檢查只警告不擋；`tools/common/`（`doc.js` 讀寫/undo/合併/改名核心、`form.js`、`views.js`、icon 選圖器、JSON 框…）給各編輯器共用，`fs.js` 紙娃娃也用；修改前請先參考 [docs/item-editor.md](docs/item-editor.md)
+- **角色編輯器**：`tools/role/`（殼的「角色」分頁）視覺化編輯 `role.json`，欄位定義在 `tools/role/schema.js`，性格選項從 `com_ai.js` 的 `wTBL` 解析、作息選項從 `navgraph.json`；右側是照 `RoleView` 規則的靜態合成預覽；改名／刪除會多掃 `xls/`、`src/`（只列不改）；修改前請先參考 [docs/role-editor.md](docs/role-editor.md)
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
 - **`src/old/`**：廢棄程式碼，不可引用也不可修改

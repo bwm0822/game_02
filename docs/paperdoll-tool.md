@@ -2,7 +2,7 @@
 
 用來調整紙娃娃零件圖（身體、頭、裝備、武器）的大小與位置，讓它們疊在一起對得上。
 
-開啟：`npm run dev` 後瀏覽 `http://localhost:8080/tools/paperdoll/`（只支援 Chrome／Edge，用 File System Access API 讀寫檔案）。正式 build 只打包 `index.html`，工具不會進遊戲。
+開啟：`npm run dev` 後瀏覽 `http://localhost:8080/tools/` 的「紙娃娃」分頁（殼見 [tools-shell.md](tools-shell.md)；只支援 Chrome／Edge，用 File System Access API 讀寫檔案）。正式 build 只打包 `index.html`，工具不會進遊戲。
 
 ## 設計原則
 
@@ -45,11 +45,11 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 ## 檔案
 
-- 開檔：先「選擇工作資料夾」（handle 存在 IndexedDB，重開 Chrome 後按「重新授權」），從左側清單點 PNG；或從檔案總管拖 PNG（可連同名 `.json`）進畫布。有同名 `.json` 就套用裡面的擺放。
+- 開檔：工作資料夾固定是專案的 `images/`（殼選了專案資料夾就自動設好），從左側清單點 PNG；或從檔案總管拖 PNG（可連同名 `.json`）進畫布。有同名 `.json` 就套用裡面的擺放。
 - 存檔：每層各自存，內建對話框只能存在工作資料夾底下，預設目錄是工作資料夾的 `output/`（沒有就用圖層所在目錄）、預設檔名 `原檔名-copy`，同名會問是否覆蓋；同時寫 PNG 和 `.json`。存檔不會自動 trim（以前的「存檔時自動 trim」拿掉了，舊專案的 `settings.autoTrim` 直接忽略），要裁就先按「裁到剛好」。
 - **存到遊戲資料**（item.json／role.json）：兩個都是手寫的來源檔（`xls/item.xlsx`、`xls/role.xlsx` 已不同步），擺放由工具直接寫進去。存檔對話框的「存到遊戲資料」勾選：
-  - 上方工具列有兩個資料夾：「工作資料夾」（例如 `images/`，開圖、存專案、一般存檔）和「遊戲資料夾」（`public/assets`，要有 `json/item.json` 和 `roles_64x64/`，不對就 alert；`json/role.json` 有就一起配）。兩個 handle 都存在 IndexedDB（`root`／`assets`），重開 Chrome 後各自按「重新授權」。
-  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選遊戲資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
+  - 兩個資料夾都從殼給的專案根目錄推出來：工作資料夾＝`images/`（開圖、存專案、一般存檔），遊戲資料＝`public/assets`（要有 `json/item.json` 和 `roles_64x64/`，不對就在狀態列提示；`json/role.json` 有就一起配）。寫了 `item.json`／`role.json` 會廣播給其他分頁（見 [tools-shell.md](tools-shell.md)）。
+  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選專案資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
   - 勾了：PNG 覆蓋 `roles_64x64/<sprite>.png`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 json，勾選的那些物件寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，有改到的檔才整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
   - 道具編輯器、角色編輯器開著也沒關係，它們存檔前會偵測到這裡寫過並三方合併。
   - 沒勾：照一般存檔（PNG＋sidecar）。
@@ -80,7 +80,8 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 | `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／移除綠色／變形／自動／像素）、UI 同步、開存檔 |
 | `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、mask、alphaClear、fill、key、removeGreen、paint、opaqueBounds、blobs（連通塊）；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
 | `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
-| `../common/fs.js` | 資料夾 handle（IndexedDB `paperdoll`）、列目錄、讀寫檔；跟道具編輯器共用 |
+| `../common/fs.js` | 列目錄、讀寫檔；跟道具編輯器共用 |
+| `../common/shell.js` | 跟殼的接線：收專案資料夾、寫 json 後廣播、回報未存狀態 |
 
 `item.json` 的其他欄位用道具編輯器改（[item-editor.md](item-editor.md)）；兩邊同時開著也沒關係，道具編輯器存檔前會偵測紙娃娃寫過的 `equip` 並合併。
 

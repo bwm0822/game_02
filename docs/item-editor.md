@@ -1,10 +1,10 @@
 # 道具編輯器（tools/item）
 
-視覺化編輯 `public/assets/json/item.json`（手寫來源檔，沒有 xlsx）。純 HTML＋JS，`npm run dev` 後開 `/tools/item/`。
+視覺化編輯 `public/assets/json/item.json`（手寫來源檔，沒有 xlsx）。純 HTML＋JS，`npm run dev` 後開 `/tools/` 的「道具」分頁（殼見 [tools-shell.md](tools-shell.md)）。
 
 ## 讀寫
 
-- 上方「選擇遊戲資料夾」選 `public/assets` 或專案根目錄（自動找 `public/assets`；選根目錄時改名／刪除會多掃 `xls/`、`src/`），handle 存在 IndexedDB `item`（跟紙娃娃分開），Chrome 重開後按「重新授權」。
+- 專案資料夾由殼選、傳進來（`setAssets()` 自動找 `public/assets`，改名／刪除會多掃 `xls/`、`src/`；無頭測試直接給 `public/assets` 也行，只掃 json）。別的分頁存了 `item.json` 會自動重讀或提示，見 [tools-shell.md](tools-shell.md)。
 - Ctrl+S 存檔，整份 `JSON.stringify(items, null, 2)`（沒有結尾換行，跟紙娃娃同格式）；沒改就存檔內容一字不差。
 - key 順序保留：改值不動位置、新 key 接在物件最後、清空的欄位整個刪 key，刪完變空的子物件（`cook: {}`）也一起刪。
 - 存檔前重新讀檔，跟上次讀／存時的原文比；被改過（例如紙娃娃「存到 item.json」）就問「合併後存檔／直接覆蓋／取消」。合併是**道具層級**三方合併：只有一邊改的取那邊，兩邊都改的以編輯器為準並列出來。
@@ -43,12 +43,13 @@
 |---|---|
 | `schema.js` | 欄位定義（`FIELDS`、`CAT_FIELDS`、`EFF_FIELDS`、`EFF_BY_TYPE`、`TABS`、`ITEM_REFS`、`template`）、`effSummary()`；遊戲加了新欄位改這裡 |
 | `main.js` | item 專屬：檢查、表單（effects 卡片、材料表）、總覽表格子、清單分組、新增 |
-| `../common/doc.js` | `createDoc(opt)`：編輯一份 `{id: 資料}` json 的核心（選資料夾、讀寫、undo、存前三方合併、複製／改名／刪除、掃 assets 引用、快捷鍵），角色編輯器共用 |
+| `../common/doc.js` | `createDoc(opt)`：編輯一份 `{id: 資料}` json 的核心（接殼給的資料夾、讀寫、undo、存前三方合併、複製／改名／刪除、掃 assets 引用、快捷鍵），角色編輯器共用 |
 | `../common/form.js` | `fieldInput()` 依欄位定義畫輸入框；`createForm()` 的原始 JSON 框、可收合的框 |
 | `../common/views.js` | `createViews()` 左邊清單、總覽表、雙擊編輯；`renderDatalists()` |
 | `../common/icons.js` | 解析 Preloader、`resolve()`／`check()`／`iconEl()`、選圖器 `pickIcon()` |
 | `../common/jsonedit.js`、`combo.js`、`dom.js`、`obj.js`、`style.css` | JSON 框、下拉選單、`h()`／`ask()`、`setAt()`／`merge3()` 等小工具、共用樣式 |
-| `../common/fs.js` | 跟紙娃娃共用的 File System Access 工具（`dirStore(app)`） |
+| `../common/fs.js` | 跟紙娃娃、殼共用的 File System Access 工具（`dirStore(app)` 只剩殼在用） |
+| `../common/shell.js` | 跟殼的接線：收專案資料夾、存檔廣播、回報未存狀態 |
 
 測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、Preloader 解析、總覽表）。
 

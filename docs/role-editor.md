@@ -1,11 +1,11 @@
 # 角色編輯器（tools/role）
 
-視覺化編輯 `public/assets/json/role.json`（手寫來源檔，`xls/role.xlsx` 已不同步）。`npm run dev` 後開 `/tools/role/`。核心跟道具編輯器共用 `tools/common/`，讀寫／undo／合併／收合框／JSON 框／combo 的行為都一樣，見 [item-editor.md](item-editor.md)，這裡只寫角色專屬的。
+視覺化編輯 `public/assets/json/role.json`（手寫來源檔，`xls/role.xlsx` 已不同步）。`npm run dev` 後開 `/tools/` 的「角色」分頁（殼見 [tools-shell.md](tools-shell.md)）。核心跟道具編輯器共用 `tools/common/`，讀寫／undo／合併／收合框／JSON 框／combo 的行為都一樣，見 [item-editor.md](item-editor.md)，這裡只寫角色專屬的。
 
 ## 讀寫
 
-- 「選擇遊戲資料夾」建議選**專案根目錄**（自動找 `public/assets`），改名／刪除才會一起掃 `xls/`、`src/`；選 `public/assets` 也能用，只掃 json。handle 存在 IndexedDB `role`。
-- 唯讀參考資料走 dev server（不經資料夾 handle）：`item.json`（道具名、裝備圖）、`ability.json`（技能）、`navgraph.json`（作息的地圖／目的地）、`com_ai.js?raw`（性格）。改了這些要重新整理頁面。
+- 專案資料夾由殼給（專案根目錄，自動找 `public/assets`），改名／刪除會一起掃 `xls/`、`src/`。
+- 唯讀參考資料走 dev server（不經資料夾 handle）：`item.json`（道具名、裝備圖）、`ability.json`（技能）、`navgraph.json`（作息的地圖／目的地）、`com_ai.js?raw`（性格）。殼裡別的分頁存了 `item.json` 會自動重抓；其他的改了要重新整理頁面。
 - 存檔前三方合併：紙娃娃之後會「存到 role.json」（body/head/hand 擺放），合併是角色層級。
 
 ## 介面
