@@ -42,8 +42,12 @@
 | 檔案 | 內容 |
 |---|---|
 | `schema.js` | 欄位定義（`FIELDS`、`CAT_FIELDS`、`EFF_FIELDS`、`EFF_BY_TYPE`、`TABS`、`ITEM_REFS`、`template`）、`effSummary()`；遊戲加了新欄位改這裡 |
-| `icons.js` | 解析 Preloader、`resolve()`／`check()`／`iconEl()`、選圖器 `pickIcon()` |
-| `main.js` | 狀態、undo、讀寫與合併、檢查、表單、總覽表、清單、新增／改名／刪除 |
+| `main.js` | item 專屬：檢查、表單（effects 卡片、材料表）、總覽表格子、清單分組、新增 |
+| `../common/doc.js` | `createDoc(opt)`：編輯一份 `{id: 資料}` json 的核心（選資料夾、讀寫、undo、存前三方合併、複製／改名／刪除、掃 assets 引用、快捷鍵），角色編輯器共用 |
+| `../common/form.js` | `fieldInput()` 依欄位定義畫輸入框；`createForm()` 的原始 JSON 框、可收合的框 |
+| `../common/views.js` | `createViews()` 左邊清單、總覽表、雙擊編輯；`renderDatalists()` |
+| `../common/icons.js` | 解析 Preloader、`resolve()`／`check()`／`iconEl()`、選圖器 `pickIcon()` |
+| `../common/jsonedit.js`、`combo.js`、`dom.js`、`obj.js`、`style.css` | JSON 框、下拉選單、`h()`／`ask()`、`setAt()`／`merge3()` 等小工具、共用樣式 |
 | `../common/fs.js` | 跟紙娃娃共用的 File System Access 工具（`dirStore(app)`） |
 
 測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、Preloader 解析、總覽表）。
