@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>遊戲工具</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./common/style.css">
+<style>
+    #tabs button { position: relative; }
+    #tabs button.dirty::after { content: '●'; color: #fc8; margin-left: 4px; }
+    #frames { flex: 1; position: relative; min-height: 0; }
+    #frames iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<header>
+    <span id="tabs">
+        <button data-tab="item">道具</button>
+        <button data-tab="role">角色</button>
+        <button data-tab="paperdoll">紙娃娃</button>
+    </span>
+    <span class="sep"></span>
+    <button id="btnProject" title="選 game_02 專案根目錄（底下要有 public/assets）">選擇專案資料夾</button>
+    <button id="btnReauth" hidden></button>
+    <span id="projectName" class="dim">（未選擇）</span>
+    <span id="status" class="dim"></span>
+</header>
+<div id="frames"></div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

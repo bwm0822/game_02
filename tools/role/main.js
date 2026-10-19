@@ -11,10 +11,11 @@ import {previewEl} from './preview.js';
 
 // role.json 裡沒有角色互相引用的欄位，改名只動 key
 const D = createDoc({
-    app: 'role', file: 'role.json', noun: '角色',
+    file: 'role.json', noun: '角色',
     external: '可能是紙娃娃「存到 role.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
+    onSaved: (file) => {if (file === 'item.json') loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
 S.ext = {items: {}, abilities: {}, maps: {}};    // 唯讀參考資料：item.json、ability.json、navgraph.json 的「地圖 → 物件名稱」
@@ -302,7 +303,7 @@ function renderForm()
 {
     const id = S.sel, r = S.data[id];
     const view = document.getElementById('view');
-    if (!r) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選角色）' : '先在上方選擇遊戲資料夾（public/assets 或專案根目錄）'));
+    if (!r) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選角色）' : '先在上方選擇專案資料夾'));
     const shown = new Set([...SC.shownFields(r), ...(S.extra[id] ?? [])]);
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.has(k));
     const warns = validate(id);
@@ -418,7 +419,7 @@ async function loadRefs()
     await loadRefs();
     render();
     IC.ready.then(render);
-    await D.start();
+    D.start();
 })();
 
 // 給無頭測試用

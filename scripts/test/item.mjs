@@ -43,7 +43,7 @@ run('item', async t => {
         await ie.setAssets(assets);
         await ie.IC.ready;
         out.warns = ie.validateAll();
-        out.load = [Object.keys(S.items).length === Object.keys(JSON.parse(orig)).length, $('assetsName').textContent];
+        out.load = [Object.keys(S.items).length === Object.keys(JSON.parse(orig)).length];
         out.canonical = orig === JSON.stringify(JSON.parse(orig), null, 2);
 
         await save('save');
@@ -350,7 +350,6 @@ run('item', async t => {
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
-    t.eq('表頭顯示資料夾名', r.load[1], 'assets');
     t.check('item.json 是 JSON.stringify(…, null, 2) 格式', r.canonical);
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('改欄位', r.edit[0], 99);

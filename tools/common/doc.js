@@ -1,19 +1,18 @@
-// 編輯 public/assets/json/<file> 一份 {id: 資料} 的共用核心：選資料夾、讀寫、undo、存檔前三方合併、新增／複製／改名／刪除、掃引用
-// 頁面要有的元素：btnAssets btnReauth assetsName btnReload btnSave dirty btnUndo btnRedo btnForm btnTable status search btnNew view dlgAsk
+// 編輯 public/assets/json/<file> 一份 {id: 資料} 的共用核心：接殼給的專案資料夾、讀寫、undo、存檔前三方合併、新增／複製／改名／刪除、掃引用
+// 頁面要有的元素：btnReload btnSave dirty btnUndo btnRedo btnForm btnTable status search btnNew view dlgAsk
 import * as FS from './fs.js';
 import * as XL from './xlsx.js';
+import * as SH from './shell.js';
 import {$, h, ul, ask, status} from './dom.js';
 import {str, setAt, merge3} from './obj.js';
 
 const ID_RE = /^[A-Za-z0-9_-]+$/;
 
-// opt: {app, file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to)}
+// opt: {file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file)}
 export function createDoc(opt)
 {
-    const DIRS = FS.dirStore(opt.app);
     const S = {
-        assets: null,           // {dir: public/assets, json: public/assets/json, root: 專案根目錄（選的是 public/assets 時是 null）}
-        pending: null,          // 還沒授權的 handle
+        assets: null,           // {dir: public/assets, json: public/assets/json, root: 專案根目錄（測試直接給 public/assets 時是 null）}
         data: {},
         saved: {},              // 上次讀檔／存檔的內容，判斷哪些改過
         diskText: null,         // 上次讀檔／存檔時硬碟上的原文，存檔前比對有沒有被別人改過
@@ -39,6 +38,7 @@ export function createDoc(opt)
         $('btnRedo').disabled = S.hi >= S.hist.length - 1;
         $('btnSave').disabled = $('btnReload').disabled = $('btnNew').disabled = !S.assets;
         $('dirty').hidden = !isDirty();
+        SH.setDirty(isDirty());
         if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
     }
 
@@ -80,7 +80,7 @@ export function createDoc(opt)
     // ---------- 讀寫 ----------
     const jsonOf = async (dir) => {const j = dir && await FS.tryDir(dir, 'json'); return j && await FS.tryFile(j, opt.file) ? j : null;};
 
-    // 可以選 public/assets，也可以選專案根目錄（改名／刪除時多掃 xls/、src/）
+    // 殼給的是專案根目錄（改名／刪除時多掃 xls/、src/）；無頭測試會直接給 public/assets
     async function setAssets(dir)
     {
         let root = null, assets = dir, json = await jsonOf(dir);
@@ -88,14 +88,10 @@ export function createDoc(opt)
         {
             assets = await FS.tryDir(await FS.tryDir(dir, 'public') ?? dir, 'assets');
             json = await jsonOf(assets);
-            if (!json) throw new Error(`「${dir.name}」裡沒有 json/${opt.file}，要選遊戲的 public/assets 或專案根目錄`);
+            if (!json) throw new Error(`「${dir.name}」裡沒有 public/assets/json/${opt.file}`);
             root = dir;
         }
         S.assets = {dir: assets, json, root};
-        S.pending = null;
-        $('btnReauth').hidden = true;
-        $('assetsName').textContent = dir.name;
-        $('assetsName').classList.remove('dim');
         await reload();
     }
 
@@ -119,7 +115,7 @@ export function createDoc(opt)
 
     async function save()
     {
-        if (!S.assets) return status('先選擇遊戲資料夾');
+        if (!S.assets) return status('先在上方選擇專案資料夾');
         const disk = await FS.readText(S.assets.json, opt.file);
         if (disk !== S.diskText)
         {
@@ -142,6 +138,7 @@ export function createDoc(opt)
         await FS.writeFile(S.assets.json, opt.file, new Blob([text]));
         S.diskText = text;
         S.saved = JSON.parse(text);
+        SH.notifySaved(opt.file);
         status(`已存檔 ${new Date().toLocaleTimeString()}`);
         render();
     }
@@ -226,7 +223,7 @@ export function createDoc(opt)
 
     const refList = (refs) => [
         refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
-        !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；選專案根目錄才會一起掃 xls/、src/'),
+        !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 xls/、src/'),
     ];
     const innerList = (refs) => refs.length ? ul(refs) : h('div', {class: 'dim'}, '（沒有）');
 
@@ -278,13 +275,6 @@ export function createDoc(opt)
     }
 
     // ---------- 事件 ----------
-    $('btnAssets').onclick = async () => {
-        try {await setAssets(await DIRS.pick('assets'));}
-        catch (e) {if (e.name !== 'AbortError') status(e.message);}
-    };
-    $('btnReauth').onclick = async () => {
-        if (S.pending && await FS.askPermission(S.pending)) setAssets(S.pending).catch(e => status(e.message));
-    };
     $('btnReload').onclick = async () => {
         if (isDirty() && await ask('重新讀取', '還沒存檔的修改會不見', [['ok', '重新讀取'], ['cancel', '取消']]) !== 'ok') return;
         reload();
@@ -305,19 +295,23 @@ export function createDoc(opt)
         if (e.ctrlKey && k === 'z' && !e.shiftKey) {e.preventDefault(); undo();}
         if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
     });
-    addEventListener('beforeunload', (e) => {if (isDirty()) e.preventDefault();});
+    // 離開警告由殼統一處理（依各分頁回報的 dirty）
 
-    // 上次選的資料夾還有權限就直接讀，沒有就顯示「重新授權」
-    async function start()
+    // 別的分頁存了檔：自己的檔沒改過就直接重讀，改過就只提示（存檔時會三方合併）
+    function onSaved(file)
     {
-        const dir = await DIRS.saved('assets');
-        if (dir && await FS.hasPermission(dir)) await setAssets(dir).catch(e => status(e.message));
-        else if (dir)
+        if (file === opt.file && S.assets)
         {
-            S.pending = dir;
-            $('btnReauth').textContent = `重新授權「${dir.name}」`;
-            $('btnReauth').hidden = false;
+            if (isDirty()) status(`${file} 在別的分頁存過了，存檔時會合併`);
+            else reload().then(() => status(`${file} 在別的分頁存過了，已重讀`)).catch(e => status(e.message));
         }
+        opt.onSaved?.(file);
+    }
+
+    function start()
+    {
+        SH.onSaved(onSaved);
+        SH.onProject(dir => setAssets(dir).catch(e => status(e.message)));
     }
 
     return {S, render, commit, undo, redo, set, setAssets, reload, save, isDirty, dirty,

@@ -46,7 +46,7 @@ run('role', async t => {
         await re.setAssets(proj);
         await re.IC.ready;
         out.warns = re.validateAll();
-        out.load = [Object.keys(S.data).length === Object.keys(JSON.parse(orig)).length, $('assetsName').textContent, !!S.assets.root, S.assets.dir.name];
+        out.load = [Object.keys(S.data).length === Object.keys(JSON.parse(orig)).length, !!S.assets.root, S.assets.dir.name];
         await save('save');
         out.roundtrip = (await disk()) === orig;
 
@@ -151,8 +151,7 @@ run('role', async t => {
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部角色', r.load[0], true);
-    t.eq('選專案根目錄：表頭顯示資料夾名', r.load[1], 'game');
-    t.check('選專案根目錄：找到 public/assets', r.load[2] && r.load[3] === 'assets');
+    t.check('選專案根目錄：找到 public/assets', r.load[1] && r.load[2] === 'assets');
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('字串道具改 id 還是字串', r.invRename, '"sword_02"');
     t.eq('字串道具數量改成 3 變物件', r.invCount, JSON.stringify({id: 'sword_02', count: 3}));

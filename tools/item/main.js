@@ -9,7 +9,7 @@ import '../common/combo.js';
 import * as SC from './schema.js';
 
 const D = createDoc({
-    app: 'item', file: 'item.json', noun: '道具',
+    file: 'item.json', noun: '道具',
     external: '可能是紙娃娃「存到 item.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs, renameRefs: (from, to) => {for (const it of Object.values(S.items)) for (const ref of SC.ITEM_REFS) ref.set(it, from, to);},
@@ -193,7 +193,7 @@ function renderForm()
 {
     const id = S.sel, it = S.items[id];
     const view = document.getElementById('view');
-    if (!it) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇遊戲資料夾（public/assets）'));
+    if (!it) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇專案資料夾'));
     const shown = [...new Set([...SC.shownFields(it), ...(S.extra[id] ?? [])])];
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.includes(k));
     const warns = validate(id);
@@ -277,7 +277,7 @@ function draw()
     S.fx = await fetch('/assets/json/fx.json').then(r => r.json()).then(Object.keys).catch(() => []);
     render();
     IC.ready.then(render);
-    await D.start();
+    D.start();
 })();
 
 // 給無頭測試用
