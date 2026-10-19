@@ -384,31 +384,31 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/terrain_tiles_v2.tsj"
+         "source":"..\/tilesets\/terrain_tiles_v2.tsj"
         }, 
         {
          "firstgid":161,
-         "source":"..\/cursors_map.tsj"
+         "source":"..\/tilesets\/cursors_map.tsj"
         }, 
         {
          "firstgid":343,
-         "source":"..\/roles.tsj"
+         "source":"..\/tilesets\/npcs.tsj"
         }, 
         {
          "firstgid":349,
-         "source":"..\/group.tsj"
+         "source":"..\/tilesets\/free_items.tsj"
         }, 
         {
          "firstgid":397,
-         "source":"..\/animals.tsj"
+         "source":"..\/tilesets\/animals.tsj"
         }, 
         {
          "firstgid":541,
-         "source":"..\/32x32GridItemsAll.tsj"
+         "source":"..\/tilesets\/32x32GridItemsAll.tsj"
         }, 
         {
          "firstgid":865,
-         "source":"..\/icons.tsj"
+         "source":"..\/tilesets\/icons.tsj"
         }],
  "tilewidth":32,
  "type":"map",

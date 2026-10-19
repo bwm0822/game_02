@@ -25,7 +25,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/terrain_tiles_v2.tsj"
+         "source":"..\/..\/tilesets\/terrain_tiles_v2.tsj"
         }],
  "tilewidth":32,
  "type":"map",

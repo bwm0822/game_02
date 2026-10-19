@@ -158,6 +158,18 @@ export default class TileMap
         });
     }
 
+    // *.tsj 裡的 image 是相對 *.tsj 的路徑（Tiled 規定），轉成相對 assets 的路徑，集合型 tileset 也拿它當 texture key
+    static _resolve(source, image)
+    {
+        const segs = source.split('/').slice(0, -1);
+        for (const s of image.split('/'))
+        {
+            if (s === '..') {segs.pop();}
+            else if (s !== '.') {segs.push(s);}
+        }
+        return segs.join('/');
+    }
+
     // 外部tileset(*.tsj) 的資料取出來，載入外部 tileset(*.png)
     static _preprocess_Tileset(scene, map)
     {
@@ -166,8 +178,10 @@ export default class TileMap
         map.data.tilesets.forEach((tile,index) => {
             if(tile.source) // tile 是外部 tileset(*.tsj)
             {
-                //let source = tile.source.split('.').shift();
-                let json = scene.cache.json.get(tile.source);
+                const raw = scene.cache.json.get(tile.source);
+                const json = {...raw};
+                if(raw.image) {json.image = this._resolve(tile.source, raw.image);}
+                if(raw.tiles) {json.tiles = raw.tiles.map(t => t.image ? {...t, image: this._resolve(tile.source, t.image)} : t);}
                 delete tile.source;
                 map.data.tilesets[index] = {...tile, ...json};
                 if(json.image)  // (*.tsj) 為 .png

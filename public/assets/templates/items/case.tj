@@ -12,7 +12,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/..\/group.tsj"
+     "source":"..\/..\/tilesets\/free_items.tsj"
     },
  "type":"template"
 }

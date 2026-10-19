@@ -271,23 +271,23 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/houe_1.tsj"
+         "source":"..\/..\/tilesets\/interior.tsj"
         }, 
         {
          "firstgid":65,
-         "source":"..\/..\/tiles.tsj"
+         "source":"..\/..\/tilesets\/tiles.tsj"
         }, 
         {
          "firstgid":569,
-         "source":"..\/..\/props.tsj"
+         "source":"..\/..\/tilesets\/props.tsj"
         }, 
         {
          "firstgid":586,
-         "source":"..\/..\/icons.tsj"
+         "source":"..\/..\/tilesets\/icons.tsj"
         }, 
         {
          "firstgid":1018,
-         "source":"..\/..\/32x32GridItemsAll.tsj"
+         "source":"..\/..\/tilesets\/32x32GridItemsAll.tsj"
         }],
  "tilewidth":32,
  "type":"map",

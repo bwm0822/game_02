@@ -1,5 +1,5 @@
 { "columns":21,
- "image":"textures\/tiles\/32rogues\/tiles.png",
+ "image":"..\/textures\/tiles\/32rogues\/tiles.png",
  "imageheight":768,
  "imagewidth":672,
  "margin":0,

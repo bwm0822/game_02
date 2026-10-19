@@ -56,6 +56,8 @@ public/         # 靜態資源（音效、地圖、JSON 資料）
                     # 第三方素材包保留包資料夾（如 items/32rogues/）；minimap/ 是 scripts/minimap.js 產出；
                     # tbd/ 放沒用到的圖（保留原相對路徑，prod build 由 vite/droptbd.mjs 刪掉不打包）
                     # 集合型 tileset 的 texture key 就是圖的路徑（item.json 的 sprite 也這樣寫），搬圖要一起改
+  assets/tilesets/  # Tiled 外部 tileset（*.tsj）：圖片來源＋格子屬性 collide/weight/block；image 相對 .tsj（../textures/...），
+                    # src/core/tilemap.js 解析成相對 assets 的路徑（Phaser 不支援外部 tileset 跟 template，由 tilemap.js 合併）
 vite/           # Vite 設定檔（config.dev.mjs、config.prod.mjs、config.prod_app.mjs）
 electron/       # Electron 主程序
 dist/           # 建置輸出（勿手動修改）

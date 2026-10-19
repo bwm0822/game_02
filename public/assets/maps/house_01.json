@@ -174,11 +174,11 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/houe_1.tsj"
+         "source":"..\/tilesets\/interior.tsj"
         }, 
         {
          "firstgid":65,
-         "source":"..\/props.tsj"
+         "source":"..\/tilesets\/props.tsj"
         }],
  "tilewidth":32,
  "type":"map",

@@ -694,23 +694,23 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/terrain_tiles_v2.tsj"
+         "source":"..\/..\/tilesets\/terrain_tiles_v2.tsj"
         }, 
         {
          "firstgid":161,
-         "source":"..\/..\/buildings.tsj"
+         "source":"..\/..\/tilesets\/buildings.tsj"
         }, 
         {
          "firstgid":193,
-         "source":"..\/..\/spr_fencePost.tsj"
+         "source":"..\/..\/tilesets\/spr_fencePost.tsj"
         }, 
         {
          "firstgid":202,
-         "source":"..\/..\/group.tsj"
+         "source":"..\/..\/tilesets\/free_items.tsj"
         }, 
         {
          "firstgid":250,
-         "source":"..\/..\/roles.tsj"
+         "source":"..\/..\/tilesets\/npcs.tsj"
         }],
  "tilewidth":32,
  "type":"map",

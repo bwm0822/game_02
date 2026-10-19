@@ -23,7 +23,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/..\/32x32GridItemsAll.tsj"
+     "source":"..\/..\/tilesets\/32x32GridItemsAll.tsj"
     },
  "type":"template"
 }

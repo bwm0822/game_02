@@ -81,15 +81,15 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/tiles.tsj"
+         "source":"..\/..\/tilesets\/tiles.tsj"
         }, 
         {
          "firstgid":505,
-         "source":"..\/..\/props.tsj"
+         "source":"..\/..\/tilesets\/props.tsj"
         }, 
         {
          "firstgid":522,
-         "source":"..\/..\/group.tsj"
+         "source":"..\/..\/tilesets\/free_items.tsj"
         }],
  "tilewidth":32,
  "type":"map",

@@ -33,7 +33,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/cursors_map.tsj"
+     "source":"..\/tilesets\/cursors_map.tsj"
     },
  "type":"template"
 }

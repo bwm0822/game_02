@@ -405,51 +405,51 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/cursors_map.tsj"
+         "source":"..\/tilesets\/cursors_map.tsj"
         }, 
         {
          "firstgid":183,
-         "source":"..\/group.tsj"
+         "source":"..\/tilesets\/free_items.tsj"
         }, 
         {
          "firstgid":231,
-         "source":"..\/terrain_tiles_v2.tsj"
+         "source":"..\/tilesets\/terrain_tiles_v2.tsj"
         }, 
         {
          "firstgid":391,
-         "source":"..\/houe_1.tsj"
+         "source":"..\/tilesets\/interior.tsj"
         }, 
         {
          "firstgid":455,
-         "source":"..\/weapons.tsj"
+         "source":"..\/tilesets\/weapons.tsj"
         }, 
         {
          "firstgid":536,
-         "source":"..\/icons.tsj"
+         "source":"..\/tilesets\/icons.tsj"
         }, 
         {
          "firstgid":968,
-         "source":"..\/monsters.tsj"
+         "source":"..\/tilesets\/monsters.tsj"
         }, 
         {
          "firstgid":1124,
-         "source":"..\/32x32GridItemsAll.tsj"
+         "source":"..\/tilesets\/32x32GridItemsAll.tsj"
         }, 
         {
          "firstgid":1464,
-         "source":"..\/spr_fencePost.tsj"
+         "source":"..\/tilesets\/spr_fencePost.tsj"
         }, 
         {
          "firstgid":1473,
-         "source":"..\/tiles.tsj"
+         "source":"..\/tilesets\/tiles.tsj"
         }, 
         {
          "firstgid":1977,
-         "source":"..\/roles.tsj"
+         "source":"..\/tilesets\/npcs.tsj"
         }, 
         {
          "firstgid":1983,
-         "source":"..\/animals.tsj"
+         "source":"..\/tilesets\/animals.tsj"
         }],
  "tilewidth":32,
  "type":"map",

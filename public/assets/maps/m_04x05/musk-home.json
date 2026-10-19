@@ -87,15 +87,15 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/..\/tiles.tsj"
+         "source":"..\/..\/tilesets\/tiles.tsj"
         }, 
         {
          "firstgid":505,
-         "source":"..\/..\/props.tsj"
+         "source":"..\/..\/tilesets\/props.tsj"
         }, 
         {
          "firstgid":522,
-         "source":"..\/..\/roles.tsj"
+         "source":"..\/..\/tilesets\/npcs.tsj"
         }],
  "tilewidth":32,
  "type":"map",

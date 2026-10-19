@@ -12,7 +12,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/Color A Spitesheet.tsj"
+     "source":"..\/tilesets\/color_a.tsj"
     },
  "type":"template"
 }

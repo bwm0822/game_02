@@ -53,7 +53,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/..\/tiles.tsj"
+     "source":"..\/..\/tilesets\/tiles.tsj"
     },
  "type":"template"
 }

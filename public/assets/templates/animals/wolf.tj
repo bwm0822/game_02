@@ -18,7 +18,7 @@
  "tileset":
     {
      "firstgid":1,
-     "source":"..\/..\/animals.tsj"
+     "source":"..\/..\/tilesets\/animals.tsj"
     },
  "type":"template"
 }
