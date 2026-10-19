@@ -387,7 +387,7 @@ run('item', async t => {
     t.eq('合併保留外部的修改', r.merge[1], 7);
     t.eq('合併保留這邊的修改', r.merge[2], 25);
     t.eq('合併後畫面上也是新的', r.merge[3], 7);
-    t.eq('解析 Preloader 的 spritesheet', r.icons[0], 32);
+    t.eq('讀 textures.json 的 spritesheet', r.icons[0], 32);
     t.eq('emoji icon 沒問題', r.icons[1], '');
     t.check('不認識的 key 有警告', r.icons[2]);
     t.check('格子超出範圍有警告', r.icons[3]);

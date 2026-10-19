@@ -77,5 +77,5 @@ run('tools', async t => {
     t.check('存完圓點消失', r.undot);
 
     await t.page.goto(new URL('/tools/item/', t.page.url()).href);
-    t.check('單獨開工具頁會提示從 /tools/ 開', await t.page.evaluate(() => document.body.firstElementChild.textContent.includes('/tools/')));
+    t.check('單獨開工具頁會提示從 /tools/ 開', await t.page.waitForFunction(() => document.body.firstElementChild.textContent.includes('/tools/'), {timeout: 5000}).then(() => true, () => false));
 });

@@ -2018,7 +2018,8 @@ async function saveLayer()
         const ts = targetsOf(game, r.name).filter(t => r.game.includes(t.tag));
         if (!ts.length) return alert(`item.json／role.json 裡已經沒有 sprite 是「${r.name}」的擺放，沒有存檔`);
         const png = await pngDir(r.name, ts);
-        await FS.writeFile(await mkDir(A.tex, png), `${r.name}.png`, await PX.toPng(out));
+        const pd = await mkDir(A.tex, png), isNew = !await FS.tryFile(pd, `${r.name}.png`);
+        await FS.writeFile(pd, `${r.name}.png`, await PX.toPng(out));
         for (const t of ts) writeEquip(game[t.file][t.id][t.key], L);
         for (const f of ['item', 'role'])
             if (ts.some(t => t.file === f))
@@ -2026,7 +2027,7 @@ async function saveLayer()
                 await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
                 SH.notifySaved(`${f}.json`);
             }
-        return status(`已存 textures/${png}/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}`);
+        return status(`已存 textures/${png}/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}${isNew ? '；新圖要按上方「更新圖片清單」遊戲才載得到' : ''}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));

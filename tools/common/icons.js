@@ -1,20 +1,23 @@
-// icon／sprite 的四種寫法：sheet:格子（spritesheet）、單張圖 key、相對 public/assets 的路徑、emoji
-// spritesheet 和單張圖的 key 從 Preloader.js 解析，新增 sheet 不用改工具
-import PRE from '../../src/scenes/Preloader.js?raw';
+// icon／sprite 的三種寫法：sheet:格子（spritesheet）、單張圖 key、emoji
+// key 讀遊戲開機載的 textures.json（scripts/textures.js 產生），殼的「更新圖片清單」重產後會廣播，這裡跟著重讀
+import {onSaved} from './shell.js';
 
 export const SHEETS = {};      // key → {url, fw, fh, margin, space}
 export const IMAGES = {};      // key → url
 export const ATLASES = new Set();
 
-const code = PRE.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
-const base = `/${code.match(/this\.load\.setPath\(\s*'([^']*)'/)?.[1] ?? 'assets'}/`;
-for (const [, key, path] of code.matchAll(/this\.load\.image\(\s*'([^']+)'\s*,\s*'([^']+)'/g)) IMAGES[key] = base + path;
-for (const [, key, path, opt] of code.matchAll(/this\.load\.spritesheet\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*\{([^}]*)\}/g))
+const base = '/assets/';
+async function loadList()
 {
-    const o = Object.fromEntries([...opt.matchAll(/(\w+)\s*:\s*(\d+)/g)].map(([, k, v]) => [k, +v]));
-    SHEETS[key] = {url: base + path, fw: o.frameWidth, fh: o.frameHeight ?? o.frameWidth, margin: o.margin ?? 0, space: o.space ?? o.spacing ?? 0};
+    const tex = await (await fetch(`${base}json/textures.json`, {cache: 'no-store'})).json();
+    for (const o of [SHEETS, IMAGES]) for (const k in o) delete o[k];
+    ATLASES.clear();
+    for (const [k, url] of Object.entries(tex.image)) IMAGES[k] = base + url;
+    for (const [k, s] of Object.entries(tex.sheet)) SHEETS[k] = {url: base + s.url, fw: s.w, fh: s.h, margin: s.margin, space: s.spacing};
+    for (const k of Object.keys(tex.atlas)) ATLASES.add(k);
 }
-for (const [, key] of code.matchAll(/this\.load\.atlas\(\s*'([^']+)'/g)) ATLASES.add(key);
+await loadList();
+onSaved((file) => {if (file === 'textures.json') loadList().then(() => {cache.clear();});});
 
 const cache = new Map();       // url → {p: Promise<img|null>, img, failed}
 function load(url)
@@ -34,10 +37,11 @@ function load(url)
 
 export const ready = Promise.all([...Object.values(SHEETS).map(s => s.url), ...Object.values(IMAGES)].map(u => load(u).p));
 
+// 跟 Phaser 的 spritesheet 一樣只扣一次 margin（tileset 才扣兩次）
 function grid(s, img)
 {
-    const cols = Math.floor((img.width - s.margin * 2 + s.space) / (s.fw + s.space));
-    const rows = Math.floor((img.height - s.margin * 2 + s.space) / (s.fh + s.space));
+    const cols = Math.floor((img.width - s.margin + s.space) / (s.fw + s.space));
+    const rows = Math.floor((img.height - s.margin + s.space) / (s.fh + s.space));
     return {cols, rows, count: cols * rows};
 }
 
@@ -61,7 +65,6 @@ export function resolve(v)
         return s ? {kind: 'sheet', key, sheet: s, frame: +frame} : {kind: 'unknown', key};
     }
     if (IMAGES[key]) return {kind: 'image', url: IMAGES[key]};
-    if (v.includes('/')) return {kind: 'path', url: base + v};
     return {kind: 'unknown', key};
 }
 
@@ -70,14 +73,13 @@ export function check(v)
 {
     const r = resolve(v);
     if (r.kind === 'none') return '沒有 icon';
-    if (r.kind === 'unknown') return `Preloader 沒有載入「${r.key}」`;
+    if (r.kind === 'unknown') return `textures.json 沒有「${r.key}」（新圖要按殼的「更新圖片清單」）`;
     if (r.kind === 'sheet')
     {
         const img = load(r.sheet.url).img;
         if (!Number.isInteger(r.frame) || r.frame < 0) return `格子編號「${v}」不是整數`;
         if (img && r.frame >= grid(r.sheet, img).count) return `${r.key} 只有 ${grid(r.sheet, img).count} 格，${r.frame} 超出範圍`;
     }
-    if (r.kind === 'path' && load(r.url).failed) return `找不到圖 ${r.url}`;
     return '';
 }
 
@@ -85,7 +87,7 @@ export function check(v)
 export async function frameOf(v)
 {
     const r = resolve(v);
-    if (r.kind !== 'sheet' && r.kind !== 'image' && r.kind !== 'path') return null;
+    if (r.kind !== 'sheet' && r.kind !== 'image') return null;
     const img = await load(r.kind === 'sheet' ? r.sheet.url : r.url).p;
     if (!img) return null;
     return {img, f: r.kind === 'sheet' ? frameRect(r.sheet, img, r.frame) : {x: 0, y: 0, w: img.width, h: img.height}};

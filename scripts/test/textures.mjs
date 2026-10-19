@@ -79,4 +79,18 @@ run('textures', async t => {
         t.eq(`${map}：物件的圖都存在`, m.bad.join(','), '');
     }
     t.check('進城後 textures/maps/ 的圖載進來了', await t.eval(d => d.game.textures.exists('terrain_tiles_v2')));
+
+    const before = fs.readFileSync('./public/assets/json/textures.json', 'utf8');
+    await t.page.goto(new URL('tools/', t.page.url()).href);
+    await t.page.waitForFunction(() => window.__tools);
+    const heard = t.page.evaluate(() => new Promise(res => {
+        const c = new BroadcastChannel('tools');
+        c.onmessage = (e) => res(e.data);
+        setTimeout(() => res(null), 10000);
+    }));
+    await t.page.click('#btnTextures');
+    await t.page.waitForFunction(() => /圖片清單(已|沒)更新/.test(document.getElementById('status').textContent), {timeout: 10000});
+    t.check('殼的按鈕跑 textures.js', /已更新：image \d+/.test(await t.page.$eval('#status', e => e.textContent)), await t.page.$eval('#status', e => e.textContent));
+    t.eq('更新後廣播 textures.json', (await heard)?.file, 'textures.json');
+    t.check('重產結果跟 commit 的一樣', fs.readFileSync('./public/assets/json/textures.json', 'utf8') === before);
 });

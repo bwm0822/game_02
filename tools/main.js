@@ -1,6 +1,7 @@
 // 工具殼：分頁切換各工具的 iframe（第一次點才載入），專案資料夾在這裡選一次、傳給每個工具
 import * as FS from './common/fs.js';
 import {$, status} from './common/dom.js';
+import {notifySaved} from './common/shell.js';
 
 const DIRS = FS.dirStore('tools');
 const TABS = ['item', 'role', 'paperdoll'];
@@ -61,6 +62,17 @@ addEventListener('beforeunload', (e) => {if (Object.values(S.dirty).some(Boolean
 $('btnProject').onclick = async () => {
     try {await setProject(await DIRS.pick('root'));}
     catch (e) {if (e.name !== 'AbortError') status(e.message);}
+};
+// 不用專案資料夾：dev server 跑 scripts/textures.js（vite/config.dev.mjs）
+$('btnTextures').onclick = async () => {
+    status('更新圖片清單中…');
+    try
+    {
+        const r = await (await fetch('/__tools/textures', {method: 'POST'})).json();
+        if (r.ok) {notifySaved('textures.json'); status(`圖片清單已更新：${r.count}`);}
+        else status(`圖片清單沒更新：${r.errors.join('；')}`);
+    }
+    catch (e) {status(`圖片清單沒更新：${e.message}`);}
 };
 $('btnReauth').onclick = async () => {
     if (S.pending && await FS.askPermission(S.pending)) setProject(S.pending).catch(e => status(e.message));
