@@ -81,6 +81,16 @@ export function check(v)
     return '';
 }
 
+// 給 canvas 自己畫：{img, f: 圖裡的格子範圍}；不是圖或載入失敗回傳 null
+export async function frameOf(v)
+{
+    const r = resolve(v);
+    if (r.kind !== 'sheet' && r.kind !== 'image' && r.kind !== 'path') return null;
+    const img = await load(r.kind === 'sheet' ? r.sheet.url : r.url).p;
+    if (!img) return null;
+    return {img, f: r.kind === 'sheet' ? frameRect(r.sheet, img, r.frame) : {x: 0, y: 0, w: img.width, h: img.height}};
+}
+
 // 預覽元素：圖畫在 size×size 的 canvas 裡（等比縮放置中），emoji 用文字
 export function iconEl(v, size = 32)
 {

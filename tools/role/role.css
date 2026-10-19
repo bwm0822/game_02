@@ -1,0 +1,16 @@
+.split { display: flex; gap: 16px; align-items: flex-start; }
+.split > .form { flex: 1; min-width: 0; }
+.pv { position: sticky; top: 0; flex: none; background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
+.pv canvas { display: block; image-rendering: pixelated; }
+.pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; max-width: 300px; }
+.pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
+
+.sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }
+.sec:empty { border: none; margin: 0; }
+
+.cells { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cell { display: flex; align-items: center; gap: 4px; background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 3px; }
+.cell.bad { border-color: #e66; }
+.cell button { padding: 0 6px; }
+#view .cells input { min-width: 0; }
+#view .cell .cnt { width: 44px; }

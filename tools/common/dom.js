@@ -25,7 +25,7 @@ export function ask(title, body, buttons)
 {
     const dlg = $('dlgAsk');
     dlg.querySelector('.title').textContent = title;
-    dlg.querySelector('.body').replaceChildren(...[body].flat().filter(Boolean));
+    dlg.querySelector('.body').replaceChildren(...[body].flat(Infinity).filter(Boolean));
     dlg.querySelector('.buttons').replaceChildren(...buttons.map(([v, t]) => h('button', {value: v}, t)));
     dlg.returnValue = '';
     dlg.showModal();

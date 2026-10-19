@@ -1,6 +1,7 @@
 // 編輯 public/assets/json/<file> 一份 {id: 資料} 的共用核心：選資料夾、讀寫、undo、存檔前三方合併、新增／複製／改名／刪除、掃引用
 // 頁面要有的元素：btnAssets btnReauth assetsName btnReload btnSave dirty btnUndo btnRedo btnForm btnTable status search btnNew view dlgAsk
 import * as FS from './fs.js';
+import * as XL from './xlsx.js';
 import {$, h, ul, ask, status} from './dom.js';
 import {str, setAt, merge3} from './obj.js';
 
@@ -11,7 +12,7 @@ export function createDoc(opt)
 {
     const DIRS = FS.dirStore(opt.app);
     const S = {
-        assets: null,           // {dir: public/assets, json: public/assets/json}
+        assets: null,           // {dir: public/assets, json: public/assets/json, root: 專案根目錄（選的是 public/assets 時是 null）}
         pending: null,          // 還沒授權的 handle
         data: {},
         saved: {},              // 上次讀檔／存檔的內容，判斷哪些改過
@@ -77,11 +78,20 @@ export function createDoc(opt)
     const set = (id, path, value) => commit(() => setAt(S.data[id], path, value));
 
     // ---------- 讀寫 ----------
+    const jsonOf = async (dir) => {const j = dir && await FS.tryDir(dir, 'json'); return j && await FS.tryFile(j, opt.file) ? j : null;};
+
+    // 可以選 public/assets，也可以選專案根目錄（改名／刪除時多掃 xls/、src/）
     async function setAssets(dir)
     {
-        const json = await FS.tryDir(dir, 'json');
-        if (!json || !await FS.tryFile(json, opt.file)) throw new Error(`「${dir.name}」裡沒有 json/${opt.file}，要選遊戲的 public/assets`);
-        S.assets = {dir, json};
+        let root = null, assets = dir, json = await jsonOf(dir);
+        if (!json)
+        {
+            assets = await FS.tryDir(await FS.tryDir(dir, 'public') ?? dir, 'assets');
+            json = await jsonOf(assets);
+            if (!json) throw new Error(`「${dir.name}」裡沒有 json/${opt.file}，要選遊戲的 public/assets 或專案根目錄`);
+            root = dir;
+        }
+        S.assets = {dir: assets, json, root};
         S.pending = null;
         $('btnReauth').hidden = true;
         $('assetsName').textContent = dir.name;
@@ -159,42 +169,65 @@ export function createDoc(opt)
         commit(() => {insertAt(Object.keys(S.data).indexOf(id) + 1, n, structuredClone(S.data[id])); S.sel = n;});
     }
 
-    // public/assets 底下其他 json 引用到 id 的地方（字串值或 key 裡有這個 id 當作獨立單字）
+    // fn(檔案 handle, 路徑)；skip(路徑) 為 true 的子資料夾不進去
+    async function walk(dir, path, fn, skip)
+    {
+        for await (const fh of dir.values())
+        {
+            const p = path ? `${path}/${fh.name}` : fh.name;
+            if (fh.kind === 'directory') {if (!skip?.(p)) await walk(fh, p, fn, skip);}
+            else await fn(fh, p);
+        }
+    }
+
+    // 引用到 id 的地方（id 當作獨立單字出現）：public/assets 底下的 json（字串值或 key）；
+    // 選的是專案根目錄的話，再加 xls/ 的儲存格（xls/lang 是 lang.js 自己管的譯文，不列）跟 src/ 的程式碼（src/old 不列）
     async function scanRefs(id)
     {
         const re = new RegExp(`(^|[^\\w])${id.replace(/[-]/g, '\\-')}([^\\w]|$)`);
         const out = [];
-        const walk = async (dir, path) => {
-            for await (const fh of dir.values())
-            {
-                const p = path ? `${path}/${fh.name}` : fh.name;
-                if (fh.kind === 'directory') {await walk(fh, p); continue;}
-                if (!/\.(json|world|tmj|tsj)$/.test(fh.name) || p === `json/${opt.file}`) continue;
-                const text = await (await fh.getFile()).text();
-                if (!re.test(text)) continue;
-                let data;
-                try {data = JSON.parse(text);} catch {out.push({file: p, path: '（不是 JSON）'}); continue;}
-                const hits = [];
-                const visit = (v, at) => {
-                    if (hits.length >= 10) return;
-                    if (typeof v === 'string') {if (re.test(v)) hits.push(`${at}＝${v.length > 40 ? v.slice(0, 40) + '…' : v}`);}
-                    else if (v && typeof v === 'object')
-                        for (const [k, c] of Object.entries(v))
-                        {
-                            const sub = Array.isArray(v) ? `${at}[${k}]` : at ? `${at}.${k}` : k;
-                            if (!Array.isArray(v) && re.test(k)) hits.push(`${sub}（key）`);
-                            visit(c, sub);
-                        }
-                };
-                visit(data, '');
-                for (const x of hits) out.push({file: p, path: x});
-            }
-        };
-        await walk(S.assets.dir, '');
+        await walk(S.assets.dir, '', async (fh, p) => {
+            if (!/\.(json|world|tmj|tsj)$/.test(fh.name) || p === `json/${opt.file}`) return;
+            const text = await (await fh.getFile()).text();
+            if (!re.test(text)) return;
+            let data;
+            try {data = JSON.parse(text);} catch {out.push({file: p, path: '（不是 JSON）'}); return;}
+            const hits = [];
+            const visit = (v, at) => {
+                if (hits.length >= 10) return;
+                if (typeof v === 'string') {if (re.test(v)) hits.push(`${at}＝${v.length > 40 ? v.slice(0, 40) + '…' : v}`);}
+                else if (v && typeof v === 'object')
+                    for (const [k, c] of Object.entries(v))
+                    {
+                        const sub = Array.isArray(v) ? `${at}[${k}]` : at ? `${at}.${k}` : k;
+                        if (!Array.isArray(v) && re.test(k)) hits.push(`${sub}（key）`);
+                        visit(c, sub);
+                    }
+            };
+            visit(data, '');
+            for (const x of hits) out.push({file: p, path: x});
+        });
+        const root = S.assets.root;
+        const xls = root && await FS.tryDir(root, 'xls');
+        if (xls) await walk(xls, 'xls', async (fh, p) => {
+            if (!fh.name.endsWith('.xlsx') || fh.name.startsWith('~$')) return;
+            try {for (const x of await XL.findText(await fh.getFile(), s => re.test(s))) out.push({file: p, path: x});}
+            catch (e) {out.push({file: p, path: `（讀不了：${e.message}）`});}
+        }, p => p === 'xls/lang');
+        const src = root && await FS.tryDir(root, 'src');
+        if (src) await walk(src, 'src', async (fh, p) => {
+            if (!fh.name.endsWith('.js')) return;
+            const lines = (await (await fh.getFile()).text()).split('\n');
+            let n = 0;
+            lines.forEach((l, i) => {if (n < 10 && re.test(l)) {n++; out.push({file: p, path: `${i + 1} 行：${l.trim().slice(0, 60)}`});}});
+        }, p => p === 'src/old');
         return out;
     }
 
-    const refList = (refs) => refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）');
+    const refList = (refs) => [
+        refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
+        !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；選專案根目錄才會一起掃 xls/、src/'),
+    ];
     const innerList = (refs) => refs.length ? ul(refs) : h('div', {class: 'dim'}, '（沒有）');
 
     async function rename(from, to)
@@ -206,7 +239,7 @@ export function createDoc(opt)
         const r = await ask(`改名 ${from} → ${to}`, [
             h('div', {class: 'title'}, `${opt.file} 裡會一起改的`),
             innerList(inner),
-            h('div', {class: 'title'}, '其他檔案（不會改，要自己處理；很多是 xlsx 轉出來的）'),
+            h('div', {class: 'title'}, '其他檔案（不會改，要自己處理；json 很多是 xlsx 轉出來的，改 xlsx 再轉檔）'),
             refList(outer),
         ], [['ok', '改名'], ['cancel', '取消']]);
         if (r !== 'ok') return;
