@@ -1,5 +1,6 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
+import {AIM, dirTo, aimPose, gripAt, swingPlace, swingPose} from '../core/pose.js'
 const _tag = 'anim';
 
 //--------------------------------------------------
@@ -125,41 +126,31 @@ export class COM_Anim extends Com
         }
     }
 
-    // pt 為 null 表示還原；以圖片中心為支點旋轉(origin 是底部中心，所以要同步補償 x/y)
-    _aim(pt, {duration=60, ease='quad.out'}={})
+    _dirTo(pt)
+    {
+        const {root} = this.ctx;
+        return dirTo(pt.x-root.pos.x, pt.y-root.pos.y, Math.sign(root.view.shape.scaleX) || 1);
+    }
+
+    // pt 為 null 表示還原；姿勢見 core/pose.js
+    _aim(pt, {duration=AIM.duration, ease=AIM.ease}={})
     {
         const {root} = this.ctx;
         const aimer = root.view?.aimer;
         if(!aimer) {return Promise.resolve(false);}
         const sp = aimer.sp;
         aimer.base ??= {x:sp.x, y:sp.y, angle:sp.angle};
-        const base = aimer.base;
         this._twAim?.stop();
 
-        let to = base.angle;
-        if(pt)
-        {
-            const sign = Math.sign(root.view.shape.scaleX) || 1;
-            const deg = Phaser.Math.RadToDeg(Math.atan2(pt.y-root.pos.y, (pt.x-root.pos.x)*sign));
-            to = sp.angle + Phaser.Math.Angle.ShortestBetween(sp.angle, deg - aimer.aim);
-        }
-
-        const h = sp.displayHeight/2;
-        const r0 = Phaser.Math.DegToRad(base.angle);
-        const [cx, cy] = [base.x + Math.sin(r0)*h, base.y - Math.cos(r0)*h];
-        const place = (angle)=>{
-            const r = Phaser.Math.DegToRad(angle);
-            sp.setAngle(angle).setPosition(cx - Math.sin(r)*h, cy + Math.cos(r)*h);
-        };
-
-        const proxy = {angle:sp.angle};
+        const pose = aimPose(sp, aimer.base, aimer.aim, pt ? this._dirTo(pt) : null);
+        const proxy = {t:0};
         return new Promise((resolve)=>{
             const tw = this.scene.tweens.add({
                 targets: proxy,
-                angle: to,
+                t: 1,
                 duration: duration,
                 ease: ease,
-                onUpdate: ()=>place(proxy.angle),
+                onUpdate: ()=>this._place(sp, pose(proxy.t)),
                 onComplete: ()=>{
                     if(!pt && this._twAim===tw) {this._twAim=null; aimer.base=null;}
                     resolve(true);
@@ -170,84 +161,22 @@ export class COM_Anim extends Com
         });
     }
 
-    // phase: 'raise' 握把上提、劍繞握把往後轉；'strike' 手臂(軸心→握把)繞軸心往前砍，劍同時甩到跟手臂一直線；null 收回原狀
-    // 'sweepRaise' 手臂(角色中心→握把)跟劍連成一直線，轉到 pt 方向 -90°；'sweep' 從那裡順時針掃 180°
-    // 都是 shape 本地座標(面向右)，面向左時 shape 已鏡像；raise/strike 姿勢固定，不看目標方向
+    _place(sp, {x, y, angle}) {sp.setAngle(angle).setPosition(x, y);}
+
+    // phase 見 core/pose.js 的 swingPose()；pt 只有 sweepRaise/sweep 用到
     _swing(phase=null, pt=null)
     {
-        const SWING = {LIFT:12, RAISE:-90, ARM:6, CHOP:120, SWEEP:180, SWEEP_ARM:14};
         const {root} = this.ctx;
         const swinger = root.view?.swinger;
         if(!swinger) {return Promise.resolve(false);}
-        const {sp, aim, grip} = swinger;
+        const {sp, grip} = swinger;
         this._twSwing?.stop();
 
-        const ox = (grip.x - sp.width*sp.originX) * sp.scaleX;
-        const oy = (grip.y - sp.height*sp.originY) * sp.scaleY;
-        const rot = (angle)=>{
-            const r = Phaser.Math.DegToRad(angle);
-            return [ox*Math.cos(r) - oy*Math.sin(r), ox*Math.sin(r) + oy*Math.cos(r)];
-        };
-        const gripAt = ()=>{const [dx, dy] = rot(sp.angle); return {x:sp.x+dx, y:sp.y+dy};};
-        const place = (g, angle)=>{
-            const [dx, dy] = rot(angle);
-            sp.setAngle(angle).setPosition(g.x - dx, g.y - dy);
-        };
-
-        swinger.base ??= {g:gripAt(), angle:sp.angle};
+        swinger.base ??= {g:gripAt(sp, grip), angle:sp.angle};
         const base = swinger.base;
-        if(this._dead) {place(base.g, base.angle); swinger.base = null; return Promise.resolve(false);}
+        if(this._dead) {this._place(sp, swingPlace(sp, grip, base.g, base.angle)); swinger.base = null; return Promise.resolve(false);}
 
-        const lerp = Phaser.Math.Linear;
-        const lerpG = (from, to, t)=>({x:lerp(from.x, to.x, t), y:lerp(from.y, to.y, t)});
-        const [g0, a0] = [gripAt(), sp.angle];
-        let pose, duration, ease;
-        if(phase==='raise')
-        {
-            const g1 = {x:base.g.x, y:base.g.y - SWING.LIFT};
-            const a1 = a0 + Phaser.Math.Angle.ShortestBetween(a0, base.angle + SWING.RAISE);
-            pose = (t)=>[lerpG(g0, g1, t), lerp(a0, a1, t)];
-            [duration, ease] = [120, 'quad.out'];
-        }
-        else if(phase==='strike')
-        {
-            const p = {x:base.g.x, y:base.g.y - SWING.LIFT + SWING.ARM};
-            const end = -90 + SWING.CHOP;
-            const a1 = a0 + ((((end - aim) - a0) % 360) + 360) % 360;   // 劍順時針甩到跟手臂一直線
-            pose = (t)=>{
-                const r = Phaser.Math.DegToRad(-90 + SWING.CHOP*t);
-                return [{x:p.x + Math.cos(r)*SWING.ARM, y:p.y + Math.sin(r)*SWING.ARM}, lerp(a0, a1, t)];
-            };
-            [duration, ease] = [80, 'cubic.in'];
-        }
-        else if(phase==='sweepRaise' || phase==='sweep')
-        {
-            const sign = Math.sign(root.view.shape.scaleX) || 1;
-            const dir = Phaser.Math.RadToDeg(Math.atan2(pt.y-root.pos.y, (pt.x-root.pos.x)*sign));
-            const from = dir - SWING.SWEEP/2;
-            const arm = (deg)=>{
-                const r = Phaser.Math.DegToRad(deg);
-                return {x:Math.cos(r)*SWING.SWEEP_ARM, y:Math.sin(r)*SWING.SWEEP_ARM};
-            };
-            if(phase==='sweepRaise')
-            {
-                const a1 = a0 + Phaser.Math.Angle.ShortestBetween(a0, from - aim);
-                pose = (t)=>[lerpG(g0, arm(from), t), lerp(a0, a1, t)];
-                [duration, ease] = [120, 'quad.out'];
-            }
-            else
-            {
-                pose = (t)=>[arm(from + SWING.SWEEP*t), a0 + SWING.SWEEP*t];
-                [duration, ease] = [300, 'cubic.in'];
-            }
-        }
-        else
-        {
-            const a1 = a0 + Phaser.Math.Angle.ShortestBetween(a0, base.angle);
-            pose = (t)=>[lerpG(g0, base.g, t), lerp(a0, a1, t)];
-            [duration, ease] = [150, 'quad.out'];
-        }
-
+        const {pose, duration, ease} = swingPose(phase, sp, swinger, base, pt ? this._dirTo(pt) : null);
         const proxy = {t:0};
         return new Promise((resolve)=>{
             const tw = this.scene.tweens.add({
@@ -255,7 +184,7 @@ export class COM_Anim extends Com
                 t: 1,
                 duration: duration,
                 ease: ease,
-                onUpdate: ()=>place(...pose(proxy.t)),
+                onUpdate: ()=>this._place(sp, pose(proxy.t)),
                 onComplete: ()=>{
                     if(!phase && this._twSwing===tw) {this._twSwing=null; swinger.base=null;}
                     resolve(true);

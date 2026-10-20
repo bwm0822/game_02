@@ -1,0 +1,15 @@
+#left { width: 220px; }
+#pv { flex: none; overflow: auto; padding: 8px; background: #25272b; border-left: 1px solid #111; max-width: 50vw; }
+#pv canvas { display: block; image-rendering: pixelated; }
+#pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; max-width: 320px; }
+#pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
+#pv .opts input[type=range] { width: 160px; }
+#pv .opts input.num { width: 64px; }
+
+table.fit { border-collapse: collapse; margin-bottom: 12px; }
+table.fit th, table.fit td { border: 1px solid #3a3d44; padding: 3px 6px; text-align: left; white-space: nowrap; }
+table.fit th { background: #2b2d31; color: #aaa; font-weight: normal; }
+table.fit td.k { color: #aaa; }
+table.fit td .sprite { color: #888; font-size: 14px; }
+table.fit input.num { width: 70px; }
+table.fit select { min-width: 160px; }

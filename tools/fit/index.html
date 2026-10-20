@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>試穿</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<link rel="stylesheet" href="./fit.css">
+</head>
+<body>
+<header>
+    <button id="btnReload" title="從硬碟重新讀 role.json、item.json">重新讀取</button>
+    <button id="btnSave" title="Ctrl+S">存檔</button>
+    <span id="dirty" class="dirty" hidden>● 未存檔</span>
+    <span class="sep"></span>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <aside id="left"><div id="list"></div></aside>
+    <section id="view"></section>
+    <aside id="pv"></aside>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

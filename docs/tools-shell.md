@@ -1,6 +1,6 @@
 # 工具殼（tools/）
 
-`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／紙娃娃，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[paperdoll-tool.md](paperdoll-tool.md)。
+`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／紙娃娃／試穿，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[paperdoll-tool.md](paperdoll-tool.md)、[fit-tool.md](fit-tool.md)。
 
 ## 結構
 
@@ -12,7 +12,7 @@
 
 - 殼只讓人選 **專案根目錄**（game_02，要有 `public/assets/json/item.json`），handle 存在 IndexedDB `tools`（key `root`），Chrome 重開後按「重新授權」。各工具以前各自的 IndexedDB（`item`／`role`／`paperdoll`）不再使用。
 - 交接：iframe 載入後 `postMessage({type:'ready'})` 給殼，殼回 `{type:'project', dir}`（handle 可以 structured clone；同 origin，殼授權過工具就能直接用）。殼重選資料夾時會再送給所有已載入的 iframe。
-- 各工具往下找：道具／角色 `public/assets`（改名／刪除會掃 `xls/`、`src/`）；紙娃娃遊戲資料 `public/assets`、工作資料夾固定 `images/`（沒有就在狀態列提示）。
+- 各工具往下找：道具／角色／試穿 `public/assets`（改名／刪除會掃 `xls/`、`src/`）；紙娃娃遊戲資料 `public/assets`、工作資料夾固定 `images/`（沒有就在狀態列提示）。
 
 ## 更新圖片清單
 

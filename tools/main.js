@@ -4,7 +4,7 @@ import {$, status} from './common/dom.js';
 import {notifySaved} from './common/shell.js';
 
 const DIRS = FS.dirStore('tools');
-const TABS = ['item', 'role', 'paperdoll'];
+const TABS = ['item', 'role', 'paperdoll', 'fit'];
 const S = {
     dir: null,
     pending: null,
