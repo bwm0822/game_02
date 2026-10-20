@@ -8,10 +8,10 @@ const TOWN = 'm/m_04x05';
 const INN = 'm_04x05/trump-inn-f1';
 const TMP = './scripts/test/out/tex';
 
-function fake(files, sheets = {}, write = false)
+function fake(files, write = false)
 {
-    fs.rmSync(TMP, {recursive: true, force: true});
-    for (const [p, s] of Object.entries({'textures/sheets.json': JSON.stringify(sheets), ...files}))
+    fs.rmSync(TMP, {recursive: true, force: true, maxRetries: 5});
+    for (const [p, s] of Object.entries(files))
     {
         fs.mkdirSync(path.dirname(`${TMP}/${p}`), {recursive: true});
         fs.writeFileSync(`${TMP}/${p}`, s);
@@ -30,17 +30,25 @@ run('textures', async t => {
     t.check('撞名報錯', !r.ok && /撞名「x」/.test(r.errors[0]), r.errors.join('；'));
     r = fake({'textures/tbd/x.png': '', 'textures/b/x.png': ''});
     t.check('tbd/ 不算撞名', r.ok, r.errors.join('；'));
-    r = fake({'textures/a/x.png': ''}, {y: {w: 32}});
-    t.check('sheets.json 列了不存在的圖報錯', !r.ok && /「y」找不到圖/.test(r.errors[0]), r.errors.join('；'));
-    r = fake({'textures/a/x.png': '', 'tilesets/x.tsj': JSON.stringify({name: 'x', image: '../textures/a/x.png', tilewidth: 16, tileheight: 16, margin: 0, spacing: 0})}, {x: {w: 32}});
-    t.check('tsj 格子跟 sheets.json 不一樣報錯', !r.ok && /不一樣/.test(r.errors[0]), r.errors.join('；'));
+    const sheet = JSON.stringify({w: 32});
+    r = fake({'textures/a/x.png': '', 'textures/a/y_sheet.json': sheet});
+    t.check('_sheet.json 找不到圖報錯', !r.ok && /找不到圖「y」/.test(r.errors[0]), r.errors.join('；'));
+    r = fake({'textures/a/x.png': '', 'textures/b/x_atlas.json': '{}'});
+    t.check('_atlas.json 不在圖的資料夾報錯', !r.ok && /找不到圖「x」/.test(r.errors[0]), r.errors.join('；'));
+    r = fake({'textures/a/x.png': '', 'textures/a/x_sheet.json': sheet, 'textures/a/x_atlas.json': '{}'});
+    t.check('同時有 _sheet 跟 _atlas 報錯', !r.ok && /同時有/.test(r.errors[0]), r.errors.join('；'));
+    r = fake({'textures/maps/m.png': '', 'textures/maps/m_sheet.json': sheet});
+    t.check('maps/ 底下有 _sheet.json 報錯', !r.ok && /以 tsj 為準/.test(r.errors[0]), r.errors.join('；'));
+    r = fake({'textures/a/x.png': '', 'textures/a/x_sheet.json': sheet, 'tilesets/x.tsj': JSON.stringify({name: 'x', image: '../textures/a/x.png', tilewidth: 16, tileheight: 16, margin: 0, spacing: 0})});
+    t.check('tsj 格子跟 _sheet.json 不一樣報錯', !r.ok && /不一樣/.test(r.errors[0]), r.errors.join('；'));
     r = fake({'textures/a/x.png': '', 'tilesets/x.tsj': JSON.stringify({name: 'x', image: '../textures/a/x.png', tilewidth: 32, tileheight: 32})});
-    t.check('單張圖被當 tileset 用報錯', !r.ok && /sheets\.json 要列格子/.test(r.errors[0]), r.errors.join('；'));
-    r = fake({'textures/a/x.png': '', 'tilesets/x.tsj': JSON.stringify({name: 'y', image: '../textures/a/x.png', tilewidth: 32, tileheight: 32})}, {x: {w: 32}});
+    t.check('單張圖被當 tileset 用報錯', !r.ok && /要加 x_sheet\.json/.test(r.errors[0]), r.errors.join('；'));
+    r = fake({'textures/a/x.png': '', 'textures/a/x_sheet.json': sheet, 'tilesets/x.tsj': JSON.stringify({name: 'y', image: '../textures/a/x.png', tilewidth: 32, tileheight: 32})});
     t.check('tsj name 跟檔名不一樣報錯', !r.ok && /name「y」/.test(r.errors[0]), r.errors.join('；'));
-    r = fake({'textures/maps/m.png': '', 'textures/a/x.png': ''}, {}, true);
+    r = fake({'textures/maps/m.png': '', 'textures/a/x.png': '', 'textures/a/s.png': '', 'textures/a/s_sheet.json': JSON.stringify({w: 16, margin: 1})}, true);
     const out = r.ok && JSON.parse(fs.readFileSync(`${TMP}/json/textures.json`, 'utf8'));
     t.check('maps/ 不進清單', out && out.image.x && !out.image.m, r.errors.join('；'));
+    t.eq('_sheet.json 讀成 spritesheet', JSON.stringify(out?.sheet?.s), JSON.stringify({url: 'textures/a/s.png', w: 16, h: 16, margin: 1, spacing: 0}));
     fs.rmSync(TMP, {recursive: true, force: true});
 
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what: '主選單'});
