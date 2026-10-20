@@ -29,7 +29,7 @@ const S = {
     hist: [], hi: -1,
     rid: null,
     slots: {},                  // cat → item id
-    zoom: 3, b: true, g: false, z: false, flip: false,
+    zoom: 3, view: true, anchor: true, b: true, g: false, z: false, flip: false,
     pose: '', t: 0, target: 0,  // target：目標方向（度，0＝右、90＝下）
 };
 
@@ -316,11 +316,14 @@ async function drawPreview()
     for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
     const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
-    g.lineWidth = px;
-    g.setLineDash([3 * px, 3 * px]);
-    g.strokeStyle = '#888';
-    g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
-    g.setLineDash([]);
+    if (S.view)
+    {
+        g.lineWidth = px;
+        g.setLineDash([3 * px, 3 * px]);
+        g.strokeStyle = '#888';
+        g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
+        g.setLineDash([]);
+    }
 
     const posed = S.pose && poseOk(S.pose);
     let n = 0;
@@ -354,12 +357,15 @@ async function drawPreview()
         g.strokeRect(vc.x - w / 2 + l, vc.y - hh / 2 + t, w - l - rr, hh - t - b);
     }
 
-    g.strokeStyle = '#ffd700';
-    g.lineWidth = 2 * px;
-    g.beginPath();
-    g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
-    g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
-    g.stroke();
+    if (S.anchor)
+    {
+        g.strokeStyle = '#ffd700';
+        g.lineWidth = 2 * px;
+        g.beginPath();
+        g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
+        g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
+        g.stroke();
+    }
     cv.dataset.drawn = n;
 }
 
@@ -393,6 +399,7 @@ function drawPv()
     $('pv').replaceChildren(
         h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）'}),
         h('div', {class: 'opts'},
+            check('view', '虛線 view', '#aaa'), check('anchor', '錨點', '#ffd700'),
             check('b', '物理 b', FRAME_COLOR.b), check('g', '佔格 g', FRAME_COLOR.g), check('z', '互動 z', FRAME_COLOR.z),
             check('flip', '翻面', null, !!S.pose),
             h('select', {title: '「遊戲」＝全螢幕玩時的大小（1024×768 FIT 到螢幕）', onchange: e => {S.zoom = e.target.value === 'game' ? 'game' : +e.target.value; drawPreview();}},

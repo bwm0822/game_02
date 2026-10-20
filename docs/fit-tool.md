@@ -15,7 +15,7 @@
 
 ## 預覽
 
-合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、依 `DEPTH` 疊。虛線是 view、黃十字是錨點，可開物理 b／佔格 g／互動 z 框、翻面。
+合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、依 `DEPTH` 疊。虛線是 view、黃十字是錨點（兩個都能關），可開物理 b／佔格 g／互動 z 框、翻面。
 
 倍率有 ×1～×6 和「遊戲」：遊戲畫面固定 1024×768、`Scale.FIT` 塞進視窗、鏡頭沒 zoom，所以「遊戲」＝`min(螢幕寬/1024, 螢幕高/768)`，是全螢幕玩時的大小（視窗越小遊戲裡越小）。canvas 照 `devicePixelRatio` 開，放大不糊。
 
