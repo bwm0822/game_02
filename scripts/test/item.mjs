@@ -117,6 +117,38 @@ run('item', async t => {
 
         await ie.IC.ready;
         out.icons = [ie.IC.SHEETS.weapons?.fw, ie.IC.check('🔑'), !!ie.IC.check('nope'), !!ie.IC.check('weapons:99999'), ie.IC.check('cloth-hood'), ie.IC.check('weapons:3')];
+        out.atlas = [ie.IC.check('hero:001'), !!ie.IC.check('hero'), !!ie.IC.check('hero:1'), (await ie.IC.frameOf('hero:001'))?.f.w];
+
+        // 選圖器：開著的時候跑 fn，回傳 [fn 的結果, 選到的值]
+        const dlgI = $('dlgIcon'), q = (s) => dlgI.querySelector(s), qa = (s) => [...dlgI.querySelectorAll(s)];
+        const pick = async (v, fn) => {
+            const p = ie.IC.pickIcon(v);
+            const r = await fn();
+            if (dlgI.open) dlgI.close('cancel');
+            return [r, await p];
+        };
+        const canvas = async () => {for (let i = 0; i < 100 && !q('.body > canvas'); i++) await sleep(20); return q('.body > canvas');};
+        const labels = () => qa('.imgCell').map(c => c.lastChild.textContent);
+        const cellOf = (label) => qa('.imgCell').find(c => c.lastChild.textContent === label);
+        out.pickTabs = (await pick('', () => qa('.tabs button').map(b => b.textContent).join()))[0];
+        out.pickImage = (await pick('macron', () => [q('.crumb').textContent, q('.imgCell.sel')?.lastChild.textContent]))[0];
+        out.pickSheet = (await pick('weapons:3', async () => [q('.crumb').textContent, !!await canvas()]))[0];
+        out.pickNav = (await pick('macron', () => {
+            cellOf('32rogues').onclick();
+            const inner = labels().join();
+            qa('.crumb a').find(a => a.textContent === 'roles').onclick();
+            return [inner, q('.crumb').textContent, labels().join()];
+        }))[0];
+        out.pickAtlas = await pick('hero:001', async () => {
+            const cv = await canvas();
+            const k = cv.width / (await ie.IC.frameOf('hero:001')).img.width;
+            const f = ie.IC.ATLASES.hero.frames.get('125'), b = cv.getBoundingClientRect();
+            cv.dispatchEvent(new MouseEvent('click', {clientX: b.left + (f.x + f.w / 2) * k, clientY: b.top + (f.y + f.h / 2) * k, bubbles: true}));
+            const r = [q('.crumb').parentElement.className, q('.crumb').textContent, dlgI.open, q('input').value];
+            dlgI.close('ok');
+            return r;
+        });
+        out.pickCancel = (await pick('macron', () => {cellOf('melanie').onclick({currentTarget: cellOf('melanie')}); return q('.imgCell.sel').lastChild.textContent;}));
 
         S.view = 'table'; S.tab = 1; ie.render();
         out.table = [document.querySelectorAll('#view tbody tr').length, Object.values(S.items).filter(it => it.cat === 'CAT_WEAPON').length];
@@ -393,6 +425,16 @@ run('item', async t => {
     t.check('格子超出範圍有警告', r.icons[3]);
     t.eq('單張圖 key 沒問題', r.icons[4], '');
     t.eq('sheet:格子 沒問題', r.icons[5], '');
+    t.eq('atlas:frame 保留前導零', r.atlas[0], '');
+    t.check('atlas 沒寫 frame 有警告', r.atlas[1]);
+    t.check('atlas frame 不存在有警告', r.atlas[2]);
+    t.eq('atlas frame 畫得出來', r.atlas[3], 51);
+    t.eq('選圖器分頁是第一層資料夾', r.pickTabs, 'equips,icons,items,others,props,roles');
+    t.eq('單張圖開在所在資料夾並反白', JSON.stringify(r.pickImage), JSON.stringify(['roles / npcs', 'macron']));
+    t.eq('sheet 直接開格子畫面', JSON.stringify(r.pickSheet), JSON.stringify(['items / weapons', true]));
+    t.check('子資料夾點進去、麵包屑點回上層', r.pickNav[0].includes('rogues ▦') && r.pickNav[1] === 'roles' && r.pickNav[2].startsWith('animals,'), JSON.stringify(r.pickNav));
+    t.eq('atlas 開 frame 畫面、點了選 frame、按確定才回傳', JSON.stringify(r.pickAtlas), JSON.stringify([['tabs', 'roles / npcs / hero', true, 'hero:125'], 'hero:125']));
+    t.eq('點圖只換選取、取消不套用', JSON.stringify(r.pickCancel), JSON.stringify(['melanie', null]));
     t.eq('總覽表武器頁', r.table[0], r.table[1]);
     t.check('表單有畫出來', r.form);
     t.eq('畫面沒有 [object …]', r.dom[0], false);

@@ -63,17 +63,18 @@ $('btnProject').onclick = async () => {
     try {await setProject(await DIRS.pick('root'));}
     catch (e) {if (e.name !== 'AbortError') status(e.message);}
 };
-// 不用專案資料夾：dev server 跑 scripts/textures.js（vite/config.dev.mjs）
+// 不用專案資料夾：dev server 跑 scripts/textures.js（vite/config.dev.mjs）；清單沒變也廣播，讓選圖器重載被覆蓋的圖
+function texturesDone(r, manual)
+{
+    if (r.ok) {notifySaved('textures.json'); if (manual || r.changed) status(`圖片清單已更新：${r.count}`);}
+    else status(`圖片清單沒更新：${r.errors.join('；')}`);
+}
 $('btnTextures').onclick = async () => {
     status('更新圖片清單中…');
-    try
-    {
-        const r = await (await fetch('/__tools/textures', {method: 'POST'})).json();
-        if (r.ok) {notifySaved('textures.json'); status(`圖片清單已更新：${r.count}`);}
-        else status(`圖片清單沒更新：${r.errors.join('；')}`);
-    }
+    try {texturesDone(await (await fetch('/__tools/textures', {method: 'POST'})).json(), true);}
     catch (e) {status(`圖片清單沒更新：${e.message}`);}
 };
+import.meta.hot?.on('tools:textures', (r) => texturesDone(r, false));
 $('btnReauth').onclick = async () => {
     if (S.pending && await FS.askPermission(S.pending)) setProject(S.pending).catch(e => status(e.message));
 };

@@ -1,7 +1,7 @@
 // 掃 public/assets/textures/ 產生 textures.json（Preloader 開機載入清單、工具選圖器也讀它）
 // key 是檔名（去副檔名），整個 textures/ 不能撞名；同資料夾有 <key>_atlas.json 的是 atlas，有 <key>_sheet.json 的是 spritesheet，其他是單張圖
 // tbd/、minimap/ 不收；maps/ 只檢查撞名，不進清單（由 tilemap 進地圖時照 *.tsj 載）
-import { readdirSync, readFileSync, writeFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, relative, dirname, basename, extname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
@@ -88,8 +88,11 @@ export function run({assets = join(ROOT, 'public/assets'), write = true} = {})
     }
 
     const count = `image ${Object.keys(out.image).length}、sheet ${Object.keys(out.sheet).length}、atlas ${Object.keys(out.atlas).length}`;
-    if (!errors.length && write) writeFileSync(join(assets, 'json/textures.json'), JSON.stringify(out, null, 2) + '\n', 'utf8');
-    return {ok: !errors.length, errors, count};
+    const file = join(assets, 'json/textures.json');
+    const text = JSON.stringify(out, null, 2) + '\n';
+    const changed = !errors.length && (!existsSync(file) || readFileSync(file, 'utf8') !== text);
+    if (changed && write) writeFileSync(file, text, 'utf8');
+    return {ok: !errors.length, errors, count, changed};
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

@@ -23,7 +23,8 @@
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
   - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅；有錯時右上角出現 `[修正]`（`parse()` 的 `err.fix` 有修法：補 `,` `:` 右括號 `"`、裸值／數字 key 加引號、刪怪字元、修數字，一次修一個，走 `insertText` 可 Ctrl+Z，不自動套用）或 `[錯誤]`（修不了，不能按），原因都在按鈕的 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。
-- icon／sprite 選圖器：`icons.js` 讀遊戲開機載的 `/assets/json/textures.json`（`scripts/textures.js` 產生，見 CLAUDE.md「圖片載入」），殼按「更新圖片清單」後收到 `saved: textures.json` 廣播就重讀。三種寫法：`sheet:格子`、單張圖 key（檔名）、emoji（不是 ASCII 識別字就當文字）；不再接受路徑。格子數照 Phaser spritesheet 算（margin 只扣一次）。atlas 只認 key 不畫圖。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
+- icon／sprite 選圖器：`icons.js` 讀遊戲開機載的 `/assets/json/textures.json`（`scripts/textures.js` 產生，見 CLAUDE.md「圖片載入」）＋各 atlas 的 `_atlas.json`，收到 `saved: textures.json` 廣播就重讀並清圖快取（圖網址帶 `?v=` 版本，覆蓋同名 PNG 也會換新）。四種寫法：`sheet:格子`、`atlas:frame`（frame 名稱是字串，`001` 保留前導零）、單張圖 key（檔名）、emoji（不是 ASCII 識別字就當文字）；不再接受路徑。格子數照 Phaser spritesheet 算（margin 只扣一次）。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
+- 選圖器版面像檔案總管：分頁是 `textures/` 第一層資料夾（從 url 路徑推，`TREE`），裡面子資料夾在前（點進去，分頁列右邊的麵包屑點回上層）、圖依檔名排；sheet／atlas（標 ▦）點了進格子畫面，攤原圖、用矩形清單（sheet 算格子、atlas 讀 json）做 hover 框選。點單張圖／格子只是選中（反白＋填進輸入框），按「確定」才套用。開啟時直接跳到目前值：sheet／atlas 進格子畫面框住、單張圖進所在資料夾反白、其他開 `icons` 分頁。
 
 ## 新增／複製／改名／刪除
 

@@ -49,6 +49,7 @@ run('textures', async t => {
     const out = r.ok && JSON.parse(fs.readFileSync(`${TMP}/json/textures.json`, 'utf8'));
     t.check('maps/ 不進清單', out && out.image.x && !out.image.m, r.errors.join('；'));
     t.eq('_sheet.json 讀成 spritesheet', JSON.stringify(out?.sheet?.s), JSON.stringify({url: 'textures/a/s.png', w: 16, h: 16, margin: 1, spacing: 0}));
+    t.check('清單沒變回報 changed:false', r.changed && gen({assets: TMP}).changed === false);
     fs.rmSync(TMP, {recursive: true, force: true});
 
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what: '主選單'});
@@ -101,4 +102,24 @@ run('textures', async t => {
     t.check('殼的按鈕跑 textures.js', /已更新：image \d+/.test(await t.page.$eval('#status', e => e.textContent)), await t.page.$eval('#status', e => e.textContent));
     t.eq('更新後廣播 textures.json', (await heard)?.file, 'textures.json');
     t.check('重產結果跟 commit 的一樣', fs.readFileSync('./public/assets/json/textures.json', 'utf8') === before);
+
+    // dev server 監看 textures/：新增／刪除圖自動重產並廣播
+    const NEW = './public/assets/textures/others/__watch_test.png';
+    const listen = () => t.page.evaluate(() => new Promise(res => {
+        const c = new BroadcastChannel('tools');
+        c.onmessage = (e) => res(e.data);
+        setTimeout(() => res(null), 10000);
+    }));
+    try
+    {
+        let h = listen();
+        fs.copyFileSync('./public/assets/textures/icons/icons.png', NEW);
+        t.eq('新增圖自動廣播', (await h)?.file, 'textures.json');
+        t.check('新圖進清單', '__watch_test' in JSON.parse(fs.readFileSync('./public/assets/json/textures.json', 'utf8')).image);
+        h = listen();
+        fs.rmSync(NEW);
+        t.eq('刪除圖自動廣播', (await h)?.file, 'textures.json');
+    }
+    finally {if (fs.existsSync(NEW)) fs.rmSync(NEW);}
+    t.check('刪掉後清單復原', fs.readFileSync('./public/assets/json/textures.json', 'utf8') === before);
 });

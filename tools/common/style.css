@@ -105,6 +105,8 @@ dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgIcon { width: 80vw; }
 #dlgIcon .body { height: 60vh; overflow: auto; background: #1e1f22; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; padding: 6px; }
 #dlgIcon .body canvas { image-rendering: pixelated; cursor: pointer; }
+#dlgIcon .crumb { align-self: center; margin-left: 12px; }
+#dlgIcon .crumb a { color: #8bd; cursor: pointer; }
 .imgCell { width: 110px; text-align: center; cursor: pointer; padding: 4px; border-radius: 3px; font-size: 14px; overflow: hidden; }
 .imgCell:hover { background: #33363c; }
 .imgCell.sel { background: #2f6db5; }
