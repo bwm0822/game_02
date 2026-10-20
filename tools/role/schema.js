@@ -56,6 +56,7 @@ export const FIELDS = {
     z: {label: '互動區 z', type: 'obj', fields: LRTB},
     body: {label: '身體', type: 'obj', fields: PART},
     head: {label: '頭', type: 'obj', fields: PART},
+    hair: {label: '頭髮', type: 'obj', fields: PART},
     hand: {label: '手', type: 'obj', fields: PART},
     corpse: {label: '屍體圖', type: 'obj', fields: PART},
     inv: {label: '物品欄', type: 'inv'},
@@ -68,7 +69,7 @@ export const REQUIRED = ['w', 'h', 'anchor'];
 export const SECTIONS = [
     {title: '基本', keys: ['kind', 'loc', 'lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
-    {title: '外觀', keys: ['faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hand', 'corpse']},
+    {title: '外觀', keys: ['faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
@@ -76,7 +77,7 @@ export const SECTIONS = [
 const BASE = ['kind', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
 const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
-    player: ['job', 'gold', 'survival', 'inv', 'hand', 'head'],
+    player: ['job', 'gold', 'survival', 'inv', 'hand', 'head', 'hair'],
     npc: ['loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
     rogue: FIGHTER, monster: FIGHTER, boss: FIGHTER,
     animal: ['style', 'animal', 'attrs', 'meat', 'skin', 'fall'],
@@ -101,7 +102,7 @@ export function schSummary(s)
 
 // ---------- 預覽 ----------
 // 跟 RoleView._addPart 的 _DEPTH 一樣（裝備依 item.json 的 cat）
-export const DEPTH = {body: 0, head: 2, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 1, CAT_WEAPON: 4, ext: 6};
+export const DEPTH = {body: 0, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要

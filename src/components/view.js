@@ -890,9 +890,10 @@ export class RoleView extends View
         const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
-        if(meta.body) {this._addPart(meta.body, GM.PART_BODY);}
-        if(meta.head) {this._addPart(meta.head, GM.PART_HEAD);}
-        if(meta.hand) {this._addPart(meta.hand, GM.PART_HAND);}
+        if(meta.body) {this._addPart(meta.body, GM.PART.BODY);}
+        if(meta.head) {this._addPart(meta.head, GM.PART.HEAD);}
+        this._hair = meta.hair ? this._addPart(meta.hair, GM.PART.HAIR) : [];
+        if(meta.hand) {this._addPart(meta.hand, GM.PART.HAND);}
         this._equips = []; 
         
         // set flipX
@@ -901,16 +902,17 @@ export class RoleView extends View
         return this;
     }
 
-    _addPart(part, type=GM.PART_BODY)
+    _addPart(part, type=GM.PART.BODY)
     {
         const _DEPTH = Object.freeze({
             [GM.PART.BODY] : 0,
             [GM.PART.HEAD] : 2,
+            [GM.PART.HAIR] : 2.5,
             [GM.PART.HAND] : 5,
             [GM.CAT.HELMET] : 3,
             [GM.CAT.CHESTPLATE] : 1,
             [GM.CAT.GLOVES] : 6,
-            [GM.CAT.BOOTS] : 1,
+            [GM.CAT.BOOTS] : 0.5,
             [GM.CAT.WEAPON] :4,
         });
 
@@ -1008,13 +1010,16 @@ export class RoleView extends View
         if(this._isCorpse) {return;}
 
         this._removeEquips();
+        let hideHair = false;
         bb.equips?.forEach((eq)=>{
             if(eq)
             {
                 const dat = DB.item(eq.id??eq);
                 this._addEquip(dat);
+                hideHair ||= !!dat.equip?.hideHair;
             }
         })
+        this._hair.forEach((sp)=>{sp.setVisible(!hideHair);});
     }
 
     _isFaceRight() {return (this._shape.scaleX < 0) !== this._faceR;}

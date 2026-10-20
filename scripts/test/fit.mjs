@@ -45,7 +45,16 @@ run('fit', async t => {
         out.drawn = await drawn();
         F.setSlot('CAT_GLOVES', 'gloves_01');
         out.gloves = [await drawn() > out.drawn, JSON.stringify(S.doc['role.json'].data['guard-1'].inv.equips)];
-        out.slotOpts = [...document.querySelectorAll('#view select')].map(s => s.options.length);
+        const dlg = $('dlgEquip');
+        out.slotOpts = [...document.querySelectorAll('#view .slot')].map(s => {s.click(); const n = dlg.querySelectorAll('.tile').length; dlg.close(); return n;});
+        out.slotIcons = document.querySelectorAll('#view .slot .ico.empty').length;
+        document.querySelector('#view .slot[data-cat=CAT_BOOTS]').click();
+        dlg.querySelector('.tile[data-id=boots_01]').click();
+        out.boots = [S.slots.CAT_BOOTS, dlg.open, S.cur, document.querySelector('#view .equipname').textContent.includes('boots_01')];
+        F.pickEquip('CAT_BOOTS');
+        dlg.querySelector('.tile[data-id=""]').click();
+        out.unequip = 'CAT_BOOTS' in S.slots;
+        F.pickEquip('CAT_HELMET'); dlg.close();
 
         // 改數字：裝備寫 item.json、部件寫 role.json、清空刪 key、undo 一起退
         fire('item.json|helmet_01|equip.y', '5');
@@ -86,6 +95,18 @@ run('fit', async t => {
         out.game = parseFloat(document.querySelector('#pv canvas').style.width);
         out.dom = document.body.innerText.includes('[object');
 
+        // 頭盔 hideHair：戴上藏頭髮、取消勾選頭髮回來
+        S.zoom = 3; F.select('wick');
+        const bare = await drawn();
+        S.cur = 'CAT_HELMET'; F.setSlot('CAT_HELMET', 'helmet_02');
+        const hide = document.querySelector('[data-k="item.json|helmet_02|equip.hideHair"]');
+        out.hair = [bare, await drawn(), !!document.querySelector('#view .hidden-hair'), hide.checked];
+        hide.checked = false; hide.dispatchEvent(new Event('change'));
+        out.hair.push(await drawn(), 'hideHair' in S.doc['item.json'].data.helmet_02.equip, !!document.querySelector('#view .hidden-hair'));
+        F.undo();
+        out.hair.push(S.doc['item.json'].data.helmet_02.equip.hideHair);
+        F.select('guard-1'); S.cur = 'CAT_HELMET'; F.render();
+
         // 存檔：只寫有改的檔；外部修改合併
         const seen = await save();
         out.saved = [seen.length, JSON.parse(await disk('role.json'))['guard-1'].body.x, (await disk('item.json')) === origItem, $('dirty').hidden];
@@ -104,7 +125,10 @@ run('fit', async t => {
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張', r.gloves[0]);
     t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword_01', 'helmet_01', 'chest_01']));
-    t.check('格子選單只列有 equip 的道具', r.slotOpts.every(n => n >= 2) && r.slotOpts[0] === 3, JSON.stringify(r.slotOpts));
+    t.check('挑選視窗只列有 equip 的道具（含卸下）', r.slotOpts.every(n => n >= 2), JSON.stringify(r.slotOpts));
+    t.eq('只有靴子格是空的剪影', r.slotIcons, 1);
+    t.eq('點 icon 穿上、關窗、選中該格', JSON.stringify(r.boots), JSON.stringify(['boots_01', false, 'CAT_BOOTS', true]));
+    t.eq('卸下', r.unequip, false);
     t.eq('改裝備寫 item.json', r.equipY, 5);
     t.eq('改部件寫 role.json', r.bodyX, -2);
     t.eq('清空刪 key', r.cleared, false);
@@ -123,6 +147,10 @@ run('fit', async t => {
     t.eq('瞄準正右方：原生朝向 45° 的弓轉 -45°', r.aimMid, -45);
     t.check('遊戲大小倍率', r.game > 0 && r.game < 400, `${r.game}`);
     t.eq('畫面沒有 [object …]', r.dom, false);
+    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
+    t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
+    t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
+    t.eq('藏頭髮可 undo', undone, true);
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));
 });

@@ -3,16 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "public/assets/maps/m/m_03x05.json",
+    "activeFile": "public/assets/maps/m/m_04x05.json",
     "expandedProjectPaths": [
-        "public",
         "public/assets/maps/m/m_04x05",
-        "public/assets/maps/m",
         ".",
         "public/assets/maps",
+        "public/assets/tiles",
+        "public",
         "public/assets/maps/m_04x05",
-        "public/assets",
-        "public/assets/tiles"
+        "public/assets/maps/m",
+        "public/assets"
     ],
     "file.lastUsedOpenFilter": "全部檔案 (*)",
     "fileStates": {
@@ -372,8 +372,8 @@
             "scale": 0.33,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 669.6969696969697,
-                "y": 160.6060606060605
+                "x": 1600,
+                "y": 1601.5151515151515
             }
         },
         "public/assets/maps/m/m_04x05.json": {
@@ -381,11 +381,11 @@
                 3,
                 5
             ],
-            "scale": 2,
-            "selectedLayer": 0,
+            "scale": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 1608,
-                "y": 1634.75
+                "x": 1532.5,
+                "y": 2212
             }
         },
         "public/assets/maps/m00x00.json": {
@@ -862,6 +862,36 @@
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "public/assets/tilesets/32x32GridItemsAll.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/buildings.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/free_items.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/icons.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/interior.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/npcs.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/props.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/spr_fencePost.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/terrain_tiles_v2.tsj": {
+            "scaleInDock": 1
+        },
+        "public/assets/tilesets/tiles.tsj": {
+            "scaleInDock": 1
+        },
         "public/assets/top.tsj": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
@@ -946,9 +976,9 @@
     "project": "game_02.tiled-project",
     "property.type": "string",
     "recentFiles": [
-        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m_04x05/trump-inn-f2.json",
         "public/assets/maps/m/m_03x05.json",
+        "public/assets/maps/m/m_04x05.json",
         "public/assets/maps/m/m_00x09.json",
         "public/assets/maps/m_04x05/house-01.json",
         "public/assets/maps/m_04x05/trump-inn-f1.json",

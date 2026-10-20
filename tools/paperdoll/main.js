@@ -1873,7 +1873,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         box.disabled = !ts.length;
         box.checked = ts.length > 0 && (was ? box.checked : true);
         $('dlgItemLab').title = !S.assets ? '先在上方選擇專案資料夾'
-                              : ts.length ? '' : `沒有 item 的 equip.sprite${S.assets.hasRole ? '、角色的 body/head/hand/corpse' : ''} 跟檔名一樣`;
+                              : ts.length ? '' : `沒有 item 的 equip.sprite${S.assets.hasRole ? '、角色的 body/head/hair/hand/corpse' : ''} 跟檔名一樣`;
         $('dlgItemIds').replaceChildren(...(ts.length > 1 ? ts.map(t => {
             const lab = el('label'), c = Object.assign(el('input'), {type: 'checkbox', checked: true, value: t.tag});
             lab.append(c, ` ${t.tag} `);
@@ -1943,9 +1943,9 @@ function sidecar(L, name)
 }
 
 // ---------- 存到遊戲資料 ----------
-// 遊戲的 public/assets：PNG 寫進 textures/ 底下、擺放寫進 json/item.json 的 equip 或 json/role.json 的 body/head/hand/corpse
+// 遊戲的 public/assets：PNG 寫進 textures/ 底下、擺放寫進 json/item.json 的 equip 或 json/role.json 的 body/head/hair/hand/corpse
 
-const PARTS = ['body', 'head', 'hand', 'corpse'];
+const PARTS = ['body', 'head', 'hair', 'hand', 'corpse'];
 // 已經有同名 PNG 就覆蓋那張（例如 body 用的是 roles/npcs/ 的整隻角色圖），沒有才照擺放種類放
 const PNG_FIND = ['equips', 'roles/parts', 'roles/npcs'];
 const PNG_NEW = {item: 'equips', role: 'roles/parts'};
@@ -1980,7 +1980,7 @@ async function mkDir(root, path)
 const readGameJson = async (name) => JSON.parse(await (await (await S.assets.json.getFileHandle(name)).getFile()).text());
 const readGame = async () => ({item: await readGameJson('item.json'), role: S.assets.hasRole ? await readGameJson('role.json') : {}});
 
-// 檔名配得到的擺放：item 的 equip、角色的 body/head/hand/corpse（spritesheet 的 sprite 配不到）
+// 檔名配得到的擺放：item 的 equip、角色的 body/head/hair/hand/corpse（spritesheet 的 sprite 配不到）
 function targetsOf(game, sprite)
 {
     return [

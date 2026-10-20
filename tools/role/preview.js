@@ -14,7 +14,7 @@ function axis(a, b, total)
     return {a, size: total - a - b};
 }
 
-// 回傳要畫的部件，照遊戲的順序（body、head、hand、裝備）再依 depth 穩定排序
+// 回傳要畫的部件，照遊戲的順序（body、head、hair、hand、裝備）再依 depth 穩定排序；裝備有 hideHair 就不畫 hair
 export function partsOf(r, items)
 {
     const out = [];
@@ -23,13 +23,11 @@ export function partsOf(r, items)
         if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
     };
-    add(r.body, DEPTH.body); add(r.head, DEPTH.head); add(r.hand, DEPTH.hand);
-    if (P.equips)
-        for (const e of r.inv?.equips ?? [])
-        {
-            const it = items[isObj(e) ? e.id : e];
-            if (it?.equip) add(it.equip, DEPTH[it.cat]);
-        }
+    const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
+    add(r.body, DEPTH.body); add(r.head, DEPTH.head);
+    if (!equips.some(it => it.equip.hideHair)) add(r.hair, DEPTH.hair);
+    add(r.hand, DEPTH.hand);
+    for (const it of equips) add(it.equip, DEPTH[it.cat]);
     return out.sort((a, b) => a.d - b.d);
 }
 

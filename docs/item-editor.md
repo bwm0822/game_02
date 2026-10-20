@@ -16,7 +16,7 @@
 
 - 左：依 cat 分組的清單（可搜尋 id／名稱）、＋新道具。
 - 表單：依 `schema.js` 畫。顯示的欄位＝基本（lab/cat/icon/gold/des）＋該 cat 建議的＋已經有值的已知欄位；其他已知欄位從「加欄位」叫出來。
-  - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`swing`、`ext`…）放框裡的「其他」JSON。
+  - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`swing`、`ext`…）放框裡的「其他」JSON。`equip` 比 `drop` 多一個「藏頭髮」（`hideHair`：穿著時 `RoleView` 隱藏頭髮，任何裝備欄都有效）。
   - 可自由輸入又有建議的欄位（list／itemref／tags、材料）不用 `<input list>`（datalist 會拿現有的值篩選，有值時看不到其他選項），改用 `combo.js`：input 加 `data-combo="<datalist id>"`，datalist 只當選項來源；點框或 ↓ 列全部、打字才篩選，選了送 `change` 接原本的 onchange。
   - 框（obj 欄位、效果、其他欄位）點標題列收合，標題只顯示個數；道具第一次畫到時決定預設（array 或超過一個 key 收合），之後記在 `S.open`，改內容不會自己收起來，換道具才重算；按「建立」「＋ 新增效果」會自動展開。
   - effects 一條一張卡片：標題是 `effSummary()` 的一行人話（不是遊戲內說明文字），欄位依 `type` 決定（`EFF_BY_TYPE`），schema 沒有的 key 在「額外欄位（JSON）」。

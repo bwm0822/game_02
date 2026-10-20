@@ -49,7 +49,7 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 - 存檔：每層各自存，內建對話框只能存在工作資料夾底下，預設目錄是工作資料夾的 `output/`（沒有就用圖層所在目錄）、預設檔名 `原檔名-copy`，同名會問是否覆蓋；同時寫 PNG 和 `.json`。存檔不會自動 trim（以前的「存檔時自動 trim」拿掉了，舊專案的 `settings.autoTrim` 直接忽略），要裁就先按「裁到剛好」。
 - **存到遊戲資料**（item.json／role.json）：兩個都是手寫的來源檔（`xls/item.xlsx`、`xls/role.xlsx` 已不同步），擺放由工具直接寫進去。存檔對話框的「存到遊戲資料」勾選：
   - 兩個資料夾都從殼給的專案根目錄推出來：工作資料夾＝`images/`（開圖、存專案、一般存檔），遊戲資料＝`public/assets`（要有 `json/item.json` 和 `textures/`，不對就在狀態列提示；`json/role.json` 有就一起配）。寫了 `item.json`／`role.json` 會廣播給其他分頁（見 [tools-shell.md](tools-shell.md)）。
-  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選專案資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
+  - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hair`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選專案資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
   - 勾了：PNG 寫進 `textures/` 底下——`equips/`、`roles/parts/`、`roles/npcs/` 哪個已有 `<sprite>.png` 就覆蓋那張（`pngDir()`，例如 `body` 用的整隻角色圖在 `roles/npcs/`），都沒有才照第一個勾選的擺放放：item → `equips/`、角色 → `roles/parts/`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 json，勾選的那些物件寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，有改到的檔才整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
   - 道具編輯器、角色編輯器開著也沒關係，它們存檔前會偵測到這裡寫過並三方合併。
   - 沒勾：照一般存檔（PNG＋sidecar）。

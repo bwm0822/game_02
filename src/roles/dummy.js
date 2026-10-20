@@ -79,7 +79,7 @@ export default class Dummy extends Role
     static ghost(scene, obj)
     {
         const meta = DB.role(obj.id);
-        const sps = [meta.body, meta.head, meta.hand].filter(p=>p?.sprite).map(p=>{
+        const sps = [meta.body, meta.head, meta.hair, meta.hand].filter(p=>p?.sprite).map(p=>{
             const [key, frame] = p.sprite.split(':');
             return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
                 .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0);

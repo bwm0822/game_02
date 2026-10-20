@@ -9,8 +9,9 @@ import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
 import {AIM, dirTo, aimPose, gripAt, swingPose} from '../../src/core/pose.js';
 
 const FILES = ['role.json', 'item.json'];
-const PARTS = [['body', '身體'], ['head', '頭'], ['hand', '手']];
-const SLOTS = [['CAT_HELMET', '頭盔'], ['CAT_CHESTPLATE', '護甲'], ['CAT_GLOVES', '手套'], ['CAT_BOOTS', '靴子'], ['CAT_WEAPON', '武器']];
+const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
+// 空格剪影同遊戲 setting.js 的 CAT2ICON
+const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const WEAPON = [[['aim'], '瞄準 aim'], [['swing', 'aim'], '揮砍 aim'], [['swing', 'grip', 'x'], '握把 x'], [['swing', 'grip', 'y'], '握把 y']];
 const ZOOMS = [1, 2, 3, 4, 6, 'game'];
@@ -29,6 +30,7 @@ const S = {
     hist: [], hi: -1,
     rid: null,
     slots: {},                  // cat → item id
+    cur: 'CAT_WEAPON',          // 選中的格子，下方面板顯示它
     zoom: 3, view: true, anchor: true, b: true, g: false, z: false, flip: false,
     pose: '', t: 0, target: 0,  // target：目標方向（度，0＝右、90＝下）
 };
@@ -151,6 +153,7 @@ function select(rid)
 {
     S.rid = rid;
     S.slots = {};
+    S.cur = 'CAT_WEAPON';
     for (const e of role()?.inv?.equips ?? [])
     {
         const id = isObj(e) ? e.id : e, it = items()[id];
@@ -164,6 +167,31 @@ function setSlot(cat, id)
     if (id) S.slots[cat] = id;
     else delete S.slots[cat];
     render();
+}
+
+const emptyIcon = (cat, size) => {
+    const el = IC.iconEl(SLOTS.find(([c]) => c === cat)[2], size);
+    el.classList.add('empty');
+    return el;
+};
+const slotIcon = (cat, size) => S.slots[cat] ? IC.iconEl(items()[S.slots[cat]].icon, size) : emptyIcon(cat, size);
+
+// 點格子：選中並跳出挑選視窗；點 icon 就穿上並關窗，點窗外或 Esc 不改
+function pickEquip(cat)
+{
+    S.cur = cat;
+    render();
+    const dlg = $('dlgEquip'), name = SLOTS.find(([c]) => c === cat)[1];
+    const opts = Object.keys(items()).filter(i => items()[i].cat === cat && isObj(items()[i].equip));
+    const tile = (id, icon, lab) => h('div', {class: 'tile' + ((S.slots[cat] ?? '') === id ? ' sel' : ''), dataset: {id}, title: id || '卸下',
+        onclick: () => {dlg.close(); setSlot(cat, id);}}, icon, h('div', {class: 'lab'}, lab));
+    dlg.replaceChildren(
+        h('div', {class: 'title'}, `選擇${name}`),
+        h('div', {class: 'tiles'},
+            tile('', emptyIcon(cat, 40), '卸下'),
+            opts.map(i => tile(i, IC.iconEl(items()[i].icon, 40), items()[i].lab ?? i))));
+    dlg.onclick = (e) => {if (e.target === dlg) dlg.close();};
+    dlg.showModal();
 }
 
 // ---------- 畫面 ----------
@@ -216,25 +244,27 @@ function drawView()
     const r = role();
     if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 hand）' : '先在上方選擇專案資料夾'));
     const partRows = PARTS.filter(([k]) => isObj(r[k])).map(([k, name]) => h('tr', null,
-        h('td', {class: 'k'}, name), h('td', null, h('span', {class: 'sprite'}, r[k].sprite ?? '')), numCells('role.json', S.rid, [k])));
-    const slotRows = SLOTS.map(([cat, name]) => {
-        const id = S.slots[cat];
-        const opts = Object.keys(items()).filter(i => items()[i].cat === cat && isObj(items()[i].equip));
-        const sel = h('select', {onchange: (e) => setSlot(cat, e.target.value)},
-            h('option', {value: ''}, '（空）'),
-            opts.map(i => h('option', {value: i, selected: i === id}, `${i}　${items()[i].lab ?? ''}`)));
-        return h('tr', null, h('td', {class: 'k'}, name), h('td', null, sel),
-            id ? numCells('item.json', id, ['equip']) : NUMS.map(() => h('td')));
-    });
-    const wid = S.slots.CAT_WEAPON;
+        h('td', {class: 'k'}, name),
+        h('td', null, h('span', {class: 'sprite'}, r[k].sprite ?? ''), k === 'hair' && hairHidden() && h('span', {class: 'dim hidden-hair'}, '（目前被頭盔隱藏）')),
+        numCells('role.json', S.rid, [k])));
+    const slots = h('div', {class: 'slots'}, SLOTS.map(([cat, name]) =>
+        h('div', {class: 'slot' + (cat === S.cur ? ' sel' : ''), dataset: {cat}, title: S.slots[cat] ? `${name}：${S.slots[cat]}` : name,
+            onclick: () => pickEquip(cat)}, slotIcon(cat, 40))));
+    const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
+    const wid = S.cur === 'CAT_WEAPON' && id;
     $('view').replaceChildren(h('div', null,
         h('div', {class: 'head'}, IC.iconEl(r.icon, 48), h('span', {class: 'bigid'}, S.rid), h('span', {class: 'dim'}, r.lab ?? '')),
         h('div', {class: 'title'}, '角色部件（role.json）'),
         h('table', {class: 'fit'}, head('部件'), partRows),
         h('div', {class: 'title'}, '裝備（item.json，全角色共用；換裝只是試穿，不會寫回角色）'),
-        h('table', {class: 'fit'}, head('格子'), slotRows),
+        slots,
+        h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
+            id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? '')] : h('span', {class: 'dim'}, '（空）')),
+        id && h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, k))), h('tr', null, numCells('item.json', id, ['equip']))),
+        id && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
+            onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
         wid && [
-            h('div', {class: 'title'}, `武器動畫（${wid}）`),
+            h('div', {class: 'title'}, '武器動畫'),
             h('div', {class: 'hint'}, '瞄準 aim：圖片原生朝向（度），有它才會瞄準；揮砍要 aim 跟握把 x/y 都填，握把是圖格內像素座標（左上為原點）'),
             h('table', {class: 'fit'}, h('tr', null, WEAPON.map(([, l]) => h('th', null, l))),
                 h('tr', null, WEAPON.map(([p]) => h('td', null, numInput('item.json', wid, ['equip', ...p], ''))))),
@@ -282,6 +312,8 @@ function poseAt(eq, f, ms)
 // ---------- 預覽 ----------
 const scaleOf = () => S.zoom === 'game' ? Math.min(screen.width / 1024, screen.height / 768) : S.zoom;
 
+const hairHidden = () => SLOTS.some(([cat]) => items()[S.slots[cat]]?.equip?.hideHair);
+
 function partsOf(r)
 {
     const out = [];
@@ -290,7 +322,7 @@ function partsOf(r)
         if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0, isWeapon});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
     };
-    for (const [k] of PARTS) add(r[k], DEPTH[k]);
+    for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(r[k], DEPTH[k]);
     for (const [cat] of SLOTS) add(items()[S.slots[cat]]?.equip, DEPTH[cat], cat === 'CAT_WEAPON');
     return out.sort((a, b) => a.d - b.d);
 }
@@ -433,4 +465,4 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, poseOk, poseAt, drawPreview, render};
+window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, poseOk, poseAt, drawPreview, render};

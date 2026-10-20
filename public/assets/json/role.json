@@ -58,6 +58,11 @@
       "dex": 10,
       "con": 10,
       "int": 10
+    },
+    "hair": {
+      "sprite": "hair-01",
+      "scale": 0.25,
+      "x": -1
     }
   },
   "trump": {
@@ -314,7 +319,7 @@
     "icon": "head-melanie",
     "job": "trader",
     "gold": 200,
-    "style": "weak",
+    "style": "skittish",
     "trade": true,
     "unique": true,
     "faceR": true,

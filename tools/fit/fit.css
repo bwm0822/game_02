@@ -13,3 +13,21 @@ table.fit td.k { color: #aaa; }
 table.fit td .sprite { color: #888; font-size: 14px; }
 table.fit input.num { width: 70px; }
 table.fit select { min-width: 160px; }
+
+.slots { display: flex; gap: 6px; margin-bottom: 8px; }
+.slot { padding: 4px; background: #6b6b6b; border: 2px solid #8a8a8a; cursor: pointer; }
+.slot:hover { border-color: #ccc; }
+.slot.sel { border-color: #ffd700; }
+.slot .ico, .tile .ico { background: none; }
+.ico.empty { filter: brightness(0); opacity: .25; }
+.equipname { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.equipname .k { color: #aaa; }
+.hidehair { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
+.hidden-hair { margin-left: 6px; }
+
+#dlgEquip .title { margin-bottom: 8px; }
+#dlgEquip .tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+#dlgEquip .tile { width: 72px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border: 2px solid #3a3d44; cursor: pointer; }
+#dlgEquip .tile:hover { border-color: #888; }
+#dlgEquip .tile.sel { border-color: #ffd700; }
+#dlgEquip .tile .lab { font-size: 13px; text-align: center; word-break: break-all; }

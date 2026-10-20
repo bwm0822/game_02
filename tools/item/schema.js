@@ -42,7 +42,7 @@ export const FIELDS = {
     times: {label: '使用次數', type: 'int'},
     endurance: {label: '耐久', type: 'int'},
     storage: {label: '格數', type: 'int'},
-    equip: {label: '裝備圖', type: 'obj', fields: SPRITE},
+    equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, hideHair: {label: '藏頭髮', type: 'bool'}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},

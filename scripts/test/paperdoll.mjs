@@ -701,7 +701,7 @@ run('paperdoll', async t => {
         const cap = JSON.parse(await readItems());
         out.cap = [JSON.stringify(cap.h2.equip), JSON.stringify(cap.h3.equip)];
 
-        // 存到 role.json：同一個檔名也配角色的 body/head/hand/corpse
+        // 存到 role.json：同一個檔名也配角色的 body/head/hair/hand/corpse
         const roleTxt = JSON.stringify({r1: {kind: 'npc', body: {sprite: 'cap', scale: 0.25, y: 32}, head: {sprite: 'hat2', scale: 0.25}, hand: {sprite: 'cap'}}}, null, 2);
         const rw = await (await json.getFileHandle('role.json', {create: true})).createWritable(); await rw.write(roleTxt); await rw.close();
         const readRoles = async () => (await (await json.getFileHandle('role.json')).getFile()).text();
@@ -735,7 +735,7 @@ run('paperdoll', async t => {
     t.eq('role.json：只改勾的部件的擺放、其他不動', JSON.stringify(it.role.slice(0, 4)),
          JSON.stringify(['{"sprite":"cap","scale":0.25,"y":0,"x":2}', '{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"hat2","scale":0.25}', 'npc']));
     t.check('role.json：照 2 格縮排重寫、沒勾 item 就不動 item.json', it.role[4] && it.role[5]);
-    t.check('role.json：配不到時說明也提到角色部件', it.roleNope.includes('body/head/hand/corpse'), it.roleNope);
+    t.check('role.json：配不到時說明也提到角色部件', it.roleNope.includes('body/head/hair/hand/corpse'), it.roleNope);
 
     // 合併：dialog 一律 accept，所以有半透明時會烘入
     const m = await ev(async () => {
