@@ -6,6 +6,7 @@
 
 - `tools/index.html`＋`tools/main.js`：殼。分頁列、選專案資料夾、每個工具一個 iframe（`./item/` 等原本的頁面），**第一次點分頁才建 iframe**，之後切分頁只是 `hidden`，工具狀態（未存修改、紙娃娃圖層）都留著。網址 hash 記目前分頁（`/tools/#role`）。
 - `tools/common/shell.js`：工具端的接線，`onProject(fn)`／`notifySaved(file)`／`onSaved(fn)`／`setDirty(bool)`。
+- `tools/common/scrollbar.css`：所有工具共用的深色捲軸（`::-webkit-scrollbar`），`common/style.css` 用 `@import` 引入；紙娃娃不載 `common/style.css`，自己 `<link>` 它。
 - 工具頁不在 iframe 裡（直接開 `/tools/item/`）時沒有資料夾來源，頂端顯示「要從 /tools/ 開」；頁面照常初始化，`window.__ie`／`__re`／`__pd` 還在，無頭測試靠這個直接開工具頁、把 OPFS 假資料夾丟給 `setAssets()`／`setRoot()`。
 
 ## 專案資料夾

@@ -1,3 +1,4 @@
+@import url('./scrollbar.css');
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { display: flex; flex-direction: column; font: 16px system-ui, sans-serif; background: #1e1f22; color: #ddd; }
