@@ -117,6 +117,7 @@
             <div id="auTable" class="autoGrid"></div>
             <div class="hint">按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
+            <div class="row2"><button id="auItem">存到 item…</button></div>
         </div>
 
         <div id="modePixel" class="mode" hidden>
@@ -164,6 +165,15 @@
         </div>
         <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
+    </form>
+</dialog>
+
+<dialog id="dlgItems">
+    <form method="dialog">
+        <div class="title">存到 item.json</div>
+        <div id="diRows"></div>
+        <label id="diBakeRow" hidden><input id="diBake" type="checkbox" checked> 烘入不透明度</label>
+        <div class="row2"><button id="diOk" value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
     </form>
 </dialog>
 

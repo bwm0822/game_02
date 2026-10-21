@@ -53,3 +53,14 @@ dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
 #dlgTree.off { opacity: .4; pointer-events: none; }
 #dlgItemLab:has(input:disabled) { color: #888; }
+#dlgItems { width: 560px; }
+.irow { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #333; }
+.irow.off { opacity: .45; }
+.irow canvas { width: 48px; height: 48px; background: #1e1f22; flex: none; }
+.irow .body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.irow .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.irow .line[hidden] { display: none; }
+.irow select { background: #2b2d31; color: #ddd; border: 1px solid #555; flex: 1; }
+.irow input:disabled { opacity: .5; }
+.irow .err { color: #f77; }
+.irow .warn { color: #fc6; }

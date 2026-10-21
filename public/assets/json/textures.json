@@ -1,9 +1,12 @@
 {
   "image": {
+    "armor-04": "textures/equips/armor-04.png",
+    "boots-04": "textures/equips/boots-04.png",
     "cloth-armor": "textures/equips/cloth-armor.png",
     "cloth-boots": "textures/equips/cloth-boots.png",
     "cloth-gloves": "textures/equips/cloth-gloves.png",
     "cloth-hood": "textures/equips/cloth-hood.png",
+    "helmet-04": "textures/equips/helmet-04.png",
     "leather-armor-1": "textures/equips/leather-armor-1.png",
     "leather-armor": "textures/equips/leather-armor.png",
     "leather-boots-1": "textures/equips/leather-boots-1.png",
@@ -11,6 +14,9 @@
     "leather-gloves": "textures/equips/leather-gloves.png",
     "leather-helmet-1": "textures/equips/leather-helmet-1.png",
     "leather-helmet": "textures/equips/leather-helmet.png",
+    "鎖子甲-armor": "textures/equips/鎖子甲-armor.png",
+    "鎖子甲-boots": "textures/equips/鎖子甲-boots.png",
+    "鎖子甲-helmet": "textures/equips/鎖子甲-helmet.png",
     "icon_karen_m": "textures/icons/icon_karen_m.png",
     "icon_macron_m": "textures/icons/icon_macron_m.png",
     "icon_musk_m": "textures/icons/icon_musk_m.png",

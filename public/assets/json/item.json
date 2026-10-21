@@ -239,6 +239,32 @@
       "hideHair": true
     }
   },
+  "helmet_03_1": {
+    "cat": "CAT_HELMET",
+    "icon": "leather-helmet-1",
+    "gold": 30,
+    "def": 30,
+    "lab": "皮盔",
+    "equip": {
+      "sprite": "leather-helmet-1",
+      "x": -1.5,
+      "scale": 0.25,
+      "hideHair": true
+    }
+  },
+  "helmet_04": {
+    "cat": "CAT_HELMET",
+    "icon": "鎖子甲-helmet",
+    "gold": 30,
+    "def": 30,
+    "lab": "鎖子盔",
+    "equip": {
+      "sprite": "鎖子甲-helmet",
+      "x": -1.5,
+      "scale": 0.25,
+      "hideHair": true
+    }
+  },
   "chest_01": {
     "cat": "CAT_CHESTPLATE",
     "icon": "cloth-armor",
@@ -283,6 +309,30 @@
       "sprite": "leather-armor-1",
       "scale": 0.25,
       "y": 28
+    }
+  },
+  "chest_03_1": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "leather-armor-1",
+    "gold": 60,
+    "def": 40,
+    "lab": "皮甲",
+    "equip": {
+      "sprite": "leather-armor-1",
+      "scale": 0.25,
+      "y": 28
+    }
+  },
+  "chest_04": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "鎖子甲-armor",
+    "gold": 60,
+    "def": 40,
+    "lab": "鎖子甲",
+    "equip": {
+      "sprite": "鎖子甲-armor",
+      "scale": 0.25,
+      "y": 29
     }
   },
   "gloves_01": {
@@ -367,6 +417,40 @@
     },
     "def": 15,
     "lab": "皮靴"
+  },
+  "boots_03_1": {
+    "cat": "CAT_BOOTS",
+    "icon": "leather-boots-1",
+    "gold": 15,
+    "equip": {
+      "sprite": "leather-boots-1",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "drop": {
+      "sprite": "leather-boots",
+      "scale": 0.25
+    },
+    "def": 15,
+    "lab": "皮靴"
+  },
+  "boots_04": {
+    "cat": "CAT_BOOTS",
+    "icon": "鎖子甲-boots",
+    "gold": 15,
+    "equip": {
+      "sprite": "鎖子甲-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "drop": {
+      "sprite": "leather-boots",
+      "scale": 0.25
+    },
+    "def": 15,
+    "lab": "鎖子靴"
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",

@@ -1712,6 +1712,8 @@ function refreshProps()
 function refreshAuto(m)
 {
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
+    $('auItem').disabled = !m.parts || !S.assets;
+    $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
     for (const P of AUTO_PARTS)
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : S.auto[P.key];
@@ -2046,6 +2048,225 @@ async function saveLayer()
     status(`已存 ${saved}／.json`);
 }
 
+// ---------- 自動零件存到 item.json ----------
+// 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要寫 PNG／擺放（scale/x/y/a/ox/oy）
+
+const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS'};
+const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
+const TEX_SKIP = ['tbd', 'minimap'];
+
+// texture key → 所在資料夾（相對 textures/）；不讀 textures.json，因為新圖可能還沒更新清單
+async function texKeys(dir = S.assets.tex, path = '', out = new Map())
+{
+    for await (const h of dir.values())
+    {
+        if (h.kind === 'directory') {if (path || !TEX_SKIP.includes(h.name)) await texKeys(h, join(path, h.name), out);}
+        else if (/\.png$/i.test(h.name)) out.set(h.name.slice(0, -4), path);
+    }
+    return out;
+}
+
+function nextItemId(items, pre)
+{
+    const n = Math.max(0, ...Object.keys(items).map(id => +(id.match(new RegExp(`^${pre}_(\\d+)$`))?.[1] ?? 0)));
+    return `${pre}_${String(n + 1).padStart(2, '0')}`;
+}
+
+// 填 r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋別人的圖，存檔時 confirm）；回傳要處理的列
+function itemCheck(rows, items, keys)
+{
+    const act = rows.filter(r => r.on && (r.png || r.place));
+    const idOf = (r) => r.id ?? r.newId;
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: ''});
+    for (const r of act)
+    {
+        const err = (s) => {r.err ||= s;};
+        const old = r.id ? items[r.id]?.equip?.sprite : null;
+        if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
+        if (!r.id)
+        {
+            if (!r.newId) err('要填 id');
+            else if (items[r.newId]) err(`id ${r.newId} 已經有了`);
+            if (!r.lab) err('要填 lab');
+        }
+        if (act.filter(o => idOf(o) === idOf(r)).length > 1) err('跟別列是同一個 item');
+        if (!r.name) err('要填檔名');
+        else if (/[\\/:*?"<>|]/.test(r.name)) err('檔名不能有 \\ / : * ? " < > |');
+        if (!r.png) continue;
+        if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
+        const users = Object.keys(items).filter(id => id !== r.id && items[id].equip?.sprite === r.name);
+        const dir = keys.get(r.name), also = users.length ? `（${users.join('、')} 也用這張）` : '';
+        if (r.name === old)
+        {
+            if (users.length) r.warn = `另外 ${users.join('、')} 也用這張圖`;
+            continue;
+        }
+        if (old) r.warn = `sprite：${old} → ${r.name}`;
+        if (dir === undefined) continue;
+        if (dir !== 'equips') err(`textures/${join(dir, r.name)}.png 已經有了，換個檔名`);
+        else r.ask = `equips/${r.name}.png${also}`;
+    }
+    return act;
+}
+
+function insertAfter(obj, after, id, val)
+{
+    const out = {};
+    for (const [k, v] of Object.entries(obj))
+    {
+        out[k] = v;
+        if (k === after) out[id] = val;
+    }
+    out[id] = val;
+    return out;
+}
+
+function itemDialog(parts, items, keys)
+{
+    const dlg = $('dlgItems');
+    const rows = AUTO_PARTS.map(P => {
+        const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
+        const id = Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && items[id].equip?.sprite === name) ?? null;
+        return {P, part, on: !!part, id, name, png: true, place: true, newId: nextItemId(items, ITEM_PRE[P.key]), lab: ''};
+    });
+    const refresh = () => {
+        const act = itemCheck(rows, items, keys);
+        for (const r of rows)
+        {
+            const k = r.P.key, live = r.on && !!r.part;
+            for (const f of ['sel', 'name', 'png', 'place', 'id', 'lab']) $(`di-${k}-${f}`).disabled = !live;
+            if (live && !r.id) $(`di-${k}-png`).disabled = $(`di-${k}-place`).disabled = true;
+            if (live && r.id && !r.png) $(`di-${k}-name`).disabled = true;
+            $(`di-${k}-new`).hidden = !!r.id;
+            const msg = $(`di-${k}-msg`);
+            msg.className = r.err ? 'err' : 'warn';
+            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；');
+        }
+        $('diOk').disabled = !act.length || act.some(r => r.err);
+    };
+    // 結構變了（換 item、切 PNG）才把 r 寫回輸入框，打字時不動
+    const sync = (r) => {
+        const k = r.P.key;
+        $(`di-${k}-sel`).value = r.id ?? '';
+        $(`di-${k}-name`).value = r.name;
+        $(`di-${k}-png`).checked = r.png;
+        $(`di-${k}-place`).checked = r.place;
+        $(`di-${k}-on`).checked = r.on;
+    };
+    $('diRows').replaceChildren(...rows.map(r => {
+        const k = r.P.key, row = el('div', 'irow' + (r.part ? '' : ' off'));
+        const inp = (f, type, lab, cls) => {
+            const i = Object.assign(el('input', cls), {id: `di-${k}-${f}`, ...(type && {type})});
+            const l = el('label');
+            l.append(...(type === 'checkbox' ? [i, ` ${lab}`] : [`${lab} `, i]));
+            return [l, i];
+        };
+        const thumb = el('canvas');
+        thumb.width = thumb.height = 48;
+        if (r.part)
+        {
+            const c = r.part.C.canvas, s = Math.min(48 / c.width, 48 / c.height);
+            thumb.getContext('2d').drawImage(c, (48 - c.width * s) / 2, (48 - c.height * s) / 2, c.width * s, c.height * s);
+        }
+        const [onL, on] = inp('on', 'checkbox', r.P.name);
+        on.disabled = !r.part;
+        const sel = Object.assign(el('select'), {id: `di-${k}-sel`});
+        sel.append(Object.assign(el('option'), {value: '', textContent: '＋新增'}),
+                   ...Object.keys(items).filter(id => items[id].cat === ITEM_CAT[k])
+                       .map(id => Object.assign(el('option'), {value: id, textContent: `${id} ${items[id].lab ?? ''}（${items[id].equip?.sprite ?? '沒有 sprite'}）`})));
+        const [nameL, name] = inp('name', null, '檔名');
+        const [pngL, png] = inp('png', 'checkbox', 'PNG');
+        const [placeL, place] = inp('place', 'checkbox', '擺放');
+        const [idL, id] = inp('id', null, 'id');
+        const [labL, lab] = inp('lab', null, 'lab');
+        id.value = r.newId;
+        const nw = Object.assign(el('div', 'line'), {id: `di-${k}-new`});
+        nw.append(idL, labL);
+        const msg = Object.assign(el('div'), {id: `di-${k}-msg`});
+        const head = el('div', 'line'), line = el('div', 'line'), body = el('div', 'body');
+        head.append(onL, sel);
+        line.append(nameL, pngL, placeL);
+        body.append(head, line, nw, msg);
+        row.append(thumb, body);
+        const reset = () => {
+            r.name = (r.id && items[r.id].equip?.sprite) || r.part.C.name;
+            r.png = r.place = true;
+        };
+        on.onchange = () => {r.on = on.checked; refresh();};
+        sel.onchange = () => {r.id = sel.value || null; reset(); sync(r); refresh();};
+        name.oninput = () => {r.name = name.value.trim(); refresh();};
+        png.onchange = () => {
+            r.png = png.checked;
+            if (!r.png) r.name = items[r.id].equip?.sprite ?? r.name;
+            sync(r);
+            refresh();
+        };
+        place.onchange = () => {r.place = place.checked; refresh();};
+        id.oninput = () => {r.newId = id.value.trim(); refresh();};
+        lab.oninput = () => {r.lab = lab.value.trim(); refresh();};
+        return row;
+    }));
+    rows.forEach(sync);
+    const fade = parts.some(p => p.C.opacity < 1);
+    $('diBakeRow').hidden = !fade;
+    $('diBake').checked = true;
+    refresh();
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => {
+        res(dlg.returnValue === 'ok' ? {rows, bake: fade && $('diBake').checked} : null);
+    }, {once: true}));
+}
+
+// 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）
+async function saveItems()
+{
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const A = S.assets;
+    const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
+    if (!d) return;
+    let items = await readGameJson('item.json');
+    const keys = await texKeys(), act = itemCheck(d.rows, items, keys);
+    const bad = act.filter(r => r.err);
+    if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${r.P.name}：${r.err}`).join('\n')}`);
+    const ask = act.filter(r => r.ask);
+    if (ask.length && !confirm(`會覆蓋：\n${ask.map(r => `${r.P.name}：${r.ask}`).join('\n')}\n要繼續嗎？`)) return;
+    const done = [], fresh = [];
+    for (const r of act)
+    {
+        const {C} = r.part;
+        if (r.png)
+        {
+            const dir = keys.get(r.name) ?? 'equips';
+            if (!keys.has(r.name)) fresh.push(r.name);
+            await FS.writeFile(await mkDir(A.tex, dir), `${r.name}.png`, await PX.toPng(d.bake ? PX.fade(C.canvas, C.opacity) : C.canvas));
+        }
+        if (!r.id)
+        {
+            const equip = {sprite: r.name};
+            writeEquip(equip, C);
+            if (r.P.key === 'helmet') equip.hideHair = true;
+            const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
+            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip});
+            done.push(`新增 ${r.newId}`);
+            continue;
+        }
+        const it = items[r.id], e = it.equip ??= {}, old = e.sprite;
+        if (r.png && r.name !== old)
+        {
+            e.sprite = r.name;
+            if (it.icon === old) it.icon = r.name;
+            if (it.drop?.sprite === old) it.drop.sprite = r.name;
+        }
+        if (r.place) writeEquip(e, C);
+        done.push(r.id);
+    }
+    await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
+    SH.notifySaved('item.json');
+    status(`已存 item.json：${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
 // ---------- 專案 ----------
 // 只記原圖路徑（相對工作資料夾）＋步驟清單，開啟時從原圖重播；undo 紀錄不存
 // 圖層的 proj 只在開專案時設定，存專案只是把 💾 打勾的圖層寫出去，不改歸屬
@@ -2374,6 +2595,7 @@ $('auReset').onclick = () => {
 };
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
+$('auItem').onclick = () => saveItems().catch(e => status(e.message));
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
@@ -2405,4 +2627,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets};
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems};

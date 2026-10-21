@@ -75,7 +75,7 @@ function rectsOf(key, img)
     return Array.from({length: grid(s, img).count}, (_, n) => ({name: String(n), ...frameRect(s, img, n)}));
 }
 
-const isText = (v) => !/^[\w\-./ ]+(:\w+)?$/.test(v);
+const isText = (v) => !/^[\p{L}\p{N}_\-./ ]+(:\w+)?$/u.test(v);
 
 export function resolve(v)
 {

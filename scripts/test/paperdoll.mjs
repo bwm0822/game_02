@@ -1012,4 +1012,102 @@ run('paperdoll', async t => {
     t.eq('自動：零件刪光就離開、原圖維持隱藏', JSON.stringify(au.delAll), JSON.stringify(['move', false]));
     t.eq('自動：零件刪光後可以再拆', JSON.stringify(au.again), JSON.stringify(['auto', null]));
     t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([22, '22']));
+
+    // 自動零件存到 item.json：沿用上面 OPFS 的假 public/assets
+    const si = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const equips = await tex.getDirectoryHandle('equips'), icons = await tex.getDirectoryHandle('icons', {create: true});
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
+        const items = {
+            helmet_01: {cat: 'CAT_HELMET', icon: 'old-hat', equip: {sprite: 'old-hat', scale: 0.25}, drop: {sprite: 'old-hat'}},
+            chest_01: {cat: 'CAT_CHESTPLATE', icon: 'src-armor', gold: 5, equip: {sprite: 'src-armor', scale: 0.25}, drop: {sprite: 'src-armor'}},
+            boots_01: {cat: 'CAT_BOOTS', equip: {sprite: 'boot'}},
+            x1: {cat: 'CAT_FOOD'},
+        };
+        await put(json, 'item.json', JSON.stringify(items, null, 2));
+        for (const n of ['src-armor.png', 'old-hat.png']) await put(equips, n, 'x');
+        await put(icons, 'tak.png', 'x');
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const set = (id, v) => {const e = $(id); if (e.type === 'checkbox') e.checked = v; else e.value = v; e.dispatchEvent(new Event(e.tagName === 'SELECT' || e.type === 'checkbox' ? 'change' : 'input'));};
+        const open = async () => {const p = pd.saveItems(); await until(() => $('dlgItems').open); return {p};};
+        const close = async ({p}, v) => {$('dlgItems').close(v); await p;};
+
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ff0000'; g.fillRect(20, 30, 60, 40);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        await pd.setAssets(assets);
+        pd.setMode('auto');
+        out.before = $('auItem').disabled;
+        pd.applyMode();
+        out.after = $('auItem').disabled;
+
+        let p = await open();
+        out.rows = [$('di-helmet-sel').value, $('di-helmet-id').value, $('di-helmet-png').disabled, $('di-armor-sel').value, $('di-armor-name').value,
+                    $('di-boots-on').disabled, $('di-helmet-msg').textContent, $('diOk').disabled];
+        set('di-helmet-lab', '鐵盔');
+        out.labOk = $('diOk').disabled;
+        set('di-helmet-name', 'tak');
+        out.tak = [$('di-helmet-msg').textContent, $('diOk').disabled];
+        set('di-helmet-name', 'src-armor');
+        out.dup = $('di-helmet-msg').textContent;
+        set('di-helmet-name', 'src-helmet');
+        await close(p, 'ok');
+        const a = await readItems();
+        out.saved = [Object.keys(a).join(), JSON.stringify(a.helmet_02), JSON.stringify(a.chest_01), await has(equips, 'src-helmet.png'), pd.S.mode.type];
+
+        p = await open();
+        out.match = [$('di-helmet-sel').value, $('di-helmet-new').hidden];
+        set('di-helmet-png', false);
+        out.locked = [$('di-helmet-name').disabled, $('di-helmet-name').value];
+        set('di-armor-name', 'new-armor');
+        out.rename = $('di-armor-msg').textContent;
+        await close(p, 'ok');
+        const b = await readItems();
+        out.renamed = [JSON.stringify(b.chest_01), await has(equips, 'new-armor.png'), await has(equips, 'src-armor.png')];
+
+        p = await open();
+        set('di-helmet-on', false);
+        set('di-armor-sel', '');
+        out.newRow = [$('di-armor-name').value, $('di-armor-id').value, $('di-armor-png').checked];
+        set('di-armor-lab', '甲');
+        set('di-armor-name', 'old-hat');
+        out.ask = $('di-armor-msg').textContent;
+        const conf = window.confirm;
+        let asked = '';
+        window.confirm = (s) => {asked = s; return false;};
+        const txt = JSON.stringify(await readItems());
+        await close(p, 'ok');
+        window.confirm = conf;
+        out.declined = [asked.includes('equips/old-hat.png'), txt === JSON.stringify(await readItems())];
+        pd.cancelMode();
+        return out;
+    });
+    t.eq('存到 item：拆完才能按', JSON.stringify([si.before, si.after]), JSON.stringify([true, false]));
+    t.eq('存到 item：配不到預設新增、帶流水號、新增時 PNG 反灰；配得到就選它；沒零件的列反灰；lab 空的擋存',
+         JSON.stringify(si.rows), JSON.stringify(['', 'helmet_02', true, 'chest_01', 'src-armor', true, '要填 lab', true]));
+    t.check('存到 item：填了 lab 就能存', !si.labOk);
+    t.eq('存到 item：撞到 equips 以外的圖擋存', JSON.stringify(si.tak), JSON.stringify(['textures/icons/tak.png 已經有了，換個檔名', true]));
+    t.eq('存到 item：跟別列檔名重複', si.dup, '跟別列檔名重複');
+    t.eq('存到 item：新增插在同 cat 後面、頭盔 hideHair；已存在的只改擺放', JSON.stringify(si.saved), JSON.stringify([
+        'helmet_01,helmet_02,chest_01,boots_01,x1',
+        '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-2,"y":2,"hideHair":true}}',
+        '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"src-armor"}}',
+        true, 'auto']));
+    t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet_02', true]));
+    t.eq('存到 item：PNG 沒勾時檔名鎖成原本的 sprite', JSON.stringify(si.locked), JSON.stringify([true, 'src-helmet']));
+    t.eq('存到 item：改檔名提示 sprite 會換', si.rename, 'sprite：src-armor → new-armor');
+    t.eq('存到 item：改檔名連 icon、drop 一起換、舊圖留著', JSON.stringify(si.renamed), JSON.stringify([
+        '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"new-armor"}}', true, true]));
+    t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'chest_02', true]));
+    t.eq('存到 item：覆蓋別人的圖要提示', si.ask, '會覆蓋 equips/old-hat.png（helmet_01 也用這張）');
+    t.eq('存到 item：存檔時 confirm 覆蓋、取消就不寫', JSON.stringify(si.declined), JSON.stringify([true, true]));
 });
