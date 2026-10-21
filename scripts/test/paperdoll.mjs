@@ -1110,4 +1110,40 @@ run('paperdoll', async t => {
     t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'chest_02', true]));
     t.eq('存到 item：覆蓋別人的圖要提示', si.ask, '會覆蓋 equips/old-hat.png（helmet_01 也用這張）');
     t.eq('存到 item：存檔時 confirm 覆蓋、取消就不寫', JSON.stringify(si.declined), JSON.stringify([true, true]));
+
+    const th = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('th', {create: true});
+        const put = async (draw) => {
+            const c = document.createElement('canvas'); c.width = c.height = 100; draw(c.getContext('2d'));
+            const w = await (await dir.getFileHandle('x.png', {create: true})).createWritable(); await w.write(await new Promise(r => c.toBlob(r))); await w.close();
+        };
+        const until = (f) => new Promise(r => {const n = Date.now(), k = () => f() || Date.now() - n > 3000 ? r(f()) : requestAnimationFrame(k); k();});
+        const px = (c, x, y) => [...c.getContext('2d').getImageData(x, y, 1, 1).data].join();
+        await put(g => {g.fillStyle = '#f00'; g.fillRect(80, 80, 10, 10);});
+        await pd.setRoot(root);
+        (await until(() => [...$('tree').querySelectorAll('.row.dir')].find(r => r.title === 'th'))).click();
+        const c = await until(() => $('tree').querySelector('canvas.thumb')?.loaded && $('tree').querySelector('canvas.thumb'));
+        out.trim = c ? [px(c, 0, 0), px(c, 31, 31)] : null;
+        await new Promise(r => setTimeout(r, 20));
+        await put(g => {g.fillStyle = '#00f'; g.fillRect(0, 0, 100, 100);});
+        await pd.refreshThumbs();
+        out.update = c && px(c, 0, 0);
+        out.projSpacer = !!$('tree').querySelector('.row.proj span.thumb');
+        const b = $('splitL').getBoundingClientRect();
+        out.bar = [b.x + b.width / 2, b.y + b.height / 2];
+        return out;
+    });
+    t.eq('縮圖：裁掉透明邊再縮', JSON.stringify(th.trim), JSON.stringify(['255,0,0,255', '255,0,0,255']));
+    t.eq('縮圖：檔案改了重產', th.update, '0,0,255,255');
+    t.check('縮圖：專案檔留同寬空位', th.projSpacer);
+    const [bx, by] = th.bar;
+    await t.page.mouse.move(bx, by);
+    await t.page.mouse.down();
+    await t.page.mouse.move(bx + 100, by, {steps: 5});
+    await t.page.mouse.up();
+    const dragged = await ev(() => [document.getElementById('left').offsetWidth, localStorage.getItem('paperdoll.leftW')]);
+    await t.page.mouse.click(bx + 100, by, {clickCount: 2});
+    const reset = await ev(() => document.getElementById('left').offsetWidth);
+    t.eq('分隔線：拖曳改寬並記住、雙擊還原', JSON.stringify([...dragged, reset]), JSON.stringify([330, '330', 230]));
 });

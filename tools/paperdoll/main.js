@@ -1791,10 +1791,46 @@ function buildTree(box, opt)
     if (S.root) box.append(treeNode(S.root, S.root.name, '', 0, opt, true));
 }
 
+// 縮圖裁掉透明邊再縮；快取依路徑，lastModified 變了就重產
+const THUMB = 32;
+const thumbs = new Map();
+const thumbIO = new IntersectionObserver(es => {
+    for (const e of es.filter(e => e.isIntersecting))
+    {
+        thumbIO.unobserve(e.target);
+        drawThumb(e.target).catch(() => {});
+    }
+});
+
+async function thumbOf(fh, key)
+{
+    const file = await fh.getFile(), hit = thumbs.get(key);
+    if (hit?.mod === file.lastModified) return hit.cv;
+    const src = PX.fromImage(await createImageBitmap(file));
+    const b = PX.opaqueBounds(src, AUTO_ALPHA) ?? {x: 0, y: 0, w: src.width, h: src.height};
+    const k = THUMB / Math.max(b.w, b.h), w = b.w * k, h = b.h * k;
+    const cv = PX.newCanvas(THUMB, THUMB), g = cv.getContext('2d');
+    g.imageSmoothingEnabled = k < 1;
+    g.drawImage(src, b.x, b.y, b.w, b.h, (THUMB - w) / 2, (THUMB - h) / 2, w, h);
+    thumbs.set(key, {mod: file.lastModified, cv});
+    return cv;
+}
+
+async function drawThumb(c)
+{
+    const t = await thumbOf(c.fh, c.key), g = c.getContext('2d');
+    g.clearRect(0, 0, THUMB, THUMB);
+    g.drawImage(t, 0, 0);
+    c.loaded = true;
+}
+
+const refreshThumbs = () => Promise.all([...document.querySelectorAll('.tree canvas.thumb')].filter(c => c.loaded).map(drawThumb));
+
 function treeNode(dir, label, path, depth, opt, open)
 {
     const wrap = el('div'), row = el('div', 'row dir'), kids = el('div');
     row.style.paddingLeft = `${depth * 12 + 4}px`;
+    row.title = label;
     let loaded = false, expanded = false;
     const toggle = async (force) => {
         expanded = force ?? !expanded;
@@ -1808,8 +1844,15 @@ function treeNode(dir, label, path, depth, opt, open)
         const show = opt.filter ?? (n => /\.png$/i.test(n) || isProj(n));
         for (const f of files.filter(f => show(f.name)))
         {
-            const r = el('div', isProj(f.name) ? 'row file proj' : 'row file');
-            r.textContent = f.name;
+            const r = el('div', isProj(f.name) ? 'row file proj' : 'row file'), name = el('span', 'name');
+            const thumb = /\.png$/i.test(f.name) ? el('canvas', 'thumb') : el('span', 'thumb');
+            if (thumb instanceof HTMLCanvasElement)
+            {
+                Object.assign(thumb, {width: THUMB, height: THUMB, fh: f, key: join(path, f.name)});
+                thumbIO.observe(thumb);
+            }
+            name.textContent = r.title = f.name;
+            r.append(thumb, name);
             r.style.paddingLeft = `${depth * 12 + 28}px`;
             r.onclick = () => opt.onFile(f, dir, path, r);
             kids.append(r);
@@ -2033,6 +2076,7 @@ async function saveLayer()
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
+    refreshThumbs();
     Object.assign(L, {dir: r.dir, path: r.path});
     // 拖進來的圖（沒有原圖路徑）或覆蓋了自己的原圖：改以剛存的檔當原圖，步驟歸零（舊 undo 對不上新原圖，一起清掉）
     // 新原圖已經烘了不透明度，opacity 要歸 1，不然會乘兩次
@@ -2443,12 +2487,13 @@ async function exportIcon()
     const icon = r.bake ? iconCanvas(N, true) : solid;
     if (!icon) return status('沒有可匯出的不透明像素');
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(icon));
+    refreshThumbs();
     status(`已匯出 ${join(r.path, r.name)}.png`);
 }
 
 // ---------- 綁定 ----------
 
-$('btnRefresh').onclick =() => buildTree($('tree'), treeOpt);
+$('btnRefresh').onclick = () => {thumbs.clear(); buildTree($('tree'), treeOpt);};
 $('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
 $('btnDup').onclick = duplicateLayer;
 $('btnMergeDown').onclick = mergeDown;
@@ -2612,6 +2657,27 @@ $('stage').addEventListener('drop', async e => {
 
 new ResizeObserver(dirty).observe(cv);
 
+// 側欄分隔線：拖曳改寬、雙擊回預設，寬度記在 localStorage
+function splitter(bar, panel, key, def, sign)
+{
+    const set = (w) => {panel.style.width = `${Math.min(600, Math.max(150, w))}px`;};
+    try {set(Number(localStorage.getItem(key)) || def);}
+    catch {set(def);}
+    const keep = () => {
+        try {localStorage.setItem(key, panel.offsetWidth);}
+        catch {}
+    };
+    bar.onpointerdown = (e) => {
+        const x0 = e.clientX, w0 = panel.offsetWidth;
+        bar.setPointerCapture(e.pointerId);
+        bar.onpointermove = (e) => set(w0 + sign * (e.clientX - x0));
+        bar.onpointerup = () => {bar.onpointermove = bar.onpointerup = null; keep();};
+    };
+    bar.ondblclick = () => {set(def); keep();};
+}
+splitter($('splitL'), $('left'), 'paperdoll.leftW', 230, 1);
+splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
+
 (async () => {
     S.view.px = cv.clientWidth / 2;
     S.view.py = cv.clientHeight / 2;
@@ -2627,4 +2693,4 @@ new ResizeObserver(dirty).observe(cv);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems};
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs};
