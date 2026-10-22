@@ -24,8 +24,7 @@ export class Pic extends OverlapSizer
         }
         if(icon) 
         {
-            const ascii = Utility.isASCIIString(icon);
-            if(ascii) {this._createImg(icon);}
+            if(Utility.isTexture(scene,icon)) {this._createImg(icon);}
             else {this._createBbc(icon);}       
         }
 
@@ -73,9 +72,7 @@ export class Pic extends OverlapSizer
     //------------------------------------------------------
     setIcon(icon,{tint=0xffffff,alpha=1}={})
     {
-        const ascii = Utility.isASCIIString(icon);
-
-        if(ascii)
+        if(Utility.isTexture(this.scene,icon))
         {
             if(this._bbc) {this.hide(this._bbc);}
             if(!this._img) {this._createImg(icon);}
@@ -325,8 +322,7 @@ export function uLabel(scene, config={})
 
     if(icon)
     {
-        const ascii = Utility.isASCIIString(icon);
-        if(ascii) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
+        if(Utility.isTexture(scene,icon)) {lab._icon=uSprite.call(lab,scene, typeof icon==='object'?icon:{icon:icon});}
         else {lab._icon=uBbc.call(lab,scene,{text:icon,ext:{align:'center',expand:false}});}
     }
 
@@ -334,8 +330,7 @@ export function uLabel(scene, config={})
 
     if(iconR)
     {
-        const ascii = Utility.isASCIIString(iconR);
-        if(ascii) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
+        if(Utility.isTexture(scene,iconR)) {lab._icon=uSprite.call(lab,scene, typeof iconR==='object'?iconR:{icon:iconR});}
         else {lab._icon=uBbc.call(lab,scene,{text:iconR,ext:{align:'center',expand:false}});}
     }
 

@@ -649,9 +649,7 @@ export class ItemView extends View
 
         if(this.key)
         {
-            const ascii = Utility.isASCIIString(this.key);
-
-            if(ascii)
+            if(Utility.isTexture(this.scene,this.key))
             {
                 // frame 為 null(例如 image-collection tileset 沒有數字 frame)時不能拼成字串，
                 // "key:null" 這種字串仍然會去查一個叫 "null" 的 frame，要整段省略掉才會落回 base frame

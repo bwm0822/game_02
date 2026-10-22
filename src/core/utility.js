@@ -778,6 +778,13 @@ export default class Utility
         return /^[\x00-\x7F]*$/.test(str);
     }
 
+    // icon 是 texture key（'key' 或 'key:frame'）還是要當文字顯示的 emoji/字
+    static isTexture(scene, icon)
+    {
+        if(!icon || typeof icon==='object') {return true;}
+        return scene.textures.exists(icon.split(':')[0]);
+    }
+
 
     static getBound(elm, cam)
     {
