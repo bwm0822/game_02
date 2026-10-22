@@ -789,6 +789,7 @@ export class Doll extends Pic
         };
         add(part.sprite, depth);
         add(part.ext, PART_DEPTH[GM.PART.EXT]);
+        add(part.back, PART_DEPTH[GM.PART.BACK]);
         return sps;
     }
 

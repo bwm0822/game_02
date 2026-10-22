@@ -925,6 +925,7 @@ export class RoleView extends View
         let sps = [];
         addSp(part.sprite, PART_DEPTH[type]);
         addSp(part.ext, PART_DEPTH[GM.PART.EXT]);
+        addSp(part.back, PART_DEPTH[GM.PART.BACK]);
         return sps;
     }
 

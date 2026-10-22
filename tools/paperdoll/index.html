@@ -57,6 +57,7 @@
             <button data-mode="warp">變形</button>
             <button data-mode="auto">自動</button>
             <button data-mode="pixel">像素</button>
+            <button data-mode="split">前後片</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
@@ -134,6 +135,13 @@
             <div id="pxInfo" class="dim"></div>
             <div class="hint">拖曳畫在選取圖層上（那格直接換成這個顏色，不混色）；Alt+點吸取顏色（連 alpha）；Ctrl+Z／Ctrl+Y 一筆一筆退。有修補的圖層不能再縮放、變形，要先「清除修補」</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="pxClear">清除修補</button></div>
+        </div>
+
+        <div id="modeSplit" class="mode" hidden>
+            <label>輪廓線：亮度 &lt; <input id="spT" type="range" min="1" max="255" value="24"> <span id="spV">24</span></label>
+            <div id="spInfo" class="dim"></div>
+            <div class="hint">頭盔拆成前片（蓋住頭，原圖層）跟後片（被頭蓋住，正下方的「-back」層）：從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊當後片（洋紅色）。拖起點、改門檻會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉後片、把前片補回原樣</div>
+            <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="spRevoke">撤掉前後片</button></div>
         </div>
 
         <div class="title">屬性</div>

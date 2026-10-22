@@ -22,6 +22,7 @@ export function partsOf(r, items)
         if (!isObj(p)) return;
         if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
+        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
     };
     const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
     add(r.body, DEPTH.body); add(r.head, DEPTH.head);

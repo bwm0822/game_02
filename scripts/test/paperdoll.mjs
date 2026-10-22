@@ -1146,4 +1146,100 @@ run('paperdoll', async t => {
     await t.page.mouse.click(bx + 100, by, {clickCount: 2});
     const reset = await ev(() => document.getElementById('left').offsetWidth);
     t.eq('分隔線：拖曳改寬並記住、雙擊還原', JSON.stringify([...dragged, reset]), JSON.stringify([330, '330', 230]));
+
+    // 前後片：橫線（帽帶）跟直線（耳罩）圍起來的右下塊是後片；沿用上面 OPFS 的假 public/assets
+    const sp = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), equips = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
+        g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeRect(22, 22, 156, 156);
+        g.fillStyle = '#000'; g.fillRect(20, 78, 160, 4); g.fillRect(68, 80, 4, 100);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'hood', null, null, null);
+        const a = (M, x, y) => M.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        const probe = [[120, 120], [100, 50], [100, 80], [70, 120], [40, 120], [74, 84]];
+        const bits = (M) => probe.map(([x, y]) => a(M, x, y) > 128 ? 1 : 0).join('');
+
+        pd.setMode('split');
+        const m = pd.S.mode;
+        out.enter = [m.type, m.err, m.start.x, m.start.y, !!m.poly];
+        m.start = {x: 100, y: 80};
+        pd.splitRun(m);
+        out.onLine = [m.err?.includes('輪廓線上'), m.poly];
+        m.start = {x: 100, y: 100};
+        pd.splitRun(m);
+        pd.applyMode();
+        const B = pd.S.layers.find(M => M.name === 'hood-back');
+        out.layers = pd.S.layers.map(M => M.name).join();
+        out.same = [B.canvas.width, B.canvas.height, L.canvas.width, B.x === L.x && B.y === L.y];
+        out.bits = [bits(L), bits(B)];
+        out.pair = pd.splitPair(B)?.F === L && pd.splitPair(L)?.B === B;
+        out.replay = JSON.stringify(JSON.parse(JSON.stringify(L.ops))) === JSON.stringify(L.ops);
+
+        const n = L.ops.at(-1).pts.length;
+        pd.select(B); pd.setMode('split');
+        out.resume = [pd.S.mode.layer === L, pd.S.mode.poly.pts.length === n, a(L, 120, 120), $('spRevoke').disabled];
+        pd.cancelMode();
+        out.cancel = [a(L, 120, 120), L.ops.length];
+        pd.undo();
+        out.undo = [pd.S.layers.length, a(L, 120, 120), L.ops.length];
+        pd.redo();
+        out.redo = [pd.S.layers.length, a(L, 120, 120)];
+
+        await put(json, 'item.json', JSON.stringify({hd: {cat: 'CAT_HELMET', icon: 'hood', equip: {sprite: 'hood', scale: 0.25}}}, null, 2));
+        const save = async (M) => {
+            const p = pd.saveLayer();
+            await until(() => $('dlgSave').open);
+            await until(() => !$('dlgItem').disabled);
+            const tags = $('dlgItemIds').textContent;
+            $('dlgSave').close('ok');
+            await p;
+            return tags;
+        };
+        const alert = window.alert;
+        let said = '';
+        window.alert = (s) => {said = s;};
+        B.x += 1;
+        pd.select(L);
+        await save(L);
+        out.mismatch = said;
+        B.x -= 1;
+        out.tags = await save(L);
+        const it = (await readItems()).hd;
+        out.saved = [JSON.stringify(it), await has(equips, 'hood.png'), await has(equips, 'hood-back.png'), await has(equips, 'hood-icon.png')];
+        pd.select(B);
+        out.backTags = await save(B);
+        window.alert = alert;
+
+        pd.select(L); pd.setMode('split'); pd.splitRevoke();
+        out.revoke = [pd.S.layers.map(M => M.name).join(), a(L, 120, 120), L.ops.length, pd.S.mode.type];
+        pd.undo();
+        out.revokeUndo = [pd.S.layers.length, a(L, 120, 120)];
+        return out;
+    });
+    t.eq('前後片：進模式就追線，起點是中央那一直行上、線圍起來那段的中點', JSON.stringify(sp.enter), JSON.stringify(['split', null, 100, 128, true]));
+    t.eq('前後片：起點在線上時報錯、沒有多邊形', JSON.stringify(sp.onLine), JSON.stringify([true, null]));
+    t.eq('前後片：後片放在前片正下方、叫 -back', sp.layers, 'hood-back,hood');
+    t.eq('前後片：兩片同尺寸同位置', JSON.stringify(sp.same), JSON.stringify([200, 200, 200, true]));
+    t.eq('前後片：右下塊歸後片、線（帽帶、耳罩）留給前片', JSON.stringify(sp.bits), JSON.stringify(['011110', '100001']));
+    t.check('前後片：前後片互相認得', sp.pair);
+    t.check('前後片：步驟 JSON 來回不變（專案存讀）', sp.replay);
+    t.eq('前後片：選後片再進來＝接著調前片、帶回多邊形、前片顯示拆之前、可以撤掉', JSON.stringify(sp.resume), JSON.stringify([true, true, 255, false]));
+    t.eq('前後片：取消＝回到拆好的樣子', JSON.stringify(sp.cancel), JSON.stringify([0, 1]));
+    t.eq('前後片：一次 undo 拿掉後片、前片補回', JSON.stringify(sp.undo), JSON.stringify([1, 255, 0]));
+    t.eq('前後片：redo', JSON.stringify(sp.redo), JSON.stringify([2, 0]));
+    t.eq('前後片存檔：兩片位置不同就擋', sp.mismatch, '沒有存檔：hood 跟 hood-back 的位置不一樣（x）');
+    t.eq('前後片存檔：存前片連後片、icon 一起寫，equip.back、icon 指過去', JSON.stringify(sp.saved), JSON.stringify([
+        '{"cat":"CAT_HELMET","icon":"hood-icon","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0,"back":"hood-back"}}', true, true, true]));
+    t.eq('前後片存檔：-back 圖層配得到 equip.back', sp.backTags, 'hd.back');
+    t.eq('前後片：撤掉＝刪後片、前片補回、離開模式', JSON.stringify(sp.revoke), JSON.stringify(['hood', 255, 0, 'move']));
+    t.eq('前後片：撤掉可以 undo', JSON.stringify(sp.revokeUndo), JSON.stringify([2, 0]));
 });

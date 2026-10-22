@@ -90,6 +90,7 @@ export const GM =
         HAND       :   0b0010_0000_0000_0000,
         EXT        :   0b0100_0000_0000_0000,
         HAIR       :   0b1000_0000_0000_0000,
+        BACK       : 0b1_0000_0000_0000_0000,
     },
 
     FAV:{
@@ -573,6 +574,7 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.HAIR] : 2.5,
     [GM.PART.HAND] : 5,
     [GM.PART.EXT] : 6,
+    [GM.PART.BACK] : 1.5,
     [GM.CAT.HELMET] : 3,
     [GM.CAT.CHESTPLATE] : 1,
     [GM.CAT.GLOVES] : 6,

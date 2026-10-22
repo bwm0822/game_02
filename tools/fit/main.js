@@ -321,6 +321,7 @@ function partsOf(r)
         if (!isObj(p)) return;
         if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0, isWeapon});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
+        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
     };
     for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(r[k], DEPTH[k]);
     for (const [cat] of SLOTS) add(items()[S.slots[cat]]?.equip, DEPTH[cat], cat === 'CAT_WEAPON');

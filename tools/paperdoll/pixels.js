@@ -382,4 +382,115 @@ export function fade(src, k)
 
 export const alphaAt = (src, x, y) => pixelAt(src, x, y)?.[3] ?? 0;
 
+// ---------- 前後片 ----------
+// 從起點像素 (x,y) 往上、往左掃到輪廓線（alpha ≥ 128 且亮度 < t）。上線當成「每一直行一個 y」往左右推、
+// 左線當成「每一橫列一個 x」往上下推，所以路口岔出去的線（例如帽帶下緣往下接耳罩的邊）走不進去：
+// 每一行只在預測位置（照前緣的斜率）附近找線段；線段突然變很長＝跟岔線併在一起，改用預測對得上的那一側邊緣
+// 點取在線靠起點那側的邊上，所以線留給前片。往外走的（上線往右、左線往下）旁邊碰到透明就停、直直延伸出圖；
+// 往內走的（上線往左、左線往上）碰到另一條線（線段變很長）就停，兩端在轉角接起來
+// 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}
+
+const SPLIT_ALPHA = 128;
+
+export function splitTrace(src, {x, y, t})
+{
+    const W = src.width, H = src.height, d = src.getContext('2d').getImageData(0, 0, W, H).data;
+    const idx = (X, Y) => X < 0 || Y < 0 || X >= W || Y >= H ? -1 : (Y * W + X) * 4;
+    const solid = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA;};
+    const line = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA && d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114 < t;};
+    if (!solid(x, y)) return {err: '起點在透明的地方'};
+    if (line(x, y)) return {err: '起點在輪廓線上，拖到線圍起來的區域裡'};
+
+    // 主軸 i 是往前推的方向、副軸 j 往大的那側是後片：上線 i=x、j=y，左線 i=y、j=x
+    const T = {n: W, line: (i, j) => line(i, j), solid: (i, j) => solid(i, j), pt: (i, j) => ({x: i + 0.5, y: j})};
+    const L = {n: H, line: (i, j) => line(j, i), solid: (i, j) => solid(j, i), pt: (i, j) => ({x: j, y: i + 0.5})};
+
+    // 從起點沿副軸往小的方向掃到線：那條線在這一行的前緣 f、後緣 b
+    const hit = (A, i, j, name) => {
+        while (--j >= 0 && !A.line(i, j)) if (!A.solid(i, j)) return {err: `往${name}掃到透明，沒碰到輪廓線`};
+        if (j < 0) return {err: `往${name}掃到圖邊，沒碰到輪廓線`};
+        const b = j;
+        while (j > 0 && A.line(i, j - 1)) j--;
+        return {i, f: j, b, w: b - j + 1};
+    };
+
+    const trace = (A, h, dir, inward, guard) => {
+        const K = Math.max(4, h.w * 2), R = Math.ceil(h.w / 2) + 2, gapMax = Math.max(2, h.w), long = h.w * 1.8 + 1;
+        const fs = [h.f], pts = [A.pt(h.i, h.b + 1)];
+        let f = h.f, b = h.b, gap = 0, end = 'end';
+        for (let i = h.i + dir; i >= 0 && i < A.n; i += dir)
+        {
+            if (guard?.(i)) {end = 'guard'; break;}
+            const k = Math.min(K, fs.length - 1);
+            const slope = k ? Math.max(-2, Math.min(2, (fs.at(-1) - fs.at(-1 - k)) / k)) : 0;
+            const pf = f + slope, pb = b + slope;
+            let best = null;
+            for (let j = Math.floor(pf - R); j <= Math.ceil(pb + R); j++)
+            {
+                if (!A.line(i, j)) continue;
+                let rf = j, rb = j;
+                while (A.line(i, rf - 1)) rf--;
+                while (A.line(i, rb + 1)) rb++;
+                const ov = Math.min(rb, pb) - Math.max(rf, pf);
+                if (!best || ov > best.ov) best = {rf, rb, ov};
+                j = rb;
+            }
+            if (!best)
+            {
+                if (!A.solid(i, Math.round(pf))) {end = 'out'; break;}
+                if (++gap > gapMax) break;
+                fs.push(f = pf);
+                b = pb;
+                continue;
+            }
+            gap = 0;
+            const {rf, rb} = best;
+            if (rb - rf + 1 <= long) {f = rf; b = rb;}
+            else if (inward) {end = 'junction'; break;}
+            else if (Math.abs(rf - pf) <= R) {f = rf; b = rf + h.w - 1;}
+            else if (Math.abs(rb - pb) <= R) {b = rb; f = rb - h.w + 1;}
+            else {f = pf; b = pb;}
+            fs.push(f);
+            pts.push(A.pt(i, b + 1));
+            if (!A.solid(i, Math.floor(f) - 2) || !A.solid(i, Math.ceil(b) + 2)) {end = 'out'; break;}
+        }
+        return {pts, end};
+    };
+
+    const up = hit(T, x, y, '上'), left = hit(L, y, x, '左');
+    if (up.err || left.err) return {err: up.err ?? left.err};
+    const tr = trace(T, up, 1, false), ld = trace(L, left, 1, false);
+    if (tr.end !== 'out' || ld.end !== 'out') return {err: `${tr.end !== 'out' ? '上線往右' : '左線往下'}沒走到外面（線斷了），換個起點或調門檻`};
+    const tl = trace(T, up, -1, true, i => i < left.f - left.w * 2);
+    const lu = trace(L, left, -1, true, i => i < up.f - up.w * 2);
+
+    const e = 2;
+    const corner = {x: lu.pts.at(-1).x, y: tl.pts.at(-1).y};
+    const te = {x: W + e, y: tr.pts.at(-1).y}, le = {x: ld.pts.at(-1).x, y: H + e};
+    const top = simplify([corner, ...[...tl.pts].reverse(), ...tr.pts.slice(1), te]);
+    const lft = simplify([le, ...[...ld.pts].reverse(), ...lu.pts.slice(1)]);
+    return {pts: [...top, {x: W + e, y: H + e}, ...lft]};
+}
+
+// Ramer–Douglas–Peucker，tol 是圖片像素
+function simplify(pts, tol = 0.75)
+{
+    if (pts.length < 3) return pts;
+    const keep = new Uint8Array(pts.length), stack = [[0, pts.length - 1]];
+    keep[0] = keep[pts.length - 1] = 1;
+    while (stack.length)
+    {
+        const [i0, i1] = stack.pop(), a = pts[i0], b = pts[i1];
+        const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+        let md = 0, mi = -1;
+        for (let i = i0 + 1; i < i1; i++)
+        {
+            const dd = Math.abs((pts[i].x - a.x) * dy - (pts[i].y - a.y) * dx) / len;
+            if (dd > md) {md = dd; mi = i;}
+        }
+        if (md > tol) {keep[mi] = 1; stack.push([i0, mi], [mi, i1]);}
+    }
+    return pts.filter((_, i) => keep[i]);
+}
+
 export const toPng = (c) => new Promise(res => c.toBlob(res, 'image/png'));

@@ -96,6 +96,7 @@ function removeLayer(L)
             Object.assign(m, {snap: History.drop(m.snap, L, true), hist: drop(m.hist), fut: drop(m.fut)});
         }
     }
+    else if (m.type === 'split' && m.back === L) m.back = null;
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
@@ -122,11 +123,11 @@ function mergeLayers(layers)
 }
 
 // ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件
-function cloneAbove(L, name)
+function cloneAbove(L, name, below = false)
 {
     const {auto, autoSrc, ...rest} = L;
     const C = {...rest, id: ++uid, name};
-    S.layers.splice(S.layers.indexOf(L) + 1, 0, C);
+    S.layers.splice(S.layers.indexOf(L) + (below ? 0 : 1), 0, C);
     return C;
 }
 
@@ -238,13 +239,14 @@ function autoSet(v)
 }
 
 // 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；scale% 記在自動產生的 xform 上（pct），
-// 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, xform(pct), ...paint] 才能再調
+// 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, xform(pct), ...paint／前後片] 才能再調
+// 零件拆了前後片時，後片跟著前片搬、一起進模式內的 undo
 const autoGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 function autoBase(C)
 {
     let i = C.ops.length - 1;
-    while (C.ops[i]?.type === 'paint') i--;
+    while (C.ops[i]?.type === 'paint' || C.ops[i]?.split) i--;
     return C.ops[i]?.type === 'xform' && C.ops[i].pct && C.ops[i - 1]?.type === 'removeGreen' ? i : -1;
 }
 
@@ -255,7 +257,8 @@ function autoGroup(L)
     return parts.length ? {gid, parts, src: S.layers.find(M => M.autoSrc === gid) ?? null} : null;
 }
 
-const autoSnap = (parts) => ({group: [hist.snapList(S), ...parts.map(p => hist.snap(p.C))]});
+const autoLayers = (parts) => parts.flatMap(p => withBack(p.C));
+const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L))]});
 const AUTO_STEPS = 50;
 const autoRow = ({C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale)});
 
@@ -266,12 +269,18 @@ function autoScale(T, part, pct)
     Object.assign(C, {ops: [...T.ops, op], canvas: PX.xform(T.canvas, op)});
 }
 
-const autoPlace = ({C}, {x, y}) => Object.assign(C, {x: x / S.scale, y: y / S.scale});
+function autoShift(C, x, y)
+{
+    const dx = x - C.x, dy = y - C.y;
+    for (const L of withBack(C)) Object.assign(L, {x: L.x + dx, y: L.y + dy});
+}
+
+const autoPlace = ({C}, {x, y}) => autoShift(C, x / S.scale, y / S.scale);
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵）記零件改之前的樣子；離開時還有步驟才記一筆全域 undo
 function autoStep(m)
 {
-    m.hist.push({group: m.parts.map(p => hist.snap(p.C))});
+    m.hist.push({group: autoLayers(m.parts).map(L => hist.snap(L))});
     if (m.hist.length > AUTO_STEPS) m.hist.shift();
     m.fut = [];
 }
@@ -280,7 +289,7 @@ function autoUndo(m, from, to)
 {
     const s = from.pop();
     if (!s) return false;
-    to.push({group: m.parts.map(p => hist.snap(p.C))});
+    to.push({group: autoLayers(m.parts).map(L => hist.snap(L))});
     History.restore(s);
     autoSet({...S.auto, ...Object.fromEntries(m.parts.map(p => [p.P.key, autoRow(p)]))});
     return true;
@@ -291,6 +300,7 @@ function autoApply(m, part, row)
 {
     const cur = autoRow(part);
     if (row.pct === cur.pct && row.x === cur.x && row.y === cur.y) return;
+    if (row.pct !== cur.pct && splitOp(part.C, false)) return alert(`${part.C.name} 拆了前後片，改 scale 要先到「前後片」按「撤掉前後片」`);
     if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
     autoStep(m);
     if (row.pct !== cur.pct)
@@ -308,7 +318,7 @@ function autoMove(m, part, x, y, step = true)
     const {C} = part;
     if (x === C.x && y === C.y) return false;
     if (step) autoStep(m);
-    Object.assign(C, {x, y});
+    autoShift(C, x, y);
     return true;
 }
 
@@ -375,7 +385,7 @@ function autoRevoke()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts) return cancelMode();
-    const parts = S.layers.filter(C => C.auto?.gid === m.gid), src = m.src;
+    const parts = S.layers.filter(C => C.auto?.gid === m.gid).flatMap(withBack), src = m.src;
     if (m.hist.length) hist.push(m.snap);
     hist.push({group: [hist.snapList(S), ...(src ? [hist.snap(src, true)] : [])]});
     S.layers = S.layers.filter(C => !parts.includes(C));
@@ -390,6 +400,177 @@ function autoKeeps(m, L)
 {
     if (!m.parts) return L === m.layer;
     return L === m.src || m.parts.some(p => p.C === L);
+}
+
+// ---------- 前後片 ----------
+// 頭盔拆成蓋住頭的前片（原圖層）跟被頭蓋住的後片（正下方的「名字-back」）：PX.splitTrace() 從起點追輪廓線產生後片多邊形，
+// 可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋；確定時前片加 mask(挖掉)、後片加 mask(keep)，不 trim，兩層同尺寸同位置
+// 兩個 mask 都帶 split = {gid, x, y, t}（起點、門檻），靠它認前後片，跟著 ops 存進專案；
+// 前片最後一步是這個 mask 時再進來就拿掉它、帶出原本的多邊形接著改，後面又疊了別的步驟就擋下
+
+const SPLIT_KEY = 'paperdoll.splitT';
+const SPLIT_STEPS = 50;
+const splitOp = (L, keep) => L.ops.findLast(o => o.type === 'mask' && !!o.keep === keep && o.split);
+const splitFind = (gid, keep) => S.layers.find(L => splitOp(L, keep)?.split.gid === gid) ?? null;
+const splitBack = (L) => {const o = splitOp(L, false); return o ? splitFind(o.split.gid, true) : null;};
+const withBack = (L) => [L, splitBack(L)].filter(Boolean);
+
+function splitPair(L)
+{
+    const gid = (splitOp(L, false) ?? splitOp(L, true))?.split.gid;
+    const F = gid && splitFind(gid, false), B = gid && splitFind(gid, true);
+    return F && B ? {F, B} : null;
+}
+
+function splitT()
+{
+    let t = 24;
+    try {t = +localStorage.getItem(SPLIT_KEY) || t;}
+    catch {}
+    return t;
+}
+
+function splitSetT(t)
+{
+    $('spT').value = $('spV').textContent = t;
+    try {localStorage.setItem(SPLIT_KEY, t);}
+    catch {}
+}
+
+// 選前片或後片都進來調前片；顯示的是拆之前的樣子
+function splitStart(L)
+{
+    const gid = splitOp(L, true)?.split.gid, F = gid ? splitFind(gid, false) : L;
+    if (!F) return status(`找不到 ${L.name} 的前片`), null;
+    if (F.locked) return status(`${F.name} 鎖定中`), null;
+    const last = F.ops.at(-1), resume = !!last?.split;
+    if (!resume && splitOp(F, false)) return status(`${F.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
+    const B = resume ? splitFind(last.split.gid, true) : null;
+    if (B && !B.ops.at(-1)?.split) return status(`${B.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
+    const m = {type: 'split', layer: F, back: B, snap: hist.snap(F), gid: last?.split?.gid ?? null, hist: [], fut: [], changed: false, poly: null, err: null};
+    if (resume)
+    {
+        const ops = F.ops.slice(0, -1);
+        Object.assign(F, {ops, canvas: PX.replay(F.src, ops)});
+        Object.assign(m, {start: {x: last.split.x, y: last.split.y}, t: last.split.t, poly: {pts: last.pts.map(([x, y]) => ({x, y})), closed: true}});
+        splitSetT(m.t);
+        status(`接著調 ${F.name} 的前後片`);
+        return m;
+    }
+    Object.assign(m, {start: splitDefStart(F, +$('spT').value), t: +$('spT').value});
+    splitRun(m);
+    return m;
+}
+
+// 不透明範圍正中央那一直行上，中央所在（落在線上就取線下面）那段線圍起來的區域的中點，離上下的線都遠一點
+function splitDefStart(L, t)
+{
+    const b = PX.opaqueBounds(L.canvas, trimT()) ?? {x: 0, y: 0, w: L.canvas.width, h: L.canvas.height};
+    const x = Math.floor(b.x + b.w / 2), y0 = Math.floor(b.y + b.h / 2), y1 = b.y + b.h;
+    const px = (y) => PX.pixelAt(L.canvas, x, y) ?? [0, 0, 0, 0];
+    const inside = (y) => {const [r, gg, bl, a] = px(y); return a >= 128 && r * 0.299 + gg * 0.587 + bl * 0.114 >= t;};
+    let a = y0;
+    while (a < y1 && !inside(a)) a++;
+    if (a >= y1) return {x, y: y0};
+    let e = a;
+    while (a > b.y && inside(a - 1)) a--;
+    while (e + 1 < y1 && inside(e + 1)) e++;
+    return {x, y: Math.floor((a + e) / 2)};
+}
+
+function splitRun(m)
+{
+    const r = PX.splitTrace(m.layer.canvas, {...m.start, t: m.t});
+    m.err = r.err ?? null;
+    m.poly = r.pts ? {pts: r.pts, closed: true} : null;
+}
+
+const splitState = (m) => ({poly: m.poly && {...m.poly}, start: m.start, t: m.t, err: m.err});
+
+function splitStep(m, s = splitState(m))
+{
+    m.hist.push(s);
+    if (m.hist.length > SPLIT_STEPS) m.hist.shift();
+    m.fut = [];
+    m.changed = true;
+}
+
+function splitUndo(m, from, to)
+{
+    const s = from.pop();
+    if (!s) return false;
+    to.push(splitState(m));
+    Object.assign(m, s, {changed: true});
+    splitSetT(m.t);
+    return true;
+}
+
+const splitStartHit = (m, w) => {
+    const p = toWorld(m.layer, m.start.x + 0.5, m.start.y + 0.5);
+    return Math.hypot(p.x - w.x, p.y - w.y) * zoomK() < 10;
+};
+
+function splitMoveStart(m, w)
+{
+    const p = toLocal(m.layer, w.x, w.y);
+    const start = {x: Math.floor(p.x), y: Math.floor(p.y)};
+    if (start.x === m.start.x && start.y === m.start.y) return;
+    if (drag.before) {splitStep(m, drag.before); drag.before = null;}
+    m.start = start;
+    splitRun(m);
+}
+
+// 前片加 mask(挖掉)；後片沒有就複製一層放在前片正下方再加 mask(keep)，有就換掉它最後那個 mask；記一筆群組 undo
+function splitApply(m)
+{
+    const F = m.layer, gid = m.gid ?? autoGid();
+    const split = {gid, x: m.start.x, y: m.start.y, t: m.t};
+    const pts = m.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
+    hist.push({group: [hist.snapList(S), m.snap, ...(m.back ? [hist.snap(m.back)] : [])]});
+    let B = m.back;
+    if (B) B.ops = B.ops.slice(0, -1);
+    else B = cloneAbove(F, `${F.name}-back`, true);
+    pushOp(B, {type: 'mask', pts, keep: true, split});
+    pushOp(F, {type: 'mask', pts, keep: false, split});
+    status(`${F.name} 拆成前片＋${B.name}`);
+}
+
+// 撤掉：前片維持拆之前的樣子（模式裡已經是）、刪掉後片，記一筆 undo
+function splitRevoke()
+{
+    const m = S.mode;
+    if (m.type !== 'split' || !m.gid) return;
+    hist.push({group: [hist.snapList(S), m.snap]});
+    S.layers = S.layers.filter(L => L !== m.back);
+    S.active = m.layer;
+    S.mode = {type: 'move'};
+    status(`撤掉 ${m.layer.name} 的前後片`);
+    refreshAll();
+}
+
+function drawSplit(m, L, K)
+{
+    if (m.poly)
+    {
+        g.fillStyle = 'rgba(255,0,255,.3)';
+        g.beginPath();
+        m.poly.pts.forEach((p, i) => {const w = toWorld(L, p.x, p.y); i ? g.lineTo(w.x, w.y) : g.moveTo(w.x, w.y);});
+        g.closePath();
+        g.fill();
+        g.strokeStyle = '#f0f';
+        drawPolyEdit(m.poly, L, K);
+    }
+    const c = toWorld(L, m.start.x + 0.5, m.start.y + 0.5), r = 8 / K;
+    g.strokeStyle = '#0ff';
+    g.lineWidth = 2 / K;
+    g.beginPath();
+    g.moveTo(c.x - r, c.y); g.lineTo(c.x + r, c.y);
+    g.moveTo(c.x, c.y - r); g.lineTo(c.x, c.y + r);
+    g.stroke();
+    g.beginPath();
+    g.arc(c.x, c.y, r / 2, 0, Math.PI * 2);
+    g.stroke();
+    g.lineWidth = 1 / K;
 }
 
 function setOrigin(L, ox, oy)
@@ -496,6 +677,7 @@ function drawOverlay(K)
     if (m.type === 'warp') drawWarp(m, K);
     if (m.type === 'crop') drawCrop(m, L, K);
     if (m.type === 'pixel') drawPixel(m, L, K);
+    if (m.type === 'split') drawSplit(m, L, K);
     if (m.type === 'scale')
     {
         g.fillStyle = '#fff';
@@ -530,6 +712,7 @@ function leaveMode()
     const m = S.mode;
     if (m.type === 'warp' && m.changed && confirm('有未套用的變形框，要套用嗎？（取消＝放棄）')) applyMode();
     else if (m.type === 'pixel' && m.changed && confirm('有未套用的像素修補，要套用嗎？（取消＝放棄）')) applyMode();
+    else if (m.type === 'split' && m.changed && m.poly && confirm('有未套用的前後片，要套用嗎？（取消＝放棄）')) applyMode();
     else cancelMode();
 }
 
@@ -563,6 +746,7 @@ function setMode(type)
     else if (type === 'warp') S.mode = warpStart(L);
     else if (type === 'auto') S.mode = autoEnter(L) ?? {type: 'move'};
     else if (type === 'pixel') S.mode = pixelStart(L);
+    else if (type === 'split') S.mode = splitStart(L) ?? {type: 'move'};
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -574,7 +758,7 @@ function cancelMode()
 {
     const m = S.mode;
     if (m.type === 'move') return;
-    if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
+    if (m.type === 'scale' || m.type === 'warp' || m.type === 'split') History.restore(m.snap);
     if (m.type === 'auto' && m.hist?.length) hist.push(m.snap);
     S.mode = {type: 'move'};
     refreshAll();
@@ -649,6 +833,11 @@ function applyMode()
     {
         if (!m.parts) autoSplit(m);
         return refreshAll();
+    }
+    else if (m.type === 'split')
+    {
+        if (!m.poly) return status(m.err ?? '還沒有後片的範圍');
+        splitApply(m);
     }
     else return;
     S.mode = {type: 'move'};
@@ -776,8 +965,11 @@ function drawCrop(m, L, K)
         poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => toWorld(L, x, y)));
         return;
     }
-    const P = m.poly;
-    if (!P) return;
+    if (m.poly) drawPolyEdit(m.poly, L, K);
+}
+
+function drawPolyEdit(P, L, K)
+{
     const wp = P.pts.map(p => toWorld(L, p.x, p.y));
     if (P.closed)
     {
@@ -1426,6 +1618,19 @@ cv.addEventListener('pointerdown', e => {
         refreshModePanel();
         dirty();
     }
+    else if (m.type === 'split')
+    {
+        const before = splitState(m);
+        if (splitStartHit(m, w)) drag = {type: 'splitStart', before};
+        else if (m.poly)
+        {
+            drag = polyPointerDown(m, e);
+            if (m.poly.pts !== before.poly.pts) splitStep(m, before);
+            else if (drag) drag.before = before;
+        }
+        refreshModePanel();
+        dirty();
+    }
     else if (m.type === 'auto' && m.parts)
     {
         const hit = pick(w, m.parts.map(p => p.C));
@@ -1450,7 +1655,7 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
     if (!drag)
     {
-        if (S.mode.type === 'crop' && S.mode.poly) {polyHover(S.mode, e); dirty();}
+        if ((S.mode.type === 'crop' || S.mode.type === 'split') && S.mode.poly) {polyHover(S.mode, e); dirty();}
         if (S.mode.type === 'warp') cv.style.cursor = warpCursor(S.mode, screenToWorld(e));
         if (S.mode.type === 'pixel') {const w = screenToWorld(e); S.mode.cursor = toLocal(S.mode.layer, w.x, w.y); dirty();}
         return;
@@ -1483,7 +1688,12 @@ cv.addEventListener('pointermove', e => {
         const p = toLocal(S.active, w.x, w.y);
         Object.assign(S.mode.rect, {bx: p.x, by: p.y});
     }
-    else if (drag.type === 'polyPt') polyDrag(S.mode, e, drag.i);
+    else if (drag.type === 'polyPt')
+    {
+        if (drag.before) {splitStep(S.mode, drag.before); drag.before = null;}
+        polyDrag(S.mode, e, drag.i);
+    }
+    else if (drag.type === 'splitStart') splitMoveStart(S.mode, w);
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
     else if (drag.type === 'band') drag.b = w;
     else if (drag.type === 'paint')
@@ -1608,6 +1818,11 @@ function undo()
         if (!m.parts || !autoUndo(m, m.hist, m.fut)) status('自動沒有步驟可以退了；要退更早的操作請先離開自動模式');
         return refreshAll();
     }
+    if (m.type === 'split')
+    {
+        if (!splitUndo(m, m.hist, m.fut)) status('前後片沒有步驟可以退了；要退更早的操作請先離開前後片模式');
+        return refreshAll();
+    }
     cancelMode();
     select(hist.undo() ?? S.active);
 }
@@ -1628,6 +1843,11 @@ function redo()
     if (m.type === 'auto')
     {
         if (m.parts) autoUndo(m, m.fut, m.hist);
+        return refreshAll();
+    }
+    if (m.type === 'split')
+    {
+        splitUndo(m, m.fut, m.hist);
         return refreshAll();
     }
     cancelMode();
@@ -1739,6 +1959,13 @@ function refreshModePanel()
     $('modeAuto').hidden = m.type !== 'auto';
     if (m.type === 'auto') refreshAuto(m);
     $('modePixel').hidden = m.type !== 'pixel';
+    $('modeSplit').hidden = m.type !== 'split';
+    if (m.type === 'split')
+    {
+        $('spRevoke').disabled = !m.gid;
+        $('modeSplit').querySelector('.ok').disabled = !m.poly;
+        $('spInfo').textContent = (m.err ?? `後片 ${m.poly.pts.length} 點`) + `，起點 ${m.start.x},${m.start.y}，可退 ${m.hist.length} 步`;
+    }
     if (m.type === 'pixel') $('pxInfo').textContent = `修補 ${m.map.size} 像素，可退 ${m.hist.length} 筆`;
     if (m.type === 'removeGreen' && m.preview) {
         $('rgH1').value = m.h1;
@@ -2026,12 +2253,48 @@ const readGameJson = async (name) => JSON.parse(await (await (await S.assets.jso
 const readGame = async () => ({item: await readGameJson('item.json'), role: S.assets.hasRole ? await readGameJson('role.json') : {}});
 
 // 檔名配得到的擺放：item 的 equip、角色的 body/head/hair/hand/corpse（spritesheet 的 sprite 配不到）
+// 後片（key: 'back'）：equip.back 等於檔名，或檔名是「equip.sprite-back」
 function targetsOf(game, sprite)
 {
+    const isBack = (e) => e && (e.back === sprite || `${e.sprite}-back` === sprite);
     return [
         ...Object.keys(game.item).filter(id => game.item[id].equip?.sprite === sprite).map(id => ({file: 'item', id, key: 'equip'})),
+        ...Object.keys(game.item).filter(id => isBack(game.item[id].equip)).map(id => ({file: 'item', id, key: 'back'})),
         ...Object.entries(game.role).flatMap(([id, r]) => PARTS.filter(p => r[p]?.sprite === sprite).map(p => ({file: 'role', id, key: p}))),
     ].map(t => ({...t, tag: `${t.id}.${t.key}`}));
+}
+
+// 前後片共用 equip 的擺放，所以兩片要同尺寸同位置；後片 PNG 叫「sprite-back」，icon 用兩片疊起來的「sprite-icon」
+function splitMismatch(F, B)
+{
+    if (F.canvas.width !== B.canvas.width || F.canvas.height !== B.canvas.height) return `${F.name} 跟 ${B.name} 尺寸不一樣`;
+    const k = ['x', 'y', 'a', 'ox', 'oy'].find(k => Math.abs(F[k] - B[k]) > 1e-6);
+    return k ? `${F.name} 跟 ${B.name} 的位置不一樣（${k}）` : '';
+}
+
+const splitPng = (L, bake) => bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
+
+function splitIcon(F, B, bake)
+{
+    const c = PX.newCanvas(F.canvas.width, F.canvas.height), cg = c.getContext('2d');
+    for (const L of [B, F]) cg.drawImage(splitPng(L, bake), 0, 0);
+    return c;
+}
+
+// 有後片：equip.back 指向它，icon 原本是 sprite 就換成 sprite-icon；沒有（前片是整張圖）就拿掉 back、icon 換回來
+function setBack(it, sprite, back)
+{
+    const icon = `${sprite}-icon`;
+    if (back)
+    {
+        it.equip.back = back;
+        if (it.icon === sprite) it.icon = icon;
+    }
+    else
+    {
+        delete it.equip.back;
+        if (it.icon === icon) it.icon = sprite;
+    }
 }
 
 function writeEquip(e, L)
@@ -2062,17 +2325,42 @@ async function saveLayer()
         const A = S.assets, game = await readGame();
         const ts = targetsOf(game, r.name).filter(t => r.game.includes(t.tag));
         if (!ts.length) return alert(`item.json／role.json 裡已經沒有 sprite 是「${r.name}」的擺放，沒有存檔`);
+        const pair = splitPair(L), bad = pair && splitMismatch(pair.F, pair.B);
+        if (bad) return alert(`沒有存檔：${bad}`);
         const png = await pngDir(r.name, ts);
-        const pd = await mkDir(A.tex, png), isNew = !await FS.tryFile(pd, `${r.name}.png`);
-        await FS.writeFile(pd, `${r.name}.png`, await PX.toPng(out));
-        for (const t of ts) writeEquip(game[t.file][t.id][t.key], L);
+        const pd = await mkDir(A.tex, png), fresh = [];
+        const put = async (name, c) => {
+            if (!await FS.tryFile(pd, `${name}.png`)) fresh.push(name);
+            await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
+        };
+        await put(r.name, out);
+        // 存前片時後片、icon 一起寫；單獨存後片也重產 icon
+        for (const t of ts)
+        {
+            const it = game[t.file][t.id];
+            if (t.key === 'back')
+            {
+                setBack(it, it.equip.sprite, r.name);
+                if (pair) await put(`${it.equip.sprite}-icon`, splitIcon(pair.F, pair.B, r.bake));
+                continue;
+            }
+            writeEquip(it[t.key], L);
+            if (t.file !== 'item') continue;
+            if (pair?.F === L)
+            {
+                await put(`${r.name}-back`, splitPng(pair.B, r.bake));
+                await put(`${r.name}-icon`, splitIcon(L, pair.B, r.bake));
+                setBack(it, r.name, `${r.name}-back`);
+            }
+            else if (!splitOp(L, false)) setBack(it, r.name, null);
+        }
         for (const f of ['item', 'role'])
             if (ts.some(t => t.file === f))
             {
                 await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
                 SH.notifySaved(`${f}.json`);
             }
-        return status(`已存 textures/${png}/${r.name}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}${isNew ? '；新圖要按上方「更新圖片清單」遊戲才載得到' : ''}`);
+        return status(`已存 textures/${png}/${r.name}.png${pair ? '（含前後片 icon）' : ''}，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
@@ -2138,6 +2426,10 @@ function itemCheck(rows, items, keys)
         else if (/[\\/:*?"<>|]/.test(r.name)) err('檔名不能有 \\ / : * ? " < > |');
         if (!r.png) continue;
         if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
+        const B = splitBack(r.part.C);
+        if (B) err(splitMismatch(r.part.C, B));
+        for (const n of B ? [`${r.name}-back`, `${r.name}-icon`] : [])
+            if (keys.has(n) && keys.get(n) !== 'equips') err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
         const users = Object.keys(items).filter(id => id !== r.id && items[id].equip?.sprite === r.name);
         const dir = keys.get(r.name), also = users.length ? `（${users.join('、')} 也用這張）` : '';
         if (r.name === old)
@@ -2279,20 +2571,29 @@ async function saveItems()
     const done = [], fresh = [];
     for (const r of act)
     {
-        const {C} = r.part;
+        const {C} = r.part, B = splitBack(C), back = B ? `${r.name}-back` : null;
         if (r.png)
         {
-            const dir = keys.get(r.name) ?? 'equips';
-            if (!keys.has(r.name)) fresh.push(r.name);
-            await FS.writeFile(await mkDir(A.tex, dir), `${r.name}.png`, await PX.toPng(d.bake ? PX.fade(C.canvas, C.opacity) : C.canvas));
+            const dir = keys.get(r.name) ?? 'equips', pd = await mkDir(A.tex, dir);
+            const put = async (name, c) => {
+                if (!keys.has(name)) fresh.push(name);
+                await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
+            };
+            await put(r.name, splitPng(C, d.bake));
+            if (B)
+            {
+                await put(back, splitPng(B, d.bake));
+                await put(`${r.name}-icon`, splitIcon(C, B, d.bake));
+            }
         }
         if (!r.id)
         {
             const equip = {sprite: r.name};
             writeEquip(equip, C);
+            if (back) equip.back = back;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
-            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip});
+            items = insertAfter(items, last, r.newId, {cat, icon: back ? `${r.name}-icon` : r.name, lab: r.lab, equip});
             done.push(`新增 ${r.newId}`);
             continue;
         }
@@ -2300,9 +2601,10 @@ async function saveItems()
         if (r.png && r.name !== old)
         {
             e.sprite = r.name;
-            if (it.icon === old) it.icon = r.name;
+            if (it.icon === old || it.icon === `${old}-icon`) it.icon = r.name;
             if (it.drop?.sprite === old) it.drop.sprite = r.name;
         }
+        if (r.png && (B || !splitOp(C, false))) setBack(it, r.name, back);
         if (r.place) writeEquip(e, C);
         done.push(r.id);
     }
@@ -2581,7 +2883,24 @@ $('wpCols').onchange = warpRegrid;
 $('wpRows').onchange = warpRegrid;
 $('wpReset').onclick = warpRegrid;
 $('wpDelete').onclick = warpButton(warpDeleteFrame);
-window.addEventListener('beforeunload', e => {if ((S.mode.type === 'warp' || S.mode.type === 'pixel') && S.mode.changed) e.preventDefault();});
+window.addEventListener('beforeunload', e => {if (['warp', 'pixel', 'split'].includes(S.mode.type) && S.mode.changed) e.preventDefault();});
+splitSetT(splitT());
+// 拖滑桿的一整段只記一步
+$('spT').oninput = () => {
+    const m = S.mode, t = +$('spT').value;
+    $('spV').textContent = t;
+    if (m.type !== 'split' || t === m.t) return;
+    if (!m.tRec) {splitStep(m); m.tRec = true;}
+    m.t = t;
+    splitRun(m);
+    refreshModePanel();
+    dirty();
+};
+$('spT').onchange = () => {
+    splitSetT(+$('spT').value);
+    if (S.mode.type === 'split') S.mode.tRec = false;
+};
+$('spRevoke').onclick = splitRevoke;
 $('pxClear').onclick = pixelClear;
 $('pxRgb').oninput = () => {$('colRgb').value = $('pxRgb').value; dirty();};
 for (const id of ['pxPen', 'pxErase', 'pxSize']) $(id).oninput = dirty;
@@ -2693,4 +3012,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs};
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitPair, splitRun};

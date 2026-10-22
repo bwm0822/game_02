@@ -102,7 +102,7 @@ export function schSummary(s)
 
 // ---------- 預覽 ----------
 // 跟 RoleView._addPart 的 _DEPTH 一樣（裝備依 item.json 的 cat）
-export const DEPTH = {body: 0, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6};
+export const DEPTH = {body: 0, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要

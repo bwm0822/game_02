@@ -27,10 +27,18 @@
   - **存到 item…**（`saveItems()`，拆完、有專案資料夾才能按）：對話框頭盔／護甲／靴子三列（這組沒有的零件那列反灰），每列勾「處理」、下拉選同 cat（`CAT_HELMET`／`CAT_CHESTPLATE`／`CAT_BOOTS`）的 item 或「＋新增」，預設選 `equip.sprite`＝圖層名的那件、配不到就新增。兩個勾：`PNG`、`擺放`（scale/x/y/a/ox/oy 一組，寫法同 `writeEquip()`），兩個都不勾＝不處理。
     - 已存在的 item：檔名帶它的 `equip.sprite`；`PNG` 沒勾時檔名鎖住。改了檔名＝換圖：新 PNG 寫進 `equips/`（舊圖不刪），`equip.sprite` 換新名，`icon`、`drop.sprite` 原本等於舊 sprite 才跟著換，列上提示「sprite：舊 → 新」。
     - 新增：id 預設下一個流水號（`helmet_NN`／`chest_NN`／`boots_NN`）、lab 必填，`PNG`／`擺放` 強制勾；寫 `{cat, icon: 檔名, lab, equip: {sprite, scale, x, y…}}`，頭盔多 `hideHair: true`，插在同 cat 最後一件後面；gold/def/drop/des 去道具編輯器補。
+    - 零件拆了前後片：勾 `PNG` 時一起寫 `<檔名>-back.png`、`<檔名>-icon.png`，`equip.back` 指向後片、`icon` 換成 `-icon`（規則同上面的「存到遊戲資料」；新增的直接用 `-icon`）；兩片尺寸位置對不上、`-back`／`-icon` 撞到 `equips/` 以外的圖都標紅擋存。
     - 檢查（`itemCheck()`，`texKeys()` 直接掃 `textures/`，不讀可能還沒更新的 textures.json）：id 撞到、lab／檔名空的、兩列同一件或同檔名、檔名撞到 `equips/` 以外的 texture → 標紅擋存；覆蓋 `equips/` 裡「不是這件原本 sprite」的圖 → 列上提示，存檔時一次 confirm；覆蓋自己的圖但別件也共用 → 只提示。存檔時重讀 item.json、重掃再檢查一次，整份重寫一次並廣播。圖層名不改；零件半透明時多一個「烘入不透明度」勾。
   - **undo**：模式內有自己的步驟（`mode.hist`／`mode.fut`，最多 50 步，`autoStep()` 記這組零件改之前的樣子），改一個數字、拖一次（真的動到才算）、按一下方向鍵各一步；Ctrl+Z／Ctrl+Y 一步一步退／重做，並把零件現在的數字寫回全域預設，退到底停住、不走全域 undo（剛拆完按也不會退掉拆）。離開模式時還有步驟才記一筆全域 undo（進調整時的快照 `mode.snap`），拆本身是另一筆，所以離開後先退調整、再退拆；「取消」前有步驟也先記這筆。
 - **像素模式**：修縮小後成品的細節（雜點、殘綠、斷線），不是拿來從零畫圖。鉛筆（B）／橡皮擦（E）、方形筆刷 1～8px（`[`／`]`），鉛筆是**取代**成色票的 RGBA（不混色）、橡皮擦是 alpha 0，畫到圖外的直接裁掉；色票跟顏色模式共用（`pxRgb`↔`colRgb` 同步，alpha 是自己的 `pxA`），Alt+點吸 RGB 連 alpha（跟顏色模式不同：修補要的是一模一樣的像素，顏色模式的填色 alpha 則不跟著吸）。筆畫畫在模式的 `preview` 上（每筆只 `putImageData` 筆刷範圍），`map`（`y*W+x → rgba`）是要寫進步驟的內容；確定（Enter）寫成**一步** `paint`、全域 undo 一筆，座標是前面所有步驟跑完那張圖的像素座標；最後一步就是 `paint` 時再進模式會拿掉它、筆畫併進同一步。模式內 Ctrl+Z／Ctrl+Y 一筆一筆退（按下到放開＝一筆，真的畫到圖上才算，最多 50 筆），退到底停住，不走全域 undo；切換圖層／模式時有沒套用的筆畫 `confirm` 問要不要套用，關分頁也會擋。一格像素 ≥ 8 螢幕 px 才畫像素格線，游標畫出對齊格子的筆刷框（鉛筆用色票色、橡皮擦白色）。選取圖層鎖定或隱藏時不能進模式。
   - **有 `paint` 的圖層不能再縮放、變形、自動拆**（`setMode`／`autoEnter` 擋下並 alert；自動拆出的零件有 `paint` 可以再進自動調，見上）：`paint` 記的是某個尺寸下的格子，換尺寸就對不上，而且縮放的 `xform` 會被 `paint` 隔開、合不回前面的 `xform`，修過的像素會被重新取樣。純裁切（保留框內、trim、移到／複製到新圖層）跟其他不重取樣的步驟照順序疊在後面就好。要再縮放就按「清除修補」：拿掉這層所有 `paint`、重播、記一筆全域 undo，模式內還沒確定的筆畫一起丟掉。
+- **前後片模式**：把頭盔拆成蓋住頭的前片（原圖層）跟被頭蓋住的後片（放在前片正下方、名字 `原名-back`），遊戲用 `equip.back` 畫在頭後面（見下方「跟遊戲的對應」）。
+  - 追線（`PX.splitTrace()`）：從起點往上、往左掃到輪廓線（alpha ≥ 128 且亮度 < 門檻，滑桿預設 24、存 `localStorage` 的 `paperdoll.splitT`；線稿的黑線約 0～10，暗色內襯約 40 幾，所以預設不能太高），上線當成「每一直行一個 y」往左右推、左線當成「每一橫列一個 x」往上下推：每一行只在照前緣斜率預測的位置附近找線段，線段突然變很長＝跟岔線（例如帽帶下緣往下接耳罩的邊）併在一起，改用預測對得上的那一側邊緣，所以岔線走不進去。點取在線靠起點那側的邊上，線留給前片。往外走的（上線往右、左線往下）旁邊碰到透明就停、直直延伸出圖；往內走的（上線往左、左線往上）碰到另一條線就停，兩端在轉角接起來。結果是後片（右下那塊）的多邊形，RDP 簡化（0.75px）。之前試過沿中心線轉角度走，路口那團比較寬的黑色、縮小後只剩 1～2px 的斜線都會讓它轉錯岔路，在不同縮放下結果不一致，才改成函數式的推法。
+  - 起點（青色十字）預設是不透明範圍正中央那一直行上、中央所在（落在線上就取線下面）那段線圍起來的區域的中點，離上下的線都遠一點；拖十字移動起點、改門檻都會重算並直接覆蓋多邊形。多邊形用多邊形裁切那套操作改：拖頂點、點邊插點。
+  - 模式內 undo：拖一次頂點、插一個點、拖一次起點、拉一次滑桿各一步（`splitState` 記多邊形／起點／門檻／錯誤訊息，最多 50 步），Ctrl+Z／Ctrl+Y 一步一步退，退到底停住、不走全域 undo。有改過時切換圖層／模式會 `confirm` 問要不要套用，關分頁也會擋。
+  - 確定：前片加 `mask(挖掉)`、後片加 `mask(keep)`，都不 trim，兩層同尺寸同位置；兩個 mask 都帶 `split = {gid, x, y, t}`（起點、門檻），前後片靠它互認（`splitOp()`／`splitPair()`），跟著 ops 存進專案，不另加圖層欄位。整個動作記一筆群組 undo。
+  - 再進來：選前片或後片按「前後片」都是調前片；前片最後一步是這個 mask 時拿掉它、顯示拆之前的樣子、帶回原本的多邊形和起點門檻，確定時換掉兩邊的 mask。前片或後片拆完後又疊了別的步驟就擋下（要重拆先 undo）；後片被刪掉了就當成重拆，確定時重新複製一層。「撤掉前後片」：刪後片、前片維持拆之前的樣子，記一筆 undo。
+  - 自動模式拆出的零件可以再拆前後片（`autoBase()` 容許後面接著 `split` 的 mask）：後片跟著前片搬（拖曳、方向鍵、改 x/y）、一起進模式內 undo、「取消」自動時一起刪；改 scale% 會擋下（mask 的座標是照原尺寸記的），要先撤掉前後片。
 - **擺放是數字**：`x`／`y`／`a`（角度）／`ox`／`oy`（中心點）不烘進圖。裝備直接寫進 `item.json`、角色的身體／頭／手／屍體直接寫進 `role.json`（見下方「存到遊戲資料」）；配不到的零件存在同名 `.json`。
 - **世界座標＝圖片像素**；遊戲單位＝世界座標 × scale（全域，預設 0.25）。「套用 scale」只切換顯示的數字單位與預覽大小，不動像素。
 - **內容不跳位**：裁切、trim、改中心點時會自動補償 `x`／`y`；縮放以中心點為基準，`x`／`y` 不變。縮放面板的 % 以原圖為 100（`srcScale()`＝ops 裡所有 `xform` 的 `w/sw` 連乘，裁切不算），寬／高是目前的像素。
@@ -45,6 +53,8 @@ sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
 sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 ```
 
+`equip.back`（前後片的後片）用同一組 `scale`／`x`／`y`／`a`／`ox`／`oy` 再畫一張，深度 `PART_DEPTH[GM.PART.BACK]` = 1.5（護甲 1 ＜ 後片 ＜ 頭 2；前片照頭盔 3）；背包紙娃娃（`uiclass.js`）、角色編輯器預覽、試穿工具都照這個畫。
+
 `x`／`y` 是零件中心點在角色 view 容器裡的位置。容器 (0,0) 是角色框（`w`×`h`）的中心；`anchor`（預設 0,16）是角色在地圖上的站立點，剛好是腳下那格 tile 的中心。「顯示 origin」勾選時，每個顯示中的圖層都畫出中心點十字（選取中＝黃、其他＝橘）。工具畫布上的參考線：紅十字＝(0,0)、白虛線＝角色框、藍框＋圓點＝anchor 那格 tile，數值可在上方調整。參考框的數字是「顯示單位」：沒勾 scale 時是圖片像素，勾了是遊戲像素，所以 tile 在畫面上的大小不隨勾選改變，變的是圖層。
 
 ## 檔案
@@ -57,6 +67,7 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
   - 兩個資料夾都從殼給的專案根目錄推出來：工作資料夾＝`images/`（開圖、存專案、一般存檔），遊戲資料＝`public/assets`（要有 `json/item.json` 和 `textures/`，不對就在狀態列提示；`json/role.json` 有就一起配）。寫了 `item.json`／`role.json` 會廣播給其他分頁（見 [tools-shell.md](tools-shell.md)）。
   - 檔名（不含副檔名）等於某些 item 的 `equip.sprite`、或某些角色的 `body`／`head`／`hair`／`hand`／`corpse` 的 `sprite`（`targetsOf()`）才能勾，預設勾、檔名預設就是圖層名；配不到或還沒選專案資料夾就反灰，hover 看原因。配到好幾個（共用 sprite，例如 `hand-man`）時列出 `id.欄位`（`h1.equip`、`wick.hand`）各自勾，hover 看是哪個檔。spritesheet 的 sprite（`weapons:3`、`animals:42`）配不到，武器、動物不走這條。
   - 勾了：PNG 寫進 `textures/` 底下——`equips/`、`roles/parts/`、`roles/npcs/` 哪個已有 `<sprite>.png` 就覆蓋那張（`pngDir()`，例如 `body` 用的整隻角色圖在 `roles/npcs/`），都沒有才照第一個勾選的擺放放：item → `equips/`、角色 → `roles/parts/`（不看對話框選的目錄、不問覆蓋、**不寫 sidecar**），重新讀一次 json，勾選的那些物件寫入 `scale`／`x`／`y`，`a`／`ox`／`oy` 是預設值（0／0.5／1）就刪掉那個 key、否則寫入，其他 key（`sprite`、`aim`、`swing`、`ext`…）跟 `drop` 不動，有改到的檔才整份 `JSON.stringify(…, null, 2)` 重寫。存在工作資料夾外面，所以不會「改以剛存的檔當原圖」，原圖跟步驟留在專案裡。
+  - 前後片：圖層名是 `<equip.sprite>-back`、或等於某件的 `equip.back`，就配得到 `id.back`（只寫 PNG 和 `equip.back`，不寫擺放）。存前片時（前後片都在畫布上）後片一起寫成 `<sprite>-back.png`、`equip.back` 指過去，另外把兩片疊起來存成 `<sprite>-icon.png`，`icon` 原本等於 sprite 就改指向它（不然背包圖示會是挖了洞的前片）；單獨存後片也會重產 icon。兩片共用 `equip` 的擺放，所以尺寸或位置（`x/y/a/ox/oy`）對不上就 alert 擋存。存的是沒拆過的整張圖（圖層沒有 `split` 的 mask）時拿掉 `equip.back`，`icon` 是 `<sprite>-icon` 就換回 sprite。
   - 道具編輯器、角色編輯器開著也沒關係，它們存檔前會偵測到這裡寫過並三方合併。
   - 沒勾：照一般存檔（PNG＋sidecar）。
   - PNG 是新建的（原本沒有同名檔）時狀態列提示：要按殼的「更新圖片清單」重產 `textures.json`，遊戲才載得到（不自動按）。檔名就是 texture key，整個 `textures/` 不能撞名，撞了更新清單會報錯。
@@ -83,14 +94,14 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 | 檔案 | 內容 |
 |---|---|
-| `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／移除綠色／變形／自動／像素）、UI 同步、開存檔 |
-| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、mask、alphaClear、fill、key、removeGreen、paint、opaqueBounds、blobs（連通塊）；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
+| `main.js` | 狀態、繪製、滑鼠鍵盤、模式（移動／裁切／縮放／清除透明／顏色／移除綠色／變形／自動／像素／前後片）、UI 同步、開存檔 |
+| `pixels.js` | 純像素運算：xform（平滑模式先每次縮一半到兩倍以內）、compose、warp、replay、erase、mask、alphaClear、fill、key、removeGreen、paint、opaqueBounds、blobs（連通塊）、splitTrace（前後片追線）；工具建的 canvas 都是 `willReadFrequently`（getImageData 快很多） |
 | `history.js` | 全域 undo／redo（快照 x/y/a/ox/oy/ops/canvas 參照；合併用的圖層清單結構快照） |
 | `../common/fs.js` | 列目錄、讀寫檔；跟道具編輯器共用 |
 | `../common/shell.js` | 跟殼的接線：收專案資料夾、寫 json 後廣播、回報未存狀態 |
 
 `item.json` 的其他欄位用道具編輯器改（[item-editor.md](item-editor.md)）；兩邊同時開著也沒關係，道具編輯器存檔前會偵測紙娃娃寫過的 `equip` 並合併。
 
-測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、多邊形裁切（含派 pointer 事件測互動）、變形、像素修補（畫／擦／模式內 undo／接著編輯／擋縮放／清除）、合併、sidecar、icon；專案存讀、存到 item.json 用 OPFS 當工作資料夾和假的 `public/assets`，因為無頭 Chrome 開不了資料夾選擇視窗）。
+測試：`node scripts/test/paperdoll.mjs`（透過 `window.__pd` 驗證位置補償、undo、清除、填色／去色／滴管、多邊形裁切（含派 pointer 事件測互動）、變形、像素修補（畫／擦／模式內 undo／接著編輯／擋縮放／清除）、前後片（追線、接著改、undo、撤掉、存檔寫 back／icon）、合併、sidecar、icon；專案存讀、存到 item.json 用 OPFS 當工作資料夾和假的 `public/assets`，因為無頭 Chrome 開不了資料夾選擇視窗）。
 
 不做的：spritesheet 讀寫、讀 `role.json`／`item.json` 預填、寫回 xlsx、自動更新圖片清單、圖層分組、油漆桶／線段／選取搬移這類繪圖工具（像素模式只做鉛筆和橡皮擦）。
