@@ -1,5 +1,5 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI, CAT2ICON} from '../core/setting.js'
+import {GM, UI, CAT2ICON, PART_DEPTH} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
@@ -757,6 +757,81 @@ export class Effect extends Pic
         this._remaining.setText(`[stroke=#000]${remaining}[/stroke]`);
     }
 
+}
+
+// 照 RoleView 的規則合成靜態紙娃娃(身體零件 + 裝備的 equip 圖)；只用身體零件算縮放跟位置，換裝不會改變人物大小
+export class Doll extends Pic
+{
+    constructor(scene, w, h, config={})
+    {
+        super(scene, w, h, {bg:UI.BG.SLOT, ...config});
+        this._w = w;
+        this._h = h;
+        this._shape = scene.add.container(0,0);
+        this._root = scene.add.container(this.x, this.y, [this._shape]);
+        this.pin(this._root);
+    }
+
+    _addPart(part, depth)
+    {
+        const sps = [];
+        const add = (sprite, depth)=>{
+            if(!sprite) {return;}
+            const [key,frame] = sprite.split(':');
+            if(!key) {return;}
+            const sp = this.scene.add.sprite(part.x ?? 0, part.y ?? 0, key, frame);
+            sp.setScale(part.scale ?? 1);
+            sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
+            sp.angle = part.a ?? 0;
+            sp.depth = depth;
+            this._shape.add(sp);
+            sps.push(sp);
+        };
+        add(part.sprite, depth);
+        add(part.ext, PART_DEPTH[GM.PART.EXT]);
+        return sps;
+    }
+
+    _fit()
+    {
+        const sps = this._shape.getAll();
+        if(sps.length===0) {return;}
+        let l=Infinity, r=-Infinity, t=Infinity, b=-Infinity;
+        sps.forEach((sp)=>{
+            const x = sp.x - sp.originX*sp.displayWidth;
+            const y = sp.y - sp.originY*sp.displayHeight;
+            l = Math.min(l, x); r = Math.max(r, x+sp.displayWidth);
+            t = Math.min(t, y); b = Math.max(b, y+sp.displayHeight);
+        });
+        const pad = 10;
+        const s = Math.min((this._w-pad*2)/(r-l), (this._h-pad*2)/(b-t));
+        this._shape.setScale(s);
+        this._shape.x = -(l+r)/2*s;
+        this._shape.y = this._h/2 - pad - b*s;
+    }
+
+    update(owner)
+    {
+        this._shape.removeAll(true);
+        const meta = owner?.bb.meta ?? {};
+        if(meta.body) {this._addPart(meta.body, PART_DEPTH[GM.PART.BODY]);}
+        if(meta.head) {this._addPart(meta.head, PART_DEPTH[GM.PART.HEAD]);}
+        const hair = meta.hair ? this._addPart(meta.hair, PART_DEPTH[GM.PART.HAIR]) : [];
+        if(meta.hand) {this._addPart(meta.hand, PART_DEPTH[GM.PART.HAND]);}
+        this._fit();
+
+        let hideHair = false;
+        owner?.equips?.forEach((eq)=>{
+            if(!eq) {return;}
+            const dat = DB.item(eq.id??eq);
+            if(!dat?.equip) {return;}
+            this._addPart(dat.equip, PART_DEPTH[dat.cat]);
+            hideHair ||= !!dat.equip.hideHair;
+        });
+        hair.forEach((sp)=>{sp.setVisible(!hideHair);});
+
+        this._shape.sort('depth');
+    }
 }
 
 

@@ -2,7 +2,7 @@ import UiFrame from './uiframe.js'
 import * as ui from './uicomponents.js'
 import {GM,UI} from '../core/setting.js'
 import Ui from './uicommon.js'
-import {Slot, EquipSlot} from './uiclass.js'
+import {Slot, EquipSlot, Doll} from './uiclass.js'
 // import UiCover from './uicover.js'
 // import UiCursor from './uicursor.js'
 
@@ -35,21 +35,38 @@ export default class UiInv extends UiFrame
             .hide()
     }
 
+    // i 是 owner.equips 的索引，3(手套)目前不顯示
     addEquips(scene)
     {
-        const cats=[
-            GM.CAT.WEAPON, GM.CAT.HELMET, GM.CAT.CHESTPLATE, GM.CAT.GLOVES,GM.CAT.BOOTS,
-            GM.CAT.NECKLACE, GM.CAT.RING, GM.CAT.RING, GM.CAT.EQUIP|GM.CAT.BAG
-        ];
-
-        const equip = (i)=>
+        const S = GM.SLOT_SIZE, sp = 5;
+        const slots = [];
+        const equip = (p, i, cat)=>
         {
-            if(i>=cats.length) return;
-            let cat=cats[i];
-            return new EquipSlot(scene, GM.SLOT_SIZE, GM.SLOT_SIZE, i, {cat:cat});
+            const slot = new EquipSlot(scene, S, S, i, {cat:cat});
+            p.add(slot);
+            slots.push(slot);
         }
 
-        this._equips = ui.uGrid.call(this,scene,{column:5, row:2, addItem:equip});
+        // 靠左才會跟背包格子同欄(背包右邊多了捲軸)
+        const p = ui.uPanel.call(this, scene, {orientation:'y', bg:UI.BG.BORDER, space:{...UI.SPACE.LRTB_5, item:sp}, ext:{align:'left'}});
+        const top = ui.uPanel.call(p, scene, {orientation:'x', space:{item:sp}});
+        const left = ui.uPanel.call(top, scene, {orientation:'y', space:{item:sp}});
+        equip(left, 1, GM.CAT.HELMET);
+        equip(left, 2, GM.CAT.CHESTPLATE);
+        equip(left, 4, GM.CAT.BOOTS);
+        const mid = ui.uPanel.call(top, scene, {orientation:'y', space:{item:sp}});
+        this._doll = new Doll(scene, S*3+sp*2, S*2+sp);
+        mid.add(this._doll);
+        const bottom = ui.uPanel.call(mid, scene, {orientation:'x', space:{item:sp}});
+        equip(bottom, 0, GM.CAT.WEAPON);
+        ui.uRect.call(bottom, scene, {width:S, height:S});
+        equip(bottom, 8, GM.CAT.EQUIP|GM.CAT.BAG);
+        const right = ui.uPanel.call(top, scene, {orientation:'y', space:{item:sp}});
+        equip(right, 5, GM.CAT.NECKLACE);
+        equip(right, 6, GM.CAT.RING);
+        equip(right, 7, GM.CAT.RING);
+
+        this._equips = {loop:(cb)=>{slots.forEach(cb);}};
         return this;
     }
 
@@ -97,6 +114,7 @@ export default class UiInv extends UiFrame
     {
         const owner=this.owner;
         this._equips.loop((elm)=>elm?.update(owner));
+        this._doll.update(owner);
         this._bag.loop((elm)=>elm?.update(owner));
         this._gold.setText(`[color=yellow][img=gold][/color] ${owner.gold}`)
     }

@@ -1,4 +1,4 @@
-import {GM} from '../core/setting.js'
+import {GM, PART_DEPTH} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
@@ -902,18 +902,6 @@ export class RoleView extends View
 
     _addPart(part, type=GM.PART.BODY)
     {
-        const _DEPTH = Object.freeze({
-            [GM.PART.BODY] : 0,
-            [GM.PART.HEAD] : 2,
-            [GM.PART.HAIR] : 2.5,
-            [GM.PART.HAND] : 5,
-            [GM.CAT.HELMET] : 3,
-            [GM.CAT.CHESTPLATE] : 1,
-            [GM.CAT.GLOVES] : 6,
-            [GM.CAT.BOOTS] : 0.5,
-            [GM.CAT.WEAPON] :4,
-        });
-
         let addSp = (sprite, depth)=>
         {
             if(!sprite) {return;}
@@ -935,8 +923,8 @@ export class RoleView extends View
         }
 
         let sps = [];
-        addSp(part.sprite, _DEPTH[type]);
-        addSp(part.ext, 6);
+        addSp(part.sprite, PART_DEPTH[type]);
+        addSp(part.ext, PART_DEPTH[GM.PART.EXT]);
         return sps;
     }
 
