@@ -6,6 +6,8 @@ const norm = (p) => p.replace(/\\/g, '/').toLowerCase();
 const TEX = norm(resolve('public/assets/textures')) + '/';
 const WATCH = /\.(png|jpe?g)$|_(sheet|atlas)\.json$/i;
 const SKIP = /^(tbd|minimap|maps)\//;
+const IMG = norm(resolve('images')) + '/';
+const IMG_WATCH = /\.png$|\.pdproj\.json$/i;
 
 function gen()
 {
@@ -31,6 +33,24 @@ const toolsApi = {
             timer = setTimeout(() => server.ws.send({type: 'custom', event: 'tools:textures', data: gen()}), 300);
         };
         for (const ev of ['add', 'unlink', 'change']) server.watcher.on(ev, onFile);
+
+        // 紙娃娃的工作資料夾 images/：300ms 內的變動合成一次，推 'tools:images' {dirs: 要重列的資料夾, changed: 內容改了的檔}（相對 images/）
+        let imgTimer, dirs = new Set(), changed = new Set();
+        const onImage = (ev, file) => {
+            const p = file.replace(/\\/g, '/');
+            if (!p.toLowerCase().startsWith(IMG)) return;
+            const rel = p.slice(IMG.length), isDir = ev.endsWith('Dir');
+            if (!rel || (!isDir && !IMG_WATCH.test(rel))) return;
+            if (ev === 'change') changed.add(rel);
+            else dirs.add(rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/')) : '');
+            clearTimeout(imgTimer);
+            imgTimer = setTimeout(() => {
+                server.ws.send({type: 'custom', event: 'tools:images', data: {dirs: [...dirs], changed: [...changed]}});
+                dirs = new Set();
+                changed = new Set();
+            }, 300);
+        };
+        for (const ev of ['add', 'unlink', 'change', 'addDir', 'unlinkDir']) server.watcher.on(ev, (file) => onImage(ev, file));
     },
 };
 
