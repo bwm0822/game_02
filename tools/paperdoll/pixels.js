@@ -44,7 +44,7 @@ export function opaqueBounds(src, t = 1)
     return x1 < 0 ? null : {x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1};
 }
 
-// alpha >= t 的像素依 8 方向相連分塊，回傳每塊的像素數、外接矩形、重心
+// alpha >= t 的像素依 8 方向相連分塊，回傳每塊的像素數、外接矩形、重心、種子（塊裡的一個像素，給 keepBlobs 用）
 export function blobs(src, t = 1)
 {
     const w = src.width, h = src.height;
@@ -53,7 +53,7 @@ export function blobs(src, t = 1)
     for (let i = 0; i < w * h; i++)
     {
         if (seen[i] || d[i * 4 + 3] < t) continue;
-        const b = {n: 0, x: w, y: h, x1: -1, y1: -1, cx: 0, cy: 0};
+        const b = {n: 0, x: w, y: h, x1: -1, y1: -1, cx: 0, cy: 0, sx: i % w, sy: (i - i % w) / w};
         let top = 0;
         stack[top++] = i;
         seen[i] = 1;
@@ -82,6 +82,41 @@ export function blobs(src, t = 1)
         out.push(b);
     }
     return out;
+}
+
+// 只留種子 pts 所在的塊（連通規則同 blobs），其他像素清成透明
+export function keepBlobs(src, {t, pts})
+{
+    const c = clone(src), w = c.width, h = c.height, g = c.getContext('2d');
+    const img = g.getImageData(0, 0, w, h), d = img.data;
+    const keep = new Uint8Array(w * h), stack = new Int32Array(w * h);
+    for (const [x, y] of pts)
+    {
+        const i = y * w + x;
+        if (x < 0 || y < 0 || x >= w || y >= h || keep[i] || d[i * 4 + 3] < t) continue;
+        let top = 0;
+        stack[top++] = i;
+        keep[i] = 1;
+        while (top)
+        {
+            const j = stack[--top], jx = j % w, jy = (j - jx) / w;
+            for (let dy = -1; dy <= 1; dy++)
+            {
+                const ny = jy + dy;
+                if (ny < 0 || ny >= h) continue;
+                for (let dx = -1; dx <= 1; dx++)
+                {
+                    const nx = jx + dx, k = ny * w + nx;
+                    if (nx < 0 || nx >= w || keep[k] || d[k * 4 + 3] < t) continue;
+                    keep[k] = 1;
+                    stack[top++] = k;
+                }
+            }
+        }
+    }
+    for (let i = 0; i < w * h; i++) if (!keep[i]) d[i * 4 + 3] = 0;
+    g.putImageData(img, 0, 0);
+    return c;
 }
 
 function draw(src, w, h, smooth)
@@ -244,6 +279,7 @@ const OPS = {
     xform: (c, op) => xform(c, op),
     removeGreen: (c, op) => removeGreen(c, op.h1, op.h2, op.s1, op.s2, op.v1, op.v2, op.rgbThr),
     paint: (c, op) => paint(c, op),
+    blobs: (c, op) => keepBlobs(c, op),
 };
 
 export function replay(src, ops)
@@ -386,7 +422,8 @@ export const alphaAt = (src, x, y) => pixelAt(src, x, y)?.[3] ?? 0;
 // 從起點像素 (x,y) 往上、往左掃到輪廓線（alpha ≥ 128 且亮度 < t）。上線當成「每一直行一個 y」往左右推、
 // 左線當成「每一橫列一個 x」往上下推，所以路口岔出去的線（例如帽帶下緣往下接耳罩的邊）走不進去：
 // 每一行只在預測位置（照前緣的斜率）附近找線段；線段突然變很長＝跟岔線併在一起，改用預測對得上的那一側邊緣
-// 點取在線靠起點那側的邊上，所以線留給前片。往外走的（上線往右、左線往下）旁邊碰到透明就停、直直延伸出圖；
+// 點取在線靠起點那側的邊上，所以線留給前片。往外走的（上線往右、左線往下）前片那側碰到透明或走到圖邊（裁到剛好的圖，外框貼著圖邊）就停、直直延伸出圖；
+// 後片那側是開口（透明）時還要繼續沿線的外緣走，免得延伸線切過前片還沒走完的線，走進開口後線斷了也算走到外面；
 // 往內走的（上線往左、左線往上）碰到另一條線（線段變很長）就停，兩端在轉角接起來
 // 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}
 
@@ -417,7 +454,7 @@ export function splitTrace(src, {x, y, t})
     const trace = (A, h, dir, inward, guard) => {
         const K = Math.max(4, h.w * 2), R = Math.ceil(h.w / 2) + 2, gapMax = Math.max(2, h.w), long = h.w * 1.8 + 1;
         const fs = [h.f], pts = [A.pt(h.i, h.b + 1)];
-        let f = h.f, b = h.b, gap = 0, end = 'end';
+        let f = h.f, b = h.b, gap = 0, end = 'edge', open = false;
         for (let i = h.i + dir; i >= 0 && i < A.n; i += dir)
         {
             if (guard?.(i)) {end = 'guard'; break;}
@@ -438,7 +475,7 @@ export function splitTrace(src, {x, y, t})
             if (!best)
             {
                 if (!A.solid(i, Math.round(pf))) {end = 'out'; break;}
-                if (++gap > gapMax) break;
+                if (++gap > gapMax) {end = open ? 'out' : 'end'; break;}
                 fs.push(f = pf);
                 b = pb;
                 continue;
@@ -452,7 +489,9 @@ export function splitTrace(src, {x, y, t})
             else {f = pf; b = pb;}
             fs.push(f);
             pts.push(A.pt(i, b + 1));
-            if (!A.solid(i, Math.floor(f) - 2) || !A.solid(i, Math.ceil(b) + 2)) {end = 'out'; break;}
+            const fo = !A.solid(i, Math.floor(f) - 2), bo = !A.solid(i, Math.ceil(b) + 2);
+            if (fo || (inward && bo)) {end = 'out'; break;}
+            if (bo) open = true;
         }
         return {pts, end};
     };
@@ -460,7 +499,8 @@ export function splitTrace(src, {x, y, t})
     const up = hit(T, x, y, '上'), left = hit(L, y, x, '左');
     if (up.err || left.err) return {err: up.err ?? left.err};
     const tr = trace(T, up, 1, false), ld = trace(L, left, 1, false);
-    if (tr.end !== 'out' || ld.end !== 'out') return {err: `${tr.end !== 'out' ? '上線往右' : '左線往下'}沒走到外面（線斷了），換個起點或調門檻`};
+    const out = (r) => r.end === 'out' || r.end === 'edge';
+    if (!out(tr) || !out(ld)) return {err: `${!out(tr) ? '上線往右' : '左線往下'}沒走到外面（線斷了），換個起點或調門檻`};
     const tl = trace(T, up, -1, true, i => i < left.f - left.w * 2);
     const lu = trace(L, left, -1, true, i => i < up.f - up.w * 2);
 

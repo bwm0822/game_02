@@ -574,7 +574,11 @@ run('paperdoll', async t => {
         out.btnOff = $('btnSaveProj').disabled;
 
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        await pd.loadHandle(fh, img, 'img');
+        const kc = document.createElement('canvas'); kc.width = 40; kc.height = 20;
+        kc.getContext('2d').fillRect(24, 0, 16, 20);
+        const kh = await img.getFileHandle('kit.png', {create: true});
+        const kw = await kh.createWritable(); await kw.write(await new Promise(r => kc.toBlob(r))); await kw.close();
+        await pd.loadHandle(kh, img, 'img');
         pd.setMode('auto'); pd.applyMode(); pd.cancelMode();
         await saveProj('auto');
         await openProj('auto', 'replace');
@@ -827,7 +831,8 @@ run('paperdoll', async t => {
         const c = document.createElement('canvas'); c.width = c.height = 200;
         const g = c.getContext('2d');
         g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
-        g.fillStyle = '#ff0000'; g.fillRect(20, 30, 60, 40);
+        g.fillStyle = '#ffff00'; g.fillRect(20, 20, 50, 50);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         g.fillRect(150, 150, 2, 2);
         g.clearRect(95, 5, 1, 1); g.fillStyle = 'rgba(255,0,0,0.04)'; g.fillRect(95, 5, 1, 1);
@@ -924,6 +929,27 @@ run('paperdoll', async t => {
         out.dragUndo = [H.x === Hx, H.y * pd.S.scale];
         pd.removeLayer(cover);
 
+        // 零件拆前後片：mask 插在縮小前面（追線用縮小前的圖），改 scale% 前後片跟著重播、拖曳一起搬
+        pd.select(H);
+        pd.setMode('split');
+        const sm = pd.S.mode;
+        sm.poly = {pts: [{x: 0, y: 0}, {x: 30, y: 0}, {x: 30, y: 20}], closed: true};
+        out.splitImg = [sm.img.width, sm.img.height];
+        pd.applyMode();
+        const HF = find('src-helmet-front'), HB = find('src-helmet-back');
+        out.autoSplit = [HF.ops.map(o => o.type).join(), HB.canvas.width === H.canvas.width, H.visible];
+        pd.select(HF);
+        pd.setMode('auto');
+        type('au-helmet-pct', 35);
+        out.autoSplitScale = [H.canvas.width, HF.canvas.width, HB.canvas.width, HF.ops.map(o => o.type).join()];
+        arrow('ArrowRight');
+        out.autoSplitMove = [HF.x === H.x, HB.x === H.x];
+        type('au-helmet-pct', 25);
+        arrow('ArrowLeft');
+        pd.cancelMode();
+        pd.select(HF); pd.setMode('split'); pd.splitRevoke();
+        out.autoSplitRevoke = [!!find('src-helmet-front'), !!find('src-helmet-back'), H.visible];
+
         H.ops = [...H.ops, {type: 'paint', px: [[0, 0, 0, 255, 0, 255]]}];
         pd.select(H);
         pd.setMode('auto');
@@ -979,7 +1005,7 @@ run('paperdoll', async t => {
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
     t.eq('自動：零件疊在原圖上（由下往上 護甲、頭盔）', au.layers, 'src,src-armor,src-helmet');
     t.check('自動：象限裡只有雜點就略過', !au.boots);
-    t.eq('自動：頭盔＝左上的塊去綠裁到剛好再縮放、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,xform']));
+    t.eq('自動：頭盔＝右上的塊去綠裁到剛好再縮放（裁切、縮小分兩步）、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,blobs,xform,xform']));
     t.eq('自動：護甲跨過中線也整塊留下、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 16, 0.25, 27, '0,0,255,255']));
     t.eq('自動：原圖隱藏、選取頭盔', JSON.stringify(au.hidden), JSON.stringify([false, true]));
     t.eq('自動：拆完再按確定不會再拆', au.splitOnce, 2);
@@ -1003,7 +1029,11 @@ run('paperdoll', async t => {
     t.eq('自動：undo 退回拖曳', JSON.stringify(au.dragUndo), JSON.stringify([true, 2]));
     t.eq('自動：有 paint 的零件可以進來調', au.paintEnter, 'auto');
     t.eq('自動：改 scale 問清除修補，否＝數字退回', JSON.stringify(au.paintNo), JSON.stringify([15, 'paint', '25']));
-    t.eq('自動：是＝清掉 paint 再縮放', JSON.stringify(au.paintYes), JSON.stringify([18, 'alpha,removeGreen,xform']));
+    t.eq('自動：零件拆前後片：追線用縮小前的圖、mask 插在縮小前面、原圖隱藏', JSON.stringify([au.splitImg, au.autoSplit]), JSON.stringify([[60, 40], ['alpha,removeGreen,blobs,xform,mask,xform', true, false]]));
+    t.eq('自動：改 scale% 前後片跟著重播', JSON.stringify(au.autoSplitScale), JSON.stringify([21, 21, 21, 'alpha,removeGreen,blobs,xform,mask,xform']));
+    t.eq('自動：方向鍵搬零件，前後片跟著搬', JSON.stringify(au.autoSplitMove), JSON.stringify([true, true]));
+    t.eq('自動：撤掉零件的前後片', JSON.stringify(au.autoSplitRevoke), JSON.stringify([false, false, true]));
+    t.eq('自動：是＝清掉 paint 再縮放', JSON.stringify(au.paintYes), JSON.stringify([18, 'alpha,removeGreen,blobs,xform,xform']));
     t.eq('自動：零件拆完後改過就擋下', au.edited, 'move');
     t.eq('自動：取消＝刪零件、顯示原圖、選原圖', JSON.stringify(au.revoke), JSON.stringify(['move', true, true, true]));
     t.eq('自動：取消可以 undo', JSON.stringify(au.revokeUndo), JSON.stringify([2, false, true]));
@@ -1012,6 +1042,128 @@ run('paperdoll', async t => {
     t.eq('自動：零件刪光就離開、原圖維持隱藏', JSON.stringify(au.delAll), JSON.stringify(['move', false]));
     t.eq('自動：零件刪光後可以再拆', JSON.stringify(au.again), JSON.stringify(['auto', null]));
     t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([22, '22']));
+
+    // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
+    const ac = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#a05030'; g.fillRect(110, 10, 80, 80);
+        g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeRect(111.5, 11.5, 77, 77);
+        g.fillStyle = '#000'; g.fillRect(110, 38, 80, 3); g.fillRect(134, 40, 3, 50);
+        const before = pd.S.layers.length;
+        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null, null);
+        const find = (n) => pd.S.layers.find(L => L.name === n);
+        const slide = (v) => {const e = $('auT'); e.value = v; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change'));};
+        const t0 = +$('auT').value;
+        pd.setMode('auto');
+        const m = pd.S.mode;
+        out.pre = [!!m.sp?.poly, $('auSplit').hidden, pd.S.layers.length - before, m.sp.img.width];
+        slide(t0 + 30);
+        out.preStep = [m.hist.length, m.sp.t];
+        pd.undo();
+        out.preUndo = [m.sp.t, $('auT').value === String(t0)];
+        pd.applyMode();
+        const H = find('kit-helmet'), F = find('kit-helmet-front'), B = find('kit-helmet-back');
+        out.made = [!!F, !!B, H.visible, pd.S.active === F, F?.ops.map(o => o.type).join(), pd.S.mode === m];
+        out.order = [pd.S.layers[0] === B, pd.S.layers.indexOf(F) === pd.S.layers.indexOf(H) + 1];
+        const c0 = F.canvas;
+        slide(t0 + 30);
+        out.after = [m.sp, $('auSp').disabled, $('auT').disabled, F.canvas === c0];
+        pd.cancelMode();
+        pd.select(F);
+        pd.setMode('auto');
+        out.resume = [pd.S.mode.type, pd.S.mode.sp];
+        pd.autoRevoke();
+        out.revoke = [!!find('kit-helmet-front'), !!find('kit-helmet'), !!find('kit-helmet-back')];
+
+        // 不勾「拆前後片」：不追線，只拆零件；勾回來立刻追線
+        const box = $('auSp');
+        box.checked = false; box.dispatchEvent(new Event('change'));
+        pd.select(K);
+        pd.setMode('auto');
+        const m2 = pd.S.mode;
+        out.off = [m2.sp, $('auT').disabled, JSON.parse(localStorage.getItem('paperdoll.auto')).split];
+        box.checked = true; box.dispatchEvent(new Event('change'));
+        out.on = !!m2.sp?.poly;
+        box.checked = false; box.dispatchEvent(new Event('change'));
+        pd.applyMode();
+        out.offMade = [!!find('kit-helmet'), !!find('kit-helmet-front'), !!find('kit-helmet-back')];
+        pd.autoRevoke();
+        box.checked = true; box.dispatchEvent(new Event('change'));
+        pd.removeLayer(K);
+        slide(t0);
+        return out;
+    });
+    t.eq('自動切線：進模式就在原圖頭盔上追線（縮小前的圖）、不建圖層', JSON.stringify(ac.pre), JSON.stringify([true, false, 1, 80]));
+    t.eq('自動切線：拆之前改門檻記一步', JSON.stringify(ac.preStep[0]), '1');
+    t.eq('自動切線：拆之前 undo 退回門檻', JSON.stringify(ac.preUndo), JSON.stringify([ac.preUndo[0], true]));
+    t.eq('自動切線：確定時頭盔一起拆前後片、選前片、留在模式', JSON.stringify(ac.made), JSON.stringify([true, true, false, true, 'alpha,removeGreen,blobs,xform,mask,xform', true]));
+    t.eq('自動切線：後片放到最底層、前片疊在頭盔上', JSON.stringify(ac.order), JSON.stringify([true, true]));
+    t.eq('自動切線：拆完不再顯示切線、勾選框和門檻反灰、拉門檻不動前後片', JSON.stringify(ac.after), JSON.stringify([null, true, true, true]));
+    t.eq('自動切線：選前片再進自動，不帶切線', JSON.stringify(ac.resume), JSON.stringify(['auto', null]));
+    t.eq('自動切線：取消自動一起刪前後片', JSON.stringify(ac.revoke), JSON.stringify([false, false, false]));
+    t.eq('自動切線：不勾拆前後片就不追線、記進 localStorage', JSON.stringify(ac.off), JSON.stringify([null, true, false]));
+    t.eq('自動切線：拆之前勾回來立刻追線', JSON.stringify(ac.on), 'true');
+    t.eq('自動切線：不勾拆前後片只拆零件', JSON.stringify(ac.offMade), JSON.stringify([true, false, false]));
+
+    // 自動只留自己的塊：左上的頭沒人認領，下巴伸進護甲的範圍也不會被裁進去
+    const ab = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const a = (L, x, y) => L.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ffff00'; g.fillRect(20, 20, 40, 60);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 100, 80, 70); g.fillRect(75, 60, 15, 40);
+        const saved = pd.S.auto;
+        pd.autoSet({...saved, split: false, armor: {pct: 100, x: 0, y: 0}});
+        const K = pd.addLayer(await createImageBitmap(c), 'chin', null, null, null);
+        pd.setMode('auto');
+        pd.applyMode();
+        const A = pd.S.layers.find(L => L.name === 'chin-armor');
+        out.made = [pd.S.layers.filter(L => L.auto).map(L => L.auto.key).join(), A.canvas.width, A.canvas.height, A.ops.map(o => o.type).join()];
+        out.cut = [a(A, 20, 10), a(A, 70, 10), a(A, 5, 50)];
+        pd.cancelMode();
+        pd.select(A);
+        pd.setMode('auto');
+        type('au-armor-pct', 50);
+        type('au-armor-pct', 100);
+        out.resume = [pd.S.mode.type, a(A, 20, 10), a(A, 70, 10)];
+        pd.autoRevoke();
+        pd.removeLayer(K);
+        pd.autoSet(saved);
+        return out;
+    });
+    t.eq('自動只留自己的塊：左上的頭丟掉、護甲範圍照外接矩形', JSON.stringify(ab.made), JSON.stringify(['armor', 80, 110, 'alpha,removeGreen,blobs,xform,xform']));
+    t.eq('自動只留自己的塊：伸進範圍的下巴清成透明、自己的塊留著', JSON.stringify(ab.cut), JSON.stringify([0, 255, 255]));
+    t.eq('自動只留自己的塊：再進來改 scale% 照樣只留自己的塊', JSON.stringify(ab.resume), JSON.stringify(['auto', 0, 255]));
+
+    // 前後片追線：左線下段的後片那側是開口時，繼續沿線外緣走到底，斜出去的線不會被延伸線切到
+    const so = await ev(async () => {
+        const pd = window.__pd, out = {};
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        const poly = (pts) => {g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill();};
+        g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
+        g.fillStyle = '#000'; g.fillRect(20, 60, 160, 4); g.fillRect(60, 60, 4, 60);
+        poly([[60, 120], [64, 120], [84, 180], [80, 180]]);
+        g.save(); g.globalCompositeOperation = 'destination-out'; poly([[64, 120], [180, 120], [180, 180], [84, 180]]); g.restore();
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c), 'open', null, null, null);
+        pd.setMode('split');
+        const m = pd.S.mode;
+        m.start = {x: 120, y: 90};
+        pd.splitRun(m);
+        out.err = m.err;
+        pd.applyMode();
+        const a = (n, x, y) => pd.S.layers.find(M => M.name === n).canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        out.alpha = [a('open-front', 78, 170), a('open-back', 78, 170), a('open-front', 120, 90), a('open-back', 120, 90)];
+        return out;
+    });
+    t.eq('前後片：後片那側是開口時沿線外緣走到底，斜出去的線整條留給前片', JSON.stringify(so), JSON.stringify({err: null, alpha: [255, 0, 0, 255]}));
 
     // 自動零件存到 item.json：沿用上面 OPFS 的假 public/assets
     const si = await ev(async () => {
@@ -1040,7 +1192,7 @@ run('paperdoll', async t => {
         const c = document.createElement('canvas'); c.width = c.height = 200;
         const g = c.getContext('2d');
         g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
-        g.fillStyle = '#ff0000'; g.fillRect(20, 30, 60, 40);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
@@ -1137,6 +1289,37 @@ run('paperdoll', async t => {
     t.eq('縮圖：裁掉透明邊再縮', JSON.stringify(th.trim), JSON.stringify(['255,0,0,255', '255,0,0,255']));
     t.eq('縮圖：檔案改了重產', th.update, '0,0,255,255');
     t.check('縮圖：專案檔留同寬空位', th.projSpacer);
+
+    // images/ 有變動：vite 推 'tools:images'，這裡直接呼叫處理函式（工作資料夾是 OPFS）
+    const tw = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('th');
+        const png = async (d, name) => {
+            const c = document.createElement('canvas'); c.width = c.height = 4;
+            const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(await new Promise(r => c.toBlob(r))); await w.close();
+        };
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const names = (path) => [...$('tree').querySelector(`.tdir[data-path="${path}"]`).lastChild.children].map(k => k.classList.contains('tdir') ? `[${k.dataset.name}]` : k.title).join();
+        const sub = await dir.getDirectoryHandle('sub', {create: true});
+        await png(dir, 'y.png');
+        out.before = names('th');
+        await pd.imagesChanged({dirs: ['th']});
+        out.added = names('th');
+        [...$('tree').querySelectorAll('.row.dir')].find(r => r.title === 'sub').click();
+        for (let i = 0; i < 10; i++) await frame();
+        await png(sub, 'z.png');
+        await dir.removeEntry('y.png');
+        await pd.imagesChanged({dirs: ['TH', 'th/sub', 'nope']});
+        out.removed = [names('th'), names('th/sub'), !$('tree').querySelector('.tdir[data-path="th/sub"]').lastChild.hidden];
+        await dir.removeEntry('sub', {recursive: true});
+        await pd.imagesChanged({dirs: ['th']});
+        out.gone = names('th');
+        return out;
+    });
+    t.eq('檔案變動：重列前看不到新檔', tw.before, 'x.png');
+    t.eq('檔案變動：重列展開中的資料夾，新資料夾、新檔出現', tw.added, '[sub],x.png,y.png');
+    t.eq('檔案變動：刪檔消失、子資料夾維持展開並重列、路徑不分大小寫', JSON.stringify(tw.removed), JSON.stringify(['[sub],x.png', 'z.png', true]));
+    t.eq('檔案變動：資料夾刪掉就拿掉', tw.gone, 'x.png');
     const [bx, by] = th.bar;
     await t.page.mouse.move(bx, by);
     await t.page.mouse.down();
@@ -1162,6 +1345,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
         g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeRect(22, 22, 156, 156);
         g.fillStyle = '#000'; g.fillRect(20, 78, 160, 4); g.fillRect(68, 80, 4, 100);
+        g.fillRect(5, 5, 1, 1); g.fillRect(194, 194, 1, 1);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         const L = pd.addLayer(await createImageBitmap(c), 'hood', null, null, null);
         const a = (M, x, y) => M.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
@@ -1177,25 +1361,34 @@ run('paperdoll', async t => {
         m.start = {x: 100, y: 100};
         pd.splitRun(m);
         pd.applyMode();
-        const B = pd.S.layers.find(M => M.name === 'hood-back');
-        out.layers = pd.S.layers.map(M => M.name).join();
-        out.same = [B.canvas.width, B.canvas.height, L.canvas.width, B.x === L.x && B.y === L.y];
-        out.bits = [bits(L), bits(B)];
-        out.pair = pd.splitPair(B)?.F === L && pd.splitPair(L)?.B === B;
-        out.replay = JSON.stringify(JSON.parse(JSON.stringify(L.ops))) === JSON.stringify(L.ops);
+        const find = (n) => pd.S.layers.find(M => M.name === n);
+        const F = find('hood-front'), B = find('hood-back');
+        out.layers = [pd.S.layers.map(M => M.name).join(), L.visible, pd.S.active === F, L.ops.length];
+        out.same = [F.canvas.width, B.canvas.width, L.canvas.width, B.x === L.x && F.x === L.x && B.y === L.y];
+        out.bits = [bits(F), bits(B), bits(L)];
+        const grp = pd.splitGroup(B);
+        out.group = grp?.O === L && grp.F === F && pd.splitGroup(L)?.B === B;
+        out.replay = JSON.stringify(JSON.parse(JSON.stringify(F.ops))) === JSON.stringify(F.ops);
 
-        const n = L.ops.at(-1).pts.length;
+        const n = F.ops.at(-1).pts.length;
         pd.select(B); pd.setMode('split');
-        out.resume = [pd.S.mode.layer === L, pd.S.mode.poly.pts.length === n, a(L, 120, 120), $('spRevoke').disabled];
+        out.resume = [pd.S.mode.layer === L, pd.S.mode.poly.pts.length === n, $('spRevoke').disabled];
         pd.cancelMode();
-        out.cancel = [a(L, 120, 120), L.ops.length];
+        out.cancel = [a(F, 120, 120), F.ops.length, pd.S.mode.type];
         pd.undo();
-        out.undo = [pd.S.layers.length, a(L, 120, 120), L.ops.length];
+        out.undo = [pd.S.layers.map(M => M.name).join(), L.visible];
         pd.redo();
-        out.redo = [pd.S.layers.length, a(L, 120, 120)];
+        out.redo = [pd.S.layers.length, L.visible];
 
-        await put(json, 'item.json', JSON.stringify({hd: {cat: 'CAT_HELMET', icon: 'hood', equip: {sprite: 'hood', scale: 0.25}}}, null, 2));
-        const save = async (M) => {
+        // 擺放連動：改任一層的 x，三層一起改、一起 undo
+        pd.select(F);
+        $('pX').value = 5; $('pX').dispatchEvent(new Event('change'));
+        out.linked = [L.x, B.x, F.x].map(v => v * (pd.S.applyScale ? pd.S.scale : 1));
+        pd.undo();
+        out.linkedUndo = [L.x, B.x, F.x];
+
+        await put(json, 'item.json', JSON.stringify({hd: {cat: 'CAT_HELMET', icon: 'hood', equip: {sprite: 'hood', scale: 0.25}, drop: {sprite: 'hood'}}}, null, 2));
+        const save = async () => {
             const p = pd.saveLayer();
             await until(() => $('dlgSave').open);
             await until(() => !$('dlgItem').disabled);
@@ -1207,39 +1400,66 @@ run('paperdoll', async t => {
         const alert = window.alert;
         let said = '';
         window.alert = (s) => {said = s;};
-        B.x += 1;
-        pd.select(L);
-        await save(L);
-        out.mismatch = said;
-        B.x -= 1;
-        out.tags = await save(L);
+        pd.select(F);
+        out.tags = await save();
         const it = (await readItems()).hd;
-        out.saved = [JSON.stringify(it), await has(equips, 'hood.png'), await has(equips, 'hood-back.png'), await has(equips, 'hood-icon.png')];
+        out.saved = [JSON.stringify(it), await has(equips, 'hood.png'), await has(equips, 'hood-front.png'), await has(equips, 'hood-back.png')];
         pd.select(B);
-        out.backTags = await save(B);
-        window.alert = alert;
+        out.again = await save();
+
+        // 原圖改過尺寸：存檔擋下；重進前後片模式重新追線、前後片跟著原圖重產
+        pd.trimLayer(L);
+        said = '';
+        await save();
+        out.stale = said;
+        pd.select(L); pd.setMode('split');
+        const rm = pd.S.mode;
+        out.retrace = [rm.img.width, rm.start.x !== 100 || rm.start.y !== 100];
+        rm.start = {x: 95, y: 95};
+        pd.splitRun(rm);
+        pd.applyMode();
+        out.resplit = [F.canvas.width === L.canvas.width, B.canvas.width === L.canvas.width, F.x === L.x, pd.S.layers.length];
+        pd.undo();
+        pd.undo();
 
         pd.select(L); pd.setMode('split'); pd.splitRevoke();
-        out.revoke = [pd.S.layers.map(M => M.name).join(), a(L, 120, 120), L.ops.length, pd.S.mode.type];
+        out.revoke = [pd.S.layers.map(M => M.name).join(), L.visible, pd.S.mode.type, pd.S.active === L];
+        await save();
+        out.unsplit = JSON.stringify((await readItems()).hd);
         pd.undo();
-        out.revokeUndo = [pd.S.layers.length, a(L, 120, 120)];
+        out.revokeUndo = [pd.S.layers.length, L.visible];
+        window.alert = alert;
+
+        // 舊格式（前片就是原圖、split 沒有 w）不認
+        const Q = pd.addLayer(await createImageBitmap(c), 'old', null, null, null);
+        Q.ops = [{type: 'mask', pts: [[0, 0], [10, 0], [10, 10]], keep: false, split: {gid: 'old', x: 0, y: 0, t: 24}}];
+        pd.setMode('split');
+        out.old = pd.S.mode.type;
+        pd.removeLayer(Q);
         return out;
     });
     t.eq('前後片：進模式就追線，起點是中央那一直行上、線圍起來那段的中點', JSON.stringify(sp.enter), JSON.stringify(['split', null, 100, 128, true]));
     t.eq('前後片：起點在線上時報錯、沒有多邊形', JSON.stringify(sp.onLine), JSON.stringify([true, null]));
-    t.eq('前後片：後片放在前片正下方、叫 -back', sp.layers, 'hood-back,hood');
-    t.eq('前後片：兩片同尺寸同位置', JSON.stringify(sp.same), JSON.stringify([200, 200, 200, true]));
-    t.eq('前後片：右下塊歸後片、線（帽帶、耳罩）留給前片', JSON.stringify(sp.bits), JSON.stringify(['011110', '100001']));
-    t.check('前後片：前後片互相認得', sp.pair);
+    t.eq('前後片：三層（-back 在最底層、原圖、-front），原圖隱藏、步驟不動、選前片', JSON.stringify(sp.layers), JSON.stringify(['hood-back,hood,hood-front', false, true, 0]));
+    t.eq('前後片：三層同尺寸同位置', JSON.stringify(sp.same), JSON.stringify([200, 200, 200, true]));
+    t.eq('前後片：右下塊歸後片、線（帽帶、耳罩）留給前片、原圖完整', JSON.stringify(sp.bits), JSON.stringify(['011110', '100001', '111111']));
+    t.check('前後片：三層互相認得', sp.group);
     t.check('前後片：步驟 JSON 來回不變（專案存讀）', sp.replay);
-    t.eq('前後片：選後片再進來＝接著調前片、帶回多邊形、前片顯示拆之前、可以撤掉', JSON.stringify(sp.resume), JSON.stringify([true, true, 255, false]));
-    t.eq('前後片：取消＝回到拆好的樣子', JSON.stringify(sp.cancel), JSON.stringify([0, 1]));
-    t.eq('前後片：一次 undo 拿掉後片、前片補回', JSON.stringify(sp.undo), JSON.stringify([1, 255, 0]));
-    t.eq('前後片：redo', JSON.stringify(sp.redo), JSON.stringify([2, 0]));
-    t.eq('前後片存檔：兩片位置不同就擋', sp.mismatch, '沒有存檔：hood 跟 hood-back 的位置不一樣（x）');
-    t.eq('前後片存檔：存前片連後片、icon 一起寫，equip.back、icon 指過去', JSON.stringify(sp.saved), JSON.stringify([
-        '{"cat":"CAT_HELMET","icon":"hood-icon","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0,"back":"hood-back"}}', true, true, true]));
-    t.eq('前後片存檔：-back 圖層配得到 equip.back', sp.backTags, 'hd.back');
-    t.eq('前後片：撤掉＝刪後片、前片補回、離開模式', JSON.stringify(sp.revoke), JSON.stringify(['hood', 255, 0, 'move']));
-    t.eq('前後片：撤掉可以 undo', JSON.stringify(sp.revokeUndo), JSON.stringify([2, 0]));
+    t.eq('前後片：選後片再進來＝調原圖、帶回多邊形、可以撤掉', JSON.stringify(sp.resume), JSON.stringify([true, true, false]));
+    t.eq('前後片：取消＝前後片不動', JSON.stringify(sp.cancel), JSON.stringify([0, 1, 'move']));
+    t.eq('前後片：一次 undo 拿掉前後片、原圖重新顯示', JSON.stringify(sp.undo), JSON.stringify(['hood', true]));
+    t.eq('前後片：redo', JSON.stringify(sp.redo), JSON.stringify([3, false]));
+    t.eq('前後片：擺放三層連動', JSON.stringify(sp.linked), JSON.stringify([5, 5, 5]));
+    t.eq('前後片：連動一起 undo', JSON.stringify(sp.linkedUndo), JSON.stringify([0, 0, 0]));
+    t.eq('前後片存檔：選前片也配得到原圖名的 item', sp.tags, 'hd.equip');
+    t.eq('前後片存檔：三張 PNG 一起寫，sprite 指前片、back 指後片、icon／drop 是原圖', JSON.stringify(sp.saved), JSON.stringify([
+        '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood-front","scale":0.25,"x":0,"y":0,"back":"hood-back"},"drop":{"sprite":"hood"}}', true, true, true]));
+    t.eq('前後片存檔：sprite 換成 -front 後再存還配得到', sp.again, 'hd.equip');
+    t.eq('前後片存檔：原圖改過尺寸就擋', sp.stale, '沒有存檔：hood 跟 hood-front 尺寸不一樣（原圖改過，先到「前後片」按確定更新）');
+    t.eq('前後片：原圖尺寸變了重進＝重新追線', JSON.stringify(sp.retrace), JSON.stringify([190, true]));
+    t.eq('前後片：重拆照原圖現在的樣子重產前後片', JSON.stringify(sp.resplit), JSON.stringify([true, true, true, 3]));
+    t.eq('前後片：撤掉＝刪前後片、原圖重新顯示並選取、離開模式', JSON.stringify(sp.revoke), JSON.stringify(['hood', true, 'move', true]));
+    t.eq('前後片存檔：沒拆的原圖存檔把 sprite 換回、拿掉 back', sp.unsplit, '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0},"drop":{"sprite":"hood"}}');
+    t.eq('前後片：撤掉可以 undo', JSON.stringify(sp.revokeUndo), JSON.stringify([3, false]));
+    t.eq('前後片：舊格式不認、不進模式', sp.old, 'move');
 });

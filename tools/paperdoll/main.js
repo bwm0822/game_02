@@ -34,7 +34,8 @@ const status = (msg) => {$('status').textContent = msg;};
 
 // ---------- 座標轉換 ----------
 
-const modeScale = (L) => S.mode.type === 'scale' && S.mode.layer === L ? [S.mode.sx, S.mode.sy] : [1, 1];
+const modeScale = (L) => S.mode.type === 'scale' && S.mode.layer === L ? [S.mode.sx, S.mode.sy]
+                       : editSp()?.view === L ? editSp().vk : [1, 1];
 const layerImg = (L) => S.mode.layer === L && S.mode.preview ? S.mode.preview : L.canvas;
 
 function toWorld(L, px, py, [sx, sy] = modeScale(L))
@@ -92,11 +93,11 @@ function removeLayer(L)
         if (!m.parts.length) cancelMode();
         else
         {
-            const drop = (list) => list.map(s => History.drop(s, L, true)).filter(Boolean);
+            const drop = (list) => list.map(s => {const d = History.drop(s, L, true); return d && {...s, ...d};}).filter(Boolean);
             Object.assign(m, {snap: History.drop(m.snap, L, true), hist: drop(m.hist), fut: drop(m.fut)});
         }
     }
-    else if (m.type === 'split' && m.back === L) m.back = null;
+    else if (m.type === 'split' && (m.F === L || m.B === L)) m[m.F === L ? 'F' : 'B'] = null;
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
     hist.forget(L, true);
@@ -125,10 +126,17 @@ function mergeLayers(layers)
 // ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件
 function cloneAbove(L, name, below = false)
 {
-    const {auto, autoSrc, ...rest} = L;
+    const {auto, autoSrc, splitSrc, ...rest} = L;
     const C = {...rest, id: ++uid, name};
     S.layers.splice(S.layers.indexOf(L) + (below ? 0 : 1), 0, C);
     return C;
+}
+
+function toBottom(L)
+{
+    S.layers.splice(S.layers.indexOf(L), 1);
+    S.layers.unshift(L);
+    return L;
 }
 
 function duplicateLayer()
@@ -208,21 +216,22 @@ function trimLayer(L)
 }
 
 // ---------- 自動模式 ----------
-// 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 裁到零件的範圍 → 縮放
-// 零件可能跨過中線，所以不切象限：去綠後分連通塊，依重心歸到象限，零件範圍＝它所有塊的外接矩形
+// 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 只留自己的塊 → 裁到零件的範圍 → 縮放
+// 零件可能跨過中線，所以不切象限：去綠後分連通塊，依重心歸到象限，零件範圍＝它所有塊的外接矩形；
+// 範圍會跟別的塊重疊（左上戴頭盔的頭，下巴伸進護甲的範圍），所以裁切前先清掉不是自己的塊（左上沒人認領，整塊丟掉）
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_PARTS = [
-    {key: 'helmet', name: '頭盔', quad: '左上', qx: 0, qy: 0},
+    {key: 'helmet', name: '頭盔', quad: '右上', qx: 1, qy: 0},
     {key: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
     {key: 'boots', name: '靴子', quad: '右下', qx: 1, qy: 1},
 ];
 const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33}};
 const AUTO_KEY = 'paperdoll.auto';
-const autoFrom = (v) => Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}]));
+const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), split: v?.split ?? true});
 
 function autoLoad()
 {
@@ -236,19 +245,23 @@ function autoSet(v)
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
     for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+    $('auSp').checked = S.auto.split;
 }
 
-// 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；scale% 記在自動產生的 xform 上（pct），
-// 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, xform(pct), ...paint／前後片] 才能再調
-// 零件拆了前後片時，後片跟著前片搬、一起進模式內的 undo
+// 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；裁切、縮小分兩步，scale% 記在縮小的 xform 上（pct），
+// 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, blobs, xform(裁切), xform(pct), ...paint] 才能再調（舊專案沒有 blobs）
+// 零件拆了前後片時，前後片跟著零件搬、改 scale% 一起重播、一起進模式內的 undo
 const autoGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 function autoBase(C)
 {
     let i = C.ops.length - 1;
-    while (C.ops[i]?.type === 'paint' || C.ops[i]?.split) i--;
-    return C.ops[i]?.type === 'xform' && C.ops[i].pct && C.ops[i - 1]?.type === 'removeGreen' ? i : -1;
+    while (C.ops[i]?.type === 'paint') i--;
+    const s = C.ops[i], c = C.ops[i - 1], k = C.ops[i - 2]?.type === 'blobs' ? 3 : 2;
+    return s?.type === 'xform' && s.pct && c?.type === 'xform' && !c.pct && C.ops[i - k]?.type === 'removeGreen' ? i : -1;
 }
+
+const autoKeep = (C) => {const o = C.ops[autoBase(C) - 2]; return o?.type === 'blobs' ? o : null;};
 
 function autoGroup(L)
 {
@@ -257,30 +270,36 @@ function autoGroup(L)
     return parts.length ? {gid, parts, src: S.layers.find(M => M.autoSrc === gid) ?? null} : null;
 }
 
-const autoLayers = (parts) => parts.flatMap(p => withBack(p.C));
-const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L))]});
+const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
+const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
 const autoRow = ({C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale)});
 
 function autoScale(T, part, pct)
 {
-    const {C, box} = part, k = pct / 100;
-    const op = {type: 'xform', ...box, w: Math.max(1, Math.round(box.sw * k)), h: Math.max(1, Math.round(box.sh * k)), smooth: true, pct};
-    Object.assign(C, {ops: [...T.ops, op], canvas: PX.xform(T.canvas, op)});
+    const {C, box, keep} = part, k = pct / 100;
+    const crop = {type: 'xform', ...box, w: box.sw, h: box.sh};
+    const op = {type: 'xform', sx: 0, sy: 0, sw: box.sw, sh: box.sh, w: Math.max(1, Math.round(box.sw * k)), h: Math.max(1, Math.round(box.sh * k)), smooth: true, pct};
+    const ops = [...(keep ? [keep] : []), crop, op];
+    Object.assign(C, {ops: [...T.ops, ...ops], canvas: PX.replay(T.canvas, ops)});
+    splitSync(C, T);
 }
 
 function autoShift(C, x, y)
 {
     const dx = x - C.x, dy = y - C.y;
-    for (const L of withBack(C)) Object.assign(L, {x: L.x + dx, y: L.y + dy});
+    for (const L of linked(C)) Object.assign(L, {x: L.x + dx, y: L.y + dy});
 }
 
 const autoPlace = ({C}, {x, y}) => autoShift(C, x / S.scale, y / S.scale);
 
-// 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵）記零件改之前的樣子；離開時還有步驟才記一筆全域 undo
-function autoStep(m)
+// 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
+// 離開時還有步驟才記一筆全域 undo
+const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp)});
+
+function autoStep(m, s = autoState(m))
 {
-    m.hist.push({group: autoLayers(m.parts).map(L => hist.snap(L))});
+    m.hist.push(s);
     if (m.hist.length > AUTO_STEPS) m.hist.shift();
     m.fut = [];
 }
@@ -289,10 +308,62 @@ function autoUndo(m, from, to)
 {
     const s = from.pop();
     if (!s) return false;
-    to.push({group: autoLayers(m.parts).map(L => hist.snap(L))});
+    to.push(autoState(m));
     History.restore(s);
-    autoSet({...S.auto, ...Object.fromEntries(m.parts.map(p => [p.P.key, autoRow(p)]))});
+    if (s.sp && m.sp) {Object.assign(m.sp, s.sp); splitSetT(m.sp.t);}
+    if (m.parts) autoSet({...S.auto, ...Object.fromEntries(m.parts.map(p => [p.P.key, autoRow(p)]))});
     return true;
+}
+
+// 頭盔的切線（sp，欄位同前後片模式）只在拆之前、勾了「拆前後片」時有，畫在原圖頭盔那塊上；拆完就不再顯示，要調去前後片模式
+// 追線在裁切後、縮小前的圖（sp.img）上做
+function autoSpView(m)
+{
+    const sp = m.sp, img = sp.img, L = m.layer, box = m.plan.find(b => b.P.key === 'helmet').box;
+    Object.assign(sp, {vk: [1, 1], view: {canvas: img, get x() {return L.x;}, get y() {return L.y;}, get a() {return L.a;},
+                                           get ox() {return (L.ox * L.canvas.width - box.sx) / img.width;},
+                                           get oy() {return (L.oy * L.canvas.height - box.sy) / img.height;}}});
+}
+
+const autoHelmet = (m) => m.parts?.find(p => p.P.key === 'helmet')?.C ?? null;
+
+// 拆之前勾／取消「拆前後片」：有勾才追頭盔切線
+function autoSpSync(m)
+{
+    if (m.type !== 'auto' || m.parts) return;
+    const hb = S.auto.split && m.plan.find(b => b.P.key === 'helmet');
+    if (!hb) m.sp = null;
+    else if (!m.sp) autoSpNew(m, hb);
+}
+
+// 去綠、依象限分好零件的範圍；進模式時就算，頭盔的切線要用
+function autoPlan(L)
+{
+    const T = {src: L.src, ops: L.ops};
+    pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
+    pushOp(T, {type: 'removeGreen', ...GREEN});
+    const W = T.canvas.width, H = T.canvas.height;
+    const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
+    const blobs = all.filter(b => b.n >= big * AUTO_NOISE);
+    const plan = [], skipped = [];
+    for (const P of AUTO_PARTS)
+    {
+        const mine = blobs.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
+        if (!mine.length) {skipped.push(P.name); continue;}
+        const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
+        plan.push({P, box: {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0},
+                   keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy])}});
+    }
+    return {T, plan, skipped};
+}
+
+function autoSpNew(m, {box, keep})
+{
+    const t = +$('spT').value;
+    m.sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), t, poly: null, err: null};
+    autoSpView(m);
+    m.sp.start = splitDefStart(m.sp.view, t);
+    splitRun(m.sp);
 }
 
 // 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置
@@ -300,7 +371,6 @@ function autoApply(m, part, row)
 {
     const cur = autoRow(part);
     if (row.pct === cur.pct && row.x === cur.x && row.y === cur.y) return;
-    if (row.pct !== cur.pct && splitOp(part.C, false)) return alert(`${part.C.name} 拆了前後片，改 scale 要先到「前後片」按「撤掉前後片」`);
     if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
     autoStep(m);
     if (row.pct !== cur.pct)
@@ -324,60 +394,57 @@ function autoMove(m, part, x, y, step = true)
 
 const autoSave = (part) => autoSet({...S.auto, [part.P.key]: autoRow(part)});
 
-// 沒拆過：先只調數字，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
+// 沒拆過：先算好零件範圍（勾了拆前後片就追頭盔切線），只調數字和切線，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
 function autoEnter(L)
 {
-    const g = autoGroup(L);
+    const g = autoGroup(splitNew(L)?.O ?? L);
     if (!g)
     {
         if (hasPaint(L)) return alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」'), null;
-        return {type: 'auto', layer: L, parts: null};
+        const {T, plan, skipped} = autoPlan(L), m = {type: 'auto', layer: L, parts: null, T, plan, skipped, sp: null, hist: [], fut: []};
+        autoSpSync(m);
+        return m;
     }
     const bad = g.parts.filter(C => autoBase(C) < 0);
-    if (bad.length) return status(`${bad.map(C => C.name).join('、')} 拆完後改過，不能再自動調整；要重拆先取消自動`), null;
+    if (bad.length) return status(`${bad.map(C => C.name).join('、')} 拆完後改過（或是舊格式），不能再自動調整；要重拆先取消自動`), null;
     const C0 = g.parts[0];
-    const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0)), canvas: null};
+    const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0) - (autoKeep(C0) ? 2 : 1)), canvas: null};
     const parts = AUTO_PARTS.map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
-        const {sx, sy, sw, sh} = C.ops[autoBase(C)];
-        return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}};
+        const {sx, sy, sw, sh} = C.ops[autoBase(C) - 1];
+        return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}, keep: autoKeep(C)};
     });
+    const m = {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
     status(`調整 ${parts.map(p => p.C.name).join('、')}`);
-    return {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, snap: autoSnap(parts), hist: [], fut: []};
+    return m;
 }
 
-// 去綠、切好，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；記一筆 undo，留在模式裡繼續調
+// 照進模式時算好的範圍，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；
+// 頭盔有切線就一起拆成前後片（選前片），之後不再顯示切線；記一筆 undo，留在模式裡繼續調
 function autoSplit(m)
 {
-    const L = m.layer;
-    const T = {src: L.src, ops: L.ops};
-    pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
-    pushOp(T, {type: 'removeGreen', ...GREEN});
-    const W = T.canvas.width, H = T.canvas.height;
-    const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
-    const blobs = all.filter(b => b.n >= big * AUTO_NOISE);
+    const L = m.layer, {T, plan, skipped} = m;
+    if (!plan.length) return status('去綠之後找不到零件');
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const gid = L.autoSrc ?? autoGid();
-    const parts = [], skipped = [];
-    for (const P of AUTO_PARTS)
-    {
-        const mine = blobs.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
-        if (!mine.length) {skipped.push(P.name); continue;}
-        const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
-        const box = {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0};
+    const parts = plan.map(({P, box, keep}) => {
         const C = cloneAbove(L, `${L.name}-${P.key}`);
         Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid}});
-        const part = {P, C, box};
+        const part = {P, C, box, keep};
         autoScale(T, part, S.auto[P.key].pct);
         autoPlace(part, S.auto[P.key]);
-        parts.push(part);
-    }
-    if (!parts.length) return status('去綠之後找不到零件');
+        return part;
+    });
     L.autoSrc = gid;
     L.visible = false;
     S.active = parts[0].C;
     hist.push(undo);
-    Object.assign(m, {layer: null, gid, src: L, T, parts, snap: autoSnap(parts), hist: [], fut: []});
-    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}`);
+    Object.assign(m, {layer: null, gid, src: L, parts, hist: [], fut: []});
+    const H = autoHelmet(m);
+    if (H && m.sp?.poly) S.active = splitBuild(H, m.sp, H.splitSrc ?? autoGid());
+    const sp = H && m.sp && !m.sp.poly ? `；頭盔沒拆前後片：${m.sp.err}` : '';
+    m.sp = null;
+    m.snap = autoSnap(parts);
+    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}${sp}`);
 }
 
 // 取消自動：刪掉這組零件、原圖重新顯示，記一筆 undo；還沒拆就只是離開
@@ -385,7 +452,7 @@ function autoRevoke()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts) return cancelMode();
-    const parts = S.layers.filter(C => C.auto?.gid === m.gid).flatMap(withBack), src = m.src;
+    const parts = S.layers.filter(C => C.auto?.gid === m.gid).flatMap(linked), src = m.src;
     if (m.hist.length) hist.push(m.snap);
     hist.push({group: [hist.snapList(S), ...(src ? [hist.snap(src, true)] : [])]});
     S.layers = S.layers.filter(C => !parts.includes(C));
@@ -399,27 +466,56 @@ function autoRevoke()
 function autoKeeps(m, L)
 {
     if (!m.parts) return L === m.layer;
-    return L === m.src || m.parts.some(p => p.C === L);
+    return L === m.src || !!autoPart(m, L);
 }
 
+const autoPart = (m, L) => m.parts?.find(p => linked(p.C).includes(L)) ?? null;
+
 // ---------- 前後片 ----------
-// 頭盔拆成蓋住頭的前片（原圖層）跟被頭蓋住的後片（正下方的「名字-back」）：PX.splitTrace() 從起點追輪廓線產生後片多邊形，
-// 可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋；確定時前片加 mask(挖掉)、後片加 mask(keep)，不 trim，兩層同尺寸同位置
-// 兩個 mask 都帶 split = {gid, x, y, t}（起點、門檻），靠它認前後片，跟著 ops 存進專案；
-// 前片最後一步是這個 mask 時再進來就拿掉它、帶出原本的多邊形接著改，後面又疊了別的步驟就擋下
+// 頭盔拆成三層：原圖 X（隱藏、步驟不動，記 splitSrc = gid）、蓋住頭的前片 X-front（原圖步驟＋mask 挖掉）、
+// 被頭蓋住的後片 X-back（＋mask keep），前片疊在原圖上面、後片放到最底層，三層同尺寸、擺放連動（linked()）
+// PX.splitTrace() 從起點追輪廓線產生後片多邊形，可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋
+// mask 插在原圖步驟的 splitAt()：一般接在最後；自動零件插在縮小（xform pct）前面，追線在縮小前的圖上做，改 scale% 前後片跟著重播
+// mask 帶 split = {gid, x, y, t, w, h, n}（起點、門檻、追線那張圖的尺寸、mask 後面原本跟著幾步），靠 gid 認一組，跟著 ops 存進專案；
+// 舊格式（前片就是原圖，split 沒有 w）不認
 
 const SPLIT_KEY = 'paperdoll.splitT';
 const SPLIT_STEPS = 50;
-const splitOp = (L, keep) => L.ops.findLast(o => o.type === 'mask' && !!o.keep === keep && o.split);
-const splitFind = (gid, keep) => S.layers.find(L => splitOp(L, keep)?.split.gid === gid) ?? null;
-const splitBack = (L) => {const o = splitOp(L, false); return o ? splitFind(o.split.gid, true) : null;};
-const withBack = (L) => [L, splitBack(L)].filter(Boolean);
+const splitIdx = (L) => L.ops.findIndex(o => o.type === 'mask' && o.split);
+const splitOp = (L) => L.ops[splitIdx(L)] ?? null;
+const splitAt = (O) => O.auto && autoBase(O) >= 0 ? autoBase(O) : O.ops.length;
+const splitOld = (g) => [g.F, g.B].some(M => M && !('w' in splitOp(M).split));
+const splitOwn = (M) => M.ops.length - splitIdx(M) - 1 !== splitOp(M).split.n;
 
-function splitPair(L)
+// 原圖被刪掉時只剩前後片（照樣能存）；前後片都沒了就不算一組
+function splitGroup(L)
 {
-    const gid = (splitOp(L, false) ?? splitOp(L, true))?.split.gid;
-    const F = gid && splitFind(gid, false), B = gid && splitFind(gid, true);
-    return F && B ? {F, B} : null;
+    const gid = L.splitSrc ?? splitOp(L)?.split.gid;
+    if (!gid) return null;
+    const find = (keep) => S.layers.find(M => {const o = splitOp(M); return o?.split.gid === gid && !!o.keep === keep;}) ?? null;
+    const F = find(false), B = find(true);
+    return F || B ? {gid, O: S.layers.find(M => M.splitSrc === gid) ?? null, F, B} : null;
+}
+
+const splitNew = (L) => {const g = splitGroup(L); return g && !splitOld(g) ? g : null;};
+
+const linked = (L) => {
+    const g = splitNew(L);
+    return g ? [L, ...[g.O, g.F, g.B].filter(M => M && M !== L)] : [L];
+};
+
+// 照原圖現在的步驟重新產生前後片（mask 不動）；base = {ops, canvas} 是原圖步驟的前段已經算好的圖，從它接著重播
+function splitSync(O, base = null)
+{
+    const g = splitNew(O);
+    if (!g) return;
+    const at = splitAt(O);
+    for (const M of [g.F, g.B].filter(Boolean))
+    {
+        const o = splitOp(M);
+        M.ops = [...O.ops.slice(0, at), {...o, split: {...o.split, n: O.ops.length - at}}, ...O.ops.slice(at)];
+        M.canvas = base?.canvas ? PX.replay(base.canvas, M.ops.slice(base.ops.length)) : PX.replay(M.src, M.ops);
+    }
 }
 
 function splitT()
@@ -432,33 +528,37 @@ function splitT()
 
 function splitSetT(t)
 {
-    $('spT').value = $('spV').textContent = t;
+    $('spT').value = $('spV').textContent = $('auT').value = $('auV').textContent = t;
     try {localStorage.setItem(SPLIT_KEY, t);}
     catch {}
 }
 
-// 選前片或後片都進來調前片；顯示的是拆之前的樣子
+// 選三層哪一層都進來調原圖；模式裡顯示原圖、藏起前後片。追線那張圖（m.img）是原圖跑到 splitAt() 的樣子，
+// 畫面上照原圖的擺放、縮 m.vk 倍畫（m.view 是借原圖擺放的假圖層，toWorld/toLocal 用它）
 function splitStart(L)
 {
-    const gid = splitOp(L, true)?.split.gid, F = gid ? splitFind(gid, false) : L;
-    if (!F) return status(`找不到 ${L.name} 的前片`), null;
-    if (F.locked) return status(`${F.name} 鎖定中`), null;
-    const last = F.ops.at(-1), resume = !!last?.split;
-    if (!resume && splitOp(F, false)) return status(`${F.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
-    const B = resume ? splitFind(last.split.gid, true) : null;
-    if (B && !B.ops.at(-1)?.split) return status(`${B.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
-    const m = {type: 'split', layer: F, back: B, snap: hist.snap(F), gid: last?.split?.gid ?? null, hist: [], fut: [], changed: false, poly: null, err: null};
-    if (resume)
+    const g = splitGroup(L);
+    if (g && splitOld(g)) return status('舊格式的前後片（前片就是原圖），要重拆請先 undo 或刪掉前後片'), null;
+    const O = g ? g.O : L;
+    if (!O) return status(`${L.name} 的原圖被刪掉了，不能再調前後片`), null;
+    if (O.locked) return status(`${O.name} 鎖定中`), null;
+    const own = [g?.F, g?.B].find(M => M && splitOwn(M));
+    if (own) return status(`${own.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
+    const at = splitAt(O), img = at < O.ops.length ? PX.replay(O.src, O.ops.slice(0, at)) : O.canvas;
+    const view = {canvas: img, get x() {return O.x;}, get y() {return O.y;}, get a() {return O.a;}, get ox() {return O.ox;}, get oy() {return O.oy;}};
+    const m = {type: 'split', layer: O, view, img, vk: [O.canvas.width / img.width, O.canvas.height / img.height],
+               F: g?.F ?? null, B: g?.B ?? null, gid: g?.gid ?? null, hist: [], fut: [], changed: false, poly: null, err: null};
+    const o = g && splitOp(g.F ?? g.B);
+    if (o && o.split.w === img.width && o.split.h === img.height)
     {
-        const ops = F.ops.slice(0, -1);
-        Object.assign(F, {ops, canvas: PX.replay(F.src, ops)});
-        Object.assign(m, {start: {x: last.split.x, y: last.split.y}, t: last.split.t, poly: {pts: last.pts.map(([x, y]) => ({x, y})), closed: true}});
+        Object.assign(m, {start: {x: o.split.x, y: o.split.y}, t: o.split.t, poly: {pts: o.pts.map(([x, y]) => ({x, y})), closed: true}});
         splitSetT(m.t);
-        status(`接著調 ${F.name} 的前後片`);
+        status(`接著調 ${O.name} 的前後片`);
         return m;
     }
-    Object.assign(m, {start: splitDefStart(F, +$('spT').value), t: +$('spT').value});
+    Object.assign(m, {start: splitDefStart(view, +$('spT').value), t: +$('spT').value});
     splitRun(m);
+    if (o) status(`${O.name} 的尺寸變了，前後片重新追線`);
     return m;
 }
 
@@ -480,7 +580,7 @@ function splitDefStart(L, t)
 
 function splitRun(m)
 {
-    const r = PX.splitTrace(m.layer.canvas, {...m.start, t: m.t});
+    const r = PX.splitTrace(m.img, {...m.start, t: m.t});
     m.err = r.err ?? null;
     m.poly = r.pts ? {pts: r.pts, closed: true} : null;
 }
@@ -506,50 +606,81 @@ function splitUndo(m, from, to)
 }
 
 const splitStartHit = (m, w) => {
-    const p = toWorld(m.layer, m.start.x + 0.5, m.start.y + 0.5);
+    const p = toWorld(m.view, m.start.x + 0.5, m.start.y + 0.5);
     return Math.hypot(p.x - w.x, p.y - w.y) * zoomK() < 10;
 };
 
+// 切線的編輯共用給前後片模式（sp 就是 mode）跟自動模式（sp 是 mode.sp，只在拆之前有）
+const editSp = () => S.mode.type === 'split' ? S.mode : S.mode.type === 'auto' ? S.mode.sp : null;
+const spBefore = (m) => m.type === 'split' ? splitState(m) : autoState(m);
+const spCommit = (m, before) => m.type === 'split' ? splitStep(m, before) : autoStep(m, before);
+
+// 自動模式只在點到起點、頂點、邊時才改切線，其他是拖零件
+function spHit(sp, w)
+{
+    if (splitStartHit(sp, w)) return true;
+    if (!sp.poly) return false;
+    const p = toLocal(sp.view, w.x, w.y);
+    return polyVertexHit(sp.poly, p) >= 0 || !!polyEdgeHit(sp.poly, p);
+}
+
 function splitMoveStart(m, w)
 {
-    const p = toLocal(m.layer, w.x, w.y);
+    const sp = editSp(), p = toLocal(sp.view, w.x, w.y);
     const start = {x: Math.floor(p.x), y: Math.floor(p.y)};
-    if (start.x === m.start.x && start.y === m.start.y) return;
-    if (drag.before) {splitStep(m, drag.before); drag.before = null;}
-    m.start = start;
-    splitRun(m);
+    if (start.x === sp.start.x && start.y === sp.start.y) return;
+    if (drag.before) {spCommit(m, drag.before); drag.before = null;}
+    sp.start = start;
+    splitRun(sp);
 }
 
-// 前片加 mask(挖掉)；後片沒有就複製一層放在前片正下方再加 mask(keep)，有就換掉它最後那個 mask；記一筆群組 undo
+// 前後片照原圖現在的步驟重新產生（缺的那張複製原圖補上：前片疊在原圖上、後片放到最底層），擺放、不透明度跟原圖一樣；原圖隱藏，回傳前片
+// splitSrc 不進快照，所以 undo／撤掉後也留著（前後片都沒了就不算一組），再拆沿用它的 gid
+function splitBuild(O, sp, gid)
+{
+    const g = splitNew(O), at = splitAt(O);
+    const split = {gid, x: sp.start.x, y: sp.start.y, t: sp.t, w: sp.img.width, h: sp.img.height, n: O.ops.length - at};
+    const pts = sp.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
+    const F = g?.F ?? cloneAbove(O, `${O.name}-front`);
+    const B = g?.B ?? toBottom(cloneAbove(O, `${O.name}-back`));
+    const {x, y, a, ox, oy, opacity} = O;
+    for (const [M, keep] of [[F, false], [B, true]])
+    {
+        const mask = {type: 'mask', pts, keep, split};
+        Object.assign(M, {x, y, a, ox, oy, opacity, visible: true, ops: [...O.ops.slice(0, at), mask, ...O.ops.slice(at)],
+                          canvas: PX.replay(sp.img, [mask, ...O.ops.slice(at)])});
+    }
+    O.splitSrc = gid;
+    O.visible = false;
+    return F;
+}
+
+// 記一筆群組 undo、選前片
 function splitApply(m)
 {
-    const F = m.layer, gid = m.gid ?? autoGid();
-    const split = {gid, x: m.start.x, y: m.start.y, t: m.t};
-    const pts = m.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
-    hist.push({group: [hist.snapList(S), m.snap, ...(m.back ? [hist.snap(m.back)] : [])]});
-    let B = m.back;
-    if (B) B.ops = B.ops.slice(0, -1);
-    else B = cloneAbove(F, `${F.name}-back`, true);
-    pushOp(B, {type: 'mask', pts, keep: true, split});
-    pushOp(F, {type: 'mask', pts, keep: false, split});
-    status(`${F.name} 拆成前片＋${B.name}`);
+    const O = m.layer;
+    hist.push({group: [hist.snapList(S), hist.snap(O, true), ...[m.F, m.B].filter(Boolean).map(M => hist.snap(M, true))]});
+    const F = S.active = splitBuild(O, m, m.gid ?? O.splitSrc ?? autoGid());
+    status(`${O.name} 拆成 ${F.name}＋${splitNew(O).B.name}`);
 }
 
-// 撤掉：前片維持拆之前的樣子（模式裡已經是）、刪掉後片，記一筆 undo
+// 撤掉：刪掉前後片、原圖重新顯示並選取，記一筆 undo
 function splitRevoke()
 {
-    const m = S.mode;
+    const m = S.mode, O = m.layer;
     if (m.type !== 'split' || !m.gid) return;
-    hist.push({group: [hist.snapList(S), m.snap]});
-    S.layers = S.layers.filter(L => L !== m.back);
-    S.active = m.layer;
+    hist.push({group: [hist.snapList(S), hist.snap(O, true)]});
+    S.layers = S.layers.filter(L => L !== m.F && L !== m.B);
+    O.visible = true;
+    S.active = O;
     S.mode = {type: 'move'};
-    status(`撤掉 ${m.layer.name} 的前後片`);
+    status(`撤掉 ${O.name} 的前後片`);
     refreshAll();
 }
 
-function drawSplit(m, L, K)
+function drawSplit(m, K)
 {
+    const L = m.view;
     if (m.poly)
     {
         g.fillStyle = 'rgba(255,0,255,.3)';
@@ -595,9 +726,10 @@ function render()
     const K = zoomK();
     const view = () => g.setTransform(K, 0, 0, K, S.view.px, S.view.py);
     g.imageSmoothingEnabled = K < 1;
+    const m = S.mode, split = m.type === 'split';
     for (const L of S.layers)
     {
-        if (!L.visible) continue;
+        if (split ? L !== m.layer && (!L.visible || L === m.F || L === m.B) : !L.visible) continue;
         const [sx, sy] = modeScale(L), img = layerImg(L);
         view();
         g.translate(L.x, L.y);
@@ -677,7 +809,8 @@ function drawOverlay(K)
     if (m.type === 'warp') drawWarp(m, K);
     if (m.type === 'crop') drawCrop(m, L, K);
     if (m.type === 'pixel') drawPixel(m, L, K);
-    if (m.type === 'split') drawSplit(m, L, K);
+    if (m.type === 'split') drawSplit(m, K);
+    if (m.type === 'auto' && m.sp) drawSplit(m.sp, K);
     if (m.type === 'scale')
     {
         g.fillStyle = '#fff';
@@ -758,7 +891,7 @@ function cancelMode()
 {
     const m = S.mode;
     if (m.type === 'move') return;
-    if (m.type === 'scale' || m.type === 'warp' || m.type === 'split') History.restore(m.snap);
+    if (m.type === 'scale' || m.type === 'warp') History.restore(m.snap);
     if (m.type === 'auto' && m.hist?.length) hist.push(m.snap);
     S.mode = {type: 'move'};
     refreshAll();
@@ -883,9 +1016,10 @@ function cropSel(m)
             cut: T => pushOp(T, {type: 'mask', pts, keep: false})};
 }
 
-// ---------- 多邊形裁切（頂點存圖層本地座標；裁切模式下圖層沒縮放，本地距離＝世界距離） ----------
+// ---------- 多邊形裁切（頂點存圖層本地座標；裁切模式下圖層沒縮放，本地距離＝世界距離；前後片的本地座標是縮小前的，要除 vk） ----------
 
-const polyTol = () => 8 / zoomK();
+const polyTol = () => 8 / zoomK() / (editSp()?.vk?.[0] ?? 1);
+const polyLayer = (m) => m.view ?? m.layer;
 
 // Shift：從 from 出發的方向鎖在 45° 的倍數
 function snap45(from, p)
@@ -914,7 +1048,7 @@ const polyNearFirst = (P, p) => P.pts.length >= 3 && Math.hypot(P.pts[0].x - p.x
 
 function polyPointerDown(m, e)
 {
-    const w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y), P = m.poly;
+    const w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y), P = m.poly;
     if (!P) {m.poly = {pts: [raw], closed: false, cursor: raw}; return null;}
     if (!P.closed)
     {
@@ -934,14 +1068,14 @@ function polyPointerDown(m, e)
 
 function polyDrag(m, e, i)
 {
-    const P = m.poly, w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y);
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
     const prev = P.pts[(i - 1 + P.pts.length) % P.pts.length];
     P.pts = P.pts.map((v, k) => k === i ? (e.shiftKey ? snap45(prev, raw) : raw) : v);
 }
 
 function polyHover(m, e)
 {
-    const P = m.poly, w = screenToWorld(e), raw = toLocal(m.layer, w.x, w.y);
+    const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
     if (!P.closed) P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
     else P.edge = polyVertexHit(P, raw) < 0 ? polyEdgeHit(P, raw)?.i ?? null : null;
 }
@@ -1603,7 +1737,7 @@ cv.addEventListener('pointerdown', e => {
     {
         const i = corners(L).findIndex(c => Math.hypot(c.x - w.x, c.y - w.y) * zoomK() < 8);
         drag = i >= 0 ? {type: 'handle', corner: [[0, 0], [1, 0], [1, 1], [0, 1]][i]}
-                      : {type: 'move', L, wx: w.x, wy: w.y, x: L.x, y: L.y};
+                      : {type: 'move', G: [{M: L, x: L.x, y: L.y}], wx: w.x, wy: w.y};
     }
     else if (m.type === 'color') pickColor(w);
     else if (m.type === 'pixel')
@@ -1618,14 +1752,14 @@ cv.addEventListener('pointerdown', e => {
         refreshModePanel();
         dirty();
     }
-    else if (m.type === 'split')
+    else if (m.type === 'split' || (m.type === 'auto' && m.sp && spHit(m.sp, w)))
     {
-        const before = splitState(m);
-        if (splitStartHit(m, w)) drag = {type: 'splitStart', before};
-        else if (m.poly)
+        const sp = editSp(), before = spBefore(m), pts = sp.poly?.pts;
+        if (splitStartHit(sp, w)) drag = {type: 'splitStart', before};
+        else if (sp.poly)
         {
-            drag = polyPointerDown(m, e);
-            if (m.poly.pts !== before.poly.pts) splitStep(m, before);
+            drag = polyPointerDown(sp, e);
+            if (sp.poly.pts !== pts) spCommit(m, before);
             else if (drag) drag.before = before;
         }
         refreshModePanel();
@@ -1633,29 +1767,32 @@ cv.addEventListener('pointerdown', e => {
     }
     else if (m.type === 'auto' && m.parts)
     {
-        const hit = pick(w, m.parts.map(p => p.C));
+        const hit = pick(w, autoLayers(m.parts));
         if (!hit) return;
         if (hit !== L) select(hit);
-        drag = {type: 'autoMove', part: m.parts.find(p => p.C === hit), wx: w.x, wy: w.y, x: hit.x, y: hit.y};
+        drag = {type: 'autoMove', part: autoPart(m, hit), wx: w.x, wy: w.y, x: hit.x, y: hit.y};
     }
     else if (m.type === 'move')
     {
         if (S.keys.has('r') && L && !L.locked)
         {
-            drag = {type: 'rotate', L, snap: hist.snap(L), a0: L.a, ang0: Math.atan2(w.y - L.y, w.x - L.x)};
+            const G = linked(L);
+            drag = {type: 'rotate', L, G, snap: {group: G.map(M => hist.snap(M))}, a0: L.a, ang0: Math.atan2(w.y - L.y, w.x - L.x)};
             return;
         }
         const hit = pick(w);
         if (!hit) return;
         if (hit !== L) select(hit);
-        drag = {type: 'move', L: hit, snap: hist.snap(hit), wx: w.x, wy: w.y, x: hit.x, y: hit.y};
+        const G = linked(hit);
+        drag = {type: 'move', G: G.map(M => ({M, x: M.x, y: M.y})), snap: {group: G.map(M => hist.snap(M))}, wx: w.x, wy: w.y};
     }
 });
 
 cv.addEventListener('pointermove', e => {
     if (!drag)
     {
-        if ((S.mode.type === 'crop' || S.mode.type === 'split') && S.mode.poly) {polyHover(S.mode, e); dirty();}
+        const hp = S.mode.type === 'crop' ? S.mode : editSp();
+        if (hp?.poly) {polyHover(hp, e); dirty();}
         if (S.mode.type === 'warp') cv.style.cursor = warpCursor(S.mode, screenToWorld(e));
         if (S.mode.type === 'pixel') {const w = screenToWorld(e); S.mode.cursor = toLocal(S.mode.layer, w.x, w.y); dirty();}
         return;
@@ -1669,8 +1806,7 @@ cv.addEventListener('pointermove', e => {
     else if (drag.type === 'move')
     {
         const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
-        drag.L.x = drag.x + dx;
-        drag.L.y = drag.y + dy;
+        for (const p of drag.G) Object.assign(p.M, {x: p.x + dx, y: p.y + dy});
     }
     else if (drag.type === 'autoMove')
     {
@@ -1681,7 +1817,8 @@ cv.addEventListener('pointermove', e => {
     {
         let a = drag.a0 + (Math.atan2(w.y - drag.L.y, w.x - drag.L.x) - drag.ang0) / RAD;
         a = e.shiftKey ? Math.round(a / 15) * 15 : round(a, 10);
-        drag.L.a = ((a + 180) % 360 + 360) % 360 - 180;
+        a = ((a + 180) % 360 + 360) % 360 - 180;
+        for (const M of drag.G) M.a = a;
     }
     else if (drag.type === 'crop')
     {
@@ -1690,8 +1827,8 @@ cv.addEventListener('pointermove', e => {
     }
     else if (drag.type === 'polyPt')
     {
-        if (drag.before) {splitStep(S.mode, drag.before); drag.before = null;}
-        polyDrag(S.mode, e, drag.i);
+        if (drag.before) {spCommit(S.mode, drag.before); drag.before = null;}
+        polyDrag(S.mode.type === 'crop' ? S.mode : editSp(), e, drag.i);
     }
     else if (drag.type === 'splitStart') splitMoveStart(S.mode, w);
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
@@ -1709,8 +1846,8 @@ cv.addEventListener('pointermove', e => {
 });
 
 cv.addEventListener('pointerup', () => {
-    const s = drag?.snap;
-    if (s && (s.x !== s.layer.x || s.y !== s.layer.y || s.a !== s.layer.a)) hist.push(s);
+    const s = drag?.snap, s0 = s?.group?.[0];
+    if (s0 && (s0.x !== s0.layer.x || s0.y !== s0.layer.y || s0.a !== s0.layer.a)) hist.push(s);
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
     if (drag?.type === 'autoMove') autoSave(drag.part);
     drag = null;
@@ -1767,7 +1904,7 @@ window.addEventListener('keydown', e => {
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
     if (m.type === 'pixel' && e.key === 'Alt') e.preventDefault();
     const d = ARROWS[e.key], L = S.active;
-    const part = m.type === 'auto' && L?.visible && !L.locked ? m.parts?.find(p => p.C === L) : null;
+    const part = m.type === 'auto' && L?.visible && !L.locked ? autoPart(m, L) : null;
     if (d && part)
     {
         e.preventDefault();
@@ -1788,10 +1925,9 @@ window.addEventListener('keydown', e => {
     else if (d && L && !L.locked && (S.mode.type === 'move' || S.mode.type === 'scale'))
     {
         e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
-        if (S.mode.type === 'move') hist.record(L);
-        L.x += d[0] * step;
-        L.y += d[1] * step;
+        const step = e.shiftKey ? 10 : 1, G = S.mode.type === 'move' ? linked(L) : [L];
+        if (S.mode.type === 'move') hist.push({group: G.map(M => hist.snap(M))});
+        for (const M of G) Object.assign(M, {x: M.x + d[0] * step, y: M.y + d[1] * step});
         refreshProps();
         dirty();
     }
@@ -1815,7 +1951,7 @@ function undo()
     }
     if (m.type === 'auto')
     {
-        if (!m.parts || !autoUndo(m, m.hist, m.fut)) status('自動沒有步驟可以退了；要退更早的操作請先離開自動模式');
+        if (!autoUndo(m, m.hist, m.fut)) status('自動沒有步驟可以退了；要退更早的操作請先離開自動模式');
         return refreshAll();
     }
     if (m.type === 'split')
@@ -1842,7 +1978,7 @@ function redo()
     }
     if (m.type === 'auto')
     {
-        if (m.parts) autoUndo(m, m.fut, m.hist);
+        autoUndo(m, m.fut, m.hist);
         return refreshAll();
     }
     if (m.type === 'split')
@@ -1932,6 +2068,9 @@ function refreshProps()
 function refreshAuto(m)
 {
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
+    $('auSp').disabled = !!m.parts;
+    $('auT').disabled = !m.sp;
+    $('auSpInfo').textContent = m.sp ? (m.sp.err ?? `後片 ${m.sp.poly.pts.length} 點`) + `，起點 ${m.sp.start.x},${m.sp.start.y}` : '';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
     for (const P of AUTO_PARTS)
@@ -2051,22 +2190,32 @@ async function drawThumb(c)
     c.loaded = true;
 }
 
+// images/ 有變動（vite dev 監看推 'tools:images'，見 vite/config.dev.mjs）：重列列過的那些資料夾、重畫縮圖；畫布上的圖層不動
+async function imagesChanged({dirs = [], changed = []})
+{
+    const want = new Set(dirs.map(d => d.toLowerCase()));
+    const boxes = [$('tree'), ...($('dlgSave').open ? [$('dlgTree')] : [])];
+    const nodes = boxes.flatMap(b => [...b.querySelectorAll('.tdir')]).filter(w => want.has(w.dataset.path.toLowerCase()));
+    await Promise.all(nodes.map(w => w.reload().catch(() => {})));
+    if (changed.length) await refreshThumbs();
+}
+import.meta.hot?.on('tools:images', (r) => imagesChanged(r).catch(e => status(e.message)));
+
 const refreshThumbs = () => Promise.all([...document.querySelectorAll('.tree canvas.thumb')].filter(c => c.loaded).map(drawThumb));
 
+// 資料夾節點（.tdir）掛 reload()：列過的才重列，子資料夾節點沿用（保留它們的展開狀態），檔案列重建
 function treeNode(dir, label, path, depth, opt, open)
 {
-    const wrap = el('div'), row = el('div', 'row dir'), kids = el('div');
+    const wrap = el('div', 'tdir'), row = el('div', 'row dir'), kids = el('div');
+    Object.assign(wrap.dataset, {path, name: dir.name});
     row.style.paddingLeft = `${depth * 12 + 4}px`;
     row.title = label;
     let loaded = false, expanded = false;
-    const toggle = async (force) => {
-        expanded = force ?? !expanded;
-        row.textContent = `${expanded ? '▾' : '▸'} ${label}`;
-        kids.hidden = !expanded;
-        if (!expanded || loaded) return;
-        loaded = true;
+    const list = async () => {
         const {dirs, files} = await FS.listDir(dir);
-        for (const d of dirs) kids.append(treeNode(d, d.name, join(path, d.name), depth + 1, opt, false));
+        const old = new Map([...kids.children].filter(k => k.classList.contains('tdir')).map(k => [k.dataset.name, k]));
+        const out = dirs.map(d => old.get(d.name) ?? treeNode(d, d.name, join(path, d.name), depth + 1, opt, false));
+        kids.replaceChildren(...out);
         if (!opt.onFile) return;
         const show = opt.filter ?? (n => /\.png$/i.test(n) || isProj(n));
         for (const f of files.filter(f => show(f.name)))
@@ -2084,6 +2233,15 @@ function treeNode(dir, label, path, depth, opt, open)
             r.onclick = () => opt.onFile(f, dir, path, r);
             kids.append(r);
         }
+    };
+    wrap.reload = () => loaded ? list() : Promise.resolve();
+    const toggle = async (force) => {
+        expanded = force ?? !expanded;
+        row.textContent = `${expanded ? '▾' : '▸'} ${label}`;
+        kids.hidden = !expanded;
+        if (!expanded || loaded) return;
+        loaded = true;
+        await list();
     };
     row.onclick = () => {opt.onDir?.(dir, path, row); toggle();};
     wrap.append(row, kids);
@@ -2252,49 +2410,43 @@ async function mkDir(root, path)
 const readGameJson = async (name) => JSON.parse(await (await (await S.assets.json.getFileHandle(name)).getFile()).text());
 const readGame = async () => ({item: await readGameJson('item.json'), role: S.assets.hasRole ? await readGameJson('role.json') : {}});
 
-// 檔名配得到的擺放：item 的 equip、角色的 body/head/hair/hand/corpse（spritesheet 的 sprite 配不到）
-// 後片（key: 'back'）：equip.back 等於檔名，或檔名是「equip.sprite-back」
+// 檔名配得到的擺放：item 的 equip（sprite 是檔名或「檔名-front」）、角色的 body/head/hair/hand/corpse（spritesheet 的 sprite 配不到）
 function targetsOf(game, sprite)
 {
-    const isBack = (e) => e && (e.back === sprite || `${e.sprite}-back` === sprite);
     return [
-        ...Object.keys(game.item).filter(id => game.item[id].equip?.sprite === sprite).map(id => ({file: 'item', id, key: 'equip'})),
-        ...Object.keys(game.item).filter(id => isBack(game.item[id].equip)).map(id => ({file: 'item', id, key: 'back'})),
+        ...Object.keys(game.item).filter(id => splitBase(game.item[id].equip?.sprite) === sprite).map(id => ({file: 'item', id, key: 'equip'})),
         ...Object.entries(game.role).flatMap(([id, r]) => PARTS.filter(p => r[p]?.sprite === sprite).map(p => ({file: 'role', id, key: p}))),
     ].map(t => ({...t, tag: `${t.id}.${t.key}`}));
 }
 
-// 前後片共用 equip 的擺放，所以兩片要同尺寸同位置；後片 PNG 叫「sprite-back」，icon 用兩片疊起來的「sprite-icon」
-function splitMismatch(F, B)
-{
-    if (F.canvas.width !== B.canvas.width || F.canvas.height !== B.canvas.height) return `${F.name} 跟 ${B.name} 尺寸不一樣`;
-    const k = ['x', 'y', 'a', 'ox', 'oy'].find(k => Math.abs(F[k] - B[k]) > 1e-6);
-    return k ? `${F.name} 跟 ${B.name} 的位置不一樣（${k}）` : '';
-}
-
+// 拆了前後片的 item：sprite 是「X-front」、back 是「X-back」、icon 是完整的原圖 X
+const splitBase = (s) => s?.replace(/-front$/, '');
 const splitPng = (L, bake) => bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
 
-function splitIcon(F, B, bake)
+// 一組前後片能不能存：兩片都要在、三層同尺寸同位置（原圖改過尺寸要先重進前後片模式）
+function splitMismatch(g)
 {
-    const c = PX.newCanvas(F.canvas.width, F.canvas.height), cg = c.getContext('2d');
-    for (const L of [B, F]) cg.drawImage(splitPng(L, bake), 0, 0);
-    return c;
+    if (!g.F || !g.B) return `前後片缺了 ${g.F ? '後片' : '前片'}，要重拆先到「前後片」按確定`;
+    const [A, ...rest] = [g.O, g.F, g.B].filter(Boolean);
+    for (const M of rest)
+    {
+        if (A.canvas.width !== M.canvas.width || A.canvas.height !== M.canvas.height)
+            return `${A.name} 跟 ${M.name} 尺寸不一樣${A === g.O ? '（原圖改過，先到「前後片」按確定更新）' : ''}`;
+        const k = ['x', 'y', 'a', 'ox', 'oy'].find(k => Math.abs(A[k] - M[k]) > 1e-6);
+        if (k) return `${A.name} 跟 ${M.name} 的位置不一樣（${k}）`;
+    }
+    return '';
 }
 
-// 有後片：equip.back 指向它，icon 原本是 sprite 就換成 sprite-icon；沒有（前片是整張圖）就拿掉 back、icon 換回來
-function setBack(it, sprite, back)
+// sprite 換成 name（拆了就是 name-front＋back）；icon、drop.sprite 原本是舊的或新的 X／X-front／X-icon 就換成 name
+function setSplit(it, name, split, old = name)
 {
-    const icon = `${sprite}-icon`;
-    if (back)
-    {
-        it.equip.back = back;
-        if (it.icon === sprite) it.icon = icon;
-    }
-    else
-    {
-        delete it.equip.back;
-        if (it.icon === icon) it.icon = sprite;
-    }
+    const e = it.equip, olds = [...new Set([old, name])].flatMap(n => [n, `${n}-front`, `${n}-icon`]);
+    e.sprite = split ? `${name}-front` : name;
+    if (split) e.back = `${name}-back`;
+    else delete e.back;
+    if (olds.includes(it.icon)) it.icon = name;
+    if (olds.includes(it.drop?.sprite)) it.drop.sprite = name;
 }
 
 function writeEquip(e, L)
@@ -2313,11 +2465,13 @@ async function saveLayer()
     const L = S.active;
     if (!L || !needRoot()) return;
     cancelMode();
+    const sg = splitNew(L);
+    const base = !sg ? L.name : sg.O?.name ?? (sg.F ? splitBase(sg.F.name) : sg.B.name.replace(/-back$/, ''));
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
-    const matched = S.assets && targetsOf(await readGame().catch(() => ({item: {}, role: {}})), L.name).length;
+    const matched = S.assets && targetsOf(await readGame().catch(() => ({item: {}, role: {}})), base).length;
     const output = await FS.tryDir(S.root, 'output');
     const [dir, path] = output ? [output, 'output'] : [L.dir ?? S.root, L.dir ? L.path : ''];
-    const r = await saveDialog(`存檔：${L.name}`, dir, path, matched ? L.name : `${L.name}-copy`, '.png', bake, null, true);
+    const r = await saveDialog(`存檔：${L.name}`, dir, path, matched ? base : `${L.name}-copy`, '.png', bake, null, true);
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
     if (r.game)
@@ -2325,7 +2479,7 @@ async function saveLayer()
         const A = S.assets, game = await readGame();
         const ts = targetsOf(game, r.name).filter(t => r.game.includes(t.tag));
         if (!ts.length) return alert(`item.json／role.json 裡已經沒有 sprite 是「${r.name}」的擺放，沒有存檔`);
-        const pair = splitPair(L), bad = pair && splitMismatch(pair.F, pair.B);
+        const bad = sg && splitMismatch(sg);
         if (bad) return alert(`沒有存檔：${bad}`);
         const png = await pngDir(r.name, ts);
         const pd = await mkDir(A.tex, png), fresh = [];
@@ -2333,26 +2487,20 @@ async function saveLayer()
             if (!await FS.tryFile(pd, `${name}.png`)) fresh.push(name);
             await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
         };
-        await put(r.name, out);
-        // 存前片時後片、icon 一起寫；單獨存後片也重產 icon
+        // 前後片三層一起寫，擺放取原圖的；原圖被刪掉時不寫原圖 PNG
+        if (!sg) await put(r.name, out);
+        else
+        {
+            if (sg.O) await put(r.name, splitPng(sg.O, r.bake));
+            await put(`${r.name}-front`, splitPng(sg.F, r.bake));
+            await put(`${r.name}-back`, splitPng(sg.B, r.bake));
+        }
+        const noIcon = sg && !sg.O && !await FS.tryFile(pd, `${r.name}.png`);
         for (const t of ts)
         {
             const it = game[t.file][t.id];
-            if (t.key === 'back')
-            {
-                setBack(it, it.equip.sprite, r.name);
-                if (pair) await put(`${it.equip.sprite}-icon`, splitIcon(pair.F, pair.B, r.bake));
-                continue;
-            }
-            writeEquip(it[t.key], L);
-            if (t.file !== 'item') continue;
-            if (pair?.F === L)
-            {
-                await put(`${r.name}-back`, splitPng(pair.B, r.bake));
-                await put(`${r.name}-icon`, splitIcon(L, pair.B, r.bake));
-                setBack(it, r.name, `${r.name}-back`);
-            }
-            else if (!splitOp(L, false)) setBack(it, r.name, null);
+            writeEquip(it[t.key], sg ? sg.O ?? sg.F : L);
+            if (t.file === 'item') setSplit(it, r.name, !!sg);
         }
         for (const f of ['item', 'role'])
             if (ts.some(t => t.file === f))
@@ -2360,7 +2508,7 @@ async function saveLayer()
                 await FS.writeFile(A.json, `${f}.json`, new Blob([JSON.stringify(game[f], null, 2)]));
                 SH.notifySaved(`${f}.json`);
             }
-        return status(`已存 textures/${png}/${r.name}.png${pair ? '（含前後片 icon）' : ''}，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+        return status(`已存 textures/${png}/${r.name}${sg ? '（-front、-back）' : ''}.png，更新 ${ts.map(t => `${t.file}.json ${t.tag}`).join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}${noIcon ? `；原圖被刪掉了，icon 指的 ${r.name}.png 不存在` : ''}`);
     }
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
@@ -2413,7 +2561,7 @@ function itemCheck(rows, items, keys)
     for (const r of act)
     {
         const err = (s) => {r.err ||= s;};
-        const old = r.id ? items[r.id]?.equip?.sprite : null;
+        const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
         if (!r.id)
         {
@@ -2426,11 +2574,11 @@ function itemCheck(rows, items, keys)
         else if (/[\\/:*?"<>|]/.test(r.name)) err('檔名不能有 \\ / : * ? " < > |');
         if (!r.png) continue;
         if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
-        const B = splitBack(r.part.C);
-        if (B) err(splitMismatch(r.part.C, B));
-        for (const n of B ? [`${r.name}-back`, `${r.name}-icon`] : [])
+        const g = splitNew(r.part.C);
+        if (g) err(splitMismatch(g));
+        for (const n of g ? [`${r.name}-front`, `${r.name}-back`] : [])
             if (keys.has(n) && keys.get(n) !== 'equips') err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
-        const users = Object.keys(items).filter(id => id !== r.id && items[id].equip?.sprite === r.name);
+        const users = Object.keys(items).filter(id => id !== r.id && splitBase(items[id].equip?.sprite) === r.name);
         const dir = keys.get(r.name), also = users.length ? `（${users.join('、')} 也用這張）` : '';
         if (r.name === old)
         {
@@ -2462,7 +2610,7 @@ function itemDialog(parts, items, keys)
     const dlg = $('dlgItems');
     const rows = AUTO_PARTS.map(P => {
         const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
-        const id = Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && items[id].equip?.sprite === name) ?? null;
+        const id = Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name) ?? null;
         return {P, part, on: !!part, id, name, png: true, place: true, newId: nextItemId(items, ITEM_PRE[P.key]), lab: ''};
     });
     const refresh = () => {
@@ -2525,7 +2673,7 @@ function itemDialog(parts, items, keys)
         body.append(head, line, nw, msg);
         row.append(thumb, body);
         const reset = () => {
-            r.name = (r.id && items[r.id].equip?.sprite) || r.part.C.name;
+            r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
             r.png = r.place = true;
         };
         on.onchange = () => {r.on = on.checked; refresh();};
@@ -2533,7 +2681,7 @@ function itemDialog(parts, items, keys)
         name.oninput = () => {r.name = name.value.trim(); refresh();};
         png.onchange = () => {
             r.png = png.checked;
-            if (!r.png) r.name = items[r.id].equip?.sprite ?? r.name;
+            if (!r.png) r.name = splitBase(items[r.id].equip?.sprite) ?? r.name;
             sync(r);
             refresh();
         };
@@ -2571,7 +2719,7 @@ async function saveItems()
     const done = [], fresh = [];
     for (const r of act)
     {
-        const {C} = r.part, B = splitBack(C), back = B ? `${r.name}-back` : null;
+        const {C} = r.part, g = splitNew(C);
         if (r.png)
         {
             const dir = keys.get(r.name) ?? 'equips', pd = await mkDir(A.tex, dir);
@@ -2580,31 +2728,25 @@ async function saveItems()
                 await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
             };
             await put(r.name, splitPng(C, d.bake));
-            if (B)
+            if (g)
             {
-                await put(back, splitPng(B, d.bake));
-                await put(`${r.name}-icon`, splitIcon(C, B, d.bake));
+                await put(`${r.name}-front`, splitPng(g.F, d.bake));
+                await put(`${r.name}-back`, splitPng(g.B, d.bake));
             }
         }
         if (!r.id)
         {
-            const equip = {sprite: r.name};
+            const equip = {sprite: g ? `${r.name}-front` : r.name};
             writeEquip(equip, C);
-            if (back) equip.back = back;
+            if (g) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
-            items = insertAfter(items, last, r.newId, {cat, icon: back ? `${r.name}-icon` : r.name, lab: r.lab, equip});
+            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip});
             done.push(`新增 ${r.newId}`);
             continue;
         }
-        const it = items[r.id], e = it.equip ??= {}, old = e.sprite;
-        if (r.png && r.name !== old)
-        {
-            e.sprite = r.name;
-            if (it.icon === old || it.icon === `${old}-icon`) it.icon = r.name;
-            if (it.drop?.sprite === old) it.drop.sprite = r.name;
-        }
-        if (r.png && (B || !splitOp(C, false))) setBack(it, r.name, back);
+        const it = items[r.id], e = it.equip ??= {};
+        if (r.png) setSplit(it, r.name, !!g, splitBase(e.sprite));
         if (r.place) writeEquip(e, C);
         done.push(r.id);
     }
@@ -2627,7 +2769,7 @@ function projectData(layers)
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, visible: L.visible, opacity: L.opacity, locked: L.locked,
-            ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}),
+            ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}),
         })),
     };
 }
@@ -2719,7 +2861,7 @@ async function openProject(fh, dir, path)
         layers.push({id: ++uid, name: d.name, dir: saveDir, path: d.path, srcPath: d.src, src, ops: d.ops,
                      canvas: PX.replay(src, d.ops), x: d.x, y: d.y, a: d.a, ox: d.ox, oy: d.oy,
                      visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
-                     ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc})});
+                     ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc})});
     }
     const lossy = warns.length > 0;
     if (add)
@@ -2834,8 +2976,9 @@ const onProp = (id, fn) => {
     $(id).onchange = () => {
         const L = S.active, v = +$(id).value;
         if (!L || !Number.isFinite(v)) return refreshProps();
-        hist.record(L);
-        fn(L, v);
+        const G = linked(L);
+        hist.push({group: G.map(M => hist.snap(M))});
+        for (const M of G) fn(M, v);
         refreshAll();
     };
 };
@@ -2900,6 +3043,20 @@ $('spT').onchange = () => {
     splitSetT(+$('spT').value);
     if (S.mode.type === 'split') S.mode.tRec = false;
 };
+$('auT').oninput = () => {
+    const m = S.mode, t = +$('auT').value;
+    $('auV').textContent = t;
+    if (m.type !== 'auto' || !m.sp || t === m.sp.t) return;
+    if (!m.tRec) {autoStep(m); m.tRec = true;}
+    m.sp.t = t;
+    splitRun(m.sp);
+    refreshModePanel();
+    dirty();
+};
+$('auT').onchange = () => {
+    splitSetT(+$('auT').value);
+    if (S.mode.type === 'auto') S.mode.tRec = false;
+};
 $('spRevoke').onclick = splitRevoke;
 $('pxClear').onclick = pixelClear;
 $('pxRgb').oninput = () => {$('colRgb').value = $('pxRgb').value; dirty();};
@@ -2955,6 +3112,12 @@ $('auReset').onclick = () => {
     const m = S.mode;
     for (const part of m.parts ?? []) autoApply(m, part, AUTO_DEF[part.P.key]);
     autoSet(null);
+    autoSpSync(m);
+    refreshAll();
+};
+$('auSp').onchange = () => {
+    autoSet({...S.auto, split: $('auSp').checked});
+    autoSpSync(S.mode);
     refreshAll();
 };
 $('auCancel').onclick = autoRevoke;
@@ -3012,4 +3175,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitPair, splitRun};
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged};

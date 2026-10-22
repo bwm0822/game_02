@@ -119,7 +119,12 @@
 
         <div id="modeAuto" class="mode" hidden>
             <div id="auTable" class="autoGrid"></div>
-            <div class="hint">按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
+            <div id="auSplit">
+                <label><input id="auSp" type="checkbox" checked> 拆前後片</label>
+                <label>頭盔切線：亮度 &lt; <input id="auT" type="range" min="1" max="255" value="24"> <span id="auV">24</span></label>
+                <div id="auSpInfo" class="dim"></div>
+            </div>
+            <div class="hint">勾「拆前後片」時頭盔上的洋紅色是後片（被頭蓋住）：拖起點（青色十字）、改門檻重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
             <div class="row2"><button id="auItem">存到 item…</button></div>
         </div>
