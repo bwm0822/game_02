@@ -19,7 +19,7 @@
 
 - 沒有等級制度，**裝備階級就是主要成長來源**，階級綁探索深度（見 §8）
 - 每件道具都畫**獨立的圖**（不用換色）
-- id 一律 ASCII：`<材質>_<部位/種類>`，如 `dragon_armor`、`iron_sword`
+- id 一律 ASCII：防具是 `<部位>-<系>-<階>`，如 `armor-lea-5`（見 §2.3）；其他是 `<材質>_<種類>`，如 `iron_sword`
 
 ## 2. 防具
 
@@ -27,23 +27,35 @@
 
 ### 2.1 三系
 
-| 系 | DEF | 主要加成 | 代價 | 搭配 |
-|---|---|---|---|---|
-| 布甲 `cloth` | 低 | INT、火/冰/毒抗 | 無 | 法術 |
-| 皮甲 `leather` | 中 | DEX、EVA、CRI | 無 | 弓、匕首、毒 |
-| 重甲 `heavy` | 高 | CON、物理抗 | **EVA 降低** | 劍、斧、槌 |
+| 系 | id 縮寫 | DEF | 主要加成 | 代價 | 搭配 |
+|---|---|---|---|---|---|
+| 布甲 | `clo` | 低 | INT、火/冰/毒抗 | 無 | 法術 |
+| 皮甲 | `lea` | 中 | DEX、EVA、CRI | 無 | 弓、匕首、毒 |
+| 重甲 | `hvy` | 高 | CON、物理抗 | **EVA 降低** | 劍、斧、槌 |
 
-### 2.2 五階材質
+### 2.2 五階材質（只用在名字，id 不帶材質）
 
-| 階 | 布甲 `cloth` | 皮甲 `leather` | 重甲 `heavy` |
+| 階 | 布甲 | 皮甲 | 重甲 |
 |---|---|---|---|
-| T1 | 麻布 `linen` | 粗皮 `rawhide` | 青銅 `bronze` |
-| T2 | 棉布 `cotton` | 硬皮 `hardhide` | 鎖子甲 `chain` |
-| T3 | 絲綢 `silk` | 鑲釘皮 `studded` | 鐵板甲 `plate` |
-| T4 | 附魔法袍 `arcane` | 狼人皮 `werewolf` | 精鋼 `steel` |
-| T5 | 星辰法袍 `astral` | 龍皮 `dragon` | 秘銀 `mithril` |
+| T1 | 麻布 Linen | 粗皮 Rawhide | 青銅 Bronze |
+| T2 | 棉布 Cotton | 硬皮 Hard Leather | 鎖子 Chain |
+| T3 | 絲綢 Silk | 鑲釘皮 Studded | 鐵板 Plate |
+| T4 | 附魔 Arcane | 狼人皮 Werewolf | 精鋼 Steel |
+| T5 | 星辰 Astral | 龍皮 Dragonhide | 秘銀 Mithril |
 
-### 2.3 DEF 暫定值（護甲；頭盔、靴子取一半）
+部位字依系不同（名字＝材質＋部位字）：
+
+| 系 | 頭盔 | 護甲 | 靴子 |
+|---|---|---|---|
+| 布甲 | 帽 Hood | 袍 Robe（附魔／星辰寫「法袍」） | 鞋 Shoes |
+| 皮甲 | 帽 Cap | 甲 Armor | 靴 Boots |
+| 重甲 | 盔 Helm | 甲 Armor | 靴 Boots |
+
+### 2.3 id 與基礎屬性
+
+id：`<部位>-<系>-<階>`，部位 `helmet`／`armor`／`boots`，階 1–5，如 `helmet-clo-1`、`boots-hvy-5`；前後片圖是 `helmet-clo-1-front`／`-back`。
+
+DEF 暫定值（護甲；頭盔、靴子取一半）：
 
 | 系 | T1 | T2 | T3 | T4 | T5 |
 |---|---|---|---|---|---|
@@ -51,34 +63,95 @@
 | 皮甲 | 6 | 12 | 18 | 24 | 30 |
 | 重甲 | 10 | 20 | 30 | 40 | 50 |
 
-### 2.4 套裝加成
+其他屬性（T＝階 1–5，⌈T/2⌉ 依序 1/1/2/2/3）：
 
-- 套裝 = 同材質的頭盔＋護甲＋靴子，**穿滿 3 件**才給加成
+| 系 | 頭盔 | 護甲 | 靴子 |
+|---|---|---|---|
+| 布甲 | INT +⌈T/2⌉ | INT +T | 火／冰／毒抗 +2T% |
+| 皮甲 | CRI +T% | DEX +T | EVA +T% |
+| 重甲 | 物理抗 +2T%、EVA −1% | CON +T、EVA −3% | CON +⌈T/2⌉、EVA −1% |
+
+重甲 EVA 懲罰不隨階級變，穿滿 −5%（剛好抵掉初始 DEX 5 的 EVA）；EVA 可以是負的（`combat.js` 命中是 `rnd < ACC − EVA`）。
+
+### 2.4 防具總表
+
+| id | 中文名 | 英文名 | 價格 | DEF | 其他屬性 |
+|---|---|---|---|---|---|
+| helmet-clo-1 | 麻布帽 | Linen Hood | 8 | 2 | INT +1 |
+| armor-clo-1 | 麻布袍 | Linen Robe | 16 | 4 | INT +1 |
+| boots-clo-1 | 麻布鞋 | Linen Shoes | 8 | 2 | 火／冰／毒抗 +2% |
+| helmet-clo-2 | 棉布帽 | Cotton Hood | 24 | 4 | INT +1 |
+| armor-clo-2 | 棉布袍 | Cotton Robe | 48 | 8 | INT +2 |
+| boots-clo-2 | 棉布鞋 | Cotton Shoes | 24 | 4 | 火／冰／毒抗 +4% |
+| helmet-clo-3 | 絲綢帽 | Silk Hood | 72 | 6 | INT +2 |
+| armor-clo-3 | 絲綢袍 | Silk Robe | 144 | 12 | INT +3 |
+| boots-clo-3 | 絲綢鞋 | Silk Shoes | 72 | 6 | 火／冰／毒抗 +6% |
+| helmet-clo-4 | 附魔帽 | Arcane Hood | 200 | 8 | INT +2 |
+| armor-clo-4 | 附魔法袍 | Arcane Robe | 400 | 16 | INT +4 |
+| boots-clo-4 | 附魔鞋 | Arcane Shoes | 200 | 8 | 火／冰／毒抗 +8% |
+| helmet-clo-5 | 星辰帽 | Astral Hood | 600 | 10 | INT +3 |
+| armor-clo-5 | 星辰法袍 | Astral Robe | 1200 | 20 | INT +5 |
+| boots-clo-5 | 星辰鞋 | Astral Shoes | 600 | 10 | 火／冰／毒抗 +10% |
+| helmet-lea-1 | 粗皮帽 | Rawhide Cap | 10 | 3 | CRI +1% |
+| armor-lea-1 | 粗皮甲 | Rawhide Armor | 20 | 6 | DEX +1 |
+| boots-lea-1 | 粗皮靴 | Rawhide Boots | 10 | 3 | EVA +1% |
+| helmet-lea-2 | 硬皮帽 | Hard Leather Cap | 30 | 6 | CRI +2% |
+| armor-lea-2 | 硬皮甲 | Hard Leather Armor | 60 | 12 | DEX +2 |
+| boots-lea-2 | 硬皮靴 | Hard Leather Boots | 30 | 6 | EVA +2% |
+| helmet-lea-3 | 鑲釘皮帽 | Studded Cap | 90 | 9 | CRI +3% |
+| armor-lea-3 | 鑲釘皮甲 | Studded Armor | 180 | 18 | DEX +3 |
+| boots-lea-3 | 鑲釘皮靴 | Studded Boots | 90 | 9 | EVA +3% |
+| helmet-lea-4 | 狼人皮帽 | Werewolf Cap | 250 | 12 | CRI +4% |
+| armor-lea-4 | 狼人皮甲 | Werewolf Armor | 500 | 24 | DEX +4 |
+| boots-lea-4 | 狼人皮靴 | Werewolf Boots | 250 | 12 | EVA +4% |
+| helmet-lea-5 | 龍皮帽 | Dragonhide Cap | 750 | 15 | CRI +5% |
+| armor-lea-5 | 龍皮甲 | Dragonhide Armor | 1500 | 30 | DEX +5 |
+| boots-lea-5 | 龍皮靴 | Dragonhide Boots | 750 | 15 | EVA +5% |
+| helmet-hvy-1 | 青銅盔 | Bronze Helm | 12 | 5 | 物理抗 +2%、EVA −1% |
+| armor-hvy-1 | 青銅甲 | Bronze Armor | 24 | 10 | CON +1、EVA −3% |
+| boots-hvy-1 | 青銅靴 | Bronze Boots | 12 | 5 | CON +1、EVA −1% |
+| helmet-hvy-2 | 鎖子盔 | Chain Helm | 36 | 10 | 物理抗 +4%、EVA −1% |
+| armor-hvy-2 | 鎖子甲 | Chain Armor | 72 | 20 | CON +2、EVA −3% |
+| boots-hvy-2 | 鎖子靴 | Chain Boots | 36 | 10 | CON +1、EVA −1% |
+| helmet-hvy-3 | 鐵板盔 | Plate Helm | 108 | 15 | 物理抗 +6%、EVA −1% |
+| armor-hvy-3 | 鐵板甲 | Plate Armor | 216 | 30 | CON +3、EVA −3% |
+| boots-hvy-3 | 鐵板靴 | Plate Boots | 108 | 15 | CON +2、EVA −1% |
+| helmet-hvy-4 | 精鋼盔 | Steel Helm | 300 | 20 | 物理抗 +8%、EVA −1% |
+| armor-hvy-4 | 精鋼甲 | Steel Armor | 600 | 40 | CON +4、EVA −3% |
+| boots-hvy-4 | 精鋼靴 | Steel Boots | 300 | 20 | CON +2、EVA −1% |
+| helmet-hvy-5 | 秘銀盔 | Mithril Helm | 900 | 25 | 物理抗 +10%、EVA −1% |
+| armor-hvy-5 | 秘銀甲 | Mithril Armor | 1800 | 50 | CON +5、EVA −3% |
+| boots-hvy-5 | 秘銀靴 | Mithril Boots | 900 | 25 | CON +3、EVA −1% |
+
+### 2.5 套裝加成
+
+- 套裝 = 同系同階的頭盔＋護甲＋靴子，**穿滿 3 件**才給加成
 - **只有 T3–T5 有加成**（共 9 套），T1、T2 是過渡裝
 - 武器**不算**進套裝
+- 套裝 key 是 `<系>-<階>`（跟 id 同風格，不綁材質名）
 
-| 套裝 | 加成（暫定） |
-|---|---|
-| 絲綢 `silk` | INT +2 |
-| 附魔法袍 `arcane` | INT +4、火/冰抗 +15% |
-| 星辰法袍 `astral` | INT +6、火/冰/毒抗 +25% |
-| 鑲釘皮 `studded` | EVA +5 |
-| 狼人皮 `werewolf` | EVA +10、CRI +5% |
-| 龍皮 `dragon` | 火抗 +30%、CRI +5% |
-| 鐵板甲 `plate` | DEF +10% |
-| 精鋼 `steel` | CON +3、物理抗 +10% |
-| 秘銀 `mithril` | CON +5、物理抗 +20%、重甲 EVA 懲罰減半 |
+| key | 中文名 | 英文名 | 加成（暫定） |
+|---|---|---|---|
+| `clo-3` | 絲綢套裝 | Silk Set | INT +2 |
+| `clo-4` | 附魔套裝 | Arcane Set | INT +4、火/冰抗 +15% |
+| `clo-5` | 星辰套裝 | Astral Set | INT +6、火/冰/毒抗 +25% |
+| `lea-3` | 鑲釘皮套裝 | Studded Set | EVA +5% |
+| `lea-4` | 狼人皮套裝 | Werewolf Set | EVA +10%、CRI +5% |
+| `lea-5` | 龍皮套裝 | Dragonhide Set | 火抗 +30%、CRI +5% |
+| `hvy-3` | 鐵板套裝 | Plate Set | DEF +10% |
+| `hvy-4` | 精鋼套裝 | Steel Set | CON +3、物理抗 +10% |
+| `hvy-5` | 秘銀套裝 | Mithril Set | CON +5、物理抗 +20%、EVA +2.5%（抵掉一半重甲懲罰） |
 
-### 2.5 資料格式
+### 2.6 資料格式
 
 防具加 `set` 欄位，套裝定義放新的手寫檔 `public/assets/json/set.json`（mod 新增套裝只加一筆）：
 
 ```json
 // item.json
-"dragon_armor": { "cat": "CAT_CHESTPLATE", "set": "dragon", ... }
+"armor-lea-5": { "cat": "CAT_CHESTPLATE", "set": "lea-5", ... }
 
 // set.json
-"dragon": { "lab": "龍皮套裝", "need": 3, "bonus": { "FIRE_RES": 30, "CRI": 5 } }
+"lea-5": { "lab": "龍皮套裝", "need": 3, "bonus": { "FIRE_RES": 30, "CRI": 5 } }
 ```
 
 ## 3. 武器
@@ -206,7 +279,7 @@ id：`small_heal_potion`。沒有 MP（技能用冷卻），所以沒有回魔�
 
 秘銀礦、龍鱗、狼人皮、星辰碎片：只能打王取得，先當戰利品，之後要不要拿來升級裝備再說。
 
-⚠️ 撞名：素材 `oak`／`linen`／`silk` 跟裝備材質前綴相同，但裝備 id 都有部位後綴（`linen_helmet`），不會撞。
+⚠️ 撞名：素材 `oak` 跟法杖材質前綴相同，但武器 id 都有種類後綴（`oak_staff`），不會撞；防具 id 不帶材質（`helmet-clo-1`），不受影響。
 
 ## 7. 製作
 
