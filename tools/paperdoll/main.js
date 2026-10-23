@@ -2149,7 +2149,13 @@ function refreshModePanel()
 const PROJ_EXT = '.pdproj.json';
 const isProj = (name) => name.toLowerCase().endsWith(PROJ_EXT);
 
-const treeOpt = {onFile: (fh, dir, path) => (isProj(fh.name) ? openProject(fh, dir, path) : loadHandle(fh, dir, path)).catch(e => status(e.message))};
+const treeOpt = {
+    onFile: (fh, dir, path) => (isProj(fh.name) ? openProject(fh, dir, path) : loadHandle(fh, dir, path)).catch(e => status(e.message)),
+    menu: (e, f) => ctxMenu(e.clientX, e.clientY, [
+        ['改名', () => startRename(f)],
+        ['刪除', () => deleteFile(f).catch(err => status(err.message))],
+    ]),
+};
 
 function buildTree(box, opt)
 {
@@ -2227,10 +2233,12 @@ function treeNode(dir, label, path, depth, opt, open)
                 Object.assign(thumb, {width: THUMB, height: THUMB, fh: f, key: join(path, f.name)});
                 thumbIO.observe(thumb);
             }
+            else thumb.textContent = '🧩';
             name.textContent = r.title = f.name;
             r.append(thumb, name);
             r.style.paddingLeft = `${depth * 12 + 28}px`;
             r.onclick = () => opt.onFile(f, dir, path, r);
+            if (opt.menu) r.oncontextmenu = (e) => {e.preventDefault(); opt.menu(e, {fh: f, dir, path, row: r, node: wrap});};
             kids.append(r);
         }
     };
@@ -2261,6 +2269,132 @@ async function loadHandle(fh, dir, path)
     const jh = await FS.tryFile(dir, `${base}.json`);
     const meta = jh ? await readJson(await jh.getFile()) : null;
     addLayer(await createImageBitmap(await fh.getFile()), base, dir, path, meta).srcPath = join(path, fh.name);
+}
+
+// ---------- 檔案樹右鍵：改名／刪除 ----------
+
+function ctxMenu(x, y, items)
+{
+    document.querySelector('.ctx')?.close();
+    const box = el('div', 'ctx');
+    const close = box.close = () => {box.remove(); removeEventListener('pointerdown', away, true); removeEventListener('keydown', esc, true);};
+    const away = (e) => {if (!box.contains(e.target)) close();};
+    const esc = (e) => {if (e.key === 'Escape') {e.stopPropagation(); close();}};
+    for (const [label, fn] of items)
+    {
+        const it = el('div');
+        it.textContent = label;
+        it.onclick = () => {close(); fn();};
+        box.append(it);
+    }
+    document.body.append(box);
+    const r = box.getBoundingClientRect();
+    box.style.left = `${Math.min(x, innerWidth - r.width)}px`;
+    box.style.top = `${Math.min(y, innerHeight - r.height)}px`;
+    addEventListener('pointerdown', away, true);
+    addEventListener('keydown', esc, true);
+}
+
+// png 連同載入時會讀的同名 .json（擺放資料）一起處理；副檔名保留原本的大小寫
+function fileParts(name)
+{
+    const proj = isProj(name), base = proj ? name.slice(0, -PROJ_EXT.length) : name.replace(/\.png$/i, '');
+    return {proj, base, ext: name.slice(base.length)};
+}
+
+async function findProjects(dir = S.root, path = '')
+{
+    const {dirs, files} = await FS.listDir(dir);
+    const own = await Promise.all(files.filter(f => isProj(f.name)).map(async f => ({dir, path, name: f.name, data: await readJson(await f.getFile())})));
+    const sub = await Promise.all(dirs.map(d => findProjects(d, join(path, d.name))));
+    return [...own.filter(p => p.data?.layers), ...sub.flat()];
+}
+
+const sameSrc = (a, b) => a?.toLowerCase() === b.toLowerCase();
+const projectsUsing = async (src) => (await findProjects()).filter(p => p.data.layers.some(d => sameSrc(d.src, src)));
+
+async function deleteFile({fh, dir, path, node})
+{
+    const {proj, base} = fileParts(fh.name), key = join(path, fh.name);
+    const side = proj ? null : await FS.tryFile(dir, `${base}.json`);
+    const users = proj ? [] : await projectsUsing(key);
+    const msg = [`刪除 ${key}？（不會進回收桶，救不回來）`,
+                 ...(side ? [`也會刪除 ${base}.json`] : []),
+                 ...(users.length ? [`這些專案會用到它：${users.map(p => join(p.path, p.name)).join('、')}`] : [])];
+    if (!confirm(msg.join('\n'))) return;
+    await FS.removeFile(dir, fh.name);
+    if (side) await FS.removeFile(dir, side.name);
+    thumbs.delete(key);
+    if (proj)
+    {
+        const own = projLayers(projKey(path, base));
+        own.forEach(L => {L.proj = null;});
+        if (own.length) S.projSig = null;
+    }
+    else S.layers.filter(L => sameSrc(L.srcPath, key)).forEach(L => {delete L.srcPath;});
+    await node.reload();
+    refreshAll();
+    updateTitle();
+    status(`已刪除 ${key}${side ? `、${base}.json` : ''}`);
+}
+
+function startRename({fh, dir, path, row, node})
+{
+    const {base} = fileParts(fh.name), name = row.querySelector('.name');
+    const inp = el('input');
+    inp.value = base;
+    name.replaceWith(inp);
+    inp.focus();
+    inp.select();
+    let done = false;
+    const end = (go) => {
+        if (done) return;
+        done = true;
+        inp.replaceWith(name);
+        if (go) renameFile({fh, dir, path, node}, inp.value.trim()).catch(e => status(e.message));
+    };
+    inp.onclick = (e) => e.stopPropagation();
+    inp.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') end(true);
+        else if (e.key === 'Escape') end(false);
+    };
+    inp.onblur = () => end(false);
+}
+
+async function renameFile({fh, dir, path, node}, to)
+{
+    const {proj, base, ext} = fileParts(fh.name);
+    if (to === base) return;
+    if (!to || /[\\/:*?"<>|]/.test(to)) return status(`檔名不合法：「${to}」`);
+    if (to.toLowerCase() === base.toLowerCase()) return status('只改大小寫不支援（Windows 檔案系統分不出來）');
+    const side = proj ? null : await FS.tryFile(dir, `${base}.json`);
+    const clash = [to + ext, ...(side ? [`${to}.json`] : [])];
+    for (const n of clash) if (await FS.tryFile(dir, n)) return status(`${join(path, n)} 已經存在，沒有改名`);
+    const from = join(path, fh.name), dest = join(path, to + ext);
+    const wasClean = !isUnsaved();
+    await FS.renameFile(dir, fh.name, to + ext);
+    if (side) await FS.renameFile(dir, side.name, `${to}.json`);
+    thumbs.delete(from);
+    const fixed = [];
+    if (proj) projLayers(projKey(path, base)).forEach(L => {L.proj.name = to;});
+    else
+    {
+        for (const p of await projectsUsing(from))
+        {
+            p.data.layers.forEach(d => {if (sameSrc(d.src, from)) d.src = dest;});
+            await FS.writeFile(p.dir, p.name, new Blob([JSON.stringify(p.data, null, 2) + '\n']));
+            fixed.push(join(p.path, p.name));
+        }
+        const open = S.layers.filter(L => sameSrc(L.srcPath, from));
+        open.forEach(L => {L.srcPath = dest;});
+        if (wasClean && S.projSig) S.projSig = projectSig();
+        open.filter(L => L.name === base).forEach(L => {L.name = to;});
+    }
+    await node.reload();
+    refreshAll();
+    updateTitle();
+    status(`已改名 ${from} → ${dest}${side ? `（連同 ${to}.json）` : ''}${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}`);
 }
 
 async function setRoot(h)
@@ -2311,6 +2445,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
             return lab;
         }) : ts.map(t => Object.assign(el('span', 'dim'), {textContent: t.tag, title: `${t.file}.json`}))));
         $('dlgItemIds').hidden = !box.checked;
+        $('dlgIconRow').hidden = !box.checked || !ts.some(t => t.file === 'item');
         png = '…';
         if (ts.length) pngDir(curName(), ts).then(p => {png = p; showPath();});
         showPath();
@@ -2322,6 +2457,8 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     if (game)
     {
         Object.assign($('dlgItem'), {disabled: true, checked: false});
+        $('dlgIcon').checked = true;
+        $('dlgIconRow').hidden = true;
         $('dlgItemIds').replaceChildren();
         $('dlgItemLab').title = '';
         $('dlgItem').onchange = refreshItem;
@@ -2353,7 +2490,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         {
             const boxes = [...$('dlgItemIds').querySelectorAll('input')];
             const pick = boxes.length ? boxes.filter(c => c.checked).map(c => c.value) : targets().map(t => t.tag);
-            return res(pick.length ? {name: n, bake: bk, game: pick} : null);
+            return res(pick.length ? {name: n, bake: bk, game: pick, icon: $('dlgIcon').checked} : null);
         }
         if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
         res({...sel, name: n, bake: bk, game: null});
@@ -2438,15 +2575,19 @@ function splitMismatch(g)
     return '';
 }
 
-// sprite 換成 name（拆了就是 name-front＋back）；icon、drop.sprite 原本是舊的或新的 X／X-front／X-icon 就換成 name
-function setSplit(it, name, split, old = name)
+// 掉在地上的樣子：sprite 是完整原圖（拆了前後片也不用 -front）、scale 跟 equip 一樣；沒有就補，其他 key 保留
+const dropOf = (it) => it.drop ??= {sprite: splitBase(it.equip.sprite)};
+const dropScale = (it) => {dropOf(it).scale = it.equip.scale;};
+
+// sprite 換成 name（拆了就是 name-front＋back）；icon 勾了就換成 name；drop.sprite 一律換成 name
+function setSplit(it, name, split, icon)
 {
-    const e = it.equip, olds = [...new Set([old, name])].flatMap(n => [n, `${n}-front`, `${n}-icon`]);
+    const e = it.equip;
     e.sprite = split ? `${name}-front` : name;
     if (split) e.back = `${name}-back`;
     else delete e.back;
-    if (olds.includes(it.icon)) it.icon = name;
-    if (olds.includes(it.drop?.sprite)) it.drop.sprite = name;
+    if (icon) it.icon = name;
+    dropOf(it).sprite = name;
 }
 
 function writeEquip(e, L)
@@ -2500,7 +2641,7 @@ async function saveLayer()
         {
             const it = game[t.file][t.id];
             writeEquip(it[t.key], sg ? sg.O ?? sg.F : L);
-            if (t.file === 'item') setSplit(it, r.name, !!sg);
+            if (t.file === 'item') {setSplit(it, r.name, !!sg, r.icon); dropScale(it);}
         }
         for (const f of ['item', 'role'])
             if (ts.some(t => t.file === f))
@@ -2529,7 +2670,7 @@ async function saveLayer()
 }
 
 // ---------- 自動零件存到 item.json ----------
-// 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要寫 PNG／擺放（scale/x/y/a/ox/oy）
+// 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要更新圖（PNG＋sprite）／更新設定（scale/x/y/a/ox/oy＋drop.scale）
 
 const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS'};
 const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
@@ -2555,7 +2696,7 @@ function nextItemId(items, pre)
 // 填 r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋別人的圖，存檔時 confirm）；回傳要處理的列
 function itemCheck(rows, items, keys)
 {
-    const act = rows.filter(r => r.on && (r.png || r.place));
+    const act = rows.filter(r => r.on && (r.png || r.place || r.icon));
     const idOf = (r) => r.id ?? r.newId;
     for (const r of rows) Object.assign(r, {err: '', warn: '', ask: ''});
     for (const r of act)
@@ -2611,15 +2752,32 @@ function itemDialog(parts, items, keys)
     const rows = AUTO_PARTS.map(P => {
         const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
         const id = Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name) ?? null;
-        return {P, part, on: !!part, id, name, png: true, place: true, newId: nextItemId(items, ITEM_PRE[P.key]), lab: ''};
+        return {P, part, on: !!part, id, name, png: true, place: true, icon: true, newId: nextItemId(items, ITEM_PRE[P.key]), lab: ''};
     });
+    const reset = (r) => {
+        r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
+        r.png = r.place = r.icon = true;
+    };
+    // 選了 <部位>-<系>-<階> 的 id：沒手動選過、有零件的其他列帶到同系同階
+    const follow = (r) => {
+        const rest = r.id?.match(/^(helmet|armor|boots)-(.+)$/)?.[2];
+        if (!rest) return;
+        for (const o of rows)
+        {
+            const id = `${o.P.key}-${rest}`;
+            if (o === r || o.manual || !o.part || items[id]?.cat !== ITEM_CAT[o.P.key]) continue;
+            o.id = id;
+            reset(o);
+            sync(o);
+        }
+    };
     const refresh = () => {
         const act = itemCheck(rows, items, keys);
         for (const r of rows)
         {
             const k = r.P.key, live = r.on && !!r.part;
-            for (const f of ['sel', 'name', 'png', 'place', 'id', 'lab']) $(`di-${k}-${f}`).disabled = !live;
-            if (live && !r.id) $(`di-${k}-png`).disabled = $(`di-${k}-place`).disabled = true;
+            for (const f of ['sel', 'name', 'png', 'place', 'icon', 'id', 'lab']) $(`di-${k}-${f}`).disabled = !live;
+            if (live && !r.id) $(`di-${k}-png`).disabled = $(`di-${k}-place`).disabled = $(`di-${k}-icon`).disabled = true;
             if (live && r.id && !r.png) $(`di-${k}-name`).disabled = true;
             $(`di-${k}-new`).hidden = !!r.id;
             const msg = $(`di-${k}-msg`);
@@ -2635,6 +2793,7 @@ function itemDialog(parts, items, keys)
         $(`di-${k}-name`).value = r.name;
         $(`di-${k}-png`).checked = r.png;
         $(`di-${k}-place`).checked = r.place;
+        $(`di-${k}-icon`).checked = r.icon;
         $(`di-${k}-on`).checked = r.on;
     };
     $('diRows').replaceChildren(...rows.map(r => {
@@ -2659,8 +2818,9 @@ function itemDialog(parts, items, keys)
                    ...Object.keys(items).filter(id => items[id].cat === ITEM_CAT[k])
                        .map(id => Object.assign(el('option'), {value: id, textContent: `${id} ${items[id].lab ?? ''}（${items[id].equip?.sprite ?? '沒有 sprite'}）`})));
         const [nameL, name] = inp('name', null, '檔名');
-        const [pngL, png] = inp('png', 'checkbox', 'PNG');
-        const [placeL, place] = inp('place', 'checkbox', '擺放');
+        const [pngL, png] = inp('png', 'checkbox', '更新圖');
+        const [placeL, place] = inp('place', 'checkbox', '更新設定');
+        const [iconL, icon] = inp('icon', 'checkbox', '更新ICON');
         const [idL, id] = inp('id', null, 'id');
         const [labL, lab] = inp('lab', null, 'lab');
         id.value = r.newId;
@@ -2669,15 +2829,11 @@ function itemDialog(parts, items, keys)
         const msg = Object.assign(el('div'), {id: `di-${k}-msg`});
         const head = el('div', 'line'), line = el('div', 'line'), body = el('div', 'body');
         head.append(onL, sel);
-        line.append(nameL, pngL, placeL);
+        line.append(nameL, pngL, placeL, iconL);
         body.append(head, line, nw, msg);
         row.append(thumb, body);
-        const reset = () => {
-            r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
-            r.png = r.place = true;
-        };
         on.onchange = () => {r.on = on.checked; refresh();};
-        sel.onchange = () => {r.id = sel.value || null; reset(); sync(r); refresh();};
+        sel.onchange = () => {r.id = sel.value || null; r.manual = true; reset(r); sync(r); follow(r); refresh();};
         name.oninput = () => {r.name = name.value.trim(); refresh();};
         png.onchange = () => {
             r.png = png.checked;
@@ -2686,6 +2842,7 @@ function itemDialog(parts, items, keys)
             refresh();
         };
         place.onchange = () => {r.place = place.checked; refresh();};
+        icon.onchange = () => {r.icon = icon.checked; refresh();};
         id.oninput = () => {r.newId = id.value.trim(); refresh();};
         lab.oninput = () => {r.lab = lab.value.trim(); refresh();};
         return row;
@@ -2741,13 +2898,14 @@ async function saveItems()
             if (g) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
-            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip});
+            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip, drop: {sprite: r.name, scale: equip.scale}});
             done.push(`新增 ${r.newId}`);
             continue;
         }
         const it = items[r.id], e = it.equip ??= {};
-        if (r.png) setSplit(it, r.name, !!g, splitBase(e.sprite));
-        if (r.place) writeEquip(e, C);
+        if (r.png) setSplit(it, r.name, !!g, r.icon);
+        else if (r.icon) it.icon = r.name;
+        if (r.place) {writeEquip(e, C); dropScale(it);}
         done.push(r.id);
     }
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
@@ -3175,4 +3333,5 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged};
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
+               deleteFile, renameFile};

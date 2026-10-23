@@ -37,6 +37,12 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .tree .row.sel { background: #2f6db5; }
 .tree .file { color: #bcd; }
 .tree .file.proj { color: #fc8; }
+.tree span.thumb { display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.tree .row input { flex: 1; min-width: 0; }
+
+.ctx { position: fixed; z-index: 10; background: #2b2d31; border: 1px solid #555; border-radius: 4px; padding: 3px 0; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.ctx div { padding: 4px 16px; cursor: pointer; }
+.ctx div:hover { background: #2f6db5; }
 
 #layers .layer { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-radius: 3px; cursor: pointer; }
 #layers .layer:hover { background: #33363c; }

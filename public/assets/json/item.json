@@ -265,6 +265,19 @@
       "hideHair": true
     }
   },
+  "helmet_05": {
+    "cat": "CAT_HELMET",
+    "icon": "皮甲-helmet",
+    "lab": "皮盔",
+    "equip": {
+      "sprite": "皮甲-helmet-front",
+      "scale": 0.25,
+      "x": -2.25,
+      "y": -1,
+      "hideHair": true,
+      "back": "皮甲-helmet-back"
+    }
+  },
   "chest_01": {
     "cat": "CAT_CHESTPLATE",
     "icon": "cloth-armor",
@@ -333,6 +346,17 @@
       "sprite": "鎖子甲-armor",
       "scale": 0.25,
       "y": 29
+    }
+  },
+  "chest_05": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "皮甲-armor",
+    "lab": "皮甲",
+    "equip": {
+      "sprite": "皮甲-armor",
+      "scale": 0.25,
+      "x": 0,
+      "y": 28.5
     }
   },
   "gloves_01": {
@@ -412,7 +436,7 @@
       "y": 33
     },
     "drop": {
-      "sprite": "leather-boots",
+      "sprite": "leather-boots-1",
       "scale": 0.25
     },
     "def": 15,
@@ -429,7 +453,7 @@
       "y": 33
     },
     "drop": {
-      "sprite": "leather-boots",
+      "sprite": "leather-boots-1",
       "scale": 0.25
     },
     "def": 15,
@@ -446,11 +470,868 @@
       "y": 33
     },
     "drop": {
-      "sprite": "leather-boots",
+      "sprite": "鎖子甲-boots",
       "scale": 0.25
     },
     "def": 15,
     "lab": "鎖子靴"
+  },
+  "boots_05": {
+    "cat": "CAT_BOOTS",
+    "icon": "皮甲-boots",
+    "lab": "皮靴",
+    "equip": {
+      "sprite": "皮甲-boots",
+      "scale": 0.25,
+      "x": 1,
+      "y": 33
+    }
+  },
+  "helmet-clo-1": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "麻布帽",
+    "gold": 8,
+    "def": 2,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 1
+      }
+    ]
+  },
+  "armor-clo-1": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "麻布袍",
+    "gold": 16,
+    "def": 4,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 1
+      }
+    ]
+  },
+  "boots-clo-1": {
+    "cat": "CAT_BOOTS",
+    "lab": "麻布鞋",
+    "gold": 8,
+    "def": 2,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "fire_res",
+        "a": 0.02
+      },
+      {
+        "type": "mod",
+        "key": "ice_res",
+        "a": 0.02
+      },
+      {
+        "type": "mod",
+        "key": "poison_res",
+        "a": 0.02
+      }
+    ]
+  },
+  "helmet-clo-2": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "棉布帽",
+    "gold": 24,
+    "def": 4,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 1
+      }
+    ]
+  },
+  "armor-clo-2": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "棉布袍",
+    "gold": 48,
+    "def": 8,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 2
+      }
+    ]
+  },
+  "boots-clo-2": {
+    "cat": "CAT_BOOTS",
+    "lab": "棉布鞋",
+    "gold": 24,
+    "def": 4,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "fire_res",
+        "a": 0.04
+      },
+      {
+        "type": "mod",
+        "key": "ice_res",
+        "a": 0.04
+      },
+      {
+        "type": "mod",
+        "key": "poison_res",
+        "a": 0.04
+      }
+    ]
+  },
+  "helmet-clo-3": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "絲綢帽",
+    "gold": 72,
+    "def": 6,
+    "set": "clo-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 2
+      }
+    ]
+  },
+  "armor-clo-3": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "絲綢袍",
+    "gold": 144,
+    "def": 12,
+    "set": "clo-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 3
+      }
+    ]
+  },
+  "boots-clo-3": {
+    "cat": "CAT_BOOTS",
+    "lab": "絲綢鞋",
+    "gold": 72,
+    "def": 6,
+    "set": "clo-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "fire_res",
+        "a": 0.06
+      },
+      {
+        "type": "mod",
+        "key": "ice_res",
+        "a": 0.06
+      },
+      {
+        "type": "mod",
+        "key": "poison_res",
+        "a": 0.06
+      }
+    ]
+  },
+  "helmet-clo-4": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "附魔帽",
+    "gold": 200,
+    "def": 8,
+    "set": "clo-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 2
+      }
+    ]
+  },
+  "armor-clo-4": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "附魔法袍",
+    "gold": 400,
+    "def": 16,
+    "set": "clo-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 4
+      }
+    ]
+  },
+  "boots-clo-4": {
+    "cat": "CAT_BOOTS",
+    "lab": "附魔鞋",
+    "gold": 200,
+    "def": 8,
+    "set": "clo-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "fire_res",
+        "a": 0.08
+      },
+      {
+        "type": "mod",
+        "key": "ice_res",
+        "a": 0.08
+      },
+      {
+        "type": "mod",
+        "key": "poison_res",
+        "a": 0.08
+      }
+    ]
+  },
+  "helmet-clo-5": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "星辰帽",
+    "gold": 600,
+    "def": 10,
+    "set": "clo-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 3
+      }
+    ]
+  },
+  "armor-clo-5": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "星辰法袍",
+    "gold": 1200,
+    "def": 20,
+    "set": "clo-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "int",
+        "a": 5
+      }
+    ]
+  },
+  "boots-clo-5": {
+    "cat": "CAT_BOOTS",
+    "lab": "星辰鞋",
+    "gold": 600,
+    "def": 10,
+    "set": "clo-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "fire_res",
+        "a": 0.1
+      },
+      {
+        "type": "mod",
+        "key": "ice_res",
+        "a": 0.1
+      },
+      {
+        "type": "mod",
+        "key": "poison_res",
+        "a": 0.1
+      }
+    ]
+  },
+  "helmet-lea-1": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "粗皮帽",
+    "gold": 10,
+    "def": 3,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "cri",
+        "a": 0.01
+      }
+    ]
+  },
+  "armor-lea-1": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "粗皮甲",
+    "gold": 20,
+    "def": 6,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "dex",
+        "a": 1
+      }
+    ]
+  },
+  "boots-lea-1": {
+    "cat": "CAT_BOOTS",
+    "lab": "粗皮靴",
+    "gold": 10,
+    "def": 3,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": 0.01
+      }
+    ]
+  },
+  "helmet-lea-2": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "硬皮帽",
+    "gold": 30,
+    "def": 6,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "cri",
+        "a": 0.02
+      }
+    ]
+  },
+  "armor-lea-2": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "硬皮甲",
+    "gold": 60,
+    "def": 12,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "dex",
+        "a": 2
+      }
+    ]
+  },
+  "boots-lea-2": {
+    "cat": "CAT_BOOTS",
+    "lab": "硬皮靴",
+    "gold": 30,
+    "def": 6,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": 0.02
+      }
+    ]
+  },
+  "helmet-lea-3": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "鑲釘皮帽",
+    "gold": 90,
+    "def": 9,
+    "set": "lea-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "cri",
+        "a": 0.03
+      }
+    ]
+  },
+  "armor-lea-3": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "鑲釘皮甲",
+    "gold": 180,
+    "def": 18,
+    "set": "lea-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "dex",
+        "a": 3
+      }
+    ]
+  },
+  "boots-lea-3": {
+    "cat": "CAT_BOOTS",
+    "lab": "鑲釘皮靴",
+    "gold": 90,
+    "def": 9,
+    "set": "lea-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": 0.03
+      }
+    ]
+  },
+  "helmet-lea-4": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "狼人皮帽",
+    "gold": 250,
+    "def": 12,
+    "set": "lea-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "cri",
+        "a": 0.04
+      }
+    ]
+  },
+  "armor-lea-4": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "狼人皮甲",
+    "gold": 500,
+    "def": 24,
+    "set": "lea-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "dex",
+        "a": 4
+      }
+    ]
+  },
+  "boots-lea-4": {
+    "cat": "CAT_BOOTS",
+    "lab": "狼人皮靴",
+    "gold": 250,
+    "def": 12,
+    "set": "lea-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": 0.04
+      }
+    ]
+  },
+  "helmet-lea-5": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "龍皮帽",
+    "gold": 750,
+    "def": 15,
+    "set": "lea-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "cri",
+        "a": 0.05
+      }
+    ]
+  },
+  "armor-lea-5": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "龍皮甲",
+    "gold": 1500,
+    "def": 30,
+    "set": "lea-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "dex",
+        "a": 5
+      }
+    ]
+  },
+  "boots-lea-5": {
+    "cat": "CAT_BOOTS",
+    "lab": "龍皮靴",
+    "gold": 750,
+    "def": 15,
+    "set": "lea-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": 0.05
+      }
+    ]
+  },
+  "helmet-hvy-1": {
+    "cat": "CAT_HELMET",
+    "lab": "青銅盔",
+    "gold": 12,
+    "def": 5,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "phy_res",
+        "a": 0.02
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ],
+    "equip": {
+      "sprite": "bronze-helmet-front",
+      "back": "bronze-helmet-back",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": 0.75,
+      "hideHair": true
+    },
+    "icon": "bronze-helmet",
+    "drop": {
+      "sprite": "bronze-helmet",
+      "scale": 0.25
+    }
+  },
+  "armor-hvy-1": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "青銅甲",
+    "gold": 24,
+    "def": 10,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 1
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.03
+      }
+    ],
+    "equip": {
+      "sprite": "bronze-armor",
+      "scale": 0.25,
+      "x": 0,
+      "y": 27.5
+    },
+    "icon": "bronze-armor",
+    "drop": {
+      "sprite": "bronze-armor",
+      "scale": 0.25
+    }
+  },
+  "boots-hvy-1": {
+    "cat": "CAT_BOOTS",
+    "lab": "青銅靴",
+    "gold": 12,
+    "def": 5,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 1
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ],
+    "equip": {
+      "sprite": "bronze-boots",
+      "scale": 0.25,
+      "x": 1,
+      "y": 33
+    },
+    "icon": "bronze-boots",
+    "drop": {
+      "sprite": "bronze-boots",
+      "scale": 0.25
+    }
+  },
+  "helmet-hvy-2": {
+    "cat": "CAT_HELMET",
+    "lab": "鎖子盔",
+    "gold": 36,
+    "def": 10,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "phy_res",
+        "a": 0.04
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ],
+    "equip": {
+      "sprite": "chain-helmet-front",
+      "back": "chain-helmet-back",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": -0.25,
+      "hideHair": true
+    },
+    "icon": "chain-helmet",
+    "drop": {
+      "sprite": "chain-helmet",
+      "scale": 0.25
+    }
+  },
+  "armor-hvy-2": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "鎖子甲",
+    "gold": 72,
+    "def": 20,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 2
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.03
+      }
+    ],
+    "equip": {
+      "sprite": "chain-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 26.5
+    },
+    "icon": "chain-armor",
+    "drop": {
+      "sprite": "chain-armor",
+      "scale": 0.25
+    }
+  },
+  "boots-hvy-2": {
+    "cat": "CAT_BOOTS",
+    "lab": "鎖子靴",
+    "gold": 36,
+    "def": 10,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 1
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ],
+    "equip": {
+      "sprite": "chain-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "chain-boots",
+    "drop": {
+      "sprite": "chain-boots",
+      "scale": 0.25
+    }
+  },
+  "helmet-hvy-3": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "鐵板盔",
+    "gold": 108,
+    "def": 15,
+    "set": "hvy-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "phy_res",
+        "a": 0.06
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
+  },
+  "armor-hvy-3": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "鐵板甲",
+    "gold": 216,
+    "def": 30,
+    "set": "hvy-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 3
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.03
+      }
+    ]
+  },
+  "boots-hvy-3": {
+    "cat": "CAT_BOOTS",
+    "lab": "鐵板靴",
+    "gold": 108,
+    "def": 15,
+    "set": "hvy-3",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 2
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
+  },
+  "helmet-hvy-4": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "精鋼盔",
+    "gold": 300,
+    "def": 20,
+    "set": "hvy-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "phy_res",
+        "a": 0.08
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
+  },
+  "armor-hvy-4": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "精鋼甲",
+    "gold": 600,
+    "def": 40,
+    "set": "hvy-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 4
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.03
+      }
+    ]
+  },
+  "boots-hvy-4": {
+    "cat": "CAT_BOOTS",
+    "lab": "精鋼靴",
+    "gold": 300,
+    "def": 20,
+    "set": "hvy-4",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 2
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
+  },
+  "helmet-hvy-5": {
+    "equip": {
+      "hideHair": true
+    },
+    "cat": "CAT_HELMET",
+    "lab": "秘銀盔",
+    "gold": 900,
+    "def": 25,
+    "set": "hvy-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "phy_res",
+        "a": 0.1
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
+  },
+  "armor-hvy-5": {
+    "cat": "CAT_CHESTPLATE",
+    "lab": "秘銀甲",
+    "gold": 1800,
+    "def": 50,
+    "set": "hvy-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 5
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.03
+      }
+    ]
+  },
+  "boots-hvy-5": {
+    "cat": "CAT_BOOTS",
+    "lab": "秘銀靴",
+    "gold": 900,
+    "def": 25,
+    "set": "hvy-5",
+    "effects": [
+      {
+        "type": "mod",
+        "key": "con",
+        "a": 3
+      },
+      {
+        "type": "mod",
+        "key": "eva",
+        "a": -0.01
+      }
+    ]
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",

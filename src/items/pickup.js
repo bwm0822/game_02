@@ -44,7 +44,7 @@ export default class Pickup extends GameObject
         this.bb.hei = GM.TILE_H;
 
         const icon = dat.drop?.sprite??dat.icon;
-        const [key,frame] = dat.icon.split(':');
+        const [key,frame] = icon.split(':');
         this.bb.key = key;
         this.bb.frame = frame;
         if(dat.drop?.scale) {this.bb.scl=dat.drop.scale;}

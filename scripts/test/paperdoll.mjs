@@ -1215,6 +1215,8 @@ run('paperdoll', async t => {
         await close(p, 'ok');
         const a = await readItems();
         out.saved = [Object.keys(a).join(), JSON.stringify(a.helmet_02), JSON.stringify(a.chest_01), await has(equips, 'src-helmet.png'), pd.S.mode.type];
+        delete a.helmet_02.drop;
+        await put(json, 'item.json', JSON.stringify(a, null, 2));
 
         p = await open();
         out.match = [$('di-helmet-sel').value, $('di-helmet-new').hidden];
@@ -1225,6 +1227,7 @@ run('paperdoll', async t => {
         await close(p, 'ok');
         const b = await readItems();
         out.renamed = [JSON.stringify(b.chest_01), await has(equips, 'new-armor.png'), await has(equips, 'src-armor.png')];
+        out.dropFill = JSON.stringify(b.helmet_02.drop);
 
         p = await open();
         set('di-helmet-on', false);
@@ -1240,6 +1243,24 @@ run('paperdoll', async t => {
         await close(p, 'ok');
         window.confirm = conf;
         out.declined = [asked.includes('equips/old-hat.png'), txt === JSON.stringify(await readItems())];
+
+        await put(json, 'item.json', JSON.stringify({
+            'helmet-hvy-1': {cat: 'CAT_HELMET', lab: '盔'},
+            'armor-hvy-1': {cat: 'CAT_CHESTPLATE', lab: '甲'},
+            'armor-hvy-2': {cat: 'CAT_CHESTPLATE', icon: 'keep', lab: '甲2'},
+        }, null, 2));
+        p = await open();
+        set('di-helmet-sel', 'helmet-hvy-1');
+        out.follow = [$('di-armor-sel').value, $('di-armor-icon').checked, $('di-boots-sel').value];
+        set('di-armor-sel', 'armor-hvy-2');
+        set('di-armor-icon', false);
+        set('di-helmet-sel', 'helmet-hvy-1');
+        out.manual = $('di-armor-sel').value;
+        window.confirm = () => true;
+        await close(p, 'ok');
+        window.confirm = conf;
+        const f = await readItems();
+        out.icons = [f['helmet-hvy-1'].icon, f['helmet-hvy-1'].equip.sprite, f['armor-hvy-2'].icon, f['armor-hvy-2'].equip.sprite, !!f['armor-hvy-1'].equip];
         pd.cancelMode();
         return out;
     });
@@ -1249,19 +1270,23 @@ run('paperdoll', async t => {
     t.check('存到 item：填了 lab 就能存', !si.labOk);
     t.eq('存到 item：撞到 equips 以外的圖擋存', JSON.stringify(si.tak), JSON.stringify(['textures/icons/tak.png 已經有了，換個檔名', true]));
     t.eq('存到 item：跟別列檔名重複', si.dup, '跟別列檔名重複');
-    t.eq('存到 item：新增插在同 cat 後面、頭盔 hideHair；已存在的只改擺放', JSON.stringify(si.saved), JSON.stringify([
+    t.eq('存到 item：新增插在同 cat 後面、頭盔 hideHair、帶 drop；已存在的只改擺放＋drop.scale', JSON.stringify(si.saved), JSON.stringify([
         'helmet_01,helmet_02,chest_01,boots_01,x1',
-        '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-2,"y":2,"hideHair":true}}',
-        '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"src-armor"}}',
+        '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-2,"y":2,"hideHair":true},"drop":{"sprite":"src-helmet","scale":0.25}}',
+        '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"src-armor","scale":0.25}}',
         true, 'auto']));
     t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet_02', true]));
     t.eq('存到 item：PNG 沒勾時檔名鎖成原本的 sprite', JSON.stringify(si.locked), JSON.stringify([true, 'src-helmet']));
     t.eq('存到 item：改檔名提示 sprite 會換', si.rename, 'sprite：src-armor → new-armor');
     t.eq('存到 item：改檔名連 icon、drop 一起換、舊圖留著', JSON.stringify(si.renamed), JSON.stringify([
-        '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"new-armor"}}', true, true]));
+        '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"new-armor","scale":0.25}}', true, true]));
+    t.eq('存到 item：只勾更新設定時沒有 drop 就補上（sprite 照 equip）', si.dropFill, '{"sprite":"src-helmet","scale":0.25}');
     t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'chest_02', true]));
     t.eq('存到 item：覆蓋別人的圖要提示', si.ask, '會覆蓋 equips/old-hat.png（helmet_01 也用這張）');
     t.eq('存到 item：存檔時 confirm 覆蓋、取消就不寫', JSON.stringify(si.declined), JSON.stringify([true, true]));
+    t.eq('存到 item：選了 <部位>-<系>-<階> 其他有零件的列帶到同系同階、更新ICON 預設勾', JSON.stringify(si.follow), JSON.stringify(['armor-hvy-1', true, '']));
+    t.eq('存到 item：手動選過的列不被別列帶走', si.manual, 'armor-hvy-2');
+    t.eq('存到 item：更新ICON 勾了補上空的 icon、沒勾就不動', JSON.stringify(si.icons), JSON.stringify(['src-helmet', 'src-helmet', 'keep', 'src-armor', false]));
 
     const th = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
@@ -1320,6 +1345,94 @@ run('paperdoll', async t => {
     t.eq('檔案變動：重列展開中的資料夾，新資料夾、新檔出現', tw.added, '[sub],x.png,y.png');
     t.eq('檔案變動：刪檔消失、子資料夾維持展開並重列、路徑不分大小寫', JSON.stringify(tw.removed), JSON.stringify(['[sub],x.png', 'z.png', true]));
     t.eq('檔案變動：資料夾刪掉就拿掉', tw.gone, 'x.png');
+
+    // 檔案樹右鍵：改名／刪除（png 連同名 .json、專案引用、開著的圖層跟著動）
+    const fm = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('rn', {create: true});
+        const put = async (d, name, data) => {const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const c = document.createElement('canvas'); c.width = c.height = 4;
+        const png = await new Promise(r => c.toBlob(r));
+        await put(dir, 'a.png', png);
+        await put(dir, 'b.png', png);
+        await put(dir, 'a.json', '{}');
+        await put(root, 'p.pdproj.json', JSON.stringify({version: 1, layers: [{name: 'a', src: 'rn/a.png', srcW: 4, srcH: 4, path: 'rn', ops: [], x: 0, y: 0, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, locked: false}]}));
+        const files = async (d) => {const n = []; for await (const k of d.keys()) n.push(k); return n.sort().join();};
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame(); return f();};
+        const row = (name) => [...$('tree').querySelectorAll('.row.file')].find(r => r.title === name);
+        const menu = (name, label) => {
+            row(name).dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, clientX: 10, clientY: 10}));
+            const items = [...document.querySelectorAll('.ctx div')];
+            out.menu = items.map(d => d.textContent).join();
+            items.find(d => d.textContent === label).click();
+        };
+        const key = (inp, k) => inp.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+        const log = [], {confirm} = window;
+        window.confirm = (m) => {log.push(m); return confirm.call(window, m);};
+        const title = () => new Promise(r => requestAnimationFrame(() => r($('projName').textContent)));
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.setRoot(root);
+        out.projIcon = (await until(() => row('p.pdproj.json')))?.querySelector('span.thumb').textContent;
+        [...$('tree').querySelectorAll('.row.dir')].find(r => r.title === 'rn').click();
+        await until(() => row('a.png'));
+        await pd.loadHandle(await dir.getFileHandle('a.png'), dir, 'rn');
+        const L = pd.S.active;
+
+        menu('a.png', '改名');
+        let inp = row('a.png').querySelector('input');
+        out.edit = inp?.value;
+        inp.value = 'zz';
+        key(inp, 'Escape');
+        out.esc = [!row('a.png').querySelector('input'), row('a.png').querySelector('.name').textContent, await files(dir)];
+
+        menu('a.png', '改名');
+        inp = row('a.png').querySelector('input');
+        inp.value = 'c';
+        key(inp, 'Enter');
+        await until(() => row('c.png'));
+        await until(() => $('status').textContent.startsWith('已改名'));
+        const p = JSON.parse(await (await (await root.getFileHandle('p.pdproj.json')).getFile()).text());
+        out.renamed = [await files(dir), p.layers[0].src, L.srcPath, L.name, $('status').textContent.includes('p.pdproj.json')];
+
+        await pd.renameFile({fh: await dir.getFileHandle('c.png'), dir, path: 'rn', node: {reload: async () => {}}}, 'b');
+        out.clash = [await files(dir), $('status').textContent];
+        await pd.renameFile({fh: await dir.getFileHandle('c.png'), dir, path: 'rn', node: {reload: async () => {}}}, 'x:y');
+        out.bad = $('status').textContent;
+
+        const rootNode = $('tree').querySelector('.tdir');
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.openProject(await root.getFileHandle('p.pdproj.json'), root, '');
+        await pd.renameFile({fh: await root.getFileHandle('p.pdproj.json'), dir: root, path: '', node: rootNode}, 'q');
+        out.projRename = [!!await root.getFileHandle('q.pdproj.json').catch(() => null), pd.S.layers[0].proj?.name, await title()];
+        log.length = 0;
+        await pd.deleteFile({fh: await root.getFileHandle('q.pdproj.json'), dir: root, path: '', node: rootNode});
+        out.projDelete = [!!await root.getFileHandle('q.pdproj.json').catch(() => null), pd.S.layers[0].proj, await title()];
+        await put(root, 'p.pdproj.json', JSON.stringify(p));
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.loadHandle(await dir.getFileHandle('c.png'), dir, 'rn');
+        const M = pd.S.active;
+        log.length = 0;
+        menu('c.png', '刪除');
+        await until(() => !row('c.png'));
+        out.deleted = [await files(dir), log[0]?.includes('c.json'), log[0]?.includes('p.pdproj.json'), M.srcPath ?? null];
+        window.confirm = confirm;
+        await root.removeEntry('rn', {recursive: true});
+        await root.removeEntry('p.pdproj.json');
+        return out;
+    });
+    t.eq('檔案樹：專案檔前面是 🧩', fm.projIcon, '🧩');
+    t.eq('右鍵選單：改名、刪除', fm.menu, '改名,刪除');
+    t.eq('改名：原地編輯不含副檔名', fm.edit, 'a');
+    t.eq('改名：Esc 取消不動檔案', JSON.stringify(fm.esc), JSON.stringify([true, 'a.png', 'a.json,a.png,b.png']));
+    t.eq('改名：連同名 json、專案 src、開著的圖層 srcPath／名稱一起改', JSON.stringify(fm.renamed), JSON.stringify(['b.png,c.json,c.png', 'rn/c.png', 'rn/c.png', 'c', true]));
+    t.eq('改名：撞名拒絕', JSON.stringify(fm.clash), JSON.stringify(['b.png,c.json,c.png', 'rn/b.png 已經存在，沒有改名']));
+    t.eq('改名：不合法檔名拒絕', fm.bad, '檔名不合法：「x:y」');
+    t.eq('改名專案：檔案改名、開著的圖層歸屬跟著改', JSON.stringify(fm.projRename), JSON.stringify([true, 'q', 'q']));
+    t.eq('刪除專案：圖層保留、脫鉤、標未存', JSON.stringify(fm.projDelete), JSON.stringify([false, null, '（未命名） *']));
+    t.eq('刪除 png：連 json 刪、確認列出引用的專案、開著的圖層清掉 srcPath', JSON.stringify(fm.deleted), JSON.stringify(['b.png', true, true, null]));
     const [bx, by] = th.bar;
     await t.page.mouse.move(bx, by);
     await t.page.mouse.down();
@@ -1388,11 +1501,13 @@ run('paperdoll', async t => {
         out.linkedUndo = [L.x, B.x, F.x];
 
         await put(json, 'item.json', JSON.stringify({hd: {cat: 'CAT_HELMET', icon: 'hood', equip: {sprite: 'hood', scale: 0.25}, drop: {sprite: 'hood'}}}, null, 2));
-        const save = async () => {
+        const save = async (icon = true) => {
             const p = pd.saveLayer();
             await until(() => $('dlgSave').open);
             await until(() => !$('dlgItem').disabled);
             const tags = $('dlgItemIds').textContent;
+            out.iconRow = [!$('dlgIconRow').hidden, $('dlgIcon').checked];
+            $('dlgIcon').checked = icon;
             $('dlgSave').close('ok');
             await p;
             return tags;
@@ -1404,8 +1519,10 @@ run('paperdoll', async t => {
         out.tags = await save();
         const it = (await readItems()).hd;
         out.saved = [JSON.stringify(it), await has(equips, 'hood.png'), await has(equips, 'hood-front.png'), await has(equips, 'hood-back.png')];
+        await put(json, 'item.json', JSON.stringify({hd: {...it, icon: 'custom'}}, null, 2));
         pd.select(B);
-        out.again = await save();
+        out.again = await save(false);
+        out.keepIcon = [...out.iconRow, (await readItems()).hd.icon];
 
         // 原圖改過尺寸：存檔擋下；重進前後片模式重新追線、前後片跟著原圖重產
         pd.trimLayer(L);
@@ -1453,13 +1570,14 @@ run('paperdoll', async t => {
     t.eq('前後片：連動一起 undo', JSON.stringify(sp.linkedUndo), JSON.stringify([0, 0, 0]));
     t.eq('前後片存檔：選前片也配得到原圖名的 item', sp.tags, 'hd.equip');
     t.eq('前後片存檔：三張 PNG 一起寫，sprite 指前片、back 指後片、icon／drop 是原圖', JSON.stringify(sp.saved), JSON.stringify([
-        '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood-front","scale":0.25,"x":0,"y":0,"back":"hood-back"},"drop":{"sprite":"hood"}}', true, true, true]));
+        '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood-front","scale":0.25,"x":0,"y":0,"back":"hood-back"},"drop":{"sprite":"hood","scale":0.25}}', true, true, true]));
     t.eq('前後片存檔：sprite 換成 -front 後再存還配得到', sp.again, 'hd.equip');
+    t.eq('存到遊戲資料：更新ICON 預設勾、取消就不動 icon', JSON.stringify(sp.keepIcon), JSON.stringify([true, true, 'custom']));
     t.eq('前後片存檔：原圖改過尺寸就擋', sp.stale, '沒有存檔：hood 跟 hood-front 尺寸不一樣（原圖改過，先到「前後片」按確定更新）');
     t.eq('前後片：原圖尺寸變了重進＝重新追線', JSON.stringify(sp.retrace), JSON.stringify([190, true]));
     t.eq('前後片：重拆照原圖現在的樣子重產前後片', JSON.stringify(sp.resplit), JSON.stringify([true, true, true, 3]));
     t.eq('前後片：撤掉＝刪前後片、原圖重新顯示並選取、離開模式', JSON.stringify(sp.revoke), JSON.stringify(['hood', true, 'move', true]));
-    t.eq('前後片存檔：沒拆的原圖存檔把 sprite 換回、拿掉 back', sp.unsplit, '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0},"drop":{"sprite":"hood"}}');
+    t.eq('前後片存檔：沒拆的原圖存檔把 sprite 換回、拿掉 back', sp.unsplit, '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0},"drop":{"sprite":"hood","scale":0.25}}');
     t.eq('前後片：撤掉可以 undo', JSON.stringify(sp.revokeUndo), JSON.stringify([3, false]));
     t.eq('前後片：舊格式不認、不進模式', sp.old, 'move');
 });

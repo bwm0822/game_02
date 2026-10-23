@@ -83,3 +83,12 @@ export async function writeFile(dir, name, blob)
     await w.write(blob);
     await w.close();
 }
+
+export const removeFile = (dir, name) => dir.removeEntry(name);
+
+// FileSystemFileHandle.move() 不是每個環境都有，改成複製再刪；to 不能已存在（大小寫不分的檔案系統上只差大小寫也算存在）
+export async function renameFile(dir, from, to)
+{
+    await writeFile(dir, to, await (await dir.getFileHandle(from)).getFile());
+    await dir.removeEntry(from);
+}

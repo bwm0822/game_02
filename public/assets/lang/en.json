@@ -1193,5 +1193,140 @@
   },
   "_meta": {
     "font": "Arial, sans-serif"
+  },
+  "item.helmet-clo-1": {
+    "麻布帽": "Linen Hood"
+  },
+  "item.armor-clo-1": {
+    "麻布袍": "Linen Robe"
+  },
+  "item.boots-clo-1": {
+    "麻布鞋": "Linen Shoes"
+  },
+  "item.helmet-clo-2": {
+    "棉布帽": "Cotton Hood"
+  },
+  "item.armor-clo-2": {
+    "棉布袍": "Cotton Robe"
+  },
+  "item.boots-clo-2": {
+    "棉布鞋": "Cotton Shoes"
+  },
+  "item.helmet-clo-3": {
+    "絲綢帽": "Silk Hood"
+  },
+  "item.armor-clo-3": {
+    "絲綢袍": "Silk Robe"
+  },
+  "item.boots-clo-3": {
+    "絲綢鞋": "Silk Shoes"
+  },
+  "item.helmet-clo-4": {
+    "附魔帽": "Arcane Hood"
+  },
+  "item.armor-clo-4": {
+    "附魔法袍": "Arcane Robe"
+  },
+  "item.boots-clo-4": {
+    "附魔鞋": "Arcane Shoes"
+  },
+  "item.helmet-clo-5": {
+    "星辰帽": "Astral Hood"
+  },
+  "item.armor-clo-5": {
+    "星辰法袍": "Astral Robe"
+  },
+  "item.boots-clo-5": {
+    "星辰鞋": "Astral Shoes"
+  },
+  "item.helmet-lea-1": {
+    "粗皮帽": "Rawhide Cap"
+  },
+  "item.armor-lea-1": {
+    "粗皮甲": "Rawhide Armor"
+  },
+  "item.boots-lea-1": {
+    "粗皮靴": "Rawhide Boots"
+  },
+  "item.helmet-lea-2": {
+    "硬皮帽": "Hard Leather Cap"
+  },
+  "item.armor-lea-2": {
+    "硬皮甲": "Hard Leather Armor"
+  },
+  "item.boots-lea-2": {
+    "硬皮靴": "Hard Leather Boots"
+  },
+  "item.helmet-lea-3": {
+    "鑲釘皮帽": "Studded Cap"
+  },
+  "item.armor-lea-3": {
+    "鑲釘皮甲": "Studded Armor"
+  },
+  "item.boots-lea-3": {
+    "鑲釘皮靴": "Studded Boots"
+  },
+  "item.helmet-lea-4": {
+    "狼人皮帽": "Werewolf Cap"
+  },
+  "item.armor-lea-4": {
+    "狼人皮甲": "Werewolf Armor"
+  },
+  "item.boots-lea-4": {
+    "狼人皮靴": "Werewolf Boots"
+  },
+  "item.helmet-lea-5": {
+    "龍皮帽": "Dragonhide Cap"
+  },
+  "item.armor-lea-5": {
+    "龍皮甲": "Dragonhide Armor"
+  },
+  "item.boots-lea-5": {
+    "龍皮靴": "Dragonhide Boots"
+  },
+  "item.helmet-hvy-1": {
+    "青銅盔": "Bronze Helm"
+  },
+  "item.armor-hvy-1": {
+    "青銅甲": "Bronze Armor"
+  },
+  "item.boots-hvy-1": {
+    "青銅靴": "Bronze Boots"
+  },
+  "item.helmet-hvy-2": {
+    "鎖子盔": "Chain Helm"
+  },
+  "item.armor-hvy-2": {
+    "鎖子甲": "Chain Armor"
+  },
+  "item.boots-hvy-2": {
+    "鎖子靴": "Chain Boots"
+  },
+  "item.helmet-hvy-3": {
+    "鐵板盔": "Plate Helm"
+  },
+  "item.armor-hvy-3": {
+    "鐵板甲": "Plate Armor"
+  },
+  "item.boots-hvy-3": {
+    "鐵板靴": "Plate Boots"
+  },
+  "item.helmet-hvy-4": {
+    "精鋼盔": "Steel Helm"
+  },
+  "item.armor-hvy-4": {
+    "精鋼甲": "Steel Armor"
+  },
+  "item.boots-hvy-4": {
+    "精鋼靴": "Steel Boots"
+  },
+  "item.helmet-hvy-5": {
+    "秘銀盔": "Mithril Helm"
+  },
+  "item.armor-hvy-5": {
+    "秘銀甲": "Mithril Armor"
+  },
+  "item.boots-hvy-5": {
+    "秘銀靴": "Mithril Boots"
   }
 }

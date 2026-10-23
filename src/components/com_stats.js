@@ -40,7 +40,7 @@ function _derivedStats(base, meta)
     if (base[GM.CRD]===undefined) {out[GM.CRD] = _baseCRD(base);}                                                
 
     // 4) Resistances
-    if (base.resists===undefined) {out.resists = _baseRES(base);}
+    out.resists = {..._baseRES(base), ...base.resists};
 
     return out;
 }
@@ -163,12 +163,13 @@ function _getStats(base, mods, meta, effs)
     // 2. get Derived from adjusted Base
     const derived = _derivedStats(base,meta);
 
-    // 3. adjust Derived
-    for (const [k, v] of Object.entries(mods.derA)) {derived[k] = (derived[k] || 0) + v;}
-    for (const [k, v] of Object.entries(mods.derM)) {derived[k] = (derived[k] || 0) * (1 + v);}
+    // 3. adjust Derived（抗性放在 derived.resists 底下）
+    const slot = (k) => GM.RESIST.includes(k) ? derived.resists : derived;
+    for (const [k, v] of Object.entries(mods.derA)) {const o = slot(k); o[k] = (o[k] || 0) + v;}
+    for (const [k, v] of Object.entries(mods.derM)) {const o = slot(k); o[k] = (o[k] || 0) * (1 + v);}
 
     // 4. 合併：base 值優先，derived 補空位
-    return {...derived,...base, effs};
+    return {...derived,...base, resists:derived.resists, effs};
 
 }
 
