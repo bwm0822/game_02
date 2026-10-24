@@ -1611,6 +1611,7 @@ run('paperdoll', async t => {
         const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const fire = (id, ev, set) => {const e = $(id); set(e); e.dispatchEvent(new Event(ev));};
         const radio = (v) => {const r = document.querySelector(`[name=spHow][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
+        const method = (v) => {const r = document.querySelector(`[name=spMethod][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
         const draw = (bottom) => {
             const c = document.createElement('canvas'); c.width = c.height = 200;
             const g = c.getContext('2d');
@@ -1627,6 +1628,7 @@ run('paperdoll', async t => {
         fire('sp-lum', 'input', e => {e.value = 24;}); fire('sp-lum', 'change', () => {});
         fire('sp-close', 'change', e => {e.value = 10;});
         fire('sp-drop', 'change', e => {e.value = 20;});
+        fire('sp-right', 'change', e => {e.checked = false;});
         radio('split');
         pd.setMode('split');
         const m = pd.S.mode;
@@ -1655,14 +1657,22 @@ run('paperdoll', async t => {
         const h0 = m.hist.length;
         step(1);
         step(-1, 3);
-        out.step = [pd.S.sp.lum, m.c.lum, m.hist.length - h0, $('sp-lum-v').textContent];
+        out.step = [pd.S.sp.lum.trace, m.c.lum, m.hist.length - h0, $('sp-lum-v').textContent];
 
         // 亮度 < 60：紅線（57）、黑線都算線，棕色（100）不算
         fire('sp-lum', 'input', e => {e.value = 60;}); fire('sp-lum', 'change', () => {});
         out.lum60 = [m.err, m.c];
 
-        // 挖除＝淹水：停在下線，下線外 20px 內沒透明不往下挖
+        // 挖除＝魔術棒：停在下線，下線外 20px 內沒透明不往下挖；切到挖除帶魔術棒＋下、關掉右
+        fire('sp-right', 'change', e => {e.checked = true;});
         radio('cut');
+        out.preset = [m.method, m.down, m.right, $('sp-right').checked, document.querySelector('[name=spMethod]:checked').value];
+        // 亮度依切割方法各存一份：魔術棒設 61，切回沿線是剛剛的 60
+        fire('sp-lum', 'input', e => {e.value = 61;}); fire('sp-lum', 'change', () => {});
+        method('trace');
+        out.lumSep = [$('sp-lum').value, m.c.lum];
+        method('wand');
+        out.lumSep.push($('sp-lum').value, m.c.lum, pd.S.sp.lum);
         out.cutUi = [m.cut, $('spCutRow').hidden, m.err];
         pd.applyMode();
         const F = pd.S.layers.find(M => M.name === 'visor-front');
@@ -1678,6 +1688,15 @@ run('paperdoll', async t => {
         out.resume = [m2.cut, document.querySelector('[name=spHow]:checked').value, $('spCutRow').hidden, m2.close, m2.drop];
         fire('sp-drop', 'change', e => {e.value = 50;});
         out.overStep = m2.hist.length;
+        const maxY = () => Math.max(...m2.poly.pts.map(p => p.y));
+        fire('sp-down', 'change', e => {e.checked = false;});
+        out.downOff = [maxY(), m2.hist.length, pd.S.sp.drop];
+        fire('sp-down', 'change', e => {e.checked = true;});
+        out.downOn = maxY();
+        fire('sp-right', 'change', e => {e.checked = true;});
+        fire('sp-reach', 'change', e => {e.value = 7;});
+        out.rightOn = [m2.right, m2.reach, m2.hist.length];
+        fire('sp-right', 'change', e => {e.checked = false;});
         pd.applyMode();
         out.overBits = probe.map(([x, y]) => a(F, x, y) > 128 ? 1 : 0).join('');
 
@@ -1710,6 +1729,41 @@ run('paperdoll', async t => {
         out.noLine = [m3.err, m3.poly.pts.map(p => `${p.x},${p.y}`).sort().join(' ')];
         pd.cancelMode();
         pd.removeLayer(N);
+
+        // 存成跟切割分開：前後片＋魔術棒（選到的那塊變後片）、挖除＋沿線（右下整塊挖空）；手動改切法不動存成
+        fire('sp-drop', 'change', e => {e.value = 20;});
+        const V = pd.addLayer(await draw(true), 'combo', null, null, null);
+        pd.setMode('split');
+        const m4 = pd.S.mode;
+        radio('split');
+        out.splitPreset = m4.method;
+        method('wand');
+        m4.start = {x: 120, y: 100};
+        pd.splitRun(m4);
+        out.manual = [m4.cut, m4.method, document.querySelector('[name=spHow]:checked').value, $('spCutRow').hidden];
+        pd.applyMode();
+        const F4 = pd.S.layers.find(M => M.name === 'combo-front'), B4 = pd.S.layers.find(M => M.name === 'combo-back');
+        const mk = () => F4.ops.find(o => o.type === 'mask').split;
+        out.splitWand = [a(F4, 120, 100), a(B4, 120, 100), a(F4, 120, 150), a(B4, 120, 150), mk().method, mk().close];
+        pd.select(F4); pd.setMode('split');
+        const m5 = pd.S.mode;
+        out.resumeWand = [m5.cut, m5.method];
+        radio('cut');
+        method('trace');
+        out.cutTraceUi = [m5.cut, m5.method, $('spCutRow').hidden];
+        pd.applyMode();
+        out.cutTrace = [pd.S.layers.map(M => M.name).join(), [[120, 100], [120, 150], [120, 62], [40, 100]].map(([x, y]) => a(F4, x, y) > 128 ? 1 : 0).join(''),
+                        mk().method, 'close' in mk()];
+        // 舊資料沒有 method：挖除而且有 close 當魔術棒，其他當沿線
+        delete mk().method;
+        pd.select(F4); pd.setMode('split');
+        out.oldTrace = pd.S.mode.method;
+        pd.cancelMode();
+        mk().close = 10;
+        pd.select(F4); pd.setMode('split');
+        out.oldWand = pd.S.mode.method;
+        pd.cancelMode();
+        pd.S.layers.filter(M => M.name.startsWith('combo')).forEach(M => pd.removeLayer(M));
         radio('split');
         pd.S.sp = JSON.parse(saved);
         return out;
@@ -1720,12 +1774,25 @@ run('paperdoll', async t => {
     t.eq('色塊：離開畫布清空', cu.leave, '—');
     t.eq('-／+：重新追線、按住只記一步', JSON.stringify(cu.step), JSON.stringify([22, 22, 2, '22']));
     t.eq('亮度 < 60 抓到紅線跟黑線', JSON.stringify(cu.lum60), JSON.stringify([null, {lum: 60}]));
+    t.eq('存成挖除：帶魔術棒＋下、關掉右', JSON.stringify(cu.preset), JSON.stringify(['wand', true, false, false, 'wand']));
+    t.eq('亮度依切割方法各存一份', JSON.stringify(cu.lumSep), JSON.stringify(['60', 60, '61', 61, {trace: 60, wand: 61}]));
     t.eq('挖除：切換重新淹水、顯示閉運算／往下射', JSON.stringify(cu.cutUi), JSON.stringify([true, false, null]));
+    t.eq('存成前後片：帶沿線', cu.splitPreset, 'trace');
+    t.eq('手動改魔術棒：存成不變、顯示閉運算那列', JSON.stringify(cu.manual), JSON.stringify([false, 'wand', 'split', false]));
+    t.eq('前後片＋魔術棒：選到的那塊變後片、下線外面留在前片、split 記 method/close', JSON.stringify(cu.splitWand), JSON.stringify([0, 255, 255, 0, 'wand', 10]));
+    t.eq('再進來帶回魔術棒', JSON.stringify(cu.resumeWand), JSON.stringify([false, 'wand']));
+    t.eq('存成挖除後手動改沿線：存成不變、藏閉運算那列', JSON.stringify(cu.cutTraceUi), JSON.stringify([true, 'trace', true]));
+    t.eq('挖除＋沿線：右下整塊挖空、刪後片、沿線不記魔術棒參數', JSON.stringify(cu.cutTrace), JSON.stringify(['combo,combo-front', '0011', 'trace', false]));
+    t.eq('舊資料沒有 method：挖除沒 close 當沿線', cu.oldTrace, 'trace');
+    t.eq('舊資料沒有 method：挖除有 close 當魔術棒', cu.oldWand, 'wand');
     t.eq('挖除：只有原圖（隱藏）＋前片、選前片', JSON.stringify(cu.layers), JSON.stringify(['visor,visor-front', false, true]));
     t.eq('挖除：挖到下線為止，上線、下線、左線、線外面都留著', cu.bits, '011111');
     t.eq('挖除：一組認得是挖除、沒有後片', JSON.stringify(cu.group), JSON.stringify([true, null, true]));
     t.eq('挖除：再進來帶回挖除、閉運算、往下射', JSON.stringify(cu.resume), JSON.stringify([true, 'cut', false, 10, 20]));
     t.eq('挖除：改往下射記一步', cu.overStep, 1);
+    t.eq('挖除：不勾「下」就停在下線、記一步、X 留著', JSON.stringify(cu.downOff), JSON.stringify([140, 2, 50]));
+    t.eq('挖除：勾回「下」再挖到底', cu.downOn, 180);
+    t.eq('挖除：勾「右」、改右的 X 各記一步', JSON.stringify(cu.rightOn), JSON.stringify([true, 7, 5]));
     t.eq('挖除：往下 50px 碰到圖底的透明，挖到底', cu.overBits, '000111');
     t.eq('挖除存檔：sprite 指 -front、沒有 back、icon／drop 是原圖', JSON.stringify(cu.saved), JSON.stringify([
         '{"cat":"CAT_HELMET","icon":"visor","equip":{"sprite":"visor-front","scale":0.25,"x":0,"y":0},"drop":{"sprite":"visor","scale":0.25}}', true, false]));
@@ -1742,9 +1809,10 @@ run('paperdoll', async t => {
         g.fillStyle = '#000'; g.fillRect(2, 2, 14, 1); g.fillRect(2, 15, 14, 1); g.fillRect(2, 2, 1, 14); g.fillRect(15, 2, 1, 14);
         g.fillRect(8, 8, 1, 1); g.fillRect(3, 11, 3, 1);
         const o = (v) => ({x: 10, y: 5, c: {lum: 24}, ...v});
-        const run = (v) => {const r = PX.splitFlood(c, o(v)); return r.err ?? [1, 2, 3].map(k => r.R.filter(q => q === k).length);};
+        const run = (v) => {const r = PX.splitFlood(c, o(v)); return r.err ?? [1, 2, 3, 4].map(k => r.R.filter(q => q === k).length);};
         const cut = (v) => PX.splitCut(c, o(v)).pts.map(p => `${p.x},${p.y}`).sort().join(' ');
         const out = {plain: run({}), close: run({close: 2}), d5: run({drop: 5}), d6: run({drop: 6}), line: run({x: 2, y: 5}),
+                     r4: run({close: 2, right: 4}), r3: run({close: 2, right: 3}), dr: run({close: 2, drop: 6, right: 4}),
                      cutClose: cut({close: 2}), cutNotch: cut({}).split(' ').length};
         g.clearRect(0, 16, 20, 4);
         g.fillStyle = '#808080'; g.fillRect(0, 16, 18, 2);
@@ -1752,8 +1820,11 @@ run('paperdoll', async t => {
         out.d4 = run({drop: 4});
         return out;
     });
-    t.eq('淹水：停在線上，孤島、半島不淹', JSON.stringify(fl.plain), JSON.stringify([140, 0, 0]));
-    t.eq('淹水：閉運算補孤島跟半島、外框不動', JSON.stringify(fl.close), JSON.stringify([140, 4, 0]));
+    t.eq('淹水：停在線上，孤島、半島不淹', JSON.stringify(fl.plain), JSON.stringify([140, 0, 0, 0]));
+    t.eq('淹水：閉運算補孤島跟半島、外框不動', JSON.stringify(fl.close), JSON.stringify([140, 4, 0, 0]));
+    t.eq('淹水：往右 4px 才透明，right=4 收線＋2 格', fl.r4[3], 36);
+    t.eq('淹水：往右 4px 才透明，right=3 不收', fl.r3[3], 0);
+    t.eq('淹水：先下後右，往下收進來的列也往右射（右下角轉角收到）', JSON.stringify(fl.dr), JSON.stringify([140, 4, 60, 51]));
     t.eq('淹水：往下 5px 內沒透明，孤島、半島、下線都不收', fl.d5[2], 0);
     t.eq('淹水：往下 6px 碰到圖邊，中間 5 格都收', fl.d6[2], 60);
     t.eq('淹水：往下 4px 才透明，drop=3 不收', fl.d3[2], 0);

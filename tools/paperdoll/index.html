@@ -147,21 +147,26 @@
 
         <div id="modeSplit" class="mode" hidden>
             <div class="row2">
-                <label><input name="spHow" type="radio" value="split" checked> 前後片</label>
+                存成：<label><input name="spHow" type="radio" value="split" checked> 前後片</label>
                 <label><input name="spHow" type="radio" value="cut"> 挖除</label>
             </div>
             <div id="spCtl" class="spCtl">
+                <div class="row2">切割：
+                    <label title="從起點往上、往左找輪廓線，沿著線切出右下那塊"><input name="spMethod" type="radio" value="trace" checked> 沿線</label>
+                    <label title="從起點往外擴散，碰到輪廓線或透明就停，選出被線圍住的那塊"><input name="spMethod" type="radio" value="wand"> 魔術棒</label>
+                </div>
                 <div class="spGrid">
                     <span>亮度 &lt;</span><button class="spStep" data-d="-1">-</button><input id="sp-lum" type="range" min="0" max="256"><button class="spStep" data-d="1">+</button><span id="sp-lum-v"></span>
                 </div>
                 <div class="row2"><span id="spSwatch" class="swatch empty"></span><span id="spRgba" class="dim">—</span></div>
                 <div id="spCutRow" class="flRow">
                     <label title="填平寬度 ≤ 2 倍的縫（0＝關掉）">閉運算 <input id="sp-close" type="number" min="0" max="30"></label>
-                    <label title="淹到的範圍下緣往下幾 px 內是透明，中間的線也挖掉（0＝不射）">下 <input id="sp-drop" type="number" min="0" max="50"> px</label>
+                    <label title="淹到的範圍下緣往下幾 px 內是透明，中間的線也挖掉"><input id="sp-down" type="checkbox"> 下 <input id="sp-drop" type="number" min="0" max="50"></label>
+                    <label title="（往下射之後）淹到的範圍右緣往右幾 px 內是透明，中間的線也挖掉"><input id="sp-right" type="checkbox"> 右 <input id="sp-reach" type="number" min="0" max="50"> px</label>
                 </div>
             </div>
             <div id="spInfo" class="dim spAfter"></div>
-            <div class="hint">頭盔拆成前片（蓋住頭，原圖層）跟後片（被頭蓋住，最底層的「-back」層）：從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊當後片（洋紅色）；選「挖除」改成從起點淹水（碰到輪廓線或透明就停），閉運算填平寬度 ≤ 2 倍的縫，「下 N px」：淹到的下緣往下 N px 內是透明就連中間的線一起挖，描外圈當挖除範圍（洋紅色，裡面的洞一起挖），只做前片、那塊挖成透明。輪廓線＝不透明、而且亮度 &lt; 門檻；在畫布上移動，色塊跟 (R,G,B,A) 顯示游標底下的顏色；-／+ 一次調 1，按住連續調。拖起點、改條件會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉前後片、原圖重新顯示</div>
+            <div class="hint">洋紅色那塊：存成「前後片」時變成後片（被頭蓋住，最底層的「-back」層），其他留在前片；存成「挖除」時挖成透明、只有前片。切那塊的方法：「沿線」從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊；「魔術棒」從起點往外擴散，碰到輪廓線或透明就停，閉運算填平寬度 ≤ 2 倍的縫，「下／右 N px」：選到的下緣／右緣往外 N px 內是透明就連中間的線一起選（先下後右），描外圈（裡面的洞一起選）。切換存成會帶切法：前後片＝沿線，挖除＝魔術棒＋下，之後可以手動改。輪廓線＝不透明、而且亮度 &lt; 門檻；在畫布上移動，色塊跟 (R,G,B,A) 顯示游標底下的顏色；-／+ 一次調 1，按住連續調。拖起點、改條件會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉前後片、原圖重新顯示</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="spRevoke">撤掉前後片</button></div>
         </div>
 

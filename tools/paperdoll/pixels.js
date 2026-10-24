@@ -425,17 +425,18 @@ export const alphaAt = (src, x, y) => pixelAt(src, x, y)?.[3] ?? 0;
 // 點取在線靠起點那側的邊上，所以線留給前片。往外走的（上線往右、左線往下）前片那側碰到透明或走到圖邊（裁到剛好的圖，外框貼著圖邊）就停、直直延伸出圖；
 // 後片那側是開口（透明）時還要繼續沿線的外緣走，免得延伸線切過前片還沒走完的線，走進開口後線斷了也算走到外面；
 // 往內走的（上線往左、左線往上）碰到另一條線（線段變很長）就停，兩端在轉角接起來
-// 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}；挖除不走這裡，用 splitCut()
+// 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}；魔術棒用 splitCut()
 
 const SPLIT_ALPHA = 128;
 
 // 輪廓線的顏色條件（不看 alpha）：亮度 < c.lum
 export const lineTest = (c) => (r, g, b) => r * 0.299 + g * 0.587 + b * 0.114 < c.lum;
 
-// 挖除：1 淹水＝從起點 4 方向淹，碰到輪廓線或透明就停；2 閉運算＝R 膨脹 close px 再侵蝕回來（四周先補 close px，貼圖邊的不會被侵蝕掉），
-// 填平寬 ≤ 2×close 的縫；3 往下射＝R 每一直行的下緣往下 drop 格內碰到透明（或圖邊），才把中間（線＋外緣的反鋸齒）收進來
-// 回傳每格是哪一步收進來的（0＝沒有、1..3），失敗回傳 {err}
-export function splitFlood(src, {x, y, c, close = 0, drop = 0})
+// 魔術棒：1 淹水＝從起點 4 方向淹，碰到輪廓線或透明就停；2 閉運算＝R 膨脹 close px 再侵蝕回來（四周先補 close px，貼圖邊的不會被侵蝕掉），
+// 填平寬 ≤ 2×close 的縫；3 往下射＝R 每一直行的下緣往下 drop 格內碰到透明（或圖邊），才把中間（線＋外緣的反鋸齒）收進來；
+// 4 往右射＝同 3，從往下射之後的 R 每一橫列的右緣往右看 right 格（右下角的轉角才收得到）
+// 回傳每格是哪一步收進來的（0＝沒有、1..4），失敗回傳 {err}
+export function splitFlood(src, {x, y, c, close = 0, drop = 0, right = 0})
 {
     const W = src.width, H = src.height, N = W * H, d = src.getContext('2d').getImageData(0, 0, W, H).data;
     const test = lineTest(c);
@@ -472,24 +473,29 @@ export function splitFlood(src, {x, y, c, close = 0, drop = 0})
             if (a[(Y + k) * PW + X + k] && !R[Y * W + X]) R[Y * W + X] = 2;
     }
 
-    if (drop > 0)
-    {
+    // R 每一行的邊緣往外看 dist 格，碰到透明／圖邊就把中間（線＋外緣的反鋸齒）都收進來；at(a, t)：第 a 行、往外第 t 格
+    const reach = (n, len, at, dist, label) => {
         const base = R.slice();
-        for (let X = 0; X < W; X++) for (let Y = 0; Y < H; Y++)
+        for (let a = 0; a < n; a++) for (let t = 0; t < len; t++)
         {
-            if (!base[Y * W + X] || (Y + 1 < H && base[(Y + 1) * W + X])) continue;
-            for (let u = 1; u <= drop; u++)
+            if (!base[at(a, t)] || (t + 1 < len && base[at(a, t + 1)])) continue;
+            for (let u = 1; u <= dist; u++)
             {
-                const ny = Y + u;
-                if (ny < H && base[ny * W + X]) break;
-                if (ny >= H || !solid(ny * W + X)) {for (let v = Y + 1; v < ny; v++) if (!R[v * W + X]) R[v * W + X] = 3; break;}
+                if (t + u < len && base[at(a, t + u)]) break;
+                if (t + u >= len || !solid(at(a, t + u)))
+                {
+                    for (let v = t + 1; v < t + u; v++) if (!R[at(a, v)]) R[at(a, v)] = label;
+                    break;
+                }
             }
         }
-    }
+    };
+    if (drop > 0) reach(W, H, (X, Y) => Y * W + X, drop, 3);
+    if (right > 0) reach(H, W, (Y, X) => Y * W + X, right, 4);
     return {R};
 }
 
-// 挖除的多邊形：splitFlood() 的結果取起點那一塊（4 連通），沿格子邊描外圈（裡面的洞一起挖）、RDP 簡化；失敗回傳 {err}
+// 魔術棒的多邊形：splitFlood() 的結果取起點那一塊（4 連通），沿格子邊描外圈（裡面的洞一起挖）、RDP 簡化；失敗回傳 {err}
 export function splitCut(src, o)
 {
     const r = splitFlood(src, o);

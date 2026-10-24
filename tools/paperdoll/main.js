@@ -342,7 +342,12 @@ function autoSpSync(m)
     const hb = S.auto.split !== 'none' && m.plan.find(b => b.P.key === 'helmet');
     if (!hb) m.sp = null;
     else if (!m.sp) autoSpNew(m, hb);
-    else if (m.sp.cut !== (S.auto.split === 'cut')) spChange({cut: !m.sp.cut});
+    else if (m.sp.cut !== (S.auto.split === 'cut'))
+    {
+        const p = spPreset(!m.sp.cut);
+        spChange({...p, c: spCrit(p.method)});
+        spSet(m.sp);
+    }
 }
 
 // 去綠、依象限分好零件的範圍；進模式時就算，頭盔的切線要用
@@ -368,9 +373,10 @@ function autoPlan(L)
 
 function autoSpNew(m, {box, keep})
 {
-    const c = spCrit();
-    m.sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), c, cut: S.auto.split === 'cut',
-            close: S.sp.close, drop: S.sp.drop, poly: null, err: null};
+    const p = spPreset(S.auto.split === 'cut'), c = spCrit(p.method);
+    m.sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), c,
+            close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, ...p, poly: null, err: null};
+    spSet(m.sp);
     autoSpView(m);
     m.sp.start = splitDefStart(m.sp.view, c);
     splitRun(m.sp);
@@ -486,9 +492,10 @@ const autoPart = (m, L) => m.parts?.find(p => linked(p.C).includes(L)) ?? null;
 // 被頭蓋住的後片 X-back（＋mask keep），前片疊在原圖上面、後片放到最底層，三層同尺寸、擺放連動（linked()）
 // PX.splitTrace() 從起點追輪廓線產生後片多邊形，可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋
 // mask 插在原圖步驟的 splitAt()：一般接在最後；自動零件插在縮小（xform pct）前面，追線在縮小前的圖上做，改 scale% 前後片跟著重播
-// mask 帶 split = {gid, x, y, c, cut, close, drop, w, h, n}（起點、線的條件、挖除、閉運算、往下射、追線那張圖的尺寸、mask 後面原本跟著幾步），
+// 存成（前後片／挖除 cut）跟切割方法（method：沿線 trace＝PX.splitTrace()、魔術棒 wand＝PX.splitCut()）分開，多邊形都是「從前片拿掉的那塊」
+// mask 帶 split = {gid, x, y, c, cut, method, close, down, drop, right, reach, w, h, n}（起點、線的條件、挖除、切割方法、閉運算、往下射／往右射（勾選、X px）、追線那張圖的尺寸、mask 後面原本跟著幾步），
 // 靠 gid 認一組，跟著 ops 存進專案；c 只有 t 的舊資料當只勾亮度；舊格式（前片就是原圖，split 沒有 w）不認
-// 挖除（cut）：多邊形改由 PX.splitCut() 淹水描外圈產生，挖成透明，只有原圖＋前片、沒有後片；舊挖除的 over 不用了
+// 挖除（cut）：多邊形那塊挖成透明，只有原圖＋前片、沒有後片；舊挖除的 over 不用了
 
 const SPLIT_KEY = 'paperdoll.split';
 const SPLIT_STEPS = 50;
@@ -530,32 +537,41 @@ function splitSync(O, base = null)
 }
 
 // 線的亮度門檻、挖除、閉運算、往下射是前後片跟自動共用的設定（S.sp），記在 localStorage
-// 切線（前後片模式本身、自動模式的 mode.sp）自己帶一份 c = {lum}、cut、close、drop，undo 跟著退
-const SP_LUM = 24, SP_CLOSE = 10, SP_DROP = 20;
+// 切線（前後片模式本身、自動模式的 mode.sp）自己帶一份 c = {lum}、cut、method、close、down、drop、right、reach，undo 跟著退
+const SP_LUM = 24, SP_CLOSE = 10, SP_DROP = 20, SP_REACH = 20;
 
-// 舊設定的 lum 是 {on, v}、更舊的只有 paperdoll.splitT
+// 切換存成時帶的切法（單向，之後可以手動改）：前後片＝沿線，挖除＝魔術棒＋往下射、不往右射
+const spPreset = (cut) => cut ? {cut, method: 'wand', down: true, right: false} : {cut, method: 'trace'};
+
+// 亮度門檻依切割方法各存一份 lum = {trace, wand}；舊設定的 lum 是單一數字或 {on, v}、更舊的只有 paperdoll.splitT，兩種方法都用它
 function spLoad()
 {
     let v = null, t = null;
     try {v = JSON.parse(localStorage.getItem(SPLIT_KEY)); t = +localStorage.getItem('paperdoll.splitT');}
     catch {}
-    const lum = typeof v?.lum === 'object' ? v.lum.v : v?.lum ?? (t || SP_LUM);
-    return {cut: !!v?.cut, close: v?.close ?? SP_CLOSE, drop: v?.drop ?? SP_DROP, lum};
+    const old = typeof v?.lum === 'number' ? v.lum : v?.lum?.v ?? (t || SP_LUM);
+    const lum = {trace: v?.lum?.trace ?? old, wand: v?.lum?.wand ?? old};
+    return {cut: !!v?.cut, method: v?.method ?? (v?.cut ? 'wand' : 'trace'), close: v?.close ?? SP_CLOSE, down: v?.down ?? true, drop: v?.drop ?? SP_DROP,
+            right: !!v?.right, reach: v?.reach ?? SP_REACH, lum};
 }
 
-const spCrit = () => ({lum: S.sp.lum});
+const spCrit = (method = S.sp.method) => ({lum: S.sp.lum[method]});
 // 舊資料：只有門檻 t、或 c 裡亮度沒勾（當時只勾 RGB）就用預設亮度
 const spOf = (o) => ({lum: o.c?.lum ?? o.t ?? SP_LUM});
 
 // 把切線（或只給設定）寫回共用設定跟面板；cut 只有前後片模式的切線才寫回（自動的挖除記在 S.auto）
 function spSet(sp = null, cut = false)
 {
-    if (sp) Object.assign(S.sp, {lum: sp.c.lum, close: sp.close, drop: sp.drop, ...(cut && {cut: sp.cut})});
+    if (sp) Object.assign(S.sp, {lum: {...S.sp.lum, [sp.method]: sp.c.lum}, method: sp.method, close: sp.close, down: sp.down, drop: sp.drop,
+                                 right: sp.right, reach: sp.reach, ...(cut && {cut: sp.cut})});
     try {localStorage.setItem(SPLIT_KEY, JSON.stringify(S.sp));}
     catch {}
-    $('sp-lum').value = $('sp-lum-v').textContent = S.sp.lum;
+    $('sp-lum').value = $('sp-lum-v').textContent = S.sp.lum[S.sp.method];
     $('sp-close').value = S.sp.close;
+    $('sp-down').checked = S.sp.down;
     $('sp-drop').value = S.sp.drop;
+    $('sp-right').checked = S.sp.right;
+    $('sp-reach').value = S.sp.reach;
 }
 
 // 色塊：游標底下追線那張圖的顏色（透明＝空的），游標不在圖上就清空
@@ -585,13 +601,15 @@ function splitStart(L)
     const o = g && splitOp(g.F ?? g.B);
     if (o && o.split.w === img.width && o.split.h === img.height)
     {
-        Object.assign(m, {start: {x: o.split.x, y: o.split.y}, c: spOf(o.split), cut: g.cut, close: o.split.close ?? SP_CLOSE, drop: o.split.drop ?? SP_DROP,
+        Object.assign(m, {start: {x: o.split.x, y: o.split.y}, c: spOf(o.split), cut: g.cut,
+                          method: o.split.method ?? (g.cut && o.split.close != null ? 'wand' : 'trace'), close: o.split.close ?? SP_CLOSE, down: o.split.down ?? true, drop: o.split.drop ?? SP_DROP,
+                          right: !!o.split.right, reach: o.split.reach ?? SP_REACH,
                           poly: {pts: o.pts.map(([x, y]) => ({x, y})), closed: true}});
         spSet(m, true);
         status(`接著調 ${O.name} 的${g.cut ? '挖除' : '前後片'}`);
         return m;
     }
-    Object.assign(m, {c: spCrit(), cut: g ? g.cut : S.sp.cut, close: S.sp.close, drop: S.sp.drop});
+    Object.assign(m, {c: spCrit(), cut: g ? g.cut : S.sp.cut, method: S.sp.method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach});
     m.start = splitDefStart(view, m.c);
     splitRun(m);
     if (o) status(`${O.name} 的尺寸變了，前後片重新追線`);
@@ -617,12 +635,12 @@ function splitDefStart(L, c)
 
 function splitRun(m)
 {
-    const r = m.cut ? PX.splitCut(m.img, {...m.start, c: m.c, close: m.close, drop: m.drop}) : PX.splitTrace(m.img, {...m.start, c: m.c});
+    const r = m.method === 'wand' ? PX.splitCut(m.img, {...m.start, c: m.c, close: m.close, drop: m.down ? m.drop : 0, right: m.right ? m.reach : 0}) : PX.splitTrace(m.img, {...m.start, c: m.c});
     m.err = r.err ?? null;
     m.poly = r.pts ? {pts: r.pts, closed: true} : null;
 }
 
-const splitState = (m) => ({poly: m.poly && {...m.poly}, start: m.start, c: m.c, cut: m.cut, close: m.close, drop: m.drop, err: m.err});
+const splitState = (m) => ({poly: m.poly && {...m.poly}, start: m.start, c: m.c, cut: m.cut, method: m.method, close: m.close, down: m.down, drop: m.drop, right: m.right, reach: m.reach, err: m.err});
 
 // 改線的條件／挖除／閉運算／往下射：重新追線；rec＝這次拖曳滑桿已經記過一步
 function spChange(patch, rec = false)
@@ -646,9 +664,9 @@ function spHover(e)
 // -／+：按住連續調，整段跟拖滑桿一樣只記一步
 function spStep(d)
 {
-    const v = Math.max(0, Math.min(256, S.sp.lum + d));
-    if (v === S.sp.lum) return;
-    S.sp.lum = v;
+    const k = S.sp.method, v = Math.max(0, Math.min(256, S.sp.lum[k] + d));
+    if (v === S.sp.lum[k]) return;
+    S.sp.lum = {...S.sp.lum, [k]: v};
     $('sp-lum').value = $('sp-lum-v').textContent = v;
     spChange({c: spCrit()}, true);
 }
@@ -706,7 +724,8 @@ function splitMoveStart(m, w)
 function splitBuild(O, sp, gid)
 {
     const g = splitNew(O), at = splitAt(O);
-    const split = {gid, x: sp.start.x, y: sp.start.y, c: sp.c, ...(sp.cut && {cut: true, close: sp.close, drop: sp.drop}),
+    const split = {gid, x: sp.start.x, y: sp.start.y, c: sp.c, ...(sp.cut && {cut: true}), method: sp.method,
+                   ...(sp.method === 'wand' && {close: sp.close, down: sp.down, drop: sp.drop, right: sp.right, reach: sp.reach}),
                    w: sp.img.width, h: sp.img.height, n: O.ops.length - at};
     const pts = sp.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
     const F = g?.F ?? cloneAbove(O, `${O.name}-front`);
@@ -2156,13 +2175,15 @@ function refreshAuto(m)
 
 const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`;
 
-// 線的條件那塊前後片跟自動共用，搬到顯示中的面板；沒有切線時反灰，閉運算／往下射只在挖除時出現
+// 切割方法、線的條件那塊前後片跟自動共用，搬到顯示中的面板；沒有切線時反灰，閉運算／往下射／往右射只在魔術棒時出現
 function refreshSpCtl(m)
 {
     const sp = editSp(), box = m.type === 'split' ? $('modeSplit') : $('auSplit');
     if ($('spCtl').parentNode !== box) box.insertBefore($('spCtl'), box.querySelector('.spAfter'));
     $('spCtl').querySelectorAll('input, button').forEach(e => {e.disabled = !sp;});
-    $('spCutRow').hidden = !(sp ? sp.cut : m.type === 'split' ? S.sp.cut : S.auto?.split === 'cut');
+    const method = sp?.method ?? S.sp.method;
+    document.querySelector(`[name=spMethod][value=${method}]`).checked = true;
+    $('spCutRow').hidden = method !== 'wand';
     if (!sp) spSwatch();
     if (m.type === 'split') document.querySelector(`[name=spHow][value=${m.cut ? 'cut' : 'split'}]`).checked = true;
 }
@@ -3271,8 +3292,8 @@ window.addEventListener('beforeunload', e => {if (['warp', 'pixel', 'split'].inc
 // 拖滑桿的一整段只記一步
 S.sp = spLoad();
 $('sp-lum').oninput = () => {
-    S.sp.lum = +$('sp-lum').value;
-    $('sp-lum-v').textContent = S.sp.lum;
+    S.sp.lum = {...S.sp.lum, [S.sp.method]: +$('sp-lum').value};
+    $('sp-lum-v').textContent = $('sp-lum').value;
     spChange({c: spCrit()}, true);
 };
 $('sp-lum').onchange = () => {
@@ -3280,15 +3301,26 @@ $('sp-lum').onchange = () => {
     S.mode.tRec = false;
 };
 spSet();
-for (const [k, max] of [['close', 30], ['drop', 50]]) $(`sp-${k}`).onchange = () => {
+for (const k of ['down', 'right']) $(`sp-${k}`).onchange = () => {
+    S.sp[k] = $(`sp-${k}`).checked;
+    spSet();
+    spChange({[k]: S.sp[k]});
+};
+for (const [k, max] of [['close', 30], ['drop', 50], ['reach', 50]]) $(`sp-${k}`).onchange = () => {
     S.sp[k] = Math.max(0, Math.min(max, Math.round(+$(`sp-${k}`).value) || 0));
     spSet();
     spChange({[k]: S.sp[k]});
 };
-document.querySelectorAll('[name=spHow]').forEach(r => {r.onchange = () => {
-    S.sp.cut = r.value === 'cut';
+document.querySelectorAll('[name=spMethod]').forEach(r => {r.onchange = () => {
+    S.sp.method = r.value;
     spSet();
-    spChange({cut: S.sp.cut});
+    spChange({method: S.sp.method, c: spCrit()});
+};});
+document.querySelectorAll('[name=spHow]').forEach(r => {r.onchange = () => {
+    const p = spPreset(r.value === 'cut');
+    Object.assign(S.sp, p);
+    spSet();
+    spChange({...p, c: spCrit()});
 };});
 for (const b of document.querySelectorAll('.spStep'))
 {
