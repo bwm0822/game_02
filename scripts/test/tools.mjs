@@ -59,6 +59,25 @@ run('tools', async t => {
         const disk = JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
         out.saved = [disk.apple.gold, !!disk.fig];
         out.undot = await until(() => !tabBtn('item').classList.contains('dirty'));
+
+        // 左欄拖拉改寬度：各工具分開記、重開還在、雙擊恢復預設
+        const leftW = (tab) => Math.round(win(tab).document.getElementById('left').getBoundingClientRect().width);
+        const grip = (tab) => win(tab).document.querySelector('.left-grip');
+        const ptr = (tab, type, x) => grip(tab).dispatchEvent(new (win(tab).PointerEvent)(type, {clientX: x, button: 0, pointerId: 1, bubbles: true}));
+        T.show('item');
+        const w0 = leftW('item');
+        ptr('item', 'pointerdown', 300); ptr('item', 'pointermove', 400); ptr('item', 'pointerup', 400);
+        const w1 = leftW('item');
+        win('item').location.reload();
+        await sleep(200);
+        await until(() => win('item')?.__ie && win('item').document.querySelector('.left-grip'));
+        const w2 = leftW('item');
+        T.show('role');
+        ptr('role', 'pointerdown', 300); ptr('role', 'pointermove', 9999); ptr('role', 'pointerup', 9999);
+        const pdMax = leftW('role') <= Math.ceil(win('role').innerWidth * 0.6) && win('item').localStorage.getItem('tools.left.role') !== win('item').localStorage.getItem('tools.left.item');
+        T.show('item');
+        grip('item').dispatchEvent(new (win('item').MouseEvent)('dblclick', {bubbles: true}));
+        out.left = [w1 - w0, w2 === w1, pdMax, leftW('item') === w0, win('item').localStorage.getItem('tools.left.item')];
         return out;
     });
 
@@ -75,6 +94,7 @@ run('tools', async t => {
     t.eq('存檔會廣播', r.heard, 'item.json');
     t.eq('存檔合併外部修改', JSON.stringify(r.saved), JSON.stringify([9, true]));
     t.check('存完圓點消失', r.undot);
+    t.eq('左欄拖拉改寬度、重開還記得、最寬 60vw 且各工具分開記、雙擊恢復預設', JSON.stringify(r.left), JSON.stringify([100, true, true, true, null]));
 
     await t.page.goto(new URL('/tools/item/', t.page.url()).href);
     t.check('單獨開工具頁會提示從 /tools/ 開', await t.page.waitForFunction(() => document.body.firstElementChild.textContent.includes('/tools/'), {timeout: 5000}).then(() => true, () => false));

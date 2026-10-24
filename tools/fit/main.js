@@ -3,6 +3,7 @@
 // 同時編 role.json、item.json、anim.json：undo 三份一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
+import '../common/splitter.js';
 import {$, h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';

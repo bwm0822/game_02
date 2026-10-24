@@ -7,6 +7,7 @@
 - `tools/index.html`＋`tools/main.js`：殼。分頁列、選專案資料夾、每個工具一個 iframe（`./item/` 等原本的頁面），**第一次點分頁才建 iframe**，之後切分頁只是 `hidden`，工具狀態（未存修改、紙娃娃圖層）都留著。網址 hash 記目前分頁（`/tools/#role`）。
 - `tools/common/shell.js`：工具端的接線，`onProject(fn)`／`notifySaved(file)`／`onSaved(fn)`／`setDirty(bool)`。
 - `tools/common/scrollbar.css`：所有工具共用的深色捲軸（`::-webkit-scrollbar`），`common/style.css` 用 `@import` 引入；紙娃娃不載 `common/style.css`，自己 `<link>` 它。
+- `tools/common/splitter.js`：左欄寬度可調，main.js `import '../common/splitter.js'` 就會在 `#left` 後面插一個把手（兄弟元素，`#left` 自己捲動也不會被捲走）；拖拉改寬（80px～60vw）、雙擊回 CSS 預設，寬度記在 `localStorage` 的 `tools.left.<工具資料夾>`，各工具分開記。道具／角色／試穿用它；紙娃娃有自己的左右分隔線（見 [paperdoll-tool.md](paperdoll-tool.md)），不載。
 - 工具頁不在 iframe 裡（直接開 `/tools/item/`）時沒有資料夾來源，頂端顯示「要從 /tools/ 開」；頁面照常初始化，`window.__ie`／`__re`／`__pd` 還在，無頭測試靠這個直接開工具頁、把 OPFS 假資料夾丟給 `setAssets()`／`setRoot()`。
 
 ## 專案資料夾

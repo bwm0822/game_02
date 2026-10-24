@@ -29,7 +29,7 @@ npm run dist
 npm run deploy
 
 # 無頭瀏覽器測試（自己開 vite + 無頭 Chrome，只印 ✔/✘，失敗時截圖到 scripts/test/out/）
-node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線）、debuger.mjs（除錯面板指令表單）
+node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線、左欄寬度）、debuger.mjs（除錯面板指令表單）
 ```
 
 無頭測試：`scripts/test/harness.mjs` 提供 `newGame()`／`gotoMap()`／`talk()`／`kill()`／`give()`／`q()` 等工具，透過 `src/main.js` 只在開發版掛的 `window.__dbg` 操作遊戲（不走路、不戰鬥，直接呼叫遊戲函式）；角色在 `scene.roles`、其他物件在 `scene.gos`，工具裡的 `d.objs()` 兩者都包含。用的是電腦裡現有的 Chrome（`puppeteer-core`，不下載 Chromium）。改了劇情、地圖生成相關的東西後，優先跑對應的測試而不是請使用者手動玩。

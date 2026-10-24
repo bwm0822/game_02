@@ -6,6 +6,7 @@ import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as JE from '../common/jsonedit.js';
 import '../common/combo.js';
+import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from './preview.js';
 
