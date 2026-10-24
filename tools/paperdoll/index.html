@@ -120,11 +120,14 @@
         <div id="modeAuto" class="mode" hidden>
             <div id="auTable" class="autoGrid"></div>
             <div id="auSplit">
-                <label><input id="auSp" type="checkbox" checked> 拆前後片</label>
-                <label>頭盔切線：亮度 &lt; <input id="auT" type="range" min="1" max="255" value="24"> <span id="auV">24</span></label>
-                <div id="auSpInfo" class="dim"></div>
+                <div class="row2">頭盔：
+                    <label><input name="auHow" type="radio" value="none"> 不拆</label>
+                    <label><input name="auHow" type="radio" value="split" checked> 前後片</label>
+                    <label><input name="auHow" type="radio" value="cut"> 挖除</label>
+                </div>
+                <div id="auSpInfo" class="dim spAfter"></div>
             </div>
-            <div class="hint">勾「拆前後片」時頭盔上的洋紅色是後片（被頭蓋住）：拖起點（青色十字）、改門檻重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
+            <div class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
             <div class="row2"><button id="auItem">存到 item…</button></div>
         </div>
@@ -143,9 +146,22 @@
         </div>
 
         <div id="modeSplit" class="mode" hidden>
-            <label>輪廓線：亮度 &lt; <input id="spT" type="range" min="1" max="255" value="24"> <span id="spV">24</span></label>
-            <div id="spInfo" class="dim"></div>
-            <div class="hint">頭盔拆成前片（蓋住頭，原圖層）跟後片（被頭蓋住，正下方的「-back」層）：從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊當後片（洋紅色）。拖起點、改門檻會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉後片、把前片補回原樣</div>
+            <div class="row2">
+                <label><input name="spHow" type="radio" value="split" checked> 前後片</label>
+                <label><input name="spHow" type="radio" value="cut"> 挖除</label>
+            </div>
+            <div id="spCtl" class="spCtl">
+                <div class="spGrid">
+                    <span>亮度 &lt;</span><button class="spStep" data-d="-1">-</button><input id="sp-lum" type="range" min="0" max="256"><button class="spStep" data-d="1">+</button><span id="sp-lum-v"></span>
+                </div>
+                <div class="row2"><span id="spSwatch" class="swatch empty"></span><span id="spRgba" class="dim">—</span></div>
+                <div id="spCutRow" class="flRow">
+                    <label title="填平寬度 ≤ 2 倍的縫（0＝關掉）">閉運算 <input id="sp-close" type="number" min="0" max="30"></label>
+                    <label title="淹到的範圍下緣往下幾 px 內是透明，中間的線也挖掉（0＝不射）">下 <input id="sp-drop" type="number" min="0" max="50"> px</label>
+                </div>
+            </div>
+            <div id="spInfo" class="dim spAfter"></div>
+            <div class="hint">頭盔拆成前片（蓋住頭，原圖層）跟後片（被頭蓋住，最底層的「-back」層）：從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊當後片（洋紅色）；選「挖除」改成從起點淹水（碰到輪廓線或透明就停），閉運算填平寬度 ≤ 2 倍的縫，「下 N px」：淹到的下緣往下 N px 內是透明就連中間的線一起挖，描外圈當挖除範圍（洋紅色，裡面的洞一起挖），只做前片、那塊挖成透明。輪廓線＝不透明、而且亮度 &lt; 門檻；在畫布上移動，色塊跟 (R,G,B,A) 顯示游標底下的顏色；-／+ 一次調 1，按住連續調。拖起點、改條件會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉前後片、原圖重新顯示</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="spRevoke">撤掉前後片</button></div>
         </div>
 

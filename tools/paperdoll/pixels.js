@@ -419,22 +419,125 @@ export function fade(src, k)
 export const alphaAt = (src, x, y) => pixelAt(src, x, y)?.[3] ?? 0;
 
 // ---------- 前後片 ----------
-// 從起點像素 (x,y) 往上、往左掃到輪廓線（alpha ≥ 128 且亮度 < t）。上線當成「每一直行一個 y」往左右推、
+// 從起點像素 (x,y) 往上、往左掃到輪廓線（alpha ≥ 128 且亮度 < c.lum）。上線當成「每一直行一個 y」往左右推、
 // 左線當成「每一橫列一個 x」往上下推，所以路口岔出去的線（例如帽帶下緣往下接耳罩的邊）走不進去：
 // 每一行只在預測位置（照前緣的斜率）附近找線段；線段突然變很長＝跟岔線併在一起，改用預測對得上的那一側邊緣
 // 點取在線靠起點那側的邊上，所以線留給前片。往外走的（上線往右、左線往下）前片那側碰到透明或走到圖邊（裁到剛好的圖，外框貼著圖邊）就停、直直延伸出圖；
 // 後片那側是開口（透明）時還要繼續沿線的外緣走，免得延伸線切過前片還沒走完的線，走進開口後線斷了也算走到外面；
 // 往內走的（上線往左、左線往上）碰到另一條線（線段變很長）就停，兩端在轉角接起來
-// 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}
+// 回傳後片（右下那塊）的多邊形 {pts: [{x,y}…]}，失敗回傳 {err}；挖除不走這裡，用 splitCut()
 
 const SPLIT_ALPHA = 128;
 
-export function splitTrace(src, {x, y, t})
+// 輪廓線的顏色條件（不看 alpha）：亮度 < c.lum
+export const lineTest = (c) => (r, g, b) => r * 0.299 + g * 0.587 + b * 0.114 < c.lum;
+
+// 挖除：1 淹水＝從起點 4 方向淹，碰到輪廓線或透明就停；2 閉運算＝R 膨脹 close px 再侵蝕回來（四周先補 close px，貼圖邊的不會被侵蝕掉），
+// 填平寬 ≤ 2×close 的縫；3 往下射＝R 每一直行的下緣往下 drop 格內碰到透明（或圖邊），才把中間（線＋外緣的反鋸齒）收進來
+// 回傳每格是哪一步收進來的（0＝沒有、1..3），失敗回傳 {err}
+export function splitFlood(src, {x, y, c, close = 0, drop = 0})
+{
+    const W = src.width, H = src.height, N = W * H, d = src.getContext('2d').getImageData(0, 0, W, H).data;
+    const test = lineTest(c);
+    const solid = (i) => d[i * 4 + 3] >= SPLIT_ALPHA;
+    const open = (i) => solid(i) && !test(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+    if (x < 0 || y < 0 || x >= W || y >= H || !solid(y * W + x)) return {err: '起點在透明的地方'};
+    if (!open(y * W + x)) return {err: '起點在輪廓線上，拖到線圍起來的區域裡'};
+    const R = new Uint8Array(N);
+    fill4(W, H, y * W + x, open, R);
+
+    if (close > 0)
+    {
+        const k = close, PW = W + 2 * k, PH = H + 2 * k;
+        let a = new Uint8Array(PW * PH);
+        for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) a[(Y + k) * PW + X + k] = R[Y * W + X] ? 1 : 0;
+        // 方形結構元素，橫、直分開做；dil=true 取 max（膨脹），false 取 min（侵蝕，圖外當 0）
+        const pass = (s, dil, horiz) => {
+            const o = new Uint8Array(PW * PH);
+            for (let Y = 0; Y < PH; Y++) for (let X = 0; X < PW; X++)
+            {
+                let v = dil ? 0 : 1;
+                for (let t = -k; t <= k; t++)
+                {
+                    const nx = horiz ? X + t : X, ny = horiz ? Y : Y + t;
+                    const p = nx >= 0 && ny >= 0 && nx < PW && ny < PH ? s[ny * PW + nx] : 0;
+                    if (dil ? p : !p) {v = dil ? 1 : 0; break;}
+                }
+                o[Y * PW + X] = v;
+            }
+            return o;
+        };
+        a = pass(pass(pass(pass(a, true, true), true, false), false, true), false, false);
+        for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++)
+            if (a[(Y + k) * PW + X + k] && !R[Y * W + X]) R[Y * W + X] = 2;
+    }
+
+    if (drop > 0)
+    {
+        const base = R.slice();
+        for (let X = 0; X < W; X++) for (let Y = 0; Y < H; Y++)
+        {
+            if (!base[Y * W + X] || (Y + 1 < H && base[(Y + 1) * W + X])) continue;
+            for (let u = 1; u <= drop; u++)
+            {
+                const ny = Y + u;
+                if (ny < H && base[ny * W + X]) break;
+                if (ny >= H || !solid(ny * W + X)) {for (let v = Y + 1; v < ny; v++) if (!R[v * W + X]) R[v * W + X] = 3; break;}
+            }
+        }
+    }
+    return {R};
+}
+
+// 挖除的多邊形：splitFlood() 的結果取起點那一塊（4 連通），沿格子邊描外圈（裡面的洞一起挖）、RDP 簡化；失敗回傳 {err}
+export function splitCut(src, o)
+{
+    const r = splitFlood(src, o);
+    if (r.err) return r;
+    const W = src.width, H = src.height, M = new Uint8Array(W * H);
+    fill4(W, H, o.y * W + o.x, (i) => r.R[i] > 0, M);
+    const s = M.indexOf(1), x0 = s % W, y0 = (s - x0) / W;
+    const at = (X, Y) => X >= 0 && Y >= 0 && X < W && Y < H && M[Y * W + X] === 1;
+    // 順時針走格子邊（區域在右手邊），從最上面一列最左邊那格的左上角往右出發；pts 只記轉彎的角
+    const pts = [];
+    let cx = x0, cy = y0, dx = 1, dy = 0;
+    do
+    {
+        cx += dx; cy += dy;
+        const rx = -dy, ry = dx;
+        const ax = cx + Math.min(0, dx), ay = cy + Math.min(0, dy);
+        const left = at(ax + Math.min(0, -rx), ay + Math.min(0, -ry)), right = at(ax + Math.min(0, rx), ay + Math.min(0, ry));
+        const [ndx, ndy] = left ? [-rx, -ry] : right ? [dx, dy] : [rx, ry];
+        if (ndx !== dx || ndy !== dy) pts.push({x: cx, y: cy});
+        dx = ndx; dy = ndy;
+    } while (cx !== x0 || cy !== y0 || dx !== 1 || dy !== 0);
+    // 閉合的環頭尾同一點，RDP 的基準線長度是 0，所以從離起點最遠的那一點切成兩段各自簡化
+    const p0 = pts[0], d2 = pts.map(p => (p.x - p0.x) ** 2 + (p.y - p0.y) ** 2), far = d2.indexOf(Math.max(...d2));
+    const a = simplify(pts.slice(0, far + 1)), b = simplify([...pts.slice(far), p0]);
+    return {pts: [...a, ...b.slice(1, -1)]};
+}
+
+function fill4(W, H, seed, ok, mark)
+{
+    const stack = new Int32Array(W * H);
+    let top = 0;
+    mark[seed] = 1;
+    stack[top++] = seed;
+    while (top)
+    {
+        const i = stack[--top], X = i % W;
+        for (const j of [X > 0 ? i - 1 : -1, X < W - 1 ? i + 1 : -1, i - W, i + W])
+            if (j >= 0 && j < W * H && !mark[j] && ok(j)) {mark[j] = 1; stack[top++] = j;}
+    }
+}
+
+export function splitTrace(src, {x, y, c})
 {
     const W = src.width, H = src.height, d = src.getContext('2d').getImageData(0, 0, W, H).data;
+    const test = lineTest(c);
     const idx = (X, Y) => X < 0 || Y < 0 || X >= W || Y >= H ? -1 : (Y * W + X) * 4;
     const solid = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA;};
-    const line = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA && d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114 < t;};
+    const line = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA && test(d[i], d[i + 1], d[i + 2]);};
     if (!solid(x, y)) return {err: '起點在透明的地方'};
     if (line(x, y)) return {err: '起點在輪廓線上，拖到線圍起來的區域裡'};
 
@@ -498,16 +601,18 @@ export function splitTrace(src, {x, y, t})
 
     const up = hit(T, x, y, '上'), left = hit(L, y, x, '左');
     if (up.err || left.err) return {err: up.err ?? left.err};
-    const tr = trace(T, up, 1, false), ld = trace(L, left, 1, false);
     const out = (r) => r.end === 'out' || r.end === 'edge';
-    if (!out(tr) || !out(ld)) return {err: `${!out(tr) ? '上線往右' : '左線往下'}沒走到外面（線斷了），換個起點或調門檻`};
+    const tr = trace(T, up, 1, false), ld = trace(L, left, 1, false);
+    const broken = !out(tr) ? '上線往右' : !out(ld) ? '左線往下' : null;
+    if (broken) return {err: `${broken}沒走到外面（線斷了），換個起點或調門檻`};
     const tl = trace(T, up, -1, true, i => i < left.f - left.w * 2);
     const lu = trace(L, left, -1, true, i => i < up.f - up.w * 2);
 
     const e = 2;
     const corner = {x: lu.pts.at(-1).x, y: tl.pts.at(-1).y};
-    const te = {x: W + e, y: tr.pts.at(-1).y}, le = {x: ld.pts.at(-1).x, y: H + e};
+    const te = {x: W + e, y: tr.pts.at(-1).y};
     const top = simplify([corner, ...[...tl.pts].reverse(), ...tr.pts.slice(1), te]);
+    const le = {x: ld.pts.at(-1).x, y: H + e};
     const lft = simplify([le, ...[...ld.pts].reverse(), ...lu.pts.slice(1)]);
     return {pts: [...top, {x: W + e, y: H + e}, ...lft]};
 }
