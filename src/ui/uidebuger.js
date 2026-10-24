@@ -15,8 +15,12 @@ import DB from '../data/db.js'
 
 function cmd_get(args)
 {
-    // [get] [gold/item] [id] [count]
-    const rewards=[{type:args[1],id:args[2],count:Number(args[3])}];
+    // [get] [gold/item/set] [id] [count]，set 的 id 是 <系>-<階>，給所有 <部位>-<系>-<階>
+    const count = Number(args[3]);
+    const rewards = args[1]==='set'
+        ? setIds(args[2]).map((id)=>({type:'item',id,count}))
+        : [{type:args[1],id:args[2],count}];
+    if(rewards.length===0) {this.print(`[color=yellow][沒有套裝 ${args[2]}][/color]\n`); return;}
     GM.player.reward(rewards)
 }
 
@@ -104,10 +108,16 @@ const catOpts = ()=>{
     const cats = [...new Set(DB.itemIds().map((id)=>DB.item(id).cat))];
     return [{text:'全部',value:'all'},
             ...cats.filter((c)=>c!==undefined).map((c)=>({text:CAT_NAME[c],value:c})),
-            ...(cats.includes(undefined)?[{text:'其他',value:'other'}]:[])];
+            ...(cats.includes(undefined)?[{text:'其他',value:'other'}]:[]),
+            {text:'套裝',value:'set'}];
 }
 
-const itemOpts = (cat)=>DB.itemIds()
+const setIds = (key)=>DB.itemIds().filter((id)=>id.slice(id.indexOf('-')+1)===key);
+
+const itemOpts = (cat)=>cat==='set'
+    ? DB.itemIds().filter((id)=>id.startsWith('armor-'))
+        .map((id)=>({text:DB.item(id).lab??id,value:id.slice('armor-'.length)}))
+    : DB.itemIds()
     .filter((id)=>{
         const c = DB.item(id).cat;
         return cat==='all' || (cat==='other'?c===undefined:c===cat);
@@ -130,7 +140,9 @@ const CMDS =
                     {key:'cat', dd:catOpts, w:130, if:(v)=>v.type==='item'},
                     {key:'id', dd:(v)=>itemOpts(v.cat), w:160, if:(v)=>v.type==='item'},
                     {key:'count', lab:'數量', def:'1'}],
-            build:(v)=>`get ${v.type} ${v.type==='item'?v.id:'-'} ${v.count}`},
+            build:(v)=>v.type==='item'
+                ? `get ${v.cat==='set'?'set':'item'} ${v.id} ${v.count}`
+                : `get gold - ${v.count}`},
 
     w:      {usage:'設定格子權重（世界座標）',
             fields:[{key:'x', lab:'x', fresh:true, def:()=>String(Math.round(GM.player?.x??0))},

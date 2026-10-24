@@ -84,6 +84,20 @@ run('debuger', async t => {
     });
     t.eq('分類選 WEAPON，道具跟著換', cat.join(), `${weapon},${weapon}`);
 
+    const set = await t.eval(d => {
+        const g = d.Ui.get(d.UI.TAG.DEBUGER);
+        Object.assign(g._vals.get, {cat:'set', id:'lea-1'});
+        g.buildParams();
+        g._inputs.count.setValue('2');
+        const n = (id) => d.GM.player.queryItem((itm) => itm.id === id).reduce((s, itm) => s + (itm.count ?? 1), 0);
+        const ids = ['helmet-lea-1', 'armor-lea-1', 'boots-lea-1'];
+        const before = ids.map(n);
+        g.exec();
+        return {id: g._vals.get.id, gained: ids.map((id, i) => n(id) - before[i]).join()};
+    });
+    t.eq('套裝選單的值是 <系>-<階>', set.id, 'lea-1');
+    t.eq('套裝 get set lea-1 2，三件各 2', set.gained, '2,2,2');
+
     await openDD('params', 0);
     await pick('gold');
     await frame();
