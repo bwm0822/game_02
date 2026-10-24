@@ -219,11 +219,13 @@ function trimLayer(L)
 // 整張 AI 原圖（綠底、零件各在一個象限）拆成零件圖層：清除透明 → 移除綠色 → 只留自己的塊 → 裁到零件的範圍 → 縮放
 // 零件可能跨過中線，所以不切象限：去綠後分連通塊，依重心歸到象限，零件範圍＝它所有塊的外接矩形；
 // 範圍會跟別的塊重疊（左上戴頭盔的頭，下巴伸進護甲的範圍），所以裁切前先清掉不是自己的塊（左上沒人認領，整塊丟掉）
+// 左上的頭盔常跟護甲黏成一塊（重心落到左上，護甲整個被丟掉）：四個象限湊不齊就逐步加侵蝕量重分（最多 AUTO_ERODE px），侵蝕量記在 blobs 步驟上
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
+const AUTO_ERODE = 12;
 const AUTO_PARTS = [
     {key: 'helmet', name: '頭盔', quad: '右上', qx: 1, qy: 0},
     {key: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
@@ -357,16 +359,25 @@ function autoPlan(L)
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
     pushOp(T, {type: 'removeGreen', ...GREEN});
     const W = T.canvas.width, H = T.canvas.height;
-    const all = PX.blobs(T.canvas, trimT()), big = Math.max(0, ...all.map(b => b.n));
-    const blobs = all.filter(b => b.n >= big * AUTO_NOISE);
+    const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
+    const split = (erode) => {
+        const all = PX.blobs(T.canvas, trimT(), erode), big = Math.max(0, ...all.map(b => b.n));
+        return all.filter(b => b.n >= big * AUTO_NOISE);
+    };
+    let blobs = split(0), erode = 0;
+    for (let k = 1; k <= AUTO_ERODE && ![0, 1].every(qx => [0, 1].every(qy => blobs.some(b => quad(b, qx, qy)))); k++)
+    {
+        const bs = split(k);
+        if ([0, 1].every(qx => [0, 1].every(qy => bs.some(b => quad(b, qx, qy))))) [blobs, erode] = [bs, k];
+    }
     const plan = [], skipped = [];
     for (const P of AUTO_PARTS)
     {
-        const mine = blobs.filter(b => (b.cx >= W / 2) === !!P.qx && (b.cy >= H / 2) === !!P.qy);
+        const mine = blobs.filter(b => quad(b, P.qx, P.qy));
         if (!mine.length) {skipped.push(P.name); continue;}
         const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
         plan.push({P, box: {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0},
-                   keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy])}});
+                   keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy]), ...(erode ? {erode} : {})}});
     }
     return {T, plan, skipped};
 }

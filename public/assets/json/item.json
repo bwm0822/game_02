@@ -758,7 +758,11 @@
   },
   "helmet-lea-1": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "rawhide-helmet-front",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": -0.25
     },
     "cat": "CAT_HELMET",
     "lab": "粗皮帽",
@@ -770,7 +774,12 @@
         "key": "cri",
         "a": 0.01
       }
-    ]
+    ],
+    "icon": "rawhide-helmet",
+    "drop": {
+      "sprite": "rawhide-helmet",
+      "scale": 0.25
+    }
   },
   "armor-lea-1": {
     "cat": "CAT_CHESTPLATE",
@@ -783,7 +792,18 @@
         "key": "dex",
         "a": 1
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "rawhide-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 26.5
+    },
+    "icon": "rawhide-armor",
+    "drop": {
+      "sprite": "rawhide-armor",
+      "scale": 0.25
+    }
   },
   "boots-lea-1": {
     "cat": "CAT_BOOTS",
@@ -796,7 +816,18 @@
         "key": "eva",
         "a": 0.01
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "rawhide-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "rawhide-boots",
+    "drop": {
+      "sprite": "rawhide-boots",
+      "scale": 0.25
+    }
   },
   "helmet-lea-2": {
     "equip": {
@@ -842,7 +873,11 @@
   },
   "helmet-lea-3": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "studded-helmet-front",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": -0.25
     },
     "cat": "CAT_HELMET",
     "lab": "鑲釘皮帽",
@@ -855,7 +890,12 @@
         "key": "cri",
         "a": 0.03
       }
-    ]
+    ],
+    "icon": "studded-helmet",
+    "drop": {
+      "sprite": "studded-helmet",
+      "scale": 0.25
+    }
   },
   "armor-lea-3": {
     "cat": "CAT_CHESTPLATE",
@@ -869,7 +909,18 @@
         "key": "dex",
         "a": 3
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "studded-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 28.5
+    },
+    "icon": "studded-armor",
+    "drop": {
+      "sprite": "studded-armor",
+      "scale": 0.25
+    }
   },
   "boots-lea-3": {
     "cat": "CAT_BOOTS",
@@ -883,11 +934,26 @@
         "key": "eva",
         "a": 0.03
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "studded-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "studded-boots",
+    "drop": {
+      "sprite": "studded-boots",
+      "scale": 0.25
+    }
   },
   "helmet-lea-4": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "werewolf-helmet-front",
+      "scale": 0.25,
+      "x": -2,
+      "y": 1.75
     },
     "cat": "CAT_HELMET",
     "lab": "狼人皮帽",
@@ -900,7 +966,12 @@
         "key": "cri",
         "a": 0.04
       }
-    ]
+    ],
+    "icon": "werewolf-helmet",
+    "drop": {
+      "sprite": "werewolf-helmet",
+      "scale": 0.25
+    }
   },
   "armor-lea-4": {
     "cat": "CAT_CHESTPLATE",
@@ -914,7 +985,18 @@
         "key": "dex",
         "a": 4
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "werewolf-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 29
+    },
+    "icon": "werewolf-armor",
+    "drop": {
+      "sprite": "werewolf-armor",
+      "scale": 0.25
+    }
   },
   "boots-lea-4": {
     "cat": "CAT_BOOTS",
@@ -928,11 +1010,26 @@
         "key": "eva",
         "a": 0.04
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "werewolf-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "werewolf-boots",
+    "drop": {
+      "sprite": "werewolf-boots",
+      "scale": 0.25
+    }
   },
   "helmet-lea-5": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "dragonhide-helmet-front",
+      "scale": 0.25,
+      "x": -4.5,
+      "y": 1.5
     },
     "cat": "CAT_HELMET",
     "lab": "龍皮帽",
@@ -945,7 +1042,12 @@
         "key": "cri",
         "a": 0.05
       }
-    ]
+    ],
+    "icon": "dragonhide-helmet",
+    "drop": {
+      "sprite": "dragonhide-helmet",
+      "scale": 0.25
+    }
   },
   "armor-lea-5": {
     "cat": "CAT_CHESTPLATE",
@@ -959,7 +1061,18 @@
         "key": "dex",
         "a": 5
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "dragonhide-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 29
+    },
+    "icon": "dragonhide-armor",
+    "drop": {
+      "sprite": "dragonhide-armor",
+      "scale": 0.25
+    }
   },
   "boots-lea-5": {
     "cat": "CAT_BOOTS",
@@ -973,7 +1086,18 @@
         "key": "eva",
         "a": 0.05
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "dragonhide-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "dragonhide-boots",
+    "drop": {
+      "sprite": "dragonhide-boots",
+      "scale": 0.25
+    }
   },
   "helmet-hvy-1": {
     "cat": "CAT_HELMET",
@@ -1155,7 +1279,12 @@
   },
   "helmet-hvy-3": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "plate-helmet-front",
+      "back": "plate-helmet-back",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": -0.25
     },
     "cat": "CAT_HELMET",
     "lab": "鐵板盔",
@@ -1173,7 +1302,12 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "icon": "plate-helmet",
+    "drop": {
+      "sprite": "plate-helmet",
+      "scale": 0.25
+    }
   },
   "armor-hvy-3": {
     "cat": "CAT_CHESTPLATE",
@@ -1192,7 +1326,18 @@
         "key": "eva",
         "a": -0.03
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "plate-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 26.5
+    },
+    "icon": "plate-armor",
+    "drop": {
+      "sprite": "plate-armor",
+      "scale": 0.25
+    }
   },
   "boots-hvy-3": {
     "cat": "CAT_BOOTS",
@@ -1211,11 +1356,26 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "plate-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "plate-boots",
+    "drop": {
+      "sprite": "plate-boots",
+      "scale": 0.25
+    }
   },
   "helmet-hvy-4": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "steel-helmet",
+      "scale": 0.25,
+      "x": -1.75,
+      "y": 2.75
     },
     "cat": "CAT_HELMET",
     "lab": "精鋼盔",
@@ -1233,7 +1393,12 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "icon": "steel-helmet",
+    "drop": {
+      "sprite": "steel-helmet",
+      "scale": 0.25
+    }
   },
   "armor-hvy-4": {
     "cat": "CAT_CHESTPLATE",
@@ -1252,7 +1417,18 @@
         "key": "eva",
         "a": -0.03
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "steel-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 28.5
+    },
+    "icon": "steel-armor",
+    "drop": {
+      "sprite": "steel-armor",
+      "scale": 0.25
+    }
   },
   "boots-hvy-4": {
     "cat": "CAT_BOOTS",
@@ -1271,11 +1447,26 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "steel-boots",
+      "scale": 0.25,
+      "x": 1,
+      "y": 33
+    },
+    "icon": "steel-boots",
+    "drop": {
+      "sprite": "steel-boots",
+      "scale": 0.25
+    }
   },
   "helmet-hvy-5": {
     "equip": {
-      "hideHair": true
+      "hideHair": true,
+      "sprite": "mithril-helmet",
+      "scale": 0.25,
+      "x": -3.75,
+      "y": 2.75
     },
     "cat": "CAT_HELMET",
     "lab": "秘銀盔",
@@ -1293,7 +1484,12 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "icon": "mithril-helmet",
+    "drop": {
+      "sprite": "mithril-helmet",
+      "scale": 0.25
+    }
   },
   "armor-hvy-5": {
     "cat": "CAT_CHESTPLATE",
@@ -1312,7 +1508,18 @@
         "key": "eva",
         "a": -0.03
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "mithril-armor",
+      "scale": 0.25,
+      "x": 0.25,
+      "y": 27.5
+    },
+    "icon": "mithril-armor",
+    "drop": {
+      "sprite": "mithril-armor",
+      "scale": 0.25
+    }
   },
   "boots-hvy-5": {
     "cat": "CAT_BOOTS",
@@ -1331,7 +1538,18 @@
         "key": "eva",
         "a": -0.01
       }
-    ]
+    ],
+    "equip": {
+      "sprite": "mithril-boots",
+      "scale": 0.25,
+      "x": 1.5,
+      "y": 33
+    },
+    "icon": "mithril-boots",
+    "drop": {
+      "sprite": "mithril-boots",
+      "scale": 0.25
+    }
   },
   "neck_01": {
     "cat": "CAT_NECKLACE",

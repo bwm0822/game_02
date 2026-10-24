@@ -46,7 +46,7 @@
       "sprite": "head-wick",
       "scale": 0.25,
       "x": -2,
-      "y": 3
+      "y": 4
     },
     "inv": {
       "storage": {
@@ -62,7 +62,8 @@
     "hair": {
       "sprite": "hair-01",
       "scale": 0.25,
-      "x": -1
+      "x": -1,
+      "y": 2
     }
   },
   "trump": {

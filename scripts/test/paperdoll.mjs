@@ -1160,6 +1160,28 @@ run('paperdoll', async t => {
     t.eq('自動只留自己的塊：伸進範圍的下巴清成透明、自己的塊留著', JSON.stringify(ab.cut), JSON.stringify([0, 255, 255]));
     t.eq('自動只留自己的塊：再進來改 scale% 照樣只留自己的塊', JSON.stringify(ab.resume), JSON.stringify(['auto', 0, 255]));
 
+    // 左上的頭盔用細線黏著護甲、重心落在左上：侵蝕到斷開再分，護甲不會整塊被丟掉
+    const ae = await ev(async () => {
+        const pd = window.__pd;
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ffff00'; g.fillRect(10, 5, 80, 85); g.fillRect(110, 20, 70, 60);
+        g.fillStyle = '#0000ff'; g.fillRect(48, 90, 2, 10); g.fillRect(20, 100, 60, 50); g.fillRect(120, 120, 60, 50);
+        const saved = pd.S.auto;
+        pd.autoSet({...saved, split: false, armor: {pct: 100, x: 0, y: 0}});
+        const K = pd.addLayer(await createImageBitmap(c), 'glued', null, null, null);
+        pd.setMode('auto');
+        pd.applyMode();
+        const A = pd.S.layers.find(L => L.name === 'glued-armor');
+        const out = [pd.S.layers.filter(L => L.auto).map(L => L.auto.key).join(), A?.canvas.width, A?.canvas.height <= 60, A?.ops.find(o => o.type === 'blobs').erode];
+        pd.autoRevoke();
+        pd.removeLayer(K);
+        pd.autoSet(saved);
+        return out;
+    });
+    t.eq('自動：左上頭盔黏著護甲時侵蝕分開，護甲留下、侵蝕量記在 blobs', JSON.stringify(ae), JSON.stringify(['boots,armor,helmet', 60, true, 1]));
+
     // 前後片追線：左線下段的後片那側是開口時，繼續沿線外緣走到底，斜出去的線不會被延伸線切到
     const so = await ev(async () => {
         const pd = window.__pd, out = {};

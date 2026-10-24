@@ -44,27 +44,42 @@ export function opaqueBounds(src, t = 1)
     return x1 < 0 ? null : {x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1};
 }
 
-// alpha >= t 的像素依 8 方向相連分塊，回傳每塊的像素數、外接矩形、重心、種子（塊裡的一個像素，給 keepBlobs 用）
-export function blobs(src, t = 1)
+// alpha >= t 的像素依 8 方向相連分塊，回傳每塊編號（1 起，0＝透明）；
+// erode > 0：先侵蝕 erode px（棋盤距離），把細細黏在一起的零件拆開，侵蝕後的核心各自分塊，再一圈圈同時長回原本的像素（先到先得）；
+// 整塊被侵蝕光的照原本連通自成一塊
+function labels(d, w, h, t, erode)
 {
-    const w = src.width, h = src.height;
-    const d = src.getContext('2d').getImageData(0, 0, w, h).data;
-    const seen = new Uint8Array(w * h), stack = new Int32Array(w * h), out = [];
-    for (let i = 0; i < w * h; i++)
+    const N = w * h, on = new Uint8Array(N);
+    for (let i = 0; i < N; i++) on[i] = d[i * 4 + 3] >= t ? 1 : 0;
+    let core = on;
+    if (erode > 0)
     {
-        if (seen[i] || d[i * 4 + 3] < t) continue;
-        const b = {n: 0, x: w, y: h, x1: -1, y1: -1, cx: 0, cy: 0, sx: i % w, sy: (i - i % w) / w};
-        let top = 0;
-        stack[top++] = i;
-        seen[i] = 1;
-        while (top)
+        const D = new Int32Array(N);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
         {
-            const j = stack[--top], x = j % w, y = (j - x) / w;
-            b.n++; b.cx += x; b.cy += y;
-            if (x < b.x) b.x = x;
-            if (x > b.x1) b.x1 = x;
-            if (y < b.y) b.y = y;
-            if (y > b.y1) b.y1 = y;
+            const i = y * w + x;
+            if (!on[i]) continue;
+            D[i] = 1 + Math.min(x ? D[i - 1] : 0, y ? D[i - w] : 0, x && y ? D[i - w - 1] : 0, y && x < w - 1 ? D[i - w + 1] : 0);
+        }
+        for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--)
+        {
+            const i = y * w + x;
+            if (!on[i]) continue;
+            const v = 1 + Math.min(x < w - 1 ? D[i + 1] : 0, y < h - 1 ? D[i + w] : 0, x < w - 1 && y < h - 1 ? D[i + w + 1] : 0, y < h - 1 && x ? D[i + w - 1] : 0);
+            if (v < D[i]) D[i] = v;
+        }
+        core = new Uint8Array(N);
+        for (let i = 0; i < N; i++) core[i] = D[i] > erode ? 1 : 0;
+    }
+    const lab = new Int32Array(N), queue = new Int32Array(N);
+    let n = 0, qn = 0;
+    const flood = (i, m) => {
+        let top = qn;
+        lab[i] = ++n;
+        queue[qn++] = i;
+        while (top < qn)
+        {
+            const j = queue[top++], x = j % w, y = (j - x) / w;
             for (let dy = -1; dy <= 1; dy++)
             {
                 const ny = y + dy;
@@ -72,49 +87,64 @@ export function blobs(src, t = 1)
                 for (let dx = -1; dx <= 1; dx++)
                 {
                     const nx = x + dx, k = ny * w + nx;
-                    if (nx < 0 || nx >= w || seen[k] || d[k * 4 + 3] < t) continue;
-                    seen[k] = 1;
-                    stack[top++] = k;
+                    if (nx < 0 || nx >= w || lab[k] || !m[k]) continue;
+                    lab[k] = n;
+                    queue[qn++] = k;
                 }
             }
         }
-        b.cx /= b.n; b.cy /= b.n;
-        out.push(b);
+    };
+    for (let i = 0; i < N; i++) if (core[i] && !lab[i]) flood(i, core);
+    if (core === on) return {lab, n};
+    for (let top = 0; top < qn; top++)
+    {
+        const j = queue[top], x = j % w, y = (j - x) / w;
+        for (let dy = -1; dy <= 1; dy++)
+        {
+            const ny = y + dy;
+            if (ny < 0 || ny >= h) continue;
+            for (let dx = -1; dx <= 1; dx++)
+            {
+                const nx = x + dx, k = ny * w + nx;
+                if (nx < 0 || nx >= w || lab[k] || !on[k]) continue;
+                lab[k] = lab[j];
+                queue[qn++] = k;
+            }
+        }
     }
+    for (let i = 0; i < N; i++) if (on[i] && !lab[i]) flood(i, on);
+    return {lab, n};
+}
+
+// 分塊（見 labels），回傳每塊的像素數、外接矩形、重心、種子（塊裡的一個像素，給 keepBlobs 用）
+export function blobs(src, t = 1, erode = 0)
+{
+    const w = src.width, h = src.height;
+    const {lab, n} = labels(src.getContext('2d').getImageData(0, 0, w, h).data, w, h, t, erode);
+    const out = Array.from({length: n}, () => ({n: 0, x: w, y: h, x1: -1, y1: -1, cx: 0, cy: 0, sx: -1, sy: -1}));
+    for (let i = 0; i < w * h; i++)
+    {
+        if (!lab[i]) continue;
+        const b = out[lab[i] - 1], x = i % w, y = (i - x) / w;
+        if (b.sx < 0) Object.assign(b, {sx: x, sy: y});
+        b.n++; b.cx += x; b.cy += y;
+        if (x < b.x) b.x = x;
+        if (x > b.x1) b.x1 = x;
+        if (y < b.y) b.y = y;
+        if (y > b.y1) b.y1 = y;
+    }
+    for (const b of out) {b.cx /= b.n; b.cy /= b.n;}
     return out;
 }
 
-// 只留種子 pts 所在的塊（連通規則同 blobs），其他像素清成透明
-export function keepBlobs(src, {t, pts})
+// 只留種子 pts 所在的塊（分塊規則同 blobs，erode 也要一樣），其他像素清成透明
+export function keepBlobs(src, {t, pts, erode = 0})
 {
     const c = clone(src), w = c.width, h = c.height, g = c.getContext('2d');
     const img = g.getImageData(0, 0, w, h), d = img.data;
-    const keep = new Uint8Array(w * h), stack = new Int32Array(w * h);
-    for (const [x, y] of pts)
-    {
-        const i = y * w + x;
-        if (x < 0 || y < 0 || x >= w || y >= h || keep[i] || d[i * 4 + 3] < t) continue;
-        let top = 0;
-        stack[top++] = i;
-        keep[i] = 1;
-        while (top)
-        {
-            const j = stack[--top], jx = j % w, jy = (j - jx) / w;
-            for (let dy = -1; dy <= 1; dy++)
-            {
-                const ny = jy + dy;
-                if (ny < 0 || ny >= h) continue;
-                for (let dx = -1; dx <= 1; dx++)
-                {
-                    const nx = jx + dx, k = ny * w + nx;
-                    if (nx < 0 || nx >= w || keep[k] || d[k * 4 + 3] < t) continue;
-                    keep[k] = 1;
-                    stack[top++] = k;
-                }
-            }
-        }
-    }
-    for (let i = 0; i < w * h; i++) if (!keep[i]) d[i * 4 + 3] = 0;
+    const {lab} = labels(d, w, h, t, erode), keep = new Set();
+    for (const [x, y] of pts) if (x >= 0 && y >= 0 && x < w && y < h && lab[y * w + x]) keep.add(lab[y * w + x]);
+    for (let i = 0; i < w * h; i++) if (!keep.has(lab[i])) d[i * 4 + 3] = 0;
     g.putImageData(img, 0, 0);
     return c;
 }
