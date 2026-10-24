@@ -989,15 +989,15 @@ export function uDropdownBase(scene,config={})
         onchange,
         multi=false,
         width=200,
+        maxItems=10,
     }=config;
 
-    let _menu=null,_cover=null,_val;
+    let _menu=null,_cover=null,_scroll=null,_btns=[],_val;
 
     const parseOpt=(value)=>{
         if(!multi) {return value;}
         const opt={text:'', value:0};
-        const childs = _menu?.getChildren();
-        childs?.forEach((child)=>{
+        _btns.forEach((child)=>{
             if(child.value)
             {
                 opt.value|=child.opt.value;
@@ -1015,8 +1015,7 @@ export function uDropdownBase(scene,config={})
     }
 
     const setAll=(on)=>{
-        const childs = _menu?.getChildren();
-        childs?.forEach((child)=>{child.opt&&child.setValue(on)})
+        _btns.forEach((child)=>{child.setValue(on)})
         const opt=parseOpt();
         setValue(opt);
     }
@@ -1028,20 +1027,25 @@ export function uDropdownBase(scene,config={})
             {
                 _menu.hide();
                 _cover.visible=false;
+                _scroll?.mouseWheel(false);
             }
             else
             {
                 _menu.show().repos();
                 _cover.visible=true;
+                _scroll?.mouseWheel(true);
             }
         }
     }
 
     const remove=()=>{
+        _scroll?.mouseWheel(false);
         _menu?.destroy();
         _cover?.destroy();
         _menu=null;
         _cover=null;
+        _scroll=null;
+        _btns=[];
     }
 
     const repos=function(){if(this.bottom>GM.h){this.y-=(this.bottom-GM.h);}}
@@ -1062,16 +1066,29 @@ export function uDropdownBase(scene,config={})
                         .setOrigin(0)
         _menu.repos = repos;
 
-        // 3) add options            
-        options.forEach((opt)=>{
-            const btn=uButton.call(_menu,scene,{
+        // 3) add options（超過 maxItems 改放進捲動清單）
+        const addOpt = (opt)=>{
+            const btn=uButton(scene,{
                                     text:opt.text,
                                     style:multi?UI.BTN.CHECK:UI.BTN.OPTION,
-                                    ext:{expand:true},
                                     onclick:(btn)=>{setValue(parseOpt(btn.opt));}})
             btn.opt=opt;
             if(multi) {btn.setValue((_val&opt.value)===opt.value);}
-        })
+            return btn;
+        }
+
+        let list = _menu;
+        if(options.length > maxItems)
+        {
+            // 捲動清單的感應區要排在選項底下，所以先量高度、建清單，再建選項
+            const probe = addOpt(options[0]);
+            const h = probe.layout().height;
+            probe.destroy();
+            _scroll = list = uScroll.call(_menu,scene,{width:btn.width, height:h*maxItems, bg:{}, space:{}});
+            _scroll.mouseWheel(true);
+        }
+        _btns = options.map(addOpt);
+        _btns.forEach((b)=>{list.add(b,{expand:true});})
 
         if(multi)
         {
@@ -1098,6 +1115,7 @@ export function uDropdownBase(scene,config={})
     const dd = uButton(scene,{text:{text:text,fixedWidth:width,align:align},
                                 style:UI.BTN.DROP,
                                 onclick:onclick});
+    dd.once('destroy', remove);
     if(this&&this.add) {this.add(dd,ext);}
 
 

@@ -67,6 +67,8 @@ export default class DB
 
     static item(id) { return this._itemDB?.[id]; }
 
+    static itemIds() { return Object.keys(this._itemDB ?? {}); }
+
     static role(id) { return this._roleDB?.[id]; }
 
     static roleIds() { return Object.keys(this._roleDB ?? {}); }

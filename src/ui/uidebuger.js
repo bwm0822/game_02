@@ -10,6 +10,7 @@ import Quality from '../systems/quality.js'
 import {exec} from '../systems/script.js'
 import Story from '../systems/story.js'
 import Line from '../systems/line.js'
+import DB from '../data/db.js'
 
 
 function cmd_get(args)
@@ -29,7 +30,7 @@ function cmd_w(args)
     {
         let p={x:Number(args[1]),y:Number(args[2])}
         let weight=Number(args[3])
-        send('setWeight',p,weight)
+        this.send('setWeight',p,weight)
     }
 }
 
@@ -88,6 +89,83 @@ function cmd_pop(args)
     this.print(`[color=blue]✓ 彈出訊息: ${msg}[/color]\n`);
 }
 
+///////////////////////////////////////////////////
+// 指令頁的下拉表單：fields 依序產生欄位（dd=下拉選項、否則是輸入框），build 組回指令字串交給 process()
+//  - if：欄位顯示條件；fresh：每次重建都重算預設值（目前時間、玩家位置）
+//  - parse：右鍵選單直接丟指令字串進來時，反解析回表單值
+///////////////////////////////////////////////////
+const CAT_NAME = Object.fromEntries(Object.entries(GM.CAT).map(([k,v])=>[v,k]));
+
+const opts = (arr)=>arr.map((o)=>typeof o==='object'?o:{text:String(o),value:o});
+
+const npcOpts = ()=>DB.roleIds().filter((id)=>DB.role(id).kind==='npc').map((id)=>({text:id,value:id}));
+
+const catOpts = ()=>{
+    const cats = [...new Set(DB.itemIds().map((id)=>DB.item(id).cat))];
+    return [{text:'全部',value:'all'},
+            ...cats.filter((c)=>c!==undefined).map((c)=>({text:CAT_NAME[c],value:c})),
+            ...(cats.includes(undefined)?[{text:'其他',value:'other'}]:[])];
+}
+
+const itemOpts = (cat)=>DB.itemIds()
+    .filter((id)=>{
+        const c = DB.item(id).cat;
+        return cat==='all' || (cat==='other'?c===undefined:c===cat);
+    })
+    .map((id)=>({text:DB.item(id).lab??id,value:id}));
+
+const qOpts = ()=>[{text:'(全部)',value:''},
+                    ...Object.keys(DB.qualities()).filter((k)=>!k.includes('*')).map((k)=>({text:k,value:k}))];
+
+const isNpcQ = (name)=>Quality.decl(name)?.scope==='npc';
+
+const CMDS =
+{
+    raw:    {text:'手打', usage:'輸入完整指令',
+            fields:[{key:'line', get w() {return GM.w/2-150;}}],
+            build:(v)=>v.line},
+
+    get:    {usage:'取得金錢／道具',
+            fields:[{key:'type', dd:()=>opts(['item','gold']), w:80},
+                    {key:'cat', dd:catOpts, w:130, if:(v)=>v.type==='item'},
+                    {key:'id', dd:(v)=>itemOpts(v.cat), w:160, if:(v)=>v.type==='item'},
+                    {key:'count', lab:'數量', def:'1'}],
+            build:(v)=>`get ${v.type} ${v.type==='item'?v.id:'-'} ${v.count}`},
+
+    w:      {usage:'設定格子權重（世界座標）',
+            fields:[{key:'x', lab:'x', fresh:true, def:()=>String(Math.round(GM.player?.x??0))},
+                    {key:'y', lab:'y', fresh:true, def:()=>String(Math.round(GM.player?.y??0))},
+                    {key:'weight', lab:'weight', def:'0'}],
+            build:(v)=>`w ${v.x} ${v.y} ${v.weight}`},
+
+    t:      {usage:'查詢／設定時間',
+            fields:[{key:'mode', dd:()=>opts([{text:'查詢',value:'?'},{text:'設定',value:'set'}]), w:80},
+                    {key:'d', lab:'天', fresh:true, def:()=>String(TimeSystem.time.d), if:(v)=>v.mode==='set'},
+                    {key:'h', lab:'時', fresh:true, def:()=>String(TimeSystem.time.h), if:(v)=>v.mode==='set'},
+                    {key:'m', lab:'分', fresh:true, def:()=>String(TimeSystem.time.m), if:(v)=>v.mode==='set'}],
+            build:(v)=>v.mode==='set'?`t d:${v.d} h:${v.h} m:${v.m}`:'t'},
+
+    q:      {usage:'查詢／設定 quality',
+            fields:[{key:'name', dd:qOpts, w:180},
+                    {key:'npc', dd:npcOpts, w:100, if:(v)=>isNpcQ(v.name)},
+                    {key:'op', dd:()=>opts([{text:'查詢',value:'?'},'=','+','-']), w:70, if:(v)=>v.name},
+                    {key:'val', def:'10', if:(v)=>v.name&&v.op!=='?'}],
+            build:(v)=>{
+                if(!v.name) {return 'q';}
+                const full = isNpcQ(v.name) ? `${v.npc}.${v.name}` : v.name;
+                return v.op==='?' ? `q ${full}` : `q ${full}${v.op}${v.val}`;
+            }},
+
+    story:  {usage:'列出 NPC 的對話卡與事件卡',
+            fields:[{key:'npc', dd:npcOpts, w:120}],
+            build:(v)=>`story ${v.npc}`,
+            parse:(args)=>({npc:args[1]})},
+
+    pop:    {usage:'測試彈出訊息',
+            fields:[{key:'msg', lab:'訊息', def:'測試訊息', w:250}],
+            build:(v)=>`pop ${v.msg}`},
+}
+
 
 export default class UiDebuger extends UiFrame
 {
@@ -107,6 +185,8 @@ export default class UiDebuger extends UiFrame
         }
         super(scene, config, UI.TAG.DEBUGER);
         UiDebuger.instance = this;
+        this._cmd = Object.keys(CMDS)[0];
+        this._vals = {};
         this.addBg(scene,{color:GM.COLOR.PRIMARY,...UI.BG.BORDER_DARK})
             .addTop(scene, UI.TAG.DEBUGER)
             .addTabs(scene)
@@ -164,9 +244,89 @@ export default class UiDebuger extends UiFrame
         const scene = this.scene;
         this._page.clearAll();
         this._area = this.createArea(scene);
-        this._input = this.addInput(scene);
         this._page.addItem(this._area)
-                    .addItem(this._input)
+                    .addItem(this.createCmdRow(scene));
+        this._params = null;
+        this.buildParams();
+    }
+
+    createCmdRow(scene)
+    {
+        const p = ui.uPanel(scene,{space:{item:10}});
+        ui.uDropdown.call(p, scene, {
+                    width: 100,
+                    ext: {},
+                    options: Object.entries(CMDS).map(([k,d])=>({text:d.text??k,value:k})),
+                    onchange: (v)=>{
+                        if(v===this._cmd) {return;}
+                        this._cmd = v;
+                        this.rebuild();
+                    }})
+                    .setValue(this._cmd);
+        this._usage = ui.uBbc.call(p, scene, {text:'', ext:{proportion:1}});
+        ui.uButton.call(p, scene, {text:'執行', onclick:()=>this.exec()});
+        return p;
+    }
+
+    // 下拉的 onchange 是在選單按鈕的點擊事件裡呼叫，延到下一幀再重建，避免在事件中銷毀選單
+    rebuild()
+    {
+        this.scene.time.delayedCall(0, ()=>{if(this._tab==='cmd') {this.buildParams();}});
+    }
+
+    buildParams()
+    {
+        const scene = this.scene;
+        const def = CMDS[this._cmd];
+        const v = this._vals[this._cmd] ??= {};
+        def.fields.forEach((f)=>{
+            if(f.fresh || !(f.key in v)) {v[f.key] = typeof f.def==='function' ? f.def() : (f.def ?? '');}
+        });
+
+        if(this._params) {this._page._panel.remove(this._params, true);}
+        this._usage.setText(`[color=gray]${def.usage}[/color]`);
+        this._inputs = {};
+        this._params = ui.uPanel(scene,{space:{item:10}});
+        def.fields.forEach((f)=>{
+            if(f.if && !f.if(v)) {return;}
+            if(f.lab) {ui.uBbc.call(this._params, scene, {text:f.lab});}
+            if(f.dd) {this.addDD(f, v);}
+            else
+            {
+                this._inputs[f.key] = ui.uInput.call(this._params, scene, {
+                                width: f.w ?? 60,
+                                height: 36,
+                                btn: false,
+                                onenter: (t)=>{v[f.key]=t;}});
+                this._inputs[f.key].setValue(v[f.key]);
+            }
+        });
+        this._page.addItem(this._params);
+        this.layout();
+    }
+
+    addDD(f, v)
+    {
+        const options = f.dd(v);
+        if(!options.some((o)=>o.value===v[f.key])) {v[f.key] = options[0].value;}
+        ui.uDropdown.call(this._params, this.scene, {
+                    width: f.w ?? 120,
+                    ext: {},
+                    options: options,
+                    onchange: (val)=>{
+                        if(val===v[f.key]) {return;}
+                        v[f.key] = val;
+                        this.rebuild();
+                    }})
+                    .setValue(v[f.key]);
+    }
+
+    exec()
+    {
+        const v = this._vals[this._cmd];
+        Object.entries(this._inputs).forEach(([k,input])=>{v[k]=input.getValue();});
+        const cmd = CMDS[this._cmd].build(v).trim();
+        if(cmd) {this.process(cmd);}
     }
 
     print(str)
@@ -179,6 +339,7 @@ export default class UiDebuger extends UiFrame
     {
         dlog(T.UI)('cmd =',cmd)
         const args = cmd.split(' ');
+        this.print(`[color=gray]> ${cmd}[/color]\n`);
         try
         {
             const func = eval(`cmd_${args[0]}`);
@@ -186,7 +347,7 @@ export default class UiDebuger extends UiFrame
         }
         catch(e)
         {
-            this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')
+            this.print('[color=yellow][無效指令!!!][/color]\n')
         }
         // if(func) {func.bind(this)(args);}
         // else {this.print(cmd+'  [color=yellow][無效指令!!!][/color]\n')}
@@ -196,23 +357,11 @@ export default class UiDebuger extends UiFrame
     {
         return scene.rexUI.add.textArea({
                     width: GM.w/2-50,
-                    height: 230,
+                    height: 180,
                     background: ui.uRect(scene,{color:GM.COLOR.LIGHT}),
                     text: ui.uBbc(scene),
                     //content: '123\n456\n789\n1111\n777\n888\n999\n111'
                 })
-    }
-
-    addInput(scene)
-    {
-        const config =
-        {
-            width: GM.w/2-150,
-            height: 36,
-            onclick: this.process.bind(this)
-        }
-        const input=ui.uInput(scene, config);
-        return input;
     }
 
     ///////////////////////////////////////////////////
@@ -306,7 +455,14 @@ export default class UiDebuger extends UiFrame
     show(cmd)
     {
         super.show();
-        if(cmd) {this._tabs.init('top'); this.process(cmd);}
+        if(cmd)
+        {
+            const args = cmd.split(' ');
+            const parse = CMDS[args[0]]?.parse;
+            if(parse) {this._cmd = args[0]; Object.assign(this._vals[args[0]] ??= {}, parse(args));}
+            this._tabs.init('top');
+            this.process(cmd);
+        }
         else if(!this._tab) {this._tabs.init('top');}
         this.layout();
     }
