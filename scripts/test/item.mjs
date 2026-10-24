@@ -57,13 +57,13 @@ run('item', async t => {
         ie.set('sword_01', ['def'], undefined);
         out.clear = 'def' in S.items.sword_01;
         ie.set('sword_01', ['equip', 'x'], 4);
-        out.keepUnknown = [JSON.stringify(S.items.sword_01.equip.swing), S.items.sword_01.equip.x];
+        out.keepUnknown = [JSON.stringify([S.items.sword_01.equip.ox, S.items.sword_01.equip.oy]), S.items.sword_01.equip.x];
         ie.set('raw_meat', ['cook', 'id'], undefined);
         out.cleanup = 'cook' in S.items.raw_meat;
         ie.undo();
         out.undoCook = S.items.raw_meat.cook?.id;
         ie.undo(); ie.undo(); ie.undo(); ie.undo();
-        out.undoAll = [S.items.sword_01.atk, 'x' in S.items.sword_01.equip];
+        out.undoAll = [S.items.sword_01.atk, S.items.sword_01.equip.x];
         ie.redo();
         out.redo = S.items.sword_01.atk;
         ie.undo();
@@ -324,7 +324,7 @@ run('item', async t => {
         go('sword_02'); go('raw_meat');
         out.reset = [st('效果'), st('烹煮成')];
         go('sword_02');
-        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith('裝備圖（3）'), box('裝備圖').querySelector('.bar [title]')?.title, box('效果').querySelector('.bar [title]')?.title];
+        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith('裝備圖（5）'), box('裝備圖').querySelector('.bar [title]')?.title, box('效果').querySelector('.bar [title]')?.title];
         ie.addEff('sword_02');
         out.addEff = [st('效果'), box('效果').querySelectorAll('.card').length];
         ie.undo();
@@ -388,10 +388,10 @@ run('item', async t => {
     t.check('改欄位不動 key 順序', r.edit[1]);
     t.eq('新欄位接在最後', r.append, 'def');
     t.eq('清空欄位會刪 key', r.clear, false);
-    t.eq('改 equip.x 不動 swing', r.keepUnknown[0], JSON.stringify({aim: -45, grip: {x: 3, y: 28}}));
+    t.eq('改 equip.x 不動其他 key', r.keepUnknown[0], JSON.stringify([0.09375, 0.875]));
     t.eq('清空 cook.id 連 cook 一起刪', r.cleanup, false);
     t.eq('undo 一步', r.undoCook, 'cooked_meat');
-    t.eq('undo 到底', JSON.stringify(r.undoAll), JSON.stringify([15, false]));
+    t.eq('undo 到底', JSON.stringify(r.undoAll), JSON.stringify([15, -13]));
     t.eq('redo', r.redo, 99);
     t.eq('新增效果', r.addEff, 1);
     t.eq('刪光效果連 effects 一起刪', r.delEff, false);

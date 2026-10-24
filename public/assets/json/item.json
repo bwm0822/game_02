@@ -5,14 +5,10 @@
     "gold": 15,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22,
-      "swing": {
-        "aim": -45,
-        "grip": {
-          "x": 3,
-          "y": 28
-        }
-      }
+      "y": 18,
+      "x": -13,
+      "ox": 0.09375,
+      "oy": 0.875
     },
     "type": "melee",
     "range": 1,
@@ -101,14 +97,10 @@
     "gold": 25,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22,
-      "swing": {
-        "aim": -45,
-        "grip": {
-          "x": 3,
-          "y": 28
-        }
-      }
+      "y": 18,
+      "x": -13,
+      "ox": 0.09375,
+      "oy": 0.875
     },
     "type": "melee",
     "range": 1,
@@ -138,14 +130,10 @@
     "gold": 35,
     "equip": {
       "sprite": "weapons:3",
-      "y": 22,
-      "swing": {
-        "aim": -45,
-        "grip": {
-          "x": 3,
-          "y": 28
-        }
-      }
+      "y": 18,
+      "x": -13,
+      "ox": 0.09375,
+      "oy": 0.875
     },
     "type": "melee",
     "range": 1,
@@ -162,8 +150,7 @@
     "equip": {
       "sprite": "weapons:22",
       "y": 24,
-      "x": 15,
-      "aim": 45
+      "x": 15
     },
     "type": "ranged",
     "range": 5,
@@ -180,8 +167,7 @@
     "equip": {
       "sprite": "weapons:26",
       "y": -8,
-      "x": 15,
-      "aim": 45
+      "x": 15
     },
     "type": "ranged",
     "range": 5,
@@ -1569,14 +1555,10 @@
     "gold": 10,
     "equip": {
       "sprite": "weapons:6",
-      "y": 22,
-      "swing": {
-        "aim": -45,
-        "grip": {
-          "x": 5,
-          "y": 23
-        }
-      }
+      "y": 13,
+      "x": -11,
+      "ox": 0.15625,
+      "oy": 0.71875
     },
     "type": "melee",
     "range": 1,

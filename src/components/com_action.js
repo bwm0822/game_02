@@ -63,32 +63,35 @@ export class COM_Action extends Com
         root.updateDepth();
     }
 
-    async _attack_Melee(target, onHit)
+    // 武器動畫(anim.json)播到 ready 時前撲，播到 hit 才命中；回傳前撲是否成功(成功才要 anim_rest 收回)
+    async _lungeAnim(anim, pt)
+    {
+        const {root}=this.ctx
+        let ok = false;
+        await root.anim_play?.(anim, pt, {ready:async()=>{ok = await root.anim_lunge?.(pt, 12, {duration:100, ease:'cubic.in'});}});
+        return ok;
+    }
+
+    async _attack_Melee(target, onHit, anim='chop')
     {
         const {root}=this.ctx
         root.face?.(target.pos);
         root.setDepth(root.y+FRONT);
-        await root.anim_swing?.('raise');
-        const ok = await root.anim_lunge?.(target.pos, 12, {duration:100, ease:'cubic.in'});
-        await root.anim_swing?.('strike');
+        const ok = await this._lungeAnim(anim, target.pos);
         const hit = onHit?.();
-        root.anim_swing?.(null);
         if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
         await hit;
         root.updateDepth();
     }
 
-    // 斬擊：起手轉到 dirPt 方向 -90°，前衝 12px 到位才順時針掃 180°，掃完所有目標同時命中
+    // 斬擊：預設 sweep 動畫(轉向 dirPt)，掃完所有目標同時命中
     async _sweepAttack(targets, dirPt, ability)
     {
         const {root}=this.ctx
         root.face?.(dirPt);
         root.setDepth(root.y+FRONT);
-        await root.anim_swing?.('sweepRaise', dirPt);
-        const ok = await root.anim_lunge?.(dirPt, 12, {duration:100, ease:'cubic.in'});
-        await root.anim_swing?.('sweep', dirPt);
+        const ok = await this._lungeAnim(ability?.anim ?? 'sweep', dirPt);
         const hits = targets.map(t=>this._onDamage(t, ability));
-        root.anim_swing?.(null);
         if(ok) {await root.anim_rest?.({duration:150, ease:'quad.out'});}
         await Promise.all(hits);
         root.updateDepth();
@@ -110,11 +113,8 @@ export class COM_Action extends Com
         root.removeWeight?.();
         root.addWeight?.(landing);
         root.anim_idle?.(false);
-        await root.anim_swing?.('raise');
-        await this._step(contact, Math.max(60, 60*reach/GM.TILE_W), 'quad.in', {onUpdate});
-        await root.anim_swing?.('strike');
+        await root.anim_play?.(ability?.anim ?? 'chop', target.pos, {ready:()=>this._step(contact, Math.max(60, 60*reach/GM.TILE_W), 'quad.in', {onUpdate})});
         const hit = this._onDamage(target, ability);
-        root.anim_swing?.(null);
         await Promise.all([this._step(landing, 150, 'quad.out', {onUpdate}), hit]);
         root.updateDepth();
     }
@@ -146,11 +146,11 @@ export class COM_Action extends Com
         target.updateDepth();
     }
 
-    async _attack_Ranged(target, onHit)
+    async _attack_Ranged(target, onHit, anim='aim')
     {
         const {root}=this.ctx
         root.face?.(target.pos);
-        const aimed = await root.anim_aim?.(target.pos);
+        await root.anim_play?.(anim, target.pos);
         root.anim_lunge?.(target.pos, -4, {duration:60, ease:'quad.out'})
             ?.then(ok=>ok && root.anim_rest?.({duration:120, ease:'quad.inOut'}));
         const sprite = {img:'arrow', deg:0};
@@ -160,7 +160,7 @@ export class COM_Action extends Com
                             {onComplete:()=>{onHit?.();resolve();}}
                         );
             });
-        if(aimed) {root.anim_aim?.(null);}
+        root.anim_end?.();
     }
 
     _attack_Spell(target, onHit, sprite)
@@ -316,8 +316,8 @@ export class COM_Action extends Com
             if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
             if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
             if(travel.type==='fall')        {return this._attack_Fall(target, onHit, travel);}
-            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit);}
-            if(travel.type==='melee')       {return this._attack_Melee(target, onHit);}
+            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit, ability.anim);}
+            if(travel.type==='melee')       {return this._attack_Melee(target, onHit, ability.anim);}
         };
 
         if(targets.length>1 && travel?.parallel===false)   // 多目標且明確設定依序執行

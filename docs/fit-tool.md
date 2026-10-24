@@ -1,16 +1,16 @@
 # 試穿（tools/fit）
 
-選角色、穿上裝備，用數字調整角色部件跟裝備疊在身上的擺放，武器可以擺出瞄準／揮砍的姿勢來對握把。開法：`npm run dev` 後開 `/tools/` 的「試穿」分頁（殼見 [tools-shell.md](tools-shell.md)）。
+選角色、穿上裝備，用數字調整角色部件跟裝備疊在身上的擺放（「擺放」分頁）；「動畫」分頁編 `anim.json` 的武器動畫（下劈、橫掃、瞄準…）。開法：`npm run dev` 後開 `/tools/` 的「試穿」分頁（殼見 [tools-shell.md](tools-shell.md)）。
 
 ## 範圍
 
 - **角色**：只列紙娃娃型（有 `head` 或 `hand` 的），依 `kind` 分組。
-- **五格**：武器／頭盔／護甲／手套／靴子，畫成跟遊戲裝備欄一樣的圖形格（空格是遊戲 `CAT2ICON` 的剪影）。點格子＝選中（金框）＋跳出挑選視窗，視窗列同 `cat` 且有 `equip` 的道具 icon＋名稱（沒有 `equip` 的道具穿上也看不到，所以不列），第一格是「卸下」，點了就穿上並關窗，點窗外／Esc 不改；格子下方只顯示選中格的道具名稱＋擺放數字（武器再加 aim／握把），切角色時預設選中武器格。選角色時照 `inv.equips` 帶入原本的穿搭；換裝只是試穿，**不會寫回** `inv.equips`（要改穿搭用角色編輯器）。
+- **五格**：武器／頭盔／護甲／手套／靴子，畫成跟遊戲裝備欄一樣的圖形格（空格是遊戲 `CAT2ICON` 的剪影）。點格子＝選中（金框）＋跳出挑選視窗，視窗列同 `cat` 且有 `equip` 的道具 icon＋名稱（沒有 `equip` 的道具穿上也看不到，所以不列），第一格是「卸下」，點了就穿上並關窗，點窗外／Esc 不改；格子下方只顯示選中格的道具名稱＋擺放數字，切角色時預設選中武器格。選角色時照 `inv.equips` 帶入原本的穿搭；換裝只是試穿，**不會寫回** `inv.equips`（要改穿搭用角色編輯器）。
 - **可調**（只用數字欄，畫布只負責預覽）：
   - 角色 `body`/`head`/`hair`/`hand` 的 `scale/x/y/a/ox/oy` → `role.json`
   - 裝備 `equip` 的 `scale/x/y/a/ox/oy` → `item.json`。**裝備擺放是全角色共用的**，在這個角色身上調準了，換別的角色可能會歪
   - 裝備 `equip.hideHair`（「藏頭髮」勾選框）：穿著任一件有它的裝備時遊戲不畫頭髮，預覽同規則，頭髮那列會標「目前被頭盔隱藏」；要調頭髮先卸下該裝備
-  - 武器 `equip.aim`（有它才會瞄準）、`swing.aim`、`swing.grip.x/y`（揮砍要三個都有）
+  - 武器的 `ox/oy` 就是握把（動畫繞原點轉），武器圖要統一朝向畫（動畫的角度直接是圖片角度）
   - 欄位清空＝刪 key（遊戲用預設值，placeholder 顯示預設值）；不是數字的不寫
 - 不做：改 sprite（用道具／角色編輯器）、改像素（用紙娃娃）、跨角色比對、`ext` 的獨立擺放（跟主圖同一組數字，跟遊戲一樣）。
 
@@ -18,22 +18,40 @@
 
 合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、依 `DEPTH` 疊。虛線是 view、黃十字是錨點（兩個都能關），可開物理 b／佔格 g／互動 z 框、翻面。
 
+右欄分上下兩塊：上面畫布區太大時自己捲（重繪保留捲動位置，換倍率／角色／分頁時置中），下面控制面板（顯示選項、動畫列）固定在底部一直看得到，兩個分頁共用。
+
 倍率有 ×1～×6 和「遊戲」：遊戲畫面固定 1024×768、`Scale.FIT` 塞進視窗、鏡頭沒 zoom，所以「遊戲」＝`min(螢幕寬/1024, 螢幕高/768)`，是全螢幕玩時的大小（視窗越小遊戲裡越小）。canvas 照 `devicePixelRatio` 開，放大不糊。
 
-## 武器姿勢
+## 武器動畫（anim.json）
 
-姿勢數學在 `src/core/pose.js`（純函式、不碰 Phaser）：`aimPose()`、`swingPose()`、`gripAt()`、`swingPlace()`、`dirTo()`。遊戲的 `COM_Anim._aim/_swing` 用 tween 推 `t`，工具用滑桿推，所以兩邊算出來一樣；**改揮砍動作改 pose.js，不要在 com_anim.js 另寫一份**。
+`public/assets/json/anim.json` 是**手寫來源檔**（沒有轉檔），全武器共用的具名動畫：
 
-- 姿勢下拉：靜止／瞄準／下劈／橫掃，串法照 `com_action.js`：`aim→收回`、`raise→strike→收回`、`sweepRaise→sweep→收回`（中間的 lunge 整隻前撲不演）。武器缺對應參數的選項反灰，換武器後不能用就跳回靜止。
-- 時間滑桿 0～1 是整段的進度，`▶ 播放` 照遊戲的 duration／ease 跑一次（ease 只實作用到的 `quad.out`、`cubic.in`）。
-- 目標角度：0＝右、90＝下、180＝左。面向跟遊戲的 `face()` 一樣跟著目標翻（目標在左邊就翻面），姿勢模式下「翻面」勾選反灰。
-- 只有武器主圖會動，`ext` 不動（遊戲的 swinger／aimer 也只拿 `sps[0]`）。
+```json
+"chop": {"follow": false, "pivot": {"x": -13, "y": 12}, "ready": 120, "hit": 200, "back": 150, "hold": false,
+         "keys": [{"t": 120, "x": -13, "y": 6, "a": -90, "ease": "quad.out"},
+                  {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "cubic.in", "path": "arc"}]}
+```
+
+- 影格 `x/y`＝武器原點（`ox/oy`，也就是握把）在 shape 本地座標（面向右、相對 view 中心）的**絕對位置**，`a`＝sprite 角度；`t` 是從開始算的 ms，`ease` 是進入這格的緩動（`pose.js` 的 `EASE`），`path:'arc'` 繞 `pivot` 做極座標補間（方向跟角度變化同向），預設直線。
+- 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`quad.out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
+- `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
+- `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。
+- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫看技能 `meta.anim`（`ability.xlsx`），沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。
+- 數學在 `src/core/pose.js`（純函式、不碰 Phaser）：`animTrack()` 攤影格、`poseAt()` 取某 ms 的姿勢；遊戲用 tween 推時間、工具用滑桿推，兩邊一樣；**改動畫數學改 pose.js，不要在 com_anim.js 另寫一份**。
+
+## 動畫分頁
+
+- 上方選武器（同五格），武器的擺放數字也在這（調 `ox/oy` 對握把）；動畫下拉＋新增／複製／刪除，名稱欄直接改名（英數字底線，改名／刪除只提示，技能 `meta.anim` 跟 `com_action.js` 預設要自己改）。
+- 屬性：轉向目標、舉著等、支點 x/y、ready、hit、back；影格表 `t/x/y/a/ease/path`，點列＝選中並跳到那一格；「新增影格」用時間軸目前位置的當下姿勢插一格。
+- 畫布：拖武器＝移選中影格的位置、拖白點（旋轉把手，原點往圖片中心延伸兩倍）＝轉角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格。虛線＝原點軌跡，半透明＝其他影格。拖拉中直接改資料、放開才記一筆 undo。`follow` 動畫轉了向也能拖（位移會反轉回影格座標）。
+- 時間軸：◆ 影格、R ready、H hit 都能拖（影格夾在前後格之間、R/H 不超過最後一格），灰底是收回段；點空白跳時間，滑桿靠近影格會吸附。`▶ 播放` 時 ready 停 100ms、hold 停 300ms 模擬遊戲裡等程式的時間。
+- 目標角度：0＝右、90＝下、180＝左。面向跟遊戲的 `face()` 一樣跟著目標翻，動畫分頁「翻面」反灰。
 
 ## 存讀檔
 
-不走 `common/doc.js`（它一頁只管一個檔），自己管兩份：
+不走 `common/doc.js`（它一頁只管一個檔），自己管三份（`role.json`、`item.json`、`anim.json`）：
 
-- undo／redo 一筆記兩個檔的快照（Ctrl+Z／Ctrl+Y，最多 300 步）。
+- undo／redo 一筆記三個檔的快照（Ctrl+Z／Ctrl+Y，最多 300 步）。
 - 存檔（Ctrl+S）只寫有改的檔；寫之前比對硬碟，被別人改過就問「合併／覆蓋／取消」（`merge3`，同 `doc.js`），寫完 `notifySaved()` 廣播。
 - 收到別的分頁存檔：那個檔沒改過就重讀（undo 紀錄從現在重算），有改就只提示、存檔時合併。`textures.json` 更新時重畫預覽。
 - 換角色時修改留著，一起存；未存狀態回報給殼（分頁 ●、關頁警告）。
@@ -42,10 +60,11 @@
 
 | 檔案 | 內容 |
 |---|---|
-| `tools/fit/main.js` | 狀態、讀寫、undo、清單／表格／預覽、姿勢推進 `poseAt()` |
+| `tools/fit/main.js` | 狀態、讀寫、undo、清單／表格／預覽、動畫分頁（影格表、畫布拖拉、時間軸、播放） |
 | `tools/fit/fit.css` | 版面 |
-| `src/core/pose.js` | 瞄準／揮砍姿勢純函式（遊戲共用） |
+| `src/core/pose.js` | 武器動畫數學純函式（遊戲共用） |
+| `public/assets/json/anim.json` | 武器動畫資料（手寫來源檔） |
 
 `DEPTH`、`KINDS` 從 `tools/role/schema.js` 拿。
 
-測試：`node scripts/test/fit.mjs`（OPFS 當假的專案根目錄：只列紙娃娃型、帶入原裝、換裝不寫回、數字寫進對的檔、清空刪 key、跨檔 undo、hideHair 藏頭髮、姿勢可用與總長、瞄準角度、遊戲倍率、只存有改的檔、外部修改合併）。
+測試：`node scripts/test/fit.mjs`（OPFS 當假的專案根目錄：只列紙娃娃型、帶入原裝、換裝不寫回、數字寫進對的檔、清空刪 key、跨檔 undo、hideHair 藏頭髮、動畫總長／轉向／ready 暫停、新增影格、畫布拖位置／把手、改名、×6 時控制面板仍在畫面上與捲動保留、遊戲倍率、只存有改的檔、外部修改合併）。

@@ -1,0 +1,34 @@
+{
+  "chop": {
+    "follow": false,
+    "pivot": {"x": -13, "y": 12},
+    "ready": 120,
+    "hit": 200,
+    "back": 150,
+    "keys": [
+      {"t": 120, "x": -13, "y": 6, "a": -90, "ease": "quad.out"},
+      {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "cubic.in", "path": "arc"}
+    ]
+  },
+  "sweep": {
+    "follow": true,
+    "pivot": {"x": 0, "y": 0},
+    "ready": 120,
+    "hit": 420,
+    "back": 150,
+    "keys": [
+      {"t": 120, "x": 0, "y": -14, "a": -45, "ease": "quad.out"},
+      {"t": 420, "x": 0, "y": 14, "a": 135, "ease": "cubic.in", "path": "arc"}
+    ]
+  },
+  "aim": {
+    "follow": true,
+    "hold": true,
+    "pivot": {"x": 15, "y": 8},
+    "hit": 60,
+    "back": 60,
+    "keys": [
+      {"t": 60, "x": 26.3, "y": 19.3, "a": -45, "ease": "quad.out"}
+    ]
+  }
+}

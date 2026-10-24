@@ -1,6 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
-import {AIM, dirTo, aimPose, gripAt, swingPlace, swingPose} from '../core/pose.js'
+import DB from '../data/db.js'
+import {dirTo, animTrack, poseAt, trackEnd} from '../core/pose.js'
 const _tag = 'anim';
 
 //--------------------------------------------------
@@ -132,74 +133,72 @@ export class COM_Anim extends Com
         return dirTo(pt.x-root.pos.x, pt.y-root.pos.y, Math.sign(root.view.shape.scaleX) || 1);
     }
 
-    // pt 為 null 表示還原；姿勢見 core/pose.js
-    _aim(pt, {duration=AIM.duration, ease=AIM.ease}={})
-    {
-        const {root} = this.ctx;
-        const aimer = root.view?.aimer;
-        if(!aimer) {return Promise.resolve(false);}
-        const sp = aimer.sp;
-        aimer.base ??= {x:sp.x, y:sp.y, angle:sp.angle};
-        this._twAim?.stop();
-
-        const pose = aimPose(sp, aimer.base, aimer.aim, pt ? this._dirTo(pt) : null);
-        const proxy = {t:0};
-        return new Promise((resolve)=>{
-            const tw = this.scene.tweens.add({
-                targets: proxy,
-                t: 1,
-                duration: duration,
-                ease: ease,
-                onUpdate: ()=>this._place(sp, pose(proxy.t)),
-                onComplete: ()=>{
-                    if(!pt && this._twAim===tw) {this._twAim=null; aimer.base=null;}
-                    resolve(true);
-                },
-                onStop: ()=>resolve(false),
-            });
-            this._twAim = tw;
-        });
-    }
-
     _place(sp, {x, y, angle}) {sp.setAngle(angle).setPosition(x, y);}
 
-    // phase 見 core/pose.js 的 swingPose()；pt 只有 sweepRaise/sweep 用到
-    _swing(phase=null, pt=null)
+    // 時間軸 from→to(ms) 線性推進，緩動在 poseAt 裡算；被 _stop 打斷回傳 false
+    _seg(run, from, to)
     {
-        const {root} = this.ctx;
-        const swinger = root.view?.swinger;
-        if(!swinger) {return Promise.resolve(false);}
-        const {sp, grip} = swinger;
-        this._twSwing?.stop();
-
-        swinger.base ??= {g:gripAt(sp, grip), angle:sp.angle};
-        const base = swinger.base;
-        if(this._dead) {this._place(sp, swingPlace(sp, grip, base.g, base.angle)); swinger.base = null; return Promise.resolve(false);}
-
-        const {pose, duration, ease} = swingPose(phase, sp, swinger, base, pt ? this._dirTo(pt) : null);
-        const proxy = {t:0};
+        if(to<=from) {return Promise.resolve(this._run===run);}
+        const proxy = {ms:from};
         return new Promise((resolve)=>{
-            const tw = this.scene.tweens.add({
+            run.tw = this.scene.tweens.add({
                 targets: proxy,
-                t: 1,
-                duration: duration,
-                ease: ease,
-                onUpdate: ()=>this._place(sp, pose(proxy.t)),
-                onComplete: ()=>{
-                    if(!phase && this._twSwing===tw) {this._twSwing=null; swinger.base=null;}
-                    resolve(true);
-                },
+                ms: to,
+                duration: to - from,
+                onUpdate: ()=>this._place(run.sp, poseAt(run.track, proxy.ms)),
+                onComplete: ()=>resolve(this._run===run),
                 onStop: ()=>resolve(false),
             });
-            this._twSwing = tw;
         });
     }
+
+    _stop()
+    {
+        const run = this._run;
+        this._run = null;
+        run?.tw?.stop();
+        run?.release();
+    }
+
+    // 播 anim.json 的武器動畫(見 core/pose.js)；播到 ready 標記先等 ready()(身體位移)做完，
+    // 回傳的 Promise 在 hit 標記 resolve(true＝有播)；之後自動播完收回，hold 動畫停在最後一格等 _end()
+    _play(id, pt=null, {ready}={})
+    {
+        const sp = this.ctx.root.view?.weapon;
+        const anim = DB.anim(id);
+        if(!sp || !anim || this._dead) {return (async()=>{await ready?.(); return false;})();}
+
+        this._stop();
+        if(this._wpRest?.sp!==sp) {this._wpRest = {sp, x:sp.x, y:sp.y, angle:sp.angle};}
+        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wpRest, pt ? this._dirTo(pt) : 0);
+        const run = {sp, track};
+        const free = new Promise((resolve)=>{run.release = resolve;});
+        this._run = run;
+
+        const [readyAt, hitAt, end] = [anim.ready ?? 0, anim.hit ?? track.end, track.end];
+        return new Promise((resolve)=>{
+            (async()=>{
+                if(!await this._seg(run, 0, readyAt)) {return resolve(false);}
+                await ready?.();
+                if(this._run!==run || !await this._seg(run, readyAt, hitAt)) {return resolve(false);}
+                resolve(true);
+                if(!await this._seg(run, hitAt, end)) {return;}
+                if(anim.hold) {await free;}
+                if(this._run===run && await this._seg(run, end, trackEnd(track))) {this._run = null; this._wpRest = null;}
+            })();
+        });
+    }
+
+    _end() {this._run?.release();}
 
     _ondead()
     {
         this._idle(false);
         this._dead = true;
-        this._swing(null);
+        this._stop();
+        const rest = this._wpRest;
+        if(rest?.sp.active) {this._place(rest.sp, rest);}
+        this._wpRest = null;
     }
 
     //------------------------------------------------------
@@ -217,8 +216,8 @@ export class COM_Anim extends Com
         root.anim_lunge = this._lunge.bind(this);
         root.anim_rest = this._rest.bind(this);
         root.anim_hit = this._hit.bind(this);
-        root.anim_aim = this._aim.bind(this);
-        root.anim_swing = this._swing.bind(this);
+        root.anim_play = this._play.bind(this);
+        root.anim_end = this._end.bind(this);
 
         // 3.註冊(event)給其他元件或外部呼叫
         root.on(GM.EVT.ONDEAD, this._ondead.bind(this));

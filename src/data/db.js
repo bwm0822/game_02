@@ -40,6 +40,8 @@ export default class DB
 
         this._fxDB = scene.cache.json.get('fx');
 
+        this._animDB = scene.cache.json.get('anim');
+
         this._navDB = scene.cache.json.get('navgraph');
 
         this._storyDB = scene.cache.json.get('story');
@@ -78,6 +80,8 @@ export default class DB
     static ability(id) { return this._abilityDB?.[id]; }
 
     static fx(id) { return this._fxDB?.[id]; }
+
+    static anim(id) { return this._animDB?.[id]; }
 
     static navgraph() { return this._navDB; }
 

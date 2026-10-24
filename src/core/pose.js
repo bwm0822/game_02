@@ -1,13 +1,21 @@
-// 武器瞄準／揮砍的姿勢數學(純函式、不碰 Phaser)：COM_Anim 用 tween 推 t，tools/fit 用滑桿推 t，兩邊算出來一樣
-// 座標都是 shape 本地(面向右)，面向左時 shape 已鏡像
-// sp 只讀 {x, y, angle, width, height, originX, originY, scaleX, scaleY, displayHeight}，回傳的姿勢是 {x, y, angle}
+// 武器動畫(anim.json)的姿勢數學(純函式、不碰 Phaser)：COM_Anim 用 tween 推時間，tools/fit 用滑桿推，兩邊算出來一樣
+// 座標都是 shape 本地(面向右)，面向左時 shape 已鏡像；姿勢是武器 sprite 的 {x, y, angle}(位置＝原點 ox/oy 所在)
+// anim: {follow, pivot:{x,y}, ready, hit, back, hold, keys:[{t, x, y, a, ease, path}]}，t/ready/hit/back 單位 ms
 
-const SWING = {LIFT:12, RAISE:-90, ARM:6, CHOP:120, SWEEP:180, SWEEP_ARM:14};
-export const AIM = {duration:60, ease:'quad.out'};
+export const BACK_EASE = 'quad.out';
 
 const rad = (deg)=>deg*Math.PI/180;
+const deg = (r)=>r*180/Math.PI;
 const lerp = (a, b, t)=>a + (b - a)*t;
-const lerpG = (from, to, t)=>({x:lerp(from.x, to.x, t), y:lerp(from.y, to.y, t)});
+
+const pow = (p)=>({in:(t)=>t**p, out:(t)=>1 - (1 - t)**p, inOut:(t)=>t<0.5 ? (2*t)**p/2 : 1 - (2 - 2*t)**p/2});
+const [QUAD, CUBIC] = [pow(2), pow(3)];
+export const EASE = {
+    'linear': (t)=>t,
+    'quad.in': QUAD.in, 'quad.out': QUAD.out, 'quad.inOut': QUAD.inOut,
+    'cubic.in': CUBIC.in, 'cubic.out': CUBIC.out, 'cubic.inOut': CUBIC.inOut,
+    'sine.inOut': (t)=>(1 - Math.cos(Math.PI*t))/2,
+};
 
 // 同 Phaser.Math.Angle.ShortestBetween：b-a 換到 [-180, 180)
 export function shortest(a, b)
@@ -20,92 +28,53 @@ export function shortest(a, b)
 // 目標方向(度)；sign 是 shape.scaleX 的正負
 export const dirTo = (dx, dy, sign=1)=>Math.atan2(dy, dx*sign)*180/Math.PI;
 
-// 瞄準：以圖片中心為支點旋轉(origin 是底部中心，所以 x/y 要補償)；base 是瞄準前的 {x, y, angle}，deg 為 null 表示還原
-export function aimPose(sp, base, aim, deg=null)
+export const animEnd = (anim)=>anim.keys.at(-1)?.t ?? 0;
+
+// 把動畫攤成一串影格：第 0 格是 from(當下姿勢)，最後補一格收回 rest；follow 的影格繞 pivot 轉 dir 度
+// 進第一格跟收回用最短角度(兩端不是編輯出來的姿勢)，中間影格照數字 lerp，所以轉向由數字決定
+export function animTrack(anim, from, rest=from, dir=0)
 {
-    const to = deg==null ? base.angle : sp.angle + shortest(sp.angle, deg - aim);
-    const h = sp.displayHeight/2;
-    const r0 = rad(base.angle);
-    const [cx, cy] = [base.x + Math.sin(r0)*h, base.y - Math.cos(r0)*h];
-    const a0 = sp.angle;
-    return (t)=>{
-        const angle = lerp(a0, to, t);
-        const r = rad(angle);
-        return {x:cx - Math.sin(r)*h, y:cy + Math.cos(r)*h, angle};
-    };
+    const pivot = anim.pivot ?? {x:0, y:0};
+    const rot = anim.follow ? dir : 0;
+    const [c, s] = [Math.cos(rad(rot)), Math.sin(rad(rot))];
+    const keys = anim.keys.map((k)=>{
+        const [dx, dy] = [k.x - pivot.x, k.y - pivot.y];
+        return {t:k.t, x:pivot.x + dx*c - dy*s, y:pivot.y + dx*s + dy*c, angle:k.a + rot, ease:k.ease, path:k.path};
+    });
+    if(keys.length)
+    {
+        const off = from.angle + shortest(from.angle, keys[0].angle) - keys[0].angle;
+        keys.forEach((k)=>{k.angle += off;});
+    }
+    const last = keys.at(-1) ?? {t:0, angle:from.angle};
+    const end = animEnd(anim);
+    const back = {t:end + (anim.back ?? 0), x:rest.x, y:rest.y, angle:last.angle + shortest(last.angle, rest.angle), ease:BACK_EASE};
+    return {pivot, end, frames:[{t:0, x:from.x, y:from.y, angle:from.angle}, ...keys, back]};
 }
 
-// grip 是圖格內握柄像素座標(左上為原點)，轉 angle 度後相對 sprite 位置的偏移
-function gripOffset(sp, grip, angle)
+export const trackEnd = (track)=>track.frames.at(-1).t;
+
+// arc：握把繞 pivot 做極座標補間，繞的方向跟武器角度變化同向(角度沒變就走最短)
+function arcAt(p, k0, k1, e)
 {
-    const ox = (grip.x - sp.width*sp.originX) * sp.scaleX;
-    const oy = (grip.y - sp.height*sp.originY) * sp.scaleY;
-    const r = rad(angle);
-    return [ox*Math.cos(r) - oy*Math.sin(r), ox*Math.sin(r) + oy*Math.cos(r)];
+    const a0 = deg(Math.atan2(k0.y - p.y, k0.x - p.x));
+    let d = shortest(a0, deg(Math.atan2(k1.y - p.y, k1.x - p.x)));
+    const turn = k1.angle - k0.angle;
+    if(turn>0 && d<0) {d += 360;}
+    else if(turn<0 && d>0) {d -= 360;}
+    const r = lerp(Math.hypot(k0.x - p.x, k0.y - p.y), Math.hypot(k1.x - p.x, k1.y - p.y), e);
+    const a = rad(a0 + d*e);
+    return {x:p.x + Math.cos(a)*r, y:p.y + Math.sin(a)*r};
 }
 
-export function gripAt(sp, grip)
+export function poseAt(track, ms)
 {
-    const [dx, dy] = gripOffset(sp, grip, sp.angle);
-    return {x:sp.x+dx, y:sp.y+dy};
-}
-
-// 握把在 g、轉 angle 度時 sprite 的姿勢
-export function swingPlace(sp, grip, g, angle)
-{
-    const [dx, dy] = gripOffset(sp, grip, angle);
-    return {x:g.x - dx, y:g.y - dy, angle};
-}
-
-// phase: 'raise' 握把上提、劍繞握把往後轉；'strike' 手臂(軸心→握把)繞軸心往前砍，劍同時甩到跟手臂一直線；null 收回原狀
-// 'sweepRaise' 手臂(角色中心→握把)跟劍連成一直線，轉到 dir -90°；'sweep' 從那裡順時針掃 180°
-// raise/strike 姿勢固定，不看目標方向；base 是揮砍前的 {g:握把位置, angle}
-export function swingPose(phase, sp, {aim, grip}, base, dir=null)
-{
-    const [g0, a0] = [gripAt(sp, grip), sp.angle];
-    let pose, duration, ease;
-    if(phase==='raise')
-    {
-        const g1 = {x:base.g.x, y:base.g.y - SWING.LIFT};
-        const a1 = a0 + shortest(a0, base.angle + SWING.RAISE);
-        pose = (t)=>[lerpG(g0, g1, t), lerp(a0, a1, t)];
-        [duration, ease] = [120, 'quad.out'];
-    }
-    else if(phase==='strike')
-    {
-        const p = {x:base.g.x, y:base.g.y - SWING.LIFT + SWING.ARM};
-        const end = -90 + SWING.CHOP;
-        const a1 = a0 + ((((end - aim) - a0) % 360) + 360) % 360;   // 劍順時針甩到跟手臂一直線
-        pose = (t)=>{
-            const r = rad(-90 + SWING.CHOP*t);
-            return [{x:p.x + Math.cos(r)*SWING.ARM, y:p.y + Math.sin(r)*SWING.ARM}, lerp(a0, a1, t)];
-        };
-        [duration, ease] = [80, 'cubic.in'];
-    }
-    else if(phase==='sweepRaise' || phase==='sweep')
-    {
-        const from = dir - SWING.SWEEP/2;
-        const arm = (deg)=>{
-            const r = rad(deg);
-            return {x:Math.cos(r)*SWING.SWEEP_ARM, y:Math.sin(r)*SWING.SWEEP_ARM};
-        };
-        if(phase==='sweepRaise')
-        {
-            const a1 = a0 + shortest(a0, from - aim);
-            pose = (t)=>[lerpG(g0, arm(from), t), lerp(a0, a1, t)];
-            [duration, ease] = [120, 'quad.out'];
-        }
-        else
-        {
-            pose = (t)=>[arm(from + SWING.SWEEP*t), a0 + SWING.SWEEP*t];
-            [duration, ease] = [300, 'cubic.in'];
-        }
-    }
-    else
-    {
-        const a1 = a0 + shortest(a0, base.angle);
-        pose = (t)=>[lerpG(g0, base.g, t), lerp(a0, a1, t)];
-        [duration, ease] = [150, 'quad.out'];
-    }
-    return {pose:(t)=>swingPlace(sp, grip, ...pose(t)), duration, ease};
+    const fs = track.frames;
+    let i = 1;
+    while(i < fs.length - 1 && ms > fs[i].t) {i++;}
+    const [k0, k1] = [fs[i-1], fs[i]];
+    const u = k1.t > k0.t ? Math.min(1, Math.max(0, (ms - k0.t)/(k1.t - k0.t))) : 1;
+    const e = (EASE[k1.ease] ?? EASE.linear)(u);
+    const pos = k1.path==='arc' ? arcAt(track.pivot, k0, k1, e) : {x:lerp(k0.x, k1.x, e), y:lerp(k0.y, k1.y, e)};
+    return {...pos, angle:lerp(k0.angle, k1.angle, e)};
 }

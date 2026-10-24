@@ -244,8 +244,7 @@ class View extends Phaser.GameObjects.Container
 
     // anim.js 會用到
     get shape() {return this._shape;}
-    get aimer() {return this._aimer;}   // 可瞄準的裝備 {sp, aim}，aim 是圖片原生朝向(度)
-    get swinger() {return this._swinger;}   // 可揮砍的裝備 {sp, aim, grip}，grip 是圖格內握柄像素座標(左上為原點)
+    get weapon() {return this._held?.sps[0] ?? this._weapon?.[0];}   // 播武器動畫的 sprite，手上暫拿的工具優先
 
     //--------------------------------------------------
     // outline
@@ -941,8 +940,6 @@ export class RoleView extends View
         let sps = this._addPart(item.equip, item.cat);
         this._sortParts();
         this._equips.push(...sps);
-        if(item.equip.aim!=null && sps[0]) {this._aimer = {sp:sps[0], aim:item.equip.aim};}
-        if(item.equip.swing && sps[0]) {this._swinger = {sp:sps[0], ...item.equip.swing};}
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
     }
 
@@ -952,8 +949,6 @@ export class RoleView extends View
         this._held = null;
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
-        this._aimer = null;
-        this._swinger = null;
         this._weapon = null;
     }
 
@@ -962,17 +957,15 @@ export class RoleView extends View
     {
         const dat = DB.item(id);
         if(!dat?.equip) {return ()=>{};}
-        const held = {sps:this._addPart(dat.equip, dat.cat), aimer:this._aimer, swinger:this._swinger};
+        const held = {sps:this._addPart(dat.equip, dat.cat)};
         this._sortParts();
         this._weapon?.forEach((sp)=>{sp.setVisible(false);});
-        this._aimer = null;
-        this._swinger = dat.equip.swing && held.sps[0] ? {sp:held.sps[0], ...dat.equip.swing} : null;
         this._held = held;
         return ()=>{
             if(this._held!==held) {return;}
             held.sps.forEach((sp)=>{sp.destroy();});
             this._weapon?.forEach((sp)=>{sp.setVisible(true);});
-            [this._aimer, this._swinger, this._held] = [held.aimer, held.swinger, null];
+            this._held = null;
         };
     }
 
