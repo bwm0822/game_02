@@ -1020,6 +1020,7 @@ function setMode(type)
     else if (type === 'auto') S.mode = autoEnter(L) ?? {type: 'move'};
     else if (type === 'pixel') S.mode = pixelStart(L);
     else if (type === 'split') S.mode = splitStart(L) ?? {type: 'move'};
+    else if (type === 'icon') S.mode = {type, layer: L};
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -2286,6 +2287,8 @@ function refreshModePanel()
     if (m.type === 'auto') refreshAuto(m);
     $('modePixel').hidden = m.type !== 'pixel';
     $('modeSplit').hidden = m.type !== 'split';
+    $('modeIcon').hidden = m.type !== 'icon';
+    if (m.type === 'icon') iconPreview(m);
     if (m.type === 'split')
     {
         $('spRevoke').disabled = !m.gid;
@@ -2771,6 +2774,79 @@ function sidecar(L, name)
     if (o.oy !== 1) cell.oy = o.oy;
     o.xlsx = JSON.stringify(cell).slice(1, -1);
     return o;
+}
+
+// ---------- icon ----------
+// size×size、順時針轉 a 度、內容佔 fill%；icon 模式的設定存 localStorage，自動模式存武器 icon 固定用 ICON_AUTO
+
+const ICON_KEY = 'paperdoll.icon';
+const ICON_AUTO = {size: 100, a: 45, fill: 90};
+
+function iconLoad()
+{
+    let v = null;
+    try {v = JSON.parse(localStorage.getItem(ICON_KEY));}
+    catch {}
+    return {...ICON_AUTO, ...v};
+}
+
+function iconSet(v)
+{
+    S.icon = v;
+    try {localStorage.setItem(ICON_KEY, JSON.stringify(v));}
+    catch {}
+}
+
+// 自動零件從縮小前的圖轉，不然是把縮成 10% 的 equip 圖再放大
+function iconSrc(L)
+{
+    const i = L.auto ? autoBase(L) : -1;
+    return i < 0 ? L.canvas : PX.replay(L.src, L.ops.slice(0, i));
+}
+
+function iconOf(c, {size, a, fill})
+{
+    // cos(90°) 不是剛好 0，不扣一點會多出一格、整張圖偏半格糊掉
+    const r = a * Math.PI / 180, cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r)), dim = (v) => Math.ceil(v - 1e-6);
+    const rot = PX.newCanvas(dim(c.width * cs + c.height * sn), dim(c.width * sn + c.height * cs));
+    const g = rot.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.translate(rot.width / 2, rot.height / 2);
+    g.rotate(r);
+    g.drawImage(c, -c.width / 2, -c.height / 2);
+    const b = PX.opaqueBounds(rot, trimT());
+    if (!b) return null;
+    const k = size * fill / 100 / Math.max(b.w, b.h);
+    const fit = PX.xform(rot, {sx: b.x, sy: b.y, sw: b.w, sh: b.h, w: Math.max(1, Math.round(b.w * k)), h: Math.max(1, Math.round(b.h * k))});
+    const out = PX.newCanvas(size, size);
+    out.getContext('2d').drawImage(fit, Math.floor((size - fit.width) / 2), Math.floor((size - fit.height) / 2));
+    return out;
+}
+
+// 來源圖照圖層目前的 canvas 快取，圖層在模式裡被改（undo）就重取
+function iconPreview(m)
+{
+    if (m.canvas !== m.layer.canvas) Object.assign(m, {canvas: m.layer.canvas, src: iconSrc(m.layer)});
+    const c = iconOf(m.src, S.icon), pv = $('icPreview');
+    pv.width = pv.height = S.icon.size;
+    if (c) pv.getContext('2d').drawImage(c, 0, 0);
+    $('icInfo').textContent = c ? `${S.icon.size}×${S.icon.size}，來源 ${m.src.width}×${m.src.height}${m.src !== m.layer.canvas ? '（縮小前）' : ''}` : '沒有不透明的像素';
+    $('icSave').disabled = !c;
+}
+
+async function saveIcon()
+{
+    const m = S.mode;
+    if (m.type !== 'icon' || !needRoot()) return;
+    const L = m.layer, o = {...S.icon};
+    const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
+    const r = await saveDialog(`存 icon（${o.size}×${o.size}）`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-icon`, '.png', bake);
+    if (!r) return;
+    const c = iconOf(r.bake ? PX.fade(m.src, L.opacity) : m.src, o);
+    if (!c) return status('沒有不透明的像素');
+    await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(c));
+    refreshThumbs();
+    status(`已存 ${join(r.path, r.name)}.png`);
 }
 
 // ---------- 遊戲資料 ----------
@@ -3483,6 +3559,19 @@ $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
 $('auItem').onclick = () => saveItems().catch(e => status(e.message));
 
+S.icon = iconLoad();
+for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => true], ['icFill', 'fill', v => v > 0 && v <= 100]])
+{
+    $(id).value = S.icon[f];
+    $(id).onchange = () => {
+        const v = f === 'a' ? +$(id).value : Math.round(+$(id).value);
+        if (Number.isFinite(v) && ok(v)) iconSet({...S.icon, [f]: v});
+        $(id).value = S.icon[f];
+        refreshModePanel();
+    };
+}
+$('icSave').onclick = () => saveIcon().catch(e => status(e.message));
+
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
     e.preventDefault();
@@ -3535,4 +3624,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon};

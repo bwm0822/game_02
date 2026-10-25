@@ -54,6 +54,7 @@
             <button data-mode="auto">自動</button>
             <button data-mode="pixel">像素</button>
             <button data-mode="split">前後片</button>
+            <button data-mode="icon">icon</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、自動模式分塊、icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
@@ -170,6 +171,18 @@
             <div id="spInfo" class="dim spAfter"></div>
             <div class="hint">洋紅色那塊：存成「前後片」時變成後片（被頭蓋住，最底層的「-back」層），其他留在前片；存成「挖除」時挖成透明、只有前片。切那塊的方法：「沿線」從起點（青色十字）往上、往左找輪廓線，沿著線切出右下那塊；「魔術棒」從起點往外擴散，碰到輪廓線或透明就停，閉運算填平寬度 ≤ 2 倍的縫，「下／右 N px」：選到的下緣／右緣往外 N px 內是透明就連中間的線一起選（先下後右），描外圈（裡面的洞一起選）。切換存成會帶切法：前後片＝沿線，挖除＝魔術棒＋下，之後可以手動改。輪廓線＝不透明、而且亮度 &lt; 門檻；在畫布上移動，色塊跟 (R,G,B,A) 顯示游標底下的顏色；-／+ 一次調 1，按住連續調。拖起點、改條件會重新計算；拖頂點、點邊加點微調；Ctrl+Z／Ctrl+Y 一步一步退。已經拆過的圖層再進來可以接著改；按「撤掉前後片」會刪掉前後片、原圖重新顯示</div>
             <div class="row2"><button class="ok">確定</button><button class="cancel">取消</button><button id="spRevoke">撤掉前後片</button></div>
+        </div>
+
+        <div id="modeIcon" class="mode" hidden>
+            <div class="flRow">
+                <label>尺寸 <input id="icSize" type="number" min="1" step="1"></label>
+                <label>角度 <input id="icA" type="number" step="any"></label>
+                <label>佔比 <input id="icFill" type="number" min="1" max="100" step="1">%</label>
+            </div>
+            <canvas id="icPreview"></canvas>
+            <div id="icInfo" class="dim"></div>
+            <div class="hint">選取的圖層順時針轉「角度」→ 裁到不透明範圍（門檻）→ 等比縮放塞進「尺寸 × 佔比」→ 置中放到 尺寸×尺寸。自動零件用縮小前的圖，不會糊。數字是全域設定；自動模式「存到 item…」的武器 icon 固定 100｜45｜90，不看這裡</div>
+            <div class="row2"><button id="icSave">存檔…</button><button class="cancel">離開</button></div>
         </div>
 
         <div class="title">屬性</div>

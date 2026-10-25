@@ -1335,6 +1335,71 @@ run('paperdoll', async t => {
          JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"ox":0,"oy":0.6}', 'sword-1', '{"sprite":"sword-1","scale":0.25}', true]));
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
 
+    // icon 模式：順時針轉 a 度、佔比、自動零件用縮小前的圖、存檔
+    const ic = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory();
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const box = (c) => {
+            const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+            let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+            for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++)
+                if (d[(y * c.width + x) * 4 + 3] > 128) {x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);}
+            return [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
+        };
+        const a = (c, x, y) => c.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        const c = document.createElement('canvas'); c.width = 100; c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.setRoot(root);
+        const L = pd.addLayer(await createImageBitmap(c), 'bar', null, null, null);
+        type('icSize', 64); type('icA', 0); type('icFill', 50);
+        pd.setMode('icon');
+        const pv = $('icPreview');
+        out.upright = [pd.S.mode.type, pv.width, ...box(pv)];
+        type('icA', 90);
+        out.flat = box(pv);
+        type('icSize', 100); type('icA', 45); type('icFill', 90);
+        const b = box(pv);
+        out.diag = [b[2] >= 86 && b[2] <= 90 && b[3] >= 86 && b[3] <= 90, Math.abs(b[0] + b[2] / 2 - 50) <= 1, a(pv, 85, 14) > 128, a(pv, 14, 14), a(pv, 14, 85) > 128];
+        out.saved = JSON.parse(localStorage.getItem('paperdoll.icon'));
+        type('icFill', 0);
+        out.bad = [pd.S.icon.fill, $('icFill').value];
+
+        const p = pd.saveIcon();
+        await until(() => $('dlgSave').open);
+        out.defName = $('dlgName').value;
+        $('dlgSave').close('ok');
+        await p;
+        const f = await createImageBitmap(await (await root.getFileHandle('bar-icon.png')).getFile());
+        out.file = [f.width, f.height];
+
+        // 自動零件：用縮小前（裁切後）的圖
+        pd.cancelMode();
+        pd.autoSet({kind: 'weapon', weapon: {pct: 10, x: 0, y: 0, a: 0, ox: 0.5, oy: 0.85}});
+        pd.select(L);
+        pd.setMode('auto');
+        pd.applyMode();
+        const W = pd.S.layers.find(M => M.auto?.key === 'weapon');
+        pd.cancelMode();
+        pd.select(W);
+        pd.setMode('icon');
+        out.hires = [W.canvas.width, W.canvas.height, pd.S.mode.src.width, pd.S.mode.src.height, $('icInfo').textContent.includes('縮小前')];
+        pd.cancelMode();
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('icon：轉 0 度、64×64、佔比 50%＝直立置中', JSON.stringify(ic.upright), JSON.stringify(['icon', 64, 30, 16, 4, 32]));
+    t.eq('icon：轉 90 度＝橫的', JSON.stringify(ic.flat), JSON.stringify([16, 30, 32, 4]));
+    t.eq('icon：45 度、佔比 90%＝塞進 90×90 置中、頂端朝右上', JSON.stringify(ic.diag), JSON.stringify([true, true, true, 0, true]));
+    t.eq('icon：設定寫回 localStorage', JSON.stringify(ic.saved), JSON.stringify({size: 100, a: 45, fill: 90}));
+    t.eq('icon：不合法的數字不收', JSON.stringify(ic.bad), JSON.stringify([90, '90']));
+    t.eq('icon：存檔預設 <名>-icon、寫 尺寸×尺寸 的 PNG', JSON.stringify([ic.defName, ...ic.file]), JSON.stringify(['bar-icon', 100, 100]));
+    t.eq('icon：自動零件用縮小前的圖', JSON.stringify(ic.hires), JSON.stringify([2, 16, 20, 160, true]));
+
     const th = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
         const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('th', {create: true});

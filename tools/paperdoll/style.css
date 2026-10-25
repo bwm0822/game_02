@@ -71,6 +71,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .flRow input[type=number] { width: 36px; }
 .swatch { width: 40px; height: 18px; border: 1px solid #555; border-radius: 3px; }
 .swatch.empty { background: repeating-conic-gradient(#777 0 25%, #555 0 50%) 0 0 / 8px 8px; }
+#icPreview { align-self: flex-start; max-width: 100%; border: 1px solid #555; background: repeating-conic-gradient(#777 0 25%, #555 0 50%) 0 0 / 8px 8px; }
 #props { display: flex; flex-direction: column; gap: 4px; }
 
 dialog { background: #25272b; color: #ddd; border: 1px solid #555; width: 420px; }
