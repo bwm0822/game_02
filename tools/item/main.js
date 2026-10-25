@@ -262,8 +262,8 @@ function draw()
 
     const ids = Object.keys(S.items);
     V.renderList([
-        ...[...SC.CATS, ''].map(c => [n => c ? `${SC.CAT_NAMES[c]}（${n}）` : `無分類（${n}）`, ids.filter(id => (S.items[id].cat ?? '') === c)]),
-        ['不認識的分類', ids.filter(id => S.items[id].cat && !SC.CATS.includes(S.items[id].cat))],
+        ...[...SC.CATS, ''].map(c => [n => c ? `${SC.CAT_NAMES[c]}（${n}）` : `無分類（${n}）`, ids.filter(id => (S.items[id].cat ?? '') === c), c]),
+        ['不認識的分類', ids.filter(id => S.items[id].cat && !SC.CATS.includes(S.items[id].cat)), '#unknown'],
     ]);
     if (S.view === 'form') renderForm();
     else V.renderTable(SC.TABS, {

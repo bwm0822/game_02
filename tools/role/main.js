@@ -386,10 +386,10 @@ function draw()
     V.renderList([
         ...[...SC.KINDS, ''].flatMap(k => {
             const ks = ids.filter(id => kindOf(id) === k);
-            if (k !== 'npc') return [[n => `${k ? SC.KIND_NAMES[k] : '無分類'}（${n}）`, ks]];
-            return locs.map(l => [n => `NPC・${l || '無地點'}（${n}）`, ks.filter(id => (S.data[id].loc ?? '') === l)]);
+            if (k !== 'npc') return [[n => `${k ? SC.KIND_NAMES[k] : '無分類'}（${n}）`, ks, k]];
+            return locs.map(l => [n => `NPC・${l || '無地點'}（${n}）`, ks.filter(id => (S.data[id].loc ?? '') === l), `npc:${l}`]);
         }),
-        ['不認識的分類', ids.filter(id => kindOf(id) && !SC.KINDS.includes(kindOf(id)))],
+        ['不認識的分類', ids.filter(id => kindOf(id) && !SC.KINDS.includes(kindOf(id))), '#unknown'],
     ]);
     if (S.view === 'form') return renderForm();
     V.renderTable(SC.TABS, {

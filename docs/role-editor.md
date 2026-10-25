@@ -10,7 +10,7 @@
 
 ## 介面
 
-- 左：清單依 `kind` 分組（玩家、NPC、盜賊、怪物、動物、頭目、無分類），NPC 再依 `loc` 分組。`kind`／`loc` 只給編輯器分類，遊戲不讀。
+- 左：清單依 `kind` 分組（玩家、NPC、盜賊、怪物、動物、頭目、無分類），NPC 再依 `loc` 分組，每組可收合（見 [tools-shell.md](tools-shell.md) 的 `fold.js`）。`kind`／`loc` 只給編輯器分類，遊戲不讀。
 - 表單（`schema.js`）分「基本／戰鬥／外觀／物品／作息」幾段；顯示的欄位＝基本＋該 kind 建議的（`KIND_FIELDS`）＋已經有值的，其他從「加欄位」叫出來。遊戲沒在讀的 `stats`/`states`/`weapon`/`type` 不在 schema 裡，放最下面「其他欄位」原樣保留。
   - 性格 `style` 的選項從 `com_ai.js` 的 `wTBL` 解析（註解掉的不算，行尾註解當說明），不在表上的會警告「遊戲會當成 passive_fighter」。
   - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。

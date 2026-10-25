@@ -1,11 +1,19 @@
 // 左邊清單、總覽表、combo 選項來源
 import {$, h} from './dom.js';
 import * as IC from './icons.js';
+import {createFold} from './fold.js';
 
 // row: {icon(id), lab(id), warns(id)}
 export function createViews({S, render, dirty}, row)
 {
-    const pick = (id) => {S.sel = id; S.view = 'form'; render();};
+    const F = createFold();
+    const unpick = () => {S.sel = null; S.view = 'table';};
+    // 表單開著時再點一次選到的＝取消選擇
+    const pick = (id) => {
+        if (id === S.sel && S.view === 'form') unpick();
+        else {S.sel = id; S.view = 'form';}
+        render();
+    };
 
     function matchSearch(id)
     {
@@ -13,12 +21,22 @@ export function createViews({S, render, dirty}, row)
         return !q || id.toLowerCase().includes(q) || (row.lab(id) ?? '').toLowerCase().includes(q);
     }
 
-    // groups: [[標題, ids]]，空的組不畫
+    // groups: [[標題, ids, key]]，空的組不畫；key 是收合狀態用的穩定名稱
+    // 摺起來的組裡不留選取：摺的時候取消選擇，從別處選到（新增、改名、undo、表格點 id）就展開那組
     function renderList(groups)
     {
-        $('list').replaceChildren(...groups.map(([t, ids]) => [t, ids.filter(matchSearch)]).filter(([, ids]) => ids.length).flatMap(([t, ids]) => [
-            h('div', {class: 'group'}, typeof t === 'function' ? t(ids.length) : t),
-            ...ids.map(id => {
+        const searching = !!S.search.trim();
+        const shown = groups.map(([t, ids, key]) => [t, ids.filter(matchSearch), key]).filter(([, ids]) => ids.length);
+        const mine = shown.find(([, ids]) => ids.includes(S.sel))?.[2];
+        if (mine !== undefined && !searching) F.open(mine);
+        const keys = shown.map(g => g[2]);
+        const onToggle = () => {
+            if (mine !== undefined && F.folded(mine, searching)) unpick();
+            render();
+        };
+        $('list').replaceChildren(...shown.flatMap(([t, ids, key]) => [
+            F.head(key, typeof t === 'function' ? t(ids.length) : t, keys, onToggle, searching),
+            ...F.folded(key, searching) ? [] : ids.map(id => {
                 const w = row.warns(id);
                 return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, onclick: () => pick(id)},
                     IC.iconEl(row.icon(id), 20),

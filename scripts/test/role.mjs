@@ -125,7 +125,7 @@ run('role', async t => {
         out.badId = 'bad id' in S.data;
 
         // 清單分組、總覽表
-        out.groups = [...document.querySelectorAll('#list .group')].map(g => g.textContent);
+        out.groups = [...document.querySelectorAll('#list .group')].map(g => g.textContent.replace(/^[▾▸]/, ''));
         S.view = 'table'; S.tab = 2; re.render();
         out.table = [document.querySelectorAll('#view tbody tr').length, Object.values(S.data).filter(x => x.kind === 'npc').length];
         S.loc = 'nowhere'; re.render();

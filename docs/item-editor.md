@@ -14,7 +14,7 @@
 
 ## 介面
 
-- 左：依 cat 分組的清單（可搜尋 id／名稱）、＋新道具。
+- 左：依 cat 分組的清單（可搜尋 id／名稱，組可收合，見 [tools-shell.md](tools-shell.md) 的 `fold.js`）、＋新道具。
 - 表單：依 `schema.js` 畫。顯示的欄位＝基本（lab/cat/icon/gold/des）＋該 cat 建議的＋已經有值的已知欄位；其他已知欄位從「加欄位」叫出來。
   - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`ext`、`back`…）放框裡的「其他」JSON。`equip` 比 `drop` 多一個「藏頭髮」（`hideHair`：穿著時 `RoleView` 隱藏頭髮，任何裝備欄都有效）。
   - 可自由輸入又有建議的欄位（list／itemref／tags、材料）不用 `<input list>`（datalist 會拿現有的值篩選，有值時看不到其他選項），改用 `combo.js`：input 加 `data-combo="<datalist id>"`，datalist 只當選項來源；點框或 ↓ 列全部、打字才篩選，選了送 `change` 接原本的 onchange。

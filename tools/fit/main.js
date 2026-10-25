@@ -7,6 +7,7 @@ import '../common/splitter.js';
 import {$, h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
+import {createFold} from '../common/fold.js';
 import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd} from '../../src/core/pose.js';
 
@@ -33,6 +34,8 @@ const S = {
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
 };
+
+const F = createFold();
 
 const roles = () => S.doc['role.json'].data;
 const items = () => S.doc['item.json'].data;
@@ -219,9 +222,14 @@ function drawList()
     const ids = Object.keys(roles()).filter(id => isDoll(roles()[id]));
     const saved = S.doc['role.json'].saved;
     const groups = [...KINDS, ''].map(k => [k, ids.filter(id => (roles()[id].kind ?? '') === k)]).filter(([, g]) => g.length);
+    // 摺起來的組裡不留選取（同 views.js 的 renderList）
+    const mine = groups.find(([, g]) => g.includes(S.rid))?.[0];
+    if (mine !== undefined) F.open(mine);
+    const onToggle = () => (mine !== undefined && F.folded(mine) ? select(null) : render());
+    const keys = groups.map(([k]) => k);
     $('list').replaceChildren(...groups.map(([k, g]) => [
-        h('div', {class: 'group'}, KIND_NAMES[k] ?? '無分類'),
-        g.map(id => h('div', {class: 'item' + (id === S.rid ? ' sel' : ''), onclick: () => select(id)},
+        F.head(k, `${KIND_NAMES[k] ?? '無分類'}（${g.length}）`, keys, onToggle),
+        F.folded(k) ? [] : g.map(id => h('div', {class: 'item' + (id === S.rid ? ' sel' : ''), onclick: () => select(id === S.rid ? null : id)},
             IC.iconEl(roles()[id].icon, 24),
             h('span', {class: 'id'}, id),
             h('span', {class: 'lab'}, roles()[id].lab ?? ''),

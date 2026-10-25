@@ -55,6 +55,8 @@ main { flex: 1; display: flex; min-height: 0; }
 #view { flex: 1; overflow: auto; padding: 8px 16px 32px; min-width: 0; }
 
 .group { color: #888; font-size: 15px; margin: 8px 0 2px; }
+.group.fold { cursor: pointer; user-select: none; }
+.group.fold .arrow { display: inline-block; width: 1em; font-size: .8em; }
 .item { display: flex; align-items: center; gap: 6px; padding: 2px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
 .item:hover { background: #33363c; }
 .item.sel { background: #2f6db5; }
