@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>提示詞</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #path { width: 260px; }
+    .group { display: flex; align-items: center; gap: 4px; cursor: default; user-select: none; }
+    .group { cursor: pointer; }
+    .group .arrow { width: 1em; font-size: .8em; }
+    .group .name { flex: 1; }
+    .group button { padding: 0 6px; font-size: 14px; }
+    .item.drop { box-shadow: inset 0 2px 0 #4a8be0; }
+    .group.drop { box-shadow: inset 0 -2px 0 #4a8be0; }
+    .missing { color: #e66; }
+    .fields textarea { min-height: 120px; }
+    .out { white-space: pre-wrap; background: #2b2d31; border: 1px solid #3a3d44; padding: 6px 8px; margin: 0; max-width: 950px; font: 15px/1.45 ui-monospace, Consolas, monospace; }
+    .users a { color: #8bd; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+    <label>檔案 <input id="path" title="相對專案根目錄"></label>
+    <button id="btnLoad">載入</button>
+    <span class="sep"></span>
+    <button id="btnReload" title="從硬碟重新讀">重新讀取</button>
+    <button id="btnSave" title="Ctrl+S">存檔</button>
+    <span id="dirty" class="dirty" hidden>● 未存檔</span>
+    <span class="sep"></span>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <aside id="left">
+        <input id="search" placeholder="搜尋名稱／內容">
+        <div id="list"></div>
+        <button id="btnNew">＋ 新分類</button>
+    </aside>
+    <section id="view"></section>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

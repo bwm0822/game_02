@@ -29,7 +29,7 @@ npm run dist
 npm run deploy
 
 # 無頭瀏覽器測試（自己開 vite + 無頭 Chrome，只印 ✔/✘，失敗時截圖到 scripts/test/out/）
-node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線、左欄寬度）、debuger.mjs（除錯面板指令表單）
+node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線、左欄寬度）、debuger.mjs（除錯面板指令表單）、prompt.mjs（提示詞工具）
 ```
 
 無頭測試：`scripts/test/harness.mjs` 提供 `newGame()`／`gotoMap()`／`talk()`／`kill()`／`give()`／`q()` 等工具，透過 `src/main.js` 只在開發版掛的 `window.__dbg` 操作遊戲（不走路、不戰鬥，直接呼叫遊戲函式）；角色在 `scene.roles`、其他物件在 `scene.gos`，工具裡的 `d.objs()` 兩者都包含。用的是電腦裡現有的 Chrome（`puppeteer-core`，不下載 Chromium）。改了劇情、地圖生成相關的東西後，優先跑對應的測試而不是請使用者手動玩。
@@ -112,6 +112,7 @@ dist/           # 建置輸出（勿手動修改）
 - **道具編輯器**：`tools/item/`（殼的「道具」分頁）視覺化編輯 `item.json`，欄位定義在 `tools/item/schema.js`（遊戲加新欄位改這裡，沒列到的 key 會原樣保留），icon 選圖器讀 `textures.json`（分頁＝`textures/` 第一層資料夾、檔案總管式瀏覽，支援 `sheet:格子`／`atlas:frame`；dev server 監看 `textures/` 自動重產清單）；存檔保留 key 順序、存前偵測外部修改做道具層級合併、檢查只警告不擋；`tools/common/`（`doc.js` 讀寫/undo/合併/改名核心、`form.js`、`views.js`、icon 選圖器、JSON 框…）給各編輯器共用，`fs.js` 紙娃娃也用；修改前請先參考 [docs/item-editor.md](docs/item-editor.md)
 - **角色編輯器**：`tools/role/`（殼的「角色」分頁）視覺化編輯 `role.json`，欄位定義在 `tools/role/schema.js`，性格選項從 `com_ai.js` 的 `wTBL` 解析、作息選項從 `navgraph.json`；右側是照 `RoleView` 規則的靜態合成預覽；改名／刪除會多掃 `xls/`、`src/`（只列不改）；修改前請先參考 [docs/role-editor.md](docs/role-editor.md)
 - **試穿**：`tools/fit/`（殼的「試穿」分頁）選紙娃娃型角色、五格（武器/頭盔/護甲/手套/靴子）試穿（不寫回 `inv.equips`），用數字調 `role.json` 的 `body`/`head`/`hair`/`hand` 和 `item.json` 的 `equip` 擺放；「動畫」分頁編 **`anim.json`（手寫來源檔）** 的武器動畫（關鍵影格＝武器原點 `ox/oy` 的位置＋sprite 角度，`follow`/`pivot`/`ready`/`hit`/`hold`/`back`），畫布拖武器／旋轉把手／支點、時間軸拖影格；三檔一起 undo、各自合併存檔；動畫數學在 `src/core/pose.js`（純函式，`COM_Anim.anim_play()` 跟工具共用，改動作改這裡），技能用 `meta.anim` 選動畫（預設見 `com_action.js`）；修改前請先參考 [docs/fit-tool.md](docs/fit-tool.md)
+- **提示詞**：`tools/prompt/`（殼的「提示詞」分頁）管理 AI 生圖提示詞，檔案路徑可設（預設 `prompts/prompt.json`，`{items:{分類:[{name,desc,common}]}, common:{名稱:文字}}`），common 支援 `{desc}`/`{name}` 佔位符、沒有就 `desc+'\n'+common`，只複製不打 API；修改前請先參考 [docs/prompt-tool.md](docs/prompt-tool.md)
 - **圖片載入（自動）**：Preloader 不手寫 `load.image`／`spritesheet`／`atlas`，改讀 `public/assets/json/textures.json`（產出檔，`node scripts/textures.js` 掃 `textures/` 產生；`predev*`／`prebuild*` 自動跑、run_all 也跑、工具殼「更新圖片清單」按鈕走 vite dev 的 `POST /__tools/textures`）；同資料夾有 `<key>_atlas.json` 是 atlas，有手寫的 `<key>_sheet.json`（`{w, h?, margin?, spacing?}`）是 spritesheet，其他是單張圖（json 配不到圖、兩個都有、`maps/` 底下放 `_sheet.json` 都會報錯）；`textures/maps/` 不進清單，由 `tilemap.js` 進地圖時照 *.tsj 載（tsj 的 `name` 要等於檔名，集合型 tile 用檔名當 key，Preloader 載過的 Phaser 會跳過不重載）；撞名、`_sheet.json` 跟 tsj 格子不一致、tsj name 不等於檔名都會報錯不產出；Phaser 的 spritesheet 只扣一次 margin、tileset 扣兩次，有 margin 的圖要補邊讓兩邊格數一樣（如 `cursors.png`）
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
