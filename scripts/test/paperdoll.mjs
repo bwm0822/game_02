@@ -1274,7 +1274,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);
         g.fillRect(5, 5, 1, 1);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'sword-1', null, null, null);
         await pd.setAssets(assets);
         pd.autoSet({kind: 'weapon', weapon: {pct: 50, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}});
         pd.setMode('auto');
@@ -1282,7 +1282,7 @@ run('paperdoll', async t => {
         pd.applyMode();
         const W = pd.S.layers.find(M => M.auto?.key === 'weapon');
         out.made = [pd.S.layers.filter(M => M.auto).length, W.canvas.width, W.canvas.height, W.ops.map(o => o.type).join(), W.ox, W.oy,
-                    W.x * pd.S.scale, L.visible, document.querySelector('[name=auKind][value=armor]').disabled];
+                    W.x * pd.S.scale, L.visible, document.querySelector('[name=auKind][value=armor]').disabled, W.name];
 
         const x0 = W.x, y0 = W.y;
         type('au-weapon-oy', 0.5);
@@ -1307,7 +1307,6 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         out.resume = [pd.S.mode.kind, pd.S.mode.parts?.length, pd.S.auto.kind, document.querySelector('[name=auKind][value=weapon]').checked];
 
-        W.name = 'sword-1';
         type('icSize', 32); type('icA', 0);
         let p = await open();
         out.rows = [$('di-weapon-sel').value, !!$('di-helmet-sel'), $('di-weapon-name').value];
@@ -1343,8 +1342,8 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動（武器）：進模式顯示武器那一行、藏起護具的表跟頭盔切線', JSON.stringify(aw.enter), JSON.stringify(['weapon', false, true, true]));
-    t.eq('自動（武器）：一個零件、不去綠、丟雜點、裁到剛好再縮、套用 a/ox/oy、拆完不能切種類', JSON.stringify(aw.made),
-         JSON.stringify([1, 10, 80, 'alpha,blobs,xform,xform', 0.5, 0.85, -13, false, true]));
+    t.eq('自動（武器）：一個零件（名字＝原圖名）、不去綠、丟雜點、裁到剛好再縮、套用 a/ox/oy、拆完不能切種類', JSON.stringify(aw.made),
+         JSON.stringify([1, 10, 80, 'alpha,blobs,xform,xform', 0.5, 0.85, -13, false, true, 'sword-1']));
     t.eq('自動（武器）：改 oy 時 x/y 不動、寫回預設', JSON.stringify(aw.oy), JSON.stringify([0.5, true, 0.5]));
     t.eq('自動（武器）：拖支點＝圖跟著動、x/y 不動、一次拖曳一步', JSON.stringify(aw.pivot), JSON.stringify([true, 0, 0.6, '0', 0, 2]));
     t.eq('自動（武器）：拖支點可以 undo', JSON.stringify(aw.pivotUndo), JSON.stringify([0.5, 0.5]));

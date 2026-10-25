@@ -488,7 +488,7 @@ function autoSplit(m)
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const gid = L.autoSrc ?? autoGid();
     const parts = plan.map(({P, box, keep}) => {
-        const C = cloneAbove(L, `${L.name}-${P.key}`);
+        const C = cloneAbove(L, P.kind === 'weapon' ? L.name : `${L.name}-${P.key}`);
         Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid}});
         const part = {P, C, box, keep};
         autoScale(T, part, S.auto[P.key].pct);
