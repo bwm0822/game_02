@@ -1351,8 +1351,8 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：改 a 只轉預覽', aw.a, 30);
     t.eq('自動（武器）：選零件再進來照零件的種類', JSON.stringify(aw.resume), JSON.stringify(['weapon', 1, 'weapon', true]));
     t.eq('自動（武器）：存到 item 只有一列、id＝圖層名就配到', JSON.stringify(aw.rows), JSON.stringify(['sword-1', false, 'sword-1']));
-    t.eq('自動（武器）：存到 textures/weapons、a 不寫、icon 指 -icon、drop 是原圖', JSON.stringify(aw.saved),
-         JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"ox":0,"oy":0.6}', 'sword-1-icon', '{"sprite":"sword-1","scale":0.25}', true]));
+    t.eq('自動（武器）：存到 textures/weapons、a 有寫、icon 指 -icon、drop 是原圖', JSON.stringify(aw.saved),
+         JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"a":30,"ox":0,"oy":0.6}', 'sword-1-icon', '{"sprite":"sword-1","scale":0.25}', true]));
     t.eq('自動（武器）：-icon 固定 100×100、斜 45° 朝右上，不看 icon 模式的設定', JSON.stringify(aw.icon), JSON.stringify([100, 100, true, 0, true]));
     t.eq('自動（武器）：只勾更新ICON 也會產 -icon', JSON.stringify(aw.iconOnly), JSON.stringify(['sword-1-icon', true]));
     t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');

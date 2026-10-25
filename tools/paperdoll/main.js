@@ -2767,7 +2767,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
 function sidecar(L, name)
 {
     const s = S.scale;
-    const o = {x: round(L.x * s), y: round(L.y * s), a: round(L.a), scale: s, ox: L.ox, oy: L.oy};
+    const o = {x: round(L.x * s), y: round(L.y * s), a: round(L.a, 10), scale: s, ox: L.ox, oy: L.oy};
     const cell = {sprite: name, scale: s, x: o.x, y: o.y};
     if (o.a) cell.a = o.a;
     if (o.ox !== 0.5) cell.ox = o.ox;
@@ -2905,14 +2905,13 @@ function setSplit(it, name, g, icon)
     dropOf(it).sprite = name;
 }
 
-// 武器的角度由 anim.json 管，a 一律不寫
-function writeEquip(e, L, weapon = false)
+function writeEquip(e, L)
 {
     const o = sidecar(L, e.sprite);
     Object.assign(e, {scale: o.scale, x: o.x, y: o.y});
     for (const [k, def] of [['a', 0], ['ox', 0.5], ['oy', 1]])
     {
-        if (o[k] === def || (weapon && k === 'a')) delete e[k];
+        if (o[k] === def) delete e[k];
         else e[k] = o[k];
     }
 }
@@ -3184,7 +3183,7 @@ async function saveItems()
         if (!r.id)
         {
             const equip = {sprite: g ? `${r.name}-front` : r.name};
-            writeEquip(equip, C, r.P.kind === 'weapon');
+            writeEquip(equip, C);
             if (g && !g.cut) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
@@ -3195,7 +3194,7 @@ async function saveItems()
         const it = items[r.id], e = it.equip ??= {};
         if (r.png) setSplit(it, r.name, g, r.icon && ik);
         else if (r.icon) it.icon = ik;
-        if (r.place) {writeEquip(e, C, r.P.kind === 'weapon'); dropScale(it);}
+        if (r.place) {writeEquip(e, C); dropScale(it);}
         done.push(r.id);
     }
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
