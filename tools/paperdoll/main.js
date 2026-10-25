@@ -2344,6 +2344,8 @@ const treeOpt = {
     menu: (e, f) => ctxMenu(e.clientX, e.clientY, [
         ['改名', () => startRename(f)],
         ['刪除', () => deleteFile(f).catch(err => status(err.message))],
+        // 右鍵在已選的列上＝整批，在沒選的列上＝只有那一張
+        ...(/\.png$/i.test(f.fh.name) ? [['批次存武器到 item…', () => saveBatch(picked.has(f.row) ? [...picked].map(r => r.file) : [f]).catch(err => status(err.message))]] : []),
     ]),
     move: true,
 };
@@ -3028,15 +3030,17 @@ function insertAfter(obj, after, id, val)
     return out;
 }
 
+// 武器多認 id＝圖層名（新武器還沒有 equip）
+const itemMatch = (items, P, name) => Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name)
+    ?? (P.kind === 'weapon' && items[name]?.cat === ITEM_CAT[P.key] ? name : null);
+
 function itemDialog(parts, items, keys)
 {
     const dlg = $('dlgItems');
-    // 武器多認 id＝圖層名（新武器還沒有 equip）；新增的 id 沒有流水號，要自己填
+    // 新增的武器 id 沒有流水號，要自己填
     const rows = autoParts(parts[0].P.kind).map(P => {
-        const part = parts.find(p => p.P === P), name = part?.C.name ?? '', cat = ITEM_CAT[P.key];
-        const id = Object.keys(items).find(id => items[id].cat === cat && splitBase(items[id].equip?.sprite) === name)
-                ?? (P.kind === 'weapon' && items[name]?.cat === cat ? name : null);
-        return {P, part, on: !!part, id, name, png: true, place: true, icon: true, newId: ITEM_PRE[P.key] ? nextItemId(items, ITEM_PRE[P.key]) : '', lab: ''};
+        const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
+        return {P, part, on: !!part, id: itemMatch(items, P, name), name, png: true, place: true, icon: true, newId: ITEM_PRE[P.key] ? nextItemId(items, ITEM_PRE[P.key]) : '', lab: ''};
     });
     const reset = (r) => {
         r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
@@ -3143,20 +3147,25 @@ function itemDialog(parts, items, keys)
     }, {once: true}));
 }
 
-// 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）
 async function saveItems()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts || !S.assets) return;
-    const A = S.assets;
     const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
-    if (!d) return;
+    if (d) await commitItems(d.rows, d.bake);
+}
+
+// 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）；all：換 sprite、共用圖（warn）也一起 confirm
+async function commitItems(rows, bake, all = false)
+{
+    const A = S.assets, tag = (r) => r.tag ?? r.P.name;
     let items = await readGameJson('item.json');
-    const keys = await texKeys(), act = itemCheck(d.rows, items, keys);
+    const keys = await texKeys(), act = itemCheck(rows, items, keys);
     const bad = act.filter(r => r.err);
-    if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${r.P.name}：${r.err}`).join('\n')}`);
-    const ask = act.filter(r => r.ask);
-    if (ask.length && !confirm(`會覆蓋：\n${ask.map(r => `${r.P.name}：${r.ask}`).join('\n')}\n要繼續嗎？`)) return;
+    if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${tag(r)}：${r.err}`).join('\n')}`);
+    const ask = act.filter(r => r.ask || all && r.warn)
+        .map(r => `${tag(r)}：${all ? [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；') : r.ask}`);
+    if (ask.length && !confirm(`${all ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
     const done = [], fresh = [];
     for (const r of act)
     {
@@ -3168,16 +3177,16 @@ async function saveItems()
         if (r.png)
         {
             const dir = keys.get(r.name) ?? itemDir(r.P);
-            await put(dir, r.name, splitPng(C, d.bake));
+            await put(dir, r.name, splitPng(C, bake));
             if (g)
             {
-                await put(dir, `${r.name}-front`, splitPng(g.F, d.bake));
-                if (!g.cut) await put(dir, `${r.name}-back`, splitPng(g.B, d.bake));
+                await put(dir, `${r.name}-front`, splitPng(g.F, bake));
+                if (!g.cut) await put(dir, `${r.name}-back`, splitPng(g.B, bake));
             }
         }
         if (r.icon && ik !== r.name)
         {
-            const src = iconSrc(C), c = iconOf(d.bake ? PX.fade(src, C.opacity) : src, ICON_AUTO);
+            const src = iconSrc(C), c = iconOf(bake ? PX.fade(src, C.opacity) : src, ICON_AUTO);
             if (c) await put(itemDir(r.P), ik, c);
         }
         if (!r.id)
@@ -3200,6 +3209,148 @@ async function saveItems()
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
     SH.notifySaved('item.json');
     status(`已存 item.json：${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// ---------- 批次存武器 ----------
+// 檔案樹多選 PNG 右鍵：不建圖層，每張照自動武器的步驟算、套全域預設的 scale/x/y/a/ox/oy，一次存進 item.json
+// 每列只選 item（對不到預設不處理）；更新圖／設定／ICON 整批一組、檔名固定是原圖名，只有已有 equip 的列能勾「保留原設定」
+
+const batchP = () => autoParts('weapon')[0];
+const BT_W = 48;
+
+// 假圖層：給 itemCheck／commitItems 跟自動零件一樣的欄位（src、ops、canvas、擺放、auto）
+function batchPart(src, name)
+{
+    const C = {name, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1, opacity: 1, auto: {key: batchP().key}};
+    const {T, plan} = autoPlan(C, 'weapon');
+    if (!plan.length) return null;
+    const part = {...plan[0], C, T};
+    autoScale(T, part, S.auto.weapon.pct);
+    autoPlace(part, S.auto.weapon);
+    return part;
+}
+
+// 成品照實際像素畫（太大才等比縮小），icon 縮進框裡
+function fitDraw(cv, c, up = false)
+{
+    const g = cv.getContext('2d'), s = Math.min(up ? Infinity : 1, cv.width / c.width, cv.height / c.height);
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.drawImage(c, (cv.width - c.width * s) / 2, (cv.height - c.height * s) / 2, c.width * s, c.height * s);
+}
+
+function batchDialog(rows, items, keys)
+{
+    const dlg = $('dlgBatch'), G = {png: true, place: true, icon: true};
+    const has = (r) => !!(r.id && items[r.id]?.equip);
+    // 新增強制三個都做；保留原設定就不動擺放；沒勾更新圖時檔名＝原本的 sprite（只重產 icon）
+    const apply = (r) => {
+        r.on = !!r.part && r.sel !== '-';
+        r.id = r.on && r.sel || null;
+        r.png = !r.id || G.png;
+        r.place = !r.id || G.place && !(has(r) && r.keep);
+        r.icon = !r.id || G.icon;
+        r.name = r.png ? r.file : splitBase(items[r.id].equip?.sprite) ?? r.file;
+    };
+    const refresh = () => {
+        rows.forEach(apply);
+        const act = itemCheck(rows, items, keys);
+        for (const r of rows)
+        {
+            const e = r.el;
+            e.row.classList.toggle('off', !r.on);
+            e.keep.hidden = !has(r);
+            e.nw.hidden = !r.on || !!r.id;
+            e.ic.classList.toggle('dim', !r.icon);
+            e.msg.className = r.err || !r.part ? 'err' : 'warn';
+            e.msg.textContent = !r.part ? '清除透明之後找不到武器' : !r.on ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；');
+        }
+        $('btOk').disabled = !act.length || act.some(r => r.err);
+    };
+    const opts = [['-', '不處理'], ['', '＋新增'],
+                  ...Object.keys(items).filter(id => items[id].cat === ITEM_CAT[batchP().key])
+                      .map(id => [id, `${id} ${items[id].lab ?? ''}（${items[id].equip?.sprite ?? '沒有 sprite'}）`])];
+    $('btRows').replaceChildren(...rows.map(r => {
+        const row = el('div', 'irow'), body = el('div', 'body');
+        const pic = Object.assign(el('canvas', 'tall'), {width: BT_W, height: BT_W * 2});
+        const ic = Object.assign(el('canvas'), {width: BT_W, height: BT_W});
+        const sel = el('select');
+        sel.append(...opts.map(([value, textContent]) => Object.assign(el('option'), {value, textContent})));
+        sel.value = r.sel;
+        sel.disabled = !r.part;
+        const box = (lab, type) => {
+            const i = Object.assign(el('input'), type && {type}), l = el('label');
+            l.append(...(type ? [i, ` ${lab}`] : [`${lab} `, i]));
+            return [l, i];
+        };
+        const [keepL, keep] = box('保留原設定', 'checkbox');
+        const [idL, id] = box('id'), [labL, lab] = box('lab');
+        const head = el('div', 'line'), nw = el('div', 'line'), msg = el('div');
+        head.append(Object.assign(el('span'), {textContent: r.tag}), sel, keepL);
+        nw.append(idL, labL);
+        body.append(head, nw, msg);
+        row.append(pic, ic, body);
+        r.el = {row, pic, ic, keep: keepL, nw, msg};
+        if (r.part)
+        {
+            fitDraw(pic, r.part.C.canvas);
+            const c = iconOf(iconSrc(r.part.C), ICON_AUTO);
+            if (c) fitDraw(ic, c, true);
+        }
+        keep.checked = r.keep;
+        sel.onchange = () => {r.sel = sel.value; r.keep = keep.checked = true; refresh();};
+        keep.onchange = () => {r.keep = keep.checked; refresh();};
+        id.oninput = () => {r.newId = id.value.trim(); refresh();};
+        lab.oninput = () => {r.lab = lab.value.trim(); refresh();};
+        return row;
+    }));
+    for (const f of ['png', 'place', 'icon'])
+    {
+        $(`bt-${f}`).checked = G[f];
+        $(`bt-${f}`).onchange = () => {G[f] = $(`bt-${f}`).checked; refresh();};
+    }
+    // 數字跟自動面板共用全域預設；scale% 變了才重算成品（icon 用縮小前的圖，不用重算）
+    for (const f of AUTO_F.weapon)
+    {
+        const inp = $(`bt-${f}`);
+        inp.value = S.auto.weapon[f];
+        inp.onchange = () => {
+            const v = +inp.value, old = S.auto.weapon[f];
+            if (!Number.isFinite(v) || f === 'pct' && !(v > 0) || v === old) return void (inp.value = old);
+            autoSet({...S.auto, weapon: {...S.auto.weapon, [f]: v}});
+            for (const r of rows.filter(r => r.part))
+            {
+                if (f === 'pct')
+                {
+                    autoScale(r.part.T, r.part, v);
+                    fitDraw(r.el.pic, r.part.C.canvas);
+                }
+                autoPlace(r.part, S.auto.weapon);
+            }
+            refresh();
+        };
+    }
+    $('btTitle').textContent = `批次存武器到 item.json（${rows.length} 張）`;
+    refresh();
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => res(dlg.returnValue === 'ok'), {once: true}));
+}
+
+// fs：檔案樹列的 file（{fh, path}）
+async function saveBatch(fs)
+{
+    if (!S.assets) return status('先在上方選擇專案資料夾（要有 public/assets/json/item.json）');
+    const files = fs.filter(x => /\.png$/i.test(x.fh.name))
+        .sort((a, b) => join(a.path, a.fh.name).localeCompare(join(b.path, b.fh.name)));
+    if (!files.length) return status('沒有選到 PNG');
+    const items = await readGameJson('item.json'), rows = [];
+    for (const x of files)
+    {
+        const file = x.fh.name.replace(/\.png$/i, '');
+        const part = batchPart(PX.fromImage(await createImageBitmap(await x.fh.getFile())), file);
+        rows.push({P: batchP(), tag: join(x.path, x.fh.name), file, part, sel: part && itemMatch(items, batchP(), file) || '-', keep: true, newId: '', lab: ''});
+    }
+    if (await batchDialog(rows, items, await texKeys())) await commitItems(rows, false, true);
 }
 
 // ---------- 專案 ----------
@@ -3632,4 +3783,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch};

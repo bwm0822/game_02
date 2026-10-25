@@ -1357,6 +1357,93 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
 
+    // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定
+    const bt = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, data) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const fire = (e, v, type) => {e[e.type === 'checkbox' ? 'checked' : 'value'] = v; e.dispatchEvent(new Event(type ?? (e.type === 'text' ? 'input' : 'change')));};
+        await put(json, 'item.json', JSON.stringify({
+            'sword-1': {cat: 'CAT_WEAPON', lab: '青銅劍', equip: {sprite: 'sword-a', scale: 0.25, x: 1, y: 2}},
+            'sword-2': {cat: 'CAT_WEAPON', lab: '鐵劍'},
+        }, null, 2));
+        const dir = await root.getDirectoryHandle('batch', {create: true}), fs = [];
+        for (const [name, draw] of [['sword-a', true], ['blank', false], ['sword-2', true], ['other', true]])
+        {
+            const c = document.createElement('canvas'); c.width = 100; c.height = 200;
+            if (draw) {const g = c.getContext('2d'); g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);}
+            await put(dir, `${name}.png`, await new Promise(r => c.toBlob(r)));
+            fs.push({fh: await dir.getFileHandle(`${name}.png`), path: 'batch'});
+        }
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.autoSet({kind: 'weapon', weapon: {pct: 50, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}});
+        let asked = 0;
+        const conf = window.confirm;
+        window.confirm = () => (asked++, true);
+        const rowsOf = () => [...$('btRows').children].map(r => ({sel: r.querySelector('select'), keep: r.querySelector('input[type=checkbox]'),
+                                                                   ins: [...r.querySelectorAll('input:not([type])')], msg: r.querySelector('.body > div:last-child'), r}));
+        let p = pd.saveBatch(fs);
+        await until(() => $('dlgBatch').open);
+        let R = rowsOf();
+        out.rows = R.map(x => [x.sel.value, x.sel.disabled, x.keep.parentElement.hidden, x.r.classList.contains('off')]);
+        out.blank = R[0].msg.textContent;
+        out.nums = [$('bt-pct').value, $('bt-oy').value];
+        fire($('bt-pct'), 25);
+        fire($('bt-a'), 30);
+        out.pct = [pd.S.auto.weapon.pct, $('au-weapon-pct').value, pd.S.auto.weapon.a];
+        fire(R[1].sel, '');
+        out.newMsg = R[1].msg.textContent;
+        fire(R[1].ins[0], 'sword-x'); fire(R[1].ins[1], '新劍');
+        out.ok = $('btOk').disabled;
+        $('dlgBatch').close('ok');
+        await p;
+        let it = await readItems();
+        const weapons = await tex.getDirectoryHandle('weapons');
+        const png = async (n) => {const f = await weapons.getFileHandle(`${n}.png`).catch(() => null); if (!f) return null; const b = await createImageBitmap(await f.getFile()); return [b.width, b.height];};
+        out.saved = [JSON.stringify(it['sword-1'].equip), it['sword-1'].icon, JSON.stringify(it['sword-2'].equip), JSON.stringify(it['sword-2'].drop),
+                     Object.keys(it).join(), JSON.stringify(it['sword-x']), await png('sword-a'), await png('sword-2-icon'), await png('blank'), pd.S.layers.length, asked];
+
+        // 不勾保留原設定＝擺放也寫；只勾更新ICON＝sprite 不動、只重產 -icon
+        p = pd.saveBatch(fs.slice(0, 1));
+        await until(() => $('dlgBatch').open);
+        R = rowsOf();
+        fire(R[0].keep, false);
+        $('dlgBatch').close('ok');
+        await p;
+        out.place = JSON.stringify((await readItems())['sword-1'].equip);
+        await put(json, 'item.json', JSON.stringify({'sword-1': {cat: 'CAT_WEAPON', lab: '青銅劍', icon: 'old', equip: {sprite: 'old-sword', scale: 0.25, x: 1, y: 2}}}, null, 2));
+        await put(dir, 'sword-1.png', await fs[0].fh.getFile());
+        p = pd.saveBatch([{fh: await dir.getFileHandle('sword-1.png'), path: 'batch'}]);
+        await until(() => $('dlgBatch').open);
+        fire($('bt-png'), false); fire($('bt-place'), false);
+        $('dlgBatch').close('ok');
+        await p;
+        it = (await readItems())['sword-1'];
+        out.iconOnly = [it.equip.sprite, it.icon, await png('old-sword-icon')];
+        window.confirm = conf;
+        // 根目錄多一個資料夾，後面的分隔線拖曳測試會失準
+        await root.removeEntry('batch', {recursive: true});
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('批次：照路徑排序、對 sprite／id 預設選好、對不到不處理、已有 equip 才有保留原設定、找不到武器的列不能選',
+         JSON.stringify(bt.rows), JSON.stringify([['-', true, true, true], ['-', false, true, true], ['sword-2', false, true, false], ['sword-1', false, false, false]]));
+    t.eq('批次：找不到武器的列提示', bt.blank, '清除透明之後找不到武器');
+    t.eq('批次：數字帶入全域預設', JSON.stringify(bt.nums), JSON.stringify(['50', '0.85']));
+    t.eq('批次：改數字寫回全域預設、自動面板同步', JSON.stringify(bt.pct), JSON.stringify([25, '25', 30]));
+    t.eq('批次：新增要填 id', bt.newMsg, '要填 id');
+    t.eq('批次：填好就能存', bt.ok, false);
+    t.eq('批次：保留原設定不動擺放、其他寫 equip／drop／icon、新增插在最後一件武器後面、成品照 scale%、不建圖層、沒有要確認的就不 confirm', JSON.stringify(bt.saved), JSON.stringify([
+        '{"sprite":"sword-a","scale":0.25,"x":1,"y":2}', 'sword-a-icon', '{"sprite":"sword-2","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}', '{"sprite":"sword-2","scale":0.25}',
+        'sword-1,sword-2,sword-x', '{"cat":"CAT_WEAPON","icon":"other-icon","lab":"新劍","equip":{"sprite":"other","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85},"drop":{"sprite":"other","scale":0.25}}',
+        [5, 40], [100, 100], null, 0, 0]));
+    t.eq('批次：不勾保留原設定就寫擺放', bt.place, '{"sprite":"sword-a","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}');
+    t.eq('批次：只勾更新ICON 時 sprite 不動、-icon 用原本的 sprite 名', JSON.stringify(bt.iconOnly), JSON.stringify(['old-sword', 'old-sword-icon', [100, 100]]));
+
     // icon 模式：順時針轉 a 度、佔比、自動零件用縮小前的圖、存檔
     const ic = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
@@ -1558,7 +1645,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('檔案樹：專案檔前面是 🧩', fm.projIcon, '🧩');
-    t.eq('右鍵選單：改名、刪除', fm.menu, '改名,刪除');
+    t.eq('右鍵選單：改名、刪除、PNG 有批次存武器', fm.menu, '改名,刪除,批次存武器到 item…');
     t.eq('改名：原地編輯不含副檔名', fm.edit, 'a');
     t.eq('改名：Esc 取消不動檔案', JSON.stringify(fm.esc), JSON.stringify([true, 'a.png', 'a.json,a.png,b.png']));
     t.eq('改名：連同名 json、專案 src、開著的圖層 srcPath／名稱一起改', JSON.stringify(fm.renamed), JSON.stringify(['b.png,c.json,c.png', 'rn/c.png', 'rn/c.png', 'c', true]));

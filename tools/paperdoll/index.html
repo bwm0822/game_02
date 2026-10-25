@@ -225,6 +225,27 @@
     </form>
 </dialog>
 
+<dialog id="dlgBatch">
+    <form method="dialog">
+        <div id="btTitle" class="title"></div>
+        <div class="row2">
+            <label>scale% <input id="bt-pct" type="number" step="any"></label>
+            <label>x <input id="bt-x" type="number" step="any"></label>
+            <label>y <input id="bt-y" type="number" step="any"></label>
+            <label>a <input id="bt-a" type="number" step="any"></label>
+            <label>ox <input id="bt-ox" type="number" step="any"></label>
+            <label>oy <input id="bt-oy" type="number" step="any"></label>
+        </div>
+        <div class="row2">
+            <label><input id="bt-png" type="checkbox" checked> 更新圖</label>
+            <label><input id="bt-place" type="checkbox" checked> 更新設定</label>
+            <label><input id="bt-icon" type="checkbox" checked> 更新ICON</label>
+        </div>
+        <div id="btRows"></div>
+        <div class="row2"><button id="btOk" value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
+    </form>
+</dialog>
+
 <dialog id="dlgOpen">
     <form method="dialog">
         <div id="dlgOpenTitle" class="title"></div>
