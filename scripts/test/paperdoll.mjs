@@ -1329,6 +1329,88 @@ run('paperdoll', async t => {
     t.eq('存到 item：手動選過的列不被別列帶走', si.manual, 'armor-hvy-2');
     t.eq('存到 item：更新ICON 勾了補上空的 icon、沒勾就不動', JSON.stringify(si.icons), JSON.stringify(['src-helmet', 'src-helmet', 'keep', 'src-armor', false]));
 
+    // 自動（武器）：透明底單把武器，一個零件，多調 a/ox/oy，存到 textures/weapons、a 不寫
+    const aw = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        await put(json, 'item.json', JSON.stringify({'sword-1': {cat: 'CAT_WEAPON', lab: '青銅劍'}, x1: {cat: 'CAT_FOOD'}}, null, 2));
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const set = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event(e.tagName === 'SELECT' ? 'change' : 'input'));};
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const open = async () => {const p = pd.saveItems(); await until(() => $('dlgItems').open); return {p};};
+        const close = async ({p}, v) => {$('dlgItems').close(v); await p;};
+
+        const c = document.createElement('canvas'); c.width = 100; c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);
+        g.fillRect(5, 5, 1, 1);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        await pd.setAssets(assets);
+        pd.autoSet({kind: 'weapon', weapon: {pct: 50, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}});
+        pd.setMode('auto');
+        out.enter = [pd.S.mode.kind, $('auWeapon').hidden, $('auTable').hidden, $('auSplit').hidden];
+        pd.applyMode();
+        const W = pd.S.layers.find(M => M.auto?.key === 'weapon');
+        out.made = [pd.S.layers.filter(M => M.auto).length, W.canvas.width, W.canvas.height, W.ops.map(o => o.type).join(), W.ox, W.oy,
+                    W.x * pd.S.scale, L.visible, document.querySelector('[name=auKind][value=armor]').disabled];
+
+        const x0 = W.x, y0 = W.y;
+        type('au-weapon-oy', 0.5);
+        out.oy = [W.oy, W.x === x0 && W.y === y0, pd.S.auto.weapon.oy];
+
+        const cv = $('cv'), rc = cv.getBoundingClientRect(), K = pd.S.view.zoom * (pd.S.applyScale ? pd.S.scale : 1);
+        const atW = (w) => ({clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true});
+        const fireW = (type, w, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...atW(w), ...extra}));
+        const p0 = {x: W.x, y: W.y}, p1 = {x: W.x + 5, y: W.y - 8};
+        fireW('pointerdown', p0); fireW('pointermove', p1, {buttons: 1}); fireW('pointerup', p1);
+        out.pivot = [W.x === x0 && W.y === y0, W.ox, W.oy, $('au-weapon-ox').value, pd.S.auto.weapon.ox, pd.S.mode.hist.length];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
+        out.pivotUndo = [W.ox, W.oy];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'y', ctrlKey: true, bubbles: true}));
+        type('au-weapon-a', 30);
+        out.a = W.a;
+
+        pd.select(L);
+        pd.cancelMode();
+        pd.autoSet({...pd.S.auto, kind: 'armor'});
+        pd.select(W);
+        pd.setMode('auto');
+        out.resume = [pd.S.mode.kind, pd.S.mode.parts?.length, pd.S.auto.kind, document.querySelector('[name=auKind][value=weapon]').checked];
+
+        W.name = 'sword-1';
+        let p = await open();
+        out.rows = [$('di-weapon-sel').value, !!$('di-helmet-sel'), $('di-weapon-name').value];
+        await close(p, 'ok');
+        const it = (await readItems())['sword-1'];
+        out.saved = [JSON.stringify(it.equip), it.icon, JSON.stringify(it.drop), !!await (await tex.getDirectoryHandle('weapons')).getFileHandle('sword-1.png').catch(() => null)];
+        p = await open();
+        set('di-weapon-sel', '');
+        set('di-weapon-lab', '劍');
+        out.newId = [$('di-weapon-id').value, $('di-weapon-msg').textContent];
+        await close(p, 'cancel');
+
+        pd.cancelMode();
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('自動（武器）：進模式顯示武器那一行、藏起護具的表跟頭盔切線', JSON.stringify(aw.enter), JSON.stringify(['weapon', false, true, true]));
+    t.eq('自動（武器）：一個零件、不去綠、丟雜點、裁到剛好再縮、套用 a/ox/oy、拆完不能切種類', JSON.stringify(aw.made),
+         JSON.stringify([1, 10, 80, 'alpha,blobs,xform,xform', 0.5, 0.85, -13, false, true]));
+    t.eq('自動（武器）：改 oy 時 x/y 不動、寫回預設', JSON.stringify(aw.oy), JSON.stringify([0.5, true, 0.5]));
+    t.eq('自動（武器）：拖支點＝圖跟著動、x/y 不動、一次拖曳一步', JSON.stringify(aw.pivot), JSON.stringify([true, 0, 0.6, '0', 0, 2]));
+    t.eq('自動（武器）：拖支點可以 undo', JSON.stringify(aw.pivotUndo), JSON.stringify([0.5, 0.5]));
+    t.eq('自動（武器）：改 a 只轉預覽', aw.a, 30);
+    t.eq('自動（武器）：選零件再進來照零件的種類', JSON.stringify(aw.resume), JSON.stringify(['weapon', 1, 'weapon', true]));
+    t.eq('自動（武器）：存到 item 只有一列、id＝圖層名就配到', JSON.stringify(aw.rows), JSON.stringify(['sword-1', false, 'sword-1']));
+    t.eq('自動（武器）：存到 textures/weapons、a 不寫、icon/drop 跟著設', JSON.stringify(aw.saved),
+         JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"ox":0,"oy":0.6}', 'sword-1', '{"sprite":"sword-1","scale":0.25}', true]));
+    t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
+
     const th = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
         const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('th', {create: true});

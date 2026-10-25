@@ -59,6 +59,8 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .mode[hidden] { display: none; }
 .autoGrid { display: grid; grid-template-columns: auto auto repeat(3, 1fr); gap: 4px; align-items: center; }
 .autoGrid input[type=number] { width: 100%; }
+.autoGrid.weapon { grid-template-columns: auto repeat(6, 1fr); }
+.autoGrid[hidden] { display: none; }
 .spCtl { display: flex; flex-direction: column; gap: 4px; }
 .spGrid { display: grid; grid-template-columns: auto 20px 1fr 20px 28px; gap: 2px 4px; align-items: center; }
 .spStep { padding: 0; width: 20px; }

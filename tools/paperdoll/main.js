@@ -221,22 +221,27 @@ function trimLayer(L)
 // 範圍會跟別的塊重疊（左上戴頭盔的頭，下巴伸進護甲的範圍），所以裁切前先清掉不是自己的塊（左上沒人認領，整塊丟掉）
 // 左上的頭盔常跟護甲黏成一塊（重心落到左上，護甲整個被丟掉）：四個象限湊不齊就逐步加侵蝕量重分（最多 AUTO_ERODE px），侵蝕量記在 blobs 步驟上
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
+// kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_ERODE = 12;
 const AUTO_PARTS = [
-    {key: 'helmet', name: '頭盔', quad: '右上', qx: 1, qy: 0},
-    {key: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
-    {key: 'boots', name: '靴子', quad: '右下', qx: 1, qy: 1},
+    {key: 'helmet', kind: 'armor', name: '頭盔', quad: '右上', qx: 1, qy: 0},
+    {key: 'armor', kind: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
+    {key: 'boots', kind: 'armor', name: '靴子', quad: '右下', qx: 1, qy: 1},
+    {key: 'weapon', kind: 'weapon', name: '武器'},
 ];
-const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33}};
+const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy']};
+const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33},
+                  weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}};
 const AUTO_KEY = 'paperdoll.auto';
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])),
-                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split'});
+                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: v?.kind === 'weapon' ? 'weapon' : 'armor'});
+const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 
 function autoLoad()
 {
@@ -249,8 +254,9 @@ function autoSet(v)
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
-    for (const P of AUTO_PARTS) for (const f of ['pct', 'x', 'y']) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+    for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
+    document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
 }
 
 // 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；裁切、縮小分兩步，scale% 記在縮小的 xform 上（pct），
@@ -263,7 +269,8 @@ function autoBase(C)
     let i = C.ops.length - 1;
     while (C.ops[i]?.type === 'paint') i--;
     const s = C.ops[i], c = C.ops[i - 1], k = C.ops[i - 2]?.type === 'blobs' ? 3 : 2;
-    return s?.type === 'xform' && s.pct && c?.type === 'xform' && !c.pct && C.ops[i - k]?.type === 'removeGreen' ? i : -1;
+    const g = C.ops[i - k]?.type === (C.auto?.key === 'weapon' ? 'alpha' : 'removeGreen');
+    return s?.type === 'xform' && s.pct && c?.type === 'xform' && !c.pct && g ? i : -1;
 }
 
 const autoKeep = (C) => {const o = C.ops[autoBase(C) - 2]; return o?.type === 'blobs' ? o : null;};
@@ -278,7 +285,9 @@ function autoGroup(L)
 const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
-const autoRow = ({C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale)});
+const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale),
+                              ...(P.kind === 'weapon' && {a: round(C.a, 10), ox: C.ox, oy: C.oy})});
+const autoSame = (P, a, b) => AUTO_F[P.kind].every(f => a[f] === b[f]);
 
 function autoScale(T, part, pct)
 {
@@ -296,7 +305,11 @@ function autoShift(C, x, y)
     for (const L of linked(C)) Object.assign(L, {x: L.x + dx, y: L.y + dy});
 }
 
-const autoPlace = ({C}, {x, y}) => autoShift(C, x / S.scale, y / S.scale);
+function autoPlace({P, C}, {x, y, a, ox, oy})
+{
+    if (P.kind === 'weapon') Object.assign(C, {a, ox, oy});
+    autoShift(C, x / S.scale, y / S.scale);
+}
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
@@ -353,17 +366,27 @@ function autoSpSync(m)
 }
 
 // 去綠、依象限分好零件的範圍；進模式時就算，頭盔的切線要用
-function autoPlan(L)
+function autoPlan(L, kind)
 {
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
-    pushOp(T, {type: 'removeGreen', ...GREEN});
-    const W = T.canvas.width, H = T.canvas.height;
-    const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
     const split = (erode) => {
         const all = PX.blobs(T.canvas, trimT(), erode), big = Math.max(0, ...all.map(b => b.n));
         return all.filter(b => b.n >= big * AUTO_NOISE);
     };
+    const part = (P, mine, erode) => {
+        const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
+        return {P, box: {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0},
+                keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy]), ...(erode ? {erode} : {})}};
+    };
+    if (kind === 'weapon')
+    {
+        const blobs = split(0);
+        return {T, plan: blobs.length ? [part(autoParts(kind)[0], blobs, 0)] : [], skipped: []};
+    }
+    pushOp(T, {type: 'removeGreen', ...GREEN});
+    const W = T.canvas.width, H = T.canvas.height;
+    const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
     let blobs = split(0), erode = 0;
     for (let k = 1; k <= AUTO_ERODE && ![0, 1].every(qx => [0, 1].every(qy => blobs.some(b => quad(b, qx, qy)))); k++)
     {
@@ -371,13 +394,11 @@ function autoPlan(L)
         if ([0, 1].every(qx => [0, 1].every(qy => bs.some(b => quad(b, qx, qy))))) [blobs, erode] = [bs, k];
     }
     const plan = [], skipped = [];
-    for (const P of AUTO_PARTS)
+    for (const P of autoParts(kind))
     {
         const mine = blobs.filter(b => quad(b, P.qx, P.qy));
         if (!mine.length) {skipped.push(P.name); continue;}
-        const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
-        plan.push({P, box: {sx: x0, sy: y0, sw: Math.max(...mine.map(b => b.x1)) + 1 - x0, sh: Math.max(...mine.map(b => b.y1)) + 1 - y0},
-                   keep: {type: 'blobs', t: trimT(), pts: mine.map(b => [b.sx, b.sy]), ...(erode ? {erode} : {})}});
+        plan.push(part(P, mine, erode));
     }
     return {T, plan, skipped};
 }
@@ -397,7 +418,7 @@ function autoSpNew(m, {box, keep})
 function autoApply(m, part, row)
 {
     const cur = autoRow(part);
-    if (row.pct === cur.pct && row.x === cur.x && row.y === cur.y) return;
+    if (autoSame(part.P, row, cur)) return;
     if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
     autoStep(m);
     if (row.pct !== cur.pct)
@@ -419,6 +440,17 @@ function autoMove(m, part, x, y, step = true)
     return true;
 }
 
+// 武器的支點／角度：x/y（手的位置）不動，圖跟著動
+function autoPose(m, part, v, step = true)
+{
+    const {C} = part;
+    if (Object.keys(v).every(k => v[k] === C[k])) return false;
+    if (step) autoStep(m);
+    Object.assign(C, v);
+    return true;
+}
+
+const autoWeapon = (m) => m.type === 'auto' && m.parts?.find(p => p.P.kind === 'weapon') || null;
 const autoSave = (part) => autoSet({...S.auto, [part.P.key]: autoRow(part)});
 
 // 沒拆過：先算好零件範圍（勾了拆前後片就追頭盔切線），只調數字和切線，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
@@ -428,19 +460,21 @@ function autoEnter(L)
     if (!g)
     {
         if (hasPaint(L)) return alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」'), null;
-        const {T, plan, skipped} = autoPlan(L), m = {type: 'auto', layer: L, parts: null, T, plan, skipped, sp: null, hist: [], fut: []};
+        const kind = S.auto.kind, {T, plan, skipped} = autoPlan(L, kind);
+        const m = {type: 'auto', kind, layer: L, parts: null, T, plan, skipped, sp: null, hist: [], fut: []};
         autoSpSync(m);
         return m;
     }
     const bad = g.parts.filter(C => autoBase(C) < 0);
     if (bad.length) return status(`${bad.map(C => C.name).join('、')} 拆完後改過（或是舊格式），不能再自動調整；要重拆先取消自動`), null;
-    const C0 = g.parts[0];
+    const C0 = g.parts[0], kind = AUTO_PARTS.find(P => P.key === C0.auto.key).kind;
     const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0) - (autoKeep(C0) ? 2 : 1)), canvas: null};
-    const parts = AUTO_PARTS.map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
+    const parts = autoParts(kind).map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
         const {sx, sy, sw, sh} = C.ops[autoBase(C) - 1];
         return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}, keep: autoKeep(C)};
     });
-    const m = {type: 'auto', layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
+    if (S.auto.kind !== kind) autoSet({...S.auto, kind});
+    const m = {type: 'auto', kind, layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
     status(`調整 ${parts.map(p => p.C.name).join('、')}`);
     return m;
 }
@@ -450,7 +484,7 @@ function autoEnter(L)
 function autoSplit(m)
 {
     const L = m.layer, {T, plan, skipped} = m;
-    if (!plan.length) return status('去綠之後找不到零件');
+    if (!plan.length) return status(`${m.kind === 'weapon' ? '清除透明' : '去綠'}之後找不到零件`);
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const gid = L.autoSrc ?? autoGid();
     const parts = plan.map(({P, box, keep}) => {
@@ -790,8 +824,13 @@ function drawSplit(m, K)
         g.strokeStyle = '#f0f';
         drawPolyEdit(m.poly, L, K);
     }
-    const c = toWorld(L, m.start.x + 0.5, m.start.y + 0.5), r = 8 / K;
-    g.strokeStyle = '#0ff';
+    drawCross(toWorld(L, m.start.x + 0.5, m.start.y + 0.5), K, '#0ff');
+}
+
+function drawCross(c, K, color)
+{
+    const r = 8 / K;
+    g.strokeStyle = color;
     g.lineWidth = 2 / K;
     g.beginPath();
     g.moveTo(c.x - r, c.y); g.lineTo(c.x + r, c.y);
@@ -910,6 +949,8 @@ function drawOverlay(K)
     if (m.type === 'pixel') drawPixel(m, L, K);
     if (m.type === 'split') drawSplit(m, K);
     if (m.type === 'auto' && m.sp) drawSplit(m.sp, K);
+    const wp = autoWeapon(m);
+    if (wp) drawCross(wp.C, K, '#f90');
     if (m.type === 'scale')
     {
         g.fillStyle = '#fff';
@@ -1866,6 +1907,14 @@ cv.addEventListener('pointerdown', e => {
     }
     else if (m.type === 'auto' && m.parts)
     {
+        const wp = autoWeapon(m), C = wp?.C;
+        if (C && !C.locked && C.visible && (S.keys.has('r') || Math.hypot(w.x - C.x, w.y - C.y) * zoomK() <= 8))
+        {
+            if (C !== L) select(C);
+            drag = S.keys.has('r') ? {type: 'autoPose', part: wp, a0: C.a, ang0: Math.atan2(w.y - C.y, w.x - C.x)}
+                                   : {type: 'autoPose', part: wp, wx: w.x, wy: w.y, ox: C.ox, oy: C.oy};
+            return;
+        }
         const hit = pick(w, autoLayers(m.parts));
         if (!hit) return;
         if (hit !== L) select(hit);
@@ -1913,11 +1962,23 @@ cv.addEventListener('pointermove', e => {
         const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
         if (autoMove(S.mode, drag.part, drag.x + dx, drag.y + dy, !drag.moved)) drag.moved = true;
     }
+    else if (drag.type === 'autoPose')
+    {
+        const C = drag.part.C;
+        let v;
+        if (drag.ang0 !== undefined) v = {a: dragAngle(e, w, C, drag)};
+        else
+        {
+            // 世界位移轉成圖層本地位移，支點反向移動＝圖跟著游標走、x/y 不動
+            const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
+            const c = Math.cos(C.a * RAD), s = Math.sin(C.a * RAD);
+            v = {ox: round(drag.ox - (dx * c + dy * s) / C.canvas.width, 10000), oy: round(drag.oy - (dy * c - dx * s) / C.canvas.height, 10000)};
+        }
+        if (autoPose(S.mode, drag.part, v, !drag.moved)) drag.moved = true;
+    }
     else if (drag.type === 'rotate')
     {
-        let a = drag.a0 + (Math.atan2(w.y - drag.L.y, w.x - drag.L.x) - drag.ang0) / RAD;
-        a = e.shiftKey ? Math.round(a / 15) * 15 : round(a, 10);
-        a = ((a + 180) % 360 + 360) % 360 - 180;
+        const a = dragAngle(e, w, drag.L, drag);
         for (const M of drag.G) M.a = a;
     }
     else if (drag.type === 'crop')
@@ -1949,10 +2010,17 @@ cv.addEventListener('pointerup', () => {
     const s = drag?.snap, s0 = s?.group?.[0];
     if (s0 && (s0.x !== s0.layer.x || s0.y !== s0.layer.y || s0.a !== s0.layer.a)) hist.push(s);
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
-    if (drag?.type === 'autoMove') autoSave(drag.part);
+    if (drag?.type === 'autoMove' || drag?.type === 'autoPose') autoSave(drag.part);
     drag = null;
     dirty();
 });
+
+function dragAngle(e, w, L, {a0, ang0})
+{
+    let a = a0 + (Math.atan2(w.y - L.y, w.x - L.x) - ang0) / RAD;
+    a = e.shiftKey ? Math.round(a / 15) * 15 : round(a, 10);
+    return ((a + 180) % 360 + 360) % 360 - 180;
+}
 
 cv.addEventListener('pointerleave', () => {
     if (S.mode.type === 'pixel' && !drag) {S.mode.cursor = null; dirty();}
@@ -2169,13 +2237,17 @@ function refreshAuto(m)
 {
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
+    document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
+    const weapon = m.kind === 'weapon';
+    for (const id of ['auTable', 'auSplit', 'auHintArmor']) $(id).hidden = weapon;
+    for (const id of ['auWeapon', 'auHintWeapon']) $(id).hidden = !weapon;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
-    for (const P of AUTO_PARTS)
+    for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : S.auto[P.key];
-        for (const f of ['pct', 'x', 'y'])
+        for (const f of AUTO_F[P.kind])
         {
             const inp = $(`au-${P.key}-${f}`);
             inp.value = row[f];
@@ -2754,7 +2826,7 @@ function sidecar(L, name)
 
 const PARTS = ['body', 'head', 'hair', 'hand', 'corpse'];
 // 已經有同名 PNG 就覆蓋那張（例如 body 用的是 roles/npcs/ 的整隻角色圖），沒有才照擺放種類放
-const PNG_FIND = ['equips', 'roles/parts', 'roles/npcs'];
+const PNG_FIND = ['equips', 'weapons', 'roles/parts', 'roles/npcs'];
 const PNG_NEW = {item: 'equips', role: 'roles/parts'};
 
 // h：專案根目錄，或直接給 public/assets（無頭測試）
@@ -2830,13 +2902,14 @@ function setSplit(it, name, g, icon)
     dropOf(it).sprite = name;
 }
 
-function writeEquip(e, L)
+// 武器的角度由 anim.json 管，a 一律不寫
+function writeEquip(e, L, weapon = false)
 {
     const o = sidecar(L, e.sprite);
     Object.assign(e, {scale: o.scale, x: o.x, y: o.y});
     for (const [k, def] of [['a', 0], ['ox', 0.5], ['oy', 1]])
     {
-        if (o[k] === def) delete e[k];
+        if (o[k] === def || (weapon && k === 'a')) delete e[k];
         else e[k] = o[k];
     }
 }
@@ -2880,7 +2953,7 @@ async function saveLayer()
         for (const t of ts)
         {
             const it = game[t.file][t.id];
-            writeEquip(it[t.key], sg ? sg.O ?? sg.F : L);
+            writeEquip(it[t.key], sg ? sg.O ?? sg.F : L, it.cat === 'CAT_WEAPON');
             if (t.file === 'item') {setSplit(it, r.name, sg, r.icon); dropScale(it);}
         }
         for (const f of ['item', 'role'])
@@ -2912,8 +2985,9 @@ async function saveLayer()
 // ---------- 自動零件存到 item.json ----------
 // 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要更新圖（PNG＋sprite）／更新設定（scale/x/y/a/ox/oy＋drop.scale）
 
-const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS'};
+const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON'};
 const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
+const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : 'equips';
 const TEX_SKIP = ['tbd', 'minimap'];
 
 // texture key → 所在資料夾（相對 textures/）；不讀 textures.json，因為新圖可能還沒更新清單
@@ -2957,8 +3031,9 @@ function itemCheck(rows, items, keys)
         if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
         const g = splitNew(r.part.C);
         if (g) err(splitMismatch(g));
+        const home = itemDir(r.P);
         for (const n of g ? [`${r.name}-front`, ...(g.cut ? [] : [`${r.name}-back`])] : [])
-            if (keys.has(n) && keys.get(n) !== 'equips') err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
+            if (keys.has(n) && keys.get(n) !== home) err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
         const users = Object.keys(items).filter(id => id !== r.id && splitBase(items[id].equip?.sprite) === r.name);
         const dir = keys.get(r.name), also = users.length ? `（${users.join('、')} 也用這張）` : '';
         if (r.name === old)
@@ -2968,8 +3043,8 @@ function itemCheck(rows, items, keys)
         }
         if (old) r.warn = `sprite：${old} → ${r.name}`;
         if (dir === undefined) continue;
-        if (dir !== 'equips') err(`textures/${join(dir, r.name)}.png 已經有了，換個檔名`);
-        else r.ask = `equips/${r.name}.png${also}`;
+        if (dir !== home) err(`textures/${join(dir, r.name)}.png 已經有了，換個檔名`);
+        else r.ask = `${home}/${r.name}.png${also}`;
     }
     return act;
 }
@@ -2989,10 +3064,12 @@ function insertAfter(obj, after, id, val)
 function itemDialog(parts, items, keys)
 {
     const dlg = $('dlgItems');
-    const rows = AUTO_PARTS.map(P => {
-        const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
-        const id = Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name) ?? null;
-        return {P, part, on: !!part, id, name, png: true, place: true, icon: true, newId: nextItemId(items, ITEM_PRE[P.key]), lab: ''};
+    // 武器多認 id＝圖層名（新武器還沒有 equip）；新增的 id 沒有流水號，要自己填
+    const rows = autoParts(parts[0].P.kind).map(P => {
+        const part = parts.find(p => p.P === P), name = part?.C.name ?? '', cat = ITEM_CAT[P.key];
+        const id = Object.keys(items).find(id => items[id].cat === cat && splitBase(items[id].equip?.sprite) === name)
+                ?? (P.kind === 'weapon' && items[name]?.cat === cat ? name : null);
+        return {P, part, on: !!part, id, name, png: true, place: true, icon: true, newId: ITEM_PRE[P.key] ? nextItemId(items, ITEM_PRE[P.key]) : '', lab: ''};
     });
     const reset = (r) => {
         r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
@@ -3119,7 +3196,7 @@ async function saveItems()
         const {C} = r.part, g = splitNew(C);
         if (r.png)
         {
-            const dir = keys.get(r.name) ?? 'equips', pd = await mkDir(A.tex, dir);
+            const dir = keys.get(r.name) ?? itemDir(r.P), pd = await mkDir(A.tex, dir);
             const put = async (name, c) => {
                 if (!keys.has(name)) fresh.push(name);
                 await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
@@ -3134,7 +3211,7 @@ async function saveItems()
         if (!r.id)
         {
             const equip = {sprite: g ? `${r.name}-front` : r.name};
-            writeEquip(equip, C);
+            writeEquip(equip, C, r.P.kind === 'weapon');
             if (g && !g.cut) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
@@ -3145,7 +3222,7 @@ async function saveItems()
         const it = items[r.id], e = it.equip ??= {};
         if (r.png) setSplit(it, r.name, g, r.icon);
         else if (r.icon) it.icon = r.name;
-        if (r.place) {writeEquip(e, C); dropScale(it);}
+        if (r.place) {writeEquip(e, C, r.P.kind === 'weapon'); dropScale(it);}
         done.push(r.id);
     }
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
@@ -3505,11 +3582,14 @@ const removeGreenChanged = () => {
 };
 for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
 
-$('auTable').append(...['', '象限', 'scale%', 'x', 'y'].map(t => Object.assign(el('span', 'dim'), {textContent: t})));
+const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
+$('auTable').append(...dimSpans(['', '象限', 'scale%', 'x', 'y']));
+$('auWeapon').append(...dimSpans(['', 'scale%', 'x', 'y', 'a', 'ox', 'oy']));
 for (const P of AUTO_PARTS)
 {
-    $('auTable').append(Object.assign(el('span'), {textContent: P.name}), Object.assign(el('span', 'dim'), {textContent: P.quad}));
-    for (const f of ['pct', 'x', 'y'])
+    const box = $(P.kind === 'weapon' ? 'auWeapon' : 'auTable');
+    box.append(Object.assign(el('span'), {textContent: P.name}), ...(P.quad ? dimSpans([P.quad]) : []));
+    for (const f of AUTO_F[P.kind])
     {
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
         inp.onchange = () => {
@@ -3519,17 +3599,24 @@ for (const P of AUTO_PARTS)
             else autoSet(ok ? {...S.auto, [P.key]: {...S.auto[P.key], [f]: v}} : S.auto);
             refreshAll();
         };
-        $('auTable').append(inp);
+        box.append(inp);
     }
 }
 autoSet(autoLoad());
 $('auReset').onclick = () => {
     const m = S.mode;
     for (const part of m.parts ?? []) autoApply(m, part, AUTO_DEF[part.P.key]);
-    autoSet(null);
+    autoSet({kind: S.auto.kind});
     autoSpSync(m);
     refreshAll();
 };
+// 還沒拆才能切：照新的種類重算零件範圍
+document.querySelectorAll('[name=auKind]').forEach(r => {r.onchange = () => {
+    autoSet({...S.auto, kind: r.value});
+    const m = S.mode;
+    if (m.type === 'auto' && !m.parts) S.mode = autoEnter(m.layer) ?? {type: 'move'};
+    refreshAll();
+};});
 document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
     autoSet({...S.auto, split: r.value});
     autoSpSync(S.mode);

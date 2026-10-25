@@ -118,7 +118,12 @@
         </div>
 
         <div id="modeAuto" class="mode" hidden>
+            <div class="row2" style="margin: 0 0 4px">
+                <label><input name="auKind" type="radio" value="armor" checked> 護具</label>
+                <label><input name="auKind" type="radio" value="weapon"> 武器</label>
+            </div>
             <div id="auTable" class="autoGrid"></div>
+            <div id="auWeapon" class="autoGrid weapon" hidden></div>
             <div id="auSplit">
                 <div class="row2">頭盔：
                     <label><input name="auHow" type="radio" value="none"> 不拆</label>
@@ -127,7 +132,8 @@
                 </div>
                 <div id="auSpInfo" class="dim spAfter"></div>
             </div>
-            <div class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
+            <div id="auHintWeapon" class="hint" hidden>透明底、直立的單把武器。按確定才清除透明（alpha &lt; 32）→ 丟掉雜點（比最大塊 1% 小的）→ 裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；x／y 是手的位置（遊戲單位），橘色十字是支點：拖十字＝圖跟著動、x／y 不動（改 ox／oy），按住 R 拖曳＝轉角度 a（只是預覽，存到 item 一律 a=0），拖武器本體＝改 x／y。取消＝撤掉這次自動，離開／Esc＝保留結果</div>
+            <div id="auHintArmor" class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
             <div class="row2"><button id="auItem">存到 item…</button></div>
         </div>
