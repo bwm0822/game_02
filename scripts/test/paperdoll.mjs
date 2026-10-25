@@ -1265,6 +1265,7 @@ run('paperdoll', async t => {
         const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const set = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event(e.tagName === 'SELECT' ? 'change' : 'input'));};
         const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const set2 = (id, v) => {const e = $(id); e.checked = v; e.dispatchEvent(new Event('change'));};
         const open = async () => {const p = pd.saveItems(); await until(() => $('dlgItems').open); return {p};};
         const close = async ({p}, v) => {$('dlgItems').close(v); await p;};
 
@@ -1307,11 +1308,30 @@ run('paperdoll', async t => {
         out.resume = [pd.S.mode.kind, pd.S.mode.parts?.length, pd.S.auto.kind, document.querySelector('[name=auKind][value=weapon]').checked];
 
         W.name = 'sword-1';
+        type('icSize', 32); type('icA', 0);
         let p = await open();
         out.rows = [$('di-weapon-sel').value, !!$('di-helmet-sel'), $('di-weapon-name').value];
         await close(p, 'ok');
-        const it = (await readItems())['sword-1'];
-        out.saved = [JSON.stringify(it.equip), it.icon, JSON.stringify(it.drop), !!await (await tex.getDirectoryHandle('weapons')).getFileHandle('sword-1.png').catch(() => null)];
+        type('icSize', 100); type('icA', 45);
+        const it = (await readItems())['sword-1'], weapons = await tex.getDirectoryHandle('weapons');
+        out.saved = [JSON.stringify(it.equip), it.icon, JSON.stringify(it.drop), !!await weapons.getFileHandle('sword-1.png').catch(() => null)];
+        const ic = await createImageBitmap(await (await weapons.getFileHandle('sword-1-icon.png')).getFile());
+        const k = document.createElement('canvas'); k.width = ic.width; k.height = ic.height; k.getContext('2d').drawImage(ic, 0, 0);
+        const al = (x, y) => k.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        out.icon = [ic.width, ic.height, al(85, 14) > 128, al(14, 14), al(50, 50) > 128];
+
+        // 只勾更新ICON：只重產 -icon、sprite 不動；-icon 撞到 weapons/ 以外的圖就擋
+        await put(json, 'item.json', JSON.stringify({'sword-1': {...it, icon: 'old'}}, null, 2));
+        await weapons.removeEntry('sword-1-icon.png');
+        p = await open();
+        set2('di-weapon-png', false); set2('di-weapon-place', false);
+        await close(p, 'ok');
+        out.iconOnly = [(await readItems())['sword-1'].icon, !!await weapons.getFileHandle('sword-1-icon.png').catch(() => null)];
+        await put(await tex.getDirectoryHandle('icons', {create: true}), 'sword-1-icon.png', 'x');
+        p = await open();
+        out.clash = $('di-weapon-msg').textContent;
+        await close(p, 'cancel');
+        await (await tex.getDirectoryHandle('icons')).removeEntry('sword-1-icon.png');
         p = await open();
         set('di-weapon-sel', '');
         set('di-weapon-lab', '劍');
@@ -1331,8 +1351,11 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：改 a 只轉預覽', aw.a, 30);
     t.eq('自動（武器）：選零件再進來照零件的種類', JSON.stringify(aw.resume), JSON.stringify(['weapon', 1, 'weapon', true]));
     t.eq('自動（武器）：存到 item 只有一列、id＝圖層名就配到', JSON.stringify(aw.rows), JSON.stringify(['sword-1', false, 'sword-1']));
-    t.eq('自動（武器）：存到 textures/weapons、a 不寫、icon/drop 跟著設', JSON.stringify(aw.saved),
-         JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"ox":0,"oy":0.6}', 'sword-1', '{"sprite":"sword-1","scale":0.25}', true]));
+    t.eq('自動（武器）：存到 textures/weapons、a 不寫、icon 指 -icon、drop 是原圖', JSON.stringify(aw.saved),
+         JSON.stringify(['{"sprite":"sword-1","scale":0.25,"x":-13,"y":18,"ox":0,"oy":0.6}', 'sword-1-icon', '{"sprite":"sword-1","scale":0.25}', true]));
+    t.eq('自動（武器）：-icon 固定 100×100、斜 45° 朝右上，不看 icon 模式的設定', JSON.stringify(aw.icon), JSON.stringify([100, 100, true, 0, true]));
+    t.eq('自動（武器）：只勾更新ICON 也會產 -icon', JSON.stringify(aw.iconOnly), JSON.stringify(['sword-1-icon', true]));
+    t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
 
     // icon 模式：順時針轉 a 度、佔比、自動零件用縮小前的圖、存檔

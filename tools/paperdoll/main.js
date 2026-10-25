@@ -2894,14 +2894,14 @@ function splitMismatch(g)
 const dropOf = (it) => it.drop ??= {sprite: splitBase(it.equip.sprite)};
 const dropScale = (it) => {dropOf(it).scale = it.equip.scale;};
 
-// sprite 換成 name（拆了就是 name-front＋back，挖除只有 name-front）；icon 勾了就換成 name；drop.sprite 一律換成 name
+// sprite 換成 name（拆了就是 name-front＋back，挖除只有 name-front）；有給 icon 就換成它；drop.sprite 一律換成 name
 function setSplit(it, name, g, icon)
 {
     const e = it.equip;
     e.sprite = g ? `${name}-front` : name;
     if (g && !g.cut) e.back = `${name}-back`;
     else delete e.back;
-    if (icon) it.icon = name;
+    if (icon) it.icon = icon;
     dropOf(it).sprite = name;
 }
 
@@ -2952,6 +2952,8 @@ async function saveLayer()
 const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON'};
 const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
 const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : 'equips';
+// 武器的 icon 是另外產的斜擺圖 <名>-icon（ICON_AUTO），護具的 icon 就是完整的原圖
+const iconKey = (r) => r.P.kind === 'weapon' ? `${r.name}-icon` : r.name;
 const TEX_SKIP = ['tbd', 'minimap'];
 
 // texture key → 所在資料夾（相對 textures/）；不讀 textures.json，因為新圖可能還沒更新清單
@@ -2991,6 +2993,8 @@ function itemCheck(rows, items, keys)
         if (act.filter(o => idOf(o) === idOf(r)).length > 1) err('跟別列是同一個 item');
         if (!r.name) err('要填檔名');
         else if (/[\\/:*?"<>|]/.test(r.name)) err('檔名不能有 \\ / : * ? " < > |');
+        const ik = iconKey(r);
+        if (r.icon && ik !== r.name && keys.has(ik) && keys.get(ik) !== itemDir(r.P)) err(`textures/${join(keys.get(ik), ik)}.png 已經有了，換個檔名`);
         if (!r.png) continue;
         if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
         const g = splitNew(r.part.C);
@@ -3157,20 +3161,25 @@ async function saveItems()
     const done = [], fresh = [];
     for (const r of act)
     {
-        const {C} = r.part, g = splitNew(C);
+        const {C} = r.part, g = splitNew(C), ik = iconKey(r);
+        const put = async (dir, name, c) => {
+            if (!keys.has(name)) fresh.push(name);
+            await FS.writeFile(await mkDir(A.tex, dir), `${name}.png`, await PX.toPng(c));
+        };
         if (r.png)
         {
-            const dir = keys.get(r.name) ?? itemDir(r.P), pd = await mkDir(A.tex, dir);
-            const put = async (name, c) => {
-                if (!keys.has(name)) fresh.push(name);
-                await FS.writeFile(pd, `${name}.png`, await PX.toPng(c));
-            };
-            await put(r.name, splitPng(C, d.bake));
+            const dir = keys.get(r.name) ?? itemDir(r.P);
+            await put(dir, r.name, splitPng(C, d.bake));
             if (g)
             {
-                await put(`${r.name}-front`, splitPng(g.F, d.bake));
-                if (!g.cut) await put(`${r.name}-back`, splitPng(g.B, d.bake));
+                await put(dir, `${r.name}-front`, splitPng(g.F, d.bake));
+                if (!g.cut) await put(dir, `${r.name}-back`, splitPng(g.B, d.bake));
             }
+        }
+        if (r.icon && ik !== r.name)
+        {
+            const src = iconSrc(C), c = iconOf(d.bake ? PX.fade(src, C.opacity) : src, ICON_AUTO);
+            if (c) await put(itemDir(r.P), ik, c);
         }
         if (!r.id)
         {
@@ -3179,13 +3188,13 @@ async function saveItems()
             if (g && !g.cut) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
-            items = insertAfter(items, last, r.newId, {cat, icon: r.name, lab: r.lab, equip, drop: {sprite: r.name, scale: equip.scale}});
+            items = insertAfter(items, last, r.newId, {cat, icon: ik, lab: r.lab, equip, drop: {sprite: r.name, scale: equip.scale}});
             done.push(`新增 ${r.newId}`);
             continue;
         }
         const it = items[r.id], e = it.equip ??= {};
-        if (r.png) setSplit(it, r.name, g, r.icon);
-        else if (r.icon) it.icon = r.name;
+        if (r.png) setSplit(it, r.name, g, r.icon && ik);
+        else if (r.icon) it.icon = ik;
         if (r.place) {writeEquip(e, C, r.P.kind === 'weapon'); dropScale(it);}
         done.push(r.id);
     }
