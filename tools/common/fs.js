@@ -92,3 +92,9 @@ export async function renameFile(dir, from, to)
     await writeFile(dir, to, await (await dir.getFileHandle(from)).getFile());
     await dir.removeEntry(from);
 }
+
+export async function moveFile(from, name, to)
+{
+    await writeFile(to, name, await (await from.getFileHandle(name)).getFile());
+    await from.removeEntry(name);
+}

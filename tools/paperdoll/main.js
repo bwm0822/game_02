@@ -1998,7 +1998,7 @@ window.addEventListener('keydown', e => {
     const m = S.mode;
     if (e.key === 'Enter') applyMode();
     else if (e.key === 'Escape' && m.type === 'crop' && (m.rect || m.poly)) {m.rect = m.poly = null; refreshModePanel(); dirty();}
-    else if (e.key === 'Escape') cancelMode();
+    else if (e.key === 'Escape') {clearPick(); cancelMode();}
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
@@ -2270,11 +2270,50 @@ const treeOpt = {
         ['改名', () => startRename(f)],
         ['刪除', () => deleteFile(f).catch(err => status(err.message))],
     ]),
+    move: true,
 };
+
+// 主清單多選：Ctrl+點切換、Shift+點從上次點的那列選到這列（同資料夾才算範圍），一般點照舊開圖並清掉選取
+const picked = new Set();
+let pickAnchor = null, dragFiles = null;
+
+function clearPick()
+{
+    picked.forEach(r => r.classList.remove('picked'));
+    picked.clear();
+}
+
+function setPick(r, on)
+{
+    r.classList.toggle('picked', on);
+    on ? picked.add(r) : picked.delete(r);
+}
+
+// 回傳 true 表示是選取操作、不開圖
+function pickClick(e, r)
+{
+    const anchor = pickAnchor;
+    pickAnchor = r;
+    if (e.shiftKey && anchor?.isConnected && anchor.parentElement === r.parentElement)
+    {
+        const rows = [...r.parentElement.children].filter(x => x.classList.contains('file'));
+        const [i, j] = [rows.indexOf(anchor), rows.indexOf(r)].sort((a, b) => a - b);
+        rows.slice(i, j + 1).forEach(x => setPick(x, true));
+        return true;
+    }
+    if (e.ctrlKey || e.shiftKey)
+    {
+        setPick(r, !picked.has(r));
+        return true;
+    }
+    clearPick();
+    return false;
+}
 
 function buildTree(box, opt)
 {
     box.innerHTML = '';
+    if (opt.move) clearPick();
     if (S.root) box.append(treeNode(S.root, S.root.name, '', 0, opt, true));
 }
 
@@ -2352,12 +2391,38 @@ function treeNode(dir, label, path, depth, opt, open)
             name.textContent = r.title = f.name;
             r.append(thumb, name);
             r.style.paddingLeft = `${depth * 12 + 28}px`;
-            r.onclick = () => opt.onFile(f, dir, path, r);
-            if (opt.menu) r.oncontextmenu = (e) => {e.preventDefault(); opt.menu(e, {fh: f, dir, path, row: r, node: wrap});};
+            r.file = {fh: f, dir, path, node: wrap};
+            r.onclick = opt.move ? (e) => pickClick(e, r) || opt.onFile(f, dir, path, r) : () => opt.onFile(f, dir, path, r);
+            if (opt.menu) r.oncontextmenu = (e) => {e.preventDefault(); opt.menu(e, {...r.file, row: r});};
+            if (opt.move)
+            {
+                r.draggable = true;
+                r.ondragstart = (e) => {
+                    dragFiles = picked.has(r) ? [...picked] : [r];
+                    e.dataTransfer.effectAllowed = 'move';
+                };
+                r.ondragend = () => {dragFiles = null;};
+            }
             kids.append(r);
         }
     };
-    wrap.reload = () => loaded ? list() : Promise.resolve();
+    if (opt.move)
+    {
+        row.ondragover = (e) => {if (dragFiles) {e.preventDefault(); row.classList.add('drop');}};
+        row.ondragleave = () => row.classList.remove('drop');
+        row.ondrop = (e) => {
+            e.preventDefault();
+            row.classList.remove('drop');
+            const rows = dragFiles;
+            dragFiles = null;
+            if (rows) moveFiles(rows.map(x => x.file), {dir, path, node: wrap}).catch(err => status(err.message));
+        };
+    }
+    wrap.reload = () => {
+        if (!loaded) return Promise.resolve();
+        if (opt.move) clearPick();
+        return list();
+    };
     const toggle = async (force) => {
         expanded = force ?? !expanded;
         row.textContent = `${expanded ? '▾' : '▸'} ${label}`;
@@ -2510,6 +2575,66 @@ async function renameFile({fh, dir, path, node}, to)
     refreshAll();
     updateTitle();
     status(`已改名 ${from} → ${dest}${side ? `（連同 ${to}.json）` : ''}${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}`);
+}
+
+// 整批先檢查撞名（目的地已有、或彼此同名，含 png 的同名 .json，大小寫不分），有任何一個就整批不搬
+async function moveFiles(files, to)
+{
+    files = files.filter(f => f.path.toLowerCase() !== to.path.toLowerCase());
+    if (!files.length) return;
+    const where = to.path || S.root.name;
+    const plan = await Promise.all(files.map(async f => {
+        const {proj, base} = fileParts(f.fh.name);
+        const side = proj ? null : await FS.tryFile(f.dir, `${base}.json`);
+        return {...f, proj, base, names: [f.fh.name, ...(side ? [side.name] : [])]};
+    }));
+    const taken = new Set((await FS.listDir(to.dir)).files.map(h => h.name.toLowerCase())), clash = [];
+    for (const n of plan.flatMap(p => p.names))
+    {
+        if (taken.has(n.toLowerCase())) clash.push(n);
+        taken.add(n.toLowerCase());
+    }
+    if (clash.length) return status(`${where} 撞名，沒有移動：${clash.join('、')}`);
+    const wasClean = !isUnsaved(), done = [];
+    let err = null;
+    for (const p of plan)
+    {
+        let n = p.names[0];
+        try
+        {
+            await FS.moveFile(p.dir, n, to.dir);
+            done.push(p);
+            for (n of p.names.slice(1)) await FS.moveFile(p.dir, n, to.dir);
+        }
+        catch (e) {err = `移動 ${join(p.path, n)} 失敗：${e.message}`; break;}
+    }
+    const srcs = new Map();
+    for (const p of done)
+    {
+        const from = join(p.path, p.fh.name);
+        thumbs.delete(from);
+        if (p.proj) projLayers(projKey(p.path, p.base)).forEach(L => {Object.assign(L.proj, {dir: to.dir, path: to.path});});
+        else srcs.set(from.toLowerCase(), join(to.path, p.fh.name));
+    }
+    const fixed = [];
+    if (srcs.size)
+    {
+        for (const p of await findProjects())
+        {
+            const hits = p.data.layers.filter(d => srcs.has(d.src?.toLowerCase()));
+            if (!hits.length) continue;
+            hits.forEach(d => {d.src = srcs.get(d.src.toLowerCase());});
+            await FS.writeFile(p.dir, p.name, new Blob([JSON.stringify(p.data, null, 2) + '\n']));
+            fixed.push(join(p.path, p.name));
+        }
+        S.layers.filter(L => srcs.has(L.srcPath?.toLowerCase())).forEach(L => {L.srcPath = srcs.get(L.srcPath.toLowerCase());});
+        if (wasClean && S.projSig) S.projSig = projectSig();
+    }
+    await Promise.all([...new Set([...done.map(p => p.node), to.node])].map(n => n.reload()));
+    refreshAll();
+    updateTitle();
+    const msg = done.length ? `已移動 ${done.map(p => p.fh.name).join('、')} 到 ${where}${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}` : '';
+    status(err ? `${err}${msg ? `；${msg}` : ''}` : msg);
 }
 
 async function setRoot(h)
@@ -3466,4 +3591,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, iconCanvas, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, spStep};
+               deleteFile, renameFile, moveFiles, spStep};

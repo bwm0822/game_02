@@ -1474,6 +1474,103 @@ run('paperdoll', async t => {
     t.eq('改名專案：檔案改名、開著的圖層歸屬跟著改', JSON.stringify(fm.projRename), JSON.stringify([true, 'q', 'q']));
     t.eq('刪除專案：圖層保留、脫鉤、標未存', JSON.stringify(fm.projDelete), JSON.stringify([false, null, '（未命名） *']));
     t.eq('刪除 png：連 json 刪、確認列出引用的專案、開著的圖層清掉 srcPath', JSON.stringify(fm.deleted), JSON.stringify(['b.png', true, true, null]));
+
+    // 檔案樹多選＋拖曳搬檔（png 連同名 .json、專案 src、開著的圖層、專案檔歸屬跟著動；撞名整批拒絕）
+    const mv = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory();
+        const dir = await root.getDirectoryHandle('mv', {create: true}), sub = await dir.getDirectoryHandle('sub', {create: true});
+        const dst = await root.getDirectoryHandle('dst', {create: true});
+        const put = async (d, name, data) => {const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const c = document.createElement('canvas'); c.width = c.height = 4;
+        const png = await new Promise(r => c.toBlob(r));
+        for (const n of ['a.png', 'b.png', 'c.png']) await put(dir, n, png);
+        await put(dir, 'a.json', '{}');
+        await put(dst, 'C.png', png);
+        const layer = (name) => ({name, src: `mv/${name}.png`, srcW: 4, srcH: 4, path: 'mv', ops: [], x: 0, y: 0, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, locked: false});
+        await put(root, 'p.pdproj.json', JSON.stringify({version: 1, layers: [layer('a'), layer('c')]}));
+        const files = async (d) => {const n = []; for await (const k of d.keys()) n.push(k); return n.sort().join();};
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame(); return f();};
+        const row = (name, dirName) => [...$('tree').querySelectorAll('.tdir')].find(w => w.dataset.name === dirName)
+            ?.querySelector(':scope > div > .row.file[title="' + name + '"]');
+        const dirRow = (name) => [...$('tree').querySelectorAll('.row.dir')].find(r => r.title === name);
+        const click = (r, o = {}) => r.dispatchEvent(new MouseEvent('click', {bubbles: true, ...o}));
+        const picked = () => [...$('tree').querySelectorAll('.row.picked')].map(r => r.title).join();
+        const drag = async (r, target) => {
+            const dt = new DataTransfer();
+            r.dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: dt}));
+            target.dispatchEvent(new DragEvent('dragover', {bubbles: true, cancelable: true, dataTransfer: dt}));
+            target.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: dt}));
+            r.dispatchEvent(new DragEvent('dragend', {bubbles: true, dataTransfer: dt}));
+        };
+        const status = () => $('status').textContent;
+        const readProj = async (d, n) => JSON.parse(await (await (await d.getFileHandle(n)).getFile()).text());
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.setRoot(root);
+        await until(() => dirRow('mv'));
+        dirRow('mv').click();
+        await until(() => row('a.png', 'mv') && dirRow('sub'));
+        dirRow('sub').click();
+        dirRow('dst').click();
+        await until(() => row('C.png', 'dst'));
+
+        click(row('a.png', 'mv'), {ctrlKey: true});
+        out.ctrl = [picked(), pd.S.layers.length];
+        click(row('c.png', 'mv'), {shiftKey: true});
+        out.shift = picked();
+        click(row('C.png', 'dst'), {ctrlKey: true});
+        click(row('a.png', 'mv'), {shiftKey: true});
+        out.crossShift = picked();
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.esc = picked();
+        click(row('b.png', 'mv'), {ctrlKey: true});
+        click(row('a.png', 'mv'));
+        await until(() => pd.S.layers.length);
+        out.plain = [picked(), pd.S.active?.srcPath];
+        const L = pd.S.active;
+
+        click(row('a.png', 'mv'), {ctrlKey: true});
+        click(row('b.png', 'mv'), {ctrlKey: true});
+        await drag(row('a.png', 'mv'), dirRow('sub'));
+        await until(() => status().startsWith('已移動'));
+        const p = await readProj(root, 'p.pdproj.json');
+        out.moved = [await files(dir), await files(sub), p.layers.map(d => d.src).join(), L.srcPath, picked(), status().includes('p.pdproj.json')];
+
+        await drag(row('c.png', 'mv'), dirRow('dst'));
+        out.clash = [await files(dir), await files(dst), status()];
+
+        click(row('c.png', 'mv'), {ctrlKey: true});
+        await drag(row('b.png', 'sub'), dirRow('mv'));
+        await until(() => status().startsWith('已移動 b.png'));
+        out.unpicked = [await files(dir), await files(sub)];
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.openProject(await root.getFileHandle('p.pdproj.json'), root, '');
+        await until(() => row('p.pdproj.json', root.name));
+        await drag(row('p.pdproj.json', root.name), dirRow('dst'));
+        await until(() => row('p.pdproj.json', 'dst'));
+        out.proj = [pd.S.layers[0].proj.path, pd.S.layers[0].proj.dir.name, !!await root.getFileHandle('p.pdproj.json').catch(() => null)];
+
+        await drag(row('a.png', 'sub'), dirRow('sub'));
+        out.same = await files(sub);
+
+        for (const n of ['mv', 'dst']) await root.removeEntry(n, {recursive: true});
+        await pd.setRoot(root);
+        return out;
+    });
+    t.eq('多選：Ctrl+點選取、不開圖', JSON.stringify(mv.ctrl), JSON.stringify(['a.png', 0]));
+    t.eq('多選：Shift+點選範圍', mv.shift, 'a.png,b.png,c.png');
+    t.eq('多選：Shift 跨資料夾不算範圍，只切換那列', mv.crossShift, 'C.png,b.png,c.png');
+    t.eq('多選：Esc 清除', mv.esc, '');
+    t.eq('多選：一般點開圖並清掉選取', JSON.stringify(mv.plain), JSON.stringify(['', 'mv/a.png']));
+    t.eq('搬檔：整批連同名 json 搬走、專案 src／開著的圖層跟著換、選取清掉', JSON.stringify(mv.moved),
+         JSON.stringify(['c.png,sub', 'a.json,a.png,b.png', 'mv/sub/a.png,mv/c.png', 'mv/sub/a.png', '', true]));
+    t.eq('搬檔：撞名（大小寫不分）整批拒絕', JSON.stringify(mv.clash), JSON.stringify(['c.png,sub', 'C.png', 'dst 撞名，沒有移動：c.png']));
+    t.eq('搬檔：拖沒選的列只搬它自己', JSON.stringify(mv.unpicked), JSON.stringify(['b.png,c.png,sub', 'a.json,a.png']));
+    t.eq('搬專案檔：開著的圖層歸屬跟著改', JSON.stringify(mv.proj), JSON.stringify(['dst', 'dst', false]));
+    t.eq('搬檔：拖回原資料夾不動', mv.same, 'a.json,a.png');
     const [bx, by] = th.bar;
     await t.page.mouse.move(bx, by);
     await t.page.mouse.down();
