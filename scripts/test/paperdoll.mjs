@@ -85,8 +85,6 @@ run('paperdoll', async t => {
 
         L.a = 30;
         out.xlsx = pd.sidecar(L, 'foo').xlsx;
-        const icon = pd.iconCanvas(32);
-        out.icon = [icon.width, icon.height, pd.S.layers.length];
 
         const N = pd.addLayer(await img(100, 50, g => {g.fillRect(40, 10, 20, 30); g.fillStyle = 'rgba(0,0,0,0.02)'; g.fillRect(0, 0, 1, 1);}), 'n', null, null, null);
         pd.trimLayer(N);
@@ -631,7 +629,6 @@ run('paperdoll', async t => {
         out.baked = await save('b', true);
         out.keep = [out.shown, L.opacity, L.srcPath];
         out.solid = await save('c', false);
-        out.icon = [await alphaOf(pd.iconCanvas(32, true)), await alphaOf(pd.iconCanvas(32))];
         out.self = [await save('a', true), L.opacity, L.ops.length, await alphaOf(L.canvas)];
         out.hidden = !(await save('d', true), out.shown);
         return out;
@@ -639,107 +636,35 @@ run('paperdoll', async t => {
     t.check('不透明度：勾選烘入，PNG 變半透明', Math.abs(o.baked - 128) <= 1, `alpha=${o.baked}`);
     t.eq('不透明度：存成別的檔，勾選有出現、opacity 不變', JSON.stringify(o.keep), JSON.stringify([true, 0.5, 'img/a.png']));
     t.eq('不透明度：沒勾就存實心', o.solid, 255);
-    t.check('不透明度：icon 勾選烘入才變淡', Math.abs(o.icon[0] - 128) <= 1 && o.icon[1] === 255, JSON.stringify(o.icon));
     t.check('不透明度：覆蓋原圖後 opacity 歸 1，不會乘兩次', Math.abs(o.self[0] - 128) <= 1 && o.self[1] === 1 && o.self[2] === 0 && o.self[3] === o.self[0], JSON.stringify(o.self));
     t.check('不透明度：100% 時不顯示勾選', o.hidden);
 
-    // 存到 item.json：OPFS 底下建一份假的 public/assets
+    // 一般存檔只存工作資料夾；OPFS 底下建一份假的 public/assets 給後面「存到 item」用
     const it = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
         const root = await navigator.storage.getDirectory(), img = await root.getDirectoryHandle('img');
         const assets = await root.getDirectoryHandle('assets', {create: true});
         const json = await assets.getDirectoryHandle('json', {create: true});
         const tex = await assets.getDirectoryHandle('textures', {create: true});
-        const equips = await tex.getDirectoryHandle('equips', {create: true});
+        await tex.getDirectoryHandle('equips', {create: true});
         const output = await root.getDirectoryHandle('output', {create: true});
-        const items = {
-            h1: {cat: 'CAT_HELMET', equip: {sprite: 'hat', scale: 0.25, y: -6, a: 30, aim: 1}, drop: {sprite: 'hat', scale: 0.25}},
-            h2: {equip: {sprite: 'cap', scale: 0.25}},
-            h3: {equip: {sprite: 'cap', scale: 0.25}},
-            x1: {cat: 'CAT_FOOD'},
-        };
         const fh = await json.getFileHandle('item.json', {create: true});
-        const w = await fh.createWritable(); await w.write(JSON.stringify(items, null, 2)); await w.close();
-        const readItems = async () => (await (await json.getFileHandle('item.json')).getFile()).text();
+        const w = await fh.createWritable(); await w.write('{}'); await w.close();
         const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
-        const frame = () => new Promise(r => requestAnimationFrame(r));
-        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
-        const open = async () => {
-            const p = pd.saveLayer();
-            await until(() => $('dlgSave').open);
-            await until(() => !$('dlgItem').disabled || $('dlgItemLab').title);
-            return {p};
-        };
-        const rename = async (n) => {$('dlgName').value = n; $('dlgName').dispatchEvent(new Event('input')); await frame();};
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await new Promise(r => requestAnimationFrame(r));};
 
-        Object.assign(pd.S, {layers: [], active: null, projSig: null, assets: null});
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.setAssets(assets);
         await pd.loadHandle(await img.getFileHandle('a.png'), img, 'img');
-        const L = pd.S.active;
-        let {p} = await open();
-        out.noAssets = [!$('dlgItemRow').hidden, $('dlgItem').disabled, $('dlgItemLab').title.includes('專案資料夾'), $('dlgName').value];
-        $('dlgSave').close('cancel'); await p;
-
-        await pd.setAssets(assets);
-        L.name = 'hat';
-        L.x = 8; L.y = 0; L.a = 0;
-        ({p} = await open());
-        await until(() => !$('dlgPath').textContent.endsWith('…'));
-        out.def = [$('dlgName').value, $('dlgItem').checked, $('dlgPath').textContent, $('dlgTree').classList.contains('off'), $('dlgItemIds').textContent];
+        const p = pd.saveLayer();
+        await until(() => $('dlgSave').open);
+        out.def = [$('dlgName').value, $('dlgPath').textContent.endsWith('output')];
         $('dlgSave').close('ok'); await p;
-        const after = JSON.parse(await readItems());
-        out.hat = [JSON.stringify(after.h1.equip), JSON.stringify(after.h1.drop), await has(equips, 'hat.png'), await has(equips, 'hat.json'), L.srcPath];
-        out.format = (await readItems()) === JSON.stringify(after, null, 2);
-
-        ({p} = await open());
-        await rename('nope');
-        out.nope = [$('dlgItem').disabled, $('dlgItem').checked, $('dlgItemLab').title, $('dlgPath').textContent];
-        $('dlgSave').close('ok'); await p;
-        out.nopeSaved = [await has(output, 'nope.png'), await has(output, 'nope.json'), await has(equips, 'nope.png')];
-
-        ({p} = await open());
-        await rename('cap');
-        const boxes = [...$('dlgItemIds').querySelectorAll('input')];
-        out.capBoxes = boxes.map(c => `${c.value}:${c.checked}`).join();
-        boxes[1].checked = false;
-        $('dlgSave').close('ok'); await p;
-        const cap = JSON.parse(await readItems());
-        out.cap = [JSON.stringify(cap.h2.equip), JSON.stringify(cap.h3.equip)];
-
-        // 存到 role.json：同一個檔名也配角色的 body/head/hair/hand/corpse
-        const roleTxt = JSON.stringify({r1: {kind: 'npc', body: {sprite: 'cap', scale: 0.25, y: 32}, head: {sprite: 'hat2', scale: 0.25}, hand: {sprite: 'cap'}}}, null, 2);
-        const rw = await (await json.getFileHandle('role.json', {create: true})).createWritable(); await rw.write(roleTxt); await rw.close();
-        const readRoles = async () => (await (await json.getFileHandle('role.json')).getFile()).text();
-        await pd.setAssets(assets);
-        L.x = 8; L.y = 0;
-        ({p} = await open());
-        await rename('cap');
-        const rb = [...$('dlgItemIds').querySelectorAll('input')];
-        out.roleBoxes = rb.map(c => c.value).join();
-        rb.filter(c => c.value.endsWith('.equip')).forEach(c => {c.checked = false;});
-        const itemsBefore = await readItems();
-        $('dlgSave').close('ok'); await p;
-        const role = JSON.parse(await readRoles());
-        out.role = [JSON.stringify(role.r1.body), JSON.stringify(role.r1.hand), JSON.stringify(role.r1.head), role.r1.kind, (await readRoles()) === JSON.stringify(role, null, 2), (await readItems()) === itemsBefore];
-        ({p} = await open());
-        await rename('nope');
-        out.roleNope = $('dlgItemLab').title;
-        $('dlgSave').close('cancel'); await p;
+        out.saved = [await has(output, 'a-copy.png'), await has(output, 'a-copy.json')];
         return out;
     });
-    t.eq('item.json：沒選專案資料夾時反灰、提示去上方選、檔名預設 -copy', JSON.stringify(it.noAssets), JSON.stringify([true, true, true, 'a-copy']));
-    t.eq('item.json：檔名配對得到時預設勾、存進 textures/equips', JSON.stringify(it.def), JSON.stringify(['hat', true, 'assets/textures/equips', true, 'h1.equip']));
-    t.eq('item.json：只改擺放欄位、預設值刪掉、其他不動、不寫 sidecar、原圖不換', JSON.stringify(it.hat),
-         JSON.stringify(['{"sprite":"hat","scale":0.25,"y":0,"aim":1,"x":2}', '{"sprite":"hat","scale":0.25}', true, false, 'img/a.png']));
-    t.check('item.json：照 2 格縮排重寫', it.format);
-    t.eq('item.json：配不到時反灰、說明原因、存到 output', JSON.stringify(it.nope), JSON.stringify([true, false, '沒有 item 的 equip.sprite 跟檔名一樣', 'output']));
-    t.eq('item.json：沒勾就存 output 的 PNG＋sidecar', JSON.stringify(it.nopeSaved), JSON.stringify([true, true, false]));
-    t.eq('item.json：好幾筆共用 sprite 時列出來各自勾', it.capBoxes, 'h2.equip:true,h3.equip:true');
-    t.eq('item.json：只寫有勾的', JSON.stringify(it.cap), JSON.stringify(['{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"cap","scale":0.25}']));
-    t.eq('role.json：同檔名的角色部件也列出來', it.roleBoxes, 'h2.equip,h3.equip,r1.body,r1.hand');
-    t.eq('role.json：只改勾的部件的擺放、其他不動', JSON.stringify(it.role.slice(0, 4)),
-         JSON.stringify(['{"sprite":"cap","scale":0.25,"y":0,"x":2}', '{"sprite":"cap","scale":0.25,"x":2,"y":0}', '{"sprite":"hat2","scale":0.25}', 'npc']));
-    t.check('role.json：照 2 格縮排重寫、沒勾 item 就不動 item.json', it.role[4] && it.role[5]);
-    t.check('role.json：配不到時說明也提到角色部件', it.roleNope.includes('body/head/hair/hand/corpse'), it.roleNope);
+    t.eq('存檔：預設存到 output/、檔名 -copy', JSON.stringify(it.def), JSON.stringify(['a-copy', true]));
+    t.eq('存檔：寫 PNG＋sidecar', JSON.stringify(it.saved), JSON.stringify([true, true]));
 
     // 合併：dialog 一律 accept，所以有半透明時會烘入
     const m = await ev(async () => {
@@ -817,7 +742,6 @@ run('paperdoll', async t => {
     t.eq('去色：滴管吸 RGB', r.picked, '#ff0000');
     t.eq('去色：RGB 完全相等的變透明', r.key, '0,10,0,255');
     t.eq('sidecar 的 xlsx 字串', r.xlsx, '"sprite":"foo","scale":0.25,"x":-3,"y":6.75,"a":30');
-    t.eq('icon 是 32×32', JSON.stringify(r.icon), JSON.stringify([32, 32, 2]));
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
     t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
     t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));
@@ -1663,16 +1587,9 @@ run('paperdoll', async t => {
     const reset = await ev(() => document.getElementById('left').offsetWidth);
     t.eq('分隔線：拖曳改寬並記住、雙擊還原', JSON.stringify([...dragged, reset]), JSON.stringify([330, '330', 230]));
 
-    // 前後片：橫線（帽帶）跟直線（耳罩）圍起來的右下塊是後片；沿用上面 OPFS 的假 public/assets
+    // 前後片：橫線（帽帶）跟直線（耳罩）圍起來的右下塊是後片
     const sp = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
-        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
-        const json = await assets.getDirectoryHandle('json'), equips = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
-        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
-        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
-        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
-        const frame = () => new Promise(r => requestAnimationFrame(r));
-        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const c = document.createElement('canvas'); c.width = c.height = 200;
         const g = c.getContext('2d');
         g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
@@ -1720,35 +1637,8 @@ run('paperdoll', async t => {
         pd.undo();
         out.linkedUndo = [L.x, B.x, F.x];
 
-        await put(json, 'item.json', JSON.stringify({hd: {cat: 'CAT_HELMET', icon: 'hood', equip: {sprite: 'hood', scale: 0.25}, drop: {sprite: 'hood'}}}, null, 2));
-        const save = async (icon = true) => {
-            const p = pd.saveLayer();
-            await until(() => $('dlgSave').open);
-            await until(() => !$('dlgItem').disabled);
-            const tags = $('dlgItemIds').textContent;
-            out.iconRow = [!$('dlgIconRow').hidden, $('dlgIcon').checked];
-            $('dlgIcon').checked = icon;
-            $('dlgSave').close('ok');
-            await p;
-            return tags;
-        };
-        const alert = window.alert;
-        let said = '';
-        window.alert = (s) => {said = s;};
-        pd.select(F);
-        out.tags = await save();
-        const it = (await readItems()).hd;
-        out.saved = [JSON.stringify(it), await has(equips, 'hood.png'), await has(equips, 'hood-front.png'), await has(equips, 'hood-back.png')];
-        await put(json, 'item.json', JSON.stringify({hd: {...it, icon: 'custom'}}, null, 2));
-        pd.select(B);
-        out.again = await save(false);
-        out.keepIcon = [...out.iconRow, (await readItems()).hd.icon];
-
-        // 原圖改過尺寸：存檔擋下；重進前後片模式重新追線、前後片跟著原圖重產
+        // 原圖改過尺寸：重進前後片模式重新追線、前後片跟著原圖重產
         pd.trimLayer(L);
-        said = '';
-        await save();
-        out.stale = said;
         pd.select(L); pd.setMode('split');
         const rm = pd.S.mode;
         out.retrace = [rm.img.width, rm.start.x !== 100 || rm.start.y !== 100];
@@ -1761,11 +1651,8 @@ run('paperdoll', async t => {
 
         pd.select(L); pd.setMode('split'); pd.splitRevoke();
         out.revoke = [pd.S.layers.map(M => M.name).join(), L.visible, pd.S.mode.type, pd.S.active === L];
-        await save();
-        out.unsplit = JSON.stringify((await readItems()).hd);
         pd.undo();
         out.revokeUndo = [pd.S.layers.length, L.visible];
-        window.alert = alert;
 
         // 舊格式（前片就是原圖、split 沒有 w）不認
         const Q = pd.addLayer(await createImageBitmap(c), 'old', null, null, null);
@@ -1788,28 +1675,15 @@ run('paperdoll', async t => {
     t.eq('前後片：redo', JSON.stringify(sp.redo), JSON.stringify([3, false]));
     t.eq('前後片：擺放三層連動', JSON.stringify(sp.linked), JSON.stringify([5, 5, 5]));
     t.eq('前後片：連動一起 undo', JSON.stringify(sp.linkedUndo), JSON.stringify([0, 0, 0]));
-    t.eq('前後片存檔：選前片也配得到原圖名的 item', sp.tags, 'hd.equip');
-    t.eq('前後片存檔：三張 PNG 一起寫，sprite 指前片、back 指後片、icon／drop 是原圖', JSON.stringify(sp.saved), JSON.stringify([
-        '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood-front","scale":0.25,"x":0,"y":0,"back":"hood-back"},"drop":{"sprite":"hood","scale":0.25}}', true, true, true]));
-    t.eq('前後片存檔：sprite 換成 -front 後再存還配得到', sp.again, 'hd.equip');
-    t.eq('存到遊戲資料：更新ICON 預設勾、取消就不動 icon', JSON.stringify(sp.keepIcon), JSON.stringify([true, true, 'custom']));
-    t.eq('前後片存檔：原圖改過尺寸就擋', sp.stale, '沒有存檔：hood 跟 hood-front 尺寸不一樣（原圖改過，先到「前後片」按確定更新）');
     t.eq('前後片：原圖尺寸變了重進＝重新追線', JSON.stringify(sp.retrace), JSON.stringify([190, true]));
     t.eq('前後片：重拆照原圖現在的樣子重產前後片', JSON.stringify(sp.resplit), JSON.stringify([true, true, true, 3]));
     t.eq('前後片：撤掉＝刪前後片、原圖重新顯示並選取、離開模式', JSON.stringify(sp.revoke), JSON.stringify(['hood', true, 'move', true]));
-    t.eq('前後片存檔：沒拆的原圖存檔把 sprite 換回、拿掉 back', sp.unsplit, '{"cat":"CAT_HELMET","icon":"hood","equip":{"sprite":"hood","scale":0.25,"x":0,"y":0},"drop":{"sprite":"hood","scale":0.25}}');
     t.eq('前後片：撤掉可以 undo', JSON.stringify(sp.revokeUndo), JSON.stringify([3, false]));
     t.eq('前後片：舊格式不認、不進模式', sp.old, 'move');
 
-    // 色塊＋亮度門檻＋挖除：紅色上線／下線（亮度 57）、黑色左線，亮度 24 抓不到紅線、60 抓得到；沿用上面 OPFS 的假 public/assets
+    // 色塊＋亮度門檻＋挖除：紅色上線／下線（亮度 57）、黑色左線，亮度 24 抓不到紅線、60 抓得到
     const cu = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
-        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
-        const json = await assets.getDirectoryHandle('json'), equips = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
-        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
-        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
-        const frame = () => new Promise(r => requestAnimationFrame(r));
-        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const fire = (id, ev, set) => {const e = $(id); set(e); e.dispatchEvent(new Event(ev));};
         const radio = (v) => {const r = document.querySelector(`[name=spHow][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
         const method = (v) => {const r = document.querySelector(`[name=spMethod][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
@@ -1901,16 +1775,6 @@ run('paperdoll', async t => {
         pd.applyMode();
         out.overBits = probe.map(([x, y]) => a(F, x, y) > 128 ? 1 : 0).join('');
 
-        // 存到 item：sprite 指 -front、沒有 back、icon／drop 是原圖、不寫 -back.png
-        await put(json, 'item.json', JSON.stringify({vs: {cat: 'CAT_HELMET', icon: 'visor', equip: {sprite: 'visor', scale: 0.25}, drop: {sprite: 'visor'}}}, null, 2));
-        const p = pd.saveLayer();
-        await until(() => $('dlgSave').open);
-        await until(() => !$('dlgItem').disabled);
-        $('dlgSave').close('ok');
-        await p;
-        const it = JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text()).vs;
-        out.saved = [JSON.stringify(it), await has(equips, 'visor-front.png'), await has(equips, 'visor-back.png')];
-
         // 挖除→前後片：補回 -back
         pd.select(L); pd.setMode('split');
         radio('split');
@@ -1995,8 +1859,6 @@ run('paperdoll', async t => {
     t.eq('挖除：勾回「下」再挖到底', cu.downOn, 180);
     t.eq('挖除：勾「右」、改右的 X 各記一步', JSON.stringify(cu.rightOn), JSON.stringify([true, 7, 5]));
     t.eq('挖除：往下 50px 碰到圖底的透明，挖到底', cu.overBits, '000111');
-    t.eq('挖除存檔：sprite 指 -front、沒有 back、icon／drop 是原圖', JSON.stringify(cu.saved), JSON.stringify([
-        '{"cat":"CAT_HELMET","icon":"visor","equip":{"sprite":"visor-front","scale":0.25,"x":0,"y":0},"drop":{"sprite":"visor","scale":0.25}}', true, false]));
     t.eq('挖除→前後片：補回 -back', JSON.stringify(cu.toSplit), JSON.stringify(['visor-back,visor,visor-front', false]));
     t.eq('挖除→前後片：undo', cu.toSplitUndo, 'visor,visor-front');
     t.eq('挖除：下面沒有線就淹到圖底，外圈貼著格子邊', JSON.stringify(cu.noLine), JSON.stringify([null, '180,180 180,64 64,180 64,64']));

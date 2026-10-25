@@ -27,7 +27,7 @@
 
 ## 存檔廣播與未存檔
 
-- `BroadcastChannel('tools')`，訊息 `{type:'saved', file}`，`file` 是 `public/assets/json` 底下的檔名。發送：`doc.js` 存檔後、紙娃娃「存到遊戲資料」寫了 `item.json`／`role.json` 後。
+- `BroadcastChannel('tools')`，訊息 `{type:'saved', file}`，`file` 是 `public/assets/json` 底下的檔名。發送：`doc.js` 存檔後、紙娃娃自動模式「存到 item…」寫了 `item.json` 後。
 - 接收（`doc.js`）：是自己的檔且沒有未存修改 → 自動重讀；有未存修改 → 狀態列提示，存檔時照舊三方合併。角色編輯器另外在 `item.json` 存過時重抓唯讀參考資料（`loadRefs()`）。紙娃娃每次存都現讀 json，不用聽。
 - 工具用 `setDirty()` 把未存狀態回報給殼（道具／角色＝`isDirty()`，紙娃娃＝專案標題有沒有 `*`），殼在分頁標籤加 ● 並統一處理關頁警告（`doc.js` 自己的 `beforeunload` 拿掉了；紙娃娃變形／像素模式中的那個還在）。
 

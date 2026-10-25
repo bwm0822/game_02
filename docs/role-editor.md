@@ -38,4 +38,4 @@
 
 測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `xls/story.xlsx`、`src/`：原樣往返、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、改名掃 assets/xlsx/src、新增範本、分組、總覽與地點篩選、合併）。
 
-不做的：翻譯（`lab`/`des` 的譯文在 `xls/lang/en.xlsx`）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字（[fit-tool.md](fit-tool.md)），或紙娃娃「存到遊戲資料」寫 body/head/hand/corpse，存回來後按「重新讀取」，或直接存檔讓它合併）。
+不做的：翻譯（`lab`/`des` 的譯文在 `xls/lang/en.xlsx`）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。

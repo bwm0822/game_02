@@ -23,10 +23,6 @@
     <button id="btnUndo" title="Ctrl+Z">↶</button>
     <button id="btnRedo" title="Ctrl+Y">↷</button>
     <button id="btnFit">置中</button>
-    <span class="sep"></span>
-    <label>icon <input id="iconSize" type="number" min="1" value="32" list="iconSizes"></label>
-    <datalist id="iconSizes"><option value="32"><option value="64"><option value="128"></datalist>
-    <button id="btnIcon">匯出 icon</button>
 </header>
 
 <main>
@@ -59,7 +55,7 @@
             <button data-mode="pixel">像素</button>
             <button data-mode="split">前後片</button>
             <button id="btnTrim">裁到剛好</button>
-            <label title="alpha 低於門檻的像素不算內容（裁到剛好、存檔 trim、匯出 icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
+            <label title="alpha 低於門檻的像素不算內容（裁到剛好、自動模式分塊、icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
 
         <div id="modeCrop" class="mode" hidden>
@@ -202,11 +198,6 @@
         <div id="dlgTree" class="tree"></div>
         <div>目錄：<span id="dlgPath"></span></div>
         <label>檔名 <input id="dlgName" size="30"> <span id="dlgExt">.png</span></label>
-        <div id="dlgItemRow" hidden>
-            <label id="dlgItemLab"><input id="dlgItem" type="checkbox"> 存到遊戲資料（item.json／role.json）</label>
-            <span id="dlgItemIds"></span>
-            <label id="dlgIconRow"><input id="dlgIcon" type="checkbox"> 更新ICON</label>
-        </div>
         <label id="dlgBakeRow" hidden><input id="dlgBake" type="checkbox"> <span id="dlgBakeLab"></span></label>
         <div class="row2"><button value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
     </form>
