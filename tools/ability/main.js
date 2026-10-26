@@ -445,12 +445,14 @@ function unplace(id)
     status(`${id} 移出 ${t}，列在左欄「未分類」，拖到樹上可以放回去`);
 }
 
-// 拖技能（畫布節點、左欄技能列）放下的地方：左欄樹列＝換到那棵樹、「未分類」＝移出樹、畫布＝游標所在的格子（畫布外夾在 0）
+// 拖技能（畫布節點、左欄技能列）放下的地方：左欄樹列＝換到那棵樹、「未分類」那列以下（底下的技能列、空白）＝移出樹、畫布＝游標所在的格子（畫布外夾在 0）
 function dropTarget(x, y)
 {
     const el = document.elementFromPoint(x, y);
     const row = el?.closest('#list .item[data-tree]');
     if (row) return {el: row, tree: row.dataset.tree};
+    const uncat = el?.closest('#left') && $('list').querySelector('.item.uncat');
+    if (uncat && y >= uncat.getBoundingClientRect().top) return {el: uncat, tree: UNCAT};
     const tree = el?.closest('#view')?.querySelector('.tree');
     if (!tree || !isTree(S.tree)) return null;
     const b = tree.getBoundingClientRect();

@@ -327,6 +327,14 @@ run('ability', async t => {
         // 拖到未分類 → 移出樹，列在未分類底下
         rdrag(node('firewall'), row(ab.UNCAT));
         out.rdUncat = [!!ab.S.doc['ab_tree.json'].data.Fire.find(n => n.id === 'firewall'), !!document.querySelector('#list .item[data-id="firewall"]')];
+        // 拖到未分類底下（未分類的技能列、更下面的空白）也算未分類
+        const lb = $('list').getBoundingClientRect();
+        let hotBelow;
+        rdrag(node('fireballvolley'), [lb.left + 40, lb.bottom - 5], {during: () => {hotBelow = document.querySelector('#list .item.drop')?.dataset.tree;}});
+        out.rdBelow = [T().Fire.some(n => n.id === 'fireballvolley'), hotBelow];
+        rdrag(node('combustion'), document.querySelector('#list .item[data-id="firewall"]'));
+        out.rdOnOrphan = T().Fire.some(n => n.id === 'combustion');
+        ab.undo(); ab.undo();
         // 左欄未分類的技能拖到畫布空格 → 放在那一格
         const tr = document.querySelector('#view .tree').getBoundingClientRect();
         let cell = {};
@@ -498,6 +506,8 @@ run('ability', async t => {
     t.eq('拖完的 click 被吃掉', r.rdEat.join(), 'fireball,Fire');
     t.check('拖到同一棵樹的列不動', r.rdSame);
     t.eq('拖到未分類移出樹', r.rdUncat.join(), 'false,true');
+    t.eq('拖到未分類下方空白也算未分類（未分類列反白）', r.rdBelow.join(), `false,${'#uncat'}`);
+    t.eq('拖到未分類底下的技能列也算未分類', r.rdOnOrphan, false);
     t.eq('左欄拖到畫布空格放在那一格', r.rdCell[0], '{"id":"firewall","x":3,"y":3}');
     t.eq('拖到空格時框起來、放開後消失', r.rdCell.slice(1).join(), 'true,false,false');
     t.eq('拖到有人的格子：紅框、不動、提示', r.rdBusy.join(), 'true,{"id":"firewall","x":3,"y":3},true');
