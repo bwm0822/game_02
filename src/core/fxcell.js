@@ -86,3 +86,39 @@ export default class FxCell
         this.holder.destroy();
     }
 }
+
+// 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(view 的上緣/中間/下緣)，ox/oy 是額外偏移
+export function attachCell(scene, root, cfg)
+{
+    const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
+    const [top, bottom] = [root.view?.Min.y ?? 0, root.view?.Max.y ?? 0];
+    const y = {top, center:(top+bottom)/2}[align] ?? bottom;
+    return new FxCell(scene, root, cfg.img, cfg, {x:ox, y:y+oy, size:30, originY:1});
+}
+
+// body 是套在角色身體(view.shape)上的 tween；shape 原點是 view 中心，要以底部為支點轉就得同步補償 x/y；特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
+// 補償只加差值不寫絕對值，被打時的擊退位移(COM_Anim._offset)、圖示的 spawn/tick 才不會被蓋掉
+export function bodyTween(scene, view, holder, cfg)
+{
+    const shape = view.shape;
+    const base = {x:shape.x, y:shape.y};
+    const [px, py] = [base.x, base.y + view.max.y];
+    const orbit = (obj, px, py, spin)=>{
+        const d = {x:obj.x-px, y:obj.y-py};
+        let off = {x:0, y:0, a:0};
+        return (a)=>{
+            const r = Phaser.Math.DegToRad(a);
+            const [c, s] = [Math.cos(r), Math.sin(r)];
+            const next = {x:d.x*c - d.y*s - d.x, y:d.x*s + d.y*c - d.y, a};
+            obj.x += next.x - off.x;
+            obj.y += next.y - off.y;
+            if(spin) {obj.angle += next.a - off.a;}
+            off = next;
+        };
+    };
+    const body = orbit(shape, px, py, false);
+    const icon = orbit(holder, view.x+px, view.y+py, true);
+    const pivot = ()=>{body(shape.angle); icon(shape.angle);};
+    const tween = scene.tweens.add({...cfg, targets:shape, onUpdate:pivot});
+    return {tween, base};
+}

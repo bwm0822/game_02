@@ -7,6 +7,7 @@ import * as IC from '../common/icons.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
+import {previewEl, PV} from './preview.js';
 
 // fx 的 id 就是效果 id，改名只列出 ability／item 的引用（doc.js 掃 assets），不跟著改
 const D = createDoc({
@@ -14,10 +15,11 @@ const D = createDoc({
     external: '可能是手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (file === 'ability.json' || file === 'item.json') loadRefs().then(render);},
+    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json'].includes(file)) loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
 S.refs = {};    // 效果 id → [{tab: 'ability'|'item', id, type}]，type:'action' 是瞬間效果不播特效，不收
+S.ext = {roles: {}, items: {}};     // 預覽用的唯讀參考資料
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.data[id]?.img, lab: id => labOf(id), warns: id => validate(id)});
 
@@ -171,7 +173,8 @@ function renderForm()
                 fieldInput({type: 'icon'}, fx.img, v => set(id, ['img'], v), 'img'),
                 cellBox(id, fx),
                 SC.STAGES.map(st => stageBox(id, fx, st)),
-                otherBox(id, fx)))));
+                otherBox(id, fx))),
+        previewEl(id, fx, S.ext)));
 }
 
 // ---------- 總覽表 ----------
@@ -235,11 +238,12 @@ function collectRefs(data, tab, out)
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
-    const [abilities, items] = await Promise.all([get('ability.json'), get('item.json')]);
+    const [abilities, items, roles] = await Promise.all([get('ability.json'), get('item.json'), get('role.json')]);
     const refs = {};
     collectRefs(abilities, 'ability', refs);
     collectRefs(items, 'item', refs);
     S.refs = refs;
+    Object.assign(S.ext, {roles, items});
 }
 
 (async () => {
@@ -251,4 +255,4 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__fx = {S, D, add, validate, validateAll, missing, isUnused, render, loadRefs, SC};
+window.__fx = {S, D, add, validate, validateAll, missing, isUnused, render, loadRefs, SC, PV};

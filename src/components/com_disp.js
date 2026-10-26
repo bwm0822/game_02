@@ -4,7 +4,7 @@ import {uBbc,uRect,uImage,Pic,uPanel} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
-import FxCell from '../core/fxcell.js'
+import {attachCell, bodyTween} from '../core/fxcell.js'
 import Line from '../systems/line.js'
 const _tag = 'disp';
 const BUBBLE_CD = 3000;
@@ -304,33 +304,10 @@ export class COM_Disp extends Com
         this._fxMap[id] = {cell, body, ref:1};
     }
 
-    // shape 原點是 view 中心，要以底部為支點轉就得同步補償 x/y；特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
-    // 補償只加差值不寫絕對值，被打時的擊退位移(COM_Anim._offset)、圖示的 spawn/tick 才不會被蓋掉
     _bodyTween(cfg, holder)
     {
         const view = this.ctx.root.view;
-        const shape = view?.shape;
-        if(!shape) {return null;}
-        const base = {x:shape.x, y:shape.y};
-        const [px, py] = [base.x, base.y + view.max.y];
-        const orbit = (obj, px, py, spin)=>{
-            const d = {x:obj.x-px, y:obj.y-py};
-            let off = {x:0, y:0, a:0};
-            return (a)=>{
-                const r = Phaser.Math.DegToRad(a);
-                const [c, s] = [Math.cos(r), Math.sin(r)];
-                const next = {x:d.x*c - d.y*s - d.x, y:d.x*s + d.y*c - d.y, a};
-                obj.x += next.x - off.x;
-                obj.y += next.y - off.y;
-                if(spin) {obj.angle += next.a - off.a;}
-                off = next;
-            };
-        };
-        const body = orbit(shape, px, py, false);
-        const icon = orbit(holder, view.x+px, view.y+py, true);
-        const pivot = ()=>{body(shape.angle); icon(shape.angle);};
-        const tween = this.scene.tweens.add({...cfg, targets:shape, onUpdate:pivot});
-        return {tween, base};
+        return view?.shape ? bodyTween(this.scene, view, holder, cfg) : null;
     }
 
     _fxOff(id, force=false)
@@ -351,11 +328,7 @@ export class COM_Disp extends Com
 
     _fxCell(cfg)
     {
-        const {root} = this.ctx;
-        const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
-        const [top, bottom] = [root.view?.Min.y ?? 0, root.view?.Max.y ?? 0];
-        const y = {top, center:(top+bottom)/2}[align] ?? bottom;
-        return new FxCell(this.scene, root, cfg.img, cfg, {x:ox, y:y+oy, size:30, originY:1});
+        return attachCell(this.scene, this.ctx.root, cfg);
     }
 
     _fxTick(id)

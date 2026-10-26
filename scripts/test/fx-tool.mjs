@@ -77,6 +77,41 @@ run('fx-tool', async t => {
         for (let i = 0; i < 200 && !dlg.open; i++) await sleep(20);
         out.renameDlg = dlg.textContent.includes('json/ability.json');
         dlg.close('cancel'); await p;
+
+        // 預覽：Phaser 跑遊戲的 FxCell；預設角色是怪物
+        const PV = fx.PV, st = PV.st;
+        const until = async (f) => {for (let i = 0; i < 250 && !f(); i++) await sleep(20); return f();};
+        PV.P.auto = false;
+        S.sel = 'stun'; S.view = 'form'; fx.render();
+        out.pvEl = !!q('#view .pv .stage canvas');
+        await until(() => st.fx?.img === '💫' && st.root);
+        out.pvRole = st.ext.roles[PV.P.role]?.kind;
+        PV.replay();
+        // stun：align top → 掛在 view 上緣；有 body → 身體會擺
+        out.stunCell = [!!st.cur, st.cur?.cell.holder.y === st.view.Min.y, !!st.cur?.body];
+        await sleep(200);
+        out.bodySwing = st.view.shape.angle !== 0;
+        PV.off();
+        out.offReset = [st.cur, st.view.shape.angle];
+        // 改了就重播、預覽元素不重建
+        const cv = q('#view .pv .stage canvas');
+        // body 會讓圖示繞腳底轉，比位置前先拿掉
+        D.commit(() => {S.data.stun.cell.align = 'bottom'; delete S.data.stun.body;});
+        await until(() => st.fx?.cell.align === 'bottom');
+        out.rerender = [q('#view .pv .stage canvas') === cv, st.cur?.cell.holder.y === st.view.Max.y];
+        D.undo();
+        // burn：閃一下，不常駐，播完自己消失
+        S.sel = 'burn'; fx.render();
+        await until(() => st.fx?.img === '🔥');
+        PV.stop(); PV.on();
+        out.flash = [st.cur, st.flashes.size];
+        await until(() => st.flashes.size === 0);
+        out.flashDone = st.flashes.size;
+        // 自動循環
+        PV.P.auto = true; PV.replay();
+        await until(() => st.flashes.size > 0);
+        out.auto = st.flashes.size > 0;
+        PV.stop();
         return out;
     });
 
@@ -96,4 +131,13 @@ run('fx-tool', async t => {
     t.eq('移除階段', r.tickGone, false);
     t.check('階段 undo', r.stageUndo);
     t.check('改名列出 ability.json 的引用', r.renameDlg);
+    t.check('預覽有 Phaser 畫布', r.pvEl);
+    t.eq('預設角色是怪物', r.pvRole, 'monster');
+    t.eq('stun 上身：常駐、掛在 view 上緣、有 body', JSON.stringify(r.stunCell), JSON.stringify([true, true, true]));
+    t.check('body 讓身體擺動', r.bodySwing);
+    t.eq('解除後身體轉回正', JSON.stringify(r.offReset), JSON.stringify([null, 0]));
+    t.eq('改欄位就重播、畫布不重建', JSON.stringify(r.rerender), JSON.stringify([true, true]));
+    t.eq('閃一下不常駐', JSON.stringify(r.flash), JSON.stringify([null, 1]));
+    t.eq('閃一下播完自己消失', r.flashDone, 0);
+    t.check('自動循環會播', r.auto);
 });
