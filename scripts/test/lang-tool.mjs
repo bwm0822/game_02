@@ -86,6 +86,39 @@ run('lang-tool', async t => {
         out.ja = [lt.opt.file, S.langs.join(','), JSON.parse(await disk('ja.json'))._meta?.font, S.stat.ok, S.stat.new === S.entries.length + S.rows.filter(r => r.ctx === '_shared').length];
         await lt.switchLang('en');
         out.back = [lt.opt.file, S.data[first.ctx]?.[first.src]?.t];
+
+        // orphan：同情境的 new 列建議搬舊譯文
+        const nw = S.rows.find(x => x.check === 'new' && S.rows.filter(y => y.ctx === x.ctx && y.check === 'new').length === 1);
+        lt.D.commit(() => {(S.data[nw.ctx] ??= {})['舊的句子'] = {t: 'Old line', r: 'ok'};});
+        S.node = ''; lt.render();
+        const row = () => q(k(nw.ctx, nw.src));
+        out.retyped = row().querySelector('.chk').textContent;
+        row().querySelector('.sug').click();
+        out.adopt = [JSON.stringify(S.data[nw.ctx][nw.src]), '舊的句子' in S.data[nw.ctx]];
+        // 刪除全部 orphan
+        S.node = '@orphan'; lt.render();
+        out.orphans = qa('#view tbody tr').length;
+        const p2 = (async () => {for (let i = 0; i < 200 && !$('dlgAsk').open; i++) await sleep(20);})();
+        qa('#view button').find(b => b.textContent.startsWith('刪除全部')).click(); await p2;
+        $('dlgAsk').close('ok'); await sleep(50);
+        out.orphansLeft = S.stat.orphan;
+
+        // shared：兩個情境同一句同一個譯文 → 升為 shared，兩個都刪掉、改顯示 shared
+        const cnt = {};
+        for (const x of S.rows) if (x.ctx !== '_shared' && x.check === 'new') (cnt[x.src] ??= []).push(x.ctx);
+        const src = Object.keys(cnt).find(s => cnt[s].length >= 2 && !s.includes('{'));
+        const [c1, c2] = cnt[src];
+        lt.setT(c1, src, 'Same'); lt.setT(c2, src, 'Same');
+        S.node = ''; lt.render();
+        const p3 = (async () => {for (let i = 0; i < 200 && !$('dlgAsk').open; i++) await sleep(20);})();
+        q(k(c1, src)).dispatchEvent(new MouseEvent('contextmenu', {bubbles: true})); await p3;
+        $('dlgAsk').close('ok'); await sleep(50);
+        out.promote = [S.data._shared[src]?.t, src in (S.data[c1] ?? {}), src in (S.data[c2] ?? {}),
+            q(k(c2, src)).querySelector('textarea').placeholder, q(k(c2, src)).querySelector('.chk').textContent];
+        // 情境自己覆寫 → ↺ 回到 shared
+        lt.setT(c2, src, 'Own'); lt.render();
+        [...q(k(c2, src)).querySelectorAll('.sug')].find(a => a.textContent.includes('回到 shared')).click();
+        out.revert = src in (S.data[c2] ?? {});
         return out;
     });
 
@@ -107,4 +140,10 @@ run('lang-tool', async t => {
     t.eq('字型', r.font, 'Georgia');
     t.eq('新增語言 ja', JSON.stringify(r.ja), JSON.stringify(['ja.json', 'en,ja', 'Arial, sans-serif', 0, true]));
     t.eq('切回 en', JSON.stringify(r.back), JSON.stringify(['en.json', 'Hello']));
+    t.eq('同情境一筆 new 一筆 orphan 標可能是改字', r.retyped, 'new（可能是改字）');
+    t.eq('點建議：搬舊譯文標 mt、orphan 刪掉', JSON.stringify(r.adopt), JSON.stringify([JSON.stringify({t: 'Old line', r: 'mt'}), false]));
+    t.check('orphan 節點列出孤兒', r.orphans >= 3, `${r.orphans}`);
+    t.eq('刪除全部 orphan', r.orphansLeft, 0);
+    t.eq('升為 shared：搬進 _shared、同譯文的情境刪掉、灰字顯示', JSON.stringify(r.promote), JSON.stringify(['Same', false, false, 'Same', 'shared']));
+    t.eq('↺ 回到 shared', r.revert, false);
 });

@@ -94,6 +94,41 @@ function setT(ctx, src, t)
 
 const cycleR = (ctx, src) => commit(() => setRow(ctx, src, v => ({...v, r: REVIEW[(REVIEW.indexOf(v.r ?? '') + 1) % REVIEW.length]})));
 
+// 建議：同情境 orphan 的舊譯文搬到這列（原文變了，審核標 mt），orphan 刪掉
+function adopt(r, o)
+{
+    commit(() => {
+        setRow(r.ctx, r.src, () => ({t: o.t, r: 'mt'}));
+        setRow(o.ctx, o.src, () => null);
+    });
+}
+
+const removeRow = (r) => commit(() => setRow(r.ctx, r.src, () => null));
+
+async function removeOrphans()
+{
+    const list = S.rows.filter(r => r.check === 'orphan');
+    if (!list.length) return;
+    if (await ask(`刪除全部 ${list.length} 筆 orphan`, '原文已經不存在的舊譯文都會刪掉（可以 undo）', [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    commit(() => {for (const r of list) setRow(r.ctx, r.src, () => null);});
+}
+
+// 升為 shared：這列的譯文搬進 _shared，同原文、譯文一模一樣的其他情境也一起刪掉
+async function promote(r)
+{
+    const same = S.rows.filter(x => x.src === r.src && x.ctx !== SHARED && x.check !== 'orphan' && x.t === r.t);
+    const cur = S.data[SHARED]?.[r.src]?.t;
+    if (await ask(`升為 shared：「${r.src}」→「${r.t}」`, [
+        h('div', null, `${same.length} 個情境的譯文一樣，會一起刪掉、改用 shared：`),
+        h('div', {class: 'dim'}, same.map(x => x.ctx).join('、')),
+        cur && cur !== r.t && h('div', {class: 'warn'}, `_shared 原本是「${cur}」，會被蓋掉`),
+    ], [['ok', '升為 shared'], ['cancel', '取消']]) !== 'ok') return;
+    commit(() => {
+        setRow(SHARED, r.src, () => ({t: r.t, r: r.r}));
+        for (const x of same) setRow(x.ctx, x.src, () => null);
+    });
+}
+
 function setFont(font)
 {
     commit(() => {
@@ -274,19 +309,38 @@ function textCell(r)
     return h('td', null, ta);
 }
 
+function hintCell(r)
+{
+    const kids = [];
+    if (r.check === 'orphan') kids.push(h('button', {title: '刪掉這筆舊譯文', onclick: () => removeRow(r)}, '刪除'));
+    for (const o of r.hints) kids.push(h('a', {class: 'sug', title: `舊原文：${o.src}\n點了搬過來（審核標 mt），orphan 刪掉`, onclick: () => adopt(r, o)}, `舊：${o.t}`));
+    if (r.t && r.ctx !== SHARED && S.data[SHARED]?.[r.src]?.t)
+        kids.push(h('a', {class: 'sug', title: `_shared：${S.data[SHARED][r.src].t}\n點了刪掉這個情境自己的譯文`, onclick: () => removeRow(r)}, '↺ 回到 shared'));
+    return h('td', {class: 'hint'}, kids);
+}
+
+// 同情境恰好一筆 new、一筆 orphan：多半是原文改了字
+function retyped(r)
+{
+    if (r.check !== 'new' || r.hints.length !== 1) return false;
+    return S.rows.filter(x => x.ctx === r.ctx && x.check === 'new').length === 1;
+}
+
 function rowEl(r, base)
 {
     const k = rowKey(r.ctx, r.src);
     const dirty = (S.data[r.ctx]?.[r.src]?.t ?? '') !== (S.saved[r.ctx]?.[r.src]?.t ?? '') || (S.data[r.ctx]?.[r.src]?.r ?? '') !== (S.saved[r.ctx]?.[r.src]?.r ?? '');
     const ctx = base && r.ctx.startsWith(base + '.') ? r.ctx.slice(base.length + 1) : r.ctx;
-    const check = r.check === 'error' ? `error：${r.err}` : r.check === 'orphan' ? 'orphan' : r.check || (r.shared ? 'shared' : '');
-    return h('tr', {class: [r.check, dirty && 'dirty'].filter(Boolean).join(' '), dataset: {k}},
+    const check = r.check === 'error' ? `error：${r.err}` : retyped(r) ? 'new（可能是改字）' : r.check || (r.shared ? 'shared' : '');
+    return h('tr', {class: [r.check, dirty && 'dirty'].filter(Boolean).join(' '), dataset: {k},
+            oncontextmenu: r.t && r.ctx !== SHARED && r.check !== 'orphan' ? (e) => {e.preventDefault(); promote(r);} : null,
+            title: r.t && r.ctx !== SHARED && r.check !== 'orphan' ? '右鍵：升為 shared' : null},
         h('td', {class: 'ctx', title: r.ctx}, ctx, r.uses && h('div', {class: 'dim'}, `${r.uses} 個情境`)),
         h('td', {class: 'src'}, r.src),
         textCell(r),
         h('td', null, r.t && h('button', {class: 'rv ' + r.r, title: '審核：空白 → mt（機翻未審）→ ok（已審）', onclick: () => cycleR(r.ctx, r.src)}, r.r || '·')),
         h('td', {class: 'chk'}, check),
-        h('td', {class: 'hint'}));
+        hintCell(r));
 }
 
 const COLS = [['情境', '14%'], ['原文', '28%'], ['譯文', '34%'], ['審核', '56px'], ['檢查', '9%'], ['建議', '']];
@@ -296,7 +350,10 @@ function renderTable()
     const rows = visibleRows();
     const base = S.search.trim() ? '' : S.node.startsWith('@') || S.node === SHARED ? '' : S.node;
     const max = 1000;
+    const orphans = S.node === ORPHAN && !S.search.trim() && rows.length > 0;
     $('view').replaceChildren(
+        orphans && h('div', {class: 'row2'}, h('span', {class: 'dim'}, '原文已經不存在的舊譯文；new 列的「建議」欄可以把同情境的搬過去'),
+            h('span', {class: 'grow'}), h('button', {onclick: removeOrphans}, `刪除全部 orphan（${rows.length}）`)),
         rows.length ? h('table', {class: 'tr'},
             h('colgroup', null, COLS.map(([, w]) => h('col', {style: w && `width: ${w}`}))),
             h('thead', null, h('tr', null, COLS.map(([t]) => h('th', null, t)))),

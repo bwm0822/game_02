@@ -95,7 +95,7 @@ export function analyze(file, entries)
     {
         if (ctx === META) continue;
         for (const [src, v] of Object.entries(rows))
-            if (!alive.has(key(ctx, src))) orphans.push({ctx, src, t: v?.t ?? '', r: v?.r ?? '', check: 'orphan', uses: 0});
+            if (!alive.has(key(ctx, src))) orphans.push({ctx, src, t: v?.t ?? '', r: v?.r ?? '', check: 'orphan', err: '', shared: '', hints: []});
     }
     const orphanBy = {};
     for (const o of orphans) if (o.t) (orphanBy[o.ctx] ??= []).push(o);
