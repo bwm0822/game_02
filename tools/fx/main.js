@@ -4,6 +4,7 @@ import {createDoc} from '../common/doc.js';
 import {fieldInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
+import * as SH from '../common/shell.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
@@ -229,7 +230,8 @@ function refsEl(id)
 {
     const refs = refsOf(id);
     return h('div', {class: 'refs'}, h('span', null, '用到的：'),
-        refs.length ? refs.map(r => h('span', {title: `${r.tab}.json 的 effects（type: ${r.type}）`}, `${r.tab === 'ability' ? '能力' : '道具'} ${r.id}`))
+        refs.length ? refs.map(r => h('a', {class: 'go', title: `跳到${r.tab === 'ability' ? '能力' : '道具'}分頁（effects 的 type: ${r.type}）`, onclick: () => SH.gotoTab(r.tab, [r.id])},
+                                      `${r.tab === 'ability' ? '能力' : '道具'} ${r.id} ↗`))
                     : h('span', {class: 'dim'}, '（沒有效果用這個 id，遊戲不會播）'));
 }
 

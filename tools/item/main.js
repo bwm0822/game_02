@@ -14,7 +14,9 @@ const D = createDoc({
     external: '可能是紙娃娃「存到 item.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs, renameRefs: (from, to) => {for (const it of Object.values(S.items)) for (const ref of SC.ITEM_REFS) ref.set(it, from, to);},
+    onSaved: (file) => {if (file === 'fx.json') loadFx().then(fx => {S.fx = fx; render();});},
 });
+const loadFx = () => fetch('/assets/json/fx.json', {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
 const {S, render, commit, set} = D;
 Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}});
 S.fx = [];
@@ -275,7 +277,7 @@ function draw()
 }
 
 (async () => {
-    S.fx = await fetch('/assets/json/fx.json').then(r => r.json()).then(Object.keys).catch(() => []);
+    S.fx = await loadFx();
     render();
     IC.ready.then(render);
     D.listenGoto();

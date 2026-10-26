@@ -149,9 +149,12 @@ async function save()
 }
 
 // 別的分頁存了檔：沒改過就重讀（undo 紀錄從現在重算），改過就只提示（存檔時會合併）
+const loadFx = () => fetch('/assets/json/fx.json', {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
+
 async function onSaved(file)
 {
     if (file === 'textures.json') return IC.ready.then(render);
+    if (file === 'fx.json') {S.fx = await loadFx(); return render();}
     if (!FILES.includes(file) || !S.assets) return;
     if (dirtyOf(file)) return status(`${file} 在別的分頁存過了，存檔時會合併`);
     await load(file);
@@ -993,7 +996,7 @@ addEventListener('keydown', (e) => {
 
 (async () => {
     S.anims = await fetch('/assets/json/anim.json').then(r => r.json()).then(Object.keys).catch(() => []);
-    S.fx = await fetch('/assets/json/fx.json').then(r => r.json()).then(Object.keys).catch(() => []);
+    S.fx = await loadFx();
     render();
     IC.ready.then(render);
     SH.onSaved(onSaved);

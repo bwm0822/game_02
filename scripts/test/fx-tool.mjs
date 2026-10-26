@@ -2,7 +2,8 @@
 import {run} from './harness.mjs'
 
 run('fx-tool', async t => {
-    await t.page.goto(new URL('tools/fx/', t.page.url()).href);
+    const base = t.page.url();
+    await t.page.goto(new URL('tools/fx/', base).href);
     await t.page.waitForFunction(() => window.__fx && Object.keys(window.__fx.S.refs).length);
 
     const r = await t.page.evaluate(async () => {
@@ -171,4 +172,30 @@ run('fx-tool', async t => {
     t.eq('閃一下不常駐', JSON.stringify(r.flash), JSON.stringify([null, 1]));
     t.eq('閃一下播完自己消失', r.flashDone, 0);
     t.check('自動循環會播', r.auto);
+
+    // 殼：「用到的」↗ 跳到能力分頁那個技能；特效存檔後能力分頁的效果 id 建議跟著更新
+    await t.page.goto(new URL('tools/#fx', base).href);
+    await t.page.waitForFunction(() => window.__tools);
+    const s = await t.page.evaluate(async () => {
+        const T = window.__tools, out = {};
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const until = async (f) => {for (let i = 0; i < 250 && !f(); i++) await sleep(20); return f();};
+        const get = (f) => fetch(f, {cache: 'no-store'}).then(r => r.text());
+        const opfs = await navigator.storage.getDirectory();
+        const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
+        const write = async (d, name, data) => {const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const proj = await dir(opfs, 'game'), json = await dir(proj, 'public', 'assets', 'json');
+        for (const f of ['fx', 'ability', 'ab_tree', 'item', 'role', 'local']) await write(json, `${f}.json`, await get(`/assets/json/${f}.json`));
+        await T.setProject(proj);
+        const win = (tab) => T.S.frames[tab]?.contentWindow;
+        await until(() => win('fx')?.__fx?.S.assets);
+        const fx = win('fx').__fx;
+        fx.S.sel = 'burn'; fx.S.view = 'form'; fx.render();
+        const a = win('fx').document.querySelector('#view .refs a.go');
+        out.target = a?.textContent;
+        a.click();
+        out.jump = !!await until(() => location.hash === '#ability' && win('ability')?.__ab?.S.sel && out.target.includes(win('ability').__ab.S.sel));
+        return out;
+    });
+    t.check('↗ 跳到能力分頁那個技能', s.jump, s.target);
 });
