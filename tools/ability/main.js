@@ -1,5 +1,6 @@
 // 能力＋能力樹：左欄樹清單、中間樹畫布（照遊戲 uiability.js 的畫法）、右欄技能表單
-// 同時編 ability.json（技能＋前置 refs）、ab_tree.json（{樹:[{id,x,y}]}）、local.json（樹名 <樹>.lab）：undo 一起記，存檔各自比對外部修改、三方合併
+// 同時編 ability.json（技能＋前置 refs）、ab_tree.json（{樹:[{id,x,y}]}）、local.json（樹名 <樹>.lab）、role.json（技能改名／刪除時的 abilities）：
+// undo 一起記，存檔各自比對外部修改、三方合併
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import '../common/splitter.js';
@@ -8,10 +9,11 @@ import {$, h, ul, ask, status} from '../common/dom.js';
 import {str, setAt, replaceRaw, merge3} from '../common/obj.js';
 import {fieldInput, createForm} from '../common/form.js';
 import {renderDatalists} from '../common/views.js';
+import {ID_RE, scanRefsIn} from '../common/doc.js';
 import * as IC from '../common/icons.js';
 import * as SC from './schema.js';
 
-const FILES = ['ability.json', 'ab_tree.json', 'local.json'];
+const FILES = ['ability.json', 'ab_tree.json', 'local.json', 'role.json'];
 // 遊戲一格 50px、邊界留白 5px，這裡等比放大
 const CELL = 64, M = 8;
 
@@ -30,6 +32,7 @@ const F = createForm({S, render});
 const abs = () => S.doc['ability.json'].data;
 const trees = () => S.doc['ab_tree.json'].data;
 const locals = () => S.doc['local.json'].data;
+const roles = () => S.doc['role.json'].data;
 const treeOf = (id) => Object.keys(trees()).find(t => trees()[t].some(n => n.id === id));
 const treeLab = (t) => locals()[t]?.lab;
 const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
@@ -341,6 +344,288 @@ function removeRef(child, parent)
     });
 }
 
+// ---------- 右鍵選單 ----------
+const closeMenu = () => document.querySelector('.ctxmenu')?.remove();
+addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu')) closeMenu();});
+
+// items: [[文字, fn, disabled]]，'-' 是分隔線
+function menu(e, items)
+{
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    document.body.append(h('div', {class: 'ctxmenu', style: `left:${e.clientX}px;top:${e.clientY}px`},
+        items.filter(Boolean).map(([label, fn, disabled]) => label === '-' ? h('hr') :
+            h('button', {type: 'button', disabled, onclick: () => {closeMenu(); fn();}}, label))));
+}
+
+// ---------- 技能：新增／複製／放上樹／改名／刪除 ----------
+// 改名／刪除時這三個檔由工具一起改，掃外部引用時跳過
+const OWN = ['json/ability.json', 'json/ab_tree.json', 'json/role.json'];
+const renameKey = (obj, from, to) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k === from ? to : k, v]));
+const isFree = (t, x, y) => !trees()[t].some(n => n.x === x && n.y === y);
+
+function idError(id, taken)
+{
+    if (!id) return '不能是空的';
+    if (!ID_RE.test(id)) return '只能用英數字、底線、減號';
+    if (taken) return `「${id}」已經有了`;
+    return '';
+}
+
+// 排在 after 後面；沒給就排在目前這棵樹最後一個技能後面，都沒有就排最後
+function insertAbility(id, value, after)
+{
+    const e = Object.entries(abs());
+    const i = after ? e.findIndex(([k]) => k === after) : e.findLastIndex(([k]) => treeOf(k) === S.tree);
+    e.splice(i < 0 ? e.length : i + 1, 0, [id, value]);
+    S.doc['ability.json'].data = Object.fromEntries(e);
+}
+
+function add(id, x, y, lab)
+{
+    const err = idError(id, abs()[id]);
+    if (err) return status(err);
+    if (!isFree(S.tree, x, y)) return status(`${x},${y} 已經有技能了`);
+    commit(() => {
+        insertAbility(id, {...SC.template(), ...(lab && {lab})});
+        trees()[S.tree].push({id, x, y});
+        S.sel = id;
+        S.link = null;
+    });
+}
+
+async function askNew(x, y)
+{
+    const id = h('input', {size: 24}), lab = h('input', {size: 24});
+    const p = ask(`新技能（${S.tree} 的 ${x},${y}）`, [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '名稱'), lab)],
+        [['ok', '新增'], ['cancel', '取消']]);
+    id.focus();
+    if (await p === 'ok') add(id.value.trim(), x, y, lab.value.trim());
+}
+
+function place(id, x, y)
+{
+    if (treeOf(id) || !isFree(S.tree, x, y)) return;
+    commit(() => {trees()[S.tree].push({id, x, y}); S.sel = id;});
+}
+
+function unplace(id)
+{
+    const t = treeOf(id);
+    if (!t) return;
+    commit(() => {trees()[t] = trees()[t].filter(n => n.id !== id); S.link = null;});
+    status(`${id} 移出 ${t}，列在左欄「不在樹上」，在樹上空格右鍵可以放回去`);
+}
+
+function dup(id)
+{
+    let n = `${id}_copy`;
+    for (let i = 2; abs()[n]; i++) n = `${id}_copy${i}`;
+    const t = treeOf(id), at = t && nodeOf(t, id);
+    commit(() => {
+        insertAbility(n, structuredClone(abs()[id]), id);
+        if (at)
+        {
+            let x = at.x + 1;
+            while (!isFree(t, x, at.y)) x++;
+            trees()[t].push({id: n, x, y: at.y});
+        }
+        S.sel = n;
+    });
+}
+
+// 工具一起改的引用
+function innerRefs(id)
+{
+    const out = [];
+    for (const [k, a] of Object.entries(abs())) if (Array.isArray(a.refs) && a.refs.includes(id)) out.push(`ability.json：${k}.refs`);
+    for (const t of Object.keys(trees())) if (trees()[t].some(n => n.id === id)) out.push(`ab_tree.json：${t}`);
+    for (const [rid, r] of Object.entries(roles())) if (Array.isArray(r.abilities) && r.abilities.includes(id)) out.push(`role.json：${rid}.abilities`);
+    return out;
+}
+
+const refList = (refs) => [
+    refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
+    !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 xls/、src/'),
+];
+const innerList = (refs) => refs.length ? ul(refs) : h('div', {class: 'dim'}, '（沒有）');
+
+async function rename(from, to)
+{
+    if (from === to) return;
+    const err = idError(to, abs()[to]);
+    if (err) return status(err);
+    const inner = innerRefs(from), outer = await scanRefsIn(S.assets, from, p => OWN.includes(p));
+    const r = await ask(`改名 ${from} → ${to}`, [
+        h('div', {class: 'title'}, '會一起改的'),
+        innerList(inner),
+        h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
+        refList(outer),
+        h('div', {class: 'dim'}, `翻譯的情境 ability.${from} 會變 orphan，要跑 node scripts/lang.js 後到 en.xlsx 處理`),
+    ], [['ok', '改名'], ['cancel', '取消']]);
+    if (r !== 'ok') return;
+    const sw = (a) => a.map(x => x === from ? to : x);
+    commit(() => {
+        S.doc['ability.json'].data = renameKey(abs(), from, to);
+        for (const a of Object.values(abs())) if (Array.isArray(a.refs)) a.refs = sw(a.refs);
+        for (const nodes of Object.values(trees())) for (const n of nodes) if (n.id === from) n.id = to;
+        for (const ro of Object.values(roles())) if (Array.isArray(ro.abilities)) ro.abilities = sw(ro.abilities);
+        if (S.extra[from]) {S.extra[to] = S.extra[from]; delete S.extra[from];}
+        if (S.link) S.link = null;
+        S.sel = to;
+    });
+    status(`已改名 ${from} → ${to}${outer.length ? `，其他檔案還有 ${outer.length} 處引用` : ''}`);
+}
+
+async function askRename(from)
+{
+    const to = h('input', {size: 24, value: from});
+    const p = ask(`改名 ${from}`, [h('div', null, '新的 id：'), to], [['ok', '下一步'], ['cancel', '取消']]);
+    to.select();
+    if (await p === 'ok') await rename(from, to.value.trim());
+}
+
+async function remove(id)
+{
+    const inner = innerRefs(id), outer = await scanRefsIn(S.assets, id, p => OWN.includes(p));
+    const r = await ask(`刪除 ${id}`, [
+        h('div', {class: 'title'}, '會一起拿掉的（別人的前置、樹上的節點、角色的 abilities）'),
+        innerList(inner),
+        h('div', {class: 'title'}, '其他檔案（不會改）'),
+        refList(outer),
+    ], [['ok', '刪除'], ['cancel', '取消']]);
+    if (r !== 'ok') return;
+    commit(() => {
+        delete abs()[id];
+        for (const a of Object.values(abs())) if (Array.isArray(a.refs) && a.refs.includes(id))
+        {
+            a.refs = a.refs.filter(x => x !== id);
+            if (!a.refs.length) delete a.refs;
+        }
+        for (const t of Object.keys(trees())) trees()[t] = trees()[t].filter(n => n.id !== id);
+        for (const ro of Object.values(roles())) if (Array.isArray(ro.abilities)) ro.abilities = ro.abilities.filter(x => x !== id);
+        S.sel = null;
+        S.link = null;
+    });
+}
+
+// ---------- 樹：新增／改名／排序／刪除（樹名在 local.json 的 <樹>.lab，跟著改） ----------
+function addTree(id, lab)
+{
+    const err = idError(id, trees()[id]);
+    if (err) return status(err);
+    commit(() => {
+        trees()[id] = [];
+        if (lab) setAt(locals(), [id, 'lab'], lab);
+        S.tree = id;
+        S.sel = null;
+    });
+}
+
+async function askNewTree()
+{
+    const id = h('input', {size: 24}), lab = h('input', {size: 24});
+    const p = ask('新樹', [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '名稱'), lab)], [['ok', '新增'], ['cancel', '取消']]);
+    id.focus();
+    if (await p === 'ok') addTree(id.value.trim(), lab.value.trim());
+}
+
+async function renameTree(from, to)
+{
+    if (from === to) return;
+    const err = idError(to, trees()[to]) || (locals()[to] ? `local.json 已經有「${to}」` : '');
+    if (err) return status(err);
+    const outer = await scanRefsIn(S.assets, from, p => p === 'json/ab_tree.json' || p === 'json/local.json');
+    const r = await ask(`樹改名 ${from} → ${to}`, [
+        h('div', null, 'ab_tree.json 的 key 跟 local.json 的樹名 key 會一起改'),
+        h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
+        refList(outer),
+        h('div', {class: 'dim'}, `翻譯的情境 ui.${from} 會變 orphan，要跑 node scripts/lang.js 後到 en.xlsx 處理`),
+    ], [['ok', '改名'], ['cancel', '取消']]);
+    if (r !== 'ok') return;
+    commit(() => {
+        S.doc['ab_tree.json'].data = renameKey(trees(), from, to);
+        if (from in locals()) S.doc['local.json'].data = renameKey(locals(), from, to);
+        S.tree = to;
+    });
+}
+
+async function askRenameTree(from)
+{
+    const to = h('input', {size: 24, value: from});
+    const p = ask(`樹改名 ${from}`, [h('div', null, '新的 id：'), to], [['ok', '下一步'], ['cancel', '取消']]);
+    to.select();
+    if (await p === 'ok') await renameTree(from, to.value.trim());
+}
+
+// 樹的順序＝遊戲技能頁的分頁順序
+function moveTree(t, d)
+{
+    const e = Object.entries(trees()), i = e.findIndex(([k]) => k === t);
+    if (i + d < 0 || i + d >= e.length) return;
+    [e[i], e[i + d]] = [e[i + d], e[i]];
+    commit(() => {S.doc['ab_tree.json'].data = Object.fromEntries(e);});
+}
+
+async function removeTree(t)
+{
+    const n = trees()[t].length;
+    const r = await ask(`刪除樹 ${t}`, [
+        h('div', null, n ? `樹上的 ${n} 個技能留在 ability.json，變成「不在樹上」` : '樹上沒有技能'),
+        locals()[t] && h('div', null, `local.json 的 ${t}（樹名）一起拿掉`),
+    ], [['ok', '刪除'], ['cancel', '取消']]);
+    if (r !== 'ok') return;
+    const keys = Object.keys(trees()), i = keys.indexOf(t);
+    commit(() => {
+        delete trees()[t];
+        delete locals()[t];
+        S.tree = keys[i + 1] ?? keys[i - 1] ?? null;
+        S.sel = null;
+        S.link = null;
+    });
+}
+
+function treeMenu(e, t)
+{
+    const keys = Object.keys(trees()), i = keys.indexOf(t);
+    menu(e, [
+        ['改名…', () => askRenameTree(t)],
+        ['上移', () => moveTree(t, -1), i === 0],
+        ['下移', () => moveTree(t, 1), i === keys.length - 1],
+        ['-'],
+        ['新增樹…', askNewTree],
+        ['-'],
+        ['刪除…', () => removeTree(t)],
+    ]);
+}
+
+function nodeMenu(e, id)
+{
+    menu(e, [
+        ['改名…', () => askRename(id)],
+        ['複製', () => dup(id)],
+        ['移出這棵樹', () => unplace(id)],
+        ['-'],
+        ['刪除…', () => remove(id)],
+    ]);
+}
+
+// 空格右鍵：新增技能，或把「不在樹上」的技能放上來
+function cellMenu(e)
+{
+    if (e.target.closest('.node')) return;
+    const b = e.currentTarget.getBoundingClientRect();
+    const x = Math.floor((e.clientX - b.left - M) / CELL), y = Math.floor((e.clientY - b.top - M) / CELL);
+    if (x < 0 || y < 0) return;
+    const orphans = Object.keys(abs()).filter(id => !treeOf(id));
+    menu(e, [
+        [`新增技能…（${x},${y}）`, () => askNew(x, y)],
+        orphans.length && ['-'],
+        ...orphans.map(id => [`放上 ${id}${abs()[id].lab ? `　${abs()[id].lab}` : ''}`, () => place(id, x, y)]),
+    ]);
+}
+
 // ---------- 左欄 ----------
 function abRow(id)
 {
@@ -366,7 +651,8 @@ function renderList()
         ...Object.keys(trees()).map(t => {
             const w = validateTree(t), bad = trees()[t].filter(n => abs()[n.id] && validate(n.id).length).length;
             const dirty = trees()[t].some(n => dirtyAb(n.id)) || str(trees()[t]) !== str(S.doc['ab_tree.json'].saved[t]) || str(locals()[t]) !== str(S.doc['local.json'].saved[t]);
-            return h('div', {class: 'item' + (t === S.tree ? ' sel' : ''), dataset: {tree: t}, onclick: () => selectTree(t)},
+            return h('div', {class: 'item' + (t === S.tree ? ' sel' : ''), dataset: {tree: t}, title: '右鍵：改名、排序、刪除',
+                onclick: () => selectTree(t), oncontextmenu: e => treeMenu(e, t)},
                 h('span', {class: 'id'}, t),
                 h('span', {class: 'lab'}, treeLab(t) ?? ''),
                 h('span', {class: 'mark'}, h('span', {class: 'dim'}, trees()[t].length),
@@ -471,13 +757,13 @@ function renderTree()
             h('label', null, '名稱 ', h('input', {dataset: {k: `tree.${t}.lab`}, value: treeLab(t) ?? '',
                 onchange: e => commit(() => setAt(locals(), [t, 'lab'], e.target.value.trim() || undefined))}))),
         warns.length && h('ul', {class: 'warns'}, warns.map(x => h('li', null, x))),
-        h('div', {class: 'tree', style: `width:${w * CELL + 2 * M}px;height:${hh * CELL + 2 * M}px;--cell:${CELL}px;--m:${M}px`},
+        h('div', {class: 'tree', style: `width:${w * CELL + 2 * M}px;height:${hh * CELL + 2 * M}px;--cell:${CELL}px;--m:${M}px`, oncontextmenu: cellMenu},
             svg,
             nodes.map(n => {
                 const ab = abs()[n.id], p = center(n), bad = !ab || validate(n.id).length;
                 return h('div', {class: 'node' + (n.id === S.sel ? ' sel' : '') + (bad ? ' bad' : ''), dataset: {id: n.id},
                     title: [n.id, ...(ab ? validate(n.id) : ['不在 ability.json'])].join('\n'),
-                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => nodeDown(e, n)},
+                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => nodeDown(e, n), oncontextmenu: e => ab ? nodeMenu(e, n.id) : e.preventDefault()},
                     IC.iconEl(ab?.icon, 40),
                     h('div', {class: 'nlab'}, ab?.lab ?? n.id),
                     ab && h('div', {class: 'handle', title: '拉到另一個技能＝設成它的前置', onpointerdown: e => linkDown(e, n), onclick: e => e.stopPropagation()}));
@@ -546,7 +832,11 @@ function renderForm()
         h('div', {class: 'head'},
             IC.iconEl(ab.icon, 48),
             h('span', {class: 'bigid'}, id),
-            dirtyAb(id) && h('span', {class: 'dirty'}, '●')),
+            dirtyAb(id) && h('span', {class: 'dirty'}, '●'),
+            h('span', {class: 'grow'}),
+            h('button', {type: 'button', onclick: () => askRename(id)}, '改名…'),
+            h('button', {type: 'button', onclick: () => dup(id)}, '複製'),
+            h('button', {type: 'button', onclick: () => remove(id)}, '刪除…')),
         warns.length && h('ul', {class: 'warns'}, warns.map(w => h('li', null, w))),
         h('div', {class: 'fields'},
             shown.map(k => SC.FIELDS[k].type === 'cards' ? cardBox(id, ab, k) : [
@@ -588,7 +878,7 @@ function render()
     renderForm();
     $('btnUndo').disabled = S.hi <= 0;
     $('btnRedo').disabled = S.hi >= S.hist.length - 1;
-    $('btnSave').disabled = $('btnReload').disabled = !S.assets;
+    $('btnSave').disabled = $('btnReload').disabled = $('btnNewTree').disabled = !S.assets;
     $('dirty').hidden = !isDirty();
     SH.setDirty(isDirty());
     if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
@@ -602,6 +892,7 @@ $('btnSave').onclick = save;
 $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
 $('search').oninput = (e) => {S.search = e.target.value; render();};
+$('btnNewTree').onclick = askNewTree;
 
 addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
@@ -609,7 +900,7 @@ addEventListener('keydown', (e) => {
     if (e.ctrlKey && k === 's') {e.preventDefault(); document.activeElement?.blur(); save(); return;}
     if (e.target.matches?.('input, textarea, select') || document.querySelector('dialog[open]')) return;
     if ((k === 'delete' || k === 'backspace') && S.link) {e.preventDefault(); removeRef(S.link.child, S.link.ref);}
-    if (k === 'escape' && S.link) {S.link = null; render();}
+    if (k === 'escape') {closeMenu(); if (S.link) {S.link = null; render();}}
     if (e.ctrlKey && k === 'z' && !e.shiftKey) {e.preventDefault(); undo();}
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
 });
@@ -624,4 +915,5 @@ addEventListener('keydown', (e) => {
 })();
 
 // 給無頭測試用
-window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, addCard, delCard, validate, validateTree, validateAll, render, IC, CELL, M};
+window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, addCard, delCard,
+               add, place, unplace, dup, rename, remove, innerRefs, addTree, renameTree, moveTree, removeTree, validate, validateTree, validateAll, render, IC, CELL, M};

@@ -6,7 +6,63 @@ import * as SH from './shell.js';
 import {$, h, ul, ask, status} from './dom.js';
 import {str, setAt, merge3} from './obj.js';
 
-const ID_RE = /^[A-Za-z0-9_-]+$/;
+export const ID_RE = /^[A-Za-z0-9_-]+$/;
+
+// fn(檔案 handle, 路徑)；skip(路徑) 為 true 的子資料夾不進去
+async function walk(dir, path, fn, skip)
+{
+    for await (const fh of dir.values())
+    {
+        const p = path ? `${path}/${fh.name}` : fh.name;
+        if (fh.kind === 'directory') {if (!skip?.(p)) await walk(fh, p, fn, skip);}
+        else await fn(fh, p);
+    }
+}
+
+// 引用到 id 的地方（id 當作獨立單字出現）：public/assets 底下的 json（字串值或 key；skip(相對 assets 的路徑) 為 true 的不掃）；
+// 有專案根目錄的話，再加 xls/ 的儲存格（xls/lang 是 lang.js 自己管的譯文，不列）跟 src/ 的程式碼（src/old 不列）
+// assets: {dir: public/assets, root: 專案根目錄或 null}
+export async function scanRefsIn(assets, id, skip)
+{
+    const re = new RegExp(`(^|[^\\w])${id.replace(/[-]/g, '\\-')}([^\\w]|$)`);
+    const out = [];
+    await walk(assets.dir, '', async (fh, p) => {
+        if (!/\.(json|world|tmj|tsj)$/.test(fh.name) || skip?.(p)) return;
+        const text = await (await fh.getFile()).text();
+        if (!re.test(text)) return;
+        let data;
+        try {data = JSON.parse(text);} catch {out.push({file: p, path: '（不是 JSON）'}); return;}
+        const hits = [];
+        const visit = (v, at) => {
+            if (hits.length >= 10) return;
+            if (typeof v === 'string') {if (re.test(v)) hits.push(`${at}＝${v.length > 40 ? v.slice(0, 40) + '…' : v}`);}
+            else if (v && typeof v === 'object')
+                for (const [k, c] of Object.entries(v))
+                {
+                    const sub = Array.isArray(v) ? `${at}[${k}]` : at ? `${at}.${k}` : k;
+                    if (!Array.isArray(v) && re.test(k)) hits.push(`${sub}（key）`);
+                    visit(c, sub);
+                }
+        };
+        visit(data, '');
+        for (const x of hits) out.push({file: p, path: x});
+    });
+    const root = assets.root;
+    const xls = root && await FS.tryDir(root, 'xls');
+    if (xls) await walk(xls, 'xls', async (fh, p) => {
+        if (!fh.name.endsWith('.xlsx') || fh.name.startsWith('~$')) return;
+        try {for (const x of await XL.findText(await fh.getFile(), s => re.test(s))) out.push({file: p, path: x});}
+        catch (e) {out.push({file: p, path: `（讀不了：${e.message}）`});}
+    }, p => p === 'xls/lang');
+    const src = root && await FS.tryDir(root, 'src');
+    if (src) await walk(src, 'src', async (fh, p) => {
+        if (!fh.name.endsWith('.js')) return;
+        const lines = (await (await fh.getFile()).text()).split('\n');
+        let n = 0;
+        lines.forEach((l, i) => {if (n < 10 && re.test(l)) {n++; out.push({file: p, path: `${i + 1} 行：${l.trim().slice(0, 60)}`});}});
+    }, p => p === 'src/old');
+    return out;
+}
 
 // opt: {file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), decode, encode}
 // decode(json) → {id: 資料}、encode({id: 資料}) → json：檔案本身不是 {id: 資料} 時（story.json）轉接，undo／合併都以 id 為單位
@@ -168,60 +224,7 @@ export function createDoc(opt)
         commit(() => {insertAt(Object.keys(S.data).indexOf(id) + 1, n, structuredClone(S.data[id])); S.sel = n;});
     }
 
-    // fn(檔案 handle, 路徑)；skip(路徑) 為 true 的子資料夾不進去
-    async function walk(dir, path, fn, skip)
-    {
-        for await (const fh of dir.values())
-        {
-            const p = path ? `${path}/${fh.name}` : fh.name;
-            if (fh.kind === 'directory') {if (!skip?.(p)) await walk(fh, p, fn, skip);}
-            else await fn(fh, p);
-        }
-    }
-
-    // 引用到 id 的地方（id 當作獨立單字出現）：public/assets 底下的 json（字串值或 key）；
-    // 選的是專案根目錄的話，再加 xls/ 的儲存格（xls/lang 是 lang.js 自己管的譯文，不列）跟 src/ 的程式碼（src/old 不列）
-    async function scanRefs(id)
-    {
-        const re = new RegExp(`(^|[^\\w])${id.replace(/[-]/g, '\\-')}([^\\w]|$)`);
-        const out = [];
-        await walk(S.assets.dir, '', async (fh, p) => {
-            if (!/\.(json|world|tmj|tsj)$/.test(fh.name) || p === `json/${opt.file}`) return;
-            const text = await (await fh.getFile()).text();
-            if (!re.test(text)) return;
-            let data;
-            try {data = JSON.parse(text);} catch {out.push({file: p, path: '（不是 JSON）'}); return;}
-            const hits = [];
-            const visit = (v, at) => {
-                if (hits.length >= 10) return;
-                if (typeof v === 'string') {if (re.test(v)) hits.push(`${at}＝${v.length > 40 ? v.slice(0, 40) + '…' : v}`);}
-                else if (v && typeof v === 'object')
-                    for (const [k, c] of Object.entries(v))
-                    {
-                        const sub = Array.isArray(v) ? `${at}[${k}]` : at ? `${at}.${k}` : k;
-                        if (!Array.isArray(v) && re.test(k)) hits.push(`${sub}（key）`);
-                        visit(c, sub);
-                    }
-            };
-            visit(data, '');
-            for (const x of hits) out.push({file: p, path: x});
-        });
-        const root = S.assets.root;
-        const xls = root && await FS.tryDir(root, 'xls');
-        if (xls) await walk(xls, 'xls', async (fh, p) => {
-            if (!fh.name.endsWith('.xlsx') || fh.name.startsWith('~$')) return;
-            try {for (const x of await XL.findText(await fh.getFile(), s => re.test(s))) out.push({file: p, path: x});}
-            catch (e) {out.push({file: p, path: `（讀不了：${e.message}）`});}
-        }, p => p === 'xls/lang');
-        const src = root && await FS.tryDir(root, 'src');
-        if (src) await walk(src, 'src', async (fh, p) => {
-            if (!fh.name.endsWith('.js')) return;
-            const lines = (await (await fh.getFile()).text()).split('\n');
-            let n = 0;
-            lines.forEach((l, i) => {if (n < 10 && re.test(l)) {n++; out.push({file: p, path: `${i + 1} 行：${l.trim().slice(0, 60)}`});}});
-        }, p => p === 'src/old');
-        return out;
-    }
+    const scanRefs = (id) => scanRefsIn(S.assets, id, p => p === `json/${opt.file}`);
 
     const refList = (refs) => [
         refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),

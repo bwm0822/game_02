@@ -10,19 +10,26 @@ run('ability', async t => {
     const r = await t.page.evaluate(async () => {
         const ab = window.__ab, S = ab.S, out = {}, $ = (id) => document.getElementById(id);
         const sleep = (ms) => new Promise(res => setTimeout(res, ms));
-        const save = async (...answers) => {
+        // 跑 fn，跳出的對話框依序回答；answer 是字串（按鈕值）或 (dialog) => 按鈕值（先填輸入框）
+        const flow = async (fn, ...answers) => {
             let done = false;
-            const p = ab.save().finally(() => {done = true;}), seen = [];
+            const p = Promise.resolve(fn()).finally(() => {done = true;}), seen = [];
             while (!done)
             {
-                if ($('dlgAsk').open) {seen.push($('dlgAsk').textContent); $('dlgAsk').close(answers.shift() ?? 'cancel');}
+                if ($('dlgAsk').open)
+                {
+                    seen.push($('dlgAsk').textContent);
+                    const a = answers.shift() ?? 'cancel';
+                    $('dlgAsk').close(typeof a === 'function' ? a($('dlgAsk')) : a);
+                }
                 await sleep(20);
             }
             await p;
             return seen;
         };
+        const save = (...answers) => flow(() => ab.save(), ...answers);
 
-        const FILES = ['ability.json', 'ab_tree.json', 'local.json'];
+        const FILES = ['ability.json', 'ab_tree.json', 'local.json', 'role.json'];
         const orig = {};
         for (const f of FILES) orig[f] = await (await fetch(`/assets/json/${f}`)).text();
         const opfs = await navigator.storage.getDirectory();
@@ -33,6 +40,9 @@ run('ability', async t => {
         const json = await dir(proj, 'public', 'assets', 'json');
         const disk = async (f) => (await (await json.getFileHandle(f)).getFile()).text();
         for (const f of FILES) await write(json, f, orig[f]);
+        await write(await dir(proj, 'public', 'assets', 'maps'), 'x.json', JSON.stringify({objs: [{props: {ability: 'fireball'}}, {name: 'fireball_2'}]}));
+        await write(await dir(proj, 'src'), 'x.js', 'const a = 1;\nconst ab = "fireball";\n');
+        await write(await dir(proj, 'src', 'old'), 'y.js', 'fireball');
 
         await ab.setAssets(proj);
         await ab.IC.ready;
@@ -89,7 +99,7 @@ run('ability', async t => {
         ext.heal.cd = 99;
         await write(json, 'ability.json', JSON.stringify(ext, null, 2));
         ab.set('fireball', ['cd'], 5);
-        const seen = await save('merge');
+        let seen = await save('merge');
         const m = JSON.parse(await disk('ability.json'));
         out.merge = [seen.length, m.heal.cd, m.fireball.cd];
 
@@ -212,6 +222,81 @@ run('ability', async t => {
         out.tokBad = document.querySelectorAll('#pv .despv .tokbad').length;
         ab.undo();
         out.final2 = ab.validateAll().length;
+
+        // ---------- 技能改名／複製／新增／移出放回／刪除 ----------
+        const T = () => S.doc['ab_tree.json'].data, R = () => S.doc['role.json'].data;
+        const rid = Object.keys(R()).find(k => R()[k].abilities?.includes('fireball'));
+        const idx0 = Object.keys(A()).indexOf('fireball');
+        seen = await flow(() => ab.rename('fireball', 'fire_ball'), 'ok');
+        out.renDlg = [seen[0]?.includes('ability.json：fireballvolley.refs'), seen[0]?.includes('ab_tree.json：Fire'), seen[0]?.includes(`role.json：${rid}.abilities`),
+                      seen[0]?.includes('maps/x.json'), seen[0]?.includes('src/x.js'), seen[0]?.includes('src/old'), seen[0]?.includes('fireball_2'), seen[0]?.includes('json/role.json')];
+        out.ren = [Object.keys(A()).indexOf('fire_ball') === idx0, 'fireball' in A(), JSON.stringify(A().fireballvolley.refs), !!T().Fire.find(n => n.id === 'fire_ball'),
+                   R()[rid].abilities.includes('fire_ball'), S.sel];
+        out.renBad = await flow(() => ab.rename('fire_ball', 'heal'), 'ok');
+        ab.undo();
+        out.renUndo = ['fireball' in A(), R()[rid].abilities.includes('fireball')];
+
+        ab.dup('firewall');
+        out.dup = [Object.keys(A())[Object.keys(A()).indexOf('firewall') + 1], JSON.stringify(T().Fire.find(n => n.id === 'firewall_copy')), S.sel];
+        ab.undo();
+
+        // 空格右鍵 → 新增技能（排在這棵樹最後一個技能後面）
+        ab.selectTree('Fire');
+        const tree = document.querySelector('#view .tree'), tb = tree.getBoundingClientRect();
+        const ctx = (el, x, y) => el.dispatchEvent(new MouseEvent('contextmenu', {clientX: x, clientY: y, bubbles: true, cancelable: true}));
+        ctx(tree, tb.left + ab.M + 3 * CELL + 5, tb.top + ab.M + 2 * CELL + 5);
+        out.cellMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        seen = await flow(() => document.querySelector('.ctxmenu button').click(), (d) => {
+            const [id, lab] = d.querySelectorAll('input'); id.value = 'flame'; lab.value = '火焰'; return 'ok';
+        });
+        out.menuGone = !document.querySelector('.ctxmenu');
+        out.added = [JSON.stringify(A().flame), Object.keys(A()).indexOf('flame') === Object.keys(A()).indexOf('meteorshower') + 1,
+                     JSON.stringify(T().Fire.at(-1)), S.sel];
+        // 移出樹 → 不在樹上 → 空格右鍵放回去
+        ab.unplace('flame');
+        out.unplaced = [!T().Fire.some(n => n.id === 'flame'), 'flame' in A()];
+        ctx(tree.isConnected ? tree : document.querySelector('#view .tree'), tb.left + ab.M + 4 * CELL + 5, tb.top + ab.M + 5);
+        const put = [...document.querySelectorAll('.ctxmenu button')].find(b => b.textContent.startsWith('放上 flame'));
+        out.placeItem = put?.textContent;
+        put?.click();
+        out.placed = JSON.stringify(T().Fire.find(n => n.id === 'flame'));
+        // 節點右鍵選單
+        ctx(document.querySelector('#view .node[data-id="flame"]'), 0, 0);
+        out.nodeMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent).join();
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.escMenu = !document.querySelector('.ctxmenu');
+        ab.undo(); ab.undo(); ab.undo();
+        out.addUndo = 'flame' in A();
+
+        // 刪除：別人的前置、樹節點、角色 abilities 一起拿掉
+        seen = await flow(() => ab.remove('fireball'), 'ok');
+        out.del = ['fireball' in A(), 'refs' in A().fireballvolley, T().Fire.some(n => n.id === 'fireball'), R()[rid].abilities.includes('fireball'), seen[0]?.includes('src/x.js')];
+        ab.undo();
+
+        // ---------- 樹 ----------
+        ab.addTree('Holy', '神聖');
+        out.addTree = [Object.keys(T()).at(-1), JSON.stringify(T().Holy), S.doc['local.json'].data.Holy?.lab, S.tree];
+        out.addTreeBad = (ab.addTree('Fire'), Object.keys(T()).length);
+        seen = await flow(() => ab.renameTree('Holy', 'Light'), 'ok');
+        out.renTree = [Object.keys(T()).at(-1), S.doc['local.json'].data.Light?.lab, 'Holy' in S.doc['local.json'].data, S.tree];
+        ab.moveTree('Light', -1);
+        out.moveTree = Object.keys(T()).slice(-2).join();
+        ab.moveTree('General', -1);
+        out.moveTop = Object.keys(T())[0];
+        seen = await flow(() => ab.removeTree('Fire'), 'ok');
+        out.delTree = ['Fire' in T(), 'Fire' in S.doc['local.json'].data, 'fireball' in A(), ab.validate('fireball').includes('不在任何一棵樹上'), seen[0]?.includes('5 個技能')];
+        // 樹列右鍵選單
+        ctx(document.querySelector('#list .item[data-tree="General"]'), 10, 10);
+        out.treeMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => `${b.textContent}${b.disabled ? '(x)' : ''}`).join();
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        for (let i = 0; i < 4; i++) ab.undo();
+        out.treeUndo = [Object.keys(T()).join(), 'Holy' in S.doc['local.json'].data];
+
+        // 存檔：role.json 也寫
+        await flow(() => ab.rename('heal', 'heal2'), 'ok');
+        const rid2 = Object.keys(R()).find(k => R()[k].abilities?.includes('heal2'));
+        await save('save');
+        out.saveRole = rid2 && JSON.parse(await disk('role.json'))[rid2].abilities.includes('heal2');
         return out;
     });
 
@@ -292,4 +377,39 @@ run('ability', async t => {
     if (r.tokWarns.length !== 4) console.log('    ' + r.tokWarns.join('\n    '));
     t.eq('預覽標紅 4 個', r.tokBad, 4);
     t.eq('改回來沒警告', r.final2, 0);
+
+    t.eq('改名對話框列出一起改的（refs／樹／角色）', r.renDlg.slice(0, 3).join(), 'true,true,true');
+    t.eq('改名對話框列出外部引用（maps、src）', r.renDlg.slice(3, 5).join(), 'true,true');
+    t.eq('不列 src/old、fireball_2、role.json', r.renDlg.slice(5).join(), 'false,false,false');
+    t.eq('改名保留位置、舊 id 消失', r.ren.slice(0, 2).join(), 'true,false');
+    t.eq('改名連動 refs', r.ren[2], '["fire_ball"]');
+    t.check('改名連動樹節點', r.ren[3]);
+    t.check('改名連動 role.json abilities', r.ren[4]);
+    t.eq('改名後選新 id', r.ren[5], 'fire_ball');
+    t.eq('改成已有的 id 不跳對話框', r.renBad.length, 0);
+    t.eq('改名 undo', r.renUndo.join(), 'true,true');
+    t.eq('複製排在後面、樹上放右邊空格', r.dup.join(' '), 'firewall_copy {"id":"firewall_copy","x":3,"y":0} firewall_copy');
+    t.check('空格右鍵有新增', r.cellMenu[0]?.startsWith('新增技能…（3,2）'), r.cellMenu.join());
+    t.check('選完選單關掉', r.menuGone);
+    t.eq('新增技能內容', r.added[0], '{"icon":"❓","mode":"active","lab":"火焰","des":""}');
+    t.check('新增排在這棵樹最後一個後面', r.added[1]);
+    t.eq('新增放在右鍵的格子', r.added[2], '{"id":"flame","x":3,"y":2}');
+    t.eq('新增後選取', r.added[3], 'flame');
+    t.eq('移出樹保留技能', r.unplaced.join(), 'true,true');
+    t.check('空格選單有放上不在樹上的', r.placeItem?.startsWith('放上 flame'), r.placeItem);
+    t.eq('放回樹上', r.placed, '{"id":"flame","x":4,"y":0}');
+    t.eq('節點右鍵選單', r.nodeMenu, '改名…,複製,移出這棵樹,刪除…');
+    t.check('Esc 關選單', r.escMenu);
+    t.eq('新增 undo', r.addUndo, false);
+    t.eq('刪除連帶清 refs／樹／角色', r.del.slice(0, 4).join(), 'false,false,false,false');
+    t.check('刪除對話框列外部引用', r.del[4]);
+    t.eq('新增樹', r.addTree.join(' '), 'Holy [] 神聖 Holy');
+    t.eq('樹 id 重複不加', r.addTreeBad, 9);
+    t.eq('樹改名連 local.json', r.renTree.join(), 'Light,神聖,false,Light');
+    t.eq('樹上移', r.moveTree, 'Light,Enhancement');
+    t.eq('第一棵不能再上移', r.moveTop, 'General');
+    t.eq('刪除樹：技能留著變不在樹上', r.delTree.join(), 'false,false,true,true,true');
+    t.eq('樹列右鍵選單', r.treeMenu, '改名…,上移(x),下移,新增樹…,刪除…');
+    t.check('樹 undo', r.treeUndo[0] === 'General,Sword,Archery,Fire,Ice,Poison,Support,Enhancement' && !r.treeUndo[1], r.treeUndo.join(' '));
+    t.check('存檔寫 role.json', r.saveRole);
 });
