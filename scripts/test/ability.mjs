@@ -53,9 +53,9 @@ run('ability', async t => {
         out.refsRow = document.querySelector('#pv .refs')?.textContent;
         ab.select('fireballvolley');
         out.refsRow2 = document.querySelector('#pv .refs')?.textContent;
-        // 表單沒列到的 key（hits/travel/fx/effects）進其他欄位
+        // 表單沒列到的 key（travel/fx）進其他欄位
         ab.select('fireball');
-        out.other = document.querySelector('#pv .box .bar .dim')?.textContent;
+        out.other = [...document.querySelectorAll('#pv .box .bar')].find(b => b.textContent.includes('其他欄位'))?.querySelector('.dim').textContent;
 
         // 改欄位：只有 ability.json 變、key 位置不動
         const fire = (el, v) => {el.value = v; el.dispatchEvent(new Event('change'));};
@@ -177,6 +177,41 @@ run('ability', async t => {
         out.cross = ab.validate('fireball').some(w => w.includes('在別棵樹（Ice）'));
         ab.undo();
         out.final = ab.validateAll().length;
+
+        // ---------- hits／effects 卡片、說明預覽 ----------
+        const A = () => S.doc['ability.json'].data;
+        ab.select('fireball');
+        S.open.hits = S.open.effects = true; ab.render();
+        out.cards = [...document.querySelectorAll('#pv .card .sum')].map(e => e.textContent);
+        fire(document.querySelector('#pv [data-k="hits.0.pow"]'), '2');
+        out.hitPow = A().fireball.hits[0].pow;
+        ab.addCard('fireball', 'hits');
+        out.addHit = [A().fireball.hits.length, JSON.stringify(A().fireball.hits[1]), document.querySelectorAll('#pv .card').length];
+        // 卡片不認識的 key 在額外欄位
+        ab.commit(() => {A().fireball.hits[1].zz = 1;});
+        out.hitRaw = !!document.querySelector('#pv details[open] [data-k="hits.1.#raw"], #pv details[open] .je');
+        ab.delCard('fireball', 'hits', 1);
+        ab.delCard('fireball', 'hits', 0);
+        out.delHits = 'hits' in A().fireball;
+        ab.undo(); ab.undo(); ab.undo(); ab.undo(); ab.undo();
+        out.hitsUndo = JSON.stringify(A().fireball.hits) === JSON.stringify(JSON.parse(orig['ability.json']).fireball.hits);
+        // 加欄位選 effects：直接加一張卡
+        ab.select('heal');
+        const addSel = [...document.querySelectorAll('#pv select')].find(s => [...s.options].some(o => o.value === 'effects'));
+        addSel.value = 'effects'; addSel.dispatchEvent(new Event('change'));
+        out.addEff = JSON.stringify(A().heal.effects);
+        ab.undo();
+
+        // 說明預覽：{#fmt} 顯示公式、{#elm} 顯示元素名、{#formula} 自成一行
+        ab.select('fireball');
+        out.preview = document.querySelector('#pv .despv')?.textContent;
+        out.chips = document.querySelectorAll('#pv .despv .chip').length;
+        // token 錯誤：超出 hits、沒有的欄位、沒有 w/h、一般欄位帶索引
+        fire(document.querySelector('#pv [data-k="des"]'), '{#fmt1}{#foo}{#wh}{#range2}{#range}');
+        out.tokWarns = ab.validate('fireball').filter(w => w.startsWith('說明的'));
+        out.tokBad = document.querySelectorAll('#pv .despv .tokbad').length;
+        ab.undo();
+        out.final2 = ab.validateAll().length;
         return out;
     });
 
@@ -194,7 +229,7 @@ run('ability', async t => {
     t.eq('表單標題', r.formHead, 'fireball');
     t.eq('沒有前置顯示 —', r.refsRow, '—');
     t.eq('前置唯讀顯示', r.refsRow2, 'fireball');
-    t.check('hits/travel/fx/effects 進其他欄位', r.other?.startsWith('（4）'), r.other);
+    t.check('travel/fx 進其他欄位', r.other?.startsWith('（2）'), r.other);
     t.eq('改 cd', r.cd, 4);
     t.check('改值不動 key 順序', r.keyOrder);
     t.check('樹列出現未存點', r.dirtyMark);
@@ -241,4 +276,20 @@ run('ability', async t => {
     t.check('繞圈警告', r.cycle);
     t.check('跨樹警告', r.cross);
     t.eq('最後沒有警告', r.final, 0);
+
+    t.eq('卡片摘要', r.cards.join(' | '), '火 10+1.5×int | 命中時・對目標・持續傷害 🔥burn 火 -5・3 回合・最多 3 層');
+    t.eq('卡片改欄位', r.hitPow, 2);
+    t.eq('新增傷害卡', r.addHit.slice(0, 2).join(' '), '2 {"elm":"phy","pow":1}');
+    t.eq('新增後卡片數', r.addHit[2], 3);
+    t.check('卡片不認識的 key 進額外欄位', r.hitRaw);
+    t.eq('刪光卡片拿掉 key', r.delHits, false);
+    t.check('卡片 undo', r.hitsUndo);
+    t.eq('加欄位 effects 直接加卡', r.addEff, '[{"type":"mod"}]');
+    t.check('預覽 fmt 顯示公式', r.preview?.includes('10+1.5×'), r.preview);
+    t.check('預覽 formula 換行', r.preview?.includes('\n'), r.preview);
+    t.eq('預覽色塊數', r.chips, 2);
+    t.eq('token 錯誤 4 個', r.tokWarns.length, 4);
+    if (r.tokWarns.length !== 4) console.log('    ' + r.tokWarns.join('\n    '));
+    t.eq('預覽標紅 4 個', r.tokBad, 4);
+    t.eq('改回來沒警告', r.final2, 0);
 });

@@ -23,7 +23,7 @@ const S = {
     link: null,                 // 畫布上選中的連線 {child, ref}，Del 刪掉
     extra: {},                  // id → Set：「加欄位」叫出來、還沒填值的欄位
     drafts: {}, open: {}, formOf: null,
-    anims: [],
+    anims: [], fx: [],
 };
 const F = createForm({S, render});
 
@@ -171,7 +171,15 @@ function validate(id)
     if (!ab.lab) out.push('沒有名稱 lab');
     const e = IC.check(ab.icon);
     if (e) out.push(`icon：${e}`);
-    for (const [k, v] of Object.entries(ab)) if (SC.FIELDS[k] && k !== 'icon') checkVal(SC.FIELDS[k], v, k, out);
+    for (const [k, v] of Object.entries(ab))
+    {
+        const def = SC.FIELDS[k];
+        if (!def || k === 'icon') continue;
+        if (def.type !== 'cards') {checkVal(def, v, k, out); continue;}
+        if (!Array.isArray(v)) {out.push(`${k} 應該是陣列`); continue;}
+        v.forEach((x, i) => {for (const [f, d] of Object.entries(SC.CARDS[k].fields)) checkVal(d, x?.[f], `${k}[${i}].${f}`, out);});
+    }
+    out.push(...desWarns(ab));
     const t = treeOf(id);
     if (ab.refs !== undefined && !Array.isArray(ab.refs)) out.push('refs 應該是陣列');
     else for (const [i, r] of (ab.refs ?? []).entries())
@@ -184,6 +192,58 @@ function validate(id)
     if (inCycle(id)) out.push('前置繞成一圈，永遠解不開');
     if (!t) out.push('不在任何一棵樹上');
     return out;
+}
+
+// ---------- 說明的 token（同遊戲 utility.js 的 fmt_Des） ----------
+const TOKEN_RE = /{#([a-zA-Z]+)(\d*)}/g;
+const HIT_TOKENS = ['fmt', 'formula', 'elm'];
+// 沒有 hits 的技能把自己當第 0 筆
+const hitOf = (ab, i) => Array.isArray(ab.hits) ? ab.hits[i] : i === 0 ? ab : undefined;
+const whOf = (ab) => [ab.w ?? ab.zoneW, ab.h ?? ab.zoneH];
+const lab = (k) => locals()[k]?.lab ?? k;
+
+function tokenError(ab, key, idx)
+{
+    const tok = `{#${key}${idx}}`;
+    if (HIT_TOKENS.includes(key))
+        return hitOf(ab, idx === '' ? 0 : +idx) ? '' : `說明的 ${tok} 超出 hits 筆數（${Array.isArray(ab.hits) ? ab.hits.length : 1}）`;
+    if (key === 'wh') return whOf(ab).includes(undefined) ? `說明的 ${tok} 沒有 w/h（或 zoneW/zoneH）` : '';
+    if (idx !== '') return `說明的 ${tok}：只有 fmt／formula／elm 能帶索引`;
+    return ab[key] ? '' : `說明的 ${tok}：技能沒有 ${key} 欄位（遊戲會顯示空白）`;
+}
+
+const desWarns = (ab) => typeof ab.des === 'string' ? [...ab.des.matchAll(TOKEN_RE)].map(m => tokenError(ab, m[1], m[2])).filter(Boolean) : [];
+
+// 遊戲裡 {#fmt} 是用施放者屬性算出來的數字，這裡拿不到屬性，顯示成公式
+function tokenEl(ab, key, idx)
+{
+    const err = tokenError(ab, key, idx);
+    if (err) return h('span', {class: 'tokbad', title: err}, `{#${key}${idx}}`);
+    const chip = (text) => h('span', {class: 'chip'}, text);
+    if (HIT_TOKENS.includes(key))
+    {
+        const hit = hitOf(ab, idx === '' ? 0 : +idx), {pow = 1, flat = 0} = hit;
+        const src = lab(hit.src ?? (ab.tag === 'heal' ? 'int' : 'atk'));
+        const parts = [flat ? `${flat}+` : '', pow !== 1 ? `${pow}×` : '', src].join('');
+        if (key === 'fmt') return chip(parts);
+        if (key === 'elm') return h('b', null, lab(hit.elm ?? 'phy'));
+        return ['\n', chip(`${lab(hit.elm ?? 'phy')} ${parts}`)];
+    }
+    if (key === 'wh') return h('b', null, whOf(ab).join('×'));
+    return h('b', null, typeof ab[key] === 'string' ? lab(ab[key]) : String(ab[key]));
+}
+
+function desPreview(ab)
+{
+    const des = typeof ab.des === 'string' ? ab.des : '', out = [];
+    let last = 0;
+    for (const m of des.matchAll(TOKEN_RE))
+    {
+        out.push(des.slice(last, m.index), tokenEl(ab, m[1], m[2]));
+        last = m.index + m[0].length;
+    }
+    out.push(des.slice(last));
+    return h('div', {class: 'despv'}, out);
 }
 
 const nodeOf = (t, id) => trees()[t]?.find(n => n.id === id);
@@ -425,6 +485,46 @@ function renderTree()
 }
 
 // ---------- 表單 ----------
+function addCard(id, k)
+{
+    S.open[k] = true;
+    commit(() => {const ab = abs()[id]; (ab[k] ??= []).push(SC.CARDS[k].blank());});
+}
+
+function delCard(id, k, i)
+{
+    commit(() => {const ab = abs()[id]; ab[k].splice(i, 1); if (!ab[k].length) delete ab[k];});
+}
+
+function card(id, k, list, i)
+{
+    const C = SC.CARDS[k], x = list[i], path = [k, i];
+    const move = (d) => commit(() => {const a = abs()[id][k]; [a[i], a[i + d]] = [a[i + d], a[i]];});
+    const known = (f) => !!C.fields[f];
+    return h('div', {class: 'card'},
+        h('div', {class: 'bar'},
+            h('span', {class: 'sum'}, C.summary(x, abs()[id])),
+            h('button', {type: 'button', title: '上移', disabled: i === 0, onclick: () => move(-1)}, '↑'),
+            h('button', {type: 'button', title: '下移', disabled: i === list.length - 1, onclick: () => move(1)}, '↓'),
+            h('button', {type: 'button', title: '複製', onclick: () => commit(() => abs()[id][k].splice(i + 1, 0, structuredClone(x)))}, '⧉'),
+            h('button', {type: 'button', title: '刪除', onclick: () => delCard(id, k, i)}, '×')),
+        h('div', {class: 'sub'},
+            C.fieldsOf(x).map(f => h('label', null, h('span', {title: f}, C.fields[f].label),
+                fieldInput(C.fields[f], x[f], v => set(id, [...path, f], v), `${k}.${i}.${f}`)))),
+        h('details', {open: Object.keys(x).some(f => !known(f))}, h('summary', {class: 'dim'}, '額外欄位（JSON）'),
+            F.rawArea(x, known, v => commit(() => replaceRaw(abs()[id][k][i], known, v)), `${k}.${i}.#raw`)));
+}
+
+function cardBox(id, ab, k)
+{
+    const C = SC.CARDS[k], list = Array.isArray(ab[k]) ? ab[k] : [];
+    const open = F.isOpen(k, list);
+    return h('div', {class: 'box'},
+        F.boxBar(k, open, list.length > 0, h('span', {title: k}, C.label), h('span', {class: 'dim'}, `（${list.length}）`), h('span', {class: 'grow'}),
+            h('button', {type: 'button', onclick: () => addCard(id, k)}, C.add)),
+        open && list.map((_, i) => card(id, k, list, i)));
+}
+
 function otherBox(id, ab, known)
 {
     const raw = Object.fromEntries(Object.entries(ab).filter(([k]) => !known(k)));
@@ -449,14 +549,20 @@ function renderForm()
             dirtyAb(id) && h('span', {class: 'dirty'}, '●')),
         warns.length && h('ul', {class: 'warns'}, warns.map(w => h('li', null, w))),
         h('div', {class: 'fields'},
-            shown.map(k => [
+            shown.map(k => SC.FIELDS[k].type === 'cards' ? cardBox(id, ab, k) : [
                 h('span', {class: 'k' + (ab[k] === undefined ? ' unset' : ''), title: k}, SC.FIELDS[k].label),
                 fieldInput(SC.FIELDS[k], ab[k], v => set(id, [k], v), k),
+                k === 'des' && [h('span', {class: 'k unset'}, '預覽'), desPreview(ab)],
             ]),
             h('span', {class: 'k' + (ab.refs ? '' : ' unset'), title: 'refs（在樹上拉線）'}, '前置'),
             h('span', {class: 'refs'}, Array.isArray(ab.refs) && ab.refs.length ? ab.refs.join('、') : h('span', {class: 'dim'}, '—')),
             rest.length && [h('span', {class: 'k unset'}, '加欄位'),
-                h('select', {onchange: e => {(S.extra[id] ??= new Set()).add(e.target.value); render();}},
+                h('select', {onchange: e => {
+                    const k = e.target.value;
+                    if (SC.FIELDS[k].type === 'cards') return addCard(id, k);
+                    (S.extra[id] ??= new Set()).add(k);
+                    render();
+                }},
                     h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
             otherBox(id, ab, known)),
     ].filter(Boolean));
@@ -468,10 +574,14 @@ function render()
     const focus = document.activeElement?.dataset?.k;
     if (S.formOf !== S.sel) {S.drafts = {}; S.open = {}; S.formOf = S.sel;}
     const vals = (k) => Object.values(abs()).map(a => a[k]);
+    const sub = (list, k) => Object.values(abs()).flatMap(a => Array.isArray(a[list]) ? a[list].map(x => x?.[k]) : []);
     renderDatalists({
         tag: [...SC.FIELDS.tag.suggest, ...vals('tag')],
-        reqClass: [...SC.FIELDS.reqClass.suggest, ...vals('reqClass')],
+        reqClass: [...SC.FIELDS.reqClass.suggest, ...vals('reqClass'), ...sub('effects', 'reqClass')],
         anim: [...S.anims, ...vals('anim')],
+        src: [...SC.STATS, ...sub('hits', 'src')],
+        key: [...SC.STATS, ...sub('effects', 'key')],
+        id: [...S.fx, ...sub('effects', 'id')],
     });
     renderList();
     renderTree();
@@ -506,6 +616,7 @@ addEventListener('keydown', (e) => {
 
 (async () => {
     S.anims = await fetch('/assets/json/anim.json').then(r => r.json()).then(Object.keys).catch(() => []);
+    S.fx = await fetch('/assets/json/fx.json').then(r => r.json()).then(Object.keys).catch(() => []);
     render();
     IC.ready.then(render);
     SH.onSaved(onSaved);
@@ -513,4 +624,4 @@ addEventListener('keydown', (e) => {
 })();
 
 // 給無頭測試用
-window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, validate, validateTree, validateAll, render, IC, CELL, M};
+window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, addCard, delCard, validate, validateTree, validateAll, render, IC, CELL, M};

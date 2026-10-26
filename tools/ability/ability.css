@@ -3,6 +3,11 @@
 #pv .fields { grid-template-columns: 90px 1fr; }
 #pv .fields input:not([type=checkbox]):not(.num), #pv .fields select { min-width: 0; width: 100%; }
 #pv .refs { color: #bcd; }
+#pv .sub input:not([type=checkbox]):not(.num) { width: 130px; }
+.despv { white-space: pre-wrap; line-height: 1.7; padding: 4px 6px; background: #1b1c1f; border: 1px solid #333; border-radius: 3px; }
+.despv b { font-weight: normal; color: #fff; }
+.despv .chip { background: #99dddd; color: #000; padding: 0 4px; }
+.despv .tokbad { color: #ff5555; text-decoration: underline wavy; cursor: help; }
 
 .treebar { display: flex; align-items: center; gap: 12px; margin: 6px 0 10px; }
 .treebar .bigid { font-size: 22px; font-weight: bold; }
