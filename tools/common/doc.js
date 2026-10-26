@@ -321,6 +321,9 @@ export function createDoc(opt)
         SH.onProject(dir => onProject(dir).catch(e => status(e.message)));
     }
 
+    // 別的分頁叫我們選某一筆（翻譯分頁的 ↗）：path = [id]；還沒讀檔就先記在 S.sel，reload 時找得到會留著
+    const listenGoto = () => SH.onGoto(([id]) => {S.sel = id; S.view = 'form'; render();});
+
     return {S, render, commit, undo, redo, set, setAssets, reload, save, isDirty, dirty,
-            idError, insertAt, dup, scanRefs, rename, remove, askRename, start};
+            idError, insertAt, dup, scanRefs, rename, remove, askRename, start, listenGoto};
 }

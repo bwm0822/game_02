@@ -420,6 +420,7 @@ async function loadRefs()
     await loadRefs();
     render();
     IC.ready.then(render);
+    D.listenGoto();
     D.start();
 })();
 

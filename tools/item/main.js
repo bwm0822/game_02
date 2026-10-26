@@ -278,6 +278,7 @@ function draw()
     S.fx = await fetch('/assets/json/fx.json').then(r => r.json()).then(Object.keys).catch(() => []);
     render();
     IC.ready.then(render);
+    D.listenGoto();
     D.start();
 })();
 

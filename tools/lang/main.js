@@ -1,6 +1,7 @@
 import {$, h, ask, status} from '../common/dom.js';
 import {createDoc} from '../common/doc.js';
 import * as FS from '../common/fs.js';
+import * as SH from '../common/shell.js';
 import '../common/splitter.js';
 import {flattenStory, mergeDialog} from '../../src/data/storydata.js';
 import {extract, analyze, SHARED, META, DEFAULT_META} from '../../src/data/langdata.js';
@@ -14,6 +15,7 @@ const PREF = 'tools.lang.lang';
 const DOMAIN = {ui: '介面', item: '道具', role: '角色', ability: '能力', dlg: '對話', line: '台詞', story: '任務',
                 'story.let': '劇情卡', 'story.thread': '任務日誌', 'story.node': '長對話節點'};
 const REVIEW = ['', 'mt', 'ok'];
+const TAB_LAB = {item: '道具', role: '角色', ability: '能力', dialog: '對話', story: '任務'};
 
 const opt = {
     file: 'en.json', dir: 'lang', noun: '個情境',
@@ -199,7 +201,39 @@ async function loadRefs()
     const get = (f) => fetch(`/assets/json/${f}.json`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
     const [local, item, role, ability, dialog, story] = await Promise.all(SOURCES.map(get));
     S.roles = role;
+    S.src = {item, role, ability, dialog, story};
     S.entries = extract({local, item, role, ability, dialog: mergeDialog(dialog, role), story: flattenStory(story)});
+}
+
+// ↗：情境 → [分頁, path]（各分頁 onGoto 收的格式）；ui.* 沒有編輯器
+function sourceOf(r)
+{
+    const [dom, a, b] = r.ctx.split('.');
+    const {dialog, story} = S.src ?? {};
+    const lines = Object.entries(story?.lines ?? {});
+    if ((dom === 'item' || dom === 'role' || dom === 'ability') && S.src?.[dom]?.[a]) return [dom, [a]];
+    if (dom === 'dlg')
+    {
+        if (dialog?.[a]?.nodes?.[b]) return ['dialog', [a, 'nodes', b]];
+        if (dialog?.[a]?.extend?.[b]) return ['dialog', [a, 'extend', b]];
+    }
+    if (dom === 'line' && dialog?.[a])
+    {
+        const i = (dialog[a].lines ?? []).findIndex(l => l.concept === b && l.text === r.src);
+        return ['dialog', i < 0 ? [a] : [a, 'lines', i]];
+    }
+    if (dom === 'story' && a === 'let')
+        for (const [l, line] of lines)
+        {
+            const i = (line.storylets ?? []).findIndex(s => s.id === b);
+            if (i >= 0) return ['story', [l, 'storylets', i]];
+        }
+    if (dom === 'story' && a === 'thread')
+        for (const [l, line] of lines) if (line.threads?.[b]) return ['story', [l, 'threads', b]];
+    if (dom === 'story' && a === 'node')
+        for (const [l, line] of lines)
+            for (const [npc, ns] of Object.entries(line.nodes ?? {})) if (ns[b]) return ['story', [l, 'nodes', npc, b]];
+    return null;
 }
 
 // ---------- 樹 ----------
@@ -331,11 +365,13 @@ function rowEl(r, base)
     const k = rowKey(r.ctx, r.src);
     const dirty = (S.data[r.ctx]?.[r.src]?.t ?? '') !== (S.saved[r.ctx]?.[r.src]?.t ?? '') || (S.data[r.ctx]?.[r.src]?.r ?? '') !== (S.saved[r.ctx]?.[r.src]?.r ?? '');
     const ctx = base && r.ctx.startsWith(base + '.') ? r.ctx.slice(base.length + 1) : r.ctx;
+    const go = r.check !== 'orphan' && sourceOf(r);
     const check = r.check === 'error' ? `error：${r.err}` : retyped(r) ? 'new（可能是改字）' : r.check || (r.shared ? 'shared' : '');
     return h('tr', {class: [r.check, dirty && 'dirty'].filter(Boolean).join(' '), dataset: {k},
             oncontextmenu: r.t && r.ctx !== SHARED && r.check !== 'orphan' ? (e) => {e.preventDefault(); promote(r);} : null,
             title: r.t && r.ctx !== SHARED && r.check !== 'orphan' ? '右鍵：升為 shared' : null},
-        h('td', {class: 'ctx', title: r.ctx}, ctx, r.uses && h('div', {class: 'dim'}, `${r.uses} 個情境`)),
+        h('td', {class: 'ctx', title: r.ctx}, ctx, go && h('a', {class: 'go', title: `跳到${TAB_LAB[go[0]]}分頁`, onclick: () => SH.gotoTab(...go)}, ' ↗'),
+            r.uses && h('div', {class: 'dim'}, `${r.uses} 個情境`)),
         h('td', {class: 'src'}, r.src),
         textCell(r),
         h('td', null, r.t && h('button', {class: 'rv ' + r.r, title: '審核：空白 → mt（機翻未審）→ ok（已審）', onclick: () => cycleR(r.ctx, r.src)}, r.r || '·')),

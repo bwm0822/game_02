@@ -106,6 +106,8 @@ async function reload()
     resetHist();
     if (!isTree(S.tree) && S.tree !== UNCAT) S.tree = Object.keys(trees())[0] ?? UNCAT;
     if (!abs()[S.sel]) S.sel = null;
+    if (abs()[S.goto]) {S.sel = S.goto; S.tree = treeOf(S.goto) ?? S.tree;}
+    S.goto = null;
     status(`讀入 ${Object.keys(abs()).length} 個技能、${Object.keys(trees()).length} 棵樹`);
     render();
 }
@@ -987,6 +989,8 @@ addEventListener('keydown', (e) => {
     render();
     IC.ready.then(render);
     SH.onSaved(onSaved);
+    // 翻譯分頁的 ↗：path = [技能 id]；還沒讀檔就等 reload
+    SH.onGoto(([id]) => {if (abs()[id]) select(id); else S.goto = id;});
     SH.onProject(dir => setAssets(dir).catch(e => status(e.message)));
 })();
 

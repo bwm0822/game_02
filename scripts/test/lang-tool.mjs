@@ -146,4 +146,50 @@ run('lang-tool', async t => {
     t.eq('刪除全部 orphan', r.orphansLeft, 0);
     t.eq('升為 shared：搬進 _shared、同譯文的情境刪掉、灰字顯示', JSON.stringify(r.promote), JSON.stringify(['Same', false, false, 'Same', 'shared']));
     t.eq('↺ 回到 shared', r.revert, false);
+
+    // 殼：每列的 ↗ 跳到來源分頁
+    await t.page.goto(new URL('tools/#lang', base).href);
+    await t.page.waitForFunction(() => window.__tools);
+    const s = await t.page.evaluate(async () => {
+        const T = window.__tools, out = {};
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const until = async (f) => {for (let i = 0; i < 250 && !f(); i++) await sleep(20); return f();};
+        const win = (tab) => T.S.frames[tab]?.contentWindow;
+        const opfs = await navigator.storage.getDirectory();
+        const proj = await opfs.getDirectoryHandle('game');
+        const assets = await (await proj.getDirectoryHandle('public')).getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json');
+        const copy = async (d, url, name) => {
+            const w = await (await d.getFileHandle(name, {create: true})).createWritable();
+            await w.write(await (await fetch(url, {cache: 'no-store'})).text()); await w.close();
+        };
+        for (const f of ['item', 'role', 'ability', 'ab_tree', 'local', 'story', 'dialog']) await copy(json, `/assets/json/${f}.json`, `${f}.json`);
+        await copy(await assets.getDirectoryHandle('lang'), '/assets/lang/en.json', 'en.json');
+        await T.setProject(proj);
+        await until(() => win('lang')?.__lt?.S.rows.length && win('lang').__lt.S.assets);
+        const lt = win('lang').__lt;
+        const jump = async (ctx, tab, ok) => {
+            T.show('lang');
+            lt.S.node = ''; lt.S.search = ctx; lt.render();
+            const a = [...win('lang').document.querySelectorAll('#view tr')].find(tr => tr.dataset.k && JSON.parse(tr.dataset.k)[0] === ctx)?.querySelector('a.go');
+            if (!a) return 'no ↗';
+            a.click();
+            return !!await until(() => location.hash === `#${tab}` && ok(win(tab)));
+        };
+        out.item = await jump('item.sword_01', 'item', w => w.__ie?.S.sel === 'sword_01');
+        out.role = await jump('role.karen', 'role', w => w.__re?.S.sel === 'karen');
+        out.ability = await jump('ability.fireball', 'ability', w => w.__ab?.S.sel === 'fireball');
+        out.dialog = await jump('dlg._common.n_cold', 'dialog', w => w.__dl?.S.sel === '_common'
+            && w.document.querySelector(`.flash[data-k="${CSS.escape(JSON.stringify(['_common', 'nodes', 'n_cold']))}"]`));
+        out.story = await jump('story.let.hunt_ask', 'story', w => w.__st?.S.sel && w.document.querySelector('#view .flash'));
+        lt.S.search = 'ui.weapon'; lt.render();
+        out.ui = [...win('lang').document.querySelectorAll('#view tr')].some(tr => tr.querySelector('a.go'));
+        return out;
+    });
+    t.eq('↗ 道具', s.item, true);
+    t.eq('↗ 角色', s.role, true);
+    t.eq('↗ 能力', s.ability, true);
+    t.eq('↗ 對話節點', s.dialog, true);
+    t.eq('↗ 劇情卡', s.story, true);
+    t.eq('ui.* 沒有 ↗', s.ui, false);
 });
