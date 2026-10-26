@@ -80,10 +80,10 @@ run('多國語言', async t => {
     await t.eval(d => {
         d.Record.setting.lang = 'en';
         d.Lang.load({
-            'dlg._common.n_cold': {'……又是你。': '...You again.'},
-            'story.let.hunt_ask': {'關於任務': 'About the job'},
-            'story.thread.bandit_hunt': {'盜賊討伐': 'Bandit Hunt', '與 xi 對話了解情況': 'Talk to xi'},
-            _shared: {'離開': 'Leave', '聊天': 'Chat'},
+            'dlg._common.n_cold': {'……又是你。': {t: '...You again.'}},
+            'story.let.hunt_ask': {'關於任務': {t: 'About the job'}, '接受': {t: 'Accept {#x}'}},
+            'story.thread.bandit_hunt': {'盜賊討伐': {t: 'Bandit Hunt'}, '與 xi 對話了解情況': {t: 'Talk to xi', r: 'ok'}},
+            _shared: {'離開': {t: 'Leave'}, '聊天': {t: 'Chat'}},
         });
     });
     await t.setQ('karen.favor', 20);
@@ -95,6 +95,7 @@ run('多國語言', async t => {
     const opts = await t.eval(d => {d.objs().find(g => g.id === 'karen').talk(); const dlg = d.Ui.get(d.UI.TAG.DIALOG); const b = dlg.dialog.B.map(b => b.text); dlg.close(); return b;});
     t.check('storylet 選項照 story.let 情境翻', opts.includes('About the job') && opts.includes('Chat'), JSON.stringify(opts));
     t.check('沒有譯文的選項退回原文', opts.includes('交易'), JSON.stringify(opts));
+    t.eq('佔位符不合的譯文退回原文', await t.eval(d => d.Lang.tr('story.let.hunt_ask', '接受')), '接受');
     await t.talk('karen', 'About the job', '接受');
     const j = await t.journal('bandit_hunt');
     t.eq('日誌標題', j?.title, 'Bandit Hunt');

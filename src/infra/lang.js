@@ -1,5 +1,6 @@
 import Record from './record.js';
 import {GM} from '../core/setting.js';
+import {compile} from '../data/langdata.js';
 
 const SOURCE_FONT = GM.FONT;
 
@@ -16,13 +17,13 @@ export default class Lang
 
     static get code() {return Record.setting.lang;}
 
-    // 原文語言跟偽語系不需要翻譯檔（public/assets/lang/<code>.json，由 scripts/lang.js 產生）
+    // 原文語言跟偽語系不需要翻譯檔（public/assets/lang/<code>.json，手寫來源檔，格式見 src/data/langdata.js）
     static get needsTable() {return this.code !== this.SOURCE && this.code !== this.PSEUDO;}
 
-    static load(tbl)
+    static load(file)
     {
-        this._tbl = tbl ?? null;
-        GM.FONT = this._tbl?._meta?.font ?? SOURCE_FONT;
+        this._tbl = file ? compile(file) : null;
+        GM.FONT = file?._meta?.font ?? SOURCE_FONT;
     }
 
     static tr(ctx, src, args)
