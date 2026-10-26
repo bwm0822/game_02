@@ -37,7 +37,7 @@ export default class UiSteal extends UiFrame
             space: UI.SPACE.LRTBI_10,
             ext: {expand: true}
         })
-        const pic = ui.uPic.call(p, scene, {w: GM.PORTRAITS_W, h: GM.PORTRAITS_H, bg: UI.BG.SLOT, icon: 'portraits/0'})
+        const pic = ui.uPic.call(p, scene, {w: GM.PORTRAITS_W, h: GM.PORTRAITS_H, bg: UI.BG.SLOT})
         const bbc = ui.uBbc.call(p, scene, {text: '', ext: {align: 'top'}})
 
         p.setIcon = (owner) => {pic.setIcon(owner.icon);}

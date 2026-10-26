@@ -53,7 +53,6 @@ export default class UiDialog extends UiFrame
                                     ext:{expand:true,proportion:1}})
 
         const uIcon = ui.uPic.call(p,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
-                                        icon:'portraits/0',
                                         bg:UI.BG.SLOT,
                                         // ext:{align:'top'}
                                     });
@@ -93,7 +92,6 @@ export default class UiDialog extends UiFrame
                                     ext:{expand:true,proportion:1}});
 
         const pic = ui.uPic.call(p,scene,{w:GM.PORTRAITS.W,h:GM.PORTRAITS.H,
-                                        icon:'portraits/0',
                                         bg:UI.BG.SLOT,
                                         // ext:{align:'top'} 
                                     });
