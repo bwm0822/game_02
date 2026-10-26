@@ -659,7 +659,7 @@ function renderList()
                     dirty && h('span', {class: 'dirty', title: '未存檔'}, ' ●'),
                     (w.length || bad) && h('span', {class: 'warn', title: [...w, bad && `${bad} 個技能有警告`].filter(Boolean).join('\n')}, ' ⚠')));
         }),
-        orphans.length && h('div', {class: 'group'}, `不在樹上（${orphans.length}）`),
+        ...orphans.length ? [h('div', {class: 'group'}, `不在樹上（${orphans.length}）`)] : [],
         ...orphans.map(abRow));
     $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
 }

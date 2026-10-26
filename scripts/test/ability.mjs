@@ -50,6 +50,7 @@ run('ability', async t => {
         out.warns = ab.validateAll();
         out.firstTree = S.tree;
         out.listTrees = document.querySelectorAll('#list .item[data-tree]').length;
+        out.listText = [...$('list').childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent);
 
         // 畫布：Fire 樹的節點跟連線（fireballvolley←fireball、combustion←volley+firewall、meteorshower←combustion，加上 3 條子節點上方短線）
         ab.selectTree('Fire');
@@ -307,6 +308,7 @@ run('ability', async t => {
     if (r.warns.length) console.log('    ' + r.warns.join('\n    '));
     t.eq('預設選第一棵樹', r.firstTree, 'General');
     t.eq('左欄列出 8 棵樹', r.listTrees, 8);
+    t.eq('左欄沒有多餘文字（沒有不在樹上的技能時不印 0）', JSON.stringify(r.listText), '[]');
     t.eq('Fire 樹 5 個節點', r.nodes, 5);
     t.eq('Fire 樹連線 4＋短線 3', r.links, 7);
     t.eq('節點位置照格子', r.nodePos.join(), '8px,8px');
