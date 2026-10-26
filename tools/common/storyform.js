@@ -1,6 +1,7 @@
 // 任務／對話工具共用：唯讀參考資料、條件／指令的自動完成選項、輸入框、節點編輯器、欄位標紅、檢查面板
 // 欄位的 data-k 一律是資料路徑的 keyOf()（[紀錄 id, ...json 路徑]），檢查結果靠它找到要標紅、要跳過去的欄位
 import {$, h, status} from './dom.js';
+import * as SH from './shell.js';
 import {getAt, parseNum} from './obj.js';
 import {mergeDialog, COMMON} from '../../src/data/storydata.js';
 import {EVENTS, OPS} from '../../src/data/storycheck.js';
@@ -178,7 +179,7 @@ export function createStoryForm(D, opt = {})
                 ]));
     }
 
-    return {get, put, renameKey, isOpen, toggle, text, area, cond, lines, num, keyInput, btn, row, link, move, nodeCard};
+    return {get, put, renameKey, isOpen, toggle, text, area, cond, lines, num, keyInput, btn, row, link, move, nodeCard, choicesBox};
 }
 
 // ---------- 檢查結果 ----------
@@ -221,18 +222,32 @@ export function jumpTo(D, path)
     }
 }
 
-// 頁面底部的檢查面板；canJump(r) 為 false 的（別的檔案）只列不跳
-export function renderChecks(S, results, {toPath, onJump})
+// 別的分頁叫我們跳過去；資料還沒讀進來就先記著，回傳的函式在 draw() 最後呼叫
+export function listenGoto(D)
 {
+    let pending = null;
+    SH.onGoto(p => {if (D.S.assets) jumpTo(D, p); else pending = p;});
+    return () => {
+        if (!pending || !D.S.assets) return;
+        const p = pending;
+        pending = null;
+        setTimeout(() => jumpTo(D, p));
+    };
+}
+
+// 頁面底部的檢查面板；這個分頁的檔案點了跳到欄位，別的檔案交給 onOther(r)（回傳跳轉函式，或 null 只列不跳）
+export function renderChecks(S, results, opt)
+{
+    const {toPath, onJump, onOther} = opt;
     const errs = results.filter(r => r.level === 'error').length, warns = results.length - errs;
     const open = S.checksOpen ??= true;
     $('checks').replaceChildren(
-        h('div', {class: 'bar', onclick: () => {S.checksOpen = !open; renderChecks(S, results, {toPath, onJump});}},
+        h('div', {class: 'bar', onclick: () => {S.checksOpen = !open; renderChecks(S, results, opt);}},
             h('span', {class: 'arrow'}, open ? '▼' : '▶'),
             results.length ? h('span', {class: errs ? 'err' : 'warn'}, `檢查：${errs} 個錯誤、${warns} 個警告`) : h('span', {class: 'ok'}, '檢查：沒有問題')),
         open && results.length > 0 && h('div', {class: 'list'}, results.map(r => {
-            const p = toPath(r);
-            return h('div', {class: 'chk ' + r.level + (p ? ' go' : ''), onclick: p && (() => onJump(p))},
+            const p = toPath(r), go = p ? () => onJump(p) : onOther?.(r);
+            return h('div', {class: 'chk ' + r.level + (go ? ' go' : ''), onclick: go},
                 h('span', {class: 'lv'}, r.level === 'error' ? '✘' : '⚠'),
                 h('span', {class: 'at'}, `${r.file} ${r.path.join('.')}`),
                 h('span', null, r.msg));

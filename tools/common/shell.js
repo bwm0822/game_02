@@ -18,6 +18,10 @@ export function onProject(fn)
 export const notifySaved = (file) => chan.postMessage({type: 'saved', file});
 export const onSaved = (fn) => chan.addEventListener('message', (e) => {if (e.data?.type === 'saved') fn(e.data.file);});
 
+// 跳到別的分頁的某個地方：殼切過去，再把 path 交給那個工具（還沒載入的等它 ready）
+export const gotoTab = (tab, path) => {if (inShell) window.parent.postMessage({type: 'goto', tab, path}, '*');};
+export const onGoto = (fn) => addEventListener('message', (e) => {if (e.source === window.parent && e.data?.type === 'goto') fn(e.data.path);});
+
 let last = null;
 export function setDirty(dirty)
 {

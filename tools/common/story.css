@@ -24,6 +24,16 @@ input.key { font-weight: bold; color: #bcd; }
 .crow .btns { display: flex; gap: 2px; }
 .crow .btns button, .trow button { padding: 1px 6px; }
 table.vals input:not(.num) { min-width: 0; }
+.ehead, .erow { display: grid; grid-template-columns: 200px 56px 1fr 1fr auto; gap: 6px; align-items: start; }
+.lhead, .lrow { display: grid; grid-template-columns: 130px 1fr 2fr auto; gap: 6px; align-items: start; }
+.ehead, .lhead { color: #888; font-size: 14px; }
+#view .erow input, #view .erow textarea, #view .lrow input { min-width: 0; width: 100%; }
+.erow .num { width: 56px; }
+.erow.inh { color: #888; padding: 2px 0; }
+.inhrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.chip { display: inline-flex; gap: 4px; align-items: center; background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 1px 4px; }
+.chip a { color: #8bd; cursor: pointer; }
+.chip button { padding: 0 6px; font-size: 14px; }
 
 .bad { outline: 2px solid #e55 !important; outline-offset: -1px; }
 .warnf { outline: 2px solid #e9b44c !important; outline-offset: -1px; }

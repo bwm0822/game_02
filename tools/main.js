@@ -4,13 +4,15 @@ import {$, status} from './common/dom.js';
 import {notifySaved} from './common/shell.js';
 
 const DIRS = FS.dirStore('tools');
-const TABS = ['item', 'role', 'story', 'fit', 'prompt', 'paperdoll'];
+const TABS = ['item', 'role', 'story', 'dialog', 'fit', 'prompt', 'paperdoll'];
 const S = {
     dir: null,
     pending: null,
     tab: null,
     frames: {},         // tab → iframe
     dirty: {},          // tab → bool
+    ready: {},          // tab → iframe 回報過 ready
+    goto: {},           // tab → 等 iframe ready 才送的跳轉 path
 };
 
 const tabOf = (win) => TABS.find(t => S.frames[t]?.contentWindow === win);
@@ -47,7 +49,18 @@ function show(tab)
 addEventListener('message', (e) => {
     const tab = tabOf(e.source);
     if (!tab) return;
-    if (e.data?.type === 'ready') send(tab);
+    if (e.data?.type === 'ready')
+    {
+        S.ready[tab] = true;
+        send(tab);
+        if (S.goto[tab]) {e.source.postMessage({type: 'goto', path: S.goto[tab]}, '*'); delete S.goto[tab];}
+    }
+    else if (e.data?.type === 'goto' && TABS.includes(e.data.tab))
+    {
+        show(e.data.tab);
+        if (S.ready[e.data.tab]) S.frames[e.data.tab].contentWindow.postMessage({type: 'goto', path: e.data.path}, '*');
+        else S.goto[e.data.tab] = e.data.path;
+    }
     else if (e.data?.type === 'dirty')
     {
         S.dirty[tab] = e.data.dirty;

@@ -4,6 +4,7 @@ import {createViews, renderDatalists} from '../common/views.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SF from '../common/storyform.js';
+import * as SH from '../common/shell.js';
 import {checkStory} from '../../src/data/storycheck.js';
 
 // story.json = {qualities, lines:{<劇情線>: {...}}}；編輯時攤成 {@qualities, <劇情線>...}，undo／合併以劇情線為單位
@@ -37,12 +38,24 @@ const V = createViews(D, {
     warns: id => issues(id).map(r => r.msg),
 });
 
-// 節點在哪條劇情線（同一個檔案才跳得過去；dialog.json 的節點到對話分頁）
+// 節點在哪條劇情線；不在 story.json 的話，看是 dialog.json 裡 NPC 自己的還是 _common 的，跳到對話分頁
 function nodeLine(npc, id) {return Object.keys(S.data).find(l => l !== Q && S.data[l].nodes?.[npc]?.[id]);}
+function dialogPath(npc, id)
+{
+    const d = S.refs.dialog;
+    if (d[npc]?.nodes?.[id]) return [npc, 'nodes', id];
+    if (d._common?.nodes?.[id]) return ['_common', 'nodes', id];
+    return null;
+}
 const F = SF.createStoryForm(D, {
-    nodeLink: (npc, id) => {const l = nodeLine(npc, id); return l && (() => SF.jumpTo(D, [l, 'nodes', npc, id]));},
-    other: (npc, id) => S.lists?.nodes[npc]?.has(id) ? '（dialog.json）' : null,
+    nodeLink: (npc, id) => {
+        const l = nodeLine(npc, id);
+        if (l) return () => SF.jumpTo(D, [l, 'nodes', npc, id]);
+        const p = dialogPath(npc, id);
+        return p && (() => SH.gotoTab('dialog', p));
+    },
 });
+const pendingGoto = SF.listenGoto(D);
 const {get, btn, row} = F;
 
 // ---------- 新增 ----------
@@ -236,7 +249,8 @@ function draw()
     renderDatalists(S.lists.lists, S.lists.labels);
     const lines = Object.keys(S.data).filter(id => id !== Q);
     V.renderList([['宣告', [Q].filter(id => id in S.data), 'q'], [n => `劇情線（${n}）`, lines, 'lines']]);
-    SF.renderChecks(S, S.results, {toPath, onJump: p => SF.jumpTo(D, p)});
+    SF.renderChecks(S, S.results, {toPath, onJump: p => SF.jumpTo(D, p),
+        onOther: r => r.file === 'dialog.json' ? () => SH.gotoTab('dialog', r.path) : null});
     const view = $('view');
     if (S.view === 'table')
     {
@@ -251,6 +265,7 @@ function draw()
     if (!S.data[S.sel]) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選劇情線）' : '先在上方選擇專案資料夾'));
     view.replaceChildren(S.sel === Q ? renderQualities() : renderLine(S.sel));
     SF.markIssues(S.results, toPath);
+    pendingGoto();
 }
 
 function cell(id, c)
