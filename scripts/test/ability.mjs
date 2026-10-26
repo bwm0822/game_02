@@ -142,8 +142,8 @@ run('ability', async t => {
         // 拖到有人的格子：不動
         drag('fireballvolley', 2 * CELL, -3 * CELL);
         out.occupied = [tnode('Fire', 'fireballvolley').x, tnode('Fire', 'fireballvolley').y, $('status').textContent];
-        // 拖到負的座標：夾在 0
-        drag('meteorshower', -5 * CELL, 0);
+        // 拖到畫布左邊外面（還在中間欄）：夾在 0
+        drag('meteorshower', -(ab.M + 1.5 * CELL + 6), 0);
         out.clamp = tnode('Fire', 'meteorshower').x;
         ab.undo(); ab.undo();
         out.dragUndo = [tnode('Fire', 'fireballvolley').y, tnode('Fire', 'meteorshower').x];
@@ -164,7 +164,8 @@ run('ability', async t => {
         const n0 = S.hi;
         fireAt(handle, 'pointerdown', hx, hy); fireAt(handle, 'pointerup', 5, 5);
         out.dropNowhere = S.hi === n0;
-        // 點線選取、Del 刪掉
+        // 點線選取、Del 刪掉（等拖曳後吃 click 的時間過去）
+        await sleep(350);
         S.link = null; ab.render();
         document.querySelector('#view g[data-link="firewall>meteorshower"] polyline.hit').dispatchEvent(new MouseEvent('click', {bubbles: true}));
         out.clickLink = S.link && `${S.link.ref}>${S.link.child}`;
@@ -294,10 +295,11 @@ run('ability', async t => {
         for (let i = 0; i < 4; i++) ab.undo();
         out.treeUndo = [Object.keys(T()).join(), 'Holy' in S.doc['local.json'].data];
 
-        // ---------- 右鍵拖：換分類 ----------
+        // ---------- 拖曳換分類 ----------
+        await sleep(350);
         const rdrag = (el, to, extra = {}) => {
             const [x, y] = mid(el), [tx, ty] = Array.isArray(to) ? to : mid(to);
-            const ev = (type, px, py) => el.dispatchEvent(new PointerEvent(type, {clientX: px, clientY: py, button: 2, buttons: 2, pointerId: 2, bubbles: true}));
+            const ev = (type, px, py) => el.dispatchEvent(new PointerEvent(type, {clientX: px, clientY: py, button: 0, buttons: 1, pointerId: 2, bubbles: true}));
             ev('pointerdown', x, y);
             ev('pointermove', tx, ty);
             extra.during?.();
@@ -314,9 +316,9 @@ run('ability', async t => {
                      !!document.querySelector('.ghost'), !!document.querySelector('#list .item.drop')];
         out.rdDuring = [during.ghost, during.hot];
         out.rdCross = ab.validate('fireballvolley').some(w => w.includes('在別棵樹（Ice）'));
-        // 拖完緊接著的 contextmenu 被吃掉，不跳選單
-        node('firewall').dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true}));
-        out.rdEat = !document.querySelector('.ctxmenu');
+        // 拖完緊接著的 click 被吃掉，不會選到別的、畫布不跳
+        node('firewall').click();
+        out.rdEat = [S.sel, S.tree];
         await sleep(350);
         // 拖到同一棵樹的列：不動
         const hs = S.hi;
@@ -336,7 +338,8 @@ run('ability', async t => {
         const fv = mid(node('fireballvolley'));
         rdrag(node('firewall'), fv, {during: () => {cell = {bad: !!document.querySelector('#view .dropcell.bad')};}});
         out.rdBusy = [cell.bad, JSON.stringify(T().Fire.find(n => n.id === 'firewall')), $('status').textContent.includes('已經有')];
-        // 右鍵沒拖動：不改、照舊可以跳選單
+        // 沒拖動：不改
+        await sleep(350);
         const hs2 = S.hi;
         rdrag(node('firewall'), node('firewall'));
         out.rdTiny = S.hi === hs2;
@@ -352,8 +355,9 @@ run('ability', async t => {
         $('search').value = ''; $('search').dispatchEvent(new Event('input'));
 
         // 未分類列：點了畫布顯示提示
+        await sleep(350);
         row(ab.UNCAT).click();
-        out.uncatView = [S.tree, document.querySelector('#view .hint')?.textContent.includes('按住右鍵拖')];
+        out.uncatView = [S.tree, document.querySelector('#view .hint')?.textContent.includes('拖到左欄的樹上')];
 
         // ＋ 新技能：放在目前這棵樹最下面一列的下一列；選未分類時只加技能
         ab.selectTree('Fire');
@@ -486,25 +490,25 @@ run('ability', async t => {
     t.eq('刪除樹：技能留著變不在樹上', r.delTree.join(), 'false,false,true,true,true');
     t.eq('樹列右鍵選單', r.treeMenu, '改名…,上移(x),下移,新增樹…,刪除…');
     t.check('樹 undo', r.treeUndo[0] === 'General,Sword,Archery,Fire,Ice,Poison,Support,Enhancement' && !r.treeUndo[1], r.treeUndo.join(' '));
-    t.eq('右鍵拖到 Ice 列：放 Ice 最下面下一列 x=0', r.rdIce[0], '{"id":"fireball","x":0,"y":5}');
-    t.eq('右鍵拖：原本的樹拿掉、畫布不換、選它', r.rdIce.slice(1, 4).join(), 'false,Fire,fireball');
+    t.eq('拖節點到 Ice 列：放 Ice 最下面下一列 x=0', r.rdIce[0], '{"id":"fireball","x":0,"y":5}');
+    t.eq('換分類：原本的樹拿掉、畫布不換、選它', r.rdIce.slice(1, 4).join(), 'false,Fire,fireball');
     t.eq('放開後拖曳影子／反白消失', r.rdIce.slice(4).join(), 'false,false');
     t.eq('拖曳中有影子、樹列反白', r.rdDuring.join(), 'true,Ice');
     t.check('前置留著、跨樹標警告', r.rdCross);
-    t.check('拖完的右鍵選單被吃掉', r.rdEat);
+    t.eq('拖完的 click 被吃掉', r.rdEat.join(), 'fireball,Fire');
     t.check('拖到同一棵樹的列不動', r.rdSame);
     t.eq('拖到未分類移出樹', r.rdUncat.join(), 'false,true');
     t.eq('左欄拖到畫布空格放在那一格', r.rdCell[0], '{"id":"firewall","x":3,"y":3}');
     t.eq('拖到空格時框起來、放開後消失', r.rdCell.slice(1).join(), 'true,false,false');
     t.eq('拖到有人的格子：紅框、不動、提示', r.rdBusy.join(), 'true,{"id":"firewall","x":3,"y":3},true');
-    t.check('右鍵沒拖動不改', r.rdTiny);
-    t.eq('右鍵拖 undo', r.rdUndo.join(), 'true,{"id":"firewall","x":2,"y":0}');
+    t.check('沒拖動不改', r.rdTiny);
+    t.eq('拖曳換分類 undo', r.rdUndo.join(), 'true,{"id":"firewall","x":2,"y":0}');
     t.eq('搜尋時樹列照樣顯示（8 棵＋未分類）', r.searchTrees, 9);
     t.eq('搜尋結果拖到樹列', r.rdSearch, '{"id":"icebolt","x":0,"y":3}');
     t.eq('點未分類：畫布顯示提示', r.uncatView.join(), `${'#uncat'},true`);
     t.eq('＋新技能放最下面一列的下一列', r.btnNew[0], '{"id":"nova","x":0,"y":7}');
     t.check('＋新技能排在這棵樹最後一個後面', r.btnNew[1]);
     t.eq('選未分類時＋新技能不上樹', r.btnNewUncat.join(), 'true,false,#uncat');
-    t.eq('畫布操作提示', r.hintLine, '空格按右鍵：新增・左鍵拖：移位置・右鍵拖到左欄的樹：換分類・藍點拉線：設前置・點線＋Del：刪前置');
+    t.eq('畫布操作提示', r.hintLine, '空格按右鍵：新增・拖節點：移位置／拖到左欄的樹換分類・藍點拉線：設前置・點線＋Del：刪前置');
     t.check('存檔寫 role.json', r.saveRole);
 });

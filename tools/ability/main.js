@@ -442,43 +442,44 @@ function unplace(id)
     const t = treeOf(id);
     if (!t) return;
     commit(() => {trees()[t] = trees()[t].filter(n => n.id !== id); S.link = null;});
-    status(`${id} 移出 ${t}，列在左欄「未分類」，按住右鍵拖到樹上可以放回去`);
+    status(`${id} 移出 ${t}，列在左欄「未分類」，拖到樹上可以放回去`);
 }
 
-// 按住右鍵拖技能（畫布節點、左欄技能列）：放到左欄的樹列＝換到那棵樹、放到「未分類」＝移出樹、放到畫布空格＝放在那一格
-// 沒拖動（< 4px）就放開照舊跳右鍵選單；拖過的話吃掉接著來的 contextmenu
+// 拖技能（畫布節點、左欄技能列）放下的地方：左欄樹列＝換到那棵樹、「未分類」＝移出樹、畫布＝游標所在的格子（畫布外夾在 0）
 function dropTarget(x, y)
 {
     const el = document.elementFromPoint(x, y);
     const row = el?.closest('#list .item[data-tree]');
     if (row) return {el: row, tree: row.dataset.tree};
-    const tree = el?.closest('#view .tree');
+    const tree = el?.closest('#view')?.querySelector('.tree');
     if (!tree || !isTree(S.tree)) return null;
     const b = tree.getBoundingClientRect();
-    const at = {x: Math.floor((x - b.left - M) / CELL), y: Math.floor((y - b.top - M) / CELL)};
-    if (at.x < 0 || at.y < 0) return null;
+    const at = {x: Math.max(0, Math.floor((x - b.left - M) / CELL)), y: Math.max(0, Math.floor((y - b.top - M) / CELL))};
     return {tree: S.tree, at, box: tree};
 }
 
-function rightDrag(e, id)
+// 左鍵拖技能：畫布節點跟著游標走，拖出畫布（或從左欄拖）時游標旁邊跟一個影子；放下照 dropTarget
+// 沒拖動（< 4px）當作點一下；拖過的話吃掉接著來的 click（不然左欄那列會被選取、畫布跳到別棵樹）
+function dragAb(e, id)
 {
-    if (e.button !== 2) return;
-    e.stopPropagation();
-    const src = e.currentTarget, sx = e.clientX, sy = e.clientY;
-    let ghost = null, mark = null, hot = null, tgt = null;
+    if (e.button !== 0) return;
+    const src = e.currentTarget, isNode = src.classList.contains('node');
+    const sx = e.clientX, sy = e.clientY, ox = parseFloat(src.style.left), oy = parseFloat(src.style.top);
+    let moved = false, ghost = null, mark = null, hot = null;
     const unmark = () => {hot?.classList.remove('drop'); mark?.remove(); hot = mark = null;};
     if (e.isTrusted) src.setPointerCapture(e.pointerId);
     src.onpointermove = (ev) => {
-        if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
-        if (!ghost)
+        const dx = ev.clientX - sx, dy = ev.clientY - sy;
+        if (!moved && Math.hypot(dx, dy) < 4) return;
+        moved = true;
+        if (isNode)
         {
-            closeMenu();
-            document.body.append(ghost = h('div', {class: 'ghost'}, IC.iconEl(abs()[id]?.icon, 32), h('span', null, id)));
+            src.classList.add('drag');
+            src.style.left = `${ox + dx}px`;
+            src.style.top = `${oy + dy}px`;
         }
-        ghost.style.left = `${ev.clientX + 12}px`;
-        ghost.style.top = `${ev.clientY + 12}px`;
         unmark();
-        tgt = dropTarget(ev.clientX, ev.clientY);
+        const tgt = dropTarget(ev.clientX, ev.clientY);
         if (tgt?.el) (hot = tgt.el).classList.add('drop');
         else if (tgt?.at)
         {
@@ -486,17 +487,24 @@ function rightDrag(e, id)
             tgt.box.append(mark = h('div', {class: 'dropcell' + (isFree(tgt.tree, tgt.at.x, tgt.at.y) || mine ? '' : ' bad'),
                 style: `left:${M + tgt.at.x * CELL}px;top:${M + tgt.at.y * CELL}px`}));
         }
+        const showGhost = !isNode || !tgt?.at;
+        if (showGhost && !ghost) document.body.append(ghost = h('div', {class: 'ghost'}, IC.iconEl(abs()[id]?.icon, 32), h('span', null, id)));
+        if (!showGhost && ghost) {ghost.remove(); ghost = null;}
+        if (ghost) {ghost.style.left = `${ev.clientX + 12}px`; ghost.style.top = `${ev.clientY + 12}px`;}
     };
     src.onpointerup = (ev) => {
         src.onpointermove = src.onpointerup = null;
-        if (!ghost) return;
-        ghost.remove();
+        ghost?.remove();
         unmark();
+        if (!moved) return;
         const eat = (c) => {c.preventDefault(); c.stopPropagation();};
-        addEventListener('contextmenu', eat, {capture: true, once: true});
-        setTimeout(() => removeEventListener('contextmenu', eat, {capture: true}), 300);
-        tgt = dropTarget(ev.clientX, ev.clientY);
+        const stop = () => removeEventListener('click', eat, {capture: true});
+        addEventListener('click', eat, {capture: true, once: true});
+        addEventListener('pointerdown', stop, {capture: true, once: true});
+        setTimeout(stop, 300);
+        const tgt = dropTarget(ev.clientX, ev.clientY);
         if (tgt) moveTo(id, tgt.tree, tgt.at);
+        else render();
     };
 }
 
@@ -712,8 +720,8 @@ function cellMenu(e)
 function abRow(id)
 {
     const ab = abs()[id], w = validate(id);
-    return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, title: '按住右鍵拖到樹上（左欄的樹或畫布的空格）',
-        onclick: () => select(id), onpointerdown: e => rightDrag(e, id), oncontextmenu: e => e.preventDefault()},
+    return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, title: '拖到樹上（左欄的樹或畫布的空格）',
+        onclick: () => select(id), onpointerdown: e => dragAb(e, id)},
         IC.iconEl(ab.icon, 20),
         h('span', {class: 'id'}, id),
         h('span', {class: 'lab'}, ab.lab ?? ''),
@@ -766,29 +774,6 @@ function svgEl(tag, attrs)
     return el;
 }
 
-const cellAt = (px) => Math.max(0, Math.round((px - M) / CELL));
-
-// 拖節點：放開時吸附到最近的格子；沒拖動（< 4px）交給 onclick 選取
-function nodeDown(e, n)
-{
-    if (e.button !== 0) return;
-    const el = e.currentTarget, sx = e.clientX, sy = e.clientY, ox = parseFloat(el.style.left), oy = parseFloat(el.style.top);
-    let moved = false;
-    if (e.isTrusted) el.setPointerCapture(e.pointerId);
-    el.onpointermove = (ev) => {
-        const dx = ev.clientX - sx, dy = ev.clientY - sy;
-        if (!moved && Math.hypot(dx, dy) < 4) return;
-        moved = true;
-        el.classList.add('drag');
-        el.style.left = `${ox + dx}px`;
-        el.style.top = `${oy + dy}px`;
-    };
-    el.onpointerup = (ev) => {
-        el.onpointermove = el.onpointerup = null;
-        if (moved) moveNode(n.id, cellAt(ox + ev.clientX - sx), cellAt(oy + ev.clientY - sy));
-    };
-}
-
 // 從節點底下的把手拉線到另一個節點：被拉到的那個多一個前置（拉線的這個）
 function linkDown(e, n)
 {
@@ -813,7 +798,7 @@ function renderTree()
     if (!S.assets) return $('view').replaceChildren(h('div', {class: 'dim'}, '先在上方選擇專案資料夾'));
     if (!nodes) return $('view').replaceChildren(
         h('div', {class: 'treebar'}, h('span', {class: 'bigid'}, '未分類')),
-        h('div', {class: 'hint'}, '未分類的技能列在左欄，按住右鍵拖到左欄的樹上；或先選一棵樹，再拖到畫布的空格'));
+        h('div', {class: 'hint'}, '未分類的技能列在左欄，拖到左欄的樹上；或先選一棵樹，再拖到畫布的空格'));
     // 右邊、下面多留兩格，讓節點有地方拖
     const w = Math.max(0, ...nodes.map(n => n.x)) + 3, hh = Math.max(0, ...nodes.map(n => n.y)) + 3;
     const svg = svgEl('svg', {class: 'links', width: w * CELL + 2 * M, height: hh * CELL + 2 * M});
@@ -843,7 +828,7 @@ function renderTree()
             h('span', {class: 'bigid'}, t),
             h('label', null, '名稱 ', h('input', {dataset: {k: `tree.${t}.lab`}, value: treeLab(t) ?? '',
                 onchange: e => commit(() => setAt(locals(), [t, 'lab'], e.target.value.trim() || undefined))}))),
-        h('div', {class: 'hint'}, '空格按右鍵：新增・左鍵拖：移位置・右鍵拖到左欄的樹：換分類・藍點拉線：設前置・點線＋Del：刪前置'),
+        h('div', {class: 'hint'}, '空格按右鍵：新增・拖節點：移位置／拖到左欄的樹換分類・藍點拉線：設前置・點線＋Del：刪前置'),
         warns.length && h('ul', {class: 'warns'}, warns.map(x => h('li', null, x))),
         h('div', {class: 'tree', style: `width:${w * CELL + 2 * M}px;height:${hh * CELL + 2 * M}px;--cell:${CELL}px;--m:${M}px`, oncontextmenu: cellMenu},
             svg,
@@ -851,7 +836,7 @@ function renderTree()
                 const ab = abs()[n.id], p = center(n), bad = !ab || validate(n.id).length;
                 return h('div', {class: 'node' + (n.id === S.sel ? ' sel' : '') + (bad ? ' bad' : ''), dataset: {id: n.id},
                     title: [n.id, ...(ab ? validate(n.id) : ['不在 ability.json'])].join('\n'),
-                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => ab && e.button === 2 ? rightDrag(e, n.id) : nodeDown(e, n), oncontextmenu: e => ab ? nodeMenu(e, n.id) : e.preventDefault()},
+                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => dragAb(e, n.id), oncontextmenu: e => ab ? nodeMenu(e, n.id) : e.preventDefault()},
                     IC.iconEl(ab?.icon, 40),
                     h('div', {class: 'nlab'}, ab?.lab ?? n.id),
                     ab && h('div', {class: 'handle', title: '拉到另一個技能＝設成它的前置', onpointerdown: e => linkDown(e, n), onclick: e => e.stopPropagation()}));
