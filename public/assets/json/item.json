@@ -1900,7 +1900,20 @@
       "sword"
     ],
     "lab": "青銅劍",
-    "des": "鐵匠學徒練手的青銅劍，刃口不太鋒利，但足夠防身。均衡好用，命中率高。"
+    "des": "鐵匠學徒練手的青銅劍，刃口不太鋒利，但足夠防身。均衡好用，命中率高。",
+    "equip": {
+      "sprite": "sword-bronze",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "oy": 0.85,
+      "a": 60
+    },
+    "icon": "sword-bronze-icon",
+    "drop": {
+      "sprite": "sword-bronze",
+      "scale": 0.25
+    }
   },
   "sword-2": {
     "cat": "CAT_WEAPON",
@@ -1919,7 +1932,20 @@
       "sword"
     ],
     "lab": "鐵劍",
-    "des": "城鎮衛兵的制式佩劍，樸實耐用。均衡好用，命中率高。"
+    "des": "城鎮衛兵的制式佩劍，樸實耐用。均衡好用，命中率高。",
+    "equip": {
+      "sprite": "sword-iron",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.85
+    },
+    "icon": "sword-iron-icon",
+    "drop": {
+      "sprite": "sword-iron",
+      "scale": 0.25
+    }
   },
   "sword-3": {
     "cat": "CAT_WEAPON",
@@ -1938,7 +1964,20 @@
       "sword"
     ],
     "lab": "鋼劍",
-    "des": "反覆鍛打的鋼刃，揮動時劍身幾乎不見震顫。均衡好用，命中率高。"
+    "des": "反覆鍛打的鋼刃，揮動時劍身幾乎不見震顫。均衡好用，命中率高。",
+    "equip": {
+      "sprite": "sword-steel",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.85
+    },
+    "icon": "sword-steel-icon",
+    "drop": {
+      "sprite": "sword-steel",
+      "scale": 0.25
+    }
   },
   "sword-4": {
     "cat": "CAT_WEAPON",
@@ -1957,7 +1996,20 @@
       "sword"
     ],
     "lab": "精鋼劍",
-    "des": "名匠以精煉鋼打造，刃面映出細密的鍛紋。均衡好用，命中率高。"
+    "des": "名匠以精煉鋼打造，刃面映出細密的鍛紋。均衡好用，命中率高。",
+    "equip": {
+      "sprite": "sword-finesteel",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.85
+    },
+    "icon": "sword-finesteel-icon",
+    "drop": {
+      "sprite": "sword-finesteel",
+      "scale": 0.25
+    }
   },
   "sword-5": {
     "cat": "CAT_WEAPON",
@@ -1976,7 +2028,20 @@
       "sword"
     ],
     "lab": "秘銀劍",
-    "des": "傳說中矮人以秘銀鍛造的寶劍，輕若無物、銳不可擋。均衡好用，命中率高。"
+    "des": "傳說中矮人以秘銀鍛造的寶劍，輕若無物、銳不可擋。均衡好用，命中率高。",
+    "equip": {
+      "sprite": "sword-mithril",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.85
+    },
+    "icon": "sword-mithril-icon",
+    "drop": {
+      "sprite": "sword-mithril",
+      "scale": 0.25
+    }
   },
   "axe-1": {
     "cat": "CAT_WEAPON",
@@ -1996,7 +2061,21 @@
       "sword"
     ],
     "lab": "青銅斧",
-    "des": "半是工具半是武器的青銅斧，伐木與劈敵都靠它。傷害高但命中較低。"
+    "des": "半是工具半是武器的青銅斧，伐木與劈敵都靠它。傷害高但命中較低。",
+    "equip": {
+      "sprite": "axe-bronze",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "ox": 0.3,
+      "oy": 0.85
+    },
+    "icon": "axe-bronze-icon",
+    "drop": {
+      "sprite": "axe-bronze",
+      "scale": 0.25
+    }
   },
   "axe-2": {
     "cat": "CAT_WEAPON",
@@ -2027,7 +2106,21 @@
       "sword"
     ],
     "lab": "鐵斧",
-    "des": "厚重的鐵製戰斧，斧刃帶著洗不掉的暗紅。傷害高但命中較低，命中時可能使目標流血。"
+    "des": "厚重的鐵製戰斧，斧刃帶著洗不掉的暗紅。傷害高但命中較低，命中時可能使目標流血。",
+    "equip": {
+      "sprite": "axe-iron",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "ox": 0.3,
+      "oy": 0.85
+    },
+    "icon": "axe-iron-icon",
+    "drop": {
+      "sprite": "axe-iron",
+      "scale": 0.25
+    }
   },
   "axe-3": {
     "cat": "CAT_WEAPON",
@@ -2058,7 +2151,21 @@
       "sword"
     ],
     "lab": "鋼斧",
-    "des": "寬刃鋼斧，一記重劈就能撕開皮甲。傷害高但命中較低，命中時可能使目標流血。"
+    "des": "寬刃鋼斧，一記重劈就能撕開皮甲。傷害高但命中較低，命中時可能使目標流血。",
+    "equip": {
+      "sprite": "axe-steel",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "ox": 0.3,
+      "oy": 0.85
+    },
+    "icon": "axe-steel-icon",
+    "drop": {
+      "sprite": "axe-steel",
+      "scale": 0.25
+    }
   },
   "axe-4": {
     "cat": "CAT_WEAPON",
@@ -2089,7 +2196,21 @@
       "sword"
     ],
     "lab": "精鋼斧",
-    "des": "斧刃開了倒鉤，留下的傷口難以癒合。傷害高但命中較低，命中時可能使目標流血。"
+    "des": "斧刃開了倒鉤，留下的傷口難以癒合。傷害高但命中較低，命中時可能使目標流血。",
+    "equip": {
+      "sprite": "axe-finesteel",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "ox": 0.3,
+      "oy": 0.85
+    },
+    "icon": "axe-finesteel-icon",
+    "drop": {
+      "sprite": "axe-finesteel",
+      "scale": 0.25
+    }
   },
   "axe-5": {
     "cat": "CAT_WEAPON",
@@ -2120,7 +2241,21 @@
       "sword"
     ],
     "lab": "秘銀斧",
-    "des": "秘銀戰斧在揮舞時發出低鳴，傳說能劈開城門。傷害高但命中較低，命中時可能使目標流血。"
+    "des": "秘銀戰斧在揮舞時發出低鳴，傳說能劈開城門。傷害高但命中較低，命中時可能使目標流血。",
+    "equip": {
+      "sprite": "axe-mithril",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "ox": 0.3,
+      "oy": 0.85
+    },
+    "icon": "axe-mithril-icon",
+    "drop": {
+      "sprite": "axe-mithril",
+      "scale": 0.25
+    }
   },
   "hammer-1": {
     "cat": "CAT_WEAPON",
@@ -2140,7 +2275,20 @@
       "sword"
     ],
     "lab": "青銅槌",
-    "des": "粗糙的青銅鑄錘，敲起來比砍起來可靠。傷害高但命中較低。"
+    "des": "粗糙的青銅鑄錘，敲起來比砍起來可靠。傷害高但命中較低。",
+    "equip": {
+      "sprite": "hammer-bronze",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.85
+    },
+    "icon": "hammer-bronze-icon",
+    "drop": {
+      "sprite": "hammer-bronze",
+      "scale": 0.25
+    }
   },
   "hammer-2": {
     "cat": "CAT_WEAPON",
@@ -2170,7 +2318,10 @@
       "sword"
     ],
     "lab": "鐵槌",
-    "des": "方頭鐵槌，連頭盔都能敲出凹痕。傷害高但命中較低，命中時可能使目標昏迷。"
+    "des": "方頭鐵槌，連頭盔都能敲出凹痕。傷害高但命中較低，命中時可能使目標昏迷。",
+    "equip": {
+      "sprite": "hammer-iron"
+    }
   },
   "hammer-3": {
     "cat": "CAT_WEAPON",
@@ -2200,7 +2351,10 @@
       "sword"
     ],
     "lab": "鋼槌",
-    "des": "鋼製戰槌，槌頭的重量足以震碎骨頭。傷害高但命中較低，命中時可能使目標昏迷。"
+    "des": "鋼製戰槌，槌頭的重量足以震碎骨頭。傷害高但命中較低，命中時可能使目標昏迷。",
+    "equip": {
+      "sprite": "hammer-steel"
+    }
   },
   "hammer-4": {
     "cat": "CAT_WEAPON",
@@ -2230,7 +2384,10 @@
       "sword"
     ],
     "lab": "精鋼槌",
-    "des": "槌面刻有防滑紋路的精鋼重槌，一擊便能讓人眼冒金星。傷害高但命中較低，命中時可能使目標昏迷。"
+    "des": "槌面刻有防滑紋路的精鋼重槌，一擊便能讓人眼冒金星。傷害高但命中較低，命中時可能使目標昏迷。",
+    "equip": {
+      "sprite": "hammer-finesteel"
+    }
   },
   "hammer-5": {
     "cat": "CAT_WEAPON",
@@ -2260,7 +2417,10 @@
       "sword"
     ],
     "lab": "秘銀槌",
-    "des": "秘銀戰槌落下時有如雷鳴，大地為之震顫。傷害高但命中較低，命中時可能使目標昏迷。"
+    "des": "秘銀戰槌落下時有如雷鳴，大地為之震顫。傷害高但命中較低，命中時可能使目標昏迷。",
+    "equip": {
+      "sprite": "hammer-mithril"
+    }
   },
   "dagger-1": {
     "cat": "CAT_WEAPON",
@@ -2279,7 +2439,20 @@
       "dagger"
     ],
     "lab": "青銅匕首",
-    "des": "短小的青銅匕首，盜賊入行的第一把刀。傷害低但容易暴擊。"
+    "des": "短小的青銅匕首，盜賊入行的第一把刀。傷害低但容易暴擊。",
+    "equip": {
+      "sprite": "dagger-bronze",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 70,
+      "oy": 0.8
+    },
+    "icon": "dagger-bronze-icon",
+    "drop": {
+      "sprite": "dagger-bronze",
+      "scale": 0.25
+    }
   },
   "dagger-2": {
     "cat": "CAT_WEAPON",
@@ -2310,7 +2483,10 @@
       "dagger"
     ],
     "lab": "鐵匕首",
-    "des": "細長的鐵製匕首，容易藏在靴筒裡。傷害低但容易暴擊，命中時可能使目標中毒。"
+    "des": "細長的鐵製匕首，容易藏在靴筒裡。傷害低但容易暴擊，命中時可能使目標中毒。",
+    "equip": {
+      "sprite": "dagger-iron"
+    }
   },
   "dagger-3": {
     "cat": "CAT_WEAPON",
@@ -2341,7 +2517,10 @@
       "dagger"
     ],
     "lab": "鋼匕首",
-    "des": "刃尖淬過毒液的鋼匕首，專挑盔甲的縫隙下手。傷害低但容易暴擊，命中時可能使目標中毒。"
+    "des": "刃尖淬過毒液的鋼匕首，專挑盔甲的縫隙下手。傷害低但容易暴擊，命中時可能使目標中毒。",
+    "equip": {
+      "sprite": "dagger-steel"
+    }
   },
   "dagger-4": {
     "cat": "CAT_WEAPON",
@@ -2372,7 +2551,10 @@
       "dagger"
     ],
     "lab": "暗影匕首",
-    "des": "漆黑的刃身不反射任何光線，刺客最愛的夥伴。傷害低但容易暴擊，命中時可能使目標中毒。"
+    "des": "漆黑的刃身不反射任何光線，刺客最愛的夥伴。傷害低但容易暴擊，命中時可能使目標中毒。",
+    "equip": {
+      "sprite": "dagger-shadow"
+    }
   },
   "dagger-5": {
     "cat": "CAT_WEAPON",
@@ -2403,7 +2585,10 @@
       "dagger"
     ],
     "lab": "毒牙匕首",
-    "des": "以巨蛇毒牙磨成，刃上的毒液永不乾涸。傷害低但容易暴擊，命中時可能使目標中毒。"
+    "des": "以巨蛇毒牙磨成，刃上的毒液永不乾涸。傷害低但容易暴擊，命中時可能使目標中毒。",
+    "equip": {
+      "sprite": "dagger-venomfang"
+    }
   },
   "bow-1": {
     "cat": "CAT_WEAPON",
@@ -2415,7 +2600,21 @@
       "bow"
     ],
     "lab": "短弓",
-    "des": "獵人常用的木製短弓，輕巧好上手。遠程武器，能在遠處攻擊敵人。"
+    "des": "獵人常用的木製短弓，輕巧好上手。遠程武器，能在遠處攻擊敵人。",
+    "equip": {
+      "sprite": "bow-short",
+      "scale": 0.25,
+      "x": 0,
+      "y": 13,
+      "a": 60,
+      "ox": 0.7,
+      "oy": 0.5
+    },
+    "icon": "bow-short-icon",
+    "drop": {
+      "sprite": "bow-short",
+      "scale": 0.25
+    }
   },
   "bow-2": {
     "cat": "CAT_WEAPON",
@@ -2427,7 +2626,10 @@
       "bow"
     ],
     "lab": "長弓",
-    "des": "以硬木製成的長弓，射程與力道都勝過短弓。遠程武器，能在遠處攻擊敵人。"
+    "des": "以硬木製成的長弓，射程與力道都勝過短弓。遠程武器，能在遠處攻擊敵人。",
+    "equip": {
+      "sprite": "bow-long"
+    }
   },
   "bow-3": {
     "cat": "CAT_WEAPON",
@@ -2439,7 +2641,10 @@
       "bow"
     ],
     "lab": "複合弓",
-    "des": "以木、角、筋層層黏合，小巧卻極為強勁。遠程武器，能在遠處攻擊敵人。"
+    "des": "以木、角、筋層層黏合，小巧卻極為強勁。遠程武器，能在遠處攻擊敵人。",
+    "equip": {
+      "sprite": "bow-composite"
+    }
   },
   "bow-4": {
     "cat": "CAT_WEAPON",
@@ -2451,7 +2656,10 @@
       "bow"
     ],
     "lab": "精靈弓",
-    "des": "精靈工匠的作品，弓身纖細優雅，箭矢幾乎無聲。遠程武器，能在遠處攻擊敵人。"
+    "des": "精靈工匠的作品，弓身纖細優雅，箭矢幾乎無聲。遠程武器，能在遠處攻擊敵人。",
+    "equip": {
+      "sprite": "bow-elven"
+    }
   },
   "bow-5": {
     "cat": "CAT_WEAPON",
@@ -2463,7 +2671,10 @@
       "bow"
     ],
     "lab": "龍骨弓",
-    "des": "以巨龍脊骨削成的長弓，拉開時隱約聽見龍吟。遠程武器，能在遠處攻擊敵人。"
+    "des": "以巨龍脊骨削成的長弓，拉開時隱約聽見龍吟。遠程武器，能在遠處攻擊敵人。",
+    "equip": {
+      "sprite": "bow-dragonbone"
+    }
   },
   "staff-1": {
     "cat": "CAT_WEAPON",
@@ -2482,7 +2693,20 @@
       "staff"
     ],
     "lab": "橡木杖",
-    "des": "普通的橡木手杖，杖頭殘留著焦黑的痕跡。提升智力。"
+    "des": "普通的橡木手杖，杖頭殘留著焦黑的痕跡。提升智力。",
+    "equip": {
+      "sprite": "staff-oak",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "a": 60,
+      "oy": 0.75
+    },
+    "icon": "staff-oak-icon",
+    "drop": {
+      "sprite": "staff-oak",
+      "scale": 0.25
+    }
   },
   "staff-2": {
     "cat": "CAT_WEAPON",
@@ -2512,7 +2736,10 @@
       "staff"
     ],
     "lab": "水晶杖",
-    "des": "杖頭鑲著冰涼的水晶，摸起來總是結著薄霜。提升智力，命中時可能使目標凍傷。"
+    "des": "杖頭鑲著冰涼的水晶，摸起來總是結著薄霜。提升智力，命中時可能使目標凍傷。",
+    "equip": {
+      "sprite": "staff-crystal"
+    }
   },
   "staff-3": {
     "cat": "CAT_WEAPON",
@@ -2542,7 +2769,10 @@
       "staff"
     ],
     "lab": "符文杖",
-    "des": "杖身刻滿火焰符文，施法時符文會發出紅光。提升智力，命中時可能使目標燃燒。"
+    "des": "杖身刻滿火焰符文，施法時符文會發出紅光。提升智力，命中時可能使目標燃燒。",
+    "equip": {
+      "sprite": "staff-runic"
+    }
   },
   "staff-4": {
     "cat": "CAT_WEAPON",
@@ -2572,7 +2802,10 @@
       "staff"
     ],
     "lab": "附魔杖",
-    "des": "被寒冰魔力附魔的法杖，周圍的空氣總是凝結成霧。提升智力，命中時可能使目標凍傷。"
+    "des": "被寒冰魔力附魔的法杖，周圍的空氣總是凝結成霧。提升智力，命中時可能使目標凍傷。",
+    "equip": {
+      "sprite": "staff-enchanted"
+    }
   },
   "staff-5": {
     "cat": "CAT_WEAPON",
@@ -2602,6 +2835,9 @@
       "staff"
     ],
     "lab": "星辰杖",
-    "des": "杖頭封存著一顆墜落的星辰，燃燒著永不熄滅的光焰。提升智力，命中時可能使目標燃燒。"
+    "des": "杖頭封存著一顆墜落的星辰，燃燒著永不熄滅的光焰。提升智力，命中時可能使目標燃燒。",
+    "equip": {
+      "sprite": "staff-starlight"
+    }
   }
 }
