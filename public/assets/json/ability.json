@@ -253,60 +253,7 @@
     "zoneW": 5,
     "zoneH": 1,
     "zoneDur": 4,
-    "zoneImg": "🔥",
-    "zoneAnim": {
-      "cell": {
-        "size": 30,
-        "jitter": 3,
-        "scale": [
-          0.85,
-          1.15
-        ],
-        "alpha": 0.9,
-        "flipX": "random"
-      },
-      "spawn": {
-        "scale": {
-          "from": 0,
-          "to": 1
-        },
-        "duration": 250,
-        "ease": "Back.Out",
-        "stagger": 70,
-        "from": "center"
-      },
-      "idle": {
-        "scaleX": {
-          "from": 0.75,
-          "to": 1.25
-        },
-        "scaleY": {
-          "from": 0.75,
-          "to": 1.25
-        },
-        "y": "-=2",
-        "duration": 450,
-        "yoyo": true,
-        "repeat": -1,
-        "ease": "Sine.InOut",
-        "randDelay": 450
-      },
-      "tick": {
-        "scale": {
-          "from": 1,
-          "to": 1.4
-        },
-        "duration": 150,
-        "yoyo": true,
-        "ease": "Quad.Out"
-      },
-      "end": {
-        "alpha": 0,
-        "scale": 0.3,
-        "duration": 350,
-        "ease": "Quad.In"
-      }
-    },
+    "zoneFx": "firewall",
     "effects": [
       {
         "type": "dot",

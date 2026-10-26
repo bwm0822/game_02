@@ -4,7 +4,7 @@ import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
-import FxCell from '../core/fxcell.js'
+import FxCell, {zoneDelays} from '../core/fxcell.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -746,7 +746,7 @@ export class ZoneView extends View
         this.zoneW = 1;   // 橫向總格數
         this.zoneH = 1;   // 縱向總格數
         this.zoneImg = null;   // 每格要顯示的 icon(emoji)
-        this.zoneAnim = null;  // {cell, spawn, idle, tick, end}，spawn/idle/tick/end 是 Phaser tween 設定
+        this.zoneAnim = null;  // fx.json 的一筆 {img, cell, spawn, idle, tick, end}，spawn/idle/tick/end 是 Phaser tween 設定
         this.zoneSrc = null;   // 施法者位置(world)，spawn.from='near' 用
         this._cells = [];
     }
@@ -788,15 +788,9 @@ export class ZoneView extends View
 
     _spawnDelays(stagger, from)
     {
-        if(from==='random') {return this._cells.map(()=>Math.random()*stagger*(this._cells.length-1));}
-        if(from==='near' && this.zoneSrc)
-        {
-            const {x,y} = this.zoneSrc;
-            const dist = this._cells.map(c=>Phaser.Math.Distance.Between(x, y, this.root.x+c.gx*GM.TILE_W, this.root.y+c.gy*GM.TILE_H));
-            const order = [...dist].sort((a,b)=>a-b);
-            return dist.map(d=>order.indexOf(d)*stagger);
-        }
-        return this._cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
+        const src = this.zoneSrc;
+        const dist = src && (c=>Phaser.Math.Distance.Between(src.x, src.y, this.root.x+c.gx*GM.TILE_W, this.root.y+c.gy*GM.TILE_H));
+        return zoneDelays(this._cells, stagger, from, dist);
     }
 
     // 只登記有生成的格子(牆、桌子這類被跳過的格子不加權重，否則會變成可通行)

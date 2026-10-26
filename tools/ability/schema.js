@@ -56,6 +56,10 @@ export const FIELDS = {
     weapon: {label: '武器攻擊', type: 'bool'},
     roles: {label: '被角色擋', type: 'bool'},
     anim: {label: '動畫', type: 'list', suggest: []},
+    zoneW: {label: '區域寬', type: 'int'},
+    zoneH: {label: '區域高', type: 'int'},
+    zoneDur: {label: '區域回合', type: 'int'},
+    zoneFx: {label: '區域特效', type: 'list', suggest: []},
     hits: {label: '傷害', type: 'cards'},
     effects: {label: '效果', type: 'cards'},
 };

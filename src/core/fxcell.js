@@ -87,6 +87,19 @@ export default class FxCell
     }
 }
 
+// 區域多格的 spawn 先後(ZoneView 跟特效工具共用)：cells=[{gx,gy}]；center 由中心往外、random 隨機、near 由 dist(cell) 小的開始(沒給 dist 就當 center)
+export function zoneDelays(cells, stagger=0, from='center', dist=null)
+{
+    if(from==='random') {return cells.map(()=>Math.random()*stagger*(cells.length-1));}
+    if(from==='near' && dist)
+    {
+        const d = cells.map(dist);
+        const order = [...d].sort((a,b)=>a-b);
+        return d.map(x=>order.indexOf(x)*stagger);
+    }
+    return cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
+}
+
 // 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(view 的上緣/中間/下緣)，ox/oy 是額外偏移
 export function attachCell(scene, root, cfg)
 {

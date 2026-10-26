@@ -10,7 +10,7 @@ import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl, PV} from './preview.js';
 
-// fx 的 id 就是效果 id，改名只列出 ability／item 的引用（doc.js 掃 assets），不跟著改
+// fx 的 id 是效果 id 或技能的 zoneFx，改名只列出 ability／item 的引用（doc.js 掃 assets），不跟著改
 const D = createDoc({
     file: 'fx.json', noun: '特效',
     external: '可能是手動改的。',
@@ -20,14 +20,16 @@ const D = createDoc({
 });
 const {S, render, commit, set} = D;
 S.refs = {};    // 效果 id → [{tab: 'ability'|'item', id, type}]，type:'action' 是瞬間效果不播特效，不收
-S.ext = {roles: {}, items: {}};     // 預覽用的唯讀參考資料
+S.ext = {roles: {}, items: {}, abilities: {}};     // 預覽用的唯讀參考資料
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.data[id]?.img, lab: id => labOf(id), warns: id => validate(id)});
 
 const refsOf = (id) => S.refs[id] ?? [];
+const isZone = (id) => refsOf(id).some(r => r.type === 'zone');
+const TYPE_NAMES = {zone: '區域'};
 const missing = () => Object.keys(S.refs).filter(id => !S.data[id]);
 const isUnused = (id) => !refsOf(id).length;
-const labOf = (id) => S.data[id] ? [...new Set(refsOf(id).map(r => r.type))].join(' ') : '缺特效';
+const labOf = (id) => S.data[id] ? [...new Set(refsOf(id).map(r => TYPE_NAMES[r.type] ?? r.type))].join(' ') : '缺特效';
 
 // ---------- 檢查 ----------
 function validate(id)
@@ -59,6 +61,10 @@ function validate(id)
         if (tw.ease !== undefined && !SC.EASES.includes(tw.ease)) out.push(`${k}.ease 不認識的曲線：${tw.ease}`);
         if (tw.repeat === -1 && k !== 'idle' && k !== 'body') out.push(`${k} 無限重複，${k === 'end' ? '特效不會消失' : '會一直播'}`);
     }
+    const zone = isZone(id);
+    if (zone && refsOf(id).some(r => r.type !== 'zone')) out.push('同時被當成區域特效（zoneFx）跟效果特效（effects 的 id），兩邊會長得一樣');
+    if (zone && cell?.flash) out.push('區域特效不支援閃一下');
+    if (zone && fx.body) out.push('區域特效沒有身體可以套 body');
     if (cell?.flash && fx.idle) out.push('閃一下的特效不會播 idle');
     if (cell?.flash && fx.body) out.push('閃一下的特效不會套 body');
     if (isObj(fx.body))
@@ -116,7 +122,7 @@ function cellBox(id, fx)
         F.boxBar('cell', open, true, h('span', {title: 'cell'}, '格子'),
             h('span', {class: 'dim'}, Object.entries(c).map(([a, x]) => `${a}:${str(x)}`).join('  '))),
         open && h('div', {class: 'fields'},
-            Object.entries(SC.CELL).map(([k, d]) => [
+            Object.entries(SC.CELL).filter(([, d]) => SC.forKind(d, isZone(id))).map(([k, d]) => [
                 h('span', {class: 'k' + (c[k] === undefined ? ' unset' : ''), title: `cell.${k}`}, d.label),
                 h('span', {class: 'iconField'}, cellInput(id, k, d, c[k]), d.hint && h('span', {class: 'dim'}, d.hint)),
             ]),
@@ -176,12 +182,12 @@ function timeInput(id, k, t, v)
 {
     const def = SC.TIME[t], put = (val) => set(id, [k, t], val), dk = `${k}.${t}`;
     if (def.type === 'ease') return h('input', {size: 12, dataset: {k: dk, combo: 'dl-eases'}, value: v ?? '', onchange: e => put(e.target.value.trim() || undefined)});
-    return fieldInput({type: def.type}, v, put, dk);
+    return fieldInput(def, v, put, dk);
 }
 
 function tweenForm(id, k, v)
 {
-    const time = SC.timeKeys(k), props = SC.propsOf(k);
+    const time = SC.timeKeys(k, isZone(id)), props = SC.propsOf(k);
     const known = (key) => time.includes(key) || props.includes(key);
     const used = Object.keys(v).filter(p => props.includes(p));
     const rest = props.filter(p => !used.includes(p));
@@ -230,7 +236,7 @@ function refsEl(id)
 {
     const refs = refsOf(id);
     return h('div', {class: 'refs'}, h('span', null, '用到的：'),
-        refs.length ? refs.map(r => h('a', {class: 'go', title: `跳到${r.tab === 'ability' ? '能力' : '道具'}分頁（effects 的 type: ${r.type}）`, onclick: () => SH.gotoTab(r.tab, [r.id])},
+        refs.length ? refs.map(r => h('a', {class: 'go', title: `跳到${r.tab === 'ability' ? '能力' : '道具'}分頁（${r.type === 'zone' ? '技能的 zoneFx' : `effects 的 type: ${r.type}`}）`, onclick: () => SH.gotoTab(r.tab, [r.id])},
                                       `${r.tab === 'ability' ? '能力' : '道具'} ${r.id} ↗`))
                     : h('span', {class: 'dim'}, '（沒有效果用這個 id，遊戲不會播）'));
 }
@@ -260,14 +266,22 @@ function renderForm()
                 h('span', {class: 'k' + (fx.img === undefined ? ' unset' : ''), title: 'img'}, '圖'),
                 fieldInput({type: 'icon'}, fx.img, v => set(id, ['img'], v), 'img'),
                 cellBox(id, fx),
-                SC.STAGES.map(st => stageBox(id, fx, st)),
+                SC.STAGES.filter(st => SC.forKind(st, isZone(id)) || fx[st.k] !== undefined).map(st => stageBox(id, fx, st)),
                 otherBox(id, fx))),
-        previewEl(id, fx, S.ext)));
+        previewEl(id, fx, S.ext, zoneSize(id))));
+}
+
+// 區域預覽的格數：第一個用 zoneFx 指到它的技能的 zoneW×zoneH
+function zoneSize(id)
+{
+    const r = refsOf(id).find(x => x.type === 'zone'), ab = r && S.ext.abilities[r.id];
+    return ab ? {w: ab.zoneW ?? 1, h: ab.zoneH ?? 1, by: r.id} : null;
 }
 
 // ---------- 總覽表 ----------
 function cellText(c, fx, id)
 {
+    if (c === '#kind') return isZone(id) ? '區域' : '效果';
     if (c === '#stages') return SC.STAGES.filter(s => fx[s.k] !== undefined).map(s => s.k).join(' ');
     if (c === '#refs') return refsOf(id).map(r => r.id).join(', ');
     const v = getAt(fx, c.split('.'));
@@ -282,7 +296,7 @@ function tableCell(id, c)
     return h('td', {class: c === 'cell.size' ? 'n' : ''}, cellText(c, fx, id));
 }
 
-const HEAD = {'img': ['圖'], 'cell.size': ['大小', 'cell.size'], 'cell.align': ['基準', 'cell.align'], 'cell.flash': ['閃', 'cell.flash'], '#stages': ['階段'], '#refs': ['用到的']};
+const HEAD = {'img': ['圖'], '#kind': ['種類'], 'cell.size': ['大小', 'cell.size'], 'cell.align': ['基準', 'cell.align'], 'cell.flash': ['閃', 'cell.flash'], '#stages': ['階段'], '#refs': ['用到的']};
 
 // ---------- 畫面 ----------
 function draw()
@@ -320,7 +334,11 @@ function collectRefs(data, tab, out)
                 }
         for (const x of Object.values(v)) walk(x, owner);
     };
-    for (const [id, v] of Object.entries(data)) walk(v, id);
+    for (const [id, v] of Object.entries(data))
+    {
+        walk(v, id);
+        if (tab === 'ability' && typeof v?.zoneFx === 'string') (out[v.zoneFx] ??= []).push({tab, id, type: 'zone'});
+    }
 }
 
 async function loadRefs()
@@ -331,7 +349,7 @@ async function loadRefs()
     collectRefs(abilities, 'ability', refs);
     collectRefs(items, 'item', refs);
     S.refs = refs;
-    Object.assign(S.ext, {roles, items});
+    Object.assign(S.ext, {roles, items, abilities});
 }
 
 (async () => {

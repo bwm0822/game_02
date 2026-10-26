@@ -1,6 +1,7 @@
 import {GameObject} from '../core/gameobject.js'
 import {ZoneView} from '../components/view.js'
 import {GM} from '../core/setting.js'
+import DB from '../data/db.js'
 
 //--------------------------------------------------
 // 類別 : 地面危險區域(如火焰地帶)
@@ -31,8 +32,9 @@ export default class HazardZone extends GameObject
         this.bb.hei = this._h*GM.TILE_H;
         this.bb.zoneW = this._w;            // 給 ZoneView._addShape() 畫每一格用
         this.bb.zoneH = this._h;
-        this.bb.zoneImg = ability.zoneImg;
-        this.bb.zoneAnim = ability.zoneAnim;
+        const fx = DB.fx(ability.zoneFx);   // 每格的外觀/動畫(fx.json，技能用 zoneFx 指 id)
+        this.bb.zoneImg = fx?.img;
+        this.bb.zoneAnim = fx;
         this.bb.zoneSrc = caster ? {x:caster.x, y:caster.y} : null;
 
         this.addCom(new ZoneView(this.scene), {modify:false});

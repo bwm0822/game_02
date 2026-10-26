@@ -191,6 +191,7 @@ function validate(id)
         v.forEach((x, i) => {for (const [f, d] of Object.entries(SC.CARDS[k].fields)) checkVal(d, x?.[f], `${k}[${i}].${f}`, out);});
     }
     out.push(...desWarns(ab));
+    if (ab.zoneFx !== undefined && S.fx.length && !S.fx.includes(ab.zoneFx)) out.push(`區域特效 zoneFx 在 fx.json 沒有：${ab.zoneFx}（到特效分頁建立）`);
     const t = treeOf(id);
     if (ab.refs !== undefined && !Array.isArray(ab.refs)) out.push('refs 應該是陣列');
     else for (const [i, r] of (ab.refs ?? []).entries())
@@ -960,6 +961,7 @@ function render()
         src: [...SC.STATS, ...sub('hits', 'src')],
         key: [...SC.STATS, ...sub('effects', 'key')],
         id: [...S.fx, ...sub('effects', 'id')],
+        zoneFx: S.fx,
     });
     renderList();
     renderTree();

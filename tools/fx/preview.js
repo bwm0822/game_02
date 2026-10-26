@@ -1,8 +1,10 @@
 // Phaser 預覽：直接跑遊戲的 FxCell／attachCell／bodyTween（src/core/fxcell.js），角色照角色編輯器的合成規則（partsOf）畫成一張貼圖當 view.shape
 // root(角色位置) → view(在 -anchor) → shape(view 中心)，跟 RoleView 一樣，cell.align／body 的支點才會跟遊戲一致
+// 區域特效（技能 zoneFx 引用的）不放角色，照 ZoneView 排 w×h 格，spawn 先後用 zoneDelays，tick 隨機挑一格（遊戲是角色站的那格）
 import Phaser from 'phaser';
 import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
-import {attachCell, bodyTween} from '../../src/core/fxcell.js';
+import FxCell, {attachCell, bodyTween, zoneDelays} from '../../src/core/fxcell.js';
+import {GM} from '../../src/core/setting.js';
 import {h} from '../common/dom.js';
 import * as IC from '../common/icons.js';
 import {partsOf} from '../role/preview.js';
@@ -15,6 +17,9 @@ const st = {
     el: null, scene: null, ready: null,
     root: null, view: null, base: null,
     fx: null, key: null, roleKey: null, run: 0,
+    zone: null,             // 區域特效的格數 {w, h, by}；null 是效果特效
+    zcells: null,           // 區域：生成中的 [{gx, gy, fx}]
+    sel: null,              // 角色下拉
     cur: null,              // 常駐中的 {cell, body}
     flashes: new Set(),     // flash 型、正在播的 cell
     imgs: new Map(),        // fx.img → 載進 Phaser 的貼圖 key（emoji 不用）
@@ -110,8 +115,49 @@ function flash()
     return cell.spawn().then(() => cell.tick()).then(() => cell.end()).then(() => {st.flashes.delete(cell); cell.destroy();});
 }
 
+function zoneOn()
+{
+    if (st.zcells) return;
+    const {w: cw, h: ch} = st.zone, [tw, th] = [GM.TILE_W, GM.TILE_H];
+    const xs = -Math.floor(cw / 2), ys = -Math.floor(ch / 2);
+    const {jitter = 0} = st.fx.cell ?? {};
+    const cells = [];
+    for (let x = xs; x < xs + cw; x++)
+        for (let y = ys; y < ys + ch; y++)
+        {
+            const px = W / 2 + x * tw, py = H / 2 + y * th;
+            const fx = new FxCell(st.scene, null, st.fx.img, st.fx,
+                {x: px + Phaser.Math.FloatBetween(-jitter, jitter), y: py + Phaser.Math.FloatBetween(-jitter, jitter), size: tw});
+            fx.holder.setDepth(py + 1);
+            cells.push({gx: x, gy: y, fx});
+        }
+    // near：施法者當作站在區域左邊兩格
+    const src = {x: W / 2 + (xs - 2) * tw, y: H / 2};
+    const {stagger = 0, from = 'center'} = st.fx.spawn ?? {};
+    const delays = zoneDelays(cells, stagger, from, c => Phaser.Math.Distance.Between(src.x, src.y, W / 2 + c.gx * tw, H / 2 + c.gy * th));
+    cells.forEach((c, i) => c.fx.spawn(delays[i]));
+    st.zcells = cells;
+}
+
+function zoneOff()
+{
+    const cells = st.zcells;
+    st.zcells = null;
+    Promise.all(cells.map(c => c.fx.end())).then(() => cells.forEach(c => c.fx.destroy()));
+}
+
+// 區域不放角色，鏡頭縮到整片放得下
+function layout()
+{
+    const cam = st.scene.cameras.main, z = st.zone;
+    st.root?.setVisible(!z);
+    cam.setZoom(z ? Math.min(1, (W - 8) / (z.w * GM.TILE_W), (H - 8) / (z.h * GM.TILE_H)) : 1).centerOn(W / 2, H / 2);
+    if (st.sel) st.sel.disabled = !!z;
+}
+
 function on()
 {
+    if (st.zone) {if (st.fx) zoneOn(); return;}
     if (!st.fx || !st.root || st.cur) return;
     if (isFlash()) {flash(); return;}
     const cell = attachCell(st.scene, st.root, st.fx);
@@ -122,7 +168,8 @@ function on()
 
 function tick()
 {
-    if (st.cur) st.cur.cell.tick();
+    if (st.zcells) Phaser.Utils.Array.GetRandom(st.zcells).fx.tick();
+    else if (st.cur) st.cur.cell.tick();
     else if (isFlash() && st.root) flash();
 }
 
@@ -135,6 +182,7 @@ function resetBody(body)
 
 function off()
 {
+    if (st.zcells) return zoneOff();
     const c = st.cur;
     if (!c) return;
     st.cur = null;
@@ -149,6 +197,8 @@ function stop()
     if (st.cur) {st.cur.cell.destroy(); resetBody(st.cur.body); st.cur = null;}
     for (const c of st.flashes) c.destroy();
     st.flashes.clear();
+    st.zcells?.forEach(c => c.fx.destroy());
+    st.zcells = null;
 }
 
 // 上身 → 每秒 tick 一次共 3 次 → 解除 → 停一下再來（時間跟著速度倍率）
@@ -173,7 +223,9 @@ async function loop(run)
 function replay()
 {
     stop();
-    if (!st.fx || !st.root) return;
+    if (!st.scene) return;
+    layout();
+    if (!st.fx || (!st.zone && !st.root)) return;
     st.scene.tweens.timeScale = P.speed;
     if (P.auto) loop(st.run);
     else on();
@@ -189,7 +241,7 @@ function syncCtl()
 
 function controls(roles)
 {
-    const sel = h('select', {title: '套在哪個角色上', onchange: async e => {
+    const sel = st.sel = h('select', {title: '套在哪個角色上（區域特效不用）', onchange: async e => {
         P.role = e.target.value;
         try {localStorage.setItem('tools.fx.role', P.role);} catch {}
         await buildRole();
@@ -208,12 +260,14 @@ function controls(roles)
 }
 
 // 每次重繪呼叫；預覽元素只建一次（搬進新的表單裡，Phaser 畫布不重建），fx 或角色變了才重播
-export function previewEl(id, fx, ext)
+// zone：區域特效的格數 {w, h, by}，效果特效給 null
+export function previewEl(id, fx, ext, zone = null)
 {
     st.ext = ext;
     if (!P.role || !ext.roles[P.role]) P.role = Object.keys(ext.roles).find(k => ext.roles[k].kind === 'monster') ?? Object.keys(ext.roles)[0] ?? null;
-    if (!st.el) st.el = h('div', {class: 'pv'}, createGame(), controls(ext.roles));
-    const key = JSON.stringify([id, fx]);
+    if (!st.el) st.el = h('div', {class: 'pv'}, createGame(), controls(ext.roles), h('div', {class: 'zinfo dim'}));
+    st.el.querySelector('.zinfo').textContent = zone ? `區域 ${zone.w}×${zone.h}（照 ${zone.by} 的 zoneW×zoneH）` : '';
+    const key = JSON.stringify([id, fx, zone]);
     if (key !== st.key)
     {
         st.key = key;
@@ -222,6 +276,7 @@ export function previewEl(id, fx, ext)
             const img = fx && await imgKey(fx.img);
             if (key !== st.key) return;
             st.fx = fx && {...structuredClone(fx), img};
+            st.zone = zone;
             replay();
         });
     }

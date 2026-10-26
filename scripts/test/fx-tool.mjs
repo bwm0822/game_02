@@ -130,7 +130,23 @@ run('fx-tool', async t => {
         out.flash = [st.cur, st.flashes.size];
         await until(() => st.flashes.size === 0);
         out.flashDone = st.flashes.size;
+        // 區域特效：firewall 被技能 zoneFx 引用；表單換成區域欄位，預覽排 zoneW×zoneH 格
+        S.sel = 'firewall'; PV.P.auto = false; fx.render();
+        out.zoneRef = (S.refs.firewall ?? []).map(r => `${r.tab}:${r.id}:${r.type}`).join(',');
+        out.zoneForm = [!!q('[data-k="cell.jitter"]'), !!q('[data-k="cell.flash"]'), !!q('[data-k="spawn.stagger"]'), !!q('[data-k="spawn.from"]'),
+                        qa('#view .box .bar [title="body"]').length];
+        await until(() => st.zone && st.fx?.img === '🔥' && st.zcells);
+        out.zoneCells = [st.zcells?.length, PV.st.sel.disabled];
+        PV.off();
+        out.zoneOff = st.zcells;
+        S.sel = 'stun'; fx.render();
+        await until(() => !st.zone && st.cur);
+        out.backToRole = [!!st.cur, st.root.visible, PV.st.sel.disabled];
+        PV.stop();
+
         // 自動循環
+        S.sel = 'burn'; fx.render();
+        await until(() => st.fx?.img === '🔥' && !st.zone);
         PV.P.auto = true; PV.replay();
         await until(() => st.flashes.size > 0);
         out.auto = st.flashes.size > 0;
@@ -171,6 +187,11 @@ run('fx-tool', async t => {
     t.eq('改欄位就重播、畫布不重建', JSON.stringify(r.rerender), JSON.stringify([true, true]));
     t.eq('閃一下不常駐', JSON.stringify(r.flash), JSON.stringify([null, 1]));
     t.eq('閃一下播完自己消失', r.flashDone, 0);
+    t.eq('firewall 是技能 zoneFx 的引用', r.zoneRef, 'ability:firewall:zone');
+    t.eq('區域表單：有抖動／逐格間隔／從哪開始，沒有閃一下／body', JSON.stringify(r.zoneForm), JSON.stringify([true, false, true, true, 0]));
+    t.eq('區域預覽排 5×1 格、角色下拉停用', JSON.stringify(r.zoneCells), JSON.stringify([5, true]));
+    t.eq('區域解除', r.zoneOff, null);
+    t.eq('換回效果特效：放回角色', JSON.stringify(r.backToRole), JSON.stringify([true, true, false]));
     t.check('自動循環會播', r.auto);
 
     // 殼：「用到的」↗ 跳到能力分頁那個技能；特效存檔後能力分頁的效果 id 建議跟著更新
