@@ -39,6 +39,9 @@ export function compose(it, common)
     return [it.desc, c].filter(Boolean).join('\n');
 }
 
+// 網頁版 ChatGPT 同一輪裡生完圖拿不到圖檔，要下一輪才能用 Python 另存
+export const saveCmd = (file) => `把剛剛那張圖用 Python 原樣存成 ${file}.png（不要重畫、不要縮放、不要改背景），給我下載連結。`;
+
 // ---------- 歷史 ----------
 function commit(fn)
 {
@@ -375,10 +378,11 @@ function drawItem()
     const keep = (e) => e.preventDefault();
     const fileInp = h('input', {'data-k': 'file', value: it.file ?? '', placeholder: '不含副檔名', oninput: (e) => live('file')(e), onchange: (e) => setItem(sel, 'file', e.target.value.trim())});
     const btnFile = h('button', {disabled: !it.file, onmousedown: keep, onclick: () => copy(fileInp.value.trim())}, '複製檔名');
+    const btnSave = h('button', {disabled: !it.file, onmousedown: keep, onclick: () => copy(saveCmd(fileInp.value.trim()))}, '複製存檔指令');
     const live = (k) => (e) => {
         const v = {...it, [k]: e.target.value};
         out.textContent = compose(v, common);
-        btnFile.disabled = !v.file;
+        btnFile.disabled = btnSave.disabled = !v.file?.trim();
     };
     const select = h('select', {class: lost ? 'missing' : null, onchange: (e) => setItem(sel, 'common', e.target.value)},
         h('option', {value: ''}, '（無）'),
@@ -404,7 +408,7 @@ function drawItem()
             h('div', null, select),
             h('span', {class: 'k'}, '描述'),
             h('textarea', {'data-k': 'desc', value: it.desc ?? '', oninput: live('desc'), onchange: (e) => setItem(sel, 'desc', e.target.value)})),
-        h('div', {class: 'row2'}, h('span', {class: 'title'}, '組合結果'), h('button', {onmousedown: keep, onclick: () => copy(out.textContent)}, '複製提示詞')),
+        h('div', {class: 'row2'}, h('span', {class: 'title'}, '組合結果'), h('button', {onmousedown: keep, onclick: () => copy(out.textContent)}, '複製提示詞'), btnSave),
         out,
     ];
 }
@@ -475,5 +479,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__pe = {S, setRoot, setPath, load, save, compose, commit, undo, redo, addItem, dupItem, removeItem, moveItem, setItem,
+window.__pe = {S, setRoot, setPath, load, save, compose, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, setItem,
                addCat, renameCat, removeCat, addCommon, renameCommon, removeCommon, usersOf};

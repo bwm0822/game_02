@@ -43,6 +43,8 @@ run('prompt', async t => {
         out.btnFile = [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled;
         pe.setItem(S.sel, 'file', 'sword-iron');
         out.btnFile = [out.btnFile, [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled];
+        out.btnSave = [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製存檔指令')?.disabled;
+        out.saveCmd = pe.saveCmd('sword-iron');
         S.search = 'sword-iron'; pe.commit(() => {});
         out.searchFile = document.querySelectorAll('#list .item .id').length;
         S.search = ''; pe.commit(() => {});
@@ -151,6 +153,8 @@ run('prompt', async t => {
     t.eq('沒有 common 只有描述', r.noCommon, 'x');
     t.eq('{file} 代換、沒填整行拿掉', JSON.stringify(r.file), JSON.stringify(['a\n存成 sword-iron.png\nend', 'a\nend']));
     t.eq('複製檔名按鈕：空的停用、有填啟用', JSON.stringify(r.btnFile), JSON.stringify([true, false]));
+    t.eq('複製存檔指令按鈕：有填啟用', r.btnSave, false);
+    t.check('存檔指令帶檔名', r.saveCmd.includes('sword-iron.png'), r.saveCmd);
     t.eq('搜尋比對檔名', r.searchFile, 1);
     t.eq('跨分類拖曳', JSON.stringify(r.move), JSON.stringify([1, '鐵劍', JSON.stringify({cat: '護具', i: 0})]));
     t.check('拖回原分類插在前面', r.order);
