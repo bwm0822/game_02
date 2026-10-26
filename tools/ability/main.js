@@ -20,6 +20,7 @@ const S = {
     doc: Object.fromEntries(FILES.map(f => [f, {data: {}, saved: {}, diskText: null}])),
     hist: [], hi: -1,
     tree: null, sel: null, search: '',
+    link: null,                 // 畫布上選中的連線 {child, ref}，Del 刪掉
     extra: {},                  // id → Set：「加欄位」叫出來、還沒填值的欄位
     drafts: {}, open: {}, formOf: null,
     anims: [],
@@ -171,10 +172,41 @@ function validate(id)
     const e = IC.check(ab.icon);
     if (e) out.push(`icon：${e}`);
     for (const [k, v] of Object.entries(ab)) if (SC.FIELDS[k] && k !== 'icon') checkVal(SC.FIELDS[k], v, k, out);
+    const t = treeOf(id);
     if (ab.refs !== undefined && !Array.isArray(ab.refs)) out.push('refs 應該是陣列');
-    else for (const r of ab.refs ?? []) if (!abs()[r]) out.push(`前置指到不存在的技能：${r}`);
-    if (!treeOf(id)) out.push('不在任何一棵樹上');
+    else for (const [i, r] of (ab.refs ?? []).entries())
+    {
+        if (ab.refs.indexOf(r) !== i) out.push(`前置重複：${r}`);
+        else if (!abs()[r]) out.push(`前置指到不存在的技能：${r}`);
+        else if (t && treeOf(r) !== t) out.push(`前置 ${r} 在別棵樹（${treeOf(r) ?? '不在樹上'}）`);
+        else if (t && !linkOk(t, r, id)) out.push(`前置 ${r} 沒有在上面，遊戲的連線會畫歪`);
+    }
+    if (inCycle(id)) out.push('前置繞成一圈，永遠解不開');
+    if (!t) out.push('不在任何一棵樹上');
     return out;
+}
+
+const nodeOf = (t, id) => trees()[t]?.find(n => n.id === id);
+// 遊戲的連線只會從父往下畫，父要在子的上面（y 比較小）
+function linkOk(t, parent, child)
+{
+    const p = nodeOf(t, parent), c = nodeOf(t, child);
+    return !p || !c || p.y < c.y;
+}
+
+function inCycle(id)
+{
+    const seen = new Set(), stack = [...(abs()[id].refs ?? [])];
+    while (stack.length)
+    {
+        const r = stack.pop();
+        if (r === id) return true;
+        if (seen.has(r)) continue;
+        seen.add(r);
+        const refs = abs()[r]?.refs;
+        if (Array.isArray(refs)) stack.push(...refs);
+    }
+    return false;
 }
 
 function validateTree(t)
@@ -204,14 +236,49 @@ function select(id)
 {
     S.sel = id;
     S.tree = treeOf(id) ?? S.tree;
+    S.link = null;
     render();
 }
 
 function selectTree(t)
 {
     S.tree = t;
+    S.link = null;
     if (treeOf(S.sel) !== t) S.sel = null;
     render();
+}
+
+// ---------- 樹的編輯 ----------
+function moveNode(id, x, y)
+{
+    const nodes = trees()[S.tree], n = nodes.find(m => m.id === id), hit = nodes.find(m => m !== n && m.x === x && m.y === y);
+    if (hit) {status(`${x},${y} 已經有 ${hit.id}`); return render();}
+    if (n.x === x && n.y === y) return render();
+    commit(() => {n.x = x; n.y = y; S.sel = id; S.link = null;});
+}
+
+function addRef(child, parent)
+{
+    const a = abs()[child];
+    if (!a || child === parent) return render();
+    if (Array.isArray(a.refs) && a.refs.includes(parent)) {status(`${parent} 已經是 ${child} 的前置`); return render();}
+    commit(() => {
+        if (Array.isArray(a.refs)) a.refs.push(parent);
+        else a.refs = [parent];
+        S.sel = child;
+        S.link = {child, ref: parent};
+    });
+}
+
+function removeRef(child, parent)
+{
+    const a = abs()[child];
+    if (!Array.isArray(a?.refs) || !a.refs.includes(parent)) return;
+    commit(() => {
+        a.refs = a.refs.filter(r => r !== parent);
+        if (!a.refs.length) delete a.refs;
+        S.link = null;
+    });
 }
 
 // ---------- 左欄 ----------
@@ -269,19 +336,73 @@ function svgEl(tag, attrs)
     return el;
 }
 
+const cellAt = (px) => Math.max(0, Math.round((px - M) / CELL));
+
+// 拖節點：放開時吸附到最近的格子；沒拖動（< 4px）交給 onclick 選取
+function nodeDown(e, n)
+{
+    if (e.button !== 0) return;
+    const el = e.currentTarget, sx = e.clientX, sy = e.clientY, ox = parseFloat(el.style.left), oy = parseFloat(el.style.top);
+    let moved = false;
+    if (e.isTrusted) el.setPointerCapture(e.pointerId);
+    el.onpointermove = (ev) => {
+        const dx = ev.clientX - sx, dy = ev.clientY - sy;
+        if (!moved && Math.hypot(dx, dy) < 4) return;
+        moved = true;
+        el.classList.add('drag');
+        el.style.left = `${ox + dx}px`;
+        el.style.top = `${oy + dy}px`;
+    };
+    el.onpointerup = (ev) => {
+        el.onpointermove = el.onpointerup = null;
+        if (moved) moveNode(n.id, cellAt(ox + ev.clientX - sx), cellAt(oy + ev.clientY - sy));
+    };
+}
+
+// 從節點底下的把手拉線到另一個節點：被拉到的那個多一個前置（拉線的這個）
+function linkDown(e, n)
+{
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    const el = e.currentTarget, svg = el.closest('.tree').querySelector('svg.links'), box = svg.getBoundingClientRect(), p = center(n);
+    const line = svgEl('polyline', {class: 'temp', points: `${p.x},${p.y + CELL / 2}`});
+    svg.append(line);
+    if (e.isTrusted) el.setPointerCapture(e.pointerId);
+    el.onpointermove = (ev) => line.setAttribute('points', `${p.x},${p.y + CELL / 2} ${ev.clientX - box.left},${ev.clientY - box.top}`);
+    el.onpointerup = (ev) => {
+        el.onpointermove = el.onpointerup = null;
+        line.remove();
+        const to = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.node')?.dataset.id;
+        if (to && to !== n.id) addRef(to, n.id);
+    };
+}
+
 function renderTree()
 {
     const t = S.tree, nodes = trees()[t];
     if (!nodes) return $('view').replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選樹）' : '先在上方選擇專案資料夾'));
-    const w = Math.max(0, ...nodes.map(n => n.x)) + 2, hh = Math.max(0, ...nodes.map(n => n.y)) + 2;
+    // 右邊、下面多留兩格，讓節點有地方拖
+    const w = Math.max(0, ...nodes.map(n => n.x)) + 3, hh = Math.max(0, ...nodes.map(n => n.y)) + 3;
     const svg = svgEl('svg', {class: 'links', width: w * CELL + 2 * M, height: hh * CELL + 2 * M});
     const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
     for (const n of nodes)
     {
         const refs = abs()[n.id]?.refs;
         if (!Array.isArray(refs)) continue;
-        for (const r of refs) if (byId[r]) svg.append(svgEl('polyline', {points: linkPts(center(byId[r]), center(n)).join(' ')}));
-        svg.append(svgEl('polyline', {points: selfMark(center(n)).join(' ')}));
+        for (const r of refs)
+        {
+            if (!byId[r]) continue;
+            const pts = linkPts(center(byId[r]), center(n)).join(' ');
+            const sel = S.link?.child === n.id && S.link.ref === r;
+            const hit = svgEl('polyline', {class: 'hit', points: pts}), tip = svgEl('title', {});
+            tip.textContent = `${r} → ${n.id}（點選後按 Del 刪除）`;
+            hit.append(tip);
+            hit.addEventListener('click', () => {S.link = sel ? null : {child: n.id, ref: r}; render();});
+            const g = svgEl('g', {'data-link': `${r}>${n.id}`});
+            g.append(svgEl('polyline', {class: 'link' + (linkOk(t, r, n.id) ? '' : ' bad') + (sel ? ' sel' : ''), points: pts}), hit);
+            svg.append(g);
+        }
+        svg.append(svgEl('polyline', {class: 'link', points: selfMark(center(n)).join(' ')}));
     }
     const warns = validateTree(t);
     $('view').replaceChildren(
@@ -296,9 +417,10 @@ function renderTree()
                 const ab = abs()[n.id], p = center(n), bad = !ab || validate(n.id).length;
                 return h('div', {class: 'node' + (n.id === S.sel ? ' sel' : '') + (bad ? ' bad' : ''), dataset: {id: n.id},
                     title: [n.id, ...(ab ? validate(n.id) : ['不在 ability.json'])].join('\n'),
-                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id)},
+                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => nodeDown(e, n)},
                     IC.iconEl(ab?.icon, 40),
-                    h('div', {class: 'nlab'}, ab?.lab ?? n.id));
+                    h('div', {class: 'nlab'}, ab?.lab ?? n.id),
+                    ab && h('div', {class: 'handle', title: '拉到另一個技能＝設成它的前置', onpointerdown: e => linkDown(e, n), onclick: e => e.stopPropagation()}));
             })));
 }
 
@@ -376,6 +498,8 @@ addEventListener('keydown', (e) => {
     // 先失焦讓正在打的欄位觸發 change 套用
     if (e.ctrlKey && k === 's') {e.preventDefault(); document.activeElement?.blur(); save(); return;}
     if (e.target.matches?.('input, textarea, select') || document.querySelector('dialog[open]')) return;
+    if ((k === 'delete' || k === 'backspace') && S.link) {e.preventDefault(); removeRef(S.link.child, S.link.ref);}
+    if (k === 'escape' && S.link) {S.link = null; render();}
     if (e.ctrlKey && k === 'z' && !e.shiftKey) {e.preventDefault(); undo();}
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
 });
@@ -389,4 +513,4 @@ addEventListener('keydown', (e) => {
 })();
 
 // 給無頭測試用
-window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, validate, validateTree, validateAll, render, IC};
+window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, validate, validateTree, validateAll, render, IC, CELL, M};

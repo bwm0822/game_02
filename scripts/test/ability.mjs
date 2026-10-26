@@ -2,6 +2,8 @@
 import {run} from './harness.mjs'
 
 run('ability', async t => {
+    // 畫布在中間欄，太窄的話節點會捲到看不到，elementFromPoint 找不到
+    await t.page.setViewport({width: 1600, height: 900});
     await t.page.goto(new URL('tools/ability/', t.page.url()).href);
     await t.page.waitForFunction(() => window.__ab);
 
@@ -42,7 +44,7 @@ run('ability', async t => {
         // 畫布：Fire 樹的節點跟連線（fireballvolley←fireball、combustion←volley+firewall、meteorshower←combustion，加上 3 條子節點上方短線）
         ab.selectTree('Fire');
         out.nodes = document.querySelectorAll('#view .node').length;
-        out.links = document.querySelectorAll('#view svg.links polyline').length;
+        out.links = document.querySelectorAll('#view svg.links polyline.link').length;
         const fb = document.querySelector('#view .node[data-id="fireball"]');
         out.nodePos = [fb.style.left, fb.style.top];
         fb.click();
@@ -107,6 +109,74 @@ run('ability', async t => {
         $('search').value = '火'; $('search').dispatchEvent(new Event('input'));
         out.search = [...document.querySelectorAll('#list .item[data-id]')].map(e => e.dataset.id);
         $('search').value = ''; $('search').dispatchEvent(new Event('input'));
+
+        // ---------- 畫布編輯 ----------
+        const {CELL} = ab;
+        const node = (id) => document.querySelector(`#view .node[data-id="${id}"]`);
+        const fireAt = (el, type, x, y) => el.dispatchEvent(new PointerEvent(type, {clientX: x, clientY: y, button: 0, pointerId: 1, bubbles: true}));
+        const mid = (el) => {const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2];};
+        const drag = (id, dx, dy) => {const el = node(id), [x, y] = mid(el); fireAt(el, 'pointerdown', x, y); fireAt(el, 'pointermove', x + dx, y + dy); fireAt(el, 'pointerup', x + dx, y + dy);};
+        const tnode = (t, id) => S.doc['ab_tree.json'].data[t].find(n => n.id === id);
+        const refs = (id) => S.doc['ability.json'].data[id].refs;
+        ab.selectTree('Fire');
+
+        // 拖節點：吸附到格子、key 順序不變
+        drag('fireballvolley', 3, CELL + 10);
+        out.drag = [tnode('Fire', 'fireballvolley').x, tnode('Fire', 'fireballvolley').y, Object.keys(tnode('Fire', 'fireballvolley')).join(), S.sel];
+        // 小於 4px 不算拖
+        const h0 = S.hi;
+        drag('fireballvolley', 2, 1);
+        out.tiny = S.hi === h0;
+        // 拖到有人的格子：不動
+        drag('fireballvolley', 2 * CELL, -3 * CELL);
+        out.occupied = [tnode('Fire', 'fireballvolley').x, tnode('Fire', 'fireballvolley').y, $('status').textContent];
+        // 拖到負的座標：夾在 0
+        drag('meteorshower', -5 * CELL, 0);
+        out.clamp = tnode('Fire', 'meteorshower').x;
+        ab.undo(); ab.undo();
+        out.dragUndo = [tnode('Fire', 'fireballvolley').y, tnode('Fire', 'meteorshower').x];
+
+        // 拉線：firewall 的把手拉到 meteorshower → meteorshower 多一個前置
+        const handle = node('firewall').querySelector('.handle');
+        const [hx, hy] = mid(handle), [mx, my] = mid(node('meteorshower'));
+        fireAt(handle, 'pointerdown', hx, hy);
+        fireAt(handle, 'pointermove', mx, my);
+        out.temp = !!document.querySelector('#view polyline.temp');
+        fireAt(handle, 'pointerup', mx, my);
+        out.addRef = [JSON.stringify(refs('meteorshower')), !!document.querySelector('#view polyline.temp'), S.link && `${S.link.ref}>${S.link.child}`];
+        out.linkSel = !!document.querySelector('#view g[data-link="firewall>meteorshower"] polyline.link.sel');
+        // 重複拉不會加第二次
+        ab.addRef('meteorshower', 'firewall');
+        out.dupRef = refs('meteorshower').length;
+        // 拉到空白：不改
+        const n0 = S.hi;
+        fireAt(handle, 'pointerdown', hx, hy); fireAt(handle, 'pointerup', 5, 5);
+        out.dropNowhere = S.hi === n0;
+        // 點線選取、Del 刪掉
+        S.link = null; ab.render();
+        document.querySelector('#view g[data-link="firewall>meteorshower"] polyline.hit').dispatchEvent(new MouseEvent('click', {bubbles: true}));
+        out.clickLink = S.link && `${S.link.ref}>${S.link.child}`;
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}));
+        out.delRef = [JSON.stringify(refs('meteorshower')), S.link];
+        // 刪掉最後一個前置：refs 整個拿掉、短線也不畫
+        ab.removeRef('fireballvolley', 'fireball');
+        out.delLast = ['refs' in S.doc['ability.json'].data.fireballvolley, document.querySelectorAll('#view svg.links polyline.link').length];
+        ab.undo(); ab.undo(); ab.undo();
+        out.refUndo = [JSON.stringify(refs('meteorshower')), JSON.stringify(refs('fireballvolley'))];
+
+        // 前置不在上面：警告、線標紅
+        ab.moveNode('meteorshower', 3, 2);
+        out.badLink = [ab.validate('meteorshower').some(w => w.includes('沒有在上面')), !!document.querySelector('#view g[data-link="combustion>meteorshower"] polyline.link.bad')];
+        ab.undo();
+        out.badLinkUndo = ab.validate('meteorshower').length;
+        // 繞圈、跨樹
+        ab.addRef('fireball', 'meteorshower');
+        out.cycle = ab.validate('fireball').some(w => w.includes('繞成一圈'));
+        ab.undo();
+        ab.addRef('fireball', 'icebolt');
+        out.cross = ab.validate('fireball').some(w => w.includes('在別棵樹（Ice）'));
+        ab.undo();
+        out.final = ab.validateAll().length;
         return out;
     });
 
@@ -148,4 +218,27 @@ run('ability', async t => {
     t.eq('不在樹上的技能列在左欄', r.orphan.join(), 'heal');
     t.check('不在樹上有警告', r.orphanAbWarn);
     t.check('搜尋名稱', r.search.includes('fireball') && r.search.includes('firewall') && !r.search.includes('heal'), r.search.join());
+
+    t.eq('拖節點吸附格子', r.drag.join(), '0,3,id,x,y,fireballvolley');
+    t.check('小於 4px 不算拖', r.tiny);
+    t.check('拖到有人的格子不動', r.occupied[0] === 0 && r.occupied[1] === 3 && r.occupied[2].includes('已經有'), r.occupied.join());
+    t.eq('拖到負座標夾在 0', r.clamp, 0);
+    t.eq('拖節點 undo', r.dragUndo.join(), '2,1');
+    t.check('拉線時有虛線', r.temp);
+    t.eq('拉線加前置', r.addRef[0], '["combustion","firewall"]');
+    t.check('放開後虛線消失', !r.addRef[1]);
+    t.eq('新線被選中', r.addRef[2], 'firewall>meteorshower');
+    t.check('選中的線標色', r.linkSel);
+    t.eq('重複拉不加', r.dupRef, 2);
+    t.check('拉到空白不改', r.dropNowhere);
+    t.eq('點線選取', r.clickLink, 'firewall>meteorshower');
+    t.eq('Del 刪前置', JSON.stringify(r.delRef), JSON.stringify(['["combustion"]', null]));
+    t.eq('刪最後一個前置拿掉 refs', r.delLast[0], false);
+    t.eq('沒有 refs 就不畫短線', r.delLast[1], 5);
+    t.eq('前置 undo', r.refUndo.join(' '), '["combustion"] ["fireball"]');
+    t.check('前置不在上面：警告＋紅線', r.badLink[0] && r.badLink[1], JSON.stringify(r.badLink));
+    t.eq('移回去沒警告', r.badLinkUndo, 0);
+    t.check('繞圈警告', r.cycle);
+    t.check('跨樹警告', r.cross);
+    t.eq('最後沒有警告', r.final, 0);
 });
