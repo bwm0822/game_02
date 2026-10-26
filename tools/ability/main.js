@@ -556,7 +556,7 @@ async function rename(from, to)
         innerList(inner),
         h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
         refList(outer),
-        h('div', {class: 'dim'}, `翻譯的情境 ability.${from} 會變 orphan，要跑 node scripts/lang.js 後到 en.xlsx 處理`),
+        h('div', {class: 'dim'}, `翻譯的情境 ability.${from} 會變 orphan，到翻譯分頁處理`),
     ], [['ok', '改名'], ['cancel', '取消']]);
     if (r !== 'ok') return;
     const sw = (a) => a.map(x => x === from ? to : x);
@@ -635,7 +635,7 @@ async function renameTree(from, to)
         h('div', null, 'ab_tree.json 的 key 跟 local.json 的樹名 key 會一起改'),
         h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
         refList(outer),
-        h('div', {class: 'dim'}, `翻譯的情境 ui.${from} 會變 orphan，要跑 node scripts/lang.js 後到 en.xlsx 處理`),
+        h('div', {class: 'dim'}, `翻譯的情境 ui.${from} 會變 orphan，到翻譯分頁處理`),
     ], [['ok', '改名'], ['cancel', '取消']]);
     if (r !== 'ok') return;
     commit(() => {

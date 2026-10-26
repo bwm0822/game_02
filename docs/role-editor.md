@@ -21,7 +21,7 @@
 ## 新增／複製／改名／刪除
 
 - 新角色：輸入 id 跟 kind，套 `template(kind)`（人形或獸形的外觀＋該 kind 常用欄位），排在同 kind 最後；要照現有角色改就用「複製」。
-- role.json 裡沒有角色互相引用的欄位，改名只動 key；其他地方（`story.json` 的 who、`dialog.json` 的 NPC key、Tiled 地圖、`src/` 寫死的 id…）只列不改。改名會讓翻譯情境 `role.<id>` 變 orphan，跑 `node scripts/lang.js` 後到 en.xlsx 處理。
+- role.json 裡沒有角色互相引用的欄位，改名只動 key；其他地方（`story.json` 的 who、`dialog.json` 的 NPC key、Tiled 地圖、`src/` 寫死的 id…）只列不改。改名會讓翻譯情境 `role.<id>` 變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
 
 ## 檢查
 
@@ -38,4 +38,4 @@
 
 測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `xls/role.xlsx`、`src/`：原樣往返、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、改名掃 assets/xlsx/src、新增範本、分組、總覽與地點篩選、合併）。
 
-不做的：翻譯（`lab`/`des` 的譯文在 `xls/lang/en.xlsx`）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。
+不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。

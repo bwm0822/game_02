@@ -65,4 +65,4 @@
 
 測試：`node scripts/test/story-tool.mjs`（原樣往返、標紅、面板跳轉、`@節點` 連結、節點／選項編輯與 undo、新增卡、自動完成、三方合併、quality／節點／spawn 改名）、`node scripts/test/dialog-tool.mjs`（原樣往返、沿用 `_common` 的入口與節點、覆寫、加掛選項、建立 NPC 對話、`_common` 節點改名、殼裡任務↔對話互跳）。
 
-不做的：試玩模擬器（之後的待辦，要測流程就進遊戲用 debug 的 `q` 指令）、翻譯（譯文在 `xls/lang/<lang>.xlsx`，改了文字要跑 `node scripts/lang.js`）、改其他檔案的引用、節點圖。
+不做的：試玩模擬器（之後的待辦，要測流程就進遊戲用 debug 的 `q` 指令）、翻譯（譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、節點圖。

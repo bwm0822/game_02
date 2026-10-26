@@ -10,7 +10,7 @@ for %%f in (scripts\*.js) do (
         node "%%f"
     )
 )
-rem lang.js reads the outputs of the scripts above, so it must run last
+rem lang.js only checks public/assets/lang/*.json (hand-edited in tools/lang) against the outputs above, so it runs last
 echo Running scripts\lang.js...
 node scripts\lang.js
 echo Done.

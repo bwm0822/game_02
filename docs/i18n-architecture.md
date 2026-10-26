@@ -1,6 +1,7 @@
 # 多國語言（i18n）架構
 
 > 狀態：2026-10-09 設計討論全部定案（共 18 題）；實作照 §13 分階段進行，第 1～6 階段已完成；英文為 Claude 機翻（審核欄 `mt`），待實玩修句子與爆版。
+> 2026-10-26：翻譯表從 `xls/lang/<lang>.xlsx` 改成手寫的 `public/assets/lang/<lang>.json`，用工具殼的「翻譯」分頁編（[lang-tool.md](lang-tool.md)）；§11 底下 xlsx 的描述是舊流程，留作紀錄。
 
 ## 已定案
 
@@ -14,7 +15,7 @@
 
 ### 3. 翻譯放哪（gettext 式）
 - 資料 xlsx 只寫**原文**（本體是中文），不再每列開語言欄。
-- 每個語言一份翻譯表 `xls/lang/<lang>.xlsx`，產出 `public/assets/lang/<lang>.json`。
+- 每個語言一份翻譯檔 `public/assets/lang/<lang>.json`（手寫來源檔＝執行期檔，格式見 [lang-tool.md](lang-tool.md)；原本是 `xls/lang/<lang>.xlsx` 轉出來，已不同步）。
 - 原文語言不需要翻譯檔：目前語言 == 該資料的 `sourceLang` → 直接用原文；否則查翻譯檔，查不到退回原文。
 - mod 可以宣告自己的 `sourceLang`（例如英文寫的 mod），中文玩家再另做 `zh-TW.json`。
 
@@ -83,6 +84,12 @@
 - 首次啟動預設在 `Record.defaultLang()`；無頭測試的 harness 把 `navigator.language` 固定成 `zh-TW`，測試預期值才會是中文。
 
 ### 11. 翻譯流程
+- **2026-10-26 改版（現行）**：
+  - `public/assets/lang/<lang>.json` 是 `{_meta, _shared:{原文:{t,r}}, <情境>:{原文:{t,r}}}`，只存有譯文的列；檢查欄（new/orphan/error）跟建議都即時算，審核欄變成 `r`。
+  - 抽取＋檢查搬到 `src/data/langdata.js`，`Lang.load()`（`compile()`，佔位符不合退回原文）、`scripts/lang.js`、`tools/lang` 共用。
+  - `scripts/lang.js` 只檢查、印統計，不寫檔；`--add`／`--prune` 拿掉，改在翻譯分頁「＋ 語言」「刪除全部 orphan」。
+  - 改格式時從當時的 `en.json` 就地升級、審核全標 `mt`；`xls/lang/en.xlsx` 跟 `_legacy_en.json` 留著不動但不再同步（xlsx 裡的審核狀態跟 orphan 沒帶過來）。
+- 以下是舊流程（xlsx）：
 - 新增 `scripts/lang.js`，排在 `run_all` 最後；從**產出的 json**（item/ability/local/dialog/story）抽出「情境＋原文」。
 - 對每個 `xls/lang/<lang>.xlsx` 做 merge（exceljs 寫入，遵守 quest-dialog-architecture.md §8 樣式）：
   - 新原文 → 新增列，檢查欄 `new`
@@ -158,6 +165,6 @@
 ### 18. 字型
 - 字型依語言決定：啟動時依當前語言設定 `GM.FONT`（font stack，不內嵌字型檔）。
   - 原文語言 `zh-TW` 沒有翻譯檔，預設值寫在 `setting.js`：`Arial, "Microsoft JhengHei", sans-serif`
-  - 其他語言寫在翻譯檔的 `_meta.font`（來源是 `xls/lang/<lang>.xlsx` 的 `meta` sheet），維持「加語言不動程式」
+  - 其他語言寫在翻譯檔的 `_meta.font`（翻譯分頁頂端的「字型」），維持「加語言不動程式」
 - 第 3 階段順便把散落各處寫死的 `fontFamily` 收斂到 `GM.FONT`（`src/old/` 不動）。
 - 實作：`Lang.load(tbl)` 設定 `GM.FONT`（在 `MainMenu.loadData()` 呼叫）；`com_port`、`view.js` 改用 `GM.FONT`。主選單／GameOver 標題的 `'Arial Black'` 是刻意的粗體標題字，保留（中日韓字會自動退到系統字型）。
