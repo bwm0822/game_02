@@ -282,6 +282,10 @@
     "lab": "顯示任務",
     "grp": "general"
   },
+  "required": {
+    "lab": "需求",
+    "grp": "general"
+  },
   "iron": {
     "lab": "鐵礦",
     "grp": "items"

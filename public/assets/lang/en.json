@@ -2710,6 +2710,26 @@
     "關於任務": {
       "t": "About the job",
       "r": "mt"
+    },
+    "鋼劍": {
+      "t": "Steel Sword",
+      "r": "mt"
+    },
+    "麻布帽": {
+      "t": "Linen Cap",
+      "r": "mt"
+    },
+    "皮盔": {
+      "t": "Leather Helm",
+      "r": "mt"
+    },
+    "皮甲": {
+      "t": "Leather Armor",
+      "r": "mt"
+    },
+    "皮靴": {
+      "t": "Leather Boots",
+      "r": "mt"
     }
   },
   "item.helmet-clo-1": {
