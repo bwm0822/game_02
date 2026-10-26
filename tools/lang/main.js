@@ -4,7 +4,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import '../common/splitter.js';
 import {flattenStory, mergeDialog} from '../../src/data/storydata.js';
-import {extract, analyze, SHARED, META, DEFAULT_META} from '../../src/data/langdata.js';
+import {extract, analyze, verify, SHARED, META, DEFAULT_META} from '../../src/data/langdata.js';
 
 // public/assets/lang/<lang>.json：{_meta, _shared:{原文:{t,r}}, <情境>:{原文:{t,r}}}，只存有譯文的列，格式見 src/data/langdata.js
 const SOURCES = ['local', 'item', 'role', 'ability', 'dialog', 'story'];
@@ -427,7 +427,92 @@ function draw()
     if (S.assets && !S.quiet) status(`${langCode()}：${stat.ok} ok / ${stat.new} new / ${stat.orphan} orphan / ${stat.error} error`);
 }
 
+// ---------- 給 AI 翻 ----------
+// 表格裡看得到的 new／error 列 → 提示詞＋{情境:{原文:""}}；不打 API，複製去貼
+function exportText()
+{
+    const rows = visibleRows().filter(isTodo);
+    if (!rows.length) return null;
+    const json = {};
+    for (const r of rows) (json[r.ctx] ??= {})[r.src] = '';
+    const npcs = new Set(rows.map(r => r.ctx.split('.')).filter(([d]) => d === 'dlg' || d === 'line' || d === 'role').map(p => p[1]));
+    const name = (id) => {const lab = S.roles[id]?.lab; return lab && (S.data[`role.${id}`]?.[lab]?.t ?? S.data[SHARED]?.[lab]?.t);};
+    const glossary = Object.keys(S.roles).filter(id => S.roles[id].lab && name(id))
+        .map(id => `- ${S.roles[id].lab}（${id}）→ ${name(id)}${npcs.has(id) && S.roles[id].des ? `：${S.roles[id].des}` : ''}`);
+    return [
+        `你是遊戲翻譯。把下面 JSON 的原文（繁體中文）翻成 ${langCode()}，填進空字串，維持同樣的 JSON 結構，只回傳 JSON。`,
+        '- 遊戲是 2D 奇幻 RPG。外層 key 是情境：ui.* 介面、item.* 道具、role.* 角色、ability.* 技能、dlg.<NPC>.<節點> / line.<NPC>.* 對話、story.* 任務',
+        '- {#xxx} 是佔位符、[color=…]…[/color] 之類是 BBCode，原樣保留、不要翻',
+        '- 對話裡用 / 分隔的是隨機挑一句的變體，整串一起翻，變體數可以跟原文不同',
+        '- 介面文字盡量短；\\n 是換行，保留',
+        glossary.length && '角色名（照這個翻，括號是 id）：',
+        ...glossary,
+        '',
+        JSON.stringify(json, null, 2),
+    ].filter(l => l !== 0).join('\n');
+}
+
+async function copyTodo()
+{
+    const text = exportText();
+    if (!text) return status('表格裡沒有 new／error 的列');
+    try {await navigator.clipboard.writeText(text); status(`已複製 ${visibleRows().filter(isTodo).length} 句待翻＋提示詞`);}
+    catch (e) {status(`複製失敗：${e.message}`);}
+}
+
+// 貼回 {情境:{原文:譯文}}（可以包在 ``` 裡）→ 分類預覽 → 套用（審核標 mt）
+function parsePaste(text)
+{
+    const s = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    const json = JSON.parse(s);
+    const known = new Set(S.rows.filter(r => r.check !== 'orphan').map(r => rowKey(r.ctx, r.src)));
+    const out = {apply: [], same: [], unknown: [], empty: 0};
+    for (const [ctx, rows] of Object.entries(json))
+    {
+        if (!rows || typeof rows !== 'object') continue;
+        for (const [src, t] of Object.entries(rows))
+        {
+            if (typeof t !== 'string' || !t.trim()) {out.empty++; continue;}
+            if (!known.has(rowKey(ctx, src))) {out.unknown.push({ctx, src, t}); continue;}
+            const cur = S.data[ctx]?.[src]?.t ?? '';
+            if (cur === t) {out.same.push({ctx, src, t}); continue;}
+            out.apply.push({ctx, src, t, cur, err: verify(src, t)});
+        }
+    }
+    return out;
+}
+
+function applyPaste(list)
+{
+    commit(() => {for (const x of list) setRow(x.ctx, x.src, () => ({t: x.t, r: 'mt'}));});
+    status(`已套用 ${list.length} 句（審核標 mt）`);
+}
+
+async function pasteDone()
+{
+    const ta = h('textarea', {class: 'paste', placeholder: '把 AI 回的 JSON 整段貼進來（前後有說明文字或 ``` 也沒關係）'});
+    const p = ask('貼上譯文', ta, [['ok', '預覽'], ['cancel', '取消']]);
+    ta.focus();
+    if (await p !== 'ok' || !ta.value.trim()) return;
+    let res;
+    try {res = parsePaste(ta.value);} catch (e) {return status(`不是 JSON：${e.message}`);}
+    if (!res.apply.length) return status(`沒有要套用的（一樣 ${res.same.length}、對不到 ${res.unknown.length}、空的 ${res.empty}）`);
+    const errs = res.apply.filter(x => x.err).length;
+    const r = await ask(`套用 ${res.apply.length} 句譯文`, [
+        h('div', {class: 'dim'}, `一樣的 ${res.same.length} 句跳過、空的 ${res.empty} 句跳過`),
+        errs > 0 && h('div', {class: 'warn'}, `${errs} 句佔位符／BBCode 跟原文不合，還是會套用，在表格裡標 error`),
+        res.unknown.length > 0 && h('div', {class: 'warn'}, `對不到原文的 ${res.unknown.length} 句不套用：${res.unknown.slice(0, 5).map(x => `${x.ctx}「${x.src}」`).join('、')}${res.unknown.length > 5 ? '…' : ''}`),
+        h('table', {class: 'tr'}, h('tbody', null, res.apply.map(x => h('tr', {class: x.err ? 'error' : ''},
+            h('td', {class: 'ctx'}, x.ctx), h('td', {class: 'src'}, x.src),
+            h('td', null, x.cur && h('div', {class: 'dim'}, `原本：${x.cur}`), x.t),
+            h('td', {class: 'chk'}, x.err))))),
+    ], [['ok', '套用'], ['cancel', '取消']]);
+    if (r === 'ok') applyPaste(res.apply);
+}
+
 // ---------- 事件 ----------
+$('btnCopy').onclick = copyTodo;
+$('btnPaste').onclick = pasteDone;
 $('lang').onchange = (e) => switchLang(e.target.value);
 $('font').onchange = (e) => setFont(e.target.value.trim());
 $('filter').onchange = (e) => {S.filter = e.target.value; render();};
@@ -439,4 +524,4 @@ $('filter').onchange = (e) => {S.filter = e.target.value; render();};
 })();
 
 // 給無頭測試用
-window.__lt = {S, D, opt, useProject, switchLang, setT, cycleR, loadRefs, render};
+window.__lt = {S, D, opt, useProject, switchLang, setT, cycleR, loadRefs, render, exportText, parsePaste, applyPaste};

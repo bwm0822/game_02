@@ -34,6 +34,8 @@
     .sug:hover { text-decoration: underline; }
     .go { color: #8bd; cursor: pointer; }
     tr.flash td { background: #3a4a2a; }
+    #dlgAsk textarea.paste { width: 70vw; height: 50vh; font: 14px ui-monospace, Consolas, monospace; }
+    #dlgAsk table.tr { font-size: 14px; }
 </style>
 </head>
 <body>
@@ -59,6 +61,9 @@
         <option value="ok">ok（已審）</option>
         <option value="orphan">orphan（原文已不存在）</option>
     </select>
+    <span class="sep"></span>
+    <button id="btnCopy" title="把表格裡看得到的 new／error 列複製成 JSON＋提示詞，貼給 AI 翻">複製待翻</button>
+    <button id="btnPaste" title="貼回 AI 翻好的 JSON，預覽後套用（審核標 mt）">貼上譯文</button>
     <button id="btnForm" hidden></button>
     <button id="btnTable" hidden></button>
     <span id="status" class="dim"></span>

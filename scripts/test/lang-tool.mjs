@@ -119,6 +119,20 @@ run('lang-tool', async t => {
         lt.setT(c2, src, 'Own'); lt.render();
         [...q(k(c2, src)).querySelectorAll('.sug')].find(a => a.textContent.includes('回到 shared')).click();
         out.revert = src in (S.data[c2] ?? {});
+
+        // 給 AI 翻：匯出目前節點的 new／error、貼回預覽分類後套用
+        S.node = 'item'; lt.render();
+        const text = lt.exportText();
+        const exp = JSON.parse(text.slice(text.indexOf('\n{') + 1));
+        out.export = [text.includes('{#xxx}'), text.includes('→ Gilly'), Object.keys(exp).every(c => c.startsWith('item.')),
+            Object.values(exp).flatMap(Object.values).every(v => v === ''), Object.values(exp).flatMap(Object.keys).length === S.rows.filter(x => x.ctx.startsWith('item.') && (x.check === 'new' || x.check === 'error')).length];
+        const todo = S.rows.find(x => x.ctx.startsWith('item.') && x.check === 'new' && !x.src.includes('{'));
+        const done = S.rows.find(x => x.t && x.check === '' && x.ctx !== '_shared');
+        const paste = {[todo.ctx]: {[todo.src]: 'AI line'}, [done.ctx]: {[done.src]: done.t}, 'dlg.nobody.n_x': {'不存在': 'Nope'}};
+        const res = lt.parsePaste('好的：\n```json\n' + JSON.stringify(paste) + '\n```');
+        out.paste = [res.apply.length, res.same.length, res.unknown.length];
+        lt.applyPaste(res.apply);
+        out.applied = JSON.stringify(S.data[todo.ctx][todo.src]);
         return out;
     });
 
@@ -146,6 +160,9 @@ run('lang-tool', async t => {
     t.eq('刪除全部 orphan', r.orphansLeft, 0);
     t.eq('升為 shared：搬進 _shared、同譯文的情境刪掉、灰字顯示', JSON.stringify(r.promote), JSON.stringify(['Same', false, false, 'Same', 'shared']));
     t.eq('↺ 回到 shared', r.revert, false);
+    t.eq('匯出：提示詞有佔位符規則跟角色譯名、只含目前節點的待翻、譯文空白', JSON.stringify(r.export), JSON.stringify([true, true, true, true, true]));
+    t.eq('貼回：套用／一樣／對不到 分類', JSON.stringify(r.paste), JSON.stringify([1, 1, 1]));
+    t.eq('套用標 mt', r.applied, JSON.stringify({t: 'AI line', r: 'mt'}));
 
     // 殼：每列的 ↗ 跳到來源分頁
     await t.page.goto(new URL('tools/#lang', base).href);
