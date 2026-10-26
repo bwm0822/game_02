@@ -38,6 +38,14 @@ run('prompt', async t => {
         pe.setItem(S.sel, 'name', '鐵劍');
         out.holder = pe.compose(S.data.items.武器[0], S.data.common);
         out.noCommon = pe.compose({desc: 'x', common: ''}, S.data.common);
+        const fc = {f: '{name}\n存成 {file}.png\nend'};
+        out.file = [pe.compose({name: 'a', file: 'sword-iron', common: 'f'}, fc), pe.compose({name: 'a', file: '', common: 'f'}, fc)];
+        out.btnFile = [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled;
+        pe.setItem(S.sel, 'file', 'sword-iron');
+        out.btnFile = [out.btnFile, [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled];
+        S.search = 'sword-iron'; pe.commit(() => {});
+        out.searchFile = document.querySelectorAll('#list .item .id').length;
+        S.search = ''; pe.commit(() => {});
 
         // 複製、跨分類拖曳
         pe.dupItem({cat: '武器', i: 0});
@@ -114,12 +122,36 @@ run('prompt', async t => {
         return out;
     });
 
+    // 打完字直接點按鈕：第一下就要觸發（mousedown 不能讓輸入框 change 重畫把按鈕換掉）
+    await t.page.evaluate(async () => {
+        const pe = window.__pe, S = pe.S;
+        await pe.setPath('prompts/prompt.json');
+        S.mode = 'items'; S.sel = {cat: '武器', i: 0}; pe.commit(() => {});
+        document.getElementById('status').textContent = '';
+    });
+    await t.page.click('[data-k="file"]', {clickCount: 3});
+    await t.page.keyboard.type('axe-iron');
+    const btn = (label) => t.page.evaluateHandle(l => [...document.querySelectorAll('#view button')].find(b => b.textContent === l), label);
+    const copied = () => t.page.waitForFunction(() => document.getElementById('status').textContent, {timeout: 2000}).catch(() => {});
+    await (await btn('複製檔名')).click();
+    await copied();
+    const click1 = await t.page.evaluate(() => [document.getElementById('status').textContent, document.activeElement?.dataset?.k, window.__pe.S.data.items.武器[0].file]);
+    await t.page.evaluate(() => {document.getElementById('status').textContent = '';});
+    await t.page.click('[data-k="desc"]');
+    await t.page.keyboard.type('!');
+    await (await btn('複製提示詞')).click();
+    await copied();
+    const click2 = await t.page.evaluate(() => document.getElementById('status').textContent);
+
     t.check('檔案不存在會問要不要建骨架', r.ask);
     t.eq('骨架內容', JSON.stringify(r.skeleton), JSON.stringify(['武器,護具,道具', '武器,護具,道具']));
-    t.eq('新增物品預設帶同名 common', JSON.stringify(r.newItem), JSON.stringify({name: '新物品', desc: '', common: '武器'}));
+    t.eq('新增物品預設帶同名 common', JSON.stringify(r.newItem), JSON.stringify({name: '新物品', file: '', desc: '', common: '武器'}));
     t.eq('沒佔位符：描述＋換行＋common', r.plain, 'iron sword\npixel art');
     t.eq('佔位符代換', r.holder, 'icon of 鐵劍: iron sword, 32x32');
     t.eq('沒有 common 只有描述', r.noCommon, 'x');
+    t.eq('{file} 代換、沒填整行拿掉', JSON.stringify(r.file), JSON.stringify(['a\n存成 sword-iron.png\nend', 'a\nend']));
+    t.eq('複製檔名按鈕：空的停用、有填啟用', JSON.stringify(r.btnFile), JSON.stringify([true, false]));
+    t.eq('搜尋比對檔名', r.searchFile, 1);
     t.eq('跨分類拖曳', JSON.stringify(r.move), JSON.stringify([1, '鐵劍', JSON.stringify({cat: '護具', i: 0})]));
     t.check('拖回原分類插在前面', r.order);
     t.eq('common 改名連物品引用一起改', r.rename, '像素-武器,像素-武器');
@@ -139,4 +171,6 @@ run('prompt', async t => {
     t.eq('合併後存檔', JSON.stringify(r.saved), JSON.stringify(['external', 2, '武器,護具,道具,飾品']));
     t.check('存完未存檔標記消失', r.clean);
     t.eq('換路徑記住、沒建檔就沒資料', JSON.stringify(r.path), JSON.stringify(['other/p.json', null]));
+    t.check('打完檔名直接點「複製檔名」第一下就觸發、焦點留在輸入框', /複製/.test(click1[0]) && click1[1] === 'file', JSON.stringify(click1));
+    t.check('打完描述直接點「複製提示詞」第一下就觸發', /複製/.test(click2), click2);
 });

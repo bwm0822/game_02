@@ -1,4 +1,4 @@
-// 提示詞：管理給 AI 生圖用的提示詞（{items: {分類: [{name, desc, common}]}, common: {名稱: 文字}}），組好按複製貼到外面
+// 提示詞：管理給 AI 生圖用的提示詞（{items: {分類: [{name, file, desc, common}]}, common: {名稱: 文字}}），組好按複製貼到外面
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import {$, h, ul, ask, status} from '../common/dom.js';
@@ -31,11 +31,11 @@ const isDirty = () => !!S.data && str(S.data) !== str(S.saved);
 const view = () => ({mode: S.mode, sel: structuredClone(S.sel)});
 const selItem = () => S.mode === 'items' && S.sel ? S.data?.items[S.sel.cat]?.[S.sel.i] : null;
 
-// common 有 {desc}／{name} 就代換進去，沒有就接在描述後面
+// common 有 {desc}／{name}／{file} 就代換進去，沒有就接在描述後面；沒填 file 時含 {file} 的行整行拿掉
 export function compose(it, common)
 {
-    const c = common[it.common] ?? '';
-    if (/\{(desc|name)\}/.test(c)) return c.replaceAll('{desc}', it.desc ?? '').replaceAll('{name}', it.name ?? '');
+    const c = (common[it.common] ?? '').split('\n').filter(l => it.file || !l.includes('{file}')).join('\n');
+    if (/\{(desc|name|file)\}/.test(c)) return c.replaceAll('{desc}', it.desc ?? '').replaceAll('{name}', it.name ?? '').replaceAll('{file}', it.file ?? '');
     return [it.desc, c].filter(Boolean).join('\n');
 }
 
@@ -167,7 +167,7 @@ function addItem(cat)
 {
     commit(() => {
         const list = S.data.items[cat];
-        list.push({name: '新物品', desc: '', common: cat in S.data.common ? cat : ''});
+        list.push({name: '新物品', file: '', desc: '', common: cat in S.data.common ? cat : ''});
         S.mode = 'items';
         S.sel = {cat, i: list.length - 1};
     });
@@ -320,7 +320,7 @@ function groupHead(key, label, title, ...buttons)
 function drawItemList()
 {
     const q = S.search.toLowerCase();
-    const hit = (it) => !q || `${it.name}\n${it.desc}`.toLowerCase().includes(q);
+    const hit = (it) => !q || `${it.name}\n${it.file ?? ''}\n${it.desc}`.toLowerCase().includes(q);
     const rows = [];
     for (const [cat, list] of Object.entries(S.data.items))
     {
@@ -371,7 +371,15 @@ function drawItem()
     const sel = S.sel, it = selItem(), common = S.data.common;
     const lost = it.common && !(it.common in common);
     const out = h('pre', {class: 'out'}, compose(it, common));
-    const live = (k) => (e) => {out.textContent = compose({...it, [k]: e.target.value}, common);};
+    // mousedown 不搶焦點：不然輸入框先 change → 重畫，按鈕被換掉這下 click 就掉了
+    const keep = (e) => e.preventDefault();
+    const fileInp = h('input', {'data-k': 'file', value: it.file ?? '', placeholder: '不含副檔名', oninput: (e) => live('file')(e), onchange: (e) => setItem(sel, 'file', e.target.value.trim())});
+    const btnFile = h('button', {disabled: !it.file, onmousedown: keep, onclick: () => copy(fileInp.value.trim())}, '複製檔名');
+    const live = (k) => (e) => {
+        const v = {...it, [k]: e.target.value};
+        out.textContent = compose(v, common);
+        btnFile.disabled = !v.file;
+    };
     const select = h('select', {class: lost ? 'missing' : null, onchange: (e) => setItem(sel, 'common', e.target.value)},
         h('option', {value: ''}, '（無）'),
         Object.keys(common).map(k => h('option', {value: k}, k)),
@@ -387,11 +395,16 @@ function drawItem()
         h('div', {class: 'fields'},
             h('span', {class: 'k'}, '名稱'),
             h('input', {'data-k': 'name', value: it.name ?? '', oninput: live('name'), onchange: (e) => setItem(sel, 'name', e.target.value)}),
+            h('span', {class: 'k'}, '檔名'),
+            h('div', {class: 'file'},
+                fileInp,
+                h('span', {class: 'dim'}, '.png'),
+                btnFile),
             h('span', {class: 'k'}, '共用'),
             h('div', null, select),
             h('span', {class: 'k'}, '描述'),
             h('textarea', {'data-k': 'desc', value: it.desc ?? '', oninput: live('desc'), onchange: (e) => setItem(sel, 'desc', e.target.value)})),
-        h('div', {class: 'row2'}, h('span', {class: 'title'}, '組合結果'), h('button', {onclick: () => copy(out.textContent)}, '複製提示詞')),
+        h('div', {class: 'row2'}, h('span', {class: 'title'}, '組合結果'), h('button', {onmousedown: keep, onclick: () => copy(out.textContent)}, '複製提示詞')),
         out,
     ];
 }
