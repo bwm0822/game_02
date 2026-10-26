@@ -39,16 +39,17 @@
 
 ## ↗ 跳到來源
 
-每列情境旁的 `↗` 用 `gotoTab` 跳到來源分頁（`ui.*`、orphan 沒有）：
+每列情境旁的 `↗` 用 `gotoTab` 跳到來源分頁（orphan 沒有）：
 
 | 情境 | 分頁 | path |
 |---|---|---|
+| `ui.<key>` | 文字 | `[key]`（[local-tool.md](local-tool.md)） |
 | `item.<id>`／`role.<id>`／`ability.<id>` | 道具／角色／能力 | `[id]`（`doc.js` 的 `listenGoto()`；能力分頁自己接，還沒讀檔就記在 `S.goto`） |
 | `dlg.<npc>.<node>` | 對話 | `[npc, 'nodes', node]`，extend 掛的選項是 `[npc, 'extend', node]` |
 | `line.<npc>.<concept>` | 對話 | `[npc, 'lines', i]`（同 concept 同原文那句） |
 | `story.let.<id>`／`story.thread.<id>`／`story.node.<id>` | 任務 | `[line, 'storylets', i]`／`[line, 'threads', id]`／`[line, 'nodes', npc, id]` |
 
-只做「翻譯 → 來源」，其他分頁沒有跳回翻譯的入口。
+反方向只有文字分頁的「翻譯 ↗」：path `[情境]`，翻譯分頁把它填進搜尋。
 
 ## 給 AI 翻
 

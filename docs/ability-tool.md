@@ -10,7 +10,7 @@
 |---|---|
 | `ability.json` | 技能本體，前置是技能自己的 `refs`（陣列，空了就整個拿掉） |
 | `ab_tree.json` | `{樹 id: [{id, x, y}]}`，key 順序＝遊戲技能頁的分頁順序，x/y 是整數格 |
-| `local.json` | 樹名 `<樹 id>.lab`（遊戲 `tree.lab()`） |
+| `local.json` | 樹名 `<樹 id>.lab`（遊戲 `tree.lab()`），寫入時帶 `grp: "ability"`（文字分頁的分組，見 [local-tool.md](local-tool.md)） |
 | `role.json` | 只在技能改名／刪除時改 `abilities` |
 
 - undo／redo 四份一起記（整份快照，跟著記選到的樹／技能）。存檔只寫有改的檔，每份各自比對外部修改、問「合併後存檔／直接覆蓋／取消」，合併是第一層 id 的三方合併（同試穿工具）。存完廣播，角色分頁會重讀 `role.json`。
