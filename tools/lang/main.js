@@ -387,7 +387,7 @@ function renderTable()
     const base = S.search.trim() ? '' : S.node.startsWith('@') || S.node === SHARED ? '' : S.node;
     const max = 1000;
     const orphans = S.node === ORPHAN && !S.search.trim() && rows.length > 0;
-    $('view').replaceChildren(
+    $('view').replaceChildren(...[
         orphans && h('div', {class: 'row2'}, h('span', {class: 'dim'}, '原文已經不存在的舊譯文；new 列的「建議」欄可以把同情境的搬過去'),
             h('span', {class: 'grow'}), h('button', {onclick: removeOrphans}, `刪除全部 orphan（${rows.length}）`)),
         rows.length ? h('table', {class: 'tr'},
@@ -395,7 +395,7 @@ function renderTable()
             h('thead', null, h('tr', null, COLS.map(([t]) => h('th', null, t)))),
             h('tbody', null, rows.slice(0, max).map(r => rowEl(r, base))))
             : h('div', {class: 'dim'}, S.assets ? '（沒有符合的列）' : '先在上方選擇專案資料夾'),
-        rows.length > max && h('div', {class: 'dim'}, `只列前 ${max} 列，共 ${rows.length} 列`));
+        rows.length > max && h('div', {class: 'dim'}, `只列前 ${max} 列，共 ${rows.length} 列`)].filter(Boolean));
     for (const ta of $('view').querySelectorAll('textarea')) fit(ta);
 }
 
