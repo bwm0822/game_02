@@ -69,7 +69,7 @@ class Map
         map.objects.forEach((layer)=>{
 
             let qid;
-            // @群組 layer：出現條件寫在 story.xlsx 的 spawn 表，只在進地圖時判斷；
+            // @群組 layer：出現條件寫在 story.json 劇情線的 spawns，只在進地圖時判斷；
             // 群組名稱同時是存檔命名空間，改條件不會讓存檔對不上
             if(layer.name.startsWith('@'))
             {

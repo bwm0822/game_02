@@ -1,5 +1,5 @@
 // 事件卡 enter/time 與情境事實：node scripts/test/events.mjs
-// 測試卡直接塞進 DB.story().storylets，不動 story.xlsx
+// 測試卡直接塞進 DB.story().storylets，不動 story.json
 import {run} from './harness.mjs'
 
 const FOREST = 'm/m_03x05';

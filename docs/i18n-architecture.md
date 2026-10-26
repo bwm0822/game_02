@@ -144,7 +144,7 @@
 | storylet（label/hint/text） | `story.let.<id>` |
 | story 節點 | `story.node.<node>` |
 
-- 實作（第 4 階段）：節點、line 的情境由轉檔腳本（`scripts/tools.js` 的 `buildNode`、`scripts/dialog.js` 的 `buildLine`）寫進 json 的 `ctx` 欄，執行期直接 `tr(node.ctx, …)`；`_common` 合併進各 NPC 後仍保留 `dlg._common.*`，所以共用台詞只翻一次。`choice:<node>` 掛到別張 sheet 節點上的選項自帶 `ctx`（來源 sheet），其他選項沿用節點的。storylet／thread 的情境在執行期組（`Story.cardCtx()`、`Story._threadCtx()`）。
+- 實作（第 4 階段）：節點、line 的情境由 `src/data/storydata.js`（`flattenStory()`／`mergeDialog()`，`DB.load` 跟 `scripts/lang.js` 共用）在載入時算進 `ctx` 欄，執行期直接 `tr(node.ctx, …)`；`_common` 合併進各 NPC 後仍保留 `dlg._common.*`，所以共用台詞只翻一次。`extend` 掛到別的 NPC 節點上的選項自帶 `ctx`（來源 NPC），其他選項沿用節點的。storylet／thread 的情境在執行期組（`Story.cardCtx()`、`Story._threadCtx()`）。
 - quality 的 `label` 執行期沒有顯示的地方（只在 xlsx/除錯用），不翻譯；原本表上的 `story.quality.<id>` 拿掉。
 
 ### 16. textKeys / labelKey 改名

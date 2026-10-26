@@ -2,6 +2,8 @@
 
 修改任務或對話系統之前先看這份筆記。涵蓋資料格式、xlsx→json 建置流程、對話元件、QuestManager、以及兩者的串接流程。
 
+> ⚠️ 整份是歷史筆記：資料格式以 [story-architecture.md](story-architecture.md) 為準，編輯工具見 [story-tool.md](story-tool.md)。
+>
 > ⚠️ 這套系統正在被 [story-architecture.md](story-architecture.md)（storylet + quality）分階段取代。**階段 1 已完成**，以下內容已過時：
 > - `Record.getVar/setVar/rmVar`、`Record.game.vars` 已移除，全域旗標與 `_xxx` 都改存在 quality 庫 `Record.game.q`（`_xxx` 存成 `<npcId>._xxx`，`COM_Talk._rec` 已移除）
 > - 條件與指令改由共用模組 `src/systems/script.js` 解析（`COM_Talk` 與 `QuestManager` 共用同一套）；`set` 不帶值存的是 `1` 而不是 `true`，`clr`/`rm` 都是設回預設值（刪除）
@@ -231,6 +233,8 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 4. 對話中要暫存「這個 NPC 是不是講過這句話了」之類的旗標，用 `_` 開頭的變數名（存在對話元件自己的 runtime 資料，不會污染全域 `Record`）。
 
 ## 8. `xls/quest.xlsx`、`xls/dialog.xlsx` 格式規範
+
+> 2026-10-26：quest.xlsx、dialog.xlsx、story.xlsx 都已刪除（劇情跟對話改成手寫 `story.json`／`dialog.json`，用工具殼的任務／對話分頁編，見 [story-tool.md](story-tool.md)）。下面的樣式規範只剩參考價值；「寫 xlsx 一律用 exceljs」的理由仍適用其他 xlsx（ability.xlsx 等）。
 
 用程式編輯這兩份 xlsx 時**一律用 `exceljs`**，不要用 `xlsx`（SheetJS）套件寫入——`xlsx` 套件的 community 版寫入時不支援儲存格樣式，且曾經在寫入時把 `sheetFormatPr` 弄壞成 `zeroHeight="1"`（所有未明確指定列高的列會被當成高度 0/隱藏，導致表格看起來只到某一列就斷掉、在最上方插入整列也像沒作用），還會弄丟凍結窗格設定。`xlsx` 套件本身仍保留給 `scripts/quest.js`/`scripts/dialog.js` 的讀取轉換用途（那邊只讀不寫，不受影響）。
 

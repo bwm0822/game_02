@@ -29,7 +29,7 @@ npm run dist
 npm run deploy
 
 # 無頭瀏覽器測試（自己開 vite + 無頭 Chrome，只印 ✔/✘，失敗時截圖到 scripts/test/out/）
-node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線、左欄寬度）、debuger.mjs（除錯面板指令表單）、prompt.mjs（提示詞工具）
+node scripts/test/rogue.mjs     # 另有 textures.mjs（自動載圖）、events.mjs（事件卡）、dialog.mjs（_common/line/n_cold）、approach.mjs（see/approach）、wolf.mjs（狼患岔路）、lang.mjs（多國語言 tr()/qps）、paperdoll.mjs（紙娃娃編輯器）、item.mjs（道具編輯器）、role.mjs（角色編輯器）、fit.mjs（試穿／動畫分頁）、anim.mjs（遊戲裡播武器動畫）、tools.mjs（工具殼接線、左欄寬度）、debuger.mjs（除錯面板指令表單）、prompt.mjs（提示詞工具）、story-tool.mjs（任務編輯器）、dialog-tool.mjs（對話編輯器＋殼裡互跳）
 ```
 
 無頭測試：`scripts/test/harness.mjs` 提供 `newGame()`／`gotoMap()`／`talk()`／`kill()`／`give()`／`q()` 等工具，透過 `src/main.js` 只在開發版掛的 `window.__dbg` 操作遊戲（不走路、不戰鬥，直接呼叫遊戲函式）；角色在 `scene.roles`、其他物件在 `scene.gos`，工具裡的 `d.objs()` 兩者都包含。用的是電腦裡現有的 Chrome（`puppeteer-core`，不下載 Chromium）。改了劇情、地圖生成相關的東西後，優先跑對應的測試而不是請使用者手動玩。
@@ -96,7 +96,8 @@ dist/           # 建置輸出（勿手動修改）
 - **場景類別**：放於 `src/scenes/`，名稱以大寫字母開頭
 - **UI 類別**：放於 `src/ui/`，繼承自 `src/ui/uiframe.js` 的 `UiFrame` 基底類別（`uicommon.js` 的 `Ui` 是靜態全域註冊表，非繼承用基底類別）；修改或新增 UI 面板前請先參考 [docs/ui-architecture.md](docs/ui-architecture.md)
 - **Story（storylet + quality，取代 Quest/Dialog 中）**：劇情狀態統一存在 quality 庫（`src/systems/quality.js`，`Record.game.q`），條件／指令由 `src/systems/script.js` 共用；**`story.json` 是手寫來源檔**（`{qualities, lines:{<劇情線>:{title, threads, storylets, nodes, spawns}}}`，`DB.load` 用 `src/data/storydata.js` 的 `flattenStory()` 攤平；xlsx 已刪除），quality 名稱要先在 `qualities` 宣告，`node scripts/story.js` 只做靜態檢查（邏輯在 `src/data/storycheck.js`，工具共用）；任務（thread 日誌）、對話卡、事件卡都寫在劇情線裡，執行期是 `src/systems/story.js`（`Story`），舊的 QuestManager/quest.xlsx 已退休；分 5 階段實作（已全部完成），修改任務、對話、好感度或劇情相關程式碼前請先參考 [docs/story-architecture.md](docs/story-architecture.md)
-- **Dialog**：**`public/assets/json/dialog.json` 是手寫來源檔**（合併前的 `{_common, <npc>:{entries, lines, nodes, extend}}`，`DB.load` 用 `mergeDialog()` 合併 `_common`、算翻譯 `ctx`；`scripts/lang.js` 也用同一支）；對話元件為 `com_talk.js`（`COM_Talk`），會把 story 的對話卡插進 entry 節點；`_common` 是所有 NPC 共用的節點與 rule-based 台詞（`line`，`src/systems/line.js`），格式見 [docs/story-architecture.md §6](docs/story-architecture.md)；任務／對話工具（`tools/story/`、`tools/dialog/`）實作中
+- **Dialog**：**`public/assets/json/dialog.json` 是手寫來源檔**（合併前的 `{_common, <npc>:{entries, lines, nodes, extend}}`，`DB.load` 用 `mergeDialog()` 合併 `_common`、算翻譯 `ctx`；`scripts/lang.js` 也用同一支）；對話元件為 `com_talk.js`（`COM_Talk`），會把 story 的對話卡插進 entry 節點；`_common` 是所有 NPC 共用的節點與 rule-based 台詞（`line`，`src/systems/line.js`），格式見 [docs/story-architecture.md §6](docs/story-architecture.md)
+- **任務／對話工具**：`tools/story/`（殼的「任務」分頁，編 story.json）、`tools/dialog/`（「對話」分頁，編 dialog.json），共用 `tools/common/storyform.js`（節點編輯器、條件／指令自動完成 `combo.js` 的 `data-expr`、`checkStory()` 欄位標紅＋底部檢查面板、`shell.js` 的 `gotoTab` 跨分頁跳）；改名用 `tools/common/storyrename.js` 連帶改同檔引用（token 比對），其他檔案只列；修改前請先參考 [docs/story-tool.md](docs/story-tool.md)
 - **地圖邊界出口**：`public/assets/maps/main.world`（Tiled World 檔）定義地圖間的相對座標，`GameScene.js` 的 `_createEdgeExits()`/`_findAdjacentMap()` 依此在地圖邊界建立可點擊的 `Port` 出口物件（點擊觸發切換，不是自動偵測）；修改邊界轉場邏輯前請先參考 [docs/map-seamless-transition.md](docs/map-seamless-transition.md)
 - **總覽地圖（縮圖拼接）**：選單「地圖」頁籤（`PMap`）用 `scripts/minimap.js` 產生的各地圖縮圖，依 `main.world` 座標合成顯示（`MiniMap`），不是獨立設計的地圖；修改總覽地圖顯示或縮圖產生流程前請先參考 [docs/minimap-overview.md](docs/minimap-overview.md)
 - **存讀檔**：`Record.game.scenes` 分 `prefab`（Tiled 物件層、固定 uid）跟 `runtime`（動態建立、`uid===-1`，用陣列)兩種資料；修改存讀檔相關程式碼前請先參考 [docs/record-save-architecture.md](docs/record-save-architecture.md)

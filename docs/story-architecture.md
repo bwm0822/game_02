@@ -1,8 +1,8 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
-> 2026-10-26：story.xlsx／dialog.xlsx 已刪除，`story.json`／`dialog.json` 改成手寫來源檔（照劇情線分組／合併前格式，執行期由 `src/data/storydata.js` 攤平、合併；檢查在 `src/data/storycheck.js`）。下面 §5、§6 的表格欄位照 json 欄位對應（`label_key`→`label`、`text_keys`→`texts`、entry 的 `node_id`→`node`、`choice:<node_id>`→`extend`），文件改寫待任務／對話工具完成。
+> 狀態：**階段 1～5 全部完成**（2026-10-08）。任務系統（QuestManager／quest.xlsx）已退休。
 >
-> 狀態：**階段 1～5 全部完成**（2026-10-08）。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的格式以本文 §6 為準，[quest-dialog-architecture.md](quest-dialog-architecture.md) 只剩 xlsx 樣式規範（§8）有效。
+> 2026-10-26：story.xlsx／dialog.xlsx 已刪除，`public/assets/json/story.json`／`dialog.json` 是**手寫來源檔**，用工具殼的「任務」「對話」分頁編（見 [story-tool.md](story-tool.md)）。執行期由 `src/data/storydata.js`（`flattenStory()`／`mergeDialog()`）在 `DB.load` 攤平、合併；靜態檢查在 `src/data/storycheck.js`（`node scripts/story.js` 跟兩個工具共用）。§5、§6 是 json 格式。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。
 
@@ -11,11 +11,11 @@
 ```
 quality 庫（Record.game.q）── 唯一的劇情狀態，全部是數字
    ▲ 讀條件／寫效果                    ▲ 只讀
-storylet（story.xlsx）               thread（story.xlsx）
+storylet（story.json）               thread（story.json）
  ・對話卡：跟 NPC 對話時變成選項       ・任務日誌：把 quality 翻譯成「現在該做什麼」
  ・事件卡：世界事件發生時自動觸發       ・不推進劇情，只負責顯示
    ▲
-對話樹（dialog.xlsx）── NPC 的日常：開場、閒聊、交易；rule-based 台詞（line）
+對話樹（dialog.json）── NPC 的日常：開場、閒聊、交易；rule-based 台詞（line）
 ```
 
 - **推進劇情的永遠是 storylet 改 quality**；任務日誌只是一面鏡子
@@ -38,7 +38,7 @@ Record.game.q = {
 
 - **不存在 = 0**：`!x` 與 `x==0` 等價；`x=0` 等同刪除
 - **命名慣例**：quality 代表「世界的某件事」（`wolf_hunt`、`pelt_trade`），不是「某個任務」（`QX01`），方便跨任務、跨 NPC 共用；quality／thread／storylet／節點／spawn 群組名稱一律 ASCII（`scripts/story.js` 檢查，見 [i18n-architecture.md §5](i18n-architecture.md)）
-- **NPC 前綴解析**：在某個 NPC 的情境下（該 NPC 的 dialog sheet、`_common`、`who` 對到該 NPC 的卡），`favor`／`_xxx` 這種 scope=npc 或 `_` 開頭的名稱自動補成 `<npcId>.favor`／`<npcId>._xxx`；要指定別的 NPC 就寫完整名稱 `karen.favor`
+- **NPC 前綴解析**：在某個 NPC 的情境下（dialog.json 裡該 NPC 的、`_common`、`who` 對到該 NPC 的卡），`favor`／`_xxx` 這種 scope=npc 或 `_` 開頭的名稱自動補成 `<npcId>.favor`／`<npcId>._xxx`；要指定別的 NPC 就寫完整名稱 `karen.favor`
 - 取代：`Record.game.vars`、`COM_Talk._rec`、`QuestManager.quests` 三處狀態；地圖 `#flag` layer（`src/manager/map.js`）改讀 quality
 - **舊存檔不相容**，直接放棄
 
@@ -51,18 +51,18 @@ Record.game.q = {
 - 沒標 `unique` 的、以及 NPC 對其他 NPC 的好感度，照舊存在 `COM_Favor` 自己身上；storylet 讀到這類 NPC 的 `favor` 一律是預設值 50
 - 對話只在 `HATE`（≤10）以下隱藏；≤25 走 `n_cold` 冷淡入口（見 §6.3）；交易規則不變（≤25 不能交易）
 
-### 2.2 qualities 宣告表（story.xlsx 的 `qualities` sheet）
+### 2.2 qualities 宣告（story.json 的 `qualities`）
 
-```
-#  name    scope   default  show  label   desc
-   wolf_hunt     global  0        no
-   favor     npc     50       yes   好感度
-   懷疑     npc     0        no
-   通緝     global  0        no
-   kill.*     global  0        no            ← 萬用字元
+```json
+"qualities": {
+  "favor":     {"scope": "npc",    "default": 50, "show": true,  "label": "好感度"},
+  "wolf_hunt": {"scope": "global", "default": 0,  "show": false, "label": "屠夫的生意經"},
+  "kill.*":    {"scope": "global", "default": 0,  "show": false, "label": "kill.*"}
+}
 ```
 
-- 轉檔時掃過 story.xlsx 與 dialog.xlsx 所有條件／效果／thread，**遇到沒宣告的名稱就報錯**（sheet + 列號）
+- `kill.*` 是萬用字元
+- 檢查時掃過 story.json 與 dialog.json 所有條件／效果／thread，**遇到沒宣告的名稱就報錯**（回報 json 路徑）
 - `_` 開頭的 NPC 私有旗標免宣告
 - `show=yes` 可以顯示在 UI 上
 
@@ -97,124 +97,155 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 
 淘汰：`set`／`clr`／`rm`／`qstart`／`qclose`／`consume`、`next:"[var]"` 動態指標。
 
-## 5. story.xlsx
+## 5. story.json
 
-一條劇情線一個 sheet（`qualities` sheet 除外），sheet 內沿用 `#` 表頭分多張表的慣例：
+`{qualities, lines: {<劇情線 id>: {title, threads, storylets, nodes, spawns}}}`，一條劇情線的所有內容放在一起（`title` 只給工具看）。`flattenStory()` 攤成執行期的 `{qualities, threads, storylets, nodes, spawns}`（`DB.story()`）；thread、節點、spawn 群組的 id 全域唯一（檢查會抓跨劇情線重複）。
 
-### 5.1 thread 表（任務日誌）
+### 5.1 threads（任務日誌）
 
-```
-#  thread  title        desc                              quality  value  journal                          pos        end  reward_hint
-   QX01    屠夫的生意經   黑森林的狼氾濫，xi 的肉舖快沒貨了……   wolf_hunt     1      獵殺黑森林的野狼 ({wolf_hunt.kills}/3)   m/m_03x05
-                                                                   2      剝下狼皮，帶去給商人 karen
-                                                                   3      回去跟 xi 回報
-                                                                   9      你把狼皮直接賣給了 xi                       Y
-                                                                   10     完成                                        Y    xi 答應會好好報答你
+```json
+"threads": {
+  "wolf_hunt": {
+    "title": "屠夫的生意經", "desc": "黑森林的野狼氾濫……", "quality": "wolf_hunt",
+    "values": {
+      "1":  {"journal": "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)", "pos": "m/m_03x05", "reward": "金幣 x120、斧頭 x1"},
+      "2":  {"journal": "剝下狼皮"},
+      "9":  {"journal": "你把狼皮直接賣給了 xi", "end": true},
+      "10": {"journal": "已向 xi 回報，領取獎勵", "end": true}
+    }
+  }
+}
 ```
 
 - quality 第一次變成表上有的值時，thread 出現在日誌中
 - `journal` 支援 `{quality名}` 佔位符
-- `end=Y` 的值代表結束，移到「已完成」分類
-- `reward_hint` 選填，取代原本的「獎勵」區塊（實際獎勵寫在效果裡）
+- `end: true` 的值代表結束，移到「已完成」分類
+- `reward` 選填，取代原本的「獎勵」區塊（實際獎勵寫在效果裡）
 
-### 5.2 storylet 表
+### 5.2 storylets
 
+```json
+"storylets": [
+  {"id": "wolf_ask", "who": "xi", "requires": "wolf_hunt==0", "label": "關於任務", "text": "@n_wolf_ask"},
+  {"id": "wolf_kill", "on": ["kill"], "requires": "wolf_hunt==1 && wolf_hunt.kills>=3", "effects": ["wolf_hunt=2", "stop wolf_hunt.kills"]},
+  {"id": "wolf_sell", "who": "xi", "tease": "wolf_hunt==2", "requires": "wolf_hunt==3 && item:plet:1",
+   "label": "把狼皮直接賣給你", "hint": "需要狼皮", "text": "……也好，那我自己收了。", "effects": ["take plet 1", "wolf_hunt=9", "gold+80"]},
+  {"id": "wolf_grudge", "who": "karen", "on": ["see"], "requires": "wolf_hunt==9 && !_grudge", "text": "喂！你給我過來！", "effects": ["approach n_wolf_grudge"]}
+]
 ```
-#  id           who        on    tease    requires                     label             hint          text                         effects
-   wolf_ask     xi                         wolf_hunt==0                       關於黑森林                       最近狼變多了……能幫我獵些狼皮嗎？  wolf_hunt=1, count wolf_hunt.kills kill:wolf
-   wolf_enough             kill            wolf_hunt==1 && wolf_hunt.kills>=3                                         已經獵到足夠的狼了             wolf_hunt=2, stop wolf_hunt.kills
-   wolf_pelt    karen                      wolf_hunt==2 && item:plet:1        關於黑森林的狼皮                  這批狼皮品質不錯……             take plet 1, wolf_hunt=3, favor+5
-   wolf_sell    xi               wolf_hunt==2   wolf_hunt==2 && item:plet:3        直接把狼皮賣給你   需要 3 張狼皮   ……也好，那我自己收了           take plet 3, wolf_hunt=9, gold+80
-   wolf_report  xi                         wolf_hunt==3                       回報                             @n_wolf_report               wolf_hunt=10, gold+120, give axe_01 1
-   wolf_grudge  karen      see             wolf_hunt==9 && !_grudge                                            聽說你把狼皮都賣給 xi 了？哼   _grudge=1, favor-10
-```
 
-- 上表是示意，實際 xlsx 裡多個效果／事件用 `;` 分隔（同 dialog.xlsx）
+- `on`、`effects` 是陣列（一個事件／指令一項）；`requires`／`tease` 是一個條件字串
 - **對話卡**：有 `who`、沒有 `on`。跟該 NPC 對話時，`requires` 成立就變成選項（插入位置見 §6.4）
 - **事件卡**：有 `on`。事件發生時檢查 `requires`，成立就套用 `effects`；`text` 有值就顯示成畫面提示，或冒在 NPC 頭上的泡泡；空白就默默套用
 - **`who`**：`karen`（單一 NPC）／`job:guard`（`role.json` 的 `job`）／`*`（任何 NPC）；同一個 `id` 有多張卡時，越具體的壓過越籠統的
 - **`tease`**：選填。`tease` 成立但 `requires` 不成立時，顯示成灰色選項並附上 `hint`；沒填就完全隱藏
 - **`text`**：一句話，或 `@節點id` 跳進長對話節點
-- **`mood`**：選填（K 欄）。空白＝一般對話卡；`cold`＝只在 NPC 冷淡（`n_cold`）時出現，見 §6.4
+- **`mood`**：選填。空白＝一般對話卡；`cold`＝只在 NPC 冷淡（`n_cold`）時出現，見 §6.4
 - 不重複出現靠 quality 擋（例如 `!_grudge`），不另外設 once 欄
 
-### 5.3 長對話節點表
+### 5.3 nodes（長對話節點）
 
-`text` 填 `@n_xxx` 時跳進的節點，放在**同一個劇情線 sheet**，欄位與 dialog.xlsx 的 node/choice 相同（加 `who` 欄標示屬於哪個 NPC），讓一條劇情的所有內容都在同一頁。
+`text` 填 `@n_xxx` 時跳進的節點，照 NPC 分：`"nodes": {"xi": {"n_wolf_ask": {...}}}`，節點格式跟 dialog.json 相同（§6.1），讓一條劇情的所有內容都在同一個地方。翻譯情境是 `story.node.<節點 id>`。
 
-### 5.4 spawn 表（地圖 `@群組` 圖層）
+### 5.4 spawns（地圖 `@群組` 圖層）
 
-劇情期間才出現的物件（怪、NPC、道具）在 Tiled 裡放進名稱是 `@群組` 的物件圖層，出現條件寫在劇情線 sheet 的 spawn 表：
+劇情期間才出現的物件（怪、NPC、道具）在 Tiled 裡放進名稱是 `@群組` 的物件圖層，出現條件寫在劇情線的 spawns：
 
-```
-#  group   requires              desc
-   wolves   wolf_hunt && wolf_hunt<10        狼患進行中，m_03x05 出現 3 隻狼
+```json
+"spawns": {"wolves": "wolf_hunt && wolf_hunt<9"}
 ```
 
 - `src/manager/map.js` 只在**進地圖時**判斷（`DB.spawn(group)`）：不成立就不生成，並清掉該群組的存檔；即時生成／移除刻意不做（2026-10-08 決定）
 - 群組名稱同時是存檔命名空間（`qid`），條件怎麼改都不影響存檔；群組名稱全域唯一
-- 轉檔檢查：地圖的 `@` 圖層沒宣告 → 錯誤；宣告了但沒地圖用 → 警告；舊的 `#` 條件圖層 → 錯誤
+- 檢查（`scripts/story.js`）：地圖的 `@` 圖層沒宣告 → 錯誤；宣告了但沒地圖用 → 警告；舊的 `#` 條件圖層 → 錯誤
 
-## 6. dialog.xlsx
+## 6. dialog.json
 
-欄位不變（`section`／`node_id`／`priority`／`condition`／`text_keys`／`label_key`／`next`／`actions`），只負責 NPC 的日常與個性。
+存**合併前**的資料，只負責 NPC 的日常與個性：
 
-### 6.1 `_common` sheet
+```json
+{
+  "_common": {"entries": [...], "lines": [...], "nodes": {...}, "extend": {...}},
+  "karen":   {"lines": [{"concept": "greet", "condition": "!_first_meet", "text": "很高興認識你，我是Karen"}]}
+}
+```
 
-所有 NPC 共用的 line／entry／node；NPC 自己的 sheet 有同名節點就用自己的。裡面的 `favor`、`_xxx` 自動解析成當下那個 NPC 的。
+節點格式（dialog.json 的 `nodes`、story.json 劇情線的 `nodes` 共用）：
 
-- 合併在轉檔時做（`scripts/dialog.js`）：節點同名用自己的、entry 同 `node_id` 用自己的；`choice:<node_id>` 列可以掛到 `_common` 的節點上，不用複製整個節點
+```json
+"n_wolf_report": {
+  "texts":   {"wolf_hunt<4": "狼皮收集得如何了?", "wolf_hunt==4": "都準備好了嗎？太好了!"},
+  "actions": ["進到節點時執行的指令"],
+  "next":    "沒有自己的選項時沿用這個節點的選項（§6.5）",
+  "choices": [{"label": "完成了", "condition": "wolf_hunt==4", "actions": ["wolf_hunt=10", "gold+120"], "next": "n_wolf_report", "priority": 0}],
+  "posts":   ["離開節點時執行的指令"],
+  "cards": 10, "mood": "cold"
+}
+```
+
+- `texts` 是 `{條件: 台詞}`，`"true"` 是無條件；欄位都選填，空的不寫
+- 選項依 `priority` 排序（沒填是 0），對話卡插進來也照這個排（§6.4）
+
+### 6.1 `_common`
+
+所有 NPC 共用的 line／entry／node；NPC 自己有同名節點就用自己的。裡面的 `favor`、`_xxx` 自動解析成當下那個 NPC 的。
+
+- 合併在載入時做（`mergeDialog()`，`DB.load` 跟 `scripts/lang.js` 共用）：節點同名用自己的、entry 同 `node` 用自己的；`extend: {<節點 id>: [選項…]}` 可以把選項掛到（合併後的）節點上，不用複製整個節點
+- 翻譯情境：節點 `dlg.<npc 或 _common>.<節點 id>`、line `line.<npc 或 _common>.<concept>`；`extend` 掛到別人節點上的選項自帶來源的情境
 - `_common` 的 n_default 有 `交易` 選項，條件是 `trade` 事實（`role.json` 的 `trade:true`），所有商人自動都有
 - dialog 的條件（choice、entry、texts）跟 line 一樣附帶 NPC 情境事實（`Line.facts()`：`map`/`hour`/`time`/`job`/`style`/`trade`/`hp`）
-- **能對話的 NPC** = 有自己 sheet 的 + `role.json` 標 `unique:true` 的（沒 sheet 就整套用 `_common`）；其他角色（狼、盜賊…）沒有對話，但 line 泡泡照樣吃 `_common` 的
-- dialog.json 的 `_common` key 是合併前的共用資料，給沒有對話的角色查 line 用
+- **能對話的 NPC** = dialog.json 有自己 key 的 + `role.json` 標 `unique:true` 的（沒有 key 就整套用 `_common`）；其他角色（狼、盜賊…）沒有對話，但 line 泡泡照樣吃 `_common` 的
+- 執行期 `DB.dialog('_common')` 是合併前的共用資料，給沒有對話的角色查 line 用
 
-### 6.2 `section: line`（rule-based 台詞）
+### 6.2 `lines`（rule-based 台詞）
 
+```json
+"lines": [
+  {"concept": "greet", "text": "你好/需要幫助嗎?"},
+  {"concept": "greet", "condition": "time=night", "text": "這麼晚了還在外面晃？"},
+  {"concept": "underAtk", "condition": "hp<0.3", "text": "救命啊！別打了！"}
+]
 ```
-#  section  node_id   condition                      text_keys
-   line     greet                                    你好/需要幫助嗎?
-   line     greet     time=night                     這麼晚了還在外面晃？
-   line     underAtk  hp<0.3                         救命啊！別打了！
-```
 
-- `node_id` 欄填 concept：`greet`（開對話時 NPC 的第一句）、`underAtk`、`stolen`、`hearPlayer`、`seePlayer`…
-- 挑選：所有條件成立的 line 中，**條件數最多的勝出**；寫在 NPC 自己 sheet 的 line **+1 分**；同分隨機
-- 條件數 = `condition` 用 `&&` 切出的段數；`text_keys` 可以用 `/` 分隔多句隨機挑
+- concept：`greet`（開對話時 NPC 的第一句）、`underAtk`、`stolen`…
+- 挑選：所有條件成立的 line 中，**條件數最多的勝出**；寫在 NPC 自己的 line **+1 分**；同分隨機
+- 條件數 = `condition` 用 `&&` 切出的段數；`text` 可以用 `/` 分隔多句隨機挑
 - 泡泡類 concept 同一個 NPC 有冷卻時間（`COM_Disp` 的 `BUBBLE_CD`，3 秒）
-- entry 節點的 `text_keys` 空白時，開場白使用 `greet` 命中的 line
-- `text_keys` 的 `條件: 文字` 映射寫法保留給一般節點，開場白改用 line
+- entry 節點的 `texts` 空白時，開場白使用 `greet` 命中的 line
+- `texts` 的 `{條件: 台詞}` 寫法保留給一般節點，開場白改用 line
 - [com_disp.js](../src/components/com_disp.js) 的 `underAtk`／`stolen` 泡泡查 line（`_common` 裡是 `找死!!!`／`有小偷!!!`）
 - 程式：`src/systems/line.js`（`Line.pick(npc, concept, facts)`、`Line.facts(npc, root)` 附帶 `map`/`hour`/`time`/`job`/`style`，有 root 時加 `hp`（血量比例 0～1））
 
 ### 6.3 entry 與冷淡入口
 
-```
-_common
-#  section  node_id   priority  condition   text_keys
-   entry    n_cold    1         favor<=25
-   entry    n_default 9
-   node     n_cold                          ……又是你。
-   storylets          10                                         ← 能挽回好感的卡插在這
-   choice             99                                          離開   close
+```json
+"_common": {
+  "entries": [
+    {"node": "n_cold", "priority": 1, "condition": "favor<=25"},
+    {"node": "n_default", "priority": 9, "actions": ["_where=0"]}
+  ],
+  "nodes": {
+    "n_cold": {"texts": {"true": "……又是你。"}, "cards": 10, "mood": "cold", "choices": [{"label": "離開", "priority": 99, "actions": ["close"]}]}
+  }
+}
 ```
 
-entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為）。
+entry 依 `priority` 排序取第一個成立的（執行期欄位是 `nodeId`／`order`）。`n_cold` 的 `cards: 10` 是能挽回好感的卡插進來的位置。
 
 ### 6.4 storylet 插入位置
 
 - 預設：插進**entry 節點**，priority 30
-- 節點底下有 `section: storylets` 列時：插進那個節點、用那一列的 `priority`（`n_cold` 是 10）
+- 節點有 `cards` 時：插進那個節點、用 `cards` 當 priority（`n_cold` 是 10）
 - 其他節點不會被插
-- **mood**：`storylets` 列的 `node_id` 欄可以填一個情境名稱（`n_cold` 填 `cold`），這個節點只收 storylet 表 `mood` 欄相同的卡；沒填 mood 的節點（含預設的 entry 節點）只收 `mood` 空白的卡。所以 NPC 冷淡時只會出現挽回好感的卡（`mood=cold`），任務卡不會跑進來，好感回來後挽回卡也不會出現
-- 轉檔檢查：事件卡不能填 `mood`；`mood` 填了 dialog.xlsx 沒有任何 storylets 列收的值會報錯
+- **mood**：節點可以填一個情境名稱（`n_cold` 填 `cold`），這個節點只收 storylet `mood` 相同的卡；沒填 mood 的節點（含預設的 entry 節點）只收 `mood` 空白的卡。所以 NPC 冷淡時只會出現挽回好感的卡（`mood: "cold"`），任務卡不會跑進來，好感回來後挽回卡也不會出現
+- 檢查：事件卡不能填 `mood`；`mood` 填了 dialog.json 沒有任何節點收的值會報錯
 
 ### 6.5 節點沿用選項
 
-節點列的 `next` 有值、底下沒有 choice 列時，代表「顯示完這句，沿用 `next` 節點的選項」，閒聊節點不用每個都複製一整組選項：
+節點的 `next` 有值、沒有 `choices` 時，代表「顯示完這句，沿用 `next` 節點的選項」，閒聊節點不用每個都複製一整組選項：
 
-```
-   node     n_where   這裡是……                  n_chat     _where=1
+```json
+"n_where": {"texts": {"true": "這裡是……"}, "actions": ["_where=1"], "next": "n_chat"}
 ```
 
 ### 6.6 拿掉的東西
@@ -243,7 +274,7 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 - 有 `approach n_xxx`：記到 `bb.approach`，`BehApproach`（1.3 分，壓過作息跟發呆、輸給 Respond／Investigate／戰鬥）走到玩家旁邊，抵達後 `root.talkAt(n_xxx)` 開對話直接進 `n_xxx`（entry 節點照算，`next` 回 entry 時對話卡照插）；玩家的移動被 `stop()` 打斷，NPC 發呆 2 回合不走開
 - 不觸發／暫停：好感 ≤ `HATE`（放棄、清掉 `bb.approach`）、戰鬥模式（`GS.mode` 不是 NORMAL）、NPC 睡覺、玩家正在對話或交易（`Story.playerBusy`）；後三種先去做作息，條件解除後繼續走過來；走不到也放棄
 - `bb.approach` 不存檔：玩家在 NPC 走到之前離開地圖，這次搭話就沒了。所以 `see` 卡只放「打招呼」這類效果，推進劇情的 quality 寫在 `n_xxx` 節點裡，下次看到還會再來
-- 轉檔檢查：`approach` 只能用在 `on` 含 `see`、有填 `who` 的卡，`n_xxx` 要是 who 對到的 NPC 的節點
+- 檢查：`approach` 只能用在 `on` 含 `see`、有填 `who` 的卡，`n_xxx` 要是 who 對到的 NPC 的節點
 
 ## 9. 任務日誌（PQuest）
 
@@ -258,12 +289,17 @@ entry 依 `priority` 排序取第一個成立的（沿用現行 `order` 行為�
 - **quality 檢視器**：debug 面板「指令」頁的 `q` 指令——`q` 列出全部、`q 關鍵字` 篩選、`q wolf_hunt=2`／`q karen.favor+10` 直接修改（名稱要寫完整，沒有 NPC 情境）
 - **`T.STORY`**：`dlog` 印出事件卡觸發與 quality 變動
 
-## 11. 轉檔靜態檢查
+## 11. 靜態檢查
 
-- 未宣告的 quality 名稱
-- `goto`／`@節點`／`approach`／entry 指向不存在的節點
+`src/data/storycheck.js` 的 `checkStory({story, dialog, roles, items, maps})`，`node scripts/story.js`（run_all 會跑，有錯誤 exit code 1）跟任務／對話工具的檢查面板共用：
+
+- 未宣告的 quality 名稱、識別字不是 ASCII
+- `goto`／`@節點`／`approach`／entry／`next` 指向不存在的節點
 - `who` 寫了不存在的 NPC id 或 job
-- 錯誤一律標出 xlsx、sheet、列號
+- 認不得的指令、`give`／`take`／`item:` 用到不存在的道具
+- thread／節點／spawn 群組／storylet（id+who）跨劇情線重複
+- 地圖 `@群組` 圖層（只有 node 那邊檢查，工具讀不到地圖）
+- 結果是 `{level, file, path, msg}`，`path` 是 json 路徑
 
 ## 12. 實作階段
 

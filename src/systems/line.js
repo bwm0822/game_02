@@ -4,7 +4,7 @@ import {worldFacts} from './story.js'
 import {tr} from '../infra/lang.js'
 
 //--------------------------------------------------
-// rule-based 台詞（dialog.xlsx 的 section: line），見 docs/story-architecture.md §6.2
+// rule-based 台詞（dialog.json 的 lines），見 docs/story-architecture.md §6.2
 //  - 所有條件成立的 line 中，條件數最多的勝出；寫在 NPC 自己 sheet 的 +1 分；同分隨機
 //  - 沒有 dialog 的角色（狼、盜賊…）只吃 _common 的 line
 //--------------------------------------------------

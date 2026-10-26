@@ -62,7 +62,7 @@ export class COM_Talk extends Com
         return entry?.nodeId || null;
     }
 
-    // NPC 自己的 dialog 節點優先，沒有再找 story.xlsx 的長對話節點
+    // NPC 自己的 dialog 節點優先，沒有再找 story.json 的長對話節點
     _findNode(nodeId) {return this._data?.nodes?.[nodeId] ?? Story.node(this._npc, nodeId) ?? null;}
 
     // 第一次隨機選擇，之後依序顯示
@@ -214,7 +214,7 @@ export class COM_Talk extends Com
         return {A, B};
     }
 
-    // entry 節點的 text_keys 空白時，開場白用 greet line
+    // entry 節點的 texts 空白時，開場白用 greet line
     _nodeText(node)
     {
         const text = this._getNodeText(node);

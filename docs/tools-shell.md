@@ -1,11 +1,11 @@
 # 工具殼（tools/）
 
-`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／試穿／提示詞／紙娃娃，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[fit-tool.md](fit-tool.md)、[prompt-tool.md](prompt-tool.md)、[paperdoll-tool.md](paperdoll-tool.md)。
+`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／任務／對話／試穿／提示詞／紙娃娃，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[story-tool.md](story-tool.md)、[fit-tool.md](fit-tool.md)、[prompt-tool.md](prompt-tool.md)、[paperdoll-tool.md](paperdoll-tool.md)。
 
 ## 結構
 
 - `tools/index.html`＋`tools/main.js`：殼。分頁列、選專案資料夾、每個工具一個 iframe（`./item/` 等原本的頁面），**第一次點分頁才建 iframe**，之後切分頁只是 `hidden`，工具狀態（未存修改、紙娃娃圖層）都留著。網址 hash 記目前分頁（`/tools/#role`）。
-- `tools/common/shell.js`：工具端的接線，`onProject(fn)`／`notifySaved(file)`／`onSaved(fn)`／`setDirty(bool)`。
+- `tools/common/shell.js`：工具端的接線，`onProject(fn)`／`notifySaved(file)`／`onSaved(fn)`／`setDirty(bool)`／`gotoTab(tab, path)`／`onGoto(fn)`（跳到別的分頁的某個地方：工具 postMessage `{type:'goto', tab, path}` 給殼，殼切分頁再把 `{type:'goto', path}` 轉給那個 iframe，還沒 ready 的先排隊；任務↔對話分頁用）。
 - `tools/common/scrollbar.css`：所有工具共用的深色捲軸（`::-webkit-scrollbar`），`common/style.css` 用 `@import` 引入；紙娃娃不載 `common/style.css`，自己 `<link>` 它。
 - `tools/common/fold.js`：左欄分組收合（`createFold()`），道具／角色（經 `views.js` 的 `renderList`，分組是 `[標題, ids, key]`）跟試穿用；點組標題切換 `▾/▸`、**Alt＋點全部一起**，摺起來的組 key 記在 `localStorage` 的 `tools.<工具資料夾>.fold`；搜尋中全部展開（不改存著的狀態）。摺起來的組裡不留選取：摺的時候取消選擇（道具／角色回總覽表），從別處選到（新增、改名、undo、表格點 id）就展開那組。清單上再點一次選到的那列也是取消選擇。提示詞有自己的摺疊（只記在記憶體），不用它。
 - `tools/common/splitter.js`：左欄寬度可調，main.js `import '../common/splitter.js'` 就會在 `#left` 後面插一個把手（兄弟元素，`#left` 自己捲動也不會被捲走）；拖拉改寬（80px～60vw）、雙擊回 CSS 預設，寬度記在 `localStorage` 的 `tools.left.<工具資料夾>`，各工具分開記。道具／角色／試穿／提示詞用它；紙娃娃有自己的左右分隔線（見 [paperdoll-tool.md](paperdoll-tool.md)），不載。

@@ -1,5 +1,5 @@
 // NPC 主動（on:see、approach、BehApproach）：node scripts/test/approach.mjs
-// 測試卡跟節點直接塞進 DB.story()，不動 story.xlsx
+// 測試卡跟節點直接塞進 DB.story()，不動 story.json
 import {run} from './harness.mjs'
 
 const TOWN = 'm/m_04x05';
