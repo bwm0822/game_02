@@ -257,6 +257,15 @@ function nodeLabel(node)
     return '';
 }
 
+// 選節點時展開它跟上層；之後箭頭照樣可以收合
+function selectNode(node)
+{
+    S.node = node;
+    const p = node.split('.');
+    if (node !== ALL && node !== SHARED && node !== ORPHAN) p.forEach((_, i) => S.fold.add(p.slice(0, i + 1).join('.')));
+    render();
+}
+
 function renderTree()
 {
     const cnt = new Map(), kids = new Map();
@@ -279,9 +288,9 @@ function renderTree()
     const row = (node, depth, name) => {
         // 「全部」不展開：頂層的領域固定列在它下面
         const c = cnt.get(node) ?? {todo: 0, all: 0}, sub = node === ALL ? [] : kids.get(node) ?? [];
-        const open = S.fold.has(node) || S.node === node || S.node.startsWith(node + '.');
+        const open = S.fold.has(node);
         out.push(h('div', {class: 'node' + (S.node === node ? ' sel' : ''), style: `padding-left: ${4 + depth * 14}px`, dataset: {node},
-                onclick: () => {S.node = node; render();}},
+                onclick: () => selectNode(node)},
             h('span', {class: 'arrow', onclick: sub.length ? (e) => {e.stopPropagation(); S.fold.has(node) ? S.fold.delete(node) : S.fold.add(node); render();} : null},
                 sub.length ? (open ? '▾' : '▸') : ''),
             h('span', null, name ?? node.split('.').at(-1)),

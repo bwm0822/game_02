@@ -34,9 +34,11 @@ run('lang-tool', async t => {
         out.tree = qa('#list .node').map(n => n.dataset.node);
         S.node = ''; lt.render();
         out.allOnce = qa('#list .node').filter(n => n.dataset.node === 'ui').length;
-        S.node = 'dlg'; lt.render();
+        qa('#list .node').find(n => n.dataset.node === 'dlg').click();
         out.dlgOnly = qa('#view tbody tr').every(tr => JSON.parse(tr.dataset.k)[0].startsWith('dlg.'));
         out.dlgOpen = qa('#list .node').some(n => n.dataset.node === 'dlg._common');
+        qa('#list .node').find(n => n.dataset.node === 'dlg').querySelector('.arrow').click();
+        out.dlgFold = [S.node, qa('#list .node').some(n => n.dataset.node === 'dlg._common')];
 
         // 篩選 new 的列數 = 統計
         S.node = ''; $('filter').value = 'new'; $('filter').dispatchEvent(new Event('change'));
@@ -145,6 +147,7 @@ run('lang-tool', async t => {
     t.eq('選「全部」時領域不重複', r.allOnce, 1);
     t.check('點 dlg 只列對話', r.dlgOnly);
     t.check('選到的節點展開', r.dlgOpen);
+    t.eq('選到的節點也能收合', JSON.stringify(r.dlgFold), JSON.stringify(['dlg', false]));
     t.eq('篩選 new 的列數＝統計', r.newRows, r.stat.new);
     t.eq('改譯文：寫進資料、textarea 沒被換掉、檢查欄更新', JSON.stringify(r.edit), JSON.stringify(['Hello {#x}', true, 'error：多 {#x}']));
     t.check('篩選中改完那列先留著', !r.fixed);
