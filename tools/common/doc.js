@@ -132,7 +132,7 @@ export function createDoc(opt)
     const sub = opt.dir ?? 'json';
     const jsonOf = async (dir) => {const j = dir && await FS.tryDir(dir, sub); return j && await FS.tryFile(j, opt.file) ? j : null;};
 
-    // 殼給的是專案根目錄（改名／刪除時多掃 xls/、src/）；無頭測試會直接給 public/assets
+    // 殼給的是專案根目錄（改名／刪除時多掃 src/）；無頭測試會直接給 public/assets
     async function setAssets(dir)
     {
         let root = null, assets = dir, json = await jsonOf(dir);
@@ -223,7 +223,7 @@ export function createDoc(opt)
 
     const refList = (refs) => [
         refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
-        !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 xls/、src/'),
+        !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 src/'),
     ];
     const innerList = (refs) => refs.length ? ul(refs) : h('div', {class: 'dim'}, '（沒有）');
 
@@ -236,7 +236,7 @@ export function createDoc(opt)
         const r = await ask(`改名 ${from} → ${to}`, [
             h('div', {class: 'title'}, `${opt.file} 裡會一起改的`),
             innerList(inner),
-            h('div', {class: 'title'}, '其他檔案（不會改，要自己處理；json 很多是 xlsx 轉出來的，改 xlsx 再轉檔）'),
+            h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
             refList(outer),
         ], [['ok', '改名'], ['cancel', '取消']]);
         if (r !== 'ok') return;
