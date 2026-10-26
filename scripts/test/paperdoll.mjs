@@ -1279,21 +1279,23 @@ run('paperdoll', async t => {
         pd.autoSet({kind: 'weapon', weapon: {pct: 50, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}});
         pd.setMode('auto');
         out.enter = [pd.S.mode.kind, $('auWeapon').hidden, $('auTable').hidden, $('auSplit').hidden];
+        out.cls = [pd.S.auto.cls, $('auCls').value, $('auClsL').hidden];
         pd.applyMode();
         const W = pd.S.layers.find(M => M.auto?.key === 'weapon');
+        out.cls.push(W.auto.cls);
         out.made = [pd.S.layers.filter(M => M.auto).length, W.canvas.width, W.canvas.height, W.ops.map(o => o.type).join(), W.ox, W.oy,
                     W.x * pd.S.scale, L.visible, document.querySelector('[name=auKind][value=armor]').disabled, W.name];
 
         const x0 = W.x, y0 = W.y;
         type('au-weapon-oy', 0.5);
-        out.oy = [W.oy, W.x === x0 && W.y === y0, pd.S.auto.weapon.oy];
+        out.oy = [W.oy, W.x === x0 && W.y === y0, pd.S.auto.weapon.sword.oy, pd.S.auto.weapon.bow.oy];
 
         const cv = $('cv'), rc = cv.getBoundingClientRect(), K = pd.S.view.zoom * (pd.S.applyScale ? pd.S.scale : 1);
         const atW = (w) => ({clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true});
         const fireW = (type, w, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...atW(w), ...extra}));
         const p0 = {x: W.x, y: W.y}, p1 = {x: W.x + 5, y: W.y - 8};
         fireW('pointerdown', p0); fireW('pointermove', p1, {buttons: 1}); fireW('pointerup', p1);
-        out.pivot = [W.x === x0 && W.y === y0, W.ox, W.oy, $('au-weapon-ox').value, pd.S.auto.weapon.ox, pd.S.mode.hist.length];
+        out.pivot = [W.x === x0 && W.y === y0, W.ox, W.oy, $('au-weapon-ox').value, pd.S.auto.weapon.sword.ox, pd.S.mode.hist.length];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
         out.pivotUndo = [W.ox, W.oy];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'y', ctrlKey: true, bubbles: true}));
@@ -1337,14 +1339,32 @@ run('paperdoll', async t => {
         out.newId = [$('di-weapon-id').value, $('di-weapon-msg').textContent];
         await close(p, 'cancel');
 
+        // 換分類：套那組數字、記一步；改數字只寫目前分類；還原預設只還原目前分類
+        pd.autoSet({...pd.S.auto, weapon: {...pd.S.auto.weapon, bow: {pct: 50, x: 5, y: 6, a: 0, ox: 0.5, oy: 0.5}}});
+        type('auCls', 'bow');
+        out.swap = [Math.round(W.x * pd.S.scale), W.a, W.auto.cls, pd.S.auto.cls, pd.S.auto.weapon.sword.x];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
+        out.swapUndo = [Math.round(W.x * pd.S.scale), W.a, W.auto.cls, pd.S.auto.cls, $('auCls').value];
+        type('auCls', 'bow');
+        type('au-weapon-x', 7);
+        $('auReset').click();
+        out.reset = [pd.S.auto.weapon.bow.x, pd.S.auto.weapon.sword.x, Math.round(W.x * pd.S.scale)];
+
         pd.cancelMode();
+        pd.autoSet({weapon: {pct: 33}});
+        out.legacy = [pd.S.auto.weapon.bow.pct, pd.S.auto.weapon.default.pct, pd.S.auto.weapon.sword.x];
         pd.autoSet({});
         return out;
     });
     t.eq('自動（武器）：進模式顯示武器那一行、藏起護具的表跟頭盔切線', JSON.stringify(aw.enter), JSON.stringify(['weapon', false, true, true]));
     t.eq('自動（武器）：一個零件（名字＝原圖名）、不去綠、丟雜點、裁到剛好再縮、套用 a/ox/oy、拆完不能切種類', JSON.stringify(aw.made),
          JSON.stringify([1, 10, 80, 'alpha,blobs,xform,xform', 0.5, 0.85, -13, false, true, 'sword-1']));
-    t.eq('自動（武器）：改 oy 時 x/y 不動、寫回預設', JSON.stringify(aw.oy), JSON.stringify([0.5, true, 0.5]));
+    t.eq('自動（武器）：分類照名字前綴猜、顯示分類下拉、記在零件上', JSON.stringify(aw.cls), JSON.stringify(['sword', 'sword', false, 'sword']));
+    t.eq('自動（武器）：改 oy 時 x/y 不動、只寫回目前分類', JSON.stringify(aw.oy), JSON.stringify([0.5, true, 0.5, 0.85]));
+    t.eq('自動（武器）：換分類套那組數字、別的分類不動', JSON.stringify(aw.swap), JSON.stringify([5, 0, 'bow', 'bow', -13]));
+    t.eq('自動（武器）：換分類可以 undo', JSON.stringify(aw.swapUndo), JSON.stringify([-13, 30, 'sword', 'sword', 'sword']));
+    t.eq('自動（武器）：還原預設只還原目前分類', JSON.stringify(aw.reset), JSON.stringify([-13, -13, -13]));
+    t.eq('自動（武器）：舊格式數字複製到每個分類', JSON.stringify(aw.legacy), JSON.stringify([33, 33, -13]));
     t.eq('自動（武器）：拖支點＝圖跟著動、x/y 不動、一次拖曳一步', JSON.stringify(aw.pivot), JSON.stringify([true, 0, 0.6, '0', 0, 2]));
     t.eq('自動（武器）：拖支點可以 undo', JSON.stringify(aw.pivotUndo), JSON.stringify([0.5, 0.5]));
     t.eq('自動（武器）：改 a 只轉預覽', aw.a, 30);
@@ -1384,7 +1404,7 @@ run('paperdoll', async t => {
         let asked = 0;
         const conf = window.confirm;
         window.confirm = () => (asked++, true);
-        const rowsOf = () => [...$('btRows').children].map(r => ({sel: r.querySelector('select'), keep: r.querySelector('input[type=checkbox]'),
+        const rowsOf = () => [...$('btRows').children].map(r => ({cls: r.querySelectorAll('select')[0], sel: r.querySelectorAll('select')[1], keep: r.querySelector('input[type=checkbox]'),
                                                                    ins: [...r.querySelectorAll('input:not([type])')], msg: r.querySelector('.body > div:last-child'), r}));
         let p = pd.saveBatch(fs);
         await until(() => $('dlgBatch').open);
@@ -1392,9 +1412,15 @@ run('paperdoll', async t => {
         out.rows = R.map(x => [x.sel.value, x.sel.disabled, x.keep.parentElement.hidden, x.r.classList.contains('off')]);
         out.blank = R[0].msg.textContent;
         out.nums = [$('bt-pct').value, $('bt-oy').value];
+        out.cls = [$('bt-cls').value, ...R.map(x => x.cls.value)];
         fire($('bt-pct'), 25);
         fire($('bt-a'), 30);
-        out.pct = [pd.S.auto.weapon.pct, $('au-weapon-pct').value, pd.S.auto.weapon.a];
+        out.pct = [pd.S.auto.weapon.default.pct, $('au-weapon-pct').value, pd.S.auto.weapon.default.a, pd.S.auto.weapon.sword.pct];
+        fire($('bt-cls'), 'sword');
+        out.pct.push($('bt-pct').value);
+        fire($('bt-pct'), 25);
+        fire($('bt-a'), 30);
+        fire(R[1].cls, 'bow');
         fire(R[1].sel, '');
         out.newMsg = R[1].msg.textContent;
         fire(R[1].ins[0], 'sword-x'); fire(R[1].ins[1], '新劍');
@@ -1405,7 +1431,7 @@ run('paperdoll', async t => {
         const weapons = await tex.getDirectoryHandle('weapons');
         const png = async (n) => {const f = await weapons.getFileHandle(`${n}.png`).catch(() => null); if (!f) return null; const b = await createImageBitmap(await f.getFile()); return [b.width, b.height];};
         out.saved = [JSON.stringify(it['sword-1'].equip), it['sword-1'].icon, JSON.stringify(it['sword-2'].equip), JSON.stringify(it['sword-2'].drop),
-                     Object.keys(it).join(), JSON.stringify(it['sword-x']), await png('sword-a'), await png('sword-2-icon'), await png('blank'), pd.S.layers.length, asked];
+                     Object.keys(it).join(), JSON.stringify(it['sword-x']), await png('sword-a'), await png('sword-2-icon'), await png('blank'), pd.S.layers.length, asked, await png('other')];
 
         // 不勾保留原設定＝擺放也寫；只勾更新ICON＝sprite 不動、只重產 -icon
         p = pd.saveBatch(fs.slice(0, 1));
@@ -1434,13 +1460,14 @@ run('paperdoll', async t => {
          JSON.stringify(bt.rows), JSON.stringify([['-', true, true, true], ['-', false, true, true], ['sword-2', false, true, false], ['sword-1', false, false, false]]));
     t.eq('批次：找不到武器的列提示', bt.blank, '清除透明之後找不到武器');
     t.eq('批次：數字帶入全域預設', JSON.stringify(bt.nums), JSON.stringify(['50', '0.85']));
-    t.eq('批次：改數字寫回全域預設、自動面板同步', JSON.stringify(bt.pct), JSON.stringify([25, '25', 30]));
+    t.eq('批次：每列照檔名猜分類、上面編輯第一列的分類', JSON.stringify(bt.cls), JSON.stringify(['default', 'default', 'default', 'sword', 'sword']));
+    t.eq('批次：改數字只寫回編輯中的分類、自動面板同步、切分類換數字', JSON.stringify(bt.pct), JSON.stringify([25, '25', 30, 50, '50']));
     t.eq('批次：新增要填 id', bt.newMsg, '要填 id');
     t.eq('批次：填好就能存', bt.ok, false);
-    t.eq('批次：保留原設定不動擺放、其他寫 equip／drop／icon、新增插在最後一件武器後面、成品照 scale%、不建圖層、沒有要確認的就不 confirm', JSON.stringify(bt.saved), JSON.stringify([
+    t.eq('批次：保留原設定不動擺放、其他寫 equip／drop／icon、新增插在最後一件武器後面、成品照列的分類的 scale%、不建圖層、沒有要確認的就不 confirm', JSON.stringify(bt.saved), JSON.stringify([
         '{"sprite":"sword-a","scale":0.25,"x":1,"y":2}', 'sword-a-icon', '{"sprite":"sword-2","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}', '{"sprite":"sword-2","scale":0.25}',
-        'sword-1,sword-2,sword-x', '{"cat":"CAT_WEAPON","icon":"other-icon","lab":"新劍","equip":{"sprite":"other","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85},"drop":{"sprite":"other","scale":0.25}}',
-        [5, 40], [100, 100], null, 0, 0]));
+        'sword-1,sword-2,sword-x', '{"cat":"CAT_WEAPON","icon":"other-icon","lab":"新劍","equip":{"sprite":"other","scale":0.25,"x":-13,"y":18,"oy":0.85},"drop":{"sprite":"other","scale":0.25}}',
+        [5, 40], [100, 100], null, 0, 0, [10, 80]]));
     t.eq('批次：不勾保留原設定就寫擺放', bt.place, '{"sprite":"sword-a","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}');
     t.eq('批次：只勾更新ICON 時 sprite 不動、-icon 用原本的 sprite 名', JSON.stringify(bt.iconOnly), JSON.stringify(['old-sword', 'old-sword-icon', [100, 100]]));
 

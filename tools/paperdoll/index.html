@@ -118,6 +118,7 @@
             <div class="row2" style="margin: 0 0 4px">
                 <label><input name="auKind" type="radio" value="armor" checked> 護具</label>
                 <label><input name="auKind" type="radio" value="weapon"> 武器</label>
+                <label id="auClsL" hidden>分類 <select id="auCls"></select></label>
             </div>
             <div id="auTable" class="autoGrid"></div>
             <div id="auWeapon" class="autoGrid weapon" hidden></div>
@@ -229,6 +230,7 @@
     <form method="dialog">
         <div id="btTitle" class="title"></div>
         <div class="row2">
+            <label>分類 <select id="bt-cls"></select></label>
             <label>scale% <input id="bt-pct" type="number" step="any"></label>
             <label>x <input id="bt-x" type="number" step="any"></label>
             <label>y <input id="bt-y" type="number" step="any"></label>

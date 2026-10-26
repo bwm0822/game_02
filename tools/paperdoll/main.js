@@ -237,11 +237,19 @@ const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', '
 const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33},
                   weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}};
 const AUTO_KEY = 'paperdoll.auto';
+// 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
+// 舊格式 weapon 直接放數字：複製到每個分類
+const WCLS = [['sword', '劍'], ['axe', '斧'], ['hammer', '錘'], ['dagger', '匕首'], ['staff', '法杖'], ['bow', '弓'], ['default', '預設']];
+const wclsOk = (c) => WCLS.some(([k]) => k === c) ? c : 'default';
+const wclsOf = (name) => wclsOk(name?.split(/[-_]/)[0]);
+const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...AUTO_DEF.weapon, ...(w && 'pct' in w ? w : w?.[k])}]));
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
-const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])),
+const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: v?.kind === 'weapon' ? 'weapon' : 'armor'});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
+const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : a[P.key];
+const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}} : {...a, [P.key]: row};
 
 function autoLoad()
 {
@@ -254,7 +262,8 @@ function autoSet(v)
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
-    for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = S.auto[P.key][f];
+    for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
+    $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
 }
@@ -313,7 +322,7 @@ function autoPlace({P, C}, {x, y, a, ox, oy})
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
-const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp)});
+const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls});
 
 function autoStep(m, s = autoState(m))
 {
@@ -334,7 +343,9 @@ function autoUndo(m, from, to)
         spSet(m.sp);
         autoSet({...S.auto, split: m.sp.cut ? 'cut' : 'split'});
     }
-    if (m.parts) autoSet({...S.auto, ...Object.fromEntries(m.parts.map(p => [p.P.key, autoRow(p)]))});
+    if (!m.parts) return true;
+    for (const p of m.parts) if (p.P.kind === 'weapon') p.C.auto = {...p.C.auto, cls: s.cls};
+    autoSet(m.parts.reduce((a, p) => autoWith(a, p.P, autoRow(p)), {...S.auto, cls: s.cls}));
     return true;
 }
 
@@ -415,12 +426,12 @@ function autoSpNew(m, {box, keep})
 }
 
 // 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置
-function autoApply(m, part, row)
+function autoApply(m, part, row, step = true)
 {
     const cur = autoRow(part);
     if (autoSame(part.P, row, cur)) return;
     if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
-    autoStep(m);
+    if (step) autoStep(m);
     if (row.pct !== cur.pct)
     {
         m.T.canvas ??= PX.replay(m.T.src, m.T.ops);
@@ -451,7 +462,7 @@ function autoPose(m, part, v, step = true)
 }
 
 const autoWeapon = (m) => m.type === 'auto' && m.parts?.find(p => p.P.kind === 'weapon') || null;
-const autoSave = (part) => autoSet({...S.auto, [part.P.key]: autoRow(part)});
+const autoSave = (part) => autoSet(autoWith(S.auto, part.P, autoRow(part)));
 
 // 沒拆過：先算好零件範圍（勾了拆前後片就追頭盔切線），只調數字和切線，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
 function autoEnter(L)
@@ -461,6 +472,7 @@ function autoEnter(L)
     {
         if (hasPaint(L)) return alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」'), null;
         const kind = S.auto.kind, {T, plan, skipped} = autoPlan(L, kind);
+        if (kind === 'weapon') autoSet({...S.auto, cls: wclsOf(L.name)});
         const m = {type: 'auto', kind, layer: L, parts: null, T, plan, skipped, sp: null, hist: [], fut: []};
         autoSpSync(m);
         return m;
@@ -473,7 +485,7 @@ function autoEnter(L)
         const {sx, sy, sw, sh} = C.ops[autoBase(C) - 1];
         return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}, keep: autoKeep(C)};
     });
-    if (S.auto.kind !== kind) autoSet({...S.auto, kind});
+    autoSet({...S.auto, kind, ...(kind === 'weapon' && {cls: wclsOk(C0.auto.cls ?? wclsOf(C0.name))})});
     const m = {type: 'auto', kind, layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
     status(`調整 ${parts.map(p => p.C.name).join('、')}`);
     return m;
@@ -489,10 +501,10 @@ function autoSplit(m)
     const gid = L.autoSrc ?? autoGid();
     const parts = plan.map(({P, box, keep}) => {
         const C = cloneAbove(L, P.kind === 'weapon' ? L.name : `${L.name}-${P.key}`);
-        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid}});
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls})}});
         const part = {P, C, box, keep};
-        autoScale(T, part, S.auto[P.key].pct);
-        autoPlace(part, S.auto[P.key]);
+        autoScale(T, part, autoCfg(P).pct);
+        autoPlace(part, autoCfg(P));
         return part;
     });
     L.autoSrc = gid;
@@ -2241,13 +2253,14 @@ function refreshAuto(m)
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
     const weapon = m.kind === 'weapon';
     for (const id of ['auTable', 'auSplit', 'auHintArmor']) $(id).hidden = weapon;
-    for (const id of ['auWeapon', 'auHintWeapon']) $(id).hidden = !weapon;
+    for (const id of ['auWeapon', 'auHintWeapon', 'auClsL']) $(id).hidden = !weapon;
+    $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
     for (const P of autoParts(m.kind))
     {
-        const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : S.auto[P.key];
+        const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
         for (const f of AUTO_F[P.kind])
         {
             const inp = $(`au-${P.key}-${f}`);
@@ -3219,16 +3232,18 @@ const batchP = () => autoParts('weapon')[0];
 const BT_W = 48;
 
 // 假圖層：給 itemCheck／commitItems 跟自動零件一樣的欄位（src、ops、canvas、擺放、auto）
-function batchPart(src, name)
+function batchPart(src, name, cls)
 {
     const C = {name, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1, opacity: 1, auto: {key: batchP().key}};
     const {T, plan} = autoPlan(C, 'weapon');
     if (!plan.length) return null;
     const part = {...plan[0], C, T};
-    autoScale(T, part, S.auto.weapon.pct);
-    autoPlace(part, S.auto.weapon);
+    autoScale(T, part, S.auto.weapon[cls].pct);
+    autoPlace(part, S.auto.weapon[cls]);
     return part;
 }
+
+const clsOpts = (sel) => sel.replaceChildren(...WCLS.map(([value, lab]) => Object.assign(el('option'), {value, textContent: `${lab} ${value}`})));
 
 // 成品照實際像素畫（太大才等比縮小），icon 縮進框裡
 function fitDraw(cv, c, up = false)
@@ -3266,6 +3281,15 @@ function batchDialog(rows, items, keys)
         }
         $('btOk').disabled = !act.length || act.some(r => r.err);
     };
+    const place = (r, scale) => {
+        const w = S.auto.weapon[r.cls];
+        if (scale)
+        {
+            autoScale(r.part.T, r.part, w.pct);
+            fitDraw(r.el.pic, r.part.C.canvas);
+        }
+        autoPlace(r.part, w);
+    };
     const opts = [['-', '不處理'], ['', '＋新增'],
                   ...Object.keys(items).filter(id => items[id].cat === ITEM_CAT[batchP().key])
                       .map(id => [id, `${id} ${items[id].lab ?? ''}（${items[id].equip?.sprite ?? '沒有 sprite'}）`])];
@@ -3273,10 +3297,13 @@ function batchDialog(rows, items, keys)
         const row = el('div', 'irow'), body = el('div', 'body');
         const pic = Object.assign(el('canvas', 'tall'), {width: BT_W, height: BT_W * 2});
         const ic = Object.assign(el('canvas'), {width: BT_W, height: BT_W});
-        const sel = el('select');
+        const sel = el('select'), cls = el('select');
         sel.append(...opts.map(([value, textContent]) => Object.assign(el('option'), {value, textContent})));
         sel.value = r.sel;
         sel.disabled = !r.part;
+        clsOpts(cls);
+        cls.value = r.cls;
+        cls.disabled = !r.part;
         const box = (lab, type) => {
             const i = Object.assign(el('input'), type && {type}), l = el('label');
             l.append(...(type ? [i, ` ${lab}`] : [`${lab} `, i]));
@@ -3285,7 +3312,7 @@ function batchDialog(rows, items, keys)
         const [keepL, keep] = box('保留原設定', 'checkbox');
         const [idL, id] = box('id'), [labL, lab] = box('lab');
         const head = el('div', 'line'), nw = el('div', 'line'), msg = el('div');
-        head.append(Object.assign(el('span'), {textContent: r.tag}), sel, keepL);
+        head.append(Object.assign(el('span'), {textContent: r.tag}), cls, sel, keepL);
         nw.append(idL, labL);
         body.append(head, nw, msg);
         row.append(pic, ic, body);
@@ -3297,6 +3324,7 @@ function batchDialog(rows, items, keys)
             if (c) fitDraw(ic, c, true);
         }
         keep.checked = r.keep;
+        cls.onchange = () => {r.cls = cls.value; place(r, true); refresh();};
         sel.onchange = () => {r.sel = sel.value; r.keep = keep.checked = true; refresh();};
         keep.onchange = () => {r.keep = keep.checked; refresh();};
         id.oninput = () => {r.newId = id.value.trim(); refresh();};
@@ -3308,24 +3336,22 @@ function batchDialog(rows, items, keys)
         $(`bt-${f}`).checked = G[f];
         $(`bt-${f}`).onchange = () => {G[f] = $(`bt-${f}`).checked; refresh();};
     }
-    // 數字跟自動面板共用全域預設；scale% 變了才重算成品（icon 用縮小前的圖，不用重算）
+    // 數字跟自動面板共用全域預設，上面的分類選要改哪一組（預設第一列的分類），只重算同分類的列；
+    // scale% 變了才重算成品（icon 用縮小前的圖，不用重算）
+    let ecls = rows.find(r => r.part)?.cls ?? 'default';
+    const nums = () => {for (const f of AUTO_F.weapon) $(`bt-${f}`).value = S.auto.weapon[ecls][f];};
+    clsOpts($('bt-cls'));
+    $('bt-cls').value = ecls;
+    $('bt-cls').onchange = () => {ecls = $('bt-cls').value; nums();};
+    nums();
     for (const f of AUTO_F.weapon)
     {
         const inp = $(`bt-${f}`);
-        inp.value = S.auto.weapon[f];
         inp.onchange = () => {
-            const v = +inp.value, old = S.auto.weapon[f];
+            const v = +inp.value, old = S.auto.weapon[ecls][f];
             if (!Number.isFinite(v) || f === 'pct' && !(v > 0) || v === old) return void (inp.value = old);
-            autoSet({...S.auto, weapon: {...S.auto.weapon, [f]: v}});
-            for (const r of rows.filter(r => r.part))
-            {
-                if (f === 'pct')
-                {
-                    autoScale(r.part.T, r.part, v);
-                    fitDraw(r.el.pic, r.part.C.canvas);
-                }
-                autoPlace(r.part, S.auto.weapon);
-            }
+            autoSet({...S.auto, weapon: {...S.auto.weapon, [ecls]: {...S.auto.weapon[ecls], [f]: v}}});
+            for (const r of rows.filter(r => r.part && r.cls === ecls)) place(r, f === 'pct');
             refresh();
         };
     }
@@ -3347,8 +3373,8 @@ async function saveBatch(fs)
     for (const x of files)
     {
         const file = x.fh.name.replace(/\.png$/i, '');
-        const part = batchPart(PX.fromImage(await createImageBitmap(await x.fh.getFile())), file);
-        rows.push({P: batchP(), tag: join(x.path, x.fh.name), file, part, sel: part && itemMatch(items, batchP(), file) || '-', keep: true, newId: '', lab: ''});
+        const cls = wclsOf(file), part = batchPart(PX.fromImage(await createImageBitmap(await x.fh.getFile())), file, cls);
+        rows.push({P: batchP(), tag: join(x.path, x.fh.name), file, cls, part, sel: part && itemMatch(items, batchP(), file) || '-', keep: true, newId: '', lab: ''});
     }
     if (await batchDialog(rows, items, await texKeys())) await commitItems(rows, false, true);
 }
@@ -3688,17 +3714,31 @@ for (const P of AUTO_PARTS)
             const v = +inp.value, m = S.mode, part = m.parts?.find(p => p.P === P);
             const ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
             if (ok && part) autoApply(m, part, {...autoRow(part), [f]: v});
-            else autoSet(ok ? {...S.auto, [P.key]: {...S.auto[P.key], [f]: v}} : S.auto);
+            else autoSet(ok ? autoWith(S.auto, P, {...autoCfg(P), [f]: v}) : S.auto);
             refreshAll();
         };
         box.append(inp);
     }
 }
+clsOpts($('auCls'));
 autoSet(autoLoad());
+// 換分類：拆過就把那組數字套到武器上（記一步），沒拆只換顯示的數字
+$('auCls').onchange = () => {
+    const m = S.mode, part = autoWeapon(m), cls = $('auCls').value;
+    if (part) autoStep(m);
+    autoSet({...S.auto, cls});
+    if (part)
+    {
+        part.C.auto = {...part.C.auto, cls};
+        autoApply(m, part, autoCfg(part.P), false);
+    }
+    refreshAll();
+};
+// 武器只還原目前分類，護具只還原護具（武器各分類不動）
 $('auReset').onclick = () => {
-    const m = S.mode;
+    const m = S.mode, weapon = S.auto.kind === 'weapon';
     for (const part of m.parts ?? []) autoApply(m, part, AUTO_DEF[part.P.key]);
-    autoSet({kind: S.auto.kind});
+    autoSet(weapon ? autoWith(S.auto, batchP(), AUTO_DEF.weapon) : {kind: S.auto.kind, weapon: S.auto.weapon, cls: S.auto.cls});
     autoSpSync(m);
     refreshAll();
 };
