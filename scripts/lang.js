@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import fs from 'fs'
+import {flattenStory, mergeDialog} from '../src/data/storydata.js'
 
 // 翻譯表：從產出的 json 抽「情境＋原文」，merge 進 xls/lang/<lang>.xlsx，再產出 public/assets/lang/<lang>.json
 // 設計見 docs/i18n-architecture.md §11；要排在 run_all 最後（讀的是其他腳本的產出）
@@ -46,13 +47,13 @@ function extract()
             for (const c of n.choices ?? []) add(c.ctx ?? n.ctx, c.label);
         }
     };
-    const dialog = read('dialog');
+    const dialog = mergeDialog(read('dialog'), read('role'));
     for (const d of Object.values(dialog))
     {
         nodes(Object.values(d.nodes ?? {}));
         for (const l of d.lines ?? []) add(l.ctx, l.text);
     }
-    const story = read('story');
+    const story = flattenStory(read('story'));
     for (const npc of Object.values(story.nodes)) nodes(Object.values(npc));
     for (const s of story.storylets)
     {

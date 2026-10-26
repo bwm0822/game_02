@@ -1,5 +1,6 @@
 import {GM} from '../core/setting.js'
 import {tr} from '../infra/lang.js'
+import {flattenStory, mergeDialog} from './storydata.js'
 
 export default class DB
 {
@@ -31,7 +32,7 @@ export default class DB
         this._roleDB = scene.cache.json.get('role');
         this._localize(this._roleDB, 'role');
 
-        this._dialogDB = scene.cache.json.get('dialog');
+        this._dialogDB = mergeDialog(scene.cache.json.get('dialog'), this._roleDB);
 
         this._abilityDB = scene.cache.json.get('skill');
         this._localize(this._abilityDB, 'ability');
@@ -44,7 +45,7 @@ export default class DB
 
         this._navDB = scene.cache.json.get('navgraph');
 
-        this._storyDB = scene.cache.json.get('story');
+        this._storyDB = flattenStory(scene.cache.json.get('story'));
     }
 
     static lut(key)

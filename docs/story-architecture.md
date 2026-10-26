@@ -1,5 +1,7 @@
 # Story 架構設計（storylet + rule-based + 對話樹）
 
+> 2026-10-26：story.xlsx／dialog.xlsx 已刪除，`story.json`／`dialog.json` 改成手寫來源檔（照劇情線分組／合併前格式，執行期由 `src/data/storydata.js` 攤平、合併；檢查在 `src/data/storycheck.js`）。下面 §5、§6 的表格欄位照 json 欄位對應（`label_key`→`label`、`text_keys`→`texts`、entry 的 `node_id`→`node`、`choice:<node_id>`→`extend`），文件改寫待任務／對話工具完成。
+>
 > 狀態：**階段 1～5 全部完成**（2026-10-08）。任務系統（QuestManager／quest.xlsx）已退休；dialog.xlsx 的格式以本文 §6 為準，[quest-dialog-architecture.md](quest-dialog-architecture.md) 只剩 xlsx 樣式規範（§8）有效。
 
 目標是高自由度：同一個目標可以有多種解法，選擇會留下後果，NPC 會記得。取代現行 `QuestManager` + `COM_Talk` 的旗標接力寫法。

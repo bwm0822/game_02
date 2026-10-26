@@ -43,498 +43,475 @@
       "label": "kill.*"
     }
   },
-  "threads": {
+  "lines": {
     "bandit_hunt": {
-      "id": "bandit_hunt",
-      "title": "盜賊討伐",
-      "desc": "黑森林裡出現了一群盜賊，商隊都不敢上路，商人 karen 需要你的幫助。",
-      "quality": "bandit_hunt",
-      "values": {
-        "1": {
-          "journal": "與 xi 對話了解情況",
-          "reward": "金幣 x100"
-        },
-        "2": {
-          "journal": "前往黑森林，清光盜賊 ({bandit_hunt.kills}/3)",
-          "pos": "m/m_03x05"
-        },
-        "3": {
-          "journal": "從盜賊身上取得匕首"
-        },
-        "4": {
-          "journal": "任務完成，跟 karen 回報任務"
-        },
-        "10": {
-          "journal": "已向 karen 回報，領取獎勵",
-          "end": true
+      "title": "討伐令",
+      "threads": {
+        "bandit_hunt": {
+          "title": "盜賊討伐",
+          "desc": "黑森林裡出現了一群盜賊，商隊都不敢上路，商人 karen 需要你的幫助。",
+          "quality": "bandit_hunt",
+          "values": {
+            "1": {
+              "journal": "與 xi 對話了解情況",
+              "reward": "金幣 x100"
+            },
+            "2": {
+              "journal": "前往黑森林，清光盜賊 ({bandit_hunt.kills}/3)",
+              "pos": "m/m_03x05"
+            },
+            "3": {
+              "journal": "從盜賊身上取得匕首"
+            },
+            "4": {
+              "journal": "任務完成，跟 karen 回報任務"
+            },
+            "10": {
+              "journal": "已向 karen 回報，領取獎勵",
+              "end": true
+            }
+          }
         }
+      },
+      "storylets": [
+        {
+          "id": "hunt_ask",
+          "who": "karen",
+          "requires": "bandit_hunt==0",
+          "label": "關於任務",
+          "text": "@n_hunt_ask"
+        },
+        {
+          "id": "hunt_xi",
+          "who": "xi",
+          "requires": "bandit_hunt==1",
+          "label": "關於盜賊",
+          "text": "@n_hunt_xi"
+        },
+        {
+          "id": "hunt_kill",
+          "on": [
+            "kill"
+          ],
+          "requires": "bandit_hunt==2 && bandit_hunt.kills>=3",
+          "effects": [
+            "bandit_hunt=3",
+            "stop bandit_hunt.kills"
+          ]
+        },
+        {
+          "id": "hunt_knife",
+          "on": [
+            "item",
+            "quality"
+          ],
+          "requires": "bandit_hunt==3 && item:sword_01:1",
+          "effects": [
+            "bandit_hunt=4"
+          ]
+        },
+        {
+          "id": "hunt_report",
+          "who": "karen",
+          "requires": "bandit_hunt>=1 && bandit_hunt<10",
+          "label": "關於任務",
+          "text": "@n_hunt_report"
+        }
+      ],
+      "nodes": {
+        "karen": {
+          "n_hunt_ask": {
+            "texts": {
+              "true": "最近黑森林有盜賊出沒，商隊都不敢走了……能幫忙討伐嗎?"
+            },
+            "choices": [
+              {
+                "label": "接受",
+                "actions": [
+                  "bandit_hunt=1"
+                ],
+                "next": "n_hunt_ask2"
+              },
+              {
+                "label": "拒絕",
+                "next": "n_default"
+              }
+            ]
+          },
+          "n_hunt_ask2": {
+            "texts": {
+              "true": "先去找xi了解詳情"
+            },
+            "choices": [
+              {
+                "label": "好",
+                "next": "n_default"
+              }
+            ]
+          },
+          "n_hunt_report": {
+            "texts": {
+              "bandit_hunt<4": "任務如何了?",
+              "bandit_hunt==4": "任務如何了?",
+              "bandit_hunt==10": "很好，這是你的獎勵"
+            },
+            "choices": [
+              {
+                "label": "處理中",
+                "condition": "bandit_hunt<4",
+                "next": "n_default"
+              },
+              {
+                "label": "完成了",
+                "condition": "bandit_hunt==4",
+                "actions": [
+                  "bandit_hunt=10",
+                  "gold+100"
+                ],
+                "next": "n_hunt_report"
+              },
+              {
+                "label": "離開",
+                "condition": "bandit_hunt==10",
+                "next": "n_default"
+              }
+            ]
+          }
+        },
+        "xi": {
+          "n_hunt_xi": {
+            "texts": {
+              "true": "盜賊就躲在黑森林裡，他們身上都帶著匕首，拿一把回來給 karen 當證明吧。"
+            },
+            "choices": [
+              {
+                "label": "了解",
+                "actions": [
+                  "bandit_hunt=2",
+                  "count bandit_hunt.kills kill:rogue-1"
+                ],
+                "next": "n_default"
+              }
+            ]
+          }
+        }
+      },
+      "spawns": {
+        "bandits": "bandit_hunt>=2 && bandit_hunt<10"
       }
     },
     "wolf_hunt": {
-      "id": "wolf_hunt",
-      "title": "屠夫的生意經",
-      "desc": "黑森林的野狼氾濫，xi 的肉舖快沒貨了，想找人幫忙獵狼取皮，順便帶個口信給城裡的商人 karen。",
-      "quality": "wolf_hunt",
-      "values": {
-        "1": {
-          "journal": "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)",
-          "pos": "m/m_03x05",
-          "reward": "金幣 x120、斧頭 x1"
-        },
-        "2": {
-          "journal": "剝下狼皮"
-        },
-        "3": {
-          "journal": "帶著狼皮去找商人 karen 談談"
-        },
-        "4": {
-          "journal": "任務完成，回去跟 xi 回報"
-        },
-        "9": {
-          "journal": "你把狼皮直接賣給了 xi",
-          "end": true
-        },
-        "10": {
-          "journal": "已向 xi 回報，領取獎勵",
-          "end": true
+      "title": "狼患",
+      "threads": {
+        "wolf_hunt": {
+          "title": "屠夫的生意經",
+          "desc": "黑森林的野狼氾濫，xi 的肉舖快沒貨了，想找人幫忙獵狼取皮，順便帶個口信給城裡的商人 karen。",
+          "quality": "wolf_hunt",
+          "values": {
+            "1": {
+              "journal": "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)",
+              "pos": "m/m_03x05",
+              "reward": "金幣 x120、斧頭 x1"
+            },
+            "2": {
+              "journal": "剝下狼皮"
+            },
+            "3": {
+              "journal": "帶著狼皮去找商人 karen 談談"
+            },
+            "4": {
+              "journal": "任務完成，回去跟 xi 回報"
+            },
+            "9": {
+              "journal": "你把狼皮直接賣給了 xi",
+              "end": true
+            },
+            "10": {
+              "journal": "已向 xi 回報，領取獎勵",
+              "end": true
+            }
+          }
         }
+      },
+      "storylets": [
+        {
+          "id": "wolf_ask",
+          "who": "xi",
+          "requires": "wolf_hunt==0",
+          "label": "關於任務",
+          "text": "@n_wolf_ask"
+        },
+        {
+          "id": "wolf_kill",
+          "on": [
+            "kill"
+          ],
+          "requires": "wolf_hunt==1 && wolf_hunt.kills>=3",
+          "effects": [
+            "wolf_hunt=2",
+            "stop wolf_hunt.kills"
+          ]
+        },
+        {
+          "id": "wolf_pelt",
+          "on": [
+            "item",
+            "quality"
+          ],
+          "requires": "wolf_hunt==2 && item:plet:1",
+          "effects": [
+            "wolf_hunt=3"
+          ]
+        },
+        {
+          "id": "wolf_karen",
+          "who": "karen",
+          "requires": "wolf_hunt==3 && item:plet:1",
+          "label": "關於黑森林的狼皮",
+          "text": "@n_wolf_karen"
+        },
+        {
+          "id": "wolf_report",
+          "who": "xi",
+          "requires": "wolf_hunt>=1 && wolf_hunt<9",
+          "label": "關於任務",
+          "text": "@n_wolf_report"
+        },
+        {
+          "id": "wolf_sell",
+          "who": "xi",
+          "tease": "wolf_hunt==2",
+          "requires": "wolf_hunt==3 && item:plet:1",
+          "label": "把狼皮直接賣給你",
+          "hint": "需要狼皮",
+          "text": "……也好，省得你跑一趟，那我自己收了。",
+          "effects": [
+            "take plet 1",
+            "wolf_hunt=9",
+            "gold+80"
+          ]
+        },
+        {
+          "id": "wolf_grudge",
+          "who": "karen",
+          "on": [
+            "see"
+          ],
+          "requires": "wolf_hunt==9 && !_grudge",
+          "text": "喂！你給我過來！",
+          "effects": [
+            "approach n_wolf_grudge"
+          ]
+        }
+      ],
+      "nodes": {
+        "karen": {
+          "n_wolf_karen": {
+            "texts": {
+              "true": "這批狼皮品質不錯，這批貨我收了！幫我跟 xi 說一聲喔。"
+            },
+            "choices": [
+              {
+                "label": "好的",
+                "actions": [
+                  "take plet 1",
+                  "wolf_hunt=4"
+                ],
+                "next": "n_default"
+              }
+            ]
+          },
+          "n_wolf_grudge": {
+            "texts": {
+              "true": "聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。"
+            },
+            "choices": [
+              {
+                "label": "抱歉，下次一定先找你",
+                "actions": [
+                  "_grudge=1",
+                  "favor-5"
+                ],
+                "next": "n_default"
+              },
+              {
+                "label": "我想賣給誰就賣給誰",
+                "actions": [
+                  "_grudge=1",
+                  "favor-15"
+                ],
+                "next": "n_default"
+              }
+            ]
+          }
+        },
+        "xi": {
+          "n_wolf_ask": {
+            "texts": {
+              "true": "最近黑森林的狼變多了，肉舖都要沒貨了……能幫我獵些狼皮回來嗎？"
+            },
+            "choices": [
+              {
+                "label": "接受",
+                "actions": [
+                  "wolf_hunt=1",
+                  "count wolf_hunt.kills kill:wolf"
+                ],
+                "next": "n_default"
+              },
+              {
+                "label": "拒絕",
+                "next": "n_default"
+              }
+            ]
+          },
+          "n_wolf_report": {
+            "texts": {
+              "wolf_hunt<4": "狼皮收集得如何了?",
+              "wolf_hunt==4": "都準備好了嗎？太好了!",
+              "wolf_hunt==10": "謝謝你，這是你的獎勵"
+            },
+            "choices": [
+              {
+                "label": "處理中",
+                "condition": "wolf_hunt<4",
+                "next": "n_default"
+              },
+              {
+                "label": "完成了",
+                "condition": "wolf_hunt==4",
+                "actions": [
+                  "wolf_hunt=10",
+                  "gold+120",
+                  "give axe_01 1"
+                ],
+                "next": "n_wolf_report"
+              },
+              {
+                "label": "離開",
+                "condition": "wolf_hunt==10",
+                "next": "n_default"
+              }
+            ]
+          }
+        }
+      },
+      "spawns": {
+        "wolves": "wolf_hunt && wolf_hunt<9"
       }
     },
     "pelt_trade": {
-      "id": "pelt_trade",
-      "title": "跑腿的交涉",
-      "desc": "黑森林的野狼問題解決後，xi 想跟 karen 談長期收購狼皮的生意，請你幫忙帶提案去交涉。",
-      "quality": "pelt_trade",
-      "values": {
-        "1": {
-          "journal": "帶著提案去找商人 karen 談交涉條件",
-          "reward": "金幣 x100"
-        },
-        "2": {
-          "journal": "任務完成，回去跟 xi 回報"
-        },
-        "10": {
-          "journal": "已向 xi 回報，領取謝禮",
-          "end": true
+      "title": "狼皮生意",
+      "threads": {
+        "pelt_trade": {
+          "title": "跑腿的交涉",
+          "desc": "黑森林的野狼問題解決後，xi 想跟 karen 談長期收購狼皮的生意，請你幫忙帶提案去交涉。",
+          "quality": "pelt_trade",
+          "values": {
+            "1": {
+              "journal": "帶著提案去找商人 karen 談交涉條件",
+              "reward": "金幣 x100"
+            },
+            "2": {
+              "journal": "任務完成，回去跟 xi 回報"
+            },
+            "10": {
+              "journal": "已向 xi 回報，領取謝禮",
+              "end": true
+            }
+          }
         }
-      }
+      },
+      "storylets": [
+        {
+          "id": "trade_ask",
+          "who": "xi",
+          "requires": "wolf_hunt==10 && pelt_trade==0",
+          "label": "關於任務",
+          "text": "@n_trade_ask"
+        },
+        {
+          "id": "trade_karen",
+          "who": "karen",
+          "requires": "pelt_trade==1",
+          "label": "轉達 xi 的提案",
+          "text": "@n_trade_karen"
+        },
+        {
+          "id": "trade_report",
+          "who": "xi",
+          "requires": "pelt_trade>=1 && pelt_trade<10",
+          "label": "關於任務",
+          "text": "@n_trade_report"
+        }
+      ],
+      "nodes": {
+        "karen": {
+          "n_trade_karen": {
+            "texts": {
+              "true": "長期收購？聽起來不錯，價錢我可以再加一點，你回去跟 xi 說一聲，這筆生意我接了。"
+            },
+            "choices": [
+              {
+                "label": "好的",
+                "actions": [
+                  "pelt_trade=2"
+                ],
+                "next": "n_default"
+              }
+            ]
+          }
+        },
+        "xi": {
+          "n_trade_ask": {
+            "texts": {
+              "true": "森林安靜多了，這下該跟 karen 把長期收購狼皮的事情談攏。你能不能幫我帶個提案去，跟她把價錢跟數量談好？"
+            },
+            "choices": [
+              {
+                "label": "接受",
+                "actions": [
+                  "pelt_trade=1"
+                ],
+                "next": "n_default"
+              },
+              {
+                "label": "拒絕",
+                "next": "n_default"
+              }
+            ]
+          },
+          "n_trade_report": {
+            "texts": {
+              "pelt_trade==1": "跟 karen 談得怎麼樣了?",
+              "pelt_trade==2": "都談好了嗎？太好了!",
+              "pelt_trade==10": "這趟辛苦你了，這是謝禮"
+            },
+            "choices": [
+              {
+                "label": "處理中",
+                "condition": "pelt_trade==1",
+                "next": "n_default"
+              },
+              {
+                "label": "完成了",
+                "condition": "pelt_trade==2",
+                "actions": [
+                  "pelt_trade=10",
+                  "gold+100"
+                ],
+                "next": "n_trade_report"
+              },
+              {
+                "label": "離開",
+                "condition": "pelt_trade==10",
+                "next": "n_default"
+              }
+            ]
+          }
+        }
+      },
+      "spawns": {}
     }
-  },
-  "storylets": [
-    {
-      "id": "hunt_ask",
-      "who": "karen",
-      "requires": "bandit_hunt==0",
-      "label": "關於任務",
-      "text": "@n_hunt_ask"
-    },
-    {
-      "id": "hunt_xi",
-      "who": "xi",
-      "requires": "bandit_hunt==1",
-      "label": "關於盜賊",
-      "text": "@n_hunt_xi"
-    },
-    {
-      "id": "hunt_kill",
-      "requires": "bandit_hunt==2 && bandit_hunt.kills>=3",
-      "on": [
-        "kill"
-      ],
-      "effects": [
-        "bandit_hunt=3",
-        "stop bandit_hunt.kills"
-      ]
-    },
-    {
-      "id": "hunt_knife",
-      "requires": "bandit_hunt==3 && item:sword_01:1",
-      "on": [
-        "item",
-        "quality"
-      ],
-      "effects": [
-        "bandit_hunt=4"
-      ]
-    },
-    {
-      "id": "hunt_report",
-      "who": "karen",
-      "requires": "bandit_hunt>=1 && bandit_hunt<10",
-      "label": "關於任務",
-      "text": "@n_hunt_report"
-    },
-    {
-      "id": "wolf_ask",
-      "who": "xi",
-      "requires": "wolf_hunt==0",
-      "label": "關於任務",
-      "text": "@n_wolf_ask"
-    },
-    {
-      "id": "wolf_kill",
-      "requires": "wolf_hunt==1 && wolf_hunt.kills>=3",
-      "on": [
-        "kill"
-      ],
-      "effects": [
-        "wolf_hunt=2",
-        "stop wolf_hunt.kills"
-      ]
-    },
-    {
-      "id": "wolf_pelt",
-      "requires": "wolf_hunt==2 && item:plet:1",
-      "on": [
-        "item",
-        "quality"
-      ],
-      "effects": [
-        "wolf_hunt=3"
-      ]
-    },
-    {
-      "id": "wolf_karen",
-      "who": "karen",
-      "requires": "wolf_hunt==3 && item:plet:1",
-      "label": "關於黑森林的狼皮",
-      "text": "@n_wolf_karen"
-    },
-    {
-      "id": "wolf_report",
-      "who": "xi",
-      "requires": "wolf_hunt>=1 && wolf_hunt<9",
-      "label": "關於任務",
-      "text": "@n_wolf_report"
-    },
-    {
-      "id": "wolf_sell",
-      "who": "xi",
-      "tease": "wolf_hunt==2",
-      "requires": "wolf_hunt==3 && item:plet:1",
-      "label": "把狼皮直接賣給你",
-      "hint": "需要狼皮",
-      "text": "……也好，省得你跑一趟，那我自己收了。",
-      "effects": [
-        "take plet 1",
-        "wolf_hunt=9",
-        "gold+80"
-      ]
-    },
-    {
-      "id": "wolf_grudge",
-      "who": "karen",
-      "requires": "wolf_hunt==9 && !_grudge",
-      "text": "喂！你給我過來！",
-      "on": [
-        "see"
-      ],
-      "effects": [
-        "approach n_wolf_grudge"
-      ]
-    },
-    {
-      "id": "trade_ask",
-      "who": "xi",
-      "requires": "wolf_hunt==10 && pelt_trade==0",
-      "label": "關於任務",
-      "text": "@n_trade_ask"
-    },
-    {
-      "id": "trade_karen",
-      "who": "karen",
-      "requires": "pelt_trade==1",
-      "label": "轉達 xi 的提案",
-      "text": "@n_trade_karen"
-    },
-    {
-      "id": "trade_report",
-      "who": "xi",
-      "requires": "pelt_trade>=1 && pelt_trade<10",
-      "label": "關於任務",
-      "text": "@n_trade_report"
-    }
-  ],
-  "nodes": {
-    "karen": {
-      "n_hunt_ask": {
-        "ctx": "story.node.n_hunt_ask",
-        "texts": {
-          "true": "最近黑森林有盜賊出沒，商隊都不敢走了……能幫忙討伐嗎?"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "接受",
-            "priority": 0,
-            "actions": [
-              "bandit_hunt=1"
-            ],
-            "next": "n_hunt_ask2"
-          },
-          {
-            "label": "拒絕",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_hunt_ask2": {
-        "ctx": "story.node.n_hunt_ask2",
-        "texts": {
-          "true": "先去找xi了解詳情"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "好",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_hunt_report": {
-        "ctx": "story.node.n_hunt_report",
-        "texts": {
-          "bandit_hunt<4": "任務如何了?",
-          "bandit_hunt==4": "任務如何了?",
-          "bandit_hunt==10": "很好，這是你的獎勵"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "處理中",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "bandit_hunt<4"
-          },
-          {
-            "label": "完成了",
-            "priority": 0,
-            "actions": [
-              "bandit_hunt=10",
-              "gold+100"
-            ],
-            "next": "n_hunt_report",
-            "condition": "bandit_hunt==4"
-          },
-          {
-            "label": "離開",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "bandit_hunt==10"
-          }
-        ],
-        "posts": []
-      },
-      "n_wolf_karen": {
-        "ctx": "story.node.n_wolf_karen",
-        "texts": {
-          "true": "這批狼皮品質不錯，這批貨我收了！幫我跟 xi 說一聲喔。"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "好的",
-            "priority": 0,
-            "actions": [
-              "take plet 1",
-              "wolf_hunt=4"
-            ],
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_wolf_grudge": {
-        "ctx": "story.node.n_wolf_grudge",
-        "texts": {
-          "true": "聽說你把狼皮都賣給 xi 了？哼，有好貨不先找我，倒便宜了那個屠夫。"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "抱歉，下次一定先找你",
-            "priority": 0,
-            "actions": [
-              "_grudge=1",
-              "favor-5"
-            ],
-            "next": "n_default"
-          },
-          {
-            "label": "我想賣給誰就賣給誰",
-            "priority": 0,
-            "actions": [
-              "_grudge=1",
-              "favor-15"
-            ],
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_trade_karen": {
-        "ctx": "story.node.n_trade_karen",
-        "texts": {
-          "true": "長期收購？聽起來不錯，價錢我可以再加一點，你回去跟 xi 說一聲，這筆生意我接了。"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "好的",
-            "priority": 0,
-            "actions": [
-              "pelt_trade=2"
-            ],
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      }
-    },
-    "xi": {
-      "n_hunt_xi": {
-        "ctx": "story.node.n_hunt_xi",
-        "texts": {
-          "true": "盜賊就躲在黑森林裡，他們身上都帶著匕首，拿一把回來給 karen 當證明吧。"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "了解",
-            "priority": 0,
-            "actions": [
-              "bandit_hunt=2",
-              "count bandit_hunt.kills kill:rogue-1"
-            ],
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_wolf_ask": {
-        "ctx": "story.node.n_wolf_ask",
-        "texts": {
-          "true": "最近黑森林的狼變多了，肉舖都要沒貨了……能幫我獵些狼皮回來嗎？"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "接受",
-            "priority": 0,
-            "actions": [
-              "wolf_hunt=1",
-              "count wolf_hunt.kills kill:wolf"
-            ],
-            "next": "n_default"
-          },
-          {
-            "label": "拒絕",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_wolf_report": {
-        "ctx": "story.node.n_wolf_report",
-        "texts": {
-          "wolf_hunt<4": "狼皮收集得如何了?",
-          "wolf_hunt==4": "都準備好了嗎？太好了!",
-          "wolf_hunt==10": "謝謝你，這是你的獎勵"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "處理中",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "wolf_hunt<4"
-          },
-          {
-            "label": "完成了",
-            "priority": 0,
-            "actions": [
-              "wolf_hunt=10",
-              "gold+120",
-              "give axe_01 1"
-            ],
-            "next": "n_wolf_report",
-            "condition": "wolf_hunt==4"
-          },
-          {
-            "label": "離開",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "wolf_hunt==10"
-          }
-        ],
-        "posts": []
-      },
-      "n_trade_ask": {
-        "ctx": "story.node.n_trade_ask",
-        "texts": {
-          "true": "森林安靜多了，這下該跟 karen 把長期收購狼皮的事情談攏。你能不能幫我帶個提案去，跟她把價錢跟數量談好？"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "接受",
-            "priority": 0,
-            "actions": [
-              "pelt_trade=1"
-            ],
-            "next": "n_default"
-          },
-          {
-            "label": "拒絕",
-            "priority": 0,
-            "next": "n_default"
-          }
-        ],
-        "posts": []
-      },
-      "n_trade_report": {
-        "ctx": "story.node.n_trade_report",
-        "texts": {
-          "pelt_trade==1": "跟 karen 談得怎麼樣了?",
-          "pelt_trade==2": "都談好了嗎？太好了!",
-          "pelt_trade==10": "這趟辛苦你了，這是謝禮"
-        },
-        "actions": [],
-        "choices": [
-          {
-            "label": "處理中",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "pelt_trade==1"
-          },
-          {
-            "label": "完成了",
-            "priority": 0,
-            "actions": [
-              "pelt_trade=10",
-              "gold+100"
-            ],
-            "next": "n_trade_report",
-            "condition": "pelt_trade==2"
-          },
-          {
-            "label": "離開",
-            "priority": 0,
-            "next": "n_default",
-            "condition": "pelt_trade==10"
-          }
-        ],
-        "posts": []
-      }
-    }
-  },
-  "spawns": {
-    "bandits": "bandit_hunt>=2 && bandit_hunt<10",
-    "wolves": "wolf_hunt && wolf_hunt<9"
   }
 }

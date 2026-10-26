@@ -28,7 +28,7 @@ run('role', async t => {
         };
 
         const orig = await (await fetch('/assets/json/role.json')).text();
-        const xlsx = await (await fetch('/xls/story.xlsx')).blob();
+        const xlsx = await (await fetch('/xls/role.xlsx')).blob();
         const opfs = await navigator.storage.getDirectory();
         for await (const name of opfs.keys()) await opfs.removeEntry(name, {recursive: true});
         const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
@@ -38,7 +38,7 @@ run('role', async t => {
         const disk = async () => (await (await json.getFileHandle('role.json')).getFile()).text();
         await write(json, 'role.json', orig);
         await write(await dir(proj, 'public', 'assets', 'm'), 'test.json', JSON.stringify({objs: [{name: 'karen'}, {name: 'karen_2'}]}));
-        await write(await dir(proj, 'xls'), 'story.xlsx', xlsx);
+        await write(await dir(proj, 'xls'), 'role.xlsx', xlsx);
         await write(await dir(proj, 'xls', 'lang'), 'en.xlsx', xlsx);
         await write(await dir(proj, 'src'), 'x.js', 'const a = 1;\nconst who = "karen";\n');
         await write(await dir(proj, 'src', 'old'), 'y.js', 'karen');
@@ -104,7 +104,7 @@ run('role', async t => {
         let p = re.rename('karen', 'karen2');
         const dlg = await answer('cancel'); await p;
         out.dlgText = dlg;
-        out.renameDlg = [dlg.includes('m/test.json'), dlg.includes('xls/story.xlsx'), dlg.includes('xls/lang'), dlg.includes('src/x.js：2 行'), dlg.includes('src/old'), (dlg.match(/karen_2/g) ?? []).length];
+        out.renameDlg = [dlg.includes('m/test.json'), dlg.includes('xls/role.xlsx'), dlg.includes('xls/lang'), dlg.includes('src/x.js：2 行'), dlg.includes('src/old'), (dlg.match(/karen_2/g) ?? []).length];
         p = re.rename('karen', 'karen2');
         await answer('ok'); await p;
         const ks = Object.keys(S.data);
