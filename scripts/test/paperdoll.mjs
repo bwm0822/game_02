@@ -84,7 +84,7 @@ run('paperdoll', async t => {
         pd.select(A);
 
         L.a = 30;
-        out.xlsx = pd.sidecar(L, 'foo').xlsx;
+        out.sidecar = JSON.stringify(pd.sidecar(L));
 
         const N = pd.addLayer(await img(100, 50, g => {g.fillRect(40, 10, 20, 30); g.fillStyle = 'rgba(0,0,0,0.02)'; g.fillRect(0, 0, 1, 1);}), 'n', null, null, null);
         pd.trimLayer(N);
@@ -741,7 +741,7 @@ run('paperdoll', async t => {
     t.check('填色：undo 還原', r.fillUndo);
     t.eq('去色：滴管吸 RGB', r.picked, '#ff0000');
     t.eq('去色：RGB 完全相等的變透明', r.key, '0,10,0,255');
-    t.eq('sidecar 的 xlsx 字串', r.xlsx, '"sprite":"foo","scale":0.25,"x":-3,"y":6.75,"a":30');
+    t.eq('sidecar 的擺放數字', r.sidecar, '{"x":-3,"y":6.75,"a":30,"scale":0.25,"ox":0.5,"oy":1}');
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
     t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
     t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));

@@ -19,7 +19,7 @@
 - **只存有譯文的列**。`new`（沒譯文）、`orphan`（原文已經不存在）、`error`（佔位符／BBCode 跟原文不合）跟「建議」都是即時算的，不存。
 - 抽原文、算狀態、檢查都在 `src/data/langdata.js`（純函式）：`extract(data)` 從 local/item/role/ability/dialog/story 抽 `{ctx, src}`，`analyze(file, entries)` 算每列狀態，`compile(file)` 給 `Lang.load()` 轉成執行期查表（佔位符不合的譯文不收，退回原文），`scripts/lang.js` 跟工具也用同一套。
 - `node scripts/lang.js` 只做檢查、印統計（`en: 551 ok / 78 new / 3 orphan / 0 error`，error 逐列列出），不寫檔；`run_all` 最後一步照樣跑它。
-- `xls/lang/en.xlsx`、`_legacy_en.json` 已不同步（2026-10-26 改格式時從當時的 `en.json` 就地升級，審核全標 `mt`），不要再改它們。
+- 舊的 `xls/lang/en.xlsx`、`_legacy_en.json` 已刪除（2026-10-26 改格式時從當時的 `en.json` 就地升級，審核全標 `mt`；2026-10-27 刪掉，en.xlsx 要看去翻 git 歷史）。
 
 ## 畫面
 

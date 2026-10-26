@@ -545,7 +545,7 @@ function innerRefs(id)
 
 const refList = (refs) => [
     refs.length ? ul(refs.map(r => `${r.file}：${r.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
-    !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 xls/、src/'),
+    !S.assets.root && h('div', {class: 'dim'}, '只掃了 public/assets；給專案根目錄才會一起掃 src/'),
 ];
 const innerList = (refs) => refs.length ? ul(refs) : h('div', {class: 'dim'}, '（沒有）');
 

@@ -88,7 +88,7 @@
   - `public/assets/lang/<lang>.json` 是 `{_meta, _shared:{原文:{t,r}}, <情境>:{原文:{t,r}}}`，只存有譯文的列；檢查欄（new/orphan/error）跟建議都即時算，審核欄變成 `r`。
   - 抽取＋檢查搬到 `src/data/langdata.js`，`Lang.load()`（`compile()`，佔位符不合退回原文）、`scripts/lang.js`、`tools/lang` 共用。
   - `scripts/lang.js` 只檢查、印統計，不寫檔；`--add`／`--prune` 拿掉，改在翻譯分頁「＋ 語言」「刪除全部 orphan」。
-  - 改格式時從當時的 `en.json` 就地升級、審核全標 `mt`；`xls/lang/en.xlsx` 跟 `_legacy_en.json` 留著不動但不再同步（xlsx 裡的審核狀態跟 orphan 沒帶過來）。
+  - 改格式時從當時的 `en.json` 就地升級、審核全標 `mt`；`xls/lang/en.xlsx` 跟 `_legacy_en.json` 不再同步（xlsx 裡的審核狀態跟 orphan 沒帶過來），2026-10-27 連同整個 `xls/` 刪除。
 - 以下是舊流程（xlsx）：
 - 新增 `scripts/lang.js`，排在 `run_all` 最後；從**產出的 json**（item/ability/local/dialog/story）抽出「情境＋原文」。
 - 對每個 `xls/lang/<lang>.xlsx` 做 merge（exceljs 寫入，遵守 quest-dialog-architecture.md §8 樣式）：

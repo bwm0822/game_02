@@ -234,7 +234,7 @@ static quests = {active: {}, close: {}};   // 沒有 opened！(見第 6 節已�
 
 ## 8. `xls/quest.xlsx`、`xls/dialog.xlsx` 格式規範
 
-> 2026-10-26：quest.xlsx、dialog.xlsx、story.xlsx 都已刪除（劇情跟對話改成手寫 `story.json`／`dialog.json`，用工具殼的任務／對話分頁編，見 [story-tool.md](story-tool.md)）。下面的樣式規範只剩參考價值；「寫 xlsx 一律用 exceljs」的理由仍適用其他 xlsx（ability.xlsx 等）。
+> 2026-10-26：quest.xlsx、dialog.xlsx、story.xlsx 都已刪除（劇情跟對話改成手寫 `story.json`／`dialog.json`，用工具殼的任務／對話分頁編，見 [story-tool.md](story-tool.md)）。2026-10-27 整個 `xls/` 刪除、`xlsx`／`exceljs` 套件也移除，下面的樣式規範只剩歷史紀錄。
 
 用程式編輯這兩份 xlsx 時**一律用 `exceljs`**，不要用 `xlsx`（SheetJS）套件寫入——`xlsx` 套件的 community 版寫入時不支援儲存格樣式，且曾經在寫入時把 `sheetFormatPr` 弄壞成 `zeroHeight="1"`（所有未明確指定列高的列會被當成高度 0/隱藏，導致表格看起來只到某一列就斷掉、在最上方插入整列也像沒作用），還會弄丟凍結窗格設定。`xlsx` 套件本身仍保留給 `scripts/quest.js`/`scripts/dialog.js` 的讀取轉換用途（那邊只讀不寫，不受影響）。
 

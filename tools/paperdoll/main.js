@@ -2788,16 +2788,10 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     }, {once: true}));
 }
 
-function sidecar(L, name)
+function sidecar(L)
 {
     const s = S.scale;
-    const o = {x: round(L.x * s), y: round(L.y * s), a: round(L.a, 10), scale: s, ox: L.ox, oy: L.oy};
-    const cell = {sprite: name, scale: s, x: o.x, y: o.y};
-    if (o.a) cell.a = o.a;
-    if (o.ox !== 0.5) cell.ox = o.ox;
-    if (o.oy !== 1) cell.oy = o.oy;
-    o.xlsx = JSON.stringify(cell).slice(1, -1);
-    return o;
+    return {x: round(L.x * s), y: round(L.y * s), a: round(L.a, 10), scale: s, ox: L.ox, oy: L.oy};
 }
 
 // ---------- icon ----------
@@ -2931,7 +2925,7 @@ function setSplit(it, name, g, icon)
 
 function writeEquip(e, L)
 {
-    const o = sidecar(L, e.sprite);
+    const o = sidecar(L);
     Object.assign(e, {scale: o.scale, x: o.x, y: o.y});
     for (const [k, def] of [['a', 0], ['ox', 0.5], ['oy', 1]])
     {
@@ -2952,7 +2946,7 @@ async function saveLayer()
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
-    await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L, r.name), null, 2) + '\n']));
+    await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L), null, 2) + '\n']));
     refreshThumbs();
     Object.assign(L, {dir: r.dir, path: r.path});
     // 拖進來的圖（沒有原圖路徑）或覆蓋了自己的原圖：改以剛存的檔當原圖，步驟歸零（舊 undo 對不上新原圖，一起清掉）
