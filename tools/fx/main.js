@@ -49,7 +49,15 @@ function validate(id)
             if (def.type === 'bool' && typeof v !== 'boolean') out.push(`cell.${k} 應該是 true/false`);
             if (def.type === 'flip' && v !== true && v !== false && v !== 'random') out.push(`cell.${k} 要是 true／false／"random"`);
         }
-    for (const {k} of SC.STAGES) if (fx[k] !== undefined && !isObj(fx[k])) out.push(`${k} 應該是物件（Phaser tween 設定）`);
+    for (const {k} of SC.STAGES)
+    {
+        const tw = fx[k];
+        if (tw === undefined) continue;
+        if (!isObj(tw)) {out.push(`${k} 應該是物件（Phaser tween 設定）`); continue;}
+        for (const t of ['duration', 'delay', 'repeat', 'randDelay']) if (tw[t] !== undefined && typeof tw[t] !== 'number') out.push(`${k}.${t} 不是數字：${str(tw[t])}`);
+        if (tw.ease !== undefined && !SC.EASES.includes(tw.ease)) out.push(`${k}.ease 不認識的曲線：${tw.ease}`);
+        if (tw.repeat === -1 && k !== 'idle' && k !== 'body') out.push(`${k} 無限重複，${k === 'end' ? '特效不會消失' : '會一直播'}`);
+    }
     if (cell?.flash && fx.idle) out.push('閃一下的特效不會播 idle');
     if (cell?.flash && fx.body) out.push('閃一下的特效不會套 body');
     if (isObj(fx.body))
@@ -115,16 +123,94 @@ function cellBox(id, fx)
             F.rawArea(c, known, raw => commit(() => {S.data[id].cell ??= {}; replaceRaw(S.data[id].cell, known, raw); if (!Object.keys(S.data[id].cell).length) delete S.data[id].cell;}), 'cell.#raw')));
 }
 
+// ---------- 表單：tween ----------
+// 換 key 名稱、位置不變
+function renameKey(obj, from, to)
+{
+    const e = Object.entries(obj).map(([k, v]) => [k === from ? to : k, v]);
+    for (const k of Object.keys(obj)) delete obj[k];
+    Object.assign(obj, Object.fromEntries(e));
+}
+
+function convertVal(v, mode)
+{
+    const m = SC.valMode(v), n = m === 'num' ? v : m === 'ft' ? v.to : 0;
+    return {num: n, rel: '+=0', ft: {from: n, to: n}}[mode];
+}
+
+function propVal(id, k, p, v)
+{
+    const put = (val) => set(id, [k, p], val), dk = `${k}.${p}`, mode = SC.valMode(v);
+    const num = (val, key, f) => h('input', {class: 'num', dataset: {k: key}, value: val ?? '', onchange: e => f(parseNum(e.target.value))});
+    const modes = [['num', '數值'], ['rel', '相對'], ['ft', '從→到'], ...mode === 'raw' ? [['raw', 'JSON']] : []];
+    const sel = h('select', {dataset: {k: `${dk}#mode`}, onchange: e => put(convertVal(v, e.target.value))},
+        modes.map(([m, n]) => h('option', {value: m, selected: m === mode}, n)));
+    if (mode === 'num') return [sel, num(v, dk, n => put(n ?? 0))];
+    if (mode === 'rel')
+    {
+        const [sign, n] = [v.slice(0, 2), v.slice(2)];
+        return [sel,
+            h('select', {dataset: {k: `${dk}#sign`}, onchange: e => put(`${e.target.value}${n}`)}, ['+=', '-='].map(s => h('option', {value: s, selected: s === sign}, s))),
+            num(n, dk, x => put(`${sign}${x ?? 0}`))];
+    }
+    if (mode === 'ft')
+        return [sel,
+            num(v.from, `${dk}.from`, x => put(x === undefined ? {to: v.to} : {from: x, to: v.to})), h('span', {class: 'dim'}, '→'),
+            num(v.to, `${dk}.to`, x => put({...v, to: x ?? 0}))];
+    return [sel, h('input', {size: 30, dataset: {k: dk}, value: str(v), onchange: e => {
+        try {put(JSON.parse(e.target.value));} catch {status(`${dk} 不是合法的 JSON`); render();}
+    }})];
+}
+
+function propRow(id, k, p, v, used)
+{
+    return h('div', {class: 'prop'},
+        h('select', {dataset: {k: `${k}.${p}#name`}, onchange: e => commit(() => renameKey(S.data[id][k], p, e.target.value))},
+            SC.propsOf(k).map(o => h('option', {value: o, selected: o === p, disabled: o !== p && used.includes(o)}, o))),
+        propVal(id, k, p, v),
+        h('button', {type: 'button', title: '移除', onclick: () => set(id, [k, p], undefined)}, '×'));
+}
+
+function timeInput(id, k, t, v)
+{
+    const def = SC.TIME[t], put = (val) => set(id, [k, t], val), dk = `${k}.${t}`;
+    if (def.type === 'ease') return h('input', {size: 12, dataset: {k: dk, combo: 'dl-eases'}, value: v ?? '', onchange: e => put(e.target.value.trim() || undefined)});
+    return fieldInput({type: def.type}, v, put, dk);
+}
+
+function tweenForm(id, k, v)
+{
+    const time = SC.timeKeys(k), props = SC.propsOf(k);
+    const known = (key) => time.includes(key) || props.includes(key);
+    const used = Object.keys(v).filter(p => props.includes(p));
+    const rest = props.filter(p => !used.includes(p));
+    const unknown = Object.keys(v).some(key => !known(key));
+    return h('div', {class: 'tw'},
+        h('div', {class: 'sub'}, time.map(t => h('label', {title: t}, SC.TIME[t].label, timeInput(id, k, t, v[t]),
+            SC.TIME[t].hint && h('span', {class: 'dim'}, SC.TIME[t].hint)))),
+        h('div', {class: 'props'},
+            used.map(p => propRow(id, k, p, v[p], used)),
+            rest.length > 0 && h('select', {dataset: {k: `${k}.#add`}, onchange: e => set(id, [k, e.target.value], SC.PROPS[e.target.value])},
+                h('option', {value: ''}, '＋ 加屬性'), rest.map(p => h('option', {value: p}, p)))),
+        h('details', {open: unknown}, h('summary', {class: 'dim'}, '其他（JSON）'),
+            F.rawArea(v, known, raw => commit(() => replaceRaw(S.data[id][k], known, raw)), `${k}.#raw`)));
+}
+
+const BODY_DEF = {angle: {from: -3, to: 3}, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.InOut'};
+
 function stageBox(id, fx, {k, label, hint})
 {
-    const v = fx[k], open = v !== undefined && (S.open[k] ??= true);
+    const v = fx[k], open = v !== undefined && (S.open[k] ??= true), json = !!S.open[`${k}#json`];
     const sum = isObj(v) ? Object.entries(v).filter(([, x]) => typeof x !== 'object').map(([a, x]) => `${a}:${x}`).join('  ') : '';
     return h('div', {class: 'box'},
         F.boxBar(k, open, v !== undefined, h('span', {title: k}, label), h('span', {class: 'hint'}, hint),
-            h('span', {class: 'grow'}), h('span', {class: 'dim'}, sum),
-            v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], k === 'body' ? {angle: {from: -8, to: 8}, duration: 300, yoyo: true, repeat: -1, ease: 'Sine.InOut'} : {duration: 200});}}, '建立')
+            h('span', {class: 'grow'}), !open && h('span', {class: 'dim'}, sum),
+            open && h('button', {type: 'button', class: json ? 'on' : '', title: '整段用 JSON 改', onclick: () => {S.open[`${k}#json`] = !json; render();}}, 'JSON'),
+            v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], k === 'body' ? structuredClone(BODY_DEF) : {duration: 200});}}, '建立')
                             : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
-        open && F.rawArea(v, () => false, raw => set(id, [k], isObj(raw) && Object.keys(raw).length ? raw : undefined), `${k}.#raw`));
+        open && (json || !isObj(v)
+            ? F.rawArea(v, () => false, raw => set(id, [k], isObj(raw) && Object.keys(raw).length ? raw : undefined), `${k}.#json`)
+            : tweenForm(id, k, v)));
 }
 
 function otherBox(id, fx)
@@ -200,7 +286,7 @@ const HEAD = {'img': ['圖'], 'cell.size': ['大小', 'cell.size'], 'cell.align'
 function draw()
 {
     const ids = Object.keys(S.data), miss = missing();
-    renderDatalists({missing: miss});
+    renderDatalists({missing: miss, eases: SC.EASES});
     V.renderList([
         [n => `特效（${n}）`, ids.filter(id => !isUnused(id)), 'used'],
         [n => `未使用（${n}）`, ids.filter(isUnused), 'unused'],

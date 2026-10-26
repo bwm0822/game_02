@@ -20,6 +20,33 @@ export const STAGES = [
     {k: 'body', label: '身體', hint: '套在角色身上（view.shape），只支援 angle，以腳底為支點轉'},
 ];
 
+// tween 的時間參數；屬性（PROPS）以外、這裡也沒有的 key 放「其他」JSON
+export const TIME = {
+    duration:  {type: 'num', label: '時長', hint: 'ms'},
+    ease:      {type: 'ease', label: '曲線'},
+    delay:     {type: 'num', label: '延遲'},
+    yoyo:      {type: 'bool', label: '來回'},
+    repeat:    {type: 'num', label: '重複', hint: '-1 無限'},
+    randDelay: {type: 'num', label: '隨機延遲', only: ['idle']},
+};
+export const timeKeys = (stage) => Object.keys(TIME).filter(k => !TIME[k].only || TIME[k].only.includes(stage));
+
+// 屬性 → 新增時的預設值；值的寫法：數字、相對字串 "+=4"／"-=4"、{from, to}
+export const PROPS = {scale: 1, scaleX: 1, scaleY: 1, alpha: 1, x: '+=0', y: '+=0', angle: 0};
+export const propsOf = (stage) => stage === 'body' ? ['angle'] : Object.keys(PROPS);
+
+export const EASES = ['Linear', 'Stepped', 'Power0', 'Power1', 'Power2', 'Power3', 'Power4',
+    ...['Quad', 'Cubic', 'Quart', 'Quint', 'Sine', 'Expo', 'Circ', 'Back', 'Elastic', 'Bounce'].flatMap(n => [`${n}.In`, `${n}.Out`, `${n}.InOut`])];
+
+// 值的寫法：num 數字、rel 相對字串、ft {from, to}、raw 其他（JSON 直接改）
+export function valMode(v)
+{
+    if (typeof v === 'number') return 'num';
+    if (typeof v === 'string' && /^[+-]=-?[\d.]+$/.test(v)) return 'rel';
+    if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(k => k === 'from' || k === 'to') && 'to' in v) return 'ft';
+    return 'raw';
+}
+
 export const TOP = new Set(['img', 'cell', ...STAGES.map(s => s.k)]);
 
 export const TABS = [{label: '全部', cols: ['img', 'cell.size', 'cell.align', 'cell.flash', '#stages', '#refs']}];

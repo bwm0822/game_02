@@ -72,6 +72,28 @@ run('fx-tool', async t => {
         D.undo();
         out.stageUndo = JSON.stringify(S.data.stun) === before;
 
+        // tween 表單：時間參數、值的寫法切換、相對值、改屬性名（位置不變）、加屬性、JSON 切換
+        S.sel = 'burn'; S.view = 'form'; fx.render();
+        const burn0 = JSON.stringify(S.data.burn);
+        fire(q('[data-k="spawn.duration"]'), '300');
+        fire(q('[data-k="spawn.scale#mode"]'), 'num');
+        out.twNum = [S.data.burn.spawn.duration, S.data.burn.spawn.scale];
+        out.relSign = q('[data-k="tick.y#sign"]')?.value;
+        fire(q('[data-k="tick.y"]'), '6');
+        out.rel = S.data.burn.tick.y;
+        fire(q('[data-k="spawn.scale#name"]'), 'alpha');
+        out.renameProp = Object.keys(S.data.burn.spawn).join(',');
+        fire(q('[data-k="end.#add"]'), 'angle');
+        out.addProp = S.data.burn.end.angle;
+        D.set('burn', ['spawn', 'ease'], 'Nope.Out');
+        out.easeWarn = fx.validate('burn').some(w => w.includes('Nope.Out'));
+        for (let i = 0; i < 6; i++) D.undo();
+        out.twUndo = JSON.stringify(S.data.burn) === burn0;
+        [...q('#view').querySelectorAll('.box')].find(b => b.querySelector('.bar [title="spawn"]')).querySelector('button.on, .bar button[title="整段用 JSON 改"]').click();
+        out.jsonMode = !!q('[data-k="spawn.#json"]');
+        S.sel = 'stun'; fx.render();
+        out.bodyOnly = [q('[data-k="body.#add"]'), q('[data-k="body.angle#name"]')?.options.length];
+
         // 改名：確認框列出 ability.json 的引用
         const p = D.rename('burn', 'burn2');
         for (let i = 0; i < 200 && !dlg.open; i++) await sleep(20);
@@ -130,6 +152,15 @@ run('fx-tool', async t => {
     t.check('body 有 angle 以外的屬性會警告', r.bodyWarn);
     t.eq('移除階段', r.tickGone, false);
     t.check('階段 undo', r.stageUndo);
+    t.eq('時長、從→到切成數值（取 to）', JSON.stringify(r.twNum), JSON.stringify([300, 1]));
+    t.eq('相對值顯示 -=', r.relSign, '-=');
+    t.eq('改相對值數字', r.rel, '-=6');
+    t.eq('改屬性名，位置不變', r.renameProp, 'alpha,duration,ease');
+    t.eq('加屬性用預設值', r.addProp, 0);
+    t.check('不認識的曲線會警告', r.easeWarn);
+    t.check('tween 表單 undo 回原樣', r.twUndo);
+    t.check('JSON 切換', r.jsonMode);
+    t.eq('body 只有 angle', JSON.stringify(r.bodyOnly), JSON.stringify([null, 1]));
     t.check('改名列出 ability.json 的引用', r.renameDlg);
     t.check('預覽有 Phaser 畫布', r.pvEl);
     t.eq('預設角色是怪物', r.pvRole, 'monster');
