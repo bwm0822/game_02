@@ -23,7 +23,7 @@ export default class Lang
     static load(file)
     {
         this._tbl = file ? compile(file) : null;
-        GM.FONT = file?._meta?.font ?? SOURCE_FONT;
+        GM.FONT = file?._meta?.font || SOURCE_FONT;
     }
 
     static tr(ctx, src, args)

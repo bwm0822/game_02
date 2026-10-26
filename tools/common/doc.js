@@ -64,7 +64,7 @@ export async function scanRefsIn(assets, id, skip)
     return out;
 }
 
-// opt: {file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), decode, encode}
+// opt: {file, dir（public/assets 底下的資料夾，預設 json）, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), decode, encode}
 // decode(json) → {id: 資料}、encode({id: 資料}) → json：檔案本身不是 {id: 資料} 時（story.json）轉接，undo／合併都以 id 為單位
 export function createDoc(opt)
 {
@@ -136,7 +136,8 @@ export function createDoc(opt)
     const set = (id, path, value) => commit(() => setAt(S.data[id], path, value));
 
     // ---------- 讀寫 ----------
-    const jsonOf = async (dir) => {const j = dir && await FS.tryDir(dir, 'json'); return j && await FS.tryFile(j, opt.file) ? j : null;};
+    const sub = opt.dir ?? 'json';
+    const jsonOf = async (dir) => {const j = dir && await FS.tryDir(dir, sub); return j && await FS.tryFile(j, opt.file) ? j : null;};
 
     // 殼給的是專案根目錄（改名／刪除時多掃 xls/、src/）；無頭測試會直接給 public/assets
     async function setAssets(dir)
@@ -146,7 +147,7 @@ export function createDoc(opt)
         {
             assets = await FS.tryDir(await FS.tryDir(dir, 'public') ?? dir, 'assets');
             json = await jsonOf(assets);
-            if (!json) throw new Error(`「${dir.name}」裡沒有 public/assets/json/${opt.file}`);
+            if (!json) throw new Error(`「${dir.name}」裡沒有 public/assets/${sub}/${opt.file}`);
             root = dir;
         }
         S.assets = {dir: assets, json, root};
@@ -313,10 +314,11 @@ export function createDoc(opt)
         opt.onSaved?.(file);
     }
 
-    function start()
+    // onProject(dir)：要先處理再 setAssets 的工具自己接（翻譯分頁要先找出有哪些語言檔）
+    function start(onProject = setAssets)
     {
         SH.onSaved(onSaved);
-        SH.onProject(dir => setAssets(dir).catch(e => status(e.message)));
+        SH.onProject(dir => onProject(dir).catch(e => status(e.message)));
     }
 
     return {S, render, commit, undo, redo, set, setAssets, reload, save, isDirty, dirty,

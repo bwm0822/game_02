@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>翻譯</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #left { width: 260px; }
+    .node { display: flex; align-items: center; gap: 4px; padding: 1px 4px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+    .node:hover { background: #33363c; }
+    .node.sel { background: #2f6db5; }
+    .node .arrow { width: 1em; color: #888; font-size: .8em; flex: none; }
+    .node .lab { color: #888; overflow: hidden; text-overflow: ellipsis; }
+    .node .cnt { margin-left: auto; color: #888; font-size: 14px; }
+    .node .cnt.todo { color: #e9b44c; }
+    table.tr { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    table.tr th, table.tr td { border: 1px solid #3a3d44; padding: 3px 6px; text-align: left; vertical-align: top; }
+    table.tr th { background: #2b2d31; position: sticky; top: 0; z-index: 1; }
+    table.tr td.ctx { color: #8a9; font-size: 14px; word-break: break-all; }
+    table.tr td.src { white-space: pre-wrap; }
+    table.tr td textarea { display: block; resize: none; overflow: hidden; min-height: 1.6em; }
+    table.tr td textarea::placeholder { color: #777; }
+    table.tr td.chk { font-size: 14px; }
+    table.tr td.hint { font-size: 14px; color: #aaa; }
+    table.tr tr.new td.chk { color: #e9b44c; }
+    table.tr tr.error td.chk { color: #ff7777; }
+    table.tr tr.orphan td { color: #888; }
+    table.tr tr.dirty td.ctx { color: #fc8; }
+    .rv { padding: 0 6px; min-width: 3em; }
+    .rv.mt { color: #e9b44c; }
+    .rv.ok { color: #7c7; }
+    .sug { color: #8bd; cursor: pointer; display: block; }
+    .sug:hover { text-decoration: underline; }
+    .go { color: #8bd; cursor: pointer; }
+    tr.flash td { background: #3a4a2a; }
+</style>
+</head>
+<body>
+<header>
+    <button id="btnReload" title="從硬碟重新讀翻譯檔">重新讀取</button>
+    <button id="btnSave" title="Ctrl+S">存檔</button>
+    <span id="dirty" class="dirty" hidden>● 未存檔</span>
+    <span class="sep"></span>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <span class="sep"></span>
+    <select id="lang" title="語言"></select>
+    <button id="btnNew" title="新增一個語言的翻譯檔">＋ 語言</button>
+    <label class="dim">字型 <input id="font" size="22" placeholder="（用原文字型）"></label>
+    <span class="sep"></span>
+    <input id="search" placeholder="搜尋原文／譯文／情境（整棵樹）" size="28">
+    <select id="filter">
+        <option value="">全部</option>
+        <option value="todo">待處理（new＋error）</option>
+        <option value="new">new（沒譯文）</option>
+        <option value="error">error（佔位符不合）</option>
+        <option value="mt">mt（機翻未審）</option>
+        <option value="ok">ok（已審）</option>
+        <option value="orphan">orphan（原文已不存在）</option>
+    </select>
+    <button id="btnForm" hidden></button>
+    <button id="btnTable" hidden></button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <aside id="left">
+        <div id="list"></div>
+    </aside>
+    <section id="view"></section>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
