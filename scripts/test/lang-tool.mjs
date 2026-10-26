@@ -32,6 +32,8 @@ run('lang-tool', async t => {
 
         // 樹：全部、各領域、_shared、orphan；點 dlg 只列對話
         out.tree = qa('#list .node').map(n => n.dataset.node);
+        S.node = ''; lt.render();
+        out.allOnce = qa('#list .node').filter(n => n.dataset.node === 'ui').length;
         S.node = 'dlg'; lt.render();
         out.dlgOnly = qa('#view tbody tr').every(tr => JSON.parse(tr.dataset.k)[0].startsWith('dlg.'));
         out.dlgOpen = qa('#list .node').some(n => n.dataset.node === 'dlg._common');
@@ -140,6 +142,7 @@ run('lang-tool', async t => {
     t.check('有統計', r.stat.ok > 500 && r.status.startsWith('en：'), r.status);
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.check('樹有全部／領域／_shared／orphan', ['', 'ui', 'item', 'dlg', 'story', '_shared', '@orphan'].every(n => r.tree.includes(n)), r.tree.join(' '));
+    t.eq('選「全部」時領域不重複', r.allOnce, 1);
     t.check('點 dlg 只列對話', r.dlgOnly);
     t.check('選到的節點展開', r.dlgOpen);
     t.eq('篩選 new 的列數＝統計', r.newRows, r.stat.new);

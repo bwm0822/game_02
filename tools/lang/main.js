@@ -277,7 +277,8 @@ function renderTree()
     }
     const out = [];
     const row = (node, depth, name) => {
-        const c = cnt.get(node) ?? {todo: 0, all: 0}, sub = kids.get(node) ?? [];
+        // 「全部」不展開：頂層的領域固定列在它下面
+        const c = cnt.get(node) ?? {todo: 0, all: 0}, sub = node === ALL ? [] : kids.get(node) ?? [];
         const open = S.fold.has(node) || S.node === node || S.node.startsWith(node + '.');
         out.push(h('div', {class: 'node' + (S.node === node ? ' sel' : ''), style: `padding-left: ${4 + depth * 14}px`, dataset: {node},
                 onclick: () => {S.node = node; render();}},
