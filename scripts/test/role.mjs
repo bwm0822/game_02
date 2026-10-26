@@ -1,4 +1,4 @@
-// 角色編輯器（tools/role）：用 window.__re 直接呼叫，OPFS 當假的專案根目錄（public/assets、xls、src）
+// 角色編輯器（tools/role）：用 window.__re 直接呼叫，OPFS 當假的專案根目錄（public/assets、src）
 import {run} from './harness.mjs'
 
 run('role', async t => {
@@ -28,7 +28,6 @@ run('role', async t => {
         };
 
         const orig = await (await fetch('/assets/json/role.json')).text();
-        const xlsx = await (await fetch('/xls/role.xlsx')).blob();
         const opfs = await navigator.storage.getDirectory();
         for await (const name of opfs.keys()) await opfs.removeEntry(name, {recursive: true});
         const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
@@ -38,8 +37,6 @@ run('role', async t => {
         const disk = async () => (await (await json.getFileHandle('role.json')).getFile()).text();
         await write(json, 'role.json', orig);
         await write(await dir(proj, 'public', 'assets', 'm'), 'test.json', JSON.stringify({objs: [{name: 'karen'}, {name: 'karen_2'}]}));
-        await write(await dir(proj, 'xls'), 'role.xlsx', xlsx);
-        await write(await dir(proj, 'xls', 'lang'), 'en.xlsx', xlsx);
         await write(await dir(proj, 'src'), 'x.js', 'const a = 1;\nconst who = "karen";\n');
         await write(await dir(proj, 'src', 'old'), 'y.js', 'karen');
 
@@ -100,11 +97,11 @@ run('role', async t => {
         await sleep(300);
         out.previewEquip = +document.querySelector('.pv canvas').dataset.drawn;
 
-        // 改名：掃 assets、xls（不含 xls/lang）、src（不含 src/old）
+        // 改名：掃 assets、src（不含 src/old）
         let p = re.rename('karen', 'karen2');
         const dlg = await answer('cancel'); await p;
         out.dlgText = dlg;
-        out.renameDlg = [dlg.includes('m/test.json'), dlg.includes('xls/role.xlsx'), dlg.includes('xls/lang'), dlg.includes('src/x.js：2 行'), dlg.includes('src/old'), (dlg.match(/karen_2/g) ?? []).length];
+        out.renameDlg = [dlg.includes('m/test.json'), dlg.includes('src/x.js：2 行'), dlg.includes('src/old'), (dlg.match(/karen_2/g) ?? []).length];
         p = re.rename('karen', 'karen2');
         await answer('ok'); await p;
         const ks = Object.keys(S.data);
@@ -172,11 +169,9 @@ run('role', async t => {
     t.check('預覽畫出身體', r.preview >= 1, `${r.preview}`);
     t.check('預覽畫出裝備', r.previewEquip > 2, `${r.previewEquip}`);
     t.check('改名列出 assets 裡的引用', r.renameDlg[0], r.dlgText);
-    t.check('改名列出 xlsx 儲存格', r.renameDlg[1]);
-    t.eq('不列 xls/lang', r.renameDlg[2], false);
-    t.check('改名列出 src 的行號', r.renameDlg[3]);
-    t.eq('不列 src/old', r.renameDlg[4], false);
-    t.eq('karen_2 不算引用', r.renameDlg[5], 0);
+    t.check('改名列出 src 的行號', r.renameDlg[1]);
+    t.eq('不列 src/old', r.renameDlg[2], false);
+    t.eq('karen_2 不算引用', r.renameDlg[3], 0);
     t.eq('改名留在原位、舊 id 消失、選到新 id', JSON.stringify(r.rename), JSON.stringify([true, false, 'karen2']));
     t.eq('刪除', r.remove, false);
     t.check('新角色排在同分類最後', r.add[0]);

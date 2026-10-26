@@ -30,8 +30,8 @@
 
 - 新道具：輸入 id（英數字、底線、減號）和 cat，套 `template(cat)`，排在**同 cat 最後一個的後面**。
 - 複製：`<id>_copy`（重複就加數字），排在原道具後面。
-- 改名、刪除前掃 `public/assets` 底下所有 `.json/.world/.tmj/.tsj`（`json/item.json` 除外），id 以獨立單字出現（前後不是 `\w`）在字串值或 key 裡都列出來，所以 `item.raw_meat`、`has:raw_meat:2` 會中、`raw_meat_2` 不會；`icons_atlas.json` 這種同名 frame 也會列，自己判斷。選的是專案根目錄的話再掃 `xls/**/*.xlsx` 的儲存格跟工作表名稱（`xlsx.js` 用瀏覽器內建 `DecompressionStream` 解 zip，不用套件；`xls/lang` 不掃，已不同步；現行譯文 `public/assets/lang/*.json` 會在掃 `public/assets` 時列出）、`src/**/*.js` 的行（`src/old` 不掃）。
-- 改名時 item.json 裡的引用（`ITEM_REFS`：`cook.id`、`bb.harvest.id`、`make.items` 的 key）一起改，其他檔案只列不改（很多是 xlsx 轉出來的產出檔，改了下次轉檔會被蓋）。改名也會讓翻譯的情境 `item.<id>` 變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
+- 改名、刪除前掃 `public/assets` 底下所有 `.json/.world/.tmj/.tsj`（`json/item.json` 除外），id 以獨立單字出現（前後不是 `\w`）在字串值或 key 裡都列出來，所以 `item.raw_meat`、`has:raw_meat:2` 會中、`raw_meat_2` 不會；`icons_atlas.json` 這種同名 frame 也會列，自己判斷。選的是專案根目錄的話再掃 `src/**/*.js` 的行（`src/old` 不掃）；譯文 `public/assets/lang/*.json` 會在掃 `public/assets` 時列出。
+- 改名時 item.json 裡的引用（`ITEM_REFS`：`cook.id`、`bb.harvest.id`、`make.items` 的 key）一起改，其他檔案只列不改（地圖、其他資料檔的引用自己判斷要不要改）。改名也會讓翻譯的情境 `item.<id>` 變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
 - 刪除不改任何引用，只列出來。
 
 ## 檢查（validate）

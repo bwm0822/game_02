@@ -4,7 +4,7 @@
 
 ## 資料
 
-- `local.json` = `{key: {lab, des?, grp?}}`，手寫來源檔（`xls/local.xlsx`、`scripts/local.js` 已不同步）。遊戲用 `'key'.lab(args)`／`'key'.des()`／`Local.name(key)` 讀，查不到 `lab` 顯示紅字 key；翻譯情境是 `ui.<key>`。
+- `local.json` = `{key: {lab, des?, grp?}}`，手寫來源檔（舊 `local.xlsx`、`scripts/local.js` 已刪除）。遊戲用 `'key'.lab(args)`／`'key'.des()`／`Local.name(key)` 讀，查不到 `lab` 顯示紅字 key；翻譯情境是 `ui.<key>`。
 - `grp` 只給這個工具分組，遊戲跟翻譯都不讀。2026-10-26 從舊 `local.xlsx` 的分頁名一次填好：`general` 一般、`items` 道具、`jobs` 職業、`stat` 屬性、`tag` 標籤、`other` 其他、`quest` 任務、`ability` 能力樹、`option` 互動選項、`msg` 訊息（同一個 key 在多頁時取先出現的）。
 - 能力分頁也寫 `local.json`（樹名 `<樹>.lab`），新增樹名時帶 `grp: "ability"`；兩個分頁同時開靠存檔廣播＋三方合併。
 

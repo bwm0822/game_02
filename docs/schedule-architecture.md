@@ -4,7 +4,7 @@
 
 ## 1. 資料：作息 = 「時間 → 目的地」
 
-寫在 `role.json`（手寫來源檔，`xls/role.xlsx` 已不同步）的 `schedule` 陣列：
+寫在 `role.json`（手寫來源檔）的 `schedule` 陣列：
 
 ```js
 "schedule": [

@@ -1,7 +1,7 @@
 import {GM} from '../core/setting.js';
 import {tr} from './lang.js';
 
-// local.xlsx 是 UI 原文表，情境 ui.<key>
+// local.json 是 UI 原文表，情境 ui.<key>
 export default class Local
 {
     static _local;
@@ -17,7 +17,7 @@ export default class Local
         return src === undefined ? `[color=red]${key}[/color]` : tr(`ui.${key}`, src, args);
     }
 
-    // 不一定有列在 local.xlsx 的 key（例如採集工具的 cat_sub），查不到就顯示 key 本身；角色名稱用 role.label
+    // 不一定有列在 local.json 的 key（例如採集工具的 cat_sub），查不到就顯示 key 本身；角色名稱用 role.label
     static name(id)
     {
         const src = this._local?.[id]?.lab;

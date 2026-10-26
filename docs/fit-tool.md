@@ -36,7 +36,7 @@
 - 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`quad.out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
 - `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
 - `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。
-- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫看技能 `meta.anim`（`ability.xlsx`），沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。
+- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫看技能的 `anim`（`ability.json`），沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。
 - 數學在 `src/core/pose.js`（純函式、不碰 Phaser）：`animTrack()` 攤影格、`poseAt()` 取某 ms 的姿勢；遊戲用 tween 推時間、工具用滑桿推，兩邊一樣；**改動畫數學改 pose.js，不要在 com_anim.js 另寫一份**。
 
 ## 動畫分頁

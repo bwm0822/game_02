@@ -1,7 +1,6 @@
 // 編輯 public/assets/json/<file> 一份 {id: 資料} 的共用核心：接殼給的專案資料夾、讀寫、undo、存檔前三方合併、新增／複製／改名／刪除、掃引用
 // 頁面要有的元素：btnReload btnSave dirty btnUndo btnRedo btnForm btnTable status search btnNew view dlgAsk
 import * as FS from './fs.js';
-import * as XL from './xlsx.js';
 import * as SH from './shell.js';
 import {$, h, ul, ask, status} from './dom.js';
 import {str, setAt, merge3} from './obj.js';
@@ -20,7 +19,7 @@ async function walk(dir, path, fn, skip)
 }
 
 // 引用到 id 的地方（id 當作獨立單字出現）：public/assets 底下的 json（字串值或 key；skip(相對 assets 的路徑) 為 true 的不掃）；
-// 有專案根目錄的話，再加 xls/ 的儲存格（xls/lang 是 lang.js 自己管的譯文，不列）跟 src/ 的程式碼（src/old 不列）
+// 有專案根目錄的話，再加 src/ 的程式碼（src/old 不列）
 // assets: {dir: public/assets, root: 專案根目錄或 null}
 export async function scanRefsIn(assets, id, skip)
 {
@@ -48,12 +47,6 @@ export async function scanRefsIn(assets, id, skip)
         for (const x of hits) out.push({file: p, path: x});
     });
     const root = assets.root;
-    const xls = root && await FS.tryDir(root, 'xls');
-    if (xls) await walk(xls, 'xls', async (fh, p) => {
-        if (!fh.name.endsWith('.xlsx') || fh.name.startsWith('~$')) return;
-        try {for (const x of await XL.findText(await fh.getFile(), s => re.test(s))) out.push({file: p, path: x});}
-        catch (e) {out.push({file: p, path: `（讀不了：${e.message}）`});}
-    }, p => p === 'xls/lang');
     const src = root && await FS.tryDir(root, 'src');
     if (src) await walk(src, 'src', async (fh, p) => {
         if (!fh.name.endsWith('.js')) return;

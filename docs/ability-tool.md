@@ -4,7 +4,7 @@
 
 ## 資料
 
-同時編四份手寫來源檔（`xls/ability.xlsx`／`ab_tree.xlsx`／`local.xlsx` 已不同步，`run_all` 不跑它們的轉檔腳本）：
+同時編四份手寫來源檔（沒有 xlsx、沒有轉檔腳本）：
 
 | 檔案 | 內容 |
 |---|---|

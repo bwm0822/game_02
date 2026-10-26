@@ -1,6 +1,6 @@
 # 角色編輯器（tools/role）
 
-視覺化編輯 `public/assets/json/role.json`（手寫來源檔，`xls/role.xlsx` 已不同步）。`npm run dev` 後開 `/tools/` 的「角色」分頁（殼見 [tools-shell.md](tools-shell.md)）。核心跟道具編輯器共用 `tools/common/`，讀寫／undo／合併／收合框／JSON 框／combo 的行為都一樣，見 [item-editor.md](item-editor.md)，這裡只寫角色專屬的。
+視覺化編輯 `public/assets/json/role.json`（手寫來源檔，沒有 xlsx）。`npm run dev` 後開 `/tools/` 的「角色」分頁（殼見 [tools-shell.md](tools-shell.md)）。核心跟道具編輯器共用 `tools/common/`，讀寫／undo／合併／收合框／JSON 框／combo 的行為都一樣，見 [item-editor.md](item-editor.md)，這裡只寫角色專屬的。
 
 ## 讀寫
 
@@ -36,6 +36,6 @@
 | `main.js` | 檢查、表單（物品欄格子、作息卡片）、清單分組、總覽表、新增 |
 | `role.css` | 預覽、分段標題、道具格子 |
 
-測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `xls/role.xlsx`、`src/`：原樣往返、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、改名掃 assets/xlsx/src、新增範本、分組、總覽與地點篩選、合併）。
+測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）。
 
 不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。
