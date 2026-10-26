@@ -1,11 +1,13 @@
 // story.json / dialog.json 的靜態檢查（scripts/story.js 跟任務／對話工具共用，純函式）
 // 輸入是手寫來源格式；回傳 [{level:'error'|'warn', file, path:[json 路徑], msg}]
-// maps：[{file, layers:[圖層名稱]}]，沒給就不檢查 @群組 圖層（工具端讀不到地圖）
+// maps：[{file, layers:[圖層名稱]}]，沒給就不檢查 @群組 圖層（工具端讀不到地圖）；items（item.json）沒給就不檢查道具 id
 import {flattenStory, mergeDialog, COMMON} from './storydata.js'
 
 // 條件裡由查詢方提供的情境事實，不是 quality
 const FACTS = ['time', 'hour', 'map', 'hp', 'job', 'style', 'trade', 'dead', 'true', 'false'];
 export const EVENTS = ['kill', 'item', 'enter', 'time', 'quality', 'see'];
+// script.js 自己處理的＋交給呼叫方（COM_Talk／uidialog／Story）的
+export const OPS = ['give', 'take', 'count', 'stop', 'trade', 'close', 'goto', 'approach'];
 
 export function condNames(expr)
 {
@@ -33,7 +35,7 @@ export function parseAction(action)
     return {names, op, args};
 }
 
-export function checkStory({story, dialog, roles, maps})
+export function checkStory({story, dialog, roles, items, maps})
 {
     const out = [];
     const flat = flattenStory(story);
@@ -60,9 +62,12 @@ export function checkStory({story, dialog, roles, maps})
         return false;
     };
 
+    const checkItem = (id, at) => {if (items && id && !items[id]) err(at, `沒有道具「${id}」`);};
+
     const checkName = (name, at) => {
         checkId('quality', name, at);
-        if (name.startsWith('_') || name.startsWith('item:')) return;
+        if (name.startsWith('item:')) return checkItem(name.split(':')[1], at);
+        if (name.startsWith('_')) return;
         if (FACTS.includes(name) || /^-?\d+(\.\d+)?$/.test(name) || name === 'gold') return;
         if (!isDeclared(name)) err(at, `未宣告的 quality「${name}」`);
     };
@@ -75,6 +80,8 @@ export function checkStory({story, dialog, roles, maps})
     const checkActions = (actions, at, npcs) => (actions ?? []).forEach((a, i) => {
         const {names, op, args} = parseAction(a);
         names.forEach(n => checkName(n, sub(at, i)));
+        if (op && !OPS.includes(op)) err(sub(at, i), `認不得的指令「${op}」`);
+        if (op === 'give' || op === 'take') checkItem(args[0], sub(at, i));
         if ((op === 'goto' || op === 'approach') && npcs) npcs.forEach(npc => checkNode(npc, args[0], sub(at, i)));
     });
 

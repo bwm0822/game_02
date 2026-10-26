@@ -1,0 +1,44 @@
+/* 任務／對話工具共用 */
+.form { max-width: 1100px; }
+.sec { display: flex; align-items: center; gap: 8px; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin: 16px 0 6px; padding-bottom: 2px; }
+.sec .dim { font-weight: normal; font-size: 14px; }
+.npc { color: #bcd; margin: 8px 0 4px; }
+.cellrow { display: flex; align-items: center; gap: 6px; }
+.cellrow > input:not(.num), .cellrow > textarea { flex: 1; }
+.fields input.expr, .fields textarea.expr { font-family: ui-monospace, Consolas, monospace; font-size: 15px; }
+input.key { font-weight: bold; color: #bcd; }
+.bar.fold { cursor: pointer; user-select: none; }
+.card .bar .arrow, .box .bar .arrow { width: 1em; color: #888; font-size: .8em; }
+.card .bar > b { color: #bcd; }
+.card .bar .who { color: #fc8; }
+.badge { font-size: 13px; padding: 0 5px; border-radius: 3px; background: #2f4f6d; color: #cde; }
+.badge.ev { background: #5a3f6d; }
+.card.node > .bar .sum { color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows { display: flex; flex-direction: column; gap: 4px; }
+.trow { display: grid; grid-template-columns: 240px 1fr auto; gap: 6px; align-items: start; }
+#view .trow input { min-width: 0; }
+.chead, .crow { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr 190px 56px auto; gap: 6px; align-items: start; }
+.chead { color: #888; font-size: 14px; }
+#view .crow input, #view .crow textarea { min-width: 0; width: 100%; }
+.crow .num { width: 56px; }
+.crow .btns { display: flex; gap: 2px; }
+.crow .btns button, .trow button { padding: 1px 6px; }
+table.vals input:not(.num) { min-width: 0; }
+
+.bad { outline: 2px solid #e55 !important; outline-offset: -1px; }
+.warnf { outline: 2px solid #e9b44c !important; outline-offset: -1px; }
+.flash { animation: flash 1.2s; }
+@keyframes flash { 0%, 50% { box-shadow: 0 0 0 3px #4a8be0; } 100% { box-shadow: none; } }
+
+#checks { background: #25272b; border-top: 1px solid #111; max-height: 30vh; overflow: auto; font-size: 15px; }
+#checks .bar { position: sticky; top: 0; background: #25272b; padding: 4px 10px; cursor: pointer; user-select: none; display: flex; gap: 6px; }
+#checks .arrow { color: #888; font-size: .8em; width: 1em; }
+#checks .err { color: #f77; }
+#checks .ok { color: #8c8; }
+#checks .list { padding: 0 10px 6px; }
+.chk { display: flex; gap: 8px; padding: 1px 4px; border-radius: 3px; }
+.chk.go { cursor: pointer; }
+.chk.go:hover { background: #33363c; }
+.chk.error .lv { color: #f77; }
+.chk.warn .lv { color: #e9b44c; }
+.chk .at { color: #888; font-family: ui-monospace, Consolas, monospace; }

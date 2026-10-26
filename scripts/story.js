@@ -31,7 +31,7 @@ function readMaps(dir, out = [])
     return out;
 }
 
-const res = checkStory({story: read('story'), dialog: read('dialog'), roles: read('role'), maps: readMaps(MAP_DIR)});
+const res = checkStory({story: read('story'), dialog: read('dialog'), roles: read('role'), items: read('item'), maps: readMaps(MAP_DIR)});
 for (const r of res) console[r.level === 'error' ? 'error' : 'warn'](`${r.level.toUpperCase()} ${r.file} ${r.path.join('.')}：${r.msg}`);
 const errors = res.filter(r => r.level === 'error').length;
 if (errors) {console.error(`story 檢查：${errors} 個錯誤`); process.exitCode = 1;}

@@ -8,9 +8,11 @@ import {str, setAt, merge3} from './obj.js';
 
 const ID_RE = /^[A-Za-z0-9_-]+$/;
 
-// opt: {file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file)}
+// opt: {file, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), decode, encode}
+// decode(json) → {id: 資料}、encode({id: 資料}) → json：檔案本身不是 {id: 資料} 時（story.json）轉接，undo／合併都以 id 為單位
 export function createDoc(opt)
 {
+    const decode = opt.decode ?? (j => j), encode = opt.encode ?? (d => d);
     const S = {
         assets: null,           // {dir: public/assets, json: public/assets/json, root: 專案根目錄（測試直接給 public/assets 時是 null）}
         data: {},
@@ -99,8 +101,8 @@ export function createDoc(opt)
     {
         const text = await FS.readText(S.assets.json, opt.file);
         S.diskText = text;
-        S.saved = JSON.parse(text);
-        S.data = JSON.parse(text);
+        S.saved = decode(JSON.parse(text));
+        S.data = decode(JSON.parse(text));
         S.extra = {};
         S.drafts = {};
         S.hist = [{data: str(S.data), before: S.sel, after: S.sel}];
@@ -119,7 +121,7 @@ export function createDoc(opt)
         const disk = await FS.readText(S.assets.json, opt.file);
         if (disk !== S.diskText)
         {
-            const m = merge3(JSON.parse(S.diskText), S.data, JSON.parse(disk));
+            const m = merge3(decode(JSON.parse(S.diskText)), S.data, decode(JSON.parse(disk)));
             const r = await ask(`${opt.file} 在讀進來之後被改過了`, [
                 h('div', null, opt.external),
                 m.external.length && h('div', null, `外部改了：${m.external.join('、')}`),
@@ -134,10 +136,10 @@ export function createDoc(opt)
             const r = await ask(`有 ${warns.length} 個問題`, ul(warns), [['save', '仍然存檔'], ['cancel', '取消']]);
             if (r !== 'save') return status('取消存檔');
         }
-        const text = JSON.stringify(S.data, null, 2);
+        const text = JSON.stringify(encode(S.data), null, 2);
         await FS.writeFile(S.assets.json, opt.file, new Blob([text]));
         S.diskText = text;
-        S.saved = JSON.parse(text);
+        S.saved = decode(JSON.parse(text));
         SH.notifySaved(opt.file);
         status(`已存檔 ${new Date().toLocaleTimeString()}`);
         render();
