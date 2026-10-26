@@ -1404,13 +1404,23 @@ run('paperdoll', async t => {
         let asked = 0;
         const conf = window.confirm;
         window.confirm = () => (asked++, true);
-        const rowsOf = () => [...$('btRows').children].map(r => ({cls: r.querySelectorAll('select')[0], sel: r.querySelectorAll('select')[1], keep: r.querySelector('input[type=checkbox]'),
+        const rowsOf = () => [...$('btRows').children].map(r => ({cls: r.querySelectorAll('select')[0], sel: r.querySelectorAll('select')[1], upd: r.querySelector('input[type=checkbox]'),
                                                                    ins: [...r.querySelectorAll('input:not([type])')], msg: r.querySelector('.body > div:last-child'), r}));
         let p = pd.saveBatch(fs);
         await until(() => $('dlgBatch').open);
         let R = rowsOf();
-        out.rows = R.map(x => [x.sel.value, x.sel.disabled, x.keep.parentElement.hidden, x.r.classList.contains('off')]);
+        out.rows = R.map(x => [x.sel.value, x.sel.disabled, x.upd.parentElement.hidden, x.r.classList.contains('off')]);
         out.blank = R[0].msg.textContent;
+        const top = () => [$('bt-place').checked, $('bt-place').indeterminate, $('bt-place').disabled, ...R.map(x => x.upd.checked)];
+        out.top = [top()];
+        fire(R[3].upd, false);
+        out.top.push(top());
+        fire($('bt-place'), true);
+        out.top.push(top());
+        fire($('bt-place'), false);
+        out.top.push(top());
+        fire($('bt-place'), true);
+        fire(R[3].upd, false);
         out.nums = [$('bt-pct').value, $('bt-oy').value];
         out.cls = [$('bt-cls').value, ...R.map(x => x.cls.value)];
         fire($('bt-pct'), 25);
@@ -1433,11 +1443,9 @@ run('paperdoll', async t => {
         out.saved = [JSON.stringify(it['sword-1'].equip), it['sword-1'].icon, JSON.stringify(it['sword-2'].equip), JSON.stringify(it['sword-2'].drop),
                      Object.keys(it).join(), JSON.stringify(it['sword-x']), await png('sword-a'), await png('sword-2-icon'), await png('blank'), pd.S.layers.length, asked, await png('other')];
 
-        // 不勾保留原設定＝擺放也寫；只勾更新ICON＝sprite 不動、只重產 -icon
+        // 預設勾更新設定＝擺放也寫；只勾更新ICON＝sprite 不動、只重產 -icon
         p = pd.saveBatch(fs.slice(0, 1));
         await until(() => $('dlgBatch').open);
-        R = rowsOf();
-        fire(R[0].keep, false);
         $('dlgBatch').close('ok');
         await p;
         out.place = JSON.stringify((await readItems())['sword-1'].equip);
@@ -1456,19 +1464,22 @@ run('paperdoll', async t => {
         pd.autoSet({});
         return out;
     });
-    t.eq('批次：照路徑排序、對 sprite／id 預設選好、對不到不處理、已有 equip 才有保留原設定、找不到武器的列不能選',
-         JSON.stringify(bt.rows), JSON.stringify([['-', true, true, true], ['-', false, true, true], ['sword-2', false, true, false], ['sword-1', false, false, false]]));
+    t.eq('批次：照路徑排序、對 sprite／id 預設選好、對不到不處理、對到 item 才有更新設定、找不到武器的列不能選',
+         JSON.stringify(bt.rows), JSON.stringify([['-', true, true, true], ['-', false, true, true], ['sword-2', false, false, false], ['sword-1', false, false, false]]));
+    t.eq('批次：上面的更新設定是全選、有勾有不勾就半勾', JSON.stringify(bt.top), JSON.stringify([
+        [true, false, false, true, true, true, true], [false, true, false, true, true, true, false],
+        [true, false, false, true, true, true, true], [false, false, false, false, false, false, false]]));
     t.eq('批次：找不到武器的列提示', bt.blank, '清除透明之後找不到武器');
     t.eq('批次：數字帶入全域預設', JSON.stringify(bt.nums), JSON.stringify(['50', '0.85']));
     t.eq('批次：每列照檔名猜分類、上面編輯第一列的分類', JSON.stringify(bt.cls), JSON.stringify(['default', 'default', 'default', 'sword', 'sword']));
     t.eq('批次：改數字只寫回編輯中的分類、自動面板同步、切分類換數字', JSON.stringify(bt.pct), JSON.stringify([25, '25', 30, 50, '50']));
     t.eq('批次：新增要填 id', bt.newMsg, '要填 id');
     t.eq('批次：填好就能存', bt.ok, false);
-    t.eq('批次：保留原設定不動擺放、其他寫 equip／drop／icon、新增插在最後一件武器後面、成品照列的分類的 scale%、不建圖層、沒有要確認的就不 confirm', JSON.stringify(bt.saved), JSON.stringify([
+    t.eq('批次：沒勾更新設定不動擺放、其他寫 equip／drop／icon、新增插在最後一件武器後面、成品照列的分類的 scale%、不建圖層、沒有要確認的就不 confirm', JSON.stringify(bt.saved), JSON.stringify([
         '{"sprite":"sword-a","scale":0.25,"x":1,"y":2}', 'sword-a-icon', '{"sprite":"sword-2","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}', '{"sprite":"sword-2","scale":0.25}',
         'sword-1,sword-2,sword-x', '{"cat":"CAT_WEAPON","icon":"other-icon","lab":"新劍","equip":{"sprite":"other","scale":0.25,"x":-13,"y":18,"oy":0.85},"drop":{"sprite":"other","scale":0.25}}',
         [5, 40], [100, 100], null, 0, 0, [10, 80]]));
-    t.eq('批次：不勾保留原設定就寫擺放', bt.place, '{"sprite":"sword-a","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}');
+    t.eq('批次：預設勾更新設定就寫擺放', bt.place, '{"sprite":"sword-a","scale":0.25,"x":-13,"y":18,"a":30,"oy":0.85}');
     t.eq('批次：只勾更新ICON 時 sprite 不動、-icon 用原本的 sprite 名', JSON.stringify(bt.iconOnly), JSON.stringify(['old-sword', 'old-sword-icon', [100, 100]]));
 
     // icon 模式：順時針轉 a 度、佔比、自動零件用縮小前的圖、存檔

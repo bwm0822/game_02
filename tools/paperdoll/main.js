@@ -3235,7 +3235,7 @@ async function commitItems(rows, bake, all = false)
 
 // ---------- 批次存武器 ----------
 // 檔案樹多選 PNG 右鍵：不建圖層，每張照自動武器的步驟算、套全域預設的 scale/x/y/a/ox/oy，一次存進 item.json
-// 每列只選 item（對不到預設不處理）；更新圖／設定／ICON 整批一組、檔名固定是原圖名，只有已有 equip 的列能勾「保留原設定」
+// 每列只選 item（對不到預設不處理）；更新圖／ICON 整批一組、檔名固定是原圖名，更新設定每列各自勾（對到 item 的列才有）
 
 const batchP = () => autoParts('weapon')[0];
 const BT_W = 48;
@@ -3264,25 +3264,26 @@ function fitDraw(cv, c, up = false)
 
 function batchDialog(rows, items, keys)
 {
-    const dlg = $('dlgBatch'), G = {png: true, place: true, icon: true};
-    const has = (r) => !!(r.id && items[r.id]?.equip);
-    // 新增強制三個都做；保留原設定就不動擺放；沒勾更新圖時檔名＝原本的 sprite（只重產 icon）
+    const dlg = $('dlgBatch'), G = {png: true, icon: true}, top = $('bt-place');
+    // 新增強制三個都做；更新設定每列各自勾（上面那個是全選，有勾有不勾就半勾）；沒勾更新圖時檔名＝原本的 sprite（只重產 icon）
     const apply = (r) => {
         r.on = !!r.part && r.sel !== '-';
         r.id = r.on && r.sel || null;
         r.png = !r.id || G.png;
-        r.place = !r.id || G.place && !(has(r) && r.keep);
+        r.place = !r.id || r.upd;
         r.icon = !r.id || G.icon;
         r.name = r.png ? r.file : splitBase(items[r.id].equip?.sprite) ?? r.file;
     };
     const refresh = () => {
         rows.forEach(apply);
-        const act = itemCheck(rows, items, keys);
+        const act = itemCheck(rows, items, keys), ids = rows.filter(r => r.id), n = ids.filter(r => r.upd).length;
+        Object.assign(top, {disabled: !ids.length, checked: !ids.length || n === ids.length, indeterminate: n > 0 && n < ids.length});
         for (const r of rows)
         {
             const e = r.el;
             e.row.classList.toggle('off', !r.on);
-            e.keep.hidden = !has(r);
+            e.updL.hidden = !r.id;
+            e.upd.checked = r.upd;
             e.nw.hidden = !r.on || !!r.id;
             e.ic.classList.toggle('dim', !r.icon);
             e.msg.className = r.err || !r.part ? 'err' : 'warn';
@@ -3318,33 +3319,33 @@ function batchDialog(rows, items, keys)
             l.append(...(type ? [i, ` ${lab}`] : [`${lab} `, i]));
             return [l, i];
         };
-        const [keepL, keep] = box('保留原設定', 'checkbox');
+        const [updL, upd] = box('更新設定', 'checkbox');
         const [idL, id] = box('id'), [labL, lab] = box('lab');
         const head = el('div', 'line'), nw = el('div', 'line'), msg = el('div');
-        head.append(Object.assign(el('span'), {textContent: r.tag}), cls, sel, keepL);
+        head.append(Object.assign(el('span'), {textContent: r.tag}), cls, sel, updL);
         nw.append(idL, labL);
         body.append(head, nw, msg);
         row.append(pic, ic, body);
-        r.el = {row, pic, ic, keep: keepL, nw, msg};
+        r.el = {row, pic, ic, upd, updL, nw, msg};
         if (r.part)
         {
             fitDraw(pic, r.part.C.canvas);
             const c = iconOf(iconSrc(r.part.C), ICON_AUTO);
             if (c) fitDraw(ic, c, true);
         }
-        keep.checked = r.keep;
         cls.onchange = () => {r.cls = cls.value; place(r, true); refresh();};
-        sel.onchange = () => {r.sel = sel.value; r.keep = keep.checked = true; refresh();};
-        keep.onchange = () => {r.keep = keep.checked; refresh();};
+        sel.onchange = () => {r.sel = sel.value; refresh();};
+        upd.onchange = () => {r.upd = upd.checked; refresh();};
         id.oninput = () => {r.newId = id.value.trim(); refresh();};
         lab.oninput = () => {r.lab = lab.value.trim(); refresh();};
         return row;
     }));
-    for (const f of ['png', 'place', 'icon'])
+    for (const f of ['png', 'icon'])
     {
         $(`bt-${f}`).checked = G[f];
         $(`bt-${f}`).onchange = () => {G[f] = $(`bt-${f}`).checked; refresh();};
     }
+    top.onchange = () => {for (const r of rows) r.upd = top.checked; refresh();};
     // 數字跟自動面板共用全域預設，上面的分類選要改哪一組（預設第一列的分類），只重算同分類的列；
     // scale% 變了才重算成品（icon 用縮小前的圖，不用重算）
     let ecls = rows.find(r => r.part)?.cls ?? 'default';
@@ -3383,7 +3384,7 @@ async function saveBatch(fs)
     {
         const file = x.fh.name.replace(/\.png$/i, '');
         const cls = wclsOf(file), part = batchPart(PX.fromImage(await createImageBitmap(await x.fh.getFile())), file, cls);
-        rows.push({P: batchP(), tag: join(x.path, x.fh.name), file, cls, part, sel: part && itemMatch(items, batchP(), file) || '-', keep: true, newId: '', lab: ''});
+        rows.push({P: batchP(), tag: join(x.path, x.fh.name), file, cls, part, sel: part && itemMatch(items, batchP(), file) || '-', upd: true, newId: '', lab: ''});
     }
     if (await batchDialog(rows, items, await texKeys())) await commitItems(rows, false, true);
 }
