@@ -1,6 +1,6 @@
 // 任務／對話工具共用：唯讀參考資料、條件／指令的自動完成選項、輸入框、節點編輯器、欄位標紅、檢查面板
 // 欄位的 data-k 一律是資料路徑的 keyOf()（[紀錄 id, ...json 路徑]），檢查結果靠它找到要標紅、要跳過去的欄位
-import {$, h, status} from './dom.js';
+import {$, h, ul, ask, status} from './dom.js';
 import * as SH from './shell.js';
 import {getAt, parseNum} from './obj.js';
 import {mergeDialog, COMMON} from '../../src/data/storydata.js';
@@ -48,7 +48,8 @@ export function storyLists(refs, story, dialog)
 }
 
 // ---------- 輸入框＋節點編輯器 ----------
-// opt: {nodeLink(npc, id) → 跳過去的函式或 null, other(npc, id) → 不在這份檔案時的說明文字, mood: 顯示 cards/mood 欄}
+// opt: {nodeLink(npc, id) → 跳過去的函式或 null, other(npc, id) → 不在這份檔案時的說明文字, mood: 顯示 cards/mood 欄,
+//       renameNode(path, npc, to) → 節點改名（連帶改引用）}
 export function createStoryForm(D, opt = {})
 {
     const {S, commit, render} = D;
@@ -85,8 +86,9 @@ export function createStoryForm(D, opt = {})
             onchange: e => {const a = e.target.value.split('\n').map(s => s.trim()).filter(Boolean); put(path, a.length ? a : undefined);}});
     };
     const num = (path) => h('input', {class: 'num', dataset: {k: keyOf(path)}, value: get(path) ?? '', onchange: e => put(path, parseNum(e.target.value))});
-    const keyInput = (path, size = 16) => h('input', {size, class: 'key', dataset: {k: keyOf([...path, '#id'])}, value: path.at(-1),
-        onchange: e => renameKey(path, e.target.value.trim())});
+    // onRename(to)：要連帶改引用的（節點、spawn），沒給就只改 key
+    const keyInput = (path, size = 16, onRename) => h('input', {size, class: 'key', dataset: {k: keyOf([...path, '#id'])}, value: path.at(-1),
+        onchange: e => onRename ? onRename(e.target.value.trim()) : renameKey(path, e.target.value.trim())});
     const btn = (title, label, fn, disabled) => h('button', {type: 'button', title, disabled, onclick: e => {e.stopPropagation(); fn();}}, label);
     const row = (k, title, ...el) => [h('span', {class: 'k', title}, k), h('div', {class: 'cellrow'}, ...el)];
 
@@ -163,7 +165,7 @@ export function createStoryForm(D, opt = {})
         return h('div', {class: 'card node', dataset: {k: keyOf(path)}},
             h('div', {class: 'bar fold', onclick: e => {if (!e.target.closest('button, input')) toggle(path);}},
                 h('span', {class: 'arrow'}, open ? '▼' : '▶'),
-                keyInput(path),
+                keyInput(path, 16, opt.renameNode && (to => opt.renameNode(path, npc, to))),
                 h('span', {class: 'sum'}, firstText(n), n.choices?.length ? h('span', {class: 'dim'}, `　[ ${n.choices.length} 個選項 ]`) : n.next && h('span', {class: 'dim'}, `　→ ${n.next}`)),
                 btn('刪除節點', '×', onDelete)),
             open && h('div', {class: 'fields'},
@@ -180,6 +182,36 @@ export function createStoryForm(D, opt = {})
     }
 
     return {get, put, renameKey, isOpen, toggle, text, area, cond, lines, num, keyInput, btn, row, link, move, nodeCard, choicesBox};
+}
+
+// ---------- 改名（連帶改同一個檔案的引用，其他檔案只列） ----------
+// 照原位置換 key
+export function renameKeyAt(root, path, to)
+{
+    const parent = getAt(root, path.slice(0, -1)), from = path.at(-1);
+    const e = Object.entries(parent);
+    for (const k of Object.keys(parent)) delete parent[k];
+    for (const [k, v] of e) parent[k === from ? to : k] = v;
+}
+
+// apply(data)：在 data 上改名並改引用，回傳改了哪些地方；先在複本上跑一次給確認框列
+export async function renameWithRefs(D, {what, from, to, file, apply, error})
+{
+    const {S, render, commit} = D;
+    if (!to || to === from) return render();
+    const err = !/^[\x21-\x7e]+$/.test(to) ? '只能用 ASCII（英數字、底線…）' : error?.(to);
+    if (err) {status(err); return render();}
+    const inner = apply(structuredClone(S.data));
+    const outer = S.assets ? await D.scanRefs(from) : [];
+    const r = await ask(`改名 ${what} ${from} → ${to}`, [
+        h('div', {class: 'title'}, `${file} 裡會一起改的`),
+        inner.length ? ul(inner) : h('div', {class: 'dim'}, '（沒有）'),
+        h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
+        outer.length ? ul(outer.map(o => `${o.file}：${o.path}`)) : h('div', {class: 'dim'}, '（沒有）'),
+    ], [['ok', '改名'], ['cancel', '取消']]);
+    if (r !== 'ok') return render();
+    commit(() => apply(S.data));
+    status(`已改名 ${from} → ${to}，一起改了 ${inner.length} 處${outer.length ? `，其他檔案還有 ${outer.length} 處引用` : ''}`);
 }
 
 // ---------- 檢查結果 ----------

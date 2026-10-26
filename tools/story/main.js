@@ -5,6 +5,7 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SF from '../common/storyform.js';
 import * as SH from '../common/shell.js';
+import * as RN from '../common/storyrename.js';
 import {checkStory} from '../../src/data/storycheck.js';
 
 // story.json = {qualities, lines:{<劇情線>: {...}}}；編輯時攤成 {@qualities, <劇情線>...}，undo／合併以劇情線為單位
@@ -54,6 +55,29 @@ const F = SF.createStoryForm(D, {
         const p = dialogPath(npc, id);
         return p && (() => SH.gotoTab('dialog', p));
     },
+    renameNode: (path, npc, to) => SF.renameWithRefs(D, {
+        what: `${npc} 的節點`, from: path.at(-1), to, file: 'story.json',
+        error: to => nodeLine(npc, to) && `${npc} 已經有節點 ${to}`,
+        apply: data => {SF.renameKeyAt(data, path, to); return RN.rewriteStory(linesOf(data), RN.nodeRenamer(path.at(-1), to, n => n === npc));},
+    }),
+});
+const linesOf = (data) => Object.fromEntries(Object.entries(data).filter(([k]) => k !== Q));
+
+function renameQuality(from, to)
+{
+    const npcs = S.data[Q][from].scope === 'npc' ? Object.keys(S.refs.roles) : [];
+    return SF.renameWithRefs(D, {
+        what: 'quality', from, to, file: 'story.json',
+        error: to => to in S.data[Q] && `「${to}」已經有了`,
+        apply: data => {SF.renameKeyAt(data, [Q, from], to); return RN.rewriteStory(linesOf(data), RN.qualityRenamer(from, to, npcs));},
+    });
+}
+
+// spawn 群組只有地圖的 @群組 圖層會引用（其他檔案，只列）
+const renameSpawn = (path, to) => SF.renameWithRefs(D, {
+    what: 'spawn 群組', from: path.at(-1), to, file: 'story.json',
+    error: to => Object.values(linesOf(S.data)).some(l => to in (l.spawns ?? {})) && `已經有 spawn 群組 ${to}`,
+    apply: data => {SF.renameKeyAt(data, path, to); return [];},
 });
 const pendingGoto = SF.listenGoto(D);
 const {get, btn, row} = F;
@@ -107,7 +131,7 @@ function renderQualities()
             h('tbody', null, Object.entries(qs).map(([n, q]) => {
                 const p = [Q, n];
                 return h('tr', {dataset: {k: SF.keyOf(p)}},
-                    h('td', null, n),
+                    h('td', null, F.keyInput(p, 18, to => renameQuality(n, to))),
                     h('td', null, h('select', {dataset: {k: SF.keyOf([...p, 'scope'])}, onchange: e => F.put([...p, 'scope'], e.target.value)},
                         ['global', 'npc'].map(s => h('option', {value: s, selected: q.scope === s}, s)))),
                     h('td', null, F.num([...p, 'default'])),
@@ -198,7 +222,7 @@ function spawnRows(line)
         h('tbody', null, Object.keys(sp).map(g => {
             const p = [line, 'spawns', g];
             return h('tr', null,
-                h('td', null, '@', F.keyInput(p, 14)),
+                h('td', null, '@', F.keyInput(p, 14, to => renameSpawn(p, to))),
                 h('td', null, F.cond(p, '（一直出現）')),
                 h('td', null, btn('刪除', '×', () => commit(() => {delete S.data[line].spawns[g];}))));
         })));

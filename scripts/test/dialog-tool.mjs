@@ -45,6 +45,16 @@ run('dialog-tool', async t => {
         qa('#view .chip a').find(a => a.textContent === 'n_where').click();
         out.jumpCommon = [S.sel, !!q(k('_common', 'nodes', 'n_where', 'texts', 'true'))];
 
+        // _common 節點改名：_common 裡的 next 都跟著改
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        S.sel = '_common'; dl.render();
+        change(q(k('_common', 'nodes', 'n_chat', '#id')), 'n_talk');
+        for (let i = 0; i < 200 && !$('dlgAsk').open; i++) await sleep(20);
+        out.renameDlg = $('dlgAsk').textContent.includes('n_where.next');
+        $('dlgAsk').close('ok'); await sleep(50);
+        out.rename = [S.data._common.nodes.n_where.next, S.data._common.nodes.n_default.choices.find(c => c.label === '聊天').next, S.results.filter(r => r.level === 'error').length];
+        dl.undo();
+
         // 加掛選項
         S.sel = 'xi'; dl.render();
         dl.commit(() => {S.data.xi.extend = {n_default: [{label: '最近好嗎', next: 'n_chat'}]};});
@@ -70,6 +80,8 @@ run('dialog-tool', async t => {
     t.check('karen：沿用 _common 的入口與節點、列出劇情卡', r.karen[0] === 2 && r.karen[1] === 7 && r.karen[2], JSON.stringify(r.karen));
     t.check('覆寫 _common 的節點', r.override);
     t.eq('沿用的節點連結跳到 _common', JSON.stringify(r.jumpCommon), JSON.stringify(['_common', true]));
+    t.check('節點改名確認框列出一起改的', r.renameDlg);
+    t.eq('_common 節點改名：next 都跟著改、沒有錯誤', JSON.stringify(r.rename), JSON.stringify(['n_talk', 'n_talk', 0]));
     t.eq('加掛選項：畫出選項、沒有錯誤', JSON.stringify(r.extend), JSON.stringify([true, 0]));
     t.check('只用 _common 的 NPC 有提示', r.only);
     t.eq('建立自己的對話', r.create, '{}');

@@ -6,6 +6,7 @@ import '../common/splitter.js';
 import * as SF from '../common/storyform.js';
 import * as SH from '../common/shell.js';
 import * as IC from '../common/icons.js';
+import * as RN from '../common/storyrename.js';
 import {checkStory} from '../../src/data/storycheck.js';
 import {COMMON} from '../../src/data/storydata.js';
 
@@ -48,6 +49,16 @@ const F = SF.createStoryForm(D, {
         if (S.data[COMMON]?.nodes?.[id]) return () => SF.jumpTo(D, [COMMON, 'nodes', id]);
         const p = storyNode(npc, id);
         return p && (() => SH.gotoTab('story', p));
+    },
+    // _common 的節點：所有沒有自己同名節點的 NPC 情境下的引用都算；NPC 自己的：只算那個 NPC 的
+    renameNode: (path, npc, to) => {
+        const from = path.at(-1);
+        const inNpc = npc === COMMON ? (n => n === COMMON || !S.data[n]?.nodes?.[from]) : (n => n === npc);
+        return SF.renameWithRefs(D, {
+            what: `${npc} 的節點`, from, to, file: 'dialog.json',
+            error: to => S.data[npc].nodes?.[to] && `${npc} 已經有節點 ${to}`,
+            apply: data => {SF.renameKeyAt(data, path, to); return RN.rewriteDialog(data, RN.nodeRenamer(from, to, inNpc));},
+        });
     },
 });
 const {get, btn, row} = F;

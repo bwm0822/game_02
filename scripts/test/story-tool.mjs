@@ -89,6 +89,26 @@ run('story-tool', async t => {
         S.sel = st.Q; st.render();
         out.qual = qa('#view tbody tr').length === Object.keys(JSON.parse(orig).qualities).length;
 
+        // 改名連帶改引用：quality（條件、指令、日誌佔位符；wolf_hunt 不動）
+        const renameBy = async (sel, v) => {change(q(sel), v); out.dlg = await answer('ok'); await sleep(50);};
+        await renameBy(k(st.Q, 'wolf_hunt.kills', '#id'), 'wolf_hunt.count');
+        const w = S.data.wolf_hunt;
+        out.renameQ = [Object.keys(S.data[st.Q]).indexOf('wolf_hunt.count') === Object.keys(JSON.parse(orig).qualities).indexOf('wolf_hunt.kills'),
+            w.storylets[1].requires, w.storylets[1].effects[1], w.threads.wolf_hunt.values[1].journal, w.nodes.xi.n_wolf_ask.choices[0].actions[1],
+            S.results.filter(r => r.level === 'error').length];
+        st.undo();
+        out.renameQUndo = JSON.stringify(st.encode(S.data)) === JSON.stringify(JSON.parse(orig));
+        // 節點：approach 的參數跟著改
+        S.sel = 'wolf_hunt'; st.render();
+        await renameBy(k('wolf_hunt', 'nodes', 'karen', 'n_wolf_grudge', '#id'), 'n_grudge');
+        out.renameNode = [!!S.data.wolf_hunt.nodes.karen.n_grudge, S.data.wolf_hunt.storylets[6].effects[0], out.dlg.includes('approach n_wolf_grudge')];
+        st.undo();
+        // spawn：地圖的 @群組 圖層只列不改
+        await write(await dir(opfs, 'game', 'public', 'assets', 'maps'), 'm.json', JSON.stringify({layers: [{name: '@wolves'}]}));
+        await renameBy(k('wolf_hunt', 'spawns', 'wolves', '#id'), 'wolfpack');
+        out.renameSpawn = ['wolfpack' in S.data.wolf_hunt.spawns, out.dlg.includes('maps/m.json')];
+        st.undo();
+
         // 存檔前三方合併：外部改 bandit_hunt、這邊改 wolf_hunt
         const ext = JSON.parse(orig); ext.lines.bandit_hunt.title = '外部';
         await write(json, 'story.json', JSON.stringify(ext, null, 2));
@@ -121,6 +141,11 @@ run('story-tool', async t => {
     t.check('自動完成只列符合游標前那個字的', r.combo[0] && r.combo[1] === 'pelt_trade', r.combo[1]);
     t.eq('自動完成只換那個字', r.comboPick, 'wolf_hunt==0 && pelt_trade');
     t.check('quality 宣告頁每個一列', r.qual);
+    t.eq('quality 改名：原位、條件／指令／日誌／節點選項都改、沒有錯誤', JSON.stringify(r.renameQ), JSON.stringify([true,
+        'wolf_hunt==1 && wolf_hunt.count>=3', 'stop wolf_hunt.count', '前往黑森林狩獵，擊殺野狼 ({wolf_hunt.count}/3)', 'count wolf_hunt.count kill:wolf', 0]));
+    t.check('quality 改名一步 undo', r.renameQUndo);
+    t.eq('節點改名：approach 跟著改、確認框有列', JSON.stringify(r.renameNode), JSON.stringify([true, 'approach n_grudge', true]));
+    t.eq('spawn 改名：地圖圖層列在其他檔案', JSON.stringify(r.renameSpawn), JSON.stringify([true, true]));
     t.eq('合併：外部的、這邊的都留著，結構不變', JSON.stringify(r.merge), JSON.stringify(['外部', '這邊', 'qualities,lines']));
     t.eq('總覽 3 條劇情線', r.table, 3);
 });
