@@ -163,7 +163,7 @@ export function createStoryForm(D, opt = {})
             h('div', {class: 'bar fold', onclick: e => {if (!e.target.closest('button, input')) toggle(path);}},
                 h('span', {class: 'arrow'}, open ? '▼' : '▶'),
                 keyInput(path),
-                h('span', {class: 'sum'}, firstText(n), n.choices?.length ? h('span', {class: 'dim'}, `　${n.choices.length}個選項`) : n.next && h('span', {class: 'dim'}, `　→ ${n.next}`)),
+                h('span', {class: 'sum'}, firstText(n), n.choices?.length ? h('span', {class: 'dim'}, `　[ ${n.choices.length} 個 選項 ]`) : n.next && h('span', {class: 'dim'}, `　→ ${n.next}`)),
                 btn('刪除節點', '×', onDelete)),
             open && h('div', {class: 'fields'},
                 h('span', {class: 'k', title: 'texts'}, '台詞'), textsBox([...path, 'texts']),
