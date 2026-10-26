@@ -4,7 +4,7 @@
 
 ## 讀寫
 
-- 專案資料夾由殼選、傳進來（`setAssets()` 自動找 `public/assets`，改名／刪除會多掃 `xls/`、`src/`；無頭測試直接給 `public/assets` 也行，只掃 json）。別的分頁存了 `item.json` 會自動重讀或提示，見 [tools-shell.md](tools-shell.md)。
+- 專案資料夾由殼選、傳進來（`setAssets()` 自動找 `public/assets`，改名／刪除會多掃 `src/`；無頭測試直接給 `public/assets` 也行，只掃 json）。別的分頁存了 `item.json` 會自動重讀或提示，見 [tools-shell.md](tools-shell.md)。
 - Ctrl+S 存檔，整份 `JSON.stringify(items, null, 2)`（沒有結尾換行，跟紙娃娃同格式）；沒改就存檔內容一字不差。
 - key 順序保留：改值不動位置、新 key 接在物件最後、清空的欄位整個刪 key，刪完變空的子物件（`cook: {}`）也一起刪。
 - 存檔前重新讀檔，跟上次讀／存時的原文比；被改過（例如紙娃娃「存到 item.json」）就問「合併後存檔／直接覆蓋／取消」。合併是**道具層級**三方合併：只有一邊改的取那邊，兩邊都改的以編輯器為準並列出來。

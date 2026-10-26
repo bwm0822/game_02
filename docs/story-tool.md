@@ -48,7 +48,7 @@
 - **quality**：條件、指令裡的名稱一起改；scope=npc 的話，`<npc>.名稱` 也一起改。
 - **節點**：引用只算同一個 NPC 情境下的（storylet 的 who、節點所屬的 NPC）。對話分頁改 `_common` 的節點時，所有「沒有自己同名節點」的 NPC 的引用都會一起改。
 - **spawn 群組**：story.json 裡沒有引用，地圖的 `@群組` 圖層只列出來。
-- 改名前會先跳確認框，列出這個檔案裡會一起改的地方，以及其他檔案（`doc.js` 的 `scanRefs`：public/assets 底下的 json、`xls/`、`src/`）裡只列不改的引用。確定之後整個改名是一步 undo。
+- 改名前會先跳確認框，列出這個檔案裡會一起改的地方，以及其他檔案（`doc.js` 的 `scanRefs`：public/assets 底下的 json、`src/`）裡只列不改的引用。確定之後整個改名是一步 undo。
 - 劇情線、thread、storylet 的 id 只改 key（沒有別的資料引用它們；劇情線 id 用 `doc.js` 的改名）。改名之後漏掉的引用，檢查面板會抓出來。
 
 ## 程式結構

@@ -27,7 +27,8 @@
   - 空格右鍵：新增技能（排在 `ability.json` 裡這棵樹最後一個技能後面）、把未分類的技能放上來。節點右鍵：改名、複製（放在右邊第一個空格）、移出這棵樹、刪除。
 - 右：技能表單，欄位定義在 `schema.js`（遊戲加新欄位改這裡）。顯示＝基本（lab/icon/mode/tag/des）＋有值的已知欄位，其他從「加欄位」叫出來。
   - `hits`、`effects` 一筆一張卡片（↑↓⧉×），卡片標題是一行摘要；effects 欄位沿用道具編輯器的 `EFF_FIELDS`／`EFF_BY_TYPE`／`effSummary`，多一個 `reqClass`。卡片裡 schema 沒有的 key 在「額外欄位（JSON）」。
-  - `travel`／`fx`／`cast`／`zone*` 等沒列到的 key 在最下面「其他欄位」原始 JSON。
+  - 區域技能（火牆）的 `zoneW`／`zoneH`／`zoneDur`／`zoneFx` 是「區域寬／高／回合／特效」；`zoneFx` 指 fx.json 的 id（下拉列出 fx.json 全部，沒有就警告），外觀到特效分頁編（[fx-tool.md](fx-tool.md)）。
+  - `travel`／`fx`／`cast` 等沒列到的 key 在最下面「其他欄位」原始 JSON。
   - 前置只唯讀顯示，要在畫布拉線改。
   - 說明預覽：照遊戲 `utility.js` 的 `fmt_Des()` 展開 token，拿不到施放者屬性，所以 `{#fmt}` 顯示成公式（`10+1.5×智力`）；元素、屬性名查 `local.json` 的 `lab`。
 
@@ -39,7 +40,7 @@
 
 ## 改名／刪除
 
-- 技能改名：`ability.json` 的 key（位置不變）、別人的 `refs`、樹節點、`role.json` 的 `abilities` 一起改；其他檔案用 `doc.js` 的 `scanRefsIn()` 掃（`public/assets` 的 json、`xls/`、`src/`，跳過這三份工具自己改的）只列不改。翻譯情境 `ability.<id>` 會變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
+- 技能改名：`ability.json` 的 key（位置不變）、別人的 `refs`、樹節點、`role.json` 的 `abilities` 一起改；其他檔案用 `doc.js` 的 `scanRefsIn()` 掃（`public/assets` 的 json、`src/`，跳過這三份工具自己改的）只列不改。翻譯情境 `ability.<id>` 會變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
 - 技能刪除：別人的 `refs`、樹節點、`role.json` 的 `abilities` 一起拿掉，外部引用只列。
 - 樹改名：`ab_tree.json` 跟 `local.json` 的 key 一起改（`local.json` 已經有新名字就不給改），外部引用只列；翻譯情境 `ui.<樹>` 會變 orphan。
 - 樹刪除：技能留在 `ability.json` 變「不在樹上」，`local.json` 的樹名一起拿掉。
