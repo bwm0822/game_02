@@ -320,7 +320,7 @@
     "icon": "head-melanie",
     "job": "trader",
     "gold": 200,
-    "style": "skittish",
+    "style": "passive_coward",
     "trade": true,
     "unique": true,
     "faceR": true,
