@@ -64,7 +64,7 @@ export async function scanRefsIn(assets, id, skip)
     return out;
 }
 
-// opt: {file, dir（public/assets 底下的資料夾，預設 json）, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), decode, encode}
+// opt: {file, dir（public/assets 底下的資料夾，預設 json）, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), afterSave(), decode, encode}
 // decode(json) → {id: 資料}、encode({id: 資料}) → json：檔案本身不是 {id: 資料} 時（story.json）轉接，undo／合併都以 id 為單位
 export function createDoc(opt)
 {
@@ -199,6 +199,7 @@ export function createDoc(opt)
         S.saved = decode(JSON.parse(text));
         SH.notifySaved(opt.file);
         status(`已存檔 ${new Date().toLocaleTimeString()}`);
+        await opt.afterSave?.();
         render();
     }
 

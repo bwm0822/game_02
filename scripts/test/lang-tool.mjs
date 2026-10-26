@@ -92,7 +92,7 @@ run('lang-tool', async t => {
         out.back = [lt.opt.file, S.data[first.ctx]?.[first.src]?.t];
 
         // orphan：同情境的 new 列建議搬舊譯文
-        const nw = S.rows.find(x => x.check === 'new' && S.rows.filter(y => y.ctx === x.ctx && y.check === 'new').length === 1);
+        const nw = S.rows.find(x => x.check === 'new' && !x.hints.length && S.rows.filter(y => y.ctx === x.ctx && y.check === 'new').length === 1);
         lt.D.commit(() => {(S.data[nw.ctx] ??= {})['舊的句子'] = {t: 'Old line', r: 'ok'};});
         S.node = ''; lt.render();
         const row = () => q(k(nw.ctx, nw.src));
@@ -109,9 +109,13 @@ run('lang-tool', async t => {
 
         // shared：兩個情境同一句同一個譯文 → 升為 shared，兩個都刪掉、改顯示 shared
         const cnt = {};
-        for (const x of S.rows) if (x.ctx !== '_shared' && x.check === 'new') (cnt[x.src] ??= []).push(x.ctx);
+        for (const x of S.rows) if (x.ctx !== '_shared' && x.check !== 'orphan') (cnt[x.src] ??= []).push(x.ctx);
         const src = Object.keys(cnt).find(s => cnt[s].length >= 2 && !s.includes('{'));
         const [c1, c2] = cnt[src];
+        lt.D.commit(() => {
+            for (const c of cnt[src]) if (S.data[c]) delete S.data[c][src];
+            if (S.data._shared) delete S.data._shared[src];
+        });
         lt.setT(c1, src, 'Same'); lt.setT(c2, src, 'Same');
         S.node = ''; lt.render();
         const p3 = (async () => {for (let i = 0; i < 200 && !$('dlgAsk').open; i++) await sleep(20);})();
@@ -205,8 +209,7 @@ run('lang-tool', async t => {
         out.dialog = await jump('dlg._common.n_cold', 'dialog', w => w.__dl?.S.sel === '_common'
             && w.document.querySelector(`.flash[data-k="${CSS.escape(JSON.stringify(['_common', 'nodes', 'n_cold']))}"]`));
         out.story = await jump('story.let.hunt_ask', 'story', w => w.__st?.S.sel && w.document.querySelector('#view .flash'));
-        lt.S.search = 'ui.weapon'; lt.render();
-        out.ui = [...win('lang').document.querySelectorAll('#view tr')].some(tr => tr.querySelector('a.go'));
+        out.ui = await jump('ui.weapon', 'local', w => w.__lc?.S.node === 'general');
         return out;
     });
     t.eq('↗ 道具', s.item, true);
@@ -214,5 +217,5 @@ run('lang-tool', async t => {
     t.eq('↗ 能力', s.ability, true);
     t.eq('↗ 對話節點', s.dialog, true);
     t.eq('↗ 劇情卡', s.story, true);
-    t.eq('ui.* 沒有 ↗', s.ui, false);
+    t.eq('↗ 文字（ui.*）', s.ui, true);
 });

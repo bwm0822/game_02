@@ -15,7 +15,7 @@ const PREF = 'tools.lang.lang';
 const DOMAIN = {ui: '介面', item: '道具', role: '角色', ability: '能力', dlg: '對話', line: '台詞', story: '任務',
                 'story.let': '劇情卡', 'story.thread': '任務日誌', 'story.node': '長對話節點'};
 const REVIEW = ['', 'mt', 'ok'];
-const TAB_LAB = {item: '道具', role: '角色', ability: '能力', dialog: '對話', story: '任務'};
+const TAB_LAB = {local: '文字', item: '道具', role: '角色', ability: '能力', dialog: '對話', story: '任務'};
 
 const opt = {
     file: 'en.json', dir: 'lang', noun: '個情境',
@@ -201,7 +201,7 @@ async function loadRefs()
     const get = (f) => fetch(`/assets/json/${f}.json`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
     const [local, item, role, ability, dialog, story] = await Promise.all(SOURCES.map(get));
     S.roles = role;
-    S.src = {item, role, ability, dialog, story};
+    S.src = {local, item, role, ability, dialog, story};
     S.entries = extract({local, item, role, ability, dialog: mergeDialog(dialog, role), story: flattenStory(story)});
 }
 
@@ -212,6 +212,7 @@ function sourceOf(r)
     const {dialog, story} = S.src ?? {};
     const lines = Object.entries(story?.lines ?? {});
     if ((dom === 'item' || dom === 'role' || dom === 'ability') && S.src?.[dom]?.[a]) return [dom, [a]];
+    if (dom === 'ui' && S.src?.local?.[a]) return ['local', [a]];
     if (dom === 'dlg')
     {
         if (dialog?.[a]?.nodes?.[b]) return ['dialog', [a, 'nodes', b]];
@@ -526,6 +527,13 @@ $('btnPaste').onclick = pasteDone;
 $('lang').onchange = (e) => switchLang(e.target.value);
 $('font').onchange = (e) => setFont(e.target.value.trim());
 $('filter').onchange = (e) => {S.filter = e.target.value; render();};
+
+// 文字分頁的「翻譯 ↗」：path = [情境]，用搜尋列出那個情境的每一句
+SH.onGoto(([ctx]) => {
+    S.search = $('search').value = ctx;
+    S.filter = $('filter').value = '';
+    render();
+});
 
 (async () => {
     await loadRefs();

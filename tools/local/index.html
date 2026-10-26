@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>文字</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #left { width: 200px; }
+    .node { display: flex; align-items: center; gap: 6px; padding: 1px 6px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+    .node:hover { background: #33363c; }
+    .node.sel { background: #2f6db5; }
+    .node .cnt { margin-left: auto; color: #888; font-size: 14px; }
+    .node .cnt.warn { color: #e9b44c; }
+    .node.gap { margin-top: 8px; }
+    table.tx { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    table.tx th, table.tx td { border: 1px solid #3a3d44; padding: 3px 6px; text-align: left; vertical-align: top; }
+    table.tx th { background: #2b2d31; position: sticky; top: 0; z-index: 1; }
+    table.tx td.key { color: #bcd; word-break: break-all; }
+    table.tx td textarea { display: block; resize: none; overflow: hidden; min-height: 1.6em; }
+    table.tx td select { width: 100%; }
+    table.tx td.refs { text-align: right; }
+    table.tx td.refs a { color: #8bd; cursor: pointer; }
+    table.tx tr.unused td { color: #777; }
+    table.tx tr.unused td textarea { color: #999; }
+    table.tx tr.dirty td.key { color: #fc8; }
+    table.tx tr.flash td { background: #3a4a2a; }
+    table.tx tr.miss td { color: #e9b44c; }
+    .locs { font-size: 13px; color: #999; white-space: pre-wrap; margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+    <button id="btnReload" title="從硬碟重新讀 local.json">重新讀取</button>
+    <button id="btnSave" title="Ctrl+S">存檔</button>
+    <span id="dirty" class="dirty" hidden>● 未存檔</span>
+    <span class="sep"></span>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <span class="sep"></span>
+    <input id="search" placeholder="搜尋 key／原文（全部分組）" size="28">
+    <button id="btnNew">＋ 新增</button>
+    <button id="btnScan" title="重新掃 src/ 跟資料 json，算引用、缺少、未使用">重新掃描</button>
+    <button id="btnForm" hidden></button>
+    <button id="btnTable" hidden></button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <aside id="left">
+        <div id="list"></div>
+    </aside>
+    <section id="view"></section>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
