@@ -407,7 +407,7 @@ run('ability', async t => {
     t.check('樹列出現未存點', r.dirtyMark);
     t.eq('清空刪 key', r.cleared, false);
     t.eq('undo', r.undo, 5);
-    t.eq('樹名寫進 local.json', JSON.stringify(r.treeLab), JSON.stringify({lab: '火焰'}));
+    t.eq('樹名寫進 local.json（分組 ability）', JSON.stringify(r.treeLab), JSON.stringify({lab: '火焰', grp: 'ability'}));
     t.eq('清空樹名拿掉整個 key', r.treeLabGone, false);
     t.check('沒有樹名有警告', r.treeLabWarn);
     t.eq('樹名 undo', r.treeLabUndo, '火焰');

@@ -1,702 +1,923 @@
 {
   "weapon": {
     "lab": "武器",
-    "des": "攻擊用"
+    "des": "攻擊用",
+    "grp": "general"
   },
   "armor": {
-    "lab": "防具"
+    "lab": "防具",
+    "grp": "general"
   },
   "item": {
-    "lab": "道具"
+    "lab": "道具",
+    "grp": "general"
   },
   "skill": {
-    "lab": "技能"
+    "lab": "技能",
+    "grp": "general"
   },
   "ability": {
-    "lab": "能力"
+    "lab": "能力",
+    "grp": "general"
   },
   "helmet": {
-    "lab": "頭盔"
+    "lab": "頭盔",
+    "grp": "general"
   },
   "chestplate": {
-    "lab": "胸甲"
+    "lab": "胸甲",
+    "grp": "general"
   },
   "gloves": {
-    "lab": "手套"
+    "lab": "手套",
+    "grp": "general"
   },
   "boots": {
-    "lab": "靴子"
+    "lab": "靴子",
+    "grp": "general"
   },
   "necklace": {
-    "lab": "項鍊"
+    "lab": "項鍊",
+    "grp": "general"
   },
   "ring": {
-    "lab": "戒子"
+    "lab": "戒子",
+    "grp": "general"
   },
   "bag": {
-    "lab": "背包"
+    "lab": "背包",
+    "grp": "general"
   },
   "equip": {
-    "lab": "裝備"
+    "lab": "裝備",
+    "grp": "general"
   },
   "other": {
-    "lab": "其他"
+    "lab": "其他",
+    "grp": "general"
   },
   "storage": {
-    "lab": "儲量"
+    "lab": "儲量",
+    "grp": "general"
   },
   "endurance": {
-    "lab": "耐久"
+    "lab": "耐久",
+    "grp": "general"
   },
   "durability": {
-    "lab": "耐久"
+    "lab": "耐久",
+    "grp": "general"
   },
   "times": {
-    "lab": "次數"
+    "lab": "次數",
+    "grp": "general"
   },
   "capacity": {
-    "lab": "容量"
+    "lab": "容量",
+    "grp": "general"
   },
   "attrs": {
-    "lab": "屬性"
+    "lab": "屬性",
+    "grp": "general"
   },
   "states": {
-    "lab": "狀態"
+    "lab": "狀態",
+    "grp": "general"
   },
   "life": {
     "lab": "生命",
-    "des": "生命值\n降到 0，就死亡"
+    "des": "生命值\n降到 0，就死亡",
+    "grp": "general"
   },
   "attack": {
-    "lab": "攻擊"
+    "lab": "攻擊",
+    "grp": "general"
   },
   "defense": {
     "lab": "防禦",
-    "des": "可吸收的傷害"
+    "des": "可吸收的傷害",
+    "grp": "general"
   },
   "use": {
-    "lab": "使用"
+    "lab": "使用",
+    "grp": "general"
   },
   "drop": {
-    "lab": "丟棄"
+    "lab": "丟棄",
+    "grp": "general"
   },
   "take": {
-    "lab": "拿"
+    "lab": "拿",
+    "grp": "general"
   },
   "talk": {
-    "lab": "交談"
+    "lab": "交談",
+    "grp": "general"
   },
   "trade": {
-    "lab": "交易"
+    "lab": "交易",
+    "grp": "general"
   },
   "buy": {
-    "lab": "買"
+    "lab": "買",
+    "grp": "general"
   },
   "sell": {
-    "lab": "賣"
+    "lab": "賣",
+    "grp": "general"
   },
   "split": {
-    "lab": "拆分"
+    "lab": "拆分",
+    "grp": "general"
   },
   "open": {
-    "lab": "開啟"
+    "lab": "開啟",
+    "grp": "general"
   },
   "observe": {
-    "lab": "觀察"
+    "lab": "觀察",
+    "grp": "general"
   },
   "transfer": {
-    "lab": "移動"
+    "lab": "移動",
+    "grp": "general"
   },
   "openbag": {
-    "lab": "開啟"
+    "lab": "開啟",
+    "grp": "general"
   },
   "inv": {
-    "lab": "背包"
+    "lab": "背包",
+    "grp": "general"
   },
   "profile": {
-    "lab": "個人"
+    "lab": "個人",
+    "grp": "general"
   },
   "drink": {
-    "lab": "喝水"
+    "lab": "喝水",
+    "grp": "general"
   },
   "fill": {
-    "lab": "取水"
+    "lab": "取水",
+    "grp": "general"
   },
   "cook": {
-    "lab": "烹煮"
+    "lab": "烹煮",
+    "grp": "general"
   },
   "open_door": {
-    "lab": "打開"
+    "lab": "打開",
+    "grp": "general"
   },
   "close_door": {
-    "lab": "關閉"
+    "lab": "關閉",
+    "grp": "general"
   },
   "make": {
-    "lab": "製作"
+    "lab": "製作",
+    "grp": "general"
   },
   "rest": {
-    "lab": "休息"
+    "lab": "休息",
+    "grp": "general"
   },
   "wake": {
-    "lab": "起床"
+    "lab": "起床",
+    "grp": "general"
   },
   "setting": {
-    "lab": "設定"
+    "lab": "設定",
+    "grp": "general"
   },
   "_space_full": {
-    "lab": "空間已滿 !!!"
+    "lab": "空間已滿 !!!",
+    "grp": "general"
   },
   "_not_enough_gold": {
-    "lab": "金幣不足 !!!"
+    "lab": "金幣不足 !!!",
+    "grp": "general"
   },
   "player": {
-    "lab": "玩家"
+    "lab": "玩家",
+    "grp": "general"
   },
   "quest_general": {
-    "lab": "一般任務"
+    "lab": "一般任務",
+    "grp": "general"
   },
   "description": {
-    "lab": "說明"
+    "lab": "說明",
+    "grp": "general"
   },
   "progress": {
-    "lab": "進度"
+    "lab": "進度",
+    "grp": "general"
   },
   "completed": {
-    "lab": "已完成"
+    "lab": "已完成",
+    "grp": "general"
   },
   "clear": {
-    "lab": "清除"
+    "lab": "清除",
+    "grp": "general"
   },
   "select_all": {
-    "lab": "全選"
+    "lab": "全選",
+    "grp": "general"
   },
   "submit": {
-    "lab": "送出"
+    "lab": "送出",
+    "grp": "general"
   },
   "save": {
-    "lab": "存檔"
+    "lab": "存檔",
+    "grp": "general"
   },
   "leave": {
-    "lab": "離開"
+    "lab": "離開",
+    "grp": "general"
   },
   "mode_toggle": {
-    "lab": "模式:{#v}"
+    "lab": "模式:{#v}",
+    "grp": "general"
   },
   "manufacture": {
-    "lab": "製造"
+    "lab": "製造",
+    "grp": "general"
   },
   "map": {
-    "lab": "地圖"
+    "lab": "地圖",
+    "grp": "general"
   },
   "effect": {
-    "lab": "效果"
+    "lab": "效果",
+    "grp": "general"
   },
   "main": {
-    "lab": "主要"
+    "lab": "主要",
+    "grp": "general"
   },
   "mouse_edge_move": {
-    "lab": "滑鼠移動到邊緣可移動鏡頭"
+    "lab": "滑鼠移動到邊緣可移動鏡頭",
+    "grp": "general"
   },
   "pointer_lock": {
-    "lab": "滑鼠鎖定模式"
+    "lab": "滑鼠鎖定模式",
+    "grp": "general"
   },
   "start_game": {
-    "lab": "開始遊戲"
+    "lab": "開始遊戲",
+    "grp": "general"
   },
   "game_setting": {
-    "lab": "遊戲設定"
+    "lab": "遊戲設定",
+    "grp": "general"
   },
   "map_show_names": {
-    "lab": "顯示地名"
+    "lab": "顯示地名",
+    "grp": "general"
   },
   "map_show_quests": {
-    "lab": "顯示任務"
+    "lab": "顯示任務",
+    "grp": "general"
   },
   "iron": {
-    "lab": "鐵礦"
+    "lab": "鐵礦",
+    "grp": "items"
   },
   "salt": {
-    "lab": "鹽"
+    "lab": "鹽",
+    "grp": "items"
   },
   "raw_meat": {
-    "lab": "生肉"
+    "lab": "生肉",
+    "grp": "items"
   },
   "cooked_meat": {
-    "lab": "熟肉"
+    "lab": "熟肉",
+    "grp": "items"
   },
   "raw_fish": {
-    "lab": "生魚"
+    "lab": "生魚",
+    "grp": "items"
   },
   "salt_baked_fish": {
-    "lab": "鹽烤魚"
+    "lab": "鹽烤魚",
+    "grp": "items"
   },
   "sword_01": {
-    "lab": "普通刀"
+    "lab": "普通刀",
+    "grp": "items"
   },
   "sword_02": {
-    "lab": "鐵劍"
+    "lab": "鐵劍",
+    "grp": "items"
   },
   "sword_03": {
-    "lab": "鋼劍"
+    "lab": "鋼劍",
+    "grp": "items"
   },
   "helmet_01": {
-    "lab": "草帽"
+    "lab": "草帽",
+    "grp": "items"
   },
   "helmet_02": {
-    "lab": "麻布帽"
+    "lab": "麻布帽",
+    "grp": "items"
   },
   "helmet_03": {
-    "lab": "皮帽"
+    "lab": "皮帽",
+    "grp": "items"
   },
   "chest_01": {
-    "lab": "草衣"
+    "lab": "草衣",
+    "grp": "items"
   },
   "chest_02": {
-    "lab": "麻布衣"
+    "lab": "麻布衣",
+    "grp": "items"
   },
   "chest_03": {
-    "lab": "皮衣"
+    "lab": "皮衣",
+    "grp": "items"
   },
   "gloves_01": {
-    "lab": "手套"
+    "lab": "手套",
+    "grp": "items"
   },
   "boots_01": {
-    "lab": "靴子"
+    "lab": "靴子",
+    "grp": "items"
   },
   "neck_01": {
-    "lab": "項鍊"
+    "lab": "項鍊",
+    "grp": "items"
   },
   "ring_01": {
-    "lab": "戒子"
+    "lab": "戒子",
+    "grp": "items"
   },
   "torch": {
-    "lab": "火把"
+    "lab": "火把",
+    "grp": "items"
   },
   "bottle": {
-    "lab": "水壺"
+    "lab": "水壺",
+    "grp": "items"
   },
   "ranger": {
     "lab": "遊俠",
-    "des": "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺"
+    "des": "弓箭高手、森林獵人、野外生存達人，腳步輕盈如風，氣息比幽靈還難察覺",
+    "grp": "jobs"
   },
   "smith": {
     "lab": "鐵匠",
-    "des": "打造武器、防具與工具的鍛造高手。"
+    "des": "打造武器、防具與工具的鍛造高手。",
+    "grp": "jobs"
   },
   "innkeeper": {
     "lab": "旅館老闆",
-    "des": "經營旅館與酒館，消息靈通的熱情招待。"
+    "des": "經營旅館與酒館，消息靈通的熱情招待。",
+    "grp": "jobs"
   },
   "trader": {
     "lab": "小販",
-    "des": "村內攤商，賣日用品或冒險裝備。"
+    "des": "村內攤商，賣日用品或冒險裝備。",
+    "grp": "jobs"
   },
   "butcher": {
-    "lab": "解剖"
+    "lab": "解剖",
+    "grp": "jobs"
   },
   "merchant": {
     "lab": "行商",
-    "des": "來去自如的商旅，販售異地貨品。"
+    "des": "來去自如的商旅，販售異地貨品。",
+    "grp": "jobs"
   },
   "guard": {
     "lab": "守衛",
-    "des": "巡邏村莊、維持治安。"
+    "des": "巡邏村莊、維持治安。",
+    "grp": "jobs"
   },
   "rogue": {
-    "lab": "盜賊"
+    "lab": "盜賊",
+    "grp": "jobs"
   },
   "str": {
     "lab": "力量",
-    "des": "影響近戰攻擊"
+    "des": "影響近戰攻擊",
+    "grp": "stat"
   },
   "dex": {
     "lab": "敏捷",
-    "des": "影響閃避"
+    "des": "影響閃避",
+    "grp": "stat"
   },
   "con": {
     "lab": "體質",
-    "des": "影響生命"
+    "des": "影響生命",
+    "grp": "stat"
   },
   "int": {
     "lab": "智慧",
-    "des": "影響法術效力"
+    "des": "影響法術效力",
+    "grp": "stat"
   },
   "luk": {
     "lab": "幸運",
-    "des": "影響判定"
+    "des": "影響判定",
+    "grp": "stat"
   },
   "combat": {
-    "lab": "戰鬥"
+    "lab": "戰鬥",
+    "grp": "stat"
   },
   "atk": {
     "lab": "攻擊",
-    "des": "物理傷害"
+    "des": "物理傷害",
+    "grp": "stat"
   },
   "def": {
     "lab": "防禦",
-    "des": "物理防禦"
+    "des": "物理防禦",
+    "grp": "stat"
   },
   "range": {
     "lab": "距離",
-    "des": "攻擊半徑"
+    "des": "攻擊半徑",
+    "grp": "stat"
   },
   "acc": {
     "lab": "命中",
-    "des": "命中率"
+    "des": "命中率",
+    "grp": "stat"
   },
   "eva": {
     "lab": "閃避",
-    "des": "閃避率"
+    "des": "閃避率",
+    "grp": "stat"
   },
   "cri": {
     "lab": "暴率",
-    "des": "暴擊率"
+    "des": "暴擊率",
+    "grp": "stat"
   },
   "crd": {
     "lab": "暴傷",
-    "des": "暴擊傷害倍率"
+    "des": "暴擊傷害倍率",
+    "grp": "stat"
   },
   "pen": {
     "lab": "穿透",
-    "des": "無視防禦"
+    "des": "無視防禦",
+    "grp": "stat"
   },
   "resist": {
-    "lab": "抗性"
+    "lab": "抗性",
+    "grp": "stat"
   },
   "phy_res": {
     "lab": "物抗",
-    "des": "物理抗性"
+    "des": "物理抗性",
+    "grp": "stat"
   },
   "fire_res": {
     "lab": "火抗",
-    "des": "火焰抗性"
+    "des": "火焰抗性",
+    "grp": "stat"
   },
   "ice_res": {
     "lab": "冰抗",
-    "des": "冰凍抗性"
+    "des": "冰凍抗性",
+    "grp": "stat"
   },
   "poison_res": {
     "lab": "毒抗",
-    "des": "中毒抗性"
+    "des": "中毒抗性",
+    "grp": "stat"
   },
   "elm": {
-    "lab": "元素"
+    "lab": "元素",
+    "grp": "stat"
   },
   "phy": {
-    "lab": "物理"
+    "lab": "物理",
+    "grp": "stat"
   },
   "fire": {
-    "lab": "火焰"
+    "lab": "火焰",
+    "grp": "stat"
   },
   "ice": {
-    "lab": "冰凍"
+    "lab": "冰凍",
+    "grp": "stat"
   },
   "poison": {
-    "lab": "中毒"
+    "lab": "中毒",
+    "grp": "stat"
   },
   "hp": {
     "lab": "生命",
-    "des": "生命值\n降到 0，就死亡"
+    "des": "生命值\n降到 0，就死亡",
+    "grp": "stat"
   },
   "hunger": {
     "lab": "飢餓",
-    "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝"
+    "des": "飢餓度\n大於[color=red]50%[/color]，生命開始流逝",
+    "grp": "stat"
   },
   "thirst": {
     "lab": "口渴",
-    "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝"
+    "des": "口渴度\n大於[color=red]50%[/color]，生命開始流逝",
+    "grp": "stat"
   },
   "hot": {
     "lab": "持續回復",
-    "des": "觸發{#tag}，每回合增加{#value}點生命，持續{#dur}回合 "
+    "des": "觸發{#tag}，每回合增加{#value}點生命，持續{#dur}回合 ",
+    "grp": "stat"
   },
   "dot": {
     "lab": "持續傷害",
-    "des": "觸發{#tag}，每回合受到{#value}點{#elm}傷害，持續{#dur}回合 "
+    "des": "觸發{#tag}，每回合受到{#value}點{#elm}傷害，持續{#dur}回合 ",
+    "grp": "stat"
   },
   "buff": {
     "lab": "增益",
-    "des": "觸發{#tag}，{#eff}，持續{#dur}回合 "
+    "des": "觸發{#tag}，{#eff}，持續{#dur}回合 ",
+    "grp": "stat"
   },
   "act_hot": {
     "lab": "持續回復",
-    "des": "每回合增加{#value}點生命 "
+    "des": "每回合增加{#value}點生命 ",
+    "grp": "stat"
   },
   "act_dot": {
     "lab": "持續傷害",
-    "des": "每回合受到{#value}點{#elm}傷害"
+    "des": "每回合受到{#value}點{#elm}傷害",
+    "grp": "stat"
   },
   "act_buff": {
     "lab": "增益",
-    "des": "{#eff}"
+    "des": "{#eff}",
+    "grp": "stat"
   },
   "crit": {
-    "lab": "暴擊"
+    "lab": "暴擊",
+    "grp": "stat"
   },
   "miss": {
-    "lab": "失誤"
+    "lab": "失誤",
+    "grp": "stat"
   },
   "hit": {
-    "lab": "命中"
+    "lab": "命中",
+    "grp": "stat"
   },
   "cast": {
-    "lab": "施法"
+    "lab": "施法",
+    "grp": "stat"
   },
   "self": {
-    "lab": "自身"
+    "lab": "自身",
+    "grp": "stat"
   },
   "target": {
-    "lab": "目標"
+    "lab": "目標",
+    "grp": "stat"
   },
   "stun": {
-    "lab": "昏眩"
+    "lab": "昏眩",
+    "grp": "stat"
   },
   "lifesteal": {
     "lab": "吸血",
-    "des": "造成傷害的{#num}轉換為生命值"
+    "des": "造成傷害的{#num}轉換為生命值",
+    "grp": "stat"
   },
   "burn": {
-    "lab": "灼燒"
+    "lab": "灼燒",
+    "grp": "stat"
   },
   "scope": {
-    "lab": "類型"
+    "lab": "類型",
+    "grp": "stat"
   },
   "single": {
-    "lab": "單體"
+    "lab": "單體",
+    "grp": "stat"
   },
   "group": {
-    "lab": "群體"
+    "lab": "群體",
+    "grp": "stat"
   },
   "area": {
-    "lab": "範圍"
+    "lab": "範圍",
+    "grp": "stat"
   },
   "bleed": {
-    "lab": "出血"
+    "lab": "出血",
+    "grp": "tag"
   },
   "heal": {
-    "lab": "治療"
+    "lab": "治療",
+    "grp": "tag"
   },
   "strong": {
-    "lab": "強化"
+    "lab": "強化",
+    "grp": "tag"
   },
   "active": {
-    "lab": "主動"
+    "lab": "主動",
+    "grp": "other"
   },
   "passive": {
-    "lab": "被動"
+    "lab": "被動",
+    "grp": "other"
   },
   "type": {
     "lab": "類型",
-    "des": "戰鬥類型"
+    "des": "戰鬥類型",
+    "grp": "other"
   },
   "melee": {
-    "lab": "近戰"
+    "lab": "近戰",
+    "grp": "other"
   },
   "ranged": {
-    "lab": "遠距"
+    "lab": "遠距",
+    "grp": "other"
   },
   "reqClass": {
-    "lab": "需求"
+    "lab": "需求",
+    "grp": "other"
   },
   "sword": {
-    "lab": "劍"
+    "lab": "劍",
+    "grp": "other"
   },
   "bow": {
-    "lab": "弓"
+    "lab": "弓",
+    "grp": "other"
   },
   "quest": {
-    "lab": "任務"
+    "lab": "任務",
+    "grp": "quest"
   },
   "conditions": {
-    "lab": "條件"
+    "lab": "條件",
+    "grp": "quest"
   },
   "rewards": {
-    "lab": "獎勵"
+    "lab": "獎勵",
+    "grp": "quest"
   },
   "gold": {
-    "lab": "金幣"
+    "lab": "金幣",
+    "grp": "quest"
   },
   "kill": {
-    "lab": "殺死"
+    "lab": "殺死",
+    "grp": "quest"
   },
   "General": {
-    "lab": "一般"
+    "lab": "一般",
+    "grp": "ability"
   },
   "Sword": {
-    "lab": "劍技"
+    "lab": "劍技",
+    "grp": "ability"
   },
   "Archery": {
-    "lab": "弓技"
+    "lab": "弓技",
+    "grp": "ability"
   },
   "Fire": {
-    "lab": "火系"
+    "lab": "火系",
+    "grp": "ability"
   },
   "Ice": {
-    "lab": "冰系"
+    "lab": "冰系",
+    "grp": "ability"
   },
   "Poison": {
-    "lab": "毒系"
+    "lab": "毒系",
+    "grp": "ability"
   },
   "Support": {
-    "lab": "支援"
+    "lab": "支援",
+    "grp": "ability"
   },
   "Enhancement": {
-    "lab": "強化"
+    "lab": "強化",
+    "grp": "ability"
   },
   "steal": {
-    "lab": "偷竊"
+    "lab": "偷竊",
+    "grp": "ability"
   },
   "pickup": {
-    "lab": "拾取"
+    "lab": "拾取",
+    "grp": "option"
   },
   "lock": {
-    "lab": "上鎖"
+    "lab": "上鎖",
+    "grp": "option"
   },
   "unlock": {
-    "lab": "解鎖"
+    "lab": "解鎖",
+    "grp": "option"
   },
   "restore": {
-    "lab": "恢復"
+    "lab": "恢復",
+    "grp": "option"
   },
   "_beg_mercy": {
-    "lab": "不要殺我!!!"
+    "lab": "不要殺我!!!",
+    "grp": "msg"
   },
   "_shout_help": {
-    "lab": "救命啊！"
+    "lab": "救命啊！",
+    "grp": "msg"
   },
   "_shout_come": {
-    "lab": "來人啊！"
+    "lab": "來人啊！",
+    "grp": "msg"
   },
   "_shout_murder": {
-    "lab": "有人要殺我！"
+    "lab": "有人要殺我！",
+    "grp": "msg"
   },
   "_harvest_need_tool": {
-    "lab": "需要 {#tool} 才能採集"
+    "lab": "需要 {#tool} 才能採集",
+    "grp": "msg"
   },
   "_harvest_chop": {
-    "lab": "砍了 {#cur}/{#max} 下"
+    "lab": "砍了 {#cur}/{#max} 下",
+    "grp": "msg"
   },
   "_harvest_drop": {
-    "lab": "掉落 {#item} x{#count}"
+    "lab": "掉落 {#item} x{#count}",
+    "grp": "msg"
   },
   "_harvest_get": {
-    "lab": "獲得 {#item}"
+    "lab": "獲得 {#item}",
+    "grp": "msg"
   },
   "_lock_no_skill": {
-    "lab": "缺少開鎖技能"
+    "lab": "缺少開鎖技能",
+    "grp": "msg"
   },
   "_lock_no_tool": {
-    "lab": "缺少開鎖工具"
+    "lab": "缺少開鎖工具",
+    "grp": "msg"
   },
   "_lock_confirm": {
-    "lab": "用開鎖工具開鎖？\n成功率 {#rate}%"
+    "lab": "用開鎖工具開鎖？\n成功率 {#rate}%",
+    "grp": "msg"
   },
   "_lock_fail": {
-    "lab": "{#who} 開鎖失敗"
+    "lab": "{#who} 開鎖失敗",
+    "grp": "msg"
   },
   "_lock_tool_broken": {
-    "lab": "開鎖工具損壞了"
+    "lab": "開鎖工具損壞了",
+    "grp": "msg"
   },
   "_lock_locked": {
-    "lab": "{#who} 上鎖"
+    "lab": "{#who} 上鎖",
+    "grp": "msg"
   },
   "_lock_unlocked": {
-    "lab": "{#who} 開鎖"
+    "lab": "{#who} 開鎖",
+    "grp": "msg"
   },
   "_loot_no_knife": {
-    "lab": "沒有刀具，無法解剖"
+    "lab": "沒有刀具，無法解剖",
+    "grp": "msg"
   },
   "_loot_get": {
-    "lab": "{#who} 獲得 {#item}"
+    "lab": "{#who} 獲得 {#item}",
+    "grp": "msg"
   },
   "_hunger": {
-    "lab": "{#who} {#pct}% 飢餓"
+    "lab": "{#who} {#pct}% 飢餓",
+    "grp": "msg"
   },
   "_thirst": {
-    "lab": "{#who} {#pct}% 口渴"
+    "lab": "{#who} {#pct}% 口渴",
+    "grp": "msg"
   },
   "_steal_ok": {
-    "lab": "{#who} 成功偷竊 {#item}"
+    "lab": "{#who} 成功偷竊 {#item}",
+    "grp": "msg"
   },
   "_steal_fail": {
-    "lab": "{#who} 偷竊失敗"
+    "lab": "{#who} 偷竊失敗",
+    "grp": "msg"
   },
   "_steal_confirm": {
-    "lab": "偷竊嗎?"
+    "lab": "偷竊嗎?",
+    "grp": "msg"
   },
   "_trade_refuse": {
-    "lab": "無法交易"
+    "lab": "無法交易",
+    "grp": "msg"
   },
   "_fill_water": {
-    "lab": "{#who} 裝水"
+    "lab": "{#who} 裝水",
+    "grp": "msg"
   },
   "_bottle_full": {
-    "lab": "{#who} 水壺已滿"
+    "lab": "{#who} 水壺已滿",
+    "grp": "msg"
   },
   "_learn_confirm": {
-    "lab": "學習此技能?"
+    "lab": "學習此技能?",
+    "grp": "msg"
   },
   "_quest_updated": {
-    "lab": "更新任務"
+    "lab": "更新任務",
+    "grp": "msg"
   },
   "_dlg_hint": {
-    "lab": "（{#hint}）"
+    "lab": "（{#hint}）",
+    "grp": "msg"
   },
   "_dlg_listen": {
-    "lab": "*聆聽...*"
+    "lab": "*聆聽...*",
+    "grp": "msg"
   },
   "_favor_value": {
-    "lab": "好感 : {#v}"
+    "lab": "好感 : {#v}",
+    "grp": "msg"
   },
   "_eff_stage": {
-    "lab": "{#v}時，"
+    "lab": "{#v}時，",
+    "grp": "msg"
   },
   "_eff_trigger": {
-    "lab": "觸發[color=skyblue]{#v}[/color]，"
+    "lab": "觸發[color=skyblue]{#v}[/color]，",
+    "grp": "msg"
   },
   "_eff_trigger_end": {
-    "lab": "觸發[color=skyblue]{#v}[/color]"
+    "lab": "觸發[color=skyblue]{#v}[/color]",
+    "grp": "msg"
   },
   "_eff_dur": {
-    "lab": "，持續[color=white]{#v}[/color]回合"
+    "lab": "，持續[color=white]{#v}[/color]回合",
+    "grp": "msg"
   },
   "_eff_stack": {
-    "lab": "，最多疊加[color=white]{#v}[/color]層"
+    "lab": "，最多疊加[color=white]{#v}[/color]層",
+    "grp": "msg"
   },
   "_eff_dot": {
-    "lab": "{#stage}{#scope}{#trigger}每回合{#num}血量{#dur}{#stack}"
+    "lab": "{#stage}{#scope}{#trigger}每回合{#num}血量{#dur}{#stack}",
+    "grp": "msg"
   },
   "_eff_buff": {
-    "lab": "{#stage}{#scope}{#trigger}{#key}{#num}{#dur}{#stack}"
+    "lab": "{#stage}{#scope}{#trigger}{#key}{#num}{#dur}{#stack}",
+    "grp": "msg"
   },
   "_eff_mod": {
-    "lab": "{#stage}{#scope}{#key}{#num}"
+    "lab": "{#stage}{#scope}{#key}{#num}",
+    "grp": "msg"
   },
   "_eff_action": {
-    "lab": "{#stage}{#trigger}{#des}"
+    "lab": "{#stage}{#trigger}{#des}",
+    "grp": "msg"
   },
   "_active_dot": {
-    "lab": "每回合{#num}血量"
+    "lab": "每回合{#num}血量",
+    "grp": "msg"
   },
   "_active_buff_key": {
-    "lab": "有效回合內，{#key}{#num}"
+    "lab": "有效回合內，{#key}{#num}",
+    "grp": "msg"
   },
   "_active_buff": {
-    "lab": "有效回合內，{#id}"
+    "lab": "有效回合內，{#id}",
+    "grp": "msg"
   },
   "_active_remaining": {
-    "lab": "{#eff}，剩[color=white]{#n}[/color]回合"
+    "lab": "{#eff}，剩[color=white]{#n}[/color]回合",
+    "grp": "msg"
   },
   "_trade_sell": {
-    "lab": "[weight=900]{#who}[/weight] 賣 {#item}"
+    "lab": "[weight=900]{#who}[/weight] 賣 {#item}",
+    "grp": "msg"
   },
   "_trade_buy": {
-    "lab": "[weight=900]{#who}[/weight] 買 {#item}"
+    "lab": "[weight=900]{#who}[/weight] 買 {#item}",
+    "grp": "msg"
   },
   "_drop_item": {
-    "lab": "丟棄 {#item}"
+    "lab": "丟棄 {#item}",
+    "grp": "msg"
   },
   "_pickup_item": {
-    "lab": "拾取 {#item}"
+    "lab": "拾取 {#item}",
+    "grp": "msg"
   }
 }

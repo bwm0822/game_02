@@ -605,13 +605,21 @@ async function remove(id)
 }
 
 // ---------- 樹：新增／改名／排序／刪除（樹名在 local.json 的 <樹>.lab，跟著改） ----------
+// 樹名在 local.json（文字分頁的分組 grp 是 ability）；清掉名稱時只剩 grp 就整筆拿掉
+function setTreeLab(t, lab)
+{
+    if (lab) {setAt(locals(), [t, 'lab'], lab); locals()[t].grp ??= 'ability'; return;}
+    setAt(locals(), [t, 'lab'], undefined);
+    if (locals()[t] && Object.keys(locals()[t]).every(k => k === 'grp')) delete locals()[t];
+}
+
 function addTree(id, lab)
 {
     const err = idError(id, trees()[id]);
     if (err) return status(err);
     commit(() => {
         trees()[id] = [];
-        if (lab) setAt(locals(), [id, 'lab'], lab);
+        if (lab) setTreeLab(id, lab);
         S.tree = id;
         S.sel = null;
     });
@@ -831,7 +839,7 @@ function renderTree()
         h('div', {class: 'treebar'},
             h('span', {class: 'bigid'}, t),
             h('label', null, '名稱 ', h('input', {dataset: {k: `tree.${t}.lab`}, value: treeLab(t) ?? '',
-                onchange: e => commit(() => setAt(locals(), [t, 'lab'], e.target.value.trim() || undefined))}))),
+                onchange: e => commit(() => setTreeLab(t, e.target.value.trim()))}))),
         h('div', {class: 'hint'}, '空格按右鍵：新增・拖節點：移位置／拖到左欄的樹換分類・藍點拉線：設前置・點線＋Del：刪前置'),
         warns.length && h('ul', {class: 'warns'}, warns.map(x => h('li', null, x))),
         h('div', {class: 'tree', style: `width:${w * CELL + 2 * M}px;height:${hh * CELL + 2 * M}px;--cell:${CELL}px;--m:${M}px`, oncontextmenu: cellMenu},
