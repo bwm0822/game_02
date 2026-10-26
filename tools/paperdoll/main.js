@@ -234,15 +234,24 @@ const AUTO_PARTS = [
     {key: 'weapon', kind: 'weapon', name: '武器'},
 ];
 const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy']};
-const AUTO_DEF = {helmet: {pct: 22, x: -2, y: 2}, armor: {pct: 20, x: 0.25, y: 27}, boots: {pct: 20, x: 1.5, y: 33},
+const AUTO_DEF = {helmet: {pct: 28, x: -1.75, y: -0.25}, armor: {pct: 20, x: 0.25, y: 26.5}, boots: {pct: 20, x: 1.5, y: 33},
                   weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}};
 const AUTO_KEY = 'paperdoll.auto';
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
-// 舊格式 weapon 直接放數字：複製到每個分類
-const WCLS = [['sword', '劍'], ['axe', '斧'], ['hammer', '錘'], ['dagger', '匕首'], ['staff', '法杖'], ['bow', '弓'], ['default', '預設']];
+// 分類的內建預設＝AUTO_DEF.weapon 蓋上 WCLS 第三欄；舊格式 weapon 直接放數字：複製到每個分類
+const WCLS = [
+    ['sword', '劍', {pct: 12, x: -6, y: 17, a: 60}],
+    ['axe', '斧', {pct: 12, x: -6, y: 17, a: 60, ox: 0.3}],
+    ['hammer', '錘', {x: -6, y: 17, a: 60}],
+    ['dagger', '匕首', {x: 0, y: 16, a: 70, oy: 0.75}],
+    ['staff', '法杖', {pct: 15, x: -6, y: 17, a: 60, oy: 0.7}],
+    ['bow', '弓', {pct: 12, x: 5, y: 17, a: 60, ox: 0.7, oy: 0.5}],
+    ['default', '預設', {}],
+];
 const wclsOk = (c) => WCLS.some(([k]) => k === c) ? c : 'default';
 const wclsOf = (name) => wclsOk(name?.split(/[-_]/)[0]);
-const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...AUTO_DEF.weapon, ...(w && 'pct' in w ? w : w?.[k])}]));
+const wclsDef = (c) => ({...AUTO_DEF.weapon, ...WCLS.find(([k]) => k === c)[2]});
+const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k), ...(w && 'pct' in w ? w : w?.[k])}]));
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
@@ -3737,8 +3746,8 @@ $('auCls').onchange = () => {
 // 武器只還原目前分類，護具只還原護具（武器各分類不動）
 $('auReset').onclick = () => {
     const m = S.mode, weapon = S.auto.kind === 'weapon';
-    for (const part of m.parts ?? []) autoApply(m, part, AUTO_DEF[part.P.key]);
-    autoSet(weapon ? autoWith(S.auto, batchP(), AUTO_DEF.weapon) : {kind: S.auto.kind, weapon: S.auto.weapon, cls: S.auto.cls});
+    for (const part of m.parts ?? []) autoApply(m, part, weapon ? wclsDef(S.auto.cls) : AUTO_DEF[part.P.key]);
+    autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls)) : {kind: S.auto.kind, weapon: S.auto.weapon, cls: S.auto.cls});
     autoSpSync(m);
     refreshAll();
 };

@@ -930,7 +930,7 @@ run('paperdoll', async t => {
     t.eq('自動：零件疊在原圖上（由下往上 護甲、頭盔）', au.layers, 'src,src-armor,src-helmet');
     t.check('自動：象限裡只有雜點就略過', !au.boots);
     t.eq('自動：頭盔＝右上的塊去綠裁到剛好再縮放（裁切、縮小分兩步）、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,blobs,xform,xform']));
-    t.eq('自動：護甲跨過中線也整塊留下、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 16, 0.25, 27, '0,0,255,255']));
+    t.eq('自動：護甲跨過中線也整塊留下、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 16, 0.25, 26.5, '0,0,255,255']));
     t.eq('自動：原圖隱藏、選取頭盔', JSON.stringify(au.hidden), JSON.stringify([false, true]));
     t.eq('自動：拆完再按確定不會再拆', au.splitOnce, 2);
     t.eq('自動：剛拆完 Ctrl+Z 停住、不退拆', JSON.stringify(au.undoStop), JSON.stringify([true, true, 1]));
@@ -965,7 +965,7 @@ run('paperdoll', async t => {
     t.eq('自動：刪掉的零件不會被 undo 復活', JSON.stringify(au.delNoRevive), JSON.stringify([false, true]));
     t.eq('自動：零件刪光就離開、原圖維持隱藏', JSON.stringify(au.delAll), JSON.stringify(['move', false]));
     t.eq('自動：零件刪光後可以再拆', JSON.stringify(au.again), JSON.stringify(['auto', null]));
-    t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([22, '22']));
+    t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([28, '28']));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
     const ac = await ev(async () => {
@@ -1237,14 +1237,14 @@ run('paperdoll', async t => {
     t.eq('存到 item：跟別列檔名重複', si.dup, '跟別列檔名重複');
     t.eq('存到 item：新增插在同 cat 後面、頭盔 hideHair、帶 drop；已存在的只改擺放＋drop.scale', JSON.stringify(si.saved), JSON.stringify([
         'helmet_01,helmet_02,chest_01,boots_01,x1',
-        '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-2,"y":2,"hideHair":true},"drop":{"sprite":"src-helmet","scale":0.25}}',
-        '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"src-armor","scale":0.25}}',
+        '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-1.75,"y":-0.25,"hideHair":true},"drop":{"sprite":"src-helmet","scale":0.25}}',
+        '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":26.5},"drop":{"sprite":"src-armor","scale":0.25}}',
         true, 'auto']));
     t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet_02', true]));
     t.eq('存到 item：PNG 沒勾時檔名鎖成原本的 sprite', JSON.stringify(si.locked), JSON.stringify([true, 'src-helmet']));
     t.eq('存到 item：改檔名提示 sprite 會換', si.rename, 'sprite：src-armor → new-armor');
     t.eq('存到 item：改檔名連 icon、drop 一起換、舊圖留著', JSON.stringify(si.renamed), JSON.stringify([
-        '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":27},"drop":{"sprite":"new-armor","scale":0.25}}', true, true]));
+        '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":26.5},"drop":{"sprite":"new-armor","scale":0.25}}', true, true]));
     t.eq('存到 item：只勾更新設定時沒有 drop 就補上（sprite 照 equip）', si.dropFill, '{"sprite":"src-helmet","scale":0.25}');
     t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'chest_02', true]));
     t.eq('存到 item：覆蓋別人的圖要提示', si.ask, '會覆蓋 equips/old-hat.png（helmet_01 也用這張）');
@@ -1363,8 +1363,8 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：改 oy 時 x/y 不動、只寫回目前分類', JSON.stringify(aw.oy), JSON.stringify([0.5, true, 0.5, 0.85]));
     t.eq('自動（武器）：換分類套那組數字、別的分類不動', JSON.stringify(aw.swap), JSON.stringify([5, 0, 'bow', 'bow', -13]));
     t.eq('自動（武器）：換分類可以 undo', JSON.stringify(aw.swapUndo), JSON.stringify([-13, 30, 'sword', 'sword', 'sword']));
-    t.eq('自動（武器）：還原預設只還原目前分類', JSON.stringify(aw.reset), JSON.stringify([-13, -13, -13]));
-    t.eq('自動（武器）：舊格式數字複製到每個分類', JSON.stringify(aw.legacy), JSON.stringify([33, 33, -13]));
+    t.eq('自動（武器）：還原預設只還原目前分類', JSON.stringify(aw.reset), JSON.stringify([5, -13, 5]));
+    t.eq('自動（武器）：舊格式數字複製到每個分類', JSON.stringify(aw.legacy), JSON.stringify([33, 33, -6]));
     t.eq('自動（武器）：拖支點＝圖跟著動、x/y 不動、一次拖曳一步', JSON.stringify(aw.pivot), JSON.stringify([true, 0, 0.6, '0', 0, 2]));
     t.eq('自動（武器）：拖支點可以 undo', JSON.stringify(aw.pivotUndo), JSON.stringify([0.5, 0.5]));
     t.eq('自動（武器）：改 a 只轉預覽', aw.a, 30);
