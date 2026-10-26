@@ -4,6 +4,14 @@
 #pv .fields input:not([type=checkbox]):not(.num), #pv .fields select { min-width: 0; width: 100%; }
 #pv .refs { color: #bcd; }
 #pv .sub input:not([type=checkbox]):not(.num) { width: 130px; }
+#list .item.uncat { margin-top: 8px; border-top: 1px solid #333; }
+#list .item.drop { outline: 2px solid #4da3ff; background: #2a3a52; }
+.treebar + .hint { margin: -4px 0 8px; }
+.ghost { position: fixed; z-index: 30; pointer-events: none; display: flex; align-items: center; gap: 4px; padding: 2px 6px;
+         background: rgba(43, 45, 49, .85); border: 1px solid #4da3ff; border-radius: 4px; }
+.ghost .ico { background: none; }
+.dropcell { position: absolute; width: var(--cell); height: var(--cell); border: 2px dashed #4da3ff; border-radius: 4px; pointer-events: none; z-index: 3; }
+.dropcell.bad { border-color: #e05555; }
 .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 160px; padding: 4px 0;
            background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
 .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }

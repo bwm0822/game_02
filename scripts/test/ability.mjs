@@ -49,7 +49,8 @@ run('ability', async t => {
         out.load = [Object.keys(S.doc['ability.json'].data).length, Object.keys(S.doc['ab_tree.json'].data).length, !!S.assets.root];
         out.warns = ab.validateAll();
         out.firstTree = S.tree;
-        out.listTrees = document.querySelectorAll('#list .item[data-tree]').length;
+        out.listTrees = document.querySelectorAll('#list .item[data-tree]:not(.uncat)').length;
+        out.uncatRow = document.querySelector('#list .item.uncat')?.textContent;
         out.listText = [...$('list').childNodes].filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent);
 
         // 畫布：Fire 樹的節點跟連線（fireballvolley←fireball、combustion←volley+firewall、meteorshower←combustion，加上 3 條子節點上方短線）
@@ -293,6 +294,77 @@ run('ability', async t => {
         for (let i = 0; i < 4; i++) ab.undo();
         out.treeUndo = [Object.keys(T()).join(), 'Holy' in S.doc['local.json'].data];
 
+        // ---------- 右鍵拖：換分類 ----------
+        const rdrag = (el, to, extra = {}) => {
+            const [x, y] = mid(el), [tx, ty] = Array.isArray(to) ? to : mid(to);
+            const ev = (type, px, py) => el.dispatchEvent(new PointerEvent(type, {clientX: px, clientY: py, button: 2, buttons: 2, pointerId: 2, bubbles: true}));
+            ev('pointerdown', x, y);
+            ev('pointermove', tx, ty);
+            extra.during?.();
+            ev('pointerup', tx, ty);
+        };
+        const row = (t) => document.querySelector(`#list .item[data-tree="${t}"]`);
+        ab.selectTree('Fire');
+        // 畫布節點拖到 Ice 列：放在 Ice 最下面一列的下一列、x=0，畫布還是 Fire
+        let during = {};
+        rdrag(node('fireball'), row('Ice'), {during: () => {
+            during = {ghost: !!document.querySelector('.ghost'), hot: document.querySelector('#list .item.drop')?.dataset.tree};
+        }});
+        out.rdIce = [JSON.stringify(T().Ice.find(n => n.id === 'fireball')), T().Fire.some(n => n.id === 'fireball'), S.tree, S.sel,
+                     !!document.querySelector('.ghost'), !!document.querySelector('#list .item.drop')];
+        out.rdDuring = [during.ghost, during.hot];
+        out.rdCross = ab.validate('fireballvolley').some(w => w.includes('在別棵樹（Ice）'));
+        // 拖完緊接著的 contextmenu 被吃掉，不跳選單
+        node('firewall').dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true}));
+        out.rdEat = !document.querySelector('.ctxmenu');
+        await sleep(350);
+        // 拖到同一棵樹的列：不動
+        const hs = S.hi;
+        rdrag(node('firewall'), row('Fire'));
+        out.rdSame = S.hi === hs;
+        // 拖到未分類 → 移出樹，列在未分類底下
+        rdrag(node('firewall'), row(ab.UNCAT));
+        out.rdUncat = [!!ab.S.doc['ab_tree.json'].data.Fire.find(n => n.id === 'firewall'), !!document.querySelector('#list .item[data-id="firewall"]')];
+        // 左欄未分類的技能拖到畫布空格 → 放在那一格
+        const tr = document.querySelector('#view .tree').getBoundingClientRect();
+        let cell = {};
+        rdrag(document.querySelector('#list .item[data-id="firewall"]'), [tr.left + ab.M + 3 * CELL + 10, tr.top + ab.M + 3 * CELL + 10], {during: () => {
+            cell = {mark: !!document.querySelector('#view .dropcell'), bad: !!document.querySelector('#view .dropcell.bad')};
+        }});
+        out.rdCell = [JSON.stringify(T().Fire.find(n => n.id === 'firewall')), cell.mark, cell.bad, !!document.querySelector('#view .dropcell')];
+        // 拖到有人的格子：紅框、不動
+        const fv = mid(node('fireballvolley'));
+        rdrag(node('firewall'), fv, {during: () => {cell = {bad: !!document.querySelector('#view .dropcell.bad')};}});
+        out.rdBusy = [cell.bad, JSON.stringify(T().Fire.find(n => n.id === 'firewall')), $('status').textContent.includes('已經有')];
+        // 右鍵沒拖動：不改、照舊可以跳選單
+        const hs2 = S.hi;
+        rdrag(node('firewall'), node('firewall'));
+        out.rdTiny = S.hi === hs2;
+        for (let i = 0; i < 3; i++) ab.undo();
+        out.rdUndo = [!!T().Fire.find(n => n.id === 'fireball'), JSON.stringify(T().Fire.find(n => n.id === 'firewall'))];
+
+        // 搜尋結果也能拖到樹列，搜尋時樹列照樣顯示
+        $('search').value = 'icebolt'; $('search').dispatchEvent(new Event('input'));
+        out.searchTrees = document.querySelectorAll('#list .item[data-tree]').length;
+        rdrag(document.querySelector('#list .item[data-id="icebolt"]'), row('Poison'));
+        out.rdSearch = JSON.stringify(T().Poison.find(n => n.id === 'icebolt'));
+        ab.undo();
+        $('search').value = ''; $('search').dispatchEvent(new Event('input'));
+
+        // 未分類列：點了畫布顯示提示
+        row(ab.UNCAT).click();
+        out.uncatView = [S.tree, document.querySelector('#view .hint')?.textContent.includes('按住右鍵拖')];
+
+        // ＋ 新技能：放在目前這棵樹最下面一列的下一列；選未分類時只加技能
+        ab.selectTree('Fire');
+        await flow(() => $('btnNewAb').click(), (d) => {d.querySelector('input').value = 'nova'; return 'ok';});
+        out.btnNew = [JSON.stringify(T().Fire.find(n => n.id === 'nova')), Object.keys(A()).indexOf('nova') === Object.keys(A()).indexOf('meteorshower') + 1];
+        ab.selectTree(ab.UNCAT);
+        await flow(() => $('btnNewAb').click(), (d) => {d.querySelector('input').value = 'nova2'; return 'ok';});
+        out.btnNewUncat = ['nova2' in A(), Object.keys(T()).some(t => T()[t].some(n => n.id === 'nova2')), S.tree];
+        ab.undo(); ab.undo();
+        out.hintLine = (ab.selectTree('Fire'), document.querySelector('#view .hint')?.textContent);
+
         // 存檔：role.json 也寫
         await flow(() => ab.rename('heal', 'heal2'), 'ok');
         const rid2 = Object.keys(R()).find(k => R()[k].abilities?.includes('heal2'));
@@ -308,6 +380,7 @@ run('ability', async t => {
     if (r.warns.length) console.log('    ' + r.warns.join('\n    '));
     t.eq('預設選第一棵樹', r.firstTree, 'General');
     t.eq('左欄列出 8 棵樹', r.listTrees, 8);
+    t.eq('沒有未分類也顯示未分類列', r.uncatRow, '未分類0');
     t.eq('左欄沒有多餘文字（沒有不在樹上的技能時不印 0）', JSON.stringify(r.listText), '[]');
     t.eq('Fire 樹 5 個節點', r.nodes, 5);
     t.eq('Fire 樹連線 4＋短線 3', r.links, 7);
@@ -413,5 +486,25 @@ run('ability', async t => {
     t.eq('刪除樹：技能留著變不在樹上', r.delTree.join(), 'false,false,true,true,true');
     t.eq('樹列右鍵選單', r.treeMenu, '改名…,上移(x),下移,新增樹…,刪除…');
     t.check('樹 undo', r.treeUndo[0] === 'General,Sword,Archery,Fire,Ice,Poison,Support,Enhancement' && !r.treeUndo[1], r.treeUndo.join(' '));
+    t.eq('右鍵拖到 Ice 列：放 Ice 最下面下一列 x=0', r.rdIce[0], '{"id":"fireball","x":0,"y":5}');
+    t.eq('右鍵拖：原本的樹拿掉、畫布不換、選它', r.rdIce.slice(1, 4).join(), 'false,Fire,fireball');
+    t.eq('放開後拖曳影子／反白消失', r.rdIce.slice(4).join(), 'false,false');
+    t.eq('拖曳中有影子、樹列反白', r.rdDuring.join(), 'true,Ice');
+    t.check('前置留著、跨樹標警告', r.rdCross);
+    t.check('拖完的右鍵選單被吃掉', r.rdEat);
+    t.check('拖到同一棵樹的列不動', r.rdSame);
+    t.eq('拖到未分類移出樹', r.rdUncat.join(), 'false,true');
+    t.eq('左欄拖到畫布空格放在那一格', r.rdCell[0], '{"id":"firewall","x":3,"y":3}');
+    t.eq('拖到空格時框起來、放開後消失', r.rdCell.slice(1).join(), 'true,false,false');
+    t.eq('拖到有人的格子：紅框、不動、提示', r.rdBusy.join(), 'true,{"id":"firewall","x":3,"y":3},true');
+    t.check('右鍵沒拖動不改', r.rdTiny);
+    t.eq('右鍵拖 undo', r.rdUndo.join(), 'true,{"id":"firewall","x":2,"y":0}');
+    t.eq('搜尋時樹列照樣顯示（8 棵＋未分類）', r.searchTrees, 9);
+    t.eq('搜尋結果拖到樹列', r.rdSearch, '{"id":"icebolt","x":0,"y":3}');
+    t.eq('點未分類：畫布顯示提示', r.uncatView.join(), `${'#uncat'},true`);
+    t.eq('＋新技能放最下面一列的下一列', r.btnNew[0], '{"id":"nova","x":0,"y":7}');
+    t.check('＋新技能排在這棵樹最後一個後面', r.btnNew[1]);
+    t.eq('選未分類時＋新技能不上樹', r.btnNewUncat.join(), 'true,false,#uncat');
+    t.eq('畫布操作提示', r.hintLine, '空格按右鍵：新增・左鍵拖：移位置・右鍵拖到左欄的樹：換分類・藍點拉線：設前置・點線＋Del：刪前置');
     t.check('存檔寫 role.json', r.saveRole);
 });

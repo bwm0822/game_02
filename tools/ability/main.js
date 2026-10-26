@@ -34,6 +34,9 @@ const trees = () => S.doc['ab_tree.json'].data;
 const locals = () => S.doc['local.json'].data;
 const roles = () => S.doc['role.json'].data;
 const treeOf = (id) => Object.keys(trees()).find(t => trees()[t].some(n => n.id === id));
+// 左欄的「未分類」（不在任何一棵樹上），選它時 S.tree 是這個值；# 不是合法 id，不會跟樹撞名
+const UNCAT = '#uncat';
+const isTree = (t) => !!trees()[t];
 const treeLab = (t) => locals()[t]?.lab;
 const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
 const isDirty = () => FILES.some(dirtyOf);
@@ -101,7 +104,7 @@ async function reload()
     S.extra = {};
     S.drafts = {};
     resetHist();
-    if (!trees()[S.tree]) S.tree = Object.keys(trees())[0] ?? null;
+    if (!isTree(S.tree) && S.tree !== UNCAT) S.tree = Object.keys(trees())[0] ?? UNCAT;
     if (!abs()[S.sel]) S.sel = null;
     status(`讀入 ${Object.keys(abs()).length} 個技能、${Object.keys(trees()).length} 棵樹`);
     render();
@@ -295,6 +298,7 @@ const validateAll = () => [
 ];
 
 // ---------- 選取 ----------
+// 未分類的技能沒有被選的樹時，畫布照舊顯示原本那棵樹，才能從左欄右鍵拖到畫布的空格
 function select(id)
 {
     S.sel = id;
@@ -307,7 +311,7 @@ function selectTree(t)
 {
     S.tree = t;
     S.link = null;
-    if (treeOf(S.sel) !== t) S.sel = null;
+    if ((treeOf(S.sel) ?? UNCAT) !== t) S.sel = null;
     render();
 }
 
@@ -373,49 +377,127 @@ function idError(id, taken)
     return '';
 }
 
-// 排在 after 後面；沒給就排在目前這棵樹最後一個技能後面，都沒有就排最後
+// 排在 after 後面；沒給就排在目前這棵樹（或未分類）最後一個技能後面，都沒有就排最後
 function insertAbility(id, value, after)
 {
     const e = Object.entries(abs());
-    const i = after ? e.findIndex(([k]) => k === after) : e.findLastIndex(([k]) => treeOf(k) === S.tree);
+    const i = after ? e.findIndex(([k]) => k === after) : e.findLastIndex(([k]) => (treeOf(k) ?? UNCAT) === S.tree);
     e.splice(i < 0 ? e.length : i + 1, 0, [id, value]);
     S.doc['ability.json'].data = Object.fromEntries(e);
 }
 
-function add(id, x, y, lab)
+// 沒指定格子時放的位置：最下面一列的下一列、x=0（一定是空格）
+function bottomCell(t, except)
+{
+    const ys = trees()[t].filter(n => n.id !== except).map(n => n.y);
+    return {x: 0, y: ys.length ? Math.max(...ys) + 1 : 0};
+}
+
+// at 沒給就放在 bottomCell；目前選的是未分類就只加技能、不上樹
+function add(id, lab, at)
 {
     const err = idError(id, abs()[id]);
     if (err) return status(err);
-    if (!isFree(S.tree, x, y)) return status(`${x},${y} 已經有技能了`);
+    const t = isTree(S.tree) ? S.tree : null, p = t && (at ?? bottomCell(t));
+    if (t && !isFree(t, p.x, p.y)) return status(`${p.x},${p.y} 已經有技能了`);
     commit(() => {
         insertAbility(id, {...SC.template(), ...(lab && {lab})});
-        trees()[S.tree].push({id, x, y});
+        if (t) trees()[t].push({id, ...p});
         S.sel = id;
         S.link = null;
     });
 }
 
-async function askNew(x, y)
+async function askNew(at)
 {
     const id = h('input', {size: 24}), lab = h('input', {size: 24});
-    const p = ask(`新技能（${S.tree} 的 ${x},${y}）`, [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '名稱'), lab)],
+    const where = !isTree(S.tree) ? '未分類' : at ? `${S.tree} 的 ${at.x},${at.y}` : `${S.tree} 最下面`;
+    const p = ask(`新技能（${where}）`, [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '名稱'), lab)],
         [['ok', '新增'], ['cancel', '取消']]);
     id.focus();
-    if (await p === 'ok') add(id.value.trim(), x, y, lab.value.trim());
+    if (await p === 'ok') add(id.value.trim(), lab.value.trim(), at);
 }
 
-function place(id, x, y)
+// 換分類：t 是樹 id 或 UNCAT；at 沒給就放 bottomCell。前置照留，跨樹的由檢查標紅
+function moveTo(id, t, at)
 {
-    if (treeOf(id) || !isFree(S.tree, x, y)) return;
-    commit(() => {trees()[S.tree].push({id, x, y}); S.sel = id;});
+    const from = treeOf(id);
+    if (t === UNCAT) return from ? unplace(id) : render();
+    if (from === t) return at ? moveNode(id, at.x, at.y) : render();
+    const p = at ?? bottomCell(t);
+    if (!isFree(t, p.x, p.y)) {status(`${p.x},${p.y} 已經有技能了`); return render();}
+    commit(() => {
+        if (from) trees()[from] = trees()[from].filter(n => n.id !== id);
+        trees()[t].push({id, x: p.x, y: p.y});
+        S.sel = id;
+        S.link = null;
+    });
+    status(`${id} 放到 ${t} 的 ${p.x},${p.y}`);
 }
+
+const place = (id, x, y) => moveTo(id, S.tree, {x, y});
 
 function unplace(id)
 {
     const t = treeOf(id);
     if (!t) return;
     commit(() => {trees()[t] = trees()[t].filter(n => n.id !== id); S.link = null;});
-    status(`${id} 移出 ${t}，列在左欄「不在樹上」，在樹上空格右鍵可以放回去`);
+    status(`${id} 移出 ${t}，列在左欄「未分類」，按住右鍵拖到樹上可以放回去`);
+}
+
+// 按住右鍵拖技能（畫布節點、左欄技能列）：放到左欄的樹列＝換到那棵樹、放到「未分類」＝移出樹、放到畫布空格＝放在那一格
+// 沒拖動（< 4px）就放開照舊跳右鍵選單；拖過的話吃掉接著來的 contextmenu
+function dropTarget(x, y)
+{
+    const el = document.elementFromPoint(x, y);
+    const row = el?.closest('#list .item[data-tree]');
+    if (row) return {el: row, tree: row.dataset.tree};
+    const tree = el?.closest('#view .tree');
+    if (!tree || !isTree(S.tree)) return null;
+    const b = tree.getBoundingClientRect();
+    const at = {x: Math.floor((x - b.left - M) / CELL), y: Math.floor((y - b.top - M) / CELL)};
+    if (at.x < 0 || at.y < 0) return null;
+    return {tree: S.tree, at, box: tree};
+}
+
+function rightDrag(e, id)
+{
+    if (e.button !== 2) return;
+    e.stopPropagation();
+    const src = e.currentTarget, sx = e.clientX, sy = e.clientY;
+    let ghost = null, mark = null, hot = null, tgt = null;
+    const unmark = () => {hot?.classList.remove('drop'); mark?.remove(); hot = mark = null;};
+    if (e.isTrusted) src.setPointerCapture(e.pointerId);
+    src.onpointermove = (ev) => {
+        if (!ghost && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+        if (!ghost)
+        {
+            closeMenu();
+            document.body.append(ghost = h('div', {class: 'ghost'}, IC.iconEl(abs()[id]?.icon, 32), h('span', null, id)));
+        }
+        ghost.style.left = `${ev.clientX + 12}px`;
+        ghost.style.top = `${ev.clientY + 12}px`;
+        unmark();
+        tgt = dropTarget(ev.clientX, ev.clientY);
+        if (tgt?.el) (hot = tgt.el).classList.add('drop');
+        else if (tgt?.at)
+        {
+            const n = nodeOf(tgt.tree, id), mine = n && n.x === tgt.at.x && n.y === tgt.at.y;
+            tgt.box.append(mark = h('div', {class: 'dropcell' + (isFree(tgt.tree, tgt.at.x, tgt.at.y) || mine ? '' : ' bad'),
+                style: `left:${M + tgt.at.x * CELL}px;top:${M + tgt.at.y * CELL}px`}));
+        }
+    };
+    src.onpointerup = (ev) => {
+        src.onpointermove = src.onpointerup = null;
+        if (!ghost) return;
+        ghost.remove();
+        unmark();
+        const eat = (c) => {c.preventDefault(); c.stopPropagation();};
+        addEventListener('contextmenu', eat, {capture: true, once: true});
+        setTimeout(() => removeEventListener('contextmenu', eat, {capture: true}), 300);
+        tgt = dropTarget(ev.clientX, ev.clientY);
+        if (tgt) moveTo(id, tgt.tree, tgt.at);
+    };
 }
 
 function dup(id)
@@ -580,7 +662,7 @@ async function removeTree(t)
     commit(() => {
         delete trees()[t];
         delete locals()[t];
-        S.tree = keys[i + 1] ?? keys[i - 1] ?? null;
+        S.tree = keys[i + 1] ?? keys[i - 1] ?? UNCAT;
         S.sel = null;
         S.link = null;
     });
@@ -611,7 +693,7 @@ function nodeMenu(e, id)
     ]);
 }
 
-// 空格右鍵：新增技能，或把「不在樹上」的技能放上來
+// 空格右鍵：新增技能，或把未分類的技能放上來
 function cellMenu(e)
 {
     if (e.target.closest('.node')) return;
@@ -620,7 +702,7 @@ function cellMenu(e)
     if (x < 0 || y < 0) return;
     const orphans = Object.keys(abs()).filter(id => !treeOf(id));
     menu(e, [
-        [`新增技能…（${x},${y}）`, () => askNew(x, y)],
+        [`新增技能…（${x},${y}）`, () => askNew({x, y})],
         orphans.length && ['-'],
         ...orphans.map(id => [`放上 ${id}${abs()[id].lab ? `　${abs()[id].lab}` : ''}`, () => place(id, x, y)]),
     ]);
@@ -630,7 +712,8 @@ function cellMenu(e)
 function abRow(id)
 {
     const ab = abs()[id], w = validate(id);
-    return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, onclick: () => select(id)},
+    return h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, title: '按住右鍵拖到樹上（左欄的樹或畫布的空格）',
+        onclick: () => select(id), onpointerdown: e => rightDrag(e, id), oncontextmenu: e => e.preventDefault()},
         IC.iconEl(ab.icon, 20),
         h('span', {class: 'id'}, id),
         h('span', {class: 'lab'}, ab.lab ?? ''),
@@ -639,14 +722,12 @@ function abRow(id)
 
 function renderList()
 {
+    // 搜尋中結果列在最上面，樹列照樣顯示（結果可以右鍵拖到樹列），未分類底下不展開
     const q = S.search.trim().toLowerCase();
-    if (q)
-    {
-        const ids = Object.keys(abs()).filter(id => id.toLowerCase().includes(q) || (abs()[id].lab ?? '').toLowerCase().includes(q));
-        return $('list').replaceChildren(ids.length ? h('div', {class: 'group'}, `技能（${ids.length}）`) : h('div', {class: 'dim'}, '（沒有符合的技能）'), ...ids.map(abRow));
-    }
+    const found = q ? Object.keys(abs()).filter(id => id.toLowerCase().includes(q) || (abs()[id].lab ?? '').toLowerCase().includes(q)) : [];
     const orphans = Object.keys(abs()).filter(id => !treeOf(id));
     $('list').replaceChildren(
+        ...q ? [found.length ? h('div', {class: 'group'}, `搜尋結果（${found.length}）`) : h('div', {class: 'dim'}, '（沒有符合的技能）'), ...found.map(abRow)] : [],
         h('div', {class: 'group'}, `樹（${Object.keys(trees()).length}）`),
         ...Object.keys(trees()).map(t => {
             const w = validateTree(t), bad = trees()[t].filter(n => abs()[n.id] && validate(n.id).length).length;
@@ -655,12 +736,15 @@ function renderList()
                 onclick: () => selectTree(t), oncontextmenu: e => treeMenu(e, t)},
                 h('span', {class: 'id'}, t),
                 h('span', {class: 'lab'}, treeLab(t) ?? ''),
-                h('span', {class: 'mark'}, h('span', {class: 'dim'}, trees()[t].length),
+                h('span', {class: 'mark'}, h('span', {class: 'dim'}, String(trees()[t].length)),
                     dirty && h('span', {class: 'dirty', title: '未存檔'}, ' ●'),
                     (w.length || bad) && h('span', {class: 'warn', title: [...w, bad && `${bad} 個技能有警告`].filter(Boolean).join('\n')}, ' ⚠')));
         }),
-        ...orphans.length ? [h('div', {class: 'group'}, `不在樹上（${orphans.length}）`)] : [],
-        ...orphans.map(abRow));
+        h('div', {class: 'item uncat' + (S.tree === UNCAT ? ' sel' : ''), dataset: {tree: UNCAT}, title: '技能拖到這裡＝移出樹',
+            onclick: () => selectTree(UNCAT), oncontextmenu: e => e.preventDefault()},
+            h('span', {class: 'id'}, '未分類'),
+            h('span', {class: 'mark'}, h('span', {class: 'dim'}, String(orphans.length)))),
+        ...q ? [] : orphans.map(abRow));
     $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
 }
 
@@ -726,7 +810,10 @@ function linkDown(e, n)
 function renderTree()
 {
     const t = S.tree, nodes = trees()[t];
-    if (!nodes) return $('view').replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選樹）' : '先在上方選擇專案資料夾'));
+    if (!S.assets) return $('view').replaceChildren(h('div', {class: 'dim'}, '先在上方選擇專案資料夾'));
+    if (!nodes) return $('view').replaceChildren(
+        h('div', {class: 'treebar'}, h('span', {class: 'bigid'}, '未分類')),
+        h('div', {class: 'hint'}, '未分類的技能列在左欄，按住右鍵拖到左欄的樹上；或先選一棵樹，再拖到畫布的空格'));
     // 右邊、下面多留兩格，讓節點有地方拖
     const w = Math.max(0, ...nodes.map(n => n.x)) + 3, hh = Math.max(0, ...nodes.map(n => n.y)) + 3;
     const svg = svgEl('svg', {class: 'links', width: w * CELL + 2 * M, height: hh * CELL + 2 * M});
@@ -756,6 +843,7 @@ function renderTree()
             h('span', {class: 'bigid'}, t),
             h('label', null, '名稱 ', h('input', {dataset: {k: `tree.${t}.lab`}, value: treeLab(t) ?? '',
                 onchange: e => commit(() => setAt(locals(), [t, 'lab'], e.target.value.trim() || undefined))}))),
+        h('div', {class: 'hint'}, '空格按右鍵：新增・左鍵拖：移位置・右鍵拖到左欄的樹：換分類・藍點拉線：設前置・點線＋Del：刪前置'),
         warns.length && h('ul', {class: 'warns'}, warns.map(x => h('li', null, x))),
         h('div', {class: 'tree', style: `width:${w * CELL + 2 * M}px;height:${hh * CELL + 2 * M}px;--cell:${CELL}px;--m:${M}px`, oncontextmenu: cellMenu},
             svg,
@@ -763,7 +851,7 @@ function renderTree()
                 const ab = abs()[n.id], p = center(n), bad = !ab || validate(n.id).length;
                 return h('div', {class: 'node' + (n.id === S.sel ? ' sel' : '') + (bad ? ' bad' : ''), dataset: {id: n.id},
                     title: [n.id, ...(ab ? validate(n.id) : ['不在 ability.json'])].join('\n'),
-                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => nodeDown(e, n), oncontextmenu: e => ab ? nodeMenu(e, n.id) : e.preventDefault()},
+                    style: `left:${p.x - CELL / 2}px;top:${p.y - CELL / 2}px`, onclick: () => ab && select(n.id), onpointerdown: e => ab && e.button === 2 ? rightDrag(e, n.id) : nodeDown(e, n), oncontextmenu: e => ab ? nodeMenu(e, n.id) : e.preventDefault()},
                     IC.iconEl(ab?.icon, 40),
                     h('div', {class: 'nlab'}, ab?.lab ?? n.id),
                     ab && h('div', {class: 'handle', title: '拉到另一個技能＝設成它的前置', onpointerdown: e => linkDown(e, n), onclick: e => e.stopPropagation()}));
@@ -878,7 +966,7 @@ function render()
     renderForm();
     $('btnUndo').disabled = S.hi <= 0;
     $('btnRedo').disabled = S.hi >= S.hist.length - 1;
-    $('btnSave').disabled = $('btnReload').disabled = $('btnNewTree').disabled = !S.assets;
+    $('btnSave').disabled = $('btnReload').disabled = $('btnNewTree').disabled = $('btnNewAb').disabled = !S.assets;
     $('dirty').hidden = !isDirty();
     SH.setDirty(isDirty());
     if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
@@ -893,6 +981,7 @@ $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
 $('search').oninput = (e) => {S.search = e.target.value; render();};
 $('btnNewTree').onclick = askNewTree;
+$('btnNewAb').onclick = () => askNew();
 
 addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
@@ -916,4 +1005,4 @@ addEventListener('keydown', (e) => {
 
 // 給無頭測試用
 window.__ab = {S, setAssets, reload, save, commit, set, undo, redo, select, selectTree, moveNode, addRef, removeRef, addCard, delCard,
-               add, place, unplace, dup, rename, remove, innerRefs, addTree, renameTree, moveTree, removeTree, validate, validateTree, validateAll, render, IC, CELL, M};
+               add, place, unplace, moveTo, UNCAT, dup, rename, remove, innerRefs, addTree, renameTree, moveTree, removeTree, validate, validateTree, validateAll, render, IC, CELL, M};
