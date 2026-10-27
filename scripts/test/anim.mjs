@@ -4,6 +4,8 @@ import {run} from './harness.mjs'
 run('武器動畫', async t => {
     await t.newGame();
     const r = await t.eval(async (d) => {
+        // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
+        d.DB._animDB = await (await fetch('/scripts/test/fixtures/anim.json')).json();
         const p = d.GM.player, out = {};
         const sleep = (ms) => new Promise(res => setTimeout(res, ms));
         const pose = () => {const sp = p.view.weapon; return [Math.round(sp.x), Math.round(sp.y), Math.round(sp.angle)];};

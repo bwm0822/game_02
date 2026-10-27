@@ -24,7 +24,8 @@ run('fit', async t => {
 
         const origRole = await (await fetch('/assets/json/role.json')).text();
         const origItem = await (await fetch('/assets/json/item.json')).text();
-        const origAnim = await (await fetch('/assets/json/anim.json')).text();
+        // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
+        const origAnim = await (await fetch('/scripts/test/fixtures/anim.json')).text();
         const opfs = await navigator.storage.getDirectory();
         for await (const name of opfs.keys()) await opfs.removeEntry(name, {recursive: true});
         const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
