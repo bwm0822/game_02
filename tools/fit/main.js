@@ -341,18 +341,28 @@ function unrotPt(an, p)
     return {x: pv.x + dx, y: pv.y + dy};
 }
 
+// 選了 #i 插在它跟前一格中間，沒選接在最後一格後面半個收回段；姿勢取該時間的補間
 function addKey()
 {
     const an = anim(), eq = weapon();
     if (!an || !eq) return;
-    const ms = Math.round(S.ms) || 100;
-    if (an.keys.some(k => k.t === ms)) {setMs(ms); return render();}
+    const {keys} = an, i = S.key, last = keys.at(-1);
+    const ms = i >= 0 ? Math.round(((keys[i - 1]?.t ?? 0) + keys[i].t) / 2)
+        : last ? last.t + Math.round(an.back ? an.back / 2 : 100) : 100;
+    if (keys.some(k => k.t === ms) || ms <= 0) {status(`#${i + 1} 跟前一格間隔太小，插不進去`); return render();}
     const tr = trackOf(), p = tr ? trackPose(tr, ms) : restOf(eq), q = unrotPt(an, p);
     commit(() => {
         an.keys.push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'quad.out'});
         an.keys.sort((a, b) => a.t - b.t);
         setMs(ms);
     });
+}
+
+function pickKey(i)
+{
+    if (i === S.key) S.key = -1;
+    else setMs(anim().keys[i].t);
+    render();
 }
 
 function delKey(i)
@@ -404,7 +414,7 @@ function animView(slots)
     const check = (k, text, title) => h('label', {title}, h('input', {type: 'checkbox', checked: !!an[k], dataset: {k: `${F}|${S.aid}|${k}`},
         onchange: (e) => commit(() => setAt(an, [k], e.target.checked || undefined))}), text);
     const sel = (opts, v, onchange) => h('select', {onchange}, opts.map(([o, t]) => h('option', {value: o, selected: o === v}, t)));
-    const keyRow = (k, i) => h('tr', {class: i === S.key ? 'sel' : '', onclick: (e) => {if (e.target.matches('input, select, button')) return; setMs(k.t); render();}},
+    const keyRow = (k, i) => h('tr', {class: i === S.key ? 'sel' : '', onclick: (e) => {if (e.target.matches('input, select, button')) return; pickKey(i);}},
         h('td', {class: 'k'}, `#${i + 1}`),
         h('td', null, numInput(F, S.aid, ['keys', i, 't'], '', {req: true, after: (n) => {an.keys.sort((a, b) => a.t - b.t); setMs(n);}})),
         ['x', 'y', 'a'].map(f => h('td', null, numInput(F, S.aid, ['keys', i, f], '', {req: true}))),
@@ -435,8 +445,8 @@ function animView(slots)
             h('table', {class: 'fit keys'},
                 h('tr', null, ['', 't (ms)', 'x', 'y', 'a', 'ease', 'path', ''].map(t => h('th', null, t))),
                 an.keys.map(keyRow)),
-            h('button', {onclick: addKey, title: '在時間軸目前位置用當下姿勢新增一格'}, `＋ 新增影格（${Math.round(S.ms)} ms）`),
-            h('div', {class: 'hint'}, '畫布：拖武器＝移位置、拖白點＝轉角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列）。虛線＝原點軌跡、半透明＝其他影格。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
+            h('button', {onclick: addKey, title: '選了影格插在它跟前一格中間、沒選接在最後；姿勢取該時間的補間'}, S.key >= 0 ? `＋ 插在 #${S.key + 1} 之前` : '＋ 新增影格（最後）'),
+            h('div', {class: 'hint'}, '畫布：拖武器＝移位置、拖白點＝轉角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列，再點一次或 Esc 取消選取）。虛線＝原點軌跡、半透明＝其他影格。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
         ],
     ];
 }
@@ -685,7 +695,7 @@ function timeline(tr)
     const keys = an.keys.map((k, i) => mark('key' + (i === S.key ? ' sel' : ''), k.t, '◆', `影格 #${i + 1}`, {
         clamp: (v) => Math.min(an.keys[i + 1]?.t - 1 || total, Math.max((an.keys[i - 1]?.t ?? 0) + 1, v)),
         set: (v) => commit(() => {k.t = v; setMs(v);}),
-        click: () => {setMs(k.t); render();},
+        click: () => pickKey(i),
     }));
     const flag = (k, text, title) => an[k] != null && mark(k, an[k], text, title, {
         clamp: (v) => Math.min(tr.end, v),
@@ -765,6 +775,7 @@ addEventListener('keydown', (e) => {
     const k = e.key.toLowerCase();
     if (e.ctrlKey && k === 's') {e.preventDefault(); document.activeElement?.blur(); save(); return;}
     if (e.target.matches?.('input, textarea, select') || document.querySelector('dialog[open]')) return;
+    if (k === 'escape' && S.mode === 'anim' && S.key >= 0) {S.key = -1; render();}
     if (e.ctrlKey && k === 'z' && !e.shiftKey) {e.preventDefault(); undo();}
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
 });
@@ -774,4 +785,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, drawPreview, render,
-    trackOf, setMs, addKey, delKey, newAnim, renameAnim, play, playMs, get geo() {return geo;}};
+    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, play, playMs, get geo() {return geo;}};
