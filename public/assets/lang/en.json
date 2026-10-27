@@ -1592,6 +1592,316 @@
       "r": "mt"
     }
   },
+  "item.sword-1": {
+    "青銅劍": {
+      "t": "Bronze Sword",
+      "r": "mt"
+    },
+    "鐵匠學徒練手的青銅劍，刃口不太鋒利，但足夠防身。均衡好用，命中率高。": {
+      "t": "A bronze sword an apprentice smith practiced on. The edge isn't very sharp, but it's enough for self-defense. Balanced and accurate.",
+      "r": "mt"
+    }
+  },
+  "item.sword-2": {
+    "鐵劍": {
+      "t": "Iron Sword",
+      "r": "mt"
+    },
+    "城鎮衛兵的制式佩劍，樸實耐用。均衡好用，命中率高。": {
+      "t": "The standard-issue sword of the town guard, plain and durable. Balanced and accurate.",
+      "r": "mt"
+    }
+  },
+  "item.sword-3": {
+    "鋼劍": {
+      "t": "Steel Sword",
+      "r": "mt"
+    },
+    "反覆鍛打的鋼刃，揮動時劍身幾乎不見震顫。均衡好用，命中率高。": {
+      "t": "A blade of steel forged again and again; it barely trembles when swung. Balanced and accurate.",
+      "r": "mt"
+    }
+  },
+  "item.sword-4": {
+    "精鋼劍": {
+      "t": "Fine Steel Sword",
+      "r": "mt"
+    },
+    "名匠以精煉鋼打造，刃面映出細密的鍛紋。均衡好用，命中率高。": {
+      "t": "Forged by a master from refined steel, its blade shows a fine forging pattern. Balanced and accurate.",
+      "r": "mt"
+    }
+  },
+  "item.sword-5": {
+    "秘銀劍": {
+      "t": "Mithril Sword",
+      "r": "mt"
+    },
+    "傳說中矮人以秘銀鍛造的寶劍，輕若無物、銳不可擋。均衡好用，命中率高。": {
+      "t": "A legendary sword forged by dwarves from mithril, light as air and unstoppably keen. Balanced and accurate.",
+      "r": "mt"
+    }
+  },
+  "item.axe-1": {
+    "青銅斧": {
+      "t": "Bronze Axe",
+      "r": "mt"
+    },
+    "半是工具半是武器的青銅斧，伐木與劈敵都靠它。傷害高但命中較低。": {
+      "t": "Half tool, half weapon, this bronze axe fells trees and foes alike. High damage but lower accuracy.",
+      "r": "mt"
+    }
+  },
+  "item.axe-2": {
+    "鐵斧": {
+      "t": "Iron Axe",
+      "r": "mt"
+    },
+    "厚重的鐵製戰斧，斧刃帶著洗不掉的暗紅。傷害高但命中較低，命中時可能使目標流血。": {
+      "t": "A heavy iron battle axe, its blade stained a dark red that never washes off. High damage but lower accuracy; may cause bleeding on hit.",
+      "r": "mt"
+    }
+  },
+  "item.axe-3": {
+    "鋼斧": {
+      "t": "Steel Axe",
+      "r": "mt"
+    },
+    "寬刃鋼斧，一記重劈就能撕開皮甲。傷害高但命中較低，命中時可能使目標流血。": {
+      "t": "A broad-bladed steel axe; one heavy chop can tear through leather armor. High damage but lower accuracy; may cause bleeding on hit.",
+      "r": "mt"
+    }
+  },
+  "item.axe-4": {
+    "精鋼斧": {
+      "t": "Fine Steel Axe",
+      "r": "mt"
+    },
+    "斧刃開了倒鉤，留下的傷口難以癒合。傷害高但命中較低，命中時可能使目標流血。": {
+      "t": "Its blade is barbed, leaving wounds that are slow to heal. High damage but lower accuracy; may cause bleeding on hit.",
+      "r": "mt"
+    }
+  },
+  "item.axe-5": {
+    "秘銀斧": {
+      "t": "Mithril Axe",
+      "r": "mt"
+    },
+    "秘銀戰斧在揮舞時發出低鳴，傳說能劈開城門。傷害高但命中較低，命中時可能使目標流血。": {
+      "t": "A mithril battle axe that hums as it swings; legend says it can cleave a city gate. High damage but lower accuracy; may cause bleeding on hit.",
+      "r": "mt"
+    }
+  },
+  "item.hammer-1": {
+    "青銅槌": {
+      "t": "Bronze Mallet",
+      "r": "mt"
+    },
+    "粗糙的青銅鑄錘，敲起來比砍起來可靠。傷害高但命中較低。": {
+      "t": "A crudely cast bronze mallet, more reliable for bashing than cutting. High damage but lower accuracy.",
+      "r": "mt"
+    }
+  },
+  "item.hammer-2": {
+    "鐵槌": {
+      "t": "Iron Mallet",
+      "r": "mt"
+    },
+    "方頭鐵槌，連頭盔都能敲出凹痕。傷害高但命中較低，命中時可能使目標昏迷。": {
+      "t": "A square-headed iron mallet that can dent even a helmet. High damage but lower accuracy; may stun on hit.",
+      "r": "mt"
+    }
+  },
+  "item.hammer-3": {
+    "鋼槌": {
+      "t": "Steel Mallet",
+      "r": "mt"
+    },
+    "鋼製戰槌，槌頭的重量足以震碎骨頭。傷害高但命中較低，命中時可能使目標昏迷。": {
+      "t": "A steel war hammer whose head is heavy enough to shatter bone. High damage but lower accuracy; may stun on hit.",
+      "r": "mt"
+    }
+  },
+  "item.hammer-4": {
+    "精鋼槌": {
+      "t": "Fine Steel Mallet",
+      "r": "mt"
+    },
+    "槌面刻有防滑紋路的精鋼重槌，一擊便能讓人眼冒金星。傷害高但命中較低，命中時可能使目標昏迷。": {
+      "t": "A heavy fine steel hammer with a grooved face; one blow leaves you seeing stars. High damage but lower accuracy; may stun on hit.",
+      "r": "mt"
+    }
+  },
+  "item.hammer-5": {
+    "秘銀槌": {
+      "t": "Mithril Mallet",
+      "r": "mt"
+    },
+    "秘銀戰槌落下時有如雷鳴，大地為之震顫。傷害高但命中較低，命中時可能使目標昏迷。": {
+      "t": "A mithril war hammer that falls like thunder and shakes the earth. High damage but lower accuracy; may stun on hit.",
+      "r": "mt"
+    }
+  },
+  "item.dagger-1": {
+    "青銅匕首": {
+      "t": "Bronze Dagger",
+      "r": "mt"
+    },
+    "短小的青銅匕首，盜賊入行的第一把刀。傷害低但容易暴擊。": {
+      "t": "A short bronze dagger, a thief's first blade. Low damage but crits easily.",
+      "r": "mt"
+    }
+  },
+  "item.dagger-2": {
+    "鐵匕首": {
+      "t": "Iron Dagger",
+      "r": "mt"
+    },
+    "細長的鐵製匕首，容易藏在靴筒裡。傷害低但容易暴擊，命中時可能使目標中毒。": {
+      "t": "A slender iron dagger, easy to hide in a boot. Low damage but crits easily; may poison on hit.",
+      "r": "mt"
+    }
+  },
+  "item.dagger-3": {
+    "鋼匕首": {
+      "t": "Steel Dagger",
+      "r": "mt"
+    },
+    "刃尖淬過毒液的鋼匕首，專挑盔甲的縫隙下手。傷害低但容易暴擊，命中時可能使目標中毒。": {
+      "t": "A steel dagger with a venom-dipped tip, made for the gaps in armor. Low damage but crits easily; may poison on hit.",
+      "r": "mt"
+    }
+  },
+  "item.dagger-4": {
+    "暗影匕首": {
+      "t": "Shadow Dagger",
+      "r": "mt"
+    },
+    "漆黑的刃身不反射任何光線，刺客最愛的夥伴。傷害低但容易暴擊，命中時可能使目標中毒。": {
+      "t": "Its pitch-black blade reflects no light at all, an assassin's favorite companion. Low damage but crits easily; may poison on hit.",
+      "r": "mt"
+    }
+  },
+  "item.dagger-5": {
+    "毒牙匕首": {
+      "t": "Venomfang Dagger",
+      "r": "mt"
+    },
+    "以巨蛇毒牙磨成，刃上的毒液永不乾涸。傷害低但容易暴擊，命中時可能使目標中毒。": {
+      "t": "Ground from a giant serpent's fang, its venom never dries. Low damage but crits easily; may poison on hit.",
+      "r": "mt"
+    }
+  },
+  "item.bow-1": {
+    "短弓": {
+      "t": "Short Bow",
+      "r": "mt"
+    },
+    "獵人常用的木製短弓，輕巧好上手。遠程武器，能在遠處攻擊敵人。": {
+      "t": "A hunter's wooden short bow, light and easy to handle. A ranged weapon that strikes enemies from afar.",
+      "r": "mt"
+    }
+  },
+  "item.bow-2": {
+    "長弓": {
+      "t": "Long Bow",
+      "r": "mt"
+    },
+    "以硬木製成的長弓，射程與力道都勝過短弓。遠程武器，能在遠處攻擊敵人。": {
+      "t": "A long bow of hardwood, with more range and power than a short bow. A ranged weapon that strikes enemies from afar.",
+      "r": "mt"
+    }
+  },
+  "item.bow-3": {
+    "複合弓": {
+      "t": "Composite Bow",
+      "r": "mt"
+    },
+    "以木、角、筋層層黏合，小巧卻極為強勁。遠程武器，能在遠處攻擊敵人。": {
+      "t": "Layers of wood, horn and sinew glued together, compact yet extremely powerful. A ranged weapon that strikes enemies from afar.",
+      "r": "mt"
+    }
+  },
+  "item.bow-4": {
+    "精靈弓": {
+      "t": "Elven Bow",
+      "r": "mt"
+    },
+    "精靈工匠的作品，弓身纖細優雅，箭矢幾乎無聲。遠程武器，能在遠處攻擊敵人。": {
+      "t": "The work of elven craftsmen, slender and elegant; its arrows fly almost silently. A ranged weapon that strikes enemies from afar.",
+      "r": "mt"
+    }
+  },
+  "item.bow-5": {
+    "龍骨弓": {
+      "t": "Dragonbone Bow",
+      "r": "mt"
+    },
+    "以巨龍脊骨削成的長弓，拉開時隱約聽見龍吟。遠程武器，能在遠處攻擊敵人。": {
+      "t": "A long bow carved from a dragon's spine; draw it and you faintly hear a dragon's roar. A ranged weapon that strikes enemies from afar.",
+      "r": "mt"
+    }
+  },
+  "item.staff-1": {
+    "橡木杖": {
+      "t": "Oak Staff",
+      "r": "mt"
+    },
+    "普通的橡木手杖，杖頭殘留著焦黑的痕跡。提升智力。": {
+      "t": "An ordinary oak staff, its head still marked with scorch. Increases intelligence.",
+      "r": "mt"
+    }
+  },
+  "item.staff-2": {
+    "水晶杖": {
+      "t": "Crystal Staff",
+      "r": "mt"
+    },
+    "杖頭鑲著冰涼的水晶，摸起來總是結著薄霜。提升智力，命中時可能使目標凍傷。": {
+      "t": "Its head is set with a cold crystal that always feels frosted. Increases intelligence; may cause frostbite on hit.",
+      "r": "mt"
+    }
+  },
+  "item.staff-3": {
+    "符文杖": {
+      "t": "Runic Staff",
+      "r": "mt"
+    },
+    "杖身刻滿火焰符文，施法時符文會發出紅光。提升智力，命中時可能使目標燃燒。": {
+      "t": "Its shaft is carved with fire runes that glow red when casting. Increases intelligence; may burn on hit.",
+      "r": "mt"
+    }
+  },
+  "item.staff-4": {
+    "附魔杖": {
+      "t": "Enchanted Staff",
+      "r": "mt"
+    },
+    "被寒冰魔力附魔的法杖，周圍的空氣總是凝結成霧。提升智力，命中時可能使目標凍傷。": {
+      "t": "A staff enchanted with frost magic; the air around it always condenses into mist. Increases intelligence; may cause frostbite on hit.",
+      "r": "mt"
+    }
+  },
+  "item.staff-5": {
+    "星辰杖": {
+      "t": "Starlight Staff",
+      "r": "mt"
+    },
+    "杖頭封存著一顆墜落的星辰，燃燒著永不熄滅的光焰。提升智力，命中時可能使目標燃燒。": {
+      "t": "Its head holds a fallen star that burns with an undying flame. Increases intelligence; may burn on hit.",
+      "r": "mt"
+    }
+  },
+  "item.debug-sword": {
+    "測試劍": {
+      "t": "Test Sword",
+      "r": "mt"
+    },
+    "開發測試用，命中時會觸發各種效果。": {
+      "t": "For development testing; triggers various effects on hit.",
+      "r": "mt"
+    }
+  },
   "item.iron": {
     "鐵礦": {
       "t": "Iron ore",

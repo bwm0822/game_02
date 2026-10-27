@@ -2844,5 +2844,102 @@
     "equip": {
       "sprite": "staff-starlight"
     }
+  },
+  "debug-sword": {
+    "cat": "CAT_WEAPON",
+    "gold": 0,
+    "type": "melee",
+    "range": 1,
+    "atk": 15,
+    "effects": [
+      {
+        "type": "mod",
+        "key": "str",
+        "a": 1
+      },
+      {
+        "stage": "atk",
+        "scope": "self",
+        "type": "mod",
+        "key": "acc",
+        "m": 0.1
+      },
+      {
+        "stage": "atk",
+        "scope": "target",
+        "type": "mod",
+        "key": "eva",
+        "m": -0.1
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "debuff",
+        "ctrl": true,
+        "chance": 0.5,
+        "dur": 1,
+        "id": "stun",
+        "icon": "💫"
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "dot",
+        "a": -1,
+        "dur": 3,
+        "elm": "poison",
+        "id": "poison",
+        "icon": "☠️"
+      },
+      {
+        "stage": "hit",
+        "scope": "target",
+        "type": "dot",
+        "m": -0.1,
+        "elm": "fire",
+        "dur": 3,
+        "id": "burn",
+        "stack": 3,
+        "icon": "🔥"
+      },
+      {
+        "stage": "hit",
+        "scope": "self",
+        "type": "action",
+        "chance": 0.25,
+        "key": "hp",
+        "m": 0.25,
+        "id": "lifesteal"
+      },
+      {
+        "stage": "hit",
+        "scope": "self",
+        "type": "buff",
+        "stack": 1,
+        "key": "str",
+        "a": 1,
+        "dur": 3,
+        "id": "strong",
+        "icon": "💪"
+      }
+    ],
+    "cat_sub": [
+      "sword"
+    ],
+    "lab": "測試劍",
+    "des": "開發測試用，命中時會觸發各種效果。",
+    "equip": {
+      "sprite": "sword-bronze",
+      "scale": 0.25,
+      "x": -13,
+      "y": 20,
+      "oy": 0.85,
+      "a": 60
+    },
+    "icon": "sword-bronze-icon",
+    "drop": {
+      "sprite": "sword-bronze",
+      "scale": 0.25
+    }
   }
 }
