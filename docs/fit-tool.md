@@ -28,12 +28,12 @@
 
 ```json
 "chop": {"follow": false, "pivot": {"x": -13, "y": 12}, "ready": 120, "hit": 200, "back": 150, "hold": false,
-         "keys": [{"t": 120, "x": -13, "y": 6, "a": -90, "ease": "quad.out"},
-                  {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "cubic.in", "path": "arc"}]}
+         "keys": [{"t": 120, "x": -13, "y": 6, "a": -90, "ease": "Quad.Out"},
+                  {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "Cubic.In", "path": "arc"}]}
 ```
 
 - 影格 `x/y`＝武器原點（`ox/oy`，也就是握把）在 shape 本地座標（面向右、相對 view 中心）的**絕對位置**，`a`＝sprite 角度；`t` 是從開始算的 ms，`ease` 是進入這格的緩動（`pose.js` 的 `EASE`），`path:'arc'` 繞 `pivot` 做極座標補間（方向跟角度變化同向），預設直線。
-- 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`quad.out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
+- 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`Quad.Out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
 - `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
 - `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。
 - 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫：普攻看武器的 `anim`（`item.json` 最上層，如匕首 `stab`；`com_stats.js` 帶進 `total.anim`）；技能看技能的 `anim`（`ability.json`），近戰／遠程型（`travel.type` 是 `melee`/`ranged`）技能沒寫就退回武器的 `anim`；都沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。

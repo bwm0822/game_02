@@ -352,7 +352,7 @@ function addKey()
     if (keys.some(k => k.t === ms) || ms <= 0) {status(`#${i + 1} 跟前一格間隔太小，插不進去`); return render();}
     const tr = trackOf(), p = tr ? trackPose(tr, ms) : restOf(eq), q = unrotPt(an, p);
     commit(() => {
-        an.keys.push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'quad.out'});
+        an.keys.push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'Quad.Out'});
         an.keys.sort((a, b) => a.t - b.t);
         setMs(ms);
     });
@@ -377,7 +377,7 @@ function newAnim(copy)
     while (anims()[id]) id = `${base}_${++n}`;
     const r = weapon() ? restOf(weapon()) : {x: 0, y: 0, angle: 0};
     commit(() => {
-        anims()[id] = copy ? structuredClone(anim()) : {follow: false, pivot: {x: 0, y: 0}, hit: 200, back: 150, keys: [{t: 200, x: r.x, y: r.y, a: r.angle, ease: 'quad.out'}]};
+        anims()[id] = copy ? structuredClone(anim()) : {follow: false, pivot: {x: 0, y: 0}, hit: 200, back: 150, keys: [{t: 200, x: r.x, y: r.y, a: r.angle, ease: 'Quad.Out'}]};
         S.aid = id;
         setMs(0);
     });
@@ -418,7 +418,7 @@ function animView(slots)
         h('td', {class: 'k'}, `#${i + 1}`),
         h('td', null, numInput(F, S.aid, ['keys', i, 't'], '', {req: true, after: (n) => {an.keys.sort((a, b) => a.t - b.t); setMs(n);}})),
         ['x', 'y', 'a'].map(f => h('td', null, numInput(F, S.aid, ['keys', i, f], '', {req: true}))),
-        h('td', null, sel(Object.keys(EASE).map(e => [e, e]), k.ease ?? 'linear', (e) => commit(() => {k.ease = e.target.value;}))),
+        h('td', null, sel(Object.keys(EASE).map(e => [e, e]), k.ease ?? 'Linear', (e) => commit(() => {k.ease = e.target.value;}))),
         h('td', null, sel([['line', '直線'], ['arc', '弧線']], k.path ?? 'line', (e) => commit(() => setAt(k, ['path'], e.target.value === 'arc' ? 'arc' : undefined)))),
         h('td', null, h('button', {title: '刪除影格', onclick: () => delKey(i)}, '✕')));
     return [

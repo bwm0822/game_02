@@ -3,6 +3,8 @@
 //   區域特效：技能的 zoneFx 指的 id，每格一個（src/components/view.js 的 ZoneView，HazardZone 用）
 // 單格動畫：src/core/fxcell.js（FxCell、attachCell、bodyTween、zoneDelays）
 
+import {EASE} from '../../src/core/pose.js';
+
 export const CELL = {
     size:  {type: 'num', label: '大小', hint: 'px，沒填是 30'},
     scale: {type: 'range', label: '縮放', hint: '數字，或 min, max 每次隨機'},
@@ -43,8 +45,7 @@ export const timeKeys = (stage, zone) => Object.keys(TIME).filter(k => (!TIME[k]
 export const PROPS = {scale: 1, scaleX: 1, scaleY: 1, alpha: 1, x: '+=0', y: '+=0', angle: 0};
 export const propsOf = (stage) => stage === 'body' ? ['angle'] : Object.keys(PROPS);
 
-export const EASES = ['Linear', 'Stepped', 'Power0', 'Power1', 'Power2', 'Power3', 'Power4',
-    ...['Quad', 'Cubic', 'Quart', 'Quint', 'Sine', 'Expo', 'Circ', 'Back', 'Elastic', 'Bounce'].flatMap(n => [`${n}.In`, `${n}.Out`, `${n}.InOut`])];
+export const EASES = Object.keys(EASE);
 
 // 值的寫法：num 數字、rel 相對字串、ft {from, to}、raw 其他（JSON 直接改）
 export function valMode(v)

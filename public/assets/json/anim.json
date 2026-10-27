@@ -1,45 +1,101 @@
 {
   "chop": {
     "follow": false,
-    "pivot": {"x": -13, "y": 12},
+    "pivot": {
+      "x": -13,
+      "y": 12
+    },
     "ready": 120,
     "hit": 200,
     "back": 150,
     "keys": [
-      {"t": 120, "x": -13, "y": 6, "a": -90, "ease": "quad.out"},
-      {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "cubic.in", "path": "arc"}
+      {
+        "t": 120,
+        "x": -13,
+        "y": 6,
+        "a": -90,
+        "ease": "Quad.Out"
+      },
+      {
+        "t": 200,
+        "x": -7.8,
+        "y": 15,
+        "a": 75,
+        "ease": "Cubic.In",
+        "path": "arc"
+      }
     ]
   },
   "sweep": {
     "follow": true,
-    "pivot": {"x": 0, "y": 0},
+    "pivot": {
+      "x": 0,
+      "y": 0
+    },
     "ready": 120,
     "hit": 420,
     "back": 150,
     "keys": [
-      {"t": 120, "x": 0, "y": -14, "a": -45, "ease": "quad.out"},
-      {"t": 420, "x": 0, "y": 14, "a": 135, "ease": "cubic.in", "path": "arc"}
+      {
+        "t": 120,
+        "x": 0,
+        "y": -14,
+        "a": -45,
+        "ease": "Quad.Out"
+      },
+      {
+        "t": 420,
+        "x": 0,
+        "y": 14,
+        "a": 135,
+        "ease": "Cubic.In",
+        "path": "arc"
+      }
     ]
   },
   "stab": {
     "follow": true,
-    "pivot": {"x": -13, "y": 14},
+    "pivot": {
+      "x": 0,
+      "y": 14
+    },
     "ready": 100,
     "hit": 180,
     "back": 120,
     "keys": [
-      {"t": 100, "x": -20, "y": 14, "a": 90, "ease": "quad.out"},
-      {"t": 180, "x": 4, "y": 14, "a": 90, "ease": "cubic.in"}
+      {
+        "t": 100,
+        "x": -5,
+        "y": 14,
+        "a": 90,
+        "ease": "Quad.Out"
+      },
+      {
+        "t": 180,
+        "x": 10,
+        "y": 14,
+        "a": 90,
+        "ease": "Quad.In"
+      }
     ]
   },
   "aim": {
     "follow": true,
     "hold": true,
-    "pivot": {"x": 15, "y": 8},
+    "pivot": {
+      "x": 0,
+      "y": 10
+    },
     "hit": 60,
     "back": 60,
     "keys": [
-      {"t": 60, "x": 26.3, "y": 19.3, "a": -45, "ease": "quad.out"}
+      {
+        "t": 60,
+        "x": 15,
+        "y": 10,
+        "a": 0,
+        "ease": "Quad.Out"
+      }
     ]
   }
 }
