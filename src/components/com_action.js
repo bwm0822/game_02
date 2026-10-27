@@ -5,6 +5,7 @@ import Utility from '../core/utility.js'
 import {computeDamage} from '../core/combat.js'
 import {GM, GS} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
+import {DEFAULT_ANIM, weaponAnim} from '../core/pose.js'
 const _tag = 'action';
 const FRONT = 0.5;   // 近戰攻擊期間 depth 墊高(不到一格)，同一排(y 相同)時攻擊者畫在目標上面
 
@@ -72,7 +73,7 @@ export class COM_Action extends Com
         return ok;
     }
 
-    async _attack_Melee(target, onHit, anim='chop')
+    async _attack_Melee(target, onHit, anim=DEFAULT_ANIM.melee)
     {
         const {root}=this.ctx
         root.face?.(target.pos);
@@ -146,7 +147,7 @@ export class COM_Action extends Com
         target.updateDepth();
     }
 
-    async _attack_Ranged(target, onHit, anim='aim')
+    async _attack_Ranged(target, onHit, anim=DEFAULT_ANIM.ranged)
     {
         const {root}=this.ctx
         root.face?.(target.pos);
@@ -301,8 +302,8 @@ export class COM_Action extends Com
         {
             const target = targets[0];
             const onHit = ()=>this._onDamage(target, ability);
-            if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit, root.total.anim);}
-            else {await this._attack_Melee(target, onHit, root.total.anim);}
+            if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit, weaponAnim(root.total));}
+            else {await this._attack_Melee(target, onHit, weaponAnim(root.total));}
             return true;
         }
 

@@ -4,6 +4,10 @@
 
 export const BACK_EASE = 'Quad.Out';
 
+// 普攻動畫：武器 item.json 的 anim，沒寫就照近戰／遠程退回預設；item 也可以是 root.total(有 type/anim)
+export const DEFAULT_ANIM = {melee:'chop', ranged:'aim'};
+export const weaponAnim = (item)=>item?.anim ?? DEFAULT_ANIM[item?.type==='ranged' ? 'ranged' : 'melee'];
+
 const rad = (deg)=>deg*Math.PI/180;
 const deg = (r)=>r*180/Math.PI;
 const lerp = (a, b, t)=>a + (b - a)*t;

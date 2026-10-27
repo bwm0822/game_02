@@ -9,7 +9,7 @@ import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
 import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
-import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd} from '../../src/core/pose.js';
+import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 
 const FILES = ['role.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
@@ -178,11 +178,13 @@ function setSlot(cat, id)
     render();
 }
 
-// 換武器時動畫切到那把武器的普攻動畫(item.json 的 anim)；沒寫就維持原本選的
+// 換武器時動畫切到那把武器的普攻動畫（同遊戲 pose.js 的 weaponAnim）；空手或指到不存在的動畫就切到（無）
 function weaponAnim()
 {
-    const a = items()[S.slots.CAT_WEAPON]?.anim;
-    if (a && anims()[a] && a !== S.aid) {S.aid = a; setMs(0);}
+    const wid = S.slots.CAT_WEAPON, a = wid ? animOf(items()[wid]) : null;
+    if (a && !anims()[a]) status(`${wid} 的 anim ${a} 不存在`);
+    const aid = anims()[a] ? a : null;
+    if (aid !== S.aid) {S.aid = aid; setMs(0);}
 }
 
 const emptyIcon = (cat, size) => {
@@ -214,7 +216,6 @@ function pickEquip(cat)
 function render()
 {
     const focus = document.activeElement?.dataset?.k;
-    if (!anim()) S.aid = Object.keys(anims())[0] ?? null;
     drawList();
     drawView();
     drawPv();
@@ -403,9 +404,14 @@ const animUsers = (aid) => Object.keys(items()).filter(id => items()[id].anim ==
 async function delAnim()
 {
     const users = animUsers(S.aid);
-    const msg = `${users.length ? `道具 ${users.join('、')} 的普攻會變回預設動畫；` : ''}技能 anim 或 com_action.js 預設用到它的會播不出來`;
+    const msg = `${users.length ? `道具 ${users.join('、')} 的 anim 會清掉、普攻變回預設動畫；` : ''}技能 anim 或 pose.js 預設（DEFAULT_ANIM）用到它的會播不出來`;
     if (await ask(`刪除動畫 ${S.aid}`, msg, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
-    commit(() => {delete anims()[S.aid]; S.aid = null; setMs(0);});
+    commit(() => {
+        delete anims()[S.aid];
+        for (const id of users) delete items()[id].anim;
+        S.aid = null;
+        setMs(0);
+    });
 }
 
 function animView(slots)
@@ -428,7 +434,7 @@ function animView(slots)
         wid && h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, k))), h('tr', null, numCells('item.json', wid, ['equip']))),
         h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝武器原點 ox/oy 在角色上的位置，a＝圖片角度）'),
         h('div', {class: 'animbar'},
-            sel(Object.keys(anims()).map(k => [k, k]), S.aid, (e) => {S.aid = e.target.value; setMs(0); playing++; render();}),
+            sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
             h('button', {onclick: () => newAnim(false)}, '新增'),
             an && h('button', {onclick: () => newAnim(true)}, '複製'),
             an && h('button', {onclick: delAnim}, '刪除'),
@@ -760,7 +766,7 @@ function drawPv()
                 }}),
                 h('span', {class: 'ms'}, `${Math.round(S.ms)} / ${total} ms`),
                 h('button', {onclick: play, title: `ready 停 ${PAUSE.ready}ms 模擬前撲、舉著等停 ${PAUSE.hold}ms`}, '▶ 播放'),
-            ] : h('span', {class: 'dim'}, weapon() ? '這個動畫還沒有影格' : '穿上武器才能預覽'),
+            ] : h('span', {class: 'dim'}, !weapon() ? '穿上武器才能預覽' : anim() ? '這個動畫還沒有影格' : '沒有選動畫'),
             h('label', {title: '0＝右、90＝下、180＝左；面向跟著目標翻，轉向目標的動畫整組繞支點轉'}, '目標角度',
                 h('input', {type: 'number', step: 'any', class: 'num', value: S.target, onchange: e => {S.target = +e.target.value || 0; render();}})))));
     drawPreview();
@@ -785,4 +791,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, drawPreview, render,
-    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, play, playMs, get geo() {return geo;}};
+    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}};

@@ -128,14 +128,29 @@ run('fit', async t => {
         F.undo();
         out.renameUndo = Object.keys(A()).join();
         const I = () => S.doc['item.json'].data;
+        const optNone = () => document.querySelector('.animbar select').value;
         F.setSlot('CAT_WEAPON', 'dagger-1');
         out.weaponAnim = [S.aid];
+        F.setSlot('CAT_WEAPON', 'bow_01');
+        out.weaponAnim.push(S.aid);
         F.setSlot('CAT_WEAPON', 'sword_01');
         out.weaponAnim.push(S.aid);
+        F.setSlot('CAT_WEAPON', null);
+        out.weaponAnim.push(S.aid, optNone(), !!document.querySelector('table.keys'));
+        I().sword_01.anim = 'nope'; F.setSlot('CAT_WEAPON', 'sword_01');
+        out.weaponAnim.push(S.aid, $('status')?.textContent.includes('nope'));
+        delete I().sword_01.anim;
+        F.setSlot('CAT_WEAPON', 'dagger-1');
         F.renameAnim('stab2');
         out.stabRename = [I()['dagger-1'].anim, I()['dagger-5'].anim];
         F.undo();
         out.stabRename.push(I()['dagger-1'].anim);
+        S.aid = 'stab'; F.render();
+        const del = F.delAnim();
+        $('dlgAsk').close('ok'); await del;
+        out.delAnim = [Object.keys(A()).join(), S.aid, 'anim' in I()['dagger-1'], 'anim' in I()['dagger-5'], optNone()];
+        F.undo();
+        out.delAnim.push(Object.keys(A()).join(), I()['dagger-1'].anim);
         F.setSlot('CAT_WEAPON', 'bow_01');
         S.aid = 'aim'; S.target = 0; F.render();
         out.aim = [trackEnd(F.trackOf()), Math.round(poseAt(F.trackOf(), 60).angle)];
@@ -147,8 +162,10 @@ run('fit', async t => {
         const st = stage();
         const scrolls = st.scrollHeight > st.clientHeight;
         const centered = Math.abs(st.scrollTop - (st.scrollHeight - st.clientHeight) / 2) <= 1;
+        const scrolled = new Promise(res => st.addEventListener('scroll', res, {once: true}));
         st.scrollTop = 40; st.scrollLeft = 30;
-        await sleep(50);
+        // 刪除確認框 showModal 過後，scroll 事件要過一陣子才發
+        await Promise.race([scrolled, sleep(2000)]);
         fire(`anim.json|aim|back`, '70');
         await F.drawPreview();
         out.pinned = [ctrl.bottom <= innerHeight, scrolls, centered, stage().scrollTop, stage().scrollLeft];
@@ -200,7 +217,7 @@ run('fit', async t => {
     t.check('未存標記', r.dirty[0] && r.dirty[1]);
     t.eq('undo 跨兩個檔', JSON.stringify(r.undo), JSON.stringify([5, undefined]));
     t.eq('redo', r.redo, -2);
-    t.eq('動畫分頁：預設第一個動畫、表格與時間軸各 2 格', JSON.stringify(r.animUi), JSON.stringify(['anim', 'chop', 2, 2]));
+    t.eq('動畫分頁：劍沒寫 anim 用預設 chop、表格與時間軸各 2 格', JSON.stringify(r.animUi), JSON.stringify(['anim', 'chop', 2, 2]));
     t.eq('下劈總長 200+收回 150', r.chop[0], 350);
     t.check('下劈結束回到原姿勢', r.chop[1]);
     t.eq('舉劍 -90°', r.chop[2], -90);
@@ -218,13 +235,15 @@ run('fit', async t => {
     t.eq('拖拉各一筆 undo', JSON.stringify(r.dragUndo), JSON.stringify([-13, -90]));
     t.eq('改名保留順序', JSON.stringify(r.rename), JSON.stringify(['chop2,sweep,stab,aim', 'chop2']));
     t.eq('改名可 undo', r.renameUndo, 'chop,sweep,stab,aim');
-    t.eq('換匕首切到 stab、換沒寫 anim 的劍不切', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', 'stab']));
+    t.eq('換武器切動畫：匕首 stab、弓預設 aim、劍預設 chop、空手（無）隱藏編輯區、anim 不存在（無）＋提示',
+        JSON.stringify(r.weaponAnim), JSON.stringify(['stab', 'aim', 'chop', null, '', false, null, true]));
     t.eq('改名連帶改道具 anim、undo 一起退', JSON.stringify(r.stabRename), JSON.stringify(['stab2', 'stab2', 'stab']));
-    t.eq('瞄準：總長 60+60、正右方 -45°', JSON.stringify(r.aim), JSON.stringify([120, -45]));
+    t.eq('刪除動畫：停在（無）、清掉道具 anim、undo 一起退', JSON.stringify(r.delAnim),
+        JSON.stringify(['chop,sweep,aim', null, false, false, '', 'chop,sweep,stab,aim', 'stab']));
+    t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
     t.eq('×6：控制面板留在畫面上、畫布區自己捲、換倍率置中、重繪保留捲動', JSON.stringify(r.pinned), JSON.stringify([true, true, true, 40, 30]));
     t.check('遊戲大小倍率', r.game > 0 && r.game < 400, `${r.game}`);
-    t.eq('畫面沒有 [object …]', r.dom, false);
-    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
+    t.eq('畫面沒有 [object …]', r.dom, false);    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
