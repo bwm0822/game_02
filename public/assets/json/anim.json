@@ -21,6 +21,17 @@
       {"t": 420, "x": 0, "y": 14, "a": 135, "ease": "cubic.in", "path": "arc"}
     ]
   },
+  "stab": {
+    "follow": true,
+    "pivot": {"x": -13, "y": 14},
+    "ready": 100,
+    "hit": 180,
+    "back": 120,
+    "keys": [
+      {"t": 100, "x": -20, "y": 14, "a": 90, "ease": "quad.out"},
+      {"t": 180, "x": 4, "y": 14, "a": 90, "ease": "cubic.in"}
+    ]
+  },
   "aim": {
     "follow": true,
     "hold": true,

@@ -33,6 +33,7 @@ export const FIELDS = {
     atk: {label: '攻擊', type: 'num'},
     def: {label: '防禦', type: 'num'},
     range: {label: '射程', type: 'int'},
+    anim: {label: '普攻動畫', type: 'list', suggest: []},
     cat_sub: {label: '子類別', type: 'tags', suggest: ['sword', 'axe', 'bow']},
     useable: {label: '可使用', type: 'bool'},
     cps: {label: '堆疊數', type: 'int'},
@@ -55,7 +56,7 @@ export const BASE = ['lab', 'cat', 'icon', 'gold', 'des'];
 
 const ARMOR = ['def', 'equip', 'drop', 'effects'];
 export const CAT_FIELDS = {
-    CAT_WEAPON: ['type', 'atk', 'range', 'cat_sub', 'equip', 'effects'],
+    CAT_WEAPON: ['type', 'atk', 'range', 'anim', 'cat_sub', 'equip', 'effects'],
     CAT_HELMET: ARMOR, CAT_CHESTPLATE: ARMOR, CAT_GLOVES: ARMOR, CAT_BOOTS: ARMOR,
     CAT_NECKLACE: ['def', 'effects'], CAT_RING: ['def', 'effects'],
     CAT_EQUIP: ['endurance', 'light', 'equip'],

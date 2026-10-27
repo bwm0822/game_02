@@ -38,6 +38,15 @@ run('武器動畫', async t => {
         drop();
 
         out.missing = await p.anim_play('nope', right);
+
+        // 普攻動畫看武器的 anim(item.json)，沒寫就預設 chop
+        const eqs = p.bb.equips, saved = [...eqs], play = p.anim_play, played = [];
+        p.anim_play = (id, ...a) => {played.push(id); return play(id, ...a);};
+        const swing = async (id) => {eqs.length = 0; eqs.push({id, count: 1}); p.setDirty(); await p.anim_melee({pos: right}); return p.total.anim ?? null;};
+        out.weaponAnim = [await swing('dagger-1'), await swing('sword_01')];
+        out.played = played;
+        p.anim_play = play;
+        eqs.length = 0; eqs.push(...saved); p.setDirty();
         return out;
     });
 
@@ -51,4 +60,6 @@ run('武器動畫', async t => {
     t.eq('hold：舉著等 anim_end', JSON.stringify(r.hold), JSON.stringify(r.aim[1]));
     t.check('anim_end 後收回', r.aimBack[0]);
     t.eq('沒有的動畫不播', r.missing, false);
+    t.eq('武器 anim 帶進 total', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', null]));
+    t.eq('匕首普攻刺、劍普攻劈', JSON.stringify(r.played), JSON.stringify(['stab', 'chop']));
 });

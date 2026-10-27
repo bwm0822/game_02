@@ -112,6 +112,15 @@ run('fit', async t => {
         out.rename = [Object.keys(A()).join(), S.aid];
         F.undo();
         out.renameUndo = Object.keys(A()).join();
+        const I = () => S.doc['item.json'].data;
+        F.setSlot('CAT_WEAPON', 'dagger-1');
+        out.weaponAnim = [S.aid];
+        F.setSlot('CAT_WEAPON', 'sword_01');
+        out.weaponAnim.push(S.aid);
+        F.renameAnim('stab2');
+        out.stabRename = [I()['dagger-1'].anim, I()['dagger-5'].anim];
+        F.undo();
+        out.stabRename.push(I()['dagger-1'].anim);
         F.setSlot('CAT_WEAPON', 'bow_01');
         S.aid = 'aim'; S.target = 0; F.render();
         out.aim = [trackEnd(F.trackOf()), Math.round(poseAt(F.trackOf(), 60).angle)];
@@ -188,8 +197,10 @@ run('fit', async t => {
     t.check('拖武器改選中影格位置', r.dragMove[0] === -10 && r.dragMove[1] === 4, JSON.stringify(r.dragMove));
     t.eq('拖把手轉 90°（Shift 吸 15°）', r.dragRot, 0);
     t.eq('拖拉各一筆 undo', JSON.stringify(r.dragUndo), JSON.stringify([-13, -90]));
-    t.eq('改名保留順序', JSON.stringify(r.rename), JSON.stringify(['chop2,sweep,aim', 'chop2']));
-    t.eq('改名可 undo', r.renameUndo, 'chop,sweep,aim');
+    t.eq('改名保留順序', JSON.stringify(r.rename), JSON.stringify(['chop2,sweep,stab,aim', 'chop2']));
+    t.eq('改名可 undo', r.renameUndo, 'chop,sweep,stab,aim');
+    t.eq('換匕首切到 stab、換沒寫 anim 的劍不切', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', 'stab']));
+    t.eq('改名連帶改道具 anim、undo 一起退', JSON.stringify(r.stabRename), JSON.stringify(['stab2', 'stab2', 'stab']));
     t.eq('瞄準：總長 60+60、正右方 -45°', JSON.stringify(r.aim), JSON.stringify([120, -45]));
     t.eq('×6：控制面板留在畫面上、畫布區自己捲、換倍率置中、重繪保留捲動', JSON.stringify(r.pinned), JSON.stringify([true, true, true, 40, 30]));
     t.check('遊戲大小倍率', r.game > 0 && r.game < 400, `${r.game}`);

@@ -166,6 +166,7 @@ function select(rid)
         const id = isObj(e) ? e.id : e, it = items()[id];
         if (it?.equip && SLOTS.some(([c]) => c === it.cat)) S.slots[it.cat] = id;
     }
+    weaponAnim();
     render();
 }
 
@@ -173,7 +174,15 @@ function setSlot(cat, id)
 {
     if (id) S.slots[cat] = id;
     else delete S.slots[cat];
+    if (cat === 'CAT_WEAPON') weaponAnim();
     render();
+}
+
+// 換武器時動畫切到那把武器的普攻動畫(item.json 的 anim)；沒寫就維持原本選的
+function weaponAnim()
+{
+    const a = items()[S.slots.CAT_WEAPON]?.anim;
+    if (a && anims()[a] && a !== S.aid) {S.aid = a; setMs(0);}
 }
 
 const emptyIcon = (cat, size) => {
@@ -370,17 +379,22 @@ function renameAnim(to)
     if (to === S.aid) return;
     if (!/^[A-Za-z0-9_]+$/.test(to)) {status('動畫名稱只能用英數字跟底線'); return render();}
     if (anims()[to]) {status(`已經有 ${to}`); return render();}
-    const from = S.aid, d = S.doc['anim.json'];
+    const from = S.aid, d = S.doc['anim.json'], users = animUsers(from);
     commit(() => {
         d.data = Object.fromEntries(Object.entries(d.data).map(([k, v]) => [k === from ? to : k, v]));
+        for (const id of users) items()[id].anim = to;
         S.aid = to;
     });
-    status(`${from} 改名成 ${to}：技能 meta.anim、com_action.js 的預設（chop／sweep／aim）用到的要自己改`);
+    status(`${from} 改名成 ${to}${users.length ? `，道具 ${users.join('、')} 的 anim 一起改了` : ''}：技能 anim、com_action.js 的預設（chop／sweep／aim）用到的要自己改`);
 }
+
+const animUsers = (aid) => Object.keys(items()).filter(id => items()[id].anim === aid);
 
 async function delAnim()
 {
-    if (await ask(`刪除動畫 ${S.aid}`, '技能 meta.anim 或 com_action.js 預設用到它的會播不出來', [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    const users = animUsers(S.aid);
+    const msg = `${users.length ? `道具 ${users.join('、')} 的普攻會變回預設動畫；` : ''}技能 anim 或 com_action.js 預設用到它的會播不出來`;
+    if (await ask(`刪除動畫 ${S.aid}`, msg, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
     commit(() => {delete anims()[S.aid]; S.aid = null; setMs(0);});
 }
 

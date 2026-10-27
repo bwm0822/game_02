@@ -36,12 +36,12 @@
 - 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`quad.out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
 - `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
 - `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。
-- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫看技能的 `anim`（`ability.json`），沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。
+- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.weapon` 是要動的 sprite（暫拿的工具優先，只動主圖、`ext` 不動）。用哪個動畫：普攻看武器的 `anim`（`item.json` 最上層，如匕首 `stab`；`com_stats.js` 帶進 `total.anim`）；技能看技能的 `anim`（`ability.json`），近戰／遠程型（`travel.type` 是 `melee`/`ranged`）技能沒寫就退回武器的 `anim`；都沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`）。
 - 數學在 `src/core/pose.js`（純函式、不碰 Phaser）：`animTrack()` 攤影格、`poseAt()` 取某 ms 的姿勢；遊戲用 tween 推時間、工具用滑桿推，兩邊一樣；**改動畫數學改 pose.js，不要在 com_anim.js 另寫一份**。
 
 ## 動畫分頁
 
-- 上方選武器（同五格），武器的擺放數字也在這（調 `ox/oy` 對握把）；動畫下拉＋新增／複製／刪除，名稱欄直接改名（英數字底線，改名／刪除只提示，技能 `meta.anim` 跟 `com_action.js` 預設要自己改）。
+- 上方選武器（同五格），武器的擺放數字也在這（調 `ox/oy` 對握把）；換武器（含選角色帶入原裝）時，武器有寫 `anim` 就自動切到那個動畫，沒寫維持原本選的。動畫下拉＋新增／複製／刪除，名稱欄直接改名（英數字底線）：改名連帶改 `item.json` 裡引用它的 `anim`（同一筆 undo），刪除時列出用到它的道具；技能 `anim` 跟 `com_action.js` 預設只提示、要自己改。
 - 屬性：轉向目標、舉著等、支點 x/y、ready、hit、back；影格表 `t/x/y/a/ease/path`，點列＝選中並跳到那一格；「新增影格」用時間軸目前位置的當下姿勢插一格。
 - 畫布：拖武器＝移選中影格的位置、拖白點（旋轉把手，原點往圖片中心延伸兩倍）＝轉角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格。虛線＝原點軌跡，半透明＝其他影格。拖拉中直接改資料、放開才記一筆 undo。`follow` 動畫轉了向也能拖（位移會反轉回影格座標）。
 - 時間軸：◆ 影格、R ready、H hit 都能拖（影格夾在前後格之間、R/H 不超過最後一格），灰底是收回段；點空白跳時間，滑桿靠近影格會吸附。`▶ 播放` 時 ready 停 100ms、hold 停 300ms 模擬遊戲裡等程式的時間。

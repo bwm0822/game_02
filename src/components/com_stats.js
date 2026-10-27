@@ -23,6 +23,7 @@ function _derivedStats(base, meta)
     // 1) Vital & resource
     if (base[GM.HPMAX]===undefined) {out[GM.HPMAX] = _baseHPMAX(base);}
     if (base[GM.TYPE]===undefined) {out[GM.TYPE] = meta[GM.TYPE] || GM.MELEE; }
+    if (meta[GM.ANIM]) {out[GM.ANIM] = meta[GM.ANIM];}
 
     // 2) Combat basics
     if (base[GM.ATK]===undefined)
@@ -91,7 +92,7 @@ function _metaOfEquips(equips)   // 取得裝備基本屬性
             {
                 meta[k] = (meta[k]||0)+ v;
             }
-            else if(GM.COMBAT.includes(k))
+            else if(GM.COMBAT.includes(k) || k===GM.ANIM)
             {
                 meta[k] = v;
             }

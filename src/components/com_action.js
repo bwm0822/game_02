@@ -301,8 +301,8 @@ export class COM_Action extends Com
         {
             const target = targets[0];
             const onHit = ()=>this._onDamage(target, ability);
-            if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit);}
-            else {await this._attack_Melee(target, onHit);}
+            if(root.total.type==='ranged') {await this._attack_Ranged(target, onHit, root.total.anim);}
+            else {await this._attack_Melee(target, onHit, root.total.anim);}
             return true;
         }
 
@@ -316,8 +316,8 @@ export class COM_Action extends Com
             if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
             if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
             if(travel.type==='fall')        {return this._attack_Fall(target, onHit, travel);}
-            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit, ability.anim);}
-            if(travel.type==='melee')       {return this._attack_Melee(target, onHit, ability.anim);}
+            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit, ability.anim ?? root.total.anim);}
+            if(travel.type==='melee')       {return this._attack_Melee(target, onHit, ability.anim ?? root.total.anim);}
         };
 
         if(targets.length>1 && travel?.parallel===false)   // 多目標且明確設定依序執行
@@ -427,7 +427,7 @@ export class COM_Action extends Com
         root.attackDecor = this._attackDecor.bind(this);
         root.dashAttack = this._dashAttack.bind(this);
         root.sweepAttack = this._sweepAttack.bind(this);
-        root.anim_melee = (target) => this._attack_Melee(target, null);
+        root.anim_melee = (target) => this._attack_Melee(target, null, root.total?.anim);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);
         root.flee = this._flee.bind(this);

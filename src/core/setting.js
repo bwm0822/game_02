@@ -258,6 +258,7 @@ export const GM =
     CRD : "crd",        // 暴傷
     PEN : "pen",        // 穿透
     TYPE : "type",      // 攻擊類型: ranged/melee
+    ANIM : "anim",      // 武器普攻動畫(anim.json 的 id)，不在 COMBAT 裡(COMBAT 會顯示在面板)
     // 攻擊類型
     RANGED : 'ranged',
     MELEE : 'melee',

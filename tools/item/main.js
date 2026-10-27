@@ -14,12 +14,16 @@ const D = createDoc({
     external: '可能是紙娃娃「存到 item.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs, renameRefs: (from, to) => {for (const it of Object.values(S.items)) for (const ref of SC.ITEM_REFS) ref.set(it, from, to);},
-    onSaved: (file) => {if (file === 'fx.json') loadFx().then(fx => {S.fx = fx; render();});},
+    onSaved: (file) => {
+        if (file === 'fx.json') loadKeys(file).then(fx => {S.fx = fx; render();});
+        if (file === 'anim.json') loadKeys(file).then(a => {S.anims = a; render();});
+    },
 });
-const loadFx = () => fetch('/assets/json/fx.json', {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
+const loadKeys = (file) => fetch(`/assets/json/${file}`, {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
 const {S, render, commit, set} = D;
 Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}});
 S.fx = [];
+S.anims = null;
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.items[id].icon, lab: id => S.items[id].lab, warns: id => validate(id)});
 
@@ -71,6 +75,7 @@ function validate(id)
         else if (k !== 'icon') checkVal(def, v, k, out);
     }
     if (it.bb?.harvest?.id && !S.items[it.bb.harvest.id]) out.push(`bb.harvest.id 指到不存在的道具：${it.bb.harvest.id}`);
+    if (it.anim && S.anims && !S.anims.includes(it.anim)) out.push(`anim 指到 anim.json 沒有的動畫：${it.anim}`);
     return out;
 }
 
@@ -260,6 +265,7 @@ function draw()
         class: [...SC.FIELDS.device.fields.class.suggest, ...its.map(it => it.device?.class)],
         key: [...SC.STATS, ...effs.map(e => e.key)],
         id: [...SC.EFF_FIELDS.id.suggest, ...S.fx, ...effs.map(e => e.id)],
+        anim: S.anims ?? [],
     }, {items: o => S.items[o]?.lab});
 
     const ids = Object.keys(S.items);
@@ -277,7 +283,7 @@ function draw()
 }
 
 (async () => {
-    S.fx = await loadFx();
+    [S.fx, S.anims] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json')]);
     render();
     IC.ready.then(render);
     D.listenGoto();
