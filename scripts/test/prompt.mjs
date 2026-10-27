@@ -145,6 +145,68 @@ run('prompt', async t => {
     await copied();
     const click2 = await t.page.evaluate(() => document.getElementById('status').textContent);
 
+    // 子分類：key 是路徑
+    const sub = await t.page.evaluate(async () => {
+        const pe = window.__pe, S = pe.S, out = {}, $ = (id) => document.getElementById(id);
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const answer = async (v, input) => {
+            for (let i = 0; i < 100 && !$('dlgAsk').open; i++) await sleep(20);
+            if (!$('dlgAsk').open) return null;
+            const text = $('dlgAsk').textContent;
+            if (input !== undefined) $('dlgAsk').querySelector('input').value = input;
+            $('dlgAsk').close(v);
+            return text;
+        };
+        const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('prompts');
+        const w = await (await dir.getFileHandle('tree.json', {create: true})).createWritable();
+        await w.write(JSON.stringify({items: {'護具/布甲/星辰': [{name: '星袍', common: ''}], 武器: [], '武器/劍': [{name: '鐵劍', common: ''}], 護具: [{name: '盾', common: ''}]}, common: {武器: '', 劍: ''}}));
+        await w.close();
+        const p = pe.setPath('prompts/tree.json');
+        await answer('ok');
+        await p;
+        const keys = () => Object.keys(S.data.items).join();
+        out.norm = [keys(), $('dirty').hidden];
+        const seq = () => [...document.querySelectorAll('#list > div')].map(e => e.querySelector('.name, .id').textContent);
+        out.seq = seq().slice(seq().indexOf('護具（2）'));
+
+        pe.addItem('武器/劍');
+        pe.addItem('護具/布甲/星辰');
+        out.common = [S.data.items['武器/劍'][1].common, S.data.items['護具/布甲/星辰'][1].common];
+        pe.undo(); pe.undo();
+
+        let pr = pe.addCat('武器');
+        await answer('ok');
+        await pr;
+        S.mode = 'items'; S.sel = {cat: '武器/劍', i: 0}; S.fold.add('武器/劍');
+        pr = pe.renameCat('武器');
+        await answer('ok', '兵器');
+        await pr;
+        out.rename = [keys(), S.sel.cat, S.fold.has('兵器/劍')];
+        pe.moveCat('兵器/劍', '護具', 'in');
+        out.in = [keys(), S.sel.cat];
+        pe.moveCat('兵器', '護具', 'before');
+        pe.moveCat('護具/布甲/星辰', '護具', 'after');
+        pe.moveCat('護具', '護具/布甲', 'in');
+        out.move = keys();
+        pr = pe.removeCat('護具');
+        out.removeAsk = await answer('cancel');
+        await pr;
+
+        const shown = (q) => {
+            S.search = q; pe.commit(() => {});
+            const r = [[...document.querySelectorAll('#list .group .name')].map(e => e.textContent).slice(1), [...document.querySelectorAll('#list .item .id')].map(e => e.textContent)];
+            S.search = ''; pe.commit(() => {});
+            return r;
+        };
+        out.search = [shown('星袍'), shown('布甲'), shown('鐵劍')];
+        [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▾護具')).dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
+        out.fold = ['護具', '護具/布甲', '護具/劍'].every(k => S.fold.has(k)) && !S.fold.has('兵器');
+
+        await pe.save();
+        out.saved = Object.keys(JSON.parse(await (await (await dir.getFileHandle('tree.json')).getFile()).text()).items).join();
+        return out;
+    });
+
     t.check('檔案不存在會問要不要建骨架', r.ask);
     t.eq('骨架內容', JSON.stringify(r.skeleton), JSON.stringify(['武器,護具,道具', '武器,護具,道具']));
     t.eq('新增物品預設帶同名 common', JSON.stringify(r.newItem), JSON.stringify({name: '新物品', file: '', desc: '', common: '武器'}));
@@ -177,4 +239,14 @@ run('prompt', async t => {
     t.eq('換路徑記住、沒建檔就沒資料', JSON.stringify(r.path), JSON.stringify(['other/p.json', null]));
     t.check('打完檔名直接點「複製檔名」第一下就觸發、焦點留在輸入框', /複製/.test(click1[0]) && click1[1] === 'file', JSON.stringify(click1));
     t.check('打完描述直接點「複製提示詞」第一下就觸發', /複製/.test(click2), click2);
+    t.eq('載入補齊祖先、照前序排、不算修改', JSON.stringify(sub.norm), JSON.stringify(['護具,護具/布甲,護具/布甲/星辰,武器,武器/劍', true]));
+    t.eq('子分類在前、直屬物品在後', sub.seq.join(), '護具（2）,布甲（1）,星辰（1）,星袍,盾,武器（1）,劍（1）,鐵劍');
+    t.eq('新增物品 common 從最深一層往上找', JSON.stringify(sub.common), JSON.stringify(['劍', '']));
+    t.eq('分類改名連子分類、選擇、摺疊一起改', JSON.stringify(sub.rename), JSON.stringify(['護具,護具/布甲,護具/布甲/星辰,兵器,兵器/劍,兵器/新分類', '兵器/劍', true]));
+    t.eq('拖進別的分類當最後一個子分類', JSON.stringify(sub.in), JSON.stringify(['護具,護具/布甲,護具/布甲/星辰,護具/劍,兵器,兵器/新分類', '護具/劍']));
+    t.eq('拖到前／後當兄弟、不能拖進自己的子孫', sub.move, '兵器,兵器/新分類,護具,護具/布甲,護具/劍,星辰');
+    t.check('刪除分類確認列出子分類跟物品數', /2 個子分類、2 個物品/.test(sub.removeAsk ?? ''), sub.removeAsk);
+    t.eq('搜尋：只留命中路徑、分類名稱命中留整棵', JSON.stringify(sub.search), JSON.stringify([[['星辰（1）'], ['星袍']], [['護具（2）', '布甲（0）'], []], [['護具（2）', '劍（1）'], ['鐵劍']]]));
+    t.check('Alt＋點分類連子分類一起摺', sub.fold);
+    t.eq('存檔照前序', sub.saved, '兵器,兵器/新分類,護具,護具/布甲,護具/劍,星辰');
 });

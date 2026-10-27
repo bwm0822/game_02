@@ -1,4 +1,4 @@
-// 提示詞：管理給 AI 生圖用的提示詞（{items: {分類: [{name, file, desc, common}]}, common: {名稱: 文字}}），組好按複製貼到外面
+// 提示詞：管理給 AI 生圖用的提示詞（{items: {分類路徑: [{name, file, desc, common}]}, common: {名稱: 文字}}），組好按複製貼到外面
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import {$, h, ul, ask, status} from '../common/dom.js';
@@ -26,7 +26,41 @@ const COMMON = '\0common';
 try {S.path = localStorage.getItem(PATH_KEY) || DEFAULT_PATH;}
 catch {}
 
-const norm = (d) => ({...d, items: d?.items ?? {}, common: d?.common ?? {}});
+// ---------- 分類路徑 ----------
+// items 的 key 是「武器/劍」這種路徑；一律補齊祖先、照樹的前序排（兄弟照第一次出現的順序），檔案順序＝畫面順序
+const parentOf = (p) => p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '';
+const leafOf = (p) => p.slice(p.lastIndexOf('/') + 1);
+const join = (parent, name) => parent ? `${parent}/${name}` : name;
+const under = (p, top) => p === top || p.startsWith(`${top}/`);
+const rebase = (p, from, to) => under(p, from) ? to + p.slice(from.length) : p;
+
+// 路徑 → 子分類路徑（'' 是根）
+function tree(items)
+{
+    const kids = new Map([['', []]]);
+    for (const k of Object.keys(items))
+    {
+        const segs = k.split('/');
+        for (let n = 1; n <= segs.length; n++)
+        {
+            const p = segs.slice(0, n).join('/');
+            if (kids.has(p)) continue;
+            kids.set(p, []);
+            kids.get(parentOf(p)).push(p);
+        }
+    }
+    return kids;
+}
+
+function normItems(items)
+{
+    const kids = tree(items), out = {};
+    const walk = (p) => {out[p] = items[p] ?? []; kids.get(p).forEach(walk);};
+    kids.get('').forEach(walk);
+    return out;
+}
+
+const norm = (d) => ({...d, items: normItems(d?.items ?? {}), common: d?.common ?? {}});
 const isDirty = () => !!S.data && str(S.data) !== str(S.saved);
 const view = () => ({mode: S.mode, sel: structuredClone(S.sel)});
 const selItem = () => S.mode === 'items' && S.sel ? S.data?.items[S.sel.cat]?.[S.sel.i] : null;
@@ -136,7 +170,7 @@ async function save()
             (mi.conflict.length || mc.conflict.length) && h('div', {class: 'warn'}, `兩邊都改了（合併時以這裡的為準）：${[...mi.conflict, ...mc.conflict].join('、')}`),
         ], [['merge', '合併後存檔'], ['overwrite', '直接覆蓋'], ['cancel', '取消']]);
         if (r !== 'merge' && r !== 'overwrite') return status('取消存檔');
-        if (r === 'merge') commit(() => {S.data = {...S.data, items: mi.data, common: mc.data};});
+        if (r === 'merge') commit(() => {S.data = {...S.data, items: normItems(mi.data), common: mc.data};});
     }
     const text = JSON.stringify(S.data, null, 2);
     await FS.writeFile(dir, name, new Blob([text]));
@@ -166,11 +200,14 @@ function uniqueName(base, has)
     return n;
 }
 
+// 從最深一層往上找第一個同名的 common
+const defaultCommon = (cat) => cat.split('/').reverse().find(s => s in S.data.common) ?? '';
+
 function addItem(cat)
 {
     commit(() => {
         const list = S.data.items[cat];
-        list.push({name: '新物品', file: '', desc: '', common: cat in S.data.common ? cat : ''});
+        list.push({name: '新物品', file: '', desc: '', common: defaultCommon(cat)});
         S.mode = 'items';
         S.sel = {cat, i: list.length - 1};
     });
@@ -215,38 +252,72 @@ async function askName(title, value)
     return await p === 'ok' ? inp.value.trim() : null;
 }
 
-async function addCat()
+const badName = (name) => name.includes('/') && (status('分類名稱不能有 /'), true);
+
+// parent 空的＝頂層
+async function addCat(parent = '')
 {
-    const name = await askName('新分類', uniqueName('新分類', n => n in S.data.items));
-    if (!name) return;
-    if (name in S.data.items) return status(`分類「${name}」已經有了`);
-    commit(() => {S.data.items[name] = [];});
+    const name = await askName(parent ? `新子分類（${parent}）` : '新分類', uniqueName('新分類', n => join(parent, n) in S.data.items));
+    if (!name || badName(name)) return;
+    const p = join(parent, name);
+    if (p in S.data.items) return status(`分類「${p}」已經有了`);
+    S.fold.delete(parent);
+    commit(() => {S.data.items = normItems({...S.data.items, [p]: []});});
+}
+
+// 子分類路徑、選擇、摺疊跟著換前綴
+function repath(from, to)
+{
+    if (S.sel?.cat && under(S.sel.cat, from)) S.sel.cat = rebase(S.sel.cat, from, to);
+    S.fold = new Set([...S.fold].map(k => rebase(k, from, to)));
+}
+
+async function renameCat(from)
+{
+    const name = await askName(`分類改名 ${from}`, leafOf(from));
+    if (!name || badName(name)) return;
+    const to = join(parentOf(from), name);
+    if (to === from) return;
+    if (to in S.data.items) return status(`分類「${to}」已經有了`);
+    commit(() => {
+        S.data.items = Object.fromEntries(Object.entries(S.data.items).map(([k, v]) => [rebase(k, from, to), v]));
+        repath(from, to);
+    });
+}
+
+// 連整棵子樹一起刪
+async function removeCat(top)
+{
+    const keys = Object.keys(S.data.items).filter(k => under(k, top));
+    const subs = keys.length - 1, n = keys.reduce((s, k) => s + S.data.items[k].length, 0);
+    if ((subs || n) && await ask(`刪除分類 ${top}`, `裡面還有${subs ? ` ${subs} 個子分類、` : ' '}${n} 個物品，會一起刪掉`, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    commit(() => {
+        for (const k of keys) delete S.data.items[k];
+        if (S.sel?.cat && under(S.sel.cat, top)) S.sel = null;
+    });
+}
+
+// where：before／after＝當 target 的兄弟、in＝當 target 的最後一個子分類；整棵子樹一起搬
+function moveCat(from, target, where)
+{
+    if (under(target, from)) return;
+    const to = join(where === 'in' ? target : parentOf(target), leafOf(from));
+    if (to !== from && to in S.data.items) return status(`分類「${to}」已經有了`);
+    commit(() => {
+        const all = Object.entries(S.data.items);
+        const moving = all.filter(([k]) => under(k, from)).map(([k, v]) => [rebase(k, from, to), v]);
+        const rest = all.filter(([k]) => !under(k, from));
+        let i = rest.findIndex(([k]) => k === target);
+        if (where !== 'before') while (i < rest.length && under(rest[i][0], target)) i++;
+        rest.splice(i, 0, ...moving);
+        S.data.items = normItems(Object.fromEntries(rest));
+        repath(from, to);
+    });
 }
 
 function renameKey(obj, from, to)
 {
     return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k === from ? to : k, v]));
-}
-
-async function renameCat(from)
-{
-    const to = await askName(`分類改名 ${from}`, from);
-    if (!to || to === from) return;
-    if (to in S.data.items) return status(`分類「${to}」已經有了`);
-    commit(() => {
-        S.data.items = renameKey(S.data.items, from, to);
-        if (S.sel?.cat === from) S.sel.cat = to;
-    });
-}
-
-async function removeCat(cat)
-{
-    const n = S.data.items[cat].length;
-    if (n && await ask(`刪除分類 ${cat}`, `裡面還有 ${n} 個物品，會一起刪掉`, [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
-    commit(() => {
-        delete S.data.items[cat];
-        if (S.sel?.cat === cat) S.sel = null;
-    });
 }
 
 // ---------- 共用 ----------
@@ -286,14 +357,42 @@ function removeCommon(name)
 const usersOf = (name) => Object.entries(S.data.items).flatMap(([cat, list]) => list.flatMap((it, i) => it.common === name ? [{cat, i, it}] : []));
 
 // ---------- 畫面 ----------
-let drag = null;
+let drag = null;           // 物品 {cat, i}、分類 {top}
 
+// 物品列只收物品
 function dropTarget(el, to)
 {
-    el.ondragover = (e) => {if (drag) {e.preventDefault(); el.classList.add('drop');}};
+    el.ondragover = (e) => {if (drag && !drag.top) {e.preventDefault(); el.classList.add('drop');}};
     el.ondragleave = () => el.classList.remove('drop');
-    el.ondrop = (e) => {e.preventDefault(); el.classList.remove('drop'); if (drag) moveItem(drag, to);};
+    el.ondrop = (e) => {e.preventDefault(); el.classList.remove('drop'); const d = drag; drag = null; if (d && !d.top) moveItem(d, to);};
 }
+
+// 分類標題：物品放最後；分類看放在上／中／下段
+function catDrop(el, cat)
+{
+    const zone = (e) => {const r = el.getBoundingClientRect(), y = (e.clientY - r.top) / r.height; return y < .25 ? 'before' : y > .75 ? 'after' : 'in';};
+    const ok = () => drag && (!drag.top || !under(cat, drag.top));
+    const clear = () => el.classList.remove('drop', 'drop-before', 'drop-after');
+    el.ondragover = (e) => {
+        if (!ok()) return;
+        e.preventDefault();
+        clear();
+        const z = drag.top ? zone(e) : 'in';
+        el.classList.add(z === 'in' ? 'drop' : `drop-${z}`);
+    };
+    el.ondragleave = clear;
+    el.ondrop = (e) => {
+        e.preventDefault();
+        clear();
+        if (!ok()) return;
+        const d = drag;
+        drag = null;
+        if (d.top) moveCat(d.top, cat, zone(e));
+        else moveItem(d, {cat, i: S.data.items[cat].length});
+    };
+}
+
+const indent = (depth) => `padding-left: ${4 + depth * 14}px`;
 
 // 再點一次選到的就取消選擇
 const pick = (mode, sel) => {S.mode = mode; S.sel = sel; render();};
@@ -301,53 +400,69 @@ const pick = (mode, sel) => {S.mode = mode; S.sel = sel; render();};
 // 搜尋中全部展開
 const folded = (key) => !S.search && S.fold.has(key);
 
-// Alt＋點：所有組跟著被點的那組一起摺／展開
-function groupHead(key, label, title, ...buttons)
+// Alt＋點：分類＝連整棵子樹一起摺／展開，共用組＝所有組一起
+function groupHead(key, label, title, depth, ...buttons)
 {
-    const inside = (k) => k === COMMON ? S.mode === 'common' : S.mode === 'items' && S.sel?.cat === k;
-    const toggle = (all) => {
+    const inside = (k) => k === COMMON ? S.mode === 'common' : S.mode === 'items' && !!S.sel?.cat && under(S.sel.cat, k);
+    const toggle = (alt) => {
         const fold = !S.fold.has(key);
-        for (const k of all ? [COMMON, ...Object.keys(S.data.items)] : [key])
+        const keys = !alt ? [key] : key === COMMON ? [COMMON, ...Object.keys(S.data.items)] : Object.keys(S.data.items).filter(k => under(k, key));
+        for (const k of keys)
         {
             if (!fold) S.fold.delete(k);
             else {S.fold.add(k); if (inside(k)) S.sel = null;}
         }
         render();
     };
-    return h('div', {class: 'group', title: `${title}，Alt＋點全部`, onclick: (e) => {if (!e.target.closest('button')) toggle(e.altKey);}},
+    return h('div', {class: 'group', style: indent(depth), title: `${title}，Alt＋點${key === COMMON ? '全部' : '連子分類'}`, onclick: (e) => {if (!e.target.closest('button')) toggle(e.altKey);}},
         h('span', {class: 'arrow'}, folded(key) ? '▸' : '▾'),
         h('span', {class: 'name'}, label),
         ...buttons);
 }
 
+function catHead(cat, depth, n)
+{
+    const g = groupHead(cat, `${leafOf(cat)}（${n}）`, '點一下摺疊，雙擊改名，可拖曳', depth,
+        h('button', {title: '新增物品', onclick: () => {S.fold.delete(cat); addItem(cat);}}, '＋'),
+        h('button', {title: '新增子分類', onclick: () => addCat(cat)}, '⊞'),
+        h('button', {title: '刪除分類（連子分類）', onclick: () => removeCat(cat)}, '✕'));
+    g.ondblclick = (e) => {if (!e.target.closest('button')) renameCat(cat);};
+    g.setAttribute('draggable', 'true');
+    g.ondragstart = (e) => {drag = {top: cat}; e.dataTransfer.effectAllowed = 'move';};
+    g.ondragend = () => {drag = null;};
+    catDrop(g, cat);
+    return g;
+}
+
+function itemRow(cat, i, depth)
+{
+    const it = S.data.items[cat][i];
+    const lost = it.common && !(it.common in S.data.common);
+    const on = S.mode === 'items' && S.sel?.cat === cat && S.sel.i === i;
+    const row = h('div', {class: `item${on ? ' sel' : ''}`, style: indent(depth), draggable: 'true', onclick: () => pick('items', on ? null : {cat, i})},
+        h('span', {class: 'id'}, it.name || '（未命名）'),
+        lost && h('span', {class: 'mark missing', title: `共用「${it.common}」遺失`}, '⚠'));
+    row.ondragstart = (e) => {drag = {cat, i}; e.dataTransfer.effectAllowed = 'move';};
+    row.ondragend = () => {drag = null;};
+    dropTarget(row, {cat, i});
+    return row;
+}
+
+// 子分類在前、直屬物品在後；搜尋時只留有命中的路徑，分類名稱命中就整棵子樹都留
 function drawItemList()
 {
-    const q = S.search.toLowerCase();
-    const hit = (it) => !q || `${it.name}\n${it.file ?? ''}\n${it.desc}`.toLowerCase().includes(q);
-    const rows = [];
-    for (const [cat, list] of Object.entries(S.data.items))
-    {
-        const g = groupHead(cat, `${cat}（${list.length}）`, '點一下摺疊，雙擊改名',
-            h('button', {title: '新增物品', onclick: () => {S.fold.delete(cat); addItem(cat);}}, '＋'),
-            h('button', {title: '刪除分類', onclick: () => removeCat(cat)}, '✕'));
-        g.ondblclick = (e) => {if (!e.target.closest('button')) renameCat(cat);};
-        dropTarget(g, {cat, i: list.length});
-        rows.push(g);
-        if (folded(cat)) continue;
-        list.forEach((it, i) => {
-            if (!hit(it)) return;
-            const lost = it.common && !(it.common in S.data.common);
-            const on = S.mode === 'items' && S.sel?.cat === cat && S.sel.i === i;
-            const row = h('div', {class: `item${on ? ' sel' : ''}`, draggable: 'true', onclick: () => pick('items', on ? null : {cat, i})},
-                h('span', {class: 'id'}, it.name || '（未命名）'),
-                lost && h('span', {class: 'mark missing', title: `共用「${it.common}」遺失`}, '⚠'));
-            row.ondragstart = (e) => {drag = {cat, i}; e.dataTransfer.effectAllowed = 'move';};
-            row.ondragend = () => {drag = null;};
-            dropTarget(row, {cat, i});
-            rows.push(row);
-        });
-    }
-    return rows;
+    const q = S.search.toLowerCase(), kids = tree(S.data.items);
+    const hit = (it) => `${it.name}\n${it.file ?? ''}\n${it.desc}`.toLowerCase().includes(q);
+    const total = (p) => S.data.items[p].length + kids.get(p).reduce((n, c) => n + total(c), 0);
+    const draw = (cat, depth, all) => {
+        all ||= !q || leafOf(cat).toLowerCase().includes(q);
+        const body = folded(cat) ? [] : [
+            ...kids.get(cat).flatMap(c => draw(c, depth + 1, all)),
+            ...S.data.items[cat].flatMap((it, i) => all || hit(it) ? [itemRow(cat, i, depth + 1)] : []),
+        ];
+        return !all && !body.length ? [] : [catHead(cat, depth, total(cat)), ...body];
+    };
+    return kids.get('').flatMap(c => draw(c, 0, false));
 }
 
 // 放在所有分類前面
@@ -355,7 +470,7 @@ function drawCommonList()
 {
     const q = S.search.toLowerCase();
     return [
-        groupHead(COMMON, `⚙ 共用（${Object.keys(S.data.common).length}）`, '點一下摺疊',
+        groupHead(COMMON, `⚙ 共用（${Object.keys(S.data.common).length}）`, '點一下摺疊', 0,
             h('button', {title: '新增共用', onclick: () => {S.fold.delete(COMMON); addCommon();}}, '＋')),
         folded(COMMON) ? [] : Object.entries(S.data.common)
             .filter(([k, v]) => !q || `${k}\n${v}`.toLowerCase().includes(q))
@@ -459,7 +574,7 @@ $('btnReload').onclick = async () => {
 $('btnSave').onclick = save;
 $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
-$('btnNew').onclick = addCat;
+$('btnNew').onclick = () => addCat();
 $('search').oninput = (e) => {S.search = e.target.value; render();};
 
 addEventListener('keydown', (e) => {
@@ -480,4 +595,4 @@ render();
 
 // 給無頭測試用
 window.__pe = {S, setRoot, setPath, load, save, compose, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, setItem,
-               addCat, renameCat, removeCat, addCommon, renameCommon, removeCommon, usersOf};
+               addCat, renameCat, removeCat, moveCat, normItems, addCommon, renameCommon, removeCommon, usersOf};
