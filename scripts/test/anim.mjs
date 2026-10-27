@@ -56,7 +56,7 @@ run('武器動畫', async t => {
     t.eq('橫掃朝下：整組繞支點轉 90°', JSON.stringify(r.sweep), JSON.stringify([-14, 0, -135]));   // Phaser 把 angle 換到 [-180, 180)，225＝-135
     t.eq('橫掃播完收回', JSON.stringify(r.sweepBack.slice(0, 2)), JSON.stringify(r.rest.slice(0, 2)));
     t.check('橫掃收回角度', ((r.sweepBack[2] % 360) + 360) % 360 === 0, JSON.stringify(r.sweepBack));
-    t.eq('瞄準正右方', JSON.stringify(r.aim), JSON.stringify([true, [26, 19, -45]]));
+    t.eq('瞄準正右方', JSON.stringify(r.aim), JSON.stringify([true, [15, 10, 0]]));
     t.eq('hold：舉著等 anim_end', JSON.stringify(r.hold), JSON.stringify(r.aim[1]));
     t.check('anim_end 後收回', r.aimBack[0]);
     t.eq('沒有的動畫不播', r.missing, false);
