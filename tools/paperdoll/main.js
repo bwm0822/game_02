@@ -427,7 +427,7 @@ function autoSpNew(m, {box, keep})
 {
     const p = spPreset(S.auto.split === 'cut'), c = spCrit(p.method);
     m.sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), c,
-            close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, ...p, poly: null, err: null};
+            close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, ...p, mark: null, poly: null, err: null};
     spSet(m.sp);
     autoSpView(m);
     m.sp.start = splitDefStart(m.sp.view, c);
@@ -559,7 +559,8 @@ const autoPart = (m, L) => m.parts?.find(p => linked(p.C).includes(L)) ?? null;
 // PX.splitTrace() 從起點追輪廓線產生後片多邊形，可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋
 // mask 插在原圖步驟的 splitAt()：一般接在最後；自動零件插在縮小（xform pct）前面，追線在縮小前的圖上做，改 scale% 前後片跟著重播
 // 存成（前後片／挖除 cut）跟切割方法（method：沿線 trace＝PX.splitTrace()、魔術棒 wand＝PX.splitCut()）分開，多邊形都是「從前片拿掉的那塊」
-// mask 帶 split = {gid, x, y, c, cut, method, close, down, drop, right, reach, w, h, n}（起點、線的條件、挖除、切割方法、閉運算、往下射／往右射（勾選、X px）、追線那張圖的尺寸、mask 後面原本跟著幾步），
+// mask 帶 split = {gid, x, y, c, cut, method, close, down, drop, right, reach, mark, w, h, n}（起點、線的條件、挖除、切割方法、閉運算、往下射／往右射（勾選、X px）、
+// 手畫標記（行程編碼）、追線那張圖的尺寸、mask 後面原本跟著幾步），
 // 靠 gid 認一組，跟著 ops 存進專案；c 只有 t 的舊資料當只勾亮度；舊格式（前片就是原圖，split 沒有 w）不認
 // 挖除（cut）：多邊形那塊挖成透明，只有原圖＋前片、沒有後片；舊挖除的 over 不用了
 
@@ -669,13 +670,13 @@ function splitStart(L)
     {
         Object.assign(m, {start: {x: o.split.x, y: o.split.y}, c: spOf(o.split), cut: g.cut,
                           method: o.split.method ?? (g.cut && o.split.close != null ? 'wand' : 'trace'), close: o.split.close ?? SP_CLOSE, down: o.split.down ?? true, drop: o.split.drop ?? SP_DROP,
-                          right: !!o.split.right, reach: o.split.reach ?? SP_REACH,
+                          right: !!o.split.right, reach: o.split.reach ?? SP_REACH, mark: o.split.mark ? PX.markUnpack(o.split.mark, img.width * img.height) : null,
                           poly: {pts: o.pts.map(([x, y]) => ({x, y})), closed: true}});
         spSet(m, true);
         status(`接著調 ${O.name} 的${g.cut ? '挖除' : '前後片'}`);
         return m;
     }
-    Object.assign(m, {c: spCrit(), cut: g ? g.cut : S.sp.cut, method: S.sp.method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach});
+    Object.assign(m, {c: spCrit(), cut: g ? g.cut : S.sp.cut, method: S.sp.method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, mark: null});
     m.start = splitDefStart(view, m.c);
     splitRun(m);
     if (o) status(`${O.name} 的尺寸變了，前後片重新追線`);
@@ -701,12 +702,15 @@ function splitDefStart(L, c)
 
 function splitRun(m)
 {
-    const r = m.method === 'wand' ? PX.splitCut(m.img, {...m.start, c: m.c, close: m.close, drop: m.down ? m.drop : 0, right: m.right ? m.reach : 0}) : PX.splitTrace(m.img, {...m.start, c: m.c});
+    const r = m.method === 'wand' ? PX.splitCut(m.img, {...m.start, c: m.c, close: m.close, drop: m.down ? m.drop : 0, right: m.right ? m.reach : 0, mark: m.mark})
+                                  : PX.splitTrace(m.img, {...m.start, c: m.c, mark: m.mark});
     m.err = r.err ?? null;
     m.poly = r.pts ? {pts: r.pts, closed: true} : null;
 }
 
-const splitState = (m) => ({poly: m.poly && {...m.poly}, start: m.start, c: m.c, cut: m.cut, method: m.method, close: m.close, down: m.down, drop: m.drop, right: m.right, reach: m.reach, err: m.err});
+// mark 是寫入時才複製（一筆畫線換一個新陣列），所以步驟裡直接放參照
+const splitState = (m) => ({poly: m.poly && {...m.poly}, start: m.start, c: m.c, cut: m.cut, method: m.method, close: m.close, down: m.down, drop: m.drop, right: m.right, reach: m.reach,
+                            mark: m.mark, err: m.err});
 
 // 改線的條件／挖除／閉運算／往下射：重新追線；rec＝這次拖曳滑桿已經記過一步
 function spChange(patch, rec = false)
@@ -784,6 +788,102 @@ function splitMoveStart(m, w)
     splitRun(sp);
 }
 
+function spDelPt(m, i)
+{
+    const sp = editSp(), P = sp.poly;
+    if (P.pts.length <= 3) return status('多邊形最少要 3 點');
+    spCommit(m, spBefore(m));
+    sp.poly = {...P, pts: P.pts.filter((_, k) => k !== i), vert: null, edge: null};
+}
+
+// ---------- 畫線標記 ----------
+// 在追線那張圖（sp.img）上塗標記蓋過亮度條件，不改圖片；一筆（按下到放開）一步，放開才重新追線
+const spPaintOn = () => $('spPaint').checked;
+const spN = () => Math.min(8, Math.max(1, Math.round(+$('spSize').value || 1)));
+const markCount = (mark) => mark ? mark.reduce((n, k) => n + (k ? 1 : 0), 0) : 0;
+
+function spMarkDown(m, w, e)
+{
+    const sp = editSp();
+    const d = {type: 'spMark', v: e.button === 2 ? 0 : e.shiftKey ? PX.MARK_OFF : PX.MARK_ON, before: spBefore(m), own: false, changed: false,
+               p: toLocal(sp.view, w.x, w.y)};
+    spMarkStamp(m, sp, d, d.p);
+    return d;
+}
+
+function spMarkStamp(m, sp, d, p)
+{
+    const W = sp.img.width, H = sp.img.height, n = spN(), b = brushAt(p, n);
+    const x0 = Math.max(0, b.x), y0 = Math.max(0, b.y), x1 = Math.min(W, b.x + n), y1 = Math.min(H, b.y + n);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++)
+    {
+        const i = y * W + x;
+        if ((sp.mark?.[i] ?? 0) === d.v) continue;
+        if (!d.own) {sp.mark = sp.mark?.slice() ?? new Uint8Array(W * H); d.own = true;}
+        if (!d.changed) {spCommit(m, d.before); d.changed = true;}
+        sp.mark[i] = d.v;
+        sp.markCv = null;
+    }
+}
+
+function spMarkLine(m, sp, d, a, b)
+{
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y))));
+    for (let i = 1; i <= n; i++) spMarkStamp(m, sp, d, {x: a.x + (b.x - a.x) * i / n, y: a.y + (b.y - a.y) * i / n});
+}
+
+function spMarkUp(d)
+{
+    const sp = editSp();
+    if (!d.changed || !sp) return;
+    if (!markCount(sp.mark)) sp.mark = null;
+    splitRun(sp);
+    refreshModePanel();
+}
+
+function spMarkClear()
+{
+    const m = S.mode, sp = editSp();
+    if (!sp?.mark) return;
+    spCommit(m, spBefore(m));
+    sp.mark = null;
+    splitRun(sp);
+    refreshModePanel();
+    dirty();
+}
+
+function drawMark(sp, K)
+{
+    const L = sp.view, W = sp.img.width, H = sp.img.height, cur = spPaintOn() && sp.cursor;
+    if (!sp.mark && !cur) return;
+    g.save();
+    g.translate(L.x, L.y);
+    g.rotate(L.a * RAD);
+    g.scale(sp.vk[0], sp.vk[1]);
+    g.translate(-L.ox * W, -L.oy * H);
+    if (sp.mark)
+    {
+        if (sp.markCv?.src !== sp.mark)
+        {
+            const img = new ImageData(W, H);
+            sp.mark.forEach((k, i) => {if (k) img.data.set(k === PX.MARK_ON ? [255, 0, 255, 220] : [0, 255, 255, 220], i * 4);});
+            const c = PX.newCanvas(W, H);
+            c.getContext('2d').putImageData(img, 0, 0);
+            sp.markCv = {src: sp.mark, cv: c};
+        }
+        g.imageSmoothingEnabled = false;
+        g.drawImage(sp.markCv.cv, 0, 0);
+    }
+    if (cur)
+    {
+        const n = spN(), b = brushAt(sp.cursor, n);
+        g.strokeStyle = S.keys.has('shift') ? '#0ff' : '#f0f';
+        g.lineWidth = 2 / K / sp.vk[0];
+        g.strokeRect(b.x, b.y, n, n);
+    }
+    g.restore();
+}
+
 // 前後片照原圖現在的步驟重新產生（缺的那張複製原圖補上：前片疊在原圖上、後片放到最底層），擺放、不透明度跟原圖一樣；原圖隱藏，回傳前片
 // 挖除只做前片，原本有後片就刪掉
 // splitSrc 不進快照，所以 undo／撤掉後也留著（前後片都沒了就不算一組），再拆沿用它的 gid
@@ -792,7 +892,7 @@ function splitBuild(O, sp, gid)
     const g = splitNew(O), at = splitAt(O);
     const split = {gid, x: sp.start.x, y: sp.start.y, c: sp.c, ...(sp.cut && {cut: true}), method: sp.method,
                    ...(sp.method === 'wand' && {close: sp.close, down: sp.down, drop: sp.drop, right: sp.right, reach: sp.reach}),
-                   w: sp.img.width, h: sp.img.height, n: O.ops.length - at};
+                   ...(sp.mark && {mark: PX.markPack(sp.mark)}), w: sp.img.width, h: sp.img.height, n: O.ops.length - at};
     const pts = sp.poly.pts.map(p => [round(p.x, 100), round(p.y, 100)]);
     const F = g?.F ?? cloneAbove(O, `${O.name}-front`);
     if (sp.cut && g?.B) S.layers = S.layers.filter(M => M !== g.B);
@@ -835,6 +935,7 @@ function splitRevoke()
 function drawSplit(m, K)
 {
     const L = m.view;
+    drawMark(m, K);
     if (m.poly)
     {
         g.fillStyle = 'rgba(255,0,255,.3)';
@@ -1239,7 +1340,12 @@ function polyHover(m, e)
 {
     const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
     if (!P.closed) P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
-    else P.edge = polyVertexHit(P, raw) < 0 ? polyEdgeHit(P, raw)?.i ?? null : null;
+    else
+    {
+        const v = polyVertexHit(P, raw);
+        P.vert = v >= 0 ? v : null;
+        P.edge = v < 0 ? polyEdgeHit(P, raw)?.i ?? null : null;
+    }
 }
 
 // Backspace：刪最後一點；已閉合就先解開閉合
@@ -1287,7 +1393,7 @@ function drawPolyEdit(P, L, K)
     }
     g.fillStyle = '#fff';
     wp.forEach((p, i) => {
-        const r = (i === 0 && !P.closed && polyNearFirst(P, P.cursor) ? 6 : 3) / K;
+        const r = ((i === 0 && !P.closed && polyNearFirst(P, P.cursor)) || (P.closed && i === P.vert) ? 6 : 3) / K;
         g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
         g.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
     });
@@ -1862,6 +1968,21 @@ const PIXEL_KEYS = {
     ']': () => {$('pxSize').value = Math.min(8, pxN() + 1);},
 };
 
+const SPMARK_KEYS = {
+    b: () => spPaintSet(!spPaintOn()),
+    '[': () => {$('spSize').value = spN() - 1 || 1;},
+    ']': () => {$('spSize').value = Math.min(8, spN() + 1);},
+};
+
+// 開畫線時頂點／邊不能改，清掉滑鼠停留的標示
+function spPaintSet(on)
+{
+    $('spPaint').checked = on;
+    const sp = editSp();
+    if (sp?.poly) sp.poly.vert = sp.poly.edge = null;
+    if (sp && !on) sp.cursor = null;
+}
+
 // 鉛筆跟填色／去色共用色票
 function setRgb(px)
 {
@@ -1880,6 +2001,13 @@ cv.addEventListener('pointerdown', e => {
     {
         e.preventDefault();
         drag = {type: 'pan', sx: e.clientX, sy: e.clientY, px: S.view.px, py: S.view.py};
+        return;
+    }
+    if ((e.button === 0 || e.button === 2) && editSp() && spPaintOn())
+    {
+        drag = spMarkDown(m, w, e);
+        refreshModePanel();
+        dirty();
         return;
     }
     if (e.button !== 0) return;
@@ -1917,7 +2045,12 @@ cv.addEventListener('pointerdown', e => {
     else if (m.type === 'split' || (m.type === 'auto' && m.sp && spHit(m.sp, w)))
     {
         const sp = editSp(), before = spBefore(m), pts = sp.poly?.pts;
-        if (splitStartHit(sp, w)) drag = {type: 'splitStart', before};
+        if (e.altKey)
+        {
+            const i = sp.poly ? polyVertexHit(sp.poly, toLocal(sp.view, w.x, w.y)) : -1;
+            if (i >= 0) spDelPt(m, i);
+        }
+        else if (splitStartHit(sp, w)) drag = {type: 'splitStart', before};
         else if (sp.poly)
         {
             drag = polyPointerDown(sp, e);
@@ -1962,7 +2095,8 @@ cv.addEventListener('pointermove', e => {
     if (!drag)
     {
         const hp = S.mode.type === 'crop' ? S.mode : editSp();
-        if (hp?.poly) {polyHover(hp, e); dirty();}
+        if (hp?.poly && !(hp === editSp() && spPaintOn())) {polyHover(hp, e); dirty();}
+        if (editSp() && spPaintOn()) {const sp = editSp(), w = screenToWorld(e); sp.cursor = toLocal(sp.view, w.x, w.y); dirty();}
         if (S.mode.type === 'warp') cv.style.cursor = warpCursor(S.mode, screenToWorld(e));
         if (S.mode.type === 'pixel') {const w = screenToWorld(e); S.mode.cursor = toLocal(S.mode.layer, w.x, w.y); dirty();}
         if (editSp()) spHover(e);
@@ -2014,6 +2148,12 @@ cv.addEventListener('pointermove', e => {
         polyDrag(S.mode.type === 'crop' ? S.mode : editSp(), e, drag.i);
     }
     else if (drag.type === 'splitStart') splitMoveStart(S.mode, w);
+    else if (drag.type === 'spMark')
+    {
+        const sp = editSp(), p = toLocal(sp.view, w.x, w.y);
+        spMarkLine(S.mode, sp, drag, drag.p, p);
+        drag.p = sp.cursor = p;
+    }
     else if (drag.type === 'handle') scaleByHandle(w, drag.corner);
     else if (drag.type === 'band') drag.b = w;
     else if (drag.type === 'paint')
@@ -2033,6 +2173,7 @@ cv.addEventListener('pointerup', () => {
     if (s0 && (s0.x !== s0.layer.x || s0.y !== s0.layer.y || s0.a !== s0.layer.a)) hist.push(s);
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
     if (drag?.type === 'autoMove' || drag?.type === 'autoPose') autoSave(drag.part);
+    if (drag?.type === 'spMark') spMarkUp(drag);
     drag = null;
     dirty();
 });
@@ -2046,7 +2187,10 @@ function dragAngle(e, w, L, {a0, ang0})
 
 cv.addEventListener('pointerleave', () => {
     if (S.mode.type === 'pixel' && !drag) {S.mode.cursor = null; dirty();}
+    if (editSp() && !drag) {editSp().cursor = null; dirty();}
 });
+
+cv.addEventListener('contextmenu', e => {if (editSp() && spPaintOn()) e.preventDefault();});
 
 // 中鍵拖曳平移時，擋掉 Chrome 的中鍵自動捲動
 cv.addEventListener('mousedown', e => {if (e.button === 1) e.preventDefault();});
@@ -2092,6 +2236,8 @@ window.addEventListener('keydown', e => {
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && editSp()?.poly?.vert != null && !spPaintOn()) {spDelPt(m, editSp().poly.vert); refreshModePanel(); dirty();}
+    else if (editSp() && !e.ctrlKey && !e.altKey && SPMARK_KEYS[key]) {SPMARK_KEYS[key](); refreshModePanel(); dirty();}
     if ((m.type === 'pixel' || editSp()) && e.key === 'Alt') e.preventDefault();
     const d = ARROWS[e.key], L = S.active;
     const part = m.type === 'auto' && L?.visible && !L.locked ? autoPart(m, L) : null;
@@ -2279,7 +2425,8 @@ function refreshAuto(m)
     }
 }
 
-const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`;
+const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
+                       + (sp.mark ? `，標記 ${markCount(sp.mark)} px` : '');
 
 // 切割方法、線的條件那塊前後片跟自動共用，搬到顯示中的面板；沒有切線時反灰，閉運算／往下射／往右射只在魔術棒時出現
 function refreshSpCtl(m)
@@ -2287,6 +2434,7 @@ function refreshSpCtl(m)
     const sp = editSp(), box = m.type === 'split' ? $('modeSplit') : $('auSplit');
     if ($('spCtl').parentNode !== box) box.insertBefore($('spCtl'), box.querySelector('.spAfter'));
     $('spCtl').querySelectorAll('input, button').forEach(e => {e.disabled = !sp;});
+    $('spMarkClear').disabled = !sp?.mark;
     const method = sp?.method ?? S.sp.method;
     document.querySelector(`[name=spMethod][value=${method}]`).checked = true;
     $('spCutRow').hidden = method !== 'wand';
@@ -2328,7 +2476,7 @@ function refreshModePanel()
         $('rgRgbThr').value = m.rgbThr;
     }
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
-    if (m.type !== 'warp') cv.style.cursor = m.type === 'pixel' ? 'crosshair' : '';
+    if (m.type !== 'warp') cv.style.cursor = m.type === 'pixel' || (editSp() && spPaintOn()) ? 'crosshair' : '';
     if (m.type === 'warp')
     {
         const f = warpCur(m);
@@ -3671,6 +3819,9 @@ for (const b of document.querySelectorAll('.spStep'))
     };
 }
 cv.addEventListener('pointerleave', () => spSwatch());
+$('spPaint').onchange = () => {$('spPaint').blur(); spPaintSet(spPaintOn()); refreshModePanel(); dirty();};
+$('spSize').oninput = dirty;
+$('spMarkClear').onclick = spMarkClear;
 $('spRevoke').onclick = splitRevoke;
 $('pxClear').onclick = pixelClear;
 $('pxRgb').oninput = () => {$('colRgb').value = $('pxRgb').value; dirty();};

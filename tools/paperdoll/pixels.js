@@ -462,16 +462,46 @@ const SPLIT_ALPHA = 128;
 // 輪廓線的顏色條件（不看 alpha）：亮度 < c.lum
 export const lineTest = (c) => (r, g, b) => r * 0.299 + g * 0.587 + b * 0.114 < c.lum;
 
+// 手畫的標記（mark[i]：1＝強制是線、2＝強制不是線、0＝照條件）蓋過 lineTest；強制是線不看 alpha
+export const MARK_ON = 1, MARK_OFF = 2;
+const isLine = (d, test, mark) => (i) => {
+    const k = mark?.[i];
+    return k === MARK_ON || (k !== MARK_OFF && d[i * 4 + 3] >= SPLIT_ALPHA && test(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]));
+};
+
+// 標記存檔用的行程編碼：{on, off} 各是 [起點, 長度, …]
+export function markPack(mark)
+{
+    const r = {on: [], off: []};
+    for (let i = 0; i < mark.length;)
+    {
+        const k = mark[i];
+        let j = i + 1;
+        while (j < mark.length && mark[j] === k) j++;
+        if (k) (k === MARK_ON ? r.on : r.off).push(i, j - i);
+        i = j;
+    }
+    return r;
+}
+
+export function markUnpack(o, n)
+{
+    const mark = new Uint8Array(n);
+    for (const [arr, k] of [[o.on, MARK_ON], [o.off, MARK_OFF]])
+        for (let i = 0; i + 1 < (arr?.length ?? 0); i += 2) mark.fill(k, arr[i], Math.min(n, arr[i] + arr[i + 1]));
+    return mark;
+}
+
 // 魔術棒：1 淹水＝從起點 4 方向淹，碰到輪廓線或透明就停；2 閉運算＝R 膨脹 close px 再侵蝕回來（四周先補 close px，貼圖邊的不會被侵蝕掉），
 // 填平寬 ≤ 2×close 的縫；3 往下射＝R 每一直行的下緣往下 drop 格內碰到透明（或圖邊），才把中間（線＋外緣的反鋸齒）收進來；
 // 4 往右射＝同 3，從往下射之後的 R 每一橫列的右緣往右看 right 格（右下角的轉角才收得到）
 // 回傳每格是哪一步收進來的（0＝沒有、1..4），失敗回傳 {err}
-export function splitFlood(src, {x, y, c, close = 0, drop = 0, right = 0})
+export function splitFlood(src, {x, y, c, close = 0, drop = 0, right = 0, mark = null})
 {
     const W = src.width, H = src.height, N = W * H, d = src.getContext('2d').getImageData(0, 0, W, H).data;
-    const test = lineTest(c);
+    const line = isLine(d, lineTest(c), mark);
     const solid = (i) => d[i * 4 + 3] >= SPLIT_ALPHA;
-    const open = (i) => solid(i) && !test(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]);
+    const open = (i) => solid(i) && !line(i);
     if (x < 0 || y < 0 || x >= W || y >= H || !solid(y * W + x)) return {err: '起點在透明的地方'};
     if (!open(y * W + x)) return {err: '起點在輪廓線上，拖到線圍起來的區域裡'};
     const R = new Uint8Array(N);
@@ -567,13 +597,13 @@ function fill4(W, H, seed, ok, mark)
     }
 }
 
-export function splitTrace(src, {x, y, c})
+export function splitTrace(src, {x, y, c, mark = null})
 {
     const W = src.width, H = src.height, d = src.getContext('2d').getImageData(0, 0, W, H).data;
-    const test = lineTest(c);
+    const test = isLine(d, lineTest(c), mark);
     const idx = (X, Y) => X < 0 || Y < 0 || X >= W || Y >= H ? -1 : (Y * W + X) * 4;
     const solid = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA;};
-    const line = (X, Y) => {const i = idx(X, Y); return i >= 0 && d[i + 3] >= SPLIT_ALPHA && test(d[i], d[i + 1], d[i + 2]);};
+    const line = (X, Y) => X >= 0 && Y >= 0 && X < W && Y < H && test(Y * W + X);
     if (!solid(x, y)) return {err: '起點在透明的地方'};
     if (line(x, y)) return {err: '起點在輪廓線上，拖到線圍起來的區域裡'};
 

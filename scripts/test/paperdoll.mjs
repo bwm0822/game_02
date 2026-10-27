@@ -2107,4 +2107,107 @@ run('paperdoll', async t => {
     t.eq('淹水：起點在線上報錯', fl.line, '起點在輪廓線上，拖到線圍起來的區域裡');
     t.eq('挖除外圈：孤島不管、閉運算補掉半島＝框內矩形', fl.cutClose, '15,15 15,3 3,15 3,3');
     t.eq('挖除外圈：沒閉運算，半島留一道凹口', fl.cutNotch, 8);
+
+    // 畫線標記＋刪頂點：同上的紅線／黑線圖，亮度 60、魔術棒不閉運算不射，從 (100,100) 淹到 x 64..179、y 64..139
+    const mk = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const fire = (id, ev, set) => {const e = $(id); set(e); e.dispatchEvent(new Event(ev));};
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
+        g.fillStyle = '#c00000'; g.fillRect(20, 60, 160, 4); g.fillRect(20, 140, 160, 4);
+        g.fillStyle = '#000'; g.fillRect(60, 60, 4, 120);
+        const saved = JSON.stringify(pd.S.sp);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'mk', null, null, null);
+        pd.setMode('split');
+        const m = pd.S.mode;
+        const radio = (n, v) => {const r = document.querySelector(`[name=${n}][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
+        radio('spHow', 'split'); radio('spMethod', 'wand');
+        fire('sp-lum', 'input', e => {e.value = 60;}); fire('sp-lum', 'change', () => {});
+        fire('sp-close', 'change', e => {e.value = 0;});
+        fire('sp-down', 'change', e => {e.checked = false;});
+        fire('sp-right', 'change', e => {e.checked = false;});
+        m.start = {x: 100, y: 100};
+        pd.splitRun(m);
+        const box = () => {const xs = m.poly.pts.map(p => p.x), ys = m.poly.pts.map(p => p.y); return [Math.max(...xs), Math.max(...ys)];};
+        out.base = box();
+
+        const cv = $('cv'), rc = cv.getBoundingClientRect();
+        const at = (x, y) => {const w = pd.toWorld(m.view, x, y), K = pd.S.view.zoom; return {clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true};};
+        const pe = (type, x, y, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...at(x, y), ...extra}));
+        const stroke = (a, b, extra = {}) => {pe('pointerdown', ...a, extra); pe('pointermove', ...b, {buttons: 1, ...extra}); pe('pointerup', ...b, extra);};
+        const key = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+
+        // B 開畫線；左鍵一筆直線 x=120..121 把區域切開，放開才重算、記一步
+        key('b');
+        fire('spSize', 'input', e => {e.value = 2;});
+        const h0 = m.hist.length;
+        stroke([121, 62], [121, 141]);
+        out.on = [$('spPaint').checked, box(), m.hist.length - h0, m.mark[100 * 200 + 120], $('spMarkClear').disabled];
+        // 開畫線時拖不到起點
+        stroke([100.5, 100.5], [90.5, 90.5], {button: 2});
+        out.noStart = [m.start.x, m.start.y];
+        // 右鍵清掉那條線
+        stroke([121, 62], [121, 141], {button: 2});
+        out.erase = [box(), m.mark, m.hist.length - h0];
+        // Shift＋左鍵在下面的紅線上開個口：當成不是線，淹到下面
+        stroke([100, 139], [100, 145], {shiftKey: true});
+        out.off = [box(), m.mark[141 * 200 + 100]];
+        // 清除鈕一步清光、反灰
+        $('spMarkClear').click();
+        out.clear = [box(), m.mark, $('spMarkClear').disabled, m.hist.length - h0];
+        pd.undo();
+        out.clearUndo = [box(), m.mark?.[141 * 200 + 100]];
+
+        // 確定：split 存 mark（行程編碼），再進來帶回標記
+        pd.applyMode();
+        const F = pd.S.layers.find(M => M.name === 'mk-front');
+        const sm = F.ops.find(o => o.type === 'mask').split.mark;
+        out.saved = [Array.isArray(sm.on), sm.off.length > 0, JSON.parse(JSON.stringify(sm)).off[1] > 0];
+        pd.select(F); pd.setMode('split');
+        const m2 = pd.S.mode;
+        out.resume = [m2.mark?.[141 * 200 + 100], m2.mark?.length];
+        pd.cancelMode();
+
+        // 刪頂點：關畫線；Alt＋點頂點刪掉、最少 3 點；游標停在頂點上按 Delete 也刪
+        pd.select(F); pd.setMode('split');
+        key('b');
+        const m3 = pd.S.mode;
+        m3.poly = {pts: [{x: 70, y: 70}, {x: 170, y: 70}, {x: 175, y: 120}, {x: 120, y: 135}, {x: 70, y: 130}], closed: true};
+        const at3 = (x, y) => {const w = pd.toWorld(m3.view, x, y), K = pd.S.view.zoom; return {clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true};};
+        const n0 = m3.poly.pts.length, h3 = m3.hist.length, p0 = m3.poly.pts[0];
+        cv.dispatchEvent(new PointerEvent('pointerdown', {...at3(p0.x, p0.y), altKey: true}));
+        cv.dispatchEvent(new PointerEvent('pointerup', at3(p0.x, p0.y)));
+        out.alt = [n0, m3.poly.pts.length, m3.hist.length - h3];
+        const p1 = m3.poly.pts[1];
+        cv.dispatchEvent(new PointerEvent('pointermove', at3(p1.x, p1.y)));
+        out.hover = m3.poly.vert;
+        key('Delete');
+        out.del = [m3.poly.pts.length, m3.hist.length - h3];
+        const p2 = m3.poly.pts[0];
+        cv.dispatchEvent(new PointerEvent('pointermove', at3(p2.x, p2.y)));
+        key('Backspace');
+        out.min = [m3.poly.pts.length, $('status').textContent];
+        pd.undo();
+        out.undo = m3.poly.pts.length;
+        pd.cancelMode();
+        pd.S.layers.filter(M => M.name.startsWith('mk')).forEach(M => pd.removeLayer(M));
+        pd.S.sp = JSON.parse(saved);
+        return out;
+    });
+    t.eq('畫線：沒標記時淹到 x 180、y 140', JSON.stringify(mk.base), JSON.stringify([180, 140]));
+    t.eq('畫線：B 開、一筆加線切開區域、放開記一步、清除鈕可按', JSON.stringify(mk.on), JSON.stringify([true, [120, 140], 1, 1, false]));
+    t.eq('畫線：開著時拖不到起點', JSON.stringify(mk.noStart), JSON.stringify([100, 100]));
+    t.eq('畫線：右鍵清掉標記、全清就變 null', JSON.stringify(mk.erase), JSON.stringify([[180, 140], null, 2]));
+    t.eq('畫線：Shift 去線，紅線開口淹到下面', JSON.stringify(mk.off), JSON.stringify([[180, 180], 2]));
+    t.eq('畫線：清除標記一步、反灰', JSON.stringify(mk.clear), JSON.stringify([[180, 140], null, true, 4]));
+    t.eq('畫線：清除後 undo 帶回標記', JSON.stringify(mk.clearUndo), JSON.stringify([[180, 180], 2]));
+    t.eq('畫線：split 存 mark 行程編碼', JSON.stringify(mk.saved), JSON.stringify([true, true, true]));
+    t.eq('畫線：再進來帶回標記', JSON.stringify(mk.resume), JSON.stringify([2, 40000]));
+    t.eq('刪點：Alt＋點頂點刪一點、記一步', JSON.stringify([mk.alt[1] === mk.alt[0] - 1, mk.alt[2]]), JSON.stringify([true, 1]));
+    t.eq('刪點：游標停在頂點上會標示', mk.hover, 1);
+    t.eq('刪點：Delete 刪游標下的頂點', JSON.stringify(mk.del), JSON.stringify([mk.alt[0] - 2, 2]));
+    t.eq('刪點：最少留 3 點', JSON.stringify(mk.min), JSON.stringify([3, '多邊形最少要 3 點']));
+    t.eq('刪點：undo 退回一點', mk.undo, mk.min[0] + 1);
 });
