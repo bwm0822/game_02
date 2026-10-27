@@ -60,8 +60,8 @@
 
 ### 8. 程式寫死的顯示字串
 - 一律搬進 `local.xlsx`，用 ASCII id 取（延續 `'weapon'.lab()` 習慣），local.xlsx 是「UI 原文表」。
-- 豁免（可留中文）：`dlog()`、註解、`uidebuger.js`、`manager/test.js` 等開發者專用；`src/old/`。
-- 順便刪掉 `src/old/` 以外的舊檔：`*_old.js`、`cmbat copy.js`、`stats copy.js`（刪前確認沒被 import）。
+- 豁免（可留中文）：`dlog()`、註解、`uidebuger.js`、`manager/test.js` 等開發者專用。
+- 順便刪掉舊檔：`*_old.js`、`cmbat copy.js`、`stats copy.js`（刪前確認沒被 import）。
 - 實作（第 3 階段）：
   - UI 標籤加在 `general` 分頁；訊息與句子模板放新的 `msg` 分頁，key 用 `_` 開頭（延續 `_space_full`）。
   - 帶參數：`'_lock_fail'.lab({who})`（`String.prototype.lab(args)` → `tr('ui.<key>', 原文, args)`）。
@@ -166,5 +166,5 @@
 - 字型依語言決定：啟動時依當前語言設定 `GM.FONT`（font stack，不內嵌字型檔）。
   - 原文語言 `zh-TW` 沒有翻譯檔，預設值寫在 `setting.js`：`Arial, "Microsoft JhengHei", sans-serif`
   - 其他語言寫在翻譯檔的 `_meta.font`（翻譯分頁頂端的「字型」），維持「加語言不動程式」
-- 第 3 階段順便把散落各處寫死的 `fontFamily` 收斂到 `GM.FONT`（`src/old/` 不動）。
+- 第 3 階段順便把散落各處寫死的 `fontFamily` 收斂到 `GM.FONT`。
 - 實作：`Lang.load(tbl)` 設定 `GM.FONT`（在 `MainMenu.loadData()` 呼叫）；`com_port`、`view.js` 改用 `GM.FONT`。主選單／GameOver 標題的 `'Arial Black'` 是刻意的粗體標題字，保留（中日韓字會自動退到系統字型）。

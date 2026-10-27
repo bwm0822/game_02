@@ -112,7 +112,6 @@ export default class UiInv extends UiFrame {
 - `uitest.js`（`UiTest`）：`ui.js` 有 import 但 `createUI()` 從未 new，屬開發期試驗殘留。
 - `uiframe.js` 有未使用的 `import UiMark from './uimark.js'`。
 - `uidragged.js`／`uicursor.js`／`uicomponents.js`（`Icon`）內留有大段被註解掉的舊版實作。
-- `src/old/ui_old.js`：整個 UI 系統重構前的舊版備份，`src/old/` 依專案規範不可引用也不可修改。
 
 ## 4. 新增 UI 面板的標準作法
 

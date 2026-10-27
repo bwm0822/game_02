@@ -49,7 +49,6 @@ src/
   services/     # 服務：dragService、pressService
   infra/        # 基礎設施：record（存讀檔）、local（localStorage）
   data/         # 靜態資料：db.js（集中載入 JSON 資料）
-  old/          # 廢棄程式碼（勿修改、勿引用）
 
 public/         # 靜態資源（音效、地圖、JSON 資料）
   assets/textures/  # 所有圖檔：icons/props/natures/equips/items/roles{parts,npcs,monsters,animals,boss}/others、maps/{tiles,buildings}；
@@ -121,7 +120,6 @@ dist/           # 建置輸出（勿手動修改）
 - **圖片載入（自動）**：Preloader 不手寫 `load.image`／`spritesheet`／`atlas`，改讀 `public/assets/json/textures.json`（產出檔，`node scripts/textures.js` 掃 `textures/` 產生；`predev*`／`prebuild*` 自動跑、run_all 也跑、工具殼「更新圖片清單」按鈕走 vite dev 的 `POST /__tools/textures`）；同資料夾有 `<key>_atlas.json` 是 atlas，有手寫的 `<key>_sheet.json`（`{w, h?, margin?, spacing?}`）是 spritesheet，其他是單張圖（json 配不到圖、兩個都有、`maps/` 底下放 `_sheet.json` 都會報錯）；`textures/maps/` 不進清單，由 `tilemap.js` 進地圖時照 *.tsj 載（tsj 的 `name` 要等於檔名，集合型 tile 用檔名當 key，Preloader 載過的 Phaser 會跳過不重載）；撞名、`_sheet.json` 跟 tsj 格子不一致、tsj name 不等於檔名都會報錯不產出；Phaser 的 spritesheet 只扣一次 margin、tileset 扣兩次，有 margin 的圖要補邊讓兩邊格數一樣（如 `cursors.png`）
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
-- **`src/old/`**：廢棄程式碼，不可引用也不可修改
 - **不寫多餘的 comments**：除非有隱藏的約束或不直覺的行為，否則不加註解
 
 ## 主要依賴

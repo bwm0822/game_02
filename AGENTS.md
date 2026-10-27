@@ -49,7 +49,6 @@ src/
   services/     # 服務：dragService、pressService
   infra/        # 基礎設施：record（存讀檔）、local（localStorage）
   data/         # 靜態資料：db.js（集中載入 JSON 資料）
-  old/          # 廢棄程式碼（勿修改、勿引用）
 
 public/         # 靜態資源（圖片、音效、地圖、JSON 資料）
 vite/           # Vite 設定檔（config.dev.mjs、config.prod.mjs、config.prod_app.mjs）
@@ -104,7 +103,6 @@ dist/           # 建置輸出（勿手動修改）
 - **紙娃娃編輯器**：`tools/paperdoll/`（純 HTML + Canvas 2D，`npm run dev` 後開 `/tools/paperdoll/`）調整零件圖的裁切／縮放／透明清除，擺放數字（`x`/`y`/`a`/`ox`/`oy`）存成同名 `.json` 給人抄進 xlsx；遊戲零件的 origin 讀 `part.ox ?? 0.5`、`part.oy ?? 1`；修改前請先參考 [docs/paperdoll-tool.md](docs/paperdoll-tool.md)
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`
-- **`src/old/`**：廢棄程式碼，不可引用也不可修改
 - **不寫多餘的 comments**：除非有隱藏的約束或不直覺的行為，否則不加註解
 
 ## 主要依賴
