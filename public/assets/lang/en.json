@@ -470,24 +470,6 @@
       "r": "mt"
     }
   },
-  "ui.sword_01": {
-    "普通刀": {
-      "t": "Common Knife",
-      "r": "mt"
-    }
-  },
-  "ui.sword_02": {
-    "鐵劍": {
-      "t": "Iron Sword",
-      "r": "mt"
-    }
-  },
-  "ui.sword_03": {
-    "鋼劍": {
-      "t": "Steel Sword",
-      "r": "mt"
-    }
-  },
   "ui.helmet_01": {
     "草帽": {
       "t": "Straw hat",
@@ -1476,44 +1458,6 @@
       "r": "mt"
     }
   },
-  "item.sword_01": {
-    "匕首": {
-      "t": "Dagger",
-      "r": "mt"
-    },
-    "常用近戰武器": {
-      "t": "A common melee weapon",
-      "r": "mt"
-    }
-  },
-  "item.sword_02": {
-    "焠毒短劍": {
-      "t": "Venom Shortsword",
-      "r": "mt"
-    },
-    "用毒液浸泡過的短劍，可使目標中毒": {
-      "t": "A shortsword steeped in venom. Can poison its target.",
-      "r": "mt"
-    }
-  },
-  "item.sword_03": {
-    "鋼劍": {
-      "t": "Steel Sword",
-      "r": "mt"
-    }
-  },
-  "item.bow_01": {
-    "弓": {
-      "t": "Bow",
-      "r": "mt"
-    }
-  },
-  "item.bow_02": {
-    "高級弓": {
-      "t": "Fine Bow",
-      "r": "mt"
-    }
-  },
   "item.helmet_01": {
     "草帽": {
       "t": "Straw hat",
@@ -1583,12 +1527,6 @@
   "item.ring_01": {
     "戒子": {
       "t": "Ring",
-      "r": "mt"
-    }
-  },
-  "item.axe_01": {
-    "斧頭": {
-      "t": "Axe",
       "r": "mt"
     }
   },

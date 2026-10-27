@@ -90,7 +90,7 @@ run('local-tool', async t => {
         return out;
     });
 
-    t.eq('讀入 221 筆', r.count, 221);
+    t.eq('讀入 219 筆', r.count, 219);
     t.check('左欄有全部／分組／缺少／未使用', ['#all', 'general', 'msg', 'ability', '#miss', '#unused'].every(n => r.groups.includes(n)), r.groups.join(' '));
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('缺少：src 明確查表＋role.json 的 job', r.missing, '_zz_missing,zz_job');

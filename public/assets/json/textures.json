@@ -209,13 +209,6 @@
       "margin": 0,
       "spacing": 0
     },
-    "weapons": {
-      "url": "textures/items/weapons.png",
-      "w": 32,
-      "h": 32,
-      "margin": 0,
-      "spacing": 0
-    },
     "doors": {
       "url": "textures/props/doors.png",
       "w": 32,
