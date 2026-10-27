@@ -30,10 +30,10 @@ run('盜賊討伐', async t => {
     t.eq('清光盜賊', await t.q('bandit_hunt.kills'), 3);
     t.eq('任務進到取得匕首', await t.q('bandit_hunt'), 3);
 
-    const loot = await t.eval(d => d.objs().filter(g => g.id === 'rogue-1' && g.findEquip?.(i => (i.id ?? i) === 'sword_01')).length);
+    const loot = await t.eval(d => d.objs().filter(g => g.id === 'rogue-1' && g.findEquip?.(i => (i.id ?? i) === 'dagger-1')).length);
     t.eq('盜賊屍體上有匕首可以撿', loot, 3);
 
-    await t.give('sword_01');
+    await t.give('dagger-1');
     t.eq('拿到匕首', await t.q('bandit_hunt'), 4);
 
     await t.gotoMap(TOWN);

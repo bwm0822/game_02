@@ -110,7 +110,7 @@
       "storage": {
         "capacity": -1,
         "items": [
-          "sword_01",
+          "sword-1",
           {
             "id": "helmet_01",
             "count": 1
@@ -185,7 +185,7 @@
       "storage": {
         "capacity": -1,
         "items": [
-          "sword_01",
+          "sword-1",
           {
             "id": "helmet_01",
             "count": 1
@@ -225,7 +225,6 @@
     "icon": "head-musk",
     "job": "smith",
     "gold": 200,
-    "weapon": "sword_01",
     "trade": true,
     "unique": true,
     "faceR": true,
@@ -267,7 +266,7 @@
       "storage": {
         "capacity": -1,
         "items": [
-          "sword_01",
+          "sword-1",
           "chest_01",
           "gloves_01",
           "chest_02",
@@ -436,7 +435,7 @@
       "storage": {
         "capacity": -1,
         "items": [
-          "sword_01",
+          "sword-1",
           {
             "id": "helmet_01",
             "count": 1
@@ -522,7 +521,7 @@
       "storage": {
         "capacity": -1,
         "items": [
-          "sword_01",
+          "sword-1",
           {
             "id": "helmet_01",
             "count": 1
@@ -611,7 +610,7 @@
     },
     "inv": {
       "equips": [
-        "sword_01",
+        "sword-1",
         "helmet_01",
         "chest_01"
       ]
@@ -702,7 +701,7 @@
     },
     "inv": {
       "equips": [
-        "sword_01",
+        "sword-1",
         "helmet_01",
         "chest_01"
       ]
@@ -790,7 +789,7 @@
     },
     "inv": {
       "equips": [
-        "sword_01"
+        "dagger-1"
       ]
     },
     "attrs": {
@@ -856,7 +855,7 @@
     },
     "inv": {
       "equips": [
-        "bow_01"
+        "bow-1"
       ]
     },
     "attrs": {

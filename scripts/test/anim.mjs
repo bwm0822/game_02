@@ -6,13 +6,18 @@ run('武器動畫', async t => {
     const r = await t.eval(async (d) => {
         // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
         d.DB._animDB = await (await fetch('/scripts/test/fixtures/anim.json')).json();
+        // 武器擺放也固定，實際 item.json 的 equip 常調
+        Object.assign(d.DB._itemDB, {
+            't-sword': {cat: 'CAT_WEAPON', type: 'melee', range: 1, atk: 15, equip: {sprite: 'sword-bronze', x: -13, y: 18, ox: 0.09375, oy: 0.875}},
+            't-bow': {cat: 'CAT_WEAPON', type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24}},
+        });
         const p = d.GM.player, out = {};
         const sleep = (ms) => new Promise(res => setTimeout(res, ms));
         const pose = () => {const sp = p.view.weapon; return [Math.round(sp.x), Math.round(sp.y), Math.round(sp.angle)];};
         const right = {x: p.pos.x + 100, y: p.pos.y}, down = {x: p.pos.x, y: p.pos.y + 100};
         p.face(right);
 
-        let drop = p.hold('sword_01');
+        let drop = p.hold('t-sword');
         const rest = pose();
         out.rest = rest;
         let readyAt = null;
@@ -28,7 +33,7 @@ run('武器動畫', async t => {
         out.sweepBack = pose();
         drop();
 
-        drop = p.hold('bow_01');
+        drop = p.hold('t-bow');
         const bowRest = pose();
         p.face(right);
         out.aim = [await p.anim_play('aim', right), pose()];
@@ -45,7 +50,7 @@ run('武器動畫', async t => {
         const eqs = p.bb.equips, saved = [...eqs], play = p.anim_play, played = [];
         p.anim_play = (id, ...a) => {played.push(id); return play(id, ...a);};
         const swing = async (id) => {eqs.length = 0; eqs.push({id, count: 1}); p.setDirty(); await p.anim_melee({pos: right}); return p.total.anim ?? null;};
-        out.weaponAnim = [await swing('dagger-1'), await swing('sword_01')];
+        out.weaponAnim = [await swing('dagger-1'), await swing('t-sword')];
         out.played = played;
         p.anim_play = play;
         eqs.length = 0; eqs.push(...saved); p.setDirty();

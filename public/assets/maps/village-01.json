@@ -77,29 +77,6 @@
                  "y":992
                 }, 
                 {
-                 "gid":458,
-                 "height":32,
-                 "id":98,
-                 "name":"",
-                 "properties":[
-                        {
-                         "name":"id",
-                         "type":"string",
-                         "value":"sword_01"
-                        }, 
-                        {
-                         "name":"q",
-                         "type":"string",
-                         "value":"karen_01"
-                        }],
-                 "rotation":0,
-                 "type":"pickup",
-                 "visible":true,
-                 "width":32,
-                 "x":1024,
-                 "y":1056
-                }, 
-                {
                  "height":32,
                  "id":100,
                  "name":"musk-p1",
@@ -418,10 +395,6 @@
         {
          "firstgid":391,
          "source":"..\/tilesets\/interior.tsj"
-        }, 
-        {
-         "firstgid":455,
-         "source":"..\/tilesets\/weapons.tsj"
         }, 
         {
          "firstgid":536,

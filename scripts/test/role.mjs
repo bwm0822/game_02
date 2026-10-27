@@ -53,7 +53,7 @@ run('role', async t => {
         sel('trump');
         const cellInputs = () => [...document.querySelectorAll('#view .cell input')];
         const fire = (el, v) => {el.value = v; el.dispatchEvent(new Event('change'));};
-        fire(cellInputs()[0], 'sword_02');
+        fire(cellInputs()[0], 'sword-2');
         out.invRename = JSON.stringify(items()[0]);
         fire(document.querySelector('#view .cell input.cnt'), '3');
         out.invCount = JSON.stringify(items()[0]);
@@ -150,8 +150,8 @@ run('role', async t => {
     t.eq('讀入全部角色', r.load[0], true);
     t.check('選專案根目錄：找到 public/assets', r.load[1] && r.load[2] === 'assets');
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
-    t.eq('字串道具改 id 還是字串', r.invRename, '"sword_02"');
-    t.eq('字串道具數量改成 3 變物件', r.invCount, JSON.stringify({id: 'sword_02', count: 3}));
+    t.eq('字串道具改 id 還是字串', r.invRename, '"sword-2"');
+    t.eq('字串道具數量改成 3 變物件', r.invCount, JSON.stringify({id: 'sword-2', count: 3}));
     t.eq('物件道具改 id 還是物件', r.invObj, JSON.stringify({id: 'gloves_01', count: 1}));
     t.eq('加道具是字串', r.invAdd, 'apple');
     t.check('移除道具', r.invDel[0]);

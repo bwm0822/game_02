@@ -105,7 +105,7 @@
             "item",
             "quality"
           ],
-          "requires": "bandit_hunt==3 && item:sword_01:1",
+          "requires": "bandit_hunt==3 && item:dagger-1:1",
           "effects": [
             "bandit_hunt=4"
           ]
@@ -211,7 +211,7 @@
             "1": {
               "journal": "前往黑森林狩獵，擊殺野狼 ({wolf_hunt.kills}/3)",
               "pos": "m/m_03x05",
-              "reward": "金幣 x120、斧頭 x1"
+              "reward": "金幣 x120、青銅斧 x1"
             },
             "2": {
               "journal": "剝下狼皮"
@@ -383,7 +383,7 @@
                 "actions": [
                   "wolf_hunt=10",
                   "gold+120",
-                  "give axe_01 1"
+                  "give axe-1 1"
                 ],
                 "next": "n_wolf_report"
               },

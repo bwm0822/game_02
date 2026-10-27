@@ -21,7 +21,7 @@
 
 ### 4. 翻譯 key
 - key = **情境 + 原文**（gettext 的 `msgctxt` + `msgid`），直接用原文字串當 key，不用雜湊。
-- 情境是自動產生的語意路徑，例如 `dlg.karen.n_chat`、`item.sword_01`、`ability.steal`、`ui.weapon`。
+- 情境是自動產生的語意路徑，例如 `dlg.karen.n_chat`、`item.sword-1`、`ability.steal`、`ui.weapon`。
 - 有共用詞庫 `_shared`：情境查不到時，退到全域同一句的譯文（`離開`、`接受`…）。
 - en.json 大致長相：
   ```json

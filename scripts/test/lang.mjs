@@ -5,14 +5,14 @@ run('多國語言', async t => {
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
 
     const zh = await t.eval(d => ({
-        item: d.DB.item('sword_01').lab,
+        item: d.DB.item('sword-1').lab,
         ability: d.DB.ability('fireball').lab,
         des: d.DB.ability('fireball').des,
         ui: d.Local.lab('weapon'),
         missing: d.Local.lab('no_such_key'),
         fill: d.Lang.tr('x', '{#num} 格 {#keep}', {num:3}),
     }));
-    t.eq('item 原文', zh.item, '匕首');
+    t.eq('item 原文', zh.item, '青銅劍');
     t.eq('ability 原文', zh.ability, '火球術');
     t.check('ability 說明保留佔位符給 fmt_Des', zh.des.includes('{#fmt}'), zh.des);
     t.eq('local 原文', zh.ui, '武器');
@@ -24,21 +24,21 @@ run('多國語言', async t => {
         d.DB.load(d.game.scene.getScene('MainMenu'));
         d.DB.load(d.game.scene.getScene('MainMenu'));
         const r = {
-            item: d.DB.item('sword_01').lab,
+            item: d.DB.item('sword-1').lab,
             role: d.DB.role('karen').lab,
             ui: d.Local.lab('weapon'),
             bbc: d.Lang.tr('x', '[color=red]火[/color]{#n}'),
         };
         d.Record.setting.lang = 'zh-TW';
         d.DB.load(d.game.scene.getScene('MainMenu'));
-        r.back = d.DB.item('sword_01').lab;
+        r.back = d.DB.item('sword-1').lab;
         return r;
     });
-    t.eq('qps 拉長加括號（DB.load 重跑不會疊兩層）', qps.item, '【匕首匕首】');
+    t.eq('qps 拉長加括號（DB.load 重跑不會疊兩層）', qps.item, '【青銅劍青銅劍】');
     t.eq('qps 角色名', qps.role, '【凱倫凱倫】');
     t.eq('qps local', qps.ui, '【武器武器】');
     t.eq('qps 只重複看得到的字', qps.bbc, '【[color=red]火[/color]{#n}火】');
-    t.eq('切回原文', qps.back, '匕首');
+    t.eq('切回原文', qps.back, '青銅劍');
 
     await t.newGame();
     t.ok('開新遊戲沒有錯誤');
@@ -111,8 +111,8 @@ run('多國語言', async t => {
     await t.eval(d => {d.Record.setting.lang = 'en'; d.Record.saveSetting();});
     await t.page.reload();
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單（英文）'});
-    const en = await t.eval(d => ({item: d.DB.item('sword_01').lab, role: d.DB.role('karen').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, shared: d.Lang.tr('item.apple', '可食用')}));
-    t.eq('en.json 的 item 譯文', en.item, 'Dagger');
+    const en = await t.eval(d => ({item: d.DB.item('sword-1').lab, role: d.DB.role('karen').lab, ui: d.Local.lab('weapon'), font: d.GM.FONT, shared: d.Lang.tr('item.apple', '可食用')}));
+    t.eq('en.json 的 item 譯文', en.item, 'Bronze Sword');
     t.eq('en.json 的 role 譯文', en.role, 'Gilly');
     t.eq('en.json 的 ui 譯文', en.ui, 'Weapon');
     t.eq('en 字型來自 _meta.font', en.font, 'Arial, sans-serif');

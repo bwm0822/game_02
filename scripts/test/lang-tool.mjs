@@ -70,7 +70,7 @@ run('lang-tool', async t => {
         out.saved = JSON.parse(await disk())[first.ctx]?.[first.src]?.t;
 
         // 搜尋跨整棵樹
-        S.node = 'item'; $('search').value = 'Dagger'; $('search').dispatchEvent(new Event('input'));
+        S.node = 'item'; $('search').value = 'Bronze Sword'; $('search').dispatchEvent(new Event('input'));
         out.search = qa('#view tbody tr').map(tr => JSON.parse(tr.dataset.k)[0]);
         $('search').value = ''; $('search').dispatchEvent(new Event('input'));
 
@@ -160,7 +160,7 @@ run('lang-tool', async t => {
     t.eq('清空譯文就刪掉那列', r.cleared, false);
     t.eq('undo', r.undo, 'Hello');
     t.eq('存檔', r.saved, 'Hello');
-    t.check('搜尋跨整棵樹（也搜譯文）', r.search.includes('item.sword_01'), r.search.join(' '));
+    t.check('搜尋跨整棵樹（也搜譯文）', r.search.includes('item.sword-1'), r.search.join(' '));
     t.eq('字型', r.font, 'Georgia');
     t.eq('新增語言 ja', JSON.stringify(r.ja), JSON.stringify(['ja.json', 'en,ja', 'Arial, sans-serif', 0, true]));
     t.eq('切回 en', JSON.stringify(r.back), JSON.stringify(['en.json', 'Hello']));
@@ -203,7 +203,7 @@ run('lang-tool', async t => {
             a.click();
             return !!await until(() => location.hash === `#${tab}` && ok(win(tab)));
         };
-        out.item = await jump('item.sword_01', 'item', w => w.__ie?.S.sel === 'sword_01');
+        out.item = await jump('item.sword-1', 'item', w => w.__ie?.S.sel === 'sword-1');
         out.role = await jump('role.karen', 'role', w => w.__re?.S.sel === 'karen');
         out.ability = await jump('ability.fireball', 'ability', w => w.__ab?.S.sel === 'fireball');
         out.dialog = await jump('dlg._common.n_cold', 'dialog', w => w.__dl?.S.sel === '_common'

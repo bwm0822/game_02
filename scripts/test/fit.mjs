@@ -76,13 +76,13 @@ run('fit', async t => {
 
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
-        const sw = S.doc['item.json'].data.sword_01.equip;
+        const sw = S.doc['item.json'].data['sword-1'].equip;
         document.querySelector('.tab[data-mode=anim]').click();
         out.animUi = [S.mode, S.aid, document.querySelectorAll('table.keys tr').length - 1, document.querySelectorAll('.timeline .mark.key').length];
         const chop = F.trackOf();
         const {poseAt, trackEnd} = await import('/src/core/pose.js');
         const end = poseAt(chop, trackEnd(chop)), raised = poseAt(chop, 120);
-        out.chop = [trackEnd(chop), Math.abs(end.x - sw.x) < 1e-6 && Math.abs(end.y - sw.y) < 1e-6 && Math.abs(end.angle) < 1e-6, raised.angle];
+        out.chop = [trackEnd(chop), Math.abs(end.x - sw.x) < 1e-6 && Math.abs(end.y - sw.y) < 1e-6 && Math.abs(end.angle - (sw.a ?? 0)) < 1e-6, raised.angle];
         out.playMs = [F.playMs(A().chop, chop, 150), F.playMs(A().chop, chop, 250)];
         S.aid = 'sweep'; S.target = 90; F.render();
         const down = poseAt(F.trackOf(), 120);
@@ -132,15 +132,15 @@ run('fit', async t => {
         const optNone = () => document.querySelector('.animbar select').value;
         F.setSlot('CAT_WEAPON', 'dagger-1');
         out.weaponAnim = [S.aid];
-        F.setSlot('CAT_WEAPON', 'bow_01');
+        F.setSlot('CAT_WEAPON', 'bow-1');
         out.weaponAnim.push(S.aid);
-        F.setSlot('CAT_WEAPON', 'sword_01');
+        F.setSlot('CAT_WEAPON', 'sword-1');
         out.weaponAnim.push(S.aid);
         F.setSlot('CAT_WEAPON', null);
         out.weaponAnim.push(S.aid, optNone(), !!document.querySelector('table.keys'));
-        I().sword_01.anim = 'nope'; F.setSlot('CAT_WEAPON', 'sword_01');
+        I()['sword-1'].anim = 'nope'; F.setSlot('CAT_WEAPON', 'sword-1');
         out.weaponAnim.push(S.aid, $('status')?.textContent.includes('nope'));
-        delete I().sword_01.anim;
+        delete I()['sword-1'].anim;
         F.setSlot('CAT_WEAPON', 'dagger-1');
         F.renameAnim('stab2');
         out.stabRename = [I()['dagger-1'].anim, I()['dagger-5'].anim];
@@ -152,7 +152,7 @@ run('fit', async t => {
         out.delAnim = [Object.keys(A()).join(), S.aid, 'anim' in I()['dagger-1'], 'anim' in I()['dagger-5'], optNone()];
         F.undo();
         out.delAnim.push(Object.keys(A()).join(), I()['dagger-1'].anim);
-        F.setSlot('CAT_WEAPON', 'bow_01');
+        F.setSlot('CAT_WEAPON', 'bow-1');
         S.aid = 'aim'; S.target = 0; F.render();
         out.aim = [trackEnd(F.trackOf()), Math.round(poseAt(F.trackOf(), 60).angle)];
         const zsel = document.querySelector('#pv .ctrl select');
@@ -171,7 +171,7 @@ run('fit', async t => {
         await F.drawPreview();
         out.pinned = [ctrl.bottom <= innerHeight, scrolls, centered, stage().scrollTop, stage().scrollLeft];
         S.zoom = 3;
-        F.setSlot('CAT_WEAPON', 'sword_01');
+        F.setSlot('CAT_WEAPON', 'sword-1');
         S.mode = 'fit'; S.zoom = 'game'; F.render();
         await F.drawPreview();
         out.game = parseFloat(document.querySelector('#pv canvas').style.width);
@@ -203,10 +203,10 @@ run('fit', async t => {
     });
 
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1] && r.list[2], JSON.stringify(r.list));
-    t.eq('選角色帶入原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword_01', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
+    t.eq('選角色帶入原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張', r.gloves[0]);
-    t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword_01', 'helmet_01', 'chest_01']));
+    t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword-1', 'helmet_01', 'chest_01']));
     t.check('挑選視窗只列有 equip 的道具（含卸下）', r.slotOpts.every(n => n >= 2), JSON.stringify(r.slotOpts));
     t.eq('只有靴子格是空的剪影', r.slotIcons, 1);
     t.eq('點 icon 穿上、關窗、選中該格', JSON.stringify(r.boots), JSON.stringify(['boots_01', false, 'CAT_BOOTS', true]));

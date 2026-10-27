@@ -88,7 +88,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 |---|---|
 | `x=1`、`x+1`、`x-2` | quality 設值／加減 |
 | `karen.favor+10` | 指定 NPC |
-| `give axe_01 1`、`take plet 3` | 給玩家／拿走玩家的道具（`take` 取代 `consume`，不檢查數量，搭配 `item:` 條件先擋） |
+| `give axe-1 1`、`take plet 3` | 給玩家／拿走玩家的道具（`take` 取代 `consume`，不檢查數量，搭配 `item:` 條件先擋） |
 | `gold+120`、`gold-50` | 金錢 |
 | `count wolf_hunt.kills kill:wolf`、`stop wolf_hunt.kills` | 開／停專屬計數器 |
 | `trade`、`close`、`goto n_xxx` | 對話控制（只在對話中有效） |
