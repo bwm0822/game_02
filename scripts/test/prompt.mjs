@@ -207,6 +207,47 @@ run('prompt', async t => {
         return out;
     });
 
+    // 物品多選：Ctrl／Shift＋點、整批拖曳、批次改共用／刪除
+    const many = await t.page.evaluate(async () => {
+        const pe = window.__pe, S = pe.S, out = {};
+        S.fold.clear();
+        pe.commit(() => {S.data.items.兵器 = ['a', 'b', 'c'].map(name => ({name, file: '', desc: '', common: ''}));});
+        const row = (name) => [...document.querySelectorAll('#list .item')].find(e => e.querySelector('.id').textContent === name);
+        const click = (name, k = {}) => row(name).dispatchEvent(new MouseEvent('click', {bubbles: true, ...k}));
+        const names = (cat) => S.data.items[cat].map(it => it.name).join();
+        const sels = () => [...document.querySelectorAll('#list .item.sel .id')].map(e => e.textContent).join();
+        click('a');
+        click('鐵劍', {shiftKey: true});
+        out.shift = [sels(), document.querySelector('#view .bigid')?.textContent];
+        click('b', {ctrlKey: true});
+        out.ctrl = sels();
+        pe.setPicks('common', '劍');
+        out.common = [names('兵器'), S.data.items.兵器.map(it => it.common).join(), S.data.items['護具/劍'][0].common];
+        const dt = new DataTransfer();
+        row('c').dispatchEvent(new DragEvent('dragstart', {bubbles: true, dataTransfer: dt}));
+        row('盾').dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: dt}));
+        out.drag = [names('兵器'), names('護具'), names('護具/劍'), sels()];
+        pe.moveItems([...S.picks], {cat: '護具', i: 1});
+        out.dropOnPicked = names('護具');
+        click('a', {ctrlKey: true});
+        click('c', {ctrlKey: true});
+        out.single = [S.picks.length, JSON.stringify(S.sel), !!document.querySelector('[data-k="name"]')];
+        click('a', {shiftKey: true});
+        out.range = sels();
+        [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▾護具')).click();
+        out.fold = [S.picks.length, sels()];
+        S.fold.clear(); pe.commit(() => {});
+        click('a');
+        click('盾', {shiftKey: true});
+        pe.removePicks();
+        out.remove = [names('護具'), S.picks.length];
+        pe.undo();
+        out.undo = [names('護具'), S.picks.length];
+        click('盾');
+        out.plain = [S.picks.length, sels()];
+        return out;
+    });
+
     t.check('檔案不存在會問要不要建骨架', r.ask);
     t.eq('骨架內容', JSON.stringify(r.skeleton), JSON.stringify(['武器,護具,道具', '武器,護具,道具']));
     t.eq('新增物品預設帶同名 common', JSON.stringify(r.newItem), JSON.stringify({name: '新物品', file: '', desc: '', common: '武器'}));
@@ -249,4 +290,14 @@ run('prompt', async t => {
     t.eq('搜尋：只留命中路徑、分類名稱命中留整棵', JSON.stringify(sub.search), JSON.stringify([[['星辰（1）'], ['星袍']], [['護具（2）', '布甲（0）'], []], [['護具（2）', '劍（1）'], ['鐵劍']]]));
     t.check('Alt＋點分類連子分類一起摺', sub.fold);
     t.eq('存檔照前序', sub.saved, '兵器,兵器/新分類,護具,護具/布甲,護具/劍,星辰');
+    t.eq('Shift＋點跨分類選範圍、右欄批次面板', JSON.stringify(many.shift), JSON.stringify(['a,b,c,鐵劍', '已選 4 個物品']));
+    t.eq('Ctrl＋點減選', many.ctrl, 'a,c,鐵劍');
+    t.eq('批次改共用', JSON.stringify(many.common), JSON.stringify(['a,b,c', '劍,,劍', '劍']));
+    t.eq('整批拖曳照畫面順序插在目標前面、維持多選', JSON.stringify(many.drag), JSON.stringify(['b', 'a,c,鐵劍,盾', '', 'a,c,鐵劍']));
+    t.eq('拖到選到的其中一個上不亂序', many.dropOnPicked, 'a,c,鐵劍,盾');
+    t.eq('Ctrl 減到剩一個退回單選', JSON.stringify(many.single), JSON.stringify([0, JSON.stringify({cat: '護具', i: 2}), true]));
+    t.eq('Shift 起點是最後單選的那個', many.range, 'a,c,鐵劍');
+    t.eq('摺起分類清掉裡面的多選', JSON.stringify(many.fold), JSON.stringify([0, '']));
+    t.eq('批次刪除、undo 連多選一起回來', JSON.stringify([many.remove, many.undo]), JSON.stringify([['', 0], ['a,c,鐵劍,盾', 4]]));
+    t.eq('多選中一般點一下只選那個', JSON.stringify(many.plain), JSON.stringify([0, '盾']));
 });

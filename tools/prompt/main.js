@@ -16,7 +16,8 @@ const S = {
     saved: null,
     diskText: null,
     mode: 'items',          // 選的是哪一種：items | common
-    sel: null,              // items：{cat, i}；common：名稱
+    sel: null,              // items：{cat, i}；common：名稱；多選時是 Shift 範圍的起點
+    picks: [],              // 物品多選：兩個以上才算，[{cat, i}]
     search: '',
     fold: new Set(),        // 摺起來的分組：分類名稱，共用組是 COMMON
     hist: [], hi: -1,
@@ -62,8 +63,17 @@ function normItems(items)
 
 const norm = (d) => ({...d, items: normItems(d?.items ?? {}), common: d?.common ?? {}});
 const isDirty = () => !!S.data && str(S.data) !== str(S.saved);
-const view = () => ({mode: S.mode, sel: structuredClone(S.sel)});
+const view = () => ({mode: S.mode, sel: structuredClone(S.sel), picks: structuredClone(S.picks)});
 const selItem = () => S.mode === 'items' && S.sel ? S.data?.items[S.sel.cat]?.[S.sel.i] : null;
+const multi = () => S.mode === 'items' && S.picks.length > 1;
+const same = (a, b) => a.cat === b.cat && a.i === b.i;
+
+// 剩一個就退回單選
+function fixPicks()
+{
+    if (S.picks.length === 1) S.sel = S.picks[0];
+    if (S.picks.length < 2) S.picks = [];
+}
 
 // common 有 {desc}／{name}／{file} 就代換進去，沒有就接在描述後面；沒填 file 時含 {file} 的行整行拿掉
 export function compose(it, common)
@@ -92,7 +102,7 @@ function commit(fn)
     render();
 }
 
-const restore = (v) => {S.mode = v.mode; S.sel = structuredClone(v.sel);};
+const restore = (v) => {S.mode = v.mode; S.sel = structuredClone(v.sel); S.picks = structuredClone(v.picks ?? []);};
 
 function undo()
 {
@@ -126,7 +136,8 @@ function loaded(text)
     S.diskText = text;
     S.saved = norm(JSON.parse(text));
     S.data = structuredClone(S.saved);
-    S.hist = [{data: str(S.data), before: view(), after: view()}];
+    S.picks = [];
+    S.hist =[{data: str(S.data), before: view(), after: view()}];
     S.hi = 0;
     if (S.mode === 'items' ? !selItem() : !(S.sel in S.data.common)) S.sel = null;
 }
@@ -210,6 +221,7 @@ function addItem(cat)
         list.push({name: '新物品', file: '', desc: '', common: defaultCommon(cat)});
         S.mode = 'items';
         S.sel = {cat, i: list.length - 1};
+        S.picks = [];
     });
 }
 
@@ -218,6 +230,7 @@ function dupItem({cat, i})
     commit(() => {
         S.data.items[cat].splice(i + 1, 0, structuredClone(S.data.items[cat][i]));
         S.sel = {cat, i: i + 1};
+        S.picks = [];
     });
 }
 
@@ -227,22 +240,36 @@ function removeItem({cat, i})
         const list = S.data.items[cat];
         list.splice(i, 1);
         S.sel = list.length ? {cat, i: Math.min(i, list.length - 1)} : null;
+        S.picks = [];
     });
 }
 
-// to.i 是插在誰前面（= 長度就放最後）；可以跨分類
-function moveItem(from, to)
+// froms 照給的順序緊挨著插在 to.i 前面（= 長度就放最後）；可以跨分類；to 是被搬的其中一個就往後找第一個沒被搬的
+function moveItems(froms, to)
 {
     commit(() => {
-        const [it] = S.data.items[from.cat].splice(from.i, 1);
-        let i = to.i;
-        if (from.cat === to.cat && from.i < i) i--;
-        S.data.items[to.cat].splice(i, 0, it);
+        const items = S.data.items, its = froms.map(f => items[f.cat][f.i]);
+        const anchor = items[to.cat].slice(to.i).find(it => !its.includes(it));
+        for (const f of [...froms].sort((a, b) => b.i - a.i)) items[f.cat].splice(f.i, 1);
+        const list = items[to.cat], i = anchor ? list.indexOf(anchor) : list.length;
+        list.splice(i, 0, ...its);
+        S.picks = its.length > 1 ? its.map((_, n) => ({cat: to.cat, i: i + n})) : [];
         S.sel = {cat: to.cat, i};
     });
 }
 
+const moveItem = (from, to) => moveItems([from], to);
 const setItem = (sel, k, v) => commit(() => {S.data.items[sel.cat][sel.i][k] = v;});
+const setPicks = (k, v) => commit(() => {for (const p of S.picks) S.data.items[p.cat][p.i][k] = v;});
+
+function removePicks()
+{
+    commit(() => {
+        for (const p of [...S.picks].sort((a, b) => b.i - a.i)) S.data.items[p.cat].splice(p.i, 1);
+        S.picks = [];
+        S.sel = null;
+    });
+}
 
 async function askName(title, value)
 {
@@ -269,6 +296,7 @@ async function addCat(parent = '')
 function repath(from, to)
 {
     if (S.sel?.cat && under(S.sel.cat, from)) S.sel.cat = rebase(S.sel.cat, from, to);
+    for (const p of S.picks) p.cat = rebase(p.cat, from, to);
     S.fold = new Set([...S.fold].map(k => rebase(k, from, to)));
 }
 
@@ -294,6 +322,8 @@ async function removeCat(top)
     commit(() => {
         for (const k of keys) delete S.data.items[k];
         if (S.sel?.cat && under(S.sel.cat, top)) S.sel = null;
+        S.picks = S.picks.filter(p => !under(p.cat, top));
+        fixPicks();
     });
 }
 
@@ -357,14 +387,15 @@ function removeCommon(name)
 const usersOf = (name) => Object.entries(S.data.items).flatMap(([cat, list]) => list.flatMap((it, i) => it.common === name ? [{cat, i, it}] : []));
 
 // ---------- 畫面 ----------
-let drag = null;           // 物品 {cat, i}、分類 {top}
+let drag = null;           // 物品 {cat, i}、整批物品 {many}、分類 {top}
+const dragged = (d) => d.many ?? [d];
 
 // 物品列只收物品
 function dropTarget(el, to)
 {
     el.ondragover = (e) => {if (drag && !drag.top) {e.preventDefault(); el.classList.add('drop');}};
     el.ondragleave = () => el.classList.remove('drop');
-    el.ondrop = (e) => {e.preventDefault(); el.classList.remove('drop'); const d = drag; drag = null; if (d && !d.top) moveItem(d, to);};
+    el.ondrop = (e) => {e.preventDefault(); el.classList.remove('drop'); const d = drag; drag = null; if (d && !d.top) moveItems(dragged(d), to);};
 }
 
 // 分類標題：物品放最後；分類看放在上／中／下段
@@ -388,14 +419,39 @@ function catDrop(el, cat)
         const d = drag;
         drag = null;
         if (d.top) moveCat(d.top, cat, zone(e));
-        else moveItem(d, {cat, i: S.data.items[cat].length});
+        else moveItems(dragged(d), {cat, i: S.data.items[cat].length});
     };
 }
 
 const indent = (depth) => `padding-left: ${4 + depth * 14}px`;
 
 // 再點一次選到的就取消選擇
-const pick = (mode, sel) => {S.mode = mode; S.sel = sel; render();};
+const pick = (mode, sel) => {S.mode = mode; S.sel = sel; S.picks = []; render();};
+
+let shown = [];             // 清單上看得到的物品，照畫面順序，給 Shift 範圍跟整批拖曳排序用
+const order = (p) => shown.findIndex(s => same(s, p));
+const picked = (p) => S.picks.some(s => same(s, p));
+
+// Ctrl＋點加減、Shift＋點從起點選到這裡（照畫面順序、可跨分類）
+function clickItem(e, me)
+{
+    const cur = S.mode === 'items' && S.sel ? S.sel : null;
+    if (e.shiftKey && cur && order(cur) >= 0)
+    {
+        const [a, b] = [order(cur), order(me)].sort((x, y) => x - y);
+        S.picks = shown.slice(a, b + 1);
+    }
+    else if (e.ctrlKey || e.metaKey)
+    {
+        const base = S.picks.length ? S.picks : cur ? [cur] : [];
+        S.picks = base.some(s => same(s, me)) ? base.filter(s => !same(s, me)) : [...base, me];
+        S.sel = picked(me) ? me : S.picks.at(-1) ?? null;
+    }
+    else return pick('items', !multi() && cur && same(cur, me) ? null : me);
+    S.mode = 'items';
+    fixPicks();
+    render();
+}
 
 // 搜尋中全部展開
 const folded = (key) => !S.search && S.fold.has(key);
@@ -410,8 +466,14 @@ function groupHead(key, label, title, depth, ...buttons)
         for (const k of keys)
         {
             if (!fold) S.fold.delete(k);
-            else {S.fold.add(k); if (inside(k)) S.sel = null;}
+            else
+            {
+                S.fold.add(k);
+                if (inside(k)) S.sel = null;
+                if (k !== COMMON) S.picks = S.picks.filter(p => !under(p.cat, k));
+            }
         }
+        fixPicks();
         render();
     };
     return h('div', {class: 'group', style: indent(depth), title: `${title}，Alt＋點${key === COMMON ? '全部' : '連子分類'}`, onclick: (e) => {if (!e.target.closest('button')) toggle(e.altKey);}},
@@ -438,11 +500,14 @@ function itemRow(cat, i, depth)
 {
     const it = S.data.items[cat][i];
     const lost = it.common && !(it.common in S.data.common);
-    const on = S.mode === 'items' && S.sel?.cat === cat && S.sel.i === i;
-    const row = h('div', {class: `item${on ? ' sel' : ''}`, style: indent(depth), draggable: 'true', onclick: () => pick('items', on ? null : {cat, i})},
+    const me = {cat, i};
+    const on = multi() ? picked(me) : S.mode === 'items' && !!S.sel && same(S.sel, me);
+    shown.push(me);
+    const row = h('div', {class: `item${on ? ' sel' : ''}`, style: indent(depth), draggable: 'true', title: 'Ctrl＋點多選、Shift＋點選範圍', onclick: (e) => clickItem(e, me)},
         h('span', {class: 'id'}, it.name || '（未命名）'),
         lost && h('span', {class: 'mark missing', title: `共用「${it.common}」遺失`}, '⚠'));
-    row.ondragstart = (e) => {drag = {cat, i}; e.dataTransfer.effectAllowed = 'move';};
+    // 拖選到的其中一個＝整批照畫面順序搬
+    row.ondragstart = (e) => {drag = multi() && picked(me) ? {many: [...S.picks].sort((a, b) => order(a) - order(b))} : me; e.dataTransfer.effectAllowed = 'move';};
     row.ondragend = () => {drag = null;};
     dropTarget(row, {cat, i});
     return row;
@@ -452,6 +517,7 @@ function itemRow(cat, i, depth)
 function drawItemList()
 {
     const q = S.search.toLowerCase(), kids = tree(S.data.items);
+    shown = [];
     const hit = (it) => `${it.name}\n${it.file ?? ''}\n${it.desc}`.toLowerCase().includes(q);
     const total = (p) => S.data.items[p].length + kids.get(p).reduce((n, c) => n + total(c), 0);
     const draw = (cat, depth, all) => {
@@ -528,6 +594,26 @@ function drawItem()
     ];
 }
 
+// 多選：批次改共用、批次刪除
+function drawMulti()
+{
+    const sorted = [...S.picks].sort((a, b) => order(a) - order(b));
+    const select = h('select', {onchange: (e) => {if (e.target.value !== '\0') setPicks('common', e.target.value);}},
+        h('option', {value: '\0'}, '（不變）'),
+        h('option', {value: ''}, '（無）'),
+        Object.keys(S.data.common).map(k => h('option', {value: k}, k)));
+    return [
+        h('div', {class: 'head'},
+            h('span', {class: 'bigid'}, `已選 ${S.picks.length} 個物品`),
+            h('span', {class: 'grow'}),
+            h('button', {onclick: () => {S.picks = []; S.sel = null; render();}}, '取消選取'),
+            h('button', {onclick: removePicks}, '刪除')),
+        h('div', {class: 'hint'}, '拖曳其中一個＝整批照順序搬'),
+        h('div', {class: 'fields'}, h('span', {class: 'k'}, '共用'), h('div', null, select)),
+        h('div', {class: 'users'}, ul(sorted.map(p => h('a', {onclick: () => pick('items', p)}, `${p.cat}／${S.data.items[p.cat][p.i].name || '（未命名）'}`)))),
+    ];
+}
+
 function drawCommon()
 {
     const name = S.sel, users = usersOf(name);
@@ -540,7 +626,7 @@ function drawCommon()
         h('textarea', {'data-k': 'ctext', rows: 12, value: S.data.common[name], onchange: (e) => commit(() => {S.data.common[name] = e.target.value;})}),
         h('div', {class: 'title'}, `用到的物品（${users.length}）`),
         users.length
-            ? h('div', {class: 'users'}, ul(users.map(u => h('a', {onclick: () => {S.mode = 'items'; S.sel = {cat: u.cat, i: u.i}; render();}}, `${u.cat}／${u.it.name || '（未命名）'}`))))
+            ? h('div', {class: 'users'}, ul(users.map(u => h('a', {onclick: () => pick('items', {cat: u.cat, i: u.i})}, `${u.cat}／${u.it.name || '（未命名）'}`))))
             : h('div', {class: 'dim'}, '（沒有）'),
     ];
 }
@@ -558,7 +644,7 @@ function render()
     SH.setDirty(isDirty());
     $('list').replaceChildren(...(has ? [...drawCommonList().flat(), ...drawItemList()] : []));
     const body = !has ? [h('div', {class: 'dim'}, S.root ? '' : '要從 /tools/ 開、選好專案資料夾')]
-        : S.mode === 'items' ? (selItem() ? drawItem() : [h('div', {class: 'dim'}, '左邊選一個物品')])
+        : S.mode === 'items' ? (multi() ? drawMulti() : selItem() ? drawItem() : [h('div', {class: 'dim'}, '左邊選一個物品')])
         : S.sel in S.data.common ? drawCommon() : [h('div', {class: 'dim'}, '左邊選一個共用')];
     $('view').replaceChildren(...body);
     if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
@@ -594,5 +680,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__pe = {S, setRoot, setPath, load, save, compose, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, setItem,
+window.__pe = {S, setRoot, setPath, load, save, compose, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, moveItems, setItem, setPicks, removePicks,
                addCat, renameCat, removeCat, moveCat, normItems, addCommon, renameCommon, removeCommon, usersOf};
