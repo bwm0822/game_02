@@ -2413,6 +2413,8 @@ function refreshAuto(m)
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
+    $('auLoad').disabled = $('auItem').disabled;
+    $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '照 equip.sprite 找 item，載入擺放（scale% 不動）' : '拆完才能載入';
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
@@ -2517,6 +2519,10 @@ const treeOpt = {
         // 右鍵在已選的列上＝整批，在沒選的列上＝只有那一張
         ...(/\.png$/i.test(f.fh.name) ? [['批次存武器到 item…', () => saveBatch(picked.has(f.row) ? [...picked].map(r => r.file) : [f]).catch(err => status(err.message))]] : []),
     ]),
+    dirMenu: (e, w) => ctxMenu(e.clientX, e.clientY, [
+        ['新增資料夾', () => startNewDir(w).catch(err => status(err.message))],
+        ...(w.dataset.path ? [['刪除', () => deleteDir(w).catch(err => status(err.message))]] : []),
+    ]),
     move: true,
 };
 
@@ -2615,6 +2621,7 @@ function treeNode(dir, label, path, depth, opt, open)
 {
     const wrap = el('div', 'tdir'), row = el('div', 'row dir'), kids = el('div');
     Object.assign(wrap.dataset, {path, name: dir.name});
+    Object.assign(wrap, {fsDir: dir, depth});
     row.style.paddingLeft = `${depth * 12 + 4}px`;
     row.title = label;
     let loaded = false, expanded = false;
@@ -2679,6 +2686,8 @@ function treeNode(dir, label, path, depth, opt, open)
         await list();
     };
     row.onclick = () => {opt.onDir?.(dir, path, row); toggle();};
+    if (opt.dirMenu) row.oncontextmenu = (e) => {e.preventDefault(); opt.dirMenu(e, wrap);};
+    wrap.expand = () => toggle(true);
     wrap.append(row, kids);
     toggle(open);
     return wrap;
@@ -2787,6 +2796,75 @@ function startRename({fh, dir, path, row, node})
         else if (e.key === 'Escape') end(false);
     };
     inp.onblur = () => end(false);
+}
+
+// ---------- 資料夾：新增／刪除空的 ----------
+
+// 在資料夾節點（展開）最上面插一列輸入框，Enter 建立、Esc／失焦取消；在存檔對話框的 form 裡，Enter／Esc 要擋掉送出和關閉
+async function startNewDir(w, done)
+{
+    await w.expand();
+    const r = el('div', 'row dir'), inp = el('input');
+    r.style.paddingLeft = `${(w.depth + 1) * 12 + 4}px`;
+    r.append('📁 ', inp);
+    w.lastChild.prepend(r);
+    inp.value = '新資料夾';
+    inp.focus();
+    inp.select();
+    let ended = false;
+    const end = async (go) => {
+        if (ended) return;
+        ended = true;
+        r.remove();
+        const name = inp.value.trim();
+        if (!go || !await createDir(w, name)) return;
+        await w.reload();
+        const k = [...w.lastChild.children].find(x => x.classList.contains('tdir') && x.dataset.name === name);
+        if (k) done?.(k);
+    };
+    inp.onclick = (e) => e.stopPropagation();
+    inp.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter' || e.key === 'Escape') e.preventDefault();
+        if (e.key === 'Enter') end(true).catch(err => status(err.message));
+        else if (e.key === 'Escape') end(false);
+    };
+    inp.onblur = () => end(false);
+}
+
+async function createDir(w, name)
+{
+    const at = join(w.dataset.path, name);
+    if (!name || /[\\/:*?"<>|]/.test(name) || /^\.+$/.test(name)) return status(`資料夾名稱不合法：「${name}」`), false;
+    const {dirs, files} = await FS.listDir(w.fsDir);
+    if ([...dirs, ...files].some(h => h.name.toLowerCase() === name.toLowerCase())) return status(`${at} 已經存在，沒有新增`), false;
+    await w.fsDir.getDirectoryHandle(name, {create: true});
+    status(`已新增資料夾 ${at}`);
+    return true;
+}
+
+// 只刪完全空的（連清單沒顯示的檔案也算），不問
+async function deleteDir(w)
+{
+    const {dirs, files} = await FS.listDir(w.fsDir), n = dirs.length + files.length;
+    if (n) return status(`${w.dataset.path} 裡面還有 ${n} 個項目，沒有刪除`);
+    const up = w.parentElement.closest('.tdir');
+    await up.fsDir.removeEntry(w.dataset.name);
+    await up.reload();
+    status(`已刪除資料夾 ${w.dataset.path}`);
+}
+
+// 照路徑一層層展開，回傳那個資料夾節點
+async function treeDir(box, path)
+{
+    let w = box.querySelector('.tdir');
+    for (const seg of path.split('/').filter(Boolean))
+    {
+        if (!w) break;
+        await w.expand();
+        w = [...w.lastChild.children].find(k => k.classList.contains('tdir') && k.dataset.name === seg);
+    }
+    return w ?? null;
 }
 
 async function renameFile({fh, dir, path, node}, to)
@@ -2922,6 +3000,10 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         filter: (n) => n.toLowerCase().endsWith(ext),
         onFile: (f, d, p, row) => {pick(d, p, row); $('dlgName').value = f.name.slice(0, -ext.length);},
     });
+    // 建在目前的目的地底下，建好就選它
+    $('dlgNewDir').onclick = () => treeDir($('dlgTree'), sel.path)
+        .then(w => w && startNewDir(w, k => {pick(k.fsDir,k.dataset.path, k.firstChild); $('dlgName').focus();}))
+        .catch(e => status(e.message));
     $('dlgName').value = name;
     showPath();
     dlg.returnValue = '';
@@ -3309,6 +3391,31 @@ function itemDialog(parts, items, keys)
     return new Promise(res => dlg.addEventListener('close', () => {
         res(dlg.returnValue === 'ok' ? {rows, bake: fade && $('diBake').checked} : null);
     }, {once: true}));
+}
+
+// 每個零件照 itemMatch() 找 item，載入擺放（x/y，武器多 a/ox/oy；沒寫的 key 是預設值），scale% 不動；
+// 整次一步模式內 undo、寫回全域預設，一個都沒對到（或都沒變）不記
+async function loadItems()
+{
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const items = await readGameJson('item.json');
+    const rows = [], hit = [], miss = [], warn = [];
+    for (const part of m.parts)
+    {
+        const id = itemMatch(items, part.P, part.C.name), e = id && items[id].equip;
+        if (!e) {miss.push(part.C.name); continue;}
+        hit.push(`${part.C.name} ← ${id}`);
+        if (e.scale !== undefined && e.scale !== S.scale) warn.push(`${id} 的 scale ${e.scale} ≠ ${S.scale}`);
+        rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0,
+                          ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
+    }
+    if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
+    const diff = rows.filter(([part, row]) => !autoSame(part.P, row, autoRow(part)));
+    if (diff.length) autoStep(m);
+    for (const [part, row] of diff) autoApply(m, part, row, false);
+    status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
+    refreshAll();
 }
 
 async function saveItems()
@@ -3912,6 +4019,7 @@ document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
 $('auItem').onclick = () => saveItems().catch(e => status(e.message));
+$('auLoad').onclick = () => loadItems().catch(e => status(e.message));
 
 S.icon = iconLoad();
 for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => true], ['icFill', 'fill', v => v > 0 && v <= 100]])
@@ -3977,5 +4085,5 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
+               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
                deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch};

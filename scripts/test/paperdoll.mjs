@@ -1253,6 +1253,70 @@ run('paperdoll', async t => {
     t.eq('存到 item：手動選過的列不被別列帶走', si.manual, 'armor-hvy-2');
     t.eq('存到 item：更新ICON 勾了補上空的 icon、沒勾就不動', JSON.stringify(si.icons), JSON.stringify(['src-helmet', 'src-helmet', 'keep', 'src-armor', false]));
 
+    // 載入 item：照 equip.sprite 對 item，載入擺放（scale% 不動），一步模式內 undo、寫回全域預設
+    const li = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const key = (id) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: id, ctrlKey: true, bubbles: true}));
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        await pd.setAssets(assets);
+        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none'});
+        pd.setMode('auto');
+        out.before = $('auLoad').disabled;
+        pd.applyMode();
+        out.after = $('auLoad').disabled;
+        const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C, A = m.parts.find(p => p.P.key === 'armor').C;
+        const pct = H.ops.at(-1).pct, at = (C) => [C.x * pd.S.scale, C.y * pd.S.scale];
+        const a0 = at(A);
+
+        await put(json, 'item.json', JSON.stringify({x1: {cat: 'CAT_FOOD'}}, null, 2));
+        await pd.loadItems();
+        out.none = [$('status').textContent, m.hist.length];
+
+        await put(json, 'item.json', JSON.stringify({
+            helmet_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-helmet-front', back: 'src-helmet-back', scale: 0.5, x: 3, y: -4}},
+            chest_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-armor', scale: 0.25, x: 9, y: 9}},
+        }, null, 2));
+        await pd.loadItems();
+        out.load = [...at(H), H.ops.at(-1).pct === pct, pd.S.auto.helmet.x, pd.S.auto.helmet.y, at(A).join() === a0.join(), m.hist.length, $('status').textContent];
+        await pd.loadItems();
+        out.again = m.hist.length;
+        key('z');
+        out.undo = [...at(H), m.hist.length];
+        pd.cancelMode();
+
+        const w = document.createElement('canvas'); w.width = 100; w.height = 200;
+        w.getContext('2d').fillStyle = '#ff0000'; w.getContext('2d').fillRect(40, 20, 20, 160);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(w), 'sword-1', null, null, null);
+        pd.autoSet({...pd.S.auto, kind: 'weapon'});
+        pd.setMode('auto');
+        pd.applyMode();
+        const W = pd.S.mode.parts[0].C;
+        Object.assign(W, {ox: 0.3, oy: 0.2, a: 40});
+        await put(json, 'item.json', JSON.stringify({'sword-1': {cat: 'CAT_WEAPON', equip: {sprite: 'sword-1', scale: 0.25, x: 2, y: 3, a: 15}}}, null, 2));
+        await pd.loadItems();
+        const d = pd.S.auto.weapon.sword;
+        out.weapon = [...at(W), W.a, W.ox, W.oy, d.x, d.y, d.a, d.ox, d.oy];
+        pd.cancelMode();
+        return out;
+    });
+    t.eq('載入 item：拆完才能按', JSON.stringify([li.before, li.after]), JSON.stringify([true, false]));
+    t.eq('載入 item：一個都沒對到只提示、不記步驟', JSON.stringify(li.none), JSON.stringify(['src-helmet、src-armor 找不到對應的 item', 0]));
+    t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、scale% 不動、寫回預設、一步、scale 對不上警告', JSON.stringify(li.load), JSON.stringify([
+        3, -4, true, 3, -4, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item；注意：helmet_01 的 scale 0.5 ≠ 0.25']));
+    t.eq('載入 item：數字沒變不記步驟', li.again, 1);
+    t.check('載入 item：undo 一步退回', li.undo[2] === 0 && (li.undo[0] !== 3 || li.undo[1] !== -4));
+    t.eq('載入 item：武器多載 a/ox/oy，沒寫的 key 當預設、寫回目前分類', JSON.stringify(li.weapon), JSON.stringify([2, 3, 15, 0.5, 1, 2, 3, 15, 0.5, 1]));
+
     // 自動（武器）：透明底單把武器，一個零件，多調 a/ox/oy，存到 textures/weapons、a 不寫
     const aw = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
@@ -1692,6 +1756,98 @@ run('paperdoll', async t => {
     t.eq('改名專案：檔案改名、開著的圖層歸屬跟著改', JSON.stringify(fm.projRename), JSON.stringify([true, 'q', 'q']));
     t.eq('刪除專案：圖層保留、脫鉤、標未存', JSON.stringify(fm.projDelete), JSON.stringify([false, null, '（未命名） *']));
     t.eq('刪除 png：連 json 刪、確認列出引用的專案、開著的圖層清掉 srcPath', JSON.stringify(fm.deleted), JSON.stringify(['b.png', true, true, null]));
+
+    // 資料夾右鍵：新增資料夾（原地編輯）／刪除空的；存檔對話框的「新資料夾」建好就選它
+    const nd = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), dir = await root.getDirectoryHandle('nd', {create: true});
+        await (await dir.getFileHandle('f.txt', {create: true})).createWritable().then(w => w.close());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame(); return f();};
+        const dirs = async (d) => {const n = []; for await (const [k, h] of d.entries()) if (h.kind === 'directory') n.push(k); return n.sort().join();};
+        const dirRow = (box, path) => box.querySelector(`.tdir[data-path="${path}"] > .row.dir`);
+        const menu = (r, label) => {
+            r.dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, clientX: 10, clientY: 10}));
+            const items = [...document.querySelectorAll('.ctx div')], names = items.map(d => d.textContent).join();
+            if (label) items.find(d => d.textContent === label).click();
+            else document.querySelector('.ctx').close();
+            return names;
+        };
+        const input = (box) => until(() => box.querySelector('.tdir > div > .row.dir > input'));
+        const key = (inp, k) => inp.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, cancelable: true}));
+        const status = () => $('status').textContent;
+        const tree = $('tree');
+
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.setRoot(root);
+        await until(() => dirRow(tree, 'nd'));
+        out.rootMenu = menu(dirRow(tree, ''));
+        out.dirMenu = menu(dirRow(tree, 'nd'));
+
+        menu(dirRow(tree, 'nd'), '新增資料夾');
+        let inp = await input(tree);
+        out.def = [inp.value, inp.selectionStart, inp.selectionEnd];
+        key(inp, 'Escape');
+        out.esc = [!tree.querySelector('.row.dir > input'), await dirs(dir)];
+
+        for (const [name, k] of [['a', 'ok'], ['A', 'clash'], ['f.TXT', 'file'], ['x:y', 'bad']])
+        {
+            $('status').textContent = '';
+            menu(dirRow(tree, 'nd'), '新增資料夾');
+            inp = await input(tree);
+            if (!inp) {out[k] = 'no input'; continue;}
+            inp.value = name;
+            key(inp, 'Enter');
+            await until(() => !tree.querySelector('.row.dir > input') && status());
+            out[k] = status();
+        }
+        await until(() => dirRow(tree, 'nd/a'));
+        out.made = [await dirs(dir), !!dirRow(tree, 'nd/a')];
+        if (!out.made[1]) return out;
+
+        await (await dir.getDirectoryHandle('a')).getFileHandle('.keep', {create: true});
+        menu(dirRow(tree, 'nd/a'), '刪除');
+        await until(() => status().includes('沒有刪除'));
+        out.notEmpty = [status(), await dirs(dir)];
+        await (await dir.getDirectoryHandle('a')).removeEntry('.keep');
+        menu(dirRow(tree, 'nd/a'), '刪除');
+        await until(() => !dirRow(tree, 'nd/a'));
+        out.deleted = [status(), await dirs(dir)];
+
+        const c = document.createElement('canvas'); c.width = c.height = 4;
+        pd.addLayer(await createImageBitmap(c), 'L', dir, 'nd', null);
+        const p = pd.saveLayer();
+        await until(() => $('dlgSave').open);
+        out.dlgFrom = $('dlgPath').textContent;
+        $('dlgNewDir').click();
+        const box = $('dlgTree');
+        inp = await input(box);
+        inp.value = 'out';
+        key(inp, 'Enter');
+        await until(() => $('dlgPath').textContent.endsWith('out'));
+        // OPFS 根目錄名字是空的，dlgPath 就是相對路徑；之前的測試留下 output/ 的話預設目的地是它
+        const want = out.dlgFrom ? `${out.dlgFrom}/out` : 'out';
+        const base = out.dlgFrom ? await root.getDirectoryHandle(out.dlgFrom.split('/')[0]) : root;
+        const made = await base.getDirectoryHandle('out').catch(() => null);
+        out.dlg = [$('dlgPath').textContent === want, !!box.querySelector(`.tdir[data-path="${want}"] > .row.dir.sel`), document.activeElement === $('dlgName'), $('dlgSave').open, !!made];
+        $('dlgSave').close('cancel');
+        await p;
+        if (made) await base.removeEntry('out');
+        await root.removeEntry('nd', {recursive: true});
+        return out;
+    });
+    t.eq('資料夾右鍵：根節點只有新增', nd.rootMenu, '新增資料夾');
+    t.eq('資料夾右鍵：一般資料夾新增＋刪除', nd.dirMenu, '新增資料夾,刪除');
+    t.eq('新增資料夾：預設「新資料夾」全選', JSON.stringify(nd.def), JSON.stringify(['新資料夾', 0, 4]));
+    t.eq('新增資料夾：Esc 取消不建', JSON.stringify(nd.esc), JSON.stringify([true, '']));
+    t.eq('新增資料夾：Enter 建立', nd.ok, '已新增資料夾 nd/a');
+    t.eq('新增資料夾：跟資料夾撞名（大小寫不分）拒絕', nd.clash, 'nd/A 已經存在，沒有新增');
+    t.eq('新增資料夾：跟檔案撞名拒絕', nd.file, 'nd/f.TXT 已經存在，沒有新增');
+    t.eq('新增資料夾：不合法名稱拒絕', nd.bad, '資料夾名稱不合法：「x:y」');
+    t.eq('新增資料夾：重列後出現', JSON.stringify(nd.made), JSON.stringify(['a', true]));
+    t.eq('刪除資料夾：不空（連隱藏檔）拒絕', JSON.stringify(nd.notEmpty), JSON.stringify(['nd/a 裡面還有 1 個項目，沒有刪除', 'a']));
+    t.eq('刪除資料夾：空的直接刪', JSON.stringify(nd.deleted), JSON.stringify(['已刪除資料夾 nd/a', '']));
+    t.eq('存檔對話框：新資料夾建在目的地底下、建好選它、游標回檔名、對話框不關', JSON.stringify(nd.dlg), JSON.stringify([true, true, true, true, true]));
 
     // 檔案樹多選＋拖曳搬檔（png 連同名 .json、專案 src、開著的圖層、專案檔歸屬跟著動；撞名整批拒絕）
     const mv = await ev(async () => {
