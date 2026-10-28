@@ -5,8 +5,8 @@ import '../common/splitter.js';
 import {createFold} from '../common/fold.js';
 import {listTextures, scan} from './scan.js';
 
-// 整理 textures/：看哪些圖沒人引用；一般資料夾的「刪除」是搬進 tbd/（保留相對路徑），tbd/ 裡才真的刪
-const UNUSED = '#unused', TBD = 'textures/tbd';
+// 整理 textures/：看哪些圖沒人引用；一般資料夾的「刪除」是搬進 .tbd/（保留相對路徑），.tbd/ 裡才真的刪
+const UNUSED = '#unused', TBD = 'textures/.tbd';
 const S = {
     root: null, assets: null,
     tex: [],            // listTextures()
@@ -57,7 +57,7 @@ async function rescan()
     S.refs = await scan(S.root);
     render();
     const n = S.tex.filter(isUnused).length, bad = S.tex.filter(isBad).length;
-    status(S.refs.scanned ? `${S.tex.length} 張、未使用 ${n}` + (bad ? `、tbd 裡還被引用 ${bad}` : '') : '沒有 src/，未使用不準');
+    status(S.refs.scanned ? `${S.tex.length} 張、未使用 ${n}` + (bad ? `、.tbd 裡還被引用 ${bad}` : '') : '沒有 src/，未使用不準');
 }
 
 function imgEl(e, cls)
@@ -91,7 +91,7 @@ function renderList()
         : h('span', {class: 'arrow'});
     const node = (id, name, n, {depth = 0, cls = '', bad = 0, pre = null} = {}) => h('div', {class: `node ${cls}` + (S.node === id ? ' sel' : ''), dataset: {node: id},
             style: `padding-left: ${6 + depth * 14}px`, onclick: () => {S.node = id; S.search = $('search').value = ''; render();}},
-        pre, h('span', null, name), bad > 0 && h('span', {class: 'cnt bad', title: 'tbd 裡還被引用的'}, `⚠ ${bad}`), h('span', {class: 'cnt'}, n));
+        pre, h('span', null, name), bad > 0 && h('span', {class: 'cnt bad', title: '.tbd 裡還被引用的'}, `⚠ ${bad}`), h('span', {class: 'cnt'}, n));
     $('list').replaceChildren(
         node(UNUSED, '未使用', S.refs ? S.tex.filter(isUnused).length : '…'),
         ...all.map((d, i) => {
@@ -169,7 +169,7 @@ function renderDetail()
         info,
         S.sel.size > 1 && h('div', {class: 'dim'}, `（共選了 ${S.sel.size} 張）`),
         h('div', {class: 'title'}, `引用（${S.refs ? refs.length : '…'}）`),
-        isBad(e) && h('div', {class: 'bad'}, '在 tbd/ 裡還被引用：遊戲載不到這張圖，是搬錯了還是要把引用拿掉？'),
+        isBad(e) && h('div', {class: 'bad'}, '在 .tbd/ 裡還被引用：遊戲載不到這張圖，是搬錯了還是要把引用拿掉？'),
         S.refs && !refs.length && h('div', {class: 'dim'}, '（沒找到；用字串組出來的 key 掃不到，刪之前自己再確認）'),
         refs.length > 0 && h('ul', {class: 'refs'}, refs.slice(0, LIMIT).map(r => h('li', null, r.text,
             r.go && h('a', {class: 'go', title: '跳過去', onclick: () => SH.gotoTab(...r.go)}, ' ↗')))),
@@ -180,7 +180,7 @@ function renderButtons()
 {
     const sel = selected(), out = sel.filter(e => !e.tbd), inTbd = sel.filter(e => e.tbd);
     const set = (id, n, txt) => {$(id).disabled = !n; $(id).textContent = n ? `${txt}（${n}）` : txt;};
-    set('btnTbd', out.length, '搬到 tbd');
+    set('btnTbd', out.length, '搬到 .tbd');
     set('btnBack', inTbd.length, '搬回原位');
     set('btnDel', inTbd.length, '刪除');
 }
@@ -215,7 +215,7 @@ async function pruneEmpty(dir, stop)
 }
 
 const filesOf = (e) => [nameOf(e.path), ...e.metas];
-// textures/a/b ↔ textures/tbd/a/b
+// textures/a/b ↔ textures/.tbd/a/b
 const join = (a, b) => b ? `${a}/${b}` : a;
 const tbdDir = (e) => join(TBD, e.dir.slice('textures/'.length));
 const backDir = (e) => join('textures', e.dir.slice(TBD.length + 1));
@@ -257,8 +257,8 @@ async function toTbd(list = selected().filter(e => !e.tbd))
 {
     if (!list.length) return;
     const body = refsBody(list);
-    if (body.length && await ask(`搬 ${list.length} 張到 tbd/`, body, [['ok', '還是要搬'], ['cancel', '取消']]) !== 'ok') return;
-    return run(list, (e) => move(e, tbdDir(e)), '搬到 tbd/');
+    if (body.length && await ask(`搬 ${list.length} 張到 .tbd/`, body, [['ok', '還是要搬'], ['cancel', '取消']]) !== 'ok') return;
+    return run(list, (e) => move(e, tbdDir(e)), '搬到 .tbd/');
 }
 
 async function back(list = selected().filter(e => e.tbd))

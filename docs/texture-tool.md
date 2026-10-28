@@ -1,11 +1,11 @@
 # 圖片工具（tools/texture/）
 
-殼的「圖片」分頁：整理 `public/assets/textures/`，看哪些圖沒人引用、被誰引用，把不要的搬進 `tbd/`、在 `tbd/` 裡真的刪掉。不改任何 json，引用只列不改。
+殼的「圖片」分頁：整理 `public/assets/textures/`，看哪些圖沒人引用、被誰引用，把不要的搬進 `.tbd/`、在 `.tbd/` 裡真的刪掉。不改任何 json，引用只列不改。
 
 ## 畫面
 
-- 左欄：「未使用」（`tbd/` 以外沒人引用的）＋資料夾樹（`textures/` 底下，`tbd/` 排最後，`minimap/` 不列，`textures/` 根目錄的圖只在搜尋／未使用看得到）；`tbd/` 裡還被引用的圖數字標紅 ⚠。
-- 中間：選的資料夾（含子資料夾）的縮圖；未使用的變淡，`tbd/` 裡還被引用的紅框（遊戲載不到 `tbd/`，等於已經缺圖）。點一下選取，Ctrl＋點加減，Shift＋點範圍；搜尋框比檔名、跨所有資料夾。有 `_sheet.json`／`_atlas.json` 的標 ▦。
+- 左欄：「未使用」（`.tbd/` 以外沒人引用的）＋資料夾樹（`textures/` 底下，`.tbd/` 排最後，`minimap/` 不列，`textures/` 根目錄的圖只在搜尋／未使用看得到）；`.tbd/` 裡還被引用的圖數字標紅 ⚠。
+- 中間：選的資料夾（含子資料夾）的縮圖；未使用的變淡，`.tbd/` 裡還被引用的紅框（遊戲載不到 `.tbd/`，等於已經缺圖）。點一下選取，Ctrl＋點加減，Shift＋點範圍；搜尋框比檔名、跨所有資料夾。有 `_sheet.json`／`_atlas.json` 的標 ▦。
 - 右欄：最後點的那張的大圖、路徑、尺寸、sheet 格數／atlas frame 數、引用清單；item／role／ability／fx／dialog／story 的引用有 ↗ 跳到那個分頁（`gotoTab`，story 去掉開頭的 `lines`）。
 
 ## 引用規則（`scan.js`）
@@ -20,8 +20,8 @@
 
 ## 操作（檔案操作，不進 undo）
 
-- 一般資料夾：「搬到 tbd」→ `textures/a/b/x.png` 搬到 `textures/tbd/a/b/x.png`，同名 `_sheet.json`／`_atlas.json` 一起搬；目標已存在就不搬。
-- `tbd/`：「搬回原位」（`tbd/` 以外已有同 key 的圖＝撞名、或原位已有同名檔就不搬）、「刪除」（`removeEntry`，一定確認、沒有資源回收筒）；做完往上清掉 `tbd/` 裡的空資料夾（`tbd/` 本身留著）。
+- 一般資料夾：「搬到 .tbd」→ `textures/a/b/x.png` 搬到 `textures/.tbd/a/b/x.png`，同名 `_sheet.json`／`_atlas.json` 一起搬；目標已存在就不搬。
+- `.tbd/`：「搬回原位」（`.tbd/` 以外已有同 key 的圖＝撞名、或原位已有同名檔就不搬）、「刪除」（`removeEntry`，一定確認、沒有資源回收筒）；做完往上清掉 `.tbd/` 裡的空資料夾（`.tbd/` 本身留著）。
 - 有被引用的圖，搬／刪前先列出引用確認，不擋。
 - `textures.json` 不用手動更新：dev server 監看 `textures/` 會自己重產，殼廣播後這裡重列（見 [tools-shell.md](tools-shell.md)）。被 tsj 用路徑引用的圖搬走，`scripts/textures.js` 會報錯不產出，要把圖搬回來或改 tsj。
 

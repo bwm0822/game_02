@@ -53,8 +53,8 @@ src/
 public/         # 靜態資源（音效、地圖、JSON 資料）
   assets/textures/  # 所有圖檔：icons/props/natures/equips/items/roles{parts,npcs,monsters,animals,boss}/others、maps/{tiles,buildings}；
                     # 第三方素材包保留包資料夾（如 items/32rogues/）；minimap/ 是 scripts/minimap.js 產出；
-                    # tbd/ 放沒用到的圖（保留原相對路徑，prod build 由 vite/droptbd.mjs 刪掉不打包）
-                    # texture key 一律是檔名（去副檔名），整個 textures/（含 maps/、不含 tbd/、minimap/）不能撞名；資料只寫 key 不寫路徑
+                    # .tbd/ 放沒用到的圖（保留原相對路徑，prod build 由 vite/droptbd.mjs 刪掉不打包）
+                    # texture key 一律是檔名（去副檔名），整個 textures/（含 maps/、不含 .tbd/、minimap/）不能撞名；資料只寫 key 不寫路徑
   assets/tilesets/  # Tiled 外部 tileset（*.tsj）：圖片來源＋格子屬性 collide/weight/block；image 相對 .tsj（../textures/...），
                     # src/core/tilemap.js 解析成相對 assets 的路徑（Phaser 不支援外部 tileset 跟 template，由 tilemap.js 合併）
 vite/           # Vite 設定檔（config.dev.mjs、config.prod.mjs、config.prod_app.mjs）
@@ -117,7 +117,7 @@ dist/           # 建置輸出（勿手動修改）
 - **能力編輯器**：`tools/ability/`（殼的「能力」分頁）同時編 `ability.json`／`ab_tree.json`／`local.json`（樹名）／`role.json`（只在技能改名刪除時），左樹清單、中樹畫布（照 `uiability.js` 畫，拖節點移格子、拖到左欄樹列／「未分類」換分類、藍點拉線加 `refs`、點線 Del 刪、空格／節點／樹列右鍵增刪改名、「＋ 新技能」）、右技能表單（`tools/ability/schema.js`，`hits`/`effects` 卡片、說明 token 預覽與檢查）；前置要在子的上面（遊戲的線只往下畫）；修改前請先參考 [docs/ability-tool.md](docs/ability-tool.md)
 - **試穿**：`tools/fit/`（殼的「試穿」分頁）選紙娃娃型角色、五格（武器/頭盔/護甲/手套/靴子）試穿（不寫回 `inv.equips`），用數字調 `role.json` 的 `body`/`head`/`hair`/`hand` 和 `item.json` 的 `equip` 擺放；「動畫」分頁編 **`anim.json`（手寫來源檔）** 的武器動畫（關鍵影格＝武器原點 `ox/oy` 的位置＋sprite 角度，`follow`/`pivot`/`ready`/`hit`/`hold`/`back`），畫布拖武器／旋轉把手／支點、時間軸拖影格；三檔一起 undo、各自合併存檔；動畫數學在 `src/core/pose.js`（純函式，`COM_Anim.anim_play()` 跟工具共用，改動作改這裡），普攻看武器 `item.json` 的 `anim`（如匕首 `stab`），技能用 `anim` 選動畫（近戰／遠程型沒寫退回武器的，預設見 `com_action.js`）；換武器自動切到它的動畫、改名連帶改道具 `anim`；修改前請先參考 [docs/fit-tool.md](docs/fit-tool.md)
 - **提示詞**：`tools/prompt/`（殼的「提示詞」分頁）管理 AI 生圖提示詞，檔案路徑可設（預設 `prompts/prompt.json`，`{items:{分類路徑:[{name,file,desc,common}]}, common:{名稱:文字}}`，分類路徑用 `/` 分層、存檔補齊祖先照前序排，`file`＝生圖存檔名不含副檔名），common 支援 `{desc}`/`{name}`/`{file}` 佔位符（沒填 file 時含 `{file}` 的行整行拿掉）、沒有就 `desc+'\n'+common`，只複製不打 API；修改前請先參考 [docs/prompt-tool.md](docs/prompt-tool.md)
-- **圖片工具**：`tools/texture/`（殼的「圖片」分頁）看 `textures/` 哪些圖沒人引用、被誰引用（只認放圖的地方：資料 json 的 `icon`/`sprite`/`back`/`img` 欄位（`scan.js` 的 `FIELDS`，加了放圖的新欄位要補）、Tiled 屬性 `value`、tsj 的 `image` 比路徑、src 字串要是 `key:frame` 或同行有圖片相關字），一般資料夾「搬到 tbd」（保留相對路徑、`_sheet`/`_atlas.json` 一起搬），`tbd/` 裡才能「搬回原位」或真的刪；`tbd/` 裡還被引用的標紅；修改前請先參考 [docs/texture-tool.md](docs/texture-tool.md)
+- **圖片工具**：`tools/texture/`（殼的「圖片」分頁）看 `textures/` 哪些圖沒人引用、被誰引用（只認放圖的地方：資料 json 的 `icon`/`sprite`/`back`/`img` 欄位（`scan.js` 的 `FIELDS`，加了放圖的新欄位要補）、Tiled 屬性 `value`、tsj 的 `image` 比路徑、src 字串要是 `key:frame` 或同行有圖片相關字），一般資料夾「搬到 .tbd」（保留相對路徑、`_sheet`/`_atlas.json` 一起搬），`.tbd/` 裡才能「搬回原位」或真的刪；`.tbd/` 裡還被引用的標紅；修改前請先參考 [docs/texture-tool.md](docs/texture-tool.md)
 - **圖片載入（自動）**：Preloader 不手寫 `load.image`／`spritesheet`／`atlas`，改讀 `public/assets/json/textures.json`（產出檔，`node scripts/textures.js` 掃 `textures/` 產生；`predev*`／`prebuild*` 自動跑、run_all 也跑、工具殼「更新圖片清單」按鈕走 vite dev 的 `POST /__tools/textures`）；同資料夾有 `<key>_atlas.json` 是 atlas，有手寫的 `<key>_sheet.json`（`{w, h?, margin?, spacing?}`）是 spritesheet，其他是單張圖（json 配不到圖、兩個都有、`maps/` 底下放 `_sheet.json` 都會報錯）；`textures/maps/` 不進清單，由 `tilemap.js` 進地圖時照 *.tsj 載（tsj 的 `name` 要等於檔名，集合型 tile 用檔名當 key，Preloader 載過的 Phaser 會跳過不重載）；撞名、`_sheet.json` 跟 tsj 格子不一致、tsj name 不等於檔名都會報錯不產出；Phaser 的 spritesheet 只扣一次 margin、tileset 扣兩次，有 margin 的圖要補邊讓兩邊格數一樣（如 `cursors.png`）
 - **全域常數**：集中定義於 `src/core/setting.js`（`GM`、`ORDER`、`UI` 等）
 - **Debug 輸出**：使用 `dlog(tag, ...)` 搭配 `T` 旗標（定義於 `src/core/debug.js`）；正式版不留 `console.log`

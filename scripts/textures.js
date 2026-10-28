@@ -1,12 +1,12 @@
 // 掃 public/assets/textures/ 產生 textures.json（Preloader 開機載入清單、工具選圖器也讀它）
 // key 是檔名（去副檔名），整個 textures/ 不能撞名；同資料夾有 <key>_atlas.json 的是 atlas，有 <key>_sheet.json 的是 spritesheet，其他是單張圖
-// tbd/、minimap/ 不收；maps/ 只檢查撞名，不進清單（由 tilemap 進地圖時照 *.tsj 載）
+// .tbd/、minimap/ 不收；maps/ 只檢查撞名，不進清單（由 tilemap 進地圖時照 *.tsj 載）
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, relative, dirname, basename, extname, resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SKIP = new Set(['tbd', 'minimap']);
+const SKIP = new Set(['.tbd', 'minimap']);
 const LAZY = 'maps';
 const IMG = new Set(['.png', '.jpg', '.jpeg']);
 const META = /^(.+)_(sheet|atlas)\.json$/;

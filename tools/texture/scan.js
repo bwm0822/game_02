@@ -47,7 +47,7 @@ export async function listTextures(assets)
         const dir = p.slice(0, p.lastIndexOf('/'));
         if (!names.has(dir)) names.set(dir, new Set());
         names.get(dir).add(fh.name);
-        if (IMG.test(fh.name)) out.push({path: p, key: fh.name.replace(IMG, ''), dir, tbd: p.startsWith('textures/tbd/')});
+        if (IMG.test(fh.name)) out.push({path: p, key: fh.name.replace(IMG, ''), dir, tbd: p.startsWith('textures/.tbd/')});
     }, (p) => p === 'textures/minimap');
     for (const e of out) e.metas = ['sheet', 'atlas'].map(k => `${e.key}_${k}.json`).filter(n => names.get(e.dir).has(n));
     return out.sort((a, b) => a.path.localeCompare(b.path));

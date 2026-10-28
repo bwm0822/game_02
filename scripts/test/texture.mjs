@@ -29,7 +29,7 @@ run('texture', async t => {
         const png = await new Promise(res => cv.toBlob(res));
         const proj = await dir(opfs, 'game');
         const T = 'public/assets/textures';
-        for (const p of ['equips/a', 'equips/b', 'icons/sh', 'maps/tiles/t', 'props/c', 'props/d', 'props/f', 'tbd/x/e', 'tbd/y/c', 'minimap/m', 'top'])
+        for (const p of ['equips/a', 'equips/b', 'icons/sh', 'maps/tiles/t', 'props/c', 'props/d', 'props/f', '.tbd/x/e', '.tbd/y/c', 'minimap/m', 'top'])
             await write(`${T}/${p}.png`, png);
         await write(`${T}/icons/sh_sheet.json`, '{"w": 2}');
         // b、d 只出現在不是放圖的地方（同名字串），要算未使用
@@ -58,7 +58,7 @@ run('texture', async t => {
         const arrowOf = (d) => document.querySelector(`#list .node[data-node="textures/${d}"] .arrow`);
         arrowOf('maps').click();
         out.fold = [nodes(), S.node, arrowOf('maps').textContent, $('list').textContent.includes('null')];
-        arrowOf('tbd').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
+        arrowOf('.tbd').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.foldAll = nodes();
         arrowOf('maps').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.unfoldAll = nodes() === out.nodes;
@@ -78,7 +78,7 @@ run('texture', async t => {
         let p = tx.toTbd([S.tex.find(e => e.key === 'sh')]);
         if (await dlg()) $('dlgAsk').close('ok');
         await p;
-        out.moved = [await exists(`${T}/tbd/equips/b.png`), await exists(`${T}/equips/b.png`), await exists(`${T}/tbd/icons/sh.png`), await exists(`${T}/tbd/icons/sh_sheet.json`), await exists(`${T}/icons/sh_sheet.json`)];
+        out.moved = [await exists(`${T}/.tbd/equips/b.png`), await exists(`${T}/equips/b.png`), await exists(`${T}/.tbd/icons/sh.png`), await exists(`${T}/.tbd/icons/sh_sheet.json`), await exists(`${T}/icons/sh_sheet.json`)];
         out.shBad = tx.isBad(S.tex.find(e => e.key === 'sh'));
         // 被引用的要確認，取消就不搬
         p = tx.toTbd([S.tex.find(e => e.key === 'a')]);
@@ -89,36 +89,36 @@ run('texture', async t => {
         p = tx.toTbd([S.tex.find(e => e.key === 'top')]);
         if (await dlg()) $('dlgAsk').close('ok');
         await p;
-        out.top = await exists(`${T}/tbd/top.png`);
+        out.top = await exists(`${T}/.tbd/top.png`);
 
         // 搬回原位：tbd 的空資料夾一起清掉；跟外面撞名的不搬
-        await tx.back([S.tex.find(e => e.path === 'textures/tbd/equips/b.png'), S.tex.find(e => e.path === 'textures/tbd/y/c.png'), S.tex.find(e => e.path === 'textures/tbd/top.png')]);
-        out.back = [await exists(`${T}/equips/b.png`), await dirExists(`${T}/tbd/equips`), await exists(`${T}/tbd/y/c.png`), await exists(`${T}/top.png`)];
+        await tx.back([S.tex.find(e => e.path === 'textures/.tbd/equips/b.png'), S.tex.find(e => e.path === 'textures/.tbd/y/c.png'), S.tex.find(e => e.path === 'textures/.tbd/top.png')]);
+        out.back = [await exists(`${T}/equips/b.png`), await dirExists(`${T}/.tbd/equips`), await exists(`${T}/.tbd/y/c.png`), await exists(`${T}/top.png`)];
         out.backMsg = $('status').textContent;
         // 原位已經有同名檔也不搬
         await write(`${T}/icons/sh.png`, png);
         await tx.relist();
-        await tx.back([S.tex.find(e => e.path === 'textures/tbd/icons/sh.png')]);
-        out.backExists = [await exists(`${T}/tbd/icons/sh.png`), await exists(`${T}/tbd/icons/sh_sheet.json`)];
+        await tx.back([S.tex.find(e => e.path === 'textures/.tbd/icons/sh.png')]);
+        out.backExists = [await exists(`${T}/.tbd/icons/sh.png`), await exists(`${T}/.tbd/icons/sh_sheet.json`)];
 
         // 刪除：一定確認
-        p = tx.remove([S.tex.find(e => e.path === 'textures/tbd/x/e.png')]);
+        p = tx.remove([S.tex.find(e => e.path === 'textures/.tbd/x/e.png')]);
         out.askDel = await dlg() && $('dlgAsk').textContent.includes('不能 undo') && $('dlgAsk').textContent.includes('it2.equip.sprite');
         $('dlgAsk').close('ok'); await p;
-        out.deleted = [await exists(`${T}/tbd/x/e.png`), await dirExists(`${T}/tbd/x`), await dirExists(`${T}/tbd`)];
+        out.deleted = [await exists(`${T}/.tbd/x/e.png`), await dirExists(`${T}/.tbd/x`), await dirExists(`${T}/.tbd`)];
         return out;
     });
 
-    t.eq('列出 textures/（不含 minimap/）', r.list, 'equips/a.png,equips/b.png,icons/sh.png,maps/tiles/t.png,props/c.png,props/d.png,props/f.png,tbd/x/e.png,tbd/y/c.png,top.png');
+    t.eq('列出 textures/（不含 minimap/）', r.list, '.tbd/x/e.png,.tbd/y/c.png,equips/a.png,equips/b.png,icons/sh.png,maps/tiles/t.png,props/c.png,props/d.png,props/f.png,top.png');
     t.eq('sheet 帶著 _sheet.json', r.metas, 'sh_sheet.json');
     t.eq('未使用：src 註解、src/old、textures.json、物件 key、不是放圖的欄位／src 行都不算', r.unused, 'b,d');
-    t.eq('tbd 裡還被引用的標紅', r.bad, 'textures/tbd/x/e.png,textures/tbd/y/c.png');
+    t.eq('tbd 裡還被引用的標紅', r.bad, 'textures/.tbd/x/e.png,textures/.tbd/y/c.png');
     t.eq('item.json 的引用 ↗ 跳道具分頁', r.goA, JSON.stringify([['item', ['it1']]]));
     t.eq('fx.json 的引用 ↗ 跳特效分頁', r.goF, JSON.stringify(['fx', ['burn']]));
     t.eq('tsj 的 image 用路徑引用', r.refT, 'tilesets/tiles.tsj：image');
-    t.eq('左欄：未使用、資料夾樹、tbd 最後', r.nodes, '#unused,equips,icons,maps,maps/tiles,props,tbd,tbd/x,tbd/y');
-    t.eq('點箭頭摺疊子資料夾、不換選取', JSON.stringify(r.fold), JSON.stringify(['#unused,equips,icons,maps,props,tbd,tbd/x,tbd/y', '#unused', '▸', false]));
-    t.eq('Alt＋點全部摺', r.foldAll, '#unused,equips,icons,maps,props,tbd');
+    t.eq('左欄：未使用、資料夾樹、tbd 最後', r.nodes, '#unused,equips,icons,maps,maps/tiles,props,.tbd,.tbd/x,.tbd/y');
+    t.eq('點箭頭摺疊子資料夾、不換選取', JSON.stringify(r.fold), JSON.stringify(['#unused,equips,icons,maps,props,.tbd,.tbd/x,.tbd/y', '#unused', '▸', false]));
+    t.eq('Alt＋點全部摺', r.foldAll, '#unused,equips,icons,maps,props,.tbd');
     t.check('Alt＋點全部展開', r.unfoldAll);
     t.eq('Shift 範圍選', r.shift, 'textures/props/c.png,textures/props/d.png,textures/props/f.png');
     t.eq('Ctrl 取消一張', r.ctrl, 'textures/props/c.png,textures/props/f.png');

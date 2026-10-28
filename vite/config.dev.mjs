@@ -5,7 +5,7 @@ import { run as genTextures } from '../scripts/textures.js';
 const norm = (p) => p.replace(/\\/g, '/').toLowerCase();
 const TEX = norm(resolve('public/assets/textures')) + '/';
 const WATCH = /\.(png|jpe?g)$|_(sheet|atlas)\.json$/i;
-const SKIP = /^(tbd|minimap|maps)\//;
+const SKIP = /^(\.tbd|minimap|maps)\//;
 const IMG = norm(resolve('images')) + '/';
 const IMG_WATCH = /\.png$|\.pdproj\.json$/i;
 

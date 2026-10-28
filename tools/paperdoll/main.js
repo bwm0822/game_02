@@ -3280,7 +3280,7 @@ const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
 const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : 'equips';
 // 武器的 icon 是另外產的斜擺圖 <名>-icon（ICON_AUTO），護具的 icon 就是完整的原圖
 const iconKey = (r) => r.P.kind === 'weapon' ? `${r.name}-icon` : r.name;
-const TEX_SKIP = ['tbd', 'minimap'];
+const TEX_SKIP = ['.tbd', 'minimap'];
 
 // texture key → 所在資料夾（相對 textures/）；不讀 textures.json，因為新圖可能還沒更新清單
 async function texKeys(dir = S.assets.tex, path = '', out = new Map())

@@ -53,8 +53,8 @@ src/
 public/         # 靜態資源（音效、地圖、JSON 資料）
   assets/textures/  # 所有圖檔：icons/props/natures/equips/items/roles{parts,npcs,monsters,animals,boss}/others、maps/{tiles,buildings}；
                     # 第三方素材包保留包資料夾（如 items/32rogues/）；minimap/ 是 scripts/minimap.js 產出；
-                    # tbd/ 放沒用到的圖（保留原相對路徑，prod build 由 vite/droptbd.mjs 刪掉不打包）
-                    # texture key 一律是檔名（去副檔名），整個 textures/（含 maps/、不含 tbd/、minimap/）不能撞名；資料只寫 key 不寫路徑
+                    # .tbd/ 放沒用到的圖（保留原相對路徑，prod build 由 vite/droptbd.mjs 刪掉不打包）
+                    # texture key 一律是檔名（去副檔名），整個 textures/（含 maps/、不含 .tbd/、minimap/）不能撞名；資料只寫 key 不寫路徑
   assets/tilesets/  # Tiled 外部 tileset（*.tsj）：圖片來源＋格子屬性 collide/weight/block；image 相對 .tsj（../textures/...），
                     # src/core/tilemap.js 解析成相對 assets 的路徑（Phaser 不支援外部 tileset 跟 template，由 tilemap.js 合併）
 vite/           # Vite 設定檔（config.dev.mjs、config.prod.mjs、config.prod_app.mjs）

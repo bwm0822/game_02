@@ -28,8 +28,8 @@ run('textures', async t => {
 
     let r = fake({'textures/a/x.png': '', 'textures/b/x.png': ''});
     t.check('撞名報錯', !r.ok && /撞名「x」/.test(r.errors[0]), r.errors.join('；'));
-    r = fake({'textures/tbd/x.png': '', 'textures/b/x.png': ''});
-    t.check('tbd/ 不算撞名', r.ok, r.errors.join('；'));
+    r = fake({'textures/.tbd/x.png': '', 'textures/b/x.png': ''});
+    t.check('.tbd/ 不算撞名', r.ok, r.errors.join('；'));
     const sheet = JSON.stringify({w: 32});
     r = fake({'textures/a/x.png': '', 'textures/a/y_sheet.json': sheet});
     t.check('_sheet.json 找不到圖報錯', !r.ok && /找不到圖「y」/.test(r.errors[0]), r.errors.join('；'));

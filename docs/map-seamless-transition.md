@@ -94,7 +94,7 @@ nty = 1;                                        // 跨越軸：鄰圖內側第 1
 
 ## 4. 素材
 
-- 出口圖示用 `cursors` spritesheet（`textures/icons/cursors.png`，Preloader 已載入）依方向挑對應 frame：`t`=1(`arrow_n`)、`b`=2(`arrow_s`)、`l`=29(`arrow_w`)、`r`=0(`arrow_e`)——frame index 是照舊的 `cursors_atlas.json`（已移到 `textures/tbd/icons/`）的座標換算成 spritesheet(33x33、margin 1、14 欄，格子定義在 `textures/icons/cursors_sheet.json`) 位置算出來的。專案裡另外還有一個 `'arrow'`（`textures/others/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。
+- 出口圖示用 `cursors` spritesheet（`textures/icons/cursors.png`，Preloader 已載入）依方向挑對應 frame：`t`=1(`arrow_n`)、`b`=2(`arrow_s`)、`l`=29(`arrow_w`)、`r`=0(`arrow_e`)——frame index 是照舊的 `cursors_atlas.json`（已移到 `textures/.tbd/icons/`）的座標換算成 spritesheet(33x33、margin 1、14 欄，格子定義在 `textures/icons/cursors_sheet.json`) 位置算出來的。專案裡另外還有一個 `'arrow'`（`textures/others/arrow.png`）是遠程攻擊用的**投射物**箭矢，兩個不要混用。
 - 圖示走 `Port`/`ItemView` 的標準顯示+互動系統，hover 時的高亮是 `View._addListener()` 內建的 outline 效果（`rexOutlinePipeline`），跟遊戲裡其他可互動物件（門、樓梯、NPC）一致，**不是**自己刻的半透明/hover 特效（舊版曾經自己刻過 `setAlpha(0.5)` + hover 變不透明，改版後拿掉了，統一交給既有的互動系統處理）。
 
 ## 5. 除錯踩過的坑（照時間順序）
