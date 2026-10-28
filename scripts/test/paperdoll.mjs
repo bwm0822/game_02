@@ -1738,7 +1738,7 @@ run('paperdoll', async t => {
         await pd.loadHandle(await dir.getFileHandle('c.png'), dir, 'rn');
         const M = pd.S.active;
         log.length = 0;
-        menu('c.png', '刪除');
+        await pd.deleteFile({fh: await dir.getFileHandle('c.png'), dir, path: 'rn'});
         await until(() => !row('c.png'));
         out.deleted = [await files(dir), log[0]?.includes('c.json'), log[0]?.includes('p.pdproj.json'), M.srcPath ?? null];
         window.confirm = confirm;
@@ -1747,7 +1747,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('檔案樹：專案檔前面是 🧩', fm.projIcon, '🧩');
-    t.eq('右鍵選單：改名、刪除、PNG 有批次存武器', fm.menu, '改名,刪除,批次存武器到 item…');
+    t.eq('右鍵選單：改名、移到 .tbd、PNG 有批次存武器', fm.menu, '改名,移到 .tbd,批次存武器到 item…');
     t.eq('改名：原地編輯不含副檔名', fm.edit, 'a');
     t.eq('改名：Esc 取消不動檔案', JSON.stringify(fm.esc), JSON.stringify([true, 'a.png', 'a.json,a.png,b.png']));
     t.eq('改名：連同名 json、專案 src、開著的圖層 srcPath／名稱一起改', JSON.stringify(fm.renamed), JSON.stringify(['b.png,c.json,c.png', 'rn/c.png', 'rn/c.png', 'c', true]));
@@ -1805,14 +1805,77 @@ run('paperdoll', async t => {
         out.made = [await dirs(dir), !!dirRow(tree, 'nd/a')];
         if (!out.made[1]) return out;
 
+        const {confirm} = window, asked = [];
+        let answer = false;
+        window.confirm = (m) => {asked.push(m); return answer;};
+        // 移到 .tbd：保留相對路徑、沒引用沒覆蓋不問；.tbd 裡搬回原位（清掉空的上層）、撞名拒絕、合併覆蓋要問、真的刪每次問
+        const expand = async (path) => {
+            let acc = '';
+            for (const seg of path.split('/'))
+            {
+                acc = acc ? `${acc}/${seg}` : seg;
+                if (!await until(() => dirRow(tree, acc))) return null;
+                await dirRow(tree, acc).parentElement.expand();
+            }
+            return dirRow(tree, path);
+        };
+        const has = async (path) => !!await path.split('/').reduce((p, s, i, a) => p.then(d => d && (i === a.length - 1 ? d.getFileHandle(s).catch(() => d.getDirectoryHandle(s)) : d.getDirectoryHandle(s)).catch(() => null)), Promise.resolve(root));
         await (await dir.getDirectoryHandle('a')).getFileHandle('.keep', {create: true});
-        menu(dirRow(tree, 'nd/a'), '刪除');
-        await until(() => status().includes('沒有刪除'));
-        out.notEmpty = [status(), await dirs(dir)];
-        await (await dir.getDirectoryHandle('a')).removeEntry('.keep');
-        menu(dirRow(tree, 'nd/a'), '刪除');
+        menu(dirRow(tree, 'nd/a'), '移到 .tbd');
         await until(() => !dirRow(tree, 'nd/a'));
-        out.deleted = [status(), await dirs(dir)];
+        await expand('.tbd/nd/a');
+        out.toTbd = [asked.length, await dirs(dir), await has('.tbd/nd/a/.keep'), status()];
+        out.tbdMenus = [menu(dirRow(tree, '.tbd')), menu(dirRow(tree, '.tbd/nd/a'))];
+        menu(dirRow(tree, '.tbd/nd/a'), '搬回原位');
+        await until(() => dirRow(tree, 'nd/a'));
+        out.back = [await has('nd/a/.keep'), await has('.tbd/nd'), await has('.tbd'), status()];
+
+        menu(dirRow(tree, 'nd/a'), '移到 .tbd');
+        await until(() => !dirRow(tree, 'nd/a'));
+        await expand('.tbd/nd/a');
+        await (await dir.getDirectoryHandle('a', {create: true})).getFileHandle('.keep', {create: true});
+        await pd.imagesChanged({dirs: ['nd']});
+        await until(() => dirRow(tree, 'nd/a'));
+        menu(dirRow(tree, '.tbd/nd/a'), '搬回原位');
+        await until(() => status().includes('沒有搬回'));
+        out.backClash = status();
+        menu(dirRow(tree, 'nd/a'), '移到 .tbd');
+        await until(() => asked.length);
+        await frame();
+        out.overAsk = [asked[0], await dirs(dir)];
+        asked.length = 0;
+        answer = true;
+        menu(dirRow(tree, 'nd/a'), '移到 .tbd');
+        await until(() => !dirRow(tree, 'nd/a'));
+        out.merged = [await dirs(dir), await has('.tbd/nd/a/.keep')];
+        await expand('.tbd/nd/a');
+        asked.length = 0;
+        menu(dirRow(tree, '.tbd/nd/a'), '刪除');
+        await until(() => !dirRow(tree, '.tbd/nd/a'));
+        out.deleted = [asked[0], await has('.tbd/nd'), await has('.tbd'), status()];
+        answer = false;
+
+        // 檔案：png 連同名 json 一起移、一起搬回
+        const pc0 = document.createElement('canvas'); pc0.width = pc0.height = 4;
+        const png0 = await new Promise(res => pc0.toBlob(res));
+        const put0 = async (d, n, data) => {const w = await (await d.getFileHandle(n, {create: true})).createWritable(); await w.write(data); await w.close();};
+        await put0(dir, 'g.png', png0);
+        await put0(dir, 'g.json', '{}');
+        await pd.imagesChanged({dirs: ['nd']});
+        const fileRow = (path, n) => tree.querySelector(`.tdir[data-path="${path}"] > div > .row.file[title="${n}"]`);
+        await until(() => fileRow('nd', 'g.png'));
+        asked.length = 0;
+        out.fileMenu = menu(fileRow('nd', 'g.png'), '移到 .tbd');
+        await until(() => !fileRow('nd', 'g.png'));
+        await expand('.tbd/nd');
+        await until(() => fileRow('.tbd/nd', 'g.png'));
+        out.fileTbd = [asked.length, await has('nd/g.png'), await has('nd/g.json'), await has('.tbd/nd/g.png'), await has('.tbd/nd/g.json'), status()];
+        out.tbdFileMenu = menu(fileRow('.tbd/nd', 'g.png'), '搬回原位');
+        await until(() => fileRow('nd', 'g.png'));
+        out.fileBack = [await has('nd/g.png'), await has('nd/g.json'), await has('.tbd/nd'), status()];
+        await dir.removeEntry('g.png');
+        await dir.removeEntry('g.json');
+        await pd.imagesChanged({dirs: ['nd']});
 
         // 改名：整棵搬過去，專案 src／path、開著的圖層、專案歸屬跟著改
         const r = await dir.getDirectoryHandle('r', {create: true}), sub = await r.getDirectoryHandle('sub', {create: true});
@@ -1847,6 +1910,17 @@ run('paperdoll', async t => {
         out.renamed = [await dirs(dir), !!await (await s.getDirectoryHandle('sub')).getFileHandle('x.png').catch(() => null), q.layers[0].src, q.layers[0].path,
                        L.srcPath, L.path, await L.dir.isSameEntry(await s.getDirectoryHandle('sub')), L.proj.path, await L.proj.dir.isSameEntry(s),
                        !!dirRow(tree, 'nd/r'), $('projName').textContent, status()];
+
+        // 有專案用到的資料夾移到 .tbd：要問、開著的圖層脫鉤、專案檔不改
+        await put(dir, 'o.pdproj.json', JSON.stringify(q));
+        asked.length = 0;
+        answer = true;
+        menu(dirRow(tree, 'nd/s'), '移到 .tbd');
+        await until(() => !dirRow(tree, 'nd/s'));
+        const o = JSON.parse(await (await (await dir.getFileHandle('o.pdproj.json')).getFile()).text());
+        out.delFull = [asked[0], await dirs(dir), await has('.tbd/nd/s/sub/x.png'), o.layers[0].src, L.srcPath ?? null, L.dir, L.path, L.proj, $('projName').textContent, status()];
+        window.confirm = confirm;
+        await root.removeEntry('.tbd', {recursive: true});
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
 
         const c = document.createElement('canvas'); c.width = c.height = 4;
@@ -1873,7 +1947,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('資料夾右鍵：根節點只有新增', nd.rootMenu, '新增資料夾');
-    t.eq('資料夾右鍵：一般資料夾新增＋改名＋刪除', nd.dirMenu, '新增資料夾,改名,刪除');
+    t.eq('資料夾右鍵：一般資料夾新增＋改名＋移到 .tbd', nd.dirMenu, '新增資料夾,改名,移到 .tbd');
     t.eq('新增資料夾：預設「新資料夾」全選', JSON.stringify(nd.def), JSON.stringify(['新資料夾', 0, 4]));
     t.eq('新增資料夾：Esc 取消不建', JSON.stringify(nd.esc), JSON.stringify([true, '']));
     t.eq('新增資料夾：Enter 建立', nd.ok, '已新增資料夾 nd/a');
@@ -1881,12 +1955,24 @@ run('paperdoll', async t => {
     t.eq('新增資料夾：跟檔案撞名拒絕', nd.file, 'nd/f.TXT 已經存在，沒有新增');
     t.eq('新增資料夾：不合法名稱拒絕', nd.bad, '資料夾名稱不合法：「x:y」');
     t.eq('新增資料夾：重列後出現', JSON.stringify(nd.made), JSON.stringify(['a', true]));
-    t.eq('刪除資料夾：不空（連隱藏檔）拒絕', JSON.stringify(nd.notEmpty), JSON.stringify(['nd/a 裡面還有 1 個項目，沒有刪除', 'a']));
-    t.eq('刪除資料夾：空的直接刪', JSON.stringify(nd.deleted), JSON.stringify(['已刪除資料夾 nd/a', '']));
+    t.eq('移到 .tbd：保留相對路徑、沒引用沒覆蓋不問', JSON.stringify(nd.toTbd), JSON.stringify([0, '', true, '已移到 .tbd/nd/a']));
+    t.eq('.tbd 右鍵：本身只有新增、裡面的有刪除＋搬回原位', JSON.stringify(nd.tbdMenus), JSON.stringify(['新增資料夾', '新增資料夾,改名,刪除,搬回原位']));
+    t.eq('搬回原位：回到原路徑、清掉空的上層、.tbd 本身留著', JSON.stringify(nd.back), JSON.stringify([true, false, true, '已搬回 nd/a']));
+    t.eq('搬回原位：原位有同名就拒絕', nd.backClash, 'nd/a 已經存在，沒有搬回');
+    t.eq('移到 .tbd：會覆蓋就問、取消不動', JSON.stringify(nd.overAsk), JSON.stringify(['移到 .tbd/nd/a？\n會覆蓋 1 個檔案：.tbd/nd/a/.keep', 'a']));
+    t.eq('移到 .tbd：確定就合併覆蓋', JSON.stringify(nd.merged), JSON.stringify(['', true]));
+    t.eq('.tbd 裡刪除：每次都問、真的刪、清掉空的上層', JSON.stringify(nd.deleted), JSON.stringify([
+        '刪除資料夾 .tbd/nd/a？裡面有 1 個檔案（含子資料夾），不會進回收桶，救不回來', false, true, '已刪除資料夾 .tbd/nd/a']));
+    t.eq('檔案右鍵：一般位置是移到 .tbd', nd.fileMenu, '改名,移到 .tbd,批次存武器到 item…');
+    t.eq('檔案移到 .tbd：連同名 json、不問', JSON.stringify(nd.fileTbd), JSON.stringify([0, false, false, true, true, '已移到 .tbd/nd/g.png（連同 g.json）']));
+    t.eq('.tbd 裡的檔案右鍵：刪除＋搬回原位', nd.tbdFileMenu, '改名,刪除,搬回原位,批次存武器到 item…');
+    t.eq('檔案搬回原位：連同名 json、清掉空的上層', JSON.stringify(nd.fileBack), JSON.stringify([true, true, false, '已搬回 nd/g.png（連同 g.json）']));
     t.eq('資料夾改名：原地編輯帶原名、撞名拒絕', JSON.stringify([nd.renDef, nd.renClash]), JSON.stringify(['r', 'nd/T 已經存在，沒有改名']));
     t.eq('資料夾改名：只改大小寫拒絕', nd.renCase, '只改大小寫不支援（Windows 檔案系統分不出來）');
     t.eq('資料夾改名：整棵搬、專案 src／path、開著的圖層 srcPath／path／dir、專案歸屬跟著改、不標未存', JSON.stringify(nd.renamed), JSON.stringify([
         's,t', true, 'nd/s/sub/x.png', 'nd/s/sub', 'nd/s/sub/x.png', 'nd/s/sub', true, 'nd/s', true, false, 'q', '已改名 nd/r → nd/s；更新了專案 nd/s/q.pdproj.json']));
+    t.eq('移到 .tbd：有專案用到要問、整棵搬、專案檔不改、開著的圖層清 srcPath、存檔位置回根、專案脫鉤標未存', JSON.stringify(nd.delFull), JSON.stringify([
+        '移到 .tbd/nd/s？\n這些專案會用到，會變成找不到原圖：nd/o.pdproj.json', 't', true, 'nd/s/sub/x.png', null, null, '', null, '（未命名） *', '已移到 .tbd/nd/s']));
     t.eq('存檔對話框：新資料夾建在目的地底下、建好選它、游標回檔名、對話框不關', JSON.stringify(nd.dlg), JSON.stringify([true, true, true, true, true]));
 
     // 檔案樹多選＋拖曳搬檔（png 連同名 .json、專案 src、開著的圖層、專案檔歸屬跟著動；撞名整批拒絕）

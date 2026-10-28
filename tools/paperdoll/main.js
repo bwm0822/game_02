@@ -2513,15 +2513,24 @@ const isProj = (name) => name.toLowerCase().endsWith(PROJ_EXT);
 
 const treeOpt = {
     onFile: (fh, dir, path) => (isProj(fh.name) ? openProject(fh, dir, path) : loadHandle(fh, dir, path)).catch(e => status(e.message)),
+    // 一般位置的「刪除」是移到 .tbd（保留相對路徑），.tbd 裡才真的刪、可以搬回原位
     menu: (e, f) => ctxMenu(e.clientX, e.clientY, [
         ['改名', () => startRename(f)],
-        ['刪除', () => deleteFile(f).catch(err => status(err.message))],
+        ...(inDir(f.path, TBD)
+            ? [['刪除', () => deleteFile(f).catch(err => status(err.message))], ['搬回原位', () => fileBack(f).catch(err => status(err.message))]]
+            : [[`移到 ${TBD}`, () => fileToTbd(f).catch(err => status(err.message))]]),
         // 右鍵在已選的列上＝整批，在沒選的列上＝只有那一張
         ...(/\.png$/i.test(f.fh.name) ? [['批次存武器到 item…', () => saveBatch(picked.has(f.row) ? [...picked].map(r => r.file) : [f]).catch(err => status(err.message))]] : []),
     ]),
+    // 根節點、.tbd 本身只能新增資料夾
     dirMenu: (e, w) => ctxMenu(e.clientX, e.clientY, [
         ['新增資料夾', () => startNewDir(w).catch(err => status(err.message))],
-        ...(w.dataset.path ? [['改名', () => startRenameDir(w)], ['刪除', () => deleteDir(w).catch(err => status(err.message))]] : []),
+        ...(!w.dataset.path || sameSrc(w.dataset.path, TBD) ? [] : [
+            ['改名', () => startRenameDir(w)],
+            ...(inDir(w.dataset.path, TBD)
+                ? [['刪除', () => deleteDir(w).catch(err => status(err.message))], ['搬回原位', () => dirBack(w).catch(err => status(err.message))]]
+                : [[`移到 ${TBD}`, () => dirToTbd(w).catch(err => status(err.message))]]),
+        ]),
     ]),
     move: true,
 };
@@ -2759,6 +2768,16 @@ async function deleteFile({fh, dir, path, node})
     if (!confirm(msg.join('\n'))) return;
     await FS.removeFile(dir, fh.name);
     if (side) await FS.removeFile(dir, side.name);
+    forgetFile(path, fh.name);
+    await pruneTbd(path);
+    await reloadUp(path);
+    status(`已刪除 ${key}${side ? `、${base}.json` : ''}`);
+}
+
+// 檔案不在原位了（刪掉或移到 .tbd）：開著的圖層脫鉤，原圖是它的清掉 srcPath、專案檔是它的 proj 清掉（標未存）
+function forgetFile(path, name)
+{
+    const {proj, base} = fileParts(name), key = join(path, name);
     thumbs.delete(key);
     if (proj)
     {
@@ -2767,10 +2786,139 @@ async function deleteFile({fh, dir, path, node})
         if (own.length) S.projSig = null;
     }
     else S.layers.filter(L => sameSrc(L.srcPath, key)).forEach(L => {delete L.srcPath;});
-    await node.reload();
+}
+
+// 資料夾不在原位了：同上，另外存檔位置在裡面的回到工作資料夾
+function forgetDir(from)
+{
+    for (const k of [...thumbs.keys()]) if (inDir(k, from)) thumbs.delete(k);
+    for (const L of S.layers)
+    {
+        if (inDir(L.srcPath, from)) delete L.srcPath;
+        if (inDir(L.path, from)) Object.assign(L, {dir: null, path: ''});
+        if (L.proj && inDir(L.proj.path, from)) {L.proj = null; S.projSig = null;}
+    }
+}
+
+// ---------- .tbd：一般位置的刪除是搬進來（保留相對路徑），撞名合併／覆蓋；.tbd 裡真的刪、搬回原位（原位有同名就不搬） ----------
+
+const TBD = '.tbd';
+const tbdPath = (path) => join(TBD, path);
+const backPath = (path) => path.slice(TBD.length + 1);
+const parentOf = (path) => path.split('/').slice(0, -1).join('/');
+const tryResolve = (path) => FS.resolveDir(S.root, path).catch(() => null);
+
+// 由上往下重列 path 跟它所有的上層（新建的中間資料夾才會出現）；列過的才重列，被上層重列拿掉的（清掉的空資料夾）跳過
+async function reloadUp(path)
+{
+    const want = new Set([''].concat(path.split('/').filter(Boolean).map((_, i, a) => a.slice(0, i + 1).join('/'))));
+    const nodes = [...$('tree').querySelectorAll('.tdir')].filter(w => want.has(w.dataset.path));
+    for (const w of nodes) if (w.isConnected) await w.reload();
     refreshAll();
     updateTitle();
-    status(`已刪除 ${key}${side ? `、${base}.json` : ''}`);
+}
+
+// .tbd 裡搬走／刪掉東西後，往上清掉空的資料夾（.tbd 本身留著）
+async function pruneTbd(path)
+{
+    for (let p = path; inDir(p, TBD) && !sameSrc(p, TBD); p = parentOf(p))
+    {
+        const d = await tryResolve(p), ls = d && await FS.listDir(d);
+        if (!d || ls.dirs.length + ls.files.length) return;
+        await (await tryResolve(parentOf(p))).removeEntry(p.split('/').at(-1));
+    }
+}
+
+const usersMsg = (users) => users.length ? [`這些專案會用到，會變成找不到原圖：${users.map(p => join(p.path, p.name)).join('、')}`] : [];
+
+// png 連同名 .json；有專案用到、或 .tbd 裡同名會被覆蓋才問
+async function fileToTbd({fh, dir, path})
+{
+    const {proj, base} = fileParts(fh.name), key = join(path, fh.name), toPath = tbdPath(path);
+    const side = proj ? null : await FS.tryFile(dir, `${base}.json`);
+    const names = [fh.name, ...(side ? [side.name] : [])];
+    const old = await tryResolve(toPath);
+    const over = old ? (await Promise.all(names.map(async n => await FS.tryFile(old, n) && join(toPath, n)))).filter(Boolean) : [];
+    const users = proj ? [] : await projectsUsing(key);
+    const msg = [...(over.length ? [`會覆蓋 ${over.join('、')}`] : []), ...usersMsg(users)];
+    if (msg.length && !confirm(`移到 ${toPath}？\n${msg.join('\n')}`)) return;
+    const to = await mkDir(S.root, toPath);
+    for (const n of names) await FS.moveFile(dir, n, to);
+    forgetFile(path, fh.name);
+    await reloadUp(path);
+    await reloadUp(toPath);
+    status(`已移到 ${join(toPath, fh.name)}${side ? `（連同 ${side.name}）` : ''}`);
+}
+
+// 兩邊都有的檔案（.tbd 裡會被覆蓋的），路徑相對工作資料夾
+async function overlap(from, to, path, out = [])
+{
+    for await (const h of from.values())
+    {
+        const p = join(path, h.name);
+        if (h.kind === 'directory') {const d = await FS.tryDir(to, h.name); if (d) await overlap(h, d, p, out);}
+        else if (await FS.tryFile(to, h.name)) out.push(p);
+    }
+    return out;
+}
+
+// 整棵合併進 .tbd 的同一個位置（建新的／複製／刪舊的，同改名）；複製失敗舊的不動
+async function dirToTbd(w)
+{
+    const from = w.dataset.path, up = w.parentElement.closest('.tdir'), toPath = tbdPath(from);
+    const old = await tryResolve(toPath);
+    const over = old ? await overlap(w.fsDir, old, toPath) : [];
+    const users = (await findProjects()).filter(p => !inDir(p.path, from) && p.data.layers.some(d => inDir(d.src, from)));
+    const msg = [...(over.length ? [`會覆蓋 ${over.length} 個檔案：${over.slice(0, 10).join('、')}${over.length > 10 ? '…' : ''}`] : []), ...usersMsg(users)];
+    if (msg.length && !confirm(`移到 ${toPath}？\n${msg.join('\n')}`)) return;
+    try {await FS.copyDir(w.fsDir, await mkDir(S.root, toPath));}
+    catch (e) {return status(`複製到 ${toPath} 失敗，${from} 沒有動：${e.message}`);}
+    let left = '';
+    try {await up.fsDir.removeEntry(w.dataset.name, {recursive: true});}
+    catch (e) {left = `；${from} 刪不掉（${e.message}），要自己刪`;}
+    forgetDir(from);
+    await reloadUp(up.dataset.path);
+    await reloadUp(parentOf(toPath));
+    status(`已移到 ${toPath}${left}`);
+}
+
+// 不碰引用：專案檔沒改過，搬回來重開就好
+async function fileBack({fh, dir, path})
+{
+    const {proj, base} = fileParts(fh.name), toPath = backPath(path);
+    const side = proj ? null : await FS.tryFile(dir, `${base}.json`);
+    const names = [fh.name, ...(side ? [side.name] : [])];
+    const old = await tryResolve(toPath);
+    const clash = old ? (await Promise.all(names.map(async n => await FS.tryFile(old, n) && join(toPath, n)))).filter(Boolean) : [];
+    if (clash.length) return status(`${clash.join('、')} 已經存在，沒有搬回`);
+    const to = await mkDir(S.root, toPath);
+    for (const n of names) await FS.moveFile(dir, n, to);
+    thumbs.delete(join(path, fh.name));
+    await pruneTbd(path);
+    await reloadUp(path);
+    await reloadUp(toPath);
+    status(`已搬回 ${join(toPath, fh.name)}${side ? `（連同 ${side.name}）` : ''}`);
+}
+
+async function dirBack(w)
+{
+    const from = w.dataset.path, up = w.parentElement.closest('.tdir'), toPath = backPath(from), toUp = parentOf(toPath);
+    const parent = await tryResolve(toUp);
+    if (parent && await dirHas(parent, w.dataset.name)) return status(`${toPath} 已經存在，沒有搬回`);
+    try {await FS.copyDir(w.fsDir, await mkDir(await mkDir(S.root, toUp), w.dataset.name));}
+    catch (e)
+    {
+        await (await tryResolve(toUp))?.removeEntry(w.dataset.name, {recursive: true}).catch(() => {});
+        return status(`複製到 ${toPath} 失敗，沒有搬回：${e.message}`);
+    }
+    let left = '';
+    try {await up.fsDir.removeEntry(w.dataset.name, {recursive: true});}
+    catch (e) {left = `；${from} 刪不掉（${e.message}），要自己刪`;}
+    for (const k of [...thumbs.keys()]) if (inDir(k, from)) thumbs.delete(k);
+    await pruneTbd(up.dataset.path);
+    await reloadUp(up.dataset.path);
+    await reloadUp(toUp);
+    status(`已搬回 ${toPath}${left}`);
 }
 
 function startRename({fh, dir, path, row, node})
@@ -2844,15 +2992,30 @@ async function createDir(w, name)
     return true;
 }
 
-// 只刪完全空的（連清單沒顯示的檔案也算），不問
+// 路徑 p 等於 dir 或在它底下（不分大小寫）
+const inDir = (p, dir) => typeof p === 'string' && (p.toLowerCase() === dir.toLowerCase() || p.toLowerCase().startsWith(`${dir.toLowerCase()}/`));
+
+async function countFiles(dir)
+{
+    let n = 0;
+    for await (const h of dir.values()) n += h.kind === 'directory' ? await countFiles(h) : 1;
+    return n;
+}
+
+// 只在 .tbd 裡：每次都 confirm（檔案數、資料夾外面用到裡面圖的專案），整棵刪，開著的圖層脫鉤（forgetDir）
 async function deleteDir(w)
 {
-    const {dirs, files} = await FS.listDir(w.fsDir), n = dirs.length + files.length;
-    if (n) return status(`${w.dataset.path} 裡面還有 ${n} 個項目，沒有刪除`);
-    const up = w.parentElement.closest('.tdir');
-    await up.fsDir.removeEntry(w.dataset.name);
-    await up.reload();
-    status(`已刪除資料夾 ${w.dataset.path}`);
+    const from = w.dataset.path, up = w.parentElement.closest('.tdir');
+    const n = await countFiles(w.fsDir);
+    const users = (await findProjects()).filter(p => !inDir(p.path, from) && p.data.layers.some(d => inDir(d.src, from)));
+    const msg = [`刪除資料夾 ${from}？裡面有 ${n} 個檔案（含子資料夾），不會進回收桶，救不回來`,
+                 ...(users.length ? [`這些專案會用到裡面的圖：${users.map(p => join(p.path, p.name)).join('、')}`] : [])];
+    if (!confirm(msg.join('\n'))) return;
+    await up.fsDir.removeEntry(w.dataset.name, {recursive: true});
+    forgetDir(from);
+    await pruneTbd(up.dataset.path);
+    await reloadUp(up.dataset.path);
+    status(`已刪除資料夾 ${from}`);
 }
 
 // 原地編輯資料夾列（保留 ▸／▾），Enter 改名、Esc／失焦取消
@@ -2898,8 +3061,7 @@ async function renameDir(w, to)
     try {await up.fsDir.removeEntry(name, {recursive: true});}
     catch (e) {left = `；舊的 ${from} 刪不掉（${e.message}），要自己刪`;}
 
-    const low = from.toLowerCase();
-    const moved = (p) => typeof p === 'string' && (p.toLowerCase() === low || p.toLowerCase().startsWith(`${low}/`)) ? dest + p.slice(from.length) : null;
+    const moved = (p) => inDir(p, from) ? dest + p.slice(from.length) : null;
     const wasClean = !isUnsaved(), fixed = [];
     for (const p of await findProjects())
     {
@@ -3192,7 +3354,7 @@ async function setAssets(h)
 async function mkDir(root, path)
 {
     let d = root;
-    for (const seg of path.split('/')) d = await d.getDirectoryHandle(seg, {create: true});
+    for (const seg of path.split('/').filter(Boolean)) d = await d.getDirectoryHandle(seg, {create: true});
     return d;
 }
 
