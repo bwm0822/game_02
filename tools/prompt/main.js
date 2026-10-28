@@ -75,12 +75,26 @@ function fixPicks()
     if (S.picks.length < 2) S.picks = [];
 }
 
-// common 有 {desc}／{name}／{file} 就代換進去，沒有就接在描述後面；沒填 file 時含 {file} 的行整行拿掉
+// 行內註解：// 到行尾，緊貼在 : 後面的（網址）不算
+const COMMENT = /(?<!:)\/\/.*/;
+
+// 純註解行整行拿掉，其他行拿掉註解、去行尾空白
+export function strip(text)
+{
+    return (text ?? '').split('\n').flatMap(l => {
+        if (!COMMENT.test(l)) return [l];
+        const s = l.replace(COMMENT, '').trimEnd();
+        return s.trim() ? [s] : [];
+    }).join('\n');
+}
+
+// 先各自去註解再組：common 有 {desc}／{name}／{file} 就代換進去，沒有就接在描述後面；沒填 file 時含 {file} 的行整行拿掉
 export function compose(it, common)
 {
-    const c = (common[it.common] ?? '').split('\n').filter(l => it.file || !l.includes('{file}')).join('\n');
-    if (/\{(desc|name|file)\}/.test(c)) return c.replaceAll('{desc}', it.desc ?? '').replaceAll('{name}', it.name ?? '').replaceAll('{file}', it.file ?? '');
-    return [it.desc, c].filter(Boolean).join('\n');
+    const desc = strip(it.desc);
+    const c = strip(common[it.common]).split('\n').filter(l => it.file || !l.includes('{file}')).join('\n');
+    if (/\{(desc|name|file)\}/.test(c)) return c.replaceAll('{desc}', desc).replaceAll('{name}', it.name ?? '').replaceAll('{file}', it.file ?? '');
+    return [desc, c].filter(Boolean).join('\n');
 }
 
 // 網頁版 ChatGPT 同一輪裡生完圖拿不到圖檔，要下一輪才能用 Python 另存
@@ -545,6 +559,54 @@ function drawCommonList()
     ];
 }
 
+const esc = (s) => s.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[c]);
+
+function paint(text)
+{
+    return text.split('\n').map(l => {
+        const m = COMMENT.exec(l);
+        return m ? esc(l.slice(0, m.index)) + `<span class="cm">${esc(m[0])}</span>` : esc(l);
+    }).join('\n') + '\n';
+}
+
+// Ctrl+/：游標行或選取的行首加減「// 」，非空行全是註解就拿掉、否則全加；整段一次 insertText，原生 undo 一步
+function toggleComment(ta)
+{
+    const v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+    const s = v.lastIndexOf('\n', a - 1) + 1;
+    let e = v.indexOf('\n', b > a && v[b - 1] === '\n' ? b - 1 : b);
+    if (e < 0) e = v.length;
+    const lines = v.slice(s, e).split('\n');
+    const off = lines.filter(l => l.trim()).every(l => /^\s*\/\//.test(l));
+    const text = lines.map(l => !l.trim() ? l : off ? l.replace(/^(\s*)\/\/ ?/, '$1') : l.replace(/^(\s*)/, '$1// ')).join('\n');
+    ta.setSelectionRange(s, e);
+    document.execCommand('insertText', false, text);
+    ta.setSelectionRange(s, s + text.length);
+}
+
+// 寬度變了（拖分隔線、視窗縮放）換行跟著變，高度要重算
+// 下一幀才改高度：在回呼裡直接改會觸發 ResizeObserver loop 錯誤
+const refit = new ResizeObserver(es => requestAnimationFrame(() => {
+    for (const {target} of es) target.isConnected ? target.fit() : refit.unobserve(target);
+}));
+
+// textarea 文字透明、底下疊上色的 pre（註解灰色）；高度跟著內容長，沒有捲軸換行才對得齊
+function commentArea(props)
+{
+    const pre = h('pre', {class: 'cm-hl'});
+    const ta = h('textarea', {...props, class: 'cm-ta', spellcheck: false});
+    ta.fit = () => {
+        pre.innerHTML = paint(ta.value);
+        ta.style.height = 'auto';
+        ta.style.height = `${ta.scrollHeight + 2}px`;
+    };
+    ta.addEventListener('input', ta.fit);
+    ta.addEventListener('keydown', (e) => {if (e.ctrlKey && e.key === '/') {e.preventDefault(); toggleComment(ta);}});
+    pre.innerHTML = paint(ta.value);
+    refit.observe(ta);
+    return h('div', {class: 'cm-area'}, pre, ta);
+}
+
 function copy(text)
 {
     navigator.clipboard.writeText(text).then(() => status('已複製'), e => status(`複製失敗：${e.message}`));
@@ -588,7 +650,7 @@ function drawItem()
             h('span', {class: 'k'}, '共用'),
             h('div', null, select),
             h('span', {class: 'k'}, '描述'),
-            h('textarea', {'data-k': 'desc', value: it.desc ?? '', oninput: live('desc'), onchange: (e) => setItem(sel, 'desc', e.target.value)})),
+            commentArea({'data-k': 'desc', value: it.desc ?? '', title: '// 到行尾是註解（灰色，不會組進去），Ctrl+/ 切換', oninput: live('desc'), onchange: (e) => setItem(sel, 'desc', e.target.value)})),
         h('div', {class: 'row2'}, h('span', {class: 'title'}, '組合結果'), h('button', {onmousedown: keep, onclick: () => copy(out.textContent)}, '複製提示詞'), btnSave),
         out,
     ];
@@ -622,8 +684,8 @@ function drawCommon()
             h('input', {'data-k': 'cname', class: 'bigid', value: name, title: '改名會連物品的引用一起改', onchange: (e) => renameCommon(name, e.target.value)}),
             h('span', {class: 'grow'}),
             h('button', {onclick: () => removeCommon(name)}, '刪除')),
-        h('div', {class: 'hint'}, '可用 {desc}、{name} 把物品的描述／名稱代換進來；沒有的話會接在描述後面（描述＋換行＋這段）'),
-        h('textarea', {'data-k': 'ctext', rows: 12, value: S.data.common[name], onchange: (e) => commit(() => {S.data.common[name] = e.target.value;})}),
+        h('div', {class: 'hint'}, '可用 {desc}、{name} 把物品的描述／名稱代換進來；沒有的話會接在描述後面（描述＋換行＋這段）；// 到行尾是註解（灰色，不會組進去），Ctrl+/ 切換'),
+        commentArea({'data-k': 'ctext', value: S.data.common[name], onchange: (e) => commit(() => {S.data.common[name] = e.target.value;})}),
         h('div', {class: 'title'}, `用到的物品（${users.length}）`),
         users.length
             ? h('div', {class: 'users'}, ul(users.map(u => h('a', {onclick: () => pick('items', {cat: u.cat, i: u.i})}, `${u.cat}／${u.it.name || '（未命名）'}`))))
@@ -680,5 +742,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__pe = {S, setRoot, setPath, load, save, compose, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, moveItems, setItem, setPicks, removePicks,
+window.__pe = {S, setRoot, setPath, load, save, compose, strip, saveCmd, commit, undo, redo, addItem, dupItem, removeItem, moveItem, moveItems, setItem, setPicks, removePicks,
                addCat, renameCat, removeCat, moveCat, normItems, addCommon, renameCommon, removeCommon, usersOf};

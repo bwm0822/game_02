@@ -40,6 +40,8 @@ run('prompt', async t => {
         out.noCommon = pe.compose({desc: 'x', common: ''}, S.data.common);
         const fc = {f: '{name}\n存成 {file}.png\nend'};
         out.file = [pe.compose({name: 'a', file: 'sword-iron', common: 'f'}, fc), pe.compose({name: 'a', file: '', common: 'f'}, fc)];
+        out.strip = pe.strip('// 整行\n  // 縮排整行\n畫一把劍   // 備忘\n\n看 https://a.b/c.png // 參考\nend');
+        out.cmCompose = pe.compose({name: '劍', desc: 'iron // 太亮\n// 關掉', common: 'c'}, {c: '// 說明\n{name}: {desc}'});
         out.btnFile = [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled;
         pe.setItem(S.sel, 'file', 'sword-iron');
         out.btnFile = [out.btnFile, [...document.querySelectorAll('#view button')].find(b => b.textContent === '複製檔名')?.disabled];
@@ -144,6 +146,16 @@ run('prompt', async t => {
     await (await btn('複製提示詞')).click();
     await copied();
     const click2 = await t.page.evaluate(() => document.getElementById('status').textContent);
+
+    // 描述框：註解灰色、Ctrl+/ 切換行首 //、組合結果去註解
+    await t.page.evaluate(() => {const pe = window.__pe; pe.setItem(pe.S.sel, 'desc', 'a\nb // x'); pe.commit(() => {});});
+    const cm = await t.page.evaluate(() => document.querySelector('.cm-area .cm')?.textContent);
+    await t.page.click('[data-k="desc"]');
+    await t.page.evaluate(() => document.querySelector('[data-k="desc"]').setSelectionRange(0, 3));
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('/'); await t.page.keyboard.up('Control');
+    const toggle1 = await t.page.evaluate(() => [document.querySelector('[data-k="desc"]').value, document.querySelector('#view .out').textContent]);
+    await t.page.keyboard.down('Control'); await t.page.keyboard.press('/'); await t.page.keyboard.up('Control');
+    const toggle2 = await t.page.evaluate(() => document.querySelector('[data-k="desc"]').value);
 
     // 子分類：key 是路徑
     const sub = await t.page.evaluate(async () => {
@@ -255,6 +267,11 @@ run('prompt', async t => {
     t.eq('佔位符代換', r.holder, 'icon of 鐵劍: iron sword, 32x32');
     t.eq('沒有 common 只有描述', r.noCommon, 'x');
     t.eq('{file} 代換、沒填整行拿掉', JSON.stringify(r.file), JSON.stringify(['a\n存成 sword-iron.png\nend', 'a\nend']));
+    t.eq('去註解：純註解行拿掉、行尾空白去掉、空行留著、:// 不算', r.strip, '畫一把劍\n\n看 https://a.b/c.png\nend');
+    t.eq('common 跟 desc 各自去註解再代換', r.cmCompose, '劍: iron');
+    t.eq('註解灰色', cm, '// x');
+    t.check('Ctrl+/ 加註解、組合結果即時去掉', toggle1[0] === '// a\n// b // x' && !toggle1[1].includes('//'), JSON.stringify(toggle1));
+    t.eq('Ctrl+/ 再按拿掉', toggle2, 'a\nb // x');
     t.eq('複製檔名按鈕：空的停用、有填啟用', JSON.stringify(r.btnFile), JSON.stringify([true, false]));
     t.eq('複製存檔指令按鈕：有填啟用', r.btnSave, false);
     t.check('存檔指令帶檔名', r.saveCmd.includes('sword-iron.png'), r.saveCmd);

@@ -19,7 +19,9 @@
 
 ## 組合規則（`compose()`）
 
-common 裡有 `{desc}`／`{name}`／`{file}` 就代換；沒有就是 `desc + '\n' + common`（空的那邊省略）。`file` 沒填時，common 裡含 `{file}` 的行整行拿掉。
+common 跟 desc 先各自去註解（`strip()`）：`//` 到行尾是註解，緊貼在 `:` 後面的（`https://`）不算；去完只剩空白的行整行拿掉，其他行去行尾空白，原本就空的行保留。然後 common 裡有 `{desc}`／`{name}`／`{file}` 就代換；沒有就是 `desc + '\n' + common`（空的那邊省略）。`file` 沒填時，common 裡含 `{file}` 的行整行拿掉。搜尋照舊比對整段（註解也搜得到）。
+
+desc／common 框是 `commentArea()`：textarea 文字透明、底下疊同字型的 `pre` 把註解畫灰；高度跟著內容長（沒有捲軸，換行才對得齊，寬度變了由 `ResizeObserver` 重算）。`Ctrl+/` 切換游標行／選取行的行首 `// `（非空行全是註解就拿掉、否則全加，空行跳過），用 `insertText` 一次換掉，textarea 原生 undo 一步、離開欄位才進工具的 undo。
 
 ## 畫面
 
