@@ -222,6 +222,7 @@ function trimLayer(L)
 // 左上的頭盔常跟護甲黏成一塊（重心落到左上，護甲整個被丟掉）：四個象限湊不齊就逐步加侵蝕量重分（最多 AUTO_ERODE px），侵蝕量記在 blobs 步驟上
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 // kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
+//       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件共用 scale%，另外合成頭像 portrait）
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
@@ -232,10 +233,17 @@ const AUTO_PARTS = [
     {key: 'armor', kind: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
     {key: 'boots', kind: 'armor', name: '靴子', quad: '右下', qx: 1, qy: 1},
     {key: 'weapon', kind: 'weapon', name: '武器'},
+    {key: 'head', kind: 'head', name: '頭', side: 0},
+    {key: 'hair', kind: 'head', name: '頭髮', side: 1},
 ];
-const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy']};
+const AUTO_KINDS = ['armor', 'weapon', 'head'];
+const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'x', 'y']};
 const AUTO_DEF = {helmet: {pct: 28, x: -1.75, y: -0.25}, armor: {pct: 20, x: 0.25, y: 26.5}, boots: {pct: 20, x: 1.5, y: 33},
-                  weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}};
+                  weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, x: -2, y: 4}, hair: {pct: 18, x: -1, y: 2}};
+const AUTO_PORTRAIT = {w: 100, h: 100, fill: 90};
+const PT_F = ['w', 'h', 'fill'];
+// 頭髮的 scale% 跟頭共用，面板只有頭那格
+const autoShow = (P) => P.key === 'hair' ? ['x', 'y'] : AUTO_F[P.kind];
 const AUTO_KEY = 'paperdoll.auto';
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 分類的內建預設＝AUTO_DEF.weapon 蓋上 WCLS 第三欄；舊格式 weapon 直接放數字：複製到每個分類
@@ -255,7 +263,8 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
-                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: v?.kind === 'weapon' ? 'weapon' : 'armor'});
+                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
+                          portrait: {...AUTO_PORTRAIT, ...v?.portrait}});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : a[P.key];
 const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}} : {...a, [P.key]: row};
@@ -271,7 +280,8 @@ function autoSet(v)
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
-    for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
+    for (const P of AUTO_PARTS) for (const f of autoShow(P)) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
+    for (const f of PT_F) $(`au-pt-${f}`).value = S.auto.portrait[f];
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -406,6 +416,19 @@ function autoPlan(L, kind)
     }
     pushOp(T, {type: 'removeGreen', ...GREEN});
     const W = T.canvas.width, H = T.canvas.height;
+    if (kind === 'head')
+    {
+        const blobs = split(0), left = (b) => b.cx < W / 2, both = blobs.some(left) && !blobs.every(left);
+        const plan = [], skipped = [];
+        // 頭髮先建，疊在頭上面
+        for (const P of autoParts(kind).reverse())
+        {
+            const mine = blobs.filter(b => both ? left(b) === (P.side === 0) : P.side === 0);
+            if (!mine.length) {skipped.push(P.name); continue;}
+            plan.push(part(P, mine, 0));
+        }
+        return {T, plan, skipped};
+    }
     const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
     let blobs = split(0), erode = 0;
     for (let k = 1; k <= AUTO_ERODE && ![0, 1].every(qx => [0, 1].every(qy => blobs.some(b => quad(b, qx, qy)))); k++)
@@ -526,7 +549,8 @@ function autoSplit(m)
     const sp = H && m.sp && !m.sp.poly ? `；頭盔沒拆前後片：${m.sp.err}` : '';
     m.sp = null;
     m.snap = autoSnap(parts);
-    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skipped.length ? `；${skipped.join('、')} 的象限是空的，略過` : ''}${sp}`);
+    const skip = !skipped.length ? '' : m.kind === 'head' ? '；只有一邊有東西，全部當頭、沒有頭髮' : `；${skipped.join('、')} 的象限是空的，略過`;
+    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skip}${sp}`);
 }
 
 // 取消自動：刪掉這組零件、原圖重新顯示，記一筆 undo；還沒拆就只是離開
@@ -2406,25 +2430,39 @@ function refreshAuto(m)
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
-    const weapon = m.kind === 'weapon';
-    for (const id of ['auTable', 'auSplit', 'auHintArmor']) $(id).hidden = weapon;
-    for (const id of ['auWeapon', 'auHintWeapon', 'auClsL']) $(id).hidden = !weapon;
+    const head = m.kind === 'head';
+    for (const [k, ids] of [['armor', ['auTable', 'auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
+                            ['head', ['auHead', 'auHintHead', 'auPortrait']]])
+        for (const id of ids) $(id).hidden = m.kind !== k;
     $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
+    $('auItem').textContent = head ? '存到 role…' : '存到 item…';
+    $('auLoad').textContent = head ? '載入 role' : '載入 item';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
     $('auLoad').disabled = $('auItem').disabled;
-    $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '照 equip.sprite 找 item，載入擺放（scale% 不動）' : '拆完才能載入';
+    $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : !m.parts ? '拆完才能載入'
+                      : head ? '照 id＝原圖名（或 head.sprite）找角色，載入擺放（scale% 不動）' : '照 equip.sprite 找 item，載入擺放（scale% 不動）';
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
-        for (const f of AUTO_F[P.kind])
+        for (const f of autoShow(P))
         {
             const inp = $(`au-${P.key}-${f}`);
             inp.value = row[f];
             inp.disabled = !!m.parts && !part;
         }
     }
+    if (head) autoPortrait(m);
+}
+
+function autoPortrait(m)
+{
+    const pv = $('auPtPreview'), o = S.auto.portrait, c = m.parts && portraitOf(m.parts);
+    pv.width = o.w;
+    pv.height = o.h;
+    if (c) pv.getContext('2d').drawImage(c, 0, 0);
+    $('auPtInfo').textContent = !m.parts ? '拆完才有預覽' : c ? `頭像 ${o.w}×${o.h}` : '沒有不透明的像素';
 }
 
 const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
@@ -3322,7 +3360,8 @@ function iconSrc(L)
     return i < 0 ? L.canvas : PX.replay(L.src, L.ops.slice(0, i));
 }
 
-function iconOf(c, {size, a, fill})
+// 給 w／h 就是長方形，內容等比塞進 w×h 的 fill%；fill 可以超過 100，超出框的部分裁掉
+function iconOf(c, {size, w = size, h = size, a, fill})
 {
     // cos(90°) 不是剛好 0，不扣一點會多出一格、整張圖偏半格糊掉
     const r = a * Math.PI / 180, cs = Math.abs(Math.cos(r)), sn = Math.abs(Math.sin(r)), dim = (v) => Math.ceil(v - 1e-6);
@@ -3334,11 +3373,37 @@ function iconOf(c, {size, a, fill})
     g.drawImage(c, -c.width / 2, -c.height / 2);
     const b = PX.opaqueBounds(rot, trimT());
     if (!b) return null;
-    const k = size * fill / 100 / Math.max(b.w, b.h);
+    const k = fill / 100 * Math.min(w / b.w, h / b.h);
     const fit = PX.xform(rot, {sx: b.x, sy: b.y, sw: b.w, sh: b.h, w: Math.max(1, Math.round(b.w * k)), h: Math.max(1, Math.round(b.h * k))});
-    const out = PX.newCanvas(size, size);
-    out.getContext('2d').drawImage(fit, Math.floor((size - fit.width) / 2), Math.floor((size - fit.height) / 2));
+    const out = PX.newCanvas(w, h);
+    out.getContext('2d').drawImage(fit, Math.floor((w - fit.width) / 2), Math.floor((h - fit.height) / 2));
     return out;
+}
+
+// 頭像：頭、頭髮縮小前的圖照目前擺放疊起來（x/y 照 scale% 放大回原圖尺寸），再照 W×H×% 等比置中；
+// 縮小前的圖只跟零件的步驟有關，照 ops 快取（拖曳時不重播）
+const preCache = new WeakMap();
+function preOf(C)
+{
+    const h = preCache.get(C);
+    if (h?.ops === C.ops) return h.c;
+    const c = iconSrc(C);
+    preCache.set(C, {ops: C.ops, c});
+    return c;
+}
+
+function portraitOf(parts, o = S.auto.portrait, bake = false)
+{
+    const ims = autoParts('head').map(P => parts.find(p => p.P === P)).filter(Boolean).map(({C}) => {
+        const k = 100 / C.ops[autoBase(C)].pct, src = preOf(C), c = bake ? PX.fade(src, C.opacity) : src;
+        return {c, x: C.x * k - C.ox * c.width, y: C.y * k - C.oy * c.height};
+    });
+    if (!ims.length) return null;
+    const x0 = Math.min(...ims.map(i => i.x)), y0 = Math.min(...ims.map(i => i.y));
+    const cv = PX.newCanvas(Math.ceil(Math.max(...ims.map(i => i.x + i.c.width)) - x0), Math.ceil(Math.max(...ims.map(i => i.y + i.c.height)) - y0));
+    const g = cv.getContext('2d');
+    for (const i of ims) g.drawImage(i.c, Math.round(i.x - x0), Math.round(i.y - y0));
+    return iconOf(cv, {...o, a: 0});
 }
 
 // 來源圖照圖層目前的 canvas 快取，圖層在模式裡被改（undo）就重取
@@ -3681,11 +3746,17 @@ async function loadItems()
                           ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
     }
     if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
+    autoApplyAll(m, rows);
+    status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
+    refreshAll();
+}
+
+// rows = [[part, row]]：有變的才套，整次一步模式內 undo
+function autoApplyAll(m, rows)
+{
     const diff = rows.filter(([part, row]) => !autoSame(part.P, row, autoRow(part)));
     if (diff.length) autoStep(m);
     for (const [part, row] of diff) autoApply(m, part, row, false);
-    status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
-    refreshAll();
 }
 
 async function saveItems()
@@ -3750,6 +3821,206 @@ async function commitItems(rows, bake, all = false)
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
     SH.notifySaved('item.json');
     status(`已存 item.json：${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// ---------- 頭像存到 role.json ----------
+// 只能選已經有 head 的角色（不新增）：頭、頭髮寫 textures/roles/parts（head／hair 的 sprite、scale、x、y），
+// 頭像另外合成寫 roles/portraits（icon）；檔名預設 head-<id>／hair-<id>／portrait-<id>，不照舊 sprite（常有好幾個角色共用一顆頭）
+
+const ROLE_DIR = {head: 'roles/parts', hair: 'roles/parts', portrait: 'roles/portraits'};
+const headBase = (parts) => parts[0].C.name.replace(/-(head|hair)$/, '');
+// id＝原圖名，再看 head.sprite＝head-<原圖名>
+const roleMatch = (roles, name) => (roles[name]?.head ? name : Object.keys(roles).find(id => roles[id].head?.sprite === `head-${name}`)) ?? null;
+const roleOld = (role, k) => k === 'portrait' ? role?.icon : role?.[k]?.sprite;
+
+// 填 R.err、r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋到圖，存檔時 confirm）；回傳要處理的列
+function roleCheck(R, roles, keys)
+{
+    const act = R.rows.filter(r => r.on && (r.png || r.place));
+    const role = roles[R.id];
+    R.err = !R.id ? '要選角色' : !role ? `role.json 裡已經沒有 ${R.id}` : '';
+    for (const r of R.rows) Object.assign(r, {err: '', warn: '', ask: ''});
+    if (!role) return act;
+    for (const r of act)
+    {
+        const err = (s) => {r.err ||= s;};
+        const old = roleOld(role, r.key), home = ROLE_DIR[r.key];
+        if (!r.png && !old) err(`${R.id} 沒有 ${r.key}，要勾更新圖`);
+        if (!r.png) continue;
+        if (!r.name) err('要填檔名');
+        else if (/[\\/:*?"<>|]/.test(r.name)) err('檔名不能有 \\ / : * ? " < > |');
+        if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
+        const dir = keys.get(r.name);
+        if (dir !== undefined && dir !== home) err(`textures/${join(dir, r.name)}.png 已經有了，換個檔名`);
+        if (r.name !== old && old) r.warn = `${r.key === 'portrait' ? 'icon' : 'sprite'}：${old} → ${r.name}`;
+        const users = Object.keys(roles).filter(id => ['head', 'hair', 'portrait'].some(k => !(id === R.id && k === r.key) && roleOld(roles[id], k) === r.name));
+        if (dir === home && (r.name !== old || users.length)) r.ask = `${home}/${r.name}.png${users.length ? `（${users.join('、')} 也用這張）` : ''}`;
+    }
+    return act;
+}
+
+function roleDialog(parts, roles, keys)
+{
+    const dlg = $('dlgRole'), pt = portraitOf(parts);
+    const rows = [...autoParts('head').map(P => ({key: P.key, tag: P.name, part: parts.find(p => p.P === P)})), {key: 'portrait', tag: '頭像', part: null}];
+    const R = {id: roleMatch(roles, headBase(parts)), rows};
+    const avail = (r) => r.key === 'portrait' || !!r.part;
+    // 換角色：檔名回到 <部位>-<id>、勾勾全勾；角色沒有這個部位就一定要更新圖
+    const reset = () => {
+        for (const r of rows) Object.assign(r, {on: avail(r), name: R.id ? `${r.key}-${R.id}` : '', png: true, place: r.key !== 'portrait'});
+    };
+    const refresh = () => {
+        const act = roleCheck(R, roles, keys);
+        $('drMsg').textContent = R.err;
+        for (const r of rows)
+        {
+            const k = r.key, live = r.on && avail(r) && !!R.id, has = !!roleOld(roles[R.id], k);
+            $(`dr-${k}-on`).disabled = !avail(r) || !R.id;
+            $(`dr-${k}-name`).disabled = !live || !r.png;
+            $(`dr-${k}-png`).disabled = !live || !has;
+            if ($(`dr-${k}-place`)) $(`dr-${k}-place`).disabled = !live;
+            const msg = $(`dr-${k}-msg`);
+            msg.className = r.err ? 'err' : 'warn';
+            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；');
+        }
+        $('drOk').disabled = !!R.err || !act.length || act.some(r => r.err);
+    };
+    const sync = () => {
+        $('drRole').value = R.id ?? '';
+        for (const r of rows)
+        {
+            const k = r.key;
+            $(`dr-${k}-on`).checked = r.on;
+            $(`dr-${k}-name`).value = r.name;
+            $(`dr-${k}-png`).checked = r.png;
+            if ($(`dr-${k}-place`)) $(`dr-${k}-place`).checked = r.place;
+        }
+    };
+    const sel = $('drRole');
+    sel.replaceChildren(Object.assign(el('option'), {value: '', textContent: '（請選擇）'}),
+                        ...Object.keys(roles).filter(id => roles[id].head)
+                            .map(id => Object.assign(el('option'), {value: id, textContent: `${id} ${roles[id].lab ?? ''}（${roles[id].head.sprite ?? '沒有 sprite'}）`})));
+    sel.onchange = () => {R.id = sel.value || null; reset(); sync(); refresh();};
+    $('drRows').replaceChildren(...rows.map(r => {
+        const k = r.key, row = el('div', 'irow' + (avail(r) ? '' : ' off'));
+        const inp = (f, type, lab) => {
+            const i = Object.assign(el('input'), {id: `dr-${k}-${f}`, ...(type && {type})});
+            const l = el('label');
+            l.append(...(type === 'checkbox' ? [i, ` ${lab}`] : [`${lab} `, i]));
+            return [l, i];
+        };
+        const thumb = el('canvas');
+        thumb.width = thumb.height = 48;
+        const c = r.part?.C.canvas ?? (k === 'portrait' ? pt : null);
+        if (c) fitDraw(thumb, c, true);
+        const [onL, on] = inp('on', 'checkbox', r.tag);
+        const [nameL, name] = inp('name', null, '檔名');
+        const [pngL, png] = inp('png', 'checkbox', k === 'portrait' ? '更新頭像' : '更新圖');
+        const msg = Object.assign(el('div'), {id: `dr-${k}-msg`});
+        const line = el('div', 'line'), body = el('div', 'body');
+        line.append(onL, nameL, pngL);
+        if (k !== 'portrait')
+        {
+            const [placeL, place] = inp('place', 'checkbox', '更新設定');
+            line.append(placeL);
+            place.onchange = () => {r.place = place.checked; refresh();};
+        }
+        body.append(line, msg);
+        row.append(thumb, body);
+        on.onchange = () => {r.on = on.checked; refresh();};
+        name.oninput = () => {r.name = name.value.trim(); refresh();};
+        png.onchange = () => {
+            r.png = png.checked;
+            r.name = r.png ? `${k}-${R.id}` : roleOld(roles[R.id], k) ?? r.name;
+            sync();
+            refresh();
+        };
+        return row;
+    }));
+    reset();
+    sync();
+    const fade = parts.some(p => p.C.opacity < 1);
+    $('drBakeRow').hidden = !fade;
+    $('drBake').checked = true;
+    refresh();
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => {
+        res(dlg.returnValue === 'ok' ? {R, bake: fade && $('drBake').checked} : null);
+    }, {once: true}));
+}
+
+async function saveRole()
+{
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const d = await roleDialog(m.parts, await readGameJson('role.json'), await texKeys());
+    if (d) await commitRole(m.parts, d.R, d.bake);
+}
+
+// 存檔時重讀 role.json、重掃 textures/ 再檢查一次
+async function commitRole(parts, R, bake)
+{
+    const A = S.assets, roles = await readGameJson('role.json');
+    const keys = await texKeys(), act = roleCheck(R, roles, keys);
+    const bad = [R.err && `角色：${R.err}`, ...act.filter(r => r.err).map(r => `${r.tag}：${r.err}`)].filter(Boolean);
+    if (bad.length) return alert(`沒有存檔：\n${bad.join('\n')}`);
+    const ask = act.filter(r => r.ask).map(r => `${r.tag}：會覆蓋 ${r.ask}`);
+    if (ask.length && !confirm(`會覆蓋：\n${ask.join('\n')}\n要繼續嗎？`)) return;
+    const role = roles[R.id], done = [], fresh = [];
+    const put = async (k, name, c) => {
+        if (!keys.has(name)) fresh.push(name);
+        await FS.writeFile(await mkDir(A.tex, ROLE_DIR[k]), `${name}.png`, await PX.toPng(c));
+    };
+    for (const r of act)
+    {
+        if (r.key === 'portrait')
+        {
+            const c = portraitOf(parts, S.auto.portrait, bake);
+            if (!c) continue;
+            await put(r.key, r.name, c);
+            role.icon = r.name;
+            done.push('icon');
+            continue;
+        }
+        const {C} = r.part, o = role[r.key] ??= {};
+        if (r.png)
+        {
+            await put(r.key, r.name, splitPng(C, bake));
+            o.sprite = r.name;
+        }
+        if (r.place)
+        {
+            const s = sidecar(C);
+            Object.assign(o, {scale: s.scale, x: s.x, y: s.y});
+        }
+        done.push(r.key);
+    }
+    await FS.writeFile(A.json, 'role.json', new Blob([JSON.stringify(roles, null, 2)]));
+    SH.notifySaved('role.json');
+    status(`已存 role.json：${R.id} 的 ${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// 照 roleMatch() 找角色，把 head／hair 的 x/y 套回零件（scale% 不動），角色沒有 hair 就只套頭
+async function loadRole()
+{
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const roles = await readGameJson('role.json'), base = headBase(m.parts), id = roleMatch(roles, base);
+    if (!id) return status(`找不到 ${base} 對應的角色（id＝${base} 或 head.sprite＝head-${base}）`);
+    const rows = [], hit = [], warn = [];
+    for (const P of autoParts('head'))
+    {
+        const part = m.parts.find(p => p.P === P), e = roles[id][P.key];
+        if (!part || !e) continue;
+        hit.push(part.P.key);
+        if (e.scale !== undefined && e.scale !== S.scale) warn.push(`${id}.${part.P.key} 的 scale ${e.scale} ≠ ${S.scale}`);
+        rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0}]);
+    }
+    if (!hit.length) return status(`${id} 沒有 head／hair`);
+    autoApplyAll(m, rows);
+    status([`載入 ${id} 的 ${hit.join('、')}`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
+    refreshAll();
 }
 
 // ---------- 批次存武器 ----------
@@ -4235,22 +4506,35 @@ for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
 $('auTable').append(...dimSpans(['', '象限', 'scale%', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', 'scale%', 'x', 'y', 'a', 'ox', 'oy']));
+$('auHead').append(...dimSpans(['', 'scale%', 'x', 'y']));
+const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
 for (const P of AUTO_PARTS)
 {
-    const box = $(P.kind === 'weapon' ? 'auWeapon' : 'auTable');
-    box.append(Object.assign(el('span'), {textContent: P.name}), ...(P.quad ? dimSpans([P.quad]) : []));
-    for (const f of AUTO_F[P.kind])
+    const box = $(AUTO_BOX[P.kind]);
+    box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans([...(P.quad ? [P.quad] : []), ...(P.key === 'hair' ? ['同上'] : [])]));
+    for (const f of autoShow(P))
     {
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
+        // 頭像的 scale% 頭和頭髮一起改
         inp.onchange = () => {
-            const v = +inp.value, m = S.mode, part = m.parts?.find(p => p.P === P);
-            const ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
-            if (ok && part) autoApply(m, part, {...autoRow(part), [f]: v});
-            else autoSet(ok ? autoWith(S.auto, P, {...autoCfg(P), [f]: v}) : S.auto);
+            const v = +inp.value, m = S.mode, ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
+            const peers = P.kind === 'head' && f === 'pct' ? autoParts('head') : [P];
+            const parts = peers.map(Q => m.parts?.find(p => p.P === Q)).filter(Boolean);
+            if (ok && parts.length) autoApplyAll(m, parts.map(part => [part, {...autoRow(part), [f]: v}]));
+            else autoSet(ok ? peers.reduce((a, Q) => autoWith(a, Q, {...autoCfg(Q, a), [f]: v}), S.auto) : S.auto);
             refreshAll();
         };
         box.append(inp);
     }
+}
+for (const f of PT_F)
+{
+    $(`au-pt-${f}`).onchange = () => {
+        const v = Math.round(+$(`au-pt-${f}`).value);
+        if (Number.isFinite(v) && v >= 1 && (f !== 'fill' || v <= 400)) autoSet({...S.auto, portrait: {...S.auto.portrait, [f]: v}});
+        else autoSet(S.auto);
+        refreshAll();
+    };
 }
 clsOpts($('auCls'));
 autoSet(autoLoad());
@@ -4266,11 +4550,13 @@ $('auCls').onchange = () => {
     }
     refreshAll();
 };
-// 武器只還原目前分類，護具只還原護具（武器各分類不動）
+// 武器只還原目前分類，護具只還原護具（連頭盔拆法），頭像只還原頭像（連 W/H/%）
 $('auReset').onclick = () => {
-    const m = S.mode, weapon = S.auto.kind === 'weapon';
+    const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
     for (const part of m.parts ?? []) autoApply(m, part, weapon ? wclsDef(S.auto.cls) : AUTO_DEF[part.P.key]);
-    autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls)) : {kind: S.auto.kind, weapon: S.auto.weapon, cls: S.auto.cls});
+    autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls))
+                   : {...S.auto, ...Object.fromEntries(autoParts(kind).map(P => [P.key, AUTO_DEF[P.key]])),
+                      ...(kind === 'head' ? {portrait: AUTO_PORTRAIT} : {split: undefined})});
     autoSpSync(m);
     refreshAll();
 };
@@ -4288,8 +4574,8 @@ document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
 };});
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
-$('auItem').onclick = () => saveItems().catch(e => status(e.message));
-$('auLoad').onclick = () => loadItems().catch(e => status(e.message));
+$('auItem').onclick = () => (S.mode.kind === 'head' ? saveRole() : saveItems()).catch(e => status(e.message));
+$('auLoad').onclick = () => (S.mode.kind === 'head' ? loadRole() : loadItems()).catch(e => status(e.message));
 
 S.icon = iconLoad();
 for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => true], ['icFill', 'fill', v => v > 0 && v <= 100]])
@@ -4356,4 +4642,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole};

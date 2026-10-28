@@ -1441,6 +1441,137 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
 
+    // 自動（頭像）：左光頭右頭髮（臉是綠洞），共用 scale%，存到 role.json（head／hair／icon），載入 role
+    const ah = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const roles0 = {wick: {kind: 'player', lab: '維克', icon: 'head-wick', head: {sprite: 'head-wick', scale: 0.25, x: -2, y: 4}, hair: {sprite: 'hair-01', scale: 0.25, x: -1, y: 2}},
+                        trump: {lab: '川普', icon: 'head-trump', head: {sprite: 'head-trump', scale: 0.25}}, wolf: {icon: 'animals:1'}};
+        await put(json, 'role.json', JSON.stringify(roles0, null, 2));
+        const readRoles = async () => JSON.parse(await (await (await json.getFileHandle('role.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const key = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, ctrlKey: true, bubbles: true}));
+        const open = async () => {const p = pd.saveRole(); await until(() => $('dlgRole').open); return {p};};
+        const close = async ({p}, v) => {$('dlgRole').close(v); await p;};
+        const alpha = (c, x, y) => c.getContext('2d').getImageData(x, y, 1, 1).data[3];
+        const at = (C) => [Math.round(C.x * pd.S.scale), Math.round(C.y * pd.S.scale)];
+        const png = async (path, name) => {
+            try
+            {
+                let d = tex;
+                for (const s of path.split('/')) d = await d.getDirectoryHandle(s);
+                const b = await createImageBitmap(await (await d.getFileHandle(`${name}.png`)).getFile());
+                return [b.width, b.height];
+            }
+            catch {return null;}
+        };
+
+        const c = document.createElement('canvas'); c.width = 200; c.height = 100;
+        const g = c.getContext('2d');
+        g.fillStyle = '#e0a070'; g.fillRect(20, 20, 60, 60);
+        g.fillStyle = '#663311'; g.fillRect(120, 10, 70, 80);
+        g.fillStyle = '#00ff00'; g.fillRect(140, 30, 30, 40);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'wick', null, null, null);
+        await pd.setAssets(assets);
+        pd.autoSet({kind: 'head', head: {pct: 50, x: -2, y: 4}, hair: {pct: 50, x: -1, y: 2}});
+        pd.setMode('auto');
+        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auPortrait').hidden, $('auItem').textContent, $('auPtInfo').textContent, !!$('au-hair-pct')];
+        pd.applyMode();
+        const m = pd.S.mode, Hd = m.parts.find(p => p.P.key === 'head').C, Hr = m.parts.find(p => p.P.key === 'hair').C;
+        out.made = [Hd.name, Hr.name, Hd.canvas.width, Hd.canvas.height, Hr.canvas.width, Hr.canvas.height, Hd.ops.map(o => o.type).join(),
+                    pd.S.layers.indexOf(Hr) > pd.S.layers.indexOf(Hd), alpha(Hr.canvas, 17, 20), alpha(Hr.canvas, 2, 2) > 128, ...at(Hd), ...at(Hr), L.visible];
+
+        type('au-head-pct', 20);
+        out.pct = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length];
+        key('z');
+        out.pctUndo = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, $('au-head-pct').value];
+        type('au-hair-x', 3);
+        out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
+
+        out.pv = [$('auPtPreview').width, $('auPtPreview').height, $('auPtInfo').textContent];
+        type('au-pt-w', 80);
+        type('au-pt-fill', 0);
+        out.pv.push($('auPtPreview').width, pd.S.auto.portrait.w, pd.S.auto.portrait.fill);
+
+        let p = await open();
+        out.dlg = [$('drRole').value, [...$('drRole').options].map(o => o.value).join(), $('dr-head-name').value, $('dr-hair-name').value, $('dr-portrait-name').value,
+                   $('dr-hair-msg').textContent, $('dr-portrait-msg').textContent, $('drOk').disabled];
+        await close(p, 'ok');
+        const r = (await readRoles()).wick;
+        out.saved = [JSON.stringify(r.head), JSON.stringify(r.hair), r.icon, await png('roles/parts', 'head-wick'), await png('roles/parts', 'hair-wick'), await png('roles/portraits', 'portrait-wick')];
+
+        // 別的角色也用這顆頭：提示覆蓋；檔名撞到 roles/parts 以外：擋；換角色檔名跟著換、沒有 hair 的角色一定要更新圖
+        await put(json, 'role.json', JSON.stringify({...await readRoles(), trump: {...roles0.trump, head: {sprite: 'head-wick'}}}, null, 2));
+        await put(await tex.getDirectoryHandle('icons', {create: true}), 'hair-trump.png', 'x');
+        p = await open();
+        out.check = [$('dr-head-msg').textContent, $('drOk').disabled];
+        const sel = $('drRole'); sel.value = 'trump'; sel.dispatchEvent(new Event('change'));
+        out.swap = [$('dr-head-name').value, $('dr-hair-name').value, $('dr-hair-png').checked, $('dr-hair-png').disabled,
+                    $('dr-head-msg').textContent, $('dr-hair-msg').textContent, $('drOk').disabled];
+        sel.value = ''; sel.dispatchEvent(new Event('change'));
+        out.none = [$('drMsg').textContent, $('drOk').disabled];
+        await close(p, 'cancel');
+        await (await tex.getDirectoryHandle('icons')).removeEntry('hair-trump.png');
+
+        // 載入 role：x/y 套回、一步 undo；角色沒有 hair 就只套頭
+        await put(json, 'role.json', JSON.stringify({...await readRoles(), wick: {...r, head: {...r.head, x: 5, y: 6}, hair: {...r.hair, x: 7, y: 8}}}, null, 2));
+        const h0 = m.hist.length;
+        await pd.loadRole();
+        out.load = [...at(Hd), ...at(Hr), m.hist.length - h0, pd.S.auto.head.x, $('status').textContent];
+        key('z');
+        out.loadUndo = [...at(Hd), ...at(Hr)];
+        await put(json, 'role.json', JSON.stringify({wick: {head: {sprite: 'head-wick', x: 1, y: 1}}}, null, 2));
+        await pd.loadRole();
+        out.loadBald = [...at(Hd), ...at(Hr)];
+        await put(json, 'role.json', JSON.stringify({nobody: {head: {sprite: 'head-x'}}}, null, 2));
+        await pd.loadRole();
+        out.loadMiss = $('status').textContent;
+
+        // 只有一塊：全部當頭，頭髮那行反灰
+        pd.cancelMode();
+        const c2 = document.createElement('canvas'); c2.width = 200; c2.height = 100;
+        c2.getContext('2d').fillStyle = '#e0a070'; c2.getContext('2d').fillRect(110, 20, 60, 60);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c2), 'bald', null, null, null);
+        pd.setMode('auto');
+        pd.applyMode();
+        out.bald = [pd.S.mode.parts.map(p => p.C.name).join(), $('au-hair-x').disabled, $('au-head-x').disabled, $('status').textContent];
+        $('auReset').click();
+        out.reset = [pd.S.auto.portrait.w, pd.S.auto.head.pct, pd.S.auto.helmet.pct];
+        pd.cancelMode();
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('自動（頭像）：進模式顯示頭像的表、W/H/%、按鈕叫存到 role；頭髮沒有自己的 scale%', JSON.stringify(ah.enter),
+         JSON.stringify(['head', false, true, true, false, '存到 role…', '拆完才有預覽', false]));
+    t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面', JSON.stringify(ah.made),
+         JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false]));
+    t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
+    t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
+    t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
+    t.eq('自動（頭像）：頭像預覽照 W/H，不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 90]));
+    t.eq('自動（頭像）：對話框 id＝原圖名就配到、只列有 head 的角色、檔名照 id', JSON.stringify(ah.dlg),
+         JSON.stringify(['wick', ',wick,trump', 'head-wick', 'hair-wick', 'portrait-wick', 'sprite：hair-01 → hair-wick', 'icon：head-wick → portrait-wick', false]));
+    t.eq('自動（頭像）：寫 head／hair（sprite/scale/x/y）跟 icon，PNG 在 roles/parts、roles/portraits', JSON.stringify(ah.saved),
+         JSON.stringify(['{"sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"sprite":"hair-wick","scale":0.25,"x":3,"y":2}', 'portrait-wick', [30, 30], [35, 40], [80, 100]]));
+    t.eq('自動（頭像）：別的角色共用的圖提示覆蓋（不擋）', JSON.stringify(ah.check),
+         JSON.stringify(['會覆蓋 roles/parts/head-wick.png（trump 也用這張）', false]));
+    t.eq('自動（頭像）：換角色檔名跟著換、沒有 hair 的角色一定要更新圖、撞到別的資料夾擋存', JSON.stringify(ah.swap),
+         JSON.stringify(['head-trump', 'hair-trump', true, true, 'sprite：head-wick → head-trump', 'textures/icons/hair-trump.png 已經有了，換個檔名', true]));
+    t.eq('自動（頭像）：沒選角色不能存', JSON.stringify(ah.none), JSON.stringify(['要選角色', true]));
+    t.eq('自動（頭像）：載入 role 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick 的 head、hair']));
+    t.eq('自動（頭像）：載入 role 可以 undo', JSON.stringify(ah.loadUndo), JSON.stringify([-2, 4, 3, 2]));
+    t.eq('自動（頭像）：角色沒有 hair 只套頭', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2]));
+    t.eq('自動（頭像）：找不到角色', ah.loadMiss, '找不到 wick 對應的角色（id＝wick 或 head.sprite＝head-wick）');
+    t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
+         JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
+    t.eq('自動（頭像）：還原預設只還原頭像（連 W/H/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28]));
+
     // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定
     const bt = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);

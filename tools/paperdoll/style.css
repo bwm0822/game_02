@@ -60,6 +60,8 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .autoGrid { display: grid; grid-template-columns: auto auto repeat(3, 1fr); gap: 4px; align-items: center; }
 .autoGrid input[type=number] { width: 100%; }
 .autoGrid.weapon { grid-template-columns: auto repeat(6, 1fr); }
+.autoGrid.head { grid-template-columns: auto repeat(3, 1fr); }
+#auPtPreview { display: block; margin-top: 4px; max-width: 100%; border: 1px solid #555; background: repeating-conic-gradient(#777 0 25%, #555 0 50%) 0 0 / 8px 8px; }
 .autoGrid[hidden] { display: none; }
 .spCtl { display: flex; flex-direction: column; gap: 4px; }
 .spGrid { display: grid; grid-template-columns: auto 20px 1fr 20px 28px; gap: 2px 4px; align-items: center; }
@@ -77,7 +79,9 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 dialog { background: #25272b; color: #ddd; border: 1px solid #555; width: 420px; }
 dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
-#dlgItems { width: 560px; }
+#dlgItems, #dlgRole { width: 560px; }
+#drMsg { color: #f77; }
+#drRole { background: #2b2d31; color: #ddd; border: 1px solid #555; }
 .irow { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #333; }
 .irow.off { opacity: .45; }
 .irow canvas { width: 48px; height: 48px; background: #1e1f22; flex: none; }
