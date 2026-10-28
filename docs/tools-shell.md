@@ -1,6 +1,6 @@
 # 工具殼（tools/）
 
-`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／能力／特效／任務／對話／文字／翻譯／試穿／提示詞／紙娃娃，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[ability-tool.md](ability-tool.md)、[fx-tool.md](fx-tool.md)、[story-tool.md](story-tool.md)、[local-tool.md](local-tool.md)、[lang-tool.md](lang-tool.md)、[fit-tool.md](fit-tool.md)、[prompt-tool.md](prompt-tool.md)、[paperdoll-tool.md](paperdoll-tool.md)。
+`npm run dev` 後開 `/tools/`（只支援 Chrome／Edge，File System Access API）。一個網址、上方分頁切換 道具／角色／能力／特效／任務／對話／文字／翻譯／試穿／提示詞／紙娃娃／圖片，各工具的細節見 [item-editor.md](item-editor.md)、[role-editor.md](role-editor.md)、[ability-tool.md](ability-tool.md)、[fx-tool.md](fx-tool.md)、[story-tool.md](story-tool.md)、[local-tool.md](local-tool.md)、[lang-tool.md](lang-tool.md)、[fit-tool.md](fit-tool.md)、[prompt-tool.md](prompt-tool.md)、[paperdoll-tool.md](paperdoll-tool.md)、[texture-tool.md](texture-tool.md)。
 
 ## 結構
 

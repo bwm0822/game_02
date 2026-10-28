@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>圖片</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #left { width: 240px; }
+    .node { display: flex; align-items: center; gap: 6px; padding: 1px 6px; border-radius: 3px; cursor: pointer; white-space: nowrap; }
+    .node:hover { background: #33363c; }
+    .node.sel { background: #2f6db5; }
+    .node .cnt { margin-left: auto; color: #888; font-size: 14px; }
+    .node .cnt.bad { color: #e66; }
+    .node.gap { margin-top: 8px; }
+    .node .arrow { width: 1em; flex: none; color: #888; font-size: .8em; }
+    #view { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; user-select: none; }
+    .cell { width: 104px; text-align: center; padding: 4px; border-radius: 3px; border: 1px solid transparent; font-size: 13px; cursor: pointer; }
+    .cell:hover { background: #33363c; }
+    .cell.sel { background: #2f6db5; }
+    .cell img { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; display: block; margin: 0 auto 2px; }
+    .cell .k { word-break: break-all; }
+    .cell.unused { opacity: .45; }
+    .cell.bad { border-color: #e66; }
+    .cell.bad .k { color: #f88; }
+    #detail { width: 360px; flex: none; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; }
+    #detail .big { width: 100%; max-height: 300px; object-fit: contain; image-rendering: pixelated; background: #1e1f22; display: block; }
+    #detail .path { word-break: break-all; color: #bcd; margin: 6px 0 2px; }
+    #detail .refs { font-size: 13px; padding-left: 16px; margin: 4px 0; }
+    #detail .refs li { word-break: break-all; margin-bottom: 2px; }
+    #detail a.go { color: #8bd; cursor: pointer; }
+    #detail .bad { color: #f88; }
+</style>
+</head>
+<body>
+<header>
+    <button id="btnScan" title="重新掃 src/、資料 json、地圖、tsj 算引用（改了 src/ 或 tsj 後按；其他分頁存 json 會自動重掃）">重新掃描</button>
+    <input id="search" placeholder="搜尋檔名（全部資料夾）" size="24">
+    <span class="sep"></span>
+    <button id="btnTbd" disabled>搬到 tbd</button>
+    <button id="btnBack" disabled>搬回原位</button>
+    <button id="btnDel" disabled>刪除</button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <aside id="left">
+        <div id="list"></div>
+    </aside>
+    <section id="view"></section>
+    <aside id="detail"></aside>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

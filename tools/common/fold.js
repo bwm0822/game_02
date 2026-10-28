@@ -17,16 +17,21 @@ export function createFold()
     const folded = (key, searching) => !searching && set.has(key);
     const open = (key) => {if (set.delete(key)) save();};
 
+    // all：Alt＋點時一起切的 keys
+    const toggle = (key, all) => {
+        const fold = !set.has(key);
+        for (const k of all ?? [key]) fold ? set.add(k) : set.delete(k);
+        save();
+    };
+
     // keys：清單上所有組的 key（Alt＋點用）；onToggle 由呼叫端清選取、重畫
     function head(key, label, keys, onToggle, searching)
     {
         return h('div', {class: 'group fold', title: '點一下摺疊，Alt＋點全部', onclick: (e) => {
-            const fold = !set.has(key);
-            for (const k of e.altKey ? keys : [key]) fold ? set.add(k) : set.delete(k);
-            save();
+            toggle(key, e.altKey ? keys : null);
             onToggle();
         }}, h('span', {class: 'arrow'}, folded(key, searching) ? '▸' : '▾'), label);
     }
 
-    return {folded, open, head};
+    return {folded, open, toggle, head};
 }
