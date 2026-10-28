@@ -1814,6 +1814,41 @@ run('paperdoll', async t => {
         await until(() => !dirRow(tree, 'nd/a'));
         out.deleted = [status(), await dirs(dir)];
 
+        // 改名：整棵搬過去，專案 src／path、開著的圖層、專案歸屬跟著改
+        const r = await dir.getDirectoryHandle('r', {create: true}), sub = await r.getDirectoryHandle('sub', {create: true});
+        await dir.getDirectoryHandle('t', {create: true});
+        const pc = document.createElement('canvas'); pc.width = pc.height = 4;
+        const put = async (d, n, data) => {const w = await (await d.getFileHandle(n, {create: true})).createWritable(); await w.write(data); await w.close();};
+        await put(sub, 'x.png', await new Promise(res => pc.toBlob(res)));
+        await put(r, 'q.pdproj.json', JSON.stringify({version: 1, layers: [{name: 'x', src: 'nd/r/sub/x.png', srcW: 4, srcH: 4, path: 'nd/r/sub', ops: [], x: 0, y: 0, a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, locked: false}]}));
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        await pd.openProject(await r.getFileHandle('q.pdproj.json'), r, 'nd/r');
+        await pd.imagesChanged({dirs: ['nd']});
+        await until(() => dirRow(tree, 'nd/r'));
+        const rename = async (path, name) => {
+            $('status').textContent = '';
+            menu(dirRow(tree, path), '改名');
+            const i = dirRow(tree, path).querySelector('input');
+            if (!i) return 'no input';
+            const v = i.value;
+            i.value = name;
+            key(i, 'Enter');
+            await until(() => status());
+            return v;
+        };
+        out.renDef = await rename('nd/r', 'T');
+        out.renClash = status();
+        await rename('nd/r', 'R');
+        out.renCase = status();
+        await rename('nd/r', 's');
+        await until(() => dirRow(tree, 'nd/s'));
+        const s = await dir.getDirectoryHandle('s'), L = pd.S.layers[0];
+        const q = JSON.parse(await (await (await s.getFileHandle('q.pdproj.json')).getFile()).text());
+        out.renamed = [await dirs(dir), !!await (await s.getDirectoryHandle('sub')).getFileHandle('x.png').catch(() => null), q.layers[0].src, q.layers[0].path,
+                       L.srcPath, L.path, await L.dir.isSameEntry(await s.getDirectoryHandle('sub')), L.proj.path, await L.proj.dir.isSameEntry(s),
+                       !!dirRow(tree, 'nd/r'), $('projName').textContent, status()];
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+
         const c = document.createElement('canvas'); c.width = c.height = 4;
         pd.addLayer(await createImageBitmap(c), 'L', dir, 'nd', null);
         const p = pd.saveLayer();
@@ -1822,6 +1857,7 @@ run('paperdoll', async t => {
         $('dlgNewDir').click();
         const box = $('dlgTree');
         inp = await input(box);
+        if (!inp) {$('dlgSave').close('cancel'); await p; return out;}
         inp.value = 'out';
         key(inp, 'Enter');
         await until(() => $('dlgPath').textContent.endsWith('out'));
@@ -1837,7 +1873,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('資料夾右鍵：根節點只有新增', nd.rootMenu, '新增資料夾');
-    t.eq('資料夾右鍵：一般資料夾新增＋刪除', nd.dirMenu, '新增資料夾,刪除');
+    t.eq('資料夾右鍵：一般資料夾新增＋改名＋刪除', nd.dirMenu, '新增資料夾,改名,刪除');
     t.eq('新增資料夾：預設「新資料夾」全選', JSON.stringify(nd.def), JSON.stringify(['新資料夾', 0, 4]));
     t.eq('新增資料夾：Esc 取消不建', JSON.stringify(nd.esc), JSON.stringify([true, '']));
     t.eq('新增資料夾：Enter 建立', nd.ok, '已新增資料夾 nd/a');
@@ -1847,6 +1883,10 @@ run('paperdoll', async t => {
     t.eq('新增資料夾：重列後出現', JSON.stringify(nd.made), JSON.stringify(['a', true]));
     t.eq('刪除資料夾：不空（連隱藏檔）拒絕', JSON.stringify(nd.notEmpty), JSON.stringify(['nd/a 裡面還有 1 個項目，沒有刪除', 'a']));
     t.eq('刪除資料夾：空的直接刪', JSON.stringify(nd.deleted), JSON.stringify(['已刪除資料夾 nd/a', '']));
+    t.eq('資料夾改名：原地編輯帶原名、撞名拒絕', JSON.stringify([nd.renDef, nd.renClash]), JSON.stringify(['r', 'nd/T 已經存在，沒有改名']));
+    t.eq('資料夾改名：只改大小寫拒絕', nd.renCase, '只改大小寫不支援（Windows 檔案系統分不出來）');
+    t.eq('資料夾改名：整棵搬、專案 src／path、開著的圖層 srcPath／path／dir、專案歸屬跟著改、不標未存', JSON.stringify(nd.renamed), JSON.stringify([
+        's,t', true, 'nd/s/sub/x.png', 'nd/s/sub', 'nd/s/sub/x.png', 'nd/s/sub', true, 'nd/s', true, false, 'q', '已改名 nd/r → nd/s；更新了專案 nd/s/q.pdproj.json']));
     t.eq('存檔對話框：新資料夾建在目的地底下、建好選它、游標回檔名、對話框不關', JSON.stringify(nd.dlg), JSON.stringify([true, true, true, true, true]));
 
     // 檔案樹多選＋拖曳搬檔（png 連同名 .json、專案 src、開著的圖層、專案檔歸屬跟著動；撞名整批拒絕）

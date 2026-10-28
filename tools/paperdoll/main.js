@@ -2521,7 +2521,7 @@ const treeOpt = {
     ]),
     dirMenu: (e, w) => ctxMenu(e.clientX, e.clientY, [
         ['新增資料夾', () => startNewDir(w).catch(err => status(err.message))],
-        ...(w.dataset.path ? [['刪除', () => deleteDir(w).catch(err => status(err.message))]] : []),
+        ...(w.dataset.path ? [['改名', () => startRenameDir(w)], ['刪除', () => deleteDir(w).catch(err => status(err.message))]] : []),
     ]),
     move: true,
 };
@@ -2624,7 +2624,7 @@ function treeNode(dir, label, path, depth, opt, open)
     Object.assign(wrap, {fsDir: dir, depth});
     row.style.paddingLeft = `${depth * 12 + 4}px`;
     row.title = label;
-    let loaded = false, expanded = false;
+    let listing = null, expanded = false;
     const list = async () => {
         const {dirs, files} = await FS.listDir(dir);
         const old = new Map([...kids.children].filter(k => k.classList.contains('tdir')).map(k => [k.dataset.name, k]));
@@ -2672,18 +2672,17 @@ function treeNode(dir, label, path, depth, opt, open)
             if (rows) moveFiles(rows.map(x => x.file), {dir, path, node: wrap}).catch(err => status(err.message));
         };
     }
+    // listing 是列目錄的 promise：剛展開還沒列完時 expand() 也要等到它
     wrap.reload = () => {
-        if (!loaded) return Promise.resolve();
+        if (!listing) return Promise.resolve();
         if (opt.move) clearPick();
-        return list();
+        return listing = list();
     };
-    const toggle = async (force) => {
+    const toggle = (force) => {
         expanded = force ?? !expanded;
         row.textContent = `${expanded ? '▾' : '▸'} ${label}`;
         kids.hidden = !expanded;
-        if (!expanded || loaded) return;
-        loaded = true;
-        await list();
+        return expanded ? listing ??= list() : Promise.resolve();
     };
     row.onclick = () => {opt.onDir?.(dir, path, row); toggle();};
     if (opt.dirMenu) row.oncontextmenu = (e) => {e.preventDefault(); opt.dirMenu(e, wrap);};
@@ -2832,12 +2831,14 @@ async function startNewDir(w, done)
     inp.onblur = () => end(false);
 }
 
+const badDirName = (name) => !name || /[\\/:*?"<>|]/.test(name) || /^\.+$/.test(name);
+const dirHas = async (dir, name) => {const {dirs, files} = await FS.listDir(dir); return [...dirs, ...files].some(h => h.name.toLowerCase() === name.toLowerCase());};
+
 async function createDir(w, name)
 {
     const at = join(w.dataset.path, name);
-    if (!name || /[\\/:*?"<>|]/.test(name) || /^\.+$/.test(name)) return status(`資料夾名稱不合法：「${name}」`), false;
-    const {dirs, files} = await FS.listDir(w.fsDir);
-    if ([...dirs, ...files].some(h => h.name.toLowerCase() === name.toLowerCase())) return status(`${at} 已經存在，沒有新增`), false;
+    if (badDirName(name)) return status(`資料夾名稱不合法：「${name}」`), false;
+    if (await dirHas(w.fsDir, name)) return status(`${at} 已經存在，沒有新增`), false;
     await w.fsDir.getDirectoryHandle(name, {create: true});
     status(`已新增資料夾 ${at}`);
     return true;
@@ -2852,6 +2853,84 @@ async function deleteDir(w)
     await up.fsDir.removeEntry(w.dataset.name);
     await up.reload();
     status(`已刪除資料夾 ${w.dataset.path}`);
+}
+
+// 原地編輯資料夾列（保留 ▸／▾），Enter 改名、Esc／失焦取消
+function startRenameDir(w)
+{
+    const row = w.firstChild, text = row.textContent, inp = el('input');
+    inp.value = w.dataset.name;
+    row.replaceChildren(text.slice(0, 2), inp);
+    inp.focus();
+    inp.select();
+    let ended = false;
+    const end = (go) => {
+        if (ended) return;
+        ended = true;
+        row.textContent = text;
+        if (go) renameDir(w, inp.value.trim()).catch(e => status(e.message));
+    };
+    inp.onclick = (e) => e.stopPropagation();
+    inp.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') end(true);
+        else if (e.key === 'Escape') end(false);
+    };
+    inp.onblur = () => end(false);
+}
+
+// FS Access 沒有搬資料夾：建新的 → 整棵複製 → 刪舊的；複製失敗就刪掉複製一半的、舊的不動，刪舊的失敗就留著兩份、引用照樣改成新的
+// 引用：所有專案的 src／path、開著的圖層 srcPath／path／dir、專案歸屬 proj.path／dir（舊的 handle 失效，重新 resolve）
+async function renameDir(w, to)
+{
+    const name = w.dataset.name, from = w.dataset.path, up = w.parentElement.closest('.tdir'), dest = join(up.dataset.path, to);
+    if (to === name) return;
+    if (badDirName(to)) return status(`資料夾名稱不合法：「${to}」`);
+    if (to.toLowerCase() === name.toLowerCase()) return status('只改大小寫不支援（Windows 檔案系統分不出來）');
+    if (await dirHas(up.fsDir, to)) return status(`${dest} 已經存在，沒有改名`);
+    try {await FS.copyDir(w.fsDir, await up.fsDir.getDirectoryHandle(to, {create: true}));}
+    catch (e)
+    {
+        await up.fsDir.removeEntry(to, {recursive: true}).catch(() => {});
+        return status(`複製到 ${dest} 失敗，沒有改名：${e.message}`);
+    }
+    let left = '';
+    try {await up.fsDir.removeEntry(name, {recursive: true});}
+    catch (e) {left = `；舊的 ${from} 刪不掉（${e.message}），要自己刪`;}
+
+    const low = from.toLowerCase();
+    const moved = (p) => typeof p === 'string' && (p.toLowerCase() === low || p.toLowerCase().startsWith(`${low}/`)) ? dest + p.slice(from.length) : null;
+    const wasClean = !isUnsaved(), fixed = [];
+    for (const p of await findProjects())
+    {
+        let hit = false;
+        for (const d of p.data.layers)
+            for (const k of ['src', 'path'])
+            {
+                const n = moved(d[k]);
+                if (n !== null) {d[k] = n; hit = true;}
+            }
+        if (!hit) continue;
+        await FS.writeFile(p.dir, p.name, new Blob([JSON.stringify(p.data, null, 2) + '\n']));
+        fixed.push(join(p.path, p.name));
+    }
+    for (const L of S.layers)
+    {
+        const s = moved(L.srcPath), p = moved(L.path);
+        if (s !== null) L.srcPath = s;
+        if (p !== null) Object.assign(L, {path: p, dir: await FS.resolveDir(S.root, p)});
+    }
+    for (const P of projects())
+    {
+        const p = moved(P.path);
+        if (p !== null) Object.assign(P, {path: p, dir: await FS.resolveDir(S.root, p)});
+    }
+    for (const k of [...thumbs.keys()]) if (moved(k) !== null) thumbs.delete(k);
+    if (wasClean && S.projSig) S.projSig = projectSig();
+    await up.reload();
+    refreshAll();
+    updateTitle();
+    status(`已改名 ${from} → ${dest}${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}${left}`);
 }
 
 // 照路徑一層層展開，回傳那個資料夾節點

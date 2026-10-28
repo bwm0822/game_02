@@ -93,6 +93,16 @@ export async function renameFile(dir, from, to)
     await dir.removeEntry(from);
 }
 
+// 整棵複製到 to（已存在的資料夾），同名檔覆蓋
+export async function copyDir(from, to)
+{
+    for await (const h of from.values())
+    {
+        if (h.kind === 'directory') await copyDir(h, await to.getDirectoryHandle(h.name, {create: true}));
+        else await writeFile(to, h.name, await h.getFile());
+    }
+}
+
 export async function moveFile(from, name, to)
 {
     await writeFile(to, name, await (await from.getFileHandle(name)).getFile());
