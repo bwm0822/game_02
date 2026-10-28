@@ -273,13 +273,6 @@
       "h": 64,
       "margin": 0,
       "spacing": 0
-    },
-    "Warrior_Red": {
-      "url": "textures/roles/npcs/tiny/Warrior_Red.png",
-      "w": 192,
-      "h": 192,
-      "margin": 0,
-      "spacing": 0
     }
   },
   "atlas": {
