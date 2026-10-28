@@ -2537,7 +2537,7 @@ const treeOpt = {
 
 // 主清單多選：Ctrl+點切換、Shift+點從上次點的那列選到這列（同資料夾才算範圍），一般點照舊開圖並清掉選取
 const picked = new Set();
-let pickAnchor = null, dragFiles = null;
+let pickAnchor = null, dragFiles = null, dragDir = null;
 
 function clearPick()
 {
@@ -2671,14 +2671,25 @@ function treeNode(dir, label, path, depth, opt, open)
     };
     if (opt.move)
     {
-        row.ondragover = (e) => {if (dragFiles) {e.preventDefault(); row.classList.add('drop');}};
+        // 資料夾列也能拖（根節點、.tbd 本身不行），一次一個
+        if (path && !sameSrc(path, TBD))
+        {
+            row.draggable = true;
+            row.ondragstart = (e) => {
+                dragDir = wrap;
+                e.dataTransfer.effectAllowed = 'move';
+            };
+            row.ondragend = () => {dragDir = null;};
+        }
+        row.ondragover = (e) => {if (dragFiles || dragDir) {e.preventDefault(); row.classList.add('drop');}};
         row.ondragleave = () => row.classList.remove('drop');
         row.ondrop = (e) => {
             e.preventDefault();
             row.classList.remove('drop');
-            const rows = dragFiles;
-            dragFiles = null;
+            const rows = dragFiles, w = dragDir;
+            dragFiles = dragDir = null;
             if (rows) moveFiles(rows.map(x => x.file), {dir, path, node: wrap}).catch(err => status(err.message));
+            else if (w) moveDir(w, wrap).catch(err => status(err.message));
         };
     }
     // listing 是列目錄的 promise：剛展開還沒列完時 expand() 也要等到它
@@ -3042,8 +3053,6 @@ function startRenameDir(w)
     inp.onblur = () => end(false);
 }
 
-// FS Access 沒有搬資料夾：建新的 → 整棵複製 → 刪舊的；複製失敗就刪掉複製一半的、舊的不動，刪舊的失敗就留著兩份、引用照樣改成新的
-// 引用：所有專案的 src／path、開著的圖層 srcPath／path／dir、專案歸屬 proj.path／dir（舊的 handle 失效，重新 resolve）
 async function renameDir(w, to)
 {
     const name = w.dataset.name, from = w.dataset.path, up = w.parentElement.closest('.tdir'), dest = join(up.dataset.path, to);
@@ -3051,14 +3060,34 @@ async function renameDir(w, to)
     if (badDirName(to)) return status(`資料夾名稱不合法：「${to}」`);
     if (to.toLowerCase() === name.toLowerCase()) return status('只改大小寫不支援（Windows 檔案系統分不出來）');
     if (await dirHas(up.fsDir, to)) return status(`${dest} 已經存在，沒有改名`);
-    try {await FS.copyDir(w.fsDir, await up.fsDir.getDirectoryHandle(to, {create: true}));}
+    const r = await relocateDir(w, up, to);
+    status(r.err ? `${r.err}，沒有改名` : `已改名 ${from} → ${dest}${r.msg}`);
+}
+
+// 拖資料夾列到別的資料夾列上：不能拖進自己（或底下）、原本就在那裡的不動、目的地有同名就拒絕；引用同改名
+async function moveDir(w, to)
+{
+    const from = w.dataset.path, up = w.parentElement.closest('.tdir'), dest = join(to.dataset.path, w.dataset.name);
+    if (inDir(to.dataset.path, from)) return status(`${from} 不能搬進自己裡面`);
+    if (sameSrc(up.dataset.path, to.dataset.path)) return;
+    if (await dirHas(to.fsDir, w.dataset.name)) return status(`${dest} 已經存在，沒有移動`);
+    const r = await relocateDir(w, to, w.dataset.name);
+    status(r.err ? `${r.err}，沒有移動` : `已移動 ${from} 到 ${to.dataset.path || S.root.name}${r.msg}`);
+}
+
+// FS Access 沒有搬資料夾：在 to 底下建 name → 整棵複製 → 刪舊的；複製失敗就刪掉複製一半的、舊的不動，刪舊的失敗就留著兩份、引用照樣改成新的
+// 引用：所有專案的 src／path、開著的圖層 srcPath／path／dir、專案歸屬 proj.path／dir（舊的 handle 失效，重新 resolve）
+async function relocateDir(w, to, name)
+{
+    const from = w.dataset.path, up = w.parentElement.closest('.tdir'), dest = join(to.dataset.path, name);
+    try {await FS.copyDir(w.fsDir, await to.fsDir.getDirectoryHandle(name, {create: true}));}
     catch (e)
     {
-        await up.fsDir.removeEntry(to, {recursive: true}).catch(() => {});
-        return status(`複製到 ${dest} 失敗，沒有改名：${e.message}`);
+        await to.fsDir.removeEntry(name, {recursive: true}).catch(() => {});
+        return {err: `複製到 ${dest} 失敗（${e.message}）`};
     }
     let left = '';
-    try {await up.fsDir.removeEntry(name, {recursive: true});}
+    try {await up.fsDir.removeEntry(w.dataset.name, {recursive: true});}
     catch (e) {left = `；舊的 ${from} 刪不掉（${e.message}），要自己刪`;}
 
     const moved = (p) => inDir(p, from) ? dest + p.slice(from.length) : null;
@@ -3089,10 +3118,10 @@ async function renameDir(w, to)
     }
     for (const k of [...thumbs.keys()]) if (moved(k) !== null) thumbs.delete(k);
     if (wasClean && S.projSig) S.projSig = projectSig();
-    await up.reload();
+    for (const n of new Set([up, to])) if (n.isConnected) await n.reload();
     refreshAll();
     updateTitle();
-    status(`已改名 ${from} → ${dest}${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}${left}`);
+    return {msg: `${fixed.length ? `；更新了專案 ${fixed.join('、')}` : ''}${left}`};
 }
 
 // 照路徑一層層展開，回傳那個資料夾節點

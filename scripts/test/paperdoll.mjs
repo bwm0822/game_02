@@ -2056,6 +2056,25 @@ run('paperdoll', async t => {
         await drag(row('a.png', 'sub'), dirRow('sub'));
         out.same = await files(sub);
 
+        // 拖資料夾：整棵搬、專案 src／開著的圖層跟著換；拖進自己底下、撞名拒絕；根節點、.tbd 不能拖
+        const pathRow = (p) => $('tree').querySelector(`.tdir[data-path="${p}"] > .row.dir`);
+        out.dirDrag = [pathRow('').draggable, pathRow('mv').draggable];
+        await drag(pathRow('mv/sub'), pathRow('dst'));
+        await until(() => pathRow('dst/sub'));
+        const p2 = await readProj(dst, 'p.pdproj.json');
+        out.dirMoved = [await files(dir), await files(await dst.getDirectoryHandle('sub')), p2.layers.map(d => d.src).join(), pd.S.layers.map(L => L.srcPath).join(), status()];
+        $('status').textContent = '';
+        await drag(pathRow('dst'), pathRow('dst/sub'));
+        await until(() => status());
+        out.intoSelf = status();
+        await dir.getDirectoryHandle('sub', {create: true});
+        await pd.imagesChanged({dirs: ['mv']});
+        await until(() => pathRow('mv/sub'));
+        $('status').textContent = '';
+        await drag(pathRow('mv/sub'), pathRow('dst'));
+        await until(() => status());
+        out.dirClash = [status(), await files(dir)];
+
         for (const n of ['mv', 'dst']) await root.removeEntry(n, {recursive: true});
         await pd.setRoot(root);
         return out;
@@ -2071,6 +2090,11 @@ run('paperdoll', async t => {
     t.eq('搬檔：拖沒選的列只搬它自己', JSON.stringify(mv.unpicked), JSON.stringify(['b.png,c.png,sub', 'a.json,a.png']));
     t.eq('搬專案檔：開著的圖層歸屬跟著改', JSON.stringify(mv.proj), JSON.stringify(['dst', 'dst', false]));
     t.eq('搬檔：拖回原資料夾不動', mv.same, 'a.json,a.png');
+    t.eq('拖資料夾：根節點不能拖、一般資料夾可以', JSON.stringify(mv.dirDrag), JSON.stringify([false, true]));
+    t.eq('拖資料夾：整棵搬、專案 src／開著的圖層跟著換', JSON.stringify(mv.dirMoved), JSON.stringify([
+        'b.png,c.png', 'a.json,a.png', 'dst/sub/a.png,mv/c.png', 'dst/sub/a.png,mv/c.png', '已移動 mv/sub 到 dst；更新了專案 dst/p.pdproj.json']));
+    t.eq('拖資料夾：不能拖進自己底下', mv.intoSelf, 'dst 不能搬進自己裡面');
+    t.eq('拖資料夾：目的地有同名就拒絕', JSON.stringify(mv.dirClash), JSON.stringify(['dst/sub 已經存在，沒有移動', 'b.png,c.png,sub']));
     const [bx, by] = th.bar;
     await t.page.mouse.move(bx, by);
     await t.page.mouse.down();
