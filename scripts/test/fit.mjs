@@ -20,6 +20,7 @@ run('fit', async t => {
             return seen;
         };
         const fire = (k, v) => {const el = document.querySelector(`[data-k="${k}"]`); el.value = v; el.dispatchEvent(new Event('change'));};
+        const isDirtyNow = () => !$('dirty').hidden;
         const drawn = async () => {await F.drawPreview(); return +document.querySelector('#pv canvas').dataset.drawn;};
 
         const origRole = await (await fetch('/assets/json/role.json')).text();
@@ -44,8 +45,11 @@ run('fit', async t => {
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.list = [document.querySelectorAll('#list .item').length, dolls.length];
 
-        // 選角色帶入原裝
+        // 選角色不帶裝備，「穿原裝」才帶入
         F.select('guard-1');
+        out.opts = [...document.querySelectorAll('#pv .opts input[type=checkbox]')].slice(0, 5).map(c => c.checked);
+        out.slots0 = JSON.stringify(S.slots);
+        document.querySelector('#view .orig').click();
         out.slots = JSON.stringify(S.slots);
         out.drawn = await drawn();
         F.setSlot('CAT_GLOVES', 'gloves_01');
@@ -60,6 +64,18 @@ run('fit', async t => {
         dlg.querySelector('.tile[data-id=""]').click();
         out.unequip = 'CAT_BOOTS' in S.slots;
         F.pickEquip('CAT_HELMET'); dlg.close();
+
+        // 透明度：每格各自、只影響預覽、換角色保留、格子標 %
+        const kept = JSON.stringify(S.slots);
+        const bar = document.querySelector('#view .alphabar input[type=range]');
+        bar.value = 40; bar.dispatchEvent(new Event('input')); bar.dispatchEvent(new Event('change'));
+        const helmA = () => F.partsOf(S.doc['role.json'].data[S.rid]).find(p => p.sprite === S.doc['item.json'].data.helmet_01.equip.sprite)?.alpha;
+        out.alpha = [S.alpha.CAT_HELMET, helmA(), !!document.querySelector('#view .slot[data-cat=CAT_HELMET] .alpha'), !!document.querySelector('#view .slot[data-cat=CAT_WEAPON] .alpha'), isDirtyNow()];
+        F.select('wick');
+        out.keep = [JSON.stringify(S.slots) === kept, S.alpha.CAT_HELMET, S.cur];
+        F.setAlpha('CAT_HELMET', 1); F.render();
+        out.alpha.push('CAT_HELMET' in S.alpha, !!document.querySelector('#view .slot .alpha'));
+        F.select('guard-1');
 
         // 改數字：裝備寫 item.json、部件寫 role.json、清空刪 key、undo 一起退
         fire('item.json|helmet_01|equip.y', '5');
@@ -195,7 +211,7 @@ run('fit', async t => {
         out.dom = document.body.innerText.includes('[object');
 
         // 頭盔 hideHair：戴上藏頭髮、取消勾選頭髮回來
-        S.zoom = 3; F.select('wick');
+        S.zoom = 3; F.select('wick'); F.wearOrig();
         const bare = await drawn();
         S.cur = 'CAT_HELMET'; F.setSlot('CAT_HELMET', 'helmet_02');
         const hide = document.querySelector('[data-k="item.json|helmet_02|equip.hideHair"]');
@@ -217,7 +233,7 @@ run('fit', async t => {
         out.sex.push('f' in e2());
         F.undo(); F.undo(); F.undo();
         out.sex.push('f' in e2());
-        F.select('guard-1'); S.cur = 'CAT_HELMET'; F.render();
+        F.select('guard-1'); F.wearOrig(); S.cur = 'CAT_HELMET'; F.render();
 
         // 背景色：純色鋪滿、記 localStorage、棋盤格按鈕恢復
         const corner = async () => {await F.drawPreview(); const c = document.querySelector('#pv canvas'); return [...c.getContext('2d').getImageData(0, 0, 1, 1).data].slice(0, 3).join();};
@@ -242,7 +258,12 @@ run('fit', async t => {
 
     t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
-    t.eq('選角色帶入原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
+    t.eq('虛線／錨點／b／g／z 預設不勾', JSON.stringify(r.opts), JSON.stringify([false, false, false, false, false]));
+    t.eq('選角色不帶原裝', r.slots0, '{}');
+    t.eq('穿原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
+    t.eq('透明度：存在格子、預覽套用、標 %、只標那格、不算修改', JSON.stringify(r.alpha.slice(0, 5)), JSON.stringify([0.4, 0.4, true, false, false]));
+    t.eq('換角色裝備、透明度、選中格都保留', JSON.stringify(r.keep), JSON.stringify([true, 0.4, 'CAT_HELMET']));
+    t.eq('透明度 100% 刪掉、% 標記消失', JSON.stringify(r.alpha.slice(5)), JSON.stringify([false, false]));
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張', r.gloves[0]);
     t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword-1', 'helmet_01', 'chest_01']));

@@ -32,9 +32,10 @@ const S = {
     doc: Object.fromEntries(FILES.map(f => [f, {data: {}, saved: {}, diskText: null}])),
     hist: [], hi: -1,
     rid: null,
-    slots: {},                  // cat → item id
+    slots: {},                  // cat → item id，換角色不動
+    alpha: {},                  // cat → 預覽透明度 0～1（沒寫＝1），只是顯示用、不存檔
     cur: 'CAT_WEAPON',          // 選中的格子，下方面板顯示它
-    zoom: 3, view: true, anchor: true, b: true, g: false, z: false, flip: false,
+    zoom: 3, view: false, anchor: false, b: false, g: false, z: false, flip: false,
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
@@ -173,19 +174,34 @@ async function onSaved(file)
 }
 
 // ---------- 選角色、換裝 ----------
+// 換角色裝備不動，只清掉道具已經不在（或沒有 equip）的格子
 function select(rid)
 {
     S.rid = rid;
-    S.slots = {};
     recenter();
-    S.cur = 'CAT_WEAPON';
-    for (const e of role()?.inv?.equips ?? [])
-    {
-        const id = isObj(e) ? e.id : e, it = items()[id];
-        if (it?.equip && SLOTS.some(([c]) => c === it.cat)) S.slots[it.cat] = id;
-    }
+    const wid = S.slots.CAT_WEAPON;
+    for (const [cat, id] of Object.entries(S.slots)) if (!isObj(items()[id]?.equip)) delete S.slots[cat];
+    if (S.slots.CAT_WEAPON !== wid) weaponAnim();
+    render();
+}
+
+const origEquips = () => (role()?.inv?.equips ?? []).map(e => isObj(e) ? e.id : e)
+    .filter(id => isObj(items()[id]?.equip) && SLOTS.some(([c]) => c === items()[id].cat));
+
+// 穿原裝：五格整組換成角色的 inv.equips，原裝沒有的格子清空
+function wearOrig()
+{
+    S.slots = {};
+    for (const id of origEquips()) S.slots[items()[id].cat] = id;
     weaponAnim();
     render();
+}
+
+function setAlpha(cat, v)
+{
+    if (v >= 1) delete S.alpha[cat];
+    else S.alpha[cat] = Math.max(0, v);
+    drawPreview();
 }
 
 function setSlot(cat, id)
@@ -308,9 +324,11 @@ function drawView()
     const r = role();
     if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 hand）' : '先在上方選擇專案資料夾'));
     const tab = (m, text) => h('button', {class: 'tab' + (S.mode === m ? ' sel' : ''), dataset: {mode: m}, onclick: () => {S.mode = m; playing++; recenter(); render();}}, text);
+    const orig = origEquips().length > 0;
     const slots = h('div', {class: 'slots'}, SLOTS.map(([cat, name]) =>
         h('div', {class: 'slot' + (cat === S.cur ? ' sel' : ''), dataset: {cat}, title: S.slots[cat] ? `${name}：${S.slots[cat]}` : name,
-            onclick: () => pickEquip(cat)}, slotIcon(cat, 40))));
+            onclick: () => pickEquip(cat)}, slotIcon(cat, 40), cat in S.alpha && h('span', {class: 'alpha'}, '%'))),
+        h('button', {class: 'orig', disabled: !orig, title: orig ? '五格換成這個角色的 inv.equips' : '這個角色沒有原裝', onclick: wearOrig}, '穿原裝'));
     $('view').replaceChildren(h('div', null,
         h('div', {class: 'tabs'}, tab('fit', '擺放'), tab('anim', '動畫')),
         h('div', {class: 'head'}, IC.iconEl(r.icon, 48), h('span', {class: 'bigid'}, S.rid), h('span', {class: 'dim'}, r.lab ?? '')),
@@ -331,10 +349,23 @@ function fitView(r, slots)
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? '')] : h('span', {class: 'dim'}, '（空）')),
+        id && alphaBar(S.cur),
         id && equipTable(id),
         id && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
             onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
     ];
+}
+
+// 拖滑桿只重畫預覽（整頁重繪會打斷拖拉），放開才 render 更新格子上的 % 標記
+function alphaBar(cat)
+{
+    const pct = Math.round((S.alpha[cat] ?? 1) * 100);
+    const out = h('span', {class: 'num'}, `${pct}%`);
+    return h('label', {class: 'alphabar', title: '只影響預覽，不存檔'}, '透明度',
+        h('input', {type: 'range', min: 0, max: 100, value: pct,
+            oninput: (e) => {out.textContent = `${e.target.value}%`; setAlpha(cat, e.target.value / 100);},
+            onchange: () => render()}),
+        out);
 }
 
 // ---------- 動畫 ----------
@@ -514,14 +545,15 @@ const hairHidden = () => SLOTS.some(([cat]) => items()[S.slots[cat]]?.equip?.hid
 function partsOf(r)
 {
     const out = [];
-    const add = (p, d, isWeapon) => {
+    const add = (p, d, cat) => {
         if (!isObj(p)) return;
-        if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0, isWeapon});
-        if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
-        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
+        const alpha = S.alpha[cat] ?? 1, isWeapon = cat === 'CAT_WEAPON';
+        if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0, isWeapon, alpha});
+        if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, alpha});
+        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back, alpha});
     };
     for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(r[k], DEPTH[k]);
-    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat === 'CAT_WEAPON');
+    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat);
     return out.sort((a, b) => a.d - b.d);
 }
 
@@ -609,15 +641,17 @@ async function drawPreview()
         {
             const q = trackPose(tr, S.ms);
             pose = {x: q.x, y: q.y, a: q.angle};
-            wp = {p, ...fr, pose: q};
+            wp = {p, ...fr, pose: q, alpha: pt.alpha};
         }
+        g.globalAlpha = pt.alpha ?? 1;
         drawSp(p, fr.img, fr.f, pose);
+        g.globalAlpha = 1;
         n++;
     });
 
     if (tr && wp)
     {
-        g.globalAlpha = 0.3;
+        g.globalAlpha = 0.3 * wp.alpha;
         tr.frames.slice(1, -1).forEach(k => {if (k.t !== S.ms) drawSp(wp.p, wp.img, wp.f, {x: k.x, y: k.y, a: k.angle});});
         g.globalAlpha = 1;
         const total = trackEnd(tr), hd = handleOf(wp.p, wp.f, wp.pose), pv = tr.pivot;
@@ -860,5 +894,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, drawPreview, render, partsOf,
+window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
     trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}};
