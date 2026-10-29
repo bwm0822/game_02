@@ -204,6 +204,19 @@ run('fit', async t => {
         out.hair.push(await drawn(), 'hideHair' in S.doc['item.json'].data.helmet_02.equip, !!document.querySelector('#view .hidden-hair'));
         F.undo();
         out.hair.push(S.doc['item.json'].data.helmet_02.equip.hideHair);
+
+        // 女角：scale/x/y 改的是 equip.f，第一次改從基準複製；a 還是改基準；刪除女版回到共用
+        F.select('mary'); S.cur = 'CAT_HELMET'; F.setSlot('CAT_HELMET', 'helmet_02');
+        const e2 = () => S.doc['item.json'].data.helmet_02.equip, base = {...e2()};
+        out.sex = [!!document.querySelector('[data-k="item.json|helmet_02|equip.f.y"]'), !document.querySelector('#view .delsex')];
+        fire('item.json|helmet_02|equip.f.y', '9');
+        out.sex.push(JSON.stringify(e2().f) === JSON.stringify({scale: base.scale, ...(base.x !== undefined && {x: base.x}), y: 9}), e2().y === base.y);
+        fire('item.json|helmet_02|equip.f.scale', '0.2');
+        out.sex.push(e2().f.scale, F.partsOf(S.doc['role.json'].data.mary).find(p => p.sprite === e2().sprite).p.y);
+        document.querySelector('#view .delsex').click();
+        out.sex.push('f' in e2());
+        F.undo(); F.undo(); F.undo();
+        out.sex.push('f' in e2());
         F.select('guard-1'); S.cur = 'CAT_HELMET'; F.render();
 
         // 背景色：純色鋪滿、記 localStorage、棋盤格按鈕恢復
@@ -276,6 +289,7 @@ run('fit', async t => {
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
+    t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false]));
     t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));

@@ -26,6 +26,7 @@ table.fit select { min-width: 160px; }
 .equipname .k { color: #aaa; }
 .hidehair { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
 .hidden-hair { margin-left: 6px; }
+.sexnote { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 
 .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
 .tab.sel { border-color: #ffd700; color: #ffd700; }

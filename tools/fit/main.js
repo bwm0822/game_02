@@ -10,6 +10,7 @@ import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
 import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
+import {equipFor} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
@@ -58,7 +59,11 @@ const anim = () => anims()[S.aid];
 const isDoll = (r) => isObj(r.head) || isObj(r.hand);
 const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
 const isDirty = () => FILES.some(dirtyOf);
-const weapon = () => items()[S.slots.CAT_WEAPON]?.equip;
+// 女角（sex 不是 m）的裝備擺放：equip[sex] 蓋掉 scale/x/y（同遊戲 equipFor）；數字欄改的是 equip[sex]，第一次改從基準複製
+const SEX_NUMS = ['scale', 'x', 'y'];
+const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
+const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex);
+const weapon = () => equipOf(S.slots.CAT_WEAPON);
 const r1 = (v) => Math.round(v * 10) / 10;
 const rad = (d) => d * Math.PI / 180;
 
@@ -274,6 +279,28 @@ function numInput(file, id, path, ph, {req, after} = {})
 }
 
 const numCells = (file, id, base) => NUMS.map(([k, ph]) => h('td', null, numInput(file, id, [...base, k], ph)));
+
+function equipCells(id)
+{
+    const sx = sexKey(), e = items()[id].equip ?? {}, had = isObj(e[sx]);
+    const fill = () => {
+        const eq = items()[id].equip, o = eq[sx];
+        eq[sx] = Object.fromEntries(SEX_NUMS.map(k => [k, o[k] ?? e[k]]).filter(([, v]) => v !== undefined));
+    };
+    return NUMS.map(([k, ph]) => h('td', null, sx && SEX_NUMS.includes(k)
+        ? numInput('item.json', id, ['equip', sx, k], String(e[k] ?? ph), {after: (n) => !had && n !== undefined && fill()})
+        : numInput('item.json', id, ['equip', k], ph)));
+}
+
+function equipTable(id)
+{
+    const sx = sexKey(), has = sx && isObj(items()[id].equip?.[sx]);
+    return [
+        h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（${sx}）` : k))), h('tr', null, equipCells(id))),
+        sx && h('div', {class: 'sexnote dim'}, has ? `scale／x／y 是 equip.${sx}（這個性別專用）` : `沒有 equip.${sx}，顯示的是共用值；改了就建立 equip.${sx}`,
+            has && h('button', {class: 'delsex', onclick: () => commit(() => {delete items()[id].equip[sx];})}, '刪除女版')),
+    ];
+}
 const head = (first) => h('tr', null, h('th', null, first), h('th', null, '圖／道具'), NUMS.map(([k]) => h('th', null, k)));
 
 function drawView()
@@ -304,7 +331,7 @@ function fitView(r, slots)
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? '')] : h('span', {class: 'dim'}, '（空）')),
-        id && h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, k))), h('tr', null, numCells('item.json', id, ['equip']))),
+        id && equipTable(id),
         id && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
             onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
     ];
@@ -444,7 +471,7 @@ function animView(slots)
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, '武器'),
             wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, items()[wid].lab ?? '')] : h('span', {class: 'dim'}, '（空，穿上武器才能預覽）')),
-        wid && h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, k))), h('tr', null, numCells('item.json', wid, ['equip']))),
+        wid && equipTable(wid),
         h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝武器原點 ox/oy 在角色上的位置，a＝圖片角度）'),
         h('div', {class: 'animbar'},
             sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
@@ -494,7 +521,7 @@ function partsOf(r)
         if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
     };
     for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(r[k], DEPTH[k]);
-    for (const [cat] of SLOTS) add(items()[S.slots[cat]]?.equip, DEPTH[cat], cat === 'CAT_WEAPON');
+    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat === 'CAT_WEAPON');
     return out.sort((a, b) => a.d - b.d);
 }
 
@@ -833,5 +860,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, drawPreview, render,
+window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, setSlot, pickEquip, drawPreview, render, partsOf,
     trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}};
