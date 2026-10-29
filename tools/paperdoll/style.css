@@ -67,7 +67,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .autoGrid input[type=number] { width: 100%; }
 .autoGrid.weapon { grid-template-columns: auto repeat(6, 1fr); }
 .autoGrid.head { grid-template-columns: auto 1fr auto 1fr 1fr; }
-#auPortrait .flRow input[type=number] { width: 56px; }
+#auPortrait .flRow input[type=number], #modeIcon .flRow input[type=number] { width: 56px; }
 #auPtPreview { display: block; margin-top: 4px; max-width: 100%; border: 1px solid #555; background: repeating-conic-gradient(#777 0 25%, #555 0 50%) 0 0 / 8px 8px; }
 .autoGrid[hidden] { display: none; }
 .spCtl { display: flex; flex-direction: column; gap: 4px; }

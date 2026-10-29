@@ -1600,9 +1600,10 @@ run('paperdoll', async t => {
         out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
 
         out.pv = [$('auPtPreview').width, $('auPtPreview').height, $('auPtInfo').textContent];
-        type('au-pt-w', 80);
+        type('au-pt-size', 80);
         type('au-pt-fill', 0);
-        out.pv.push($('auPtPreview').width, pd.S.auto.portrait.w, pd.S.auto.portrait.fill);
+        out.pv.push($('auPtPreview').width, $('auPtPreview').height, pd.S.auto.portrait.size, pd.S.auto.portrait.fill);
+        out.legacy = [JSON.stringify(pd.autoFrom({portrait: {w: 64, h: 32, fill: 90}}).portrait)];
 
         let p = await open();
         out.dlg = [$('drRole').value, [...$('drRole').options].map(o => o.value).join(), $('dr-head-name').value, $('dr-hair-name').value, $('dr-portrait-name').value,
@@ -1665,12 +1666,12 @@ run('paperdoll', async t => {
         out.bald = [pd.S.mode.parts.map(p => p.C.name).join(), $('au-hair-x').disabled, $('au-head-x').disabled, $('status').textContent];
         link(false);
         $('auReset').click();
-        out.reset = [pd.S.auto.portrait.w, pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
+        out.reset = [pd.S.auto.portrait.size, pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
         pd.cancelMode();
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（頭像）：進模式顯示頭像的表、W/H/%、按鈕叫存到 role；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
+    t.eq('自動（頭像）：進模式顯示頭像的表、尺寸/%、按鈕叫存到 role；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
          JSON.stringify(['head', false, true, true, false, '存到 role…', '拆完才有預覽', true, true]));
     t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面', JSON.stringify(ah.made),
          JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false]));
@@ -1683,13 +1684,14 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false]));
     t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
     t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
-    t.eq('自動（頭像）：頭像預覽照 W/H，不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 90]));
+    t.eq('自動（頭像）：頭像預覽照尺寸（正方形），不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 80, 100]));
+    t.eq('自動（頭像）：舊設定 w/h 轉成 size（取 w）、fill 重設 100', JSON.stringify(ah.legacy), JSON.stringify(['{"size":64,"fill":100}']));
     t.eq('自動（頭像）：對話框 id＝原圖名就配到、列出所有角色（依 kind 分組）、檔名照 id', JSON.stringify(ah.dlg),
          JSON.stringify(['wick', ',wick,wolf,trump', 'head-wick', 'hair-wick', 'portrait-wick', 'sprite：hair-01 → hair-wick', 'icon：head-wick → portrait-wick', false]));
     t.eq('自動（頭像）：分組名、⚠ 標 body 不是 body-*、沒有 head 的標出來', JSON.stringify(ah.groups),
          JSON.stringify(['玩家,動物,其他', '（請選擇）|wick 維克（head-wick）|⚠ wolf （沒有 head）|trump 川普（head-trump）', '']));
     t.eq('自動（頭像）：寫 head／hair（sprite/scale/x/y）跟 icon，PNG 在 roles/parts、roles/portraits，零件記住角色', JSON.stringify(ah.saved),
-         JSON.stringify(['{"sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"sprite":"hair-wick","scale":0.25,"x":3,"y":2}', 'portrait-wick', [30, 30], [35, 40], [80, 100], 'wick', 'wick']));
+         JSON.stringify(['{"sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"sprite":"hair-wick","scale":0.25,"x":3,"y":2}', 'portrait-wick', [30, 30], [35, 40], [80, 80], 'wick', 'wick']));
     t.eq('自動（頭像）：別的角色共用的圖提示覆蓋（不擋）', JSON.stringify(ah.check),
          JSON.stringify(['會覆蓋 roles/parts/head-wick.png（trump 也用這張）', false]));
     t.eq('自動（頭像）：換角色檔名跟著換、沒有 hair 的角色一定要更新圖、撞到別的資料夾擋存', JSON.stringify(ah.swap),
@@ -1707,7 +1709,7 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：找不到角色', ah.loadMiss, '找不到 wick 對應的角色（存過的角色、id＝wick 或 head.sprite＝head-wick）');
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
          JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
-    t.eq('自動（頭像）：還原預設只還原頭像（連 W/H/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28, true]));
+    t.eq('自動（頭像）：還原預設只還原頭像（連尺寸/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28, true]));
 
     // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定
     const bt = await ev(async () => {

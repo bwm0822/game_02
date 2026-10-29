@@ -130,8 +130,7 @@
             <div id="auHead" class="autoGrid head" hidden></div>
             <div id="auPortrait" hidden>
                 <div class="flRow">頭像
-                    <label>W <input id="au-pt-w" type="number" min="1" step="1"></label>
-                    <label>H <input id="au-pt-h" type="number" min="1" step="1"></label>
+                    <label>尺寸 <input id="au-pt-size" type="number" min="1" step="1"></label>
                     <label>% <input id="au-pt-fill" type="number" min="1" max="400" step="1"></label>
                 </div>
                 <canvas id="auPtPreview"></canvas>
@@ -146,7 +145,7 @@
                 <div id="auSpInfo" class="dim spAfter"></div>
             </div>
             <div id="auHintWeapon" class="hint" hidden>透明底、直立的單把武器。按確定才清除透明（alpha &lt; 32）→ 丟掉雜點（比最大塊 1% 小的）→ 裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；x／y 是手的位置（遊戲單位），橘色十字是支點：拖十字＝圖跟著動、x／y 不動（改 ox／oy），按住 R 拖曳＝轉角度 a（只是預覽，存到 item 一律 a=0），拖武器本體＝改 x／y。取消＝撤掉這次自動，離開／Esc＝保留結果</div>
-            <div id="auHintHead" class="hint" hidden>透明底，左邊光頭、右邊頭髮（臉的位置是綠色的洞）。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 照重心在中線左右分成頭／頭髮（只有一邊有東西就全部當頭）、裁到剛好 → 縮放，頭髮疊在頭上面。scale% 各自調，勾 🔗 連動時頭髮跟頭一樣（只能改頭），x／y 是遊戲單位，把頭髮拖到頭上對好；頭對身體的細調去試穿分頁。頭像＝頭＋頭髮照目前位置疊起來（用縮小前的圖），等比塞進 W×H 的 %（可以超過 100，超出的裁掉）。存到 role 可以選任何角色（依 kind 分組，⚠＝body 不是 body-*，存了會疊兩顆頭），沒有 head／hair 就新增，檔名預設 head-／hair-／portrait-&lt;id&gt;；存過的角色記在零件上，下次存／載入 role 先選它</div>
+            <div id="auHintHead" class="hint" hidden>透明底，左邊光頭、右邊頭髮（臉的位置是綠色的洞）。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 照重心在中線左右分成頭／頭髮（只有一邊有東西就全部當頭）、裁到剛好 → 縮放，頭髮疊在頭上面。scale% 各自調，勾 🔗 連動時頭髮跟頭一樣（只能改頭），x／y 是遊戲單位，把頭髮拖到頭上對好；頭對身體的細調去試穿分頁。頭像＝頭＋頭髮照目前位置疊起來（用縮小前的圖），等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）。存到 role 可以選任何角色（依 kind 分組，⚠＝body 不是 body-*，存了會疊兩顆頭），沒有 head／hair 就新增，檔名預設 head-／hair-／portrait-&lt;id&gt;；存過的角色記在零件上，下次存／載入 role 先選它</div>
             <div id="auHintArmor" class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（只改 x／y 不重新縮放），x／y 是遊戲單位。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
             <div class="row2"><button id="auLoad">載入 item</button><button id="auItem">存到 item…</button></div>

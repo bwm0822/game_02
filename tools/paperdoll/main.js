@@ -297,8 +297,10 @@ const AUTO_KINDS = ['armor', 'weapon', 'head'];
 const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'x', 'y']};
 const AUTO_DEF = {helmet: {pct: 28, x: -1.75, y: -0.25}, armor: {pct: 20, x: 0.25, y: 26.5}, boots: {pct: 20, x: 1.5, y: 33},
                   weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, x: -2, y: 4}, hair: {pct: 18, x: -1, y: 2}};
-const AUTO_PORTRAIT = {w: 100, h: 100, fill: 90};
-const PT_F = ['w', 'h', 'fill'];
+const AUTO_PORTRAIT = {size: 100, fill: 100};
+const PT_F = ['size', 'fill'];
+// 舊格式 {w, h, fill}：w 當 size、fill 重設
+const ptFrom = (p) => p && 'w' in p ? {size: p.w, fill: AUTO_PORTRAIT.fill} : {...AUTO_PORTRAIT, ...p};
 const AUTO_KEY = 'paperdoll.auto';
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 分類的內建預設＝AUTO_DEF.weapon 蓋上 WCLS 第三欄；舊格式 weapon 直接放數字：複製到每個分類
@@ -319,7 +321,7 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          portrait: {...AUTO_PORTRAIT, ...v?.portrait}, headLink: v?.headLink ?? true});
+                          portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : a[P.key];
 const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}} : {...a, [P.key]: row};
@@ -2547,10 +2549,9 @@ function refreshAuto(m)
 function autoPortrait(m)
 {
     const pv = $('auPtPreview'), o = S.auto.portrait, c = m.parts && portraitOf(m.parts);
-    pv.width = o.w;
-    pv.height = o.h;
+    pv.width = pv.height = o.size;
     if (c) pv.getContext('2d').drawImage(c, 0, 0);
-    $('auPtInfo').textContent = !m.parts ? '拆完才有預覽' : c ? `頭像 ${o.w}×${o.h}` : '沒有不透明的像素';
+    $('auPtInfo').textContent = !m.parts ? '拆完才有預覽' : c ? `頭像 ${o.size}×${o.size}` : '沒有不透明的像素';
 }
 
 const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
@@ -3493,7 +3494,7 @@ function iconOf(c, {size, w = size, h = size, a, fill})
     return out;
 }
 
-// 頭像：頭、頭髮縮小前的圖照目前擺放疊起來（x/y 照 scale% 放大回原圖尺寸），再照 W×H×% 等比置中；
+// 頭像：頭、頭髮縮小前的圖照目前擺放疊起來（x/y 照 scale% 放大回原圖尺寸），再照 尺寸×尺寸×% 等比置中；
 // 縮小前的圖只跟零件的步驟有關，照 ops 快取（拖曳時不重播）
 const preCache = new WeakMap();
 function preOf(C)
@@ -4811,5 +4812,5 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
+               warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
                deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData};
