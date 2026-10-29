@@ -240,6 +240,7 @@ export const GM =
 
     // 基礎屬性
     BASE : ["str", "dex", "con", "int", "luk"],
+    BASE_DEF : {str:5, dex:5, con:5, int:5, luk:5},     // role.json 的 attrs 會覆蓋
     STR: "str",
     DEX: "dex",
     CON: "con",
@@ -503,6 +504,7 @@ export const UI =
         CHANGESCENE:'changescene',
         GAMEOVER:'gameover',
         SETTING:'setting',
+        SELECT:'select',
         MANUFACTURE:'manufacture',
         COVER:'cover',
         DRAGGED:'dragged',

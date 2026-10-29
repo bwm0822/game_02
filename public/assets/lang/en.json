@@ -410,9 +410,33 @@
       "r": "mt"
     }
   },
-  "ui.start_game": {
-    "開始遊戲": {
-      "t": "Start Game",
+  "ui.continue_game": {
+    "繼續遊戲": {
+      "t": "Continue",
+      "r": "mt"
+    }
+  },
+  "ui.new_game": {
+    "新遊戲": {
+      "t": "New Game",
+      "r": "mt"
+    }
+  },
+  "ui.select_role": {
+    "選擇角色": {
+      "t": "Choose Character",
+      "r": "mt"
+    }
+  },
+  "ui.start": {
+    "開始": {
+      "t": "Start",
+      "r": "mt"
+    }
+  },
+  "ui.overwrite_save": {
+    "開新遊戲會覆蓋目前的存檔，確定嗎？": {
+      "t": "Starting a new game will overwrite your current save. Continue?",
       "r": "mt"
     }
   },
@@ -2005,6 +2029,16 @@
   "role.wick": {
     "維克": {
       "t": "Wick",
+      "r": "mt"
+    },
+    "冒險者": {
+      "t": "Adventurer",
+      "r": "mt"
+    }
+  },
+  "role.mary": {
+    "瑪莉": {
+      "t": "Mary",
       "r": "mt"
     },
     "冒險者": {

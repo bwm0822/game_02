@@ -76,6 +76,9 @@ export default class DB
 
     static roleIds() { return Object.keys(this._roleDB ?? {}); }
 
+    // 可選的玩家角色，順序照 role.json
+    static playerIds() { return this.roleIds().filter(id=>this._roleDB[id].kind==='player'); }
+
     static dialog(id) {return this._dialogDB?.[id]; }
 
     static ability(id) { return this._abilityDB?.[id]; }

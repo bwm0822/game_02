@@ -41,6 +41,12 @@
       "default": 0,
       "show": false,
       "label": "kill.*"
+    },
+    "pc.*": {
+      "scope": "global",
+      "default": 0,
+      "show": false,
+      "label": "pc.*"
     }
   },
   "lines": {

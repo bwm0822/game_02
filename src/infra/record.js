@@ -114,6 +114,17 @@ export default class Record
         return data;
     }
 
+    static hasGame() {return !!Utility.load('game');}
+
+    // pc.<id> 是 story.json 宣告的 quality，劇情用它判斷玩的是哪個角色
+    static newGame(pid)
+    {
+        this.game = Utility.deepClone(this.game_def);
+        this.game.pid = pid;
+        this.game.q[`pc.${pid}`] = 1;
+        this.saveGame();
+    }
+
     static loadSetting()
     {
         let data = Utility.load('setting');

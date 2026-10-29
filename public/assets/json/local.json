@@ -266,8 +266,24 @@
     "lab": "滑鼠鎖定模式",
     "grp": "general"
   },
-  "start_game": {
-    "lab": "開始遊戲",
+  "continue_game": {
+    "lab": "繼續遊戲",
+    "grp": "general"
+  },
+  "new_game": {
+    "lab": "新遊戲",
+    "grp": "general"
+  },
+  "select_role": {
+    "lab": "選擇角色",
+    "grp": "general"
+  },
+  "start": {
+    "lab": "開始",
+    "grp": "general"
+  },
+  "overwrite_save": {
+    "lab": "開新遊戲會覆蓋目前的存檔，確定嗎？",
     "grp": "general"
   },
   "game_setting": {

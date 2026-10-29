@@ -86,11 +86,18 @@ class Tester
         throw new Error(`等待逾時：${what}`);
     }
 
-    // 主選單 → 開新遊戲，等到起始地圖載入完成
-    async newGame()
+    // 主選單 → 選角面板開新遊戲（沒給 pid 選第一個；有存檔時自動按覆蓋確認），等到起始地圖載入完成
+    async newGame(pid)
     {
         await this.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
-        await this.eval(d => d.game.scene.getScene('MainMenu').scene.start('Game'));
+        await this.eval((d, pid) => {
+            const sel = d.Ui.get(d.UI.TAG.SELECT);
+            sel.show();
+            if (pid) sel.select(pid);
+            sel.start();
+            const c = d.Ui.get(d.UI.TAG.CONFIRM);
+            if (c.isOpen) c.confirm();
+        }, pid);
         await this.waitReady(await this.eval(d => d.Record.game_def.map));
     }
 

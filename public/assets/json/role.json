@@ -66,6 +66,67 @@
       "y": 2
     }
   },
+  "mary": {
+    "kind": "player",
+    "lab": "瑪莉",
+    "des": "冒險者",
+    "icon": "portrait-mary",
+    "job": "ranger",
+    "gold": 100,
+    "survival": true,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": {
+      "sprite": "body-woman",
+      "scale": 0.25,
+      "y": 32
+    },
+    "hand": {
+      "sprite": "hand-man",
+      "scale": 0.25,
+      "y": 32
+    },
+    "inv": {
+      "storage": {
+        "capacity": 20
+      }
+    },
+    "head": {
+      "sprite": "head-mary",
+      "scale": 0.25,
+      "x": -1,
+      "y": 2
+    },
+    "hair": {
+      "sprite": "hair-mary",
+      "scale": 0.25,
+      "x": -2,
+      "y": 4
+    }
+  },
   "trump": {
     "kind": "npc",
     "loc": "brooklyn",
@@ -316,7 +377,7 @@
     "loc": "brooklyn",
     "lab": "凱倫",
     "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～",
-    "icon": "head-melanie",
+    "icon": "portrait-karen",
     "job": "trader",
     "gold": 200,
     "style": "passive_coward",
@@ -348,7 +409,7 @@
       "b": 0
     },
     "body": {
-      "sprite": "melanie",
+      "sprite": "body-woman",
       "scale": 0.25,
       "y": 32
     },
@@ -384,7 +445,29 @@
         "go": "bed",
         "map": "m_04x05/karen-home"
       }
-    ]
+    ],
+    "head": {
+      "sprite": "head-karen",
+      "scale": 0.25,
+      "x": -1,
+      "y": 2
+    },
+    "hair": {
+      "sprite": "hair-karen",
+      "scale": 0.25,
+      "x": -2,
+      "y": 4
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "helmet-clo-2",
+        "boots-clo-2"
+      ]
+    }
   },
   "xi": {
     "kind": "npc",

@@ -186,11 +186,7 @@ export class COM_Stats extends Com
     {
         super();
         // --- 基礎屬性（可依你資料庫載入覆蓋） ---
-        this.baseStats =
-        {
-            [GM.STR] : 5, [GM.DEX] : 5, [GM.INT] : 5,
-            [GM.CON] : 5, [GM.LUK] : 5,
-        }
+        this.baseStats = {...GM.BASE_DEF};
 
         this._states = {
             [GM.HP]:_baseHPMAX(this.baseStats),

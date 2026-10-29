@@ -102,7 +102,7 @@ export default class UiInv extends UiFrame {
 
 **對話/任務**：`uidialog.js`（NPC 對話框）、`uimisc.js`（任務/地圖頁籤，委派 `PQuest`/`PMap`）
 
-**系統/設定**：`uimain.js`（底部主控列）、`uisetting.js`（遊戲設定）、`uichangescene.js`（黑幕轉場）、`uicover.js`（全螢幕遮罩，計數器支援巢狀開關）、`uigameover.js`（結束畫面）、`uimaplegend.js`（小地圖圖例）、`uidebuger.js`（開發主控台）
+**系統/設定**：`uimain.js`（底部主控列）、`uisetting.js`（遊戲設定）、`uiselect.js`（新遊戲選角，跟 `uisetting.js` 一樣由 `MainMenu` 自己 new，不在 `createUI()`）、`uichangescene.js`（黑幕轉場）、`uicover.js`（全螢幕遮罩，計數器支援巢狀開關）、`uigameover.js`（結束畫面）、`uimaplegend.js`（小地圖圖例）、`uidebuger.js`（開發主控台）
 
 **共通彈窗/HUD/游標**：`uiinfo.js`（通用 tooltip）、`uioption.js`（右鍵動作選單）、`uimessage.js`（左下角訊息佇列）、`uitime.js`（右下角時間顯示）
 

@@ -16,6 +16,7 @@ import Story from '../systems/story.js'
 import {Player} from '../roles/player.js'
 import Port from '../items/port.js'
 import Utility from '../core/utility.js'
+import DB from '../data/db.js'
 
 const PLACE_RANGE = 2;  // 放置範圍：玩家周圍 ±2 格(5x5)
 
@@ -459,7 +460,7 @@ export class GameScene extends Scene
         }
 
         dlog(T.SCENE)('------------ pos=',pos)
-        new classType(this,pos.x,pos.y).init_runtime('wick').load();
+        new classType(this,pos.x,pos.y).init_runtime(Record.game.pid ??= DB.playerIds()[0]).load();
 
         this.setCameraFollow(GM.CAM_CENTER);
  

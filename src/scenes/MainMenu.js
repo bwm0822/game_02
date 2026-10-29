@@ -4,6 +4,8 @@ import Local from '../infra/local.js'
 import Lang from '../infra/lang.js'
 import DB from '../data/db.js'
 import UiSetting from '../ui/uisetting.js'
+import UiSelect from '../ui/uiselect.js'
+import UiConfirm from '../ui/uiconfirm.js'
 import {GM} from '../core/setting.js';
 import UiCursor from '../ui/uicursor.js'
 import {DEBUG,T,dlog} from '../core/debug.js'
@@ -41,13 +43,17 @@ export class MainMenu extends Scene
         this.add.image(screenCenterX, screenCenterY, 'background').setOrigin(0.5);
         this.add.image(screenCenterX, screenCenterY, 'logo').setOrigin(0.5);
 
-        this.btn_start(50, 400);
-        this.btn_setting(50, 450);
+        let y = 400;
+        if(Record.hasGame()) {this.button(50, y, 'continue_game'.lab(), ()=>this.scene.start('Game')); y+=50;}
+        this.button(50, y, 'new_game'.lab(), ()=>UiSelect.show()); y+=50;
+        this.button(50, y, 'game_setting'.lab(), ()=>UiSetting.show());
 
         GM.w = this.sys.canvas.width;
         GM.h = this.sys.canvas.height;
         this.input.setDefaultCursor('none');    // 消除預設的游標
         new UiSetting(this);
+        new UiSelect(this);
+        new UiConfirm(this);
         new UiCursor(this);
     }
 
@@ -76,21 +82,6 @@ export class MainMenu extends Scene
         DB.load(this);
     }
 
-
-    btn_start(x, y) 
-    {
-        this.button(x, y, 'start_game'.lab(), () => {
-            this.scene.start('Game');}
-        );
-    }
-
-
-    btn_setting(x, y)
-    {
-        this.button(x, y, 'game_setting'.lab(),()=>{
-            UiSetting.show()
-        });//, () => {this.scene.start('Setting');});
-    }
 
     debug()
     {
