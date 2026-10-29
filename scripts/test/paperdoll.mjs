@@ -661,10 +661,48 @@ run('paperdoll', async t => {
         out.def = [$('dlgName').value, $('dlgPath').textContent.endsWith('output')];
         $('dlgSave').close('ok'); await p;
         out.saved = [await has(output, 'a-copy.png'), await has(output, 'a-copy.json')];
+
+        // 存到 textures/：樹多一個根（不列 .tbd、minimap），只寫 PNG、圖層不動；跟別的資料夾撞 key 擋下、對話框留著
+        await tex.getDirectoryHandle('.tbd', {create: true});
+        await tex.getDirectoryHandle('minimap', {create: true});
+        const icons = await tex.getDirectoryHandle('icons', {create: true});
+        await (await icons.getFileHandle('dup.png', {create: true})).createWritable().then(async w => {await w.write('x'); await w.close();});
+        const equips = await tex.getDirectoryHandle('equips');
+        const L = pd.S.active, before = JSON.stringify([L.srcPath, L.path, L.ops.length]);
+        const box = $('dlgTree');
+        const kid = (w, name) => [...w.lastChild.children].find(k => k.classList.contains('tdir') && k.dataset.name === name);
+        const alerts = [], alert0 = window.alert;
+        window.alert = (s) => alerts.push(s);
+        let q = pd.saveLayer();
+        await until(() => $('dlgSave').open);
+        const roots = [...box.children].map(w => w.firstChild.textContent);
+        const T = box.children[1];
+        T.firstChild.click();
+        await until(() => kid(T, 'equips'));
+        out.texTree = [roots.join('|'), [...T.lastChild.children].filter(k => k.classList.contains('tdir')).map(k => k.dataset.name).sort().join()];
+        kid(T, 'equips').firstChild.click();
+        out.texPath = $('dlgPath').textContent;
+        $('dlgName').value = 'dup';
+        $('dlgSave').close('ok');
+        await until(() => alerts.length && $('dlgSave').open);
+        out.clash = [alerts[0], $('dlgSave').open, await has(equips, 'dup.png')];
+        $('dlgName').value = 'a-tex';
+        $('dlgSave').close('ok');
+        await q;
+        out.texSaved = [await has(equips, 'a-tex.png'), await has(equips, 'a-tex.json'), JSON.stringify([L.srcPath, L.path, L.ops.length]) === before, $('status').textContent];
+        window.alert = alert0;
+        for (const n of ['.tbd', 'minimap', 'icons']) await tex.removeEntry(n, {recursive: true});
+        await equips.removeEntry('a-tex.png');
         return out;
     });
     t.eq('存檔：預設存到 output/、檔名 -copy', JSON.stringify(it.def), JSON.stringify(['a-copy', true]));
     t.eq('存檔：寫 PNG＋sidecar', JSON.stringify(it.saved), JSON.stringify([true, true]));
+    t.eq('存檔：對話框多一個 textures 根，不列 .tbd、minimap', JSON.stringify([...it.texTree, it.texPath]),
+         JSON.stringify(['▾ |▸ textures', 'equips,icons', 'textures/equips']));
+    t.eq('存檔：存到 textures/ 跟別的資料夾撞 key 擋下、對話框留著', JSON.stringify(it.clash),
+         JSON.stringify(['textures/icons/dup.png 已經有了（texture key 不能撞名），換個檔名', true, false]));
+    t.eq('存檔：存到 textures/ 只寫 PNG、圖層不動', JSON.stringify(it.texSaved),
+         JSON.stringify([true, false, true, '已匯出 textures/equips/a-tex.png']));
 
     // 合併：dialog 一律 accept，所以有半透明時會烘入
     const m = await ev(async () => {
@@ -1771,6 +1809,7 @@ run('paperdoll', async t => {
         const p = pd.saveIcon();
         await until(() => $('dlgSave').open);
         out.defName = $('dlgName').value;
+        out.iconTex = [...$('dlgTree').children].map(w => w.firstChild.textContent.slice(2)).includes('textures');
         $('dlgSave').close('ok');
         await p;
         const f = await createImageBitmap(await (await root.getFileHandle('bar-icon.png')).getFile());
@@ -1797,6 +1836,7 @@ run('paperdoll', async t => {
     t.eq('icon：設定寫回 localStorage', JSON.stringify(ic.saved), JSON.stringify({size: 100, a: 45, fill: 90}));
     t.eq('icon：不合法的數字不收', JSON.stringify(ic.bad), JSON.stringify([90, '90']));
     t.eq('icon：存檔預設 <名>-icon、寫 尺寸×尺寸 的 PNG', JSON.stringify([ic.defName, ...ic.file]), JSON.stringify(['bar-icon', 100, 100]));
+    t.check('icon：存檔對話框也能選 textures', ic.iconTex);
     t.eq('icon：自動零件用縮小前的圖', JSON.stringify(ic.hires), JSON.stringify([2, 16, 20, 160, true]));
 
     const th = await ev(async () => {

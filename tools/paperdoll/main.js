@@ -2676,7 +2676,7 @@ function treeNode(dir, label, path, depth, opt, open)
     const list = async () => {
         const {dirs, files} = await FS.listDir(dir);
         const old = new Map([...kids.children].filter(k => k.classList.contains('tdir')).map(k => [k.dataset.name, k]));
-        const out = dirs.map(d => old.get(d.name) ?? treeNode(d, d.name, join(path, d.name), depth + 1, opt, false));
+        const out = dirs.filter(d => !opt.skip?.(path, d.name)).map(d => old.get(d.name) ?? treeNode(d, d.name, join(path, d.name), depth + 1, opt, false));
         kids.replaceChildren(...out);
         if (!opt.onFile) return;
         const show = opt.filter ?? (n => /\.png$/i.test(n) || isProj(n));
@@ -3164,9 +3164,8 @@ async function relocateDir(w, to, name)
 }
 
 // 照路徑一層層展開，回傳那個資料夾節點
-async function treeDir(box, path)
+async function treeDir(box, path, w = box.querySelector('.tdir'))
 {
-    let w = box.querySelector('.tdir');
     for (const seg of path.split('/').filter(Boolean))
     {
         if (!w) break;
@@ -3284,11 +3283,14 @@ function needRoot()
 }
 
 // bake：有半透明圖層時傳勾選框的文字，結果的 bake 是有沒有勾；note(path, name)：覆蓋確認時多加的文字
-function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null)
+// tex：樹多一個 public/assets/textures 根（不列 .tbd、minimap），選它的話結果的 tex 是 true、path 相對 textures/；
+// 存進去的檔名不能跟 textures/ 別的資料夾的 key 撞名，撞了提示後對話框留著讓你改
+function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = null, tex = false)
 {
-    const dlg = $('dlgSave');
-    let sel = {dir, path};
-    const showPath = () => {$('dlgPath').textContent = join(S.root.name, sel.path);};
+    const dlg = $('dlgSave'), box = $('dlgTree');
+    let sel = {dir, path, tex: false};
+    const selDir = () => !sel.tex ? sel.path : sel.path ? `textures/${sel.path}` : 'textures';
+    const showPath = () => {$('dlgPath').textContent = join(sel.tex ? 'textures' : S.root.name, sel.path);};
     $('dlgTitle').textContent = title;
     $('dlgExt').textContent = ext;
     $('dlgBakeRow').hidden = !bake;
@@ -3298,19 +3300,26 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
         const n = $('dlgName').value.trim();
         return n.toLowerCase().endsWith(ext) ? n.slice(0, -ext.length) : n;
     };
+    let texRoot = null;
     const pick = (d, p, row) => {
-        sel = {dir: d, path: p};
-        $('dlgTree').querySelectorAll('.sel').forEach(r => r.classList.remove('sel'));
+        sel = {dir: d, path: p, tex: !!texRoot?.contains(row)};
+        box.querySelectorAll('.sel').forEach(r => r.classList.remove('sel'));
         row.classList.add('sel');
         showPath();
     };
-    buildTree($('dlgTree'), {
+    const opt = {
         onDir: pick,
         filter: (n) => n.toLowerCase().endsWith(ext),
         onFile: (f, d, p, row) => {pick(d, p, row); $('dlgName').value = f.name.slice(0, -ext.length);},
-    });
+    };
+    buildTree(box, opt);
+    if (tex && S.assets)
+    {
+        texRoot = treeNode(S.assets.tex, 'textures', '', 0, {...opt, skip: (p, n) => !p && TEX_SKIP.includes(n)}, false);
+        box.append(texRoot);
+    }
     // 建在目前的目的地底下，建好就選它
-    $('dlgNewDir').onclick = () => treeDir($('dlgTree'), sel.path)
+    $('dlgNewDir').onclick = () => treeDir(box, sel.path, sel.tex ? texRoot : undefined)
         .then(w => w && startNewDir(w, k => {pick(k.fsDir,k.dataset.path, k.firstChild); $('dlgName').focus();}))
         .catch(e => status(e.message));
     $('dlgName').value = name;
@@ -3318,13 +3327,29 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     dlg.returnValue = '';
     dlg.showModal();
     $('dlgName').select();
-    return new Promise(res => dlg.addEventListener('close', async () => {
-        const n = curName();
-        if (dlg.returnValue !== 'ok' || !n) return res(null);
-        const bk = !!bake && $('dlgBake').checked;
-        if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${join(sel.path, n)}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
-        res({...sel, name: n, bake: bk});
-    }, {once: true}));
+    return new Promise(res => {
+        const onClose = async () => {
+            const n = curName();
+            if (dlg.returnValue !== 'ok' || !n) return res(null);
+            if (sel.tex)
+            {
+                const hit = [...await texKeys()].find(([k]) => k.toLowerCase() === n.toLowerCase());
+                if (hit && hit[1].toLowerCase() !== sel.path.toLowerCase())
+                {
+                    alert(`textures/${join(hit[1], hit[0])}.png 已經有了（texture key 不能撞名），換個檔名`);
+                    dlg.returnValue = '';
+                    dlg.showModal();
+                    $('dlgName').select();
+                    return dlg.addEventListener('close', onClose, {once: true});
+                }
+            }
+            const bk = !!bake && $('dlgBake').checked;
+            const shown = join(selDir(), n);
+            if (await FS.tryFile(sel.dir, n + ext) && !confirm(`${shown}${ext} 已存在，要覆蓋嗎？${note?.(sel.path, n) ?? ''}`)) return res(null);
+            res({...sel, name: n, bake: bk});
+        };
+        dlg.addEventListener('close', onClose, {once: true});
+    });
 }
 
 function sidecar(L)
@@ -3428,13 +3453,13 @@ async function saveIcon()
     if (m.type !== 'icon' || !needRoot()) return;
     const L = m.layer, o = {...S.icon};
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
-    const r = await saveDialog(`存 icon（${o.size}×${o.size}）`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-icon`, '.png', bake);
+    const r = await saveDialog(`存 icon（${o.size}×${o.size}）`, L.dir ?? S.root, L.dir ? L.path : '', `${L.name}-icon`, '.png', bake, null, true);
     if (!r) return;
     const c = iconOf(r.bake ? PX.fade(m.src, L.opacity) : m.src, o);
     if (!c) return status('沒有不透明的像素');
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(c));
     refreshThumbs();
-    status(`已存 ${join(r.path, r.name)}.png`);
+    status(`${r.tex ? '已匯出 textures/' : '已存 '}${join(r.path, r.name)}.png`);
 }
 
 // ---------- 遊戲資料 ----------
@@ -3512,10 +3537,12 @@ async function saveLayer()
     const bake = L.opacity < 1 ? `烘入不透明度（目前 ${Math.round(L.opacity * 100)}%）` : null;
     const output = await FS.tryDir(S.root, 'output');
     const [dir, path] = output ? [output, 'output'] : [L.dir ?? S.root, L.dir ? L.path : ''];
-    const r = await saveDialog(`存檔：${L.name}`, dir, path, `${L.name}-copy`, '.png', bake);
+    const r = await saveDialog(`存檔：${L.name}`, dir, path, `${L.name}-copy`, '.png', bake, null, true);
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
+    // 存進 textures/ 是匯出成品：不寫擺放 .json、圖層的原圖／位置都不動
+    if (r.tex) return status(`已匯出 textures/${join(r.path, r.name)}.png`);
     await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L), null, 2) + '\n']));
     refreshThumbs();
     Object.assign(L, {dir: r.dir, path: r.path});
