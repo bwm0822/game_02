@@ -325,9 +325,11 @@ function drawView()
     if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 hand）' : '先在上方選擇專案資料夾'));
     const tab = (m, text) => h('button', {class: 'tab' + (S.mode === m ? ' sel' : ''), dataset: {mode: m}, onclick: () => {S.mode = m; playing++; recenter(); render();}}, text);
     const orig = origEquips().length > 0;
-    const slots = h('div', {class: 'slots'}, SLOTS.map(([cat, name]) =>
+    // 左鍵換裝、右鍵只選中該格；擺放分頁每格下方是透明度
+    const slots = h('div', {class: 'slots'}, SLOTS.map(([cat, name]) => h('div', {class: 'slotcol', dataset: {cat}},
         h('div', {class: 'slot' + (cat === S.cur ? ' sel' : ''), dataset: {cat}, title: S.slots[cat] ? `${name}：${S.slots[cat]}` : name,
-            onclick: () => pickEquip(cat)}, slotIcon(cat, 40), cat in S.alpha && h('span', {class: 'alpha'}, '%'))),
+            onclick: () => pickEquip(cat), oncontextmenu: (e) => {e.preventDefault(); S.cur = cat; render();}}, slotIcon(cat, 40)),
+        S.mode === 'fit' && alphaBar(cat))),
         h('button', {class: 'orig', disabled: !orig, title: orig ? '五格換成這個角色的 inv.equips' : '這個角色沒有原裝', onclick: wearOrig}, '穿原裝'));
     $('view').replaceChildren(h('div', null,
         h('div', {class: 'tabs'}, tab('fit', '擺放'), tab('anim', '動畫')),
@@ -349,23 +351,18 @@ function fitView(r, slots)
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? '')] : h('span', {class: 'dim'}, '（空）')),
-        id && alphaBar(S.cur),
         id && equipTable(id),
         id && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
             onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
     ];
 }
 
-// 拖滑桿只重畫預覽（整頁重繪會打斷拖拉），放開才 render 更新格子上的 % 標記
+// 拖滑桿只重畫預覽，不整頁重繪（會打斷拖拉）
 function alphaBar(cat)
 {
     const pct = Math.round((S.alpha[cat] ?? 1) * 100);
-    const out = h('span', {class: 'num'}, `${pct}%`);
-    return h('label', {class: 'alphabar', title: '只影響預覽，不存檔'}, '透明度',
-        h('input', {type: 'range', min: 0, max: 100, value: pct,
-            oninput: (e) => {out.textContent = `${e.target.value}%`; setAlpha(cat, e.target.value / 100);},
-            onchange: () => render()}),
-        out);
+    return h('input', {type: 'range', class: 'alphabar', min: 0, max: 100, value: pct, title: `透明度 ${pct}%（只影響預覽，不存檔）`,
+        oninput: (e) => {e.target.title = `透明度 ${e.target.value}%（只影響預覽，不存檔）`; setAlpha(cat, e.target.value / 100);}});
 }
 
 // ---------- 動畫 ----------

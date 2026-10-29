@@ -65,16 +65,22 @@ run('fit', async t => {
         out.unequip = 'CAT_BOOTS' in S.slots;
         F.pickEquip('CAT_HELMET'); dlg.close();
 
-        // 透明度：每格各自、只影響預覽、換角色保留、格子標 %
+        // 右鍵只選中、不開視窗
+        document.querySelector('#view .slot[data-cat=CAT_CHESTPLATE]').dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true}));
+        out.rclick = [S.cur, dlg.open];
+        S.cur = 'CAT_HELMET'; F.render();
+
+        // 透明度：每格正下方一條、只影響預覽、換角色保留
         const kept = JSON.stringify(S.slots);
-        const bar = document.querySelector('#view .alphabar input[type=range]');
-        bar.value = 40; bar.dispatchEvent(new Event('input')); bar.dispatchEvent(new Event('change'));
+        out.bars = document.querySelectorAll('#view .slotcol .alphabar').length;
+        const bar = document.querySelector('#view .slotcol[data-cat=CAT_HELMET] .alphabar');
+        bar.value = 40; bar.dispatchEvent(new Event('input'));
         const helmA = () => F.partsOf(S.doc['role.json'].data[S.rid]).find(p => p.sprite === S.doc['item.json'].data.helmet_01.equip.sprite)?.alpha;
-        out.alpha = [S.alpha.CAT_HELMET, helmA(), !!document.querySelector('#view .slot[data-cat=CAT_HELMET] .alpha'), !!document.querySelector('#view .slot[data-cat=CAT_WEAPON] .alpha'), isDirtyNow()];
+        out.alpha = [S.alpha.CAT_HELMET, helmA(), 'CAT_WEAPON' in S.alpha, isDirtyNow()];
         F.select('wick');
-        out.keep = [JSON.stringify(S.slots) === kept, S.alpha.CAT_HELMET, S.cur];
-        F.setAlpha('CAT_HELMET', 1); F.render();
-        out.alpha.push('CAT_HELMET' in S.alpha, !!document.querySelector('#view .slot .alpha'));
+        out.keep = [JSON.stringify(S.slots) === kept, S.alpha.CAT_HELMET, document.querySelector('#view .slotcol[data-cat=CAT_HELMET] .alphabar').value];
+        F.setAlpha('CAT_HELMET', 1);
+        out.alpha.push('CAT_HELMET' in S.alpha);
         F.select('guard-1');
 
         // 改數字：裝備寫 item.json、部件寫 role.json、清空刪 key、undo 一起退
@@ -261,9 +267,11 @@ run('fit', async t => {
     t.eq('虛線／錨點／b／g／z 預設不勾', JSON.stringify(r.opts), JSON.stringify([false, false, false, false, false]));
     t.eq('選角色不帶原裝', r.slots0, '{}');
     t.eq('穿原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
-    t.eq('透明度：存在格子、預覽套用、標 %、只標那格、不算修改', JSON.stringify(r.alpha.slice(0, 5)), JSON.stringify([0.4, 0.4, true, false, false]));
-    t.eq('換角色裝備、透明度、選中格都保留', JSON.stringify(r.keep), JSON.stringify([true, 0.4, 'CAT_HELMET']));
-    t.eq('透明度 100% 刪掉、% 標記消失', JSON.stringify(r.alpha.slice(5)), JSON.stringify([false, false]));
+    t.eq('右鍵只選中該格、不開視窗', JSON.stringify(r.rclick), JSON.stringify(['CAT_CHESTPLATE', false]));
+    t.eq('每格正下方一條透明度', r.bars, 5);
+    t.eq('透明度：只改那格、預覽套用、不算修改', JSON.stringify(r.alpha.slice(0, 4)), JSON.stringify([0.4, 0.4, false, false]));
+    t.eq('換角色裝備、透明度保留', JSON.stringify(r.keep), JSON.stringify([true, 0.4, '40']));
+    t.eq('透明度 100% 刪掉', r.alpha[4], false);
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張', r.gloves[0]);
     t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword-1', 'helmet_01', 'chest_01']));

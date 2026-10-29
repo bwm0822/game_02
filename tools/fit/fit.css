@@ -16,12 +16,11 @@ table.fit td .sprite { color: #888; font-size: 14px; }
 table.fit input.num { width: 70px; }
 table.fit select { min-width: 160px; }
 
-.slots { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.slot { position: relative; padding: 4px; background: #6b6b6b; border: 2px solid #8a8a8a; cursor: pointer; }
-.slot .alpha { position: absolute; right: 1px; bottom: 0; font-size: 11px; font-weight: bold; color: #7fd4ff; text-shadow: 0 0 2px #000; }
-.slots .orig { margin-left: 6px; }
-.alphabar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.alphabar input[type=range] { width: 160px; }
+.slots { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 8px; }
+.slotcol { display: flex; flex-direction: column; gap: 4px; }
+.slot { padding: 4px; background: #6b6b6b; border: 2px solid #8a8a8a; cursor: pointer; }
+.slots .orig { margin: 14px 0 0 6px; }
+.alphabar { width: 52px; margin: 0; }
 .slot:hover { border-color: #ccc; }
 .slot.sel { border-color: #ffd700; }
 .slot .ico, .tile .ico { background: none; }
