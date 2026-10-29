@@ -17,6 +17,7 @@ const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand',
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
+const STEP = {scale: 0.01, x: 0.25, y: 0.25, ox: 0.1, oy: 0.1};    // 數字欄 ↑↓ 一次多少
 // 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
 const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
 const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
@@ -285,7 +286,7 @@ function drawList()
 function numInput(file, id, path, ph, {req, after} = {})
 {
     const k = `${file}|${id}|${path.join('.')}`, v = getAt(S.doc[file].data[id], path);
-    return h('input', {type: 'number', step: path.at(-1) === 'scale' ? 0.01 : 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
+    return h('input', {type: 'number', step: STEP[path.at(-1)] ?? 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
         onchange: (e) => {
             const n = parseNum(e.target.value);
             if (typeof n === 'string') {status(`${path.join('.')} 要是數字`); return render();}
