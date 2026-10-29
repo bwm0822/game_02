@@ -47,8 +47,28 @@ export function fieldInput(def, val, put, k)
     }
 }
 
-export function createForm({S, render})
+export function createForm({S, render, commit})
 {
+    S.json ??= false;   // 整筆 JSON 模式：記在頁面，換一筆保持
+    const FULL = '#full';
+
+    const modeBtn = () => h('button', {type: 'button', class: S.json ? 'on' : '', title: '切換表單／整筆 JSON',
+        onclick: () => {S.json = !S.json; render();}}, S.json ? '表單' : 'JSON');
+
+    // 整筆物件（不含 id）；不是物件也當成錯，留草稿
+    function fullJson(id)
+    {
+        return JE.jsonEdit({k: FULL, text: S.drafts[FULL]?.text ?? JSON.stringify(S.data[id], null, 2), placeholder: '{ }', maxRows: 200,
+            onApply: v => {
+                if (!isObj(v)) {S.drafts[FULL] = {text: JSON.stringify(v, null, 2), msg: '整筆要是物件 { }'}; return render();}
+                delete S.drafts[FULL];
+                commit(() => {S.data[id] = v;});
+            },
+            onDraft: (t, msg) => {S.drafts[FULL] = {text: t, msg};}});
+    }
+
+    const fullDraft = () => S.drafts[FULL] && `整筆 JSON 有錯還沒套用（${S.drafts[FULL].msg}）`;
+
     // obj 裡 isKnown 以外的 key 用 JSON 框編輯；有錯沒套用的原文留在 S.drafts
     function rawArea(obj, isKnown, put, k)
     {
@@ -69,5 +89,5 @@ export function createForm({S, render})
             fold && h('span', {class: 'arrow'}, open ? '▼' : '▶'), ...kids);
     }
 
-    return {rawArea, isOpen, boxBar};
+    return {rawArea, isOpen, boxBar, modeBtn, fullJson, fullDraft};
 }

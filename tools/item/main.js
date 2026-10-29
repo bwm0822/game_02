@@ -204,7 +204,7 @@ function renderForm()
     if (!it) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇專案資料夾'));
     const shown = [...new Set([...SC.shownFields(it), ...(S.extra[id] ?? [])])];
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.includes(k));
-    const warns = validate(id);
+    const warns = [F.fullDraft(), ...validate(id)].filter(Boolean);
     const known = (k) => !!SC.FIELDS[k];
     view.replaceChildren(...[
         h('div', {class: 'head'},
@@ -212,11 +212,12 @@ function renderForm()
             h('span', {class: 'bigid'}, id),
             D.dirty(id) && h('span', {class: 'dirty'}, '●'),
             h('span', {class: 'grow'}),
+            F.modeBtn(),
             h('button', {type: 'button', onclick: () => D.askRename(id)}, '改名…'),
             h('button', {type: 'button', onclick: () => D.dup(id)}, '複製'),
             h('button', {type: 'button', onclick: () => D.remove(id)}, '刪除…')),
         warns.length && h('ul', {class: 'warns'}, warns.map(w => h('li', null, w))),
-        h('div', {class: 'fields'},
+        S.json ? F.fullJson(id) : h('div', {class: 'fields'},
             shown.map(k => fieldRow(id, it, k)),
             rest.length && [h('span', {class: 'k unset'}, '加欄位'),
                 h('select', {onchange: e => {

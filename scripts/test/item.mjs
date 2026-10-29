@@ -389,6 +389,32 @@ run('item', async t => {
     t.eq('hover 中文欄位名看得到 key', JSON.stringify(fold.tips), JSON.stringify(['價格', 'class']));
     t.eq('內容變多不會自己收起來', JSON.stringify(fold.freeze), JSON.stringify(['▼', '▼', true]));
 
+    // 整筆 JSON 模式
+    const full = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const btn = (text) => [...document.querySelectorAll('#view .head button')].find(b => b.textContent === text);
+        const ta = () => document.querySelector('#view textarea[data-k="#full"]');
+        const fire = (v) => {ta().value = v; ta().dispatchEvent(new Event('input')); ta().dispatchEvent(new Event('change'));};
+        S.sel = 'raw_meat'; S.view = 'form'; ie.render();
+        btn('JSON').click();
+        out.show = [!!ta(), !document.querySelector('#view .fields'), JSON.parse(ta().value).lab === S.items.raw_meat.lab];
+        fire(JSON.stringify({...S.items.raw_meat, gold: 123}));
+        out.apply = S.items.raw_meat.gold;
+        ie.undo();
+        fire('{');
+        out.bad = [S.items.raw_meat.gold !== 123, !!S.drafts['#full']];
+        S.sel = 'pot'; ie.render();
+        out.keep = [!!ta(), JSON.parse(ta().value).lab === S.items.pot.lab];
+        btn('表單').click();
+        out.back = !!document.querySelector('#view .fields');
+        return out;
+    });
+    t.check('道具 JSON 模式：整筆物件、表單換掉', full.show.every(Boolean), JSON.stringify(full.show));
+    t.eq('道具 JSON 模式：套用', full.apply, 123);
+    t.check('道具 JSON 模式：有錯不套用、留草稿', full.bad.every(Boolean));
+    t.check('道具 JSON 模式：換道具保持', full.keep.every(Boolean));
+    t.check('切回表單', full.back);
+
     // 下拉選單：有值也列全部、打字才篩選
     const key = '#view input[data-combo="dl-key"]';
     await t.page.evaluate(() => {const ie = window.__ie; ie.S.sel = 'raw_meat'; ie.S.view = 'form'; ie.render(); ie.S.open.effects = true; ie.render();});
@@ -466,7 +492,7 @@ run('item', async t => {
     t.check('atlas 沒寫 frame 有警告', r.atlas[1]);
     t.check('atlas frame 不存在有警告', r.atlas[2]);
     t.eq('atlas frame 畫得出來', r.atlas[3], 51);
-    t.eq('選圖器分頁是第一層資料夾', r.pickTabs, 'equips,icons,items,others,props,roles');
+    t.eq('選圖器分頁是第一層資料夾', r.pickTabs, 'equips,icons,items,others,props,roles,weapons');
     t.eq('單張圖開在所在資料夾並反白', JSON.stringify(r.pickImage), JSON.stringify(['roles / npcs', 'macron']));
     t.eq('sheet 直接開格子畫面', JSON.stringify(r.pickSheet), JSON.stringify(['icons / icons', true]));
     t.check('子資料夾點進去、麵包屑點回上層', r.pickNav[0].includes('rogues ▦') && r.pickNav[1] === 'roles' && r.pickNav[2].startsWith('animals,'), JSON.stringify(r.pickNav));

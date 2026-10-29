@@ -7,6 +7,9 @@
 
 .sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }
 .sec:empty { border: none; margin: 0; }
+.sec.fold { cursor: pointer; user-select: none; }
+.sec.fold .arrow { display: inline-block; width: 1em; color: #888; font-size: .8em; }
+.sec.bad { color: #e66; }
 
 .cells { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .cell { display: flex; align-items: center; gap: 4px; background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 3px; }

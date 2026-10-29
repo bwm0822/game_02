@@ -21,6 +21,7 @@
   - 可自由輸入又有建議的欄位（list／itemref／tags、材料）不用 `<input list>`（datalist 會拿現有的值篩選，有值時看不到其他選項），改用 `combo.js`：input 加 `data-combo="<datalist id>"`，datalist 只當選項來源；點框或 ↓ 列全部、打字才篩選，選了送 `change` 接原本的 onchange。
   - 框（obj 欄位、效果、其他欄位）點標題列收合，標題只顯示個數；道具第一次畫到時決定預設（array 或超過一個 key 收合），之後記在 `S.open`，改內容不會自己收起來，換道具才重算；按「建立」「＋ 新增效果」會自動展開。
   - effects 一條一張卡片：標題是 `effSummary()` 的一行人話（不是遊戲內說明文字），欄位依 `type` 決定（`EFF_BY_TYPE`），schema 沒有的 key 在「額外欄位（JSON）」。
+  - 標題列「JSON」鈕切成整筆 JSON 模式（`form.js` 的 `modeBtn()`／`fullJson()`，角色編輯器也用）：表單換成一個 JSON 框，內容是這筆物件本身（不含 id，改名還是用「改名…」），失焦沒錯就整筆換掉（一步 undo、key 位置不動），不是物件也算錯；有錯的草稿 key 是 `#full`，切回表單時警告清單會列出來。模式記在 `S.json`（頁面，換一筆保持，重新整理回表單）。
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
   - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅；有錯時右上角出現 `[修正]`（`parse()` 的 `err.fix` 有修法：補 `,` `:` 右括號 `"`、裸值／數字 key 加引號、刪怪字元、修數字，一次修一個，走 `insertText` 可 Ctrl+Z，不自動套用）或 `[錯誤]`（修不了，不能按），原因都在按鈕的 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。

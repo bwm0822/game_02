@@ -51,6 +51,22 @@ run('role', async t => {
         const items = () => S.data.trump.inv.storage.items;
         const sel = (id) => {S.sel = id; S.view = 'form'; re.render();};
         sel('trump');
+        const secs = () => [...document.querySelectorAll('#view .sec.fold')];
+        const btn = (text) => [...document.querySelectorAll('#view .head button')].find(b => b.textContent === text);
+        out.foldDefault = [secs().length, secs().every(s => s.textContent.startsWith('▶')), document.querySelectorAll('#view .cell').length,
+                           secs().find(s => s.textContent.includes('物品'))?.textContent];
+        secs().find(s => s.textContent.includes('物品')).click();
+        out.foldClick = document.querySelectorAll('#view .cell').length > 0;
+        sel('karen');
+        out.foldKeep = secs().find(s => s.textContent.includes('物品')).textContent.startsWith('▼');
+        btn('全部收合').click();
+        const addSel = document.querySelector('#view .fields > select');
+        addSel.value = 'corpse'; addSel.dispatchEvent(new Event('change'));
+        out.foldAdd = [secs().find(s => s.textContent.includes('外觀')).textContent.startsWith('▼'), secs().find(s => s.textContent.includes('物品')).textContent.startsWith('▶')];
+        re.undo();
+        sel('trump');
+        btn('全部展開').click();
+        out.foldAll = secs().every(s => s.textContent.startsWith('▼'));
         const cellInputs = () => [...document.querySelectorAll('#view .cell input')];
         const fire = (el, v) => {el.value = v; el.dispatchEvent(new Event('change'));};
         fire(cellInputs()[0], 'sword-2');
@@ -68,11 +84,35 @@ run('role', async t => {
         out.invUndo = JSON.stringify(items()) === JSON.stringify(JSON.parse(orig).trump.inv.storage.items);
         re.set('trump', ['inv', 'storage', 'items', 0], 'nope');
         out.invBad = [re.validate('trump').some(w => w.includes('nope')), !!document.querySelector('#view .cell.bad')];
+        out.secBad = secs().filter(s => s.classList.contains('bad')).map(s => s.textContent.replace(/[▼▶]|（.*/g, ''));
         re.undo();
+
+        // 整筆 JSON 模式
+        btn('JSON').click();
+        const full = () => document.querySelector('#view textarea[data-k="#full"]');
+        const fireJ = (v) => {full().value = v; full().dispatchEvent(new Event('input')); full().dispatchEvent(new Event('change'));};
+        out.jsonShow = [!!full(), JSON.parse(full().value).lab === S.data.trump.lab, !document.querySelector('#view .fields'), !!document.querySelector('.pv canvas')];
+        const j = JSON.parse(full().value); j.gold = 777; j.zzz = 1;
+        fireJ(JSON.stringify(j));
+        out.jsonApply = [S.data.trump.gold, S.data.trump.zzz, Object.keys(S.data).indexOf('trump') === Object.keys(JSON.parse(orig)).indexOf('trump')];
+        re.undo();
+        out.jsonUndo = [S.data.trump.gold === JSON.parse(orig).trump.gold, 'zzz' in S.data.trump];
+        fireJ('{"lab": ');
+        out.jsonBad = [S.data.trump.lab === JSON.parse(orig).trump.lab, !!S.drafts['#full'], full().value];
+        btn('表單').click();
+        out.jsonDraftWarn = document.querySelector('#view .warns')?.textContent.includes('整筆 JSON 有錯');
+        btn('JSON').click();
+        fireJ('[1]');
+        out.jsonNotObj = [Array.isArray(S.data.trump), !!S.drafts['#full']];
+        sel('karen');
+        out.jsonKeep = [!!full(), !S.drafts['#full'], JSON.parse(full().value).lab === S.data.karen.lab];
+        btn('表單').click();
+        sel('trump');
 
         // 作息
         const sch = () => S.data.karen.schedule;
         sel('karen');
+        re.set('karen', ['style'], 'weak');    // 留著，後面存檔才有警告可問
         out.style = re.validate('karen').some(w => w.includes('weak'));
         out.schCards = document.querySelectorAll('#view .card').length === sch().length;
         re.addSch('karen');
@@ -151,6 +191,19 @@ run('role', async t => {
     t.eq('讀入全部角色', r.load[0], true);
     t.check('選專案根目錄：找到 public/assets', r.load[1] && r.load[2] === 'assets');
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
+    t.check('段落預設全部收合、標題有欄位數（玩家沒有作息段）', r.foldDefault[0] === 4 && r.foldDefault[1] && r.foldDefault[2] === 0 && /物品（1）/.test(r.foldDefault[3]), JSON.stringify(r.foldDefault));
+    t.check('點段標題展開', r.foldClick);
+    t.check('換角色保持段落開關', r.foldKeep);
+    t.check('加欄位自動展開那一段', r.foldAdd[0] && r.foldAdd[1], JSON.stringify(r.foldAdd));
+    t.check('全部展開', r.foldAll);
+    t.eq('有警告的段標紅', JSON.stringify(r.secBad), JSON.stringify(['物品']));
+    t.check('JSON 模式：整筆物件、表單換掉、預覽還在', r.jsonShow.every(Boolean), JSON.stringify(r.jsonShow));
+    t.check('JSON 模式：套用、key 位置不動', r.jsonApply[0] === 777 && r.jsonApply[1] === 1 && r.jsonApply[2], JSON.stringify(r.jsonApply));
+    t.check('JSON 模式：一步 undo', r.jsonUndo[0] && !r.jsonUndo[1]);
+    t.check('JSON 模式：有錯不套用、留草稿', r.jsonBad[0] && r.jsonBad[1] && r.jsonBad[2] === '{"lab": ', JSON.stringify(r.jsonBad));
+    t.check('切回表單警告草稿', r.jsonDraftWarn);
+    t.check('JSON 模式：不是物件不套用', !r.jsonNotObj[0] && r.jsonNotObj[1]);
+    t.check('換角色保持 JSON 模式、草稿丟掉', r.jsonKeep.every(Boolean), JSON.stringify(r.jsonKeep));
     t.eq('字串道具改 id 還是字串', r.invRename, '"sword-2"');
     t.eq('字串道具數量改成 3 變物件', r.invCount, JSON.stringify({id: 'sword-2', count: 3}));
     t.eq('物件道具改 id 還是物件', r.invObj, JSON.stringify({id: 'gloves_01', count: 1}));

@@ -21,6 +21,7 @@ const D = createDoc({
 const {S, render, commit, set} = D;
 S.ext = {items: {}, abilities: {}, maps: {}};    // 唯讀參考資料：item.json、ability.json、navgraph.json 的「地圖 → 物件名稱」
 S.loc = '';                                      // 總覽表 NPC 頁的地點篩選
+S.secOpen = {};                                  // 表單段落開關（段名 → bool，預設收合；記在頁面，換角色保持）
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.data[id].icon, lab: id => S.data[id].lab, warns: id => validate(id)});
 
@@ -97,25 +98,31 @@ function checkSchedule(list, out)
     });
 }
 
-function validate(id)
+// keys：跟 out 一一對應的欄位 key（段落標題標 ⚠ 用）
+function validate(id, keys = [])
 {
     const r = S.data[id], out = [];
+    const tag = (k) => {while (keys.length < out.length) keys.push(k);};
     if (!r.lab) out.push('沒有名稱 lab');
-    for (const k of SC.REQUIRED) if (r[k] === undefined) out.push(`沒有 ${k}（遊戲畫角色會出錯）`);
+    tag('lab');
+    for (const k of SC.REQUIRED) {if (r[k] === undefined) out.push(`沒有 ${k}（遊戲畫角色會出錯）`); tag(k);}
     if (r.kind && !SC.KINDS.includes(r.kind)) out.push(`不認識的分類 kind：${r.kind}`);
+    tag('kind');
     if (r.style !== undefined && !(r.style in SC.STYLES)) out.push(`性格 style「${r.style}」在 com_ai.js 的 wTBL 裡沒有（遊戲會當成 ${SC.STYLE_DEFAULT}）`);
+    tag('style');
     for (const [k, v] of Object.entries(r))
     {
         const def = SC.FIELDS[k];
         if (!def || k === 'style') continue;
         if (def.type === 'obj')
         {
-            if (!isObj(v)) {out.push(`${k} 應該是物件`); continue;}
-            for (const [f, d] of Object.entries(def.fields)) checkVal(d, v[f], `${k}.${f}`, out);
+            if (!isObj(v)) out.push(`${k} 應該是物件`);
+            else for (const [f, d] of Object.entries(def.fields)) checkVal(d, v[f], `${k}.${f}`, out);
         }
         else if (def.type === 'inv') checkInv(v, out);
         else if (def.type === 'schedule') checkSchedule(v, out);
         else checkVal(def, v, k, out);
+        tag(k);
     }
     return out;
 }
@@ -294,7 +301,7 @@ function otherBox(id, r)
 {
     const known = (k) => !!SC.FIELDS[k];
     const raw = Object.fromEntries(Object.entries(r).filter(([k]) => !known(k)));
-    const open = F.isOpen('#raw', raw), n = Object.keys(raw).length;
+    const open = S.open['#raw'] ??= false, n = Object.keys(raw).length;
     return h('div', {class: 'box'},
         F.boxBar('#raw', open, n > 0, '其他欄位', h('span', {class: 'dim'}, `（${n}）原始 JSON，遊戲沒在讀或工具不認識的 key，例如 stats、states`)),
         open && F.rawArea(r, known, raw => commit(() => replaceRaw(S.data[id], known, raw)), '#raw'));
@@ -307,7 +314,9 @@ function renderForm()
     if (!r) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選角色）' : '先在上方選擇專案資料夾'));
     const shown = new Set([...SC.shownFields(r), ...(S.extra[id] ?? [])]);
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.has(k));
-    const warns = validate(id);
+    const wkeys = [], warns = validate(id, wkeys), draft = F.fullDraft();
+    const secs = SC.SECTIONS.map(sec => ({...sec, keys: sec.keys.filter(k => shown.has(k))})).filter(sec => sec.keys.length > 0);
+    const allOpen = (v) => {for (const sec of SC.SECTIONS) S.secOpen[sec.title] = v; render();};
     view.replaceChildren(h('div', {class: 'split'},
         h('div', {class: 'form'},
             h('div', {class: 'head'},
@@ -316,18 +325,26 @@ function renderForm()
                 h('span', {class: 'dim'}, r.lab ?? ''),
                 D.dirty(id) && h('span', {class: 'dirty'}, '●'),
                 h('span', {class: 'grow'}),
+                !S.json && [h('button', {type: 'button', onclick: () => allOpen(true)}, '全部展開'),
+                            h('button', {type: 'button', onclick: () => allOpen(false)}, '全部收合')],
+                F.modeBtn(),
                 h('button', {type: 'button', onclick: () => D.askRename(id)}, '改名…'),
                 h('button', {type: 'button', onclick: () => D.dup(id)}, '複製'),
                 h('button', {type: 'button', onclick: () => D.remove(id)}, '刪除…')),
-            warns.length > 0 && h('ul', {class: 'warns'}, warns.map(w => h('li', null, w))),
-            h('div', {class: 'fields'},
-                SC.SECTIONS.map(sec => {
-                    const keys = sec.keys.filter(k => shown.has(k));
-                    return keys.length > 0 && [h('div', {class: 'sec'}, sec.title), keys.map(k => fieldRow(id, r, k))];
+            (warns.length > 0 || draft) && h('ul', {class: 'warns'}, [draft, ...warns].filter(Boolean).map(w => h('li', null, w))),
+            S.json ? F.fullJson(id) : h('div', {class: 'fields'},
+                secs.map(sec => {
+                    const open = !!S.secOpen[sec.title], n = sec.keys.filter(k => r[k] !== undefined).length;
+                    const bad = wkeys.some(k => sec.keys.includes(k));
+                    return [h('div', {class: 'sec fold' + (bad ? ' bad' : ''), onclick: () => {S.secOpen[sec.title] = !open; render();}},
+                                h('span', {class: 'arrow'}, open ? '▼' : '▶'), `${sec.title}（${n}）`, bad && h('span', {title: '這段有檢查警告'}, ' ⚠')),
+                            open && sec.keys.map(k => fieldRow(id, r, k))];
                 }),
                 rest.length > 0 && [h('div', {class: 'sec'}, ''), h('span', {class: 'k unset'}, '加欄位'),
                     h('select', {onchange: e => {
                         const k = e.target.value, def = SC.FIELDS[k];
+                        const sec = SC.SECTIONS.find(s => s.keys.includes(k));
+                        if (sec) S.secOpen[sec.title] = true;
                         if (def.type === 'obj') {S.open[k] = true; return set(id, [k], {});}
                         if (def.type === 'inv') {S.open.inv = true; return set(id, ['inv'], {storage: {capacity: -1, items: []}});}
                         if (def.type === 'schedule') return addSch(id);

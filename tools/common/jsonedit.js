@@ -243,7 +243,7 @@ function onKey(ta, e)
 
 // ---------- 元件 ----------
 // onApply(value)：失焦時沒錯就套用；onDraft(text, msg)：失焦時有錯，呼叫端自己留草稿
-export function jsonEdit({text, k, placeholder, onApply, onDraft})
+export function jsonEdit({text, k, placeholder, onApply, onDraft, maxRows = 30})
 {
     const box = document.createElement('div');
     const area = document.createElement('div');
@@ -274,7 +274,7 @@ export function jsonEdit({text, k, placeholder, onApply, onDraft})
         btn.classList.toggle('off', !last.err);
         btn.textContent = fix ? '修正' : '錯誤';
         btn.title = !last.err ? '' : fix ? `${fix.label}（${reason()}）` : reason();
-        ta.rows = Math.min(30, Math.max(2, ta.value.split('\n').length));
+        ta.rows = Math.min(maxRows, Math.max(2, ta.value.split('\n').length));
         sync();
     };
     ta.addEventListener('input', refresh);
