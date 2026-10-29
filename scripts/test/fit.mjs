@@ -262,6 +262,14 @@ run('fit', async t => {
         return out;
     });
 
+    // 空白欄位 ↑ 從 placeholder（oy 預設 1）起跳，不是從 0
+    const oy = '[data-k="item.json|helmet_01|equip.oy"]';
+    await t.page.evaluate((sel) => {const el = document.querySelector(sel); el.value = ''; el.dispatchEvent(new Event('change'));}, oy);
+    await t.page.focus(oy);
+    await t.page.keyboard.press('ArrowUp');
+    await t.page.keyboard.press('Tab');
+    const stepPh = await t.page.evaluate(() => window.__fit.S.doc['item.json'].data.helmet_01.equip.oy);
+
     t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
     t.eq('虛線／錨點／b／g／z 預設不勾', JSON.stringify(r.opts), JSON.stringify([false, false, false, false, false]));
@@ -322,4 +330,5 @@ run('fit', async t => {
     t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));
+    t.eq('空白欄位 ↑ 從預設值起跳', stepPh, 1.1);
 });

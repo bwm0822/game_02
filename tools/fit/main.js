@@ -286,7 +286,11 @@ function drawList()
 function numInput(file, id, path, ph, {req, after} = {})
 {
     const k = `${file}|${id}|${path.join('.')}`, v = getAt(S.doc[file].data[id], path);
+    // 空白時 ↑↓／上下三角形會從 0 起跳：先填入 placeholder（預設值）再讓瀏覽器步進
+    const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
     return h('input', {type: 'number', step: STEP[path.at(-1)] ?? 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
+        onkeydown: (e) => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') fromPh(e.target);},
+        onmousedown: (e) => {if (e.offsetX > e.target.clientWidth - 20) fromPh(e.target);},
         onchange: (e) => {
             const n = parseNum(e.target.value);
             if (typeof n === 'string') {status(`${path.join('.')} 要是數字`); return render();}
