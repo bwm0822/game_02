@@ -3394,11 +3394,15 @@ function preOf(C)
 
 function portraitOf(parts, o = S.auto.portrait, bake = false)
 {
-    const ims = autoParts('head').map(P => parts.find(p => p.P === P)).filter(Boolean).map(({C}) => {
-        const k = 100 / C.ops[autoBase(C)].pct, src = preOf(C), c = bake ? PX.fade(src, C.opacity) : src;
+    const ps = autoParts('head').map(P => parts.find(p => p.P === P)).filter(Boolean);
+    if (!ps.length) return null;
+    // 頭、頭髮的 pct 可以不同：以最大的 pct 為基準（那個用縮小前的圖），其他照 pct 比例縮小，大小、位置才跟畫面上一致
+    const pct = (C) => C.ops[autoBase(C)].pct, top = Math.max(...ps.map(({C}) => pct(C))), k = 100 / top;
+    const ims = ps.map(({C}) => {
+        const src = preOf(C), f = bake ? PX.fade(src, C.opacity) : src, r = pct(C) / top;
+        const c = PX.xform(f, {sx: 0, sy: 0, sw: f.width, sh: f.height, w: Math.max(1, Math.round(f.width * r)), h: Math.max(1, Math.round(f.height * r))});
         return {c, x: C.x * k - C.ox * c.width, y: C.y * k - C.oy * c.height};
     });
-    if (!ims.length) return null;
     const x0 = Math.min(...ims.map(i => i.x)), y0 = Math.min(...ims.map(i => i.y));
     const cv = PX.newCanvas(Math.ceil(Math.max(...ims.map(i => i.x + i.c.width)) - x0), Math.ceil(Math.max(...ims.map(i => i.y + i.c.height)) - y0));
     const g = cv.getContext('2d');

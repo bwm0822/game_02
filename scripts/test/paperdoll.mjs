@@ -1498,6 +1498,15 @@ run('paperdoll', async t => {
         type('au-hair-pct', 20);
         type('au-head-pct', 40);
         out.split = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length - h1];
+        // pct 不同時頭像的長寬比要跟畫面上兩個零件合起來的外框一樣
+        const rect = (C) => [C.x - C.ox * C.canvas.width, C.y - C.oy * C.canvas.height, C.x + (1 - C.ox) * C.canvas.width, C.y + (1 - C.oy) * C.canvas.height];
+        const [a, b] = [rect(Hd), rect(Hr)];
+        const view = (Math.max(a[2], b[2]) - Math.min(a[0], b[0])) / (Math.max(a[3], b[3]) - Math.min(a[1], b[1]));
+        const pv = $('auPtPreview'), d = pv.getContext('2d').getImageData(0, 0, pv.width, pv.height).data;
+        let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+        for (let y = 0; y < pv.height; y++) for (let x = 0; x < pv.width; x++)
+            if (d[(y * pv.width + x) * 4 + 3] > 16) {x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);}
+        out.ptRatio = Math.abs((x1 - x0 + 1) / (y1 - y0 + 1) - view) < 0.05 || [view, (x1 - x0 + 1) / (y1 - y0 + 1)];
         h1 = m.hist.length;
         link(true);
         out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1];
@@ -1573,6 +1582,7 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
     t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
     t.eq('自動（頭像）：不連動時 scale% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
+    t.eq('自動（頭像）：頭、頭髮 pct 不同時頭像比例跟畫面上一樣', JSON.stringify(ah.ptRatio), 'true');
     t.eq('自動（頭像）：打開連動頭髮對齊頭、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1]));
     t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false]));
     t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
