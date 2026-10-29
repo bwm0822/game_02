@@ -21,6 +21,7 @@ run('dialog-tool', async t => {
         const disk = async () => (await (await json.getFileHandle('dialog.json')).getFile()).text();
         await write(json, 'dialog.json', orig);
         await dl.setAssets(await dir(opfs, 'game'));
+        S.view = 'form';
 
         out.load = Object.keys(S.data).join(',');
         out.groups = qa('#list .group').map(g => g.textContent.trim());
@@ -107,7 +108,7 @@ run('dialog-tool', async t => {
         await T.setProject(proj);
         await until(() => win('story')?.__st?.S.data.wolf_hunt);
         const st = win('story').__st;
-        st.S.sel = 'wolf_hunt'; st.render(); st.S.open[JSON.stringify(['wolf_hunt', 'nodes', 'xi', 'n_wolf_ask'])] = true; st.render();
+        st.S.sel = 'wolf_hunt'; st.S.view = 'form'; st.render(); st.S.open[JSON.stringify(['wolf_hunt', 'nodes', 'xi', 'n_wolf_ask'])] = true; st.render();
         // n_wolf_ask 的「接受」→ n_default 在 dialog.json 的 _common
         win('story').document.querySelector(`[data-k="${CSS.escape(JSON.stringify(['wolf_hunt', 'nodes', 'xi', 'n_wolf_ask', 'choices', 0, 'next']))}"]`).parentElement.querySelector('button').click();
         out.toDialog = await until(() => win('dialog')?.__dl?.S.sel === '_common' && location.hash === '#dialog'

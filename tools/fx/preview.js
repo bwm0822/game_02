@@ -71,8 +71,12 @@ async function buildRole()
     st.root?.destroy();
     st.root = null;
     if (!r) return;
-    const key = `role-${P.role}-${Date.now()}`;
-    scene.textures.addCanvas(key, await roleCanvas(r, st.ext.items));
+    // 連續呼叫時（換特效／換角色）只留最後一次，不然 await 期間會各建一份、key 撞名
+    const seq = st.buildSeq = (st.buildSeq ?? 0) + 1;
+    const cv = await roleCanvas(r, st.ext.items);
+    if (seq !== st.buildSeq) return;
+    const key = `role-${P.role}-${seq}`;
+    scene.textures.addCanvas(key, cv);
     const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
     const root = scene.add.container(W / 2, H - 24);
     const view = scene.add.container(-ax, -ay);

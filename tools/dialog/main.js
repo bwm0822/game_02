@@ -252,17 +252,19 @@ function draw()
             head: (c) => [{'#entries': '入口', '#lines': '台詞', '#nodes': '節點', '#extend': '加掛'}[c]],
             cell: (id, c) => h('td', {class: 'n'}, cnt(id, c)),
         });
-        return;
     }
-    if (S.sel && !(S.sel in S.data) && S.refs.roles[S.sel])
-        return view.replaceChildren(h('div', {class: 'form'},
+    else if (S.sel && !(S.sel in S.data) && S.refs.roles[S.sel])
+        view.replaceChildren(h('div', {class: 'form'},
             h('div', {class: 'head'}, h('span', {class: 'bigid'}, S.sel), h('span', {class: 'dim'}, roleLab(S.sel) ?? '')),
             h('p', {class: 'dim'}, `${S.sel} 是 unique NPC，沒有自己的對話，整套用 _common。`),
             btn('建立這個 NPC 自己的對話', `建立 ${S.sel} 自己的對話`, () => create(S.sel)),
             storySection(S.sel)));
-    if (!S.data[S.sel]) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選 NPC）' : '先在上方選擇專案資料夾'));
-    view.replaceChildren(renderSheet(S.sel));
-    SF.markIssues(S.results, toPath);
+    else if (!S.data[S.sel]) view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選 NPC）' : '先在上方選擇專案資料夾'));
+    else
+    {
+        view.replaceChildren(renderSheet(S.sel));
+        SF.markIssues(S.results, toPath);
+    }
     pendingGoto();
 }
 

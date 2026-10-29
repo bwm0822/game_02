@@ -284,9 +284,13 @@ function draw()
             head: (c) => [{title: '標題', '#threads': 'thread', '#lets': '劇情卡', '#nodes': '節點', '#spawns': 'spawn'}[c]],
             cell: (id, c) => h('td', {class: c === 'title' ? '' : 'n'}, cell(id, c)),
         });
-        return;
+        return pendingGoto();
     }
-    if (!S.data[S.sel]) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選劇情線）' : '先在上方選擇專案資料夾'));
+    if (!S.data[S.sel])
+    {
+        view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選劇情線）' : '先在上方選擇專案資料夾'));
+        return pendingGoto();
+    }
     view.replaceChildren(S.sel === Q ? renderQualities() : renderLine(S.sel));
     SF.markIssues(S.results, toPath);
     pendingGoto();

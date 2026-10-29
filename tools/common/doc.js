@@ -157,7 +157,7 @@ export function createDoc(opt)
         S.drafts = {};
         S.hist = [{data: str(S.data), before: S.sel, after: S.sel}];
         S.hi = 0;
-        if (!S.data[S.sel]) S.sel = Object.keys(S.data)[0] ?? null;
+        if (!S.data[S.sel]) {S.sel = null; S.view = 'table';}
         status(`讀入 ${Object.keys(S.data).length} 個${opt.noun}`);
         render();
     }

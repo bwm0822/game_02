@@ -29,6 +29,7 @@ run('story-tool', async t => {
         await write(json, 'story.json', orig);
         await st.setAssets(await dir(opfs, 'game'));
         qa('#list .group').find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
+        S.view = 'form';
 
         out.load = [Object.keys(S.data).join(','), qa('#list .item').length];
         out.clean = S.results.filter(r => r.level === 'error').map(r => r.msg);
