@@ -350,10 +350,11 @@ function fitView(r, slots)
         h('div', {class: 'title'}, '裝備（item.json，全角色共用；換裝只是試穿，不會寫回角色）'),
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
-            id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? '')] : h('span', {class: 'dim'}, '（空）')),
+            id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? ''),
+                h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
+                    onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮')]
+                : h('span', {class: 'dim'}, '（空）')),
         id && equipTable(id),
-        id && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
-            onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
     ];
 }
 

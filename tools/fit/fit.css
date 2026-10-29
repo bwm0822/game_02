@@ -27,7 +27,7 @@ table.fit select { min-width: 160px; }
 .ico.empty { filter: brightness(0); opacity: .25; }
 .equipname { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
 .equipname .k { color: #aaa; }
-.hidehair { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
+.hidehair { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; align-self: center; }
 .hidden-hair { margin-left: 6px; }
 .sexnote { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 
