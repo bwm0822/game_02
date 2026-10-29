@@ -68,6 +68,7 @@
   },
   "mary": {
     "kind": "player",
+    "sex": "f",
     "lab": "瑪莉",
     "des": "冒險者",
     "icon": "portrait-mary",
@@ -374,6 +375,7 @@
   },
   "karen": {
     "kind": "npc",
+    "sex": "f",
     "loc": "brooklyn",
     "lab": "凱倫",
     "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～",

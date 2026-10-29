@@ -136,6 +136,13 @@ run('role', async t => {
         sel('guard-1');
         await sleep(300);
         out.previewEquip = +document.querySelector('.pv canvas').dataset.drawn;
+        {
+            const {partsOf} = await import('/tools/role/preview.js');
+            const items = {h: {cat: 'CAT_HELMET', equip: {sprite: 'h', scale: 0.25, x: 1, y: 2, hideHair: true, f: {scale: 0.2, x: 3, y: 4}}}};
+            const eq = (sex) => partsOf({sex, inv: {equips: ['h']}}, items).find(p => p.sprite === 'h').p;
+            const f = eq('f'), m = eq(undefined);
+            out.previewSex = [f.scale, f.x, f.y, f.hideHair, m.scale, m.x, m.y].join(',');
+        }
 
         // 改名：掃 assets、src（不含 src/old）
         let p = re.rename('karen', 'karen2');
@@ -222,6 +229,7 @@ run('role', async t => {
     t.check('路網選項依地圖分', r.navMaps);
     t.check('預覽畫出身體', r.preview >= 1, `${r.preview}`);
     t.check('預覽畫出裝備', r.previewEquip > 2, `${r.previewEquip}`);
+    t.eq('預覽女角套 equip.f、男角用基準', r.previewSex, '0.2,3,4,true,0.25,1,2');
     t.check('改名列出 assets 裡的引用', r.renameDlg[0], r.dlgText);
     t.check('改名列出 src 的行號', r.renameDlg[1]);
     t.eq('不列 src/old', r.renameDlg[2], false);

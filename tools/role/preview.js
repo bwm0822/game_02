@@ -4,6 +4,7 @@ import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {DEPTH} from './schema.js';
+import {equipFor} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false};   // 開關跨角色保留
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -28,7 +29,7 @@ export function partsOf(r, items)
     add(r.body, DEPTH.body); add(r.head, DEPTH.head);
     if (!equips.some(it => it.equip.hideHair)) add(r.hair, DEPTH.hair);
     add(r.hand, DEPTH.hand);
-    for (const it of equips) add(it.equip, DEPTH[it.cat]);
+    for (const it of equips) add(equipFor(it.equip, r.sex), DEPTH[it.cat]);
     return out.sort((a, b) => a.d - b.d);
 }
 

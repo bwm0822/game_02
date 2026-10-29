@@ -5,6 +5,7 @@ import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
+import {equipFor} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -931,7 +932,7 @@ export class RoleView extends View
     _addEquip(item)
     {
         if(!item.equip) {return;}
-        let sps = this._addPart(item.equip, item.cat);
+        let sps = this._addPart(equipFor(item.equip, this.meta.sex), item.cat);
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
@@ -951,7 +952,7 @@ export class RoleView extends View
     {
         const dat = DB.item(id);
         if(!dat?.equip) {return ()=>{};}
-        const held = {sps:this._addPart(dat.equip, dat.cat)};
+        const held = {sps:this._addPart(equipFor(dat.equip, this.meta.sex), dat.cat)};
         this._sortParts();
         this._weapon?.forEach((sp)=>{sp.setVisible(false);});
         this._held = held;

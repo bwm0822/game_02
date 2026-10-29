@@ -48,6 +48,7 @@ export const FIELDS = {
     skin: {label: '掉落皮', type: 'itemref'},
     fall: {label: '倒地角度', type: 'int'},
     faceR: {label: '圖朝右', type: 'bool'},
+    sex: {label: '性別', type: 'enum', options: ['', 'm', 'f'], names: {'': '男（預設）', m: '男', f: '女'}},
     w: {label: '寬 w', type: 'int'},
     h: {label: '高 h', type: 'int'},
     anchor: {label: '錨點', type: 'obj', fields: XY},
@@ -69,7 +70,7 @@ export const REQUIRED = ['w', 'h', 'anchor'];
 export const SECTIONS = [
     {title: '基本', keys: ['kind', 'loc', 'lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
-    {title: '外觀', keys: ['faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'corpse']},
+    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
@@ -77,8 +78,8 @@ export const SECTIONS = [
 const BASE = ['kind', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
 const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
-    player: ['job', 'gold', 'survival', 'inv', 'hand', 'head', 'hair'],
-    npc: ['loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
+    player: ['sex', 'job', 'gold', 'survival', 'inv', 'hand', 'head', 'hair'],
+    npc: ['sex', 'loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
     rogue: FIGHTER, monster: FIGHTER, boss: FIGHTER,
     animal: ['style', 'animal', 'attrs', 'meat', 'skin', 'fall'],
 };

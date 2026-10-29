@@ -3,6 +3,7 @@ import {GM, UI, CAT2ICON, PART_DEPTH} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
+import {equipFor} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -826,7 +827,7 @@ export class Doll extends Pic
             if(!eq) {return;}
             const dat = DB.item(eq.id??eq);
             if(!dat?.equip) {return;}
-            this._addPart(dat.equip, PART_DEPTH[dat.cat]);
+            this._addPart(equipFor(dat.equip, meta.sex), PART_DEPTH[dat.cat]);
             hideHair ||= !!dat.equip.hideHair;
         });
         hair.forEach((sp)=>{sp.setVisible(!hideHair);});
