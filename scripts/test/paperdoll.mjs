@@ -1446,6 +1446,80 @@ run('paperdoll', async t => {
     t.check('載入 item：undo 一步退回', li.undo[2] === 0 && (li.undo[0] !== 3 || li.undo[1] !== -4));
     t.eq('載入 item：武器多載 a/ox/oy，沒寫的 key 當預設、寫回目前分類', JSON.stringify(li.weapon), JSON.stringify([2, 3, 15, 0.5, 1, 2, 3, 15, 0.5, 1]));
 
+    // 存到 item 男女：一定存男版（女模式下 PNG 照男版 pct 烤、存完復原）、勾女版寫 equip.f、沒勾刪 equip.f 要確認；載入 item 女模式讀 equip.f
+    const sf = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), equips = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const pngW = async (n) => (await createImageBitmap(await (await equips.getFileHandle(n)).getFile())).width;
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const set = (id, v) => {const e = $(id); e.checked = v; e.dispatchEvent(new Event('change'));};
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        await put(json, 'item.json', JSON.stringify({helmet_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-helmet', scale: 0.25, f: {scale: 0.2, x: 0, y: 0}}}}, null, 2));
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        await pd.setAssets(assets);
+        pd.setDoll({sex: 'm'});
+        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}, saveF: false});
+        pd.setMode('auto');
+        pd.applyMode();
+        const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C;
+        out.ui = [$('auFemaleL').hidden, $('auFemale').disabled, $('auFemale').checked];
+        $('dollF').click();
+        const hist0 = m.hist.length;
+        const conf = window.confirm;
+        let asked = '';
+        window.confirm = (s) => {asked = s; return true;};
+        let p = pd.saveItems();
+        await until(() => $('dlgItems').open);
+        set('di-armor-on', false);
+        out.dlg = [H.canvas.width, H.x * pd.S.scale, $('di-helmet-msg').textContent];
+        $('dlgItems').close('ok');
+        await p;
+        let a = await readItems();
+        out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('helmet_01') || asked.includes('頭盔：會移除女版'),
+                    H.canvas.width, H.x * pd.S.scale, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
+        set('auFemale', true);
+        out.saveF = [pd.S.auto.saveF, JSON.parse(localStorage.getItem('paperdoll.auto')).saveF];
+        asked = '';
+        p = pd.saveItems();
+        await until(() => $('dlgItems').open);
+        set('di-armor-on', false);
+        out.dlgF = $('di-helmet-msg').textContent;
+        $('dlgItems').close('ok');
+        await p;
+        a = await readItems();
+        out.female = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked];
+        window.confirm = conf;
+
+        a.helmet_01.equip.f = {scale: 0.125, x: 7, y: 8};
+        a.helmet_01.equip.x = -5;
+        await put(json, 'item.json', JSON.stringify(a, null, 2));
+        await pd.loadItems();
+        out.loadF = [H.x * pd.S.scale, H.y * pd.S.scale, pd.S.auto.f.helmet.x, pd.S.auto.helmet.x, $('status').textContent.includes('≠')];
+        pd.cancelMode();
+        pd.setDoll({sex: 'm'});
+        pd.autoSet(null);
+        Object.assign(pd.S, {layers: [], active: null});
+        return out;
+    });
+    t.eq('存到 item 男女：女版勾選框只在護具、拆完才能按、預設不勾', JSON.stringify(sf.ui), JSON.stringify([false, false, false]));
+    t.eq('存到 item 男女：女模式開對話框時零件換成男版、沒勾女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 1, '會移除女版（沒勾「女版」）']));
+    t.eq('存到 item 男女：一定存男版（PNG 照男版 pct）、刪 equip.f 要確認、存完復原女版不記步驟', JSON.stringify(sf.male),
+         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 15, 3, 'f', true, true]));
+    t.eq('存到 item 男女：女版勾選記在設定', JSON.stringify(sf.saveF), JSON.stringify([true, true]));
+    t.eq('存到 item 男女：勾了女版不提示', sf.dlgF, '');
+    t.eq('存到 item 男女：勾女版寫 equip.f（scale＝S.scale×女pct÷男pct）、PNG 還是男版、不用確認', JSON.stringify(sf.female),
+         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2,"f":{"scale":0.125,"x":3,"y":4}}', 30, '']));
+    t.eq('載入 item 男女：女模式讀 equip.f、寫回女版、scale 不警告', JSON.stringify(sf.loadF), JSON.stringify([7, 8, 7, 1, false]));
+
     // 自動（武器）：透明底單把武器，一個零件，多調 a/ox/oy，存到 textures/weapons、a 不寫
     const aw = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);

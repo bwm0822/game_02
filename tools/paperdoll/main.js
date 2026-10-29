@@ -333,7 +333,7 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true,
+                          portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true, saveF: !!v?.saveF,
                           f: Object.fromEntries(AUTO_PARTS.filter(P => P.kind === 'armor').map(P => [P.key, {...AUTO_DEF[P.key], ...v?.f?.[P.key]}]))});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 // 護具分男女兩組：S.auto.helmet… 是男版、S.auto.f.helmet… 是女版，照 header 的 男｜女（S.doll.sex）選用
@@ -357,6 +357,7 @@ function autoSet(v)
     for (const f of PT_F) $(`au-pt-${f}`).value = S.auto.portrait[f];
     $('au-link').checked = S.auto.headLink;
     $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
+    $('auFemale').checked = S.auto.saveF;
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -2552,7 +2553,8 @@ function refreshAuto(m)
     $('auLoad').textContent = head ? '載入 role' : '載入 item';
     $('auItem').disabled = !m.parts || !S.assets;
     $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
-    $('auLoad').disabled = $('auItem').disabled;
+    $('auLoad').disabled = $('auFemale').disabled = $('auItem').disabled;
+    $('auFemaleL').hidden = m.kind !== 'armor';
     $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : !m.parts ? '拆完才能載入'
                       : head ? '照 id＝原圖名（或 head.sprite）找角色，載入擺放（scale% 不動）' : '照 equip.sprite 找 item，載入擺放（scale% 不動）';
     for (const P of autoParts(m.kind))
@@ -3703,10 +3705,11 @@ function itemCheck(rows, items, keys)
 {
     const act = rows.filter(r => r.on && (r.png || r.place || r.icon));
     const idOf = (r) => r.id ?? r.newId;
-    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: ''});
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false});
     for (const r of act)
     {
         const err = (s) => {r.err ||= s;};
+        r.dropF = r.P.kind === 'armor' && !S.auto.saveF && !!items[r.id]?.equip?.f;
         const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
         if (!r.id)
@@ -3794,7 +3797,7 @@ function itemDialog(parts, items, keys)
             $(`di-${k}-new`).hidden = !!r.id;
             const msg = $(`di-${k}-msg`);
             msg.className = r.err ? 'err' : 'warn';
-            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；');
+            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`, r.dropF && '會移除女版（沒勾「女版」）'].filter(Boolean).join('；');
         }
         $('diOk').disabled = !act.length || act.some(r => r.err);
     };
@@ -3881,10 +3884,11 @@ async function loadItems()
     const rows = [], hit = [], miss = [], warn = [];
     for (const part of m.parts)
     {
-        const id = itemMatch(items, part.P, part.C.name), e = id && items[id].equip;
-        if (!e) {miss.push(part.C.name); continue;}
+        const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
+        if (!e0) {miss.push(part.C.name); continue;}
+        const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0;
         hit.push(`${part.C.name} ← ${id}`);
-        if (e.scale !== undefined && e.scale !== S.scale) warn.push(`${id} 的 scale ${e.scale} ≠ ${S.scale}`);
+        if (e0.scale !== undefined && e0.scale !== S.scale) warn.push(`${id} 的 scale ${e0.scale} ≠ ${S.scale}`);
         rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0,
                           ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
     }
@@ -3902,13 +3906,43 @@ function autoApplyAll(m, rows)
     for (const [part, row] of diff) autoApply(m, part, row, false);
 }
 
+// 一定存男版：女模式下先照男版數字重擺（PNG 用男版 pct 烤），存完復原；勾「女版」另寫 equip.f，沒勾就刪掉 equip.f
 async function saveItems()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts || !S.assets) return;
-    const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
-    if (d) await commitItems(d.rows, d.bake);
+    const back = autoMale(m);
+    if (back === false) return;
+    try
+    {
+        const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
+        if (d) await commitItems(d.rows, d.bake);
+    }
+    finally
+    {
+        if (back) {back(); refreshAll();}
+    }
 }
+
+// 回傳復原用的函式；不用換（不是女模式）回 null；有修補又要重新縮放就不換、回 false
+function autoMale(m)
+{
+    const parts = m.parts.filter(p => autoFemale(p.P));
+    if (!parts.length) return null;
+    const paint = parts.filter(p => hasPaint(p.C) && autoRow(p).pct !== S.auto[p.P.key].pct);
+    if (paint.length) return status(`${paint.map(p => p.C.name).join('、')} 有像素修補，男女 scale% 不同不能存（男版要重新縮放）`), false;
+    const s = autoState(m);
+    m.T.canvas ??= PX.replay(m.T.src, m.T.ops);
+    for (const p of parts)
+    {
+        if (autoRow(p).pct !== S.auto[p.P.key].pct) autoScale(m.T, p, S.auto[p.P.key].pct);
+        autoPlace(p, S.auto[p.P.key]);
+    }
+    return () => History.restore(s);
+}
+
+// 女版擺放：PNG 照男版 pct 烤，所以 scale 照兩邊 pct 的比例換算
+const femaleOf = (P) => {const f = S.auto.f[P.key]; return {scale: round(S.scale * f.pct / S.auto[P.key].pct, 10000), x: f.x, y: f.y};};
 
 // 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）；all：換 sprite、共用圖（warn）也一起 confirm
 async function commitItems(rows, bake, all = false)
@@ -3918,9 +3952,9 @@ async function commitItems(rows, bake, all = false)
     const keys = await texKeys(), act = itemCheck(rows, items, keys);
     const bad = act.filter(r => r.err);
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${tag(r)}：${r.err}`).join('\n')}`);
-    const ask = act.filter(r => r.ask || all && r.warn)
-        .map(r => `${tag(r)}：${all ? [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；') : r.ask}`);
-    if (ask.length && !confirm(`${all ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
+    const ask = act.filter(r => r.ask || all && r.warn || r.dropF)
+        .map(r => `${tag(r)}：${[all ? r.warn : '', r.ask && (all ? `會覆蓋 ${r.ask}` : r.ask), r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
+    if (ask.length && !confirm(`${all || act.some(r => r.dropF) ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
     const done = [], fresh = [];
     for (const r of act)
     {
@@ -3950,6 +3984,7 @@ async function commitItems(rows, bake, all = false)
             writeEquip(equip, C);
             if (g && !g.cut) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
+            if (r.P.kind === 'armor' && S.auto.saveF) equip.f = femaleOf(r.P);
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
             items = insertAfter(items, last, r.newId, {cat, icon: ik, lab: r.lab, equip, drop: {sprite: r.name, scale: equip.scale}});
             done.push(`新增 ${r.newId}`);
@@ -3959,6 +3994,11 @@ async function commitItems(rows, bake, all = false)
         if (r.png) setSplit(it, r.name, g, r.icon && ik);
         else if (r.icon) it.icon = ik;
         if (r.place) {writeEquip(e, C); dropScale(it);}
+        if (r.P.kind === 'armor')
+        {
+            delete e.f;
+            if (S.auto.saveF) e.f = femaleOf(r.P);
+        }
         done.push(r.id);
     }
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
@@ -4768,7 +4808,8 @@ document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
 };});
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
-$('auItem').onclick = () => (S.mode.kind === 'head' ? saveRole() : saveItems()).catch(e => status(e.message));
+$('auFemale').onchange = () => autoSet({...S.auto, saveF: $('auFemale').checked});
+$('auItem').onclick =() => (S.mode.kind === 'head' ? saveRole() : saveItems()).catch(e => status(e.message));
 $('auLoad').onclick = () => (S.mode.kind === 'head' ? loadRole() : loadItems()).catch(e => status(e.message));
 
 S.icon = iconLoad();
