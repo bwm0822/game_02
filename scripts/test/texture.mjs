@@ -54,14 +54,21 @@ run('texture', async t => {
         out.refT = tx.refsOf(S.tex.find(e => e.key === 't')).map(x => x.text).join('|');
         const nodes = () => [...document.querySelectorAll('#list .node')].map(n => n.dataset.node.replace('textures/', '')).join(',');
         out.nodes = nodes();
-        // 收合：點箭頭摺子資料夾（不換選取），Alt＋點全部
+        // 收合：預設摺起來，點箭頭展開／摺（不換選取），點名字＝選取＋展開，Alt＋點全部
         const arrowOf = (d) => document.querySelector(`#list .node[data-node="textures/${d}"] .arrow`);
+        const nodeOf = (d) => document.querySelector(`#list .node[data-node="textures/${d}"]`);
         arrowOf('maps').click();
-        out.fold = [nodes(), S.node, arrowOf('maps').textContent, $('list').textContent.includes('null')];
-        arrowOf('.tbd').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
-        out.foldAll = nodes();
+        out.unfold = [nodes(), S.node, arrowOf('maps').textContent, $('list').textContent.includes('null')];
+        arrowOf('maps').click();
+        out.fold = [nodes() === out.nodes, arrowOf('maps').textContent];
+        nodeOf('.tbd').click();
+        out.nameOpen = [nodes(), S.node];
+        nodeOf('.tbd').click();
+        out.nameKeep = arrowOf('.tbd').textContent;
         arrowOf('maps').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
-        out.unfoldAll = nodes() === out.nodes;
+        out.unfoldAll = nodes();
+        arrowOf('maps').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
+        out.foldAll = nodes() === out.nodes;
 
         // 選取：點、Ctrl 加、Shift 範圍
         S.node = 'textures/props'; tx.render();
@@ -116,10 +123,13 @@ run('texture', async t => {
     t.eq('item.json 的引用 ↗ 跳道具分頁', r.goA, JSON.stringify([['item', ['it1']]]));
     t.eq('fx.json 的引用 ↗ 跳特效分頁', r.goF, JSON.stringify(['fx', ['burn']]));
     t.eq('tsj 的 image 用路徑引用', r.refT, 'tilesets/tiles.tsj：image');
-    t.eq('左欄：未使用、資料夾樹、tbd 最後', r.nodes, '#unused,equips,icons,maps,maps/tiles,props,.tbd,.tbd/x,.tbd/y');
-    t.eq('點箭頭摺疊子資料夾、不換選取', JSON.stringify(r.fold), JSON.stringify(['#unused,equips,icons,maps,props,.tbd,.tbd/x,.tbd/y', '#unused', '▸', false]));
-    t.eq('Alt＋點全部摺', r.foldAll, '#unused,equips,icons,maps,props,.tbd');
-    t.check('Alt＋點全部展開', r.unfoldAll);
+    t.eq('左欄：未使用、資料夾樹（預設摺起來）、tbd 最後', r.nodes, '#unused,equips,icons,maps,props,.tbd');
+    t.eq('點箭頭展開子資料夾、不換選取', JSON.stringify(r.unfold), JSON.stringify(['#unused,equips,icons,maps,maps/tiles,props,.tbd', '#unused', '▾', false]));
+    t.eq('再點箭頭摺回去', JSON.stringify(r.fold), JSON.stringify([true, '▸']));
+    t.eq('點名字＝選取＋展開', JSON.stringify(r.nameOpen), JSON.stringify(['#unused,equips,icons,maps,props,.tbd,.tbd/x,.tbd/y', 'textures/.tbd']));
+    t.eq('再點名字不會摺起來', r.nameKeep, '▾');
+    t.eq('Alt＋點全部展開', r.unfoldAll, '#unused,equips,icons,maps,maps/tiles,props,.tbd,.tbd/x,.tbd/y');
+    t.check('Alt＋點全部摺', r.foldAll);
     t.eq('Shift 範圍選', r.shift, 'textures/props/c.png,textures/props/d.png,textures/props/f.png');
     t.eq('Ctrl 取消一張', r.ctrl, 'textures/props/c.png,textures/props/f.png');
     t.eq('一般資料夾只能搬到 tbd', JSON.stringify(r.btns), JSON.stringify([false, true, true]));

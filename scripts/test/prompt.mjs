@@ -27,6 +27,11 @@ run('prompt', async t => {
         out.ask = (await answer('ok'))?.includes('骨架');
         await p;
         out.skeleton = [Object.keys((await disk()).items).join(), Object.keys(S.data.common).join()];
+        // 預設全部摺起來；Alt＋點共用組全部展開、記在 localStorage
+        const heads = () => [...document.querySelectorAll('#list .group')];
+        out.defFold = [document.querySelectorAll('#list .item').length, heads().every(g => g.textContent.startsWith('▸'))];
+        heads()[0].dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
+        out.openSaved = JSON.parse(localStorage.getItem('tools.prompt.open') ?? '[]').length;
 
         // 新增物品預設帶同名 common；組合規則
         pe.addItem('武器');
@@ -86,7 +91,7 @@ run('prompt', async t => {
         out.fold = [n0 - n1, n2, names().length === n0];
         const altClick = () => document.querySelector('#list .group').dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         altClick();
-        out.foldAll = [names().length, S.fold.size];
+        out.foldAll = [names().length, S.open.size];
         altClick();
         out.foldAll.push(names().length === n0);
 
@@ -178,6 +183,8 @@ run('prompt', async t => {
         await p;
         const keys = () => Object.keys(S.data.items).join();
         out.norm = [keys(), $('dirty').hidden];
+        const openAll = () => {S.open = new Set(['\0common', ...Object.keys(S.data.items)]); pe.commit(() => {});};
+        openAll();
         const seq = () => [...document.querySelectorAll('#list > div')].map(e => e.querySelector('.name, .id').textContent);
         out.seq = seq().slice(seq().indexOf('護具（2）'));
 
@@ -189,11 +196,11 @@ run('prompt', async t => {
         let pr = pe.addCat('武器');
         await answer('ok');
         await pr;
-        S.mode = 'items'; S.sel = {cat: '武器/劍', i: 0}; S.fold.add('武器/劍');
+        S.mode = 'items'; S.sel = {cat: '武器/劍', i: 0}; S.open.add('武器/劍');
         pr = pe.renameCat('武器');
         await answer('ok', '兵器');
         await pr;
-        out.rename = [keys(), S.sel.cat, S.fold.has('兵器/劍')];
+        out.rename = [keys(), S.sel.cat, S.open.has('兵器/劍') && !S.open.has('武器/劍')];
         pe.moveCat('兵器/劍', '護具', 'in');
         out.in = [keys(), S.sel.cat];
         pe.moveCat('兵器', '護具', 'before');
@@ -212,7 +219,7 @@ run('prompt', async t => {
         };
         out.search = [shown('星袍'), shown('布甲'), shown('鐵劍')];
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▾護具')).dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
-        out.fold = ['護具', '護具/布甲', '護具/劍'].every(k => S.fold.has(k)) && !S.fold.has('兵器');
+        out.fold = ['護具', '護具/布甲', '護具/劍'].every(k => !S.open.has(k)) && S.open.has('兵器');
 
         await pe.save();
         out.saved = Object.keys(JSON.parse(await (await (await dir.getFileHandle('tree.json')).getFile()).text()).items).join();
@@ -222,7 +229,8 @@ run('prompt', async t => {
     // 物品多選：Ctrl／Shift＋點、整批拖曳、批次改共用／刪除
     const many = await t.page.evaluate(async () => {
         const pe = window.__pe, S = pe.S, out = {};
-        S.fold.clear();
+        const openAll = () => {S.open = new Set(['\0common', ...Object.keys(S.data.items)]); pe.commit(() => {});};
+        openAll();
         pe.commit(() => {S.data.items.兵器 = ['a', 'b', 'c'].map(name => ({name, file: '', desc: '', common: ''}));});
         const row = (name) => [...document.querySelectorAll('#list .item')].find(e => e.querySelector('.id').textContent === name);
         const click = (name, k = {}) => row(name).dispatchEvent(new MouseEvent('click', {bubbles: true, ...k}));
@@ -248,7 +256,7 @@ run('prompt', async t => {
         out.range = sels();
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▾護具')).click();
         out.fold = [S.picks.length, sels()];
-        S.fold.clear(); pe.commit(() => {});
+        openAll();
         click('a');
         click('盾', {shiftKey: true});
         pe.removePicks();
@@ -261,6 +269,8 @@ run('prompt', async t => {
     });
 
     t.check('檔案不存在會問要不要建骨架', r.ask);
+    t.eq('左欄預設全部摺起來', JSON.stringify(r.defFold), JSON.stringify([0, true]));
+    t.eq('Alt＋點共用組全部展開、記在 localStorage', r.openSaved, 4);
     t.eq('骨架內容', JSON.stringify(r.skeleton), JSON.stringify(['武器,護具,道具', '武器,護具,道具']));
     t.eq('新增物品預設帶同名 common', JSON.stringify(r.newItem), JSON.stringify({name: '新物品', file: '', desc: '', common: '武器'}));
     t.eq('沒佔位符：描述＋換行＋common', r.plain, 'iron sword\npixel art');
@@ -285,7 +295,7 @@ run('prompt', async t => {
     t.eq('共用組在最上面、點了顯示共用', JSON.stringify(r.list), JSON.stringify(['⚙ 共用（3）', 'common', true]));
     t.eq('分組摺疊、搜尋中全展開', JSON.stringify(r.fold), JSON.stringify([3, 2, true]));
     t.eq('摺起選到的那組會清除選擇', r.foldSel, null);
-    t.check('Alt＋點全部摺／全部展開', r.foldAll[0] === 0 && r.foldAll[1] > 1 && r.foldAll[2], JSON.stringify(r.foldAll));
+    t.check('Alt＋點全部摺／全部展開', r.foldAll[0] === 0 && r.foldAll[1] === 0 && r.foldAll[2], JSON.stringify(r.foldAll));
     t.eq('再點一次選到的會取消選擇', r.unpick, null);
     t.check('新增分類', r.cat);
     t.check('刪除非空分類要確認', r.catAsk);

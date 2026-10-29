@@ -44,6 +44,8 @@ run('item', async t => {
         await ie.IC.ready;
         out.warns = ie.validateAll();
         out.load = [Object.keys(S.items).length === Object.keys(JSON.parse(orig)).length];
+        // 預設摺起來，只有選到的那筆所在的組會打開
+        out.defFold = [...document.querySelectorAll('#list .group')].filter(g => g.textContent.startsWith('▾')).length === (S.sel ? 1 : 0);
         out.canonical = orig === JSON.stringify(JSON.parse(orig), null, 2);
 
         await save('save');
@@ -155,37 +157,43 @@ run('item', async t => {
         out.table = [document.querySelectorAll('#view tbody tr').length, Object.values(S.items).filter(it => it.cat === 'CAT_WEAPON').length];
         S.view = 'form'; ie.render();
         out.form = !!document.querySelector('#view .fields');
-        S.sel = 'sword-3'; ie.render();
-        out.dom = [document.body.innerText.includes('[object'), document.querySelectorAll('#list .item').length === Object.keys(S.items).length,
-                   [...document.querySelector('#view').childNodes].some(n => n.nodeType === Node.TEXT_NODE)];
-
-        // 左欄收合（存在 localStorage，測完清掉）
-        const FOLD = 'tools.item.fold';
-        const foldKeys = () => JSON.parse(localStorage.getItem(FOLD) ?? '[]');
-        const head = (t) => [...document.querySelectorAll('#list .group')].find(g => g.textContent.includes(t));
+        // 左欄收合（預設摺起來，展開的存在 localStorage，測完清掉）
+        const OPEN = 'tools.item.open';
+        const openKeys = () => JSON.parse(localStorage.getItem(OPEN) ?? '[]');
+        const heads = () => [...document.querySelectorAll('#list .group')];
+        const head = (t) => heads().find(g => g.textContent.includes(t));
         const rows = () => document.querySelectorAll('#list .item').length;
         const row = (id) => document.querySelector(`#list .item[data-id="${id}"]`);
         const altClick = (el) => el.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
-        localStorage.removeItem(FOLD);
-        S.sel = 'sword-3'; S.view = 'form'; S.search = ''; ie.render();
-        const n0 = rows();
+        const openAll = () => {const g = heads().find(g => g.textContent.startsWith('▸')); if (g) altClick(g);};
+        S.sel = 'sword-3'; ie.render();
+        openAll();
+        out.dom = [document.body.innerText.includes('[object'), document.querySelectorAll('#list .item').length === Object.keys(S.items).length,
+                   [...document.querySelector('#view').childNodes].some(n => n.nodeType === Node.TEXT_NODE)];
+
+        S.sel = null; S.view = 'table'; S.search = ''; ie.render();
+        const n0 = rows(), nGroups = heads().length;
+        altClick(head('武器'));
+        out.foldAll = [rows(), openKeys().length];
         head('武器').click();
-        out.fold = [rows() < n0 && !row('sword-3'), S.sel, S.view, head('武器').textContent.startsWith('▸'), foldKeys().includes('CAT_WEAPON')];
+        out.unfold = [!!row('sword-3'), head('武器').textContent.startsWith('▾'), openKeys().join()];
+        S.sel = 'sword-3'; S.view = 'form'; ie.render();
+        head('武器').click();
+        out.fold = [!row('sword-3'), S.sel, S.view, head('武器').textContent.startsWith('▸'), openKeys().includes('CAT_WEAPON')];
         S.search = 'sword-'; ie.render();
         out.foldSearch = [!!row('sword-3'), head('武器').textContent.startsWith('▾')];
         S.search = ''; ie.render();
         out.foldKeep = !row('sword-3');
         S.sel = 'sword-3'; S.view = 'form'; ie.render();
-        out.foldOpen = [!!document.querySelector('#list .item.sel'), foldKeys().includes('CAT_WEAPON')];
-        altClick(head('武器'));
-        out.foldAll = [rows(), S.sel];
-        altClick(head('武器'));
-        out.foldAll.push(rows() === n0, foldKeys().length);
+        out.foldOpen = [!!document.querySelector('#list .item.sel'), openKeys().includes('CAT_WEAPON')];
+        altClick(head('防具') ?? heads().find(g => !g.textContent.includes('武器')));
+        out.foldAll.push(rows() === n0, openKeys().length === nGroups);
+        S.sel = null; S.view = 'table'; ie.render();
         row('sword-3').click();
         out.pick = [S.sel, S.view];
         row('sword-3').click();
         out.unpick = [S.sel, S.view];
-        localStorage.removeItem(FOLD);
+        localStorage.removeItem(OPEN);
         return out;
     });
 
@@ -469,11 +477,13 @@ run('item', async t => {
     t.eq('畫面沒有 [object …]', r.dom[0], false);
     t.check('清單每個道具一列', r.dom[1]);
     t.eq('表單沒有多出來的文字（例如 0）', r.dom[2], false);
-    t.eq('點組標題摺疊：選到的那組取消選擇、回總覽、記在 localStorage', JSON.stringify(r.fold), JSON.stringify([true, null, 'table', true, true]));
+    t.check('左欄預設摺起來（只開選到的那組）', r.defFold);
+    t.eq('點組標題展開、記在 localStorage', JSON.stringify(r.unfold), JSON.stringify([true, true, 'CAT_WEAPON']));
+    t.eq('點組標題摺疊：選到的那組取消選擇、回總覽、從 localStorage 拿掉', JSON.stringify(r.fold), JSON.stringify([true, null, 'table', true, false]));
     t.eq('搜尋中全部展開', JSON.stringify(r.foldSearch), JSON.stringify([true, true]));
     t.check('清掉搜尋恢復摺疊', r.foldKeep);
-    t.eq('從別處選到摺起來組裡的會展開那組', JSON.stringify(r.foldOpen), JSON.stringify([true, false]));
-    t.eq('Alt＋點全部摺／全部展開', JSON.stringify(r.foldAll), JSON.stringify([0, null, true, 0]));
+    t.eq('從別處選到摺起來組裡的會展開那組並記住', JSON.stringify(r.foldOpen), JSON.stringify([true, true]));
+    t.eq('Alt＋點全部摺／全部展開', JSON.stringify(r.foldAll), JSON.stringify([0, 0, true, true]));
     t.eq('點清單選取開表單', JSON.stringify(r.pick), JSON.stringify(['sword-3', 'form']));
     t.eq('再點一次取消選擇、回總覽', JSON.stringify(r.unpick), JSON.stringify([null, 'table']));
 });

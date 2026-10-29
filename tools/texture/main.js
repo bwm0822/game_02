@@ -90,7 +90,7 @@ function renderList()
             FOLD.folded(d) ? '▸' : '▾')
         : h('span', {class: 'arrow'});
     const node = (id, name, n, {depth = 0, cls = '', bad = 0, pre = null} = {}) => h('div', {class: `node ${cls}` + (S.node === id ? ' sel' : ''), dataset: {node: id},
-            style: `padding-left: ${6 + depth * 14}px`, onclick: () => {S.node = id; S.search = $('search').value = ''; render();}},
+            style: `padding-left: ${6 + depth * 14}px`, onclick: () => {S.node = id; if (parents.includes(id)) FOLD.open(id); S.search = $('search').value = ''; render();}},
         pre, h('span', null, name), bad > 0 && h('span', {class: 'cnt bad', title: '.tbd 裡還被引用的'}, `⚠ ${bad}`), h('span', {class: 'cnt'}, n));
     $('list').replaceChildren(
         node(UNUSED, '未使用', S.refs ? S.tex.filter(isUnused).length : '…'),

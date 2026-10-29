@@ -51,7 +51,8 @@ run('dialog-tool', async t => {
         change(q(k('_common', 'nodes', 'n_chat', '#id')), 'n_talk');
         for (let i = 0; i < 200 && !$('dlgAsk').open; i++) await sleep(20);
         out.renameDlg = $('dlgAsk').textContent.includes('n_where.next');
-        $('dlgAsk').close('ok'); await sleep(50);
+        $('dlgAsk').close('ok');
+        for (let i = 0; i < 200 && !S.data._common.nodes.n_talk; i++) await sleep(20);
         out.rename = [S.data._common.nodes.n_where.next, S.data._common.nodes.n_default.choices.find(c => c.label === '聊天').next, S.results.filter(r => r.level === 'error').length];
         dl.undo();
 

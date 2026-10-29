@@ -40,6 +40,7 @@ run('fit', async t => {
         await F.setRoot(proj);
         await F.IC.ready;
         const dolls = Object.entries(JSON.parse(origRole)).filter(([, v]) => v.head || v.hand).map(([k]) => k);
+        [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.list = [document.querySelectorAll('#list .item').length, dolls.length, S.rid === dolls[0]];
 
         // 選角色帶入原裝

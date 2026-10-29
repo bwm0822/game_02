@@ -19,13 +19,22 @@ const S = {
     sel: null,              // items：{cat, i}；common：名稱；多選時是 Shift 範圍的起點
     picks: [],              // 物品多選：兩個以上才算，[{cat, i}]
     search: '',
-    fold: new Set(),        // 摺起來的分組：分類名稱，共用組是 COMMON
+    open: new Set(),        // 展開的分組（預設摺起來）：分類名稱，共用組是 COMMON
     hist: [], hi: -1,
 };
 const COMMON = '\0common';
+const OPEN_KEY = 'tools.prompt.open';
 
 try {S.path = localStorage.getItem(PATH_KEY) || DEFAULT_PATH;}
 catch {}
+try {S.open = new Set(JSON.parse(localStorage.getItem(OPEN_KEY)) ?? []);}
+catch {}
+
+const saveOpen = () => {
+    try {localStorage.setItem(OPEN_KEY, JSON.stringify([...S.open]));}
+    catch {}
+};
+const openGroup = (key) => {if (!S.open.has(key)) {S.open.add(key); saveOpen();}};
 
 // ---------- 分類路徑 ----------
 // items 的 key 是「武器/劍」這種路徑；一律補齊祖先、照樹的前序排（兄弟照第一次出現的順序），檔案順序＝畫面順序
@@ -302,7 +311,7 @@ async function addCat(parent = '')
     if (!name || badName(name)) return;
     const p = join(parent, name);
     if (p in S.data.items) return status(`分類「${p}」已經有了`);
-    S.fold.delete(parent);
+    if (parent) openGroup(parent);
     commit(() => {S.data.items = normItems({...S.data.items, [p]: []});});
 }
 
@@ -311,7 +320,8 @@ function repath(from, to)
 {
     if (S.sel?.cat && under(S.sel.cat, from)) S.sel.cat = rebase(S.sel.cat, from, to);
     for (const p of S.picks) p.cat = rebase(p.cat, from, to);
-    S.fold = new Set([...S.fold].map(k => rebase(k, from, to)));
+    S.open = new Set([...S.open].map(k => rebase(k, from, to)));
+    saveOpen();
 }
 
 async function renameCat(from)
@@ -468,25 +478,26 @@ function clickItem(e, me)
 }
 
 // 搜尋中全部展開
-const folded = (key) => !S.search && S.fold.has(key);
+const folded = (key) => !S.search && !S.open.has(key);
 
 // Alt＋點：分類＝連整棵子樹一起摺／展開，共用組＝所有組一起
 function groupHead(key, label, title, depth, ...buttons)
 {
     const inside = (k) => k === COMMON ? S.mode === 'common' : S.mode === 'items' && !!S.sel?.cat && under(S.sel.cat, k);
     const toggle = (alt) => {
-        const fold = !S.fold.has(key);
+        const fold = S.open.has(key);
         const keys = !alt ? [key] : key === COMMON ? [COMMON, ...Object.keys(S.data.items)] : Object.keys(S.data.items).filter(k => under(k, key));
         for (const k of keys)
         {
-            if (!fold) S.fold.delete(k);
+            if (!fold) S.open.add(k);
             else
             {
-                S.fold.add(k);
+                S.open.delete(k);
                 if (inside(k)) S.sel = null;
                 if (k !== COMMON) S.picks = S.picks.filter(p => !under(p.cat, k));
             }
         }
+        saveOpen();
         fixPicks();
         render();
     };
@@ -498,8 +509,8 @@ function groupHead(key, label, title, depth, ...buttons)
 
 function catHead(cat, depth, n)
 {
-    const g = groupHead(cat, `${leafOf(cat)}（${n}）`, '點一下摺疊，雙擊改名，可拖曳', depth,
-        h('button', {title: '新增物品', onclick: () => {S.fold.delete(cat); addItem(cat);}}, '＋'),
+    const g = groupHead(cat, `${leafOf(cat)}（${n}）`, '點一下展開／摺疊，雙擊改名，可拖曳', depth,
+        h('button', {title: '新增物品', onclick: () => {openGroup(cat); addItem(cat);}}, '＋'),
         h('button', {title: '新增子分類', onclick: () => addCat(cat)}, '⊞'),
         h('button', {title: '刪除分類（連子分類）', onclick: () => removeCat(cat)}, '✕'));
     g.ondblclick = (e) => {if (!e.target.closest('button')) renameCat(cat);};
@@ -550,8 +561,8 @@ function drawCommonList()
 {
     const q = S.search.toLowerCase();
     return [
-        groupHead(COMMON, `⚙ 共用（${Object.keys(S.data.common).length}）`, '點一下摺疊', 0,
-            h('button', {title: '新增共用', onclick: () => {S.fold.delete(COMMON); addCommon();}}, '＋')),
+        groupHead(COMMON, `⚙ 共用（${Object.keys(S.data.common).length}）`, '點一下展開／摺疊', 0,
+            h('button', {title: '新增共用', onclick: () => {openGroup(COMMON); addCommon();}}, '＋')),
         folded(COMMON) ? [] : Object.entries(S.data.common)
             .filter(([k, v]) => !q || `${k}\n${v}`.toLowerCase().includes(q))
             .map(([k]) => h('div', {class: `item${S.mode === 'common' && S.sel === k ? ' sel' : ''}`, onclick: () => pick('common', S.mode === 'common' && S.sel === k ? null : k)},

@@ -130,6 +130,7 @@ run('role', async t => {
         S.loc = ''; S.tab = 5; re.render();
         out.tableAnimal = [...document.querySelectorAll('#view thead th')].map(th => th.textContent).join('|');
         S.view = 'form'; S.sel = 'wick'; re.render();
+        [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.dom = [document.body.innerText.includes('[object'), [...document.querySelector('#view .form').childNodes].some(n => n.nodeType === Node.TEXT_NODE),
                    document.querySelectorAll('#list .item').length === Object.keys(S.data).length];
 
