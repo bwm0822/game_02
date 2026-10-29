@@ -16,11 +16,15 @@ const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand',
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
-const ZOOMS = [1, 2, 3, 4, 6, 'game'];
+// 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
+const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
+const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
 const FRAME_COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
 // 預覽播放時 ready 停一下（模擬前撲）、hold 停一下（模擬等箭飛）
 const PAUSE = {ready: 100, hold: 300};
 const SNAP = 15;
+const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
+const BG_KEY = 'tools.fit.bg';
 
 const S = {
     json: null,                 // public/assets/json
@@ -33,7 +37,16 @@ const S = {
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
+    bg: null,                   // 畫布純色背景，null＝棋盤格
 };
+try {S.bg = localStorage.getItem(BG_KEY);} catch {}
+
+function setBg(c)
+{
+    S.bg = c;
+    try {c ? localStorage.setItem(BG_KEY, c) : localStorage.removeItem(BG_KEY);} catch {}
+    drawPv();
+}
 
 const F = createFold();
 
@@ -458,7 +471,16 @@ function animView(slots)
 }
 
 // ---------- 預覽 ----------
-const scaleOf = () => S.zoom === 'game' ? Math.min(screen.width / 1024, screen.height / 768) : S.zoom;
+const scaleOf = () => S.zoom;
+const gameZoom = () => Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100;
+const stepZoom = (z, dir) => (dir > 0 ? ZOOM_GRID.find(g => g > z + 1e-9) : ZOOM_GRID.findLast(g => g < z - 1e-9)) ?? z;
+
+function setZoom(z)
+{
+    S.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+    recenter();
+    drawPv();
+}
 
 const hairHidden = () => SLOTS.some(([cat]) => items()[S.slots[cat]]?.equip?.hideHair);
 
@@ -525,10 +547,12 @@ async function drawPreview()
     placeScroll(cv.parentElement);
     const g = cv.getContext('2d'), px = 1 / K, flip = facing();
     g.setTransform(K * dpr, 0, 0, K * dpr, 0, 0);
-    g.imageSmoothingEnabled = false;
-    g.fillStyle = '#1b1c1f'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#222428';
-    for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
+    // 跟遊戲一樣用雙線性（Phaser 預設 LINEAR），零件縮小後的邊緣濃淡才看得出遊戲裡的樣子
+    g.imageSmoothingEnabled = true;
+    g.imageSmoothingQuality = 'low';
+    g.fillStyle = S.bg ?? BG[0]; g.fillRect(0, 0, W, H);
+    g.fillStyle = BG[1];
+    if (!S.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
     const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
     if (S.view)
@@ -753,8 +777,27 @@ function drawPv()
             check('view', '虛線 view', '#aaa'), check('anchor', '錨點', '#ffd700'),
             check('b', '物理 b', FRAME_COLOR.b), check('g', '佔格 g', FRAME_COLOR.g), check('z', '互動 z', FRAME_COLOR.z),
             check('flip', '翻面', null, isAnim),
-            h('select', {title: '「遊戲」＝全螢幕玩時的大小（1024×768 FIT 到螢幕）', onchange: e => {S.zoom = e.target.value === 'game' ? 'game' : +e.target.value; recenter(); drawPreview();}},
-                ZOOMS.map(z => h('option', {value: z, selected: z === S.zoom}, z === 'game' ? '遊戲' : `×${z}`)))),
+            h('label', {title: `倍率 ${ZOOM_MIN}～${ZOOM_MAX}，↑↓：小於 1 每次 0.1、1 以上每次 1`}, '×',
+                h('input', {type: 'number', class: 'num zoom', min: ZOOM_MIN, max: ZOOM_MAX, step: 0.1, value: S.zoom,
+                    // 點上下三角形的 input 事件沒有 inputType（打字才有），只拿來判斷方向、改照格子走（step 要 0.1，1 才按得下去）；舊欄位先填新值，接著的 change 才不會用 spinner 的值蓋回去
+                    oninput: e => {
+                        if (e.inputType) return;
+                        const v = parseFloat(e.target.value);
+                        if (!Number.isFinite(v) || v === S.zoom) return;
+                        const z = stepZoom(S.zoom, v > S.zoom ? 1 : -1);
+                        e.target.value = z;
+                        setZoom(z);
+                    },
+                    onchange: e => {const v = parseFloat(e.target.value); Number.isFinite(v) ? setZoom(v) : e.target.value = S.zoom;},
+                    onkeydown: e => {
+                        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                        e.preventDefault();
+                        setZoom(stepZoom(S.zoom, e.key === 'ArrowUp' ? 1 : -1));
+                        $('pv').querySelector('input.zoom').focus();
+                    }})),
+            h('button', {class: 'gamezoom', title: '全螢幕玩時的大小（1024×768 FIT 到螢幕）', onclick: () => setZoom(gameZoom())}, '遊戲'),
+            h('input', {type: 'color', class: 'bg', title: '背景色', value: S.bg ?? BG[0], oninput: e => {S.bg = e.target.value; drawPreview();}, onchange: e => setBg(e.target.value)}),
+            h('button', {class: 'bgchk', title: '背景改回棋盤格', disabled: !S.bg, onclick: () => setBg(null)}, '棋盤格')),
         isAnim && h('div', {class: 'opts anim'},
             tr ? [
                 timeline(tr),

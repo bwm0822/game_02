@@ -157,8 +157,22 @@ run('fit', async t => {
         F.setSlot('CAT_WEAPON', 'bow-1');
         S.aid = 'aim'; S.target = 0; F.render();
         out.aim = [trackEnd(F.trackOf()), Math.round(poseAt(F.trackOf(), 60).angle)];
-        const zsel = document.querySelector('#pv .ctrl select');
-        zsel.value = '6'; zsel.dispatchEvent(new Event('change'));
+        const zin = () => document.querySelector('#pv input.zoom');
+        const zset = (v) => {zin().value = v; zin().dispatchEvent(new Event('change'));};
+        const zkey = (key) => {zin().dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true})); return S.zoom;};
+        zset('1.41'); out.zstep = [zkey('ArrowUp')];
+        zset('1.41'); out.zstep.push(zkey('ArrowDown'), zkey('ArrowDown'), zkey('ArrowUp'));
+        zset('0.1'); out.zstep.push(zkey('ArrowDown'));
+        zset('9'); out.zstep.push(S.zoom, zkey('ArrowUp'));
+        zset('abc'); out.zstep.push(S.zoom, zin().value);
+        const spin = (v) => {zin().value = v; zin().dispatchEvent(new Event('input')); return S.zoom;};
+        zset('1.41'); out.zspin = [zin().type, spin('2.41')];
+        zset('1'); out.zspin.push(spin('0.9'), spin('0.95'));
+        // 真的 spinner：stepDown/stepUp 照 step 改值，1 要能往下
+        const real = (dir) => {dir > 0 ? zin().stepUp() : zin().stepDown(); zin().dispatchEvent(new Event('input')); return S.zoom;};
+        zset('1'); out.zspin.push(real(-1), real(1), real(1));
+        zset('6'); out.zspin.push(real(-1));
+        zset('6');
         await F.drawPreview();
         const stage = () => document.querySelector('#pv .stage');
         const ctrl = document.querySelector('#pv .ctrl').getBoundingClientRect();
@@ -174,9 +188,10 @@ run('fit', async t => {
         out.pinned = [ctrl.bottom <= innerHeight, scrolls, centered, stage().scrollTop, stage().scrollLeft];
         S.zoom = 3;
         F.setSlot('CAT_WEAPON', 'sword-1');
-        S.mode = 'fit'; S.zoom = 'game'; F.render();
+        S.mode = 'fit'; F.render();
+        document.querySelector('#pv .gamezoom').click();
         await F.drawPreview();
-        out.game = parseFloat(document.querySelector('#pv canvas').style.width);
+        out.game = [parseFloat(document.querySelector('#pv canvas').style.width), S.zoom === Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100, zin().value === String(S.zoom)];
         out.dom = document.body.innerText.includes('[object');
 
         // 頭盔 hideHair：戴上藏頭髮、取消勾選頭髮回來
@@ -190,6 +205,14 @@ run('fit', async t => {
         F.undo();
         out.hair.push(S.doc['item.json'].data.helmet_02.equip.hideHair);
         F.select('guard-1'); S.cur = 'CAT_HELMET'; F.render();
+
+        // 背景色：純色鋪滿、記 localStorage、棋盤格按鈕恢復
+        const corner = async () => {await F.drawPreview(); const c = document.querySelector('#pv canvas'); return [...c.getContext('2d').getImageData(0, 0, 1, 1).data].slice(0, 3).join();};
+        const bgIn = document.querySelector('#pv input.bg');
+        bgIn.value = '#ff0000'; bgIn.dispatchEvent(new Event('change'));
+        out.bg = [await corner(), localStorage.getItem('tools.fit.bg'), document.querySelector('#pv .bgchk').disabled];
+        document.querySelector('#pv .bgchk').click();
+        out.bg.push(await corner(), localStorage.getItem('tools.fit.bg'), document.querySelector('#pv .bgchk').disabled);
 
         // 存檔：只寫有改的檔；外部修改合併
         const seen = await save();
@@ -246,11 +269,14 @@ run('fit', async t => {
         JSON.stringify(['chop,sweep,aim', null, false, false, '', 'chop,sweep,stab,aim', 'stab']));
     t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
     t.eq('×6：控制面板留在畫面上、畫布區自己捲、換倍率置中、重繪保留捲動', JSON.stringify(r.pinned), JSON.stringify([true, true, true, 40, 30]));
-    t.check('遊戲大小倍率', r.game > 0 && r.game < 400, `${r.game}`);
+    t.check('「遊戲」按鈕填入螢幕算出的倍率', r.game[0] > 0 && r.game[0] < 400 && r.game[1] && r.game[2], JSON.stringify(r.game));
+    t.eq('倍率 ↑↓ 吸格、夾範圍、亂打恢復', JSON.stringify(r.zstep), JSON.stringify([2, 1, 0.9, 1, 0.1, 6, 6, 6, '6']));
+    t.eq('倍率上下三角形也吸格', JSON.stringify(r.zspin), JSON.stringify(['number', 2, 0.9, 1, 0.9, 1, 2, 5]));
     t.eq('畫面沒有 [object …]', r.dom, false);    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
+    t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));
 });
