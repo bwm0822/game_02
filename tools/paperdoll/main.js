@@ -222,7 +222,7 @@ function trimLayer(L)
 // 左上的頭盔常跟護甲黏成一塊（重心落到左上，護甲整個被丟掉）：四個象限湊不齊就逐步加侵蝕量重分（最多 AUTO_ERODE px），侵蝕量記在 blobs 步驟上
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 // kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
-//       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件共用 scale%，另外合成頭像 portrait）
+//       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 scale%，連動（headLink）時頭髮跟頭一樣，另外合成頭像 portrait）
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
@@ -242,8 +242,6 @@ const AUTO_DEF = {helmet: {pct: 28, x: -1.75, y: -0.25}, armor: {pct: 20, x: 0.2
                   weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, x: -2, y: 4}, hair: {pct: 18, x: -1, y: 2}};
 const AUTO_PORTRAIT = {w: 100, h: 100, fill: 90};
 const PT_F = ['w', 'h', 'fill'];
-// 頭髮的 scale% 跟頭共用，面板只有頭那格
-const autoShow = (P) => P.key === 'hair' ? ['x', 'y'] : AUTO_F[P.kind];
 const AUTO_KEY = 'paperdoll.auto';
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 分類的內建預設＝AUTO_DEF.weapon 蓋上 WCLS 第三欄；舊格式 weapon 直接放數字：複製到每個分類
@@ -264,7 +262,7 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          portrait: {...AUTO_PORTRAIT, ...v?.portrait}});
+                          portrait: {...AUTO_PORTRAIT, ...v?.portrait}, headLink: v?.headLink ?? true});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : a[P.key];
 const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}} : {...a, [P.key]: row};
@@ -280,8 +278,9 @@ function autoSet(v)
     S.auto = autoFrom(v);
     try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
     catch {}
-    for (const P of AUTO_PARTS) for (const f of autoShow(P)) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
+    for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     for (const f of PT_F) $(`au-pt-${f}`).value = S.auto.portrait[f];
+    $('au-link').checked = S.auto.headLink;
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -341,7 +340,7 @@ function autoPlace({P, C}, {x, y, a, ox, oy})
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
-const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls});
+const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls, link: S.auto.headLink});
 
 function autoStep(m, s = autoState(m))
 {
@@ -364,7 +363,7 @@ function autoUndo(m, from, to)
     }
     if (!m.parts) return true;
     for (const p of m.parts) if (p.P.kind === 'weapon') p.C.auto = {...p.C.auto, cls: s.cls};
-    autoSet(m.parts.reduce((a, p) => autoWith(a, p.P, autoRow(p)), {...S.auto, cls: s.cls}));
+    autoSet(m.parts.reduce((a, p) => autoWith(a, p.P, autoRow(p)), {...S.auto, cls: s.cls, headLink: s.link}));
     return true;
 }
 
@@ -2446,12 +2445,13 @@ function refreshAuto(m)
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
-        for (const f of autoShow(P))
+        for (const f of AUTO_F[P.kind])
         {
             const inp = $(`au-${P.key}-${f}`);
             inp.value = row[f];
-            inp.disabled = !!m.parts && !part;
+            inp.disabled = !!m.parts && !part || P.key === 'hair' && f === 'pct' && S.auto.headLink;
         }
+        if (P.key === 'hair') $('au-link').disabled = !!m.parts && !part;
     }
     if (head) autoPortrait(m);
 }
@@ -4506,27 +4506,48 @@ for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
 $('auTable').append(...dimSpans(['', '象限', 'scale%', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', 'scale%', 'x', 'y', 'a', 'ox', 'oy']));
-$('auHead').append(...dimSpans(['', 'scale%', 'x', 'y']));
+$('auHead').append(...dimSpans(['', 'scale%', '', 'x', 'y']));
 const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
+const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的 scale% 跟頭一樣，只能改頭那格'});
+linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
 for (const P of AUTO_PARTS)
 {
     const box = $(AUTO_BOX[P.kind]);
-    box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans([...(P.quad ? [P.quad] : []), ...(P.key === 'hair' ? ['同上'] : [])]));
-    for (const f of autoShow(P))
+    box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans(P.quad ? [P.quad] : []));
+    for (const f of AUTO_F[P.kind])
     {
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
-        // 頭像的 scale% 頭和頭髮一起改
+        // 連動時改頭的 scale%，頭髮設成一樣的值
         inp.onchange = () => {
             const v = +inp.value, m = S.mode, ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
-            const peers = P.kind === 'head' && f === 'pct' ? autoParts('head') : [P];
+            const peers = P.key === 'head' && f === 'pct' && S.auto.headLink ? autoParts('head') : [P];
             const parts = peers.map(Q => m.parts?.find(p => p.P === Q)).filter(Boolean);
             if (ok && parts.length) autoApplyAll(m, parts.map(part => [part, {...autoRow(part), [f]: v}]));
             else autoSet(ok ? peers.reduce((a, Q) => autoWith(a, Q, {...autoCfg(Q, a), [f]: v}), S.auto) : S.auto);
             refreshAll();
         };
         box.append(inp);
+        if (P.kind === 'head' && f === 'pct') box.append(P.key === 'hair' ? linkBox : el('span'));
     }
 }
+// 打開連動：頭髮對齊頭的 scale%，拆過就記一步（連開關一起退）；有修補不清除就不打開
+$('au-link').onchange = () => {
+    const on = $('au-link').checked, m = S.mode, [H, R] = autoParts('head');
+    const head = m.parts?.find(p => p.P === H), hair = m.parts?.find(p => p.P === R);
+    if (!on || !head || !hair) autoSet({...S.auto, headLink: on, ...(on && {hair: {...S.auto.hair, pct: S.auto.head.pct}})});
+    else
+    {
+        const pct = autoRow(head).pct;
+        if (autoRow(hair).pct !== pct)
+        {
+            autoStep(m);
+            autoApply(m, hair, {...autoRow(hair), pct}, false);
+            if (autoRow(hair).pct !== pct) m.hist.pop();
+        }
+        autoSet({...S.auto, headLink: autoRow(hair).pct === pct});
+    }
+    refreshAll();
+};
 for (const f of PT_F)
 {
     $(`au-pt-${f}`).onchange = () => {
@@ -4556,7 +4577,7 @@ $('auReset').onclick = () => {
     for (const part of m.parts ?? []) autoApply(m, part, weapon ? wclsDef(S.auto.cls) : AUTO_DEF[part.P.key]);
     autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls))
                    : {...S.auto, ...Object.fromEntries(autoParts(kind).map(P => [P.key, AUTO_DEF[P.key]])),
-                      ...(kind === 'head' ? {portrait: AUTO_PORTRAIT} : {split: undefined})});
+                      ...(kind === 'head' ? {portrait: AUTO_PORTRAIT, headLink: true} : {split: undefined})});
     autoSpSync(m);
     refreshAll();
 };

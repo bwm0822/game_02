@@ -1480,7 +1480,7 @@ run('paperdoll', async t => {
         await pd.setAssets(assets);
         pd.autoSet({kind: 'head', head: {pct: 50, x: -2, y: 4}, hair: {pct: 50, x: -1, y: 2}});
         pd.setMode('auto');
-        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auPortrait').hidden, $('auItem').textContent, $('auPtInfo').textContent, !!$('au-hair-pct')];
+        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auPortrait').hidden, $('auItem').textContent, $('auPtInfo').textContent, $('au-hair-pct').disabled, $('au-link').checked];
         pd.applyMode();
         const m = pd.S.mode, Hd = m.parts.find(p => p.P.key === 'head').C, Hr = m.parts.find(p => p.P.key === 'hair').C;
         out.made = [Hd.name, Hr.name, Hd.canvas.width, Hd.canvas.height, Hr.canvas.width, Hr.canvas.height, Hd.ops.map(o => o.type).join(),
@@ -1490,6 +1490,23 @@ run('paperdoll', async t => {
         out.pct = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length];
         key('z');
         out.pctUndo = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, $('au-head-pct').value];
+        // 關掉連動各改各的；打開時頭髮對齊頭、一步，undo 連開關一起退
+        const link = (on) => {$('au-link').checked = on; $('au-link').dispatchEvent(new Event('change'));};
+        let h1 = m.hist.length;
+        link(false);
+        out.unlink = [pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1];
+        type('au-hair-pct', 20);
+        type('au-head-pct', 40);
+        out.split = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length - h1];
+        h1 = m.hist.length;
+        link(true);
+        out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1];
+        key('z');
+        out.relinkUndo = [Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-link').checked, $('au-hair-pct').disabled];
+        key('z'); key('z');
+        h1 = m.hist.length;
+        link(true);
+        out.relinkSame = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.headLink, m.hist.length - h1];
         type('au-hair-x', 3);
         out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
 
@@ -1541,18 +1558,24 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         pd.applyMode();
         out.bald = [pd.S.mode.parts.map(p => p.C.name).join(), $('au-hair-x').disabled, $('au-head-x').disabled, $('status').textContent];
+        link(false);
         $('auReset').click();
-        out.reset = [pd.S.auto.portrait.w, pd.S.auto.head.pct, pd.S.auto.helmet.pct];
+        out.reset = [pd.S.auto.portrait.w, pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
         pd.cancelMode();
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（頭像）：進模式顯示頭像的表、W/H/%、按鈕叫存到 role；頭髮沒有自己的 scale%', JSON.stringify(ah.enter),
-         JSON.stringify(['head', false, true, true, false, '存到 role…', '拆完才有預覽', false]));
+    t.eq('自動（頭像）：進模式顯示頭像的表、W/H/%、按鈕叫存到 role；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
+         JSON.stringify(['head', false, true, true, false, '存到 role…', '拆完才有預覽', true, true]));
     t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面', JSON.stringify(ah.made),
          JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false]));
     t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
     t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
+    t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
+    t.eq('自動（頭像）：不連動時 scale% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
+    t.eq('自動（頭像）：打開連動頭髮對齊頭、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1]));
+    t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false]));
+    t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
     t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
     t.eq('自動（頭像）：頭像預覽照 W/H，不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 90]));
     t.eq('自動（頭像）：對話框 id＝原圖名就配到、只列有 head 的角色、檔名照 id', JSON.stringify(ah.dlg),
@@ -1570,7 +1593,7 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：找不到角色', ah.loadMiss, '找不到 wick 對應的角色（id＝wick 或 head.sprite＝head-wick）');
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
          JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
-    t.eq('自動（頭像）：還原預設只還原頭像（連 W/H/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28]));
+    t.eq('自動（頭像）：還原預設只還原頭像（連 W/H/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28, true]));
 
     // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定
     const bt = await ev(async () => {
