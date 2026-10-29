@@ -93,7 +93,7 @@ async function setRoot(dir)
     S.json = json;
     for (const f of FILES) await load(f);
     resetHist();
-    if (!role() || !isDoll(role())) select(Object.keys(roles()).find(id => isDoll(roles()[id])) ?? null);
+    if (!role() || !isDoll(role())) select(null);
     else render();
     status('');
 }

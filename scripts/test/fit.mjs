@@ -40,8 +40,9 @@ run('fit', async t => {
         await F.setRoot(proj);
         await F.IC.ready;
         const dolls = Object.entries(JSON.parse(origRole)).filter(([, v]) => v.head || v.hand).map(([k]) => k);
+        out.defFold = [S.rid, document.querySelectorAll('#list .item').length];
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
-        out.list = [document.querySelectorAll('#list .item').length, dolls.length, S.rid === dolls[0]];
+        out.list = [document.querySelectorAll('#list .item').length, dolls.length];
 
         // 選角色帶入原裝
         F.select('guard-1');
@@ -203,7 +204,8 @@ run('fit', async t => {
         return out;
     });
 
-    t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1] && r.list[2], JSON.stringify(r.list));
+    t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
+    t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
     t.eq('選角色帶入原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張', r.gloves[0]);
