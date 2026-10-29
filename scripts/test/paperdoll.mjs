@@ -1005,6 +1005,55 @@ run('paperdoll', async t => {
     t.eq('自動：零件刪光後可以再拆', JSON.stringify(au.again), JSON.stringify(['auto', null]));
     t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([28, '28']));
 
+    // 護具男女兩組數字：header 男｜女切換、拆過就照新那組重擺（一步 undo 連性別一起退）、還原預設只還原目前性別
+    const sx = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        Object.assign(pd.S, {layers: [], active: null});
+        pd.cancelMode();
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        pd.setDoll({sex: 'm'});
+        pd.autoSet({helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}});
+        out.noTag = $('dollF').disabled;
+        out.legacy = JSON.stringify(pd.autoFrom({helmet: {pct: 40}}).f.helmet);
+        const S0 = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        pd.select(S0);
+        pd.setMode('auto');
+        pd.applyMode();
+        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.x * pd.S.scale, H.y * pd.S.scale];
+        out.m = [...at(), $('au-helmet-pct').value, $('auSexL').textContent];
+        $('dollF').click();
+        out.f = [...at(), $('au-helmet-pct').value, $('auSexL').textContent, m.hist.length];
+        type('au-helmet-x', 5);
+        out.fEdit = [pd.S.auto.f.helmet.x, pd.S.auto.helmet.x];
+        pd.undo(); pd.undo();
+        out.undo = [...at(), pd.S.doll.sex, $('au-helmet-pct').value, pd.S.auto.helmet.x, pd.S.auto.f.helmet.x];
+        pd.redo();
+        out.redo = [...at(), pd.S.doll.sex];
+        $('auReset').click();
+        out.reset = [pd.S.auto.f.helmet.pct, pd.S.auto.helmet.pct, H.canvas.width];
+        pd.cancelMode();
+        const proj = pd.projectData(pd.S.layers).settings;
+        out.saved = [proj.doll.sex, proj.auto.f.helmet.pct];
+        pd.setDoll({sex: 'm'});
+        pd.autoSet(null);
+        Object.assign(pd.S, {layers: [], active: null});
+        return out;
+    });
+    t.eq('男女：沒標記也能切性別', sx.noTag, false);
+    t.eq('男女：舊設定沒有 f，女版用內建預設', sx.legacy, JSON.stringify({pct: 28, x: -1.75, y: -0.25}));
+    t.eq('男女：男版數字拆', JSON.stringify(sx.m), JSON.stringify([30, 1, 2, '50', '♂男版']));
+    t.eq('男女：切女照女版重擺、記一步', JSON.stringify(sx.f), JSON.stringify([15, 3, 4, '25', '♀女版', 1]));
+    t.eq('男女：女模式改數字寫 f', JSON.stringify(sx.fEdit), JSON.stringify([5, 1]));
+    t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 1, 2, 'm', '50', 1, 3]));
+    t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([15, 3, 4, 'f']));
+    t.eq('男女：還原預設只還原目前性別', JSON.stringify(sx.reset), JSON.stringify([28, 50, 17]));
+    t.eq('男女：性別跟兩組數字存進專案', JSON.stringify(sx.saved), JSON.stringify(['f', 28]));
+
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
     const ac = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
@@ -2829,7 +2878,7 @@ run('paperdoll', async t => {
         window.confirm = conf;
         return out;
     });
-    t.eq('人偶：沒標記時切換 disable', JSON.stringify(dl.noTag), JSON.stringify([true, true]));
+    t.eq('人偶：沒標記時頭髮 disable（性別也切自動護具數字，不 disable）', JSON.stringify(dl.noTag), JSON.stringify([false, true]));
     t.eq('人偶：同部位只能一層，標新的拿掉舊的', JSON.stringify(dl.unique), JSON.stringify([null, 'm-body']));
     t.eq('人偶：圖層列顯示徽章', dl.badge, '♀身');
     t.eq('人偶：切女只顯示女的', dl.f, 'mh-,mH-,mb-,fh+,fb+,x+');

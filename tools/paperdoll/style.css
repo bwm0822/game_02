@@ -70,6 +70,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 #auPortrait .flRow input[type=number], #modeIcon .flRow input[type=number] { width: 56px; }
 #auPtPreview { display: block; margin-top: 4px; max-width: 100%; border: 1px solid #555; background: repeating-conic-gradient(#777 0 25%, #555 0 50%) 0 0 / 8px 8px; }
 .autoGrid[hidden] { display: none; }
+.autoGrid .sexL { font-size: 11px; color: #9cf; white-space: nowrap; }
 .spCtl { display: flex; flex-direction: column; gap: 4px; }
 .spGrid { display: grid; grid-template-columns: auto 20px 1fr 20px 28px; gap: 2px 4px; align-items: center; }
 .spStep { padding: 0; width: 20px; }

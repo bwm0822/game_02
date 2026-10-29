@@ -203,15 +203,27 @@ function setTag(L, tag)
     refreshAll();
 }
 
-function setDoll(d)
+function dollShow()
 {
-    Object.assign(S.doll, d);
     for (const L of S.layers)
     {
         if (!L.tag) continue;
         const [s, p] = L.tag.split('-');
         L.visible = s === S.doll.sex && (p !== 'hair' || S.doll.hair);
     }
+}
+
+// 換性別也換自動護具用的那組數字：拆過就照新那組重新擺放（有變才記一步模式內 undo，連性別一起退）
+function setDoll(d)
+{
+    const m = S.mode, parts = d.sex && d.sex !== S.doll.sex && m.type === 'auto' ? (m.parts ?? []).filter(p => p.P.kind === 'armor') : [];
+    const before = parts.length && autoState(m);
+    Object.assign(S.doll, d);
+    dollShow();
+    autoSet(S.auto);
+    const diff = parts.filter(p => !autoSame(p.P, autoCfg(p.P), autoRow(p)));
+    if (diff.length) autoStep(m, before);
+    for (const p of diff) autoApply(m, p, autoCfg(p.P), false);
     refreshAll();
 }
 
@@ -321,10 +333,14 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true});
+                          portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true,
+                          f: Object.fromEntries(AUTO_PARTS.filter(P => P.kind === 'armor').map(P => [P.key, {...AUTO_DEF[P.key], ...v?.f?.[P.key]}]))});
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
-const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : a[P.key];
-const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}} : {...a, [P.key]: row};
+// 護具分男女兩組：S.auto.helmet… 是男版、S.auto.f.helmet… 是女版，照 header 的 男｜女（S.doll.sex）選用
+const autoFemale = (P) => P.kind === 'armor' && S.doll.sex === 'f';
+const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : autoFemale(P) ? a.f[P.key] : a[P.key];
+const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}}
+                              : autoFemale(P) ? {...a, f: {...a.f, [P.key]: row}} : {...a, [P.key]: row};
 
 function autoLoad()
 {
@@ -340,6 +356,7 @@ function autoSet(v)
     for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     for (const f of PT_F) $(`au-pt-${f}`).value = S.auto.portrait[f];
     $('au-link').checked = S.auto.headLink;
+    $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -399,7 +416,8 @@ function autoPlace({P, C}, {x, y, a, ox, oy})
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
-const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls, link: S.auto.headLink});
+const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls, link: S.auto.headLink,
+                           sex: S.doll.sex});
 
 function autoStep(m, s = autoState(m))
 {
@@ -419,6 +437,12 @@ function autoUndo(m, from, to)
         Object.assign(m.sp, s.sp);
         spSet(m.sp);
         autoSet({...S.auto, split: m.sp.cut ? 'cut' : 'split'});
+    }
+    if (s.sex !== S.doll.sex)
+    {
+        S.doll.sex = s.sex;
+        dollShow();
+        autoSet(S.auto);
     }
     if (!m.parts) return true;
     for (const p of m.parts) if (p.P.kind === 'weapon') p.C.auto = {...p.C.auto, cls: s.cls};
@@ -2448,7 +2472,6 @@ function refreshLayers()
     for (const s of Object.keys(DOLL_SEX))
     {
         const b = $(s === 'm' ? 'dollM' : 'dollF');
-        b.disabled = !tagged;
         b.classList.toggle('on', S.doll.sex === s);
     }
     $('dollHair').disabled = !tagged;
@@ -4364,8 +4387,8 @@ function applySettings(s)
     $('showOrigin').checked = s.showOrigin ?? true;
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
-    if (s.auto) autoSet(s.auto);
     if (s.doll) Object.assign(S.doll, s.doll);
+    autoSet(s.auto ?? S.auto);
 }
 
 async function saveProject()
@@ -4654,7 +4677,7 @@ const removeGreenChanged = () => {
 for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
 
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
-$('auTable').append(...dimSpans(['', '象限', 'scale%', 'x', 'y']));
+$('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', 'scale%', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', 'scale%', 'x', 'y', 'a', 'ox', 'oy']));
 $('auHead').append(...dimSpans(['', 'scale%', '', 'x', 'y']));
 const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
@@ -4721,12 +4744,12 @@ $('auCls').onchange = () => {
     }
     refreshAll();
 };
-// 武器只還原目前分類，護具只還原護具（連頭盔拆法），頭像只還原頭像（連 W/H/%）
+// 武器只還原目前分類，護具只還原護具目前性別那組（連頭盔拆法），頭像只還原頭像（連尺寸/%）
 $('auReset').onclick = () => {
     const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
     for (const part of m.parts ?? []) autoApply(m, part, weapon ? wclsDef(S.auto.cls) : AUTO_DEF[part.P.key]);
     autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls))
-                   : {...S.auto, ...Object.fromEntries(autoParts(kind).map(P => [P.key, AUTO_DEF[P.key]])),
+                   : {...autoParts(kind).reduce((a, P) => autoWith(a, P, AUTO_DEF[P.key]), S.auto),
                       ...(kind === 'head' ? {portrait: AUTO_PORTRAIT, headLink: true} : {split: undefined})});
     autoSpSync(m);
     refreshAll();
