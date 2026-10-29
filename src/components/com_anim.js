@@ -3,6 +3,7 @@ import {GM} from '../core/setting.js'
 import DB from '../data/db.js'
 import {dirTo, animTrack, poseAt, trackEnd} from '../core/pose.js'
 const _tag = 'anim';
+const IDLE_BREATH = false;  // idle 呼吸動畫暫時關掉（比對遊戲跟試穿的比例時會干擾）
 
 //--------------------------------------------------
 // 類別 : 元件(component)
@@ -26,7 +27,7 @@ export class COM_Anim extends Com
         const {root} = this.ctx;
         const view = root.view;
         if(!view) {return;}   // 判斷 this.view ，以避免在地圖上出錯
-        if(on)
+        if(on && IDLE_BREATH)
         {
             if(!this._twIdle)
             {
