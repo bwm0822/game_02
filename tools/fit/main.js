@@ -285,7 +285,7 @@ function drawList()
 function numInput(file, id, path, ph, {req, after} = {})
 {
     const k = `${file}|${id}|${path.join('.')}`, v = getAt(S.doc[file].data[id], path);
-    return h('input', {type: 'number', step: 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
+    return h('input', {type: 'number', step: path.at(-1) === 'scale' ? 0.01 : 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
         onchange: (e) => {
             const n = parseNum(e.target.value);
             if (typeof n === 'string') {status(`${path.join('.')} 要是數字`); return render();}
