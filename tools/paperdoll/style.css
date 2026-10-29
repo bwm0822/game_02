@@ -82,6 +82,7 @@ dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
 #dlgItems, #dlgRole { width: 560px; }
 #drMsg { color: #f77; }
+#drMsg.warn { color: #fc6; }
 #drRole { background: #2b2d31; color: #ddd; border: 1px solid #555; }
 .irow { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #333; }
 .irow.off { opacity: .45; }

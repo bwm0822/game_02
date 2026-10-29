@@ -2,6 +2,7 @@ import {History} from './history.js';
 import * as PX from './pixels.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
+import {KINDS, KIND_NAMES} from '../role/schema.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -3828,14 +3829,22 @@ async function commitItems(rows, bake, all = false)
 }
 
 // ---------- 頭像存到 role.json ----------
-// 只能選已經有 head 的角色（不新增）：頭、頭髮寫 textures/roles/parts（head／hair 的 sprite、scale、x、y），
+// 可以選任何現有角色（不新增角色，沒有 head／hair 就新增那一項）：頭、頭髮寫 textures/roles/parts（head／hair 的 sprite、scale、x、y），
 // 頭像另外合成寫 roles/portraits（icon）；檔名預設 head-<id>／hair-<id>／portrait-<id>，不照舊 sprite（常有好幾個角色共用一顆頭）
+// 存過的角色記在零件的 auto.role，之後存／載入先看它
 
 const ROLE_DIR = {head: 'roles/parts', hair: 'roles/parts', portrait: 'roles/portraits'};
 const headBase = (parts) => parts[0].C.name.replace(/-(head|hair)$/, '');
-// id＝原圖名，再看 head.sprite＝head-<原圖名>
-const roleMatch = (roles, name) => (roles[name]?.head ? name : Object.keys(roles).find(id => roles[id].head?.sprite === `head-${name}`)) ?? null;
+// auto.role，再來 id＝原圖名，再看 head.sprite＝head-<原圖名>
+function roleMatch(roles, parts)
+{
+    const rem = parts.find(p => p.C.auto?.role)?.C.auto.role, name = headBase(parts);
+    if (roles[rem]) return rem;
+    return (roles[name] ? name : Object.keys(roles).find(id => roles[id].head?.sprite === `head-${name}`)) ?? null;
+}
 const roleOld = (role, k) => k === 'portrait' ? role?.icon : role?.[k]?.sprite;
+// body 不是 body-* 的（整張圖、sheet 格子）頭已經畫在身上，再疊 head 會兩顆頭
+const roleBodyOdd = (role) => role?.body?.sprite && !role.body.sprite.startsWith('body-') ? role.body.sprite : null;
 
 // 填 R.err、r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋到圖，存檔時 confirm）；回傳要處理的列
 function roleCheck(R, roles, keys)
@@ -3843,6 +3852,8 @@ function roleCheck(R, roles, keys)
     const act = R.rows.filter(r => r.on && (r.png || r.place));
     const role = roles[R.id];
     R.err = !R.id ? '要選角色' : !role ? `role.json 裡已經沒有 ${R.id}` : '';
+    const odd = roleBodyOdd(role);
+    R.warn = odd ? `body 是 ${odd}，不是紙娃娃身體（body-*），存了會疊兩顆頭` : '';
     for (const r of R.rows) Object.assign(r, {err: '', warn: '', ask: ''});
     if (!role) return act;
     for (const r of act)
@@ -3867,7 +3878,7 @@ function roleDialog(parts, roles, keys)
 {
     const dlg = $('dlgRole'), pt = portraitOf(parts);
     const rows = [...autoParts('head').map(P => ({key: P.key, tag: P.name, part: parts.find(p => p.P === P)})), {key: 'portrait', tag: '頭像', part: null}];
-    const R = {id: roleMatch(roles, headBase(parts)), rows};
+    const R = {id: roleMatch(roles, parts), rows};
     const avail = (r) => r.key === 'portrait' || !!r.part;
     // 換角色：檔名回到 <部位>-<id>、勾勾全勾；角色沒有這個部位就一定要更新圖
     const reset = () => {
@@ -3875,7 +3886,8 @@ function roleDialog(parts, roles, keys)
     };
     const refresh = () => {
         const act = roleCheck(R, roles, keys);
-        $('drMsg').textContent = R.err;
+        $('drMsg').className = R.err ? 'err' : 'warn';
+        $('drMsg').textContent = R.err || R.warn;
         for (const r of rows)
         {
             const k = r.key, live = r.on && avail(r) && !!R.id, has = !!roleOld(roles[R.id], k);
@@ -3901,9 +3913,19 @@ function roleDialog(parts, roles, keys)
         }
     };
     const sel = $('drRole');
-    sel.replaceChildren(Object.assign(el('option'), {value: '', textContent: '（請選擇）'}),
-                        ...Object.keys(roles).filter(id => roles[id].head)
-                            .map(id => Object.assign(el('option'), {value: id, textContent: `${id} ${roles[id].lab ?? ''}（${roles[id].head.sprite ?? '沒有 sprite'}）`})));
+    const opt = (id) => {
+        const r = roles[id], head = r.head ? r.head.sprite ?? '沒有 sprite' : '沒有 head';
+        return Object.assign(el('option'), {value: id, textContent: `${roleBodyOdd(r) ? '⚠ ' : ''}${id} ${r.lab ?? ''}（${head}）`});
+    };
+    const kindOf = (id) => KINDS.includes(roles[id].kind) ? roles[id].kind : '';
+    const groups = [...KINDS, ''].map(k => {
+        const ids = Object.keys(roles).filter(id => kindOf(id) === k);
+        if (!ids.length) return null;
+        const g = Object.assign(el('optgroup'), {label: KIND_NAMES[k] ?? '其他'});
+        g.append(...ids.map(opt));
+        return g;
+    }).filter(Boolean);
+    sel.replaceChildren(Object.assign(el('option'), {value: '', textContent: '（請選擇）'}), ...groups);
     sel.onchange = () => {R.id = sel.value || null; reset(); sync(); refresh();};
     $('drRows').replaceChildren(...rows.map(r => {
         const k = r.key, row = el('div', 'irow' + (avail(r) ? '' : ' off'));
@@ -4002,6 +4024,7 @@ async function commitRole(parts, R, bake)
     }
     await FS.writeFile(A.json, 'role.json', new Blob([JSON.stringify(roles, null, 2)]));
     SH.notifySaved('role.json');
+    for (const p of parts) p.C.auto = {...p.C.auto, role: R.id};
     status(`已存 role.json：${R.id} 的 ${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
@@ -4010,8 +4033,8 @@ async function loadRole()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts || !S.assets) return;
-    const roles = await readGameJson('role.json'), base = headBase(m.parts), id = roleMatch(roles, base);
-    if (!id) return status(`找不到 ${base} 對應的角色（id＝${base} 或 head.sprite＝head-${base}）`);
+    const roles = await readGameJson('role.json'), base = headBase(m.parts), id = roleMatch(roles, m.parts);
+    if (!id) return status(`找不到 ${base} 對應的角色（存過的角色、id＝${base} 或 head.sprite＝head-${base}）`);
     const rows = [], hit = [], warn = [];
     for (const P of autoParts('head'))
     {
