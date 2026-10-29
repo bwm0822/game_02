@@ -1029,7 +1029,7 @@ run('paperdoll', async t => {
         pd.applyMode();
         const H = find('kit-helmet'), F = find('kit-helmet-front'), B = find('kit-helmet-back');
         out.made = [!!F, !!B, H.visible, pd.S.active === F, F?.ops.map(o => o.type).join(), pd.S.mode === m];
-        out.order = [pd.S.layers[0] === B, pd.S.layers.indexOf(F) === pd.S.layers.indexOf(H) + 1];
+        out.order = [pd.S.layers[0] === B, pd.S.layers.indexOf(H) === pd.S.layers.indexOf(F) + 1];
         const c0 = F.canvas;
         slide(t0 + 30);
         out.after = [m.sp, document.querySelector('[name=auHow]').disabled, $('sp-lum').disabled, F.canvas === c0];
@@ -1077,7 +1077,7 @@ run('paperdoll', async t => {
     t.eq('自動切線：拆之前改門檻記一步', JSON.stringify(ac.preStep[0]), '1');
     t.eq('自動切線：拆之前 undo 退回門檻', JSON.stringify(ac.preUndo), JSON.stringify([ac.preUndo[0], true]));
     t.eq('自動切線：確定時頭盔一起拆前後片、選前片、留在模式', JSON.stringify(ac.made), JSON.stringify([true, true, false, true, 'alpha,removeGreen,blobs,xform,mask,xform', true]));
-    t.eq('自動切線：後片放到最底層、前片疊在頭盔上', JSON.stringify(ac.order), JSON.stringify([true, true]));
+    t.eq('自動切線：後片放到最底層、原頭盔層疊在前片上', JSON.stringify(ac.order), JSON.stringify([true, true]));
     t.eq('自動切線：拆完不再顯示切線、勾選框和門檻反灰、拉門檻不動前後片', JSON.stringify(ac.after), JSON.stringify([null, true, true, true]));
     t.eq('自動切線：選前片再進自動，不帶切線', JSON.stringify(ac.resume), JSON.stringify(['auto', null]));
     t.eq('自動切線：取消自動一起刪前後片', JSON.stringify(ac.revoke), JSON.stringify([false, false, false]));
@@ -1143,6 +1143,48 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動：左上頭盔黏著護甲時侵蝕分開，護甲留下、侵蝕量記在 blobs', JSON.stringify(ae), JSON.stringify(['boots,armor,helmet', 60, true, 1]));
+
+    // 有標記頭的參考人偶：照遊戲深度排，頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子接在最低的頭下面
+    const ad = await ev(async () => {
+        const pd = window.__pd, out = {};
+        const blank = async () => {const c = document.createElement('canvas'); c.width = c.height = 10; c.getContext('2d').fillRect(0, 0, 10, 10); return createImageBitmap(c);};
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#a05030'; g.fillRect(110, 10, 80, 80);
+        g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeRect(111.5, 11.5, 77, 77);
+        g.fillStyle = '#000'; g.fillRect(110, 38, 80, 3); g.fillRect(134, 40, 3, 50);
+        g.fillStyle = '#0000ff'; g.fillRect(20, 110, 60, 60); g.fillRect(120, 130, 60, 40);
+        const saved = pd.S.auto;
+        pd.autoSet({...saved, kind: 'armor', split: 'split'});
+        const before = pd.S.layers.slice();
+        const doll = [];
+        for (const tag of ['m-body', 'm-head', 'f-head', 'm-hair']) doll.push(Object.assign(pd.addLayer(await blank(), tag, null, null, null), {tag}));
+        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null, null);
+        const names = () => pd.S.layers.filter(L => !before.includes(L)).map(L => L.name).join();
+        pd.setMode('auto');
+        pd.applyMode();
+        out.tagged = names();
+        const badges = () => [...document.querySelectorAll('#layers .layer')].map(r => r.querySelector('.tag.armor') && `${r.querySelector('.name').textContent.split(' ')[0]}:${r.querySelector('.tag.armor').textContent}`).filter(Boolean).join();
+        out.badges = badges();
+        out.badgeTitle = [...document.querySelectorAll('#layers .layer .tag.armor')].map(b => b.title).find(s => s.includes('前'));
+        pd.autoRevoke();
+        out.badgesGone = badges();
+        for (const L of doll) delete L.tag;
+        pd.select(K);
+        pd.setMode('auto');
+        pd.applyMode();
+        out.plain = names();
+        pd.autoRevoke();
+        for (const L of [K, ...doll]) pd.removeLayer(L);
+        pd.autoSet(saved);
+        return out;
+    });
+    t.eq('自動：有標記頭時照遊戲深度插進參考人偶', ad.tagged, 'm-body,kit-boots,kit-armor,kit-helmet-back,m-head,f-head,m-hair,kit-helmet-front,kit-helmet,kit');
+    t.eq('自動：護具零件的圖層標示（前後片加前／後）', ad.badges, 'kit-helmet:盔,kit-helmet-front:盔前,kit-helmet-back:盔後,kit-armor:甲,kit-boots:靴');
+    t.eq('自動：標示的提示', ad.badgeTitle, '自動護具：頭盔（前片）');
+    t.eq('自動：取消自動標示跟著消失', ad.badgesGone, '');
+    t.eq('自動：沒有標記頭就疊在原圖上、後片到最底', ad.plain, 'kit-helmet-back,m-body,m-head,f-head,m-hair,kit,kit-boots,kit-armor,kit-helmet-front,kit-helmet');
 
     // 前後片追線：左線下段的後片那側是開口時，繼續沿線外緣走到底，斜出去的線不會被延伸線切到
     const so = await ev(async () => {
@@ -2744,4 +2786,57 @@ run('paperdoll', async t => {
     t.eq('刪點：Delete 刪游標下的頂點', JSON.stringify(mk.del), JSON.stringify([mk.alt[0] - 2, 2]));
     t.eq('刪點：最少留 3 點', JSON.stringify(mk.min), JSON.stringify([3, '多邊形最少要 3 點']));
     t.eq('刪點：undo 退回一點', mk.undo, mk.min[0] + 1);
+
+    // 關閉＋參考人偶標記
+    const dl = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const conf = window.confirm;
+        const bmp = () => {const c = document.createElement('canvas'); c.width = c.height = 4; return createImageBitmap(c);};
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.cancelMode();
+        const vis = () => pd.S.layers.map(L => `${L.name}${L.visible ? '+' : '-'}`).join();
+        const L = {};
+        for (const n of ['mh', 'mH', 'mb', 'fh', 'fb', 'x']) L[n] = pd.addLayer(await bmp(), n, null, null, null);
+        out.noTag = [$('dollM').disabled, $('dollHair').disabled];
+        pd.setTag(L.mh, 'm-hair'); pd.setTag(L.mH, 'm-head'); pd.setTag(L.mb, 'm-body');
+        pd.setTag(L.fh, 'f-hair'); pd.setTag(L.fb, 'm-body');
+        out.unique = [L.mb.tag ?? null, L.fb.tag];
+        pd.setTag(L.fb, 'f-body'); pd.setTag(L.mb, 'm-body');
+        out.badge = document.querySelector('#layers .layer .tag')?.textContent;
+        pd.setDoll({sex: 'f', hair: true});
+        out.f = vis();
+        pd.setDoll({sex: 'm'});
+        out.m = vis();
+        pd.setDoll({hair: false});
+        out.noHair = vis();
+        out.btn = [$('dollM').classList.contains('on'), $('dollF').classList.contains('on'), $('dollHair').checked];
+        pd.select(L.mb); pd.duplicateLayer();
+        out.dupTag = pd.S.active.tag ?? null;
+        pd.setTag(L.mH, null);
+        out.untag = 'tag' in L.mH;
+        const data = pd.projectData(pd.S.layers);
+        out.data = [data.settings.doll, data.layers.map(d => d.tag ?? '').join()];
+
+        let asked = 0;
+        window.confirm = () => (asked++, false);
+        pd.closeAll();
+        out.keep = [pd.S.layers.length > 0, asked];
+        window.confirm = () => (asked++, true);
+        pd.closeAll();
+        out.closed = [pd.S.layers.length, pd.S.active, pd.hist.undos.length, asked, $('btnClose').disabled, $('projName').textContent];
+        window.confirm = conf;
+        return out;
+    });
+    t.eq('人偶：沒標記時切換 disable', JSON.stringify(dl.noTag), JSON.stringify([true, true]));
+    t.eq('人偶：同部位只能一層，標新的拿掉舊的', JSON.stringify(dl.unique), JSON.stringify([null, 'm-body']));
+    t.eq('人偶：圖層列顯示徽章', dl.badge, '♀身');
+    t.eq('人偶：切女只顯示女的', dl.f, 'mh-,mH-,mb-,fh+,fb+,x+');
+    t.eq('人偶：切男只顯示男的', dl.m, 'mh+,mH+,mb+,fh-,fb-,x+');
+    t.eq('人偶：取消頭髮藏目前性別的髮', dl.noHair, 'mh-,mH+,mb+,fh-,fb-,x+');
+    t.eq('人偶：按鈕狀態', JSON.stringify(dl.btn), JSON.stringify([true, false, false]));
+    t.eq('人偶：複製不帶標記', dl.dupTag, null);
+    t.check('人偶：取消標記', !dl.untag);
+    t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', hair: false}, 'm-hair,,m-body,,f-hair,f-body,']));
+    t.eq('關閉：有沒存的修改、按取消不關', JSON.stringify(dl.keep), JSON.stringify([true, 1]));
+    t.eq('關閉：清空圖層與 undo', JSON.stringify(dl.closed), JSON.stringify([0, null, 0, 2, true, '（未命名）']));
 });

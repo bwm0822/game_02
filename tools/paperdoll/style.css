@@ -5,6 +5,8 @@ button { background: #3a3d44; color: #ddd; border: 1px solid #555; border-radius
 button:hover:not(:disabled) { background: #4a4e57; }
 button:disabled { opacity: 0.4; cursor: default; }
 button.on { background: #2f6db5; border-color: #4a8be0; }
+#dollM.on { background: #6fcf6f; border-color: #4caf50; color: #000; }
+#dollF.on { background: #f4a6c8; border-color: #e07aa8; color: #000; }
 input[type=number] { width: 56px; background: #2b2d31; color: #ddd; border: 1px solid #555; }
 input:not([type]) { background: #2b2d31; color: #ddd; border: 1px solid #555; }
 label { white-space: nowrap; }
@@ -52,6 +54,10 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 #layers .layer .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #layers .layer .ico { width: 20px; text-align: center; opacity: .9; }
 #layers .layer .ico.off { opacity: .25; }
+#layers .layer .tag { flex: none; padding: 0 3px; border-radius: 3px; color: #000; font-size: 11px; }
+#layers .layer .tag.m { background: #6fcf6f; }
+#layers .layer .tag.f { background: #f4a6c8; }
+#layers .layer .tag.armor { background: #9fb3c8; }
 #layers .layer.drop { box-shadow: inset 0 2px 0 #4a8be0; }
 
 .tools { display: flex; flex-wrap: wrap; gap: 4px; }

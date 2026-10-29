@@ -10,7 +10,11 @@
 <body>
 <header>
     <button id="btnSaveProj" title="把 💾 打勾的圖層存成專案">存專案…</button>
+    <button id="btnClose" title="關掉全部圖層">關閉</button>
     <span id="projName" class="dim">（未命名）</span>
+    <span class="sep"></span>
+    <span title="圖層右鍵標成 男／女 的 髮／頭／身體，切換時批次改顯示"><button id="dollM">男</button><button id="dollF">女</button></span>
+    <label><input id="dollHair" type="checkbox" checked> 頭髮</label>
     <span class="sep"></span>
     <label>scale <input id="scale" type="number" step="0.05" min="0.01" value="0.25"></label>
     <label><input id="applyScale" type="checkbox"> 套用 scale</label>

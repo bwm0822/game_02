@@ -22,6 +22,7 @@ const S = {
     scale: 0.25,
     applyScale: false,
     ref: {tw: 32, th: 32, rw: 32, rh: 64, ax: 0, ay: 16},
+    doll: {sex: 'm', hair: true},
     view: {zoom: 0.5, px: 0, py: 0},
     mode: {type: 'move'},
     keys: new Set(),
@@ -124,10 +125,10 @@ function mergeLayers(layers)
     status(`合併 ${layers.length} 個圖層 → ${L.name}`);
 }
 
-// ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件
+// ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件，也不帶人偶標記（同部位只能一層）
 function cloneAbove(L, name, below = false)
 {
-    const {auto, autoSrc, splitSrc, ...rest} = L;
+    const {auto, autoSrc, splitSrc, tag, ...rest} = L;
     const C = {...rest, id: ++uid, name};
     S.layers.splice(S.layers.indexOf(L) + (below ? 0 : 1), 0, C);
     return C;
@@ -165,6 +166,61 @@ function mergeVisible()
     const layers = S.layers.filter(L => L.visible && !L.locked);
     if (layers.length < 2) return status('顯示中、沒鎖定的圖層不到兩層');
     mergeLayers(layers);
+}
+
+function closeAll()
+{
+    if (!S.layers.length) return;
+    if (isUnsaved() && !confirm('目前有沒存的修改，要放棄嗎？')) return;
+    cancelMode();
+    hist.undos.length = hist.redos.length = 0;
+    Object.assign(S, {layers: [], active: null, projSig: null});
+    refreshAll();
+    status('已關閉');
+}
+
+// ---------- 參考人偶：圖層標成 男／女 的 髮／頭／身體（tag＝m-hair…），切換時批次改顯示（跟 👁 一樣不進 undo） ----------
+
+const DOLL_SEX = {m: '男', f: '女'}, DOLL_PART = {hair: '髮', head: '頭', body: '身體'};
+const dollBadge = (tag) => {const [s, p] = tag.split('-'); return (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0];};
+
+// 自動護具零件的標示：看 auto.key 算、只顯示；前後片沒有 auto，從原頭盔層找
+const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子']};
+
+function armorBadge(L)
+{
+    const g = splitNew(L), b = ARMOR_BADGE[(g?.O ?? L).auto?.key];
+    if (!b) return null;
+    const [s, n] = L === g?.F ? ['前', '（前片）'] : L === g?.B ? ['後', '（後片）'] : ['', ''];
+    return Object.assign(el('span', 'tag armor'), {textContent: b[0] + s, title: `自動護具：${b[1]}${n}`});
+}
+
+function setTag(L, tag)
+{
+    for (const M of S.layers) if (M.tag === tag) delete M.tag;
+    if (tag) L.tag = tag;
+    else delete L.tag;
+    refreshAll();
+}
+
+function setDoll(d)
+{
+    Object.assign(S.doll, d);
+    for (const L of S.layers)
+    {
+        if (!L.tag) continue;
+        const [s, p] = L.tag.split('-');
+        L.visible = s === S.doll.sex && (p !== 'hair' || S.doll.hair);
+    }
+    refreshAll();
+}
+
+function tagMenu(e, L)
+{
+    e.preventDefault();
+    const items = Object.entries(DOLL_SEX).flatMap(([s, sn]) => Object.entries(DOLL_PART).map(([p, pn]) =>
+        [`${L.tag === `${s}-${p}` ? '✔ ' : ''}${sn}：${pn}`, () => setTag(L, `${s}-${p}`)]));
+    ctxMenu(e.clientX, e.clientY, L.tag ? [...items, ['取消標記', () => setTag(L, null)]] : items);
 }
 
 function select(L)
@@ -546,11 +602,29 @@ function autoSplit(m)
     Object.assign(m, {layer: null, gid, src: L, parts, hist: [], fut: []});
     const H = autoHelmet(m);
     if (H && m.sp?.poly) S.active = splitBuild(H, m.sp, H.splitSrc ?? autoGid());
+    autoStack(parts);
     const sp = H && m.sp && !m.sp.poly ? `；頭盔沒拆前後片：${m.sp.err}` : '';
     m.sp = null;
     m.snap = autoSnap(parts);
     const skip = !skipped.length ? '' : m.kind === 'head' ? '；只有一邊有東西，全部當頭、沒有頭髮' : `；${skipped.join('、')} 的象限是空的，略過`;
     status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skip}${sp}`);
+}
+
+// 原頭盔層放在前片正上方；有標記成頭的參考人偶就照遊戲深度（PART_DEPTH）插進去：頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子由上往下接在最低的頭下面
+function autoStack(parts)
+{
+    const C = (k) => parts.find(p => p.P.key === k)?.C, H = C('helmet'), g = H && splitNew(H);
+    if (g?.F)
+    {
+        S.layers.splice(S.layers.indexOf(H), 1);
+        S.layers.splice(S.layers.indexOf(g.F) + 1, 0, H);
+    }
+    const doll = S.layers.filter(L => /-(head|hair)$/.test(L.tag ?? '')), head = doll.find(L => L.tag.endsWith('-head'));
+    if (!head) return;
+    const top = H ? [g?.F, H].filter(Boolean) : [], below = [C('boots'), C('armor'), g?.B].filter(Boolean);
+    S.layers = S.layers.filter(L => !top.includes(L) && !below.includes(L));
+    S.layers.splice(S.layers.indexOf(head), 0, ...below);
+    S.layers.splice(S.layers.indexOf(doll.at(-1)) + 1, 0, ...top);
 }
 
 // 取消自動：刪掉這組零件、原圖重新顯示，記一筆 undo；還沒拆就只是離開
@@ -2367,6 +2441,16 @@ function refreshLayers()
     const box = $('layers');
     box.innerHTML = '';
     $('btnSaveProj').disabled = !S.layers.some(L => L.save);
+    $('btnClose').disabled = !S.layers.length;
+    const tagged = S.layers.some(L => L.tag);
+    for (const s of Object.keys(DOLL_SEX))
+    {
+        const b = $(s === 'm' ? 'dollM' : 'dollF');
+        b.disabled = !tagged;
+        b.classList.toggle('on', S.doll.sex === s);
+    }
+    $('dollHair').disabled = !tagged;
+    $('dollHair').checked = S.doll.hair;
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
@@ -2384,10 +2468,13 @@ function refreshLayers()
             ico('💾', L.save, `專案：${L.proj?.name ?? '（無）'}（點一下切換要不要存進專案）`, () => {L.save = !L.save; refreshAll();}),
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
+            ...(L.tag ? [Object.assign(el('span', 'tag ' + L.tag.split('-')[0]), {textContent: dollBadge(L.tag), title: '參考人偶（右鍵改標記）'})] : []),
+            ...[armorBadge(L)].filter(Boolean),
             name,
             ico('✕', true, '刪除圖層', () => {if (confirm(`刪除圖層 ${L.name}？`)) removeLayer(L);}),
         );
         row.onclick = () => select(L);
+        row.oncontextmenu = (e) => tagMenu(e, L);
         row.draggable = true;
         row.ondragstart = () => {dragRow = L;};
         row.ondragend = () => {dragRow = null;};
@@ -4242,12 +4329,12 @@ function projectData(layers)
     return {
         version: 1,
         settings: {scale: S.scale, applyScale: S.applyScale, showOrigin: $('showOrigin').checked, ref: {...S.ref},
-                   trimT: trimT(), auto: S.auto},
+                   trimT: trimT(), auto: S.auto, doll: {...S.doll}},
         active: layers.indexOf(S.active),
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, visible: L.visible, opacity: L.opacity, locked: L.locked,
-            ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}),
+            ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}), ...(L.tag && {tag: L.tag}),
         })),
     };
 }
@@ -4277,6 +4364,7 @@ function applySettings(s)
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
     if (s.auto) autoSet(s.auto);
+    if (s.doll) Object.assign(S.doll, s.doll);
 }
 
 async function saveProject()
@@ -4339,6 +4427,9 @@ async function openProject(fh, dir, path)
                      canvas: PX.replay(src, d.ops), x: d.x, y: d.y, a: d.a, ox: d.ox, oy: d.oy,
                      visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
                      ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc})});
+        const had = add && S.layers.some(L => L.tag === d.tag) || layers.some(L => L.tag === d.tag);
+        if (d.tag && had) warns.push(`${d.name}：人偶標記 ${dollBadge(d.tag)} 已經有別層了，拿掉這層的標記`);
+        else if (d.tag) layers.at(-1).tag = d.tag;
     }
     const lossy = warns.length > 0;
     if (add)
@@ -4387,6 +4478,10 @@ function flatten(layers, bake)
 
 $('btnRefresh').onclick = () => {thumbs.clear(); buildTree($('tree'), treeOpt);};
 $('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
+$('btnClose').onclick = closeAll;
+$('dollM').onclick = () => setDoll({sex: 'm'});
+$('dollF').onclick = () => setDoll({sex: 'f'});
+$('dollHair').onchange = () => setDoll({hair: $('dollHair').checked});
 $('btnDup').onclick = duplicateLayer;
 $('btnMergeDown').onclick = mergeDown;
 $('btnMergeVisible').onclick = mergeVisible;
@@ -4717,4 +4812,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData};
