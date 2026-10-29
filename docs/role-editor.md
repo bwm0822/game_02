@@ -17,7 +17,7 @@
   - 性格 `style` 的選項從 `com_ai.js` 的 `wTBL` 解析（註解掉的不算，行尾註解當說明），不在表上的會警告「遊戲會當成 passive_fighter」。
   - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。
   - 作息：一筆一張卡片，標題是一行摘要。時間分「出發 HH:MM／抵達 @HH:MM」；地圖、目的地的選項來自 `navgraph.json`（節點 key `地圖:物件`），目的地只列該地圖的物件；活動選巡邏才出現路線（逗號分隔、可重複）跟停留。路網沒有的地圖／物件、時間格式錯、巡邏沒 route 都會警告（新地圖要先跑 `node scripts/navgraph.js`）。
-- 右側固定的靜態合成預覽（`preview.js`）：照 `RoleView` 的規則畫——view 中心＝錨點 −`anchor`，部件放在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、`scale`、角度 `a`，依 depth 疊（body 0、胸甲／靴 1、head 2、hair 2.5、頭盔 3、武器 4、hand 5、手套／ext 6，同 `_addPart`）；裝備從 `inv.equips` 查 `item.json` 的 `equip`，有一件 `equip.hideHair` 就不畫 hair。虛線是 view（w×h），黃十字是錨點，紅／綠／藍框是物理 b／佔格 g／互動區 z（算法同 `View._resolveAxis`）。可切換框、裝備、翻面、放大倍率（記在頁面，換角色保留）。不播動畫、不打光。
+- 右側固定的靜態合成預覽（`preview.js`）：照 `RoleView` 的規則畫——view 中心＝錨點 −`anchor`，部件放在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、`scale`、角度 `a`，依 depth 疊（body 0、胸甲／靴 1、head 2、hair 2.5、頭盔 3、武器 4、hand 5、手套／ext 6，同 `_addPart`）；裝備從 `inv.equips` 查 `item.json` 的 `equip`（照角色的 `sex` 用 `equipFor()` 套 `equip.f`，同遊戲），有一件 `equip.hideHair` 就不畫 hair。`sex`（`m`／`f`，空＝男）在「外觀」段，玩家／NPC 預設列出。虛線是 view（w×h），黃十字是錨點，紅／綠／藍框是物理 b／佔格 g／互動區 z（算法同 `View._resolveAxis`）。可切換框、裝備、翻面、放大倍率（記在頁面，換角色保留）。不播動畫、不打光。
 - 總覽：全部＋6 個 kind 共 7 頁，欄位可以是 `attrs.atk` 這種路徑；NPC 頁有地點篩選。
 
 ## 新增／複製／改名／刪除
@@ -38,6 +38,6 @@
 | `main.js` | 檢查、表單（物品欄格子、作息卡片）、清單分組、總覽表、新增 |
 | `role.css` | 預覽、分段標題、道具格子 |
 
-測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）。
+測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）。
 
 不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。

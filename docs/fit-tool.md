@@ -9,6 +9,7 @@
 - **可調**（只用數字欄，畫布只負責預覽）：
   - 角色 `body`/`head`/`hair`/`hand` 的 `scale/x/y/a/ox/oy` → `role.json`
   - 裝備 `equip` 的 `scale/x/y/a/ox/oy` → `item.json`。**裝備擺放是全角色共用的**，在這個角色身上調準了，換別的角色可能會歪
+  - 女角（`role.json` 的 `sex` 不是 `m`，目前只有 `f`）：裝備的 `scale/x/y` 數字欄改的是 `equip.f`（表頭標 `scale（f）`，`a/ox/oy` 還是基準），沒有 `equip.f` 時顯示共用值當 placeholder，第一次改就從基準複製 scale/x/y 建出 `equip.f`（`equipCells()`）；有 `equip.f` 時旁邊有「刪除女版」回到共用。預覽、武器動畫的 rest 都照 `equipFor()`（`src/core/equip.js`，跟遊戲同一支）
   - 裝備 `equip.hideHair`（「藏頭髮」勾選框）：穿著任一件有它的裝備時遊戲不畫頭髮，預覽同規則，頭髮那列會標「目前被頭盔隱藏」；要調頭髮先卸下該裝備
   - 武器的 `ox/oy` 就是握把（動畫繞原點轉），武器圖要統一朝向畫（動畫的角度直接是圖片角度）
   - 欄位清空＝刪 key（遊戲用預設值，placeholder 顯示預設值）；不是數字的不寫
@@ -67,4 +68,4 @@
 
 `DEPTH`、`KINDS` 從 `tools/role/schema.js` 拿。
 
-測試：`node scripts/test/fit.mjs`（OPFS 當假的專案根目錄：只列紙娃娃型、帶入原裝、換裝不寫回、數字寫進對的檔、清空刪 key、跨檔 undo、hideHair 藏頭髮、動畫總長／轉向／ready 暫停、新增影格（插選取之前／接最後／取消選取／間隔太小）、畫布拖位置／把手、改名、×6 時控制面板仍在畫面上與捲動保留、遊戲倍率、倍率 ↑↓ 吸格／夾範圍、背景色、只存有改的檔、外部修改合併）。
+測試：`node scripts/test/fit.mjs`（OPFS 當假的專案根目錄：只列紙娃娃型、帶入原裝、換裝不寫回、數字寫進對的檔、清空刪 key、跨檔 undo、hideHair 藏頭髮、女角改 equip.f／刪除女版、動畫總長／轉向／ready 暫停、新增影格（插選取之前／接最後／取消選取／間隔太小）、畫布拖位置／把手、改名、×6 時控制面板仍在畫面上與捲動保留、遊戲倍率、倍率 ↑↓ 吸格／夾範圍、背景色、只存有改的檔、外部修改合併）。
