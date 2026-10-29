@@ -339,12 +339,18 @@
   },
   "helmet-clo-2": {
     "equip": {
-      "hideHair": true,
       "sprite": "cloth-cotton-helmet-front",
       "back": "cloth-cotton-helmet-back",
-      "scale": 0.25,
-      "x": -3,
-      "y": 0
+      "scale": 0.26,
+      "x": -3.75,
+      "y": 0,
+      "hideHair": true,
+      "a": 0,
+      "f": {
+        "scale": 0.25,
+        "x": -3.75,
+        "y": 0
+      }
     },
     "cat": "CAT_HELMET",
     "lab": "棉布帽",
@@ -379,7 +385,12 @@
       "sprite": "cloth-cotton-armor",
       "scale": 0.25,
       "x": -0.75,
-      "y": 31.5
+      "y": 30.5,
+      "f": {
+        "scale": 0.23,
+        "x": -0.75,
+        "y": 27.5
+      }
     },
     "icon": "cloth-cotton-armor",
     "drop": {
@@ -411,9 +422,14 @@
     ],
     "equip": {
       "sprite": "cloth-cotton-boots",
-      "scale": 0.25,
-      "x": 1.5,
-      "y": 33
+      "scale": 0.24,
+      "x": 1.75,
+      "y": 33,
+      "f": {
+        "scale": 0.2,
+        "x": 1.75,
+        "y": 33
+      }
     },
     "icon": "cloth-cotton-boots",
     "drop": {
@@ -1109,7 +1125,12 @@
       "sprite": "bronze-armor",
       "scale": 0.25,
       "x": 0,
-      "y": 27.5
+      "y": 27.5,
+      "f": {
+        "scale": 0.23,
+        "x": 0,
+        "y": 24.5
+      }
     },
     "icon": "bronze-armor",
     "drop": {
@@ -1138,7 +1159,12 @@
       "sprite": "bronze-boots",
       "scale": 0.25,
       "x": 1,
-      "y": 33
+      "y": 33,
+      "f": {
+        "scale": 0.22,
+        "x": 1.5,
+        "y": 33
+      }
     },
     "icon": "bronze-boots",
     "drop": {
