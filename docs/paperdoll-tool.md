@@ -125,9 +125,12 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 - 關閉（`closeAll()`，「存專案…」旁、沒圖層時停用）：一次清掉全部圖層（不分專案、拖進來的也清），有未存修改先 `confirm()`；清空 undo、標題回「（未命名）」；tile／角色框／anchor／自動模式等設定不動。
 - 參考人偶：圖層列右鍵標成 `男／女` 的 `髮／頭／身體`（圖層 `tag`＝`m-hair`／`m-head`／`m-body`／`f-…`，名字前顯示 `♂髮` 之類徽章，選單有「取消標記」），同一個 tag 只能一層，標新的會拿掉舊那層的。header 的 `男｜女`＋`☐ 頭髮`（`S.doll = {sex, hair}`，沒有標記圖層時 `☐ 頭髮` 停用；`男｜女` 一定能按，因為也切自動護具的男女數字）按下去是當下批次改 👁 一次（`setDoll()`／`dollShow()`：選中性別的頭／身體顯示、髮照勾選，另一性別全藏，沒標記的不動），之後手動 👁 照常；跟 👁 一樣不進 undo、標記本身也不進 undo。`tag` 跟著專案圖層存讀、`doll` 存在專案 `settings`；`cloneAbove()`（複製、自動零件…）跟合併出來的新圖層不帶標記；加入專案時 tag 跟現有圖層撞到就拿掉新那層的並警告。
 - 部位 pool（`part.json`，遊戲角色的 `body`／`shoes`／`cloth`／`head`／`hair`／`hand` 都是它的 id，角色在角色編輯器／試穿挑）：圖層列右鍵選單在人偶標記下面多一段 `pool：身體／鞋子／衣服／頭／頭髮／手`（圖層 `pool`＝kind，跟人偶 `tag` 分開欄位、可以同時有、同一種數量不限；徽章是黃底的 身／鞋／衣／頭／髮／手（`POOL_BADGE`）；「取消 pool」連存過的 id 一起清）。`pool`／`poolId` 跟著專案存讀，`cloneAbove()` 跟合併不帶，不進 undo。
-  - **存到 pool…**（存讀模式，`savePool()`／`poolDialog()`／`commitPool()`；沒有 pool 圖層或還沒有專案資料夾時停用）：每個標了 pool 的圖層一列（照圖層清單由上往下），預設勾 👁 顯示中的，id 預設 `poolId ?? 圖層名` 可改。男模式：PNG 寫 `textures/roles/parts/<id>.png`（有半透明就問烘入）、條目 `{kind, sprite: id, scale, x, y}`＋`a`／`ox`／`oy` 不是預設才寫（`writeEquip()`），已有的條目保留其他 key（`f`、`note`…），新條目接在同 kind 最後一筆後面。女模式（header `女`）：不寫 PNG、不動基準，只寫 `f: {scale, x, y}`。存完把 id 記進圖層 `poolId`、廣播 `part.json`。
-  - 檢查（`poolCheck()`）：id 空的／不合法、列之間同 id、條目的 kind 跟圖層的不同、texture 撞到 `roles/parts` 以外、女模式條目不存在 → 擋存；覆蓋已有條目（列出在用的角色）或 `roles/parts` 已有同名 PNG → 存檔時一次 confirm。存檔時重讀 part.json／role.json、重掃 textures 再檢查一次。
-  - **載入 pool**（存讀模式，`loadPool()`）：標了 pool 的圖層照 `poolId ?? 圖層名` 找條目，女模式讀 `f`。自動零件（頭像、服飾）照組 `autoOpen()` 走 `loadPlace()`：套 scale/x/y、存檔% 照 PNG 反推、寫回全域預設；其他層直接套 scale/x/y/a/ox/oy。整次一筆全域 undo（群組快照），找不到的列在狀態列。
+  - **存到 pool…**（存讀模式，`savePool()`／`poolDialog()`／`commitPool()`；沒有 pool 圖層或還沒有專案資料夾時停用）：每個標了 pool 的圖層一列（照圖層清單由上往下），預設勾 👁 顯示中的，id 預設 `poolId ?? 圖層名` 可改。不分男女都寫 PNG `textures/roles/parts/<id>.png`（有半透明就問烘入）＋基準：條目 `{kind, sprite: id, scale, x, y}`＋`a`／`ox`／`oy` 不是預設才寫（`writeEquip()`），已有的條目保留其他 key（`f`、`note`…），新條目接在同 kind 最後一筆後面。
+    - **服飾零件**（有男女兩組數字，`poolSexed()`）跟存到 item 一樣**一定存男版**：女模式下 `savePool()` 先對每組 `autoMale()`（`poolGroups()` 照組 `autoOpen()`），對話框關掉後復原；存讀模式 pool 那列的 `☐ 女版`（`S.auto.poolF`，跟 item 的 `saveF` 分開，跟著 `paperdoll.auto`／專案設定存，預設不勾，沒有服飾零件時藏起來）勾了寫 `f = 女版那組`（`femaleOf()`），沒勾刪掉 `f`，原本有的列上提示「會移除女版」、存檔時一起 confirm。
+    - **其他層**（頭像、手動標的）只有一組數字：照目前擺放存成基準，`f` 不寫也不刪（勾了女版時列上提示「只有一組數字，不含女版」；要女版去試穿分頁調）。以前「女模式只寫 f」拿掉了。
+    - 存完把 id 記進圖層 `poolId`、廣播 `part.json`。
+  - 檢查（`poolCheck()`）：id 空的／不合法、列之間同 id、條目的 kind 跟圖層的不同、texture 撞到 `roles/parts` 以外 → 擋存；覆蓋已有條目（列出在用的角色）、`roles/parts` 已有同名 PNG、會移除女版 → 存檔時一次 confirm。存檔時重讀 part.json／role.json、重掃 textures 再檢查一次。
+  - **載入 pool**（存讀模式，`loadPool()`）：標了 pool 的圖層照 `poolId ?? 圖層名` 找條目，讀基準。自動零件（頭像、服飾）照組 `autoOpen()` 走 `loadPlace()`：套 scale/x/y、存檔% 照 PNG 反推、寫回全域預設；服飾另外把基準寫進男版那組、`f` 寫進女版那組（沒有 `f` 沿用基準），零件照目前的 `男｜女` 擺；其他層不管性別直接套基準的 scale/x/y/a/ox/oy。整次一筆全域 undo（群組快照），找不到的列在狀態列。
 
 ## 程式結構
 

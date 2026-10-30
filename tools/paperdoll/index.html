@@ -148,8 +148,9 @@
             <div class="row2"><button id="btnSave" title="選取的圖層存成 PNG">存檔…</button></div>
             <div class="row2"><button id="slItem">存到 item…</button><button id="slItemLoad">載入 item</button>
                 <label id="slItemFL" title="一定存男版；勾了另外寫 equip.f（女版的 scale/x/y），沒勾會刪掉 equip.f"><input id="slItemF" type="checkbox"> 女版</label></div>
-            <div class="row2"><button id="slPool" title="把右鍵標了 pool 部位的圖層存進 part.json（女模式只寫 f）">存到 pool…</button>
-                <button id="slPoolLoad" title="照 part.json 把擺放載回標了 pool 部位的圖層（女模式讀 f）">載入 pool</button></div>
+            <div class="row2"><button id="slPool" title="把右鍵標了 pool 部位的圖層存進 part.json（PNG＋基準）">存到 pool…</button>
+                <button id="slPoolLoad" title="照 part.json 把擺放載回標了 pool 部位的圖層">載入 pool</button>
+                <label id="slPoolFL" title="服飾零件一定存男版；勾了另外寫 f（女版的 scale/x/y），沒勾會刪掉 f"><input id="slPoolF" type="checkbox"> 女版</label></div>
             <div id="slInfo" class="dim"></div>
             <div class="hint">item：選一組自動拆的護具／武器零件（原圖、零件、前後片都算），照 equip.sprite 找 item。pool：所有右鍵標了 pool 部位的圖層。載入照遊戲的 PNG 反推存檔%（要重烤先問），整次一步 undo。這個模式裡照常可以點選、拖曳圖層</div>
             <div class="row2"><button class="cancel">離開</button></div>

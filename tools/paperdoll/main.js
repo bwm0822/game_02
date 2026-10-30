@@ -315,7 +315,7 @@ const AUTO_FF = ['scale', 'x', 'y'];
 // 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
 const AUTO_DEF = ST.DEF.auto;
 const AUTO_KEY = 'paperdoll.auto';
-const AUTO_UI = ['cls', 'split', 'kind', 'headLink', 'saveF'];
+const AUTO_UI = ['cls', 'split', 'kind', 'headLink', 'saveF', 'poolF'];
 const AUTO_NUM = [...AUTO_PARTS.filter(P => P.kind !== 'weapon').map(P => P.key), 'weapon', 'f'];
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 舊格式 weapon 直接放數字：複製到每個分類
@@ -327,7 +327,7 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          headLink: v?.headLink ?? true, saveF: !!v?.saveF,
+                          headLink: v?.headLink ?? true, saveF: !!v?.saveF, poolF: !!v?.poolF,
                           f: Object.fromEntries(AUTO_PARTS.filter(P => AUTO_SEXED.includes(P.kind)).map(P => [P.key, femaleFrom(P, v)]))});
 // 舊格式沒有 scale（當時固定 0.25）；女版以前有自己的 pct，換成同一張 PNG 的 scale＝0.25 × 女pct ÷ 男pct
 function femaleFrom(P, v)
@@ -363,6 +363,7 @@ function autoSet(v)
     $('au-link').checked = S.auto.headLink;
     $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
     $('slItemF').checked = S.auto.saveF;
+    $('slPoolF').checked = S.auto.poolF;
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -2620,7 +2621,8 @@ function refreshSL()
     $('slItem').disabled = $('slItemLoad').disabled = $('slItemF').disabled = !S.assets || !g;
     $('slItemFL').hidden = g?.parts[0].auto.key === 'weapon';
     $('slItem').title = $('slItemLoad').title = why || (g ? `${g.parts.map(C => C.name).join('、')}，照 equip.sprite 找 item` : '選一組自動拆的護具／武器零件');
-    $('slPool').disabled = $('slPoolLoad').disabled = !S.assets || !pool;
+    $('slPool').disabled = $('slPoolLoad').disabled = $('slPoolF').disabled = !S.assets || !pool;
+    $('slPoolFL').hidden = !S.layers.some(poolSexed);
     $('slPool').title = $('slPoolLoad').title = why || (pool ? '' : '圖層右鍵標 pool 部位');
     $('slInfo').textContent = g ? `item：${g.parts.map(C => C.name).join('、')}` : '';
 }
@@ -4066,13 +4068,28 @@ async function commitItems(rows, bake, all = false)
 // ---------- 部位 pool（part.json） ----------
 // 圖層右鍵標成 pool 的部位（L.pool＝kind）；「存到 pool…」每個標了的層一列，預設勾 👁 顯示中的：
 // PNG 寫 textures/roles/parts/<id>.png、擺放（scale/x/y，a/ox/oy 不是預設才寫）寫成 part.json 的條目，條目其他 key 保留；
-// 女模式（header 的 女）不動圖也不動基準，只寫 f（scale/x/y），條目要先存在。存過的 id 記在 L.poolId，下次預設用它
+// 有男女兩組數字的自動零件（服飾）一定存男版（女模式先照男版重擺，存完復原），勾「女版」另寫 f、沒勾刪 f；
+// 其他層（頭像、手動標的）只有一組，存成基準、f 不動。存過的 id 記在 L.poolId，下次預設用它
 
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hand: '手'};
 const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hand: '手'};
 const POOL_DIR = 'roles/parts';
-const POOL_F = ['scale', 'x', 'y'];
-const poolFemale = () => S.doll.sex === 'f';
+const poolP = (L) => L.pool && L.auto ? AUTO_PARTS.find(P => P.key === L.auto.key) : null;
+const poolSexed = (L) => AUTO_SEXED.includes(poolP(L)?.kind);
+
+// 標了 pool 的自動零件照組做成 m（拆完改過、不能再調的組略過，當一般圖層）
+function poolGroups()
+{
+    const ms = new Map();
+    for (const L of S.layers.filter(L => AUTO_POOL.includes(poolP(L)?.kind)))
+    {
+        const g = autoGroup(L);
+        if (!g || ms.has(g.gid)) continue;
+        const m = autoOpen(g);
+        if (typeof m !== 'string') ms.set(g.gid, m);
+    }
+    return [...ms.values()];
+}
 
 function setPool(L, kind)
 {
@@ -4087,8 +4104,8 @@ const partUsers = (roles, id) => Object.keys(roles).filter(rid => Object.keys(PO
 // 填 r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋，存檔時 confirm）；回傳要處理的列
 function poolCheck(rows, parts, roles, keys)
 {
-    const act = rows.filter(r => r.on), female = poolFemale();
-    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: ''});
+    const act = rows.filter(r => r.on);
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false});
     for (const r of act)
     {
         const err = (s) => {r.err ||= s;};
@@ -4097,12 +4114,8 @@ function poolCheck(rows, parts, roles, keys)
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
         if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
         if (old && old.kind !== r.L.pool) err(`part.json 的 ${r.id} 是 ${POOL_KIND[old.kind] ?? old.kind}`);
-        if (female)
-        {
-            if (!old) err('女模式只寫 f，part.json 要先有這筆（切到男存一次）');
-            else r.warn = `只寫 ${r.id}.f（scale／x／y）${also}`;
-            continue;
-        }
+        r.dropF = poolSexed(r.L) && !S.auto.poolF && !!old?.f;
+        r.warn = r.dropF ? '會移除女版（沒勾「女版」）' : !poolSexed(r.L) && S.auto.poolF ? '只有一組數字，不含女版' : '';
         const dir = keys.get(r.id);
         if (dir !== undefined && dir !== POOL_DIR) err(`textures/${join(dir, r.id)}.png 已經有了，換個 id`);
         else if (old) r.ask = `${r.id}（PNG＋擺放）${also}`;
@@ -4113,9 +4126,9 @@ function poolCheck(rows, parts, roles, keys)
 
 function poolDialog(parts, roles, keys)
 {
-    const dlg = $('dlgPool'), female = poolFemale();
+    const dlg = $('dlgPool');
     const rows = S.layers.filter(L => L.pool).reverse().map(L => ({L, on: L.visible, id: L.poolId ?? L.name}));
-    $('dpTitle').textContent = `存到 pool（part.json）${female ? '：女版，只寫 f' : ''}`;
+    $('dpTitle').textContent = '存到 pool（part.json）';
     const refresh = () => {
         const act = poolCheck(rows, parts, roles, keys);
         for (const r of rows)
@@ -4143,7 +4156,7 @@ function poolDialog(parts, roles, keys)
         row.append(thumb, body);
         return row;
     }));
-    const fade = !female && rows.some(r => r.L.opacity < 1);
+    const fade = rows.some(r => r.L.opacity < 1);
     $('dpBakeRow').hidden = !fade;
     $('dpBake').checked = true;
     refresh();
@@ -4157,34 +4170,42 @@ function poolDialog(parts, roles, keys)
 async function savePool()
 {
     if (!S.assets || !S.layers.some(L => L.pool)) return;
-    const d = await poolDialog(await readParts(), await readGameJson('role.json'), await texKeys());
-    if (d) await commitPool(d.rows, d.bake);
+    const backs = poolGroups().map(autoMale).filter(Boolean);
+    try
+    {
+        const d = await poolDialog(await readParts(), await readGameJson('role.json'), await texKeys());
+        if (d) await commitPool(d.rows, d.bake);
+    }
+    finally
+    {
+        for (const back of backs) back();
+        if (backs.length) refreshAll();
+    }
 }
 
 // 存檔時重讀 part.json、role.json、重掃 textures/ 再檢查一次；新條目接在同 kind 的最後一筆後面
 async function commitPool(rows, bake)
 {
-    const A = S.assets, female = poolFemale();
+    const A = S.assets;
     let parts = await readParts();
     const keys = await texKeys(), act = poolCheck(rows, parts, await readGameJson('role.json'), keys);
     const bad = act.filter(r => r.err);
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${r.L.name}：${r.err}`).join('\n')}`);
-    const ask = act.filter(r => r.ask).map(r => `${r.L.name}：${r.ask}`);
-    if (ask.length && !confirm(`會覆蓋：\n${ask.join('\n')}\n要繼續嗎？`)) return;
+    const ask = act.filter(r => r.ask || r.dropF).map(r => `${r.L.name}：${[r.ask && `會覆蓋 ${r.ask}`, r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
+    if (ask.length && !confirm(`請確認：\n${ask.join('\n')}\n要繼續嗎？`)) return;
     const fresh = [];
     for (const r of act)
     {
-        const {L, id} = r, o = placeOf(L);
-        if (female)
-        {
-            parts[id].f = Object.fromEntries(POOL_F.map(k => [k, o[k]]));
-            L.poolId = id;
-            continue;
-        }
+        const {L, id} = r;
         if (!keys.has(id)) fresh.push(id);
         await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${id}.png`, await PX.toPng(splitPng(L, bake)));
         const e = {...parts[id] ?? {kind: L.pool}, sprite: id};
         writeEquip(e, L);
+        if (poolSexed(L))
+        {
+            delete e.f;
+            if (S.auto.poolF) e.f = femaleOf(poolP(L));
+        }
         if (parts[id]) parts[id] = e;
         else parts = insertAfter(parts, Object.keys(parts).filter(k => parts[k].kind === L.pool).at(-1), id, e);
         L.poolId = id;
@@ -4192,45 +4213,44 @@ async function commitPool(rows, bake)
     await FS.writeFile(A.json, 'part.json', new Blob([JSON.stringify(parts, null, 2)]));
     SH.notifySaved('part.json');
     refreshAll();
-    status(`已存 part.json：${act.map(r => r.id).join('、')}${female ? '（女版 f）' : ''}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+    status(`已存 part.json：${act.map(r => r.id).join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
-// 標了 pool 的層照 id（存過的 poolId，不然圖層名）找條目，載入擺放（女模式套 f）：
-// 自動零件（頭像、服飾）載入 scale/x/y、照 PNG 反推存檔%（同載入 item 的 loadPlace，寫回全域預設），其他層直接套 scale/x/y/a/ox/oy；
-// 整次一筆全域 undo，都沒對到不記
+// 標了 pool 的層照 id（存過的 poolId，不然圖層名）找條目，載入基準：
+// 自動零件（頭像、服飾）照 PNG 反推存檔%（同載入 item 的 loadPlace，寫回全域預設），服飾另外 f 進女版那組（沒有 f 沿用基準）、照目前性別擺；
+// 其他層直接套 scale/x/y/a/ox/oy。整次一筆全域 undo，都沒對到不記
 async function loadPool()
 {
     if (!S.assets) return;
-    const parts = await readParts(), pool = S.layers.filter(L => L.pool), female = poolFemale();
+    const parts = await readParts(), pool = S.layers.filter(L => L.pool), ms = poolGroups();
     const undo = {group: [hist.snapList(S), ...pool.flatMap(L => linked(L)).map(L => hist.snap(L, true))]};
-    const hit = [], miss = [], warn = [], groups = new Map();
+    const hit = [], miss = [], warn = [], mine = new Set(ms.flatMap(m => m.parts.map(p => p.C)));
     const entry = (L) => {
-        const id = L.poolId ?? L.name, e0 = parts[id];
-        if (!e0) {miss.push(L.name); return null;}
+        const id = L.poolId ?? L.name, e = parts[id];
+        if (!e) {miss.push(L.name); return null;}
         hit.push(`${L.name} ← ${id}`);
         L.poolId = id;
-        return {e0, e: female && e0.f ? {...e0, ...e0.f} : e0};
+        return e;
     };
-    for (const L of pool)
+    for (const L of pool.filter(L => !mine.has(L)))
     {
-        const g = L.auto && autoGroup(L), m = g && (groups.get(g.gid) ?? autoOpen(g));
-        if (m && typeof m !== 'string')
-        {
-            groups.set(g.gid, m);
-            continue;
-        }
-        const got = entry(L);
-        if (got) Object.assign(L, {scale: got.e.scale ?? L.scale, x: got.e.x ?? 0, y: got.e.y ?? 0, a: got.e.a ?? 0, ox: got.e.ox ?? 0.5, oy: got.e.oy ?? 1});
+        const e = entry(L);
+        if (e) Object.assign(L, {scale: e.scale ?? L.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
     }
-    for (const m of groups.values())
+    for (const m of ms)
     {
-        const rows = [];
+        const rows = [], sexed = [];
         for (const part of m.parts.filter(p => p.C.pool))
         {
-            const got = entry(part.C), cur = autoRow(part);
-            if (got) rows.push([part, {...cur, scale: got.e.scale ?? cur.scale, x: got.e.x ?? 0, y: got.e.y ?? 0}, got.e0.sprite]);
+            const e = entry(part.C), cur = autoRow(part);
+            if (!e) continue;
+            const base = {scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}, fem = {...base, ...e.f};
+            if (AUTO_SEXED.includes(part.P.kind)) sexed.push([part.P, base, fem]);
+            rows.push([part, {...cur, ...(autoFemale(part.P) ? fem : base)}, e.sprite]);
         }
         if (rows.length) await loadPlace(m, rows, warn);
+        for (const [P, base, fem] of sexed)
+            autoSet({...S.auto, [P.key]: {...S.auto[P.key], ...base}, f: {...S.auto.f, [P.key]: pickKeys(fem, AUTO_FF)}});
     }
     if (hit.length) hist.push(undo);
     refreshAll();
@@ -4815,6 +4835,7 @@ $('auLeave').onclick = cancelMode;
 $('slItemF').onchange = () => autoSet({...S.auto, saveF: $('slItemF').checked});
 $('slItem').onclick = () => saveItems().catch(e => status(e.message));
 $('slItemLoad').onclick = () => loadItems().catch(e => status(e.message));
+$('slPoolF').onchange = () => autoSet({...S.auto, poolF: $('slPoolF').checked});
 $('slPool').onclick = () => savePool().catch(e => status(e.message));
 $('slPoolLoad').onclick = () => loadPool().catch(e => status(e.message));
 
