@@ -4766,7 +4766,7 @@ $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', '
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
 const AUTO_LINK = ['pct', 'scale'];
-const AUTO_STEP = {pct: 1, scale: 0.01, x: STEP, y: STEP};
+const AUTO_STEP = {pct: 0.25, scale: 0.01, x: STEP, y: STEP};
 const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的存檔%、scale 跟頭一樣，只能改頭那格'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
 for (const P of AUTO_PARTS)
