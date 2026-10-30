@@ -1465,6 +1465,25 @@ run('paperdoll', async t => {
         out.again = m.hist.length;
         key('z');
         out.undo = [...at(H), m.hist.length];
+
+        // 照遊戲的 PNG 反推存檔%：頭盔裁切框 60×40，PNG 6×4＝10%；取消＝不重烤，確定＝重烤；比例對不上只警告
+        const eq = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
+        const png = async (w, h) => {const k = document.createElement('canvas'); k.width = w; k.height = h; await put(eq, 'src-helmet.png', await new Promise(r => k.toBlob(r)));};
+        await png(6, 4);
+        await put(json, 'item.json', JSON.stringify({helmet_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-helmet', scale: 0.5, x: 3, y: -4}}}, null, 2));
+        const conf = window.confirm;
+        let asked = '';
+        window.confirm = (s) => {asked = s; return false;};
+        await pd.loadItems();
+        out.pngNo = [H.ops.at(-1).pct === pct, asked.includes(`src-helmet：${pct} → 10`), $('status').textContent.includes('存檔% 沒改'), H.scale];
+        window.confirm = (s) => {asked = s; return true;};
+        await pd.loadItems();
+        out.pngYes = [H.ops.at(-1).pct, H.canvas.width, H.canvas.height, pd.S.auto.helmet.pct];
+        await png(20, 20);
+        asked = '';
+        await pd.loadItems();
+        out.pngBad = [H.ops.at(-1).pct, asked, $('status').textContent.includes('比例對不上')];
+        window.confirm = conf;
         pd.cancelMode();
 
         const w = document.createElement('canvas'); w.width = 100; w.height = 200;
@@ -1488,6 +1507,9 @@ run('paperdoll', async t => {
     t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、讀 scale、存檔% 不動、寫回預設、一步', JSON.stringify(li.load), JSON.stringify([
         3, -4, 0.5, true, 3, -4, 0.5, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item']));
     t.eq('載入 item：數字沒變不記步驟', li.again, 1);
+    t.eq('載入 item：PNG 反推存檔%，取消就不重烤、其他照套', JSON.stringify(li.pngNo), JSON.stringify([true, true, true, 0.5]));
+    t.eq('載入 item：PNG 反推存檔%，確定就重烤', JSON.stringify(li.pngYes), JSON.stringify([10, 6, 4, 10]));
+    t.eq('載入 item：PNG 比例對不上只警告、不問', JSON.stringify(li.pngBad), JSON.stringify([10, '', true]));
     t.check('載入 item：undo 一步退回', li.undo[2] === 0 && (li.undo[0] !== 3 || li.undo[1] !== -4));
     t.eq('載入 item：武器多載 a/ox/oy，沒寫的 key 當預設、寫回目前分類', JSON.stringify(li.weapon), JSON.stringify([2, 3, 15, 0.5, 1, 2, 3, 15, 0.5, 1]));
 

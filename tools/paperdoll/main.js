@@ -2590,7 +2590,7 @@ function refreshAuto(m)
     $('auLoad').disabled = $('auFemale').disabled = $('auItem').disabled;
     $('auFemaleL').hidden = m.kind !== 'armor';
     $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : !m.parts ? '拆完才能載入'
-                      : head ? '照 id＝原圖名（或 head.sprite）找角色，載入擺放（存檔% 不動）' : '照 equip.sprite 找 item，載入擺放（存檔% 不動）';
+                      : (head ? '照 id＝原圖名（或 head.sprite）找角色' : '照 equip.sprite 找 item') + '，載入 scale/x/y，照遊戲的 PNG 反推存檔%（要重烤先問）';
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
@@ -3915,12 +3915,51 @@ async function loadItems()
         const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0, cur = autoRow(part);
         hit.push(`${part.C.name} ← ${id}`);
         rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0,
-                          ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
+                          ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}, e0.sprite]);
     }
     if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
-    autoApplyAll(m, rows);
+    await loadPlace(m, rows, warn);
     status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
     refreshAll();
+}
+
+// 遊戲裡那張 PNG 是原圖縮成幾 %：PNG 尺寸 ÷ 零件的裁切框，長寬都要對得上（先試整數）；找不到圖回 null，對不上回 {warn}
+async function pngPct(part, key, keys)
+{
+    const path = keys.get(key);
+    if (path === undefined) return null;
+    let dir = S.assets.tex;
+    for (const seg of path.split('/').filter(Boolean)) dir = await dir.getDirectoryHandle(seg);
+    const {width: w, height: h} = await createImageBitmap(await (await dir.getFileHandle(`${key}.png`)).getFile());
+    const {sw, sh} = part.box, p0 = w / sw * 100;
+    const fit = (p) => Math.max(1, Math.round(sw * p / 100)) === w && Math.max(1, Math.round(sh * p / 100)) === h;
+    const pct = [Math.round(p0), round(p0, 100)].find(fit);
+    return pct ? {pct} : {warn: `${key}.png ${w}×${h} 跟裁切框 ${sw}×${sh} 的比例對不上，存檔% 不動`};
+}
+
+// rows = [[part, row, PNG 的 key]]：照 PNG 反推存檔%，要重烤的一次問；不重烤就只套其他數字（畫面大小會跟遊戲不同）
+async function loadPlace(m, rows, warn)
+{
+    const keys = await texKeys();
+    for (const r of rows)
+    {
+        const got = r[2] && await pngPct(r[0], r[2], keys);
+        if (got?.warn) warn.push(got.warn);
+        if (got?.pct) r[1].pct = got.pct;
+    }
+    const re = rows.filter(([part, row]) => row.pct !== autoRow(part).pct);
+    if (re.length && !confirm(`遊戲裡的 PNG 跟目前的存檔% 不同，要照遊戲的重烤嗎？（取消＝存檔% 不動）\n${re.map(([p, r]) => `${p.C.name}：${autoRow(p).pct} → ${r.pct}`).join('\n')}`))
+    {
+        for (const [part, row] of re) row.pct = autoRow(part).pct;
+        warn.push(`${re.map(([p]) => p.C.name).join('、')} 存檔% 沒改，畫面大小跟遊戲不同`);
+    }
+    autoApplyAll(m, rows);
+    const [hd, hr] = autoParts('head').map(P => m.parts.find(p => p.P === P));
+    if (S.auto.headLink && hd && hr && AUTO_LINK.some(f => autoRow(hd)[f] !== autoRow(hr)[f]))
+    {
+        autoSet({...S.auto, headLink: false});
+        warn.push('頭、頭髮的存檔%／scale 不同，關掉 🔗');
+    }
 }
 
 // rows = [[part, row]]：有變的才套，整次一步模式內 undo
@@ -4222,7 +4261,7 @@ async function commitRole(parts, R, bake)
     status(`已存 role.json：${R.id} 的 ${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
-// 照 roleMatch() 找角色，把 head／hair 的 x/y 套回零件（存檔% 不動），角色沒有 hair 就只套頭
+// 照 roleMatch() 找角色，把 head／hair 的 scale/x/y 套回零件、照 PNG 反推存檔%，角色沒有 hair 就只套頭
 async function loadRole()
 {
     const m = S.mode;
@@ -4236,10 +4275,10 @@ async function loadRole()
         if (!part || !e) continue;
         hit.push(part.P.key);
         const cur = autoRow(part);
-        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}]);
+        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}, e.sprite]);
     }
     if (!hit.length) return status(`${id} 沒有 head／hair`);
-    autoApplyAll(m, rows);
+    await loadPlace(m, rows, warn);
     status([`載入 ${id} 的 ${hit.join('、')}`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
     refreshAll();
 }
