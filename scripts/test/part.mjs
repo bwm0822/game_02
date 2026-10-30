@@ -28,5 +28,5 @@ run('部位 pool', async t => {
     });
     const has = (k) => keys?.find(([key]) => key === k);
     t.check('瑪莉畫出身體／頭／頭髮／手', ['body-woman', 'head-mary', 'hair-mary', 'hand-man'].every(has), JSON.stringify(keys));
-    t.check('衣服深度 0.3、沒穿護甲時顯示', has('body-man')?.[1] === 0.3 && has('body-man')?.[2] === true, JSON.stringify(has('body-man')));
+    t.check('衣服深度 0.7（靴子之上）、沒穿護甲時顯示', has('body-man')?.[1] === 0.7 && has('body-man')?.[2] === true, JSON.stringify(has('body-man')));
 });

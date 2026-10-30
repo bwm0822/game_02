@@ -580,7 +580,7 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.HAND] : 5,
     [GM.PART.EXT] : 6,
     [GM.PART.BACK] : 1.5,
-    [GM.PART.CLOTH] : 0.3,
+    [GM.PART.CLOTH] : 0.7,
     [GM.PART.SHOES] : 0.2,
     [GM.CAT.HELMET] : 3,
     [GM.CAT.CHESTPLATE] : 1,

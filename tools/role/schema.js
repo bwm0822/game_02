@@ -106,7 +106,7 @@ export function schSummary(s)
 
 // ---------- 預覽 ----------
 // 跟 setting.js 的 PART_DEPTH 一樣（裝備依 item.json 的 cat）
-export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.3, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
+export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.7, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
 // equip.js 的 hiddenParts 用：item.json 的 cat 是字串
 export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS'};
 
