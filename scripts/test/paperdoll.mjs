@@ -2892,6 +2892,24 @@ run('paperdoll', async t => {
     t.eq('挖除外圈：孤島不管、閉運算補掉半島＝框內矩形', fl.cutClose, '15,15 15,3 3,15 3,3');
     t.eq('挖除外圈：沒閉運算，半島留一道凹口', fl.cutNotch, 8);
 
+    // 去綠：20×10 亮綠底；黑框 (4..15, 2..7) 圍住暗綠背心；左邊 x 0..2 是 3 格寬的綠邊（寬鬆綠、不是亮綠）；值＝各點 alpha
+    const rg = await ev(async () => {
+        const PX = await import(new URL('pixels.js', location.href).href);
+        const c = document.createElement('canvas'); c.width = 20; c.height = 10;
+        const g = c.getContext('2d', {willReadFrequently: true});
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 20, 10);
+        g.fillStyle = '#000'; g.fillRect(4, 2, 12, 6);
+        g.fillStyle = 'rgb(45,61,38)'; g.fillRect(5, 3, 10, 4);
+        g.fillStyle = 'rgb(60,140,40)'; g.fillRect(0, 0, 3, 10);
+        const G = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
+        const pts = [[8, 4], [4, 2], [18, 0], [0, 5], [2, 5]];
+        const run = (op) => {const r = PX.removeGreen(c, op).getContext('2d'); return pts.map(([x, y]) => r.getImageData(x, y, 1, 1).data[3]);};
+        return {grow3: run({...G, grow: 3, seedS: 150, seedV: 150}), grow1: run({...G, grow: 1, seedS: 150, seedV: 150}), legacy: run(G)};
+    });
+    t.eq('去綠：暗綠背心隔著描邊留著、亮綠挖掉、3 格綠邊清光', JSON.stringify(rg.grow3), JSON.stringify([255, 255, 0, 0, 0]));
+    t.eq('去綠：grow=1 只清貼著亮綠那格綠邊', JSON.stringify(rg.grow1), JSON.stringify([255, 255, 0, 255, 0]));
+    t.eq('去綠：舊步驟（沒有 grow）照舊整張寬鬆綠都挖', JSON.stringify(rg.legacy), JSON.stringify([0, 255, 0, 0, 0]));
+
     // 畫線標記＋刪頂點：同上的紅線／黑線圖，亮度 60、魔術棒不閉運算不射，從 (100,100) 淹到 x 64..179、y 64..139
     const mk = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);

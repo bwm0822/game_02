@@ -288,7 +288,7 @@ function trimLayer(L)
 // kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
 //       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 存檔%，連動（headLink）時頭髮跟頭一樣，另外合成頭像 portrait）
 
-const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
+const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150};
 const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_ERODE = 12;
@@ -1355,7 +1355,7 @@ function applyMode()
     else if (m.type === 'removeGreen')
     {
         hist.record(L);
-        pushOp(L, {type: 'removeGreen', h1: m.h1, h2: m.h2, s1: m.s1, s2: m.s2, v1: m.v1, v2: m.v2, rgbThr: m.rgbThr});
+        pushOp(L, {type: 'removeGreen', h1: m.h1, h2: m.h2, s1: m.s1, s2: m.s2, v1: m.v1, v2: m.v2, rgbThr: m.rgbThr, grow: m.grow, seedS: m.seedS, seedV: m.seedV});
     }
     else if (m.type === 'warp')
     {
@@ -1585,7 +1585,8 @@ function updateRemoveGreen()
     m.v1 = +$('rgV1').value || 20;
     m.v2 = +$('rgV2').value || 255;
     m.rgbThr = +$('rgRgbThr').value || 40;
-    m.preview = PX.removeGreen(m.layer.canvas, m.h1, m.h2, m.s1, m.s2, m.v1, m.v2, m.rgbThr);
+    m.grow = Math.max(0, Math.round(+$('rgGrow').value || 0));
+    m.preview = PX.removeGreen(m.layer.canvas, m);
     dirty();
 }
 
@@ -2660,6 +2661,7 @@ function refreshModePanel()
         $('rgV1').value = m.v1;
         $('rgV2').value = m.v2;
         $('rgRgbThr').value = m.rgbThr;
+        $('rgGrow').value = m.grow;
     }
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
     if (m.type !== 'warp') cv.style.cursor = m.type === 'pixel' || (editSp() && spPaintOn()) ? 'crosshair' : '';
@@ -4757,7 +4759,7 @@ const removeGreenChanged = () => {
     refreshModePanel();
     updateRemoveGreen();
 };
-for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
+for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr', 'rgGrow']) $(id).oninput = removeGreenChanged;
 
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
 $('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', '存檔%', 'scale', 'x', 'y']));

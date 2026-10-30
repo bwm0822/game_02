@@ -307,7 +307,7 @@ const OPS = {
     fill: (c, op) => fill(c, op),
     key: (c, op) => key(c, op),
     xform: (c, op) => xform(c, op),
-    removeGreen: (c, op) => removeGreen(c, op.h1, op.h2, op.s1, op.s2, op.v1, op.v2, op.rgbThr),
+    removeGreen: (c, op) => removeGreen(c, op),
     paint: (c, op) => paint(c, op),
     blobs: (c, op) => keepBlobs(c, op),
 };
@@ -399,33 +399,54 @@ function rgbToHsv(r, g, b)
     return {h: h * 180, s: s * 255, v: v * 255};
 }
 
-// 移除綠色背景：HSV + RGB 雙重判斷
-export function removeGreen(src, h1, h2, s1, s2, v1, v2, rgbThr)
+// 移除綠色背景：HSV + RGB 雙重判斷（寬鬆綠）
+// 有 grow：只挖亮綠（色相 h1~h2、s≥seedS、v≥seedV）＋從亮綠往外 grow 格內連著的寬鬆綠（清綠邊），暗綠衣服隔著描邊不會被挖；
+// 舊專案的步驟沒有 grow，照舊整張寬鬆綠都挖
+export function removeGreen(src, op)
 {
+    const {h1, h2, s1, s2, v1, v2, rgbThr, grow, seedS, seedV} = op;
     const c = clone(src);
     const g = c.getContext('2d');
-    const img = g.getImageData(0, 0, c.width, c.height);
+    const W = c.width, H = c.height;
+    const img = g.getImageData(0, 0, W, H);
     const d = img.data;
+    const legacy = grow === undefined;
+    const loose = new Uint8Array(W * H);
+    let front = [];
 
-    for (let i = 0; i < d.length; i += 4)
+    for (let p = 0, i = 0; p < loose.length; p++, i += 4)
     {
         const r = d[i], g_val = d[i + 1], b = d[i + 2], a = d[i + 3];
-
-        // RGB 判斷：G > R+rgbThr AND G > B+rgbThr
-        const isGreenRGB = g_val > 100 && g_val > r + rgbThr && g_val > b + rgbThr;
-
-        let isGreen = isGreenRGB;
-
-        // HSV 判斷
+        let isGreen = g_val > 100 && g_val > r + rgbThr && g_val > b + rgbThr;
+        const hsv = isGreen && legacy ? null : rgbToHsv(r, g_val, b);
         if (!isGreen && a > 200)
-        {
-            const hsv = rgbToHsv(r, g_val, b);
             isGreen = hsv.h >= h1 && hsv.h <= h2 &&
                       hsv.s >= s1 && hsv.s <= s2 &&
                       hsv.v >= v1 && hsv.v <= v2;
-        }
 
-        if (isGreen) d[i + 3] = 0;  // 設為透明
+        if (legacy) {if (isGreen) d[i + 3] = 0; continue;}
+        if (a > 0 && hsv.h >= h1 && hsv.h <= h2 && hsv.s >= seedS && hsv.v >= seedV) {d[i + 3] = 0; front.push(p);}
+        else if (isGreen) loose[p] = 1;
+    }
+
+    for (let k = 0; k < grow && front.length; k++)
+    {
+        const next = [];
+        for (const p of front)
+        {
+            const x = p % W, y = (p - x) / W;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
+            {
+                const X = x + dx, Y = y + dy;
+                if (X < 0 || Y < 0 || X >= W || Y >= H) continue;
+                const q = Y * W + X;
+                if (!loose[q]) continue;
+                loose[q] = 0;
+                d[q * 4 + 3] = 0;
+                next.push(q);
+            }
+        }
+        front = next;
     }
     g.putImageData(img, 0, 0);
     return c;
