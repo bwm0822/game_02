@@ -91,6 +91,8 @@ export const GM =
         EXT        :   0b0100_0000_0000_0000,
         HAIR       :   0b1000_0000_0000_0000,
         BACK       : 0b1_0000_0000_0000_0000,
+        CLOTH      : 0b10_0000_0000_0000_0000,
+        SHOES      : 0b100_0000_0000_0000_0000,
     },
 
     FAV:{
@@ -578,11 +580,23 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.HAND] : 5,
     [GM.PART.EXT] : 6,
     [GM.PART.BACK] : 1.5,
+    [GM.PART.CLOTH] : 0.3,
+    [GM.PART.SHOES] : 0.2,
     [GM.CAT.HELMET] : 3,
     [GM.CAT.CHESTPLATE] : 1,
     [GM.CAT.GLOVES] : 6,
     [GM.CAT.BOOTS] : 0.5,
     [GM.CAT.WEAPON] :4,
+});
+
+// role.json 的部位欄位 → GM.PART
+export const ROLE_PART = Object.freeze({
+    body : GM.PART.BODY,
+    shoes : GM.PART.SHOES,
+    cloth : GM.PART.CLOTH,
+    head : GM.PART.HEAD,
+    hair : GM.PART.HAIR,
+    hand : GM.PART.HAND,
 });
 
 export const ORDER = [

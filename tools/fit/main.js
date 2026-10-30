@@ -9,12 +9,12 @@ import {$, h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
-import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
+import {DEPTH, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
-const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
+const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
@@ -356,6 +356,7 @@ function drawView()
 
 function fitView(r, slots)
 {
+    const hide = hiddenNow();
     const partRows = PARTS.filter(([k]) => r[k]).map(([k, name]) => {
         const pid = r[k], p = parts()[pid], n = usersOf(pid).length;
         return h('tr', null,
@@ -363,7 +364,7 @@ function fitView(r, slots)
             h('td', null, h('span', {class: 'sprite'}, pid),
                 !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
-                k === 'hair' && hairHidden() && h('span', {class: 'dim hidden-hair'}, '（目前被頭盔隱藏）')),
+                hide.has(k) && h('span', {class: `dim hidden-${k}`}, '（目前被裝備隱藏）')),
             p ? sexCells('part.json', pid, []) : NUMS.map(() => h('td')));
     });
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
@@ -561,7 +562,7 @@ function setZoom(z)
     drawPv();
 }
 
-const hairHidden = () => SLOTS.some(([cat]) => items()[S.slots[cat]]?.equip?.hideHair);
+const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT);
 
 function partsOf(r)
 {
@@ -573,7 +574,8 @@ function partsOf(r)
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, alpha});
         if (p.back) out.push({p, sprite: p.back, d: DEPTH.back, alpha});
     };
-    for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(partFor(parts(), r, k), DEPTH[k]);
+    const hide = hiddenNow();
+    for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), DEPTH[k]);
     for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat);
     return out.sort((a, b) => a.d - b.d);
 }

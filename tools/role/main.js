@@ -9,6 +9,7 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from './preview.js';
+import {ROLE_PARTS} from '../../src/core/equip.js';
 
 // role.json 裡沒有角色互相引用的欄位，改名只動 key
 const D = createDoc({
@@ -398,7 +399,7 @@ function draw()
         job: [...SC.JOBS, ...rs.map(r => r.job)],
         loc: rs.map(r => r.loc),
         maps: Object.keys(S.ext.maps),
-        ...Object.fromEntries(['body', 'head', 'hair', 'hand'].map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k)])),
+        ...Object.fromEntries(ROLE_PARTS.map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k)])),
         ...Object.fromEntries(Object.entries(S.ext.maps).map(([m, names]) => [`nav-${m}`, names])),
     }, {items: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
 

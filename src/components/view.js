@@ -1,11 +1,11 @@
-import {GM, PART_DEPTH} from '../core/setting.js'
+import {GM, PART_DEPTH, ROLE_PART} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor} from '../core/equip.js'
+import {equipFor, hiddenParts, ROLE_PARTS} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -882,11 +882,12 @@ export class RoleView extends View
         const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
-        const part = (k)=>DB.rolePart(meta, k);
-        if(part('body')) {this._addPart(part('body'), GM.PART.BODY);}
-        if(part('head')) {this._addPart(part('head'), GM.PART.HEAD);}
-        this._hair = part('hair') ? this._addPart(part('hair'), GM.PART.HAIR) : [];
-        if(part('hand')) {this._addPart(part('hand'), GM.PART.HAND);}
+        this._parts = {};
+        for(const k of ROLE_PARTS)
+        {
+            const p = DB.rolePart(meta, k);
+            this._parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
+        }
         this._equips = []; 
         
         // set flipX
@@ -986,16 +987,10 @@ export class RoleView extends View
         if(this._isCorpse) {return;}
 
         this._removeEquips();
-        let hideHair = false;
-        bb.equips?.forEach((eq)=>{
-            if(eq)
-            {
-                const dat = DB.item(eq.id??eq);
-                this._addEquip(dat);
-                hideHair ||= !!dat.equip?.hideHair;
-            }
-        })
-        this._hair.forEach((sp)=>{sp.setVisible(!hideHair);});
+        const dats = (bb.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq));
+        dats.forEach((dat)=>{this._addEquip(dat);});
+        const hide = hiddenParts(dats, GM.CAT);
+        for(const [k, sps] of Object.entries(this._parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
     }
 
     _isFaceRight() {return (this._shape.scaleX < 0) !== this._faceR;}

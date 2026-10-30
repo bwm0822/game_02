@@ -1,9 +1,9 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI, CAT2ICON, PART_DEPTH} from '../core/setting.js'
+import {GM, UI, CAT2ICON, PART_DEPTH, ROLE_PART} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor} from '../core/equip.js'
+import {equipFor, hiddenParts, ROLE_PARTS} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -816,22 +816,18 @@ export class Doll extends Pic
     {
         this._shape.removeAll(true);
         const meta = owner?.bb.meta ?? {};
-        const part = (k)=>DB.rolePart(meta, k);
-        if(part('body')) {this._addPart(part('body'), PART_DEPTH[GM.PART.BODY]);}
-        if(part('head')) {this._addPart(part('head'), PART_DEPTH[GM.PART.HEAD]);}
-        const hair = part('hair') ? this._addPart(part('hair'), PART_DEPTH[GM.PART.HAIR]) : [];
-        if(part('hand')) {this._addPart(part('hand'), PART_DEPTH[GM.PART.HAND]);}
+        const parts = {};
+        for(const k of ROLE_PARTS)
+        {
+            const p = DB.rolePart(meta, k);
+            parts[k] = p ? this._addPart(p, PART_DEPTH[ROLE_PART[k]]) : [];
+        }
         this._fit();
 
-        let hideHair = false;
-        owner?.equips?.forEach((eq)=>{
-            if(!eq) {return;}
-            const dat = DB.item(eq.id??eq);
-            if(!dat?.equip) {return;}
-            this._addPart(equipFor(dat.equip, meta.sex), PART_DEPTH[dat.cat]);
-            hideHair ||= !!dat.equip.hideHair;
-        });
-        hair.forEach((sp)=>{sp.setVisible(!hideHair);});
+        const dats = (owner?.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq)).filter(dat=>dat?.equip);
+        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex), PART_DEPTH[dat.cat]);});
+        const hide = hiddenParts(dats, GM.CAT);
+        for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 
         this._shape.sort('depth');
     }

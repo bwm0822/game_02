@@ -3,8 +3,8 @@
 import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
-import {DEPTH} from './schema.js';
-import {equipFor, partFor} from '../../src/core/equip.js';
+import {DEPTH, CAT} from './schema.js';
+import {equipFor, partFor, hiddenParts, ROLE_PARTS} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false};   // 開關跨角色保留
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -15,7 +15,7 @@ function axis(a, b, total)
     return {a, size: total - a - b};
 }
 
-// 回傳要畫的部件，照遊戲的順序（body、head、hair、hand、裝備）再依 depth 穩定排序；裝備有 hideHair 就不畫 hair
+// 回傳要畫的部件，照遊戲的順序（部位、裝備）再依 depth 穩定排序；被裝備藏掉的部位（hiddenParts）不畫
 // 角色的部位是 part.json 的 id（parts＝part.json）
 export function partsOf(r, items, parts)
 {
@@ -27,10 +27,8 @@ export function partsOf(r, items, parts)
         if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
     };
     const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
-    const part = (k) => partFor(parts, r, k);
-    add(part('body'), DEPTH.body); add(part('head'), DEPTH.head);
-    if (!equips.some(it => it.equip.hideHair)) add(part('hair'), DEPTH.hair);
-    add(part('hand'), DEPTH.hand);
+    const hide = hiddenParts(equips, CAT);
+    for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), DEPTH[k]);
     for (const it of equips) add(equipFor(it.equip, r.sex), DEPTH[it.cat]);
     return out.sort((a, b) => a.d - b.d);
 }

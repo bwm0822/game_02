@@ -59,6 +59,8 @@ export const FIELDS = {
     head: {label: '頭', type: 'list', part: true},
     hair: {label: '頭髮', type: 'list', part: true},
     hand: {label: '手', type: 'list', part: true},
+    cloth: {label: '衣服', type: 'list', part: true},
+    shoes: {label: '鞋子', type: 'list', part: true},
     corpse: {label: '屍體圖', type: 'obj', fields: PART},
     inv: {label: '物品欄', type: 'inv'},
     schedule: {label: '作息', type: 'schedule'},
@@ -70,7 +72,7 @@ export const REQUIRED = ['w', 'h', 'anchor'];
 export const SECTIONS = [
     {title: '基本', keys: ['kind', 'loc', 'lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
-    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'corpse']},
+    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'cloth', 'shoes', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
@@ -102,8 +104,10 @@ export function schSummary(s)
 }
 
 // ---------- 預覽 ----------
-// 跟 RoleView._addPart 的 _DEPTH 一樣（裝備依 item.json 的 cat）
-export const DEPTH = {body: 0, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
+// 跟 setting.js 的 PART_DEPTH 一樣（裝備依 item.json 的 cat）
+export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.3, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
+// equip.js 的 hiddenParts 用：item.json 的 cat 是字串
+export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS'};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要
