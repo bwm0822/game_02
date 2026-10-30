@@ -284,7 +284,7 @@ function trimLayer(L)
 // 左上的頭盔常跟護甲黏成一塊（重心落到左上，護甲整個被丟掉）：四個象限湊不齊就逐步加侵蝕量重分（最多 AUTO_ERODE px），侵蝕量記在 blobs 步驟上
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 // kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
-//       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 scale%，連動（headLink）時頭髮跟頭一樣，另外合成頭像 portrait）
+//       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 存檔%，連動（headLink）時頭髮跟頭一樣，另外合成頭像 portrait）
 
 const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40};
 const AUTO_ALPHA = 32;
@@ -299,9 +299,11 @@ const AUTO_PARTS = [
     {key: 'hair', kind: 'head', name: '頭髮', side: 1},
 ];
 const AUTO_KINDS = ['armor', 'weapon', 'head'];
-const AUTO_F = {armor: ['pct', 'x', 'y'], weapon: ['pct', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'x', 'y']};
-const AUTO_DEF = {helmet: {pct: 28, x: -1.75, y: -0.25}, armor: {pct: 20, x: 0.25, y: 26.5}, boots: {pct: 20, x: 1.5, y: 33},
-                  weapon: {pct: 10, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, x: -2, y: 4}, hair: {pct: 18, x: -1, y: 2}};
+// pct＝存檔%（原圖縮成幾 % 烤成 PNG），scale＝遊戲的 equip.scale／role 的 head.scale…；畫面大小＝原圖 × pct% × scale，兩個不互相換算
+const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y']};
+const AUTO_FF = ['scale', 'x', 'y'];
+const AUTO_DEF = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33},
+                  weapon: {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, scale: 0.25, x: -2, y: 4}, hair: {pct: 18, scale: 0.25, x: -1, y: 2}};
 const AUTO_PORTRAIT = {size: 100, fill: 100};
 const PT_F = ['size', 'fill'];
 // 舊格式 {w, h, fill}：w 當 size、fill 重設
@@ -327,13 +329,20 @@ const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
                           portrait: ptFrom(v?.portrait), headLink: v?.headLink ?? true, saveF: !!v?.saveF,
-                          f: Object.fromEntries(AUTO_PARTS.filter(P => P.kind === 'armor').map(P => [P.key, {...AUTO_DEF[P.key], ...v?.f?.[P.key]}]))});
+                          f: Object.fromEntries(AUTO_PARTS.filter(P => P.kind === 'armor').map(P => [P.key, femaleFrom(P, v)]))});
+// 舊格式沒有 scale（當時固定 0.25）；女版以前有自己的 pct，換成同一張 PNG 的 scale＝0.25 × 女pct ÷ 男pct
+function femaleFrom(P, v)
+{
+    const d = AUTO_DEF[P.key], o = v?.f?.[P.key], pct = v?.[P.key]?.pct ?? d.pct;
+    return {scale: o?.scale ?? round(d.scale * (o?.pct ?? pct) / pct, 10000), x: o?.x ?? d.x, y: o?.y ?? d.y};
+}
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
-// 護具分男女兩組：S.auto.helmet… 是男版、S.auto.f.helmet… 是女版，照 header 的 男｜女（S.doll.sex）選用
+const pickKeys = (o, ks) => Object.fromEntries(ks.map(k => [k, o[k]]));
+// 護具分男女兩組：S.auto.helmet… 是男版、S.auto.f.helmet… 是女版（只有 scale/x/y，存檔% 跟男版共用，PNG 只有一張），照 header 的 男｜女（S.doll.sex）選用
 const autoFemale = (P) => P.kind === 'armor' && S.doll.sex === 'f';
-const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : autoFemale(P) ? a.f[P.key] : a[P.key];
+const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : autoFemale(P) ? {...a[P.key], ...a.f[P.key]} : a[P.key];
 const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}}
-                              : autoFemale(P) ? {...a, f: {...a.f, [P.key]: row}} : {...a, [P.key]: row};
+                              : autoFemale(P) ? {...a, [P.key]: {...a[P.key], pct: row.pct}, f: {...a.f, [P.key]: pickKeys(row, AUTO_FF)}} : {...a, [P.key]: row};
 
 function autoLoad()
 {
@@ -356,9 +365,9 @@ function autoSet(v)
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
 }
 
-// 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；裁切、縮小分兩步，scale% 記在縮小的 xform 上（pct），
+// 拆出的零件記 auto = {key, gid}、原圖記 autoSrc = gid；裁切、縮小分兩步，存檔% 記在縮小的 xform 上（pct），
 // 之後的裁切／縮放會跟它合成一步、pct 就不見了，所以零件步驟是 [...去綠, blobs, xform(裁切), xform(pct), ...paint] 才能再調（舊專案沒有 blobs）
-// 零件拆了前後片時，前後片跟著零件搬、改 scale% 一起重播、一起進模式內的 undo
+// 零件拆了前後片時，前後片跟著零件搬、改 存檔% 一起重播、一起進模式內的 undo
 const autoGid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 function autoBase(C)
@@ -382,7 +391,7 @@ function autoGroup(L)
 const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
-const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x), y: round(C.y),
+const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, scale: round(C.scale, 10000), x: round(C.x), y: round(C.y),
                               ...(P.kind === 'weapon' && {a: round(C.a, 10), ox: C.ox, oy: C.oy})});
 const autoSame = (P, a, b) => AUTO_F[P.kind].every(f => a[f] === b[f]);
 
@@ -402,9 +411,10 @@ function autoShift(C, x, y)
     for (const L of linked(C)) Object.assign(L, {x: L.x + dx, y: L.y + dy});
 }
 
-function autoPlace({P, C}, {x, y, a, ox, oy})
+function autoPlace({P, C}, {scale, x, y, a, ox, oy})
 {
     if (P.kind === 'weapon') Object.assign(C, {a, ox, oy});
+    for (const L of linked(C)) L.scale = scale;
     autoShift(C, x, y);
 }
 
@@ -533,12 +543,12 @@ function autoSpNew(m, {box, keep})
     splitRun(m.sp);
 }
 
-// 拆完後改數字直接套到零件：scale 變了才從去綠圖重新取樣（有 paint 要先問），x/y 只搬位置
+// 拆完後改數字直接套到零件：存檔% 變了才從去綠圖重新取樣（有 paint 要先問），scale／x／y 只改擺放
 function autoApply(m, part, row, step = true)
 {
     const cur = autoRow(part);
     if (autoSame(part.P, row, cur)) return;
-    if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改 scale 要清除修補，要清除嗎？`)) return;
+    if (row.pct !== cur.pct && hasPaint(part.C) && !confirm(`${part.C.name} 有像素修補，改存檔% 要清除修補，要清除嗎？`)) return;
     if (step) autoStep(m);
     if (row.pct !== cur.pct)
     {
@@ -671,11 +681,30 @@ function autoKeeps(m, L)
 
 const autoPart = (m, L) => m.parts?.find(p => linked(p.C).includes(L)) ?? null;
 
+// 自動拆出的零件（或它的前後片）：縮放模式拉它改的是存檔%（重烤），等比
+function autoOwner(L)
+{
+    const g = autoGroup(splitNew(L)?.O ?? L);
+    return g?.parts.find(C => linked(C).includes(L) && autoBase(C) >= 0) ?? null;
+}
+
+// 縮放模式按確定：借自動模式套數字（存檔%×k，連動時頭髮跟著，拖過的位移換成 x/y），整次一筆 undo
+function autoRescale(L, k, dx, dy)
+{
+    const m = autoEnter(autoOwner(L));
+    if (!m) return;
+    const part = autoPart(m, L), row = autoRow(part), pct = round(row.pct * k, 100);
+    const peers = part.P.kind === 'head' && S.auto.headLink ? m.parts.filter(p => p.P.kind === 'head') : [part];
+    autoApplyAll(m, peers.map(p => [p, {...autoRow(p), pct, ...(p === part && {x: round(row.x + dx), y: round(row.y + dy)})}]));
+    if (m.hist.length) hist.push(m.snap);
+    status(`${part.C.name} 存檔% ${row.pct} → ${autoRow(part).pct}`);
+}
+
 // ---------- 前後片 ----------
 // 頭盔拆成三層：原圖 X（隱藏、步驟不動，記 splitSrc = gid）、蓋住頭的前片 X-front（原圖步驟＋mask 挖掉）、
 // 被頭蓋住的後片 X-back（＋mask keep），前片疊在原圖上面、後片放到最底層，三層同尺寸、擺放連動（linked()）
 // PX.splitTrace() 從起點追輪廓線產生後片多邊形，可以拖頂點／點邊加點，拖起點或改門檻就重算覆蓋
-// mask 插在原圖步驟的 splitAt()：一般接在最後；自動零件插在縮小（xform pct）前面，追線在縮小前的圖上做，改 scale% 前後片跟著重播
+// mask 插在原圖步驟的 splitAt()：一般接在最後；自動零件插在縮小（xform pct）前面，追線在縮小前的圖上做，改 存檔% 前後片跟著重播
 // 存成（前後片／挖除 cut）跟切割方法（method：沿線 trace＝PX.splitTrace()、魔術棒 wand＝PX.splitCut()）分開，多邊形都是「從前片拿掉的那塊」
 // mask 帶 split = {gid, x, y, c, cut, method, close, down, drop, right, reach, mark, w, h, n}（起點、線的條件、挖除、切割方法、閉運算、往下射／往右射（勾選、X px）、
 // 手畫標記（行程編碼）、追線那張圖的尺寸、mask 後面原本跟著幾步），
@@ -1243,13 +1272,13 @@ function setMode(type)
         status('選取的圖層隱藏中，先打開顯示');
         type = 'move';
     }
-    else if ((type === 'scale' || type === 'warp') && hasPaint(L))
+    else if ((type === 'scale' && !autoOwner(L) || type === 'warp') && hasPaint(L))
     {
         alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」');
         type = 'move';
     }
     if (type === 'crop') S.mode = {type, layer: L, rect: null, poly: null};
-    else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, k: srcScale(L), lock: $('scLock').checked, snap: hist.snap(L)};
+    else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, k: srcScale(L), lock: !!autoOwner(L) || $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
     else if (type === 'removeGreen') {
@@ -1296,6 +1325,12 @@ function applyMode()
             if (how === 'move') sel.cut(L);
             S.active = C;
         }
+    }
+    else if (m.type === 'scale' && autoOwner(L))
+    {
+        const dx = L.x - m.snap.x, dy = L.y - m.snap.y;
+        History.restore(m.snap);
+        autoRescale(L, m.sx, dx, dy);
     }
     else if (m.type === 'scale')
     {
@@ -2555,7 +2590,7 @@ function refreshAuto(m)
     $('auLoad').disabled = $('auFemale').disabled = $('auItem').disabled;
     $('auFemaleL').hidden = m.kind !== 'armor';
     $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : !m.parts ? '拆完才能載入'
-                      : head ? '照 id＝原圖名（或 head.sprite）找角色，載入擺放（scale% 不動）' : '照 equip.sprite 找 item，載入擺放（scale% 不動）';
+                      : head ? '照 id＝原圖名（或 head.sprite）找角色，載入擺放（存檔% 不動）' : '照 equip.sprite 找 item，載入擺放（存檔% 不動）';
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
@@ -2563,7 +2598,7 @@ function refreshAuto(m)
         {
             const inp = $(`au-${P.key}-${f}`);
             inp.value = row[f];
-            inp.disabled = !!m.parts && !part || P.key === 'hair' && f === 'pct' && S.auto.headLink;
+            inp.disabled = !!m.parts && !part || P.key === 'hair' && AUTO_LINK.includes(f) && S.auto.headLink;
         }
         if (P.key === 'hair') $('au-link').disabled = !!m.parts && !part;
     }
@@ -3511,7 +3546,7 @@ function iconOf(c, {size, w = size, h = size, a, fill})
     return out;
 }
 
-// 頭像：頭、頭髮縮小前的圖照目前擺放疊起來（x/y 照 scale% 放大回原圖尺寸），再照 尺寸×尺寸×% 等比置中；
+// 頭像：頭、頭髮縮小前的圖照目前擺放疊起來（x/y 照 存檔%×scale 放大回原圖尺寸），再照 尺寸×尺寸×% 等比置中；
 // 縮小前的圖只跟零件的步驟有關，照 ops 快取（拖曳時不重播）
 const preCache = new WeakMap();
 function preOf(C)
@@ -3527,12 +3562,12 @@ function portraitOf(parts, o = S.auto.portrait, bake = false)
 {
     const ps = autoParts('head').map(P => parts.find(p => p.P === P)).filter(Boolean);
     if (!ps.length) return null;
-    // 頭、頭髮的 pct 可以不同：以最大的 pct 為基準（那個用縮小前的圖），其他照 pct 比例縮小，大小、位置才跟畫面上一致
-    const pct = (C) => C.ops[autoBase(C)].pct, top = Math.max(...ps.map(({C}) => pct(C))), k = 100 / top;
+    // 原圖 1 像素在畫面上是 存檔%×scale 個遊戲單位，頭、頭髮可以不同：以最大的為基準（那個用縮小前的圖），其他照比例縮小，大小、位置才跟畫面上一致
+    const unit = (C) => C.ops[autoBase(C)].pct / 100 * C.scale, top = Math.max(...ps.map(({C}) => unit(C)));
     const ims = ps.map(({C}) => {
-        const src = preOf(C), f = bake ? PX.fade(src, C.opacity) : src, r = pct(C) / top;
+        const src = preOf(C), f = bake ? PX.fade(src, C.opacity) : src, r = unit(C) / top;
         const c = PX.xform(f, {sx: 0, sy: 0, sw: f.width, sh: f.height, w: Math.max(1, Math.round(f.width * r)), h: Math.max(1, Math.round(f.height * r))});
-        return {c, x: C.x / C.scale * k - C.ox * c.width, y: C.y / C.scale * k - C.oy * c.height};
+        return {c, x: C.x / top - C.ox * c.width, y: C.y / top - C.oy * c.height};
     });
     const x0 = Math.min(...ims.map(i => i.x)), y0 = Math.min(...ims.map(i => i.y));
     const cv = PX.newCanvas(Math.ceil(Math.max(...ims.map(i => i.x + i.c.width)) - x0), Math.ceil(Math.max(...ims.map(i => i.y + i.c.height)) - y0));
@@ -3865,7 +3900,7 @@ function itemDialog(parts, items, keys)
     }, {once: true}));
 }
 
-// 每個零件照 itemMatch() 找 item，載入擺放（x/y，武器多 a/ox/oy；沒寫的 key 是預設值），scale% 不動；
+// 每個零件照 itemMatch() 找 item，載入擺放（scale/x/y，武器多 a/ox/oy；沒寫的 key 是預設值，沒有 scale 就不動）；
 // 整次一步模式內 undo、寫回全域預設，一個都沒對到（或都沒變）不記
 async function loadItems()
 {
@@ -3877,10 +3912,9 @@ async function loadItems()
     {
         const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
         if (!e0) {miss.push(part.C.name); continue;}
-        const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0;
+        const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0, cur = autoRow(part);
         hit.push(`${part.C.name} ← ${id}`);
-        if (e0.scale !== undefined && e0.scale !== part.C.scale) warn.push(`${id} 的 scale ${e0.scale} ≠ ${part.C.scale}`);
-        rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0,
+        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0,
                           ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
     }
     if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
@@ -3897,13 +3931,12 @@ function autoApplyAll(m, rows)
     for (const [part, row] of diff) autoApply(m, part, row, false);
 }
 
-// 一定存男版：女模式下先照男版數字重擺（PNG 用男版 pct 烤），存完復原；勾「女版」另寫 equip.f，沒勾就刪掉 equip.f
+// 一定存男版：女模式下先照男版數字重擺（PNG 男女共用一張，不用重烤），存完復原；勾「女版」另寫 equip.f，沒勾就刪掉 equip.f
 async function saveItems()
 {
     const m = S.mode;
     if (m.type !== 'auto' || !m.parts || !S.assets) return;
     const back = autoMale(m);
-    if (back === false) return;
     try
     {
         const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
@@ -3915,25 +3948,17 @@ async function saveItems()
     }
 }
 
-// 回傳復原用的函式；不用換（不是女模式）回 null；有修補又要重新縮放就不換、回 false
+// 回傳復原用的函式；不用換（不是女模式）回 null
 function autoMale(m)
 {
     const parts = m.parts.filter(p => autoFemale(p.P));
     if (!parts.length) return null;
-    const paint = parts.filter(p => hasPaint(p.C) && autoRow(p).pct !== S.auto[p.P.key].pct);
-    if (paint.length) return status(`${paint.map(p => p.C.name).join('、')} 有像素修補，男女 scale% 不同不能存（男版要重新縮放）`), false;
     const s = autoState(m);
-    m.T.canvas ??= PX.replay(m.T.src, m.T.ops);
-    for (const p of parts)
-    {
-        if (autoRow(p).pct !== S.auto[p.P.key].pct) autoScale(m.T, p, S.auto[p.P.key].pct);
-        autoPlace(p, S.auto[p.P.key]);
-    }
+    for (const p of parts) autoPlace(p, S.auto[p.P.key]);
     return () => History.restore(s);
 }
 
-// 女版擺放：PNG 照男版 pct 烤，所以 scale 照兩邊 pct 的比例換算
-const femaleOf = (P) => {const f = S.auto.f[P.key]; return {scale: round(LAYER_SCALE * f.pct / S.auto[P.key].pct, 10000), x: f.x, y: f.y};};
+const femaleOf = (P) => pickKeys(S.auto.f[P.key], AUTO_FF);
 
 // 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）；all：換 sprite、共用圖（warn）也一起 confirm
 async function commitItems(rows, bake, all = false)
@@ -4197,7 +4222,7 @@ async function commitRole(parts, R, bake)
     status(`已存 role.json：${R.id} 的 ${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
-// 照 roleMatch() 找角色，把 head／hair 的 x/y 套回零件（scale% 不動），角色沒有 hair 就只套頭
+// 照 roleMatch() 找角色，把 head／hair 的 x/y 套回零件（存檔% 不動），角色沒有 hair 就只套頭
 async function loadRole()
 {
     const m = S.mode;
@@ -4210,8 +4235,8 @@ async function loadRole()
         const part = m.parts.find(p => p.P === P), e = roles[id][P.key];
         if (!part || !e) continue;
         hit.push(part.P.key);
-        if (e.scale !== undefined && e.scale !== part.C.scale) warn.push(`${id}.${part.P.key} 的 scale ${e.scale} ≠ ${part.C.scale}`);
-        rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0}]);
+        const cur = autoRow(part);
+        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}]);
     }
     if (!hit.length) return status(`${id} 沒有 head／hair`);
     autoApplyAll(m, rows);
@@ -4333,7 +4358,7 @@ function batchDialog(rows, items, keys)
     }
     top.onchange = () => {for (const r of rows) r.upd = top.checked; refresh();};
     // 數字跟自動面板共用全域預設，上面的分類選要改哪一組（預設第一列的分類），只重算同分類的列；
-    // scale% 變了才重算成品（icon 用縮小前的圖，不用重算）
+    // 存檔% 變了才重算成品（icon 用縮小前的圖，不用重算）
     let ecls = rows.find(r => r.part)?.cls ?? 'default';
     const nums = () => {for (const f of AUTO_F.weapon) $(`bt-${f}`).value = S.auto.weapon[ecls][f];};
     clsOpts($('bt-cls'));
@@ -4345,7 +4370,7 @@ function batchDialog(rows, items, keys)
         const inp = $(`bt-${f}`);
         inp.onchange = () => {
             const v = +inp.value, old = S.auto.weapon[ecls][f];
-            if (!Number.isFinite(v) || f === 'pct' && !(v > 0) || v === old) return void (inp.value = old);
+            if (!Number.isFinite(v) || AUTO_LINK.includes(f) && !(v > 0) || v === old) return void (inp.value = old);
             autoSet({...S.auto, weapon: {...S.auto.weapon, [ecls]: {...S.auto.weapon[ecls], [f]: v}}});
             for (const r of rows.filter(r => r.part && r.cls === ecls)) place(r, f === 'pct');
             refresh();
@@ -4697,11 +4722,12 @@ const removeGreenChanged = () => {
 for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr']) $(id).oninput = removeGreenChanged;
 
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
-$('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', 'scale%', 'x', 'y']));
-$('auWeapon').append(...dimSpans(['', 'scale%', 'x', 'y', 'a', 'ox', 'oy']));
-$('auHead').append(...dimSpans(['', 'scale%', '', 'x', 'y']));
+$('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', '存檔%', 'scale', 'x', 'y']));
+$('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', 'oy']));
+$('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
-const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的 scale% 跟頭一樣，只能改頭那格'});
+const AUTO_LINK = ['pct', 'scale'];
+const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的存檔%、scale 跟頭一樣，只能改頭那格'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
 for (const P of AUTO_PARTS)
 {
@@ -4709,35 +4735,35 @@ for (const P of AUTO_PARTS)
     box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans(P.quad ? [P.quad] : []));
     for (const f of AUTO_F[P.kind])
     {
-        const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : 'any'});
-        // 連動時改頭的 scale%，頭髮設成一樣的值
+        const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: f === 'pct' ? 1 : f === 'scale' ? 0.01 : 'any'});
+        // 連動時改頭的存檔%／scale，頭髮設成一樣的值
         inp.onchange = () => {
-            const v = +inp.value, m = S.mode, ok = Number.isFinite(v) && (f !== 'pct' || v > 0);
-            const peers = P.key === 'head' && f === 'pct' && S.auto.headLink ? autoParts('head') : [P];
+            const v = +inp.value, m = S.mode, ok = Number.isFinite(v) && (!AUTO_LINK.includes(f) || v > 0);
+            const peers = P.key === 'head' && AUTO_LINK.includes(f) && S.auto.headLink ? autoParts('head') : [P];
             const parts = peers.map(Q => m.parts?.find(p => p.P === Q)).filter(Boolean);
             if (ok && parts.length) autoApplyAll(m, parts.map(part => [part, {...autoRow(part), [f]: v}]));
             else autoSet(ok ? peers.reduce((a, Q) => autoWith(a, Q, {...autoCfg(Q, a), [f]: v}), S.auto) : S.auto);
             refreshAll();
         };
         box.append(inp);
-        if (P.kind === 'head' && f === 'pct') box.append(P.key === 'hair' ? linkBox : el('span'));
+        if (P.kind === 'head' && f === 'scale') box.append(P.key === 'hair' ? linkBox : el('span'));
     }
 }
-// 打開連動：頭髮對齊頭的 scale%，拆過就記一步（連開關一起退）；有修補不清除就不打開
+// 打開連動：頭髮對齊頭的存檔%、scale，拆過就記一步（連開關一起退）；有修補不清除就不打開
 $('au-link').onchange = () => {
     const on = $('au-link').checked, m = S.mode, [H, R] = autoParts('head');
     const head = m.parts?.find(p => p.P === H), hair = m.parts?.find(p => p.P === R);
-    if (!on || !head || !hair) autoSet({...S.auto, headLink: on, ...(on && {hair: {...S.auto.hair, pct: S.auto.head.pct}})});
+    if (!on || !head || !hair) autoSet({...S.auto, headLink: on, ...(on && {hair: {...S.auto.hair, ...pickKeys(S.auto.head, AUTO_LINK)}})});
     else
     {
-        const pct = autoRow(head).pct;
-        if (autoRow(hair).pct !== pct)
+        const same = () => AUTO_LINK.every(f => autoRow(hair)[f] === autoRow(head)[f]);
+        if (!same())
         {
             autoStep(m);
-            autoApply(m, hair, {...autoRow(hair), pct}, false);
-            if (autoRow(hair).pct !== pct) m.hist.pop();
+            autoApply(m, hair, {...autoRow(hair), ...pickKeys(autoRow(head), AUTO_LINK)}, false);
+            if (!same()) m.hist.pop();
         }
-        autoSet({...S.auto, headLink: autoRow(hair).pct === pct});
+        autoSet({...S.auto, headLink: same()});
     }
     refreshAll();
 };
@@ -4764,12 +4790,13 @@ $('auCls').onchange = () => {
     }
     refreshAll();
 };
-// 武器只還原目前分類，護具只還原護具目前性別那組（連頭盔拆法），頭像只還原頭像（連尺寸/%）
+// 武器只還原目前分類，護具只還原護具目前性別那組（連頭盔拆法；女版的存檔% 跟男版共用，不動），頭像只還原頭像（連尺寸/%）
 $('auReset').onclick = () => {
     const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
-    for (const part of m.parts ?? []) autoApply(m, part, weapon ? wclsDef(S.auto.cls) : AUTO_DEF[part.P.key]);
-    autoSet(weapon ? autoWith(S.auto, batchP(), wclsDef(S.auto.cls))
-                   : {...autoParts(kind).reduce((a, P) => autoWith(a, P, AUTO_DEF[P.key]), S.auto),
+    const def = (P) => weapon ? wclsDef(S.auto.cls) : autoFemale(P) ? {...AUTO_DEF[P.key], pct: S.auto[P.key].pct} : AUTO_DEF[P.key];
+    for (const part of m.parts ?? []) autoApply(m, part, def(part.P));
+    autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))
+                   : {...autoParts(kind).reduce((a, P) => autoWith(a, P, def(P)), S.auto),
                       ...(kind === 'head' ? {portrait: AUTO_PORTRAIT, headLink: true} : {split: undefined})});
     autoSpSync(m);
     refreshAll();

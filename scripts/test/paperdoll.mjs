@@ -858,10 +858,26 @@ run('paperdoll', async t => {
         out.stepUndo = [pd.S.mode === m, H.canvas.width, H.x, pd.S.auto.helmet.pct, $('au-helmet-pct').value];
         pd.redo();
         out.stepRedo = [H.canvas.width, pd.S.auto.helmet.pct];
+        const c1 = H.canvas;
+        type('au-helmet-scale', 0.5);
+        out.scaleEdit = [H.canvas === c1, H.scale, pd.S.auto.helmet.scale, $('au-helmet-scale').value];
+        pd.undo();
+        out.scaleUndo = [H.scale, pd.S.auto.helmet.scale];
         pd.select(S);
         out.keepMode = pd.S.mode === m;
         pd.select(O);
         out.leaveOther = [pd.S.mode.type, !!find('src-helmet'), pd.hist.undos.length - n0];
+
+        // 縮放模式拉自動零件：改存檔%（重烤）、scale 不動、等比、一筆 undo
+        pd.select(H);
+        pd.setMode('scale');
+        const lock = pd.S.mode.lock;
+        pd.S.mode.sx = pd.S.mode.sy = 0.5;
+        const nS = pd.hist.undos.length;
+        pd.applyMode();
+        out.handle = [lock, H.ops.at(-1).pct, H.canvas.width, H.scale, pd.S.mode.type, pd.hist.undos.length - nS, pd.S.auto.helmet.pct];
+        pd.undo();
+        out.handleUndo = [H.ops.at(-1).pct, H.canvas.width];
 
         pd.autoSet({...pd.S.auto, helmet: {pct: 40, x: 0, y: 0}});
         pd.select(S);
@@ -997,6 +1013,10 @@ run('paperdoll', async t => {
     t.eq('自動：改 scale 只重取樣、不重新去綠、模式內不記全域 undo、寫回預設', JSON.stringify(au.rescaled), JSON.stringify([15, true, true, 1, 25]));
     t.eq('自動：模式內 Ctrl+Z 退一步、預設跟著退', JSON.stringify(au.stepUndo), JSON.stringify([true, 30, 4, 50, '50']));
     t.eq('自動：模式內 Ctrl+Y 重做', JSON.stringify(au.stepRedo), JSON.stringify([15, 25]));
+    t.eq('自動：改 scale 不重烤、寫回預設', JSON.stringify(au.scaleEdit), JSON.stringify([true, 0.5, 0.5, '0.5']));
+    t.eq('自動：改 scale 可以 undo', JSON.stringify(au.scaleUndo), JSON.stringify([0.25, 0.25]));
+    t.eq('自動：縮放模式拉零件＝改存檔%（等比、重烤）、scale 不動、一筆 undo', JSON.stringify(au.handle), JSON.stringify([true, 12.5, 8, 0.25, 'move', 1, 12.5]));
+    t.eq('自動：縮放模式改存檔% 可以 undo', JSON.stringify(au.handleUndo), JSON.stringify([25, 15]));
     t.check('自動：點原圖不離開模式', au.keepMode);
     t.eq('自動：點別的圖層＝離開、保留零件、調整另記一筆', JSON.stringify(au.leaveOther), JSON.stringify(['move', true, 2]));
     t.eq('自動：選原圖再進來是調整，面板顯示零件的實際值', JSON.stringify(au.resume), JSON.stringify(['auto', 2, '25', '4', true]));
@@ -1038,14 +1058,16 @@ run('paperdoll', async t => {
         pd.cancelMode();
         const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
         pd.setDoll({sex: 'm'});
-        pd.autoSet({helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}});
+        pd.autoSet({helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {scale: 0.125, x: 3, y: 4}}});
         out.noTag = $('dollF').disabled;
         out.legacy = JSON.stringify(pd.autoFrom({helmet: {pct: 40}}).f.helmet);
+        const old = pd.autoFrom({helmet: {pct: 40, x: 1}, f: {helmet: {pct: 20, x: 3, y: 4}}, weapon: {sword: {pct: 9}}});
+        out.legacyF = [JSON.stringify(old.f.helmet), old.helmet.scale, old.weapon.sword.scale];
         const S0 = pd.addLayer(await createImageBitmap(c), 'src', null, null);
         pd.select(S0);
         pd.setMode('auto');
         pd.applyMode();
-        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.x, H.y];
+        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.scale, H.x, H.y];
         out.m = [...at(), $('au-helmet-pct').value, $('auSexL').textContent];
         $('dollF').click();
         out.f = [...at(), $('au-helmet-pct').value, $('auSexL').textContent, m.hist.length];
@@ -1056,24 +1078,26 @@ run('paperdoll', async t => {
         pd.redo();
         out.redo = [...at(), pd.S.doll.sex];
         $('auReset').click();
-        out.reset = [pd.S.auto.f.helmet.pct, pd.S.auto.helmet.pct, H.canvas.width];
+        out.reset = [pd.S.auto.f.helmet.scale, pd.S.auto.helmet.pct, H.canvas.width, H.x];
         pd.cancelMode();
         const proj = pd.projectData(pd.S.layers).settings;
-        out.saved = [proj.doll.sex, proj.auto.f.helmet.pct];
+        out.saved = [proj.doll.sex, proj.auto.f.helmet.scale, 'pct' in proj.auto.f.helmet];
         pd.setDoll({sex: 'm'});
         pd.autoSet(null);
         Object.assign(pd.S, {layers: [], active: null});
         return out;
     });
     t.eq('男女：沒標記也能切性別', sx.noTag, false);
-    t.eq('男女：舊設定沒有 f，女版用內建預設', sx.legacy, JSON.stringify({pct: 28, x: -1.75, y: -0.25}));
-    t.eq('男女：男版數字拆', JSON.stringify(sx.m), JSON.stringify([30, 1, 2, '50', '♂男版']));
-    t.eq('男女：切女照女版重擺、記一步', JSON.stringify(sx.f), JSON.stringify([15, 3, 4, '25', '♀女版', 1]));
+    t.eq('男女：舊設定沒有 f，女版用內建預設', sx.legacy, JSON.stringify({scale: 0.25, x: -1.75, y: -0.25}));
+    t.eq('男女：舊設定沒有 scale 補 0.25、女版舊 pct 換成 scale＝0.25×女pct÷男pct', JSON.stringify(sx.legacyF),
+         JSON.stringify([JSON.stringify({scale: 0.125, x: 3, y: 4}), 0.25, 0.25]));
+    t.eq('男女：男版數字拆', JSON.stringify(sx.m), JSON.stringify([30, 0.25, 1, 2, '50', '♂男版']));
+    t.eq('男女：切女照女版重擺（PNG 同一張、存檔% 共用）、記一步', JSON.stringify(sx.f), JSON.stringify([30, 0.125, 3, 4, '50', '♀女版', 1]));
     t.eq('男女：女模式改數字寫 f', JSON.stringify(sx.fEdit), JSON.stringify([5, 1]));
-    t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 1, 2, 'm', '50', 1, 3]));
-    t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([15, 3, 4, 'f']));
-    t.eq('男女：還原預設只還原目前性別', JSON.stringify(sx.reset), JSON.stringify([28, 50, 17]));
-    t.eq('男女：性別跟兩組數字存進專案', JSON.stringify(sx.saved), JSON.stringify(['f', 28]));
+    t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3]));
+    t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
+    t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
+    t.eq('男女：性別跟兩組數字存進專案、女版沒有 pct', JSON.stringify(sx.saved), JSON.stringify(['f', 0.25, false]));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
     const ac = await ev(async () => {
@@ -1436,7 +1460,7 @@ run('paperdoll', async t => {
             chest_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-armor', scale: 0.25, x: 9, y: 9}},
         }, null, 2));
         await pd.loadItems();
-        out.load = [...at(H), H.ops.at(-1).pct === pct, pd.S.auto.helmet.x, pd.S.auto.helmet.y, at(A).join() === a0.join(), m.hist.length, $('status').textContent];
+        out.load = [...at(H), H.scale, H.ops.at(-1).pct === pct, pd.S.auto.helmet.x, pd.S.auto.helmet.y, pd.S.auto.helmet.scale, at(A).join() === a0.join(), m.hist.length, $('status').textContent];
         await pd.loadItems();
         out.again = m.hist.length;
         key('z');
@@ -1461,8 +1485,8 @@ run('paperdoll', async t => {
     });
     t.eq('載入 item：拆完才能按', JSON.stringify([li.before, li.after]), JSON.stringify([true, false]));
     t.eq('載入 item：一個都沒對到只提示、不記步驟', JSON.stringify(li.none), JSON.stringify(['src-helmet、src-armor 找不到對應的 item', 0]));
-    t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、scale% 不動、寫回預設、一步、scale 對不上警告', JSON.stringify(li.load), JSON.stringify([
-        3, -4, true, 3, -4, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item；注意：helmet_01 的 scale 0.5 ≠ 0.25']));
+    t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、讀 scale、存檔% 不動、寫回預設、一步', JSON.stringify(li.load), JSON.stringify([
+        3, -4, 0.5, true, 3, -4, 0.5, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item']));
     t.eq('載入 item：數字沒變不記步驟', li.again, 1);
     t.check('載入 item：undo 一步退回', li.undo[2] === 0 && (li.undo[0] !== 3 || li.undo[1] !== -4));
     t.eq('載入 item：武器多載 a/ox/oy，沒寫的 key 當預設、寫回目前分類', JSON.stringify(li.weapon), JSON.stringify([2, 3, 15, 0.5, 1, 2, 3, 15, 0.5, 1]));
@@ -1488,7 +1512,7 @@ run('paperdoll', async t => {
         pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.setDoll({sex: 'm'});
-        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}, saveF: false});
+        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {scale: 0.125, x: 3, y: 4}}, saveF: false});
         pd.setMode('auto');
         pd.applyMode();
         const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C;
@@ -1501,12 +1525,12 @@ run('paperdoll', async t => {
         let p = pd.saveItems();
         await until(() => $('dlgItems').open);
         set('di-armor-on', false);
-        out.dlg = [H.canvas.width, H.x, $('di-helmet-msg').textContent];
+        out.dlg = [H.canvas.width, H.scale, H.x, $('di-helmet-msg').textContent];
         $('dlgItems').close('ok');
         await p;
         let a = await readItems();
         out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('helmet_01') || asked.includes('頭盔：會移除女版'),
-                    H.canvas.width, H.x, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
+                    H.canvas.width, H.scale, H.x, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
         set('auFemale', true);
         out.saveF = [pd.S.auto.saveF, JSON.parse(localStorage.getItem('paperdoll.auto')).saveF];
         asked = '';
@@ -1524,7 +1548,7 @@ run('paperdoll', async t => {
         a.helmet_01.equip.x = -5;
         await put(json, 'item.json', JSON.stringify(a, null, 2));
         await pd.loadItems();
-        out.loadF = [H.x, H.y, pd.S.auto.f.helmet.x, pd.S.auto.helmet.x, $('status').textContent.includes('≠')];
+        out.loadF = [H.x, H.y, H.scale, pd.S.auto.f.helmet.x, pd.S.auto.f.helmet.scale, pd.S.auto.helmet.x, pd.S.auto.helmet.scale, $('status').textContent.includes('≠')];
         pd.cancelMode();
         pd.setDoll({sex: 'm'});
         pd.autoSet(null);
@@ -1532,14 +1556,14 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('存到 item 男女：女版勾選框只在護具、拆完才能按、預設不勾', JSON.stringify(sf.ui), JSON.stringify([false, false, false]));
-    t.eq('存到 item 男女：女模式開對話框時零件換成男版、沒勾女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 1, '會移除女版（沒勾「女版」）']));
-    t.eq('存到 item 男女：一定存男版（PNG 照男版 pct）、刪 equip.f 要確認、存完復原女版不記步驟', JSON.stringify(sf.male),
-         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 15, 3, 'f', true, true]));
+    t.eq('存到 item 男女：女模式開對話框時零件換成男版、沒勾女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 0.25, 1, '會移除女版（沒勾「女版」）']));
+    t.eq('存到 item 男女：一定存男版、刪 equip.f 要確認、存完復原女版不記步驟', JSON.stringify(sf.male),
+         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 30, 0.125, 3, 'f', true, true]));
     t.eq('存到 item 男女：女版勾選記在設定', JSON.stringify(sf.saveF), JSON.stringify([true, true]));
     t.eq('存到 item 男女：勾了女版不提示', sf.dlgF, '');
-    t.eq('存到 item 男女：勾女版寫 equip.f（scale＝S.scale×女pct÷男pct）、PNG 還是男版、不用確認', JSON.stringify(sf.female),
+    t.eq('存到 item 男女：勾女版寫 equip.f（女版自己的 scale/x/y）、PNG 同一張、不用確認', JSON.stringify(sf.female),
          JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2,"f":{"scale":0.125,"x":3,"y":4}}', 30, '']));
-    t.eq('載入 item 男女：女模式讀 equip.f、寫回女版、scale 不警告', JSON.stringify(sf.loadF), JSON.stringify([7, 8, 7, 1, false]));
+    t.eq('載入 item 男女：女模式讀 equip.f（連 scale）、寫回女版、男版不動', JSON.stringify(sf.loadF), JSON.stringify([7, 8, 0.125, 7, 0.125, 1, 0.25, false]));
 
     // 自動（武器）：透明底單把武器，一個零件，多調 a/ox/oy，存到 textures/weapons、a 不寫
     const aw = await ev(async () => {
@@ -1722,8 +1746,10 @@ run('paperdoll', async t => {
         type('au-hair-pct', 20);
         type('au-head-pct', 40);
         out.split = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length - h1];
-        // pct 不同時頭像的長寬比要跟畫面上兩個零件合起來的外框一樣
-        const rect = (C) => [C.x - C.ox * C.canvas.width, C.y - C.oy * C.canvas.height, C.x + (1 - C.ox) * C.canvas.width, C.y + (1 - C.oy) * C.canvas.height];
+        type('au-hair-scale', 0.5);
+        out.splitScale = [Hr.scale, Hd.scale, pd.S.auto.hair.scale];
+        // 存檔%、scale 不同時頭像的長寬比要跟畫面上兩個零件合起來的外框一樣
+        const rect = (C) => {const w = C.canvas.width * C.scale, h = C.canvas.height * C.scale; return [C.x - C.ox * w, C.y - C.oy * h, C.x + (1 - C.ox) * w, C.y + (1 - C.oy) * h];};
         const [a, b] = [rect(Hd), rect(Hr)];
         const view = (Math.max(a[2], b[2]) - Math.min(a[0], b[0])) / (Math.max(a[3], b[3]) - Math.min(a[1], b[1]));
         const pv = $('auPtPreview'), d = pv.getContext('2d').getImageData(0, 0, pv.width, pv.height).data;
@@ -1733,10 +1759,10 @@ run('paperdoll', async t => {
         out.ptRatio = Math.abs((x1 - x0 + 1) / (y1 - y0 + 1) - view) < 0.05 || [view, (x1 - x0 + 1) / (y1 - y0 + 1)];
         h1 = m.hist.length;
         link(true);
-        out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1];
+        out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1, Hr.scale, $('au-hair-scale').disabled];
         key('z');
-        out.relinkUndo = [Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-link').checked, $('au-hair-pct').disabled];
-        key('z'); key('z');
+        out.relinkUndo = [Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-link').checked, $('au-hair-pct').disabled, Hr.scale];
+        key('z'); key('z'); key('z');
         h1 = m.hist.length;
         link(true);
         out.relinkSame = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.headLink, m.hist.length - h1];
@@ -1822,10 +1848,11 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
     t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
     t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
-    t.eq('自動（頭像）：不連動時 scale% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
-    t.eq('自動（頭像）：頭、頭髮 pct 不同時頭像比例跟畫面上一樣', JSON.stringify(ah.ptRatio), 'true');
-    t.eq('自動（頭像）：打開連動頭髮對齊頭、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1]));
-    t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false]));
+    t.eq('自動（頭像）：不連動時存檔% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
+    t.eq('自動（頭像）：不連動時 scale 各改各的', JSON.stringify(ah.splitScale), JSON.stringify([0.5, 0.25, 0.5]));
+    t.eq('自動（頭像）：頭、頭髮存檔%／scale 不同時頭像比例跟畫面上一樣', JSON.stringify(ah.ptRatio), 'true');
+    t.eq('自動（頭像）：打開連動頭髮對齊頭（存檔%＋scale）、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1, 0.25, true]));
+    t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false, 0.5]));
     t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
     t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
     t.eq('自動（頭像）：頭像預覽照尺寸（正方形），不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 80, 100]));
