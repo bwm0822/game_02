@@ -55,10 +55,10 @@ export const FIELDS = {
     b: {label: '物理 b', type: 'obj', fields: LRTB},
     g: {label: '佔格 g', type: 'obj', fields: LRTB},
     z: {label: '互動區 z', type: 'obj', fields: LRTB},
-    body: {label: '身體', type: 'obj', fields: PART},
-    head: {label: '頭', type: 'obj', fields: PART},
-    hair: {label: '頭髮', type: 'obj', fields: PART},
-    hand: {label: '手', type: 'obj', fields: PART},
+    body: {label: '身體', type: 'list', part: true},
+    head: {label: '頭', type: 'list', part: true},
+    hair: {label: '頭髮', type: 'list', part: true},
+    hand: {label: '手', type: 'list', part: true},
     corpse: {label: '屍體圖', type: 'obj', fields: PART},
     inv: {label: '物品欄', type: 'inv'},
     schedule: {label: '作息', type: 'schedule'},
@@ -123,9 +123,9 @@ export const colDef = (c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?
 // ---------- 新角色 ----------
 const box = () => ({l: 0, r: 0, t: 32, b: 0});
 const HUMAN = () => ({faceR: true, anchor: {x: 0, y: 16}, w: 32, h: 64, b: box(), g: box(), z: box(),
-                      body: {sprite: 'body-man', scale: 0.25, y: 32}, hand: {sprite: 'hand-man', scale: 0.25, y: 32}});
+                      body: 'body-man', hand: 'hand-man'});
 const BEAST = () => ({faceR: false, anchor: {x: -16, y: 16}, w: 64, h: 64, b: box(), g: box(), z: box(),
-                      body: {sprite: 'animals:42', scale: 2, y: 32}, fall: 180});
+                      body: 'animals-42', fall: 180});
 const ATTRS = () => ({attrs: {atk: 5, def: 0}});
 
 export function template(kind)

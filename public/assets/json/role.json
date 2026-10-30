@@ -32,22 +32,9 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "body-man",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
-    "head": {
-      "sprite": "head-wick",
-      "scale": 0.25,
-      "x": -2,
-      "y": 4
-    },
+    "body": "body-man",
+    "hand": "hand-man",
+    "head": "head-wick",
     "inv": {
       "storage": {
         "capacity": 20
@@ -59,12 +46,7 @@
       "con": 10,
       "int": 10
     },
-    "hair": {
-      "sprite": "hair-wick",
-      "scale": 0.25,
-      "x": -1,
-      "y": 2
-    }
+    "hair": "hair-wick"
   },
   "mary": {
     "kind": "player",
@@ -100,33 +82,15 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "body-woman",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "body-woman",
+    "hand": "hand-man",
     "inv": {
       "storage": {
         "capacity": 20
       }
     },
-    "head": {
-      "sprite": "head-mary",
-      "scale": 0.25,
-      "x": -1,
-      "y": 2
-    },
-    "hair": {
-      "sprite": "hair-mary",
-      "scale": 0.25,
-      "x": -2,
-      "y": 4
-    }
+    "head": "head-mary",
+    "hair": "hair-mary"
   },
   "trump": {
     "kind": "npc",
@@ -163,11 +127,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "trump",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "trump",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -238,11 +198,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "melanie",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "melanie",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -314,16 +270,8 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "musk",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "musk",
+    "hand": "hand-man",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -410,11 +358,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "body-woman",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "body-woman",
     "stats": {
       "str": 10,
       "dex": 10,
@@ -448,18 +392,8 @@
         "map": "m_04x05/karen-home"
       }
     ],
-    "head": {
-      "sprite": "head-karen",
-      "scale": 0.25,
-      "x": -1,
-      "y": 2
-    },
-    "hair": {
-      "sprite": "hair-karen",
-      "scale": 0.25,
-      "x": -2,
-      "y": 4
-    },
+    "head": "head-karen",
+    "hair": "hair-karen",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -511,11 +445,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "xi",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "xi",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -597,11 +527,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "macron",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "macron",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -683,16 +609,8 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "rogue",
+    "hand": "hand-man",
     "inv": {
       "equips": [
         "sword-1",
@@ -774,16 +692,8 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "rogue",
+    "hand": "hand-man",
     "inv": {
       "equips": [
         "sword-1",
@@ -862,16 +772,8 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "rogue",
+    "hand": "hand-man",
     "inv": {
       "equips": [
         "dagger-1"
@@ -928,16 +830,8 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
-    "hand": {
-      "sprite": "hand-man",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "rogue",
+    "hand": "hand-man",
     "inv": {
       "equips": [
         "bow-1"
@@ -997,11 +891,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "monsters:0",
-      "scale": 2,
-      "y": 32
-    },
+    "body": "monsters-0",
     "attrs": {
       "atk": 5,
       "def": 0
@@ -1054,11 +944,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "animals:42",
-      "scale": 2,
-      "y": 32
-    },
+    "body": "animals-42",
     "fall": 180,
     "attrs": {
       "atk": 5,
@@ -1111,11 +997,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "animals:82",
-      "scale": 2,
-      "y": 32
-    },
+    "body": "animals-82",
     "fall": 180,
     "attrs": {
       "atk": 5,
@@ -1165,11 +1047,7 @@
       "t": 32,
       "b": 0
     },
-    "body": {
-      "sprite": "rogue",
-      "scale": 0.25,
-      "y": 32
-    },
+    "body": "rogue",
     "attrs": {
       "hpMax": 500,
       "def": 0,

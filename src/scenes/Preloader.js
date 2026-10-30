@@ -52,6 +52,7 @@ export class Preloader extends Scene
         this.load.json('local', 'json/local.json');
         this.load.json('item', 'json/item.json');
         this.load.json('role', 'json/role.json');
+        this.load.json('part', 'json/part.json');
         this.load.json('dialog', 'json/dialog.json');
         this.load.json('skill', 'json/ability.json');
         this.load.json('sk_tree', 'json/ab_tree.json');

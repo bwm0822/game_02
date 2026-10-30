@@ -185,12 +185,12 @@ run('role', async t => {
         const seen = await save('save');
         out.saved = [seen.length, JSON.parse(await disk()).npc_new?.kind, $('dirty').hidden];
         const ext = JSON.parse(await disk());
-        ext.wick.body.y = 30;
+        ext.wick.anchor.y = 30;
         await write(json, 'role.json', JSON.stringify(ext, null, 2));
         re.set('trump', ['gold'], 300);
         await save('merge', 'save');
         const after = JSON.parse(await disk());
-        out.merge = [after.wick.body.y, after.trump.gold];
+        out.merge = [after.wick.anchor.y, after.trump.gold];
         return out;
     });
 

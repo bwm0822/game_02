@@ -816,10 +816,11 @@ export class Doll extends Pic
     {
         this._shape.removeAll(true);
         const meta = owner?.bb.meta ?? {};
-        if(meta.body) {this._addPart(meta.body, PART_DEPTH[GM.PART.BODY]);}
-        if(meta.head) {this._addPart(meta.head, PART_DEPTH[GM.PART.HEAD]);}
-        const hair = meta.hair ? this._addPart(meta.hair, PART_DEPTH[GM.PART.HAIR]) : [];
-        if(meta.hand) {this._addPart(meta.hand, PART_DEPTH[GM.PART.HAND]);}
+        const part = (k)=>DB.rolePart(meta, k);
+        if(part('body')) {this._addPart(part('body'), PART_DEPTH[GM.PART.BODY]);}
+        if(part('head')) {this._addPart(part('head'), PART_DEPTH[GM.PART.HEAD]);}
+        const hair = part('hair') ? this._addPart(part('hair'), PART_DEPTH[GM.PART.HAIR]) : [];
+        if(part('hand')) {this._addPart(part('hand'), PART_DEPTH[GM.PART.HAND]);}
         this._fit();
 
         let hideHair = false;

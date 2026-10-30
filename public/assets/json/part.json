@@ -1,0 +1,116 @@
+{
+  "animals-42": {
+    "kind": "body",
+    "sprite": "animals:42",
+    "scale": 2,
+    "y": 32
+  },
+  "animals-82": {
+    "kind": "body",
+    "sprite": "animals:82",
+    "scale": 2,
+    "y": 32
+  },
+  "body-man": {
+    "kind": "body",
+    "sprite": "body-man",
+    "scale": 0.25,
+    "y": 32
+  },
+  "body-woman": {
+    "kind": "body",
+    "sprite": "body-woman",
+    "scale": 0.25,
+    "y": 32
+  },
+  "macron": {
+    "kind": "body",
+    "sprite": "macron",
+    "scale": 0.25,
+    "y": 32
+  },
+  "melanie": {
+    "kind": "body",
+    "sprite": "melanie",
+    "scale": 0.25,
+    "y": 32
+  },
+  "monsters-0": {
+    "kind": "body",
+    "sprite": "monsters:0",
+    "scale": 2,
+    "y": 32
+  },
+  "musk": {
+    "kind": "body",
+    "sprite": "musk",
+    "scale": 0.25,
+    "y": 32
+  },
+  "rogue": {
+    "kind": "body",
+    "sprite": "rogue",
+    "scale": 0.25,
+    "y": 32
+  },
+  "trump": {
+    "kind": "body",
+    "sprite": "trump",
+    "scale": 0.25,
+    "y": 32
+  },
+  "xi": {
+    "kind": "body",
+    "sprite": "xi",
+    "scale": 0.25,
+    "y": 32
+  },
+  "hand-man": {
+    "kind": "hand",
+    "sprite": "hand-man",
+    "scale": 0.25,
+    "y": 32
+  },
+  "head-karen": {
+    "kind": "head",
+    "sprite": "head-karen",
+    "scale": 0.25,
+    "x": -1,
+    "y": 2
+  },
+  "head-mary": {
+    "kind": "head",
+    "sprite": "head-mary",
+    "scale": 0.25,
+    "x": -1,
+    "y": 2
+  },
+  "head-wick": {
+    "kind": "head",
+    "sprite": "head-wick",
+    "scale": 0.25,
+    "x": -2,
+    "y": 4
+  },
+  "hair-karen": {
+    "kind": "hair",
+    "sprite": "hair-karen",
+    "scale": 0.25,
+    "x": -2,
+    "y": 4
+  },
+  "hair-mary": {
+    "kind": "hair",
+    "sprite": "hair-mary",
+    "scale": 0.25,
+    "x": -2,
+    "y": 4
+  },
+  "hair-wick": {
+    "kind": "hair",
+    "sprite": "hair-wick",
+    "scale": 0.25,
+    "x": -1,
+    "y": 2
+  }
+}

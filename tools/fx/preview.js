@@ -42,9 +42,9 @@ function createGame()
     return box;
 }
 
-async function roleCanvas(r, items)
+async function roleCanvas(r, items, pdb)
 {
-    const parts = partsOf(r, items);
+    const parts = partsOf(r, items, pdb);
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
     const cv = document.createElement('canvas');
     cv.width = cv.height = ROLE_CV;
@@ -73,7 +73,7 @@ async function buildRole()
     if (!r) return;
     // 連續呼叫時（換特效／換角色）只留最後一次，不然 await 期間會各建一份、key 撞名
     const seq = st.buildSeq = (st.buildSeq ?? 0) + 1;
-    const cv = await roleCanvas(r, st.ext.items);
+    const cv = await roleCanvas(r, st.ext.items, st.ext.parts);
     if (seq !== st.buildSeq) return;
     const key = `role-${P.role}-${seq}`;
     scene.textures.addCanvas(key, cv);

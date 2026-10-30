@@ -6,6 +6,7 @@ import {COM_Pickable} from '../components/com_pickable.js'
 import {GameObject} from '../core/gameobject.js'
 import DB from '../data/db.js'
 import {GM} from '../core/setting.js'
+import {ROLE_PARTS} from '../core/equip.js'
 import Role from './role.js'
 
 //--------------------------------------------------
@@ -79,7 +80,7 @@ export default class Dummy extends Role
     static ghost(scene, obj)
     {
         const meta = DB.role(obj.id);
-        const sps = [meta.body, meta.head, meta.hair, meta.hand].filter(p=>p?.sprite).map(p=>{
+        const sps = ROLE_PARTS.map(k=>DB.rolePart(meta, k)).filter(p=>p?.sprite).map(p=>{
             const [key, frame] = p.sprite.split(':');
             return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
                 .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0);

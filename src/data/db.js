@@ -1,6 +1,8 @@
 import {GM} from '../core/setting.js'
 import {tr} from '../infra/lang.js'
 import {flattenStory, mergeDialog} from './storydata.js'
+import {partFor} from '../core/equip.js'
+import {T, dlog} from '../core/debug.js'
 
 export default class DB
 {
@@ -31,6 +33,8 @@ export default class DB
 
         this._roleDB = scene.cache.json.get('role');
         this._localize(this._roleDB, 'role');
+
+        this._partDB = scene.cache.json.get('part');
 
         this._dialogDB = mergeDialog(scene.cache.json.get('dialog'), this._roleDB);
 
@@ -78,6 +82,16 @@ export default class DB
 
     // 可選的玩家角色，順序照 role.json
     static playerIds() { return this.roleIds().filter(id=>this._roleDB[id].kind==='player'); }
+
+    static part(id) { return this._partDB?.[id]; }
+
+    // 角色的部位（role.body 之類寫的是 part.json 的 id）：女角套 f；查不到 id 就不畫
+    static rolePart(meta, kind)
+    {
+        const p = partFor(this._partDB, meta, kind);
+        if(meta?.[kind] && !p) {dlog(T.WARN)(`part.json 沒有 ${meta[kind]}（${kind}）`);}
+        return p;
+    }
 
     static dialog(id) {return this._dialogDB?.[id]; }
 

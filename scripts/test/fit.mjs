@@ -25,6 +25,7 @@ run('fit', async t => {
 
         const origRole = await (await fetch('/assets/json/role.json')).text();
         const origItem = await (await fetch('/assets/json/item.json')).text();
+        const origPart = await (await fetch('/assets/json/part.json')).text();
         // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
         const origAnim = await (await fetch('/scripts/test/fixtures/anim.json')).text();
         const opfs = await navigator.storage.getDirectory();
@@ -36,6 +37,7 @@ run('fit', async t => {
         const disk = async (f) => (await (await json.getFileHandle(f)).getFile()).text();
         await write(json, 'role.json', origRole);
         await write(json, 'item.json', origItem);
+        await write(json, 'part.json', origPart);
         await write(json, 'anim.json', origAnim);
 
         await F.setRoot(proj);
@@ -83,20 +85,21 @@ run('fit', async t => {
         out.alpha.push('CAT_HELMET' in S.alpha);
         F.select('guard-1');
 
-        // 改數字：裝備寫 item.json、部件寫 role.json、清空刪 key、undo 一起退
+        // 改數字：裝備寫 item.json、部件寫 part.json（標共用幾個角色）、清空刪 key、undo 一起退
         fire('item.json|helmet_01|equip.y', '5');
         out.equipY = S.doc['item.json'].data.helmet_01.equip.y;
-        fire('role.json|guard-1|body.x', '-2');
-        out.bodyX = S.doc['role.json'].data['guard-1'].body.x;
+        out.shared = document.querySelector('#view .shared')?.textContent;
+        fire('part.json|rogue|x', '-2');
+        out.bodyX = S.doc['part.json'].data.rogue.x;
         fire('item.json|helmet_01|equip.scale', '');
         out.cleared = 'scale' in S.doc['item.json'].data.helmet_01.equip;
         fire('item.json|helmet_01|equip.x', 'abc');
         out.badNum = 'x' in S.doc['item.json'].data.helmet_01.equip;
         out.dirty = [!$('dirty').hidden, !!document.querySelector('#list .item.sel .mark')];
         F.undo(); F.undo();
-        out.undo = [S.doc['item.json'].data.helmet_01.equip.y, S.doc['role.json'].data['guard-1'].body.x];
+        out.undo = [S.doc['item.json'].data.helmet_01.equip.y, S.doc['part.json'].data.rogue.x];
         F.redo();
-        out.redo = S.doc['role.json'].data['guard-1'].body.x;
+        out.redo = S.doc['part.json'].data.rogue.x;
 
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
@@ -251,7 +254,7 @@ run('fit', async t => {
 
         // 存檔：只寫有改的檔；外部修改合併
         const seen = await save();
-        out.saved = [seen.length, JSON.parse(await disk('role.json'))['guard-1'].body.x, (await disk('item.json')) === origItem, $('dirty').hidden];
+        out.saved = [seen.length, JSON.parse(await disk('part.json')).rogue.x, (await disk('item.json')) === origItem, $('dirty').hidden];
         const ext = JSON.parse(await disk('item.json'));
         ext.boots_01.gold = 999;
         await write(json, 'item.json', JSON.stringify(ext, null, 2));
@@ -288,7 +291,8 @@ run('fit', async t => {
     t.eq('點 icon 穿上、關窗、選中該格', JSON.stringify(r.boots), JSON.stringify(['boots_01', false, 'CAT_BOOTS', true]));
     t.eq('卸下', r.unequip, false);
     t.eq('改裝備寫 item.json', r.equipY, 5);
-    t.eq('改部件寫 role.json', r.bodyX, -2);
+    t.eq('改部件寫 part.json', r.bodyX, -2);
+    t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
     t.eq('清空刪 key', r.cleared, false);
     t.eq('不是數字不寫', r.badNum, false);
     t.check('未存標記', r.dirty[0] && r.dirty[1]);

@@ -882,10 +882,11 @@ export class RoleView extends View
         const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
-        if(meta.body) {this._addPart(meta.body, GM.PART.BODY);}
-        if(meta.head) {this._addPart(meta.head, GM.PART.HEAD);}
-        this._hair = meta.hair ? this._addPart(meta.hair, GM.PART.HAIR) : [];
-        if(meta.hand) {this._addPart(meta.hand, GM.PART.HAND);}
+        const part = (k)=>DB.rolePart(meta, k);
+        if(part('body')) {this._addPart(part('body'), GM.PART.BODY);}
+        if(part('head')) {this._addPart(part('head'), GM.PART.HEAD);}
+        this._hair = part('hair') ? this._addPart(part('hair'), GM.PART.HAIR) : [];
+        if(part('hand')) {this._addPart(part('hand'), GM.PART.HAND);}
         this._equips = []; 
         
         // set flipX

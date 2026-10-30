@@ -16,10 +16,10 @@ const D = createDoc({
     external: '可能是紙娃娃「存到 role.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (file === 'item.json') loadRefs().then(render);},
+    onSaved: (file) => {if (file === 'item.json' || file === 'part.json') loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
-S.ext = {items: {}, abilities: {}, maps: {}};    // 唯讀參考資料：item.json、ability.json、navgraph.json 的「地圖 → 物件名稱」
+S.ext = {items: {}, abilities: {}, maps: {}, parts: {}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
 S.loc = '';                                      // 總覽表 NPC 頁的地點篩選
 S.secOpen = {};                                  // 表單段落開關（段名 → bool，預設收合；記在頁面，換角色保持）
 const F = createForm(D);
@@ -41,6 +41,8 @@ function checkVal(def, v, where, out)
     else if (t === 'enum' && !def.options.includes(v)) out.push(`${where} 不認識的值：${v}`);
     else if (t === 'sprite' || t === 'icon') {const e = IC.check(v); if (e) out.push(`${where}：${e}`);}
     else if (t === 'itemref' && !S.ext.items[v]) out.push(`${where} 指到不存在的道具：${v}`);
+    else if (def.part && !S.ext.parts[v]) out.push(`${where} 指到 part.json 沒有的部位：${v}`);
+    else if (def.part && S.ext.parts[v].kind !== where) out.push(`${where} 指到的部位是 ${S.ext.parts[v].kind}：${v}`);
     else if (t === 'tags')
     {
         if (!Array.isArray(v)) out.push(`${where} 應該是陣列`);
@@ -352,7 +354,7 @@ function renderForm()
                         render();
                     }}, h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
                 otherBox(id, r))),
-        previewEl(r, S.ext.items)));
+        previewEl(r, S.ext.items, S.ext.parts)));
 }
 
 // ---------- 總覽表 ----------
@@ -396,6 +398,7 @@ function draw()
         job: [...SC.JOBS, ...rs.map(r => r.job)],
         loc: rs.map(r => r.loc),
         maps: Object.keys(S.ext.maps),
+        ...Object.fromEntries(['body', 'head', 'hair', 'hand'].map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k)])),
         ...Object.fromEntries(Object.entries(S.ext.maps).map(([m, names]) => [`nav-${m}`, names])),
     }, {items: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
 
@@ -423,14 +426,14 @@ function draw()
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
-    const [items, abilities, nav] = await Promise.all([get('item.json'), get('ability.json'), get('navgraph.json')]);
+    const [items, abilities, nav, parts] = await Promise.all([get('item.json'), get('ability.json'), get('navgraph.json'), get('part.json')]);
     const maps = {};
     for (const key of Object.keys(nav.nodes ?? {}))
     {
         const i = key.indexOf(':');
         (maps[key.slice(0, i)] ??= []).push(key.slice(i + 1));
     }
-    Object.assign(S.ext, {items, abilities, maps});
+    Object.assign(S.ext, {items, abilities, maps, parts});
 }
 
 (async () => {

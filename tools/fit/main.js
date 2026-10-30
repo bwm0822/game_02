@@ -1,6 +1,6 @@
-// 試穿：選紙娃娃型角色、五格各挑一件裝備（只是試穿，不寫回 inv.equips），用數字調 body/head/hand 跟裝備 equip 的擺放
+// 試穿：選紙娃娃型角色、五格各挑一件裝備（只是試穿，不寫回 inv.equips），用數字調部位（part.json，全角色共用）跟裝備 equip 的擺放
 // 動畫模式編 anim.json（全武器共用的武器動畫）：畫布拖武器／旋轉把手／支點，時間軸拖影格／ready／hit
-// 同時編 role.json、item.json、anim.json：undo 三份一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
+// 同時編 role.json、part.json、item.json、anim.json：undo 一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
@@ -11,9 +11,9 @@ import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
 import {DEPTH, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor} from '../../src/core/equip.js';
+import {equipFor, partFor} from '../../src/core/equip.js';
 
-const FILES = ['role.json', 'item.json', 'anim.json'];
+const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
@@ -54,11 +54,12 @@ function setBg(c)
 const F = createFold();
 
 const roles = () => S.doc['role.json'].data;
+const parts = () => S.doc['part.json'].data;
 const items = () => S.doc['item.json'].data;
 const anims = () => S.doc['anim.json'].data;
 const role = () => roles()[S.rid];
 const anim = () => anims()[S.aid];
-const isDoll = (r) => isObj(r.head) || isObj(r.hand);
+const isDoll = (r) => !!(r.head || r.hand);
 const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
 const isDirty = () => FILES.some(dirtyOf);
 // 女角（sex 不是 m）的裝備擺放：equip[sex] 蓋掉 scale/x/y（同遊戲 equipFor）；數字欄改的是 equip[sex]，第一次改從基準複製
@@ -267,7 +268,10 @@ function render()
 function drawList()
 {
     const ids = Object.keys(roles()).filter(id => isDoll(roles()[id]));
-    const saved = S.doc['role.json'].saved;
+    const saved = S.doc['role.json'].saved, psaved = S.doc['part.json'].saved;
+    // 用到的部位改過也算
+    const roleDirty = (id) => str(roles()[id]) !== str(saved[id])
+        || PARTS.some(([k]) => {const pid = roles()[id][k]; return pid && str(parts()[pid]) !== str(psaved[pid]);});
     const groups = [...KINDS, ''].map(k => [k, ids.filter(id => (roles()[id].kind ?? '') === k)]).filter(([, g]) => g.length);
     // 摺起來的組裡不留選取（同 views.js 的 renderList）
     const mine = groups.find(([, g]) => g.includes(S.rid))?.[0];
@@ -280,7 +284,7 @@ function drawList()
             IC.iconEl(roles()[id].icon, 24),
             h('span', {class: 'id'}, id),
             h('span', {class: 'lab'}, roles()[id].lab ?? ''),
-            str(roles()[id]) !== str(saved[id]) && h('span', {class: 'mark dirty'}, '●'))),
+            roleDirty(id) && h('span', {class: 'mark dirty'}, '●'))),
     ]).flat(Infinity));
 }
 
@@ -301,30 +305,36 @@ function numInput(file, id, path, ph, {req, after} = {})
         }});
 }
 
-const numCells = (file, id, base) => NUMS.map(([k, ph]) => h('td', null, numInput(file, id, [...base, k], ph)));
 
-function equipCells(id)
+// file 裡 id 那筆的 base（裝備是 ['equip']、部位是 []）：女角的 scale/x/y 改 base[sx]，第一次改從基準複製
+function sexCells(file, id, base)
 {
-    const sx = sexKey(), e = items()[id].equip ?? {}, had = isObj(e[sx]);
+    const sx = sexKey(), e = getAt(S.doc[file].data[id], base) ?? {}, had = isObj(e[sx]);
     const fill = () => {
-        const eq = items()[id].equip, o = eq[sx];
+        const eq = getAt(S.doc[file].data[id], base), o = eq[sx];
         eq[sx] = Object.fromEntries(SEX_NUMS.map(k => [k, o[k] ?? e[k]]).filter(([, v]) => v !== undefined));
     };
     return NUMS.map(([k, ph]) => h('td', null, sx && SEX_NUMS.includes(k)
-        ? numInput('item.json', id, ['equip', sx, k], String(e[k] ?? ph), {after: (n) => !had && n !== undefined && fill()})
-        : numInput('item.json', id, ['equip', k], ph)));
+        ? numInput(file, id, [...base, sx, k], String(e[k] ?? ph), {after: (n) => !had && n !== undefined && fill()})
+        : numInput(file, id, [...base, k], ph)));
 }
+
+const sexHead = (first) => {
+    const sx = sexKey();
+    return h('tr', null, first.map(t => h('th', null, t)), NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（${sx}）` : k)));
+};
 
 function equipTable(id)
 {
     const sx = sexKey(), has = sx && isObj(items()[id].equip?.[sx]);
     return [
-        h('table', {class: 'fit'}, h('tr', null, NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（${sx}）` : k))), h('tr', null, equipCells(id))),
+        h('table', {class: 'fit'}, sexHead([]), h('tr', null, sexCells('item.json', id, ['equip']))),
         sx && h('div', {class: 'sexnote dim'}, has ? `scale／x／y 是 equip.${sx}（這個性別專用）` : `沒有 equip.${sx}，顯示的是共用值；改了就建立 equip.${sx}`,
             has && h('button', {class: 'delsex', onclick: () => commit(() => {delete items()[id].equip[sx];})}, '刪除女版')),
     ];
 }
-const head = (first) => h('tr', null, h('th', null, first), h('th', null, '圖／道具'), NUMS.map(([k]) => h('th', null, k)));
+
+const usersOf = (pid) => Object.keys(roles()).filter(rid => PARTS.some(([k]) => roles()[rid][k] === pid));
 
 function drawView()
 {
@@ -346,14 +356,20 @@ function drawView()
 
 function fitView(r, slots)
 {
-    const partRows = PARTS.filter(([k]) => isObj(r[k])).map(([k, name]) => h('tr', null,
-        h('td', {class: 'k'}, name),
-        h('td', null, h('span', {class: 'sprite'}, r[k].sprite ?? ''), k === 'hair' && hairHidden() && h('span', {class: 'dim hidden-hair'}, '（目前被頭盔隱藏）')),
-        numCells('role.json', S.rid, [k])));
+    const partRows = PARTS.filter(([k]) => r[k]).map(([k, name]) => {
+        const pid = r[k], p = parts()[pid], n = usersOf(pid).length;
+        return h('tr', null,
+            h('td', {class: 'k'}, name),
+            h('td', null, h('span', {class: 'sprite'}, pid),
+                !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
+                n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
+                k === 'hair' && hairHidden() && h('span', {class: 'dim hidden-hair'}, '（目前被頭盔隱藏）')),
+            p ? sexCells('part.json', pid, []) : NUMS.map(() => h('td')));
+    });
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
     return [
-        h('div', {class: 'title'}, '角色部件（role.json）'),
-        h('table', {class: 'fit'}, head('部件'), partRows),
+        h('div', {class: 'title'}, '角色部件（part.json，用到同一個部位的角色都會一起變）'),
+        h('table', {class: 'fit'}, sexHead(['部件', '部位']), partRows),
         h('div', {class: 'title'}, '裝備（item.json，全角色共用；換裝只是試穿，不會寫回角色）'),
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
@@ -557,7 +573,7 @@ function partsOf(r)
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, alpha});
         if (p.back) out.push({p, sprite: p.back, d: DEPTH.back, alpha});
     };
-    for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(r[k], DEPTH[k]);
+    for (const [k] of PARTS) if (k !== 'hair' || !hairHidden()) add(partFor(parts(), r, k), DEPTH[k]);
     for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat);
     return out.sort((a, b) => a.d - b.d);
 }

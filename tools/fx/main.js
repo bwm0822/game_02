@@ -16,7 +16,7 @@ const D = createDoc({
     external: '可能是手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json'].includes(file)) loadRefs().then(render);},
+    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json', 'part.json'].includes(file)) loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
 S.refs = {};    // 效果 id → [{tab: 'ability'|'item', id, type}]，type:'action' 是瞬間效果不播特效，不收
@@ -344,12 +344,12 @@ function collectRefs(data, tab, out)
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
-    const [abilities, items, roles] = await Promise.all([get('ability.json'), get('item.json'), get('role.json')]);
+    const [abilities, items, roles, parts] = await Promise.all([get('ability.json'), get('item.json'), get('role.json'), get('part.json')]);
     const refs = {};
     collectRefs(abilities, 'ability', refs);
     collectRefs(items, 'item', refs);
     S.refs = refs;
-    Object.assign(S.ext, {roles, items, abilities});
+    Object.assign(S.ext, {roles, items, abilities, parts});
 }
 
 (async () => {

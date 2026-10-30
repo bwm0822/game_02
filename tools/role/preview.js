@@ -4,7 +4,7 @@ import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {DEPTH} from './schema.js';
-import {equipFor} from '../../src/core/equip.js';
+import {equipFor, partFor} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false};   // 開關跨角色保留
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -16,7 +16,8 @@ function axis(a, b, total)
 }
 
 // 回傳要畫的部件，照遊戲的順序（body、head、hair、hand、裝備）再依 depth 穩定排序；裝備有 hideHair 就不畫 hair
-export function partsOf(r, items)
+// 角色的部位是 part.json 的 id（parts＝part.json）
+export function partsOf(r, items, parts)
 {
     const out = [];
     const add = (p, d) => {
@@ -26,18 +27,19 @@ export function partsOf(r, items)
         if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
     };
     const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
-    add(r.body, DEPTH.body); add(r.head, DEPTH.head);
-    if (!equips.some(it => it.equip.hideHair)) add(r.hair, DEPTH.hair);
-    add(r.hand, DEPTH.hand);
+    const part = (k) => partFor(parts, r, k);
+    add(part('body'), DEPTH.body); add(part('head'), DEPTH.head);
+    if (!equips.some(it => it.equip.hideHair)) add(part('hair'), DEPTH.hair);
+    add(part('hand'), DEPTH.hand);
     for (const it of equips) add(equipFor(it.equip, r.sex), DEPTH[it.cat]);
     return out.sort((a, b) => a.d - b.d);
 }
 
-async function draw(cv, r, items)
+async function draw(cv, r, items, pdb)
 {
     const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
     const W = Math.max(w, 64) + 48, H = Math.max(hh, 64) + 48, K = P.zoom;
-    const parts = partsOf(r, items);
+    const parts = partsOf(r, items, pdb);
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
     cv.width = W * K; cv.height = H * K;
     const g = cv.getContext('2d');
@@ -88,10 +90,10 @@ async function draw(cv, r, items)
     cv.dataset.drawn = n;
 }
 
-export function previewEl(r, items)
+export function previewEl(r, items, parts)
 {
     const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）'});
-    const redraw = () => draw(cv, r, items);
+    const redraw = () => draw(cv, r, items, parts);
     const check = (k, text, color) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: P[k], onchange: e => {P[k] = e.target.checked; redraw();}}), text);
     redraw();
