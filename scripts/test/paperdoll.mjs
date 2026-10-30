@@ -826,8 +826,13 @@ run('paperdoll', async t => {
         const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
         const find = (n) => pd.S.layers.find(L => L.name === n);
         const px = (L, x, y) => [...L.canvas.getContext('2d').getImageData(x, y, 1, 1).data].join();
+        // 設定的專案根目錄借放在 assets/ 底下：放在 OPFS 根目錄會多一列檔案樹，後面的分隔線拖曳測試會失準
+        const opfs = await (await navigator.storage.getDirectory()).getDirectoryHandle('assets');
+        const disk = async () => JSON.parse(await (await (await (await opfs.getDirectoryHandle('tools')).getFileHandle('settings.json')).getFile()).text());
+        await pd.ST.load(opfs);
         pd.autoSet({helmet: {pct: 50, x: -2, y: 2}});
-        out.stored = JSON.parse(localStorage.getItem('paperdoll.auto')).helmet.pct;
+        await pd.ST.flush();
+        out.stored = [(await disk()).auto.helmet, Object.keys(JSON.parse(localStorage.getItem('paperdoll.auto'))).sort().join()];
 
         pd.setMode('auto');
         out.enter = [pd.S.mode.type, pd.S.layers.length === before, S.visible, $('modeAuto').querySelector('.ok').disabled];
@@ -993,12 +998,14 @@ run('paperdoll', async t => {
         pd.cancelMode();
 
         pd.autoSet(null);
-        out.reset = [JSON.parse(localStorage.getItem('paperdoll.auto')).helmet.pct, $('au-helmet-pct').value];
+        await pd.ST.flush();
+        out.reset = [JSON.stringify(await disk()), $('au-helmet-pct').value];
         pd.removeLayer(S);
         pd.removeLayer(O);
         return out;
     });
-    t.eq('自動：數字寫進 localStorage', au.stored, 50);
+    t.eq('自動：數字只存跟內建不一樣的進 tools/settings.json、localStorage 只剩介面狀態', JSON.stringify(au.stored),
+         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,kind,saveF,split']));
     t.eq('自動：進模式什麼都不動、確定可以按', JSON.stringify(au.enter), JSON.stringify(['auto', true, true, false]));
     t.eq('自動：還沒拆時取消＝離開', JSON.stringify(au.revokeEarly), JSON.stringify(['move', true]));
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
@@ -1044,7 +1051,7 @@ run('paperdoll', async t => {
     t.eq('自動：刪掉的零件不會被 undo 復活', JSON.stringify(au.delNoRevive), JSON.stringify([false, true]));
     t.eq('自動：零件刪光就離開、原圖維持隱藏', JSON.stringify(au.delAll), JSON.stringify(['move', false]));
     t.eq('自動：零件刪光後可以再拆', JSON.stringify(au.again), JSON.stringify(['auto', null]));
-    t.eq('自動：還原預設', JSON.stringify(au.reset), JSON.stringify([28, '28']));
+    t.eq('自動：還原預設（settings.json 變空）', JSON.stringify(au.reset), JSON.stringify(['{}', '28']));
 
     // 護具男女兩組數字：header 男｜女切換、拆過就照新那組重擺（一步 undo 連性別一起退）、還原預設只還原目前性別
     const sx = await ev(async () => {
@@ -1081,7 +1088,12 @@ run('paperdoll', async t => {
         out.reset = [pd.S.auto.f.helmet.scale, pd.S.auto.helmet.pct, H.canvas.width, H.x];
         pd.cancelMode();
         const proj = pd.projectData(pd.S.layers).settings;
-        out.saved = [proj.doll.sex, proj.auto.f.helmet.scale, 'pct' in proj.auto.f.helmet];
+        out.saved = [proj.doll.sex, Object.keys(proj.auto).sort().join()];
+        // 舊專案的 auto 有數字：開的時候忽略，只拿介面狀態
+        const x0 = pd.S.auto.helmet.x;
+        pd.applySettings({auto: {helmet: {pct: 1, x: 99}, kind: 'head'}});
+        out.oldProj = [pd.S.auto.helmet.x === x0, pd.S.auto.kind];
+        pd.applySettings({auto: {kind: 'armor'}});
         pd.setDoll({sex: 'm'});
         pd.autoSet(null);
         Object.assign(pd.S, {layers: [], active: null});
@@ -1097,7 +1109,8 @@ run('paperdoll', async t => {
     t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3]));
     t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
-    t.eq('男女：性別跟兩組數字存進專案、女版沒有 pct', JSON.stringify(sx.saved), JSON.stringify(['f', 0.25, false]));
+    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,kind,saveF,split']));
+    t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
     const ac = await ev(async () => {

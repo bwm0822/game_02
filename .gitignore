@@ -30,6 +30,7 @@ __pycache__
 ~*.xlsx
 ~*.xlsm
 images/
+tools/settings.json
 
 # claude code local settings
 .claude/settings.local.json

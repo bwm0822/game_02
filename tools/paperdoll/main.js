@@ -2,6 +2,8 @@ import {History} from './history.js';
 import * as PX from './pixels.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
+import * as ST from '../common/settings.js';
+import {WCLS} from '../common/settings.js';
 import {KINDS, KIND_NAMES} from '../role/schema.js';
 
 const $ = (id) => document.getElementById(id);
@@ -302,27 +304,19 @@ const AUTO_KINDS = ['armor', 'weapon', 'head'];
 // pct＝存檔%（原圖縮成幾 % 烤成 PNG），scale＝遊戲的 equip.scale／role 的 head.scale…；畫面大小＝原圖 × pct% × scale，兩個不互相換算
 const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y']};
 const AUTO_FF = ['scale', 'x', 'y'];
-const AUTO_DEF = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33},
-                  weapon: {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}, head: {pct: 18, scale: 0.25, x: -2, y: 4}, hair: {pct: 18, scale: 0.25, x: -1, y: 2}};
-const AUTO_PORTRAIT = {size: 100, fill: 100};
+// 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
+const AUTO_DEF = ST.DEF.auto;
 const PT_F = ['size', 'fill'];
 // 舊格式 {w, h, fill}：w 當 size、fill 重設
-const ptFrom = (p) => p && 'w' in p ? {size: p.w, fill: AUTO_PORTRAIT.fill} : {...AUTO_PORTRAIT, ...p};
+const ptFrom = (p) => p && 'w' in p ? {size: p.w, fill: AUTO_DEF.portrait.fill} : {...AUTO_DEF.portrait, ...p};
 const AUTO_KEY = 'paperdoll.auto';
+const AUTO_UI = ['cls', 'split', 'kind', 'headLink', 'saveF'];
+const AUTO_NUM = [...AUTO_PARTS.filter(P => P.kind !== 'weapon').map(P => P.key), 'weapon', 'portrait', 'f'];
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
-// 分類的內建預設＝AUTO_DEF.weapon 蓋上 WCLS 第三欄；舊格式 weapon 直接放數字：複製到每個分類
-const WCLS = [
-    ['sword', '劍', {pct: 12, x: -6, y: 17, a: 60}],
-    ['axe', '斧', {pct: 12, x: -6, y: 17, a: 60, ox: 0.3}],
-    ['hammer', '錘', {x: -6, y: 17, a: 60}],
-    ['dagger', '匕首', {x: 0, y: 16, a: 70, oy: 0.75}],
-    ['staff', '法杖', {pct: 15, x: -6, y: 17, a: 60, oy: 0.7}],
-    ['bow', '弓', {pct: 12, x: 5, y: 17, a: 60, ox: 0.7, oy: 0.5}],
-    ['default', '預設', {}],
-];
+// 舊格式 weapon 直接放數字：複製到每個分類
 const wclsOk = (c) => WCLS.some(([k]) => k === c) ? c : 'default';
 const wclsOf = (name) => wclsOk(name?.split(/[-_]/)[0]);
-const wclsDef = (c) => ({...AUTO_DEF.weapon, ...WCLS.find(([k]) => k === c)[2]});
+const wclsDef = (c) => AUTO_DEF.weapon[c];
 const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k), ...(w && 'pct' in w ? w : w?.[k])}]));
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
@@ -333,7 +327,7 @@ const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...
 // 舊格式沒有 scale（當時固定 0.25）；女版以前有自己的 pct，換成同一張 PNG 的 scale＝0.25 × 女pct ÷ 男pct
 function femaleFrom(P, v)
 {
-    const d = AUTO_DEF[P.key], o = v?.f?.[P.key], pct = v?.[P.key]?.pct ?? d.pct;
+    const d = AUTO_DEF.f[P.key], o = v?.f?.[P.key], pct = v?.[P.key]?.pct ?? AUTO_DEF[P.key].pct;
     return {scale: o?.scale ?? round(d.scale * (o?.pct ?? pct) / pct, 10000), x: o?.x ?? d.x, y: o?.y ?? d.y};
 }
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
@@ -350,11 +344,16 @@ function autoLoad()
     catch {return null;}
 }
 
+// settings.json 還沒讀進來前不寫：localStorage 舊的數字要留著等第一次讀檔時搬過去
 function autoSet(v)
 {
     S.auto = autoFrom(v);
-    try {localStorage.setItem(AUTO_KEY, JSON.stringify(S.auto));}
-    catch {}
+    if (ST.ready())
+    {
+        try {localStorage.setItem(AUTO_KEY, JSON.stringify(pickKeys(S.auto, AUTO_UI)));}
+        catch {}
+        ST.set('auto', pickKeys(S.auto, AUTO_NUM));
+    }
     for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     for (const f of PT_F) $(`au-pt-${f}`).value = S.auto.portrait[f];
     $('au-link').checked = S.auto.headLink;
@@ -2150,8 +2149,7 @@ function setRgb(px)
 
 let drag = null;
 // 拖曳、方向鍵以 0.25 遊戲單位為一格（scale 0.25 的圖剛好 1 像素）
-const STEP = 0.25;
-const onStep = (v) => Math.round(v / STEP) * STEP;
+const onStep = (v) => Math.round(v / ST.step('xy')) * ST.step('xy');
 
 cv.addEventListener('pointerdown', e => {
     cv.setPointerCapture(e.pointerId);
@@ -2403,7 +2401,7 @@ window.addEventListener('keydown', e => {
     if (d && part)
     {
         e.preventDefault();
-        const step = STEP * (e.shiftKey ? 10 : 1);
+        const step = ST.step('xy') * (e.shiftKey ? 10 : 1);
         autoMove(m, part, round(L.x + d[0] * step), round(L.y + d[1] * step));
         autoSave(part);
         refreshProps();
@@ -2412,7 +2410,7 @@ window.addEventListener('keydown', e => {
     else if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
     {
         e.preventDefault();
-        const step = STEP * (e.shiftKey ? 10 : 1);
+        const step = ST.step('xy') * (e.shiftKey ? 10 : 1);
         warpNudge(S.mode, d[0] * step, d[1] * step);
         refreshModePanel();
         dirty();
@@ -2420,7 +2418,7 @@ window.addEventListener('keydown', e => {
     else if (d && L && !L.locked && (S.mode.type === 'move' || S.mode.type === 'scale'))
     {
         e.preventDefault();
-        const step = STEP * (e.shiftKey ? 10 : 1), G = S.mode.type === 'move' ? linked(L) : [L];
+        const step = ST.step('xy') * (e.shiftKey ? 10 : 1), G = S.mode.type === 'move' ? linked(L) : [L];
         if (S.mode.type === 'move') hist.push({group: G.map(M => hist.snap(M))});
         for (const M of G) Object.assign(M, {x: round(M.x + d[0] * step), y: round(M.y + d[1] * step)});
         refreshProps();
@@ -4447,7 +4445,7 @@ function projectData(layers)
 {
     return {
         version: 1,
-        settings: {showOrigin: $('showOrigin').checked, ref: {...S.ref}, trimT: trimT(), auto: S.auto, doll: {...S.doll}},
+        settings: {showOrigin: $('showOrigin').checked, ref: {...S.ref}, trimT: trimT(), auto: pickKeys(S.auto, AUTO_UI), doll: {...S.doll}},
         active: layers.indexOf(S.active),
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
@@ -4478,7 +4476,8 @@ function applySettings(s)
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
     if (s.doll) Object.assign(S.doll, s.doll);
-    autoSet(s.auto ?? S.auto);
+    // 舊專案的 auto 有整包數字：只拿介面狀態，數字以 settings.json 為準
+    autoSet({...S.auto, ...Object.fromEntries(AUTO_UI.filter(k => k in (s.auto ?? {})).map(k => [k, s.auto[k]]))});
 }
 
 async function saveProject()
@@ -4766,7 +4765,6 @@ $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', '
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
 const AUTO_LINK = ['pct', 'scale'];
-const AUTO_STEP = {pct: 0.25, scale: 0.01, x: STEP, y: STEP};
 const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的存檔%、scale 跟頭一樣，只能改頭那格'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
 for (const P of AUTO_PARTS)
@@ -4775,7 +4773,8 @@ for (const P of AUTO_PARTS)
     box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans(P.quad ? [P.quad] : []));
     for (const f of AUTO_F[P.kind])
     {
-        const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`, step: AUTO_STEP[f] ?? 'any'});
+        const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`});
+        inp.dataset.step = f;
         // 連動時改頭的存檔%／scale，頭髮設成一樣的值
         inp.onchange = () => {
             const v = +inp.value, m = S.mode, ok = Number.isFinite(v) && (!AUTO_LINK.includes(f) || v > 0);
@@ -4818,6 +4817,13 @@ for (const f of PT_F)
 }
 clsOpts($('auCls'));
 autoSet(autoLoad());
+ST.applySteps();
+// 別的分頁改了設定：數字換成檔案的，介面狀態照舊
+ST.onChange(() => {
+    autoSet({...S.auto, ...ST.get('auto')});
+    ST.applySteps();
+    refreshAll();
+});
 // 換分類：拆過就把那組數字套到武器上（記一步），沒拆只換顯示的數字
 $('auCls').onchange = () => {
     const m = S.mode, part = autoWeapon(m), cls = $('auCls').value;
@@ -4833,11 +4839,11 @@ $('auCls').onchange = () => {
 // 武器只還原目前分類，護具只還原護具目前性別那組（連頭盔拆法；女版的存檔% 跟男版共用，不動），頭像只還原頭像（連尺寸/%）
 $('auReset').onclick = () => {
     const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
-    const def = (P) => weapon ? wclsDef(S.auto.cls) : autoFemale(P) ? {...AUTO_DEF[P.key], pct: S.auto[P.key].pct} : AUTO_DEF[P.key];
+    const def = (P) => weapon ? wclsDef(S.auto.cls) : autoFemale(P) ? {...AUTO_DEF.f[P.key], pct: S.auto[P.key].pct} : AUTO_DEF[P.key];
     for (const part of m.parts ?? []) autoApply(m, part, def(part.P));
     autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))
                    : {...autoParts(kind).reduce((a, P) => autoWith(a, P, def(P)), S.auto),
-                      ...(kind === 'head' ? {portrait: AUTO_PORTRAIT, headLink: true} : {split: undefined})});
+                      ...(kind === 'head' ? {portrait: AUTO_DEF.portrait, headLink: true} : {split: undefined})});
     autoSpSync(m);
     refreshAll();
 };
@@ -4908,6 +4914,11 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
     refreshAll();
     SH.onProject(async (dir) => {
         await setAssets(dir).catch(e => status(e.message));
+        // 第一次沒有 settings.json：把 localStorage 裡舊的數字（開頁時已讀進 S.auto）寫過去
+        const had = await ST.load(dir).catch(e => {status(`tools/settings.json 讀不到：${e.message}`); return null;});
+        if (had !== null) autoSet(had ? {...S.auto, ...ST.get('auto')} : S.auto);
+        ST.applySteps();
+        refreshAll();
         const img = await FS.tryDir(dir, 'images');
         if (img) setRoot(img);
         else status(`「${dir.name}」裡沒有 images/（紙娃娃的工作資料夾）`);
@@ -4918,4 +4929,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData, applySettings, ST};

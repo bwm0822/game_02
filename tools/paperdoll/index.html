@@ -207,12 +207,12 @@
         <div class="title">屬性</div>
         <div id="props">
             <div id="pName" class="dim">（沒有選取圖層）</div>
-            <label>x <input id="pX" type="number" step="0.25"></label>
-            <label>y <input id="pY" type="number" step="0.25"></label>
-            <label>scale <input id="pS" type="number" step="0.01" min="0.0001"></label>
-            <label>a <input id="pA" type="number" step="any"></label>
-            <label>ox <input id="pOx" type="number" step="0.05"></label>
-            <label>oy <input id="pOy" type="number" step="0.05"></label>
+            <label>x <input id="pX" type="number" data-step="x"></label>
+            <label>y <input id="pY" type="number" data-step="y"></label>
+            <label>scale <input id="pS" type="number" data-step="scale" min="0.0001"></label>
+            <label>a <input id="pA" type="number" data-step="a"></label>
+            <label>ox <input id="pOx" type="number" data-step="ox"></label>
+            <label>oy <input id="pOy" type="number" data-step="oy"></label>
             <label>透明度 <input id="pOp" type="range" min="0" max="100" value="100"></label>
             <button id="btnSave">存檔…</button>
         </div>
@@ -262,13 +262,13 @@
         <div id="btTitle" class="title"></div>
         <div class="row2">
             <label>分類 <select id="bt-cls"></select></label>
-            <label>存檔% <input id="bt-pct" type="number" step="0.25"></label>
-            <label>scale <input id="bt-scale" type="number" step="0.01"></label>
-            <label>x <input id="bt-x" type="number" step="0.25"></label>
-            <label>y <input id="bt-y" type="number" step="0.25"></label>
-            <label>a <input id="bt-a" type="number" step="any"></label>
-            <label>ox <input id="bt-ox" type="number" step="any"></label>
-            <label>oy <input id="bt-oy" type="number" step="any"></label>
+            <label>存檔% <input id="bt-pct" type="number" data-step="pct"></label>
+            <label>scale <input id="bt-scale" type="number" data-step="scale"></label>
+            <label>x <input id="bt-x" type="number" data-step="x"></label>
+            <label>y <input id="bt-y" type="number" data-step="y"></label>
+            <label>a <input id="bt-a" type="number" data-step="a"></label>
+            <label>ox <input id="bt-ox" type="number" data-step="ox"></label>
+            <label>oy <input id="bt-oy" type="number" data-step="oy"></label>
         </div>
         <div class="row2">
             <label><input id="bt-png" type="checkbox" checked> 更新圖</label>
