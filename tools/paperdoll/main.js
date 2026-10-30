@@ -210,7 +210,7 @@ function dollShow()
 // 換性別也換自動護具用的那組數字：拆過就照新那組重新擺放（有變才記一步模式內 undo，連性別一起退）
 function setDoll(d)
 {
-    const m = S.mode, parts = d.sex && d.sex !== S.doll.sex && m.type === 'auto' ? (m.parts ?? []).filter(p => p.P.kind === 'armor') : [];
+    const m = S.mode, parts = d.sex && d.sex !== S.doll.sex && m.type === 'auto' ? (m.parts ?? []).filter(p => AUTO_SEXED.includes(p.P.kind)) : [];
     const before = parts.length && autoState(m);
     Object.assign(S.doll, d);
     dollShow();
@@ -302,10 +302,15 @@ const AUTO_PARTS = [
     {key: 'weapon', kind: 'weapon', name: '武器'},
     {key: 'head', kind: 'head', name: '頭', side: 0},
     {key: 'hair', kind: 'head', name: '頭髮', side: 1},
+    {key: 'cloth', kind: 'outfit', name: '衣服', quad: '左下', qx: 0, qy: 1},
+    {key: 'shoes', kind: 'outfit', name: '鞋子', quad: '右下', qx: 1, qy: 1},
 ];
-const AUTO_KINDS = ['armor', 'weapon', 'head'];
+const AUTO_KINDS = ['armor', 'weapon', 'head', 'outfit'];
 // pct＝存檔%（原圖縮成幾 % 烤成 PNG），scale＝遊戲的 equip.scale／role 的 head.scale…；畫面大小＝原圖 × pct% × scale，兩個不互相換算
-const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y']};
+const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y'], outfit: ['pct', 'scale', 'x', 'y']};
+// 分男女兩組的種類；服飾零件自動標 pool（key 就是 pool 的 kind）
+const AUTO_SEXED = ['armor', 'outfit'];
+const AUTO_POOL = ['head', 'outfit'];
 const AUTO_FF = ['scale', 'x', 'y'];
 // 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
 const AUTO_DEF = ST.DEF.auto;
@@ -323,7 +328,7 @@ const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
                           headLink: v?.headLink ?? true, saveF: !!v?.saveF,
-                          f: Object.fromEntries(AUTO_PARTS.filter(P => P.kind === 'armor').map(P => [P.key, femaleFrom(P, v)]))});
+                          f: Object.fromEntries(AUTO_PARTS.filter(P => AUTO_SEXED.includes(P.kind)).map(P => [P.key, femaleFrom(P, v)]))});
 // 舊格式沒有 scale（當時固定 0.25）；女版以前有自己的 pct，換成同一張 PNG 的 scale＝0.25 × 女pct ÷ 男pct
 function femaleFrom(P, v)
 {
@@ -333,7 +338,7 @@ function femaleFrom(P, v)
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 const pickKeys = (o, ks) => Object.fromEntries(ks.map(k => [k, o[k]]));
 // 護具分男女兩組：S.auto.helmet… 是男版、S.auto.f.helmet… 是女版（只有 scale/x/y，存檔% 跟男版共用，PNG 只有一張），照 header 的 男｜女（S.doll.sex）選用
-const autoFemale = (P) => P.kind === 'armor' && S.doll.sex === 'f';
+const autoFemale = (P) => AUTO_SEXED.includes(P.kind) && S.doll.sex === 'f';
 const autoCfg = (P, a = S.auto) => P.kind === 'weapon' ? a.weapon[a.cls] : autoFemale(P) ? {...a[P.key], ...a.f[P.key]} : a[P.key];
 const autoWith = (a, P, row) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}}
                               : autoFemale(P) ? {...a, [P.key]: {...a[P.key], pct: row.pct}, f: {...a.f, [P.key]: pickKeys(row, AUTO_FF)}} : {...a, [P.key]: row};
@@ -513,12 +518,14 @@ function autoPlan(L, kind)
         }
         return {T, plan, skipped};
     }
+    // 要湊齊的象限：左上的頭＋各零件的（服飾右上是空的）
     const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
+    const need = [[0, 0], ...autoParts(kind).map(P => [P.qx, P.qy])], full = (bs) => need.every(([qx, qy]) => bs.some(b => quad(b, qx, qy)));
     let blobs = split(0), erode = 0;
-    for (let k = 1; k <= AUTO_ERODE && ![0, 1].every(qx => [0, 1].every(qy => blobs.some(b => quad(b, qx, qy)))); k++)
+    for (let k = 1; k <= AUTO_ERODE && !full(blobs); k++)
     {
         const bs = split(k);
-        if ([0, 1].every(qx => [0, 1].every(qy => bs.some(b => quad(b, qx, qy))))) [blobs, erode] = [bs, k];
+        if (full(bs)) [blobs, erode] = [bs, k];
     }
     const plan = [], skipped = [];
     for (const P of autoParts(kind))
@@ -618,7 +625,7 @@ function autoSplit(m)
     const parts = plan.map(({P, box, keep}) => {
         const C = cloneAbove(L, P.kind === 'weapon' ? L.name : `${L.name}-${P.key}`);
         Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls})},
-                          ...(P.kind === 'head' && {pool: P.key})});
+                          ...(AUTO_POOL.includes(P.kind) && {pool: P.key})});
         const part = {P, C, box, keep};
         autoScale(T, part, autoCfg(P).pct);
         autoPlace(part, autoCfg(P));
@@ -639,7 +646,7 @@ function autoSplit(m)
     status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skip}${sp}`);
 }
 
-// 原頭盔層放在前片正上方；有標記成頭的參考人偶就照遊戲深度（PART_DEPTH）插進去：頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子由上往下接在最低的頭下面
+// 原頭盔層放在前片正上方；有標記成頭的參考人偶就照遊戲深度（PART_DEPTH）插進去：頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子（衣服、鞋子）由上往下接在最低的頭下面
 function autoStack(parts)
 {
     const C = (k) => parts.find(p => p.P.key === k)?.C, H = C('helmet'), g = H && splitNew(H);
@@ -650,7 +657,7 @@ function autoStack(parts)
     }
     const doll = S.layers.filter(L => /-(head|hair)$/.test(L.tag ?? '')), head = doll.find(L => L.tag.endsWith('-head'));
     if (!head) return;
-    const top = H ? [g?.F, H].filter(Boolean) : [], below = [C('boots'), C('armor'), g?.B].filter(Boolean);
+    const top = H ? [g?.F, H].filter(Boolean) : [], below = [C('shoes'), C('cloth'), C('boots'), C('armor'), g?.B].filter(Boolean);
     S.layers = S.layers.filter(L => !top.includes(L) && !below.includes(L));
     S.layers.splice(S.layers.indexOf(head), 0, ...below);
     S.layers.splice(S.layers.indexOf(doll.at(-1)) + 1, 0, ...top);
@@ -2578,10 +2585,12 @@ function refreshAuto(m)
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
-    const head = m.kind === 'head';
-    for (const [k, ids] of [['armor', ['auTable', 'auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
-                            ['head', ['auHead', 'auHintHead']]])
+    const head = AUTO_POOL.includes(m.kind);
+    for (const [k, ids] of [['armor', ['auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
+                            ['head', ['auHead', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
+    $('auTable').hidden = !AUTO_SEXED.includes(m.kind);
+    for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
     $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
     $('auItem').textContent = head ? '存到 pool…' : '存到 item…';
@@ -4686,13 +4695,14 @@ const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textConte
 $('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', '存檔%', 'scale', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', 'oy']));
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
-const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead'};
+// 護具跟服飾共用一張表，refreshAuto() 照 data-kind 藏另一種的列
+const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead', outfit: 'auTable'};
 const AUTO_LINK = ['pct', 'scale'];
 const linkBox = Object.assign(el('label'), {title: '跟頭連動：頭髮的存檔%、scale 跟頭一樣，只能改頭那格'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
 for (const P of AUTO_PARTS)
 {
-    const box = $(AUTO_BOX[P.kind]);
+    const box = $(AUTO_BOX[P.kind]), n0 = box.children.length;
     box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans(P.quad ? [P.quad] : []));
     for (const f of AUTO_F[P.kind])
     {
@@ -4710,6 +4720,7 @@ for (const P of AUTO_PARTS)
         box.append(inp);
         if (P.kind === 'head' && f === 'scale') box.append(P.key === 'hair' ? linkBox : el('span'));
     }
+    for (const e of [...box.children].slice(n0)) e.dataset.kind = P.kind;
 }
 // 打開連動：頭髮對齊頭的存檔%、scale，拆過就記一步（連開關一起退）；有修補不清除就不打開
 $('au-link').onchange = () => {
@@ -4757,7 +4768,7 @@ $('auReset').onclick = () => {
     for (const part of m.parts ?? []) autoApply(m, part, def(part.P));
     autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))
                    : {...autoParts(kind).reduce((a, P) => autoWith(a, P, def(P)), S.auto),
-                      ...(kind === 'head' ? {headLink: true} : {split: undefined})});
+                      ...(kind === 'head' && {headLink: true}), ...(kind === 'armor' && {split: undefined})});
     autoSpSync(m);
     refreshAll();
 };
@@ -4776,8 +4787,8 @@ document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
 $('auFemale').onchange = () => autoSet({...S.auto, saveF: $('auFemale').checked});
-$('auItem').onclick =() => (S.mode.kind === 'head' ? savePool() : saveItems()).catch(e => status(e.message));
-$('auLoad').onclick = () => (S.mode.kind === 'head' ? loadPoolAuto() : loadItems()).catch(e => status(e.message));
+$('auItem').onclick =() => (AUTO_POOL.includes(S.mode.kind) ? savePool() : saveItems()).catch(e => status(e.message));
+$('auLoad').onclick = () => (AUTO_POOL.includes(S.mode.kind) ? loadPoolAuto() : loadItems()).catch(e => status(e.message));
 
 S.icon = iconLoad();
 for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => true], ['icFill', 'fill', v => v > 0 && v <= 100]])

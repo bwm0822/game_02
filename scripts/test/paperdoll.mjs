@@ -1859,6 +1859,43 @@ run('paperdoll', async t => {
          JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
     t.eq('自動（頭像）：還原預設只還原頭、頭髮（連 🔗）', JSON.stringify(ah.reset), JSON.stringify([18, 28, true]));
 
+    // 自動（服飾）：左上頭丟掉、左下衣服、右下鞋子（右上空），自動標 pool、男女兩組
+    const ao = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = 200; c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#e0a070'; g.fillRect(20, 20, 60, 60);
+        g.fillStyle = '#334455'; g.fillRect(20, 120, 60, 60);
+        g.fillStyle = '#00ff00'; g.fillRect(40, 130, 20, 20);
+        g.fillStyle = '#663311'; g.fillRect(120, 160, 60, 20);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const L = pd.addLayer(await createImageBitmap(c), 'inn', null, null);
+        pd.autoSet({kind: 'outfit', cloth: {pct: 50, scale: 0.25, x: 1, y: 2}, shoes: {pct: 50, scale: 0.25, x: 3, y: 4},
+                    f: {cloth: {scale: 0.2, x: 5, y: 6}, shoes: {scale: 0.25, x: 3, y: 4}}});
+        pd.setMode('auto');
+        const shown = (id) => !$(id).hidden;
+        out.enter = [pd.S.mode.kind, shown('auTable'), shown('auSplit'), shown('auHintOutfit'), shown('au-cloth-pct'), shown('au-helmet-pct'),
+                     $('auItem').textContent];
+        pd.applyMode();
+        const m = pd.S.mode, part = (k) => m.parts.find(p => p.P.key === k)?.C, Cl = part('cloth'), Sh = part('shoes');
+        out.made = [m.parts.map(p => p.C.name).join(), Cl.canvas.width, Cl.canvas.height, Sh.canvas.width, Sh.canvas.height, Cl.pool, Sh.pool,
+                    pd.S.layers.indexOf(Cl) > pd.S.layers.indexOf(Sh), pd.S.active === Cl, L.visible, Cl.x, Sh.y,
+                    Cl.canvas.getContext('2d').getImageData(15, 10, 1, 1).data[3]];
+        pd.setDoll({sex: 'f'});
+        out.female = [Cl.scale, Cl.x, Cl.y, Cl.canvas.width, $('auSexL').textContent];
+        pd.setDoll({sex: 'm'});
+        out.male = [Cl.scale, Cl.x, Cl.y];
+        pd.cancelMode();
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('自動（服飾）：進模式用護具那張表、只顯示衣服鞋子、不拆前後片', JSON.stringify(ao.enter),
+         JSON.stringify(['outfit', true, false, true, true, false, '存到 pool…']));
+    t.eq('自動（服飾）：左上丟掉、衣服鞋子各一層（衣服疊在鞋子上、選衣服）、去綠、自動標 pool', JSON.stringify(ao.made),
+         JSON.stringify(['inn-cloth,inn-shoes', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
+    t.eq('自動（服飾）：切女照女版重擺、存檔% 共用', JSON.stringify(ao.female), JSON.stringify([0.2, 5, 6, 30, '♀女版']));
+    t.eq('自動（服飾）：切回男', JSON.stringify(ao.male), JSON.stringify([0.25, 1, 2]));
+
     // 部位 pool：右鍵標 kind、存到 part.json（預設勾顯示中的、PNG＋擺放、接在同 kind 後面）、女模式只寫 f、載入 pool
     const pl = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
