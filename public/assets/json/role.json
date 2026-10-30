@@ -97,7 +97,7 @@
     "loc": "brooklyn",
     "lab": "川普",
     "des": "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。",
-    "icon": "head-trump",
+    "icon": "portrait-trump",
     "job": "innkeeper",
     "gold": 200,
     "trade": true,
@@ -127,7 +127,7 @@
       "t": 32,
       "b": 0
     },
-    "body": "trump",
+    "body": "body-man",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -160,7 +160,11 @@
         "go": "bed",
         "map": "m_04x05/trump-inn-f2"
       }
-    ]
+    ],
+    "head": "trump-head",
+    "hair": "trump-hair",
+    "cloth": "outfit-innkeeper-armor",
+    "shoes": "outfit-innkeeper-boots"
   },
   "melanie": {
     "kind": "npc",

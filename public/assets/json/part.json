@@ -92,6 +92,13 @@
     "x": -2,
     "y": 4
   },
+  "trump-head": {
+    "kind": "head",
+    "sprite": "trump-head",
+    "scale": 0.25,
+    "x": -2,
+    "y": 4
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -112,5 +119,50 @@
     "scale": 0.25,
     "x": -1,
     "y": 2
+  },
+  "trump-hair": {
+    "kind": "hair",
+    "sprite": "trump-hair",
+    "scale": 0.25,
+    "x": -1,
+    "y": -0.75
+  },
+  "outfit-innkeeper-armor": {
+    "kind": "cloth",
+    "sprite": "outfit-innkeeper-armor",
+    "scale": 0.25,
+    "x": -0.25,
+    "y": 28
+  },
+  "outfit-innkeeper-cloth": {
+    "kind": "cloth",
+    "sprite": "outfit-innkeeper-cloth",
+    "scale": 0.25,
+    "x": -0.25,
+    "y": 28,
+    "f": {
+      "scale": 0.23,
+      "x": 0.25,
+      "y": 25.75
+    }
+  },
+  "outfit-innkeeper-boots": {
+    "kind": "shoes",
+    "sprite": "outfit-innkeeper-boots",
+    "scale": 0.24,
+    "x": 1.5,
+    "y": 33
+  },
+  "outfit-innkeeper-shoes": {
+    "kind": "shoes",
+    "sprite": "outfit-innkeeper-shoes",
+    "scale": 0.24,
+    "x": 1.5,
+    "y": 33,
+    "f": {
+      "scale": 0.2,
+      "x": 2,
+      "y": 33
+    }
   }
 }
