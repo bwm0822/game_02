@@ -30,10 +30,11 @@ export const DEF = {
         head: {pct: 18, scale: 0.25, x: -2, y: 4},
         hair: {pct: 18, scale: 0.25, x: -1, y: 2},
         weapon: Object.fromEntries(WCLS.map(([k, , o]) => [k, {...WEAPON, ...o}])),
-        portrait: {size: 100, fill: 100},
         // 女版護具只有 scale/x/y（PNG 跟存檔% 跟男版共用）
         f: Object.fromEntries(Object.entries(ARMOR).map(([k, {scale, x, y}]) => [k, {scale, x, y}])),
     },
+    // 角色編輯器「由頭髮產生」頭像：頭＋頭髮等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
+    portrait: {size: 100, fill: 100},
 };
 
 const S = {dir: null, over: {}, cur: structuredClone(DEF), timer: null, fns: []};
@@ -77,7 +78,7 @@ export async function load(root)
     return had;
 }
 
-// 整段換掉（sec＝'step'／'auto'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
+// 整段換掉（sec＝'step'／'auto'／'portrait'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
 export function set(sec, value)
 {
     S.cur = {...S.cur, [sec]: merge(DEF[sec], value)};

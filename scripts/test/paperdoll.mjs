@@ -1724,22 +1724,21 @@ run('paperdoll', async t => {
     t.eq('自動（武器）：-icon 撞到 weapons/ 以外的圖就擋', aw.clash, 'textures/icons/sword-1-icon.png 已經有了，換個檔名');
     t.eq('自動（武器）：新增沒有流水號、要填 id', JSON.stringify(aw.newId), JSON.stringify(['', '要填 id']));
 
-    // 自動（頭像）：左光頭右頭髮（臉是綠洞），共用 scale%，存到 role.json（head／hair／icon），載入 role
+    // 自動（頭像）：左光頭右頭髮（臉是綠洞），共用 scale%，零件自動標 pool、存到 pool／載入 pool
     const ah = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
         const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
         const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
         const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
-        const roles0 = {wick: {kind: 'player', lab: '維克', icon: 'head-wick', head: {sprite: 'head-wick', scale: 0.25, x: -2, y: 4}, hair: {sprite: 'hair-01', scale: 0.25, x: -1, y: 2}},
-                        trump: {lab: '川普', icon: 'head-trump', head: {sprite: 'head-trump', scale: 0.25}}, wolf: {kind: 'animal', icon: 'animals:1', body: {sprite: 'animals:1'}}};
-        await put(json, 'role.json', JSON.stringify(roles0, null, 2));
-        const readRoles = async () => JSON.parse(await (await (await json.getFileHandle('role.json')).getFile()).text());
+        await put(json, 'role.json', JSON.stringify({wick: {kind: 'player', head: 'head-wick', hair: 'hair-wick'}}, null, 2));
+        await put(json, 'part.json', JSON.stringify({'head-wick': {kind: 'head', sprite: 'head-wick', scale: 0.25, x: -2, y: 4}}, null, 2));
+        const readParts = async () => JSON.parse(await (await (await json.getFileHandle('part.json')).getFile()).text());
         const frame = () => new Promise(r => requestAnimationFrame(r));
         const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
         const key = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, ctrlKey: true, bubbles: true}));
-        const open = async () => {const p = pd.saveRole(); await until(() => $('dlgRole').open); return {p};};
-        const close = async ({p}, v) => {$('dlgRole').close(v); await p;};
+        const open = async () => {const p = pd.savePool(); await until(() => $('dlgPool').open); return {p};};
+        const close = async ({p}, v) => {$('dlgPool').close(v); await p;};
         const alpha = (c, x, y) => c.getContext('2d').getImageData(x, y, 1, 1).data[3];
         const at = (C) => [Math.round(C.x), Math.round(C.y)];
         const png = async (path, name) => {
@@ -1763,11 +1762,11 @@ run('paperdoll', async t => {
         await pd.setAssets(assets);
         pd.autoSet({kind: 'head', head: {pct: 50, x: -2, y: 4}, hair: {pct: 50, x: -1, y: 2}});
         pd.setMode('auto');
-        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auPortrait').hidden, $('auItem').textContent, $('auPtInfo').textContent, $('au-hair-pct').disabled, $('au-link').checked];
+        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auItem').textContent, $('auLoad').textContent, $('au-hair-pct').disabled, $('au-link').checked];
         pd.applyMode();
         const m = pd.S.mode, Hd = m.parts.find(p => p.P.key === 'head').C, Hr = m.parts.find(p => p.P.key === 'hair').C;
         out.made = [Hd.name, Hr.name, Hd.canvas.width, Hd.canvas.height, Hr.canvas.width, Hr.canvas.height, Hd.ops.map(o => o.type).join(),
-                    pd.S.layers.indexOf(Hr) > pd.S.layers.indexOf(Hd), alpha(Hr.canvas, 17, 20), alpha(Hr.canvas, 2, 2) > 128, ...at(Hd), ...at(Hr), L.visible];
+                    pd.S.layers.indexOf(Hr) > pd.S.layers.indexOf(Hd), alpha(Hr.canvas, 17, 20), alpha(Hr.canvas, 2, 2) > 128, ...at(Hd), ...at(Hr), L.visible, Hd.pool, Hr.pool];
 
         type('au-head-pct', 20);
         out.pct = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length];
@@ -1783,15 +1782,6 @@ run('paperdoll', async t => {
         out.split = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length - h1];
         type('au-hair-scale', 0.5);
         out.splitScale = [Hr.scale, Hd.scale, pd.S.auto.hair.scale];
-        // 存檔%、scale 不同時頭像的長寬比要跟畫面上兩個零件合起來的外框一樣
-        const rect = (C) => {const w = C.canvas.width * C.scale, h = C.canvas.height * C.scale; return [C.x - C.ox * w, C.y - C.oy * h, C.x + (1 - C.ox) * w, C.y + (1 - C.oy) * h];};
-        const [a, b] = [rect(Hd), rect(Hr)];
-        const view = (Math.max(a[2], b[2]) - Math.min(a[0], b[0])) / (Math.max(a[3], b[3]) - Math.min(a[1], b[1]));
-        const pv = $('auPtPreview'), d = pv.getContext('2d').getImageData(0, 0, pv.width, pv.height).data;
-        let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-        for (let y = 0; y < pv.height; y++) for (let x = 0; x < pv.width; x++)
-            if (d[(y * pv.width + x) * 4 + 3] > 16) {x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);}
-        out.ptRatio = Math.abs((x1 - x0 + 1) / (y1 - y0 + 1) - view) < 0.05 || [view, (x1 - x0 + 1) / (y1 - y0 + 1)];
         h1 = m.hist.length;
         link(true);
         out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1, Hr.scale, $('au-hair-scale').disabled];
@@ -1804,61 +1794,29 @@ run('paperdoll', async t => {
         type('au-hair-x', 3);
         out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
 
-        out.pv = [$('auPtPreview').width, $('auPtPreview').height, $('auPtInfo').textContent];
-        type('au-pt-size', 80);
-        type('au-pt-fill', 0);
-        out.pv.push($('auPtPreview').width, $('auPtPreview').height, pd.S.auto.portrait.size, pd.S.auto.portrait.fill);
-        out.legacy = [JSON.stringify(pd.autoFrom({portrait: {w: 64, h: 32, fill: 90}}).portrait)];
-
+        // 存到 pool：id 預設零件名，改成 head-wick／hair-wick；已有的 head-wick 提示覆蓋（wick 在用）
         let p = await open();
-        out.dlg = [$('drRole').value, [...$('drRole').options].map(o => o.value).join(), $('dr-head-name').value, $('dr-hair-name').value, $('dr-portrait-name').value,
-                   $('dr-hair-msg').textContent, $('dr-portrait-msg').textContent, $('drOk').disabled];
-        out.groups = [[...$('drRole').querySelectorAll('optgroup')].map(o => o.label).join(), [...$('drRole').options].map(o => o.textContent).join('|'), $('drMsg').textContent];
+        const rows = () => [...$('dpRows').children].map(r => ({id: r.querySelector('input:not([type])'), msg: r.querySelector('.body > div:last-child')}));
+        out.dlg = rows().map(r => r.id.value);
+        rows()[0].id.value = 'hair-wick'; rows()[0].id.dispatchEvent(new Event('input'));
+        rows()[1].id.value = 'head-wick'; rows()[1].id.dispatchEvent(new Event('input'));
+        out.dlg.push(...rows().map(r => r.msg.textContent));
+        const ok = window.confirm; window.confirm = () => true;
         await close(p, 'ok');
-        const r = (await readRoles()).wick;
-        out.saved = [JSON.stringify(r.head), JSON.stringify(r.hair), r.icon, await png('roles/parts', 'head-wick'), await png('roles/parts', 'hair-wick'), await png('roles/portraits', 'portrait-wick'), Hd.auto.role, Hr.auto.role];
+        window.confirm = ok;
+        const saved = await readParts();
+        out.saved = [JSON.stringify(saved['head-wick']), JSON.stringify(saved['hair-wick']), await png('roles/parts', 'head-wick'), await png('roles/parts', 'hair-wick'), Hd.poolId, Hr.poolId];
 
-        // 別的角色也用這顆頭：提示覆蓋；檔名撞到 roles/parts 以外：擋；換角色檔名跟著換、沒有 hair 的角色一定要更新圖
-        await put(json, 'role.json', JSON.stringify({...await readRoles(), trump: {...roles0.trump, head: {sprite: 'head-wick'}}}, null, 2));
-        await put(await tex.getDirectoryHandle('icons', {create: true}), 'hair-trump.png', 'x');
-        p = await open();
-        out.check = [$('dr-head-msg').textContent, $('drOk').disabled];
-        const sel = $('drRole'); sel.value = 'trump'; sel.dispatchEvent(new Event('change'));
-        out.swap = [$('dr-head-name').value, $('dr-hair-name').value, $('dr-hair-png').checked, $('dr-hair-png').disabled,
-                    $('dr-head-msg').textContent, $('dr-hair-msg').textContent, $('drOk').disabled];
-        sel.value = ''; sel.dispatchEvent(new Event('change'));
-        out.none = [$('drMsg').textContent, $('drOk').disabled];
-        await close(p, 'cancel');
-        await (await tex.getDirectoryHandle('icons')).removeEntry('hair-trump.png');
-
-        // 載入 role：x/y 套回、一步 undo；角色沒有 hair 就只套頭
-        await put(json, 'role.json', JSON.stringify({...await readRoles(), wick: {...r, head: {...r.head, x: 5, y: 6}, hair: {...r.hair, x: 7, y: 8}}}, null, 2));
+        // 載入 pool：x/y 套回、一步模式內 undo；沒有條目的零件略過
+        await put(json, 'part.json', JSON.stringify({...saved, 'head-wick': {...saved['head-wick'], x: 5, y: 6}, 'hair-wick': {...saved['hair-wick'], x: 7, y: 8}}, null, 2));
         const h0 = m.hist.length;
-        await pd.loadRole();
+        await pd.loadPoolAuto();
         out.load = [...at(Hd), ...at(Hr), m.hist.length - h0, pd.S.auto.head.x, $('status').textContent];
         key('z');
         out.loadUndo = [...at(Hd), ...at(Hr)];
-        await put(json, 'role.json', JSON.stringify({wick: {head: {sprite: 'head-wick', x: 1, y: 1}}}, null, 2));
-        await pd.loadRole();
-        out.loadBald = [...at(Hd), ...at(Hr)];
-
-        // 沒有 head 的角色也能選：一定要更新圖、新增 head／hair；body 不是 body-* 只警告；存過的角色下次先選它
-        await put(json, 'role.json', JSON.stringify({...await readRoles(), wolf: roles0.wolf}, null, 2));
-        p = await open();
-        const sel2 = $('drRole'), pre = sel2.value;
-        sel2.value = 'wolf'; sel2.dispatchEvent(new Event('change'));
-        out.wolf = [pre, $('drMsg').textContent, $('drMsg').className, $('dr-head-name').value, $('dr-head-png').checked, $('dr-head-png').disabled, $('drOk').disabled];
-        await close(p, 'ok');
-        const w = (await readRoles()).wolf;
-        out.wolfSaved = [w.head?.sprite, w.hair?.sprite, w.icon, w.body.sprite, Hd.auto.role, Hr.auto.role];
-        p = await open();
-        out.remember = $('drRole').value;
-        await close(p, 'cancel');
-        await pd.loadRole();
-        out.loadRemember = $('status').textContent;
-        await put(json, 'role.json', JSON.stringify({nobody: {head: {sprite: 'head-x'}}}, null, 2));
-        await pd.loadRole();
-        out.loadMiss = $('status').textContent;
+        await put(json, 'part.json', JSON.stringify({'head-wick': {kind: 'head', sprite: 'head-wick', scale: 0.25, x: 1, y: 1}}, null, 2));
+        await pd.loadPoolAuto();
+        out.loadBald = [...at(Hd), ...at(Hr), $('status').textContent];
 
         // 只有一塊：全部當頭，頭髮那行反灰
         pd.cancelMode();
@@ -1871,51 +1829,35 @@ run('paperdoll', async t => {
         out.bald = [pd.S.mode.parts.map(p => p.C.name).join(), $('au-hair-x').disabled, $('au-head-x').disabled, $('status').textContent];
         link(false);
         $('auReset').click();
-        out.reset = [pd.S.auto.portrait.size, pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
+        out.reset = [pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
         pd.cancelMode();
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（頭像）：進模式顯示頭像的表、尺寸/%、按鈕叫存到 role；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
-         JSON.stringify(['head', false, true, true, false, '存到 role…', '拆完才有預覽', true, true]));
-    t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面', JSON.stringify(ah.made),
-         JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false]));
+    t.eq('自動（頭像）：進模式顯示頭像的表、按鈕叫存到 pool／載入 pool；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
+         JSON.stringify(['head', false, true, true, '存到 pool…', '載入 pool', true, true]));
+    t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面、自動標 pool', JSON.stringify(ah.made),
+         JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false, 'head', 'hair']));
     t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
     t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
     t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
     t.eq('自動（頭像）：不連動時存檔% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
     t.eq('自動（頭像）：不連動時 scale 各改各的', JSON.stringify(ah.splitScale), JSON.stringify([0.5, 0.25, 0.5]));
-    t.eq('自動（頭像）：頭、頭髮存檔%／scale 不同時頭像比例跟畫面上一樣', JSON.stringify(ah.ptRatio), 'true');
     t.eq('自動（頭像）：打開連動頭髮對齊頭（存檔%＋scale）、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1, 0.25, true]));
     t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false, 0.5]));
     t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
     t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
-    t.eq('自動（頭像）：頭像預覽照尺寸（正方形），不合法的數字不收', JSON.stringify(ah.pv), JSON.stringify([100, 100, '頭像 100×100', 80, 80, 80, 100]));
-    t.eq('自動（頭像）：舊設定 w/h 轉成 size（取 w）、fill 重設 100', JSON.stringify(ah.legacy), JSON.stringify(['{"size":64,"fill":100}']));
-    t.eq('自動（頭像）：對話框 id＝原圖名就配到、列出所有角色（依 kind 分組）、檔名照 id', JSON.stringify(ah.dlg),
-         JSON.stringify(['wick', ',wick,wolf,trump', 'head-wick', 'hair-wick', 'portrait-wick', 'sprite：hair-01 → hair-wick', 'icon：head-wick → portrait-wick', false]));
-    t.eq('自動（頭像）：分組名、⚠ 標 body 不是 body-*、沒有 head 的標出來', JSON.stringify(ah.groups),
-         JSON.stringify(['玩家,動物,其他', '（請選擇）|wick 維克（head-wick）|⚠ wolf （沒有 head）|trump 川普（head-trump）', '']));
-    t.eq('自動（頭像）：寫 head／hair（sprite/scale/x/y）跟 icon，PNG 在 roles/parts、roles/portraits，零件記住角色', JSON.stringify(ah.saved),
-         JSON.stringify(['{"sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"sprite":"hair-wick","scale":0.25,"x":3,"y":2}', 'portrait-wick', [30, 30], [35, 40], [80, 80], 'wick', 'wick']));
-    t.eq('自動（頭像）：別的角色共用的圖提示覆蓋（不擋）', JSON.stringify(ah.check),
-         JSON.stringify(['會覆蓋 roles/parts/head-wick.png（trump 也用這張）', false]));
-    t.eq('自動（頭像）：換角色檔名跟著換、沒有 hair 的角色一定要更新圖、撞到別的資料夾擋存', JSON.stringify(ah.swap),
-         JSON.stringify(['head-trump', 'hair-trump', true, true, 'sprite：head-wick → head-trump', 'textures/icons/hair-trump.png 已經有了，換個檔名', true]));
-    t.eq('自動（頭像）：沒選角色不能存', JSON.stringify(ah.none), JSON.stringify(['要選角色', true]));
-    t.eq('自動（頭像）：載入 role 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick 的 head、hair']));
-    t.eq('自動（頭像）：載入 role 可以 undo', JSON.stringify(ah.loadUndo), JSON.stringify([-2, 4, 3, 2]));
-    t.eq('自動（頭像）：角色沒有 hair 只套頭', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2]));
-    t.eq('自動（頭像）：沒有 head 的角色可選、一定要更新圖，body 不是 body-* 只警告不擋', JSON.stringify(ah.wolf),
-         JSON.stringify(['wick', 'body 是 animals:1，不是紙娃娃身體（body-*），存了會疊兩顆頭', 'warn', 'head-wolf', true, true, false]));
-    t.eq('自動（頭像）：新增 head／hair／icon、body 不動、零件改記 wolf', JSON.stringify(ah.wolfSaved),
-         JSON.stringify(['head-wolf', 'hair-wolf', 'portrait-wolf', 'animals:1', 'wolf', 'wolf']));
-    t.eq('自動（頭像）：存過的角色比 id＝原圖名優先（存到、載入都是）', JSON.stringify([ah.remember, ah.loadRemember]),
-         JSON.stringify(['wolf', '載入 wolf 的 head、hair']));
-    t.eq('自動（頭像）：找不到角色', ah.loadMiss, '找不到 wick 對應的角色（存過的角色、id＝wick 或 head.sprite＝head-wick）');
+    t.eq('自動（頭像）：存到 pool 預設零件名、已有的提示覆蓋', JSON.stringify(ah.dlg),
+         JSON.stringify(['wick-hair', 'wick-head', '', '會覆蓋 head-wick（PNG＋擺放）（wick 在用）']));
+    t.eq('自動（頭像）：存成 part.json 條目＋roles/parts 的 PNG、零件記住 id', JSON.stringify(ah.saved),
+         JSON.stringify(['{"kind":"head","sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"kind":"hair","sprite":"hair-wick","scale":0.25,"x":3,"y":2}',
+                         [30, 30], [35, 40], 'head-wick', 'hair-wick']));
+    t.eq('自動（頭像）：載入 pool 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick-hair ← hair-wick、wick-head ← head-wick']));
+    t.eq('自動（頭像）：載入 pool 可以 undo', JSON.stringify(ah.loadUndo), JSON.stringify([-2, 4, 3, 2]));
+    t.eq('自動（頭像）：沒有條目的零件略過', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2, '載入 wick-head ← head-wick；wick-hair 在 part.json 找不到']));
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
          JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
-    t.eq('自動（頭像）：還原預設只還原頭像（連尺寸/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28, true]));
+    t.eq('自動（頭像）：還原預設只還原頭、頭髮（連 🔗）', JSON.stringify(ah.reset), JSON.stringify([18, 28, true]));
 
     // 部位 pool：右鍵標 kind、存到 part.json（預設勾顯示中的、PNG＋擺放、接在同 kind 後面）、女模式只寫 f、載入 pool
     const pl = await ev(async () => {

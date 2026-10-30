@@ -1,4 +1,4 @@
-// 設定：看／改 tools/settings.json（工具共用的步進、紙娃娃自動拆圖的數字）；只存改過的值，空白＝內建值（灰字 placeholder）
+// 設定：看／改 tools/settings.json（工具共用的步進、紙娃娃自動拆圖的數字、角色頭像合成）；只存改過的值，空白＝內建值（灰字 placeholder）
 // 改了直接存（settings.js 延遲寫檔＋廣播），紙娃娃那邊調的數字也寫同一份，收到廣播就重畫、undo 從現在重算
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
@@ -21,7 +21,7 @@ const AUTO_ROWS = [
 
 const S = {hist: [], hi: -1};
 
-const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto);};
+const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto); ST.set('portrait', o.portrait);};
 
 function resetHist()
 {
@@ -107,14 +107,14 @@ function autoTable()
                 h('td', null, resetBtn(path, `${grp} ${lab} 整列回到內建`)));
         }),
     ]);
-    const pt = ['auto', 'portrait'];
-    return [
-        h('table', {class: 'grid'}, h('tr', null, h('th'), AUTO_COLS.map(f => h('th', null, AUTO_LABS[f] ?? f)), h('th')), rows),
-        h('div', {class: 'title'}, '頭像合成'),
-        h('table', {class: 'grid'},
-            h('tr', null, PT_COLS.map(([, lab]) => h('th', null, lab)), h('th')),
-            h('tr', null, PT_COLS.map(([k]) => numCell([...pt, k])), h('td', null, resetBtn(pt, '頭像合成回到內建')))),
-    ];
+    return h('table', {class: 'grid'}, h('tr', null, h('th'), AUTO_COLS.map(f => h('th', null, AUTO_LABS[f] ?? f)), h('th')), rows);
+}
+
+function portraitTable()
+{
+    return h('table', {class: 'grid'},
+        h('tr', null, PT_COLS.map(([, lab]) => h('th', null, lab))),
+        h('tr', null, PT_COLS.map(([k]) => numCell(['portrait', k]))));
 }
 
 function render()
@@ -127,7 +127,9 @@ function render()
         h('div', {class: 'hint'}, '紙娃娃（自動表、圖層屬性、批次存武器）、試穿共用；Shift＋方向鍵 ×10'),
         title('紙娃娃自動拆圖', 'auto'),
         h('div', {class: 'hint'}, '就是紙娃娃自動面板目前的數字：那邊調了這裡跟著變，這裡改了下次拆圖照這組；紙娃娃的「重設」＝回到內建'),
-        ...autoTable(),
+        autoTable(),
+        title('角色頭像', 'portrait'), portraitTable(),
+        h('div', {class: 'hint'}, '角色編輯器「由頭髮產生」：頭＋頭髮等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）'),
     ] : [h('div', {class: 'hint'}, '等專案資料夾…')]));
     ST.applySteps();
     if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
