@@ -1095,8 +1095,13 @@
       "back": "bronze-helmet-back",
       "scale": 0.25,
       "x": -1.75,
-      "y": 0.75,
-      "hideHair": true
+      "y": -0.25,
+      "hideHair": true,
+      "f": {
+        "scale": 0.25,
+        "x": -1.75,
+        "y": -0.25
+      }
     },
     "icon": "bronze-helmet",
     "drop": {
@@ -1124,8 +1129,8 @@
     "equip": {
       "sprite": "bronze-armor",
       "scale": 0.25,
-      "x": 0,
-      "y": 27.5,
+      "x": -0.25,
+      "y": 26.5,
       "f": {
         "scale": 0.23,
         "x": 0,
@@ -1158,7 +1163,7 @@
     "equip": {
       "sprite": "bronze-boots",
       "scale": 0.25,
-      "x": 1,
+      "x": 1.5,
       "y": 33,
       "f": {
         "scale": 0.22,
