@@ -1349,10 +1349,12 @@ run('paperdoll', async t => {
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
+        pd.setMode('sl');
+        out.before = $('slItem').disabled;
         pd.setMode('auto');
-        out.before = $('auItem').disabled;
         pd.applyMode();
-        out.after = $('auItem').disabled;
+        pd.setMode('sl');
+        out.after = $('slItem').disabled;
 
         let p = await open();
         out.rows = [$('di-helmet-sel').value, $('di-helmet-id').value, $('di-helmet-png').disabled, $('di-armor-sel').value, $('di-armor-name').value,
@@ -1416,7 +1418,7 @@ run('paperdoll', async t => {
         pd.cancelMode();
         return out;
     });
-    t.eq('存到 item：拆完才能按', JSON.stringify([si.before, si.after]), JSON.stringify([true, false]));
+    t.eq('存到 item：存讀模式選到拆完的零件才能按', JSON.stringify([si.before, si.after]), JSON.stringify([true, false]));
     t.eq('存到 item：配不到預設新增、帶流水號、新增時 PNG 反灰；配得到就選它；沒零件的列反灰；lab 空的擋存',
          JSON.stringify(si.rows), JSON.stringify(['', 'helmet_02', true, 'chest_01', 'src-armor', true, '要填 lab', true]));
     t.check('存到 item：填了 lab 就能存', !si.labOk);
@@ -1426,7 +1428,7 @@ run('paperdoll', async t => {
         'helmet_01,helmet_02,chest_01,boots_01,x1',
         '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-1.75,"y":-0.25,"hideHair":true},"drop":{"sprite":"src-helmet","scale":0.25}}',
         '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":26.5},"drop":{"sprite":"src-armor","scale":0.25}}',
-        true, 'auto']));
+        true, 'sl']));
     t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet_02', true]));
     t.eq('存到 item：PNG 沒勾時檔名鎖成原本的 sprite', JSON.stringify(si.locked), JSON.stringify([true, 'src-helmet']));
     t.eq('存到 item：改檔名提示 sprite 會換', si.rename, 'sprite：src-armor → new-armor');
@@ -1456,28 +1458,30 @@ run('paperdoll', async t => {
         pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none'});
+        pd.setMode('sl');
+        out.before = $('slItemLoad').disabled;
         pd.setMode('auto');
-        out.before = $('auLoad').disabled;
         pd.applyMode();
-        out.after = $('auLoad').disabled;
         const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C, A = m.parts.find(p => p.P.key === 'armor').C;
+        pd.setMode('sl');
+        out.after = $('slItemLoad').disabled;
         const pct = H.ops.at(-1).pct, at = (C) => [C.x, C.y];
-        const a0 = at(A);
+        const a0 = at(A), u0 = pd.hist.undos.length, U = () => pd.hist.undos.length - u0;
 
         await put(json, 'item.json', JSON.stringify({x1: {cat: 'CAT_FOOD'}}, null, 2));
         await pd.loadItems();
-        out.none = [$('status').textContent, m.hist.length];
+        out.none = [$('status').textContent, U()];
 
         await put(json, 'item.json', JSON.stringify({
             helmet_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-helmet-front', back: 'src-helmet-back', scale: 0.5, x: 3, y: -4}},
             chest_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-armor', scale: 0.25, x: 9, y: 9}},
         }, null, 2));
         await pd.loadItems();
-        out.load = [...at(H), H.scale, H.ops.at(-1).pct === pct, pd.S.auto.helmet.x, pd.S.auto.helmet.y, pd.S.auto.helmet.scale, at(A).join() === a0.join(), m.hist.length, $('status').textContent];
+        out.load = [...at(H), H.scale, H.ops.at(-1).pct === pct, pd.S.auto.helmet.x, pd.S.auto.helmet.y, pd.S.auto.helmet.scale, at(A).join() === a0.join(), U(), $('status').textContent];
         await pd.loadItems();
-        out.again = m.hist.length;
+        out.again = U();
         key('z');
-        out.undo = [...at(H), m.hist.length];
+        out.undo = [...at(H), U()];
 
         // 照遊戲的 PNG 反推存檔%：頭盔裁切框 60×40，PNG 6×4＝10%；取消＝不重烤，確定＝重烤；比例對不上只警告
         const eq = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
@@ -1507,6 +1511,8 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         pd.applyMode();
         const W = pd.S.mode.parts[0].C;
+        pd.setMode('sl');
+        out.noF = $('slItemFL').hidden;
         Object.assign(W, {ox: 0.3, oy: 0.2, a: 40});
         await put(json, 'item.json', JSON.stringify({'sword-1': {cat: 'CAT_WEAPON', equip: {sprite: 'sword-1', scale: 0.25, x: 2, y: 3, a: 15}}}, null, 2));
         await pd.loadItems();
@@ -1515,9 +1521,10 @@ run('paperdoll', async t => {
         pd.cancelMode();
         return out;
     });
-    t.eq('載入 item：拆完才能按', JSON.stringify([li.before, li.after]), JSON.stringify([true, false]));
+    t.eq('載入 item：存讀模式選到拆完的零件才能按', JSON.stringify([li.before, li.after]), JSON.stringify([true, false]));
     t.eq('載入 item：一個都沒對到只提示、不記步驟', JSON.stringify(li.none), JSON.stringify(['src-helmet、src-armor 找不到對應的 item', 0]));
-    t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、讀 scale、存檔% 不動、寫回預設、一步', JSON.stringify(li.load), JSON.stringify([
+    t.check('存讀：武器沒有女版勾', li.noF);
+    t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、讀 scale、存檔% 不動、寫回預設、一筆全域 undo', JSON.stringify(li.load), JSON.stringify([
         3, -4, 0.5, true, 3, -4, 0.5, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item']));
     t.eq('載入 item：數字沒變不記步驟', li.again, 1);
     t.eq('載入 item：PNG 反推存檔%，取消就不重烤、其他照套', JSON.stringify(li.pngNo), JSON.stringify([true, true, true, 0.5]));
@@ -1550,10 +1557,12 @@ run('paperdoll', async t => {
         pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {scale: 0.125, x: 3, y: 4}}, saveF: false});
         pd.setMode('auto');
         pd.applyMode();
-        const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C;
-        out.ui = [$('auFemaleL').hidden, $('auFemale').disabled, $('auFemale').checked];
+        const H = pd.S.mode.parts.find(p => p.P.key === 'helmet').C;
         $('dollF').click();
-        const hist0 = m.hist.length;
+        pd.setMode('sl');
+        const m = pd.S.mode;
+        out.ui = [$('slItemFL').hidden, $('slItemF').disabled, $('slItemF').checked];
+        const hist0 = pd.hist.undos.length;
         const conf = window.confirm;
         let asked = '';
         window.confirm = (s) => {asked = s; return true;};
@@ -1565,8 +1574,8 @@ run('paperdoll', async t => {
         await p;
         let a = await readItems();
         out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('helmet_01') || asked.includes('頭盔：會移除女版'),
-                    H.canvas.width, H.scale, H.x, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
-        set('auFemale', true);
+                    H.canvas.width, H.scale, H.x, pd.S.doll.sex, pd.hist.undos.length === hist0, pd.S.mode === m];
+        set('slItemF', true);
         out.saveF = [pd.S.auto.saveF, JSON.parse(localStorage.getItem('paperdoll.auto')).saveF];
         asked = '';
         p = pd.saveItems();
@@ -1590,7 +1599,7 @@ run('paperdoll', async t => {
         Object.assign(pd.S, {layers: [], active: null});
         return out;
     });
-    t.eq('存到 item 男女：女版勾選框只在護具、拆完才能按、預設不勾', JSON.stringify(sf.ui), JSON.stringify([false, false, false]));
+    t.eq('存到 item 男女：女版勾選框選到護具時顯示、能按、預設不勾', JSON.stringify(sf.ui), JSON.stringify([false, false, false]));
     t.eq('存到 item 男女：女模式開對話框時零件換成男版、沒勾女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 0.25, 1, '會移除女版（沒勾「女版」）']));
     t.eq('存到 item 男女：一定存男版、刪 equip.f 要確認、存完復原女版不記步驟', JSON.stringify(sf.male),
          JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 30, 0.125, 3, 'f', true, true]));
@@ -1762,7 +1771,7 @@ run('paperdoll', async t => {
         await pd.setAssets(assets);
         pd.autoSet({kind: 'head', head: {pct: 50, x: -2, y: 4}, hair: {pct: 50, x: -1, y: 2}});
         pd.setMode('auto');
-        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('auItem').textContent, $('auLoad').textContent, $('au-hair-pct').disabled, $('au-link').checked];
+        out.enter = [pd.S.mode.kind, $('auHead').hidden, $('auTable').hidden, $('auWeapon').hidden, $('au-hair-pct').disabled, $('au-link').checked];
         pd.applyMode();
         const m = pd.S.mode, Hd = m.parts.find(p => p.P.key === 'head').C, Hr = m.parts.find(p => p.P.key === 'hair').C;
         out.made = [Hd.name, Hr.name, Hd.canvas.width, Hd.canvas.height, Hr.canvas.width, Hr.canvas.height, Hd.ops.map(o => o.type).join(),
@@ -1807,15 +1816,16 @@ run('paperdoll', async t => {
         const saved = await readParts();
         out.saved = [JSON.stringify(saved['head-wick']), JSON.stringify(saved['hair-wick']), await png('roles/parts', 'head-wick'), await png('roles/parts', 'hair-wick'), Hd.poolId, Hr.poolId];
 
-        // 載入 pool：x/y 套回、一步模式內 undo；沒有條目的零件略過
+        // 載入 pool（存讀模式）：x/y 套回、一筆全域 undo；沒有條目的零件略過
         await put(json, 'part.json', JSON.stringify({...saved, 'head-wick': {...saved['head-wick'], x: 5, y: 6}, 'hair-wick': {...saved['hair-wick'], x: 7, y: 8}}, null, 2));
-        const h0 = m.hist.length;
-        await pd.loadPoolAuto();
-        out.load = [...at(Hd), ...at(Hr), m.hist.length - h0, pd.S.auto.head.x, $('status').textContent];
+        pd.setMode('sl');
+        const h0 = pd.hist.undos.length;
+        await pd.loadPool();
+        out.load = [...at(Hd), ...at(Hr), pd.hist.undos.length - h0, pd.S.auto.head.x, $('status').textContent];
         key('z');
         out.loadUndo = [...at(Hd), ...at(Hr)];
         await put(json, 'part.json', JSON.stringify({'head-wick': {kind: 'head', sprite: 'head-wick', scale: 0.25, x: 1, y: 1}}, null, 2));
-        await pd.loadPoolAuto();
+        await pd.loadPool();
         out.loadBald = [...at(Hd), ...at(Hr), $('status').textContent];
 
         // 只有一塊：全部當頭，頭髮那行反灰
@@ -1834,8 +1844,8 @@ run('paperdoll', async t => {
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（頭像）：進模式顯示頭像的表、按鈕叫存到 pool／載入 pool；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
-         JSON.stringify(['head', false, true, true, '存到 pool…', '載入 pool', true, true]));
+    t.eq('自動（頭像）：進模式顯示頭像的表；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
+         JSON.stringify(['head', false, true, true, true, true]));
     t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面、自動標 pool', JSON.stringify(ah.made),
          JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false, 'head', 'hair']));
     t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
@@ -1852,7 +1862,7 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：存成 part.json 條目＋roles/parts 的 PNG、零件記住 id', JSON.stringify(ah.saved),
          JSON.stringify(['{"kind":"head","sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"kind":"hair","sprite":"hair-wick","scale":0.25,"x":3,"y":2}',
                          [30, 30], [35, 40], 'head-wick', 'hair-wick']));
-    t.eq('自動（頭像）：載入 pool 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick-hair ← hair-wick、wick-head ← head-wick']));
+    t.eq('自動（頭像）：載入 pool 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick-head ← head-wick、wick-hair ← hair-wick']));
     t.eq('自動（頭像）：載入 pool 可以 undo', JSON.stringify(ah.loadUndo), JSON.stringify([-2, 4, 3, 2]));
     t.eq('自動（頭像）：沒有條目的零件略過', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2, '載入 wick-head ← head-wick；wick-hair 在 part.json 找不到']));
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
@@ -1875,7 +1885,7 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         const shown = (id) => !$(id).hidden;
         out.enter = [pd.S.mode.kind, shown('auTable'), shown('auSplit'), shown('auHintOutfit'), shown('au-cloth-pct'), shown('au-helmet-pct'),
-                     $('auItem').textContent];
+                     $('auFemaleL') === null];
         pd.applyMode();
         const m = pd.S.mode, part = (k) => m.parts.find(p => p.P.key === k)?.C, Cl = part('cloth'), Sh = part('shoes');
         out.made = [m.parts.map(p => p.C.name).join(), Cl.canvas.width, Cl.canvas.height, Sh.canvas.width, Sh.canvas.height, Cl.pool, Sh.pool,
@@ -1890,7 +1900,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動（服飾）：進模式用護具那張表、只顯示衣服鞋子、不拆前後片', JSON.stringify(ao.enter),
-         JSON.stringify(['outfit', true, false, true, true, false, '存到 pool…']));
+         JSON.stringify(['outfit', true, false, true, true, false, true]));
     t.eq('自動（服飾）：左上丟掉、衣服鞋子各一層（衣服疊在鞋子上、選衣服）、去綠、自動標 pool', JSON.stringify(ao.made),
          JSON.stringify(['inn-cloth,inn-shoes', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
     t.eq('自動（服飾）：切女照女版重擺、存檔% 共用', JSON.stringify(ao.female), JSON.stringify([0.2, 5, 6, 30, '♀女版']));
@@ -1919,11 +1929,16 @@ run('paperdoll', async t => {
         const B = pd.addLayer(await createImageBitmap(c), 'cloth-old', null, null);
         const H = pd.addLayer(await createImageBitmap(c), 'hidden', null, null);
         await pd.setAssets(assets);
-        out.btn0 = $('btnPool').disabled;
+        pd.select(null);
+        pd.setMode('sl');
+        out.sl = [pd.S.mode.type, $('modeSL').hidden, $('btnSave').disabled, !!$('btnPool'), !!$('auItem')];
+        pd.select(A);
+        out.sl.push($('btnSave').disabled, pd.S.mode.type);
+        out.btn0 = $('slPool').disabled;
         pd.setPool(A, 'cloth'); pd.setPool(B, 'cloth'); pd.setPool(H, 'shoes');
         H.visible = false;
         Object.assign(A, {x: 1, y: 2, scale: 0.5});
-        out.btn = $('btnPool').disabled;
+        out.btn = $('slPool').disabled;
         out.badge = [...document.querySelectorAll('#layers .tag.pool')].map(b => b.textContent).join();
         out.proj = pd.projectData(pd.S.layers).layers.map(d => d.pool ?? '').join();
 
@@ -1963,6 +1978,8 @@ run('paperdoll', async t => {
         out.unset = [A.pool, A.poolId];
         return out;
     });
+    t.eq('存讀：沒選圖層也能進、存檔要選圖層、選圖層不離開模式；header／自動面板沒有存讀按鈕了', JSON.stringify(pl.sl),
+         JSON.stringify(['sl', false, true, false, false, false, 'sl']));
     t.eq('pool：沒標 pool 按鈕停用、標了才能按、徽章、存進專案', JSON.stringify([pl.btn0, pl.btn, pl.badge, pl.proj]), JSON.stringify([true, false, '鞋,衣,衣', 'cloth,cloth,shoes']));
     t.eq('pool：對話框預設勾顯示中的、id＝圖層名、已有的提示覆蓋', JSON.stringify(pl.dlg),
          JSON.stringify([[false, 'hidden', ''], [true, 'cloth-old', '會覆蓋 cloth-old（PNG＋擺放）（wick 在用）'], [true, 'cloth-a', '']]));

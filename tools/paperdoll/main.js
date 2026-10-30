@@ -362,7 +362,7 @@ function autoSet(v)
     for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     $('au-link').checked = S.auto.headLink;
     $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
-    $('auFemale').checked = S.auto.saveF;
+    $('slItemF').checked = S.auto.saveF;
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -600,18 +600,26 @@ function autoEnter(L)
         autoSpSync(m);
         return m;
     }
+    const m = autoOpen(g);
+    if (typeof m === 'string') return status(m), null;
+    autoSet({...S.auto, kind: m.kind});
+    status(`調整 ${m.parts.map(p => p.C.name).join('、')}`);
+    return m;
+}
+
+// 拆過的一組零件做成跟自動模式一樣的 m（存讀模式也用）；不能調回傳原因
+function autoOpen(g)
+{
     const bad = g.parts.filter(C => autoBase(C) < 0);
-    if (bad.length) return status(`${bad.map(C => C.name).join('、')} 拆完後改過（或是舊格式），不能再自動調整；要重拆先取消自動`), null;
+    if (bad.length) return `${bad.map(C => C.name).join('、')} 拆完後改過（或是舊格式），不能再自動調整；要重拆先取消自動`;
     const C0 = g.parts[0], kind = AUTO_PARTS.find(P => P.key === C0.auto.key).kind;
     const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0) - (autoKeep(C0) ? 2 : 1)), canvas: null};
     const parts = autoParts(kind).map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
         const {sx, sy, sw, sh} = C.ops[autoBase(C) - 1];
         return {P: AUTO_PARTS.find(P => P.key === C.auto.key), C, box: {sx, sy, sw, sh}, keep: autoKeep(C)};
     });
-    autoSet({...S.auto, kind, ...(kind === 'weapon' && {cls: wclsOk(C0.auto.cls ?? wclsOf(C0.name))})});
-    const m = {type: 'auto', kind, layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
-    status(`調整 ${parts.map(p => p.C.name).join('、')}`);
-    return m;
+    if (kind === 'weapon') autoSet({...S.auto, cls: wclsOk(C0.auto.cls ?? wclsOf(C0.name))});
+    return {type: 'auto', kind, layer: null, gid: g.gid, src: g.src, T, parts, sp: null, snap: autoSnap(parts), hist: [], fut: []};
 }
 
 // 照進模式時算好的範圍，每個零件複製一層疊在原圖上（由下往上 靴子、護甲、頭盔），原圖隱藏；
@@ -1268,7 +1276,7 @@ function setMode(type)
 {
     leaveMode();
     const L = S.active;
-    if (type !== 'move' && (!L || L.locked))
+    if (type !== 'move' && type !== 'sl' && (!L || L.locked))
     {
         status('先選一個沒鎖定的圖層');
         type = 'move';
@@ -1296,6 +1304,7 @@ function setMode(type)
     else if (type === 'pixel') S.mode = pixelStart(L);
     else if (type === 'split') S.mode = splitStart(L) ?? {type: 'move'};
     else if (type === 'icon') S.mode = {type, layer: L};
+    else if (type === 'sl') S.mode = {type};
     else S.mode = {type: 'move'};
     refreshAll();
 }
@@ -2240,7 +2249,7 @@ cv.addEventListener('pointerdown', e => {
         if (hit !== L) select(hit);
         drag = {type: 'autoMove', part: autoPart(m, hit), wx: w.x, wy: w.y, x: hit.x, y: hit.y};
     }
-    else if (m.type === 'move')
+    else if (m.type === 'move' || m.type === 'sl')
     {
         if (S.keys.has('r') && L && !L.locked)
         {
@@ -2423,11 +2432,11 @@ window.addEventListener('keydown', e => {
         refreshModePanel();
         dirty();
     }
-    else if (d && L && !L.locked && (S.mode.type === 'move' || S.mode.type === 'scale'))
+    else if (d && L && !L.locked && ['move', 'sl', 'scale'].includes(S.mode.type))
     {
         e.preventDefault();
-        const step = ST.step('xy') * (e.shiftKey ? 10 : 1), G = S.mode.type === 'move' ? linked(L) : [L];
-        if (S.mode.type === 'move') hist.push({group: G.map(M => hist.snap(M))});
+        const move = S.mode.type !== 'scale', step = ST.step('xy') * (e.shiftKey ? 10 : 1), G = move ? linked(L) : [L];
+        if (move) hist.push({group: G.map(M => hist.snap(M))});
         for (const M of G) Object.assign(M, {x: round(M.x + d[0] * step), y: round(M.y + d[1] * step)});
         refreshProps();
         dirty();
@@ -2517,7 +2526,6 @@ function refreshLayers()
     }
     $('dollHair').disabled = !tagged;
     $('dollHair').checked = S.doll.hair;
-    $('btnPool').disabled = $('btnPoolLoad').disabled = !S.assets || !S.layers.some(L => L.pool);
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
@@ -2560,7 +2568,7 @@ function refreshLayers()
     }
 }
 
-const PROP_IDS = ['pX', 'pY', 'pS', 'pA', 'pOx', 'pOy', 'pOp', 'btnSave'];
+const PROP_IDS = ['pX', 'pY', 'pS', 'pA', 'pOx', 'pOy', 'pOp'];
 
 function refreshProps()
 {
@@ -2585,7 +2593,6 @@ function refreshAuto(m)
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
-    const head = AUTO_POOL.includes(m.kind);
     for (const [k, ids] of [['armor', ['auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
                             ['head', ['auHead', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
@@ -2593,14 +2600,6 @@ function refreshAuto(m)
     for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
     $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
-    $('auItem').textContent = head ? '存到 pool…' : '存到 item…';
-    $('auLoad').textContent = head ? '載入 pool' : '載入 item';
-    $('auItem').disabled = !m.parts || !S.assets;
-    $('auItem').title = !S.assets ? '先在上方選擇專案資料夾' : m.parts ? '' : '拆完才能存';
-    $('auLoad').disabled = $('auFemale').disabled = $('auItem').disabled;
-    $('auFemaleL').hidden = m.kind !== 'armor';
-    $('auLoad').title = !S.assets ? '先在上方選擇專案資料夾' : !m.parts ? '拆完才能載入'
-                      : (head ? '照 id（存過的 id，不然零件名）找 part.json' : '照 equip.sprite 找 item') + '，載入 scale/x/y，照遊戲的 PNG 反推存檔%（要重烤先問）';
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
@@ -2612,6 +2611,18 @@ function refreshAuto(m)
         }
         if (P.key === 'hair') $('au-link').disabled = !!m.parts && !part;
     }
+}
+
+function refreshSL()
+{
+    const g = slGroup(ITEM_KINDS), pool = S.layers.some(L => L.pool), why = !S.assets && '先在上方選擇專案資料夾';
+    $('btnSave').disabled = !S.active;
+    $('slItem').disabled = $('slItemLoad').disabled = $('slItemF').disabled = !S.assets || !g;
+    $('slItemFL').hidden = g?.parts[0].auto.key === 'weapon';
+    $('slItem').title = $('slItemLoad').title = why || (g ? `${g.parts.map(C => C.name).join('、')}，照 equip.sprite 找 item` : '選一組自動拆的護具／武器零件');
+    $('slPool').disabled = $('slPoolLoad').disabled = !S.assets || !pool;
+    $('slPool').title = $('slPoolLoad').title = why || (pool ? '' : '圖層右鍵標 pool 部位');
+    $('slInfo').textContent = g ? `item：${g.parts.map(C => C.name).join('、')}` : '';
 }
 
 const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
@@ -2648,6 +2659,8 @@ function refreshModePanel()
     $('modeSplit').hidden = m.type !== 'split';
     $('modeIcon').hidden = m.type !== 'icon';
     if (m.type === 'icon') iconPreview(m);
+    $('modeSL').hidden = m.type !== 'sl';
+    if (m.type === 'sl') refreshSL();
     if (m.type === 'split')
     {
         $('spRevoke').disabled = !m.gid;
@@ -3873,11 +3886,11 @@ function itemDialog(parts, items, keys)
 }
 
 // 每個零件照 itemMatch() 找 item，載入擺放（scale/x/y，武器多 a/ox/oy；沒寫的 key 是預設值，沒有 scale 就不動）；
-// 整次一步模式內 undo、寫回全域預設，一個都沒對到（或都沒變）不記
+// 整次一筆全域 undo、寫回全域預設，一個都沒對到（或都沒變）不記
 async function loadItems()
 {
-    const m = S.mode;
-    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const m = slAuto(ITEM_KINDS);
+    if (!m || !S.assets) return;
     const items = await readGameJson('item.json');
     const rows = [], hit = [], miss = [], warn = [];
     for (const part of m.parts)
@@ -3891,6 +3904,7 @@ async function loadItems()
     }
     if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
     await loadPlace(m, rows, warn);
+    if (m.hist.length) hist.push(m.snap);
     status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
     refreshAll();
 }
@@ -3942,11 +3956,27 @@ function autoApplyAll(m, rows)
     for (const [part, row] of diff) autoApply(m, part, row, false);
 }
 
+// 存讀模式的 item 作用在選取圖層所屬的那組自動零件（選原圖、零件、前後片都算），要是 kinds 裡的種類
+const ITEM_KINDS = ['armor', 'weapon'];
+
+function slGroup(kinds)
+{
+    const L = S.active, g = L && autoGroup(splitNew(L)?.O ?? L);
+    return g && kinds.includes(AUTO_PARTS.find(P => P.key === g.parts[0].auto.key).kind) ? g : null;
+}
+
+function slAuto(kinds)
+{
+    const g = slGroup(kinds), m = g && autoOpen(g);
+    if (typeof m === 'string') return status(m), null;
+    return m;
+}
+
 // 一定存男版：女模式下先照男版數字重擺（PNG 男女共用一張，不用重烤），存完復原；勾「女版」另寫 equip.f，沒勾就刪掉 equip.f
 async function saveItems()
 {
-    const m = S.mode;
-    if (m.type !== 'auto' || !m.parts || !S.assets) return;
+    const m = slAuto(ITEM_KINDS);
+    if (!m || !S.assets) return;
     const back = autoMale(m);
     try
     {
@@ -4165,50 +4195,46 @@ async function commitPool(rows, bake)
     status(`已存 part.json：${act.map(r => r.id).join('、')}${female ? '（女版 f）' : ''}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
-// 標了 pool 的層照 id（存過的 poolId，不然圖層名）找條目，載入擺放（女模式套 f）；整次一步 undo，都沒對到不記
-function loadPoolInto(parts)
-{
-    const hit = [], miss = [], snaps = [], female = poolFemale();
-    for (const L of S.layers.filter(L => L.pool))
-    {
-        const id = L.poolId ?? L.name, e0 = parts[id];
-        if (!e0) {miss.push(L.name); continue;}
-        const e = female && e0.f ? {...e0, ...e0.f} : e0;
-        snaps.push(hist.snap(L));
-        Object.assign(L, {scale: e.scale ?? L.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1, poolId: id});
-        hit.push(`${L.name} ← ${id}`);
-    }
-    if (snaps.length) hist.push({group: snaps});
-    refreshAll();
-    status(hit.length ? [`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 在 part.json 找不到`].filter(Boolean).join('；')
-                      : `${miss.join('、')} 在 part.json 找不到`);
-}
-
+// 標了 pool 的層照 id（存過的 poolId，不然圖層名）找條目，載入擺放（女模式套 f）：
+// 自動零件（頭像、服飾）載入 scale/x/y、照 PNG 反推存檔%（同載入 item 的 loadPlace，寫回全域預設），其他層直接套 scale/x/y/a/ox/oy；
+// 整次一筆全域 undo，都沒對到不記
 async function loadPool()
 {
     if (!S.assets) return;
-    loadPoolInto(await readParts());
-}
-
-// 頭像自動模式：頭、頭髮零件照 id 找條目，載入 scale/x/y、照 PNG 反推存檔%（跟載入 item 一樣走 loadPlace），整次一步模式內 undo
-async function loadPoolAuto()
-{
-    const m = S.mode;
-    if (m.type !== 'auto' || !m.parts || !S.assets) return;
-    const parts = await readParts(), rows = [], hit = [], miss = [], warn = [];
-    for (const part of m.parts)
+    const parts = await readParts(), pool = S.layers.filter(L => L.pool), female = poolFemale();
+    const undo = {group: [hist.snapList(S), ...pool.flatMap(L => linked(L)).map(L => hist.snap(L, true))]};
+    const hit = [], miss = [], warn = [], groups = new Map();
+    const entry = (L) => {
+        const id = L.poolId ?? L.name, e0 = parts[id];
+        if (!e0) {miss.push(L.name); return null;}
+        hit.push(`${L.name} ← ${id}`);
+        L.poolId = id;
+        return {e0, e: female && e0.f ? {...e0, ...e0.f} : e0};
+    };
+    for (const L of pool)
     {
-        const {C} = part, id = C.poolId ?? C.name, e0 = parts[id];
-        if (!e0) {miss.push(C.name); continue;}
-        const e = poolFemale() && e0.f ? {...e0, ...e0.f} : e0, cur = autoRow(part);
-        hit.push(`${C.name} ← ${id}`);
-        C.poolId = id;
-        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}, e0.sprite]);
+        const g = L.auto && autoGroup(L), m = g && (groups.get(g.gid) ?? autoOpen(g));
+        if (m && typeof m !== 'string')
+        {
+            groups.set(g.gid, m);
+            continue;
+        }
+        const got = entry(L);
+        if (got) Object.assign(L, {scale: got.e.scale ?? L.scale, x: got.e.x ?? 0, y: got.e.y ?? 0, a: got.e.a ?? 0, ox: got.e.ox ?? 0.5, oy: got.e.oy ?? 1});
     }
-    if (!hit.length) return status(`${miss.join('、')} 在 part.json 找不到`);
-    await loadPlace(m, rows, warn);
-    status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 在 part.json 找不到`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
+    for (const m of groups.values())
+    {
+        const rows = [];
+        for (const part of m.parts.filter(p => p.C.pool))
+        {
+            const got = entry(part.C), cur = autoRow(part);
+            if (got) rows.push([part, {...cur, scale: got.e.scale ?? cur.scale, x: got.e.x ?? 0, y: got.e.y ?? 0}, got.e0.sprite]);
+        }
+        if (rows.length) await loadPlace(m, rows, warn);
+    }
+    if (hit.length) hist.push(undo);
     refreshAll();
+    status([hit.length && `載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 在 part.json 找不到`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
 }
 
 // ---------- 批次存武器 ----------
@@ -4786,9 +4812,11 @@ document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
 };});
 $('auCancel').onclick = autoRevoke;
 $('auLeave').onclick = cancelMode;
-$('auFemale').onchange = () => autoSet({...S.auto, saveF: $('auFemale').checked});
-$('auItem').onclick =() => (AUTO_POOL.includes(S.mode.kind) ? savePool() : saveItems()).catch(e => status(e.message));
-$('auLoad').onclick = () => (AUTO_POOL.includes(S.mode.kind) ? loadPoolAuto() : loadItems()).catch(e => status(e.message));
+$('slItemF').onchange = () => autoSet({...S.auto, saveF: $('slItemF').checked});
+$('slItem').onclick = () => saveItems().catch(e => status(e.message));
+$('slItemLoad').onclick = () => loadItems().catch(e => status(e.message));
+$('slPool').onclick = () => savePool().catch(e => status(e.message));
+$('slPoolLoad').onclick = () => loadPool().catch(e => status(e.message));
 
 S.icon = iconLoad();
 for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => true], ['icFill', 'fill', v => v > 0 && v <= 100]])
@@ -4802,8 +4830,6 @@ for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => t
     };
 }
 $('icSave').onclick = () => saveIcon().catch(e => status(e.message));
-$('btnPool').onclick = () => savePool().catch(e => status(e.message));
-$('btnPoolLoad').onclick = () => loadPool().catch(e => status(e.message));
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
@@ -4856,4 +4882,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, savePool, commitPool, loadPool, loadPoolAuto, projectData, applySettings, ST};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, savePool, commitPool, loadPool, projectData, applySettings, ST};

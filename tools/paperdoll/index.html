@@ -16,9 +16,6 @@
     <span title="圖層右鍵標成 男／女 的 髮／頭／身體，切換時批次改顯示"><button id="dollM">男</button><button id="dollF">女</button></span>
     <label><input id="dollHair" type="checkbox" checked> 頭髮</label>
     <span class="sep"></span>
-    <button id="btnPool" title="把右鍵標了 pool 部位的圖層存進 part.json（女模式只寫 f）">存到 pool…</button>
-    <button id="btnPoolLoad" title="照 part.json 把擺放載回標了 pool 部位的圖層（女模式讀 f）">載入 pool</button>
-    <span class="sep"></span>
     <label><input id="showOrigin" type="checkbox" checked> 顯示 origin</label>
     <span class="sep"></span>
     <label>tile <input id="tw" type="number" value="32">×<input id="th" type="number" value="32"></label>
@@ -60,6 +57,7 @@
             <button data-mode="pixel">像素</button>
             <button data-mode="split">前後片</button>
             <button data-mode="icon">icon</button>
+            <button data-mode="sl">存讀</button>
             <button id="btnTrim">裁到剛好</button>
             <label title="alpha 低於門檻的像素不算內容（裁到剛好、自動模式分塊、icon 共用）">門檻 <input id="trimT" type="number" min="1" max="255" value="16"></label>
         </div>
@@ -144,7 +142,17 @@
             <div id="auHintOutfit" class="hint" hidden>綠底整套：左上光頭（丟掉）、左下衣服、右下鞋子（身體的位置是綠色的洞），右上空著。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上（鞋子在下、衣服在上）、原圖隱藏，自動標 pool 的 衣服／鞋子。存檔%＝PNG 縮成原圖幾 %，scale／x／y 只改擺放（遊戲單位）；男女各一組 scale／x／y，照上方 男｜女 切換，存檔% 共用。「存到 pool…」存進 part.json（PNG 在 roles/parts，id 預設是零件名），再到角色編輯器挑</div>
             <div id="auHintArmor" class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（存檔%＝PNG 縮成原圖幾 %，改了才重新縮放；scale＝遊戲的 equip.scale，跟 x／y 一樣只改擺放），x／y 是遊戲單位；女版只有 scale／x／y，存檔% 跟男版共用。用「縮放」模式拉零件改的是存檔%（等比）。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
-            <div class="row2"><button id="auLoad">載入 item</button><button id="auItem">存到 item…</button><label id="auFemaleL" title="一定存男版；勾了另外寫 equip.f（女版的 scale/x/y），沒勾會刪掉 equip.f"><input id="auFemale" type="checkbox"> 女版</label></div>
+        </div>
+
+        <div id="modeSL" class="mode" hidden>
+            <div class="row2"><button id="btnSave" title="選取的圖層存成 PNG">存檔…</button></div>
+            <div class="row2"><button id="slItem">存到 item…</button><button id="slItemLoad">載入 item</button>
+                <label id="slItemFL" title="一定存男版；勾了另外寫 equip.f（女版的 scale/x/y），沒勾會刪掉 equip.f"><input id="slItemF" type="checkbox"> 女版</label></div>
+            <div class="row2"><button id="slPool" title="把右鍵標了 pool 部位的圖層存進 part.json（女模式只寫 f）">存到 pool…</button>
+                <button id="slPoolLoad" title="照 part.json 把擺放載回標了 pool 部位的圖層（女模式讀 f）">載入 pool</button></div>
+            <div id="slInfo" class="dim"></div>
+            <div class="hint">item：選一組自動拆的護具／武器零件（原圖、零件、前後片都算），照 equip.sprite 找 item。pool：所有右鍵標了 pool 部位的圖層。載入照遊戲的 PNG 反推存檔%（要重烤先問），整次一步 undo。這個模式裡照常可以點選、拖曳圖層</div>
+            <div class="row2"><button class="cancel">離開</button></div>
         </div>
 
         <div id="modePixel" class="mode" hidden>
@@ -212,7 +220,6 @@
             <label>ox <input id="pOx" type="number" data-step="ox"></label>
             <label>oy <input id="pOy" type="number" data-step="oy"></label>
             <label>透明度 <input id="pOp" type="range" min="0" max="100" value="100"></label>
-            <button id="btnSave">存檔…</button>
         </div>
         <div class="hint">
             拖曳：移動（Shift 只沿水平或垂直）　R+拖曳：旋轉（Shift 鎖 15°）<br>
