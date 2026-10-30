@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>設定</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    #view h3 { display: flex; align-items: center; gap: 10px; margin: 14px 0 6px; font-size: 17px; }
+    #view h3 button { font-size: 14px; font-weight: normal; padding: 1px 8px; }
+    table.grid th { cursor: default; text-align: center; }
+    table.grid td { text-align: center; }
+    table.grid td.k { text-align: left; color: #aaa; }
+    table.grid td.na { background: #232428; }
+    table.grid td input { width: 80px; min-width: 0; text-align: right; }
+    table.grid td input::placeholder { color: #666; }
+    table.grid td input.changed { color: #fc8; border-color: #a8742c; }
+    table.grid tr.sub td.k { padding-left: 18px; }
+    table.grid td button { padding: 0 6px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+    <button id="btnUndo" title="Ctrl+Z">↶</button>
+    <button id="btnRedo" title="Ctrl+Y">↷</button>
+    <span class="sep"></span>
+    <span class="dim">存在 tools/settings.json（不進 git），改了自動存；空白＝用內建值（灰字）</span>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <section id="view"></section>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
