@@ -5,8 +5,9 @@
 ## 讀寫
 
 - 專案資料夾由殼給（專案根目錄，自動找 `public/assets`），改名／刪除會一起掃 `src/`。
-- 唯讀參考資料走 dev server（不經資料夾 handle）：`item.json`（道具名、裝備圖）、`ability.json`（技能）、`navgraph.json`（作息的地圖／目的地）、`com_ai.js?raw`（性格）。殼裡別的分頁存了 `item.json` 會自動重抓；其他的改了要重新整理頁面。
-- 存檔前三方合併：紙娃娃之後會「存到 role.json」（body/head/hand 擺放），合併是角色層級。
+- 參考資料走 dev server（不經資料夾 handle）：`item.json`（道具名、裝備圖）、`part.json`（部位）、`ability.json`（技能）、`navgraph.json`（作息的地圖／目的地）、`com_ai.js?raw`（性格）。殼裡別的分頁存了 `item.json`／`part.json` 會自動重抓、`textures.json` 會重畫；其他的改了要重新整理頁面。`part.json` 只有部位選圖器的改名／刪除會寫（經資料夾 handle）。
+- 也讀 `tools/settings.json`（`portrait`，由頭髮產生頭像的尺寸／%）。
+- 存檔前三方合併（別的分頁像試穿也會改 role.json），合併是角色層級。
 
 ## 介面
 
@@ -16,8 +17,12 @@
 - 段內欄位：顯示的欄位＝基本＋該 kind 建議的（`KIND_FIELDS`）＋已經有值的，其他從「加欄位」叫出來。遊戲沒在讀的 `stats`/`states`/`weapon`/`type` 不在 schema 裡，放最下面「其他欄位」原樣保留。
   - 性格 `style` 的選項從 `com_ai.js` 的 `wTBL` 解析（註解掉的不算，行尾註解當說明），不在表上的會警告「遊戲會當成 passive_fighter」。
   - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。
+  - 部位（「外觀」段的身體／鞋子／衣服／頭／頭髮／手，`type: 'part'`）：寫 `part.json` 的 id（部位的圖跟擺放都在 part.json，見 [paperdoll-tool.md](paperdoll-tool.md) 的「部位 pool」）。欄位是縮圖＋id 輸入框（combo 只列同 kind）＋「選…」：pool 選圖器（`pickPart()`，`#dlgPart`）照 kind 列條目，第一格「無」（清掉），hover 看幾個角色在用，點一下就選。選圖器裡右鍵條目：
+    - 改名（`renamePart()`）：新 id 只能英數字／底線／減號、不能撞名；`part.json` 立刻寫（位置不變、sprite 不變），role.json 裡用到的角色一起改（一步 undo）並馬上存檔，兩邊才不會對不上。
+    - 刪除（`deletePart()`）：還有角色在用就擋（列出是誰）；PNG 不刪，到「圖片」分頁搬到 .tbd。
+  - 頭像 `icon` 旁邊的「由頭髮產生」（`genPortrait()`，角色沒有頭／頭髮就停用）：`tools/common/portrait.js` 的 `portraitOf()` 把頭、頭髮（`partFor()` 查條目，女角套 `f`）照遊戲擺放疊起來——PNG 原尺寸畫，scale 最小的那張 1:1、其他照比例放大，可以轉角度——裁到不透明範圍（alpha ≥ 16），等比塞進 `portrait.size`×`size` 的 `fill`%（設定分頁「角色頭像」，可以超過 100、超出的裁掉）置中，寫 `textures/roles/portraits/portrait-<id>.png` 並把 `icon` 改成它（一步 undo，要自己存 role.json）。icon 原本不是它而檔案已經在 → 先問覆蓋；`portrait-<id>` 是別的資料夾的 texture key → 擋。dev server 監看 `textures/` 會自動更新圖片清單。
   - 作息：一筆一張卡片，標題是一行摘要。時間分「出發 HH:MM／抵達 @HH:MM」；地圖、目的地的選項來自 `navgraph.json`（節點 key `地圖:物件`），目的地只列該地圖的物件；活動選巡邏才出現路線（逗號分隔、可重複）跟停留。路網沒有的地圖／物件、時間格式錯、巡邏沒 route 都會警告（新地圖要先跑 `node scripts/navgraph.js`）。
-- 右側固定的靜態合成預覽（`preview.js`）：照 `RoleView` 的規則畫——view 中心＝錨點 −`anchor`，部件放在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、`scale`、角度 `a`，依 depth 疊（body 0、胸甲／靴 1、head 2、hair 2.5、頭盔 3、武器 4、hand 5、手套／ext 6，同 `_addPart`）；裝備從 `inv.equips` 查 `item.json` 的 `equip`（照角色的 `sex` 用 `equipFor()` 套 `equip.f`，同遊戲），有一件 `equip.hideHair` 就不畫 hair。`sex`（`m`／`f`，空＝男）在「外觀」段，玩家／NPC 預設列出。虛線是 view（w×h），黃十字是錨點，紅／綠／藍框是物理 b／佔格 g／互動區 z（算法同 `View._resolveAxis`）。可切換框、裝備、翻面、放大倍率（記在頁面，換角色保留）。不播動畫、不打光。
+- 右側固定的靜態合成預覽（`preview.js`）：照 `RoleView` 的規則畫——view 中心＝錨點 −`anchor`，部件放在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、`scale`、角度 `a`，依 depth 疊（body 0、shoes 0.2、cloth 0.3、靴 0.5、胸甲 1、後片 1.5、head 2、hair 2.5、頭盔 3、武器 4、hand 5、手套／ext 6，同 `PART_DEPTH`）；部位照 id 查 `part.json`、裝備從 `inv.equips` 查 `item.json` 的 `equip`（照角色的 `sex` 用 `partFor()`／`equipFor()` 套 `f`，同遊戲），被裝備藏掉的部位不畫（`hiddenParts()`：`hideHair` 藏頭髮、任何護甲藏衣服、任何靴子藏鞋子）。`sex`（`m`／`f`，空＝男）在「外觀」段，玩家／NPC 預設列出。虛線是 view（w×h），黃十字是錨點，紅／綠／藍框是物理 b／佔格 g／互動區 z（算法同 `View._resolveAxis`）。可切換框、裝備、翻面、放大倍率（記在頁面，換角色保留）。不播動畫、不打光。
 - 總覽：全部＋6 個 kind 共 7 頁，欄位可以是 `attrs.atk` 這種路徑；NPC 頁有地點篩選。
 
 ## 新增／複製／改名／刪除
@@ -27,17 +32,18 @@
 
 ## 檢查
 
-`lab`、`w`/`h`/`anchor`（RoleView 直接讀，沒有會出錯）、數字／布林型別、kind、style、sprite／icon 在 textures.json、`meat`/`skin`/物品欄／裝備的道具存在（裝備還要有 `equip`）、物品數超過容量、技能存在、作息（上面）。只警告不擋存檔。
+`lab`、`w`/`h`/`anchor`（RoleView 直接讀，沒有會出錯）、數字／布林型別、kind、style、sprite／icon 在 textures.json、部位 id 在 part.json 而且 kind 對、`meat`/`skin`/物品欄／裝備的道具存在（裝備還要有 `equip`）、物品數超過容量、技能存在、作息（上面）。只警告不擋存檔。
 
 ## 程式結構
 
 | 檔案 | 內容 |
 |---|---|
 | `schema.js` | 欄位定義（`FIELDS`、`SECTIONS`、`KIND_FIELDS`、`STYLES`、`TABS`、`DEPTH`）、`template()`、`schSummary()` |
-| `preview.js` | 靜態合成預覽 `previewEl(role, items)` |
-| `main.js` | 檢查、表單（物品欄格子、作息卡片）、清單分組、總覽表、新增 |
-| `role.css` | 預覽、分段標題、道具格子 |
+| `preview.js` | 靜態合成預覽 `previewEl(role, items, parts)`、`partsOf()`（特效工具也用） |
+| `main.js` | 檢查、表單（物品欄格子、作息卡片、部位選圖器、由頭髮產生）、清單分組、總覽表、新增 |
+| `role.css` | 預覽、分段標題、道具格子、部位選圖器 |
+| `../common/portrait.js` | 頭＋頭髮合成頭像 `portraitOf()` |
 
-測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）。
+測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）、`node scripts/test/role-part.mjs`（部位欄、選圖器只列同 kind／無／取消、改名連帶存 role.json、撞名擋、刪除有人用擋、由頭髮產生的尺寸與覆蓋確認、沒頭的角色停用）。
 
-不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）。
+不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）、新增部位條目（紙娃娃「存到 pool…」）。
