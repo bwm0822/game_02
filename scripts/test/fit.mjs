@@ -330,5 +330,5 @@ run('fit', async t => {
     t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));
-    t.eq('空白欄位 ↑ 從預設值起跳', stepPh, 1.1);
+    t.eq('空白欄位 ↑ 從預設值起跳（ox/oy 步進＝設定的 o 0.05）', stepPh, 1.05);
 });
