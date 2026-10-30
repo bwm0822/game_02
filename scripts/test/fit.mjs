@@ -101,6 +101,18 @@ run('fit', async t => {
         F.redo();
         out.redo = S.doc['part.json'].data.rogue.x;
 
+        // 下拉挑部位：六個部位都有、寫 role.json、選（無）刪 key、undo
+        const pick = (k, v) => {const s = document.querySelector(`select.part[data-k="role.json|guard-1|${k}"]`); s.value = v; s.dispatchEvent(new Event('change'));};
+        const g1 = () => S.doc['role.json'].data['guard-1'];
+        const n0 = await drawn();
+        out.partSel = [document.querySelectorAll('#view select.part').length, [...document.querySelector('select.part[data-k$="|head"]').options].every(o => !o.value || o.value.startsWith('head-'))];
+        pick('head', 'head-wick');
+        out.partSel.push(g1().head, await drawn() === n0 + 1);
+        pick('head', '');
+        out.partSel.push('head' in g1());
+        F.undo(); F.undo();
+        out.partSel.push('head' in g1());
+
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
         const sw = S.doc['item.json'].data['sword-1'].equip;
@@ -293,6 +305,7 @@ run('fit', async t => {
     t.eq('改裝備寫 item.json', r.equipY, 5);
     t.eq('改部件寫 part.json', r.bodyX, -2);
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
+    t.eq('下拉挑部位：六個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([6, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);
     t.eq('不是數字不寫', r.badNum, false);
     t.check('未存標記', r.dirty[0] && r.dirty[1]);

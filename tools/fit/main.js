@@ -357,12 +357,18 @@ function drawView()
 function fitView(r, slots)
 {
     const hide = hiddenNow();
-    const partRows = PARTS.filter(([k]) => r[k]).map(([k, name]) => {
-        const pid = r[k], p = parts()[pid], n = usersOf(pid).length;
+    // 每個部位一個下拉挑 part.json 同 kind 的條目（寫 role.json，跟數字一起 undo）；沒挑的部位數字欄空著
+    const partRows = PARTS.map(([k, name]) => {
+        const pid = r[k], p = parts()[pid], n = pid ? usersOf(pid).length : 0;
+        const ids = Object.keys(parts()).filter(id => parts()[id].kind === k);
+        const opts = pid && !ids.includes(pid) ? [...ids, pid] : ids;
         return h('tr', null,
             h('td', {class: 'k'}, name),
-            h('td', null, h('span', {class: 'sprite'}, pid),
-                !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
+            h('td', null, h('select', {class: 'part', dataset: {k: `role.json|${S.rid}|${k}`},
+                    onchange: (e) => commit(() => setAt(role(), [k], e.target.value || undefined))},
+                    h('option', {value: '', selected: !pid}, '（無）'),
+                    opts.map(id => h('option', {value: id, selected: id === pid}, id))),
+                pid && !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
                 hide.has(k) && h('span', {class: `dim hidden-${k}`}, '（目前被裝備隱藏）')),
             p ? sexCells('part.json', pid, []) : NUMS.map(() => h('td')));
