@@ -11,7 +11,9 @@ run('paperdoll', async t => {
         const img = (w, h, draw) => {const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d')); return createImageBitmap(c);};
         const pos = (L) => ({w: L.canvas.width, h: L.canvas.height, x: L.x, y: L.y});
 
-        const L = pd.addLayer(await img(100, 50, g => g.fillRect(10, 5, 80, 40)), 't', null, null, {x: 2, y: 8, scale: 0.25});
+        const L = pd.addLayer(await img(100, 50, g => g.fillRect(10, 5, 80, 40)), 't', null, null);
+        out.loadScale = L.scale;
+        Object.assign(L, {x: 8, y: 32, scale: 1});
         out.load = pos(L);
         pd.trimLayer(L);
         out.trim = pos(L);
@@ -34,8 +36,8 @@ run('paperdoll', async t => {
         const grad = (g) => {const gr = g.createLinearGradient(0, 0, 64, 64); gr.addColorStop(0, '#f00'); gr.addColorStop(1, '#00f'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);};
         const pix = (L) => [...L.canvas.getContext('2d').getImageData(0, 0, L.canvas.width, L.canvas.height).data].join();
         const scaleBy = (L, f) => {pd.select(L); pd.setMode('scale'); pd.S.mode.sx = pd.S.mode.sy = f; pd.applyMode();};
-        const G1 = pd.addLayer(await img(64, 64, grad), 'g1', null, null, null);
-        const G2 = pd.addLayer(await img(64, 64, grad), 'g2', null, null, null);
+        const G1 = pd.addLayer(await img(64, 64, grad), 'g1', null, null);
+        const G2 = pd.addLayer(await img(64, 64, grad), 'g2', null, null);
         scaleBy(G1, 0.5); scaleBy(G1, 0.5);
         scaleBy(G2, 0.25);
         out.fromSrc = G1.ops.length === 1 && pix(G1) === pix(G2);
@@ -52,7 +54,7 @@ run('paperdoll', async t => {
         out.originKeep = Math.hypot(before.x - after.x, before.y - after.y) < 1e-9;
         pd.setOrigin(L, 0.5, 1);
 
-        const A = pd.addLayer(await img(4, 1, g => [10, 50, 200, 255].forEach((a, i) => {g.fillStyle = `rgba(255,0,0,${a / 255})`; g.fillRect(i, 0, 1, 1);})), 'a', null, null, null);
+        const A = pd.addLayer(await img(4, 1, g => [10, 50, 200, 255].forEach((a, i) => {g.fillStyle = `rgba(255,0,0,${a / 255})`; g.fillRect(i, 0, 1, 1);})), 'a', null, null);
         document.getElementById('alT').value = 60;
         pd.setMode('alpha');
         pd.applyMode();
@@ -60,7 +62,7 @@ run('paperdoll', async t => {
 
         const rgba = (L) => [...L.canvas.getContext('2d').getImageData(0, 0, L.canvas.width, 1).data].join();
         const strip = () => img(4, 1, g => [[0, 255, 0, 10], [255, 0, 0, 255], [10, 20, 30, 255]].forEach(([r, gg, b, a], i) => {g.fillStyle = `rgba(${r},${gg},${b},${a / 255})`; g.fillRect(i + 1, 0, 1, 1);}));
-        const F = pd.addLayer(await strip(), 'f', null, null, null);
+        const F = pd.addLayer(await strip(), 'f', null, null);
         const fBefore = rgba(F);
         Object.assign(document.getElementById('colRgb'), {value: '#0000ff'});
         document.getElementById('colA').value = 200;
@@ -72,7 +74,7 @@ run('paperdoll', async t => {
         pd.undo();
         out.fillUndo = rgba(F) === fBefore;
 
-        const K = pd.addLayer(await strip(), 'k', null, null, null);
+        const K = pd.addLayer(await strip(), 'k', null, null);
         document.getElementById('colKey').checked = true;
         pd.setMode('color');
         pd.pickColor(pd.toWorld(K, 2.5, 0.5));
@@ -84,13 +86,13 @@ run('paperdoll', async t => {
         pd.select(A);
 
         L.a = 30;
-        out.sidecar = JSON.stringify(pd.sidecar(L));
+        out.place = JSON.stringify(pd.placeOf(L));
 
-        const N = pd.addLayer(await img(100, 50, g => {g.fillRect(40, 10, 20, 30); g.fillStyle = 'rgba(0,0,0,0.02)'; g.fillRect(0, 0, 1, 1);}), 'n', null, null, null);
+        const N = pd.addLayer(await img(100, 50, g => {g.fillRect(40, 10, 20, 30); g.fillStyle = 'rgba(0,0,0,0.02)'; g.fillRect(0, 0, 1, 1);}), 'n', null, null);
         pd.trimLayer(N);
         out.noise = [N.canvas.width, N.canvas.height];
 
-        const E = pd.addLayer(await img(10, 10, g => g.fillRect(0, 0, 10, 10)), 'e', null, null, null);
+        const E = pd.addLayer(await img(10, 10, g => g.fillRect(0, 0, 10, 10)), 'e', null, null);
         const ex = E.x, ey = E.y;
         document.getElementById('cropCut').checked = true;
         pd.setMode('crop');
@@ -129,7 +131,7 @@ run('paperdoll', async t => {
         const $ = (id) => document.getElementById(id);
         const sq = (n) => {const c = document.createElement('canvas'); c.width = c.height = n; c.getContext('2d').fillRect(0, 0, n, n); return createImageBitmap(c);};
         const alpha = (L, x, y) => L.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
-        const L = pd.addLayer(await sq(40), 'w', null, null, {x: 5, y: 7, scale: 1});
+        const L = Object.assign(pd.addLayer(await sq(40), 'w', null, null), {x: 5, y: 7, scale: 1});
         L.a = 30;
         const x0 = L.x, y0 = L.y, ops0 = L.ops.length;
         const center0 = pd.toWorld(L, 20, 20);
@@ -168,7 +170,7 @@ run('paperdoll', async t => {
         pd.S.layers.splice(pd.S.layers.indexOf(L), 1);
 
         // 局部框：右邊一排點往左推 5，框外不動、框內右側空出來
-        const M = pd.addLayer(await sq(40), 'm', null, null, null);
+        const M = pd.addLayer(await sq(40), 'm', null, null);
         const mx = M.x, my = M.y;
         pd.setMode('warp');
         f = pd.warpAddFrame(pd.S.mode, {x: 10, y: 10, w: 20, h: 20});
@@ -195,7 +197,7 @@ run('paperdoll', async t => {
         pd.S.layers.splice(pd.S.layers.indexOf(M), 1);
 
         // 互動：真的派 pointer 事件
-        const Q = pd.addLayer(await sq(40), 'q', null, null, null);
+        const Q = Object.assign(pd.addLayer(await sq(40), 'q', null, null), {scale: 1});
         $('wpCols').value = 4;
         $('wpRows').value = 4;
         pd.setMode('warp');
@@ -264,7 +266,7 @@ run('paperdoll', async t => {
         const pd = window.__pd, out = {};
         const c = document.createElement('canvas'); c.width = c.height = 10;
         c.getContext('2d').fillRect(0, 0, 10, 10);
-        const Q = pd.addLayer(await createImageBitmap(c), 'q', null, null, null);
+        const Q = Object.assign(pd.addLayer(await createImageBitmap(c), 'q', null, null), {scale: 1});
         const a = (L, x, y) => L.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
         const tri = [{x: 2, y: 2}, {x: 8, y: 2}, {x: 2, y: 8}];
         const run = (how) => {
@@ -370,7 +372,7 @@ run('paperdoll', async t => {
         const $ = (id) => document.getElementById(id);
         const c = document.createElement('canvas'); c.width = c.height = 10;
         c.getContext('2d').fillRect(0, 0, 10, 10);
-        const L = pd.addLayer(await createImageBitmap(c), 'px', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'px', null, null);
         const at = (cv, x, y) => [...cv.getContext('2d').getImageData(x, y, 1, 1).data].join();
         const key = (k, extra = {}) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
         const cv = $('cv'), rc = cv.getBoundingClientRect();
@@ -541,12 +543,9 @@ run('paperdoll', async t => {
         M.save = true;
         pd.removeLayer(D);
 
-        log.length = 0;
-        pd.S.scale = 0.5;
         await openProj('u', 'add');
-        pd.S.scale = 0.25;
         const U = pd.S.layers.at(-1);
-        out.add = [pd.S.layers.length, U.proj?.name, pd.S.active === U, U.x === M.x, await title(), log.some(m => m.includes('scale'))];
+        out.add = [pd.S.layers.length, U.proj?.name, pd.S.active === U, U.x === M.x, U.scale === M.scale, await title()];
         await openProj('u', 'add');
         out.addTwice = pd.S.layers.length;
         pd.undo();
@@ -564,7 +563,7 @@ run('paperdoll', async t => {
 
         pd.select(M);
         const before = await text('t');
-        const X = pd.addLayer(await createImageBitmap(c), 'dropped', null, null, null);
+        const X = pd.addLayer(await createImageBitmap(c), 'dropped', null, null);
         out.dropTag = X.proj === M.proj;
         out.looseBlocked = await saveProj('t') === null && before === await text('t');
         for (const K of pd.S.layers) K.save = false;
@@ -585,6 +584,16 @@ run('paperdoll', async t => {
         pd.setMode('auto');
         out.autoKeep = [pd.S.layers.length, AP.auto?.key, AP.auto?.gid === AS.autoSrc, AS.visible, pd.S.mode.parts?.length, pd.S.mode.src === AS];
         pd.cancelMode();
+
+        // 舊專案：世界座標是像素、全域 settings.scale，圖層沒有 scale
+        const cur = pd.projectData(pd.S.layers.slice(0, 1));
+        const old = {...cur, settings: {...cur.settings, scale: 0.5, applyScale: true}, layers: cur.layers.map(({scale, ...d}) => ({...d, x: 8, y: -4}))};
+        const ow = await (await root.getFileHandle('old.pdproj.json', {create: true})).createWritable();
+        await ow.write(JSON.stringify(old)); await ow.close();
+        await openProj('old', 'replace');
+        const OL = pd.S.layers[0];
+        out.oldProj = [OL.x, OL.y, OL.scale, 'scale' in pd.projectData(pd.S.layers).settings, pd.projectData(pd.S.layers).layers[0].scale];
+        await root.removeEntry('old.pdproj.json');
         Object.assign(window, {confirm, alert});
         return out;
     });
@@ -595,7 +604,7 @@ run('paperdoll', async t => {
     t.eq('專案：重開後重播填色', p.reopenPix, '255,0,0,128');
     t.eq('專案：只開一個專案時預設存回它，圖層相同不提示', JSON.stringify(p.defOwn), JSON.stringify(['t', true]));
     t.check('專案：複製的圖層沿用歸屬', p.dupTag);
-    t.eq('專案：加入疊在上面、選取加入的圖層、座標不變、scale 不同會警告', JSON.stringify(p.add), JSON.stringify([2, 'u', true, true, 't + u *', true]));
+    t.eq('專案：加入疊在上面、選取加入的圖層、座標跟 scale 不變', JSON.stringify(p.add), JSON.stringify([2, 'u', true, true, true, 't + u *']));
     t.eq('專案：同一個專案不能加入兩次', p.addTwice, 2);
     t.eq('專案：undo 拿掉加入的圖層', JSON.stringify(p.addUndo), JSON.stringify([1, 't']));
     t.eq('專案：多個專案時預設新專案', p.defMulti, 'project');
@@ -606,6 +615,7 @@ run('paperdoll', async t => {
     t.check('專案：有拖進來的圖層時擋下存檔', p.looseBlocked);
     t.check('專案：💾 全關時存專案按鈕不能按', p.btnOff);
     t.eq('專案：自動拆的關係跟著存讀，重開還能再調', JSON.stringify(p.autoKeep), JSON.stringify([2, 'helmet', true, false, 1, true]));
+    t.eq('專案：舊格式照 settings.scale 換成遊戲單位、每層填 scale，新存檔不寫全域 scale', JSON.stringify(p.oldProj), JSON.stringify([4, -2, 0.5, false, 0.5]));
 
     const o = await ev(async () => {
         const pd = window.__pd, out = {};
@@ -696,7 +706,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('存檔：預設存到 output/、檔名 -copy', JSON.stringify(it.def), JSON.stringify(['a-copy', true]));
-    t.eq('存檔：寫 PNG＋sidecar', JSON.stringify(it.saved), JSON.stringify([true, true]));
+    t.eq('存檔：只寫 PNG（不寫同名 .json）', JSON.stringify(it.saved), JSON.stringify([true, false]));
     t.eq('存檔：對話框多一個 textures 根，不列 .tbd、minimap', JSON.stringify([...it.texTree, it.texPath]),
          JSON.stringify(['▾ |▸ textures', 'equips,icons', 'textures/equips']));
     t.eq('存檔：存到 textures/ 跟別的資料夾撞 key 擋下、對話框留著', JSON.stringify(it.clash),
@@ -712,9 +722,10 @@ run('paperdoll', async t => {
         const names = () => pd.S.layers.map(L => L.name).join();
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         pd.hist.undos.length = pd.hist.redos.length = 0;
-        const A = pd.addLayer(await sq(20, '#f00'), 'A', null, null, null);
-        const B = pd.addLayer(await sq(10, '#00f'), 'B', null, null, null);
-        const C = pd.addLayer(await sq(10, '#0f0'), 'C', null, null, null);
+        const A = pd.addLayer(await sq(20, '#f00'), 'A', null, null);
+        const B = pd.addLayer(await sq(10, '#00f'), 'B', null, null);
+        const C = pd.addLayer(await sq(10, '#0f0'), 'C', null, null);
+        A.scale = B.scale = C.scale = 1;
         B.x = 30;
         C.visible = false;
 
@@ -752,6 +763,14 @@ run('paperdoll', async t => {
         out.dup = [names(), samePos, D.canvas.width, A.canvas.width];
         pd.undo(); pd.undo();
         out.dupUndo = names();
+
+        // scale 不同的圖層合併：取最小的 scale，畫面大小位置不變
+        const X = Object.assign(pd.addLayer(await sq(8, '#f00'), 'X', null, null), {x: 0, y: 0, scale: 0.25});
+        const Y = Object.assign(pd.addLayer(await sq(4, '#00f'), 'Y', null, null), {x: 3, y: 0, scale: 0.5});
+        pd.select(Y);
+        pd.mergeDown();
+        const XY = pd.S.active, px2 = (wx, wy) => {const p = pd.toLocal(XY, wx, wy); return [...XY.canvas.getContext('2d').getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data].join();};
+        out.mixed = [XY.scale, XY.canvas.width, XY.canvas.height, px2(-0.5, -1), px2(3, -1)];
         return out;
     });
     t.eq('合併：向下合併遇到隱藏的圖層會拒絕', m.hidden, 'A,B,C');
@@ -763,8 +782,10 @@ run('paperdoll', async t => {
     t.eq('合併：刪掉的圖層不會被 undo 合併復活', m.removed, 'A,B');
     t.eq('複製：放在原圖層上面、位置相同、改副本不影響原圖層', JSON.stringify(m.dup), JSON.stringify(['A,A-copy,B', true, 5, 20]));
     t.eq('複製：undo 拿掉副本', m.dupUndo, 'A,B');
+    t.eq('合併：scale 不同取最小的、畫面不變', JSON.stringify(m.mixed), JSON.stringify([0.25, 20, 8, '255,0,0,255', '0,0,255,255']));
 
-    t.eq('載入時套用 json（遊戲單位 ÷ scale）', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
+    t.eq('載入的圖層預設 scale 0.25', r.loadScale, 0.25);
+    t.eq('載入：尺寸', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
     t.eq('trim 後內容不跳位', JSON.stringify(r.trim), JSON.stringify({w: 80, h: 40, x: 8, y: 27}));
     t.eq('裁切後內容不跳位', JSON.stringify(r.crop), JSON.stringify({w: 40, h: 40, x: -12, y: 27}));
     t.eq('undo 還原裁切', JSON.stringify(r.undo), JSON.stringify(r.trim));
@@ -779,7 +800,7 @@ run('paperdoll', async t => {
     t.check('填色：undo 還原', r.fillUndo);
     t.eq('去色：滴管吸 RGB', r.picked, '#ff0000');
     t.eq('去色：RGB 完全相等的變透明', r.key, '0,10,0,255');
-    t.eq('sidecar 的擺放數字', r.sidecar, '{"x":-3,"y":6.75,"a":30,"scale":0.25,"ox":0.5,"oy":1}');
+    t.eq('擺放數字（遊戲單位）', r.place, '{"x":-12,"y":27,"a":30,"scale":1,"ox":0.5,"oy":1}');
     t.eq('trim 忽略低於門檻的雜訊', JSON.stringify(r.noise), JSON.stringify([20, 30]));
     t.eq('裁切（移除）：框內挖透明、尺寸位置不變', JSON.stringify(r.erase), JSON.stringify([10, 10, true, 0, 0, 255, 255, 'erase']));
     t.eq('裁切（移除）：undo 還原', JSON.stringify(r.eraseUndo), JSON.stringify([0, 255]));
@@ -798,8 +819,8 @@ run('paperdoll', async t => {
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         g.fillRect(150, 150, 2, 2);
         g.clearRect(95, 5, 1, 1); g.fillStyle = 'rgba(255,0,0,0.04)'; g.fillRect(95, 5, 1, 1);
-        const O = pd.addLayer(await createImageBitmap(c), 'other', null, null, null);
-        const S = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        const O = pd.addLayer(await createImageBitmap(c), 'other', null, null);
+        const S = pd.addLayer(await createImageBitmap(c), 'src', null, null);
         const before = pd.S.layers.length, conf = window.confirm;
         const $ = (id) => document.getElementById(id);
         const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
@@ -820,8 +841,8 @@ run('paperdoll', async t => {
         out.split = [pd.S.mode === m, $('modeAuto').querySelector('.ok').disabled, pd.hist.undos.length - n0, $('au-boots-pct').disabled];
         out.layers = pd.S.layers.slice(before - 1).map(L => L.name).join();
         out.boots = !!find('src-boots');
-        out.helmet = [H.canvas.width, H.canvas.height, H.x * pd.S.scale, H.y * pd.S.scale, H.ox, H.oy, px(H, 15, 10), H.ops.map(o => o.type).join()];
-        out.armor = [A.canvas.width, A.canvas.height, A.x * pd.S.scale, A.y * pd.S.scale, px(A, 8, 5)];
+        out.helmet = [H.canvas.width, H.canvas.height, H.x, H.y, H.ox, H.oy, px(H, 15, 10), H.ops.map(o => o.type).join()];
+        out.armor = [A.canvas.width, A.canvas.height, A.x, A.y, px(A, 8, 5)];
         out.hidden = [S.visible, pd.S.active === H];
         pd.applyMode();
         out.splitOnce = pd.S.layers.length - before;
@@ -830,11 +851,11 @@ run('paperdoll', async t => {
 
         const c0 = H.canvas, T = m.T.canvas;
         type('au-helmet-x', 4);
-        out.moved = [H.canvas === c0, H.x * pd.S.scale];
+        out.moved = [H.canvas === c0, H.x];
         type('au-helmet-pct', 25);
         out.rescaled = [H.canvas.width, m.T.canvas === T, pd.S.mode === m, pd.hist.undos.length - n0, pd.S.auto.helmet.pct];
         pd.undo();
-        out.stepUndo = [pd.S.mode === m, H.canvas.width, H.x * pd.S.scale, pd.S.auto.helmet.pct, $('au-helmet-pct').value];
+        out.stepUndo = [pd.S.mode === m, H.canvas.width, H.x, pd.S.auto.helmet.pct, $('au-helmet-pct').value];
         pd.redo();
         out.stepRedo = [H.canvas.width, pd.S.auto.helmet.pct];
         pd.select(S);
@@ -852,9 +873,9 @@ run('paperdoll', async t => {
         type('au-helmet-y', 3);
         out.resumeUndo = [pd.hist.undos.length - n1, r.hist.length];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
-        out.esc = [pd.S.mode.type, !!find('src-helmet'), H.x * pd.S.scale];
+        out.esc = [pd.S.mode.type, !!find('src-helmet'), H.x];
         pd.undo();
-        out.resumeUndone = [H.x * pd.S.scale, H.y * pd.S.scale, !!find('src-helmet')];
+        out.resumeUndone = [H.x, H.y, !!find('src-helmet')];
 
         // 畫布拖曳：真的派 pointer 事件；cover 疊在頭盔上面，要穿過它抓頭盔
         const cv = $('cv'), rc = cv.getBoundingClientRect();
@@ -862,24 +883,24 @@ run('paperdoll', async t => {
         const fireW = (type, w, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...atW(w), ...extra}));
         const dragW = (a, b) => {fireW('pointerdown', a); fireW('pointermove', b, {buttons: 1}); fireW('pointerup', b);};
         const arrow = (k, extra = {}) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true, ...extra}));
-        const cover = pd.addLayer(await createImageBitmap(c), 'cover', null, null, null);
+        const cover = pd.addLayer(await createImageBitmap(c), 'cover', null, null);
         const h0 = pd.toWorld(H, 7, 1), Hx = H.x;
         pd.setMode('auto');
-        out.dragBefore = [pd.S.mode.parts, (dragW(h0, {x: h0.x + 8, y: h0.y}), cover.x)];
+        out.dragBefore = [pd.S.mode.parts, (dragW(h0, {x: h0.x + 2, y: h0.y}), cover.x)];
         pd.cancelMode();
         pd.select(S);
         pd.setMode('auto');
         const n2 = pd.hist.undos.length;
-        dragW(h0, {x: h0.x + 8, y: h0.y + 4});
+        dragW(h0, {x: h0.x + 2, y: h0.y + 1});
         const am = pd.S.mode;
-        out.drag = [pd.S.mode.type, pd.S.active === H, cover.x, H.x * pd.S.scale, H.y * pd.S.scale, $('au-helmet-x').value, pd.S.auto.helmet.x, am.hist.length];
+        out.drag = [pd.S.mode.type, pd.S.active === H, cover.x, H.x, H.y, $('au-helmet-x').value, pd.S.auto.helmet.x, am.hist.length];
         arrow('ArrowRight', {shiftKey: true});
         arrow('ArrowUp');
-        out.arrow = [H.x * pd.S.scale, H.y * pd.S.scale, $('au-helmet-y').value, pd.S.auto.helmet.x, am.hist.length, pd.hist.undos.length - n2];
+        out.arrow = [H.x, H.y, $('au-helmet-y').value, pd.S.auto.helmet.x, am.hist.length, pd.hist.undos.length - n2];
         arrow('z', {ctrlKey: true});
-        out.arrowUndo = [pd.S.mode === am, H.y * pd.S.scale, pd.S.auto.helmet.y, $('au-helmet-y').value];
+        out.arrowUndo = [pd.S.mode === am, H.y, pd.S.auto.helmet.y, $('au-helmet-y').value];
         arrow('y', {ctrlKey: true});
-        out.arrowRedo = H.y * pd.S.scale;
+        out.arrowRedo = H.y;
         const Hx1 = H.x;
         dragW({x: 1000, y: 1000}, {x: 1010, y: 1000});
         H.locked = true;
@@ -888,7 +909,7 @@ run('paperdoll', async t => {
         out.dragMiss = [pd.S.mode.type, pd.S.active === H, H.x === Hx1];
         pd.cancelMode();
         pd.undo();
-        out.dragUndo = [H.x === Hx, H.y * pd.S.scale];
+        out.dragUndo = [H.x === Hx, H.y];
         pd.removeLayer(cover);
 
         // 零件拆前後片：mask 插在縮小前面（追線用縮小前的圖），改 scale% 前後片跟著重播、拖曳一起搬
@@ -1020,11 +1041,11 @@ run('paperdoll', async t => {
         pd.autoSet({helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}});
         out.noTag = $('dollF').disabled;
         out.legacy = JSON.stringify(pd.autoFrom({helmet: {pct: 40}}).f.helmet);
-        const S0 = pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        const S0 = pd.addLayer(await createImageBitmap(c), 'src', null, null);
         pd.select(S0);
         pd.setMode('auto');
         pd.applyMode();
-        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.x * pd.S.scale, H.y * pd.S.scale];
+        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.x, H.y];
         out.m = [...at(), $('au-helmet-pct').value, $('auSexL').textContent];
         $('dollF').click();
         out.f = [...at(), $('au-helmet-pct').value, $('auSexL').textContent, m.hist.length];
@@ -1064,7 +1085,7 @@ run('paperdoll', async t => {
         g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeRect(111.5, 11.5, 77, 77);
         g.fillStyle = '#000'; g.fillRect(110, 38, 80, 3); g.fillRect(134, 40, 3, 50);
         const before = pd.S.layers.length;
-        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null, null);
+        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null);
         const find = (n) => pd.S.layers.find(L => L.name === n);
         const slide = (v) => {const e = $('sp-lum'); e.value = v; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change'));};
         const t0 = +$('sp-lum').value;
@@ -1150,7 +1171,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#0000ff'; g.fillRect(10, 100, 80, 70); g.fillRect(75, 60, 15, 40);
         const saved = pd.S.auto;
         pd.autoSet({...saved, split: false, armor: {pct: 100, x: 0, y: 0}});
-        const K = pd.addLayer(await createImageBitmap(c), 'chin', null, null, null);
+        const K = pd.addLayer(await createImageBitmap(c), 'chin', null, null);
         pd.setMode('auto');
         pd.applyMode();
         const A = pd.S.layers.find(L => L.name === 'chin-armor');
@@ -1181,7 +1202,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#0000ff'; g.fillRect(48, 90, 2, 10); g.fillRect(20, 100, 60, 50); g.fillRect(120, 120, 60, 50);
         const saved = pd.S.auto;
         pd.autoSet({...saved, split: false, armor: {pct: 100, x: 0, y: 0}});
-        const K = pd.addLayer(await createImageBitmap(c), 'glued', null, null, null);
+        const K = pd.addLayer(await createImageBitmap(c), 'glued', null, null);
         pd.setMode('auto');
         pd.applyMode();
         const A = pd.S.layers.find(L => L.name === 'glued-armor');
@@ -1208,8 +1229,8 @@ run('paperdoll', async t => {
         pd.autoSet({...saved, kind: 'armor', split: 'split'});
         const before = pd.S.layers.slice();
         const doll = [];
-        for (const tag of ['m-body', 'm-head', 'f-head', 'm-hair']) doll.push(Object.assign(pd.addLayer(await blank(), tag, null, null, null), {tag}));
-        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null, null);
+        for (const tag of ['m-body', 'm-head', 'f-head', 'm-hair']) doll.push(Object.assign(pd.addLayer(await blank(), tag, null, null), {tag}));
+        const K = pd.addLayer(await createImageBitmap(c), 'kit', null, null);
         const names = () => pd.S.layers.filter(L => !before.includes(L)).map(L => L.name).join();
         pd.setMode('auto');
         pd.applyMode();
@@ -1246,7 +1267,7 @@ run('paperdoll', async t => {
         poly([[60, 120], [64, 120], [84, 180], [80, 180]]);
         g.save(); g.globalCompositeOperation = 'destination-out'; poly([[64, 120], [180, 120], [180, 180], [84, 180]]); g.restore();
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(c), 'open', null, null, null);
+        pd.addLayer(await createImageBitmap(c), 'open', null, null);
         pd.setMode('split');
         const m = pd.S.mode;
         m.start = {x: 120, y: 90};
@@ -1289,7 +1310,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.setMode('auto');
         out.before = $('auItem').disabled;
@@ -1395,7 +1416,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none'});
         pd.setMode('auto');
@@ -1403,7 +1424,7 @@ run('paperdoll', async t => {
         pd.applyMode();
         out.after = $('auLoad').disabled;
         const m = pd.S.mode, H = m.parts.find(p => p.P.key === 'helmet').C, A = m.parts.find(p => p.P.key === 'armor').C;
-        const pct = H.ops.at(-1).pct, at = (C) => [C.x * pd.S.scale, C.y * pd.S.scale];
+        const pct = H.ops.at(-1).pct, at = (C) => [C.x, C.y];
         const a0 = at(A);
 
         await put(json, 'item.json', JSON.stringify({x1: {cat: 'CAT_FOOD'}}, null, 2));
@@ -1425,7 +1446,7 @@ run('paperdoll', async t => {
         const w = document.createElement('canvas'); w.width = 100; w.height = 200;
         w.getContext('2d').fillStyle = '#ff0000'; w.getContext('2d').fillRect(40, 20, 20, 160);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(w), 'sword-1', null, null, null);
+        pd.addLayer(await createImageBitmap(w), 'sword-1', null, null);
         pd.autoSet({...pd.S.auto, kind: 'weapon'});
         pd.setMode('auto');
         pd.applyMode();
@@ -1464,7 +1485,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
         await put(json, 'item.json', JSON.stringify({helmet_01: {cat: 'CAT_HELMET', equip: {sprite: 'src-helmet', scale: 0.25, f: {scale: 0.2, x: 0, y: 0}}}}, null, 2));
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(c), 'src', null, null, null);
+        pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.setDoll({sex: 'm'});
         pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, x: 1, y: 2}, f: {helmet: {pct: 25, x: 3, y: 4}}, saveF: false});
@@ -1480,12 +1501,12 @@ run('paperdoll', async t => {
         let p = pd.saveItems();
         await until(() => $('dlgItems').open);
         set('di-armor-on', false);
-        out.dlg = [H.canvas.width, H.x * pd.S.scale, $('di-helmet-msg').textContent];
+        out.dlg = [H.canvas.width, H.x, $('di-helmet-msg').textContent];
         $('dlgItems').close('ok');
         await p;
         let a = await readItems();
         out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('helmet_01') || asked.includes('頭盔：會移除女版'),
-                    H.canvas.width, H.x * pd.S.scale, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
+                    H.canvas.width, H.x, pd.S.doll.sex, m.hist.length === hist0, pd.S.mode === m];
         set('auFemale', true);
         out.saveF = [pd.S.auto.saveF, JSON.parse(localStorage.getItem('paperdoll.auto')).saveF];
         asked = '';
@@ -1503,7 +1524,7 @@ run('paperdoll', async t => {
         a.helmet_01.equip.x = -5;
         await put(json, 'item.json', JSON.stringify(a, null, 2));
         await pd.loadItems();
-        out.loadF = [H.x * pd.S.scale, H.y * pd.S.scale, pd.S.auto.f.helmet.x, pd.S.auto.helmet.x, $('status').textContent.includes('≠')];
+        out.loadF = [H.x, H.y, pd.S.auto.f.helmet.x, pd.S.auto.helmet.x, $('status').textContent.includes('≠')];
         pd.cancelMode();
         pd.setDoll({sex: 'm'});
         pd.autoSet(null);
@@ -1541,7 +1562,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);
         g.fillRect(5, 5, 1, 1);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await createImageBitmap(c), 'sword-1', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'sword-1', null, null);
         await pd.setAssets(assets);
         pd.autoSet({kind: 'weapon', weapon: {pct: 50, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85}});
         pd.setMode('auto');
@@ -1551,16 +1572,16 @@ run('paperdoll', async t => {
         const W = pd.S.layers.find(M => M.auto?.key === 'weapon');
         out.cls.push(W.auto.cls);
         out.made = [pd.S.layers.filter(M => M.auto).length, W.canvas.width, W.canvas.height, W.ops.map(o => o.type).join(), W.ox, W.oy,
-                    W.x * pd.S.scale, L.visible, document.querySelector('[name=auKind][value=armor]').disabled, W.name];
+                    W.x, L.visible, document.querySelector('[name=auKind][value=armor]').disabled, W.name];
 
         const x0 = W.x, y0 = W.y;
         type('au-weapon-oy', 0.5);
         out.oy = [W.oy, W.x === x0 && W.y === y0, pd.S.auto.weapon.sword.oy, pd.S.auto.weapon.bow.oy];
 
-        const cv = $('cv'), rc = cv.getBoundingClientRect(), K = pd.S.view.zoom * (pd.S.applyScale ? pd.S.scale : 1);
+        const cv = $('cv'), rc = cv.getBoundingClientRect(), K = pd.S.view.zoom;
         const atW = (w) => ({clientX: rc.left + pd.S.view.px + w.x * K, clientY: rc.top + pd.S.view.py + w.y * K, pointerId: 1, button: 0, bubbles: true});
         const fireW = (type, w, extra = {}) => cv.dispatchEvent(new PointerEvent(type, {...atW(w), ...extra}));
-        const p0 = {x: W.x, y: W.y}, p1 = {x: W.x + 5, y: W.y - 8};
+        const p0 = {x: W.x, y: W.y}, p1 = {x: W.x + 1.25, y: W.y - 2};
         fireW('pointerdown', p0); fireW('pointermove', p1, {buttons: 1}); fireW('pointerup', p1);
         out.pivot = [W.x === x0 && W.y === y0, W.ox, W.oy, $('au-weapon-ox').value, pd.S.auto.weapon.sword.ox, pd.S.mode.hist.length];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
@@ -1609,13 +1630,13 @@ run('paperdoll', async t => {
         // 換分類：套那組數字、記一步；改數字只寫目前分類；還原預設只還原目前分類
         pd.autoSet({...pd.S.auto, weapon: {...pd.S.auto.weapon, bow: {pct: 50, x: 5, y: 6, a: 0, ox: 0.5, oy: 0.5}}});
         type('auCls', 'bow');
-        out.swap = [Math.round(W.x * pd.S.scale), W.a, W.auto.cls, pd.S.auto.cls, pd.S.auto.weapon.sword.x];
+        out.swap = [Math.round(W.x), W.a, W.auto.cls, pd.S.auto.cls, pd.S.auto.weapon.sword.x];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true, bubbles: true}));
-        out.swapUndo = [Math.round(W.x * pd.S.scale), W.a, W.auto.cls, pd.S.auto.cls, $('auCls').value];
+        out.swapUndo = [Math.round(W.x), W.a, W.auto.cls, pd.S.auto.cls, $('auCls').value];
         type('auCls', 'bow');
         type('au-weapon-x', 7);
         $('auReset').click();
-        out.reset = [pd.S.auto.weapon.bow.x, pd.S.auto.weapon.sword.x, Math.round(W.x * pd.S.scale)];
+        out.reset = [pd.S.auto.weapon.bow.x, pd.S.auto.weapon.sword.x, Math.round(W.x)];
 
         pd.cancelMode();
         pd.autoSet({weapon: {pct: 33}});
@@ -1661,7 +1682,7 @@ run('paperdoll', async t => {
         const open = async () => {const p = pd.saveRole(); await until(() => $('dlgRole').open); return {p};};
         const close = async ({p}, v) => {$('dlgRole').close(v); await p;};
         const alpha = (c, x, y) => c.getContext('2d').getImageData(x, y, 1, 1).data[3];
-        const at = (C) => [Math.round(C.x * pd.S.scale), Math.round(C.y * pd.S.scale)];
+        const at = (C) => [Math.round(C.x), Math.round(C.y)];
         const png = async (path, name) => {
             try
             {
@@ -1679,7 +1700,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#663311'; g.fillRect(120, 10, 70, 80);
         g.fillStyle = '#00ff00'; g.fillRect(140, 30, 30, 40);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await createImageBitmap(c), 'wick', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'wick', null, null);
         await pd.setAssets(assets);
         pd.autoSet({kind: 'head', head: {pct: 50, x: -2, y: 4}, hair: {pct: 50, x: -1, y: 2}});
         pd.setMode('auto');
@@ -1783,7 +1804,7 @@ run('paperdoll', async t => {
         const c2 = document.createElement('canvas'); c2.width = 200; c2.height = 100;
         c2.getContext('2d').fillStyle = '#e0a070'; c2.getContext('2d').fillRect(110, 20, 60, 60);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        pd.addLayer(await createImageBitmap(c2), 'bald', null, null, null);
+        pd.addLayer(await createImageBitmap(c2), 'bald', null, null);
         pd.setMode('auto');
         pd.applyMode();
         out.bald = [pd.S.mode.parts.map(p => p.C.name).join(), $('au-hair-x').disabled, $('au-head-x').disabled, $('status').textContent];
@@ -1959,7 +1980,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#ff0000'; g.fillRect(40, 20, 20, 160);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         await pd.setRoot(root);
-        const L = pd.addLayer(await createImageBitmap(c), 'bar', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'bar', null, null);
         type('icSize', 64); type('icA', 0); type('icFill', 50);
         pd.setMode('icon');
         const pv = $('icPreview');
@@ -2319,7 +2340,7 @@ run('paperdoll', async t => {
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
 
         const c = document.createElement('canvas'); c.width = c.height = 4;
-        pd.addLayer(await createImageBitmap(c), 'L', dir, 'nd', null);
+        pd.addLayer(await createImageBitmap(c), 'L', dir, 'nd');
         const p = pd.saveLayer();
         await until(() => $('dlgSave').open);
         out.dlgFrom = $('dlgPath').textContent;
@@ -2510,7 +2531,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#000'; g.fillRect(20, 78, 160, 4); g.fillRect(68, 80, 4, 100);
         g.fillRect(5, 5, 1, 1); g.fillRect(194, 194, 1, 1);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await createImageBitmap(c), 'hood', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'hood', null, null);
         const a = (M, x, y) => M.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
         const probe = [[120, 120], [100, 50], [100, 80], [70, 120], [40, 120], [74, 84]];
         const bits = (M) => probe.map(([x, y]) => a(M, x, y) > 128 ? 1 : 0).join('');
@@ -2546,7 +2567,7 @@ run('paperdoll', async t => {
         // 擺放連動：改任一層的 x，三層一起改、一起 undo
         pd.select(F);
         $('pX').value = 5; $('pX').dispatchEvent(new Event('change'));
-        out.linked = [L.x, B.x, F.x].map(v => v * (pd.S.applyScale ? pd.S.scale : 1));
+        out.linked = [L.x, B.x, F.x].map(v => v);
         pd.undo();
         out.linkedUndo = [L.x, B.x, F.x];
 
@@ -2568,7 +2589,7 @@ run('paperdoll', async t => {
         out.revokeUndo = [pd.S.layers.length, L.visible];
 
         // 舊格式（前片就是原圖、split 沒有 w）不認
-        const Q = pd.addLayer(await createImageBitmap(c), 'old', null, null, null);
+        const Q = pd.addLayer(await createImageBitmap(c), 'old', null, null);
         Q.ops = [{type: 'mask', pts: [[0, 0], [10, 0], [10, 10]], keep: false, split: {gid: 'old', x: 0, y: 0, t: 24}}];
         pd.setMode('split');
         out.old = pd.S.mode.type;
@@ -2612,7 +2633,7 @@ run('paperdoll', async t => {
         const a = (M, x, y) => M.canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
         const saved = JSON.stringify(pd.S.sp);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await draw(true), 'visor', null, null, null);
+        const L = pd.addLayer(await draw(true), 'visor', null, null);
         fire('sp-lum', 'input', e => {e.value = 24;}); fire('sp-lum', 'change', () => {});
         fire('sp-close', 'change', e => {e.value = 10;});
         fire('sp-drop', 'change', e => {e.value = 20;});
@@ -2698,7 +2719,7 @@ run('paperdoll', async t => {
 
         // 下面沒有線：淹到圖底，外圈是剛好貼著格子邊的矩形
         pd.removeLayer(F); pd.removeLayer(L);
-        const N = pd.addLayer(await draw(false), 'open2', null, null, null);
+        const N = pd.addLayer(await draw(false), 'open2', null, null);
         radio('cut');
         pd.setMode('split');
         const m3 = pd.S.mode;
@@ -2710,7 +2731,7 @@ run('paperdoll', async t => {
 
         // 存成跟切割分開：前後片＋魔術棒（選到的那塊變後片）、挖除＋沿線（右下整塊挖空）；手動改切法不動存成
         fire('sp-drop', 'change', e => {e.value = 20;});
-        const V = pd.addLayer(await draw(true), 'combo', null, null, null);
+        const V = pd.addLayer(await draw(true), 'combo', null, null);
         pd.setMode('split');
         const m4 = pd.S.mode;
         radio('split');
@@ -2820,7 +2841,7 @@ run('paperdoll', async t => {
         g.fillStyle = '#000'; g.fillRect(60, 60, 4, 120);
         const saved = JSON.stringify(pd.S.sp);
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
-        const L = pd.addLayer(await createImageBitmap(c), 'mk', null, null, null);
+        const L = pd.addLayer(await createImageBitmap(c), 'mk', null, null);
         pd.setMode('split');
         const m = pd.S.mode;
         const radio = (n, v) => {const r = document.querySelector(`[name=${n}][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
@@ -2921,7 +2942,7 @@ run('paperdoll', async t => {
         pd.cancelMode();
         const vis = () => pd.S.layers.map(L => `${L.name}${L.visible ? '+' : '-'}`).join();
         const L = {};
-        for (const n of ['mh', 'mH', 'mb', 'fh', 'fb', 'x']) L[n] = pd.addLayer(await bmp(), n, null, null, null);
+        for (const n of ['mh', 'mH', 'mb', 'fh', 'fb', 'x']) L[n] = pd.addLayer(await bmp(), n, null, null);
         out.noTag = [$('dollM').disabled, $('dollHair').disabled];
         pd.setTag(L.mh, 'm-hair'); pd.setTag(L.mH, 'm-head'); pd.setTag(L.mb, 'm-body');
         pd.setTag(L.fh, 'f-hair'); pd.setTag(L.fb, 'm-body');

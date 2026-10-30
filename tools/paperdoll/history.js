@@ -10,8 +10,8 @@ export class History
     // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）
     snap(layer, vis = false)
     {
-        const {x, y, a, ox, oy, ops, canvas} = layer;
-        return vis ? {layer, x, y, a, ox, oy, ops, canvas, visible: layer.visible} : {layer, x, y, a, ox, oy, ops, canvas};
+        const {x, y, a, ox, oy, scale, ops, canvas} = layer;
+        return vis ? {layer, x, y, a, ox, oy, scale, ops, canvas, visible: layer.visible} : {layer, x, y, a, ox, oy, scale, ops, canvas};
     }
 
     snapList(state) {return {state, layers: [...state.layers], active: state.active};}
@@ -66,8 +66,8 @@ export class History
     {
         if (s.group) return s.group.forEach(m => History.restore(m));
         if (s.state) return Object.assign(s.state, {layers: [...s.layers], active: s.active});
-        const {x, y, a, ox, oy, ops, canvas} = s;
-        Object.assign(s.layer, {x, y, a, ox, oy, ops, canvas});
+        const {x, y, a, ox, oy, scale, ops, canvas} = s;
+        Object.assign(s.layer, {x, y, a, ox, oy, scale, ops, canvas});
         if ('visible' in s) s.layer.visible = s.visible;
     }
 }

@@ -12,26 +12,24 @@ const join = (path, name) => path ? `${path}/${name}` : name;
 
 const cv = $('cv'), g = cv.getContext('2d');
 
-// 世界座標 = 圖片像素；遊戲單位 = 世界座標 × scale
+// 世界座標 = 遊戲單位；每層畫面大小 = 像素 × L.scale（自動零件的 L.scale 就是 equip.scale）
+const LAYER_SCALE = 0.25;
 const S = {
     root: null,             // 工作資料夾：專案的 images/
     assets: null,           // 遊戲的 public/assets：{dir, json, roles}
     projSig: null,      // 上次存／開專案時整個畫布的內容，跟現在比對出有沒有沒存的修改
     layers: [],
     active: null,
-    scale: 0.25,
-    applyScale: false,
     ref: {tw: 32, th: 32, rw: 32, rh: 64, ax: 0, ay: 16},
     doll: {sex: 'm', hair: true},
-    view: {zoom: 0.5, px: 0, py: 0},
+    view: {zoom: 2, px: 0, py: 0},
     mode: {type: 'move'},
     keys: new Set(),
 };
 const hist = new History();
 let uid = 0;
 
-const unit = () => S.applyScale ? S.scale : 1;
-const zoomK = () => S.view.zoom * unit();
+const zoomK = () => S.view.zoom;
 const status = (msg) => {$('status').textContent = msg;};
 
 // ---------- 座標轉換 ----------
@@ -42,18 +40,18 @@ const layerImg = (L) => S.mode.layer === L && S.mode.preview ? S.mode.preview : 
 
 function toWorld(L, px, py, [sx, sy] = modeScale(L))
 {
-    const img = layerImg(L);
-    const dx = (px - L.ox * img.width) * sx, dy = (py - L.oy * img.height) * sy;
+    const img = layerImg(L), k = L.scale;
+    const dx = (px - L.ox * img.width) * sx * k, dy = (py - L.oy * img.height) * sy * k;
     const c = Math.cos(L.a * RAD), s = Math.sin(L.a * RAD);
     return {x: L.x + dx * c - dy * s, y: L.y + dx * s + dy * c};
 }
 
 function toLocal(L, wx, wy, [sx, sy] = modeScale(L))
 {
-    const img = layerImg(L);
+    const img = layerImg(L), k = L.scale;
     const dx = wx - L.x, dy = wy - L.y;
     const c = Math.cos(-L.a * RAD), s = Math.sin(-L.a * RAD);
-    return {x: (dx * c - dy * s) / sx + L.ox * img.width, y: (dx * s + dy * c) / sy + L.oy * img.height};
+    return {x: (dx * c - dy * s) / sx / k + L.ox * img.width, y: (dx * s + dy * c) / sy / k + L.oy * img.height};
 }
 
 function screenToWorld(e)
@@ -69,19 +67,14 @@ const corners = (L) => {
 
 // ---------- 圖層 ----------
 
-function addLayer(img, name, dir, path, meta)
+function addLayer(img, name, dir, path)
 {
     const src = PX.fromImage(img);
-    const L = {id: ++uid, name, dir, path, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1,
+    const L = {id: ++uid, name, dir, path, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1, scale: LAYER_SCALE,
                visible: true, opacity: 1, locked: false, save: true, proj: S.active?.proj ?? null};
-    if (meta)
-    {
-        const f = meta.scale || S.scale;
-        Object.assign(L, {x: (meta.x ?? 0) / f, y: (meta.y ?? 0) / f, a: meta.a ?? 0, ox: meta.ox ?? 0.5, oy: meta.oy ?? 1});
-    }
     S.layers.push(L);
     select(L);
-    status(`載入 ${name}.png${meta ? '（套用同名 .json）' : ''}`);
+    status(`載入 ${name}.png`);
     return L;
 }
 
@@ -113,10 +106,10 @@ function mergeLayers(layers)
     cancelMode();
     const base = layers[0];
     const bake = layers.some(L => L.opacity < 1) && confirm('有半透明圖層，要烘入不透明度嗎？（取消＝照 100% 合併）');
-    const {big, minX, minY} = flatten(layers, bake);
+    const {big, minX, minY, k} = flatten(layers, bake);
     hist.push(hist.snapList(S));
     const L = {id: ++uid, name: `${base.name}-merged`, dir: base.dir, path: base.path, src: big, ops: [], canvas: big,
-               x: base.x, y: base.y, a: 0, ox: (base.x - minX) / big.width, oy: (base.y - minY) / big.height,
+               x: base.x, y: base.y, a: 0, ox: (base.x - minX) / k / big.width, oy: (base.y - minY) / k / big.height, scale: k,
                visible: true, opacity: 1, locked: false, save: true, proj: base.proj};
     const i = S.layers.indexOf(base);
     S.layers = S.layers.filter(M => !layers.includes(M));
@@ -389,7 +382,7 @@ function autoGroup(L)
 const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
-const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x * S.scale), y: round(C.y * S.scale),
+const autoRow = ({P, C}) => ({pct: C.ops[autoBase(C)].pct, x: round(C.x), y: round(C.y),
                               ...(P.kind === 'weapon' && {a: round(C.a, 10), ox: C.ox, oy: C.oy})});
 const autoSame = (P, a, b) => AUTO_F[P.kind].every(f => a[f] === b[f]);
 
@@ -412,7 +405,7 @@ function autoShift(C, x, y)
 function autoPlace({P, C}, {x, y, a, ox, oy})
 {
     if (P.kind === 'weapon') Object.assign(C, {a, ox, oy});
-    autoShift(C, x / S.scale, y / S.scale);
+    autoShift(C, x, y);
 }
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
@@ -456,7 +449,7 @@ function autoUndo(m, from, to)
 function autoSpView(m)
 {
     const sp = m.sp, img = sp.img, L = m.layer, box = m.plan.find(b => b.P.key === 'helmet').box;
-    Object.assign(sp, {vk: [1, 1], view: {canvas: img, get x() {return L.x;}, get y() {return L.y;}, get a() {return L.a;},
+    Object.assign(sp, {vk: [1, 1], view: {canvas: img, get x() {return L.x;}, get y() {return L.y;}, get a() {return L.a;}, get scale() {return L.scale;},
                                            get ox() {return (L.ox * L.canvas.width - box.sx) / img.width;},
                                            get oy() {return (L.oy * L.canvas.height - box.sy) / img.height;}}});
 }
@@ -787,7 +780,8 @@ function splitStart(L)
     const own = [g?.F, g?.B].find(M => M && splitOwn(M));
     if (own) return status(`${own.name} 拆完後又加了步驟，不能再調前後片；要重拆先 undo`), null;
     const at = splitAt(O), img = at < O.ops.length ? PX.replay(O.src, O.ops.slice(0, at)) : O.canvas;
-    const view = {canvas: img, get x() {return O.x;}, get y() {return O.y;}, get a() {return O.a;}, get ox() {return O.ox;}, get oy() {return O.oy;}};
+    const view = {canvas: img, get x() {return O.x;}, get y() {return O.y;}, get a() {return O.a;}, get ox() {return O.ox;}, get oy() {return O.oy;},
+                  get scale() {return O.scale;}};
     const m = {type: 'split', layer: O, view, img, vk: [O.canvas.width / img.width, O.canvas.height / img.height],
                F: g?.F ?? null, B: g?.B ?? null, gid: g?.gid ?? null, hist: [], fut: [], changed: false, poly: null, err: null};
     const o = g && splitOp(g.F ?? g.B);
@@ -984,7 +978,7 @@ function drawMark(sp, K)
     g.save();
     g.translate(L.x, L.y);
     g.rotate(L.a * RAD);
-    g.scale(sp.vk[0], sp.vk[1]);
+    g.scale(sp.vk[0] * L.scale, sp.vk[1] * L.scale);
     g.translate(-L.ox * W, -L.oy * H);
     if (sp.mark)
     {
@@ -1003,7 +997,7 @@ function drawMark(sp, K)
     {
         const n = spN(), b = brushAt(sp.cursor, n);
         g.strokeStyle = S.keys.has('shift') ? '#0ff' : '#f0f';
-        g.lineWidth = 2 / K / sp.vk[0];
+        g.lineWidth = 2 / K / sp.vk[0] / L.scale;
         g.strokeRect(b.x, b.y, n, n);
     }
     g.restore();
@@ -1022,11 +1016,11 @@ function splitBuild(O, sp, gid)
     const F = g?.F ?? cloneAbove(O, `${O.name}-front`);
     if (sp.cut && g?.B) S.layers = S.layers.filter(M => M !== g.B);
     const B = sp.cut ? null : g?.B ?? toBottom(cloneAbove(O, `${O.name}-back`));
-    const {x, y, a, ox, oy, opacity} = O;
+    const {x, y, a, ox, oy, scale, opacity} = O;
     for (const [M, keep] of [[F, false], [B, true]].filter(([M]) => M))
     {
         const mask = {type: 'mask', pts, keep, split};
-        Object.assign(M, {x, y, a, ox, oy, opacity, visible: true, ops: [...O.ops.slice(0, at), mask, ...O.ops.slice(at)],
+        Object.assign(M, {x, y, a, ox, oy, scale, opacity, visible: true, ops: [...O.ops.slice(0, at), mask, ...O.ops.slice(at)],
                           canvas: PX.replay(sp.img, [mask, ...O.ops.slice(at)])});
     }
     O.splitSrc = gid;
@@ -1110,16 +1104,16 @@ function render()
     g.clearRect(0, 0, w, h);
     const K = zoomK();
     const view = () => g.setTransform(K, 0, 0, K, S.view.px, S.view.py);
-    g.imageSmoothingEnabled = K < 1;
     const m = S.mode, split = m.type === 'split';
     for (const L of S.layers)
     {
         if (split ? L !== m.layer && (!L.visible || L === m.F || L === m.B) : !L.visible) continue;
         const [sx, sy] = modeScale(L), img = layerImg(L);
+        g.imageSmoothingEnabled = K * L.scale * Math.min(sx, sy) < 1;
         view();
         g.translate(L.x, L.y);
         g.rotate(L.a * RAD);
-        g.scale(sx, sy);
+        g.scale(sx * L.scale, sy * L.scale);
         g.globalAlpha = L.opacity;
         g.drawImage(img, -L.ox * img.width, -L.oy * img.height);
         g.globalAlpha = 1;
@@ -1158,10 +1152,9 @@ function poly(pts)
     g.stroke();
 }
 
-// 參考框的數字是顯示單位：沒勾 scale 時就是圖片像素，勾了是遊戲像素
 function drawRefs(K)
 {
-    const r = S.ref, s = unit();
+    const r = S.ref;
     const x0 = -S.view.px / K, y0 = -S.view.py / K, W = cv.width / K, H = cv.height / K;
     g.strokeStyle = 'rgba(255,80,80,.8)';
     g.beginPath();
@@ -1171,13 +1164,13 @@ function drawRefs(K)
 
     g.setLineDash([4 / K, 4 / K]);
     g.strokeStyle = 'rgba(255,255,255,.6)';
-    g.strokeRect(-r.rw / 2 / s, -r.rh / 2 / s, r.rw / s, r.rh / s);
+    g.strokeRect(-r.rw / 2, -r.rh / 2, r.rw, r.rh);
     g.setLineDash([]);
 
     g.strokeStyle = 'rgba(80,220,255,.9)';
-    g.strokeRect((r.ax - r.tw / 2) / s, (r.ay - r.th / 2) / s, r.tw / s, r.th / s);
+    g.strokeRect(r.ax - r.tw / 2, r.ay - r.th / 2, r.tw, r.th);
     g.beginPath();
-    g.arc(r.ax / s, r.ay / s, 4 / K, 0, Math.PI * 2);
+    g.arc(r.ax, r.ay, 4 / K, 0, Math.PI * 2);
     g.stroke();
 }
 
@@ -1212,13 +1205,13 @@ function drawOverlay(K)
 
 function fitView()
 {
-    const r = S.ref, s = unit();
-    const pts = [{x: -r.rw / 2 / s, y: -r.rh / 2 / s}, {x: r.rw / 2 / s, y: r.rh / 2 / s},
+    const r = S.ref;
+    const pts = [{x: -r.rw / 2, y: -r.rh / 2}, {x: r.rw / 2, y: r.rh / 2},
                  ...S.layers.filter(L => L.visible).flatMap(corners)];
     const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
     const K = Math.min(cv.clientWidth / (maxX - minX), cv.clientHeight / (maxY - minY)) * 0.85;
-    S.view.zoom = K / unit();
+    S.view.zoom = K;
     S.view.px = cv.clientWidth / 2 - (minX + maxX) / 2 * K;
     S.view.py = cv.clientHeight / 2 - (minY + maxY) / 2 * K;
     dirty();
@@ -1404,9 +1397,9 @@ function cropSel(m)
             cut: T => pushOp(T, {type: 'mask', pts, keep: false})};
 }
 
-// ---------- 多邊形裁切（頂點存圖層本地座標；裁切模式下圖層沒縮放，本地距離＝世界距離；前後片的本地座標是縮小前的，要除 vk） ----------
+// ---------- 多邊形裁切（頂點存圖層本地座標；本地距離＝世界距離 ÷ scale；前後片的本地座標是縮小前的，還要除 vk） ----------
 
-const polyTol = () => 8 / zoomK() / (editSp()?.vk?.[0] ?? 1);
+const polyTol = () => {const sp = editSp(); return 8 / zoomK() / (sp?.vk?.[0] ?? 1) / (sp?.view ?? S.mode.layer).scale;};
 const polyLayer = (m) => m.view ?? m.layer;
 
 // Shift：從 from 出發的方向鎖在 45° 的倍數
@@ -1576,7 +1569,7 @@ function pickColor(w)
 function scaleByHandle(w, [cx, cy])
 {
     const m = S.mode, L = m.layer;
-    const c = {x: (cx - L.ox) * L.canvas.width, y: (cy - L.oy) * L.canvas.height};
+    const c = {x: (cx - L.ox) * L.canvas.width * L.scale, y: (cy - L.oy) * L.canvas.height * L.scale};
     const r = -L.a * RAD, dx = w.x - L.x, dy = w.y - L.y;
     const mx = dx * Math.cos(r) - dy * Math.sin(r), my = dx * Math.sin(r) + dy * Math.cos(r);
     if (m.lock)
@@ -1783,14 +1776,14 @@ function warpClick(m, w)
 function warpWorld(m, p)
 {
     const L = m.layer, c = Math.cos(L.a * RAD), s = Math.sin(L.a * RAD);
-    const dx = p.x - L.ox * m.input.width, dy = p.y - L.oy * m.input.height;
+    const dx = (p.x - L.ox * m.input.width) * L.scale, dy = (p.y - L.oy * m.input.height) * L.scale;
     return {x: m.base.x + dx * c - dy * s, y: m.base.y + dx * s + dy * c};
 }
 
 function warpLocal(m, w)
 {
     const L = m.layer, c = Math.cos(-L.a * RAD), s = Math.sin(-L.a * RAD);
-    const dx = w.x - m.base.x, dy = w.y - m.base.y;
+    const dx = (w.x - m.base.x) / L.scale, dy = (w.y - m.base.y) / L.scale;
     return {x: dx * c - dy * s + L.ox * m.input.width, y: dx * s + dy * c + L.oy * m.input.height};
 }
 
@@ -1894,7 +1887,7 @@ function warpPointerMove(m, e, w)
     if (drag.type === 'warpPt')
     {
         const [dx, dy] = shiftLock(e, w.x - drag.w0.x, w.y - drag.w0.y);
-        const c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
+        const c = Math.cos(-m.layer.a * RAD) / m.layer.scale, s = Math.sin(-m.layer.a * RAD) / m.layer.scale;
         const lx = dx * c - dy * s, ly = dx * s + dy * c;
         for (const [k, p] of drag.orig) f.pts[k] = {x: p.x + lx, y: p.y + ly};
         f.edited = true;
@@ -1937,7 +1930,7 @@ function warpBandSelect(m, a, b, add)
 // 世界座標的位移轉成 input 座標（圖層有旋轉時方向要轉回去）
 function warpNudge(m, dx, dy)
 {
-    const f = warpCur(m), c = Math.cos(-m.layer.a * RAD), s = Math.sin(-m.layer.a * RAD);
+    const f = warpCur(m), c = Math.cos(-m.layer.a * RAD) / m.layer.scale, s = Math.sin(-m.layer.a * RAD) / m.layer.scale;
     const lx = dx * c - dy * s, ly = dx * s + dy * c;
     warpRecord(m);
     for (const k of f.sel) f.pts[k] = {x: f.pts[k].x + lx, y: f.pts[k].y + ly};
@@ -2067,7 +2060,10 @@ function drawPixel(m, L, K)
     g.save();
     g.translate(L.x, L.y);
     g.rotate(L.a * RAD);
+    g.scale(L.scale, L.scale);
     g.translate(-L.ox * W, -L.oy * H);
+    K *= L.scale;
+    g.lineWidth = 1 / K;
     if (K >= PIXEL_GRID)
     {
         g.strokeStyle = 'rgba(255,255,255,.15)';
@@ -2118,6 +2114,9 @@ function setRgb(px)
 // ---------- 滑鼠 / 鍵盤 ----------
 
 let drag = null;
+// 拖曳、方向鍵以 0.25 遊戲單位為一格（scale 0.25 的圖剛好 1 像素）
+const STEP = 0.25;
+const onStep = (v) => Math.round(v / STEP) * STEP;
 
 cv.addEventListener('pointerdown', e => {
     cv.setPointerCapture(e.pointerId);
@@ -2235,12 +2234,12 @@ cv.addEventListener('pointermove', e => {
     }
     else if (drag.type === 'move')
     {
-        const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
+        const [dx, dy] = shiftLock(e, onStep(w.x - drag.wx), onStep(w.y - drag.wy));
         for (const p of drag.G) Object.assign(p.M, {x: p.x + dx, y: p.y + dy});
     }
     else if (drag.type === 'autoMove')
     {
-        const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
+        const [dx, dy] = shiftLock(e, onStep(w.x - drag.wx), onStep(w.y - drag.wy));
         if (autoMove(S.mode, drag.part, drag.x + dx, drag.y + dy, !drag.moved)) drag.moved = true;
     }
     else if (drag.type === 'autoPose')
@@ -2251,8 +2250,8 @@ cv.addEventListener('pointermove', e => {
         else
         {
             // 世界位移轉成圖層本地位移，支點反向移動＝圖跟著游標走、x/y 不動
-            const [dx, dy] = shiftLock(e, Math.round(w.x - drag.wx), Math.round(w.y - drag.wy));
-            const c = Math.cos(C.a * RAD), s = Math.sin(C.a * RAD);
+            const [dx, dy] = shiftLock(e, onStep(w.x - drag.wx), onStep(w.y - drag.wy));
+            const c = Math.cos(C.a * RAD) / C.scale, s = Math.sin(C.a * RAD) / C.scale;
             v = {ox: round(drag.ox - (dx * c + dy * s) / C.canvas.width, 10000), oy: round(drag.oy - (dy * c - dx * s) / C.canvas.height, 10000)};
         }
         if (autoPose(S.mode, drag.part, v, !drag.moved)) drag.moved = true;
@@ -2369,8 +2368,8 @@ window.addEventListener('keydown', e => {
     if (d && part)
     {
         e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
-        autoMove(m, part, L.x + d[0] * step, L.y + d[1] * step);
+        const step = STEP * (e.shiftKey ? 10 : 1);
+        autoMove(m, part, round(L.x + d[0] * step), round(L.y + d[1] * step));
         autoSave(part);
         refreshProps();
         dirty();
@@ -2378,7 +2377,7 @@ window.addEventListener('keydown', e => {
     else if (d && S.mode.type === 'warp' && warpCur(S.mode)?.sel.size)
     {
         e.preventDefault();
-        const step = e.shiftKey ? 10 : 1;
+        const step = STEP * (e.shiftKey ? 10 : 1);
         warpNudge(S.mode, d[0] * step, d[1] * step);
         refreshModePanel();
         dirty();
@@ -2386,9 +2385,9 @@ window.addEventListener('keydown', e => {
     else if (d && L && !L.locked && (S.mode.type === 'move' || S.mode.type === 'scale'))
     {
         e.preventDefault();
-        const step = e.shiftKey ? 10 : 1, G = S.mode.type === 'move' ? linked(L) : [L];
+        const step = STEP * (e.shiftKey ? 10 : 1), G = S.mode.type === 'move' ? linked(L) : [L];
         if (S.mode.type === 'move') hist.push({group: G.map(M => hist.snap(M))});
-        for (const M of G) Object.assign(M, {x: M.x + d[0] * step, y: M.y + d[1] * step});
+        for (const M of G) Object.assign(M, {x: round(M.x + d[0] * step), y: round(M.y + d[1] * step)});
         refreshProps();
         dirty();
     }
@@ -2518,7 +2517,7 @@ function refreshLayers()
     }
 }
 
-const PROP_IDS = ['pX', 'pY', 'pA', 'pOx', 'pOy', 'pOp', 'btnSave'];
+const PROP_IDS = ['pX', 'pY', 'pS', 'pA', 'pOx', 'pOy', 'pOp', 'btnSave'];
 
 function refreshProps()
 {
@@ -2527,10 +2526,10 @@ function refreshProps()
     $('pName').textContent = L ? `${join(L.path ?? '', L.name)}.png　原圖 ${L.src.width}×${L.src.height} → ${L.canvas.width}×${L.canvas.height}（${L.ops.length} 步）`
                                : '（沒有選取圖層）';
     if (!L) return;
-    const u = unit();
     const set = (id, v) => {if (document.activeElement !== $(id)) $(id).value = v;};
-    set('pX', round(L.x * u));
-    set('pY', round(L.y * u));
+    set('pX', round(L.x));
+    set('pY', round(L.y));
+    set('pS', round(L.scale, 10000));
     set('pA', round(L.a, 10));
     set('pOx', L.ox);
     set('pOy', L.oy);
@@ -2872,10 +2871,7 @@ async function readJson(file)
 
 async function loadHandle(fh, dir, path)
 {
-    const base = fh.name.replace(/\.png$/i, '');
-    const jh = await FS.tryFile(dir, `${base}.json`);
-    const meta = jh ? await readJson(await jh.getFile()) : null;
-    addLayer(await createImageBitmap(await fh.getFile()), base, dir, path, meta).srcPath = join(path, fh.name);
+    addLayer(await createImageBitmap(await fh.getFile()), fh.name.replace(/\.png$/i, ''), dir, path).srcPath = join(path, fh.name);
 }
 
 // ---------- 檔案樹右鍵：改名／刪除 ----------
@@ -3465,11 +3461,7 @@ function saveDialog(title, dir, path, name, ext = '.png', bake = null, note = nu
     });
 }
 
-function sidecar(L)
-{
-    const s = S.scale;
-    return {x: round(L.x * s), y: round(L.y * s), a: round(L.a, 10), scale: s, ox: L.ox, oy: L.oy};
-}
+const placeOf = (L) => ({x: round(L.x), y: round(L.y), a: round(L.a, 10), scale: round(L.scale, 10000), ox: L.ox, oy: L.oy});
 
 // ---------- icon ----------
 // size×size、順時針轉 a 度、內容佔 fill%；icon 模式的設定存 localStorage，自動模式存武器 icon 固定用 ICON_AUTO
@@ -3540,7 +3532,7 @@ function portraitOf(parts, o = S.auto.portrait, bake = false)
     const ims = ps.map(({C}) => {
         const src = preOf(C), f = bake ? PX.fade(src, C.opacity) : src, r = pct(C) / top;
         const c = PX.xform(f, {sx: 0, sy: 0, sw: f.width, sh: f.height, w: Math.max(1, Math.round(f.width * r)), h: Math.max(1, Math.round(f.height * r))});
-        return {c, x: C.x * k - C.ox * c.width, y: C.y * k - C.oy * c.height};
+        return {c, x: C.x / C.scale * k - C.ox * c.width, y: C.y / C.scale * k - C.oy * c.height};
     });
     const x0 = Math.min(...ims.map(i => i.x)), y0 = Math.min(...ims.map(i => i.y));
     const cv = PX.newCanvas(Math.ceil(Math.max(...ims.map(i => i.x + i.c.width)) - x0), Math.ceil(Math.max(...ims.map(i => i.y + i.c.height)) - y0));
@@ -3610,7 +3602,7 @@ function splitMismatch(g)
     {
         if (A.canvas.width !== M.canvas.width || A.canvas.height !== M.canvas.height)
             return `${A.name} 跟 ${M.name} 尺寸不一樣${A === g.O ? '（原圖改過，先到「前後片」按確定更新）' : ''}`;
-        const k = ['x', 'y', 'a', 'ox', 'oy'].find(k => Math.abs(A[k] - M[k]) > 1e-6);
+        const k = ['x', 'y', 'a', 'ox', 'oy', 'scale'].find(k => Math.abs(A[k] - M[k]) > 1e-6);
         if (k) return `${A.name} 跟 ${M.name} 的位置不一樣（${k}）`;
     }
     return '';
@@ -3633,7 +3625,7 @@ function setSplit(it, name, g, icon)
 
 function writeEquip(e, L)
 {
-    const o = sidecar(L);
+    const o = placeOf(L);
     Object.assign(e, {scale: o.scale, x: o.x, y: o.y});
     for (const [k, def] of [['a', 0], ['ox', 0.5], ['oy', 1]])
     {
@@ -3654,9 +3646,8 @@ async function saveLayer()
     if (!r) return;
     const out = r.bake ? PX.fade(L.canvas, L.opacity) : L.canvas;
     await FS.writeFile(r.dir, `${r.name}.png`, await PX.toPng(out));
-    // 存進 textures/ 是匯出成品：不寫擺放 .json、圖層的原圖／位置都不動
+    // 存進 textures/ 是匯出成品：圖層的原圖／位置都不動
     if (r.tex) return status(`已匯出 textures/${join(r.path, r.name)}.png`);
-    await FS.writeFile(r.dir, `${r.name}.json`, new Blob([JSON.stringify(sidecar(L), null, 2) + '\n']));
     refreshThumbs();
     Object.assign(L, {dir: r.dir, path: r.path});
     // 拖進來的圖（沒有原圖路徑）或覆蓋了自己的原圖：改以剛存的檔當原圖，步驟歸零（舊 undo 對不上新原圖，一起清掉）
@@ -3670,7 +3661,7 @@ async function saveLayer()
     }
     refreshProps();
     dirty();
-    status(`已存 ${saved}／.json`);
+    status(`已存 ${saved}`);
 }
 
 // ---------- 自動零件存到 item.json ----------
@@ -3888,7 +3879,7 @@ async function loadItems()
         if (!e0) {miss.push(part.C.name); continue;}
         const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0;
         hit.push(`${part.C.name} ← ${id}`);
-        if (e0.scale !== undefined && e0.scale !== S.scale) warn.push(`${id} 的 scale ${e0.scale} ≠ ${S.scale}`);
+        if (e0.scale !== undefined && e0.scale !== part.C.scale) warn.push(`${id} 的 scale ${e0.scale} ≠ ${part.C.scale}`);
         rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0,
                           ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}]);
     }
@@ -3942,7 +3933,7 @@ function autoMale(m)
 }
 
 // 女版擺放：PNG 照男版 pct 烤，所以 scale 照兩邊 pct 的比例換算
-const femaleOf = (P) => {const f = S.auto.f[P.key]; return {scale: round(S.scale * f.pct / S.auto[P.key].pct, 10000), x: f.x, y: f.y};};
+const femaleOf = (P) => {const f = S.auto.f[P.key]; return {scale: round(LAYER_SCALE * f.pct / S.auto[P.key].pct, 10000), x: f.x, y: f.y};};
 
 // 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）；all：換 sprite、共用圖（warn）也一起 confirm
 async function commitItems(rows, bake, all = false)
@@ -4195,7 +4186,7 @@ async function commitRole(parts, R, bake)
         }
         if (r.place)
         {
-            const s = sidecar(C);
+            const s = placeOf(C);
             Object.assign(o, {scale: s.scale, x: s.x, y: s.y});
         }
         done.push(r.key);
@@ -4219,7 +4210,7 @@ async function loadRole()
         const part = m.parts.find(p => p.P === P), e = roles[id][P.key];
         if (!part || !e) continue;
         hit.push(part.P.key);
-        if (e.scale !== undefined && e.scale !== S.scale) warn.push(`${id}.${part.P.key} 的 scale ${e.scale} ≠ ${S.scale}`);
+        if (e.scale !== undefined && e.scale !== part.C.scale) warn.push(`${id}.${part.P.key} 的 scale ${e.scale} ≠ ${part.C.scale}`);
         rows.push([part, {...autoRow(part), x: e.x ?? 0, y: e.y ?? 0}]);
     }
     if (!hit.length) return status(`${id} 沒有 head／hair`);
@@ -4238,7 +4229,7 @@ const BT_W = 48;
 // 假圖層：給 itemCheck／commitItems 跟自動零件一樣的欄位（src、ops、canvas、擺放、auto）
 function batchPart(src, name, cls)
 {
-    const C = {name, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1, opacity: 1, auto: {key: batchP().key}};
+    const C = {name, src, ops: [], canvas: src, x: 0, y: 0, a: 0, ox: 0.5, oy: 1, scale: LAYER_SCALE, opacity: 1, auto: {key: batchP().key}};
     const {T, plan} = autoPlan(C, 'weapon');
     if (!plan.length) return null;
     const part = {...plan[0], C, T};
@@ -4392,12 +4383,11 @@ function projectData(layers)
 {
     return {
         version: 1,
-        settings: {scale: S.scale, applyScale: S.applyScale, showOrigin: $('showOrigin').checked, ref: {...S.ref},
-                   trimT: trimT(), auto: S.auto, doll: {...S.doll}},
+        settings: {showOrigin: $('showOrigin').checked, ref: {...S.ref}, trimT: trimT(), auto: S.auto, doll: {...S.doll}},
         active: layers.indexOf(S.active),
         layers: layers.map(L => ({
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
-            ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, visible: L.visible, opacity: L.opacity, locked: L.locked,
+            ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, scale: L.scale, visible: L.visible, opacity: L.opacity, locked: L.locked,
             ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}), ...(L.tag && {tag: L.tag}),
         })),
     };
@@ -4419,11 +4409,7 @@ function updateTitle()
 
 function applySettings(s)
 {
-    S.scale = s.scale ?? 0.25;
-    S.applyScale = !!s.applyScale;
     Object.assign(S.ref, s.ref);
-    $('scale').value = S.scale;
-    $('applyScale').checked = S.applyScale;
     $('showOrigin').checked = s.showOrigin ?? true;
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
@@ -4473,6 +4459,8 @@ async function openProject(fh, dir, path)
     if (!data?.layers) return;
     cancelMode();
     const wasClean = !isUnsaved(), proj = {dir, path, name};
+    // 舊專案：世界座標是像素、全域 settings.scale 換算成遊戲單位；每層填當時的 scale，位置大小不變
+    const s0 = data.settings?.scale ?? LAYER_SCALE;
     const layers = [], warns = [];
     for (const d of data.layers)
     {
@@ -4487,8 +4475,9 @@ async function openProject(fh, dir, path)
         if (src.width !== d.srcW || src.height !== d.srcH)
             warns.push(`${d.name}：原圖尺寸變了（${d.srcW}×${d.srcH} → ${src.width}×${src.height}），結果可能不對`);
         const saveDir = await FS.resolveDir(S.root, d.path).catch(() => srcDir);
+        const k = d.scale === undefined ? s0 : 1;
         layers.push({id: ++uid, name: d.name, dir: saveDir, path: d.path, srcPath: d.src, src, ops: d.ops,
-                     canvas: PX.replay(src, d.ops), x: d.x, y: d.y, a: d.a, ox: d.ox, oy: d.oy,
+                     canvas: PX.replay(src, d.ops), x: d.x * k, y: d.y * k, a: d.a, ox: d.ox, oy: d.oy, scale: d.scale ?? s0,
                      visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
                      ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc})});
         const had = add && S.layers.some(L => L.tag === d.tag) || layers.some(L => L.tag === d.tag);
@@ -4498,8 +4487,6 @@ async function openProject(fh, dir, path)
     const lossy = warns.length > 0;
     if (add)
     {
-        const scale = data.settings?.scale ?? 0.25;
-        if (scale !== S.scale) warns.unshift(`${name} 的 scale 是 ${scale}，沿用目前的 ${S.scale}（疊圖對位與匯出數字會跟原本不同）`);
         hist.push(hist.snapList(S));
         S.layers = [...S.layers, ...layers];
         S.active = layers[data.active] ?? layers.at(-1) ?? S.active;
@@ -4518,10 +4505,12 @@ async function openProject(fh, dir, path)
     if (warns.length) alert(warns.join('\n'));
 }
 
+// 合成圖的 scale 取最小的那層（像素最密），那層照原尺寸畫、不失真
 function flatten(layers, bake)
 {
+    const k = Math.min(...layers.map(L => L.scale));
     const pts = layers.flatMap(corners);
-    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const xs = pts.map(p => p.x / k), ys = pts.map(p => p.y / k);
     const minX = Math.floor(Math.min(...xs)), minY = Math.floor(Math.min(...ys));
     const big = PX.newCanvas(Math.ceil(Math.max(...xs)) - minX, Math.ceil(Math.max(...ys)) - minY);
     const bg = big.getContext('2d');
@@ -4529,12 +4518,13 @@ function flatten(layers, bake)
     for (const L of layers)
     {
         bg.setTransform(1, 0, 0, 1, -minX, -minY);
-        bg.translate(L.x, L.y);
+        bg.translate(L.x / k, L.y / k);
         bg.rotate(L.a * RAD);
+        bg.scale(L.scale / k, L.scale / k);
         bg.globalAlpha = bake ? L.opacity : 1;
         bg.drawImage(L.canvas, -L.ox * L.canvas.width, -L.oy * L.canvas.height);
     }
-    return {big, minX, minY};
+    return {big, minX: minX * k, minY: minY * k, k};
 }
 
 
@@ -4565,17 +4555,6 @@ document.querySelectorAll('[data-mode]').forEach(b => {b.onclick = () => setMode
 document.querySelectorAll('.mode .ok').forEach(b => {b.onclick = applyMode;});
 document.querySelectorAll('.mode .cancel').forEach(b => {b.onclick = cancelMode;});
 
-$('scale').onchange = () => {
-    const v = +$('scale').value;
-    S.scale = v > 0 ? v : 0.25;
-    refreshProps();
-    dirty();
-};
-$('applyScale').onchange = () => {
-    S.applyScale = $('applyScale').checked;
-    refreshProps();
-    dirty();
-};
 for (const id of Object.keys(S.ref)) $(id).oninput = () => {S.ref[id] = +$(id).value || 0; dirty();};
 
 const onProp = (id, fn) => {
@@ -4588,8 +4567,9 @@ const onProp = (id, fn) => {
         refreshAll();
     };
 };
-onProp('pX', (L, v) => {L.x = v / unit();});
-onProp('pY', (L, v) => {L.y = v / unit();});
+onProp('pX', (L, v) => {L.x = v;});
+onProp('pY', (L, v) => {L.y = v;});
+onProp('pS', (L, v) => {if (v > 0) L.scale = v;});
 onProp('pA', (L, v) => {L.a = v;});
 onProp('pOx', (L, v) => setOrigin(L, v, L.oy));
 onProp('pOy', (L, v) => setOrigin(L, L.ox, v));
@@ -4828,14 +4808,8 @@ $('icSave').onclick = () => saveIcon().catch(e => status(e.message));
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
     e.preventDefault();
-    const files = [...e.dataTransfer.files];
-    const jsons = new Map(files.filter(f => /\.json$/i.test(f.name)).map(f => [f.name.replace(/\.json$/i, ''), f]));
-    for (const f of files.filter(f => /\.png$/i.test(f.name)))
-    {
-        const base = f.name.replace(/\.png$/i, '');
-        const jf = jsons.get(base);
-        addLayer(await createImageBitmap(f), base, null, null, jf ? await readJson(jf) : null);
-    }
+    for (const f of [...e.dataTransfer.files].filter(f => /\.png$/i.test(f.name)))
+        addLayer(await createImageBitmap(f), f.name.replace(/\.png$/i, ''), null, null);
 });
 
 new ResizeObserver(dirty).observe(cv);
@@ -4874,7 +4848,7 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 })();
 
 // 給無頭測試用
-window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, sidecar, undo, redo, toWorld,
+window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
                deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData};

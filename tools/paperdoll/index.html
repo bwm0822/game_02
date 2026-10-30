@@ -16,8 +16,6 @@
     <span title="圖層右鍵標成 男／女 的 髮／頭／身體，切換時批次改顯示"><button id="dollM">男</button><button id="dollF">女</button></span>
     <label><input id="dollHair" type="checkbox" checked> 頭髮</label>
     <span class="sep"></span>
-    <label>scale <input id="scale" type="number" step="0.05" min="0.01" value="0.25"></label>
-    <label><input id="applyScale" type="checkbox"> 套用 scale</label>
     <label><input id="showOrigin" type="checkbox" checked> 顯示 origin</label>
     <span class="sep"></span>
     <label>tile <input id="tw" type="number" value="32">×<input id="th" type="number" value="32"></label>
@@ -211,6 +209,7 @@
             <div id="pName" class="dim">（沒有選取圖層）</div>
             <label>x <input id="pX" type="number" step="any"></label>
             <label>y <input id="pY" type="number" step="any"></label>
+            <label>scale <input id="pS" type="number" step="0.01" min="0.0001"></label>
             <label>a <input id="pA" type="number" step="any"></label>
             <label>ox <input id="pOx" type="number" step="0.05"></label>
             <label>oy <input id="pOy" type="number" step="0.05"></label>
@@ -219,9 +218,10 @@
         </div>
         <div class="hint">
             拖曳：移動（Shift 只沿水平或垂直）　R+拖曳：旋轉（Shift 鎖 15°）<br>
-            方向鍵 1px／Shift 10px（圖片像素）<br>
+            x／y 是遊戲單位，scale＝圖片 1 像素是幾個遊戲單位<br>
+            方向鍵 0.25／Shift 2.5（遊戲單位）<br>
             滾輪：縮放視角　中鍵拖曳：平移視角<br>
-            可從檔案總管拖 PNG（和同名 .json）進來
+            可從檔案總管拖 PNG 進來
         </div>
     </aside>
 </main>
