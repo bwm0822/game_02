@@ -1,4 +1,8 @@
-import {h, ask, status} from '../common/dom.js';
+import {$, h, ask, status} from '../common/dom.js';
+import * as FS from '../common/fs.js';
+import * as SH from '../common/shell.js';
+import * as ST from '../common/settings.js';
+import {portraitOf, toPng} from '../common/portrait.js';
 import {str, isObj, getAt, replaceRaw, parseNum} from '../common/obj.js';
 import {createDoc} from '../common/doc.js';
 import {fieldInput, createForm} from '../common/form.js';
@@ -9,7 +13,7 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from './preview.js';
-import {ROLE_PARTS} from '../../src/core/equip.js';
+import {ROLE_PARTS, partFor} from '../../src/core/equip.js';
 
 // role.json 裡沒有角色互相引用的欄位，改名只動 key
 const D = createDoc({
@@ -17,7 +21,10 @@ const D = createDoc({
     external: '可能是紙娃娃「存到 role.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (file === 'item.json' || file === 'part.json') loadRefs().then(render);},
+    onSaved: (file) => {
+        if (file === 'item.json' || file === 'part.json') loadRefs().then(render);
+        if (file === 'textures.json') render();
+    },
 });
 const {S, render, commit, set} = D;
 S.ext = {items: {}, abilities: {}, maps: {}, parts: {}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
@@ -181,7 +188,118 @@ function fieldRow(id, r, k)
     if (def.type === 'obj') return objBox(id, k, def, v);
     if (def.type === 'inv') return invBox(id, v);
     if (def.type === 'schedule') return schedBox(id, v);
-    return [h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label), fieldInput(def, v, val => set(id, [k], val), k)];
+    const lab = h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label);
+    if (def.type === 'part') return [lab, partField(id, k, v)];
+    const inp = fieldInput(def, v, val => set(id, [k], val), k);
+    if (k === 'icon') inp.append(h('button', {type: 'button', disabled: !canPortrait(r), title: '頭＋頭髮照遊戲擺放疊起來，存成 textures/roles/portraits/portrait-<id>.png',
+        onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭髮產生'));
+    return [lab, inp];
+}
+
+// ---------- 表單：部位（part.json 的 id） ----------
+// pool 選圖器照 kind 列條目：點一下選、「無」清掉；右鍵條目改名（連帶改 role.json 的引用、存檔）／刪除（有角色在用就擋）
+const partUsers = (pid) => Object.keys(S.data).filter(rid => ROLE_PARTS.some(k => S.data[rid][k] === pid));
+
+function partField(id, k, v)
+{
+    const p = S.ext.parts[v];
+    return h('span', {class: 'iconField'},
+        IC.iconEl(p?.sprite, 32),
+        h('input', {dataset: {k, combo: `dl-${k}`}, value: v ?? '', onchange: e => set(id, [k], e.target.value.trim() || undefined)}),
+        h('button', {type: 'button', onclick: async () => {const r = await pickPart(k, v); if (r !== null) set(id, [k], r || undefined);}}, '選…'));
+}
+
+// 回傳選到的 id，''＝無，null＝取消
+function pickPart(kind, cur)
+{
+    const dlg = $('dlgPart');
+    let done;
+    const pick = (v) => {done = v; dlg.close();};
+    const draw = () => {
+        const ids = Object.keys(S.ext.parts).filter(pid => S.ext.parts[pid].kind === kind);
+        const tile = (pid, icon, lab, title) => h('div', {class: 'tile' + ((cur ?? '') === pid ? ' sel' : ''), dataset: {id: pid}, title,
+            onclick: () => pick(pid), oncontextmenu: pid ? (e) => {e.preventDefault(); partMenu(pid).then(draw);} : null}, icon, h('div', {class: 'lab'}, lab));
+        dlg.querySelector('.title').textContent = `選擇${SC.FIELDS[kind].label}（part.json，右鍵改名／刪除）`;
+        dlg.querySelector('.tiles').replaceChildren(
+            tile('', IC.iconEl(null, 48), '無', '清掉'),
+            ...ids.map(pid => {
+                const n = partUsers(pid).length;
+                return tile(pid, IC.iconEl(S.ext.parts[pid].sprite, 48), pid, `${pid}${n ? `（${n} 個角色在用：${partUsers(pid).join('、')}）` : '（沒有角色在用）'}`);
+            }));
+    };
+    draw();
+    dlg.onclick = (e) => {if (e.target === dlg) dlg.close();};
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => res(done ?? null), {once: true}));
+}
+
+async function partMenu(pid)
+{
+    const r = await ask(pid, h('div', {class: 'dim'}, `${partUsers(pid).length} 個角色在用`), [['rename', '改名…'], ['delete', '刪除…'], ['cancel', '取消']]);
+    if (r === 'rename') await renamePart(pid);
+    if (r === 'delete') await deletePart(pid);
+}
+
+const readParts = async () => JSON.parse(await FS.readText(S.assets.json, 'part.json'));
+async function writeParts(parts)
+{
+    await FS.writeFile(S.assets.json, 'part.json', new Blob([JSON.stringify(parts, null, 2)]));
+    S.ext.parts = parts;
+    SH.notifySaved('part.json');
+}
+
+// part.json 立刻寫；role.json 的引用一起改（一步 undo）然後存檔，兩邊才不會對不上
+async function renamePart(from)
+{
+    const to = h('input', {size: 24, value: from});
+    const p = ask(`改名 ${from}`, [h('div', null, '新的 id（sprite 不變）：'), to], [['ok', '下一步'], ['cancel', '取消']]);
+    to.select();
+    if (await p !== 'ok') return;
+    const id = to.value.trim(), parts = await readParts(), users = partUsers(from);
+    if (id === from) return;
+    if (!/^[\w-]+$/.test(id)) return status('id 只能用英數字、底線、減號');
+    if (parts[id]) return status(`part.json 已經有 ${id}`);
+    if (!parts[from]) return status(`part.json 已經沒有 ${from}`);
+    if (await ask(`改名 ${from} → ${id}`, [h('div', null, `role.json 會一起改並存檔：${users.join('、') || '（沒有角色在用）'}`)], [['ok', '改名'], ['cancel', '取消']]) !== 'ok') return;
+    await writeParts(Object.fromEntries(Object.entries(parts).map(([k, v]) => [k === from ? id : k, v])));
+    if (users.length)
+    {
+        commit(() => {for (const rid of users) for (const k of ROLE_PARTS) if (S.data[rid][k] === from) S.data[rid][k] = id;});
+        await D.save();
+    }
+    status(`已改名 ${from} → ${id}${users.length ? `（${users.join('、')}）` : ''}`);
+}
+
+async function deletePart(pid)
+{
+    const users = partUsers(pid);
+    if (users.length) return void await ask(`不能刪 ${pid}`, h('div', null, `還有角色在用：${users.join('、')}`), [['ok', '知道了']]);
+    if (await ask(`刪除 ${pid}`, h('div', null, 'PNG 不會刪，可以到「圖片」分頁搬到 .tbd'), [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    const parts = await readParts();
+    delete parts[pid];
+    await writeParts(parts);
+    status(`已刪除 ${pid}`);
+}
+
+// ---------- 由頭髮產生頭像 ----------
+const PORTRAIT_DIR = ['textures', 'roles', 'portraits'];
+const headParts = (r) => ['head', 'hair'].map(k => partFor(S.ext.parts, r, k)).filter(p => p?.sprite);
+const canPortrait = (r) => headParts(r).length > 0;
+
+async function genPortrait(id)
+{
+    const r = S.data[id], name = `portrait-${id}`;
+    const url = IC.IMAGES[name];
+    if (url && !url.includes(`/${PORTRAIT_DIR.join('/')}/`)) return status(`textures 別的資料夾已經有 ${name}，換不了`);
+    const c = await portraitOf(headParts(r), ST.get('portrait'));
+    if (!c) return status('頭／頭髮的圖讀不到或是全透明');
+    let dir = S.assets.dir;
+    for (const seg of PORTRAIT_DIR) dir = await dir.getDirectoryHandle(seg, {create: true});
+    if (r.icon !== name && await FS.tryFile(dir, `${name}.png`)
+        && await ask(`覆蓋 ${name}.png`, h('div', null, `textures/${PORTRAIT_DIR.slice(1).join('/')}/${name}.png 已經有了`), [['ok', '覆蓋'], ['cancel', '取消']]) !== 'ok') return;
+    await FS.writeFile(dir, `${name}.png`, await toPng(c));
+    set(id, ['icon'], name);
+    status(`已產生 ${PORTRAIT_DIR.slice(1).join('/')}/${name}.png，icon 改成 ${name}（圖片清單會自動更新）`);
 }
 
 // ---------- 表單：物品欄 ----------
@@ -442,9 +560,13 @@ async function loadRefs()
     render();
     IC.ready.then(render);
     D.listenGoto();
-    D.start();
+    D.start(async (dir) => {
+        await ST.load(dir).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
+        await D.setAssets(dir);
+    });
 })();
 
 // 給無頭測試用
 window.__re = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, dup: D.dup,
-               rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC};
+               rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
+               pickPart, renamePart, deletePart, genPortrait, loadRefs};
