@@ -1917,6 +1917,89 @@ run('paperdoll', async t => {
          JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
     t.eq('自動（頭像）：還原預設只還原頭像（連尺寸/%）', JSON.stringify(ah.reset), JSON.stringify([100, 18, 28, true]));
 
+    // 部位 pool：右鍵標 kind、存到 part.json（預設勾顯示中的、PNG＋擺放、接在同 kind 後面）、女模式只寫 f、載入 pool
+    const pl = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const read = async (name) => JSON.parse(await (await (await json.getFileHandle(name)).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const open = async () => {const p = pd.savePool(); await until(() => $('dlgPool').open); return {p};};
+        const rows = () => [...$('dpRows').children].map(r => ({on: r.querySelector('input[type=checkbox]'), id: r.querySelector('input:not([type])'), msg: r.querySelector('.body > div:last-child')}));
+        const png = async (name) => {try {const b = await createImageBitmap(await (await (await (await tex.getDirectoryHandle('roles')).getDirectoryHandle('parts')).getFileHandle(`${name}.png`)).getFile()); return [b.width, b.height];} catch {return null;}};
+        await put(json, 'role.json', JSON.stringify({wick: {cloth: 'cloth-old'}}, null, 2));
+        await put(json, 'part.json', JSON.stringify({'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25}, 'cloth-old': {kind: 'cloth', sprite: 'cloth-old', scale: 0.25, note: 1}, 'hand-man': {kind: 'hand', sprite: 'hand-man'}}, null, 2));
+        const c = document.createElement('canvas'); c.width = 40; c.height = 60;
+        c.getContext('2d').fillRect(0, 0, 40, 60);
+        pd.cancelMode();
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.setDoll({sex: 'm'});
+        const A = pd.addLayer(await createImageBitmap(c), 'cloth-a', null, null);
+        const B = pd.addLayer(await createImageBitmap(c), 'cloth-old', null, null);
+        const H = pd.addLayer(await createImageBitmap(c), 'hidden', null, null);
+        await pd.setAssets(assets);
+        out.btn0 = $('btnPool').disabled;
+        pd.setPool(A, 'cloth'); pd.setPool(B, 'cloth'); pd.setPool(H, 'shoes');
+        H.visible = false;
+        Object.assign(A, {x: 1, y: 2, scale: 0.5});
+        out.btn = $('btnPool').disabled;
+        out.badge = [...document.querySelectorAll('#layers .tag.pool')].map(b => b.textContent).join();
+        out.proj = pd.projectData(pd.S.layers).layers.map(d => d.pool ?? '').join();
+
+        let {p} = await open();
+        out.dlg = rows().map(r => [r.on.checked, r.id.value, r.msg.textContent]);
+        rows()[1].id.value = 'body-man'; rows()[1].id.dispatchEvent(new Event('input'));
+        out.kindErr = [rows()[1].msg.textContent, $('dpOk').disabled];
+        rows()[1].id.value = 'cloth-old'; rows()[1].id.dispatchEvent(new Event('input'));
+        const ok = window.confirm; window.confirm = () => true;
+        $('dlgPool').close('ok'); await p;
+        let parts = await read('part.json');
+        out.saved = [Object.keys(parts).join(), JSON.stringify(parts['cloth-a']), JSON.stringify(parts['cloth-old']), 'shoes' in parts, await png('cloth-a'), A.poolId];
+
+        // 女模式：只寫 f、不寫 PNG；條目不存在要擋
+        pd.setDoll({sex: 'f'});
+        Object.assign(A, {x: 5, y: 6, scale: 0.4});
+        H.visible = true;
+        ({p} = await open());
+        out.fem = [$('dpTitle').textContent, rows().map(r => r.msg.textContent), $('dpOk').disabled];
+        rows()[0].on.checked = false; rows()[0].on.dispatchEvent(new Event('change'));
+        out.femOk = $('dpOk').disabled;
+        $('dlgPool').close('ok'); await p;
+        window.confirm = ok;
+        parts = await read('part.json');
+        out.femSaved = [JSON.stringify(parts['cloth-a']), JSON.stringify(parts['cloth-old'].f)];
+
+        // 載入 pool：女模式讀 f、男模式讀基準，一步 undo
+        Object.assign(A, {x: 0, y: 0, scale: 1});
+        await pd.loadPool();
+        out.loadF = [A.x, A.y, A.scale, $('status').textContent];
+        pd.setDoll({sex: 'm'});
+        await pd.loadPool();
+        out.loadM = [A.x, A.y, A.scale];
+        pd.undo();
+        out.loadUndo = [A.x, A.y, A.scale];
+        pd.setPool(A, null);
+        out.unset = [A.pool, A.poolId];
+        return out;
+    });
+    t.eq('pool：沒標 pool 按鈕停用、標了才能按、徽章、存進專案', JSON.stringify([pl.btn0, pl.btn, pl.badge, pl.proj]), JSON.stringify([true, false, '鞋,衣,衣', 'cloth,cloth,shoes']));
+    t.eq('pool：對話框預設勾顯示中的、id＝圖層名、已有的提示覆蓋', JSON.stringify(pl.dlg),
+         JSON.stringify([[false, 'hidden', ''], [true, 'cloth-old', '會覆蓋 cloth-old（PNG＋擺放）（wick 在用）'], [true, 'cloth-a', '']]));
+    t.eq('pool：kind 不合擋存', JSON.stringify(pl.kindErr), JSON.stringify(['part.json 的 body-man 是 身體', true]));
+    t.eq('pool：新條目接在同 kind 後面、PNG 在 roles/parts、覆蓋保留其他 key、記住 id', JSON.stringify(pl.saved),
+         JSON.stringify(['body-man,cloth-old,cloth-a,hand-man', '{"kind":"cloth","sprite":"cloth-a","scale":0.5,"x":1,"y":2}',
+                         '{"kind":"cloth","sprite":"cloth-old","scale":0.25,"note":1,"x":0,"y":0}', false, [40, 60], 'cloth-a']));
+    t.eq('pool：女模式只寫 f、沒有條目擋', JSON.stringify(pl.fem),
+         JSON.stringify(['存到 pool（part.json）：女版，只寫 f', ['女模式只寫 f，part.json 要先有這筆（切到男存一次）', '只寫 cloth-old.f（scale／x／y）（wick 在用）', '只寫 cloth-a.f（scale／x／y）'], true]));
+    t.eq('pool：取消勾擋住的那列就能存', pl.femOk, false);
+    t.eq('pool：女版寫 f、基準不動', JSON.stringify(pl.femSaved),
+         JSON.stringify(['{"kind":"cloth","sprite":"cloth-a","scale":0.5,"x":1,"y":2,"f":{"scale":0.4,"x":5,"y":6}}', '{"scale":0.25,"x":0,"y":0}']));
+    t.eq('pool：女模式載入讀 f', JSON.stringify(pl.loadF), JSON.stringify([5, 6, 0.4, '載入 cloth-a ← cloth-a、cloth-old ← cloth-old；hidden 在 part.json 找不到']));
+    t.eq('pool：男模式載入讀基準、undo', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[1, 2, 0.5], [5, 6, 0.4]]));
+    t.eq('pool：取消 pool 連 id 一起清', JSON.stringify(pl.unset), JSON.stringify([null, null]));
+
     // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定
     const bt = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);

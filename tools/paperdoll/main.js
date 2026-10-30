@@ -123,7 +123,7 @@ function mergeLayers(layers)
 // ops 跟 canvas 都不會被就地修改，直接共用參照；複本不算自動拆出的零件，也不帶人偶標記（同部位只能一層）
 function cloneAbove(L, name, below = false)
 {
-    const {auto, autoSrc, splitSrc, tag, ...rest} = L;
+    const {auto, autoSrc, splitSrc, tag, pool, poolId, ...rest} = L;
     const C = {...rest, id: ++uid, name};
     S.layers.splice(S.layers.indexOf(L) + (below ? 0 : 1), 0, C);
     return C;
@@ -222,12 +222,15 @@ function setDoll(d)
     refreshAll();
 }
 
+// 人偶標記之後接 pool 部位（L.pool，跟人偶標記分開、數量不限）
 function tagMenu(e, L)
 {
     e.preventDefault();
     const items = Object.entries(DOLL_SEX).flatMap(([s, sn]) => Object.entries(DOLL_PART).map(([p, pn]) =>
         [`${L.tag === `${s}-${p}` ? '✔ ' : ''}${sn}：${pn}`, () => setTag(L, `${s}-${p}`)]));
-    ctxMenu(e.clientX, e.clientY, L.tag ? [...items, ['取消標記', () => setTag(L, null)]] : items);
+    const pools = Object.entries(POOL_KIND).map(([k, n]) => [`${L.pool === k ? '✔ ' : ''}pool：${n}`, () => setPool(L, k)]);
+    ctxMenu(e.clientX, e.clientY, [...items, ...L.tag ? [['取消標記', () => setTag(L, null)]] : [],
+                                  ...pools, ...L.pool ? [['取消 pool', () => setPool(L, null)]] : []]);
 }
 
 function select(L)
@@ -2510,6 +2513,7 @@ function refreshLayers()
     }
     $('dollHair').disabled = !tagged;
     $('dollHair').checked = S.doll.hair;
+    $('btnPool').disabled = $('btnPoolLoad').disabled = !S.assets || !S.layers.some(L => L.pool);
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
@@ -2528,6 +2532,7 @@ function refreshLayers()
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
             ...(L.tag ? [Object.assign(el('span', 'tag ' + L.tag.split('-')[0]), {textContent: dollBadge(L.tag), title: '參考人偶（右鍵改標記）'})] : []),
+            ...(L.pool ? [Object.assign(el('span', 'tag pool'), {textContent: POOL_KIND[L.pool][0], title: `pool：${POOL_KIND[L.pool]}${L.poolId ? `（存過 ${L.poolId}）` : ''}（右鍵改）`})] : []),
             ...[armorBadge(L)].filter(Boolean),
             name,
             ico('✕', true, '刪除圖層', () => {if (confirm(`刪除圖層 ${L.name}？`)) removeLayer(L);}),
@@ -4061,6 +4066,162 @@ async function commitItems(rows, bake, all = false)
     status(`已存 item.json：${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
+// ---------- 部位 pool（part.json） ----------
+// 圖層右鍵標成 pool 的部位（L.pool＝kind）；「存到 pool…」每個標了的層一列，預設勾 👁 顯示中的：
+// PNG 寫 textures/roles/parts/<id>.png、擺放（scale/x/y，a/ox/oy 不是預設才寫）寫成 part.json 的條目，條目其他 key 保留；
+// 女模式（header 的 女）不動圖也不動基準，只寫 f（scale/x/y），條目要先存在。存過的 id 記在 L.poolId，下次預設用它
+
+const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hand: '手'};
+const POOL_DIR = 'roles/parts';
+const POOL_F = ['scale', 'x', 'y'];
+const poolFemale = () => S.doll.sex === 'f';
+
+function setPool(L, kind)
+{
+    if (kind) L.pool = kind;
+    else {delete L.pool; delete L.poolId;}
+    refreshAll();
+}
+
+const readParts = async () => await FS.tryFile(S.assets.json, 'part.json') ? readGameJson('part.json') : {};
+const partUsers = (roles, id) => Object.keys(roles).filter(rid => Object.keys(POOL_KIND).some(k => roles[rid][k] === id));
+
+// 填 r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋，存檔時 confirm）；回傳要處理的列
+function poolCheck(rows, parts, roles, keys)
+{
+    const act = rows.filter(r => r.on), female = poolFemale();
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: ''});
+    for (const r of act)
+    {
+        const err = (s) => {r.err ||= s;};
+        const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
+        if (!r.id) err('要填 id');
+        else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
+        if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
+        if (old && old.kind !== r.L.pool) err(`part.json 的 ${r.id} 是 ${POOL_KIND[old.kind] ?? old.kind}`);
+        if (female)
+        {
+            if (!old) err('女模式只寫 f，part.json 要先有這筆（切到男存一次）');
+            else r.warn = `只寫 ${r.id}.f（scale／x／y）${also}`;
+            continue;
+        }
+        const dir = keys.get(r.id);
+        if (dir !== undefined && dir !== POOL_DIR) err(`textures/${join(dir, r.id)}.png 已經有了，換個 id`);
+        else if (old) r.ask = `${r.id}（PNG＋擺放）${also}`;
+        else if (dir === POOL_DIR) r.ask = `${POOL_DIR}/${r.id}.png`;
+    }
+    return act;
+}
+
+function poolDialog(parts, roles, keys)
+{
+    const dlg = $('dlgPool'), female = poolFemale();
+    const rows = S.layers.filter(L => L.pool).reverse().map(L => ({L, on: L.visible, id: L.poolId ?? L.name}));
+    $('dpTitle').textContent = `存到 pool（part.json）${female ? '：女版，只寫 f' : ''}`;
+    const refresh = () => {
+        const act = poolCheck(rows, parts, roles, keys);
+        for (const r of rows)
+        {
+            r.inp.disabled = !r.on;
+            r.msg.className = r.err ? 'err' : 'warn';
+            r.msg.textContent = !r.on ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`].filter(Boolean).join('；');
+        }
+        $('dpOk').disabled = !act.length || act.some(r => r.err);
+    };
+    $('dpRows').replaceChildren(...rows.map(r => {
+        const row = el('div', 'irow'), body = el('div', 'body'), line = el('div', 'line');
+        const thumb = el('canvas');
+        thumb.width = thumb.height = 48;
+        fitDraw(thumb, r.L.canvas, true);
+        const on = Object.assign(el('input'), {type: 'checkbox', checked: r.on, onchange: () => {r.on = on.checked; refresh();}});
+        const onL = el('label');
+        onL.append(on, ` ${POOL_KIND[r.L.pool]}　${r.L.name}`);
+        r.inp = Object.assign(el('input'), {value: r.id, oninput: () => {r.id = r.inp.value.trim(); refresh();}});
+        const idL = el('label');
+        idL.append('id ', r.inp);
+        r.msg = el('div');
+        line.append(onL, idL);
+        body.append(line, r.msg);
+        row.append(thumb, body);
+        return row;
+    }));
+    const fade = !female && rows.some(r => r.L.opacity < 1);
+    $('dpBakeRow').hidden = !fade;
+    $('dpBake').checked = true;
+    refresh();
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => {
+        res(dlg.returnValue === 'ok' ? {rows, bake: fade && $('dpBake').checked} : null);
+    }, {once: true}));
+}
+
+async function savePool()
+{
+    if (!S.assets || !S.layers.some(L => L.pool)) return;
+    const d = await poolDialog(await readParts(), await readGameJson('role.json'), await texKeys());
+    if (d) await commitPool(d.rows, d.bake);
+}
+
+// 存檔時重讀 part.json、role.json、重掃 textures/ 再檢查一次；新條目接在同 kind 的最後一筆後面
+async function commitPool(rows, bake)
+{
+    const A = S.assets, female = poolFemale();
+    let parts = await readParts();
+    const keys = await texKeys(), act = poolCheck(rows, parts, await readGameJson('role.json'), keys);
+    const bad = act.filter(r => r.err);
+    if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${r.L.name}：${r.err}`).join('\n')}`);
+    const ask = act.filter(r => r.ask).map(r => `${r.L.name}：${r.ask}`);
+    if (ask.length && !confirm(`會覆蓋：\n${ask.join('\n')}\n要繼續嗎？`)) return;
+    const fresh = [];
+    for (const r of act)
+    {
+        const {L, id} = r, o = placeOf(L);
+        if (female)
+        {
+            parts[id].f = Object.fromEntries(POOL_F.map(k => [k, o[k]]));
+            L.poolId = id;
+            continue;
+        }
+        if (!keys.has(id)) fresh.push(id);
+        await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${id}.png`, await PX.toPng(splitPng(L, bake)));
+        const e = {...parts[id] ?? {kind: L.pool}, sprite: id};
+        writeEquip(e, L);
+        if (parts[id]) parts[id] = e;
+        else parts = insertAfter(parts, Object.keys(parts).filter(k => parts[k].kind === L.pool).at(-1), id, e);
+        L.poolId = id;
+    }
+    await FS.writeFile(A.json, 'part.json', new Blob([JSON.stringify(parts, null, 2)]));
+    SH.notifySaved('part.json');
+    refreshAll();
+    status(`已存 part.json：${act.map(r => r.id).join('、')}${female ? '（女版 f）' : ''}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// 標了 pool 的層照 id（存過的 poolId，不然圖層名）找條目，載入擺放（女模式套 f）；整次一步 undo，都沒對到不記
+function loadPoolInto(parts)
+{
+    const hit = [], miss = [], snaps = [], female = poolFemale();
+    for (const L of S.layers.filter(L => L.pool))
+    {
+        const id = L.poolId ?? L.name, e0 = parts[id];
+        if (!e0) {miss.push(L.name); continue;}
+        const e = female && e0.f ? {...e0, ...e0.f} : e0;
+        snaps.push(hist.snap(L));
+        Object.assign(L, {scale: e.scale ?? L.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1, poolId: id});
+        hit.push(`${L.name} ← ${id}`);
+    }
+    if (snaps.length) hist.push({group: snaps});
+    refreshAll();
+    status(hit.length ? [`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 在 part.json 找不到`].filter(Boolean).join('；')
+                      : `${miss.join('、')} 在 part.json 找不到`);
+}
+
+async function loadPool()
+{
+    if (!S.assets) return;
+    loadPoolInto(await readParts());
+}
+
 // ---------- 頭像存到 role.json ----------
 // 可以選任何現有角色（不新增角色，沒有 head／hair 就新增那一項）：頭、頭髮寫 textures/roles/parts（head／hair 的 sprite、scale、x、y），
 // 頭像另外合成寫 roles/portraits（icon）；檔名預設 head-<id>／hair-<id>／portrait-<id>，不照舊 sprite（常有好幾個角色共用一顆頭）
@@ -4453,6 +4614,7 @@ function projectData(layers)
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, scale: L.scale, visible: L.visible, opacity: L.opacity, locked: L.locked,
             ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}), ...(L.tag && {tag: L.tag}),
+            ...(L.pool && {pool: L.pool}), ...(L.poolId && {poolId: L.poolId}),
         })),
     };
 }
@@ -4544,7 +4706,8 @@ async function openProject(fh, dir, path)
         layers.push({id: ++uid, name: d.name, dir: saveDir, path: d.path, srcPath: d.src, src, ops: d.ops,
                      canvas: PX.replay(src, d.ops), x: d.x * k, y: d.y * k, a: d.a, ox: d.ox, oy: d.oy, scale: d.scale ?? s0,
                      visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
-                     ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc})});
+                     ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc}),
+                     ...(d.pool && {pool: d.pool}), ...(d.poolId && {poolId: d.poolId})});
         const had = add && S.layers.some(L => L.tag === d.tag) || layers.some(L => L.tag === d.tag);
         if (d.tag && had) warns.push(`${d.name}：人偶標記 ${dollBadge(d.tag)} 已經有別層了，拿掉這層的標記`);
         else if (d.tag) layers.at(-1).tag = d.tag;
@@ -4879,6 +5042,8 @@ for (const [id, f, ok] of [['icSize', 'size', v => v >= 1], ['icA', 'a', () => t
     };
 }
 $('icSave').onclick = () => saveIcon().catch(e => status(e.message));
+$('btnPool').onclick = () => savePool().catch(e => status(e.message));
+$('btnPoolLoad').onclick = () => loadPool().catch(e => status(e.message));
 
 $('stage').addEventListener('dragover', e => e.preventDefault());
 $('stage').addEventListener('drop', async e => {
@@ -4931,4 +5096,4 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, projectData, applySettings, ST};
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, saveRole, loadRole, closeAll, setTag, setDoll, setPool, savePool, commitPool, loadPool, projectData, applySettings, ST};

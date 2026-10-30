@@ -16,6 +16,9 @@
     <span title="圖層右鍵標成 男／女 的 髮／頭／身體，切換時批次改顯示"><button id="dollM">男</button><button id="dollF">女</button></span>
     <label><input id="dollHair" type="checkbox" checked> 頭髮</label>
     <span class="sep"></span>
+    <button id="btnPool" title="把右鍵標了 pool 部位的圖層存進 part.json（女模式只寫 f）">存到 pool…</button>
+    <button id="btnPoolLoad" title="照 part.json 把擺放載回標了 pool 部位的圖層（女模式讀 f）">載入 pool</button>
+    <span class="sep"></span>
     <label><input id="showOrigin" type="checkbox" checked> 顯示 origin</label>
     <span class="sep"></span>
     <label>tile <input id="tw" type="number" value="32">×<input id="th" type="number" value="32"></label>
@@ -255,6 +258,15 @@
         <div id="drRows"></div>
         <label id="drBakeRow" hidden><input id="drBake" type="checkbox" checked> 烘入不透明度</label>
         <div class="row2"><button id="drOk" value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
+    </form>
+</dialog>
+
+<dialog id="dlgPool">
+    <form method="dialog">
+        <div id="dpTitle" class="title"></div>
+        <div id="dpRows"></div>
+        <label id="dpBakeRow" hidden><input id="dpBake" type="checkbox" checked> 烘入不透明度</label>
+        <div class="row2"><button id="dpOk" value="ok">存檔</button><button value="cancel" formnovalidate>取消</button></div>
     </form>
 </dialog>
 

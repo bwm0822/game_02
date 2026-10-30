@@ -58,6 +58,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 #layers .layer .tag.m { background: #6fcf6f; }
 #layers .layer .tag.f { background: #f4a6c8; }
 #layers .layer .tag.armor { background: #9fb3c8; }
+#layers .layer .tag.pool { background: #e8c56a; }
 #layers .layer.drop { box-shadow: inset 0 2px 0 #4a8be0; }
 
 .tools { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -87,7 +88,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 dialog { background: #25272b; color: #ddd; border: 1px solid #555; width: 420px; }
 dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgTree { height: 260px; overflow: auto; background: #1e1f22; margin: 6px 0; }
-#dlgItems, #dlgRole { width: 560px; }
+#dlgItems, #dlgRole, #dlgPool { width: 560px; }
 #drMsg { color: #f77; }
 #drMsg.warn { color: #fc6; }
 #drRole { background: #2b2d31; color: #ddd; border: 1px solid #555; }
