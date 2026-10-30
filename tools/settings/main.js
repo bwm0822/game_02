@@ -65,8 +65,12 @@ function redo()
 function numCell(path)
 {
     const f = path.at(-1), def = getAt(ST.DEF, path), v = getAt(ST.over(), path);
+    // 空白時 ↑↓／上下三角形會從 0 起跳：先填入內建值再讓瀏覽器步進
+    const fromPh = (el) => {if (el.value === '') el.value = def;};
     return h('td', null, h('input', {type: 'number', class: v === undefined ? null : 'changed', value: v ?? '', placeholder: def,
         dataset: {k: path.join('.'), step: f}, title: `內建 ${def}`,
+        onkeydown: (e) => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') fromPh(e.target);},
+        onmousedown: (e) => {if (e.offsetX > e.target.clientWidth - 20) fromPh(e.target);},
         onchange: (e) => {
             const s = e.target.value.trim(), n = Number(s);
             if (s === '') return edit(path, undefined);

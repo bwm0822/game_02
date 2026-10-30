@@ -83,6 +83,12 @@ run('settings', async t => {
         await st.ST.flush();
         out.resetAll = [(await disk()).step, inp('step.xy').value, inp('step.xy').placeholder];
         out.pdBack = await until(() => pd.document.getElementById('pX').step === '0.25');
+
+        // 空白格按 ↑ 從內建值起跳，不是從 0
+        const e = inp('auto.armor.y');
+        e.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp'}));
+        e.stepUp();
+        out.stepPh = e.value;
         return out;
     });
 
@@ -100,4 +106,5 @@ run('settings', async t => {
     t.eq('紙娃娃改數字：設定頁重畫、undo 重算、不蓋掉別的設定', JSON.stringify(r.cross), JSON.stringify(['40', 0, 0.5]));
     t.eq('全部回到內建：步進清掉、灰字顯示內建', JSON.stringify(r.resetAll), JSON.stringify([undefined, '', '0.25']));
     t.check('全部回到內建：紙娃娃步進跟著回來', r.pdBack);
+    t.eq('空白格 ↑ 從內建值起跳', r.stepPh, '26.75');
 });
