@@ -2529,7 +2529,7 @@ function refreshLayers()
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
             ...(L.tag ? [Object.assign(el('span', 'tag ' + L.tag.split('-')[0]), {textContent: dollBadge(L.tag), title: '參考人偶（右鍵改標記）'})] : []),
-            ...(L.pool ? [Object.assign(el('span', 'tag pool'), {textContent: POOL_KIND[L.pool][0], title: `pool：${POOL_KIND[L.pool]}${L.poolId ? `（存過 ${L.poolId}）` : ''}（右鍵改）`})] : []),
+            ...(L.pool ? [Object.assign(el('span', 'tag pool'), {textContent: POOL_BADGE[L.pool], title: `pool：${POOL_KIND[L.pool]}${L.poolId ? `（存過 ${L.poolId}）` : ''}（右鍵改）`})] : []),
             ...[armorBadge(L)].filter(Boolean),
             name,
             ico('✕', true, '刪除圖層', () => {if (confirm(`刪除圖層 ${L.name}？`)) removeLayer(L);}),
@@ -4030,6 +4030,7 @@ async function commitItems(rows, bake, all = false)
 // 女模式（header 的 女）不動圖也不動基準，只寫 f（scale/x/y），條目要先存在。存過的 id 記在 L.poolId，下次預設用它
 
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hand: '手'};
+const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hand: '手'};
 const POOL_DIR = 'roles/parts';
 const POOL_F = ['scale', 'x', 'y'];
 const poolFemale = () => S.doll.sex === 'f';
