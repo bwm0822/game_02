@@ -73,10 +73,17 @@ export function animTrack(anim, from, rest=from, dir=0)
         const off = from.angle + shortest(from.angle, keys[0].angle) - keys[0].angle;
         keys.forEach((k)=>{k.angle += off;});
     }
-    const last = keys.at(-1) ?? {t:0, angle:from.angle};
     const end = animEnd(anim);
-    const back = {t:end + (anim.back ?? 0), x:rest.x, y:rest.y, angle:last.angle + shortest(last.angle, rest.angle), ease:BACK_EASE};
-    return {pivot, end, frames:[{t:0, x:from.x, y:from.y, angle:from.angle}, ...keys, back]};
+    const track = {pivot, end, frames:[{t:0, x:from.x, y:from.y, angle:from.angle}, ...keys, {t:end + (anim.back ?? 0), ease:BACK_EASE}]};
+    return setRest(track, rest);
+}
+
+// 改收回的姿勢(播到一半換了武器，手腕的靜止位置變了)
+export function setRest(track, rest)
+{
+    const [last, back] = [track.frames.at(-2), track.frames.at(-1)];
+    Object.assign(back, {x:rest.x, y:rest.y, angle:last.angle + shortest(last.angle, rest.angle)});
+    return track;
 }
 
 export const trackEnd = (track)=>track.frames.at(-1).t;

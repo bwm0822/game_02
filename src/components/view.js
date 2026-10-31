@@ -5,7 +5,7 @@ import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot} from '../core/equip.js'
+import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -960,27 +960,39 @@ export class RoleView extends View
 
     _removeEquips()
     {
-        this._held?.sps.forEach((sp)=>{sp.destroy();});
-        this._held = null;
         this._equips.forEach((equip)=>{equip.destroy();})
         this._equips = [];
         this._weapon = null;
     }
 
+    // 手腕節點照 body 支點＋手上那把東西(held＝它的 equip)的位移；節點正在播動畫(不在舊的靜止姿勢)只換 pivot，收回時才過去
+    _placeWrists(held)
+    {
+        const body = DB.rolePart(this.meta, 'body');
+        const wrap = (a)=>((a % 360) + 540) % 360 - 180;
+        for(const k of WRISTS)
+        {
+            const n = this._nodes?.[k];
+            if(!n) {continue;}
+            const [o, p] = [n.pivot, pivotOf(body, k, held)];
+            const still = Math.abs(n.x - o.x) < 1e-6 && Math.abs(n.y - o.y) < 1e-6 && Math.abs(wrap(n.angle - o.a)) < 1e-6;
+            n.pivot = p;
+            if(still) {n.setPosition(p.x, p.y).setAngle(p.a);}
+        }
+    }
+
     // 暫時把背包裡的工具拿在手上(蓋過原本的武器，不動裝備欄)，回傳放下用的函式
     _hold(id)
     {
-        const dat = DB.item(id);
-        if(!dat?.equip) {return ()=>{};}
-        const held = {sps:this._addPart(equipFor(dat.equip, this.meta.sex), dat.cat, 'wristF')};
-        this._sortParts();
-        this._weapon?.forEach((sp)=>{sp.setVisible(false);});
-        this._held = held;
+        if(!DB.item(id)?.equip) {return ()=>{};}
+        const tok = {};
+        this._holdTok = tok;
+        this._holdId = id;
+        this._updateEquips();
         return ()=>{
-            if(this._held!==held) {return;}
-            held.sps.forEach((sp)=>{sp.destroy();});
-            this._weapon?.forEach((sp)=>{sp.setVisible(true);});
-            this._held = null;
+            if(this._holdTok!==tok) {return;}
+            this._holdTok = this._holdId = null;
+            this._updateEquips();
         };
     }
 
@@ -1007,7 +1019,15 @@ export class RoleView extends View
 
         this._removeEquips();
         const dats = (bb.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq));
+        const held = this._holdId ? DB.item(this._holdId) : null;
+        this._placeWrists(held ? held.equip : weaponOf(dats, GM.CAT));
         dats.forEach((dat)=>{this._addEquip(dat);});
+        if(held)
+        {
+            this._weapon?.forEach((sp)=>{sp.setVisible(false);});
+            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex), held.cat, 'wristF'));
+            this._sortParts();
+        }
         const hide = hiddenParts(dats, GM.CAT);
         for(const [k, sps] of Object.entries(this._parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
     }

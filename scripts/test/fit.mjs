@@ -149,6 +149,31 @@ run('fit', async t => {
         fire('part.json|rogue|wristF.a', '');
         out.rotA.push(JSON.stringify(rogue().wristF));
 
+        // 武器的手腕位移：寫 equip.wristF／wristB、武器跟著移；切「武器」拖十字寫武器不寫 body、脖子拖不動；清空刪掉
+        const swEq = () => S.doc['item.json'].data['sword-1'].equip;
+        const sx0 = swd().x;
+        S.cur = 'CAT_WEAPON'; F.render();
+        fire('item.json|sword-1|equip.wristF.x', '5');
+        out.wristOfs = [JSON.stringify(swEq().wristF), Math.round(swd().x - sx0), document.querySelectorAll('#view table.wrists tr').length - 1];
+        document.querySelector('#view .dragmode [data-drag=weapon]').click();
+        await F.drawPreview();
+        {
+            const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
+            const dragBy = (p) => {ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 3)); ptr('pointerup', at(p.x + 2, p.y + 3));};
+            dragBy(g.pts.wristB);
+            out.wristOfs.push(JSON.stringify(swEq().wristB), 'wristB' in rogue());
+            const neck0 = JSON.stringify(rogue().neck ?? null);
+            dragBy(g.pts.neck);
+            out.wristOfs.push(JSON.stringify(rogue().neck ?? null) === neck0);
+        }
+        F.undo();
+        fire('item.json|sword-1|equip.wristF.x', '');
+        out.wristOfs.push('wristF' in swEq(), 'wristB' in swEq());
+        document.querySelector('#view .dragmode [data-drag=body]').click();
+        S.cur = 'CAT_HELMET'; F.render();
+
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
         const sw = {...S.doc['part.json'].data.rogue.wristF, a: 0};
@@ -369,6 +394,7 @@ run('fit', async t => {
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
     t.eq('支點 a：武器跟著轉、清空 a 只刪 a', JSON.stringify(r.rotA), JSON.stringify([90, '{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}']));
+    t.eq('武器手腕位移：寫 equip、武器跟著移、兩列、拖十字寫武器、脖子不動、清空刪掉', JSON.stringify(r.wristOfs), JSON.stringify(['{"x":5}', 5, 2, '{"x":2,"y":3}', false, true, false, false]));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
     t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);

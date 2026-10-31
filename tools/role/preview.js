@@ -4,7 +4,7 @@ import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
-import {equipFor, partFor, hiddenParts, ROLE_PARTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -39,14 +39,15 @@ export function partsOf(r, items, parts)
 {
     const out = [];
     const body = partFor(parts, r, 'body');
+    const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
+    const held = weaponOf(equips, CAT);
     const add = (p, k) => {
         if (!isObj(p)) return;
-        p = atPivot(p, pivotOf(body, NODE[k]));
+        p = atPivot(p, pivotOf(body, NODE[k], held));
         if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
     };
-    const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
     const hide = hiddenParts(equips, CAT);
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
     for (const it of equips) add(equipFor(it.equip, r.sex), it.cat);

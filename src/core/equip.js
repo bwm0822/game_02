@@ -6,8 +6,16 @@ export const ROLE_PARTS = ['body', 'shoes', 'cloth', 'head', 'hair', 'handF', 'h
 export const partFor = (parts, r, kind) => r?.[kind] ? equipFor(parts?.[r[kind]], r.sex) : undefined;
 
 // body 條目上的支點（neck／wristF／wristB）{x, y, a}，a＝節點靜止時的角度，沒寫＝0；body 已經套過 f
+// held＝手上那把東西（武器，或暫拿的工具）的 equip：它的 wristF／wristB {x, y, a} 是疊在 body 支點上的位移，不分男女（不放 f）
 export const PIVOTS = ['neck', 'wristF', 'wristB'];
-export const pivotOf = (body, k) => ({x: body?.[k]?.x ?? 0, y: body?.[k]?.y ?? 0, a: body?.[k]?.a ?? 0});
+export const WRISTS = ['wristF', 'wristB'];
+export function pivotOf(body, k, held)
+{
+    const o = WRISTS.includes(k) ? held?.[k] : null;
+    return {x: (body?.[k]?.x ?? 0) + (o?.x ?? 0), y: (body?.[k]?.y ?? 0) + (o?.y ?? 0), a: (body?.[k]?.a ?? 0) + (o?.a ?? 0)};
+}
+// 穿著的道具裡武器的 equip（只有武器的手腕位移會生效）；cat 同 hiddenParts
+export const weaponOf = (items, cat) => items.find(it => it?.cat === cat.WEAPON)?.equip;
 
 const rot = (x, y, deg) => {const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c];};
 const still = (pv) => !pv.x && !pv.y && !pv.a;
@@ -26,7 +34,7 @@ export function fromPivot(p, pv)
 }
 
 // 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、任何護甲藏衣服、任何靴子藏鞋子、任何手套藏兩隻手
-// cat 是分類常數（遊戲傳 GM.CAT，工具傳 {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'}）
+// cat 是分類常數（遊戲傳 GM.CAT，工具傳 {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'}）
 export function hiddenParts(items, cat)
 {
     const out = new Set();

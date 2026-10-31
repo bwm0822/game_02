@@ -13,7 +13,7 @@ import {createFold} from '../common/fold.js';
 import * as PT from '../common/part.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, hiddenParts, PIVOTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
@@ -45,6 +45,7 @@ const S = {
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
+    dragW: false,               // 擺放分頁拖十字改：false 身體支點／true 武器的手腕位移（不記住）
     bg: null,                   // 畫布純色背景，null＝棋盤格
 };
 try {S.bg = localStorage.getItem(BG_KEY);} catch {}
@@ -72,7 +73,12 @@ const SEX_NUMS = ['scale', 'x', 'y'];
 const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
 const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex);
 const bodyId = () => role()?.body;
-const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k);
+// 實際的支點＝body 的支點＋武器的手腕位移（equip.wristF／wristB，男女共用）；支點表跟拖 body 十字改的是 bodyPivot
+const heldEquip = () => items()[S.slots.CAT_WEAPON]?.equip;
+const bodyPivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k);
+const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k, heldEquip());
+// 擺放分頁拖青／橘十字改武器的位移（脖子鎖住）；沒武器時照身體
+const dragWeapon = () => S.dragW && !!heldEquip();
 const r1 = (v) => Math.round(v * 10) / 10;
 const rad = (d) => d * Math.PI / 180;
 
@@ -337,6 +343,7 @@ function equipTable(id)
         h('table', {class: 'fit'}, sexHead([]), h('tr', null, sexCells('item.json', id, ['equip']))),
         sx && h('div', {class: 'sexnote dim'}, has ? `scale／x／y 是 equip.${sx}（這個性別專用）` : `沒有 equip.${sx}，顯示的是共用值；改了就建立 equip.${sx}`,
             has && h('button', {class: 'delsex', onclick: () => commit(() => {delete items()[id].equip[sx];})}, '刪除女版')),
+        items()[id].cat === 'CAT_WEAPON' && wristTable(id),
     ];
 }
 
@@ -403,7 +410,7 @@ function pivotTable()
     if (!p) return null;
     const sx = sexKey();
     const row = (k) => {
-        const base = [...(sx ? [sx] : []), k], cur = pivot(k);
+        const base = [...(sx ? [sx] : []), k], cur = bodyPivot(k);
         // 清空 x／y＝刪掉整個支點（回到基準／0）；清空 a 只刪 a
         const fill = (c) => (n) => {
             const o = getAt(p, base);
@@ -415,9 +422,25 @@ function pivotTable()
             h('td', null, k),
             ['x', 'y', 'a'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill(c)}))));
     };
+    const dragTab = (w, text) => h('button', {class: 'tab' + (!!S.dragW === w ? ' sel' : ''), dataset: {drag: w ? 'weapon' : 'body'},
+        disabled: w && !heldEquip(), title: w && !heldEquip() ? '武器格沒有東西' : '', onclick: () => {S.dragW = w; render();}}, text);
     return [
         h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`),
+        h('div', {class: 'dragmode'}, h('span', {class: 'dim'}, '拖十字改：'), dragTab(false, '身體'), dragTab(true, '武器')),
         h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), PIVOTS.map(row)),
+    ];
+}
+
+// 武器的手腕位移：疊在 body 支點上（x/y/a 相加），男女共用；清空三格＝刪掉
+function wristTable(id)
+{
+    const row = (k) => h('tr', null,
+        h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]),
+        h('td', null, k),
+        ['x', 'y', 'a'].map(c => h('td', null, numInput('item.json', id, ['equip', k, c], '0'))));
+    return [
+        h('div', {class: 'title'}, '武器的手腕位移（equip.wristF／wristB，疊在 body 支點上、男女共用；拿著它時前後手、手套跟著移）'),
+        h('table', {class: 'fit wrists'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), WRISTS.map(row)),
     ];
 }
 
@@ -612,7 +635,7 @@ function partsOf(r)
     const body = partFor(parts(), r, 'body');
     const add = (p, k, cat) => {
         if (!isObj(p)) return;
-        p = atPivot(p, pivotOf(body, NODE[k]));
+        p = atPivot(p, pivotOf(body, NODE[k], heldEquip()));
         const alpha = S.alpha[cat] ?? 1;
         if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0, node: NODE[k], alpha});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, node: NODE[k], alpha});
@@ -760,6 +783,7 @@ async function drawPreview()
                 g.save();
                 g.translate(x, y);
                 g.rotate(rad(a));
+                g.globalAlpha = dragWeapon() && !WRISTS.includes(k) ? 0.3 : 1;
                 g.strokeStyle = PIVOT_COLOR[k];
                 g.beginPath();
                 g.moveTo(-4, 0); g.lineTo(4, 0);
@@ -821,15 +845,17 @@ function onDown(e)
         a0: Math.atan2(l.y - wr.y, l.x - wr.x), o: {x: wr.x, y: wr.y}};
 }
 
-// 擺放分頁拖 body 的支點十字：女角寫 f 裡的
+// 擺放分頁拖 body 的支點十字：女角寫 f 裡的；切到武器時拖的是武器 equip 的手腕位移（男女共用，脖子不能拖）
 function onDownPivot(e)
 {
-    const l = toLocal(e), k = PIVOTS.find(k => Math.hypot(l.x - geo.pts[k].x, l.y - geo.pts[k].y) <= 8 / geo.K);
-    const p = parts()[bodyId()];
+    const w = dragWeapon(), keys = w ? WRISTS : PIVOTS;
+    const l = toLocal(e), k = keys.find(k => Math.hypot(l.x - geo.pts[k].x, l.y - geo.pts[k].y) <= 8 / geo.K);
+    const p = w ? items()[S.slots.CAT_WEAPON] : parts()[bodyId()];
     if (!k || !p) return;
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
-    const path = [...(sexKey() ? [sexKey()] : []), k];
-    drag = {kind: 'node', l, p, path, orig: structuredClone(getAt(p, path)), from: geo.pts[k]};
+    const path = w ? ['equip', k] : [...(sexKey() ? [sexKey()] : []), k];
+    const orig = structuredClone(getAt(p, path));
+    drag = {kind: 'node', l, p, path, orig, from: w ? {x: orig?.x ?? 0, y: orig?.y ?? 0} : bodyPivot(k)};
 }
 
 function onMove(e)

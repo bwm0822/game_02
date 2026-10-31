@@ -3,7 +3,7 @@ import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth} from '../core/setting
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor, hiddenParts, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
+import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -777,7 +777,7 @@ export class Doll extends Pic
     {
         const sps = [];
         const depth = flatDepth(type);
-        part = atPivot(part, pivotOf(this._body, PART_NODE[type]));
+        part = atPivot(part, pivotOf(this._body, PART_NODE[type], this._held));
         const add = (sprite, depth)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
@@ -819,15 +819,22 @@ export class Doll extends Pic
         this._shape.removeAll(true);
         const meta = owner?.bb.meta ?? {};
         this._body = DB.rolePart(meta, 'body');
-        const parts = {};
-        for(const k of ROLE_PARTS)
-        {
-            const p = DB.rolePart(meta, k);
-            parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
-        }
-        this._fit();
-
         const dats = (owner?.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq)).filter(dat=>dat?.equip);
+        const parts = {};
+        const addParts = ()=>{
+            for(const k of ROLE_PARTS)
+            {
+                const p = DB.rolePart(meta, k);
+                parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
+            }
+        };
+        // 縮放照空手算(武器會挪手腕)，再照武器的手腕重擺
+        this._held = null;
+        addParts();
+        this._fit();
+        this._held = weaponOf(dats, GM.CAT);
+        if(this._held) {this._shape.removeAll(true); addParts();}
+
         dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex), dat.cat);});
         const hide = hiddenParts(dats, GM.CAT);
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}

@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import DB from '../data/db.js'
-import {dirTo, animTrack, poseAt, trackEnd} from '../core/pose.js'
+import {dirTo, animTrack, setRest, poseAt, trackEnd} from '../core/pose.js'
 const _tag = 'anim';
 const IDLE_BREATH = false;  // idle 呼吸動畫暫時關掉（比對遊戲跟試穿的比例時會干擾）
 
@@ -186,6 +186,7 @@ export class COM_Anim extends Com
                 resolve(true);
                 if(!await this._seg(run, hitAt, end)) {return;}
                 if(anim.hold) {await free;}
+                setRest(track, this._wristRest(sp));
                 if(this._run===run && await this._seg(run, end, trackEnd(track))) {this._run = null;}
             })();
         });

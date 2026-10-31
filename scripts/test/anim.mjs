@@ -56,6 +56,28 @@ run('武器動畫', async t => {
 
         out.missing = await p.anim_play('nope', right);
 
+        // 武器的手腕位移(equip.wristF／wristB)：穿上時手腕移過去；暫拿工具改用工具的(沒寫＝0)；播到一半放下，收回到武器的位置
+        d.DB._itemDB['t-bow2'] = {cat: d.GM.CAT.WEAPON, type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24, wristF: {x: 4, y: -2, a: 10}, wristB: {x: 1, y: 1}}};
+        {
+            const eqs = p.bb.equips, saved = [...eqs];
+            const wb = () => {const n = p.view._nodes.wristB; return [Math.round(n.x), Math.round(n.y)];};
+            const wb0 = wb();
+            const wear = (list) => {eqs.length = 0; eqs.push(...list); p.setDirty(); p.emit(d.GM.EVT.UPDATEEQUIP);};
+            wear([{id: 't-bow2', count: 1}]);
+            out.ofs = [pose(), wb()[0] - wb0[0], wb()[1] - wb0[1]];
+            const put = p.hold('t-sword');
+            out.ofs.push(pose());
+            put();
+            out.ofs.push(pose());
+            const put2 = p.hold('t-sword');
+            await p.anim_play('chop', right);
+            put2();
+            await sleep(400);
+            out.ofs.push(pose());
+            wear(saved);
+            out.ofs.push(wb()[0] === wb0[0] && wb()[1] === wb0[1]);
+        }
+
         // 普攻動畫看武器的 anim(item.json)，沒寫就預設 chop
         const eqs = p.bb.equips, saved = [...eqs], play = p.anim_play, played = [];
         p.anim_play = (id, ...a) => {played.push(id); return play(id, ...a);};
@@ -79,6 +101,8 @@ run('武器動畫', async t => {
     t.eq('hold：舉著等 anim_end', JSON.stringify(r.hold), JSON.stringify(r.aim[1]));
     t.check('anim_end 後收回', r.aimBack[0]);
     t.eq('沒有的動畫不播', r.missing, false);
+    t.eq('武器手腕位移：穿上移過去、暫拿工具用工具的、放下恢復、播到一半放下收回武器位置、脫下回原位',
+        JSON.stringify(r.ofs), JSON.stringify([[-9, 16, 30], 1, 1, [-13, 18, 20], [-9, 16, 30], [-9, 16, 30], true]));
     t.eq('武器 anim 帶進 total', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', null]));
     t.eq('匕首普攻刺、劍普攻劈', JSON.stringify(r.played), JSON.stringify(['stab', 'chop']));
 });

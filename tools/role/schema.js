@@ -116,7 +116,7 @@ export const BACK_DEPTH = {CAT_GLOVES: -0.94};
 export const NODE = {head: 'neck', hair: 'neck', CAT_HELMET: 'neck', handF: 'wristF', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF', handB: 'wristB'};
 export const BACK_NODE = {CAT_GLOVES: 'wristB'};
 // equip.js 的 hiddenParts 用：item.json 的 cat 是字串
-export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'};
+export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要
