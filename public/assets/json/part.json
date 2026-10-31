@@ -28,7 +28,7 @@
     },
     "wristB": {
       "x": 12,
-      "y": 17
+      "y": 19
     },
     "a": 0
   },
@@ -42,13 +42,13 @@
       "y": 0
     },
     "wristF": {
-      "x": -12,
+      "x": -10,
       "y": 20,
       "a": -15
     },
     "wristB": {
-      "x": 12,
-      "y": 17
+      "x": 10,
+      "y": 19
     }
   },
   "macron": {
@@ -178,7 +178,9 @@
       "scale": 0.23,
       "x": 0.25,
       "y": 25.75
-    }
+    },
+    "oy": 1,
+    "a": 0
   },
   "outfit-innkeeper-shoes": {
     "kind": "shoes",
@@ -196,12 +198,18 @@
     "kind": "handF",
     "sprite": "handF",
     "scale": 0.25,
-    "oy": 0.5
+    "oy": 0.5,
+    "f": {
+      "scale": 0.2
+    }
   },
   "handB": {
     "kind": "handB",
     "sprite": "handB",
     "scale": 0.25,
-    "oy": 0.5
+    "oy": 0.5,
+    "f": {
+      "scale": 0.2
+    }
   }
 }
