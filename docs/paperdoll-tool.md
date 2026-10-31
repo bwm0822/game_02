@@ -71,7 +71,7 @@
 
 ## 跟遊戲的對應
 
-遊戲組零件在 `src/components/view.js` 的 `_addPart`（以及 `src/roles/dummy.js` 的 `ghost`）：
+遊戲組零件在 `src/components/view.js` 的 `_addPart`（以及 `src/roles/dummy.js` 的 `ghost`；掛在支點上的，`sp` 在支點節點裡）：
 
 ```js
 sp.setScale(part.scale);
@@ -81,7 +81,9 @@ sp.x = part.x ?? 0;  sp.y = part.y ?? 0;  sp.angle = part.a ?? 0;
 
 角色的部位（`role.json` 的 `body`／`head`…）是 `part.json` 的 id，`DB.rolePart()`（`src/core/equip.js` 的 `partFor()`，女角套 `f`）查出來的條目跟 `item.json` 的 `equip` 一樣餵給 `_addPart`。`equip.back`（前後片的後片）用同一組 `scale`／`x`／`y`／`a`／`ox`／`oy` 再畫一張，深度 `PART_DEPTH[GM.PART.BACK]` = 1.5（護甲 1 ＜ 後片 ＜ 頭 2；前片照頭盔 3）；背包紙娃娃（`uiclass.js`）、角色編輯器預覽、試穿工具都照這個畫。
 
-`x`／`y` 是零件中心點在角色 view 容器裡的位置。容器 (0,0) 是角色框（`w`×`h`）的中心；`anchor`（預設 0,16）是角色在地圖上的站立點，剛好是腳下那格 tile 的中心。「顯示 origin」勾選時，每個顯示中的圖層都畫出中心點十字（選取中＝黃、其他＝橘）。工具畫布上的參考線：紅十字＝(0,0)、白虛線＝角色框、藍框＋圓點＝anchor 那格 tile，數值可在上方調整，單位是遊戲單位（跟世界座標一樣）。
+**支點**：頭、頭髮、頭盔（neck）、武器、手套、前手（wristF）、後手（wristB）在遊戲裡掛在 body 的支點節點上，`x`／`y` 是**相對支點**的；紙娃娃畫布一律是身體座標，存讀時自動換算（`pivotShift()`：存到 item／pool 減掉、載入加回）。支點看 `part.json` 的 `body-man`（男人偶）或 `body-woman` 套 `f`（女人偶）：護具一定存男版、`equip.f` 用女版支點；武器、頭像、手動層照目前 `男｜女`。
+
+`x`／`y`（沒掛支點的部位）是零件中心點在角色 view 容器裡的位置。容器 (0,0) 是角色框（`w`×`h`）的中心；`anchor`（預設 0,16）是角色在地圖上的站立點，剛好是腳下那格 tile 的中心。「顯示 origin」勾選時，每個顯示中的圖層都畫出中心點十字（選取中＝黃、其他＝橘）。工具畫布上的參考線：紅十字＝(0,0)、白虛線＝角色框、藍框＋圓點＝anchor 那格 tile，數值可在上方調整，單位是遊戲單位（跟世界座標一樣）。
 
 ## 檔案
 

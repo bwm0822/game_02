@@ -15,13 +15,39 @@
     "kind": "body",
     "sprite": "body-man",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "neck": {
+      "x": 1.5,
+      "y": 0
+    },
+    "wristF": {
+      "x": -13,
+      "y": 20
+    },
+    "wristB": {
+      "x": 13,
+      "y": 17
+    }
   },
   "body-woman": {
     "kind": "body",
     "sprite": "body-woman",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "f": {
+      "wristF": {
+        "x": -13,
+        "y": 20
+      },
+      "neck": {
+        "x": 0,
+        "y": 0
+      },
+      "wristB": {
+        "x": 13,
+        "y": 17
+      }
+    }
   },
   "macron": {
     "kind": "body",
@@ -51,7 +77,19 @@
     "kind": "body",
     "sprite": "rogue",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "neck": {
+      "x": 1.5,
+      "y": 0
+    },
+    "wristF": {
+      "x": -13,
+      "y": 20
+    },
+    "wristB": {
+      "x": 13,
+      "y": 17
+    }
   },
   "trump": {
     "kind": "body",
@@ -89,14 +127,14 @@
     "kind": "head",
     "sprite": "head-wick",
     "scale": 0.25,
-    "x": -2,
+    "x": -3.5,
     "y": 4
   },
   "trump-head": {
     "kind": "head",
     "sprite": "trump-head",
     "scale": 0.25,
-    "x": -2,
+    "x": -3.5,
     "y": 4
   },
   "hair-karen": {
@@ -117,14 +155,14 @@
     "kind": "hair",
     "sprite": "hair-wick",
     "scale": 0.25,
-    "x": -1,
+    "x": -2.5,
     "y": 2
   },
   "trump-hair": {
     "kind": "hair",
     "sprite": "trump-hair",
     "scale": 0.25,
-    "x": -1,
+    "x": -2.5,
     "y": -0.75
   },
   "outfit-innkeeper-cloth": {

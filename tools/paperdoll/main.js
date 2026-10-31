@@ -4,6 +4,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {WCLS} from '../common/settings.js';
+import {equipFor, pivotOf} from '../../src/core/equip.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -3645,6 +3646,20 @@ function setSplit(it, name, g, icon)
     dropOf(it).sprite = name;
 }
 
+// 掛在支點上的（頭盔、武器、手套、頭、頭髮、前後手）遊戲數字相對 body 的支點，紙娃娃畫布是身體座標：存的時候減、載入的時候加
+// 男＝body-man、女＝body-woman 套 f（跟部位分頁的人偶一樣）；sign 1＝存（減）、-1＝載入（加）
+const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
+const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
+const PART_NODE = {head: 'neck', hair: 'neck', handF: 'wristF', handB: 'wristB'};
+function pivotShift(o, parts, node, sex, sign = 1)
+{
+    if (!o || !node) return o;
+    const p = pivotOf(equipFor(parts[PIVOT_BODY[sex]], sex), node);
+    if (o.x !== undefined || p.x) o.x = round((o.x ?? 0) - sign * p.x);
+    if (o.y !== undefined || p.y) o.y = round((o.y ?? 0) - sign * p.y);
+    return o;
+}
+
 function writeEquip(e, L)
 {
     const o = placeOf(L);
@@ -3893,13 +3908,14 @@ async function loadItems()
 {
     const m = slAuto(ITEM_KINDS);
     if (!m || !S.assets) return;
-    const items = await readGameJson('item.json');
+    const items = await readGameJson('item.json'), pjson = await readParts();
     const rows = [], hit = [], miss = [], warn = [];
     for (const part of m.parts)
     {
         const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
         if (!e0) {miss.push(part.C.name); continue;}
-        const e = autoFemale(part.P) && e0.f ? {...e0, ...e0.f} : e0, cur = autoRow(part);
+        // 照目前人偶的支點加回身體座標（護具女模式＝f 那組）
+        const e = pivotShift({...e0, ...(autoFemale(part.P) && e0.f)}, pjson, ITEM_NODE[items[id].cat], S.doll.sex, -1), cur = autoRow(part);
         hit.push(`${part.C.name} ← ${id}`);
         rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0,
                           ...(part.P.kind === 'weapon' && {a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1})}, e0.sprite]);
@@ -4014,10 +4030,14 @@ async function commitItems(rows, bake, all = false)
     const ask = act.filter(r => r.ask || all && r.warn || r.dropF)
         .map(r => `${tag(r)}：${[all ? r.warn : '', r.ask && (all ? `會覆蓋 ${r.ask}` : r.ask), r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
     if (ask.length && !confirm(`${all || act.some(r => r.dropF) ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
-    const done = [], fresh = [];
+    const done = [], fresh = [], pjson = await readParts();
     for (const r of act)
     {
         const {C} = r.part, g = splitNew(C), ik = iconKey(r);
+        // 有男女兩組的（護具）一定存男版、女版是 f；其他照目前人偶
+        const node = ITEM_NODE[ITEM_CAT[r.P.key]], sex = AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex;
+        const place = (e) => {writeEquip(e, C); pivotShift(e, pjson, node, sex);};
+        const female = () => pivotShift(femaleOf(r.P), pjson, node, 'f');
         const put = async (dir, name, c) => {
             if (!keys.has(name)) fresh.push(name);
             await FS.writeFile(await mkDir(A.tex, dir), `${name}.png`, await PX.toPng(c));
@@ -4040,10 +4060,10 @@ async function commitItems(rows, bake, all = false)
         if (!r.id)
         {
             const equip = {sprite: g ? `${r.name}-front` : r.name};
-            writeEquip(equip, C);
+            place(equip);
             if (g && !g.cut) equip.back = `${r.name}-back`;
             if (r.P.key === 'helmet') equip.hideHair = true;
-            if (r.P.kind === 'armor' && S.auto.saveF) equip.f = femaleOf(r.P);
+            if (r.P.kind === 'armor' && S.auto.saveF) equip.f = female();
             const cat = ITEM_CAT[r.P.key], last = Object.keys(items).filter(id => items[id].cat === cat).at(-1);
             items = insertAfter(items, last, r.newId, {cat, icon: ik, lab: r.lab, equip, drop: {sprite: r.name, scale: equip.scale}});
             done.push(`新增 ${r.newId}`);
@@ -4052,11 +4072,11 @@ async function commitItems(rows, bake, all = false)
         const it = items[r.id], e = it.equip ??= {};
         if (r.png) setSplit(it, r.name, g, r.icon && ik);
         else if (r.icon) it.icon = ik;
-        if (r.place) {writeEquip(e, C); dropScale(it);}
+        if (r.place) {place(e); dropScale(it);}
         if (r.P.kind === 'armor')
         {
             delete e.f;
-            if (S.auto.saveF) e.f = femaleOf(r.P);
+            if (S.auto.saveF) e.f = female();
         }
         done.push(r.id);
     }
@@ -4201,6 +4221,7 @@ async function commitPool(rows, bake)
         await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${id}.png`, await PX.toPng(splitPng(L, bake)));
         const e = {...parts[id] ?? {kind: L.pool}, sprite: id};
         writeEquip(e, L);
+        pivotShift(e, parts, PART_NODE[L.pool], S.doll.sex);
         if (poolSexed(L))
         {
             delete e.f;
@@ -4225,12 +4246,13 @@ async function loadPool()
     const parts = await readParts(), pool = S.layers.filter(L => L.pool), ms = poolGroups();
     const undo = {group: [hist.snapList(S), ...pool.flatMap(L => linked(L)).map(L => hist.snap(L, true))]};
     const hit = [], miss = [], warn = [], mine = new Set(ms.flatMap(m => m.parts.map(p => p.C)));
+    // 掛在支點上的照目前人偶加回身體座標（這些都只有基準一組，沒有 f）
     const entry = (L) => {
         const id = L.poolId ?? L.name, e = parts[id];
         if (!e) {miss.push(L.name); return null;}
         hit.push(`${L.name} ← ${id}`);
         L.poolId = id;
-        return e;
+        return pivotShift({...e}, parts, PART_NODE[e.kind], S.doll.sex, -1);
     };
     for (const L of pool.filter(L => !mine.has(L)))
     {
@@ -4902,5 +4924,5 @@ splitter($('splitR'), $('right'), 'paperdoll.rightW', 290, -1);
 // 給無頭測試用
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
-               warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
+               warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, commitItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
                deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, savePool, commitPool, loadPool, projectData, applySettings, ST};

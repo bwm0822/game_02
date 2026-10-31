@@ -27,9 +27,13 @@ run('fit', async t => {
         const roleObj = await (await fetch('/assets/json/role.json')).json();
         Object.assign(roleObj['guard-1'], {handF: 'hand-man', handB: 'hand-man'});
         const origRole = JSON.stringify(roleObj, null, 2);
-        const origItem = await (await fetch('/assets/json/item.json')).text();
+        // helmet_01 拿掉 x：後面打不是數字的 x 要是「沒寫的欄位不動」
+        const itemObj = await (await fetch('/assets/json/item.json')).json();
+        delete itemObj.helmet_01.equip.x;
+        const origItem = JSON.stringify(itemObj, null, 2);
         const partObj = await (await fetch('/assets/json/part.json')).json();
         partObj.rogue.wristF = {x: -13, y: 20};
+        delete partObj.rogue.neck; delete partObj.rogue.wristB;
         const origPart = JSON.stringify(partObj, null, 2);
         // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
         const origAnim = await (await fetch('/scripts/test/fixtures/anim.json')).text();
@@ -120,8 +124,11 @@ run('fit', async t => {
 
         // 支點：數字欄寫 body 條目（只填 x 補上 y）、畫布拖十字一筆 undo、清空刪掉
         const rogue = () => S.doc['part.json'].data.rogue;
+        const helmX = () => F.partsOf(g1()).find(p => p.sprite === S.doc['item.json'].data.helmet_01.equip.sprite)?.p.x ?? 0;
+        const hx0 = helmX();
         fire('part.json|rogue|neck.x', '3');
         out.pivot = [JSON.stringify(rogue().neck)];
+        out.follow = [hx0, helmX()];
         await F.drawPreview();
         {
             const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo, p = g.pts.wristB;
@@ -354,6 +361,7 @@ run('fit', async t => {
     t.eq('改部件寫 part.json', r.bodyX, -2);
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
+    t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
     t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);
     t.eq('不是數字不寫', r.badNum, false);

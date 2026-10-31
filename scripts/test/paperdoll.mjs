@@ -1510,7 +1510,7 @@ run('paperdoll', async t => {
         pd.autoSet({...pd.S.auto, kind: 'weapon'});
         pd.setMode('auto');
         pd.applyMode();
-        const W = pd.S.mode.parts[0].C;
+        const Wp = pd.S.mode.parts[0], W = Wp.C;
         pd.setMode('sl');
         out.noF = $('slItemFL').hidden;
         Object.assign(W, {ox: 0.3, oy: 0.2, a: 40});
@@ -1518,6 +1518,14 @@ run('paperdoll', async t => {
         await pd.loadItems();
         const d = pd.S.auto.weapon.sword;
         out.weapon = [...at(W), W.a, W.ox, W.oy, d.x, d.y, d.a, d.ox, d.oy];
+        // 遊戲數字相對支點：有 body-man 的 wristF 就加回去（男人偶），存的時候再減掉
+        await put(json, 'part.json', JSON.stringify({'body-man': {kind: 'body', sprite: 'body-man', wristF: {x: -10, y: 20}}}, null, 2));
+        await pd.loadItems();
+        out.weaponPivot = [Math.round(W.x), Math.round(W.y)];
+        await pd.commitItems([{P: Wp.P, part: Wp, on: true, id: 'sword-1', name: 'sword-1', png: false, place: true, icon: false}], false);
+        const saved = JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text())['sword-1'].equip;
+        out.weaponPivot.push(saved.x, saved.y);
+        await json.removeEntry('part.json');
         pd.cancelMode();
         return out;
     });
@@ -1532,6 +1540,7 @@ run('paperdoll', async t => {
     t.eq('載入 item：PNG 比例對不上只警告、不問', JSON.stringify(li.pngBad), JSON.stringify([10, '', true]));
     t.check('載入 item：undo 一步退回', li.undo[2] === 0 && (li.undo[0] !== 3 || li.undo[1] !== -4));
     t.eq('載入 item：武器多載 a/ox/oy，沒寫的 key 當預設、寫回目前分類', JSON.stringify(li.weapon), JSON.stringify([2, 3, 15, 0.5, 1, 2, 3, 15, 0.5, 1]));
+    t.eq('存讀 item 換算支點：載入加 body-man 的 wristF、存回減掉', JSON.stringify(li.weaponPivot), JSON.stringify([-8, 23, 2, 3]));
 
     // 存到 item 男女：一定存男版（女模式下 PNG 照男版 pct 烤、存完復原）、勾女版寫 equip.f、沒勾刪 equip.f 要確認；載入 item 女模式讀 equip.f
     const sf = await ev(async () => {

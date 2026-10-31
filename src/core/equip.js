@@ -8,6 +8,8 @@ export const partFor = (parts, r, kind) => r?.[kind] ? equipFor(parts?.[r[kind]]
 // body 條目上的支點（neck／wristF／wristB），沒寫＝(0,0)；body 已經套過 f
 export const PIVOTS = ['neck', 'wristF', 'wristB'];
 export const pivotOf = (body, k) => ({x: body?.[k]?.x ?? 0, y: body?.[k]?.y ?? 0});
+// 掛在支點上的部位／裝備數字相對支點：靜態合成（不建節點）攤成一層時加回去；後片照本體的支點擺
+export const atPivot = (p, pv) => pv.x || pv.y ? {...p, x: (p.x ?? 0) + pv.x, y: (p.y ?? 0) + pv.y} : p;
 
 // 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、任何護甲藏衣服、任何靴子藏鞋子、任何手套藏兩隻手
 // cat 是分類常數（遊戲傳 GM.CAT，工具傳 {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'}）

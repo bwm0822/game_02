@@ -15,7 +15,7 @@ run('武器動畫', async t => {
         d.DB._animDB = await (await fetch('/scripts/test/fixtures/anim.json')).json();
         // 武器擺放也固定，實際 item.json 的 equip 常調
         Object.assign(d.DB._itemDB, {
-            't-sword': {cat: 'CAT_WEAPON', type: 'melee', range: 1, atk: 15, equip: {sprite: 'sword-bronze', x: -13, y: 18, ox: 0.09375, oy: 0.875}},
+            't-sword': {cat: 'CAT_WEAPON', type: 'melee', range: 1, atk: 15, equip: {sprite: 'sword-bronze', x: 1, y: -2, ox: 0.09375, oy: 0.875}},
             't-bow': {cat: 'CAT_WEAPON', type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24}},
         });
         const p = d.GM.player, out = {};
@@ -69,7 +69,7 @@ run('武器動畫', async t => {
 
     t.eq('沒手沒武器（wristF 空的）不播', JSON.stringify(r.empty), JSON.stringify([null, false]));
     t.eq('手腕靜止在 body 的 wristF 支點', JSON.stringify(r.rest), JSON.stringify([-13, 18, 0]));
-    t.eq('劍掛在手腕上：本地座標＝equip 扣支點', JSON.stringify(r.swordLocal), JSON.stringify([0, 0]));
+    t.eq('劍掛在手腕上：本地座標＝equip 的數字（相對手腕）', JSON.stringify(r.swordLocal), JSON.stringify([1, -2]));
     t.eq('ready 時舉劍、hit 時劈到底', JSON.stringify(r.chopHit), JSON.stringify([true, [-13, 6, -90], [-8, 15, 75]]));
     t.eq('下劈播完收回', JSON.stringify(r.chopBack), JSON.stringify(r.rest));
     t.eq('橫掃朝下：整組繞支點轉 90°', JSON.stringify(r.sweep), JSON.stringify([-14, 0, -135]));   // Phaser 把 angle 換到 [-180, 180)，225＝-135

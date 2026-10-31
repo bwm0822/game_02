@@ -24,7 +24,7 @@ run('部位 pool', async t => {
         const m = d.DB.role('mary');
         d.DB._partDB['t-hf'] = {kind:'handF', sprite:'hand-man', scale:0.25, x:3, y:30};
         d.DB._partDB['t-hb'] = {kind:'handB', sprite:'hand-man', scale:0.25, y:31};
-        d.DB._partDB[m.body] = {...d.DB._partDB[m.body], neck:{x:9, y:9}, wristF:{x:5, y:20}, f:{...d.DB._partDB[m.body].f, neck:{x:1, y:-40}}};
+        d.DB._partDB[m.body] = {...d.DB._partDB[m.body], neck:{x:9, y:9}, wristF:{x:5, y:20}, f:{neck:{x:1, y:-40}}};
         Object.assign(m, {cloth:'t-f', handF:'t-hf', handB:'t-hb'});
     });
     await t.newGame('mary');
@@ -39,8 +39,8 @@ run('部位 pool', async t => {
     t.check('衣服深度 0.7（靴子之上）、沒穿護甲時顯示', has('body-man')?.[1] === 0.7 && has('body-man')?.[2] === true, JSON.stringify(has('body-man')));
     t.eq('頭、頭髮掛 neck、前手掛 wristF、後手掛 wristB', [has('head-mary')?.[3], has('hair-mary')?.[3]].join(), 'neck,neck');
     const head = await t.eval(d => d.DB.rolePart(d.DB.role('mary'), 'head').y);
-    t.eq('女角支點用 f、子部位扣支點後畫面位置不變', JSON.stringify([has('head-mary')?.[5], has('head-mary')?.[6], has('hand-man', 'wristF')?.[4], has('hand-man', 'wristF')?.[5]]),
-        JSON.stringify([head, head + 40, 3, 30]));
+    t.eq('女角支點用 f、子部位數字相對支點（跟著支點走）', JSON.stringify([has('head-mary')?.[5], has('head-mary')?.[6], has('hand-man', 'wristF')?.[4], has('hand-man', 'wristF')?.[5]]),
+        JSON.stringify([head - 40, head, 8, 50]));
     t.eq('節點整組照 NODE_DEPTH 排：wristB 在 body 前面（底層）', await t.eval(d => {
         const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
         return v._shape.getAll().map(c => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? c.texture.key).slice(0, 2).join();

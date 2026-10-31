@@ -3,8 +3,8 @@
 import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
-import {DEPTH, BACK_DEPTH, CAT} from './schema.js';
-import {equipFor, partFor, hiddenParts, ROLE_PARTS} from '../../src/core/equip.js';
+import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
+import {equipFor, partFor, hiddenParts, ROLE_PARTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -33,12 +33,15 @@ function axis(a, b, total)
 }
 
 // 回傳要畫的部件，照遊戲的順序（部位、裝備）再依 depth 穩定排序；被裝備藏掉的部位（hiddenParts）不畫
+// 掛在支點上的（NODE）數字相對 body 的支點，p 是加回支點後的副本
 // 角色的部位是 part.json 的 id（parts＝part.json）
 export function partsOf(r, items, parts)
 {
     const out = [];
+    const body = partFor(parts, r, 'body');
     const add = (p, k) => {
         if (!isObj(p)) return;
+        p = atPivot(p, pivotOf(body, NODE[k]));
         if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});

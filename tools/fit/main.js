@@ -13,7 +13,7 @@ import {createFold} from '../common/fold.js';
 import * as PT from '../common/part.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, hiddenParts, PIVOTS, pivotOf} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, PIVOTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
@@ -396,7 +396,7 @@ function fitView(r, slots)
 }
 
 // body 條目上的支點：女角改 f 裡的（第一次改從基準複製），x／y 只填一個時另一個補上目前值
-// 支點只決定繞哪裡轉：子部位數字是身體座標，移支點畫面不變
+// 掛在支點上的部位數字相對支點：移支點整組跟著走
 function pivotTable()
 {
     const pid = bodyId(), p = parts()[pid];
@@ -412,7 +412,7 @@ function pivotTable()
             ['x', 'y'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill}))));
     };
     return [
-        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以，只影響繞哪裡轉、不會移動部位）`),
+        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以；掛在上面的部位、裝備數字相對支點，會跟著一起移動）`),
         h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y'].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
 }
@@ -604,9 +604,11 @@ const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]),
 function partsOf(r)
 {
     const out = [];
-    // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）
+    // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）；p 是加回支點的副本（數字相對支點）
+    const body = partFor(parts(), r, 'body');
     const add = (p, k, cat) => {
         if (!isObj(p)) return;
+        p = atPivot(p, pivotOf(body, NODE[k]));
         const alpha = S.alpha[cat] ?? 1;
         if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0, node: NODE[k], alpha});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, node: NODE[k], alpha});

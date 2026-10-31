@@ -1,9 +1,9 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI, CAT2ICON, ROLE_PART, flatDepth} from '../core/setting.js'
+import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor, hiddenParts, ROLE_PARTS} from '../core/equip.js'
+import {equipFor, hiddenParts, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -777,6 +777,7 @@ export class Doll extends Pic
     {
         const sps = [];
         const depth = flatDepth(type);
+        part = atPivot(part, pivotOf(this._body, PART_NODE[type]));
         const add = (sprite, depth)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
@@ -817,6 +818,7 @@ export class Doll extends Pic
     {
         this._shape.removeAll(true);
         const meta = owner?.bb.meta ?? {};
+        this._body = DB.rolePart(meta, 'body');
         const parts = {};
         for(const k of ROLE_PARTS)
         {
