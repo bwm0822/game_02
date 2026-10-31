@@ -149,6 +149,48 @@ run('fit', async t => {
         fire('part.json|rogue|wristF.a', '');
         out.rotA.push(JSON.stringify(rogue().wristF));
 
+        // 滑過十字變粗（hover）、拖白點轉角度（Shift 吸 15°）、還沒有的支點帶上位置、一筆 undo
+        await F.drawPreview();
+        const cvs = () => {
+            const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
+            // 繞十字中心從把手轉 deg 度
+            const turn = (k, deg, shift = false) => {
+                const c = g.pts[k], h0 = g.hds[k], r = Math.hypot(h0.x - c.x, h0.y - c.y), a = Math.atan2(h0.y - c.y, h0.x - c.x) + deg * Math.PI / 180;
+                const to = at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r);
+                ptr('pointerdown', at(h0.x, h0.y)); ptr('pointermove', {...to, shiftKey: shift}); ptr('pointerup', to);
+            };
+            return {cv, g, at, ptr, turn};
+        };
+        {
+            const {cv, g, at, ptr, turn} = cvs();
+            ptr('pointermove', at(g.pts.wristF.x, g.pts.wristF.y));
+            out.hover = [F.hover, cv.style.cursor];
+            ptr('pointermove', at(g.hds.wristF.x, g.hds.wristF.y));
+            out.hover.push(F.hover, cv.style.cursor);
+            cv.dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
+            out.hover.push(F.hover);
+            turn('wristF', 90);
+            out.rotDrag = [JSON.stringify(rogue().wristF)];
+            F.undo();
+            out.rotDrag.push(JSON.stringify(rogue().wristF));
+        }
+        await F.drawPreview();
+        {
+            const {turn} = cvs();
+            turn('wristF', 47, true);
+            out.rotDrag.push(rogue().wristF.a);
+            F.undo();
+        }
+        await F.drawPreview();
+        {
+            const {turn} = cvs();
+            turn('neck', 90);
+            out.rotDrag.push(JSON.stringify(rogue().neck));
+            F.undo();
+        }
+
         // 武器的手腕位移：寫 equip.wristF／wristB、武器跟著移；切「武器」拖十字寫武器不寫 body、脖子拖不動；清空刪掉
         const swEq = () => S.doc['item.json'].data['sword-1'].equip;
         const sx0 = swd().x;
@@ -168,6 +210,10 @@ run('fit', async t => {
             dragBy(g.pts.neck);
             out.wristOfs.push(JSON.stringify(rogue().neck ?? null) === neck0);
         }
+        await F.drawPreview();
+        cvs().turn('wristF', 90);
+        out.wristOfs.push(JSON.stringify(swEq().wristF), JSON.stringify(rogue().wristF));
+        F.undo();
         F.undo();
         fire('item.json|sword-1|equip.wristF.x', '');
         out.wristOfs.push('wristF' in swEq(), 'wristB' in swEq());
@@ -394,7 +440,9 @@ run('fit', async t => {
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
     t.eq('支點 a：武器跟著轉、清空 a 只刪 a', JSON.stringify(r.rotA), JSON.stringify([90, '{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}']));
-    t.eq('武器手腕位移：寫 equip、武器跟著移、兩列、拖十字寫武器、脖子不動、清空刪掉', JSON.stringify(r.wristOfs), JSON.stringify(['{"x":5}', 5, 2, '{"x":2,"y":3}', false, true, false, false]));
+    t.eq('武器手腕位移：寫 equip、武器跟著移、兩列、拖十字寫武器、脖子不動、清空刪掉', JSON.stringify(r.wristOfs), JSON.stringify(['{"x":5}', 5, 2, '{"x":2,"y":3}', false, true, '{"x":5,"a":90}', '{"x":-13,"y":20}', false, false]));
+    t.eq('滑過十字／把手 hover、游標、移出清掉', JSON.stringify(r.hover), JSON.stringify(['wristF', 'move', 'wristF', 'grab', null]));
+    t.eq('拖白點轉 90°、undo、Shift 吸 45、沒有的支點帶上位置', JSON.stringify(r.rotDrag), JSON.stringify(['{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}', 45, '{"x":0,"y":0,"a":90}']));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
     t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);

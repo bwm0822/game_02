@@ -772,19 +772,28 @@ async function drawPreview()
     }
     else if (!isAnim)
     {
-        // 擺放分頁：body 的三個支點畫成十字，可以拖
+        // 擺放分頁：body 的三個支點畫成十字，可以拖；往上的白點是旋轉把手；滑過（或拖著）的那個變粗
         const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
+        const hds = Object.fromEntries(PIVOTS.map(k => [k, handleOf({x: pts[k].x, y: pts[k].y, angle: pts[k].a})]));
+        const live = drag?.k ?? hover;
         if (S.doc['part.json'].data[bodyId()]) local(() => {
-            g.lineWidth = 1.5 * px;
             // 十字照靜止角度 a 轉，往上那條長一點看得出方向
             for (const k of PIVOTS)
             {
-                const {x, y, a} = pts[k];
+                const {x, y, a} = pts[k], on = k === live, locked = !dragKeys().includes(k);
                 g.save();
+                g.globalAlpha = locked ? 0.3 : 1;
+                g.lineWidth = (on ? 3 : 1.5) * px;
+                g.strokeStyle = PIVOT_COLOR[k];
+                if (!locked)
+                {
+                    g.beginPath(); g.moveTo(x, y); g.lineTo(hds[k].x, hds[k].y);
+                    g.save(); g.lineWidth = (on ? 1.5 : 0.75) * px; g.setLineDash([2 * px, 2 * px]); g.stroke(); g.restore();
+                    g.fillStyle = '#fff';
+                    g.beginPath(); g.arc(hds[k].x, hds[k].y, (on ? 4 : 2.5) * px, 0, Math.PI * 2); g.fill();
+                }
                 g.translate(x, y);
                 g.rotate(rad(a));
-                g.globalAlpha = dragWeapon() && !WRISTS.includes(k) ? 0.3 : 1;
-                g.strokeStyle = PIVOT_COLOR[k];
                 g.beginPath();
                 g.moveTo(-4, 0); g.lineTo(4, 0);
                 g.moveTo(0, -7); g.lineTo(0, 4);
@@ -792,7 +801,7 @@ async function drawPreview()
                 g.restore();
             }
         });
-        geo = {vc, K, flip, pts};
+        geo = {vc, K, flip, pts, hds};
     }
     else geo = null;
 
@@ -846,24 +855,66 @@ function onDown(e)
 }
 
 // 擺放分頁拖 body 的支點十字：女角寫 f 裡的；切到武器時拖的是武器 equip 的手腕位移（男女共用，脖子不能拖）
+// 拖十字＝移位置、拖白點＝轉角度 a（Shift 吸 15°）
+const dragKeys = () => dragWeapon() ? WRISTS : PIVOTS;
+function pivotHit(l)
+{
+    const near = (p, r) => Math.hypot(l.x - p.x, l.y - p.y) <= r / geo.K;
+    const keys = dragKeys();
+    const k = keys.find(k => near(geo.hds[k], 8));
+    if (k) return {k, kind: 'nodeRot'};
+    const m = keys.find(k => near(geo.pts[k], 8));
+    return m ? {k: m, kind: 'node'} : null;
+}
+
+let hover = null;
+function onHoverPivot(e)
+{
+    const hit = geo?.hds ? pivotHit(toLocal(e)) : null;
+    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : 'grab') : '';
+    if ((hit?.k ?? null) === hover) return;
+    hover = hit?.k ?? null;
+    drawPreview();
+}
+function onLeave(e)
+{
+    e.currentTarget.style.cursor = '';
+    if (hover === null || drag) return;
+    hover = null;
+    drawPreview();
+}
+
 function onDownPivot(e)
 {
-    const w = dragWeapon(), keys = w ? WRISTS : PIVOTS;
-    const l = toLocal(e), k = keys.find(k => Math.hypot(l.x - geo.pts[k].x, l.y - geo.pts[k].y) <= 8 / geo.K);
+    const w = dragWeapon(), l = toLocal(e), hit = pivotHit(l);
     const p = w ? items()[S.slots.CAT_WEAPON] : parts()[bodyId()];
-    if (!k || !p) return;
+    if (!hit || !p) return;
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
+    const {k, kind} = hit, c = geo.pts[k];
     const path = w ? ['equip', k] : [...(sexKey() ? [sexKey()] : []), k];
     const orig = structuredClone(getAt(p, path));
-    drag = {kind: 'node', l, p, path, orig, from: w ? {x: orig?.x ?? 0, y: orig?.y ?? 0} : bodyPivot(k)};
+    drag = {kind, k, l, p, path, orig, from: w ? {x: orig?.x ?? 0, y: orig?.y ?? 0, a: orig?.a ?? 0} : bodyPivot(k),
+        a0: Math.atan2(l.y - c.y, l.x - c.x), o: {x: c.x, y: c.y}};
+}
+
+// 轉支點：寫 x/y/a 一整組（還沒有這個支點時帶上目前位置）；a 是 0 就刪，武器的位移變空就整個刪
+function rotNode(e, l)
+{
+    const da = (Math.atan2(l.y - drag.o.y, l.x - drag.o.x) - drag.a0) * 180 / Math.PI;
+    let a = drag.from.a + shortestDeg(da);
+    a = e.shiftKey ? Math.round(a / SNAP) * SNAP : r1(a);
+    const o = {...(drag.orig ?? (dragWeapon() ? {} : {x: drag.from.x, y: drag.from.y})), a};
+    if (!o.a) delete o.a;
+    setAt(drag.p, drag.path, Object.keys(o).length ? o : undefined);
 }
 
 function onMove(e)
 {
-    if (!drag) return;
+    if (!drag) return onHoverPivot(e);
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
     // 第一次拖女版（還沒有 f 的支點）帶上目前的角度
-    if (kind === 'node') setAt(drag.p, drag.path, {...(drag.orig ?? (drag.from.a ? {a: drag.from.a} : {})), x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
+    if (kind === 'nodeRot') rotNode(e, l);
+    else if (kind === 'node') setAt(drag.p, drag.path, {...(drag.orig ?? (drag.from.a ? {a: drag.from.a} : {})), x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
     else if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
     else if (kind === 'move')
     {
@@ -886,9 +937,9 @@ function onUp()
     if (!drag) return;
     const {kind, an, key, orig, p, path} = drag;
     drag = null;
-    if (kind === 'node')
+    if (kind === 'node' || kind === 'nodeRot')
     {
-        const v = getAt(p, path);
+        const v = structuredClone(getAt(p, path));
         setAt(p, path, orig);
         commit(() => setAt(p, path, v));
     }
@@ -966,7 +1017,7 @@ function drawPv()
     const isAnim = S.mode === 'anim', tr = isAnim ? trackOf() : null;
     const check = (k, text, color, disabled) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: S[k], disabled, onchange: e => {S[k] = e.target.checked; drawPreview();}}), text);
-    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp});
+    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp, onpointerleave: onLeave});
     const total = tr ? trackEnd(tr) : 0;
     $('pv').replaceChildren(
         h('div', {class: 'stage', onscroll: e => {scroll = {x: e.target.scrollLeft, y: e.target.scrollTop};}}, cv),
@@ -1049,4 +1100,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
-    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}};
+    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};
