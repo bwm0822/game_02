@@ -783,9 +783,16 @@ async function drawPreview()
         if (S.doc['part.json'].data[bodyId()]) local(() => {
             for (const k of PIVOTS) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
-        // 部件／裝備不畫框（可點選、拖 x/y，角度只用數字改）
+        // 部件：滑過的畫虛線框、選中的畫實線框＋旋轉把手（拖著或滑過把手變粗）
         const its = parts.map((pt, i) => ({...pt, f: frames[i]?.f})).filter(it => it.f && it.src?.id);
-        geo = {vc, K, flip, pts, hds, its};
+        const sel = its.find(it => it.k === S.pick && it.main) ?? its.find(it => it.k === S.pick);
+        const ph = sel && HD.partHandle(sel.p, sel.f, 10 * px);
+        const liveK = drag?.pk ?? hoverPart;
+        local(() => {
+            if (liveK !== S.pick) HD.drawSel(g, its.filter(it => it.k === liveK), null, px, {dash: true});
+            HD.drawSel(g, its.filter(it => it.k === S.pick), ph, px, {thick: liveK === S.pick, rotOn: liveK === ROT});
+        });
+        geo = {vc, K, flip, pts, hds, its, sel, ph};
     }
     else geo = null;
 
@@ -851,8 +858,14 @@ function pivotHit(l)
     return m ? {k: m, kind: 'node'} : null;
 }
 
-// 擺放分頁的部件／裝備：點選（最上層那張）、拖＝移 x/y；十字優先
-const partHit = (l) => geo.its.findLast(it => inSprite(it.p, it.f, {x: it.p.x ?? 0, y: it.p.y ?? 0, angle: it.p.a ?? 0}, l.x, l.y));
+// 擺放分頁的部件／裝備：點選（最上層那張）、拖＝移 x/y、拖選中的白點＝轉 a；十字優先
+const ROT = '@rot';         // hoverPart／drag.pk 指選中部件的旋轉把手
+function partHit(l)
+{
+    if (geo.ph && Math.hypot(l.x - geo.ph.x, l.y - geo.ph.y) <= 8 / geo.K) return {kind: 'rot', it: geo.sel};
+    const it = geo.its.findLast(it => inSprite(it.p, it.f, {x: it.p.x ?? 0, y: it.p.y ?? 0, angle: it.p.a ?? 0}, l.x, l.y));
+    return it ? {kind: 'move', it} : null;
+}
 
 // 只重畫中間欄跟預覽（畫布不換，拖拉才不會斷）
 function pick(k)
@@ -870,32 +883,35 @@ function pickQuiet(k)
     drawPreview();
 }
 
-let hover = null;
+let hover = null, hoverPart = null;
 function onHoverPivot(e)
 {
-    const l = geo?.hds ? toLocal(e) : null, hit = l && pivotHit(l);
-    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : HD.ROT_CURSOR) : l && partHit(l) ? 'move' : '';
-    const h1 = hit?.k ?? null;
-    if (h1 === hover) return;
-    hover = h1;
+    const l = geo?.hds ? toLocal(e) : null, hit = l && pivotHit(l), ph = l && !hit ? partHit(l) : null;
+    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : HD.ROT_CURSOR) : ph ? (ph.kind === 'rot' ? HD.ROT_CURSOR : 'move') : '';
+    const h1 = hit?.k ?? null, h2 = ph ? (ph.kind === 'rot' ? ROT : ph.it.k) : null;
+    if (h1 === hover && h2 === hoverPart) return;
+    [hover, hoverPart] = [h1, h2];
     drawPreview();
 }
 function onLeave(e)
 {
     e.currentTarget.style.cursor = '';
-    if (hover === null || drag) return;
-    hover = null;
+    if ((hover === null && hoverPart === null) || drag) return;
+    hover = hoverPart = null;
     drawPreview();
 }
 
 function onDownFit(e)
 {
     if (onDownPivot(e)) return;
-    const l = toLocal(e), it = partHit(l);
-    if (!it) return S.pick != null && pick(null);
+    const l = toLocal(e), hit = partHit(l);
+    if (!hit) return S.pick != null && pick(null);
+    const it = hit.it;
     if (it.k !== S.pick) pick(it.k);
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
-    drag = {kind: 'part', l, src: it.src, raw: it.raw, pv: it.pv, orig: structuredClone(entryOf(it.src))};
+    const c = {x: it.p.x ?? 0, y: it.p.y ?? 0};
+    drag = {kind: hit.kind === 'rot' ? 'partRot' : 'part', pk: hit.kind === 'rot' ? ROT : it.k, l, src: it.src, raw: it.raw, pv: it.pv,
+        orig: structuredClone(entryOf(it.src)), a0: Math.atan2(l.y - c.y, l.x - c.x), o: c};
 }
 
 const entryOf = (src) => getAt(S.doc[src.file].data[src.id], src.base);
@@ -955,6 +971,11 @@ function onMove(e)
         const r = -rad(drag.pv.a), [rx, ry] = [dx * Math.cos(r) - dy * Math.sin(r), dx * Math.sin(r) + dy * Math.cos(r)];
         setPlace(drag.src, {x: r1((drag.raw.x ?? 0) + rx), y: r1((drag.raw.y ?? 0) + ry)});
     }
+    else if (kind === 'partRot')
+    {
+        const da = (Math.atan2(l.y - drag.o.y, l.x - drag.o.x) - drag.a0) * 180 / Math.PI, a = (drag.raw.a ?? 0) + shortestDeg(da);
+        setPlace(drag.src, {a: e.shiftKey ? Math.round(a / SNAP) * SNAP : r1(a)});
+    }
     else if (kind === 'node') setAt(drag.p, drag.path, {...(drag.orig ?? (drag.from.a ? {a: drag.from.a} : {})), x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
     else if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
     else if (kind === 'move')
@@ -978,7 +999,7 @@ function onUp()
     if (!drag) return;
     const {kind, an, key, orig, p, path, src} = drag;
     drag = null;
-    if (kind === 'part')
+    if (kind === 'part' || kind === 'partRot')
     {
         const v = structuredClone(entryOf(src));
         putEntry(src, orig);
@@ -1147,4 +1168,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
-    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};
+    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}, get hoverPart() {return hoverPart;}};
