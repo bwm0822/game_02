@@ -43,7 +43,7 @@
 | `tools/part/index.html` | 頁面、樣式（`.pv` 從 role.css 抄，role.css 其他規則會撞 `.cell`） |
 | `tools/part/main.js` | 讀檔、檢查、左樹、縮圖總覽、詳細、各動作 |
 | `tools/role/preview.js` | 合成（角色編輯器共用）；`opt.pivots` 開身體支點十字拖拉 |
-| `tools/common/handles.js` | 畫布拖拉的共用畫法：支點十字、旋轉游標、部件外框（試穿也用） |
+| `tools/common/handles.js` | 畫布拖拉的共用畫法：支點十字、旋轉游標、轉角度（試穿也用） |
 | `tools/common/part.js` | 跟角色編輯器共用：`usersOf()`、`renameRefs()`、`renameKey()`、`readParts()`／`writeParts()`、`askRename()`（含掃程式碼）、`rename()`（先廣播再寫）、`askDelete()`、`remove()` |
 
 測試：`node scripts/test/part-tool.mjs`（OPFS 當假的專案：分段、卡片標示、三種壞、篩選／搜尋、總覽部位分頁（只列一個部位、記住、跟篩選一起算數量、空了留著）、左樹分組／拖寬把手／點卡片展開並選取／列標示／再點取消／摺起取消選取、詳細合成、男女切換（套 body-woman、有無 f 的標示、記住）、到試穿停用、擺放數字（女改 f、清空刪 key、undo／Ctrl+Z／Ctrl+Y、刪除女版）、非身體不能拖、身體支點（表格、拖十字、轉 a、undo）、身體沒有男女切換（不標 f、寫基準）、合成底色（記住、棋盤格恢復）、改 kind 擋／改、換圖、新增帶 id／抄數字／排序、複製、不合法 id、改名連帶 role.json、刪除擋／刪；殼裡：角色分頁跟試穿分頁有未存修改時被改名、記憶體跟著改、存檔合併結果正確，↗ 到試穿選角色並聚焦數字欄）。
