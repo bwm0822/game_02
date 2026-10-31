@@ -119,6 +119,31 @@ run('part-tool', async t => {
         row('hair-unused').click();
         await sleep(300);
         out.femaleF = [cap(), btn('↗ 到試穿調').disabled, [...document.querySelectorAll('#view td.k')].map(td => td.textContent).join()];
+
+        // 擺放數字：女改 f、男改基準、清空刪 key，立刻寫檔；undo／redo（按鈕、Ctrl+Z）也立刻寫；刪除女版
+        const fire = async (k, v) => {const el = document.querySelector(`[data-k="${k}"]`); el.value = v; el.dispatchEvent(new Event('change')); await pt.idle();};
+        const hu = async () => (await read('part.json'))['hair-unused'];        out.nums = [[...document.querySelectorAll('#view table.nums th')].map(th => th.textContent).join()];
+        await fire('part.json|hair-unused|f.x', '7');
+        out.nums.push(JSON.stringify((await hu()).f));
+        sex('m');
+        await sleep(300);
+        await fire('part.json|hair-unused|x', '3');
+        out.nums.push((await hu()).x);
+        await fire('part.json|hair-unused|x', '');
+        out.nums.push('x' in await hu(), $('btnUndo').disabled, $('btnRedo').disabled);
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        out.nums.push((await hu()).x);
+        dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true}));
+        await sleep(50); await pt.idle();
+        out.nums.push('x' in await hu(), (await hu()).f.x);
+        dispatchEvent(new KeyboardEvent('keydown', {key: 'y', ctrlKey: true}));
+        await sleep(50); await pt.idle();
+        out.nums.push((await hu()).x, $('btnRedo').disabled);
+        sex('f');
+        await sleep(300);
+        btn('刪除女版').click();
+        await sleep(50); await pt.idle();
+        out.nums.push('f' in await hu(), document.querySelector('#view .sexnote').textContent.startsWith('沒有 f'));
         sex('m');
         await sleep(300);
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
@@ -212,7 +237,9 @@ run('part-tool', async t => {
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));
     t.eq('詳細：右欄套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));
     t.eq('合成切女：套 body-woman、沒有 f 用基準、記住', JSON.stringify(r.female), JSON.stringify(['套在 body-woman（沒有 f，用基準數字）', 2, 'f', 'f']));
-    t.eq('換一筆保留女：有 f 用女版、到試穿停用、欄位唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite,scale,f']));
+    t.eq('換一筆保留女：有 f 用女版、到試穿停用、擺放以外唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite']));
+    t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
+        JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
     t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
