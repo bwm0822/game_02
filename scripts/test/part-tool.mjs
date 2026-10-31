@@ -47,12 +47,11 @@ run('part-tool', async t => {
             return seen;
         };
         const pickIcon = async (v) => {await until(() => $('dlgIcon').open); $('dlgIcon').querySelector('input').value = v; $('dlgIcon').close('ok'); await sleep(30);};
-        const cellIds = (sec) => [...document.querySelectorAll('#view .cells')][sec];
 
         const {assets, read} = await eval(`(${SETUP})`)();
         await pt.setRoot(assets);
         await pt.IC.ready;
-        pt.render();
+        pt.setTab('all');
 
         // 縮圖牆：照 kind 分段（六種＋不認識的）、使用次數、未使用標灰、壞的標紅
         out.secs = [...document.querySelectorAll('#view .sec')].map(s => s.firstChild.textContent);
@@ -73,6 +72,22 @@ run('part-tool', async t => {
         $('search').value = 'mary'; $('search').dispatchEvent(new Event('input'));
         out.search = [...document.querySelectorAll('#view .cell')].map(c => c.dataset.id).sort().join();
         $('search').value = ''; $('search').dispatchEvent(new Event('input'));
+
+        // 總覽上方分頁切部位：一次只列一個部位、不畫分段標題、記住；篩選後數量跟著變、目前分頁空了也留著
+        const tabBtns = () => [...document.querySelectorAll('#view .tabs button')].map(b => b.textContent);
+        const tab = (k) => document.querySelector(`#view .tabs [data-tab="${k}"]`).click();
+        const cellIds = () => [...document.querySelectorAll('#view .cell')].map(c => c.dataset.id);
+        out.tabs = tabBtns()[0].startsWith('全部（') && tabBtns().length === 8;
+        tab('hair');
+        out.tabHair = [cellIds().every(id => S.parts[id].kind === 'hair'), cellIds().includes('hair-wick'), document.querySelectorAll('#view .sec').length,
+                       localStorage.getItem('tools.part.tab'), document.querySelector('#view .tabs .on').dataset.tab];
+        filter('bad');
+        out.tabBad = [cellIds().join(), tabBtns().join()];
+        $('search').value = 'zzz'; $('search').dispatchEvent(new Event('input'));
+        out.tabEmpty = [document.querySelector('#view .tabs .on')?.dataset.tab, cellIds().length, tabBtns().join()];
+        $('search').value = ''; $('search').dispatchEvent(new Event('input'));
+        filter('all');
+        tab('all');
 
         // 左樹：照 kind 分組、左欄可拖寬度；沒選時右欄空著
         const heads = () => [...document.querySelectorAll('#list .group')];
@@ -183,6 +198,10 @@ run('part-tool', async t => {
     t.eq('篩選壞的', r.bad, 'bad-sprite,head-karen,weird');
     t.check('篩選未使用', r.unused);
     t.eq('搜尋 id／sprite', r.search, 'hair-mary,head-mary');
+    t.check('總覽分頁：全部＋六個部位＋不認識的', r.tabs);
+    t.eq('分頁頭髮：只列頭髮、沒有分段標題、記住', JSON.stringify(r.tabHair), JSON.stringify([true, true, 0, 'hair', 'hair']));
+    t.eq('分頁＋篩選壞的：只剩有壞的部位分頁', JSON.stringify(r.tabBad), JSON.stringify(['bad-sprite', ['全部（3）', '頭（1）', '頭髮（1）', '不認識的 kind（1）'].join()]));
+    t.eq('篩選後空了的分頁', JSON.stringify(r.tabEmpty), JSON.stringify(['hair', 0, '全部（0）,頭髮（0）']));
     t.eq('左樹：照 kind 分組、左欄可拖、沒選右欄空', JSON.stringify(r.tree), JSON.stringify([['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '手　hand', '不認識的 kind'].join(), true, 0]));
     t.eq('點總覽卡片：選取、展開那組、列標 sel、中間換詳細', JSON.stringify(r.pickCell), JSON.stringify(['hair-wick', '▾', 'hair-wick', true]));
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));

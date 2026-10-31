@@ -26,8 +26,9 @@ const S = {
     sel: null,
     sex: 'm',           // 合成套在男／女人偶，記在頁面
 };
-const SEX_KEY = 'tools.part.sex';
-try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f';} catch {}
+const SEX_KEY = 'tools.part.sex', TAB_KEY = 'tools.part.tab';
+S.tab = 'all';      // 總覽的部位分頁：all／kind／#unknown，記在頁面
+try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f'; S.tab = localStorage.getItem(TAB_KEY) || 'all';} catch {}
 
 const F = createFold();
 
@@ -127,12 +128,25 @@ function cell(pid)
         IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, pid), n > 0 && h('span', {class: 'n'}, n));
 }
 
+// 上方分頁切部位：全部＝照組分段，其他一次只列一個部位；目前分頁就算篩選後空了也留著
 function renderWall()
 {
-    const gs = groups();
-    $('view').replaceChildren(...(gs.length
-        ? gs.flatMap(([, name, list]) => [h('div', {class: 'sec'}, name, h('span', {class: 'dim'}, `（${list.length}）`)), h('div', {class: 'cells'}, list.map(cell))])
-        : [h('div', {class: 'dim'}, '（沒有符合的）')]));
+    const gs = groups(), n = gs.reduce((s, [, , list]) => s + list.length, 0);
+    const tabs = [['all', '全部', n], ...SECS.map(([k, name]) => [k, name.split('　')[0], gs.find(([g]) => g === k)?.[2].length ?? 0])
+        .filter(([k, , c]) => c || k === S.tab)];
+    const shown = S.tab === 'all' ? gs : gs.filter(([k]) => k === S.tab);
+    $('view').replaceChildren(
+        h('div', {class: 'tabs'}, tabs.map(([k, name, c]) => h('button', {class: S.tab === k ? 'on' : '', dataset: {tab: k}, onclick: () => setTab(k)}, `${name}（${c}）`))),
+        ...(shown.length
+            ? shown.flatMap(([, name, list]) => [S.tab === 'all' && h('div', {class: 'sec'}, name, h('span', {class: 'dim'}, `（${list.length}）`)), h('div', {class: 'cells'}, list.map(cell))])
+            : [h('div', {class: 'dim'}, '（沒有符合的）')]));
+}
+
+function setTab(k)
+{
+    S.tab = k;
+    try {localStorage.setItem(TAB_KEY, k);} catch {}
+    render();
 }
 
 // ---------- 中間：詳細；右欄：合成 ----------
@@ -325,4 +339,4 @@ render();
 IC.ready.then(render);
 
 // 給無頭測試用
-window.__pt = {S, setRoot, reload, render, problems, isBad, isUnused, renamePart, deletePart, changeKind, changeSprite, askEntry, IC};
+window.__pt = {S, setTab, setRoot, reload, render, problems, isBad, isUnused, renamePart, deletePart, changeKind, changeSprite, askEntry, IC};
