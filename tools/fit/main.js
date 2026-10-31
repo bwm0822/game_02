@@ -407,15 +407,14 @@ function fitView(r, slots)
     ];
 }
 
-// body 條目上的支點：女角改 f 裡的（第一次改從基準複製），x／y 只填一個時另一個補上目前值
+// body 條目上的支點：不分男女都寫基準（男女各有自己的身體條目，支點跟著身體走），x／y 只填一個時另一個補上目前值
 // 掛在支點上的部位數字相對支點：移支點整組跟著走
 function pivotTable()
 {
     const pid = bodyId(), p = parts()[pid];
     if (!p) return null;
-    const sx = sexKey();
     const row = (k) => {
-        const base = [...(sx ? [sx] : []), k], cur = bodyPivot(k);
+        const base = [k], cur = bodyPivot(k);
         // 清空 x／y＝刪掉整個支點（回到基準／0）；清空 a 只刪 a
         const fill = (c) => (n) => {
             const o = getAt(p, base);
@@ -430,7 +429,7 @@ function pivotTable()
     const dragTab = (w, text) => h('button', {class: 'tab' + (!!S.dragW === w ? ' sel' : ''), dataset: {drag: w ? 'weapon' : 'body'},
         disabled: w && !heldEquip(), title: w && !heldEquip() ? '武器格沒有東西' : '', onclick: () => {S.dragW = w; render();}}, text);
     return [
-        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`),
+        h('div', {class: 'title'}, `支點（body ${pid}，男女共用；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`),
         h('div', {class: 'dragmode'}, h('span', {class: 'dim'}, '拖十字改：'), dragTab(false, '身體'), dragTab(true, '武器')),
         h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
@@ -899,7 +898,7 @@ function onDown(e)
         a0: Math.atan2(l.y - wr.y, l.x - wr.x), o: {x: wr.x, y: wr.y}};
 }
 
-// 擺放分頁拖 body 的支點十字：女角寫 f 裡的；切到武器時拖的是武器 equip 的手腕位移（男女共用，脖子不能拖）
+// 擺放分頁拖 body 的支點十字：寫基準（不分男女）；切到武器時拖的是武器 equip 的手腕位移（男女共用，脖子不能拖）
 // 拖十字＝移位置、拖白點＝轉角度 a（Shift 吸 15°）
 const dragKeys = () => dragWeapon() ? WRISTS : PIVOTS;
 function pivotHit(l)
@@ -1002,7 +1001,7 @@ function onDownPivot(e)
     if (!hit || !p) return false;
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
     const {k, kind} = hit, c = geo.pts[k];
-    const path = w ? ['equip', k] : [...(sexKey() ? [sexKey()] : []), k];
+    const path = w ? ['equip', k] : [k];
     const orig = structuredClone(getAt(p, path));
     drag = {kind, k, l, p, path, orig, from: w ? {x: orig?.x ?? 0, y: orig?.y ?? 0, a: orig?.a ?? 0} : bodyPivot(k),
         a0: Math.atan2(l.y - c.y, l.x - c.x), o: {x: c.x, y: c.y}};
@@ -1024,7 +1023,7 @@ function onMove(e)
 {
     if (!drag) return onHoverPivot(e);
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
-    // 第一次拖女版（還沒有 f 的支點）帶上目前的角度
+    // 第一次拖（還沒有這個支點）帶上目前的角度
     if (kind === 'nodeRot') rotNode(e, l);
     else if (kind === 'part')
     {

@@ -402,6 +402,12 @@ run('fit', async t => {
         out.sex.push('f' in e2());
         F.undo(); F.undo(); F.undo();
         out.sex.push('f' in e2());
+        // 女角調支點：寫 body 條目的基準、不建 f（男女各有自己的身體）
+        const mb = () => S.doc['part.json'].data[S.doc['role.json'].data.mary.body];
+        const mbF = JSON.stringify(mb().f ?? null), mbX = mb().wristB?.x ?? 0;
+        fire(`part.json|${S.doc['role.json'].data.mary.body}|wristB.x`, String(mbX + 1));
+        out.sex.push(mb().wristB.x === mbX + 1, JSON.stringify(mb().f ?? null) === mbF);
+        F.undo();
         F.select('guard-1'); F.wearOrig(); S.cur = 'CAT_HELMET'; F.render();
 
         // 背景色：純色鋪滿、記 localStorage、棋盤格按鈕恢復
@@ -525,7 +531,7 @@ run('fit', async t => {
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
-    t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false]));
+    t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo、支點寫基準不建 f', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false, true, true]));
     t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));
