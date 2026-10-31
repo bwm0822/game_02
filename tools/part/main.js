@@ -24,7 +24,10 @@ const S = {
     filter: 'all',
     search: '',
     sel: null,
+    sex: 'm',           // 合成套在男／女人偶，記在頁面
 };
+const SEX_KEY = 'tools.part.sex';
+try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f';} catch {}
 
 const F = createFold();
 
@@ -171,9 +174,18 @@ function renderDetail()
         users.length ? h('ul', {class: 'users'}, users.map(rid => h('li', null, rid, ' ', h('span', {class: 'dim'}, S.roles[rid].lab ?? ''),
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
             : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）'));
+    const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
     $('right').replaceChildren(
-        h('div', null, h('div', {class: 'cap'}, `套在 ${DOLL.m}`), previewEl(dollOf(pid, 'm'), {}, S.parts)),
-        p.f && h('div', null, h('div', {class: 'cap'}, `女版 f，套在 ${DOLL.f}`), previewEl(dollOf(pid, 'f'), {}, S.parts)));
+        h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')),
+        h('div', null, h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
+            previewEl(dollOf(pid, S.sex), {}, S.parts)));
+}
+
+function setSex(sx)
+{
+    S.sex = sx;
+    try {localStorage.setItem(SEX_KEY, sx);} catch {}
+    render();
 }
 
 function render()

@@ -90,18 +90,26 @@ run('part-tool', async t => {
         const btn = (txt) => [...document.querySelectorAll('#view button')].find(b => b.textContent === txt);
         out.detail = [document.querySelectorAll('#right .pv canvas').length, +document.querySelector('#right .pv canvas').dataset.drawn,
                       [...document.querySelectorAll('#view .users li')].map(li => li.firstChild.textContent).join(), btn('↗ 到試穿調').disabled];
+        // 合成切男女：套 body-woman，沒有 f 標「用基準」，有 f 標「用女版 f」；記住
+        const sex = (sx) => document.querySelector(`#right .sexsw [data-sex="${sx}"]`).click();
+        const cap = () => document.querySelector('#right .cap').textContent;
+        sex('f');
+        await sleep(300);
+        out.female = [cap(), +document.querySelector('#right .pv canvas').dataset.drawn, localStorage.getItem('tools.part.sex'),
+                      document.querySelector('#right .sexsw .on').dataset.sex];
         row('hair-unused').click();
         await sleep(300);
-        out.unusedDetail = [document.querySelectorAll('#right .pv canvas').length, btn('↗ 到試穿調').disabled,
-                            [...document.querySelectorAll('#view td.k')].map(td => td.textContent).join()];
+        out.femaleF = [cap(), btn('↗ 到試穿調').disabled, [...document.querySelectorAll('#view td.k')].map(td => td.textContent).join()];
+        sex('m');
+        await sleep(300);
+        out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
 
-        // 合成底色：純色、兩張一起換、記住；棋盤格恢復
+        // 合成底色：純色、記住；棋盤格恢復
         const px = (cv) => [...cv.getContext('2d').getImageData(1, 1, 1, 1).data.slice(0, 3)].join();
         const color = document.querySelector('#right input.bg');
         color.value = '#ff0000'; color.dispatchEvent(new Event('input')); color.dispatchEvent(new Event('change'));
         await sleep(200);
-        out.bg = [[...document.querySelectorAll('#right .pv canvas')].map(px).join('|'), localStorage.getItem('tools.preview.bg'),
-                  document.querySelectorAll('#right input.bg')[1].value];
+        out.bg = [px(document.querySelector('#right .pv canvas')), localStorage.getItem('tools.preview.bg')];
         document.querySelector('#right .bgchk').click();
         await sleep(200);
         out.bgReset = [px(document.querySelector('#right .pv canvas')) !== '255,0,0', localStorage.getItem('tools.preview.bg')];
@@ -170,8 +178,10 @@ run('part-tool', async t => {
     t.eq('點總覽卡片：選取、展開那組、列標 sel、中間換詳細', JSON.stringify(r.pickCell), JSON.stringify(['hair-wick', '▾', 'hair-wick', true]));
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));
     t.eq('詳細：右欄套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));
-    t.eq('沒人用：有女版多一張合成、到試穿停用、欄位唯讀列出', JSON.stringify(r.unusedDetail), JSON.stringify([2, true, 'sprite,scale,f']));
-    t.eq('合成底色：純色、兩張一起換、記住', JSON.stringify(r.bg), JSON.stringify(['255,0,0|255,0,0', '#ff0000', '#ff0000']));
+    t.eq('合成切女：套 body-woman、沒有 f 用基準、記住', JSON.stringify(r.female), JSON.stringify(['套在 body-woman（沒有 f，用基準數字）', 2, 'f', 'f']));
+    t.eq('換一筆保留女：有 f 用女版、到試穿停用、欄位唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite,scale,f']));
+    t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
+    t.eq('合成底色：純色、記住', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
     t.eq('合成底色：棋盤格恢復、清掉記憶', JSON.stringify(r.bgReset), JSON.stringify([true, null]));
     t.eq('再點一次取消選取、回總覽、右欄空', JSON.stringify(r.unpick), JSON.stringify([null, true, 0]));
     t.eq('摺起選到的那組：取消選取', JSON.stringify(r.foldUnpick), JSON.stringify([null, '▸', false]));
