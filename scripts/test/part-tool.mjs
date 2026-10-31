@@ -96,9 +96,11 @@ run('part-tool', async t => {
         const head = (k) => heads().find(g => g.textContent.includes(`　${k}（`));
         const rows = () => [...document.querySelectorAll('#list .item')].map(i => i.dataset.id);
         out.tree = [heads().map(g => g.textContent.slice(1).replace(/（\d+）$/, '')).join(), !!document.querySelector('.left-grip'), $('right').childElementCount];
+        out.midGrip = [document.querySelector('.mid-grip').style.display];
         // 點總覽卡片：選到它、展開那組、列標 sel，中間換詳細
         cell('hair-wick').click();
         await sleep(300);
+        out.midGrip.push(document.querySelector('.mid-grip').style.display);
         out.pickCell = [S.sel, head('hair').querySelector('.arrow').textContent, document.querySelector('#list .item.sel')?.dataset.id, !document.querySelector('#view .cell')];
         const row = (id) => document.querySelector(`#list .item[data-id="${id}"]`);
         out.rowMarks = [row('hair-unused').classList.contains('unused'), !!row('bad-sprite').querySelector('.warn'), row('hair-wick').querySelector('.n').textContent];
@@ -204,6 +206,7 @@ run('part-tool', async t => {
     t.eq('分頁頭髮：只列頭髮、沒有分段標題、記住', JSON.stringify(r.tabHair), JSON.stringify([true, true, 0, 'hair', 'hair']));
     t.eq('分頁＋篩選壞的：只剩有壞的部位分頁', JSON.stringify(r.tabBad), JSON.stringify(['bad-sprite', ['全部（3）', '頭（1）', '頭髮（1）', '不認識的 kind（1）'].join()]));
     t.eq('篩選後空了的分頁', JSON.stringify(r.tabEmpty), JSON.stringify(['hair', 0, '全部（0）,頭髮（0）']));
+    t.eq('中間欄把手：沒選（右欄空）藏、選了出現', JSON.stringify(r.midGrip), JSON.stringify(['none', '']));
     t.eq('左樹：照 kind 分組、左欄可拖、沒選右欄空', JSON.stringify(r.tree), JSON.stringify([['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '前手　handF', '後手　handB', '不認識的 kind'].join(), true, 0]));
     t.eq('點總覽卡片：選取、展開那組、列標 sel、中間換詳細', JSON.stringify(r.pickCell), JSON.stringify(['hair-wick', '▾', 'hair-wick', true]));
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));

@@ -176,7 +176,14 @@ run('role', async t => {
         out.tableLoc = [document.querySelectorAll('#view tbody tr').length, !!document.querySelector('#view .tabs select')];
         S.loc = ''; S.tab = 5; re.render();
         out.tableAnimal = [...document.querySelectorAll('#view thead th')].map(th => th.textContent).join('|');
+        // 第三欄預覽：總覽表時右欄空、中間把手藏起來；選了角色才有預覽跟把手
+        const tick = () => new Promise(res => setTimeout(res));
+        const grip = () => document.querySelector('.mid-grip');
+        await tick();
+        out.right = [document.getElementById('right').childElementCount, grip().style.display];
         S.view = 'form'; S.sel = 'wick'; re.render();
+        await tick();
+        out.right.push(!!document.querySelector('#right .pv canvas'), grip().style.display, !document.querySelector('#view .pv'));
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.dom = [document.body.innerText.includes('[object'), [...document.querySelector('#view .form').childNodes].some(n => n.nodeType === Node.TEXT_NODE),
                    document.querySelectorAll('#list .item').length === Object.keys(S.data).length];
@@ -195,6 +202,7 @@ run('role', async t => {
     });
 
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
+    t.eq('預覽在第三欄：總覽表時右欄空、把手藏；選角色才出現', JSON.stringify(r.right), JSON.stringify([0, 'none', true, '', true]));
     t.eq('讀入全部角色', r.load[0], true);
     t.check('選專案根目錄：找到 public/assets', r.load[1] && r.load[2] === 'assets');
     t.check('沒改就存檔，內容一字不差', r.roundtrip);

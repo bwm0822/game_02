@@ -52,18 +52,26 @@ if (left)
 }
 
 // 中間欄固定寬度、右欄吃剩下的（右欄至少留它 CSS 的 min-width）；視窗縮放時重夾，不改記住的值
+// 右欄是空的（沒選東西）時中間照舊吃滿、把手藏起來，有內容再套回記住的寬度
 const mid = document.querySelector('[data-resize]');
 const right = mid?.nextElementSibling;
 if (mid && right)
 {
     const MIN = 200;
+    const empty = () => right.childElementCount === 0;
     const clamp = (w) => {
         const room = mid.parentElement.getBoundingClientRect().right - mid.getBoundingClientRect().left - (parseFloat(getComputedStyle(right).minWidth) || 0);
         return Math.round(Math.max(MIN, Math.min(room, w)));
     };
     const apply = (w) => {
+        if (empty()) w = 0;
         Object.assign(mid.style, w ? {width: `${w}px`, flex: 'none'} : {width: '', flex: ''});
         Object.assign(right.style, w ? {flex: '1', maxWidth: 'none'} : {flex: '', maxWidth: ''});
     };
-    addEventListener('resize', splitter(mid, `tools.mid.${tool}`, 'mid-grip', clamp, apply));
+    const refit = splitter(mid, `tools.mid.${tool}`, 'mid-grip', clamp, apply);
+    const grip = mid.nextElementSibling;
+    const sync = () => {grip.style.display = empty() ? 'none' : ''; refit();};
+    sync();
+    new MutationObserver(sync).observe(right, {childList: true});
+    addEventListener('resize', refit);
 }

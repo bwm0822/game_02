@@ -415,14 +415,19 @@ function otherBox(id, r)
 function renderForm()
 {
     const id = S.sel, r = S.data[id];
-    const view = document.getElementById('view');
-    if (!r) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選角色）' : '先在上方選擇專案資料夾'));
+    const view = document.getElementById('view'), right = document.getElementById('right');
+    if (!r)
+    {
+        right.replaceChildren();
+        return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選角色）' : '先在上方選擇專案資料夾'));
+    }
     const shown = new Set([...SC.shownFields(r), ...(S.extra[id] ?? [])]);
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.has(k));
     const wkeys = [], warns = validate(id, wkeys), draft = F.fullDraft();
     const secs = SC.SECTIONS.map(sec => ({...sec, keys: sec.keys.filter(k => shown.has(k))})).filter(sec => sec.keys.length > 0);
     const allOpen = (v) => {for (const sec of SC.SECTIONS) S.secOpen[sec.title] = v; render();};
-    view.replaceChildren(h('div', {class: 'split'},
+    right.replaceChildren(previewEl(r, S.ext.items, S.ext.parts));
+    view.replaceChildren(
         h('div', {class: 'form'},
             h('div', {class: 'head'},
                 IC.iconEl(r.icon, 48),
@@ -456,8 +461,7 @@ function renderForm()
                         (S.extra[id] ??= new Set()).add(k);
                         render();
                     }}, h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
-                otherBox(id, r))),
-        previewEl(r, S.ext.items, S.ext.parts)));
+                otherBox(id, r))));
 }
 
 // ---------- 總覽表 ----------
@@ -515,6 +519,7 @@ function draw()
         ['不認識的分類', ids.filter(id => kindOf(id) && !SC.KINDS.includes(kindOf(id))), '#unknown'],
     ]);
     if (S.view === 'form') return renderForm();
+    document.getElementById('right').replaceChildren();
     V.renderTable(SC.TABS, {
         inTab,
         sortKey: (id, c) => c === '#sch' ? (S.data[id].schedule?.length ?? 0) : c === '#equips' ? cellText(c, S.data[id]) : getAt(S.data[id], c.split('.')),
