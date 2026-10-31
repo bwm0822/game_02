@@ -1,15 +1,18 @@
-// 部位（part.json）總覽與整理：左樹（照 kind 分組）、中間沒選＝縮圖總覽／選了＝詳細、右欄合成；壞的／沒人用的標出來；改名、改 kind、換圖、新增、複製、刪除都立刻寫檔＋廣播，沒有 undo
-// 擺放數字不在這裡調（唯讀），要調按「↗ 到試穿調」
+// 部位（part.json）總覽與整理：左樹（照 kind 分組）、中間沒選＝縮圖總覽／選了＝詳細、右欄合成；壞的／沒人用的標出來；改名、改 kind、換圖、新增、複製、刪除都立刻寫檔＋廣播
+// 擺放數字（scale/x/y/a/ox/oy，女版改 f）也在詳細裡改，一樣立刻寫檔；只有擺放有 undo（條目層級，undo 也立刻寫）
 import {$, h, ask, status} from '../common/dom.js';
+import {str, isObj, parseNum} from '../common/obj.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
+import * as ST from '../common/settings.js';
 import * as IC from '../common/icons.js';
 import * as PT from '../common/part.js';
 import {ID_RE} from '../common/doc.js';
 import {createFold} from '../common/fold.js';
 import '../common/splitter.js';
 import {previewEl} from '../role/preview.js';
-import {ROLE_PARTS} from '../../src/core/equip.js';
+import {ROLE_PARTS, PIVOTS, pivotOf} from '../../src/core/equip.js';
+import {PIVOT_NAMES, PIVOT_COLOR} from '../common/handles.js';
 
 const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
 const FILTERS = [['all', '全部'], ['unused', '未使用'], ['bad', '壞的']];
@@ -24,8 +27,11 @@ const S = {
     filter: 'all',
     search: '',
     sel: null,
-    sex: 'm',           // 合成套在男／女人偶，記在頁面
+    sex: 'm',           // 合成套在男／女人偶，記在頁面；女＝擺放數字的 scale/x/y 改 f
+    hist: [], hi: 0,    // 擺放的 undo：[{pid, before, after}]，hi＝下一筆要放的位置
 };
+const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
+const SEX_NUMS = ['scale', 'x', 'y'];
 const SEX_KEY = 'tools.part.sex', TAB_KEY = 'tools.part.tab';
 S.tab = 'all';      // 總覽的部位分頁：all／kind／#unknown，記在頁面
 try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f'; S.tab = localStorage.getItem(TAB_KEY) || 'all';} catch {}
@@ -61,6 +67,8 @@ async function setRoot(dir)
     }
     if (!json || !await FS.tryFile(json, 'part.json')) throw new Error(`「${dir.name}」裡沒有 public/assets/json/part.json`);
     S.assets = {dir: assets, json, root};
+    // 數字欄的步進看 tools/settings.json，讀不到用內建值
+    if (root) await ST.load(root).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
     await reload();
 }
 
@@ -158,17 +166,144 @@ function dollOf(pid, sex)
     return r;
 }
 
+// 擺放、支點以外的欄位唯讀
 function fieldRows(p)
 {
-    return Object.entries(p).filter(([k]) => k !== 'kind').map(([k, v]) =>
+    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
         h('tr', null, h('td', {class: 'k'}, k), h('td', null, typeof v === 'object' ? JSON.stringify(v) : String(v))));
+}
+
+// 擺放數字：女（右欄切到女）的 scale/x/y 改 f，第一次改從基準複製（同試穿的 sexCells）；清空＝刪 key
+function numTable(pid)
+{
+    const p = S.parts[pid], sx = S.sex === 'f' ? 'f' : null, has = isObj(p.f);
+    const cell = (k, ph) => {
+        const inF = sx && SEX_NUMS.includes(k), v = inF ? p.f?.[k] : p[k];
+        const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
+        return h('td', null, h('input', {type: 'number', step: ST.step(k) ?? 'any', class: 'num', value: v ?? '',
+            placeholder: inF ? String(p[k] ?? ph) : ph, dataset: {k: `part.json|${pid}|${inF ? `f.${k}` : k}`},
+            onkeydown: (e) => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') fromPh(e.target);},
+            onmousedown: (e) => {if (e.offsetX > e.target.clientWidth - 20) fromPh(e.target);},
+            onchange: (e) => {
+                const n = parseNum(e.target.value);
+                if (typeof n === 'string') {status(`${k} 要是數字`); return render();}
+                act(edit(pid, (q) => setVals(q, {[k]: n})));
+            }}));
+    };
+    return [
+        h('div', {class: 'title'}, `擺放（改了立刻存檔${sx ? '；scale／x／y 是女版 f' : ''}）`),
+        h('table', {class: 'nums'},
+            h('tr', null, NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（f）` : k))),
+            h('tr', null, NUMS.map(([k, ph]) => cell(k, ph)))),
+        sx && h('div', {class: 'sexnote dim'}, has ? 'scale／x／y 是 f（女版專用）' : '沒有 f，顯示的是共用值；改了就建立 f',
+            has && h('button', {class: 'delsex', onclick: () => act(edit(pid, (q) => {delete q.f;}))}, '刪除女版')),
+    ];
+}
+
+// 女（右欄切到女）的 scale/x/y 寫 f（第一次從基準複製），其他寫基準；undefined＝刪 key
+function setVals(q, vals)
+{
+    for (const [k, n] of Object.entries(vals))
+    {
+        const inF = S.sex === 'f' && SEX_NUMS.includes(k);
+        if (inF && !isObj(q.f)) q.f = Object.fromEntries(SEX_NUMS.map(s => [s, q[s]]).filter(([, v]) => v !== undefined));
+        const t = inF ? q.f : q;
+        if (n === undefined) delete t[k];
+        else t[k] = n;
+    }
+}
+
+// body 的支點（neck／wristF／wristB {x, y, a}）：不分男女寫基準（男女各有自己的身體條目）；還沒有就從 0 起建
+// vals 的值 undefined＝清空：清 x 或 y＝刪掉整個支點（回到 0），清 a 只刪 a（同試穿）
+function setPivot(q, k, vals)
+{
+    const cur = pivotOf(q, k);
+    const o = {...(isObj(q[k]) ? q[k] : {x: cur.x, y: cur.y}), ...vals};
+    if (!o.a) delete o.a;
+    if (o.x === undefined || o.y === undefined) delete q[k];
+    else q[k] = o;
+}
+
+// 右欄合成上拖身體的支點十字：拖的時候只改記憶體跟重畫，放開才寫檔（一筆 undo）
+function pivotDrag(pid)
+{
+    let last = null;
+    return {
+        set: (k, vals) => {
+            last = {k, vals: {...(last?.k === k ? last.vals : {}), ...vals}};
+            setPivot(S.parts[pid], k, vals);
+        },
+        done: () => {const v = last; last = null; if (v) act(edit(pid, (q) => setPivot(q, v.k, v.vals)));},
+    };
+}
+
+// 身體的支點表：同試穿的支點表（x／y 只填一個補上另一個目前值，清空 x 或 y＝刪掉支點）
+function pivotTable(pid)
+{
+    const p = S.parts[pid];
+    const cell = (k, c) => h('td', null, h('input', {type: 'number', step: ST.step(c) ?? 'any', class: 'num',
+        value: p[k]?.[c] ?? '', placeholder: String(pivotOf(p, k)[c]), dataset: {k: `part.json|${pid}|${k}.${c}`},
+        onchange: (e) => {
+            const n = parseNum(e.target.value);
+            if (typeof n === 'string') {status(`${k}.${c} 要是數字`); return render();}
+            act(edit(pid, (q) => setPivot(q, k, {[c]: n})));
+        }}));
+    return [
+        h('div', {class: 'title'}, '支點（男女共用；右欄十字可拖、白點轉 a；掛在上面的部位、裝備數字相對支點）'),
+        h('table', {class: 'nums pivots'},
+            h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))),
+            PIVOTS.map(k => h('tr', null, h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]), h('td', null, k),
+                ['x', 'y', 'a'].map(c => cell(k, c))))),
+    ];
+}
+
+// ---------- 擺放：立刻寫檔＋undo ----------
+// 從磁碟讀最新的再改（別的分頁剛存的不會被蓋掉），記一筆 undo；動作排隊，連打不會互蓋
+let queue = Promise.resolve();
+const enqueue = (fn) => (queue = queue.then(fn));
+
+function edit(pid, fn)
+{
+    return enqueue(async () => {
+        const parts = await PT.readParts(S.assets.json);
+        if (!parts[pid]) {status(`part.json 已經沒有 ${pid}`); return reload();}
+        const before = structuredClone(parts[pid]);
+        fn(parts[pid]);
+        if (str(before) === str(parts[pid])) return render();
+        S.hist.length = S.hi;
+        S.hist.push({pid, before, after: structuredClone(parts[pid])});
+        S.hi = S.hist.length;
+        await save(parts, pid, `${pid} 已存檔`);
+    });
+}
+
+function putBack(e, v, msg)
+{
+    return enqueue(async () => {
+        const parts = await PT.readParts(S.assets.json);
+        if (!parts[e.pid]) {status(`part.json 已經沒有 ${e.pid}`); return reload();}
+        parts[e.pid] = structuredClone(v);
+        await save(parts, e.pid, `${msg} ${e.pid}`);
+    });
+}
+function undo()
+{
+    if (S.hi <= 0) return Promise.resolve();
+    const e = S.hist[--S.hi];
+    return putBack(e, e.before, '已復原');
+}
+function redo()
+{
+    if (S.hi >= S.hist.length) return Promise.resolve();
+    const e = S.hist[S.hi++];
+    return putBack(e, e.after, '已重做');
 }
 
 function renderDetail()
 {
     const pid = S.sel, p = S.parts[pid];
     const users = usersOf(pid), bad = problems(pid), doll = users.find(rid => isDoll(S.roles[rid]));
-    $('view').replaceChildren(
+    $('view').replaceChildren(h('div', {class: 'detail'},
         h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
             h('span', {class: 'grow'}),
             h('span', {class: 'acts'},
@@ -182,16 +317,18 @@ function renderDetail()
         bad.length > 0 && h('ul', {class: 'warns'}, bad.map(w => h('li', null, w))),
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
-        h('div', {class: 'title'}, '欄位（唯讀）'),
+        numTable(pid),
+        p.kind === 'body' && pivotTable(pid),
+        h('div', {class: 'title'}, '其他欄位（唯讀）'),
         h('table', null, fieldRows(p)),
         h('div', {class: 'title'}, `使用者（${users.length}）`),
         users.length ? h('ul', {class: 'users'}, users.map(rid => h('li', null, rid, ' ', h('span', {class: 'dim'}, S.roles[rid].lab ?? ''),
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
-            : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）'));
+            : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）')));
     const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
     $('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, S.sex), {}, S.parts),
+        previewEl(dollOf(pid, S.sex), {}, S.parts, p.kind === 'body' ? {pivots: pivotDrag(pid)} : {}),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 
@@ -203,6 +340,15 @@ function setSex(sx)
 }
 
 function render()
+{
+    const focus = document.activeElement?.dataset?.k;
+    draw();
+    $('btnUndo').disabled = S.hi <= 0;
+    $('btnRedo').disabled = S.hi >= S.hist.length;
+    if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();
+}
+
+function draw()
 {
     const all = Object.keys(S.parts);
     const count = {all: all.length, unused: all.filter(isUnused).length, bad: all.filter(isBad).length};
@@ -243,6 +389,7 @@ async function renamePart(from)
     const users = usersOf(from), to = await PT.askRename(S.assets.json, S.assets.root, from, users);
     if (!to) return;
     await PT.rename(S.assets.json, from, to);
+    for (const e of S.hist) if (e.pid === from) e.pid = to;
     if (users.length)
     {
         const roles = JSON.parse(await FS.readText(S.assets.json, 'role.json'));
@@ -259,6 +406,9 @@ async function deletePart(pid)
 {
     if (!await PT.askDelete(pid, usersOf(pid))) return;
     await PT.remove(S.assets.json, pid);
+    // 刪掉的條目沒辦法 undo 回去：拿掉它的紀錄，hi 扣掉前面被拿掉的
+    S.hi -= S.hist.slice(0, S.hi).filter(e => e.pid === pid).length;
+    S.hist = S.hist.filter(e => e.pid !== pid);
     S.sel = null;
     await reload();
     status(`已刪除 ${pid}`);
@@ -328,6 +478,15 @@ async function askEntry(src)
 
 // ---------- 接線 ----------
 $('btnNew').onclick = () => act(askEntry());
+$('btnUndo').onclick = () => act(undo());
+$('btnRedo').onclick = () => act(redo());
+// 文字欄（搜尋、對話框）留給瀏覽器自己的復原
+addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.target.matches?.('input:not([type=number]), textarea')) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z' && !e.shiftKey) {e.preventDefault(); act(undo());}
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) {e.preventDefault(); act(redo());}
+});
 $('search').oninput = (e) => {S.search = e.target.value; render();};
 SH.onSaved((file) => {
     if (file === 'part.json' || file === 'role.json') act(reload());
@@ -339,4 +498,4 @@ render();
 IC.ready.then(render);
 
 // 給無頭測試用
-window.__pt = {S, setTab, setRoot, reload, render, problems, isBad, isUnused, renamePart, deletePart, changeKind, changeSprite, askEntry, IC};
+window.__pt = {S, setTab, setRoot, reload, render, problems, isBad, isUnused, renamePart, deletePart, changeKind, changeSprite, askEntry, edit, undo, redo, idle: () => queue, IC};

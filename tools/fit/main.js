@@ -10,6 +10,7 @@ import {$, h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
+import * as HD from '../common/handles.js';
 import * as PT from '../common/part.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
@@ -20,9 +21,7 @@ const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['h
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
-// body 上的支點（neck／wristF／wristB）：畫布十字的顏色
-const PIVOT_NAMES = {neck: '脖子', wristF: '前手腕', wristB: '後手腕'};
-const PIVOT_COLOR = {neck: '#ff66cc', wristF: '#66ffcc', wristB: '#ffaa33'};
+const {PIVOT_NAMES, PIVOT_COLOR} = HD;
 // 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
 const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
 const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
@@ -662,20 +661,6 @@ function unwrist(w, pv, lx, ly)
     return {x: pv.x + dx * Math.cos(r) - dy * Math.sin(r), y: pv.y + dx * Math.sin(r) + dy * Math.cos(r)};
 }
 
-// 部件在 shape 本地座標的四個角（p 已加回支點，照 p.a 繞 origin 轉）
-function boxOf(p, f)
-{
-    const s = p.scale ?? 1, a = rad(p.a ?? 0), [c, sn] = [Math.cos(a), Math.sin(a)];
-    const x0 = -(p.ox ?? 0.5) * f.w * s, y0 = -(p.oy ?? 1) * f.h * s, x1 = x0 + f.w * s, y1 = y0 + f.h * s;
-    return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([u, v]) => ({x: (p.x ?? 0) + u * c - v * sn, y: (p.y ?? 0) + u * sn + v * c}));
-}
-// 選中部件的旋轉把手：圖的上緣中間再往上 gap（跟支點十字的把手錯開）
-function partHandle(p, f, gap)
-{
-    const [tl, tr] = boxOf(p, f), a = rad(p.a ?? 0), top = {x: (tl.x + tr.x) / 2, y: (tl.y + tr.y) / 2};
-    return {top, x: top.x + Math.sin(a) * gap, y: top.y - Math.cos(a) * gap};
-}
-
 function inSprite(p, f, pose, lx, ly)
 {
     const s = p.scale ?? 1, r = -rad(pose.angle), [dx, dy] = [lx - pose.x, ly - pose.y];
@@ -793,57 +778,19 @@ async function drawPreview()
     {
         // 擺放分頁：body 的三個支點畫成十字，可以拖；往上的白點是旋轉把手；滑過（或拖著）的那個變粗
         const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
-        const hds = Object.fromEntries(PIVOTS.map(k => [k, handleOf({x: pts[k].x, y: pts[k].y, angle: pts[k].a})]));
+        const hds = Object.fromEntries(PIVOTS.map(k => [k, HD.crossHandle(pts[k])]));
         const live = drag?.k ?? hover;
         if (S.doc['part.json'].data[bodyId()]) local(() => {
-            // 十字照靜止角度 a 轉，往上那條長一點看得出方向
-            for (const k of PIVOTS)
-            {
-                const {x, y, a} = pts[k], on = k === live, locked = !dragKeys().includes(k);
-                g.save();
-                g.globalAlpha = locked ? 0.3 : 1;
-                g.lineWidth = (on ? 3 : 1.5) * px;
-                g.strokeStyle = PIVOT_COLOR[k];
-                if (!locked)
-                {
-                    g.beginPath(); g.moveTo(x, y); g.lineTo(hds[k].x, hds[k].y);
-                    g.save(); g.lineWidth = (on ? 1.5 : 0.75) * px; g.setLineDash([2 * px, 2 * px]); g.stroke(); g.restore();
-                    g.fillStyle = '#fff';
-                    g.beginPath(); g.arc(hds[k].x, hds[k].y, (on ? 4 : 2.5) * px, 0, Math.PI * 2); g.fill();
-                }
-                g.translate(x, y);
-                g.rotate(rad(a));
-                g.beginPath();
-                g.moveTo(-4, 0); g.lineTo(4, 0);
-                g.moveTo(0, -7); g.lineTo(0, 4);
-                g.stroke();
-                g.restore();
-            }
+            for (const k of PIVOTS) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
         // 部件：滑過的畫虛線框、選中的畫實線框＋旋轉把手（拖著或滑過把手變粗）
         const its = parts.map((pt, i) => ({...pt, f: frames[i]?.f})).filter(it => it.f && it.src?.id);
         const sel = its.find(it => it.k === S.pick && it.main) ?? its.find(it => it.k === S.pick);
-        const ph = sel && partHandle(sel.p, sel.f, 10 * px);
+        const ph = sel && HD.partHandle(sel.p, sel.f, 10 * px);
         const liveK = drag?.pk ?? hoverPart;
         local(() => {
-            const outline = (it, width, dash) => {
-                const c = boxOf(it.p, it.f);
-                g.lineWidth = width * px;
-                g.setLineDash(dash.map(d => d * px));
-                g.beginPath(); c.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.stroke();
-                g.setLineDash([]);
-            };
-            g.strokeStyle = '#fff';
-            for (const it of its) if (it.k === liveK && it.k !== S.pick) outline(it, 1, [2, 2]);
-            for (const it of its) if (it.k === S.pick) outline(it, liveK === S.pick ? 2.5 : 1.5, []);
-            if (ph)
-            {
-                const on = liveK === ROT;
-                g.lineWidth = (on ? 1.5 : 1) * px;
-                g.beginPath(); g.moveTo(ph.top.x, ph.top.y); g.lineTo(ph.x, ph.y); g.stroke();
-                g.fillStyle = '#fff';
-                g.beginPath(); g.arc(ph.x, ph.y, (on ? 4 : 3) * px, 0, Math.PI * 2); g.fill();
-            }
+            if (liveK !== S.pick) HD.drawSel(g, its.filter(it => it.k === liveK), null, px, {dash: true});
+            HD.drawSel(g, its.filter(it => it.k === S.pick), ph, px, {thick: liveK === S.pick, rotOn: liveK === ROT});
         });
         geo = {vc, K, flip, pts, hds, its, sel, ph};
     }
@@ -911,13 +858,6 @@ function pivotHit(l)
     return m ? {k: m, kind: 'node'} : null;
 }
 
-// 旋轉游標：上半圓弧兩端各一個實心箭頭（左右轉），白色加黑邊在哪種底色都看得到；熱點在中間
-const ROT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-linejoin="round">`
-    + [['#000', 4, '#000'], ['#fff', 2, '#fff']].map(([c, w, f]) => `<path d="M5 13 A7 7 0 0 1 19 13" fill="none" stroke="${c}" stroke-width="${w}"/>`
-        + `<path d="M1.5 12.5 H8.5 L5 18 Z M15.5 12.5 H22.5 L19 18 Z" fill="${f}" stroke="${c}" stroke-width="${w - 1.5}"/>`).join('')
-    + `</svg>`;
-const ROT_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(ROT_SVG)}") 8 8, grab`;
-
 // 擺放分頁的部件／裝備：點選（最上層那張）、拖＝移 x/y、拖選中的白點＝轉 a；十字優先
 const ROT = '@rot';         // hoverPart／drag.pk 指選中部件的旋轉把手
 function partHit(l)
@@ -947,7 +887,7 @@ let hover = null, hoverPart = null;
 function onHoverPivot(e)
 {
     const l = geo?.hds ? toLocal(e) : null, hit = l && pivotHit(l), ph = l && !hit ? partHit(l) : null;
-    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : ROT_CURSOR) : ph ? (ph.kind === 'rot' ? ROT_CURSOR : 'move') : '';
+    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : HD.ROT_CURSOR) : ph ? (ph.kind === 'rot' ? HD.ROT_CURSOR : 'move') : '';
     const h1 = hit?.k ?? null, h2 = ph ? (ph.kind === 'rot' ? ROT : ph.it.k) : null;
     if (h1 === hover && h2 === hoverPart) return;
     [hover, hoverPart] = [h1, h2];
