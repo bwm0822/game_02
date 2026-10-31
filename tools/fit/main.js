@@ -345,7 +345,6 @@ function equipTable(id)
         h('table', {class: 'fit'}, sexHead([]), h('tr', null, sexCells('item.json', id, ['equip']))),
         sx && h('div', {class: 'sexnote dim'}, has ? `scale／x／y 是 equip.${sx}（這個性別專用）` : `沒有 equip.${sx}，顯示的是共用值；改了就建立 equip.${sx}`,
             has && h('button', {class: 'delsex', onclick: () => commit(() => {delete items()[id].equip[sx];})}, '刪除女版')),
-        items()[id].cat === 'CAT_WEAPON' && wristTable(id),
     ];
 }
 
@@ -410,10 +409,15 @@ function fitView(r, slots)
 
 // body 條目上的支點：不分男女都寫基準（男女各有自己的身體條目，支點跟著身體走），x／y 只填一個時另一個補上目前值
 // 掛在支點上的部位數字相對支點：移支點整組跟著走
+// 武器格有武器時多三欄＝武器的手腕位移（equip.wristF／wristB，疊在 body 支點上、男女共用，清空三格＝刪掉）
 function pivotTable()
 {
     const pid = bodyId(), p = parts()[pid];
     if (!p) return null;
+    const wid = heldEquip() && S.slots.CAT_WEAPON;
+    const wcells = (k) => !wid ? null : WRISTS.includes(k)
+        ? ['x', 'y', 'a'].map(c => h('td', {class: 'wrist'}, numInput('item.json', wid, ['equip', k, c], '0')))
+        : ['x', 'y', 'a'].map(() => h('td'));
     const row = (k) => {
         const base = [k], cur = bodyPivot(k);
         // 清空 x／y＝刪掉整個支點（回到基準／0）；清空 a 只刪 a
@@ -425,27 +429,16 @@ function pivotTable()
         return h('tr', null,
             h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]),
             h('td', null, k),
-            ['x', 'y', 'a'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill(c)}))));
+            ['x', 'y', 'a'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill(c)}))),
+            wcells(k));
     };
     const dragTab = (w, text) => h('button', {class: 'tab' + (!!S.dragW === w ? ' sel' : ''), dataset: {drag: w ? 'weapon' : 'body'},
         disabled: w && !heldEquip(), title: w && !heldEquip() ? '武器格沒有東西' : '', onclick: () => {S.dragW = w; render();}}, text);
     return [
-        h('div', {class: 'title'}, `支點（body ${pid}，男女共用；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`),
+        h('div', {class: 'title'}, `支點（body ${pid}，男女共用；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`
+            + (wid ? `；武器欄＝${wid} 的手腕位移 equip.wristF／wristB，疊在 body 支點上、男女共用` : '')),
         h('div', {class: 'dragmode'}, h('span', {class: 'dim'}, '拖十字改：'), dragTab(false, '身體'), dragTab(true, '武器')),
-        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), PIVOTS.map(row)),
-    ];
-}
-
-// 武器的手腕位移：疊在 body 支點上（x/y/a 相加），男女共用；清空三格＝刪掉
-function wristTable(id)
-{
-    const row = (k) => h('tr', null,
-        h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]),
-        h('td', null, k),
-        ['x', 'y', 'a'].map(c => h('td', null, numInput('item.json', id, ['equip', k, c], '0'))));
-    return [
-        h('div', {class: 'title'}, '武器的手腕位移（equip.wristF／wristB，疊在 body 支點上、男女共用；拿著它時前後手、手套跟著移）'),
-        h('table', {class: 'fit wrists'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), WRISTS.map(row)),
+        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a', ...(wid ? ['武器 x', '武器 y', '武器 a'] : [])].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
 }
 

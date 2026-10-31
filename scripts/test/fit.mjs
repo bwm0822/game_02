@@ -236,7 +236,7 @@ run('fit', async t => {
         const sx0 = swd().x;
         S.cur = 'CAT_WEAPON'; F.render();
         fire('item.json|sword-1|equip.wristF.x', '5');
-        out.wristOfs = [JSON.stringify(swEq().wristF), Math.round(swd().x - sx0), document.querySelectorAll('#view table.wrists tr').length - 1];
+        out.wristOfs = [JSON.stringify(swEq().wristF), Math.round(swd().x - sx0), document.querySelectorAll('#view table.pivots tr:has(td.wrist)').length];
         document.querySelector('#view .dragmode [data-drag=weapon]').click();
         await F.drawPreview();
         {
