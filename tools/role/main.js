@@ -9,6 +9,7 @@ import {fieldInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as JE from '../common/jsonedit.js';
+import * as PT from '../common/part.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
@@ -198,7 +199,7 @@ function fieldRow(id, r, k)
 
 // ---------- 表單：部位（part.json 的 id） ----------
 // pool 選圖器照 kind 列條目：點一下選、「無」清掉；右鍵條目改名（連帶改 role.json 的引用、存檔）／刪除（有角色在用就擋）
-const partUsers = (pid) => Object.keys(S.data).filter(rid => ROLE_PARTS.some(k => S.data[rid][k] === pid));
+const partUsers = (pid) => PT.usersOf(S.data, pid);
 
 function partField(id, k, v)
 {
@@ -240,46 +241,29 @@ async function partMenu(pid)
     if (r === 'delete') await deletePart(pid);
 }
 
-const readParts = async () => JSON.parse(await FS.readText(S.assets.json, 'part.json'));
-async function writeParts(parts)
-{
-    await FS.writeFile(S.assets.json, 'part.json', new Blob([JSON.stringify(parts, null, 2)]));
-    S.ext.parts = parts;
-    SH.notifySaved('part.json');
-}
-
 // part.json 立刻寫；role.json 的引用一起改（一步 undo）然後存檔，兩邊才不會對不上
 async function renamePart(from)
 {
-    const to = h('input', {size: 24, value: from});
-    const p = ask(`改名 ${from}`, [h('div', null, '新的 id（sprite 不變）：'), to], [['ok', '下一步'], ['cancel', '取消']]);
-    to.select();
-    if (await p !== 'ok') return;
-    const id = to.value.trim(), parts = await readParts(), users = partUsers(from);
-    if (id === from) return;
-    if (!/^[\w-]+$/.test(id)) return status('id 只能用英數字、底線、減號');
-    if (parts[id]) return status(`part.json 已經有 ${id}`);
-    if (!parts[from]) return status(`part.json 已經沒有 ${from}`);
-    if (await ask(`改名 ${from} → ${id}`, [h('div', null, `role.json 會一起改並存檔：${users.join('、') || '（沒有角色在用）'}`)], [['ok', '改名'], ['cancel', '取消']]) !== 'ok') return;
-    await writeParts(Object.fromEntries(Object.entries(parts).map(([k, v]) => [k === from ? id : k, v])));
+    const users = partUsers(from), to = await PT.askRename(S.assets.json, S.assets.root, from, users);
+    if (!to) return;
+    S.ext.parts = await PT.rename(S.assets.json, from, to);
     if (users.length)
     {
-        commit(() => {for (const rid of users) for (const k of ROLE_PARTS) if (S.data[rid][k] === from) S.data[rid][k] = id;});
+        commit(() => PT.renameRefs(S.data, from, to));
         await D.save();
     }
-    status(`已改名 ${from} → ${id}${users.length ? `（${users.join('、')}）` : ''}`);
+    status(`已改名 ${from} → ${to}${users.length ? `（${users.join('、')}）` : ''}`);
 }
 
 async function deletePart(pid)
 {
-    const users = partUsers(pid);
-    if (users.length) return void await ask(`不能刪 ${pid}`, h('div', null, `還有角色在用：${users.join('、')}`), [['ok', '知道了']]);
-    if (await ask(`刪除 ${pid}`, h('div', null, 'PNG 不會刪，可以到「圖片」分頁搬到 .tbd'), [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
-    const parts = await readParts();
-    delete parts[pid];
-    await writeParts(parts);
+    if (!await PT.askDelete(pid, partUsers(pid))) return;
+    S.ext.parts = await PT.remove(S.assets.json, pid);
     status(`已刪除 ${pid}`);
 }
+
+// 部位分頁改名會直接寫 role.json：還沒存的話先在記憶體跟著改，存檔合併時才不會被舊 id 蓋回去（沒改過的會因為存檔通知重讀）
+SH.onPartRenamed((from, to) => {if (D.isDirty()) commit(() => PT.renameRefs(S.data, from, to));});
 
 // ---------- 由頭髮產生頭像 ----------
 const PORTRAIT_DIR = ['textures', 'roles', 'portraits'];

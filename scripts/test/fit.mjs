@@ -105,7 +105,7 @@ run('fit', async t => {
         const pick = (k, v) => {const s = document.querySelector(`select.part[data-k="role.json|guard-1|${k}"]`); s.value = v; s.dispatchEvent(new Event('change'));};
         const g1 = () => S.doc['role.json'].data['guard-1'];
         const n0 = await drawn();
-        out.partSel = [document.querySelectorAll('#view select.part').length, [...document.querySelector('select.part[data-k$="|head"]').options].every(o => !o.value || o.value.startsWith('head-'))];
+        out.partSel = [document.querySelectorAll('#view select.part').length, [...document.querySelector('select.part[data-k$="|head"]').options].every(o => !o.value || S.doc['part.json'].data[o.value]?.kind === 'head')];
         pick('head', 'head-wick');
         out.partSel.push(g1().head, await drawn() === n0 + 1);
         pick('head', '');

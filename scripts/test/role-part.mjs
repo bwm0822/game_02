@@ -77,9 +77,9 @@ run('role-part', async t => {
         out.portrait = [bmp.width, bmp.height, c.getContext('2d').getImageData(50, 50, 1, 1).data[3] > 0, S.data.karen.icon];        S.data.karen.icon = 'head-karen'; re.render();
         out.overwrite = await run(re.genPortrait('karen'), () => 'cancel');
         out.kept = S.data.karen.icon;
-        sel('trump');
+        sel('musk');
         const btn = [...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭髮產生');
-        out.trumpBtn = btn?.disabled;
+        out.noHeadBtn = btn?.disabled;
         return out;
     });
 
@@ -92,5 +92,5 @@ run('role-part', async t => {
     t.eq('有角色在用不能刪、沒人用的刪掉', JSON.stringify([r.delUsed, r.delUnused, r.deleted]), JSON.stringify([['不能刪 hair-mary'], ['刪除 hair-unused'], [true, false]]));
     t.eq('由頭髮產生：100×100、有畫東西、icon 改成 portrait-<id>', JSON.stringify(r.portrait), JSON.stringify([100, 100, true, 'portrait-karen']));
     t.eq('icon 不是它、檔案已經有了：先問、取消不動', JSON.stringify([r.overwrite, r.kept]), JSON.stringify([['覆蓋 portrait-karen.png'], 'head-karen']));
-    t.eq('沒有頭／頭髮的角色按鈕停用', r.trumpBtn, true);
+    t.eq('沒有頭／頭髮的角色按鈕停用', r.noHeadBtn, true);
 });

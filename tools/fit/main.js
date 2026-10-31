@@ -9,6 +9,7 @@ import {$, h, ask, status} from '../common/dom.js';
 import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
+import * as PT from '../common/part.js';
 import {DEPTH, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, hiddenParts} from '../../src/core/equip.js';
@@ -919,6 +920,22 @@ addEventListener('keydown', (e) => {
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
 });
 SH.onSaved((file) => onSaved(file).catch(e => status(e.message)));
+// 部位分頁改名：還沒存的檔先在記憶體跟著改（沒改過的會因為存檔通知重讀）
+SH.onPartRenamed((from, to) => {
+    const pd = dirtyOf('part.json'), rd = dirtyOf('role.json');
+    if (pd || rd) commit(() => {
+        if (pd) S.doc['part.json'].data = PT.renameKey(parts(), from, to);
+        if (rd) PT.renameRefs(roles(), from, to);
+    });
+});
+// 部位分頁的「↗ 到試穿調」：path = [角色 id, 部位 kind]，選角色並把游標放到那個部位的數字欄；還沒讀檔就先記在 S.rid（setRoot 找得到會留著）
+SH.onGoto(([rid, k]) => {
+    S.mode = 'fit';
+    if (!S.json) {S.rid = rid; return;}
+    select(rid);
+    const pid = role()?.[k];
+    if (pid) document.querySelector(`[data-k^="${CSS.escape(`part.json|${pid}|`)}"]`)?.focus();
+});
 ST.onChange(render);
 SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
