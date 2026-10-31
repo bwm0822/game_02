@@ -1891,7 +1891,7 @@
       "sprite": "sword-bronze",
       "scale": 0.25,
       "oy": 0.85,
-      "a": 60
+      "a": 90
     },
     "icon": "sword-bronze-icon",
     "drop": {
@@ -1920,7 +1920,7 @@
     "equip": {
       "sprite": "sword-iron",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.85
     },
     "icon": "sword-iron-icon",
@@ -1950,7 +1950,7 @@
     "equip": {
       "sprite": "sword-steel",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.85
     },
     "icon": "sword-steel-icon",
@@ -1980,7 +1980,7 @@
     "equip": {
       "sprite": "sword-finesteel",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.85
     },
     "icon": "sword-finesteel-icon",
@@ -2010,7 +2010,7 @@
     "equip": {
       "sprite": "sword-mithril",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.85
     },
     "icon": "sword-mithril-icon",
@@ -2041,7 +2041,7 @@
     "equip": {
       "sprite": "axe-bronze",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "ox": 0.3,
       "oy": 0.85
     },
@@ -2084,7 +2084,7 @@
     "equip": {
       "sprite": "axe-iron",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "ox": 0.3,
       "oy": 0.85
     },
@@ -2127,7 +2127,7 @@
     "equip": {
       "sprite": "axe-steel",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "ox": 0.3,
       "oy": 0.85
     },
@@ -2170,7 +2170,7 @@
     "equip": {
       "sprite": "axe-finesteel",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "ox": 0.5,
       "oy": 0.85
     },
@@ -2213,7 +2213,7 @@
     "equip": {
       "sprite": "axe-mithril",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "ox": 0.5,
       "oy": 0.85
     },
@@ -2245,7 +2245,7 @@
     "equip": {
       "sprite": "hammer-bronze",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.85
     },
     "icon": "hammer-bronze-icon",
@@ -2416,7 +2416,7 @@
     "equip": {
       "sprite": "dagger-bronze",
       "scale": 0.25,
-      "a": 115,
+      "a": 90,
       "oy": 0.8
     },
     "icon": "dagger-bronze-icon",
@@ -2587,11 +2587,16 @@
     "equip": {
       "sprite": "bow-short",
       "scale": 0.25,
-      "x": 13,
-      "y": -7,
-      "a": 60,
+      "x": 0,
+      "y": 0,
+      "a": 90,
       "ox": 0.7,
-      "oy": 0.5
+      "oy": 0.5,
+      "wristF": {
+        "x": 12,
+        "a": 0,
+        "y": 0
+      }
     },
     "icon": "bow-short-icon",
     "drop": {
@@ -2688,7 +2693,7 @@
     "equip": {
       "sprite": "staff-oak",
       "scale": 0.25,
-      "a": 60,
+      "a": 90,
       "oy": 0.75
     },
     "icon": "staff-oak-icon",
@@ -2924,7 +2929,7 @@
       "sprite": "sword-bronze",
       "scale": 0.25,
       "oy": 0.85,
-      "a": 60
+      "a": 90
     },
     "icon": "sword-bronze-icon",
     "drop": {

@@ -45,7 +45,9 @@
       "con": 10,
       "int": 10
     },
-    "hair": "hair-wick"
+    "hair": "hair-wick",
+    "handF": "handF",
+    "handB": "handB"
   },
   "mary": {
     "kind": "player",
@@ -88,7 +90,9 @@
       }
     },
     "head": "head-mary",
-    "hair": "hair-mary"
+    "hair": "hair-mary",
+    "handF": "handF",
+    "handB": "handB"
   },
   "trump": {
     "kind": "npc",
