@@ -307,6 +307,32 @@ run('fit', async t => {
     await t.page.keyboard.press('Tab');
     const stepPh = await t.page.evaluate(() => window.__fit.S.doc['item.json'].data.helmet_01.equip.oy);
 
+    // 中間欄把手：拖寬記住、預覽吃剩下（夾在 min-width）、中間最少 200、雙擊恢復自動
+    const mid = await t.page.evaluate(() => {
+        const view = document.getElementById('view'), pv = document.getElementById('pv'), grip = document.querySelector('.mid-grip');
+        const W = (el) => Math.round(el.getBoundingClientRect().width);
+        const drag = (dx) => {
+            const x = grip.getBoundingClientRect().left;
+            for (const [type, cx] of [['pointerdown', x], ['pointermove', x + dx], ['pointerup', x + dx]])
+                grip.dispatchEvent(new PointerEvent(type, {clientX: cx, button: 0, pointerId: 1, bubbles: true}));
+        };
+        const out = {};
+        const v0 = W(view);
+        drag(-50);
+        out.drag = [W(view) === v0 - 50, localStorage.getItem('tools.mid.fit') === String(v0 - 50), pv.getBoundingClientRect().right === document.querySelector('main').getBoundingClientRect().right];
+        drag(5000);
+        out.max = Math.round(W(pv)) === Math.round(parseFloat(getComputedStyle(pv).minWidth));
+        drag(-5000);
+        out.min = W(view);
+        grip.dispatchEvent(new MouseEvent('dblclick', {bubbles: true}));
+        out.reset = [view.style.width, pv.style.flex, localStorage.getItem('tools.mid.fit')];
+        return out;
+    });
+
+    t.eq('中間欄拖窄：寬度記住、預覽吃剩下', JSON.stringify(mid.drag), JSON.stringify([true, true, true]));
+    t.check('中間欄拖到底：預覽留 min-width', mid.max);
+    t.eq('中間欄最少 200', mid.min, 200);
+    t.eq('雙擊恢復自動、清掉記憶', JSON.stringify(mid.reset), JSON.stringify(['', '', null]));
     t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
     t.eq('虛線／錨點／b／g／z 預設不勾', JSON.stringify(r.opts), JSON.stringify([false, false, false, false, false]));
