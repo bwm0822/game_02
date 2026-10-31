@@ -186,12 +186,7 @@ function numTable(pid)
             onchange: (e) => {
                 const n = parseNum(e.target.value);
                 if (typeof n === 'string') {status(`${k} 要是數字`); return render();}
-                act(edit(pid, (q) => {
-                    if (!inF) return n === undefined ? delete q[k] : (q[k] = n);
-                    if (!isObj(q.f)) q.f = Object.fromEntries(SEX_NUMS.map(s => [s, q[s]]).filter(([, v]) => v !== undefined));
-                    if (n === undefined) delete q.f[k];
-                    else q.f[k] = n;
-                }));
+                act(edit(pid, (q) => setVals(q, {[k]: n})));
             }}));
     };
     return [
@@ -202,6 +197,30 @@ function numTable(pid)
         sx && h('div', {class: 'sexnote dim'}, has ? 'scale／x／y 是 f（女版專用）' : '沒有 f，顯示的是共用值；改了就建立 f',
             has && h('button', {class: 'delsex', onclick: () => act(edit(pid, (q) => {delete q.f;}))}, '刪除女版')),
     ];
+}
+
+// 女（右欄切到女）的 scale/x/y 寫 f（第一次從基準複製），其他寫基準；undefined＝刪 key
+function setVals(q, vals)
+{
+    for (const [k, n] of Object.entries(vals))
+    {
+        const inF = S.sex === 'f' && SEX_NUMS.includes(k);
+        if (inF && !isObj(q.f)) q.f = Object.fromEntries(SEX_NUMS.map(s => [s, q[s]]).filter(([, v]) => v !== undefined));
+        const t = inF ? q.f : q;
+        if (n === undefined) delete t[k];
+        else t[k] = n;
+    }
+}
+
+// 右欄合成上拖這個條目：拖的時候只改記憶體跟重畫，放開才寫檔（一筆 undo）
+function dragEdit(pid)
+{
+    let last = {};
+    return {
+        k: S.parts[pid].kind,
+        set: (vals) => {Object.assign(last, vals); setVals(S.parts[pid], vals);},
+        done: () => {const v = last; last = {}; if (Object.keys(v).length) act(edit(pid, (q) => setVals(q, v)));},
+    };
 }
 
 // ---------- 擺放：立刻寫檔＋undo ----------
@@ -274,7 +293,7 @@ function renderDetail()
     const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
     $('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, S.sex), {}, S.parts),
+        previewEl(dollOf(pid, S.sex), {}, S.parts, {edit: dragEdit(pid)}),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 

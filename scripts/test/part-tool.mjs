@@ -146,6 +146,48 @@ run('part-tool', async t => {
         out.nums.push('f' in await hu(), document.querySelector('#view .sexnote').textContent.startsWith('沒有 f'));
         sex('m');
         await sleep(300);
+
+        // 右欄合成拖這個條目：滑過變粗、拖改 x/y（相對支點）、放開才寫一次、白點轉 a、undo；女拖寫 f
+        const drag = async (fn) => {
+            const cv = document.querySelector('#right .pv canvas'), st = cv.st, g = st.geo, rc = cv.getBoundingClientRect();
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + (g.flip ? -x : x)) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
+            await fn({cv, st, g, at, ptr});
+            await sleep(50); await pt.idle(); await sleep(200);
+        };
+        const pv0 = await hu(), h0 = S.hist.length;
+        let pvA;
+        await drag(async ({cv, st, g, at, ptr}) => {
+            const p = g.main.p, f = g.main.f, s = p.scale ?? 1;
+            const c = {x: (p.x ?? 0) + (0.5 - (p.ox ?? 0.5)) * f.w * s, y: (p.y ?? 0) + (0.5 - (p.oy ?? 1)) * f.h * s};
+            ptr('pointermove', at(c.x, c.y));
+            out.pvDrag = [st.live, cv.style.cursor];
+            pvA = g.main.pv.a ?? 0;
+            ptr('pointerdown', at(c.x, c.y)); ptr('pointermove', at(c.x + 2, c.y + 3));
+            out.pvDrag.push(S.hist.length === h0);
+            ptr('pointerup', at(c.x + 2, c.y + 3));
+        });
+        {
+            const q = await hu(), r = -pvA * Math.PI / 180, ex = (pv0.x ?? 0) + 2 * Math.cos(r) - 3 * Math.sin(r), ey = (pv0.y ?? 0) + 2 * Math.sin(r) + 3 * Math.cos(r);
+            out.pvDrag.push(Math.abs(q.x - ex) < 0.11 && Math.abs(q.y - ey) < 0.11, S.hist.length - h0);
+        }
+        await drag(async ({g, at, ptr}) => {
+            const c = {x: g.main.p.x ?? 0, y: g.main.p.y ?? 0}, ph = g.ph, r = Math.hypot(ph.x - c.x, ph.y - c.y), a = Math.atan2(ph.y - c.y, ph.x - c.x) + Math.PI / 2;
+            ptr('pointerdown', at(ph.x, ph.y)); ptr('pointermove', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r)); ptr('pointerup', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r));
+        });
+        out.pvDrag.push(Math.round(((await hu()).a ?? 0) - (pv0.a ?? 0)));
+        await pt.undo(); await pt.undo(); await sleep(200);
+        out.pvDrag.push(JSON.stringify(await hu()) === JSON.stringify(pv0));
+        sex('f');
+        await sleep(300);
+        await drag(async ({g, at, ptr}) => {
+            const c = {x: g.main.p.x ?? 0, y: (g.main.p.y ?? 0) - 1};
+            ptr('pointerdown', at(c.x, c.y)); ptr('pointermove', at(c.x, c.y + 4)); ptr('pointerup', at(c.x, c.y + 4));
+        });
+        out.pvDrag.push(typeof (await hu()).f?.y === 'number', (await hu()).y === pv0.y);
+        await pt.undo(); await sleep(200);
+        sex('m');
+        await sleep(300);
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
         // ×6：男女在最下面，選項列跟男女留在右欄裡（畫布那層自己捲）
         const zoom = document.querySelector('#right .pv select');
@@ -240,6 +282,8 @@ run('part-tool', async t => {
     t.eq('換一筆保留女：有 f 用女版、到試穿停用、擺放以外唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite']));
     t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
         JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
+    t.eq('右欄合成拖條目：hover、拖時不寫、放開寫一次（相對支點）、白點轉 90、undo、女寫 f 不動基準', JSON.stringify(r.pvDrag),
+        JSON.stringify(['move', 'move', true, true, 1, 90, true, true, true]));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
     t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
