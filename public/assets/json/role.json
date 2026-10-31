@@ -163,8 +163,8 @@
     ],
     "head": "trump-head",
     "hair": "trump-hair",
-    "cloth": "outfit-innkeeper-armor",
-    "shoes": "outfit-innkeeper-boots"
+    "cloth": "outfit-innkeeper-cloth",
+    "shoes": "outfit-innkeeper-shoes"
   },
   "melanie": {
     "kind": "npc",
