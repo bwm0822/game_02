@@ -4071,8 +4071,8 @@ async function commitItems(rows, bake, all = false)
 // 有男女兩組數字的自動零件（服飾）一定存男版（女模式先照男版重擺，存完復原），勾「女版」另寫 f、沒勾刪 f；
 // 其他層（頭像、手動標的）只有一組，存成基準、f 不動。存過的 id 記在 L.poolId，下次預設用它
 
-const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hand: '手'};
-const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hand: '手'};
+const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
+const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', handF: '前', handB: '後'};
 const POOL_DIR = 'roles/parts';
 const poolP = (L) => L.pool && L.auto ? AUTO_PARTS.find(P => P.key === L.auto.key) : null;
 const poolSexed = (L) => AUTO_SEXED.includes(poolP(L)?.kind);

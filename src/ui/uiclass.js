@@ -1,5 +1,5 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI, CAT2ICON, PART_DEPTH, ROLE_PART} from '../core/setting.js'
+import {GM, UI, CAT2ICON, ROLE_PART, flatDepth} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
@@ -773,9 +773,10 @@ export class Doll extends Pic
         this.pin(this._root);
     }
 
-    _addPart(part, depth)
+    _addPart(part, type)
     {
         const sps = [];
+        const depth = flatDepth(type);
         const add = (sprite, depth)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
@@ -788,9 +789,9 @@ export class Doll extends Pic
             this._shape.add(sp);
             sps.push(sp);
         };
-        add(part.sprite, depth);
-        add(part.ext, PART_DEPTH[GM.PART.EXT]);
-        add(part.back, PART_DEPTH[GM.PART.BACK]);
+        add(part.sprite, depth.sprite);
+        add(part.ext, depth.ext);
+        add(part.back, depth.back);
         return sps;
     }
 
@@ -820,12 +821,12 @@ export class Doll extends Pic
         for(const k of ROLE_PARTS)
         {
             const p = DB.rolePart(meta, k);
-            parts[k] = p ? this._addPart(p, PART_DEPTH[ROLE_PART[k]]) : [];
+            parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
         }
         this._fit();
 
         const dats = (owner?.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq)).filter(dat=>dat?.equip);
-        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex), PART_DEPTH[dat.cat]);});
+        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex), dat.cat);});
         const hide = hiddenParts(dats, GM.CAT);
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 

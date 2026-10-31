@@ -2,12 +2,13 @@
 import {run} from './harness.mjs'
 import {hiddenParts} from '../../src/core/equip.js'
 
-const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS'};
+const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'};
 
 run('部位 pool', async t => {
     const hide = (...its) => [...hiddenParts(its, CAT)].sort().join();
     t.eq('護甲藏衣服', hide({cat: 'CAT_CHESTPLATE', equip: {}}), 'cloth');
     t.eq('靴子藏鞋子', hide({cat: 'CAT_BOOTS', equip: {}}), 'shoes');
+    t.eq('手套藏兩隻手', hide({cat: 'CAT_GLOVES', equip: {}}), 'handB,handF');
     t.eq('hideHair 藏頭髮、沒 equip 不算', hide({cat: 'CAT_HELMET', equip: {hideHair: true}}, {cat: 'CAT_CHESTPLATE'}, undefined), 'hair');
 
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
@@ -18,15 +19,31 @@ run('部位 pool', async t => {
         return [d.DB.rolePart({cloth:'t-f'}, 'cloth').y, d.DB.rolePart({cloth:'t-f', sex:'f'}, 'cloth').y].join();
     }), '1,9');
 
-    // 瑪莉穿上測試用的衣服（借 body-man 的圖）
-    await t.eval(d => {d.DB.role('mary').cloth = 't-f';});
+    // 瑪莉穿上測試用的衣服（借 body-man 的圖）、前後手（借 hand-man 的圖）、脖子／前手腕支點（女版 f 蓋過基準）
+    await t.eval(d => {
+        const m = d.DB.role('mary');
+        d.DB._partDB['t-hf'] = {kind:'handF', sprite:'hand-man', scale:0.25, x:3, y:30};
+        d.DB._partDB['t-hb'] = {kind:'handB', sprite:'hand-man', scale:0.25, y:31};
+        d.DB._partDB[m.body] = {...d.DB._partDB[m.body], neck:{x:9, y:9}, wristF:{x:5, y:20}, f:{...d.DB._partDB[m.body].f, neck:{x:1, y:-40}}};
+        Object.assign(m, {cloth:'t-f', handF:'t-hf', handB:'t-hb'});
+    });
     await t.newGame('mary');
-    // 角色 view 畫出的 sprite：RoleView 的 _shape
+    // 角色 view 畫出的 sprite：RoleView 的 _shape，支點節點裡的另外記節點名
     const keys = await t.eval(d => {
         const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
-        return v ? v._shape.getAll().map(sp => [sp.texture.key, sp.depth, sp.visible]) : null;
+        const node = (c) => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? '';
+        return v ? v.sprites.map(sp => [sp.texture.key, sp.depth, sp.visible, node(sp.parentContainer), sp.x + sp.parentContainer.x, sp.y + sp.parentContainer.y, sp.y]) : null;
     });
-    const has = (k) => keys?.find(([key]) => key === k);
-    t.check('瑪莉畫出身體／頭／頭髮／手', ['body-woman', 'head-mary', 'hair-mary', 'hand-man'].every(has), JSON.stringify(keys));
+    const has = (k, n) => keys?.find(([key, , , node]) => key === k && (n === undefined || node === n));
+    t.check('瑪莉畫出身體／頭／頭髮／前後手', ['body-woman', 'head-mary', 'hair-mary'].every(k => has(k)) && has('hand-man', 'wristF') && has('hand-man', 'wristB'), JSON.stringify(keys));
     t.check('衣服深度 0.7（靴子之上）、沒穿護甲時顯示', has('body-man')?.[1] === 0.7 && has('body-man')?.[2] === true, JSON.stringify(has('body-man')));
+    t.eq('頭、頭髮掛 neck、前手掛 wristF、後手掛 wristB', [has('head-mary')?.[3], has('hair-mary')?.[3]].join(), 'neck,neck');
+    const head = await t.eval(d => d.DB.rolePart(d.DB.role('mary'), 'head').y);
+    t.eq('女角支點用 f、子部位扣支點後畫面位置不變', JSON.stringify([has('head-mary')?.[5], has('head-mary')?.[6], has('hand-man', 'wristF')?.[4], has('hand-man', 'wristF')?.[5]]),
+        JSON.stringify([head, head + 40, 3, 30]));
+    t.eq('節點整組照 NODE_DEPTH 排：wristB 在 body 前面（底層）', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        return v._shape.getAll().map(c => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? c.texture.key).slice(0, 2).join();
+    }), 'wristB,body-woman');
+    t.eq('播動畫動的是 wristF 節點', await t.eval(d => d.GM.player.view.wrist === Object.values(d.GM.player._coms).find(c => c?._nodes)._nodes.wristF), true);
 });

@@ -1,7 +1,14 @@
 // 武器動畫（anim.json + COM_Anim.anim_play）：在遊戲裡揮劍、橫掃、瞄準，檢查影格姿勢、ready 等身體位移、hold 等 anim_end、播完回原位
+// 動的是 wristF 節點（前手腕），武器掛在上面；待機＝body 的 wristF 支點
 import {run} from './harness.mjs'
 
 run('武器動畫', async t => {
+    await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
+    await t.eval(d => {
+        const r = d.DB.role(d.DB.playerIds()[0]);
+        d.DB._partDB[r.body] = {...d.DB._partDB[r.body], wristF: {x: -13, y: 18}};
+        delete r.handF;
+    });
     await t.newGame();
     const r = await t.eval(async (d) => {
         // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
@@ -13,13 +20,16 @@ run('武器動畫', async t => {
         });
         const p = d.GM.player, out = {};
         const sleep = (ms) => new Promise(res => setTimeout(res, ms));
-        const pose = () => {const sp = p.view.weapon; return [Math.round(sp.x), Math.round(sp.y), Math.round(sp.angle)];};
+        const pose = () => {const sp = p.view.wrist; return [Math.round(sp.x), Math.round(sp.y), Math.round(sp.angle)];};
         const right = {x: p.pos.x + 100, y: p.pos.y}, down = {x: p.pos.x, y: p.pos.y + 100};
         p.face(right);
 
+        out.empty = [p.view.wrist, await p.anim_play('chop', right)];
         let drop = p.hold('t-sword');
         const rest = pose();
         out.rest = rest;
+        const sw = p.view.wrist.list[0];
+        out.swordLocal = [sw.x, sw.y];
         let readyAt = null;
         const hit = p.anim_play('chop', right, {ready: async () => {readyAt = pose(); await sleep(200);}});
         out.chopHit = [await hit, readyAt, pose()];
@@ -57,7 +67,9 @@ run('武器動畫', async t => {
         return out;
     });
 
-    t.eq('劍靜止：原點在握把', JSON.stringify(r.rest), JSON.stringify([-13, 18, 0]));
+    t.eq('沒手沒武器（wristF 空的）不播', JSON.stringify(r.empty), JSON.stringify([null, false]));
+    t.eq('手腕靜止在 body 的 wristF 支點', JSON.stringify(r.rest), JSON.stringify([-13, 18, 0]));
+    t.eq('劍掛在手腕上：本地座標＝equip 扣支點', JSON.stringify(r.swordLocal), JSON.stringify([0, 0]));
     t.eq('ready 時舉劍、hit 時劈到底', JSON.stringify(r.chopHit), JSON.stringify([true, [-13, 6, -90], [-8, 15, 75]]));
     t.eq('下劈播完收回', JSON.stringify(r.chopBack), JSON.stringify(r.rest));
     t.eq('橫掃朝下：整組繞支點轉 90°', JSON.stringify(r.sweep), JSON.stringify([-14, 0, -135]));   // Phaser 把 angle 換到 [-180, 180)，225＝-135

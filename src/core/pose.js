@@ -1,5 +1,5 @@
 // 武器動畫(anim.json)的姿勢數學(純函式、不碰 Phaser)：COM_Anim 用 tween 推時間，tools/fit 用滑桿推，兩邊算出來一樣
-// 座標都是 shape 本地(面向右)，面向左時 shape 已鏡像；姿勢是武器 sprite 的 {x, y, angle}(位置＝原點 ox/oy 所在)
+// 座標都是 shape 本地(面向右)，面向左時 shape 已鏡像；姿勢是 wristF 節點(前手腕)的 {x, y, angle}，手、武器、手套掛在上面一起動，待機＝body 的 wristF 支點、角度 0
 // anim: {follow, pivot:{x,y}, ready, hit, back, hold, keys:[{t, x, y, a, ease, path}]}，t/ready/hit/back 單位 ms
 
 export const BACK_EASE = 'Quad.Out';

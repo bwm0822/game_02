@@ -1,11 +1,11 @@
-import {GM, PART_DEPTH, ROLE_PART} from '../core/setting.js'
+import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, PART_NODE, BACK_NODE} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, ROLE_PARTS} from '../core/equip.js'
+import {equipFor, hiddenParts, ROLE_PARTS, PIVOTS, pivotOf} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -245,7 +245,8 @@ class View extends Phaser.GameObjects.Container
 
     // anim.js 會用到
     get shape() {return this._shape;}
-    get weapon() {return this._held?.sps[0] ?? this._weapon?.[0];}   // 播武器動畫的 sprite，手上暫拿的工具優先
+    get wrist() {return this._nodes?.wristF?.length ? this._nodes.wristF : null;}   // 播武器動畫的節點，空的(動物、沒手)不播
+    get sprites() {const l = this._shape?.list; return l ? l.flatMap(c=>c.list ?? [c]) : [this._shape];}   // 支點節點只有一層
 
     //--------------------------------------------------
     // outline
@@ -882,23 +883,35 @@ export class RoleView extends View
         const meta = this.meta;
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
+        const body = DB.rolePart(meta, 'body');
+        this._nodes = {};
+        for(const k of PIVOTS)
+        {
+            const p = pivotOf(body, k);
+            const node = this.scene.add.container(p.x, p.y).setDepth(NODE_DEPTH[k]);
+            node.pivot = p;
+            this._shape.add(node);
+            this._nodes[k] = node;
+        }
         this._parts = {};
         for(const k of ROLE_PARTS)
         {
             const p = DB.rolePart(meta, k);
             this._parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
         }
-        this._equips = []; 
-        
+        this._equips = [];
+        this._sortParts();
+
         // set flipX
         if(this.flipX) {this._shape.scaleX *= -1;}
         
         return this;
     }
 
-    _addPart(part, type=GM.PART.BODY)
+    // 掛在支點節點的部位：數字是 shape 座標，扣掉節點的支點位置
+    _addPart(part, type=GM.PART.BODY, node=PART_NODE[type])
     {
-        let addSp = (sprite, depth)=>
+        let addSp = (sprite, depth, n)=>
         {
             if(!sprite) {return;}
             let [key,frame]=sprite.split(':');
@@ -908,27 +921,31 @@ export class RoleView extends View
                 sp.setScale(part.scale);
                 sp.setPipeline('Light2D');
                 sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
-                sp.x = part.x ?? 0;
-                sp.y = part.y ?? 0;
+                sp.x = (part.x ?? 0) - (n?.pivot.x ?? 0);
+                sp.y = (part.y ?? 0) - (n?.pivot.y ?? 0);
                 sp.angle = part.a ?? 0;
                 sp.depth = depth;
                 this._deadTint != null && sp.setTint(this._deadTint);
-                this._shape.add(sp);
+                (n ?? this._shape).add(sp);
                 sps.push(sp);
             }
         }
 
         let sps = [];
-        addSp(part.sprite, PART_DEPTH[type]);
-        addSp(part.ext, PART_DEPTH[GM.PART.EXT]);
-        addSp(part.back, PART_DEPTH[GM.PART.BACK]);
+        const n = this._nodes[node];
+        const backNode = BACK_NODE[type];
+        addSp(part.sprite, PART_DEPTH[type], n);
+        addSp(part.ext, PART_DEPTH[GM.PART.EXT], n);
+        addSp(part.back, PART_DEPTH[backNode ? type : GM.PART.BACK], backNode ? this._nodes[backNode] : n);
         return sps;
     }
 
     _sortParts()
     {
-        let children = this._shape.getAll().sort((a, b) => a.depth - b.depth);
-        children.forEach(child => {this._shape.bringToTop(child);});
+        for(const c of [this._shape, ...Object.values(this._nodes)])
+        {
+            c.getAll().sort((a, b) => a.depth - b.depth).forEach(child => {c.bringToTop(child);});
+        }
     }
 
     _addEquip(item)
@@ -954,7 +971,7 @@ export class RoleView extends View
     {
         const dat = DB.item(id);
         if(!dat?.equip) {return ()=>{};}
-        const held = {sps:this._addPart(equipFor(dat.equip, this.meta.sex), dat.cat)};
+        const held = {sps:this._addPart(equipFor(dat.equip, this.meta.sex), dat.cat, 'wristF')};
         this._sortParts();
         this._weapon?.forEach((sp)=>{sp.setVisible(false);});
         this._held = held;
@@ -971,6 +988,7 @@ export class RoleView extends View
         super._remove();
         // 移除 parts
         this._shape.getAll().forEach((child)=>{child.destroy();});
+        this._nodes = {};
     }
 
    
@@ -1007,7 +1025,7 @@ export class RoleView extends View
     {
         const g = Math.round(255 - t*(255-0x88));
         this._deadTint = (g<<16)|(g<<8)|g;
-        this._shape.getAll().forEach(sp=>sp.setTint?.(this._deadTint));
+        this.sprites.forEach(sp=>sp.setTint?.(this._deadTint));
     }
 
     // shape 的原點是 view 中心，以它為支點轉，再移到 grid 中心，屍體就會置中躺在自己那格
@@ -1065,7 +1083,7 @@ export class RoleView extends View
         await this._dying;
         this._dying = null;
         this._deadTint = null;
-        this._shape.getAll().forEach(sp=>sp.clearTint?.());
+        this.sprites.forEach(sp=>sp.clearTint?.());
         this._shape.setAngle(0).setY(0);
         ({weight:this.weight, isBlock:this.isBlock} = this._alive);
         this._addWeight();

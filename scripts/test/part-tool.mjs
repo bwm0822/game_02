@@ -14,6 +14,8 @@ const SETUP = async () => {
         'hair-unused': {kind: 'hair', sprite: 'hair-01', scale: 0.25, f: {scale: 0.2, x: 1, y: 2}},
         'bad-sprite': {kind: 'hair', sprite: 'no-such-texture'},
         'weird': {kind: 'tail', sprite: 'hair-01'},
+        'hand-man': {...parts['hand-man'], kind: 'handF'},
+        'hand-b': {kind: 'handB', sprite: 'hand-man', scale: 0.25},
     });
     await write(json, 'part.json', JSON.stringify(parts, null, 2));
     const roles = JSON.parse(await (await fetch('/assets/json/role.json')).text());
@@ -77,7 +79,7 @@ run('part-tool', async t => {
         const tabBtns = () => [...document.querySelectorAll('#view .tabs button')].map(b => b.textContent);
         const tab = (k) => document.querySelector(`#view .tabs [data-tab="${k}"]`).click();
         const cellIds = () => [...document.querySelectorAll('#view .cell')].map(c => c.dataset.id);
-        out.tabs = tabBtns()[0].startsWith('全部（') && tabBtns().length === 8;
+        out.tabs = tabBtns()[0].startsWith('全部（') && tabBtns().length === 9;
         tab('hair');
         out.tabHair = [cellIds().every(id => S.parts[id].kind === 'hair'), cellIds().includes('hair-wick'), document.querySelectorAll('#view .sec').length,
                        localStorage.getItem('tools.part.tab'), document.querySelector('#view .tabs .on').dataset.tab];
@@ -192,17 +194,17 @@ run('part-tool', async t => {
         return out;
     }, SETUP.toString());
 
-    t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '手　hand', '不認識的 kind']));
+    t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '前手　handF', '後手　handB', '不認識的 kind']));
     t.eq('卡片：使用次數、未使用灰、壞的紅（圖不存在、kind 不認識、放錯欄位）', JSON.stringify(r.cells), JSON.stringify([true, true, true, true, true, false]));
     t.eq('檢查訊息', JSON.stringify(r.probs), JSON.stringify([true, true, 'tester 的 hair 指到它，但它是 head']));
     t.eq('篩選壞的', r.bad, 'bad-sprite,head-karen,weird');
     t.check('篩選未使用', r.unused);
     t.eq('搜尋 id／sprite', r.search, 'hair-mary,head-mary');
-    t.check('總覽分頁：全部＋六個部位＋不認識的', r.tabs);
+    t.check('總覽分頁：全部＋七個部位＋不認識的', r.tabs);
     t.eq('分頁頭髮：只列頭髮、沒有分段標題、記住', JSON.stringify(r.tabHair), JSON.stringify([true, true, 0, 'hair', 'hair']));
     t.eq('分頁＋篩選壞的：只剩有壞的部位分頁', JSON.stringify(r.tabBad), JSON.stringify(['bad-sprite', ['全部（3）', '頭（1）', '頭髮（1）', '不認識的 kind（1）'].join()]));
     t.eq('篩選後空了的分頁', JSON.stringify(r.tabEmpty), JSON.stringify(['hair', 0, '全部（0）,頭髮（0）']));
-    t.eq('左樹：照 kind 分組、左欄可拖、沒選右欄空', JSON.stringify(r.tree), JSON.stringify([['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '手　hand', '不認識的 kind'].join(), true, 0]));
+    t.eq('左樹：照 kind 分組、左欄可拖、沒選右欄空', JSON.stringify(r.tree), JSON.stringify([['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '前手　handF', '後手　handB', '不認識的 kind'].join(), true, 0]));
     t.eq('點總覽卡片：選取、展開那組、列標 sel、中間換詳細', JSON.stringify(r.pickCell), JSON.stringify(['hair-wick', '▾', 'hair-wick', true]));
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));
     t.eq('詳細：右欄套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));

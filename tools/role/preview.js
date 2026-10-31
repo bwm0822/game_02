@@ -3,7 +3,7 @@
 import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
-import {DEPTH, CAT} from './schema.js';
+import {DEPTH, BACK_DEPTH, CAT} from './schema.js';
 import {equipFor, partFor, hiddenParts, ROLE_PARTS} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
@@ -37,16 +37,16 @@ function axis(a, b, total)
 export function partsOf(r, items, parts)
 {
     const out = [];
-    const add = (p, d) => {
+    const add = (p, k) => {
         if (!isObj(p)) return;
-        if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0});
+        if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
-        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back});
+        if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
     };
     const equips = P.equips ? (r.inv?.equips ?? []).map(e => items[isObj(e) ? e.id : e]).filter(it => it?.equip) : [];
     const hide = hiddenParts(equips, CAT);
-    for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), DEPTH[k]);
-    for (const it of equips) add(equipFor(it.equip, r.sex), DEPTH[it.cat]);
+    for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
+    for (const it of equips) add(equipFor(it.equip, r.sex), it.cat);
     return out.sort((a, b) => a.d - b.d);
 }
 

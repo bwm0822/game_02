@@ -5,7 +5,7 @@ import {COM_Disp} from '../components/com_disp.js'
 import {COM_Pickable} from '../components/com_pickable.js'
 import {GameObject} from '../core/gameobject.js'
 import DB from '../data/db.js'
-import {GM} from '../core/setting.js'
+import {GM, ROLE_PART, flatDepth} from '../core/setting.js'
 import {ROLE_PARTS} from '../core/equip.js'
 import Role from './role.js'
 
@@ -80,11 +80,11 @@ export default class Dummy extends Role
     static ghost(scene, obj)
     {
         const meta = DB.role(obj.id);
-        const sps = ROLE_PARTS.map(k=>DB.rolePart(meta, k)).filter(p=>p?.sprite).map(p=>{
+        const sps = ROLE_PARTS.map(k=>[k, DB.rolePart(meta, k)]).filter(([,p])=>p?.sprite).map(([k, p])=>{
             const [key, frame] = p.sprite.split(':');
             return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
-                .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0);
+                .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0).setDepth(flatDepth(ROLE_PART[k]).sprite);
         });
-        return scene.add.container(0, 0, sps);
+        return scene.add.container(0, 0, sps).sort('depth');
     }
 }

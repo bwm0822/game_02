@@ -87,12 +87,13 @@ export const GM =
     PART:{
         HEAD       :   0b0000_1000_0000_0000,
         BODY       :   0b0001_0000_0000_0000,
-        HAND       :   0b0010_0000_0000_0000,
+        HAND_F     :   0b0010_0000_0000_0000,
         EXT        :   0b0100_0000_0000_0000,
         HAIR       :   0b1000_0000_0000_0000,
         BACK       : 0b1_0000_0000_0000_0000,
         CLOTH      : 0b10_0000_0000_0000_0000,
         SHOES      : 0b100_0000_0000_0000_0000,
+        HAND_B     : 0b1000_0000_0000_0000_0000,
     },
 
     FAV:{
@@ -577,7 +578,8 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.BODY] : 0,
     [GM.PART.HEAD] : 2,
     [GM.PART.HAIR] : 2.5,
-    [GM.PART.HAND] : 5,
+    [GM.PART.HAND_F] : 5,
+    [GM.PART.HAND_B] : 5,
     [GM.PART.EXT] : 6,
     [GM.PART.BACK] : 1.5,
     [GM.PART.CLOTH] : 0.7,
@@ -596,8 +598,36 @@ export const ROLE_PART = Object.freeze({
     cloth : GM.PART.CLOTH,
     head : GM.PART.HEAD,
     hair : GM.PART.HAIR,
-    hand : GM.PART.HAND,
+    handF : GM.PART.HAND_F,
+    handB : GM.PART.HAND_B,
 });
+
+// 支點節點(看不見的子 container，位置寫在 body 的 part.json：neck/wristF/wristB {x,y})：
+// 掛在節點的部位跟著節點轉，depth 只在節點裡排，節點整組用 NODE_DEPTH 跟其他部位排
+export const NODE_DEPTH = Object.freeze({neck:1.5, wristF:4, wristB:-1});
+export const PART_NODE = Object.freeze({
+    [GM.PART.HEAD] : 'neck',
+    [GM.PART.HAIR] : 'neck',
+    [GM.CAT.HELMET] : 'neck',
+    [GM.PART.HAND_F] : 'wristF',
+    [GM.CAT.WEAPON] : 'wristF',
+    [GM.CAT.GLOVES] : 'wristF',
+    [GM.PART.HAND_B] : 'wristB',
+});
+// back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]；手套的後片是後手套，進 wristB、depth 同手套
+export const BACK_NODE = Object.freeze({[GM.CAT.GLOVES] : 'wristB'});
+
+// 靜態合成(角色面板、ghost)不建節點、攤成一層時的 depth：節點整組的 depth＋節點裡的 depth/100
+const _flat = (node, d)=>node ? NODE_DEPTH[node] + d/100 : d;
+export function flatDepth(type)
+{
+    const [node, back] = [PART_NODE[type], BACK_NODE[type]];
+    return {
+        sprite: _flat(node, PART_DEPTH[type]),
+        ext: _flat(node, PART_DEPTH[GM.PART.EXT]),
+        back: back ? _flat(back, PART_DEPTH[type]) : _flat(node, PART_DEPTH[GM.PART.BACK]),
+    };
+}
 
 export const ORDER = [
     GM.TALK,

@@ -104,7 +104,7 @@ export class COM_Anim extends Com
     {
         const shape = this.ctx.root.view?.shape;
         if(!shape) {return;}
-        const sps = shape.list ?? [shape];
+        const sps = this.ctx.root.view.sprites;
         sps.forEach(sp=>sp.setTintFill?.(0xffffff));
         this._twFlash?.remove();
         this._twFlash = this.scene.time.delayedCall(duration, ()=>{
@@ -161,17 +161,18 @@ export class COM_Anim extends Com
         run?.release();
     }
 
-    // 播 anim.json 的武器動畫(見 core/pose.js)；播到 ready 標記先等 ready()(身體位移)做完，
+    _wristRest(sp) {return {x:sp.pivot.x, y:sp.pivot.y, angle:0};}
+
+    // 播 anim.json 的武器動畫(見 core/pose.js)，動的是 wristF 節點(手、武器、手套跟著動)；播到 ready 標記先等 ready()(身體位移)做完，
     // 回傳的 Promise 在 hit 標記 resolve(true＝有播)；之後自動播完收回，hold 動畫停在最後一格等 _end()
     _play(id, pt=null, {ready}={})
     {
-        const sp = this.ctx.root.view?.weapon;
+        const sp = this.ctx.root.view?.wrist;
         const anim = DB.anim(id);
         if(!sp || !anim || this._dead) {return (async()=>{await ready?.(); return false;})();}
 
         this._stop();
-        if(this._wpRest?.sp!==sp) {this._wpRest = {sp, x:sp.x, y:sp.y, angle:sp.angle};}
-        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wpRest, pt ? this._dirTo(pt) : 0);
+        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wristRest(sp), pt ? this._dirTo(pt) : 0);
         const run = {sp, track};
         const free = new Promise((resolve)=>{run.release = resolve;});
         this._run = run;
@@ -185,7 +186,7 @@ export class COM_Anim extends Com
                 resolve(true);
                 if(!await this._seg(run, hitAt, end)) {return;}
                 if(anim.hold) {await free;}
-                if(this._run===run && await this._seg(run, end, trackEnd(track))) {this._run = null; this._wpRest = null;}
+                if(this._run===run && await this._seg(run, end, trackEnd(track))) {this._run = null;}
             })();
         });
     }
@@ -197,9 +198,8 @@ export class COM_Anim extends Com
         this._idle(false);
         this._dead = true;
         this._stop();
-        const rest = this._wpRest;
-        if(rest?.sp.active) {this._place(rest.sp, rest);}
-        this._wpRest = null;
+        const sp = this.ctx.root.view?.wrist;
+        if(sp?.active) {this._place(sp, this._wristRest(sp));}
     }
 
     //------------------------------------------------------

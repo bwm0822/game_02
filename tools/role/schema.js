@@ -59,7 +59,8 @@ export const FIELDS = {
     body: {label: '身體', type: 'part', part: true},
     head: {label: '頭', type: 'part', part: true},
     hair: {label: '頭髮', type: 'part', part: true},
-    hand: {label: '手', type: 'part', part: true},
+    handF: {label: '前手', type: 'part', part: true},
+    handB: {label: '後手', type: 'part', part: true},
     cloth: {label: '衣服', type: 'part', part: true},
     shoes: {label: '鞋子', type: 'part', part: true},
     corpse: {label: '屍體圖', type: 'obj', fields: PART},
@@ -73,7 +74,7 @@ export const REQUIRED = ['w', 'h', 'anchor'];
 export const SECTIONS = [
     {title: '基本', keys: ['kind', 'loc', 'lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
-    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hand', 'cloth', 'shoes', 'corpse']},
+    {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'handF', 'handB', 'cloth', 'shoes', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
@@ -81,7 +82,7 @@ export const SECTIONS = [
 const BASE = ['kind', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
 const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
-    player: ['sex', 'job', 'gold', 'survival', 'inv', 'hand', 'head', 'hair'],
+    player: ['sex', 'job', 'gold', 'survival', 'inv', 'handF', 'handB', 'head', 'hair'],
     npc: ['sex', 'loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
     rogue: FIGHTER, monster: FIGHTER, boss: FIGHTER,
     animal: ['style', 'animal', 'attrs', 'meat', 'skin', 'fall'],
@@ -105,10 +106,17 @@ export function schSummary(s)
 }
 
 // ---------- 預覽 ----------
-// 跟 setting.js 的 PART_DEPTH 一樣（裝備依 item.json 的 cat）
-export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.7, head: 2, hair: 2.5, hand: 5, CAT_HELMET: 3, CAT_CHESTPLATE: 1, CAT_GLOVES: 6, CAT_BOOTS: 0.5, CAT_WEAPON: 4, ext: 6, back: 1.5};
+// 跟 setting.js 的 flatDepth() 一樣：攤成一層（支點節點整組的 depth＋節點裡的 depth/100；裝備依 item.json 的 cat）
+// 節點：neck 1.5（back 後片 1.5、頭 2、髮 2.5、頭盔 3）、wristF 4（武器 4、前手 5、手套 6）、wristB -1（後手 5、後手套 6）
+export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.7, head: 1.52, hair: 1.525, handF: 4.05, handB: -0.95,
+    CAT_HELMET: 1.53, CAT_CHESTPLATE: 1, CAT_GLOVES: 4.06, CAT_BOOTS: 0.5, CAT_WEAPON: 4.04, ext: 6, back: 1.515};
+// 後片的 depth：手套的後片是後手套（wristB），其他照 DEPTH.back
+export const BACK_DEPTH = {CAT_GLOVES: -0.94};
+// 掛在支點節點的部位（跟 setting.js 的 PART_NODE／BACK_NODE 一樣），試穿播動畫時 wristF 上的一起動
+export const NODE = {head: 'neck', hair: 'neck', CAT_HELMET: 'neck', handF: 'wristF', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF', handB: 'wristB'};
+export const BACK_NODE = {CAT_GLOVES: 'wristB'};
 // equip.js 的 hiddenParts 用：item.json 的 cat 是字串
-export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS'};
+export const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'};
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要
@@ -128,7 +136,7 @@ export const colDef = (c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?
 // ---------- 新角色 ----------
 const box = () => ({l: 0, r: 0, t: 32, b: 0});
 const HUMAN = () => ({faceR: true, anchor: {x: 0, y: 16}, w: 32, h: 64, b: box(), g: box(), z: box(),
-                      body: 'body-man', hand: 'hand-man'});
+                      body: 'body-man'});
 const BEAST = () => ({faceR: false, anchor: {x: -16, y: 16}, w: 64, h: 64, b: box(), g: box(), z: box(),
                       body: 'animals-42', fall: 180});
 const ATTRS = () => ({attrs: {atk: 5, def: 0}});

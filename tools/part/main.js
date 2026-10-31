@@ -11,7 +11,7 @@ import '../common/splitter.js';
 import {previewEl} from '../role/preview.js';
 import {ROLE_PARTS} from '../../src/core/equip.js';
 
-const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hand: '手'};
+const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
 const FILTERS = [['all', '全部'], ['unused', '未使用'], ['bad', '壞的']];
 // 人偶：角色編輯器人形範本的身體跟尺寸
 const DOLL = {m: 'body-man', f: 'body-woman'};
@@ -33,7 +33,7 @@ try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f'; S.tab = localStorag
 const F = createFold();
 
 const usersOf = (pid) => PT.usersOf(S.roles, pid);
-const isDoll = (r) => !!(r.head || r.hand);
+const isDoll = (r) => !!(r.head || r.handF || r.handB);
 
 function problems(pid)
 {
@@ -172,7 +172,7 @@ function renderDetail()
         h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
             h('span', {class: 'grow'}),
             h('span', {class: 'acts'},
-                h('button', {disabled: !doll, title: doll ? `到試穿分頁選 ${doll}、游標放在這個部位的數字` : '沒有紙娃娃型角色（有 head 或 hand）在用，試穿挑不到',
+                h('button', {disabled: !doll, title: doll ? `到試穿分頁選 ${doll}、游標放在這個部位的數字` : '沒有紙娃娃型角色（有 head 或 handF／handB）在用，試穿挑不到',
                     onclick: () => SH.gotoTab('fit', [doll, p.kind])}, '↗ 到試穿調'),
                 h('button', {onclick: () => act(renamePart(pid))}, '改名…'),
                 h('button', {onclick: () => act(changeKind(pid))}, '改 kind…'),
