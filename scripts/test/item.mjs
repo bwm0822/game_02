@@ -2,6 +2,8 @@
 import {run} from './harness.mjs'
 
 run('item', async t => {
+    // 右欄有預覽，1024 寬時中間欄太窄、JSON 框右上的按鈕會被裁掉
+    await t.page.setViewport({width: 1600, height: 900});
     await t.page.goto(new URL('tools/item/', t.page.url()).href);
     await t.page.waitForFunction(() => window.__ie);
 
@@ -361,7 +363,7 @@ run('item', async t => {
         go('sword-2'); go('raw_meat');
         out.reset = [st('效果'), st('烹煮成')];
         go('sword-2');
-        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith('裝備圖（6）'), box('裝備圖').querySelector('.bar [title]')?.title, box('效果').querySelector('.bar [title]')?.title];
+        out.equip = [st('裝備圖'), box('裝備圖').querySelector('.bar').textContent.replace(/^[▶▼]/, '').startsWith('裝備圖（4）'), box('裝備圖').querySelector('.bar [title]')?.title, box('效果').querySelector('.bar [title]')?.title];
         ie.addEff('sword-2');
         out.addEff = [st('效果'), box('效果').querySelectorAll('.card').length];
         ie.undo();
@@ -443,6 +445,31 @@ run('item', async t => {
     t.check('選道具時附名稱', await t.page.evaluate(() => [...document.querySelectorAll('.combo .opt')].some(o => o.querySelector('.lab')?.textContent === '生肉')));
     await t.page.keyboard.press('Escape');
 
+    // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來
+    const pv = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const cap = () => document.querySelector('#right .cap')?.textContent ?? null;
+        S.view = 'form'; S.sel = 'sword-1'; ie.setSex('m');
+        out.m = [cap(), !!document.querySelector('#right .pv canvas')];
+        ie.setSex('f');
+        const fItem = Object.keys(S.items).find(id => S.items[id].equip?.f), baseItem = Object.keys(S.items).find(id => S.items[id].equip && !S.items[id].equip.f);
+        out.f = [cap(), localStorage.getItem('tools.item.sex')];
+        S.sel = fItem; ie.render(); out.f.push(cap().includes('用女版 f'));
+        S.sel = baseItem; ie.render(); out.f.push(cap().includes('沒有 f'));
+        ie.setSex('m');
+        S.sel = 'raw_meat'; ie.render();
+        out.none = [cap().includes('沒有 equip'), !!document.querySelector('#right .pv canvas')];
+        S.view = 'table'; ie.render();
+        out.table = document.getElementById('right').childElementCount;
+        S.view = 'form'; S.sel = null; ie.render();
+        out.empty = document.getElementById('right').childElementCount;
+        return out;
+    });
+    t.eq('預覽：男套 wick、有畫布', JSON.stringify(pv.m), JSON.stringify(['套在 wick', true]));
+    t.eq('預覽：女套 mary、記住、有 f／沒 f 的提示', JSON.stringify(pv.f), JSON.stringify(['套在 mary（沒有 f，用基準數字）', 'f', true, true]));
+    t.eq('預覽：沒 equip 有提示、還是畫人偶', JSON.stringify(pv.none), JSON.stringify([true, true]));
+    t.eq('預覽：總覽、沒選道具時藏起來', JSON.stringify([pv.table, pv.empty]), '[0,0]');
+
     if (r.warns.length) console.log(`  （現有資料的警告 ${r.warns.length} 個：${r.warns.join('；')}）`);
     t.eq('讀入全部道具', r.load[0], true);
     t.check('item.json 是 JSON.stringify(…, null, 2) 格式', r.canonical);
@@ -451,10 +478,10 @@ run('item', async t => {
     t.check('改欄位不動 key 順序', r.edit[1]);
     t.eq('新欄位接在最後', r.append, 'def');
     t.eq('清空欄位會刪 key', r.clear, false);
-    t.eq('改 equip.x 不動其他 key', r.keepUnknown[0], JSON.stringify([0.85, 60]));
+    t.eq('改 equip.x 不動其他 key', r.keepUnknown[0], JSON.stringify([0.85, 90]));
     t.eq('清空 cook.id 連 cook 一起刪', r.cleanup, false);
     t.eq('undo 一步', r.undoCook, 'cooked_meat');
-    t.eq('undo 到底', JSON.stringify(r.undoAll), JSON.stringify([6, -13]));
+    t.eq('undo 到底', JSON.stringify(r.undoAll), JSON.stringify([6, null]));
     t.eq('redo', r.redo, 99);
     t.eq('新增效果', r.addEff, 1);
     t.eq('刪光效果連 effects 一起刪', r.delEff, false);

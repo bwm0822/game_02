@@ -24,6 +24,7 @@
   - 標題列「JSON」鈕切成整筆 JSON 模式（`form.js` 的 `modeBtn()`／`fullJson()`，角色編輯器也用）：表單換成一個 JSON 框，內容是這筆物件本身（不含 id，改名還是用「改名…」），失焦沒錯就整筆換掉（一步 undo、key 位置不動），不是物件也算錯；有錯的草稿 key 是 `#full`，切回表單時警告清單會列出來。模式記在 `S.json`（頁面，換一筆保持，重新整理回表單）。
   - 最下面「其他欄位」是道具層級不認識的 key（`bb` 等）的原始 JSON，JSON 格式錯就不套用。
   - 這三種 JSON 框都是 `jsonedit.js`（透明 textarea 疊在上色的 `<pre>` 上，不用套件）：打字即時解析，只把第一個出錯的 token 標紅；有錯時右上角出現 `[修正]`（`parse()` 的 `err.fix` 有修法：補 `,` `:` 右括號 `"`、裸值／數字 key 加引號、刪怪字元、修數字，一次修一個，走 `insertText` 可 Ctrl+Z，不自動套用）或 `[錯誤]`（修不了，不能按），原因都在按鈕的 title；裸 key 跟結尾逗號不算錯（打 `:` 時裸 key 自動補引號、字串外打 `'` 換成 `"`），失焦沒錯才套用並整理成標準 JSON；有錯就把原文留在 `S.drafts`（重繪不會不見、存檔時警告），換道具就丟掉。按鍵輔助一律走 `execCommand('insertText')`，Ctrl+Z 才退得回去。
+- 右：裝備預覽（表單模式、有選道具才有；總覽時藏起來，中間欄可拖寬，同角色分頁的 `splitter.js`）。用角色分頁的 `previewEl()`（[role-editor.md](role-editor.md)，規則同 `RoleView`：支點、手腕位移、`hiddenParts()`、女角套 `equip.f`），只看不能拖。人偶＝`role.json` 第一個 `kind:"player"` 且 `sex`（缺＝m）符合的角色，只拿長相、`inv.equips` 換成只有這件（現在男＝`wick`、女＝`mary`），找不到就光的 `body-man`／`body-woman`；下面 `男｜女` 切換記在 localStorage `tools.item.sex`，上方標「套在 <角色>」＋女版有沒有 `f`；沒有 `equip` 的道具照畫人偶、標「沒有 equip，不能裝備」。顯示用的是記憶體裡還沒存的道具；`role.json`／`part.json` 唯讀，收到存檔廣播重讀。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。
 - icon／sprite 選圖器：`icons.js` 讀遊戲開機載的 `/assets/json/textures.json`（`scripts/textures.js` 產生，見 CLAUDE.md「圖片載入」）＋各 atlas 的 `_atlas.json`，收到 `saved: textures.json` 廣播就重讀並清圖快取（圖網址帶 `?v=` 版本，覆蓋同名 PNG 也會換新）。四種寫法：`sheet:格子`、`atlas:frame`（frame 名稱是字串，`001` 保留前導零）、單張圖 key（檔名）、emoji（不是 ASCII 識別字就當文字）；不再接受路徑。格子數照 Phaser spritesheet 算（margin 只扣一次）。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
 - 選圖器版面像檔案總管：分頁是 `textures/` 第一層資料夾（從 url 路徑推，`TREE`），裡面子資料夾在前（點進去，分頁列右邊的麵包屑點回上層）、圖依檔名排；sheet／atlas（標 ▦）點了進格子畫面，攤原圖、用矩形清單（sheet 算格子、atlas 讀 json）做 hover 框選。點單張圖／格子只是選中（反白＋填進輸入框），按「確定」才套用。開啟時直接跳到目前值：sheet／atlas 進格子畫面框住、單張圖進所在資料夾反白、其他開 `icons` 分頁。
@@ -54,6 +55,6 @@
 | `../common/fs.js` | 跟紙娃娃、殼共用的 File System Access 工具（`dirStore(app)` 只剩殼在用） |
 | `../common/shell.js` | 跟殼的接線：收專案資料夾、存檔廣播、回報未存狀態 |
 
-測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、textures.json 解析、總覽表）。
+測試：`node scripts/test/item.mjs`（透過 `window.__ie`，OPFS 當假的 `public/assets`：原樣往返、key 順序、清空刪 key、undo/redo、effects 增刪、未知欄位保留、改名連動與引用掃描、刪除、新增位置、複製、檢查只警告、外部修改合併、textures.json 解析、總覽表、右欄預覽（男女人偶、記住、f 提示、沒 equip、總覽藏起來））；中間欄太窄 JSON 框按鈕會被裁，測試開 1600 寬。
 
 不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、裝備疊圖預覽（紙娃娃的事）、改其他 json、自動改外部引用。

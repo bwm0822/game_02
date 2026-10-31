@@ -8,6 +8,7 @@ import * as JE from '../common/jsonedit.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
+import {previewEl} from '../role/preview.js';
 
 const D = createDoc({
     file: 'item.json', noun: '道具',
@@ -17,13 +18,21 @@ const D = createDoc({
     onSaved: (file) => {
         if (file === 'fx.json') loadKeys(file).then(fx => {S.fx = fx; render();});
         if (file === 'anim.json') loadKeys(file).then(a => {S.anims = a; render();});
+        if (file === 'role.json' || file === 'part.json') loadJson(file).then(o => {S[file === 'role.json' ? 'roles' : 'parts'] = o; render();});
+        if (file === 'textures.json') render();
     },
 });
-const loadKeys = (file) => fetch(`/assets/json/${file}`, {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
+const loadJson = (file) => fetch(`/assets/json/${file}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
+const loadKeys = (file) => loadJson(file).then(Object.keys);
 const {S, render, commit, set} = D;
 Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}});
 S.fx = [];
 S.anims = null;
+S.roles = {};       // 唯讀：role.json、part.json（預覽的人偶）
+S.parts = {};
+const SEX_KEY = 'tools.item.sex';
+S.sex = 'm';
+try {if (localStorage.getItem(SEX_KEY) === 'f') S.sex = 'f';} catch {}
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.items[id].icon, lab: id => S.items[id].lab, warns: id => validate(id)});
 
@@ -201,7 +210,11 @@ function renderForm()
 {
     const id = S.sel, it = S.items[id];
     const view = document.getElementById('view');
-    if (!it) return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇專案資料夾'));
+    if (!it)
+    {
+        document.getElementById('right').replaceChildren();
+        return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇專案資料夾'));
+    }
     const shown = [...new Set([...SC.shownFields(it), ...(S.extra[id] ?? [])])];
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.includes(k));
     const warns = [F.fullDraft(), ...validate(id)].filter(Boolean);
@@ -229,6 +242,32 @@ function renderForm()
                 }}, h('option', {value: ''}, '…'), rest.map(k => h('option', {value: k}, `${SC.FIELDS[k].label}　${k}`)))],
             otherBox(id, it, known)),
     ].filter(Boolean));
+    renderPreview(id, it);
+}
+
+// ---------- 預覽 ----------
+// 人偶＝第一個這個性別的玩家角色（只拿長相，身上只穿這件）；沒有就光身體
+const DOLL = {m: 'body-man', f: 'body-woman'};
+const dollOf = (sx) => Object.entries(S.roles).find(([, r]) => r.kind === 'player' && (r.sex ?? 'm') === sx);
+
+function renderPreview(id, it)
+{
+    const [rid, r] = dollOf(S.sex) ?? [];
+    const doll = {...(r ?? {w: 32, h: 64, anchor: {x: 0, y: 16}, sex: S.sex, body: DOLL[S.sex]}), inv: {equips: [id]}};
+    const note = !isObj(it.equip) ? h('span', {class: 'warn'}, '（沒有 equip，不能裝備）')
+        : S.sex === 'f' && (isObj(it.equip.f) ? '，用女版 f' : '（沒有 f，用基準數字）');
+    const sexBtn = (sx, name) => h('button', {type: 'button', class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
+    document.getElementById('right').replaceChildren(
+        h('div', {class: 'cap'}, `套在 ${rid ?? DOLL[S.sex]}`, note),
+        previewEl(doll, S.items, S.parts),
+        h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
+}
+
+function setSex(sx)
+{
+    S.sex = sx;
+    try {localStorage.setItem(SEX_KEY, sx);} catch {}
+    render();
 }
 
 // ---------- 總覽表 ----------
@@ -274,8 +313,9 @@ function draw()
         ...[...SC.CATS, ''].map(c => [n => c ? `${SC.CAT_NAMES[c]}（${n}）` : `無分類（${n}）`, ids.filter(id => (S.items[id].cat ?? '') === c), c]),
         ['不認識的分類', ids.filter(id => S.items[id].cat && !SC.CATS.includes(S.items[id].cat)), '#unknown'],
     ]);
-    if (S.view === 'form') renderForm();
-    else V.renderTable(SC.TABS, {
+    if (S.view === 'form') return renderForm();
+    document.getElementById('right').replaceChildren();
+    V.renderTable(SC.TABS, {
         inTab: (tab, id) => SC.inTab(tab, S.items[id]),
         sortKey: (id, col) => col === '#eff' ? (S.items[id].effects?.length ?? 0) : S.items[id][col],
         head: (c) => c === '#eff' ? ['效果'] : [SC.FIELDS[c].label, c],
@@ -284,7 +324,7 @@ function draw()
 }
 
 (async () => {
-    [S.fx, S.anims] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json')]);
+    [S.fx, S.anims, S.roles, S.parts] = await Promise.all([loadKeys('fx.json'), loadKeys('anim.json'), loadJson('role.json'), loadJson('part.json')]);
     render();
     IC.ready.then(render);
     D.listenGoto();
@@ -293,4 +333,4 @@ function draw()
 
 // 給無頭測試用
 window.__ie = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, dup: D.dup,
-               rename: D.rename, remove: D.remove, addEff, delEff, scanRefs: D.scanRefs, innerRefs, validate, validateAll, render, IC, JE};
+               rename: D.rename, remove: D.remove, addEff, delEff, scanRefs: D.scanRefs, innerRefs, validate, validateAll, render, IC, JE, setSex};
