@@ -2,7 +2,7 @@
 
 `part.json`（部位 pool）的總覽與整理：一次看到全部條目、誰在用、哪些壞了，做改名／改 kind／換圖／新增／複製／刪除。開法：`npm run dev` 後開 `/tools/` 的「部位」分頁（殼見 [tools-shell.md](tools-shell.md)）。
 
-**擺放也能在這裡調**：詳細裡的 `scale/x/y/a/ox/oy` 數字欄（女＝右欄切到女，`scale/x/y` 改 `f`），身體條目另有 neck／wristF／wristB 支點表＋右欄十字，改了立刻寫檔，有 undo（見下）；試穿也能調（見 [fit-tool.md](fit-tool.md)）；從圖產生新條目走紙娃娃「存到 pool…」（見 [paperdoll-tool.md](paperdoll-tool.md)）。
+**擺放也能在這裡調**：詳細裡的 `scale/x/y/a/ox/oy` 數字欄（女＝右欄切到女，`scale/x/y` 改 `f`），身體條目另有 neck／wristF／wristB 支點表＋右欄十字（要在預覽的「顯示 ▾」勾才畫、才能拖，跟試穿共用勾選），改了立刻寫檔，有 undo（見下）；試穿也能調（見 [fit-tool.md](fit-tool.md)）；從圖產生新條目走紙娃娃「存到 pool…」（見 [paperdoll-tool.md](paperdoll-tool.md)）。
 
 ## 畫面
 

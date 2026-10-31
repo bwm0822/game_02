@@ -58,7 +58,12 @@ run('fit', async t => {
 
         // 選角色不帶裝備，「穿原裝」才帶入
         F.select('guard-1');
-        out.opts = [...document.querySelectorAll('#pv .opts input[type=checkbox]')].slice(0, 5).map(c => c.checked);
+        // 「顯示 ▾」：點開跳面板、八項預設不勾、點外面收起來
+        const menu = () => {document.querySelector('#pv .showbtn').click(); return document.querySelector('.showpop');};
+        const outside = () => document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
+        out.opts = [document.querySelector('#pv .showbtn').textContent, [...menu().querySelectorAll('input')].map(c => c.checked)];
+        outside();
+        out.opts.push(!document.querySelector('.showpop'));
         out.slots0 = JSON.stringify(S.slots);
         document.querySelector('#view .orig').click();
         out.slots = JSON.stringify(S.slots);
@@ -129,13 +134,24 @@ run('fit', async t => {
         fire('part.json|rogue|neck.x', '3');
         out.pivot = [JSON.stringify(rogue().neck)];
         out.follow = [hx0, helmX()];
-        await F.drawPreview();
-        {
+        const dragB = () => {
             const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo, p = g.pts.wristB;
             const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
             const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
             ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 5)); ptr('pointerup', at(p.x + 2, p.y + 5));
+        };
+        // 支點沒勾顯示：不畫也拖不動；勾三個支點、記在 localStorage、按鈕標數量
+        await F.drawPreview();
+        dragB();
+        out.hiddenPivot = ['wristB' in rogue()];
+        {
+            const p = menu();
+            for (const k of ['neck', 'wristF', 'wristB']) p.querySelector(`[data-show=${k}]`).click();
+            out.hiddenPivot.push(document.querySelector('#pv .showbtn').textContent, localStorage.getItem('tools.preview.show'));
+            outside();
         }
+        await F.drawPreview();
+        dragB();
         out.pivot.push(JSON.stringify(rogue().wristB));
         F.undo();
         out.pivot.push('wristB' in rogue());
@@ -258,6 +274,8 @@ run('fit', async t => {
         const down = poseAt(F.trackOf(), 120);
         S.target = 180; F.render();
         out.sweep = [trackEnd(F.trackOf()), [Math.round(down.x), Math.round(down.y), Math.round(down.angle)], document.querySelector('#pv input[type=checkbox][disabled]')?.parentElement.textContent];
+        out.sweep.push([...menu().querySelectorAll('input:disabled')].map(c => c.dataset.show));
+        outside();
         S.aid = 'chop'; S.target = 0; F.setMs(200); F.render();
         const addBtn = () => [...document.querySelectorAll('button')].find(b => b.textContent.startsWith('＋'))?.textContent;
         out.addBtn = [addBtn()];
@@ -450,7 +468,8 @@ run('fit', async t => {
     t.eq('雙擊恢復自動、清掉記憶', JSON.stringify(mid.reset), JSON.stringify(['', '', null]));
     t.eq('一打開不選角色、左欄全部摺起來', JSON.stringify(r.defFold), JSON.stringify([null, 0]));
     t.check('清單只列紙娃娃型角色', r.list[0] === r.list[1], JSON.stringify(r.list));
-    t.eq('虛線／錨點／b／g／z 預設不勾', JSON.stringify(r.opts), JSON.stringify([false, false, false, false, false]));
+    t.eq('「顯示 ▾」八項預設不勾、點外面收起來', JSON.stringify(r.opts), JSON.stringify(['顯示（0）▾', Array(8).fill(false), true]));
+    t.eq('支點沒勾顯示拖不動；勾三個記住', JSON.stringify(r.hiddenPivot), JSON.stringify([false, '顯示（3）▾', '{"neck":true,"wristF":true,"wristB":true}']));
     t.eq('選角色不帶原裝', r.slots0, '{}');
     t.eq('穿原裝', r.slots, JSON.stringify({CAT_WEAPON: 'sword-1', CAT_HELMET: 'helmet_01', CAT_CHESTPLATE: 'chest_01'}));
     t.eq('右鍵只選中該格、不開視窗', JSON.stringify(r.rclick), JSON.stringify(['CAT_CHESTPLATE', false]));
@@ -490,6 +509,7 @@ run('fit', async t => {
     t.eq('橫掃總長 420+150', r.sweep[0], 570);
     t.eq('橫掃目標朝下：起手繞支點轉 90°', JSON.stringify(r.sweep[1]), JSON.stringify([14, 0, 45]));
     t.eq('動畫模式翻面反灰', r.sweep[2], '翻面');
+    t.eq('動畫模式顯示選單的三個支點反灰', JSON.stringify(r.sweep[3]), JSON.stringify(['neck', 'wristF', 'wristB']));
     t.check('新增影格：選 #2 插在它跟前一格中間、選中新格、角度取補間', r.addKey[0] === '120,160,200' && r.addKey[1] === 1 && r.addKey[2] > -90 && r.addKey[2] < 75, JSON.stringify(r.addKey));
     t.eq('新增影格按鈕：選了／取消選取後的文字', JSON.stringify(r.addBtn), JSON.stringify(['＋ 插在 #2 之前', -1, '＋ 新增影格（最後）']));
     t.eq('沒選影格：接在最後＋back/2、選中新格', JSON.stringify(r.addLast), JSON.stringify(['120,160,200,275', 3]));

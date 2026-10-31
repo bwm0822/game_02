@@ -4,10 +4,11 @@ import {h} from '../common/dom.js';
 import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import * as HD from '../common/handles.js';
+import {show, showMenu} from '../common/showmenu.js';
 import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
 import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
-const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
+const P = {zoom: 3, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
 const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
 const BG_KEY = 'tools.preview.bg';
@@ -15,6 +16,7 @@ try {P.bg = localStorage.getItem(BG_KEY);} catch {}
 
 // 同頁可能有好幾張預覽（部位分頁的男／女版），換底色全部一起重畫
 const redraws = new WeakMap();      // .pv 元素 → redraw
+const redrawAll = () => {for (const pv of document.querySelectorAll('.pv')) redraws.get(pv)?.();};
 function setBg(c, store)
 {
     P.bg = c;
@@ -70,11 +72,14 @@ async function draw(cv, r, items, pdb, st)
     if (!P.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
     const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
-    g.lineWidth = 1 / K;
-    g.setLineDash([3 / K, 3 / K]);
-    g.strokeStyle = '#888';
-    g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
-    g.setLineDash([]);
+    if (show.view)
+    {
+        g.lineWidth = 1 / K;
+        g.setLineDash([3 / K, 3 / K]);
+        g.strokeStyle = '#888';
+        g.strokeRect(vc.x - w / 2, vc.y - hh / 2, w, hh);
+        g.setLineDash([]);
+    }
 
     let n = 0;
     parts.forEach((pt, i) => {
@@ -92,33 +97,36 @@ async function draw(cv, r, items, pdb, st)
         n++;
     });
 
-    // 可拖的 body 支點十字（opt.pivots）：滑過／拖著變粗
+    // 可拖的 body 支點十字（opt.pivots，有勾顯示的）：滑過／拖著變粗
     if (st?.pivots)
     {
         const body = partFor(pdb, r, 'body'), pts = Object.fromEntries(PIVOTS.map(k => [k, pivotOf(body, k)]));
         g.save();
         g.translate(vc.x, vc.y);
         if (P.flip) g.scale(-1, 1);
-        for (const k of PIVOTS) HD.drawCross(g, k, pts[k], 1 / K, {on: st.live?.k === k});
+        for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], 1 / K, {on: st.live?.k === k});
         g.restore();
         st.geo = {vc, K, flip: P.flip, pts};
     }
 
     for (const k of ['g', 'z', 'b'])
     {
-        if (!P[k] || !isObj(r[k])) continue;
+        if (!show[k] || !isObj(r[k])) continue;
         const x = axis(r[k].l, r[k].r, w), y = axis(r[k].t, r[k].b, hh);
         g.strokeStyle = COLOR[k];
         g.lineWidth = 2 / K;
         g.strokeRect(vc.x - w / 2 + x.a, vc.y - hh / 2 + y.a, x.size, y.size);
     }
 
-    g.strokeStyle = '#ffd700';
-    g.lineWidth = 2 / K;
-    g.beginPath();
-    g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
-    g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
-    g.stroke();
+    if (show.anchor)
+    {
+        g.strokeStyle = '#ffd700';
+        g.lineWidth = 2 / K;
+        g.beginPath();
+        g.moveTo(root.x - 4, root.y); g.lineTo(root.x + 4, root.y);
+        g.moveTo(root.x, root.y - 4); g.lineTo(root.x, root.y + 4);
+        g.stroke();
+    }
     cv.dataset.drawn = n;
 }
 
@@ -133,12 +141,12 @@ function editable(cv, st, redraw)
         const g = st.geo, rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) / g.K - g.vc.x, y = (e.clientY - rc.top) / g.K - g.vc.y;
         return {x: g.flip ? -x : x, y};
     };
-    // {rot: 白點？, k: 支點}；白點優先
+    // {rot: 白點？, k: 支點}；白點優先；沒勾顯示的不能拖
     const hit = (l) => {
-        const g = st.geo, near = (p) => Math.hypot(l.x - p.x, l.y - p.y) <= 8 / g.K;
-        const k = PIVOTS.find(k => near(HD.crossHandle(g.pts[k])));
+        const g = st.geo, near = (p) => Math.hypot(l.x - p.x, l.y - p.y) <= 8 / g.K, keys = PIVOTS.filter(k => show[k]);
+        const k = keys.find(k => near(HD.crossHandle(g.pts[k])));
         if (k) return {rot: true, k};
-        const m = PIVOTS.find(k => near(g.pts[k]));
+        const m = keys.find(k => near(g.pts[k]));
         return m ? {rot: false, k: m} : null;
     };
     cv.onpointerdown = (e) => {
@@ -193,7 +201,7 @@ export function previewEl(r, items, parts, opt = {})
     const pv = h('div', {class: 'pv'},
         h('div', {class: 'cvbox'}, cv),
         h('div', {class: 'opts'},
-            check('b', '物理 b', COLOR.b), check('g', '佔格 g', COLOR.g), check('z', '互動 z', COLOR.z),
+            showMenu(() => redrawAll(), opt.pivots ? [] : PIVOTS),
             check('equips', '裝備'), check('flip', '翻面'),
             h('select', {onchange: e => {P.zoom = +e.target.value; redraw();}},
                 [2, 3, 4, 6].map(z => h('option', {value: z, selected: z === P.zoom}, `×${z}`))),

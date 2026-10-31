@@ -12,6 +12,7 @@ import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
 import * as HD from '../common/handles.js';
 import * as PT from '../common/part.js';
+import {show, showMenu} from '../common/showmenu.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot} from '../../src/core/equip.js';
@@ -26,6 +27,7 @@ const {PIVOT_NAMES, PIVOT_COLOR} = HD;
 const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
 const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
 const FRAME_COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
+// 顯示選項（view、錨點、b/g/z、支點）在 showmenu.js 的 show，跟角色／部位分頁共用
 // 預覽播放時 ready 停一下（模擬前撲）、hold 停一下（模擬等箭飛）
 const PAUSE = {ready: 100, hold: 300};
 const SNAP = 15;
@@ -41,7 +43,7 @@ const S = {
     alpha: {},                  // cat → 預覽透明度 0～1（沒寫＝1），只是顯示用、不存檔
     cur: 'CAT_WEAPON',          // 選中的格子，下方面板顯示它
     pick: null,                 // 畫布上選中的部件：部位 kind 或裝備 cat（裝備時跟 cur 同步）
-    zoom: 3, view: false, anchor: false, b: false, g: false, z: false, flip: false,
+    zoom: 3, flip: false,
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
@@ -707,7 +709,7 @@ async function drawPreview()
     if (!S.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
     const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
-    if (S.view)
+    if (show.view)
     {
         g.lineWidth = px;
         g.setLineDash([3 * px, 3 * px]);
@@ -775,12 +777,12 @@ async function drawPreview()
     }
     else if (!isAnim)
     {
-        // 擺放分頁：body 的三個支點畫成十字，可以拖；往上的白點是旋轉把手；滑過（或拖著）的那個變粗
+        // 擺放分頁：body 的三個支點（有勾顯示的）畫成十字，可以拖；往上的白點是旋轉把手；滑過（或拖著）的那個變粗
         const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
         const hds = Object.fromEntries(PIVOTS.map(k => [k, HD.crossHandle(pts[k])]));
         const live = drag?.k ?? hover;
         if (S.doc['part.json'].data[bodyId()]) local(() => {
-            for (const k of PIVOTS) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
+            for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
         geo = {vc, K, flip, pts, hds};
     }
@@ -788,14 +790,14 @@ async function drawPreview()
 
     for (const k of ['g', 'z', 'b'])
     {
-        if (!S[k] || !isObj(r[k])) continue;
+        if (!show[k] || !isObj(r[k])) continue;
         const l = r[k].l ?? 0, rr = r[k].r ?? 0, t = r[k].t ?? 0, b = r[k].b ?? 0;
         g.strokeStyle = FRAME_COLOR[k];
         g.lineWidth = 2 * px;
         g.strokeRect(vc.x - w / 2 + l, vc.y - hh / 2 + t, w - l - rr, hh - t - b);
     }
 
-    if (S.anchor)
+    if (show.anchor)
     {
         g.strokeStyle = '#ffd700';
         g.lineWidth = 2 * px;
@@ -841,7 +843,7 @@ const dragKeys = () => dragWeapon() ? WRISTS : PIVOTS;
 function pivotHit(l)
 {
     const near = (p, r) => Math.hypot(l.x - p.x, l.y - p.y) <= r / geo.K;
-    const keys = dragKeys();
+    const keys = dragKeys().filter(k => show[k]);
     const k = keys.find(k => near(geo.hds[k], 8));
     if (k) return {k, kind: 'nodeRot'};
     const m = keys.find(k => near(geo.pts[k], 8));
@@ -1014,8 +1016,7 @@ function drawPv()
         h('div', {class: 'stage', onscroll: e => {scroll = {x: e.target.scrollLeft, y: e.target.scrollTop};}}, cv),
         h('div', {class: 'ctrl'},
         h('div', {class: 'opts'},
-            check('view', '虛線 view', '#aaa'), check('anchor', '錨點', '#ffd700'),
-            check('b', '物理 b', FRAME_COLOR.b), check('g', '佔格 g', FRAME_COLOR.g), check('z', '互動 z', FRAME_COLOR.z),
+            showMenu(drawPreview, isAnim ? PIVOTS : []),
             check('flip', '翻面', null, isAnim),
             h('label', {title: `倍率 ${ZOOM_MIN}～${ZOOM_MAX}，↑↓：小於 1 每次 0.1、1 以上每次 1`}, '×',
                 h('input', {type: 'number', class: 'num zoom', min: ZOOM_MIN, max: ZOOM_MAX, step: 0.1, value: S.zoom,
@@ -1090,5 +1091,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
+window.__fit = {S, show, IC,setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
     trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};

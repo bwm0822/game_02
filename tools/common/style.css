@@ -31,6 +31,10 @@ textarea { width: 100%; resize: vertical; }
 .je-bad { background: #5a2626; border-color: #ff5555; color: #ff8888; cursor: help; }
 .je > button.je-bad:hover { background: #5a2626; }
 label { white-space: nowrap; }
+.showpop { position: fixed; z-index: 10; display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; font-size: 14px; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+.showpop label { display: inline-flex; align-items: center; gap: 4px; }
+.showpop label:has(:disabled) { opacity: 0.4; }
+.showpop hr { width: 100%; margin: 3px 0; border: none; border-top: 1px solid #555; }
 input[data-combo] { padding-right: 20px; background: #2b2d31 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23999'/%3E%3C/svg%3E") no-repeat right 6px center; }
 .combo { position: fixed; z-index: 10; max-height: 360px; overflow: auto; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
 .combo .opt { padding: 2px 8px; white-space: nowrap; cursor: pointer; }

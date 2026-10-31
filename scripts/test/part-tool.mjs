@@ -161,6 +161,14 @@ run('part-tool', async t => {
         S.sel = 'body-man'; pt.render(); await sleep(300);
         const bm = async () => (await read('part.json'))['body-man'];
         const bm0 = await bm(), hb = S.hi;
+        // 支點預設不顯示、拖不動；從「顯示 ▾」勾三個支點
+        await drag(async ({at, ptr, g}) => {const p = g.pts.wristB; ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 3)); ptr('pointerup', at(p.x + 2, p.y + 3));});
+        out.hiddenPivot = [S.hi === hb];
+        document.querySelector('#right .showbtn').click();
+        for (const k of ['neck', 'wristF', 'wristB']) document.querySelector(`.showpop [data-show=${k}]`).click();
+        document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
+        out.hiddenPivot.push(document.querySelector('#right .showbtn').textContent);
+        await sleep(200);
         out.body = [document.querySelectorAll('#view table.pivots tr').length - 1, [...document.querySelectorAll('#view td.k')].some(td => td.textContent === 'wristF' && td.closest('table:not(.pivots)'))];
         const wf = (await bm()).wristF ?? {x: 0, y: 0};
         await fire('part.json|body-man|wristF.x', String((wf.x ?? 0) + 1));
@@ -285,6 +293,7 @@ run('part-tool', async t => {
     t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
         JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
     t.eq('右欄合成：不是身體的條目不能拖', JSON.stringify(r.noDrag), JSON.stringify([null, true]));
+    t.eq('身體支點預設不顯示拖不動、從顯示選單勾三個', JSON.stringify(r.hiddenPivot), JSON.stringify([true, '顯示（3）▾']));
     t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原；身體沒有男女切換、不標 f、寫基準、undo',
         JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true,
             true, 'scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
