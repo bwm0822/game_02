@@ -910,7 +910,7 @@ function onDownFit(e)
     if (it.k !== S.pick) pick(it.k);
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
     const c = {x: it.p.x ?? 0, y: it.p.y ?? 0};
-    drag = {kind: hit.kind === 'rot' ? 'partRot' : 'part', pk: hit.kind === 'rot' ? ROT : it.k, l, src: it.src, raw: it.raw, pv: it.pv,
+    drag = {kind: hit.kind === 'rot' ? 'partRot' : 'part', pk: hit.kind === 'rot' ? ROT : it.k, l, src: it.src, raw: {...it.raw}, pv: it.pv,
         orig: structuredClone(entryOf(it.src)), a0: Math.atan2(l.y - c.y, l.x - c.x), o: c};
 }
 

@@ -208,7 +208,7 @@ run('fit', async t => {
             out.pickUi = [F.hoverPart, cv2.style.cursor];
             ptr2('pointerdown', at2(c.x, c.y));
             out.pickUi.push(S.pick, S.cur, cv2.isConnected);
-            ptr2('pointermove', at2(c.x + 2, c.y + 3)); ptr2('pointerup', at2(c.x + 2, c.y + 3));
+            ptr2('pointermove', at2(c.x + 1, c.y + 1)); ptr2('pointermove', at2(c.x + 2, c.y + 3)); ptr2('pointerup', at2(c.x + 2, c.y + 3));
             out.pickUi.push(Math.round((hm().x ?? 0) - (h0.x ?? 0)), Math.round(hm().y - h0.y));
             F.undo();
             out.pickUi.push(JSON.stringify(hm()) === JSON.stringify(h0));
