@@ -22,6 +22,18 @@ export function fieldInput(def, val, put, k)
         }
         case 'int': case 'num':
             return h('input', {class: 'num', inputmode: 'decimal', dataset: data, value: val ?? '', onchange: e => put(parseNum(e.target.value))});
+        // {x, y, a}：只寫有填的 key，三格都清空＝刪掉整個物件
+        case 'xya':
+        {
+            const o = isObj(val) ? val : {};
+            const one = (c) => h('label', null, c, h('input', {class: 'num', inputmode: 'decimal', dataset: {k: `${k}.${c}`}, value: o[c] ?? '',
+                onchange: e => {
+                    const n = {...o, [c]: parseNum(e.target.value)};
+                    if (n[c] === undefined) delete n[c];
+                    put(Object.keys(n).length ? n : undefined);
+                }}));
+            return h('span', {class: 'xya'}, ['x', 'y', 'a'].map(one));
+        }
         case 'tags':
             return h('input', {dataset: {...data, combo: `dl-${k.split('.').at(-1)}`, tags: ''}, value: (val ?? []).join(', '),
                 onchange: e => {const a = e.target.value.split(',').map(s => s.trim()).filter(Boolean); put(a.length ? a : undefined);}});

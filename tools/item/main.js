@@ -46,6 +46,15 @@ function checkVal(def, v, where, out)
         else if (def.type === 'int' && !Number.isInteger(v)) out.push(`${where} 應該是整數：${v}`);
     }
     else if (def.type === 'enum' && !def.options.includes(v)) out.push(`${where} 不認識的值：${v}`);
+    else if (def.type === 'xya')
+    {
+        if (!isObj(v)) out.push(`${where} 應該是 {x, y, a}：${str(v)}`);
+        else for (const [c, n] of Object.entries(v))
+        {
+            if (!['x', 'y', 'a'].includes(c)) out.push(`${where} 只能有 x／y／a：${c}`);
+            else if (typeof n !== 'number') out.push(`${where}.${c} 不是數字：${str(n)}`);
+        }
+    }
     else if (def.type === 'sprite') {const e = IC.check(v); if (e) out.push(`${where}：${e}`);}
     else if (def.type === 'itemref' && !S.items[v]) out.push(`${where} 指到不存在的道具：${v}`);
     else if (def.type === 'map' && isObj(v))
@@ -178,7 +187,7 @@ function fieldRow(id, it, k)
                 v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], {});}}, '建立')
                                 : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
             open && h('div', {class: 'fields'},
-                Object.entries(def.fields).map(([f, d]) => [
+                Object.entries(def.fields).filter(([f, d]) => d.show?.(it, o[f]) ?? true).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
                     d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d, o[f], val => set(id, [k, f], val), `${k}.${f}`),
                 ]),

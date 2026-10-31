@@ -445,6 +445,40 @@ run('item', async t => {
     t.check('選道具時附名稱', await t.page.evaluate(() => [...document.querySelectorAll('.combo .opt')].some(o => o.querySelector('.lab')?.textContent === '生肉')));
     await t.page.keyboard.press('Escape');
 
+    // equip 的手腕位移 wristF／wristB（xya）：武器一定顯示、護具有值才顯示；只寫有填的、清空刪掉、不進「其他」、亂填警告
+    const wr = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const inp = (k) => document.querySelector(`#view input[data-k="${k}"]`);
+        const fire = (k, v) => {const el = inp(k); el.value = v; el.dispatchEvent(new Event('change'));};
+        const rows = () => ['wristF', 'wristB'].map(w => !!inp(`equip.${w}.x`));
+        const raw = () => document.querySelector('#view textarea[data-k="equip.#raw"]')?.value ?? '';
+        const armor = Object.keys(S.items).find(id => S.items[id].cat === 'CAT_HELMET' && S.items[id].equip);
+        S.view = 'form'; S.json = false; S.sel = 'sword-1'; ie.render(); S.open.equip = true; ie.render();
+        out.weapon = rows();
+        fire('equip.wristF.x', '5');
+        out.one = JSON.stringify(S.items['sword-1'].equip.wristF);
+        fire('equip.wristF.a', '30');
+        out.two = [JSON.stringify(S.items['sword-1'].equip.wristF), raw().includes('wrist')];
+        fire('equip.wristF.x', ''); fire('equip.wristF.a', '');
+        out.clear = 'wristF' in S.items['sword-1'].equip;
+        S.sel = armor; ie.render(); S.open.equip = true; ie.render();
+        out.armor = rows();
+        ie.set(armor, ['equip', 'wristB'], {y: 2});
+        out.armorSet = [rows(), inp('equip.wristB.y').value];
+        ie.set(armor, ['equip', 'wristB'], {y: 'z', s: 1});
+        out.warn = ie.validate(armor).filter(w => w.includes('equip.wristB')).length;
+        ie.undo(); ie.undo();
+        out.undo = 'wristB' in S.items[armor].equip;
+        return out;
+    });
+    t.eq('手腕位移：武器有前後手腕兩列', JSON.stringify(wr.weapon), '[true,true]');
+    t.eq('手腕位移：只填 x 只寫 x', wr.one, '{"x":5}');
+    t.eq('手腕位移：再填 a、不進「其他」', JSON.stringify(wr.two), JSON.stringify(['{"x":5,"a":30}', false]));
+    t.eq('手腕位移：清空刪掉', wr.clear, false);
+    t.eq('手腕位移：護具沒值不顯示、有值才顯示', JSON.stringify([wr.armor, wr.armorSet]), JSON.stringify([[false, false], [[false, true], '2']]));
+    t.eq('手腕位移：不是數字／多的 key 警告', wr.warn, 2);
+    t.eq('手腕位移：undo', wr.undo, false);
+
     // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來
     const pv = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S, out = {};

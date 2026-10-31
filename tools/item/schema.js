@@ -1,6 +1,8 @@
 // item.json 的欄位定義：表單、總覽表、檢查都看這份；沒列到的 key 不會被丟掉（道具層級進原始 JSON 區、effect 進額外欄位）
 // type：text / textarea / int / num / bool / enum（下拉，options 固定）/ list（自由輸入＋建議）/ tags（字串陣列）
 //       icon / sprite（選圖器）/ itemref（道具 id）/ color（0xRRGGBB 整數）/ obj（fields 子欄位）/ map（道具 id → 數量）/ effects
+//       xya（{x, y, a} 數字）
+// obj 子欄位的 show(it, v)：false 就不畫（key 還是算認得的，不會進「其他」）
 
 export const CATS = ['CAT_WEAPON', 'CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS', 'CAT_NECKLACE', 'CAT_RING',
                      'CAT_EQUIP', 'CAT_BAG', 'CAT_FOOD', 'CAT_ITEM', 'CAT_DEVICE'];
@@ -23,6 +25,9 @@ const SPRITE = {
     oy: {label: 'oy', type: 'num'},
 };
 
+// 手腕位移（疊在 body 支點上，男女共用）只有武器、暫拿的工具會用到：武器一定顯示，其他有值才顯示
+const WRIST_SHOW = (it, v) => it.cat === 'CAT_WEAPON' || v !== undefined;
+
 export const FIELDS = {
     lab: {label: '名稱', type: 'text'},
     cat: {label: '分類', type: 'enum', options: ['', ...CATS], names: CAT_NAMES},
@@ -43,7 +48,8 @@ export const FIELDS = {
     times: {label: '使用次數', type: 'int'},
     endurance: {label: '耐久', type: 'int'},
     storage: {label: '格數', type: 'int'},
-    equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, back: {label: '後片', type: 'sprite'}, hideHair: {label: '藏頭髮', type: 'bool'}}},
+    equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, back: {label: '後片', type: 'sprite'}, hideHair: {label: '藏頭髮', type: 'bool'},
+        wristF: {label: '前手腕', type: 'xya', show: WRIST_SHOW}, wristB: {label: '後手腕', type: 'xya', show: WRIST_SHOW}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
     cook: {label: '烹煮成', type: 'obj', fields: {id: {label: 'id', type: 'itemref'}}},

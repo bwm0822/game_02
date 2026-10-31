@@ -8,6 +8,8 @@ button:disabled { opacity: 0.4; cursor: default; }
 button.on { background: #2f6db5; border-color: #4a8be0; }
 input, textarea, select { background: #2b2d31; color: #ddd; border: 1px solid #555; font: inherit; }
 input.num { width: 80px; }
+.xya { display: flex; gap: 10px; }
+.xya label { display: inline-flex; align-items: center; gap: 4px; color: #aaa; }
 textarea { width: 100%; resize: vertical; }
 .je, .je-area { position: relative; }
 .je-hl, .je-ta { margin: 0; font: 16px/1.45 ui-monospace, Consolas, monospace; padding: 4px 6px; border: 1px solid #555; white-space: pre; tab-size: 2; }
