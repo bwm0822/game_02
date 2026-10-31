@@ -168,7 +168,7 @@ run('fit', async t => {
             ptr('pointermove', at(g.pts.wristF.x, g.pts.wristF.y));
             out.hover = [F.hover, cv.style.cursor];
             ptr('pointermove', at(g.hds.wristF.x, g.hds.wristF.y));
-            out.hover.push(F.hover, cv.style.cursor);
+            out.hover.push(F.hover, cv.style.cursor.startsWith('url(') && cv.style.cursor.endsWith('grab'));
             cv.dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
             out.hover.push(F.hover);
             turn('wristF', 90);
@@ -441,7 +441,7 @@ run('fit', async t => {
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
     t.eq('支點 a：武器跟著轉、清空 a 只刪 a', JSON.stringify(r.rotA), JSON.stringify([90, '{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}']));
     t.eq('武器手腕位移：寫 equip、武器跟著移、兩列、拖十字寫武器、脖子不動、清空刪掉', JSON.stringify(r.wristOfs), JSON.stringify(['{"x":5}', 5, 2, '{"x":2,"y":3}', false, true, '{"x":5,"a":90}', '{"x":-13,"y":20}', false, false]));
-    t.eq('滑過十字／把手 hover、游標、移出清掉', JSON.stringify(r.hover), JSON.stringify(['wristF', 'move', 'wristF', 'grab', null]));
+    t.eq('滑過十字／把手 hover、游標、移出清掉', JSON.stringify(r.hover), JSON.stringify(['wristF', 'move', 'wristF', true, null]));
     t.eq('拖白點轉 90°、undo、Shift 吸 45、沒有的支點帶上位置', JSON.stringify(r.rotDrag), JSON.stringify(['{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}', 45, '{"x":0,"y":0,"a":90}']));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
     t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
