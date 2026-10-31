@@ -6,11 +6,21 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../common/style.css">
 <style>
-    /* 角色編輯器的預覽（role.css 其他規則會撞 .cell／.sec，只抄這段） */
+    /* 角色編輯器的預覽（role.css 其他規則會撞 .cell，只抄這段） */
     .pv { background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
     .pv canvas { display: block; image-rendering: pixelated; }
     .pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; max-width: 300px; }
     .pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
+    .pv .opts input.bg { width: 32px; height: 22px; padding: 0 2px; }
+    .pv .opts .bgchk { padding: 0 6px; font-size: 13px; }
+    #left { width: 260px; }
+    #filters { display: flex; gap: 4px; }
+    #filters button { flex: 1; padding: 2px 4px; font-size: 14px; }
+    #left .bottom { display: flex; flex-direction: column; gap: 4px; }
+    #left #status { font-size: 14px; word-break: break-all; }
+    .item .n { margin-left: auto; color: #888; font-size: 13px; }
+    .item.unused { opacity: .45; }
+    .item .warn { color: #e66; }
     #view { user-select: none; }
     .sec { color: #aaa; font-weight: bold; margin: 12px 0 4px; }
     .sec:first-child { margin-top: 0; }
@@ -18,37 +28,37 @@
     .cells { display: flex; flex-wrap: wrap; gap: 6px; }
     .cell { position: relative; width: 104px; text-align: center; padding: 4px; border-radius: 3px; border: 1px solid transparent; font-size: 13px; cursor: pointer; }
     .cell:hover { background: #33363c; }
-    .cell.sel { background: #2f6db5; }
     .cell .ico { display: flex; margin: 0 auto 2px; }
     .cell .k { word-break: break-all; }
     .cell .n { position: absolute; top: 2px; right: 4px; color: #8bd; font-size: 12px; }
     .cell.unused { opacity: .45; }
     .cell.bad { border-color: #e66; }
     .cell.bad .k { color: #f88; }
-    #detail { width: 400px; flex: none; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; }
-    #detail .acts { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
-    #detail .pics { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
-    #detail .pics .cap { font-size: 13px; color: #888; margin-bottom: 2px; }
-    #detail table { border-collapse: collapse; font-size: 14px; }
-    #detail td { padding: 1px 8px 1px 0; vertical-align: top; }
-    #detail td.k { color: #888; }
-    #detail .users { padding-left: 18px; margin: 4px 0; }
-    #detail a.go { color: #8bd; cursor: pointer; }
-    #detail .bad { color: #f88; }
+    #view .head { flex-wrap: wrap; }
+    #view .acts { display: flex; flex-wrap: wrap; gap: 4px; }
+    #view table { border-collapse: collapse; font-size: 15px; }
+    #view td { padding: 1px 12px 1px 0; vertical-align: top; }
+    #view td.k { color: #888; }
+    #view .users { padding-left: 18px; margin: 4px 0; }
+    #view a.go { color: #8bd; cursor: pointer; }
+    #right { flex: none; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; display: flex; flex-direction: column; gap: 8px; }
+    #right:empty { display: none; }
+    #right .cap { font-size: 13px; color: #888; margin-bottom: 2px; }
 </style>
 </head>
 <body>
-<header>
-    <span id="filters"></span>
-    <input id="search" placeholder="搜尋 id／sprite" size="20">
-    <span class="sep"></span>
-    <button id="btnNew">＋ 新增</button>
-    <span id="status" class="dim"></span>
-</header>
-
 <main>
+    <aside id="left">
+        <input id="search" placeholder="搜尋 id／sprite">
+        <div id="filters"></div>
+        <div id="list"></div>
+        <div class="bottom">
+            <button id="btnNew">＋ 新增</button>
+            <span id="status" class="dim"></span>
+        </div>
+    </aside>
     <section id="view"></section>
-    <aside id="detail"></aside>
+    <aside id="right"></aside>
 </main>
 
 <dialog id="dlgAsk">

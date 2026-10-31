@@ -1,4 +1,4 @@
-// 部位（part.json）總覽與整理：照 kind 分段的縮圖牆、壞的／沒人用的標出來；改名、改 kind、換圖、新增、複製、刪除都立刻寫檔＋廣播，沒有 undo
+// 部位（part.json）總覽與整理：左樹（照 kind 分組）、中間沒選＝縮圖總覽／選了＝詳細、右欄合成；壞的／沒人用的標出來；改名、改 kind、換圖、新增、複製、刪除都立刻寫檔＋廣播，沒有 undo
 // 擺放數字不在這裡調（唯讀），要調按「↗ 到試穿調」
 import {$, h, ask, status} from '../common/dom.js';
 import * as FS from '../common/fs.js';
@@ -6,6 +6,8 @@ import * as SH from '../common/shell.js';
 import * as IC from '../common/icons.js';
 import * as PT from '../common/part.js';
 import {ID_RE} from '../common/doc.js';
+import {createFold} from '../common/fold.js';
+import '../common/splitter.js';
 import {previewEl} from '../role/preview.js';
 import {ROLE_PARTS} from '../../src/core/equip.js';
 
@@ -23,6 +25,8 @@ const S = {
     search: '',
     sel: null,
 };
+
+const F = createFold();
 
 const usersOf = (pid) => PT.usersOf(S.roles, pid);
 const isDoll = (r) => !!(r.head || r.hand);
@@ -65,7 +69,7 @@ async function reload()
     render();
 }
 
-// ---------- 中間：縮圖牆 ----------
+// ---------- 篩選、分組 ----------
 function visible()
 {
     const q = S.search.trim().toLowerCase();
@@ -74,28 +78,61 @@ function visible()
         && (!q || pid.toLowerCase().includes(q) || String(S.parts[pid].sprite ?? '').toLowerCase().includes(q)));
 }
 
+const SECS = [...ROLE_PARTS.map(k => [k, `${KIND_NAMES[k]}　${k}`]), ['#unknown', '不認識的 kind']];
+const inSec = (k, pid) => (k === '#unknown' ? !ROLE_PARTS.includes(S.parts[pid].kind) : S.parts[pid].kind === k);
+// [[key, 標題, ids]]，空的組不列
+function groups()
+{
+    const ids = visible();
+    return SECS.map(([k, name]) => [k, name, ids.filter(pid => inSec(k, pid))]).filter(([, , list]) => list.length);
+}
+
+// 再點一次選到的＝取消選取（回總覽）
+const pick = (pid) => {S.sel = S.sel === pid ? null : pid; render();};
+
+// ---------- 左欄：樹 ----------
+// 同 views.js 的 renderList：摺起來的組裡不留選取，從別處選到（總覽卡片、新增、改名、↗ 跳過來）就展開那組
+function renderList()
+{
+    const searching = !!S.search.trim(), gs = groups(), keys = gs.map(([k]) => k);
+    const mine = gs.find(([, , list]) => list.includes(S.sel))?.[0];
+    if (mine !== undefined && !searching) F.open(mine);
+    const onToggle = () => {
+        if (mine !== undefined && F.folded(mine, searching)) S.sel = null;
+        render();
+    };
+    $('list').replaceChildren(...gs.flatMap(([k, name, list]) => [
+        F.head(k, `${name}（${list.length}）`, keys, onToggle, searching),
+        ...F.folded(k, searching) ? [] : list.map(pid => {
+            const users = usersOf(pid), bad = problems(pid);
+            return h('div', {class: 'item' + (pid === S.sel ? ' sel' : '') + (users.length ? '' : ' unused'), dataset: {id: pid}, onclick: () => pick(pid)},
+                IC.iconEl(S.parts[pid].sprite, 20),
+                h('span', {class: 'id'}, pid),
+                h('span', {class: 'n', title: users.join('、') || '沒有角色在用'}, users.length),
+                bad.length > 0 && h('span', {class: 'warn', title: bad.join('\n')}, '⚠'));
+        }),
+    ]));
+    $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
+}
+
+// ---------- 中間：沒選＝縮圖總覽 ----------
 function cell(pid)
 {
     const p = S.parts[pid], n = usersOf(pid).length, bad = problems(pid);
-    return h('div', {class: ['cell', S.sel === pid && 'sel', !n && 'unused', bad.length && 'bad'].filter(Boolean).join(' '), dataset: {id: pid},
-            title: [pid, bad.length ? bad.join('\n') : n ? `${n} 個角色在用` : '沒有角色在用'].join('\n'),
-            onclick: () => {S.sel = S.sel === pid ? null : pid; render();}},
+    return h('div', {class: ['cell', !n && 'unused', bad.length && 'bad'].filter(Boolean).join(' '), dataset: {id: pid},
+            title: [pid, bad.length ? bad.join('\n') : n ? `${n} 個角色在用` : '沒有角色在用'].join('\n'), onclick: () => pick(pid)},
         IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, pid), n > 0 && h('span', {class: 'n'}, n));
 }
 
-function renderView()
+function renderWall()
 {
-    if (!S.assets) return $('view').replaceChildren(h('div', {class: 'dim'}, '先在上方選擇專案資料夾'));
-    const ids = visible();
-    const secs = [...ROLE_PARTS.map(k => [k, `${KIND_NAMES[k]}　${k}`]), ['#unknown', '不認識的 kind']]
-        .map(([k, name]) => [name, ids.filter(pid => k === '#unknown' ? !ROLE_PARTS.includes(S.parts[pid].kind) : S.parts[pid].kind === k)])
-        .filter(([, list]) => list.length);
-    $('view').replaceChildren(...(secs.length
-        ? secs.map(([name, list]) => [h('div', {class: 'sec'}, name, h('span', {class: 'dim'}, `（${list.length}）`)), h('div', {class: 'cells'}, list.map(cell))]).flat()
+    const gs = groups();
+    $('view').replaceChildren(...(gs.length
+        ? gs.flatMap(([, name, list]) => [h('div', {class: 'sec'}, name, h('span', {class: 'dim'}, `（${list.length}）`)), h('div', {class: 'cells'}, list.map(cell))])
         : [h('div', {class: 'dim'}, '（沒有符合的）')]));
 }
 
-// ---------- 右欄：詳細 ----------
+// ---------- 中間：詳細；右欄：合成 ----------
 function dollOf(pid, sex)
 {
     const r = {...DOLL_ROLE, sex, body: DOLL[sex]};
@@ -113,33 +150,30 @@ function fieldRows(p)
 function renderDetail()
 {
     const pid = S.sel, p = S.parts[pid];
-    if (!p)
-    {
-        const all = Object.keys(S.parts);
-        return $('detail').replaceChildren(h('div', {class: 'dim'}, S.assets ? `點一張看詳細（共 ${all.length} 筆、未使用 ${all.filter(isUnused).length}、壞的 ${all.filter(isBad).length}）` : ''));
-    }
     const users = usersOf(pid), bad = problems(pid), doll = users.find(rid => isDoll(S.roles[rid]));
-    $('detail').replaceChildren(
-        h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`)),
+    $('view').replaceChildren(
+        h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
+            h('span', {class: 'grow'}),
+            h('span', {class: 'acts'},
+                h('button', {disabled: !doll, title: doll ? `到試穿分頁選 ${doll}、游標放在這個部位的數字` : '沒有紙娃娃型角色（有 head 或 hand）在用，試穿挑不到',
+                    onclick: () => SH.gotoTab('fit', [doll, p.kind])}, '↗ 到試穿調'),
+                h('button', {onclick: () => act(renamePart(pid))}, '改名…'),
+                h('button', {onclick: () => act(changeKind(pid))}, '改 kind…'),
+                h('button', {onclick: () => act(changeSprite(pid))}, '換圖…'),
+                h('button', {onclick: () => act(askEntry(pid))}, '複製…'),
+                h('button', {onclick: () => act(deletePart(pid))}, '刪除…'))),
         bad.length > 0 && h('ul', {class: 'warns'}, bad.map(w => h('li', null, w))),
-        h('div', {class: 'acts'},
-            h('button', {disabled: !doll, title: doll ? `到試穿分頁選 ${doll}、游標放在這個部位的數字` : '沒有紙娃娃型角色（有 head 或 hand）在用，試穿挑不到',
-                onclick: () => SH.gotoTab('fit', [doll, p.kind])}, '↗ 到試穿調'),
-            h('button', {onclick: () => act(renamePart(pid))}, '改名…'),
-            h('button', {onclick: () => act(changeKind(pid))}, '改 kind…'),
-            h('button', {onclick: () => act(changeSprite(pid))}, '換圖…'),
-            h('button', {onclick: () => act(askEntry(pid))}, '複製…'),
-            h('button', {onclick: () => act(deletePart(pid))}, '刪除…')),
-        h('div', {class: 'pics'},
-            h('div', null, h('div', {class: 'cap'}, '原圖'), IC.iconEl(p.sprite, 160)),
-            h('div', null, h('div', {class: 'cap'}, `套在 ${DOLL.m}`), previewEl(dollOf(pid, 'm'), {}, S.parts)),
-            p.f && h('div', null, h('div', {class: 'cap'}, `女版 f，套在 ${DOLL.f}`), previewEl(dollOf(pid, 'f'), {}, S.parts))),
+        h('div', {class: 'title'}, '原圖'),
+        IC.iconEl(p.sprite, 160),
         h('div', {class: 'title'}, '欄位（唯讀）'),
         h('table', null, fieldRows(p)),
         h('div', {class: 'title'}, `使用者（${users.length}）`),
         users.length ? h('ul', {class: 'users'}, users.map(rid => h('li', null, rid, ' ', h('span', {class: 'dim'}, S.roles[rid].lab ?? ''),
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
             : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）'));
+    $('right').replaceChildren(
+        h('div', null, h('div', {class: 'cap'}, `套在 ${DOLL.m}`), previewEl(dollOf(pid, 'm'), {}, S.parts)),
+        p.f && h('div', null, h('div', {class: 'cap'}, `女版 f，套在 ${DOLL.f}`), previewEl(dollOf(pid, 'f'), {}, S.parts)));
 }
 
 function render()
@@ -149,8 +183,11 @@ function render()
     $('filters').replaceChildren(...FILTERS.map(([f, name]) => h('button', {class: S.filter === f ? 'on' : '', dataset: {filter: f},
         onclick: () => {S.filter = f; render();}}, `${name}（${count[f]}）`)));
     $('btnNew').disabled = !S.assets;
-    renderView();
-    renderDetail();
+    renderList();
+    if (S.parts[S.sel]) return renderDetail();
+    $('right').replaceChildren();
+    if (S.assets) renderWall();
+    else $('view').replaceChildren(h('div', {class: 'dim'}, '先在上方選擇專案資料夾'));
 }
 
 // ---------- 動作（立刻寫檔） ----------

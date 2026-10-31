@@ -74,16 +74,45 @@ run('part-tool', async t => {
         out.search = [...document.querySelectorAll('#view .cell')].map(c => c.dataset.id).sort().join();
         $('search').value = ''; $('search').dispatchEvent(new Event('input'));
 
-        // 詳細：人偶合成、女版、唯讀欄位、使用者 ↗、到試穿（沒有紙娃娃型角色在用就停用）
+        // 左樹：照 kind 分組、左欄可拖寬度；沒選時右欄空著
+        const heads = () => [...document.querySelectorAll('#list .group')];
+        const head = (k) => heads().find(g => g.textContent.includes(`　${k}（`));
+        const rows = () => [...document.querySelectorAll('#list .item')].map(i => i.dataset.id);
+        out.tree = [heads().map(g => g.textContent.slice(1).replace(/（\d+）$/, '')).join(), !!document.querySelector('.left-grip'), $('right').childElementCount];
+        // 點總覽卡片：選到它、展開那組、列標 sel，中間換詳細
         cell('hair-wick').click();
         await sleep(300);
-        const btn = (txt) => [...document.querySelectorAll('#detail button')].find(b => b.textContent === txt);
-        out.detail = [document.querySelectorAll('#detail .pv canvas').length, +document.querySelector('#detail .pv canvas').dataset.drawn,
-                      [...document.querySelectorAll('#detail .users li')].map(li => li.firstChild.textContent).join(), btn('↗ 到試穿調').disabled];
-        cell('hair-unused').click();
+        out.pickCell = [S.sel, head('hair').querySelector('.arrow').textContent, document.querySelector('#list .item.sel')?.dataset.id, !document.querySelector('#view .cell')];
+        const row = (id) => document.querySelector(`#list .item[data-id="${id}"]`);
+        out.rowMarks = [row('hair-unused').classList.contains('unused'), !!row('bad-sprite').querySelector('.warn'), row('hair-wick').querySelector('.n').textContent];
+
+        // 詳細：中間原圖＋唯讀欄位＋使用者、右欄人偶合成、到試穿（沒有紙娃娃型角色在用就停用）
+        const btn = (txt) => [...document.querySelectorAll('#view button')].find(b => b.textContent === txt);
+        out.detail = [document.querySelectorAll('#right .pv canvas').length, +document.querySelector('#right .pv canvas').dataset.drawn,
+                      [...document.querySelectorAll('#view .users li')].map(li => li.firstChild.textContent).join(), btn('↗ 到試穿調').disabled];
+        row('hair-unused').click();
         await sleep(300);
-        out.unusedDetail = [document.querySelectorAll('#detail .pv canvas').length, btn('↗ 到試穿調').disabled,
-                            [...document.querySelectorAll('#detail td.k')].map(td => td.textContent).join()];
+        out.unusedDetail = [document.querySelectorAll('#right .pv canvas').length, btn('↗ 到試穿調').disabled,
+                            [...document.querySelectorAll('#view td.k')].map(td => td.textContent).join()];
+
+        // 合成底色：純色、兩張一起換、記住；棋盤格恢復
+        const px = (cv) => [...cv.getContext('2d').getImageData(1, 1, 1, 1).data.slice(0, 3)].join();
+        const color = document.querySelector('#right input.bg');
+        color.value = '#ff0000'; color.dispatchEvent(new Event('input')); color.dispatchEvent(new Event('change'));
+        await sleep(200);
+        out.bg = [[...document.querySelectorAll('#right .pv canvas')].map(px).join('|'), localStorage.getItem('tools.preview.bg'),
+                  document.querySelectorAll('#right input.bg')[1].value];
+        document.querySelector('#right .bgchk').click();
+        await sleep(200);
+        out.bgReset = [px(document.querySelector('#right .pv canvas')) !== '255,0,0', localStorage.getItem('tools.preview.bg')];
+
+        // 再點一次選到的列：取消選取、回總覽；摺起選到的那組也取消選取
+        row('hair-unused').click();
+        out.unpick = [S.sel, !!document.querySelector('#view .cell'), $('right').childElementCount];
+        row('hair-wick').click();
+        head('hair').click();
+        out.foldUnpick = [S.sel, head('hair').querySelector('.arrow').textContent, rows().includes('hair-wick')];
+        pt.S.sel = 'hair-unused'; pt.render();
 
         // 改 kind：有人在用擋住；沒人用的改掉
         out.kindUsed = await run(pt.changeKind('hair-wick'), () => 'ok');
@@ -137,8 +166,15 @@ run('part-tool', async t => {
     t.eq('篩選壞的', r.bad, 'bad-sprite,head-karen,weird');
     t.check('篩選未使用', r.unused);
     t.eq('搜尋 id／sprite', r.search, 'hair-mary,head-mary');
-    t.eq('詳細：套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));
+    t.eq('左樹：照 kind 分組、左欄可拖、沒選右欄空', JSON.stringify(r.tree), JSON.stringify([['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '手　hand', '不認識的 kind'].join(), true, 0]));
+    t.eq('點總覽卡片：選取、展開那組、列標 sel、中間換詳細', JSON.stringify(r.pickCell), JSON.stringify(['hair-wick', '▾', 'hair-wick', true]));
+    t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));
+    t.eq('詳細：右欄套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));
     t.eq('沒人用：有女版多一張合成、到試穿停用、欄位唯讀列出', JSON.stringify(r.unusedDetail), JSON.stringify([2, true, 'sprite,scale,f']));
+    t.eq('合成底色：純色、兩張一起換、記住', JSON.stringify(r.bg), JSON.stringify(['255,0,0|255,0,0', '#ff0000', '#ff0000']));
+    t.eq('合成底色：棋盤格恢復、清掉記憶', JSON.stringify(r.bgReset), JSON.stringify([true, null]));
+    t.eq('再點一次取消選取、回總覽、右欄空', JSON.stringify(r.unpick), JSON.stringify([null, true, 0]));
+    t.eq('摺起選到的那組：取消選取', JSON.stringify(r.foldUnpick), JSON.stringify([null, '▸', false]));
     t.eq('改 kind：有人用擋住、沒人用的改掉', JSON.stringify([r.kindUsed, r.kind, r.kindDisk]), JSON.stringify([['不能改 hair-wick 的 kind'], ['改 hair-unused 的 kind'], 'head']));
     t.eq('換圖', r.sprite, 'hair-karen');
     t.eq('新增：選圖帶出 id', r.autoId, 'hair-01');
@@ -185,7 +221,7 @@ run('part-tool', async t => {
 
         // ↗ 到試穿：切到試穿分頁、選第一個紙娃娃型使用者、游標在那個部位的數字欄
         pt.S.sel = 'hair-john'; pt.render();
-        [...win('part').document.querySelectorAll('#detail button')].find(b => b.textContent === '↗ 到試穿調').click();
+        [...win('part').document.querySelectorAll('#view button')].find(b => b.textContent === '↗ 到試穿調').click();
         out.goto = await until(() => T.S.tab === 'fit' && fit.S.rid === 'wick') && [T.S.tab, fit.S.rid, win('fit').document.activeElement?.dataset?.k?.startsWith('part.json|hair-john|')];
         return out;
     }, SETUP.toString());

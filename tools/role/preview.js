@@ -6,8 +6,25 @@ import * as IC from '../common/icons.js';
 import {DEPTH, CAT} from './schema.js';
 import {equipFor, partFor, hiddenParts, ROLE_PARTS} from '../../src/core/equip.js';
 
-const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false};   // 開關跨角色保留
+const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
+const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
+const BG_KEY = 'tools.preview.bg';
+try {P.bg = localStorage.getItem(BG_KEY);} catch {}
+
+// 同頁可能有好幾張預覽（部位分頁的男／女版），換底色全部一起重畫
+const redraws = new WeakMap();      // .pv 元素 → redraw
+function setBg(c, store)
+{
+    P.bg = c;
+    if (store) try {c ? localStorage.setItem(BG_KEY, c) : localStorage.removeItem(BG_KEY);} catch {}
+    for (const pv of document.querySelectorAll('.pv'))
+    {
+        pv.querySelector('input.bg').value = c ?? BG[0];
+        pv.querySelector('.bgchk').disabled = !c;
+        redraws.get(pv)?.();
+    }
+}
 
 function axis(a, b, total)
 {
@@ -43,9 +60,9 @@ async function draw(cv, r, items, pdb)
     const g = cv.getContext('2d');
     g.imageSmoothingEnabled = false;
     g.scale(K, K);
-    g.fillStyle = '#1b1c1f'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#222428';
-    for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
+    g.fillStyle = P.bg ?? BG[0]; g.fillRect(0, 0, W, H);
+    g.fillStyle = BG[1];
+    if (!P.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
     const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
     g.lineWidth = 1 / K;
@@ -95,11 +112,15 @@ export function previewEl(r, items, parts)
     const check = (k, text, color) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: P[k], onchange: e => {P[k] = e.target.checked; redraw();}}), text);
     redraw();
-    return h('div', {class: 'pv'},
+    const pv = h('div', {class: 'pv'},
         cv,
         h('div', {class: 'opts'},
             check('b', '物理 b', COLOR.b), check('g', '佔格 g', COLOR.g), check('z', '互動 z', COLOR.z),
             check('equips', '裝備'), check('flip', '翻面'),
             h('select', {onchange: e => {P.zoom = +e.target.value; redraw();}},
-                [2, 3, 4, 6].map(z => h('option', {value: z, selected: z === P.zoom}, `×${z}`)))));
+                [2, 3, 4, 6].map(z => h('option', {value: z, selected: z === P.zoom}, `×${z}`))),
+            h('input', {type: 'color', class: 'bg', title: '背景色', value: P.bg ?? BG[0], oninput: e => setBg(e.target.value), onchange: e => setBg(e.target.value, true)}),
+            h('button', {type: 'button', class: 'bgchk', title: '背景改回棋盤格', disabled: !P.bg, onclick: () => setBg(null, true)}, '棋盤格')));
+    redraws.set(pv, redraw);
+    return pv;
 }
