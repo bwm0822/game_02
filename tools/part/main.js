@@ -158,6 +158,9 @@ function setTab(k)
 }
 
 // ---------- 中間：詳細；右欄：合成 ----------
+// 身體沒有男女之分（男女各有自己的身體條目）：不給切換、不讀寫 f
+const sexFor = (p) => (p.kind === 'body' ? 'm' : S.sex);
+
 function dollOf(pid, sex)
 {
     const r = {...DOLL_ROLE, sex, body: DOLL[sex]};
@@ -176,7 +179,7 @@ function fieldRows(p)
 // 擺放數字：女（右欄切到女）的 scale/x/y 改 f，第一次改從基準複製（同試穿的 sexCells）；清空＝刪 key
 function numTable(pid)
 {
-    const p = S.parts[pid], sx = S.sex === 'f' ? 'f' : null, has = isObj(p.f);
+    const p = S.parts[pid], sx = sexFor(p) === 'f' ? 'f' : null, has = isObj(p.f);
     const cell = (k, ph) => {
         const inF = sx && SEX_NUMS.includes(k), v = inF ? p.f?.[k] : p[k];
         const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
@@ -205,7 +208,7 @@ function setVals(q, vals)
 {
     for (const [k, n] of Object.entries(vals))
     {
-        const inF = S.sex === 'f' && SEX_NUMS.includes(k);
+        const inF = sexFor(q) === 'f' && SEX_NUMS.includes(k);
         if (inF && !isObj(q.f)) q.f = Object.fromEntries(SEX_NUMS.map(s => [s, q[s]]).filter(([, v]) => v !== undefined));
         const t = inF ? q.f : q;
         if (n === undefined) delete t[k];
@@ -326,9 +329,13 @@ function renderDetail()
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
             : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）')));
     const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
+    // 身體：只畫自己（照基準數字）＋支點十字，沒有男女切換
+    if (p.kind === 'body') return $('right').replaceChildren(
+        h('div', {class: 'cap'}, `身體 ${pid}`),
+        previewEl(dollOf(pid, 'm'), {}, S.parts, {pivots: pivotDrag(pid)}));
     $('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, S.sex), {}, S.parts, p.kind === 'body' ? {pivots: pivotDrag(pid)} : {}),
+        previewEl(dollOf(pid, S.sex), {}, S.parts),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 

@@ -181,17 +181,14 @@ run('part-tool', async t => {
         out.body.push(Math.round((await bm()).neck.a - (bm0.neck?.a ?? 0)), S.hi - hb);
         await pt.undo(); await pt.undo(); await pt.undo(); await sleep(200);
         out.body.push(JSON.stringify(await bm()) === JSON.stringify(bm0));
-        sex('f');
-        await sleep(300);
-        await drag(async ({g, at, ptr}) => {
-            const p = g.pts.wristF;
-            ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 1, p.y)); ptr('pointerup', at(p.x + 1, p.y));
-        });
-        out.body.push(!(await bm()).f, (await bm()).wristF.x === (bm0.wristF?.x ?? 0) + 1);
+        // 身體沒有男女：就算記住的是女，也沒有切換、數字欄不標 f、改了寫基準
+        S.sex = 'f'; pt.render(); await sleep(300);
+        out.body.push(!document.querySelector('#right .sexsw'), [...document.querySelectorAll('#view table.nums:not(.pivots) th')].map(th => th.textContent).join(), $('right').querySelector('.cap').textContent);
+        await fire('part.json|body-man|y', String((bm0.y ?? 0) + 1));
+        out.body.push(!(await bm()).f, (await bm()).y === (bm0.y ?? 0) + 1);
         await pt.undo(); await sleep(200);
         out.body.push(JSON.stringify(await bm()) === JSON.stringify(bm0));
-        sex('m');
-        await sleep(300);
+        S.sex = 'm'; pt.render(); await sleep(300);
         S.sel = 'hair-unused'; pt.render();
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
         // ×6：男女在最下面，選項列跟男女留在右欄裡（畫布那層自己捲）
@@ -288,8 +285,9 @@ run('part-tool', async t => {
     t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
         JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
     t.eq('右欄合成：不是身體的條目不能拖', JSON.stringify(r.noDrag), JSON.stringify([null, true]));
-    t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原、女也寫基準不建 f、undo',
-        JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true, true, true, true]));
+    t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原；身體沒有男女切換、不標 f、寫基準、undo',
+        JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true,
+            true, 'scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
     t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
