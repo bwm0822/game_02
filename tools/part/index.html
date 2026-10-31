@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>部位</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../common/style.css">
+<style>
+    /* 角色編輯器的預覽（role.css 其他規則會撞 .cell／.sec，只抄這段） */
+    .pv { background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
+    .pv canvas { display: block; image-rendering: pixelated; }
+    .pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; max-width: 300px; }
+    .pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
+    #view { user-select: none; }
+    .sec { color: #aaa; font-weight: bold; margin: 12px 0 4px; }
+    .sec:first-child { margin-top: 0; }
+    .sec .dim { font-weight: normal; }
+    .cells { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cell { position: relative; width: 104px; text-align: center; padding: 4px; border-radius: 3px; border: 1px solid transparent; font-size: 13px; cursor: pointer; }
+    .cell:hover { background: #33363c; }
+    .cell.sel { background: #2f6db5; }
+    .cell .ico { display: flex; margin: 0 auto 2px; }
+    .cell .k { word-break: break-all; }
+    .cell .n { position: absolute; top: 2px; right: 4px; color: #8bd; font-size: 12px; }
+    .cell.unused { opacity: .45; }
+    .cell.bad { border-color: #e66; }
+    .cell.bad .k { color: #f88; }
+    #detail { width: 400px; flex: none; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; }
+    #detail .acts { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+    #detail .pics { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+    #detail .pics .cap { font-size: 13px; color: #888; margin-bottom: 2px; }
+    #detail table { border-collapse: collapse; font-size: 14px; }
+    #detail td { padding: 1px 8px 1px 0; vertical-align: top; }
+    #detail td.k { color: #888; }
+    #detail .users { padding-left: 18px; margin: 4px 0; }
+    #detail a.go { color: #8bd; cursor: pointer; }
+    #detail .bad { color: #f88; }
+</style>
+</head>
+<body>
+<header>
+    <span id="filters"></span>
+    <input id="search" placeholder="搜尋 id／sprite" size="20">
+    <span class="sep"></span>
+    <button id="btnNew">＋ 新增</button>
+    <span id="status" class="dim"></span>
+</header>
+
+<main>
+    <section id="view"></section>
+    <aside id="detail"></aside>
+</main>
+
+<dialog id="dlgAsk">
+    <form method="dialog">
+        <div class="title"></div>
+        <div class="body"></div>
+        <div class="row2 buttons"></div>
+    </form>
+</dialog>
+
+<dialog id="dlgIcon">
+    <form method="dialog">
+        <div class="tabs"></div>
+        <div class="body"></div>
+        <div class="row2">
+            <label>直接輸入 <input size="28"></label>
+            <span class="info dim"></span>
+            <span class="grow"></span>
+            <button value="ok">確定</button><button value="cancel" formnovalidate>取消</button>
+        </div>
+    </form>
+</dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
