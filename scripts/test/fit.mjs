@@ -191,6 +191,47 @@ run('fit', async t => {
             F.undo();
         }
 
+        // 畫布點選部件：最上層那張、裝備格跟著選；拖＝改 x/y（相對支點）、一筆 undo；部件表的列有焦點＝選它；白點轉 a；點空白取消
+        await F.drawPreview();
+        {
+            const {cv, g, at, ptr} = cvs();
+            const center = (k) => {const it = g.its.find(it => it.k === k && it.main), f = it.f, s = it.p.scale ?? 1;
+                return {x: (it.p.x ?? 0) + (0.5 - (it.p.ox ?? 0.5)) * f.w * s, y: (it.p.y ?? 0) + (0.5 - (it.p.oy ?? 1)) * f.h * s};};
+            const hm = () => S.doc['item.json'].data.helmet_01.equip, h0 = {...hm()}, c = center('CAT_HELMET');
+            S.cur = 'CAT_WEAPON'; F.render();
+            await F.drawPreview();
+            const g2 = F.geo;
+            const cv2 = document.querySelector('#pv canvas'), rc2 = cv2.getBoundingClientRect();
+            const at2 = (x, y) => ({clientX: rc2.left + (g2.vc.x + x) * g2.K, clientY: rc2.top + (g2.vc.y + y) * g2.K, pointerId: 1, bubbles: true});
+            const ptr2 = (type, q) => cv2.dispatchEvent(new PointerEvent(type, q));
+            ptr2('pointermove', at2(c.x, c.y));
+            out.pickUi = [F.hoverPart, cv2.style.cursor];
+            ptr2('pointerdown', at2(c.x, c.y));
+            out.pickUi.push(S.pick, S.cur, cv2.isConnected);
+            ptr2('pointermove', at2(c.x + 2, c.y + 3)); ptr2('pointerup', at2(c.x + 2, c.y + 3));
+            out.pickUi.push(Math.round((hm().x ?? 0) - (h0.x ?? 0)), Math.round(hm().y - h0.y));
+            F.undo();
+            out.pickUi.push(JSON.stringify(hm()) === JSON.stringify(h0));
+        }
+        document.querySelector('#view tr.partrow[data-pick=body] select').dispatchEvent(new FocusEvent('focusin', {bubbles: true}));
+        out.pickUi.push(S.pick, document.querySelector('#view tr.partrow.sel')?.dataset.pick);
+        await F.drawPreview();
+        {
+            const {g, at, ptr} = cvs(), ph = g.ph, c = {x: g.sel.p.x ?? 0, y: g.sel.p.y ?? 0};
+            const a = Math.atan2(ph.y - c.y, ph.x - c.x) + Math.PI / 2, r = Math.hypot(ph.x - c.x, ph.y - c.y);
+            const pid = g1().body, a0 = S.doc['part.json'].data[pid].a ?? 0;
+            ptr('pointerdown', at(ph.x, ph.y)); ptr('pointermove', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r)); ptr('pointerup', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r));
+            out.pickUi.push(Math.round((S.doc['part.json'].data[pid].a ?? 0) - a0));
+            F.undo();
+        }
+        await F.drawPreview();
+        {
+            const {at, ptr} = cvs();
+            ptr('pointerdown', at(-60, -60)); ptr('pointerup', at(-60, -60));
+            out.pickUi.push(S.pick);
+        }
+        S.cur = 'CAT_HELMET'; F.render();
+
         // 武器的手腕位移：寫 equip.wristF／wristB、武器跟著移；切「武器」拖十字寫武器不寫 body、脖子拖不動；清空刪掉
         const swEq = () => S.doc['item.json'].data['sword-1'].equip;
         const sx0 = swd().x;
@@ -441,6 +482,8 @@ run('fit', async t => {
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
     t.eq('支點 a：武器跟著轉、清空 a 只刪 a', JSON.stringify(r.rotA), JSON.stringify([90, '{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}']));
     t.eq('武器手腕位移：寫 equip、武器跟著移、兩列、拖十字寫武器、脖子不動、清空刪掉', JSON.stringify(r.wristOfs), JSON.stringify(['{"x":5}', 5, 2, '{"x":2,"y":3}', false, true, '{"x":5,"a":90}', '{"x":-13,"y":20}', false, false]));
+    t.eq('畫布點選部件：hover、選頭盔（裝備格跟著）、畫布不換、拖改 x/y、undo、表格列選身體、白點轉 90、點空白取消',
+        JSON.stringify(r.pickUi), JSON.stringify(['CAT_HELMET', 'move', 'CAT_HELMET', 'CAT_HELMET', true, 2, 3, true, 'body', 'body', 90, null]));
     t.eq('滑過十字／把手 hover、游標、移出清掉', JSON.stringify(r.hover), JSON.stringify(['wristF', 'move', 'wristF', true, null]));
     t.eq('拖白點轉 90°、undo、Shift 吸 45、沒有的支點帶上位置', JSON.stringify(r.rotDrag), JSON.stringify(['{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}', 45, '{"x":0,"y":0,"a":90}']));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
