@@ -868,11 +868,11 @@ function pivotHit(l)
 }
 
 // 旋轉游標：上半圓弧兩端各一個實心箭頭（左右轉），白色加黑邊在哪種底色都看得到；熱點在中間
-const ROT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-linejoin="round">`
+const ROT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-linejoin="round">`
     + [['#000', 4, '#000'], ['#fff', 2, '#fff']].map(([c, w, f]) => `<path d="M5 13 A7 7 0 0 1 19 13" fill="none" stroke="${c}" stroke-width="${w}"/>`
         + `<path d="M1.5 12.5 H8.5 L5 18 Z M15.5 12.5 H22.5 L19 18 Z" fill="${f}" stroke="${c}" stroke-width="${w - 1.5}"/>`).join('')
     + `</svg>`;
-const ROT_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(ROT_SVG)}") 12 12, grab`;
+const ROT_CURSOR = `url("data:image/svg+xml,${encodeURIComponent(ROT_SVG)}") 8 8, grab`;
 
 let hover = null;
 function onHoverPivot(e)
