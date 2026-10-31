@@ -103,6 +103,15 @@ run('part-tool', async t => {
         sex('m');
         await sleep(300);
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
+        // ×6：男女在最下面，選項列跟男女留在右欄裡（畫布那層自己捲）
+        const zoom = document.querySelector('#right .pv select');
+        zoom.value = '6'; zoom.dispatchEvent(new Event('change'));
+        await sleep(300);
+        const box = $('right').getBoundingClientRect(), inside = (sel) => {const b = document.querySelector(sel).getBoundingClientRect(); return b.top >= box.top && b.bottom <= box.bottom + 1;};
+        const cvbox = document.querySelector('#right .cvbox');
+        out.zoom6 = [$('right').lastElementChild.classList.contains('sexsw'), inside('#right .opts'), inside('#right .sexsw'),
+                     cvbox.scrollHeight > cvbox.clientHeight || cvbox.scrollWidth > cvbox.clientWidth, $('right').scrollTop];
+        zoom.value = '3'; zoom.dispatchEvent(new Event('change'));
 
         // 合成底色：純色、記住；棋盤格恢復
         const px = (cv) => [...cv.getContext('2d').getImageData(1, 1, 1, 1).data.slice(0, 3)].join();
@@ -181,7 +190,8 @@ run('part-tool', async t => {
     t.eq('合成切女：套 body-woman、沒有 f 用基準、記住', JSON.stringify(r.female), JSON.stringify(['套在 body-woman（沒有 f，用基準數字）', 2, 'f', 'f']));
     t.eq('換一筆保留女：有 f 用女版、到試穿停用、欄位唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite,scale,f']));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
-    t.eq('合成底色：純色、記住', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
+    t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
+    t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
     t.eq('合成底色：棋盤格恢復、清掉記憶', JSON.stringify(r.bgReset), JSON.stringify([true, null]));
     t.eq('再點一次取消選取、回總覽、右欄空', JSON.stringify(r.unpick), JSON.stringify([null, true, 0]));
     t.eq('摺起選到的那組：取消選取', JSON.stringify(r.foldUnpick), JSON.stringify([null, '▸', false]));

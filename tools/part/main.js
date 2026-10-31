@@ -176,9 +176,9 @@ function renderDetail()
             : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）'));
     const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
     $('right').replaceChildren(
-        h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')),
-        h('div', null, h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-            previewEl(dollOf(pid, S.sex), {}, S.parts)));
+        h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
+        previewEl(dollOf(pid, S.sex), {}, S.parts),
+        h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 
 function setSex(sx)

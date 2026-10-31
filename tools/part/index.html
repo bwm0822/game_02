@@ -41,10 +41,14 @@
     #view td.k { color: #888; }
     #view .users { padding-left: 18px; margin: 4px 0; }
     #view a.go { color: #8bd; cursor: pointer; }
-    #right { flex: none; overflow: auto; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; display: flex; flex-direction: column; gap: 8px; }
+    /* 只有畫布那層捲，選項列跟男女固定在下面 */
+    #right { flex: none; max-width: 50vw; overflow: hidden; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; display: flex; flex-direction: column; gap: 6px; }
     #right:empty { display: none; }
-    #right .cap { font-size: 13px; color: #888; margin-bottom: 2px; }
-    #right .sexsw { display: flex; gap: 4px; }
+    #right .cap { flex: none; font-size: 13px; color: #888; }
+    #right .pv { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    #right .pv .cvbox { flex: 0 1 auto; min-height: 0; overflow: auto; }
+    #right .pv .opts { flex: none; }
+    #right .sexsw { flex: none; display: flex; gap: 4px; }
 </style>
 </head>
 <body>

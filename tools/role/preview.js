@@ -112,8 +112,9 @@ export function previewEl(r, items, parts)
     const check = (k, text, color) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: P[k], onchange: e => {P[k] = e.target.checked; redraw();}}), text);
     redraw();
+    // 畫布包一層：版面想讓畫布自己捲、選項固定在下面時（部位分頁）捲這層
     const pv = h('div', {class: 'pv'},
-        cv,
+        h('div', {class: 'cvbox'}, cv),
         h('div', {class: 'opts'},
             check('b', '物理 b', COLOR.b), check('g', '佔格 g', COLOR.g), check('z', '互動 z', COLOR.z),
             check('equips', '裝備'), check('flip', '翻面'),
