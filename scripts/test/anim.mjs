@@ -6,7 +6,7 @@ run('武器動畫', async t => {
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
     await t.eval(d => {
         const r = d.DB.role(d.DB.playerIds()[0]);
-        d.DB._partDB[r.body] = {...d.DB._partDB[r.body], wristF: {x: -13, y: 18}};
+        d.DB._partDB[r.body] = {...d.DB._partDB[r.body], wristF: {x: -13, y: 18, a: 20}};
         delete r.handF;
     });
     await t.newGame();
@@ -68,13 +68,13 @@ run('武器動畫', async t => {
     });
 
     t.eq('沒手沒武器（wristF 空的）不播', JSON.stringify(r.empty), JSON.stringify([null, false]));
-    t.eq('手腕靜止在 body 的 wristF 支點', JSON.stringify(r.rest), JSON.stringify([-13, 18, 0]));
+    t.eq('手腕靜止在 body 的 wristF 支點（含靜止角度 a）', JSON.stringify(r.rest), JSON.stringify([-13, 18, 20]));
     t.eq('劍掛在手腕上：本地座標＝equip 的數字（相對手腕）', JSON.stringify(r.swordLocal), JSON.stringify([1, -2]));
     t.eq('ready 時舉劍、hit 時劈到底', JSON.stringify(r.chopHit), JSON.stringify([true, [-13, 6, -90], [-8, 15, 75]]));
     t.eq('下劈播完收回', JSON.stringify(r.chopBack), JSON.stringify(r.rest));
     t.eq('橫掃朝下：整組繞支點轉 90°', JSON.stringify(r.sweep), JSON.stringify([-14, 0, -135]));   // Phaser 把 angle 換到 [-180, 180)，225＝-135
     t.eq('橫掃播完收回', JSON.stringify(r.sweepBack.slice(0, 2)), JSON.stringify(r.rest.slice(0, 2)));
-    t.check('橫掃收回角度', ((r.sweepBack[2] % 360) + 360) % 360 === 0, JSON.stringify(r.sweepBack));
+    t.check('橫掃收回到靜止角度', (((r.sweepBack[2] - 20) % 360) + 360) % 360 === 0, JSON.stringify(r.sweepBack));
     t.eq('瞄準正右方', JSON.stringify(r.aim), JSON.stringify([true, [15, 10, 0]]));
     t.eq('hold：舉著等 anim_end', JSON.stringify(r.hold), JSON.stringify(r.aim[1]));
     t.check('anim_end 後收回', r.aimBack[0]);

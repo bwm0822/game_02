@@ -1,6 +1,6 @@
 // 部位 pool（part.json）：node scripts/test/part.mjs
 import {run} from './harness.mjs'
-import {hiddenParts} from '../../src/core/equip.js'
+import {hiddenParts, atPivot, fromPivot} from '../../src/core/equip.js'
 
 const CAT = {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'};
 
@@ -9,6 +9,10 @@ run('部位 pool', async t => {
     t.eq('護甲藏衣服', hide({cat: 'CAT_CHESTPLATE', equip: {}}), 'cloth');
     t.eq('靴子藏鞋子', hide({cat: 'CAT_BOOTS', equip: {}}), 'shoes');
     t.eq('手套藏兩隻手', hide({cat: 'CAT_GLOVES', equip: {}}), 'handB,handF');
+    const r2 = (p) => [p.x, p.y, p.a].map(v => Math.round(v * 1000) / 1000).join();
+    const pv = {x: 1, y: 2, a: 90};
+    t.eq('atPivot：繞支點轉 a、角度疊上去', r2(atPivot({x: 10, y: 0, a: 5}, pv)), '1,12,95');
+    t.eq('fromPivot 是反過來', r2(fromPivot(atPivot({x: 3, y: -4, a: 7}, pv), pv)), '3,-4,7');
     t.eq('hideHair 藏頭髮、沒 equip 不算', hide({cat: 'CAT_HELMET', equip: {hideHair: true}}, {cat: 'CAT_CHESTPLATE'}, undefined), 'hair');
 
     await t.waitFor(d => d?.game.scene.isActive('MainMenu'), {what:'主選單'});
@@ -24,7 +28,7 @@ run('部位 pool', async t => {
         const m = d.DB.role('mary');
         d.DB._partDB['t-hf'] = {kind:'handF', sprite:'hand-man', scale:0.25, x:3, y:30};
         d.DB._partDB['t-hb'] = {kind:'handB', sprite:'hand-man', scale:0.25, y:31};
-        d.DB._partDB[m.body] = {...d.DB._partDB[m.body], neck:{x:9, y:9}, wristF:{x:5, y:20}, f:{neck:{x:1, y:-40}}};
+        d.DB._partDB[m.body] = {...d.DB._partDB[m.body], neck:{x:9, y:9}, wristF:{x:5, y:20}, f:{neck:{x:1, y:-40, a:30}}};
         Object.assign(m, {cloth:'t-f', handF:'t-hf', handB:'t-hb'});
     });
     await t.newGame('mary');
@@ -45,5 +49,6 @@ run('部位 pool', async t => {
         const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
         return v._shape.getAll().map(c => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? c.texture.key).slice(0, 2).join();
     }), 'wristB,body-woman');
+    t.eq('支點的 a＝節點靜止角度', await t.eval(d => Object.values(d.GM.player._coms).find(c => c?._nodes)._nodes.neck.angle), 30);
     t.eq('播動畫動的是 wristF 節點', await t.eval(d => d.GM.player.view.wrist === Object.values(d.GM.player._coms).find(c => c?._nodes)._nodes.wristF), true);
 });

@@ -404,16 +404,20 @@ function pivotTable()
     const sx = sexKey();
     const row = (k) => {
         const base = [...(sx ? [sx] : []), k], cur = pivot(k);
-        // 清空任一格＝刪掉整個支點（回到基準／0）
-        const fill = (n) => {const o = getAt(p, base); if (n === undefined) setAt(p, base, undefined); else {o.x ??= cur.x; o.y ??= cur.y;}};
+        // 清空 x／y＝刪掉整個支點（回到基準／0）；清空 a 只刪 a
+        const fill = (c) => (n) => {
+            const o = getAt(p, base);
+            if (n === undefined) {if (c !== 'a') setAt(p, base, undefined);}
+            else {o.x ??= cur.x; o.y ??= cur.y; if (cur.a && c !== 'a') o.a ??= cur.a;}
+        };
         return h('tr', null,
             h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]),
             h('td', null, k),
-            ['x', 'y'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill}))));
+            ['x', 'y', 'a'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill(c)}))));
     };
     return [
-        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以；掛在上面的部位、裝備數字相對支點，會跟著一起移動）`),
-        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y'].map(t => h('th', null, t))), PIVOTS.map(row)),
+        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以；a＝靜止角度；掛在上面的部位、裝備數字相對支點，會跟著一起移動、轉）`),
+        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
 }
 
@@ -426,8 +430,8 @@ function alphaBar(cat)
 }
 
 // ---------- 動畫 ----------
-// 動的是 wristF（前手腕）：待機＝body 的 wristF 支點、角度 0；手、武器、手套掛在上面（同遊戲 COM_Anim）
-const wristRest = () => ({...pivot('wristF'), angle: 0});
+// 動的是 wristF（前手腕）：待機＝body 的 wristF 支點（位置＋靜止角度 a）；手、武器、手套掛在上面（同遊戲 COM_Anim）
+const wristRest = () => {const p = pivot('wristF'); return {x: p.x, y: p.y, angle: p.a};};
 const wristParts = () => role() ? partsOf(role()).filter(pt => pt.node === 'wristF') : [];
 const facing = () => S.mode === 'anim' ? Math.cos(rad(S.target)) < 0 : S.flip;
 const dirOf = () => dirTo(Math.cos(rad(S.target)), Math.sin(rad(S.target)), facing() ? -1 : 1);
@@ -623,10 +627,10 @@ function partsOf(r)
 // 手腕的旋轉把手：手腕本地往上 16
 const HANDLE = 16;
 const handleOf = (w) => ({x: w.x + Math.sin(rad(w.angle)) * HANDLE, y: w.y - Math.cos(rad(w.angle)) * HANDLE});
-// 畫面（shape 本地）座標換到手腕的靜止座標：掛在手腕的部位用自己的數字 hit-test
+// 畫面（shape 本地）座標換到手腕靜止時的位置（pv＝支點，含靜止角度 a）：掛在手腕的部位用靜止時的樣子 hit-test
 function unwrist(w, pv, lx, ly)
 {
-    const r = -rad(w.angle), [dx, dy] = [lx - w.x, ly - w.y];
+    const r = rad(pv.a - w.angle), [dx, dy] = [lx - w.x, ly - w.y];
     return {x: pv.x + dx * Math.cos(r) - dy * Math.sin(r), y: pv.y + dx * Math.sin(r) + dy * Math.cos(r)};
 }
 
@@ -688,10 +692,10 @@ async function drawPreview()
 
     const tr = isAnim ? trackOf() : null;
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); fn(); g.restore();};
-    // w：手腕姿勢（掛在 wristF 的部位先扣支點 wp、再照手腕轉／移）
+    // w：手腕姿勢（掛在 wristF 的部位 p 已是靜止時的身體座標：先退回支點 wp 的本地、再照手腕轉／移）
     const wp = pivot('wristF');
     const drawSp = (p, img, f, w) => local(() => {
-        if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle)); g.translate(-wp.x, -wp.y);}
+        if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - wp.a)); g.translate(-wp.x, -wp.y);}
         g.translate(p.x ?? 0, p.y ?? 0);
         g.rotate(rad(p.a ?? 0));
         g.scale(p.scale ?? 1, p.scale ?? 1);
@@ -749,14 +753,19 @@ async function drawPreview()
         const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
         if (S.doc['part.json'].data[bodyId()]) local(() => {
             g.lineWidth = 1.5 * px;
+            // 十字照靜止角度 a 轉，往上那條長一點看得出方向
             for (const k of PIVOTS)
             {
-                const {x, y} = pts[k];
+                const {x, y, a} = pts[k];
+                g.save();
+                g.translate(x, y);
+                g.rotate(rad(a));
                 g.strokeStyle = PIVOT_COLOR[k];
                 g.beginPath();
-                g.moveTo(x - 4, y); g.lineTo(x + 4, y);
-                g.moveTo(x, y - 4); g.lineTo(x, y + 4);
+                g.moveTo(-4, 0); g.lineTo(4, 0);
+                g.moveTo(0, -7); g.lineTo(0, 4);
                 g.stroke();
+                g.restore();
             }
         });
         geo = {vc, K, flip, pts};
@@ -827,7 +836,8 @@ function onMove(e)
 {
     if (!drag) return;
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
-    if (kind === 'node') setAt(drag.p, drag.path, {x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
+    // 第一次拖女版（還沒有 f 的支點）帶上目前的角度
+    if (kind === 'node') setAt(drag.p, drag.path, {...(drag.orig ?? (drag.from.a ? {a: drag.from.a} : {})), x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
     else if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
     else if (kind === 'move')
     {

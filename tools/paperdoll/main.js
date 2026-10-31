@@ -4,7 +4,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {WCLS} from '../common/settings.js';
-import {equipFor, pivotOf} from '../../src/core/equip.js';
+import {equipFor, pivotOf, atPivot, fromPivot} from '../../src/core/equip.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -3647,16 +3647,21 @@ function setSplit(it, name, g, icon)
 }
 
 // 掛在支點上的（頭盔、武器、手套、頭、頭髮、前後手）遊戲數字相對 body 的支點，紙娃娃畫布是身體座標：存的時候減、載入的時候加
-// 男＝body-man、女＝body-woman 套 f（跟部位分頁的人偶一樣）；sign 1＝存（減）、-1＝載入（加）
+// 男＝body-man、女＝body-woman 套 f（跟部位分頁的人偶一樣）；sign 1＝存（fromPivot）、-1＝載入（atPivot），含支點的靜止角度 a；
+// 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪
 const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
 const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
 const PART_NODE = {head: 'neck', hair: 'neck', handF: 'wristF', handB: 'wristB'};
-function pivotShift(o, parts, node, sex, sign = 1)
+function pivotShift(o, parts, node, sex, sign = 1, withA = true)
 {
     if (!o || !node) return o;
-    const p = pivotOf(equipFor(parts[PIVOT_BODY[sex]], sex), node);
-    if (o.x !== undefined || p.x) o.x = round((o.x ?? 0) - sign * p.x);
-    if (o.y !== undefined || p.y) o.y = round((o.y ?? 0) - sign * p.y);
+    const pv = pivotOf(equipFor(parts[PIVOT_BODY[sex]], sex), node), r = (sign > 0 ? fromPivot : atPivot)(o, pv);
+    if (r === o) return o;
+    o.x = round(r.x);
+    o.y = round(r.y);
+    if (!withA) return o;
+    o.a = round(r.a, 10);
+    if (!o.a) delete o.a;
     return o;
 }
 
@@ -4037,7 +4042,7 @@ async function commitItems(rows, bake, all = false)
         // 有男女兩組的（護具）一定存男版、女版是 f；其他照目前人偶
         const node = ITEM_NODE[ITEM_CAT[r.P.key]], sex = AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex;
         const place = (e) => {writeEquip(e, C); pivotShift(e, pjson, node, sex);};
-        const female = () => pivotShift(femaleOf(r.P), pjson, node, 'f');
+        const female = () => pivotShift(femaleOf(r.P), pjson, node, 'f', 1, false);
         const put = async (dir, name, c) => {
             if (!keys.has(name)) fresh.push(name);
             await FS.writeFile(await mkDir(A.tex, dir), `${name}.png`, await PX.toPng(c));

@@ -5,7 +5,7 @@ import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, ROLE_PARTS, PIVOTS, pivotOf} from '../core/equip.js'
+import {equipFor, hiddenParts, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -888,7 +888,7 @@ export class RoleView extends View
         for(const k of PIVOTS)
         {
             const p = pivotOf(body, k);
-            const node = this.scene.add.container(p.x, p.y).setDepth(NODE_DEPTH[k]);
+            const node = this.scene.add.container(p.x, p.y).setDepth(NODE_DEPTH[k]).setAngle(p.a);
             node.pivot = p;
             this._shape.add(node);
             this._nodes[k] = node;
@@ -911,19 +911,19 @@ export class RoleView extends View
     // 掛在支點節點的部位：數字相對節點；後片進別的節點(手套後片進 wristB)時照本體的節點擺，換算成那個節點的座標
     _addPart(part, type=GM.PART.BODY, node=PART_NODE[type])
     {
-        let addSp = (sprite, depth, n, off={x:0, y:0})=>
+        let addSp = (sprite, depth, n, p=part)=>
         {
             if(!sprite) {return;}
             let [key,frame]=sprite.split(':');
             if(key)
             {
                 let sp = this.scene.add.sprite(0,0,key,frame);
-                sp.setScale(part.scale);
+                sp.setScale(p.scale);
                 sp.setPipeline('Light2D');
-                sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
-                sp.x = (part.x ?? 0) + off.x;
-                sp.y = (part.y ?? 0) + off.y;
-                sp.angle = part.a ?? 0;
+                sp.setOrigin(p.ox ?? 0.5, p.oy ?? 1);
+                sp.x = p.x ?? 0;
+                sp.y = p.y ?? 0;
+                sp.angle = p.a ?? 0;
                 sp.depth = depth;
                 this._deadTint != null && sp.setTint(this._deadTint);
                 (n ?? this._shape).add(sp);
@@ -936,7 +936,7 @@ export class RoleView extends View
         const bn = this._nodes[BACK_NODE[type]];
         addSp(part.sprite, PART_DEPTH[type], n);
         addSp(part.ext, PART_DEPTH[GM.PART.EXT], n);
-        if(bn) {addSp(part.back, PART_DEPTH[type], bn, {x:(n?.pivot.x ?? 0) - bn.pivot.x, y:(n?.pivot.y ?? 0) - bn.pivot.y});}
+        if(bn) {addSp(part.back, PART_DEPTH[type], bn, fromPivot(atPivot(part, n?.pivot ?? pivotOf()), bn.pivot));}
         else {addSp(part.back, PART_DEPTH[GM.PART.BACK], n);}
         return sps;
     }

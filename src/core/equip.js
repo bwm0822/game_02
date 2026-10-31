@@ -5,11 +5,25 @@ export const equipFor = (equip, sex) => equip?.[sex] ? {...equip, ...equip[sex]}
 export const ROLE_PARTS = ['body', 'shoes', 'cloth', 'head', 'hair', 'handF', 'handB'];
 export const partFor = (parts, r, kind) => r?.[kind] ? equipFor(parts?.[r[kind]], r.sex) : undefined;
 
-// body 條目上的支點（neck／wristF／wristB），沒寫＝(0,0)；body 已經套過 f
+// body 條目上的支點（neck／wristF／wristB）{x, y, a}，a＝節點靜止時的角度，沒寫＝0；body 已經套過 f
 export const PIVOTS = ['neck', 'wristF', 'wristB'];
-export const pivotOf = (body, k) => ({x: body?.[k]?.x ?? 0, y: body?.[k]?.y ?? 0});
-// 掛在支點上的部位／裝備數字相對支點：靜態合成（不建節點）攤成一層時加回去；後片照本體的支點擺
-export const atPivot = (p, pv) => pv.x || pv.y ? {...p, x: (p.x ?? 0) + pv.x, y: (p.y ?? 0) + pv.y} : p;
+export const pivotOf = (body, k) => ({x: body?.[k]?.x ?? 0, y: body?.[k]?.y ?? 0, a: body?.[k]?.a ?? 0});
+
+const rot = (x, y, deg) => {const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c];};
+const still = (pv) => !pv.x && !pv.y && !pv.a;
+// 掛在支點上的部位／裝備數字相對支點（繞支點轉 a）：atPivot 換成身體座標（靜態合成攤成一層時用），fromPivot 反過來
+export function atPivot(p, pv)
+{
+    if (still(pv)) return p;
+    const [x, y] = rot(p.x ?? 0, p.y ?? 0, pv.a);
+    return {...p, x: pv.x + x, y: pv.y + y, a: (p.a ?? 0) + pv.a};
+}
+export function fromPivot(p, pv)
+{
+    if (still(pv)) return p;
+    const [x, y] = rot((p.x ?? 0) - pv.x, (p.y ?? 0) - pv.y, -pv.a);
+    return {...p, x, y, a: (p.a ?? 0) - pv.a};
+}
 
 // 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、任何護甲藏衣服、任何靴子藏鞋子、任何手套藏兩隻手
 // cat 是分類常數（遊戲傳 GM.CAT，工具傳 {CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES'}）

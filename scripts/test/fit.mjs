@@ -141,6 +141,13 @@ run('fit', async t => {
         out.pivot.push('wristB' in rogue());
         fire('part.json|rogue|neck.x', '');
         out.pivot.push('neck' in rogue(), document.querySelectorAll('#view table.pivots tr').length - 1);
+        // 支點的 a：掛在上面的跟著轉、角度疊上去；清空 a 只刪 a
+        const swd = () => F.partsOf(g1()).find(p => p.sprite === S.doc['item.json'].data['sword-1'].equip.sprite)?.p;
+        const a0 = swd().a ?? 0;
+        fire('part.json|rogue|wristF.a', '90');
+        out.rotA = [Math.round(swd().a - a0), JSON.stringify(rogue().wristF)];
+        fire('part.json|rogue|wristF.a', '');
+        out.rotA.push(JSON.stringify(rogue().wristF));
 
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
@@ -361,6 +368,7 @@ run('fit', async t => {
     t.eq('改部件寫 part.json', r.bodyX, -2);
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
     t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
+    t.eq('支點 a：武器跟著轉、清空 a 只刪 a', JSON.stringify(r.rotA), JSON.stringify([90, '{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}']));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
     t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);
