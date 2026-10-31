@@ -21,9 +21,7 @@ const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['h
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
-// body 上的支點（neck／wristF／wristB）：畫布十字的顏色
-const PIVOT_NAMES = {neck: '脖子', wristF: '前手腕', wristB: '後手腕'};
-const PIVOT_COLOR = {neck: '#ff66cc', wristF: '#66ffcc', wristB: '#ffaa33'};
+const {PIVOT_NAMES, PIVOT_COLOR} = HD;
 // 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
 const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
 const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
@@ -781,32 +779,10 @@ async function drawPreview()
     {
         // 擺放分頁：body 的三個支點畫成十字，可以拖；往上的白點是旋轉把手；滑過（或拖著）的那個變粗
         const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
-        const hds = Object.fromEntries(PIVOTS.map(k => [k, handleOf({x: pts[k].x, y: pts[k].y, angle: pts[k].a})]));
+        const hds = Object.fromEntries(PIVOTS.map(k => [k, HD.crossHandle(pts[k])]));
         const live = drag?.k ?? hover;
         if (S.doc['part.json'].data[bodyId()]) local(() => {
-            // 十字照靜止角度 a 轉，往上那條長一點看得出方向
-            for (const k of PIVOTS)
-            {
-                const {x, y, a} = pts[k], on = k === live, locked = !dragKeys().includes(k);
-                g.save();
-                g.globalAlpha = locked ? 0.3 : 1;
-                g.lineWidth = (on ? 3 : 1.5) * px;
-                g.strokeStyle = PIVOT_COLOR[k];
-                if (!locked)
-                {
-                    g.beginPath(); g.moveTo(x, y); g.lineTo(hds[k].x, hds[k].y);
-                    g.save(); g.lineWidth = (on ? 1.5 : 0.75) * px; g.setLineDash([2 * px, 2 * px]); g.stroke(); g.restore();
-                    g.fillStyle = '#fff';
-                    g.beginPath(); g.arc(hds[k].x, hds[k].y, (on ? 4 : 2.5) * px, 0, Math.PI * 2); g.fill();
-                }
-                g.translate(x, y);
-                g.rotate(rad(a));
-                g.beginPath();
-                g.moveTo(-4, 0); g.lineTo(4, 0);
-                g.moveTo(0, -7); g.lineTo(0, 4);
-                g.stroke();
-                g.restore();
-            }
+            for (const k of PIVOTS) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
         // 部件：滑過的畫虛線框、選中的畫實線框＋旋轉把手（拖著或滑過把手變粗）
         const its = parts.map((pt, i) => ({...pt, f: frames[i]?.f})).filter(it => it.f && it.src?.id);

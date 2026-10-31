@@ -11,7 +11,8 @@ import {ID_RE} from '../common/doc.js';
 import {createFold} from '../common/fold.js';
 import '../common/splitter.js';
 import {previewEl} from '../role/preview.js';
-import {ROLE_PARTS} from '../../src/core/equip.js';
+import {ROLE_PARTS, PIVOTS, pivotOf, equipFor} from '../../src/core/equip.js';
+import {PIVOT_NAMES, PIVOT_COLOR} from '../common/handles.js';
 
 const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
 const FILTERS = [['all', '全部'], ['unused', '未使用'], ['bad', '壞的']];
@@ -165,10 +166,10 @@ function dollOf(pid, sex)
     return r;
 }
 
-// 擺放以外的欄位唯讀（body 的支點 neck／wristF／wristB 到試穿調）
+// 擺放、支點以外的欄位唯讀
 function fieldRows(p)
 {
-    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && !NUMS.some(([n]) => n === k)).map(([k, v]) =>
+    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
         h('tr', null, h('td', {class: 'k'}, k), h('td', null, typeof v === 'object' ? JSON.stringify(v) : String(v))));
 }
 
@@ -212,15 +213,54 @@ function setVals(q, vals)
     }
 }
 
-// 右欄合成上拖這個條目：拖的時候只改記憶體跟重畫，放開才寫檔（一筆 undo）
+// body 的支點（neck／wristF／wristB {x, y, a}）：女改 f 裡的；還沒有就從目前值（女＝套過 f）起建，帶上角度
+// vals 的值 undefined＝清空：清 x 或 y＝刪掉整個支點（回到基準／0），清 a 只刪 a（同試穿）
+function setPivot(q, k, vals)
+{
+    const female = S.sex === 'f', cur = pivotOf(female ? equipFor(q, 'f') : q, k);
+    const t = female ? (isObj(q.f) ? q.f : (q.f = {})) : q;
+    const o = {...(isObj(t[k]) ? t[k] : {x: cur.x, y: cur.y, ...(cur.a ? {a: cur.a} : {})}), ...vals};
+    if (!o.a) delete o.a;
+    if (o.x === undefined || o.y === undefined) delete t[k];
+    else t[k] = o;
+    if (female && !Object.keys(q.f).length) delete q.f;
+}
+
+// 右欄合成上拖這個條目（身體另外可以拖三個支點十字）：拖的時候只改記憶體跟重畫，放開才寫檔（一筆 undo）
 function dragEdit(pid)
 {
-    let last = {};
+    let last = null;
+    const apply = (q, {vals, k}) => (k ? setPivot(q, k, vals) : setVals(q, vals));
     return {
         k: S.parts[pid].kind,
-        set: (vals) => {Object.assign(last, vals); setVals(S.parts[pid], vals);},
-        done: () => {const v = last; last = {}; if (Object.keys(v).length) act(edit(pid, (q) => setVals(q, v)));},
+        pivots: S.parts[pid].kind === 'body',
+        set: (vals, k) => {
+            last = {vals: {...(last && last.k === k ? last.vals : {}), ...vals}, k};
+            apply(S.parts[pid], {vals, k});
+        },
+        done: () => {const v = last; last = null; if (v) act(edit(pid, (q) => apply(q, v)));},
     };
+}
+
+// 身體的支點表：同試穿的支點表（x／y 只填一個補上另一個目前值，清空 x 或 y＝刪掉支點）
+function pivotTable(pid)
+{
+    const p = S.parts[pid], female = S.sex === 'f', t = female ? p.f ?? {} : p;
+    const cur = (k) => pivotOf(female ? equipFor(p, 'f') : p, k);
+    const cell = (k, c) => h('td', null, h('input', {type: 'number', step: ST.step(c) ?? 'any', class: 'num',
+        value: t[k]?.[c] ?? '', placeholder: String(cur(k)[c]), dataset: {k: `part.json|${pid}|${female ? 'f.' : ''}${k}.${c}`},
+        onchange: (e) => {
+            const n = parseNum(e.target.value);
+            if (typeof n === 'string') {status(`${k}.${c} 要是數字`); return render();}
+            act(edit(pid, (q) => setPivot(q, k, {[c]: n})));
+        }}));
+    return [
+        h('div', {class: 'title'}, `支點（${female ? '女版 f；' : ''}右欄十字可拖、白點轉 a；掛在上面的部位、裝備數字相對支點）`),
+        h('table', {class: 'nums pivots'},
+            h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))),
+            PIVOTS.map(k => h('tr', null, h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]), h('td', null, k),
+                ['x', 'y', 'a'].map(c => cell(k, c))))),
+    ];
 }
 
 // ---------- 擺放：立刻寫檔＋undo ----------
@@ -284,6 +324,7 @@ function renderDetail()
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
         numTable(pid),
+        p.kind === 'body' && pivotTable(pid),
         h('div', {class: 'title'}, '其他欄位（唯讀）'),
         h('table', null, fieldRows(p)),
         h('div', {class: 'title'}, `使用者（${users.length}）`),

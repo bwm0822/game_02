@@ -5,7 +5,7 @@ import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import * as HD from '../common/handles.js';
 import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
-import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const P = {zoom: 3, b: true, g: false, z: false, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -95,17 +95,20 @@ async function draw(cv, r, items, pdb, st)
         n++;
     });
 
-    // 可拖的部件（edit.k）：外框＋旋轉把手，滑過／拖著變粗
+    // 可拖的部件（edit.k）：外框＋旋轉把手；edit.pivots 另畫 body 的三個支點十字；滑過／拖著變粗
     if (st?.edit)
     {
         const mine = its.filter(it => it.k === st.edit.k), main = mine.find(it => it.main) ?? mine[0];
         const ph = main && HD.partHandle(main.p, main.f, 10 / K);
+        const body = partFor(pdb, r, 'body'), pts = st.edit.pivots ? Object.fromEntries(PIVOTS.map(k => [k, pivotOf(body, k)])) : null;
+        const live = st.live ?? {};
         g.save();
         g.translate(vc.x, vc.y);
         if (P.flip) g.scale(-1, 1);
-        HD.drawSel(g, mine, ph, 1 / K, {thick: st.live === 'move', rotOn: st.live === 'rot'});
+        HD.drawSel(g, mine, ph, 1 / K, {thick: live.kind === 'move', rotOn: live.kind === 'rot'});
+        if (pts) for (const k of PIVOTS) HD.drawCross(g, k, pts[k], 1 / K, {on: live.k === k});
         g.restore();
-        st.geo = {vc, K, flip: P.flip, mine, main, ph};
+        st.geo = {vc, K, flip: P.flip, mine, main, ph, pts};
     }
 
     for (const k of ['g', 'z', 'b'])
@@ -126,10 +129,12 @@ async function draw(cv, r, items, pdb, st)
     cv.dataset.drawn = n;
 }
 
-// opt.edit＝{k, set(vals), done()}：畫布上 kind／cat 是 k 的部件可以拖（x/y，數字相對支點）、拖白點轉 a（Shift 吸 15°）；
+// opt.edit＝{k, pivots, set(vals, pivot), done()}：畫布上 kind／cat 是 k 的部件可以拖（x/y，數字相對支點）、拖白點轉 a（Shift 吸 15°）；
+// pivots＝也能拖 body 的支點十字（十字優先，set 第二個參數是支點名，vals 是身體座標）；
 // 拖的時候一直呼叫 set（呼叫端改記憶體裡的資料），放開呼叫 done（呼叫端寫檔）
 const SNAP = 15;
 const r1 = (v) => Math.round(v * 10) / 10;
+const snapA = (e, a) => e.shiftKey ? Math.round(a / SNAP) * SNAP : r1(a);
 function editable(cv, st, redraw)
 {
     const ed = st.edit;
@@ -137,40 +142,52 @@ function editable(cv, st, redraw)
         const g = st.geo, rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) / g.K - g.vc.x, y = (e.clientY - rc.top) / g.K - g.vc.y;
         return {x: g.flip ? -x : x, y};
     };
+    // {kind: move／rot（部件）、pv／pvRot（支點十字，k＝支點）}
     const hit = (l) => {
-        const g = st.geo;
-        if (!g?.main) return null;
-        if (g.ph && Math.hypot(l.x - g.ph.x, l.y - g.ph.y) <= 8 / g.K) return 'rot';
-        return g.mine.some(it => HD.inPart(it.p, it.f, l.x, l.y)) ? 'move' : null;
+        const g = st.geo, near = (p) => Math.hypot(l.x - p.x, l.y - p.y) <= 8 / g.K;
+        if (g.pts)
+        {
+            const k = PIVOTS.find(k => near(HD.crossHandle(g.pts[k]))) ?? null;
+            if (k) return {kind: 'pvRot', k};
+            const m = PIVOTS.find(k => near(g.pts[k]));
+            if (m) return {kind: 'pv', k: m};
+        }
+        if (!g.main) return null;
+        if (g.ph && near(g.ph)) return {kind: 'rot'};
+        return g.mine.some(it => HD.inPart(it.p, it.f, l.x, l.y)) ? {kind: 'move'} : null;
     };
     cv.onpointerdown = (e) => {
         if (!st.geo) return;
-        const l = toLocal(e), kind = hit(l);
-        if (!kind) return;
+        const l = toLocal(e), h = hit(l);
+        if (!h) return;
         if (e.isTrusted) cv.setPointerCapture(e.pointerId);
+        if (h.k)
+        {
+            const o = {...st.geo.pts[h.k]};
+            st.drag = {...h, l, from: o, o, a0: Math.atan2(l.y - o.y, l.x - o.x)};
+            return;
+        }
         const m = st.geo.main, o = {x: m.p.x ?? 0, y: m.p.y ?? 0};
-        st.drag = {kind, l, raw: {...m.raw}, pv: m.pv, o, a0: Math.atan2(l.y - o.y, l.x - o.x)};
+        st.drag = {...h, l, raw: {...m.raw}, pv: m.pv, o, a0: Math.atan2(l.y - o.y, l.x - o.x)};
     };
     cv.onpointermove = (e) => {
         if (!st.geo) return;
         const l = toLocal(e), d = st.drag;
         if (d)
         {
-            if (d.kind === 'move')
+            if (d.kind === 'pv') ed.set({x: r1(d.from.x + l.x - d.l.x), y: r1(d.from.y + l.y - d.l.y)}, d.k);
+            else if (d.kind === 'pvRot') ed.set({a: snapA(e, d.from.a + HD.turnDeg(d.o, d.a0, l))}, d.k);
+            else if (d.kind === 'move')
             {
                 const [rx, ry] = HD.unpivot(l.x - d.l.x, l.y - d.l.y, d.pv);
                 ed.set({x: r1((d.raw.x ?? 0) + rx), y: r1((d.raw.y ?? 0) + ry)});
             }
-            else
-            {
-                const a = (d.raw.a ?? 0) + HD.turnDeg(d.o, d.a0, l);
-                ed.set({a: e.shiftKey ? Math.round(a / SNAP) * SNAP : r1(a)});
-            }
+            else ed.set({a: snapA(e, (d.raw.a ?? 0) + HD.turnDeg(d.o, d.a0, l))});
             return redraw();
         }
-        const kind = hit(l);
-        cv.style.cursor = kind === 'rot' ? HD.ROT_CURSOR : kind ? 'move' : '';
-        if (kind !== st.live) {st.live = kind; redraw();}
+        const h = hit(l);
+        cv.style.cursor = !h ? '' : h.kind === 'rot' || h.kind === 'pvRot' ? HD.ROT_CURSOR : 'move';
+        if (JSON.stringify(h) !== JSON.stringify(st.live)) {st.live = h; redraw();}
     };
     cv.onpointerup = () => {
         if (!st.drag) return;
