@@ -1,5 +1,6 @@
 // 試穿：選紙娃娃型角色、五格各挑一件裝備（只是試穿，不寫回 inv.equips），用數字調部位（part.json，全角色共用）跟裝備 equip 的擺放
-// 動畫模式編 anim.json（全武器共用的武器動畫）：畫布拖武器／旋轉把手／支點，時間軸拖影格／ready／hit
+// 擺放分頁另外調 body 的支點（neck／wristF／wristB，畫布拖十字）
+// 動畫模式編 anim.json（全武器共用的武器動畫，動的是前手腕 wristF）：畫布拖手腕／旋轉把手／支點，時間軸拖影格／ready／hit
 // 同時編 role.json、part.json、item.json、anim.json：undo 一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
@@ -10,15 +11,18 @@ import {str, isObj, getAt, setAt, parseNum, merge3} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import {createFold} from '../common/fold.js';
 import * as PT from '../common/part.js';
-import {DEPTH, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
+import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, hiddenParts} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, PIVOTS, pivotOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
-const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hand', '手']];
+const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
+// body 上的支點（neck／wristF／wristB）：畫布十字的顏色
+const PIVOT_NAMES = {neck: '脖子', wristF: '前手腕', wristB: '後手腕'};
+const PIVOT_COLOR = {neck: '#ff66cc', wristF: '#66ffcc', wristB: '#ffaa33'};
 // 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
 const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
 const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
@@ -60,14 +64,15 @@ const items = () => S.doc['item.json'].data;
 const anims = () => S.doc['anim.json'].data;
 const role = () => roles()[S.rid];
 const anim = () => anims()[S.aid];
-const isDoll = (r) => !!(r.head || r.hand);
+const isDoll = (r) => !!(r.head || r.handF || r.handB);
 const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
 const isDirty = () => FILES.some(dirtyOf);
 // 女角（sex 不是 m）的裝備擺放：equip[sex] 蓋掉 scale/x/y（同遊戲 equipFor）；數字欄改的是 equip[sex]，第一次改從基準複製
 const SEX_NUMS = ['scale', 'x', 'y'];
 const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
 const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex);
-const weapon = () => equipOf(S.slots.CAT_WEAPON);
+const bodyId = () => role()?.body;
+const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k);
 const r1 = (v) => Math.round(v * 10) / 10;
 const rad = (d) => d * Math.PI / 180;
 
@@ -340,7 +345,7 @@ const usersOf = (pid) => Object.keys(roles()).filter(rid => PARTS.some(([k]) => 
 function drawView()
 {
     const r = role();
-    if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 hand）' : '先在上方選擇專案資料夾'));
+    if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 handF／handB）' : '先在上方選擇專案資料夾'));
     const tab = (m, text) => h('button', {class: 'tab' + (S.mode === m ? ' sel' : ''), dataset: {mode: m}, onclick: () => {S.mode = m; playing++; recenter(); render();}}, text);
     const orig = origEquips().length > 0;
     // 左鍵換裝、右鍵只選中該格；擺放分頁每格下方是透明度
@@ -378,6 +383,7 @@ function fitView(r, slots)
     return [
         h('div', {class: 'title'}, '角色部件（part.json，用到同一個部位的角色都會一起變）'),
         h('table', {class: 'fit'}, sexHead(['部件', '部位']), partRows),
+        pivotTable(),
         h('div', {class: 'title'}, '裝備（item.json，全角色共用；換裝只是試穿，不會寫回角色）'),
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
@@ -386,6 +392,28 @@ function fitView(r, slots)
                     onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮')]
                 : h('span', {class: 'dim'}, '（空）')),
         id && equipTable(id),
+    ];
+}
+
+// body 條目上的支點：女角改 f 裡的（第一次改從基準複製），x／y 只填一個時另一個補上目前值
+// 支點只決定繞哪裡轉：子部位數字是身體座標，移支點畫面不變
+function pivotTable()
+{
+    const pid = bodyId(), p = parts()[pid];
+    if (!p) return null;
+    const sx = sexKey();
+    const row = (k) => {
+        const base = [...(sx ? [sx] : []), k], cur = pivot(k);
+        // 清空任一格＝刪掉整個支點（回到基準／0）
+        const fill = (n) => {const o = getAt(p, base); if (n === undefined) setAt(p, base, undefined); else {o.x ??= cur.x; o.y ??= cur.y;}};
+        return h('tr', null,
+            h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]),
+            h('td', null, k),
+            ['x', 'y'].map(c => h('td', null, numInput('part.json', pid, [...base, c], String(cur[c]), {after: fill}))));
+    };
+    return [
+        h('div', {class: 'title'}, `支點（body ${pid}${sx ? `，${sx} 版` : ''}；畫布上拖十字也可以，只影響繞哪裡轉、不會移動部位）`),
+        h('table', {class: 'fit pivots'}, h('tr', null, ['支點', '', 'x', 'y'].map(t => h('th', null, t))), PIVOTS.map(row)),
     ];
 }
 
@@ -398,15 +426,17 @@ function alphaBar(cat)
 }
 
 // ---------- 動畫 ----------
-const restOf = (eq) => ({x: eq.x ?? 0, y: eq.y ?? 0, angle: eq.a ?? 0});
+// 動的是 wristF（前手腕）：待機＝body 的 wristF 支點、角度 0；手、武器、手套掛在上面（同遊戲 COM_Anim）
+const wristRest = () => ({...pivot('wristF'), angle: 0});
+const wristParts = () => role() ? partsOf(role()).filter(pt => pt.node === 'wristF') : [];
 const facing = () => S.mode === 'anim' ? Math.cos(rad(S.target)) < 0 : S.flip;
 const dirOf = () => dirTo(Math.cos(rad(S.target)), Math.sin(rad(S.target)), facing() ? -1 : 1);
 const rotOf = (an = anim()) => an?.follow ? dirOf() : 0;
 
-function trackOf(eq = weapon(), an = anim())
+function trackOf(an = anim())
 {
-    if (!eq || !an?.keys?.length) return null;
-    const rest = restOf(eq);
+    if (!wristParts().length || !an?.keys?.length) return null;
+    const rest = wristRest();
     return animTrack(an, rest, rest, dirOf());
 }
 
@@ -445,13 +475,13 @@ function unrotPt(an, p)
 // 選了 #i 插在它跟前一格中間，沒選接在最後一格後面半個收回段；姿勢取該時間的補間
 function addKey()
 {
-    const an = anim(), eq = weapon();
-    if (!an || !eq) return;
+    const an = anim();
+    if (!an) return;
     const {keys} = an, i = S.key, last = keys.at(-1);
     const ms = i >= 0 ? Math.round(((keys[i - 1]?.t ?? 0) + keys[i].t) / 2)
         : last ? last.t + Math.round(an.back ? an.back / 2 : 100) : 100;
     if (keys.some(k => k.t === ms) || ms <= 0) {status(`#${i + 1} 跟前一格間隔太小，插不進去`); return render();}
-    const tr = trackOf(), p = tr ? trackPose(tr, ms) : restOf(eq), q = unrotPt(an, p);
+    const tr = trackOf(), p = tr ? trackPose(tr, ms) : wristRest(), q = unrotPt(an, p);
     commit(() => {
         an.keys.push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'Quad.Out'});
         an.keys.sort((a, b) => a.t - b.t);
@@ -476,7 +506,7 @@ function newAnim(copy)
     const base = copy ? `${S.aid}_copy` : 'anim';
     let id = base, n = 1;
     while (anims()[id]) id = `${base}_${++n}`;
-    const r = weapon() ? restOf(weapon()) : {x: 0, y: 0, angle: 0};
+    const r = role() ? wristRest() : {x: 0, y: 0, angle: 0};
     commit(() => {
         anims()[id] = copy ? structuredClone(anim()) : {follow: false, pivot: {x: 0, y: 0}, hit: 200, back: 150, keys: [{t: 200, x: r.x, y: r.y, a: r.angle, ease: 'Quad.Out'}]};
         S.aid = id;
@@ -530,9 +560,9 @@ function animView(slots)
     return [
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, '武器'),
-            wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, items()[wid].lab ?? '')] : h('span', {class: 'dim'}, '（空，穿上武器才能預覽）')),
+            wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, items()[wid].lab ?? '')] : h('span', {class: 'dim'}, '（空手，揮的是前手）')),
         wid && equipTable(wid),
-        h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝武器原點 ox/oy 在角色上的位置，a＝圖片角度）'),
+        h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝前手腕 wristF 在角色上的位置，a＝手腕角度，手、武器、手套跟著動）'),
         h('div', {class: 'animbar'},
             sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
             h('button', {onclick: () => newAnim(false)}, '新增'),
@@ -552,7 +582,7 @@ function animView(slots)
                 h('tr', null, ['', 't (ms)', 'x', 'y', 'a', 'ease', 'path', ''].map(t => h('th', null, t))),
                 an.keys.map(keyRow)),
             h('button', {onclick: addKey, title: '選了影格插在它跟前一格中間、沒選接在最後；姿勢取該時間的補間'}, S.key >= 0 ? `＋ 插在 #${S.key + 1} 之前` : '＋ 新增影格（最後）'),
-            h('div', {class: 'hint'}, '畫布：拖武器＝移位置、拖白點＝轉角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列，再點一次或 Esc 取消選取）。虛線＝原點軌跡、半透明＝其他影格。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
+            h('div', {class: 'hint'}, '畫布：拖手／武器＝移手腕位置、拖白點＝轉手腕角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列，再點一次或 Esc 取消選取）。虛線＝手腕軌跡、半透明＝其他影格。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
         ],
     ];
 }
@@ -574,27 +604,28 @@ const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]),
 function partsOf(r)
 {
     const out = [];
-    const add = (p, d, cat) => {
+    // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）
+    const add = (p, k, cat) => {
         if (!isObj(p)) return;
-        const alpha = S.alpha[cat] ?? 1, isWeapon = cat === 'CAT_WEAPON';
-        if (p.sprite) out.push({p, sprite: p.sprite, d: d ?? 0, isWeapon, alpha});
-        if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, alpha});
-        if (p.back) out.push({p, sprite: p.back, d: DEPTH.back, alpha});
+        const alpha = S.alpha[cat] ?? 1;
+        if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0, node: NODE[k], alpha});
+        if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext, node: NODE[k], alpha});
+        if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? NODE[k], alpha});
     };
     const hide = hiddenNow();
-    for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), DEPTH[k]);
-    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), DEPTH[cat], cat);
+    for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
+    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat);
     return out.sort((a, b) => a.d - b.d);
 }
 
-// 武器 sprite 本地座標的旋轉把手：原點往圖片中心方向延伸兩倍（原點就在中心時朝上）
-function handleOf(p, f, pose)
+// 手腕的旋轉把手：手腕本地往上 16
+const HANDLE = 16;
+const handleOf = (w) => ({x: w.x + Math.sin(rad(w.angle)) * HANDLE, y: w.y - Math.cos(rad(w.angle)) * HANDLE});
+// 畫面（shape 本地）座標換到手腕的靜止座標：掛在手腕的部位用自己的數字 hit-test
+function unwrist(w, pv, lx, ly)
 {
-    const s = p.scale ?? 1;
-    let [hx, hy] = [(0.5 - (p.ox ?? 0.5)) * f.w * s * 2, (0.5 - (p.oy ?? 1)) * f.h * s * 2];
-    if (Math.hypot(hx, hy) < 4) [hx, hy] = [0, -f.h * s * 0.75];
-    const r = rad(pose.angle), [c, sn] = [Math.cos(r), Math.sin(r)];
-    return {x: pose.x + hx * c - hy * sn, y: pose.y + hx * sn + hy * c};
+    const r = -rad(w.angle), [dx, dy] = [lx - w.x, ly - w.y];
+    return {x: pv.x + dx * Math.cos(r) - dy * Math.sin(r), y: pv.y + dx * Math.sin(r) + dy * Math.cos(r)};
 }
 
 function inSprite(p, f, pose, lx, ly)
@@ -655,36 +686,37 @@ async function drawPreview()
 
     const tr = isAnim ? trackOf() : null;
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); fn(); g.restore();};
-    const drawSp = (p, img, f, {x = 0, y = 0, a = 0}) => local(() => {
-        g.translate(x, y);
-        g.rotate(rad(a));
+    // w：手腕姿勢（掛在 wristF 的部位先扣支點 wp、再照手腕轉／移）
+    const wp = pivot('wristF');
+    const drawSp = (p, img, f, w) => local(() => {
+        if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle)); g.translate(-wp.x, -wp.y);}
+        g.translate(p.x ?? 0, p.y ?? 0);
+        g.rotate(rad(p.a ?? 0));
         g.scale(p.scale ?? 1, p.scale ?? 1);
         g.drawImage(img, f.x, f.y, f.w, f.h, -(p.ox ?? 0.5) * f.w, -(p.oy ?? 1) * f.h, f.w, f.h);
     });
-    let n = 0, wp = null;
+    const wr = tr ? trackPose(tr, S.ms) : null;
+    let n = 0;
+    const grp = [];
     parts.forEach((pt, i) => {
         const fr = frames[i];
         if (!fr) return;
-        const {p} = pt;
-        let pose = {x: p.x ?? 0, y: p.y ?? 0, a: p.a ?? 0};
-        if (tr && pt.isWeapon)
-        {
-            const q = trackPose(tr, S.ms);
-            pose = {x: q.x, y: q.y, a: q.angle};
-            wp = {p, ...fr, pose: q, alpha: pt.alpha};
-        }
+        const inWrist = tr && pt.node === 'wristF';
+        if (inWrist) grp.push({...pt, ...fr});
         g.globalAlpha = pt.alpha ?? 1;
-        drawSp(p, fr.img, fr.f, pose);
+        drawSp(pt.p, fr.img, fr.f, inWrist ? wr : null);
         g.globalAlpha = 1;
         n++;
     });
 
-    if (tr && wp)
+    if (tr && grp.length)
     {
-        g.globalAlpha = 0.3 * wp.alpha;
-        tr.frames.slice(1, -1).forEach(k => {if (k.t !== S.ms) drawSp(wp.p, wp.img, wp.f, {x: k.x, y: k.y, a: k.angle});});
+        tr.frames.slice(1, -1).forEach(k => {
+            if (k.t === S.ms) return;
+            for (const it of grp) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, k);}
+        });
         g.globalAlpha = 1;
-        const total = trackEnd(tr), hd = handleOf(wp.p, wp.f, wp.pose), pv = tr.pivot;
+        const total = trackEnd(tr), hd = handleOf(wr), pv = tr.pivot;
         local(() => {
             g.lineWidth = px;
             g.setLineDash([2 * px, 2 * px]);
@@ -701,13 +733,31 @@ async function drawPreview()
             if (S.key >= 0)
             {
                 g.strokeStyle = '#fff';
-                g.beginPath(); g.moveTo(wp.pose.x, wp.pose.y); g.lineTo(hd.x, hd.y); g.stroke();
+                g.beginPath(); g.moveTo(wr.x, wr.y); g.lineTo(hd.x, hd.y); g.stroke();
                 dot(hd.x, hd.y, '#fff', 4);
-                dot(wp.pose.x, wp.pose.y, '#ffcc66', 3);
+                dot(wr.x, wr.y, '#ffcc66', 3);
             }
             dot(pv.x, pv.y, '#4da3ff', 4);
         });
-        geo = {vc, K, flip, wp, hd, pv};
+        geo = {vc, K, flip, wr, wp, grp, hd, pv};
+    }
+    else if (!isAnim)
+    {
+        // 擺放分頁：body 的三個支點畫成十字，可以拖
+        const pts = Object.fromEntries(PIVOTS.map(k => [k, pivot(k)]));
+        if (S.doc['part.json'].data[bodyId()]) local(() => {
+            g.lineWidth = 1.5 * px;
+            for (const k of PIVOTS)
+            {
+                const {x, y} = pts[k];
+                g.strokeStyle = PIVOT_COLOR[k];
+                g.beginPath();
+                g.moveTo(x - 4, y); g.lineTo(x + 4, y);
+                g.moveTo(x, y - 4); g.lineTo(x, y + 4);
+                g.stroke();
+            }
+        });
+        geo = {vc, K, flip, pts};
     }
     else geo = null;
 
@@ -744,26 +794,39 @@ function toLocal(e)
 let drag = null;
 function onDown(e)
 {
+    if (geo?.pts) return onDownPivot(e);
     const an = anim();
     if (!geo || !an) return;
     const l = toLocal(e), near = (p, r) => Math.hypot(l.x - p.x, l.y - p.y) <= r / geo.K;
-    const {wp} = geo, key = an.keys[S.key];
+    const {wr, wp} = geo, key = an.keys[S.key], u = unwrist(wr, wp, l.x, l.y);
     let kind = null;
     if (key && near(geo.hd, 10)) kind = 'rot';
     else if (near(geo.pv, 8)) kind = 'pivot';
-    else if (inSprite(wp.p, wp.f, wp.pose, l.x, l.y)) kind = 'move';
+    else if (near(wr, 6) || geo.grp.some(it => inSprite(it.p, it.f, {x: it.p.x ?? 0, y: it.p.y ?? 0, angle: it.p.a ?? 0}, u.x, u.y))) kind = 'move';
     if (!kind) return;
     if (kind !== 'pivot' && !key) return status('先選一個影格（時間軸 ◆ 或表格列），或按「新增影格」');
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
     drag = {kind, l, an, key, orig: structuredClone(kind === 'pivot' ? an.pivot ?? {x: 0, y: 0} : key),
-        a0: Math.atan2(l.y - wp.pose.y, l.x - wp.pose.x), o: {x: wp.pose.x, y: wp.pose.y}};
+        a0: Math.atan2(l.y - wr.y, l.x - wr.x), o: {x: wr.x, y: wr.y}};
+}
+
+// 擺放分頁拖 body 的支點十字：女角寫 f 裡的
+function onDownPivot(e)
+{
+    const l = toLocal(e), k = PIVOTS.find(k => Math.hypot(l.x - geo.pts[k].x, l.y - geo.pts[k].y) <= 8 / geo.K);
+    const p = parts()[bodyId()];
+    if (!k || !p) return;
+    if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
+    const path = [...(sexKey() ? [sexKey()] : []), k];
+    drag = {kind: 'node', l, p, path, orig: structuredClone(getAt(p, path)), from: geo.pts[k]};
 }
 
 function onMove(e)
 {
     if (!drag) return;
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
-    if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
+    if (kind === 'node') setAt(drag.p, drag.path, {x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
+    else if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
     else if (kind === 'move')
     {
         const [ux, uy] = unrotVec(an, dx, dy);
@@ -783,9 +846,15 @@ const shortestDeg = (d) => d - Math.floor((d + 180) / 360) * 360;
 function onUp()
 {
     if (!drag) return;
-    const {kind, an, key, orig} = drag;
+    const {kind, an, key, orig, p, path} = drag;
     drag = null;
-    if (kind === 'pivot')
+    if (kind === 'node')
+    {
+        const v = getAt(p, path);
+        setAt(p, path, orig);
+        commit(() => setAt(p, path, v));
+    }
+    else if (kind === 'pivot')
     {
         const v = an.pivot;
         an.pivot = orig;
@@ -900,7 +969,7 @@ function drawPv()
                 }}),
                 h('span', {class: 'ms'}, `${Math.round(S.ms)} / ${total} ms`),
                 h('button', {onclick: play, title: `ready 停 ${PAUSE.ready}ms 模擬前撲、舉著等停 ${PAUSE.hold}ms`}, '▶ 播放'),
-            ] : h('span', {class: 'dim'}, !weapon() ? '穿上武器才能預覽' : anim() ? '這個動畫還沒有影格' : '沒有選動畫'),
+            ] : h('span', {class: 'dim'}, !wristParts().length ? '前手腕上沒東西（穿武器或挑前手）才能預覽' : anim() ? '這個動畫還沒有影格' : '沒有選動畫'),
             h('label', {title: '0＝右、90＝下、180＝左；面向跟著目標翻，轉向目標的動畫整組繞支點轉'}, '目標角度',
                 h('input', {type: 'number', step: 'any', class: 'num', value: S.target, onchange: e => {S.target = +e.target.value || 0; render();}})))));
     drawPreview();

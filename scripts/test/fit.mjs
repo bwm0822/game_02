@@ -23,9 +23,14 @@ run('fit', async t => {
         const isDirtyNow = () => !$('dirty').hidden;
         const drawn = async () => {await F.drawPreview(); return +document.querySelector('#pv canvas').dataset.drawn;};
 
-        const origRole = await (await fetch('/assets/json/role.json')).text();
+        // guard-1 補前後手（紙娃娃型、wristF 有東西）、它的 body（rogue）補前手腕支點
+        const roleObj = await (await fetch('/assets/json/role.json')).json();
+        Object.assign(roleObj['guard-1'], {handF: 'hand-man', handB: 'hand-man'});
+        const origRole = JSON.stringify(roleObj, null, 2);
         const origItem = await (await fetch('/assets/json/item.json')).text();
-        const origPart = await (await fetch('/assets/json/part.json')).text();
+        const partObj = await (await fetch('/assets/json/part.json')).json();
+        partObj.rogue.wristF = {x: -13, y: 20};
+        const origPart = JSON.stringify(partObj, null, 2);
         // 動畫用固定資料，實際 anim.json 數值常調不會弄壞測試
         const origAnim = await (await fetch('/scripts/test/fixtures/anim.json')).text();
         const opfs = await navigator.storage.getDirectory();
@@ -42,7 +47,7 @@ run('fit', async t => {
 
         await F.setRoot(proj);
         await F.IC.ready;
-        const dolls = Object.entries(JSON.parse(origRole)).filter(([, v]) => v.head || v.hand).map(([k]) => k);
+        const dolls = Object.entries(JSON.parse(origRole)).filter(([, v]) => v.head || v.handF || v.handB).map(([k]) => k);
         out.defFold = [S.rid, document.querySelectorAll('#list .item').length];
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.list = [document.querySelectorAll('#list .item').length, dolls.length];
@@ -55,7 +60,7 @@ run('fit', async t => {
         out.slots = JSON.stringify(S.slots);
         out.drawn = await drawn();
         F.setSlot('CAT_GLOVES', 'gloves_01');
-        out.gloves = [await drawn() > out.drawn, JSON.stringify(S.doc['role.json'].data['guard-1'].inv.equips)];
+        out.gloves = [await drawn() === out.drawn - 1, JSON.stringify(S.doc['role.json'].data['guard-1'].inv.equips)];
         const dlg = $('dlgEquip');
         out.slotOpts = [...document.querySelectorAll('#view .slot')].map(s => {s.click(); const n = dlg.querySelectorAll('.tile').length; dlg.close(); return n;});
         out.slotIcons = document.querySelectorAll('#view .slot .ico.empty').length;
@@ -101,7 +106,7 @@ run('fit', async t => {
         F.redo();
         out.redo = S.doc['part.json'].data.rogue.x;
 
-        // 下拉挑部位：六個部位都有、寫 role.json、選（無）刪 key、undo
+        // 下拉挑部位：七個部位都有、寫 role.json、選（無）刪 key、undo
         const pick = (k, v) => {const s = document.querySelector(`select.part[data-k="role.json|guard-1|${k}"]`); s.value = v; s.dispatchEvent(new Event('change'));};
         const g1 = () => S.doc['role.json'].data['guard-1'];
         const n0 = await drawn();
@@ -113,9 +118,26 @@ run('fit', async t => {
         F.undo(); F.undo();
         out.partSel.push('head' in g1());
 
+        // 支點：數字欄寫 body 條目（只填 x 補上 y）、畫布拖十字一筆 undo、清空刪掉
+        const rogue = () => S.doc['part.json'].data.rogue;
+        fire('part.json|rogue|neck.x', '3');
+        out.pivot = [JSON.stringify(rogue().neck)];
+        await F.drawPreview();
+        {
+            const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo, p = g.pts.wristB;
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
+            ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 5)); ptr('pointerup', at(p.x + 2, p.y + 5));
+        }
+        out.pivot.push(JSON.stringify(rogue().wristB));
+        F.undo();
+        out.pivot.push('wristB' in rogue());
+        fire('part.json|rogue|neck.x', '');
+        out.pivot.push('neck' in rogue(), document.querySelectorAll('#view table.pivots tr').length - 1);
+
         // 動畫模式：pose.js 算時間軸、加影格、畫布拖拉、改名、播放暫停
         const A = () => S.doc['anim.json'].data;
-        const sw = S.doc['item.json'].data['sword-1'].equip;
+        const sw = {...S.doc['part.json'].data.rogue.wristF, a: 0};
         document.querySelector('.tab[data-mode=anim]').click();
         out.animUi = [S.mode, S.aid, document.querySelectorAll('table.keys tr').length - 1, document.querySelectorAll('.timeline .mark.key').length];
         const chop = F.trackOf();
@@ -149,13 +171,13 @@ run('fit', async t => {
         await F.drawPreview();
         const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
         const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
-        const o = g.wp.pose;
+        const o = g.wr;
         const ptr = (type, p) => document.querySelector('#pv canvas').dispatchEvent(new PointerEvent(type, p));
         ptr('pointerdown', at(o.x, o.y)); ptr('pointermove', at(o.x + 3, o.y - 2)); ptr('pointerup', at(o.x + 3, o.y - 2));
         const k0 = A().chop.keys[0];
         out.dragMove = [k0.x, k0.y];
         await F.drawPreview();
-        const o2 = F.geo.wp.pose, hd = F.geo.hd;
+        const o2 = F.geo.wr, hd = F.geo.hd;
         ptr('pointerdown', at(hd.x, hd.y));
         const rr = Math.hypot(hd.x - o2.x, hd.y - o2.y), a1 = Math.atan2(hd.y - o2.y, hd.x - o2.x) + Math.PI / 2;
         const rot = {...at(o2.x + Math.cos(a1) * rr, o2.y + Math.sin(a1) * rr), shiftKey: true};
@@ -296,7 +318,7 @@ run('fit', async t => {
     t.eq('換角色裝備、透明度保留', JSON.stringify(r.keep), JSON.stringify([true, 0.4, '40']));
     t.eq('透明度 100% 刪掉', r.alpha[4], false);
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
-    t.check('換上手套多畫一張', r.gloves[0]);
+    t.check('換上手套多畫一張、藏兩隻手', r.gloves[0]);
     t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword-1', 'helmet_01', 'chest_01']));
     t.check('挑選視窗只列有 equip 的道具（含卸下）', r.slotOpts.every(n => n >= 2), JSON.stringify(r.slotOpts));
     t.eq('只有靴子格是空的剪影', r.slotIcons, 1);
@@ -305,7 +327,8 @@ run('fit', async t => {
     t.eq('改裝備寫 item.json', r.equipY, 5);
     t.eq('改部件寫 part.json', r.bodyX, -2);
     t.eq('部位標共用幾個角色', r.shared, '（共用 5 個角色）');
-    t.eq('下拉挑部位：六個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([6, true, 'head-wick', true, false, false]));
+    t.eq('支點：只填 x 補 y、拖十字寫 body、undo、清空刪掉、三列', JSON.stringify(r.pivot), JSON.stringify(['{"x":3,"y":0}', '{"x":2,"y":5}', false, false, 3]));
+    t.eq('下拉挑部位：七個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([7, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);
     t.eq('不是數字不寫', r.badNum, false);
     t.check('未存標記', r.dirty[0] && r.dirty[1]);
