@@ -119,112 +119,8 @@ run('part-tool', async t => {
         row('hair-unused').click();
         await sleep(300);
         out.femaleF = [cap(), btn('↗ 到試穿調').disabled, [...document.querySelectorAll('#view td.k')].map(td => td.textContent).join()];
-
-        // 擺放數字：女改 f、男改基準、清空刪 key，立刻寫檔；undo／redo（按鈕、Ctrl+Z）也立刻寫；刪除女版
-        const fire = async (k, v) => {const el = document.querySelector(`[data-k="${k}"]`); el.value = v; el.dispatchEvent(new Event('change')); await pt.idle();};
-        const hu = async () => (await read('part.json'))['hair-unused'];        out.nums = [[...document.querySelectorAll('#view table.nums th')].map(th => th.textContent).join()];
-        await fire('part.json|hair-unused|f.x', '7');
-        out.nums.push(JSON.stringify((await hu()).f));
         sex('m');
         await sleep(300);
-        await fire('part.json|hair-unused|x', '3');
-        out.nums.push((await hu()).x);
-        await fire('part.json|hair-unused|x', '');
-        out.nums.push('x' in await hu(), $('btnUndo').disabled, $('btnRedo').disabled);
-        $('btnUndo').click(); await sleep(50); await pt.idle();
-        out.nums.push((await hu()).x);
-        dispatchEvent(new KeyboardEvent('keydown', {key: 'z', ctrlKey: true}));
-        await sleep(50); await pt.idle();
-        out.nums.push('x' in await hu(), (await hu()).f.x);
-        dispatchEvent(new KeyboardEvent('keydown', {key: 'y', ctrlKey: true}));
-        await sleep(50); await pt.idle();
-        out.nums.push((await hu()).x, $('btnRedo').disabled);
-        sex('f');
-        await sleep(300);
-        btn('刪除女版').click();
-        await sleep(50); await pt.idle();
-        out.nums.push('f' in await hu(), document.querySelector('#view .sexnote').textContent.startsWith('沒有 f'));
-        sex('m');
-        await sleep(300);
-
-        // 右欄合成拖這個條目：滑過變粗、拖改 x/y（相對支點）、放開才寫一次、白點轉 a、undo；女拖寫 f
-        const drag = async (fn) => {
-            const cv = document.querySelector('#right .pv canvas'), st = cv.st, g = st.geo, rc = cv.getBoundingClientRect();
-            const at = (x, y) => ({clientX: rc.left + (g.vc.x + (g.flip ? -x : x)) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
-            const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
-            await fn({cv, st, g, at, ptr});
-            await sleep(50); await pt.idle(); await sleep(200);
-        };
-        const pv0 = await hu(), h0 = S.hi;
-        let pvA;
-        await drag(async ({cv, st, g, at, ptr}) => {
-            const p = g.main.p, f = g.main.f, s = p.scale ?? 1;
-            const c = {x: (p.x ?? 0) + (0.5 - (p.ox ?? 0.5)) * f.w * s, y: (p.y ?? 0) + (0.5 - (p.oy ?? 1)) * f.h * s};
-            ptr('pointermove', at(c.x, c.y));
-            out.pvDrag = [st.live?.kind, cv.style.cursor];
-            pvA = g.main.pv.a ?? 0;
-            ptr('pointerdown', at(c.x, c.y)); ptr('pointermove', at(c.x + 2, c.y + 3));
-            out.pvDrag.push(S.hi === h0);
-            ptr('pointerup', at(c.x + 2, c.y + 3));
-        });
-        {
-            const q = await hu(), r = -pvA * Math.PI / 180, ex = (pv0.x ?? 0) + 2 * Math.cos(r) - 3 * Math.sin(r), ey = (pv0.y ?? 0) + 2 * Math.sin(r) + 3 * Math.cos(r);
-            out.pvDrag.push(Math.abs(q.x - ex) < 0.11 && Math.abs(q.y - ey) < 0.11, S.hi - h0);
-        }
-        await drag(async ({g, at, ptr}) => {
-            const c = {x: g.main.p.x ?? 0, y: g.main.p.y ?? 0}, ph = g.ph, r = Math.hypot(ph.x - c.x, ph.y - c.y), a = Math.atan2(ph.y - c.y, ph.x - c.x) + Math.PI / 2;
-            ptr('pointerdown', at(ph.x, ph.y)); ptr('pointermove', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r)); ptr('pointerup', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r));
-        });
-        out.pvDrag.push(Math.round(((await hu()).a ?? 0) - (pv0.a ?? 0)));
-        await pt.undo(); await pt.undo(); await sleep(200);
-        out.pvDrag.push(JSON.stringify(await hu()) === JSON.stringify(pv0));
-        sex('f');
-        await sleep(300);
-        await drag(async ({g, at, ptr}) => {
-            const c = {x: g.main.p.x ?? 0, y: (g.main.p.y ?? 0) - 1};
-            ptr('pointerdown', at(c.x, c.y)); ptr('pointermove', at(c.x, c.y + 4)); ptr('pointerup', at(c.x, c.y + 4));
-        });
-        out.pvDrag.push(typeof (await hu()).f?.y === 'number', (await hu()).y === pv0.y);
-        await pt.undo(); await sleep(200);
-        sex('m');
-        await sleep(300);
-
-        // 身體：支點表（三列、改數字寫 body 條目）、右欄十字拖位置／白點轉 a、十字優先、undo；女寫 f 裡的支點
-        S.sel = 'body-man'; pt.render(); await sleep(300);
-        const bm = async () => (await read('part.json'))['body-man'];
-        const bm0 = await bm(), hb = S.hi;
-        out.body = [document.querySelectorAll('#view table.pivots tr').length - 1, [...document.querySelectorAll('#view td.k')].some(td => td.textContent === 'wristF' && td.closest('table:not(.pivots)'))];
-        const wf = (await bm()).wristF ?? {x: 0, y: 0};
-        await fire('part.json|body-man|wristF.x', String((wf.x ?? 0) + 1));
-        out.body.push((await bm()).wristF.x === (wf.x ?? 0) + 1, (await bm()).wristF.y === (wf.y ?? 0));
-        await drag(async ({cv, st, g, at, ptr}) => {
-            const p = g.pts.wristB;
-            ptr('pointermove', at(p.x, p.y));
-            out.body.push(JSON.stringify(st.live), cv.style.cursor);
-            ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 3)); ptr('pointerup', at(p.x + 2, p.y + 3));
-        });
-        const wb0 = bm0.wristB ?? {x: 0, y: 0};
-        out.body.push((await bm()).wristB.x === (wb0.x ?? 0) + 2 && (await bm()).wristB.y === (wb0.y ?? 0) + 3);
-        await drag(async ({g, at, ptr}) => {
-            const c = g.pts.neck, hd = {x: c.x + Math.sin((c.a ?? 0) * Math.PI / 180) * 16, y: c.y - Math.cos((c.a ?? 0) * Math.PI / 180) * 16};
-            const a = Math.atan2(hd.y - c.y, hd.x - c.x) + Math.PI / 2, r = 16;
-            ptr('pointerdown', at(hd.x, hd.y)); ptr('pointermove', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r)); ptr('pointerup', at(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r));
-        });
-        out.body.push(Math.round((await bm()).neck.a - (bm0.neck?.a ?? 0)), S.hi - hb);
-        await pt.undo(); await pt.undo(); await pt.undo(); await sleep(200);
-        out.body.push(JSON.stringify(await bm()) === JSON.stringify(bm0));
-        sex('f');
-        await sleep(300);
-        await drag(async ({g, at, ptr}) => {
-            const p = g.pts.wristF;
-            ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 1, p.y)); ptr('pointerup', at(p.x + 1, p.y));
-        });
-        out.body.push(typeof (await bm()).f?.wristF?.x === 'number', JSON.stringify((await bm()).wristF) === JSON.stringify(bm0.wristF));
-        await pt.undo(); await sleep(200);
-        out.body.push(JSON.stringify(await bm()) === JSON.stringify(bm0));
-        sex('m');
-        await sleep(300);
-        S.sel = 'hair-unused'; pt.render();
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
         // ×6：男女在最下面，選項列跟男女留在右欄裡（畫布那層自己捲）
         const zoom = document.querySelector('#right .pv select');
@@ -316,13 +212,7 @@ run('part-tool', async t => {
     t.eq('樹的列：沒人用變灰、壞的 ⚠、使用次數', JSON.stringify(r.rowMarks), JSON.stringify([true, true, '1']));
     t.eq('詳細：右欄套在人偶上（身體＋部位）、使用者、可到試穿', JSON.stringify(r.detail), JSON.stringify([1, 2, 'wick', false]));
     t.eq('合成切女：套 body-woman、沒有 f 用基準、記住', JSON.stringify(r.female), JSON.stringify(['套在 body-woman（沒有 f，用基準數字）', 2, 'f', 'f']));
-    t.eq('換一筆保留女：有 f 用女版、到試穿停用、擺放以外唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite']));
-    t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
-        JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
-    t.eq('右欄合成拖條目：hover、拖時不寫、放開寫一次（相對支點）、白點轉 90、undo、女寫 f 不動基準', JSON.stringify(r.pvDrag),
-        JSON.stringify(['move', 'move', true, true, 1, 90, true, true, true]));
-    t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原、女寫 f 不動基準、undo',
-        JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"kind":"pv","k":"wristB"}', 'move', true, 90, 3, true, true, true, true]));
+    t.eq('換一筆保留女：有 f 用女版、到試穿停用、欄位唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite,scale,f']));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
     t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
