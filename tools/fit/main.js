@@ -635,19 +635,18 @@ function partsOf(r)
 {
     const out = [];
     // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）；p 是加回支點的副本（數字相對支點）
-    // src＝數字寫在哪（畫布拖拉用）：file、id、base（條目裡的路徑）；raw＝加回支點前的數字、pv＝支點
     const body = partFor(parts(), r, 'body');
-    const add = (raw, k, cat, src) => {
+    const add = (raw, k, cat) => {
         if (!isObj(raw)) return;
-        const pv = pivotOf(body, NODE[k], heldEquip()), p = atPivot(raw, pv);
-        const o = {p, k, src, raw, pv, node: NODE[k], alpha: S.alpha[cat] ?? 1};
+        const p = atPivot(raw, pivotOf(body, NODE[k], heldEquip()));
+        const o = {p, k, node: NODE[k], alpha: S.alpha[cat] ?? 1};
         if (p.sprite) out.push({...o, sprite: p.sprite, d: DEPTH[k] ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? NODE[k]});
     };
     const hide = hiddenNow();
-    for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k, undefined, {file: 'part.json', id: r[k], base: []});
-    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat, {file: 'item.json', id: S.slots[cat], base: ['equip']});
+    for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
+    for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat);
     return out.sort((a, b) => a.d - b.d);
 }
 
@@ -783,11 +782,7 @@ async function drawPreview()
         if (S.doc['part.json'].data[bodyId()]) local(() => {
             for (const k of PIVOTS) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
-        // 部件：只有滑過（或拖著）的畫虛線框，選中的不畫（角度用數字改）
-        const its = parts.map((pt, i) => ({...pt, f: frames[i]?.f})).filter(it => it.f && it.src?.id);
-        const liveK = drag?.pk ?? hoverPart;
-        local(() => HD.drawSel(g, its.filter(it => it.k === liveK), px));
-        geo = {vc, K, flip, pts, hds, its};
+        geo = {vc, K, flip, pts, hds};
     }
     else geo = null;
 
@@ -853,17 +848,6 @@ function pivotHit(l)
     return m ? {k: m, kind: 'node'} : null;
 }
 
-// 擺放分頁的部件／裝備：點選（最上層那張）、拖＝移 x/y；十字優先
-const partHit = (l) => geo.its.findLast(it => inSprite(it.p, it.f, {x: it.p.x ?? 0, y: it.p.y ?? 0, angle: it.p.a ?? 0}, l.x, l.y));
-
-// 只重畫中間欄跟預覽（畫布不換，拖拉才不會斷）
-function pick(k)
-{
-    S.pick = k;
-    if (SLOTS.some(([c]) => c === k)) S.cur = k;
-    drawView();
-    drawPreview();
-}
 function pickQuiet(k)
 {
     if (S.pick === k) return;
@@ -872,66 +856,36 @@ function pickQuiet(k)
     drawPreview();
 }
 
-let hover = null, hoverPart = null;
+let hover = null;
 function onHoverPivot(e)
 {
-    const l = geo?.hds ? toLocal(e) : null, hit = l && pivotHit(l), ph = l && !hit ? partHit(l) : null;
-    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : HD.ROT_CURSOR) : ph ? 'move' : '';
-    const h1 = hit?.k ?? null, h2 = ph?.k ?? null;
-    if (h1 === hover && h2 === hoverPart) return;
-    [hover, hoverPart] = [h1, h2];
+    const l = geo?.hds ? toLocal(e) : null, hit = l && pivotHit(l);
+    e.currentTarget.style.cursor = hit ? (hit.kind === 'node' ? 'move' : HD.ROT_CURSOR) : '';
+    const h = hit?.k ?? null;
+    if (h === hover) return;
+    hover = h;
     drawPreview();
 }
 function onLeave(e)
 {
     e.currentTarget.style.cursor = '';
-    if ((hover === null && hoverPart === null) || drag) return;
-    hover = hoverPart = null;
+    if (hover === null || drag) return;
+    hover = null;
     drawPreview();
 }
 
+// 擺放分頁只有支點十字能拖，部件／裝備不理滑鼠（選取跟數字在中間欄）
 function onDownFit(e)
-{
-    if (onDownPivot(e)) return;
-    const l = toLocal(e), it = partHit(l);
-    if (!it) return S.pick != null && pick(null);
-    if (it.k !== S.pick) pick(it.k);
-    if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
-    drag = {kind: 'part', pk: it.k, l, src: it.src, raw: {...it.raw}, pv: it.pv, orig: structuredClone(entryOf(it.src))};
-}
-
-const entryOf = (src) => getAt(S.doc[src.file].data[src.id], src.base);
-function putEntry(src, v)
-{
-    const d = S.doc[src.file].data;
-    if (src.base.length) setAt(d[src.id], src.base, v);
-    else d[src.id] = v;
-}
-// 擺放數字：女角的 scale/x/y 寫 f（第一次從基準複製，同 sexCells），其他寫基準；a 是 0 就刪
-function setPlace(src, vals)
-{
-    const o = entryOf(src), sx = sexKey();
-    for (const [k, v] of Object.entries(vals))
-    {
-        if (sx && SEX_NUMS.includes(k) && !isObj(o[sx])) o[sx] = Object.fromEntries(SEX_NUMS.map(n => [n, o[n]]).filter(([, v]) => v !== undefined));
-        const t = sx && SEX_NUMS.includes(k) ? o[sx] : o;
-        if (k === 'a' && !v) delete t.a;
-        else t[k] = v;
-    }
-}
-
-function onDownPivot(e)
 {
     const w = dragWeapon(), l = toLocal(e), hit = pivotHit(l);
     const p = w ? items()[S.slots.CAT_WEAPON] : parts()[bodyId()];
-    if (!hit || !p) return false;
+    if (!hit || !p) return;
     if (e.isTrusted) e.currentTarget.setPointerCapture(e.pointerId);
     const {k, kind} = hit, c = geo.pts[k];
     const path = w ? ['equip', k] : [k];
     const orig = structuredClone(getAt(p, path));
     drag = {kind, k, l, p, path, orig, from: w ? {x: orig?.x ?? 0, y: orig?.y ?? 0, a: orig?.a ?? 0} : bodyPivot(k),
         a0: Math.atan2(l.y - c.y, l.x - c.x), o: {x: c.x, y: c.y}};
-    return true;
 }
 
 // 轉支點：寫 x/y/a 一整組（還沒有這個支點時帶上目前位置）；a 是 0 就刪，武器的位移變空就整個刪
@@ -951,12 +905,6 @@ function onMove(e)
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
     // 第一次拖（還沒有這個支點）帶上目前的角度
     if (kind === 'nodeRot') rotNode(e, l);
-    else if (kind === 'part')
-    {
-        // 畫面位移轉回支點本地（支點有靜止角度 a）
-        const r = -rad(drag.pv.a), [rx, ry] = [dx * Math.cos(r) - dy * Math.sin(r), dx * Math.sin(r) + dy * Math.cos(r)];
-        setPlace(drag.src, {x: r1((drag.raw.x ?? 0) + rx), y: r1((drag.raw.y ?? 0) + ry)});
-    }
     else if (kind === 'node') setAt(drag.p, drag.path, {...(drag.orig ?? (drag.from.a ? {a: drag.from.a} : {})), x: r1(drag.from.x + dx), y: r1(drag.from.y + dy)});
     else if (kind === 'pivot') an.pivot = {x: r1(orig.x + dx), y: r1(orig.y + dy)};
     else if (kind === 'move')
@@ -978,15 +926,9 @@ const shortestDeg = (d) => d - Math.floor((d + 180) / 360) * 360;
 function onUp()
 {
     if (!drag) return;
-    const {kind, an, key, orig, p, path, src} = drag;
+    const {kind, an, key, orig, p, path} = drag;
     drag = null;
-    if (kind === 'part')
-    {
-        const v = structuredClone(entryOf(src));
-        putEntry(src, orig);
-        commit(() => putEntry(src, v));
-    }
-    else if (kind === 'node' || kind === 'nodeRot')
+    if (kind === 'node' || kind === 'nodeRot')
     {
         const v = structuredClone(getAt(p, path));
         setAt(p, path, orig);
@@ -1149,4 +1091,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, IC, setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
-    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}, get hoverPart() {return hoverPart;}};
+    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};

@@ -38,31 +38,9 @@ export function drawCross(g, k, pt, px, {on = false, locked = false} = {})
     g.restore();
 }
 
-// 部件的四個角（照 p.a 繞 origin 轉）
-export function boxOf(p, f)
-{
-    const s = p.scale ?? 1, a = rad(p.a ?? 0), [c, sn] = [Math.cos(a), Math.sin(a)];
-    const x0 = -(p.ox ?? 0.5) * f.w * s, y0 = -(p.oy ?? 1) * f.h * s, x1 = x0 + f.w * s, y1 = y0 + f.h * s;
-    return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([u, v]) => ({x: (p.x ?? 0) + u * c - v * sn, y: (p.y ?? 0) + u * sn + v * c}));
-}
-
 // 繞 o 從 a0（弧度）轉到 l 的角度差（度，[-180, 180)）
 export function turnDeg(o, a0, l)
 {
     const d = (Math.atan2(l.y - o.y, l.x - o.x) - a0) * 180 / Math.PI;
     return d - Math.floor((d + 180) / 360) * 360;
-}
-
-// 在 g（已經在 shape 本地座標、1 單位＝px 倍）畫滑過部件的虛線外框
-export function drawSel(g, its, px)
-{
-    g.strokeStyle = '#fff';
-    g.lineWidth = px;
-    g.setLineDash([2 * px, 2 * px]);
-    for (const it of its)
-    {
-        const c = boxOf(it.p, it.f);
-        g.beginPath(); c.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.closePath(); g.stroke();
-    }
-    g.setLineDash([]);
 }
