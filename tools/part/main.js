@@ -11,10 +11,11 @@ import {ID_RE} from '../common/doc.js';
 import {createFold} from '../common/fold.js';
 import '../common/splitter.js';
 import {previewEl} from '../role/preview.js';
-import {ROLE_PARTS, PIVOTS, pivotOf} from '../../src/core/equip.js';
+import {ROLE_PARTS, PIVOTS, pivotOf, sexOk} from '../../src/core/equip.js';
 import {PIVOT_NAMES, PIVOT_COLOR} from '../common/handles.js';
 
 const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
+const SEX_NAMES = {m: '限男', f: '限女'}, SEX_MARK = {m: '♂', f: '♀'};
 const FILTERS = [['all', '全部'], ['unused', '未使用'], ['bad', '壞的']];
 // 人偶：角色編輯器人形範本的身體跟尺寸
 const DOLL = {m: 'body-man', f: 'body-woman'};
@@ -49,6 +50,7 @@ function problems(pid)
     if (e) out.push(`sprite：${e}`);
     for (const [rid, r] of Object.entries(S.roles))
         for (const k of ROLE_PARTS) if (r[k] === pid && k !== p.kind) out.push(`${rid} 的 ${k} 指到它，但它是 ${p.kind}`);
+    for (const rid of usersOf(pid)) if (!sexOk(p, S.roles[rid].sex)) out.push(`${rid} 在用，但這條${SEX_NAMES[p.sex] ?? p.sex}`);
     return out;
 }
 const isBad = (pid) => problems(pid).length > 0;
@@ -133,7 +135,8 @@ function cell(pid)
     const p = S.parts[pid], n = usersOf(pid).length, bad = problems(pid);
     return h('div', {class: ['cell', !n && 'unused', bad.length && 'bad'].filter(Boolean).join(' '), dataset: {id: pid},
             title: [pid, bad.length ? bad.join('\n') : n ? `${n} 個角色在用` : '沒有角色在用'].join('\n'), onclick: () => pick(pid)},
-        IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, pid), n > 0 && h('span', {class: 'n'}, n));
+        IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, pid), n > 0 && h('span', {class: 'n'}, n),
+        SEX_MARK[p.sex] && h('span', {class: 'sexmark', title: SEX_NAMES[p.sex]}, SEX_MARK[p.sex]));
 }
 
 // 上方分頁切部位：全部＝照組分段，其他一次只列一個部位；目前分頁就算篩選後空了也留著
@@ -159,7 +162,9 @@ function setTab(k)
 
 // ---------- 中間：詳細；右欄：合成 ----------
 // 身體沒有男女之分（男女各有自己的身體條目）：不給切換、不讀寫 f
-const sexFor = (p) => (p.kind === 'body' ? 'm' : S.sex);
+// 限定性別（p.sex）的條目：合成固定那個性別、數字寫基準（遊戲不套 f）
+const sexFor = (p) => p.sex ?? (p.kind === 'body' ? 'm' : S.sex);
+const writesF = (p) => !p.sex && p.kind !== 'body' && sexFor(p) === 'f';
 
 function dollOf(pid, sex)
 {
@@ -172,14 +177,14 @@ function dollOf(pid, sex)
 // 擺放、支點以外的欄位唯讀
 function fieldRows(p)
 {
-    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
+    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && k !== 'sex' && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
         h('tr', null, h('td', {class: 'k'}, k), h('td', null, typeof v === 'object' ? JSON.stringify(v) : String(v))));
 }
 
 // 擺放數字：女（右欄切到女）的 scale/x/y 改 f，第一次改從基準複製（同試穿的 sexCells）；清空＝刪 key
 function numTable(pid)
 {
-    const p = S.parts[pid], sx = sexFor(p) === 'f' ? 'f' : null, has = isObj(p.f);
+    const p = S.parts[pid], sx = writesF(p) ? 'f' : null, has = isObj(p.f);
     const cell = (k, ph) => {
         const inF = sx && SEX_NUMS.includes(k), v = inF ? p.f?.[k] : p[k];
         const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
@@ -208,7 +213,7 @@ function setVals(q, vals)
 {
     for (const [k, n] of Object.entries(vals))
     {
-        const inF = sexFor(q) === 'f' && SEX_NUMS.includes(k);
+        const inF = writesF(q) && SEX_NUMS.includes(k);
         if (inF && !isObj(q.f)) q.f = Object.fromEntries(SEX_NUMS.map(s => [s, q[s]]).filter(([, v]) => v !== undefined));
         const t = inF ? q.f : q;
         if (n === undefined) delete t[k];
@@ -320,6 +325,9 @@ function renderDetail()
         bad.length > 0 && h('ul', {class: 'warns'}, bad.map(w => h('li', null, w))),
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
+        h('div', {class: 'title'}, '限定（改了立刻存檔；有在用的角色性別不符就不能改）'),
+        h('select', {dataset: {k: `part.json|${pid}|sex`}, onchange: e => act(setPartSex(pid, e.target.value || undefined))},
+            ['', 'm', 'f'].map(v => h('option', {value: v, selected: (p.sex ?? '') === v}, SEX_NAMES[v] ? `${SEX_NAMES[v]}　${v}` : '—'))),
         numTable(pid),
         p.kind === 'body' && pivotTable(pid),
         h('div', {class: 'title'}, '其他欄位（唯讀）'),
@@ -328,14 +336,15 @@ function renderDetail()
         users.length ? h('ul', {class: 'users'}, users.map(rid => h('li', null, rid, ' ', h('span', {class: 'dim'}, S.roles[rid].lab ?? ''),
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
             : h('div', {class: 'dim'}, '（沒有角色在用；路人隨機長相做好之後也可能是素材，不一定要刪）')));
-    const sexBtn = (sx, name) => h('button', {class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
+    const sx = sexFor(p);
+    const sexBtn = (s, name) => h('button', {class: sx === s ? 'on' : '', dataset: {sex: s}, disabled: !!p.sex && s !== sx, onclick: () => setSex(s)}, name);
     // 身體：只畫自己（照基準數字）＋支點十字，沒有男女切換
     if (p.kind === 'body') return $('right').replaceChildren(
         h('div', {class: 'cap'}, `身體 ${pid}`),
-        previewEl(dollOf(pid, 'm'), {}, S.parts, {pivots: pivotDrag(pid)}));
+        previewEl(dollOf(pid, sx), {}, S.parts, {pivots: pivotDrag(pid)}));
     $('right').replaceChildren(
-        h('div', {class: 'cap'}, `套在 ${DOLL[S.sex]}`, S.sex === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, S.sex), {}, S.parts),
+        h('div', {class: 'cap'}, `套在 ${DOLL[sx]}`, p.sex ? `，${SEX_NAMES[p.sex] ?? p.sex}（用基準數字）` : sx === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
+        previewEl(dollOf(pid, sx), {}, S.parts),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 
@@ -433,6 +442,18 @@ async function changeKind(pid)
     const parts = await PT.readParts(S.assets.json);
     parts[pid].kind = sel.value;
     await save(parts, pid, `${pid} 改成 ${sel.value}`);
+}
+
+// 限定性別：有角色在用、性別不符就擋（同改 kind）；空＝刪 key；走 edit（條目 undo）
+async function setPartSex(pid, sx)
+{
+    const bad = sx ? usersOf(pid).filter(rid => !sexOk({sex: sx}, S.roles[rid].sex)) : [];
+    if (bad.length)
+    {
+        render();
+        return void await ask(`不能把 ${pid} 改成${SEX_NAMES[sx]}`, h('div', null, `性別不符的角色在用：${bad.join('、')}`), [['ok', '知道了']]);
+    }
+    await edit(pid, (q) => {if (sx) q.sex = sx; else delete q.sex;});
 }
 
 async function changeSprite(pid)

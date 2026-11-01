@@ -270,9 +270,33 @@ run('part-tool', async t => {
         out.delUsed = await run(pt.deletePart('hair-mary'), () => 'ok');
         out.del = await run(pt.deletePart('hair-mary-2'), () => 'ok');
         out.deleted = ['hair-mary' in await read('part.json'), 'hair-mary-2' in await read('part.json'), S.sel];
+
+        // 限定 sex：瑪莉（女）在用 → 改限男擋下；限女立刻寫、預覽鎖女、數字寫基準不建 f、縮圖標 ♀、undo
+        S.sel = 'hair-mary'; S.sex = 'm'; pt.render(); await sleep(300);
+        const sexSel = () => document.querySelector('#view select[data-k="part.json|hair-mary|sex"]');
+        const hm = async () => (await read('part.json'))['hair-mary'];
+        const setS = (v) => {sexSel().value = v; sexSel().dispatchEvent(new Event('change'));};
+        out.sexBlock = await run((async () => {setS('m'); await sleep(100); await pt.idle();})(), () => 'ok');
+        out.sexBlock.push('sex' in await hm(), sexSel().value);
+        setS('f'); await sleep(50); await pt.idle(); await sleep(300);
+        const fx = (await hm()).f;
+        out.sexSet = [(await hm()).sex, cap().includes('限女'), document.querySelector('#right .sexsw .on').dataset.sex,
+                      document.querySelector('#right .sexsw [data-sex="m"]').disabled, !!document.querySelector('#view .sexnote'),
+                      [...document.querySelectorAll('#view table.nums th')].some(th => th.textContent.includes('（f）')), pt.problems('hair-mary').length];
+        await fire('part.json|hair-mary|x', '9');
+        out.sexSet.push((await hm()).x, JSON.stringify((await hm()).f) === JSON.stringify(fx));
+        S.sel = null; pt.setTab('hair'); pt.render(); await sleep(100);
+        out.sexSet.push(document.querySelector('#view .cell[data-id="hair-mary"] .sexmark')?.textContent);
+        S.sel = 'hair-mary'; pt.render();
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        out.sexSet.push('sex' in await hm());
         return out;
     }, SETUP.toString());
 
+    t.eq('限定：女角在用改限男擋下、不寫檔', JSON.stringify(r.sexBlock), JSON.stringify(['不能把 hair-mary 改成限男', false, '']));
+    t.eq('限定：限女立刻寫、預覽鎖女且男鈕灰、不標 f、沒有警告、數字寫基準不動 f、縮圖 ♀、undo 拿掉',
+         JSON.stringify(r.sexSet), JSON.stringify(['f', true, 'f', true, false, false, 0, 9, true, '♀', false]));
     t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '前手　handF', '後手　handB', '不認識的 kind']));
     t.eq('卡片：使用次數、未使用灰、壞的紅（圖不存在、kind 不認識、放錯欄位）', JSON.stringify(r.cells), JSON.stringify([true, true, true, true, true, false]));
     t.eq('檢查訊息', JSON.stringify(r.probs), JSON.stringify([true, true, 'tester 的 hair 指到它，但它是 head']));
