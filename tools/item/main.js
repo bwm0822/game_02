@@ -284,7 +284,7 @@ function renderPreview(id, it)
     const sexBtn = (s, name) => h('button', {type: 'button', class: sx === s ? 'on' : '', dataset: {sex: s}, disabled: !!it.sex && s !== sx, onclick: () => setSex(s)}, name);
     document.getElementById('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${rid ?? DOLL[sx]}`, note),
-        previewEl(doll, S.items, S.parts),
+        previewEl(doll, S.items, S.parts, {key: id}),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 

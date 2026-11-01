@@ -14,6 +14,9 @@ const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
 const BG_KEY = 'tools.preview.bg';
 try {P.bg = localStorage.getItem(BG_KEY);} catch {}
 
+// 畫布框（.cvbox）的捲動位置照呼叫端給的 key（同一筆＝同一個 key）記住：重建時同一個 key、同倍率就捲回去，換一筆、第一次、倍率變了就置中
+let scroll = null;          // {key, x, y, zoom}
+
 // 同頁可能有好幾張預覽（部位分頁的男／女版），換底色全部一起重畫
 const redraws = new WeakMap();      // .pv 元素 → redraw
 const redrawAll = () => {for (const pv of document.querySelectorAll('.pv')) redraws.get(pv)?.();};
@@ -187,11 +190,22 @@ function editable(cv, st, redraw)
     };
 }
 
+// opt.key：哪一筆（見 scroll）
 export function previewEl(r, items, parts, opt = {})
 {
     const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）'});
     const st = {pivots: opt.pivots, live: null, drag: null, geo: null};
-    const redraw = () => draw(cv, r, items, parts, st);
+    const keep = (box) => {scroll = {key: opt.key, x: box.scrollLeft, y: box.scrollTop, zoom: P.zoom};};
+    const place = () => {
+        const box = cv.parentElement;
+        if (!box?.isConnected) return void requestAnimationFrame(() => cv.parentElement?.isConnected && place());
+        const s = scroll?.key === opt.key && scroll.zoom === P.zoom ? scroll
+            : {x: (box.scrollWidth - box.clientWidth) / 2, y: (box.scrollHeight - box.clientHeight) / 2};
+        box.scrollLeft = s.x;
+        box.scrollTop = s.y;
+        keep(box);
+    };
+    const redraw = () => draw(cv, r, items, parts, st).then(place);
     if (opt.pivots) editable(cv, st, redraw);
     cv.st = st;     // 無頭測試讀幾何
     const check = (k, text, color) => h('label', {style: color && `color:${color}`},
@@ -199,7 +213,7 @@ export function previewEl(r, items, parts, opt = {})
     redraw();
     // 畫布包一層：版面想讓畫布自己捲、選項固定在下面時（部位分頁）捲這層
     const pv = h('div', {class: 'pv'},
-        h('div', {class: 'cvbox'}, cv),
+        h('div', {class: 'cvbox', onscroll: e => keep(e.target)}, cv),
         h('div', {class: 'opts'},
             showMenu(() => redrawAll(), opt.pivots ? [] : PIVOTS),
             check('equips', '裝備'), check('flip', '翻面'),

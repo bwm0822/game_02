@@ -10,6 +10,8 @@ const SETUP = async () => {
     const proj = await dir(opfs, 'game'), assets = await dir(proj, 'public', 'assets'), json = await dir(assets, 'json');
     for (const f of ['role.json', 'item.json', 'anim.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
     const parts = await (await fetch('/assets/json/part.json')).json();
+    // 實際資料的 sex 限定常調，拿掉免得多出性別警告（限定的測試自己設）
+    for (const p of Object.values(parts)) delete p.sex;
     Object.assign(parts, {
         'hair-unused': {kind: 'hair', sprite: 'hair-01', scale: 0.25, f: {scale: 0.2, x: 1, y: 2}},
         'bad-sprite': {kind: 'hair', sprite: 'no-such-texture'},
@@ -291,12 +293,31 @@ run('part-tool', async t => {
         $('btnUndo').click(); await sleep(50); await pt.idle();
         $('btnUndo').click(); await sleep(50); await pt.idle();
         out.sexSet.push('sex' in await hm());
+
+        // 右欄捲動：第一次置中；同一筆改值（重建預覽）捲回原位；換一筆、改倍率置中
+        const cvb = () => document.querySelector('#right .pv .cvbox');
+        const spos = () => [cvb().scrollLeft, cvb().scrollTop];
+        const smid = () => [Math.round((cvb().scrollWidth - cvb().clientWidth) / 2), Math.round((cvb().scrollHeight - cvb().clientHeight) / 2)];
+        const setZ = async (z) => {const s = document.querySelector('#right .pv .opts select'); s.value = z; s.dispatchEvent(new Event('change')); await sleep(300);};
+        S.sel = 'hair-mary'; pt.render(); await sleep(300);
+        await setZ(6);
+        out.scroll = [smid().every(v => v > 0), JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid())];
+        cvb().scrollLeft = 3; cvb().scrollTop = 4; await sleep(100);
+        await fire('part.json|hair-mary|y', '11'); await sleep(300);
+        out.scroll.push(JSON.stringify(spos()));
+        S.sel = 'hair-unused'; pt.render(); await sleep(300);
+        out.scroll.push(JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid()));
+        cvb().scrollLeft = 3; cvb().scrollTop = 4; await sleep(100);
+        await setZ(4);
+        out.scroll.push(JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid()));
+        await setZ(3);
         return out;
     }, SETUP.toString());
 
     t.eq('限定：女角在用改限男擋下、不寫檔', JSON.stringify(r.sexBlock), JSON.stringify(['不能把 hair-mary 改成限男', false, '']));
     t.eq('限定：限女立刻寫、預覽鎖女且男鈕灰、不標 f、沒有警告、數字寫基準不動 f、縮圖 ♀、undo 拿掉',
          JSON.stringify(r.sexSet), JSON.stringify(['f', true, 'f', true, false, false, 0, 9, true, '♀', false]));
+    t.eq('右欄捲動：第一次置中、同一筆改值捲回原位、換一筆／改倍率置中', JSON.stringify(r.scroll), JSON.stringify([true, true, '[3,4]', true, true]));
     t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '前手　handF', '後手　handB', '不認識的 kind']));
     t.eq('卡片：使用次數、未使用灰、壞的紅（圖不存在、kind 不認識、放錯欄位）', JSON.stringify(r.cells), JSON.stringify([true, true, true, true, true, false]));
     t.eq('檢查訊息', JSON.stringify(r.probs), JSON.stringify([true, true, 'tester 的 hair 指到它，但它是 head']));

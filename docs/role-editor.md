@@ -41,7 +41,7 @@
 | 檔案 | 內容 |
 |---|---|
 | `schema.js` | 欄位定義（`FIELDS`、`SECTIONS`、`KIND_FIELDS`、`STYLES`、`TABS`、`DEPTH`）、`template()`、`schSummary()` |
-| `preview.js` | 靜態合成預覽 `previewEl(role, items, parts)`、`partsOf()`（特效工具也用） |
+| `preview.js` | 靜態合成預覽 `previewEl(role, items, parts, {key, pivots})`、`partsOf()`（特效工具也用）；畫布框的捲動位置記在 `key`（呼叫端給這筆的 id：角色／道具／部位）：同一筆重建（改值、undo、切男女）捲回原位，換一筆、第一次、改倍率置中 |
 | `main.js` | 檢查、表單（物品欄格子、作息卡片、部位選圖器、由頭髮產生）、清單分組、總覽表、新增 |
 | `role.css` | 預覽、分段標題、道具格子、部位選圖器 |
 | `../common/portrait.js` | 頭＋頭髮合成頭像 `portraitOf()` |
