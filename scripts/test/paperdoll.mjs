@@ -1828,7 +1828,7 @@ run('paperdoll', async t => {
         type('au-hair-x', 3);
         out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
 
-        // 存到 pool：id 預設零件名，改成 head-wick／hair-wick；已有的 head-wick 提示覆蓋（wick 在用）
+        // 存到 pool：id 預設零件名（head-wick／hair-wick）；已有的 head-wick 提示覆蓋（wick 在用）
         let p = await open();
         const rows = () => [...$('dpRows').children].map(r => ({id: r.querySelector('input:not([type])'), msg: r.querySelector('.body > div:last-child')}));
         out.dlg = rows().map(r => r.id.value);
@@ -1872,7 +1872,7 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：進模式顯示頭像的表；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
          JSON.stringify(['head', false, true, true, true, true]));
     t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面、自動標 pool', JSON.stringify(ah.made),
-         JSON.stringify(['wick-head', 'wick-hair', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false, 'head', 'hair']));
+         JSON.stringify(['head-wick', 'hair-wick', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false, 'head', 'hair']));
     t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
     t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
     t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
@@ -1883,15 +1883,15 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
     t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
     t.eq('自動（頭像）：存到 pool 預設零件名、已有的提示覆蓋', JSON.stringify(ah.dlg),
-         JSON.stringify(['wick-hair', 'wick-head', '', '會覆蓋 head-wick（PNG＋擺放）（wick 在用）']));
+         JSON.stringify(['hair-wick', 'head-wick', '', '會覆蓋 head-wick（PNG＋擺放）（wick 在用）']));
     t.eq('自動（頭像）：存成 part.json 條目＋roles/parts 的 PNG、零件記住 id', JSON.stringify(ah.saved),
          JSON.stringify(['{"kind":"head","sprite":"head-wick","scale":0.25,"x":-2,"y":4}', '{"kind":"hair","sprite":"hair-wick","scale":0.25,"x":3,"y":2}',
                          [30, 30], [35, 40], 'head-wick', 'hair-wick']));
-    t.eq('自動（頭像）：載入 pool 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 wick-head ← head-wick、wick-hair ← hair-wick']));
+    t.eq('自動（頭像）：載入 pool 套回 x/y、一步', JSON.stringify(ah.load), JSON.stringify([5, 6, 7, 8, 1, 5, '載入 head-wick ← head-wick、hair-wick ← hair-wick']));
     t.eq('自動（頭像）：載入 pool 可以 undo', JSON.stringify(ah.loadUndo), JSON.stringify([-2, 4, 3, 2]));
-    t.eq('自動（頭像）：沒有條目的零件略過', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2, '載入 wick-head ← head-wick；wick-hair 在 part.json 找不到']));
+    t.eq('自動（頭像）：沒有條目的零件略過', JSON.stringify(ah.loadBald), JSON.stringify([1, 1, 3, 2, '載入 head-wick ← head-wick；hair-wick 在 part.json 找不到']));
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
-         JSON.stringify(['bald-head', true, false, '自動拆出 bald-head；只有一邊有東西，全部當頭、沒有頭髮']));
+         JSON.stringify(['head-bald', true, false, '自動拆出 head-bald；只有一邊有東西，全部當頭、沒有頭髮']));
     t.eq('自動（頭像）：還原預設只還原頭、頭髮（連 🔗）', JSON.stringify(ah.reset), JSON.stringify([18, 28, true]));
 
     // 自動（服飾）：左上頭丟掉、左下衣服、右下鞋子（右上空），自動標 pool、男女兩組
@@ -1930,7 +1930,7 @@ run('paperdoll', async t => {
         const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const msgs = () => [...$('dpRows').children].map(r => r.querySelector('.body > div:last-child').textContent);
         await put(json, 'role.json', '{}');
-        await put(json, 'part.json', JSON.stringify({'inn-cloth': {kind: 'cloth', sprite: 'inn-cloth', scale: 0.25, f: {scale: 1, x: 1, y: 1}}}, null, 2));
+        await put(json, 'part.json', JSON.stringify({'cloth-inn': {kind: 'cloth', sprite: 'cloth-inn', scale: 0.25, f: {scale: 1, x: 1, y: 1}}}, null, 2));
         await pd.setAssets(assets);
         pd.setDoll({sex: 'f'});
         pd.setMode('sl');
@@ -1943,7 +1943,7 @@ run('paperdoll', async t => {
         out.dlg = [Cl.scale, Cl.x, Cl.y, ...msgs()];
         $('dlgPool').close('ok'); await p;
         let parts = await read();
-        out.saved = [JSON.stringify(parts['inn-cloth']), JSON.stringify(parts['inn-shoes']), asked.includes('inn-cloth：會覆蓋 inn-cloth（PNG＋擺放）；會移除女版'), Cl.scale, Cl.x];
+        out.saved = [JSON.stringify(parts['cloth-inn']), JSON.stringify(parts['shoes-inn']), asked.includes('cloth-inn：會覆蓋 cloth-inn（PNG＋擺放）；會移除女版'), Cl.scale, Cl.x];
         $('slPoolF').checked = true; $('slPoolF').dispatchEvent(new Event('change'));
         p = pd.savePool();
         await until(() => $('dlgPool').open);
@@ -1951,9 +1951,9 @@ run('paperdoll', async t => {
         $('dlgPool').close('ok'); await p;
         window.confirm = ok;
         parts = await read();
-        out.savedF = [JSON.stringify(parts['inn-cloth'].f), JSON.stringify(parts['inn-shoes'].f), pd.S.auto.poolF];
+        out.savedF = [JSON.stringify(parts['cloth-inn'].f), JSON.stringify(parts['shoes-inn'].f), pd.S.auto.poolF];
 
-        await put(json, 'part.json', JSON.stringify({...parts, 'inn-cloth': {...parts['inn-cloth'], x: 7, y: 8, f: {scale: 0.3, x: 9, y: 10}}}, null, 2));
+        await put(json, 'part.json', JSON.stringify({...parts, 'cloth-inn': {...parts['cloth-inn'], x: 7, y: 8, f: {scale: 0.3, x: 9, y: 10}}}, null, 2));
         const u0 = pd.hist.undos.length;
         await pd.loadPool();
         out.load = [Cl.scale, Cl.x, Cl.y, pd.S.auto.cloth.x, pd.S.auto.cloth.y, pd.S.auto.cloth.scale, JSON.stringify(pd.S.auto.f.cloth), pd.hist.undos.length - u0];
@@ -1965,16 +1965,16 @@ run('paperdoll', async t => {
     t.eq('自動（服飾）：進模式用護具那張表、只顯示衣服鞋子、不拆前後片', JSON.stringify(ao.enter),
          JSON.stringify(['outfit', true, false, true, true, false, true]));
     t.eq('自動（服飾）：左上丟掉、衣服鞋子各一層（衣服疊在鞋子上、選衣服）、去綠、自動標 pool', JSON.stringify(ao.made),
-         JSON.stringify(['inn-cloth,inn-shoes', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
+         JSON.stringify(['cloth-inn,shoes-inn', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
     t.eq('自動（服飾）：切女照女版重擺、存檔% 共用', JSON.stringify(ao.female), JSON.stringify([0.2, 5, 6, 30, '♀女版']));
     t.eq('自動（服飾）：切回男', JSON.stringify(ao.male), JSON.stringify([0.25, 1, 2]));
     t.eq('自動（服飾）：存讀模式有 pool 的女版勾、預設不勾', JSON.stringify(ao.slF), JSON.stringify([false, false]));
     t.eq('自動（服飾）：女模式存 pool 時零件換成男版、沒勾女版提示會移除', JSON.stringify(ao.dlg),
-         JSON.stringify([0.25, 1, 2, '會移除女版（沒勾「女版」）；會覆蓋 inn-cloth（PNG＋擺放）', '']));
+         JSON.stringify([0.25, 1, 2, '會移除女版（沒勾「女版」）；會覆蓋 cloth-inn（PNG＋擺放）', '']));
     t.eq('自動（服飾）：一定存男版、沒勾刪 f 要確認、存完復原女版', JSON.stringify(ao.saved),
-         JSON.stringify(['{"kind":"cloth","sprite":"inn-cloth","scale":0.25,"x":1,"y":2}', '{"kind":"shoes","sprite":"inn-shoes","scale":0.25,"x":3,"y":4}', true, 0.2, 5]));
+         JSON.stringify(['{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":1,"y":2}', '{"kind":"shoes","sprite":"shoes-inn","scale":0.25,"x":3,"y":4}', true, 0.2, 5]));
     t.eq('自動（服飾）：勾女版不提示移除、寫 f＝女版那組', JSON.stringify([ao.dlgF, ao.savedF]),
-         JSON.stringify([['會覆蓋 inn-cloth（PNG＋擺放）', '會覆蓋 inn-shoes（PNG＋擺放）'], ['{"scale":0.2,"x":5,"y":6}', '{"scale":0.25,"x":3,"y":4}', true]]));
+         JSON.stringify([['會覆蓋 cloth-inn（PNG＋擺放）', '會覆蓋 shoes-inn（PNG＋擺放）'], ['{"scale":0.2,"x":5,"y":6}', '{"scale":0.25,"x":3,"y":4}', true]]));
     t.eq('自動（服飾）：載入 pool 基準進男版、f 進女版、照目前性別擺、一步 undo', JSON.stringify(ao.load),
          JSON.stringify([0.3, 9, 10, 7, 8, 0.25, '{"scale":0.3,"x":9,"y":10}', 1]));
 
