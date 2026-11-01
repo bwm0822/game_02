@@ -3215,7 +3215,7 @@ run('paperdoll', async t => {
     });
     t.eq('人偶：沒標記時頭髮 disable（性別也切自動護具數字，不 disable）', JSON.stringify(dl.noTag), JSON.stringify([false, true]));
     t.eq('人偶：同部位只能一層，標新的拿掉舊的', JSON.stringify(dl.unique), JSON.stringify([null, 'm-body']));
-    t.eq('人偶：圖層列顯示徽章', dl.badge, '♀身');
+    t.eq('人偶：圖層列顯示徽章（沒對到 part.json 標 ⚠）', dl.badge, '♀身⚠');
     t.eq('人偶：切女只顯示女的', dl.f, 'mh-,mH-,mb-,fh+,fb+,x+');
     t.eq('人偶：切男只顯示男的', dl.m, 'mh+,mH+,mb+,fh-,fb-,x+');
     t.eq('人偶：取消頭髮藏目前性別的髮', dl.noHair, 'mh-,mH+,mb+,fh-,fb-,x+');
@@ -3225,4 +3225,64 @@ run('paperdoll', async t => {
     t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', hair: false}, 'm-hair,,m-body,,f-hair,f-body,']));
     t.eq('關閉：有沒存的修改、按取消不關', JSON.stringify(dl.keep), JSON.stringify([true, 1]));
     t.eq('關閉：清空圖層與 undo', JSON.stringify(dl.closed), JSON.stringify([0, null, 0, 2, true, '（未命名）']));
+
+    // 參考人偶照 part.json 同名條目同步：擺好鎖住、頭掛在參考身體的 neck、換算基準用參考身體、圖尺寸不同警告、part.json 改了跟著重擺
+    const ds = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), tex = await assets.getDirectoryHandle('textures');
+        const put = async (dir, name, data) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const bmp = (w, h) => {const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').fillRect(0, 0, w, h); return c;};
+        const parts = {'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25, y: 30},
+                       'body-alt': {kind: 'body', sprite: 'body-alt', scale: 0.5, y: 40, a: 0, neck: {x: 2, y: -30}},
+                       'head-x': {kind: 'head', sprite: 'head-x', scale: 0.25, x: 1, y: -2},
+                       'hat': {kind: 'cloth', sprite: 'hat', scale: 0.25, x: 0, y: 0}};
+        await put(json, 'part.json', JSON.stringify(parts, null, 2));
+        const pdir = await (await tex.getDirectoryHandle('roles', {create: true})).getDirectoryHandle('parts', {create: true});
+        await put(pdir, 'body-alt.png', await new Promise(r => bmp(5, 8).toBlob(r)));
+        pd.cancelMode();
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.setDoll({sex: 'm', hair: true});
+        const B = pd.addLayer(await createImageBitmap(bmp(4, 8)), 'body-alt', null, null);
+        const Hd = pd.addLayer(await createImageBitmap(bmp(4, 4)), 'head-x', null, null);
+        const N = pd.addLayer(await createImageBitmap(bmp(4, 4)), 'nobody', null, null);
+        const X = pd.addLayer(await createImageBitmap(bmp(4, 4)), 'hat', null, null);
+        await pd.setAssets(assets);
+        pd.setTag(B, 'm-body'); pd.setTag(Hd, 'm-head'); pd.setTag(N, 'f-body');
+        Object.assign(N, {x: 7, y: 8});
+        pd.select(N);
+        out.place = [[B.x, B.y, B.a, B.scale], [Hd.x, Hd.y], [N.x, N.y]];
+        out.pinned = [pd.pinned(B), pd.pinned(Hd), pd.pinned(N), pd.pinned(X)];
+        for (let i = 0; i < 30 && !pd.dollWarn(B); i++) await frame();
+        pd.select(B);
+        out.badge = [...document.querySelectorAll('#layers .layer .tag')].map(b => b.textContent).join();
+        out.props = [$('pX').disabled, $('pS').disabled, $('pOp').disabled];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}));
+        pd.setMode('scale');
+        out.locked = [B.x, pd.S.mode.type];
+        pd.undo();
+        out.undo = B.y;
+
+        // 載入 pool：換算基準用參考身體（body-alt 的 rig y 40），不是 body-man
+        pd.setPool(X, 'cloth');
+        await pd.loadPool();
+        out.load = X.y;
+        pd.setPool(X, null);
+
+        // 別的分頁改了 part.json：參考人偶重擺、其他零件不動、提示
+        X.y = 0;
+        await put(json, 'part.json', JSON.stringify({...parts, 'body-alt': {...parts['body-alt'], y: 20}}, null, 2));
+        await pd.partsChanged();
+        out.changed = [B.y, Hd.y, X.y, $('status').textContent.includes('part.json 改了')];
+        return out;
+    });
+    t.eq('參考人偶：照條目擺（身體＝rig、頭掛 neck），對不到的照舊', JSON.stringify(ds.place), JSON.stringify([[0, 40, 0, 0.5], [3, 8], [7, 8]]));
+    t.eq('參考人偶：只有對到條目的鎖住', JSON.stringify(ds.pinned), JSON.stringify([true, true, false, false]));
+    t.eq('參考人偶：徽章 ⚠（圖跟遊戲 PNG 不一樣大／沒對到）', ds.badge, '♀身⚠,♂頭,♂身⚠');
+    t.eq('參考人偶：屬性欄停用（不透明度除外）', JSON.stringify(ds.props), JSON.stringify([true, true, false]));
+    t.eq('參考人偶：方向鍵不動、不能進縮放', JSON.stringify(ds.locked), JSON.stringify([0, 'move']));
+    t.eq('參考人偶：undo 也拉回條目位置', ds.undo, 40);
+    t.eq('參考人偶：載入 pool 照參考身體的 rig 換算', ds.load, 40);
+    t.eq('參考人偶：part.json 改了跟著重擺、其他零件不動＋提示', JSON.stringify(ds.changed), JSON.stringify([20, -12, 0, true]));
 });
