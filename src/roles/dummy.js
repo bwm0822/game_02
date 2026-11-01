@@ -6,7 +6,7 @@ import {COM_Pickable} from '../components/com_pickable.js'
 import {GameObject} from '../core/gameobject.js'
 import DB from '../data/db.js'
 import {GM, ROLE_PART, PART_NODE, flatDepth} from '../core/setting.js'
-import {ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
+import {ROLE_PARTS, flatPart} from '../core/equip.js'
 import Role from './role.js'
 
 //--------------------------------------------------
@@ -82,7 +82,7 @@ export default class Dummy extends Role
         const meta = DB.role(obj.id);
         const body = DB.rolePart(meta, 'body');
         const sps = ROLE_PARTS.map(k=>[k, DB.rolePart(meta, k)]).filter(([,p])=>p?.sprite).map(([k, p])=>{
-            p = atPivot(p, pivotOf(body, PART_NODE[ROLE_PART[k]]));
+            if(k!=='body') {p = flatPart(p, body, PART_NODE[ROLE_PART[k]]);}
             const [key, frame] = p.sprite.split(':');
             return scene.add.sprite(p.x??0, (p.y??0)-meta.anchor.y, key, frame)
                 .setScale(p.scale).setOrigin(p.ox??0.5, p.oy??1).setAngle(p.a??0).setDepth(flatDepth(ROLE_PART[k]).sprite);

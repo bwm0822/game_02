@@ -22,7 +22,7 @@
 
 ## 預覽
 
-合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、掛在支點上的先用 `atPivot()` 加回 body 的支點，依 `DEPTH` 疊（`DEPTH` 是遊戲 `flatDepth()` 攤成一層的值：節點整組的 depth＋節點裡的 depth/100；手套後片用 `BACK_DEPTH`）。「顯示（N）▾」下拉（`tools/common/showmenu.js`，點開跳面板、點外面收起）多選虛線 view、黃十字錨點、物理 b／佔格 g／互動 z 框、脖子／前手腕／後手腕支點十字，預設全不勾，記在 `localStorage` 的 `tools.preview.show`（跟角色／部位分頁的預覽共用，別的分頁改了用 `storage` 事件跟著換）；沒勾的支點不畫也拖不動，動畫分頁三個支點反灰；翻面另外勾。
+合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +rig（body 的 x/y/a）+(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、掛在支點上的先用 `atPivot()` 加回 body 的支點（試穿整張畫布套 rig 變換、內部都是 rig 座標，身體圖畫在 rig 的 0,0；角色預覽用 `flatPart()` 直接換成 shape 座標），依 `DEPTH` 疊（`DEPTH` 是遊戲 `flatDepth()` 攤成一層的值：節點整組的 depth＋節點裡的 depth/100；手套後片用 `BACK_DEPTH`）。「顯示（N）▾」下拉（`tools/common/showmenu.js`，點開跳面板、點外面收起）多選虛線 view、黃十字錨點、物理 b／佔格 g／互動 z 框、脖子／前手腕／後手腕支點十字，預設全不勾，記在 `localStorage` 的 `tools.preview.show`（跟角色／部位分頁的預覽共用，別的分頁改了用 `storage` 事件跟著換）；沒勾的支點不畫也拖不動，動畫分頁三個支點反灰；翻面另外勾。
 
 中間欄跟右欄之間有把手（`splitter.js` 的 `data-resize`）：拖了中間固定寬度、右欄吃剩下（最少 340px），雙擊回自動，記在 `tools.mid.fit`。右欄分上下兩塊：上面畫布區太大時自己捲（重繪保留捲動位置，換倍率／角色／分頁時置中），下面控制面板（顯示選項、動畫列）固定在底部一直看得到，兩個分頁共用。
 
@@ -39,7 +39,7 @@
 ```
 
 - 動的是 **前手腕 `wristF` 節點**（看不見的子 container），掛在上面的前手、武器（含暫拿的工具）、手套一起動，所以空手也能播（揮拳）；靜止＝body 的 `wristF` 支點＋武器的手腕位移、角度＝它的 `a`（影格是絕對姿勢，只有收回回到靜止角度）。
-- 影格 `x/y`＝手腕在 shape 本地座標（面向右、相對 view 中心）的**絕對位置**，`a`＝手腕角度（武器實際角度＝手腕角度＋武器自己的 `equip.a`）；`t` 是從開始算的 ms，`ease` 是進入這格的緩動（`pose.js` 的 `EASE`），`path:'arc'` 繞 `pivot` 做極座標補間（方向跟角度變化同向），預設直線。
+- 影格 `x/y`＝手腕在 rig 本地座標（面向右、相對 rig＝body 的 x/y/a，人形 body 都是 `y:32`＝腳底）的**絕對位置**，`a`＝手腕角度（武器實際角度＝手腕角度＋武器自己的 `equip.a`）；`t` 是從開始算的 ms，`ease` 是進入這格的緩動（`pose.js` 的 `EASE`），`path:'arc'` 繞 `pivot` 做極座標補間（方向跟角度變化同向），預設直線。
 - 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`Quad.Out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
 - `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
 - `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。

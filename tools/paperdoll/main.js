@@ -4,7 +4,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {WCLS} from '../common/settings.js';
-import {equipFor, pivotOf, atPivot, fromPivot} from '../../src/core/equip.js';
+import {equipFor, flatPart, unflatPart} from '../../src/core/equip.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -3646,16 +3646,16 @@ function setSplit(it, name, g, icon)
     dropOf(it).sprite = name;
 }
 
-// 掛在支點上的（頭盔、武器、手套、頭、頭髮、前後手）遊戲數字相對 body 的支點，紙娃娃畫布是身體座標：存的時候減、載入的時候加
-// 男＝body-man、女＝body-woman 套 f（跟部位分頁的人偶一樣）；sign 1＝存（fromPivot）、-1＝載入（atPivot），含支點的靜止角度 a；
-// 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪
+// 遊戲數字相對 rig（body 的 x/y/a），掛在支點上的（頭盔、武器、手套、頭、頭髮、前後手）再相對 body 的支點，紙娃娃畫布是 shape 座標：存的時候減、載入的時候加
+// 男＝body-man、女＝body-woman 套 f（跟部位分頁的人偶一樣）；sign 1＝存（unflatPart）、-1＝載入（flatPart），含支點的靜止角度 a；
+// 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪；node null＝身體自己（它的 x/y/a 就是 rig，不換）
 const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
 const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
-const PART_NODE = {head: 'neck', hair: 'neck', handF: 'wristF', handB: 'wristB'};
+const PART_NODE = {body: null, head: 'neck', hair: 'neck', handF: 'wristF', handB: 'wristB'};
 function pivotShift(o, parts, node, sex, sign = 1, withA = true)
 {
-    if (!o || !node) return o;
-    const pv = pivotOf(equipFor(parts[PIVOT_BODY[sex]], sex), node), r = (sign > 0 ? fromPivot : atPivot)(o, pv);
+    if (!o || node === null) return o;
+    const r = (sign > 0 ? unflatPart : flatPart)(o, equipFor(parts[PIVOT_BODY[sex]], sex), node);
     if (r === o) return o;
     o.x = round(r.x);
     o.y = round(r.y);
@@ -3921,7 +3921,7 @@ async function loadItems()
     {
         const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
         if (!e0) {miss.push(part.C.name); continue;}
-        // 照目前人偶的支點加回身體座標（護具女模式＝f 那組）
+        // 照目前人偶的 rig／支點換回畫布座標（護具女模式＝f 那組）
         const e = pivotShift({...e0, ...(autoFemale(part.P) && e0.f)}, pjson, ITEM_NODE[items[id].cat], S.doll.sex, -1), cur = autoRow(part);
         hit.push(`${part.C.name} ← ${id}`);
         rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0,
@@ -4263,7 +4263,7 @@ async function loadPool()
     const parts = await readParts(), pool = S.layers.filter(L => L.pool), ms = poolGroups();
     const undo = {group: [hist.snapList(S), ...pool.flatMap(L => linked(L)).map(L => hist.snap(L, true))]};
     const hit = [], miss = [], warn = [], mine = new Set(ms.flatMap(m => m.parts.map(p => p.C)));
-    // 掛在支點上的照目前人偶加回身體座標（這些都只有基準一組，沒有 f）
+    // 照目前人偶的 rig／支點換回畫布座標（這些都只有基準一組，沒有 f）
     const entry = (L) => {
         const id = L.poolId ?? L.name, e = parts[id];
         if (!e) {miss.push(L.name); return null;}

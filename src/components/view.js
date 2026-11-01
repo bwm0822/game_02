@@ -5,7 +5,7 @@ import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot} from '../core/equip.js'
+import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -246,7 +246,8 @@ class View extends Phaser.GameObjects.Container
     // anim.js 會用到
     get shape() {return this._shape;}
     get wrist() {return this._nodes?.wristF?.length ? this._nodes.wristF : null;}   // 播武器動畫的節點，空的(動物、沒手)不播
-    get sprites() {const l = this._shape?.list; return l ? l.flatMap(c=>c.list ?? [c]) : [this._shape];}   // 支點節點只有一層
+    get rig() {return this._rig;}
+    get sprites() {const flat = (c)=>c.list ? c.list.flatMap(flat) : [c]; return this._shape ? flat(this._shape) : [];}   // shape→rig→支點節點，攤平
 
     //--------------------------------------------------
     // outline
@@ -884,20 +885,23 @@ export class RoleView extends View
         this._shape = this.scene.add.container(0,0);
         this.add(this._shape);
         const body = DB.rolePart(meta, 'body');
+        const rig = rigOf(body);
+        this._rig = this.scene.add.container(rig.x, rig.y).setAngle(rig.a);
+        this._shape.add(this._rig);
         this._nodes = {};
         for(const k of PIVOTS)
         {
             const p = pivotOf(body, k);
             const node = this.scene.add.container(p.x, p.y).setDepth(NODE_DEPTH[k]).setAngle(p.a);
             node.pivot = p;
-            this._shape.add(node);
+            this._rig.add(node);
             this._nodes[k] = node;
         }
         this._parts = {};
         for(const k of ROLE_PARTS)
         {
             const p = DB.rolePart(meta, k);
-            this._parts[k] = p ? this._addPart(p, ROLE_PART[k]) : [];
+            this._parts[k] = !p ? [] : k==='body' ? this._addPart({...p, x:0, y:0, a:0}) : this._addPart(p, ROLE_PART[k]);
         }
         this._equips = [];
         this._sortParts();
@@ -926,7 +930,7 @@ export class RoleView extends View
                 sp.angle = p.a ?? 0;
                 sp.depth = depth;
                 this._deadTint != null && sp.setTint(this._deadTint);
-                (n ?? this._shape).add(sp);
+                (n ?? this._rig ?? this._shape).add(sp);
                 sps.push(sp);
             }
         }
@@ -943,7 +947,7 @@ export class RoleView extends View
 
     _sortParts()
     {
-        for(const c of [this._shape, ...Object.values(this._nodes)])
+        for(const c of [this._shape, this._rig, ...Object.values(this._nodes)].filter(Boolean))
         {
             c.getAll().sort((a, b) => a.depth - b.depth).forEach(child => {c.bringToTop(child);});
         }
@@ -1001,6 +1005,7 @@ export class RoleView extends View
         super._remove();
         // 移除 parts
         this._shape.getAll().forEach((child)=>{child.destroy();});
+        this._rig = null;
         this._nodes = {};
     }
 

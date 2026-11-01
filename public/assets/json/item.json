@@ -81,8 +81,12 @@
     "equip": {
       "sprite": "cloth-armor",
       "scale": 0.25,
-      "y": 25,
-      "x": -1
+      "y": -7,
+      "x": -1,
+      "f": {
+        "scale": 0.22,
+        "y": -8
+      }
     },
     "drop": {
       "sprite": "cloth-armor",
@@ -99,7 +103,11 @@
       "sprite": "leather-armor",
       "scale": 0.25,
       "x": -0.5,
-      "y": 26
+      "y": -6,
+      "f": {
+        "scale": 0.22,
+        "y": -7
+      }
     },
     "drop": {
       "sprite": "leather-armor",
@@ -117,7 +125,7 @@
     "equip": {
       "sprite": "leather-armor-1",
       "scale": 0.25,
-      "y": 28
+      "y": -4
     }
   },
   "chest_04": {
@@ -129,7 +137,7 @@
     "equip": {
       "sprite": "鎖子甲-armor",
       "scale": 0.25,
-      "y": 29
+      "y": -3
     }
   },
   "chest_05": {
@@ -140,7 +148,7 @@
       "sprite": "皮甲-armor",
       "scale": 0.25,
       "x": 0,
-      "y": 28.5
+      "y": -3.5
     }
   },
   "gloves_01": {
@@ -185,7 +193,7 @@
       "sprite": "cloth-boots",
       "scale": 0.25,
       "x": 1,
-      "y": 32
+      "y": 0
     },
     "drop": {
       "sprite": "cloth-boots",
@@ -202,7 +210,7 @@
       "sprite": "leather-boots",
       "scale": 0.25,
       "x": 1.25,
-      "y": 33
+      "y": 1
     },
     "drop": {
       "sprite": "leather-boots",
@@ -219,7 +227,7 @@
       "sprite": "leather-boots-1",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "drop": {
       "sprite": "leather-boots-1",
@@ -236,7 +244,7 @@
       "sprite": "鎖子甲-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "drop": {
       "sprite": "鎖子甲-boots",
@@ -253,7 +261,7 @@
       "sprite": "皮甲-boots",
       "scale": 0.25,
       "x": 1,
-      "y": 33
+      "y": 1
     }
   },
   "helmet-clo-1": {
@@ -298,7 +306,7 @@
       "sprite": "cloth-linen-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 30.5
+      "y": -1.5
     },
     "icon": "cloth-linen-armor",
     "drop": {
@@ -332,7 +340,7 @@
       "sprite": "cloth-linen-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "cloth-linen-boots",
     "drop": {
@@ -387,11 +395,11 @@
       "sprite": "cloth-cotton-armor",
       "scale": 0.25,
       "x": -0.75,
-      "y": 30.5,
+      "y": -1.5,
       "f": {
         "scale": 0.23,
         "x": -0.75,
-        "y": 27.5
+        "y": -4.5
       }
     },
     "icon": "cloth-cotton-armor",
@@ -426,11 +434,11 @@
       "sprite": "cloth-cotton-boots",
       "scale": 0.24,
       "x": 1.75,
-      "y": 33,
+      "y": 1,
       "f": {
         "scale": 0.2,
         "x": 1.75,
-        "y": 33
+        "y": 1
       }
     },
     "icon": "cloth-cotton-boots",
@@ -483,7 +491,7 @@
       "sprite": "cloth-silk-armor",
       "scale": 0.25,
       "x": -0.75,
-      "y": 31.5
+      "y": -0.5
     },
     "icon": "cloth-silk-armor",
     "drop": {
@@ -518,7 +526,7 @@
       "sprite": "cloth-silk-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "cloth-silk-boots",
     "drop": {
@@ -570,7 +578,7 @@
       "sprite": "cloth-arcane-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 30.5
+      "y": -1.5
     },
     "icon": "cloth-arcane-armor",
     "drop": {
@@ -605,7 +613,7 @@
       "sprite": "cloth-arcane-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "cloth-arcane-boots",
     "drop": {
@@ -657,7 +665,7 @@
       "sprite": "cloth-astral-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 30.5
+      "y": -1.5
     },
     "icon": "cloth-astral-armor",
     "drop": {
@@ -692,7 +700,7 @@
       "sprite": "cloth-astral-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "cloth-astral-boots",
     "drop": {
@@ -741,7 +749,7 @@
       "sprite": "rawhide-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 26.5
+      "y": -5.5
     },
     "icon": "rawhide-armor",
     "drop": {
@@ -765,7 +773,7 @@
       "sprite": "rawhide-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "rawhide-boots",
     "drop": {
@@ -815,7 +823,7 @@
       "sprite": "leather-hard-armor",
       "scale": 0.25,
       "x": -0.25,
-      "y": 27.5
+      "y": -4.5
     },
     "icon": "leather-hard-armor",
     "drop": {
@@ -839,7 +847,7 @@
       "sprite": "leather-hard-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "leather-hard-boots",
     "drop": {
@@ -890,7 +898,7 @@
       "sprite": "studded-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 28.5
+      "y": -3.5
     },
     "icon": "studded-armor",
     "drop": {
@@ -915,7 +923,7 @@
       "sprite": "studded-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "studded-boots",
     "drop": {
@@ -966,7 +974,7 @@
       "sprite": "werewolf-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 29
+      "y": -3
     },
     "icon": "werewolf-armor",
     "drop": {
@@ -991,7 +999,7 @@
       "sprite": "werewolf-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "werewolf-boots",
     "drop": {
@@ -1042,7 +1050,7 @@
       "sprite": "dragonhide-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 29
+      "y": -3
     },
     "icon": "dragonhide-armor",
     "drop": {
@@ -1067,7 +1075,7 @@
       "sprite": "dragonhide-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "dragonhide-boots",
     "drop": {
@@ -1132,11 +1140,11 @@
       "sprite": "bronze-armor",
       "scale": 0.25,
       "x": -0.25,
-      "y": 26.5,
+      "y": -5.5,
       "f": {
         "scale": 0.23,
         "x": 0,
-        "y": 24.5
+        "y": -7.5
       }
     },
     "icon": "bronze-armor",
@@ -1166,11 +1174,11 @@
       "sprite": "bronze-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33,
+      "y": 1,
       "f": {
         "scale": 0.22,
         "x": 1.5,
-        "y": 33
+        "y": 1
       }
     },
     "icon": "bronze-boots",
@@ -1231,7 +1239,7 @@
       "sprite": "chain-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 26.5
+      "y": -5.5
     },
     "icon": "chain-armor",
     "drop": {
@@ -1260,7 +1268,7 @@
       "sprite": "chain-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "chain-boots",
     "drop": {
@@ -1322,7 +1330,7 @@
       "sprite": "plate-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 26.5
+      "y": -5.5
     },
     "icon": "plate-armor",
     "drop": {
@@ -1352,7 +1360,7 @@
       "sprite": "plate-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "plate-boots",
     "drop": {
@@ -1413,7 +1421,7 @@
       "sprite": "steel-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 28.5
+      "y": -3.5
     },
     "icon": "steel-armor",
     "drop": {
@@ -1443,7 +1451,7 @@
       "sprite": "steel-boots",
       "scale": 0.25,
       "x": 1,
-      "y": 33
+      "y": 1
     },
     "icon": "steel-boots",
     "drop": {
@@ -1504,7 +1512,7 @@
       "sprite": "mithril-armor",
       "scale": 0.25,
       "x": 0.25,
-      "y": 27.5
+      "y": -4.5
     },
     "icon": "mithril-armor",
     "drop": {
@@ -1534,7 +1542,7 @@
       "sprite": "mithril-boots",
       "scale": 0.25,
       "x": 1.5,
-      "y": 33
+      "y": 1
     },
     "icon": "mithril-boots",
     "drop": {

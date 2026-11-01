@@ -165,8 +165,8 @@
     ],
     "head": "trump-head",
     "hair": "trump-hair",
-    "cloth": "outfit-innkeeper-cloth",
-    "shoes": "outfit-innkeeper-shoes"
+    "shoes": "outfit-innkeeper-shoes",
+    "cloth": "outfit-innkeeper-cloth"
   },
   "melanie": {
     "kind": "npc",
@@ -408,7 +408,9 @@
         "helmet-clo-2",
         "boots-clo-2"
       ]
-    }
+    },
+    "handF": "handF",
+    "handB": "handB"
   },
   "xi": {
     "kind": "npc",

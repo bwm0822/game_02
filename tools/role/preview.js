@@ -6,7 +6,7 @@ import * as IC from '../common/icons.js';
 import * as HD from '../common/handles.js';
 import {show, showMenu} from '../common/showmenu.js';
 import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
-import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
 
 const P = {zoom: 3, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
@@ -39,7 +39,7 @@ function axis(a, b, total)
 }
 
 // 回傳要畫的部件，照遊戲的順序（部位、裝備）再依 depth 穩定排序；被裝備藏掉的部位（hiddenParts）不畫
-// 掛在支點上的（NODE）數字相對 body 的支點，p 是加回支點後的副本
+// 掛在支點上的（NODE）數字相對 body 的支點、其他相對 rig（body 的 x/y/a），p 是換回 shape 座標的副本
 // 角色的部位是 part.json 的 id（parts＝part.json）
 export function partsOf(r, items, parts)
 {
@@ -49,7 +49,7 @@ export function partsOf(r, items, parts)
     const held = weaponOf(equips, CAT);
     const add = (p, k) => {
         if (!isObj(p)) return;
-        p = atPivot(p, pivotOf(body, NODE[k], held));
+        if (k !== 'body') p = flatPart(p, body, NODE[k], held);
         if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0});
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
@@ -103,13 +103,13 @@ async function draw(cv, r, items, pdb, st)
     // 可拖的 body 支點十字（opt.pivots，有勾顯示的）：滑過／拖著變粗
     if (st?.pivots)
     {
-        const body = partFor(pdb, r, 'body'), pts = Object.fromEntries(PIVOTS.map(k => [k, pivotOf(body, k)]));
+        const body = partFor(pdb, r, 'body'), rig = rigOf(body), pts = Object.fromEntries(PIVOTS.map(k => [k, atPivot(pivotOf(body, k), rig)]));
         g.save();
         g.translate(vc.x, vc.y);
         if (P.flip) g.scale(-1, 1);
         for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], 1 / K, {on: st.live?.k === k});
         g.restore();
-        st.geo = {vc, K, flip: P.flip, pts};
+        st.geo = {vc, K, flip: P.flip, pts, rig};
     }
 
     for (const k of ['g', 'z', 'b'])
@@ -133,7 +133,7 @@ async function draw(cv, r, items, pdb, st)
     cv.dataset.drawn = n;
 }
 
-// opt.pivots＝{set(k, vals), done()}：畫 body 的三個支點十字，拖十字改 x/y、拖白點轉 a（Shift 吸 15°），vals 是身體座標；
+// opt.pivots＝{set(k, vals), done()}：畫 body 的三個支點十字，拖十字改 x/y、拖白點轉 a（Shift 吸 15°），vals 是 rig 座標（同 body 條目上的支點）；
 // 拖的時候一直呼叫 set（呼叫端改記憶體裡的資料），放開呼叫 done（呼叫端寫檔）
 const SNAP = 15;
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -165,10 +165,14 @@ function editable(cv, st, redraw)
         const l = toLocal(e), d = st.drag;
         if (d)
         {
-            if (!d.rot) ed.set(d.k, {x: r1(d.o.x + l.x - d.l.x), y: r1(d.o.y + l.y - d.l.y)});
+            if (!d.rot)
+            {
+                const p = fromPivot({x: d.o.x + l.x - d.l.x, y: d.o.y + l.y - d.l.y}, st.geo.rig);
+                ed.set(d.k, {x: r1(p.x), y: r1(p.y)});
+            }
             else
             {
-                const a = d.o.a + HD.turnDeg(d.o, d.a0, l);
+                const a = d.o.a - st.geo.rig.a + HD.turnDeg(d.o, d.a0, l);
                 ed.set(d.k, {a: e.shiftKey ? Math.round(a / SNAP) * SNAP : r1(a)});
             }
             return redraw();

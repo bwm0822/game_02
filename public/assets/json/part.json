@@ -18,19 +18,22 @@
     "y": 32,
     "neck": {
       "x": 1.5,
-      "y": 0,
+      "y": -32,
       "a": 0
     },
     "wristF": {
       "x": -12,
-      "y": 20,
+      "y": -12,
       "a": -15
     },
     "wristB": {
       "x": 12,
-      "y": 19
+      "y": -13
     },
-    "a": 0
+    "a": 0,
+    "ox": 0.5,
+    "sex": "m",
+    "x": 0.5
   },
   "body-woman": {
     "kind": "body",
@@ -38,18 +41,20 @@
     "scale": 0.25,
     "y": 32,
     "neck": {
-      "x": 0,
-      "y": 0
+      "x": 0.5,
+      "y": -32,
+      "a": 0
     },
     "wristF": {
       "x": -10,
-      "y": 20,
+      "y": -12,
       "a": -15
     },
     "wristB": {
       "x": 10,
-      "y": 19
-    }
+      "y": -13
+    },
+    "sex": "f"
   },
   "macron": {
     "kind": "body",
@@ -82,15 +87,15 @@
     "y": 32,
     "neck": {
       "x": 1.5,
-      "y": 0
+      "y": -32
     },
     "wristF": {
       "x": -13,
-      "y": 20
+      "y": -12
     },
     "wristB": {
       "x": 13,
-      "y": 17
+      "y": -15
     }
   },
   "trump": {
@@ -115,37 +120,47 @@
     "kind": "head",
     "sprite": "head-karen",
     "scale": 0.25,
-    "x": -1,
+    "x": -1.5,
     "y": 2,
-    "a": 0
+    "a": 0,
+    "sex": "f"
   },
   "head-mary": {
     "kind": "head",
     "sprite": "head-mary",
     "scale": 0.25,
-    "x": -1,
-    "y": 2
+    "x": -1.5,
+    "y": 2,
+    "sex": "f"
   },
   "head-wick": {
     "kind": "head",
     "sprite": "head-wick",
     "scale": 0.25,
-    "x": -3.5,
-    "y": 4
+    "x": -3,
+    "y": 4,
+    "sex": "m",
+    "a": 0
   },
   "trump-head": {
     "kind": "head",
     "sprite": "trump-head",
     "scale": 0.25,
-    "x": -3.5,
-    "y": 4
+    "x": -3,
+    "y": 4,
+    "sex": "m"
   },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
     "scale": 0.25,
     "x": -2,
-    "y": 4
+    "y": 4,
+    "f": {
+      "scale": 0.25,
+      "x": -2.25,
+      "y": 4
+    }
   },
   "hair-mary": {
     "kind": "hair",
@@ -165,33 +180,31 @@
     "kind": "hair",
     "sprite": "trump-hair",
     "scale": 0.25,
-    "x": -2.5,
+    "x": -1.75,
     "y": -0.75
   },
   "outfit-innkeeper-cloth": {
     "kind": "cloth",
     "sprite": "outfit-innkeeper-cloth",
     "scale": 0.25,
-    "x": -0.25,
-    "y": 28,
+    "x": 0.25,
+    "y": -4,
     "f": {
       "scale": 0.23,
       "x": 0.25,
-      "y": 25.75
-    },
-    "oy": 1,
-    "a": 0
+      "y": -6.25
+    }
   },
   "outfit-innkeeper-shoes": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
-    "scale": 0.24,
-    "x": 1.5,
-    "y": 33,
+    "scale": 0.25,
+    "x": 2.25,
+    "y": 1.5,
     "f": {
       "scale": 0.2,
       "x": 2,
-      "y": 33
+      "y": 1
     }
   },
   "handF": {

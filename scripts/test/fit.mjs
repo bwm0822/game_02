@@ -136,7 +136,7 @@ run('fit', async t => {
         out.follow = [hx0, helmX()];
         const dragB = () => {
             const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo, p = g.pts.wristB;
-            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + g.rig.x + x) * g.K, clientY: rc.top + (g.vc.y + g.rig.y + y) * g.K, pointerId: 1, bubbles: true});
             const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
             ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 5)); ptr('pointerup', at(p.x + 2, p.y + 5));
         };
@@ -169,7 +169,7 @@ run('fit', async t => {
         await F.drawPreview();
         const cvs = () => {
             const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
-            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + g.rig.x + x) * g.K, clientY: rc.top + (g.vc.y + g.rig.y + y) * g.K, pointerId: 1, bubbles: true});
             const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
             // 繞十字中心從把手轉 deg 度
             const turn = (k, deg, shift = false) => {
@@ -241,7 +241,7 @@ run('fit', async t => {
         await F.drawPreview();
         {
             const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
-            const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+            const at = (x, y) => ({clientX: rc.left + (g.vc.x + g.rig.x + x) * g.K, clientY: rc.top + (g.vc.y + g.rig.y + y) * g.K, pointerId: 1, bubbles: true});
             const ptr = (type, q) => cv.dispatchEvent(new PointerEvent(type, q));
             const dragBy = (p) => {ptr('pointerdown', at(p.x, p.y)); ptr('pointermove', at(p.x + 2, p.y + 3)); ptr('pointerup', at(p.x + 2, p.y + 3));};
             dragBy(g.pts.wristB);
@@ -297,7 +297,7 @@ run('fit', async t => {
         F.setMs(120); F.render();
         await F.drawPreview();
         const cv = document.querySelector('#pv canvas'), rc = cv.getBoundingClientRect(), g = F.geo;
-        const at = (x, y) => ({clientX: rc.left + (g.vc.x + x) * g.K, clientY: rc.top + (g.vc.y + y) * g.K, pointerId: 1, bubbles: true});
+        const at = (x, y) => ({clientX: rc.left + (g.vc.x + g.rig.x + x) * g.K, clientY: rc.top + (g.vc.y + g.rig.y + y) * g.K, pointerId: 1, bubbles: true});
         const o = g.wr;
         const ptr = (type, p) => document.querySelector('#pv canvas').dispatchEvent(new PointerEvent(type, p));
         ptr('pointerdown', at(o.x, o.y)); ptr('pointermove', at(o.x + 3, o.y - 2)); ptr('pointerup', at(o.x + 3, o.y - 2));
@@ -398,7 +398,8 @@ run('fit', async t => {
         fire('item.json|helmet_02|equip.f.y', '9');
         out.sex.push(JSON.stringify(e2().f) === JSON.stringify({scale: base.scale, ...(base.x !== undefined && {x: base.x}), y: 9}), e2().y === base.y);
         fire('item.json|helmet_02|equip.f.scale', '0.2');
-        out.sex.push(e2().f.scale, F.partsOf(S.doc['role.json'].data.mary).find(p => p.sprite === e2().sprite).p.y);
+        const mary = S.doc['role.json'].data.mary, neckY = S.doc['part.json'].data[mary.body].neck?.y ?? 0;
+        out.sex.push(e2().f.scale, F.partsOf(mary).find(p => p.sprite === e2().sprite).p.y - neckY);
         document.querySelector('#view .delsex').click();
         out.sex.push('f' in e2());
         F.undo(); F.undo(); F.undo();

@@ -15,7 +15,7 @@ import * as PT from '../common/part.js';
 import {show, showMenu} from '../common/showmenu.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
@@ -79,6 +79,7 @@ const bodyId = () => role()?.body;
 // 實際的支點＝body 的支點＋武器的手腕位移（equip.wristF／wristB，男女共用）；支點表跟拖 body 十字改的是 bodyPivot
 const heldEquip = () => items()[S.slots.CAT_WEAPON]?.equip;
 const bodyPivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k);
+const rigNow = () => rigOf(partFor(parts(), role(), 'body'));
 const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k, heldEquip());
 // 擺放分頁拖青／橘十字改武器的位移（脖子鎖住）；沒武器時照身體
 const dragWeapon = () => S.dragW && !!heldEquip();
@@ -638,11 +639,11 @@ const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]),
 function partsOf(r)
 {
     const out = [];
-    // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）；p 是加回支點的副本（數字相對支點）
+    // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）；p 是 rig 座標的副本（掛支點的加回支點；body 自己在 rig 的 0,0）
     const body = partFor(parts(), r, 'body');
     const add = (raw, k, cat) => {
         if (!isObj(raw)) return;
-        const p = atPivot(raw, pivotOf(body, NODE[k], heldEquip()));
+        const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, NODE[k], heldEquip()));
         const o = {p, k, node: NODE[k], alpha: S.alpha[cat] ?? 1};
         if (p.sprite) out.push({...o, sprite: p.sprite, d: DEPTH[k] ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
@@ -657,7 +658,7 @@ function partsOf(r)
 // 手腕的旋轉把手：手腕本地往上 16
 const HANDLE = 16;
 const handleOf = (w) => ({x: w.x + Math.sin(rad(w.angle)) * HANDLE, y: w.y - Math.cos(rad(w.angle)) * HANDLE});
-// 畫面（shape 本地）座標換到手腕靜止時的位置（pv＝支點，含靜止角度 a）：掛在手腕的部位用靜止時的樣子 hit-test
+// 畫面（rig 本地，toLocal 換好的）座標換到手腕靜止時的位置（pv＝支點，含靜止角度 a）：掛在手腕的部位用靜止時的樣子 hit-test
 function unwrist(w, pv, lx, ly)
 {
     const r = rad(pv.a - w.angle), [dx, dy] = [lx - w.x, ly - w.y];
@@ -721,8 +722,10 @@ async function drawPreview()
     }
 
     const tr = isAnim ? trackOf() : null;
-    const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); fn(); g.restore();};
-    // w：手腕姿勢（掛在 wristF 的部位 p 已是靜止時的身體座標：先退回支點 wp 的本地、再照手腕轉／移）
+    // 部位、支點、手腕姿勢、動畫影格都是 rig 座標（rig＝body 的 x/y/a）
+    const rig = rigNow();
+    const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); g.translate(rig.x, rig.y); g.rotate(rad(rig.a)); fn(); g.restore();};
+    // w：手腕姿勢（掛在 wristF 的部位 p 已是靜止時的 rig 座標：先退回支點 wp 的本地、再照手腕轉／移）
     const wp = pivot('wristF');
     const drawSp = (p, img, f, w) => local(() => {
         if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - wp.a)); g.translate(-wp.x, -wp.y);}
@@ -775,7 +778,7 @@ async function drawPreview()
             }
             dot(pv.x, pv.y, '#4da3ff', 4);
         });
-        geo = {vc, K, flip, wr, wp, grp, hd, pv};
+        geo = {vc, K, flip, rig, wr, wp, grp, hd, pv};
     }
     else if (!isAnim)
     {
@@ -786,7 +789,7 @@ async function drawPreview()
         if (S.doc['part.json'].data[bodyId()]) local(() => {
             for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
-        geo = {vc, K, flip, pts, hds};
+        geo = {vc, K, flip, rig, pts, hds};
     }
     else geo = null;
 
@@ -817,7 +820,8 @@ function toLocal(e)
 {
     const rc = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rc.left) / geo.K - geo.vc.x, y = (e.clientY - rc.top) / geo.K - geo.vc.y;
-    return {x: geo.flip ? -x : x, y};
+    const p = fromPivot({x: geo.flip ? -x : x, y}, geo.rig);
+    return {x: p.x, y: p.y};
 }
 
 let drag = null;

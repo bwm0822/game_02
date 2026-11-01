@@ -602,7 +602,8 @@ export const ROLE_PART = Object.freeze({
     handB : GM.PART.HAND_B,
 });
 
-// 支點節點(看不見的子 container，位置寫在 body 的 part.json：neck/wristF/wristB {x,y})：
+// 結構：_shape(翻面、執行期動畫) → rig(body 的 x/y/a，資料擺放層) → 身體圖(0,0)、衣服鞋子護甲靴子、三個支點節點
+// 支點節點(看不見的子 container，位置寫在 body 的 part.json：neck/wristF/wristB {x,y}，相對 rig)：
 // 掛在節點的部位跟著節點轉，depth 只在節點裡排，節點整組用 NODE_DEPTH 跟其他部位排
 export const NODE_DEPTH = Object.freeze({neck:1.5, wristF:4, wristB:-1});
 export const PART_NODE = Object.freeze({

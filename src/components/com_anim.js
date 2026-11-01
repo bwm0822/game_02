@@ -172,7 +172,7 @@ export class COM_Anim extends Com
         if(!sp || !anim || this._dead) {return (async()=>{await ready?.(); return false;})();}
 
         this._stop();
-        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wristRest(sp), pt ? this._dirTo(pt) : 0);
+        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wristRest(sp), pt ? this._dirTo(pt) - (this.ctx.root.view.rig?.angle ?? 0) : 0);
         const run = {sp, track};
         const free = new Promise((resolve)=>{run.release = resolve;});
         this._run = run;

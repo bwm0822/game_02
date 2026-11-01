@@ -3,7 +3,7 @@ import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth} from '../core/setting
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor, sexOk, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
+import {equipFor, sexOk, hiddenParts, weaponOf, ROLE_PARTS, flatPart} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -780,7 +780,7 @@ export class Doll extends Pic
     {
         const sps = [];
         const depth = flatDepth(type);
-        part = atPivot(part, pivotOf(this._body, PART_NODE[type], this._held));
+        if(type!==GM.PART.BODY) {part = flatPart(part, this._body, PART_NODE[type], this._held);}
         const add = (sprite, depth)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
