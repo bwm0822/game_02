@@ -73,7 +73,7 @@ const isDirty = () => FILES.some(dirtyOf);
 // 女角（sex 不是 m）的裝備擺放：equip[sex] 蓋掉 scale/x/y（同遊戲 equipFor）；數字欄改的是 equip[sex]，第一次改從基準複製
 const SEX_NUMS = ['scale', 'x', 'y'];
 const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
-const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex);
+const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex, items()[id]?.sex);
 const bodyId = () => role()?.body;
 // 實際的支點＝body 的支點＋武器的手腕位移（equip.wristF／wristB，男女共用）；支點表跟拖 body 十字改的是 bodyPivot
 const heldEquip = () => items()[S.slots.CAT_WEAPON]?.equip;

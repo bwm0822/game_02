@@ -53,7 +53,7 @@ export function partsOf(r, items, parts)
     };
     const hide = hiddenParts(equips, CAT);
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
-    for (const it of equips) add(equipFor(it.equip, r.sex), it.cat);
+    for (const it of equips) add(equipFor(it.equip, r.sex, it.sex), it.cat);
     return out.sort((a, b) => a.d - b.d);
 }
 

@@ -9,6 +9,7 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from '../role/preview.js';
+import {sexOk} from '../../src/core/equip.js';
 
 const D = createDoc({
     file: 'item.json', noun: '道具',
@@ -94,6 +95,9 @@ function validate(id)
     }
     if (it.bb?.harvest?.id && !S.items[it.bb.harvest.id]) out.push(`bb.harvest.id 指到不存在的道具：${it.bb.harvest.id}`);
     if (it.anim && S.anims && !S.anims.includes(it.anim)) out.push(`anim 指到 anim.json 沒有的動畫：${it.anim}`);
+    if (it.sex && isObj(it.equip?.f)) out.push('有限定 sex，女版 equip.f 不會用到');
+    for (const [rid, r] of Object.entries(S.roles))
+        if ((r.inv?.equips ?? []).some(e => (e?.id ?? e) === id) && !sexOk(it, r.sex)) out.push(`${rid} 穿著，但這件${SC.FIELDS.sex.names[it.sex] ?? it.sex}`);
     return out;
 }
 
@@ -186,7 +190,7 @@ function fieldRow(id, it, k)
         const extra = S.extra[id] ?? new Set();
         const subs = Object.entries(def.fields).map(([f, d]) => [f, d, !d.opt || o[f] !== undefined || extra.has(`${k}.${f}`)]);
         const put = (f, val) => {if (val === undefined) extra.delete(`${k}.${f}`); set(id, [k, f], val);};
-        const hidden = subs.filter(([, , on]) => !on);
+        const hidden = subs.filter(([, d, on]) => !on && (d.offer?.(it) ?? true));
         return h('div', {class: 'box'},
             F.boxBar(k, open, v !== undefined, h('span', {title: k}, def.label), v !== undefined && h('span', {class: 'dim'}, `（${Object.keys(o).length}）`), h('span', {class: 'grow'}),
                 v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], {});}}, '建立')
@@ -268,15 +272,18 @@ function renderForm()
 const DOLL = {m: 'body-man', f: 'body-woman'};
 const dollOf = (sx) => Object.entries(S.roles).find(([, r]) => r.kind === 'player' && (r.sex ?? 'm') === sx);
 
+// 道具限定性別（it.sex）時人偶固定那個性別、另一顆鈕按不了，不動記住的 S.sex
 function renderPreview(id, it)
 {
-    const [rid, r] = dollOf(S.sex) ?? [];
-    const doll = {...(r ?? {w: 32, h: 64, anchor: {x: 0, y: 16}, sex: S.sex, body: DOLL[S.sex]}), inv: {equips: [id]}};
+    const sx = SC.SEXES.includes(it.sex) ? it.sex : S.sex;
+    const [rid, r] = dollOf(sx) ?? [];
+    const doll = {...(r ?? {w: 32, h: 64, anchor: {x: 0, y: 16}, sex: sx, body: DOLL[sx]}), inv: {equips: [id]}};
     const note = !isObj(it.equip) ? h('span', {class: 'warn'}, '（沒有 equip，不能裝備）')
-        : S.sex === 'f' && (isObj(it.equip.f) ? '，用女版 f' : '（沒有 f，用基準數字）');
-    const sexBtn = (sx, name) => h('button', {type: 'button', class: S.sex === sx ? 'on' : '', dataset: {sex: sx}, onclick: () => setSex(sx)}, name);
+        : it.sex ? `，${SC.FIELDS.sex.names[it.sex] ?? it.sex}（用基準數字）`
+        : sx === 'f' && (isObj(it.equip.f) ? '，用女版 f' : '（沒有 f，用基準數字）');
+    const sexBtn = (s, name) => h('button', {type: 'button', class: sx === s ? 'on' : '', dataset: {sex: s}, disabled: !!it.sex && s !== sx, onclick: () => setSex(s)}, name);
     document.getElementById('right').replaceChildren(
-        h('div', {class: 'cap'}, `套在 ${rid ?? DOLL[S.sex]}`, note),
+        h('div', {class: 'cap'}, `套在 ${rid ?? DOLL[sx]}`, note),
         previewEl(doll, S.items, S.parts),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
@@ -296,6 +303,7 @@ function cellText(k, it)
     if (v === undefined) return '';
     if (Array.isArray(v)) return v.join(', ');
     if (k === 'cat') return SC.CAT_NAMES[v] ?? v;
+    if (k === 'sex') return SC.FIELDS.sex.names[v] ?? v;
     if (typeof v === 'boolean') return v ? '✔' : '';
     return String(v);
 }

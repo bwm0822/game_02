@@ -553,6 +553,41 @@ run('item', async t => {
     t.eq('女版：多的 key 警告', fv.warn, true);
     t.eq('加欄位：最上層空列能收回去、不改資料、強制顯示的沒鈕', JSON.stringify(fv.top), '[true,false,true,false]');
 
+    // 限定 sex：預設不顯示、最上層加欄位叫出來；有值時預覽鎖那個性別、equip 框加欄位不列女版、有 f 警告、穿著的 NPC 性別不符警告、總覽防具欄
+    const sx = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const top = () => [...document.querySelectorAll('#view .fields > select:not([data-k])')].at(-1);
+        const sel = () => document.querySelector('#view select[data-k="sex"]');
+        const eqAdd = () => [...(document.querySelector('#view select[data-k="equip.#add"]')?.options ?? [])].map(o => o.value);
+        const btn = (s) => document.querySelector(`#right button[data-sex="${s}"]`);
+        const worn = Object.values(S.roles).flatMap(r => r.inv?.equips ?? []).map(e => e?.id ?? e);
+        const id = Object.keys(S.items).find(k => S.items[k].cat === 'CAT_HELMET' && !S.items[k].equip?.f && !S.items[k].sex && worn.includes(k));
+        const fid = Object.keys(S.items).find(k => S.items[k].equip?.f && !S.items[k].sex);
+        const wearer = Object.entries(S.roles).find(([, r]) => (r.inv?.equips ?? []).some(e => (e?.id ?? e) === id) && (r.sex ?? 'm') === 'm')?.[0];
+        ie.setSex('m');
+        S.view = 'form'; S.json = false; S.sel = id; ie.render(); S.open.equip = true; ie.render();
+        out.hidden = [!!sel(), [...top().options].some(o => o.value === 'sex'), eqAdd().includes('f')];
+        top().value = 'sex'; top().dispatchEvent(new Event('change'));
+        sel().value = 'f'; sel().dispatchEvent(new Event('change'));
+        out.set = [S.items[id].sex, document.querySelector('#right .cap').textContent.includes('限女'), btn('f').classList.contains('on'), btn('m').disabled, eqAdd().includes('f'), S.sex];
+        out.wornWarn = ie.validate(id).some(w => w.startsWith(`${wearer} 穿著`));
+        S.view = 'table'; S.tab = 2; ie.render();
+        out.table = [...document.querySelectorAll('#view th')].some(th => th.textContent.includes('限定')) && document.querySelector('#view').textContent.includes('限女');
+        S.view = 'form'; ie.render();
+        ie.undo();
+        out.undo = [S.items[id].sex, ie.validate(id).some(w => w.includes('穿著'))];
+        ie.set(fid, ['sex'], 'f');
+        out.fWarn = ie.validate(fid).some(w => w.includes('equip.f 不會用到'));
+        ie.undo();
+        return out;
+    });
+    t.eq('限定：預設不顯示、加欄位有、equip 加欄位有女版', JSON.stringify(sx.hidden), '[false,true,true]');
+    t.eq('限定：設限女、預覽鎖女且男鈕灰、equip 加欄位不列女版、不動記住的性別', JSON.stringify(sx.set), JSON.stringify(['f', true, true, true, false, 'm']));
+    t.check('限定：穿著的男 NPC 警告', sx.wornWarn);
+    t.check('限定：防具總覽有限定欄', sx.table);
+    t.eq('限定：undo', JSON.stringify(sx.undo), JSON.stringify([undefined, false]));
+    t.check('限定：有 sex 又有 f 警告', sx.fWarn);
+
     // 數字欄 ↑↓：照設定步進（scale 0.01、y 0.25、int 1），空的從灰字起跳，同一格連按併成一步 undo，點別的地方就斷開
     const armorId = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S;

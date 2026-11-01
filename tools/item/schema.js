@@ -29,8 +29,10 @@ const SPRITE = {
 // 手腕位移（疊在 body 支點上，男女共用）只有武器、暫拿的工具會用到
 const XYA = {type: 'nums', keys: ['x', 'y', 'a'], opt: true};
 
-// 女版（role.sex='f' 時蓋掉 scale/x/y，空格＝沿用基準）
-const FEMALE = {label: '女版', type: 'nums', keys: ['scale', 'x', 'y'], hint: (o) => o, opt: true};
+// 女版（role.sex='f' 時蓋掉 scale/x/y，空格＝沿用基準）；道具有 sex 時不套 f，框裡的「加欄位」也不列（offer）
+const FEMALE = {label: '女版', type: 'nums', keys: ['scale', 'x', 'y'], hint: (o) => o, opt: true, offer: (it) => !it.sex};
+
+export const SEXES = ['m', 'f'];
 
 export const FIELDS = {
     lab: {label: '名稱', type: 'text'},
@@ -38,6 +40,7 @@ export const FIELDS = {
     icon: {label: 'icon', type: 'icon'},
     gold: {label: '價格', type: 'int'},
     des: {label: '說明', type: 'textarea'},
+    sex: {label: '限定', type: 'enum', options: ['', ...SEXES], names: {m: '限男', f: '限女'}},
     type: {label: '攻擊類型', type: 'enum', options: ['', 'melee', 'ranged'], names: {melee: '近戰', ranged: '遠程'}},
     atk: {label: '攻擊', type: 'num'},
     def: {label: '防禦', type: 'num'},
@@ -143,7 +146,7 @@ export function effSummary(e)
 export const TABS = [
     {label: '全部', cats: null, cols: ['lab', 'cat', 'icon', 'gold']},
     {label: '武器', cats: ['CAT_WEAPON'], cols: ['lab', 'icon', 'gold', 'type', 'atk', 'range', 'cat_sub', '#eff']},
-    {label: '防具', cats: ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'], cols: ['lab', 'icon', 'cat', 'gold', 'def', '#eff']},
+    {label: '防具', cats: ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'], cols: ['lab', 'icon', 'cat', 'sex', 'gold', 'def', '#eff']},
     {label: '飾品', cats: ['CAT_NECKLACE', 'CAT_RING'], cols: ['lab', 'icon', 'cat', 'gold', 'def', '#eff']},
     {label: '食物', cats: ['CAT_FOOD'], cols: ['lab', 'icon', 'gold', 'cps', 'useable', '#eff']},
     {label: '道具', cats: ['CAT_ITEM', 'CAT_BAG', 'CAT_EQUIP'], cols: ['lab', 'icon', 'cat', 'gold', 'cps', 'useable', 'storage', 'capacity', 'times', 'endurance', '#eff']},
