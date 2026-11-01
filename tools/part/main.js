@@ -200,7 +200,7 @@ function numTable(pid)
     };
     return [
         h('div', {class: 'title'}, `擺放（改了立刻存檔${sx ? '；scale／x／y 是女版 f' : ''}）`),
-        h('table', {class: 'nums'},
+        h('table', {class: 'numtab'},
             h('tr', null, NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（f）` : k))),
             h('tr', null, NUMS.map(([k, ph]) => cell(k, ph)))),
         sx && h('div', {class: 'sexnote dim'}, has ? 'scale／x／y 是 f（女版專用）' : '沒有 f，顯示的是共用值；改了就建立 f',
@@ -258,7 +258,7 @@ function pivotTable(pid)
         }}));
     return [
         h('div', {class: 'title'}, '支點（男女共用；右欄十字可拖、白點轉 a；掛在上面的部位、裝備數字相對支點）'),
-        h('table', {class: 'nums pivots'},
+        h('table', {class: 'numtab pivots'},
             h('tr', null, ['支點', '', 'x', 'y', 'a'].map(t => h('th', null, t))),
             PIVOTS.map(k => h('tr', null, h('td', {class: 'k', style: `color:${PIVOT_COLOR[k]}`}, PIVOT_NAMES[k]), h('td', null, k),
                 ['x', 'y', 'a'].map(c => cell(k, c))))),

@@ -124,7 +124,7 @@ run('part-tool', async t => {
 
         // 擺放數字：女改 f、男改基準、清空刪 key，立刻寫檔；undo／redo（按鈕、Ctrl+Z）也立刻寫；刪除女版
         const fire = async (k, v) => {const el = document.querySelector(`[data-k="${k}"]`); el.value = v; el.dispatchEvent(new Event('change')); await pt.idle();};
-        const hu = async () => (await read('part.json'))['hair-unused'];        out.nums = [[...document.querySelectorAll('#view table.nums th')].map(th => th.textContent).join()];
+        const hu = async () => (await read('part.json'))['hair-unused'];        out.nums = [[...document.querySelectorAll('#view table.numtab th')].map(th => th.textContent).join()];
         await fire('part.json|hair-unused|f.x', '7');
         out.nums.push(JSON.stringify((await hu()).f));
         sex('m');
@@ -171,7 +171,11 @@ run('part-tool', async t => {
         document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}));
         out.hiddenPivot.push(document.querySelector('#right .showbtn').textContent);
         await sleep(200);
-        out.body = [document.querySelectorAll('#view table.pivots tr').length - 1, [...document.querySelectorAll('#view td.k')].some(td => td.textContent === 'wristF' && td.closest('table:not(.pivots)'))];
+        // 排版：支點三列上下排、擺放表標題跟輸入框同欄（全域 .nums 是 flex，撞名會把 tr 排成一橫條）
+        const tops = [...document.querySelectorAll('#view table.pivots tr')].map(tr => tr.getBoundingClientRect().top);
+        const lefts = (sel) => [...document.querySelectorAll(sel)].map(e => Math.round(e.getBoundingClientRect().left)).join();
+        out.layout = [tops.every((y, i) => !i || y > tops[i - 1]), lefts('#view table.numtab:not(.pivots) th') === lefts('#view table.numtab:not(.pivots) td')];
+        out.body = [document.querySelectorAll('#view table.pivots tr').length - 1,[...document.querySelectorAll('#view td.k')].some(td => td.textContent === 'wristF' && td.closest('table:not(.pivots)'))];
         const wf = (await bm()).wristF ?? {x: 0, y: 0};
         await fire('part.json|body-man|wristF.x', String((wf.x ?? 0) + 1));
         out.body.push((await bm()).wristF.x === (wf.x ?? 0) + 1, (await bm()).wristF.y === (wf.y ?? 0));
@@ -193,7 +197,7 @@ run('part-tool', async t => {
         out.body.push(JSON.stringify(await bm()) === JSON.stringify(bm0));
         // 身體沒有男女：就算記住的是女，也沒有切換、數字欄不標 f、改了寫基準
         S.sex = 'f'; pt.render(); await sleep(300);
-        out.body.push(!document.querySelector('#right .sexsw'), [...document.querySelectorAll('#view table.nums:not(.pivots) th')].map(th => th.textContent).join(), $('right').querySelector('.cap').textContent);
+        out.body.push(!document.querySelector('#right .sexsw'), [...document.querySelectorAll('#view table.numtab:not(.pivots) th')].map(th => th.textContent).join(), $('right').querySelector('.cap').textContent);
         await fire('part.json|body-man|y', String((bm0.y ?? 0) + 1));
         out.body.push(!(await bm()).f, (await bm()).y === (bm0.y ?? 0) + 1);
         await pt.undo(); await sleep(200);
@@ -284,7 +288,7 @@ run('part-tool', async t => {
         const fx = (await hm()).f;
         out.sexSet = [(await hm()).sex, cap().includes('限女'), document.querySelector('#right .sexsw .on').dataset.sex,
                       document.querySelector('#right .sexsw [data-sex="m"]').disabled, !!document.querySelector('#view .sexnote'),
-                      [...document.querySelectorAll('#view table.nums th')].some(th => th.textContent.includes('（f）')), pt.problems('hair-mary').length];
+                      [...document.querySelectorAll('#view table.numtab th')].some(th => th.textContent.includes('（f）')), pt.problems('hair-mary').length];
         await fire('part.json|hair-mary|x', '9');
         out.sexSet.push((await hm()).x, JSON.stringify((await hm()).f) === JSON.stringify(fx));
         S.sel = null; pt.setTab('hair'); pt.render(); await sleep(100);
@@ -339,6 +343,7 @@ run('part-tool', async t => {
         JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
     t.eq('右欄合成：不是身體的條目不能拖', JSON.stringify(r.noDrag), JSON.stringify([null, true]));
     t.eq('身體支點預設不顯示拖不動、從顯示選單勾三個', JSON.stringify(r.hiddenPivot), JSON.stringify([true, '顯示（3）▾']));
+    t.eq('排版：支點三列上下排、擺放表標題跟輸入框同欄', JSON.stringify(r.layout), JSON.stringify([true, true]));
     t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原；身體沒有男女切換、不標 f、寫基準、undo',
         JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true,
             true, 'scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
