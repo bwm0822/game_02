@@ -3,7 +3,7 @@ import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth} from '../core/setting
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
-import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
+import {equipFor, sexOk, hiddenParts, weaponOf, ROLE_PARTS, pivotOf, atPivot} from '../core/equip.js'
 import Ui from './uicommon.js'
 import UiInv from './uiinv.js'
 import UiInfo from './uiinfo.js'
@@ -315,7 +315,7 @@ export class Slot extends Icon
             // 使用 delacyCall 延遲執行 UiInfo.show()
             Ui.delayCall(() => {UiInfo.show(UI.INFO.SLOT,this);}); 
             // 檢查裝備欄位，符合類別的裝備，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
-            checkEquip && UiInv.checkEquipSlots(this.dat.cat);
+            checkEquip && UiInv.checkEquipSlots(this.dat.cat, this.dat);
         }
     }
 
@@ -402,15 +402,18 @@ export class EquipSlot extends Slot
         Ui.refreshAll();
     }
 
-    _isSameCat(cat)   {return (this.cat & cat) == cat;}  
+    // 拖過來的道具限定性別（item.sex）跟這格的主人不符就不能放
+    get isValid() {return super.isValid && sexOk(UiDragged.dat, this.owner?.bb.meta?.sex);}
+
+    _isSameCat(cat)   {return (this.cat & cat) == cat;}
 
     over() {super.over(false);}
     out() {super.out(false);}
 
     // 檢查裝備欄位，是否有是符合類別的裝備，是，設置背景顏色為 COLOR_SLOT_DRAG，否，設置為 COLOR_SLOT
-    checkIfSameCat(cat)
+    checkIfSameCat(cat, dat)
     {
-        this.setBgColor( this._isSameCat(cat) ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT);
+        this.setBgColor( this._isSameCat(cat) && sexOk(dat, this.owner?.bb.meta?.sex) ? GM.COLOR.SLOT_DRAG : GM.COLOR.SLOT);
     }
 
     setIcon(icon)
@@ -835,7 +838,7 @@ export class Doll extends Pic
         this._held = weaponOf(dats, GM.CAT);
         if(this._held) {this._shape.removeAll(true); addParts();}
 
-        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex), dat.cat);});
+        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat);});
         const hide = hiddenParts(dats, GM.CAT);
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 

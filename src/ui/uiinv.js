@@ -105,9 +105,9 @@ export default class UiInv extends UiFrame
     }
 
     // 檢查所有裝備欄位，符合類別的裝備欄位，背景設置為 COLOR_SLOT_DRAG，否則設置為 COLOR_SLOT
-    checkEquipSlots(cat)  
+    checkEquipSlots(cat, dat)
     {
-        this._equips.loop(elm => {elm?.checkIfSameCat(cat);});
+        this._equips.loop(elm => {elm?.checkIfSameCat(cat, dat);});
     }
 
     refresh()
@@ -152,7 +152,7 @@ export default class UiInv extends UiFrame
 
     static show(owner,cat) {this.instance?.show(owner,cat);}
     static toggle(owner) {this.instance?.toggle(owner);}
-    static checkEquipSlots(cat) {this.instance?.checkEquipSlots(cat);}
+    static checkEquipSlots(cat, dat) {this.instance?.checkEquipSlots(cat, dat);}
     static filter(conds) {this.instance?.filter(conds);}
 }
 

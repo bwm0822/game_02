@@ -24,7 +24,7 @@ export default class DragService
         // 2. 取出：把原格子清空
         slot.empty();
         // 3. 設定裝備欄位的背景顏色
-        UiInv.checkEquipSlots(slot.cat);
+        UiInv.checkEquipSlots(slot.cat, UiDragged.dat);
         return true;
     }
 

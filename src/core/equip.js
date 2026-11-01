@@ -1,5 +1,9 @@
 // 角色的 sex（role.json，沒寫＝'m'）在 equip 裡有同名覆寫（如 equip.f）就蓋掉 scale/x/y，其他欄位共用
-export const equipFor = (equip, sex) => equip?.[sex] ? {...equip, ...equip[sex]} : equip;
+// only＝道具／部位限定的性別（item.sex、part 條目的 sex，預設讀 equip.sex）：有寫就是畫給那個性別的，基準數字直接用、不套覆寫
+export const equipFor = (equip, sex, only = equip?.sex) => !only && equip?.[sex] ? {...equip, ...equip[sex]} : equip;
+
+// 道具／部位的 sex（'m'／'f'）限定誰能用，沒寫＝都能用
+export const sexOk = (dat, sex) => !dat?.sex || dat.sex === (sex ?? 'm');
 
 // 角色的部位（role.body 之類）寫的是 part.json 的 id，女角同樣套 f
 export const ROLE_PARTS = ['body', 'shoes', 'cloth', 'head', 'hair', 'handF', 'handB'];

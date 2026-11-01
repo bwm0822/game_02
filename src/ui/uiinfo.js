@@ -64,6 +64,7 @@ export default class UiInfo extends UiFrame
             const scene = this.scene;
             let cat = `[color=gray]${elm.dat.cat.lab()}[/color]`;
             ui.uBbc.call(this,scene,{text:cat});
+            if(elm.dat.sex) {ui.uBbc.call(this,scene,{text:`[color=gray]${`sex_${elm.dat.sex}`.lab()}[/color]`});}
             ui.uDiv.call(this,scene)
         }
         return this;

@@ -302,6 +302,14 @@
     "lab": "需求",
     "grp": "general"
   },
+  "sex_m": {
+    "lab": "限男性",
+    "grp": "general"
+  },
+  "sex_f": {
+    "lab": "限女性",
+    "grp": "general"
+  },
   "iron": {
     "lab": "鐵礦",
     "grp": "items"

@@ -952,7 +952,7 @@ export class RoleView extends View
     _addEquip(item)
     {
         if(!item.equip) {return;}
-        let sps = this._addPart(equipFor(item.equip, this.meta.sex), item.cat);
+        let sps = this._addPart(equipFor(item.equip, this.meta.sex, item.sex), item.cat);
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
@@ -1025,7 +1025,7 @@ export class RoleView extends View
         if(held)
         {
             this._weapon?.forEach((sp)=>{sp.setVisible(false);});
-            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex), held.cat, 'wristF'));
+            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, 'wristF'));
             this._sortParts();
         }
         const hide = hiddenParts(dats, GM.CAT);

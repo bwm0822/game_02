@@ -1080,6 +1080,18 @@
       "r": "mt"
     }
   },
+  "ui.sex_m": {
+    "限男性": {
+      "t": "Male only",
+      "r": "mt"
+    }
+  },
+  "ui.sex_f": {
+    "限女性": {
+      "t": "Female only",
+      "r": "mt"
+    }
+  },
   "ui.sword": {
     "劍": {
       "t": "Sword",
