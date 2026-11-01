@@ -1005,7 +1005,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動：數字只存跟內建不一樣的進 tools/settings.json、localStorage 只剩介面狀態', JSON.stringify(au.stored),
-         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,kind,poolF,saveF,split']));
+         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,kind,split']));
     t.eq('自動：進模式什麼都不動、確定可以按', JSON.stringify(au.enter), JSON.stringify(['auto', true, true, false]));
     t.eq('自動：還沒拆時取消＝離開', JSON.stringify(au.revokeEarly), JSON.stringify(['move', true]));
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
@@ -1076,6 +1076,11 @@ run('paperdoll', async t => {
         pd.applyMode();
         const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet'), at = () => [H.canvas.width, H.scale, H.x, H.y];
         out.m = [...at(), $('au-helmet-pct').value, $('auSexL').textContent];
+        // 拆出來預設沒有女版：切女照基準擺（這裡沒有專案資料夾、男女身體一樣，數字不變）、不記步驟
+        $('dollF').click();
+        out.noFem = [...at(), pd.hasFem(H), m.hist.length];
+        $('dollM').click();
+        H.auto = {...H.auto, fem: true};
         $('dollF').click();
         out.f = [...at(), $('au-helmet-pct').value, $('auSexL').textContent, m.hist.length];
         type('au-helmet-x', 5);
@@ -1104,12 +1109,13 @@ run('paperdoll', async t => {
     t.eq('男女：舊設定沒有 scale 補 0.25、女版舊 pct 換成 scale＝0.25×女pct÷男pct', JSON.stringify(sx.legacyF),
          JSON.stringify([JSON.stringify({scale: 0.125, x: 3, y: 4}), 0.25, 0.25]));
     t.eq('男女：男版數字拆', JSON.stringify(sx.m), JSON.stringify([30, 0.25, 1, 2, '50', '♂男版']));
-    t.eq('男女：切女照女版重擺（PNG 同一張、存檔% 共用）、記一步', JSON.stringify(sx.f), JSON.stringify([30, 0.125, 3, 4, '50', '♀女版', 1]));
+    t.eq('男女：拆出來沒有女版、切女照基準、不記步驟', JSON.stringify(sx.noFem), JSON.stringify([30, 0.25, 1, 2, false, 0]));
+    t.eq('男女：有女版切女照女版重擺（PNG 同一張、存檔% 共用）、記一步', JSON.stringify(sx.f), JSON.stringify([30, 0.125, 3, 4, '50', '♀女版', 1]));
     t.eq('男女：女模式改數字寫 f', JSON.stringify(sx.fEdit), JSON.stringify([5, 1]));
     t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3]));
     t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
-    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,kind,poolF,saveF,split']));
+    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,kind,split']));
     t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
@@ -1512,7 +1518,7 @@ run('paperdoll', async t => {
         pd.applyMode();
         const Wp = pd.S.mode.parts[0], W = Wp.C;
         pd.setMode('sl');
-        out.noF = $('slItemFL').hidden;
+        out.noF = !$('slItemFL');
         Object.assign(W, {ox: 0.3, oy: 0.2, a: 40});
         await put(json, 'item.json', JSON.stringify({'sword-1': {cat: 'CAT_WEAPON', equip: {sprite: 'sword-1', scale: 0.25, x: 2, y: 3, a: 15}}}, null, 2));
         await pd.loadItems();
@@ -1531,7 +1537,7 @@ run('paperdoll', async t => {
     });
     t.eq('載入 item：存讀模式選到拆完的零件才能按', JSON.stringify([li.before, li.after]), JSON.stringify([true, false]));
     t.eq('載入 item：一個都沒對到只提示、不記步驟', JSON.stringify(li.none), JSON.stringify(['src-helmet、src-armor 找不到對應的 item', 0]));
-    t.check('存讀：武器沒有女版勾', li.noF);
+    t.check('存讀：沒有女版勾', li.noF);
     t.eq('載入 item：sprite 是 -front 也算、cat 不對不算、讀 scale、存檔% 不動、寫回預設、一筆全域 undo', JSON.stringify(li.load), JSON.stringify([
         3, -4, 0.5, true, 3, -4, 0.5, true, 1, '載入 src-helmet ← helmet_01；src-armor 找不到 item']));
     t.eq('載入 item：數字沒變不記步驟', li.again, 1);
@@ -1563,15 +1569,15 @@ run('paperdoll', async t => {
         pd.addLayer(await createImageBitmap(c), 'src', null, null);
         await pd.setAssets(assets);
         pd.setDoll({sex: 'm'});
-        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {scale: 0.125, x: 3, y: 4}}, saveF: false});
+        pd.autoSet({...pd.S.auto, kind: 'armor', split: 'none', helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {scale: 0.125, x: 3, y: 4}}});
         pd.setMode('auto');
         pd.applyMode();
         const H = pd.S.mode.parts.find(p => p.P.key === 'helmet').C;
         $('dollF').click();
         pd.setMode('sl');
-        const m = pd.S.mode;
-        out.ui = [$('slItemFL').hidden, $('slItemF').disabled, $('slItemF').checked];
-        const hist0 = pd.hist.undos.length;
+        let m = pd.S.mode;
+        out.ui = [$('slItemF'), $('slPoolF'), pd.hasFem(H), H.scale, H.x];
+        let hist0 = pd.hist.undos.length;
         const conf = window.confirm;
         let asked = '';
         window.confirm = (s) => {asked = s; return true;};
@@ -1582,10 +1588,14 @@ run('paperdoll', async t => {
         $('dlgItems').close('ok');
         await p;
         let a = await readItems();
-        out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('helmet_01') || asked.includes('頭盔：會移除女版'),
+        out.male = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked.includes('頭盔：會移除女版（零件沒有女版）'),
                     H.canvas.width, H.scale, H.x, pd.S.doll.sex, pd.hist.undos.length === hist0, pd.S.mode === m];
-        set('slItemF', true);
-        out.saveF = [pd.S.auto.saveF, JSON.parse(localStorage.getItem('paperdoll.auto')).saveF];
+        // 右鍵新增女版：套女版那組（女模式馬上重擺）、一筆 undo
+        hist0 = pd.hist.undos.length;
+        pd.setFem(H, true);
+        out.add = [pd.hasFem(H), H.scale, H.x, H.y, pd.hist.undos.length - hist0];
+        pd.setMode('sl');
+        m = pd.S.mode;
         asked = '';
         p = pd.saveItems();
         await until(() => $('dlgItems').open);
@@ -1595,7 +1605,7 @@ run('paperdoll', async t => {
         await p;
         a = await readItems();
         out.female = [JSON.stringify(a.helmet_01.equip), await pngW('src-helmet.png'), asked];
-        // 目標限女（item.sex）：忽略勾著的「女版」，女版那組數字寫基準、清掉 f，對話框跟確認框都寫清楚
+        // 目標限女（item.sex）：忽略零件的女版，女模式那組數字寫基準、清掉 f，對話框跟確認框都寫清楚
         a.helmet_01.sex = 'f';
         await put(json, 'item.json', JSON.stringify(a, null, 2));
         asked = '';
@@ -1616,23 +1626,39 @@ run('paperdoll', async t => {
         await put(json, 'item.json', JSON.stringify(a, null, 2));
         await pd.loadItems();
         out.loadF = [H.x, H.y, H.scale, pd.S.auto.f.helmet.x, pd.S.auto.f.helmet.scale, pd.S.auto.helmet.x, pd.S.auto.helmet.scale, $('status').textContent.includes('≠')];
+        // 沒有 f＝沒有女版：女模式照基準擺、女版數字不動；undo 一步退回有女版
+        delete a.helmet_01.equip.f;
+        await put(json, 'item.json', JSON.stringify(a, null, 2));
+        hist0 = pd.hist.undos.length;
+        await pd.loadItems();
+        out.loadNoF = [pd.hasFem(H), H.x, H.scale, pd.S.auto.f.helmet.x, pd.hist.undos.length - hist0];
+        pd.undo();
+        out.loadUndo = [pd.hasFem(H), H.x];
+        // 右鍵刪除女版：女模式回到基準；undo 復原
+        pd.setFem(H, false);
+        out.del = [pd.hasFem(H), H.x];
+        pd.undo();
+        out.delUndo = [pd.hasFem(H), H.x];
         pd.cancelMode();
         pd.setDoll({sex: 'm'});
         pd.autoSet(null);
         Object.assign(pd.S, {layers: [], active: null});
         return out;
     });
-    t.eq('存到 item 男女：女版勾選框選到護具時顯示、能按、預設不勾', JSON.stringify(sf.ui), JSON.stringify([false, false, false]));
-    t.eq('存到 item 男女：女模式開對話框時零件換成男版、沒勾女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 0.25, 1, '會移除女版（沒勾「女版」）']));
-    t.eq('存到 item 男女：一定存男版、刪 equip.f 要確認、存完復原女版不記步驟', JSON.stringify(sf.male),
-         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 30, 0.125, 3, 'f', true, true]));
-    t.eq('存到 item 男女：女版勾選記在設定', JSON.stringify(sf.saveF), JSON.stringify([true, true]));
-    t.eq('存到 item 男女：勾了女版不提示', sf.dlgF, '');
-    t.eq('存到 item 男女：勾女版寫 equip.f（女版自己的 scale/x/y）、PNG 同一張、不用確認', JSON.stringify(sf.female),
+    t.eq('存到 item 男女：沒有女版勾選框、拆出來沒有女版、女模式照基準擺', JSON.stringify(sf.ui), JSON.stringify([null, null, false, 0.25, 1]));
+    t.eq('存到 item 男女：零件沒有女版提示會移除', JSON.stringify(sf.dlg), JSON.stringify([30, 0.25, 1, '會移除女版（零件沒有女版）']));
+    t.eq('存到 item 男女：一定存男版、刪 equip.f 要確認、存完復原不記步驟', JSON.stringify(sf.male),
+         JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2}', 30, true, 30, 0.25, 1, 'f', true, true]));
+    t.eq('女版：右鍵新增套女版那組、女模式馬上重擺、一筆 undo', JSON.stringify(sf.add), JSON.stringify([true, 0.125, 3, 4, 1]));
+    t.eq('存到 item 男女：有女版不提示', sf.dlgF, '');
+    t.eq('存到 item 男女：有女版寫 equip.f（女版自己的 scale/x/y）、PNG 同一張、不用確認', JSON.stringify(sf.female),
          JSON.stringify(['{"sprite":"src-helmet","scale":0.25,"x":1,"y":2,"f":{"scale":0.125,"x":3,"y":4}}', 30, '']));
     t.eq('存到 item 限女：女版數字寫基準、清掉 f、對話框跟確認框寫限女', JSON.stringify(sf.only),
          JSON.stringify(['{"sprite":"src-helmet","scale":0.125,"x":3,"y":4}', true, true]));
-    t.eq('載入 item 男女：女模式讀 equip.f（連 scale）、寫回女版、男版不動', JSON.stringify(sf.loadF), JSON.stringify([7, 8, 0.125, 7, 0.125, 1, 0.25, false]));
+    t.eq('載入 item 男女：兩組都讀（基準進男版、f 進女版）、照女版擺', JSON.stringify(sf.loadF), JSON.stringify([7, 8, 0.125, 7, 0.125, -5, 0.125, false]));
+    t.eq('載入 item 男女：沒有 f＝沒有女版、照基準擺、女版數字不動、一筆 undo', JSON.stringify(sf.loadNoF), JSON.stringify([false, -5, 0.125, 7, 1]));
+    t.eq('載入 item 男女：undo 退回有女版', JSON.stringify(sf.loadUndo), JSON.stringify([true, 7]));
+    t.eq('女版：右鍵刪除回到基準、undo 復原', JSON.stringify([sf.del, sf.delUndo]), JSON.stringify([[false, -5], [true, 7]]));
 
     // 自動（武器）：透明底單把武器，一個零件，多調 a/ox/oy，存到 textures/weapons、a 不寫
     const aw = await ev(async () => {
@@ -1916,12 +1942,14 @@ run('paperdoll', async t => {
         out.made = [m.parts.map(p => p.C.name).join(), Cl.canvas.width, Cl.canvas.height, Sh.canvas.width, Sh.canvas.height, Cl.pool, Sh.pool,
                     pd.S.layers.indexOf(Cl) > pd.S.layers.indexOf(Sh), pd.S.active === Cl, L.visible, Cl.x, Sh.y,
                     Cl.canvas.getContext('2d').getImageData(15, 10, 1, 1).data[3]];
+        out.noFem = [pd.hasFem(Cl), pd.hasFem(Sh)];
+        Cl.auto = {...Cl.auto, fem: true};
         pd.setDoll({sex: 'f'});
         out.female = [Cl.scale, Cl.x, Cl.y, Cl.canvas.width, $('auSexL').textContent];
         pd.setDoll({sex: 'm'});
         out.male = [Cl.scale, Cl.x, Cl.y];
 
-        // 存到 pool：一定存男版（女模式先換男版、存完復原），勾女版寫 f、沒勾刪 f 要確認；載入 pool 基準進男版、f 進女版
+        // 存到 pool：一定存男版（女模式先換男版、存完復原），有女版寫 f、沒有刪 f 要確認；載入 pool 基準進男版、f 進女版
         const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
         const json = await assets.getDirectoryHandle('json');
         const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
@@ -1930,33 +1958,76 @@ run('paperdoll', async t => {
         const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
         const msgs = () => [...$('dpRows').children].map(r => r.querySelector('.body > div:last-child').textContent);
         await put(json, 'role.json', '{}');
-        await put(json, 'part.json', JSON.stringify({'cloth-inn': {kind: 'cloth', sprite: 'cloth-inn', scale: 0.25, f: {scale: 1, x: 1, y: 1}}}, null, 2));
+        // 男女身體 rig 故意不同：服飾基準照男身體換算、f 照女身體
+        const bodies = {'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25, x: 0.5, y: 32}, 'body-woman': {kind: 'body', sprite: 'body-woman', scale: 0.25, y: 30}};
+        await put(json, 'part.json', JSON.stringify({...bodies, 'cloth-inn': {kind: 'cloth', sprite: 'cloth-inn', scale: 0.25, f: {scale: 1, x: 1, y: 1}}}, null, 2));
         await pd.setAssets(assets);
         pd.setDoll({sex: 'f'});
         pd.setMode('sl');
-        out.slF = [$('slPoolFL').hidden, $('slPoolF').checked];
+        out.slF = [$('slPoolFL'), $('slPoolF')];
         const ok = window.confirm;
         let asked = '';
         window.confirm = (s) => {asked = s; return true;};
+        // 衣服有女版、鞋子沒有
         let p = pd.savePool();
         await until(() => $('dlgPool').open);
-        out.dlg = [Cl.scale, Cl.x, Cl.y, ...msgs()];
+        out.dlgF = [Cl.scale, Cl.x, Cl.y, ...msgs()];
         $('dlgPool').close('ok'); await p;
         let parts = await read();
-        out.saved = [JSON.stringify(parts['cloth-inn']), JSON.stringify(parts['shoes-inn']), asked.includes('cloth-inn：會覆蓋 cloth-inn（PNG＋擺放）；會移除女版'), Cl.scale, Cl.x];
-        $('slPoolF').checked = true; $('slPoolF').dispatchEvent(new Event('change'));
+        out.savedF = [JSON.stringify(parts['cloth-inn']), JSON.stringify(parts['shoes-inn']), Cl.scale, Cl.x];
+        // 刪掉衣服的女版再存：刪 f 要確認
+        pd.setFem(Cl, false);
+        pd.setMode('sl');
         p = pd.savePool();
         await until(() => $('dlgPool').open);
-        out.dlgF = msgs();
+        out.dlg = msgs();
         $('dlgPool').close('ok'); await p;
         window.confirm = ok;
         parts = await read();
-        out.savedF = [JSON.stringify(parts['cloth-inn'].f), JSON.stringify(parts['shoes-inn'].f), pd.S.auto.poolF];
+        out.saved = [JSON.stringify(parts['cloth-inn']), asked.includes('cloth-inn：會覆蓋 cloth-inn（PNG＋擺放）；會移除女版（零件沒有女版）')];
 
         await put(json, 'part.json', JSON.stringify({...parts, 'cloth-inn': {...parts['cloth-inn'], x: 7, y: 8, f: {scale: 0.3, x: 9, y: 10}}}, null, 2));
         const u0 = pd.hist.undos.length;
         await pd.loadPool();
         out.load = [Cl.scale, Cl.x, Cl.y, pd.S.auto.cloth.x, pd.S.auto.cloth.y, pd.S.auto.cloth.scale, JSON.stringify(pd.S.auto.f.cloth), pd.hist.undos.length - u0];
+        window.confirm = () => true;
+        p = pd.savePool();
+        await until(() => $('dlgPool').open);
+        $('dlgPool').close('ok'); await p;
+        parts = await read();
+        out.round = JSON.stringify(parts['cloth-inn']);
+        await put(json, 'part.json', JSON.stringify({...parts, 'cloth-inn': {kind: 'cloth', sprite: 'cloth-inn', scale: 0.25, x: 7, y: 8}}, null, 2));
+        await pd.loadPool();
+        out.noF = [Cl.scale, Cl.x, Cl.y, JSON.stringify(pd.S.auto.f.cloth), pd.hasFem(Cl)];
+        window.confirm = ok;
+
+        // 模式外切男女：拆過的組照新那組重擺、記一筆全域 undo（連性別）；手動移過的也蓋掉＋提示；沒換性別不進 undo
+        const u1 = pd.hist.undos.length;
+        pd.setDoll({sex: 'm'});
+        out.outM = [pd.S.mode.type, Cl.x, Cl.y, pd.hist.undos.length - u1];
+        Cl.x = 100;
+        pd.setDoll({sex: 'f'});
+        out.outF = [Cl.x, Cl.y, $('status').textContent.includes('cloth-inn 手動移過，已照女版數字重擺'), $('auSexL').textContent];
+        pd.undo();
+        out.outUndo = [pd.S.doll.sex, Cl.x, Cl.y, $('auSexL').textContent];
+        pd.redo();
+        out.outRedo = [pd.S.doll.sex, Cl.x, Cl.y];
+        const u2 = pd.hist.undos.length;
+        pd.setDoll({hair: false});
+        pd.setDoll({hair: true});
+        out.outSame = pd.hist.undos.length - u2;
+
+        // 自動模式裡切男女：正在調的那組記模式內步驟，其他組也跟著重擺（不記全域 undo）；模式內 undo 退男女時其他組也回來
+        const L2 = pd.addLayer(await createImageBitmap(c), 'inn2', null, null);
+        pd.select(L2);
+        pd.setMode('auto');
+        pd.applyMode();
+        const u3 = pd.hist.undos.length, h3 = pd.S.mode.hist.length;
+        pd.setDoll({sex: 'm'});
+        out.inM = [Cl.x, Cl.y, pd.hist.undos.length - u3, pd.S.mode.hist.length - h3];
+        pd.undo();
+        out.inUndo = [pd.S.doll.sex, Cl.x, Cl.y];
+        pd.cancelMode();
         pd.setDoll({sex: 'm'});
         pd.cancelMode();
         pd.autoSet({});
@@ -1966,17 +2037,28 @@ run('paperdoll', async t => {
          JSON.stringify(['outfit', true, false, true, true, false, true]));
     t.eq('自動（服飾）：左上丟掉、衣服鞋子各一層（衣服疊在鞋子上、選衣服）、去綠、自動標 pool', JSON.stringify(ao.made),
          JSON.stringify(['cloth-inn,shoes-inn', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
-    t.eq('自動（服飾）：切女照女版重擺、存檔% 共用', JSON.stringify(ao.female), JSON.stringify([0.2, 5, 6, 30, '♀女版']));
+    t.eq('自動（服飾）：拆出來沒有女版', JSON.stringify(ao.noFem), JSON.stringify([false, false]));
+    t.eq('自動（服飾）：有女版切女照女版重擺、存檔% 共用', JSON.stringify(ao.female), JSON.stringify([0.2, 5, 6, 30, '♀女版']));
     t.eq('自動（服飾）：切回男', JSON.stringify(ao.male), JSON.stringify([0.25, 1, 2]));
-    t.eq('自動（服飾）：存讀模式有 pool 的女版勾、預設不勾', JSON.stringify(ao.slF), JSON.stringify([false, false]));
-    t.eq('自動（服飾）：女模式存 pool 時零件換成男版、沒勾女版提示會移除', JSON.stringify(ao.dlg),
-         JSON.stringify([0.25, 1, 2, '會移除女版（沒勾「女版」）；會覆蓋 cloth-inn（PNG＋擺放）', '']));
-    t.eq('自動（服飾）：一定存男版、沒勾刪 f 要確認、存完復原女版', JSON.stringify(ao.saved),
-         JSON.stringify(['{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":1,"y":2}', '{"kind":"shoes","sprite":"shoes-inn","scale":0.25,"x":3,"y":4}', true, 0.2, 5]));
-    t.eq('自動（服飾）：勾女版不提示移除、寫 f＝女版那組', JSON.stringify([ao.dlgF, ao.savedF]),
-         JSON.stringify([['會覆蓋 cloth-inn（PNG＋擺放）', '會覆蓋 shoes-inn（PNG＋擺放）'], ['{"scale":0.2,"x":5,"y":6}', '{"scale":0.25,"x":3,"y":4}', true]]));
-    t.eq('自動（服飾）：載入 pool 基準進男版、f 進女版、照目前性別擺、一步 undo', JSON.stringify(ao.load),
-         JSON.stringify([0.3, 9, 10, 7, 8, 0.25, '{"scale":0.3,"x":9,"y":10}', 1]));
+    t.eq('自動（服飾）：存讀模式沒有女版勾', JSON.stringify(ao.slF), JSON.stringify([null, null]));
+    t.eq('自動（服飾）：女模式存 pool 時零件換成男版、有女版不提示移除', JSON.stringify(ao.dlgF),
+         JSON.stringify([0.25, 1, 2, '會覆蓋 cloth-inn（PNG＋擺放）', '']));
+    t.eq('自動（服飾）：一定存男版（女模式也照男身體扣 rig）、有女版寫 f（扣女身體 rig）、沒有女版不寫、存完復原女版', JSON.stringify(ao.savedF),
+         JSON.stringify(['{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":0.5,"y":-30,"f":{"scale":0.2,"x":5,"y":-24}}',
+                         '{"kind":"shoes","sprite":"shoes-inn","scale":0.25,"x":2.5,"y":-28}', 0.2, 5]));
+    t.eq('自動（服飾）：刪掉女版提示會移除', JSON.stringify(ao.dlg), JSON.stringify(['會移除女版（零件沒有女版）；會覆蓋 cloth-inn（PNG＋擺放）', '會覆蓋 shoes-inn（PNG＋擺放）']));
+    t.eq('自動（服飾）：沒有女版刪 f 要確認', JSON.stringify(ao.saved), JSON.stringify(['{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":0.5,"y":-30}', true]));
+    t.eq('自動（服飾）：載入 pool 基準加男身體 rig 進男版、f 加女身體 rig 進女版、照目前性別擺、一步 undo', JSON.stringify(ao.load),
+         JSON.stringify([0.3, 9, 40, 7.5, 40, 0.25, '{"scale":0.3,"x":9,"y":40}', 1]));
+    t.eq('自動（服飾）：載入再存數字原樣回來', ao.round, '{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":7,"y":8,"f":{"scale":0.3,"x":9,"y":10}}');
+    t.eq('自動（服飾）：沒有 f＝沒有女版、女模式照基準加女身體 rig、女版數字不動', JSON.stringify(ao.noF), JSON.stringify([0.25, 7, 38, '{"scale":0.3,"x":9,"y":40}', false]));
+    t.eq('自動（服飾）：模式外切男照男版重擺、一筆全域 undo', JSON.stringify(ao.outM), JSON.stringify(['sl', 7.5, 40, 1]));
+    t.eq('自動（服飾）：模式外切女手動移過的也重擺＋提示', JSON.stringify(ao.outF), JSON.stringify([7, 38, true, '♀女版']));
+    t.eq('自動（服飾）：模式外 undo 連男女一起退', JSON.stringify(ao.outUndo), JSON.stringify(['m', 100, 40, '♂男版']));
+    t.eq('自動（服飾）：模式外 redo 連男女一起重做', JSON.stringify(ao.outRedo), JSON.stringify(['f', 7, 38]));
+    t.eq('自動（服飾）：沒換性別不進 undo', ao.outSame, 0);
+    t.eq('自動（服飾）：模式內切男其他組也重擺、不記全域 undo、這組記模式內一步', JSON.stringify(ao.inM), JSON.stringify([7.5, 40, 0, 1]));
+    t.eq('自動（服飾）：模式內 undo 退男女，其他組跟著回來', JSON.stringify(ao.inUndo), JSON.stringify(['f', 7, 38]));
 
     // 部位 pool：右鍵標 kind、存到 part.json（預設勾顯示中的、PNG＋擺放、接在同 kind 後面）、女模式只寫 f、載入 pool
     const pl = await ev(async () => {
@@ -2024,13 +2106,12 @@ run('paperdoll', async t => {
         let parts = await read('part.json');
         out.saved = [Object.keys(parts).join(), JSON.stringify(parts['cloth-a']), JSON.stringify(parts['cloth-old']), 'shoes' in parts, await png('cloth-a'), A.poolId];
 
-        // 手動圖層只有一組：女模式照樣存 PNG＋基準、f 不動；勾了女版提示不含女版
+        // 手動圖層沒有女版：女模式照樣存 PNG＋基準、條目的 f 刪掉（要確認）
         await put(json, 'part.json', JSON.stringify({...parts, 'cloth-a': {...parts['cloth-a'], f: {scale: 0.3, x: 9, y: 9}}}, null, 2));
         pd.setDoll({sex: 'f'});
-        pd.autoSet({...pd.S.auto, poolF: true});
         Object.assign(A, {x: 5, y: 6, scale: 0.4});
         ({p} = await open());
-        out.fem = [$('dpTitle').textContent, rows().map(r => r.msg.textContent), $('dpOk').disabled, $('slPoolFL').hidden];
+        out.fem = [$('dpTitle').textContent, rows().map(r => r.msg.textContent), $('dpOk').disabled];
         $('dlgPool').close('ok'); await p;
         parts = await read('part.json');
         out.femSaved = JSON.stringify(parts['cloth-a']);
@@ -2044,18 +2125,46 @@ run('paperdoll', async t => {
         await put(json, 'part.json', JSON.stringify({...parts, 'cloth-a': {...parts['cloth-a'], sex: undefined, f: {scale: 0.3, x: 9, y: 9}}}, null, 2));
         parts = await read('part.json');
         window.confirm = ok;
-        pd.autoSet({...pd.S.auto, poolF: false});
 
-        // 載入 pool：手動圖層不管性別都讀基準，一步 undo
+        // 載入 pool：條目有 f＝手動圖層有女版，照目前性別擺、另一組放 L.alt，一步 undo；沒有 f 的照目前性別讀基準
         Object.assign(A, {x: 0, y: 0, scale: 1});
         await pd.loadPool();
-        out.loadF = [A.x, A.y, A.scale, $('status').textContent];
+        out.loadF = [A.x, A.y, A.scale, JSON.stringify(A.alt), pd.hasFem(B), $('status').textContent];
         pd.setDoll({sex: 'm'});
+        out.swap = [A.x, A.y, A.scale, A.alt.sex];
         Object.assign(A, {x: 1, y: 1});
         await pd.loadPool();
         out.loadM = [A.x, A.y, A.scale];
         pd.undo();
-        out.loadUndo = [A.x, A.y, A.scale];
+        out.loadUndo = [A.x, A.y, A.scale, pd.hasFem(A)];
+        out.projAlt = JSON.stringify(pd.projectData([A]).layers[0].alt);
+
+        // 右鍵母子選單：標記／pool／女版，母選項顯示目前的值
+        const menu = (L) => {
+            const row = [...document.querySelectorAll('#layers .layer')].find(r => r.textContent.includes(L.name));
+            row.dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, clientX: 10, clientY: 10}));
+            const box = document.querySelector('.ctx'), top = [...box.children];
+            const kids = top.map(d => [...(d.querySelector('.kid')?.children ?? [])].map(k => k.textContent));
+            const r = [top.map(d => d.firstChild.textContent), kids];
+            box.close();
+            return r;
+        };
+        out.menuA = menu(A);
+        out.menuH = menu(H);
+        pd.setPool(H, 'head');
+        out.menuHead = menu(H)[0];
+        pd.setPool(H, 'shoes');
+        // 手動層刪除女版：女模式回到基準；undo 復原；新增從基準複製
+        pd.setDoll({sex: 'f'});
+        out.swapF = [A.x, A.y, A.scale, A.alt.sex];
+        pd.setFem(A, false);
+        out.del = [pd.hasFem(A), A.x, A.y, A.scale];
+        pd.undo();
+        out.delUndo = [pd.hasFem(A), A.x];
+        pd.setFem(A, false);
+        pd.setFem(A, true);
+        out.add = [pd.hasFem(A), A.x, A.alt.sex, A.alt.x, document.querySelector('#layers .tag.fem')?.textContent];
+        pd.setDoll({sex: 'm'});
         pd.setPool(A, null);
         out.unset = [A.pool, A.poolId];
         return out;
@@ -2069,12 +2178,22 @@ run('paperdoll', async t => {
     t.eq('pool：新條目接在同 kind 後面、PNG 在 roles/parts、覆蓋保留其他 key、記住 id', JSON.stringify(pl.saved),
          JSON.stringify(['body-man,cloth-old,cloth-a,hand-man', '{"kind":"cloth","sprite":"cloth-a","scale":0.5,"x":1,"y":2}',
                          '{"kind":"cloth","sprite":"cloth-old","scale":0.25,"note":1,"x":0,"y":0}', false, [40, 60], 'cloth-a']));
-    t.eq('pool：手動圖層女模式照樣存基準、勾女版提示不含女版、沒有服飾時女版勾藏起來', JSON.stringify(pl.fem),
-         JSON.stringify(['存到 pool（part.json）', ['', '只有一組數字，不含女版；會覆蓋 cloth-old（PNG＋擺放）（wick 在用）', '只有一組數字，不含女版；會覆蓋 cloth-a（PNG＋擺放）'], false, true]));
-    t.eq('pool：手動圖層存基準、f 不動', pl.femSaved, '{"kind":"cloth","sprite":"cloth-a","scale":0.4,"x":5,"y":6,"f":{"scale":0.3,"x":9,"y":9}}');
+    t.eq('pool：手動圖層沒有女版、女模式照樣存基準、條目有 f 提示會移除', JSON.stringify(pl.fem),
+         JSON.stringify(['存到 pool（part.json）', ['', '會覆蓋 cloth-old（PNG＋擺放）（wick 在用）', '會移除女版（零件沒有女版）；會覆蓋 cloth-a（PNG＋擺放）'], false]));
+    t.eq('pool：手動圖層沒有女版存基準、刪 f', pl.femSaved, '{"kind":"cloth","sprite":"cloth-a","scale":0.4,"x":5,"y":6}');
     t.eq('pool 限女：對話框寫限女、存基準、清掉 f、sex 保留', JSON.stringify(pl.only), JSON.stringify([true, false, 'f', 5]));
-    t.eq('pool：手動圖層女模式也讀基準', JSON.stringify(pl.loadF), JSON.stringify([5, 6, 0.4, '載入 cloth-a ← cloth-a、cloth-old ← cloth-old；hidden 在 part.json 找不到']));
-    t.eq('pool：男模式載入讀基準、undo', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[5, 6, 0.4], [1, 1, 0.4]]));
+    t.eq('pool：條目有 f 手動圖層載入成有女版、女模式擺女版、基準進 alt；沒 f 的沒有女版', JSON.stringify(pl.loadF),
+         JSON.stringify([9, 9, 0.3, '{"sex":"m","scale":0.4,"x":5,"y":6}', false, '載入 cloth-a ← cloth-a、cloth-old ← cloth-old；hidden 在 part.json 找不到']));
+    t.eq('pool：切男手動圖層換成基準、女版進 alt', JSON.stringify(pl.swap), JSON.stringify([5, 6, 0.4, 'f']));
+    t.eq('pool：男模式載入讀基準、undo（連女版）', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[5, 6, 0.4], [1, 1, 0.4, true]]));
+    t.eq('pool：手動圖層的女版存進專案', pl.projAlt, '{"sex":"f","scale":0.3,"x":9,"y":9}');
+    t.eq('右鍵：母子選單（標記／pool／女版：有 ▸ 刪除），子選單勾目前的值', JSON.stringify(pl.menuA), JSON.stringify([['標記：無', 'pool：衣服', '女版：有'],
+        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '前手', '後手'], ['刪除']]]));
+    t.eq('右鍵：能有女版的沒有女版＝女版：無 ▸ 新增', JSON.stringify([pl.menuH[0], pl.menuH[1][2]]), JSON.stringify([['標記：無', 'pool：鞋子', '女版：無'], ['新增']]));
+    t.eq('右鍵：頭不能有女版', JSON.stringify(pl.menuHead), JSON.stringify(['標記：無', 'pool：頭']));
+    t.eq('女版（手動層）：切女換成女版', JSON.stringify(pl.swapF), JSON.stringify([9, 9, 0.3, 'm']));
+    t.eq('女版（手動層）：刪除回到基準、undo 復原', JSON.stringify([pl.del, pl.delUndo]), JSON.stringify([[false, 1, 1, 0.4], [true, 9]]));
+    t.eq('女版（手動層）：新增從基準複製、圖層標 ♀', JSON.stringify(pl.add), JSON.stringify([true, 1, 'm', 1, '♀']));
     t.eq('pool：取消 pool 連 id 一起清', JSON.stringify(pl.unset), JSON.stringify([null, null]));
 
     // 批次存武器：不建圖層、套全域預設、對不到不處理、已有 equip 預設保留原設定

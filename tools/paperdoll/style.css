@@ -47,6 +47,12 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .ctx { position: fixed; z-index: 10; background: #2b2d31; border: 1px solid #555; border-radius: 4px; padding: 3px 0; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
 .ctx div { padding: 4px 16px; cursor: pointer; }
 .ctx div:hover { background: #2f6db5; }
+.ctx .sub { padding-right: 24px; position: relative; }
+.ctx .sub::after { content: '▸'; position: absolute; right: 8px; }
+.ctx .sub.open { background: #2f6db5; }
+.ctx .kid { display: none; padding: 3px 0; cursor: default; }
+.ctx .kid:hover { background: #2b2d31; }
+.ctx .sub.open > .kid { display: block; }
 
 #layers .layer { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-radius: 3px; cursor: pointer; }
 #layers .layer:hover { background: #33363c; }

@@ -7,14 +7,18 @@ export class History
 {
     constructor() {this.undos = []; this.redos = [];}
 
-    // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）
+    // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）；auto（自動零件的女版旗標）、alt（手動層另一個性別的數字）都是整個換新、不就地改
     snap(layer, vis = false)
     {
-        const {x, y, a, ox, oy, scale, ops, canvas} = layer;
-        return vis ? {layer, x, y, a, ox, oy, scale, ops, canvas, visible: layer.visible} : {layer, x, y, a, ox, oy, scale, ops, canvas};
+        const {x, y, a, ox, oy, scale, ops, canvas, auto, alt} = layer;
+        const s = {layer, x, y, a, ox, oy, scale, ops, canvas, auto, alt};
+        return vis ? {...s, visible: layer.visible} : s;
     }
 
     snapList(state) {return {state, layers: [...state.layers], active: state.active};}
+
+    // 物件的單一欄位（如人偶性別 S.doll.sex）
+    snapProp(obj, key) {return {obj, key, val: obj[key]};}
 
     push(s)
     {
@@ -49,6 +53,7 @@ export class History
     _again(s)
     {
         if (s.group) return {group: s.group.map(m => this._again(m))};
+        if (s.obj) return this.snapProp(s.obj, s.key);
         return s.state ? this.snapList(s.state) : this.snap(s.layer, 'visible' in s);
     }
 
@@ -66,8 +71,14 @@ export class History
     {
         if (s.group) return s.group.forEach(m => History.restore(m));
         if (s.state) return Object.assign(s.state, {layers: [...s.layers], active: s.active});
+        if (s.obj) return void (s.obj[s.key] = s.val);
         const {x, y, a, ox, oy, scale, ops, canvas} = s;
         Object.assign(s.layer, {x, y, a, ox, oy, scale, ops, canvas});
+        for (const k of ['auto', 'alt'])
+        {
+            if (s[k]) s.layer[k] = s[k];
+            else delete s.layer[k];
+        }
         if ('visible' in s) s.layer.visible = s.visible;
     }
 }
