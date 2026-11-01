@@ -3183,7 +3183,7 @@ run('paperdoll', async t => {
         const vis = () => pd.S.layers.map(L => `${L.name}${L.visible ? '+' : '-'}`).join();
         const L = {};
         for (const n of ['mh', 'mH', 'mb', 'fh', 'fb', 'x']) L[n] = pd.addLayer(await bmp(), n, null, null);
-        out.noTag = [$('dollM').disabled, $('dollHair').disabled];
+        out.noTag = [$('dollM').disabled, $('dollHead').disabled, $('dollHair').disabled];
         pd.setTag(L.mh, 'm-hair'); pd.setTag(L.mH, 'm-head'); pd.setTag(L.mb, 'm-body');
         pd.setTag(L.fh, 'f-hair'); pd.setTag(L.fb, 'm-body');
         out.unique = [L.mb.tag ?? null, L.fb.tag];
@@ -3195,13 +3195,20 @@ run('paperdoll', async t => {
         out.m = vis();
         pd.setDoll({hair: false});
         out.noHair = vis();
-        out.btn = [$('dollM').classList.contains('on'), $('dollF').classList.contains('on'), $('dollHair').checked];
+        pd.setDoll({head: false});
+        out.noHead = vis();
+        $('dollHair').click();
+        out.headOnly = vis();
+        $('dollHair').click();
+        out.btn = [$('dollM').classList.contains('on'), $('dollF').classList.contains('on'), $('dollHead').checked, $('dollHair').checked];
         pd.select(L.mb); pd.duplicateLayer();
         out.dupTag = pd.S.active.tag ?? null;
         pd.setTag(L.mH, null);
         out.untag = 'tag' in L.mH;
         const data = pd.projectData(pd.S.layers);
         out.data = [data.settings.doll, data.layers.map(d => d.tag ?? '').join()];
+        pd.applySettings({doll: {sex: 'm', hair: false}});
+        out.legacy = [pd.S.doll.head, pd.S.doll.hair];
 
         let asked = 0;
         window.confirm = () => (asked++, false);
@@ -3213,16 +3220,19 @@ run('paperdoll', async t => {
         window.confirm = conf;
         return out;
     });
-    t.eq('人偶：沒標記時頭髮 disable（性別也切自動護具數字，不 disable）', JSON.stringify(dl.noTag), JSON.stringify([false, true]));
+    t.eq('人偶：沒標記時頭、頭髮 disable（性別也切自動護具數字，不 disable）', JSON.stringify(dl.noTag), JSON.stringify([false, true, true]));
     t.eq('人偶：同部位只能一層，標新的拿掉舊的', JSON.stringify(dl.unique), JSON.stringify([null, 'm-body']));
     t.eq('人偶：圖層列顯示徽章（沒對到 part.json 標 ⚠）', dl.badge, '♀身⚠');
     t.eq('人偶：切女只顯示女的', dl.f, 'mh-,mH-,mb-,fh+,fb+,x+');
     t.eq('人偶：切男只顯示男的', dl.m, 'mh+,mH+,mb+,fh-,fb-,x+');
     t.eq('人偶：取消頭髮藏目前性別的髮', dl.noHair, 'mh-,mH+,mb+,fh-,fb-,x+');
-    t.eq('人偶：按鈕狀態', JSON.stringify(dl.btn), JSON.stringify([true, false, false]));
+    t.eq('人偶：取消頭藏目前性別的頭', dl.noHead, 'mh-,mH-,mb+,fh-,fb-,x+');
+    t.eq('人偶：頭、頭髮各自獨立', dl.headOnly, 'mh+,mH-,mb+,fh-,fb-,x+');
+    t.eq('人偶：按鈕狀態', JSON.stringify(dl.btn), JSON.stringify([true, false, false, false]));
     t.eq('人偶：複製不帶標記', dl.dupTag, null);
     t.check('人偶：取消標記', !dl.untag);
-    t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', hair: false}, 'm-hair,,m-body,,f-hair,f-body,']));
+    t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', head: false, hair: false}, 'm-hair,,m-body,,f-hair,f-body,']));
+    t.eq('人偶：舊專案沒有 head＝勾', JSON.stringify(dl.legacy), JSON.stringify([true, false]));
     t.eq('關閉：有沒存的修改、按取消不關', JSON.stringify(dl.keep), JSON.stringify([true, 1]));
     t.eq('關閉：清空圖層與 undo', JSON.stringify(dl.closed), JSON.stringify([0, null, 0, 2, true, '（未命名）']));
 

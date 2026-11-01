@@ -23,7 +23,7 @@ const S = {
     layers: [],
     active: null,
     ref: {tw: 32, th: 32, rw: 32, rh: 64, ax: 0, ay: 16},
-    doll: {sex: 'm', hair: true},
+    doll: {sex: 'm', head: true, hair: true},
     view: {zoom: 2, px: 0, py: 0},
     mode: {type: 'move'},
     keys: new Set(),
@@ -204,7 +204,7 @@ function dollShow()
     {
         if (!L.tag) continue;
         const [s, p] = L.tag.split('-');
-        L.visible = s === S.doll.sex && (p !== 'hair' || S.doll.hair);
+        L.visible = s === S.doll.sex && (p !== 'hair' || S.doll.hair) && (p !== 'head' || S.doll.head);
     }
 }
 
@@ -2596,7 +2596,8 @@ function refreshLayers()
         const b = $(s === 'm' ? 'dollM' : 'dollF');
         b.classList.toggle('on', S.doll.sex === s);
     }
-    $('dollHair').disabled = !tagged;
+    $('dollHead').disabled = $('dollHair').disabled = !tagged;
+    $('dollHead').checked = S.doll.head;
     $('dollHair').checked = S.doll.hair;
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
@@ -4578,7 +4579,7 @@ function applySettings(s)
     $('showOrigin').checked = s.showOrigin ?? true;
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
-    if (s.doll) Object.assign(S.doll, s.doll);
+    if (s.doll) Object.assign(S.doll, {head: true, ...s.doll});
     // 舊專案的 auto 有整包數字：只拿介面狀態，數字以 settings.json 為準
     autoSet({...S.auto, ...Object.fromEntries(AUTO_UI.filter(k => k in (s.auto ?? {})).map(k => [k, s.auto[k]]))});
 }
@@ -4703,6 +4704,7 @@ $('btnSaveProj').onclick = () => saveProject().catch(e => status(e.message));
 $('btnClose').onclick = closeAll;
 $('dollM').onclick = () => setDoll({sex: 'm'});
 $('dollF').onclick = () => setDoll({sex: 'f'});
+$('dollHead').onchange = () => setDoll({head: $('dollHead').checked});
 $('dollHair').onchange = () => setDoll({hair: $('dollHair').checked});
 $('btnDup').onclick = duplicateLayer;
 $('btnMergeDown').onclick = mergeDown;
