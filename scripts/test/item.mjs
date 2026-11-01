@@ -445,7 +445,7 @@ run('item', async t => {
     t.check('選道具時附名稱', await t.page.evaluate(() => [...document.querySelectorAll('.combo .opt')].some(o => o.querySelector('.lab')?.textContent === '生肉')));
     await t.page.keyboard.press('Escape');
 
-    // equip 的手腕位移 wristF／wristB（xya）：武器一定顯示、護具有值才顯示；只寫有填的、清空刪掉、不進「其他」、亂填警告
+    // equip 的手腕位移 wristF／wristB（nums）：武器一定顯示、護具有值才顯示；只寫有填的、清空刪掉、不進「其他」、亂填警告
     const wr = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S, out = {};
         const inp = (k) => document.querySelector(`#view input[data-k="${k}"]`);
@@ -478,6 +478,49 @@ run('item', async t => {
     t.eq('手腕位移：護具沒值不顯示、有值才顯示', JSON.stringify([wr.armor, wr.armorSet]), JSON.stringify([[false, false], [[false, true], '2']]));
     t.eq('手腕位移：不是數字／多的 key 警告', wr.warn, 2);
     t.eq('手腕位移：undo', wr.undo, false);
+
+    // equip.f 女版（nums scale/x/y）：護具一定顯示、灰字是基準值、刪除鈕；武器有值才顯示，框裡「加欄位」叫出來、刪掉藏回去
+    const fv = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S, out = {};
+        const inp = (k) => document.querySelector(`#view input[data-k="${k}"]`);
+        const fire = (k, v) => {const el = inp(k); el.value = v; el.dispatchEvent(new Event('change'));};
+        const del = () => document.querySelector('#view button[data-del="equip.f"]');
+        const add = () => document.querySelector('#view select[data-k="equip.#add"]');
+        const raw = () => document.querySelector('#view textarea[data-k="equip.#raw"]')?.value ?? '';
+        const armor = Object.keys(S.items).find(id => ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'].includes(S.items[id].cat) && S.items[id].equip?.scale !== undefined && !S.items[id].equip.f);
+        const withF = Object.keys(S.items).find(id => S.items[id].equip?.f);
+        S.view = 'form'; S.json = false; S.sel = armor; ie.render(); S.open.equip = true; ie.render();
+        const e = S.items[armor].equip;
+        out.armor = [!!inp('equip.f.scale'), inp('equip.f.scale').placeholder === String(e.scale), inp('equip.f.y').placeholder === String(e.y), !!del()];
+        fire('equip.f.y', '3');
+        out.set = [JSON.stringify(S.items[armor].equip.f), !!del(), raw().includes('"f"')];
+        del().click();
+        out.del = ['f' in S.items[armor].equip, !!inp('equip.f.scale')];
+        S.sel = withF; ie.render(); S.open.equip = true; ie.render();
+        out.raw = raw().includes('"f"');
+        ie.set(withF, ['equip', 'f', 'w'], 1);
+        out.warn = ie.validate(withF).some(w => w.includes('equip.f 只能有'));
+        ie.undo();
+        S.sel = 'sword-1'; ie.render(); S.open.equip = true; ie.render();
+        out.weapon = [!!inp('equip.f.scale'), [...(add()?.options ?? [])].map(o => o.value).join(',')];
+        add().value = 'f'; add().dispatchEvent(new Event('change'));
+        out.added = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip, add() ? [...add().options].some(o => o.value === 'f') : false];
+        fire('equip.f.scale', '0.2');
+        del().click();
+        out.hid = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip];
+        S.sel = armor; ie.render(); S.open.equip = true; ie.render();
+        out.armorAdd = [...(add()?.options ?? [])].map(o => o.value).join(',');
+        return out;
+    });
+    t.eq('女版：護具一定顯示、灰字＝基準、沒值沒刪除鈕', JSON.stringify(fv.armor), '[true,true,true,false]');
+    t.eq('女版：只填 y 只寫 y、有刪除鈕、不進「其他」', JSON.stringify(fv.set), JSON.stringify(['{"y":3}', true, false]));
+    t.eq('女版：刪除拿掉 f、護具那列還在', JSON.stringify(fv.del), '[false,true]');
+    t.eq('女版：現有的 f 不進「其他」', fv.raw, false);
+    t.eq('女版：多的 key 警告', fv.warn, true);
+    t.eq('女版：武器沒值不顯示、框裡加欄位列出女版', JSON.stringify(fv.weapon), JSON.stringify([false, ',f']));
+    t.eq('女版：加欄位叫出來（不寫檔）、選項拿掉', JSON.stringify(fv.added), '[true,false,false]');
+    t.eq('女版：武器刪掉藏回去', JSON.stringify(fv.hid), '[false,false]');
+    t.eq('加欄位：護具列出藏起來的手腕', fv.armorAdd, ',wristF,wristB');
 
     // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來
     const pv = await t.page.evaluate(() => {

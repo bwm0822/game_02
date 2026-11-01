@@ -46,12 +46,12 @@ function checkVal(def, v, where, out)
         else if (def.type === 'int' && !Number.isInteger(v)) out.push(`${where} 應該是整數：${v}`);
     }
     else if (def.type === 'enum' && !def.options.includes(v)) out.push(`${where} 不認識的值：${v}`);
-    else if (def.type === 'xya')
+    else if (def.type === 'nums')
     {
-        if (!isObj(v)) out.push(`${where} 應該是 {x, y, a}：${str(v)}`);
+        if (!isObj(v)) out.push(`${where} 應該是 {${def.keys.join(', ')}}：${str(v)}`);
         else for (const [c, n] of Object.entries(v))
         {
-            if (!['x', 'y', 'a'].includes(c)) out.push(`${where} 只能有 x／y／a：${c}`);
+            if (!def.keys.includes(c)) out.push(`${where} 只能有 ${def.keys.join('／')}：${c}`);
             else if (typeof n !== 'number') out.push(`${where}.${c} 不是數字：${str(n)}`);
         }
     }
@@ -182,15 +182,23 @@ function fieldRow(id, it, k)
         const known = (f) => !!def.fields[f];
         const o = isObj(v) ? v : {};
         const open = v !== undefined && F.isOpen(k, v);
+        // 被 show 藏起來的子欄位用框裡的「加欄位」叫出來（記在 S.extra[id] 的 'equip.f' 這種 key），清空就藏回去
+        const extra = S.extra[id] ?? new Set();
+        const subs = Object.entries(def.fields).map(([f, d]) => [f, d, (d.show?.(it, o[f]) ?? true) || extra.has(`${k}.${f}`)]);
+        const put = (f, val) => {if (val === undefined) extra.delete(`${k}.${f}`); set(id, [k, f], val);};
+        const hidden = subs.filter(([, , on]) => !on);
         return h('div', {class: 'box'},
             F.boxBar(k, open, v !== undefined, h('span', {title: k}, def.label), v !== undefined && h('span', {class: 'dim'}, `（${Object.keys(o).length}）`), h('span', {class: 'grow'}),
                 v === undefined ? h('button', {type: 'button', onclick: () => {S.open[k] = true; set(id, [k], {});}}, '建立')
                                 : h('button', {type: 'button', onclick: () => set(id, [k], undefined)}, '移除')),
             open && h('div', {class: 'fields'},
-                Object.entries(def.fields).filter(([f, d]) => d.show?.(it, o[f]) ?? true).map(([f, d]) => [
+                subs.filter(([, , on]) => on).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
-                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d, o[f], val => set(id, [k, f], val), `${k}.${f}`),
+                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`),
                 ]),
+                hidden.length && [h('span', {class: 'k unset'}, '加欄位'),
+                    h('select', {dataset: {k: `${k}.#add`}, onchange: e => {(S.extra[id] ??= new Set()).add(`${k}.${e.target.value}`); render();}},
+                        h('option', {value: ''}, '…'), hidden.map(([f, d]) => h('option', {value: f}, `${d.label}　${f}`)))],
                 h('span', {class: 'k unset'}, '其他'),
                 F.rawArea(o, known, raw => commit(() => {S.items[id][k] ??= {}; replaceRaw(S.items[id][k], known, raw);}), `${k}.#raw`)));
     }
@@ -224,7 +232,7 @@ function renderForm()
         document.getElementById('right').replaceChildren();
         return view.replaceChildren(h('div', {class: 'dim'}, S.assets ? '（沒有選道具）' : '先在上方選擇專案資料夾'));
     }
-    const shown = [...new Set([...SC.shownFields(it), ...(S.extra[id] ?? [])])];
+    const shown = [...new Set([...SC.shownFields(it), ...[...(S.extra[id] ?? [])].filter(k => SC.FIELDS[k])])];
     const rest = Object.keys(SC.FIELDS).filter(k => !shown.includes(k));
     const warns = [F.fullDraft(), ...validate(id)].filter(Boolean);
     const known = (k) => !!SC.FIELDS[k];
