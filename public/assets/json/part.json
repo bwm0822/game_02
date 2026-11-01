@@ -54,7 +54,8 @@
       "x": 10,
       "y": -13
     },
-    "sex": "f"
+    "sex": "f",
+    "x": 0
   },
   "macron": {
     "kind": "body",
@@ -142,7 +143,7 @@
     "sex": "m",
     "a": 0
   },
-  "trump-head": {
+  "head-trump": {
     "kind": "head",
     "sprite": "trump-head",
     "scale": 0.25,
@@ -176,14 +177,14 @@
     "x": -2.5,
     "y": 2
   },
-  "trump-hair": {
+  "hair-trump": {
     "kind": "hair",
     "sprite": "trump-hair",
     "scale": 0.25,
     "x": -1.75,
     "y": -0.75
   },
-  "outfit-innkeeper-cloth": {
+  "cloth-outfit-innkeeper": {
     "kind": "cloth",
     "sprite": "outfit-innkeeper-cloth",
     "scale": 0.25,
@@ -195,7 +196,7 @@
       "y": -6.25
     }
   },
-  "outfit-innkeeper-shoes": {
+  "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
     "scale": 0.25,

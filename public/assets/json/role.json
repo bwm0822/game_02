@@ -163,10 +163,10 @@
         "map": "m_04x05/trump-inn-f2"
       }
     ],
-    "head": "trump-head",
-    "hair": "trump-hair",
-    "shoes": "outfit-innkeeper-shoes",
-    "cloth": "outfit-innkeeper-cloth"
+    "head": "head-trump",
+    "hair": "hair-trump",
+    "shoes": "shoes-outfit-innkeeper",
+    "cloth": "cloth-outfit-innkeeper"
   },
   "melanie": {
     "kind": "npc",
