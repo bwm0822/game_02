@@ -190,11 +190,11 @@ function fieldRow(id, r, k)
     if (def.type === 'inv') return invBox(id, v);
     if (def.type === 'schedule') return schedBox(id, v);
     const lab = h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label);
-    if (def.type === 'part') return [lab, partField(id, k, v)];
+    if (def.type === 'part') return [lab, F.withDrop(partField(id, k, v), id, k, v)];
     const inp = fieldInput(def, v, val => set(id, [k], val), k);
     if (k === 'icon') inp.append(h('button', {type: 'button', disabled: !canPortrait(r), title: '頭＋頭髮照遊戲擺放疊起來，存成 textures/roles/portraits/portrait-<id>.png',
         onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭髮產生'));
-    return [lab, inp];
+    return [lab, F.withDrop(inp, id, k, v)];
 }
 
 // ---------- 表單：部位（part.json 的 id） ----------

@@ -505,11 +505,26 @@ run('item', async t => {
         out.weapon = [!!inp('equip.f.scale'), [...(add()?.options ?? [])].map(o => o.value).join(',')];
         add().value = 'f'; add().dispatchEvent(new Event('change'));
         out.added = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip, add() ? [...add().options].some(o => o.value === 'f') : false];
+        const drop = document.querySelector('#view button[data-drop="equip.f"]');
+        out.dropEmpty = [!!drop, document.querySelectorAll('#view .nums button').length];
+        drop.click();
+        out.dropped = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip];
+        add().value = 'f'; add().dispatchEvent(new Event('change'));
         fire('equip.f.scale', '0.2');
+        out.dropFilled = [!!document.querySelector('#view button[data-drop="equip.f"]'), !!del()];
         del().click();
         out.hid = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip];
         S.sel = armor; ie.render(); S.open.equip = true; ie.render();
         out.armorAdd = [...(add()?.options ?? [])].map(o => o.value).join(',');
+        // 最上層加欄位的空列也能收回去；強制顯示（分類建議）的空列沒有鈕
+        const top = document.querySelector('#view .fields > select:not([data-k])');
+        const tk = [...top.options].map(o => o.value).find(v => v && !['equip', 'drop', 'light', 'cook', 'make', 'device', 'effects'].includes(v));
+        const before = JSON.stringify(S.items[armor]);
+        top.value = tk; top.dispatchEvent(new Event('change'));
+        const tb = document.querySelector(`#view button[data-drop="${tk}"]`);
+        tb?.click();
+        out.top = [!!tb, !!document.querySelector(`#view [data-k="${tk}"]`), JSON.stringify(S.items[armor]) === before,
+                   !!document.querySelector('#view button[data-drop="def"]')];
         return out;
     });
     t.eq('女版：護具一定顯示、灰字＝基準、沒值沒刪除鈕', JSON.stringify(fv.armor), '[true,true,true,false]');
@@ -519,7 +534,11 @@ run('item', async t => {
     t.eq('女版：多的 key 警告', fv.warn, true);
     t.eq('女版：武器沒值不顯示、框裡加欄位列出女版', JSON.stringify(fv.weapon), JSON.stringify([false, ',f']));
     t.eq('女版：加欄位叫出來（不寫檔）、選項拿掉', JSON.stringify(fv.added), '[true,false,false]');
+    t.eq('女版：空列有一顆刪除鈕', JSON.stringify(fv.dropEmpty), '[true,1]');
+    t.eq('女版：空列按刪除收回去', JSON.stringify(fv.dropped), '[false,false]');
+    t.eq('女版：有值時是刪值那顆', JSON.stringify(fv.dropFilled), '[false,true]');
     t.eq('女版：武器刪掉藏回去', JSON.stringify(fv.hid), '[false,false]');
+    t.eq('加欄位：最上層空列能收回去、不改資料、強制顯示的沒鈕', JSON.stringify(fv.top), '[true,false,true,false]');
     t.eq('加欄位：護具列出藏起來的手腕', fv.armorAdd, ',wristF,wristB');
 
     // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來

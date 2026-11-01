@@ -214,6 +214,13 @@ run('ability', async t => {
         addSel.value = 'effects'; addSel.dispatchEvent(new Event('change'));
         out.addEff = JSON.stringify(A().heal.effects);
         ab.undo();
+        // 加欄位叫出來的空列：刪除鈕收回去、不改資料
+        const add2 = [...document.querySelectorAll('#pv select')].find(s => [...s.options].some(o => o.value === 'effects'));
+        const fk = [...add2.options].map(o => o.value).find(v => v && !['effects', 'hits'].includes(v));
+        add2.value = fk; add2.dispatchEvent(new Event('change'));
+        const drop = document.querySelector(`#pv button[data-drop="${fk}"]`), before = JSON.stringify(A().heal);
+        drop?.click();
+        out.drop = [!!drop, !!document.querySelector(`#pv [data-k="${fk}"]`), JSON.stringify(A().heal) === before];
 
         // 說明預覽：{#fmt} 顯示公式、{#elm} 顯示元素名、{#formula} 自成一行
         ab.select('fireball');
@@ -457,6 +464,7 @@ run('ability', async t => {
     t.eq('刪光卡片拿掉 key', r.delHits, false);
     t.check('卡片 undo', r.hitsUndo);
     t.eq('加欄位 effects 直接加卡', r.addEff, '[{"type":"mod"}]');
+    t.eq('加欄位叫出來的空列有刪除鈕、按了收回去、不改資料', JSON.stringify(r.drop), '[true,false,true]');
     t.check('預覽 fmt 顯示公式', r.preview?.includes('10+1.5×'), r.preview);
     t.check('預覽 formula 換行', r.preview?.includes('\n'), r.preview);
     t.eq('預覽色塊數', r.chips, 2);

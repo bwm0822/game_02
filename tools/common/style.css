@@ -9,6 +9,8 @@ button.on { background: #2f6db5; border-color: #4a8be0; }
 input, textarea, select { background: #2b2d31; color: #ddd; border: 1px solid #555; font: inherit; }
 input.num { width: 80px; }
 .nums { display: flex; gap: 10px; align-items: center; }
+.withDrop { display: flex; gap: 6px; align-items: center; }
+.withDrop > textarea { flex: 1; }
 .nums label { display: inline-flex; align-items: center; gap: 4px; color: #aaa; }
 textarea { width: 100%; resize: vertical; }
 .je, .je-area { position: relative; }

@@ -15,7 +15,7 @@
 ## 介面
 
 - 左：依 cat 分組的清單（可搜尋 id／名稱，組可收合，見 [tools-shell.md](tools-shell.md) 的 `fold.js`）、＋新道具。
-- 表單：依 `schema.js` 畫。顯示的欄位＝基本（lab/cat/icon/gold/des）＋該 cat 建議的＋已經有值的已知欄位；其他已知欄位從「加欄位」叫出來。
+- 表單：依 `schema.js` 畫。顯示的欄位＝基本（lab/cat/icon/gold/des）＋該 cat 建議的＋已經有值的已知欄位；其他已知欄位從「加欄位」叫出來；叫出來還空著的列尾有「刪除」收回去（`form.js` 的 `F.withDrop()`，只動 `S.extra`、不寫檔不進 undo，obj 框內叫出來的子欄位也一樣；規則強制顯示的空列沒有）。
   - `obj` 欄位（equip/drop/light/cook/make/device）是一個框，子欄位之外的 key（`ext`、`back`…）放框裡的「其他」JSON。`equip` 比 `drop` 多一個「藏頭髮」（`hideHair`：穿著時 `RoleView` 隱藏頭髮，任何裝備欄都有效），「女版」（`f`，scale／x／y，`sex:"f"` 的角色蓋掉基準，空格＝沿用基準、灰字顯示 equip 本身的值）跟「前手腕」「後手腕」（`wristF`／`wristB`，x／y／a；武器的手腕位移，見 [fit-tool.md](fit-tool.md)）。這三個是型別 `nums`＝`form.js` 一排數字（`keys` 決定哪幾格、`hint` 給灰字），只寫有填的 key、全清空或按「刪除」刪掉整個。子欄位可以有 `show(it, v)`：手腕兩列武器一定顯示、女版護具四類一定顯示，其他分類有值才顯示（不顯示的 key 還是算認得，不進「其他」）；藏起來的子欄位列在框裡的「加欄位」下拉，選了先顯示空的（記在 `S.extra[id]` 的 `equip.f` 這種 key，不寫檔），清空／刪除就藏回去；檢查：不是物件、不是數字、`keys` 以外的 key 警告。
   - 武器的 `anim`（普攻動畫，遊戲見 [fit-tool.md](fit-tool.md)）：選項讀 `anim.json` 的 key（存 anim.json 會重讀），指到沒有的動畫只警告；沒寫＝近戰 `chop`／遠程 `aim`。
   - 可自由輸入又有建議的欄位（list／itemref／tags、材料）不用 `<input list>`（datalist 會拿現有的值篩選，有值時看不到其他選項），改用 `combo.js`：input 加 `data-combo="<datalist id>"`，datalist 只當選項來源；點框或 ↓ 列全部、打字才篩選，選了送 `change` 接原本的 onchange。

@@ -930,7 +930,7 @@ function renderForm()
         h('div', {class: 'fields'},
             shown.map(k => SC.FIELDS[k].type === 'cards' ? cardBox(id, ab, k) : [
                 h('span', {class: 'k' + (ab[k] === undefined ? ' unset' : ''), title: k}, SC.FIELDS[k].label),
-                fieldInput(SC.FIELDS[k], ab[k], v => set(id, [k], v), k),
+                F.withDrop(fieldInput(SC.FIELDS[k], ab[k], v => set(id, [k], v), k), id, k, ab[k]),
                 k === 'des' && [h('span', {class: 'k unset'}, '預覽'), desPreview(ab)],
             ]),
             h('span', {class: 'k' + (ab.refs ? '' : ' unset'), title: 'refs（在樹上拉線）'}, '前置'),

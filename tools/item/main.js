@@ -194,7 +194,7 @@ function fieldRow(id, it, k)
             open && h('div', {class: 'fields'},
                 subs.filter(([, , on]) => on).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
-                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`),
+                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f]),
                 ]),
                 hidden.length && [h('span', {class: 'k unset'}, '加欄位'),
                     h('select', {dataset: {k: `${k}.#add`}, onchange: e => {(S.extra[id] ??= new Set()).add(`${k}.${e.target.value}`); render();}},
@@ -211,7 +211,7 @@ function fieldRow(id, it, k)
                 h('button', {type: 'button', onclick: () => addEff(id)}, '＋ 新增效果')),
             open && effs.map((_, i) => effCard(id, effs, i)));
     }
-    return [label, fieldInput(def, v, val => set(id, [k], val), k)];
+    return [label, F.withDrop(fieldInput(def, v, val => set(id, [k], val), k), id, k, v)];
 }
 
 function otherBox(id, it, known)

@@ -64,7 +64,12 @@ run('role', async t => {
         addSel.value = 'corpse'; addSel.dispatchEvent(new Event('change'));
         out.foldAdd = [secs().find(s => s.textContent.includes('外觀')).textContent.startsWith('▼'), secs().find(s => s.textContent.includes('物品')).textContent.startsWith('▶')];
         re.undo();
-        sel('trump');
+        const add2 = [...document.querySelectorAll('#view .form > .fields > select')].at(-1);
+        const fk = [...add2.options].map(o => o.value).find(v => v && !['attrs', 'anchor', 'b', 'g', 'z', 'corpse', 'inv', 'schedule'].includes(v));
+        add2.value = fk; add2.dispatchEvent(new Event('change'));
+        const drop = document.querySelector(`#view button[data-drop="${fk}"]`), before = JSON.stringify(S.data);
+        drop?.click();
+        out.drop = [!!drop, !!document.querySelector(`#view [data-k="${fk}"]`), JSON.stringify(S.data) === before];        sel('trump');
         btn('全部展開').click();
         out.foldAll = secs().every(s => s.textContent.startsWith('▼'));
         const cellInputs = () => [...document.querySelectorAll('#view .cell input')];
@@ -210,7 +215,7 @@ run('role', async t => {
     t.check('點段標題展開', r.foldClick);
     t.check('換角色保持段落開關', r.foldKeep);
     t.check('加欄位自動展開那一段', r.foldAdd[0] && r.foldAdd[1], JSON.stringify(r.foldAdd));
-    t.check('全部展開', r.foldAll);
+    t.eq('加欄位叫出來的空列有刪除鈕、按了收回去、不改資料', JSON.stringify(r.drop), '[true,false,true]');    t.check('全部展開', r.foldAll);
     t.eq('有警告的段標紅', JSON.stringify(r.secBad), JSON.stringify(['物品']));
     t.check('JSON 模式：整筆物件、表單換掉、預覽還在', r.jsonShow.every(Boolean), JSON.stringify(r.jsonShow));
     t.check('JSON 模式：套用、key 位置不動', r.jsonApply[0] === 777 && r.jsonApply[1] === 1 && r.jsonApply[2], JSON.stringify(r.jsonApply));

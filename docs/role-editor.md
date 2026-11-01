@@ -15,7 +15,7 @@
 - 表單（`schema.js`）分「基本／戰鬥／外觀／物品／作息」幾段，點段標題收合：**預設全部收合**，開關記在頁面的 `S.secOpen`（換角色保持，不存 localStorage）；標題寫有值的欄位數，段裡有檢查警告標紅 ⚠（`validate(id, keys)` 的 `keys` 跟警告一一對應欄位 key）；「加欄位」會展開那段；標題列有「全部展開／全部收合」。段裡的小框照原規則收合，「其他欄位」框一律預設收合。
 - 「JSON」鈕切成整筆 JSON 模式（跟道具編輯器共用，見 [item-editor.md](item-editor.md)），右邊預覽照樣更新。
 - 預覽在第三欄 `#right`（只有畫布那層捲、選項列固定在下面，最少 300px；總覽表／沒選角色時清空藏起來），中間欄跟它之間的把手可拖寬（`splitter.js` 的 `data-resize`，見 [tools-shell.md](tools-shell.md)）。
-- 段內欄位：顯示的欄位＝基本＋該 kind 建議的（`KIND_FIELDS`）＋已經有值的，其他從「加欄位」叫出來。遊戲沒在讀的 `stats`/`states`/`weapon`/`type` 不在 schema 裡，放最下面「其他欄位」原樣保留。
+- 段內欄位：顯示的欄位＝基本＋該 kind 建議的（`KIND_FIELDS`）＋已經有值的，其他從「加欄位」叫出來；叫出來還空著的列尾有「刪除」收回去（`F.withDrop()`，只動 `S.extra`、不寫檔不進 undo）。遊戲沒在讀的 `stats`/`states`/`weapon`/`type` 不在 schema 裡，放最下面「其他欄位」原樣保留。
   - 性格 `style` 的選項從 `com_ai.js` 的 `wTBL` 解析（註解掉的不算，行尾註解當說明），不在表上的會警告「遊戲會當成 passive_fighter」。
   - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。
   - 部位（「外觀」段的身體／鞋子／衣服／頭／頭髮／手，`type: 'part'`）：寫 `part.json` 的 id（部位的圖跟擺放都在 part.json，見 [paperdoll-tool.md](paperdoll-tool.md) 的「部位 pool」）。欄位是縮圖＋id 輸入框（combo 只列同 kind）＋「選…」：pool 選圖器（`pickPart()`，`#dlgPart`）照 kind 列條目，第一格「無」（清掉），hover 看幾個角色在用，點一下就選。選圖器裡右鍵條目：

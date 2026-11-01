@@ -25,7 +25,7 @@
   - 節點底下的藍點拉到另一個節點：被拉到的那個多一個前置。點線選取（黃色），Del 刪掉、Esc 取消。
   - 上方一行操作提示。
   - 空格右鍵：新增技能（排在 `ability.json` 裡這棵樹最後一個技能後面）、把未分類的技能放上來。節點右鍵：改名、複製（放在右邊第一個空格）、移出這棵樹、刪除。
-- 右：技能表單，欄位定義在 `schema.js`（遊戲加新欄位改這裡）。顯示＝基本（lab/icon/mode/tag/des）＋有值的已知欄位，其他從「加欄位」叫出來。
+- 右：技能表單，欄位定義在 `schema.js`（遊戲加新欄位改這裡）。顯示＝基本（lab/icon/mode/tag/des）＋有值的已知欄位，其他從「加欄位」叫出來；叫出來還空著的列尾有「刪除」收回去（`F.withDrop()`，只動 `S.extra`、不寫檔不進 undo）。
   - `hits`、`effects` 一筆一張卡片（↑↓⧉×），卡片標題是一行摘要；effects 欄位沿用道具編輯器的 `EFF_FIELDS`／`EFF_BY_TYPE`／`effSummary`，多一個 `reqClass`。卡片裡 schema 沒有的 key 在「額外欄位（JSON）」。
   - 區域技能（火牆）的 `zoneW`／`zoneH`／`zoneDur`／`zoneFx` 是「區域寬／高／回合／特效」；`zoneFx` 指 fx.json 的 id（下拉列出 fx.json 全部，沒有就警告），外觀到特效分頁編（[fx-tool.md](fx-tool.md)）。
   - `travel`／`fx`／`cast` 等沒列到的 key 在最下面「其他欄位」原始 JSON。
