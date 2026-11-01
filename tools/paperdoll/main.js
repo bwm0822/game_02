@@ -3738,11 +3738,13 @@ function itemCheck(rows, items, keys)
 {
     const act = rows.filter(r => r.on && (r.png || r.place || r.icon));
     const idOf = (r) => r.id ?? r.newId;
-    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false});
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false, only: null});
     for (const r of act)
     {
         const err = (s) => {r.err ||= s;};
-        r.dropF = r.P.kind === 'armor' && !S.auto.saveF && !!items[r.id]?.equip?.f;
+        // 目標道具限定性別（item.sex）：遊戲不套 f，忽略「女版」，照那個性別的數字寫基準、有 f 就清掉
+        r.only = items[r.id]?.sex ?? null;
+        r.dropF = !!items[r.id]?.equip?.f && (!!r.only || r.P.kind === 'armor' && !S.auto.saveF);
         const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
         if (!r.id)
@@ -3830,7 +3832,7 @@ function itemDialog(parts, items, keys)
             $(`di-${k}-new`).hidden = !!r.id;
             const msg = $(`di-${k}-msg`);
             msg.className = r.err ? 'err' : 'warn';
-            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`, r.dropF && '會移除女版（沒勾「女版」）'].filter(Boolean).join('；');
+            msg.textContent = !live ? '' : r.err || [r.warn, r.ask && `會覆蓋 ${r.ask}`, onlyNote(r), r.dropF && (r.only ? '會移除女版' : '會移除女版（沒勾「女版」）')].filter(Boolean).join('；');
         }
         $('diOk').disabled = !act.length || act.some(r => r.err);
     };
@@ -4023,6 +4025,8 @@ function autoMale(m)
 }
 
 const femaleOf = (P) => pickKeys(S.auto.f[P.key], AUTO_FF);
+// 目標限定性別時存檔對話框／確認框的說明
+const onlyNote = (r) => r.only && `${r.only === 'f' ? '限女' : '限男'}：照${r.only === 'f' ? '女' : '男'}版數字寫基準、不寫女版`;
 
 // 存檔時重讀 item.json、重掃 textures/ 再檢查一次（對話框開著時別的分頁可能改過）；all：換 sprite、共用圖（warn）也一起 confirm
 async function commitItems(rows, bake, all = false)
@@ -4032,16 +4036,20 @@ async function commitItems(rows, bake, all = false)
     const keys = await texKeys(), act = itemCheck(rows, items, keys);
     const bad = act.filter(r => r.err);
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${tag(r)}：${r.err}`).join('\n')}`);
-    const ask = act.filter(r => r.ask || all && r.warn || r.dropF)
-        .map(r => `${tag(r)}：${[all ? r.warn : '', r.ask && (all ? `會覆蓋 ${r.ask}` : r.ask), r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
-    if (ask.length && !confirm(`${all || act.some(r => r.dropF) ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
+    const ask = act.filter(r => r.ask || all && r.warn || r.dropF || r.only)
+        .map(r => `${tag(r)}：${[all ? r.warn : '', r.ask && (all ? `會覆蓋 ${r.ask}` : r.ask), onlyNote(r), r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
+    if (ask.length && !confirm(`${all || act.some(r => r.dropF || r.only) ? '請確認' : '會覆蓋'}：\n${ask.join('\n')}\n要繼續嗎？`)) return;
     const done = [], fresh = [], pjson = await readParts();
     for (const r of act)
     {
         const {C} = r.part, g = splitNew(C), ik = iconKey(r);
-        // 有男女兩組的（護具）一定存男版、女版是 f；其他照目前人偶
-        const node = ITEM_NODE[ITEM_CAT[r.P.key]], sex = AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex;
-        const place = (e) => {writeEquip(e, C); pivotShift(e, pjson, node, sex);};
+        // 有男女兩組的（護具）一定存男版、女版是 f；其他照目前人偶；限定性別的照那個性別寫基準（限女的護具用女版那組數字）
+        const node = ITEM_NODE[ITEM_CAT[r.P.key]], sex = r.only ?? (AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex);
+        const place = (e) => {
+            writeEquip(e, C);
+            if (r.only === 'f' && AUTO_SEXED.includes(r.P.kind)) Object.assign(e, femaleOf(r.P));
+            pivotShift(e, pjson, node, sex);
+        };
         const female = () => pivotShift(femaleOf(r.P), pjson, node, 'f', 1, false);
         const put = async (dir, name, c) => {
             if (!keys.has(name)) fresh.push(name);
@@ -4078,10 +4086,10 @@ async function commitItems(rows, bake, all = false)
         if (r.png) setSplit(it, r.name, g, r.icon && ik);
         else if (r.icon) it.icon = ik;
         if (r.place) {place(e); dropScale(it);}
-        if (r.P.kind === 'armor')
+        if (r.P.kind === 'armor' || r.only)
         {
             delete e.f;
-            if (S.auto.saveF) e.f = female();
+            if (S.auto.saveF && !r.only) e.f = female();
         }
         done.push(r.id);
     }
@@ -4130,17 +4138,20 @@ const partUsers = (roles, id) => Object.keys(roles).filter(rid => Object.keys(PO
 function poolCheck(rows, parts, roles, keys)
 {
     const act = rows.filter(r => r.on);
-    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false});
+    for (const r of rows) Object.assign(r, {err: '', warn: '', ask: '', dropF: false, only: null});
     for (const r of act)
     {
         const err = (s) => {r.err ||= s;};
         const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
+        r.only = old?.sex ?? null;
         if (!r.id) err('要填 id');
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
         if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
         if (old && old.kind !== r.L.pool) err(`part.json 的 ${r.id} 是 ${POOL_KIND[old.kind] ?? old.kind}`);
-        r.dropF = poolSexed(r.L) && !S.auto.poolF && !!old?.f;
-        r.warn = r.dropF ? '會移除女版（沒勾「女版」）' : !poolSexed(r.L) && S.auto.poolF ? '只有一組數字，不含女版' : '';
+        // 條目限定性別（part.sex）：遊戲不套 f，忽略「女版」，照那個性別的數字寫基準、有 f 就清掉
+        r.dropF = !!old?.f && (!!r.only || poolSexed(r.L) && !S.auto.poolF);
+        r.warn = r.only ? [onlyNote(r), r.dropF && '會移除女版'].filter(Boolean).join('；')
+            : r.dropF ? '會移除女版（沒勾「女版」）' : !poolSexed(r.L) && S.auto.poolF ? '只有一組數字，不含女版' : '';
         const dir = keys.get(r.id);
         if (dir !== undefined && dir !== POOL_DIR) err(`textures/${join(dir, r.id)}.png 已經有了，換個 id`);
         else if (old) r.ask = `${r.id}（PNG＋擺放）${also}`;
@@ -4216,7 +4227,7 @@ async function commitPool(rows, bake)
     const keys = await texKeys(), act = poolCheck(rows, parts, await readGameJson('role.json'), keys);
     const bad = act.filter(r => r.err);
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${r.L.name}：${r.err}`).join('\n')}`);
-    const ask = act.filter(r => r.ask || r.dropF).map(r => `${r.L.name}：${[r.ask && `會覆蓋 ${r.ask}`, r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
+    const ask = act.filter(r => r.ask || r.dropF || r.only).map(r => `${r.L.name}：${[r.ask && `會覆蓋 ${r.ask}`, onlyNote(r), r.dropF && '會移除女版'].filter(Boolean).join('；')}`);
     if (ask.length && !confirm(`請確認：\n${ask.join('\n')}\n要繼續嗎？`)) return;
     const fresh = [];
     for (const r of act)
@@ -4226,11 +4237,12 @@ async function commitPool(rows, bake)
         await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${id}.png`, await PX.toPng(splitPng(L, bake)));
         const e = {...parts[id] ?? {kind: L.pool}, sprite: id};
         writeEquip(e, L);
-        pivotShift(e, parts, PART_NODE[L.pool], S.doll.sex);
-        if (poolSexed(L))
+        if (r.only === 'f' && poolSexed(L)) Object.assign(e, femaleOf(poolP(L)));
+        pivotShift(e, parts, PART_NODE[L.pool], r.only ?? S.doll.sex);
+        if (poolSexed(L) || r.only)
         {
             delete e.f;
-            if (S.auto.poolF) e.f = femaleOf(poolP(L));
+            if (S.auto.poolF && !r.only) e.f = femaleOf(poolP(L));
         }
         if (parts[id]) parts[id] = e;
         else parts = insertAfter(parts, Object.keys(parts).filter(k => parts[k].kind === L.pool).at(-1), id, e);
