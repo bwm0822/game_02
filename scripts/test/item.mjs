@@ -445,22 +445,25 @@ run('item', async t => {
     t.check('選道具時附名稱', await t.page.evaluate(() => [...document.querySelectorAll('.combo .opt')].some(o => o.querySelector('.lab')?.textContent === '生肉')));
     await t.page.keyboard.press('Escape');
 
-    // equip 的手腕位移 wristF／wristB（nums）：武器一定顯示、護具有值才顯示；只寫有填的、清空刪掉、不進「其他」、亂填警告
+    // equip 的手腕位移 wristF／wristB（nums、選填）：沒值不顯示（武器也是）、加欄位叫出來；只寫有填的、清空刪掉並藏回去、不進「其他」、亂填警告
     const wr = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S, out = {};
         const inp = (k) => document.querySelector(`#view input[data-k="${k}"]`);
         const fire = (k, v) => {const el = inp(k); el.value = v; el.dispatchEvent(new Event('change'));};
         const rows = () => ['wristF', 'wristB'].map(w => !!inp(`equip.${w}.x`));
+        const add = (f) => {const s = document.querySelector('#view select[data-k="equip.#add"]'); s.value = f; s.dispatchEvent(new Event('change'));};
         const raw = () => document.querySelector('#view textarea[data-k="equip.#raw"]')?.value ?? '';
-        const armor = Object.keys(S.items).find(id => S.items[id].cat === 'CAT_HELMET' && S.items[id].equip);
-        S.view = 'form'; S.json = false; S.sel = 'sword-1'; ie.render(); S.open.equip = true; ie.render();
+        const armor = Object.keys(S.items).find(id => S.items[id].cat === 'CAT_HELMET' && S.items[id].equip && !S.items[id].equip.wristB);
+        const wp = Object.keys(S.items).find(id => S.items[id].cat === 'CAT_WEAPON' && S.items[id].equip && !S.items[id].equip.wristF && !S.items[id].equip.wristB);
+        S.view = 'form'; S.json = false; S.sel = wp; ie.render(); S.open.equip = true; ie.render();
         out.weapon = rows();
+        add('wristF');
         fire('equip.wristF.x', '5');
-        out.one = JSON.stringify(S.items['sword-1'].equip.wristF);
+        out.one = JSON.stringify(S.items[wp].equip.wristF);
         fire('equip.wristF.a', '30');
-        out.two = [JSON.stringify(S.items['sword-1'].equip.wristF), raw().includes('wrist')];
+        out.two = [JSON.stringify(S.items[wp].equip.wristF), raw().includes('wrist')];
         fire('equip.wristF.x', ''); fire('equip.wristF.a', '');
-        out.clear = 'wristF' in S.items['sword-1'].equip;
+        out.clear = ['wristF' in S.items[wp].equip, rows()[0]];
         S.sel = armor; ie.render(); S.open.equip = true; ie.render();
         out.armor = rows();
         ie.set(armor, ['equip', 'wristB'], {y: 2});
@@ -471,51 +474,62 @@ run('item', async t => {
         out.undo = 'wristB' in S.items[armor].equip;
         return out;
     });
-    t.eq('手腕位移：武器有前後手腕兩列', JSON.stringify(wr.weapon), '[true,true]');
-    t.eq('手腕位移：只填 x 只寫 x', wr.one, '{"x":5}');
+    t.eq('手腕位移：武器沒值也不顯示', JSON.stringify(wr.weapon), '[false,false]');
+    t.eq('手腕位移：加欄位叫出來、只填 x 只寫 x', wr.one, '{"x":5}');
     t.eq('手腕位移：再填 a、不進「其他」', JSON.stringify(wr.two), JSON.stringify(['{"x":5,"a":30}', false]));
-    t.eq('手腕位移：清空刪掉', wr.clear, false);
+    t.eq('手腕位移：清空刪掉、藏回去', JSON.stringify(wr.clear), '[false,false]');
     t.eq('手腕位移：護具沒值不顯示、有值才顯示', JSON.stringify([wr.armor, wr.armorSet]), JSON.stringify([[false, false], [[false, true], '2']]));
     t.eq('手腕位移：不是數字／多的 key 警告', wr.warn, 2);
     t.eq('手腕位移：undo', wr.undo, false);
 
-    // equip.f 女版（nums scale/x/y）：護具一定顯示、灰字是基準值、刪除鈕；武器有值才顯示，框裡「加欄位」叫出來、刪掉藏回去
+    // 選填的 equip 子欄位（女版 f／後片 back／藏頭髮 hideHair）：沒值不顯示（護具也是）、框裡「加欄位」叫出來、空列刪除收回去、有值刪除鈕刪值藏回去
     const fv = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S, out = {};
         const inp = (k) => document.querySelector(`#view input[data-k="${k}"]`);
         const fire = (k, v) => {const el = inp(k); el.value = v; el.dispatchEvent(new Event('change'));};
-        const del = () => document.querySelector('#view button[data-del="equip.f"]');
+        const del = (f = 'f') => document.querySelector(`#view button[data-del="equip.${f}"]`);
         const add = () => document.querySelector('#view select[data-k="equip.#add"]');
+        const addF = (f) => {add().value = f; add().dispatchEvent(new Event('change'));};
         const raw = () => document.querySelector('#view textarea[data-k="equip.#raw"]')?.value ?? '';
-        const armor = Object.keys(S.items).find(id => ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'].includes(S.items[id].cat) && S.items[id].equip?.scale !== undefined && !S.items[id].equip.f);
+        const armor = Object.keys(S.items).find(id => ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'].includes(S.items[id].cat) && S.items[id].equip?.scale !== undefined
+            && ['f', 'back', 'hideHair', 'wristF', 'wristB'].every(f => S.items[id].equip[f] === undefined));
         const withF = Object.keys(S.items).find(id => S.items[id].equip?.f);
         S.view = 'form'; S.json = false; S.sel = armor; ie.render(); S.open.equip = true; ie.render();
         const e = S.items[armor].equip;
-        out.armor = [!!inp('equip.f.scale'), inp('equip.f.scale').placeholder === String(e.scale), inp('equip.f.y').placeholder === String(e.y), !!del()];
-        fire('equip.f.y', '3');
-        out.set = [JSON.stringify(S.items[armor].equip.f), !!del(), raw().includes('"f"')];
-        del().click();
-        out.del = ['f' in S.items[armor].equip, !!inp('equip.f.scale')];
-        S.sel = withF; ie.render(); S.open.equip = true; ie.render();
-        out.raw = raw().includes('"f"');
-        ie.set(withF, ['equip', 'f', 'w'], 1);
-        out.warn = ie.validate(withF).some(w => w.includes('equip.f 只能有'));
-        ie.undo();
-        S.sel = 'sword-1'; ie.render(); S.open.equip = true; ie.render();
-        out.weapon = [!!inp('equip.f.scale'), [...(add()?.options ?? [])].map(o => o.value).join(',')];
-        add().value = 'f'; add().dispatchEvent(new Event('change'));
-        out.added = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip, add() ? [...add().options].some(o => o.value === 'f') : false];
+        out.armorAdd = [[...(add()?.options ?? [])].map(o => o.value).join(','), !!inp('equip.f.scale'), !!inp('equip.back'), !!inp('equip.hideHair')];
+        addF('f');
+        out.added = [!!inp('equip.f.scale'), 'f' in e, [...add().options].some(o => o.value === 'f'),
+                     inp('equip.f.scale').placeholder === String(e.scale), inp('equip.f.y').placeholder === String(e.y)];
         const drop = document.querySelector('#view button[data-drop="equip.f"]');
         out.dropEmpty = [!!drop, document.querySelectorAll('#view .nums button').length];
         drop.click();
-        out.dropped = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip];
-        add().value = 'f'; add().dispatchEvent(new Event('change'));
-        fire('equip.f.scale', '0.2');
-        out.dropFilled = [!!document.querySelector('#view button[data-drop="equip.f"]'), !!del()];
+        out.dropped = [!!inp('equip.f.scale'), 'f' in e];
+        addF('f');
+        fire('equip.f.y', '3');
+        out.set = [JSON.stringify(S.items[armor].equip.f), !!document.querySelector('#view button[data-drop="equip.f"]'), !!del(), raw().includes('"f"')];
         del().click();
-        out.hid = [!!inp('equip.f.scale'), 'f' in S.items['sword-1'].equip];
+        out.del = ['f' in S.items[armor].equip, !!inp('equip.f.scale')];
+        // 後片：有值時有刪除鈕、按了拿掉藏回去
+        addF('back');
+        fire('equip.back', 'zz-back');
+        out.back = [S.items[armor].equip.back, !!del('back')];
+        del('back').click();
+        out.back.push('back' in S.items[armor].equip, !!inp('equip.back'));
+        // 藏頭髮：勾了有刪除鈕；取消勾選＝刪除、藏回去
+        const hh = () => inp('equip.hideHair');
+        const tick = (v) => {hh().checked = v; hh().dispatchEvent(new Event('change'));};
+        addF('hideHair'); tick(true);
+        out.hair = [S.items[armor].equip.hideHair, !!del('hideHair')];
+        del('hideHair').click();
+        out.hair.push('hideHair' in S.items[armor].equip, !!hh());
+        addF('hideHair'); tick(true); tick(false);
+        out.hair.push('hideHair' in S.items[armor].equip, !!hh());
+        S.sel = withF; ie.render(); S.open.equip = true; ie.render();
+        out.raw = [!!inp('equip.f.scale'), raw().includes('"f"')];
+        ie.set(withF, ['equip', 'f', 'w'], 1);
+        out.warn = ie.validate(withF).some(w => w.includes('equip.f 只能有'));
+        ie.undo();
         S.sel = armor; ie.render(); S.open.equip = true; ie.render();
-        out.armorAdd = [...(add()?.options ?? [])].map(o => o.value).join(',');
         // 最上層加欄位的空列也能收回去；強制顯示（分類建議）的空列沒有鈕
         const top = document.querySelector('#view .fields > select:not([data-k])');
         const tk = [...top.options].map(o => o.value).find(v => v && !['equip', 'drop', 'light', 'cook', 'make', 'device', 'effects'].includes(v));
@@ -527,19 +541,17 @@ run('item', async t => {
                    !!document.querySelector('#view button[data-drop="def"]')];
         return out;
     });
-    t.eq('女版：護具一定顯示、灰字＝基準、沒值沒刪除鈕', JSON.stringify(fv.armor), '[true,true,true,false]');
-    t.eq('女版：只填 y 只寫 y、有刪除鈕、不進「其他」', JSON.stringify(fv.set), JSON.stringify(['{"y":3}', true, false]));
-    t.eq('女版：刪除拿掉 f、護具那列還在', JSON.stringify(fv.del), '[false,true]');
-    t.eq('女版：現有的 f 不進「其他」', fv.raw, false);
-    t.eq('女版：多的 key 警告', fv.warn, true);
-    t.eq('女版：武器沒值不顯示、框裡加欄位列出女版', JSON.stringify(fv.weapon), JSON.stringify([false, ',f']));
-    t.eq('女版：加欄位叫出來（不寫檔）、選項拿掉', JSON.stringify(fv.added), '[true,false,false]');
+    t.eq('選填：護具沒值五個都藏、列在框裡加欄位', JSON.stringify(fv.armorAdd), JSON.stringify([',f,back,hideHair,wristF,wristB', false, false, false]));
+    t.eq('女版：加欄位叫出來（不寫檔）、選項拿掉、灰字＝基準', JSON.stringify(fv.added), '[true,false,false,true,true]');
     t.eq('女版：空列有一顆刪除鈕', JSON.stringify(fv.dropEmpty), '[true,1]');
     t.eq('女版：空列按刪除收回去', JSON.stringify(fv.dropped), '[false,false]');
-    t.eq('女版：有值時是刪值那顆', JSON.stringify(fv.dropFilled), '[false,true]');
-    t.eq('女版：武器刪掉藏回去', JSON.stringify(fv.hid), '[false,false]');
+    t.eq('女版：只填 y 只寫 y、有值時是刪值那顆、不進「其他」', JSON.stringify(fv.set), JSON.stringify(['{"y":3}', false, true, false]));
+    t.eq('女版：刪除拿掉 f、藏回去', JSON.stringify(fv.del), '[false,false]');
+    t.eq('後片：有值有刪除鈕、按了拿掉藏回去', JSON.stringify(fv.back), JSON.stringify(['zz-back', true, false, false]));
+    t.eq('藏頭髮：勾了有刪除鈕、刪除／取消勾選都拿掉藏回去', JSON.stringify(fv.hair), JSON.stringify([true, true, false, false, false, false]));
+    t.eq('女版：現有的 f 顯示、不進「其他」', JSON.stringify(fv.raw), '[true,false]');
+    t.eq('女版：多的 key 警告', fv.warn, true);
     t.eq('加欄位：最上層空列能收回去、不改資料、強制顯示的沒鈕', JSON.stringify(fv.top), '[true,false,true,false]');
-    t.eq('加欄位：護具列出藏起來的手腕', fv.armorAdd, ',wristF,wristB');
 
     // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來
     const pv = await t.page.evaluate(() => {

@@ -104,10 +104,12 @@ export function createForm({S, render, commit})
     }
 
     // 「加欄位」叫出來、還空著的列：輸入框後面多「刪除」收回去（只動 S.extra，不寫檔、不進 undo）；key 跟 S.extra 裡的一樣
-    function withDrop(inp, id, key, val)
+    // del：有值時也給「刪除」（呼叫 del 刪值）
+    function withDrop(inp, id, key, val, del)
     {
-        if (val !== undefined || !S.extra[id]?.has(key)) return inp;
-        const btn = h('button', {type: 'button', dataset: {drop: key}, onclick: () => {S.extra[id].delete(key); render();}}, '刪除');
+        const btn = val !== undefined ? del && h('button', {type: 'button', dataset: {del: key}, onclick: del}, '刪除')
+                  : S.extra[id]?.has(key) && h('button', {type: 'button', dataset: {drop: key}, onclick: () => {S.extra[id].delete(key); render();}}, '刪除');
+        if (!btn) return inp;
         if (inp.classList.contains('nums')) {inp.append(btn); return inp;}
         return h('span', {class: 'withDrop'}, inp, btn);
     }

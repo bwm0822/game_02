@@ -182,9 +182,9 @@ function fieldRow(id, it, k)
         const known = (f) => !!def.fields[f];
         const o = isObj(v) ? v : {};
         const open = v !== undefined && F.isOpen(k, v);
-        // 被 show 藏起來的子欄位用框裡的「加欄位」叫出來（記在 S.extra[id] 的 'equip.f' 這種 key），清空就藏回去
+        // 選填（opt）沒值的子欄位用框裡的「加欄位」叫出來（記在 S.extra[id] 的 'equip.f' 這種 key），清空或刪除就藏回去
         const extra = S.extra[id] ?? new Set();
-        const subs = Object.entries(def.fields).map(([f, d]) => [f, d, (d.show?.(it, o[f]) ?? true) || extra.has(`${k}.${f}`)]);
+        const subs = Object.entries(def.fields).map(([f, d]) => [f, d, !d.opt || o[f] !== undefined || extra.has(`${k}.${f}`)]);
         const put = (f, val) => {if (val === undefined) extra.delete(`${k}.${f}`); set(id, [k, f], val);};
         const hidden = subs.filter(([, , on]) => !on);
         return h('div', {class: 'box'},
@@ -194,7 +194,8 @@ function fieldRow(id, it, k)
             open && h('div', {class: 'fields'},
                 subs.filter(([, , on]) => on).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
-                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f]),
+                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f],
+                        d.opt && d.type !== 'nums' && (() => put(f, undefined))),
                 ]),
                 hidden.length && [h('span', {class: 'k unset'}, '加欄位'),
                     h('select', {dataset: {k: `${k}.#add`}, onchange: e => {(S.extra[id] ??= new Set()).add(`${k}.${e.target.value}`); render();}},

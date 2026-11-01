@@ -2,7 +2,7 @@
 // type：text / textarea / int / num / bool / enum（下拉，options 固定）/ list（自由輸入＋建議）/ tags（字串陣列）
 //       icon / sprite（選圖器）/ itemref（道具 id）/ color（0xRRGGBB 整數）/ obj（fields 子欄位）/ map（道具 id → 數量）/ effects
 //       nums（一排數字存成物件，keys 是哪幾格，如 {x, y, a}）
-// obj 子欄位的 show(it, v)：false 就不畫（key 還是算認得的，不會進「其他」），框裡的「加欄位」能叫出來
+// obj 子欄位的 opt（選填）：沒值就不畫（key 還是算認得的，不會進「其他」），從框裡的「加欄位」叫出來，有值時列尾有「刪除」
 // obj 子欄位的 hint(o)：o 是整個 obj，回傳空格的灰字
 
 export const CATS = ['CAT_WEAPON', 'CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS', 'CAT_NECKLACE', 'CAT_RING',
@@ -26,14 +26,11 @@ const SPRITE = {
     oy: {label: 'oy', type: 'num'},
 };
 
-// 手腕位移（疊在 body 支點上，男女共用）只有武器、暫拿的工具會用到：武器一定顯示，其他有值才顯示
-const WRIST_SHOW = (it, v) => it.cat === 'CAT_WEAPON' || v !== undefined;
-const XYA = {type: 'nums', keys: ['x', 'y', 'a'], show: WRIST_SHOW};
+// 手腕位移（疊在 body 支點上，男女共用）只有武器、暫拿的工具會用到
+const XYA = {type: 'nums', keys: ['x', 'y', 'a'], opt: true};
 
-// 女版（role.sex='f' 時蓋掉 scale/x/y，空格＝沿用基準）：護具一定顯示，其他有值才顯示
-const ARMORS = ['CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS'];
-const FEMALE = {label: '女版', type: 'nums', keys: ['scale', 'x', 'y'], hint: (o) => o,
-    show: (it, v) => ARMORS.includes(it.cat) || v !== undefined};
+// 女版（role.sex='f' 時蓋掉 scale/x/y，空格＝沿用基準）
+const FEMALE = {label: '女版', type: 'nums', keys: ['scale', 'x', 'y'], hint: (o) => o, opt: true};
 
 export const FIELDS = {
     lab: {label: '名稱', type: 'text'},
@@ -55,7 +52,7 @@ export const FIELDS = {
     times: {label: '使用次數', type: 'int'},
     endurance: {label: '耐久', type: 'int'},
     storage: {label: '格數', type: 'int'},
-    equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, f: FEMALE, back: {label: '後片', type: 'sprite'}, hideHair: {label: '藏頭髮', type: 'bool'},
+    equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, f: FEMALE, back: {label: '後片', type: 'sprite', opt: true}, hideHair: {label: '藏頭髮', type: 'bool', opt: true},
         wristF: {label: '前手腕', ...XYA}, wristB: {label: '後手腕', ...XYA}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},
     light: {label: '光源', type: 'obj', fields: {color: {label: '顏色', type: 'color'}, radius: {label: '半徑', type: 'int'}}},
