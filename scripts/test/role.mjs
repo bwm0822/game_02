@@ -266,4 +266,35 @@ run('role', async t => {
     t.check('存檔（有警告就問）', r.saved[0] === 1 && r.saved[1] === 'npc' && r.saved[2], JSON.stringify(r.saved));
     t.eq('合併保留外部的修改', r.merge[0], 30);
     t.eq('合併保留這邊的修改', r.merge[1], 300);
+
+    // 限定 sex：女角的部位選圖器／建議只列符合的、目前用著不符的保留標 ⚠＋警告；裝備建議（dl-equips）一樣、穿著不符警告
+    const sx = await t.page.evaluate(async () => {
+        const re = window.__re, S = re.S, out = {};
+        const fem = Object.keys(S.data).find(k => S.data[k].sex === 'f' && S.data[k].hair);
+        const pid = S.data[fem].hair;
+        const other = Object.keys(S.ext.parts).find(p => S.ext.parts[p].kind === 'hair' && p !== pid);
+        S.ext.parts[other].sex = 'm'; S.ext.parts[pid].sex = 'm';
+        S.view = 'form'; S.json = false; S.sel = fem; re.render();
+        out.warn = re.validate(fem).some(w => w.includes(pid) && w.includes('限男'));
+        out.dl = [...document.querySelectorAll('#dl-hair option')].map(o => o.value).includes(other);
+        const p = re.pickPart('hair', pid, 'f');
+        const tiles = [...document.querySelectorAll('#dlgPart .tile')].map(t => t.dataset.id);
+        out.pick = [tiles.includes(other), tiles.includes(pid), document.querySelector(`#dlgPart .tile[data-id="${pid}"] .lab`).textContent.startsWith('⚠')];
+        document.getElementById('dlgPart').close();
+        await p;
+        delete S.ext.parts[other].sex; delete S.ext.parts[pid].sex;
+        const eq = Object.keys(S.ext.items).find(i => S.ext.items[i].equip && S.ext.items[i].cat === 'CAT_HELMET');
+        S.ext.items[eq].sex = 'm';
+        re.render();
+        out.eqDl = [...document.querySelectorAll('#dl-equips option')].map(o => o.value).includes(eq);
+        re.commit(() => {S.data[fem].inv ??= {}; S.data[fem].inv.equips = [eq];});
+        out.eqWarn = [re.validate(fem).some(w => w.includes(`裝備 ${eq}`) && w.includes('限男')), !!document.querySelector('#view .cells .cell.bad')];
+        re.undo();
+        delete S.ext.items[eq].sex;
+        re.render();
+        return out;
+    });
+    t.check('限定：部位性別不符警告', sx.warn);
+    t.eq('限定：部位建議／選圖器只列符合的、目前用的保留標 ⚠', JSON.stringify([sx.dl, sx.pick]), JSON.stringify([false, [false, true, true]]));
+    t.eq('限定：裝備建議不列不符的、穿著不符警告＋標紅', JSON.stringify([sx.eqDl, sx.eqWarn]), JSON.stringify([false, [true, true]]));
 });

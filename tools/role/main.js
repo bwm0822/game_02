@@ -14,7 +14,7 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from './preview.js';
-import {ROLE_PARTS, partFor} from '../../src/core/equip.js';
+import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 // role.json 裡沒有角色互相引用的欄位，改名只動 key
 const D = createDoc({
@@ -59,7 +59,10 @@ function checkVal(def, v, where, out)
     }
 }
 
-function checkInv(inv, out)
+const SEX_NAMES = {m: '限男', f: '限女'};
+const sexName = (sx) => ((sx ?? 'm') === 'f' ? '女' : '男');
+
+function checkInv(inv, out, sex)
 {
     if (!isObj(inv)) return out.push('inv 應該是物件');
     const st = inv.storage;
@@ -85,6 +88,7 @@ function checkInv(inv, out)
             const it = S.ext.items[idOf(e)];
             if (!it) out.push(`裝備指到不存在的道具：${idOf(e)}`);
             else if (!it.equip) out.push(`裝備 ${idOf(e)} 在 item.json 沒有裝備圖 equip`);
+            else if (!sexOk(it, sex)) out.push(`裝備 ${idOf(e)} ${SEX_NAMES[it.sex] ?? it.sex}，但角色是${sexName(sex)}`);
         });
     }
 }
@@ -130,7 +134,8 @@ function validate(id, keys = [])
             if (!isObj(v)) out.push(`${k} 應該是物件`);
             else for (const [f, d] of Object.entries(def.fields)) checkVal(d, v[f], `${k}.${f}`, out);
         }
-        else if (def.type === 'inv') checkInv(v, out);
+        else if (def.type === 'inv') checkInv(v, out, r.sex);
+        else if (def.type === 'part' && S.ext.parts[v] && !sexOk(S.ext.parts[v], r.sex)) out.push(`${def.label} ${v} ${SEX_NAMES[S.ext.parts[v].sex] ?? S.ext.parts[v].sex}，但角色是${sexName(r.sex)}`);
         else if (def.type === 'schedule') checkSchedule(v, out);
         else checkVal(def, v, k, out);
         tag(k);
@@ -203,29 +208,31 @@ const partUsers = (pid) => PT.usersOf(S.data, pid);
 
 function partField(id, k, v)
 {
-    const p = S.ext.parts[v];
+    const p = S.ext.parts[v], sex = S.data[id].sex;
     return h('span', {class: 'iconField'},
         IC.iconEl(p?.sprite, 32),
         h('input', {dataset: {k, combo: `dl-${k}`}, value: v ?? '', onchange: e => set(id, [k], e.target.value.trim() || undefined)}),
-        h('button', {type: 'button', onclick: async () => {const r = await pickPart(k, v); if (r !== null) set(id, [k], r || undefined);}}, '選…'));
+        h('button', {type: 'button', onclick: async () => {const r = await pickPart(k, v, sex); if (r !== null) set(id, [k], r || undefined);}}, '選…'),
+        p && !sexOk(p, sex) && h('span', {class: 'warn', title: `${SEX_NAMES[p.sex] ?? p.sex}，但角色是${sexName(sex)}`}, '⚠'));
 }
 
-// 回傳選到的 id，''＝無，null＝取消
-function pickPart(kind, cur)
+// 回傳選到的 id，''＝無，null＝取消；只列 sex 符合角色的（目前選的不符也留著、標 ⚠）
+function pickPart(kind, cur, sex)
 {
     const dlg = $('dlgPart');
     let done;
     const pick = (v) => {done = v; dlg.close();};
     const draw = () => {
-        const ids = Object.keys(S.ext.parts).filter(pid => S.ext.parts[pid].kind === kind);
+        const ids = Object.keys(S.ext.parts).filter(pid => S.ext.parts[pid].kind === kind && (sexOk(S.ext.parts[pid], sex) || pid === cur));
         const tile = (pid, icon, lab, title) => h('div', {class: 'tile' + ((cur ?? '') === pid ? ' sel' : ''), dataset: {id: pid}, title,
             onclick: () => pick(pid), oncontextmenu: pid ? (e) => {e.preventDefault(); partMenu(pid).then(draw);} : null}, icon, h('div', {class: 'lab'}, lab));
         dlg.querySelector('.title').textContent = `選擇${SC.FIELDS[kind].label}（part.json，右鍵改名／刪除）`;
         dlg.querySelector('.tiles').replaceChildren(
             tile('', IC.iconEl(null, 48), '無', '清掉'),
             ...ids.map(pid => {
-                const n = partUsers(pid).length;
-                return tile(pid, IC.iconEl(S.ext.parts[pid].sprite, 48), pid, `${pid}${n ? `（${n} 個角色在用：${partUsers(pid).join('、')}）` : '（沒有角色在用）'}`);
+                const n = partUsers(pid).length, p = S.ext.parts[pid], bad = !sexOk(p, sex);
+                return tile(pid, IC.iconEl(p.sprite, 48), bad ? `⚠ ${pid}` : pid,
+                    `${pid}${bad ? `（${SEX_NAMES[p.sex] ?? p.sex}，但角色是${sexName(sex)}）` : ''}${n ? `（${n} 個角色在用：${partUsers(pid).join('、')}）` : '（沒有角色在用）'}`);
             }));
     };
     draw();
@@ -295,25 +302,28 @@ function ensureArr(r, path)
     return Array.isArray(o[path.at(-1)]) ? o[path.at(-1)] : (o[path.at(-1)] = []);
 }
 
-function itemCell(id, path, i, e, withCount)
+// combo：輸入框的建議清單（裝備是 dl-equips，只列有 equip、sex 符合角色的）；穿著不符的標紅
+function itemCell(id, path, i, e, withCount, combo)
 {
     const obj = isObj(e), iid = idOf(e), n = obj ? e.count ?? 1 : 1, it = S.ext.items[iid];
     const k = `${path.join('.')}.${i}`;
     const put = (fn) => commit(() => fn(getAt(S.data[id], path)));
-    return h('div', {class: 'cell' + (it ? '' : ' bad'), title: it ? `${iid}　${it.lab ?? ''}` : `不存在的道具：${iid}`},
+    const wrong = combo === 'equips' && it && !sexOk(it, S.data[id].sex);
+    return h('div', {class: 'cell' + (it && !wrong ? '' : ' bad'),
+            title: !it ? `不存在的道具：${iid}` : wrong ? `${iid}　${SEX_NAMES[it.sex] ?? it.sex}，但角色是${sexName(S.data[id].sex)}` : `${iid}　${it.lab ?? ''}`},
         IC.iconEl(it?.icon, 28),
-        h('input', {size: 10, dataset: {k, combo: 'dl-items'}, value: iid ?? '',
+        h('input', {size: 10, dataset: {k, combo: `dl-${combo}`}, value: iid ?? '',
             onchange: ev => {const v = ev.target.value.trim(); put(a => {if (!v) a.splice(i, 1); else if (obj) a[i].id = v; else a[i] = v;});}}),
         withCount && h('input', {class: 'cnt', title: '數量', dataset: {k: `${k}#n`}, value: n,
             onchange: ev => {const c = parseNum(ev.target.value) ?? 1; put(a => {if (obj) a[i].count = c; else if (c !== 1) a[i] = {id: iid, count: c};});}}),
         h('button', {type: 'button', title: '移除', onclick: () => put(a => a.splice(i, 1))}, '×'));
 }
 
-function cells(id, list, path, withCount)
+function cells(id, list, path, withCount, combo = 'items')
 {
     return h('div', {class: 'cells'},
-        list.map((e, i) => itemCell(id, path, i, e, withCount)),
-        h('input', {class: 'add', size: 12, placeholder: '＋ 加道具', dataset: {k: `${path.join('.')}.+`, combo: 'dl-items'},
+        list.map((e, i) => itemCell(id, path, i, e, withCount, combo)),
+        h('input', {class: 'add', size: 12, placeholder: '＋ 加道具', dataset: {k: `${path.join('.')}.+`, combo: `dl-${combo}`},
             onchange: e => {const v = e.target.value.trim(); if (v) commit(() => ensureArr(S.data[id], path).push(v));}}));
 }
 
@@ -332,7 +342,7 @@ function invBox(id, v)
             h('span', {class: 'k' + (st.capacity === undefined ? ' unset' : ''), title: 'inv.storage.capacity'}, '容量'),
             h('span', null, fieldInput({type: 'int'}, st.capacity, val => set(id, ['inv', 'storage', 'capacity'], val), 'inv.storage.capacity'), h('span', {class: 'dim'}, '　-1 = 無限')),
             h('span', {class: 'k', title: 'inv.storage.items'}, '道具'), cells(id, items, ['inv', 'storage', 'items'], true),
-            h('span', {class: 'k', title: 'inv.equips'}, '裝備'), cells(id, equips, ['inv', 'equips'], false),
+            h('span', {class: 'k', title: 'inv.equips'}, '裝備'), cells(id, equips, ['inv', 'equips'], false, 'equips'),
             h('span', {class: 'k unset'}, '其他'),
             F.rawArea(inv, knownInv, raw => commit(() => {S.data[id].inv ??= {}; replaceRaw(S.data[id].inv, knownInv, raw);}), 'inv.#raw'),
             isObj(inv.storage) && [h('span', {class: 'k unset'}, 'storage 其他'),
@@ -499,15 +509,18 @@ function draw()
 {
     const rs = Object.values(S.data), ids = Object.keys(S.data);
     const locs = [...new Set(rs.filter(r => r.kind === 'npc').map(r => r.loc ?? ''))];
+    // 部位、裝備的建議只列 sex 符合目前這個角色的
+    const sex = S.data[S.sel]?.sex;
     renderDatalists({
         items: Object.keys(S.ext.items),
+        equips: Object.keys(S.ext.items).filter(i => S.ext.items[i].equip && sexOk(S.ext.items[i], sex)),
         abilities: Object.keys(S.ext.abilities),
         job: [...SC.JOBS, ...rs.map(r => r.job)],
         loc: rs.map(r => r.loc),
         maps: Object.keys(S.ext.maps),
-        ...Object.fromEntries(ROLE_PARTS.map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k)])),
+        ...Object.fromEntries(ROLE_PARTS.map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k && sexOk(S.ext.parts[id], sex))])),
         ...Object.fromEntries(Object.entries(S.ext.maps).map(([m, names]) => [`nav-${m}`, names])),
-    }, {items: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
+    }, {items: o => S.ext.items[o]?.lab, equips: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
 
     const kindOf = (id) => S.data[id].kind ?? '';
     V.renderList([

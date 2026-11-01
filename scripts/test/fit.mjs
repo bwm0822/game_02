@@ -409,6 +409,24 @@ run('fit', async t => {
         fire(`part.json|${S.doc['role.json'].data.mary.body}|wristB.x`, String(mbX + 1));
         out.sex.push(mb().wristB.x === mbX + 1, JSON.stringify(mb().f ?? null) === mbF);
         F.undo();
+
+        // 限定 sex：限女的裝備女角改基準（不建 f）；限男的裝備格挑選只列符合的、穿著的不符標 ⚠；部位下拉同理
+        const hb = S.hi;
+        F.commit(() => {S.doc['item.json'].data.helmet_02.sex = 'f';});
+        out.only = [!document.querySelector('[data-k="item.json|helmet_02|equip.f.y"]'), document.querySelector('#view .sexnote')?.textContent.includes('限女')];
+        fire('item.json|helmet_02|equip.y', '5');
+        out.only.push(e2().y, 'f' in e2());
+        F.commit(() => {S.doc['item.json'].data.helmet_02.sex = 'm'; S.doc['item.json'].data.helmet_01.sex = 'm';});
+        out.only.push(!!document.querySelector('#view .equipname .sexwarn'));
+        F.pickEquip('CAT_HELMET');
+        const labs = [...document.querySelectorAll('#dlgEquip .tile')].map(t => [t.dataset.id, t.querySelector('.lab').textContent]);
+        $('dlgEquip').close();
+        out.only.push(!labs.some(([id]) => id === 'helmet_01'), labs.find(([id]) => id === 'helmet_02')?.[1].startsWith('⚠'));
+        const mh = S.doc['role.json'].data.mary.hair, oh = Object.keys(S.doc['part.json'].data).find(p => S.doc['part.json'].data[p].kind === 'hair' && p !== mh);
+        F.commit(() => {S.doc['part.json'].data[mh].sex = 'm'; S.doc['part.json'].data[oh].sex = 'm';});
+        const hs = document.querySelector('select.part[data-k="role.json|mary|hair"]');
+        out.only.push(![...hs.options].some(o => o.value === oh), [...hs.options].find(o => o.value === mh)?.textContent.startsWith('⚠'), !!hs.closest('tr').querySelector('.sexwarn'));
+        while (S.hi > hb) F.undo();
         F.select('guard-1'); F.wearOrig(); S.cur = 'CAT_HELMET'; F.render();
 
         // 背景色：純色鋪滿、記 localStorage、棋盤格按鈕恢復
@@ -535,6 +553,8 @@ run('fit', async t => {
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
     t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo、支點寫基準不建 f', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false, true, true]));
+    t.eq('限定：限女改基準不建 f；限男穿著標 ⚠、挑選只列符合的；部位下拉同理',
+         JSON.stringify(r.only), JSON.stringify([true, true, 5, false, true, true, true, true, true, true]));
     t.eq('背景色：純色、記住、棋盤格恢復', JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000', false, '34,36,40', null, true]));
     t.check('只存有改的檔', r.saved[0] === 0 && r.saved[1] === -2 && !r.saved[2] && r.saved[3], JSON.stringify(r.saved));
     t.eq('外部修改合併', JSON.stringify(r.merge), JSON.stringify([1, 999, 7]));

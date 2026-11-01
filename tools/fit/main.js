@@ -15,7 +15,7 @@ import * as PT from '../common/part.js';
 import {show, showMenu} from '../common/showmenu.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot} from '../../src/core/equip.js';
+import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
@@ -72,6 +72,7 @@ const dirtyOf = (f) => str(S.doc[f].data) !== str(S.doc[f].saved);
 const isDirty = () => FILES.some(dirtyOf);
 // 女角（sex 不是 m）的裝備擺放：equip[sex] 蓋掉 scale/x/y（同遊戲 equipFor）；數字欄改的是 equip[sex]，第一次改從基準複製
 const SEX_NUMS = ['scale', 'x', 'y'];
+const SEX_NAMES = {m: '限男', f: '限女'};
 const sexKey = () => {const s = role()?.sex; return s && s !== 'm' ? s : null;};
 const equipOf = (id) => equipFor(items()[id]?.equip, role()?.sex, items()[id]?.sex);
 const bodyId = () => role()?.body;
@@ -252,14 +253,16 @@ function pickEquip(cat)
     S.cur = S.pick = cat;
     render();
     const dlg = $('dlgEquip'), name = SLOTS.find(([c]) => c === cat)[1];
-    const opts = Object.keys(items()).filter(i => items()[i].cat === cat && isObj(items()[i].equip));
-    const tile = (id, icon, lab) => h('div', {class: 'tile' + ((S.slots[cat] ?? '') === id ? ' sel' : ''), dataset: {id}, title: id || '卸下',
+    // 只列 sex 符合角色的；目前穿的不符也留著、標 ⚠
+    const sex = role()?.sex, cur = S.slots[cat];
+    const opts = Object.keys(items()).filter(i => items()[i].cat === cat && isObj(items()[i].equip) && (sexOk(items()[i], sex) || i === cur));
+    const tile = (id, icon, lab) => h('div', {class: 'tile' + ((cur ?? '') === id ? ' sel' : ''), dataset: {id}, title: id || '卸下',
         onclick: () => {dlg.close(); setSlot(cat, id);}}, icon, h('div', {class: 'lab'}, lab));
     dlg.replaceChildren(
         h('div', {class: 'title'}, `選擇${name}`),
         h('div', {class: 'tiles'},
             tile('', emptyIcon(cat, 40), '卸下'),
-            opts.map(i => tile(i, IC.iconEl(items()[i].icon, 40), items()[i].lab ?? i))));
+            opts.map(i => tile(i, IC.iconEl(items()[i].icon, 40), `${sexOk(items()[i], sex) ? '' : '⚠ '}${items()[i].lab ?? i}`))));
     dlg.onclick = (e) => {if (e.target === dlg) dlg.close();};
     dlg.showModal();
 }
@@ -321,9 +324,10 @@ function numInput(file, id, path, ph, {req, after} = {})
 
 
 // file 裡 id 那筆的 base（裝備是 ['equip']、部位是 []）：女角的 scale/x/y 改 base[sx]，第一次改從基準複製
-function sexCells(file, id, base)
+// only＝道具／部位限定的性別（item.sex、part.sex）：遊戲不套 f，一律改基準
+function sexCells(file, id, base, only)
 {
-    const sx = sexKey(), e = getAt(S.doc[file].data[id], base) ?? {}, had = isObj(e[sx]);
+    const sx = only ? null : sexKey(), e = getAt(S.doc[file].data[id], base) ?? {}, had = isObj(e[sx]);
     const fill = () => {
         const eq = getAt(S.doc[file].data[id], base), o = eq[sx];
         eq[sx] = Object.fromEntries(SEX_NUMS.map(k => [k, o[k] ?? e[k]]).filter(([, v]) => v !== undefined));
@@ -333,16 +337,17 @@ function sexCells(file, id, base)
         : numInput(file, id, [...base, k], ph)));
 }
 
-const sexHead = (first) => {
-    const sx = sexKey();
+const sexHead = (first, only) => {
+    const sx = only ? null : sexKey();
     return h('tr', null, first.map(t => h('th', null, t)), NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（${sx}）` : k)));
 };
 
 function equipTable(id)
 {
-    const sx = sexKey(), has = sx && isObj(items()[id].equip?.[sx]);
+    const only = items()[id].sex, sx = only ? null : sexKey(), has = sx && isObj(items()[id].equip?.[sx]);
     return [
-        h('table', {class: 'fit'}, sexHead([]), h('tr', null, sexCells('item.json', id, ['equip']))),
+        h('table', {class: 'fit'}, sexHead([], only), h('tr', null, sexCells('item.json', id, ['equip'], only))),
+        only && h('div', {class: 'sexnote dim'}, `${SEX_NAMES[only] ?? only}：scale／x／y 是基準（不套女版 f）`),
         sx && h('div', {class: 'sexnote dim'}, has ? `scale／x／y 是 equip.${sx}（這個性別專用）` : `沒有 equip.${sx}，顯示的是共用值；改了就建立 equip.${sx}`,
             has && h('button', {class: 'delsex', onclick: () => commit(() => {delete items()[id].equip[sx];})}, '刪除女版')),
     ];
@@ -377,19 +382,22 @@ function fitView(r, slots)
     // 每個部位一個下拉挑 part.json 同 kind 的條目（寫 role.json，跟數字一起 undo）；沒挑的部位數字欄空著
     const partRows = PARTS.map(([k, name]) => {
         const pid = r[k], p = parts()[pid], n = pid ? usersOf(pid).length : 0;
-        const ids = Object.keys(parts()).filter(id => parts()[id].kind === k);
+        // 只列 sex 符合角色的；目前用的不符也留著、標 ⚠
+        const ids = Object.keys(parts()).filter(id => parts()[id].kind === k && sexOk(parts()[id], r.sex));
         const opts = pid && !ids.includes(pid) ? [...ids, pid] : ids;
+        const wrong = p && !sexOk(p, r.sex);
         // 這列有焦點＝畫布上選中這個部位（反過來畫布點了也會標這列）
         return onFocusIn(h('tr', {class: 'partrow' + (S.pick === k ? ' sel' : ''), dataset: {pick: k}},
             h('td', {class: 'k'}, name),
             h('td', null, h('select', {class: 'part', dataset: {k: `role.json|${S.rid}|${k}`},
                     onchange: (e) => commit(() => setAt(role(), [k], e.target.value || undefined))},
                     h('option', {value: '', selected: !pid}, '（無）'),
-                    opts.map(id => h('option', {value: id, selected: id === pid}, id))),
+                    opts.map(id => h('option', {value: id, selected: id === pid}, parts()[id] && !sexOk(parts()[id], r.sex) ? `⚠ ${id}` : id))),
                 pid && !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
+                wrong && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[p.sex] ?? p.sex}`),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
                 hide.has(k) && h('span', {class: `dim hidden-${k}`}, '（目前被裝備隱藏）')),
-            p ? sexCells('part.json', pid, []) : NUMS.map(() => h('td'))), () => pickQuiet(k));
+            p ? sexCells('part.json', pid, [], p.sex) : NUMS.map(() => h('td'))), () => pickQuiet(k));
     });
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
     return [
@@ -400,6 +408,7 @@ function fitView(r, slots)
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, name),
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? ''),
+                !sexOk(it, r.sex) && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[it.sex] ?? it.sex}`),
                 h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
                     onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮')]
                 : h('span', {class: 'dim'}, '（空）')),
