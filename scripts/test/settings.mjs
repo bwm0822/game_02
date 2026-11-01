@@ -22,7 +22,8 @@ run('settings', async t => {
         await write(json, 'item.json', '{}');
         const disk = async () => {
             const fh = await (await proj.getDirectoryHandle('tools').catch(() => null))?.getFileHandle('settings.json').catch(() => null);
-            return fh ? JSON.parse(await (await fh.getFile()).text()) : null;
+            const text = fh && await (await fh.getFile()).text();
+            return text ? JSON.parse(text) : null;
         };
 
         // 紙娃娃舊的 localStorage 有整包數字：第一次拿到專案（沒有 settings.json）就搬過去，localStorage 只剩介面狀態

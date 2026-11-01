@@ -10,6 +10,8 @@ import {str, setAt, replaceRaw, merge3} from '../common/obj.js';
 import {fieldInput, createForm} from '../common/form.js';
 import {renderDatalists} from '../common/views.js';
 import {ID_RE, scanRefsIn} from '../common/doc.js';
+import * as H from '../common/hist.js';
+import * as ST from '../common/settings.js';
 import * as IC from '../common/icons.js';
 import * as SC from './schema.js';
 
@@ -59,16 +61,21 @@ function commit(fn)
     const now = snap();
     if (str(now) !== prev)
     {
-        S.hist.length = S.hi + 1;
-        S.hist.push({data: now, before, after: pos()});
-        if (S.hist.length > 300) S.hist.shift();
-        S.hi = S.hist.length - 1;
+        if (H.take() && S.hi === S.hist.length - 1 && S.hi > 0) S.hist[S.hi] = {...S.hist[S.hi], data: now, after: pos()};
+        else
+        {
+            S.hist.length = S.hi + 1;
+            S.hist.push({data: now, before, after: pos()});
+            if (S.hist.length > 300) S.hist.shift();
+            S.hi = S.hist.length - 1;
+        }
     }
     render();
 }
 
 function restore(i, at)
 {
+    H.brk();
     S.hi = i;
     FILES.forEach((f, k) => {S.doc[f].data = JSON.parse(S.hist[i].data[k]);});
     Object.assign(S, at);
@@ -1004,7 +1011,10 @@ addEventListener('keydown', (e) => {
     SH.onSaved(onSaved);
     // 翻譯分頁的 ↗：path = [技能 id]；還沒讀檔就等 reload
     SH.onGoto(([id]) => {if (abs()[id]) select(id); else S.goto = id;});
-    SH.onProject(dir => setAssets(dir).catch(e => status(e.message)));
+    SH.onProject(async dir => {
+        await ST.load(dir).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
+        await setAssets(dir).catch(e => status(e.message));
+    });
 })();
 
 // 給無頭測試用

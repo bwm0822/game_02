@@ -3,6 +3,22 @@ import {h} from './dom.js';
 import {isObj, parseNum} from './obj.js';
 import * as IC from './icons.js';
 import * as JE from './jsonedit.js';
+import * as H from './hist.js';
+import * as ST from './settings.js';
+
+// 數字欄：↑↓／上下三角形照設定的步進跳（f＝欄位名，沒設定的 int 跳 1、num 'any'），空的先從灰字起跳；同一格連按併成一步 undo（hist.js）
+function numInput(k, f, type, val, ph, put)
+{
+    const arrow = (el) => {
+        H.arrow(k);
+        if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;
+    };
+    return h('input', {type: 'number', class: 'num', step: ST.step(f) ?? (type === 'int' ? 1 : 'any'), dataset: {k}, value: val ?? '', placeholder: ph ?? '',
+        onkeydown: e => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') arrow(e.target);},
+        onmousedown: e => {if (e.offsetX > e.target.clientWidth - 20) arrow(e.target);},
+        onkeyup: H.clear, onmouseup: H.clear,
+        onchange: e => put(parseNum(e.target.value))});
+}
 
 // put(v)：v 是 undefined 表示清空；k 是 data-k（重繪後還原焦點、combo 的 datalist 用最後一段）
 export function fieldInput(def, val, put, k)
@@ -21,18 +37,16 @@ export function fieldInput(def, val, put, k)
                 opts.map(o => h('option', {value: o, selected: o === (val ?? '')}, def.names?.[o] ? `${def.names[o]}${o ? `　${o}` : ''}` : o || '—')));
         }
         case 'int': case 'num':
-            return h('input', {class: 'num', inputmode: 'decimal', dataset: data, value: val ?? '', onchange: e => put(parseNum(e.target.value))});
+            return numInput(k, k.split('.').at(-1), def.type, val, '', put);
         // 一排數字（def.keys，如 x／y／a），存成物件：只寫有填的 key，全清空或按刪除＝刪掉整個；def.hint 是空格的灰字
         case 'nums':
         {
             const o = isObj(val) ? val : {};
-            const one = (c) => h('label', null, c, h('input', {class: 'num', inputmode: 'decimal', dataset: {k: `${k}.${c}`}, value: o[c] ?? '',
-                placeholder: def.hint?.[c] ?? '',
-                onchange: e => {
-                    const n = {...o, [c]: parseNum(e.target.value)};
-                    if (n[c] === undefined) delete n[c];
-                    put(Object.keys(n).length ? n : undefined);
-                }}));
+            const one = (c) => h('label', null, c, numInput(`${k}.${c}`, c, 'num', o[c], def.hint?.[c], v => {
+                const n = {...o, [c]: v};
+                if (n[c] === undefined) delete n[c];
+                put(Object.keys(n).length ? n : undefined);
+            }));
             return h('span', {class: 'nums'}, def.keys.map(one),
                 val !== undefined && h('button', {type: 'button', dataset: {del: k}, onclick: () => put(undefined)}, '刪除'));
         }

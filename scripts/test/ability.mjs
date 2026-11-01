@@ -465,6 +465,19 @@ run('ability', async t => {
     t.check('卡片 undo', r.hitsUndo);
     t.eq('加欄位 effects 直接加卡', r.addEff, '[{"type":"mod"}]');
     t.eq('加欄位叫出來的空列有刪除鈕、按了收回去、不改資料', JSON.stringify(r.drop), '[true,false,true]');
+
+    // 數字欄 ↑↓：同一格連按併成一步 undo（能力分頁自己的 commit）
+    const nk = await t.page.evaluate(() => {
+        window.__ab.select('fireball');
+        return [...document.querySelectorAll('#pv input[type=number]')].find(i => i.value !== '')?.dataset.k;
+    });
+    const nv = () => t.page.evaluate((k) => document.querySelector(`#pv input[data-k="${k}"]`).value, nk);
+    const n0 = await nv();
+    await t.page.focus(`#pv input[data-k="${nk}"]`);
+    await t.page.keyboard.press('ArrowUp'); await t.page.keyboard.press('ArrowUp');
+    const n2 = await nv();
+    await t.page.evaluate(() => window.__ab.undo());
+    t.check('↑↓：數字欄跳值、連按一步 undo', !!nk && n2 !== n0 && (await nv()) === n0, JSON.stringify([nk, n0, n2]));
     t.check('預覽 fmt 顯示公式', r.preview?.includes('10+1.5×'), r.preview);
     t.check('預覽 formula 換行', r.preview?.includes('\n'), r.preview);
     t.eq('預覽色塊數', r.chips, 2);

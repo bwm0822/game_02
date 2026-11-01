@@ -553,6 +553,39 @@ run('item', async t => {
     t.eq('女版：多的 key 警告', fv.warn, true);
     t.eq('加欄位：最上層空列能收回去、不改資料、強制顯示的沒鈕', JSON.stringify(fv.top), '[true,false,true,false]');
 
+    // 數字欄 ↑↓：照設定步進（scale 0.01、y 0.25、int 1），空的從灰字起跳，同一格連按併成一步 undo，點別的地方就斷開
+    const armorId = await t.page.evaluate(() => {
+        const ie = window.__ie, S = ie.S;
+        const id = Object.keys(S.items).find(k => S.items[k].cat === 'CAT_HELMET' && typeof S.items[k].equip?.scale === 'number' && typeof S.items[k].equip?.y === 'number' && !S.items[k].equip.f);
+        S.view = 'form'; S.json = false; S.sel = id; ie.render(); S.open.equip = true; ie.render();
+        return id;
+    });
+    const eq0 = await t.page.evaluate((id) => structuredClone(window.__ie.S.items[id]), armorId);
+    const press = async (k, sel, n = 1) => {await t.page.focus(`#view input[data-k="${sel}"]`); for (let i = 0; i < n; i++) await t.page.keyboard.press(k);};
+    const it = () => t.page.evaluate((id) => structuredClone(window.__ie.S.items[id]), armorId);
+    await press('ArrowUp', 'equip.scale', 3);
+    const a1 = await it();
+    await press('ArrowDown', 'equip.y');
+    const a2 = await it();
+    await press('ArrowUp', 'gold', 2);
+    const a3 = await it();
+    await t.page.evaluate(() => window.__ie.undo());
+    const u1 = await it();
+    await t.page.evaluate(() => window.__ie.undo());
+    const u2 = await it();
+    await t.page.evaluate(() => window.__ie.undo());
+    const u3 = await it();
+    const r2 = (v) => Math.round(v * 100) / 100;
+    t.eq('↑↓：scale 一下 0.01', r2(a1.equip.scale), r2(eq0.equip.scale + 0.03));
+    t.eq('↑↓：y 一下 0.25', a2.equip.y, eq0.equip.y - 0.25);
+    t.eq('↑↓：int 一下 1', a3.gold, (eq0.gold ?? 0) + 2);
+    t.eq('↑↓：同一格連按一步 undo、換格子斷開', JSON.stringify([u1.gold, u2.equip.y, u3.equip.scale]), JSON.stringify([eq0.gold, eq0.equip.y, eq0.equip.scale]));
+    t.eq('↑↓：重畫後焦點還在原格', await t.page.evaluate(() => document.activeElement?.dataset.k), 'gold');
+    await t.page.evaluate(() => {const ie = window.__ie, s = document.querySelector('#view select[data-k="equip.#add"]'); s.value = 'f'; s.dispatchEvent(new Event('change'));});
+    await press('ArrowUp', 'equip.f.scale');
+    t.eq('↑↓：空格從灰字（男版）起跳', r2((await it()).equip.f?.scale), r2(eq0.equip.scale + 0.01));
+    await t.page.evaluate(() => window.__ie.undo());
+
     // 右欄預覽：套在玩家角色、男女切換記住、沒 equip 有提示、總覽／沒選藏起來
     const pv = await t.page.evaluate(() => {
         const ie = window.__ie, S = ie.S, out = {};

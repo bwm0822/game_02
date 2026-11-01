@@ -4,6 +4,8 @@ import * as FS from './fs.js';
 import * as SH from './shell.js';
 import {$, h, ul, ask, status} from './dom.js';
 import {str, setAt, merge3} from './obj.js';
+import * as H from './hist.js';
+import * as ST from './settings.js';
 
 export const ID_RE = /^[A-Za-z0-9_-]+$/;
 
@@ -101,16 +103,21 @@ export function createDoc(opt)
         const now = str(S.data);
         if (now !== prev)
         {
-            S.hist.length = S.hi + 1;
-            S.hist.push({data: now, before, after: S.sel});
-            if (S.hist.length > 300) S.hist.shift();
-            S.hi = S.hist.length - 1;
+            if (H.take() && S.hi === S.hist.length - 1 && S.hi > 0) S.hist[S.hi] = {...S.hist[S.hi], data: now, after: S.sel};
+            else
+            {
+                S.hist.length = S.hi + 1;
+                S.hist.push({data: now, before, after: S.sel});
+                if (S.hist.length > 300) S.hist.shift();
+                S.hi = S.hist.length - 1;
+            }
         }
         render();
     }
 
     function undo()
     {
+        H.brk();
         if (S.hi <= 0) return;
         S.sel = S.hist[S.hi].before;
         S.data = JSON.parse(S.hist[--S.hi].data);
@@ -119,6 +126,7 @@ export function createDoc(opt)
 
     function redo()
     {
+        H.brk();
         if (S.hi >= S.hist.length - 1) return;
         const e = S.hist[++S.hi];
         S.data = JSON.parse(e.data);
@@ -309,7 +317,14 @@ export function createDoc(opt)
     }
 
     // onProject(dir)：要先處理再 setAssets 的工具自己接（翻譯分頁要先找出有哪些語言檔）
-    function start(onProject = setAssets)
+    // 預設先讀 tools/settings.json（數字欄步進）再讀資料
+    async function loadAll(dir)
+    {
+        await ST.load(dir).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
+        await setAssets(dir);
+    }
+
+    function start(onProject = loadAll)
     {
         SH.onSaved(onSaved);
         SH.onProject(dir => onProject(dir).catch(e => status(e.message)));
