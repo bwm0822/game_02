@@ -3,7 +3,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {portraitOf, toPng} from '../common/portrait.js';
-import {str, isObj, getAt, replaceRaw, parseNum} from '../common/obj.js';
+import {str, isObj, getAt, setAt, replaceRaw, parseNum} from '../common/obj.js';
 import {createDoc} from '../common/doc.js';
 import {fieldInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
@@ -146,23 +146,37 @@ function validate(id, keys = [])
 const validateAll = () => Object.keys(S.data).flatMap(id => validate(id).map(w => `${id}：${w}`));
 
 // ---------- 新增 ----------
-function add(id, kind)
+function add(id, kind, sex)
 {
     const err = D.idError(id);
     if (err) return status(err);
     const keys = Object.keys(S.data);
     const last = keys.findLastIndex(k => (S.data[k].kind ?? '') === (kind ?? ''));
-    commit(() => {D.insertAt(last < 0 ? keys.length : last + 1, id, SC.template(kind)); S.sel = id;});
+    commit(() => {D.insertAt(last < 0 ? keys.length : last + 1, id, SC.template(kind, sex)); S.sel = id;});
+}
+
+// 標準身體跟著換，專屬身體跟其他部位不動
+function setSex(id, sex)
+{
+    commit(() => {
+        const r = S.data[id];
+        setAt(r, ['sex'], sex);
+        if (SC.isStdBody(r.body)) r.body = SC.stdBody(sex);
+    });
 }
 
 async function askNew()
 {
     const id = h('input', {size: 24}), kind = h('select', null, SC.KINDS.map(k => h('option', {value: k}, `${SC.KIND_NAMES[k]}　${k}`)));
     kind.value = S.data[S.sel]?.kind ?? 'npc';
-    const p = ask('新角色', [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '分類'), kind),
+    const sexLab = h('span', {class: 'k'}, '性別'), sex = h('select', {dataset: {k: 'newSex'}}, h('option', {value: ''}, '男'), h('option', {value: 'f'}, '女'));
+    const syncSex = () => {sexLab.hidden = sex.hidden = !SC.HUMAN_KINDS.includes(kind.value);};
+    kind.onchange = syncSex;
+    syncSex();
+    const p = ask('新角色', [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '分類'), kind, sexLab, sex),
         h('div', {class: 'hint'}, '依分類套範本；要照現有角色改的話，選那個角色按「複製」')], [['ok', '新增'], ['cancel', '取消']]);
     id.focus();
-    if (await p === 'ok') add(id.value.trim(), kind.value);
+    if (await p === 'ok') add(id.value.trim(), kind.value, sex.value);
 }
 
 // ---------- 表單：一般欄位 ----------
@@ -196,7 +210,7 @@ function fieldRow(id, r, k)
     if (def.type === 'schedule') return schedBox(id, v);
     const lab = h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label);
     if (def.type === 'part') return [lab, F.withDrop(partField(id, k, v), id, k, v)];
-    const inp = fieldInput(def, v, val => set(id, [k], val), k);
+    const inp = fieldInput(def, v, val => (k === 'sex' ? setSex(id, val) : set(id, [k], val)), k);
     if (k === 'icon') inp.append(h('button', {type: 'button', disabled: !canPortrait(r), title: '頭＋頭髮照遊戲擺放疊起來，存成 textures/roles/portraits/portrait-<id>.png',
         onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭髮產生'));
     return [lab, F.withDrop(inp, id, k, v)];
@@ -569,6 +583,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, dup: D.dup,
+window.__re = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs};

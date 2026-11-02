@@ -298,4 +298,59 @@ run('role', async t => {
     t.check('限定：部位性別不符警告', sx.warn);
     t.eq('限定：部位建議／選圖器只列符合的、目前用的保留標 ⚠', JSON.stringify([sx.dl, sx.pick]), JSON.stringify([false, [false, true, true]]));
     t.eq('限定：裝備建議不列不符的、穿著不符警告＋標紅', JSON.stringify([sx.eqDl, sx.eqWarn]), JSON.stringify([false, [true, true]]));
+
+    // 新角色選性別（人形範本才有）；表單改性別時標準身體跟著換、專屬身體不動
+    const g = await t.page.evaluate(async () => {
+        const re = window.__re, S = re.S, out = {}, dlg = document.getElementById('dlgAsk');
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const askNew = async (id, kind, sex) => {
+            const p = re.askNew();
+            for (let i = 0; i < 200 && !dlg.open; i++) await sleep(20);
+            const k = dlg.querySelector('select:not([data-k])'), s = dlg.querySelector('[data-k="newSex"]');
+            k.value = 'monster'; k.dispatchEvent(new Event('change'));
+            out.hiddenBeast = s.hidden;
+            k.value = kind; k.dispatchEvent(new Event('change'));
+            out.hiddenHuman = s.hidden;
+            s.value = sex;
+            dlg.querySelector('input').value = id;
+            dlg.close('ok');
+            await p;
+        };
+        const part = (r) => [r.sex, r.body, r.handF, r.handB];
+        await askNew('new_f', 'rogue', 'f');
+        out.female = part(S.data.new_f);
+        out.femaleWarn = re.validate('new_f').length;
+        await askNew('new_m', 'npc', '');
+        out.male = [...part(S.data.new_m), 'sex' in S.data.new_m];
+        re.add('new_beast', 'monster', 'f');
+        out.beast = [S.data.new_beast.sex, S.data.new_beast.body === 'body-woman', S.data.new_beast.handF];
+
+        const pickSex = (id, v) => {
+            S.view = 'form'; S.json = false; S.sel = id; S.secOpen['外觀'] = true; re.render();
+            const sel = document.querySelector('#view select[data-k="sex"]');
+            sel.value = v;
+            sel.dispatchEvent(new Event('change'));
+        };
+        pickSex('new_m', 'f');
+        out.toF = [S.data.new_m.sex, S.data.new_m.body];
+        re.undo();
+        out.undo = [S.data.new_m.sex, S.data.new_m.body];
+        pickSex('new_f', '');
+        out.toDefault = ['sex' in S.data.new_f, S.data.new_f.body];
+        re.set('new_m', ['body'], 'rogue');
+        pickSex('new_m', 'f');
+        out.custom = [S.data.new_m.sex, S.data.new_m.body];
+        out.fields = [re.SC.shownFields({kind: 'rogue'}).includes('sex'), re.SC.shownFields({kind: 'monster'}).includes('sex')];
+        return out;
+    });
+    t.eq('新角色：選怪物藏性別、選人形顯示', JSON.stringify([g.hiddenBeast, g.hiddenHuman]), JSON.stringify([true, false]));
+    t.eq('新角色：女角放女身體＋前後手', JSON.stringify(g.female), JSON.stringify(['f', 'body-woman', 'handF', 'handB']));
+    t.eq('新角色：女角範本沒有警告', g.femaleWarn, 0);
+    t.eq('新角色：男角不寫 sex、放男身體＋前後手', JSON.stringify(g.male), JSON.stringify([null, 'body-man', 'handF', 'handB', false]));
+    t.eq('新角色：獸形範本不吃性別', JSON.stringify(g.beast), JSON.stringify([null, false, null]));
+    t.eq('改性別：標準身體跟著換', JSON.stringify(g.toF), JSON.stringify(['f', 'body-woman']));
+    t.eq('改性別：一筆 undo 一起復原', JSON.stringify(g.undo), JSON.stringify([null, 'body-man']));
+    t.eq('改性別：女改回預設刪 sex、換男身體', JSON.stringify(g.toDefault), JSON.stringify([false, 'body-man']));
+    t.eq('改性別：專屬身體不動', JSON.stringify(g.custom), JSON.stringify(['f', 'rogue']));
+    t.eq('性別欄：盜賊固定顯示、怪物不顯示', JSON.stringify(g.fields), JSON.stringify([true, false]));
 });

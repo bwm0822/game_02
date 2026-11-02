@@ -84,7 +84,7 @@ const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
     player: ['sex', 'job', 'gold', 'survival', 'inv', 'handF', 'handB', 'head', 'hair'],
     npc: ['sex', 'loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
-    rogue: FIGHTER, monster: FIGHTER, boss: FIGHTER,
+    rogue: ['sex', ...FIGHTER], monster: FIGHTER, boss: FIGHTER,
     animal: ['style', 'animal', 'attrs', 'meat', 'skin', 'fall'],
 };
 
@@ -135,20 +135,23 @@ export const colDef = (c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?
 
 // ---------- 新角色 ----------
 const box = () => ({l: 0, r: 0, t: 32, b: 0});
-const HUMAN = () => ({faceR: true, anchor: {x: 0, y: 16}, w: 32, h: 64, b: box(), g: box(), z: box(),
-                      body: 'body-man'});
+export const HUMAN_KINDS = ['player', 'npc', 'rogue'];
+export const stdBody = (sex) => (sex === 'f' ? 'body-woman' : 'body-man');
+export const isStdBody = (body) => body === stdBody('m') || body === stdBody('f');
+const HUMAN = (sex) => ({...(sex === 'f' && {sex}), faceR: true, anchor: {x: 0, y: 16}, w: 32, h: 64, b: box(), g: box(), z: box(),
+                         body: stdBody(sex), handF: 'handF', handB: 'handB'});
 const BEAST = () => ({faceR: false, anchor: {x: -16, y: 16}, w: 64, h: 64, b: box(), g: box(), z: box(),
                       body: 'animals-42', fall: 180});
 const ATTRS = () => ({attrs: {atk: 5, def: 0}});
 
-export function template(kind)
+export function template(kind, sex)
 {
     const lab = '新角色';
     switch (kind)
     {
-        case 'player': return {kind, lab, gold: 100, survival: true, ...HUMAN(), inv: {storage: {capacity: 20}}};
-        case 'npc': return {kind, loc: 'brooklyn', lab, gold: 200, unique: true, ...HUMAN(), inv: {storage: {capacity: -1, items: []}}, schedule: []};
-        case 'rogue': return {kind, lab, gold: 200, ...HUMAN(), inv: {equips: []}, ...ATTRS()};
+        case 'player': return {kind, lab, gold: 100, survival: true, ...HUMAN(sex), inv: {storage: {capacity: 20}}};
+        case 'npc': return {kind, loc: 'brooklyn', lab, gold: 200, unique: true, ...HUMAN(sex), inv: {storage: {capacity: -1, items: []}}, schedule: []};
+        case 'rogue': return {kind, lab, gold: 200, ...HUMAN(sex), inv: {equips: []}, ...ATTRS()};
         case 'animal': return {kind, lab, style: 'skittish', animal: true, ...BEAST(), ...ATTRS()};
         default: return {kind, lab, gold: 200, ...BEAST(), ...ATTRS()};
     }

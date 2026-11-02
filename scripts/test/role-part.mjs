@@ -77,8 +77,8 @@ run('role-part', async t => {
         out.portrait = [bmp.width, bmp.height, c.getContext('2d').getImageData(50, 50, 1, 1).data[3] > 0, S.data.karen.icon];        S.data.karen.icon = 'head-karen'; re.render();
         out.overwrite = await run(re.genPortrait('karen'), () => 'cancel');
         out.kept = S.data.karen.icon;
-        sel('musk');
-        const btn = [...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭髮產生');
+        sel(Object.keys(S.data).find(k => S.data[k].kind === 'npc' && !S.data[k].head));
+        const btn =[...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭髮產生');
         out.noHeadBtn = btn?.disabled;
         return out;
     });
