@@ -184,7 +184,6 @@ async function save()
 // 別的分頁存了檔：沒改過就重讀（undo 紀錄從現在重算），改過就只提示（存檔時會合併）
 async function onSaved(file)
 {
-    if (file === 'textures.json') return drawPreview();
     if (!FILES.includes(file) || !S.json) return;
     if (dirtyOf(file)) return status(`${file} 在別的分頁存過了，存檔時會合併`);
     await load(file);
@@ -1076,6 +1075,7 @@ addEventListener('keydown', (e) => {
     if (e.ctrlKey && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); redo();}
 });
 SH.onSaved((file) => onSaved(file).catch(e => status(e.message)));
+IC.onReload(() => drawPreview().catch(e => status(e.message)));
 // 部位分頁改名：還沒存的檔先在記憶體跟著改（沒改過的會因為存檔通知重讀）
 SH.onPartRenamed((from, to) => {
     const pd = dirtyOf('part.json'), rd = dirtyOf('role.json');

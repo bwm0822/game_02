@@ -160,7 +160,6 @@ const loadFx = () => fetch('/assets/json/fx.json', {cache: 'no-store'}).then(r =
 
 async function onSaved(file)
 {
-    if (file === 'textures.json') return IC.ready.then(render);
     if (file === 'fx.json') {S.fx = await loadFx(); return render();}
     if (!FILES.includes(file) || !S.assets) return;
     if (dirtyOf(file)) return status(`${file} 在別的分頁存過了，存檔時會合併`);
@@ -1009,6 +1008,7 @@ addEventListener('keydown', (e) => {
     render();
     IC.ready.then(render);
     SH.onSaved(onSaved);
+    IC.onReload(render);
     // 翻譯分頁的 ↗：path = [技能 id]；還沒讀檔就等 reload
     SH.onGoto(([id]) => {if (abs()[id]) select(id); else S.goto = id;});
     SH.onProject(async dir => {

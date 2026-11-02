@@ -518,8 +518,8 @@ addEventListener('keydown', (e) => {
 $('search').oninput = (e) => {S.search = e.target.value; render();};
 SH.onSaved((file) => {
     if (file === 'part.json' || file === 'role.json') act(reload());
-    if (file === 'textures.json') IC.ready.then(render);
 });
+IC.onReload(render);
 SH.onGoto(([pid]) => {S.sel = pid; S.filter = 'all'; render();});
 SH.onProject((dir) => act(setRoot(dir)));
 render();

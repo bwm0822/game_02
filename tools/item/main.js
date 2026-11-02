@@ -20,12 +20,12 @@ const D = createDoc({
         if (file === 'fx.json') loadKeys(file).then(fx => {S.fx = fx; render();});
         if (file === 'anim.json') loadKeys(file).then(a => {S.anims = a; render();});
         if (file === 'role.json' || file === 'part.json') loadJson(file).then(o => {S[file === 'role.json' ? 'roles' : 'parts'] = o; render();});
-        if (file === 'textures.json') render();
     },
 });
 const loadJson = (file) => fetch(`/assets/json/${file}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
 const loadKeys = (file) => loadJson(file).then(Object.keys);
 const {S, render, commit, set} = D;
+IC.onReload(render);
 Object.defineProperty(S, 'items', {get: () => S.data, set: (v) => {S.data = v;}});
 S.fx = [];
 S.anims = null;

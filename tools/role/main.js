@@ -24,10 +24,10 @@ const D = createDoc({
     innerRefs: () => [], renameRefs: () => {},
     onSaved: (file) => {
         if (file === 'item.json' || file === 'part.json') loadRefs().then(render);
-        if (file === 'textures.json') render();
     },
 });
 const {S, render, commit, set} = D;
+IC.onReload(render);
 S.ext = {items: {}, abilities: {}, maps: {}, parts: {}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
 S.loc = '';                                      // 總覽表 NPC 頁的地點篩選
 S.secOpen = {};                                  // 表單段落開關（段名 → bool，預設收合；記在頁面，換角色保持）

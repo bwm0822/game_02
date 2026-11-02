@@ -110,15 +110,43 @@ run('textures', async t => {
         c.onmessage = (e) => res(e.data);
         setTimeout(() => res(null), 10000);
     }));
+    // 角色分頁的 icon 指向這張圖：清單重載完要自己重畫，不用切角色警告才消失
+    await t.page.evaluate(async () => {
+        const T = window.__tools, opfs = await navigator.storage.getDirectory();
+        for await (const name of opfs.keys()) await opfs.removeEntry(name, {recursive: true});
+        const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
+        const proj = await dir(opfs, 'game'), json = await dir(proj, 'public', 'assets', 'json');
+        await dir(proj, 'public', 'assets', 'textures');
+        await dir(proj, 'images');
+        const write = async (name, data) => {const w = await (await json.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        await write('item.json', '{}');
+        await write('role.json', JSON.stringify({r1: {kind: 'npc', icon: '__watch_test'}}, null, 2));
+        await T.setProject(proj);
+        T.show('role');
+    });
+    await t.page.waitForFunction(() => window.__tools.S.frames.role?.contentWindow.__re?.S.data.r1, {timeout: 10000});
+    await t.page.evaluate(() => {
+        const re = window.__tools.S.frames.role.contentWindow.__re;
+        re.S.sel = 'r1';
+        re.S.view = 'form';
+        re.render();
+    });
+    const iconWarn = (want) => t.page.waitForFunction((want) => {
+        const warns = window.__tools.S.frames.role.contentWindow.document.querySelector('.warns');
+        return !!warns?.textContent.includes('「__watch_test」') === want;
+    }, {timeout: 5000}, want).then(() => true, () => false);
+    t.check('清單沒有的圖：角色分頁有警告', await iconWarn(true));
     try
     {
         let h = listen();
         fs.copyFileSync('./public/assets/textures/icons/icons.png', NEW);
         t.eq('新增圖自動廣播', (await h)?.file, 'textures.json');
         t.check('新圖進清單', '__watch_test' in JSON.parse(fs.readFileSync('./public/assets/json/textures.json', 'utf8')).image);
+        t.check('清單重載完：角色分頁的警告自己消失', await iconWarn(false));
         h = listen();
         fs.rmSync(NEW);
         t.eq('刪除圖自動廣播', (await h)?.file, 'textures.json');
+        t.check('圖刪掉：角色分頁的警告自己回來', await iconWarn(true));
     }
     finally {if (fs.existsSync(NEW)) fs.rmSync(NEW);}
     t.check('刪掉後清單復原', fs.readFileSync('./public/assets/json/textures.json', 'utf8') === before);

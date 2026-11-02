@@ -33,7 +33,15 @@ async function loadList()
     }
 }
 await loadList();
-onSaved((file) => {if (file === 'textures.json') loadList().then(() => {cache.clear();});});
+const reloadFns = [];
+// 清單重載完才呼叫，重畫要接這個：收到 textures.json 廣播的當下 IMAGES 還是舊的
+export const onReload = (fn) => reloadFns.push(fn);
+onSaved((file) => {
+    if (file === 'textures.json') loadList().then(() => {
+        cache.clear();
+        for (const fn of reloadFns) fn();
+    });
+});
 
 const cache = new Map();       // url → {p: Promise<img|null>, img, failed}
 function load(url)
