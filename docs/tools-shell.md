@@ -19,7 +19,7 @@
 
 ## 更新圖片清單
 
-殼上方的「更新圖片清單」：`POST /__tools/textures`（`vite/config.dev.mjs` 的 `tools-api` plugin，server 端直接呼叫 `scripts/textures.js` 的 `run()`），成功就廣播 `{type:'saved', file:'textures.json'}`，各工具的選圖器（`icons.js`）重讀；失敗（撞名、格子衝突…）把錯誤顯示在狀態列，不寫檔。不用專案資料夾。遊戲要重新整理才會載到新圖。
+殼上方的「更新圖片清單」：`POST /__tools/textures`（`vite/config.dev.mjs` 的 `tools-api` plugin，server 端直接呼叫 `scripts/textures.js` 的 `run()`），成功就廣播 `{type:'saved', file:'textures.json'}`，各工具的選圖器（`icons.js`）重讀；分頁要重畫接 `IC.onReload(fn)`（重讀完才呼叫），別在 `onSaved` 收到 `textures.json` 就畫，那時清單還是舊的；失敗（撞名、格子衝突…）把錯誤顯示在狀態列，不寫檔。不用專案資料夾。遊戲要重新整理才會載到新圖。
 
 平常不用按：`tools-api` 也掛 `server.watcher`，`textures/` 底下（不含 `.tbd/`、`minimap/`、`maps/`）的圖／`_sheet.json`／`_atlas.json` 新增、刪除、修改時 debounce 300ms 跑 `run()`，結果用 vite ws 自訂事件 `tools:textures` 推給殼（`import.meta.hot.on`），殼照按鈕的流程廣播。`run()` 回報 `changed`，清單內容沒變就不寫檔、狀態列不吭聲，但仍廣播讓選圖器重載被覆蓋的圖。按鈕留著當備援。
 
