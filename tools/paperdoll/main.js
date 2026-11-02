@@ -436,7 +436,7 @@ const AUTO_FF = ['scale', 'x', 'y'];
 // 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
 const AUTO_DEF = ST.DEF.auto;
 const AUTO_KEY = 'paperdoll.auto';
-const AUTO_UI = ['cls', 'split', 'kind', 'headLink'];
+const AUTO_UI = ['cls', 'split', 'kind', 'headLink', 'headSmall'];
 const AUTO_NUM = [...AUTO_PARTS.filter(P => P.kind !== 'weapon').map(P => P.key), 'weapon', 'f'];
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 舊格式 weapon 直接放數字：複製到每個分類
@@ -448,7 +448,7 @@ const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k),
 const AUTO_SPLIT = {true: 'split', false: 'none'};
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
                           split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
-                          headLink: v?.headLink ?? true,
+                          headLink: v?.headLink ?? true, headSmall: v?.headSmall ?? true,
                           f: Object.fromEntries(AUTO_PARTS.filter(P => AUTO_SEXED.includes(P.kind)).map(P => [P.key, femaleFrom(P, v)]))});
 // 舊格式沒有 scale（當時固定 0.25）；女版以前有自己的 pct，換成同一張 PNG 的 scale＝0.25 × 女pct ÷ 男pct
 function femaleFrom(P, v)
@@ -491,6 +491,7 @@ function autoSet(v)
     }
     for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     $('au-link').checked = S.auto.headLink;
+    $('au-small').checked = S.auto.headSmall;
     $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
@@ -638,9 +639,11 @@ function autoPlan(L, kind)
 {
     const T = {src: L.src, ops: L.ops};
     pushOp(T, {type: 'alpha', t: AUTO_ALPHA});
-    const split = (erode) => {
+    // inner：落在大塊外接框裡的小塊也留（前額髮絲去綠後是一堆孤島，門檻又是照左邊整張臉算的）
+    const split = (erode, inner = false) => {
         const all = PX.blobs(T.canvas, trimT(), erode), big = Math.max(0, ...all.map(b => b.n));
-        return all.filter(b => b.n >= big * AUTO_NOISE);
+        const main = all.filter(b => b.n >= big * AUTO_NOISE);
+        return inner ? all.filter(b => main.some(M => b.x >= M.x && b.y >= M.y && b.x1 <= M.x1 && b.y1 <= M.y1)) : main;
     };
     const part = (P, mine, erode) => {
         const x0 = Math.min(...mine.map(b => b.x)), y0 = Math.min(...mine.map(b => b.y));
@@ -656,7 +659,7 @@ function autoPlan(L, kind)
     const W = T.canvas.width, H = T.canvas.height;
     if (kind === 'head')
     {
-        const blobs = split(0), left = (b) => b.cx < W / 2, both = blobs.some(left) && !blobs.every(left);
+        const blobs = split(0, S.auto.headSmall), left = (b) => b.cx < W / 2, both = blobs.some(left) && !blobs.every(left);
         const plan = [], skipped = [];
         // 頭髮先建，疊在頭上面
         for (const P of autoParts(kind).reverse())
@@ -2766,8 +2769,9 @@ function refreshAuto(m)
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
+    $('au-small').disabled = !!m.parts;
     for (const [k, ids] of [['armor', ['auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
-                            ['head', ['auHead', 'auHintHead']], ['outfit', ['auHintOutfit']]])
+                            ['head', ['auHead', 'auSmallL', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
     $('auTable').hidden = !AUTO_SEXED.includes(m.kind);
     for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
@@ -5122,6 +5126,12 @@ document.querySelectorAll('[name=auKind]').forEach(r => {r.onchange = () => {
     if (m.type === 'auto' && !m.parts) S.mode = autoEnter(m.layer) ?? {type: 'move'};
     refreshAll();
 };});
+$('au-small').onchange = () => {
+    autoSet({...S.auto, headSmall: $('au-small').checked});
+    const m = S.mode;
+    if (m.type === 'auto' && !m.parts) S.mode = autoEnter(m.layer) ?? {type: 'move'};
+    refreshAll();
+};
 document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
     autoSet({...S.auto, split: r.value});
     autoSpSync(S.mode);

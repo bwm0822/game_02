@@ -1005,7 +1005,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動：數字只存跟內建不一樣的進 tools/settings.json、localStorage 只剩介面狀態', JSON.stringify(au.stored),
-         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,kind,split']));
+         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,headSmall,kind,split']));
     t.eq('自動：進模式什麼都不動、確定可以按', JSON.stringify(au.enter), JSON.stringify(['auto', true, true, false]));
     t.eq('自動：還沒拆時取消＝離開', JSON.stringify(au.revokeEarly), JSON.stringify(['move', true]));
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
@@ -1115,7 +1115,7 @@ run('paperdoll', async t => {
     t.eq('男女：undo 連性別一起退、兩組數字各自還原', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3]));
     t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
-    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,kind,split']));
+    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,headSmall,kind,split']));
     t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
@@ -1892,6 +1892,28 @@ run('paperdoll', async t => {
         $('auReset').click();
         out.reset = [pd.S.auto.head.pct, pd.S.auto.helmet.pct, pd.S.auto.headLink];
         pd.cancelMode();
+
+        // 保留框內小塊：綠洞裡的髮絲留、框外的雜點丟；還沒拆時切換就重算，拆完反灰
+        const c3 = document.createElement('canvas'); c3.width = 200; c3.height = 100;
+        const g3 = c3.getContext('2d');
+        g3.fillStyle = '#e0a070'; g3.fillRect(20, 20, 60, 60);
+        g3.fillStyle = '#663311'; g3.fillRect(120, 10, 70, 50);
+        g3.fillStyle = '#00ff00'; g3.fillRect(140, 25, 30, 25);
+        g3.fillStyle = '#663311'; g3.fillRect(150, 35, 3, 3); g3.fillRect(150, 85, 3, 3);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(await createImageBitmap(c3), 'strand', null, null);
+        pd.autoSet({kind: 'head', head: {pct: 100}, hair: {pct: 100}});
+        pd.setMode('auto');
+        const hairPts = () => pd.S.mode.plan.find(b => b.P.key === 'hair').keep.pts.length;
+        const toggle = (on) => {$('au-small').checked = on; $('au-small').dispatchEvent(new Event('change'));};
+        out.small = [$('auSmallL').hidden, $('au-small').checked, hairPts()];
+        toggle(false);
+        out.smallOff = [pd.S.auto.headSmall, hairPts()];
+        toggle(true);
+        pd.applyMode();
+        const H3 = pd.S.mode.parts.find(p => p.P.key === 'hair').C;
+        out.smallMade = [H3.canvas.height, alpha(H3.canvas, 31, 26) > 128, $('au-small').disabled];
+        pd.cancelMode();
         pd.autoSet({});
         return out;
     });
@@ -1919,6 +1941,9 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：只有一塊就全部當頭、頭髮反灰', JSON.stringify(ah.bald),
          JSON.stringify(['head-bald', true, false, '自動拆出 head-bald；只有一邊有東西，全部當頭、沒有頭髮']));
     t.eq('自動（頭像）：還原預設只還原頭、頭髮（連 🔗）', JSON.stringify(ah.reset), JSON.stringify([18, 28, true]));
+    t.eq('自動（頭像）：保留框內小塊預設開，框內髮絲留、框外雜點丟', JSON.stringify(ah.small), JSON.stringify([false, true, 2]));
+    t.eq('自動（頭像）：關掉保留框內小塊立刻重算', JSON.stringify(ah.smallOff), JSON.stringify([false, 1]));
+    t.eq('自動（頭像）：拆出來有髮絲、沒框外雜點，拆完勾選反灰', JSON.stringify(ah.smallMade), JSON.stringify([50, true, true]));
 
     // 自動（服飾）：左上頭丟掉、左下衣服、右下鞋子（右上空），自動標 pool、男女兩組
     const ao = await ev(async () => {
