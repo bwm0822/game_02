@@ -166,7 +166,9 @@
     "head": "head-trump",
     "hair": "hair-trump",
     "shoes": "shoes-outfit-innkeeper",
-    "cloth": "cloth-outfit-innkeeper"
+    "cloth": "cloth-outfit-innkeeper",
+    "handF": "handF",
+    "handB": "handB"
   },
   "melanie": {
     "kind": "npc",
@@ -246,7 +248,7 @@
     "loc": "brooklyn",
     "lab": "馬斯克",
     "des": "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席",
-    "icon": "head-musk",
+    "icon": "portrait-musk",
     "job": "smith",
     "gold": 200,
     "trade": true,
@@ -276,7 +278,7 @@
       "t": 32,
       "b": 0
     },
-    "body": "musk",
+    "body": "body-man",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -324,7 +326,11 @@
         "go": "bed",
         "map": "m_04x05/musk-home"
       }
-    ]
+    ],
+    "head": "head-musk",
+    "hair": "hair-musk",
+    "handF": "handF",
+    "handB": "handB"
   },
   "karen": {
     "kind": "npc",
@@ -744,6 +750,97 @@
         "do": "idle"
       }
     ]
+  },
+  "kidman": {
+    "kind": "npc",
+    "loc": "brooklyn",
+    "lab": "妮可基嫚",
+    "gold": 200,
+    "unique": true,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "sex": "f",
+    "head": "head-kidman",
+    "hair": "hair-kidman",
+    "icon": "portrait-kidman",
+    "handF": "handF",
+    "handB": "handB"
+  },
+  "jobs": {
+    "kind": "npc",
+    "loc": "brooklyn",
+    "lab": "賈伯斯",
+    "gold": 200,
+    "unique": true,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "head": "head-jobs",
+    "hair": "hair-jobs",
+    "icon": "portrait-jobs",
+    "handF": "handF",
+    "handB": "handB"
   },
   "rogue-1": {
     "kind": "rogue",

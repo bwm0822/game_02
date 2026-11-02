@@ -158,6 +158,21 @@
     "x": -3,
     "y": 4
   },
+  "head-musk": {
+    "kind": "head",
+    "sprite": "head-musk",
+    "scale": 0.25,
+    "x": -3,
+    "y": 4
+  },
+  "head-kidman": {
+    "kind": "head",
+    "sprite": "head-kidman",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "sex": "f"
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -189,7 +204,8 @@
     "sprite": "trump-hair",
     "scale": 0.25,
     "x": -1.75,
-    "y": -0.75
+    "y": -0.75,
+    "sex": "m"
   },
   "hair-jobs": {
     "kind": "hair",
@@ -197,6 +213,21 @@
     "scale": 0.25,
     "x": -3,
     "y": -12.5
+  },
+  "hair-musk": {
+    "kind": "hair",
+    "sprite": "hair-musk",
+    "scale": 0.25,
+    "x": -3,
+    "y": -11.5
+  },
+  "hair-kidman": {
+    "kind": "hair",
+    "sprite": "hair-kidman",
+    "scale": 0.25,
+    "x": -0.75,
+    "y": 4,
+    "sex": "f"
   },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
