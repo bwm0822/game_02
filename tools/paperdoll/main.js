@@ -147,6 +147,32 @@ function duplicateLayer()
     status(`複製圖層 ${L.name} → ${C.name}`);
 }
 
+let poseClip = null;
+
+function copyPose()
+{
+    const L = S.active;
+    if (!L) return;
+    const {x, y, scale, a, ox, oy} = L;
+    poseClip = {x, y, scale, a, ox, oy};
+    refreshProps();
+    status(`複製 ${L.name} 的擺放`);
+}
+
+// 直接寫數字、不走 setOrigin：setOrigin 會補償 x／y，就貼不准了
+function pastePose()
+{
+    const L = S.active;
+    if (!canPastePose(L)) return;
+    const G = unpinned(linked(L));
+    hist.push({group: G.map(M => hist.snap(M))});
+    for (const M of G) Object.assign(M, poseClip);
+    refreshAll();
+    status(`貼上擺放到 ${L.name}`);
+}
+
+const canPastePose = (L) => !!(L && poseClip && S.mode.type === 'move' && !pinned(L));
+
 function mergeDown()
 {
     const L = S.active, below = S.layers[S.layers.indexOf(L) - 1];
@@ -2748,6 +2774,8 @@ function refreshProps()
     const L = S.active;
     const pin = L && pinned(L);
     PROP_IDS.forEach(id => {$(id).disabled = !L || pin && id !== 'pOp';});
+    $('btnPoseCopy').disabled = !L;
+    $('btnPosePaste').disabled = !canPastePose(L);
     $('pName').textContent = L ? `${join(L.path ?? '', L.name)}.png　原圖 ${L.src.width}×${L.src.height} → ${L.canvas.width}×${L.canvas.height}（${L.ops.length} 步）`
                                  + (pin ? `　照 part.json 的 ${L.poolId ?? L.name} 擺放，去部位／試穿分頁改` : '')
                                  + (S.doll.sex === 'f' && femAble(L) && !hasFem(L) ? '　♀沒有女版，改的是基準（男女共用）' : '')
@@ -4878,6 +4906,8 @@ $('dollF').onclick = () => setDoll({sex: 'f'});
 $('dollHead').onchange = () => setDoll({head: $('dollHead').checked});
 $('dollHair').onchange = () => setDoll({hair: $('dollHair').checked});
 $('btnDup').onclick = duplicateLayer;
+$('btnPoseCopy').onclick = copyPose;
+$('btnPosePaste').onclick = pastePose;
 $('btnMergeDown').onclick = mergeDown;
 $('btnMergeVisible').onclick = mergeVisible;
 $('btnUndo').onclick = undo;

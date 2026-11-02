@@ -784,6 +784,57 @@ run('paperdoll', async t => {
     t.eq('複製：undo 拿掉副本', m.dupUndo, 'A,B');
     t.eq('合併：scale 不同取最小的、畫面不變', JSON.stringify(m.mixed), JSON.stringify([0.25, 20, 8, '255,0,0,255', '0,0,255,255']));
 
+    // 複製／貼上擺放
+    const pose = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const copy = $('btnPoseCopy'), paste = $('btnPosePaste');
+        const sq = (n) => {const c = document.createElement('canvas'); c.width = c.height = n; c.getContext('2d').fillRect(0, 0, n, n); return createImageBitmap(c);};
+        const nums = (L) => [L.x, L.y, L.scale, L.a, L.ox, L.oy];
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.select(null);
+        out.none = [copy.disabled, paste.disabled];
+
+        const A = Object.assign(pd.addLayer(await sq(10), 'A', null, null), {x: 3, y: 4, scale: 0.5, a: 30, ox: 0.2, oy: 0.7});
+        const B = pd.addLayer(await sq(20), 'B', null, null);
+        pd.select(A);
+        copy.click();
+        A.x = 99;
+        pd.select(B);
+        const before = nums(B);
+        paste.click();
+        out.pasted = nums(B);
+        pd.undo();
+        out.undo = JSON.stringify(nums(B)) === JSON.stringify(before);
+        out.source = A.x;
+        pd.select(B);
+        pd.setMode('crop');
+        out.mode = [copy.disabled, paste.disabled];
+        pd.cancelMode();
+        out.left = paste.disabled;
+
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160);
+        g.strokeStyle = '#000'; g.lineWidth = 4; g.strokeRect(22, 22, 156, 156);
+        g.fillStyle = '#000'; g.fillRect(20, 78, 160, 4); g.fillRect(68, 80, 4, 100);
+        const H = pd.addLayer(await createImageBitmap(c), 'hood', null, null);
+        pd.select(H);
+        pd.setMode('split');
+        pd.S.mode.start = {x: 100, y: 100};
+        pd.splitRun(pd.S.mode);
+        pd.applyMode();
+        paste.click();
+        out.linked = ['hood', 'hood-front', 'hood-back'].map(n => nums(pd.S.layers.find(L => L.name === n)));
+        return out;
+    });
+    const posed = [3, 4, 0.5, 30, 0.2, 0.7];
+    t.eq('擺放：沒選圖層兩顆都反灰', JSON.stringify(pose.none), JSON.stringify([true, true]));
+    t.eq('擺放：六個數字照寫（不補償 x／y）', JSON.stringify(pose.pasted), JSON.stringify(posed));
+    t.check('擺放：貼上一筆 undo', pose.undo);
+    t.eq('擺放：複製的是當下的值，來源之後改不影響', pose.source, 99);
+    t.eq('擺放：模式中可複製、貼上反灰，離開恢復', JSON.stringify([...pose.mode, pose.left]), JSON.stringify([false, true, false]));
+    t.eq('擺放：前後片連動層一起貼', JSON.stringify(pose.linked), JSON.stringify([posed, posed, posed]));
+
     t.eq('載入的圖層預設 scale 0.25', r.loadScale, 0.25);
     t.eq('載入：尺寸', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
     t.eq('trim 後內容不跳位', JSON.stringify(r.trim), JSON.stringify({w: 80, h: 40, x: 8, y: 27}));
@@ -3412,6 +3463,8 @@ run('paperdoll', async t => {
         pd.select(B);
         out.badge = [...document.querySelectorAll('#layers .layer .tag')].map(b => b.textContent).join();
         out.props = [$('pX').disabled, $('pS').disabled, $('pOp').disabled];
+        $('btnPoseCopy').click();
+        out.poseBtn = [$('btnPoseCopy').disabled, $('btnPosePaste').disabled];
         document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft', bubbles: true}));
         pd.setMode('scale');
         out.locked = [B.x, pd.S.mode.type];
@@ -3435,7 +3488,8 @@ run('paperdoll', async t => {
     t.eq('參考人偶：只有對到條目的鎖住', JSON.stringify(ds.pinned), JSON.stringify([true, true, false, false]));
     t.eq('參考人偶：徽章 ⚠（圖跟遊戲 PNG 不一樣大／沒對到）', ds.badge, '♀身⚠,♂頭,♂身⚠');
     t.eq('參考人偶：屬性欄停用（不透明度除外）', JSON.stringify(ds.props), JSON.stringify([true, true, false]));
-    t.eq('參考人偶：方向鍵不動、不能進縮放', JSON.stringify(ds.locked), JSON.stringify([0, 'move']));
+    t.eq('參考人偶：可複製擺放、不能貼上', JSON.stringify(ds.poseBtn), JSON.stringify([false, true]));
+    t.eq('參考人偶：方向鍵不動、不能進縮放',JSON.stringify(ds.locked), JSON.stringify([0, 'move']));
     t.eq('參考人偶：undo 也拉回條目位置', ds.undo, 40);
     t.eq('參考人偶：載入 pool 照參考身體的 rig 換算', ds.load, 40);
     t.eq('參考人偶：part.json 改了跟著重擺、其他零件不動＋提示', JSON.stringify(ds.changed), JSON.stringify([20, -12, 0, true]));
