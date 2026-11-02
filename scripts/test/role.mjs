@@ -165,9 +165,10 @@ run('role', async t => {
         out.remove = 'dummy' in S.data;
         re.undo();
 
+        const lastNpc = Object.keys(S.data).filter(k => S.data[k].kind === 'npc').at(-1);
         re.add('npc_new', 'npc');
         const k2 = Object.keys(S.data);
-        out.add = [k2.indexOf('npc_new') === k2.indexOf('guard-2') + 1, S.data.npc_new.kind, S.sel, Array.isArray(S.data.npc_new.schedule), re.validate('npc_new').length];
+        out.add = [k2.indexOf('npc_new') === k2.indexOf(lastNpc) + 1, S.data.npc_new.kind, S.sel, Array.isArray(S.data.npc_new.schedule), re.validate('npc_new').length];
         re.add('wolf2', 'animal');
         out.addAnimal = [S.data.wolf2.animal, S.data.wolf2.w];
         re.add('bad id', 'npc');
