@@ -539,7 +539,6 @@ function autoSet(v)
     for (const P of AUTO_PARTS) for (const f of AUTO_F[P.kind]) $(`au-${P.key}-${f}`).value = autoCfg(P)[f];
     $('au-link').checked = S.auto.headLink;
     $('au-small').checked = S.auto.headSmall;
-    $('auSexL').textContent = S.doll.sex === 'f' ? '♀女版' : '♂男版';
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
@@ -2841,6 +2840,7 @@ function refreshAuto(m)
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
+        if (AUTO_SEXED.includes(P.kind)) $(`au-${P.key}-sex`).textContent = !part?.C.alt ? '基準' : S.doll.sex === 'f' ? '♀' : '♂';
         for (const f of AUTO_F[P.kind])
         {
             const inp = $(`au-${P.key}-${f}`);
@@ -5131,7 +5131,7 @@ const removeGreenChanged = () => {
 for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr', 'rgGrow']) $(id).oninput = removeGreenChanged;
 
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
-$('auTable').append(Object.assign(el('span', 'sexL'), {id: 'auSexL', title: '照 header 的 男｜女 切換'}), ...dimSpans(['象限', '存檔%', 'scale', 'x', 'y']));
+$('auTable').append(...dimSpans(['', '象限', '存檔%', 'scale', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', 'oy']));
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 // 護具跟服飾共用一張表，refreshAuto() 照 data-kind 藏另一種的列
@@ -5142,7 +5142,9 @@ linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '�
 for (const P of AUTO_PARTS)
 {
     const box = $(AUTO_BOX[P.kind]), n0 = box.children.length;
-    box.append(Object.assign(el('span'), {textContent: P.name}), ...dimSpans(P.quad ? [P.quad] : []));
+    const name = Object.assign(el('span'), {textContent: P.name});
+    if (AUTO_SEXED.includes(P.kind)) name.append(' ', Object.assign(el('span', 'sexL'), {id: `au-${P.key}-sex`, title: '基準＝沒有女版（男女共用，右鍵圖層新增）；♂／♀＝有女版，顯示中的那組'}));
+    box.append(name, ...dimSpans(P.quad ? [P.quad] : []));
     for (const f of AUTO_F[P.kind])
     {
         const inp = Object.assign(el('input'), {type: 'number', id: `au-${P.key}-${f}`});
