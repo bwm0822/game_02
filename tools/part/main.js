@@ -1,6 +1,7 @@
 // 部位（part.json）總覽與整理：左樹（照 kind 分組）、中間沒選＝縮圖總覽／選了＝詳細、右欄合成；壞的／沒人用的標出來；改名、改 kind、換圖、新增、複製、刪除都立刻寫檔＋廣播
-// 擺放數字（scale/x/y/a/ox/oy，女版改 f）也在詳細裡改，一樣立刻寫檔；只有擺放有 undo（條目層級，undo 也立刻寫）
+// 擺放數字（scale/x/y/a/ox/oy，女版改 f）也在詳細裡改，一樣立刻寫檔；欄位區可切整筆 JSON；擺放跟 JSON 有 undo（條目層級，undo 也立刻寫）
 import {$, h, ask, status} from '../common/dom.js';
+import * as JE from '../common/jsonedit.js';
 import {str, isObj, parseNum} from '../common/obj.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
@@ -29,7 +30,10 @@ const S = {
     search: '',
     sel: null,
     sex: 'm',           // 合成套在男／女人偶，記在頁面；女＝擺放數字的 scale/x/y 改 f
-    hist: [], hi: 0,    // 擺放的 undo：[{pid, before, after}]，hi＝下一筆要放的位置
+    hist: [], hi: 0,    // 條目層級的 undo：[{pid, before, after}]，hi＝下一筆要放的位置
+    json: false,        // 欄位區切整筆 JSON：記在頁面，換一筆保持
+    drafts: {},         // 沒套用的 JSON：{pid: {text, msg, base, conflict}}，base＝開始編輯時的條目字串
+    stale: false,       // 正在打 JSON 時延後的重畫，離開框再補
 };
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const SEX_NUMS = ['scale', 'x', 'y'];
@@ -82,6 +86,7 @@ async function reload()
     S.parts = await PT.readParts(S.assets.json);
     S.roles = JSON.parse(await FS.readText(S.assets.json, 'role.json'));
     if (!S.parts[S.sel]) S.sel = null;
+    for (const pid of Object.keys(S.drafts)) if (!S.parts[pid]) delete S.drafts[pid];
     render();
 }
 
@@ -125,6 +130,7 @@ function renderList()
                 IC.iconEl(S.parts[pid].sprite, 20),
                 h('span', {class: 'id'}, pid),
                 h('span', {class: 'n', title: users.join('、') || '沒有角色在用'}, users.length),
+                S.drafts[pid] && h('span', {class: 'draft', title: `JSON 草稿沒套用：${S.drafts[pid].msg}`}, '✎'),
                 bad.length > 0 && h('span', {class: 'warn', title: bad.join('\n')}, '⚠'));
         }),
     ]));
@@ -309,6 +315,68 @@ function redo()
     return putBack(e, e.after, '已重做');
 }
 
+// ---------- 整筆 JSON ----------
+// 按住滑鼠時先別重畫：blur 觸發的套用會換掉按鈕或列，放開時 click 就落空（scrollbar 可能沒有 mouseup，所以有逾時）
+let mouseDown = false;
+addEventListener('mousedown', () => {mouseDown = true;}, true);
+addEventListener('mouseup', () => {mouseDown = false;}, true);
+const released = () => new Promise(res => {
+    if (!mouseDown) return res();
+    addEventListener('mouseup', () => setTimeout(res), {once: true});
+    setTimeout(res, 500);
+});
+
+const moveDraft = (from, to) => {
+    if (!S.drafts[from]) return;
+    S.drafts[to] = S.drafts[from];
+    delete S.drafts[from];
+};
+
+// kind／sex 的規則同 changeKind／setPartSex，只有真的改了才檢查（放行本來就壞的條目的其他修改）
+function jsonBlocked(pid, cur, v)
+{
+    const users = usersOf(pid);
+    if (v.kind !== cur.kind && users.length) return `還有角色在用，不能改 kind：${users.join('、')}`;
+    const bad = v.sex !== cur.sex ? users.filter(rid => !sexOk(v, S.roles[rid].sex)) : [];
+    return bad.length ? `性別不符的角色在用，不能改 sex：${bad.join('、')}` : null;
+}
+
+// base＝null 是「覆蓋」：不比對別的分頁改過沒有；寫不了就把文字留成草稿
+function applyJson(pid, text, v, base)
+{
+    return enqueue(async () => {
+        await released();
+        const parts = await PT.readParts(S.assets.json), cur = parts[pid];
+        if (!cur) {status(`part.json 已經沒有 ${pid}`); return reload();}
+        const stay = (msg, conflict) => {S.drafts[pid] = {text, msg, base: base ?? str(cur), conflict}; render();};
+        if (str(v) === str(cur)) {delete S.drafts[pid]; return render();}
+        if (base !== null && str(cur) !== base) return stay('別的分頁改過這筆，要覆蓋還是捨棄草稿？', true);
+        const blocked = jsonBlocked(pid, cur, v);
+        if (blocked) return stay(blocked);
+        delete S.drafts[pid];
+        S.hist.length = S.hi;
+        S.hist.push({pid, before: structuredClone(cur), after: structuredClone(v)});
+        S.hi = S.hist.length;
+        parts[pid] = v;
+        await save(parts, S.sel, `${pid} 已存檔`);
+    });
+}
+
+function jsonPane(pid)
+{
+    const d = S.drafts[pid], base = d?.base ?? str(S.parts[pid]);
+    const box = JE.jsonEdit({k: `part.json|${pid}|#json`, text: d?.text ?? JSON.stringify(S.parts[pid], null, 2), placeholder: '{ }', maxRows: 200,
+        onApply: v => act(applyJson(pid, box.querySelector('textarea').value, v, base)),
+        onDraft: (text, msg) => {S.drafts[pid] = {text, msg, base}; released().then(render);}});
+    return [
+        h('div', {class: 'title'}, '整筆 JSON（失焦時套用、立刻存檔；id 用「改名…」）'),
+        d && h('div', {class: 'jsonmsg'}, h('span', {class: 'msg'}, d.msg),
+            d.conflict && h('button', {dataset: {act: 'overwrite'}, onclick: () => act(applyJson(pid, d.text, JSON.parse(d.text), null))}, '覆蓋'),
+            h('button', {dataset: {act: 'discard'}, onclick: () => {delete S.drafts[pid]; render();}}, '捨棄草稿')),
+        box,
+    ];
+}
+
 function renderDetail()
 {
     const pid = S.sel, p = S.parts[pid];
@@ -317,6 +385,8 @@ function renderDetail()
         h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
             h('span', {class: 'grow'}),
             h('span', {class: 'acts'},
+                h('button', {class: S.json ? 'on' : '', dataset: {act: 'json'}, title: '切換表單／整筆 JSON', onclick: () => {S.json = !S.json; render();}},
+                    S.json ? '表單' : S.drafts[pid] ? 'JSON ✎' : 'JSON'),
                 h('button', {disabled: !doll, title: doll ? `到試穿分頁選 ${doll}、游標放在這個部位的數字` : '沒有紙娃娃型角色（有 head 或 handF／handB）在用，試穿挑不到',
                     onclick: () => SH.gotoTab('fit', [doll, p.kind])}, '↗ 到試穿調'),
                 h('button', {onclick: () => act(renamePart(pid))}, '改名…'),
@@ -328,15 +398,17 @@ function renderDetail()
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
         p.back && IC.iconEl(p.back, 160),
-        p.kind === 'hat' && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!p.hideHair, dataset: {k: `part.json|${pid}|hideHair`},
-            onchange: (e) => act(edit(pid, (q) => {if (e.target.checked) q.hideHair = true; else delete q.hideHair;}))}), ' 藏頭髮（改了立刻存檔）'),
-        h('div', {class: 'title'}, '限定（改了立刻存檔；有在用的角色性別不符就不能改）'),
-        h('select', {dataset: {k: `part.json|${pid}|sex`}, onchange: e => act(setPartSex(pid, e.target.value || undefined))},
-            ['', 'm', 'f'].map(v => h('option', {value: v, selected: (p.sex ?? '') === v}, SEX_NAMES[v] ? `${SEX_NAMES[v]}　${v}` : '—'))),
-        numTable(pid),
-        p.kind === 'body' && pivotTable(pid),
-        h('div', {class: 'title'}, '其他欄位（唯讀）'),
-        h('table', null, fieldRows(p)),
+        S.json ? jsonPane(pid) : [
+            p.kind === 'hat' && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!p.hideHair, dataset: {k: `part.json|${pid}|hideHair`},
+                onchange: (e) => act(edit(pid, (q) => {if (e.target.checked) q.hideHair = true; else delete q.hideHair;}))}), ' 藏頭髮（改了立刻存檔）'),
+            h('div', {class: 'title'}, '限定（改了立刻存檔；有在用的角色性別不符就不能改）'),
+            h('select', {dataset: {k: `part.json|${pid}|sex`}, onchange: e => act(setPartSex(pid, e.target.value || undefined))},
+                ['', 'm', 'f'].map(v => h('option', {value: v, selected: (p.sex ?? '') === v}, SEX_NAMES[v] ? `${SEX_NAMES[v]}　${v}` : '—'))),
+            numTable(pid),
+            p.kind === 'body' && pivotTable(pid),
+            h('div', {class: 'title'}, '其他欄位（唯讀）'),
+            h('table', null, fieldRows(p)),
+        ],
         h('div', {class: 'title'}, `使用者（${users.length}）`),
         users.length ? h('ul', {class: 'users'}, users.map(rid => h('li', null, rid, ' ', h('span', {class: 'dim'}, S.roles[rid].lab ?? ''),
                 h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [rid])}, ' ↗'))))
@@ -360,8 +432,13 @@ function setSex(sx)
     render();
 }
 
+// 正在打 JSON（還沒失焦、沒套用）時重畫會吃掉打到一半的字；切到別的分頁 hasFocus 是 false，照常畫
+const typing = () => document.activeElement?.classList.contains('je-ta') && document.hasFocus();
+
 function render()
 {
+    if (typing()) {S.stale = true; return;}
+    S.stale = false;
     const focus = document.activeElement?.dataset?.k;
     draw();
     $('btnUndo').disabled = S.hi <= 0;
@@ -411,6 +488,7 @@ async function renamePart(from)
     if (!to) return;
     await PT.rename(S.assets.json, from, to);
     for (const e of S.hist) if (e.pid === from) e.pid = to;
+    moveDraft(from, to);
     if (users.length)
     {
         const roles = JSON.parse(await FS.readText(S.assets.json, 'role.json'));
@@ -521,9 +599,13 @@ addEventListener('keydown', (e) => {
     else if (k === 'y' || (k === 'z' && e.shiftKey)) {e.preventDefault(); act(redo());}
 });
 $('search').oninput = (e) => {S.search = e.target.value; render();};
+$('view').addEventListener('focusout', (e) => {
+    if (e.target.matches('.je-ta')) released().then(() => {if (S.stale) render();});
+});
 SH.onSaved((file) => {
     if (file === 'part.json' || file === 'role.json') act(reload());
 });
+SH.onPartRenamed(moveDraft);
 IC.onReload(render);
 SH.onGoto(([pid]) => {S.sel = pid; S.filter = 'all'; render();});
 SH.onProject((dir) => act(setRoot(dir)));

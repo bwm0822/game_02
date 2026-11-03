@@ -53,7 +53,7 @@ run('part-tool', async t => {
         };
         const pickIcon = async (v) => {await until(() => $('dlgIcon').open); $('dlgIcon').querySelector('input').value = v; $('dlgIcon').close('ok'); await sleep(30);};
 
-        const {assets, read} = await eval(`(${SETUP})`)();
+        const {assets, json, read} = await eval(`(${SETUP})`)();
         await pt.setRoot(assets);
         await pt.IC.ready;
         pt.setTab('all');
@@ -327,6 +327,85 @@ run('part-tool', async t => {
         S.parts['hat-cap'].back = 'no-such-back';
         out.hatBad = pt.problems('hat-cap').some(s => s.startsWith('back：'));
         await pt.reload();
+
+        // 整筆 JSON：只換欄位區；失焦套用＋undo；語法錯／非物件／kind、sex 規則留草稿不寫檔；別的分頁改過擋下可覆蓋；打字中不重畫；改名草稿跟著走
+        const jb = () => document.querySelector('#view [data-act="json"]');
+        const ta = (pid) => document.querySelector(`[data-k="part.json|${pid}|#json"]`);
+        const jmsg = () => document.querySelector('#view .jsonmsg .msg')?.textContent ?? '';
+        const jput = async (pid, v) => {
+            const el = ta(pid);
+            el.value = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+            el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change'));
+            await pt.idle(); await sleep(30);
+        };
+        const disk = async (pid) => (await read('part.json'))[pid];
+        const putDisk = async (pid, fn) => {
+            const parts = await read('part.json');
+            fn(parts[pid]);
+            const w = await (await json.getFileHandle('part.json')).createWritable();
+            await w.write(JSON.stringify(parts, null, 2)); await w.close();
+        };
+        S.sel = 'hat-cap'; S.sex = 'm'; pt.render();
+        jb().click();
+        out.jOpen = [jb().textContent, !!ta('hat-cap'), !document.querySelector('#view table.numtab'), !document.querySelector('.hidehair'),
+                     [...document.querySelectorAll('#view .title')].some(d => d.textContent.startsWith('使用者')), !!document.querySelector('#view .head .bigid')];
+        await jput('hat-cap', {...S.parts['hat-cap'], x: 5});
+        out.jApply = [(await disk('hat-cap')).x, JSON.parse(ta('hat-cap').value).x, !!S.drafts['hat-cap']];
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        out.jApply.push('x' in await disk('hat-cap'));
+        const hatBefore = JSON.stringify(await disk('hat-cap'));
+        await jput('hat-cap', '{ bad');
+        out.jSyntax = [JSON.stringify(await disk('hat-cap')) === hatBefore, jmsg().startsWith('第 '), !!document.querySelector('#list .item[data-id="hat-cap"] .draft')];
+        S.sel = 'hair-mary'; pt.render();
+        out.jSyntax.push(jmsg());
+        S.sel = 'hat-cap'; pt.render();
+        out.jSyntax.push(ta('hat-cap').value);
+        document.querySelector('#view [data-act="json"]').click();
+        out.jSyntax.push(jb().textContent);
+        jb().click();
+        document.querySelector('#view [data-act="discard"]').click();
+        out.jSyntax.push(!!S.drafts['hat-cap'], JSON.stringify(JSON.parse(ta('hat-cap').value)) === hatBefore);
+        await jput('hat-cap', '[1]');
+        out.jNotObj = jmsg();
+        document.querySelector('#view [data-act="discard"]').click();
+        await jput('hat-cap', {...S.parts['hat-cap'], kind: 'tail'});
+        out.jKindFree = [(await disk('hat-cap')).kind, pt.problems('hat-cap').some(s => s.startsWith('kind「tail」'))];
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        S.sel = 'hair-mary'; pt.render();
+        const maryBefore = JSON.stringify(await disk('hair-mary'));
+        await jput('hair-mary', {...S.parts['hair-mary'], kind: 'hat'});
+        out.jKind = [jmsg().includes('不能改 kind'), JSON.stringify(await disk('hair-mary')) === maryBefore];
+        document.querySelector('#view [data-act="discard"]').click();
+        await jput('hair-mary', {...S.parts['hair-mary'], sex: 'm'});
+        out.jSex = [jmsg().includes('不能改 sex'), JSON.stringify(await disk('hair-mary')) === maryBefore];
+        document.querySelector('#view [data-act="discard"]').click();
+        // 別的分頁改過：畫面還沒重讀，套用時比對磁碟擋下；覆蓋才寫
+        S.sel = 'hat-cap'; pt.render();
+        await putDisk('hat-cap', q => {q.y = 99;});
+        await jput('hat-cap', {...S.parts['hat-cap'], x: 1});
+        const conflict = document.querySelector('#view [data-act="overwrite"]');
+        out.jConflict = [!!conflict, jmsg().includes('別的分頁'), (await disk('hat-cap')).y, 'x' in await disk('hat-cap')];
+        conflict.click(); await sleep(30); await pt.idle(); await sleep(30);
+        out.jConflict.push((await disk('hat-cap')).x, 'y' in await disk('hat-cap'), !!S.drafts['hat-cap']);
+        // 清空框＝空物件：畫面不炸、標壞的、undo 救回
+        const beforeEmpty = JSON.stringify(await disk('hat-cap'));
+        await jput('hat-cap', '');
+        out.jEmpty = [JSON.stringify(await disk('hat-cap')), !!ta('hat-cap'), pt.isBad('hat-cap')];
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        out.jEmpty.push(JSON.stringify(await disk('hat-cap')) === beforeEmpty);
+        // 打字中重畫延後，離開框補畫
+        const el = ta('hat-cap');
+        el.focus();
+        pt.render();
+        out.jType = [document.hasFocus(), ta('hat-cap') === el, S.stale];
+        el.blur(); await sleep(30);
+        out.jType.push(ta('hat-cap') !== el, S.stale);
+        // 改名：草稿跟著換 id
+        await jput('hat-cap', '{ oops');
+        await run(pt.renamePart('hat-cap'), d => {d.querySelector('input').value = 'hat-cap2'; return 'ok';}, () => 'ok');
+        out.jRename = [S.drafts['hat-cap2']?.text, 'hat-cap' in S.drafts, ta('hat-cap2')?.value];
+        document.querySelector('#view [data-act="discard"]').click();
+        S.json = false;
         S.sel = null; pt.render();
         return out;
     }, SETUP.toString());
@@ -337,6 +416,17 @@ run('part-tool', async t => {
     t.eq('右欄捲動：第一次置中、同一筆改值捲回原位、換一筆／改倍率置中', JSON.stringify(r.scroll), JSON.stringify([true, true, '[3,4]', true, true]));
     t.eq('帽子：藏頭髮立刻寫、取消刪 key', JSON.stringify(r.hat), JSON.stringify([true, null]));
     t.check('帽子：back 指到不存在的圖算壞的', r.hatBad);
+    t.eq('JSON：只換欄位區，標題列、使用者留著', JSON.stringify(r.jOpen), JSON.stringify(['表單', true, true, true, true, true]));
+    t.eq('JSON：套用立刻寫、框更新、沒草稿、undo 復原', JSON.stringify(r.jApply), JSON.stringify([5, 5, false, false]));
+    t.eq('JSON：語法錯留草稿不寫檔、左樹標記、切條目草稿還在、切回表單標 ✎、捨棄回檔案內容', JSON.stringify(r.jSyntax), JSON.stringify([true, true, true, '', '{ bad', 'JSON ✎', false, true]));
+    t.eq('JSON：非物件擋下', r.jNotObj, '第 1 行：要是 { } 物件');
+    t.eq('JSON：沒人用的 kind 放行、不認識的值由問題清單標', JSON.stringify(r.jKindFree), JSON.stringify(['tail', true]));
+    t.eq('JSON：有人用改 kind 擋下', JSON.stringify(r.jKind), JSON.stringify([true, true]));
+    t.eq('JSON：性別不符改 sex 擋下', JSON.stringify(r.jSex), JSON.stringify([true, true]));
+    t.eq('JSON：別的分頁改過擋下、覆蓋才寫（整筆換掉）', JSON.stringify(r.jConflict), JSON.stringify([true, true, 99, false, 1, false, false]));
+    t.eq('JSON：清空＝空物件，畫面不炸、標壞的、undo 救回', JSON.stringify(r.jEmpty), JSON.stringify(['{}', true, true, true]));
+    t.eq('JSON：打字中重畫延後、離開框補畫', JSON.stringify(r.jType), JSON.stringify([true, true, true, true, false]));
+    t.eq('JSON：改名草稿跟著換 id', JSON.stringify(r.jRename), JSON.stringify(['{ oops', false, '{ oops']));
     t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '帽子　hat', '前手　handF', '後手　handB', '不認識的 kind']));
     t.eq('卡片：使用次數、未使用灰、壞的紅（圖不存在、kind 不認識、放錯欄位）', JSON.stringify(r.cells), JSON.stringify([true, true, true, true, true, false]));
     t.eq('檢查訊息', JSON.stringify(r.probs), JSON.stringify([true, true, 'tester 的 hair 指到它，但它是 head']));

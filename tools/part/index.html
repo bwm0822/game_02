@@ -21,6 +21,10 @@
     .item .n { margin-left: auto; color: #888; font-size: 13px; }
     .item.unused { opacity: .45; }
     .item .warn { color: #e66; }
+    .item .draft { color: #8bd; }
+    #view .jsonmsg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
+    #view .jsonmsg .msg { color: #f88; user-select: text; }
+    #view .je { margin-top: 24px; }
     #view { user-select: none; }
     .sec { color: #aaa; font-weight: bold; margin: 12px 0 4px; }
     .tabs + .sec { margin-top: 0; }
@@ -64,7 +68,7 @@
         <div id="filters"></div>
         <div id="list"></div>
         <div class="bottom">
-            <div class="row2"><button id="btnNew" class="grow">＋ 新增</button><button id="btnUndo" title="復原擺放數字（Ctrl+Z，立刻存檔）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
+            <div class="row2"><button id="btnNew" class="grow">＋ 新增</button><button id="btnUndo" title="復原擺放數字／JSON（Ctrl+Z，立刻存檔）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
             <span id="status" class="dim"></span>
         </div>
     </aside>
