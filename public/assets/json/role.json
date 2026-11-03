@@ -330,7 +330,9 @@
     "head": "head-musk",
     "hair": "hair-musk",
     "handF": "handF",
-    "handB": "handB"
+    "handB": "handB",
+    "cloth": "cloth-outfit-blacksmith",
+    "shoes": "shoes-outfit-blacksmith"
   },
   "karen": {
     "kind": "npc",
@@ -410,13 +412,13 @@
         "capacity": -1,
         "items": []
       },
-      "equips": [
-        "helmet-clo-2",
-        "boots-clo-2"
-      ]
+      "equips": []
     },
     "handF": "handF",
-    "handB": "handB"
+    "handB": "handB",
+    "hat": "hat-outfit-vegetable-seller",
+    "cloth": "cloth-outfit-vegetable-seller",
+    "shoes": "shoes-outfit-vegetable-seller"
   },
   "xi": {
     "kind": "npc",
@@ -840,7 +842,10 @@
     "hair": "hair-jobs",
     "icon": "portrait-jobs",
     "handF": "handF",
-    "handB": "handB"
+    "handB": "handB",
+    "cloth": "cloth-outfit-merchant",
+    "shoes": "shoes-outfit-merchant",
+    "hat": "hat-outfit-merchant"
   },
   "rogue-1": {
     "kind": "rogue",

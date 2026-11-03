@@ -3,13 +3,15 @@
     "kind": "body",
     "sprite": "animals:42",
     "scale": 2,
-    "y": 32
+    "y": 32,
+    "name": "狼"
   },
   "animals-82": {
     "kind": "body",
     "sprite": "animals:82",
     "scale": 2,
-    "y": 32
+    "y": 32,
+    "name": "馬"
   },
   "body-man": {
     "kind": "body",
@@ -33,7 +35,8 @@
     "a": 0,
     "ox": 0.5,
     "sex": "m",
-    "x": 0.5
+    "x": 0.5,
+    "name": "男性身體"
   },
   "body-woman": {
     "kind": "body",
@@ -55,31 +58,36 @@
       "y": -13
     },
     "sex": "f",
-    "x": 0
+    "x": 0,
+    "name": "女性身體"
   },
   "macron": {
     "kind": "body",
     "sprite": "macron",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "馬克宏"
   },
   "melanie": {
     "kind": "body",
     "sprite": "melanie",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "梅蘭妮"
   },
   "monsters-0": {
     "kind": "body",
     "sprite": "monsters:0",
     "scale": 2,
-    "y": 32
+    "y": 32,
+    "name": "獸人"
   },
   "musk": {
     "kind": "body",
     "sprite": "musk",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "馬斯克（舊全身圖）"
   },
   "rogue": {
     "kind": "body",
@@ -97,25 +105,29 @@
     "wristB": {
       "x": 13,
       "y": -15
-    }
+    },
+    "name": "盜賊"
   },
   "trump": {
     "kind": "body",
     "sprite": "trump",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "川普（舊全身圖）"
   },
   "xi": {
     "kind": "body",
     "sprite": "xi",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "習近平"
   },
   "hand-man": {
     "kind": "hand",
     "sprite": "hand-man",
     "scale": 0.25,
-    "y": 32
+    "y": 32,
+    "name": "男性手（舊）"
   },
   "head-karen": {
     "kind": "head",
@@ -124,7 +136,8 @@
     "x": -1.5,
     "y": 2,
     "a": 0,
-    "sex": "f"
+    "sex": "f",
+    "name": "凱倫的頭"
   },
   "head-mary": {
     "kind": "head",
@@ -132,7 +145,8 @@
     "scale": 0.25,
     "x": -1.5,
     "y": 2,
-    "sex": "f"
+    "sex": "f",
+    "name": "瑪莉的頭"
   },
   "head-wick": {
     "kind": "head",
@@ -141,7 +155,8 @@
     "x": -3,
     "y": 4,
     "sex": "m",
-    "a": 0
+    "a": 0,
+    "name": "維克的頭"
   },
   "head-trump": {
     "kind": "head",
@@ -149,21 +164,24 @@
     "scale": 0.25,
     "x": -3,
     "y": 4,
-    "sex": "m"
+    "sex": "m",
+    "name": "川普的頭"
   },
   "head-jobs": {
     "kind": "head",
     "sprite": "head-jobs",
     "scale": 0.25,
     "x": -3,
-    "y": 4
+    "y": 4,
+    "name": "賈伯斯的頭"
   },
   "head-musk": {
     "kind": "head",
     "sprite": "head-musk",
     "scale": 0.25,
     "x": -3,
-    "y": 4
+    "y": 4,
+    "name": "馬斯克的頭"
   },
   "head-kidman": {
     "kind": "head",
@@ -171,7 +189,8 @@
     "scale": 0.25,
     "x": -1.5,
     "y": 2,
-    "sex": "f"
+    "sex": "f",
+    "name": "妮可基嫚的頭"
   },
   "hair-karen": {
     "kind": "hair",
@@ -183,21 +202,24 @@
       "scale": 0.25,
       "x": -2.25,
       "y": 4
-    }
+    },
+    "name": "凱倫的頭髮"
   },
   "hair-mary": {
     "kind": "hair",
     "sprite": "hair-mary",
     "scale": 0.25,
     "x": -2,
-    "y": 4
+    "y": 4,
+    "name": "瑪莉的頭髮"
   },
   "hair-wick": {
     "kind": "hair",
     "sprite": "hair-wick",
     "scale": 0.25,
     "x": -2.5,
-    "y": 2
+    "y": 2,
+    "name": "維克的頭髮"
   },
   "hair-trump": {
     "kind": "hair",
@@ -205,21 +227,24 @@
     "scale": 0.25,
     "x": -1.75,
     "y": -0.75,
-    "sex": "m"
+    "sex": "m",
+    "name": "川普的頭髮"
   },
   "hair-jobs": {
     "kind": "hair",
     "sprite": "hair-jobs",
     "scale": 0.25,
     "x": -3,
-    "y": -12.5
+    "y": -12.5,
+    "name": "賈伯斯的頭髮"
   },
   "hair-musk": {
     "kind": "hair",
     "sprite": "hair-musk",
     "scale": 0.25,
     "x": -3,
-    "y": -11.5
+    "y": -11.5,
+    "name": "馬斯克的頭髮"
   },
   "hair-kidman": {
     "kind": "hair",
@@ -227,7 +252,8 @@
     "scale": 0.25,
     "x": -0.75,
     "y": 4,
-    "sex": "f"
+    "sex": "f",
+    "name": "妮可基嫚的頭髮"
   },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
@@ -239,7 +265,46 @@
       "scale": 0.23,
       "x": 0.25,
       "y": -6.25
-    }
+    },
+    "name": "旅店老闆服"
+  },
+  "cloth-outfit-blacksmith": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-blacksmith",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -2,
+    "f": {
+      "scale": 0.23,
+      "x": 0.25,
+      "y": -4.5
+    },
+    "name": "鐵匠服"
+  },
+  "cloth-outfit-butcher": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-butcher",
+    "scale": 0.25,
+    "x": -0.25,
+    "y": -3.75,
+    "name": "屠夫服"
+  },
+  "cloth-outfit-merchant": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-merchant",
+    "scale": 0.25,
+    "x": -0.25,
+    "y": -3.75,
+    "name": "商人服"
+  },
+  "cloth-outfit-vegetable-seller": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-vegetable-seller",
+    "scale": 0.25,
+    "x": -0.5,
+    "y": -1.5,
+    "sex": "f",
+    "name": "菜販服"
   },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
@@ -251,7 +316,45 @@
       "scale": 0.2,
       "x": 2,
       "y": 1
-    }
+    },
+    "name": "旅店老闆鞋"
+  },
+  "shoes-outfit-blacksmith": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-blacksmith",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 1,
+    "f": {
+      "scale": 0.2,
+      "x": 2,
+      "y": 1
+    },
+    "name": "鐵匠鞋"
+  },
+  "shoes-outfit-butcher": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-butcher",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 1,
+    "name": "屠夫鞋"
+  },
+  "shoes-outfit-merchant": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-merchant",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 1,
+    "name": "商人鞋"
+  },
+  "shoes-outfit-vegetable-seller": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-vegetable-seller",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 1,
+    "name": "菜販鞋"
   },
   "handF": {
     "kind": "handF",
@@ -260,7 +363,8 @@
     "oy": 0.5,
     "f": {
       "scale": 0.2
-    }
+    },
+    "name": "前手"
   },
   "handB": {
     "kind": "handB",
@@ -269,6 +373,34 @@
     "oy": 0.5,
     "f": {
       "scale": 0.2
-    }
+    },
+    "name": "後手"
+  },
+  "hat-outfit-butcher": {
+    "kind": "hat",
+    "sprite": "hat-outfit-butcher",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -14,
+    "hideHair": true,
+    "name": "屠夫帽"
+  },
+  "hat-outfit-merchant": {
+    "kind": "hat",
+    "sprite": "hat-outfit-merchant",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -14,
+    "name": "商人帽"
+  },
+  "hat-outfit-vegetable-seller": {
+    "kind": "hat",
+    "sprite": "hat-outfit-vegetable-seller-front",
+    "back": "hat-outfit-vegetable-seller-back",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": -7.25,
+    "sex": "f",
+    "name": "菜販帽"
   }
 }
