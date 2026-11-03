@@ -45,6 +45,12 @@ run('role-part', async t => {
         let p = re.pickPart('hair', 'hair-wick');
         const tiles = () => [...$('dlgPart').querySelectorAll('.tile')];
         out.tiles = [tiles().map(t => t.dataset.id).join(), $('dlgPart').querySelector('.tile.sel').dataset.id, $('dlgPart').querySelector('.title').textContent];
+        $('dlgPart').close();
+        await p;
+        S.ext.parts['hair-mary'].name = '瑪莉的頭髮';
+        p = re.pickPart('hair', 'hair-wick');
+        out.tileName = tiles().find(t => t.dataset.id === 'hair-mary').querySelector('.lab').textContent;
+        delete S.ext.parts['hair-mary'].name;
         tiles().find(t => t.dataset.id === 'hair-mary').click();
         out.pick = await p;
         p = re.pickPart('hair', 'hair-wick');
@@ -84,7 +90,8 @@ run('role-part', async t => {
     });
 
     t.eq('部位欄：縮圖、id、選…', JSON.stringify(r.field), JSON.stringify([true, 'hair-wick', '選…']));
-    t.check('選圖器只列同 kind、第一格是「無」、標出目前的', r.tiles[0].startsWith(',') && r.tiles[0].includes('hair-mary') && !r.tiles[0].includes('head-') && r.tiles[1] === 'hair-wick', JSON.stringify(r.tiles));
+    t.eq('選圖器：有名稱顯示名稱', r.tileName, '瑪莉的頭髮');
+    t.check('選圖器只列同 kind、第一格是「無」、標出目前的',r.tiles[0].startsWith(',') && r.tiles[0].includes('hair-mary') && !r.tiles[0].includes('head-') && r.tiles[1] === 'hair-wick', JSON.stringify(r.tiles));
     t.eq('點條目回傳 id、點「無」回傳空字串、關掉回傳 null', JSON.stringify([r.pick, r.none, r.cancel]), JSON.stringify(['hair-mary', '', null]));
     t.eq('改名問新 id、再確認一次（存檔沒有警告就不問）', JSON.stringify(r.rename), JSON.stringify(['改名 hair-wick', '改名 hair-wick → hair-john']));
     t.eq('改名：part.json 位置不變、role.json 跟著改並存檔', JSON.stringify(r.renamed), JSON.stringify([true, false, 'hair-john', 'hair-john', 'hair-wick']));

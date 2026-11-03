@@ -392,7 +392,10 @@ function fitView(r, slots)
             h('td', null, h('select', {class: 'part', dataset: {k: `role.json|${S.rid}|${k}`},
                     onchange: (e) => commit(() => setAt(role(), [k], e.target.value || undefined))},
                     h('option', {value: '', selected: !pid}, '（無）'),
-                    opts.map(id => h('option', {value: id, selected: id === pid}, parts()[id] && !sexOk(parts()[id], r.sex) ? `⚠ ${id}` : id))),
+                    opts.map(id => {
+                        const lab = parts()[id]?.name ? `${parts()[id].name}（${id}）` : id;
+                        return h('option', {value: id, selected: id === pid}, parts()[id] && !sexOk(parts()[id], r.sex) ? `⚠ ${lab}` : lab);
+                    })),
                 pid && !p && h('span', {class: 'warn'}, '（part.json 沒有）'),
                 wrong && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[p.sex] ?? p.sex}`),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),

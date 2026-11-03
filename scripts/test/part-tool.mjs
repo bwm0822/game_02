@@ -11,7 +11,7 @@ const SETUP = async () => {
     for (const f of ['role.json', 'item.json', 'anim.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
     const parts = await (await fetch('/assets/json/part.json')).json();
     // 實際資料的 sex 限定常調，拿掉免得多出性別警告（限定的測試自己設）
-    for (const p of Object.values(parts)) delete p.sex;
+    for (const p of Object.values(parts)) {delete p.sex; delete p.name;}
     Object.assign(parts, {
         'hair-unused': {kind: 'hair', sprite: 'hair-01', scale: 0.25, f: {scale: 0.2, x: 1, y: 2}},
         'bad-sprite': {kind: 'hair', sprite: 'no-such-texture'},
@@ -393,7 +393,54 @@ run('part-tool', async t => {
         out.jEmpty = [JSON.stringify(await disk('hat-cap')), !!ta('hat-cap'), pt.isBad('hat-cap')];
         $('btnUndo').click(); await sleep(50); await pt.idle();
         out.jEmpty.push(JSON.stringify(await disk('hat-cap')) === beforeEmpty);
+        // 名稱：名稱為主、id 副標；立刻寫、undo、打字中不重畫、Enter 寫入、清空刪 key、可搜尋、不列在唯讀欄位；複製帶過去；JSON 模式藏欄位
+        S.json = false; S.sel = 'hair-mary'; pt.render();
+        const nm = () => document.querySelector('#view .nameinp');
+        const setName = async (v) => {nm().focus(); nm().value = v; nm().dispatchEvent(new Event('change', {bubbles: true})); nm().blur(); await sleep(30); await pt.idle(); await sleep(30);};
+        const headTxt = () => [document.querySelector('#view .bigid').textContent, document.querySelector('#view .head .pid')?.textContent ?? null];
+        out.nameBefore = [nm().value, ...headTxt()];
+        await setName(' 瑪莉的頭髮 ');
+        const rowEl = () => document.querySelector('#list .item[data-id="hair-mary"]');
+        out.nameSet = [(await disk('hair-mary')).name, ...headTxt(), rowEl().querySelector('.id').textContent, rowEl().querySelector('.lab').textContent,
+                       [...document.querySelectorAll('#view td.k')].some(td => td.textContent === 'name')];
+        $('btnUndo').click(); await sleep(50); await pt.idle();
+        out.nameSet.push('name' in await disk('hair-mary'));
+        $('btnRedo').click(); await sleep(50); await pt.idle();
+        const typed = nm();
+        typed.focus(); typed.value = '打到一半';
+        pt.render();
+        out.nameType = [nm() === typed, nm().value, S.stale];
+        typed.value = S.parts['hair-mary'].name;
+        typed.blur(); await sleep(30);
+        out.nameType.push(S.stale);
+        $('search').value = '瑪莉的'; $('search').dispatchEvent(new Event('input'));
+        out.nameSearch = [...document.querySelectorAll('#list .item')].map(i => i.dataset.id).join();
+        $('search').value = ''; $('search').dispatchEvent(new Event('input'));
+        S.sel = null; pt.render();
+        out.nameCard = cell('hair-mary').querySelector('.k').textContent;
+        cell('hair-mary').click();
+        document.querySelector('#view [data-act="json"]').click();
+        out.nameJson = !nm();
+        S.json = false; pt.render();
+        // 改了還沒寫就點別的列：click 不落空、不跳回舊條目，名稱照樣寫進去
+        nm().focus(); nm().value = '瑪莉髮';
+        window.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
+        nm().dispatchEvent(new Event('change', {bubbles: true}));
+        nm().blur();
+        document.querySelector('#list .item[data-id="hair-john"]').click();
+        window.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+        await sleep(50); await pt.idle(); await sleep(30);
+        out.nameSwitch = [S.sel, (await disk('hair-mary')).name];
+        S.sel = 'hair-mary'; pt.render();
+        await run(pt.askEntry('hair-mary'), d => {d.querySelector('input').value = 'hair-mary-2'; return 'ok';});
+        out.nameCopy = (await disk('hair-mary-2')).name;
+        await run(pt.deletePart('hair-mary-2'), () => 'ok');
+        S.sel = 'hair-mary'; pt.render();
+        await setName('');
+        out.nameClear = ['name' in await disk('hair-mary'), ...headTxt()];
+
         // 打字中重畫延後，離開框補畫
+        S.sel = 'hat-cap'; S.json = true; pt.render();
         const el = ta('hat-cap');
         el.focus();
         pt.render();
@@ -425,7 +472,16 @@ run('part-tool', async t => {
     t.eq('JSON：性別不符改 sex 擋下', JSON.stringify(r.jSex), JSON.stringify([true, true]));
     t.eq('JSON：別的分頁改過擋下、覆蓋才寫（整筆換掉）', JSON.stringify(r.jConflict), JSON.stringify([true, true, 99, false, 1, false, false]));
     t.eq('JSON：清空＝空物件，畫面不炸、標壞的、undo 救回', JSON.stringify(r.jEmpty), JSON.stringify(['{}', true, true, true]));
-    t.eq('JSON：打字中重畫延後、離開框補畫', JSON.stringify(r.jType), JSON.stringify([true, true, true, true, false]));
+    t.eq('名稱：沒填顯示 id、沒有副標', JSON.stringify(r.nameBefore), JSON.stringify(['', 'hair-mary', null]));
+    t.eq('名稱：去空白寫檔、名稱為主 id 副標（詳細、左樹）、不列唯讀、undo', JSON.stringify(r.nameSet), JSON.stringify(['瑪莉的頭髮', '瑪莉的頭髮', 'hair-mary', '瑪莉的頭髮', 'hair-mary', false, false]));
+    t.eq('名稱：打字中不重畫、離開補畫', JSON.stringify(r.nameType), JSON.stringify([true, '打到一半', true, false]));
+    t.eq('名稱：可搜尋', r.nameSearch, 'hair-mary');
+    t.eq('名稱：總覽卡片顯示名稱', r.nameCard, '瑪莉的頭髮');
+    t.check('名稱：JSON 模式藏欄位', r.nameJson);
+    t.eq('名稱：改完直接點別的列，選取不跳回、照樣寫檔', JSON.stringify(r.nameSwitch), JSON.stringify(['hair-john', '瑪莉髮']));
+    t.eq('名稱：複製照抄', r.nameCopy, '瑪莉髮');
+    t.eq('名稱：清空刪 key、退回 id', JSON.stringify(r.nameClear), JSON.stringify([false, 'hair-mary', null]));
+    t.eq('JSON：打字中重畫延後、離開框補畫',JSON.stringify(r.jType), JSON.stringify([true, true, true, true, false]));
     t.eq('JSON：改名草稿跟著換 id', JSON.stringify(r.jRename), JSON.stringify(['{ oops', false, '{ oops']));
     t.eq('分段照 kind，不認識的另一段', JSON.stringify(r.secs), JSON.stringify(['身體　body', '鞋子　shoes', '衣服　cloth', '頭　head', '頭髮　hair', '帽子　hat', '前手　handF', '後手　handB', '不認識的 kind']));
     t.eq('卡片：使用次數、未使用灰、壞的紅（圖不存在、kind 不認識、放錯欄位）', JSON.stringify(r.cells), JSON.stringify([true, true, true, true, true, false]));

@@ -10,6 +10,9 @@ const CODE_DIRS = ['src', 'tools', 'scripts'];
 
 export const usersOf = (roles, pid) => Object.keys(roles).filter(rid => ROLE_PARTS.some(k => roles[rid][k] === pid));
 
+// name 只給工具看，遊戲不讀、不翻譯；沒填顯示 id
+export const nameOf = (parts, pid) => parts[pid]?.name ?? pid;
+
 // 回傳改到的角色 id
 export function renameRefs(roles, from, to)
 {

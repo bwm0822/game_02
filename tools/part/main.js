@@ -96,7 +96,7 @@ function visible()
     const q = S.search.trim().toLowerCase();
     return Object.keys(S.parts).filter(pid =>
         (S.filter !== 'unused' || isUnused(pid)) && (S.filter !== 'bad' || isBad(pid))
-        && (!q || pid.toLowerCase().includes(q) || String(S.parts[pid].sprite ?? '').toLowerCase().includes(q)));
+        && (!q || [pid, S.parts[pid].sprite, S.parts[pid].name].some(s => String(s ?? '').toLowerCase().includes(q))));
 }
 
 const SECS = [...ROLE_PARTS.map(k => [k, `${KIND_NAMES[k]}　${k}`]), ['#unknown', '不認識的 kind']];
@@ -128,7 +128,8 @@ function renderList()
             const users = usersOf(pid), bad = problems(pid);
             return h('div', {class: 'item' + (pid === S.sel ? ' sel' : '') + (users.length ? '' : ' unused'), dataset: {id: pid}, onclick: () => pick(pid)},
                 IC.iconEl(S.parts[pid].sprite, 20),
-                h('span', {class: 'id'}, pid),
+                h('span', {class: 'id'}, PT.nameOf(S.parts, pid)),
+                S.parts[pid].name && h('span', {class: 'lab'}, pid),
                 h('span', {class: 'n', title: users.join('、') || '沒有角色在用'}, users.length),
                 S.drafts[pid] && h('span', {class: 'draft', title: `JSON 草稿沒套用：${S.drafts[pid].msg}`}, '✎'),
                 bad.length > 0 && h('span', {class: 'warn', title: bad.join('\n')}, '⚠'));
@@ -143,7 +144,7 @@ function cell(pid)
     const p = S.parts[pid], n = usersOf(pid).length, bad = problems(pid);
     return h('div', {class: ['cell', !n && 'unused', bad.length && 'bad'].filter(Boolean).join(' '), dataset: {id: pid},
             title: [pid, bad.length ? bad.join('\n') : n ? `${n} 個角色在用` : '沒有角色在用'].join('\n'), onclick: () => pick(pid)},
-        IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, pid), n > 0 && h('span', {class: 'n'}, n),
+        IC.iconEl(p.sprite, 64), h('div', {class: 'k'}, PT.nameOf(S.parts, pid)), n > 0 && h('span', {class: 'n'}, n),
         SEX_MARK[p.sex] && h('span', {class: 'sexmark', title: SEX_NAMES[p.sex]}, SEX_MARK[p.sex]));
 }
 
@@ -185,7 +186,7 @@ function dollOf(pid, sex)
 // 擺放、支點以外的欄位唯讀
 function fieldRows(p)
 {
-    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && k !== 'sex' && !(p.kind === 'hat' && k === 'hideHair') && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
+    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'name' && k !== 'f' && k !== 'sex' && !(p.kind === 'hat' && k === 'hideHair') && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
         h('tr', null, h('td', {class: 'k'}, k), h('td', null, typeof v === 'object' ? JSON.stringify(v) : String(v))));
 }
 
@@ -289,7 +290,7 @@ function edit(pid, fn)
         S.hist.length = S.hi;
         S.hist.push({pid, before, after: structuredClone(parts[pid])});
         S.hi = S.hist.length;
-        await save(parts, pid, `${pid} 已存檔`);
+        await save(parts, S.sel, `${pid} 已存檔`);
     });
 }
 
@@ -377,12 +378,25 @@ function jsonPane(pid)
     ];
 }
 
+// 失焦才寫：等滑鼠放開，點別的列時 click 才不會落空（同整筆 JSON）；清空＝刪 key
+function nameField(pid)
+{
+    const p = S.parts[pid];
+    return h('label', {class: 'partname'}, '名稱 ', h('input', {class: 'nameinp', size: 28, value: p.name ?? '', placeholder: '工具才看得到（遊戲不顯示）',
+        dataset: {k: `part.json|${pid}|name`},
+        onkeydown: (e) => {if (e.key === 'Enter') e.target.blur();},
+        onchange: (e) => {
+            const v = e.target.value.trim();
+            act(released().then(() => edit(pid, (q) => {if (v) q.name = v; else delete q.name;})));
+        }}));
+}
+
 function renderDetail()
 {
     const pid = S.sel, p = S.parts[pid];
     const users = usersOf(pid), bad = problems(pid), doll = users.find(rid => isDoll(S.roles[rid]));
     $('view').replaceChildren(h('div', {class: 'detail'},
-        h('div', {class: 'head'}, h('span', {class: 'bigid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
+        h('div', {class: 'head'}, h('span', {class: 'bigid'}, PT.nameOf(S.parts, pid)), p.name && h('span', {class: 'dim pid'}, pid), h('span', {class: 'dim'}, `${KIND_NAMES[p.kind] ?? ''} ${p.kind ?? ''}`),
             h('span', {class: 'grow'}),
             h('span', {class: 'acts'},
                 h('button', {class: S.json ? 'on' : '', dataset: {act: 'json'}, title: '切換表單／整筆 JSON', onclick: () => {S.json = !S.json; render();}},
@@ -395,6 +409,7 @@ function renderDetail()
                 h('button', {onclick: () => act(askEntry(pid))}, '複製…'),
                 h('button', {onclick: () => act(deletePart(pid))}, '刪除…'))),
         bad.length > 0 && h('ul', {class: 'warns'}, bad.map(w => h('li', null, w))),
+        !S.json && nameField(pid),
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
         p.back && IC.iconEl(p.back, 160),
@@ -432,8 +447,9 @@ function setSex(sx)
     render();
 }
 
-// 正在打 JSON（還沒失焦、沒套用）時重畫會吃掉打到一半的字；切到別的分頁 hasFocus 是 false，照常畫
-const typing = () => document.activeElement?.classList.contains('je-ta') && document.hasFocus();
+// 正在打 JSON／名稱（還沒失焦、沒套用）時重畫會吃掉打到一半的字；切到別的分頁 hasFocus 是 false，照常畫
+const TYPING = '.je-ta, .nameinp';
+const typing = () => document.activeElement?.matches(TYPING) && document.hasFocus();
 
 function render()
 {
@@ -600,7 +616,7 @@ addEventListener('keydown', (e) => {
 });
 $('search').oninput = (e) => {S.search = e.target.value; render();};
 $('view').addEventListener('focusout', (e) => {
-    if (e.target.matches('.je-ta')) released().then(() => {if (S.stale) render();});
+    if (e.target.matches(TYPING)) released().then(() => {if (S.stale) render();});
 });
 SH.onSaved((file) => {
     if (file === 'part.json' || file === 'role.json') act(reload());

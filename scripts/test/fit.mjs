@@ -118,6 +118,11 @@ run('fit', async t => {
         // 下拉挑部位：八個部位都有、寫 role.json、選（無）刪 key、undo
         const pick = (k, v) => {const s = document.querySelector(`select.part[data-k="role.json|guard-1|${k}"]`); s.value = v; s.dispatchEvent(new Event('change'));};
         const g1 = () => S.doc['role.json'].data['guard-1'];
+        S.doc['part.json'].data['head-wick'].name = '維克的頭';
+        F.render();
+        out.partName = [...document.querySelector('select.part[data-k$="|head"]').options].find(o => o.value === 'head-wick').textContent;
+        delete S.doc['part.json'].data['head-wick'].name;
+        F.render();
         const n0 = await drawn();
         out.partSel = [document.querySelectorAll('#view select.part').length, [...document.querySelector('select.part[data-k$="|head"]').options].every(o => !o.value || S.doc['part.json'].data[o.value]?.kind === 'head')];
         pick('head', 'head-wick');
@@ -514,7 +519,8 @@ run('fit', async t => {
     t.eq('滑過十字／把手 hover、游標、移出清掉', JSON.stringify(r.hover), JSON.stringify(['wristF', 'move', 'wristF', true, null]));
     t.eq('拖白點轉 90°、undo、Shift 吸 45、沒有的支點帶上位置', JSON.stringify(r.rotDrag), JSON.stringify(['{"x":-13,"y":20,"a":90}', '{"x":-13,"y":20}', 45, '{"x":0,"y":0,"a":90}']));
     t.eq('頭盔數字相對 neck：移支點跟著走', JSON.stringify(r.follow), JSON.stringify([0, 3]));
-    t.eq('下拉挑部位：八個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo', JSON.stringify(r.partSel), JSON.stringify([8, true, 'head-wick', true, false, false]));
+    t.eq('下拉挑部位：有名稱顯示「名稱（id）」', r.partName, '維克的頭（head-wick）');
+    t.eq('下拉挑部位：八個、只列同 kind、寫 role.json 多畫一張、（無）刪 key、undo',JSON.stringify(r.partSel), JSON.stringify([8, true, 'head-wick', true, false, false]));
     t.eq('清空刪 key', r.cleared, false);
     t.eq('不是數字不寫', r.badNum, false);
     t.check('未存標記', r.dirty[0] && r.dirty[1]);

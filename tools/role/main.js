@@ -244,8 +244,8 @@ function pickPart(kind, cur, sex)
         dlg.querySelector('.tiles').replaceChildren(
             tile('', IC.iconEl(null, 48), '無', '清掉'),
             ...ids.map(pid => {
-                const n = partUsers(pid).length, p = S.ext.parts[pid], bad = !sexOk(p, sex);
-                return tile(pid, IC.iconEl(p.sprite, 48), bad ? `⚠ ${pid}` : pid,
+                const n = partUsers(pid).length, p = S.ext.parts[pid], bad = !sexOk(p, sex), name = PT.nameOf(S.ext.parts, pid);
+                return tile(pid, IC.iconEl(p.sprite, 48), bad ? `⚠ ${name}` : name,
                     `${pid}${bad ? `（${SEX_NAMES[p.sex] ?? p.sex}，但角色是${sexName(sex)}）` : ''}${n ? `（${n} 個角色在用：${partUsers(pid).join('、')}）` : '（沒有角色在用）'}`);
             }));
     };
