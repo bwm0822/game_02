@@ -18,7 +18,7 @@ import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as ani
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
-const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['handF', '前手'], ['handB', '後手']];
+const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hat', '帽子'], ['handF', '前手'], ['handB', '後手']];
 // 空格剪影同遊戲 setting.js 的 CAT2ICON
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
@@ -633,7 +633,7 @@ function setZoom(z)
     drawPv();
 }
 
-const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT);
+const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT, partFor(parts(), role(), 'hat'));
 
 function partsOf(r)
 {

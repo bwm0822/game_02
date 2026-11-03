@@ -839,7 +839,7 @@ export class Doll extends Pic
         if(this._held) {this._shape.removeAll(true); addParts();}
 
         dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat);});
-        const hide = hiddenParts(dats, GM.CAT);
+        const hide = hiddenParts(dats, GM.CAT, DB.rolePart(meta, 'hat'));
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 
         this._shape.sort('depth');

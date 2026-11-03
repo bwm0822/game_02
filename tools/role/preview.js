@@ -54,7 +54,7 @@ export function partsOf(r, items, parts)
         if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
     };
-    const hide = hiddenParts(equips, CAT);
+    const hide = hiddenParts(equips, CAT, partFor(parts, r, 'hat'));
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
     for (const it of equips) add(equipFor(it.equip, r.sex, it.sex), it.cat);
     return out.sort((a, b) => a.d - b.d);

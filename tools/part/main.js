@@ -14,7 +14,7 @@ import {previewEl} from '../role/preview.js';
 import {ROLE_PARTS, PIVOTS, pivotOf, sexOk} from '../../src/core/equip.js';
 import {PIVOT_NAMES, PIVOT_COLOR} from '../common/handles.js';
 
-const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
+const KIND_NAMES = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
 const SEX_NAMES = {m: '限男', f: '限女'}, SEX_MARK = {m: '♂', f: '♀'};
 const FILTERS = [['all', '全部'], ['unused', '未使用'], ['bad', '壞的']];
 // 人偶：角色編輯器人形範本的身體跟尺寸
@@ -48,6 +48,8 @@ function problems(pid)
     if (!ROLE_PARTS.includes(p.kind)) out.push(`kind「${p.kind ?? ''}」不是 ${ROLE_PARTS.join('／')}`);
     const e = IC.check(p.sprite);
     if (e) out.push(`sprite：${e}`);
+    const eb = p.back && IC.check(p.back);
+    if (eb) out.push(`back：${eb}`);
     for (const [rid, r] of Object.entries(S.roles))
         for (const k of ROLE_PARTS) if (r[k] === pid && k !== p.kind) out.push(`${rid} 的 ${k} 指到它，但它是 ${p.kind}`);
     for (const rid of usersOf(pid)) if (!sexOk(p, S.roles[rid].sex)) out.push(`${rid} 在用，但這條${SEX_NAMES[p.sex] ?? p.sex}`);
@@ -177,7 +179,7 @@ function dollOf(pid, sex)
 // 擺放、支點以外的欄位唯讀
 function fieldRows(p)
 {
-    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && k !== 'sex' && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
+    return Object.entries(p).filter(([k]) => k !== 'kind' && k !== 'f' && k !== 'sex' && !(p.kind === 'hat' && k === 'hideHair') && !NUMS.some(([n]) => n === k) && !(p.kind === 'body' && PIVOTS.includes(k))).map(([k, v]) =>
         h('tr', null, h('td', {class: 'k'}, k), h('td', null, typeof v === 'object' ? JSON.stringify(v) : String(v))));
 }
 
@@ -325,6 +327,9 @@ function renderDetail()
         bad.length > 0 && h('ul', {class: 'warns'}, bad.map(w => h('li', null, w))),
         h('div', {class: 'title'}, '原圖'),
         IC.iconEl(p.sprite, 160),
+        p.back && IC.iconEl(p.back, 160),
+        p.kind === 'hat' && h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!p.hideHair, dataset: {k: `part.json|${pid}|hideHair`},
+            onchange: (e) => act(edit(pid, (q) => {if (e.target.checked) q.hideHair = true; else delete q.hideHair;}))}), ' 藏頭髮（改了立刻存檔）'),
         h('div', {class: 'title'}, '限定（改了立刻存檔；有在用的角色性別不符就不能改）'),
         h('select', {dataset: {k: `part.json|${pid}|sex`}, onchange: e => act(setPartSex(pid, e.target.value || undefined))},
             ['', 'm', 'f'].map(v => h('option', {value: v, selected: (p.sex ?? '') === v}, SEX_NAMES[v] ? `${SEX_NAMES[v]}　${v}` : '—'))),

@@ -1033,7 +1033,7 @@ export class RoleView extends View
             this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, 'wristF'));
             this._sortParts();
         }
-        const hide = hiddenParts(dats, GM.CAT);
+        const hide = hiddenParts(dats, GM.CAT, DB.rolePart(this.meta, 'hat'));
         for(const [k, sps] of Object.entries(this._parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
     }
 

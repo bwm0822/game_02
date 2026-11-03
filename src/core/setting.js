@@ -94,6 +94,7 @@ export const GM =
         CLOTH      : 0b10_0000_0000_0000_0000,
         SHOES      : 0b100_0000_0000_0000_0000,
         HAND_B     : 0b1000_0000_0000_0000_0000,
+        HAT        : 0b1_0000_0000_0000_0000_0000,
     },
 
     FAV:{
@@ -584,6 +585,7 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.BACK] : 1.5,
     [GM.PART.CLOTH] : 0.7,
     [GM.PART.SHOES] : 0.2,
+    [GM.PART.HAT] : 3,
     [GM.CAT.HELMET] : 3,
     [GM.CAT.CHESTPLATE] : 1,
     [GM.CAT.GLOVES] : 6,
@@ -598,6 +600,7 @@ export const ROLE_PART = Object.freeze({
     cloth : GM.PART.CLOTH,
     head : GM.PART.HEAD,
     hair : GM.PART.HAIR,
+    hat : GM.PART.HAT,
     handF : GM.PART.HAND_F,
     handB : GM.PART.HAND_B,
 });
@@ -609,6 +612,7 @@ export const NODE_DEPTH = Object.freeze({neck:1.5, wristF:4, wristB:-1});
 export const PART_NODE = Object.freeze({
     [GM.PART.HEAD] : 'neck',
     [GM.PART.HAIR] : 'neck',
+    [GM.PART.HAT] : 'neck',
     [GM.CAT.HELMET] : 'neck',
     [GM.PART.HAND_F] : 'wristF',
     [GM.CAT.WEAPON] : 'wristF',
