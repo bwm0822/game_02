@@ -167,6 +167,7 @@ function pastePose()
     const G = unpinned(linked(L));
     hist.push({group: G.map(M => hist.snap(M))});
     for (const M of G) Object.assign(M, poseClip);
+    autoTouch(L);
     refreshAll();
     status(`貼上擺放到 ${L.name}`);
 }
@@ -234,7 +235,7 @@ function dollShow()
     }
 }
 
-// 手動層的女版：L.alt＝沒顯示的那個性別的 {sex, scale, x, y}（有女版才有，a/ox/oy 男女共用）；性別換了就跟顯示中的數字對調
+// 女版：L.alt＝沒顯示的那個性別的 {sex, scale, x, y}（有女版才有，a/ox/oy 男女共用）；性別換了就跟顯示中的數字對調
 const ALT_F = ['scale', 'x', 'y'];
 const otherSex = (s) => s === 'f' ? 'm' : 'f';
 function altSync()
@@ -243,33 +244,42 @@ function altSync()
     {
         if (L.alt?.sex !== S.doll.sex) continue;
         const cur = {sex: otherSex(S.doll.sex), ...pickKeys(L, ALT_F)};
-        Object.assign(L, pickKeys(L.alt, ALT_F));
+        autoPlace({P: {}, C: L}, L.alt);
         L.alt = cur;
     }
 }
 
-// 換性別也換自動護具／服飾用的那組數字：拆過就照新那組重新擺放；有女版的手動層換成另一組數字
-// 自動模式正在調的那組有變記一步模式內 undo（連性別一起退）；其他組（模式外全部）照數字重擺、不改 S.auto，手動移過的也蓋掉；
+// 沒女版的自動零件：同一組基準換到新身體（遊戲數字不變）
+function baseMove(L, from, to)
+{
+    const {x, y} = sexMove(autoP(L), pickKeys(L, ALT_F), from, to);
+    autoShift(L, x, y);
+}
+
+// 換了性別：有女版的兩組對調、沒女版的換身體，skip＝已經還原好的那組
+function sexSwap(from, skip = null)
+{
+    altSync();
+    for (const L of S.layers) if (femAuto(L) && !L.alt && L.auto.gid !== skip) baseMove(L, from, S.doll.sex);
+}
+
+const placeSig = (Ls) => JSON.stringify(Ls.map(L => pickKeys(L, ALT_F)));
+
+// 數字是零件自己的，換性別不讀全域；自動模式正在調的那組有變記一步模式內 undo（連性別一起退），
 // 模式外有零件或手動層動到才記一筆全域 undo（連性別一起退），模式內其他組不記
 function setDoll(d)
 {
-    const m = S.mode, auto = m.type === 'auto', change = d.sex && d.sex !== S.doll.sex;
+    const m = S.mode, auto = m.type === 'auto', from = S.doll.sex, change = d.sex && d.sex !== from;
     const parts = change && auto ? (m.parts ?? []).filter(p => AUTO_SEXED.includes(p.P.kind)) : [];
-    const before = parts.length && autoState(m);
-    const others = change ? sexedParts(auto ? m.gid ?? m.layer?.autoSrc : null) : [], hand = offCfg(others);
-    const alts = change ? S.layers.filter(L => L.alt) : [];
-    const undo = !auto && {group: [hist.snapList(S), ...[...autoLayers(others), ...alts].map(L => hist.snap(L)), hist.snapProp(S.doll, 'sex')]};
+    const before = parts.length && autoState(m), sig = placeSig(autoLayers(parts));
+    const Ls = change ? S.layers.filter(L => femAuto(L) || L.alt).flatMap(linked) : [], sig0 = placeSig(Ls);
+    const undo = !auto && {group: [hist.snapList(S), ...Ls.map(L => hist.snap(L)), hist.snapProp(S.doll, 'sex')]};
     Object.assign(S.doll, d);
     dollShow();
-    altSync();
+    if (change) sexSwap(from);
     autoSet(S.auto);
-    const diff = offCfg(parts);
-    if (diff.length) autoStep(m, before);
-    for (const p of diff) autoApply(m, p, autoCfg(p.P), false);
-    const moved = offCfg(others);
-    for (const p of moved) autoPlace(p, autoCfg(p.P, S.auto, p.C));
-    if (undo && (moved.length || alts.length)) hist.push(undo);
-    if (hand.length) status(`${hand.map(p => p.C.name).join('、')} 手動移過，已照${S.doll.sex === 'f' ? '女' : '男'}版數字重擺`);
+    if (before && placeSig(autoLayers(parts)) !== sig) autoStep(m, before);
+    if (undo && placeSig(Ls) !== sig0) hist.push(undo);
     refreshAll();
 }
 
@@ -337,23 +347,33 @@ function dollTagEl(L)
 
 const dollSig = () => JSON.stringify([dollBody(dollParts, 'm'), dollBody(dollParts, 'f'), ...S.layers.map(dollEntry)]);
 
-// 女版：護具／服飾的自動零件記 C.auto.fem（數字是全域的 S.auto.f），標了衣服／鞋子／前後手 pool 的手動層記 L.alt（數字跟著圖層）；
+// 女版：護具／服飾的自動零件、標了衣服／鞋子／前後手 pool 的手動層，有女版就有 L.alt；
 // 能新增的只有這些，其他層有女版（例如之後取消了 pool）只能刪除
 const FEM_POOL = ['cloth', 'shoes', 'handF', 'handB'];
 const femAuto = (L) => AUTO_SEXED.includes(autoP(L)?.kind);
 const femAble = (L) => femAuto(L) || FEM_POOL.includes(L.pool);
-const hasFem = (L) => femAuto(L) ? !!L.auto.fem : !!L.alt;
+const hasFem = (L) => !!L.alt;
 
-// 新增：自動零件套女版那組（設定分頁的女版數字），手動層從基準複製；刪除：回到基準。一筆全域 undo
+// 新增：自動零件套女版那組（設定分頁的女版數字），手動層從基準複製；刪除：回到基準（女模式換到女身體）。一筆全域 undo
 function setFem(L, on)
 {
     cancelMode();
     hist.push({group: [hist.snapList(S), ...linked(L).map(M => hist.snap(M))]});
     if (femAuto(L))
     {
-        const {fem, ...rest} = L.auto, P = autoP(L);
-        L.auto = on ? {...rest, fem: true} : rest;
-        if (autoFemale(P)) autoPlace({P, C: L}, autoCfg(P, S.auto, L));
+        const P = autoP(L), cur = pickKeys(L, ALT_F), female = S.doll.sex === 'f';
+        if (on)
+        {
+            const nums = pickKeys(S.auto.f[P.key], ALT_F);
+            L.alt = female ? {sex: 'm', ...pickKeys(sexMove(P, cur, 'f', 'm'), ALT_F)} : {sex: 'f', ...nums};
+            if (female) autoPlace({P, C: L}, nums);
+        }
+        else
+        {
+            const {alt} = L;
+            delete L.alt;
+            if (female) autoPlace({P, C: L}, pickKeys(sexMove(P, alt, 'm', 'f'), ALT_F));
+        }
     }
     else if (on) L.alt = {sex: otherSex(S.doll.sex), ...pickKeys(L, ALT_F)};
     else
@@ -484,8 +504,9 @@ function femaleFrom(P, v)
 }
 const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
 const pickKeys = (o, ks) => Object.fromEntries(ks.map(k => [k, o[k]]));
-// 護具／服飾分男女兩組：S.auto.helmet… 是男版（基準）、S.auto.f.helmet… 是女版（只有 scale/x/y，存檔% 跟男版共用，PNG 只有一張）；
-// 零件有沒有女版記在 C.auto.fem（拆出來預設沒有，右鍵新增／刪除）。女模式（header 的 男｜女）有女版用女版，沒有就是基準換到女身體的 rig／支點上（同遊戲）
+// 護具／服飾的全域預設分男女兩組：S.auto.helmet… 是男版（基準）、S.auto.f.helmet… 是女版（只有 scale/x/y，存檔% 跟男版共用，PNG 只有一張）；
+// 拆出來之後數字是零件自己的（圖層上是顯示中的那組），全域只給下次拆圖／新增女版用。女版有沒有看 C.alt（拆出來預設沒有，右鍵新增／刪除）；
+// 女模式（header 的 男｜女）有女版用女版，沒有就是基準換到女身體的 rig／支點上（同遊戲）
 const autoFemale = (P) => AUTO_SEXED.includes(P.kind) && S.doll.sex === 'f';
 const modeC = (P) => S.mode.parts?.find(p => p.P === P)?.C;
 const autoNode = (P) => P.kind === 'armor' ? ITEM_NODE[ITEM_CAT[P.key]] : PART_NODE[P.key];
@@ -493,10 +514,10 @@ const autoNode = (P) => P.kind === 'armor' ? ITEM_NODE[ITEM_CAT[P.key]] : PART_N
 const sexMove = (P, row, from, to, parts = dollParts) =>
     pivotShift(pivotShift({...row}, parts, autoNode(P), from, 1, false), parts, autoNode(P), to, -1, false);
 const autoCfg = (P, a = S.auto, C = modeC(P), sex = S.doll.sex) => P.kind === 'weapon' ? a.weapon[a.cls] : !AUTO_SEXED.includes(P.kind) || sex !== 'f' ? a[P.key]
-    : C?.auto?.fem ? {...a[P.key], ...a.f[P.key]} : {...a[P.key], ...pickKeys(sexMove(P, a[P.key], 'm', 'f'), AUTO_FF)};
+    : C?.alt ? {...a[P.key], ...a.f[P.key]} : {...a[P.key], ...pickKeys(sexMove(P, a[P.key], 'm', 'f'), AUTO_FF)};
 const autoWith = (a, P, row, C = modeC(P)) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}}
     : !autoFemale(P) ? {...a, [P.key]: row}
-    : C?.auto?.fem ? {...a, [P.key]: {...a[P.key], pct: row.pct}, f: {...a.f, [P.key]: pickKeys(row, AUTO_FF)}}
+    : C?.alt ? {...a, [P.key]: {...a[P.key], pct: row.pct}, f: {...a.f, [P.key]: pickKeys(row, AUTO_FF)}}
     : {...a, [P.key]: {...a[P.key], pct: row.pct, ...pickKeys(sexMove(P, row, 'f', 'm'), AUTO_FF)}};
 
 function autoLoad()
@@ -561,10 +582,6 @@ function groupsOf(Ls)
     }
     return [...ms.values()];
 }
-// 分男女的自動零件（護具、服飾），skip＝自動模式正在調的那組
-const sexedParts = (skip) => groupsOf(S.layers.filter(L => AUTO_SEXED.includes(autoP(L)?.kind) && L.auto.gid !== skip)).flatMap(m => m.parts);
-const offCfg = (parts) => parts.filter(p => !autoSame(p.P, autoCfg(p.P, S.auto, p.C), autoRow(p)));
-
 const autoLayers = (parts) => parts.flatMap(p => linked(p.C));
 const autoSnap = (parts) => ({group: [hist.snapList(S), ...autoLayers(parts).map(L => hist.snap(L, true))]});
 const AUTO_STEPS = 50;
@@ -621,11 +638,11 @@ function autoUndo(m, from, to)
     }
     if (s.sex !== S.doll.sex)
     {
+        const from = S.doll.sex;
         S.doll.sex = s.sex;
         dollShow();
-        altSync();
+        sexSwap(from, m.gid ?? m.layer?.autoSrc);
         autoSet(S.auto);
-        for (const p of offCfg(sexedParts(m.gid ?? m.layer?.autoSrc))) autoPlace(p, autoCfg(p.P, S.auto, p.C));
     }
     if (!m.parts) return true;
     for (const p of m.parts) if (p.P.kind === 'weapon') p.C.auto = {...p.C.auto, cls: s.cls};
@@ -764,6 +781,17 @@ function autoPose(m, part, v, step = true)
 
 const autoWeapon = (m) => m.type === 'auto' && m.parts?.find(p => p.P.kind === 'weapon') || null;
 const autoSave = (part) => autoSet(autoWith(S.auto, part.P, autoRow(part), part.C));
+
+// 模式外動了自動零件（或它的前後片）也寫回全域預設，同自動模式；拆完改過、不能再調的不算。武器寫它自己的分類，面板的分類不動
+function autoTouch(L)
+{
+    const C = autoOwner(L), P = C && autoP(C);
+    if (!C) return;
+    const row = autoRow({P, C}), base = P.kind === 'weapon' ? {...S.auto, cls: wclsOk(C.auto.cls ?? wclsOf(C.name))} : S.auto;
+    const a = autoWith(base, P, row, C);
+    const link = P.kind === 'head' && S.auto.headLink && autoParts('head').find(Q => Q !== P);
+    autoSet({...a, ...(link && {[link.key]: {...a[link.key], ...pickKeys(row, AUTO_LINK)}}), cls: S.auto.cls});
+}
 
 // 沒拆過：先算好零件範圍（勾了拆前後片就追頭盔切線），只調數字和切線，確定才拆；拆過（選原圖或零件）：直接進調整，去綠圖從零件自己的步驟反推
 function autoEnter(L)
@@ -2527,7 +2555,11 @@ cv.addEventListener('pointermove', e => {
 
 cv.addEventListener('pointerup', () => {
     const s = drag?.snap, s0 = s?.group?.[0];
-    if (s0 && (s0.x !== s0.layer.x || s0.y !== s0.layer.y || s0.a !== s0.layer.a)) hist.push(s);
+    if (s0 && (s0.x !== s0.layer.x || s0.y !== s0.layer.y || s0.a !== s0.layer.a))
+    {
+        hist.push(s);
+        if (drag.type === 'move' || drag.type === 'rotate') autoTouch(s0.layer);
+    }
     if (drag && S.mode.type === 'warp') {warpPointerUp(S.mode); refreshModePanel();}
     if (drag?.type === 'autoMove' || drag?.type === 'autoPose') autoSave(drag.part);
     if (drag?.type === 'spMark') spMarkUp(drag);
@@ -2621,6 +2653,7 @@ window.addEventListener('keydown', e => {
         const move = S.mode.type !== 'scale', step = ST.step('xy') * (e.shiftKey ? 10 : 1), G = move ? unpinned(linked(L)) : [L];
         if (move) hist.push({group: G.map(M => hist.snap(M))});
         for (const M of G) Object.assign(M, {x: round(M.x + d[0] * step), y: round(M.y + d[1] * step)});
+        if (move) autoTouch(L);
         refreshProps();
         dirty();
     }
@@ -3971,7 +4004,7 @@ function itemCheck(rows, items, keys)
         const err = (s) => {r.err ||= s;};
         // 目標道具限定性別（item.sex）：遊戲不套 f，忽略零件的女版，照那個性別的數字寫基準、有 f 就清掉
         r.only = items[r.id]?.sex ?? null;
-        r.dropF = !!items[r.id]?.equip?.f && (!!r.only || r.P.kind === 'armor' && !r.part.C.auto.fem);
+        r.dropF = !!items[r.id]?.equip?.f && (!!r.only || r.P.kind === 'armor' && !r.part.C.alt);
         const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
         if (!r.id)
@@ -4160,9 +4193,9 @@ async function loadItems()
             rows.push([part, {...cur, ...pick(e), a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1}, e0.sprite]);
             continue;
         }
-        const only = items[id].sex, fem = only ? !!part.C.auto.fem : !!e0.f;
+        const only = items[id].sex, fem = only ? !!part.C.alt : !!e0.f;
         const base = pick(flat(e0, 'm')), female = pick(flat(only ? e0 : {...e0, ...e0.f}, 'f'));
-        if (fem !== !!part.C.auto.fem) fems.push([part, fem]);
+        fems.push([part, fem && sexAlt(base, female)]);
         sexed.push([part.P, base, fem && female]);
         rows.push([part, {...cur, ...(autoFemale(part.P) ? female : base)}, e0.sprite]);
     }
@@ -4222,15 +4255,19 @@ async function loadPlace(m, rows, warn)
     }
 }
 
-// 載入改了零件有沒有女版（[[part, on]]）：先記一步模式內 undo 再改，之後的 autoApply 才寫進對的那組
+// 載入的兩組數字，沒顯示的那組進 alt
+const sexAlt = (base, female) => S.doll.sex === 'f' ? {sex: 'm', ...base} : {sex: 'f', ...female};
+
+// 載入改了零件的女版（[[part, alt 或 false]]）：先記一步模式內 undo 再改，之後的 autoApply 才寫進對的那組
 function femFlags(m, fems)
 {
-    if (!fems.length) return;
+    const diff = fems.filter(([{C}, alt]) => JSON.stringify(C.alt ?? false) !== JSON.stringify(alt));
+    if (!diff.length) return;
     autoStep(m);
-    for (const [{C}, on] of fems)
+    for (const [{C}, alt] of diff)
     {
-        const {fem, ...rest} = C.auto;
-        C.auto = on ? {...rest, fem: true} : rest;
+        if (alt) C.alt = alt;
+        else delete C.alt;
     }
 }
 
@@ -4288,12 +4325,22 @@ function autoMale(m)
     const parts = m.parts.filter(p => autoFemale(p.P));
     if (!parts.length) return null;
     const s = autoState(m);
-    for (const p of parts) autoPlace(p, S.auto[p.P.key]);
-    return () => History.restore(s);
+    for (const {P, C} of parts)
+    {
+        const female = partNums(P, C, 'f');
+        autoPlace({P, C}, partNums(P, C, 'm'));
+        C.keepF = female;
+    }
+    return () => {
+        History.restore(s);
+        for (const {C} of parts) delete C.keepF;
+    };
 }
 
-// 女模式顯示的那組（畫布座標）：有女版＝女版，沒有＝基準換到女身體
-const femaleOf = (P, C) => pickKeys(autoCfg(P, S.auto, C, 'f'), AUTO_FF);
+// 零件某個性別的數字（畫布座標）：有女版＝兩組各自的；沒有＝同一組基準換到那個性別的身體
+const partNums = (P, C, sex) => altNums(C.alt || sex === S.doll.sex ? C : sexMove(P, pickKeys(C, ALT_F), S.doll.sex, sex), sex);
+// keepF：autoMale() 暫時把零件換成男版時，女版那組記在這裡
+const femaleOf = (P, C) => C.keepF ?? partNums(P, C, 'f');
 // 目標限定性別時存檔對話框／確認框的說明
 const onlyNote = (r) => r.only && `${r.only === 'f' ? '限女' : '限男'}：照${r.only === 'f' ? '女' : '男'}版數字寫基準、不寫女版`;
 
@@ -4307,7 +4354,7 @@ async function commitItems(rows, bake, all = false)
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${tag(r)}：${r.err}`).join('\n')}`);
     // 有男女兩組的（護具）一定存男版、零件有女版才寫 f；其他照目前人偶；限定性別的照那個性別寫基準（限女的護具用女模式顯示的那組）
     const pjson = await readParts(), rowSex = (r) => r.only ?? (AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex);
-    const fem = (r) => r.P.kind === 'armor' && !r.only && !!r.part.C.auto.fem;
+    const fem = (r) => r.P.kind === 'armor' && !r.only && !!r.part.C.alt;
     const note = dollNote(pjson, act.flatMap(r => [rowSex(r), ...(fem(r) ? ['f'] : [])]));
     const ask = [...act.filter(r => r.ask || all && r.warn || r.dropF || r.only)
         .map(r => `${tag(r)}：${[all ? r.warn : '', r.ask && (all ? `會覆蓋 ${r.ask}` : r.ask), onlyNote(r), r.dropF && (r.only ? '會移除女版' : '會移除女版（零件沒有女版）')].filter(Boolean).join('；')}`), ...note];
@@ -4568,8 +4615,8 @@ async function loadPool()
                 rows.push([part, {...cur, ...pick(flat(e0, S.doll.sex))}, e0.sprite]);
                 continue;
             }
-            const fem = e0.sex ? !!part.C.auto.fem : !!e0.f, [base, female] = both(e0).map(pick);
-            if (fem !== !!part.C.auto.fem) fems.push([part, fem]);
+            const fem = e0.sex ? !!part.C.alt : !!e0.f, [base, female] = both(e0).map(pick);
+            fems.push([part, fem && sexAlt(base, female)]);
             sexed.push([part.P, base, fem && female]);
             rows.push([part, {...cur, ...(autoFemale(part.P) ? female : base)}, e0.sprite]);
         }
@@ -4782,6 +4829,20 @@ function applySettings(s)
     autoSet({...S.auto, ...Object.fromEntries(AUTO_UI.filter(k => k in (s.auto ?? {})).map(k => [k, s.auto[k]]))});
 }
 
+// 舊專案的女版只有 auto.fem 旗標、另一組數字在全域：補成 alt。加入專案時專案的性別跟目前不同，沒女版的基準換到目前的身體（有女版的 altSync 會對調）
+function projSexFix(layers, sex)
+{
+    for (const L of layers)
+    {
+        if (!L.auto?.fem) continue;
+        const {fem, ...rest} = L.auto, key = L.auto.key;
+        L.auto = rest;
+        L.alt ??= {sex: otherSex(sex), ...pickKeys(sex === 'f' ? S.auto[key] : S.auto.f[key], ALT_F)};
+    }
+    if (sex === S.doll.sex) return;
+    for (const L of layers) if (femAuto(L) && !L.alt) baseMove(L, sex, S.doll.sex);
+}
+
 async function saveProject()
 {
     if (!needRoot()) return;
@@ -4850,7 +4911,7 @@ async function openProject(fh, dir, path)
         if (d.tag && had) warns.push(`${d.name}：人偶標記 ${dollBadge(d.tag)} 已經有別層了，拿掉這層的標記`);
         else if (d.tag) layers.at(-1).tag = d.tag;
     }
-    const lossy = warns.length > 0;
+    const lossy = warns.length > 0, projSex = data.settings?.doll?.sex ?? S.doll.sex;
     if (add)
     {
         hist.push(hist.snapList(S));
@@ -4864,6 +4925,7 @@ async function openProject(fh, dir, path)
         S.layers = layers;
         S.active = layers[data.active] ?? layers.at(-1) ?? null;
     }
+    projSexFix(layers, projSex);
     altSync();
     dollSync();
     S.projSig = (!add || wasClean) && !lossy ? projectSig() : null;
@@ -4935,6 +4997,7 @@ const onProp = (id, fn) => {
         const G = linked(L);
         hist.push({group: G.map(M => hist.snap(M))});
         for (const M of G) fn(M, v);
+        autoTouch(L);
         refreshAll();
     };
 };
@@ -5140,7 +5203,7 @@ $('auCls').onchange = () => {
 // 武器只還原目前分類，護具只還原護具顯示中那組（女模式有女版＝女版，女版的存檔% 跟男版共用，不動；沒有女版＝基準；連頭盔拆法），頭像只還原頭、頭髮（連 🔗）
 $('auReset').onclick = () => {
     const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
-    const def = (P, C = modeC(P)) => weapon ? wclsDef(S.auto.cls) : autoFemale(P) && C?.auto?.fem ? {...AUTO_DEF.f[P.key], pct: S.auto[P.key].pct}
+    const def = (P, C = modeC(P)) => weapon ? wclsDef(S.auto.cls) : autoFemale(P) && C?.alt ? {...AUTO_DEF.f[P.key], pct: S.auto[P.key].pct}
                                                                  : autoCfg(P, {...S.auto, [P.key]: AUTO_DEF[P.key]}, C);
     for (const part of m.parts ?? []) autoApply(m, part, def(part.P, part.C));
     autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))

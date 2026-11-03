@@ -7,7 +7,7 @@ export class History
 {
     constructor() {this.undos = []; this.redos = [];}
 
-    // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）；auto（自動零件的女版旗標）、alt（手動層另一個性別的數字）都是整個換新、不就地改
+    // vis：連顯示一起記（平常切換顯示不進 undo，自動模式會隱藏原圖層）；auto、alt（另一個性別的數字）都是整個換新、不就地改
     snap(layer, vis = false)
     {
         const {x, y, a, ox, oy, scale, ops, canvas, auto, alt} = layer;

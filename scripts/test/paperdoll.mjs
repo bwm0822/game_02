@@ -1131,7 +1131,7 @@ run('paperdoll', async t => {
         $('dollF').click();
         out.noFem = [...at(), pd.hasFem(H), m.hist.length];
         $('dollM').click();
-        H.auto = {...H.auto, fem: true};
+        H.alt = {sex: 'f', scale: 0.125, x: 3, y: 4};
         $('dollF').click();
         out.f = [...at(), $('au-helmet-pct').value, $('auSexL').textContent, m.hist.length];
         type('au-helmet-x', 5);
@@ -2019,7 +2019,7 @@ run('paperdoll', async t => {
                     pd.S.layers.indexOf(Cl) > pd.S.layers.indexOf(Sh), pd.S.active === Cl, L.visible, Cl.x, Sh.y,
                     Cl.canvas.getContext('2d').getImageData(15, 10, 1, 1).data[3]];
         out.noFem = [pd.hasFem(Cl), pd.hasFem(Sh)];
-        Cl.auto = {...Cl.auto, fem: true};
+        Cl.alt = {sex: 'f', scale: 0.2, x: 5, y: 6};
         pd.setDoll({sex: 'f'});
         out.female = [Cl.scale, Cl.x, Cl.y, Cl.canvas.width, $('auSexL').textContent];
         pd.setDoll({sex: 'm'});
@@ -2077,13 +2077,13 @@ run('paperdoll', async t => {
         out.noF = [Cl.scale, Cl.x, Cl.y, JSON.stringify(pd.S.auto.f.cloth), pd.hasFem(Cl)];
         window.confirm = ok;
 
-        // 模式外切男女：拆過的組照新那組重擺、記一筆全域 undo（連性別）；手動移過的也蓋掉＋提示；沒換性別不進 undo
+        // 模式外切男女：零件自己的基準換到新身體、記一筆全域 undo（連性別）；移過的留著；沒換性別不進 undo
         const u1 = pd.hist.undos.length;
         pd.setDoll({sex: 'm'});
         out.outM = [pd.S.mode.type, Cl.x, Cl.y, pd.hist.undos.length - u1];
         Cl.x = 100;
         pd.setDoll({sex: 'f'});
-        out.outF = [Cl.x, Cl.y, $('status').textContent.includes('cloth-inn 手動移過，已照女版數字重擺'), $('auSexL').textContent];
+        out.outF = [Cl.x, Cl.y, $('auSexL').textContent];
         pd.undo();
         out.outUndo = [pd.S.doll.sex, Cl.x, Cl.y, $('auSexL').textContent];
         pd.redo();
@@ -2106,6 +2106,40 @@ run('paperdoll', async t => {
         pd.cancelMode();
         pd.setDoll({sex: 'm'});
         pd.cancelMode();
+
+        // 移動模式改的數字：寫零件＋全域預設，切男女不見了不行；別件不跟著跳；有女版兩組各自留著；女模式移動存得進 f
+        const key = (k) => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: k, bubbles: true}));
+        const Sh2 = pd.S.layers.find(M => M.name === 'shoes-inn2'), sh0 = [Sh2.x, Sh2.y];
+        pd.select(Cl);
+        const c0 = Cl.x;
+        key('ArrowRight');
+        out.touch = [Cl.x - c0 > 0, pd.S.auto.cloth.x === Cl.x, Sh2.x === sh0[0]];
+        const moved = [Cl.x, Cl.y];
+        pd.setDoll({sex: 'f'});
+        out.touchF = [Cl.x, Cl.y];
+        pd.setDoll({sex: 'm'});
+        out.touchBack = JSON.stringify([Cl.x, Cl.y]) === JSON.stringify(moved);
+        pd.setFem(Cl, true);
+        pd.setDoll({sex: 'f'});
+        pd.select(Cl);
+        const fx = Cl.x;
+        key('ArrowRight');
+        const fMoved = Cl.x;
+        out.touchFem = [fMoved - fx > 0, pd.S.auto.f.cloth.x === fMoved, pd.S.auto.cloth.x === moved[0]];
+        pd.setDoll({sex: 'm'});
+        out.femM = JSON.stringify([Cl.x, Cl.y]) === JSON.stringify(moved);
+        pd.setDoll({sex: 'f'});
+        out.femF = Cl.x === fMoved;
+        pd.setMode('sl');
+        window.confirm = () => true;
+        p = pd.savePool();
+        await until(() => $('dlgPool').open);
+        $('dlgPool').close('ok'); await p;
+        window.confirm = ok;
+        parts = await read();
+        out.femSaved = [parts['cloth-inn'].f.x === fMoved, parts['cloth-inn'].x === moved[0] - 0.5, Cl.x === fMoved];
+        pd.cancelMode();
+        pd.setDoll({sex: 'm'});
         pd.autoSet({});
         return out;
     });
@@ -2129,12 +2163,18 @@ run('paperdoll', async t => {
     t.eq('自動（服飾）：載入再存數字原樣回來', ao.round, '{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":7,"y":8,"f":{"scale":0.3,"x":9,"y":10}}');
     t.eq('自動（服飾）：沒有 f＝沒有女版、女模式照基準加女身體 rig、女版數字不動', JSON.stringify(ao.noF), JSON.stringify([0.25, 7, 38, '{"scale":0.3,"x":9,"y":40}', false]));
     t.eq('自動（服飾）：模式外切男照男版重擺、一筆全域 undo', JSON.stringify(ao.outM), JSON.stringify(['sl', 7.5, 40, 1]));
-    t.eq('自動（服飾）：模式外切女手動移過的也重擺＋提示', JSON.stringify(ao.outF), JSON.stringify([7, 38, true, '♀女版']));
+    t.eq('自動（服飾）：模式外切女移過的留著（基準換到女身體）', JSON.stringify(ao.outF), JSON.stringify([99.5, 38, '♀女版']));
     t.eq('自動（服飾）：模式外 undo 連男女一起退', JSON.stringify(ao.outUndo), JSON.stringify(['m', 100, 40, '♂男版']));
-    t.eq('自動（服飾）：模式外 redo 連男女一起重做', JSON.stringify(ao.outRedo), JSON.stringify(['f', 7, 38]));
+    t.eq('自動（服飾）：模式外 redo 連男女一起重做', JSON.stringify(ao.outRedo), JSON.stringify(['f', 99.5, 38]));
     t.eq('自動（服飾）：沒換性別不進 undo', ao.outSame, 0);
-    t.eq('自動（服飾）：模式內切男其他組也重擺、不記全域 undo、這組記模式內一步', JSON.stringify(ao.inM), JSON.stringify([7.5, 40, 0, 1]));
-    t.eq('自動（服飾）：模式內 undo 退男女，其他組跟著回來', JSON.stringify(ao.inUndo), JSON.stringify(['f', 7, 38]));
+    t.eq('自動（服飾）：模式內切男其他組也換身體、不記全域 undo、這組記模式內一步', JSON.stringify(ao.inM), JSON.stringify([100, 40, 0, 1]));
+    t.eq('自動（服飾）：模式內 undo 退男女，其他組跟著回來', JSON.stringify(ao.inUndo), JSON.stringify(['f', 99.5, 38]));
+    t.eq('移動：方向鍵寫零件＋全域預設、別件不跳', JSON.stringify(ao.touch), JSON.stringify([true, true, true]));
+    t.eq('移動：切回來還在原位', ao.touchBack, true);
+    t.eq('移動：有女版時女模式移動寫女版、男版不動', JSON.stringify(ao.touchFem), JSON.stringify([true, true, true]));
+    t.eq('移動：有女版切男是男版那組', ao.femM, true);
+    t.eq('移動：有女版切回女還在移過的位置', ao.femF, true);
+    t.eq('移動：女模式移動的數字存得進 f，基準照男版，存完回女版', JSON.stringify(ao.femSaved), JSON.stringify([true, true, true]));
 
     // 部位 pool：右鍵標 kind、存到 part.json（預設勾顯示中的、PNG＋擺放、接在同 kind 後面）、女模式只寫 f、載入 pool
     const pl = await ev(async () => {
