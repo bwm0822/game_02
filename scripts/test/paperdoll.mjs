@@ -2055,6 +2055,38 @@ run('paperdoll', async t => {
         parts = await read();
         out.keep = [parts['hat-tk'].hideHair, parts['hat-tk'].x, parts['hat-tk'].y];
 
+        // 前後片一組一個 pool：徽章掛前後片、右鍵改整組、非帽子擋存檔、刪原圖交給前片
+        const badge = (n) => [...document.querySelectorAll('#layers .layer')].find(r => r.querySelector('.name').textContent.startsWith(`${n} `))?.querySelector('.tag.pool')?.textContent ?? null;
+        const badges = () => ['hat-tk', 'hat-tk-front', 'hat-tk-back'].map(badge);
+        pd.setPool(F, 'hat');
+        out.badge = badges();
+        pd.setPool(B, null);
+        out.badgeNone = [badges(), O.pool ?? null, F.pool ?? null, B.pool ?? null];
+        pd.setPool(F, 'hat');
+        out.home = [O.pool, F.pool ?? null, B.pool ?? null];
+        const dialog = async () => {
+            const p = pd.savePool();
+            await until(() => $('dlgPool').open);
+            const hats = [...$('dpRows').children].filter(c => c.querySelector('input:not([type=checkbox])').value === 'hat-tk');
+            const r = [hats.length, hats[0].querySelector('input:not([type=checkbox])').value, hats[0].textContent.includes('要先撤掉前後片'), $('dpOk').disabled];
+            $('dlgPool').close();
+            await p;
+            return r;
+        };
+        pd.setPool(F, 'cloth');
+        out.other = await dialog();
+        pd.setPool(F, 'hat');
+        pd.setFem(O, true);
+        pd.removeLayer(O);
+        out.heir = [find('hat-tk') ?? null, F.pool, F.poolId, !!F.alt, O.pool, badges()];
+        out.heirRow = await dialog();
+        await save();
+        parts = await read();
+        out.heirSaved = [parts['hat-tk'].sprite, parts['hat-tk'].back, await png('hat-tk')];
+        pd.undo();
+        out.undo = [find('hat-tk') === O, !!O.alt, !!F.alt, await dialog()];
+        pd.setMode('move');
+
         // 挖除：只有 -front、沒有 back
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         pd.addLayer(bmp, 'tk2', null, null);
@@ -2092,6 +2124,14 @@ run('paperdoll', async t => {
     t.eq('帽子：寫前後片 PNG、不寫完整原圖', JSON.stringify(hat.pngs), JSON.stringify([true, true, false]));
     t.eq('帽子：載入 pool 前後片跟著搬', JSON.stringify(hat.load), JSON.stringify([7, 40, 7, 40, 7, 40]));
     t.eq('帽子：重存保留 hideHair', JSON.stringify(hat.keep), JSON.stringify([true, 7, 8]));
+    t.eq('帽子：徽章掛前後片、原圖不掛', JSON.stringify(hat.badge), JSON.stringify([null, '帽前', '帽後']));
+    t.eq('帽子：右鍵選無整組退出 pool', JSON.stringify(hat.badgeNone), JSON.stringify([[null, null, null], null, null, null]));
+    t.eq('帽子：在前片標 pool 記在原圖', JSON.stringify(hat.home), JSON.stringify(['hat', null, null]));
+    t.eq('帽子：改成非帽子擋存檔', JSON.stringify(hat.other), JSON.stringify([1, 'hat-tk', true, true]));
+    t.eq('帽子：刪原圖 pool／id／女版交給前片', JSON.stringify(hat.heir), JSON.stringify([null, 'hat', 'hat-tk', true, 'hat', [null, '帽前', '帽後']]));
+    t.eq('帽子：刪原圖後對話框還是一列、id 不變', JSON.stringify(hat.heirRow), JSON.stringify([1, 'hat-tk', false, false]));
+    t.eq('帽子：刪原圖後存法不變', JSON.stringify(hat.heirSaved), JSON.stringify(['hat-tk-front', 'hat-tk-back', false]));
+    t.eq('帽子：undo 刪原圖，原圖跟女版回來、還是一列', JSON.stringify(hat.undo), JSON.stringify([true, true, false, [1, 'hat-tk', false, false]]));
     t.eq('帽子：挖除只有 -front、沒有 back', JSON.stringify(hat.cut), JSON.stringify([true, null, 'hat-tk2-front', null, false]));
     t.eq('帽子：不拆就是一張圖', JSON.stringify(hat.none), JSON.stringify(['hat-tk3', null, true]));
 

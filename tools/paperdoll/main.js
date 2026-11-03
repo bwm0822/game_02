@@ -82,7 +82,8 @@ function addLayer(img, name, dir, path)
 
 function removeLayer(L)
 {
-    const m = S.mode;
+    const m = S.mode, heir = poolHeir(L);
+    if (heir) hist.push({group: [hist.snapList(S), hist.snap(L, true), hist.snap(heir, true)]});
     if (m.type === 'auto' && m.parts)
     {
         if (m.src === L) m.src = null;
@@ -97,7 +98,8 @@ function removeLayer(L)
     else if (m.type === 'split' && (m.F === L || m.B === L)) m[m.F === L ? 'F' : 'B'] = null;
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
-    hist.forget(L, true);
+    if (heir) Object.assign(heir, {pool: L.pool, poolId: L.poolId ?? L.name}, L.alt && {alt: L.alt});
+    else hist.forget(L, true);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
 }
@@ -207,15 +209,13 @@ const DOLL_SEX = {m: '男', f: '女'}, DOLL_PART = {hair: '髮', head: '頭', bo
 const dollBadge = (tag) => {const [s, p] = tag.split('-'); return (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0];};
 
 // 自動護具零件的標示：看 auto.key 算、只顯示；前後片沒有 auto，從原頭盔層找
-const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子'], hat: ['帽', '帽子']};
+const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子']};
 
 function armorBadge(L)
 {
     const g = splitNew(L), b = ARMOR_BADGE[(g?.O ?? L).auto?.key];
     if (!b) return null;
     const [s, n] = L === g?.F ? ['前', '（前片）'] : L === g?.B ? ['後', '（後片）'] : ['', ''];
-    // 帽子本體有 pool 的黃底徽章，只標前後片
-    if ((g?.O ?? L).auto.key === 'hat' && !s) return null;
     return Object.assign(el('span', 'tag armor'), {textContent: b[0] + s, title: `自動護具：${b[1]}${n}`});
 }
 
@@ -380,7 +380,7 @@ function setFem(L, on)
     else if (on) L.alt = {sex: otherSex(S.doll.sex), ...pickKeys(L, ALT_F)};
     else
     {
-        if (L.alt.sex === 'm') Object.assign(L, pickKeys(L.alt, ALT_F));
+        if (L.alt.sex === 'm') autoPlace({P: {}, C: L}, L.alt);
         delete L.alt;
     }
     status(`${L.name} ${on ? '新增' : '刪除'}女版`);
@@ -394,10 +394,11 @@ function tagMenu(e, L)
     const tags = [[null, '無'], ...Object.entries(DOLL_SEX).flatMap(([s, sn]) => Object.entries(DOLL_PART).map(([p, pn]) => [`${s}-${p}`, `${sn}：${pn}`]))];
     const pools = [[null, '無'], ...Object.entries(POOL_KIND)];
     const sub = (list, cur, set) => list.map(([k, n]) => [`${k === cur ? '✔ ' : ''}${n}`, () => set(k)]);
+    const pool = poolHome(L).pool, F = femHome(L);
     ctxMenu(e.clientX, e.clientY, [
         [`標記：${tags.find(([k]) => k === (L.tag ?? null))[1]}`, sub(tags, L.tag ?? null, (k) => setTag(L, k))],
-        [`pool：${POOL_KIND[L.pool] ?? '無'}`, sub(pools, L.pool ?? null, (k) => setPool(L, k))],
-        ...hasFem(L) ? [['女版：有', [['刪除', () => setFem(L, false)]]]] : femAble(L) ? [['女版：無', [['新增', () => setFem(L, true)]]]] : [],
+        [`pool：${POOL_KIND[pool] ?? '無'}`, sub(pools, pool ?? null, (k) => setPool(L, k))],
+        ...hasFem(F) ? [['女版：有', [['刪除', () => setFem(F, false)]]]] : femAble(F) ? [['女版：無', [['新增', () => setFem(F, true)]]]] : [],
     ]);
 }
 
@@ -2777,8 +2778,8 @@ function refreshLayers()
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
             ...(L.tag ? [dollTagEl(L)] : []),
-            ...(L.pool ? [Object.assign(el('span', 'tag pool'), {textContent: POOL_BADGE[L.pool], title: `pool：${POOL_KIND[L.pool]}${L.poolId ? `（存過 ${L.poolId}）` : ''}（右鍵改）`})] : []),
-            ...(hasFem(L) ? [Object.assign(el('span', 'tag f fem'), {textContent: '♀', title: '有女版（右鍵改）'})] : []),
+            ...[poolBadge(L)].filter(Boolean),
+            ...(hasFem(femHome(L)) ? [Object.assign(el('span', 'tag f fem'), {textContent: '♀', title: '有女版（右鍵改）'})] : []),
             ...[armorBadge(L)].filter(Boolean),
             name,
             ico('✕', true, '刪除圖層', () => {if (confirm(`刪除圖層 ${L.name}？`)) removeLayer(L);}),
@@ -4428,11 +4429,33 @@ async function commitItems(rows, bake, all = false)
 // 手動層有女版存男版那組；有女版另寫 f、沒有刪 f。其他層（身體、頭、頭髮）只有一組，照目前人偶存成基準、f 不動。
 // 帽子拆了前後片：寫 <id>-front.png／<id>-back.png（挖除只有 -front），sprite 指前片、back 指後片，同道具的 setSplit()，但部位沒有 icon／drop，不寫完整原圖
 // 存過的 id 記在 L.poolId，下次預設用它
+// 前後片一組只有一個 pool：標記記在 poolHome()（原圖，原圖刪掉時 poolHeir() 交給前片），徽章掛前後片、右鍵改整組
 
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
 const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前', handB: '後'};
 const POOL_DIR = 'roles/parts';
 const poolSplit = (L) => L.pool === 'hat' ? splitNew(L) : null;
+const poolHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.pool) ?? Ms[0];};
+const femHome = (L) => {const H = poolHome(L); return H.pool ? H : L;};
+const poolHeir = (L) => {const g = L.pool && poolHome(L) === L && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
+
+function poolBadge(L)
+{
+    const {pool, poolId} = poolHome(L), g = splitNew(L);
+    if (!pool || L === g?.O) return null;
+    return Object.assign(el('span', 'tag pool'), {textContent: POOL_BADGE[pool] + (L === g?.F ? '前' : L === g?.B ? '後' : ''),
+        title: `pool：${POOL_KIND[pool]}${poolId ? `（存過 ${poolId}）` : ''}（右鍵改）`});
+}
+
+function poolThumb(L)
+{
+    const g = poolSplit(L);
+    if (!g) return L.canvas;
+    const Ms = [g.B, g.F].filter(Boolean), c = PX.newCanvas(Ms[0].canvas.width, Ms[0].canvas.height);
+    for (const M of Ms) c.getContext('2d').drawImage(M.canvas, 0, 0);
+    return c;
+}
+
 // 這一列要寫的 [圖檔名, 圖層]
 const poolPngs = (L, id) => {const g = poolSplit(L); return g ? [[`${id}-front`, g.F], ...(g.cut ? [] : [[`${id}-back`, g.B]])] : [[id, L]];};
 const poolP = (L) => L.pool ? autoP(L) : null;
@@ -4447,8 +4470,10 @@ const poolGroups = () => groupsOf(S.layers.filter(L => AUTO_POOL.includes(poolP(
 
 function setPool(L, kind)
 {
-    if (kind) L.pool = kind;
-    else {delete L.pool; delete L.poolId;}
+    const H = poolHome(L);
+    for (const M of linked(L)) if (M !== H) {delete M.pool; delete M.poolId;}
+    if (kind) H.pool = kind;
+    else {delete H.pool; delete H.poolId;}
     refreshAll();
 }
 
@@ -4465,6 +4490,7 @@ function poolCheck(rows, parts, roles, keys)
         const err = (s) => {r.err ||= s;};
         const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
         r.only = old?.sex ?? null;
+        if (r.L.pool !== 'hat' && splitNew(r.L)) err('拆了前後片只能存成帽子，要先撤掉前後片');
         if (!r.id) err('要填 id');
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
         if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
@@ -4487,7 +4513,7 @@ function poolDialog(parts, roles, keys)
 {
     const dlg = $('dlgPool');
     // 帽子拆了前後片時原圖是隱藏的，看前後片顯示了沒
-    const rows = S.layers.filter(L => L.pool).reverse().map(L => ({L, on: linked(L).some(M => M.visible), id: L.poolId ?? L.name}));
+    const rows = S.layers.filter(L => L.pool && poolHome(L) === L).reverse().map(L => ({L, on: linked(L).some(M => M.visible), id: L.poolId ?? L.name}));
     $('dpTitle').textContent = '存到 pool（part.json）';
     const refresh = () => {
         const act = poolCheck(rows, parts, roles, keys);
@@ -4503,7 +4529,7 @@ function poolDialog(parts, roles, keys)
         const row = el('div', 'irow'), body = el('div', 'body'), line = el('div', 'line');
         const thumb = el('canvas');
         thumb.width = thumb.height = 48;
-        fitDraw(thumb, r.L.canvas, true);
+        fitDraw(thumb, poolThumb(r.L), true);
         const on = Object.assign(el('input'), {type: 'checkbox', checked: r.on, onchange: () => {r.on = on.checked; refresh();}});
         const onL = el('label');
         onL.append(on, ` ${POOL_KIND[r.L.pool]}　${r.L.name}`);
