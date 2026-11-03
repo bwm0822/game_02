@@ -207,13 +207,15 @@ const DOLL_SEX = {m: '男', f: '女'}, DOLL_PART = {hair: '髮', head: '頭', bo
 const dollBadge = (tag) => {const [s, p] = tag.split('-'); return (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0];};
 
 // 自動護具零件的標示：看 auto.key 算、只顯示；前後片沒有 auto，從原頭盔層找
-const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子']};
+const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子'], hat: ['帽', '帽子']};
 
 function armorBadge(L)
 {
     const g = splitNew(L), b = ARMOR_BADGE[(g?.O ?? L).auto?.key];
     if (!b) return null;
     const [s, n] = L === g?.F ? ['前', '（前片）'] : L === g?.B ? ['後', '（後片）'] : ['', ''];
+    // 帽子本體有 pool 的黃底徽章，只標前後片
+    if ((g?.O ?? L).auto.key === 'hat' && !s) return null;
     return Object.assign(el('span', 'tag armor'), {textContent: b[0] + s, title: `自動護具：${b[1]}${n}`});
 }
 
@@ -349,7 +351,7 @@ const dollSig = () => JSON.stringify([dollBody(dollParts, 'm'), dollBody(dollPar
 
 // 女版：護具／服飾的自動零件、標了衣服／鞋子／前後手 pool 的手動層，有女版就有 L.alt；
 // 能新增的只有這些，其他層有女版（例如之後取消了 pool）只能刪除
-const FEM_POOL = ['cloth', 'shoes', 'handF', 'handB'];
+const FEM_POOL = ['hat', 'cloth', 'shoes', 'handF', 'handB'];
 const femAuto = (L) => AUTO_SEXED.includes(autoP(L)?.kind);
 const femAble = (L) => femAuto(L) || FEM_POOL.includes(L.pool);
 const hasFem = (L) => !!L.alt;
@@ -463,12 +465,13 @@ const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_ERODE = 12;
 const AUTO_PARTS = [
-    {key: 'helmet', kind: 'armor', name: '頭盔', quad: '右上', qx: 1, qy: 0},
+    {key: 'helmet', kind: 'armor', name: '頭盔', quad: '右上', qx: 1, qy: 0, split: true},
     {key: 'armor', kind: 'armor', name: '護甲', quad: '左下', qx: 0, qy: 1},
     {key: 'boots', kind: 'armor', name: '靴子', quad: '右下', qx: 1, qy: 1},
     {key: 'weapon', kind: 'weapon', name: '武器'},
     {key: 'head', kind: 'head', name: '頭', side: 0},
     {key: 'hair', kind: 'head', name: '頭髮', side: 1},
+    {key: 'hat', kind: 'outfit', name: '帽子', quad: '右上', qx: 1, qy: 0, opt: true, split: true},
     {key: 'cloth', kind: 'outfit', name: '衣服', quad: '左下', qx: 0, qy: 1},
     {key: 'shoes', kind: 'outfit', name: '鞋子', quad: '右下', qx: 1, qy: 1},
 ];
@@ -653,19 +656,19 @@ function autoUndo(m, from, to)
 // 追線在裁切後、縮小前的圖（sp.img）上做
 function autoSpView(m)
 {
-    const sp = m.sp, img = sp.img, L = m.layer, box = m.plan.find(b => b.P.key === 'helmet').box;
+    const sp = m.sp, img = sp.img, L = m.layer, box = m.plan.find(b => b.P.split).box;
     Object.assign(sp, {vk: [1, 1], view: {canvas: img, get x() {return L.x;}, get y() {return L.y;}, get a() {return L.a;}, get scale() {return L.scale;},
                                            get ox() {return (L.ox * L.canvas.width - box.sx) / img.width;},
                                            get oy() {return (L.oy * L.canvas.height - box.sy) / img.height;}}});
 }
 
-const autoHelmet = (m) => m.parts?.find(p => p.P.key === 'helmet')?.C ?? null;
+const autoHelmet = (m) => m.parts?.find(p => p.P.split)?.C ?? null;
 
 // 拆之前切換 不拆／前後片／挖除：不拆就不追頭盔切線；前後片跟挖除互換記一步、重新追線
 function autoSpSync(m)
 {
     if (m.type !== 'auto' || m.parts) return;
-    const hb = S.auto.split !== 'none' && m.plan.find(b => b.P.key === 'helmet');
+    const hb = S.auto.split !== 'none' && m.plan.find(b => b.P.split);
     if (!hb) m.sp = null;
     else if (!m.sp) autoSpNew(m, hb);
     else if (m.sp.cut !== (S.auto.split === 'cut'))
@@ -712,9 +715,9 @@ function autoPlan(L, kind)
         }
         return {T, plan, skipped};
     }
-    // 要湊齊的象限：左上的頭＋各零件的（服飾右上是空的）
+    // 要湊齊的象限：左上的頭＋各零件的（服飾的帽子可有可無，頭飾「無」時右上是空的）
     const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
-    const need = [[0, 0], ...autoParts(kind).map(P => [P.qx, P.qy])], full = (bs) => need.every(([qx, qy]) => bs.some(b => quad(b, qx, qy)));
+    const need = [[0, 0], ...autoParts(kind).filter(P => !P.opt).map(P => [P.qx, P.qy])], full = (bs) => need.every(([qx, qy]) => bs.some(b => quad(b, qx, qy)));
     let blobs = split(0), erode = 0;
     for (let k = 1; k <= AUTO_ERODE && !full(blobs); k++)
     {
@@ -852,7 +855,7 @@ function autoSplit(m)
     const H = autoHelmet(m);
     if (H && m.sp?.poly) S.active = splitBuild(H, m.sp, H.splitSrc ?? autoGid());
     autoStack(parts);
-    const sp = H && m.sp && !m.sp.poly ? `；頭盔沒拆前後片：${m.sp.err}` : '';
+    const sp = H && m.sp && !m.sp.poly ? `；${autoP(H).name}沒拆前後片：${m.sp.err}` : '';
     m.sp = null;
     m.snap = autoSnap(parts);
     const skip = !skipped.length ? '' : m.kind === 'head' ? '；只有一邊有東西，全部當頭、沒有頭髮' : `；${skipped.join('、')} 的象限是空的，略過`;
@@ -862,7 +865,7 @@ function autoSplit(m)
 // 原頭盔層放在前片正上方；有標記成頭的參考人偶就照遊戲深度（PART_DEPTH）插進去：頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子（衣服、鞋子）由上往下接在最低的頭下面
 function autoStack(parts)
 {
-    const C = (k) => parts.find(p => p.P.key === k)?.C, H = C('helmet'), g = H && splitNew(H);
+    const C = (k) => parts.find(p => p.P.key === k)?.C, H = parts.find(p => p.P.split)?.C, g = H && splitNew(H);
     if (g?.F)
     {
         S.layers.splice(S.layers.indexOf(H), 1);
@@ -2830,10 +2833,11 @@ function refreshAuto(m)
     document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
     $('au-small').disabled = !!m.parts;
-    for (const [k, ids] of [['armor', ['auSplit', 'auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
+    for (const [k, ids] of [['armor', ['auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
                             ['head', ['auHead', 'auSmallL', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
-    $('auTable').hidden = !AUTO_SEXED.includes(m.kind);
+    $('auTable').hidden = $('auSplit').hidden = !AUTO_SEXED.includes(m.kind);
+    $('auSpName').textContent = autoParts(m.kind).find(P => P.split)?.name ?? '';
     for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
     $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
@@ -3911,7 +3915,7 @@ function setSplit(it, name, g, icon)
 // 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪；node null＝身體自己（它的 x/y/a 就是 rig，不換）
 const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
 const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
-const PART_NODE = {body: null, head: 'neck', hair: 'neck', handF: 'wristF', handB: 'wristB'};
+const PART_NODE = {body: null, head: 'neck', hair: 'neck', hat: 'neck', handF: 'wristF', handB: 'wristB'};
 function pivotShift(o, parts, node, sex, sign = 1, withA = true)
 {
     if (!o || node === null) return o;
@@ -4422,11 +4426,15 @@ async function commitItems(rows, bake, all = false)
 // PNG 寫 textures/roles/parts/<id>.png、擺放（scale/x/y，a/ox/oy 不是預設才寫）寫成 part.json 的條目，條目其他 key 保留；
 // 能有女版的（衣服／鞋子／前後手，服飾自動零件或手動層，femAble()）：自動零件一定存男版（女模式先照男版重擺，存完復原）、
 // 手動層有女版存男版那組；有女版另寫 f、沒有刪 f。其他層（身體、頭、頭髮）只有一組，照目前人偶存成基準、f 不動。
+// 帽子拆了前後片：寫 <id>-front.png／<id>-back.png（挖除只有 -front），sprite 指前片、back 指後片，同道具的 setSplit()，但部位沒有 icon／drop，不寫完整原圖
 // 存過的 id 記在 L.poolId，下次預設用它
 
-const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', handF: '前手', handB: '後手'};
-const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', handF: '前', handB: '後'};
+const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
+const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前', handB: '後'};
 const POOL_DIR = 'roles/parts';
+const poolSplit = (L) => L.pool === 'hat' ? splitNew(L) : null;
+// 這一列要寫的 [圖檔名, 圖層]
+const poolPngs = (L, id) => {const g = poolSplit(L); return g ? [[`${id}-front`, g.F], ...(g.cut ? [] : [[`${id}-back`, g.B]])] : [[id, L]];};
 const poolP = (L) => L.pool ? autoP(L) : null;
 const poolSexed = (L) => AUTO_SEXED.includes(poolP(L)?.kind);
 // 基準照哪個性別的身體換算：限定性別的照那個、服飾跟有女版的手動層一定是男版（女版在 f）、其他照目前人偶
@@ -4464,10 +4472,13 @@ function poolCheck(rows, parts, roles, keys)
         // 條目限定性別（part.sex）：遊戲不套 f，忽略零件的女版，照那個性別的數字寫基準、有 f 就清掉
         r.dropF = !!old?.f && (!!r.only || femAble(r.L) && !hasFem(r.L));
         r.warn = r.only ? [onlyNote(r), r.dropF && '會移除女版'].filter(Boolean).join('；') : r.dropF ? '會移除女版（零件沒有女版）' : '';
-        const dir = keys.get(r.id);
-        if (dir !== undefined && dir !== POOL_DIR) err(`textures/${join(dir, r.id)}.png 已經有了，換個 id`);
+        const g = poolSplit(r.L), bad = g && splitMismatch(g);
+        if (bad) err(bad);
+        const names = g && !bad ? poolPngs(r.L, r.id).map(([n]) => n) : [r.id];
+        const other = names.find(n => keys.has(n) && keys.get(n) !== POOL_DIR), mine = names.filter(n => keys.get(n) === POOL_DIR);
+        if (other) err(`textures/${join(keys.get(other), other)}.png 已經有了，換個 id`);
         else if (old) r.ask = `${r.id}（PNG＋擺放）${also}`;
-        else if (dir === POOL_DIR) r.ask = `${POOL_DIR}/${r.id}.png`;
+        else if (mine.length) r.ask = mine.map(n => `${POOL_DIR}/${n}.png`).join('、');
     }
     return act;
 }
@@ -4475,7 +4486,8 @@ function poolCheck(rows, parts, roles, keys)
 function poolDialog(parts, roles, keys)
 {
     const dlg = $('dlgPool');
-    const rows = S.layers.filter(L => L.pool).reverse().map(L => ({L, on: L.visible, id: L.poolId ?? L.name}));
+    // 帽子拆了前後片時原圖是隱藏的，看前後片顯示了沒
+    const rows = S.layers.filter(L => L.pool).reverse().map(L => ({L, on: linked(L).some(M => M.visible), id: L.poolId ?? L.name}));
     $('dpTitle').textContent = '存到 pool（part.json）';
     const refresh = () => {
         const act = poolCheck(rows, parts, roles, keys);
@@ -4548,10 +4560,15 @@ async function commitPool(rows, bake)
     const fresh = [];
     for (const r of act)
     {
-        const {L, id} = r, sexed = poolSexed(L);
-        if (!keys.has(id)) fresh.push(id);
-        await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${id}.png`, await PX.toPng(splitPng(L, bake)));
-        const e = {...parts[id] ?? {kind: L.pool}, sprite: id};
+        const {L, id} = r, sexed = poolSexed(L), g = poolSplit(L);
+        for (const [n, M] of poolPngs(L, id))
+        {
+            if (!keys.has(n)) fresh.push(n);
+            await FS.writeFile(await mkDir(A.tex, POOL_DIR), `${n}.png`, await PX.toPng(splitPng(M, bake)));
+        }
+        const e = {...parts[id] ?? {kind: L.pool}, sprite: g ? `${id}-front` : id};
+        if (g && !g.cut) e.back = `${id}-back`;
+        else delete e.back;
         writeEquip(e, L);
         if (!sexed && L.alt && femAble(L)) Object.assign(e, altNums(L, r.only ?? 'm'));
         if (r.only === 'f' && sexed) Object.assign(e, femaleOf(poolP(L), L));
@@ -4598,7 +4615,7 @@ async function loadPool()
         if (!e0) continue;
         const fem = femAble(L) && (e0.sex ? !!L.alt : !!e0.f), [eb, ef] = both(e0);
         const e = !fem ? flat(e0, S.doll.sex) : S.doll.sex === 'f' ? ef : eb, o = S.doll.sex === 'f' ? eb : ef;
-        Object.assign(L, {scale: e.scale ?? L.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
+        for (const M of poolSplit(L) ? linked(L) : [L]) Object.assign(M, {scale: e.scale ?? L.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
         if (fem) L.alt = {sex: otherSex(S.doll.sex), scale: o.scale ?? L.scale, x: o.x ?? 0, y: o.y ?? 0};
         else if (femAble(L)) delete L.alt;
     }
@@ -5210,7 +5227,7 @@ $('auReset').onclick = () => {
     for (const part of m.parts ?? []) autoApply(m, part, def(part.P, part.C));
     autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))
                    : {...autoParts(kind).reduce((a, P) => autoWith(a, P, def(P)), S.auto),
-                      ...(kind === 'head' && {headLink: true}), ...(kind === 'armor' && {split: undefined})});
+                      ...(kind === 'head' && {headLink: true}), ...(AUTO_SEXED.includes(kind) && {split: undefined})});
     autoSpSync(m);
     refreshAll();
 };

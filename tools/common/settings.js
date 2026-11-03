@@ -12,7 +12,7 @@ export const STEP_OF = {pct: 'pct', scale: 'scale', x: 'xy', y: 'xy', ox: 'o', o
 
 // 紙娃娃自動拆圖的數字：pct＝存檔%、scale＝equip.scale／role 的 head.scale…；武器照分類各一組＝WEAPON 蓋上第三欄
 const ARMOR = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
-const OUTFIT = {cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.24, x: 1.5, y: 33}};
+const OUTFIT = {hat: ARMOR.helmet, cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.24, x: 1.5, y: 33}};
 const WEAPON = {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85};
 export const WCLS = [
     ['sword', '劍', {pct: 12, x: -6, y: 17, a: 60}],

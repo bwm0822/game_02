@@ -1997,6 +1997,104 @@ run('paperdoll', async t => {
     t.eq('自動（頭像）：關掉保留框內小塊立刻重算', JSON.stringify(ah.smallOff), JSON.stringify([false, 1]));
     t.eq('自動（頭像）：拆出來有髮絲、沒框外雜點，拆完勾選反灰', JSON.stringify(ah.smallMade), JSON.stringify([50, true, true]));
 
+    // 自動（服飾）帽子：右上拆成帽子、切線同頭盔、存 pool 寫 -front／-back
+    const hat = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#e0a070'; g.fillRect(20, 20, 60, 60);
+        g.fillStyle = '#a05030'; g.fillRect(110, 10, 80, 80);
+        g.strokeStyle = '#000'; g.lineWidth = 3; g.strokeRect(111.5, 11.5, 77, 77);
+        g.fillStyle = '#000'; g.fillRect(110, 38, 80, 3); g.fillRect(134, 40, 3, 50);
+        g.fillStyle = '#334455'; g.fillRect(20, 120, 60, 60);
+        g.fillStyle = '#663311'; g.fillRect(120, 160, 60, 20);
+        const bmp = await createImageBitmap(c);
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const find = (n) => pd.S.layers.find(L => L.name === n);
+        pd.addLayer(bmp, 'tk', null, null);
+        pd.autoSet({kind: 'outfit', split: 'split', hat: {pct: 50, scale: 0.25, x: 1, y: 2}});
+        pd.setMode('auto');
+        const m = pd.S.mode;
+        out.pre = [!!m.sp?.poly, $('auSpName').textContent, $('au-hat-pct').hidden];
+        pd.applyMode();
+        const O = find('hat-tk'), F = find('hat-tk-front'), B = find('hat-tk-back');
+        out.made = [m.parts.map(p => p.C.name).join(), O.pool, O.visible, !!F, !!B, pd.S.active === F];
+
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const read = async () => JSON.parse(await (await (await json.getFileHandle('part.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        await put(json, 'role.json', '{}');
+        await put(json, 'part.json', JSON.stringify({'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25, y: 32}, 'body-woman': {kind: 'body', sprite: 'body-woman', scale: 0.25, y: 30}}, null, 2));
+        await pd.setAssets(assets);
+        const ok = window.confirm;
+        window.confirm = () => true;
+        const save = async () => {
+            pd.setMode('sl');
+            const p = pd.savePool();
+            await until(() => $('dlgPool').open);
+            const on = [...$('dpRows').children].map(r => r.querySelector('input[type=checkbox]').checked);
+            $('dlgPool').close('ok');
+            await p;
+            return on;
+        };
+        out.rowOn = await save();
+        let parts = await read();
+        out.saved = JSON.stringify(parts['hat-tk']);
+        const png = async (n) => {try {await (await (await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('roles')).getDirectoryHandle('parts')).getFileHandle(`${n}.png`); return true;} catch {return false;}};
+        out.pngs = [await png('hat-tk-front'), await png('hat-tk-back'), await png('hat-tk')];
+        // 部位分頁勾的 hideHair 重存要留著；載入 pool 前後片跟著搬
+        await put(json, 'part.json', JSON.stringify({...parts, 'hat-tk': {...parts['hat-tk'], hideHair: true, x: 7, y: 8}}, null, 2));
+        await pd.setAssets(assets);
+        await pd.loadPool();
+        out.load = [O.x, O.y, F.x, F.y, B.x, B.y];
+        await save();
+        parts = await read();
+        out.keep = [parts['hat-tk'].hideHair, parts['hat-tk'].x, parts['hat-tk'].y];
+
+        // 挖除：只有 -front、沒有 back
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(bmp, 'tk2', null, null);
+        pd.autoSet({...pd.S.auto, kind: 'outfit', split: 'cut'});
+        pd.setMode('auto');
+        pd.applyMode();
+        await save();
+        parts = await read();
+        out.cut = [!!find('hat-tk2-front'), find('hat-tk2-back') ?? null, parts['hat-tk2'].sprite, parts['hat-tk2'].back ?? null, await png('hat-tk2-back')];
+
+        // 不拆：一張圖、sprite＝id
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(bmp, 'tk3', null, null);
+        pd.autoSet({...pd.S.auto, kind: 'outfit', split: 'none'});
+        pd.setMode('auto');
+        pd.applyMode();
+        await save();
+        parts = await read();
+        out.none = [parts['hat-tk3'].sprite, parts['hat-tk3'].back ?? null, await png('hat-tk3')];
+        window.confirm = ok;
+        // 挖除連動把切割法切成魔術棒，換回前後片免得影響後面的測試
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.addLayer(bmp, 'tk4', null, null);
+        pd.autoSet({...pd.S.auto, kind: 'outfit', split: 'split'});
+        pd.setMode('auto');
+        pd.setMode('move');
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.autoSet({});
+        return out;
+    });
+    t.eq('帽子：進模式追線、面板標帽子、有帽子那列', JSON.stringify(hat.pre), JSON.stringify([true, '帽子', false]));
+    t.eq('帽子：右上拆成帽子並拆前後片、標 pool、原圖隱藏、選前片', JSON.stringify(hat.made), JSON.stringify(['hat-tk,cloth-tk,shoes-tk', 'hat', false, true, true, true]));
+    t.eq('帽子：拆了前後片（原圖隱藏）存 pool 預設勾', JSON.stringify(hat.rowOn), JSON.stringify([true, true, true]));
+    t.eq('帽子：條目 sprite 指前片、back 指後片、照 neck 換算', hat.saved, '{"kind":"hat","sprite":"hat-tk-front","back":"hat-tk-back","scale":0.25,"x":1,"y":-30}');
+    t.eq('帽子：寫前後片 PNG、不寫完整原圖', JSON.stringify(hat.pngs), JSON.stringify([true, true, false]));
+    t.eq('帽子：載入 pool 前後片跟著搬', JSON.stringify(hat.load), JSON.stringify([7, 40, 7, 40, 7, 40]));
+    t.eq('帽子：重存保留 hideHair', JSON.stringify(hat.keep), JSON.stringify([true, 7, 8]));
+    t.eq('帽子：挖除只有 -front、沒有 back', JSON.stringify(hat.cut), JSON.stringify([true, null, 'hat-tk2-front', null, false]));
+    t.eq('帽子：不拆就是一張圖', JSON.stringify(hat.none), JSON.stringify(['hat-tk3', null, true]));
+
     // 自動（服飾）：左上頭丟掉、左下衣服、右下鞋子（右上空），自動標 pool、男女兩組
     const ao = await ev(async () => {
         const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
@@ -2144,8 +2242,8 @@ run('paperdoll', async t => {
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（服飾）：進模式用護具那張表、只顯示衣服鞋子、不拆前後片', JSON.stringify(ao.enter),
-         JSON.stringify(['outfit', true, false, true, true, false, true]));
+    t.eq('自動（服飾）：進模式用護具那張表、只顯示服飾的列、有帽子拆法', JSON.stringify(ao.enter),
+         JSON.stringify(['outfit', true, true, true, true, false, true]));
     t.eq('自動（服飾）：左上丟掉、衣服鞋子各一層（衣服疊在鞋子上、選衣服）、去綠、自動標 pool', JSON.stringify(ao.made),
          JSON.stringify(['cloth-inn,shoes-inn', 30, 30, 30, 10, 'cloth', 'shoes', true, true, false, 1, 4, 0]));
     t.eq('自動（服飾）：拆出來沒有女版', JSON.stringify(ao.noFem), JSON.stringify([false, false]));
@@ -2305,7 +2403,7 @@ run('paperdoll', async t => {
     t.eq('pool：男模式載入讀基準、undo（連女版）', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[5, 6, 0.4], [1, 1, 0.4, true]]));
     t.eq('pool：手動圖層的女版存進專案', pl.projAlt, '{"sex":"f","scale":0.3,"x":9,"y":9}');
     t.eq('右鍵：母子選單（標記／pool／女版：有 ▸ 刪除），子選單勾目前的值', JSON.stringify(pl.menuA), JSON.stringify([['標記：無', 'pool：衣服', '女版：有'],
-        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '前手', '後手'], ['刪除']]]));
+        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '帽子', '前手', '後手'], ['刪除']]]));
     t.eq('右鍵：能有女版的沒有女版＝女版：無 ▸ 新增', JSON.stringify([pl.menuH[0], pl.menuH[1][2]]), JSON.stringify([['標記：無', 'pool：鞋子', '女版：無'], ['新增']]));
     t.eq('右鍵：頭不能有女版', JSON.stringify(pl.menuHead), JSON.stringify(['標記：無', 'pool：頭']));
     t.eq('女版（手動層）：切女換成女版', JSON.stringify(pl.swapF), JSON.stringify([9, 9, 0.3, 'm']));
