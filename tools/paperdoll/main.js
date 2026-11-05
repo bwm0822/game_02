@@ -468,7 +468,7 @@ function trimLayer(L)
 //       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 存檔%，連動（headLink）時頭髮跟頭一樣；
 //               零件自動標 pool 的 head／hair，存走「存到 pool」，頭像在角色編輯器由頭髮產生）
 
-const GREEN = {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150};
+const RG_F = {rgH1: 'h1', rgH2: 'h2', rgS1: 's1', rgS2: 's2', rgV1: 'v1', rgV2: 'v2', rgRgbThr: 'rgbThr', rgGrow: 'grow', rgSeedS: 'seedS', rgSeedV: 'seedV', rgSemiA: 'semiA', rgSemiV: 'semiV'};
 const AUTO_ALPHA = 32;
 const AUTO_NOISE = 0.01;    // 比最大塊的 1% 還小的塊當雜點
 const AUTO_ERODE = 12;
@@ -708,7 +708,7 @@ function autoPlan(L, kind)
         const blobs = split(0);
         return {T, plan: blobs.length ? [part(autoParts(kind)[0], blobs, 0)] : [], skipped: []};
     }
-    pushOp(T, {type: 'removeGreen', ...GREEN});
+    pushOp(T, {type: 'removeGreen', ...ST.get('green')});
     const W = T.canvas.width, H = T.canvas.height;
     if (kind === 'head')
     {
@@ -1524,7 +1524,7 @@ function setMode(type)
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
     else if (type === 'color') {S.mode = {type, layer: L, preview: null}; updateColor();}
     else if (type === 'removeGreen') {
-        S.mode = {type, layer: L, ...GREEN, preview: null};
+        S.mode = {type, layer: L, ...ST.get('green'), preview: null};
         updateRemoveGreen();
     }
     else if (type === 'warp') S.mode = warpStart(L);
@@ -1599,7 +1599,9 @@ function applyMode()
     else if (m.type === 'removeGreen')
     {
         hist.record(L);
-        pushOp(L, {type: 'removeGreen', h1: m.h1, h2: m.h2, s1: m.s1, s2: m.s2, v1: m.v1, v2: m.v2, rgbThr: m.rgbThr, grow: m.grow, seedS: m.seedS, seedV: m.seedV});
+        const green = pickKeys(m, Object.values(RG_F));
+        pushOp(L, {type: 'removeGreen', ...green});
+        ST.set('green', green);
     }
     else if (m.type === 'warp')
     {
@@ -1822,14 +1824,6 @@ function updateColor()
 function updateRemoveGreen()
 {
     const m = S.mode;
-    m.h1 = +$('rgH1').value || 45;
-    m.h2 = +$('rgH2').value || 85;
-    m.s1 = +$('rgS1').value || 60;
-    m.s2 = +$('rgS2').value || 255;
-    m.v1 = +$('rgV1').value || 20;
-    m.v2 = +$('rgV2').value || 255;
-    m.rgbThr = +$('rgRgbThr').value || 40;
-    m.grow = Math.max(0, Math.round(+$('rgGrow').value || 0));
     m.preview = PX.removeGreen(m.layer.canvas, m);
     dirty();
 }
@@ -2937,16 +2931,8 @@ function refreshModePanel()
         $('spInfo').textContent = spInfo(m) + `，可退 ${m.hist.length} 步`;
     }
     if (m.type === 'pixel') $('pxInfo').textContent = `修補 ${m.map.size} 像素，可退 ${m.hist.length} 筆`;
-    if (m.type === 'removeGreen' && m.preview) {
-        $('rgH1').value = m.h1;
-        $('rgH2').value = m.h2;
-        $('rgS1').value = m.s1;
-        $('rgS2').value = m.s2;
-        $('rgV1').value = m.v1;
-        $('rgV2').value = m.v2;
-        $('rgRgbThr').value = m.rgbThr;
-        $('rgGrow').value = m.grow;
-    }
+    if (m.type === 'removeGreen')
+        for (const [id, k] of Object.entries(RG_F)) if ($(id) !== document.activeElement) $(id).value = m[k];
     if (m.type === 'color') document.querySelectorAll('.colFillOnly').forEach(e => {e.hidden = colorHow() !== 'fill';});
     if (m.type !== 'warp') cv.style.cursor = m.type === 'pixel' || (editSp() && spPaintOn()) ? 'crosshair' : '';
     if (m.type === 'warp')
@@ -5205,12 +5191,24 @@ const colorChanged = () => {
 };
 for (const id of ['colFill', 'colKey', 'colRgb', 'colA', 'colT']) $(id).oninput = colorChanged;
 
+// 打到一半的空白不算數，留著上一個值；按確定才寫 settings.json
 const removeGreenChanged = () => {
+    const m = S.mode;
+    if (m.type !== 'removeGreen') return;
+    for (const [id, k] of Object.entries(RG_F))
+    {
+        const s = $(id).value.trim(), n = Number(s);
+        if (s !== '' && Number.isFinite(n)) m[k] = k === 'grow' ? Math.max(0, Math.round(n)) : n;
+    }
+    updateRemoveGreen();
+};
+for (const id of Object.keys(RG_F)) $(id).oninput = removeGreenChanged;
+$('rgReset').onclick = () => {
     if (S.mode.type !== 'removeGreen') return;
+    Object.assign(S.mode, ST.DEF.green);
     refreshModePanel();
     updateRemoveGreen();
 };
-for (const id of ['rgH1', 'rgH2', 'rgS1', 'rgS2', 'rgV1', 'rgV2', 'rgRgbThr', 'rgGrow']) $(id).oninput = removeGreenChanged;
 
 const dimSpans = (ts) => ts.map(t => Object.assign(el('span', 'dim'), {textContent: t}));
 $('auTable').append(...dimSpans(['', '象限', '存檔%', 'scale', 'x', 'y']));

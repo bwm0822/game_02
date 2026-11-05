@@ -3755,4 +3755,65 @@ run('paperdoll', async t => {
     t.eq('參考人偶：undo 也拉回條目位置', ds.undo, 40);
     t.eq('參考人偶：載入 pool 照參考身體的 rig 換算', ds.load, 40);
     t.eq('參考人偶：part.json 改了跟著重擺、其他零件不動＋提示', JSON.stringify(ds.changed), JSON.stringify([20, -12, 0, true]));
+
+    // 移除綠色：半透明綠霧也算種子、不透明暗綠跟暗描邊留著、舊步驟不變；參數按確定才存、可還原
+    const rgn = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const PX = await import(new URL('pixels.js', location.href).href);
+        const c = document.createElement('canvas');
+        c.width = 40; c.height = 4;
+        const g = c.getContext('2d'), im = g.createImageData(40, 4);
+        const band = (x0, x1, px) => {for (let y = 0; y < 4; y++) for (let x = x0; x < x1; x++) im.data.set(px, (y * 40 + x) * 4);};
+        band(0, 4, [0, 255, 0, 255]);
+        band(20, 24, [4, 131, 0, 97]);
+        band(28, 32, [4, 131, 0, 255]);
+        band(36, 40, [3, 11, 2, 230]);
+        g.putImageData(im, 0, 0);
+        const alphas = (cv) => [2, 22, 30, 38].map(x => PX.alphaAt(cv, x, 1));
+        const def = pd.ST.DEF.green, {semiA, semiV, ...old} = def;
+
+        out.rule = alphas(PX.removeGreen(c, def));
+        out.old = alphas(PX.removeGreen(c, old));
+
+        const L = pd.addLayer(await createImageBitmap(c), 'rg', null, null);
+        pd.select(L);
+        const type = (id, v) => {$(id).value = v; $(id).dispatchEvent(new Event('input'));};
+        pd.setMode('removeGreen');
+        out.shown = [$('rgSemiA').value, $('rgSemiV').value, $('rgSeedS').value, $('rgGrow').value];
+        type('rgRgbThr', 0);
+        out.zero = pd.S.mode.rgbThr;
+        type('rgRgbThr', 40);
+        type('rgSemiA', 0);
+        out.preview = [alphas(pd.S.mode.preview), $('rgSemiA').value];
+        pd.cancelMode();
+        out.cancel = pd.ST.get('green').semiA;
+
+        pd.setMode('removeGreen');
+        type('rgSemiA', 200);
+        pd.applyMode();
+        out.apply = [pd.ST.get('green').semiA, L.ops.at(-1).semiA, alphas(L.canvas)];
+        pd.undo();
+
+        pd.setMode('removeGreen');
+        out.again = $('rgSemiA').value;
+        $('rgReset').click();
+        out.reset = [pd.S.mode.semiA, $('rgSemiA').value, pd.ST.get('green').semiA, alphas(pd.S.mode.preview)];
+        pd.cancelMode();
+
+        pd.setMode('auto');
+        out.auto = pd.S.mode.T?.ops.find(o => o.type === 'removeGreen')?.semiA;
+        pd.cancelMode();
+        pd.ST.set('green', def);
+        return out;
+    });
+    t.eq('移除綠色：亮綠、半透明綠霧挖掉，不透明暗綠、暗描邊留著', JSON.stringify(rgn.rule), JSON.stringify([0, 0, 255, 230]));
+    t.eq('移除綠色：舊步驟沒有 semiA，綠霧照舊留著', JSON.stringify(rgn.old), JSON.stringify([0, 97, 255, 230]));
+    t.eq('移除綠色：面板顯示共用參數', JSON.stringify(rgn.shown), JSON.stringify(['254', '100', '150', '3']));
+    t.eq('移除綠色：填 0 就是 0，不會變回預設', rgn.zero, 0);
+    t.eq('移除綠色：改數字預覽跟著變、輸入框不被蓋回', JSON.stringify(rgn.preview), JSON.stringify([[0, 97, 255, 230], '0']));
+    t.eq('移除綠色：取消不存', rgn.cancel, 254);
+    t.eq('移除綠色：確定才存、步驟記參數', JSON.stringify(rgn.apply), JSON.stringify([200, 200, [0, 0, 255, 230]]));
+    t.eq('移除綠色：下次進模式沿用', rgn.again, '200');
+    t.eq('移除綠色：還原預設只填欄位＋預覽，共用參數要按確定才改', JSON.stringify(rgn.reset), JSON.stringify([254, '254', 200, [0, 0, 255, 230]]));
+    t.eq('移除綠色：自動拆圖讀共用參數', rgn.auto, 200);
 });

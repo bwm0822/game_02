@@ -402,9 +402,10 @@ function rgbToHsv(r, g, b)
 // 移除綠色背景：HSV + RGB 雙重判斷（寬鬆綠）
 // 有 grow：只挖亮綠（色相 h1~h2、s≥seedS、v≥seedV）＋從亮綠往外 grow 格內連著的寬鬆綠（清綠邊），暗綠衣服隔著描邊不會被挖；
 // 舊專案的步驟沒有 grow，照舊整張寬鬆綠都挖
+// 半透明的綠霧太暗當不了亮綠、又離亮綠超過 grow 格：a ≤ semiA 且 v ≥ semiV 的高飽和綠也算種子，不透明的暗綠不受影響；舊步驟沒有 semiA，比較結果是 false，重播不變
 export function removeGreen(src, op)
 {
-    const {h1, h2, s1, s2, v1, v2, rgbThr, grow, seedS, seedV} = op;
+    const {h1, h2, s1, s2, v1, v2, rgbThr, grow, seedS, seedV, semiA, semiV} = op;
     const c = clone(src);
     const g = c.getContext('2d');
     const W = c.width, H = c.height;
@@ -425,7 +426,7 @@ export function removeGreen(src, op)
                       hsv.v >= v1 && hsv.v <= v2;
 
         if (legacy) {if (isGreen) d[i + 3] = 0; continue;}
-        if (a > 0 && hsv.h >= h1 && hsv.h <= h2 && hsv.s >= seedS && hsv.v >= seedV) {d[i + 3] = 0; front.push(p);}
+        if (a > 0 && hsv.h >= h1 && hsv.h <= h2 && hsv.s >= seedS && (hsv.v >= seedV || a <= semiA && hsv.v >= semiV)) {d[i + 3] = 0; front.push(p);}
         else if (isGreen) loose[p] = 1;
     }
 

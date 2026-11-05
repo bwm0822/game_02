@@ -90,6 +90,16 @@ run('settings', async t => {
         e.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp'}));
         e.stepUp();
         out.stepPh = e.value;
+
+        // 移除綠色的參數：寫同一份、紙娃娃收到廣播、0 是合法值、清空回內建
+        type('green.semiA', 200);
+        await st.ST.flush();
+        out.green = await until(() => pd.__pd.ST.get('green').semiA === 200) && [(await disk()).green, inp('green.semiA').className, inp('green.semiV').placeholder];
+        type('green.semiA', 0);
+        out.greenZero = st.ST.get('green').semiA;
+        type('green.semiA', '');
+        await st.ST.flush();
+        out.greenClear = [(await disk()).green, st.ST.get('green').semiA];
         return out;
     });
 
@@ -108,4 +118,7 @@ run('settings', async t => {
     t.eq('全部回到內建：步進清掉、灰字顯示內建', JSON.stringify(r.resetAll), JSON.stringify([undefined, '', '0.25']));
     t.check('全部回到內建：紙娃娃步進跟著回來', r.pdBack);
     t.eq('空白格 ↑ 從內建值起跳', r.stepPh, '26.75');
+    t.eq('移除綠色：改值寫進 settings.json、紙娃娃收到、灰字顯示內建', JSON.stringify(r.green), JSON.stringify([{semiA: 200}, 'changed', '100']));
+    t.eq('移除綠色：0 是合法值（關掉綠霧）', r.greenZero, 0);
+    t.eq('移除綠色：清空回內建', JSON.stringify(r.greenClear), JSON.stringify([undefined, 254]));
 });

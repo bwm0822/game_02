@@ -37,6 +37,8 @@ export const DEF = {
     },
     // 角色編輯器「由頭髮產生」頭像：頭＋頭髮等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
     portrait: {size: 100, fill: 100},
+    // 紙娃娃移除綠色（手動面板、自動拆圖共用）；semiA／semiV＝半透明的高飽和綠也算種子（a ≤ semiA、v ≥ semiV），semiA 0＝關掉
+    green: {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150, semiA: 254, semiV: 100},
 };
 
 const S = {dir: null, over: {}, cur: structuredClone(DEF), timer: null, fns: []};
@@ -80,7 +82,7 @@ export async function load(root)
     return had;
 }
 
-// 整段換掉（sec＝'step'／'auto'／'portrait'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
+// 整段換掉（sec＝'step'／'auto'／'portrait'／'green'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
 export function set(sec, value)
 {
     S.cur = {...S.cur, [sec]: merge(DEF[sec], value)};
