@@ -608,7 +608,9 @@ export const ROLE_PART = Object.freeze({
 // 結構：_shape(翻面、執行期動畫) → rig(body 的 x/y/a，資料擺放層) → 身體圖(0,0)、衣服鞋子護甲靴子、三個支點節點
 // 支點節點(看不見的子 container，位置寫在 body 的 part.json：neck/wristF/wristB {x,y}，相對 rig)：
 // 掛在節點的部位跟著節點轉，depth 只在節點裡排，節點整組用 NODE_DEPTH 跟其他部位排
-export const NODE_DEPTH = Object.freeze({neck:1.5, wristF:4, wristB:-1});
+// neckB：頭髮後片用，位置同 neck(資料沒有自己的支點，NODE_PIVOT)，整組排在身體跟後手後面
+export const NODE_DEPTH = Object.freeze({neckB:-2, neck:1.5, wristF:4, wristB:-1});
+export const NODE_PIVOT = Object.freeze({neckB:'neck'});
 export const PART_NODE = Object.freeze({
     [GM.PART.HEAD] : 'neck',
     [GM.PART.HAIR] : 'neck',
@@ -619,8 +621,8 @@ export const PART_NODE = Object.freeze({
     [GM.CAT.GLOVES] : 'wristF',
     [GM.PART.HAND_B] : 'wristB',
 });
-// back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]；手套的後片是後手套，進 wristB、depth 同手套
-export const BACK_NODE = Object.freeze({[GM.CAT.GLOVES] : 'wristB'});
+// back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]；手套的後片是後手套，進 wristB、depth 同手套；頭髮後片進 neckB
+export const BACK_NODE = Object.freeze({[GM.CAT.GLOVES] : 'wristB', [GM.PART.HAIR] : 'neckB'});
 
 // 靜態合成(角色面板、ghost)不建節點、攤成一層時的 depth：節點整組的 depth＋節點裡的 depth/100
 const _flat = (node, d)=>node ? NODE_DEPTH[node] + d/100 : d;

@@ -82,7 +82,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .spStep { padding: 0; width: 20px; }
 .spGrid input[type=range] { width: 100%; min-width: 0; }
 .spCtl:has(input:disabled) { opacity: .5; }
-#spCutRow[hidden] { display: none; }
+#spCutRow[hidden], #spHandRow[hidden], .spLine[hidden] { display: none; }
 .flRow { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 .flRow input[type=number] { width: 36px; }
 .swatch { width: 40px; height: 18px; border: 1px solid #555; border-radius: 3px; }

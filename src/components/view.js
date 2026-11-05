@@ -1,11 +1,11 @@
-import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, PART_NODE, BACK_NODE} from '../core/setting.js'
+import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, NODE_PIVOT, PART_NODE, BACK_NODE} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
+import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -889,9 +889,9 @@ export class RoleView extends View
         this._rig = this.scene.add.container(rig.x, rig.y).setAngle(rig.a);
         this._shape.add(this._rig);
         this._nodes = {};
-        for(const k of PIVOTS)
+        for(const k of Object.keys(NODE_DEPTH))
         {
-            const p = pivotOf(body, k);
+            const p = pivotOf(body, NODE_PIVOT[k] ?? k);
             const node = this.scene.add.container(p.x, p.y).setDepth(NODE_DEPTH[k]).setAngle(p.a);
             node.pivot = p;
             this._rig.add(node);

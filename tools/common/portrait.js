@@ -1,4 +1,5 @@
-// 由頭髮產生頭像：部位（{sprite, scale, x, y, a, ox, oy}，女角已套 f）照遊戲擺放疊起來，裁到不透明範圍，等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
+// 由頭髮產生頭像：部位（{sprite, back, scale, x, y, a, ox, oy}，女角已套 f）照遊戲擺放疊起來，裁到不透明範圍，等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
+// 後片（back）畫在最底下、不算進大小：臉不會被長髮擠小，超出方格的裁掉
 // 用 PNG 原尺寸畫：scale 最小的那張 1:1，其他照 scale 比例放大，位置照遊戲單位換算，才不會糊
 import * as IC from './icons.js';
 
@@ -18,9 +19,10 @@ const canvas = (w, h) => Object.assign(document.createElement('canvas'), {width:
 // 圖讀不到或全透明回 null
 export async function portraitOf(parts, {size, fill})
 {
-    const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
-    const ps = parts.map((p, i) => ({p, fr: frames[i]})).filter(o => o.fr);
-    if (!ps.length) return null;
+    const layers = [...parts.filter(p => p.back).map(p => ({...p, sprite: p.back, isBack: true})), ...parts];
+    const frames = await Promise.all(layers.map(p => IC.frameOf(p.sprite)));
+    const ps = layers.map((p, i) => ({p, fr: frames[i]})).filter(o => o.fr);
+    if (!ps.some(({p}) => !p.isBack)) return null;
     const k = 1 / Math.min(...ps.map(({p}) => p.scale ?? 1));
     // 每張圖轉完角度後的四角，算整張的外框
     const place = ps.map(({p, fr}) => {
@@ -28,27 +30,31 @@ export async function portraitOf(parts, {size, fill})
         const px = (p.x ?? 0) * k, py = (p.y ?? 0) * k, lx = -(p.ox ?? 0.5) * w, ly = -(p.oy ?? 1) * h;
         const pts = [[lx, ly], [lx + w, ly], [lx, ly + h], [lx + w, ly + h]]
             .map(([x, y]) => [px + x * Math.cos(r) - y * Math.sin(r), py + x * Math.sin(r) + y * Math.cos(r)]);
-        return {fr, w, h, r, px, py, lx, ly, pts};
+        return {fr, w, h, r, px, py, lx, ly, pts, isBack: p.isBack};
     });
     const all = place.flatMap(o => o.pts);
     const x0 = Math.floor(Math.min(...all.map(([x]) => x))), y0 = Math.floor(Math.min(...all.map(([, y]) => y)));
-    const big = canvas(Math.ceil(Math.max(...all.map(([x]) => x))) - x0, Math.ceil(Math.max(...all.map(([, y]) => y))) - y0);
-    const g = big.getContext('2d');
-    g.imageSmoothingQuality = 'high';
-    for (const {fr, w, h, r, px, py, lx, ly} of place)
-    {
-        g.save();
-        g.translate(px - x0, py - y0);
-        g.rotate(r);
-        g.drawImage(fr.img, fr.f.x, fr.f.y, fr.f.w, fr.f.h, lx, ly, w, h);
-        g.restore();
-    }
-    const b = opaqueBounds(big);
+    const W = Math.ceil(Math.max(...all.map(([x]) => x))) - x0, H = Math.ceil(Math.max(...all.map(([, y]) => y))) - y0;
+    const draw = (list) => {
+        const c = canvas(W, H), g = c.getContext('2d');
+        g.imageSmoothingQuality = 'high';
+        for (const {fr, w, h, r, px, py, lx, ly} of list)
+        {
+            g.save();
+            g.translate(px - x0, py - y0);
+            g.rotate(r);
+            g.drawImage(fr.img, fr.f.x, fr.f.y, fr.f.w, fr.f.h, lx, ly, w, h);
+            g.restore();
+        }
+        return c;
+    };
+    const b = opaqueBounds(draw(place.filter(o => !o.isBack)));
     if (!b) return null;
-    const s = fill / 100 * Math.min(size / b.w, size / b.h), w = Math.max(1, Math.round(b.w * s)), h = Math.max(1, Math.round(b.h * s));
+    const s = fill / 100 * Math.min(size / b.w, size / b.h);
+    const dx = Math.floor((size - b.w * s) / 2) - b.x * s, dy = Math.floor((size - b.h * s) / 2) - b.y * s;
     const out = canvas(size, size), o = out.getContext('2d');
     o.imageSmoothingQuality = 'high';
-    o.drawImage(big, b.x, b.y, b.w, b.h, Math.floor((size - w) / 2), Math.floor((size - h) / 2), w, h);
+    o.drawImage(draw(place), dx, dy, W * s, H * s);
     return out;
 }
 

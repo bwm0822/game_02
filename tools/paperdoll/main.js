@@ -233,7 +233,14 @@ function dollShow()
     {
         if (!L.tag) continue;
         const [s, p] = L.tag.split('-');
-        L.visible = s === S.doll.sex && (p !== 'hair' || S.doll.hair) && (p !== 'head' || S.doll.head);
+        const on = s === S.doll.sex && (p !== 'hair' || S.doll.hair) && (p !== 'head' || S.doll.head), g = splitNew(L);
+        // 拆了前後片的人偶顯示的是前後片，原圖一直藏著
+        if (g?.O === L)
+        {
+            L.visible = false;
+            for (const M of [g.F, g.B]) if (M) M.visible = on;
+        }
+        else L.visible = on;
     }
 }
 
@@ -290,7 +297,7 @@ function setDoll(d)
 let dollParts = {}, dollTex = new Map();
 const dollSize = new Map();
 const dollEntry = (L) => {const e = L.tag && dollParts[L.poolId ?? L.name]; return e && e.kind === L.tag.split('-')[1] ? e : null;};
-const pinned = (L) => !!dollEntry(L);
+const pinned = (L) => {const O = splitNew(L)?.O; return !!dollEntry(L) || !!(O && dollEntry(O));};
 const unpinned = (G) => G.filter(M => !pinned(M));
 
 // 存讀換算用的 body：同性別參考身體對到的條目，沒有退回 body-man／body-woman
@@ -319,7 +326,7 @@ function dollSync()
         const e = dollEntry(L);
         if (!e) continue;
         const s = L.tag.split('-')[0], p = equipFor(e, s), q = e.kind === 'body' ? p : flatPart(p, dollBody(dollParts, s), 'neck');
-        Object.assign(L, {scale: q.scale ?? 1, x: round(q.x ?? 0), y: round(q.y ?? 0), a: round(q.a ?? 0, 10), ox: q.ox ?? 0.5, oy: q.oy ?? 1});
+        for (const M of linked(L)) Object.assign(M, {scale: q.scale ?? 1, x: round(q.x ?? 0), y: round(q.y ?? 0), a: round(q.a ?? 0, 10), ox: q.ox ?? 0.5, oy: q.oy ?? 1});
     }
 }
 
@@ -933,6 +940,7 @@ function autoRescale(L, k, dx, dy)
 // 手畫標記（行程編碼）、追線那張圖的尺寸、mask 後面原本跟著幾步），
 // 靠 gid 認一組，跟著 ops 存進專案；c 只有 t 的舊資料當只勾亮度；舊格式（前片就是原圖，split 沒有 w）不認
 // 挖除（cut）：多邊形那塊挖成透明，只有原圖＋前片、沒有後片；舊挖除的 over 不用了
+// 手繪（method: hand，只有前後片模式）：不追線，多邊形全靠點頂點，切到手繪時留著目前的多邊形；頭髮第一次進來預設手繪、存成前後片
 
 const SPLIT_KEY = 'paperdoll.split';
 const SPLIT_STEPS = 50;
@@ -992,15 +1000,16 @@ function spLoad()
             right: !!v?.right, reach: v?.reach ?? SP_REACH, lum};
 }
 
-const spCrit = (method = S.sp.method) => ({lum: S.sp.lum[method]});
+const spCrit = (method = S.sp.method) => ({lum: S.sp.lum[method] ?? SP_LUM});
 // 舊資料：只有門檻 t、或 c 裡亮度沒勾（當時只勾 RGB）就用預設亮度
 const spOf = (o) => ({lum: o.c?.lum ?? o.t ?? SP_LUM});
 
 // 把切線（或只給設定）寫回共用設定跟面板；cut 只有前後片模式的切線才寫回（自動的挖除記在 S.auto）
 function spSet(sp = null, cut = false)
 {
-    if (sp) Object.assign(S.sp, {lum: {...S.sp.lum, [sp.method]: sp.c.lum}, method: sp.method, close: sp.close, down: sp.down, drop: sp.drop,
-                                 right: sp.right, reach: sp.reach, ...(cut && {cut: sp.cut})});
+    // 手繪只屬於這次模式，不寫回共用設定，別的圖層照舊記上次的自動切法
+    if (sp && sp.method !== 'hand') Object.assign(S.sp, {lum: {...S.sp.lum, [sp.method]: sp.c.lum}, method: sp.method, close: sp.close, down: sp.down, drop: sp.drop,
+                                                         right: sp.right, reach: sp.reach, ...(cut && {cut: sp.cut})});
     try {localStorage.setItem(SPLIT_KEY, JSON.stringify(S.sp));}
     catch {}
     $('sp-lum').value = $('sp-lum-v').textContent = S.sp.lum[S.sp.method];
@@ -1047,7 +1056,8 @@ function splitStart(L)
         status(`接著調 ${O.name} 的${g.cut ? '挖除' : '前後片'}`);
         return m;
     }
-    Object.assign(m, {c: spCrit(), cut: g ? g.cut : S.sp.cut, method: S.sp.method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, mark: null});
+    const hair = O.pool === 'hair', method = hair || o?.split.method === 'hand' ? 'hand' : S.sp.method;
+    Object.assign(m, {c: spCrit(method), cut: g ? g.cut : hair ? false : S.sp.cut, method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, mark: null});
     m.start = splitDefStart(view, m.c);
     splitRun(m);
     if (o) status(`${O.name} 的尺寸變了，前後片重新追線`);
@@ -1073,6 +1083,7 @@ function splitDefStart(L, c)
 
 function splitRun(m)
 {
+    if (m.method === 'hand') {m.err = null; return;}
     const r = m.method === 'wand' ? PX.splitCut(m.img, {...m.start, c: m.c, close: m.close, drop: m.down ? m.drop : 0, right: m.right ? m.reach : 0, mark: m.mark})
                                   : PX.splitTrace(m.img, {...m.start, c: m.c, mark: m.mark});
     m.err = r.err ?? null;
@@ -1169,7 +1180,7 @@ function spDelPt(m, i)
 
 // ---------- 畫線標記 ----------
 // 在追線那張圖（sp.img）上塗標記蓋過亮度條件，不改圖片；一筆（按下到放開）一步，放開才重新追線
-const spPaintOn = () => $('spPaint').checked;
+const spPaintOn = () => $('spPaint').checked && editSp()?.method !== 'hand';
 const spN = () => Math.min(8, Math.max(1, Math.round(+$('spSize').value || 1)));
 const markCount = (mark) => mark ? mark.reduce((n, k) => n + (k ? 1 : 0), 0) : 0;
 
@@ -1309,15 +1320,18 @@ function drawSplit(m, K)
     drawMark(m, K);
     if (m.poly)
     {
-        g.fillStyle = 'rgba(255,0,255,.3)';
-        g.beginPath();
-        m.poly.pts.forEach((p, i) => {const w = toWorld(L, p.x, p.y); i ? g.lineTo(w.x, w.y) : g.moveTo(w.x, w.y);});
-        g.closePath();
-        g.fill();
+        if (m.poly.closed)
+        {
+            g.fillStyle = 'rgba(255,0,255,.3)';
+            g.beginPath();
+            m.poly.pts.forEach((p, i) => {const w = toWorld(L, p.x, p.y); i ? g.lineTo(w.x, w.y) : g.moveTo(w.x, w.y);});
+            g.closePath();
+            g.fill();
+        }
         g.strokeStyle = '#f0f';
         drawPolyEdit(m.poly, L, K);
     }
-    drawCross(toWorld(L, m.start.x + 0.5, m.start.y + 0.5), K, '#0ff');
+    if (m.method !== 'hand') drawCross(toWorld(L, m.start.x + 0.5, m.start.y + 0.5), K, '#0ff');
 }
 
 function drawCross(c, K, color)
@@ -1477,7 +1491,7 @@ function leaveMode()
     const m = S.mode;
     if (m.type === 'warp' && m.changed && confirm('有未套用的變形框，要套用嗎？（取消＝放棄）')) applyMode();
     else if (m.type === 'pixel' && m.changed && confirm('有未套用的像素修補，要套用嗎？（取消＝放棄）')) applyMode();
-    else if (m.type === 'split' && m.changed && m.poly && confirm('有未套用的前後片，要套用嗎？（取消＝放棄）')) applyMode();
+    else if (m.type === 'split' && m.changed && m.poly?.closed && confirm('有未套用的前後片，要套用嗎？（取消＝放棄）')) applyMode();
     else cancelMode();
 }
 
@@ -1614,7 +1628,7 @@ function applyMode()
     }
     else if (m.type === 'split')
     {
-        if (!m.poly) return status(m.err ?? '還沒有後片的範圍');
+        if (!m.poly?.closed) return status(m.err ?? (m.poly ? '多邊形還沒閉合' : '還沒有後片的範圍'));
         splitApply(m);
     }
     else return;
@@ -2432,17 +2446,17 @@ cv.addEventListener('pointerdown', e => {
     }
     else if (m.type === 'split' || (m.type === 'auto' && m.sp && spHit(m.sp, w)))
     {
-        const sp = editSp(), before = spBefore(m), pts = sp.poly?.pts;
+        const sp = editSp(), before = spBefore(m), pts = sp.poly?.pts, closed = sp.poly?.closed, hand = sp.method === 'hand';
         if (e.altKey)
         {
             const i = sp.poly ? polyVertexHit(sp.poly, toLocal(sp.view, w.x, w.y)) : -1;
             if (i >= 0) spDelPt(m, i);
         }
-        else if (splitStartHit(sp, w)) drag = {type: 'splitStart', before};
-        else if (sp.poly)
+        else if (!hand && splitStartHit(sp, w)) drag = {type: 'splitStart', before};
+        else if (sp.poly || hand)
         {
             drag = polyPointerDown(sp, e);
-            if (sp.poly.pts !== pts) spCommit(m, before);
+            if (sp.poly.pts !== pts || sp.poly.closed !== closed) spCommit(m, before);
             else if (drag) drag.before = before;
         }
         refreshModePanel();
@@ -2628,6 +2642,14 @@ window.addEventListener('keydown', e => {
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
+    else if (e.key === 'Backspace' && m.type === 'split' && m.method === 'hand' && m.poly && m.poly.vert == null)
+    {
+        splitStep(m);
+        polyBack(m);
+        if (m.poly) m.poly.cursor ??= m.poly.pts.at(-1);
+        refreshModePanel();
+        dirty();
+    }
     else if ((e.key === 'Delete' || e.key === 'Backspace') && editSp()?.poly?.vert != null && !spPaintOn()) {spDelPt(m, editSp().poly.vert); refreshModePanel(); dirty();}
     else if (editSp() && !e.ctrlKey && !e.altKey && SPMARK_KEYS[key]) {SPMARK_KEYS[key](); refreshModePanel(); dirty();}
     if ((m.type === 'pixel' || editSp()) && e.key === 'Alt') e.preventDefault();
@@ -2867,7 +2889,8 @@ function refreshSL()
     $('slInfo').textContent = g ? `item：${g.parts.map(C => C.name).join('、')}` : '';
 }
 
-const spInfo = (sp) => (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
+const spInfo = (sp) => sp.method === 'hand' ? (sp.poly ? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點${sp.poly.closed ? '' : '（還沒閉合）'}` : '還沒畫')
+                     : (sp.err ?? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點`) + `，起點 ${sp.start.x},${sp.start.y}`
                        + (sp.mark ? `，標記 ${markCount(sp.mark)} px` : '');
 
 // 切割方法、線的條件那塊前後片跟自動共用，搬到顯示中的面板；沒有切線時反灰，閉運算／往下射／往右射只在魔術棒時出現
@@ -2880,6 +2903,10 @@ function refreshSpCtl(m)
     const method = sp?.method ?? S.sp.method;
     document.querySelector(`[name=spMethod][value=${method}]`).checked = true;
     $('spCutRow').hidden = method !== 'wand';
+    $('spHandL').hidden = m.type !== 'split';
+    $('spHandRow').hidden = method !== 'hand' || m.type !== 'split';
+    $('spCtl').querySelectorAll('.spLine').forEach(e => {e.hidden = method === 'hand' && m.type === 'split';});
+    $('spHandClear').disabled = !sp?.poly;
     if (!sp) spSwatch();
     if (m.type === 'split') document.querySelector(`[name=spHow][value=${m.cut ? 'cut' : 'split'}]`).checked = true;
 }
@@ -4434,7 +4461,8 @@ async function commitItems(rows, bake, all = false)
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
 const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前', handB: '後'};
 const POOL_DIR = 'roles/parts';
-const poolSplit = (L) => L.pool === 'hat' ? splitNew(L) : null;
+const SPLIT_POOL = ['hat', 'hair'];
+const poolSplit = (L) => SPLIT_POOL.includes(L.pool) ? splitNew(L) : null;
 const poolHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.pool) ?? Ms[0];};
 const femHome = (L) => {const H = poolHome(L); return H.pool ? H : L;};
 const poolHeir = (L) => {const g = L.pool && poolHome(L) === L && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
@@ -4490,7 +4518,7 @@ function poolCheck(rows, parts, roles, keys)
         const err = (s) => {r.err ||= s;};
         const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
         r.only = old?.sex ?? null;
-        if (r.L.pool !== 'hat' && splitNew(r.L)) err('拆了前後片只能存成帽子，要先撤掉前後片');
+        if (!SPLIT_POOL.includes(r.L.pool) && splitNew(r.L)) err('拆了前後片只能存成帽子或頭髮，要先撤掉前後片');
         if (!r.id) err('要填 id');
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
         if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
@@ -5113,16 +5141,27 @@ for (const [k, max] of [['close', 30], ['drop', 50], ['reach', 50]]) $(`sp-${k}`
     spChange({[k]: S.sp[k]});
 };
 document.querySelectorAll('[name=spMethod]').forEach(r => {r.onchange = () => {
+    if (r.value === 'hand') return spChange({method: 'hand', c: spCrit('hand')});
     S.sp.method = r.value;
     spSet();
     spChange({method: S.sp.method, c: spCrit()});
 };});
 document.querySelectorAll('[name=spHow]').forEach(r => {r.onchange = () => {
-    const p = spPreset(r.value === 'cut');
+    const cut = r.value === 'cut';
+    if (S.mode.method === 'hand') return spChange({cut});
+    const p = spPreset(cut);
     Object.assign(S.sp, p);
     spSet();
     spChange({...p, c: spCrit()});
 };});
+$('spHandClear').onclick = () => {
+    const m = S.mode;
+    if (m.type !== 'split' || !m.poly) return;
+    splitStep(m);
+    m.poly = null;
+    refreshModePanel();
+    dirty();
+};
 for (const b of document.querySelectorAll('.spStep'))
 {
     let t = null;

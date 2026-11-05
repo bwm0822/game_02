@@ -49,10 +49,18 @@ run('部位 pool', async t => {
     const head = await t.eval(d => d.DB.rolePart(d.DB.role('mary'), 'head').y);
     t.eq('子部位數字相對支點（跟著支點走）', JSON.stringify([has('head-mary')?.[5], has('head-mary')?.[6], has('hand-man', 'wristF')?.[4], has('hand-man', 'wristF')?.[5]]),
         JSON.stringify([head - 40, head, 8, 50]));
-    t.eq('節點整組照 NODE_DEPTH 排：wristB 在 body 前面（底層）', await t.eval(d => {
+    t.eq('節點整組照 NODE_DEPTH 排：neckB、wristB 在 body 前面（底層）', await t.eval(d => {
         const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
-        return v._rig.getAll().map(c => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? c.texture.key).slice(0, 2).join();
-    }), 'wristB,body-woman');
+        return v._rig.getAll().map(c => Object.keys(v._nodes).find(k => v._nodes[k] === c) ?? c.texture.key).slice(0, 3).join();
+    }), 'neckB,wristB,body-woman');
+    t.eq('頭髮後片進 neckB（位置同 neck、在身體後面）、帽子後片留在 neck', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        const {neck, neckB} = v._nodes, sp = v._addPart({kind:'hair', sprite:'hair-mary', back:'hand-man', scale:0.25, x:2, y:3}, d.GM.PART.HAIR);
+        const back = sp.find(s => s.texture.key === 'hand-man'), out = [back.parentContainer === neckB, back.x, back.y, neckB.x === neck.x, neckB.y === neck.y, neckB.angle === neck.angle,
+            sp[0].parentContainer === neck, neck.list.some(s => s.texture.key === 'hair-karen')].join();
+        sp.forEach(s => s.destroy());
+        return out;
+    }), 'true,2,3,true,true,true,true,true');
     t.eq('rig＝body 的 x/y、身體圖在 rig 的 0,0、支點跟衣服掛在 rig 上', await t.eval(d => {
         const v = Object.values(d.GM.player._coms).find(c => c?._rig), b = v._rig.list.find(c => c.texture?.key === 'body-woman');
         const cloth = v._rig.list.find(c => c.texture?.key === 'body-man');

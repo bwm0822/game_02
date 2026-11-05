@@ -32,6 +32,7 @@ run('role-part', async t => {
         await write(json, 'role.json', await (await fetch('/assets/json/role.json')).text());
         const parts0 = JSON.parse(await (await fetch('/assets/json/part.json')).text());
         parts0['hair-unused'] = {kind: 'hair', sprite: 'hair-01', scale: 0.25};
+        delete parts0['hair-mary'].sex;
         await write(json, 'part.json', JSON.stringify(parts0, null, 2));
         await re.setAssets(assets);
         S.ext.parts = parts0;
@@ -86,6 +87,19 @@ run('role-part', async t => {
         sel(Object.keys(S.data).find(k => S.data[k].kind === 'npc' && !S.data[k].head));
         const btn =[...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭髮產生');
         out.noHeadBtn = btn?.disabled;
+
+        // 頭髮後片：畫在最底下、不影響臉的大小，超出方格裁掉
+        const {portraitOf} = await import('/tools/common/portrait.js');
+        const head = {sprite: 'head-karen', scale: 0.25}, hair = {sprite: 'hair-karen', scale: 0.25};
+        const opt = {size: 100, fill: 90}, data = (cv) => cv.getContext('2d').getImageData(0, 0, 100, 100).data;
+        const front = data(await portraitOf([head, hair], opt)), both = data(await portraitOf([head, {...hair, back: 'body-man'}], opt));
+        let same = true, more = 0;
+        for (let i = 3; i < both.length; i += 4)
+        {
+            if (front[i] === 255 && both[i] !== 255) same = false;
+            if (front[i] === 0 && both[i] > 0) more++;
+        }
+        out.portraitBack = [same, more > 0];
         return out;
     });
 
@@ -100,4 +114,5 @@ run('role-part', async t => {
     t.eq('由頭髮產生：100×100、有畫東西、icon 改成 portrait-<id>', JSON.stringify(r.portrait), JSON.stringify([100, 100, true, 'portrait-karen']));
     t.eq('icon 不是它、檔案已經有了：先問、取消不動', JSON.stringify([r.overwrite, r.kept]), JSON.stringify([['覆蓋 portrait-karen.png'], 'head-karen']));
     t.eq('沒有頭／頭髮的角色按鈕停用', r.noHeadBtn, true);
+    t.eq('頭像畫頭髮後片：臉的位置大小不變、後片多畫在空白處', JSON.stringify(r.portraitBack), JSON.stringify([true, true]));
 });
