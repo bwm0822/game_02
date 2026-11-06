@@ -362,45 +362,65 @@ run('fit', async t => {
         F.setSlot('CAT_WEAPON', 'bow-1');
         S.aid = 'aim'; S.target = 0; F.render();
         out.aim = [trackEnd(F.trackOf()), Math.round(poseAt(F.trackOf(), 60).angle)];
+        const V = F.V;
         const zin = () => document.querySelector('#pv input.zoom');
         const zset = (v) => {zin().value = v; zin().dispatchEvent(new Event('change'));};
-        const zkey = (key) => {zin().dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true})); return S.zoom;};
+        const zkey = (key) => {zin().dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true})); return V.zoom;};
         zset('1.41'); out.zstep = [zkey('ArrowUp')];
         zset('1.41'); out.zstep.push(zkey('ArrowDown'), zkey('ArrowDown'), zkey('ArrowUp'));
         zset('0.1'); out.zstep.push(zkey('ArrowDown'));
-        zset('9'); out.zstep.push(S.zoom, zkey('ArrowUp'));
-        zset('abc'); out.zstep.push(S.zoom, zin().value);
-        const spin = (v) => {zin().value = v; zin().dispatchEvent(new Event('input')); return S.zoom;};
+        zset('16'); out.zstep.push(V.zoom, zkey('ArrowUp'), zkey('ArrowUp'));
+        zset('abc'); out.zstep.push(V.zoom, zin().value);
+        zset('99'); out.zstep.push(V.zoom);
+        const spin = (v) => {zin().value = v; zin().dispatchEvent(new Event('input')); return V.zoom;};
         zset('1.41'); out.zspin = [zin().type, spin('2.41')];
         zset('1'); out.zspin.push(spin('0.9'), spin('0.95'));
         // 真的 spinner：stepDown/stepUp 照 step 改值，1 要能往下
-        const real = (dir) => {dir > 0 ? zin().stepUp() : zin().stepDown(); zin().dispatchEvent(new Event('input')); return S.zoom;};
+        const real = (dir) => {dir > 0 ? zin().stepUp() : zin().stepDown(); zin().dispatchEvent(new Event('input')); return V.zoom;};
         zset('1'); out.zspin.push(real(-1), real(1), real(1));
         zset('6'); out.zspin.push(real(-1));
         zset('6');
         await F.drawPreview();
+        // 畫布鋪滿 .stage（不捲）、控制面板留在畫面上；中鍵平移；重繪（改資料）view 不動；置中＝原點回中央
         const stage = () => document.querySelector('#pv .stage');
         const ctrl = document.querySelector('#pv .ctrl').getBoundingClientRect();
-        const st = stage();
-        const scrolls = st.scrollHeight > st.clientHeight;
-        const centered = Math.abs(st.scrollTop - (st.scrollHeight - st.clientHeight) / 2) <= 1;
-        const scrolled = new Promise(res => st.addEventListener('scroll', res, {once: true}));
-        st.scrollTop = 40; st.scrollLeft = 30;
-        // 刪除確認框 showModal 過後，scroll 事件要過一陣子才發
-        await Promise.race([scrolled, sleep(2000)]);
+        const cvr = document.querySelector('#pv canvas').getBoundingClientRect(), str = stage().getBoundingClientRect();
+        const cvp = () => document.querySelector('#pv canvas');
+        const mptr = (type, x, y) => cvp().dispatchEvent(new PointerEvent(type, {clientX: x, clientY: y, button: 1, pointerId: 1, bubbles: true}));
+        const ox0 = V.ox, oy0 = V.oy;
+        mptr('pointerdown', 100, 100); mptr('pointermove', 140, 120); mptr('pointerup', 140, 120);
+        const panned = [Math.round(V.ox - ox0), Math.round(V.oy - oy0)];
         fire(`anim.json|aim|back`, '70');
         await F.drawPreview();
-        out.pinned = [ctrl.bottom <= innerHeight, scrolls, centered, stage().scrollTop, stage().scrollLeft];
-        S.zoom = 3;
+        const viewKept = JSON.stringify([V.zoom, V.ox, V.oy]) === JSON.stringify([6, ox0 + 40, oy0 + 20]);
+        const wrc = cvp().getBoundingClientRect(), mx = Math.round(wrc.left + wrc.width / 2 + 30), my = Math.round(wrc.top + wrc.height / 2);
+        const w0 = cvp().pz.toWorld({clientX: mx, clientY: my});
+        cvp().dispatchEvent(new WheelEvent('wheel', {deltaY: 100, clientX: mx, clientY: my, bubbles: true, cancelable: true}));
+        const w1 = cvp().pz.toWorld({clientX: mx, clientY: my});
+        const wheel = [Math.abs(V.zoom - 5) < 1e-9, Math.hypot(w0.x - w1.x, w0.y - w1.y) < 1e-6];
+        document.querySelector('#pv .center').click();
+        out.pinned = [ctrl.bottom <= innerHeight, Math.round(cvr.width) === Math.round(str.width) && Math.round(cvr.height) === Math.round(str.height),
+                      JSON.stringify(panned), viewKept, ...wheel, V.ox === 0 && V.oy === 0, JSON.parse(localStorage.getItem('tools.preview.view.fit')).zoom === V.zoom];
         F.setSlot('CAT_WEAPON', 'sword-1');
         S.mode = 'fit'; F.render();
         document.querySelector('#pv .gamezoom').click();
         await F.drawPreview();
-        out.game = [parseFloat(document.querySelector('#pv canvas').style.width), S.zoom === Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100, zin().value === String(S.zoom)];
+        out.game = [V.zoom, V.zoom === Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100, parseFloat(zin().value) === V.zoom];
         out.dom = document.body.innerText.includes('[object');
 
+        // 藏頭／頭髮：少畫、記住、不改資料（共用 tools.preview.hide）
+        F.select('wick'); F.wearOrig(); await F.drawPreview();
+        {
+            const box = (k) => document.querySelector(`#pv input[data-hide=${k}]`);
+            const tick = async (k, v) => {box(k).checked = v; box(k).dispatchEvent(new Event('change')); return drawn();};
+            const n0 = await drawn(), d0 = JSON.stringify(S.doc['role.json'].data.wick);
+            const n1 = await tick('head', false), n2 = await tick('hair', false);
+            out.hideHead = [n0 - n1, n1 - n2 >= 1, localStorage.getItem('tools.preview.hide'), JSON.stringify(S.doc['role.json'].data.wick) === d0];
+            await tick('head', true); out.hideHead.push(await tick('hair', true) === n0);
+        }
+
         // 頭盔 hideHair：戴上藏頭髮、取消勾選頭髮回來
-        S.zoom = 3; F.select('wick'); F.wearOrig();
+        F.select('wick'); F.wearOrig();
         const bare = await drawn();
         S.cur = 'CAT_HELMET'; F.setSlot('CAT_HELMET', 'helmet_02');
         const hide = document.querySelector('[data-k="item.json|helmet_02|equip.hideHair"]');
@@ -609,9 +629,10 @@ run('fit', async t => {
     t.eq('刪除動畫：停在（無）、清掉道具 anim、undo 一起退', JSON.stringify(r.delAnim),
         JSON.stringify(['chop,sweep,aim', null, false, false, '', 'chop,sweep,stab,aim', 'stab']));
     t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
-    t.eq('×6：控制面板留在畫面上、畫布區自己捲、換倍率置中、重繪保留捲動', JSON.stringify(r.pinned), JSON.stringify([true, true, true, 40, 30]));
-    t.check('「遊戲」按鈕填入螢幕算出的倍率', r.game[0] > 0 && r.game[0] < 400 && r.game[1] && r.game[2], JSON.stringify(r.game));
-    t.eq('倍率 ↑↓ 吸格、夾範圍、亂打恢復', JSON.stringify(r.zstep), JSON.stringify([2, 1, 0.9, 1, 0.1, 6, 6, 6, '6']));
+    t.eq('預覽：控制面板留在畫面上、畫布鋪滿、中鍵平移、重繪 view 不動、滾輪以游標為中心、置中、記住', JSON.stringify(r.pinned), JSON.stringify([true, true, '[40,20]', true, true, true, true, true]));
+    t.check('「遊戲」按鈕填入螢幕算出的倍率', r.game[0] > 0 && r.game[1] && r.game[2], JSON.stringify(r.game));
+    t.eq('倍率 ↑↓ 吸格、夾範圍、亂打恢復', JSON.stringify(r.zstep), JSON.stringify([2, 1, 0.9, 1, 0.1, 16, 20, 20, 20, '20', 20]));
+    t.eq('藏頭少一張、藏頭髮再少、記住、不改資料、勾回來恢復', JSON.stringify(r.hideHead), JSON.stringify([1, true, '{"head":true,"hair":true}', true, true]));
     t.eq('倍率上下三角形也吸格', JSON.stringify(r.zspin), JSON.stringify(['number', 2, 0.9, 1, 0.9, 1, 2, 5]));
     t.eq('畫面沒有 [object …]', r.dom, false);    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));

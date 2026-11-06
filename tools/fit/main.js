@@ -13,6 +13,9 @@ import {createFold} from '../common/fold.js';
 import * as HD from '../common/handles.js';
 import * as PT from '../common/part.js';
 import {show, showMenu} from '../common/showmenu.js';
+import * as PZ from '../common/panzoom.js';
+import {hidden, hideChecks} from '../common/headhide.js';
+import {fillBg} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../../src/core/equip.js';
@@ -23,9 +26,6 @@ const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['h
 const SLOTS = [['CAT_WEAPON', '武器', 'icons:80'], ['CAT_HELMET', '頭盔', 'icons:113'], ['CAT_CHESTPLATE', '護甲', 'icons:119'], ['CAT_GLOVES', '手套', 'icons:128'], ['CAT_BOOTS', '靴子', 'icons:130']];
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const {PIVOT_NAMES, PIVOT_COLOR} = HD;
-// 倍率 0.1～6，↑↓ 吸到格子：<1 每 0.1、>=1 每 1
-const ZOOM_MIN = 0.1, ZOOM_MAX = 6;
-const ZOOM_GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6];
 const FRAME_COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
 // 顯示選項（view、錨點、b/g/z、支點）在 showmenu.js 的 show，跟角色／部位分頁共用
 // 預覽播放時 ready 停一下（模擬前撲）、hold 停一下（模擬等箭飛）
@@ -43,7 +43,7 @@ const S = {
     alpha: {},                  // cat → 預覽透明度 0～1（沒寫＝1），只是顯示用、不存檔
     cur: 'CAT_WEAPON',          // 選中的格子，下方面板顯示它
     pick: null,                 // 畫布上選中的部件：部位 kind 或裝備 cat（裝備時跟 cur 同步）
-    zoom: 3, flip: false,
+    flip: false,                // 倍率／位置看 panzoom.js 的 V
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
     target: 0,                  // 目標方向（度，0＝右、90＝下）
@@ -223,7 +223,6 @@ async function onSaved(file)
 function select(rid)
 {
     S.rid = rid;
-    recenter();
     const wid = S.slots.CAT_WEAPON;
     for (const [cat, id] of Object.entries(S.slots)) if (!isObj(items()[id]?.equip)) delete S.slots[cat];
     if (S.slots.CAT_WEAPON !== wid) weaponAnim();
@@ -393,7 +392,7 @@ function drawView()
 {
     const r = role();
     if (!r) return $('view').replaceChildren(h('div', {class: 'dim'}, S.json ? '沒有紙娃娃型角色（要有 head 或 handF／handB）' : '先在上方選擇專案資料夾'));
-    const tab = (m, text) => h('button', {class: 'tab' + (S.mode === m ? ' sel' : ''), dataset: {mode: m}, onclick: () => {S.mode = m; playing++; recenter(); render();}}, text);
+    const tab = (m, text) => h('button', {class: 'tab' + (S.mode === m ? ' sel' : ''), dataset: {mode: m}, onclick: () => {S.mode = m; playing++; render();}}, text);
     const orig = origEquips().length > 0;
     // 左鍵換裝、右鍵只選中該格；擺放分頁每格下方是透明度
     const slots = h('div', {class: 'slots'}, SLOTS.map(([cat, name]) => h('div', {class: 'slotcol', dataset: {cat}},
@@ -660,16 +659,9 @@ function animView(slots)
 }
 
 // ---------- 預覽 ----------
-const scaleOf = () => S.zoom;
 const gameZoom = () => Math.round(Math.min(screen.width / 1024, screen.height / 768) * 100) / 100;
-const stepZoom = (z, dir) => (dir > 0 ? ZOOM_GRID.find(g => g > z + 1e-9) : ZOOM_GRID.findLast(g => g < z - 1e-9)) ?? z;
-
-function setZoom(z)
-{
-    S.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
-    recenter();
-    drawPv();
-}
+// 置中要裝下的範圍：動畫分頁留大一點給武器揮
+const frameOf = (r) => {const pad = S.mode === 'anim' ? 112 : 48; return {w: Math.max(r.w ?? 32, 64) + pad, h: Math.max(r.h ?? 64, 64) + pad};};
 
 const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT, partFor(parts(), role(), 'hat'));
 
@@ -709,46 +701,27 @@ function inSprite(p, f, pose, lx, ly)
     return u >= 0 && u <= f.w && v >= 0 && v <= f.h;
 }
 
-// 畫布區每次重繪都是新的元素：照記下的位置捲回去；換倍率／角色／分頁時改成置中（角色在畫布正中央）
-let scroll = {x: 0, y: 0}, centerNext = true;
-const recenter = () => {centerNext = true;};
-function placeScroll(st)
-{
-    if (centerNext)
-    {
-        centerNext = false;
-        scroll = {x: (st.scrollWidth - st.clientWidth) / 2, y: (st.scrollHeight - st.clientHeight) / 2};
-    }
-    st.scrollLeft = scroll.x;
-    st.scrollTop = scroll.y;
-}
-
 let geo = null;             // 最後一次畫的幾何，給畫布拖拉 hit-test
 let drawing = 0;
 async function drawPreview()
 {
     const cv = $('pv').querySelector('canvas'), r = role();
-    if (!cv || !r) return;
+    if (!cv?.pz || !r) return;
     const token = ++drawing;
-    const isAnim = S.mode === 'anim', pad = isAnim ? 112 : 48;
+    const isAnim = S.mode === 'anim';
     const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
-    const W = Math.max(w, 64) + pad, H = Math.max(hh, 64) + pad, K = scaleOf(), dpr = devicePixelRatio || 1;
-    const parts = partsOf(r);
+    const parts = partsOf(r).filter(pt => !hidden(pt.k));
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
-    if (token !== drawing) return;
-    cv.width = Math.round(W * K * dpr); cv.height = Math.round(H * K * dpr);
-    cv.style.width = `${W * K}px`; cv.style.height = `${H * K}px`;
-    placeScroll(cv.parentElement);
-    const g = cv.getContext('2d'), px = 1 / K, flip = facing();
-    g.setTransform(K * dpr, 0, 0, K * dpr, 0, 0);
+    if (token !== drawing || !cv.isConnected) return;
+    const g = cv.getContext('2d'), flip = facing();
+    const {K, o} = cv.pz.begin(g, (g, cw, ch) => fillBg(g, cw, ch, S.bg));
+    const px = 1 / K;
     // 跟遊戲一樣用雙線性（Phaser 預設 LINEAR），零件縮小後的邊緣濃淡才看得出遊戲裡的樣子
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'low';
-    g.fillStyle = S.bg ?? BG[0]; g.fillRect(0, 0, W, H);
-    g.fillStyle = BG[1];
-    if (!S.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
-    const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
+    // vc：畫的時候是世界原點；給 hit-test 的 geo.vc 是原點在畫布上的位置換成世界單位（toLocal 照舊）
+    const vc = {x: 0, y: 0}, root = {x: ax, y: ay}, gvc = {x: o.x / K, y: o.y / K};
     if (show.view)
     {
         g.lineWidth = px;
@@ -815,7 +788,7 @@ async function drawPreview()
             }
             dot(pv.x, pv.y, '#4da3ff', 4);
         });
-        geo = {vc, K, flip, rig, wr, wp, grp, hd, pv};
+        geo = {vc: gvc, K, flip, rig, wr, wp, grp, hd, pv};
     }
     else if (!isAnim)
     {
@@ -826,7 +799,7 @@ async function drawPreview()
         if (S.doc['part.json'].data[bodyId()]) local(() => {
             for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], px, {on: k === live, locked: !dragKeys().includes(k)});
         });
-        geo = {vc, K, flip, rig, pts, hds};
+        geo = {vc: gvc, K, flip, rig, pts, hds};
     }
     else geo = null;
 
@@ -864,6 +837,7 @@ function toLocal(e)
 let drag = null;
 function onDown(e)
 {
+    if (e.button !== 0) return;
     if (geo?.pts) return onDownFit(e);
     const an = anim();
     if (!geo || !an) return;
@@ -946,6 +920,7 @@ function rotNode(e, l)
 
 function onMove(e)
 {
+    if (e.currentTarget.pz?.panning) return;
     if (!drag) return onHoverPivot(e);
     const l = toLocal(e), {kind, an, key, orig} = drag, [dx, dy] = [l.x - drag.l.x, l.y - drag.l.y];
     // 第一次拖（還沒有這個支點）帶上目前的角度
@@ -1053,33 +1028,18 @@ function drawPv()
     const isAnim = S.mode === 'anim', tr = isAnim ? trackOf() : null;
     const check = (k, text, color, disabled) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: S[k], disabled, onchange: e => {S[k] = e.target.checked; drawPreview();}}), text);
-    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp, onpointerleave: onLeave});
+    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移', onpointerdown: onDown, onpointermove: onMove, onpointerup: onUp, onpointerleave: onLeave});
+    cv.pz = PZ.panzoom(cv, {frame: () => frameOf(role()), redraw: drawPreview});
     const total = tr ? trackEnd(tr) : 0;
     $('pv').replaceChildren(
-        h('div', {class: 'stage', onscroll: e => {scroll = {x: e.target.scrollLeft, y: e.target.scrollTop};}}, cv),
+        h('div', {class: 'stage'}, cv),
         h('div', {class: 'ctrl'},
         h('div', {class: 'opts'},
             showMenu(drawPreview, isAnim ? PIVOTS : []),
             check('flip', '翻面', null, isAnim),
-            h('label', {title: `倍率 ${ZOOM_MIN}～${ZOOM_MAX}，↑↓：小於 1 每次 0.1、1 以上每次 1`}, '×',
-                h('input', {type: 'number', class: 'num zoom', min: ZOOM_MIN, max: ZOOM_MAX, step: 0.1, value: S.zoom,
-                    // 點上下三角形的 input 事件沒有 inputType（打字才有），只拿來判斷方向、改照格子走（step 要 0.1，1 才按得下去）；舊欄位先填新值，接著的 change 才不會用 spinner 的值蓋回去
-                    oninput: e => {
-                        if (e.inputType) return;
-                        const v = parseFloat(e.target.value);
-                        if (!Number.isFinite(v) || v === S.zoom) return;
-                        const z = stepZoom(S.zoom, v > S.zoom ? 1 : -1);
-                        e.target.value = z;
-                        setZoom(z);
-                    },
-                    onchange: e => {const v = parseFloat(e.target.value); Number.isFinite(v) ? setZoom(v) : e.target.value = S.zoom;},
-                    onkeydown: e => {
-                        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-                        e.preventDefault();
-                        setZoom(stepZoom(S.zoom, e.key === 'ArrowUp' ? 1 : -1));
-                        $('pv').querySelector('input.zoom').focus();
-                    }})),
-            h('button', {class: 'gamezoom', title: '全螢幕玩時的大小（1024×768 FIT 到螢幕）', onclick: () => setZoom(gameZoom())}, '遊戲'),
+            hideChecks(drawPreview),
+            PZ.zoomField(), PZ.centerBtn(),
+            h('button', {class: 'gamezoom', title: '全螢幕玩時的大小（1024×768 FIT 到螢幕）', onclick: () => PZ.setZoom(gameZoom())}, '遊戲'),
             h('input', {type: 'color', class: 'bg', title: '背景色', value: S.bg ?? BG[0], oninput: e => {S.bg = e.target.value; drawPreview();}, onchange: e => setBg(e.target.value)}),
             h('button', {class: 'bgchk', title: '背景改回棋盤格', disabled: !S.bg, onclick: () => setBg(null)}, '棋盤格')),
         isAnim && h('div', {class: 'opts anim'},
@@ -1135,5 +1095,5 @@ SH.onProject(dir => setRoot(dir).catch(e => status(e.message)));
 render();
 
 // 給無頭測試用
-window.__fit = {S, show, IC,setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
+window.__fit = {S, V: PZ.V, show, IC,setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
     trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};

@@ -1,8 +1,8 @@
 #left { width: 220px; }
-#pv { flex: none; display: flex; flex-direction: column; overflow: hidden; background: #25272b; border-left: 1px solid #111; min-width: 340px; max-width: 50vw; }
-#pv .stage { flex: 1; min-height: 0; overflow: auto; padding: 8px; }
+#pv { flex: none; width: 420px; display: flex; flex-direction: column; overflow: hidden; background: #25272b; border-left: 1px solid #111; min-width: 340px; max-width: 50vw; }
+#pv .stage { flex: 1; min-height: 120px; position: relative; }
 #pv .ctrl { flex: none; padding: 2px 8px 8px; border-top: 1px solid #111; }
-#pv canvas { display: block; image-rendering: pixelated; margin: auto; }
+#pv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 #pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; }
 #pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
 #pv .opts input[type=range] { width: 160px; }
