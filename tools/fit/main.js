@@ -332,12 +332,13 @@ function drawList()
 }
 
 // file 裡 id 那筆的 path；空字串＝刪 key（遊戲用預設值），req 的欄位不能清空；after 在同一筆 undo 裡跑
-function numInput(file, id, path, ph, {req, after, pre} = {})
+function numInput(file, id, path, ph, {req, after, pre, lock} = {})
 {
     const k = `${file}|${id}|${path.join('.')}`, v = getAt(S.doc[file].data[id], path);
     // 空白時 ↑↓／上下三角形會從 0 起跳：先填入 placeholder（預設值）再讓瀏覽器步進
     const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
     return h('input', {type: 'number', step: ST.step(path.at(-1)) ?? 'any', class: 'num', value: v ?? '', placeholder: ph, dataset: {k},
+        disabled: !!lock, title: lock || '',
         onkeydown: (e) => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') fromPh(e.target);},
         onmousedown: (e) => {if (e.offsetX > e.target.clientWidth - 20) fromPh(e.target);},
         onchange: (e) => {
@@ -351,8 +352,8 @@ function numInput(file, id, path, ph, {req, after, pre} = {})
 
 // file 裡 id 那筆的 base（裝備是 ['equip']、部位是 []）：女角的 scale/x/y 改 base[sx]，第一次改從基準複製
 // only＝道具／部位限定的性別（item.sex、part.sex）：遊戲不套 f，一律改基準
-// link＝改完 scale/x/y/a 之後呼叫 link(改前的值)（頭帶頭髮）
-function sexCells(file, id, base, only, link)
+// link＝改完 scale/x/y/a 之後呼叫 link(改前的值)（頭帶頭髮）；lock＝scale/x/y/a 鎖住（連動時的頭髮），值是提示文字
+function sexCells(file, id, base, only, link, lock)
 {
     const sx = only ? null : sexKey(), e = getAt(S.doc[file].data[id], base) ?? {}, had = isObj(e[sx]);
     const fill = () => {
@@ -360,9 +361,9 @@ function sexCells(file, id, base, only, link)
         eq[sx] = Object.fromEntries(SEX_NUMS.map(k => [k, o[k] ?? e[k]]).filter(([, v]) => v !== undefined));
     };
     return NUMS.map(([k, ph]) => {
-        const L = link && LINK_NUMS.includes(k) ? {pre: headNow, after: (n, b) => link(b)} : {};
+        const L = !LINK_NUMS.includes(k) ? {} : {lock, ...(link && {pre: headNow, after: (n, b) => link(b)})};
         return h('td', null, sx && SEX_NUMS.includes(k)
-            ? numInput(file, id, [...base, sx, k], String(e[k] ?? ph), {pre: L.pre, after: (n, b) => {if (!had && n !== undefined) fill(); L.after?.(n, b);}})
+            ? numInput(file, id, [...base, sx, k], String(e[k] ?? ph), {pre: L.pre, lock: L.lock, after: (n, b) => {if (!had && n !== undefined) fill(); L.after?.(n, b);}})
             : numInput(file, id, [...base, k], ph, L));
     });
 }
@@ -431,7 +432,8 @@ function fitView(r, slots)
                 wrong && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[p.sex] ?? p.sex}`),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
                 hide.has(k) && h('span', {class: `dim hidden-${k}`}, '（目前被裝備隱藏）')),
-            p ? sexCells('part.json', pid, [], p.sex, k === 'head' && S.headLink && linkHair) : NUMS.map(() => h('td'))), () => pickQuiet(k));
+            p ? sexCells('part.json', pid, [], p.sex, k === 'head' && S.headLink && linkHair, k === 'hair' && S.headLink && '🔗 連動中：頭髮跟著頭動，要單獨調先關掉頭列的 🔗')
+                : NUMS.map(() => h('td'))), () => pickQuiet(k));
     });
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
     return [

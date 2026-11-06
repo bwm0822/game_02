@@ -409,6 +409,8 @@ run('fit', async t => {
             F.undo();
             box().checked = true; box().dispatchEvent(new Event('change'));
             out.link.push(localStorage.getItem('tools.fit.headLink'));
+            const dis = (k) => document.querySelector(`[data-k="part.json|hair-wick|${k}"]`).disabled;
+            out.lock = [['scale', 'x', 'y', 'a', 'ox', 'oy'].map(dis), document.querySelector('[data-k="part.json|head-wick|x"]').disabled];
             const h0 = S.hi;
             fire('part.json|head-wick|x', '-3');
             fire('part.json|head-wick|a', '10');
@@ -430,6 +432,7 @@ run('fit', async t => {
             out.link.push(JSON.stringify(P()['hair-mary'].f), P()['hair-mary'].x);
             box().checked = false; box().dispatchEvent(new Event('change'));
             out.link.push(localStorage.getItem('tools.fit.headLink'));
+            out.lock.push(document.querySelector('[data-k="part.json|hair-mary|f.x"]').disabled);
             while (S.hi > hl) F.undo();
             F.select('wick');
         }
@@ -602,6 +605,8 @@ run('fit', async t => {
         '[0.5,1,0,10,null]', 4, '[0.25,-1,2,10,null]',
         '{"scale":0.25,"x":-1.5,"y":3}', '[-2,5,null]',
         '{"scale":0.25,"x":-1,"y":5}', -2, null]));
+    t.eq('🔗 連動時頭髮 scale/x/y/a 鎖住、ox/oy 跟頭照常；關掉解鎖', JSON.stringify(r.lock),
+        JSON.stringify([[true, true, true, true, false, false], false, false]));
     t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo、支點寫基準不建 f', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false, true, true]));
     t.eq('限定：限女改基準不建 f；限男穿著標 ⚠、挑選只列符合的；部位下拉同理',
          JSON.stringify(r.only), JSON.stringify([true, true, 5, false, true, true, true, true, true, true]));
