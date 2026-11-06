@@ -794,10 +794,10 @@
     "schedule": [],
     "sex": "f",
     "head": "head-kidman",
-    "hair": "hair-kidman",
     "icon": "portrait-kidman",
     "handF": "handF",
-    "handB": "handB"
+    "handB": "handB",
+    "hair": "hair-kidman"
   },
   "jobs": {
     "kind": "npc",

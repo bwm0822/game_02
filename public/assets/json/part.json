@@ -192,6 +192,91 @@
     "sex": "f",
     "name": "妮可基嫚的頭"
   },
+  "head-bandit-1": {
+    "kind": "head",
+    "sprite": "head-bandit-1",
+    "scale": 0.25,
+    "x": -3,
+    "y": 4,
+    "name": "刀疤大漢的頭"
+  },
+  "head-bandit-2": {
+    "kind": "head",
+    "sprite": "head-bandit-2",
+    "scale": 0.25,
+    "x": -3,
+    "y": 4,
+    "name": "獨眼鬍漢的頭"
+  },
+  "head-bandit-3": {
+    "kind": "head",
+    "sprite": "head-bandit-3",
+    "scale": 0.25,
+    "x": -3,
+    "y": 4,
+    "name": "瘦臉小人的頭"
+  },
+  "head-bandit-4": {
+    "kind": "head",
+    "sprite": "head-bandit-4",
+    "scale": 0.25,
+    "x": -3,
+    "y": 4,
+    "name": "年輕毛賊的頭"
+  },
+  "head-bandit-5": {
+    "kind": "head",
+    "sprite": "head-bandit-5",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 4,
+    "name": "灰髮老匪的頭"
+  },
+  "head-villager-f-1": {
+    "kind": "head",
+    "sprite": "head-villager-f-1",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "sex": "f",
+    "name": "雀斑少女的頭"
+  },
+  "head-villager-f-2": {
+    "kind": "head",
+    "sprite": "head-villager-f-2",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "sex": "f",
+    "name": "農家姑娘的頭"
+  },
+  "head-villager-f-3": {
+    "kind": "head",
+    "sprite": "head-villager-f-3",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "name": "年輕婦人的頭",
+    "sex": "f"
+  },
+  "head-villager-f-4": {
+    "kind": "head",
+    "sprite": "head-villager-f-4",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "name": "市場大嬸的頭",
+    "sex": "f"
+  },
+  "head-villager-f-5": {
+    "kind": "head",
+    "sprite": "head-villager-f-5",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2,
+    "name": "慈祥老婦的頭",
+    "sex": "f"
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -203,7 +288,8 @@
       "x": -2.25,
       "y": 4
     },
-    "name": "凱倫的頭髮"
+    "name": "凱倫的頭髮",
+    "sex": "f"
   },
   "hair-mary": {
     "kind": "hair",
@@ -211,7 +297,8 @@
     "scale": 0.25,
     "x": -2,
     "y": 4,
-    "name": "瑪莉的頭髮"
+    "name": "瑪莉的頭髮",
+    "sex": "f"
   },
   "hair-wick": {
     "kind": "hair",
@@ -254,6 +341,92 @@
     "y": 4,
     "sex": "f",
     "name": "妮可基嫚的頭髮"
+  },
+  "hair-bandit-1": {
+    "kind": "hair",
+    "sprite": "hair-bandit-1",
+    "scale": 0.25,
+    "x": -3,
+    "y": -11.25,
+    "name": "刀疤大漢的頭髮"
+  },
+  "hair-bandit-2": {
+    "kind": "hair",
+    "sprite": "hair-bandit-2",
+    "scale": 0.25,
+    "x": -3,
+    "y": -11.25,
+    "name": "獨眼鬍漢的頭髮"
+  },
+  "hair-bandit-3": {
+    "kind": "hair",
+    "sprite": "hair-bandit-3",
+    "scale": 0.25,
+    "x": -4,
+    "y": 3,
+    "name": "瘦臉小人的頭髮"
+  },
+  "hair-bandit-4": {
+    "kind": "hair",
+    "sprite": "hair-bandit-4",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -12.5,
+    "name": "年輕毛賊的頭髮"
+  },
+  "hair-bandit-5": {
+    "kind": "hair",
+    "sprite": "hair-bandit-5",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -10.75,
+    "name": "灰髮老匪的頭髮"
+  },
+  "hair-villager-f-1": {
+    "kind": "hair",
+    "sprite": "hair-villager-f-1-front",
+    "back": "hair-villager-f-1-back",
+    "scale": 0.25,
+    "x": -0.5,
+    "y": 2.75,
+    "sex": "f",
+    "name": "雀斑少女的頭髮"
+  },
+  "hair-villager-f-2": {
+    "kind": "hair",
+    "sprite": "hair-villager-f-2",
+    "scale": 0.25,
+    "x": -4.25,
+    "y": 4.75,
+    "sex": "f",
+    "name": "農家姑娘的頭髮"
+  },
+  "hair-villager-f-3": {
+    "kind": "hair",
+    "sprite": "hair-villager-f-3",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -1.5,
+    "name": "年輕婦人的頭髮",
+    "sex": "f"
+  },
+  "hair-villager-f-4": {
+    "kind": "hair",
+    "sprite": "hair-villager-f-4",
+    "scale": 0.25,
+    "x": -2.75,
+    "y": -8.25,
+    "sex": "f",
+    "name": "市場大嬸的頭髮"
+  },
+  "hair-villager-f-5": {
+    "kind": "hair",
+    "sprite": "hair-villager-f-5",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -12,
+    "name": "慈祥老婦的頭髮",
+    "sex": "f"
   },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
@@ -306,6 +479,33 @@
     "sex": "f",
     "name": "菜販服"
   },
+  "cloth-outfit-villager-f-1": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-f-1",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -3,
+    "sex": "f",
+    "name": "雀斑少女服"
+  },
+  "cloth-outfit-villager-f-2": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-f-2",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -2.5,
+    "name": "年輕婦人服",
+    "sex": "f"
+  },
+  "cloth-outfit-villager-f-4": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-f-4",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -3,
+    "sex": "f",
+    "name": "市場大嬸服"
+  },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
@@ -354,7 +554,35 @@
     "scale": 0.25,
     "x": 1.5,
     "y": 1,
-    "name": "菜販鞋"
+    "name": "菜販鞋",
+    "sex": "f"
+  },
+  "shoes-outfit-villager-f-1": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-f-1",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 0,
+    "sex": "f",
+    "name": "雀斑少女鞋"
+  },
+  "shoes-outfit-villager-f-2": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-f-2",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 0.5,
+    "name": "年輕婦人鞋",
+    "sex": "f"
+  },
+  "shoes-outfit-villager-f-4": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-f-4",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 0.5,
+    "sex": "f",
+    "name": "市場大嬸鞋"
   },
   "handF": {
     "kind": "handF",
@@ -402,5 +630,14 @@
     "y": -7.25,
     "sex": "f",
     "name": "菜販帽"
+  },
+  "hat-outfit-villager-f-4": {
+    "kind": "hat",
+    "sprite": "hat-outfit-villager-f-4",
+    "scale": 0.25,
+    "x": -2,
+    "y": 3.5,
+    "name": "市場大嬸頭巾",
+    "sex": "f"
   }
 }
