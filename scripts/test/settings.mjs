@@ -20,6 +20,8 @@ run('settings', async t => {
         await dir(proj, 'public', 'assets', 'textures');
         await dir(proj, 'images');
         await write(json, 'item.json', '{}');
+        await write(json, 'part.json', JSON.stringify({'hair-a': {kind: 'hair', sprite: 'hair-a', scale: 0.25}}));
+        await write(json, 'role.json', '{}');
         const disk = async () => {
             const fh = await (await proj.getDirectoryHandle('tools').catch(() => null))?.getFileHandle('settings.json').catch(() => null);
             const text = fh && await (await fh.getFile()).text();
@@ -70,6 +72,13 @@ run('settings', async t => {
         await st.ST.flush();
         const pd = win('paperdoll');
         out.pdStep = await until(() => pd.document.getElementById('pX').step === '0.5') && [pd.document.getElementById('au-helmet-y').step, pd.document.getElementById('bt-ox').step];
+        // 部位分頁：開著的擺放表收到廣播就換 step（下面全部回內建時驗）
+        T.show('part');
+        const pt = await until(() => win('part')?.__pt?.S.parts['hair-a'] && win('part').__pt);
+        pt.S.sel = 'hair-a'; pt.render();
+        const ptX = () => win('part').document.querySelector('input[data-k="part.json|hair-a|x"]');
+        out.ptStep = [ptX()?.step];
+        T.show('settings');
 
         // 紙娃娃那邊改數字：寫同一份，設定頁收到廣播重畫、undo 從現在重算
         pd.__pd.autoSet({...pd.__pd.S.auto, boots: {...pd.__pd.S.auto.boots, y: 40}});
@@ -84,6 +93,7 @@ run('settings', async t => {
         await st.ST.flush();
         out.resetAll = [(await disk()).step, inp('step.xy').value, inp('step.xy').placeholder];
         out.pdBack = await until(() => pd.document.getElementById('pX').step === '0.25');
+        out.ptStep.push(await until(() => ptX().step === '0.25'));
 
         // 空白格按 ↑ 從內建值起跳，不是從 0
         const e = inp('auto.armor.y');
@@ -114,6 +124,7 @@ run('settings', async t => {
     t.eq('整列 ↺ 清掉那一列', JSON.stringify(r.row), JSON.stringify(undefined));
     t.eq('步進：x/y 共用 xy、設定頁自己的格子也套用', JSON.stringify(r.step), JSON.stringify([0.5, '0.5', '0.05']));
     t.eq('步進：紙娃娃收到廣播換 step', JSON.stringify(r.pdStep), JSON.stringify(['0.5', '0.05']));
+    t.eq('步進：部位分頁開著的擺放表收到廣播換 step（不重畫）', JSON.stringify(r.ptStep), JSON.stringify(['0.5', true]));
     t.eq('紙娃娃改數字：設定頁重畫、undo 重算、不蓋掉別的設定', JSON.stringify(r.cross), JSON.stringify(['40', 0, 0.5]));
     t.eq('全部回到內建：步進清掉、灰字顯示內建', JSON.stringify(r.resetAll), JSON.stringify([undefined, '', '0.25']));
     t.check('全部回到內建：紙娃娃步進跟著回來', r.pdBack);

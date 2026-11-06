@@ -199,7 +199,7 @@ function numTable(pid)
         const inF = sx && SEX_NUMS.includes(k), v = inF ? p.f?.[k] : p[k];
         const fromPh = (el) => {if (el.value === '' && Number.isFinite(parseFloat(el.placeholder))) el.value = el.placeholder;};
         return h('td', null, h('input', {type: 'number', step: ST.step(k) ?? 'any', class: 'num', value: v ?? '',
-            placeholder: inF ? String(p[k] ?? ph) : ph, dataset: {k: `part.json|${pid}|${inF ? `f.${k}` : k}`},
+            placeholder: inF ? String(p[k] ?? ph) : ph, dataset: {k: `part.json|${pid}|${inF ? `f.${k}` : k}`, step: k},
             onkeydown: (e) => {if (e.key === 'ArrowUp' || e.key === 'ArrowDown') fromPh(e.target);},
             onmousedown: (e) => {if (e.offsetX > e.target.clientWidth - 20) fromPh(e.target);},
             onchange: (e) => {
@@ -279,7 +279,7 @@ function pivotTable(pid)
 {
     const p = S.parts[pid];
     const cell = (k, c) => h('td', null, h('input', {type: 'number', step: ST.step(c) ?? 'any', class: 'num',
-        value: p[k]?.[c] ?? '', placeholder: String(pivotOf(p, k)[c]), dataset: {k: `part.json|${pid}|${k}.${c}`},
+        value: p[k]?.[c] ?? '', placeholder: String(pivotOf(p, k)[c]), dataset: {k: `part.json|${pid}|${k}.${c}`, step: c},
         onchange: (e) => {
             const n = parseNum(e.target.value);
             if (typeof n === 'string') {status(`${k}.${c} 要是數字`); return render();}
@@ -642,6 +642,8 @@ SH.onSaved((file) => {
     if (file === 'part.json' || file === 'role.json') act(reload());
 });
 SH.onPartRenamed(moveDraft);
+// 設定分頁改了步進：只換數字欄的 step，不重畫（打到一半的字不會被吃掉）
+ST.onChange(() => ST.applySteps());
 IC.onReload(render);
 SH.onGoto(([pid]) => {S.sel = pid; S.filter = 'all'; render();});
 SH.onProject((dir) => act(setRoot(dir)));
