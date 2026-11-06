@@ -150,6 +150,28 @@ run('part-tool', async t => {
         sex('m');
         await sleep(300);
 
+        // 透明度：scale 前面一條，只調選中的部件、照 kind 記、換條目保留、不寫檔；JSON 模式藏起來但照樣套用
+        const bar = () => document.querySelector('#view table.numtab .alphabar');
+        const pvst = () => document.querySelector('#right .pv canvas').st;
+        const png0 = document.querySelector('#right .pv canvas').toDataURL(), file0 = JSON.stringify(await read('part.json')), hi0 = S.hi;
+        out.alpha = [bar()?.closest('td') === document.querySelector('#view table.numtab td'), bar().dataset.alpha];
+        bar().value = 30; bar().dispatchEvent(new Event('input'));
+        await sleep(300);
+        out.alpha.push(S.alpha.hair, pvst().alpha('hair'), pvst().alpha('body'), document.querySelector('#right .pv canvas').toDataURL() !== png0,
+                       JSON.stringify(await read('part.json')) === file0, S.hi === hi0);
+        const pick = async (id) => {S.sel = id; pt.render(); await sleep(300);};
+        await pick('hair-wick');
+        out.alpha.push(bar().value, pvst().alpha('hair'));
+        await pick('hat-cap');
+        out.alpha.push(bar().value, pvst().alpha('hat'));
+        await pick('hair-unused');
+        btn('JSON').click(); await sleep(300);
+        out.alpha.push(!bar(), pvst().alpha('hair'));
+        btn('表單').click(); await sleep(300);
+        out.alpha.push(bar().value);
+        bar().value = 100; bar().dispatchEvent(new Event('input'));
+        out.alpha.push('hair' in S.alpha);
+
         // 右欄合成：不是身體的條目沒有可拖的東西
         const drag = async (fn) => {
             const cv = document.querySelector('#right .pv canvas'), st = cv.st, g = st.geo, rc = cv.getBoundingClientRect();
@@ -501,13 +523,15 @@ run('part-tool', async t => {
     t.eq('合成切女：套 body-woman、沒有 f 用基準、記住', JSON.stringify(r.female), JSON.stringify(['套在 body-woman（沒有 f，用基準數字）', 2, 'f', 'f']));
     t.eq('換一筆保留女：有 f 用女版、到試穿停用、擺放以外唯讀列出', JSON.stringify(r.femaleF), JSON.stringify(['套在 body-woman，用女版 f', true, 'sprite']));
     t.eq('擺放數字：女改 f、男改基準、清空刪 key、undo／Ctrl+Z／Ctrl+Y 立刻寫、刪除女版', JSON.stringify(r.nums),
-        JSON.stringify(['scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
+        JSON.stringify([',scale（f）,x（f）,y（f）,a,ox,oy', '{"scale":0.2,"x":7,"y":2}', 3, false, false, true, 3, false, 7, 3, false, false, true]));
+    t.eq('透明度：scale 前面、只調選中部件、照 kind 記、不寫檔不進 undo、JSON 模式藏起來照樣套用', JSON.stringify(r.alpha),
+        JSON.stringify([true, 'hair', 0.3, 0.3, 1, true, true, true, '30', 0.3, '100', 1, true, 0.3, '30', false]));
     t.eq('右欄合成：不是身體的條目不能拖', JSON.stringify(r.noDrag), JSON.stringify([null, true]));
     t.eq('身體支點預設不顯示拖不動、從顯示選單勾三個', JSON.stringify(r.hiddenPivot), JSON.stringify([true, '顯示（3）▾']));
     t.eq('排版：支點三列上下排、擺放表標題跟輸入框同欄', JSON.stringify(r.layout), JSON.stringify([true, true]));
     t.eq('身體支點：三列、不在唯讀欄、改數字補 y、拖十字（hover、游標）、白點轉 90、三筆 undo 復原；身體沒有男女切換、不標 f、寫基準、undo',
         JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true,
-            true, 'scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
+            true, ',scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
     t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));

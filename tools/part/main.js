@@ -11,7 +11,7 @@ import * as PT from '../common/part.js';
 import {ID_RE} from '../common/doc.js';
 import {createFold} from '../common/fold.js';
 import '../common/splitter.js';
-import {previewEl} from '../role/preview.js';
+import {previewEl, redrawAll} from '../role/preview.js';
 import {ROLE_PARTS, PIVOTS, pivotOf, sexOk} from '../../src/core/equip.js';
 import {PIVOT_NAMES, PIVOT_COLOR} from '../common/handles.js';
 
@@ -34,6 +34,7 @@ const S = {
     json: false,        // 欄位區切整筆 JSON：記在頁面，換一筆保持
     drafts: {},         // 沒套用的 JSON：{pid: {text, msg, base, conflict}}，base＝開始編輯時的條目字串
     stale: false,       // 正在打 JSON 時延後的重畫，離開框再補
+    alpha: {},          // kind → 右欄合成裡選中部件的透明度 0～1（沒寫＝1），只是顯示用、不存檔
 };
 const NUMS = [['scale', '1'], ['x', '0'], ['y', '0'], ['a', '0'], ['ox', '0.5'], ['oy', '1']];
 const SEX_NUMS = ['scale', 'x', 'y'];
@@ -210,12 +211,31 @@ function numTable(pid)
     return [
         h('div', {class: 'title'}, `擺放（改了立刻存檔${sx ? '；scale／x／y 是女版 f' : ''}）`),
         h('table', {class: 'numtab'},
-            h('tr', null, NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（f）` : k))),
-            h('tr', null, NUMS.map(([k, ph]) => cell(k, ph)))),
+            h('tr', null, h('th'), NUMS.map(([k]) => h('th', null, sx && SEX_NUMS.includes(k) ? `${k}（f）` : k))),
+            h('tr', null, h('td', null, alphaBar(p.kind)), NUMS.map(([k, ph]) => cell(k, ph)))),
         sx && h('div', {class: 'sexnote dim'}, has ? 'scale／x／y 是 f（女版專用）' : '沒有 f，顯示的是共用值；改了就建立 f',
             has && h('button', {class: 'delsex', onclick: () => act(edit(pid, (q) => {delete q.f;}))}, '刪除女版')),
     ];
 }
+
+// 拖滑桿只重畫預覽，不整頁重繪（會打斷拖拉）；照 kind 記、換條目保留
+function alphaBar(kind)
+{
+    const pct = Math.round((S.alpha[kind] ?? 1) * 100);
+    return h('input', {type: 'range', class: 'alphabar', min: 0, max: 100, value: pct, dataset: {alpha: kind},
+        title: `透明度 ${pct}%（只影響預覽，不存檔）`,
+        oninput: (e) => {e.target.title = `透明度 ${e.target.value}%（只影響預覽，不存檔）`; setAlpha(kind, e.target.value / 100);}});
+}
+
+function setAlpha(kind, v)
+{
+    if (v >= 1) delete S.alpha[kind];
+    else S.alpha[kind] = Math.max(0, v);
+    redrawAll();
+}
+
+// 只有選中的部件吃透明度（選身體時就是身體自己），人偶的身體不動
+const alphaOf = (pid) => (k) => k === S.parts[pid]?.kind ? S.alpha[k] ?? 1 : 1;
 
 // 女（右欄切到女）的 scale/x/y 寫 f（第一次從基準複製），其他寫基準；undefined＝刪 key
 function setVals(q, vals)
@@ -433,10 +453,10 @@ function renderDetail()
     // 身體：只畫自己（照基準數字）＋支點十字，沒有男女切換
     if (p.kind === 'body') return $('right').replaceChildren(
         h('div', {class: 'cap'}, `身體 ${pid}`),
-        previewEl(dollOf(pid, sx), {}, S.parts, {pivots: pivotDrag(pid), key: pid}));
+        previewEl(dollOf(pid, sx), {}, S.parts, {pivots: pivotDrag(pid), key: pid, alpha: alphaOf(pid)}));
     $('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${DOLL[sx]}`, p.sex ? `，${SEX_NAMES[p.sex] ?? p.sex}（用基準數字）` : sx === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, sx), {}, S.parts, {key: pid}),
+        previewEl(dollOf(pid, sx), {}, S.parts, {key: pid, alpha: alphaOf(pid)}),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 

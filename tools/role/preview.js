@@ -19,7 +19,7 @@ let scroll = null;          // {key, x, y, zoom}
 
 // 同頁可能有好幾張預覽（部位分頁的男／女版），換底色全部一起重畫
 const redraws = new WeakMap();      // .pv 元素 → redraw
-const redrawAll = () => {for (const pv of document.querySelectorAll('.pv')) redraws.get(pv)?.();};
+export const redrawAll = () => {for (const pv of document.querySelectorAll('.pv')) redraws.get(pv)?.();};
 function setBg(c, store)
 {
     P.bg = c;
@@ -50,9 +50,9 @@ export function partsOf(r, items, parts)
     const add = (p, k) => {
         if (!isObj(p)) return;
         if (k !== 'body') p = flatPart(p, body, NODE[k], held);
-        if (p.sprite) out.push({p, sprite: p.sprite, d: DEPTH[k] ?? 0});
-        if (p.ext) out.push({p, sprite: p.ext, d: DEPTH.ext});
-        if (p.back) out.push({p, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
+        if (p.sprite) out.push({p, k, sprite: p.sprite, d: DEPTH[k] ?? 0});
+        if (p.ext) out.push({p, k, sprite: p.ext, d: DEPTH.ext});
+        if (p.back) out.push({p, k, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
     };
     const hide = hiddenParts(equips, CAT, partFor(parts, r, 'hat'));
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);
@@ -90,6 +90,7 @@ async function draw(cv, r, items, pdb, st)
         if (!fr) return;
         const {p} = pt, {img, f} = fr;
         g.save();
+        g.globalAlpha = st?.alpha?.(pt.k) ?? 1;
         g.translate(vc.x, vc.y);
         if (P.flip) g.scale(-1, 1);
         g.translate(p.x ?? 0, p.y ?? 0);
@@ -194,11 +195,11 @@ function editable(cv, st, redraw)
     };
 }
 
-// opt.key：哪一筆（見 scroll）
+// opt.key：哪一筆（見 scroll）；opt.alpha(k)：部位 kind／裝備 cat → 透明度，每次重畫都問（呼叫端改了值叫 redrawAll）
 export function previewEl(r, items, parts, opt = {})
 {
     const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）'});
-    const st = {pivots: opt.pivots, live: null, drag: null, geo: null};
+    const st = {pivots: opt.pivots, alpha: opt.alpha, live: null, drag: null, geo: null};
     const keep = (box) => {scroll = {key: opt.key, x: box.scrollLeft, y: box.scrollTop, zoom: P.zoom};};
     const place = () => {
         const box = cv.parentElement;
