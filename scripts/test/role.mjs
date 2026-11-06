@@ -141,6 +141,25 @@ run('role', async t => {
         sel('guard-1');
         await sleep(300);
         out.previewEquip = +document.querySelector('.pv canvas').dataset.drawn;
+        // 藏頭／頭髮（關掉裝備，免得頭盔先藏了頭髮）：各少畫、記住、不改資料；勾回來恢復
+        {
+            const drawn = () => +document.querySelector('.pv canvas').dataset.drawn;
+            const box = (k) => document.querySelector(`.pv input[data-hide=${k}]`);
+            const tick = async (el, v) => {el.checked = v; el.dispatchEvent(new Event('change')); await sleep(300);};
+            const eqBox = [...document.querySelectorAll('.pv .opts label')].find(l => l.textContent === '裝備').querySelector('input');
+            sel('wick'); await sleep(300);
+            const data0 = JSON.stringify(S.data.wick);
+            const nEq = drawn();
+            await tick(eqBox, false);
+            const n0 = drawn();
+            await tick(box('head'), false);
+            const n1 = drawn();
+            await tick(box('hair'), false);
+            out.hide = [n0 - n1, n1 - drawn() >= 1, localStorage.getItem('tools.preview.hide'), JSON.stringify(S.data.wick) === data0, re.dirty?.('wick') ?? false];
+            await tick(box('head'), true); await tick(box('hair'), true); await tick(eqBox, true);
+            out.hide.push(drawn() === nEq, localStorage.getItem('tools.preview.hide'));
+            sel('guard-1'); await sleep(300);
+        }
         {
             const {partsOf} = await import('/tools/role/preview.js');
             const items = {h: {cat: 'CAT_HELMET', equip: {sprite: 'h', scale: 0.25, x: 1, y: 2, hideHair: true, f: {scale: 0.2, x: 3, y: 4}}}};
@@ -244,6 +263,7 @@ run('role', async t => {
     t.check('預覽畫出身體', r.preview >= 1, `${r.preview}`);
     t.check('預覽畫出裝備', r.previewEquip > 2, `${r.previewEquip}`);
     t.eq('預覽女角套 equip.f、男角用基準', r.previewSex, '0.2,3,4,true,0.25,1,2');
+    t.eq('預覽藏頭少一張、藏頭髮再少、記住、不改資料；勾回來恢復', JSON.stringify(r.hide), JSON.stringify([1, true, '{"head":true,"hair":true}', true, false, true, '{"head":false,"hair":false}']));
     t.check('改名列出 assets 裡的引用', r.renameDlg[0], r.dlgText);
     t.check('改名列出 src 的行號', r.renameDlg[1]);
     t.eq('不列 src/old', r.renameDlg[2], false);

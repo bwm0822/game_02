@@ -450,7 +450,7 @@ function renderForm()
     const wkeys = [], warns = validate(id, wkeys), draft = F.fullDraft();
     const secs = SC.SECTIONS.map(sec => ({...sec, keys: sec.keys.filter(k => shown.has(k))})).filter(sec => sec.keys.length > 0);
     const allOpen = (v) => {for (const sec of SC.SECTIONS) S.secOpen[sec.title] = v; render();};
-    right.replaceChildren(previewEl(r, S.ext.items, S.ext.parts, {key: id}));
+    right.replaceChildren(previewEl(r, S.ext.items, S.ext.parts));
     view.replaceChildren(
         h('div', {class: 'form'},
             h('div', {class: 'head'},

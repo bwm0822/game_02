@@ -228,15 +228,11 @@ run('part-tool', async t => {
         S.sex = 'm'; pt.render(); await sleep(300);
         S.sel = 'hair-unused'; pt.render();
         out.male = [cap(), document.querySelectorAll('#right .pv canvas').length, localStorage.getItem('tools.part.sex')];
-        // ×6：男女在最下面，選項列跟男女留在右欄裡（畫布那層自己捲）
-        const zoom = document.querySelector('#right .pv select');
-        zoom.value = '6'; zoom.dispatchEvent(new Event('change'));
-        await sleep(300);
+        // 排版：男女在最下面，選項列跟男女留在右欄裡，畫布鋪滿 .cvbox（不捲）
         const box = $('right').getBoundingClientRect(), inside = (sel) => {const b = document.querySelector(sel).getBoundingClientRect(); return b.top >= box.top && b.bottom <= box.bottom + 1;};
-        const cvbox = document.querySelector('#right .cvbox');
+        const cvbox = document.querySelector('#right .cvbox'), cvr = document.querySelector('#right .pv canvas').getBoundingClientRect(), bxr = cvbox.getBoundingClientRect();
         out.zoom6 = [$('right').lastElementChild.classList.contains('sexsw'), inside('#right .opts'), inside('#right .sexsw'),
-                     cvbox.scrollHeight > cvbox.clientHeight || cvbox.scrollWidth > cvbox.clientWidth, $('right').scrollTop];
-        zoom.value = '3'; zoom.dispatchEvent(new Event('change'));
+                     Math.round(cvr.width) === Math.round(bxr.width) && Math.round(cvr.height) === Math.round(bxr.height) && cvr.height > 100, $('right').scrollTop];
 
         // 合成底色：純色、記住；棋盤格恢復
         const px = (cv) => [...cv.getContext('2d').getImageData(1, 1, 1, 1).data.slice(0, 3)].join();
@@ -321,23 +317,39 @@ run('part-tool', async t => {
         $('btnUndo').click(); await sleep(50); await pt.idle();
         out.sexSet.push('sex' in await hm());
 
-        // 右欄捲動：第一次置中；同一筆改值（重建預覽）捲回原位；換一筆、改倍率置中
-        const cvb = () => document.querySelector('#right .pv .cvbox');
-        const spos = () => [cvb().scrollLeft, cvb().scrollTop];
-        const smid = () => [Math.round((cvb().scrollWidth - cvb().clientWidth) / 2), Math.round((cvb().scrollHeight - cvb().clientHeight) / 2)];
-        const setZ = async (z) => {const s = document.querySelector('#right .pv .opts select'); s.value = z; s.dispatchEvent(new Event('change')); await sleep(300);};
+        // 右欄縮放平移：置中＝原點回中央；滾輪以游標為中心 ×1.2；中鍵拖曳平移；同一筆改值／換一筆 view 不動；記在 localStorage；倍率欄
+        const cvp = () => document.querySelector('#right .pv canvas');
+        const PV = () => JSON.parse(localStorage.getItem('tools.preview.view.part'));
         S.sel = 'hair-mary'; pt.render(); await sleep(300);
-        await setZ(6);
-        out.scroll = [smid().every(v => v > 0), JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid())];
-        cvb().scrollLeft = 3; cvb().scrollTop = 4; await sleep(100);
+        document.querySelector('#right .center').click(); await sleep(200);
+        const v0 = PV(), rc = cvp().getBoundingClientRect(), mx = Math.round(rc.left + rc.width / 2 + 20), my = Math.round(rc.top + rc.height / 2 + 10);     // WheelEvent 的 clientX 只收整數
+        const w0 = cvp().st.pz.toWorld({clientX: mx, clientY: my});
+        cvp().dispatchEvent(new WheelEvent('wheel', {deltaY: -100, clientX: mx, clientY: my, bubbles: true, cancelable: true})); await sleep(200);
+        const w1 = cvp().st.pz.toWorld({clientX: mx, clientY: my}), v1 = PV();
+        out.scroll = [v0.ox === 0 && v0.oy === 0, Math.abs(v1.zoom / v0.zoom - 1.2) < 1e-6, Math.hypot(w0.x - w1.x, w0.y - w1.y) < 1e-6,
+                      Math.abs(parseFloat(document.querySelector('#right input.zoom').value) - v1.zoom) < 1e-3];
+        const mptr = (type, x, y) => cvp().dispatchEvent(new PointerEvent(type, {clientX: x, clientY: y, button: 1, pointerId: 1, bubbles: true}));
+        const f0 = JSON.stringify(await read('part.json'));
+        mptr('pointerdown', 100, 100); mptr('pointermove', 130, 90); mptr('pointerup', 130, 90); await sleep(200);
+        const v2 = PV();
+        out.scroll.push(Math.round(v2.ox - v1.ox) === 30 && Math.round(v2.oy - v1.oy) === -10, JSON.stringify(await read('part.json')) === f0);
         await fire('part.json|hair-mary|y', '11'); await sleep(300);
-        out.scroll.push(JSON.stringify(spos()));
         S.sel = 'hair-unused'; pt.render(); await sleep(300);
-        out.scroll.push(JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid()));
-        cvb().scrollLeft = 3; cvb().scrollTop = 4; await sleep(100);
-        await setZ(4);
-        out.scroll.push(JSON.stringify(spos().map(Math.round)) === JSON.stringify(smid()));
-        await setZ(3);
+        out.scroll.push(JSON.stringify(PV()) === JSON.stringify(v2));
+        const zin = document.querySelector('#right input.zoom');
+        zin.value = '5'; zin.dispatchEvent(new Event('change')); await sleep(200);
+        zin.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowUp', bubbles: true})); await sleep(200);
+        out.scroll.push(PV().zoom);
+        zin.value = '50'; zin.dispatchEvent(new Event('change')); await sleep(200);
+        out.scroll.push(PV().zoom);
+        document.querySelector('#right .center').click(); await sleep(200);
+        out.scroll.push(PV().ox === 0 && PV().oy === 0 && PV().zoom === v0.zoom);
+
+        // 人偶只有身體＋這一筆：沒有藏頭／頭髮的勾選，記住藏了也照畫
+        localStorage.setItem('tools.preview.hide', '{"head":true,"hair":true}');
+        S.sel = 'hair-mary'; pt.render(); await sleep(300);
+        out.hide = [!document.querySelector('#right input[data-hide]'), +cvp().dataset.drawn];
+        localStorage.removeItem('tools.preview.hide');
         // 帽子：藏頭髮立刻寫、取消刪 key；back 指到不存在的圖算壞的
         S.sel = 'hat-cap'; pt.render();
         const hh = () => document.querySelector('.hidehair input');
@@ -482,7 +494,8 @@ run('part-tool', async t => {
     t.eq('限定：女角在用改限男擋下、不寫檔', JSON.stringify(r.sexBlock), JSON.stringify(['不能把 hair-mary 改成限男', false, '']));
     t.eq('限定：限女立刻寫、預覽鎖女且男鈕灰、不標 f、沒有警告、數字寫基準不動 f、縮圖 ♀、undo 拿掉',
          JSON.stringify(r.sexSet), JSON.stringify(['f', true, 'f', true, false, false, 0, 9, true, '♀', false]));
-    t.eq('右欄捲動：第一次置中、同一筆改值捲回原位、換一筆／改倍率置中', JSON.stringify(r.scroll), JSON.stringify([true, true, '[3,4]', true, true]));
+    t.eq('右欄縮放平移：置中、滾輪以游標為中心、中鍵平移不寫檔、改值／換一筆 view 不動、倍率欄照格子走、最大 20', JSON.stringify(r.scroll), JSON.stringify([true, true, true, true, true, true, true, 6, 20, true]));
+    t.eq('沒有藏頭／頭髮勾選、頭髮照畫（身體＋頭髮）', JSON.stringify(r.hide), JSON.stringify([true, 2]));
     t.eq('帽子：藏頭髮立刻寫、取消刪 key', JSON.stringify(r.hat), JSON.stringify([true, null]));
     t.check('帽子：back 指到不存在的圖算壞的', r.hatBad);
     t.eq('JSON：只換欄位區，標題列、使用者留著', JSON.stringify(r.jOpen), JSON.stringify(['表單', true, true, true, true, true]));
@@ -533,7 +546,7 @@ run('part-tool', async t => {
         JSON.stringify(r.body), JSON.stringify([3, false, true, true, '{"rot":false,"k":"wristB"}', 'move', true, 90, 3, true,
             true, ',scale,x,y,a,ox,oy', '身體 body-man', true, true, true]));
     t.eq('切回男：一張合成', JSON.stringify(r.male), JSON.stringify(['套在 body-man', 1, 'm']));
-    t.eq('×6：男女在最下面、選項列跟男女留在右欄、只有畫布捲', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
+    t.eq('排版：男女在最下面、選項列跟男女留在右欄、畫布鋪滿', JSON.stringify(r.zoom6), JSON.stringify([true, true, true, true, 0]));
     t.eq('合成底色：純色、記住',JSON.stringify(r.bg), JSON.stringify(['255,0,0', '#ff0000']));
     t.eq('合成底色：棋盤格恢復、清掉記憶', JSON.stringify(r.bgReset), JSON.stringify([true, null]));
     t.eq('再點一次取消選取、回總覽、右欄空', JSON.stringify(r.unpick), JSON.stringify([null, true, 0]));

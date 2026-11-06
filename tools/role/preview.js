@@ -5,17 +5,16 @@ import {isObj} from '../common/obj.js';
 import * as IC from '../common/icons.js';
 import * as HD from '../common/handles.js';
 import {show, showMenu} from '../common/showmenu.js';
+import * as PZ from '../common/panzoom.js';
+import {hidden, hideChecks} from '../common/headhide.js';
 import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
 import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
 
-const P = {zoom: 3, equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show
+const P = {equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show；倍率／位置看 panzoom.js
 const COLOR = {b: '#ff5555', g: '#55dd55', z: '#5599ff'};
-const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
+export const BG = ['#1b1c1f', '#222428'];   // 棋盤格兩色
 const BG_KEY = 'tools.preview.bg';
 try {P.bg = localStorage.getItem(BG_KEY);} catch {}
-
-// 畫布框（.cvbox）的捲動位置照呼叫端給的 key（同一筆＝同一個 key）記住：重建時同一個 key、同倍率就捲回去，換一筆、第一次、倍率變了就置中
-let scroll = null;          // {key, x, y, zoom}
 
 // 同頁可能有好幾張預覽（部位分頁的男／女版），換底色全部一起重畫
 const redraws = new WeakMap();      // .pv 元素 → redraw
@@ -60,21 +59,29 @@ export function partsOf(r, items, parts)
     return out.sort((a, b) => a.d - b.d);
 }
 
+// 置中要裝下的範圍（世界單位，以 view 中心為中心）
+export const frameOf = (r) => ({w: Math.max(r.w ?? 32, 64) + 48, h: Math.max(r.h ?? 64, 64) + 48});
+
+// 底色：純色或棋盤格（螢幕座標，格子大小不跟著縮放）
+export function fillBg(g, cw, ch, bg)
+{
+    g.fillStyle = bg ?? BG[0]; g.fillRect(0, 0, cw, ch);
+    if (bg) return;
+    g.fillStyle = BG[1];
+    for (let y = 0; y < ch; y += 12) for (let x = (y / 12) % 2 * 12; x < cw; x += 24) g.fillRect(x, y, 12, 12);
+}
+
 async function draw(cv, r, items, pdb, st)
 {
     const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
-    const W = Math.max(w, 64) + 48, H = Math.max(hh, 64) + 48, K = P.zoom;
-    const parts = partsOf(r, items, pdb);
+    const parts = partsOf(r, items, pdb).filter(pt => st.noHide || !hidden(pt.k));
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
-    cv.width = W * K; cv.height = H * K;
+    if (!cv.isConnected) return;
     const g = cv.getContext('2d');
+    const {K, o} = st.pz.begin(g, (g, cw, ch) => fillBg(g, cw, ch, P.bg));
     g.imageSmoothingEnabled = false;
-    g.scale(K, K);
-    g.fillStyle = P.bg ?? BG[0]; g.fillRect(0, 0, W, H);
-    g.fillStyle = BG[1];
-    if (!P.bg) for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
 
-    const vc = {x: W / 2, y: H / 2}, root = {x: vc.x + ax, y: vc.y + ay};
+    const vc = {x: 0, y: 0}, root = {x: ax, y: ay};
     if (show.view)
     {
         g.lineWidth = 1 / K;
@@ -110,7 +117,8 @@ async function draw(cv, r, items, pdb, st)
         if (P.flip) g.scale(-1, 1);
         for (const k of PIVOTS) if (show[k]) HD.drawCross(g, k, pts[k], 1 / K, {on: st.live?.k === k});
         g.restore();
-        st.geo = {vc, K, flip: P.flip, pts, rig};
+        // vc：畫布上的原點換成世界單位（clientX = rc.left + (vc.x + x) * K，同以前畫布從左上角開始畫）
+        st.geo = {vc: {x: o.x / K, y: o.y / K}, K, flip: P.flip, pts, rig};
     }
 
     for (const k of ['g', 'z', 'b'])
@@ -142,8 +150,8 @@ function editable(cv, st, redraw)
 {
     const ed = st.pivots;
     const toLocal = (e) => {
-        const g = st.geo, rc = cv.getBoundingClientRect(), x = (e.clientX - rc.left) / g.K - g.vc.x, y = (e.clientY - rc.top) / g.K - g.vc.y;
-        return {x: g.flip ? -x : x, y};
+        const {x, y} = st.pz.toWorld(e);
+        return {x: st.geo.flip ? -x : x, y};
     };
     // {rot: 白點？, k: 支點}；白點優先；沒勾顯示的不能拖
     const hit = (l) => {
@@ -154,7 +162,7 @@ function editable(cv, st, redraw)
         return m ? {rot: false, k: m} : null;
     };
     cv.onpointerdown = (e) => {
-        if (!st.geo) return;
+        if (!st.geo || e.button !== 0) return;
         const l = toLocal(e), h = hit(l);
         if (!h) return;
         if (e.isTrusted) cv.setPointerCapture(e.pointerId);
@@ -162,7 +170,7 @@ function editable(cv, st, redraw)
         st.drag = {...h, l, o, a0: Math.atan2(l.y - o.y, l.x - o.x)};
     };
     cv.onpointermove = (e) => {
-        if (!st.geo) return;
+        if (!st.geo || st.pz.panning) return;
         const l = toLocal(e), d = st.drag;
         if (d)
         {
@@ -195,35 +203,25 @@ function editable(cv, st, redraw)
     };
 }
 
-// opt.key：哪一筆（見 scroll）；opt.alpha(k)：部位 kind／裝備 cat → 透明度，每次重畫都問（呼叫端改了值叫 redrawAll）
+// opt.alpha(k)：部位 kind／裝備 cat → 透明度，每次重畫都問（呼叫端改了值叫 redrawAll）；opt.noHide：不放藏頭／頭髮的勾選、全部照畫（部位分頁：人偶只有身體＋那一筆）
+// 畫布鋪滿 .cvbox，縮放平移見 panzoom.js（同頁的預覽共用一組 view）
 export function previewEl(r, items, parts, opt = {})
 {
-    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）'});
-    const st = {pivots: opt.pivots, alpha: opt.alpha, live: null, drag: null, geo: null};
-    const keep = (box) => {scroll = {key: opt.key, x: box.scrollLeft, y: box.scrollTop, zoom: P.zoom};};
-    const place = () => {
-        const box = cv.parentElement;
-        if (!box?.isConnected) return void requestAnimationFrame(() => cv.parentElement?.isConnected && place());
-        const s = scroll?.key === opt.key && scroll.zoom === P.zoom ? scroll
-            : {x: (box.scrollWidth - box.clientWidth) / 2, y: (box.scrollHeight - box.clientHeight) / 2};
-        box.scrollLeft = s.x;
-        box.scrollTop = s.y;
-        keep(box);
-    };
-    const redraw = () => draw(cv, r, items, parts, st).then(place);
+    const cv = h('canvas', {title: '虛線：view（w×h）　黃十字：錨點（角色位置）\n滾輪縮放、按住中鍵拖曳平移'});
+    const st = {pivots: opt.pivots, alpha: opt.alpha, noHide: opt.noHide, live: null, drag: null, geo: null};
+    const redraw = () => draw(cv, r, items, parts, st);
+    st.pz = PZ.panzoom(cv, {frame: () => frameOf(r), redraw});
     if (opt.pivots) editable(cv, st, redraw);
     cv.st = st;     // 無頭測試讀幾何
     const check = (k, text, color) => h('label', {style: color && `color:${color}`},
         h('input', {type: 'checkbox', checked: P[k], onchange: e => {P[k] = e.target.checked; redraw();}}), text);
-    redraw();
-    // 畫布包一層：版面想讓畫布自己捲、選項固定在下面時（部位分頁）捲這層
+    requestAnimationFrame(redraw);
     const pv = h('div', {class: 'pv'},
-        h('div', {class: 'cvbox', onscroll: e => keep(e.target)}, cv),
+        h('div', {class: 'cvbox'}, cv),
         h('div', {class: 'opts'},
             showMenu(() => redrawAll(), opt.pivots ? [] : PIVOTS),
-            check('equips', '裝備'), check('flip', '翻面'),
-            h('select', {onchange: e => {P.zoom = +e.target.value; redraw();}},
-                [2, 3, 4, 6].map(z => h('option', {value: z, selected: z === P.zoom}, `×${z}`))),
+            check('equips', '裝備'), check('flip', '翻面'), !opt.noHide && hideChecks(() => redrawAll()),
+            PZ.zoomField(), PZ.centerBtn(),
             h('input', {type: 'color', class: 'bg', title: '背景色', value: P.bg ?? BG[0], oninput: e => setBg(e.target.value), onchange: e => setBg(e.target.value, true)}),
             h('button', {type: 'button', class: 'bgchk', title: '背景改回棋盤格', disabled: !P.bg, onclick: () => setBg(null, true)}, '棋盤格')));
     redraws.set(pv, redraw);

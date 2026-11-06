@@ -453,10 +453,10 @@ function renderDetail()
     // 身體：只畫自己（照基準數字）＋支點十字，沒有男女切換
     if (p.kind === 'body') return $('right').replaceChildren(
         h('div', {class: 'cap'}, `身體 ${pid}`),
-        previewEl(dollOf(pid, sx), {}, S.parts, {pivots: pivotDrag(pid), key: pid, alpha: alphaOf(pid)}));
+        previewEl(dollOf(pid, sx), {}, S.parts, {pivots: pivotDrag(pid), alpha: alphaOf(pid), noHide: true}));
     $('right').replaceChildren(
         h('div', {class: 'cap'}, `套在 ${DOLL[sx]}`, p.sex ? `，${SEX_NAMES[p.sex] ?? p.sex}（用基準數字）` : sx === 'f' && (p.f ? '，用女版 f' : '（沒有 f，用基準數字）')),
-        previewEl(dollOf(pid, sx), {}, S.parts, {key: pid, alpha: alphaOf(pid)}),
+        previewEl(dollOf(pid, sx), {}, S.parts, {alpha: alphaOf(pid), noHide: true}),
         h('div', {class: 'sexsw'}, sexBtn('m', '男'), sexBtn('f', '女')));
 }
 

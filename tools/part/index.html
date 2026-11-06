@@ -8,7 +8,8 @@
 <style>
     /* 角色編輯器的預覽（role.css 其他規則會撞 .cell，只抄這段） */
     .pv { background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
-    .pv canvas { display: block; image-rendering: pixelated; }
+    .pv canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+    .pv .opts input.zoom { width: 64px; }
     .pv .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 6px; font-size: 14px; max-width: 300px; }
     .pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
     .pv .opts input.bg { width: 32px; height: 22px; padding: 0 2px; }
@@ -54,11 +55,11 @@
     #view .sexnote { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
     #left .row2 { display: flex; gap: 4px; }
     /* 只有畫布那層捲，選項列跟男女固定在下面 */
-    #right { flex: none; min-width: 300px; max-width: 50vw; overflow: hidden; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; display: flex; flex-direction: column; gap: 6px; }
+    #right { flex: none; width: 340px; min-width: 300px; max-width: 50vw; overflow: hidden; padding: 8px 10px; background: #25272b; border-left: 1px solid #111; display: flex; flex-direction: column; gap: 6px; }
     #right:empty { display: none; }
     #right .cap { flex: none; font-size: 13px; color: #888; }
-    #right .pv { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
-    #right .pv .cvbox { flex: 0 1 auto; min-height: 0; overflow: auto; }
+    #right .pv { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #right .pv .cvbox { flex: 1; min-height: 120px; position: relative; }
     #right .pv .opts { flex: none; }
     #right .sexsw { flex: none; display: flex; gap: 4px; }
 </style>
