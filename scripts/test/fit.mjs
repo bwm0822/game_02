@@ -99,6 +99,20 @@ run('fit', async t => {
         out.alpha.push('CAT_HELMET' in S.alpha);
         F.select('guard-1');
 
+        // 部件透明度：每列最前面一條、套到預覽、換角色保留、（無）反灰
+        const rows = [...document.querySelectorAll('#view tr.partrow')];
+        const first = rows.map(tr => tr.firstElementChild.querySelector('.alphabar')?.dataset.alpha);
+        const r0 = S.doc['role.json'].data[S.rid];
+        const noneOk = rows.every(tr => tr.querySelector('.alphabar').disabled === !S.doc['part.json'].data[r0[tr.dataset.pick]]);
+        const pbar = document.querySelector('#view tr.partrow[data-pick=body] .alphabar');
+        pbar.value = 30; pbar.dispatchEvent(new Event('input'));
+        const bodyA = () => F.partsOf(S.doc['role.json'].data[S.rid]).find(p => p.k === 'body')?.alpha;
+        out.palpha = [first.join(','), noneOk, S.alpha.body, bodyA(), isDirtyNow()];
+        F.select('wick');
+        out.palpha.push(S.alpha.body, document.querySelector('#view tr.partrow[data-pick=body] .alphabar').value);
+        F.setAlpha('body', 1);
+        F.select('guard-1');
+
         // 改數字：裝備寫 item.json、部件寫 part.json（標共用幾個角色）、清空刪 key、undo 一起退
         fire('item.json|helmet_01|equip.y', '5');
         out.equipY = S.doc['item.json'].data.helmet_01.equip.y;
@@ -542,6 +556,9 @@ run('fit', async t => {
     t.eq('透明度：只改那格、預覽套用、不算修改', JSON.stringify(r.alpha.slice(0, 4)), JSON.stringify([0.4, 0.4, false, false]));
     t.eq('換角色裝備、透明度保留', JSON.stringify(r.keep), JSON.stringify([true, 0.4, '40']));
     t.eq('透明度 100% 刪掉', r.alpha[4], false);
+    t.eq('部件每列最前面一條透明度', r.palpha[0], 'body,shoes,cloth,head,hair,hat,handF,handB');
+    t.check('部件沒挑（無）的透明度反灰', r.palpha[1]);
+    t.eq('部件透明度：預覽套用、不算修改、換角色保留', JSON.stringify(r.palpha.slice(2)), JSON.stringify([0.3, 0.3, false, 0.3, '30']));
     t.check('預覽畫出部件與裝備', r.drawn >= 4, `${r.drawn}`);
     t.check('換上手套多畫一張、藏兩隻手', r.gloves[0]);
     t.eq('換裝不寫回 inv.equips', r.gloves[1], JSON.stringify(['sword-1', 'helmet_01', 'chest_01']));

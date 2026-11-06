@@ -419,6 +419,7 @@ function fitView(r, slots)
         const wrong = p && !sexOk(p, r.sex);
         // 這列有焦點＝畫布上選中這個部位（反過來畫布點了也會標這列）
         return onFocusIn(h('tr', {class: 'partrow' + (S.pick === k ? ' sel' : ''), dataset: {pick: k}},
+            h('td', null, alphaBar(k, !p)),
             h('td', {class: 'k'}, name, k === 'head' && h('label', {class: 'headlink', title: '連動頭髮：改頭的 scale／x／y／a，頭髮跟著動（x/y/a 加一樣的差、scale 乘一樣的倍率）'},
                 h('input', {type: 'checkbox', checked: !!S.headLink, onchange: (e) => {setHeadLink(e.target.checked); render();}}), '🔗')),
             h('td', null, h('select', {class: 'part', dataset: {k: `role.json|${S.rid}|${k}`},
@@ -438,7 +439,7 @@ function fitView(r, slots)
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
     return [
         h('div', {class: 'title'}, '角色部件（part.json，用到同一個部位的角色都會一起變）'),
-        h('table', {class: 'fit'}, sexHead(['部件', '部位']), partRows),
+        h('table', {class: 'fit'}, sexHead(['', '部件', '部位']), partRows),
         pivotTable(),
         h('div', {class: 'title'}, '裝備（item.json，全角色共用；換裝只是試穿，不會寫回角色）'),
         slots,
@@ -487,12 +488,13 @@ function pivotTable()
     ];
 }
 
-// 拖滑桿只重畫預覽，不整頁重繪（會打斷拖拉）
-function alphaBar(cat)
+// 拖滑桿只重畫預覽，不整頁重繪（會打斷拖拉）；key＝裝備 cat 或部位 kind
+function alphaBar(key, disabled)
 {
-    const pct = Math.round((S.alpha[cat] ?? 1) * 100);
-    return h('input', {type: 'range', class: 'alphabar', min: 0, max: 100, value: pct, title: `透明度 ${pct}%（只影響預覽，不存檔）`,
-        oninput: (e) => {e.target.title = `透明度 ${e.target.value}%（只影響預覽，不存檔）`; setAlpha(cat, e.target.value / 100);}});
+    const pct = Math.round((S.alpha[key] ?? 1) * 100);
+    return h('input', {type: 'range', class: 'alphabar', min: 0, max: 100, value: pct, disabled: !!disabled, dataset: {alpha: key},
+        title: `透明度 ${pct}%（只影響預覽，不存檔）`,
+        oninput: (e) => {e.target.title = `透明度 ${e.target.value}%（只影響預覽，不存檔）`; setAlpha(key, e.target.value / 100);}});
 }
 
 // ---------- 動畫 ----------
@@ -679,7 +681,7 @@ function partsOf(r)
     const add = (raw, k, cat) => {
         if (!isObj(raw)) return;
         const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, NODE[k], heldEquip()));
-        const o = {p, k, node: NODE[k], alpha: S.alpha[cat] ?? 1};
+        const o = {p, k, node: NODE[k], alpha: S.alpha[cat ?? k] ?? 1};
         if (p.sprite) out.push({...o, sprite: p.sprite, d: DEPTH[k] ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? NODE[k]});
