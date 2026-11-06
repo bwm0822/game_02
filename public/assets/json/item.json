@@ -43,8 +43,8 @@
     "lab": "皮盔",
     "equip": {
       "sprite": "leather-helmet-1",
-      "x": -3,
-      "scale": 0.25,
+      "x": -2.5,
+      "scale": 0.26,
       "hideHair": true
     }
   },
@@ -125,7 +125,7 @@
     "equip": {
       "sprite": "leather-armor-1",
       "scale": 0.25,
-      "y": -4
+      "y": -3.5
     }
   },
   "chest_04": {
@@ -225,9 +225,9 @@
     "gold": 15,
     "equip": {
       "sprite": "leather-boots-1",
-      "scale": 0.25,
+      "scale": 0.23,
       "x": 1.5,
-      "y": 1
+      "y": 0
     },
     "drop": {
       "sprite": "leather-boots-1",
@@ -1104,14 +1104,9 @@
       "sprite": "bronze-helmet-front",
       "back": "bronze-helmet-back",
       "scale": 0.25,
-      "x": -3.25,
-      "y": -0.25,
-      "hideHair": true,
-      "f": {
-        "scale": 0.25,
-        "x": -1.75,
-        "y": -0.25
-      }
+      "x": -1.75,
+      "y": 0.5,
+      "hideHair": true
     },
     "icon": "bronze-helmet",
     "drop": {
@@ -1138,14 +1133,9 @@
     ],
     "equip": {
       "sprite": "bronze-armor",
-      "scale": 0.25,
+      "scale": 0.26,
       "x": -0.25,
-      "y": -5.5,
-      "f": {
-        "scale": 0.23,
-        "x": 0,
-        "y": -7.5
-      }
+      "y": -6.5
     },
     "icon": "bronze-armor",
     "drop": {
@@ -1172,19 +1162,14 @@
     ],
     "equip": {
       "sprite": "bronze-boots",
-      "scale": 0.25,
-      "x": 1.5,
-      "y": 1,
-      "f": {
-        "scale": 0.22,
-        "x": 1.5,
-        "y": 1
-      }
+      "scale": 0.24,
+      "x": 1.25,
+      "y": 0
     },
     "icon": "bronze-boots",
     "drop": {
       "sprite": "bronze-boots",
-      "scale": 0.25
+      "scale": 0.24
     }
   },
   "helmet-hvy-2": {

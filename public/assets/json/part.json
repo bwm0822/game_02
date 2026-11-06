@@ -19,9 +19,8 @@
     "scale": 0.25,
     "y": 32,
     "neck": {
-      "x": 1.5,
-      "y": -32,
-      "a": 0
+      "x": 0,
+      "y": -32
     },
     "wristF": {
       "x": -12,
@@ -32,10 +31,8 @@
       "x": 12,
       "y": -13
     },
-    "a": 0,
-    "ox": 0.5,
     "sex": "m",
-    "x": 0.5,
+    "x": 0,
     "name": "男性身體"
   },
   "body-woman": {
@@ -44,7 +41,7 @@
     "scale": 0.25,
     "y": 32,
     "neck": {
-      "x": 0.5,
+      "x": 0,
       "y": -32,
       "a": 0
     },
@@ -152,18 +149,17 @@
     "kind": "head",
     "sprite": "head-wick",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
+    "x": -2.5,
+    "y": 3,
     "sex": "m",
-    "a": 0,
     "name": "維克的頭"
   },
   "head-trump": {
     "kind": "head",
     "sprite": "trump-head",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
+    "x": -1.25,
+    "y": 3,
     "sex": "m",
     "name": "川普的頭"
   },
@@ -171,16 +167,16 @@
     "kind": "head",
     "sprite": "head-jobs",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
+    "x": -2.5,
+    "y": 3.25,
     "name": "賈伯斯的頭"
   },
   "head-musk": {
     "kind": "head",
     "sprite": "head-musk",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
+    "x": -2.5,
+    "y": 3,
     "name": "馬斯克的頭"
   },
   "head-kidman": {
@@ -295,7 +291,7 @@
     "kind": "hair",
     "sprite": "hair-mary",
     "scale": 0.25,
-    "x": -2,
+    "x": -2.25,
     "y": 4,
     "name": "瑪莉的頭髮",
     "sex": "f"
@@ -304,16 +300,16 @@
     "kind": "hair",
     "sprite": "hair-wick",
     "scale": 0.25,
-    "x": -2.5,
-    "y": 2,
+    "x": -2,
+    "y": 1,
     "name": "維克的頭髮"
   },
   "hair-trump": {
     "kind": "hair",
     "sprite": "trump-hair",
     "scale": 0.25,
-    "x": -1.75,
-    "y": -0.75,
+    "x": 0,
+    "y": -1.75,
     "sex": "m",
     "name": "川普的頭髮"
   },
@@ -321,16 +317,16 @@
     "kind": "hair",
     "sprite": "hair-jobs",
     "scale": 0.25,
-    "x": -3,
-    "y": -12.5,
+    "x": -2.5,
+    "y": -13.25,
     "name": "賈伯斯的頭髮"
   },
   "hair-musk": {
     "kind": "hair",
     "sprite": "hair-musk",
     "scale": 0.25,
-    "x": -3,
-    "y": -11.5,
+    "x": -2.5,
+    "y": -12.5,
     "name": "馬斯克的頭髮"
   },
   "hair-kidman": {
@@ -431,9 +427,9 @@
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
     "sprite": "outfit-innkeeper-cloth",
-    "scale": 0.25,
-    "x": 0.25,
-    "y": -4,
+    "scale": 0.23,
+    "x": 0,
+    "y": -6,
     "f": {
       "scale": 0.23,
       "x": 0.25,
@@ -446,12 +442,7 @@
     "sprite": "cloth-outfit-blacksmith",
     "scale": 0.25,
     "x": 0.25,
-    "y": -2,
-    "f": {
-      "scale": 0.23,
-      "x": 0.25,
-      "y": -4.5
-    },
+    "y": -3,
     "name": "鐵匠服"
   },
   "cloth-outfit-butcher": {
@@ -465,7 +456,7 @@
   "cloth-outfit-merchant": {
     "kind": "cloth",
     "sprite": "cloth-outfit-merchant",
-    "scale": 0.25,
+    "scale": 0.24,
     "x": -0.25,
     "y": -3.75,
     "name": "商人服"
@@ -473,45 +464,54 @@
   "cloth-outfit-vegetable-seller": {
     "kind": "cloth",
     "sprite": "cloth-outfit-vegetable-seller",
-    "scale": 0.25,
-    "x": -0.5,
-    "y": -1.5,
+    "scale": 0.24,
+    "x": -0.25,
+    "y": -2.75,
     "sex": "f",
     "name": "菜販服"
   },
   "cloth-outfit-villager-f-1": {
     "kind": "cloth",
     "sprite": "cloth-outfit-villager-f-1",
-    "scale": 0.25,
+    "scale": 0.23,
     "x": 0.25,
-    "y": -3,
+    "y": -4.25,
     "sex": "f",
     "name": "雀斑少女服"
   },
   "cloth-outfit-villager-f-2": {
     "kind": "cloth",
     "sprite": "cloth-outfit-villager-f-2",
-    "scale": 0.25,
+    "scale": 0.24,
     "x": 0.25,
-    "y": -2.5,
+    "y": -3.5,
     "name": "年輕婦人服",
     "sex": "f"
   },
   "cloth-outfit-villager-f-4": {
     "kind": "cloth",
     "sprite": "cloth-outfit-villager-f-4",
-    "scale": 0.25,
-    "x": 0.25,
-    "y": -3,
+    "scale": 0.23,
+    "x": -0.5,
+    "y": -4.75,
     "sex": "f",
     "name": "市場大嬸服"
+  },
+  "cloth-outfit-villager-f-5": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-f-5",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -6,
+    "name": "慈祥老婦服",
+    "sex": "f"
   },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
-    "scale": 0.25,
-    "x": 2.25,
-    "y": 1.5,
+    "scale": 0.22,
+    "x": 2,
+    "y": 0,
     "f": {
       "scale": 0.2,
       "x": 2,
@@ -524,36 +524,31 @@
     "sprite": "shoes-outfit-blacksmith",
     "scale": 0.25,
     "x": 1.25,
-    "y": 1,
-    "f": {
-      "scale": 0.2,
-      "x": 2,
-      "y": 1
-    },
+    "y": 0,
     "name": "鐵匠鞋"
   },
   "shoes-outfit-butcher": {
     "kind": "shoes",
     "sprite": "shoes-outfit-butcher",
-    "scale": 0.25,
+    "scale": 0.23,
     "x": 1.25,
-    "y": 1,
+    "y": 0,
     "name": "屠夫鞋"
   },
   "shoes-outfit-merchant": {
     "kind": "shoes",
     "sprite": "shoes-outfit-merchant",
     "scale": 0.25,
-    "x": 1.25,
-    "y": 1,
+    "x": 1.75,
+    "y": 0,
     "name": "商人鞋"
   },
   "shoes-outfit-vegetable-seller": {
     "kind": "shoes",
     "sprite": "shoes-outfit-vegetable-seller",
-    "scale": 0.25,
-    "x": 1.5,
-    "y": 1,
+    "scale": 0.23,
+    "x": 1,
+    "y": 0,
     "name": "菜販鞋",
     "sex": "f"
   },
@@ -561,7 +556,7 @@
     "kind": "shoes",
     "sprite": "shoes-outfit-villager-f-1",
     "scale": 0.25,
-    "x": 1.5,
+    "x": 1.25,
     "y": 0,
     "sex": "f",
     "name": "雀斑少女鞋"
@@ -570,8 +565,8 @@
     "kind": "shoes",
     "sprite": "shoes-outfit-villager-f-2",
     "scale": 0.25,
-    "x": 1.5,
-    "y": 0.5,
+    "x": 1,
+    "y": 0,
     "name": "年輕婦人鞋",
     "sex": "f"
   },
@@ -579,10 +574,19 @@
     "kind": "shoes",
     "sprite": "shoes-outfit-villager-f-4",
     "scale": 0.25,
-    "x": 1.5,
-    "y": 0.5,
+    "x": 1.25,
+    "y": 0,
     "sex": "f",
     "name": "市場大嬸鞋"
+  },
+  "shoes-outfit-villager-f-5": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-f-5",
+    "scale": 0.23,
+    "x": 0.75,
+    "y": 0,
+    "name": "慈祥老婦鞋",
+    "sex": "f"
   },
   "handF": {
     "kind": "handF",
@@ -617,8 +621,8 @@
     "kind": "hat",
     "sprite": "hat-outfit-merchant",
     "scale": 0.25,
-    "x": -2.5,
-    "y": -14,
+    "x": -1.75,
+    "y": -14.5,
     "name": "商人帽"
   },
   "hat-outfit-vegetable-seller": {
@@ -638,6 +642,17 @@
     "x": -2,
     "y": 3.5,
     "name": "市場大嬸頭巾",
-    "sex": "f"
+    "sex": "f",
+    "hideHair": true
+  },
+  "hat-outfit-villager-f-5": {
+    "kind": "hat",
+    "sprite": "hat-outfit-villager-f-5",
+    "scale": 0.25,
+    "x": -1.75,
+    "y": 7.5,
+    "name": "慈祥老婦頭巾",
+    "sex": "f",
+    "hideHair": true
   }
 }
