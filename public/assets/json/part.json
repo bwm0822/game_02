@@ -506,6 +506,46 @@
     "name": "慈祥老婦服",
     "sex": "f"
   },
+  "cloth-outfit-bandit-1": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-bandit-1",
+    "scale": 0.25,
+    "x": -0.25,
+    "y": -5,
+    "name": "破皮背心服"
+  },
+  "cloth-outfit-bandit-2": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-bandit-2",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": -6.25,
+    "name": "狼皮披肩服"
+  },
+  "cloth-outfit-bandit-3": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-bandit-3",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -4,
+    "name": "灰綠短披肩服"
+  },
+  "cloth-outfit-bandit-4": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-bandit-4",
+    "scale": 0.24,
+    "x": -0.25,
+    "y": -4.5,
+    "name": "鑲釘打手服"
+  },
+  "cloth-outfit-bandit-5": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-bandit-5",
+    "scale": 0.24,
+    "x": 0.25,
+    "y": -3.75,
+    "name": "搶來的外袍服"
+  },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
@@ -587,6 +627,46 @@
     "y": 0,
     "name": "慈祥老婦鞋",
     "sex": "f"
+  },
+  "shoes-outfit-bandit-1": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-bandit-1",
+    "scale": 0.25,
+    "x": 1,
+    "y": 0,
+    "name": "破皮背心鞋"
+  },
+  "shoes-outfit-bandit-2": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-bandit-2",
+    "scale": 0.23,
+    "x": 1.5,
+    "y": 0,
+    "name": "狼皮披肩鞋"
+  },
+  "shoes-outfit-bandit-3": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-bandit-3",
+    "scale": 0.25,
+    "x": 1,
+    "y": 0,
+    "name": "灰綠短披肩鞋"
+  },
+  "shoes-outfit-bandit-4": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-bandit-4",
+    "scale": 0.23,
+    "x": 1.5,
+    "y": 0,
+    "name": "鑲釘打手鞋"
+  },
+  "shoes-outfit-bandit-5": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-bandit-5",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "搶來的外袍鞋"
   },
   "handF": {
     "kind": "handF",
