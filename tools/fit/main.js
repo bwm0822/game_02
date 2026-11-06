@@ -51,6 +51,14 @@ const S = {
     bg: null,                   // 畫布純色背景，null＝棋盤格
 };
 try {S.bg = localStorage.getItem(BG_KEY);} catch {}
+const LINK_KEY = 'tools.fit.headLink';
+try {S.headLink = localStorage.getItem(LINK_KEY) === '1';} catch {}
+
+function setHeadLink(on)
+{
+    S.headLink = on;
+    try {on ? localStorage.setItem(LINK_KEY, '1') : localStorage.removeItem(LINK_KEY);} catch {}
+}
 
 function setBg(c)
 {
@@ -84,6 +92,24 @@ const pivot = (k) => pivotOf(partFor(parts(), role(), 'body'), k, heldEquip());
 // 擺放分頁拖青／橘十字改武器的位移（脖子鎖住）；沒武器時照身體
 const dragWeapon = () => S.dragW && !!heldEquip();
 const r1 = (v) => Math.round(v * 10) / 10;
+const r4 = (v) => Math.round(v * 1e4) / 1e4;
+
+// 🔗 頭帶頭髮：用改前／改後實際生效的值算差，x/y/a 加一樣的差、scale 乘一樣的倍率（頭髮對頭的偏移跟著縮）；
+// 頭髮照自己的規則寫（限定性別或男角＝基準，女角＝f、第一次從基準複製），a 一律基準
+const LINK_NUMS = ['scale', 'x', 'y', 'a'];
+const headNow = () => {const p = partFor(parts(), role(), 'head') ?? {}; return {scale: p.scale ?? 1, x: p.x ?? 0, y: p.y ?? 0, a: p.a ?? 0};};
+function linkHair(b)
+{
+    const hp = parts()[role()?.hair];
+    if (!hp) return;
+    const n = headNow(), c = partFor(parts(), role(), 'hair'), k = b.scale ? n.scale / b.scale : 1;
+    const v = {scale: (c.scale ?? 1) * k, x: n.x + ((c.x ?? 0) - b.x) * k, y: n.y + ((c.y ?? 0) - b.y) * k, a: (c.a ?? 0) + n.a - b.a};
+    const sx = hp.sex ? null : sexKey();
+    if (sx && !isObj(hp[sx])) hp[sx] = Object.fromEntries(SEX_NUMS.map(s => [s, hp[s]]).filter(([, x]) => x !== undefined));
+    const old = {scale: c.scale ?? 1, x: c.x ?? 0, y: c.y ?? 0, a: c.a ?? 0};
+    for (const s of LINK_NUMS)
+        if (r4(v[s]) !== r4(old[s])) (sx && SEX_NUMS.includes(s) ? hp[sx] : hp)[s] = r4(v[s]);
+}
 const rad = (d) => d * Math.PI / 180;
 
 // ---------- 歷史 ----------
@@ -306,7 +332,7 @@ function drawList()
 }
 
 // file 裡 id 那筆的 path；空字串＝刪 key（遊戲用預設值），req 的欄位不能清空；after 在同一筆 undo 裡跑
-function numInput(file, id, path, ph, {req, after} = {})
+function numInput(file, id, path, ph, {req, after, pre} = {})
 {
     const k = `${file}|${id}|${path.join('.')}`, v = getAt(S.doc[file].data[id], path);
     // 空白時 ↑↓／上下三角形會從 0 起跳：先填入 placeholder（預設值）再讓瀏覽器步進
@@ -318,23 +344,27 @@ function numInput(file, id, path, ph, {req, after} = {})
             const n = parseNum(e.target.value);
             if (typeof n === 'string') {status(`${path.join('.')} 要是數字`); return render();}
             if (req && n === undefined) {status(`${path.join('.')} 不能空白`); return render();}
-            commit(() => {setAt(S.doc[file].data[id], path, n); after?.(n);});
+            commit(() => {const b = pre?.(); setAt(S.doc[file].data[id], path, n); after?.(n, b);});
         }});
 }
 
 
 // file 裡 id 那筆的 base（裝備是 ['equip']、部位是 []）：女角的 scale/x/y 改 base[sx]，第一次改從基準複製
 // only＝道具／部位限定的性別（item.sex、part.sex）：遊戲不套 f，一律改基準
-function sexCells(file, id, base, only)
+// link＝改完 scale/x/y/a 之後呼叫 link(改前的值)（頭帶頭髮）
+function sexCells(file, id, base, only, link)
 {
     const sx = only ? null : sexKey(), e = getAt(S.doc[file].data[id], base) ?? {}, had = isObj(e[sx]);
     const fill = () => {
         const eq = getAt(S.doc[file].data[id], base), o = eq[sx];
         eq[sx] = Object.fromEntries(SEX_NUMS.map(k => [k, o[k] ?? e[k]]).filter(([, v]) => v !== undefined));
     };
-    return NUMS.map(([k, ph]) => h('td', null, sx && SEX_NUMS.includes(k)
-        ? numInput(file, id, [...base, sx, k], String(e[k] ?? ph), {after: (n) => !had && n !== undefined && fill()})
-        : numInput(file, id, [...base, k], ph)));
+    return NUMS.map(([k, ph]) => {
+        const L = link && LINK_NUMS.includes(k) ? {pre: headNow, after: (n, b) => link(b)} : {};
+        return h('td', null, sx && SEX_NUMS.includes(k)
+            ? numInput(file, id, [...base, sx, k], String(e[k] ?? ph), {pre: L.pre, after: (n, b) => {if (!had && n !== undefined) fill(); L.after?.(n, b);}})
+            : numInput(file, id, [...base, k], ph, L));
+    });
 }
 
 const sexHead = (first, only) => {
@@ -388,7 +418,8 @@ function fitView(r, slots)
         const wrong = p && !sexOk(p, r.sex);
         // 這列有焦點＝畫布上選中這個部位（反過來畫布點了也會標這列）
         return onFocusIn(h('tr', {class: 'partrow' + (S.pick === k ? ' sel' : ''), dataset: {pick: k}},
-            h('td', {class: 'k'}, name),
+            h('td', {class: 'k'}, name, k === 'head' && h('label', {class: 'headlink', title: '連動頭髮：改頭的 scale／x／y／a，頭髮跟著動（x/y/a 加一樣的差、scale 乘一樣的倍率）'},
+                h('input', {type: 'checkbox', checked: !!S.headLink, onchange: (e) => {setHeadLink(e.target.checked); render();}}), '🔗')),
             h('td', null, h('select', {class: 'part', dataset: {k: `role.json|${S.rid}|${k}`},
                     onchange: (e) => commit(() => setAt(role(), [k], e.target.value || undefined))},
                     h('option', {value: '', selected: !pid}, '（無）'),
@@ -400,7 +431,7 @@ function fitView(r, slots)
                 wrong && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[p.sex] ?? p.sex}`),
                 n > 1 && h('span', {class: 'dim shared', title: usersOf(pid).join('、')}, `（共用 ${n} 個角色）`),
                 hide.has(k) && h('span', {class: `dim hidden-${k}`}, '（目前被裝備隱藏）')),
-            p ? sexCells('part.json', pid, [], p.sex) : NUMS.map(() => h('td'))), () => pickQuiet(k));
+            p ? sexCells('part.json', pid, [], p.sex, k === 'head' && S.headLink && linkHair) : NUMS.map(() => h('td'))), () => pickQuiet(k));
     });
     const id = S.slots[S.cur], it = items()[id], name = SLOTS.find(([c]) => c === S.cur)[1];
     return [

@@ -396,6 +396,44 @@ run('fit', async t => {
         F.undo();
         out.hair.push(S.doc['item.json'].data.helmet_02.equip.hideHair);
 
+        // 🔗 頭帶頭髮：預設關、記 localStorage；x/y/a 加差、scale 乘倍率（偏移跟著縮）、ox 不連動、一筆 undo
+        {
+            const P = () => S.doc['part.json'].data, hl = S.hi;
+            localStorage.removeItem('tools.fit.headLink');
+            F.commit(() => {Object.assign(P()['head-wick'], {scale: 0.25, x: -4, y: 4}); Object.assign(P()['hair-wick'], {scale: 0.25, x: -2, y: 2});});
+            const hw = () => JSON.stringify(['scale', 'x', 'y', 'a', 'ox'].map(k => P()['hair-wick'][k] ?? null));
+            const box = () => document.querySelector('#view tr.partrow[data-pick=head] .headlink input');
+            out.link = [!!box(), box().checked, !document.querySelector('#view tr.partrow[data-pick=hair] .headlink')];
+            fire('part.json|head-wick|x', '-3');
+            out.link.push(hw());
+            F.undo();
+            box().checked = true; box().dispatchEvent(new Event('change'));
+            out.link.push(localStorage.getItem('tools.fit.headLink'));
+            const h0 = S.hi;
+            fire('part.json|head-wick|x', '-3');
+            fire('part.json|head-wick|a', '10');
+            fire('part.json|head-wick|scale', '0.5');
+            fire('part.json|head-wick|ox', '0.3');
+            out.link.push(hw(), S.hi - h0);
+            F.undo(); F.undo();
+            out.link.push(hw());
+            // 女角：頭沒限定寫 f（第一次從基準複製），頭髮限女寫基準；反過來頭髮沒限定建 f
+            F.select('mary');
+            F.commit(() => {
+                delete P()['head-mary'].sex; delete P()['head-mary'].f; delete P()['hair-mary'].f;
+                Object.assign(P()['head-mary'], {scale: 0.25, x: -1.5, y: 2}); Object.assign(P()['hair-mary'], {scale: 0.25, x: -2, y: 4, sex: 'f'});
+            });
+            fire('part.json|head-mary|f.y', '3');
+            out.link.push(JSON.stringify(P()['head-mary'].f), JSON.stringify(['x', 'y', 'f'].map(k => P()['hair-mary'][k] ?? null)));
+            F.commit(() => {delete P()['hair-mary'].sex;});
+            fire('part.json|head-mary|f.x', '-0.5');
+            out.link.push(JSON.stringify(P()['hair-mary'].f), P()['hair-mary'].x);
+            box().checked = false; box().dispatchEvent(new Event('change'));
+            out.link.push(localStorage.getItem('tools.fit.headLink'));
+            while (S.hi > hl) F.undo();
+            F.select('wick');
+        }
+
         // 女角：scale/x/y 改的是 equip.f，第一次改從基準複製；a 還是改基準；刪除女版回到共用
         F.select('mary'); S.cur = 'CAT_HELMET'; F.setSlot('CAT_HELMET', 'helmet_02');
         const e2 = () => S.doc['item.json'].data.helmet_02.equip, base = {...e2()};
@@ -559,6 +597,11 @@ run('fit', async t => {
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
     t.eq('藏頭髮可 undo', undone, true);
+    t.eq('🔗 頭帶頭髮：預設關、記住、差值／倍率、ox 不連動、一筆 undo、女角各走各的規則', JSON.stringify(r.link), JSON.stringify([
+        true, false, true, '[0.25,-2,2,null,null]', '1',
+        '[0.5,1,0,10,null]', 4, '[0.25,-1,2,10,null]',
+        '{"scale":0.25,"x":-1.5,"y":3}', '[-2,5,null]',
+        '{"scale":0.25,"x":-1,"y":5}', -2, null]));
     t.eq('女角改 equip.f（從基準複製、基準不動）、預覽套 f、刪除女版、undo、支點寫基準不建 f', JSON.stringify(r.sex), JSON.stringify([true, true, true, true, 0.2, 9, false, false, true, true]));
     t.eq('限定：限女改基準不建 f；限男穿著標 ⚠、挑選只列符合的；部位下拉同理',
          JSON.stringify(r.only), JSON.stringify([true, true, 5, false, true, true, true, true, true, true]));
