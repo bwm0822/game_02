@@ -173,6 +173,17 @@ export function iconEl(v, size = 32)
     return fitCanvas(r.url, size, v, (img) => rectOf(r, img));
 }
 
+async function sizeText(key)
+{
+    const s = SHEETS[key], a = ATLASES[key];
+    const img = await load(IMAGES[key] ?? (s ?? a).url).p;
+    if (!img) return key;
+    const t = [key, `${img.width}×${img.height}`];
+    if (s) t.push(`格 ${s.fw}×${s.fh}，${grid(s, img).count} 格`);
+    if (a) t.push(`${a.frames.size} 個 frame`);
+    return t.join('　');
+}
+
 // ---------- 選圖器 ----------
 // 分頁是 textures/ 第一層資料夾，裡面像檔案總管：子資料夾點進去、sheet／atlas 點進去選格子
 // 點圖只是選中（填進輸入框），按確定才回傳；取消回傳 null
@@ -195,11 +206,20 @@ export function pickIcon(cur)
     const choose = (v) => {txt.value = v; r = resolve(v);};
     const node = () => path.reduce((n, d) => n.dirs[d], TREE);
     const go = (p, o = null) => {path = p; open = o; show();};
-    const cell = (icon, label, sel, onclick) => {
+    const cell = (icon, label, sel, onclick, key) => {
         const d = document.createElement('div');
         d.className = 'imgCell' + (sel ? ' sel' : '');
         d.append(icon, Object.assign(document.createElement('div'), {textContent: label}));
         d.onclick = onclick;
+        if (key)
+        {
+            d.onmouseenter = () => {info.textContent = d.title || key;};
+            d.onmouseleave = () => {info.textContent = '';};
+            sizeText(key).then(s => {
+                icon.title = d.title = s;
+                if (d.matches(':hover')) info.textContent = s;
+            });
+        }
         return d;
     };
     const crumb = () => {
@@ -227,8 +247,8 @@ export function pickIcon(cur)
                 choose(f.key);
                 for (const c of body.querySelectorAll('.imgCell.sel')) c.classList.remove('sel');
                 e.currentTarget.classList.add('sel');
-            }));
-            else body.append(cell(fitCanvas((SHEETS[f.key] ?? ATLASES[f.key]).url, 48, f.key), `${f.key} ▦`, f.key === r.key, () => go(path, f.key)));
+            }, f.key));
+            else body.append(cell(fitCanvas((SHEETS[f.key] ?? ATLASES[f.key]).url, 48, f.key), `${f.key} ▦`, f.key === r.key, () => go(path, f.key), f.key));
         }
     };
 
@@ -252,7 +272,7 @@ export function pickIcon(cur)
                 for (const [f, c] of [[sel, '#4a8be0'], [hover, '#fc8']]) if (f) {g.strokeStyle = c; g.strokeRect(f.x * k + 1, f.y * k + 1, f.w * k - 2, f.h * k - 2);}
             };
             const at = (e) => rects.find(f => e.offsetX / k >= f.x && e.offsetX / k < f.x + f.w && e.offsetY / k >= f.y && e.offsetY / k < f.y + f.h) ?? null;
-            cv.onmousemove = (e) => {const f = at(e); if (f === hover) return; hover = f; info.textContent = f ? `${key}:${f.name}` : ''; draw();};
+            cv.onmousemove = (e) => {const f = at(e); if (f === hover) return; hover = f; info.textContent = f ? `${key}:${f.name}　${f.w}×${f.h}` : ''; draw();};
             cv.onmouseleave = () => {hover = null; info.textContent = ''; draw();};
             cv.onclick = (e) => {const f = at(e); if (f) {choose(`${key}:${f.name}`); sel = f; draw();}};
             draw();

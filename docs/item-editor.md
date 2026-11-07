@@ -29,7 +29,7 @@
 - 右：裝備預覽（表單模式、有選道具才有；總覽時藏起來，中間欄可拖寬，同角色分頁的 `splitter.js`）。用角色分頁的 `previewEl()`（[role-editor.md](role-editor.md)，規則同 `RoleView`：支點、手腕位移、`hiddenParts()`、女角套 `equip.f`），只看不能拖。人偶＝`role.json` 第一個 `kind:"player"` 且 `sex`（缺＝m）符合的角色，只拿長相、`inv.equips` 換成只有這件（現在男＝`wick`、女＝`mary`），找不到就光的 `body-man`／`body-woman`；下面 `男｜女` 切換記在 localStorage `tools.item.sex`，上方標「套在 <角色>」＋女版有沒有 `f`；沒有 `equip` 的道具照畫人偶、標「沒有 equip，不能裝備」。顯示用的是記憶體裡還沒存的道具；`role.json`／`part.json` 唯讀，收到存檔廣播重讀。
 - 總覽：依 `TABS` 分頁籤，欄位跟著頁籤變；點標題排序（升→降→取消），雙擊格子直接改，點 icon 開選圖器，點 id 跳回表單。
 - icon／sprite 選圖器：`icons.js` 讀遊戲開機載的 `/assets/json/textures.json`（`scripts/textures.js` 產生，見 CLAUDE.md「圖片載入」）＋各 atlas 的 `_atlas.json`，收到 `saved: textures.json` 廣播就重讀並清圖快取（圖網址帶 `?v=` 版本，覆蓋同名 PNG 也會換新）。四種寫法：`sheet:格子`、`atlas:frame`（frame 名稱是字串，`001` 保留前導零）、單張圖 key（檔名）、emoji（不是 ASCII 識別字就當文字）；不再接受路徑。格子數照 Phaser spritesheet 算（margin 只扣一次）。圖走 dev server 的 `/assets/…`，不經資料夾 handle。
-- 選圖器版面像檔案總管：分頁是 `textures/` 第一層資料夾（從 url 路徑推，`TREE`），裡面子資料夾在前（點進去，分頁列右邊的麵包屑點回上層）、圖依檔名排；sheet／atlas（標 ▦）點了進格子畫面，攤原圖、用矩形清單（sheet 算格子、atlas 讀 json）做 hover 框選。點單張圖／格子只是選中（反白＋填進輸入框），按「確定」才套用。開啟時直接跳到目前值：sheet／atlas 進格子畫面框住、單張圖進所在資料夾反白、其他開 `icons` 分頁。
+- 選圖器版面像檔案總管：分頁是 `textures/` 第一層資料夾（從 url 路徑推，`TREE`），裡面子資料夾在前（點進去，分頁列右邊的麵包屑點回上層）、圖依檔名排；sheet／atlas（標 ▦）點了進格子畫面，攤原圖、用矩形清單（sheet 算格子、atlas 讀 json）做 hover 框選。hover 時底部 info 列（資料夾畫面另有 tooltip）顯示寬高：單張圖 `key　W×H`、sheet 多 `格 w×h，N 格`、atlas 多 `N 個 frame`，格子畫面是 `key:frame　w×h`（那一格的大小）。點單張圖／格子只是選中（反白＋填進輸入框），按「確定」才套用。開啟時直接跳到目前值：sheet／atlas 進格子畫面框住、單張圖進所在資料夾反白、其他開 `icons` 分頁。
 
 ## 新增／複製／改名／刪除
 
