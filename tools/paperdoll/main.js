@@ -466,7 +466,7 @@ function trimLayer(L)
 // 數字記在 localStorage，也跟著專案設定存讀；x/y 是遊戲單位
 // kind：'armor'（護具，上面那套）／'weapon'（透明底的單把武器：清除透明 → 去雜點 → 裁到剛好 → 縮放，只有一個零件，多調 a/ox/oy）
 //       'head'（透明底、左光頭右頭髮、臉是綠洞：去綠後照重心在中線左右分，只有一邊有塊就全當頭；兩個零件各自 存檔%，連動（headLink）時頭髮跟頭一樣；
-//               零件自動標 pool 的 head／hair，存走「存到 pool」，頭像在角色編輯器由頭髮產生）
+//               零件自動標 pool 的 head／hair，存走「存到 pool」，頭像在角色編輯器由頭+髮產生）
 
 const RG_F = {rgH1: 'h1', rgH2: 'h2', rgS1: 's1', rgS2: 's2', rgV1: 'v1', rgV2: 'v2', rgRgbThr: 'rgbThr', rgGrow: 'grow', rgSeedS: 'seedS', rgSeedV: 'seedV', rgSemiA: 'semiA', rgSemiV: 'semiV'};
 const AUTO_ALPHA = 32;

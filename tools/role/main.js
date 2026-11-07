@@ -212,7 +212,7 @@ function fieldRow(id, r, k)
     if (def.type === 'part') return [lab, F.withDrop(partField(id, k, v), id, k, v)];
     const inp = fieldInput(def, v, val => (k === 'sex' ? setSex(id, val) : set(id, [k], val)), k);
     if (k === 'icon') inp.append(h('button', {type: 'button', disabled: !canPortrait(r), title: '頭＋頭髮照遊戲擺放疊起來，存成 textures/roles/portraits/portrait-<id>.png',
-        onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭髮產生'));
+        onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭+髮產生'));
     return [lab, F.withDrop(inp, id, k, v)];
 }
 
@@ -286,7 +286,7 @@ async function deletePart(pid)
 // 部位分頁改名會直接寫 role.json：還沒存的話先在記憶體跟著改，存檔合併時才不會被舊 id 蓋回去（沒改過的會因為存檔通知重讀）
 SH.onPartRenamed((from, to) => {if (D.isDirty()) commit(() => PT.renameRefs(S.data, from, to));});
 
-// ---------- 由頭髮產生頭像 ----------
+// ---------- 由頭+髮產生頭像 ----------
 const PORTRAIT_DIR = ['textures', 'roles', 'portraits'];
 const headParts = (r) => ['head', 'hair'].map(k => partFor(S.ext.parts, r, k)).filter(p => p?.sprite);
 const canPortrait = (r) => headParts(r).length > 0;

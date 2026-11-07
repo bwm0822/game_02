@@ -1,4 +1,4 @@
-// 角色編輯器的部位（part.json）：pool 選圖器、改名／刪除條目、由頭髮產生頭像；node scripts/test/role-part.mjs
+// 角色編輯器的部位（part.json）：pool 選圖器、改名／刪除條目、由頭+髮產生頭像；node scripts/test/role-part.mjs
 import {run} from './harness.mjs'
 
 run('role-part', async t => {
@@ -74,7 +74,7 @@ run('role-part', async t => {
         out.delUnused = await run(re.deletePart('hair-unused'), () => 'ok');
         out.deleted = ['hair-mary' in await read('part.json'), 'hair-unused' in await read('part.json')];
 
-        // 由頭髮產生頭像：寫 roles/portraits/portrait-<id>.png（設定的尺寸）、icon 改掉；沒有頭髮的角色按鈕停用
+        // 由頭+髮產生頭像：寫 roles/portraits/portrait-<id>.png（設定的尺寸）、icon 改掉；沒有頭髮的角色按鈕停用
         sel('karen');
         await re.genPortrait('karen');
         const tex = await dir(assets, 'textures', 'roles', 'portraits');
@@ -85,7 +85,7 @@ run('role-part', async t => {
         out.overwrite = await run(re.genPortrait('karen'), () => 'cancel');
         out.kept = S.data.karen.icon;
         sel(Object.keys(S.data).find(k => S.data[k].kind === 'npc' && !S.data[k].head));
-        const btn =[...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭髮產生');
+        const btn =[...document.querySelectorAll('#view button')].find(b => b.textContent === '由頭+髮產生');
         out.noHeadBtn = btn?.disabled;
 
         // 頭髮後片：畫在最底下、不影響臉的大小，超出方格裁掉
@@ -111,7 +111,7 @@ run('role-part', async t => {
     t.eq('改名：part.json 位置不變、role.json 跟著改並存檔', JSON.stringify(r.renamed), JSON.stringify([true, false, 'hair-john', 'hair-john', 'hair-wick']));
     t.eq('改成已有的 id 擋住', r.dupStatus, 'part.json 已經有 hair-mary');
     t.eq('有角色在用不能刪、沒人用的刪掉', JSON.stringify([r.delUsed, r.delUnused, r.deleted]), JSON.stringify([['不能刪 hair-mary'], ['刪除 hair-unused'], [true, false]]));
-    t.eq('由頭髮產生：100×100、有畫東西、icon 改成 portrait-<id>', JSON.stringify(r.portrait), JSON.stringify([100, 100, true, 'portrait-karen']));
+    t.eq('由頭+髮產生：100×100、有畫東西、icon 改成 portrait-<id>', JSON.stringify(r.portrait), JSON.stringify([100, 100, true, 'portrait-karen']));
     t.eq('icon 不是它、檔案已經有了：先問、取消不動', JSON.stringify([r.overwrite, r.kept]), JSON.stringify([['覆蓋 portrait-karen.png'], 'head-karen']));
     t.eq('沒有頭／頭髮的角色按鈕停用', r.noHeadBtn, true);
     t.eq('頭像畫頭髮後片：臉的位置大小不變、後片多畫在空白處', JSON.stringify(r.portraitBack), JSON.stringify([true, true]));

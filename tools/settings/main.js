@@ -142,7 +142,7 @@ function render()
         title('紙娃娃移除綠色', 'green'), greenTable(),
         h('div', {class: 'hint'}, '手動面板跟下次自動拆圖共用（面板按確定也會寫回這裡），已經拆好的零件不受影響；半透明 alpha 上限 0＝不抓綠霧'),
         title('角色頭像', 'portrait'), portraitTable(),
-        h('div', {class: 'hint'}, '角色編輯器「由頭髮產生」：頭＋頭髮等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）'),
+        h('div', {class: 'hint'}, '角色編輯器「由頭+髮產生」：頭＋頭髮等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）'),
     ] : [h('div', {class: 'hint'}, '等專案資料夾…')]));
     ST.applySteps();
     if (focus) document.querySelector(`[data-k="${CSS.escape(focus)}"]`)?.focus();

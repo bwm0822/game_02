@@ -12,7 +12,7 @@ export const STEP_OF = {pct: 'pct', scale: 'scale', x: 'xy', y: 'xy', ox: 'o', o
 
 // 紙娃娃自動拆圖的數字：pct＝存檔%、scale＝equip.scale／role 的 head.scale…；武器照分類各一組＝WEAPON 蓋上第三欄
 const ARMOR = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
-const OUTFIT = {hat: ARMOR.helmet, cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.24, x: 1.5, y: 33}};
+const OUTFIT = {hat: ARMOR.helmet, cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
 const WEAPON = {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85};
 export const WCLS = [
     ['sword', '劍', {pct: 12, x: -6, y: 17, a: 60}],
@@ -35,7 +35,7 @@ export const DEF = {
         // 女版護具、服飾只有 scale/x/y（PNG 跟存檔% 跟男版共用）
         f: Object.fromEntries(Object.entries({...ARMOR, ...OUTFIT}).map(([k, {scale, x, y}]) => [k, {scale, x, y}])),
     },
-    // 角色編輯器「由頭髮產生」頭像：頭＋頭髮等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
+    // 角色編輯器「由頭+髮產生」頭像：頭＋頭髮等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
     portrait: {size: 100, fill: 100},
     // 紙娃娃移除綠色（手動面板、自動拆圖共用）；semiA／semiV＝半透明的高飽和綠也算種子（a ≤ semiA、v ≥ semiV），semiA 0＝關掉
     green: {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150, semiA: 254, semiV: 100},

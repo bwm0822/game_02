@@ -1,4 +1,4 @@
-// 由頭髮產生頭像：部位（{sprite, back, scale, x, y, a, ox, oy}，女角已套 f）照遊戲擺放疊起來，裁到不透明範圍，等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
+// 由頭+髮產生頭像：部位（{sprite, back, scale, x, y, a, ox, oy}，女角已套 f）照遊戲擺放疊起來，裁到不透明範圍，等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
 // 後片（back）畫在最底下、不算進大小：臉不會被長髮擠小，超出方格的裁掉
 // 用 PNG 原尺寸畫：scale 最小的那張 1:1，其他照 scale 比例放大，位置照遊戲單位換算，才不會糊
 import * as IC from './icons.js';
