@@ -153,6 +153,20 @@ run('item', async t => {
             dlgI.close('ok');
             return r;
         });
+        out.pickHover = (await pick('macron', async () => {
+            const c = cellOf('macron');
+            await new Promise(r => setTimeout(r, 300));
+            c.dispatchEvent(new MouseEvent('mouseenter'));
+            const info = q('.info').textContent, title = c.title;
+            c.dispatchEvent(new MouseEvent('mouseleave'));
+            return [info, title, q('.info').textContent];
+        }))[0];
+        out.iconHover = await Promise.all(['macron', 'icons:134', 'hero:125'].map(async v => {
+            const el = ie.IC.iconEl(v);
+            const {f} = await ie.IC.frameOf(v);
+            await new Promise(r => setTimeout(r, 50));
+            return el.title === `${v}　${f.w}×${f.h}`;
+        }));
         out.pickCancel = (await pick('macron', () => {cellOf('melanie').onclick({currentTarget: cellOf('melanie')}); return q('.imgCell.sel').lastChild.textContent;}));
 
         S.view = 'table'; S.tab = 1; ie.render();
@@ -700,6 +714,8 @@ run('item', async t => {
     t.eq('sheet 直接開格子畫面', JSON.stringify(r.pickSheet), JSON.stringify(['icons / icons', true]));
     t.check('子資料夾點進去、麵包屑點回上層', r.pickNav[0].includes('rogues ▦') && r.pickNav[1] === 'roles' && r.pickNav[2].startsWith('animals,'), JSON.stringify(r.pickNav));
     t.eq('atlas 開 frame 畫面、點了選 frame、按確定才回傳', JSON.stringify(r.pickAtlas), JSON.stringify([['tabs', 'roles / npcs / hero', true, 'hero:125'], 'hero:125']));
+    t.check('hover 圖顯示寬高（info 列＋tooltip）、移開清空', /^macron　\d+×\d+$/.test(r.pickHover[0]) && r.pickHover[1] === r.pickHover[0] && r.pickHover[2] === '', JSON.stringify(r.pickHover));
+    t.eq('icon 小圖 hover 顯示寬高（單張圖、sheet 格子、atlas frame）', JSON.stringify(r.iconHover), '[true,true,true]');
     t.eq('點圖只換選取、取消不套用', JSON.stringify(r.pickCancel), JSON.stringify(['melanie', null]));
     t.eq('總覽表武器頁', r.table[0], r.table[1]);
     t.check('表單有畫出來', r.form);

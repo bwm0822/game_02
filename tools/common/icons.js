@@ -150,6 +150,7 @@ function fitCanvas(url, size, title, f0)
         g.imageSmoothingEnabled = false;
         const f = img && (f0 ? f0(img) : {x: 0, y: 0, w: img.width, h: img.height});
         if (!f) {g.fillStyle = '#a33'; g.fillRect(0, 0, size, size); return;}
+        cv.title = `${title}　${f.w}×${f.h}`;
         const k = Math.min(size / f.w, size / f.h);
         const w = f.w * k, h = f.h * k;
         g.drawImage(img, f.x, f.y, f.w, f.h, (size - w) / 2, (size - h) / 2, w, h);
