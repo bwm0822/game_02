@@ -165,17 +165,17 @@
     ],
     "head": "head-trump",
     "hair": "hair-trump",
-    "shoes": "shoes-outfit-innkeeper",
+    "shoes": "shoes-outfit-trump",
     "handF": "handF",
     "handB": "handB",
-    "cloth": "cloth-outfit-innkeeper"
+    "cloth": "cloth-outfit-trump"
   },
   "melanie": {
     "kind": "npc",
     "loc": "brooklyn",
     "lab": "梅蘭妮",
     "des": "漂亮大方的女士，跟川普共同經營一家旅館",
-    "icon": "head-melanie",
+    "icon": "portrait-melanie",
     "job": "innkeeper",
     "gold": 200,
     "style": "passive_coward",
@@ -206,7 +206,7 @@
       "t": 32,
       "b": 0
     },
-    "body": "melanie",
+    "body": "body-woman",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -241,7 +241,14 @@
         "go": "trump-p1",
         "map": "m_04x05/trump-inn-f1"
       }
-    ]
+    ],
+    "sex": "f",
+    "head": "head-melania",
+    "hair": "hair-melania",
+    "cloth": "cloth-outfit-melania",
+    "shoes": "shoes-outfit-melania",
+    "handF": "handF",
+    "handB": "handB"
   },
   "musk": {
     "kind": "npc",
@@ -425,7 +432,7 @@
     "loc": "brooklyn",
     "lab": "習近平",
     "des": "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……",
-    "icon": "head-xi",
+    "icon": "portrait-xi",
     "job": "butcher",
     "gold": 200,
     "abilities": [
@@ -460,7 +467,7 @@
       "t": 32,
       "b": 0
     },
-    "body": "xi",
+    "body": "body-man",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -505,14 +512,20 @@
         "go": "bed",
         "map": "m_04x05/xi-home"
       }
-    ]
+    ],
+    "hair": "hair-xi",
+    "head": "head-xi",
+    "shoes": "shoes-outfit-xi",
+    "cloth": "cloth-outfit-xi",
+    "handF": "handF",
+    "handB": "handB"
   },
   "macron": {
     "kind": "npc",
     "loc": "brooklyn",
     "lab": "馬克宏",
     "des": "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。",
-    "icon": "head-macron",
+    "icon": "portrait-macron",
     "job": "merchant",
     "gold": 200,
     "trade": true,
@@ -542,7 +555,7 @@
       "t": 32,
       "b": 0
     },
-    "body": "macron",
+    "body": "body-man",
     "inv": {
       "storage": {
         "capacity": -1,
@@ -587,7 +600,13 @@
         "go": "bed",
         "map": "m_04x05/macron-home"
       }
-    ]
+    ],
+    "head": "head-macron",
+    "hair": "hair-macron",
+    "cloth": "cloth-outfit-macron",
+    "shoes": "shoes-outfit-macron",
+    "handF": "handF",
+    "handB": "handB"
   },
   "guard-1": {
     "kind": "npc",
@@ -798,8 +817,8 @@
     "handF": "handF",
     "handB": "handB",
     "hair": "hair-kidman",
-    "shoes": "shoes-outfit-villager-f-2",
-    "cloth": "cloth-outfit-villager-f-2"
+    "shoes": "shoes-outfit-kidman",
+    "cloth": "cloth-outfit-kidman"
   },
   "jobs": {
     "kind": "npc",
@@ -845,9 +864,8 @@
     "icon": "portrait-jobs",
     "handF": "handF",
     "handB": "handB",
-    "shoes": "shoes-outfit-merchant",
-    "hat": "hat-outfit-merchant",
-    "cloth": "cloth-outfit-merchant"
+    "shoes": "shoes-outfit-jobs",
+    "cloth": "cloth-outfit-jobs"
   },
   "rogue-1": {
     "kind": "rogue",

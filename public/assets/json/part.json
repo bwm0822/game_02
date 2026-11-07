@@ -156,9 +156,9 @@
   },
   "head-trump": {
     "kind": "head",
-    "sprite": "trump-head",
+    "sprite": "head-trump",
     "scale": 0.25,
-    "x": -1.25,
+    "x": -2.25,
     "y": 3,
     "sex": "m",
     "name": "川普的頭"
@@ -175,8 +175,8 @@
     "kind": "head",
     "sprite": "head-musk",
     "scale": 0.25,
-    "x": -2.5,
-    "y": 3,
+    "x": -2.25,
+    "y": 3.25,
     "name": "馬斯克的頭"
   },
   "head-kidman": {
@@ -192,41 +192,46 @@
     "kind": "head",
     "sprite": "head-bandit-1",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
-    "name": "刀疤大漢的頭"
+    "x": -2.5,
+    "y": 3,
+    "name": "刀疤大漢的頭",
+    "sex": "m"
   },
   "head-bandit-2": {
     "kind": "head",
     "sprite": "head-bandit-2",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
-    "name": "獨眼鬍漢的頭"
+    "x": -2.25,
+    "y": 4.75,
+    "name": "獨眼鬍漢的頭",
+    "sex": "m"
   },
   "head-bandit-3": {
     "kind": "head",
     "sprite": "head-bandit-3",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
-    "name": "瘦臉小人的頭"
+    "x": -2,
+    "y": 3.25,
+    "name": "瘦臉小人的頭",
+    "sex": "m"
   },
   "head-bandit-4": {
     "kind": "head",
     "sprite": "head-bandit-4",
     "scale": 0.25,
-    "x": -3,
-    "y": 4,
-    "name": "年輕毛賊的頭"
+    "x": -2,
+    "y": 3.25,
+    "name": "年輕毛賊的頭",
+    "sex": "m"
   },
   "head-bandit-5": {
     "kind": "head",
     "sprite": "head-bandit-5",
     "scale": 0.25,
     "x": -2.5,
-    "y": 4,
-    "name": "灰髮老匪的頭"
+    "y": 2.75,
+    "name": "灰髮老匪的頭",
+    "sex": "m"
   },
   "head-villager-f-1": {
     "kind": "head",
@@ -273,6 +278,40 @@
     "name": "慈祥老婦的頭",
     "sex": "f"
   },
+  "head-xi": {
+    "kind": "head",
+    "sprite": "head-xi",
+    "scale": 0.25,
+    "x": -2,
+    "y": 3.25,
+    "name": "習近平頭",
+    "sex": "m"
+  },
+  "head-macron": {
+    "kind": "head",
+    "sprite": "head-macron",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3.25,
+    "name": "馬克宏的頭",
+    "sex": "m"
+  },
+  "head-melania": {
+    "kind": "head",
+    "sprite": "head-melania",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": 2.25,
+    "name": "梅蘭妮的頭",
+    "sex": "f"
+  },
+  "head-villager-m-2": {
+    "kind": "head",
+    "sprite": "head-villager-m-2",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -284,7 +323,7 @@
       "x": -2.25,
       "y": 4
     },
-    "name": "凱倫的頭髮",
+    "name": "凱倫的髮",
     "sex": "f"
   },
   "hair-mary": {
@@ -293,7 +332,7 @@
     "scale": 0.25,
     "x": -2.25,
     "y": 4,
-    "name": "瑪莉的頭髮",
+    "name": "瑪莉的髮",
     "sex": "f"
   },
   "hair-wick": {
@@ -302,32 +341,32 @@
     "scale": 0.25,
     "x": -2,
     "y": 1,
-    "name": "維克的頭髮"
+    "name": "維克的髮"
   },
   "hair-trump": {
     "kind": "hair",
-    "sprite": "trump-hair",
+    "sprite": "hair-trump",
     "scale": 0.25,
-    "x": 0,
-    "y": -1.75,
+    "x": -1,
+    "y": -2.5,
     "sex": "m",
-    "name": "川普的頭髮"
+    "name": "川普的髮"
   },
   "hair-jobs": {
     "kind": "hair",
     "sprite": "hair-jobs",
     "scale": 0.25,
     "x": -2.5,
-    "y": -13.25,
-    "name": "賈伯斯的頭髮"
+    "y": -13.153,
+    "name": "賈伯斯的髮"
   },
   "hair-musk": {
     "kind": "hair",
     "sprite": "hair-musk",
     "scale": 0.25,
-    "x": -2.5,
-    "y": -12.5,
-    "name": "馬斯克的頭髮"
+    "x": -2.25,
+    "y": -13.5,
+    "name": "馬斯克的髮"
   },
   "hair-kidman": {
     "kind": "hair",
@@ -336,47 +375,47 @@
     "x": -0.75,
     "y": 4,
     "sex": "f",
-    "name": "妮可基嫚的頭髮"
+    "name": "妮可基嫚的髮"
   },
   "hair-bandit-1": {
     "kind": "hair",
     "sprite": "hair-bandit-1",
     "scale": 0.25,
-    "x": -3,
-    "y": -11.25,
-    "name": "刀疤大漢的頭髮"
+    "x": -3.25,
+    "y": -12.5,
+    "name": "刀疤大漢的髮"
   },
   "hair-bandit-2": {
     "kind": "hair",
     "sprite": "hair-bandit-2",
     "scale": 0.25,
-    "x": -3,
-    "y": -11.25,
-    "name": "獨眼鬍漢的頭髮"
+    "x": -2.75,
+    "y": -12.5,
+    "name": "獨眼鬍漢的髮"
   },
   "hair-bandit-3": {
     "kind": "hair",
     "sprite": "hair-bandit-3",
     "scale": 0.25,
-    "x": -4,
-    "y": 3,
-    "name": "瘦臉小人的頭髮"
+    "x": -3,
+    "y": 2,
+    "name": "瘦臉小人的髮"
   },
   "hair-bandit-4": {
     "kind": "hair",
     "sprite": "hair-bandit-4",
     "scale": 0.25,
-    "x": -2.5,
-    "y": -12.5,
-    "name": "年輕毛賊的頭髮"
+    "x": -1.5,
+    "y": -12.25,
+    "name": "年輕毛賊的髮"
   },
   "hair-bandit-5": {
     "kind": "hair",
     "sprite": "hair-bandit-5",
     "scale": 0.25,
     "x": -2.25,
-    "y": -10.75,
-    "name": "灰髮老匪的頭髮"
+    "y": -12,
+    "name": "灰髮老匪的髮"
   },
   "hair-villager-f-1": {
     "kind": "hair",
@@ -386,7 +425,7 @@
     "x": -0.5,
     "y": 2.75,
     "sex": "f",
-    "name": "雀斑少女的頭髮"
+    "name": "雀斑少女的髮"
   },
   "hair-villager-f-2": {
     "kind": "hair",
@@ -395,7 +434,7 @@
     "x": -4.25,
     "y": 4.75,
     "sex": "f",
-    "name": "農家姑娘的頭髮"
+    "name": "農家姑娘的髮"
   },
   "hair-villager-f-3": {
     "kind": "hair",
@@ -403,7 +442,7 @@
     "scale": 0.25,
     "x": -2.25,
     "y": -1.5,
-    "name": "年輕婦人的頭髮",
+    "name": "年輕婦人的髮",
     "sex": "f"
   },
   "hair-villager-f-4": {
@@ -413,7 +452,7 @@
     "x": -2.75,
     "y": -8.25,
     "sex": "f",
-    "name": "市場大嬸的頭髮"
+    "name": "市場大嬸的髮"
   },
   "hair-villager-f-5": {
     "kind": "hair",
@@ -421,8 +460,47 @@
     "scale": 0.25,
     "x": -2.25,
     "y": -12,
-    "name": "慈祥老婦的頭髮",
+    "name": "慈祥老婦的髮",
     "sex": "f"
+  },
+  "hair-xi": {
+    "kind": "hair",
+    "sprite": "hair-xi",
+    "scale": 0.25,
+    "x": -2,
+    "y": -12.25,
+    "name": "習近平的髮"
+  },
+  "hair-macron": {
+    "kind": "hair",
+    "sprite": "hair-macron",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -12,
+    "name": "馬克宏的髮"
+  },
+  "hair-melania": {
+    "kind": "hair",
+    "sprite": "hair-melania",
+    "scale": 0.25,
+    "x": -1.25,
+    "y": 5,
+    "sex": "f",
+    "name": "梅蘭妮的髮"
+  },
+  "hair-villager-m-1": {
+    "kind": "hair",
+    "sprite": "hair-villager-m-1",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -11.5
+  },
+  "hair-villager-m-2": {
+    "kind": "hair",
+    "sprite": "hair-villager-m-2",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -11.5
   },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
@@ -546,6 +624,56 @@
     "y": -3.75,
     "name": "搶來的外袍服"
   },
+  "cloth-outfit-kidman": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-kidman",
+    "scale": 0.25,
+    "x": 0.25,
+    "y": -5,
+    "name": "妮可基嫚服",
+    "sex": "f"
+  },
+  "cloth-outfit-trump": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-trump",
+    "scale": 0.24,
+    "x": 0.25,
+    "y": -3.75,
+    "name": "川普服"
+  },
+  "cloth-outfit-xi": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-xi",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4.25,
+    "name": "習近平服"
+  },
+  "cloth-outfit-macron": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-macron",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4,
+    "name": "馬克宏服"
+  },
+  "cloth-outfit-melania": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-melania",
+    "scale": 0.25,
+    "x": 0.5,
+    "y": -2.75,
+    "sex": "f",
+    "name": "梅蘭妮服"
+  },
+  "cloth-outfit-jobs": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-jobs",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4,
+    "name": "賈伯斯服"
+  },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
@@ -667,6 +795,56 @@
     "x": 1.25,
     "y": 0,
     "name": "搶來的外袍鞋"
+  },
+  "shoes-outfit-kidman": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-kidman",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 0.5,
+    "name": "妮可基嫚鞋",
+    "sex": "f"
+  },
+  "shoes-outfit-trump": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-trump",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 1,
+    "name": "川普鞋"
+  },
+  "shoes-outfit-xi": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-xi",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "習近平鞋"
+  },
+  "shoes-outfit-macron": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-macron",
+    "scale": 0.25,
+    "x": 1.75,
+    "y": 0,
+    "name": "馬克宏鞋"
+  },
+  "shoes-outfit-melania": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-melania",
+    "scale": 0.25,
+    "x": 1.5,
+    "y": 1,
+    "name": "梅蘭妮鞋",
+    "sex": "f"
+  },
+  "shoes-outfit-jobs": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-jobs",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "賈伯斯鞋"
   },
   "handF": {
     "kind": "handF",
