@@ -1157,9 +1157,9 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('男女：沒標記也能切性別', sx.noTag, false);
-    t.eq('男女：舊設定沒有 f，女版用內建預設', sx.legacy, JSON.stringify({scale: 0.25, x: -1.75, y: -0.25}));
-    t.eq('男女：舊設定沒有 scale 補 0.25、女版舊 pct 換成 scale＝0.25×女pct÷男pct', JSON.stringify(sx.legacyF),
-         JSON.stringify([JSON.stringify({scale: 0.125, x: 3, y: 4}), 0.25, 0.25]));
+    t.eq('男女：舊設定沒有 f，女版用內建預設（含存檔%）', sx.legacy, JSON.stringify({pct: 28, scale: 0.25, x: -1.75, y: -0.25}));
+    t.eq('男女：舊設定沒有 scale 補 0.25、女版沒寫的欄位用內建', JSON.stringify(sx.legacyF),
+         JSON.stringify([JSON.stringify({pct: 20, scale: 0.25, x: 3, y: 4}), 0.25, 0.25]));
     t.eq('男女：男版數字拆、沒女版標基準', JSON.stringify(sx.m), JSON.stringify([30, 0.25, 1, 2, '50', '基準']));
     t.eq('男女：拆出來沒有女版、切女照基準、不記步驟、還是標基準', JSON.stringify(sx.noFem), JSON.stringify([30, 0.25, 1, 2, false, 0, '基準']));
     t.eq('男女：有女版切女照女版重擺（PNG 同一張、存檔% 共用）、記一步、標♀', JSON.stringify(sx.f), JSON.stringify([30, 0.125, 3, 4, '50', '♀', 1]));
@@ -1169,6 +1169,71 @@ run('paperdoll', async t => {
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
     t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,headSmall,kind,split']));
     t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
+
+    // 套用：女＝用女版那組（含存檔%）拆，零件記 auto.sex、只有一組、不能新增女版、改數字／還原預設寫女版
+    const fu = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const c = document.createElement('canvas'); c.width = c.height = 200;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 200, 200);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 30, 60, 40);
+        g.fillStyle = '#0000ff'; g.fillRect(10, 90, 80, 80);
+        Object.assign(pd.S, {layers: [], active: null});
+        pd.cancelMode();
+        const type = (id, v) => {const e = $(id); e.value = v; e.dispatchEvent(new Event('change'));};
+        const use = (v) => {const r = document.querySelector(`[name=auUse][value=${v}]`); r.checked = true; r.dispatchEvent(new Event('change'));};
+        const useOf = () => [document.querySelector('[name=auUse]:checked').value, document.querySelector('[name=auUse]').disabled, $('auUseL').hidden];
+        pd.setDoll({sex: 'm'});
+        pd.autoSet({kind: 'armor', helmet: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {helmet: {pct: 25, scale: 0.125, x: 3, y: 4}}});
+        const S0 = pd.addLayer(await createImageBitmap(c), 'src', null, null);
+        pd.select(S0);
+        pd.setMode('auto');
+        out.def = useOf();
+        use('f');
+        out.pre = [$('au-helmet-pct').value, $('au-helmet-x').value, $('au-helmet-sex').textContent, $('au-armor-sex').textContent];
+        pd.applyMode();
+        const m = pd.S.mode, H = pd.S.layers.find(L => L.name === 'src-helmet');
+        out.split = [H.canvas.width, H.scale, H.x, H.y, H.auto.sex, ...useOf(), $('au-helmet-sex').textContent];
+        type('au-helmet-x', 7);
+        out.edit = [pd.S.auto.f.helmet.x, pd.S.auto.helmet.x];
+        $('auReset').click();
+        out.reset = [pd.S.auto.f.helmet.pct, pd.S.auto.f.helmet.x, pd.S.auto.helmet.pct, H.canvas.width, H.x];
+        pd.cancelMode();
+        out.locked = [pd.femLocked(H), pd.hasFem(H)];
+        // 再進來：套用照零件記的、反灰
+        pd.select(H);
+        pd.setMode('auto');
+        out.reopen = useOf();
+        pd.cancelMode();
+        // 頭像：header 女＝預設套用女、拆出的頭用女版
+        Object.assign(pd.S, {layers: [], active: null});
+        const h = document.createElement('canvas'); h.width = h.height = 200;
+        const hg = h.getContext('2d');
+        hg.fillStyle = '#ff0000'; hg.fillRect(20, 40, 60, 80);
+        hg.fillStyle = '#0000ff'; hg.fillRect(120, 30, 60, 60);
+        pd.setDoll({sex: 'f'});
+        pd.autoSet({...pd.S.auto, kind: 'head', head: {pct: 50, scale: 0.25, x: 1, y: 2}, f: {...pd.S.auto.f, head: {pct: 20, scale: 0.5, x: 5, y: 6}}});
+        pd.select(pd.addLayer(await createImageBitmap(h), 'face', null, null));
+        pd.setMode('auto');
+        out.headDef = useOf();
+        pd.applyMode();
+        const D = pd.S.layers.find(L => L.name === 'head-face');
+        out.head = [D.canvas.width, D.scale, D.x, D.y, D.auto.sex, pd.S.auto.head.pct];
+        pd.cancelMode();
+        pd.setDoll({sex: 'm'});
+        pd.autoSet(null);
+        pd.applySettings({auto: {kind: 'armor'}});
+        Object.assign(pd.S, {layers: [], active: null});
+        return out;
+    });
+    t.eq('套用：預設跟 header 的性別、沒拆可以切', JSON.stringify(fu.def), JSON.stringify(['m', false, false]));
+    t.eq('套用：切女面板換成女版那組（含存檔%）、標♀拆', JSON.stringify(fu.pre), JSON.stringify(['25', '3', '♀拆', '♀拆']));
+    t.eq('套用：女版拆、零件記 auto.sex、拆完反灰', JSON.stringify(fu.split), JSON.stringify([15, 0.125, 3, 4, 'f', 'f', true, false, '♀拆']));
+    t.eq('套用：改數字寫女版、男版不動', JSON.stringify(fu.edit), JSON.stringify([7, 1]));
+    t.eq('套用：還原預設還原女版內建', JSON.stringify(fu.reset), JSON.stringify([28, -1.75, 50, 17, -1.75]));
+    t.eq('套用：女版拆的不能新增女版', JSON.stringify(fu.locked), JSON.stringify([true, false]));
+    t.eq('套用：再進來照零件記的、反灰', JSON.stringify(fu.reopen), JSON.stringify(['f', true, false]));
+    t.eq('套用：頭像 header 女預設套用女、頭用女版數字、男版不動', JSON.stringify([...fu.headDef, ...fu.head]), JSON.stringify(['f', false, false, 12, 0.5, 5, 6, 'f', 50]));
 
     // 自動模式的頭盔切線：進模式就追線、確定時一起拆前後片、拆完改切線即時套用
     const ac = await ev(async () => {
@@ -1880,31 +1945,46 @@ run('paperdoll', async t => {
         out.made = [Hd.name, Hr.name, Hd.canvas.width, Hd.canvas.height, Hr.canvas.width, Hr.canvas.height, Hd.ops.map(o => o.type).join(),
                     pd.S.layers.indexOf(Hr) > pd.S.layers.indexOf(Hd), alpha(Hr.canvas, 17, 20), alpha(Hr.canvas, 2, 2) > 128, ...at(Hd), ...at(Hr), L.visible, Hd.pool, Hr.pool];
 
+        // 🔗（單向）：改頭的存檔%／scale，頭髮乘一樣的倍率、對頭的偏移照畫面倍率縮；頭的 x/y 頭髮跟著走
+        const pos = (C) => [C.x, C.y];
         type('au-head-pct', 20);
-        out.pct = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length];
+        out.pct = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length, ...pos(Hr)];
         key('z');
-        out.pctUndo = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, $('au-head-pct').value];
-        // 關掉連動各改各的；打開時頭髮對齊頭、一步，undo 連開關一起退
+        out.pctUndo = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, $('au-head-pct').value, ...pos(Hr)];
+        type('au-head-scale', 0.5);
+        out.scale = [Hd.scale, Hr.scale, pd.S.auto.hair.scale, ...pos(Hr)];
+        key('z');
+        type('au-head-x', 3);
+        out.headX = [Hd.x, Hr.x, pd.S.auto.hair.x];
+        key('z');
+        pd.select(Hd);
+        const x0 = [Hd.x, Hr.x];
+        document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true}));
+        out.arrow = [Hd.x - x0[0] > 0, Hd.x - x0[0] === Hr.x - x0[1], pd.S.auto.hair.x === Hr.x];
+        key('z');
+        // 頭髮自己能調、不影響頭
+        out.hairFree = [$('au-hair-pct').disabled, $('au-hair-scale').disabled];
+        type('au-hair-pct', 20);
+        type('au-hair-x', 3);
+        out.hairOnly = [Hd.canvas.width, Hr.canvas.width, Hd.x, Hr.x];
+        key('z'); key('z');
+        // 頭髮跟頭數字不同也照倍率連動（不再要求相等）
+        type('au-hair-pct', 40);
+        type('au-head-pct', 25);
+        out.ratio = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct];
+        key('z'); key('z');
+        // 關掉連動：頭不帶頭髮；開關不記步驟、不改圖
         const link = (on) => {$('au-link').checked = on; $('au-link').dispatchEvent(new Event('change'));};
         let h1 = m.hist.length;
         link(false);
-        out.unlink = [pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1];
-        type('au-hair-pct', 20);
         type('au-head-pct', 40);
-        out.split = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.head.pct, pd.S.auto.hair.pct, m.hist.length - h1];
-        type('au-hair-scale', 0.5);
-        out.splitScale = [Hr.scale, Hd.scale, pd.S.auto.hair.scale];
+        type('au-head-x', 3);
+        out.unlink = [pd.S.auto.headLink, Hd.canvas.width, Hr.canvas.width, Hr.x, m.hist.length - h1];
+        key('z'); key('z');
         h1 = m.hist.length;
         link(true);
-        out.relink = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-hair-pct').disabled, m.hist.length - h1, Hr.scale, $('au-hair-scale').disabled];
-        key('z');
-        out.relinkUndo = [Hr.canvas.width, pd.S.auto.hair.pct, pd.S.auto.headLink, $('au-link').checked, $('au-hair-pct').disabled, Hr.scale];
-        key('z'); key('z'); key('z');
-        h1 = m.hist.length;
-        link(true);
-        out.relinkSame = [Hd.canvas.width, Hr.canvas.width, pd.S.auto.headLink, m.hist.length - h1];
+        out.relink = [pd.S.auto.headLink, Hr.canvas.width, m.hist.length - h1];
         type('au-hair-x', 3);
-        out.hairX = [at(Hr)[0], at(Hd)[0], pd.S.auto.hair.x];
 
         // 存到 pool：id 預設零件名（head-wick／hair-wick）；已有的 head-wick 提示覆蓋（wick 在用）
         let p = await open();
@@ -1969,19 +2049,20 @@ run('paperdoll', async t => {
         pd.autoSet({});
         return out;
     });
-    t.eq('自動（頭像）：進模式顯示頭像的表；預設連動、頭髮 scale% 反灰', JSON.stringify(ah.enter),
-         JSON.stringify(['head', false, true, true, true, true]));
+    t.eq('自動（頭像）：進模式顯示頭像的表；預設連動、頭髮格子不鎖', JSON.stringify(ah.enter),
+         JSON.stringify(['head', false, true, true, false, true]));
     t.eq('自動（頭像）：左頭右髮、去綠（臉挖空）、頭髮疊在頭上面、自動標 pool', JSON.stringify(ah.made),
          JSON.stringify(['head-wick', 'hair-wick', 30, 30, 35, 40, 'alpha,removeGreen,blobs,xform,xform', true, 0, true, -2, 4, -1, 2, false, 'head', 'hair']));
-    t.eq('自動（頭像）：scale% 兩個一起改、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1]));
-    t.eq('自動（頭像）：scale% undo 兩個一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50']));
-    t.eq('自動（頭像）：關掉連動不改圖、不記步驟，頭髮 scale% 可改', JSON.stringify(ah.unlink), JSON.stringify([false, false, 0]));
-    t.eq('自動（頭像）：不連動時存檔% 各改各的', JSON.stringify(ah.split), JSON.stringify([24, 14, 40, 20, 2]));
-    t.eq('自動（頭像）：不連動時 scale 各改各的', JSON.stringify(ah.splitScale), JSON.stringify([0.5, 0.25, 0.5]));
-    t.eq('自動（頭像）：打開連動頭髮對齊頭（存檔%＋scale）、一步', JSON.stringify(ah.relink), JSON.stringify([24, 28, 40, true, true, 1, 0.25, true]));
-    t.eq('自動（頭像）：undo 連開關一起退', JSON.stringify(ah.relinkUndo), JSON.stringify([14, 20, false, false, false, 0.5]));
-    t.eq('自動（頭像）：數字一樣時打開連動不記步驟', JSON.stringify(ah.relinkSame), JSON.stringify([30, 35, true, 0]));
-    t.eq('自動（頭像）：頭髮 x 只動頭髮', JSON.stringify(ah.hairX), JSON.stringify([3, -2, 3]));
+    t.eq('自動（頭像）：🔗 改頭存檔% 頭髮乘倍率、偏移跟著縮、一步', JSON.stringify(ah.pct), JSON.stringify([12, 14, 20, 20, 1, -1.6, 3.2]));
+    t.eq('自動（頭像）：🔗 undo 頭跟頭髮一起退', JSON.stringify(ah.pctUndo), JSON.stringify([30, 35, 50, '50', -1, 2]));
+    t.eq('自動（頭像）：🔗 改頭 scale 頭髮乘倍率、偏移跟著縮', JSON.stringify(ah.scale), JSON.stringify([0.5, 0.5, 0.5, 0, 0]));
+    t.eq('自動（頭像）：🔗 改頭 x 頭髮跟著走', JSON.stringify(ah.headX), JSON.stringify([3, 4, 4]));
+    t.eq('自動（頭像）：🔗 方向鍵搬頭頭髮跟著、寫回全域', JSON.stringify(ah.arrow), JSON.stringify([true, true, true]));
+    t.eq('自動（頭像）：🔗 頭髮的格子不鎖', JSON.stringify(ah.hairFree), JSON.stringify([false, false]));
+    t.eq('自動（頭像）：🔗 單向：改頭髮不動頭', JSON.stringify(ah.hairOnly), JSON.stringify([30, 14, -2, 3]));
+    t.eq('自動（頭像）：🔗 數字不同也照倍率', JSON.stringify(ah.ratio), JSON.stringify([15, 14, 20]));
+    t.eq('自動（頭像）：關掉 🔗 頭不帶頭髮、開關不記步驟', JSON.stringify(ah.unlink), JSON.stringify([false, 24, 35, -1, 2]));
+    t.eq('自動（頭像）：打開 🔗 不改圖、不記步驟', JSON.stringify(ah.relink), JSON.stringify([true, 35, 0]));
     t.eq('自動（頭像）：存到 pool 預設零件名、已有的提示覆蓋', JSON.stringify(ah.dlg),
          JSON.stringify(['hair-wick', 'head-wick', '', '會覆蓋 head-wick（PNG＋擺放）（wick 在用）']));
     t.eq('自動（頭像）：存成 part.json 條目＋roles/parts 的 PNG、零件記住 id', JSON.stringify(ah.saved),
@@ -2381,9 +2462,9 @@ run('paperdoll', async t => {
     t.eq('自動（服飾）：刪掉女版提示會移除', JSON.stringify(ao.dlg), JSON.stringify(['會移除女版（零件沒有女版）；會覆蓋 cloth-inn（PNG＋擺放）', '會覆蓋 shoes-inn（PNG＋擺放）']));
     t.eq('自動（服飾）：沒有女版刪 f 要確認', JSON.stringify(ao.saved), JSON.stringify(['{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":0.5,"y":-30}', true]));
     t.eq('自動（服飾）：載入 pool 基準加男身體 rig 進男版、f 加女身體 rig 進女版、照目前性別擺、一步 undo', JSON.stringify(ao.load),
-         JSON.stringify([0.3, 9, 40, 7.5, 40, 0.25, '{"scale":0.3,"x":9,"y":40}', 1]));
+         JSON.stringify([0.3, 9, 40, 7.5, 40, 0.25, '{"pct":20,"scale":0.3,"x":9,"y":40}', 1]));
     t.eq('自動（服飾）：載入再存數字原樣回來', ao.round, '{"kind":"cloth","sprite":"cloth-inn","scale":0.25,"x":7,"y":8,"f":{"scale":0.3,"x":9,"y":10}}');
-    t.eq('自動（服飾）：沒有 f＝沒有女版、女模式照基準加女身體 rig、女版數字不動', JSON.stringify(ao.noF), JSON.stringify([0.25, 7, 38, '{"scale":0.3,"x":9,"y":40}', false]));
+    t.eq('自動（服飾）：沒有 f＝沒有女版、女模式照基準加女身體 rig、女版數字不動', JSON.stringify(ao.noF), JSON.stringify([0.25, 7, 38, '{"pct":20,"scale":0.3,"x":9,"y":40}', false]));
     t.eq('自動（服飾）：模式外切男照男版重擺、一筆全域 undo', JSON.stringify(ao.outM), JSON.stringify(['sl', 7.5, 40, 1]));
     t.eq('自動（服飾）：模式外切女移過的留著（基準換到女身體）', JSON.stringify(ao.outF), JSON.stringify([99.5, 38]));
     t.eq('自動（服飾）：模式外 undo 連男女一起退', JSON.stringify(ao.outUndo), JSON.stringify(['m', 100, 40]));
@@ -3170,6 +3251,52 @@ run('paperdoll', async t => {
         await until(() => status());
         out.dirClash = [status(), await files(dir)];
 
+        // 拖曳停在收合的資料夾上 0.7 秒展開（中途離開取消、拖的資料夾自己底下不展開）
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const opened = (p) => !pathRow(p).parentElement.lastChild.hidden;
+        const ev = (el, type, dt, o = {}) => el.dispatchEvent(new DragEvent(type, {bubbles: true, cancelable: true, dataTransfer: dt, ...o}));
+        const dt = new DataTransfer(), src = row('C.png', 'dst'), sub2 = pathRow('mv/sub');
+        const before = opened('mv/sub');
+        ev(pathRow('mv'), 'dragstart', dt);
+        ev(sub2, 'dragover', dt);
+        await wait(800);
+        const selfOpen = opened('mv/sub');
+        ev(pathRow('mv'), 'dragend', dt);
+        ev(src, 'dragstart', dt);
+        ev(sub2, 'dragover', dt);
+        await wait(300);
+        ev(sub2, 'dragleave', dt);
+        await wait(600);
+        const leftOpen = opened('mv/sub');
+        ev(sub2, 'dragover', dt);
+        await wait(800);
+        out.hoverOpen = [before, selfOpen, leftOpen, opened('mv/sub')];
+        ev(sub2, 'dragleave', dt);
+
+        // 貼上下緣自動捲、中間不捲、dragend 就停
+        const box = $('left'), pad = document.createElement('div');
+        pad.style.height = '3000px';
+        $('tree').append(pad);
+        const r = box.getBoundingClientRect();
+        const hold = async (y, ms) => {const t1 = performance.now() + ms; do {ev(box, 'dragover', dt, {clientY: y}); await frame();} while (performance.now() < t1);};
+        box.scrollTop = 0;
+        await hold(r.bottom - 2, 300);
+        await hold(r.top + r.height / 2, 0);
+        await frame();
+        const down = box.scrollTop;
+        await hold(r.top + r.height / 2, 200);
+        const mid = box.scrollTop;
+        await hold(r.top + 2, 150);
+        const up = box.scrollTop;
+        await hold(r.bottom - 2, 100);
+        ev(src, 'dragend', dt);
+        await frame();
+        const end = box.scrollTop;
+        await wait(300);
+        out.edge = [down > 50, mid === down, up < mid, box.scrollTop === end];
+        pad.remove();
+        box.scrollTop = 0;
+
         for (const n of ['mv', 'dst']) await root.removeEntry(n, {recursive: true});
         await pd.setRoot(root);
         return out;
@@ -3186,6 +3313,8 @@ run('paperdoll', async t => {
     t.eq('搬專案檔：開著的圖層歸屬跟著改', JSON.stringify(mv.proj), JSON.stringify(['dst', 'dst', false]));
     t.eq('搬檔：拖回原資料夾不動', mv.same, 'a.json,a.png');
     t.eq('拖資料夾：根節點不能拖、一般資料夾可以', JSON.stringify(mv.dirDrag), JSON.stringify([false, true]));
+    t.eq('拖曳停留：拖的資料夾底下不展開、中途離開取消、停 0.7 秒展開', JSON.stringify(mv.hoverOpen), JSON.stringify([false, false, false, true]));
+    t.eq('拖曳貼邊：下緣往下捲、中間不捲、上緣往上捲、dragend 就停', JSON.stringify(mv.edge), JSON.stringify([true, true, true, true]));
     t.eq('拖資料夾：整棵搬、專案 src／開著的圖層跟著換', JSON.stringify(mv.dirMoved), JSON.stringify([
         'b.png,c.png', 'a.json,a.png', 'dst/sub/a.png,mv/c.png', 'dst/sub/a.png,mv/c.png', '已移動 mv/sub 到 dst；更新了專案 dst/p.pdproj.json']));
     t.eq('拖資料夾：不能拖進自己底下', mv.intoSelf, 'dst 不能搬進自己裡面');

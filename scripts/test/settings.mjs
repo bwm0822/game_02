@@ -41,7 +41,7 @@ run('settings', async t => {
         const inp = (k) => doc.querySelector(`input[data-k="${k}"]`);
         const type = (k, v) => {const e = inp(k); e.value = v; e.dispatchEvent(new Event('change'));};
         out.shown = await until(() => inp('auto.helmet.pct')?.value === '44') && [inp('auto.helmet.pct').className, inp('auto.armor.pct').value, inp('auto.armor.pct').placeholder,
-                                                                                    !!inp('auto.helmet.a'), !!inp('auto.weapon.bow.oy'), inp('auto.f.helmet.pct') === null];
+                                                                                    !!inp('auto.helmet.a'), !!inp('auto.weapon.bow.oy'), !!inp('auto.f.helmet.pct') && !!inp('auto.f.head.pct') && inp('auto.f.helmet.a') === null];
 
         // 改值：只存改過的；填成跟內建一樣＝拿掉；清空＝回內建
         type('auto.armor.y', 30);
