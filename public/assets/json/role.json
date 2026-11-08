@@ -867,6 +867,200 @@
     "shoes": "shoes-outfit-jobs",
     "cloth": "cloth-outfit-jobs"
   },
+  "villager-f-1": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-女-1",
+    "des": "綁著淺棕雙辮、滿臉雀斑的少女，穿著鏽橘色背心裙，笑起來很開朗。",
+    "icon": "portrait-villager-f-1",
+    "gold": 200,
+    "sex": "f",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-f-1",
+    "hair": "hair-villager-f-1",
+    "cloth": "cloth-outfit-villager-f-1",
+    "shoes": "shoes-outfit-villager-f-1",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
+  "villager-f-2": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-女-2",
+    "des": "紅褐馬尾、兩頰曬紅的農家姑娘，穿灰藍束腰馬甲配褐色長裙，很有精神。",
+    "icon": "portrait-villager-f-2",
+    "gold": 200,
+    "sex": "f",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-f-2",
+    "hair": "hair-villager-f-2",
+    "cloth": "cloth-outfit-villager-f-2",
+    "shoes": "shoes-outfit-villager-f-2",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
+  "villager-f-4": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-女-4",
+    "des": "包著靛藍頭巾的市場大嬸，圍著灰圍裙，腰間掛著鼓鼓的小布袋，眼睛總是瞇著。",
+    "icon": "portrait-villager-f-4",
+    "gold": 200,
+    "sex": "f",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-f-4",
+    "hair": "hair-villager-f-4",
+    "cloth": "cloth-outfit-villager-f-4",
+    "shoes": "shoes-outfit-villager-f-4",
+    "hat": "hat-outfit-villager-f-4",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
+  "villager-f-5": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-女-5",
+    "des": "包著炭灰頭巾、披著灰披肩的老婦，瞇眼微笑，神情慈祥。",
+    "icon": "portrait-villager-f-5",
+    "gold": 200,
+    "sex": "f",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-f-5",
+    "hair": "hair-villager-f-5",
+    "cloth": "cloth-outfit-villager-f-5",
+    "shoes": "shoes-outfit-villager-f-5",
+    "hat": "hat-outfit-villager-f-5",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
   "rogue-1": {
     "kind": "rogue",
     "lab": "盜賊",

@@ -616,7 +616,7 @@
     "scale": 0.24,
     "x": 0.25,
     "y": -3.5,
-    "name": "年輕婦人服",
+    "name": "農家姑娘服",
     "sex": "f"
   },
   "cloth-outfit-villager-f-4": {
@@ -788,7 +788,7 @@
     "scale": 0.25,
     "x": 1,
     "y": 0,
-    "name": "年輕婦人鞋",
+    "name": "農家姑娘鞋",
     "sex": "f"
   },
   "shoes-outfit-villager-f-4": {

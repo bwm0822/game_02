@@ -2200,6 +2200,46 @@
       "r": "mt"
     }
   },
+  "role.villager-f-1": {
+    "路人-女-1": {
+      "t": "Villager (F) 1",
+      "r": "mt"
+    },
+    "綁著淺棕雙辮、滿臉雀斑的少女，穿著鏽橘色背心裙，笑起來很開朗。": {
+      "t": "A freckled girl with light-brown braids in a rust-orange pinafore dress, with a cheerful smile.",
+      "r": "mt"
+    }
+  },
+  "role.villager-f-2": {
+    "路人-女-2": {
+      "t": "Villager (F) 2",
+      "r": "mt"
+    },
+    "紅褐馬尾、兩頰曬紅的農家姑娘，穿灰藍束腰馬甲配褐色長裙，很有精神。": {
+      "t": "A farm girl with a red-brown ponytail and sun-flushed cheeks, in a gray-blue bodice and brown skirt, full of energy.",
+      "r": "mt"
+    }
+  },
+  "role.villager-f-4": {
+    "路人-女-4": {
+      "t": "Villager (F) 4",
+      "r": "mt"
+    },
+    "包著靛藍頭巾的市場大嬸，圍著灰圍裙，腰間掛著鼓鼓的小布袋，眼睛總是瞇著。": {
+      "t": "A market matron in an indigo headscarf and gray apron, a bulging pouch at her waist, always squinting.",
+      "r": "mt"
+    }
+  },
+  "role.villager-f-5": {
+    "路人-女-5": {
+      "t": "Villager (F) 5",
+      "r": "mt"
+    },
+    "包著炭灰頭巾、披著灰披肩的老婦，瞇眼微笑，神情慈祥。": {
+      "t": "An old woman in a charcoal headscarf and gray shawl, smiling kindly with narrowed eyes.",
+      "r": "mt"
+    }
+  },
   "role.orc": {
     "獸人": {
       "t": "Orc",
