@@ -371,20 +371,28 @@ run('fit', async t => {
         // 弓（equip.hand B）掛後手：部件在 wristB、畫在身體後面；動畫從 wristB 的支點出發；換匕首回前手
         const wpart = () => F.partsOf(F.S.doc['role.json'].data[S.rid]).find(pt => pt.k === 'CAT_WEAPON' && pt.main);
         const f0 = F.trackOf().frames[0];
+        // 擺放分頁在身體後面、後手蓋住；動畫分頁（正在播）整組搬到頭前面、前手後面
+        const mode0 = S.mode;
+        S.mode = 'fit';
         out.bowHand = [I()['bow-1'].equip.hand, wpart().node, wpart().d < 0, wpart().d < -0.95];
+        S.mode = 'anim';
+        const handBPart = () => F.partsOf(F.S.doc['role.json'].data[S.rid]).find(pt => pt.k === 'handB');
+        out.bowLift = [wpart().d > 1.53 && wpart().d < 4, !handBPart() || handBPart().d > wpart().d && handBPart().d < 4];
+        S.mode = mode0;
         F.setSlot('CAT_WEAPON', 'dagger-1');
         out.bowHand.push(wpart().node, wpart().d > 0, F.trackOf().frames[0].x !== f0.x || F.trackOf().frames[0].y !== f0.y);
         F.setSlot('CAT_WEAPON', 'bow-1');
         S.aid = 'aim'; F.render();
         // 動畫分頁的「另一隻手」欄＝equip.other：改數字寫回、三格清空整個刪掉、undo 回來；有 other 時預覽照畫
         const oth = () => I()['bow-1'].equip.other;
-        out.other = [JSON.stringify(oth()), !!document.querySelector('#view table.other')];
+        const oth0 = JSON.stringify(oth());
+        out.other = [!!oth(), !!document.querySelector('#view table.other')];
         fire('item.json|bow-1|equip.other.x', '5');
         out.other.push(oth().x);
         for (const c of ['x', 'y', 'a']) fire(`item.json|bow-1|equip.other.${c}`, '');
         out.other.push('other' in I()['bow-1'].equip);
         for (let i = 0; i < 4; i++) F.undo();
-        out.other.push(JSON.stringify(oth()), await drawn() > 0);
+        out.other.push(JSON.stringify(oth()) === oth0, await drawn() > 0);
         const V = F.V;
         const zin = () => document.querySelector('#pv input.zoom');
         const zset = (v) => {zin().value = v; zin().dispatchEvent(new Event('change'));};
@@ -654,7 +662,8 @@ run('fit', async t => {
         JSON.stringify(['chop,sweep,aim', null, false, false, '', 'chop,sweep,stab,aim', 'stab']));
     t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
     t.eq('另一隻手欄（equip.other）：改數字、清空刪掉、undo 回來、預覽照畫', JSON.stringify(r.other),
-        JSON.stringify(['{"x":0,"y":-14,"a":0}', true, 5, false, '{"x":0,"y":-14,"a":0}', true]));
+        JSON.stringify([true, true, 5, false, true, true]));
+    t.eq('動畫分頁：後手那組搬到頭前面、前手後面（後手仍蓋住弓）', JSON.stringify(r.bowLift), JSON.stringify([true, true]));
     t.eq('弓掛後手：wristB、身體後面、後手蓋住；換匕首回前手、動畫起點換到前手腕', JSON.stringify(r.bowHand), JSON.stringify(['B', 'wristB', true, true, 'wristF', true, true]));
     t.eq('預覽：控制面板留在畫面上、畫布鋪滿、中鍵平移、重繪 view 不動、滾輪以游標為中心、置中、記住', JSON.stringify(r.pinned), JSON.stringify([true, true, '[40,20]', true, true, true, true, true]));
     t.check('「遊戲」按鈕填入螢幕算出的倍率', r.game[0] > 0 && r.game[1] && r.game[2], JSON.stringify(r.game));

@@ -119,7 +119,9 @@ export const NODE = {head: 'neck', hair: 'neck', hat: 'neck', CAT_HELMET: 'neck'
 export const BACK_NODE = {CAT_GLOVES: 'wristB', hair: 'neckB'};
 // 武器掛哪隻手照 equip.hand（後手＝wristB，畫在身體後面、後手蓋住握把），同 setting.js 的 nodeFor()
 const WEAPON_DEPTH = {wristF: 4.04, wristB: -0.96};
-export const nodeOf = (k, equip) => (k === 'CAT_WEAPON' ? handOf(equip) : NODE[k]);
+// 武器動畫在動這個節點時整組加的 depth（setting.js 的 NODE_DEPTH_ANIM：wristB -1 → 3，舉到頭、身體前面、前手後面）
+export const ANIM_LIFT = {wristB: 4};
+export const nodeOf =(k, equip) => (k === 'CAT_WEAPON' ? handOf(equip) : NODE[k]);
 export const depthOf = (k, equip) => (k === 'CAT_WEAPON' ? WEAPON_DEPTH[handOf(equip)] : DEPTH[k]);
 // equip.js 的 hiddenParts 用：item.json 的 cat 是字串
 export const CAT = {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'};

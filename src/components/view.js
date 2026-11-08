@@ -1,4 +1,4 @@
-import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, NODE_PIVOT, PART_NODE, BACK_NODE, nodeFor} from '../core/setting.js'
+import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, NODE_DEPTH_ANIM, NODE_PIVOT, PART_NODE, BACK_NODE, nodeFor} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
@@ -247,6 +247,17 @@ class View extends Phaser.GameObjects.Container
     get shape() {return this._shape;}
     // 播武器動畫的節點＝拿武器的那隻手(equip.hand，空手＝前手)，空的(動物、沒手)不播
     get wrist() {const n = this._nodes?.[this._hand ?? 'wristF']; return n?.length ? n : null;}
+    // 武器動畫在動 sp(手腕節點)時 on＝true 整組搬到 NODE_DEPTH_ANIM(沒有的節點不動)，收回後 on＝false 搬回
+    liftWrist(sp, on)
+    {
+        const k = Object.keys(this._nodes ?? {}).find((k)=>this._nodes[k]===sp);
+        if(!k || NODE_DEPTH_ANIM[k]===undefined || !sp.active) {return;}
+        const d = on ? NODE_DEPTH_ANIM[k] : NODE_DEPTH[k];
+        if(sp.depth===d) {return;}
+        sp.setDepth(d);
+        this._sortParts();
+    }
+
     // 播武器動畫時黏在拿武器那隻手上的另一隻手(武器 equip.other)：{node, other}，沒寫或那隻手是空的＝null
     get grip()
     {

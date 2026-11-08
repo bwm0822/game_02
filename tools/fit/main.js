@@ -16,7 +16,7 @@ import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
-import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf} from '../role/schema.js';
+import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, otherAt, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
@@ -689,6 +689,9 @@ function partsOf(r)
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
     for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat);
+    // 動畫分頁＝正在播：動的那隻手腕整組照遊戲搬到前面（後手射箭）
+    const lift = S.mode === 'anim' ? ANIM_LIFT[hand()] : 0;
+    if (lift) for (const o of out) if (o.node === hand()) o.d += lift;
     return out.sort((a, b) => a.d - b.d);
 }
 

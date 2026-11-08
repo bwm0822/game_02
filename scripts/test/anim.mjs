@@ -65,10 +65,20 @@ run('武器動畫', async t => {
             const restB = pose();
             out.back = [p.view.wrist === wbN, wbN.list.some(s => s.texture?.key === 'bow-short'), !wf.list.some(s => s.texture?.key === 'bow-short'),
                         JSON.stringify(restB) === JSON.stringify([wbN.pivot.x, wbN.pivot.y, wbN.pivot.a].map(Math.round))];
+            // 播動畫時後手整組搬到頭、身體前面、前手後面（NODE_DEPTH_ANIM），收回才搬回去
+            const rig = wbN.parentContainer, at = (n) => rig.getIndex(n), neck = p.view._nodes.neck;
+            out.lift = [wbN.depth, at(wbN) < at(neck)];
             out.backAim = [await p.anim_play('aim', right), pose(), nums(wf) === f0];
+            out.lift.push(wbN.depth, at(wbN) > at(neck) && at(wbN) < at(wf));
             p.anim_end();
             await sleep(300);
             out.backAim.push(JSON.stringify(pose()) === JSON.stringify(restB));
+            out.lift.push(wbN.depth, at(wbN) < at(neck));
+            // 舉著等時被下一個動畫打斷(_stop)：先搬回，新動畫再搬上去；收回那段還在前面
+            await p.anim_play('aim', right);
+            p.anim_end();
+            await sleep(20);
+            out.lift.push(wbN.depth);
             dropB();
             out.backDrop = [p.view.wrist !== wbN, !wbN.list.some(s => s.texture?.key === 'bow-short')];
         }
@@ -146,6 +156,7 @@ run('武器動畫', async t => {
     t.eq('沒有的動畫不播', r.missing, false);
     t.eq('後手武器（hand B）：掛在 wristB、動畫動 wristB、靜止在 wristB 支點', JSON.stringify(r.back), JSON.stringify([true, true, true, true]));
     t.eq('後手武器瞄準：同一個 aim 影格（絕對姿勢）、前手不動、anim_end 收回', JSON.stringify(r.backAim), JSON.stringify([true, [15, 10, 0], true, true]));
+    t.eq('後手射箭：播動畫時整組搬到頭前面、前手後面（3），收回搬回（-1），收回那段還在前面', JSON.stringify(r.lift), JSON.stringify([-1, true, 3, true, -1, true, 3]));
     t.eq('放下後手武器：wrist 不再是 wristB、弓拿掉', JSON.stringify(r.backDrop), JSON.stringify([true, true]));
     t.eq('equip.other：待機不黏、瞄準時前手黏在弓手（手腕本地 0,-14、角度 +10）、anim_end 收回原位',
         JSON.stringify(r.grip), JSON.stringify([true, true, [15, 10, 0], [15, -4, 10], true]));

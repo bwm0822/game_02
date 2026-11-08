@@ -612,6 +612,8 @@ export const ROLE_PART = Object.freeze({
 // neckB：頭髮後片用，位置同 neck(資料沒有自己的支點，NODE_PIVOT)，整組排在身體跟後手後面
 export const NODE_DEPTH = Object.freeze({neckB:-2, neck:1.5, wristF:4, wristB:-1});
 export const NODE_PIVOT = Object.freeze({neckB:'neck'});
+// 武器動畫在動這個節點時整組暫時搬到的 depth(後手射箭：舉到頭、身體前面，前手後面)，收回後回 NODE_DEPTH
+export const NODE_DEPTH_ANIM = Object.freeze({wristB:3});
 export const PART_NODE = Object.freeze({
     [GM.PART.HEAD] : 'neck',
     [GM.PART.HAIR] : 'neck',

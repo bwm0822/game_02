@@ -162,8 +162,9 @@ export class COM_Anim extends Com
         this._run = null;
         run?.tw?.stop();
         run?.release();
-        // 黏著的另一隻手直接回原位(下一個動畫不一定用到它)
+        // 黏著的另一隻手直接回原位(下一個動畫不一定用到它)、搬到前面的手腕搬回去
         if(run?.grip?.node.active) {this._place(run.grip.node, this._wristRest(run.grip.node));}
+        if(run) {this.ctx.root.view?.liftWrist?.(run.sp, false);}
     }
 
     _wristRest(sp) {return {x:sp.pivot.x, y:sp.pivot.y, angle:sp.pivot.a};}
@@ -184,6 +185,8 @@ export class COM_Anim extends Com
         const run = {sp, track, grip};
         const free = new Promise((resolve)=>{run.release = resolve;});
         this._run = run;
+        // 動後手(弓)時整組舉到頭、身體前面，收回播完才搬回(setting.js 的 NODE_DEPTH_ANIM)
+        this.ctx.root.view.liftWrist?.(sp, true);
 
         const [readyAt, hitAt, end] = [anim.ready ?? 0, anim.hit ?? track.end, track.end];
         return new Promise((resolve)=>{
@@ -195,7 +198,11 @@ export class COM_Anim extends Com
                 if(!await this._seg(run, hitAt, end)) {return;}
                 if(anim.hold) {await free;}
                 setRest(track, this._wristRest(sp));
-                if(this._run===run && await this._seg(run, end, trackEnd(track))) {this._run = null;}
+                if(this._run===run && await this._seg(run, end, trackEnd(track)))
+                {
+                    this._run = null;
+                    this.ctx.root.view?.liftWrist?.(sp, false);
+                }
             })();
         });
     }
