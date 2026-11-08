@@ -2150,6 +2150,56 @@
       "r": "mt"
     }
   },
+  "role.bandit-1": {
+    "土匪-1": {
+      "t": "Bandit 1",
+      "r": "mt"
+    },
+    "左臉一道刀疤的平頭漢子，穿著破皮背心，是落草為寇的尋常強盜。": {
+      "t": "A crew-cut thug with a diagonal scar across his left cheek, wearing a ragged leather vest — an ordinary outlaw.",
+      "r": "mt"
+    }
+  },
+  "role.bandit-2": {
+    "土匪-2": {
+      "t": "Bandit 2",
+      "r": "mt"
+    },
+    "戴眼罩的紅鬍子，披著狼皮、掛著骨飾，長年躲在森林裡。": {
+      "t": "A red-bearded man with an eyepatch, draped in wolf fur and bone trinkets, who has hidden in the forest for years.",
+      "r": "mt"
+    }
+  },
+  "role.bandit-3": {
+    "土匪-3": {
+      "t": "Bandit 3",
+      "r": "mt"
+    },
+    "留八字鬍、笑得狡猾的瘦子，披灰綠短披肩，專在林間放冷箭。": {
+      "t": "A gaunt, sly-grinning man with a thin mustache and a gray-green capelet, who shoots arrows from the trees.",
+      "r": "mt"
+    }
+  },
+  "role.bandit-4": {
+    "土匪-4": {
+      "t": "Bandit 4",
+      "r": "mt"
+    },
+    "滿臉不服氣的年輕人，穿著釘滿鐵釘的厚皮胸片，總是衝在最前面。": {
+      "t": "A sulky young man in a thick leather chestpiece studded with iron, always the first to charge in.",
+      "r": "mt"
+    }
+  },
+  "role.bandit-5": {
+    "土匪-5": {
+      "t": "Bandit 5",
+      "r": "mt"
+    },
+    "眼神冷硬的灰髮老賊，穿著缺扣的酒紅華服，腰間的錢袋鼓鼓的。": {
+      "t": "A gray-haired old thief with a hard stare, in a wine-red coat missing its buttons, a fat coin purse at his belt.",
+      "r": "mt"
+    }
+  },
   "role.orc": {
     "獸人": {
       "t": "Orc",

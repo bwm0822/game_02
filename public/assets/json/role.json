@@ -984,6 +984,301 @@
       }
     }
   },
+  "bandit-1": {
+    "kind": "rogue",
+    "lab": "土匪-1",
+    "des": "左臉一道刀疤的平頭漢子，穿著破皮背心，是落草為寇的尋常強盜。",
+    "icon": "portrait-bandit-1",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-bandit-1",
+    "hair": "hair-bandit-1",
+    "cloth": "cloth-outfit-bandit-1",
+    "shoes": "shoes-outfit-bandit-1",
+    "attrs": {
+      "atk": 5,
+      "def": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "bandit-2": {
+    "kind": "rogue",
+    "lab": "土匪-2",
+    "des": "戴眼罩的紅鬍子，披著狼皮、掛著骨飾，長年躲在森林裡。",
+    "icon": "portrait-bandit-2",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-bandit-2",
+    "hair": "hair-bandit-2",
+    "cloth": "cloth-outfit-bandit-2",
+    "shoes": "shoes-outfit-bandit-2",
+    "attrs": {
+      "atk": 5,
+      "def": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "bandit-3": {
+    "kind": "rogue",
+    "lab": "土匪-3",
+    "des": "留八字鬍、笑得狡猾的瘦子，披灰綠短披肩，專在林間放冷箭。",
+    "icon": "portrait-bandit-3",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-bandit-3",
+    "hair": "hair-bandit-3",
+    "cloth": "cloth-outfit-bandit-3",
+    "shoes": "shoes-outfit-bandit-3",
+    "attrs": {
+      "atk": 5,
+      "def": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "bandit-4": {
+    "kind": "rogue",
+    "lab": "土匪-4",
+    "des": "滿臉不服氣的年輕人，穿著釘滿鐵釘的厚皮胸片，總是衝在最前面。",
+    "icon": "portrait-bandit-4",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-bandit-4",
+    "hair": "hair-bandit-4",
+    "cloth": "cloth-outfit-bandit-4",
+    "shoes": "shoes-outfit-bandit-4",
+    "attrs": {
+      "atk": 5,
+      "def": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
+  "bandit-5": {
+    "kind": "rogue",
+    "lab": "土匪-5",
+    "des": "眼神冷硬的灰髮老賊，穿著缺扣的酒紅華服，腰間的錢袋鼓鼓的。",
+    "icon": "portrait-bandit-5",
+    "job": "rogue",
+    "gold": 200,
+    "type": "enemy",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-bandit-5",
+    "hair": "hair-bandit-5",
+    "cloth": "cloth-outfit-bandit-5",
+    "shoes": "shoes-outfit-bandit-5",
+    "attrs": {
+      "atk": 5,
+      "def": 0
+    },
+    "states": {
+      "life": {
+        "cur": 50,
+        "max": 50
+      },
+      "hunger": {
+        "cur": 0,
+        "max": 100
+      },
+      "thirst": {
+        "cur": 0,
+        "max": 100
+      }
+    }
+  },
   "orc": {
     "kind": "monster",
     "lab": "獸人",
