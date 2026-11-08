@@ -30,7 +30,7 @@ const PART = {
 
 export const FIELDS = {
     kind: {label: '分類', type: 'enum', options: ['', ...KINDS], names: KIND_NAMES},
-    loc: {label: '地點', type: 'list'},
+    grp: {label: '子分類', type: 'list'},
     lab: {label: '名稱', type: 'text'},
     des: {label: '說明', type: 'textarea'},
     icon: {label: '頭像', type: 'icon'},
@@ -73,18 +73,18 @@ export const FIELDS = {
 export const REQUIRED = ['w', 'h', 'anchor'];
 
 export const SECTIONS = [
-    {title: '基本', keys: ['kind', 'loc', 'lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
+    {title: '基本', keys: ['kind', 'grp','lab', 'des', 'icon', 'job', 'gold', 'style', 'trade', 'unique', 'survival', 'animal']},
     {title: '戰鬥', keys: ['attrs', 'abilities', 'meat', 'skin', 'fall']},
     {title: '外觀', keys: ['faceR', 'sex','w', 'h', 'anchor', 'b', 'g', 'z', 'body', 'head', 'hair', 'hat', 'handF', 'handB', 'cloth', 'shoes', 'corpse']},
     {title: '物品', keys: ['inv']},
     {title: '作息', keys: ['schedule']},
 ];
 
-const BASE = ['kind', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
+const BASE = ['kind', 'grp', 'lab', 'des', 'icon', 'faceR', 'w', 'h', 'anchor', 'b', 'g', 'z', 'body'];
 const FIGHTER = ['job', 'gold', 'style', 'attrs', 'inv'];
 export const KIND_FIELDS = {
     player: ['sex', 'job', 'gold', 'survival', 'inv', 'handF', 'handB', 'head', 'hair'],
-    npc: ['sex', 'loc', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
+    npc: ['sex', 'job', 'gold', 'style', 'trade', 'unique', 'inv', 'schedule'],
     rogue: ['sex', ...FIGHTER], monster: FIGHTER, boss: FIGHTER,
     animal: ['style', 'animal', 'attrs', 'meat', 'skin', 'fall'],
 };
@@ -121,14 +121,14 @@ export const CAT = {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: '
 
 // ---------- 總覽表 ----------
 // kind: null＝全部；欄位可以是 attrs.atk 這種路徑；# 開頭是唯讀摘要
-const FIGHT_COLS = ['lab', 'icon', 'gold', 'style', 'attrs.hpMax', 'attrs.atk', 'attrs.def', '#equips'];
+const FIGHT_COLS = ['lab', 'grp', 'icon', 'gold', 'style', 'attrs.hpMax', 'attrs.atk', 'attrs.def', '#equips'];
 export const TABS = [
     {label: '全部', kind: null, cols: ['lab', 'icon', 'kind', 'job', 'gold', 'style']},
-    {label: '玩家', kind: 'player', cols: ['lab', 'icon', 'job', 'gold', 'survival', '#equips']},
-    {label: 'NPC', kind: 'npc', cols: ['lab', 'icon', 'loc', 'job', 'gold', 'style', 'trade', 'unique', '#sch']},
+    {label: '玩家', kind: 'player', cols: ['lab', 'grp', 'icon', 'job', 'gold', 'survival', '#equips']},
+    {label: 'NPC', kind: 'npc', cols: ['lab', 'grp', 'icon', 'job', 'gold', 'style', 'trade', 'unique', '#sch']},
     {label: '盜賊', kind: 'rogue', cols: FIGHT_COLS},
     {label: '怪物', kind: 'monster', cols: FIGHT_COLS},
-    {label: '動物', kind: 'animal', cols: ['lab', 'icon', 'style', 'meat', 'skin', 'fall', 'attrs.hpMax', 'attrs.atk', 'attrs.def']},
+    {label: '動物', kind: 'animal', cols: ['lab', 'grp', 'icon', 'style', 'meat', 'skin', 'fall', 'attrs.hpMax', 'attrs.atk', 'attrs.def']},
     {label: '頭目', kind: 'boss', cols: FIGHT_COLS},
 ];
 
@@ -151,7 +151,7 @@ export function template(kind, sex)
     switch (kind)
     {
         case 'player': return {kind, lab, gold: 100, survival: true, ...HUMAN(sex), inv: {storage: {capacity: 20}}};
-        case 'npc': return {kind, loc: 'brooklyn', lab, gold: 200, unique: true, ...HUMAN(sex), inv: {storage: {capacity: -1, items: []}}, schedule: []};
+        case 'npc': return {kind, lab, gold: 200, unique: true, ...HUMAN(sex), inv: {storage: {capacity: -1, items: []}}, schedule: []};
         case 'rogue': return {kind, lab, gold: 200, ...HUMAN(sex), inv: {equips: []}, ...ATTRS()};
         case 'animal': return {kind, lab, style: 'skittish', animal: true, ...BEAST(), ...ATTRS()};
         default: return {kind, lab, gold: 200, ...BEAST(), ...ATTRS()};

@@ -16,6 +16,8 @@ import * as SC from './schema.js';
 import {previewEl} from './preview.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
+const ALL = '#all';
+
 // role.json 裡沒有角色互相引用的欄位，改名只動 key
 const D = createDoc({
     file: 'role.json', noun: '角色',
@@ -29,10 +31,13 @@ const D = createDoc({
 const {S, render, commit, set} = D;
 IC.onReload(render);
 S.ext = {items: {}, abilities: {}, maps: {}, parts: {}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
-S.loc = '';                                      // 總覽表 NPC 頁的地點篩選
+S.grp = ALL;                                     // 總覽表 kind 分頁的子分類篩選（ALL＝全部、''＝無子分類），換分頁重置
+S.grpTab = 0;
+S.grpNew = {};                                   // 新增還沒有角色的子分類（kind → [名稱]），只在記憶體
 S.secOpen = {};                                  // 表單段落開關（段名 → bool，預設收合；記在頁面，換角色保持）
 const F = createForm(D);
-const V = createViews(D, {icon: id => S.data[id].icon, lab: id => S.data[id].lab, warns: id => validate(id)});
+const V = createViews(D, {icon: id => S.data[id].icon, lab: id => S.data[id].lab, warns: id => validate(id),
+                          item: (el, id) => {el.onpointerdown = (e) => dragRole(e, id);}});
 
 const idOf = (e) => (isObj(e) ? e.id : e);
 
@@ -123,6 +128,8 @@ function validate(id, keys = [])
     for (const k of SC.REQUIRED) {if (r[k] === undefined) out.push(`沒有 ${k}（遊戲畫角色會出錯）`); tag(k);}
     if (r.kind && !SC.KINDS.includes(r.kind)) out.push(`不認識的分類 kind：${r.kind}`);
     tag('kind');
+    if (r.loc !== undefined) out.push('loc 已經改名成 grp（子分類）');
+    tag('grp');
     if (r.style !== undefined && !(r.style in SC.STYLES)) out.push(`性格 style「${r.style}」在 com_ai.js 的 wTBL 裡沒有（遊戲會當成 ${SC.STYLE_DEFAULT}）`);
     tag('style');
     for (const [k, v] of Object.entries(r))
@@ -145,14 +152,170 @@ function validate(id, keys = [])
 
 const validateAll = () => Object.keys(S.data).flatMap(id => validate(id).map(w => `${id}：${w}`));
 
+// ---------- 子分類 grp（只給工具分組，遊戲不讀）----------
+// 清單從角色身上收集（照第一次出現的順序），再接上新增還沒有角色的
+const kindOf = (r) => r.kind ?? '';
+function grpsOf(kind)
+{
+    const gs = [...new Set(Object.values(S.data).filter(r => kindOf(r) === kind && r.grp).map(r => r.grp))];
+    return [...gs, ...(S.grpNew[kind] ?? []).filter(g => !gs.includes(g))];
+}
+const grpUsers = (kind, g) => Object.keys(S.data).filter(id => kindOf(S.data[id]) === kind && S.data[id].grp === g);
+const dropNew = (kind, g) => {S.grpNew[kind] = (S.grpNew[kind] ?? []).filter(x => x !== g);};
+
+// 沒有 grp 的話插在 kind 後面（key 順序跟手寫的一致），要在 commit 裡呼叫
+function putGrp(r, g)
+{
+    if (!g) return void delete r.grp;
+    if ('grp' in r) return void (r.grp = g);
+    const e = Object.entries(r), i = e.findIndex(([k]) => k === 'kind');
+    e.splice(i + 1, 0, ['grp', g]);
+    for (const k of Object.keys(r)) delete r[k];
+    Object.assign(r, Object.fromEntries(e));
+}
+
+const setGrp = (id, g) => commit(() => putGrp(S.data[id], g?.trim() || undefined));
+
+// 改 kind 時子分類清掉，免得掛在別的 kind 底下
+const setKind = (id, kind) => commit(() => {setAt(S.data[id], ['kind'], kind); putGrp(S.data[id], undefined);});
+
+function grpNameError(kind, g)
+{
+    if (!g) return '不能是空的';
+    if (grpsOf(kind).includes(g)) return `「${g}」已經有了`;
+    return '';
+}
+
+async function askGrp(title, value, okLabel)
+{
+    const inp = h('input', {size: 24, value});
+    const p = ask(title, [h('div', null, '名稱：'), inp], [['ok', okLabel], ['cancel', '取消']]);
+    inp.focus();
+    inp.select();
+    return await p === 'ok' ? inp.value.trim() : null;
+}
+
+async function newGrp(kind, name)
+{
+    const g = name ?? await askGrp(`新增子分類（${SC.KIND_NAMES[kind] ?? (kind || '無分類')}）`, '', '新增');
+    if (g === null) return;
+    const err = grpNameError(kind, g);
+    if (err) return status(err);
+    (S.grpNew[kind] ??= []).push(g);
+    render();
+}
+
+// 改成同 kind 已有的名字＝問要不要合併
+async function renameGrp(kind, from, name)
+{
+    const to = name ?? await askGrp(`子分類改名：${from}`, from, '改名');
+    if (to === null || to === from) return;
+    if (!to) return status('不能是空的');
+    const users = grpUsers(kind, from);
+    if (grpsOf(kind).includes(to)
+        && await ask(`合併到「${to}」？`, h('div', null, `「${from}」的 ${users.length} 個角色會移到「${to}」`), [['ok', '合併'], ['cancel', '取消']]) !== 'ok') return;
+    const i = (S.grpNew[kind] ?? []).indexOf(from);
+    if (i >= 0)
+    {
+        if (grpsOf(kind).includes(to)) dropNew(kind, from);
+        else S.grpNew[kind][i] = to;
+    }
+    if (users.length) commit(() => users.forEach(id => putGrp(S.data[id], to)));
+    else render();
+    status(`子分類 ${from} → ${to}`);
+}
+
+async function removeGrp(kind, g)
+{
+    const users = grpUsers(kind, g);
+    if (users.length && await ask(`刪除子分類「${g}」？`, h('div', null, `${users.length} 個角色會移回「${SC.KIND_NAMES[kind] ?? (kind || '無分類')}」底下（角色不會刪掉）`),
+        [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    dropNew(kind, g);
+    if (users.length) commit(() => users.forEach(id => putGrp(S.data[id], undefined)));
+    else render();
+    status(`已刪除子分類 ${g}`);
+}
+
+// ---------- 右鍵選單 ----------
+const closeMenu = () => document.querySelector('.ctxmenu')?.remove();
+addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu')) closeMenu();});
+addEventListener('keydown', (e) => {if (e.key === 'Escape') closeMenu();});
+
+// items: [[文字, fn]]
+function menu(e, items)
+{
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    document.body.append(h('div', {class: 'ctxmenu', style: `left:${e.clientX}px;top:${e.clientY}px`},
+        items.map(([label, fn]) => h('button', {type: 'button', onclick: () => {closeMenu(); fn();}}, label))));
+}
+
+// ---------- 拖角色到子分類 ----------
+// 拖到同 kind 的子分類標題＝改 grp、拖到 kind 標題＝清掉；別的 kind 擋（改 kind 要去表單）
+// 沒拖動（< 4px）當作點一下；拖過的話吃掉接著來的 click
+function dropTarget(x, y)
+{
+    const el = document.elementFromPoint(x, y)?.closest('#list .group[data-kind]');
+    return el && {el, kind: el.dataset.kind, grp: el.dataset.grp};
+}
+
+function dragRole(e, id)
+{
+    if (e.button !== 0) return;
+    const src = e.currentTarget, sx = e.clientX, sy = e.clientY;
+    let moved = false, ghost = null, hot = null;
+    const unmark = () => {hot?.classList.remove('drop', 'bad'); hot = null;};
+    if (e.isTrusted) src.setPointerCapture(e.pointerId);
+    src.onpointermove = (ev) => {
+        if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+        moved = true;
+        unmark();
+        const tgt = dropTarget(ev.clientX, ev.clientY);
+        if (tgt) (hot = tgt.el).classList.add(tgt.kind === kindOf(S.data[id]) ? 'drop' : 'bad');
+        if (!ghost) document.body.append(ghost = h('div', {class: 'ghost'}, IC.iconEl(S.data[id].icon, 24), h('span', null, id)));
+        ghost.style.left = `${ev.clientX + 12}px`;
+        ghost.style.top = `${ev.clientY + 12}px`;
+    };
+    src.onpointerup = (ev) => {
+        src.onpointermove = src.onpointerup = null;
+        ghost?.remove();
+        unmark();
+        if (!moved) return;
+        const eat = (c) => {c.preventDefault(); c.stopPropagation();};
+        const stop = () => removeEventListener('click', eat, {capture: true});
+        addEventListener('click', eat, {capture: true, once: true});
+        addEventListener('pointerdown', stop, {capture: true, once: true});
+        setTimeout(stop, 300);
+        dropRole(id, dropTarget(ev.clientX, ev.clientY));
+    };
+}
+
+function dropRole(id, tgt)
+{
+    if (!tgt) return;
+    const r = S.data[id];
+    if (tgt.kind !== kindOf(r)) return status(`${id} 是「${SC.KIND_NAMES[kindOf(r)] ?? (kindOf(r) || '無分類')}」，不能拖到別的分類；要改 kind 請到表單改`);
+    if ((r.grp ?? '') === (tgt.grp ?? '')) return;
+    setGrp(id, tgt.grp);
+}
+
 // ---------- 新增 ----------
-function add(id, kind, sex)
+// 有子分類的話排在同子分類最後，沒有的話排在同 kind 最後
+function add(id, kind, sex, grp)
 {
     const err = D.idError(id);
     if (err) return status(err);
     const keys = Object.keys(S.data);
-    const last = keys.findLastIndex(k => (S.data[k].kind ?? '') === (kind ?? ''));
-    commit(() => {D.insertAt(last < 0 ? keys.length : last + 1, id, SC.template(kind, sex)); S.sel = id;});
+    const same = (k) => kindOf(S.data[k]) === (kind ?? '');
+    const at = grp ? keys.findLastIndex(k => same(k) && S.data[k].grp === grp) : -1;
+    const last = at >= 0 ? at : keys.findLastIndex(same);
+    commit(() => {
+        const r = SC.template(kind, sex);
+        if (grp) putGrp(r, grp);
+        D.insertAt(last < 0 ? keys.length : last + 1, id, r);
+        S.sel = id;
+    });
 }
 
 // 標準身體跟著換，專屬身體跟其他部位不動
@@ -167,16 +330,26 @@ function setSex(id, sex)
 
 async function askNew()
 {
+    const cur = S.data[S.sel];
     const id = h('input', {size: 24}), kind = h('select', null, SC.KINDS.map(k => h('option', {value: k}, `${SC.KIND_NAMES[k]}　${k}`)));
-    kind.value = S.data[S.sel]?.kind ?? 'npc';
+    kind.value = cur?.kind ?? 'npc';
     const sexLab = h('span', {class: 'k'}, '性別'), sex = h('select', {dataset: {k: 'newSex'}}, h('option', {value: ''}, '男'), h('option', {value: 'f'}, '女'));
-    const syncSex = () => {sexLab.hidden = sex.hidden = !SC.HUMAN_KINDS.includes(kind.value);};
-    kind.onchange = syncSex;
-    syncSex();
-    const p = ask('新角色', [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '分類'), kind, sexLab, sex),
+    // 子分類預設跟目前選的角色一樣（同 kind 才帶）
+    const grp = h('input', {size: 24, dataset: {k: 'newGrp', combo: 'dl-newGrp'}});
+    const sync = () => {
+        sexLab.hidden = sex.hidden = !SC.HUMAN_KINDS.includes(kind.value);
+        grp.value = cur && kindOf(cur) === kind.value ? cur.grp ?? '' : '';
+        renderDatalists({newGrp: grpsOf(kind.value)});
+    };
+    kind.onchange = sync;
+    sync();
+    const p = ask('新角色', [h('div', {class: 'fields'}, h('span', {class: 'k'}, 'id'), id, h('span', {class: 'k'}, '分類'), kind,
+            h('span', {class: 'k'}, '子分類'), grp, sexLab, sex),
         h('div', {class: 'hint'}, '依分類套範本；要照現有角色改的話，選那個角色按「複製」')], [['ok', '新增'], ['cancel', '取消']]);
     id.focus();
-    if (await p === 'ok') add(id.value.trim(), kind.value, sex.value);
+    const ok = await p === 'ok';
+    render();
+    if (ok) add(id.value.trim(), kind.value, sex.value, grp.value.trim() || undefined);
 }
 
 // ---------- 表單：一般欄位 ----------
@@ -210,7 +383,7 @@ function fieldRow(id, r, k)
     if (def.type === 'schedule') return schedBox(id, v);
     const lab = h('span', {class: 'k' + (v === undefined ? ' unset' : ''), title: k}, def.label);
     if (def.type === 'part') return [lab, F.withDrop(partField(id, k, v), id, k, v)];
-    const inp = fieldInput(def, v, val => (k === 'sex' ? setSex(id, val) : set(id, [k], val)), k);
+    const inp = fieldInput(def, v, val => (k === 'sex' ? setSex(id, val) : k === 'grp' ? setGrp(id, val) : k === 'kind' ? setKind(id, val) : set(id, [k], val)), k);
     if (k === 'icon') inp.append(h('button', {type: 'button', disabled: !canPortrait(r), title: '頭＋頭髮照遊戲擺放疊起來，存成 textures/roles/portraits/portrait-<id>.png',
         onclick: () => genPortrait(id).catch(e => status(e.message))}, '由頭+髮產生'));
     return [lab, F.withDrop(inp, id, k, v)];
@@ -510,52 +683,65 @@ function tableCell(id, c)
     if (def.type === 'bool') return h('td', null, h('input', {type: 'checkbox', checked: !!getAt(r, path), onchange: e => set(id, path, e.target.checked || undefined)}));
     const num = def.type === 'int' || def.type === 'num';
     return h('td', {class: 'edit' + (num ? ' n' : ''), title: '雙擊編輯',
-        ondblclick: e => V.editCell(e.currentTarget, fieldInput(def, getAt(r, path), v => set(id, path, v), `table.${id}.${path.at(-1)}`))}, cellText(c, r));
+        ondblclick: e => V.editCell(e.currentTarget, fieldInput(def, getAt(r, path), v => (c === 'grp' ? setGrp(id, v) : c === 'kind' ? setKind(id, v) : set(id, path, v)), `table.${id}.${path.at(-1)}`))}, cellText(c, r));
 }
 
 const inTab = (tab, id) => {
     const r = S.data[id];
-    return (!tab.kind || r.kind === tab.kind) && (tab.kind !== 'npc' || !S.loc || (r.loc ?? '') === S.loc);
+    return (!tab.kind || r.kind === tab.kind) && (!tab.kind || S.grp === ALL || (r.grp ?? '') === S.grp);
 };
+
+// kind 標題：右鍵新增子分類；子分類標題：右鍵改名／刪除；兩種都能放角色
+function groupHead(kind, g)
+{
+    return (el) => {
+        el.dataset.kind = kind;
+        if (g !== undefined) el.dataset.grp = g;
+        el.oncontextmenu = (e) => menu(e, g === undefined ? [['新增子分類…', () => newGrp(kind)]]
+            : [['改名…', () => renameGrp(kind, g)], ['刪除…', () => removeGrp(kind, g)]]);
+    };
+}
 
 // ---------- 畫面 ----------
 function draw()
 {
     const rs = Object.values(S.data), ids = Object.keys(S.data);
-    const locs = [...new Set(rs.filter(r => r.kind === 'npc').map(r => r.loc ?? ''))];
-    // 部位、裝備的建議只列 sex 符合目前這個角色的
+    // 部位、裝備的建議只列 sex 符合目前這個角色的；子分類只列同 kind 的
     const sex = S.data[S.sel]?.sex;
     renderDatalists({
         items: Object.keys(S.ext.items),
         equips: Object.keys(S.ext.items).filter(i => S.ext.items[i].equip && sexOk(S.ext.items[i], sex)),
         abilities: Object.keys(S.ext.abilities),
         job: [...SC.JOBS, ...rs.map(r => r.job)],
-        loc: rs.map(r => r.loc),
+        grp: S.data[S.sel] ? grpsOf(kindOf(S.data[S.sel])) : [],
         maps: Object.keys(S.ext.maps),
         ...Object.fromEntries(ROLE_PARTS.map(k => [k, Object.keys(S.ext.parts).filter(id => S.ext.parts[id].kind === k && sexOk(S.ext.parts[id], sex))])),
         ...Object.fromEntries(Object.entries(S.ext.maps).map(([m, names]) => [`nav-${m}`, names])),
     }, {items: o => S.ext.items[o]?.lab, equips: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
 
-    const kindOf = (id) => S.data[id].kind ?? '';
     V.renderList([
-        ...[...SC.KINDS, ''].flatMap(k => {
-            const ks = ids.filter(id => kindOf(id) === k);
-            if (k !== 'npc') return [[n => `${k ? SC.KIND_NAMES[k] : '無分類'}（${n}）`, ks, k]];
-            return locs.map(l => [n => `NPC・${l || '無地點'}（${n}）`, ks.filter(id => (S.data[id].loc ?? '') === l), `npc:${l}`]);
+        ...[...SC.KINDS, ''].map(k => {
+            const ks = ids.filter(id => kindOf(S.data[id]) === k);
+            return [n => `${k ? SC.KIND_NAMES[k] : '無分類'}（${n}）`, ks.filter(id => !S.data[id].grp), k, {
+                head: groupHead(k),
+                sub: grpsOf(k).map(g => [n => `${g}（${n}）`, ks.filter(id => S.data[id].grp === g), `${k}:${g}`, {keep: true, head: groupHead(k, g)}]),
+            }];
         }),
-        ['不認識的分類', ids.filter(id => kindOf(id) && !SC.KINDS.includes(kindOf(id))), '#unknown'],
+        ['不認識的分類', ids.filter(id => kindOf(S.data[id]) && !SC.KINDS.includes(kindOf(S.data[id]))), '#unknown'],
     ]);
     if (S.view === 'form') return renderForm();
     document.getElementById('right').replaceChildren();
+    if (S.grpTab !== S.tab) {S.grpTab = S.tab; S.grp = ALL;}
+    const tabKind = SC.TABS[S.tab].kind;
     V.renderTable(SC.TABS, {
         inTab,
         sortKey: (id, c) => c === '#sch' ? (S.data[id].schedule?.length ?? 0) : c === '#equips' ? cellText(c, S.data[id]) : getAt(S.data[id], c.split('.')),
         head: (c) => c === '#sch' ? ['作息'] : c === '#equips' ? ['裝備'] : [SC.colDef(c).label, c],
         cell: tableCell,
     });
-    if (SC.TABS[S.tab].kind === 'npc')
-        document.querySelector('#view .tabs').append(h('select', {title: '地點', onchange: e => {S.loc = e.target.value; render();}},
-            h('option', {value: ''}, '全部地點'), locs.map(l => h('option', {value: l, selected: l === S.loc}, l || '（無地點）'))));
+    if (tabKind)
+        document.querySelector('#view .tabs').append(h('select', {title: '子分類', dataset: {k: 'grpFilter'}, onchange: e => {S.grp = e.target.value; render();}},
+            [[ALL, '全部子分類'], ['', '（無子分類）'], ...grpsOf(tabKind).map(g => [g, g])].map(([v, t]) => h('option', {value: v, selected: v === S.grp}, t))));
 }
 
 async function loadRefs()
@@ -585,4 +771,4 @@ async function loadRefs()
 // 給無頭測試用
 window.__re = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
-               pickPart, renamePart, deletePart, genPortrait, loadRefs};
+               pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

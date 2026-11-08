@@ -11,7 +11,12 @@
 
 ## 介面
 
-- 左：清單依 `kind` 分組（玩家、NPC、盜賊、怪物、動物、頭目、無分類），NPC 再依 `loc` 分組，每組可收合（見 [tools-shell.md](tools-shell.md) 的 `fold.js`）。`loc` 只給編輯器分類，遊戲不讀；`kind` 遊戲只讀 `player`（新遊戲選角面板列出的可選角色，`DB.playerIds()`，順序照 role.json）。
+- 左：清單是兩層樹，外層是固定的 `kind`（玩家、NPC、盜賊、怪物、動物、頭目、無分類，`schema.js` 的 `KINDS`，帶範本／欄位／分頁等行為，不能在介面增刪），裡層是子分類 `grp`（自由文字、可以中文，只給工具分組，遊戲不讀、不翻譯；舊的 NPC `loc` 已經搬成 `grp`，表單看到殘留的 `loc` 會警告）。沒有 `grp` 的角色直接列在 kind 底下、排在子分類前面；兩層都可收合（見 [tools-shell.md](tools-shell.md) 的 `fold.js`，子分類的 key 是 `<kind>:<grp>`），選到的角色會連上層一起展開。巢狀是 `views.js` 的 `renderList()` 的 `opt.sub`（道具等分頁不傳就照舊一層）。`kind` 遊戲只讀 `player`（新遊戲選角面板列出的可選角色，`DB.playerIds()`，順序照 role.json）。
+- 子分類清單**不另外存**，從角色的 `grp` 收集（照第一次出現的順序，`grpsOf(kind)`）：
+  - kind 標題右鍵「新增子分類…」（`newGrp()`）：先開一個空群組，只在記憶體（`S.grpNew`），放進角色才寫進 role.json，重新整理就沒了；同 kind 撞名擋、空白擋。
+  - 子分類標題右鍵「改名…」（`renameGrp()`）：裡面的角色一起改（一步 undo）；改成同 kind 已有的名字先問「合併」。「刪除…」（`removeGrp()`）：角色留著、`grp` 清掉退回 kind 底下（先問、一步 undo），空的直接拿掉。
+  - 把角色列拖到同 kind 的子分類標題＝改 `grp`、拖到 kind 標題＝清掉（`dragRole()`／`dropRole()`，同能力分頁：拖超過 4px 才算、吃掉接著的 click）；拖到別的 kind 標紅擋住（改 kind 要到表單）。
+  - 表單「基本」段的「子分類」欄（combo 列同 kind 的），寫入時 `grp` 沒有的話插在 `kind` 後面（`putGrp()`）；在表單／總覽表改 `kind` 會一起清掉 `grp`（`setKind()`，一步 undo；整筆 JSON 模式不連動）。
 - 表單（`schema.js`）分「基本／戰鬥／外觀／物品／作息」幾段，點段標題收合：**預設全部收合**，開關記在頁面的 `S.secOpen`（換角色保持，不存 localStorage）；標題寫有值的欄位數，段裡有檢查警告標紅 ⚠（`validate(id, keys)` 的 `keys` 跟警告一一對應欄位 key）；「加欄位」會展開那段；標題列有「全部展開／全部收合」。段裡的小框照原規則收合，「其他欄位」框一律預設收合。
 - 「JSON」鈕切成整筆 JSON 模式（跟道具編輯器共用，見 [item-editor.md](item-editor.md)），右邊預覽照樣更新。
 - 預覽在第三欄 `#right`（只有畫布那層捲、選項列固定在下面，最少 300px；總覽表／沒選角色時清空藏起來），中間欄跟它之間的把手可拖寬（`splitter.js` 的 `data-resize`，見 [tools-shell.md](tools-shell.md)）。
@@ -25,11 +30,11 @@
   - 頭像 `icon` 旁邊的「由頭+髮產生」（`genPortrait()`，角色沒有頭／頭髮就停用）：`tools/common/portrait.js` 的 `portraitOf()` 把頭、頭髮（`partFor()` 查條目，女角套 `f`）照遊戲擺放疊起來——PNG 原尺寸畫，scale 最小的那張 1:1、其他照比例放大，可以轉角度——裁到不透明範圍（alpha ≥ 16），等比塞進 `portrait.size`×`size` 的 `fill`%（設定分頁「角色頭像」，可以超過 100、超出的裁掉）置中，寫 `textures/roles/portraits/portrait-<id>.png` 並把 `icon` 改成它（一步 undo，要自己存 role.json）。icon 原本不是它而檔案已經在 → 先問覆蓋；`portrait-<id>` 是別的資料夾的 texture key → 擋。dev server 監看 `textures/` 會自動更新圖片清單。
   - 作息：一筆一張卡片，標題是一行摘要。時間分「出發 HH:MM／抵達 @HH:MM」；地圖、目的地的選項來自 `navgraph.json`（節點 key `地圖:物件`），目的地只列該地圖的物件；活動選巡邏才出現路線（逗號分隔、可重複）跟停留。路網沒有的地圖／物件、時間格式錯、巡邏沒 route 都會警告（新地圖要先跑 `node scripts/navgraph.js`）。
 - 右側固定的靜態合成預覽（`preview.js`）：照 `RoleView` 的規則畫——view 中心＝錨點 −`anchor`，部件放在 view 中心 +(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、`scale`、角度 `a`，依 depth 疊（body 0、shoes 0.2、靴 0.5、cloth 0.7、胸甲 1、後片 1.5、head 2、hair 2.5、頭盔 3、武器 4、handF 5、手套 6，handB 跟後手套在 body 後面，同遊戲 `flatDepth()`：支點節點裡的攤成「節點 depth＋節點裡 depth/100」）；部位照 id 查 `part.json`、裝備從 `inv.equips` 查 `item.json` 的 `equip`（照角色的 `sex` 用 `partFor()`／`equipFor()` 套 `f`，同遊戲），被裝備藏掉的部位不畫（`hiddenParts()`：`hideHair` 藏頭髮、任何護甲藏衣服、任何靴子藏鞋子）。`sex`（`m`／`f`，空＝男）在「外觀」段，玩家／NPC／盜賊預設列出；在表單改性別時標準身體 `body-man`↔`body-woman` 跟著換（`setSex()`，一步 undo），專屬身體跟其他部位不動（不符的沿用 ⚠／標紅／檢查警告），整筆 JSON 模式不連動。虛線是 view（w×h），黃十字是錨點，紅／綠／藍框是物理 b／佔格 g／互動區 z（算法同 `View._resolveAxis`），這些跟支點十字收在「顯示（N）▾」下拉多選（`tools/common/showmenu.js`，預設全不勾，記在 `localStorage` 的 `tools.preview.show`，跟試穿共用；沒有 `opt.pivots` 的預覽三個支點反灰、沒勾的支點不畫也拖不動）。可切換裝備、翻面、藏頭／頭髮（`tools/common/headhide.js`，勾＝顯示，只藏 `head`／`hair`（含後片），帽子頭盔不藏，只影響預覽，記在 `localStorage` 的 `tools.preview.hide`，道具／角色／試穿共用；部位分頁的人偶只有身體＋那一筆，傳 `noHide` 不放勾選、全部照畫）、縮放平移（`tools/common/panzoom.js`，同紙娃娃：畫布鋪滿 `.cvbox`、照 `devicePixelRatio` 開，滾輪以游標為中心 ×1.2、按住中鍵拖曳平移（擋掉 Chrome 自動捲動），倍率欄 0.1～20、「置中」＝原點回中央、倍率剛好裝下 `frameOf()`（view 框加一圈）；view `{zoom, ox, oy}`＝原點在畫布中心＋偏移，每頁一組、同頁預覽共用、換條目不動，記在 `localStorage` 的 `tools.preview.view.<工具>`，沒記過第一次畫時置中；棋盤格是螢幕座標、不跟著縮放）、底色（顏色選擇器＋「棋盤格」恢復，記在 `localStorage` 的 `tools.preview.bg`，同頁的預覽一起換；部位分頁的合成也是這支）。不播動畫、不打光。
-- 總覽：全部＋6 個 kind 共 7 頁，欄位可以是 `attrs.atk` 這種路徑；NPC 頁有地點篩選。
+- 總覽：全部＋6 個 kind 共 7 頁，欄位可以是 `attrs.atk` 這種路徑；kind 分頁都有「子分類」欄（雙擊改）跟子分類下拉篩選（全部／無子分類／各子分類，`S.grp`，換分頁重置；「全部」頁沒有）。
 
 ## 新增／複製／改名／刪除
 
-- 新角色：輸入 id 跟 kind，人形範本（玩家／NPC／盜賊，`HUMAN_KINDS`）多選性別（預設男，男不寫 `sex`），套 `template(kind, sex)`（人形放標準身體＋`handF`／`handB`，獸形照舊＋該 kind 常用欄位），排在同 kind 最後；要照現有角色改就用「複製」。
+- 新角色：輸入 id 跟 kind，人形範本（玩家／NPC／盜賊，`HUMAN_KINDS`）多選性別（預設男，男不寫 `sex`），套 `template(kind, sex)`（人形放標準身體＋`handF`／`handB`，獸形照舊＋該 kind 常用欄位）；子分類預設帶目前選的角色的（同 kind 才帶），有子分類排在同子分類最後、沒有排在同 kind 最後；要照現有角色改就用「複製」。
 - role.json 裡沒有角色互相引用的欄位，改名只動 key；其他地方（`story.json` 的 who、`dialog.json` 的 NPC key、Tiled 地圖、`src/` 寫死的 id…）只列不改。改名會讓翻譯情境 `role.<id>` 變 orphan，到翻譯分頁處理（[lang-tool.md](lang-tool.md)）。
 
 ## 檢查
@@ -42,10 +47,10 @@
 |---|---|
 | `schema.js` | 欄位定義（`FIELDS`、`SECTIONS`、`KIND_FIELDS`、`STYLES`、`TABS`、`DEPTH`）、`template()`、`schSummary()` |
 | `preview.js` | 靜態合成預覽 `previewEl(role, items, parts, {pivots, alpha, noHide})`、`partsOf()`（特效工具也用）、`fillBg()`／`frameOf()`（試穿也用）；縮放平移交給 `panzoom.js`，支點 hit-test 的 `geo.vc`＝原點在畫布上的位置換成世界單位 |
-| `main.js` | 檢查、表單（物品欄格子、作息卡片、部位選圖器、由頭+髮產生）、清單分組、總覽表、新增 |
-| `role.css` | 預覽、分段標題、道具格子、部位選圖器 |
+| `main.js` | 檢查、表單（物品欄格子、作息卡片、部位選圖器、由頭+髮產生）、子分類（新增／改名／刪除／拖曳／右鍵選單）、清單分組、總覽表、新增 |
+| `role.css` | 預覽、分段標題、道具格子、部位選圖器、拖曳 ghost／右鍵選單 |
 | `../common/portrait.js` | 頭＋頭髮合成頭像 `portraitOf()` |
 
-測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與地點篩選、合併）、`node scripts/test/role-part.mjs`（部位欄、選圖器只列同 kind／無／取消、改名連帶存 role.json、撞名擋、刪除有人用擋、由頭+髮產生的尺寸與覆蓋確認、沒頭的角色停用）。
+測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與子分類篩選、子分類右鍵／新增／撞名／拖曳／改名合併／刪除／改 kind 清掉／新角色帶子分類、合併）、`node scripts/test/role-part.mjs`（部位欄、選圖器只列同 kind／無／取消、改名連帶存 role.json、撞名擋、刪除有人用擋、由頭+髮產生的尺寸與覆蓋確認、沒頭的角色停用）。
 
 不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）、新增部位條目（紙娃娃「存到 pool…」或部位分頁）。

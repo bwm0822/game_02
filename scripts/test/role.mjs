@@ -197,9 +197,14 @@ run('role', async t => {
         out.groups = [...document.querySelectorAll('#list .group')].map(g => g.textContent.replace(/^[▾▸]/, ''));
         S.view = 'table'; S.tab = 2; re.render();
         out.table = [document.querySelectorAll('#view tbody tr').length, Object.values(S.data).filter(x => x.kind === 'npc').length];
-        S.loc = 'nowhere'; re.render();
-        out.tableLoc = [document.querySelectorAll('#view tbody tr').length, !!document.querySelector('#view .tabs select')];
-        S.loc = ''; S.tab = 5; re.render();
+        S.grp = 'nowhere'; re.render();
+        out.tableLoc = [document.querySelectorAll('#view tbody tr').length, !!document.querySelector('#view .tabs select[data-k="grpFilter"]')];
+        S.grp = 'brooklyn'; re.render();
+        out.tableGrp = [document.querySelectorAll('#view tbody tr').length, Object.values(S.data).filter(x => x.kind === 'npc' && x.grp === 'brooklyn').length,
+                        [...document.querySelectorAll('#view thead th')].some(th => th.textContent.startsWith('子分類'))];
+        S.tab = 0; re.render();
+        out.tableAll = [S.grp, !!document.querySelector('#view .tabs select[data-k="grpFilter"]')];
+        S.tab = 5; re.render();
         out.tableAnimal = [...document.querySelectorAll('#view thead th')].map(th => th.textContent).join('|');
         // 第三欄預覽：總覽表時右欄空、中間把手藏起來；選了角色才有預覽跟把手
         const tick = () => new Promise(res => setTimeout(res));
@@ -212,6 +217,81 @@ run('role', async t => {
         [...document.querySelectorAll('#list .group')].find(g => g.textContent.startsWith('▸'))?.dispatchEvent(new MouseEvent('click', {altKey: true, bubbles: true}));
         out.dom = [document.body.innerText.includes('[object'), [...document.querySelector('#view .form').childNodes].some(n => n.nodeType === Node.TEXT_NODE),
                    document.querySelectorAll('#list .item').length === Object.keys(S.data).length];
+
+        // 子分類 grp：新增空的、拖進去、改名、合併、刪除、改 kind 清掉、新角色跟著目前的子分類
+        const heads = () => [...document.querySelectorAll('#list .group')].map(g => g.textContent.replace(/^[▾▸]/, ''));
+        const head = (kind, g) => document.querySelector(`#list .group[data-kind="${kind}"]${g === undefined ? ':not([data-grp])' : `[data-grp="${g}"]`}`);
+        const flushed = (id) => JSON.stringify(Object.keys(S.data[id]).slice(0, 3));
+        S.view = 'table'; S.sel = null; re.render();
+        const ctx = (el) => {
+            el.dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, clientX: 10, clientY: 10}));
+            const m = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+            document.querySelector('.ctxmenu')?.remove();
+            return m;
+        };
+        out.menus = [ctx(head('rogue')), ctx(head('npc', 'brooklyn'))];
+        await re.newGrp('rogue', '山賊');
+        out.grpNew =[re.grpsOf('rogue').at(-1), heads().includes('山賊（0）'), !!head('rogue', '山賊')];
+        await re.newGrp('rogue', '山賊');
+        out.grpDup = $('status')?.textContent ?? '';
+        const ev = (el, type, x, y) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, button: 0, clientX: x, clientY: y, pointerId: 1}));
+        const center = (el) => {const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2];};
+        const openAll = () => {
+            for (let i = 0; i < 50; i++)
+            {
+                const g = [...document.querySelectorAll('#list .group')].find(x => x.textContent.startsWith('▸'));
+                if (!g) break;
+                g.click();
+            }
+        };
+        const drag = (id, kind, g) => {
+            openAll();
+            const row = document.querySelector(`#list .item[data-id="${id}"]`), to = head(kind, g);
+            if (!row || !to) return false;
+            to.scrollIntoView();
+            const [x0, y0] = center(row);
+            ev(row, 'pointerdown', x0, y0);
+            const [x1, y1] = center(to);
+            ev(row, 'pointermove', x1, y1);
+            ev(row, 'pointerup', x1, y1);
+            return true;
+        };
+        out.drag = [drag('rogue-1', 'rogue', '山賊'), S.data['rogue-1'].grp, flushed('rogue-1'), heads().includes('山賊（1）')];
+        re.undo();
+        out.dragUndo = [S.data['rogue-1'].grp, heads().includes('山賊（0）')];
+        re.redo();
+        out.dragOther = [drag('rogue-1', 'npc'), S.data['rogue-1'].kind, S.data['rogue-1'].grp, $('status').textContent.includes('不能拖到別的分類')];
+        drag('rogue-1', 'rogue');
+        out.dragBack = 'grp' in S.data['rogue-1'];
+        re.setGrp('rogue-2', '山賊');
+        re.setGrp('bandit-1', '土匪');
+        p = re.renameGrp('rogue', '山賊', '土匪');
+        out.mergeAsk = await answer('ok'); await p;
+        out.merge2 = [S.data['rogue-2'].grp, re.grpsOf('rogue').includes('山賊')];
+        re.undo();
+        out.mergeUndo = S.data['rogue-2'].grp;
+        await re.renameGrp('rogue', '山賊', '強盜');
+        out.renamed = [S.data['rogue-2'].grp, re.grpsOf('rogue').includes('山賊')];
+        p = re.removeGrp('rogue', '強盜');
+        out.delAsk = await answer('ok'); await p;
+        out.deleted = ['grp' in S.data['rogue-2'], 'rogue-2' in S.data, re.grpsOf('rogue').includes('強盜')];
+        await re.newGrp('monster', '空的');
+        await re.removeGrp('monster', '空的');
+        out.delEmpty = re.grpsOf('monster').includes('空的');
+        re.setKind('bandit-1', 'monster');
+        out.kindClear = [S.data['bandit-1'].kind, 'grp' in S.data['bandit-1']];
+        re.undo();
+        re.setGrp('bandit-2', '土匪');
+        S.sel = 'bandit-2'; S.view = 'form'; re.render();
+        p = re.askNew();
+        for (let i = 0; i < 100 && !$('dlgAsk').open; i++) await sleep(20);
+        out.newDefault = $('dlgAsk').querySelector('[data-k="newGrp"]').value;
+        $('dlgAsk').querySelector('input').value = 'bandit-9';
+        $('dlgAsk').close('ok'); await p;
+        const k3 = Object.keys(S.data);
+        out.newGrp = [S.data['bandit-9'].grp, k3.indexOf('bandit-9') === k3.indexOf('bandit-2') + 1, flushed('bandit-9')];
+        out.formGrp = !!document.querySelector('#view [data-k="grp"]');
+        S.view = 'table'; re.render();
 
         // 存檔：有警告仍可存、外部修改合併
         const seen = await save('save');
@@ -277,9 +357,29 @@ run('role', async t => {
     t.eq('範本沒有警告', r.add[4], 0);
     t.eq('動物範本', JSON.stringify(r.addAnimal), JSON.stringify([true, 64]));
     t.eq('不合法 id 不新增', r.badId, false);
-    t.check('清單依分類、NPC 再依地點分組', r.groups.some(g => g.startsWith('NPC・brooklyn')) && r.groups.some(g => g.startsWith('玩家')) && r.groups.some(g => g.startsWith('無分類')), r.groups.join(' '));
+    t.check('清單依分類、底下再依子分類 grp', r.groups.some(g => g.startsWith('NPC（')) && r.groups.some(g => g.startsWith('brooklyn（')) && r.groups.some(g => g.startsWith('玩家')) && r.groups.some(g => g.startsWith('無分類')), r.groups.join(' '));
     t.eq('總覽 NPC 頁', r.table[0], r.table[1]);
-    t.check('地點篩選', r.tableLoc[0] === 0 && r.tableLoc[1]);
+    t.check('子分類篩選：沒有的子分類 0 列、下拉在', r.tableLoc[0] === 0 && r.tableLoc[1]);
+    t.check('子分類篩選：brooklyn 只列它、有子分類欄', r.tableGrp[0] === r.tableGrp[1] && r.tableGrp[0] > 0 && r.tableGrp[2], JSON.stringify(r.tableGrp));
+    t.eq('換到「全部」分頁：篩選重置、沒有下拉', JSON.stringify(r.tableAll), JSON.stringify(['#all', false]));
+    t.eq('右鍵：kind 標題新增子分類、子分類標題改名／刪除', JSON.stringify(r.menus), JSON.stringify([['新增子分類…'], ['改名…', '刪除…']]));
+    t.eq('新增子分類：空的也畫在 kind 底下', JSON.stringify(r.grpNew), JSON.stringify(['山賊', true, true]));
+    t.check('新增子分類撞名擋住', r.grpDup.includes('已經有了'), r.grpDup);
+    t.eq('拖到子分類：改 grp、插在 kind 後面、計數', JSON.stringify(r.drag), JSON.stringify([true, '山賊', JSON.stringify(['kind', 'grp', 'lab']), true]));
+    t.eq('拖曳 undo：grp 拿掉、空分類還在', JSON.stringify(r.dragUndo), JSON.stringify([null, true]));
+    t.eq('拖到別的 kind 擋住', JSON.stringify(r.dragOther), JSON.stringify([true, 'rogue', '山賊', true]));
+    t.eq('拖到 kind 標題：grp 清掉', r.dragBack, false);
+    t.check('改名撞名問合併', (r.mergeAsk ?? '').includes('合併'), r.mergeAsk);
+    t.eq('合併：角色移過去、舊的消失', JSON.stringify(r.merge2), JSON.stringify(['土匪', false]));
+    t.eq('合併一筆 undo', r.mergeUndo, '山賊');
+    t.eq('改名：角色跟著改', JSON.stringify(r.renamed), JSON.stringify(['強盜', false]));
+    t.check('刪除有角色的子分類先問', (r.delAsk ?? '').includes('角色不會刪掉'), r.delAsk);
+    t.eq('刪除：grp 清掉、角色留著、分類消失', JSON.stringify(r.deleted), JSON.stringify([false, true, false]));
+    t.eq('刪除空的子分類不用問', r.delEmpty, false);
+    t.eq('改 kind 清掉 grp', JSON.stringify(r.kindClear), JSON.stringify(['monster', false]));
+    t.eq('新角色預設跟目前的子分類', r.newDefault, '土匪');
+    t.eq('新角色放進子分類、排在同子分類最後、grp 在 kind 後面', JSON.stringify(r.newGrp), JSON.stringify(['土匪', true, JSON.stringify(['kind', 'grp', 'lab'])]));
+    t.check('表單有子分類欄位', r.formGrp);
     t.check('總覽動物頁的欄位', r.tableAnimal.includes('掉落肉') && r.tableAnimal.includes('hpMax'), r.tableAnimal);
     t.eq('畫面沒有 [object …]', r.dom[0], false);
     t.eq('表單沒有多出來的文字（例如 0）', r.dom[1], false);
