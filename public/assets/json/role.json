@@ -96,7 +96,7 @@
   },
   "trump": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "川普",
     "des": "胖胖和氣的大叔，愛講笑話和八卦，是村裡的情報中心。",
     "icon": "portrait-trump",
@@ -172,7 +172,7 @@
   },
   "melanie": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "梅蘭妮",
     "des": "漂亮大方的女士，跟川普共同經營一家旅館",
     "icon": "portrait-melanie",
@@ -252,7 +252,7 @@
   },
   "musk": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "馬斯克",
     "des": "寡言卻可靠的中年壯漢，鍛造技術一流，據說曾是王都兵工坊的首席",
     "icon": "portrait-musk",
@@ -344,7 +344,7 @@
   "karen": {
     "kind": "npc",
     "sex": "f",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "凱倫",
     "des": "每天從村外的田地或森林帶回最新鮮的農作物，推著小車叫賣，聲音又甜又響亮～",
     "icon": "portrait-karen",
@@ -429,7 +429,7 @@
   },
   "xi": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "習近平",
     "des": "負責村裡所有牲畜的宰殺與肉品加工。據說他手起刀落，比鐵匠還俐落……",
     "icon": "portrait-xi",
@@ -522,7 +522,7 @@
   },
   "macron": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "馬克宏",
     "des": "矮個子滿臉皺紋的小老頭，總能拿出些「你不知道自己需要的東西」。",
     "icon": "portrait-macron",
@@ -610,7 +610,7 @@
   },
   "guard-1": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "守衛",
     "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
     "icon": "head-trump",
@@ -692,7 +692,7 @@
   },
   "guard-2": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "守衛",
     "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
     "icon": "head-trump",
@@ -774,7 +774,7 @@
   },
   "kidman": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "妮可基嫚",
     "gold": 200,
     "unique": true,
@@ -822,7 +822,7 @@
   },
   "jobs": {
     "kind": "npc",
-    "loc": "brooklyn",
+    "grp": "brooklyn",
     "lab": "賈伯斯",
     "gold": 200,
     "unique": true,
