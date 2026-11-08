@@ -1060,6 +1060,101 @@
     },
     "schedule": []
   },
+  "villager-m-1": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-男-1",
+    "des": "亂翹棕髮、臉頰紅紅的放羊少年，穿羊皮短背心，褲管捲到小腿，笑得很天真。",
+    "icon": "portrait-villager-m-1",
+    "gold": 200,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-m-1",
+    "hair": "hair-villager-m-1",
+    "cloth": "cloth-outfit-villager-m-1",
+    "shoes": "shoes-outfit-villager-m-1",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
+  "villager-m-2": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-男-2",
+    "des": "曬得黝黑、金棕短髮的年輕農夫，戴著寬邊草帽，穿深綠吊帶褲，一臉憨厚。",
+    "icon": "portrait-villager-m-2",
+    "gold": 200,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-m-2",
+    "hair": "hair-villager-m-2",
+    "cloth": "cloth-outfit-villager-m-2",
+    "shoes": "shoes-outfit-villager-m-2",
+    "hat": "hat-outfit-villager-m-2",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": []
+  },
   "rogue-1": {
     "kind": "rogue",
     "lab": "盜賊",

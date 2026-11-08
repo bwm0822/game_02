@@ -2240,6 +2240,26 @@
       "r": "mt"
     }
   },
+  "role.villager-m-1": {
+    "路人-男-1": {
+      "t": "Villager (M) 1",
+      "r": "mt"
+    },
+    "亂翹棕髮、臉頰紅紅的放羊少年，穿羊皮短背心，褲管捲到小腿，笑得很天真。": {
+      "t": "A rosy-cheeked shepherd boy with messy brown hair, in a sheepskin vest with rolled-up trousers and an innocent smile.",
+      "r": "mt"
+    }
+  },
+  "role.villager-m-2": {
+    "路人-男-2": {
+      "t": "Villager (M) 2",
+      "r": "mt"
+    },
+    "曬得黝黑、金棕短髮的年輕農夫，戴著寬邊草帽，穿深綠吊帶褲，一臉憨厚。": {
+      "t": "A sun-tanned young farmer with golden-brown hair, in a wide-brimmed straw hat and dark green overalls, looking honest and simple.",
+      "r": "mt"
+    }
+  },
   "role.orc": {
     "獸人": {
       "t": "Orc",

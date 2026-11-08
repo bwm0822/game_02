@@ -337,6 +337,14 @@
     "y": 3,
     "name": "白鬍老爺爺的頭"
   },
+  "head-villager-m-1": {
+    "kind": "head",
+    "sprite": "head-villager-m-1",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3,
+    "name": "放羊少年的頭"
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -517,7 +525,7 @@
     "kind": "hair",
     "sprite": "hair-villager-m-1",
     "scale": 0.25,
-    "x": -2.25,
+    "x": -2.5,
     "y": -11.5,
     "name": "放羊少年的髮"
   },
@@ -727,6 +735,22 @@
     "y": -4,
     "name": "賈伯斯服"
   },
+  "cloth-outfit-villager-m-1": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-m-1",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4,
+    "name": "放羊少年服"
+  },
+  "cloth-outfit-villager-m-2": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-m-2",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4,
+    "name": "年輕農夫服"
+  },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
@@ -899,6 +923,22 @@
     "y": 0,
     "name": "賈伯斯鞋"
   },
+  "shoes-outfit-villager-m-1": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-m-1",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "放羊少年鞋"
+  },
+  "shoes-outfit-villager-m-2": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-m-2",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "年輕農夫鞋"
+  },
   "handF": {
     "kind": "handF",
     "sprite": "handF",
@@ -965,5 +1005,14 @@
     "name": "慈祥老婦頭巾",
     "sex": "f",
     "hideHair": true
+  },
+  "hat-outfit-villager-m-2": {
+    "kind": "hat",
+    "sprite": "hat-outfit-villager-m-2-front",
+    "back": "hat-outfit-villager-m-2-back",
+    "scale": 0.25,
+    "x": -1.5,
+    "y": -12,
+    "name": "年輕農夫草帽"
   }
 }
