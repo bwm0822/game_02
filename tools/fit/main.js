@@ -672,7 +672,8 @@ const frameOf = (r) => {const pad = S.mode === 'anim' ? 112 : 48; return {w: Mat
 
 const hiddenNow = () => hiddenParts(SLOTS.map(([cat]) => items()[S.slots[cat]]), CAT, partFor(parts(), role(), 'hat'));
 
-function partsOf(r)
+// lift＝動的那隻手腕整組照遊戲搬到前面（後手射箭，ANIM_LIFT），見 liftNow()
+function partsOf(r, lift = false)
 {
     const out = [];
     // k＝部位 kind 或裝備 cat；node＝掛在哪個支點（播動畫時 wristF 上的一起動）；p 是 rig 座標的副本（掛支點的加回支點；body 自己在 rig 的 0,0）
@@ -689,11 +690,13 @@ function partsOf(r)
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
     for (const [cat] of SLOTS) add(equipOf(S.slots[cat]), cat, cat);
-    // 動畫分頁＝正在播：動的那隻手腕整組照遊戲搬到前面（後手射箭）
-    const lift = S.mode === 'anim' ? ANIM_LIFT[hand()] : 0;
-    if (lift) for (const o of out) if (o.node === hand()) o.d += lift;
+    const dd = lift ? ANIM_LIFT[hand()] ?? 0 : 0;
+    if (dd) for (const o of out) if (o.node === hand()) o.d += dd;
     return out.sort((a, b) => a.d - b.d);
 }
+
+// 動畫分頁：手離開靜止位置的那段（0 < ms < 收回結束）才搬到前面；沒選動畫、停在 0 或收回完都在後面
+const liftNow = (tr) => !!tr && S.ms > 0 && S.ms < trackEnd(tr);
 
 // 手腕的旋轉把手：手腕本地往上 16
 const HANDLE = 16;
@@ -721,7 +724,8 @@ async function drawPreview()
     const token = ++drawing;
     const isAnim = S.mode === 'anim';
     const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
-    const parts = partsOf(r).filter(pt => !hidden(pt.k));
+    const tr = isAnim ? trackOf() : null;
+    const parts = partsOf(r, liftNow(tr)).filter(pt => !hidden(pt.k));
     const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
     if (token !== drawing || !cv.isConnected) return;
     const g = cv.getContext('2d'), flip = facing();
@@ -742,7 +746,6 @@ async function drawPreview()
         g.setLineDash([]);
     }
 
-    const tr = isAnim ? trackOf() : null;
     // 部位、支點、手腕姿勢、動畫影格都是 rig 座標（rig＝body 的 x/y/a）
     const rig = rigNow();
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); g.translate(rig.x, rig.y); g.rotate(rad(rig.a)); fn(); g.restore();};
@@ -1119,4 +1122,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, V: PZ.V, show, IC,setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
-    trackOf, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};
+    trackOf, liftNow, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};

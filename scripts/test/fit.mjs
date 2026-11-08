@@ -376,8 +376,16 @@ run('fit', async t => {
         S.mode = 'fit';
         out.bowHand = [I()['bow-1'].equip.hand, wpart().node, wpart().d < 0, wpart().d < -0.95];
         S.mode = 'anim';
-        const handBPart = () => F.partsOf(F.S.doc['role.json'].data[S.rid]).find(pt => pt.k === 'handB');
-        out.bowLift = [wpart().d > 1.53 && wpart().d < 4, !handBPart() || handBPart().d > wpart().d && handBPart().d < 4];
+        const lifted = (k) => F.partsOf(F.S.doc['role.json'].data[S.rid], true).find(pt => pt.k === k && pt.main);
+        const handBPart = lifted('handB'), bowUp = lifted('CAT_WEAPON');
+        out.bowLift = [bowUp.d > 1.53 && bowUp.d < 4, !handBPart || handBPart.d > bowUp.d && handBPart.d < 4];
+        // 只有手離開靜止位置那段（0 < ms < 收回結束）才搬：停在 0、收回完、沒選動畫都在後面
+        const ms0 = S.ms, aid0 = S.aid, tr = F.trackOf(), endMs = trackEnd(tr);
+        const liftAt = (ms) => {S.ms = ms; return F.liftNow(F.trackOf());};
+        out.bowLift.push(liftAt(0), liftAt(30), liftAt(endMs - 1), liftAt(endMs));
+        S.aid = null;
+        out.bowLift.push(F.liftNow(F.trackOf()));
+        S.aid = aid0; S.ms = ms0;
         S.mode = mode0;
         F.setSlot('CAT_WEAPON', 'dagger-1');
         out.bowHand.push(wpart().node, wpart().d > 0, F.trackOf().frames[0].x !== f0.x || F.trackOf().frames[0].y !== f0.y);
@@ -663,7 +671,8 @@ run('fit', async t => {
     t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
     t.eq('另一隻手欄（equip.other）：改數字、清空刪掉、undo 回來、預覽照畫', JSON.stringify(r.other),
         JSON.stringify([true, true, 5, false, true, true]));
-    t.eq('動畫分頁：後手那組搬到頭前面、前手後面（後手仍蓋住弓）', JSON.stringify(r.bowLift), JSON.stringify([true, true]));
+    t.eq('動畫分頁：後手那組搬到頭前面、前手後面（後手仍蓋住弓）；只有 0 < ms < 收回結束 才搬、沒選動畫不搬',
+        JSON.stringify(r.bowLift), JSON.stringify([true, true, false, true, true, false, false]));
     t.eq('弓掛後手：wristB、身體後面、後手蓋住；換匕首回前手、動畫起點換到前手腕', JSON.stringify(r.bowHand), JSON.stringify(['B', 'wristB', true, true, 'wristF', true, true]));
     t.eq('預覽：控制面板留在畫面上、畫布鋪滿、中鍵平移、重繪 view 不動、滾輪以游標為中心、置中、記住', JSON.stringify(r.pinned), JSON.stringify([true, true, '[40,20]', true, true, true, true, true]));
     t.check('「遊戲」按鈕填入螢幕算出的倍率', r.game[0] > 0 && r.game[1] && r.game[2], JSON.stringify(r.game));
