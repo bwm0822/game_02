@@ -310,28 +310,32 @@
     "sprite": "head-villager-m-2",
     "scale": 0.25,
     "x": -2.5,
-    "y": 3
+    "y": 3,
+    "name": "年輕農夫的頭"
   },
   "head-villager-m-3": {
     "kind": "head",
     "sprite": "head-villager-m-3",
     "scale": 0.25,
     "x": -2.5,
-    "y": 3
+    "y": 3,
+    "name": "樵夫的頭"
   },
   "head-villager-m-4": {
     "kind": "head",
     "sprite": "head-villager-m-4",
     "scale": 0.25,
     "x": -2.5,
-    "y": 3
+    "y": 3,
+    "name": "酒館常客的頭"
   },
   "head-villager-m-5": {
     "kind": "head",
     "sprite": "head-villager-m-5",
     "scale": 0.25,
     "x": -2.5,
-    "y": 3
+    "y": 3,
+    "name": "白鬍老爺爺的頭"
   },
   "hair-karen": {
     "kind": "hair",
@@ -514,21 +518,24 @@
     "sprite": "hair-villager-m-1",
     "scale": 0.25,
     "x": -2.25,
-    "y": -11.5
+    "y": -11.5,
+    "name": "放羊少年的髮"
   },
   "hair-villager-m-2": {
     "kind": "hair",
     "sprite": "hair-villager-m-2",
     "scale": 0.25,
     "x": -2.25,
-    "y": -11.5
+    "y": -11.5,
+    "name": "年輕農夫的髮"
   },
   "hair-villager-m-3": {
     "kind": "hair",
     "sprite": "hair-villager-m-3",
     "scale": 0.25,
     "x": -2.25,
-    "y": -11.5
+    "y": -11.5,
+    "name": "樵夫的髮"
   },
   "hair-villager-m-4": {
     "kind": "hair",
@@ -536,7 +543,8 @@
     "scale": 0.25,
     "x": -2.5,
     "y": -11.5,
-    "back": "hair-villager-m-4-back"
+    "back": "hair-villager-m-4-back",
+    "name": "酒館常客的髮"
   },
   "hair-villager-m-5": {
     "kind": "hair",
@@ -544,7 +552,8 @@
     "back": "hair-villager-m-5-back",
     "scale": 0.25,
     "x": -2.5,
-    "y": -11.5
+    "y": -11.5,
+    "name": "白鬍老爺爺的髮"
   },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
