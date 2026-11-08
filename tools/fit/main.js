@@ -16,7 +16,8 @@ import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
-import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, KINDS, KIND_NAMES} from '../role/schema.js';
+import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, roleTree} from '../role/schema.js';
+import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../../src/core/equip.js';
 
@@ -314,20 +315,13 @@ function drawList()
     // 用到的部位改過也算
     const roleDirty = (id) => str(roles()[id]) !== str(saved[id])
         || PARTS.some(([k]) => {const pid = roles()[id][k]; return pid && str(parts()[pid]) !== str(psaved[pid]);});
-    const groups = [...KINDS, ''].map(k => [k, ids.filter(id => (roles()[id].kind ?? '') === k)]).filter(([, g]) => g.length);
-    // 摺起來的組裡不留選取（同 views.js 的 renderList）
-    const mine = groups.find(([, g]) => g.includes(S.rid))?.[0];
-    if (mine !== undefined) F.open(mine);
-    const onToggle = () => (mine !== undefined && F.folded(mine) ? select(null) : render());
-    const keys = groups.map(([k]) => k);
-    $('list').replaceChildren(...groups.map(([k, g]) => [
-        F.head(k, `${KIND_NAMES[k] ?? '無分類'}（${g.length}）`, keys, onToggle),
-        F.folded(k) ? [] : g.map(id => h('div', {class: 'item' + (id === S.rid ? ' sel' : ''), onclick: () => select(id === S.rid ? null : id)},
-            IC.iconEl(roles()[id].icon, 24),
-            h('span', {class: 'id'}, id),
-            h('span', {class: 'lab'}, roles()[id].lab ?? ''),
-            roleDirty(id) && h('span', {class: 'mark dirty'}, '●'))),
-    ]).flat(Infinity));
+    // 同角色分頁的 kind ▸ 子分類樹（只看不改）；子分類順序照全部角色算，跟角色分頁一致
+    const item = (id) => h('div', {class: 'item' + (id === S.rid ? ' sel' : ''), dataset: {id}, onclick: () => select(id === S.rid ? null : id)},
+        IC.iconEl(roles()[id].icon, 24),
+        h('span', {class: 'id'}, id),
+        h('span', {class: 'lab'}, roles()[id].lab ?? ''),
+        roleDirty(id) && h('span', {class: 'mark dirty'}, '●'));
+    $('list').replaceChildren(...treeEls(F, roleTree(roles(), ids), {sel: S.rid, item, unpick: () => select(null), render}));
 }
 
 // file 裡 id 那筆的 path；空字串＝刪 key（遊戲用預設值），req 的欄位不能清空；after 在同一筆 undo 裡跑

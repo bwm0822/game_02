@@ -157,7 +157,7 @@ const validateAll = () => Object.keys(S.data).flatMap(id => validate(id).map(w =
 const kindOf = (r) => r.kind ?? '';
 function grpsOf(kind)
 {
-    const gs = [...new Set(Object.values(S.data).filter(r => kindOf(r) === kind && r.grp).map(r => r.grp))];
+    const gs = SC.grpsIn(S.data, kind);
     return [...gs, ...(S.grpNew[kind] ?? []).filter(g => !gs.includes(g))];
 }
 const grpUsers = (kind, g) => Object.keys(S.data).filter(id => kindOf(S.data[id]) === kind && S.data[id].grp === g);
@@ -719,16 +719,7 @@ function draw()
         ...Object.fromEntries(Object.entries(S.ext.maps).map(([m, names]) => [`nav-${m}`, names])),
     }, {items: o => S.ext.items[o]?.lab, equips: o => S.ext.items[o]?.lab, abilities: o => S.ext.abilities[o]?.lab});
 
-    V.renderList([
-        ...[...SC.KINDS, ''].map(k => {
-            const ks = ids.filter(id => kindOf(S.data[id]) === k);
-            return [n => `${k ? SC.KIND_NAMES[k] : '無分類'}（${n}）`, ks.filter(id => !S.data[id].grp), k, {
-                head: groupHead(k),
-                sub: grpsOf(k).map(g => [n => `${g}（${n}）`, ks.filter(id => S.data[id].grp === g), `${k}:${g}`, {keep: true, head: groupHead(k, g)}]),
-            }];
-        }),
-        ['不認識的分類', ids.filter(id => kindOf(S.data[id]) && !SC.KINDS.includes(kindOf(S.data[id]))), '#unknown'],
-    ]);
+    V.renderList(SC.roleTree(S.data, ids, {grpsOf, keep: true, head: groupHead}));
     if (S.view === 'form') return renderForm();
     document.getElementById('right').replaceChildren();
     if (S.grpTab !== S.tab) {S.grpTab = S.tab; S.grp = ALL;}

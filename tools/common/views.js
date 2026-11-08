@@ -3,7 +3,47 @@ import {$, h} from './dom.js';
 import * as IC from './icons.js';
 import {createFold} from './fold.js';
 
-// row: {icon(id), lab(id), warns(id)}
+// 分組收合的樹（角色、試穿等左欄共用）：回傳要放進 #list 的元素
+// groups: [[標題, ids, key, opt?]]，空的組不畫；key 是收合狀態用的穩定名稱；標題是函式的話傳這組（含子組）的數量
+// opt：sub＝子組（同格式，畫在這組的條目後面、縮排）、keep＝沒東西也畫（搜尋時不算）、head(el)＝呼叫端加事件
+// o：{sel, searching, match(id), item(id) → 元素, unpick()}；摺起來的組裡不留選取：摺到選取那組就 unpick，從別處選到就展開那組（連同上層）
+export function treeEls(F, groups, o)
+{
+    const {sel, searching = false, match = () => true} = o;
+    const filter = (gs) => gs.map(([t, ids, key, opt = {}]) => {
+        const sub = filter(opt.sub ?? []);
+        const mine = ids.filter(match);
+        return {t, ids: mine, key, opt, sub, n: mine.length + sub.reduce((a, s) => a + s.n, 0)};
+    }).filter(g => g.n || g.sub.length || (g.opt.keep && !searching));
+    const shown = filter(groups);
+    const path = (gs) => {
+        for (const g of gs)
+        {
+            if (g.ids.includes(sel)) return [g.key];
+            const p = path(g.sub);
+            if (p) return [g.key, ...p];
+        }
+        return null;
+    };
+    const mine = path(shown) ?? [];
+    if (!searching) mine.forEach(F.open);
+    const all = (gs) => gs.flatMap(g => [g.key, ...all(g.sub)]);
+    const keys = all(shown);
+    const onToggle = () => {
+        if (mine.some(k => F.folded(k, searching))) o.unpick();
+        else o.render();
+    };
+    const draw = (gs) => gs.flatMap(g => {
+        const head = F.head(g.key, typeof g.t === 'function' ? g.t(g.n) : g.t, keys, onToggle, searching);
+        g.opt.head?.(head);
+        if (F.folded(g.key, searching)) return [head];
+        const sub = draw(g.sub);
+        return [head, ...g.ids.map(o.item), ...sub.length ? [h('div', {class: 'subgroups'}, sub)] : []];
+    });
+    return draw(shown);
+}
+
+// row: {icon(id), lab(id), warns(id), item?(el, id)}
 export function createViews({S, render, dirty}, row)
 {
     const F = createFold();
@@ -21,35 +61,9 @@ export function createViews({S, render, dirty}, row)
         return !q || id.toLowerCase().includes(q) || (row.lab(id) ?? '').toLowerCase().includes(q);
     }
 
-    // groups: [[標題, ids, key, opt?]]，空的組不畫；key 是收合狀態用的穩定名稱；標題是函式的話傳這組（含子組）的數量
-    // opt：sub＝子組（同格式，畫在這組的角色後面、縮排）、keep＝沒東西也畫（搜尋時不算）、head(el)／item(el, id)＝呼叫端加事件
-    // 摺起來的組裡不留選取：摺的時候取消選擇，從別處選到（新增、改名、undo、表格點 id）就展開那組（連同上層）
+    // groups 格式見 treeEls()；row.item(el, id) 給呼叫端在條目上加事件
     function renderList(groups)
     {
-        const searching = !!S.search.trim();
-        const filter = (gs) => gs.map(([t, ids, key, opt = {}]) => {
-            const sub = filter(opt.sub ?? []);
-            return {t, ids: ids.filter(matchSearch), key, opt, sub, n: 0};
-        }).map(g => ({...g, n: g.ids.length + g.sub.reduce((a, s) => a + s.n, 0)}))
-          .filter(g => g.n || g.sub.length || (g.opt.keep && !searching));
-        const shown = filter(groups);
-        const path = (gs) => {
-            for (const g of gs)
-            {
-                if (g.ids.includes(S.sel)) return [g.key];
-                const p = path(g.sub);
-                if (p) return [g.key, ...p];
-            }
-            return null;
-        };
-        const mine = path(shown) ?? [];
-        if (!searching) mine.forEach(F.open);
-        const all = (gs) => gs.flatMap(g => [g.key, ...all(g.sub)]);
-        const keys = all(shown);
-        const onToggle = () => {
-            if (mine.some(k => F.folded(k, searching))) unpick();
-            render();
-        };
         const item = (id) => {
             const w = row.warns(id);
             const el = h('div', {class: 'item' + (id === S.sel ? ' sel' : ''), dataset: {id}, onclick: () => pick(id)},
@@ -60,14 +74,8 @@ export function createViews({S, render, dirty}, row)
             row.item?.(el, id);
             return el;
         };
-        const draw = (gs) => gs.flatMap(g => {
-            const head = F.head(g.key, typeof g.t === 'function' ? g.t(g.n) : g.t, keys, onToggle, searching);
-            g.opt.head?.(head);
-            if (F.folded(g.key, searching)) return [head];
-            const sub = draw(g.sub);
-            return [head, ...g.ids.map(item), ...sub.length ? [h('div', {class: 'subgroups'}, sub)] : []];
-        });
-        $('list').replaceChildren(...draw(shown));
+        $('list').replaceChildren(...treeEls(F, groups, {sel: S.sel, searching: !!S.search.trim(), match: matchSearch, item,
+            unpick: () => {unpick(); render();}, render}));
         $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
     }
 

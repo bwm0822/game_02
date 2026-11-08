@@ -132,7 +132,28 @@ export const TABS = [
     {label: '頭目', kind: 'boss', cols: FIGHT_COLS},
 ];
 
-export const colDef = (c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?.fields?.[b] : FIELDS[a];};
+// ---------- 左欄樹（角色、試穿共用）----------
+// 子分類照 data 裡第一次出現的順序
+export const grpsIn = (data, kind) => [...new Set(Object.values(data).filter(r => (r.kind ?? '') === kind && r.grp).map(r => r.grp))];
+
+// kind ▸ grp 兩層，給 views.js 的 treeEls()；o：grpsOf(kind)＝子分類清單（預設 grpsIn）、keep＝空子分類也畫、head(kind, grp?)＝標題加事件
+export function roleTree(data, ids, o = {})
+{
+    const kindOf = (id) => data[id].kind ?? '';
+    const grps = o.grpsOf ?? ((k) => grpsIn(data, k));
+    return [
+        ...[...KINDS, ''].map(k => {
+            const ks = ids.filter(id => kindOf(id) === k);
+            return [n => `${k ? KIND_NAMES[k] : '無分類'}（${n}）`, ks.filter(id => !data[id].grp), k, {
+                head: o.head?.(k),
+                sub: grps(k).map(g => [n => `${g}（${n}）`, ks.filter(id => data[id].grp === g), `${k}:${g}`, {keep: o.keep, head: o.head?.(k, g)}]),
+            }];
+        }),
+        ['不認識的分類', ids.filter(id => kindOf(id) && !KINDS.includes(kindOf(id))), '#unknown'],
+    ];
+}
+
+export const colDef =(c) => {const [a, b] = c.split('.'); return b ? FIELDS[a]?.fields?.[b] : FIELDS[a];};
 
 // ---------- 新角色 ----------
 const box = () => ({l: 0, r: 0, t: 32, b: 0});

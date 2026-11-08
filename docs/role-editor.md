@@ -11,7 +11,7 @@
 
 ## 介面
 
-- 左：清單是兩層樹，外層是固定的 `kind`（玩家、NPC、盜賊、怪物、動物、頭目、無分類，`schema.js` 的 `KINDS`，帶範本／欄位／分頁等行為，不能在介面增刪），裡層是子分類 `grp`（自由文字、可以中文，只給工具分組，遊戲不讀、不翻譯；舊的 NPC `loc` 已經搬成 `grp`，表單看到殘留的 `loc` 會警告）。沒有 `grp` 的角色直接列在 kind 底下、排在子分類前面；兩層都可收合（見 [tools-shell.md](tools-shell.md) 的 `fold.js`，子分類的 key 是 `<kind>:<grp>`），選到的角色會連上層一起展開。巢狀是 `views.js` 的 `renderList()` 的 `opt.sub`（道具等分頁不傳就照舊一層）。`kind` 遊戲只讀 `player`（新遊戲選角面板列出的可選角色，`DB.playerIds()`，順序照 role.json）。
+- 左：清單是兩層樹，外層是固定的 `kind`（玩家、NPC、盜賊、怪物、動物、頭目、無分類，`schema.js` 的 `KINDS`，帶範本／欄位／分頁等行為，不能在介面增刪），裡層是子分類 `grp`（自由文字、可以中文，只給工具分組，遊戲不讀、不翻譯；舊的 NPC `loc` 已經搬成 `grp`，表單看到殘留的 `loc` 會警告）。沒有 `grp` 的角色直接列在 kind 底下、排在子分類前面；兩層都可收合（見 [tools-shell.md](tools-shell.md) 的 `fold.js`，子分類的 key 是 `<kind>:<grp>`），選到的角色會連上層一起展開。巢狀是 `views.js` 的 `treeEls()` 的 `opt.sub`（`renderList()` 也走它，道具等分頁不傳就照舊一層），角色的兩層分組由 `schema.js` 的 `roleTree()` 產生，試穿分頁也用同一份（只看不改）。`kind` 遊戲只讀 `player`（新遊戲選角面板列出的可選角色，`DB.playerIds()`，順序照 role.json）。
 - 子分類清單**不另外存**，從角色的 `grp` 收集（照第一次出現的順序，`grpsOf(kind)`）：
   - kind 標題右鍵「新增子分類…」（`newGrp()`）：先開一個空群組，只在記憶體（`S.grpNew`），放進角色才寫進 role.json，重新整理就沒了；同 kind 撞名擋、空白擋。
   - 子分類標題右鍵「改名…」（`renameGrp()`）：裡面的角色一起改（一步 undo）；改成同 kind 已有的名字先問「合併」。「刪除…」（`removeGrp()`）：角色留著、`grp` 清掉退回 kind 底下（先問、一步 undo），空的直接拿掉。
