@@ -312,6 +312,27 @@
     "x": -2.5,
     "y": 3
   },
+  "head-villager-m-3": {
+    "kind": "head",
+    "sprite": "head-villager-m-3",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3
+  },
+  "head-villager-m-4": {
+    "kind": "head",
+    "sprite": "head-villager-m-4",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3
+  },
+  "head-villager-m-5": {
+    "kind": "head",
+    "sprite": "head-villager-m-5",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -500,6 +521,29 @@
     "sprite": "hair-villager-m-2",
     "scale": 0.25,
     "x": -2.25,
+    "y": -11.5
+  },
+  "hair-villager-m-3": {
+    "kind": "hair",
+    "sprite": "hair-villager-m-3",
+    "scale": 0.25,
+    "x": -2.25,
+    "y": -11.5
+  },
+  "hair-villager-m-4": {
+    "kind": "hair",
+    "sprite": "hair-villager-m-4-front",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -11.5,
+    "back": "hair-villager-m-4-back"
+  },
+  "hair-villager-m-5": {
+    "kind": "hair",
+    "sprite": "hair-villager-m-5-front",
+    "back": "hair-villager-m-5-back",
+    "scale": 0.25,
+    "x": -2.5,
     "y": -11.5
   },
   "cloth-outfit-innkeeper": {
