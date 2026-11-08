@@ -1,6 +1,7 @@
 // 武器動畫(anim.json)的姿勢數學(純函式、不碰 Phaser)：COM_Anim 用 tween 推時間，tools/fit 用滑桿推，兩邊算出來一樣
 // 座標都是 rig 本地(面向右，rig＝body 的 x/y/a，見 equip.js 的 rigOf)，面向左時 shape 已鏡像；姿勢是拿武器那隻手的手腕節點(equip.hand，空手／沒寫＝wristF 前手腕，弓＝wristB 後手腕，見 equip.js 的 handOf)的 {x, y, angle}，手、武器、手套掛在上面一起動，待機＝body 的那個支點（位置＋靜止角度 a），影格是絕對姿勢，前後手共用
-// anim: {follow, pivot:{x,y}, ready, hit, back, hold, keys:[{t, x, y, a, ease, path}]}，t/ready/hit/back 單位 ms
+// anim: {follow, pivot:{x,y}, ready, hit, back, hold, keys:[{t, x, y, a, ease, path}], otherKeys?:[同 keys]}，t/ready/hit/back 單位 ms
+// otherKeys＝另一隻手(不拿武器那隻)的影格，同樣是 rig 座標、follow 一樣繞 pivot 轉；沒寫＝另一隻手不動。兩條各自成一條 track，end 取兩條最晚的那格
 
 export const BACK_EASE = 'Quad.Out';
 
@@ -55,16 +56,17 @@ export function shortest(a, b)
 // 目標方向(度)；sign 是 shape.scaleX 的正負
 export const dirTo = (dx, dy, sign=1)=>Math.atan2(dy, dx*sign)*180/Math.PI;
 
-export const animEnd = (anim)=>anim.keys.at(-1)?.t ?? 0;
+export const animEnd = (anim)=>Math.max(anim.keys.at(-1)?.t ?? 0, anim.otherKeys?.at(-1)?.t ?? 0);
 
 // 把動畫攤成一串影格：第 0 格是 from(當下姿勢)，最後補一格收回 rest；follow 的影格繞 pivot 轉 dir 度
 // 進第一格跟收回用最短角度(兩端不是編輯出來的姿勢)，中間影格照數字 lerp，所以轉向由數字決定
-export function animTrack(anim, from, rest=from, dir=0)
+// list＝要攤的影格(另一隻手傳 anim.otherKeys)；比 end 早結束的那條補一格停在最後姿勢等到 end
+export function animTrack(anim, from, rest=from, dir=0, list=anim.keys)
 {
     const pivot = anim.pivot ?? {x:0, y:0};
     const rot = anim.follow ? dir : 0;
     const [c, s] = [Math.cos(rad(rot)), Math.sin(rad(rot))];
-    const keys = anim.keys.map((k)=>{
+    const keys = list.map((k)=>{
         const [dx, dy] = [k.x - pivot.x, k.y - pivot.y];
         return {t:k.t, x:pivot.x + dx*c - dy*s, y:pivot.y + dx*s + dy*c, angle:k.a + rot, ease:k.ease, path:k.path};
     });
@@ -73,7 +75,8 @@ export function animTrack(anim, from, rest=from, dir=0)
         const off = from.angle + shortest(from.angle, keys[0].angle) - keys[0].angle;
         keys.forEach((k)=>{k.angle += off;});
     }
-    const end = animEnd(anim);
+    const end = animEnd(anim), last = keys.at(-1);
+    if(last && last.t < end) {keys.push({t:end, x:last.x, y:last.y, angle:last.angle, wait:true});}
     const track = {pivot, end, frames:[{t:0, x:from.x, y:from.y, angle:from.angle}, ...keys, {t:end + (anim.back ?? 0), ease:BACK_EASE}]};
     return setRest(track, rest);
 }
@@ -99,32 +102,6 @@ function arcAt(p, k0, k1, e)
     const r = lerp(Math.hypot(k0.x - p.x, k0.y - p.y), Math.hypot(k1.x - p.x, k1.y - p.y), e);
     const a = rad(a0 + d*e);
     return {x:p.x + Math.cos(a)*r, y:p.y + Math.sin(a)*r};
-}
-
-// 另一隻手黏在拿武器那隻手上(武器 equip.other＝{x, y, a}，在拿武器手腕的本地座標)：w 是拿武器那隻手腕的姿勢
-export function attach(w, other)
-{
-    const r = rad(w.angle), [x, y] = [other.x ?? 0, other.y ?? 0];
-    return {x:w.x + x*Math.cos(r) - y*Math.sin(r), y:w.y + x*Math.sin(r) + y*Math.cos(r), angle:w.angle + (other.a ?? 0)};
-}
-
-const blend = (a, b, e)=>({x:lerp(a.x, b.x, e), y:lerp(a.y, b.y, e), angle:a.angle + shortest(a.angle, b.angle)*e});
-
-// 另一隻手在 ms 的姿勢：第一格的時間內(用第一格的緩動)從 from 補間到黏著、之後黏著拿武器那隻手、收回那段(BACK_EASE)從黏著補間回 rest
-// 只在播動畫時黏；from／rest 是另一隻手腕自己的 {x, y, angle}
-export function otherAt(track, ms, other, from, rest=from)
-{
-    const fs = track.frames;
-    if(fs.length < 3) {return rest;}
-    const [first, end, last] = [fs[1], track.end, fs.at(-1).t];
-    if(ms < first.t)
-    {
-        const e = (EASE[first.ease] ?? EASE.Linear)(first.t > 0 ? Math.max(0, ms)/first.t : 1);
-        return blend(from, attach(poseAt(track, ms), other), e);
-    }
-    if(ms <= end) {return attach(poseAt(track, ms), other);}
-    const e = EASE[BACK_EASE](last > end ? Math.min(1, (ms - end)/(last - end)) : 1);
-    return blend(attach(poseAt(track, end), other), rest, e);
 }
 
 export function poseAt(track, ms)

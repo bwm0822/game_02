@@ -289,7 +289,7 @@ run('fit', async t => {
         const A = () => S.doc['anim.json'].data;
         const sw = {...S.doc['part.json'].data.rogue.wristF, a: 0};
         document.querySelector('.tab[data-mode=anim]').click();
-        out.animUi = [S.mode, S.aid, document.querySelectorAll('table.keys tr').length - 1, document.querySelectorAll('.timeline .mark.key').length];
+        out.animUi = [S.mode, S.aid, document.querySelectorAll('table.keys:not(.okeys) tr').length - 1, document.querySelectorAll('.timeline .mark.key:not(.okey)').length];
         const chop = F.trackOf();
         const {poseAt, trackEnd} = await import('/src/core/pose.js');
         const end = poseAt(chop, trackEnd(chop)), raised = poseAt(chop, 120);
@@ -306,12 +306,12 @@ run('fit', async t => {
         out.addBtn = [addBtn()];
         F.addKey();
         out.addKey = [A().chop.keys.map(k => k.t).join(), S.key, Math.round(A().chop.keys[1].a)];
-        F.pickKey(1);
+        F.pickKey('keys', 1);
         out.addBtn.push(S.key, addBtn());
         F.addKey();
         out.addLast = [A().chop.keys.map(k => k.t).join(), S.key];
         F.undo();
-        F.pickKey(1);
+        F.pickKey('keys', 1);
         dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
         out.esc = S.key;
         const ks = A().chop.keys;
@@ -391,16 +391,38 @@ run('fit', async t => {
         out.bowHand.push(wpart().node, wpart().d > 0, F.trackOf().frames[0].x !== f0.x || F.trackOf().frames[0].y !== f0.y);
         F.setSlot('CAT_WEAPON', 'bow-1');
         S.aid = 'aim'; F.render();
-        // 動畫分頁的「另一隻手」欄＝equip.other：改數字寫回、三格清空整個刪掉、undo 回來；有 other 時預覽照畫
-        const oth = () => I()['bow-1'].equip.other;
-        const oth0 = JSON.stringify(oth());
-        out.other = [!!oth(), !!document.querySelector('#view table.other')];
-        fire('item.json|bow-1|equip.other.x', '5');
-        out.other.push(oth().x);
-        for (const c of ['x', 'y', 'a']) fire(`item.json|bow-1|equip.other.${c}`, '');
-        out.other.push('other' in I()['bow-1'].equip);
-        for (let i = 0; i < 4; i++) F.undo();
-        out.other.push(JSON.stringify(oth()) === oth0, await drawn() > 0);
+        // 另一隻手（otherKeys）：下排加第一格（放在播放頭、姿勢＝前手靜止）、選中後拖的是前手、數字欄寫回、刪光拿掉 otherKeys、undo 回來
+        {
+            const oks = () => A().aim.otherKeys, fp = F.S.doc['part.json'].data.rogue.wristF ?? {};
+            const hadOther = 'otherKeys' in A().aim;
+            delete A().aim.otherKeys;
+            F.setMs(30); F.render();
+            out.otherKeys = [!!document.querySelector('table.okeys'), document.querySelectorAll('.timeline .mark.okey').length];
+            F.addKey('otherKeys');
+            const k = oks()[0];
+            out.otherKeys.push(oks().length, k.t, k.x === Math.round((fp.x ?? 0) * 10) / 10 && k.y === Math.round((fp.y ?? 0) * 10) / 10, S.row, S.key,
+                document.querySelectorAll('.timeline .mark.okey').length, document.querySelectorAll('table.okeys tr.sel').length);
+            // 支點移遠（目標 0°，不影響姿勢），免得點前手時先點到支點
+            const pv0 = A().aim.pivot;
+            A().aim.pivot = {x: 200, y: 200};
+            await F.drawPreview();
+            const g2 = F.geo, ow = g2.wr, rc2 = document.querySelector('#pv canvas').getBoundingClientRect();
+            const at2 = (x, y) => ({clientX: rc2.left + (g2.vc.x + g2.rig.x + x) * g2.K, clientY: rc2.top + (g2.vc.y + g2.rig.y + y) * g2.K, pointerId: 1, bubbles: true});
+            const bowKey0 = JSON.stringify(A().aim.keys), [k0x, k0y] = [oks()[0].x, oks()[0].y];
+            ptr('pointerdown', at2(ow.x, ow.y)); ptr('pointermove', at2(ow.x + 4, ow.y - 2)); ptr('pointerup', at2(ow.x + 4, ow.y - 2));
+            out.otherKeys.push(g2.row, Math.round((oks()[0].x - k0x) * 10) / 10, Math.round((oks()[0].y - k0y) * 10) / 10, JSON.stringify(A().aim.keys) === bowKey0);
+            A().aim.pivot = pv0;
+            fire('anim.json|aim|otherKeys.0.y', '-20');
+            out.otherKeys.push(oks()[0].y, F.otherTrackOf().end === trackEnd(F.trackOf()) - (A().aim.back ?? 0));
+            F.addKey('otherKeys');
+            out.otherKeys.push(oks().length, F.otherTrackOf().end);
+            F.delKey('otherKeys', 1); F.delKey('otherKeys', 0);
+            out.otherKeys.push('otherKeys' in A().aim, F.otherTrackOf());
+            F.undo();
+            out.otherKeys.push(oks()?.length, await drawn() > 0);
+            if (!hadOther) delete A().aim.otherKeys;
+            F.setMs(0); F.render();
+        }
         const V = F.V;
         const zin = () => document.querySelector('#pv input.zoom');
         const zset = (v) => {zin().value = v; zin().dispatchEvent(new Event('change'));};
@@ -669,8 +691,8 @@ run('fit', async t => {
     t.eq('刪除動畫：停在（無）、清掉道具 anim、undo 一起退', JSON.stringify(r.delAnim),
         JSON.stringify(['chop,sweep,aim', null, false, false, '', 'chop,sweep,stab,aim', 'stab']));
     t.eq('瞄準：總長 60+60、正右方 0°', JSON.stringify(r.aim), JSON.stringify([120, 0]));
-    t.eq('另一隻手欄（equip.other）：改數字、清空刪掉、undo 回來、預覽照畫', JSON.stringify(r.other),
-        JSON.stringify([true, true, 5, false, true, true]));
+    t.eq('另一隻手（otherKeys）：下排加第一格在播放頭＋前手靜止姿勢、選中、拖的是前手不動弓、數字寫回、end 同弓那排、刪光拿掉、undo 回來、預覽照畫',
+        JSON.stringify(r.otherKeys), JSON.stringify([true, 0, 1, 30, true, 'otherKeys', 0, 1, 1, 'otherKeys', 4, -2, true, -20, true, 2, 60, false, null, 1, true]));
     t.eq('動畫分頁：後手那組搬到頭前面、前手後面（後手仍蓋住弓）；只有 0 < ms < 收回結束 才搬、沒選動畫不搬',
         JSON.stringify(r.bowLift), JSON.stringify([true, true, false, true, true, false, false]));
     t.eq('弓掛後手：wristB、身體後面、後手蓋住；換匕首回前手、動畫起點換到前手腕', JSON.stringify(r.bowHand), JSON.stringify(['B', 'wristB', true, true, 'wristF', true, true]));

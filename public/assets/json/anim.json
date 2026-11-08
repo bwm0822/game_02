@@ -82,7 +82,7 @@
     "follow": true,
     "hold": true,
     "pivot": {
-      "x": -8,
+      "x": 0,
       "y": -32
     },
     "hit": 60,
@@ -90,10 +90,27 @@
     "keys": [
       {
         "t": 60,
+        "x": 25,
+        "y": -32,
+        "a": -90,
+        "ease": "Quad.Out",
+        "path": "arc"
+      }
+    ],
+    "otherKeys": [
+      {
+        "t": 60,
         "x": 20,
         "y": -32,
         "a": -90,
         "ease": "Quad.Out"
+      },
+      {
+        "t": 120,
+        "x": -12,
+        "y": -32,
+        "a": -90,
+        "ease": "Linear"
       }
     ]
   }

@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import DB from '../data/db.js'
-import {dirTo, animTrack, setRest, poseAt, trackEnd, otherAt} from '../core/pose.js'
+import {dirTo, animTrack, setRest, poseAt, trackEnd} from '../core/pose.js'
 const _tag = 'anim';
 const IDLE_BREATH = false;  // idle 呼吸動畫暫時關掉（比對遊戲跟試穿的比例時會干擾）
 
@@ -148,7 +148,7 @@ export class COM_Anim extends Com
                 duration: to - from,
                 onUpdate: ()=>{
                     this._place(run.sp, poseAt(run.track, proxy.ms));
-                    if(run.grip) {this._place(run.grip.node, otherAt(run.track, proxy.ms, run.grip.other, run.grip.from, this._wristRest(run.grip.node)));}
+                    if(run.other) {this._place(run.other.sp, poseAt(run.other.track, proxy.ms));}
                 },
                 onComplete: ()=>resolve(this._run===run),
                 onStop: ()=>resolve(false),
@@ -162,8 +162,8 @@ export class COM_Anim extends Com
         this._run = null;
         run?.tw?.stop();
         run?.release();
-        // 黏著的另一隻手直接回原位(下一個動畫不一定用到它)、搬到前面的手腕搬回去
-        if(run?.grip?.node.active) {this._place(run.grip.node, this._wristRest(run.grip.node));}
+        // 另一隻手直接回原位(下一個動畫不一定用到它)、搬到前面的手腕搬回去
+        if(run?.other?.sp.active) {this._place(run.other.sp, this._wristRest(run.other.sp));}
         if(run) {this.ctx.root.view?.liftWrist?.(run.sp, false);}
     }
 
@@ -178,11 +178,13 @@ export class COM_Anim extends Com
         if(!sp || !anim || this._dead) {return (async()=>{await ready?.(); return false;})();}
 
         this._stop();
-        const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wristRest(sp), pt ? this._dirTo(pt) - (this.ctx.root.view.rig?.angle ?? 0) : 0);
-        // 武器有 equip.other：另一隻手黏在拿武器那隻手上一起動(見 pose.js 的 otherAt)
-        const g = this.ctx.root.view.grip;
-        const grip = g && {...g, from:{x:g.node.x, y:g.node.y, angle:g.node.angle}};
-        const run = {sp, track, grip};
+        const dir = pt ? this._dirTo(pt) - (this.ctx.root.view.rig?.angle ?? 0) : 0;
+        const pose = (n)=>({x:n.x, y:n.y, angle:n.angle});
+        const track = animTrack(anim, pose(sp), this._wristRest(sp), dir);
+        // 動畫有 otherKeys：另一隻手自己一條 track
+        const osp = anim.otherKeys?.length ? this.ctx.root.view.otherWrist : null;
+        const other = osp && {sp:osp, track:animTrack(anim, pose(osp), this._wristRest(osp), dir, anim.otherKeys)};
+        const run = {sp, track, other};
         const free = new Promise((resolve)=>{run.release = resolve;});
         this._run = run;
         // 動後手(弓)時整組舉到頭、身體前面，收回播完才搬回(setting.js 的 NODE_DEPTH_ANIM)
@@ -198,6 +200,7 @@ export class COM_Anim extends Com
                 if(!await this._seg(run, hitAt, end)) {return;}
                 if(anim.hold) {await free;}
                 setRest(track, this._wristRest(sp));
+                if(other) {setRest(other.track, this._wristRest(other.sp));}
                 if(this._run===run && await this._seg(run, end, trackEnd(track)))
                 {
                     this._run = null;
@@ -216,8 +219,8 @@ export class COM_Anim extends Com
         this._stop();
         const sp = this.ctx.root.view?.wrist;
         if(sp?.active) {this._place(sp, this._wristRest(sp));}
-        const g = this.ctx.root.view?.grip;
-        if(g?.node.active) {this._place(g.node, this._wristRest(g.node));}
+        const o = this.ctx.root.view?.otherWrist;
+        if(o?.active) {this._place(o, this._wristRest(o));}
     }
 
     //------------------------------------------------------

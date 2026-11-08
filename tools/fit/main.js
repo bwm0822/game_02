@@ -1,6 +1,6 @@
 // 試穿：選紙娃娃型角色、五格各挑一件裝備（只是試穿，不寫回 inv.equips），用數字調部位（part.json，全角色共用）跟裝備 equip 的擺放
 // 擺放分頁另外調 body 的支點（neck／wristF／wristB，畫布拖十字）
-// 動畫模式編 anim.json（全武器共用的武器動畫，動的是拿武器那隻手的手腕，equip.hand）：畫布拖手腕／旋轉把手／支點，時間軸拖影格／ready／hit
+// 動畫模式編 anim.json（全武器共用的武器動畫，動的是拿武器那隻手的手腕，equip.hand；otherKeys＝另一隻手自己一排影格）：畫布拖手腕／旋轉把手／支點，時間軸拖影格／ready／hit
 // 同時編 role.json、part.json、item.json、anim.json：undo 一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
@@ -18,7 +18,7 @@ import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
-import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, otherAt, weaponAnim as animOf} from '../../src/core/pose.js';
+import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
@@ -47,6 +47,7 @@ const S = {
     flip: false,                // 倍率／位置看 panzoom.js 的 V
     mode: 'fit',                // fit 擺放／anim 動畫
     aid: null, ms: 0, key: -1,  // 編輯中的動畫、時間軸位置(ms)、選中的影格(ms 剛好在影格上才有)
+    row: 'keys',                // 選中的影格在哪排：keys 拿武器的手／otherKeys 另一隻手
     target: 0,                  // 目標方向（度，0＝右、90＝下）
     dragW: false,               // 擺放分頁拖十字改：false 身體支點／true 武器的手腕位移（不記住）
     bg: null,                   // 畫布純色背景，null＝棋盤格
@@ -506,6 +507,22 @@ function trackOf(an = anim())
     return animTrack(an, rest, rest, dirOf());
 }
 
+// 另一隻手（不拿武器那隻）：anim.otherKeys 自己一條 track，沒影格或那隻手腕上沒東西＝null（不動）
+// S.row＝選中的影格在哪一排（keys＝拿武器的手、otherKeys＝另一隻手），S.key 是那排的 index
+const otherHand = () => hand() === 'wristB' ? 'wristF' : 'wristB';
+const otherName = () => otherHand() === 'wristF' ? '前手' : '後手';
+const otherRest = () => {const p = pivot(otherHand()); return {x: p.x, y: p.y, angle: p.a};};
+const otherParts = () => role() ? partsOf(role()).filter(pt => pt.node === otherHand()) : [];
+function otherTrackOf(an = anim())
+{
+    if (!an?.otherKeys?.length || !otherParts().length) return null;
+    const rest = otherRest();
+    return animTrack(an, rest, rest, dirOf(), an.otherKeys);
+}
+const rowKeys = (row = S.row, an = anim()) => an?.[row] ?? [];
+const restOf = (row) => row === 'otherKeys' ? otherRest() : wristRest();
+const rowTrack = (row, an = anim()) => row === 'otherKeys' ? otherTrackOf(an) : trackOf(an);
+
 // 遊戲裡 ready、hold 會停住等程式，預覽各停 PAUSE 毫秒；e 是播放經過的真實時間，回傳時間軸 ms
 function playLen(an, tr) {return trackEnd(tr) + (an.ready ? PAUSE.ready : 0) + (an.hold ? PAUSE.hold : 0);}
 function playMs(an, tr, e)
@@ -520,10 +537,13 @@ function playMs(an, tr, e)
     return Math.min(ms, trackEnd(tr));
 }
 
-function setMs(ms)
+// 停在某格的時間就選那格：先找目前那排、沒有再找另一排
+function setMs(ms, row = S.row)
 {
     S.ms = ms;
-    S.key = anim()?.keys.findIndex(k => k.t === ms) ?? -1;
+    const other = row === 'keys' ? 'otherKeys' : 'keys';
+    const i = rowKeys(row).findIndex(k => k.t === ms), j = i < 0 ? rowKeys(other).findIndex(k => k.t === ms) : -1;
+    [S.row, S.key] = i >= 0 || j < 0 ? [row, i] : [other, j];
 }
 
 // 畫面上（已轉向）的位移／位置換回影格座標：follow 的動畫要反轉 dir
@@ -538,33 +558,42 @@ function unrotPt(an, p)
     return {x: pv.x + dx, y: pv.y + dy};
 }
 
-// 選了 #i 插在它跟前一格中間，沒選接在最後一格後面半個收回段；姿勢取該時間的補間
-function addKey()
+// 加在 row 那排：選了那排的 #i 插在它跟前一格中間，沒選接在最後一格後面半個收回段；姿勢取該時間的補間
+// 另一隻手第一格：放在播放頭（在 0 就放拿武器那排的第一格），姿勢＝靜止（還沒參與）
+function addKey(row = 'keys')
 {
     const an = anim();
     if (!an) return;
-    const {keys} = an, i = S.key, last = keys.at(-1);
+    const keys = rowKeys(row), i = row === S.row ? S.key : -1, last = keys.at(-1);
     const ms = i >= 0 ? Math.round(((keys[i - 1]?.t ?? 0) + keys[i].t) / 2)
-        : last ? last.t + Math.round(an.back ? an.back / 2 : 100) : 100;
+        : last ? last.t + Math.round(an.back ? an.back / 2 : 100)
+        : row === 'otherKeys' ? Math.round(S.ms) || an.keys[0]?.t || 100 : 100;
     if (keys.some(k => k.t === ms) || ms <= 0) {status(`#${i + 1} 跟前一格間隔太小，插不進去`); return render();}
-    const tr = trackOf(), p = tr ? trackPose(tr, ms) : wristRest(), q = unrotPt(an, p);
+    const tr = rowTrack(row), p = tr ? trackPose(tr, ms) : restOf(row), q = unrotPt(an, p);
     commit(() => {
-        an.keys.push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'Quad.Out'});
-        an.keys.sort((a, b) => a.t - b.t);
-        setMs(ms);
+        an[row] ??= [];
+        an[row].push({t: ms, x: r1(q.x), y: r1(q.y), a: r1(p.angle - rotOf(an)), ease: 'Quad.Out'});
+        an[row].sort((a, b) => a.t - b.t);
+        setMs(ms, row);
     });
 }
 
-function pickKey(i)
+function pickKey(row, i)
 {
-    if (i === S.key) S.key = -1;
-    else setMs(anim().keys[i].t);
+    if (row === S.row && i === S.key) S.key = -1;
+    else setMs(rowKeys(row)[i].t, row);
     render();
 }
 
-function delKey(i)
+// 另一隻手刪光＝拿掉 otherKeys（不參與）
+function delKey(row, i)
 {
-    commit(() => {anim().keys.splice(i, 1); setMs(S.ms);});
+    commit(() => {
+        const an = anim();
+        an[row].splice(i, 1);
+        if (row === 'otherKeys' && !an.otherKeys.length) delete an.otherKeys;
+        setMs(S.ms);
+    });
 }
 
 function newAnim(copy)
@@ -610,36 +639,29 @@ async function delAnim()
     });
 }
 
-// 武器的 equip.other：播動畫時另一隻手黏在拿武器那隻手腕上的位置（手腕本地座標）、角度；三格都清空＝刪掉（不黏）
-function otherTable(wid)
-{
-    const other = hand() === 'wristB' ? '前手' : '後手';
-    return [
-        h('div', {class: 'title'}, `另一隻手（equip.other，播動畫時${other}黏在拿武器那隻手腕上：x／y 是那隻手腕的本地座標、a 是相對角度；空白＝不黏）`),
-        h('table', {class: 'fit other'}, h('tr', null, ['x', 'y', 'a'].map(t => h('th', null, t))),
-            h('tr', null, ['x', 'y', 'a'].map(c => h('td', null, numInput('item.json', wid, ['equip', 'other', c], '0'))))),
-    ];
-}
-
 function animView(slots)
 {
     const wid = S.slots.CAT_WEAPON, an = anim(), F = 'anim.json';
     const check = (k, text, title) => h('label', {title}, h('input', {type: 'checkbox', checked: !!an[k], dataset: {k: `${F}|${S.aid}|${k}`},
         onchange: (e) => commit(() => setAt(an, [k], e.target.checked || undefined))}), text);
     const sel = (opts, v, onchange) => h('select', {onchange}, opts.map(([o, t]) => h('option', {value: o, selected: o === v}, t)));
-    const keyRow = (k, i) => h('tr', {class: i === S.key ? 'sel' : '', onclick: (e) => {if (e.target.matches('input, select, button')) return; pickKey(i);}},
+    const keyRow = (row) => (k, i) => h('tr', {class: row === S.row && i === S.key ? 'sel' : '', onclick: (e) => {if (e.target.matches('input, select, button')) return; pickKey(row, i);}},
         h('td', {class: 'k'}, `#${i + 1}`),
-        h('td', null, numInput(F, S.aid, ['keys', i, 't'], '', {req: true, after: (n) => {an.keys.sort((a, b) => a.t - b.t); setMs(n);}})),
-        ['x', 'y', 'a'].map(f => h('td', null, numInput(F, S.aid, ['keys', i, f], '', {req: true}))),
+        h('td', null, numInput(F, S.aid, [row, i, 't'], '', {req: true, after: (n) => {an[row].sort((a, b) => a.t - b.t); setMs(n, row);}})),
+        ['x', 'y', 'a'].map(f => h('td', null, numInput(F, S.aid, [row, i, f], '', {req: true}))),
         h('td', null, sel(Object.keys(EASE).map(e => [e, e]), k.ease ?? 'Linear', (e) => commit(() => {k.ease = e.target.value;}))),
         h('td', null, sel([['line', '直線'], ['arc', '弧線']], k.path ?? 'line', (e) => commit(() => setAt(k, ['path'], e.target.value === 'arc' ? 'arc' : undefined)))),
-        h('td', null, h('button', {title: '刪除影格', onclick: () => delKey(i)}, '✕')));
+        h('td', null, h('button', {title: '刪除影格', onclick: () => delKey(row, i)}, '✕')));
+    const keyTable = (row, cls) => h('table', {class: `fit keys ${cls}`},
+        h('tr', null, ['', 't (ms)', 'x', 'y', 'a', 'ease', 'path', ''].map(t => h('th', null, t))),
+        rowKeys(row).map(keyRow(row)));
+    const addBtn = (row) => h('button', {onclick: () => addKey(row), title: '選了這排的影格插在它跟前一格中間、沒選接在最後；姿勢取該時間的補間'},
+        row === S.row && S.key >= 0 ? `＋ 插在 #${S.key + 1} 之前` : '＋ 新增影格（最後）');
     return [
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, '武器'),
             wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, `${items()[wid].lab ?? ''}（${hand() === 'wristB' ? '後手' : '前手'}）`)] : h('span', {class: 'dim'}, '（空手，揮的是前手）')),
         wid && equipTable(wid),
-        wid && otherTable(wid),
         h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝拿武器那隻手的手腕（equip.hand，沒寫＝前手 wristF）在角色上的位置，a＝手腕角度，手、武器、手套跟著動）'),
         h('div', {class: 'animbar'},
             sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
@@ -654,13 +676,14 @@ function animView(slots)
                 h('label', null, '支點 x', numInput(F, S.aid, ['pivot', 'x'], '0')),
                 h('label', null, 'y', numInput(F, S.aid, ['pivot', 'y'], '0')),
                 h('label', {title: '播到這裡停住，等程式做身體位移（前撲／衝刺）'}, 'ready', numInput(F, S.aid, ['ready'], '0')),
-                h('label', {title: '命中／放箭時刻'}, 'hit', numInput(F, S.aid, ['hit'], `${an.keys.at(-1)?.t ?? 0}`)),
+                h('label', {title: '命中／放箭時刻'}, 'hit', numInput(F, S.aid, ['hit'], `${animEnd(an)}`)),
                 h('label', {title: '最後一格收回靜止的時間'}, 'back', numInput(F, S.aid, ['back'], '0'))),
-            h('table', {class: 'fit keys'},
-                h('tr', null, ['', 't (ms)', 'x', 'y', 'a', 'ease', 'path', ''].map(t => h('th', null, t))),
-                an.keys.map(keyRow)),
-            h('button', {onclick: addKey, title: '選了影格插在它跟前一格中間、沒選接在最後；姿勢取該時間的補間'}, S.key >= 0 ? `＋ 插在 #${S.key + 1} 之前` : '＋ 新增影格（最後）'),
-            h('div', {class: 'hint'}, '畫布：拖手／武器＝移手腕位置、拖白點＝轉手腕角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列，再點一次或 Esc 取消選取）。虛線＝手腕軌跡、半透明＝其他影格。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
+            keyTable('keys', ''),
+            addBtn('keys'),
+            h('div', {class: 'title'}, `另一隻手（${otherName()}，otherKeys：自己一排影格，座標同上、轉向目標一樣繞支點轉；沒有影格＝不動，刪光就拿掉）`),
+            keyTable('otherKeys', 'okeys'),
+            addBtn('otherKeys'),
+            h('div', {class: 'hint'}, '畫布：拖手／武器＝移手腕位置、拖白點＝轉手腕角度（Shift 吸 15°）、拖藍點＝支點；只能改選中的影格（時間軸 ◆ 或表格列，再點一次或 Esc 取消選取），選了另一隻手那排拖的就是另一隻手。虛線＝手腕軌跡（黃＝拿武器、青＝另一隻手）、半透明＝其他影格。動畫長度＝兩排最晚的那格，先結束的那排停住等。角度照數字補間，-90→90 是順時針掃 180°；弧線繞支點、方向跟角度變化同向。'),
         ],
     ];
 }
@@ -751,10 +774,8 @@ async function drawPreview()
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); g.translate(rig.x, rig.y); g.rotate(rad(rig.a)); fn(); g.restore();};
     // w：手腕姿勢（掛在拿武器那隻手腕的部位 p 已是靜止時的 rig 座標：先退回支點 wp 的本地、再照手腕轉／移）
     const wn = hand(), wp = pivot(wn);
-    // 武器有 equip.other：另一隻手黏在拿武器那隻手上（同遊戲 COM_Anim，pose.js 的 otherAt）
-    const other = tr && heldEquip()?.other, on = other && (wn === 'wristB' ? 'wristF' : 'wristB'), op = on && pivot(on);
-    const orest = on && {x: op.x, y: op.y, angle: op.a};
-    const oAt = (ms) => otherAt(tr, ms, other, orest, orest);
+    // 動畫有 otherKeys：另一隻手自己一條 track（同遊戲 COM_Anim）
+    const otr = tr && otherTrackOf(), on = otr && otherHand(), op = on && pivot(on);
     const drawSp = (p, img, f, w, pv = wp) => local(() => {
         if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - pv.a)); g.translate(-pv.x, -pv.y);}
         g.translate(p.x ?? 0, p.y ?? 0);
@@ -762,7 +783,7 @@ async function drawPreview()
         g.scale(p.scale ?? 1, p.scale ?? 1);
         g.drawImage(img, f.x, f.y, f.w, f.h, -(p.ox ?? 0.5) * f.w, -(p.oy ?? 1) * f.h, f.w, f.h);
     });
-    const wr = tr ? trackPose(tr, S.ms) : null;
+    const wr = tr ? trackPose(tr, S.ms) : null, ow = otr ? trackPose(otr, S.ms) : null;
     let n = 0;
     const grp = [], ogrp = [];
     parts.forEach((pt, i) => {
@@ -772,7 +793,7 @@ async function drawPreview()
         if (inWrist) grp.push({...pt, ...fr});
         if (inOther) ogrp.push({...pt, ...fr});
         g.globalAlpha = pt.alpha ?? 1;
-        if (inOther) drawSp(pt.p, fr.img, fr.f, oAt(S.ms), op);
+        if (inOther) drawSp(pt.p, fr.img, fr.f, ow, op);
         else drawSp(pt.p, fr.img, fr.f, inWrist ? wr : null);
         g.globalAlpha = 1;
         n++;
@@ -780,17 +801,22 @@ async function drawPreview()
 
     if (tr && grp.length)
     {
-        tr.frames.slice(1, -1).forEach(k => {
-            if (k.t === S.ms) return;
-            for (const it of grp) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, k);}
-            for (const it of ogrp) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, oAt(k.t), op);}
+        // 半透明殘影：各排自己的影格（pose.js 補的「停住等」那格不畫）
+        const ghosts = (track, its, pv) => track.frames.slice(1, -1).forEach(k => {
+            if (k.t === S.ms || k.wait) return;
+            for (const it of its) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, k, pv);}
         });
+        ghosts(tr, grp, wp);
+        if (otr) ghosts(otr, ogrp, op);
         g.globalAlpha = 1;
-        const total = trackEnd(tr), hd = handleOf(wr), pv = tr.pivot;
+        // 選了另一隻手那排：手腕點、旋轉把手、拖拉都換成另一隻手
+        const row = S.row === 'otherKeys' && otr ? 'otherKeys' : 'keys';
+        const sel = row === 'otherKeys' ? {w: ow, p: op, grp: ogrp, color: '#66ccff'} : {w: wr, p: wp, grp, color: '#ffcc66'};
+        const total = trackEnd(tr), hd = handleOf(sel.w), pv = tr.pivot;
         local(() => {
             g.lineWidth = px;
             g.setLineDash([2 * px, 2 * px]);
-            // 虛線軌跡：拿武器那隻手黃色、黏著的另一隻手青色
+            // 虛線軌跡：拿武器那隻手黃色、另一隻手青色
             const trail = (at, color) => {
                 g.strokeStyle = color;
                 g.beginPath();
@@ -802,19 +828,19 @@ async function drawPreview()
                 g.stroke();
             };
             trail((ms) => trackPose(tr, ms), '#ffcc66');
-            if (on) trail(oAt, '#66ccff');
+            if (otr) trail((ms) => trackPose(otr, ms), '#66ccff');
             g.setLineDash([]);
             const dot = (x, y, color, rr) => {g.fillStyle = color; g.beginPath(); g.arc(x, y, rr * px, 0, Math.PI * 2); g.fill();};
-            if (S.key >= 0)
+            if (S.key >= 0 && row === S.row)
             {
                 g.strokeStyle = '#fff';
-                g.beginPath(); g.moveTo(wr.x, wr.y); g.lineTo(hd.x, hd.y); g.stroke();
+                g.beginPath(); g.moveTo(sel.w.x, sel.w.y); g.lineTo(hd.x, hd.y); g.stroke();
                 dot(hd.x, hd.y, '#fff', 4);
-                dot(wr.x, wr.y, '#ffcc66', 3);
+                dot(sel.w.x, sel.w.y, sel.color, 3);
             }
             dot(pv.x, pv.y, '#4da3ff', 4);
         });
-        geo = {vc: gvc, K, flip, rig, wr, wp, grp, hd, pv};
+        geo = {vc: gvc, K, flip, rig, row, wr: sel.w, wp: sel.p, grp: sel.grp, hd, pv};
     }
     else if (!isAnim)
     {
@@ -868,7 +894,7 @@ function onDown(e)
     const an = anim();
     if (!geo || !an) return;
     const l = toLocal(e), near = (p, r) => Math.hypot(l.x - p.x, l.y - p.y) <= r / geo.K;
-    const {wr, wp} = geo, key = an.keys[S.key], u = unwrist(wr, wp, l.x, l.y);
+    const {wr, wp} = geo, key = geo.row === S.row ? rowKeys()[S.key] : null, u = unwrist(wr, wp, l.x, l.y);
     let kind = null;
     if (key && near(geo.hd, 10)) kind = 'rot';
     else if (near(geo.pv, 8)) kind = 'pivot';
@@ -1008,16 +1034,18 @@ function timeline(tr)
             el.onpointermove = (ev) => {v = onset.clamp(at(ev)); el.style.left = pct(v); el.title = `${title} ${v} ms`;};
             el.onpointerup = () => {el.onpointermove = el.onpointerup = null; v === t ? onset.click?.() : onset.set(v);};
         }}, text);
-    const keys = an.keys.map((k, i) => mark('key' + (i === S.key ? ' sel' : ''), k.t, '◆', `影格 #${i + 1}`, {
-        clamp: (v) => Math.min(an.keys[i + 1]?.t - 1 || total, Math.max((an.keys[i - 1]?.t ?? 0) + 1, v)),
-        set: (v) => commit(() => {k.t = v; setMs(v);}),
-        click: () => pickKey(i),
+    // 上排拿武器的手、下排另一隻手，各自拖時間（不能越過同排的前後格）
+    const lane = (row, cls, name) => rowKeys(row).map((k, i, ks) => mark(cls + (row === S.row && i === S.key ? ' sel' : ''), k.t, '◆', `${name} #${i + 1}`, {
+        clamp: (v) => Math.min(ks[i + 1]?.t - 1 || total, Math.max((ks[i - 1]?.t ?? 0) + 1, v)),
+        set: (v) => commit(() => {k.t = v; setMs(v, row);}),
+        click: () => pickKey(row, i),
     }));
+    const keys = [lane('keys', 'key', '影格'), lane('otherKeys', 'key okey', `${otherName()}影格`)];
     const flag = (k, text, title) => an[k] != null && mark(k, an[k], text, title, {
         clamp: (v) => Math.min(tr.end, v),
         set: (v) => commit(() => {an[k] = v;}),
     });
-    return h('div', {class: 'timeline', onpointerdown: (e) => {
+    return h('div', {class: 'timeline two', onpointerdown: (e) => {
         const rc = e.currentTarget.getBoundingClientRect();
         setMs(Math.round(Math.min(1, Math.max(0, (e.clientX - rc.left) / rc.width)) * total));
         playing++;
@@ -1073,7 +1101,7 @@ function drawPv()
                 timeline(tr),
                 h('input', {type: 'range', min: 0, max: total, step: 1, value: S.ms, oninput: e => {
                     playing++;
-                    const v = +e.target.value, k = anim().keys.find(k => Math.abs(k.t - v) <= total / 100);
+                    const v = +e.target.value, k = [...rowKeys(), ...rowKeys(S.row === 'keys' ? 'otherKeys' : 'keys')].find(k => Math.abs(k.t - v) <= total / 100);
                     setMs(k ? k.t : v);
                     render();
                 }}),
@@ -1122,4 +1150,4 @@ render();
 
 // 給無頭測試用
 window.__fit = {S, V: PZ.V, show, IC,setRoot, reload, save, undo, redo, commit, select, wearOrig, setAlpha, setSlot, pickEquip, drawPreview, render, partsOf,
-    trackOf, liftNow, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};
+    trackOf, otherTrackOf, liftNow, setMs, addKey, pickKey, delKey, newAnim, renameAnim, delAnim, play, playMs, get geo() {return geo;}, get hover() {return hover;}};

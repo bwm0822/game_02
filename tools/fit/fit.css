@@ -53,6 +53,10 @@ table.keys select { min-width: 0; }
 .timeline .mark.key.sel { color: #ffd700; }
 .timeline .mark.ready { color: #4da3ff; top: 14px; font-weight: bold; }
 .timeline .mark.hit { color: #ff5555; top: 14px; font-weight: bold; }
+.timeline.two { height: 44px; }
+.timeline .mark.okey { color: #6c9fb8; top: 28px; }
+.timeline .mark.okey.sel { color: #66ccff; }
+table.okeys tr.sel td { background: #1f3540; }
 .timeline .playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: #fff; pointer-events: none; }
 #pv .opts .ms { color: #aaa; font-size: 13px; min-width: 90px; }
 #pv canvas { touch-action: none; }
