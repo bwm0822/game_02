@@ -748,7 +748,7 @@
     "sprite": "cloth-outfit-villager-m-2",
     "scale": 0.25,
     "x": 0,
-    "y": -4,
+    "y": -3.75,
     "name": "年輕農夫服"
   },
   "shoes-outfit-innkeeper": {
@@ -935,7 +935,7 @@
     "kind": "shoes",
     "sprite": "shoes-outfit-villager-m-2",
     "scale": 0.25,
-    "x": 1.25,
+    "x": 1.5,
     "y": 0,
     "name": "年輕農夫鞋"
   },
