@@ -7,7 +7,7 @@ import * as HD from '../common/handles.js';
 import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
-import {DEPTH, BACK_DEPTH, NODE, CAT} from './schema.js';
+import {DEPTH, BACK_DEPTH, CAT, nodeOf, depthOf} from './schema.js';
 import {equipFor, partFor, hiddenParts, weaponOf, ROLE_PARTS, PIVOTS, pivotOf, atPivot, fromPivot, rigOf, flatPart} from '../../src/core/equip.js';
 
 const P = {equips: true, flip: false, bg: null};   // 開關跨角色保留；bg null＝棋盤格；view／錨點／框／支點看 showmenu.js 的 show；倍率／位置看 panzoom.js
@@ -48,8 +48,9 @@ export function partsOf(r, items, parts)
     const held = weaponOf(equips, CAT);
     const add = (p, k) => {
         if (!isObj(p)) return;
-        if (k !== 'body') p = flatPart(p, body, NODE[k], held);
-        if (p.sprite) out.push({p, k, sprite: p.sprite, d: DEPTH[k] ?? 0});
+        const d = depthOf(k, p);
+        if (k !== 'body') p = flatPart(p, body, nodeOf(k, p), held);
+        if (p.sprite) out.push({p, k, sprite: p.sprite, d: d ?? 0});
         if (p.ext) out.push({p, k, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, k, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
     };

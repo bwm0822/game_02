@@ -1,5 +1,5 @@
 // 武器動畫（anim.json + COM_Anim.anim_play）：在遊戲裡揮劍、橫掃、瞄準，檢查影格姿勢、ready 等身體位移、hold 等 anim_end、播完回原位
-// 動的是 wristF 節點（前手腕），武器掛在上面；待機＝body 的 wristF 支點
+// 動的是拿武器那隻手的手腕節點（沒寫 hand＝wristF 前手腕，hand 'B'＝wristB 後手腕），武器掛在上面；待機＝body 的那個支點
 import {run} from './harness.mjs'
 
 run('武器動畫', async t => {
@@ -56,6 +56,23 @@ run('武器動畫', async t => {
 
         out.missing = await p.anim_play('nope', right);
 
+        // 拿在後手的武器(equip.hand 'B'，如弓)：掛在 wristB、動畫動 wristB、前手不動；放下後回到前手
+        d.DB._itemDB['t-bowB'] = {cat: d.GM.CAT.WEAPON, type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24, hand: 'B'}};
+        {
+            const wf = p.view._nodes.wristF, wbN = p.view._nodes.wristB, nums = (n) => JSON.stringify([n.x, n.y, n.angle].map(Math.round));
+            const f0 = nums(wf);
+            const dropB = p.hold('t-bowB');
+            const restB = pose();
+            out.back = [p.view.wrist === wbN, wbN.list.some(s => s.texture?.key === 'bow-short'), !wf.list.some(s => s.texture?.key === 'bow-short'),
+                        JSON.stringify(restB) === JSON.stringify([wbN.pivot.x, wbN.pivot.y, wbN.pivot.a].map(Math.round))];
+            out.backAim = [await p.anim_play('aim', right), pose(), nums(wf) === f0];
+            p.anim_end();
+            await sleep(300);
+            out.backAim.push(JSON.stringify(pose()) === JSON.stringify(restB));
+            dropB();
+            out.backDrop = [p.view.wrist !== wbN, !wbN.list.some(s => s.texture?.key === 'bow-short')];
+        }
+
         // 武器的手腕位移(equip.wristF／wristB)：穿上時手腕移過去；暫拿工具改用工具的(沒寫＝0)；播到一半放下，收回到武器的位置
         d.DB._itemDB['t-bow2'] = {cat: d.GM.CAT.WEAPON, type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24, wristF: {x: 4, y: -2, a: 10}, wristB: {x: 1, y: 1}}};
         {
@@ -101,6 +118,9 @@ run('武器動畫', async t => {
     t.eq('hold：舉著等 anim_end', JSON.stringify(r.hold), JSON.stringify(r.aim[1]));
     t.check('anim_end 後收回', r.aimBack[0]);
     t.eq('沒有的動畫不播', r.missing, false);
+    t.eq('後手武器（hand B）：掛在 wristB、動畫動 wristB、靜止在 wristB 支點', JSON.stringify(r.back), JSON.stringify([true, true, true, true]));
+    t.eq('後手武器瞄準：同一個 aim 影格（絕對姿勢）、前手不動、anim_end 收回', JSON.stringify(r.backAim), JSON.stringify([true, [15, 10, 0], true, true]));
+    t.eq('放下後手武器：wrist 不再是 wristB、弓拿掉', JSON.stringify(r.backDrop), JSON.stringify([true, true]));
     t.eq('武器手腕位移：穿上移過去、暫拿工具用工具的、放下恢復、播到一半放下收回武器位置、脫下回原位',
         JSON.stringify(r.ofs), JSON.stringify([[-9, 16, 30], 1, 1, [-13, 18, 20], [-9, 16, 30], [-9, 16, 30], true]));
     t.eq('武器 anim 帶進 total', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', null]));

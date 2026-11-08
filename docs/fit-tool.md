@@ -39,12 +39,12 @@
                   {"t": 200, "x": -7.8, "y": 15, "a": 75, "ease": "Cubic.In", "path": "arc"}]}
 ```
 
-- 動的是 **前手腕 `wristF` 節點**（看不見的子 container），掛在上面的前手、武器（含暫拿的工具）、手套一起動，所以空手也能播（揮拳）；靜止＝body 的 `wristF` 支點＋武器的手腕位移、角度＝它的 `a`（影格是絕對姿勢，只有收回回到靜止角度）。
+- 動的是 **拿武器那隻手的手腕節點**（看不見的子 container）：武器 `equip.hand` 沒寫＝前手腕 `wristF`、`"B"`＝後手腕 `wristB`（如弓；`equip.js` 的 `handOf()`），空手＝前手，掛在上面的手、武器（含暫拿的工具，也照它的 `hand`）、手套一起動，所以空手也能播（揮拳）；靜止＝body 的那個支點＋武器的手腕位移、角度＝它的 `a`（影格是絕對姿勢、前後手共用同一份動畫，只有收回回到靜止角度）。後手的武器畫在身體後面（`wristB` 節點整組 -1，節點裡武器 4＜手 5，後手蓋住握把；工具預覽的攤平 depth 是 `role/schema.js` 的 `depthOf()`）。
 - 影格 `x/y`＝手腕在 rig 本地座標（面向右、相對 rig＝body 的 x/y/a，人形 body 都是 `y:32`＝腳底）的**絕對位置**，`a`＝手腕角度（武器實際角度＝手腕角度＋武器自己的 `equip.a`）；`t` 是從開始算的 ms，`ease` 是進入這格的緩動（`pose.js` 的 `EASE`），`path:'arc'` 繞 `pivot` 做極座標補間（方向跟角度變化同向），預設直線。
 - 第 0 格隱含＝當下姿勢，最後自動補一格用 `back` ms（`Quad.Out`）收回靜止；這兩段走最短角度，中間影格照數字 lerp（-90→90 就是順時針掃 180°）。
 - `follow:true`：以「目標在正右方」來擺，播放時整組繞 `pivot` 轉到目標方向（瞄準、橫掃）；`false` 只跟著 `face()` 翻面。
 - `ready`：播到這裡停住，等程式做身體位移（普攻／橫掃前撲、衝刺）；`hit`：命中／放箭時刻（沒寫＝最後一格）；`hold:true`：播完最後一格停住等 `anim_end()`（遠程舉著等箭命中）。
-- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.wrist` 是要動的 `wristF` 節點（裡面空的＝動物、沒手沒武器就不播，直接跑 `ready`）。用哪個動畫：普攻看武器的 `anim`（`item.json` 最上層，如匕首 `stab`；`com_stats.js` 帶進 `total.anim`）；技能看技能的 `anim`（`ability.json`），近戰／遠程型（`travel.type` 是 `melee`/`ranged`）技能沒寫就退回武器的 `anim`；都沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`；普攻的規則是 `pose.js` 的 `weaponAnim(item)`＝`anim ?? DEFAULT_ANIM[近戰／遠程]`，試穿也用它）。
+- 遊戲端：`COM_Anim` 的 `root.anim_play(id, pt, {ready})` 回傳的 Promise 在 hit 時 resolve（`true`＝有播），`root.anim_end()` 收回 hold；`view.wrist` 是要動的手腕節點（`_updateEquips()` 照武器／暫拿工具的 `hand` 記在 `view._hand`；裡面空的＝動物、沒手沒武器就不播，直接跑 `ready`）。用哪個動畫：普攻看武器的 `anim`（`item.json` 最上層，如匕首 `stab`；`com_stats.js` 帶進 `total.anim`）；技能看技能的 `anim`（`ability.json`），近戰／遠程型（`travel.type` 是 `melee`/`ranged`）技能沒寫就退回武器的 `anim`；都沒寫的預設：近戰 `chop`、ARC `sweep`、衝刺 `chop`、遠程 `aim`（`com_action.js`；普攻的規則是 `pose.js` 的 `weaponAnim(item)`＝`anim ?? DEFAULT_ANIM[近戰／遠程]`，試穿也用它）。
 - 數學在 `src/core/pose.js`（純函式、不碰 Phaser）：`animTrack()` 攤影格、`poseAt()` 取某 ms 的姿勢；遊戲用 tween 推時間、工具用滑桿推，兩邊一樣；**改動畫數學改 pose.js，不要在 com_anim.js 另寫一份**。
 
 ## 動畫分頁

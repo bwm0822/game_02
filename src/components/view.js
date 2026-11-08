@@ -1,11 +1,11 @@
-import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, NODE_PIVOT, PART_NODE, BACK_NODE} from '../core/setting.js'
+import {GM, PART_DEPTH, ROLE_PART, NODE_DEPTH, NODE_PIVOT, PART_NODE, BACK_NODE, nodeFor} from '../core/setting.js'
 import {DEBUG,DBG} from '../core/debug.js'
 import DB from '../data/db.js'
 import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
-import {equipFor, hiddenParts, weaponOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
+import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
 function debugDraw(mode=DEBUG.mode,text)
@@ -245,7 +245,8 @@ class View extends Phaser.GameObjects.Container
 
     // anim.js 會用到
     get shape() {return this._shape;}
-    get wrist() {return this._nodes?.wristF?.length ? this._nodes.wristF : null;}   // 播武器動畫的節點，空的(動物、沒手)不播
+    // 播武器動畫的節點＝拿武器的那隻手(equip.hand，空手＝前手)，空的(動物、沒手)不播
+    get wrist() {const n = this._nodes?.[this._hand ?? 'wristF']; return n?.length ? n : null;}
     get rig() {return this._rig;}
     get sprites() {const flat = (c)=>c.list ? c.list.flatMap(flat) : [c]; return this._shape ? flat(this._shape) : [];}   // shape→rig→支點節點，攤平
 
@@ -956,7 +957,7 @@ export class RoleView extends View
     _addEquip(item)
     {
         if(!item.equip) {return;}
-        let sps = this._addPart(equipFor(item.equip, this.meta.sex, item.sex), item.cat);
+        let sps = this._addPart(equipFor(item.equip, this.meta.sex, item.sex), item.cat, nodeFor(item.cat, item.equip));
         this._sortParts();
         this._equips.push(...sps);
         if(item.cat===GM.CAT.WEAPON) {this._weapon = sps;}
@@ -1025,12 +1026,14 @@ export class RoleView extends View
         this._removeEquips();
         const dats = (bb.equips ?? []).filter(Boolean).map(eq=>DB.item(eq.id??eq));
         const held = this._holdId ? DB.item(this._holdId) : null;
-        this._placeWrists(held ? held.equip : weaponOf(dats, GM.CAT));
+        const inHand = held ? held.equip : weaponOf(dats, GM.CAT);
+        this._hand = handOf(inHand);
+        this._placeWrists(inHand);
         dats.forEach((dat)=>{this._addEquip(dat);});
         if(held)
         {
             this._weapon?.forEach((sp)=>{sp.setVisible(false);});
-            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, 'wristF'));
+            this._equips.push(...this._addPart(equipFor(held.equip, this.meta.sex, held.sex), held.cat, this._hand));
             this._sortParts();
         }
         const hide = hiddenParts(dats, GM.CAT, DB.rolePart(this.meta, 'hat'));

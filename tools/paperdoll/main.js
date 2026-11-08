@@ -4,7 +4,7 @@ import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {WCLS} from '../common/settings.js';
-import {equipFor, flatPart, unflatPart} from '../../src/core/equip.js';
+import {equipFor, flatPart, unflatPart, handOf} from '../../src/core/equip.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -4006,6 +4006,8 @@ function setSplit(it, name, g, icon)
 // 沒有 a 欄位的（equip.f 只有 scale/x/y）只轉位置、不寫 a；a 是 0 就刪；node null＝身體自己（它的 x/y/a 就是 rig，不換）
 const PIVOT_BODY = {m: 'body-man', f: 'body-woman'};
 const ITEM_NODE = {CAT_HELMET: 'neck', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF'};
+// 武器掛哪隻手照 item.json 的 equip.hand（弓＝後手 wristB），新道具沒有＝前手
+const itemNode = (cat, equip) => (cat === 'CAT_WEAPON' ? handOf(equip) : ITEM_NODE[cat]);
 const PART_NODE = {body: null, head: 'neck', hair: 'neck', hat: 'neck', handF: 'wristF', handB: 'wristB'};
 function pivotShift(o, parts, node, sex, sign = 1, withA = true)
 {
@@ -4278,7 +4280,7 @@ async function loadItems()
         const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
         if (!e0) {miss.push(part.C.name); continue;}
         // 照人偶的 rig／支點換回畫布座標
-        const node = ITEM_NODE[items[id].cat], cur = autoRow(part);
+        const node = itemNode(items[id].cat, e0), cur = autoRow(part);
         const flat = (e, sex) => pivotShift({...e}, pjson, node, sex, -1);
         const pick = (e) => ({scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0});
         hit.push(`${part.C.name} ← ${id}`);
@@ -4459,7 +4461,7 @@ async function commitItems(rows, bake, all = false)
     for (const r of act)
     {
         const {C} = r.part, g = splitNew(C), ik = iconKey(r);
-        const node = ITEM_NODE[ITEM_CAT[r.P.key]], sex = rowSex(r);
+        const node = itemNode(ITEM_CAT[r.P.key], r.id && items[r.id]?.equip), sex = rowSex(r);
         const place = (e) => {
             writeEquip(e, C);
             if (r.only === 'f' && AUTO_SEXED.includes(r.P.kind)) Object.assign(e, femaleOf(r.P, C));

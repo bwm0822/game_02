@@ -163,7 +163,7 @@ export class COM_Anim extends Com
 
     _wristRest(sp) {return {x:sp.pivot.x, y:sp.pivot.y, angle:sp.pivot.a};}
 
-    // 播 anim.json 的武器動畫(見 core/pose.js)，動的是 wristF 節點(手、武器、手套跟著動)；播到 ready 標記先等 ready()(身體位移)做完，
+    // 播 anim.json 的武器動畫(見 core/pose.js)，動的是拿武器那隻手的手腕節點(view.wrist，手、武器、手套跟著動)；播到 ready 標記先等 ready()(身體位移)做完，
     // 回傳的 Promise 在 hit 標記 resolve(true＝有播)；之後自動播完收回，hold 動畫停在最後一格等 _end()
     _play(id, pt=null, {ready}={})
     {

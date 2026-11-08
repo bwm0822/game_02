@@ -1,6 +1,7 @@
 // role.json 的欄位定義：表單、總覽表、檢查都看這份；沒列到的 key（stats/states/weapon/type 這些遊戲沒在讀的）放「其他欄位」原樣保留
 // type 跟道具編輯器共用 tools/common/form.js 的 fieldInput()；inv、schedule 是自己畫的
 import AI from '../../src/components/ai/com_ai.js?raw';
+import {handOf} from '../../src/core/equip.js';
 
 export const KINDS = ['player', 'npc', 'rogue', 'monster', 'animal', 'boss'];
 export const KIND_NAMES = {player: '玩家', npc: 'NPC', rogue: '盜賊', monster: '怪物', animal: '動物', boss: '頭目'};
@@ -116,6 +117,10 @@ export const BACK_DEPTH = {CAT_GLOVES: -0.94, hair: -1.975};
 // 掛在支點節點的部位（跟 setting.js 的 PART_NODE／BACK_NODE 一樣），試穿播動畫時 wristF 上的一起動
 export const NODE = {head: 'neck', hair: 'neck', hat: 'neck', CAT_HELMET: 'neck', handF: 'wristF', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF', handB: 'wristB'};
 export const BACK_NODE = {CAT_GLOVES: 'wristB', hair: 'neckB'};
+// 武器掛哪隻手照 equip.hand（後手＝wristB，畫在身體後面、後手蓋住握把），同 setting.js 的 nodeFor()
+const WEAPON_DEPTH = {wristF: 4.04, wristB: -0.96};
+export const nodeOf = (k, equip) => (k === 'CAT_WEAPON' ? handOf(equip) : NODE[k]);
+export const depthOf = (k, equip) => (k === 'CAT_WEAPON' ? WEAPON_DEPTH[handOf(equip)] : DEPTH[k]);
 // equip.js 的 hiddenParts 用：item.json 的 cat 是字串
 export const CAT = {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'};
 

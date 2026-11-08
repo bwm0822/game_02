@@ -20,6 +20,8 @@ export function pivotOf(body, k, held)
 }
 // 穿著的道具裡武器的 equip（只有武器的手腕位移會生效）；cat 同 hiddenParts
 export const weaponOf = (items, cat) => items.find(it => it?.cat === cat.WEAPON)?.equip;
+// 手上那把東西掛在哪個手腕節點：equip.hand 'B'＝後手（如弓），沒寫＝前手；武器動畫也動這隻手
+export const handOf = (held) => (held?.hand === 'B' ? 'wristB' : 'wristF');
 
 const rot = (x, y, deg) => {const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c];};
 const still = (pv) => !pv.x && !pv.y && !pv.a;

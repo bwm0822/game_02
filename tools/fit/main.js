@@ -1,6 +1,6 @@
 // 試穿：選紙娃娃型角色、五格各挑一件裝備（只是試穿，不寫回 inv.equips），用數字調部位（part.json，全角色共用）跟裝備 equip 的擺放
 // 擺放分頁另外調 body 的支點（neck／wristF／wristB，畫布拖十字）
-// 動畫模式編 anim.json（全武器共用的武器動畫，動的是前手腕 wristF）：畫布拖手腕／旋轉把手／支點，時間軸拖影格／ready／hit
+// 動畫模式編 anim.json（全武器共用的武器動畫，動的是拿武器那隻手的手腕，equip.hand）：畫布拖手腕／旋轉把手／支點，時間軸拖影格／ready／hit
 // 同時編 role.json、part.json、item.json、anim.json：undo 一起記，存檔各自比對外部修改、三方合併；動畫數學跟遊戲共用 src/core/pose.js
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
@@ -16,10 +16,10 @@ import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
-import {DEPTH, BACK_DEPTH, NODE, BACK_NODE, CAT, roleTree} from '../role/schema.js';
+import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
-import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../../src/core/equip.js';
+import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
 const PARTS = [['body', '身體'], ['shoes', '鞋子'], ['cloth', '衣服'], ['head', '頭'], ['hair', '頭髮'], ['hat', '帽子'], ['handF', '前手'], ['handB', '後手']];
@@ -491,9 +491,10 @@ function alphaBar(key, disabled)
 }
 
 // ---------- 動畫 ----------
-// 動的是 wristF（前手腕）：待機＝body 的 wristF 支點（位置＋靜止角度 a）；手、武器、手套掛在上面（同遊戲 COM_Anim）
-const wristRest = () => {const p = pivot('wristF'); return {x: p.x, y: p.y, angle: p.a};};
-const wristParts = () => role() ? partsOf(role()).filter(pt => pt.node === 'wristF') : [];
+// 動的是拿武器那隻手的手腕（equip.hand，空手＝前手 wristF、弓＝後手 wristB）：待機＝body 的那個支點（位置＋靜止角度 a）；手、武器、手套掛在上面（同遊戲 COM_Anim）
+const hand = () => handOf(heldEquip());
+const wristRest = () => {const p = pivot(hand()); return {x: p.x, y: p.y, angle: p.a};};
+const wristParts = () => role() ? partsOf(role()).filter(pt => pt.node === hand()) : [];
 const facing = () => S.mode === 'anim' ? Math.cos(rad(S.target)) < 0 : S.flip;
 const dirOf = () => dirTo(Math.cos(rad(S.target)), Math.sin(rad(S.target)), facing() ? -1 : 1);
 const rotOf = (an = anim()) => an?.follow ? dirOf() : 0;
@@ -625,9 +626,9 @@ function animView(slots)
     return [
         slots,
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, '武器'),
-            wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, items()[wid].lab ?? '')] : h('span', {class: 'dim'}, '（空手，揮的是前手）')),
+            wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, `${items()[wid].lab ?? ''}（${hand() === 'wristB' ? '後手' : '前手'}）`)] : h('span', {class: 'dim'}, '（空手，揮的是前手）')),
         wid && equipTable(wid),
-        h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝前手腕 wristF 在角色上的位置，a＝手腕角度，手、武器、手套跟著動）'),
+        h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝拿武器那隻手的手腕（equip.hand，沒寫＝前手 wristF）在角色上的位置，a＝手腕角度，手、武器、手套跟著動）'),
         h('div', {class: 'animbar'},
             sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
             h('button', {onclick: () => newAnim(false)}, '新增'),
@@ -666,11 +667,12 @@ function partsOf(r)
     const body = partFor(parts(), r, 'body');
     const add = (raw, k, cat) => {
         if (!isObj(raw)) return;
-        const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, NODE[k], heldEquip()));
-        const o = {p, k, node: NODE[k], alpha: S.alpha[cat ?? k] ?? 1};
-        if (p.sprite) out.push({...o, sprite: p.sprite, d: DEPTH[k] ?? 0, main: true});
+        const node = nodeOf(k, raw);
+        const p = k === 'body' ? {...raw, x: 0, y: 0, a: 0} : atPivot(raw, pivotOf(body, node, heldEquip()));
+        const o = {p, k, node, alpha: S.alpha[cat ?? k] ?? 1};
+        if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
-        if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? NODE[k]});
+        if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? node});
     };
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
@@ -729,8 +731,8 @@ async function drawPreview()
     // 部位、支點、手腕姿勢、動畫影格都是 rig 座標（rig＝body 的 x/y/a）
     const rig = rigNow();
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); g.translate(rig.x, rig.y); g.rotate(rad(rig.a)); fn(); g.restore();};
-    // w：手腕姿勢（掛在 wristF 的部位 p 已是靜止時的 rig 座標：先退回支點 wp 的本地、再照手腕轉／移）
-    const wp = pivot('wristF');
+    // w：手腕姿勢（掛在拿武器那隻手腕的部位 p 已是靜止時的 rig 座標：先退回支點 wp 的本地、再照手腕轉／移）
+    const wn = hand(), wp = pivot(wn);
     const drawSp = (p, img, f, w) => local(() => {
         if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - wp.a)); g.translate(-wp.x, -wp.y);}
         g.translate(p.x ?? 0, p.y ?? 0);
@@ -744,7 +746,7 @@ async function drawPreview()
     parts.forEach((pt, i) => {
         const fr = frames[i];
         if (!fr) return;
-        const inWrist = tr && pt.node === 'wristF';
+        const inWrist = tr && pt.node === wn;
         if (inWrist) grp.push({...pt, ...fr});
         g.globalAlpha = pt.alpha ?? 1;
         drawSp(pt.p, fr.img, fr.f, inWrist ? wr : null);

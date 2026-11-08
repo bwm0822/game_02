@@ -1,5 +1,5 @@
 import {Pic, Icon, uRect, uBbc, uBar} from './uicomponents.js'
-import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth} from '../core/setting.js'
+import {GM, UI, CAT2ICON, ROLE_PART, PART_NODE, flatDepth, nodeFor} from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
 import Utility from '../core/utility.js'
@@ -776,11 +776,11 @@ export class Doll extends Pic
         this.pin(this._root);
     }
 
-    _addPart(part, type)
+    _addPart(part, type, node=PART_NODE[type])
     {
         const sps = [];
-        const depth = flatDepth(type);
-        if(type!==GM.PART.BODY) {part = flatPart(part, this._body, PART_NODE[type], this._held);}
+        const depth = flatDepth(type, node);
+        if(type!==GM.PART.BODY) {part = flatPart(part, this._body, node, this._held);}
         const add = (sprite, depth)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
@@ -838,7 +838,7 @@ export class Doll extends Pic
         this._held = weaponOf(dats, GM.CAT);
         if(this._held) {this._shape.removeAll(true); addParts();}
 
-        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat);});
+        dats.forEach((dat)=>{this._addPart(equipFor(dat.equip, meta.sex, dat.sex), dat.cat, nodeFor(dat.cat, dat.equip));});
         const hide = hiddenParts(dats, GM.CAT, DB.rolePart(meta, 'hat'));
         for(const [k, sps] of Object.entries(parts)) {sps.forEach((sp)=>{sp.setVisible(!hide.has(k));});}
 

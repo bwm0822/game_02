@@ -1,4 +1,5 @@
 import ShakePosition from "phaser3-rex-plugins/plugins/behaviors/shake/ShakePosition";
+import {handOf} from './equip.js';
 
 export let player=null;     // 全域玩家物件
 
@@ -624,11 +625,14 @@ export const PART_NODE = Object.freeze({
 // back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]；手套的後片是後手套，進 wristB、depth 同手套；頭髮後片進 neckB
 export const BACK_NODE = Object.freeze({[GM.CAT.GLOVES] : 'wristB', [GM.PART.HAIR] : 'neckB'});
 
+// 部位／裝備掛的節點：武器照 equip.hand(後手＝wristB)，其他照 PART_NODE
+export const nodeFor = (type, equip)=>type===GM.CAT.WEAPON ? handOf(equip) : PART_NODE[type];
+
 // 靜態合成(角色面板、ghost)不建節點、攤成一層時的 depth：節點整組的 depth＋節點裡的 depth/100
 const _flat = (node, d)=>node ? NODE_DEPTH[node] + d/100 : d;
-export function flatDepth(type)
+export function flatDepth(type, node=PART_NODE[type])
 {
-    const [node, back] = [PART_NODE[type], BACK_NODE[type]];
+    const back = BACK_NODE[type];
     return {
         sprite: _flat(node, PART_DEPTH[type]),
         ext: _flat(node, PART_DEPTH[GM.PART.EXT]),
