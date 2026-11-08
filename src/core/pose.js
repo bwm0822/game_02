@@ -101,6 +101,32 @@ function arcAt(p, k0, k1, e)
     return {x:p.x + Math.cos(a)*r, y:p.y + Math.sin(a)*r};
 }
 
+// 另一隻手黏在拿武器那隻手上(武器 equip.other＝{x, y, a}，在拿武器手腕的本地座標)：w 是拿武器那隻手腕的姿勢
+export function attach(w, other)
+{
+    const r = rad(w.angle), [x, y] = [other.x ?? 0, other.y ?? 0];
+    return {x:w.x + x*Math.cos(r) - y*Math.sin(r), y:w.y + x*Math.sin(r) + y*Math.cos(r), angle:w.angle + (other.a ?? 0)};
+}
+
+const blend = (a, b, e)=>({x:lerp(a.x, b.x, e), y:lerp(a.y, b.y, e), angle:a.angle + shortest(a.angle, b.angle)*e});
+
+// 另一隻手在 ms 的姿勢：第一格的時間內(用第一格的緩動)從 from 補間到黏著、之後黏著拿武器那隻手、收回那段(BACK_EASE)從黏著補間回 rest
+// 只在播動畫時黏；from／rest 是另一隻手腕自己的 {x, y, angle}
+export function otherAt(track, ms, other, from, rest=from)
+{
+    const fs = track.frames;
+    if(fs.length < 3) {return rest;}
+    const [first, end, last] = [fs[1], track.end, fs.at(-1).t];
+    if(ms < first.t)
+    {
+        const e = (EASE[first.ease] ?? EASE.Linear)(first.t > 0 ? Math.max(0, ms)/first.t : 1);
+        return blend(from, attach(poseAt(track, ms), other), e);
+    }
+    if(ms <= end) {return attach(poseAt(track, ms), other);}
+    const e = EASE[BACK_EASE](last > end ? Math.min(1, (ms - end)/(last - end)) : 1);
+    return blend(attach(poseAt(track, end), other), rest, e);
+}
+
 export function poseAt(track, ms)
 {
     const fs = track.frames;

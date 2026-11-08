@@ -247,6 +247,13 @@ class View extends Phaser.GameObjects.Container
     get shape() {return this._shape;}
     // 播武器動畫的節點＝拿武器的那隻手(equip.hand，空手＝前手)，空的(動物、沒手)不播
     get wrist() {const n = this._nodes?.[this._hand ?? 'wristF']; return n?.length ? n : null;}
+    // 播武器動畫時黏在拿武器那隻手上的另一隻手(武器 equip.other)：{node, other}，沒寫或那隻手是空的＝null
+    get grip()
+    {
+        const other = this._inHand?.other;
+        const n = other && this._nodes?.[this._hand === 'wristB' ? 'wristF' : 'wristB'];
+        return n?.length ? {node:n, other} : null;
+    }
     get rig() {return this._rig;}
     get sprites() {const flat = (c)=>c.list ? c.list.flatMap(flat) : [c]; return this._shape ? flat(this._shape) : [];}   // shape→rig→支點節點，攤平
 
@@ -1028,6 +1035,7 @@ export class RoleView extends View
         const held = this._holdId ? DB.item(this._holdId) : null;
         const inHand = held ? held.equip : weaponOf(dats, GM.CAT);
         this._hand = handOf(inHand);
+        this._inHand = inHand;
         this._placeWrists(inHand);
         dats.forEach((dat)=>{this._addEquip(dat);});
         if(held)

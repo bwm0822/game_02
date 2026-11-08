@@ -18,7 +18,7 @@ import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
 import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
-import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
+import {EASE, dirTo, animTrack, poseAt as trackPose, trackEnd, otherAt, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
 
 const FILES = ['role.json', 'part.json', 'item.json', 'anim.json'];
@@ -610,6 +610,17 @@ async function delAnim()
     });
 }
 
+// 武器的 equip.other：播動畫時另一隻手黏在拿武器那隻手腕上的位置（手腕本地座標）、角度；三格都清空＝刪掉（不黏）
+function otherTable(wid)
+{
+    const other = hand() === 'wristB' ? '前手' : '後手';
+    return [
+        h('div', {class: 'title'}, `另一隻手（equip.other，播動畫時${other}黏在拿武器那隻手腕上：x／y 是那隻手腕的本地座標、a 是相對角度；空白＝不黏）`),
+        h('table', {class: 'fit other'}, h('tr', null, ['x', 'y', 'a'].map(t => h('th', null, t))),
+            h('tr', null, ['x', 'y', 'a'].map(c => h('td', null, numInput('item.json', wid, ['equip', 'other', c], '0'))))),
+    ];
+}
+
 function animView(slots)
 {
     const wid = S.slots.CAT_WEAPON, an = anim(), F = 'anim.json';
@@ -628,6 +639,7 @@ function animView(slots)
         h('div', {class: 'equipname'}, h('span', {class: 'k'}, '武器'),
             wid ? [h('span', {class: 'bigid'}, wid), h('span', {class: 'dim'}, `${items()[wid].lab ?? ''}（${hand() === 'wristB' ? '後手' : '前手'}）`)] : h('span', {class: 'dim'}, '（空手，揮的是前手）')),
         wid && equipTable(wid),
+        wid && otherTable(wid),
         h('div', {class: 'title'}, '動畫（anim.json，全武器共用；影格 x/y＝拿武器那隻手的手腕（equip.hand，沒寫＝前手 wristF）在角色上的位置，a＝手腕角度，手、武器、手套跟著動）'),
         h('div', {class: 'animbar'},
             sel([['', '（無）'], ...Object.keys(anims()).map(k => [k, k])], an ? S.aid : '', (e) => {S.aid = e.target.value || null; setMs(0); playing++; render();}),
@@ -733,8 +745,12 @@ async function drawPreview()
     const local = (fn) => {g.save(); g.translate(vc.x, vc.y); if (flip) g.scale(-1, 1); g.translate(rig.x, rig.y); g.rotate(rad(rig.a)); fn(); g.restore();};
     // w：手腕姿勢（掛在拿武器那隻手腕的部位 p 已是靜止時的 rig 座標：先退回支點 wp 的本地、再照手腕轉／移）
     const wn = hand(), wp = pivot(wn);
-    const drawSp = (p, img, f, w) => local(() => {
-        if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - wp.a)); g.translate(-wp.x, -wp.y);}
+    // 武器有 equip.other：另一隻手黏在拿武器那隻手上（同遊戲 COM_Anim，pose.js 的 otherAt）
+    const other = tr && heldEquip()?.other, on = other && (wn === 'wristB' ? 'wristF' : 'wristB'), op = on && pivot(on);
+    const orest = on && {x: op.x, y: op.y, angle: op.a};
+    const oAt = (ms) => otherAt(tr, ms, other, orest, orest);
+    const drawSp = (p, img, f, w, pv = wp) => local(() => {
+        if (w) {g.translate(w.x, w.y); g.rotate(rad(w.angle - pv.a)); g.translate(-pv.x, -pv.y);}
         g.translate(p.x ?? 0, p.y ?? 0);
         g.rotate(rad(p.a ?? 0));
         g.scale(p.scale ?? 1, p.scale ?? 1);
@@ -742,14 +758,16 @@ async function drawPreview()
     });
     const wr = tr ? trackPose(tr, S.ms) : null;
     let n = 0;
-    const grp = [];
+    const grp = [], ogrp = [];
     parts.forEach((pt, i) => {
         const fr = frames[i];
         if (!fr) return;
-        const inWrist = tr && pt.node === wn;
+        const inWrist = tr && pt.node === wn, inOther = on && pt.node === on;
         if (inWrist) grp.push({...pt, ...fr});
+        if (inOther) ogrp.push({...pt, ...fr});
         g.globalAlpha = pt.alpha ?? 1;
-        drawSp(pt.p, fr.img, fr.f, inWrist ? wr : null);
+        if (inOther) drawSp(pt.p, fr.img, fr.f, oAt(S.ms), op);
+        else drawSp(pt.p, fr.img, fr.f, inWrist ? wr : null);
         g.globalAlpha = 1;
         n++;
     });
@@ -759,20 +777,26 @@ async function drawPreview()
         tr.frames.slice(1, -1).forEach(k => {
             if (k.t === S.ms) return;
             for (const it of grp) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, k);}
+            for (const it of ogrp) {g.globalAlpha = 0.3 * (it.alpha ?? 1); drawSp(it.p, it.img, it.f, oAt(k.t), op);}
         });
         g.globalAlpha = 1;
         const total = trackEnd(tr), hd = handleOf(wr), pv = tr.pivot;
         local(() => {
             g.lineWidth = px;
             g.setLineDash([2 * px, 2 * px]);
-            g.strokeStyle = '#ffcc66';
-            g.beginPath();
-            for (let ms = 0; ms <= total; ms += Math.max(1, total / 120))
-            {
-                const q = trackPose(tr, ms);
-                ms ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y);
-            }
-            g.stroke();
+            // 虛線軌跡：拿武器那隻手黃色、黏著的另一隻手青色
+            const trail = (at, color) => {
+                g.strokeStyle = color;
+                g.beginPath();
+                for (let ms = 0; ms <= total; ms += Math.max(1, total / 120))
+                {
+                    const q = at(ms);
+                    ms ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y);
+                }
+                g.stroke();
+            };
+            trail((ms) => trackPose(tr, ms), '#ffcc66');
+            if (on) trail(oAt, '#66ccff');
             g.setLineDash([]);
             const dot = (x, y, color, rr) => {g.fillStyle = color; g.beginPath(); g.arc(x, y, rr * px, 0, Math.PI * 2); g.fill();};
             if (S.key >= 0)

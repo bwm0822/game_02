@@ -73,6 +73,32 @@ run('武器動畫', async t => {
             out.backDrop = [p.view.wrist !== wbN, !wbN.list.some(s => s.texture?.key === 'bow-short')];
         }
 
+        // equip.other：播動畫時另一隻手(這裡是前手，戴手套讓 wristF 有東西)黏在弓手上一起動、一起轉，收回回原位
+        d.DB._itemDB['t-bowO'] = {cat: d.GM.CAT.WEAPON, type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24, hand: 'B', other: {x: 0, y: -14, a: 10}}};
+        {
+            const eqs = p.bb.equips, saved = [...eqs];
+            const wear = (list) => {eqs.length = 0; eqs.push(...list); p.setDirty(); p.emit(d.GM.EVT.UPDATEEQUIP);};
+            wear([{id: 'gloves_01', count: 1}]);
+            const wf = p.view._nodes.wristF, nums = (n) => [n.x, n.y, n.angle].map(Math.round);
+            const f0 = nums(wf);
+            const dropO = p.hold('t-bowO');
+            out.grip = [!!p.view.grip, JSON.stringify(nums(wf)) === JSON.stringify(f0)];
+            await p.anim_play('aim', right);
+            out.grip.push(pose(), nums(wf));
+            p.face(down);
+            const downHit = p.anim_play('aim', down);
+            await downHit;
+            const b = pose(), r = b[2] * Math.PI / 180;
+            out.gripTurn = [Math.round(b[0] + 14 * Math.sin(r)), Math.round(b[1] - 14 * Math.cos(r)), b[2] + 10].map(v => ((v % 360) + 540) % 360 - 180);
+            out.gripTurn.push(...nums(wf).map(v => ((v % 360) + 540) % 360 - 180));
+            p.anim_end();
+            await sleep(300);
+            out.grip.push(JSON.stringify(nums(wf)) === JSON.stringify(f0));
+            dropO();
+            p.face(right);
+            wear(saved);
+        }
+
         // 武器的手腕位移(equip.wristF／wristB)：穿上時手腕移過去；暫拿工具改用工具的(沒寫＝0)；播到一半放下，收回到武器的位置
         d.DB._itemDB['t-bow2'] = {cat: d.GM.CAT.WEAPON, type: 'ranged', range: 5, atk: 15, equip: {sprite: 'bow-short', x: 15, y: 24, wristF: {x: 4, y: -2, a: 10}, wristB: {x: 1, y: 1}}};
         {
@@ -121,6 +147,9 @@ run('武器動畫', async t => {
     t.eq('後手武器（hand B）：掛在 wristB、動畫動 wristB、靜止在 wristB 支點', JSON.stringify(r.back), JSON.stringify([true, true, true, true]));
     t.eq('後手武器瞄準：同一個 aim 影格（絕對姿勢）、前手不動、anim_end 收回', JSON.stringify(r.backAim), JSON.stringify([true, [15, 10, 0], true, true]));
     t.eq('放下後手武器：wrist 不再是 wristB、弓拿掉', JSON.stringify(r.backDrop), JSON.stringify([true, true]));
+    t.eq('equip.other：待機不黏、瞄準時前手黏在弓手（手腕本地 0,-14、角度 +10）、anim_end 收回原位',
+        JSON.stringify(r.grip), JSON.stringify([true, true, [15, 10, 0], [15, -4, 10], true]));
+    t.eq('equip.other：轉向目標時前手跟著繞著轉', JSON.stringify(r.gripTurn.slice(0, 3)), JSON.stringify(r.gripTurn.slice(3)));
     t.eq('武器手腕位移：穿上移過去、暫拿工具用工具的、放下恢復、播到一半放下收回武器位置、脫下回原位',
         JSON.stringify(r.ofs), JSON.stringify([[-9, 16, 30], 1, 1, [-13, 18, 20], [-9, 16, 30], [-9, 16, 30], true]));
     t.eq('武器 anim 帶進 total', JSON.stringify(r.weaponAnim), JSON.stringify(['stab', null]));

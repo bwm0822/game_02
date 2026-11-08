@@ -1,7 +1,7 @@
 import Com from './com.js'
 import {GM} from '../core/setting.js'
 import DB from '../data/db.js'
-import {dirTo, animTrack, setRest, poseAt, trackEnd} from '../core/pose.js'
+import {dirTo, animTrack, setRest, poseAt, trackEnd, otherAt} from '../core/pose.js'
 const _tag = 'anim';
 const IDLE_BREATH = false;  // idle 呼吸動畫暫時關掉（比對遊戲跟試穿的比例時會干擾）
 
@@ -146,7 +146,10 @@ export class COM_Anim extends Com
                 targets: proxy,
                 ms: to,
                 duration: to - from,
-                onUpdate: ()=>this._place(run.sp, poseAt(run.track, proxy.ms)),
+                onUpdate: ()=>{
+                    this._place(run.sp, poseAt(run.track, proxy.ms));
+                    if(run.grip) {this._place(run.grip.node, otherAt(run.track, proxy.ms, run.grip.other, run.grip.from, this._wristRest(run.grip.node)));}
+                },
                 onComplete: ()=>resolve(this._run===run),
                 onStop: ()=>resolve(false),
             });
@@ -159,6 +162,8 @@ export class COM_Anim extends Com
         this._run = null;
         run?.tw?.stop();
         run?.release();
+        // 黏著的另一隻手直接回原位(下一個動畫不一定用到它)
+        if(run?.grip?.node.active) {this._place(run.grip.node, this._wristRest(run.grip.node));}
     }
 
     _wristRest(sp) {return {x:sp.pivot.x, y:sp.pivot.y, angle:sp.pivot.a};}
@@ -173,7 +178,10 @@ export class COM_Anim extends Com
 
         this._stop();
         const track = animTrack(anim, {x:sp.x, y:sp.y, angle:sp.angle}, this._wristRest(sp), pt ? this._dirTo(pt) - (this.ctx.root.view.rig?.angle ?? 0) : 0);
-        const run = {sp, track};
+        // 武器有 equip.other：另一隻手黏在拿武器那隻手上一起動(見 pose.js 的 otherAt)
+        const g = this.ctx.root.view.grip;
+        const grip = g && {...g, from:{x:g.node.x, y:g.node.y, angle:g.node.angle}};
+        const run = {sp, track, grip};
         const free = new Promise((resolve)=>{run.release = resolve;});
         this._run = run;
 
@@ -201,6 +209,8 @@ export class COM_Anim extends Com
         this._stop();
         const sp = this.ctx.root.view?.wrist;
         if(sp?.active) {this._place(sp, this._wristRest(sp));}
+        const g = this.ctx.root.view?.grip;
+        if(g?.node.active) {this._place(g.node, this._wristRest(g.node));}
     }
 
     //------------------------------------------------------
