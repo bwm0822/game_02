@@ -4045,7 +4045,7 @@ run('paperdoll', async t => {
         const F = pd.S.layers.find(L => L.name === 'handF-front'), K = pd.S.layers.find(L => L.name === 'handF-back');
         pd.setTag(F, 'handF');
         out.home = [O.tag, F.tag ?? null, pd.pinned(F), pd.pinned(K)];
-        out.groupBadge = [...document.querySelectorAll('#layers .layer .tag.hand')].filter(b => b.textContent === '✋前').length;
+        out.groupBadge = [...document.querySelectorAll('#layers .layer .tag.hand')].filter(b => b.textContent === '前手').length;
         pd.setDoll({hand: false});
         out.groupOff = [O.visible, F.visible, K.visible];
         pd.setDoll({hand: true});
@@ -4064,6 +4064,24 @@ run('paperdoll', async t => {
         pd.S.layers = pd.S.layers.filter(L => L !== O);
         pd.dollHomeFix(pd.S.layers);
         out.fixNoO = [F.tag, F.poolId];
+
+        // 取消 pool 時人偶標記還靠 poolId 對條目
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const Z = await add('zz');
+        Z.poolId = 'handF';
+        pd.setTag(Z, 'handF');
+        pd.setPool(Z, 'handF');
+        pd.setPool(Z, null);
+        out.keepId = [Z.poolId, pd.pinned(Z), pd.dollWarn(Z)];
+        pd.setPool(Z, 'handF');
+        pd.setTag(Z, null);
+        out.keepPool = Z.poolId;
+        pd.setPool(Z, null);
+        out.noPool = Z.poolId ?? null;
+        Z.poolId = 'handF';
+        pd.setTag(Z, 'handF');
+        pd.setTag(Z, null);
+        out.noTag = Z.poolId ?? null;
 
         // 自動調成遊戲 PNG 大小：拿掉標記保留大小、長寬比不同不調、前後片整組
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
@@ -4110,7 +4128,7 @@ run('paperdoll', async t => {
     t.eq('人偶手：後手插身體下面、前手在最上面人偶上面、非人偶不動', dh.order, 'w,handB,b,h,handF');
     t.eq('人偶手：排序一筆 undo、標記留著', JSON.stringify(dh.undo), JSON.stringify(['w,b,h,handF,handB', 'handB']));
     t.eq('人偶手：掛各自手腕、鎖住', JSON.stringify(dh.m), JSON.stringify([[-9, 19, 0.25], [10, 17, 0.25], true]));
-    t.eq('人偶手：徽章', dh.badge, '✋前,✋後');
+    t.eq('人偶手：徽章', dh.badge, '前手,後手');
     t.eq('人偶手：切女套 f＋女身體支點、手不藏', JSON.stringify(dh.f), JSON.stringify([[-11, 19.5, 0.2], true, false]));
     t.eq('人偶手：☐ 手 一次藏兩隻、不影響頭', JSON.stringify(dh.off), JSON.stringify([false, false, true]));
     t.eq('人偶手：☐ 手 打開', JSON.stringify(dh.on), JSON.stringify([true, true]));
@@ -4127,6 +4145,10 @@ run('paperdoll', async t => {
     t.eq('人偶前後片：點後片取消整組', JSON.stringify(dh.untag), JSON.stringify([null, null]));
     t.eq('人偶前後片：舊專案貼在前片的搬回原圖', JSON.stringify(dh.fix), JSON.stringify(['handF', null]));
     t.eq('人偶前後片：舊專案沒原圖留前片、id 去後綴', JSON.stringify(dh.fixNoO), JSON.stringify(['handF', 'handF']));
+    t.eq('人偶標記：取消 pool 留 poolId、還鎖著、沒 ⚠', JSON.stringify(dh.keepId), JSON.stringify(['handF', true, '']));
+    t.eq('人偶標記：拿掉標記、pool 還在就留 id', dh.keepPool, 'handF');
+    t.eq('人偶標記：沒標記取消 pool 清 id', dh.noPool, null);
+    t.eq('人偶標記：沒 pool 拿掉標記清 id', dh.noTag, null);
     t.eq('人偶調%：對到條目自動調成遊戲 PNG 大小、⚠ 消失', JSON.stringify(dh.fit), JSON.stringify([50, 50, true, '']));
     t.eq('人偶調%：undo 退不掉（仍照遊戲大小）', dh.fitUndo, 50);
     t.eq('人偶調%：拿掉標記保留調好的大小', JSON.stringify(dh.unfit), JSON.stringify([50, 1]));

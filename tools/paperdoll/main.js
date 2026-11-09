@@ -209,10 +209,10 @@ function closeAll()
 // ---------- 參考人偶：圖層標成 男／女 的 髮／頭／身體（tag＝m-hair…）或不分男女的手（tag＝handF／handB），切換時批次改顯示（跟 👁 一樣不進 undo） ----------
 
 const DOLL_SEX = {m: '男', f: '女'}, DOLL_PART = {hair: '髮', head: '頭', body: '身體'};
-const DOLL_HAND = {handF: '前手', handB: '後手'}, DOLL_HAND_BADGE = {handF: '✋前', handB: '✋後'};
+const DOLL_HAND = {handF: '前手', handB: '後手'};
 // [性別（手是 null）, 部位]
 const dollKey = (tag) => {const i = tag.indexOf('-'); return [i < 0 ? null : tag.slice(0, i), tag.slice(i + 1)];};
-const dollBadge = (tag) => {const [s, p] = dollKey(tag); return s ? (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0] : DOLL_HAND_BADGE[p];};
+const dollBadge = (tag) => {const [s, p] = dollKey(tag); return s ? (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0] : DOLL_HAND[p];};
 
 // 自動護具零件的標示：看 auto.key 算、只顯示；前後片沒有 auto，從原頭盔層找
 const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子']};
@@ -250,6 +250,7 @@ function setTag(L, tag)
     const undo = tag in DOLL_HAND && hist.snapList(S), order = [...S.layers], H = dollHome(L);
     for (const M of [...S.layers.filter(M => M.tag === tag), ...linked(L)]) delete M.tag;
     if (tag) H.tag = tag;
+    else if (!poolHome(L).pool) for (const M of linked(L)) delete M.poolId;
     if (undo)
     {
         dollStack(H);
@@ -4719,7 +4720,7 @@ function gloveBadge(L)
 {
     const {glove} = gloveHome(L), g = splitNew(L);
     if (!glove || L === g?.O) return null;
-    return Object.assign(el('span', 'tag pool'), {textContent: `手${GLOVE_KIND[glove][0]}${L === g?.F ? '前' : L === g?.B ? '後' : ''}`, title: `手套：${GLOVE_KIND[glove]}（右鍵改）`});
+    return Object.assign(el('span', 'tag armor'), {textContent: `${GLOVE_KIND[glove][0]}套`, title: `手套：${GLOVE_KIND[glove]}（右鍵改）`});
 }
 
 // 填 r.err（擋存檔）、r.ask（覆蓋，存檔時 confirm）
@@ -4850,7 +4851,7 @@ async function loadGloves()
 // 前後片一組只有一個 pool：標記記在 poolHome()（原圖，原圖刪掉時 poolHeir() 交給前片），徽章掛前後片、右鍵改整組
 
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
-const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前', handB: '後'};
+const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前手', handB: '後手'};
 const POOL_DIR = 'roles/parts';
 const SPLIT_POOL = ['hat', 'hair', 'handF', 'handB'];
 const poolSplit = (L) => SPLIT_POOL.includes(L.pool) ? splitNew(L) : null;
@@ -4862,7 +4863,7 @@ function poolBadge(L)
 {
     const {pool, poolId} = poolHome(L), g = splitNew(L);
     if (!pool || L === g?.O) return null;
-    return Object.assign(el('span', 'tag pool'), {textContent: POOL_BADGE[pool] + (L === g?.F ? '前' : L === g?.B ? '後' : ''),
+    return Object.assign(el('span', 'tag pool'), {textContent: POOL_BADGE[pool] + (pool in DOLL_HAND ? '' : L === g?.F ? '前' : L === g?.B ? '後' : ''),
         title: `pool：${POOL_KIND[pool]}${poolId ? `（存過 ${poolId}）` : ''}（右鍵改）`});
 }
 
@@ -4889,9 +4890,11 @@ const poolGroups = () => groupsOf(S.layers.filter(L => AUTO_POOL.includes(poolP(
 function setPool(L, kind)
 {
     const H = poolHome(L);
-    for (const M of linked(L)) if (M !== H) {delete M.pool; delete M.poolId;}
+    // 人偶標記靠 poolId 對條目，還標著就留著
+    const clearId = (M) => {if (!M.tag) delete M.poolId;};
+    for (const M of linked(L)) if (M !== H) {delete M.pool; clearId(M);}
     if (kind) H.pool = kind;
-    else {delete H.pool; delete H.poolId;}
+    else {delete H.pool; clearId(H);}
     refreshAll();
 }
 
