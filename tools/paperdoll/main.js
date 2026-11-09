@@ -5,6 +5,7 @@ import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {WCLS} from '../common/settings.js';
 import {equipFor, flatPart, unflatPart, handOf} from '../../src/core/equip.js';
+import {DEPTH, BACK_DEPTH} from '../role/schema.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls) => {const e = document.createElement(tag); if (cls) e.className = cls; return e;};
@@ -23,7 +24,7 @@ const S = {
     layers: [],
     active: null,
     ref: {tw: 32, th: 32, rw: 32, rh: 64, ax: 0, ay: 16},
-    doll: {sex: 'm', head: true, hair: true},
+    doll: {sex: 'm', head: true, hair: true, hand: true},
     view: {zoom: 2, px: 0, py: 0},
     mode: {type: 'move'},
     keys: new Set(),
@@ -83,7 +84,7 @@ function addLayer(img, name, dir, path)
 function removeLayer(L)
 {
     const m = S.mode, heir = poolHeir(L);
-    if (heir) hist.push({group: [hist.snapList(S), hist.snap(L, true), hist.snap(heir, true)]});
+    if (heir) hist.push({group: [hist.snapList(S), hist.snap(L, true), hist.snap(heir, true), ...L.tag ? ['tag', 'poolId'].map(k => hist.snapProp(heir, k)) : []]});
     if (m.type === 'auto' && m.parts)
     {
         if (m.src === L) m.src = null;
@@ -98,7 +99,7 @@ function removeLayer(L)
     else if (m.type === 'split' && (m.F === L || m.B === L)) m[m.F === L ? 'F' : 'B'] = null;
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
-    if (heir) Object.assign(heir, L.pool && {pool: L.pool, poolId: L.poolId ?? L.name}, L.glove && {glove: L.glove, gloveId: L.gloveId}, L.alt && {alt: L.alt});
+    if (heir) Object.assign(heir, L.pool && {pool: L.pool, poolId: L.poolId ?? L.name}, L.glove && {glove: L.glove, gloveId: L.gloveId}, L.tag && {tag: L.tag, poolId: L.poolId ?? L.name}, L.alt && {alt: L.alt});
     else hist.forget(L, true);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
@@ -205,10 +206,13 @@ function closeAll()
     status('已關閉');
 }
 
-// ---------- 參考人偶：圖層標成 男／女 的 髮／頭／身體（tag＝m-hair…），切換時批次改顯示（跟 👁 一樣不進 undo） ----------
+// ---------- 參考人偶：圖層標成 男／女 的 髮／頭／身體（tag＝m-hair…）或不分男女的手（tag＝handF／handB），切換時批次改顯示（跟 👁 一樣不進 undo） ----------
 
 const DOLL_SEX = {m: '男', f: '女'}, DOLL_PART = {hair: '髮', head: '頭', body: '身體'};
-const dollBadge = (tag) => {const [s, p] = tag.split('-'); return (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0];};
+const DOLL_HAND = {handF: '前手', handB: '後手'}, DOLL_HAND_BADGE = {handF: '✋前', handB: '✋後'};
+// [性別（手是 null）, 部位]
+const dollKey = (tag) => {const i = tag.indexOf('-'); return [i < 0 ? null : tag.slice(0, i), tag.slice(i + 1)];};
+const dollBadge = (tag) => {const [s, p] = dollKey(tag); return s ? (s === 'm' ? '♂' : '♀') + DOLL_PART[p][0] : DOLL_HAND_BADGE[p];};
 
 // 自動護具零件的標示：看 auto.key 算、只顯示；前後片沒有 auto，從原頭盔層找
 const ARMOR_BADGE = {helmet: ['盔', '頭盔'], armor: ['甲', '胸甲'], boots: ['靴', '靴子']};
@@ -221,12 +225,55 @@ function armorBadge(L)
     return Object.assign(el('span', 'tag armor'), {textContent: b[0] + s, title: `自動護具：${b[1]}${n}`});
 }
 
+// 前後片一組只有一個人偶標記：記在原圖，原圖刪掉時交給前片（removeLayer）
+const dollHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.tag) ?? Ms[0];};
+
+// 舊專案的標記可能貼在前片／後片：搬回 dollHome，沒有原圖就用去掉 -front／-back 的名字對條目
+function dollHomeFix(layers)
+{
+    for (const L of layers.filter(M => M.tag))
+    {
+        const g = splitNew(L);
+        if (!g) continue;
+        const H = g.O ?? g.F ?? g.B;
+        if (L !== H)
+        {
+            H.tag ??= L.tag;
+            delete L.tag;
+        }
+        if (!g.O) H.poolId ??= L.name.replace(/-(front|back)$/, '');
+    }
+}
+
 function setTag(L, tag)
 {
-    for (const M of S.layers) if (M.tag === tag) delete M.tag;
-    if (tag) L.tag = tag;
-    else delete L.tag;
+    const undo = tag in DOLL_HAND && hist.snapList(S), order = [...S.layers], H = dollHome(L);
+    for (const M of [...S.layers.filter(M => M.tag === tag), ...linked(L)]) delete M.tag;
+    if (tag) H.tag = tag;
+    if (undo)
+    {
+        dollStack(H);
+        if (order.some((M, i) => M !== S.layers[i])) hist.push({group: [undo]});
+    }
     refreshAll();
+}
+
+const dollRank = (M) => {const p = dollKey(linked(M).find(o => o.tag).tag)[1]; return M === splitNew(M)?.B ? BACK_DEPTH[p] ?? DEPTH.back : DEPTH[p];};
+
+// 標手、拆手的當下照遊戲深度插進其他人偶層之間（之後可以自己拖，非人偶層不動）；沒有其他人偶就留在原處
+function dollStack(L)
+{
+    const T = linked(L).find(M => M.tag);
+    if (!T || !(dollKey(T.tag)[1] in DOLL_HAND)) return;
+    const g = splitNew(T), Ms = g ? [g.B, g.F, g.O].filter(Boolean) : [T];
+    const rank = new Map(S.layers.filter(M => linked(M).some(o => o.tag)).map(M => [M, dollRank(M)]));
+    const i0 = S.layers.indexOf(g?.O ?? T), home = i0 - Ms.filter(M => S.layers.indexOf(M) < i0).length;
+    S.layers = S.layers.filter(M => !Ms.includes(M));
+    for (const M of Ms)
+    {
+        const on = S.layers.filter(o => rank.has(o)), next = on.find(o => rank.get(o) > rank.get(M)), last = on.at(-1);
+        S.layers.splice(next ? S.layers.indexOf(next) : last ? S.layers.indexOf(last) + 1 : home, 0, M);
+    }
 }
 
 function dollShow()
@@ -234,12 +281,12 @@ function dollShow()
     for (const L of S.layers)
     {
         if (!L.tag) continue;
-        const [s, p] = L.tag.split('-');
-        const on = s === S.doll.sex && (p !== 'hair' || S.doll.hair) && (p !== 'head' || S.doll.head), g = splitNew(L);
+        const [s, p] = dollKey(L.tag);
+        const on = (!s || s === S.doll.sex) && (p !== 'hair' || S.doll.hair) && (p !== 'head' || S.doll.head) && (!(p in DOLL_HAND) || S.doll.hand), g = splitNew(L);
         // 拆了前後片的人偶顯示的是前後片，原圖一直藏著
-        if (g?.O === L)
+        if (g)
         {
-            L.visible = false;
+            if (g.O) g.O.visible = false;
             for (const M of [g.F, g.B]) if (M) M.visible = on;
         }
         else L.visible = on;
@@ -253,7 +300,7 @@ function altSync()
 {
     for (const L of S.layers)
     {
-        if (L.alt?.sex !== S.doll.sex) continue;
+        if (L.alt?.sex !== S.doll.sex || handPinned(L)) continue;
         const cur = {sex: otherSex(S.doll.sex), ...pickKeys(L, ALT_F)};
         autoPlace({P: {}, C: L}, L.alt);
         L.alt = cur;
@@ -298,8 +345,10 @@ function setDoll(d)
 // refreshAll 每次重擺、不進 undo；女的套 f，頭／頭髮掛在同性別參考身體的 neck；對不到的照舊手動擺。圖層像素跟遊戲 PNG 不一樣大只警告
 let dollParts = {}, dollTex = new Map();
 const dollSize = new Map();
-const dollEntry = (L) => {const e = L.tag && dollParts[L.poolId ?? L.name]; return e && e.kind === L.tag.split('-')[1] ? e : null;};
-const pinned = (L) => {const O = splitNew(L)?.O; return !!dollEntry(L) || !!(O && dollEntry(O));};
+const dollEntry = (L) => {const e = L.tag && dollParts[L.poolId ?? L.name]; return e && e.kind === dollKey(L.tag)[1] ? e : null;};
+const pinned = (L) => !!dollEntry(dollHome(L));
+// 鎖住的人偶手是唯讀參考：數字照條目（女模式是 f），不能有女版、不能存 pool
+const handPinned = (L) => linked(L).some(M => M.tag && dollKey(M.tag)[1] in DOLL_HAND && dollEntry(M));
 const unpinned = (G) => G.filter(M => !pinned(M));
 
 // 存讀換算用的 body：同性別參考身體對到的條目，沒有退回 body-man／body-woman
@@ -321,13 +370,40 @@ async function dollLoad()
     dollSize.clear();
 }
 
+// 不能自動調成遊戲 PNG 大小的原因（空字串＝可以）；[W, H]＝調之前的尺寸
+function dollFitBlock(L, z, W, H)
+{
+    const g = splitNew(L), last = L.ops.at(-1);
+    if (L.auto || autoOwner(L)) return '自動零件要改存檔%';
+    if (linked(L).some(hasPaint)) return '有像素修補';
+    if (last?.sg && !last.dollFit) return '手動縮放過，要先縮回 100%';
+    return g && splitScaleBlock(g) || (Math.abs(H * z.w / W - z.h) > 1 ? '長寬比不同' : '');
+}
+
+const dollFitSrc = (L) => {const o = L.ops.at(-1); return o?.dollFit ? [o.sw, o.sh] : [L.canvas.width, L.canvas.height];};
+
+// 對到條目就用一步 dollFit 縮放（最後一步、sg：前後片的 mask 插在它前面）調成遊戲 PNG 大小，跟位置一樣每次同步、不進 undo；對不到條目（含拿掉標記）就維持目前大小
+function dollFit(L, e)
+{
+    const had = L.ops.at(-1)?.dollFit ? L.ops.at(-1) : null, g = splitNew(L);
+    if (S.mode.type !== 'move' || !e || g && L !== g.O) return;
+    const z = dollPng(e.sprite);
+    if (!z) return;
+    const [W, H] = dollFitSrc(L), want = !dollFitBlock(L, z, W, H) && (z.w !== W || z.h !== H) ? z : null;
+    if (want ? had?.w === want.w && had?.h === want.h : !had) return;
+    L.ops = [...had ? L.ops.slice(0, -1) : L.ops, ...want ? [{type: 'xform', sx: 0, sy: 0, sw: W, sh: H, w: want.w, h: want.h, smooth: true, sg: true, dollFit: true}] : []];
+    L.canvas = PX.replay(L.src, L.ops);
+    if (g) splitSync(L);
+}
+
 function dollSync()
 {
     for (const L of S.layers)
     {
         const e = dollEntry(L);
+        dollFit(L, e);
         if (!e) continue;
-        const s = L.tag.split('-')[0], p = equipFor(e, s), q = e.kind === 'body' ? p : flatPart(p, dollBody(dollParts, s), 'neck');
+        const s = dollKey(L.tag)[0] ?? S.doll.sex, p = equipFor(e, s), q = e.kind === 'body' ? p : flatPart(p, dollBody(dollParts, s), PART_NODE[e.kind]);
         for (const M of linked(L)) Object.assign(M, {scale: q.scale ?? 1, x: round(q.x ?? 0), y: round(q.y ?? 0), a: round(q.a ?? 0, 10), ox: q.ox ?? 0.5, oy: q.oy ?? 1});
     }
 }
@@ -337,23 +413,26 @@ function dollPng(key)
 {
     if (dollSize.has(key)) return dollSize.get(key);
     dollSize.set(key, null);
-    texSize(key, dollTex).then(z => {if (z) {dollSize.set(key, z); refreshLayers();}}).catch(() => {});
+    texSize(key, dollTex).then(z => {if (z) {dollSize.set(key, z); refreshAll();}}).catch(() => {});
     return null;
 }
 
 function dollWarn(L)
 {
     const e = dollEntry(L), id = L.poolId ?? L.name;
-    if (!e) return `part.json 沒有同名的${DOLL_PART[L.tag.split('-')[1]]}條目 ${id}，沒同步、照舊手動擺`;
+    const k = dollKey(L.tag)[1], hand = DOLL_HAND[k];
+    if (!e) return `part.json 沒有同名的${hand ?? DOLL_PART[k]}條目 ${id}，沒同步、照舊手動擺${hand ? `（手要用整張圖，圖層名 ${k}）` : ''}`;
     const z = dollPng(e.sprite), {width: w, height: h} = L.canvas;
-    return z && (z.w !== w || z.h !== h) ? `圖 ${w}×${h} 跟遊戲的 ${e.sprite}.png ${z.w}×${z.h} 不一樣大，scale 對不上` : '';
+    if (!z || z.w === w && z.h === h) return '';
+    const why = dollFitBlock(L, z, ...dollFitSrc(L));
+    return `圖 ${w}×${h} 跟遊戲的 ${e.sprite}.png ${z.w}×${z.h} 不一樣大，scale 對不上${why ? `（沒自動調：${why}）` : ''}`;
 }
 
 function dollTagEl(L)
 {
-    const w = dollWarn(L);
-    return Object.assign(el('span', 'tag ' + L.tag.split('-')[0]), {textContent: dollBadge(L.tag) + (w ? '⚠' : ''),
-        title: ['參考人偶（右鍵改標記）', pinned(L) && `照 part.json 的 ${L.poolId ?? L.name} 擺放、鎖住，去部位／試穿分頁改`, w].filter(Boolean).join('\n')});
+    const H = dollHome(L), w = dollWarn(H);
+    return Object.assign(el('span', 'tag ' + (dollKey(H.tag)[0] ?? 'hand')), {textContent: dollBadge(H.tag) + (w ? '⚠' : ''),
+        title: ['參考人偶（右鍵改標記）', pinned(H) && `照 part.json 的 ${H.poolId ?? H.name} 擺放、鎖住，去部位／試穿分頁改`, w].filter(Boolean).join('\n')});
 }
 
 const dollSig = () => JSON.stringify([dollBody(dollParts, 'm'), dollBody(dollParts, 'f'), ...S.layers.map(dollEntry)]);
@@ -402,15 +481,15 @@ function setFem(L, on)
 function tagMenu(e, L)
 {
     e.preventDefault();
-    const tags = [[null, '無'], ...Object.entries(DOLL_SEX).flatMap(([s, sn]) => Object.entries(DOLL_PART).map(([p, pn]) => [`${s}-${p}`, `${sn}：${pn}`]))];
+    const tags = [[null, '無'], ...Object.entries(DOLL_SEX).flatMap(([s, sn]) => Object.entries(DOLL_PART).map(([p, pn]) => [`${s}-${p}`, `${sn}：${pn}`])), ...Object.entries(DOLL_HAND)];
     const pools = [[null, '無'], ...Object.entries(POOL_KIND)];
     const sub = (list, cur, set) => list.map(([k, n]) => [`${k === cur ? '✔ ' : ''}${n}`, () => set(k)]);
-    const pool = poolHome(L).pool, F = femHome(L);
+    const pool = poolHome(L).pool, F = femHome(L), tag = dollHome(L).tag ?? null;
     ctxMenu(e.clientX, e.clientY, [
-        [`標記：${tags.find(([k]) => k === (L.tag ?? null))[1]}`, sub(tags, L.tag ?? null, (k) => setTag(L, k))],
+        [`標記：${tags.find(([k]) => k === tag)[1]}`, sub(tags, tag, (k) => setTag(L, k))],
         [`pool：${POOL_KIND[pool] ?? '無'}`, sub(pools, pool ?? null, (k) => setPool(L, k))],
         [`手套：${GLOVE_KIND[gloveHome(L).glove] ?? '無'}`, sub([[null, '無'], ...Object.entries(GLOVE_KIND)], gloveHome(L).glove ?? null, (k) => setGlove(L, k))],
-        ...hasFem(F) ? [['女版：有', [['刪除', () => setFem(F, false)]]]] : femAble(F) && !femLocked(F) ? [['女版：無', [['新增', () => setFem(F, true)]]]] : [],
+        ...handPinned(F) ? [] : hasFem(F) ? [['女版：有', [['刪除', () => setFem(F, false)]]]] : femAble(F) && !femLocked(F) ? [['女版：無', [['新增', () => setFem(F, true)]]]] : [],
     ]);
 }
 
@@ -1369,6 +1448,7 @@ function splitApply(m)
     const O = m.layer;
     hist.push({group: [hist.snapList(S), hist.snap(O, true), ...[m.F, m.B].filter(Boolean).map(M => hist.snap(M, true))]});
     const F = S.active = splitBuild(O, m, m.gid ?? O.splitSrc ?? autoGid());
+    if (!m.gid) dollStack(O);
     status(m.cut ? `${O.name} 挖除 → ${F.name}` : `${O.name} 拆成 ${F.name}＋${splitNew(O).B.name}`);
 }
 
@@ -2897,9 +2977,10 @@ function refreshLayers()
         const b = $(s === 'm' ? 'dollM' : 'dollF');
         b.classList.toggle('on', S.doll.sex === s);
     }
-    $('dollHead').disabled = $('dollHair').disabled = !tagged;
+    $('dollHead').disabled = $('dollHair').disabled = $('dollHand').disabled = !tagged;
     $('dollHead').checked = S.doll.head;
     $('dollHair').checked = S.doll.hair;
+    $('dollHand').checked = S.doll.hand;
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
@@ -2924,7 +3005,7 @@ function refreshLayers()
             ico('💾', L.save, `專案：${L.proj?.name ?? '（無）'}（點一下切換要不要存進專案）`, () => {L.save = !L.save; refreshAll();}),
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
-            ...(L.tag ? [dollTagEl(L)] : []),
+            ...(dollHome(L).tag && L !== splitNew(L)?.O ? [dollTagEl(L)] : []),
             ...[poolBadge(L), gloveBadge(L)].filter(Boolean),
             ...(hasFem(femHome(L)) ? [Object.assign(el('span', 'tag f fem'), {textContent: '♀', title: '有女版（右鍵改）'})] : []),
             ...[armorBadge(L)].filter(Boolean),
@@ -4775,7 +4856,7 @@ const SPLIT_POOL = ['hat', 'hair', 'handF', 'handB'];
 const poolSplit = (L) => SPLIT_POOL.includes(L.pool) ? splitNew(L) : null;
 const poolHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.pool) ?? Ms[0];};
 const femHome = (L) => {const H = poolHome(L); return H.pool ? H : L;};
-const poolHeir = (L) => {const g = (L.pool && poolHome(L) === L || L.glove) && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
+const poolHeir = (L) => {const g = (L.pool && poolHome(L) === L || L.glove || L.tag) && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
 
 function poolBadge(L)
 {
@@ -4827,6 +4908,7 @@ function poolCheck(rows, parts, roles, keys)
         const err = (s) => {r.err ||= s;};
         const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
         r.only = old?.sex ?? null;
+        if (handPinned(r.L)) err('鎖住的人偶手是唯讀參考，先拿掉人偶標記再存');
         if (!SPLIT_POOL.includes(r.L.pool) && splitNew(r.L)) err('拆了前後片只能存成帽子、頭髮或手，要先撤掉前後片');
         if (!r.id) err('要填 id');
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
@@ -4850,7 +4932,7 @@ function poolDialog(parts, roles, keys)
 {
     const dlg = $('dlgPool');
     // 帽子拆了前後片時原圖是隱藏的，看前後片顯示了沒
-    const rows = S.layers.filter(L => L.pool && poolHome(L) === L).reverse().map(L => ({L, on: linked(L).some(M => M.visible), id: L.poolId ?? L.name}));
+    const rows = S.layers.filter(L => L.pool && poolHome(L) === L).reverse().map(L => ({L, on: !handPinned(L) && linked(L).some(M => M.visible), id: L.poolId ?? L.name}));
     $('dpTitle').textContent = '存到 pool（part.json）';
     const refresh = () => {
         const act = poolCheck(rows, parts, roles, keys);
@@ -4959,7 +5041,7 @@ async function commitPool(rows, bake)
 async function loadPool()
 {
     if (!S.assets) return;
-    const parts = await readParts(), pool = S.layers.filter(L => L.pool), ms = poolGroups();
+    const parts = await readParts(), pool = S.layers.filter(L => L.pool && !handPinned(L)), ms = poolGroups();
     const undo = {group: [hist.snapList(S), ...pool.flatMap(L => linked(L)).map(L => hist.snap(L, true))]};
     const hit = [], miss = [], warn = [], mine = new Set(ms.flatMap(m => m.parts.map(p => p.C)));
     const entry = (L) => {
@@ -5204,7 +5286,7 @@ function applySettings(s)
     $('showOrigin').checked = s.showOrigin ?? true;
     for (const id of Object.keys(S.ref)) $(id).value = S.ref[id];
     if (s.trimT) $('trimT').value = s.trimT;
-    if (s.doll) Object.assign(S.doll, {head: true, ...s.doll});
+    if (s.doll) Object.assign(S.doll, {head: true, hand: true, ...s.doll});
     // 舊專案的 auto 有整包數字：只拿介面狀態，數字以 settings.json 為準
     autoSet({...S.auto, ...Object.fromEntries(AUTO_UI.filter(k => k in (s.auto ?? {})).map(k => [k, s.auto[k]]))});
 }
@@ -5305,6 +5387,7 @@ async function openProject(fh, dir, path)
         S.layers = layers;
         S.active = layers[data.active] ?? layers.at(-1) ?? null;
     }
+    dollHomeFix(layers);
     projSexFix(layers, projSex);
     altSync();
     dollSync();
@@ -5347,6 +5430,7 @@ $('dollM').onclick = () => setDoll({sex: 'm'});
 $('dollF').onclick = () => setDoll({sex: 'f'});
 $('dollHead').onchange = () => setDoll({head: $('dollHead').checked});
 $('dollHair').onchange = () => setDoll({hair: $('dollHair').checked});
+$('dollHand').onchange = () => setDoll({hand: $('dollHand').checked});
 $('btnDup').onclick = duplicateLayer;
 $('btnPoseCopy').onclick = copyPose;
 $('btnPosePaste').onclick = pastePose;
@@ -5720,5 +5804,5 @@ async function partsChanged()
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, commitItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST,
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, dollHomeFix, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST,
                pinned, partsChanged, dollWarn, setFem, hasFem, femLocked};

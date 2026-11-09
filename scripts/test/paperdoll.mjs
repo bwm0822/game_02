@@ -2687,7 +2687,7 @@ run('paperdoll', async t => {
     t.eq('pool：男模式載入讀基準、undo（連女版）', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[5, 6, 0.4], [1, 1, 0.4, true]]));
     t.eq('pool：手動圖層的女版存進專案', pl.projAlt, '{"sex":"f","scale":0.3,"x":9,"y":9}');
     t.eq('右鍵：母子選單（標記／pool／女版：有 ▸ 刪除），子選單勾目前的值', JSON.stringify(pl.menuA), JSON.stringify([['標記：無', 'pool：衣服', '手套：無', '女版：有'],
-        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '帽子', '前手', '後手'], ['✔ 無', '前手', '後手'], ['刪除']]]));
+        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體', '前手', '後手'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '帽子', '前手', '後手'], ['✔ 無', '前手', '後手'], ['刪除']]]));
     t.eq('右鍵：能有女版的沒有女版＝女版：無 ▸ 新增', JSON.stringify([pl.menuH[0], pl.menuH[1][3]]), JSON.stringify([['標記：無', 'pool：鞋子', '手套：無', '女版：無'], ['新增']]));
     t.eq('右鍵：頭不能有女版', JSON.stringify(pl.menuHead), JSON.stringify(['標記：無', 'pool：頭', '手套：無']));
     t.eq('女版（手動層）：切女換成女版', JSON.stringify(pl.swapF), JSON.stringify([9, 9, 0.3, 'm']));
@@ -3897,7 +3897,7 @@ run('paperdoll', async t => {
     t.eq('人偶：按鈕狀態', JSON.stringify(dl.btn), JSON.stringify([true, false, false, false]));
     t.eq('人偶：複製不帶標記', dl.dupTag, null);
     t.check('人偶：取消標記', !dl.untag);
-    t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', head: false, hair: false}, 'm-hair,,m-body,,f-hair,f-body,']));
+    t.eq('人偶：存進專案', JSON.stringify(dl.data), JSON.stringify([{sex: 'm', head: false, hair: false, hand: true}, 'm-hair,,m-body,,f-hair,f-body,']));
     t.eq('人偶：舊專案沒有 head＝勾', JSON.stringify(dl.legacy), JSON.stringify([true, false]));
     t.eq('關閉：有沒存的修改、按取消不關', JSON.stringify(dl.keep), JSON.stringify([true, 1]));
     t.eq('關閉：清空圖層與 undo', JSON.stringify(dl.closed), JSON.stringify([0, null, 0, 2, true, '（未命名）']));
@@ -3964,6 +3964,176 @@ run('paperdoll', async t => {
     t.eq('參考人偶：undo 也拉回條目位置', ds.undo, 40);
     t.eq('參考人偶：載入 pool 照參考身體的 rig 換算', ds.load, 40);
     t.eq('參考人偶：part.json 改了跟著重擺、其他零件不動＋提示', JSON.stringify(ds.changed), JSON.stringify([20, -12, 0, true]));
+
+    // 人偶手：男女共用、掛手腕支點、☐ 手、唯讀、照遊戲深度排
+    const dh = await ev(async () => {
+        const pd = window.__pd, out = {}, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets'), json = await assets.getDirectoryHandle('json');
+        const put = async (name, data) => {const w = await (await json.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
+        const bmp = (draw) => {const c = document.createElement('canvas'); c.width = c.height = 200; draw?.(c.getContext('2d')); return createImageBitmap(c);};
+        await put('part.json', JSON.stringify({
+            'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25, y: 30, wristF: {x: -10, y: -13}, wristB: {x: 10, y: -13}},
+            'body-woman': {kind: 'body', sprite: 'body-woman', scale: 0.25, y: 32, wristF: {x: -11, y: -12.5}, wristB: {x: 11, y: -12.5}},
+            handF: {kind: 'handF', sprite: 'handF-front', back: 'handF-back', scale: 0.25, x: 1, y: 2, f: {scale: 0.2, x: 0, y: 0}},
+            handB: {kind: 'handB', sprite: 'handB-front', scale: 0.25, x: 0, y: 0},
+        }));
+        await put('role.json', '{}');
+        const texd = await assets.getDirectoryHandle('textures'), pngd = await (await texd.getDirectoryHandle('roles', {create: true})).getDirectoryHandle('parts', {create: true});
+        const png = document.createElement('canvas'); png.width = png.height = 50;
+        const pw = await (await pngd.getFileHandle('handB-front.png', {create: true})).createWritable();
+        await pw.write(await new Promise(r => png.toBlob(r))); await pw.close();
+        pd.cancelMode();
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.setDoll({sex: 'm', head: true, hair: true, hand: true});
+        await pd.setAssets(assets);
+        const add = async (n, draw) => pd.addLayer(await bmp(draw), n, null, null);
+        const W = await add('w'), B = await add('b'), Hd = await add('h'), HF = await add('handF'), HB = await add('handB');
+        const names = () => pd.S.layers.map(L => L.name).join();
+        pd.setTag(B, 'm-body'); pd.setTag(Hd, 'm-head');
+        pd.setTag(HF, 'handF');
+        pd.setTag(HB, 'handB');
+        out.order = names();
+        pd.undo();
+        out.undo = [names(), HB.tag];
+        pd.setTag(HB, 'handB');
+        const pos = (L) => [L.x, L.y, L.scale];
+        out.m = [pos(HF), pos(HB), pd.pinned(HF)];
+        out.badge = [...document.querySelectorAll('#layers .layer .tag.hand')].map(b => b.textContent).join();
+        pd.setDoll({sex: 'f'});
+        out.f = [pos(HF), HF.visible, B.visible];
+        pd.setDoll({sex: 'm'});
+        $('dollHand').click();
+        out.off = [HF.visible, HB.visible, Hd.visible];
+        $('dollHand').click();
+        out.on = [HF.visible, HB.visible];
+
+        const alert0 = window.alert;
+        let msg = '';
+        window.alert = (s) => {msg = s;};
+        pd.setPool(HF, 'handF');
+        await pd.commitPool([{L: HF, id: 'handF', on: true}], false);
+        window.alert = alert0;
+        out.save = msg.includes('唯讀');
+        HF.alt = {sex: 'f', scale: 9, x: 9, y: 9};
+        pd.setDoll({sex: 'f'});
+        pd.setDoll({sex: 'm'});
+        out.alt = [HF.alt.sex, HF.alt.x];
+        delete HF.alt;
+        pd.setPool(HF, null);
+
+        pd.setTag(HF, null);
+        const paint = g => {g.fillStyle = '#a05030'; g.fillRect(20, 20, 160, 160); g.fillStyle = '#000'; g.fillRect(20, 78, 160, 4); g.fillRect(68, 80, 4, 100);};
+        const G = await add('hx', paint);
+        pd.setTag(G, 'handF');
+        out.unmatched = [pd.pinned(G), pd.dollWarn(G).includes('整張')];
+        pd.select(G);
+        pd.setMode('split');
+        pd.S.mode.start = {x: 100, y: 100};
+        pd.splitRun(pd.S.mode);
+        pd.applyMode();
+        out.split = names();
+
+        // 前後片一組一個標記：點前片標，記在原圖、對得到條目；砍原圖交給前片；舊專案貼在前片的搬回原圖
+        pd.setTag(G, null);
+        const O = await add('handF', paint);
+        HF.name = 'old';
+        pd.select(O);
+        pd.setMode('split');
+        pd.S.mode.start = {x: 100, y: 100};
+        pd.splitRun(pd.S.mode);
+        pd.applyMode();
+        const F = pd.S.layers.find(L => L.name === 'handF-front'), K = pd.S.layers.find(L => L.name === 'handF-back');
+        pd.setTag(F, 'handF');
+        out.home = [O.tag, F.tag ?? null, pd.pinned(F), pd.pinned(K)];
+        out.groupBadge = [...document.querySelectorAll('#layers .layer .tag.hand')].filter(b => b.textContent === '✋前').length;
+        pd.setDoll({hand: false});
+        out.groupOff = [O.visible, F.visible, K.visible];
+        pd.setDoll({hand: true});
+        out.groupOn = [O.visible, F.visible, K.visible];
+        pd.removeLayer(O);
+        out.heir = [F.tag, F.poolId, pd.pinned(K)];
+        pd.undo();
+        out.heirUndo = [O.tag, F.tag ?? null, F.poolId ?? null];
+        pd.setTag(K, null);
+        out.untag = [O.tag ?? null, F.tag ?? null];
+        F.tag = 'handF';
+        pd.dollHomeFix(pd.S.layers);
+        out.fix = [O.tag, F.tag ?? null];
+        O.tag = undefined; delete O.tag;
+        F.tag = 'handF';
+        pd.S.layers = pd.S.layers.filter(L => L !== O);
+        pd.dollHomeFix(pd.S.layers);
+        out.fixNoO = [F.tag, F.poolId];
+
+        // 自動調成遊戲 PNG 大小：拿掉標記保留大小、長寬比不同不調、前後片整組
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const until = async (f) => {for (let i = 0; i < 40 && !f(); i++) await new Promise(r => requestAnimationFrame(r));};
+        const A = await add('handB');
+        pd.hist.undos.length = pd.hist.redos.length = 0;
+        pd.hist.record(A);
+        pd.setTag(A, 'handB');
+        await until(() => A.canvas.width === 50);
+        out.fit = [A.canvas.width, A.canvas.height, !!A.ops.at(-1)?.dollFit, pd.dollWarn(A)];
+        pd.undo();
+        pd.select(A);
+        out.fitUndo = A.canvas.width;
+        pd.setTag(A, null);
+        pd.select(A);
+        out.unfit = [A.canvas.width, A.ops.length];
+        pd.S.layers = [];
+        const wide = document.createElement('canvas'); wide.width = 200; wide.height = 100;
+        const R = pd.addLayer(await createImageBitmap(wide), 'handB', null, null);
+        pd.setTag(R, 'handB');
+        await until(() => pd.dollWarn(R));
+        out.ratio = [R.canvas.width, pd.dollWarn(R).includes('長寬比不同')];
+        pd.S.layers = [];
+        const SO = await add('handB', paint);
+        pd.select(SO);
+        pd.setMode('split');
+        pd.S.mode.start = {x: 100, y: 100};
+        pd.splitRun(pd.S.mode);
+        pd.applyMode();
+        const SF = pd.S.layers.find(L => L.name === 'handB-front'), SB = pd.S.layers.find(L => L.name === 'handB-back');
+        pd.setTag(SF, 'handB');
+        await until(() => SF.canvas.width === 50);
+        out.fitSplit = [SO, SF, SB].map(M => M.canvas.width);
+        pd.setTag(SF, null);
+        pd.select(SO);
+        out.unfitSplit = [SO, SF, SB].map(M => M.canvas.width);
+
+        pd.setDoll({sex: 'm', head: true, hair: true, hand: true});
+        pd.applySettings({doll: {sex: 'm', hair: true}});
+        out.legacy = pd.S.doll.hand;
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        return out;
+    });
+    t.eq('人偶手：後手插身體下面、前手在最上面人偶上面、非人偶不動', dh.order, 'w,handB,b,h,handF');
+    t.eq('人偶手：排序一筆 undo、標記留著', JSON.stringify(dh.undo), JSON.stringify(['w,b,h,handF,handB', 'handB']));
+    t.eq('人偶手：掛各自手腕、鎖住', JSON.stringify(dh.m), JSON.stringify([[-9, 19, 0.25], [10, 17, 0.25], true]));
+    t.eq('人偶手：徽章', dh.badge, '✋前,✋後');
+    t.eq('人偶手：切女套 f＋女身體支點、手不藏', JSON.stringify(dh.f), JSON.stringify([[-11, 19.5, 0.2], true, false]));
+    t.eq('人偶手：☐ 手 一次藏兩隻、不影響頭', JSON.stringify(dh.off), JSON.stringify([false, false, true]));
+    t.eq('人偶手：☐ 手 打開', JSON.stringify(dh.on), JSON.stringify([true, true]));
+    t.check('人偶手：鎖住的不能存 pool', dh.save);
+    t.eq('人偶手：鎖住時切男女不動 alt', JSON.stringify(dh.alt), JSON.stringify(['f', 9]));
+    t.eq('人偶手：對不到條目沒鎖、提示用整張', JSON.stringify(dh.unmatched), JSON.stringify([false, true]));
+    t.eq('人偶手：拆前後片照遊戲深度（後片在頭上、前片在上面）', dh.split, 'w,handB,b,h,hx-back,hx-front,hx,handF');
+    t.eq('人偶前後片：點前片標，記在原圖、整組鎖', JSON.stringify(dh.home), JSON.stringify(['handF', null, true, true]));
+    t.eq('人偶前後片：徽章掛前後片、原圖不掛', dh.groupBadge, 2);
+    t.eq('人偶前後片：☐ 手 整組藏', JSON.stringify(dh.groupOff), JSON.stringify([false, false, false]));
+    t.eq('人偶前後片：打開顯示前後片、原圖藏著', JSON.stringify(dh.groupOn), JSON.stringify([false, true, true]));
+    t.eq('人偶前後片：砍原圖標記交給前片、id 留原名、還鎖著', JSON.stringify(dh.heir), JSON.stringify(['handF', 'handF', true]));
+    t.eq('人偶前後片：undo 標記回原圖', JSON.stringify(dh.heirUndo), JSON.stringify(['handF', null, null]));
+    t.eq('人偶前後片：點後片取消整組', JSON.stringify(dh.untag), JSON.stringify([null, null]));
+    t.eq('人偶前後片：舊專案貼在前片的搬回原圖', JSON.stringify(dh.fix), JSON.stringify(['handF', null]));
+    t.eq('人偶前後片：舊專案沒原圖留前片、id 去後綴', JSON.stringify(dh.fixNoO), JSON.stringify(['handF', 'handF']));
+    t.eq('人偶調%：對到條目自動調成遊戲 PNG 大小、⚠ 消失', JSON.stringify(dh.fit), JSON.stringify([50, 50, true, '']));
+    t.eq('人偶調%：undo 退不掉（仍照遊戲大小）', dh.fitUndo, 50);
+    t.eq('人偶調%：拿掉標記保留調好的大小', JSON.stringify(dh.unfit), JSON.stringify([50, 1]));
+    t.eq('人偶調%：長寬比不同不調、⚠ 寫原因', JSON.stringify(dh.ratio), JSON.stringify([200, true]));
+    t.eq('人偶調%：前後片整組調', JSON.stringify(dh.fitSplit), JSON.stringify([50, 50, 50]));
+    t.eq('人偶調%：前後片拿掉標記整組保留大小', JSON.stringify(dh.unfitSplit), JSON.stringify([50, 50, 50]));
+    t.check('人偶手：舊專案沒有 hand＝勾', dh.legacy);
 
     // 移除綠色：半透明綠霧也算種子、不透明暗綠跟暗描邊留著、舊步驟不變；參數按確定才存、可還原
     const rgn = await ev(async () => {
