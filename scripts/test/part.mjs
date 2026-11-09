@@ -61,6 +61,27 @@ run('部位 pool', async t => {
         sp.forEach(s => s.destroy());
         return out;
     }), 'true,2,3,true,true,true,true,true');
+    t.eq('手的後片夾武器：同節點、前片 5、武器 4、後片 1.5', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        const sp = v._addPart({sprite:'hand-man', back:'hair-mary', scale:0.25}, d.GM.PART.HAND_F);
+        const out = [sp[0].parentContainer === v._nodes.wristF, sp[1].parentContainer === v._nodes.wristF, sp[0].depth, sp[1].depth, d.PART_DEPTH?.[d.GM.CAT.WEAPON] ?? 4].join();
+        sp.forEach(s => s.destroy());
+        return out;
+    }), 'true,true,5,1.5,4');
+    t.eq('手套：sprite／back 前手前後片、handB 進 wristB', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        const {wristF, wristB} = v._nodes;
+        const sp = v._addPart({sprite:'hand-man', back:'hair-mary', handB:{sprite:'head-mary', back:'head-karen'}, scale:0.25}, d.GM.CAT.GLOVES);
+        const out = sp.map(s => [s.parentContainer === wristF ? 'F' : s.parentContainer === wristB ? 'B' : '?', s.depth].join(':')).join();
+        sp.forEach(s => s.destroy());
+        return out;
+    }), 'F:5,F:1.5,B:5,B:1.5');
+    t.eq('手套沒 handB：只畫前手', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        const sp = v._addPart({sprite:'hand-man', scale:0.25}, d.GM.CAT.GLOVES), n = sp.length;
+        sp.forEach(s => s.destroy());
+        return n;
+    }), 1);
     t.eq('rig＝body 的 x/y、身體圖在 rig 的 0,0、支點跟衣服掛在 rig 上', await t.eval(d => {
         const v = Object.values(d.GM.player._coms).find(c => c?._rig), b = v._rig.list.find(c => c.texture?.key === 'body-woman');
         const cloth = v._rig.list.find(c => c.texture?.key === 'body-man');

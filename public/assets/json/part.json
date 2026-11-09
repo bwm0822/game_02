@@ -25,11 +25,12 @@
     "wristF": {
       "x": -12,
       "y": -12,
-      "a": -15
+      "a": -30
     },
     "wristB": {
       "x": 12,
-      "y": -13
+      "y": -12.5,
+      "a": -30
     },
     "sex": "m",
     "x": 0,
@@ -46,17 +47,18 @@
       "a": 0
     },
     "wristF": {
-      "x": -10,
+      "x": -11,
       "y": -12,
-      "a": -15
-    },
-    "wristB": {
-      "x": 10,
-      "y": -13
+      "a": -30
     },
     "sex": "f",
     "x": 0,
-    "name": "女性身體"
+    "name": "女性身體",
+    "wristB": {
+      "x": 11,
+      "y": -12.5,
+      "a": -30
+    }
   },
   "macron": {
     "kind": "body",
@@ -941,23 +943,33 @@
   },
   "handF": {
     "kind": "handF",
-    "sprite": "handF",
+    "sprite": "handF-front",
     "scale": 0.25,
+    "name": "前手",
+    "x": 0,
+    "y": 0,
+    "back": "handF-back",
     "oy": 0.5,
     "f": {
-      "scale": 0.2
-    },
-    "name": "前手"
+      "scale": 0.2,
+      "x": 0,
+      "y": 0
+    }
   },
   "handB": {
     "kind": "handB",
-    "sprite": "handB",
+    "sprite": "handB-front",
     "scale": 0.25,
+    "name": "後手",
+    "x": 0,
+    "y": 0,
+    "back": "handB-back",
     "oy": 0.5,
     "f": {
-      "scale": 0.2
-    },
-    "name": "後手"
+      "scale": 0.2,
+      "x": 0,
+      "y": 0
+    }
   },
   "hat-outfit-butcher": {
     "kind": "hat",

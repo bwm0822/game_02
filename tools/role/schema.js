@@ -109,14 +109,16 @@ export function schSummary(s)
 
 // ---------- 預覽 ----------
 // 跟 setting.js 的 flatDepth() 一樣：攤成一層（支點節點整組的 depth＋節點裡的 depth/100；裝備依 item.json 的 cat）
-// 節點：neck 1.5（back 後片 1.5、頭 2、髮 2.5、頭盔 3）、wristF 4（武器 4、前手 5、手套 6）、wristB -1（後手 5、後手套 6）、neckB -2（頭髮後片 2.5）
+// 節點：neck 1.5（back 後片 1.5、頭 2、髮 2.5、頭盔 3）、wristF 4（手／手套後片 1.5、武器 4、前手／手套 5）、wristB -1（同 wristF）、neckB -2（頭髮後片 2.5）
 export const DEPTH = {body: 0, shoes: 0.2, cloth: 0.7, head: 1.52, hair: 1.525, hat: 1.53, handF: 4.05, handB: -0.95,
-    CAT_HELMET: 1.53, CAT_CHESTPLATE: 1, CAT_GLOVES: 4.06, CAT_BOOTS: 0.5, CAT_WEAPON: 4.04, ext: 6, back: 1.515};
-// 後片的 depth：手套的後片是後手套（wristB）、頭髮後片在身體和後手後面（neckB），其他照 DEPTH.back
-export const BACK_DEPTH = {CAT_GLOVES: -0.94, hair: -1.975};
+    CAT_HELMET: 1.53, CAT_CHESTPLATE: 1, CAT_GLOVES: 4.05, CAT_BOOTS: 0.5, CAT_WEAPON: 4.04, ext: 6, back: 1.515};
+// 後片的 depth：手、手套的後片在同一個手腕節點的武器後面、頭髮後片在身體和後手後面（neckB），其他照 DEPTH.back
+export const BACK_DEPTH = {handF: 4.015, handB: -0.985, CAT_GLOVES: 4.015, hair: -1.975};
+// 手套 handB（後手那組前後片）的 depth，進 wristB
+export const REAR_DEPTH = {sprite: -0.95, back: -0.985};
 // 掛在支點節點的部位（跟 setting.js 的 PART_NODE／BACK_NODE 一樣），試穿播動畫時 wristF 上的一起動
 export const NODE = {head: 'neck', hair: 'neck', hat: 'neck', CAT_HELMET: 'neck', handF: 'wristF', CAT_WEAPON: 'wristF', CAT_GLOVES: 'wristF', handB: 'wristB'};
-export const BACK_NODE = {CAT_GLOVES: 'wristB', hair: 'neckB'};
+export const BACK_NODE = {hair: 'neckB'};
 // 武器掛哪隻手照 equip.hand（後手＝wristB，畫在身體後面、後手蓋住握把），同 setting.js 的 nodeFor()
 const WEAPON_DEPTH = {wristF: 4.04, wristB: -0.96};
 // 武器動畫在動這個節點時整組加的 depth（setting.js 的 NODE_DEPTH_ANIM：wristB -1 → 3，舉到頭、身體前面、前手後面）

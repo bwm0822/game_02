@@ -23,7 +23,7 @@
 
 ## 預覽
 
-合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +rig（body 的 x/y/a）+(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、掛在支點上的先用 `atPivot()` 加回 body 的支點（試穿整張畫布套 rig 變換、內部都是 rig 座標，身體圖畫在 rig 的 0,0；角色預覽用 `flatPart()` 直接換成 shape 座標），依 `DEPTH` 疊（`DEPTH` 是遊戲 `flatDepth()` 攤成一層的值：節點整組的 depth＋節點裡的 depth/100；手套後片用 `BACK_DEPTH`）。「顯示（N）▾」下拉（`tools/common/showmenu.js`，點開跳面板、點外面收起）多選虛線 view、黃十字錨點、物理 b／佔格 g／互動 z 框、脖子／前手腕／後手腕支點十字，預設全不勾，記在 `localStorage` 的 `tools.preview.show`（跟角色／部位分頁的預覽共用，別的分頁改了用 `storage` 事件跟著換）；沒勾的支點不畫也拖不動，動畫分頁三個支點反灰；翻面另外勾。
+合成規則同角色編輯器的 `role/preview.js`（也就是 `RoleView._addPart`）：部件在 view 中心 +rig（body 的 x/y/a）+(x, y)、origin `(ox ?? 0.5, oy ?? 1)`、掛在支點上的先用 `atPivot()` 加回 body 的支點（試穿整張畫布套 rig 變換、內部都是 rig 座標，身體圖畫在 rig 的 0,0；角色預覽用 `flatPart()` 直接換成 shape 座標），依 `DEPTH` 疊（`DEPTH` 是遊戲 `flatDepth()` 攤成一層的值：節點整組的 depth＋節點裡的 depth/100；手、手套的後片用 `BACK_DEPTH`，手套 `handB` 用 `REAR_DEPTH`）。「顯示（N）▾」下拉（`tools/common/showmenu.js`，點開跳面板、點外面收起）多選虛線 view、黃十字錨點、物理 b／佔格 g／互動 z 框、脖子／前手腕／後手腕支點十字，預設全不勾，記在 `localStorage` 的 `tools.preview.show`（跟角色／部位分頁的預覽共用，別的分頁改了用 `storage` 事件跟著換）；沒勾的支點不畫也拖不動，動畫分頁三個支點反灰；翻面另外勾。
 
 中間欄跟右欄之間有把手（`splitter.js` 的 `data-resize`）：拖了中間固定寬度、右欄吃剩下（最少 340px），雙擊回自動，記在 `tools.mid.fit`。右欄分上下兩塊：上面畫布鋪滿（不捲），下面控制面板（顯示選項、頭／頭髮、倍率、動畫列）固定在底部一直看得到，兩個分頁共用。縮放平移同道具／部位／角色的預覽（`tools/common/panzoom.js`，見 [role-editor.md](role-editor.md)）：滾輪以游標為中心 ×1.2、按住中鍵拖曳平移，view 記在 `tools.preview.view.fit`，換角色／分頁／重繪都不動，「置中」把原點放回中央、倍率剛好裝下 view 框加一圈（動畫分頁那圈大一點）；畫布的 hit-test 用 `geo.vc`＝原點在畫布上的位置換成世界單位，拖曳只認左鍵、平移中不 hover。頭／頭髮勾選（`tools/common/headhide.js`）只影響畫，支點照樣能拖。
 

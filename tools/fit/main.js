@@ -16,7 +16,7 @@ import {show, showMenu} from '../common/showmenu.js';
 import * as PZ from '../common/panzoom.js';
 import {hidden, hideChecks} from '../common/headhide.js';
 import {fillBg} from '../role/preview.js';
-import {DEPTH, BACK_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
+import {DEPTH, BACK_DEPTH, REAR_DEPTH, BACK_NODE, CAT, roleTree, nodeOf, depthOf, ANIM_LIFT} from '../role/schema.js';
 import {treeEls} from '../common/views.js';
 import {EASE, dirTo, animTrack, animEnd, poseAt as trackPose, trackEnd, weaponAnim as animOf} from '../../src/core/pose.js';
 import {equipFor, partFor, sexOk, hiddenParts, PIVOTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf, handOf} from '../../src/core/equip.js';
@@ -709,6 +709,8 @@ function partsOf(r, lift = false)
         if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? node});
+        if (p.handB?.sprite) out.push({...o, sprite: p.handB.sprite, d: REAR_DEPTH.sprite, node: 'wristB'});
+        if (p.handB?.back) out.push({...o, sprite: p.handB.back, d: REAR_DEPTH.back, node: 'wristB'});
     };
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);

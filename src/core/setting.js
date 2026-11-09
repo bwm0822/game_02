@@ -589,7 +589,7 @@ export const PART_DEPTH = Object.freeze({
     [GM.PART.HAT] : 3,
     [GM.CAT.HELMET] : 3,
     [GM.CAT.CHESTPLATE] : 1,
-    [GM.CAT.GLOVES] : 6,
+    [GM.CAT.GLOVES] : 5,
     [GM.CAT.BOOTS] : 0.5,
     [GM.CAT.WEAPON] :4,
 });
@@ -624,8 +624,8 @@ export const PART_NODE = Object.freeze({
     [GM.CAT.GLOVES] : 'wristF',
     [GM.PART.HAND_B] : 'wristB',
 });
-// back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]；手套的後片是後手套，進 wristB、depth 同手套；頭髮後片進 neckB
-export const BACK_NODE = Object.freeze({[GM.CAT.GLOVES] : 'wristB', [GM.PART.HAIR] : 'neckB'});
+// back 後片預設跟本體同節點、depth 用 PART_DEPTH[BACK]（手、手套的後片在武器後面，前片在武器前面）；頭髮後片進 neckB
+export const BACK_NODE = Object.freeze({[GM.PART.HAIR] : 'neckB'});
 
 // 部位／裝備掛的節點：武器照 equip.hand(後手＝wristB)，其他照 PART_NODE
 export const nodeFor = (type, equip)=>type===GM.CAT.WEAPON ? handOf(equip) : PART_NODE[type];
@@ -639,6 +639,9 @@ export function flatDepth(type, node=PART_NODE[type])
         sprite: _flat(node, PART_DEPTH[type]),
         ext: _flat(node, PART_DEPTH[GM.PART.EXT]),
         back: back ? _flat(back, PART_DEPTH[type]) : _flat(node, PART_DEPTH[GM.PART.BACK]),
+        // 手套的 handB＝後手那組前後片，進 wristB
+        rear: _flat('wristB', PART_DEPTH[type]),
+        rearBack: _flat('wristB', PART_DEPTH[GM.PART.BACK]),
     };
 }
 

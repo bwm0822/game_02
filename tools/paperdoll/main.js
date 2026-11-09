@@ -98,7 +98,7 @@ function removeLayer(L)
     else if (m.type === 'split' && (m.F === L || m.B === L)) m[m.F === L ? 'F' : 'B'] = null;
     else if (m.layer === L) cancelMode();
     S.layers.splice(S.layers.indexOf(L), 1);
-    if (heir) Object.assign(heir, {pool: L.pool, poolId: L.poolId ?? L.name}, L.alt && {alt: L.alt});
+    if (heir) Object.assign(heir, L.pool && {pool: L.pool, poolId: L.poolId ?? L.name}, L.glove && {glove: L.glove, gloveId: L.gloveId}, L.alt && {alt: L.alt});
     else hist.forget(L, true);
     if (S.active === L) S.active = S.layers.at(-1) ?? null;
     refreshAll();
@@ -409,6 +409,7 @@ function tagMenu(e, L)
     ctxMenu(e.clientX, e.clientY, [
         [`標記：${tags.find(([k]) => k === (L.tag ?? null))[1]}`, sub(tags, L.tag ?? null, (k) => setTag(L, k))],
         [`pool：${POOL_KIND[pool] ?? '無'}`, sub(pools, pool ?? null, (k) => setPool(L, k))],
+        [`手套：${GLOVE_KIND[gloveHome(L).glove] ?? '無'}`, sub([[null, '無'], ...Object.entries(GLOVE_KIND)], gloveHome(L).glove ?? null, (k) => setGlove(L, k))],
         ...hasFem(F) ? [['女版：有', [['刪除', () => setFem(F, false)]]]] : femAble(F) && !femLocked(F) ? [['女版：無', [['新增', () => setFem(F, true)]]]] : [],
     ]);
 }
@@ -988,7 +989,8 @@ const SPLIT_KEY = 'paperdoll.split';
 const SPLIT_STEPS = 50;
 const splitIdx = (L) => L.ops.findIndex(o => o.type === 'mask' && o.split);
 const splitOp = (L) => L.ops[splitIdx(L)] ?? null;
-const splitAt = (O) => O.auto && autoBase(O) >= 0 ? autoBase(O) : O.ops.length;
+// 手動拆的：最後一步是整組一起縮放（op.sg）時，mask 插在它前面，縮放後切線照舊對得上
+const splitAt = (O) => O.auto && autoBase(O) >= 0 ? autoBase(O) : O.ops.at(-1)?.sg ? O.ops.length - 1 : O.ops.length;
 const splitOld = (g) => [g.F, g.B].some(M => M && !('w' in splitOp(M).split));
 const splitOwn = (M) => M.ops.length - splitIdx(M) - 1 !== splitOp(M).split.n;
 
@@ -1021,6 +1023,34 @@ function splitSync(O, base = null)
         M.ops = [...O.ops.slice(0, at), {...o, split: {...o.split, n: O.ops.length - at}}, ...O.ops.slice(at)];
         M.canvas = base?.canvas ? PX.replay(base.canvas, M.ops.slice(base.ops.length)) : PX.replay(M.src, M.ops);
     }
+}
+
+// 手動拆的一組不能整組縮放的原因（空字串＝可以）：原圖被刪、或有哪一片拆完後自己加過步驟
+function splitScaleBlock(g)
+{
+    if (!g.O) return `${(g.F ?? g.B).name} 的原圖被刪掉了，不能一起縮放`;
+    const n = g.O.ops.length - splitAt(g.O), own = [g.F, g.B].find(M => M && splitOwn(M));
+    if (own) return `${own.name} 拆完後又加了步驟，不能一起縮放；要先 undo 或清除修補`;
+    return [g.F, g.B].some(M => M && splitOp(M).split.n !== n) ? `${g.O.name} 拆完後又加了步驟，不能一起縮放；要先 undo 或清除修補` : '';
+}
+
+// 縮放模式套用在手動拆的一組：原圖換成同一步 sg 縮放（一直從縮放前的圖取樣），前後片照原圖重播，一筆 undo
+function splitRescale(L, m)
+{
+    const g = splitNew(L), O = g.O, [W, H] = [L.canvas.width, L.canvas.height];
+    const [w, h] = [Math.max(1, Math.round(W * m.sx)), Math.max(1, Math.round(H * m.sy))], [dx, dy] = [L.x - m.snap.x, L.y - m.snap.y];
+    if (w === W && h === H && !dx && !dy) return;
+    History.restore(m.snap);
+    const Ms = [O, g.F, g.B].filter(Boolean);
+    hist.push({group: Ms.map(M => hist.snap(M))});
+    if (w !== W || h !== H)
+    {
+        const at = splitAt(O), last = O.ops.at(-1)?.sg ? O.ops.at(-1) : null, [sw, sh] = last ? [last.sw, last.sh] : [W, H];
+        O.ops = [...O.ops.slice(0, at), ...(w === sw && h === sh ? [] : [{type: 'xform', sx: 0, sy: 0, sw, sh, w, h, smooth: $('scSmooth').checked, sg: true}])];
+        O.canvas = PX.replay(O.src, O.ops);
+        splitSync(O);
+    }
+    for (const M of Ms) {M.x += dx; M.y += dy;}
 }
 
 // 線的亮度門檻、挖除、閉運算、往下射是前後片跟自動共用的設定（S.sp），記在 localStorage
@@ -1098,7 +1128,7 @@ function splitStart(L)
         status(`接著調 ${O.name} 的${g.cut ? '挖除' : '前後片'}`);
         return m;
     }
-    const hair = O.pool === 'hair', method = hair || o?.split.method === 'hand' ? 'hand' : S.sp.method;
+    const hair = ['hair', 'handF', 'handB'].includes(O.pool) || !!O.glove, method = hair || o?.split.method === 'hand' ? 'hand' : S.sp.method;
     Object.assign(m, {c: spCrit(method), cut: g ? g.cut : hair ? false : S.sp.cut, method, close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, mark: null});
     m.start = splitDefStart(view, m.c);
     splitRun(m);
@@ -1561,6 +1591,11 @@ function setMode(type)
         alert('這層有像素修補，縮放／變形會讓修補對不上；要先到「像素」模式按「清除修補」');
         type = 'move';
     }
+    else if (type === 'scale' && !autoOwner(L) && splitNew(L) && splitScaleBlock(splitNew(L)))
+    {
+        status(splitScaleBlock(splitNew(L)));
+        type = 'move';
+    }
     if (type === 'crop') S.mode = {type, layer: L, rect: null, poly: null};
     else if (type === 'scale') S.mode = {type, layer: L, sx: 1, sy: 1, k: srcScale(L), lock: !!autoOwner(L) || $('scLock').checked, snap: hist.snap(L)};
     else if (type === 'alpha') {S.mode = {type, layer: L, t: +$('alT').value, preview: null}; updateAlpha();}
@@ -1617,6 +1652,7 @@ function applyMode()
         History.restore(m.snap);
         autoRescale(L, m.sx, dx, dy);
     }
+    else if (m.type === 'scale' && splitNew(L)) splitRescale(L, m);
     else if (m.type === 'scale')
     {
         const W = L.canvas.width, H = L.canvas.height;
@@ -2802,6 +2838,52 @@ function refreshAll()
 }
 
 let dragRow = null;
+// 第一下點擊會選取、重建圖層列，瀏覽器的 dblclick 收不到，雙擊自己算
+let nameClick = {L: null, t: 0};
+
+const renameBase = (L) => {const g = splitNew(L); return g ? (g.O?.name ?? (g.F ?? g.B).name).replace(/-(front|back)$/, '') : L.name;};
+
+// 只改圖層名（前後片一組改基底名），存過的 pool id 跟著變；原圖、part.json、item.json 不動
+function renameLayer(L, raw)
+{
+    const to = raw.trim(), g = splitNew(L);
+    if (!to || to === renameBase(L)) return;
+    const pairs = g ? [[g.O, to], [g.F, `${to}-front`], [g.B, `${to}-back`]].filter(([M]) => M) : [[L, to]];
+    const mine = pairs.map(([M]) => M), dup = pairs.map(([, n]) => n).find(n => S.layers.some(M => !mine.includes(M) && M.name === n));
+    if (dup) return status(`已經有 ${dup} 這層了，沒有改名`);
+    hist.push({group: mine.flatMap(M => [hist.snapProp(M, 'name'), hist.snapProp(M, 'poolId')])});
+    for (const [M, n] of pairs)
+    {
+        M.name = n;
+        if (M.poolId) M.poolId = to;
+    }
+    refreshAll();
+    status(`圖層改名為 ${to}`);
+}
+
+function renameStart(span, L, row)
+{
+    const inp = Object.assign(el('input'), {value: renameBase(L)});
+    inp.style.cssText = 'flex:1;min-width:0';
+    row.draggable = false;
+    let done = false;
+    const end = (ok) => {
+        if (done) return;
+        done = true;
+        if (ok) renameLayer(L, inp.value);
+        refreshLayers();
+    };
+    inp.onclick = (e) => e.stopPropagation();
+    inp.onblur = () => end(true);
+    inp.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') end(true);
+        else if (e.key === 'Escape') end(false);
+    };
+    span.replaceWith(inp);
+    inp.focus();
+    inp.select();
+}
 
 function refreshLayers()
 {
@@ -2831,12 +2913,19 @@ function refreshLayers()
         const name = el('span', 'name');
         name.textContent = `${L.name} (${L.canvas.width}×${L.canvas.height})`;
         name.title = join(L.path ?? '', L.name);
+        name.onclick = (ev) => {
+            const now = performance.now(), twice = nameClick.L === L && now - nameClick.t < 400;
+            nameClick = twice ? {L: null, t: 0} : {L, t: now};
+            if (!twice) return;
+            ev.stopPropagation();
+            renameStart(name, L, row);
+        };
         row.append(
             ico('💾', L.save, `專案：${L.proj?.name ?? '（無）'}（點一下切換要不要存進專案）`, () => {L.save = !L.save; refreshAll();}),
             ico('👁', L.visible, '顯示／隱藏', () => {L.visible = !L.visible; refreshAll();}),
             ico(L.locked ? '🔒' : '🔓', L.locked, '鎖定', () => {L.locked = !L.locked; if (L.locked && S.mode.layer === L) cancelMode(); refreshAll();}),
             ...(L.tag ? [dollTagEl(L)] : []),
-            ...[poolBadge(L)].filter(Boolean),
+            ...[poolBadge(L), gloveBadge(L)].filter(Boolean),
             ...(hasFem(femHome(L)) ? [Object.assign(el('span', 'tag f fem'), {textContent: '♀', title: '有女版（右鍵改）'})] : []),
             ...[armorBadge(L)].filter(Boolean),
             name,
@@ -2919,13 +3008,13 @@ function refreshAuto(m)
 
 function refreshSL()
 {
-    const g = slGroup(ITEM_KINDS), pool = S.layers.some(L => L.pool), why = !S.assets && '先在上方選擇專案資料夾';
+    const g = slGroup(ITEM_KINDS), gl = gloveSel(), pool = S.layers.some(L => L.pool), why = !S.assets && '先在上方選擇專案資料夾';
     $('btnSave').disabled = !S.active;
-    $('slItem').disabled = $('slItemLoad').disabled = !S.assets || !g;
-    $('slItem').title = $('slItemLoad').title = why || (g ? `${g.parts.map(C => C.name).join('、')}，照 equip.sprite 找 item` : '選一組自動拆的護具／武器零件');
+    $('slItem').disabled = $('slItemLoad').disabled = !S.assets || !g && !gl;
+    $('slItem').title = $('slItemLoad').title = why || (g ? `${g.parts.map(C => C.name).join('、')}，照 equip.sprite 找 item` : gl ? '手套（前手＋後手）' : '選一組自動拆的護具／武器零件，或標了手套的圖層');
     $('slPool').disabled = $('slPoolLoad').disabled = !S.assets || !pool;
     $('slPool').title = $('slPoolLoad').title = why || (pool ? '' : '圖層右鍵標 pool 部位');
-    $('slInfo').textContent = g ? `item：${g.parts.map(C => C.name).join('、')}` : '';
+    $('slInfo').textContent = g ? `item：${g.parts.map(C => C.name).join('、')}` : gl ? `item：手套 ${[gloveLayer('F'), gloveLayer('B')].filter(Boolean).map(L => L.name).join('、')}` : '';
 }
 
 const spInfo = (sp) => sp.method === 'hand' ? (sp.poly ? `${sp.cut ? '挖除' : '後片'} ${sp.poly.pts.length} 點${sp.poly.closed ? '' : '（還沒閉合）'}` : '還沒畫')
@@ -4271,6 +4360,7 @@ function itemDialog(parts, items, keys)
 // 整次一筆全域 undo、寫回全域預設，一個都沒對到（或都沒變）不記
 async function loadItems()
 {
+    if (gloveSel()) return loadGloves();
     const m = slAuto(ITEM_KINDS);
     if (!m || !S.assets) return;
     const items = await readGameJson('item.json'), pjson = await readParts();
@@ -4403,6 +4493,7 @@ function slAuto(kinds)
 // 一定存男版：女模式下先照男版數字重擺（PNG 男女共用一張，不用重烤），存完復原；零件有女版另寫 equip.f，沒有就刪掉 equip.f
 async function saveItems()
 {
+    if (gloveSel()) return saveGloves();
     const m = slAuto(ITEM_KINDS);
     if (!m || !S.assets) return;
     const back = autoMale(m);
@@ -4515,6 +4606,159 @@ async function commitItems(rows, bake, all = false)
     status(`已存 item.json：${done.join('、')}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
 }
 
+// ---------- 手套 ----------
+// 一副手套兩層，圖層右鍵標前手／後手（L.glove＝'F'／'B'，同標記只能一層，拆了前後片的一組記在 gloveHome()）
+// 前手寫 equip.sprite／back、後手寫 equip.handB.sprite／back；擺放數字只有一組，後手要跟前手同位置（遊戲照前手的數字擺、換算進 wristB）
+const GLOVE_KIND = {F: '前手', B: '後手'};
+const gloveHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.glove) ?? Ms[0];};
+const gloveLayer = (w) => S.layers.find(L => L.glove === w) ?? null;
+const gloveSel = () => !!S.active && !!gloveHome(S.active).glove && !!gloveLayer('F') && !slGroup(ITEM_KINDS);
+const gloveName = (name, w) => (w === 'B' ? `${name}-b` : name);
+const gloveRefs = (L, n) => {const g = splitNew(L); return g ? {sprite: `${n}-front`, ...(g.cut ? {} : {back: `${n}-back`})} : {sprite: n};};
+// 這一層要寫的 [圖檔名, 圖層]；前手多一張完整原圖給 icon／drop
+function glovePngs(L, n, w)
+{
+    const g = splitNew(L);
+    if (!g) return [[n, L]];
+    return [...(w === 'F' ? [[n, g.O ?? g.F]] : []), [`${n}-front`, g.F], ...(g.cut ? [] : [[`${n}-back`, g.B]])];
+}
+const gloveRows = (name) => [['F', gloveLayer('F')], ['B', gloveLayer('B')]].filter(([, L]) => L).flatMap(([w, L]) => glovePngs(L, gloveName(name, w), w));
+
+function setGlove(L, w)
+{
+    for (const M of S.layers) if (w && M.glove === w) delete M.glove;
+    const H = gloveHome(L);
+    for (const M of linked(L)) delete M.glove;
+    if (w) H.glove = w;
+    else delete H.gloveId;
+    refreshAll();
+}
+
+function gloveBadge(L)
+{
+    const {glove} = gloveHome(L), g = splitNew(L);
+    if (!glove || L === g?.O) return null;
+    return Object.assign(el('span', 'tag pool'), {textContent: `手${GLOVE_KIND[glove][0]}${L === g?.F ? '前' : L === g?.B ? '後' : ''}`, title: `手套：${GLOVE_KIND[glove]}（右鍵改）`});
+}
+
+// 填 r.err（擋存檔）、r.ask（覆蓋，存檔時 confirm）
+function gloveCheck(r, items, keys)
+{
+    Object.assign(r, {err: '', ask: ''});
+    const F = gloveLayer('F'), B = gloveLayer('B'), err = (s) => {r.err ||= s;};
+    if (!F) return err('沒有標前手的圖層');
+    if (S.doll.sex === 'f' && items[r.id]?.sex !== 'f') err('手套一定存男版數字，先切回 男');
+    if (!r.name) err('檔名不能空白');
+    if (!r.id)
+    {
+        if (!r.newId) err('id 不能空白');
+        else if (items[r.newId]) err(`id ${r.newId} 已經有了`);
+        if (!r.lab) err('要填 lab');
+    }
+    for (const L of [F, B].filter(Boolean))
+    {
+        const g = splitNew(L);
+        if (g) err(splitMismatch(g));
+    }
+    const k = B && ['x', 'y', 'a', 'ox', 'oy', 'scale'].find(k => Math.abs(F[k] - B[k]) > 1e-6);
+    if (k) err(`後手要跟前手同位置、同 scale（${k} 不同），位置差異請留在 PNG 裡`);
+    const pngs = gloveRows(r.name).map(([n]) => n);
+    for (const n of pngs) if (keys.has(n) && keys.get(n) !== 'equips') err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
+    r.ask = pngs.filter(n => keys.has(n)).map(n => `equips/${n}.png`).join('、');
+}
+
+function gloveDialog(items, keys)
+{
+    const dlg = $('dlgPool'), F = gloveLayer('F'), list = Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES');
+    const match = F.gloveId && items[F.gloveId] ? F.gloveId : list.find(id => splitBase(items[id].equip?.sprite) === F.name) ?? '';
+    const r = {id: match, name: splitBase(items[match]?.equip?.sprite) ?? F.name, newId: '', lab: ''};
+    $('dpTitle').textContent = '手套存到 item';
+    const row = el('div', 'irow'), body = el('div', 'body'), line = el('div', 'line'), thumb = el('canvas'), msg = el('div');
+    thumb.width = thumb.height = 48;
+    fitDraw(thumb, poolThumb(F, splitNew(F)), true);
+    const field = (lab, value, set) => {
+        const inp = Object.assign(el('input'), {value, oninput: () => {set(inp.value.trim()); refresh();}}), L = el('label');
+        L.append(`${lab} `, inp);
+        return [L, inp];
+    };
+    const sel = Object.assign(el('select'), {onchange: () => {r.id = sel.value; refresh();}});
+    sel.append(...[['', '＋新增'], ...list.map(id => [id, `${id}　${items[id].lab ?? ''}`])].map(([value, textContent]) => Object.assign(el('option'), {value, textContent})));
+    sel.value = r.id;
+    const [nameL] = field('檔名', r.name, (v) => {r.name = v;}), [idL, idI] = field('id', '', (v) => {r.newId = v;}), [labL, labI] = field('lab', '', (v) => {r.lab = v;});
+    const refresh = () => {
+        gloveCheck(r, items, keys);
+        idI.disabled = labI.disabled = !!r.id;
+        msg.className = r.err ? 'err' : 'warn';
+        msg.textContent = r.err || (r.ask && `會覆蓋 ${r.ask}`);
+        $('dpOk').disabled = !!r.err;
+    };
+    line.append(sel, nameL, idL, labL);
+    body.append(line, msg);
+    row.append(thumb, body);
+    $('dpRows').replaceChildren(row);
+    const fade = [F, gloveLayer('B')].some(L => L && L.opacity < 1);
+    $('dpBakeRow').hidden = !fade;
+    $('dpBake').checked = true;
+    refresh();
+    dlg.returnValue = '';
+    dlg.showModal();
+    return new Promise(res => dlg.addEventListener('close', () => res(dlg.returnValue === 'ok' ? {r, bake: fade && $('dpBake').checked} : null), {once: true}));
+}
+
+async function saveGloves()
+{
+    if (!S.assets) return;
+    const d = await gloveDialog(await readGameJson('item.json'), await texKeys());
+    if (d) await commitGloves(d.r, d.bake);
+}
+
+// 存檔時重讀 item.json、重掃 textures/ 再檢查一次；沒標後手就不動現有的 handB
+async function commitGloves(r, bake)
+{
+    const A = S.assets, F = gloveLayer('F'), B = gloveLayer('B');
+    let items = await readGameJson('item.json');
+    const keys = await texKeys();
+    gloveCheck(r, items, keys);
+    if (r.err) return alert(`沒有存檔：\n${r.err}`);
+    const pjson = await readParts(), note = dollNote(pjson, [S.doll.sex]);
+    if ((r.ask || note.length) && !confirm(`請確認：\n${[r.ask && `會覆蓋 ${r.ask}`, ...note].filter(Boolean).join('\n')}\n要繼續嗎？`)) return;
+    const rows = gloveRows(r.name), fresh = rows.map(([n]) => n).filter(n => !keys.has(n));
+    for (const [n, M] of rows) await FS.writeFile(await mkDir(A.tex, keys.get(n) ?? 'equips'), `${n}.png`, await PX.toPng(splitPng(M, bake)));
+    const it = r.id ? items[r.id] : null, e = it ? it.equip ??= {} : {};
+    delete e.back;
+    Object.assign(e, gloveRefs(F, r.name));
+    if (B) e.handB = gloveRefs(B, gloveName(r.name, 'B'));
+    writeEquip(e, F);
+    pivotShift(e, pjson, 'wristF', S.doll.sex);
+    if (it)
+    {
+        it.icon = r.name;
+        dropOf(it).sprite = r.name;
+        dropScale(it);
+    }
+    else items = insertAfter(items, Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES').at(-1), r.newId, {cat: 'CAT_GLOVES', icon: r.name, lab: r.lab, equip: e, drop: {sprite: r.name, scale: e.scale}});
+    F.gloveId = r.id || r.newId;
+    await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
+    SH.notifySaved('item.json');
+    refreshAll();
+    status(`已存 item.json：${F.gloveId}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// 照存過的 id（沒有就 equip.sprite＝前手圖層名）找手套，兩層（含前後片）都套同一組擺放；圖不動
+async function loadGloves()
+{
+    const F = gloveLayer('F'), B = gloveLayer('B'), items = await readGameJson('item.json');
+    const id = F.gloveId && items[F.gloveId]?.equip ? F.gloveId : Object.keys(items).find(k => items[k].cat === 'CAT_GLOVES' && splitBase(items[k].equip?.sprite) === F.name);
+    if (!id) return status(`${F.name} 在 item.json 找不到手套`);
+    const Ms = [F, B].filter(Boolean).flatMap(linked), undo = {group: Ms.map(M => hist.snap(M, true))};
+    const e = pivotShift({...equipFor(items[id].equip, S.doll.sex, items[id].sex)}, await readParts(), 'wristF', S.doll.sex, -1);
+    for (const M of Ms) Object.assign(M, {scale: e.scale ?? M.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
+    F.gloveId = id;
+    hist.push(undo);
+    refreshAll();
+    status(`載入 ${F.name} ← ${id}`);
+}
+
 // ---------- 部位 pool（part.json） ----------
 // 圖層右鍵標成 pool 的部位（L.pool＝kind）；「存到 pool…」每個標了的層一列，預設勾 👁 顯示中的：
 // PNG 寫 textures/roles/parts/<id>.png、擺放（scale/x/y，a/ox/oy 不是預設才寫）寫成 part.json 的條目，條目其他 key 保留；
@@ -4527,11 +4771,11 @@ async function commitItems(rows, bake, all = false)
 const POOL_KIND = {body: '身體', shoes: '鞋子', cloth: '衣服', head: '頭', hair: '頭髮', hat: '帽子', handF: '前手', handB: '後手'};
 const POOL_BADGE = {body: '身', shoes: '鞋', cloth: '衣', head: '頭', hair: '髮', hat: '帽', handF: '前', handB: '後'};
 const POOL_DIR = 'roles/parts';
-const SPLIT_POOL = ['hat', 'hair'];
+const SPLIT_POOL = ['hat', 'hair', 'handF', 'handB'];
 const poolSplit = (L) => SPLIT_POOL.includes(L.pool) ? splitNew(L) : null;
 const poolHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.pool) ?? Ms[0];};
 const femHome = (L) => {const H = poolHome(L); return H.pool ? H : L;};
-const poolHeir = (L) => {const g = L.pool && poolHome(L) === L && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
+const poolHeir = (L) => {const g = (L.pool && poolHome(L) === L || L.glove) && splitNew(L); return g ? [g.F, g.B].find(M => M && M !== L) ?? null : null;};
 
 function poolBadge(L)
 {
@@ -4541,9 +4785,8 @@ function poolBadge(L)
         title: `pool：${POOL_KIND[pool]}${poolId ? `（存過 ${poolId}）` : ''}（右鍵改）`});
 }
 
-function poolThumb(L)
+function poolThumb(L, g = poolSplit(L))
 {
-    const g = poolSplit(L);
     if (!g) return L.canvas;
     const Ms = [g.B, g.F].filter(Boolean), c = PX.newCanvas(Ms[0].canvas.width, Ms[0].canvas.height);
     for (const M of Ms) c.getContext('2d').drawImage(M.canvas, 0, 0);
@@ -4584,7 +4827,7 @@ function poolCheck(rows, parts, roles, keys)
         const err = (s) => {r.err ||= s;};
         const old = parts[r.id], users = partUsers(roles, r.id), also = users.length ? `（${users.join('、')} 在用）` : '';
         r.only = old?.sex ?? null;
-        if (!SPLIT_POOL.includes(r.L.pool) && splitNew(r.L)) err('拆了前後片只能存成帽子或頭髮，要先撤掉前後片');
+        if (!SPLIT_POOL.includes(r.L.pool) && splitNew(r.L)) err('拆了前後片只能存成帽子、頭髮或手，要先撤掉前後片');
         if (!r.id) err('要填 id');
         else if (/[\\/:*?"<>|]/.test(r.id)) err('id 不能有 \\ / : * ? " < > |');
         if (act.filter(o => o.id === r.id).length > 1) err('跟別列 id 重複');
@@ -4936,7 +5179,7 @@ function projectData(layers)
             name: L.name, src: L.srcPath, srcW: L.src.width, srcH: L.src.height, path: L.path ?? '',
             ops: L.ops, x: L.x, y: L.y, a: L.a, ox: L.ox, oy: L.oy, scale: L.scale, visible: L.visible, opacity: L.opacity, locked: L.locked,
             ...(L.auto && {auto: L.auto}), ...(L.autoSrc && {autoSrc: L.autoSrc}), ...(L.splitSrc && {splitSrc: L.splitSrc}), ...(L.tag && {tag: L.tag}),
-            ...(L.pool && {pool: L.pool}), ...(L.poolId && {poolId: L.poolId}), ...(L.alt && {alt: L.alt}),
+            ...(L.pool && {pool: L.pool}), ...(L.poolId && {poolId: L.poolId}), ...(L.glove && {glove: L.glove}), ...(L.gloveId && {gloveId: L.gloveId}), ...(L.alt && {alt: L.alt}),
         })),
     };
 }
@@ -5043,7 +5286,7 @@ async function openProject(fh, dir, path)
                      canvas: PX.replay(src, d.ops), x: d.x * k, y: d.y * k, a: d.a, ox: d.ox, oy: d.oy, scale: d.scale ?? s0,
                      visible: d.visible, opacity: d.opacity, locked: d.locked, save: true, proj,
                      ...(d.auto && {auto: d.auto}), ...(d.autoSrc && {autoSrc: d.autoSrc}), ...(d.splitSrc && {splitSrc: d.splitSrc}),
-                     ...(d.pool && {pool: d.pool}), ...(d.poolId && {poolId: d.poolId}), ...(d.alt && {alt: d.alt})});
+                     ...(d.pool && {pool: d.pool}), ...(d.poolId && {poolId: d.poolId}), ...(d.glove && {glove: d.glove}), ...(d.gloveId && {gloveId: d.gloveId}), ...(d.alt && {alt: d.alt})});
         const had = add && S.layers.some(L => L.tag === d.tag) || layers.some(L => L.tag === d.tag);
         if (d.tag && had) warns.push(`${d.name}：人偶標記 ${dollBadge(d.tag)} 已經有別層了，拿掉這層的標記`);
         else if (d.tag) layers.at(-1).tag = d.tag;
@@ -5477,5 +5720,5 @@ async function partsChanged()
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, commitItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, savePool, commitPool, loadPool, projectData, applySettings, ST,
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST,
                pinned, partsChanged, dollWarn, setFem, hasFem, femLocked};

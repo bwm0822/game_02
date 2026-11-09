@@ -825,6 +825,43 @@ run('paperdoll', async t => {
         pd.applyMode();
         paste.click();
         out.linked = ['hood', 'hood-front', 'hood-back'].map(n => nums(pd.S.layers.find(L => L.name === n)));
+        const [HO, HF, HB] = ['hood', 'hood-front', 'hood-back'].map(n => pd.S.layers.find(L => L.name === n));
+        const widths = () => [HO, HF, HB].map(L => L.canvas.width);
+        const rescale = (L, f) => {pd.select(L); pd.setMode('scale'); pd.S.mode.sx = pd.S.mode.sy = f; pd.applyMode();};
+        const w0 = HO.canvas.width;
+        rescale(HB, 0.5);
+        out.rescale = [...widths(), HO.canvas.width === w0 / 2];
+        pd.select(HF); pd.setMode('split');
+        out.reSplit = [pd.S.mode.type, !!pd.S.mode.poly?.closed];
+        pd.cancelMode();
+        rescale(HF, 2);
+        out.rescale100 = [...widths().map(w => w === w0), HO.ops.some(o => o.sg)];
+        pd.undo();
+        out.rescaleUndo = widths().every(w => w === w0 / 2);
+        HF.ops = [...HF.ops, {type: 'alpha', t: 1}];
+        pd.select(HO); pd.setMode('scale');
+        out.rescaleBlock = pd.S.mode.type;
+
+        const names = () => [HO.name, HF.name, HB.name];
+        const X = pd.addLayer(await createImageBitmap(c), 'x', null, null);
+        pd.setMode('move');
+        HO.poolId = 'old';
+        pd.renameLayer(HF, 'cap');
+        out.rename = [...names(), HO.poolId];
+        pd.renameLayer(X, 'cap-back');
+        pd.renameLayer(HO, 'x');
+        pd.renameLayer(X, '   ');
+        out.renameDup = [X.name, ...names()];
+        pd.undo();
+        out.renameUndo = [...names(), HO.poolId];
+        const nameEl = () => [...document.querySelectorAll('#layers .layer .name')].find(s => s.textContent.startsWith('x '));
+        nameEl().click();
+        nameEl().click();
+        const inp = document.querySelector('#layers .layer input');
+        out.renameInput = inp?.value;
+        inp.value = 'y';
+        inp.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+        out.renamed = [X.name, !!document.querySelector('#layers .layer input')];
         return out;
     });
     const posed = [3, 4, 0.5, 30, 0.2, 0.7];
@@ -834,6 +871,16 @@ run('paperdoll', async t => {
     t.eq('擺放：複製的是當下的值，來源之後改不影響', pose.source, 99);
     t.eq('擺放：模式中可複製、貼上反灰，離開恢復', JSON.stringify([...pose.mode, pose.left]), JSON.stringify([false, true, false]));
     t.eq('擺放：前後片連動層一起貼', JSON.stringify(pose.linked), JSON.stringify([posed, posed, posed]));
+    t.check('手動前後片：縮放選後片，三片一起變', pose.rescale[0] === pose.rescale[1] && pose.rescale[1] === pose.rescale[2] && pose.rescale[3], JSON.stringify(pose.rescale));
+    t.eq('手動前後片：縮放後還能進前後片模式、切線還在', JSON.stringify(pose.reSplit), JSON.stringify(['split', true]));
+    t.eq('手動前後片：回到 100% 拿掉縮放步驟', JSON.stringify(pose.rescale100), JSON.stringify([true, true, true, false]));
+    t.check('手動前後片：undo 三片一起退', pose.rescaleUndo);
+    t.eq('手動前後片：有一片加過步驟整組擋下', pose.rescaleBlock, 'move');
+    t.eq('改名：前後片整組改基底名、pool id 跟著變', JSON.stringify(pose.rename), JSON.stringify(['cap', 'cap-front', 'cap-back', 'cap']));
+    t.eq('改名：重名、空白不套用', JSON.stringify(pose.renameDup), JSON.stringify(['x', 'cap', 'cap-front', 'cap-back']));
+    t.eq('改名：undo 整組退、id 也退', JSON.stringify(pose.renameUndo), JSON.stringify(['hood', 'hood-front', 'hood-back', 'old']));
+    t.eq('改名：雙擊名字開輸入框帶目前名字', pose.renameInput, 'x');
+    t.eq('改名：Enter 套用、輸入框收起', JSON.stringify(pose.renamed), JSON.stringify(['y', false]));
 
     t.eq('載入的圖層預設 scale 0.25', r.loadScale, 0.25);
     t.eq('載入：尺寸', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
@@ -2156,6 +2203,8 @@ run('paperdoll', async t => {
         };
         pd.setPool(F, 'cloth');
         out.other = await dialog();
+        pd.setPool(F, 'handF');
+        out.handSplit = await dialog();
         pd.setPool(F, 'hat');
         pd.setFem(O, true);
         pd.removeLayer(O);
@@ -2187,6 +2236,32 @@ run('paperdoll', async t => {
         await save();
         parts = await read();
         out.none = [parts['hat-tk3'].sprite, parts['hat-tk3'].back ?? null, await png('hat-tk3')];
+
+        // 手套：前手／後手各一層，存成 sprite／handB，載入兩層一起套
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        const gF = pd.addLayer(bmp, 'gv', null, null), gB = pd.addLayer(bmp, 'gvb', null, null);
+        for (const M of [gF, gB]) Object.assign(M, {x: 2, y: 3, scale: 0.25, a: 0, ox: 0.5, oy: 1});
+        pd.setGlove(gF, 'F');
+        pd.setGlove(gB, 'B');
+        await put(json, 'item.json', JSON.stringify({old_g: {cat: 'CAT_GLOVES', lab: '舊', equip: {sprite: 'gv', scale: 1}}}, null, 2));
+        const items = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const eqPng = async (n) => {try {await (await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips')).getFileHandle(`${n}.png`); return true;} catch {return false;}};
+        const gr = {id: 'old_g', name: 'gv', newId: '', lab: ''};
+        await pd.commitGloves(gr, false);
+        let g0 = (await items()).old_g;
+        out.glove = [g0.equip.sprite, g0.equip.handB?.sprite, g0.equip.back ?? null, g0.icon, g0.drop?.sprite, await eqPng('gv'), await eqPng('gv-b')];
+        Object.assign(gF, {x: 9});
+        const chk = {id: 'old_g', name: 'gv', newId: '', lab: ''};
+        pd.gloveCheck(chk, await items(), new Map());
+        out.gloveDiff = chk.err.includes('同位置');
+        pd.setGlove(gB, 'F');
+        out.gloveOne = [gF.glove ?? null, gB.glove];
+        pd.setGlove(gF, 'B');
+        Object.assign(gB, {x: 50, y: 60});
+        Object.assign(gF, {x: 50, y: 60});
+        gB.gloveId = 'old_g';
+        await pd.loadGloves();
+        out.gloveLoad = [gB.x === gF.x, gB.y === gF.y, gB.scale];
         window.confirm = ok;
         // 挖除連動把切割法切成魔術棒，換回前後片免得影響後面的測試
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
@@ -2292,6 +2367,11 @@ run('paperdoll', async t => {
     t.eq('帽子：右鍵選無整組退出 pool', JSON.stringify(hat.badgeNone), JSON.stringify([[null, null, null], null, null, null]));
     t.eq('帽子：在前片標 pool 記在原圖', JSON.stringify(hat.home), JSON.stringify(['hat', null, null]));
     t.eq('帽子：改成非帽子擋存檔', JSON.stringify(hat.other), JSON.stringify([1, 'hat-tk', true, true]));
+    t.eq('手：拆了前後片不再被「要先撤掉」擋（確定反灰是 id 已是帽子條目）', JSON.stringify(hat.handSplit), JSON.stringify([1, 'hat-tk', false, true]));
+    t.eq('手套：前手 sprite、後手 handB、PNG、icon／drop', JSON.stringify(hat.glove), JSON.stringify(['gv', 'gv-b', null, 'gv', 'gv', true, true]));
+    t.check('手套：後手跟前手位置不同擋存檔', hat.gloveDiff);
+    t.eq('手套：同標記只能一層', JSON.stringify(hat.gloveOne), JSON.stringify([null, 'F']));
+    t.eq('手套：載入兩層一起套', JSON.stringify(hat.gloveLoad), JSON.stringify([true, true, 0.25]));
     t.eq('帽子：刪原圖 pool／id／女版交給前片', JSON.stringify(hat.heir), JSON.stringify([null, 'hat', 'hat-tk', true, 'hat', [null, '帽前', '帽後']]));
     t.eq('帽子：刪原圖後對話框還是一列、id 不變', JSON.stringify(hat.heirRow), JSON.stringify([1, 'hat-tk', false, false]));
     t.eq('帽子：刪原圖後存法不變', JSON.stringify(hat.heirSaved), JSON.stringify(['hat-tk-front', 'hat-tk-back', false]));
@@ -2606,10 +2686,10 @@ run('paperdoll', async t => {
     t.eq('pool：切男手動圖層換成基準、女版進 alt', JSON.stringify(pl.swap), JSON.stringify([5, 6, 0.4, 'f']));
     t.eq('pool：男模式載入讀基準、undo（連女版）', JSON.stringify([pl.loadM, pl.loadUndo]), JSON.stringify([[5, 6, 0.4], [1, 1, 0.4, true]]));
     t.eq('pool：手動圖層的女版存進專案', pl.projAlt, '{"sex":"f","scale":0.3,"x":9,"y":9}');
-    t.eq('右鍵：母子選單（標記／pool／女版：有 ▸ 刪除），子選單勾目前的值', JSON.stringify(pl.menuA), JSON.stringify([['標記：無', 'pool：衣服', '女版：有'],
-        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '帽子', '前手', '後手'], ['刪除']]]));
-    t.eq('右鍵：能有女版的沒有女版＝女版：無 ▸ 新增', JSON.stringify([pl.menuH[0], pl.menuH[1][2]]), JSON.stringify([['標記：無', 'pool：鞋子', '女版：無'], ['新增']]));
-    t.eq('右鍵：頭不能有女版', JSON.stringify(pl.menuHead), JSON.stringify(['標記：無', 'pool：頭']));
+    t.eq('右鍵：母子選單（標記／pool／女版：有 ▸ 刪除），子選單勾目前的值', JSON.stringify(pl.menuA), JSON.stringify([['標記：無', 'pool：衣服', '手套：無', '女版：有'],
+        [['✔ 無', '男：髮', '男：頭', '男：身體', '女：髮', '女：頭', '女：身體'], ['無', '身體', '鞋子', '✔ 衣服', '頭', '頭髮', '帽子', '前手', '後手'], ['✔ 無', '前手', '後手'], ['刪除']]]));
+    t.eq('右鍵：能有女版的沒有女版＝女版：無 ▸ 新增', JSON.stringify([pl.menuH[0], pl.menuH[1][3]]), JSON.stringify([['標記：無', 'pool：鞋子', '手套：無', '女版：無'], ['新增']]));
+    t.eq('右鍵：頭不能有女版', JSON.stringify(pl.menuHead), JSON.stringify(['標記：無', 'pool：頭', '手套：無']));
     t.eq('女版（手動層）：切女換成女版', JSON.stringify(pl.swapF), JSON.stringify([9, 9, 0.3, 'm']));
     t.eq('女版（手動層）：刪除回到基準、undo 復原', JSON.stringify([pl.del, pl.delUndo]), JSON.stringify([[false, 1, 1, 0.4], [true, 9]]));
     t.eq('女版（手動層）：新增從基準複製、圖層標 ♀', JSON.stringify(pl.add), JSON.stringify([true, 1, 'm', 1, '♀']));

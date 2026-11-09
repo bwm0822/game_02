@@ -177,6 +177,21 @@ function delEff(id, i)
     commit(() => {const it = S.items[id]; it.effects.splice(i, 1); if (!it.effects.length) delete it.effects;});
 }
 
+// obj 裡的 obj（手套的 handB）：子欄位全空就整個拿掉
+function subObj(def, v, path, put)
+{
+    const o = isObj(v) ? v : {};
+    const setF = (f, val) => {
+        const next = {...o, [f]: val};
+        if (val === undefined) delete next[f];
+        put(Object.keys(next).length ? next : undefined);
+    };
+    return h('div', {class: 'fields'}, Object.entries(def.fields).map(([f, d]) => [
+        h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${path}.${f}`}, d.label),
+        fieldInput(d, o[f], val => setF(f, val), `${path}.${f}`),
+    ]));
+}
+
 function fieldRow(id, it, k)
 {
     const def = SC.FIELDS[k], v = it[k];
@@ -198,7 +213,7 @@ function fieldRow(id, it, k)
             open && h('div', {class: 'fields'},
                 subs.filter(([, , on]) => on).map(([f, d]) => [
                     h('span', {class: 'k' + (o[f] === undefined ? ' unset' : ''), title: `${k}.${f}`}, d.label),
-                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f],
+                    d.type === 'map' ? mapEditor(id, [k, f], o[f]) : d.type === 'obj' ? subObj(d, o[f], `${k}.${f}`, val => put(f, val)) : F.withDrop(fieldInput(d.hint ? {...d, hint: d.hint(o)} : d, o[f], val => put(f, val), `${k}.${f}`), id, `${k}.${f}`, o[f],
                         d.opt && d.type !== 'nums' && (() => put(f, undefined))),
                 ]),
                 hidden.length && [h('span', {class: 'k unset'}, '加欄位'),

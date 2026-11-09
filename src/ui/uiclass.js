@@ -796,6 +796,8 @@ export class Doll extends Pic
         add(part.sprite, depth.sprite);
         add(part.ext, depth.ext);
         add(part.back, depth.back);
+        add(part.handB?.sprite, depth.rear);
+        add(part.handB?.back, depth.rearBack);
         return sps;
     }
 
