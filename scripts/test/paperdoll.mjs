@@ -2261,6 +2261,7 @@ run('paperdoll', async t => {
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
         const gF = pd.addLayer(bmp, 'gv', null, null), gB = pd.addLayer(bmp, 'gvb', null, null);
         for (const M of [gF, gB]) Object.assign(M, {x: 2, y: 3, scale: 0.25, a: 0, ox: 0.5, oy: 1});
+        Object.assign(gB, pd.gloveBackOf(gF));
         pd.setGlove(gF, 'F');
         pd.setGlove(gB, 'B');
         await put(json, 'item.json', JSON.stringify({old_g: {cat: 'CAT_GLOVES', lab: '舊', equip: {sprite: 'gv', scale: 1}}}, null, 2));
@@ -2273,7 +2274,7 @@ run('paperdoll', async t => {
         Object.assign(gF, {x: 9});
         const chk = {id: 'old_g', name: 'gv', newId: '', lab: ''};
         pd.gloveCheck(chk, await items(), new Map());
-        out.gloveDiff = chk.err.includes('同位置');
+        out.gloveDiff = chk.err.includes('要一樣');
         pd.setGlove(gB, 'F');
         out.gloveOne = [gF.glove ?? null, gB.glove];
         pd.setGlove(gF, 'B');
@@ -2281,7 +2282,8 @@ run('paperdoll', async t => {
         Object.assign(gF, {x: 50, y: 60});
         gB.gloveId = 'old_g';
         await pd.loadGloves();
-        out.gloveLoad = [gB.x === gF.x, gB.y === gF.y, gB.scale];
+        const gb = pd.gloveBackOf(gF);
+        out.gloveLoad = [gB.x === gb.x, gB.y === gb.y, gB.scale];
         window.confirm = ok;
         // 挖除連動把切割法切成魔術棒，換回前後片免得影響後面的測試
         Object.assign(pd.S, {layers: [], active: null, projSig: null});
@@ -2414,11 +2416,18 @@ run('paperdoll', async t => {
             pd.applyMode();
             return pd.S.layers.filter(L => L.auto);
         };
+        // 手套照 body-man 的手腕換算（同遊戲資料）
+        const assets = await (await navigator.storage.getDirectory()).getDirectoryHandle('assets'), json = await assets.getDirectoryHandle('json');
+        const w = await (await json.getFileHandle('part.json', {create: true})).createWritable();
+        await w.write(JSON.stringify({'body-man': {kind: 'body', sprite: 'body-man', scale: 0.25, y: 32, wristF: {x: -12, y: -12, a: -30}, wristB: {x: 12, y: -12.5, a: -30}}}));
+        await w.close();
+        await pd.setAssets(assets);
         const parts = await run(true), at = (k) => parts.find(L => L.auto.key === k);
         out.keys = parts.map(L => L.auto.key).sort();
         out.glove = [at('handF').glove, at('handB').glove, at('handF').name, at('handB').name, at('handF').oy];
         out.boots = at('boots').ops.at(-2).sw;
-        out.same = ['x', 'y', 'scale'].every(k => at('handF')[k] === at('handB')[k]);
+        const gb = pd.gloveBackOf(at('handF'));
+        out.same = [['x', 'y', 'scale'].every(k => gb[k] === at('handB')[k]), at('handB').x - at('handF').x];
         pd.S.active = at('handF');
         out.selGlove = pd.gloveSel();
         pd.S.active = at('helmet');
@@ -2433,7 +2442,7 @@ run('paperdoll', async t => {
     t.eq('護具＋手：三欄拆出護具三件＋前後手', JSON.stringify(armh.keys), JSON.stringify(['armor', 'boots', 'handB', 'handF', 'helmet']));
     t.eq('護具＋手：靠中線的靴子不會掉進護甲', armh.boots, 65);
     t.eq('護具＋手：自動標手套、名字、oy', JSON.stringify(armh.glove), JSON.stringify(['F', 'B', 'set-gloves', 'set-gloves-b', 0.5]));
-    t.check('護具＋手：前後手預設同位置', armh.same);
+    t.eq('護具＋手：後手預設在後手腕、相對手腕跟前手一樣', JSON.stringify(armh.same), JSON.stringify([true, 24]));
     t.eq('護具＋手：選手套也走護具那組的存檔（不走手套對話框）', JSON.stringify([armh.selGlove, armh.selArmor]), JSON.stringify([false, false]));
     t.eq('護具＋手：面板有手的列', armh.panel, false);
     t.eq('護具＋手：沒畫護手就略過', JSON.stringify(armh.noFists), JSON.stringify(['armor', 'boots', 'helmet']));
@@ -2507,7 +2516,8 @@ run('paperdoll', async t => {
         pd.select(at('helmet'));
         pd.setMode('sl');
         await pd.loadItems();
-        out.load = [at('handF').x - fx, at('handB').x - bx, at('handF').scale, at('handB').scale, JSON.stringify([pd.S.auto.handF, pd.S.auto.handB]) === gDef,
+        const dF = at('handF').x - fx, dB = at('handB').x - bx;
+        out.load = [Math.abs(dF - 2 * Math.cos(Math.PI / 6)) < 0.01, Math.abs(dB - dF) < 1e-6, at('handF').scale, at('handB').scale, JSON.stringify([pd.S.auto.handF, pd.S.auto.handB]) === gDef,
                     $('status')?.textContent.includes('手套 ← gloves-set')];
         pd.undo();
         out.loadUndo = [at('handF').x === fx, at('handF').scale !== 0.5];
@@ -2535,6 +2545,8 @@ run('paperdoll', async t => {
         window.alert = alt;
         Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
         pd.autoSet({...ui, kind: 'armor'});
+        await json.removeEntry('part.json');
+        await pd.setAssets(assets);
         return out;
     });
     t.eq('護具＋手 item：沒有跳 alert', ahi.alert ?? '', '');
@@ -2545,7 +2557,7 @@ run('paperdoll', async t => {
     t.eq('護具＋手 item：存手套寫 sprite／handB／icon／drop、兩張 PNG、記 gloveId', JSON.stringify(ahi.saved),
          JSON.stringify(['g_old,gloves-set', 'set-gloves', 'set-gloves-b', 'set-gloves', 'set-gloves', true, 0.5, true, true, 'gloves-set']));
     t.eq('護具＋手 item：女模式存手套照男身體、不寫 f、圖層不動', JSON.stringify([ahi.femSel, ahi.female]), JSON.stringify([['gloves-set', ''], [true, true, false, true]]));
-    t.eq('護具＋手 item：載入手套前後手同一組、不寫回全域預設', JSON.stringify(ahi.load), JSON.stringify([2, 2, 0.5, 0.5, true, true]));
+    t.eq('護具＋手 item：載入手套前後手同一組（各自照手腕轉）、不寫回全域預設', JSON.stringify(ahi.load), JSON.stringify([true, true, 0.5, 0.5, true, true]));
     t.eq('護具＋手 item：載入一筆 undo', JSON.stringify(ahi.loadUndo), JSON.stringify([true, true]));
     t.eq('護具＋手 item：跟著選包含手套（兩個方向）', JSON.stringify(ahi.follow), JSON.stringify(['gloves-hvy-1', 'helmet-hvy-2']));
     t.eq('護具＋手 item：只有後手標紅', JSON.stringify(ahi.onlyB), JSON.stringify([true, '沒有前手']));

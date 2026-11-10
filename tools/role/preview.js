@@ -49,12 +49,14 @@ export function partsOf(r, items, parts)
     const add = (p, k) => {
         if (!isObj(p)) return;
         const d = depthOf(k, p);
+        // 手套的 handB 用同一組數字相對 wristB
+        const rear = p.handB && flatPart(p, body, 'wristB', held);
         if (k !== 'body') p = flatPart(p, body, nodeOf(k, p), held);
         if (p.sprite) out.push({p, k, sprite: p.sprite, d: d ?? 0});
         if (p.ext) out.push({p, k, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({p, k, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back});
-        if (p.handB?.sprite) out.push({p, k, sprite: p.handB.sprite, d: REAR_DEPTH.sprite});
-        if (p.handB?.back) out.push({p, k, sprite: p.handB.back, d: REAR_DEPTH.back});
+        if (p.handB?.sprite) out.push({p: rear, k, sprite: p.handB.sprite, d: REAR_DEPTH.sprite});
+        if (p.handB?.back) out.push({p: rear, k, sprite: p.handB.back, d: REAR_DEPTH.back});
     };
     const hide = hiddenParts(equips, CAT, partFor(parts, r, 'hat'));
     for (const k of ROLE_PARTS) if (!hide.has(k)) add(partFor(parts, r, k), k);

@@ -780,15 +780,17 @@ export class Doll extends Pic
     {
         const sps = [];
         const depth = flatDepth(type, node);
+        // 手套的 handB 用同一組數字相對 wristB
+        const rear = part.handB && flatPart(part, this._body, 'wristB', this._held);
         if(type!==GM.PART.BODY) {part = flatPart(part, this._body, node, this._held);}
-        const add = (sprite, depth)=>{
+        const add = (sprite, depth, p=part)=>{
             if(!sprite) {return;}
             const [key,frame] = sprite.split(':');
             if(!key) {return;}
-            const sp = this.scene.add.sprite(part.x ?? 0, part.y ?? 0, key, frame);
-            sp.setScale(part.scale ?? 1);
-            sp.setOrigin(part.ox ?? 0.5, part.oy ?? 1);
-            sp.angle = part.a ?? 0;
+            const sp = this.scene.add.sprite(p.x ?? 0, p.y ?? 0, key, frame);
+            sp.setScale(p.scale ?? 1);
+            sp.setOrigin(p.ox ?? 0.5, p.oy ?? 1);
+            sp.angle = p.a ?? 0;
             sp.depth = depth;
             this._shape.add(sp);
             sps.push(sp);
@@ -796,8 +798,8 @@ export class Doll extends Pic
         add(part.sprite, depth.sprite);
         add(part.ext, depth.ext);
         add(part.back, depth.back);
-        add(part.handB?.sprite, depth.rear);
-        add(part.handB?.back, depth.rearBack);
+        add(part.handB?.sprite, depth.rear, rear);
+        add(part.handB?.back, depth.rearBack, rear);
         return sps;
     }
 

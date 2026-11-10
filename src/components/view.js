@@ -943,7 +943,8 @@ export class RoleView extends View
         return this;
     }
 
-    // 掛在支點節點的部位：數字相對節點；進別的節點的(頭髮後片、手套的 handB)照本體的節點擺，換算成那個節點的座標
+    // 掛在支點節點的部位：數字相對節點；頭髮後片進 neckB，照本體的節點擺、換算成 neckB 的座標；
+    // 手套的 handB 用同一組數字直接相對 wristB(兩隻手各自對自己的手腕)
     _addPart(part, type=GM.PART.BODY, node=PART_NODE[type])
     {
         let addSp = (sprite, depth, n, p=part)=>
@@ -976,9 +977,8 @@ export class RoleView extends View
         if(part.handB)
         {
             const rn = this._nodes.wristB;
-            const q = fromPivot(atPivot(part, n?.pivot ?? pivotOf()), rn.pivot);
-            addSp(part.handB.sprite, PART_DEPTH[type], rn, q);
-            addSp(part.handB.back, PART_DEPTH[GM.PART.BACK], rn, q);
+            addSp(part.handB.sprite, PART_DEPTH[type], rn);
+            addSp(part.handB.back, PART_DEPTH[GM.PART.BACK], rn);
         }
         return sps;
     }

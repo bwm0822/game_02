@@ -1019,8 +1019,8 @@ function autoSplit(m)
         if (P.glove) for (const M of S.layers) if (M.glove === P.glove) delete M.glove;
         Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls}), ...(AUTO_FEM.includes(P.kind) && m.use === 'f' && {sex: 'f'})},
                           ...(AUTO_POOL.includes(P.kind) && {pool: P.key}),
-                          // 手的靜止角度在 wristF，圖層照它轉，存到 item 才是 a=0
-                          ...(P.glove && {glove: P.glove, oy: 0.5, a: dollBody(dollParts, 'm')?.wristF?.a ?? 0})});
+                          // 手的靜止角度在各自的手腕，圖層照它轉，存到 item 才是 a=0
+                          ...(P.glove && {glove: P.glove, oy: 0.5, a: dollBody(dollParts, 'm')?.[gloveWrist(P.glove)]?.a ?? 0})});
         const part = {P, C, box, keep};
         autoScale(T, part, autoCfg(P).pct);
         autoPlace(part, autoCfg(P));
@@ -4493,8 +4493,8 @@ function itemCheck(rows, items, keys)
         if (glove)
         {
             if (!r.F) err('沒有前手');
-            const k = r.F && r.B && ['x', 'y', 'a', 'ox', 'oy', 'scale'].find(k => Math.abs(r.F.C[k] - r.B.C[k]) > 1e-6);
-            if (k) err(`後手要跟前手同位置、同 scale（${k} 不同），位置差異請留在 PNG 裡`);
+            const k = r.F && gloveDiff(r.F.C, r.B?.C);
+            if (k) err(gloveDiffMsg(k, r.F.C));
         }
         const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
@@ -4735,17 +4735,16 @@ async function loadItems()
     refreshAll();
 }
 
-// 手套列：item 只有一組擺放（前手的，後手照它換算進 wristB），前後手零件套同一組 scale/x/y；存檔% 各自照自己的 PNG 反推（loadPlace）；
+// 手套列：item 只有一組擺放（前手相對 wristF、後手相對 wristB），前後手零件各自照自己的手腕換回畫布座標；存檔% 各自照自己的 PNG 反推（loadPlace）；
 // 自動拆的手套換性別不換身體，一律照男身體換回畫布座標
 function gloveLoad(gl, items, pjson, rows, hit, miss)
 {
     const id = gloveMatch(items, gl.F), e0 = id && items[id].equip;
     if (!e0 || !gl.F) {miss.push(GLOVE_P.name); return;}
-    const e = pivotShift({...e0}, pjson, 'wristF', 'm', -1);
-    for (const [part, key] of [[gl.F, e0.sprite], [gl.B, e0.handB?.sprite]])
+    for (const [part, key, w] of [[gl.F, e0.sprite, 'F'], [gl.B, e0.handB?.sprite, 'B']])
     {
         if (!part) continue;
-        const cur = autoRow(part);
+        const e = pivotShift({...e0}, pjson, gloveWrist(w), 'm', -1), cur = autoRow(part);
         rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}, key]);
     }
     gl.F.C.gloveId = id;
@@ -4966,7 +4965,22 @@ async function commitItems(rows, bake, all = false)
 
 // ---------- 手套 ----------
 // 一副手套兩層，圖層右鍵標前手／後手（L.glove＝'F'／'B'，同標記只能一層，拆了前後片的一組記在 gloveHome()）
-// 前手寫 equip.sprite／back、後手寫 equip.handB.sprite／back；擺放數字只有一組，後手要跟前手同位置（遊戲照前手的數字擺、換算進 wristB）
+// 前手寫 equip.sprite／back、後手寫 equip.handB.sprite／back；擺放數字只有一組，前手相對 wristF、後手相對 wristB（遊戲同一組數字各掛各的手腕），
+// 所以兩層相對各自手腕（男身體）的數字要一樣
+const GLOVE_K = ['x', 'y', 'a', 'ox', 'oy', 'scale'];
+const gloveWrist = (w) => (w === 'B' ? 'wristB' : 'wristF');
+const gloveLocal = (L, w) => {const o = pivotShift(pickKeys(L, GLOVE_K), dollParts, gloveWrist(w), 'm'); return Object.fromEntries(GLOVE_K.map(k => [k, o[k] ?? 0]));};
+const gloveDiff = (F, B) => {
+    if (!B) return null;
+    const f = gloveLocal(F, 'F'), b = gloveLocal(B, 'B');
+    return GLOVE_K.find(k => Math.abs(f[k] - b[k]) > 1e-6) ?? null;
+};
+// 跟前手一樣的後手擺放（畫布座標）：前手相對 wristF 的數字搬到 wristB
+const gloveBackOf = (F) => pivotShift(pivotShift(pickKeys(F, GLOVE_K), dollParts, 'wristF', 'm'), dollParts, 'wristB', 'm', -1);
+const gloveDiffMsg = (k, F) => {
+    const b = gloveBackOf(F);
+    return `後手相對後手腕、前手相對前手腕的位置／scale 要一樣（${k} 不同，後手要 x ${b.x}、y ${b.y}、scale ${b.scale}），差異請留在 PNG 裡`;
+};
 const GLOVE_KIND = {F: '前手', B: '後手'};
 const gloveHome = (L) => {const g = splitNew(L), Ms = g ? [g.O, g.F, g.B].filter(Boolean) : [L]; return Ms.find(M => M.glove) ?? Ms[0];};
 const gloveLayer = (w) => S.layers.find(L => L.glove === w) ?? null;
@@ -5018,8 +5032,8 @@ function gloveCheck(r, items, keys)
         const g = splitNew(L);
         if (g) err(splitMismatch(g));
     }
-    const k = B && ['x', 'y', 'a', 'ox', 'oy', 'scale'].find(k => Math.abs(F[k] - B[k]) > 1e-6);
-    if (k) err(`後手要跟前手同位置、同 scale（${k} 不同），位置差異請留在 PNG 裡`);
+    const k = gloveDiff(F, B);
+    if (k) err(gloveDiffMsg(k, F));
     const pngs = gloveRows(r.name).map(([n]) => n);
     for (const n of pngs) if (keys.has(n) && keys.get(n) !== 'equips') err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
     r.ask = pngs.filter(n => keys.has(n)).map(n => `equips/${n}.png`).join('、');
@@ -5139,8 +5153,12 @@ async function loadGloves()
     const id = F.gloveId && items[F.gloveId]?.equip ? F.gloveId : Object.keys(items).find(k => items[k].cat === 'CAT_GLOVES' && splitBase(items[k].equip?.sprite) === F.name);
     if (!id) return status(`${F.name} 在 item.json 找不到手套`);
     const Ms = [F, B].filter(Boolean).flatMap(linked), undo = {group: Ms.map(M => hist.snap(M, true))};
-    const e = pivotShift({...equipFor(items[id].equip, S.doll.sex, items[id].sex)}, await readParts(), 'wristF', S.doll.sex, -1);
-    for (const M of Ms) Object.assign(M, {scale: e.scale ?? M.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
+    const pjson = await readParts(), eq = equipFor(items[id].equip, S.doll.sex, items[id].sex);
+    for (const [L, w] of [[F, 'F'], [B, 'B']].filter(([L]) => L))
+    {
+        const e = pivotShift({...eq}, pjson, gloveWrist(w), S.doll.sex, -1);
+        for (const M of linked(L)) Object.assign(M, {scale: e.scale ?? M.scale, x: e.x ?? 0, y: e.y ?? 0, a: e.a ?? 0, ox: e.ox ?? 0.5, oy: e.oy ?? 1});
+    }
     F.gloveId = id;
     hist.push(undo);
     refreshAll();
@@ -6146,5 +6164,5 @@ async function partsChanged()
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, commitItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, dollHomeFix, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST, gloveSel,
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, dollHomeFix, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, gloveBackOf, savePool, commitPool, loadPool, projectData, applySettings, ST, gloveSel,
                pinned, partsChanged, dollWarn, setFem, hasFem, femLocked};

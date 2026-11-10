@@ -76,6 +76,13 @@ run('部位 pool', async t => {
         sp.forEach(s => s.destroy());
         return out;
     }), 'F:5,F:1.5,B:5,B:1.5');
+    t.eq('手套：handB 用同一組數字相對 wristB', await t.eval(d => {
+        const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
+        const sp = v._addPart({sprite:'hand-man', handB:{sprite:'head-mary'}, scale:0.25, x:3, y:-2, a:10}, d.GM.CAT.GLOVES);
+        const out = sp.map(s => [s.x, s.y, s.angle].join('/')).join();
+        sp.forEach(s => s.destroy());
+        return out;
+    }), '3/-2/10,3/-2/10');
     t.eq('手套沒 handB：只畫前手', await t.eval(d => {
         const v = Object.values(d.GM.player._coms ?? {}).find(c => c?._shape?.getAll);
         const sp = v._addPart({sprite:'hand-man', scale:0.25}, d.GM.CAT.GLOVES), n = sp.length;

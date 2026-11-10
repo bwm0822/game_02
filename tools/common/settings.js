@@ -13,7 +13,8 @@ export const STEP_OF = {pct: 'pct', scale: 'scale', x: 'xy', y: 'xy', ox: 'o', o
 // 紙娃娃自動拆圖的數字：pct＝存檔%、scale＝equip.scale／role 的 head.scale…；武器照分類各一組＝WEAPON 蓋上第三欄
 const ARMOR = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
 const OUTFIT = {hat: ARMOR.helmet, cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
-const HAND = {handF: {pct: 25, scale: 0.25, x: -12, y: 20}, handB: {pct: 25, scale: 0.25, x: -12, y: 20}};
+// 畫布座標：前手在 body-man 的 wristF、後手在 wristB（遊戲同一組數字各掛各的手腕）
+const HAND = {handF: {pct: 25, scale: 0.25, x: -12, y: 20}, handB: {pct: 25, scale: 0.25, x: 12, y: 19.5}};
 const HEAD = {head: {pct: 18, scale: 0.25, x: -2, y: 4}, hair: {pct: 18, scale: 0.25, x: -1, y: 2}};
 const WEAPON = {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85};
 export const WCLS = [

@@ -709,8 +709,10 @@ function partsOf(r, lift = false)
         if (p.sprite) out.push({...o, sprite: p.sprite, d: depthOf(k, raw) ?? 0, main: true});
         if (p.ext) out.push({...o, sprite: p.ext, d: DEPTH.ext});
         if (p.back) out.push({...o, sprite: p.back, d: BACK_DEPTH[k] ?? DEPTH.back, node: BACK_NODE[k] ?? node});
-        if (p.handB?.sprite) out.push({...o, sprite: p.handB.sprite, d: REAR_DEPTH.sprite, node: 'wristB'});
-        if (p.handB?.back) out.push({...o, sprite: p.handB.back, d: REAR_DEPTH.back, node: 'wristB'});
+        // 手套的 handB 用同一組數字相對 wristB
+        const rear = raw.handB && {...o, p: atPivot(raw, pivotOf(body, 'wristB', heldEquip())), node: 'wristB'};
+        if (p.handB?.sprite) out.push({...rear, sprite: p.handB.sprite, d: REAR_DEPTH.sprite});
+        if (p.handB?.back) out.push({...rear, sprite: p.handB.back, d: REAR_DEPTH.back});
     };
     const hide = hiddenNow();
     for (const [k] of PARTS) if (!hide.has(k)) add(partFor(parts(), r, k), k);
