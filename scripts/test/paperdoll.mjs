@@ -939,7 +939,15 @@ run('paperdoll', async t => {
 
         pd.setMode('auto');
         const m = pd.S.mode, n0 = pd.hist.undos.length;
+        const nameCls = (k) => $(`au-${k}-name`).className;
+        $('au-helmet-name').click();
+        out.pickEarly = [pd.S.active === S, nameCls('helmet')];
         pd.applyMode();
+        pd.select(find('src-armor'));
+        $('au-boots-name').click();
+        out.pickSkip = [pd.S.active === find('src-armor'), nameCls('boots')];
+        $('au-helmet-name').click();
+        out.pick = [pd.S.mode === m, pd.S.active === find('src-helmet'), nameCls('helmet'), nameCls('armor')];
         const H = find('src-helmet'), A = find('src-armor');
         out.split = [pd.S.mode === m, $('modeAuto').querySelector('.ok').disabled, pd.hist.undos.length - n0, $('au-boots-pct').disabled];
         out.layers = pd.S.layers.slice(before - 1).map(L => L.name).join();
@@ -1046,6 +1054,13 @@ run('paperdoll', async t => {
         out.autoSplitScale = [H.canvas.width, HF.canvas.width, HB.canvas.width, HF.ops.map(o => o.type).join()];
         arrow('ArrowRight');
         out.autoSplitMove = [HF.x === H.x, HB.x === H.x];
+        pd.select(find('src-armor'));
+        $('au-helmet-name').click();
+        out.pickFront = [pd.S.mode.type, pd.S.active === HF, document.querySelectorAll('#layers .layer.grp').length, $('au-helmet-name').className];
+        $('pOp').value = 40;
+        $('pOp').dispatchEvent(new Event('input'));
+        out.groupOp = [H.opacity, HF.opacity, HB.opacity, find('src-armor').opacity];
+        for (const M of [H, HF, HB]) M.opacity = 1;
         type('au-helmet-pct', 25);
         arrow('ArrowLeft');
         pd.cancelMode();
@@ -1112,6 +1127,11 @@ run('paperdoll', async t => {
     t.eq('自動：頭盔＝右上的塊去綠裁到剛好再縮放（裁切、縮小分兩步）、x/y 是遊戲單位', JSON.stringify(au.helmet), JSON.stringify([30, 20, -2, 2, 0.5, 1, '255,0,0,255', 'alpha,removeGreen,blobs,xform,xform']));
     t.eq('自動：護甲跨過中線也整塊留下、預設 20%', JSON.stringify(au.armor), JSON.stringify([16, 16, 0.25, 26.5, '0,0,255,255']));
     t.eq('自動：原圖隱藏、選取頭盔', JSON.stringify(au.hidden), JSON.stringify([false, true]));
+    t.eq('自動：還沒拆點零件名沒反應、不能點', JSON.stringify(au.pickEarly), JSON.stringify([true, 'auName']));
+    t.eq('自動：略過的零件名點了沒反應', JSON.stringify(au.pickSkip), JSON.stringify([true, 'auName']));
+    t.eq('自動：點零件名選那層、留在模式、那列反白', JSON.stringify(au.pick), JSON.stringify([true, true, 'auName pick on', 'auName pick']));
+    t.eq('自動：拆了前後片點名選前片、同組另兩層淡反白', JSON.stringify(au.pickFront), JSON.stringify(['auto', true, 2, 'auName pick on']));
+    t.eq('不透明度：前後片整組一起改', JSON.stringify(au.groupOp), JSON.stringify([0.4, 0.4, 0.4, 1]));
     t.eq('自動：拆完再按確定不會再拆', au.splitOnce, 2);
     t.eq('自動：剛拆完 Ctrl+Z 停住、不退拆', JSON.stringify(au.undoStop), JSON.stringify([true, true, 1]));
     t.eq('自動：只改 x 不重新縮放', JSON.stringify(au.moved), JSON.stringify([true, 4]));

@@ -58,6 +58,7 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 #layers .layer { display: flex; align-items: center; gap: 4px; padding: 3px 4px; border-radius: 3px; cursor: pointer; }
 #layers .layer:hover { background: #33363c; }
 #layers .layer.sel { background: #2f6db5; }
+#layers .layer.grp { background: #24476f; }
 #layers .layer .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #layers .layer .ico { width: 20px; text-align: center; opacity: .9; }
 #layers .layer .ico.off { opacity: .25; }
@@ -78,6 +79,10 @@ aside { overflow: auto; padding: 0 8px 8px; background: #25272b; }
 .autoGrid.head { grid-template-columns: auto 1fr 1fr auto 1fr 1fr; }
 #modeIcon .flRow input[type=number] { width: 56px; }
 .autoGrid[hidden], .autoGrid > [hidden] { display: none; }
+.autoGrid .auName { padding: 1px 3px; border-radius: 3px; }
+.autoGrid .auName.pick { cursor: pointer; }
+.autoGrid .auName.pick:hover { text-decoration: underline; }
+.autoGrid .auName.on { background: #2f6db5; }
 .autoGrid .sexL { font-size: 11px; color: #9cf; white-space: nowrap; }
 .spCtl { display: flex; flex-direction: column; gap: 4px; }
 .spGrid { display: grid; grid-template-columns: auto 20px 1fr 20px 28px; gap: 2px 4px; align-items: center; }

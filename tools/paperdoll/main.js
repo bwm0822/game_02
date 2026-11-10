@@ -1111,6 +1111,15 @@ function autoKeeps(m, L)
 
 const autoPart = (m, L) => m.parts?.find(p => linked(p.C).includes(L)) ?? null;
 
+// 面板點零件名選的圖層：拆了前後片選前片（原圖是隱藏的）；還沒拆、略過或圖層被刪掉＝null
+function autoPick(m, P)
+{
+    const C = m.type === 'auto' && m.parts?.find(p => p.P === P)?.C;
+    if (!C) return null;
+    const L = splitNew(C)?.F ?? C;
+    return S.layers.includes(L) ? L : null;
+}
+
 // 自動拆出的零件（或它的前後片）：縮放模式拉它改的是存檔%（重烤），等比
 function autoOwner(L)
 {
@@ -3189,7 +3198,7 @@ function refreshLayers()
     if (!S.layers.length) box.innerHTML = '<div class="dim">（從左邊點 PNG，或拖檔案進畫布）</div>';
     for (const L of [...S.layers].reverse())
     {
-        const row = el('div', 'layer' + (L === S.active ? ' sel' : ''));
+        const row = el('div', 'layer' + (L === S.active ? ' sel' : S.active && linked(S.active).includes(L) ? ' grp' : ''));
         const ico = (txt, on, title, fn) => {
             const b = el('span', 'ico' + (on ? '' : ' off'));
             Object.assign(b, {textContent: txt, title});
@@ -3283,6 +3292,9 @@ function refreshAuto(m)
     for (const P of autoParts(m.kind))
     {
         const part = m.parts?.find(p => p.P === P), row = part ? autoRow(part) : autoCfg(P);
+        const nameEl = $(`au-${P.key}-name`);
+        nameEl.classList.toggle('pick', !!autoPick(m, P));
+        nameEl.classList.toggle('on', !!part && !!S.active && linked(part.C).includes(S.active));
         if (AUTO_FEM.includes(P.kind)) $(`au-${P.key}-sex`).textContent = autoUse(part?.C) === 'f' ? '♀拆' : !AUTO_SEXED.includes(P.kind) ? ''
             : !part?.C.alt ? '基準' : S.doll.sex === 'f' ? '♀' : '♂';
         for (const f of AUTO_F[P.kind])
@@ -5684,7 +5696,7 @@ onProp('pS', (L, v) => {if (v > 0) L.scale = v;});
 onProp('pA', (L, v) => {L.a = v;});
 onProp('pOx', (L, v) => setOrigin(L, v, L.oy));
 onProp('pOy', (L, v) => setOrigin(L, L.ox, v));
-$('pOp').oninput = () => {if (S.active) {S.active.opacity = $('pOp').value / 100; dirty();}};
+$('pOp').oninput = () => {if (S.active) {for (const M of linked(S.active)) M.opacity = $('pOp').value / 100; dirty();}};
 
 const scaleInput = (id, fn) => {
     $(id).oninput = () => {
@@ -5858,7 +5870,11 @@ linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '�
 for (const P of AUTO_PARTS)
 {
     const box = $(AUTO_BOX[P.kind]), n0 = box.children.length;
-    const name = Object.assign(el('span'), {textContent: P.name});
+    const name = Object.assign(el('span', 'auName'), {textContent: P.name, id: `au-${P.key}-name`});
+    name.onclick = () => {
+        const L = autoPick(S.mode, P);
+        if (L) select(L);
+    };
     if (AUTO_FEM.includes(P.kind)) name.append(' ', Object.assign(el('span', 'sexL'), {id: `au-${P.key}-sex`,
         title: '基準＝沒有女版（男女共用，右鍵圖層新增）；♂／♀＝有女版，顯示中的那組；♀拆＝用女版設定拆（只有一組、不能新增女版）'}));
     box.append(name, ...dimSpans(P.quad ? [P.quad] : []));
