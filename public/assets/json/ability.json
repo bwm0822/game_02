@@ -220,13 +220,20 @@
         "src": "int"
       }
     ],
+    "cast": {
+      "img": "",
+      "particle": "fire-charge"
+    },
     "travel": {
       "type": "spell",
       "img": "🔥",
       "size": 25,
-      "deg": -90
+      "deg": -90,
+      "particle": "ember"
     },
-    "fx": {},
+    "fx": {
+      "particle": "fire-burst"
+    },
     "effects": [
       {
         "type": "dot",

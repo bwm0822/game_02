@@ -6,6 +6,8 @@ import {computeDamage} from '../core/combat.js'
 import {GM, GS} from '../core/setting.js'
 import {DEBUG} from '../core/debug.js'
 import {DEFAULT_ANIM, weaponAnim} from '../core/pose.js'
+import {playParticle} from '../core/particle.js'
+import DB from '../data/db.js'
 const _tag = 'action';
 const FRONT = 0.5;   // 近戰攻擊期間 depth 墊高(不到一格)，同一排(y 相同)時攻擊者畫在目標上面
 
@@ -147,14 +149,14 @@ export class COM_Action extends Com
         target.updateDepth();
     }
 
-    async _attack_Ranged(target, onHit, anim=DEFAULT_ANIM.ranged)
+    async _attack_Ranged(target, onHit, anim=DEFAULT_ANIM.ranged, trail=null)
     {
         const {root}=this.ctx
         root.face?.(target.pos);
         await root.anim_play?.(anim, target.pos);
         root.anim_lunge?.(target.pos, -4, {duration:60, ease:'quad.out'})
             ?.then(ok=>ok && root.anim_rest?.({duration:120, ease:'quad.inOut'}));
-        const sprite = {img:'arrow', deg:0};
+        const sprite = {img:'arrow', deg:0, trail};
         await new Promise((resolve)=>{
                 new Projectile(this.scene, this.root.x, this.root.y, sprite)
                     .shoot( target.pos.x, target.pos.y,
@@ -169,7 +171,7 @@ export class COM_Action extends Com
         const {root}=this.ctx
         root.face?.(target.pos);
         return new Promise((resolve)=>{
-                new Projectile(this.scene, this.root.x, this.root.y, sprite)
+                new Projectile(this.scene, this.root.x, this.root.y, {...sprite, trail:DB.particle(sprite.particle)})
                     .shoot( target.pos.x, target.pos.y,
                             {onComplete:()=>{onHit?.();resolve();}, bias:0}
                         );
@@ -181,7 +183,7 @@ export class COM_Action extends Com
         const {angle=90, dist=300, scale} = sprite;
         const startX = target.pos.x + dist/Math.tan(Phaser.Math.DegToRad(angle));
         const startY = target.pos.y - dist;
-        const pic = scale ? {...sprite, size:sprite.size*Phaser.Math.FloatBetween(scale[0], scale[1])} : sprite;
+        const pic = {...sprite, trail:DB.particle(sprite.particle), ...scale && {size:sprite.size*Phaser.Math.FloatBetween(scale[0], scale[1])}};
         return new Promise((resolve)=>{
                 new Projectile(this.scene, startX, startY, pic)
                     .shoot( target.pos.x, target.pos.y,
@@ -192,6 +194,25 @@ export class COM_Action extends Com
 
     _castImg(ability) {return ability.cast.img ?? ability.icon;}
 
+    // stage1 施法：施法者身上噴 cast.particle(不等)＋icon 跳一下(cast.img 寫 '' 就不跳)
+    _castFx(ability)
+    {
+        const c = ability.cast;
+        playParticle(this.scene, DB.particle(c.particle), {target:this.root});
+        if(c.img === '') {return;}
+        return this.root.fx?.({icon:this._castImg(ability)});
+    }
+
+    // stage3 命中：命中點噴 fx.particle(不等)＋icon 跳一下(fx.img 寫 '' 就不跳)；target 沒有(空格)就在 pos 播
+    _hitFx(ability, target, pos)
+    {
+        const f = ability.fx;
+        playParticle(this.scene, DB.particle(f.particle), {x:pos.x, y:pos.y});
+        if(f.img === '') {return;}
+        const icon = f.img ?? ability.icon;
+        return target ? target.fx?.({icon}) : this._fxAt(pos, icon);
+    }
+
     async _onDamage(target, ability)
     {
         if(!target.bb?.noCombat) {GS.mode = GM.MODE.COMBAT;}   // 任何一方發動攻擊，強制進入戰鬥模式(練習木樁除外)
@@ -201,7 +222,7 @@ export class COM_Action extends Com
         if(canKnock && lethal) {await this._knock(target, ability.knock);}   // 致命一擊先擊退再扣血，讓目標在被推到的位置死亡、換屍體
         target.takeDamage(dmg, this._root);
         const knock = canKnock && !lethal ? this._knock(target, ability.knock) : null;
-        if(ability?.fx) {await target.fx?.({icon: ability.fx.img ?? ability.icon});}   // stage3: 命中特效，需明確設定 fx 才會顯示
+        if(ability?.fx) {await this._hitFx(ability, target, target.pos);}   // stage3: 命中特效，需明確設定 fx 才會顯示
         await knock;
     }
 
@@ -307,7 +328,7 @@ export class COM_Action extends Com
             return true;
         }
 
-        if(ability.cast) {await root.fx?.({icon:this._castImg(ability)});}   // stage1: 施法動作，只播一次
+        if(ability.cast) {await this._castFx(ability);}   // stage1: 施法動作，只播一次
 
         const travel = ability.travel;
         const doOne = async (target)=>
@@ -317,7 +338,7 @@ export class COM_Action extends Com
             if(!travel)                     {return onHit();}                            // 無 stage2，直接命中
             if(travel.type==='spell')       {return this._attack_Spell(target, onHit, travel);}
             if(travel.type==='fall')        {return this._attack_Fall(target, onHit, travel);}
-            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit, ability.anim ?? root.total.anim);}
+            if(travel.type==='ranged')      {return this._attack_Ranged(target, onHit, ability.anim ?? root.total.anim, DB.particle(travel.particle));}
             if(travel.type==='melee')       {return this._attack_Melee(target, onHit, ability.anim ?? root.total.anim);}
         };
 
@@ -343,7 +364,7 @@ export class COM_Action extends Com
             if(travel.randomDelay) {await Utility.delay(Math.random()*travel.randomDelay);}
             if(travel.type==='spell')      {await this._attack_Spell(tile, null, travel);}
             else if(travel.type==='fall')  {await this._attack_Fall(tile, null, travel);}
-            if(ability.fx) {await this._fxAt(tile.pos, ability.fx.img ?? ability.icon);}
+            if(ability.fx) {await this._hitFx(ability, null, tile.pos);}
         };
 
         if(tiles.length>1 && travel.parallel===false)   // 多個空格且明確設定依序執行
@@ -428,6 +449,7 @@ export class COM_Action extends Com
         root.attackDecor = this._attackDecor.bind(this);
         root.dashAttack = this._dashAttack.bind(this);
         root.sweepAttack = this._sweepAttack.bind(this);
+        root.castFx = this._castFx.bind(this);
         root.anim_melee = (target) => this._attack_Melee(target, null, root.total?.anim);
         root.checkBlock = this._checkBlock.bind(this);
         root.closeDoorIfNeed = this._closeDoorIfNeed.bind(this);

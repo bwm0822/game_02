@@ -1,14 +1,17 @@
 import {Pic} from '../ui/uicomponents.js'
+import {playParticle} from '../core/particle.js'
 
 //--------------------------------------------------
-// 類別 : 特效元件 
+// 類別 : 特效元件
 // 功能 : 投射物特效，如 : 箭、火球
+//  trail : particle.json 的一筆(呼叫端查 DB.particle)，跟著飛當拖尾，命中時 stop(剩下的自己飄散)
 //--------------------------------------------------
 export class Projectile extends Pic
 {
-    constructor(scene, x, y, {img, size=25, deg=-90}={})
+    constructor(scene, x, y, {img, size=25, deg=-90, trail=null}={})
     {
         super(scene, size, size, {icon:img,x:x,y,y:y});
+        this.trail = playParticle(scene, trail, {target:this});   // 先建，同 depth 時畫在投射物後面
         scene.add.existing(this);
         this.setDepth(Infinity);
         this.from = {x:x, y:y};
@@ -46,7 +49,7 @@ export class Projectile extends Pic
                 this.y = ny;
                 this.angle = (a * 180 / Math.PI) + this.deg;
             },
-            onComplete:()=>{onComplete?.();this.destroy();}
+            onComplete:()=>{this.trail?.stop();onComplete?.();this.destroy();}
         });
     }
 }

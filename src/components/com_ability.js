@@ -513,7 +513,7 @@ export class COM_Ability extends Com
             this._showRange(false);
             this._clrAbility();
 
-            if(ability.cast) {await root.fx?.({icon: ability.cast.img ?? ability.icon});}   // stage1: 施法動作
+            if(ability.cast) {await root.castFx?.(ability);}   // stage1: 施法動作(com_action.js)
             const snapped = this._snapToGrid(pos);
             // 點擊位置在左右方向(水平偏移>垂直偏移)時，zoneW/zoneH 對調，讓矩形範圍轉向跟點擊方向垂直(不修改原始 ability 資料)
             const dx = Math.abs(snapped.x-this.x), dy = Math.abs(snapped.y-this.y);

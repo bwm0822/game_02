@@ -27,7 +27,7 @@ const S = {
     link: null,                 // 畫布上選中的連線 {child, ref}，Del 刪掉
     extra: {},                  // id → Set：「加欄位」叫出來、還沒填值的欄位
     drafts: {}, open: {}, formOf: null,
-    anims: [], fx: [],
+    anims: [], fx: [], particles: [],
 };
 const F = createForm({S, render});
 
@@ -156,11 +156,14 @@ async function save()
 }
 
 // 別的分頁存了檔：沒改過就重讀（undo 紀錄從現在重算），改過就只提示（存檔時會合併）
-const loadFx = () => fetch('/assets/json/fx.json', {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
+const keysOf = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).then(Object.keys).catch(() => []);
+const loadFx = () => keysOf('fx.json');
+const loadParticles = () => keysOf('particle.json');
 
 async function onSaved(file)
 {
     if (file === 'fx.json') {S.fx = await loadFx(); return render();}
+    if (file === 'particle.json') {S.particles = await loadParticles(); return render();}
     if (!FILES.includes(file) || !S.assets) return;
     if (dirtyOf(file)) return status(`${file} 在別的分頁存過了，存檔時會合併`);
     await load(file);
@@ -198,6 +201,11 @@ function validate(id)
     }
     out.push(...desWarns(ab));
     if (ab.zoneFx !== undefined && S.fx.length && !S.fx.includes(ab.zoneFx)) out.push(`區域特效 zoneFx 在 fx.json 沒有：${ab.zoneFx}（到特效分頁建立）`);
+    for (const st of ['cast', 'travel', 'fx'])
+    {
+        const p = ab[st]?.particle;
+        if (p !== undefined && S.particles.length && !S.particles.includes(p)) out.push(`${st}.particle 在 particle.json 沒有：${p}（到粒子分頁建立）`);
+    }
     const t = treeOf(id);
     if (ab.refs !== undefined && !Array.isArray(ab.refs)) out.push('refs 應該是陣列');
     else for (const [i, r] of (ab.refs ?? []).entries())
@@ -1005,6 +1013,7 @@ addEventListener('keydown', (e) => {
 (async () => {
     S.anims = await fetch('/assets/json/anim.json').then(r => r.json()).then(Object.keys).catch(() => []);
     S.fx = await loadFx();
+    S.particles = await loadParticles();
     render();
     IC.ready.then(render);
     SH.onSaved(onSaved);

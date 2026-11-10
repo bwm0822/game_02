@@ -39,7 +39,11 @@ await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
 
 ## 使用端（規劃，見計畫順序）
 
-- 技能 `cast`／`travel`／`fx` 物件內的 `particle`（travel＝拖尾，命中時 stop）
+- 技能（已完成，`com_action.js`）：`cast`／`travel`／`fx` 物件內的 `particle`
+  - `cast.particle`：`_castFx()` 在施法者身上噴（follow），不等；`cast.img` 寫 `''` 就不跳 icon（不寫＝技能 icon，跟以前一樣）。summon 型（`com_ability.js`）走 `root.castFx`
+  - `travel.particle`：`Projectile` 的 `trail`（spell／fall／ranged 都有），world＋follow 投射物，命中時 `stop()` 讓殘留的飄散；emitter 比投射物先建，同 depth 畫在後面
+  - `fx.particle`：`_hitFx()` 在命中點（目標的 pos，或補位空格）噴，不等；`fx.img` 寫 `''` 就不跳 icon
+  - 能力分頁檢查 `cast`／`travel`／`fx` 的 `particle` 在 particle.json 有沒有（這三個物件還是在「其他欄位」JSON 裡改）
 - fx.json 上層 `particle`（狀態期間持續）／`tickParticle`（tick 時噴、不等），`img` 改選填
 - 區域整片一個 emitter（`area`），spawn 播完才噴
 - Tiled 物件屬性 `particle`＋`px`/`py`；地圖層級環境粒子跟鏡頭

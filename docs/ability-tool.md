@@ -28,6 +28,7 @@
 - 右：技能表單，欄位定義在 `schema.js`（遊戲加新欄位改這裡）。顯示＝基本（lab/icon/mode/tag/des）＋有值的已知欄位，其他從「加欄位」叫出來；叫出來還空著的列尾有「刪除」收回去（`F.withDrop()`，只動 `S.extra`、不寫檔不進 undo）。
   - `hits`、`effects` 一筆一張卡片（↑↓⧉×），卡片標題是一行摘要；effects 欄位沿用道具編輯器的 `EFF_FIELDS`／`EFF_BY_TYPE`／`effSummary`，多一個 `reqClass`。卡片裡 schema 沒有的 key 在「額外欄位（JSON）」。
   - 區域技能（火牆）的 `zoneW`／`zoneH`／`zoneDur`／`zoneFx` 是「區域寬／高／回合／特效」；`zoneFx` 指 fx.json 的 id（下拉列出 fx.json 全部，沒有就警告），外觀到特效分頁編（[fx-tool.md](fx-tool.md)）。
+  - `cast`／`travel`／`fx` 物件（在「其他欄位」JSON 裡）可以寫 `particle`（particle.json 的 id，施法者身上／投射物拖尾／命中點），沒有就警告；粒子到粒子分頁編（[particle-tool.md](particle-tool.md)）。
   - `travel`／`fx`／`cast` 等沒列到的 key 在最下面「其他欄位」原始 JSON。
   - 前置只唯讀顯示，要在畫布拉線改。
   - 說明預覽：照遊戲 `utility.js` 的 `fmt_Des()` 展開 token，拿不到施放者屬性，所以 `{#fmt}` 顯示成公式（`10+1.5×智力`）；元素、屬性名查 `local.json` 的 `lab`。

@@ -115,4 +115,50 @@ run('粒子特效', async t => {
     t.eq('area：quantity／count 乘格數、發射範圍＝w×h', JSON.stringify(r.area), JSON.stringify([6, 96, 12]));
     t.eq('emoji 粒子', r.emoji, 'emoji:✨');
     t.eq('particle.json 每一筆都噴得出來（沒噴出粒子的列出來）', JSON.stringify(r.all), '[]');
+
+    // 技能：cast／travel／fx 的 particle（固定資料，實際 ability.json 常調）
+    await t.newGame();
+    const g = await t.eval(async (d) => {
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const p = d.GM.player, scene = p.scene, out = {};
+        const target = d.objs().find(o => o !== p && o.takeDamage && o.isAlive !== false);
+        out.hasTarget = !!target;
+        if (!target) return out;
+        const made = [], icons = [];
+        const add = scene.add.particles;
+        scene.add.particles = function (x, y, key, cfg) {
+            const em = add.call(this, x, y, key, cfg);
+            made.push({key, burst: cfg.emitting === false, em});
+            return em;
+        };
+        const fx = p.fx, tfx = target.fx;
+        p.fx = (c) => {icons.push(['caster', c.icon]); return fx(c);};
+        target.fx = (c) => {icons.push(['target', c.icon]); return tfx(c);};
+        Object.assign(d.DB._particleDB, {
+            't-cast': {img: 'p-dot', duration: 200, lifespan: 100, frequency: 20},
+            't-trail': {img: 'p-soft', lifespan: 150, frequency: 20},
+            't-hit': {img: 'p-spark', mode: 'burst', count: 5, lifespan: 150, speed: 30},
+        });
+        const ab = {tag: 'atk', icon: '🔥', cast: {img: '', particle: 't-cast'}, travel: {type: 'spell', img: '🔥', size: 25, deg: -90, particle: 't-trail'},
+                    fx: {particle: 't-hit'}, hits: [{elm: 'fire', pow: 0, flat: 0}]};
+        let trailDuring = null;
+        const watch = setInterval(() => {const t = made.find(m => m.key === 'p-soft'); if (t && trailDuring === null && t.em.active) trailDuring = !!t.em.follow;}, 10);
+        await p.attack([target], ab);
+        clearInterval(watch);
+        out.made = made.map(m => `${m.key}${m.burst ? ':burst' : ''}`);
+        out.trailFollow = trailDuring;
+        out.trailStopped = made.find(m => m.key === 'p-soft')?.em.emitting;
+        out.icons = icons.map(([w, i]) => `${w}:${i}`);
+        await sleep(600);
+        out.cleaned = made.every(m => !m.em.active);
+        scene.add.particles = add;
+        p.fx = fx; target.fx = tfx;
+        return out;
+    });
+    t.check('地圖上有可以打的對象', g.hasTarget);
+    t.eq('技能三段：施法者噴 cast、投射物拖尾、命中一次噴', JSON.stringify(g.made), JSON.stringify(['p-dot', 'p-soft', 'p-spark:burst']));
+    t.check('拖尾跟著投射物（world＋follow）', g.trailFollow);
+    t.eq('命中時拖尾停止發射', g.trailStopped, false);
+    t.eq('cast.img 空字串不跳 icon；fx 沒寫 img 用技能 icon', JSON.stringify(g.icons), JSON.stringify(['target:🔥']));
+    t.check('播完全部清掉', g.cleaned);
 });

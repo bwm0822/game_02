@@ -186,6 +186,10 @@ run('ability', async t => {
         ab.addRef('fireball', 'meteorshower');
         out.cycle = ab.validate('fireball').some(w => w.includes('繞成一圈'));
         ab.undo();
+        for (let i = 0; i < 100 && !S.particles.length; i++) await sleep(20);
+        ab.set('fireball', ['fx', 'particle'], 'nope-p');
+        out.ptWarn = [ab.validate('fireball').some(w => w.includes('fx.particle 在 particle.json 沒有：nope-p')), ab.validate('fireball').filter(w => w.includes('particle')).length];
+        ab.undo();
         ab.addRef('fireball', 'icebolt');
         out.cross = ab.validate('fireball').some(w => w.includes('在別棵樹（Ice）'));
         ab.undo();
@@ -408,7 +412,8 @@ run('ability', async t => {
     t.eq('表單標題', r.formHead, 'fireball');
     t.eq('沒有前置顯示 —', r.refsRow, '—');
     t.eq('前置唯讀顯示', r.refsRow2, 'fireball');
-    t.check('travel/fx 進其他欄位', r.other?.startsWith('（2）'), r.other);
+    t.eq('cast／travel／fx 的 particle 在 particle.json 沒有會警告（有的不警告）', JSON.stringify(r.ptWarn), JSON.stringify([true, 1]));
+    t.check('cast/travel/fx 進其他欄位', r.other?.startsWith('（3）'), r.other);
     t.eq('改 cd', r.cd, 4);
     t.check('改值不動 key 順序', r.keyOrder);
     t.check('樹列出現未存點', r.dirtyMark);
