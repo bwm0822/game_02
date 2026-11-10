@@ -188,6 +188,29 @@ run('粒子特效', async t => {
         zone._remove();
         await sleep(50);
         out.zoneGone = made.every(m => !m.em.active);
+
+        // 地圖：Tiled 物件的 particle＋px/py（純點固定位置；建成 GameObject 就跟著它、照存檔不在了就不噴）、地圖本身＝環境粒子跟著鏡頭
+        made.length = 0;
+        const prop = (name, value) => ({name, type: typeof value === 'number' ? 'int' : 'string', value});
+        const map = scene.map;
+        map._objParticle(scene, {id: 901, x: 100, y: 200, width: 32, height: 32, properties: [prop('particle', 't-trail'), prop('px', 3), prop('py', -4)]}, []);
+        const pt = made[0]?.em;
+        out.objPoint = [pt?.x, pt?.y, !!pt?.follow];
+        const box = scene.add.container(140, 260);
+        box.uid = 902;
+        map._objParticle(scene, {id: 902, gid: 5, x: 124, y: 270, width: 32, height: 20, properties: [prop('particle', 't-trail')]}, [box]);
+        const fo = made[1]?.em;
+        out.objGo = [fo?.follow === box, fo?.followOffset.x, fo?.followOffset.y];
+        const gone = scene.add.container(0, 0);
+        gone.uid = 903;
+        gone.destroy();
+        map._objParticle(scene, {id: 903, x: 0, y: 0, properties: [prop('particle', 't-trail')]}, [gone]);
+        out.objGone = made.length;
+        map._mapParticle(scene, {properties: [prop('particle', 't-trail')]});
+        const env = made[2]?.em;
+        out.env = [env?.scrollFactorX, env?.x === scene.cameras.main.width / 2, env?.y];
+        made.forEach(m => m.em.active && m.em.destroy());
+        box.destroy();
         scene.add.particles = add;
         return out;
     });
@@ -206,4 +229,8 @@ run('粒子特效', async t => {
     t.eq('區域：tick 那格噴一次', g.zoneTick, 'p-soft,p-spark:burst');
     t.eq('區域：end 停止發射', g.zoneEnd, false);
     t.check('區域：移除後清掉', g.zoneGone);
+    t.eq('Tiled 純點：物件中心＋px/py、固定不跟', JSON.stringify(g.objPoint), JSON.stringify([119, 212, false]));
+    t.eq('Tiled 物件建成 GameObject：跟著它，偏移＝tile 物件中心（y 是底部）－物件位置', JSON.stringify(g.objGo), JSON.stringify([true, 0, 0]));
+    t.eq('照存檔已經不在的物件不噴', g.objGone, 2);
+    t.eq('地圖環境粒子：跟著鏡頭、畫面上緣中間', JSON.stringify(g.env), JSON.stringify([0, true, 0]));
 });

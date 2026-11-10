@@ -29,8 +29,15 @@ run('particle-tool', async t => {
         const assets = await dir(opfs, 'assets'), json = await dir(assets, 'json');
         const disk = async () => (await (await json.getFileHandle('particle.json')).getFile()).text();
         await write(json, 'particle.json', orig);
+        // Tiled：地圖本身＝環境粒子、物件的自訂屬性
+        await write(await dir(assets, 'maps', 'm'), 'x.json', JSON.stringify({properties: [{name: 'particle', type: 'string', value: 'rain'}],
+            layers: [{name: 'obj', objects: [{id: 7, name: 'fire', properties: [{name: 'particle', type: 'string', value: 'smoke'}, {name: 'px', type: 'int', value: 2}]}, {id: 8}]}]}));
 
         await D.setAssets(assets);
+        for (let i = 0; i < 100 && !S.refsP; i++) await sleep(20);
+        await S.refsP;
+        out.tiled = ['rain', 'smoke'].map(k => (S.refs[k] ?? []).map(x => `${x.tab}:${x.id}:${x.at}`).join('|'));
+        out.tiledUsed = [pt.isUnused('rain'), pt.isUnused('smoke')];
         out.load = Object.keys(S.data).length === Object.keys(JSON.parse(orig)).length;
         await save();
         out.roundtrip = (await disk()) === orig;
@@ -145,6 +152,8 @@ run('particle-tool', async t => {
         return out;
     });
 
+    t.eq('Tiled 的 particle 屬性算引用（地圖本身、物件名稱）', JSON.stringify(r.tiled), JSON.stringify(['null:maps/m/x.json:地圖', 'null:maps/m/x.json:fire']));
+    t.eq('Tiled 引用到的不算未使用', JSON.stringify(r.tiledUsed), JSON.stringify([false, false]));
     t.check('讀入全部', r.load);
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('引用：技能 cast／travel／fx、fx.json 的 particle／tickParticle',

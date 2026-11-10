@@ -226,7 +226,8 @@ function refsEl(id)
 {
     const refs = refsOf(id);
     return h('div', {class: 'refs'}, h('span', null, '用到的：'),
-        refs.length ? refs.map(r => h('a', {class: 'go', title: `跳到${TAB_NAME[r.tab]}分頁（${r.at}）`, onclick: () => SH.gotoTab(r.tab, [r.id])}, `${TAB_NAME[r.tab]} ${r.id}・${r.at} ↗`))
+        refs.length ? refs.map(r => r.tab ? h('a', {class: 'go', title: `跳到${TAB_NAME[r.tab]}分頁（${r.at}）`, onclick: () => SH.gotoTab(r.tab, [r.id])}, `${TAB_NAME[r.tab]} ${r.id}・${r.at} ↗`)
+                                          : h('span', {title: 'Tiled 的自訂屬性 particle（到 Tiled 改）'}, `${r.id}・${r.at}`))
                     : h('span', {class: 'dim'}, '（還沒有人用）'));
 }
 
@@ -282,6 +283,8 @@ const HEAD = {'img': ['圖'], 'mode': ['模式'], '#amount': ['量／時間'], '
 // ---------- 畫面 ----------
 function draw()
 {
+    // 拿到專案資料夾後補掃地圖
+    if (S.assets && S.refsFor !== S.assets) {S.refsFor = S.assets; S.refsP = loadRefs().then(render);}
     const ids = Object.keys(S.data), miss = missing();
     renderDatalists({missing: miss, eases: Object.keys(EASE)});
     V.renderList([
@@ -316,13 +319,56 @@ export function collectRefs(data, tab, out)
     for (const [id, v] of Object.entries(data)) walk(v, id, '');
 }
 
+// Tiled 的自訂屬性 particle（地圖本身＝環境粒子、物件＝那個物件噴）：{name: 'particle', value}；at＝物件名稱／id，地圖本身是「地圖」
+export function collectTiled(data, file, out)
+{
+    const visit = (v, at) => {
+        if (Array.isArray(v)) return v.forEach(x => visit(x, at));
+        if (!isObj(v)) return;
+        const here = v === data ? '地圖' : v.name || (v.id !== undefined ? `#${v.id}` : at);
+        if (Array.isArray(v.properties))
+            for (const p of v.properties)
+                if (p?.name === 'particle' && typeof p.value === 'string' && p.value) (out[p.value] ??= []).push({tab: null, id: file, at: here});
+        for (const [k, x] of Object.entries(v)) if (k !== 'properties') visit(x, here);
+    };
+    visit(data, '');
+}
+
+async function walk(dir, path, fn)
+{
+    for await (const fh of dir.values())
+    {
+        const p = `${path}/${fh.name}`;
+        if (fh.kind === 'directory') await walk(fh, p, fn);
+        else await fn(fh, p);
+    }
+}
+
+// 地圖／template 要有專案資料夾才掃得到（dev server 沒有清單）
+async function tiledRefs(refs)
+{
+    const assets = S.assets?.dir;
+    if (!assets) return;
+    for (const [dir, ext] of [['maps', '.json'], ['templates', '.tj']])
+    {
+        let d = null;
+        try {d = await assets.getDirectoryHandle(dir);} catch {continue;}
+        await walk(d, dir, async (fh, p) => {
+            if (!fh.name.endsWith(ext)) return;
+            try {collectTiled(JSON.parse(await (await fh.getFile()).text()), p, refs);} catch {}
+        });
+    }
+}
+
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
     const refs = {};
     for (const f of REF_FILES) collectRefs(await get(f), TAB_OF[f], refs);
+    await tiledRefs(refs);
     const [roles, items, parts] = await Promise.all([get('role.json'), get('item.json'), get('part.json')]);
     S.refs = refs;
+    S.refsFor = S.assets;
     Object.assign(S.ext, {roles, items, parts});
 }
 
@@ -335,4 +381,4 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__pt = {S, D, add, validate, validateAll, missing, isUnused, render, loadRefs, collectRefs, SC, PV};
+window.__pt = {S, D, add, validate, validateAll, missing, isUnused, render, loadRefs, collectRefs, collectTiled, SC, PV};

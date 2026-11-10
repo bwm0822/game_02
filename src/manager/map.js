@@ -22,6 +22,7 @@ import Pot from '../items/pot.js'
 import Remains from '../items/remains.js'
 import Dummy from '../roles/dummy.js'
 import {T,dlog} from '../core/debug.js'
+import {playParticle} from '../core/particle.js'
 
 
 class Map
@@ -112,7 +113,29 @@ class Map
                 // {type:'npc_n',classType:Npc_n},
             ]);
             objs.forEach((obj) => {obj.init_prefab?.()});
+            layer.objects.forEach((obj)=>this._objParticle(scene, obj, objs));
         });
+    }
+
+    // Tiled 物件的 particle 屬性(particle.json 的 id)：在物件中心＋px/py 一直噴；有建成 GameObject 就跟著它(被銷毀就停)，沒有(純裝飾的點)就固定在那裡，換地圖時清掉
+    _objParticle(scene, obj, objs)
+    {
+        const {particle, px=0, py=0} = Utility.getProps(obj);
+        if(!particle) {return;}
+        const [w, h] = [obj.width ?? 0, obj.height ?? 0];
+        const x = obj.x + w/2 + px;
+        const y = (obj.gid ? obj.y - h/2 : obj.y + h/2) + py;   // tile 物件的 y 是底部
+        const go = objs.find(o=>o.uid===obj.id);
+        if(go && !go.active) {return;}   // 照存檔已經不在了(撿走、拆掉…)
+        const opts = go ? {target:go, ox:x-go.x, oy:y-go.y} : {x, y};
+        playParticle(scene, DB.particle(particle), opts);
+    }
+
+    // 地圖的 particle 屬性：環境粒子(下雨、落葉…)，跟著鏡頭；動態天氣以後再做
+    _mapParticle(scene, map)
+    {
+        const {particle} = Utility.getProps({properties:map.properties});
+        if(particle) {playParticle(scene, DB.particle(particle), {screen:true});}
     }
 
     _createGraph(map, diagonal=false, weight=1)
@@ -217,7 +240,7 @@ class Map
 
         // 6) 繪製 object layer
         this._createObjectLayer(scene, map, mapName);
-
+        this._mapParticle(scene, map);
     }
     
     getPath(sp, eps, tile)

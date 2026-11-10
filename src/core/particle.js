@@ -131,6 +131,7 @@ export function emitterConfig(def={}, {emoji=false}={})
 //  opts.count     : 蓋掉 def.count
 //  opts.area      : {w, h, cells}：發射範圍改成以發射點為中心的 w×h 矩形，quantity/count 乘 cells(區域特效用)
 //  opts.depth     : 數字，蓋掉預設深度
+//  opts.screen    : true＝跟著鏡頭(環境粒子：下雨…)，發射點在畫面上緣中間＋def.x/y，scrollFactor 0
 //--------------------------------------------------
 export function playParticle(scene, def, opts={})
 {
@@ -165,8 +166,10 @@ export class ParticleFx
         // follow 時粒子出生在 target＋followOffset，再套 emitter 自己的 transform，所以 emitter 要放 0,0
         const [x, y] = parent ? [dx, dy]
                      : target ? [0, 0]
+                     : opts.screen ? [scene.cameras.main.width/2 + dx, dy]
                      : [(opts.x ?? 0) + dx, (opts.y ?? 0) + dy];
         const em = this.emitter = scene.add.particles(x, y, tex.key, cfg);
+        if(opts.screen) {em.setScrollFactor(0);}
         this.target = target;
         this.under = def.depth==='under';
         if(parent) {parent.add(em); if(this.under) {parent.sendToBack(em);}}

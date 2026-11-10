@@ -22,7 +22,7 @@
 
 ## 引用
 
-`collectRefs()` 掃 ability.json／item.json／fx.json 裡 key 是 `particle` 或 `tickParticle` 的字串值（技能 `cast`／`travel`／`fx`、fx.json 上層）。地圖（Tiled 屬性）之後接上時再加。改名只動 particle.json 的 key，確認框列其他檔的引用（不跟著改）。
+`collectRefs()` 掃 ability.json／item.json／fx.json 裡 key 是 `particle` 或 `tickParticle` 的字串值（技能 `cast`／`travel`／`fx`、fx.json 上層）；`collectTiled()` 掃 `maps/**/*.json`、`templates/**/*.tj` 的 Tiled 自訂屬性 `particle`（地圖本身＝環境粒子、物件），要有專案資料夾才掃得到（拿到資料夾時 `draw()` 補掃，`S.refsP` 是那次的 promise），顯示「檔名・物件名稱」不能 ↗。改名只動 particle.json 的 key，確認框列其他檔的引用（不跟著改）。
 
 ## 檢查（只警告）
 

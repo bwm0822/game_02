@@ -48,7 +48,11 @@ await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
   - 效果特效（`com_disp.js`）：`_fxOn` 開 `particle`（follow 角色，位置＝`cellPos()`＝cell 的 align＋ox/oy，`fxcell.js` 跟 attachCell 共用），閃一下的特效也常駐粒子（沒 particle 的閃一下照舊不建 entry）；`_fxTick` 噴 `tickParticle`；`_fxOff` stop。沒 img＝不建 cell（body 照樣能套，`bodyTween` 的 holder 可以是空的）
   - 區域（`ZoneView`）：`_playSpawn` 播完才開整片一個 emitter（`area`＝有效格子的外框，`cells`＝有生成的格數），`_playTick` 在那格噴 `tickParticle`，`_playEnd` stop，`_remove` 立刻清；沒 img 的區域格子照樣登記（權重、`hasCell`），只是沒有圖
   - 特效分頁：圖下面多「粒子／tick 粒子」兩格（下拉 particle.json 的 id、↗ 跳粒子分頁），檢查 id 存在、沒 img 也沒粒子才警告；預覽改 `Phaser.AUTO`（WebGL，tint／ADD 才看得到）連粒子一起播，所有播出去的粒子記在 `st.bursts`，`stop()` 全清
-- Tiled 物件屬性 `particle`＋`px`/`py`；地圖層級環境粒子跟鏡頭
+- 地圖（已完成，`src/manager/map.js`）：
+  - Tiled 物件的自訂屬性 `particle`（string）＋選填 `px`/`py`（int）：`_objParticle()` 在物件中心（矩形＝中心、點＝本身、tile 物件的 y 是底部所以往上半格）＋px/py 持續噴。這個物件有建成 GameObject（有 type）就 follow 它（被銷毀自動停），照存檔已經不在了（init_prefab 後 `active` 是 false）就不噴；沒有 type 的純裝飾點就固定在那裡。`@群組` 條件不成立的 layer 整層跳過，不噴
+  - 地圖本身的自訂屬性 `particle`：`_mapParticle()` 環境粒子（下雨、落葉…），`opts.screen`＝emitter 放在畫面上緣中間＋def.x/y、`setScrollFactor(0)` 跟著鏡頭；`emitZone` 自己寫畫面寬的範圍（如 rain 的 `{x:-600, w:1200}`）。動態天氣（劇情指令蓋掉）以後再做
+  - 換地圖＝GameScene 重建，emitter 跟著場景清掉；不存檔
+  - 粒子分頁有專案資料夾時掃 `maps/**/*.json`、`templates/**/*.tj` 的 `properties` 裡 `name:'particle'` 算引用（顯示 檔名・物件名稱／「地圖」，不能 ↗）
 - 工具殼「粒子」分頁（特效後面）：已完成，見 [particle-tool.md](particle-tool.md)；`builtinCanvas(key)` 給工具畫內建形狀圖示
 
 測試：`node scripts/test/particle.mjs`。
