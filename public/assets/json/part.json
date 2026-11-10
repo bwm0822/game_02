@@ -753,6 +753,36 @@
     "y": -3.75,
     "name": "年輕農夫服"
   },
+  "cloth-outfit-villager-m-4": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-m-4",
+    "scale": 0.25,
+    "x": 0,
+    "y": -5.5,
+    "name": "酒館常客服"
+  },
+  "cloth-outfit-villager-f-3": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-f-3",
+    "scale": 0.25,
+    "x": 0,
+    "y": -4,
+    "name": "年輕婦人服"
+  },
+  "cloth-outfit-villager-m-3": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-m-3",
+    "scale": 0.25,
+    "x": 0,
+    "y": -6.25
+  },
+  "cloth-outfit-villager-m-5": {
+    "kind": "cloth",
+    "sprite": "cloth-outfit-villager-m-5",
+    "scale": 0.25,
+    "x": 0,
+    "y": -5.5
+  },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
     "sprite": "outfit-innkeeper-shoes",
@@ -941,6 +971,36 @@
     "y": 0,
     "name": "年輕農夫鞋"
   },
+  "shoes-outfit-villager-m-4": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-m-4",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "酒館常客鞋"
+  },
+  "shoes-outfit-villager-f-3": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-f-3",
+    "scale": 0.25,
+    "x": 1.25,
+    "y": 0,
+    "name": "年輕婦人鞋"
+  },
+  "shoes-outfit-villager-m-3": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-m-3",
+    "scale": 0.25,
+    "x": 1,
+    "y": 0
+  },
+  "shoes-outfit-villager-m-5": {
+    "kind": "shoes",
+    "sprite": "shoes-outfit-villager-m-5",
+    "scale": 0.25,
+    "x": 1,
+    "y": 0
+  },
   "handF": {
     "kind": "handF",
     "sprite": "handF-front",
@@ -1026,5 +1086,22 @@
     "x": -1.5,
     "y": -12,
     "name": "年輕農夫草帽"
+  },
+  "hat-outfit-villager-f-3": {
+    "kind": "hat",
+    "sprite": "hat-outfit-villager-f-3",
+    "scale": 0.25,
+    "x": -3.25,
+    "y": 5,
+    "name": "年輕婦人頭巾"
+  },
+  "hat-outfit-villager-m-5": {
+    "kind": "hat",
+    "sprite": "hat-outfit-villager-m-5-front",
+    "back": "hat-outfit-villager-m-5-back",
+    "scale": 0.25,
+    "x": -4,
+    "y": -12,
+    "hideHair": true
   }
 }

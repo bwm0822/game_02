@@ -963,6 +963,54 @@
     },
     "schedule": []
   },
+  "villager-f-3": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-女-3",
+    "des": "深棕低髮髻、包著米白三角頭巾的年輕婦人，穿暗酒紅長衫配米色圍裙，淺笑裡帶點倦容。",
+    "gold": 200,
+    "sex": "f",
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-woman",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-f-3",
+    "hair": "hair-villager-f-3",
+    "cloth": "cloth-outfit-villager-f-3",
+    "shoes": "shoes-outfit-villager-f-3",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "icon": "portrait-villager-f-3"
+  },
   "villager-f-4": {
     "kind": "npc",
     "grp": "路人",
@@ -1153,6 +1201,148 @@
       }
     },
     "schedule": []
+  },
+  "villager-m-3": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-男-3",
+    "des": "方臉寬下巴、深棕絡腮鬍從鬢角連到下巴的壯年樵夫，暗紅灰格紋羊毛衫外罩深棕皮背心，笑起來爽朗有精神。",
+    "gold": 200,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-m-3",
+    "hair": "hair-villager-m-3",
+    "cloth": "cloth-outfit-villager-m-3",
+    "shoes": "shoes-outfit-villager-m-3",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "icon": "portrait-villager-m-3"
+  },
+  "villager-m-4": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-男-4",
+    "des": "大圓臉、紅鼻頭的禿頂大叔，芥末黃背心被肚子撐得緊繃，衣角沾著酒漬，總是醉醺醺地傻笑。",
+    "gold": 200,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-m-4",
+    "hair": "hair-villager-m-4",
+    "cloth": "cloth-outfit-villager-m-4",
+    "shoes": "shoes-outfit-villager-m-4",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "icon": "portrait-villager-m-4"
+  },
+  "villager-m-5": {
+    "kind": "npc",
+    "grp": "路人",
+    "lab": "路人-男-5",
+    "des": "長臉粗白眉、白鬍蓋住下巴的老爺爺，戴著灰褐毛線帽，深藍灰長袍腰繫麻繩，總是慈祥地瞇眼微笑。",
+    "gold": 200,
+    "faceR": true,
+    "anchor": {
+      "x": 0,
+      "y": 16
+    },
+    "w": 32,
+    "h": 64,
+    "b": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "g": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "z": {
+      "l": 0,
+      "r": 0,
+      "t": 32,
+      "b": 0
+    },
+    "body": "body-man",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-villager-m-5",
+    "hair": "hair-villager-m-5",
+    "cloth": "cloth-outfit-villager-m-5",
+    "shoes": "shoes-outfit-villager-m-5",
+    "hat": "hat-outfit-villager-m-5",
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      }
+    },
+    "schedule": [],
+    "icon": "portrait-villager-m-5"
   },
   "rogue-1": {
     "kind": "rogue",
