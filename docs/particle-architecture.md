@@ -43,6 +43,6 @@ await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
 - fx.json 上層 `particle`（狀態期間持續）／`tickParticle`（tick 時噴、不等），`img` 改選填
 - 區域整片一個 emitter（`area`），spawn 播完才噴
 - Tiled 物件屬性 `particle`＋`px`/`py`；地圖層級環境粒子跟鏡頭
-- 工具殼「粒子」分頁（特效後面）
+- 工具殼「粒子」分頁（特效後面）：已完成，見 [particle-tool.md](particle-tool.md)；`builtinCanvas(key)` 給工具畫內建形狀圖示
 
 測試：`node scripts/test/particle.mjs`。

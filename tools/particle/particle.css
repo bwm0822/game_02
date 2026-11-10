@@ -1,0 +1,19 @@
+.split { display: flex; gap: 16px; align-items: flex-start; }
+.split > .form { flex: 1; min-width: 0; }
+.item.ghost { opacity: .5; }
+.ico.builtin { background: #111; border-radius: 3px; }
+.pv { position: sticky; top: 0; flex: none; background: #25272b; border: 1px solid #333; border-radius: 4px; padding: 8px; }
+.pv .stage canvas { display: block; }
+.pv .opts { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 6px; font-size: 14px; max-width: 480px; }
+.pv .opts label { display: inline-flex; align-items: center; gap: 3px; }
+.pv .zn { display: inline-flex; align-items: center; gap: 2px; }
+.pv .zn input { width: 3.5em; }
+.pv .info { min-width: 8em; }
+.refs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 8px; color: #aaa; }
+.refs a.go { color: #8bd; cursor: pointer; }
+.props { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 6px 0 4px; }
+.prop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.prop > .k { min-width: 8.5em; color: #ccc; }
+.prop button { padding: 0 6px; }
+.prop .chip { display: inline-flex; align-items: center; gap: 2px; }
+.prop input[type=color] { width: 2.4em; height: 1.6em; padding: 0; border: 0; background: none; }

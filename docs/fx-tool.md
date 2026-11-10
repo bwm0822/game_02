@@ -47,6 +47,6 @@ id 就是效果 id 或 `zoneFx`，改名只動 fx.json 的 key，確認框列出
 |---|---|
 | `schema.js` | `CELL`、`STAGES`、`TIME`、`PROPS`、`EASES`、`valMode()`、`forKind()`（欄位只給區域／效果特效）、`template()` |
 | `main.js` | 引用收集（`collectRefs()`：effects 陣列＋技能 `zoneFx`）、檢查、表單、清單、總覽 |
-| `preview.js` | Phaser 預覽（只裝 BBCode 外掛給 emoji 用），import 遊戲的 `src/core/fxcell.js` |
+| `preview.js` | Phaser 預覽（只裝 BBCode 外掛給 emoji 用），import 遊戲的 `src/core/fxcell.js`；角色合成、textures 圖切貼圖用 `tools/common/pvstage.js`（粒子分頁共用） |
 
 測試：`node scripts/test/fx-tool.mjs`（`window.__fx`，OPFS 假資料夾：原樣往返、引用與缺特效、cell 表單、tween 表單、檢查、改名列引用、預覽（stun 掛在上緣＋body 擺動、解除轉回正、改了重播、閃一下、自動循環、區域 5×1 格）、殼裡 ↗ 跳能力分頁）。

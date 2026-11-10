@@ -6,10 +6,9 @@ import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
 import FxCell, {attachCell, bodyTween, zoneDelays} from '../../src/core/fxcell.js';
 import {GM} from '../../src/core/setting.js';
 import {h} from '../common/dom.js';
-import * as IC from '../common/icons.js';
-import {partsOf} from '../role/preview.js';
+import {roleCanvas, addRole, imgTexture} from '../common/pvstage.js';
 
-const W = 160, H = 140, ZOOM = 2, ROLE_CV = 160;
+const W = 160, H = 140, ZOOM = 2;
 const P = {role: null, auto: true, speed: 1};
 try {P.role = localStorage.getItem('tools.fx.role');} catch {}
 
@@ -42,28 +41,6 @@ function createGame()
     return box;
 }
 
-async function roleCanvas(r, items, pdb)
-{
-    const parts = partsOf(r, items, pdb);
-    const frames = await Promise.all(parts.map(p => IC.frameOf(p.sprite)));
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = ROLE_CV;
-    const g = cv.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    parts.forEach(({p}, i) => {
-        const fr = frames[i];
-        if (!fr) return;
-        const {img, f} = fr;
-        g.save();
-        g.translate(ROLE_CV / 2 + (p.x ?? 0), ROLE_CV / 2 + (p.y ?? 0));
-        g.rotate((p.a ?? 0) * Math.PI / 180);
-        g.scale(p.scale ?? 1, p.scale ?? 1);
-        g.drawImage(img, f.x, f.y, f.w, f.h, -(p.ox ?? 0.5) * f.w, -(p.oy ?? 1) * f.h, f.w, f.h);
-        g.restore();
-    });
-    return cv;
-}
-
 async function buildRole()
 {
     const {scene} = st, r = st.ext.roles[P.role];
@@ -77,37 +54,11 @@ async function buildRole()
     if (seq !== st.buildSeq) return;
     const key = `role-${P.role}-${seq}`;
     scene.textures.addCanvas(key, cv);
-    const w = r.w ?? 32, hh = r.h ?? 64, ax = r.anchor?.x ?? 0, ay = r.anchor?.y ?? 0;
-    const root = scene.add.container(W / 2, H - 24);
-    const view = scene.add.container(-ax, -ay);
-    const shape = scene.add.image(0, 0, key);
-    view.add(shape);
-    root.add(view);
-    const g = scene.add.graphics();
-    g.lineStyle(1, 0x444444).lineBetween(-W / 2, 0, W / 2, 0);
-    g.lineStyle(1, 0x555555).strokeRect(-ax - w / 2, -ay - hh / 2, w, hh);
-    root.addAt(g, 0);
-    Object.assign(view, {shape, max: {x: w / 2, y: hh / 2}, Min: {x: -ax - w / 2, y: -ay - hh / 2}, Max: {x: -ax + w / 2, y: -ay + hh / 2}});
-    root.view = view;
-    Object.assign(st, {root, view, base: {x: shape.x, y: shape.y}, roleKey: P.role});
+    Object.assign(st, addRole(scene, r, key, W / 2, H - 24, W), {roleKey: P.role});
 }
 
-// 圖（不是 emoji）切成一張貼圖給 Pic 用；同一個值只切一次
-async function imgKey(img)
-{
-    const r = IC.resolve(img);
-    if (!r.url) return img;
-    if (st.imgs.has(img)) return st.imgs.get(img);
-    const fr = await IC.frameOf(img);
-    if (!fr) return img;
-    const cv = document.createElement('canvas');
-    cv.width = fr.f.w; cv.height = fr.f.h;
-    cv.getContext('2d').drawImage(fr.img, fr.f.x, fr.f.y, fr.f.w, fr.f.h, 0, 0, fr.f.w, fr.f.h);
-    const key = `fximg-${st.imgs.size}`;
-    st.scene.textures.addCanvas(key, cv);
-    st.imgs.set(img, key);
-    return key;
-}
+// 圖（不是 emoji）切成一張貼圖給 Pic 用
+const imgKey = (img) => imgTexture(st.scene, img, st.imgs, 'fximg');
 
 // ---------- 播放（跟 com_disp 的 _fxOn／_fxTick／_fxOff／_fxFlash 一樣） ----------
 const isFlash = () => !!st.fx?.cell?.flash;

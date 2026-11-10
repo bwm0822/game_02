@@ -14,12 +14,14 @@ export const BUILTIN = ['p-dot', 'p-soft', 'p-spark', 'p-square', 'p-ring'];
 const OWN = ['img', 'mode', 'count', 'duration', 'local', 'depth', 'x', 'y'];
 const EMOJI_SIZE = 32;
 
-function drawBuiltin(scene, key)
+// 內建形狀畫成白色 canvas(遊戲加成貼圖、工具拿來顯示)
+export function builtinCanvas(key)
 {
     const S = {'p-dot':8, 'p-soft':32, 'p-spark':[16,4], 'p-square':8, 'p-ring':16}[key];
     const [w, h] = Array.isArray(S) ? S : [S, S];
-    const tex = scene.textures.createCanvas(key, w, h);
-    const c = tex.context;
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const c = cv.getContext('2d');
     c.fillStyle = '#fff';
     switch(key)
     {
@@ -45,8 +47,10 @@ function drawBuiltin(scene, key)
         case 'p-square': c.fillRect(0, 0, w, h); break;
         case 'p-ring': c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(w/2, h/2, w/2-1, 0, Math.PI*2); c.stroke(); break;
     }
-    tex.refresh();
+    return cv;
 }
+
+const drawBuiltin = (scene, key)=>scene.textures.addCanvas(key, builtinCanvas(key));
 
 function drawEmoji(scene, key, text)
 {
