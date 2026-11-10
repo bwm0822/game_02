@@ -1103,7 +1103,7 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('自動：數字只存跟內建不一樣的進 tools/settings.json、localStorage 只剩介面狀態', JSON.stringify(au.stored),
-         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,headSmall,kind,split']));
+         JSON.stringify([{pct: 50, x: -2, y: 2}, 'cls,headLink,headSmall,kind,split,splitG,spm']));
     t.eq('自動：進模式什麼都不動、確定可以按', JSON.stringify(au.enter), JSON.stringify(['auto', true, true, false]));
     t.eq('自動：還沒拆時取消＝離開', JSON.stringify(au.revokeEarly), JSON.stringify(['move', true]));
     t.eq('自動：確定才拆、留在模式、確定反灰、記一筆 undo、空的零件那行反灰', JSON.stringify(au.split), JSON.stringify([true, true, 1, true]));
@@ -1214,7 +1214,7 @@ run('paperdoll', async t => {
     t.eq('男女：undo 連性別一起退、兩組數字各自還原、有女版的男模式標♂', JSON.stringify(sx.undo), JSON.stringify([30, 0.25, 1, 2, 'm', '50', 1, 3, '♂']));
     t.eq('男女：redo 回女版', JSON.stringify(sx.redo), JSON.stringify([30, 0.125, 3, 4, 'f']));
     t.eq('男女：還原預設只還原目前性別（存檔% 共用不動）', JSON.stringify(sx.reset), JSON.stringify([0.25, 50, 30, -1.75]));
-    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,headSmall,kind,split']));
+    t.eq('男女：性別存進專案、自動數字不存（只存介面狀態）', JSON.stringify(sx.saved), JSON.stringify(['f', 'cls,headLink,headSmall,kind,split,splitG,spm']));
     t.eq('專案：舊專案的自動數字開的時候忽略、介面狀態照讀', JSON.stringify(sx.oldProj), JSON.stringify([true, 'head']));
 
     // 套用：女＝用女版那組（含存檔%）拆，零件記 auto.sex、只有一組、不能新增女版、改數字／還原預設寫女版
@@ -2372,6 +2372,232 @@ run('paperdoll', async t => {
     t.check('手套：後手跟前手位置不同擋存檔', hat.gloveDiff);
     t.eq('手套：同標記只能一層', JSON.stringify(hat.gloveOne), JSON.stringify([null, 'F']));
     t.eq('手套：載入兩層一起套', JSON.stringify(hat.gloveLoad), JSON.stringify([true, true, 0.25]));
+
+    const armh = await ev(async () => {
+        const pd = window.__pd, out = {}, ui = pd.S.auto;
+        const sheet = async (fists) => {
+            const c = document.createElement('canvas'); c.width = 300; c.height = 120;
+            const g = c.getContext('2d');
+            g.fillStyle = '#00ff00'; g.fillRect(0, 0, 300, 120);
+            g.fillStyle = '#ffff00'; g.fillRect(20, 10, 40, 30);
+            g.fillStyle = '#0000ff'; g.fillRect(20, 70, 50, 40);
+            g.fillStyle = '#ff0000'; g.fillRect(120, 10, 50, 30);
+            g.fillRect(110, 80, 25, 30); g.fillRect(150, 80, 25, 30);
+            if (fists) {g.fillStyle = '#884400'; g.fillRect(240, 15, 20, 20); g.fillRect(240, 80, 20, 20);}
+            return createImageBitmap(c);
+        };
+        const run = async (fists) => {
+            Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+            pd.addLayer(await sheet(fists), 'set', null, null);
+            pd.autoSet({...pd.S.auto, kind: 'armorh', split: 'none'});
+            pd.setMode('auto');
+            pd.applyMode();
+            return pd.S.layers.filter(L => L.auto);
+        };
+        const parts = await run(true), at = (k) => parts.find(L => L.auto.key === k);
+        out.keys = parts.map(L => L.auto.key).sort();
+        out.glove = [at('handF').glove, at('handB').glove, at('handF').name, at('handB').name, at('handF').oy];
+        out.boots = at('boots').ops.at(-2).sw;
+        out.same = ['x', 'y', 'scale'].every(k => at('handF')[k] === at('handB')[k]);
+        pd.S.active = at('handF');
+        out.selGlove = pd.gloveSel();
+        pd.S.active = at('helmet');
+        out.selArmor = pd.gloveSel();
+        out.panel = document.getElementById('au-handF-pct').hidden;
+        const none = await run(false);
+        out.noFists = none.map(L => L.auto.key).sort();
+        Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+        pd.autoSet({...ui, kind: 'armor'});
+        return out;
+    });
+    t.eq('護具＋手：三欄拆出護具三件＋前後手', JSON.stringify(armh.keys), JSON.stringify(['armor', 'boots', 'handB', 'handF', 'helmet']));
+    t.eq('護具＋手：靠中線的靴子不會掉進護甲', armh.boots, 65);
+    t.eq('護具＋手：自動標手套、名字、oy', JSON.stringify(armh.glove), JSON.stringify(['F', 'B', 'set-gloves', 'set-gloves-b', 0.5]));
+    t.check('護具＋手：前後手預設同位置', armh.same);
+    t.eq('護具＋手：選手套走手套存檔、選護具走護具', JSON.stringify([armh.selGlove, armh.selArmor]), JSON.stringify([true, false]));
+    t.eq('護具＋手：面板有手的列', armh.panel, false);
+    t.eq('護具＋手：沒畫護手就略過', JSON.stringify(armh.noFists), JSON.stringify(['armor', 'boots', 'helmet']));
+
+    const gsp = await ev(async () => {
+        const pd = window.__pd, out = {}, ui = pd.S.auto, vis = (id) => !document.getElementById(id).hidden;
+        const sheet = async () => {
+            const c = document.createElement('canvas'); c.width = 300; c.height = 120;
+            const g = c.getContext('2d');
+            g.fillStyle = '#00ff00'; g.fillRect(0, 0, 300, 120);
+            g.fillStyle = '#ffff00'; g.fillRect(20, 10, 40, 30);
+            g.fillStyle = '#0000ff'; g.fillRect(20, 70, 50, 40);
+            g.fillStyle = '#ff0000'; g.fillRect(120, 10, 50, 30);
+            g.fillRect(110, 80, 25, 30); g.fillRect(150, 80, 25, 30);
+            for (const y of [6, 64])
+            {
+                g.fillStyle = '#884400'; g.fillRect(230, y, 40, 50);
+                g.fillStyle = '#000000'; g.fillRect(235, y + 12, 35, 3); g.fillRect(235, y + 12, 3, 38);
+            }
+            return createImageBitmap(c);
+        };
+        const run = async () => {
+            Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+            pd.addLayer(await sheet(), 'set', null, null);
+            pd.autoSet({...pd.S.auto, kind: 'armorh', split: 'none', splitG: 'split'});
+            pd.setMode('auto');
+        };
+        await run();
+        const m = pd.S.mode;
+        out.keys = Object.keys(m.sps).sort();
+        out.at = m.spKey;
+        out.rows = [vis('auGloveRow'), vis('auSpAtRow')];
+        out.polys = [m.sps.handF.poly ? true : m.sps.handF.err, m.sps.handB.poly ? true : m.sps.handB.err];
+        const lum0 = pd.S.sp.lum.trace, f0 = m.sps.handF.c.lum, b0 = m.sps.handB.c.lum;
+        pd.spStep(1);
+        pd.S.mode.tRec = false;
+        out.own = [pd.S.sp.lum.trace === lum0, m.sps.handF.c.lum === f0 + 1, m.sps.handB.c.lum === b0];
+        pd.applyMode();
+        const idx = (n) => pd.S.layers.findIndex(L => L.name === n);
+        out.alone = [idx('set-gloves-front') - idx('set-gloves-back'), idx('set-gloves-b-front') - idx('set-gloves-b-back')];
+        out.glove = pd.S.layers.find(L => L.name === 'set-gloves').glove;
+
+        await run();
+        const hm = pd.S.mode, cv = document.getElementById('cv'), rc = cv.getBoundingClientRect(), clk = (x, y, extra = {}) => {
+            const w = pd.toWorld(hm.sp.view, x, y), o = {clientX: rc.left + pd.S.view.px + w.x * pd.S.view.zoom, clientY: rc.top + pd.S.view.py + w.y * pd.S.view.zoom, pointerId: 1, button: 0, bubbles: true, detail: 1, ...extra};
+            cv.dispatchEvent(new PointerEvent('pointerdown', o));
+            cv.dispatchEvent(new PointerEvent('pointerup', o));
+        };
+        const radio = (n, v) => document.querySelector(`[name=${n}][value=${v}]`).click();
+        out.handUi = vis('spHandL');
+        radio('spMethod', 'hand');
+        out.handRow = [vis('spHandRow'), hm.sps.handF.method, hm.sps.handB.method];
+        document.getElementById('spHandClear').click();
+        pd.S.view.zoom = 8;
+        clk(4, 4); clk(30, 4); clk(30, 30);
+        out.handPts = hm.sps.handF.poly.pts.length;
+        radio('auSpAt', 'handB');
+        pd.applyMode();
+        out.blocked = [hm.parts, hm.spKey];
+        clk(4, 4);
+        const pts = JSON.stringify(hm.sps.handF.poly.pts);
+        out.closed = hm.sps.handF.poly.closed;
+        radio('auHowG', 'cut');
+        out.cutKeep = [hm.sps.handF.cut, hm.sps.handF.method, JSON.stringify(hm.sps.handF.poly.pts) === pts];
+        radio('auHowG', 'split');
+        pd.applyMode();
+        const hf = pd.S.layers.find(L => L.name === 'set-gloves-front');
+        out.handMask = [!!hm.parts, hf?.ops.find(o => o.type === 'mask')?.split.method];
+
+        // 自動面板記切法：上面手套選了手繪 → 下次拆新圖兩隻手套都手繪；切挖除換挖除記的（預設魔術棒），切回前後片又是手繪
+        await run();
+        const sm = pd.S.mode;
+        out.spm = [pd.S.auto.spm.splitG.split, pd.S.auto.spm.split.split, sm.sps.handF.method, sm.sps.handB.method];
+        radio('auHowG', 'cut');
+        out.spmCut = [sm.sps.handF.method, sm.sps.handF.cut];
+        radio('auHowG', 'split');
+        out.spmBack = sm.sps.handF.method;
+        pd.cancelMode();
+        pd.autoSet({...pd.S.auto, spm: undefined});
+
+        await run();
+        pd.addLayer(await sheet(), 'bd', null, null);
+        pd.S.layers.find(L => L.name === 'bd').tag = 'm-body';
+        pd.S.active = pd.S.layers.find(L => L.name === 'set');
+        pd.setMode('auto');
+        pd.applyMode();
+        out.stack = [idx('set-gloves-b-back') < idx('set-gloves-b-front'), idx('set-gloves-b-front') < idx('bd'), idx('bd') < idx('set-gloves-back'), idx('set-gloves-back') < idx('set-gloves-front')];
+
+        // 磁性套索：白方塊上緣 y=20，按住 Ctrl 游標貼著 y=24 移動（不按左鍵），頂點要吸到上緣
+        const c = document.createElement('canvas'); c.width = c.height = 100;
+        const g = c.getContext('2d');
+        g.fillStyle = '#ffffff'; g.fillRect(10, 20, 80, 60);
+        Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+        pd.addLayer(await createImageBitmap(c), 'mag', null, null);
+        pd.S.view.zoom = 4;
+        pd.setMode('split');
+        const mm = pd.S.mode;
+        mm.method = 'hand';
+        mm.poly = null;
+        const crc = cv.getBoundingClientRect(), ev = (type, x, y, k = {}) => {
+            const w = pd.toWorld(mm.view ?? mm.layer, x, y);
+            cv.dispatchEvent(new PointerEvent(type, {clientX: crc.left + pd.S.view.px + w.x * pd.S.view.zoom, clientY: crc.top + pd.S.view.py + w.y * pd.S.view.zoom, pointerId: 1, button: 0, bubbles: true, detail: 1, ...k}));
+        };
+        const tap = (x, y, k) => {ev('pointerdown', x, y, k); ev('pointerup', x, y, k);};
+        const ctrlUp = () => window.dispatchEvent(new KeyboardEvent('keyup', {key: 'Control'}));
+        const C = {ctrlKey: true};
+        tap(30, 24, C);
+        out.magStart = Math.abs(mm.poly.pts[0].y - 20) <= 1;
+        for (let x = 33; x <= 85; x += 4) ev('pointermove', x, 24, C);
+        out.magLive = !!mm.poly.live;
+        const pinned = mm.poly.pts.length;        ctrlUp();
+        const mp = mm.poly.pts;
+        out.mag = [pinned >= 2, mp.length === pinned, mp.every(p => Math.abs(p.y - 20) <= 1), mm.poly.closed, 'live' in mm.poly, !mm.mag];
+        out.magPin = mp.length;
+        pd.undo();
+        out.magUndo = mm.poly;
+
+        tap(30, 40);
+        out.magPlain = JSON.stringify(mm.poly.pts.map(p => ({x: Math.round(p.x * 100) / 100, y: Math.round(p.y * 100) / 100})));
+        ev('pointerdown', 30, 40); ev('pointermove', 50, 40); ev('pointerup', 50, 40);
+        out.magDrag = mm.poly.pts.length;
+        tap(60, 40); tap(60, 60);
+        ev('pointermove', 50, 50, {ctrlKey: true, shiftKey: true});
+        out.magShift = !!mm.poly.live;
+        ev('pointermove', 35, 45, C);
+        tap(31, 41, C);
+        out.magClose = mm.poly.closed;
+        ctrlUp();
+        pd.undo();
+        out.magCloseUndo = [mm.poly.closed, mm.poly.pts.length];
+
+        // 沒閉合按 Del：指著頂點刪那點，沒指著退最後一點，一次一步 undo
+        const del = () => document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true}));
+        const r2 = (P) => JSON.stringify(P.pts.map(p => [Math.round(p.x), Math.round(p.y)]));
+        mm.poly = null;
+        tap(20, 30); tap(50, 30); tap(50, 60);
+        ev('pointermove', 50, 30);
+        out.delHover = mm.poly.vert;
+        del();
+        out.delVert = r2(mm.poly);
+        ev('pointermove', 80, 80);
+        del();
+        out.delLast = r2(mm.poly);
+        pd.undo();
+        out.delUndo = r2(mm.poly);
+        del(); del();
+        out.delAll = mm.poly;
+        pd.cancelMode();
+        Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+        pd.autoSet({...ui, kind: 'armor'});
+        return out;
+    });
+    t.eq('手套切線：前後手各一條、先調第一條', JSON.stringify([gsp.keys, gsp.at]), JSON.stringify([['handB', 'handF'], 'handF']));
+    t.eq('手套切線：面板列出手套跟調切線', JSON.stringify(gsp.rows), JSON.stringify([true, true]));
+    t.eq('手套切線：兩隻都追到線', JSON.stringify(gsp.polys), JSON.stringify([true, true]));
+    t.eq('手套切線：門檻只動這隻、不寫回共用', JSON.stringify(gsp.own), JSON.stringify([true, true, true]));
+    t.eq('手套切線：沒人偶時後片貼前片下方', JSON.stringify(gsp.alone), JSON.stringify([1, 1]));
+    t.eq('手套切線：拆完標記還在', gsp.glove, 'F');
+    t.eq('手套切線：有身體照遊戲深度', JSON.stringify(gsp.stack), JSON.stringify([true, true, true, true]));
+    t.eq('自動手繪：切法有手繪', gsp.handUi, true);
+    t.eq('自動手繪：只切這條線、顯示手繪列', JSON.stringify(gsp.handRow), JSON.stringify([true, 'hand', 'trace']));
+    t.eq('自動手繪：點畫布加頂點', gsp.handPts, 3);
+    t.eq('自動手繪：沒閉合擋下、切回那條線', JSON.stringify(gsp.blocked), JSON.stringify([null, 'handF']));
+    t.eq('自動手繪：點回第一點閉合', gsp.closed, true);
+    t.eq('自動手繪：切挖除換挖除記的切法（預設魔術棒、重新追線）', JSON.stringify(gsp.cutKeep), JSON.stringify([true, 'wand', false]));
+    t.eq('自動手繪：閉合後拆開、mask 記手繪', JSON.stringify(gsp.handMask), JSON.stringify([true, 'hand']));
+    t.eq('磁性套索：Ctrl＋點的起點吸到邊', gsp.magStart, true);
+    t.eq('磁性套索：按住 Ctrl 移動有黃線', gsp.magLive, true);
+    t.eq('磁性套索：自動釘點、放開 Ctrl 丟黃線留已釘、都貼邊、沒閉合、session 結束', JSON.stringify(gsp.mag), JSON.stringify([true, true, true, false, false, true]));
+    t.check('磁性套索：直邊簡化成少數頂點', gsp.magPin <= 5, `${gsp.magPin} 點`);
+    t.eq('磁性套索：按住 Ctrl 期間一步 undo（含 Ctrl＋點）', gsp.magUndo, null);
+    t.eq('磁性套索：沒按 Ctrl 點不吸', gsp.magPlain, JSON.stringify([{x: 30, y: 40}]));
+    t.eq('磁性套索：沒按 Ctrl 拖曳只加按下那點', gsp.magDrag, 2);
+    t.eq('磁性套索：Ctrl＋Shift 時 45° 優先、沒黃線', gsp.magShift, false);
+    t.eq('磁性套索：Ctrl＋點靠近第一點閉合', gsp.magClose, true);
+    t.eq('磁性套索：閉合那段 session 一步 undo', JSON.stringify(gsp.magCloseUndo), JSON.stringify([false, 4]));
+    t.eq('自動記切法：手套記手繪、頭盔不受影響、新切線兩隻手都手繪', JSON.stringify(gsp.spm), JSON.stringify(['hand', 'trace', 'hand', 'hand']));
+    t.eq('自動記切法：切挖除換挖除記的（預設魔術棒）', JSON.stringify(gsp.spmCut), JSON.stringify(['wand', true]));
+    t.eq('自動記切法：切回前後片又是手繪', gsp.spmBack, 'hand');
+    t.eq('手繪 Del：沒閉合也偵測指著的頂點', gsp.delHover, 1);
+    t.eq('手繪 Del：刪指著的那點', gsp.delVert, JSON.stringify([[20, 30], [50, 60]]));
+    t.eq('手繪 Del：沒指著退最後一點', gsp.delLast, JSON.stringify([[20, 30]]));
+    t.eq('手繪 Del：一次一步 undo', gsp.delUndo, JSON.stringify([[20, 30], [50, 60]]));
+    t.eq('手繪 Del：刪光就清掉多邊形', gsp.delAll, null);
     t.eq('帽子：刪原圖 pool／id／女版交給前片', JSON.stringify(hat.heir), JSON.stringify([null, 'hat', 'hat-tk', true, 'hat', [null, '帽前', '帽後']]));
     t.eq('帽子：刪原圖後對話框還是一列、id 不變', JSON.stringify(hat.heirRow), JSON.stringify([1, 'hat-tk', false, false]));
     t.eq('帽子：刪原圖後存法不變', JSON.stringify(hat.heirSaved), JSON.stringify(['hat-tk-front', 'hat-tk-back', false]));

@@ -459,6 +459,151 @@ export function pixelAt(src, x, y)
     return [...src.getContext('2d').getImageData(Math.floor(x), Math.floor(y), 1, 1).data];
 }
 
+// ---------- 磁性套索 ----------
+// 梯度圖：RGB 先乘 alpha（透明像素的 RGB 不算、剪影邊靠 alpha 那個通道），四個通道各算中央差分取最大；畫布像素沒改就沿用
+const gradCache = new WeakMap();
+export function gradMap(src)
+{
+    const hit = gradCache.get(src);
+    if (hit) return hit;
+    const w = src.width, h = src.height, d = src.getContext('2d').getImageData(0, 0, w, h).data;
+    const c = new Float32Array(w * h * 4);
+    for (let i = 0; i < w * h; i++)
+    {
+        const a = d[i * 4 + 3];
+        c[i * 4] = d[i * 4] * a / 255; c[i * 4 + 1] = d[i * 4 + 1] * a / 255; c[i * 4 + 2] = d[i * 4 + 2] * a / 255; c[i * 4 + 3] = a;
+    }
+    const g = new Float32Array(w * h);
+    for (let y = 0; y < h; y++)
+    {
+        const yu = Math.max(0, y - 1) * w, yd = Math.min(h - 1, y + 1) * w;
+        for (let x = 0; x < w; x++)
+        {
+            const xl = y * w + Math.max(0, x - 1), xr = y * w + Math.min(w - 1, x + 1);
+            let best = 0;
+            for (let k = 0; k < 4; k++)
+            {
+                const gx = (c[xr * 4 + k] - c[xl * 4 + k]) / 2, gy = (c[(yd + x) * 4 + k] - c[(yu + x) * 4 + k]) / 2;
+                best = Math.max(best, Math.hypot(gx, gy));
+            }
+            g[y * w + x] = best;
+        }
+    }
+    const out = {w, h, g};
+    gradCache.set(src, out);
+    return out;
+}
+
+const distSeg = (px, py, a, b) => {
+    const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy;
+    const t = len2 ? Math.min(1, Math.max(0, ((px - a.x) * dx + (py - a.y) * dy) / len2)) : 0;
+    return Math.hypot(px - a.x - t * dx, py - a.y - t * dy);
+};
+
+// p 半徑 width 內梯度最強（≥ contrast）的像素中心，一樣強取最近；都沒有＝null
+export function edgeNear(G, p, width, contrast)
+{
+    const {w, h, g} = G, cl = (v, n) => Math.min(n - 1, Math.max(0, Math.floor(v)));
+    let best = null;
+    for (let y = cl(p.y - width, h); y <= cl(p.y + width, h); y++)
+    {
+        for (let x = cl(p.x - width, w); x <= cl(p.x + width, w); x++)
+        {
+            const v = g[y * w + x], d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y);
+            if (v < contrast || d > width) continue;
+            if (!best || v > best.v || (v === best.v && d < best.d)) best = {x: x + 0.5, y: y + 0.5, v, d};
+        }
+    }
+    return best && {x: best.x, y: best.y};
+}
+
+// 從 from 尋路到 to（像素座標），只走 trail 折線左右 width 內的像素；梯度越強越便宜（照走廊裡最強的邊正規化），低於 contrast 當沒邊
+// to 先吸到 edgeNear()（都沒到 contrast 就是游標本身）；回傳像素中心的點列（含頭尾）
+export function liveWire(G, from, to, trail, width, contrast)
+{
+    const {w, h, g} = G, cl = (v, n) => Math.min(n - 1, Math.max(0, Math.floor(v)));
+    const pts = [...trail, from, to];
+    const x0 = cl(Math.min(...pts.map(p => p.x)) - width, w), x1 = cl(Math.max(...pts.map(p => p.x)) + width, w);
+    const y0 = cl(Math.min(...pts.map(p => p.y)) - width, h), y1 = cl(Math.max(...pts.map(p => p.y)) + width, h);
+    const rw = x1 - x0 + 1, rh = y1 - y0 + 1, n = rw * rh;
+    const segs = trail.length > 1 ? trail.slice(1).map((b, i) => [trail[i], b]) : [[trail[0] ?? from, trail[0] ?? from]];
+    const inside = new Uint8Array(n);
+    let gmax = 0;
+    for (let y = y0; y <= y1; y++)
+    {
+        for (let x = x0; x <= x1; x++)
+        {
+            if (!segs.some(([a, b]) => distSeg(x + 0.5, y + 0.5, a, b) <= width)) continue;
+            inside[(y - y0) * rw + x - x0] = 1;
+            const v = g[y * w + x];
+            if (v >= contrast) gmax = Math.max(gmax, v);
+        }
+    }
+    const e = edgeNear(G, to, width, contrast), tx = cl(e?.x ?? to.x, w), ty = cl(e?.y ?? to.y, h);
+    const fx = cl(from.x, w), fy = cl(from.y, h), si = (fy - y0) * rw + fx - x0, ti = (ty - y0) * rw + tx - x0;
+    inside[si] = inside[ti] = 1;
+    const cost = new Float32Array(n);
+    for (let i = 0; i < n; i++)
+    {
+        const v = g[(y0 + Math.floor(i / rw)) * w + x0 + i % rw];
+        cost[i] = 0.05 + 1 - (gmax && v >= contrast ? v / gmax : 0);
+    }
+    const dist = new Float64Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), heap = [];
+    const push = (i, d) => {
+        heap.push([d, i]);
+        for (let k = heap.length - 1; k > 0;)
+        {
+            const p = (k - 1) >> 1;
+            if (heap[p][0] <= heap[k][0]) break;
+            [heap[p], heap[k]] = [heap[k], heap[p]];
+            k = p;
+        }
+    };
+    const pop = () => {
+        const top = heap[0], last = heap.pop();
+        if (heap.length)
+        {
+            heap[0] = last;
+            for (let k = 0;;)
+            {
+                const l = k * 2 + 1, r = l + 1;
+                let m = k;
+                if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+                if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+                if (m === k) break;
+                [heap[m], heap[k]] = [heap[k], heap[m]];
+                k = m;
+            }
+        }
+        return top;
+    };
+    dist[si] = 0;
+    push(si, 0);
+    while (heap.length)
+    {
+        const [d, i] = pop();
+        if (d > dist[i]) continue;
+        if (i === ti) break;
+        const x = i % rw, y = Math.floor(i / rw);
+        for (let dy = -1; dy <= 1; dy++)
+        {
+            for (let dx = -1; dx <= 1; dx++)
+            {
+                const nx = x + dx, ny = y + dy;
+                if ((!dx && !dy) || nx < 0 || ny < 0 || nx >= rw || ny >= rh) continue;
+                const j = ny * rw + nx;
+                if (!inside[j]) continue;
+                const nd = d + cost[j] * (dx && dy ? Math.SQRT2 : 1);
+                if (nd < dist[j]) {dist[j] = nd; prev[j] = i; push(j, nd);}
+            }
+        }
+    }
+    if (dist[ti] === Infinity) return [{x: fx + 0.5, y: fy + 0.5}, {x: tx + 0.5, y: ty + 0.5}];
+    const path = [];
+    for (let i = ti; i >= 0; i = prev[i]) path.push({x: x0 + i % rw + 0.5, y: y0 + Math.floor(i / rw) + 0.5});
+    return path.reverse();
+}
+
 export function fade(src, k)
 {
     const c = newCanvas(src.width, src.height);
@@ -705,8 +850,8 @@ export function splitTrace(src, {x, y, c, mark = null})
     return {pts: [...top, {x: W + e, y: H + e}, ...lft]};
 }
 
-// Ramer–Douglas–Peucker，tol 是圖片像素
-function simplify(pts, tol = 0.75)
+// Ramer–Douglas–Peucker，tol 是圖片像素（磁性套索也用）
+export function simplify(pts, tol = 0.75)
 {
     if (pts.length < 3) return pts;
     const keep = new Uint8Array(pts.length), stack = [[0, pts.length - 1]];

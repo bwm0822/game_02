@@ -10,14 +10,16 @@ const STEP_COLS = [['pct', '存檔%'], ['scale', 'scale'], ['xy', 'x / y（含�
 const AUTO_COLS = ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'];
 const AUTO_LABS = {pct: '存檔%'};
 const PT_COLS = [['size', '尺寸'], ['fill', '%']];
+const MAG_COLS = [['width', '寬度'], ['freq', '錨點間距'], ['contrast', '對比']];
 const GREEN_ROWS = [
     ['寬鬆綠', [['h1', 'H 下限'], ['h2', 'H 上限'], ['s1', 'S 下限'], ['s2', 'S 上限'], ['v1', 'V 下限'], ['v2', 'V 上限'], ['rgbThr', 'RGB 差']]],
     ['種子', [['seedS', '亮綠 S ≥'], ['seedV', '亮綠 V ≥'], ['semiA', '半透明 alpha ≤'], ['semiV', '半透明 V ≥'], ['grow', '往外長（格）']]],
 ];
 // 要大於 0 的欄位
-const POS = new Set(['pct', 'scale', 'size', 'fill', 'xy', 'o', 'a']);
+const POS = new Set(['pct', 'scale', 'size', 'fill', 'xy', 'o', 'a', 'width', 'freq']);
 const AUTO_ROWS = [
     ['護具', [['頭盔', ['helmet']], ['護甲', ['armor']], ['靴子', ['boots']]]],
+    ['護手', [['前手', ['handF']], ['後手', ['handB']]]],
     ['護具（女版）', [['頭盔', ['f', 'helmet']], ['護甲', ['f', 'armor']], ['靴子', ['f', 'boots']]]],
     ['服飾', [['帽子', ['hat']], ['衣服', ['cloth']], ['鞋子', ['shoes']]]],
     ['服飾（女版）', [['帽子', ['f', 'hat']], ['衣服', ['f', 'cloth']], ['鞋子', ['f', 'shoes']]]],
@@ -28,7 +30,7 @@ const AUTO_ROWS = [
 
 const S = {hist: [], hi: -1};
 
-const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto); ST.set('portrait', o.portrait); ST.set('green', o.green);};
+const apply = (o) => {ST.set('step', o.step); ST.set('auto', o.auto); ST.set('portrait', o.portrait); ST.set('green', o.green); ST.set('mag', o.mag);};
 
 function resetHist()
 {
@@ -124,6 +126,10 @@ function portraitTable()
         h('tr', null, PT_COLS.map(([k]) => numCell(['portrait', k]))));
 }
 
+const magTable = () => h('table', {class: 'grid'},
+    h('tr', null, MAG_COLS.map(([, lab]) => h('th', null, lab))),
+    h('tr', null, MAG_COLS.map(([k]) => numCell(['mag', k]))));
+
 const greenTable = () => h('table', {class: 'grid'}, GREEN_ROWS.flatMap(([grp, cols]) => [
     h('tr', null, h('th'), cols.map(([, lab]) => h('th', null, lab))),
     h('tr', null, h('td', {class: 'k'}, grp), cols.map(([k]) => numCell(['green', k]))),
@@ -142,6 +148,8 @@ function render()
         autoTable(),
         title('紙娃娃移除綠色', 'green'), greenTable(),
         h('div', {class: 'hint'}, '手動面板跟下次自動拆圖共用（面板按確定也會寫回這裡），已經拆好的零件不受影響；半透明 alpha 上限 0＝不抓綠霧'),
+        title('紙娃娃磁性套索', 'mag'), magTable(),
+        h('div', {class: 'hint'}, '手繪按住拖曳：寬度＝游標拖過的地方左右幾 px 內找邊、錨點間距＝路徑走多長釘一個頂點（都是螢幕 px）、對比＝顏色／透明度變化低於它當成沒邊（0～255）'),
         title('角色頭像', 'portrait'), portraitTable(),
         h('div', {class: 'hint'}, '角色編輯器「由頭+髮產生」：頭＋頭髮等比塞進 尺寸×尺寸 的 %（可以超過 100，超出的裁掉）'),
     ] : [h('div', {class: 'hint'}, '等專案資料夾…')]));

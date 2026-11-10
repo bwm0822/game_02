@@ -13,6 +13,7 @@ export const STEP_OF = {pct: 'pct', scale: 'scale', x: 'xy', y: 'xy', ox: 'o', o
 // 紙娃娃自動拆圖的數字：pct＝存檔%、scale＝equip.scale／role 的 head.scale…；武器照分類各一組＝WEAPON 蓋上第三欄
 const ARMOR = {helmet: {pct: 28, scale: 0.25, x: -1.75, y: -0.25}, armor: {pct: 20, scale: 0.25, x: 0.25, y: 26.5}, boots: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
 const OUTFIT = {hat: ARMOR.helmet, cloth: {pct: 20, scale: 0.25, x: -0.25, y: 28}, shoes: {pct: 20, scale: 0.25, x: 1.5, y: 33}};
+const HAND = {handF: {pct: 25, scale: 0.25, x: -12, y: 20}, handB: {pct: 25, scale: 0.25, x: -12, y: 20}};
 const HEAD = {head: {pct: 18, scale: 0.25, x: -2, y: 4}, hair: {pct: 18, scale: 0.25, x: -1, y: 2}};
 const WEAPON = {pct: 10, scale: 0.25, x: -13, y: 18, a: 0, ox: 0.5, oy: 0.85};
 export const WCLS = [
@@ -29,6 +30,7 @@ export const DEF = {
     step: STEP,
     auto: {
         ...ARMOR,
+        ...HAND,
         ...OUTFIT,
         ...HEAD,
         weapon: Object.fromEntries(WCLS.map(([k, , o]) => [k, {...WEAPON, ...o}])),
@@ -38,6 +40,8 @@ export const DEF = {
     // 角色編輯器「由頭+髮產生」頭像：頭＋頭髮等比塞進 size×size 的 fill%（可以超過 100，超出裁掉）
     portrait: {size: 100, fill: 100},
     // 紙娃娃移除綠色（手動面板、自動拆圖共用）；semiA／semiV＝半透明的高飽和綠也算種子（a ≤ semiA、v ≥ semiV），semiA 0＝關掉
+    // 紙娃娃手繪按住拖＝磁性套索（螢幕 px）：width＝游標拖過的軌跡左右多遠內找邊、freq＝路徑走多長釘一個錨點、contrast＝梯度低於它當沒邊
+    mag: {width: 10, freq: 40, contrast: 10},
     green: {h1: 45, h2: 85, s1: 60, s2: 255, v1: 20, v2: 255, rgbThr: 40, grow: 3, seedS: 150, seedV: 150, semiA: 254, semiV: 100},
 };
 
@@ -82,7 +86,7 @@ export async function load(root)
     return had;
 }
 
-// 整段換掉（sec＝'step'／'auto'／'portrait'／'green'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
+// 整段換掉（sec＝'step'／'auto'／'portrait'／'green'／'mag'），跟內建值一樣的 key 不存；還沒 load 只改記憶體
 export function set(sec, value)
 {
     S.cur = {...S.cur, [sec]: merge(DEF[sec], value)};

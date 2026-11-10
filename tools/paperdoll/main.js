@@ -567,20 +567,22 @@ const AUTO_PARTS = [
     {key: 'hat', kind: 'outfit', name: '帽子', quad: '右上', qx: 1, qy: 0, opt: true, split: true},
     {key: 'cloth', kind: 'outfit', name: '衣服', quad: '左下', qx: 0, qy: 1},
     {key: 'shoes', kind: 'outfit', name: '鞋子', quad: '右下', qx: 1, qy: 1},
+    {key: 'handF', kind: 'glove', name: '前手', quad: '右欄下', glove: 'F', opt: true},
+    {key: 'handB', kind: 'glove', name: '後手', quad: '右欄上', glove: 'B', opt: true},
 ];
-const AUTO_KINDS = ['armor', 'weapon', 'head', 'outfit'];
+const AUTO_KINDS = ['armor', 'armorh', 'weapon', 'head', 'outfit'];
 // pct＝存檔%（原圖縮成幾 % 烤成 PNG），scale＝遊戲的 equip.scale／role 的 head.scale…；畫面大小＝原圖 × pct% × scale，兩個不互相換算
-const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y'], outfit: ['pct', 'scale', 'x', 'y']};
+const AUTO_F = {armor: ['pct', 'scale', 'x', 'y'], weapon: ['pct', 'scale', 'x', 'y', 'a', 'ox', 'oy'], head: ['pct', 'scale', 'x', 'y'], outfit: ['pct', 'scale', 'x', 'y'], glove: ['pct', 'scale', 'x', 'y']};
 // 分男女兩組的種類；服飾零件自動標 pool（key 就是 pool 的 kind）
-const AUTO_SEXED = ['armor', 'outfit'];
+const AUTO_SEXED = ['armor', 'armorh', 'outfit'];
 // 有女版全域預設（S.auto.f）的種類：面板「套用：女」整組用它拆（零件記 auto.sex = 'f'）
-const AUTO_FEM = ['armor', 'outfit', 'head'];
+const AUTO_FEM = ['armor', 'armorh', 'outfit', 'head'];
 const AUTO_POOL = ['head', 'outfit'];
 const AUTO_FF = ['scale', 'x', 'y'];
 // 數字的內建值在 tools/common/settings.js（ST.DEF.auto），目前的數字存在 tools/settings.json；localStorage 只記 AUTO_UI 這些介面狀態
 const AUTO_DEF = ST.DEF.auto;
 const AUTO_KEY = 'paperdoll.auto';
-const AUTO_UI = ['cls', 'split', 'kind', 'headLink', 'headSmall'];
+const AUTO_UI = ['cls', 'split', 'splitG', 'spm', 'kind', 'headLink', 'headSmall'];
 const AUTO_NUM = [...AUTO_PARTS.filter(P => P.kind !== 'weapon').map(P => P.key), 'weapon', 'f'];
 // 武器數字照分類各存一組（S.auto.weapon[cls]），cls 是目前的分類；分類從名字第一個 -／_ 前面猜，猜不到歸 default
 // 舊格式 weapon 直接放數字：複製到每個分類
@@ -590,8 +592,12 @@ const wclsDef = (c) => AUTO_DEF.weapon[c];
 const wclsFrom = (w) => Object.fromEntries(WCLS.map(([k]) => [k, {...wclsDef(k), ...(w && 'pct' in w ? w : w?.[k])}]));
 // split：'none'／'split'（拆前後片）／'cut'（挖除）；舊的 true/false 照轉
 const AUTO_SPLIT = {true: 'split', false: 'none'};
+// spm：上次在自動面板選的切法，頭盔／帽子（split）跟手套（splitG）各一組，每組前後片（split）、挖除（cut）各一個；沒記過＝spPreset 的預設
+const SPM_DEF = {split: 'trace', cut: 'wand'}, SPM_OK = ['trace', 'wand', 'hand'];
+const spmFrom = (o) => Object.fromEntries(Object.entries(SPM_DEF).map(([k, d]) => [k, SPM_OK.includes(o?.[k]) ? o[k] : d]));
 const autoFrom = (v) => ({...Object.fromEntries(AUTO_PARTS.map(P => [P.key, {...AUTO_DEF[P.key], ...v?.[P.key]}])), weapon: wclsFrom(v?.weapon), cls: wclsOk(v?.cls),
-                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
+                          split: AUTO_SPLIT[v?.split] ?? v?.split ?? 'split', splitG: v?.splitG ?? 'split', kind: AUTO_KINDS.includes(v?.kind) ? v.kind : 'armor',
+                          spm: {split: spmFrom(v?.spm?.split), splitG: spmFrom(v?.spm?.splitG)},
                           headLink: v?.headLink ?? true, headSmall: v?.headSmall ?? true,
                           f: Object.fromEntries(AUTO_PARTS.filter(P => AUTO_FEM.includes(P.kind)).map(P => [P.key, femaleFrom(P, v)]))});
 // 沒寫的欄位（舊設定的女版沒有存檔%）用內建值
@@ -600,7 +606,8 @@ function femaleFrom(P, v)
     const o = v?.f?.[P.key];
     return {...AUTO_DEF.f[P.key], ...o && pickKeys(o, AUTO_F[P.kind].filter(f => f in o))};
 }
-const autoParts = (kind) => AUTO_PARTS.filter(P => P.kind === kind);
+// armorh＝三欄底圖（左頭身｜中頭身｜右雙拳）：護具三件＋手套兩隻，零件本身的 kind 還是 armor／glove
+const autoParts = (kind) => AUTO_PARTS.filter(P => kind === 'armorh' ? P.kind === 'armor' || P.kind === 'glove' : P.kind === kind);
 const pickKeys = (o, ks) => Object.fromEntries(ks.map(k => [k, o[k]]));
 // 護具／服飾的全域預設分男女兩組：S.auto.helmet… 是男版（基準）、S.auto.f.helmet… 是女版（只有 scale/x/y，存檔% 跟男版共用，PNG 只有一張）；
 // 拆出來之後數字是零件自己的（圖層上是顯示中的那組），全域只給下次拆圖／新增女版用。女版有沒有看 C.alt（拆出來預設沒有，右鍵新增／刪除）；
@@ -616,11 +623,11 @@ const autoUse = (C) => C ? C.auto?.sex ?? 'm' : S.mode.type === 'auto' && S.mode
 // 女版拆的護具／服飾：女版數字是女身體上的，男模式換到男身體；頭像不換身體
 const useMove = (P, row, from, to) => AUTO_SEXED.includes(P.kind) && from !== to ? {...row, ...pickKeys(sexMove(P, row, from, to), AUTO_FF)} : row;
 const autoCfg = (P, a = S.auto, C = modeC(P), sex = S.doll.sex) => P.kind === 'weapon' ? a.weapon[a.cls]
-    : autoUse(C) === 'f' ? useMove(P, a.f[P.key], 'f', sex)
+    : AUTO_FEM.includes(P.kind) && autoUse(C) === 'f' ? useMove(P, a.f[P.key], 'f', sex)
     : !AUTO_SEXED.includes(P.kind) || sex !== 'f' ? a[P.key]
     : C?.alt ? {...a[P.key], ...pickKeys(a.f[P.key], AUTO_FF)} : {...a[P.key], ...pickKeys(sexMove(P, a[P.key], 'm', 'f'), AUTO_FF)};
 const autoWith = (a, P, row, C = modeC(P)) => P.kind === 'weapon' ? {...a, weapon: {...a.weapon, [a.cls]: row}}
-    : autoUse(C) === 'f' ? {...a, f: {...a.f, [P.key]: pickKeys(useMove(P, row, S.doll.sex, 'f'), AUTO_F[P.kind])}}
+    : AUTO_FEM.includes(P.kind) && autoUse(C) === 'f' ? {...a, f: {...a.f, [P.key]: pickKeys(useMove(P, row, S.doll.sex, 'f'), AUTO_F[P.kind])}}
     : !autoFemale(P) ? {...a, [P.key]: row}
     : C?.alt ? {...a, [P.key]: {...a[P.key], pct: row.pct}, f: {...a.f, [P.key]: {...a.f[P.key], ...pickKeys(row, AUTO_FF)}}}
     : {...a, [P.key]: {...a[P.key], pct: row.pct, ...pickKeys(sexMove(P, row, 'f', 'm'), AUTO_FF)}};
@@ -646,6 +653,7 @@ function autoSet(v)
     $('au-small').checked = S.auto.headSmall;
     $('auCls').value = S.auto.cls;
     document.querySelector(`[name=auHow][value=${S.auto.split}]`).checked = true;
+    document.querySelector(`[name=auHowG][value=${S.auto.splitG}]`).checked = true;
     document.querySelector(`[name=auKind][value=${S.auto.kind}]`).checked = true;
 }
 
@@ -673,6 +681,7 @@ function autoGroup(L)
 }
 
 const autoP = (L) => L.auto ? AUTO_PARTS.find(P => P.key === L.auto.key) : null;
+const autoKindOf = (parts) => parts.some(C => autoP(C).kind === 'glove') ? 'armorh' : autoP(parts[0]).kind;
 // Ls 所屬的自動組各開成 m（拆完改過、不能再調的組略過）
 function groupsOf(Ls)
 {
@@ -718,7 +727,8 @@ function autoPlace({P, C}, {scale, x, y, a, ox, oy})
 
 // 模式內的步驟：每個動作（改一個數字、拖一次、按一下方向鍵、改一下頭盔切線）記零件（含前後片、圖層清單）改之前的樣子和切線；
 // 離開時還有步驟才記一筆全域 undo
-const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [], sp: m.sp && splitState(m.sp), cls: S.auto.cls, link: S.auto.headLink,
+const autoState = (m) => ({group: m.parts ? [hist.snapList(S), ...autoLayers(m.parts).map(L => hist.snap(L, true))] : [],
+                           sps: m.sps && Object.fromEntries(Object.entries(m.sps).map(([k, sp]) => [k, splitState(sp)])), cls: S.auto.cls, link: S.auto.headLink,
                            sex: S.doll.sex});
 
 function autoStep(m, s = autoState(m))
@@ -734,11 +744,16 @@ function autoUndo(m, from, to)
     if (!s) return false;
     to.push(autoState(m));
     History.restore(s);
-    if (s.sp && m.sp)
+    if (s.sps && m.sps)
     {
-        Object.assign(m.sp, s.sp);
+        for (const [k, st] of Object.entries(s.sps))
+        {
+            const sp = m.sps[k];
+            if (!sp) continue;
+            Object.assign(sp, st);
+            autoSet({...S.auto, [sp.own ? 'splitG' : 'split']: sp.cut ? 'cut' : 'split'});
+        }
         spSet(m.sp);
-        autoSet({...S.auto, split: m.sp.cut ? 'cut' : 'split'});
     }
     if (s.sex !== S.doll.sex)
     {
@@ -756,29 +771,48 @@ function autoUndo(m, from, to)
 
 // 頭盔的切線（sp，欄位同前後片模式）只在拆之前、選了前後片／挖除時有，畫在原圖頭盔那塊上；拆完就不再顯示，要調去前後片模式
 // 追線在裁切後、縮小前的圖（sp.img）上做
-function autoSpView(m)
+function autoSpView(m, sp)
 {
-    const sp = m.sp, img = sp.img, L = m.layer, box = m.plan.find(b => b.P.split).box;
+    const img = sp.img, L = m.layer, box = sp.box;
     Object.assign(sp, {vk: [1, 1], view: {canvas: img, get x() {return L.x;}, get y() {return L.y;}, get a() {return L.a;}, get scale() {return L.scale;},
                                            get ox() {return (L.ox * L.canvas.width - box.sx) / img.width;},
                                            get oy() {return (L.oy * L.canvas.height - box.sy) / img.height;}}});
 }
 
-const autoHelmet = (m) => m.parts?.find(p => p.P.split)?.C ?? null;
+const autoSpHow = (P) => P.glove ? S.auto.splitG : S.auto.split;
+// 存成的預設切法換成這組上次選的（其他數字照 spPreset）
+const autoPreset = (glove, cut) => ({...spPreset(cut), method: S.auto.spm[glove ? 'splitG' : 'split'][cut ? 'cut' : 'split']});
 
-// 拆之前切換 不拆／前後片／挖除：不拆就不追頭盔切線；前後片跟挖除互換記一步、重新追線
+// 拆之前切換 不拆／前後片／挖除：不拆就不追那條切線；前後片跟挖除互換記一步、重新追線
+// m.sps＝每個要拆的零件一條切線，m.sp＝畫面上正在調的那條（手套一次調一隻，m.spKey 記是哪條）
 function autoSpSync(m)
 {
     if (m.type !== 'auto' || m.parts) return;
-    const hb = S.auto.split !== 'none' && m.plan.find(b => b.P.split);
-    if (!hb) m.sp = null;
-    else if (!m.sp) autoSpNew(m, hb);
-    else if (m.sp.cut !== (S.auto.split === 'cut'))
+    m.sps ??= {};
+    const before = autoState(m);
+    let changed = false;
+    for (const b of m.plan.filter(b => b.P.split || b.P.glove))
     {
-        const p = spPreset(!m.sp.cut);
-        spChange({...p, c: spCrit(p.method)});
-        spSet(m.sp);
+        const k = b.P.key, how = autoSpHow(b.P), sp = m.sps[k];
+        if (how === 'none') delete m.sps[k];
+        else if (!sp) m.sps[k] = autoSpNew(m, b);
+        else if (sp.cut !== (how === 'cut'))
+        {
+            const p = autoPreset(sp.own, how === 'cut');
+            // 換到手繪留著目前的多邊形（同前後片模式從沿線切到手繪）
+            if (p.method === 'hand') Object.assign(sp, {cut: p.cut, method: 'hand', c: spCrit('hand')});
+            else
+            {
+                Object.assign(sp, p, {c: spCrit(p.method)});
+                splitRun(sp);
+            }
+            changed = true;
+        }
     }
+    if (changed) autoStep(m, before);
+    if (!m.sps[m.spKey]) m.spKey = Object.keys(m.sps)[0] ?? null;
+    m.sp = m.sps[m.spKey] ?? null;
+    spSet(m.sp);
 }
 
 // 去綠、依象限分好零件的範圍；進模式時就算，頭盔的切線要用
@@ -818,7 +852,9 @@ function autoPlan(L, kind)
         return {T, plan, skipped};
     }
     // 要湊齊的象限：左上的頭＋各零件的（服飾的帽子可有可無，頭飾「無」時右上是空的）
-    const quad = (b, qx, qy) => (b.cx >= W / 2) === !!qx && (b.cy >= H / 2) === !!qy;
+    const col = (b) => kind === 'armorh' ? Math.min(2, Math.floor(b.cx * 3 / W)) : +(b.cx >= W / 2);
+    const quad = (b, qx, qy) => col(b) === qx && (b.cy >= H / 2) === !!qy;
+    const mineOf = (b, P) => P.glove ? col(b) === 2 && (b.cy >= H / 2) === (P.glove === 'F') : quad(b, P.qx, P.qy);
     const need = [[0, 0], ...autoParts(kind).filter(P => !P.opt).map(P => [P.qx, P.qy])], full = (bs) => need.every(([qx, qy]) => bs.some(b => quad(b, qx, qy)));
     let blobs = split(0), erode = 0;
     for (let k = 1; k <= AUTO_ERODE && !full(blobs); k++)
@@ -829,22 +865,23 @@ function autoPlan(L, kind)
     const plan = [], skipped = [];
     for (const P of autoParts(kind))
     {
-        const mine = blobs.filter(b => quad(b, P.qx, P.qy));
+        const mine = blobs.filter(b => mineOf(b, P));
         if (!mine.length) {skipped.push(P.name); continue;}
         plan.push(part(P, mine, erode));
     }
     return {T, plan, skipped};
 }
 
-function autoSpNew(m, {box, keep})
+// 手套的切線 own：數字只屬於這條線，不寫回 S.sp
+function autoSpNew(m, {P, box, keep})
 {
-    const p = spPreset(S.auto.split === 'cut'), c = spCrit(p.method);
-    m.sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), c,
-            close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, ...p, mark: null, poly: null, err: null};
-    spSet(m.sp);
-    autoSpView(m);
-    m.sp.start = splitDefStart(m.sp.view, c);
-    splitRun(m.sp);
+    const p = autoPreset(!!P.glove, autoSpHow(P) === 'cut'), c = spCrit(p.method);
+    const sp = {img: PX.replay(m.T.canvas, [keep, {type: 'xform', ...box, w: box.sw, h: box.sh}]), box, c, own: !!P.glove,
+                close: S.sp.close, down: S.sp.down, drop: S.sp.drop, right: S.sp.right, reach: S.sp.reach, ...p, mark: null, poly: null, err: null};
+    autoSpView(m, sp);
+    sp.start = splitDefStart(sp.view, c);
+    splitRun(sp);
+    return sp;
 }
 
 // 拆完後改數字直接套到零件：存檔% 變了才從去綠圖重新取樣（有 paint 要先問），scale／x／y 只改擺放
@@ -952,7 +989,7 @@ function autoOpen(g)
 {
     const bad = g.parts.filter(C => autoBase(C) < 0);
     if (bad.length) return `${bad.map(C => C.name).join('、')} 拆完後改過（或是舊格式），不能再自動調整；要重拆先取消自動`;
-    const C0 = g.parts[0], kind = AUTO_PARTS.find(P => P.key === C0.auto.key).kind;
+    const C0 = g.parts[0], kind = autoKindOf(g.parts);
     const T = {src: C0.src, ops: C0.ops.slice(0, autoBase(C0) - (autoKeep(C0) ? 2 : 1)), canvas: null};
     const parts = autoParts(kind).map(P => g.parts.find(C => C.auto.key === P.key)).filter(Boolean).map(C => {
         const {sx, sy, sw, sh} = C.ops[autoBase(C) - 1];
@@ -968,12 +1005,22 @@ function autoSplit(m)
 {
     const L = m.layer, {T, plan, skipped} = m;
     if (!plan.length) return status(`${m.kind === 'weapon' ? '清除透明' : '去綠'}之後找不到零件`);
+    const open = Object.entries(m.sps ?? {}).find(([, sp]) => sp.method === 'hand' && !sp.poly?.closed);
+    if (open)
+    {
+        [m.spKey, m.sp] = open;
+        spSet(m.sp);
+        return status(`${AUTO_PARTS.find(P => P.key === open[0]).name}的手繪${m.sp.poly ? '還沒閉合' : '還沒畫'}`);
+    }
     const undo = {group: [hist.snapList(S), hist.snap(L, true)]};
     const gid = L.autoSrc ?? autoGid();
     const parts = plan.map(({P, box, keep}) => {
-        const C = cloneAbove(L, P.kind === 'weapon' ? L.name : AUTO_POOL.includes(P.kind) ? `${P.key}-${L.name}` : `${L.name}-${P.key}`);
-        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls}), ...(P.kind !== 'weapon' && m.use === 'f' && {sex: 'f'})},
-                          ...(AUTO_POOL.includes(P.kind) && {pool: P.key})});
+        const C = cloneAbove(L, P.glove ? gloveName(`${L.name}-gloves`, P.glove) : P.kind === 'weapon' ? L.name : AUTO_POOL.includes(P.kind) ? `${P.key}-${L.name}` : `${L.name}-${P.key}`);
+        if (P.glove) for (const M of S.layers) if (M.glove === P.glove) delete M.glove;
+        Object.assign(C, {a: 0, ox: 0.5, oy: 1, visible: true, opacity: 1, auto: {key: P.key, gid, ...(P.kind === 'weapon' && {cls: S.auto.cls}), ...(AUTO_FEM.includes(P.kind) && m.use === 'f' && {sex: 'f'})},
+                          ...(AUTO_POOL.includes(P.kind) && {pool: P.key}),
+                          // 手的靜止角度在 wristF，圖層照它轉，存到 item 才是 a=0
+                          ...(P.glove && {glove: P.glove, oy: 0.5, a: dollBody(dollParts, 'm')?.wristF?.a ?? 0})});
         const part = {P, C, box, keep};
         autoScale(T, part, autoCfg(P).pct);
         autoPlace(part, autoCfg(P));
@@ -984,14 +1031,43 @@ function autoSplit(m)
     S.active = parts[0].C;
     hist.push(undo);
     Object.assign(m, {layer: null, gid, src: L, parts, hist: [], fut: []});
-    const H = autoHelmet(m);
-    if (H && m.sp?.poly) S.active = splitBuild(H, m.sp, H.splitSrc ?? autoGid());
+    const fails = [];
+    for (const {P, C} of parts)
+    {
+        const sp = m.sps?.[P.key];
+        if (!sp) continue;
+        if (!sp.poly) {fails.push(`；${P.name}沒拆前後片：${sp.err}`); continue;}
+        const F = splitBuild(C, sp, C.splitSrc ?? autoGid());
+        if (P.split) S.active = F;
+    }
     autoStack(parts);
-    const sp = H && m.sp && !m.sp.poly ? `；${autoP(H).name}沒拆前後片：${m.sp.err}` : '';
-    m.sp = null;
+    autoGloveStack(parts);
+    m.sp = m.sps = null;
     m.snap = autoSnap(parts);
     const skip = !skipped.length ? '' : m.kind === 'head' ? '；只有一邊有東西，全部當頭、沒有頭髮' : `；${skipped.join('、')} 的象限是空的，略過`;
-    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skip}${sp}`);
+    status(`自動拆出 ${parts.map(p => p.C.name).join('、')}${skip}${fails.join('')}`);
+}
+
+// 拆了前後片的手套：有人偶身體或武器層就照遊戲深度（後片＜武器＜前片，後手整組在身體後面、前手在最上面），沒有就後片貼在前片正下方
+function autoGloveStack(parts)
+{
+    const body = S.layers.find(L => /-body$/.test(L.tag ?? '')), wp = S.layers.find(L => L.auto?.key === 'weapon');
+    for (const {P, C} of parts.filter(p => p.P.glove))
+    {
+        const g = splitNew(C);
+        if (!g?.F) continue;
+        const Ms = [g.B, g.F, C].filter(Boolean), Top = [g.F, C], i0 = S.layers.indexOf(C), home = i0 - Ms.filter(M => S.layers.indexOf(M) < i0).length;
+        S.layers = S.layers.filter(M => !Ms.includes(M));
+        const at = (o) => S.layers.indexOf(o);
+        if (P.glove === 'B' && (body ?? wp)) S.layers.splice(at(body ?? wp), 0, ...Ms);
+        else if (P.glove === 'F' && wp)
+        {
+            S.layers.splice(at(wp) + 1, 0, ...Top);
+            if (g.B) S.layers.splice(at(wp), 0, g.B);
+        }
+        else if (P.glove === 'F' && body) S.layers.push(...Ms);
+        else S.layers.splice(home, 0, ...Ms);
+    }
 }
 
 // 原頭盔層放在前片正上方；有標記成頭的參考人偶就照遊戲深度（PART_DEPTH）插進去：頭盔（前片）在最高的頭／髮上面，後片、護甲、靴子（衣服、鞋子）由上往下接在最低的頭下面
@@ -1160,16 +1236,26 @@ const spOf = (o) => ({lum: o.c?.lum ?? o.t ?? SP_LUM});
 function spSet(sp = null, cut = false)
 {
     // 手繪只屬於這次模式，不寫回共用設定，別的圖層照舊記上次的自動切法
-    if (sp && sp.method !== 'hand') Object.assign(S.sp, {lum: {...S.sp.lum, [sp.method]: sp.c.lum}, method: sp.method, close: sp.close, down: sp.down, drop: sp.drop,
-                                                         right: sp.right, reach: sp.reach, ...(cut && {cut: sp.cut})});
+    if (sp && sp.method !== 'hand' && !sp.own) Object.assign(S.sp, {lum: {...S.sp.lum, [sp.method]: sp.c.lum}, method: sp.method, close: sp.close, down: sp.down, drop: sp.drop,
+                                                                    right: sp.right, reach: sp.reach, ...(cut && {cut: sp.cut})});
     try {localStorage.setItem(SPLIT_KEY, JSON.stringify(S.sp));}
     catch {}
-    $('sp-lum').value = $('sp-lum-v').textContent = S.sp.lum[S.sp.method];
-    $('sp-close').value = S.sp.close;
-    $('sp-down').checked = S.sp.down;
-    $('sp-drop').value = S.sp.drop;
-    $('sp-right').checked = S.sp.right;
-    $('sp-reach').value = S.sp.reach;
+    // 正在調手套的切線：面板顯示那條線自己的數字
+    const own = sp?.own ? sp : !sp && editSp()?.own ? editSp() : null, v = own ?? S.sp;
+    $('sp-lum').value = $('sp-lum-v').textContent = own ? own.c.lum : S.sp.lum[S.sp.method];
+    $('sp-close').value = v.close;
+    $('sp-down').checked = v.down;
+    $('sp-drop').value = v.drop;
+    $('sp-right').checked = v.right;
+    $('sp-reach').value = v.reach;
+}
+
+// 共用設定的數字改了：手套的切線不寫回
+function spPut(patch)
+{
+    if (editSp()?.own) return;
+    Object.assign(S.sp, patch);
+    spSet();
 }
 
 // 色塊：游標底下追線那張圖的顏色（透明＝空的），游標不在圖上就清空
@@ -1268,6 +1354,14 @@ function spHover(e)
 // -／+：按住連續調，整段跟拖滑桿一樣只記一步
 function spStep(d)
 {
+    const sp = editSp();
+    if (sp?.own)
+    {
+        const lum = Math.max(0, Math.min(256, sp.c.lum + d));
+        if (lum === sp.c.lum) return;
+        $('sp-lum').value = $('sp-lum-v').textContent = lum;
+        return spChange({c: {lum}}, true);
+    }
     const k = S.sp.method, v = Math.max(0, Math.min(256, S.sp.lum[k] + d));
     if (v === S.sp.lum[k]) return;
     S.sp.lum = {...S.sp.lum, [k]: v};
@@ -1325,9 +1419,9 @@ function splitMoveStart(m, w)
 function spDelPt(m, i)
 {
     const sp = editSp(), P = sp.poly;
-    if (P.pts.length <= 3) return status('多邊形最少要 3 點');
+    if (P.closed && P.pts.length <= 3) return status('多邊形最少要 3 點');
     spCommit(m, spBefore(m));
-    sp.poly = {...P, pts: P.pts.filter((_, k) => k !== i), vert: null, edge: null};
+    sp.poly = P.pts.length > 1 ? {...P, pts: P.pts.filter((_, k) => k !== i), vert: null, edge: null} : null;
 }
 
 // ---------- 畫線標記 ----------
@@ -1838,7 +1932,9 @@ function cropSel(m)
 
 // ---------- 多邊形裁切（頂點存圖層本地座標；本地距離＝世界距離 ÷ scale；前後片的本地座標是縮小前的，還要除 vk） ----------
 
-const polyTol = () => {const sp = editSp(); return 8 / zoomK() / (sp?.vk?.[0] ?? 1) / (sp?.view ?? S.mode.layer).scale;};
+// 螢幕 px 換成多邊形所在圖層的像素
+const scrPx = (n) => {const sp = editSp(); return n / zoomK() / (sp?.vk?.[0] ?? 1) / (sp?.view ?? S.mode.layer).scale;};
+const polyTol = () => scrPx(8);
 const polyLayer = (m) => m.view ?? m.layer;
 
 // Shift：從 from 出發的方向鎖在 45° 的倍數
@@ -1865,14 +1961,23 @@ function polyEdgeHit(P, p)
 
 const polyVertexHit = (P, p) => P.pts.findIndex(v => Math.hypot(v.x - p.x, v.y - p.y) < polyTol());
 const polyNearFirst = (P, p) => P.pts.length >= 3 && Math.hypot(P.pts[0].x - p.x, P.pts[0].y - p.y) < polyTol();
+// 手繪按住 Ctrl（沒按 Shift）＝磁性套索
+const magOn = (m, e) => m.method === 'hand' && e.ctrlKey && !e.shiftKey && !m.poly?.closed;
 
 function polyPointerDown(m, e)
 {
     const w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y), P = m.poly;
-    if (!P) {m.poly = {pts: [raw], closed: false, cursor: raw}; return null;}
+    if (!P)
+    {
+        const p = magOn(m, e) ? PX.edgeNear(magGrad(m), raw, scrPx(ST.get('mag').width), ST.get('mag').contrast) ?? raw : raw;
+        m.poly = {pts: [p], closed: false, cursor: p};
+        if (m.mag) m.mag.trail = [p];
+        return null;
+    }
     if (!P.closed)
     {
         if (e.detail >= 2) P.closed = P.pts.length >= 3;
+        else if (magOn(m, e)) magClick(m, raw);
         else if (polyNearFirst(P, raw)) P.closed = true;
         else P.pts = [...P.pts, e.shiftKey ? snap45(P.pts.at(-1), raw) : raw];
         return null;
@@ -1896,7 +2001,15 @@ function polyDrag(m, e, i)
 function polyHover(m, e)
 {
     const P = m.poly, w = screenToWorld(e), raw = toLocal(polyLayer(m), w.x, w.y);
-    if (!P.closed) P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
+    if (m.mag && !e.ctrlKey) magEnd(m);
+    if (m.mag && P.live) delete P.live;
+    if (!P.closed && magOn(m, e)) {magHover(m, raw); P.vert = null;}
+    else if (!P.closed)
+    {
+        P.cursor = e.shiftKey && P.pts.length ? snap45(P.pts.at(-1), raw) : raw;
+        const v = polyVertexHit(P, raw);
+        P.vert = v >= 0 ? v : null;
+    }
     else
     {
         const v = polyVertexHit(P, raw);
@@ -1912,6 +2025,69 @@ function polyBack(m)
     if (P.closed) P.closed = false;
     else if (P.pts.length > 1) P.pts = P.pts.slice(0, -1);
     else m.poly = null;
+}
+
+// 手繪按住 Ctrl＝磁性套索（m.mag＝這次按住的 session）：移動時從最後一點沿顏色邊界即時尋路到游標，路徑走滿 freq 就把那段簡化成頂點釘下來；
+// Ctrl＋點收進到游標那段，靠近第一點就接回去閉合；放開 Ctrl 丟掉黃線，整段按住期間記一步 undo
+const MAG_TOL = 0.75, MAG_KEYS = ['width', 'freq', 'contrast'];
+const magGrad = (m) => PX.gradMap(m.view.canvas);
+
+function magBegin(m, before = spBefore(S.mode))
+{
+    m.mag = {before, changed: false, trail: m.poly ? [m.poly.pts.at(-1)] : []};
+}
+
+function magEnd(m)
+{
+    const s = m.mag;
+    if (!s) return;
+    m.mag = null;
+    if (m.poly) delete m.poly.live;
+    if (s.changed) spCommit(S.mode, s.before);
+}
+
+function magPath(m, to)
+{
+    const {width, contrast} = ST.get('mag');
+    return PX.liveWire(magGrad(m), m.poly.pts.at(-1), to, [...m.mag.trail, to], scrPx(width), contrast);
+}
+
+function magHover(m, raw)
+{
+    const P = m.poly, s = m.mag ?? (magBegin(m), m.mag), F = scrPx(ST.get('mag').freq);
+    let path = magPath(m, raw);
+    for (;;)
+    {
+        let len = 0, i = 1;
+        for (; i < path.length; i++)
+        {
+            len += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
+            if (len >= F) break;
+        }
+        if (i >= path.length - 1) break;
+        const pin = path[i];
+        P.pts = [...P.pts, ...PX.simplify(path.slice(0, i + 1), MAG_TOL).slice(1)];
+        s.changed = true;
+        const k = s.trail.reduce((b, t, j) => Math.hypot(t.x - pin.x, t.y - pin.y) < Math.hypot(s.trail[b].x - pin.x, s.trail[b].y - pin.y) ? j : b, 0);
+        s.trail = [pin, ...s.trail.slice(k + 1)];
+        path = path.slice(i);
+    }
+    s.trail.push(raw);
+    P.live = PX.simplify(path, MAG_TOL).slice(1);
+    P.cursor = path.at(-1);
+}
+
+function magClick(m, raw)
+{
+    const P = m.poly, s = m.mag ?? (magBegin(m), m.mag);
+    const close = polyNearFirst(P, raw);
+    const add = PX.simplify(magPath(m, close ? P.pts[0] : raw), MAG_TOL).slice(1);
+    if (close && add.length && polyNearFirst(P, add.at(-1))) add.pop();
+    P.pts = [...P.pts, ...add];
+    if (close) P.closed = P.pts.length >= 3;
+    delete P.live;
+    P.cursor = P.pts.at(-1);
+    s.trail = [P.pts.at(-1)];
 }
 
 function drawCrop(m, L, K)
@@ -1945,12 +2121,21 @@ function drawPolyEdit(P, L, K)
     {
         const c = toWorld(L, P.cursor.x, P.cursor.y);
         g.beginPath();
-        [...wp, c].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+        [...wp, ...(P.live ? [] : [c])].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
         g.stroke();
+        if (P.live)
+        {
+            const s = g.strokeStyle;
+            g.strokeStyle = '#ff0';
+            g.beginPath();
+            [wp.at(-1), ...P.live.map(p => toWorld(L, p.x, p.y))].forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
+            g.stroke();
+            g.strokeStyle = s;
+        }
     }
     g.fillStyle = '#fff';
     wp.forEach((p, i) => {
-        const r = ((i === 0 && !P.closed && polyNearFirst(P, P.cursor)) || (P.closed && i === P.vert) ? 6 : 3) / K;
+        const r = ((i === 0 && !P.closed && polyNearFirst(P, P.cursor)) || i === P.vert ? 6 : 3) / K;
         g.fillRect(p.x - r, p.y - r, r * 2, r * 2);
         g.strokeRect(p.x - r, p.y - r, r * 2, r * 2);
     });
@@ -2597,7 +2782,7 @@ cv.addEventListener('pointerdown', e => {
         refreshModePanel();
         dirty();
     }
-    else if (m.type === 'split' || (m.type === 'auto' && m.sp && spHit(m.sp, w)))
+    else if (m.type === 'split' || (m.type === 'auto' && m.sp && (m.sp.method === 'hand' || spHit(m.sp, w))))
     {
         const sp = editSp(), before = spBefore(m), pts = sp.poly?.pts, closed = sp.poly?.closed, hand = sp.method === 'hand';
         if (e.altKey)
@@ -2608,8 +2793,11 @@ cv.addEventListener('pointerdown', e => {
         else if (!hand && splitStartHit(sp, w)) drag = {type: 'splitStart', before};
         else if (sp.poly || hand)
         {
+            if (magOn(sp, e) && !sp.mag) magBegin(sp, before);
             drag = polyPointerDown(sp, e);
-            if (sp.poly.pts !== pts || sp.poly.closed !== closed) spCommit(m, before);
+            const changed = sp.poly.pts !== pts || sp.poly.closed !== closed;
+            if (sp.mag) sp.mag.changed ||= changed;
+            else if (changed) spCommit(m, before);
             else if (drag) drag.before = before;
         }
         refreshModePanel();
@@ -2770,6 +2958,7 @@ window.addEventListener('keydown', e => {
     if (document.querySelector('dialog[open]') || e.target.matches('input')) return;
     const key = e.key.toLowerCase();
     S.keys.add(key);
+    if (e.key !== 'Control' && e.key !== 'Shift') magStop();
     if (e.ctrlKey && (key === 'z' || key === 'y'))
     {
         e.preventDefault();
@@ -2795,11 +2984,13 @@ window.addEventListener('keydown', e => {
     else if (e.key === 'Backspace' && m.type === 'crop' && m.poly) {polyBack(m); refreshModePanel(); dirty();}
     else if ((e.key === 'Delete' || e.key === 'Backspace') && m.type === 'warp') {warpDeleteFrame(m); refreshModePanel(); dirty();}
     else if (m.type === 'pixel' && !e.ctrlKey && !e.altKey && PIXEL_KEYS[key]) {PIXEL_KEYS[key](); refreshModePanel(); dirty();}
-    else if (e.key === 'Backspace' && m.type === 'split' && m.method === 'hand' && m.poly && m.poly.vert == null)
+    // 沒指著頂點：Backspace 退最後一點（已閉合先解開），沒閉合時 Del 也一樣；指著頂點交給下一條刪那點
+    else if ((e.key === 'Backspace' || (e.key === 'Delete' && !editSp()?.poly?.closed)) && editSp()?.method === 'hand' && editSp().poly && editSp().poly.vert == null)
     {
-        splitStep(m);
-        polyBack(m);
-        if (m.poly) m.poly.cursor ??= m.poly.pts.at(-1);
+        const sp = editSp();
+        spCommit(m, spBefore(m));
+        polyBack(sp);
+        if (sp.poly) sp.poly.cursor ??= sp.poly.pts.at(-1);
         refreshModePanel();
         dirty();
     }
@@ -2836,8 +3027,21 @@ window.addEventListener('keydown', e => {
         dirty();
     }
 });
-window.addEventListener('keyup', e => S.keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => S.keys.clear());
+// 磁性套索：放開 Ctrl、失焦都收掉這段 session
+function magStop()
+{
+    const sp = editSp();
+    if (!sp?.mag) return;
+    magEnd(sp);
+    refreshModePanel();
+    dirty();
+}
+
+window.addEventListener('keyup', e => {
+    S.keys.delete(e.key.toLowerCase());
+    if (e.key === 'Control') magStop();
+});
+window.addEventListener('blur', () => {S.keys.clear(); magStop();});
 
 // 變形模式裡只退框的步驟（每框各自的），退到底就停住；要退更早的操作先離開變形
 function undo()
@@ -3060,17 +3264,20 @@ function refreshProps()
 function refreshAuto(m)
 {
     $('modeAuto').querySelector('.ok').disabled = !!m.parts;
-    document.querySelectorAll('[name=auHow]').forEach(r => {r.disabled = !!m.parts;});
+    document.querySelectorAll('[name=auHow], [name=auHowG]').forEach(r => {r.disabled = !!m.parts;});
+    $('auGloveRow').hidden = m.kind !== 'armorh';
+    $('auSpAtRow').hidden = m.kind !== 'armorh' || !!m.parts || !m.sps || !Object.keys(m.sps).length;
+    document.querySelectorAll('[name=auSpAt]').forEach(r => {r.disabled = !m.sps?.[r.value]; r.checked = r.value === m.spKey;});
     document.querySelectorAll('[name=auKind]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === m.kind;});
     $('au-small').disabled = !!m.parts;
     $('auUseL').hidden = !AUTO_FEM.includes(m.kind);
     document.querySelectorAll('[name=auUse]').forEach(r => {r.disabled = !!m.parts; r.checked = r.value === (m.use ?? 'm');});
-    for (const [k, ids] of [['armor', ['auHintArmor']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
+    for (const [k, ids] of [['armor', ['auHintArmor']], ['armorh', ['auHintArmorH']], ['weapon', ['auWeapon', 'auHintWeapon', 'auClsL']],
                             ['head', ['auHead', 'auSmallL', 'auHintHead']], ['outfit', ['auHintOutfit']]])
         for (const id of ids) $(id).hidden = m.kind !== k;
     $('auTable').hidden = $('auSplit').hidden = !AUTO_SEXED.includes(m.kind);
     $('auSpName').textContent = autoParts(m.kind).find(P => P.split)?.name ?? '';
-    for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = e.dataset.kind !== m.kind;
+    for (const e of $('auTable').querySelectorAll('[data-kind]')) e.hidden = !autoParts(m.kind).some(P => P.kind === e.dataset.kind);
     $('auCls').value = S.auto.cls;
     $('auSpInfo').textContent = m.sp ? spInfo(m.sp) : '';
     for (const P of autoParts(m.kind))
@@ -3113,10 +3320,11 @@ function refreshSpCtl(m)
     const method = sp?.method ?? S.sp.method;
     document.querySelector(`[name=spMethod][value=${method}]`).checked = true;
     $('spCutRow').hidden = method !== 'wand';
-    $('spHandL').hidden = m.type !== 'split';
-    $('spHandRow').hidden = method !== 'hand' || m.type !== 'split';
-    $('spCtl').querySelectorAll('.spLine').forEach(e => {e.hidden = method === 'hand' && m.type === 'split';});
+    $('spHandRow').hidden = $('spMagRow').hidden = method !== 'hand';
+    $('spCtl').querySelectorAll('.spLine').forEach(e => {e.hidden = method === 'hand';});
     $('spHandClear').disabled = !sp?.poly;
+    const mag = ST.get('mag');
+    for (const k of MAG_KEYS) if (document.activeElement !== $(`spMag-${k}`)) $(`spMag-${k}`).value = mag[k];
     if (!sp) spSwatch();
     if (m.type === 'split') document.querySelector(`[name=spHow][value=${m.cut ? 'cut' : 'split'}]`).checked = true;
 }
@@ -4557,18 +4765,20 @@ function autoApplyAll(m, rows)
 }
 
 // 存讀模式的 item 作用在選取圖層所屬的那組自動零件（選原圖、零件、前後片都算），要是 kinds 裡的種類
-const ITEM_KINDS = ['armor', 'weapon'];
+const ITEM_KINDS = ['armor', 'armorh', 'weapon'];
 
 function slGroup(kinds)
 {
     const L = S.active, g = L && autoGroup(splitNew(L)?.O ?? L);
-    return g && kinds.includes(AUTO_PARTS.find(P => P.key === g.parts[0].auto.key).kind) ? g : null;
+    // 選手套走手套自己的存讀（gloveSel），不算這組護具
+    return g && !gloveHome(L).glove && kinds.includes(autoKindOf(g.parts)) ? g : null;
 }
 
 function slAuto(kinds)
 {
     const g = slGroup(kinds), m = g && autoOpen(g);
     if (typeof m === 'string') return status(m), null;
+    if (m) m.parts = m.parts.filter(p => p.P.kind !== 'glove');
     return m;
 }
 
@@ -5517,8 +5727,9 @@ window.addEventListener('beforeunload', e => {if (['warp', 'pixel', 'split'].inc
 // 拖滑桿的一整段只記一步
 S.sp = spLoad();
 $('sp-lum').oninput = () => {
-    S.sp.lum = {...S.sp.lum, [S.sp.method]: +$('sp-lum').value};
     $('sp-lum-v').textContent = $('sp-lum').value;
+    if (editSp()?.own) return spChange({c: {lum: +$('sp-lum').value}}, true);
+    S.sp.lum = {...S.sp.lum, [S.sp.method]: +$('sp-lum').value};
     spChange({c: spCrit()}, true);
 };
 $('sp-lum').onchange = () => {
@@ -5527,20 +5738,26 @@ $('sp-lum').onchange = () => {
 };
 spSet();
 for (const k of ['down', 'right']) $(`sp-${k}`).onchange = () => {
-    S.sp[k] = $(`sp-${k}`).checked;
-    spSet();
-    spChange({[k]: S.sp[k]});
+    const v = $(`sp-${k}`).checked;
+    spPut({[k]: v});
+    spChange({[k]: v});
 };
 for (const [k, max] of [['close', 30], ['drop', 50], ['reach', 50]]) $(`sp-${k}`).onchange = () => {
-    S.sp[k] = Math.max(0, Math.min(max, Math.round(+$(`sp-${k}`).value) || 0));
-    spSet();
-    spChange({[k]: S.sp[k]});
+    const v = Math.max(0, Math.min(max, Math.round(+$(`sp-${k}`).value) || 0));
+    spPut({[k]: v});
+    spChange({[k]: v});
 };
 document.querySelectorAll('[name=spMethod]').forEach(r => {r.onchange = () => {
+    const m = S.mode, sp = editSp();
+    if (m.type === 'auto' && !m.parts && sp)
+    {
+        const g = sp.own ? 'splitG' : 'split';
+        autoSet({...S.auto, spm: {...S.auto.spm, [g]: {...S.auto.spm[g], [sp.cut ? 'cut' : 'split']: r.value}}});
+    }
     if (r.value === 'hand') return spChange({method: 'hand', c: spCrit('hand')});
-    S.sp.method = r.value;
+    spPut({method: r.value});
+    spChange({method: r.value, c: spCrit(r.value)});
     spSet();
-    spChange({method: S.sp.method, c: spCrit()});
 };});
 document.querySelectorAll('[name=spHow]').forEach(r => {r.onchange = () => {
     const cut = r.value === 'cut';
@@ -5550,11 +5767,20 @@ document.querySelectorAll('[name=spHow]').forEach(r => {r.onchange = () => {
     spSet();
     spChange({...p, c: spCrit()});
 };});
+for (const k of MAG_KEYS)
+{
+    $(`spMag-${k}`).onchange = (e) => {
+        const n = Number(e.target.value);
+        if (e.target.value.trim() !== '' && Number.isFinite(n) && (k === 'contrast' ? n >= 0 : n > 0)) ST.set('mag', {...ST.get('mag'), [k]: n});
+        e.target.value = ST.get('mag')[k];
+    };
+}
+
 $('spHandClear').onclick = () => {
-    const m = S.mode;
-    if (m.type !== 'split' || !m.poly) return;
-    splitStep(m);
-    m.poly = null;
+    const m = S.mode, sp = editSp();
+    if (!sp?.poly) return;
+    spCommit(m, spBefore(m));
+    sp.poly = null;
     refreshModePanel();
     dirty();
 };
@@ -5625,7 +5851,7 @@ $('auTable').append(...dimSpans(['', '象限', '存檔%', 'scale', 'x', 'y']));
 $('auWeapon').append(...dimSpans(['', '存檔%', 'scale', 'x', 'y', 'a', 'ox', 'oy']));
 $('auHead').append(...dimSpans(['', '存檔%', 'scale', '', 'x', 'y']));
 // 護具跟服飾共用一張表，refreshAuto() 照 data-kind 藏另一種的列
-const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead', outfit: 'auTable'};
+const AUTO_BOX = {armor: 'auTable', weapon: 'auWeapon', head: 'auHead', outfit: 'auTable', glove: 'auTable'};
 const AUTO_POS = ['pct', 'scale'];
 const linkBox = Object.assign(el('label'), {title: '跟頭連動（單向）：頭移動、縮放時頭髮跟著（存檔%／scale 乘一樣的倍率、位置跟著走）；頭髮自己照樣能調'});
 linkBox.append(Object.assign(el('input'), {type: 'checkbox', id: 'au-link'}), '🔗');
@@ -5689,13 +5915,13 @@ $('auCls').onchange = () => {
 $('auReset').onclick = () => {
     const m = S.mode, kind = S.auto.kind, weapon = kind === 'weapon';
     const def = (P, C = modeC(P)) => weapon ? wclsDef(S.auto.cls)
-        : autoUse(C) === 'f' ? autoCfg(P, {...S.auto, f: {...S.auto.f, [P.key]: AUTO_DEF.f[P.key]}}, C)
+        : AUTO_FEM.includes(P.kind) && autoUse(C) === 'f' ? autoCfg(P, {...S.auto, f: {...S.auto.f, [P.key]: AUTO_DEF.f[P.key]}}, C)
         : autoFemale(P) && C?.alt ? {...pickKeys(AUTO_DEF.f[P.key], AUTO_FF), pct: S.auto[P.key].pct}
         : autoCfg(P, {...S.auto, [P.key]: AUTO_DEF[P.key]}, C);
     for (const part of m.parts ?? []) autoApply(m, part, def(part.P, part.C));
     autoSet(weapon ? autoWith(S.auto, batchP(), def(batchP()))
                    : {...autoParts(kind).reduce((a, P) => autoWith(a, P, def(P)), S.auto),
-                      ...(kind === 'head' && {headLink: true}), ...(AUTO_SEXED.includes(kind) && {split: undefined})});
+                      ...(kind === 'head' && {headLink: true}), ...(AUTO_SEXED.includes(kind) && {split: undefined, splitG: undefined})});
     autoSpSync(m);
     refreshAll();
 };
@@ -5722,6 +5948,19 @@ document.querySelectorAll('[name=auUse]').forEach(r => {r.onchange = () => {
 document.querySelectorAll('[name=auHow]').forEach(r => {r.onchange = () => {
     autoSet({...S.auto, split: r.value});
     autoSpSync(S.mode);
+    refreshAll();
+};});
+document.querySelectorAll('[name=auHowG]').forEach(r => {r.onchange = () => {
+    autoSet({...S.auto, splitG: r.value});
+    autoSpSync(S.mode);
+    refreshAll();
+};});
+document.querySelectorAll('[name=auSpAt]').forEach(r => {r.onchange = () => {
+    const m = S.mode;
+    if (m.type !== 'auto' || !m.sps?.[r.value]) return;
+    m.spKey = r.value;
+    m.sp = m.sps[r.value];
+    spSet(m.sp);
     refreshAll();
 };});
 $('auCancel').onclick = autoRevoke;
@@ -5807,5 +6046,5 @@ async function partsChanged()
 window.__pd = {S, hist, addLayer, select, setMode, applyMode, cancelMode, trimLayer, setOrigin, placeOf, undo, redo, toWorld, toLocal,
                setRoot, loadHandle, saveProject, openProject, isUnsaved, saveLayer, mergeDown, mergeVisible, removeLayer, duplicateLayer, pickColor,
                warpAddFrame, autoSet, autoFrom, autoRevoke, setAssets, saveItems, loadItems, commitItems, refreshThumbs, splitRevoke, splitGroup, splitRun, imagesChanged,
-               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, dollHomeFix, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST,
+               deleteFile, renameFile, moveFiles, spStep, saveIcon, saveBatch, closeAll, setTag, dollHomeFix, setDoll, setPool, renameLayer, setGlove, commitGloves, loadGloves, gloveCheck, savePool, commitPool, loadPool, projectData, applySettings, ST, gloveSel,
                pinned, partsChanged, dollWarn, setFem, hasFem, femLocked};

@@ -10,6 +10,7 @@
   - `step`：`pct` 0.25、`scale` 0.01、`xy` 0.25（x/y 數字欄，也是紙娃娃方向鍵移動、拖曳吸附的格子；Shift ×10 寫死）、`o` 0.05（ox/oy）、`a` 1。欄位名 → 步進 key 照 `STEP_OF`（`x`/`y`→`xy`、`ox`/`oy`→`o`）。
   - `auto`：`helmet`／`armor`／`boots`／`head`／`hair`（pct/scale/x/y）、`weapon.<分類>`（pct/scale/x/y/a/ox/oy，分類表 `WCLS` 也在這支）、`f.<護具／服飾／head／hair>`（女版 pct/scale/x/y：紙娃娃自動面板「套用：女」整組拿來拆，右鍵新增女版只拿 scale/x/y；女 head／hair 內建抄男版）。
   - `portrait`：角色編輯器「由頭+髮產生」頭像的 `size`／`fill`（以前在 `auto.portrait`，紙娃娃不合成頭像了，搬到頂層；舊檔的 `auto.portrait` 讀檔時照「只認 DEF 有的 key」直接丟掉）。
+  - `mag`：紙娃娃手繪的磁性套索（按住 Ctrl 移動），`width`（軌跡左右幾 px 內找邊）／`freq`（路徑走多長釘一個頂點）都是螢幕 px、要大於 0，`contrast`（梯度低於它當沒邊，0～255）；紙娃娃手繪列下面的數字欄改了直接寫這裡。
   - `green`：紙娃娃移除綠色，手動面板跟自動拆圖共用：`h1`/`h2`/`s1`/`s2`/`v1`/`v2`/`rgbThr`（寬鬆綠）、`seedS`/`seedV`（亮綠種子）、`semiA`/`semiV`（半透明綠霧種子，`semiA` 0＝關掉）、`grow`。手動面板按確定才寫回（取消不算），「還原預設」只把欄位填回內建值，也要按確定才存；已拆好的零件照自己步驟裡的數字重播，不受影響。
 - 讀檔時只認 `DEF` 有的 key，葉子不是有限數字就用內建值。
 

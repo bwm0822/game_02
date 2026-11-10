@@ -125,6 +125,7 @@
         <div id="modeAuto" class="mode" hidden>
             <div class="row2" style="margin: 0 0 4px">
                 <label><input name="auKind" type="radio" value="armor" checked> 護具</label>
+                <label><input name="auKind" type="radio" value="armorh"> 護具＋手</label>
                 <label><input name="auKind" type="radio" value="weapon"> 武器</label>
                 <label><input name="auKind" type="radio" value="head"> 頭像</label>
                 <label><input name="auKind" type="radio" value="outfit"> 服飾</label>
@@ -144,12 +145,23 @@
                     <label><input name="auHow" type="radio" value="split" checked> 前後片</label>
                     <label><input name="auHow" type="radio" value="cut"> 挖除</label>
                 </div>
+                <div id="auGloveRow" class="row2" hidden>手套：
+                    <label><input name="auHowG" type="radio" value="none"> 不拆</label>
+                    <label><input name="auHowG" type="radio" value="split" checked> 前後片</label>
+                    <label><input name="auHowG" type="radio" value="cut"> 挖除</label>
+                </div>
+                <div id="auSpAtRow" class="row2" hidden title="一次調一條切線；手套的數字只用在這次拆圖，不影響頭盔">調切線：
+                    <label><input name="auSpAt" type="radio" value="helmet"> 頭盔</label>
+                    <label><input name="auSpAt" type="radio" value="handF"> 前手</label>
+                    <label><input name="auSpAt" type="radio" value="handB"> 後手</label>
+                </div>
                 <div id="auSpInfo" class="dim spAfter"></div>
             </div>
             <div id="auHintWeapon" class="hint" hidden>透明底、直立的單把武器。按確定才清除透明（alpha &lt; 32）→ 丟掉雜點（比最大塊 1% 小的）→ 裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；x／y 是手的位置（遊戲單位），橘色十字是支點：拖十字＝圖跟著動、x／y 不動（改 ox／oy），按住 R 拖曳＝轉角度 a（只是預覽，存到 item 一律 a=0），拖武器本體＝改 x／y。取消＝撤掉這次自動，離開／Esc＝保留結果</div>
             <div id="auHintHead" class="hint" hidden>透明底，左邊光頭、右邊頭髮（臉的位置是綠色的洞）。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 丟掉雜點（比最大塊 1% 小的；勾「保留框內小塊」時大塊外接框裡的留下）→ 照重心在中線左右分成頭／頭髮（只有一邊有東西就全部當頭）、裁到剛好 → 縮放，頭髮疊在頭上面。存檔%（PNG 縮成原圖幾 %）、scale（遊戲的 scale）各自調，勾 🔗 連動時移動、縮放頭頭髮跟著（存檔%／scale 乘一樣的倍率、位置跟著走，單向：頭髮自己照樣能調），x／y 是遊戲單位，把頭髮拖到頭上對好；頭對身體的細調去試穿分頁。拆出來的頭、頭髮自動標 pool 的 頭／頭髮，「存到 pool…」存進 part.json（PNG 在 roles/parts，id 預設是零件名），再到角色編輯器挑；頭像在角色編輯器「由頭+髮產生」</div>
             <div id="auHintOutfit" class="hint" hidden>綠底整套：左上光頭（丟掉）、右上帽子（沒畫就略過）、左下衣服、右下鞋子（身體的位置是綠色的洞）。帽子的 不拆／前後片／挖除 跟頭盔一樣：洋紅色是後片或要挖掉的部分，拆完就不再顯示切線。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上（鞋子在下、衣服在中、帽子在上）、原圖隱藏，自動標 pool 的 帽子／衣服／鞋子。存檔%＝PNG 縮成原圖幾 %，scale／x／y 只改擺放（遊戲單位）；男女各一組 scale／x／y，照上方 男｜女 切換，存檔% 共用。「存到 pool…」存進 part.json（PNG 在 roles/parts，id 預設是零件名；帽子拆了就是 -front／-back），再到角色編輯器挑；藏頭髮在部位分頁勾</div>
             <div id="auHintArmor" class="hint">選「前後片」時頭盔上的洋紅色是後片（被頭蓋住），選「挖除」時是要挖成透明的部分：拖起點（青色十字）、改線的條件重新追線，拖頂點、點邊加點微調，拆的時候一起拆成 -front／-back（後片放到最底層；挖除只有 -front）；拆完就不再顯示切線，要調去前後片模式。按確定才清除透明（alpha &lt; 32）→ 移除綠色 → 依中線取象限（左上的頭丟掉）、只留自己的塊、裁到剛好 → 縮放，零件疊在原圖上、原圖隱藏；拆完留在模式裡，改數字即時套用（存檔%＝PNG 縮成原圖幾 %，改了才重新縮放；scale＝遊戲的 equip.scale，跟 x／y 一樣只改擺放），x／y 是遊戲單位；女版只有 scale／x／y，存檔% 跟男版共用。用「縮放」模式拉零件改的是存檔%（等比）。一張圖只拆一次，選原圖或零件再進來可以繼續調；取消＝撤掉這次自動（刪零件、顯示原圖），離開／Esc＝保留結果</div>
+            <div id="auHintArmorH" class="hint" hidden>三欄底圖：左欄頭＋護甲、中欄頭盔＋靴子、右欄兩隻手套（沒畫就略過）。畫布照寬度三等分切欄，右欄再分左右：左邊是前手、右邊是後手，自動標好手套。頭盔的前後片跟「護具」一樣在這裡拆；手套的前後片也在這裡自動追線，用「調切線」一次調一隻（手套的數字只用這一次），追不到線的那隻略過；切法可以選「手繪」自己圈（按住 Ctrl 頂點吸到最暗的像素，沒閉合不能確定）。前手、後手的數字要一樣（存檔時會檢查），選手套時「存到 item」走手套流程，選其他零件存護具</div>
             <div class="row2"><button class="ok">確定</button><button id="auCancel">取消</button><button id="auLeave">離開</button><button id="auReset">還原預設</button></div>
         </div>
 
@@ -189,8 +201,14 @@
                     <label id="spHandL" title="一個一個點頂點圍出那塊，不看輪廓線；從沿線／魔術棒切過來會留著目前的多邊形"><input name="spMethod" type="radio" value="hand"> 手繪</label>
                 </div>
                 <div id="spHandRow" class="flRow">
-                    <span class="dim">點畫布加頂點，點回第一點或雙擊閉合；Backspace 退一點，Shift＝45°</span>
+                    <span class="dim">點畫布加頂點，按住 Ctrl 移動＝磁性套索（Ctrl＋點收進來）；點回第一點或雙擊閉合；Backspace 退一點，Shift＝45°</span>
                     <button id="spHandClear">重畫</button>
+                </div>
+                <div id="spMagRow" class="flRow" title="按住 Ctrl 移動時沿顏色／透明度的邊界自動找路（螢幕 px），也能在設定分頁改">
+                    <span>磁性</span>
+                    <label>寬 <input id="spMag-width" type="number" min="1" step="1" style="width:4em"></label>
+                    <label>間距 <input id="spMag-freq" type="number" min="1" step="1" style="width:4em"></label>
+                    <label>對比 <input id="spMag-contrast" type="number" min="0" step="1" style="width:4em"></label>
                 </div>
                 <div class="spGrid spLine">
                     <span>亮度 &lt;</span><button class="spStep" data-d="-1">-</button><input id="sp-lum" type="range" min="0" max="256"><button class="spStep" data-d="1">+</button><span id="sp-lum-v"></span>
