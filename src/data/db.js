@@ -45,6 +45,8 @@ export default class DB
 
         this._fxDB = scene.cache.json.get('fx');
 
+        this._particleDB = scene.cache.json.get('particle');
+
         this._animDB = scene.cache.json.get('anim');
 
         this._navDB = scene.cache.json.get('navgraph');
@@ -98,6 +100,14 @@ export default class DB
     static ability(id) { return this._abilityDB?.[id]; }
 
     static fx(id) { return this._fxDB?.[id]; }
+
+    // particle.json 的一筆(src/core/particle.js 的 playParticle 吃這個)；有 id 卻查不到就 dlog
+    static particle(id)
+    {
+        const p = this._particleDB?.[id];
+        if(id && !p) {dlog(T.WARN)(`particle.json 沒有 ${id}`);}
+        return p;
+    }
 
     static anim(id) { return this._animDB?.[id]; }
 

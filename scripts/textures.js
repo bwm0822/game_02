@@ -44,7 +44,10 @@ export function run({assets = join(ROOT, 'public/assets'), write = true} = {})
         bases.add(join(dirname(p), key));
     }
     for (const [key, ps] of Object.entries(byKey))
+    {
         if (ps.length > 1) errors.push(`檔名撞名「${key}」：${ps.map(rel).join('、')}`);
+        if (key.startsWith('p-')) errors.push(`「${key}」：p- 開頭保留給粒子內建形狀（src/core/particle.js），請改名：${ps.map(rel).join('、')}`);
+    }
 
     const meta = {};
     for (const p of files.meta)
