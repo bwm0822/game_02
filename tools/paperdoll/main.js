@@ -4457,8 +4457,9 @@ async function saveLayer()
 // ---------- 自動零件存到 item.json ----------
 // 每個零件一列：選同 cat 的 item 或新增，可改 png 檔名、各自勾要不要更新圖（PNG＋sprite）／更新設定（scale/x/y/a/ox/oy＋drop.scale）
 
-const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON'};
-const ITEM_PRE = {helmet: 'helmet', armor: 'chest', boots: 'boots'};
+const ITEM_CAT = {helmet: 'CAT_HELMET', armor: 'CAT_CHESTPLATE', boots: 'CAT_BOOTS', weapon: 'CAT_WEAPON', gloves: 'CAT_GLOVES'};
+// 護具＋手的手套在存讀 item 是一列（前後手同一件 item）；r.F／r.B 是前手／後手零件
+const GLOVE_P = {key: 'gloves', kind: 'glove', name: '手套'};
 const itemDir = (P) => P.kind === 'weapon' ? 'weapons' : 'equips';
 // 武器的 icon 是另外產的斜擺圖 <名>-icon（ICON_AUTO），護具的 icon 就是完整的原圖
 const iconKey = (r) => r.P.kind === 'weapon' ? `${r.name}-icon` : r.name;
@@ -4475,12 +4476,6 @@ async function texKeys(dir = S.assets.tex, path = '', out = new Map())
     return out;
 }
 
-function nextItemId(items, pre)
-{
-    const n = Math.max(0, ...Object.keys(items).map(id => +(id.match(new RegExp(`^${pre}_(\\d+)$`))?.[1] ?? 0)));
-    return `${pre}_${String(n + 1).padStart(2, '0')}`;
-}
-
 // 填 r.err（擋存檔）、r.warn（提示）、r.ask（覆蓋別人的圖，存檔時 confirm）；回傳要處理的列
 function itemCheck(rows, items, keys)
 {
@@ -4491,8 +4486,16 @@ function itemCheck(rows, items, keys)
     {
         const err = (s) => {r.err ||= s;};
         // 目標道具限定性別（item.sex）：遊戲不套 f，忽略零件的女版，照那個性別的數字寫基準、有 f 就清掉
-        r.only = items[r.id]?.sex ?? null;
-        r.dropF = !!items[r.id]?.equip?.f && (!!r.only || r.P.kind === 'armor' && !r.part.C.alt);
+        // 手套沒有女版：一律寫基準、不碰 f
+        const glove = r.P === GLOVE_P;
+        r.only = glove ? null : items[r.id]?.sex ?? null;
+        r.dropF = !glove && !!items[r.id]?.equip?.f && (!!r.only || r.P.kind === 'armor' && !r.part.C.alt);
+        if (glove)
+        {
+            if (!r.F) err('沒有前手');
+            const k = r.F && r.B && ['x', 'y', 'a', 'ox', 'oy', 'scale'].find(k => Math.abs(r.F.C[k] - r.B.C[k]) > 1e-6);
+            if (k) err(`後手要跟前手同位置、同 scale（${k} 不同），位置差異請留在 PNG 裡`);
+        }
         const old = r.id ? splitBase(items[r.id]?.equip?.sprite) : null;
         if (r.id && !items[r.id]) err(`item.json 裡已經沒有 ${r.id}`);
         if (!r.id)
@@ -4509,9 +4512,14 @@ function itemCheck(rows, items, keys)
         if (!r.png) continue;
         if (act.filter(o => o.png && o.name === r.name).length > 1) err('跟別列檔名重複');
         const g = splitNew(r.part.C);
-        if (g) err(splitMismatch(g));
+        for (const C of glove ? [r.F, r.B].filter(Boolean).map(p => p.C) : [r.part.C])
+        {
+            const gg = splitNew(C);
+            if (gg) err(splitMismatch(gg));
+        }
         const home = itemDir(r.P);
-        for (const n of g ? [`${r.name}-front`, ...(g.cut ? [] : [`${r.name}-back`])] : [])
+        const extra = glove ? gloveItemPngs(r, r.name).map(([n]) => n).filter(n => n !== r.name) : g ? [`${r.name}-front`, ...(g.cut ? [] : [`${r.name}-back`])] : [];
+        for (const n of extra)
             if (keys.has(n) && keys.get(n) !== home) err(`textures/${join(keys.get(n), n)}.png 已經有了，換個檔名`);
         const users = Object.keys(items).filter(id => id !== r.id && splitBase(items[id].equip?.sprite) === r.name);
         const dir = keys.get(r.name), also = users.length ? `（${users.join('、')} 也用這張）` : '';
@@ -4544,13 +4552,31 @@ function insertAfter(obj, after, id, val)
 const itemMatch = (items, P, name) => Object.keys(items).find(id => items[id].cat === ITEM_CAT[P.key] && splitBase(items[id].equip?.sprite) === name)
     ?? (P.kind === 'weapon' && items[name]?.cat === ITEM_CAT[P.key] ? name : null);
 
-function itemDialog(parts, items, keys)
+// 存讀 item 的列：護具＋手的前後手併成一列 GLOVE_P（part＝前手，沒有前手才放後手）
+function itemParts(m)
 {
-    const dlg = $('dlgItems');
-    // 新增的武器 id 沒有流水號，要自己填
-    const rows = autoParts(parts[0].P.kind).map(P => {
-        const part = parts.find(p => p.P === P), name = part?.C.name ?? '';
-        return {P, part, on: !!part, id: itemMatch(items, P, name), name, png: true, place: true, icon: true, newId: ITEM_PRE[P.key] ? nextItemId(items, ITEM_PRE[P.key]) : '', lab: ''};
+    const out = [], F = m.parts.find(p => p.P.glove === 'F'), B = m.parts.find(p => p.P.glove === 'B');
+    for (const P of autoParts(m.kind))
+    {
+        if (P.glove === 'B') continue;
+        if (P.glove) {out.push({P: GLOVE_P, part: F ?? B ?? null, F: F ?? null, B: B ?? null}); continue;}
+        out.push({P, part: m.parts.find(p => p.P === P) ?? null});
+    }
+    return out;
+}
+
+// 手套：先看前手記過的 gloveId，再照 equip.sprite＝前手圖層名
+const gloveMatch = (items, F) => F && F.C.gloveId && items[F.C.gloveId]?.cat === 'CAT_GLOVES' ? F.C.gloveId : F ? itemMatch(items, GLOVE_P, F.C.name) : null;
+const autoSrcName = (m) => m.src?.name ?? m.parts[0].C.name.replace(/-[^-]+$/, '');
+
+function itemDialog(m, items, keys)
+{
+    const dlg = $('dlgItems'), parts = m.parts, src = autoSrcName(m);
+    // 新增的 id＝<類別>-<原圖名>；武器沒有預設，要自己填
+    const rows = itemParts(m).map(({P, part, F, B}) => {
+        const name = part?.C.name ?? '', glove = P === GLOVE_P;
+        return {P, part, ...(glove && {F, B}), on: !!part, id: glove ? gloveMatch(items, F) : itemMatch(items, P, name), name, png: true, place: true, icon: true,
+                newId: P.kind === 'weapon' ? '' : `${P.key}-${src}`, lab: ''};
     });
     const reset = (r) => {
         r.name = (r.id && splitBase(items[r.id].equip?.sprite)) || r.part.C.name;
@@ -4558,7 +4584,7 @@ function itemDialog(parts, items, keys)
     };
     // 選了 <部位>-<系>-<階> 的 id：沒手動選過、有零件的其他列帶到同系同階
     const follow = (r) => {
-        const rest = r.id?.match(/^(helmet|armor|boots)-(.+)$/)?.[2];
+        const rest = r.id?.match(/^(helmet|armor|boots|gloves)-(.+)$/)?.[2];
         if (!rest) return;
         for (const o of rows)
         {
@@ -4667,7 +4693,9 @@ async function loadItems()
     if (!m || !S.assets) return;
     const items = await readGameJson('item.json'), pjson = await readParts();
     const rows = [], hit = [], miss = [], warn = [], sexed = [], fems = [];
-    for (const part of m.parts)
+    const gl = itemParts(m).find(r => r.P === GLOVE_P && r.part);
+    if (gl) gloveLoad(gl, items, pjson, rows, hit, miss);
+    for (const part of m.parts.filter(p => p.P.kind !== 'glove'))
     {
         const id = itemMatch(items, part.P, part.C.name), e0 = id && items[id].equip;
         if (!e0) {miss.push(part.C.name); continue;}
@@ -4697,11 +4725,31 @@ async function loadItems()
     }
     if (!hit.length) return status(`${miss.join('、')} 找不到對應的 item`);
     femFlags(m, fems);
+    // 手套的數字不寫回全域預設（那組只給拆圖用）
+    const keepG = pickKeys(S.auto, ['handF', 'handB']);
     await loadPlace(m, rows, warn);
+    if (gl) autoSet({...S.auto, ...keepG});
     sexedSet(sexed);
     if (m.hist.length) hist.push(m.snap);
     status([`載入 ${hit.join('、')}`, miss.length && `${miss.join('、')} 找不到 item`, warn.length && `注意：${warn.join('、')}`].filter(Boolean).join('；'));
     refreshAll();
+}
+
+// 手套列：item 只有一組擺放（前手的，後手照它換算進 wristB），前後手零件套同一組 scale/x/y；存檔% 各自照自己的 PNG 反推（loadPlace）；
+// 自動拆的手套換性別不換身體，一律照男身體換回畫布座標
+function gloveLoad(gl, items, pjson, rows, hit, miss)
+{
+    const id = gloveMatch(items, gl.F), e0 = id && items[id].equip;
+    if (!e0 || !gl.F) {miss.push(GLOVE_P.name); return;}
+    const e = pivotShift({...e0}, pjson, 'wristF', 'm', -1);
+    for (const [part, key] of [[gl.F, e0.sprite], [gl.B, e0.handB?.sprite]])
+    {
+        if (!part) continue;
+        const cur = autoRow(part);
+        rows.push([part, {...cur, scale: e.scale ?? cur.scale, x: e.x ?? 0, y: e.y ?? 0}, key]);
+    }
+    gl.F.C.gloveId = id;
+    hit.push(`${GLOVE_P.name} ← ${id}`);
 }
 
 // textures/ 裡 key.png 的尺寸，keys＝texKeys()；找不到回 null
@@ -4782,15 +4830,14 @@ const ITEM_KINDS = ['armor', 'armorh', 'weapon'];
 function slGroup(kinds)
 {
     const L = S.active, g = L && autoGroup(splitNew(L)?.O ?? L);
-    // 選手套走手套自己的存讀（gloveSel），不算這組護具
-    return g && !gloveHome(L).glove && kinds.includes(autoKindOf(g.parts)) ? g : null;
+    // 護具＋手拆出來的手套也算這組（一起存讀）；手動標的手套不在自動組裡，走手套自己的存讀（gloveSel）
+    return g && kinds.includes(autoKindOf(g.parts)) ? g : null;
 }
 
 function slAuto(kinds)
 {
     const g = slGroup(kinds), m = g && autoOpen(g);
     if (typeof m === 'string') return status(m), null;
-    if (m) m.parts = m.parts.filter(p => p.P.kind !== 'glove');
     return m;
 }
 
@@ -4803,7 +4850,7 @@ async function saveItems()
     const back = autoMale(m);
     try
     {
-        const d = await itemDialog(m.parts, await readGameJson('item.json'), await texKeys());
+        const d = await itemDialog(m, await readGameJson('item.json'), await texKeys());
         if (d) await commitItems(d.rows, d.bake);
     }
     finally
@@ -4846,7 +4893,8 @@ async function commitItems(rows, bake, all = false)
     const bad = act.filter(r => r.err);
     if (bad.length) return alert(`沒有存檔：\n${bad.map(r => `${tag(r)}：${r.err}`).join('\n')}`);
     // 有男女兩組的（護具）一定存男版、零件有女版才寫 f；其他照目前人偶；限定性別的照那個性別寫基準（限女的護具用女模式顯示的那組）
-    const pjson = await readParts(), rowSex = (r) => r.only ?? (AUTO_SEXED.includes(r.P.kind) ? 'm' : S.doll.sex);
+    // 自動拆的手套換性別不換身體（圖層上一直是男身體的數字），一律照男身體換算
+    const pjson = await readParts(), rowSex = (r) => r.only ?? (AUTO_SEXED.includes(r.P.kind) || r.P === GLOVE_P ? 'm' : S.doll.sex);
     const fem = (r) => r.P.kind === 'armor' && !r.only && !!r.part.C.alt;
     const note = dollNote(pjson, act.flatMap(r => [rowSex(r), ...(fem(r) ? ['f'] : [])]));
     const ask = [...act.filter(r => r.ask || all && r.warn || r.dropF || r.only)
@@ -4867,6 +4915,12 @@ async function commitItems(rows, bake, all = false)
             if (!keys.has(name)) fresh.push(name);
             await FS.writeFile(await mkDir(A.tex, dir), `${name}.png`, await PX.toPng(c));
         };
+        if (r.P === GLOVE_P)
+        {
+            items = await commitGloveRow(r, items, keys, put, bake, pjson);
+            done.push(r.id ? r.id : `新增 ${r.newId}`);
+            continue;
+        }
         if (r.png)
         {
             const dir = keys.get(r.name) ?? itemDir(r.P);
@@ -5046,6 +5100,36 @@ async function commitGloves(r, bake)
     SH.notifySaved('item.json');
     refreshAll();
     status(`已存 item.json：${F.gloveId}${fresh.length ? `；新圖 ${fresh.join('、')} 要按上方「更新圖片清單」遊戲才載得到` : ''}`);
+}
+
+// 存讀 item 對話框的手套列（護具＋手拆出來的）：r.F／r.B 是前手／後手零件
+const gloveItemPngs = (r, name) => [...(r.F ? glovePngs(r.F.C, name, 'F') : []), ...(r.B ? glovePngs(r.B.C, gloveName(name, 'B'), 'B') : [])];
+
+// 同 commitGloves 的寫法，但照護具列的三個勾：更新圖＝PNG＋sprite／back／handB／drop.sprite、更新設定＝前手的擺放（男身體的 wristF）＋drop.scale、更新ICON＝icon；
+// 沒有後手不動現有的 handB；回傳新的 items
+async function commitGloveRow(r, items, keys, put, bake, pjson)
+{
+    const F = r.F.C, it = r.id ? items[r.id] : null, e = it ? it.equip ??= {} : {};
+    if (r.png)
+        for (const [n, M] of gloveItemPngs(r, r.name)) await put(keys.get(n) ?? 'equips', n, splitPng(M, bake));
+    if (r.png || !it)
+    {
+        delete e.back;
+        Object.assign(e, gloveRefs(F, r.name));
+        if (r.B) e.handB = gloveRefs(r.B.C, gloveName(r.name, 'B'));
+    }
+    if (r.place || !it)
+    {
+        writeEquip(e, F);
+        pivotShift(e, pjson, 'wristF', 'm');
+    }
+    F.gloveId = r.id || r.newId;
+    if (!it) return insertAfter(items, Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES').at(-1), r.newId,
+                                {cat: 'CAT_GLOVES', icon: r.name, lab: r.lab, equip: e, drop: {sprite: r.name, scale: e.scale}});
+    if (r.icon) it.icon = r.name;
+    if (r.png) dropOf(it).sprite = r.name;
+    if (r.place) dropScale(it);
+    return items;
 }
 
 // 照存過的 id（沒有就 equip.sprite＝前手圖層名）找手套，兩層（含前後片）都套同一組擺放；圖不動

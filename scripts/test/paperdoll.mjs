@@ -1558,8 +1558,8 @@ run('paperdoll', async t => {
         set('di-helmet-name', 'src-helmet');
         await close(p, 'ok');
         const a = await readItems();
-        out.saved = [Object.keys(a).join(), JSON.stringify(a.helmet_02), JSON.stringify(a.chest_01), await has(equips, 'src-helmet.png'), pd.S.mode.type];
-        delete a.helmet_02.drop;
+        out.saved = [Object.keys(a).join(), JSON.stringify(a['helmet-src']), JSON.stringify(a.chest_01), await has(equips, 'src-helmet.png'), pd.S.mode.type];
+        delete a['helmet-src'].drop;
         await put(json, 'item.json', JSON.stringify(a, null, 2));
 
         p = await open();
@@ -1571,7 +1571,7 @@ run('paperdoll', async t => {
         await close(p, 'ok');
         const b = await readItems();
         out.renamed = [JSON.stringify(b.chest_01), await has(equips, 'new-armor.png'), await has(equips, 'src-armor.png')];
-        out.dropFill = JSON.stringify(b.helmet_02.drop);
+        out.dropFill = JSON.stringify(b['helmet-src'].drop);
 
         p = await open();
         set('di-helmet-on', false);
@@ -1609,23 +1609,23 @@ run('paperdoll', async t => {
         return out;
     });
     t.eq('存到 item：存讀模式選到拆完的零件才能按', JSON.stringify([si.before, si.after]), JSON.stringify([true, false]));
-    t.eq('存到 item：配不到預設新增、帶流水號、新增時 PNG 反灰；配得到就選它；沒零件的列反灰；lab 空的擋存',
-         JSON.stringify(si.rows), JSON.stringify(['', 'helmet_02', true, 'chest_01', 'src-armor', true, '要填 lab', true]));
+    t.eq('存到 item：配不到預設新增、id＝類別-原圖名、新增時 PNG 反灰；配得到就選它；沒零件的列反灰；lab 空的擋存',
+         JSON.stringify(si.rows), JSON.stringify(['', 'helmet-src', true, 'chest_01', 'src-armor', true, '要填 lab', true]));
     t.check('存到 item：填了 lab 就能存', !si.labOk);
     t.eq('存到 item：撞到 equips 以外的圖擋存', JSON.stringify(si.tak), JSON.stringify(['textures/icons/tak.png 已經有了，換個檔名', true]));
     t.eq('存到 item：跟別列檔名重複', si.dup, '跟別列檔名重複');
     t.eq('存到 item：新增插在同 cat 後面、頭盔 hideHair、帶 drop；已存在的只改擺放＋drop.scale', JSON.stringify(si.saved), JSON.stringify([
-        'helmet_01,helmet_02,chest_01,boots_01,x1',
+        'helmet_01,helmet-src,chest_01,boots_01,x1',
         '{"cat":"CAT_HELMET","icon":"src-helmet","lab":"鐵盔","equip":{"sprite":"src-helmet","scale":0.25,"x":-1.75,"y":-0.25,"hideHair":true},"drop":{"sprite":"src-helmet","scale":0.25}}',
         '{"cat":"CAT_CHESTPLATE","icon":"src-armor","gold":5,"equip":{"sprite":"src-armor","scale":0.25,"x":0.25,"y":26.5},"drop":{"sprite":"src-armor","scale":0.25}}',
         true, 'sl']));
-    t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet_02', true]));
+    t.eq('存到 item：存過的下次就配得到', JSON.stringify(si.match), JSON.stringify(['helmet-src', true]));
     t.eq('存到 item：PNG 沒勾時檔名鎖成原本的 sprite', JSON.stringify(si.locked), JSON.stringify([true, 'src-helmet']));
     t.eq('存到 item：改檔名提示 sprite 會換', si.rename, 'sprite：src-armor → new-armor');
     t.eq('存到 item：改檔名連 icon、drop 一起換、舊圖留著', JSON.stringify(si.renamed), JSON.stringify([
         '{"cat":"CAT_CHESTPLATE","icon":"new-armor","gold":5,"equip":{"sprite":"new-armor","scale":0.25,"x":0.25,"y":26.5},"drop":{"sprite":"new-armor","scale":0.25}}', true, true]));
     t.eq('存到 item：只勾更新設定時沒有 drop 就補上（sprite 照 equip）', si.dropFill, '{"sprite":"src-helmet","scale":0.25}');
-    t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'chest_02', true]));
+    t.eq('存到 item：切成新增時檔名回到圖層名、PNG 強制勾', JSON.stringify(si.newRow), JSON.stringify(['src-armor', 'armor-src', true]));
     t.eq('存到 item：覆蓋別人的圖要提示', si.ask, '會覆蓋 equips/old-hat.png（helmet_01 也用這張）');
     t.eq('存到 item：存檔時 confirm 覆蓋、取消就不寫', JSON.stringify(si.declined), JSON.stringify([true, true]));
     t.eq('存到 item：選了 <部位>-<系>-<階> 其他有零件的列帶到同系同階、更新ICON 預設勾', JSON.stringify(si.follow), JSON.stringify(['armor-hvy-1', true, '']));
@@ -2434,9 +2434,121 @@ run('paperdoll', async t => {
     t.eq('護具＋手：靠中線的靴子不會掉進護甲', armh.boots, 65);
     t.eq('護具＋手：自動標手套、名字、oy', JSON.stringify(armh.glove), JSON.stringify(['F', 'B', 'set-gloves', 'set-gloves-b', 0.5]));
     t.check('護具＋手：前後手預設同位置', armh.same);
-    t.eq('護具＋手：選手套走手套存檔、選護具走護具', JSON.stringify([armh.selGlove, armh.selArmor]), JSON.stringify([true, false]));
+    t.eq('護具＋手：選手套也走護具那組的存檔（不走手套對話框）', JSON.stringify([armh.selGlove, armh.selArmor]), JSON.stringify([false, false]));
     t.eq('護具＋手：面板有手的列', armh.panel, false);
     t.eq('護具＋手：沒畫護手就略過', JSON.stringify(armh.noFists), JSON.stringify(['armor', 'boots', 'helmet']));
+
+    // 護具＋手存讀 item：四列一起、前後手一列
+    const ahi = await ev(async () => {
+        const pd = window.__pd, out = {}, ui = pd.S.auto, $ = (id) => document.getElementById(id);
+        const root = await navigator.storage.getDirectory(), assets = await root.getDirectoryHandle('assets');
+        const json = await assets.getDirectoryHandle('json'), equips = await (await assets.getDirectoryHandle('textures')).getDirectoryHandle('equips');
+        const put = async (dir, name, text) => {const w = await (await dir.getFileHandle(name, {create: true})).createWritable(); await w.write(text); await w.close();};
+        const has = async (dir, name) => !!await dir.getFileHandle(name).catch(() => null);
+        const readItems = async () => JSON.parse(await (await (await json.getFileHandle('item.json')).getFile()).text());
+        const frame = () => new Promise(r => requestAnimationFrame(r));
+        const until = async (f) => {for (let i = 0; i < 100 && !f(); i++) await frame();};
+        const set = (id, v) => {const e = $(id); if (e.type === 'checkbox') e.checked = v; else e.value = v; e.dispatchEvent(new Event(e.tagName === 'SELECT' || e.type === 'checkbox' ? 'change' : 'input'));};
+        const open = async () => {const p = pd.saveItems(); await until(() => $('dlgItems').open); return {p};};
+        const close = async ({p}, v) => {$('dlgItems').close(v); await p;};
+        const conf = window.confirm, alt = window.alert;
+        window.confirm = () => true;
+        window.alert = (s) => {out.alert = (out.alert ?? '') + s;};
+        await put(json, 'item.json', JSON.stringify({g_old: {cat: 'CAT_GLOVES', equip: {sprite: 'zz'}}}, null, 2));
+        await pd.setAssets(assets);
+        const c = document.createElement('canvas'); c.width = 300; c.height = 120;
+        const g = c.getContext('2d');
+        g.fillStyle = '#00ff00'; g.fillRect(0, 0, 300, 120);
+        g.fillStyle = '#ffff00'; g.fillRect(20, 10, 40, 30);
+        g.fillStyle = '#0000ff'; g.fillRect(20, 70, 50, 40);
+        g.fillStyle = '#ff0000'; g.fillRect(120, 10, 50, 30);
+        g.fillRect(110, 80, 25, 30); g.fillRect(150, 80, 25, 30);
+        g.fillStyle = '#884400'; g.fillRect(240, 15, 20, 20); g.fillRect(240, 80, 20, 20);
+        Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+        pd.addLayer(await createImageBitmap(c), 'set', null, null);
+        pd.autoSet({...pd.S.auto, kind: 'armorh', split: 'none', splitG: 'none'});
+        pd.setMode('auto');
+        pd.applyMode();
+        const at = (k) => pd.S.layers.find(L => L.auto?.key === k);
+        pd.select(at('handB'));
+        pd.setMode('sl');
+        out.sel = [$('slItem').disabled, $('slItemLoad').disabled, pd.gloveSel()];
+
+        let p = await open();
+        out.rows = [...$('diRows').querySelectorAll('[id$="-on"]')].map(e => e.id);
+        out.ids = ['helmet', 'armor', 'boots', 'gloves'].map(k => $(`di-${k}-id`).value);
+        out.gsel = [$('di-gloves-sel').value, [...$('di-gloves-sel').options].map(o => o.value).join(), $('di-gloves-name').value];
+        for (const k of ['helmet', 'armor', 'boots']) set(`di-${k}-on`, false);
+        set('di-gloves-lab', '手套');
+        await close(p, 'ok');
+        const a = await readItems(), e = a['gloves-set'];
+        out.saved = [Object.keys(a).join(), e.equip.sprite, e.equip.handB?.sprite, e.icon, e.drop.sprite, e.drop.scale === e.equip.scale, e.equip.oy,
+                     await has(equips, 'set-gloves.png'), await has(equips, 'set-gloves-b.png'), at('handF').gloveId];
+        const male = JSON.stringify(pd.placeOf(at('handF')));
+
+        pd.setDoll({sex: 'f'});
+        pd.select(at('handF'));
+        pd.setMode('sl');
+        p = await open();
+        out.femSel = [$('di-gloves-sel').value, $('di-gloves-msg').textContent];
+        for (const k of ['helmet', 'armor', 'boots']) set(`di-${k}-on`, false);
+        set('di-gloves-png', false);
+        await close(p, 'ok');
+        const b = (await readItems())['gloves-set'];
+        out.female = [b.equip.x === e.equip.x, b.equip.y === e.equip.y, 'f' in b.equip, JSON.stringify(pd.placeOf(at('handF'))) === male];
+        pd.setDoll({sex: 'm'});
+
+        // 載入：前後手套同一組、存檔% 各自反推、手套的全域預設不動
+        const it = await readItems();
+        it['gloves-set'].equip.x += 2;
+        it['gloves-set'].equip.scale = 0.5;
+        await put(json, 'item.json', JSON.stringify(it, null, 2));
+        const fx = at('handF').x, bx = at('handB').x, gDef = JSON.stringify([pd.S.auto.handF, pd.S.auto.handB]);
+        pd.select(at('helmet'));
+        pd.setMode('sl');
+        await pd.loadItems();
+        out.load = [at('handF').x - fx, at('handB').x - bx, at('handF').scale, at('handB').scale, JSON.stringify([pd.S.auto.handF, pd.S.auto.handB]) === gDef,
+                    $('status')?.textContent.includes('手套 ← gloves-set')];
+        pd.undo();
+        out.loadUndo = [at('handF').x === fx, at('handF').scale !== 0.5];
+
+        // 跟著選：頭盔選 helmet-hvy-1 → 手套帶到 gloves-hvy-1；手套選了也帶頭盔
+        await put(json, 'item.json', JSON.stringify({'helmet-hvy-1': {cat: 'CAT_HELMET'}, 'gloves-hvy-1': {cat: 'CAT_GLOVES'}, 'helmet-hvy-2': {cat: 'CAT_HELMET'}, 'gloves-hvy-2': {cat: 'CAT_GLOVES'}}, null, 2));
+        at('handF').gloveId = null;
+        p = await open();
+        set('di-helmet-sel', 'helmet-hvy-1');
+        out.follow = [$('di-gloves-sel').value];
+        await close(p, '');
+        p = await open();
+        set('di-gloves-sel', 'gloves-hvy-2');
+        out.follow.push($('di-helmet-sel').value);
+        await close(p, '');
+
+        // 只有後手：標紅、不能存
+        pd.removeLayer(at('handF'));
+        pd.select(at('helmet'));
+        pd.setMode('sl');
+        p = await open();
+        out.onlyB = [$('di-gloves-on').checked, $('di-gloves-msg').textContent];
+        await close(p, '');
+        window.confirm = conf;
+        window.alert = alt;
+        Object.assign(pd.S, {layers: [], active: null, mode: {type: 'move'}});
+        pd.autoSet({...ui, kind: 'armor'});
+        return out;
+    });
+    t.eq('護具＋手 item：沒有跳 alert', ahi.alert ?? '', '');
+    t.eq('護具＋手 item：選後手也能存讀、不走手套對話框', JSON.stringify(ahi.sel), JSON.stringify([false, false, false]));
+    t.eq('護具＋手 item：四列、前後手一列', JSON.stringify(ahi.rows), JSON.stringify(['di-helmet-on', 'di-armor-on', 'di-boots-on', 'di-gloves-on']));
+    t.eq('護具＋手 item：新增 id＝類別-原圖名', JSON.stringify(ahi.ids), JSON.stringify(['helmet-set', 'armor-set', 'boots-set', 'gloves-set']));
+    t.eq('護具＋手 item：手套列配不到新增、下拉列手套、檔名＝前手圖層名', JSON.stringify(ahi.gsel), JSON.stringify(['', ',g_old', 'set-gloves']));
+    t.eq('護具＋手 item：存手套寫 sprite／handB／icon／drop、兩張 PNG、記 gloveId', JSON.stringify(ahi.saved),
+         JSON.stringify(['g_old,gloves-set', 'set-gloves', 'set-gloves-b', 'set-gloves', 'set-gloves', true, 0.5, true, true, 'gloves-set']));
+    t.eq('護具＋手 item：女模式存手套照男身體、不寫 f、圖層不動', JSON.stringify([ahi.femSel, ahi.female]), JSON.stringify([['gloves-set', ''], [true, true, false, true]]));
+    t.eq('護具＋手 item：載入手套前後手同一組、不寫回全域預設', JSON.stringify(ahi.load), JSON.stringify([2, 2, 0.5, 0.5, true, true]));
+    t.eq('護具＋手 item：載入一筆 undo', JSON.stringify(ahi.loadUndo), JSON.stringify([true, true]));
+    t.eq('護具＋手 item：跟著選包含手套（兩個方向）', JSON.stringify(ahi.follow), JSON.stringify(['gloves-hvy-1', 'helmet-hvy-2']));
+    t.eq('護具＋手 item：只有後手標紅', JSON.stringify(ahi.onlyB), JSON.stringify([true, '沒有前手']));
 
     const gsp = await ev(async () => {
         const pd = window.__pd, out = {}, ui = pd.S.auto, vis = (id) => !document.getElementById(id).hidden;
