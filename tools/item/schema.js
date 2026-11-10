@@ -57,6 +57,7 @@ export const FIELDS = {
     storage: {label: '格數', type: 'int'},
     equip: {label: '裝備圖', type: 'obj', fields: {...SPRITE, f: FEMALE, back: {label: '後片', type: 'sprite', opt: true},
         handB: {label: '後手', type: 'obj', opt: true, offer: (it) => it.cat === 'CAT_GLOVES', fields: {sprite: {label: '前片', type: 'sprite'}, back: {label: '後片', type: 'sprite'}}}, hideHair: {label: '藏頭髮', type: 'bool', opt: true},
+        hideHand: {label: '藏手', type: 'bool', opt: true, offer: (it) => it.cat === 'CAT_GLOVES'},
         hand: {label: '拿在', type: 'enum', options: ['', 'B'], names: {'': '前手（預設）', B: '後手'}, opt: true, offer: (it) => it.cat === 'CAT_WEAPON'},
         wristF: {label: '前手腕', ...XYA}, wristB: {label: '後手腕', ...XYA}}},
     drop: {label: '掉落圖', type: 'obj', fields: SPRITE},

@@ -5108,7 +5108,7 @@ async function commitGloves(r, bake)
         dropOf(it).sprite = r.name;
         dropScale(it);
     }
-    else items = insertAfter(items, Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES').at(-1), r.newId, {cat: 'CAT_GLOVES', icon: r.name, lab: r.lab, equip: e, drop: {sprite: r.name, scale: e.scale}});
+    else items = insertAfter(items, Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES').at(-1), r.newId, {cat: 'CAT_GLOVES', icon: r.name, lab: r.lab, equip: {...e, hideHand: true}, drop: {sprite: r.name, scale: e.scale}});
     F.gloveId = r.id || r.newId;
     await FS.writeFile(A.json, 'item.json', new Blob([JSON.stringify(items, null, 2)]));
     SH.notifySaved('item.json');
@@ -5138,6 +5138,7 @@ async function commitGloveRow(r, items, keys, put, bake, pjson)
         pivotShift(e, pjson, 'wristF', 'm');
     }
     F.gloveId = r.id || r.newId;
+    if (!it) e.hideHand = true;
     if (!it) return insertAfter(items, Object.keys(items).filter(id => items[id].cat === 'CAT_GLOVES').at(-1), r.newId,
                                 {cat: 'CAT_GLOVES', icon: r.name, lab: r.lab, equip: e, drop: {sprite: r.name, scale: e.scale}});
     if (r.icon) it.icon = r.name;

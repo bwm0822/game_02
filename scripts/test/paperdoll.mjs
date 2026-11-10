@@ -2492,7 +2492,7 @@ run('paperdoll', async t => {
         await close(p, 'ok');
         const a = await readItems(), e = a['gloves-set'];
         out.saved = [Object.keys(a).join(), e.equip.sprite, e.equip.handB?.sprite, e.icon, e.drop.sprite, e.drop.scale === e.equip.scale, e.equip.oy,
-                     await has(equips, 'set-gloves.png'), await has(equips, 'set-gloves-b.png'), at('handF').gloveId];
+                     await has(equips, 'set-gloves.png'), await has(equips, 'set-gloves-b.png'), at('handF').gloveId, e.equip.hideHand];
         const male = JSON.stringify(pd.placeOf(at('handF')));
 
         pd.setDoll({sex: 'f'});
@@ -2554,8 +2554,8 @@ run('paperdoll', async t => {
     t.eq('護具＋手 item：四列、前後手一列', JSON.stringify(ahi.rows), JSON.stringify(['di-helmet-on', 'di-armor-on', 'di-boots-on', 'di-gloves-on']));
     t.eq('護具＋手 item：新增 id＝類別-原圖名', JSON.stringify(ahi.ids), JSON.stringify(['helmet-set', 'armor-set', 'boots-set', 'gloves-set']));
     t.eq('護具＋手 item：手套列配不到新增、下拉列手套、檔名＝前手圖層名', JSON.stringify(ahi.gsel), JSON.stringify(['', ',g_old', 'set-gloves']));
-    t.eq('護具＋手 item：存手套寫 sprite／handB／icon／drop、兩張 PNG、記 gloveId', JSON.stringify(ahi.saved),
-         JSON.stringify(['g_old,gloves-set', 'set-gloves', 'set-gloves-b', 'set-gloves', 'set-gloves', true, 0.5, true, true, 'gloves-set']));
+    t.eq('護具＋手 item：存手套寫 sprite／handB／icon／drop、兩張 PNG、記 gloveId、新增的藏手', JSON.stringify(ahi.saved),
+         JSON.stringify(['g_old,gloves-set', 'set-gloves', 'set-gloves-b', 'set-gloves', 'set-gloves', true, 0.5, true, true, 'gloves-set', true]));
     t.eq('護具＋手 item：女模式存手套照男身體、不寫 f、圖層不動', JSON.stringify([ahi.femSel, ahi.female]), JSON.stringify([['gloves-set', ''], [true, true, false, true]]));
     t.eq('護具＋手 item：載入手套前後手同一組（各自照手腕轉）、不寫回全域預設', JSON.stringify(ahi.load), JSON.stringify([true, true, 0.5, 0.5, true, true]));
     t.eq('護具＋手 item：載入一筆 undo', JSON.stringify(ahi.loadUndo), JSON.stringify([true, true]));

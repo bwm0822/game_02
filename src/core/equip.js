@@ -45,7 +45,7 @@ export const rigOf = (body) => ({x: body?.x ?? 0, y: body?.y ?? 0, a: body?.a ??
 export const flatPart = (p, body, node, held) => atPivot(node ? atPivot(p, pivotOf(body, node, held)) : p, rigOf(body));
 export const unflatPart = (p, body, node, held) => {const q = fromPivot(p, rigOf(body)); return node ? fromPivot(q, pivotOf(body, node, held)) : q;};
 
-// 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、任何頭盔藏帽子、任何護甲藏衣服、任何靴子藏鞋子、任何手套藏兩隻手
+// 穿著的裝備（有 equip 的道具）會藏掉哪些部位：hideHair 藏頭髮、hideHand 藏兩隻手（手套用）、任何頭盔藏帽子、任何護甲藏衣服、任何靴子藏鞋子
 // hat＝角色的帽子條目：沒被頭盔藏掉時它的 hideHair 才生效
 // cat 是分類常數（遊戲傳 GM.CAT，工具傳 {HELMET: 'CAT_HELMET', CHESTPLATE: 'CAT_CHESTPLATE', BOOTS: 'CAT_BOOTS', GLOVES: 'CAT_GLOVES', WEAPON: 'CAT_WEAPON'}）
 export function hiddenParts(items, cat, hat)
@@ -55,10 +55,10 @@ export function hiddenParts(items, cat, hat)
     {
         if (!it?.equip) continue;
         if (it.equip.hideHair) out.add('hair');
+        if (it.equip.hideHand) {out.add('handF'); out.add('handB');}
         if (it.cat === cat.HELMET) out.add('hat');
         if (it.cat === cat.CHESTPLATE) out.add('cloth');
         if (it.cat === cat.BOOTS) out.add('shoes');
-        if (it.cat === cat.GLOVES) {out.add('handF'); out.add('handB');}
     }
     if (hat?.hideHair && !out.has('hat')) out.add('hair');
     return out;

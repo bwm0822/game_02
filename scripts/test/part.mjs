@@ -8,7 +8,7 @@ run('部位 pool', async t => {
     const hide = (...its) => [...hiddenParts(its, CAT)].sort().join();
     t.eq('護甲藏衣服', hide({cat: 'CAT_CHESTPLATE', equip: {}}), 'cloth');
     t.eq('靴子藏鞋子', hide({cat: 'CAT_BOOTS', equip: {}}), 'shoes');
-    t.eq('手套藏兩隻手', hide({cat: 'CAT_GLOVES', equip: {}}), 'handB,handF');
+    t.eq('手套 hideHand 藏兩隻手、沒寫不藏', [hide({cat: 'CAT_GLOVES', equip: {hideHand: true}}), hide({cat: 'CAT_GLOVES', equip: {}})].join('|'), 'handB,handF|');
     const r2 = (p) => [p.x, p.y, p.a].map(v => Math.round(v * 1000) / 1000).join();
     const pv = {x: 1, y: 2, a: 90};
     t.eq('atPivot：繞支點轉 a、角度疊上去', r2(atPivot({x: 10, y: 0, a: 5}, pv)), '1,12,95');

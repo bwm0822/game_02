@@ -441,7 +441,9 @@ function fitView(r, slots)
             id ? [h('span', {class: 'bigid'}, id), h('span', {class: 'dim'}, it.lab ?? ''),
                 !sexOk(it, r.sex) && h('span', {class: 'warn sexwarn'}, `⚠ ${SEX_NAMES[it.sex] ?? it.sex}`),
                 h('label', {class: 'hidehair'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHair, dataset: {k: `item.json|${id}|equip.hideHair`},
-                    onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮')]
+                    onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHair'], e.target.checked || undefined))}), '藏頭髮'),
+                S.cur === 'CAT_GLOVES' && h('label', {class: 'hidehand'}, h('input', {type: 'checkbox', checked: !!it.equip?.hideHand, dataset: {k: `item.json|${id}|equip.hideHand`},
+                    onchange: (e) => commit(() => setAt(S.doc['item.json'].data[id], ['equip', 'hideHand'], e.target.checked || undefined))}), '藏手')]
                 : h('span', {class: 'dim'}, '（空）')),
         id && equipTable(id),
     ];

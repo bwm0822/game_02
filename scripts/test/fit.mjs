@@ -491,6 +491,17 @@ run('fit', async t => {
         F.undo();
         out.hair.push(S.doc['item.json'].data.helmet_02.equip.hideHair);
 
+        // 手套 hideHand：勾了藏兩隻手、取消勾選手回來；只有手套格有這個勾
+        F.select('wick'); F.wearOrig();
+        out.hand = [!!document.querySelector('[data-k$="|equip.hideHand"]')];
+        S.cur = 'CAT_GLOVES'; F.setSlot('CAT_GLOVES', 'gloves_01');
+        const hh = document.querySelector('[data-k="item.json|gloves_01|equip.hideHand"]'), g0 = await drawn();
+        out.hand.push(hh.checked, !!document.querySelector('#view .hidden-handF'));
+        hh.checked = false; hh.dispatchEvent(new Event('change'));
+        out.hand.push(await drawn() - g0 >= 2, 'hideHand' in S.doc['item.json'].data.gloves_01.equip, !!document.querySelector('#view .hidden-handF'));
+        F.undo();
+        out.hand.push(S.doc['item.json'].data.gloves_01.equip.hideHand);
+
         // 🔗 頭帶頭髮：預設關、記 localStorage；x/y/a 加差、scale 乘倍率（偏移跟著縮）、ox 不連動、一筆 undo
         {
             const P = () => S.doc['part.json'].data, hl = S.hi;
@@ -704,6 +715,7 @@ run('fit', async t => {
     t.eq('畫面沒有 [object …]', r.dom, false);    const [bare, helm, hint, chk, off, key, hint2, undone] = r.hair;
     t.check('hideHair 頭盔：頭髮換成頭盔、張數不變、有提示、勾選框打勾', helm === bare && hint && chk, JSON.stringify(r.hair));
     t.check('取消藏頭髮：多畫頭髮、刪 key、提示消失', off === helm + 1 && !key && !hint2, JSON.stringify(r.hair));
+    t.eq('hideHand 手套：只有手套格有勾、勾著藏手、取消多畫兩隻手、刪 key、undo 回來', JSON.stringify(r.hand), JSON.stringify([false, true, true, true, false, false, true]));
     t.eq('藏頭髮可 undo', undone, true);
     t.eq('🔗 頭帶頭髮：預設關、記住、差值／倍率、ox 不連動、一筆 undo、女角各走各的規則', JSON.stringify(r.link), JSON.stringify([
         true, false, true, '[0.25,-2,2,null,null]', '1',
