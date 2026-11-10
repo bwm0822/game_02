@@ -151,8 +151,44 @@ run('粒子特效', async t => {
         out.icons = icons.map(([w, i]) => `${w}:${i}`);
         await sleep(600);
         out.cleaned = made.every(m => !m.em.active);
-        scene.add.particles = add;
         p.fx = fx; target.fx = tfx;
+
+        // fx.json：particle 常駐（閃一下的也算）、tickParticle 每次 tick、解除停止
+        made.length = 0;
+        Object.assign(d.DB._fxDB, {
+            't-flash': {img: '🔥', cell: {flash: true, align: 'top'}, particle: 't-trail', tickParticle: 't-hit'},
+            't-only': {particle: 't-cast'},
+            't-zone': {img: '🔥', cell: {size: 30}, spawn: {scale: {from: 0, to: 1}, duration: 50, stagger: 10}, end: {alpha: 0, duration: 50}, particle: 't-trail', tickParticle: 't-hit'},
+        });
+        p.fxOn('t-flash');
+        const on = made[0];
+        out.fxOn = [made.map(m => m.key).join(), on?.em.follow === p, on?.em.followOffset.y === p.view.Min.y];
+        p.fxTick('t-flash');
+        out.fxTick = made.map(m => `${m.key}${m.burst ? ':burst' : ''}`).join();
+        p.fxOff('t-flash');
+        out.fxOff = on?.em.emitting;
+        made.length = 0;
+        p.fxOn('t-only');
+        out.fxOnly = [made.map(m => m.key).join()];
+        p.fxOff('t-only');
+
+        // 區域：spawn 完整片一個 emitter（quantity×格數），tick 那格噴一次，end 停止
+        made.length = 0;
+        const {default: HazardZone} = await import('/src/items/hazardzone.js');
+        const zone = new HazardZone(scene, p.x, p.y).init_runtime({zoneW: 3, zoneH: 1, zoneDur: 1, zoneFx: 't-zone', effects: []}, p);
+        const n = [-1, 0, 1].filter(x => zone.hasCell(x, 0)).length;
+        out.beforeSpawn = made.length;
+        await zone.playSpawn();
+        const zq = made[0]?.em.quantity;
+        out.zone = [made.map(m => m.key).join(), (typeof zq === 'number' ? zq : zq?.propertyValue) === n, n > 0];
+        zone.playTick(0, 0);
+        out.zoneTick = made.map(m => `${m.key}${m.burst ? ':burst' : ''}`).join();
+        await zone.playEnd();
+        out.zoneEnd = made[0]?.em.emitting;
+        zone._remove();
+        await sleep(50);
+        out.zoneGone = made.every(m => !m.em.active);
+        scene.add.particles = add;
         return out;
     });
     t.check('地圖上有可以打的對象', g.hasTarget);
@@ -161,4 +197,13 @@ run('粒子特效', async t => {
     t.eq('命中時拖尾停止發射', g.trailStopped, false);
     t.eq('cast.img 空字串不跳 icon；fx 沒寫 img 用技能 icon', JSON.stringify(g.icons), JSON.stringify(['target:🔥']));
     t.check('播完全部清掉', g.cleaned);
+    t.eq('fx particle：閃一下的特效也常駐粒子、跟著角色、位置照 cell.align', JSON.stringify(g.fxOn), JSON.stringify(['p-soft', true, true]));
+    t.eq('fx tickParticle：tick 噴一次', g.fxTick, 'p-soft,p-spark:burst');
+    t.eq('fx 解除：停止發射', g.fxOff, false);
+    t.eq('fx 沒 img 只有粒子', JSON.stringify(g.fxOnly), JSON.stringify(['p-dot']));
+    t.eq('區域：spawn 前不噴', g.beforeSpawn, 0);
+    t.eq('區域：spawn 完整片一個 emitter、quantity×有生成的格數', JSON.stringify(g.zone), JSON.stringify(['p-soft', true, true]));
+    t.eq('區域：tick 那格噴一次', g.zoneTick, 'p-soft,p-spark:burst');
+    t.eq('區域：end 停止發射', g.zoneEnd, false);
+    t.check('區域：移除後清掉', g.zoneGone);
 });

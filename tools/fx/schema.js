@@ -56,7 +56,13 @@ export function valMode(v)
     return 'raw';
 }
 
-export const TOP = new Set(['img', 'cell', ...STAGES.map(s => s.k)]);
+// particle：效果期間持續噴（區域＝整片一個 emitter）；tickParticle：每次 tick 噴一次（區域＝那一格）；都是 particle.json 的 id
+export const PARTICLES = {
+    particle: {label: '粒子', hint: '效果期間持續噴（區域：整片，條目寫每格的量），結束時停'},
+    tickParticle: {label: 'tick 粒子', hint: '每次 tick（扣血那一下）噴一次'},
+};
+
+export const TOP = new Set(['img', 'cell', ...Object.keys(PARTICLES), ...STAGES.map(s => s.k)]);
 
 export const TABS = [{label: '全部', cols: ['img', '#kind', 'cell.size', 'cell.align', 'cell.flash', '#stages', '#refs']}];
 

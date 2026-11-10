@@ -11,7 +11,8 @@
 | 效果特效 | ability／item 的 `effects[].id`（`type: action` 的瞬間效果不播，不算） | `com_disp.js`：效果進 `_actives` 時 `fxOn`（spawn→idle 常駐），每回合扣血／控制刷新 `fxTick`，結束 `fxOff`（end）；`cell.flash:true` 不常駐，只在 tick 時播 spawn→tick→end |
 | 區域特效 | 技能的 `zoneFx`（火牆 `firewall`） | `HazardZone` 讀 `DB.fx(ability.zoneFx)` 交給 `ZoneView`：每格一個，spawn 依 `stagger`／`from` 逐格長出來，角色站的那格 tick，到期 end |
 
-- `img`：emoji，或 textures 的 key（`sheet:格子`／`atlas:frame`／單張圖）。
+- `img`：emoji，或 textures 的 key（`sheet:格子`／`atlas:frame`／單張圖）。選填：沒寫就只有粒子（沒 img 也沒粒子才警告）。
+- `particle`／`tickParticle`：particle.json 的 id（[particle-architecture.md](particle-architecture.md)）。效果特效：效果期間在 cell 的位置持續噴（閃一下的也是）、每次 tick 噴一次；區域特效：spawn 完整片一個 emitter（條目寫每格的量）、tick 那格噴一次。表單在圖下面，下拉 particle.json 的 id、↗ 跳粒子分頁。
 - `cell`：`size`（沒填 30）、`scale`（數字或 `[min, max]` 隨機）、`alpha`、`flipX`（`true`／`"random"`）；效果特效另有 `align`（`top`／`center`／`bottom`＝view 上緣／中間／下緣）、`ox`／`oy`、`flash`；區域特效另有 `jitter`（每格隨機偏移 ±px）。
 - `spawn`／`idle`／`tick`／`end`：Phaser tween 設定，套在格子的 holder 上。`idle.randDelay` 是隨機延遲上限；區域的 `spawn.stagger`（逐格間隔 ms）、`spawn.from`（`center` 中心往外／`near` 離施法者近的先／`random`）。
 - `body`：效果特效才有，套在角色身體 `view.shape` 上，只支援 `angle`，以腳底為支點轉（圖示跟著繞），解除時轉回 0。
@@ -25,7 +26,7 @@
   - 「用到的」列出每個引用，↗ 跳到能力／道具分頁那一筆。
   - 圖（選圖器同道具分頁）、格子（`cell`，依種類只顯示有用的欄位，其他 key 在「其他」JSON）。
   - 每個階段一個框，可「建立」「移除」。內容是半結構化表單：時間參數（時長、曲線（下拉 Phaser ease）、延遲、來回、重複 `-1`＝無限；idle 多隨機延遲、區域的 spawn 多逐格間隔／從哪開始）＋屬性列（`scale`／`scaleX`／`scaleY`／`alpha`／`x`／`y`／`angle`，值可以是數值、相對 `+=`／`-=`、從→到；換屬性名位置不變）；表單沒列到的 key 在「其他（JSON）」。框標題的「JSON」整段切成 JSON 框改。
-- 右：預覽（Phaser，`preview.js`）。
+- 右：預覽（Phaser，`preview.js`，`Phaser.AUTO`＝WebGL，粒子的 tint／ADD 跟遊戲一樣）。粒子一起播（上身開、tick 噴、解除停、重播／停止全清），particle.json 存檔後重讀。
   - 效果特效套在角色上：下拉選 role.json 的角色（預設第一個怪物，記在 `localStorage` 的 `tools.fx.role`），照角色編輯器的 `partsOf()` 合成一張貼圖當 `view.shape`（部位查 `part.json`），root／view／shape 的關係跟 `RoleView` 一樣，所以 `align`、`body` 的支點跟遊戲一致。灰線是地面（角色位置）、灰框是 view（w×h）。
   - 區域特效不放角色，照第一個引用它的技能的 `zoneW×zoneH` 排格子（鏡頭縮到放得下），施法者當作站在區域左邊兩格（`from: near` 用），tick 隨機挑一格。
   - 上身（spawn→idle；閃一下的是 spawn→tick→end）、tick、解除（end）、重播；「自動循環」＝上身→每秒 tick 共 3 次→解除→停一秒再來（按上身／tick／解除會關掉自動循環）；速度 1×／0.5×／0.25×（tween 的 timeScale，循環的間隔一起變）。改了任何欄位就重播，畫布不重建。

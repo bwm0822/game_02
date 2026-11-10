@@ -16,11 +16,11 @@ const D = createDoc({
     external: '可能是手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
-    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json', 'part.json'].includes(file)) loadRefs().then(render);},
+    onSaved: (file) => {if (['ability.json', 'item.json', 'role.json', 'part.json', 'particle.json'].includes(file)) loadRefs().then(render);},
 });
 const {S, render, commit, set} = D;
 S.refs = {};    // 效果 id → [{tab: 'ability'|'item', id, type}]，type:'action' 是瞬間效果不播特效，不收
-S.ext = {roles: {}, items: {}, abilities: {}};     // 預覽用的唯讀參考資料
+S.ext = {roles: {}, items: {}, abilities: {}, parts: {}, particles: {}};     // 預覽用的唯讀參考資料
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.data[id]?.img, lab: id => labOf(id), warns: id => validate(id)});
 
@@ -36,8 +36,11 @@ function validate(id)
 {
     const fx = S.data[id], out = [];
     if (!fx) return out;
-    if (!fx.img) out.push('沒有圖 img');
+    if (!fx.img) {if (!fx.particle && !fx.tickParticle) out.push('沒有圖 img（也沒有粒子，什麼都看不到）');}
     else {const e = IC.check(fx.img); if (e) out.push(`img：${e}`);}
+    for (const k of Object.keys(SC.PARTICLES))
+        if (fx[k] !== undefined && !S.ext.particles[fx[k]]) out.push(`${k} 在 particle.json 沒有：${fx[k]}（到粒子分頁建立）`);
+    if (!fx.img && (fx.spawn || fx.idle || fx.tick || fx.end)) out.push('沒有 img，spawn／idle／tick／end 不會播');
     const cell = fx.cell;
     if (cell !== undefined && !isObj(cell)) out.push('cell 應該是物件');
     else if (cell)
@@ -265,6 +268,13 @@ function renderForm()
             h('div', {class: 'fields'},
                 h('span', {class: 'k' + (fx.img === undefined ? ' unset' : ''), title: 'img'}, '圖'),
                 fieldInput({type: 'icon'}, fx.img, v => set(id, ['img'], v), 'img'),
+                Object.entries(SC.PARTICLES).map(([k, d]) => [
+                    h('span', {class: 'k' + (fx[k] === undefined ? ' unset' : ''), title: k}, d.label),
+                    h('span', {class: 'iconField'},
+                        h('input', {size: 16, dataset: {k, combo: 'dl-particles'}, value: fx[k] ?? '', onchange: e => set(id, [k], e.target.value.trim() || undefined)}),
+                        fx[k] && h('a', {class: 'go', title: '跳到粒子分頁', onclick: () => SH.gotoTab('particle', [fx[k]])}, '↗'),
+                        h('span', {class: 'dim'}, d.hint)),
+                ]),
                 cellBox(id, fx),
                 SC.STAGES.filter(st => SC.forKind(st, isZone(id)) || fx[st.k] !== undefined).map(st => stageBox(id, fx, st)),
                 otherBox(id, fx))),
@@ -302,7 +312,7 @@ const HEAD = {'img': ['圖'], '#kind': ['種類'], 'cell.size': ['大小', 'cell
 function draw()
 {
     const ids = Object.keys(S.data), miss = missing();
-    renderDatalists({missing: miss, eases: SC.EASES});
+    renderDatalists({missing: miss, eases: SC.EASES, particles: Object.keys(S.ext.particles)});
     V.renderList([
         [n => `特效（${n}）`, ids.filter(id => !isUnused(id)), 'used'],
         [n => `未使用（${n}）`, ids.filter(isUnused), 'unused'],
@@ -344,12 +354,12 @@ function collectRefs(data, tab, out)
 async function loadRefs()
 {
     const get = (f) => fetch(`/assets/json/${f}`, {cache: 'no-store'}).then(r => r.json()).catch(() => ({}));
-    const [abilities, items, roles, parts] = await Promise.all([get('ability.json'), get('item.json'), get('role.json'), get('part.json')]);
+    const [abilities, items, roles, parts, particles] = await Promise.all([get('ability.json'), get('item.json'), get('role.json'), get('part.json'), get('particle.json')]);
     const refs = {};
     collectRefs(abilities, 'ability', refs);
     collectRefs(items, 'item', refs);
     S.refs = refs;
-    Object.assign(S.ext, {roles, items, abilities, parts});
+    Object.assign(S.ext, {roles, items, abilities, parts, particles});
 }
 
 (async () => {

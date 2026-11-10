@@ -3,8 +3,10 @@
 // 區域特效（技能 zoneFx 引用的）不放角色，照 ZoneView 排 w×h 格，spawn 先後用 zoneDelays，tick 隨機挑一格（遊戲是角色站的那格）
 import Phaser from 'phaser';
 import BBCodeTextPlugin from 'phaser3-rex-plugins/plugins/bbcodetext-plugin.js';
-import FxCell, {attachCell, bodyTween, zoneDelays} from '../../src/core/fxcell.js';
+import FxCell, {attachCell, bodyTween, zoneDelays, cellPos} from '../../src/core/fxcell.js';
+import {playParticle, BUILTIN} from '../../src/core/particle.js';
 import {GM} from '../../src/core/setting.js';
+import * as IC from '../common/icons.js';
 import {h} from '../common/dom.js';
 import {roleCanvas, addRole, imgTexture} from '../common/pvstage.js';
 
@@ -19,9 +21,12 @@ const st = {
     zone: null,             // 區域特效的格數 {w, h, by}；null 是效果特效
     zcells: null,           // 區域：生成中的 [{gx, gy, fx}]
     sel: null,              // 角色下拉
-    cur: null,              // 常駐中的 {cell, body}
+    cur: null,              // 常駐中的 {cell, body, part}（沒 img 的 cell 是 null）
     flashes: new Set(),     // flash 型、正在播的 cell
     imgs: new Map(),        // fx.img → 載進 Phaser 的貼圖 key（emoji 不用）
+    pdefs: {},              // particle／tickParticle → particle.json 那筆（img 換成貼圖 key）
+    zpart: null,            // 區域：整片的粒子
+    bursts: new Set(),      // 播出去還沒銷毀的粒子（常駐、區域、tick 都算）
     ext: null,
 };
 
@@ -32,8 +37,9 @@ function createGame()
     let done;
     st.ready = new Promise(res => {done = res;});
     const box = h('div', {class: 'stage'});
+    // AUTO（WebGL）：粒子的 tint／ADD 跟遊戲一樣
     new Phaser.Game({
-        type: Phaser.CANVAS, width: W, height: H, zoom: ZOOM, pixelArt: true, parent: box,
+        type: Phaser.AUTO, width: W, height: H, zoom: ZOOM, pixelArt: true, parent: box,
         backgroundColor: '#1b1c1f', banner: false, audio: {noAudio: true},
         plugins: {global: [{key: 'rexBBCodeTextPlugin', plugin: BBCodeTextPlugin, start: true}]},
         scene: {create() {st.scene = this; done();}},
@@ -60,8 +66,29 @@ async function buildRole()
 // 圖（不是 emoji）切成一張貼圖給 Pic 用
 const imgKey = (img) => imgTexture(st.scene, img, st.imgs, 'fximg');
 
-// ---------- 播放（跟 com_disp 的 _fxOn／_fxTick／_fxOff／_fxFlash 一樣） ----------
+// 粒子條目：textures 的圖切成貼圖（內建形狀、emoji 交給 particle.js）
+async function particleDef(id)
+{
+    const def = id && st.ext.particles?.[id];
+    if (!def) return null;
+    const img = def.img && !BUILTIN.includes(def.img) && IC.resolve(def.img).url ? await imgKey(def.img) : def.img;
+    return {...structuredClone(def), img};
+}
+
+// ---------- 播放（跟 com_disp 的 _fxOn／_fxTick／_fxOff／_fxFlash、ZoneView 一樣） ----------
 const isFlash = () => !!st.fx?.cell?.flash;
+
+// 所有播出去的粒子都記著（解除後還在飄的也算），stop() 才清得掉
+function track(p)
+{
+    if (!p) return p;
+    st.bursts.add(p);
+    p.done.then(() => st.bursts.delete(p));
+    return p;
+}
+
+const burst = (def, opts) => track(def && playParticle(st.scene, def, opts));
+const onRole = (def) => {const {x, y} = cellPos(st.root, st.fx); return burst(def, {target: st.root, ox: x, oy: y});};
 
 function flash()
 {
@@ -81,16 +108,21 @@ function zoneOn()
         for (let y = ys; y < ys + ch; y++)
         {
             const px = W / 2 + x * tw, py = H / 2 + y * th;
-            const fx = new FxCell(st.scene, null, st.fx.img, st.fx,
-                {x: px + Phaser.Math.FloatBetween(-jitter, jitter), y: py + Phaser.Math.FloatBetween(-jitter, jitter), size: tw});
-            fx.holder.setDepth(py + 1);
+            const fx = st.fx.img ? new FxCell(st.scene, null, st.fx.img, st.fx,
+                {x: px + Phaser.Math.FloatBetween(-jitter, jitter), y: py + Phaser.Math.FloatBetween(-jitter, jitter), size: tw}) : null;
+            fx?.holder.setDepth(py + 1);
             cells.push({gx: x, gy: y, fx});
         }
     // near：施法者當作站在區域左邊兩格
     const src = {x: W / 2 + (xs - 2) * tw, y: H / 2};
     const {stagger = 0, from = 'center'} = st.fx.spawn ?? {};
     const delays = zoneDelays(cells, stagger, from, c => Phaser.Math.Distance.Between(src.x, src.y, W / 2 + c.gx * tw, H / 2 + c.gy * th));
-    cells.forEach((c, i) => c.fx.spawn(delays[i]));
+    const run = st.run;
+    Promise.all(cells.map((c, i) => c.fx?.spawn(delays[i]))).then(() => {
+        if (run !== st.run || st.zcells !== cells || !st.pdefs.particle) return;
+        st.zpart = burst(st.pdefs.particle,
+            {x: W / 2 + (2 * xs + cw - 1) / 2 * tw, y: H / 2 + (2 * ys + ch - 1) / 2 * th, area: {w: cw * tw, h: ch * th, cells: cells.length}});
+    });
     st.zcells = cells;
 }
 
@@ -98,7 +130,9 @@ function zoneOff()
 {
     const cells = st.zcells;
     st.zcells = null;
-    Promise.all(cells.map(c => c.fx.end())).then(() => cells.forEach(c => c.fx.destroy()));
+    st.zpart?.stop();
+    st.zpart = null;
+    Promise.all(cells.map(c => c.fx?.end())).then(() => cells.forEach(c => c.fx?.destroy()));
 }
 
 // 區域不放角色，鏡頭縮到整片放得下
@@ -114,18 +148,33 @@ function on()
 {
     if (st.zone) {if (st.fx) zoneOn(); return;}
     if (!st.fx || !st.root || st.cur) return;
-    if (isFlash()) {flash(); return;}
-    const cell = attachCell(st.scene, st.root, st.fx);
-    cell.spawn();
-    const body = st.fx.body ? bodyTween(st.scene, st.view, cell.holder, st.fx.body) : null;
-    st.cur = {cell, body};
+    const part = onRole(st.pdefs.particle);
+    if (isFlash())
+    {
+        if (st.fx.img) flash();
+        if (part) st.cur = {cell: null, body: null, part};
+        return;
+    }
+    const cell = st.fx.img ? attachCell(st.scene, st.root, st.fx) : null;
+    cell?.spawn();
+    const body = st.fx.body ? bodyTween(st.scene, st.view, cell?.holder, st.fx.body) : null;
+    st.cur = {cell, body, part};
 }
 
 function tick()
 {
-    if (st.zcells) Phaser.Utils.Array.GetRandom(st.zcells).fx.tick();
-    else if (st.cur) st.cur.cell.tick();
-    else if (isFlash() && st.root) flash();
+    if (st.zcells)
+    {
+        const c = Phaser.Utils.Array.GetRandom(st.zcells);
+        c.fx?.tick();
+        burst(st.pdefs.tickParticle, {x: W / 2 + c.gx * GM.TILE_W, y: H / 2 + c.gy * GM.TILE_H});
+        return;
+    }
+    if (!st.root || !st.fx) return;
+    st.cur?.cell?.tick();
+    if (isFlash() && st.fx.img) flash();
+    const {x, y} = cellPos(st.root, st.fx);
+    burst(st.pdefs.tickParticle, {target: st.root, ox: x, oy: y});
 }
 
 function resetBody(body)
@@ -141,7 +190,8 @@ function off()
     const c = st.cur;
     if (!c) return;
     st.cur = null;
-    c.cell.end().then(() => c.cell.destroy());
+    c.cell?.end().then(() => c.cell.destroy());
+    c.part?.stop();
     resetBody(c.body);
 }
 
@@ -149,11 +199,15 @@ function off()
 function stop()
 {
     st.run++;
-    if (st.cur) {st.cur.cell.destroy(); resetBody(st.cur.body); st.cur = null;}
+    if (st.cur) {st.cur.cell?.destroy(); st.cur.part?.stop(true); resetBody(st.cur.body); st.cur = null;}
     for (const c of st.flashes) c.destroy();
     st.flashes.clear();
-    st.zcells?.forEach(c => c.fx.destroy());
+    st.zcells?.forEach(c => c.fx?.destroy());
     st.zcells = null;
+    st.zpart?.stop(true);
+    st.zpart = null;
+    for (const p of st.bursts) p.stop(true);
+    st.bursts.clear();
 }
 
 // 上身 → 每秒 tick 一次共 3 次 → 解除 → 停一下再來（時間跟著速度倍率）
@@ -222,14 +276,16 @@ export function previewEl(id, fx, ext, zone = null)
     if (!P.role || !ext.roles[P.role]) P.role = Object.keys(ext.roles).find(k => ext.roles[k].kind === 'monster') ?? Object.keys(ext.roles)[0] ?? null;
     if (!st.el) st.el = h('div', {class: 'pv'}, createGame(), controls(ext.roles), h('div', {class: 'zinfo dim'}));
     st.el.querySelector('.zinfo').textContent = zone ? `區域 ${zone.w}×${zone.h}（照 ${zone.by} 的 zoneW×zoneH）` : '';
-    const key = JSON.stringify([id, fx, zone]);
+    const key = JSON.stringify([id, fx, zone, fx && [ext.particles?.[fx.particle], ext.particles?.[fx.tickParticle]]]);
     if (key !== st.key)
     {
         st.key = key;
         st.ready.then(async () => {
             if (st.roleKey !== P.role) await buildRole();
-            const img = fx && await imgKey(fx.img);
+            const img = fx?.img && await imgKey(fx.img);
+            const [particle, tickParticle] = fx ? await Promise.all([particleDef(fx.particle), particleDef(fx.tickParticle)]) : [null, null];
             if (key !== st.key) return;
+            st.pdefs = {particle, tickParticle};
             st.fx = fx && {...structuredClone(fx), img};
             st.zone = zone;
             replay();

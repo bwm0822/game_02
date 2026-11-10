@@ -1,6 +1,8 @@
 {
   "burn": {
     "img": "🔥",
+    "particle": "ember",
+    "tickParticle": "fire-burst",
     "cell": {
       "size": 20,
       "alpha": 0.8,
@@ -117,6 +119,7 @@
   },
   "firewall": {
     "img": "🔥",
+    "particle": "ember",
     "cell": {
       "size": 30,
       "jitter": 3,

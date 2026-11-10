@@ -44,8 +44,10 @@ await h.done;      // 銷毀時 resolve（預設不等，粒子只是裝飾）
   - `travel.particle`：`Projectile` 的 `trail`（spell／fall／ranged 都有），world＋follow 投射物，命中時 `stop()` 讓殘留的飄散；emitter 比投射物先建，同 depth 畫在後面
   - `fx.particle`：`_hitFx()` 在命中點（目標的 pos，或補位空格）噴，不等；`fx.img` 寫 `''` 就不跳 icon
   - 能力分頁檢查 `cast`／`travel`／`fx` 的 `particle` 在 particle.json 有沒有（這三個物件還是在「其他欄位」JSON 裡改）
-- fx.json 上層 `particle`（狀態期間持續）／`tickParticle`（tick 時噴、不等），`img` 改選填
-- 區域整片一個 emitter（`area`），spawn 播完才噴
+- fx.json（已完成）：上層 `particle`（狀態期間持續）／`tickParticle`（tick 時噴、不等），`img` 改選填
+  - 效果特效（`com_disp.js`）：`_fxOn` 開 `particle`（follow 角色，位置＝`cellPos()`＝cell 的 align＋ox/oy，`fxcell.js` 跟 attachCell 共用），閃一下的特效也常駐粒子（沒 particle 的閃一下照舊不建 entry）；`_fxTick` 噴 `tickParticle`；`_fxOff` stop。沒 img＝不建 cell（body 照樣能套，`bodyTween` 的 holder 可以是空的）
+  - 區域（`ZoneView`）：`_playSpawn` 播完才開整片一個 emitter（`area`＝有效格子的外框，`cells`＝有生成的格數），`_playTick` 在那格噴 `tickParticle`，`_playEnd` stop，`_remove` 立刻清；沒 img 的區域格子照樣登記（權重、`hasCell`），只是沒有圖
+  - 特效分頁：圖下面多「粒子／tick 粒子」兩格（下拉 particle.json 的 id、↗ 跳粒子分頁），檢查 id 存在、沒 img 也沒粒子才警告；預覽改 `Phaser.AUTO`（WebGL，tint／ADD 才看得到）連粒子一起播，所有播出去的粒子記在 `st.bursts`，`stop()` 全清
 - Tiled 物件屬性 `particle`＋`px`/`py`；地圖層級環境粒子跟鏡頭
 - 工具殼「粒子」分頁（特效後面）：已完成，見 [particle-tool.md](particle-tool.md)；`builtinCanvas(key)` 給工具畫內建形狀圖示
 

@@ -100,13 +100,20 @@ export function zoneDelays(cells, stagger=0, from='center', dist=null)
     return cells.map(c=>(Math.abs(c.gx)+Math.abs(c.gy))*stagger);
 }
 
-// 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(view 的上緣/中間/下緣)，ox/oy 是額外偏移
+// 持續效果的特效格掛在角色 root 上(COM_Disp 跟特效工具共用)：cell.align='bottom'('top'|'center'|'bottom') 決定基準位置(view 的上緣/中間/下緣)，ox/oy 是額外偏移；沒有 img 的特效不要呼叫
 export function attachCell(scene, root, cfg)
+{
+    const {x, y} = cellPos(root, cfg);
+    return new FxCell(scene, root, cfg.img, cfg, {x, y, size:30, originY:1});
+}
+
+// 特效格在角色 root 上的位置(attachCell 跟狀態粒子共用)
+export function cellPos(root, cfg)
 {
     const {align='bottom', ox=0, oy=0} = cfg.cell ?? {};
     const [top, bottom] = [root.view?.Min.y ?? 0, root.view?.Max.y ?? 0];
     const y = {top, center:(top+bottom)/2}[align] ?? bottom;
-    return new FxCell(scene, root, cfg.img, cfg, {x:ox, y:y+oy, size:30, originY:1});
+    return {x:ox, y:y+oy};
 }
 
 // body 是套在角色身體(view.shape)上的 tween；shape 原點是 view 中心，要以底部為支點轉就得同步補償 x/y；特效圖示(holder，掛在 root 上)也繞同一個支點跟著轉
@@ -130,7 +137,7 @@ export function bodyTween(scene, view, holder, cfg)
         };
     };
     const body = orbit(shape, px, py, false);
-    const icon = orbit(holder, view.x+px, view.y+py, true);
+    const icon = holder ? orbit(holder, view.x+px, view.y+py, true) : ()=>{};   // 沒有 img 的特效沒有圖示
     const pivot = ()=>{body(shape.angle); icon(shape.angle);};
     const tween = scene.tweens.add({...cfg, targets:shape, onUpdate:pivot});
     return {tween, base};

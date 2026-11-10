@@ -5,6 +5,7 @@ import {T,dlog} from '../core/debug.js'
 import {uPic,uBbc,uImage} from '../ui/uicomponents.js'
 import Utility from '../core/utility.js'
 import FxCell, {zoneDelays} from '../core/fxcell.js'
+import {playParticle} from '../core/particle.js'
 import {equipFor, hiddenParts, weaponOf, handOf, ROLE_PARTS, WRISTS, pivotOf, atPivot, fromPivot, rigOf} from '../core/equip.js'
 const _tag = 'view';
 
@@ -789,18 +790,29 @@ export class ZoneView extends View
                 if(!map.isOpenGround(...map.worldToTile(px,py))) {continue;}
                 const jx = Phaser.Math.FloatBetween(-jitter, jitter);
                 const jy = Phaser.Math.FloatBetween(-jitter, jitter);
-                const fx = new FxCell(this.scene, null, this.zoneImg, this.zoneAnim, {x:px+jx, y:py+jy, size:w});
-                fx.holder.setDepth(py+1);
+                const fx = this.zoneImg ? new FxCell(this.scene, null, this.zoneImg, this.zoneAnim, {x:px+jx, y:py+jy, size:w}) : null;   // 沒有 img＝只有粒子
+                fx?.holder.setDepth(py+1);
                 this._cells.push({gx:x, gy:y, fx});
             }
         }
+        this._rect = {x:cen.x+(xs+xe)/2*w, y:cen.y+(ys+ye)/2*h, w:cw*w, h:ch*h};
         return this;
     }
 
     _remove()
     {
         super._remove();
-        this._cells.forEach(c=>c.fx.destroy());
+        this._cells.forEach(c=>c.fx?.destroy());
+        this._part?.stop(true);
+    }
+
+    // fx 的 particle：整片區域一個 emitter(條目寫的是每格的量，乘有生成的格數)
+    _startParticle()
+    {
+        const def = DB.particle(this.zoneAnim?.particle);
+        if(!def || this._part || !this._cells.length) {return;}
+        const r = this._rect;
+        this._part = playParticle(this.scene, def, {x:r.x, y:r.y, area:{w:r.w, h:r.h, cells:this._cells.length}});
     }
 
     _spawnDelays(stagger, from)
@@ -842,17 +854,22 @@ export class ZoneView extends View
     {
         const {stagger=0, from='center'} = this.zoneAnim?.spawn ?? {};
         const delays = this._spawnDelays(stagger, from);
-        return Promise.all(this._cells.map((c,i)=>c.fx.spawn(delays[i])));
+        return Promise.all(this._cells.map((c,i)=>c.fx?.spawn(delays[i]))).then(()=>this._startParticle());
     }
 
+    // tickParticle：那一格噴一次
     _playTick(gx, gy)
     {
-        this._cells.find(c=>c.gx===gx && c.gy===gy)?.fx.tick();
+        const c = this._cells.find(c=>c.gx===gx && c.gy===gy);
+        if(!c) {return;}
+        c.fx?.tick();
+        playParticle(this.scene, DB.particle(this.zoneAnim?.tickParticle), {x:this.cen.x+gx*GM.TILE_W, y:this.cen.y+gy*GM.TILE_H});
     }
 
     _playEnd()
     {
-        return Promise.all(this._cells.map(c=>c.fx.end()));
+        this._part?.stop();
+        return Promise.all(this._cells.map(c=>c.fx?.end()));
     }
 
     bind(root, config)

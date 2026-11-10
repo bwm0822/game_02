@@ -127,9 +127,28 @@ run('fx-tool', async t => {
         S.sel = 'burn'; fx.render();
         await until(() => st.fx?.img === '🔥');
         PV.stop(); PV.on();
-        out.flash = [st.cur, st.flashes.size];
+        out.flash = [st.cur?.cell ?? null, st.flashes.size];
         await until(() => st.flashes.size === 0);
         out.flashDone = st.flashes.size;
+        // burn 的粒子：閃一下的特效也常駐粒子（particle）；tick 噴 tickParticle；解除停止發射
+        const ptOn = st.cur?.part;
+        out.burnPart = [ptOn?.emitter?.texture.key, !!ptOn?.target];
+        PV.tick();
+        out.burnTick = [st.bursts.size, [...st.bursts].at(-1)?.emitter?.emitting];
+        PV.off();
+        out.burnOff = [st.cur, ptOn?.emitter?.emitting ?? false];
+        PV.stop();
+        out.burnStop = [ptOn?.emitter ?? null, st.bursts.size];
+        // 只有粒子、沒 img：不建 cell，粒子照噴；沒有 img 也沒有粒子才警告
+        D.commit(() => {delete S.data.burn.img;});
+        out.noImgWarn = fx.validate('burn').some(w => w.startsWith('沒有圖 img'));
+        await until(() => st.fx && !st.fx.img);
+        PV.stop(); PV.on();
+        out.noImg = [st.flashes.size, !!st.cur?.part];
+        D.set('burn', ['particle'], 'nope-p');
+        out.badPart = fx.validate('burn').some(w => w.includes('particle 在 particle.json 沒有：nope-p'));
+        D.undo(); D.undo();
+        PV.stop();
         // 區域特效：firewall 被技能 zoneFx 引用；表單換成區域欄位，預覽排 zoneW×zoneH 格
         S.sel = 'firewall'; PV.P.auto = false; fx.render();
         out.zoneRef = (S.refs.firewall ?? []).map(r => `${r.tab}:${r.id}:${r.type}`).join(',');
@@ -137,6 +156,9 @@ run('fx-tool', async t => {
                         qa('#view .box .bar [title="body"]').length];
         await until(() => st.zone && st.fx?.img === '🔥' && st.zcells);
         out.zoneCells = [st.zcells?.length, PV.st.sel.disabled];
+        await until(() => st.zpart);
+        const zq = st.zpart?.emitter?.quantity;
+        out.zonePart = [typeof zq === 'number' ? zq : zq?.propertyValue, st.zpart?.emitter?.emitZones[0]?.source.width];
         PV.off();
         out.zoneOff = st.zcells;
         S.sel = 'stun'; fx.render();
@@ -187,9 +209,17 @@ run('fx-tool', async t => {
     t.eq('改欄位就重播、畫布不重建', JSON.stringify(r.rerender), JSON.stringify([true, true]));
     t.eq('閃一下不常駐', JSON.stringify(r.flash), JSON.stringify([null, 1]));
     t.eq('閃一下播完自己消失', r.flashDone, 0);
+    t.eq('burn 的粒子：上身就常駐、跟著角色', JSON.stringify(r.burnPart), JSON.stringify(['p-soft', true]));
+    t.eq('tick 噴一次 tick 粒子（常駐的＋這次的）', JSON.stringify(r.burnTick), JSON.stringify([2, false]));
+    t.eq('解除：停止發射', JSON.stringify(r.burnOff), JSON.stringify([null, false]));
+    t.eq('停止：粒子全部清掉', JSON.stringify(r.burnStop), JSON.stringify([null, 0]));
+    t.check('有粒子就不警告沒有 img', !r.noImgWarn);
+    t.eq('沒 img：不閃 cell、粒子照噴', JSON.stringify(r.noImg), JSON.stringify([0, true]));
+    t.check('particle 指到不存在的 id 會警告', r.badPart);
     t.eq('firewall 是技能 zoneFx 的引用', r.zoneRef, 'ability:firewall:zone');
     t.eq('區域表單：有抖動／逐格間隔／從哪開始，沒有閃一下／body', JSON.stringify(r.zoneForm), JSON.stringify([true, false, true, true, 0]));
     t.eq('區域預覽排 5×1 格、角色下拉停用', JSON.stringify(r.zoneCells), JSON.stringify([5, true]));
+    t.eq('區域粒子：spawn 完整片一個 emitter，quantity×5、寬 5 格', JSON.stringify(r.zonePart), JSON.stringify([5, 5 * 32]));
     t.eq('區域解除', r.zoneOff, null);
     t.eq('換回效果特效：放回角色', JSON.stringify(r.backToRole), JSON.stringify([true, true, false]));
     t.check('自動循環會播', r.auto);

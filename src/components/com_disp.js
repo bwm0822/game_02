@@ -4,7 +4,8 @@ import {uBbc,uRect,uImage,Pic,uPanel} from '../ui/uicomponents.js'
 import { GM } from '../core/setting.js'
 import {T,dlog} from '../core/debug.js'
 import DB from '../data/db.js'
-import {attachCell, bodyTween} from '../core/fxcell.js'
+import {attachCell, bodyTween, cellPos} from '../core/fxcell.js'
+import {playParticle} from '../core/particle.js'
 import Line from '../systems/line.js'
 const _tag = 'disp';
 const BUBBLE_CD = 3000;
@@ -290,18 +291,28 @@ export class COM_Disp extends Com
     // cell.align='bottom'('top'|'center'|'bottom') 決定基準位置，ox/oy 是基準位置上的額外偏移
     // body 是套在角色身體(view.shape)上的 tween，跟著特效開關
     // cell.flash=true 的特效不常駐，只在 _fxTick 時閃一下(見 _fxFlash)
+    // particle：particle.json 的 id，效果期間在 cell 的位置持續噴(不管 flash)，結束時 stop；img 沒寫就只有粒子
     _fxOn(id, {skipSpawn=false}={})
     {
         this._fxMap ??= {};
         const cur = this._fxMap[id];
         if(cur) {cur.ref++; return;}
         const cfg = DB.fx(id);
-        if(!cfg || cfg.cell?.flash) {return;}
+        if(!cfg) {return;}
+        const flash = cfg.cell?.flash;
+        if(flash && !cfg.particle) {return;}
 
-        const cell = this._fxCell(cfg);
-        if(skipSpawn) {cell.startIdle();} else {cell.spawn();}
-        const body = cfg.body ? this._bodyTween(cfg.body, cell.holder) : null;
-        this._fxMap[id] = {cell, body, ref:1};
+        const cell = !flash && cfg.img ? this._fxCell(cfg) : null;
+        if(skipSpawn) {cell?.startIdle();} else {cell?.spawn();}
+        const body = cfg.body && !flash ? this._bodyTween(cfg.body, cell?.holder) : null;
+        const part = this._fxParticle(cfg, cfg.particle);
+        this._fxMap[id] = {cell, body, part, ref:1};
+    }
+
+    _fxParticle(cfg, pid)
+    {
+        const root = this.ctx.root, {x, y} = cellPos(root, cfg);
+        return playParticle(this.scene, DB.particle(pid), {target:root, ox:x, oy:y});
     }
 
     _bodyTween(cfg, holder)
@@ -316,7 +327,8 @@ export class COM_Disp extends Com
         if(!cur) {return;}
         if(--cur.ref>0 && !force) {return;}
         delete this._fxMap[id];
-        cur.cell.end().then(()=>cur.cell.destroy());
+        cur.cell?.end().then(()=>cur.cell.destroy());
+        cur.part?.stop();
         if(cur.body)
         {
             cur.body.tween.stop();
@@ -331,12 +343,14 @@ export class COM_Disp extends Com
         return attachCell(this.scene, this.ctx.root, cfg);
     }
 
+    // tickParticle：每次 tick 噴一次(不等)
     _fxTick(id)
     {
-        const cur = this._fxMap?.[id];
-        if(cur) {cur.cell.tick(); return;}
         const cfg = DB.fx(id);
-        if(cfg?.cell?.flash) {this._fxFlash(cfg);}
+        if(!cfg) {return;}
+        this._fxMap?.[id]?.cell?.tick();
+        if(cfg.cell?.flash && cfg.img) {this._fxFlash(cfg);}
+        this._fxParticle(cfg, cfg.tickParticle);
     }
 
     // 播 spawn → tick → end 後銷毀，不播 idle；丟進 _promises 讓 root.wait() 跟扣血 popup 一起等
