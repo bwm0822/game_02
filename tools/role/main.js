@@ -574,6 +574,22 @@ function selectSch(id, i)
     for (const c of document.querySelectorAll('#view .card[data-sch]')) c.classList.toggle('sel', +c.dataset.sch === i);
     renderRight();
 }
+// 地圖上點了具名物件：改選中那筆的 map＋go；Shift＝在選中那筆後面插入一筆（時間抄它、改成抵達），沒有作息就是第一筆
+function pickDest(id, map, go, shift)
+{
+    const i = schSel(id);
+    if (!shift && i < 0) return;
+    S.secOpen['作息'] = true;
+    S.open.schedule = true;
+    commit(() => {
+        const a = ensureArr(S.data[id], ['schedule']);
+        if (!shift) {Object.assign(a[i], {map, go}); return;}
+        const t = a[i]?.t ? `@${a[i].t.replace(/^@/, '')}` : '@08:00';
+        a.splice(i + 1, 0, {t, go, map});
+        S.schSel = {id, i: i + 1};
+    });
+}
+
 // 時刻表（跟遊戲 ScheduleManager 同一支 buildPlan）
 const planOf = (id) => (Array.isArray(S.data[id]?.schedule) && S.data[id].schedule.every(s => typeof s.t === 'string')
     ? SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes) : {plan: null, warns: []});
@@ -676,7 +692,8 @@ function renderRight()
     const id = S.sel, r = S.data[id];
     if (!r || S.view !== 'form') return;
     document.getElementById('right').replaceChildren(rightTabs(), S.rtab === 'sched'
-        ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges})
+        ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges, onPick: (m, go, shift) => pickDest(id, m, go, shift),
+            others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
 

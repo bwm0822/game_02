@@ -4,6 +4,11 @@ import {h} from '../common/dom.js';
 import * as PZ from '../common/panzoom.js';
 import {loadMap, decodeLayer, joinPath, objectTiles, buildGrid, bestPath} from '../../src/data/navgrid.js';
 import {edgeCost, hhmm, mod} from '../../src/data/schedplan.js';
+import {createShowMenu} from '../common/showmenu.js';
+
+const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
+    ['names', '物件名稱', '#dddddd'], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {mine: true});
+export const show = SHOW.show;
 
 const FH = 0x80000000, FV = 0x40000000, FD = 0x20000000, GID = 0x1fffffff;
 const KEY = 'tools.role.sched';
@@ -179,7 +184,7 @@ export function legsOf(p, edges)
 function routeOn(d, legs, name)
 {
     if (!legs) return null;
-    d.grid ??= buildGrid(d.map, d.tilesets, d.objs);
+    gridOf(d);
     const tw = d.map.tilewidth, th = d.map.tileheight, px = ([tx, ty]) => ({x: (tx + 0.5) * tw, y: (ty + 0.5) * th});
     const lines = [], labels = [];
     legs.forEach((leg, li) => {
@@ -219,6 +224,16 @@ function stopsOn(schedule, mapName)
     return out;
 }
 
+// 其他角色在這張圖的作息點：名稱 → [{id, i, t}]
+function othersOn(others, mapName)
+{
+    const out = new Map();
+    for (const o of others ?? []) if (o.s.map === mapName && o.s.go) (out.get(o.s.go) ?? out.set(o.s.go, []).get(o.s.go)).push({id: o.id, i: o.i, t: o.s.t});
+    return out;
+}
+
+const gridOf = (d) => (d.grid ??= buildGrid(d.map, d.tilesets, d.objs));
+
 function draw(cv, st)
 {
     const d = st.data, g = cv.getContext('2d');
@@ -227,7 +242,18 @@ function draw(cv, st)
     g.imageSmoothingEnabled = false;
     g.translate(-d.W / 2, -d.H / 2);
     g.drawImage(d.bake, 0, 0);
+    if (show.grid)
+    {
+        const grid = gridOf(d), tw = d.map.tilewidth, th = d.map.tileheight;
+        grid.forEach((row, ty) => row.forEach((w, tx) => {
+            if (w === 1) return;
+            g.fillStyle = w === 0 ? 'rgba(255,60,60,0.35)' : 'rgba(255,220,60,0.3)';
+            g.fillRect(tx * tw, ty * th, tw, th);
+        }));
+    }
+    // 只顯示選中那筆時，其他筆的編號不畫
     const stops = stopsOn(st.schedule, st.name);
+    if (!show.mine) for (const [name, nums] of stops) {const keep = nums.filter(n => n === st.sel + 1); keep.length ? stops.set(name, keep) : stops.delete(name);}
     g.lineWidth = 1 / K;
     for (const n of d.named.values())
     {
@@ -257,6 +283,34 @@ function draw(cv, st)
         g.fill(); g.stroke();
         g.fillStyle = '#fff';
         g.fillText(txt, n.cen.x, n.cen.y + 0.5 / K);
+    }
+    // 其他角色用到的點：綠字列在下面（id 編號）
+    if (show.others)
+    {
+        g.font = `${10 / K}px sans-serif`;
+        for (const [name, list] of othersOn(st.others, st.name))
+        {
+            const n = d.named.get(name);
+            if (!n) continue;
+            const txt = list.map(o => `${o.id} ${o.i + 1}`).join('、'), w = g.measureText(txt).width + 6 / K, y = n.cen.y + r + 7 / K;
+            g.fillStyle = 'rgba(20,40,10,0.85)';
+            g.fillRect(n.cen.x - w / 2, y - 6 / K, w, 12 / K);
+            g.fillStyle = '#9ccc65';
+            g.fillText(txt, n.cen.x, y);
+        }
+    }
+    if (show.names)
+    {
+        g.font = `${10 / K}px sans-serif`;
+        g.lineWidth = 3 / K;
+        g.strokeStyle = 'rgba(0,0,0,0.85)';
+        g.fillStyle = '#eee';
+        for (const n of d.named.values())
+        {
+            const y = n.type === 'point' ? n.cen.y - 11 / K : n.rect.y - 6 / K;
+            g.strokeText(n.name, n.cen.x, y);
+            g.fillText(n.name, n.cen.x, y);
+        }
     }
     drawRoute(g, st, K);
     cv.dataset.drawn = d.named.size;
@@ -323,37 +377,43 @@ export function setMap(m)
 }
 
 // r＝角色；maps＝路網裡的地圖清單；refresh()＝換地圖後要整個重畫右欄
-// opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆、opt.edges＝路網的 edges
-export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}} = {})
+// opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆（-1＝沒有）、opt.edges＝路網的 edges
+// opt.others＝其他角色的作息 [{id, i, s}]；opt.onPick(map, name, shift)＝點了具名物件（有選卡片才改、Shift＝在後面插入）
+export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], onPick = null} = {})
 {
     const name = M.map && maps.includes(M.map) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
     const view = viewOf(name);
     const cv = h('canvas', {title: '滾輪縮放、按住中鍵拖曳平移；點路線上的「→ 地圖」切過去'});
     const info = h('span', {class: 'info dim'}, '讀取中…');
     const legs = legsOf(plan?.[sel], edges);
-    const st = {name, schedule: r.schedule, data: null, hover: null, legs, route: null, hits: []};
+    const st = {name, schedule: r.schedule, sel, others, data: null, hover: null, legs, route: null, hits: []};
     const go = (m) => {setMap(m); refresh();};
+    const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
     cv.addEventListener('click', (e) => {
-        const rc = cv.getBoundingClientRect(), K = st.pz.K, o = st.pz.o;
-        // hits 是世界座標（地圖左上角為 0）；換成螢幕
-        const x = e.clientX - rc.left, y = e.clientY - rc.top;
-        const hit = st.hits.find(b => {
-            const sx = o.x + (b.x - (st.data?.W ?? 0) / 2) * K, sy = o.y + (b.y - (st.data?.H ?? 0) / 2) * K;
-            return x >= sx && x <= sx + b.w * K && y >= sy && y <= sy + b.h * K;
-        });
-        if (hit) go(hit.go);
+        if (!st.data) return;
+        // 先看路線標籤（「→ 地圖」切圖），再看具名物件
+        const p = toMap(e);
+        const hit = st.hits.find(b => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+        if (hit) return go(hit.go);
+        const n = hitAt(st.data, p, st.pz.K);
+        if (n && onPick && (e.shiftKey || sel >= 0)) onPick(name, n.name, e.shiftKey);
     });
     const redraw = () => draw(cv, st);
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
     cv.st = st;
-    const users = (n) => {const nums = stopsOn(r.schedule, name).get(n.name); return nums ? `　作息 ${nums.join(',')}` : '';};
+    const users = (n) => {
+        const nums = stopsOn(r.schedule, name).get(n.name), os = othersOn(others, name).get(n.name);
+        return (nums ? `　作息 ${nums.join(',')}` : '') + (os ? `　${os.map(o => `${o.id} ${o.i + 1}（${o.t}）`).join('、')}` : '');
+    };
+    const hint = () => (sel >= 0 ? `　點＝設成作息 ${sel + 1} 的目的地、Shift＋點＝在後面插入` : '　Shift＋點＝新增一筆作息');
     const say = () => {
         const n = st.hover && st.data?.named.get(st.hover);
-        info.textContent = n ? `${n.name}（${n.type || '無 type'}）${users(n)}` : st.data ? `${name}　具名物件 ${st.data.named.size}` : info.textContent;
+        info.textContent = n ? `${n.name}（${n.type || '無 type'}）${users(n)}${onPick ? hint() : ''}` : st.data ? `${name}　具名物件 ${st.data.named.size}` : info.textContent;
+        info.title = info.textContent;
     };
     cv.addEventListener('pointermove', (e) => {
         if (!st.data || st.pz.panning) return;
-        const p = st.pz.toWorld(e), n = hitAt(st.data, {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2}, st.pz.K);
+        const n = hitAt(st.data, toMap(e), st.pz.K);
         const k = n?.name ?? null;
         cv.style.cursor = n ? 'pointer' : '';
         if (k === st.hover) return;
@@ -381,5 +441,5 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}}
         h('div', {class: 'opts'}, pick),
         crumbs,
         h('div', {class: 'cvbox'}, cv),
-        h('div', {class: 'opts'}, PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'), info));
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'), info));
 }
