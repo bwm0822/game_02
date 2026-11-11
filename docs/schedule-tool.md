@@ -5,7 +5,7 @@
 ## 功能
 
 - **地圖**：`tools/role/schedmap.js` 的 `schedMapEl(role, maps, refresh)`。`maps`＝`navgraph.json` 裡有的地圖（路網沒有的圖不列）。預設顯示上次選的地圖（`tools.role.sched.map`），沒選過＝這個角色作息第一筆的 `map`。
-- **怎麼畫**：不用 Phaser，Canvas 2D 自己畫。`mapData(name)` 經 dev server 讀地圖 json，用 `src/data/navgrid.js` 的 `loadMap()` 一起讀 template／外部 tileset（跟路網同一份解析），把圖塊層和有 gid 的物件**烤成一張 1:1 的圖**（每張地圖只烤一次，`forget(name)` 丟掉重讀）。每次重畫只要 `drawImage` 這張圖，再疊上標記。
+- **怎麼畫**：不用 Phaser，Canvas 2D 自己畫。讀檔／烤圖／具名物件／格子在 **`tools/common/mapview.js`**（地圖分頁共用，schedmap 轉出 `mapData`／`forget`／`setReader`；`mapData(name, {skip, tag})` 的 `skip(o)` 是不烤進去的物件，不同 `tag` 各快取一份，`forget(name)` 全部丟掉）。`mapData(name)` 經 dev server 讀地圖 json，用 `src/data/navgrid.js` 的 `loadMap()` 一起讀 template／外部 tileset（跟路網同一份解析），把圖塊層和有 gid 的物件**烤成一張 1:1 的圖**（每張地圖只烤一次，`forget(name)` 丟掉重讀）。每次重畫只要 `drawImage` 這張圖，再疊上標記。
   - 圖塊：一般 tileset 照 `columns`／`margin`／`spacing` 切格，集合型 tileset 每格一張圖、底部對齊格子（同 Tiled）；翻轉旗標照 Tiled 的順序（先對角，再水平／垂直）；圖層的 `visible`／`opacity`／`offsetx`/`offsety` 都照著畫。
   - 物件：有 gid 的照 Tiled 畫在 `(x, y−h)`、依 `rotation` 繞左下角轉，同一層依 y 排序。template 物件的 gid 是相對 template 自己的 tileset，用 tileset 路徑對回這張地圖的 `firstgid` 換算。
 - **縮放平移**：用 `tools/common/panzoom.js`，**每張地圖一組 view**（`createView('tools.preview.view.role.map.<地圖>')`），不跟外觀預覽共用。第一次看一張圖時自動置中裝滿。
