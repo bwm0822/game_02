@@ -7,18 +7,19 @@ import {h} from './dom.js';
 export const ZOOM_MIN = 0.1, ZOOM_MAX = 20;
 const GRID = [...Array.from({length: 9}, (_, i) => (i + 1) / 10), 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20];
 export const stepZoom = (z, dir) => (dir > 0 ? GRID.find(g => g > z + 1e-9) : GRID.findLast(g => g < z - 1e-9)) ?? z;
-const clamp = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+// v.max：這組 view 自己的倍率上限（地圖分頁的世界總覽）
+const clamp = (z, v) => Math.min(v?.max ?? ZOOM_MAX, Math.max(ZOOM_MIN, z));
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
 const tool = location.pathname.split('/').filter(s => s && !s.endsWith('.html')).at(-1);
 
-export function createView(key)
+export function createView(key, {max} = {})
 {
-    const v = {key, zoom: 3, ox: 0, oy: 0, set: false, centerOf: null};
+    const v = {key, zoom: 3, ox: 0, oy: 0, set: false, centerOf: null, max};
     try
     {
         const s = JSON.parse(localStorage.getItem(key));
-        if (Number.isFinite(s?.zoom)) Object.assign(v, {zoom: clamp(s.zoom), ox: +s.ox || 0, oy: +s.oy || 0, set: true});
+        if (Number.isFinite(s?.zoom)) Object.assign(v, {zoom: clamp(s.zoom, v), ox: +s.ox || 0, oy: +s.oy || 0, set: true});
     } catch {}
     return v;
 }
@@ -47,8 +48,8 @@ function changed(v)
 // (rx, ry)：縮放中心，相對畫布中心的螢幕 px（預設畫布中心）
 export function setZoom(z, rx = 0, ry = 0, v = V)
 {
-    const f = clamp(z) / v.zoom;
-    v.zoom = clamp(z);
+    const f = clamp(z, v) / v.zoom;
+    v.zoom = clamp(z, v);
     v.ox = rx - (rx - v.ox) * f;
     v.oy = ry - (ry - v.oy) * f;
     changed(v);
@@ -59,14 +60,15 @@ export function center(v = V)
 {
     const c = v.centerOf?.();
     if (!c) return;
-    v.zoom = clamp(c.z);
+    v.zoom = clamp(c.z, v);
     v.ox = v.oy = 0;
     changed(v);
 }
 
 // frame()：置中要裝下的範圍；redraw()：重畫這張畫布（呼叫端的 draw）；view：用哪組（預設 V）
+// leftPan：左鍵按住拖超過 4px 也平移（拖過的話 pz.dragged 在接著的 click 時是 true，呼叫端拿來吃掉點擊）
 // 回傳 {K, o, begin(g)}：o＝世界原點在畫布上的位置（css px）；begin 量好畫布大小、填底、換到世界座標，回傳 {K, o, cw, ch}
-export function panzoom(cv, {frame, redraw, view = V})
+export function panzoom(cv, {frame, redraw, view = V, leftPan = false})
 {
     const v = view;
     live.set(cv, {redraw, view: v});
@@ -93,7 +95,7 @@ export function panzoom(cv, {frame, redraw, view = V})
             const dpr = devicePixelRatio || 1, {cw, ch} = size();
             const w = Math.max(1, Math.round(cw * dpr)), hh = Math.max(1, Math.round(ch * dpr));
             if (cv.width !== w || cv.height !== hh) {cv.width = w; cv.height = hh;}
-            if (!v.set && cw && ch) {const c = fit(); v.zoom = clamp(c.z); v.ox = v.oy = 0; v.set = true;}
+            if (!v.set && cw && ch) {const c = fit(); v.zoom = clamp(c.z, v); v.ox = v.oy = 0; v.set = true;}
             g.setTransform(dpr, 0, 0, dpr, 0, 0);
             bg?.(g, cw, ch);
             const o = pz.o, K = v.zoom;
@@ -105,21 +107,30 @@ export function panzoom(cv, {frame, redraw, view = V})
     // 中鍵按下時擋掉 Chrome 的自動捲動
     cv.addEventListener('mousedown', e => {if (e.button === 1) e.preventDefault();});
     cv.addEventListener('pointerdown', (e) => {
-        if (e.button !== 1) return;
-        e.preventDefault();
+        if (e.button !== 1 && !(leftPan && e.button === 0)) return;
+        if (e.button === 1) e.preventDefault();
         if (e.isTrusted) cv.setPointerCapture(e.pointerId);
-        pan = {x: e.clientX, y: e.clientY, ox: v.ox, oy: v.oy};
-        pz.panning = true;
-        cv.style.cursor = 'grabbing';
+        // 左鍵：先記著，移超過 4px 才算平移（沒移就是點擊）
+        pan = {x: e.clientX, y: e.clientY, ox: v.ox, oy: v.oy, left: e.button === 0, moved: e.button === 1};
+        pz.dragged = false;
+        if (pan.moved) {pz.panning = true; cv.style.cursor = 'grabbing';}
     });
     cv.addEventListener('pointermove', (e) => {
         if (!pan) return;
+        if (!pan.moved)
+        {
+            if (Math.hypot(e.clientX - pan.x, e.clientY - pan.y) < 4) return;
+            pan.moved = true;
+            pz.panning = true;
+            cv.style.cursor = 'grabbing';
+        }
         v.ox = pan.ox + e.clientX - pan.x;
         v.oy = pan.oy + e.clientY - pan.y;
         changed(v);
     });
     const end = () => {
         if (!pan) return;
+        if (pan.left && pan.moved) {pz.dragged = true; setTimeout(() => {pz.dragged = false;}, 0);}
         pan = null;
         pz.panning = false;
         cv.style.cursor = '';
@@ -138,8 +149,8 @@ export function panzoom(cv, {frame, redraw, view = V})
 // 倍率數字欄：可直接打；↑↓、上下三角形照格子走（小於 1 每次 0.1、1～6 每次 1，再上去 8/10/12/16/20）
 export function zoomField(v = V)
 {
-    const inp = h('input', {type: 'number', class: 'num zoom', min: ZOOM_MIN, max: ZOOM_MAX, step: 0.1, value: r3(v.zoom),
-        title: `倍率 ${ZOOM_MIN}～${ZOOM_MAX}（滾輪縮放、按住中鍵拖曳平移）`,
+    const inp = h('input', {type: 'number', class: 'num zoom', min: ZOOM_MIN, max: v.max ?? ZOOM_MAX, step: 0.1, value: r3(v.zoom),
+        title: `倍率 ${ZOOM_MIN}～${v.max ?? ZOOM_MAX}（滾輪縮放、按住中鍵拖曳平移）`,
         // 點上下三角形的 input 事件沒有 inputType（打字才有），只拿來判斷方向、改照格子走
         oninput: e => {
             if (e.inputType) return;

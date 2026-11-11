@@ -127,6 +127,7 @@ function setTime(t, on = S.timeOn)
     try {localStorage.setItem(T_KEY, String(S.t)); localStorage.setItem(TIME_KEY, on ? '1' : '0');} catch {}
     const st = mapSt();
     if (!st) return;
+    if (st.world) {st.npcs = worldNpcs(st.geo); st.updateTime?.(); st.redraw(); return;}
     st.npcs = npcsAt(st);
     Promise.all(st.npcs.filter(x => !st.sprites.has(x.id)).map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs())))).then(() => st.redraw());
     st.updateTime?.();
@@ -176,15 +177,16 @@ function catOf(name, worldSet, worldBase)
     return name.includes('/') && worldBase.has(name.split('/')[0]) ? 'room' : 'other';
 }
 
-// 徽章用：只讀地圖 json＋template，不烤圖；issues＝不用格子就能查的問題（角色不存在、具名 NPC…），擋路格要打開地圖才算
+// 徽章／總覽用：只讀地圖 json＋template，不烤圖；issues＝不用格子就能查的問題（角色不存在、具名 NPC…），擋路格要打開地圖才算
+// dots＝每個角色 {oid, rid, layer, x, y（站的位置，地圖像素）, level（⚠ 等級或 null）}；named＝具名物件中心（時間游標在總覽上找點）
 const tplCache = new Map();
 async function summarize(name)
 {
     const file = `maps/${name}.json`, map = await MV.readJson(file);
-    if (!map) return {roles: 0, groups: [], issues: [], err: '讀不到'};
+    if (!map) return {roles: 0, groups: [], issues: [], dots: [], named: {}, err: '讀不到'};
     const dir = MV.dirOf(file);
     let roles = 0;
-    const groups = [], issues = [];
+    const groups = [], issues = [], dots = [], named = {};
     for (const l of map.layers ?? [])
     {
         if (l.type !== 'objectgroup') continue;
@@ -199,12 +201,19 @@ async function summarize(name)
                 tpl = await tplCache.get(p);
             }
             const o = resolveObject(raw, tpl);
+            if (o.name && o.type !== 'npc')
+            {
+                const w = o.width || map.tilewidth, hh = o.height || map.tileheight;
+                named[o.name] = {x: o.x + w / 2, y: (o.gid ? o.y - hh : o.y) + hh / 2};
+            }
             if (!isRoleObj(o)) continue;
             roles++;
-            for (const x of roleIssues(String(o.props.id), S.roles)) issues.push(x.msg);
+            const rid = String(o.props.id), xs = roleIssues(rid, S.roles), {root} = placeOf(o, S.roles[rid]);
+            for (const x of xs) issues.push(x.msg);
+            dots.push({oid: o.id, rid, layer: l.name, x: root.x, y: root.y, level: xs.some(x => x.level === 'error') ? 'error' : xs.length ? 'warn' : null});
         }
     }
-    return {roles, groups, issues};
+    return {roles, groups, issues, dots, named};
 }
 
 async function resummarize(names)
@@ -223,6 +232,9 @@ async function reload()
     const names = await listMaps();
     const worldSet = new Set(S.world.map(w => w.name)), worldBase = new Set(S.world.map(w => w.name.split('/').at(-1)));
     S.maps = names.map(name => ({name, cat: catOf(name, worldSet, worldBase)}));
+    // 世界地圖 → 底下的室內地圖（資料夾名＝世界地圖的檔名）
+    S.rooms = {};
+    for (const w of S.world) S.rooms[w.name] = S.maps.filter(m => m.cat === 'room' && m.name.split('/')[0] === w.name.split('/').at(-1)).map(m => m.name);
     S.sums = {};
     await resummarize(names);
     if (S.sel && !names.includes(S.sel)) S.sel = null;
@@ -269,24 +281,246 @@ function renderList()
 }
 
 // ---------- 中間：世界總覽 ----------
+// canvas＋panzoom（左鍵拖也平移、最多 6 倍）；單位＝縮圖像素（一張地圖 WS＝100，同 scripts/minimap.js 的 OUTPUT_SIZE），世界原點在中心
+const WS = 100;
+const WORLD_VIEW = PZ.createView('tools.preview.view.map.#world', {max: 6});
+const DOT = {fixed: '#4fc3f7', grp: '#ff8fc8', warn: '#f0b400', error: '#e53935'};
+
+function worldGeom()
+{
+    if (!S.world.length) return null;
+    const unit = WS / Math.max(...S.world.map(w => Math.max(w.w, w.h)));      // 世界像素 → 總覽單位
+    const x0 = Math.min(...S.world.map(w => w.x)), y0 = Math.min(...S.world.map(w => w.y));
+    const W = (Math.max(...S.world.map(w => w.x + w.w)) - x0) * unit, H = (Math.max(...S.world.map(w => w.y + w.h)) - y0) * unit;
+    // 每格：{w（main.world 那筆）, x, y, cw, ch}（總覽單位、左上角，原點在整張中心）
+    const cells = S.world.map(w => ({w, x: (w.x - x0) * unit - W / 2, y: (w.y - y0) * unit - H / 2, cw: w.w * unit, ch: w.h * unit}));
+    return {unit, W, H, cells};
+}
+
+// 室內地圖加總：{n（張數）, roles, groups, issues}
+function roomsSum(world)
+{
+    const rs = S.rooms?.[world] ?? [];
+    const sum = {n: rs.length, roles: 0, groups: 0, issues: 0};
+    for (const r of rs) {const s = S.sums[r]; sum.roles += s?.roles ?? 0; sum.groups += s?.groups.length ?? 0; sum.issues += s?.issues.length ?? 0;}
+    return sum;
+}
+
+const hiddenGroup = (layer) => layer.startsWith('@') && S.hide.has(layer.slice(1));
+
+// 時間游標在總覽：[{id, at, map, x, y（總覽單位；在室內＝null）, room}]
+function worldNpcs(geo)
+{
+    if (!S.timeOn || !geo) return [];
+    const byName = new Map(geo.cells.map(c => [c.w.name, c]));
+    const out = [];
+    for (const [id, p] of Object.entries(S.plans ?? {}))
+    {
+        const at = whereAt(p.plan, p.sch, S.t, p.segs);
+        if (!at) continue;
+        const c = byName.get(at.map);
+        if (c)
+        {
+            const n = S.sums[at.map]?.named[at.go];
+            if (n) out.push({id, at, map: at.map, x: c.x + n.x * geo.unit, y: c.y + n.y * geo.unit});
+            continue;
+        }
+        const parent = Object.keys(S.rooms ?? {}).find(w => S.rooms[w].includes(at.map));
+        if (parent) out.push({id, at, map: at.map, room: parent});
+    }
+    return out;
+}
+
+function drawWorld(cv, st)
+{
+    const g = cv.getContext('2d'), geo = st.geo;
+    const {K} = st.pz.begin(g, (g, cw, ch) => {g.fillStyle = '#111'; g.fillRect(0, 0, cw, ch);});
+    if (!geo) return;
+    g.imageSmoothingEnabled = false;
+    st.hits = [];
+    const big = geo.cells[0] && geo.cells[0].cw * K >= 48;      // 格子夠大才寫字
+    for (const c of geo.cells)
+    {
+        const img = st.imgs.get(c.w.name);
+        if (img) g.drawImage(img, c.x, c.y, c.cw, c.ch);
+        else {g.fillStyle = '#222'; g.fillRect(c.x, c.y, c.cw, c.ch);}
+        const has = hasStuff(c.w.name) || roomsSum(c.w.name).roles > 0;
+        g.strokeStyle = st.hover?.cell === c.w.name ? '#8bd' : has ? 'rgba(136,187,221,0.6)' : 'rgba(255,255,255,0.08)';
+        g.lineWidth = (st.hover?.cell === c.w.name ? 2 : 1) / K;
+        g.strokeRect(c.x, c.y, c.cw, c.ch);
+    }
+    // 角色小點（大小固定在螢幕 px）
+    for (const c of geo.cells)
+    {
+        for (const d of S.sums[c.w.name]?.dots ?? [])
+        {
+            if (hiddenGroup(d.layer)) continue;
+            const x = c.x + d.x * geo.unit, y = c.y + d.y * geo.unit;
+            g.fillStyle = d.level ? DOT[d.level] : d.layer.startsWith('@') ? DOT.grp : DOT.fixed;
+            g.strokeStyle = '#000';
+            g.lineWidth = 1 / K;
+            const r = (st.hover?.d === d ? 4.5 : 3) / K;
+            g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+            st.hits.push({kind: 'dot', x: x - 5 / K, y: y - 5 / K, w: 10 / K, h: 10 / K, d, map: c.w.name});
+        }
+    }
+    // 時間游標：青色點（走路中空心）
+    for (const n of st.npcs ?? [])
+    {
+        if (n.x == null) continue;
+        const r = (st.hover?.n === n ? 5 : 3.5) / K;
+        g.beginPath(); g.arc(n.x, n.y, r, 0, Math.PI * 2);
+        g.lineWidth = 1.5 / K;
+        if (n.at.kind === 'walk') {g.strokeStyle = '#26e0e0'; g.stroke();}
+        else {g.fillStyle = '#26e0e0'; g.fill(); g.strokeStyle = '#000'; g.lineWidth = 1 / K; g.stroke();}
+        st.hits.push({kind: 'npc', x: n.x - 5 / K, y: n.y - 5 / K, w: 10 / K, h: 10 / K, n});
+    }
+    // 字：地圖名（左上）、徽章（右下，一行一個）
+    if (big)
+    {
+        g.font = `${11 / K}px sans-serif`;
+        g.textBaseline = 'top';
+        for (const c of geo.cells)
+        {
+            g.textAlign = 'left';
+            g.lineWidth = 3 / K;
+            g.strokeStyle = 'rgba(0,0,0,0.9)';
+            g.fillStyle = '#ccc';
+            g.strokeText(shortName(c.w.name), c.x + 2 / K, c.y + 1 / K);
+            g.fillText(shortName(c.w.name), c.x + 2 / K, c.y + 1 / K);
+            const s = S.sums[c.w.name], rs = roomsSum(c.w.name);
+            const inRoom = (st.npcs ?? []).filter(n => n.room === c.w.name).length;
+            const tags = [
+                s?.roles > 0 && {t: `🐾${s.roles}`, c: '#8bd'},
+                ...(s?.groups ?? []).map(x => ({t: `@${x}`, c: '#e9a'})),
+                s?.issues.length > 0 && {t: `⚠${s.issues.length}`, c: '#f88'},
+                rs.n > 0 && {t: `🏠${rs.n}${rs.roles ? `(🐾${rs.roles})` : ''}${inRoom ? ` 🕒${inRoom}` : ''}`, c: rs.issues ? '#f88' : '#ddd', room: true},
+            ].filter(Boolean);
+            g.textAlign = 'right';
+            let y = c.y + c.ch - 2 / K;
+            for (const tag of tags.reverse())
+            {
+                const tw = g.measureText(tag.t).width + 6 / K, th = 14 / K;
+                y -= th + 1 / K;
+                const x = c.x + c.cw - 2 / K;
+                g.fillStyle = 'rgba(0,0,0,0.75)';
+                g.fillRect(x - tw, y, tw, th);
+                g.fillStyle = tag.c;
+                g.fillText(tag.t, x - 3 / K, y + 1.5 / K);
+                if (tag.room) st.hits.push({kind: 'room', x: x - tw, y, w: tw, h: th, map: c.w.name});
+            }
+        }
+        g.textBaseline = 'alphabetic';
+    }
+    cv.dataset.drawn = geo.cells.length;
+}
+
+// 點到誰：徽章／點優先（後畫的在上面），再來格子
+function worldHit(st, p)
+{
+    const inBox = (b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+    for (let i = (st.hits?.length ?? 0) - 1; i >= 0; i--) if (inBox(st.hits[i])) return st.hits[i];
+    const c = st.geo?.cells.find(c => p.x >= c.x && p.x <= c.x + c.cw && p.y >= c.y && p.y <= c.y + c.ch);
+    return c ? {kind: 'cell', map: c.w.name} : null;
+}
+
+function roomMenu(e, world)
+{
+    const rs = S.rooms[world] ?? [];
+    menu(e, rs.map(r => {
+        const s = S.sums[r];
+        return [`${r}${s?.roles ? `　🐾${s.roles}` : ''}${s?.groups.length ? `　@${s.groups.join(' @')}` : ''}${s?.issues.length ? `　⚠${s.issues.length}` : ''}`, () => selectMap(r)];
+    }));
+}
+
 function worldEl()
 {
-    if (!S.world.length) return h('div', {class: 'dim'}, '沒有 main.world');
-    const x0 = Math.min(...S.world.map(w => w.x)), y0 = Math.min(...S.world.map(w => w.y));
-    const W = Math.max(...S.world.map(w => w.x + w.w)) - x0, H = Math.max(...S.world.map(w => w.y + w.h)) - y0;
-    const pct = (v, t) => `${(v / t) * 100}%`;
-    const box = h('div', {class: 'world', style: `aspect-ratio: ${W} / ${H}; max-width: calc((100vh - 70px) * ${W / H})`},
-        S.world.map(w => {
-            const s = S.sums[w.name];
-            return h('div', {class: 'cell' + (hasStuff(w.name) ? ' has' : ''), dataset: {map: w.name}, title: w.name,
-                style: `left:${pct(w.x - x0, W)};top:${pct(w.y - y0, H)};width:${pct(w.w, W)};height:${pct(w.h, H)}`,
-                onclick: () => selectMap(w.name)},
-                h('img', {src: `/assets/textures/minimap/${w.name}.png`, alt: '', loading: 'lazy', draggable: 'false'}),
-                h('span', {class: 'lab'}, shortName(w.name)),
-                h('span', {class: 'bd'}, s?.roles > 0 && h('span', null, `🐾${s.roles}`),
-                    s?.groups.map(g => h('span', {class: 'grp'}, `@${g}`))));
-        }));
-    return [h('div', {class: 'wtitle'}, '世界總覽：點一格打開那張地圖（室內和其他地圖在左欄）'), box];
+    const geo = worldGeom();
+    if (!geo) return h('div', {class: 'dim'}, '沒有 main.world');
+    const cv = h('canvas');
+    const tip = h('div', {class: 'tip', hidden: true});
+    const st = {world: true, geo, imgs: new Map(), hits: [], hover: null, npcs: []};
+    cv.st = st;
+    const redraw = () => drawWorld(cv, st);
+    st.redraw = redraw;
+    st.pz = PZ.panzoom(cv, {frame: () => ({w: geo.W, h: geo.H}), redraw, view: WORLD_VIEW, leftPan: true});
+    st.npcs = worldNpcs(geo);
+    for (const c of geo.cells) MV.loadImg(`/assets/textures/minimap/${c.w.name}.png`).then(img => {if (img) {st.imgs.set(c.w.name, img); redraw();}});
+    const hoverKey = (x) => (x ? `${x.kind}:${x.map ?? ''}:${x.d?.oid ?? x.n?.id ?? ''}` : null);
+    const say = (e) => {
+        const x = st.hover;
+        if (!x) {tip.hidden = true; return;}
+        const lines = [];
+        if (x.kind === 'dot')
+        {
+            const r = S.roles[x.d.rid];
+            lines.push(h('div', {class: 'tname'}, `${x.d.rid}${r?.lab ? ` ${r.lab}` : ''}`),
+                h('div', {class: 'tsub'}, `${shortName(x.map)}・${x.d.layer.startsWith('@') ? x.d.layer : '常駐'}`),
+                h('div', {class: 'thint'}, '點＝打開地圖並選取'));
+        }
+        else if (x.kind === 'npc')
+        {
+            const {at} = x.n;
+            lines.push(h('div', {class: 'tname'}, `${x.n.id}（作息）`),
+                h('div', {class: 'tsub'}, `${hhmm(S.t)} ${at.kind === 'walk' ? '正走去' : '在'} ${shortName(at.map)}／${at.go}`),
+                h('div', {class: 'thint'}, '點＝打開那張地圖'));
+        }
+        else if (x.kind === 'room')
+        {
+            const inRoom = st.npcs.filter(n => n.room === x.map);
+            lines.push(h('div', {class: 'tname'}, `${shortName(x.map)} 的室內`),
+                ...(S.rooms[x.map] ?? []).map(r => {
+                    const s = S.sums[r], who = inRoom.filter(n => n.map === r).map(n => n.id);
+                    return h('div', {class: 'tsub'}, `${r.split('/').at(-1)}${s?.roles ? `　🐾${s.roles}` : ''}${s?.groups.length ? `　@${s.groups.join(' @')}` : ''}${s?.issues.length ? `　⚠${s.issues.length}` : ''}${who.length ? `　🕒${who.join('、')}` : ''}`);
+                }),
+                h('div', {class: 'thint'}, '點＝選一張打開'));
+        }
+        else
+        {
+            const s = S.sums[x.map];
+            lines.push(h('div', {class: 'tname'}, x.map),
+                h('div', {class: 'tsub'}, `角色 ${s?.roles ?? 0}${s?.groups.length ? `・@${s.groups.join(' @')}` : ''}${s?.issues.length ? `・⚠${s.issues.length}` : ''}`),
+                h('div', {class: 'thint'}, '點＝打開；左鍵或中鍵拖曳平移、滾輪縮放'));
+        }
+        tip.replaceChildren(...lines);
+        tip.hidden = false;
+        if (!e) return;
+        const box = cv.getBoundingClientRect(), px = e.clientX - box.left, py = e.clientY - box.top;
+        tip.style.left = `${Math.max(0, px + 14 + tip.offsetWidth > box.width ? px - 14 - tip.offsetWidth : px + 14)}px`;
+        tip.style.top = `${Math.max(0, py + 16 + tip.offsetHeight > box.height ? py - 10 - tip.offsetHeight : py + 16)}px`;
+    };
+    cv.addEventListener('pointermove', (e) => {
+        if (st.pz.panning) {tip.hidden = true; return;}
+        const x = worldHit(st, st.pz.toWorld(e)), changed = hoverKey(x) !== hoverKey(st.hover);
+        st.hover = x;
+        if (x?.kind === 'cell') st.hover.cell = x.map;
+        cv.style.cursor = x ? 'pointer' : '';
+        say(e);
+        if (changed) redraw();
+    });
+    cv.addEventListener('pointerleave', () => {if (st.hover) {st.hover = null; say(); redraw();}});
+    cv.addEventListener('click', (e) => {
+        if (st.pz.dragged) return;
+        const x = worldHit(st, st.pz.toWorld(e));
+        if (!x) return;
+        if (x.kind === 'room') return roomMenu(e, x.map);
+        if (x.kind === 'dot') {selectMap(x.map); S.pick = x.d.oid; renderRight(); return;}
+        if (x.kind === 'npc') return selectMap(x.n.map);
+        selectMap(x.map);
+    });
+    requestAnimationFrame(redraw);
+    st.countText = () => {
+        const n = st.npcs.filter(x => x.x != null).length, r = st.npcs.filter(x => x.room).length;
+        return `全世界 ${n + r} 人${r ? `（室內 ${r}）` : ''}`;
+    };
+    return h('div', {class: 'mv world'},
+        h('div', {class: 'opts'}, h('span', {class: 'name'}, '世界總覽'),
+            h('span', {class: 'help', title: '滾輪縮放（最多 6 倍）、左鍵或中鍵拖曳平移；點一格打開那張地圖、點小點打開並選取那個角色、點 🏠 選室內地圖；藍點＝常駐、粉紅＝@群組、紅／黃＝有 ⚠'}, '?')),
+        h('div', {class: 'cvbox'}, cv, tip),
+        h('div', {class: 'opts'}, PZ.zoomField(WORLD_VIEW), PZ.centerBtn(WORLD_VIEW, '整個世界放回中央、倍率剛好裝滿畫布'),
+            h('span', {class: 'legend'}, h('i', {style: `background:${DOT.fixed}`}), '常駐', h('i', {style: `background:${DOT.grp}`}), '@群組',
+                h('i', {style: `background:${DOT.error}`}), '⚠', h('i', {style: 'background:#26e0e0'}), '作息')),
+        timeBar(st));
 }
 
 // ---------- 中間：地圖 ----------
@@ -630,7 +864,7 @@ function timeBar(st)
         chk.checked = S.timeOn;
         if (document.activeElement !== inp) inp.value = hhmm(S.t);
         rng.value = S.t;
-        cnt.textContent = S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人走過來` : ''}` : '';
+        cnt.textContent = S.timeOn && st.countText ? st.countText() : S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人走過來` : ''}` : '';
     };
     st.updateTime();
     return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻在哪；淡的虛線框＝正走去那個點'},
@@ -1038,7 +1272,7 @@ addEventListener('keydown', (e) => {
     else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); act(redo());}
     else if (e.key === 'Delete' && S.pick != null)
     {
-        const st = mapSt(), it = st?.all.find(x => x.o.id === S.pick);
+        const st = mapSt(), it = st?.all?.find(x => x.o.id === S.pick);
         if (it) {e.preventDefault(); act(deleteRole(st.name, it));}
     }
 });

@@ -47,17 +47,61 @@ run('map-tool', async t => {
         out.onlyMem = localStorage.getItem('tools.map.only');
         document.getElementById('onlyRoles').click();
 
-        // ---- 總覽 ----
-        const cells = () => [...document.querySelectorAll('#view .world .cell')];
+        // ---- 總覽（canvas＋panzoom） ----
+        const cv = () => document.querySelector('#view canvas');
+        const wst = () => cv()?.st;
+        const cells = () => (wst()?.world ? wst().geo.cells : []);
+        await until(() => wst()?.world && wst().imgs.size > 0);
+        await sleep(50); wst().redraw();
+        // 總覽單位 → 螢幕座標
+        const wAt = (p) => {const s = wst(), b = cv().getBoundingClientRect(); return {clientX: b.left + s.pz.o.x + p.x * s.pz.K, clientY: b.top + s.pz.o.y + p.y * s.pz.K};};
+        const cellAt = (name, fx = 0.5, fy = 0.5) => {const c = cells().find(x => x.w.name === name); return wAt({x: c.x + c.cw * fx, y: c.y + c.ch * fy});};
         out.cells = cells().length;
-        const c35 = cells().find(c => c.dataset.map === 'm/m_03x05');
-        out.cell35 = [c35?.classList.contains('has'), c35?.querySelector('.bd')?.textContent, c35?.querySelector('img')?.getAttribute('src')];
+        const c35 = cells().find(c => c.w.name === 'm/m_03x05');
+        const hitsOf = (kind, map) => wst().hits.filter(x => x.kind === kind && (!map || x.map === map));
+        out.dots = hitsOf('dot', 'm/m_03x05').map(x => x.d.layer).sort().join();
+        const wolfDot = hitsOf('dot', 'm/m_03x05').find(x => x.d.rid === 'wolf' && x.d.x === 528 && x.d.y === 208);
+        out.dotPos = wolfDot && [Math.abs(wolfDot.x + wolfDot.w / 2 - (c35.x + 528 * wst().geo.unit)) < 0.01, Math.abs(wolfDot.y + wolfDot.h / 2 - (c35.y + 208 * wst().geo.unit)) < 0.01];
+        out.room = hitsOf('room').map(x => x.map).join();
         out.noRight = document.getElementById('right').children.length;
-        c35.click();
+        // 倍率上限 6、倍率欄 max
+        const WV = wst().pz.view;
+        mt.PZ.setZoom(50, 0, 0, WV);
+        out.zmax = [WV.zoom, document.querySelector('#view input.zoom')?.max];
+        mt.PZ.center(WV);
+        await sleep(30);
+        // 左鍵拖：平移、不開地圖
+        const ox0 = WV.ox, p0 = cellAt('m/m_00x00');
+        cv().dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, button: 0, ...p0}));
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, clientX: p0.clientX + 30, clientY: p0.clientY}));
+        cv().dispatchEvent(new PointerEvent('pointerup', {bubbles: true, clientX: p0.clientX + 30, clientY: p0.clientY}));
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, clientX: p0.clientX + 30, clientY: p0.clientY}));
+        out.drag = [Math.round(WV.ox - ox0), S.sel];
+        mt.PZ.center(WV);
+        await sleep(30); wst().redraw();
+        // 🏠：點了列室內地圖、選一張打開
+        const rb = hitsOf('room', 'm/m_04x05')[0];
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...wAt({x: rb.x + rb.w / 2, y: rb.y + rb.h / 2})}));
+        out.roomMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent.split('　')[0]).join();
+        document.querySelector('.ctxmenu')?.remove();
+        // 點小點（放大到 6 倍、點放正中央，縮小時點會疊在一起）：打開那張地圖、選取那個角色
+        const dc = {x: c35.x + 528 * wst().geo.unit, y: c35.y + 208 * wst().geo.unit};
+        Object.assign(WV, {zoom: 6, ox: -dc.x * 6, oy: -dc.y * 6});
+        wst().redraw();
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...wAt(dc)}));
+        out.dotClick = [S.sel, S.pick === wolfDot.d.oid];
+        mt.selectMap(S.sel);        // 回總覽
+        await until(() => wst()?.world);
+        // 時間游標在總覽：12:00
+        mt.setTime(12 * 60, true);
+        out.wtime = [wst().npcs.some(n => n.id === 'trump' && n.room === 'm/m_04x05'), wst().npcs.some(n => n.x != null), document.querySelector('#view .timebar .dim').textContent];
+        mt.setTime(12 * 60, false);
+        // 點格子打開
+        await sleep(30); wst().redraw();
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...cellAt('m/m_03x05', 0.1, 0.9)}));
         out.sel = [S.sel, localStorage.getItem('tools.map.sel')];
 
         // ---- 地圖 ----
-        const cv = () => document.querySelector('#view canvas');
         await until(() => cv()?.st.data && document.querySelector('#right .roles'));
         const st = cv().st;
         out.size = [st.data.W, st.data.H];
@@ -108,6 +152,7 @@ run('map-tool', async t => {
 
         // 再點同一張＝回總覽
         mt.selectMap('m/m_04x05');
+        await until(() => wst()?.world);
         out.back = [S.sel, cells().length > 0, localStorage.getItem('tools.map.sel')];
 
         // ================= 第 3 步：放置／移動／換角色／屬性／刪除／undo =================
@@ -436,7 +481,14 @@ run('map-tool', async t => {
     t.check('沒角色的地圖變淡', r.emptyDim);
     t.check('只看有角色的：記住、沒角色的不列', r.onlyMem === '1' && !r.only.includes('m_04x05/karen-home') && r.only.includes('m/m_03x05'), r.only.join());
     t.eq('總覽：main.world 每張一格', r.cells, 100);
-    t.check('總覽格子：有東西的加框、列群組、縮圖路徑', r.cell35[0] && r.cell35[1] === '🐾6@wolves@bandits' && r.cell35[2] === '/assets/textures/minimap/m/m_03x05.png', JSON.stringify(r.cell35));
+    t.eq('總覽小點：m_03x05 六個角色都在群組（粉紅）', r.dots, '@bandits,@bandits,@bandits,@wolves,@wolves,@wolves');
+    t.check('小點位置＝格子＋站的位置 × 縮放', r.dotPos?.every(Boolean), JSON.stringify(r.dotPos));
+    t.eq('🏠 徽章在有室內地圖的格子', r.room, 'm/m_04x05');
+    t.check('倍率上限 6、倍率欄 max', r.zmax[0] === 6 && r.zmax[1] === '6', r.zmax.join());
+    t.check('左鍵拖：平移 30px、不開地圖', r.drag[0] === 30 && r.drag[1] === null, r.drag.join());
+    t.eq('點 🏠：列室內地圖', r.roomMenu, 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2');
+    t.check('點小點：打開地圖、選取那個角色', r.dotClick[0] === 'm/m_03x05' && r.dotClick[1], r.dotClick.join());
+    t.check('總覽時間游標：室內的算進 🏠、世界地圖上有青點、人數', r.wtime[0] && r.wtime[1] && /全世界 \d+ 人（室內 \d+）/.test(r.wtime[2]), JSON.stringify(r.wtime));
     t.eq('沒選地圖：右欄空的', r.noRight, 0);
     t.check('點格子：選那張、記住', r.sel[0] === 'm/m_03x05' && r.sel[1] === 'm/m_03x05', r.sel.join());
     t.check('地圖 100×100 格', r.size.join() === '3200,3200', r.size.join());
