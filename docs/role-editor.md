@@ -22,7 +22,8 @@
 - 預覽在第三欄 `#right`（只有畫布那層捲、選項列固定在下面，最少 300px；總覽表／沒選角色時清空藏起來），中間欄跟它之間的把手可拖寬（`splitter.js` 的 `data-resize`，見 [tools-shell.md](tools-shell.md)）。
 - 段內欄位：顯示的欄位＝基本＋該 kind 建議的（`KIND_FIELDS`）＋已經有值的，其他從「加欄位」叫出來；叫出來還空著的列尾有「刪除」收回去（`F.withDrop()`，只動 `S.extra`、不寫檔不進 undo）。遊戲沒在讀的 `stats`/`states`/`weapon`/`type` 不在 schema 裡，放最下面「其他欄位」原樣保留。
   - 性格 `style` 的選項從 `com_ai.js` 的 `wTBL` 解析（註解掉的不算，行尾註解當說明），不在表上的會警告「遊戲會當成 passive_fighter」。
-  - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。裝備格子的建議是 `dl-equips`（只列有 `equip`、`sex` 符合角色的，`sexOk()`），穿著性別不符的標紅＋檢查警告。部位的 combo 跟選圖器也只列 sex 符合的，目前用著不符的保留、選圖器標 ⚠、欄位旁 ⚠＋檢查警告。
+  - 物品欄：`inv.storage.capacity`（-1 = 無限）、`inv.storage.items`（道具格子，有數量）、`inv.equips`（裝備格子）。**保留原寫法**：字串留字串，數量改成不是 1 才變 `{id, count}`；物件留物件。格子打 id 有道具清單可選，不存在的道具格子標紅。裝備格子的建議是 `dl-equips`（只列有 `equip`、`sex` 符合角色的，`sexOk()`），穿著性別不符的標紅＋檢查警告。
+  - 加道具：每排最後的「＋」開 `tools/common/itempick.js` 的 `pickItem()` 對話框（道具／裝備兩排共用，裝備排同 `dl-equips` 只列有 `equip`、性別符合的）：頁籤＝全部＋12 個 `CAT`（`CAT_NAMES`，帶數量、0 個反灰）＋無分類（有沒寫 `cat` 的道具才出現），每次開都停在全部；格子＝48px icon＋`lab`（滑鼠停著 id／分類／價格），順序照 item.json，已在這排的標數量；搜尋框比對 id／`lab`、只篩目前頁籤、頁籤數字跟著變，Enter 只剩一個就選它。點一下＝加進去並關窗，Ctrl＋點＝加進去不關（連續加）；道具排點到已有的那格數量 +1（字串變 `{id, count}`），裝備排照樣多一格；每點一次一步 undo。點格子的 icon＝同一個對話框換成別的道具（保留數量、不能連續加）；格子的 id 輸入框跟建議照舊。部位的 combo 跟選圖器也只列 sex 符合的，目前用著不符的保留、選圖器標 ⚠、欄位旁 ⚠＋檢查警告。
   - 部位（「外觀」段的身體／鞋子／衣服／頭／頭髮／手，`type: 'part'`）：寫 `part.json` 的 id（部位的圖跟擺放都在 part.json，見 [paperdoll-tool.md](paperdoll-tool.md) 的「部位 pool」）。欄位是縮圖＋id 輸入框（combo 只列同 kind）＋「選…」：pool 選圖器（`pickPart()`，`#dlgPart`）照 kind 列條目，第一格「無」（清掉），hover 看幾個角色在用，點一下就選。選圖器裡右鍵條目：
     - 改名（`renamePart()`）：新 id 只能英數字／底線／減號、不能撞名；`part.json` 立刻寫（位置不變、sprite 不變），role.json 裡用到的角色一起改（一步 undo）並馬上存檔，兩邊才不會對不上。確認框另列 `src/`、`tools/`、`scripts/` 裡寫死的 id（只列不改）。
     - 刪除（`deletePart()`）：還有角色在用就擋（列出是誰）；PNG 不刪，到「圖片」分頁搬到 .tbd。
@@ -51,6 +52,6 @@
 | `role.css` | 預覽、分段標題、道具格子、部位選圖器、拖曳 ghost／右鍵選單 |
 | `../common/portrait.js` | 頭＋頭髮合成頭像 `portraitOf()` |
 
-測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與子分類篩選、子分類右鍵／新增／撞名／拖曳／改名合併／刪除／改 kind 清掉／新角色帶子分類、合併）、`node scripts/test/role-part.mjs`（部位欄、選圖器只列同 kind／無／取消、改名連帶存 role.json、撞名擋、刪除有人用擋、由頭+髮產生的尺寸與覆蓋確認、沒頭的角色停用）。
+測試：`node scripts/test/role.mjs`（OPFS 當假的專案根目錄，含 `src/`：原樣往返、段落收合、整筆 JSON 模式、根目錄模式、物品欄寫法保留、加道具對話框（頁籤／搜尋／Ctrl＋點／+1／裝備篩選／點 icon 換道具）、作息增刪與檢查、預覽有畫出部件與裝備、女角套 equip.f、改名掃 assets/src、新增範本、分組、總覽與子分類篩選、子分類右鍵／新增／撞名／拖曳／改名合併／刪除／改 kind 清掉／新角色帶子分類、合併）、`node scripts/test/role-part.mjs`（部位欄、選圖器只列同 kind／無／取消、改名連帶存 role.json、撞名擋、刪除有人用擋、由頭+髮產生的尺寸與覆蓋確認、沒頭的角色停用）。
 
 不做的：翻譯（`lab`/`des` 的譯文在翻譯分頁編，見 [lang-tool.md](lang-tool.md)）、改其他檔案的引用、預覽動畫／打光、調零件擺放（用試穿分頁調數字，見 [fit-tool.md](fit-tool.md)）、新增部位條目（紙娃娃「存到 pool…」或部位分頁）。

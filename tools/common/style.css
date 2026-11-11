@@ -115,6 +115,15 @@ dialog { background: #25272b; color: #ddd; border: 1px solid #555; min-width: 52
 dialog::backdrop { background: rgba(0,0,0,.5); }
 #dlgAsk .body { max-height: 60vh; overflow: auto; }
 #dlgAsk ul { margin: 4px 0; padding-left: 18px; }
+dialog.itempick { width: 720px; }
+.itempick .bar { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.itempick .tabs button.empty { opacity: .4; }
+.itempick .tiles { height: 60vh; overflow: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+.itempick .tile { position: relative; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border: 2px solid #3a3d44; cursor: pointer; }
+.itempick .tile:hover { border-color: #888; }
+.itempick .tile .lab { font-size: 13px; text-align: center; word-break: break-all; }
+.itempick .tile .ico { background: none; }
+.itempick .tile .n { position: absolute; top: 2px; right: 2px; min-width: 16px; padding: 0 3px; border-radius: 8px; background: #2f6db5; font-size: 12px; text-align: center; }
 #dlgIcon { width: 80vw; }
 #dlgIcon .body { height: 60vh; overflow: auto; background: #1e1f22; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; padding: 6px; }
 #dlgIcon .body canvas { image-rendering: pixelated; cursor: pointer; }

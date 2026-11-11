@@ -80,7 +80,8 @@ run('role', async t => {
         out.invCount = JSON.stringify(items()[0]);
         fire(cellInputs()[2], 'gloves_01');
         out.invObj = JSON.stringify(items()[1]);
-        fire(document.querySelector('#view .cells input.add'), 'apple');
+        document.querySelector('#view .cells button.add').click();
+        document.querySelector('dialog.itempick .tile[data-id="apple"]').click();
         out.invAdd = items().at(-1);
         const n0 = items().length;
         document.querySelector('#view .cell button').click();
@@ -418,6 +419,90 @@ run('role', async t => {
     t.check('限定：部位性別不符警告', sx.warn);
     t.eq('限定：部位建議／選圖器只列符合的、目前用的保留標 ⚠', JSON.stringify([sx.dl, sx.pick]), JSON.stringify([false, [false, true, true]]));
     t.eq('限定：裝備建議不列不符的、穿著不符警告＋標紅', JSON.stringify([sx.eqDl, sx.eqWarn]), JSON.stringify([false, [true, true]]));
+
+    // 物品欄「＋」：依 cat 分頁的道具對話框（搜尋、Ctrl＋點連續加、已有 +1、裝備篩選、點 icon 換道具）
+    const ip = await t.page.evaluate(async () => {
+        const re = window.__re, S = re.S, out = {};
+        const dlg = () => document.querySelector('dialog.itempick');
+        const tile = (id) => dlg().querySelector(`.tile[data-id="${id}"]`);
+        const tabs = () => [...dlg().querySelectorAll('.tabs button')];
+        const tabBtn = (t) => dlg().querySelector(`.tabs button[data-tab="${t}"]`);
+        const ctrl = (el) => el.dispatchEvent(new MouseEvent('click', {bubbles: true, ctrlKey: true}));
+        const items = () => S.data.trump.inv.storage.items;
+        S.view = 'form'; S.json = false; S.sel = 'trump'; S.secOpen.物品 = true; S.open.inv = true; re.render();
+        const before = JSON.stringify(items()), h0 = S.hi;
+        const addBtns = () => [...document.querySelectorAll('#view .cells button.add')];
+        addBtns()[0].click();
+        const all = Object.keys(S.ext.items);
+        out.open = [dlg().open, document.activeElement === dlg().querySelector('input.search'), tabBtn('#all').classList.contains('on'),
+                    dlg().querySelectorAll('.tile').length === all.length, tabs()[0].textContent === `全部 ${all.length}`];
+        const food = all.filter(i => S.ext.items[i].cat === 'CAT_FOOD');
+        tabBtn('CAT_FOOD').click();
+        out.tab = [tabBtn('CAT_FOOD').textContent === `食物 ${food.length}`, dlg().querySelectorAll('.tile').length === food.length];
+        const emptyCat = ['CAT_WEAPON', 'CAT_HELMET', 'CAT_CHESTPLATE', 'CAT_GLOVES', 'CAT_BOOTS', 'CAT_NECKLACE', 'CAT_RING', 'CAT_EQUIP', 'CAT_BAG', 'CAT_FOOD', 'CAT_ITEM', 'CAT_DEVICE']
+            .find(c => !all.some(i => S.ext.items[i].cat === c));
+        out.empty = emptyCat ? tabBtn(emptyCat).classList.contains('empty') : true;
+        out.none = !!tabBtn('#none') === all.some(i => !S.ext.items[i].cat);
+        const s = dlg().querySelector('input.search');
+        s.value = 'apple'; s.dispatchEvent(new Event('input'));
+        out.search = [[...dlg().querySelectorAll('.tile')].map(t => t.dataset.id).includes('apple'), tabBtn('#all').textContent.endsWith(` ${all.filter(i => i.includes('apple') || String(S.ext.items[i].lab ?? '').includes('apple')).length}`)];
+        tabBtn('#all').click();
+        s.value = ''; s.dispatchEvent(new Event('input'));
+        ctrl(tile('apple'));
+        ctrl(tile('apple'));
+        out.multi = [dlg().open, JSON.stringify(items().at(-1)), tile('apple').querySelector('.n')?.textContent, S.hi - h0];
+        ctrl(tile('dummy'));
+        out.inc = [JSON.stringify(items().filter(e => (e.id ?? e) === 'dummy')), tile('dummy').querySelector('.n')?.textContent];
+        s.value = 'apple'; s.dispatchEvent(new Event('input'));
+        const one = dlg().querySelectorAll('.tile').length === 1;
+        s.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+        out.enter = one ? [dlg().open, JSON.stringify(items().at(-1))] : 'skip';
+        while (S.hi > h0) re.undo();
+        out.undo = JSON.stringify(items()) === before;
+
+        // 裝備：只列有 equip、性別符合
+        const eqs = all.filter(i => S.ext.items[i].equip);
+        const helm = eqs.find(i => S.ext.items[i].cat === 'CAT_HELMET');
+        S.ext.items[helm].sex = S.data.trump.sex === 'f' ? 'm' : 'f';
+        addBtns()[1].click();
+        const ids = [...dlg().querySelectorAll('.tile')].map(t => t.dataset.id);
+        out.equips = [ids.every(i => S.ext.items[i].equip), !ids.includes(helm), ids.length === eqs.length - 1, tabBtn('CAT_FOOD').classList.contains('empty')];
+        tile(ids[0]).click();
+        out.eqAdd = [dlg().open, JSON.stringify(S.data.trump.inv.equips)];
+        addBtns()[1].click();
+        tile(ids[0]).click();
+        out.eqDup = JSON.stringify(S.data.trump.inv.equips);
+        delete S.ext.items[helm].sex;
+        while (S.hi > h0) re.undo();
+
+        // 點格子 icon＝換道具（保留數量、不能連續加）
+        re.commit(() => {items()[1].count = 4;});
+        document.querySelectorAll('#view .cell .pick')[1].click();
+        out.swapTitle = dlg().querySelector('.title').textContent;
+        ctrl(tile('apple'));
+        out.swap = [dlg().open, JSON.stringify(items()[1])];
+        document.querySelectorAll('#view .cell .pick')[0].click();
+        tile('apple').click();
+        out.swapStr = JSON.stringify(items()[0]);
+        while (S.hi > h0) re.undo();
+        out.undo2 = JSON.stringify(items()) === before;
+        return out;
+    });
+    t.eq('道具對話框：開在全部、搜尋框有焦點、列全部道具、頁籤帶數量', JSON.stringify(ip.open), JSON.stringify([true, true, true, true, true]));
+    t.eq('道具對話框：切到食物頁只列食物、頁籤數量', JSON.stringify(ip.tab), JSON.stringify([true, true]));
+    t.check('道具對話框：沒道具的分類反灰', ip.empty);
+    t.check('道具對話框：有沒寫 cat 的道具才有「無分類」', ip.none);
+    t.eq('道具對話框：搜尋篩格子、頁籤數字跟著變', JSON.stringify(ip.search), JSON.stringify([true, true]));
+    t.eq('道具對話框：Ctrl＋點不關、已有的 +1、格子標數字、每點一步 undo', JSON.stringify(ip.multi), JSON.stringify([true, JSON.stringify({id: 'apple', count: 2}), '2', 2]));
+    t.eq('道具對話框：已有的字串道具變 {id, count}', JSON.stringify(ip.inc), JSON.stringify([JSON.stringify([{id: 'dummy', count: 2}, 'dummy', 'dummy']), '4']));
+    t.check('道具對話框：Enter 只剩一個就加它並關窗', ip.enter === 'skip' || (ip.enter[0] === false && ip.enter[1] === JSON.stringify({id: 'apple', count: 3})), JSON.stringify(ip.enter));
+    t.check('道具對話框：undo 回原樣', ip.undo);
+    t.eq('道具對話框：裝備只列有 equip、性別符合的', JSON.stringify(ip.equips), JSON.stringify([true, true, true, true]));
+    t.check('道具對話框：點一下加裝備並關窗', ip.eqAdd[0] === false && JSON.parse(ip.eqAdd[1]).length === 1, JSON.stringify(ip.eqAdd));
+    t.check('道具對話框：裝備重複點照樣多一格', JSON.parse(ip.eqDup).length === 2, ip.eqDup);
+    t.eq('點格子 icon 換道具：保留數量、Ctrl 也關窗', JSON.stringify([ip.swapTitle, ip.swap]), JSON.stringify(['換成…', [false, JSON.stringify({id: 'apple', count: 4})]]));
+    t.eq('點格子 icon 換字串道具', ip.swapStr, '"apple"');
+    t.check('換道具 undo 回原樣', ip.undo2);
 
     // 新角色選性別（人形範本才有）；表單改性別時標準身體跟著換、專屬身體不動
     const g = await t.page.evaluate(async () => {

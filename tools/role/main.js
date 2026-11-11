@@ -10,6 +10,7 @@ import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as JE from '../common/jsonedit.js';
 import * as PT from '../common/part.js';
+import {pickItem} from '../common/itempick.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
@@ -498,7 +499,9 @@ function itemCell(id, path, i, e, withCount, combo)
     const wrong = combo === 'equips' && it && !sexOk(it, S.data[id].sex);
     return h('div', {class: 'cell' + (it && !wrong ? '' : ' bad'),
             title: !it ? `不存在的道具：${iid}` : wrong ? `${iid}　${SEX_NAMES[it.sex] ?? it.sex}，但角色是${sexName(S.data[id].sex)}` : `${iid}　${it.lab ?? ''}`},
-        IC.iconEl(it?.icon, 28),
+        h('span', {class: 'pick', title: '換成別的道具…', dataset: {k: `${k}#pick`},
+            onclick: () => pickItem(S.ext.items, {title: '換成…', multi: false, filter: itemFilter(id, combo), count: itemCount(id, path),
+                onPick: v => put(a => {if (obj) a[i].id = v; else a[i] = v;})})}, IC.iconEl(it?.icon, 28)),
         h('input', {size: 10, dataset: {k, combo: `dl-${combo}`}, value: iid ?? '',
             onchange: ev => {const v = ev.target.value.trim(); put(a => {if (!v) a.splice(i, 1); else if (obj) a[i].id = v; else a[i] = v;});}}),
         withCount && h('input', {class: 'cnt', title: '數量', dataset: {k: `${k}#n`}, value: n,
@@ -510,8 +513,22 @@ function cells(id, list, path, withCount, combo = 'items')
 {
     return h('div', {class: 'cells'},
         list.map((e, i) => itemCell(id, path, i, e, withCount, combo)),
-        h('input', {class: 'add', size: 12, placeholder: '＋ 加道具', dataset: {k: `${path.join('.')}.+`, combo: `dl-${combo}`},
-            onchange: e => {const v = e.target.value.trim(); if (v) commit(() => ensureArr(S.data[id], path).push(v));}}));
+        h('button', {type: 'button', class: 'add', title: '加道具…', dataset: {k: `${path.join('.')}.+`},
+            onclick: () => pickItem(S.ext.items, {title: withCount ? '加道具' : '加裝備', filter: itemFilter(id, combo), count: itemCount(id, path),
+                onPick: v => commit(() => addItem(ensureArr(S.data[id], path), v, withCount))})}, '＋'));
+}
+
+// 裝備只列有 equip、sex 符合角色的
+const itemFilter = (id, combo) => (combo === 'equips' ? (_, it) => isObj(it.equip) && sexOk(it, S.data[id].sex) : () => true);
+const itemCount = (id, path) => (iid) => (getAt(S.data[id], path) ?? []).reduce((n, e) => n + (idOf(e) === iid ? (isObj(e) ? e.count ?? 1 : 1) : 0), 0);
+
+// 有數量的（道具）已經有就 +1，字串變 {id, count}；裝備照樣多一格
+function addItem(a, iid, withCount)
+{
+    const i = withCount ? a.findIndex(e => idOf(e) === iid) : -1;
+    if (i < 0) a.push(iid);
+    else if (isObj(a[i])) a[i].count = (a[i].count ?? 1) + 1;
+    else a[i] = {id: iid, count: 2};
 }
 
 function invBox(id, v)

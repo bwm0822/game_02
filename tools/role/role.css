@@ -18,6 +18,9 @@
 .cell { display: flex; align-items: center; gap: 4px; background: #2b2d31; border: 1px solid #3a3d44; border-radius: 4px; padding: 3px; }
 .cell.bad { border-color: #e66; }
 .cell button { padding: 0 6px; }
+.cell .pick { cursor: pointer; display: inline-flex; }
+.cell .pick:hover { outline: 1px solid #888; }
+.cells button.add { padding: 2px 10px; }
 #view .cells input { min-width: 0; }
 #view .cell .cnt { width: 44px; }
 
