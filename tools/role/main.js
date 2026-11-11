@@ -19,6 +19,7 @@ import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
 import * as ME from './mapedit.js';
+import * as MR from '../common/maproles.js';
 import * as SB from './schedbar.js';
 import * as GT from './gantt.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
@@ -31,6 +32,24 @@ const D = createDoc({
     external: '可能是紙娃娃「存到 role.json」或手動改的。',
     draw, validateAll: () => validateAll(), onNew: () => askNew(),
     innerRefs: () => [], renameRefs: () => {},
+    // 地圖上的角色物件（屬性 id）跟 template：改名連帶改並立刻寫（role.json 也跟著存，免得地圖指到還沒存的新 id），刪除有人用就擋
+    ext: {
+        title: '地圖／template 裡會一起改的（立刻寫檔，role.json 也一起存）',
+        blockDelete: '還有地圖／template 用到這個角色，先到地圖分頁換掉或刪掉：',
+        refs: async (id) => {
+            if (!S.assets) return null;
+            const data = await MR.roleRefs(S.assets.dir, id);
+            return {data, lines: MR.refLines(data), n: MR.refCount(data)};
+        },
+        rename: async (from, to, data) => {
+            let files;
+            try {files = await MR.renameRoleRefs(S.assets.dir, data, from, to);}
+            catch (e) {status(`地圖沒改完：${e.message}`); return;}
+            await D.save();
+            for (const f of files) {SH.notifySaved(f); if (f.startsWith('maps/')) SM.forget(f.slice(5).replace(/\.json$/, ''));}
+            status(`已改名 ${from} → ${to}：role.json 跟 ${files.join('、')} 都寫好了`);
+        },
+    },
     onSaved: (file) => {
         if (file === 'item.json' || file === 'part.json') loadRefs().then(render);
         // 地圖分頁寫了地圖：丟掉烤好的圖重讀

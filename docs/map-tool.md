@@ -6,7 +6,7 @@
 2. ✅ 分頁骨架：地圖樹＋徽章、世界總覽、畫地圖＋角色、右欄（唯讀）
 3. ✅ 放置角色：調色盤、點放／Shift 連放／拖曳／刪除／換 id／屬性表、`roles` 圖層、立刻寫檔＋廣播＋undo
 4. ✅ `@群組`：新增／共用／改名／刪除，連動 story.json 劇情線的 `spawns`、條件編輯＋↗ 任務分頁、👁 預覽
-5. 檢查與連動：`src/data/` 共用的地圖檢查（id 不存在／擋路格／具名 NPC 標 ⚠，run_all 也跑）、角色分頁改名／刪除連動地圖
+5. ✅ 檢查與連動：`src/data/` 共用的地圖檢查（id 不存在／擋路格／具名 NPC 標 ⚠，run_all 也跑）、角色分頁改名／刪除連動地圖
 6. 時間游標：`whereAt()` 顯示具名 NPC 此刻在這張圖的哪裡
 
 ## 定案
@@ -54,6 +54,15 @@
 - **刪除**：這張圖的圖層連同裡面的角色。別張圖還在用＝只刪圖層；是最後一張＝問「連條件一起刪／只刪圖層」。
 - 寫檔走 `editFiles()`（好幾個檔全部改好才一起寫，地圖照 Tiled 排版、story.json 同任務分頁 `JSON.stringify(…, null, 2)`），每個檔都廣播（story.json 是 `story.json`、地圖是 `maps/…`）；任務分頁有未存修改時照它的合併規則處理。undo 一筆可以包好幾個檔，每個檔都要沒被別處改過才復原。
 - 群組在哪幾張地圖用，看左欄徽章那份（`S.sums`，每次寫完重算）。
+
+## 檢查與連動（第 5 步）
+
+- **`src/data/mapcheck.js`**（工具跟腳本共用，`isRoleObj`／`placeOf` 也搬到這裡）：`roleIssues(rid, roles)`＝不用格子就能查的（role.json 沒有 → error、玩家角色 → error、具名 NPC → warn）；`checkMapRoles(d, roles, grid?)`＝再加站在地圖外（error）、站在擋住的格子（warn，格子同路網 `buildGrid()`：牆、物件佔住的）。
+- **`node scripts/maps.js`**：掃全部地圖（不含 `_` 開頭）印出來，有 error exit code 1；run_all 會自動跑（`scripts/*.js`）。
+- **地圖分頁**：左欄徽章 `⚠n`＝`roleIssues` 的數量（擋路格要打開地圖才算，不進徽章）；打開的地圖每個有問題的角色右上角紅（有 error）／黃（只有 warn）圓點「!」，浮動框、角色清單、選取的角色都列出來。role.json 存檔後全部徽章重算。
+- **角色分頁改名**（`doc.js` 的 `opt.ext`，`tools/common/maproles.js`）：掃 `maps/**` 物件自己的屬性 `id` 跟 `templates/**` 的 `.tj`（連帶列出用那個 template 的地圖），對話框多一段「地圖／template 裡會一起改的」；按改名＝記憶體改完後**立刻寫地圖／template＋存 role.json**（免得地圖指到還沒存的新 id），廣播每個檔、`SM.forget()`。地圖照 Tiled 排版重寫；template 是另一種排版，只用正規式換掉 `"name":"id" … "value":"舊"` 那個值。
+- **角色分頁刪除**：地圖或 template 還在用就擋（列出在哪），不進原本的刪除確認。
+- 地圖分頁收到 `templates/…` 的廣播＝快取全丟、整個重讀。
 
 ## 同步
 

@@ -59,7 +59,8 @@ export async function scanRefsIn(assets, id, skip)
     return out;
 }
 
-// opt: {file, dir（public/assets 底下的資料夾，預設 json）, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), afterSave(), decode, encode}
+// opt: {file, dir（public/assets 底下的資料夾，預設 json）, noun, external, draw, validateAll, onNew, innerRefs(id), renameRefs(from, to), onSaved(file), afterSave(), decode, encode, ext}
+// ext（選填）：改名時連帶改、刪除時擋的其他檔案，見 rename()
 // decode(json) → {id: 資料}、encode({id: 資料}) → json：檔案本身不是 {id: 資料} 時（story.json）轉接，undo／合併都以 id 為單位
 export function createDoc(opt)
 {
@@ -241,9 +242,12 @@ export function createDoc(opt)
         const err = idError(to);
         if (err) return status(err);
         const inner = opt.innerRefs(from), outer = await scanRefs(from);
+        // opt.ext：會連帶改的其他檔案（角色分頁＝地圖／template），{refs(id) → {lines, n, data}, title, rename(from, to, data), blockDelete}
+        const ext = opt.ext && await opt.ext.refs(from);
         const r = await ask(`改名 ${from} → ${to}`, [
             h('div', {class: 'title'}, `${opt.file} 裡會一起改的`),
             innerList(inner),
+            ext?.n > 0 && [h('div', {class: 'title'}, opt.ext.title), innerList(ext.lines)],
             h('div', {class: 'title'}, '其他檔案（不會改，要自己處理）'),
             refList(outer),
         ], [['ok', '改名'], ['cancel', '取消']]);
@@ -254,11 +258,18 @@ export function createDoc(opt)
             if (S.extra[from]) {S.extra[to] = S.extra[from]; delete S.extra[from];}
             S.sel = to;
         });
+        if (ext?.n > 0) return opt.ext.rename(from, to, ext.data);
         status(`已改名 ${from} → ${to}${outer.length ? `，其他檔案還有 ${outer.length} 處引用` : ''}`);
     }
 
     async function remove(id)
     {
+        const ext = opt.ext?.blockDelete && await opt.ext.refs(id);
+        if (ext?.n > 0)
+        {
+            await ask(`不能刪 ${id}`, [h('div', null, opt.ext.blockDelete), innerList(ext.lines)], [['ok', '知道了']]);
+            return;
+        }
         const inner = opt.innerRefs(id), outer = await scanRefs(id);
         const r = await ask(`刪除 ${id}`, [
             h('div', {class: 'title'}, `${opt.file} 裡還在引用的（不會跟著改）`),

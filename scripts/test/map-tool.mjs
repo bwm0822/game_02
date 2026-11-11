@@ -373,6 +373,28 @@ run('map-tool', async t => {
         // undo 回到第 4 步之前：story.json＋三張地圖一字不差
         while (S.hi > hi0) await mt.undo();
         out.undo4 = [await readStory() === snap.story, await readText('forest-01.json') === snap.forest, await readText('m/m_03x05.json') === snap.m35, await readText(`${KH}.json`) === snap.kh];
+
+        // ================= 第 5 步：⚠ 檢查 =================
+        // village-01 的 rogue 在 role.json 沒有 → 左欄徽章 ⚠
+        out.v01 = [S.sums['village-01'].issues.join(), items().find(e => e.dataset.map === 'village-01')?.querySelector('.badges .warn')?.textContent];
+        // karen-home：放一隻狼在牆上（擋路格）、放 karen（具名 NPC）
+        mt.selectMap(KH);
+        await settle();
+        const g5 = mt.MV.gridOf(cv().st.data);
+        let wall = null, open = null;
+        g5.forEach((row, ty) => row.forEach((w, tx) => {if (!wall && w === 0 && tx > 0 && ty > 1) wall = [tx, ty]; if (!open && w > 0 && tx > 2 && ty > 2) open = [tx, ty];}));
+        await mt.placeRole(KH, 'wolf', wall, false);
+        await settle();
+        await mt.placeRole(KH, 'karen', open, false);
+        await settle();
+        const iss = [...cv().st.issues.values()].flat();
+        out.iss = iss.map(x => `${x.level}:${x.rid}:${x.msg}`);
+        out.badgeKH = items().find(e => e.dataset.map === KH)?.querySelector('.badges .warn')?.textContent;
+        out.rowWarn = document.querySelectorAll('#right .roles .r .warn').length;
+        const kar = cv().st.roles.find(it => it.rid === 'karen');
+        S.pick = kar.o.id; mt.render();
+        await settle();
+        out.pickWarn = [...document.querySelectorAll('#right .picked .issue')].map(e => e.textContent).join();
         chan.close();
         return out;
     }, SETUP.toString());
@@ -448,4 +470,60 @@ run('map-tool', async t => {
     t.check('刪除（別張圖還在用）：只刪圖層、條件留著', r.delBtns1 === 'layer,cancel' && !r.del1[0] && r.del1[1], `${r.delBtns1} ${r.del1.join()}`);
     t.check('刪除最後一張：可以連條件一起刪、目標回常駐', r.delBtns2 === 'all,layer,cancel' && !r.del2[0] && !r.del2[1] && r.del2[2] === '', `${r.delBtns2} ${r.del2.join()}`);
     t.check('undo 回到第 4 步之前：story.json＋三張地圖一字不差', r.undo4.every(Boolean), r.undo4.join());
+
+    // ---- 第 5 步 ----
+    t.check('左欄：角色不存在的地圖標 ⚠', /沒有角色「rogue」/.test(r.v01[0]) && r.v01[1] === '⚠1', r.v01.join(' | '));
+    t.check('擋路格、具名 NPC 標警告', r.iss.some(s => /^warn:wolf:站在擋住的格子/.test(s)) && r.iss.some(s => /^warn:karen:.*具名 NPC/.test(s)), r.iss.join(' | '));
+    t.eq('左欄徽章只算不用格子的（具名 NPC）', r.badgeKH, '⚠1');
+    t.eq('角色清單標 ⚠', r.rowWarn, 2);
+    t.check('選取的角色列出問題', /具名 NPC/.test(r.pickWarn), r.pickWarn);
+
+    // ---- 角色分頁改名／刪除連動地圖 ----
+    await t.page.goto(new URL('/tools/role/', t.page.url()).href);
+    await t.page.waitForFunction(() => window.__re);
+    const r2 = await t.page.evaluate(async () => {
+        const re = window.__re, out = {};
+        const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+        const until = async (f) => {for (let i = 0; i < 300 && !f(); i++) await sleep(20); return f();};
+        const opfs = await navigator.storage.getDirectory();
+        const assets = await (await (await opfs.getDirectoryHandle('game')).getDirectoryHandle('public')).getDirectoryHandle('assets');
+        const read = async (rel) => {let d = assets; const s = rel.split('/'); for (const n of s.slice(0, -1)) d = await d.getDirectoryHandle(n); return (await (await d.getFileHandle(s.at(-1))).getFile()).text();};
+        await re.setAssets(assets);
+        const dlg = document.getElementById('dlgAsk');
+        const answer = async (fn) => {await until(() => dlg.open); const v = fn(dlg); dlg.close(v);};
+        const saved = [], chan = new BroadcastChannel('tools');
+        chan.onmessage = (e) => saved.push(e.data.file);
+        // orc：village-01 物件自己寫 id → 改名連帶改、role.json 一起存
+        let p = re.rename('orc', 'orc_x');
+        await answer(d => {out.orcDlg = d.querySelector('.body').textContent; return 'ok';});
+        await p;
+        await sleep(100);
+        const v01 = JSON.parse(await read('maps/village-01.json'));
+        out.orc = [v01.layers.flatMap(l => l.objects ?? []).find(o => o.id === 143)?.properties.find(x => x.name === 'id').value,
+            Object.keys(JSON.parse(await read('json/role.json'))).includes('orc_x'), saved.includes('maps/village-01.json')];
+        // wolf：用 template → 改 template 的值（其他一字不動）
+        const tplBefore = await read('templates/animals/wolf.tj');
+        p = re.rename('wolf', 'wolf_x');
+        await answer(d => {out.wolfDlg = d.querySelector('.body').textContent; return 'ok';});
+        await p;
+        await sleep(100);
+        const tplAfter = await read('templates/animals/wolf.tj');
+        out.wolf = [tplAfter === tplBefore.replace('"value":"wolf"', '"value":"wolf_x"'), tplAfter !== tplBefore, saved.includes('templates/animals/wolf.tj')];
+        // 刪除：有地圖用到擋；沒人用的照常
+        p = re.remove('orc_x');
+        await answer(d => {out.delBlock = [d.querySelector('.title').textContent, d.querySelector('.body').textContent]; return 'ok';});
+        await p;
+        out.stillThere = !!re.S.data.orc_x;
+        p = re.remove('bandit-5');
+        await answer(d => {out.delNormal = d.querySelector('.title').textContent; return 'cancel';});
+        await p;
+        chan.close();
+        return out;
+    });
+    t.check('角色改名：對話框列出地圖物件', /maps\/village-01\.json：物件 143/.test(r2.orcDlg), r2.orcDlg);
+    t.check('角色改名：地圖物件的 id 跟著改、role.json 存好、廣播', r2.orc.every(Boolean) && r2.orc[0] === 'orc_x', r2.orc.join());
+    t.check('角色改名：對話框列出 template 跟在用的地圖', /templates\/animals\/wolf\.tj（template，.*maps\/m\/m_03x05\.json/.test(r2.wolfDlg), r2.wolfDlg);
+    t.check('角色改名：template 只換那個值、廣播', r2.wolf.every(Boolean), r2.wolf.join());
+    t.check('刪除角色：地圖還在用就擋', r2.delBlock[0] === '不能刪 orc_x' && /village-01/.test(r2.delBlock[1]) && r2.stillThere, r2.delBlock.join(' | '));
+    t.eq('刪除沒人用的角色照常問', r2.delNormal, '刪除 bandit-5');
 });

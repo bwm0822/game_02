@@ -17,6 +17,7 @@ import {checkStory} from '../../src/data/storycheck.js';
 import {resolveObject, joinPath} from '../../src/data/navgrid.js';
 import {usersOf as pointUsers} from '../role/mapedit.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
+import {roleIssues, checkMapRoles} from '../../src/data/mapcheck.js';
 import '../common/splitter.js';
 
 const SEL_KEY = 'tools.map.sel', ONLY_KEY = 'tools.map.only';
@@ -126,15 +127,15 @@ function catOf(name, worldSet, worldBase)
     return name.includes('/') && worldBase.has(name.split('/')[0]) ? 'room' : 'other';
 }
 
-// 徽章用：只讀地圖 json＋template，不烤圖
+// 徽章用：只讀地圖 json＋template，不烤圖；issues＝不用格子就能查的問題（角色不存在、具名 NPC…），擋路格要打開地圖才算
 const tplCache = new Map();
 async function summarize(name)
 {
     const file = `maps/${name}.json`, map = await MV.readJson(file);
-    if (!map) return {roles: 0, groups: [], err: '讀不到'};
+    if (!map) return {roles: 0, groups: [], issues: [], err: '讀不到'};
     const dir = MV.dirOf(file);
     let roles = 0;
-    const groups = [];
+    const groups = [], issues = [];
     for (const l of map.layers ?? [])
     {
         if (l.type !== 'objectgroup') continue;
@@ -148,10 +149,13 @@ async function summarize(name)
                 if (!tplCache.has(p)) tplCache.set(p, MV.readJson(p));
                 tpl = await tplCache.get(p);
             }
-            if (isRoleObj(resolveObject(raw, tpl))) roles++;
+            const o = resolveObject(raw, tpl);
+            if (!isRoleObj(o)) continue;
+            roles++;
+            for (const x of roleIssues(String(o.props.id), S.roles)) issues.push(x.msg);
         }
     }
-    return {roles, groups};
+    return {roles, groups, issues};
 }
 
 async function resummarize(names)
@@ -188,7 +192,8 @@ function badges(name)
     if (s.err) return h('span', {class: 'badges'}, h('span', {class: 'warn'}, `⚠ ${s.err}`));
     return h('span', {class: 'badges'},
         s.roles > 0 && h('span', {title: '角色數'}, `🐾${s.roles}`),
-        s.groups.length > 0 && h('span', {class: 'grp', title: s.groups.map(g => `@${g}`).join(' ')}, `@${s.groups.length}`));
+        s.groups.length > 0 && h('span', {class: 'grp', title: s.groups.map(g => `@${g}`).join(' ')}, `@${s.groups.length}`),
+        s.issues.length > 0 && h('span', {class: 'warn', title: s.issues.join('\n')}, `⚠${s.issues.length}`));
 }
 
 function selectMap(name)
@@ -313,6 +318,23 @@ function draw(cv, st)
         g.fillStyle = sel ? 'rgba(79,195,247,0.25)' : 'rgba(255,255,255,0.15)';
         g.fillRect(Math.floor(root.x / tw) * tw, Math.floor(root.y / th) * th, tw, th);
     }
+    // ⚠：有錯紅、只有警告黃（大小固定在螢幕 px）
+    g.font = `bold ${12 / K}px sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    for (const it of st.roles)
+    {
+        const xs = st.issues?.get(it.o.id);
+        if (!xs) continue;
+        const x = it.at.cen.x + it.at.w / 2, y = it.at.cen.y - it.at.h / 2, r = 7 / K;
+        g.fillStyle = xs.some(i => i.level === 'error') ? '#e53935' : '#f0b400';
+        g.strokeStyle = '#000';
+        g.lineWidth = 1 / K;
+        g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.fillStyle = '#000';
+        g.fillText('!', x, y + 0.5 / K);
+    }
+    g.textBaseline = 'alphabetic';
     if (st.drag?.moved) drawGhost(g, d, K, st.drag.it.rid, st.drag.tile, st.sprites);
     else if (S.place && st.ghost) drawGhost(g, d, K, S.place, st.ghost, st.sprites);
     if (show.names)
@@ -353,6 +375,8 @@ async function loadMapState(st)
     if (!d) return;
     st.all = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
     applyHide(st);
+    st.issues = new Map();
+    for (const x of checkMapRoles(d, S.roles, MV.gridOf(d))) (st.issues.get(x.oid) ?? st.issues.set(x.oid, []).get(x.oid)).push(x);
     const rids = new Set(st.all.map(it => it.rid));
     if (S.place) rids.add(S.place);
     await Promise.all([...rids].map(async rid => st.sprites.set(rid, await spriteOf(rid, refs()))));
@@ -379,6 +403,7 @@ function mapEl(name)
             const it = hit.it, r = S.roles[it.rid], [tx, ty] = rootTile(st.data, it);
             lines.push(h('div', {class: 'tname'}, `${it.rid}${r?.lab ? ` ${r.lab}` : ''}`),
                 h('div', {class: 'tsub'}, `${KIND[r?.kind] ?? r?.kind ?? '⚠ role.json 沒有'}・${it.layer}・格 ${tx},${ty}`),
+                ...(st.issues?.get(it.o.id) ?? []).map(x => h('div', {class: 'twarn'}, `⚠ ${x.msg}`)),
                 h('div', {class: 'thint'}, '點＝選取、拖＝移動、右鍵＝選單'));
         }
         else
@@ -780,6 +805,7 @@ function renderRight()
             onclick: () => {S.pick = S.pick === it.o.id ? null : it.o.id; renderRight(); st.redraw();},
             oncontextmenu: (e) => roleMenu(e, st, it)},
             IC.iconEl(S.roles[it.rid]?.icon, 20), h('span', null, it.rid),
+            st.issues?.has(it.o.id) && h('span', {class: 'warn', title: st.issues.get(it.o.id).map(x => x.msg).join('\n')}, '⚠'),
             h('span', {class: 'where'}, `${layerLabel(groupOf(it.layer))}・${tx},${ty}`));
     });
     const it = st.all.find(x => x.o.id === S.pick);
@@ -855,7 +881,8 @@ function pickedEl(it, d)
     return h('div', {class: 'picked'},
         h('div', {class: 'sec'}, '選取的角色 ', h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [it.rid])}, `↗ ${it.rid}`)),
         h('table', null,
-            h('tr', null, h('td', {class: 'k'}, '角色'), h('td', null, idSel, isNamed(it.rid) && h('div', {class: 'warn'}, NAMED_WARN))),
+            h('tr', null, h('td', {class: 'k'}, '角色'), h('td', null, idSel,
+                (mapSt().issues?.get(it.o.id) ?? []).map(x => h('div', {class: 'warn issue'}, `⚠ ${x.msg}`)))),
             r && h('tr', null, h('td', {class: 'k'}, '種類'), h('td', null, KIND[r.kind] ?? r.kind ?? '')),
             h('tr', null, h('td', {class: 'k'}, '圖層'), h('td', null, h('select', {dataset: {k: 'layer'}, onchange: e => act(setLayer(map, it, e.target.value))},
                 layersOf(d).map(l => h('option', {value: l, selected: l === groupOf(it.layer)}, layerLabel(l)))),
@@ -902,8 +929,11 @@ addEventListener('keydown', (e) => {
 });
 SH.onSaved((file) => {
     if (!S.assets) return;
-    if (['role.json', 'item.json', 'part.json'].includes(file)) act(loadRefs().then(render));
+    if (file === 'role.json') act(loadRefs().then(() => resummarize(S.maps.map(m => m.name))).then(render));
+    else if (['item.json', 'part.json'].includes(file)) act(loadRefs().then(render));
     else if (file === 'story.json') act(loadSpawns().then(renderRight));
+    // template 改了（角色分頁改名）：快取全丟、整個重讀
+    else if (file?.startsWith('templates/')) {tplCache.clear(); MV.forget(); act(reload());}
     else if (file?.startsWith('maps/'))
     {
         const name = file.slice(5).replace(/\.json$/, '');

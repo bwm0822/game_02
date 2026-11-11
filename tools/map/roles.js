@@ -2,8 +2,8 @@
 // 外觀照角色分頁的合成預覽（partsOf），每個角色烤一張小圖快取
 import {partsOf} from '../role/preview.js';
 import * as IC from '../common/icons.js';
-
-export const isRoleObj = (o) => o.type === 'npc' && !!o.props?.id;
+import {isRoleObj} from '../../src/data/mapcheck.js';
+export {isRoleObj, placeOf} from '../../src/data/mapcheck.js';
 
 // 地圖裡的角色：[{o（navgrid 解析過的物件）, layer（圖層名）, rid}]
 export function roleObjs(d)
@@ -20,15 +20,6 @@ export function roleObjs(d)
         }
     }
     return out;
-}
-
-// view 中心（Phaser 把物件放在視覺中心：tile 物件以左下為原點、其他以左上、point 寬高 0）跟 root（＝view 中心＋錨點，站的那格）
-export function placeOf(o, r)
-{
-    const w = o.width ?? 0, hh = o.height ?? 0;
-    const cen = {x: o.x + w / 2, y: o.gid ? o.y - hh / 2 : o.y + hh / 2};
-    const root = {x: cen.x + (r?.anchor?.x ?? 0), y: cen.y + (r?.anchor?.y ?? 0)};
-    return {cen, root, w: r?.w ?? 32, h: r?.h ?? 64};
 }
 
 const SZ = 256;
