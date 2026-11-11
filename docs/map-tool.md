@@ -42,7 +42,17 @@
 
 - 滑過角色：浮動框 id 名字、種類・圖層・格子；點＝選取（右欄跟著反白），點空地取消；**拖曳**＝整格移動（拖超過 4px 才算、綠框鬼影、放開寫檔、吃掉接著的 click）；**Del** 刪選取的；**右鍵**選單＝移到「常駐」／別的 `@群組`、刪除、↗ 角色分頁。
 - 滑過 point：誰的第幾筆作息在用；點了跳到第一個使用者的角色分頁。
-- 「顯示 ▾」（`tools.map.show`）：作息 point（預設勾）、物件名稱、格子可走。
+- 「顯示 ▾」（`tools.map.show`）：作息 point（預設勾）、物件名稱、格子可走、門（預設勾）。`showmenu.js` 只存勾了的＋預設勾卻取消的（`false`），讀的時候預設先套再蓋存的，所以後來才加的預設項目舊存檔也會勾。
+
+## 門（2026-11-11）
+
+- **門**＝`type:"port"`＋屬性 `map`（要去的地圖，相對 `maps/`）的物件（`isPortObj()`），`port`＝落腳點（那張圖上同名的物件，如世界地圖的 `karen-home` ↔ 房裡的 `door`、`stair-up` ↔ `stair-dn`）；哪個方向都算，`main.world` 的邊界出口不算（遊戲執行期才產生）。
+- 畫在角色底下：橘色半透明框＋`🚪`（壞的紅／黃＋`⚠`），滑過變實線；「顯示 ▾」的「門」沒勾＝不畫也點不到。
+- 點擊順序：角色 ＞ 時間游標 NPC ＞ 門 ＞ point；放置模式、拖曳中不理門。
+- **單擊進去**：`enterDoor()` 把這張推進 `S.back`、打開目的地圖（左欄選到、記 `tools.map.sel`），`landAt()` 倍率不動（那張圖沒記過＝置中的倍率）、落腳點放到畫布正中央、黃框閃 1.2 秒。落腳點找不到＝照原本的視角打開＋狀態列提示。
+- **← 返回**（「總覽」旁邊）：只有點門進來的才推進堆疊（只在記憶體），按了回上一張（視角是那張記住的）、空了變灰。
+- **壞門**：`src/data/mapcheck.js` 的 `portIssue(o, namesOf)`：地圖不存在＝error（畫布紅框、點了不跳只提示）、落腳點找不到＝warn（黃框、照樣進去）。左欄 `⚠n` 也算進去：`summarize()` 記每張圖的物件名稱 `names` 跟門 `ports`，`resummarize()` 後 `linkPorts()` 整批補上門的問題（`issues`＝`roleIssues`＋門）。`node scripts/maps.js` 同樣檢查（門可能指到 `_` 開頭的圖，用到才讀）。
+- 不做：門的雙向配對檢查（可能是故意的單向門）、世界總覽上畫門。
 
 ## 放角色（第 3 步）
 
@@ -65,7 +75,7 @@
 
 ## 檢查與連動（第 5 步）
 
-- **`src/data/mapcheck.js`**（工具跟腳本共用，`isRoleObj`／`placeOf` 也搬到這裡）：`roleIssues(rid, roles)`＝不用格子就能查的（role.json 沒有 → error、玩家角色 → error、具名 NPC → warn）；`checkMapRoles(d, roles, grid?)`＝再加站在地圖外（error）、站在擋住的格子（warn，格子同路網 `buildGrid()`：牆、物件佔住的）。
+- **`src/data/mapcheck.js`**（工具跟腳本共用，`isRoleObj`／`placeOf` 也搬到這裡；門的 `isPortObj`／`portIssue` 見「門」）：`roleIssues(rid, roles)`＝不用格子就能查的（role.json 沒有 → error、玩家角色 → error、具名 NPC → warn）；`checkMapRoles(d, roles, grid?)`＝再加站在地圖外（error）、站在擋住的格子（warn，格子同路網 `buildGrid()`：牆、物件佔住的）。
 - **`node scripts/maps.js`**：掃全部地圖（不含 `_` 開頭）印出來，有 error exit code 1；run_all 會自動跑（`scripts/*.js`）。
 - **地圖分頁**：左欄徽章 `⚠n`＝`roleIssues` 的數量（擋路格要打開地圖才算，不進徽章）；打開的地圖每個有問題的角色右上角紅（有 error）／黃（只有 warn）圓點「!」，浮動框、角色清單、選取的角色都列出來。role.json 存檔後全部徽章重算。
 - **角色分頁改名**（`doc.js` 的 `opt.ext`，`tools/common/maproles.js`）：掃 `maps/**` 物件自己的屬性 `id` 跟 `templates/**` 的 `.tj`（連帶列出用那個 template 的地圖），對話框多一段「地圖／template 裡會一起改的」；按改名＝記憶體改完後**立刻寫地圖／template＋存 role.json**（免得地圖指到還沒存的新 id），廣播每個檔、`SM.forget()`。地圖照 Tiled 排版重寫；template 是另一種排版，只用正規式換掉 `"name":"id" … "value":"舊"` 那個值。
@@ -84,4 +94,4 @@
 - 角色分頁寫 point 後也廣播 `maps/<地圖>.json`，收到地圖分頁的廣播會 `SM.forget()` 重畫作息地圖。
 - `SH.onGoto([地圖, 物件 id?])`。
 
-測試：`node scripts/test/map-tool.mjs`。
+測試：`node scripts/test/map-tool.mjs`（假專案在 OPFS：真的 json＋幾張地圖，加上測試自己寫的 `fixture-01`（圖塊物件的 `rogue`／`orc`）、`fixture-02`（好的／地圖不存在／落腳點不存在三個門），不放進 `public/`）。

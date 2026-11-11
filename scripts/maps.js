@@ -1,9 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import {loadMap} from '../src/data/navgrid.js'
-import {checkMapRoles} from '../src/data/mapcheck.js'
+import {checkMapRoles, isPortObj, portIssue} from '../src/data/mapcheck.js'
 
-// 地圖上的角色物件檢查（同工具地圖分頁的 ⚠）：角色不存在／是玩家／站在地圖外 → 錯誤；具名 NPC、站在擋住的格子 → 警告；有錯誤 exit code 1
+// 地圖檢查（同工具地圖分頁的 ⚠）：角色不存在／是玩家／站在地圖外、門指到不存在的地圖 → 錯誤；具名 NPC、站在擋住的格子、門的落腳點找不到 → 警告；有錯誤 exit code 1
 const ASSETS = './public/assets';
 const MAP_DIR = `${ASSETS}/maps`;
 
@@ -21,15 +21,31 @@ function mapNames(dir, pre = '', out = [])
     return out;
 }
 
+// 門要查別張圖的物件名稱，先全部讀進來（門也可能指到 _ 開頭的圖，用到再讀）
+const loaded = new Map();
+const load = async (name) => {if (!loaded.has(name)) loaded.set(name, await loadMap(name, readJson)); return loaded.get(name);};
+const names = new Map();
+const namesOf = (name) => names.get(name) ?? null;
+
 let errors = 0, warns = 0;
-for (const name of mapNames(MAP_DIR))
+const report = (level, where, msg) => {
+    level === 'error' ? errors++ : warns++;
+    console[level === 'error' ? 'error' : 'warn'](`${level.toUpperCase()} ${where}：${msg}`);
+};
+const all = mapNames(MAP_DIR);
+for (const name of all) await load(name);
+for (const [name, d] of loaded) if (d) names.set(name, new Set(d.objs.map(o => o.name).filter(Boolean)));
+for (const name of all)
 {
-    const d = await loadMap(name, readJson);
+    const d = loaded.get(name);
     if (!d) continue;
-    for (const r of checkMapRoles(d, roles))
+    for (const r of checkMapRoles(d, roles)) report(r.level, `maps/${name}.json 物件 ${r.oid}（${r.rid}）`, r.msg);
+    for (const o of d.objs.filter(isPortObj))
     {
-        r.level === 'error' ? errors++ : warns++;
-        console[r.level === 'error' ? 'error' : 'warn'](`${r.level.toUpperCase()} maps/${name}.json 物件 ${r.oid}（${r.rid}）：${r.msg}`);
+        const target = String(o.props.map);
+        if (!names.has(target) && await load(target)) names.set(target, new Set(loaded.get(target).objs.map(x => x.name).filter(Boolean)));
+        const x = portIssue(o, namesOf);
+        if (x) report(x.level, `maps/${name}.json 物件 ${o.id}（門）`, x.msg);
     }
 }
 if (errors) {console.error(`地圖檢查：${errors} 個錯誤、${warns} 個警告`); process.exitCode = 1;}

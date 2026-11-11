@@ -3,6 +3,18 @@
 import {buildGrid} from './navgrid.js';
 
 export const isRoleObj = (o) => o.type === 'npc' && o.props?.id != null && o.props.id !== '';
+// 門＝type port＋屬性 map（要去的地圖，相對 maps/）、port（落腳點＝那張圖上同名的物件）
+export const isPortObj = (o) => o.type === 'port' && o.props?.map != null && o.props.map !== '';
+
+// namesOf(地圖名)＝那張圖的物件名稱 Set（地圖不存在／讀不到＝null）；地圖不存在＝錯誤、落腳點找不到＝警告、沒問題＝null
+export function portIssue(o, namesOf)
+{
+    const map = String(o.props.map), to = String(o.props.port ?? ''), self = o.name ? `門「${o.name}」` : '門';
+    const names = namesOf(map);
+    if (!names) return {level: 'error', msg: `${self}指到不存在的地圖「${map}」`};
+    if (!names.has(to)) return {level: 'warn', msg: `${self}的落腳點「${to}」在 ${map} 找不到`};
+    return null;
+}
 
 export function placeOf(o, r)
 {

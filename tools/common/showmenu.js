@@ -3,7 +3,7 @@
 import {h} from './dom.js';
 import {PIVOT_NAMES, PIVOT_COLOR} from './handles.js';
 
-// items：[[key, 文字, 顏色], null＝分隔線, …]；defaults：沒存過時的勾選
+// items：[[key, 文字, 顏色], null＝分隔線, …]；defaults：預設勾的（存過的蓋過去；後來才加的預設項目，舊的存檔也照預設勾）
 export function createShowMenu(key, items, defaults = {})
 {
     const show = {};
@@ -11,7 +11,7 @@ export function createShowMenu(key, items, defaults = {})
         for (const k in show) delete show[k];
         let saved = null;
         try {saved = JSON.parse(localStorage.getItem(key));} catch {}
-        Object.assign(show, saved ?? defaults);
+        Object.assign(show, defaults, saved);
     };
     load();
     // 別的分頁（iframe）改了：跟著換、用最後一個按鈕的 onChange 重畫
@@ -22,8 +22,8 @@ export function createShowMenu(key, items, defaults = {})
         label();
         redraw?.();
     });
-    // 只存勾了的；存過（就算是 {}）就不再套 defaults
-    const save = () => {try {localStorage.setItem(key, JSON.stringify(Object.fromEntries(Object.entries(show).filter(([, v]) => v))));} catch {}};
+    // 存勾了的＋預設勾卻取消的（false）
+    const save = () => {try {localStorage.setItem(key, JSON.stringify(Object.fromEntries(Object.entries(show).filter(([k, v]) => v || defaults[k]))));} catch {}};
     const text = () => `顯示（${items.filter(it => it && show[it[0]]).length}）▾`;
     // 同頁可能有好幾張預覽（部位分頁的男／女版），按鈕上的數字一起更新
     const label = () => {for (const b of document.querySelectorAll(`.showbtn[data-key="${key}"]`)) b.textContent = text();};

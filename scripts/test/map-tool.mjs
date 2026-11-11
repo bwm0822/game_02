@@ -490,6 +490,54 @@ run('map-tool', async t => {
         // 關掉
         document.querySelector('#view [data-k=timeOn]').click();
         out.offAgain = [cv().st.npcs.length, localStorage.getItem('tools.map.time')];
+
+        // ================= 門：點了進那張圖 =================
+        const scr = (p) => {const s = cv().st, b = cv().getBoundingClientRect(); return {clientX: b.left + s.pz.o.x + (p.x - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (p.y - s.data.H / 2) * s.pz.K};};
+        const doorOf = (nm) => cv().st.ports.find(p => p.o.name === nm);
+        const mid = (d) => scr({x: d.rect.x + d.rect.w / 2, y: d.rect.y + d.rect.h / 2});
+        const centered = (nm) => {const n = cv().st.data.named.get(nm), p = scr(n.cen), b = cv().getBoundingClientRect(); return Math.abs(p.clientX - (b.left + b.width / 2)) < 1 && Math.abs(p.clientY - (b.top + b.height / 2)) < 1;};
+        const backBtn = () => document.querySelector('#view button.back');
+        out.doorShow = [mt.SHOW.show.doors, localStorage.getItem('tools.map.show')];
+        mt.selectMap('m/m_04x05');
+        await settle();
+        // 假專案只抄了 karen-home、trump-inn 兩間（其他 15 間在這裡算不存在）
+        out.doors = [cv().st.ports.length, cv().st.ports.filter(p => !p.issue).map(p => p.o.name).sort().join('+'), backBtn()?.disabled, S.back.length];
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...mid(doorOf('karen-home'))}));
+        out.dtip = [...document.querySelectorAll('#view .tip > div')].map(e => e.textContent).join(' | ');
+        out.dcursor = cv().style.cursor;
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('karen-home'))}));
+        await settle();
+        out.enter = [S.sel, S.back.join(), localStorage.getItem('tools.map.sel'), centered('door'), !!cv().st.flash, backBtn()?.disabled,
+            document.querySelector('#list .item.sel')?.dataset.map];
+        await sleep(1400);
+        out.flashOff = cv().st.flash;
+        // 從房裡的 door 出去：回到世界地圖、鏡頭在 karen-home 門上
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('door'))}));
+        await settle();
+        out.exit = [S.sel, S.back.join(), centered('karen-home')];
+        // ← 返回
+        backBtn().click();
+        await settle();
+        out.goBack = [S.sel, S.back.join(), backBtn()?.disabled];
+        // 壞門：地圖不存在＝紅、點了不跳只提示；落腳點不存在＝黃、照樣進去＋提示
+        mt.selectMap('fixture-02');
+        await settle();
+        out.bad = cv().st.ports.map(p => `${p.o.name}:${p.issue?.level ?? 'ok'}`).join();
+        out.badBadge = [items().find(e => e.dataset.map === 'fixture-02')?.querySelector('.badges .warn')?.textContent, S.sums['fixture-02'].issues.join(' | ')];
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...mid(doorOf('to-nowhere'))}));
+        out.badTip = [...document.querySelectorAll('#view .tip > div')].map(e => e.textContent).join(' | ');
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('to-nowhere'))}));
+        await settle();
+        out.noJump = [S.sel, document.getElementById('status').textContent];
+        // 顯示 ▾ 關掉門：不畫也點不到；舊存檔沒寫 doors 也照預設勾
+        mt.SHOW.show.doors = false;
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('to-kh-bad'))}));
+        await settle();
+        out.hidden = S.sel;
+        mt.SHOW.show.doors = true;
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('to-kh-bad'))}));
+        await settle();
+        out.noLand = [S.sel, document.getElementById('status').textContent, S.back.at(-1)];
         chan.close();
         return out;
     }, SETUP.toString());
@@ -587,6 +635,22 @@ run('map-tool', async t => {
     t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
     t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
     t.check('關掉：不畫、記住', r.offAgain[0] === 0 && r.offAgain[1] === '0', r.offAgain.join());
+
+    // ---- 門 ----
+    t.check('顯示 ▾「門」預設勾', r.doorShow[0] === true, r.doorShow.join());
+    t.check('m_04x05：17 個門、有抄進假專案的兩間是好的、返回鈕灰的', r.doors.join() === '17,karen-home+trump-inn,true,0', r.doors.join());
+    t.check('滑過門：浮動框目的地、落腳點、手指', /🚪 karen-home → m_04x05\/karen-home/.test(r.dtip) && /落腳點 door/.test(r.dtip) && /點＝進去/.test(r.dtip) && r.dcursor === 'pointer', `${r.dtip} ${r.dcursor}`);
+    t.check('點門：打開那張、左欄選到、記住、鏡頭在落腳點、閃一下、返回鈕亮',
+        r.enter[0] === 'm_04x05/karen-home' && r.enter[1] === 'm/m_04x05' && r.enter[2] === 'm_04x05/karen-home' && r.enter[3] && r.enter[4] && r.enter[5] === false && r.enter[6] === 'm_04x05/karen-home', r.enter.join());
+    t.check('閃完就停', r.flashOff === null, String(r.flashOff));
+    t.check('房裡的門出去：回世界地圖、鏡頭在 karen-home 門上', r.exit[0] === 'm/m_04x05' && r.exit[1] === 'm/m_04x05,m_04x05/karen-home' && r.exit[2], r.exit.join());
+    t.check('← 返回：回上一張、堆疊少一筆', r.goBack.join() === 'm_04x05/karen-home,m/m_04x05,false', r.goBack.join());
+    t.eq('壞門：地圖不存在紅、落腳點找不到黃', r.bad, 'to-kh:ok,to-nowhere:error,to-kh-bad:warn');
+    t.check('壞門算進左欄 ⚠', r.badBadge[0] === '⚠2' && /不存在的地圖「no-such-map」/.test(r.badBadge[1]) && /落腳點「nope」/.test(r.badBadge[1]), r.badBadge.join(' | '));
+    t.check('滑過壞門：⚠ 原因、點了不會跳', /⚠ 門「to-nowhere」指到不存在的地圖/.test(r.badTip) && /點了不會跳/.test(r.badTip), r.badTip);
+    t.check('點地圖不存在的門：不跳、狀態列提示', r.noJump[0] === 'fixture-02' && /不存在的地圖/.test(r.noJump[1]), r.noJump.join(' | '));
+    t.eq('顯示 ▾ 關掉門：點不到', r.hidden, 'fixture-02');
+    t.check('落腳點找不到：照樣進去、提示', r.noLand[0] === 'm_04x05/karen-home' && /找不到落腳點「nope」/.test(r.noLand[1]) && r.noLand[2] === 'fixture-02', r.noLand.join(' | '));
 
     // ---- 角色分頁改名／刪除連動地圖 ----
     await t.page.goto(new URL('/tools/role/', t.page.url()).href);
