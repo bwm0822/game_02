@@ -50,15 +50,46 @@ run('map-tool', async t => {
         // ---- 左欄 ----
         out.cats = Object.fromEntries(['world', 'room', 'other'].map(c => [c, S.maps.filter(m => m.cat === c).map(m => m.name)]));
         out.sum = [S.sums['m/m_03x05'], S.sums['fixture-01']?.roles, S.sums['m/m_04x05']?.roles];
-        for (const g of [...document.querySelectorAll('#list .group.fold')]) if (g.querySelector('.arrow').textContent === '▸') g.click();
-        for (const g of [...document.querySelectorAll('#list .group.fold')]) if (g.querySelector('.arrow').textContent === '▸') g.click();
         const items = () => [...document.querySelectorAll('#list .item')];
-        out.badge = items().find(e => e.dataset.map === 'm/m_03x05')?.querySelector('.badges')?.textContent;
-        out.emptyDim = items().find(e => e.dataset.map === 'm_04x05/karen-home')?.classList.contains('empty');
+        const heads = () => [...document.querySelectorAll('#list .group.fold')];
+        const itemOf = (m) => items().find(e => e.dataset.map === m);
+        const roomArrow = () => itemOf('m/m_04x05')?.querySelector('.arrow.fold');
+        out.heads = heads().map(g => g.textContent.slice(1)).join();
+        for (const g of heads()) if (g.querySelector('.arrow').textContent === '▸') g.click();
+        out.roomFolded = [!itemOf('m_04x05/karen-home'), itemOf('m/m_04x05')?.querySelector('.badges')?.textContent];
+        // 摺著：房子的 ⚠ 加總掛在世界地圖那列
+        const iss0 = S.sums['m_04x05/trump-inn-f2'].issues;
+        S.sums['m_04x05/trump-inn-f2'].issues = [...iss0, '測試1', '測試2'];
+        mt.render();
+        out.roomWarn = itemOf('m/m_04x05')?.querySelector('.badges .warn:last-child')?.textContent;
+        roomArrow().click();
+        out.roomOpen = [items().map(e => e.dataset.map).slice(1, 5).join(), itemOf('m_04x05/karen-home')?.classList.contains('sub'),
+            itemOf('m_04x05/karen-home')?.textContent.startsWith('karen-home'), /🏠⚠/.test(itemOf('m/m_04x05')?.textContent), localStorage.getItem('tools.map.open')];
+        S.sums['m_04x05/trump-inn-f2'].issues = iss0;
+        mt.render();
+        out.badge = itemOf('m/m_03x05')?.querySelector('.badges')?.textContent;
+        out.emptyDim = itemOf('m_04x05/karen-home')?.classList.contains('empty');
         document.getElementById('onlyRoles').click();
         out.only = items().map(e => e.dataset.map);
         out.onlyMem = localStorage.getItem('tools.map.only');
         document.getElementById('onlyRoles').click();
+        // 搜尋：房子對到 → 世界地圖跟著列（淡色）、世界地圖對到不帶房子
+        const search = (v) => {const s = document.getElementById('search'); s.value = v; s.dispatchEvent(new Event('input'));};
+        roomArrow().click();
+        search('karen');
+        out.search = items().map(e => `${e.dataset.map}${e.classList.contains('empty') ? '~' : ''}`).join();
+        search('m/m_04');
+        out.search2 = items().map(e => e.dataset.map).join();
+        search('');
+        // 選著世界地圖時點「世界」摺得起來、重畫也不會彈開
+        mt.selectMap('m/m_03x05');
+        heads()[0].click();
+        mt.render();
+        out.foldSel = [heads()[0].querySelector('.arrow').textContent, !itemOf('m/m_03x05')];
+        // 從外面換選取（undo、總覽、門…）：展開所在的組＋世界地圖那層
+        mt.selectMap('m_04x05/trump-inn-f1');
+        out.reveal = [document.querySelector('#list .item.sel')?.dataset.map, heads()[0].querySelector('.arrow').textContent];
+        mt.selectMap('m_04x05/trump-inn-f1');
 
         // ---- 總覽（canvas＋panzoom） ----
         const cv = () => document.querySelector('#view canvas');
@@ -545,6 +576,15 @@ run('map-tool', async t => {
     t.check('地圖分類：世界／室內／其他，_ 開頭的舊檔不列', r.cats.world.join() === 'm/m_03x05,m/m_04x05' && r.cats.room.join() === 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2'
         && r.cats.other.join() === 'fixture-01,fixture-02', JSON.stringify(r.cats));
     t.check('徽章：m_03x05 六個角色、兩個群組；fixture-01 兩個', r.sum[0]?.roles === 6 && r.sum[0]?.groups.join() === 'wolves,bandits' && r.sum[1] === 2, JSON.stringify(r.sum));
+    t.eq('左欄只有 世界／其他 兩組（室內掛在世界地圖底下）', r.heads, '世界（2）,其他（2）');
+    t.check('m_04x05 預設摺著、徽章 🏠3', r.roomFolded[0] && /🏠3/.test(r.roomFolded[1]), r.roomFolded.join());
+    t.eq('摺著：房子的 ⚠ 加總', r.roomWarn, '🏠⚠2');
+    t.check('點 ▸ 展開：房子排在 m_04x05 底下、縮排、短名、⚠ 回到房子身上、記住', r.roomOpen[0] === 'm/m_04x05,m_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2'
+        && r.roomOpen[1] && r.roomOpen[2] && !r.roomOpen[3] && /room:m\/m_04x05/.test(r.roomOpen[4]), r.roomOpen.join(' | '));
+    t.eq('搜尋房子：世界地圖跟著列（淡色）', r.search, 'm/m_04x05~,m_04x05/karen-home~');
+    t.eq('搜尋世界地圖：不帶出沒對到的房子', r.search2, 'm/m_04x05');
+    t.check('選著世界地圖時點「世界」摺得起來、重畫不彈開', r.foldSel[0] === '▸' && r.foldSel[1], r.foldSel.join());
+    t.check('換選取：展開所在的組＋世界地圖那層', r.reveal.join() === 'm_04x05/trump-inn-f1,▾', r.reveal.join());
     t.eq('左欄徽章文字', r.badge, '🐾6@2');
     t.check('沒角色的地圖變淡', r.emptyDim);
     t.check('只看有角色的：記住、沒角色的不列', r.onlyMem === '1' && !r.only.includes('m_04x05/karen-home') && r.only.includes('m/m_03x05'), r.only.join());

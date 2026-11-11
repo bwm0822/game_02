@@ -1,4 +1,4 @@
-// 地圖分頁：左樹（世界／室內／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色唯讀）、右欄圖層／群組＋角色清單＋選取的角色
+// 地圖分頁：左樹（世界（室內地圖掛在所屬世界地圖底下）／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色唯讀）、右欄圖層／群組＋角色清單＋選取的角色
 // 地圖先讀專案資料夾、讀不到走 dev server（tools/common/mapview.js）；見 docs/map-tool.md
 import {$, h, ask, status} from '../common/dom.js';
 import * as ED from './edit.js';
@@ -29,6 +29,8 @@ const S = {
     spawns: {},         // 群組 → {line, cond}（story.json 劇情線的 spawns）
     world: [],          // main.world：[{name, x, y, w, h}]
     maps: [],           // [{name, cat: world|room|other}]
+    rooms: {},          // 世界地圖 → [室內地圖]
+    parent: {},         // 室內地圖 → 世界地圖
     sums: {},           // 地圖名 → {roles, groups: [名稱], err}
     sel: null,          // 選中的地圖
     pick: null,         // 選中的角色（物件 id）
@@ -51,7 +53,7 @@ const SHOW = createShowMenu('tools.map.show', [['points', '作息 point（淡色
 const show = SHOW.show;
 const F = createFold();
 const refs = () => ({roles: S.roles, items: S.items, parts: S.parts});
-const CATS = [['world', '世界'], ['room', '室內'], ['other', '其他']];
+const CATS = [['world', '世界'], ['other', '其他']];
 const KIND = {npc: 'NPC', monster: '怪物', animal: '動物', boss: '首領', rogue: '土匪', player: '玩家'};
 
 // ---------- 讀取 ----------
@@ -67,6 +69,7 @@ async function setRoot(dir)
     if (!json || !await FS.tryFile(json, 'role.json')) throw new Error(`「${dir.name}」裡沒有 public/assets/json/role.json`);
     S.assets = {dir: assets, json};
     await reload();
+    if (S.sel) {reveal(S.sel); renderList();}
 }
 
 MV.setReader(async (rel) => {
@@ -249,7 +252,12 @@ async function reload()
     S.maps = names.map(name => ({name, cat: catOf(name, worldSet, worldBase)}));
     // 世界地圖 → 底下的室內地圖（資料夾名＝世界地圖的檔名）
     S.rooms = {};
-    for (const w of S.world) S.rooms[w.name] = S.maps.filter(m => m.cat === 'room' && m.name.split('/')[0] === w.name.split('/').at(-1)).map(m => m.name);
+    S.parent = {};
+    for (const w of S.world)
+    {
+        S.rooms[w.name] = S.maps.filter(m => m.cat === 'room' && m.name.split('/')[0] === w.name.split('/').at(-1)).map(m => m.name);
+        for (const r of S.rooms[w.name]) S.parent[r] = w.name;
+    }
     S.sums = {};
     await resummarize(names);
     if (S.sel && !names.includes(S.sel)) S.sel = null;
@@ -261,15 +269,15 @@ async function reload()
 const hasStuff = (name) => !!(S.sums[name]?.roles || S.sums[name]?.groups.length);
 const shortName = (name) => name.split('/').at(-1);
 
-function badges(name)
+function badges(name, extra = [])
 {
     const s = S.sums[name];
     if (!s) return null;
-    if (s.err) return h('span', {class: 'badges'}, h('span', {class: 'warn'}, `⚠ ${s.err}`));
+    if (s.err) return h('span', {class: 'badges'}, h('span', {class: 'warn'}, `⚠ ${s.err}`), ...extra);
     return h('span', {class: 'badges'},
         s.roles > 0 && h('span', {title: '角色數'}, `🐾${s.roles}`),
         s.groups.length > 0 && h('span', {class: 'grp', title: s.groups.map(g => `@${g}`).join(' ')}, `@${s.groups.length}`),
-        s.issues.length > 0 && h('span', {class: 'warn', title: s.issues.join('\n')}, `⚠${s.issues.length}`));
+        s.issues.length > 0 && h('span', {class: 'warn', title: s.issues.join('\n')}, `⚠${s.issues.length}`), ...extra);
 }
 
 function selectMap(name)
@@ -282,7 +290,19 @@ function openMap(name)
     S.sel = name;
     S.pick = null;
     try {S.sel ? localStorage.setItem(SEL_KEY, S.sel) : localStorage.removeItem(SEL_KEY);} catch {}
+    reveal(name);
     render();
+}
+
+// 選取換了才展開它所在的組（＋室內地圖的世界地圖那層）並捲到看得見；之後手動摺起來就保持摺著
+function reveal(name)
+{
+    const m = name && S.maps.find(x => x.name === name);
+    if (!m) return;
+    const p = S.parent[name];
+    F.open(p ? 'world' : m.cat);
+    if (p) F.open(roomKey(p));
+    S.scrollSel = true;
 }
 
 // 點門：記住從哪來（← 返回）、打開那張圖、鏡頭移到落腳點
@@ -299,19 +319,48 @@ function goBack()
     if (m) openMap(m);
 }
 
+const roomKey = (world) => `room:${world}`;
+
+// 摺著的世界地圖：房子的 ⚠ 加總（滑過列哪幾間）
+function roomWarn(world)
+{
+    const bad = (S.rooms[world] ?? []).map(r => [r, S.sums[r]?.err ? 1 : S.sums[r]?.issues.length ?? 0]).filter(([, n]) => n);
+    const n = bad.reduce((a, [, k]) => a + k, 0);
+    return n > 0 && h('span', {class: 'warn', title: bad.map(([r, k]) => `${shortName(r)}：⚠${k}`).join('\n')}, `🏠⚠${n}`);
+}
+
+// 世界／其他兩組；室內地圖掛在所屬的世界地圖底下（▸ 展開），找不到世界地圖的室內地圖在「其他」
 function renderList()
 {
     const q = S.search.trim().toLowerCase(), searching = !!q;
-    const vis = S.maps.filter(m => (!q || m.name.toLowerCase().includes(q)) && (!S.only || hasStuff(m.name)));
-    const gs = CATS.map(([k, t]) => [k, t, vis.filter(m => m.cat === k)]).filter(([, , l]) => l.length);
+    const ok = (m) => (!q || m.name.toLowerCase().includes(q)) && (!S.only || hasStuff(m.name));
+    const kidsOf = (m) => (S.rooms[m.name] ?? []).filter(r => ok({name: r}));
+    const gs = CATS.map(([k, t]) => [k, t, S.maps.filter(m => m.cat === k && (ok(m) || (k === 'world' && kidsOf(m).length)))]).filter(([, , l]) => l.length);
     const keys = gs.map(([k]) => k);
-    const mine = gs.find(([, , l]) => l.some(m => m.name === S.sel))?.[0];
-    if (mine && !searching) F.open(mine);
+    const roomKeys = S.world.filter(w => S.rooms[w.name]?.length).map(w => roomKey(w.name));
+    const row = (name, label, {sub, dim, arrow, extra} = {}) => h('div', {class: 'item' + (sub ? ' sub' : '') + (name === S.sel ? ' sel' : '') + (dim ? ' empty' : ''),
+        dataset: {map: name}, title: name, onclick: () => selectMap(name)}, arrow, h('span', null, label), badges(name, extra));
+    const worldRows = (m) => {
+        const all = S.rooms[m.name] ?? [];
+        if (!all.length) return [row(m.name, shortName(m.name), {dim: !ok(m) || !hasStuff(m.name), arrow: h('span', {class: 'arrow'})})];
+        const k = roomKey(m.name), folded = F.folded(k, searching);
+        const arrow = h('span', {class: 'arrow fold', title: '點一下展開／摺疊室內地圖，Alt＋點全部', onclick: (e) => {
+            e.stopPropagation();
+            F.toggle(k, e.altKey ? roomKeys : null);
+            renderList();
+        }}, folded ? '▸' : '▾');
+        const extra = [h('span', {title: `室內地圖 ${all.length} 張`}, `🏠${all.length}`), folded && roomWarn(m.name)];
+        return [row(m.name, shortName(m.name), {dim: !ok(m) || !hasStuff(m.name), arrow, extra}),
+            ...folded ? [] : kidsOf(m).map(r => row(r, shortName(r), {sub: true, dim: !hasStuff(r)}))];
+    };
     $('list').replaceChildren(...gs.flatMap(([k, t, list]) => [
         F.head(k, `${t}（${list.length}）`, keys, () => render(), searching),
-        ...F.folded(k, searching) ? [] : list.map(m => h('div', {class: 'item' + (m.name === S.sel ? ' sel' : '') + (hasStuff(m.name) ? '' : ' empty'),
-            dataset: {map: m.name}, title: m.name, onclick: () => selectMap(m.name)},
-            h('span', null, m.cat === 'room' ? m.name : shortName(m.name)), badges(m.name)))]));
+        ...F.folded(k, searching) ? [] : list.flatMap(m => (k === 'world' ? worldRows(m) : [row(m.name, m.name, {dim: !hasStuff(m.name)})]))]));
+    if (S.scrollSel)
+    {
+        S.scrollSel = false;
+        $('list').querySelector('.item.sel')?.scrollIntoView({block: 'nearest'});
+    }
 }
 
 // ---------- 中間：世界總覽 ----------
