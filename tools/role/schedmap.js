@@ -286,7 +286,9 @@ function draw(cv, st)
         else g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
     }
     g.globalAlpha = 1;
-    // 作息點：實心圓＋卡片編號（大小固定在螢幕 px）
+    drawRoute(g, st, K);
+    drawPatrol(g, st, K);
+    // 作息點：膠囊一格一個卡片編號，選中那張反白（大小固定在螢幕 px）；畫在路線上面
     const r = 9 / K;
     g.font = `bold ${11 / K}px sans-serif`;
     g.textAlign = 'center';
@@ -295,46 +297,61 @@ function draw(cv, st)
     {
         const n = d.named.get(name);
         if (!n) continue;
-        const txt = nums.join(','), w = Math.max(r * 2, g.measureText(txt).width + 8 / K);
+        const ws = nums.map(v => g.measureText(String(v)).width + 8 / K);
+        if (ws.length === 1) ws[0] = Math.max(r * 2, ws[0]);
+        const w = ws.reduce((a, b) => a + b, 0), x0 = n.cen.x - w / 2, y0 = n.cen.y - r;
+        g.beginPath();
+        g.roundRect(x0, y0, w, r * 2, r);
         g.fillStyle = '#e8743b';
+        g.fill();
+        g.save();
+        g.clip();
+        let x = x0;
+        nums.forEach((v, i) => {
+            const on = v === st.sel + 1;
+            if (on) {g.fillStyle = '#fff'; g.fillRect(x, y0, ws[i], r * 2);}
+            if (i) {g.fillStyle = '#000'; g.fillRect(x - 0.5 / K, y0, 1 / K, r * 2);}
+            g.fillStyle = on ? '#e8743b' : '#fff';
+            g.fillText(String(v), x + ws[i] / 2, n.cen.y + 0.5 / K);
+            x += ws[i];
+        });
+        g.restore();
         g.strokeStyle = '#000';
         g.lineWidth = 1.5 / K;
         g.beginPath();
-        g.roundRect(n.cen.x - w / 2, n.cen.y - r, w, r * 2, r);
-        g.fill(); g.stroke();
-        g.fillStyle = '#fff';
-        g.fillText(txt, n.cen.x, n.cen.y + 0.5 / K);
+        g.roundRect(x0, y0, w, r * 2, r);
+        g.stroke();
     }
     // 其他角色用到的點：綠字列在下面（id 編號）
     if (show.others)
     {
-        g.font = `${10 / K}px sans-serif`;
+        g.font = `${14 / K}px sans-serif`;
         for (const [name, list] of othersOn(st.others, st.name))
         {
             const n = d.named.get(name);
             if (!n) continue;
-            const txt = list.map(o => `${o.id} ${o.i + 1}`).join('、'), w = g.measureText(txt).width + 6 / K, y = n.cen.y + r + 7 / K;
+            const txt = list.map(o => `${o.id} ${o.i + 1}`).join('、'), w = g.measureText(txt).width + 8 / K, y = n.cen.y + r + 10 / K;
             g.fillStyle = 'rgba(20,40,10,0.85)';
-            g.fillRect(n.cen.x - w / 2, y - 6 / K, w, 12 / K);
+            g.fillRect(n.cen.x - w / 2, y - 9 / K, w, 18 / K);
             g.fillStyle = '#9ccc65';
             g.fillText(txt, n.cen.x, y);
         }
     }
     if (show.names)
     {
-        g.font = `${10 / K}px sans-serif`;
-        g.lineWidth = 3 / K;
+        g.font = `bold ${14 / K}px sans-serif`;
+        g.lineWidth = 3.5 / K;
         g.strokeStyle = 'rgba(0,0,0,0.85)';
         g.fillStyle = '#eee';
         for (const n of d.named.values())
         {
-            const y = n.type === 'point' ? n.cen.y - 11 / K : n.rect.y - 6 / K;
+            const y = n.type === 'point' ? n.cen.y - 18 / K : n.rect.y - 9 / K;
             g.strokeText(n.name, n.cen.x, y);
             g.fillText(n.name, n.cen.x, y);
         }
     }
-    drawRoute(g, st, K);
-    drawPatrol(g, st, K);
+    drawBadges(g, st, K);
+    drawLabels(g, st, K);
     // 拖曳中的 point：放開後會落在的格子
     if (st.drag?.moved)
     {
@@ -348,10 +365,9 @@ function draw(cv, st)
     cv.dataset.drawn = d.named.size;
 }
 
-// 選中那筆的路線：亮藍折線（走不到的段畫紅虛線），起訖／換圖處標時間；標籤的螢幕範圍記在 st.hits（點了切圖）
+// 選中那筆的路線：亮藍折線（走不到的段畫紅虛線）
 function drawRoute(g, st, K)
 {
-    st.hits = [];
     const rt = st.route;
     if (!rt) return;
     g.lineJoin = g.lineCap = 'round';
@@ -368,6 +384,14 @@ function drawRoute(g, st, K)
         g.stroke();
     }
     g.setLineDash([]);
+}
+
+// 路線起訖／換圖處的時間標籤（畫在最上面）；標籤的範圍記在 st.hits（點了切圖）
+function drawLabels(g, st, K)
+{
+    st.hits = [];
+    const rt = st.route;
+    if (!rt) return;
     g.font = `${12 / K}px sans-serif`;
     g.textAlign = 'left';
     g.textBaseline = 'middle';
@@ -387,10 +411,9 @@ function drawRoute(g, st, K)
     }
 }
 
-// 巡邏：綠線（入口那段細、回起點那段虛線），每個路點旁邊一排號碼（走到第幾個；重複經過就好幾個），號碼的範圍記在 st.routeHits（右鍵刪那一次）
+// 巡邏：綠線（入口那段細、回起點那段虛線）
 function drawPatrol(g, st, K)
 {
-    st.routeHits = [];
     const pt = st.patrol;
     if (!pt) return;
     g.lineJoin = g.lineCap = 'round';
@@ -407,6 +430,14 @@ function drawPatrol(g, st, K)
         g.stroke();
     }
     g.setLineDash([]);
+}
+
+// 巡邏每個路點旁邊一排號碼（走到第幾個；重複經過就好幾個），號碼的範圍記在 st.routeHits（右鍵刪那一次）
+function drawBadges(g, st, K)
+{
+    st.routeHits = [];
+    const pt = st.patrol;
+    if (!pt) return;
     g.font = `bold ${10 / K}px sans-serif`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
@@ -462,8 +493,9 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
 {
     const name = M.map && maps.includes(M.map) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
     const view = viewOf(name);
-    const cv = h('canvas', {title: '滾輪縮放、按住中鍵拖曳平移；點路線上的「→ 地圖」切過去'});
-    const info = h('span', {class: 'info dim'}, '讀取中…');
+    const cv = h('canvas');
+    const tip = h('div', {class: 'smaptip', hidden: true});
+    const msg = h('div', {class: 'smapmsg dim', hidden: true});
     const legs = legsOf(plan?.[sel], edges);
     const st = {name, schedule: r.schedule, sel, others, data: null, hover: null, legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
     const inBox = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
@@ -483,15 +515,23 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const redraw = () => draw(cv, st);
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
     cv.st = st;
-    const users = (n) => {
-        const nums = stopsOn(r.schedule, name).get(n.name), os = othersOn(others, name).get(n.name);
-        return (nums ? `　作息 ${nums.join(',')}` : '') + (os ? `　${os.map(o => `${o.id} ${o.i + 1}（${o.t}）`).join('、')}` : '');
-    };
-    const hint = () => (editRoute ? '　點＝加到巡邏路線最後' : sel >= 0 ? `　點＝設成作息 ${sel + 1} 的目的地、Shift＋點＝在後面插入` : '　Shift＋點＝新增一筆作息');
-    const say = () => {
+    const hint = () => (editRoute ? '點＝加到巡邏路線最後' : sel >= 0 ? `點＝設成作息 ${sel + 1} 的目的地、Shift＋點＝在後面插入` : 'Shift＋點＝新增一筆作息');
+    // 滑過具名物件：游標旁浮動框（名稱、這個角色第幾筆作息＋時間、其他角色、操作提示），靠右／下邊翻面
+    const say = (e) => {
         const n = st.hover && st.data?.named.get(st.hover);
-        info.textContent = n ? `${n.name}（${n.type || '無 type'}）${users(n)}${onPick ? hint() : ''}` : st.data ? `${name}　具名物件 ${st.data.named.size}` : info.textContent;
-        info.title = info.textContent;
+        if (!n) {tip.hidden = true; return;}
+        const nums = stopsOn(r.schedule, name).get(n.name), os = othersOn(others, name).get(n.name);
+        tip.replaceChildren(...[
+            h('div', {class: 'tname'}, `${n.name}（${n.type || '無 type'}）`),
+            nums && h('div', {class: 'tmine'}, '作息 ', nums.flatMap((v, i) => [i > 0 && '、', h(v === sel + 1 ? 'b' : 'span', null, `${v}（${r.schedule[v - 1].t}）`)])),
+            os && h('div', {class: 'tothers'}, os.map(o => `${o.id} ${o.i + 1}（${o.t}）`).join('、')),
+            (onPick || editRoute) && h('div', {class: 'thint'}, hint())].filter(Boolean));
+        tip.hidden = false;
+        if (!e) return;
+        const box = cv.getBoundingClientRect(), x = e.clientX - box.left, y = e.clientY - box.top;
+        const w = tip.offsetWidth, ht = tip.offsetHeight;
+        tip.style.left = `${Math.max(0, x + 14 + w > box.width ? x - 14 - w : x + 14)}px`;
+        tip.style.top = `${Math.max(0, y + 16 + ht > box.height ? y - 10 - ht : y + 16)}px`;
     };
     // 拖 point（左鍵按在 point 上、移超過 4px 才算拖）：放開時 onMove(map, name, x, y)，x/y＝格子左上角；拖過就吃掉接著的 click
     const snap = (p) => {const tw = st.data.map.tilewidth, th = st.data.map.tileheight; return {x: Math.floor(p.x / tw) * tw, y: Math.floor(p.y / th) * th};};
@@ -520,15 +560,16 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
             dr.moved = true;
             dr.to = snap(toMap(e));
             cv.style.cursor = 'grabbing';
+            tip.hidden = true;
             return redraw();
         }
         const n = hitAt(st.data, toMap(e), st.pz.K);
         const k = n?.name ?? null;
         cv.style.cursor = n?.type === 'point' && onMove ? 'grab' : n ? 'pointer' : '';
-        if (k === st.hover) return;
+        const changed = k !== st.hover;
         st.hover = k;
-        say();
-        redraw();
+        say(e);
+        if (changed) redraw();
     });
     cv.addEventListener('pointerleave', () => {if (st.hover) {st.hover = null; say(); redraw();}});
     cv.addEventListener('contextmenu', (e) => {
@@ -543,8 +584,8 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     });
     mapData(name).then(d => {
         st.data = d;
-        if (!d) info.textContent = `讀不到地圖 ${name}`;
-        else {st.route = routeOn(d, legs, name); st.patrol = patrol?.map === name ? patrolOn(d, patrol) : null; say();}
+        if (!d) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
+        else {st.route = routeOn(d, legs, name); st.patrol = patrol?.map === name ? patrolOn(d, patrol) : null;}
         if (d && !view.set) PZ.center(view);
         redraw();
     });
@@ -565,8 +606,8 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         banner,
         navMsg && h('div', {class: 'navmsg dim'}, navMsg),
         editBar,
-        h('div', {class: 'opts'}, pick),
+        h('div', {class: 'opts'}, pick, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點路線上的「→ 地圖」切過去；滑過物件看誰在用'}, '?')),
         crumbs,
-        h('div', {class: 'cvbox'}, cv),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'), info));
+        h('div', {class: 'cvbox'}, cv, tip, msg),
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
 }

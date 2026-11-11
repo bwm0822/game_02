@@ -58,11 +58,20 @@ run('schedule-tool', async t => {
         const n = (k) => d.named.get(k);
         out.pixels = [px(n('stair-up').cen.x, n('stair-up').cen.y), px(5 * 32 + 16, 5 * 32 + 16)].map(a => a > 0);
 
-        // 滑到 trump-p1 上：資訊列顯示名稱、type、是第幾筆作息
+        // 滑到 trump-p1 上：浮動框顯示名稱、type、是第幾筆作息＋時間（選中的加粗）；下方沒有資訊列、canvas 沒有 title
         await sleep(50);
         const rc = cv().getBoundingClientRect(), o = st.pz.o, K = st.pz.K, p = n('trump-p1').cen;
         cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, clientX: rc.left + o.x + (p.x - d.W / 2) * K, clientY: rc.top + o.y + (p.y - d.H / 2) * K}));
-        out.hover = right().querySelector('.smap .info').textContent;
+        const tip = () => right().querySelector('.smap .smaptip');
+        const tipText = () => (tip().hidden ? '' : [...tip().children].map(c => c.textContent).join('\n'));
+        out.hover = tipText();
+        out.hoverBold = tip().querySelector('.tmine b')?.textContent;
+        out.noInfo = [!right().querySelector('.smap .info'), !cv().hasAttribute('title'), !!right().querySelector('.smap .help[title]')];
+        // 選中那張的編號反白：膠囊裡數字左邊是白底（橘點畫在藍線上面）
+        const dpr = devicePixelRatio || 1, px0 = cv().getContext('2d').getImageData(Math.round((o.x + (p.x - d.W / 2) * K - 7) * dpr), Math.round((o.y + (p.y - d.H / 2) * K) * dpr), 1, 1).data;
+        out.selWhite = [...px0.slice(0, 3)].every(v => v > 230);
+        cv().dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
+        out.tipGone = tip().hidden;
 
         // 地圖的倍率是自己一組，不動外觀預覽的
         re.PZ.setZoom(1.5, 0, 0, st.pz.view);
@@ -217,7 +226,7 @@ run('schedule-tool', async t => {
         S.schSel = {id: 'trump', i: 0}; re.SM.setMap('m_04x05/trump-inn-f1'); re.render();
         const hist0 = S.hi;
         await at('sit-1', 'pointermove');
-        out.hoverOthers = right().querySelector('.smap .info').textContent;
+        out.hoverOthers = tipText();
         await at('sit-1', 'click');
         out.picked = [cards()[0].classList.contains('sel'), S.data.trump.schedule[0].map, S.data.trump.schedule[0].go, S.data.trump.schedule.length];
         re.undo();
@@ -387,7 +396,10 @@ run('schedule-tool', async t => {
     t.eq('trump-inn-f1 畫成 15×15 格（480×480）', JSON.stringify(r.size), JSON.stringify([480, 480]));
     t.eq('具名物件：trump-p1、door、stair-up', JSON.stringify(r.named), JSON.stringify([true, true, true]));
     t.eq('烤好的圖：翻轉的樓梯、地板都有畫', JSON.stringify(r.pixels), JSON.stringify([true, true]));
-    t.check('滑過物件顯示名稱、type、第幾筆作息', r.hover.startsWith('trump-p1（point）　作息 1　'), r.hover);
+    t.check('滑過物件：浮動框顯示名稱、type、第幾筆作息＋時間', r.hover.startsWith('trump-p1（point）\n作息 1（@06:20）\n'), r.hover);
+    t.eq('浮動框：選中那張加粗、離開就藏', JSON.stringify([r.hoverBold, r.tipGone]), JSON.stringify(['1（@06:20）', true]));
+    t.eq('沒有下方資訊列、canvas 沒 title、說明在 ?', JSON.stringify(r.noInfo), JSON.stringify([true, true, true]));
+    t.check('選中那張的編號反白（白底，蓋在路線上面）', r.selWhite);
     t.eq('地圖的倍率自己一組', JSON.stringify(r.zoomSep), JSON.stringify([1.5, true]));
     t.eq('換地圖記住', r.mapMem, 'm/m_04x05');
     t.check('大地圖 100×100 格、有 musk-p1／trump-inn', JSON.stringify(r.big) === JSON.stringify([3200, 3200, true, true]), JSON.stringify(r.big));
@@ -430,7 +442,7 @@ run('schedule-tool', async t => {
     t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
-    t.check('滑過別人用的點：列出誰的第幾筆、提示點選', /^sit-1（.*）.*musk 2（@12:10）.*點＝設成作息 1 的目的地/.test(r.hoverOthers), r.hoverOthers);
+    t.check('滑過別人用的點：列出誰的第幾筆、提示點選', /^sit-1（[^\n]*）\n[^\n]*musk 2（@12:10）[^\n]*\n點＝設成作息 1 的目的地/.test(r.hoverOthers), r.hoverOthers);
     t.eq('有選卡片時點物件：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
     t.eq('一筆 undo 回原本的目的地', r.pickUndo, 'trump-p1');
     t.eq('Shift＋點：在選中那筆後面插入（時間抄它、抵達）、選到新的那筆',

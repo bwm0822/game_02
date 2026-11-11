@@ -67,7 +67,15 @@
 .gantt .glegend .pick { cursor: pointer; padding: 1px 4px; border-radius: 3px; }
 .gantt .glegend .pick.on { background: #2f6db5; color: #fff; }
 .gantt .glegend small { color: #ffd54f; margin-left: 2px; }
-.smap .info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.smap .help { flex: none; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 50%; background: #3a3d44; color: #ccc; font-size: 12px; cursor: help; }
+.smap .smaptip { position: absolute; z-index: 2; pointer-events: none; max-width: min(320px, 90%); padding: 5px 10px; background: rgba(16,17,20,0.94); border: 1px solid #555; border-radius: 4px; font-size: 14px; line-height: 1.5; color: #ddd; }
+.smap .smaptip .tname { color: #fff; font-weight: bold; }
+.smap .smaptip .tmine { color: #f0a070; }
+.smap .smaptip .tmine b { color: #fff; background: #e8743b; padding: 0 3px; border-radius: 3px; }
+.smap .smaptip .tothers { color: #9ccc65; }
+.smap .smaptip .thint { color: #999; }
+.smap .smapmsg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.smap .smapmsg[hidden] { display: none; }
 
 .sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }
 .sec:empty { border: none; margin: 0; }
