@@ -570,6 +570,7 @@ function selectSch(id, i)
 {
     if (S.schSel?.id === id && S.schSel.i === i) return;
     S.schSel = {id, i};
+    if (S.routeEdit && !editingRoute(id, i)) {S.routeEdit = null; for (const b of document.querySelectorAll('#view .routebtn.on')) {b.classList.remove('on'); b.textContent = '✎ 編輯路線';}}
     const m = S.data[id].schedule[i]?.map;
     if (m) SM.setMap(m);
     for (const c of document.querySelectorAll('#view .card[data-sch]')) c.classList.toggle('sel', +c.dataset.sch === i);
@@ -646,6 +647,7 @@ async function newPoint(id, map, x, y, d)
     while (d.named.has(`${id}-p${n}`)) n++;
     const name = await askPointName(`在 ${map} 新增 point`, `${id}-p${n}`, d.named);
     if (!name || !await writeMap(map, data => ME.addPoint(data, map, name, x, y, isPointRaw), `新增 ${name}`)) return;
+    if (S.routeEdit?.id === id) return routeAdd(id, map, name);
     const i = schSel(id);
     if (i >= 0) commit(() => Object.assign(S.data[id].schedule[i], {map, go: name}));
 }
@@ -695,6 +697,57 @@ async function updateNav()
     render();
 }
 
+// ---------- 巡邏路線 ----------
+S.routeEdit = null;                              // 編輯中的巡邏 {id, i}
+const editingRoute = (id, i) => S.routeEdit?.id === id && S.routeEdit.i === i;
+function toggleRouteEdit(id, i)
+{
+    if (editingRoute(id, i)) S.routeEdit = null;
+    else
+    {
+        S.routeEdit = {id, i};
+        S.schSel = {id, i};
+        S.rtab = 'sched';
+        const m = S.data[id].schedule[i].map;
+        if (m) SM.setMap(m);
+    }
+    render();
+}
+addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !S.routeEdit || document.querySelector('dialog[open]')) return;
+    S.routeEdit = null;
+    render();
+});
+
+function routeAdd(id, map, name)
+{
+    const i = S.routeEdit?.i, s = S.data[id].schedule[i];
+    if (map !== s.map) return status(`巡邏路線只能用 ${s.map} 的點`);
+    commit(() => {const a = S.data[id].schedule[i]; a.route = [...(a.route ?? []), name];});
+}
+
+function routeDel(id, idx)
+{
+    const i = S.routeEdit?.i;
+    commit(() => {
+        const a = S.data[id].schedule[i], rt = (a.route ?? []).filter((_, k) => k !== idx);
+        a.route = rt.length ? rt : undefined;
+    });
+}
+
+// 一圈多久（同遊戲 COM_Schedule._initPatrol 的 loop：每點停 wait＋走到下一點）
+function patrolInfo(s)
+{
+    const rt = s.route ?? [];
+    if (!rt.length) return null;
+    const keys = rt.map(n => `${s.map}:${n}`), wait = s.wait ?? 0;
+    const legs = keys.map((k, j) => (k === keys[(j + 1) % keys.length] ? 0 : SP.edgeCost(S.ext.nav.edges, k, keys[(j + 1) % keys.length])));
+    const bad = legs.findIndex(c => c === Infinity);
+    if (bad >= 0) return h('div', {class: 'times bad'}, `巡邏：${rt[bad]} 走不到 ${rt[(bad + 1) % rt.length]}（路網）`);
+    const walk = legs.reduce((a, b) => a + b, 0);
+    return h('div', {class: 'times patrol'}, `巡邏一圈 ${walk + wait * rt.length} 分（走 ${walk} 分＋停 ${rt.length}×${wait}）`);
+}
+
 // 時刻表（跟遊戲 ScheduleManager 同一支 buildPlan）
 const planOf = (id) => (Array.isArray(S.data[id]?.schedule) && S.data[id].schedule.every(s => typeof s.t === 'string')
     ? SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes) : {plan: null, warns: []});
@@ -729,6 +782,7 @@ function schCard(id, list, i, pl)
             h('button', {type: 'button', title: '複製', onclick: () => commit(() => S.data[id].schedule.splice(i + 1, 0, structuredClone(s)))}, '⧉'),
             h('button', {type: 'button', title: '刪除', onclick: () => commit(() => S.data[id].schedule.splice(i, 1))}, '×')),
         schTimes(i, pl, s),
+        s.do === 'patrol' && patrolInfo(s),
         h('div', {class: 'sub'},
             h('label', {title: 't'}, '時間',
                 h('select', {dataset: {k: `${k}.t#mode`}, onchange: e => put('t', `${e.target.value}${hhmm}`)},
@@ -743,6 +797,8 @@ function schCard(id, list, i, pl)
                 Object.entries(SC.DO_NAMES).map(([v, n]) => h('option', {value: v, selected: v === (s.do ?? '')}, n)),
                 s.do && !(s.do in SC.DO_NAMES) && h('option', {value: s.do, selected: true}, s.do))),
             s.do === 'patrol' && [
+                h('button', {type: 'button', class: 'routebtn' + (editingRoute(id, i) ? ' on' : ''), title: '在右欄地圖上點選路點（Esc 結束）',
+                    onclick: (e) => {e.stopPropagation(); toggleRouteEdit(id, i);}}, editingRoute(id, i) ? '✔ 完成' : '✎ 編輯路線'),
                 h('label', {title: 'route（依序循環，要來回就重複寫）'}, '路線', h('input', {size: 40, dataset: {k: `${k}.route`, combo: nav, tags: ''},
                     value: (s.route ?? []).join(', '),
                     onchange: e => {const a = e.target.value.split(',').map(x => x.trim()).filter(Boolean); put('route', a.length ? a : undefined);}})),
@@ -804,6 +860,8 @@ function renderRight()
     document.getElementById('right').replaceChildren(rightTabs(), S.rtab === 'sched'
         ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges, onPick: (m, go, shift) => pickDest(id, m, go, shift),
             onNew: (m, x, y, d) => newPoint(id, m, x, y, d), onMove: movePoint, onMenu: pointMenu, stale: S.stale, onUpdate: updateNav, navMsg: S.navMsg,
+            patrol: r.schedule?.[schSel(id)]?.do === 'patrol' ? r.schedule[schSel(id)] : null, editRoute: editingRoute(id, schSel(id)),
+            onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k),
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
@@ -959,6 +1017,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, ME, updateNav, checkStale, renamePoint, deletePoint, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, ME, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

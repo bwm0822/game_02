@@ -255,6 +255,44 @@ run('schedule-tool', async t => {
         out.nav = [posted, S.navMsg];
         re.SM.forget();
 
+        // ---- 第 6 步：巡邏路線 ----
+        S.sel = 'guard-1'; S.schSel = {id: 'guard-1', i: 0}; re.SM.setMap('m/m_04x05'); re.render();
+        const g1 = S.data['guard-1'].schedule[0];
+        out.patrolInfo = cards()[0].querySelector('.times.patrol')?.textContent;
+        const gk = g1.route.map(n => `m/m_04x05:${n}`);
+        const walk = gk.reduce((a, k, j) => a + re.SP.edgeCost(S.ext.nav.edges, k, gk[(j + 1) % gk.length]), 0);
+        out.patrolWant = `巡邏一圈 ${walk + 3 * 5} 分（走 ${walk} 分＋停 5×3）`;
+        await until(() => cv()?.st.patrol);
+        const pt = cv().st.patrol;
+        out.patrolLines = [pt.lines.map(l => l.kind).join(), pt.lines.every(l => !l.broken)];
+        await sleep(50);
+        out.badges = cv().st.routeHits.map(b => b.idx).join();
+        // 編輯路線：按鈕切換、地圖上方提示
+        cards()[0].querySelector('.routebtn').click();
+        await until(() => cv()?.st.data);
+        out.editOn = [cards()[0].querySelector('.routebtn').textContent, !!right().querySelector('.smap .routeedit'), cv().st.editRoute];
+        // 點 guard-p3 加到最後
+        await at('guard-p3', 'click');
+        out.added6 = S.data['guard-1'].schedule[0].route.join();
+        re.undo();
+        // 右鍵第 4 個號碼（第二次經過 guard-p2）拿掉那一次
+        await until(() => cv()?.st.routeHits.length === 5);
+        const b4 = cv().st.routeHits.find(b => b.idx === 3);
+        {
+            const c = cv(), s = c.st, d = s.data, rc = c.getBoundingClientRect(), o = s.pz.o, K = s.pz.K;
+            c.dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, clientX: rc.left + o.x + (b4.x + b4.w / 2 - d.W / 2) * K, clientY: rc.top + o.y + (b4.y + b4.h / 2 - d.H / 2) * K}));
+        }
+        out.removed6 = S.data['guard-1'].schedule[0].route.join();
+        re.undo();
+        // 別張圖的點不能加
+        re.SM.setMap('m_04x05/trump-inn-f1'); re.render();
+        await at('trump-p1', 'click');
+        out.otherMap = [S.data['guard-1'].schedule[0].route.length, $('status').textContent];
+        // Esc 結束
+        document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.editOff = [S.routeEdit, cards()[0].querySelector('.routebtn').textContent];
+        S.sel = 'trump';
+
         right().querySelector('[data-rtab=look]').click();
         out.back = [!!right().querySelector('.pv:not(.smap)'), localStorage.getItem('tools.role.rtab')];
         localStorage.removeItem('tools.role.sched.map');
@@ -311,4 +349,12 @@ run('schedule-tool', async t => {
     t.eq('有作息用到不能刪', JSON.stringify([r.delUsed, r.stillThere]), JSON.stringify([['不能刪 trump-p9'], true]));
     t.eq('沒人用：確認後刪掉', JSON.stringify([r.delAsk, r.deleted]), JSON.stringify([['刪除 trump-p9？'], true]));
     t.eq('更新路網：POST、顯示節點數跟警告', JSON.stringify(r.nav), JSON.stringify([true, '路網已更新：61 個節點，1 個警告\n測試警告']));
+    t.eq('巡邏卡片：一圈幾分（走＋停 n×wait）', r.patrolInfo, r.patrolWant);
+    t.eq('巡邏路線：入口就是第一點不畫、4 段＋回起點虛線、都走得到', JSON.stringify(r.patrolLines), JSON.stringify(['loop,loop,loop,loop,close', true]));
+    t.eq('每經過一次一個號碼', r.badges, '0,1,2,3,4');
+    t.eq('編輯路線：按鈕變完成、地圖上方提示', JSON.stringify(r.editOn), JSON.stringify(['✔ 完成', true, true]));
+    t.eq('點點加到路線最後', r.added6, 'guard-p1,guard-p2,guard-p3,guard-p2,guard-p4,guard-p3');
+    t.eq('右鍵號碼拿掉那一次', r.removed6, 'guard-p1,guard-p2,guard-p3,guard-p4');
+    t.eq('別張圖的點不能加', JSON.stringify(r.otherMap), JSON.stringify([5, '巡邏路線只能用 m/m_04x05 的點']));
+    t.eq('Esc 結束編輯', JSON.stringify(r.editOff), JSON.stringify([null, '✎ 編輯路線']));
 });

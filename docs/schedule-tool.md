@@ -2,7 +2,7 @@
 
 角色分頁右欄上方「外觀｜作息」切換（`S.rtab`，記在 `localStorage` 的 `tools.role.rtab`）。外觀＝原本的合成預覽；作息＝這份文件。左邊的作息卡片照舊（[role-editor.md](role-editor.md)），右邊畫地圖。作息資料格式見 [schedule-architecture.md](schedule-architecture.md)。
 
-## 現況（第 5 步）
+## 功能
 
 - **地圖**：`tools/role/schedmap.js` 的 `schedMapEl(role, maps, refresh)`。`maps`＝`navgraph.json` 裡有的地圖（路網沒有的圖不列）。預設顯示上次選的地圖（`tools.role.sched.map`），沒選過＝這個角色作息第一筆的 `map`。
 - **怎麼畫**：不用 Phaser，Canvas 2D 自己畫。`mapData(name)` 經 dev server 讀地圖 json，用 `src/data/navgrid.js` 的 `loadMap()` 一起讀 template／外部 tileset（跟路網同一份解析），把圖塊層和有 gid 的物件**烤成一張 1:1 的圖**（每張地圖只烤一次，`forget(name)` 丟掉重讀）。每次重畫只要 `drawImage` 這張圖，再疊上標記。
@@ -31,10 +31,11 @@
 - **Tiled 排版**：`tools/common/tiledjson.js` 的 `stringify()` 照 Tiled 的規則輸出（最外層 `{ `、key 縮排、物件陣列元素縮排 +7、`}, ` 分隔、`\/`、非 ASCII 寫 `\uXXXX`、換行照原檔），git diff 只多出改的那幾行。專案的地圖讀進來再寫出去一字不差（測試會檢查全部地圖）；`forest-01`、`house-08`、`trump-inn-f1` 有幾行手改過的排版（`},` 少空白、多空行），工具寫它們時會順便整理成 Tiled 的樣子，資料不變。
 - **路網過期**：`ME.staleMaps()` 比檔案時間，路網裡的地圖有比 `json/navgraph.json` 新的就在右欄頂端顯示「⚠ 路網已過期（xxx.json 比 navgraph.json 新）［更新路網］」（切到作息、重畫右欄、寫完地圖時檢查）；**不自動重跑**，按鈕才打 `POST /__tools/navgraph`，結果（節點數、警告）顯示在橫幅下面，跑完重讀 navgraph.json。卡片的目的地不在路網裡就在卡片上標「⚠ 路網裡沒有 地圖:點」。在 Tiled 改了地圖一樣會被比出來。
 
-## 還沒做（照順序）
-
-6. 巡邏 `route` 畫環＋編輯模式
+- **巡邏**（選中那筆是 `do:"patrol"`、地圖是它的 `map`，同遊戲 `COM_Schedule._initPatrol()` 的走法）：入口 `go` → `route[0]` 畫細綠線（入口就是第一點不畫），`route` 依序畫綠線，最後一點回 `route[0]` 畫綠虛線；每經過一次在路點旁畫一個綠色號碼（重複經過就好幾個）。卡片上寫「巡邏一圈 N 分（走 X 分＋停 n×wait）」，有路點走不到下一點（路網沒有那條邊）就標紅。
+  - 卡片上「✎ 編輯路線」（`toggleRouteEdit()`，`S.routeEdit = {id, i}`）：右欄切到作息、跳到巡邏的地圖、上方綠色提示；點物件＝加到 `route` 最後、右鍵綠色號碼＝拿掉那一次（拿光就刪掉 `route`）、點空地＝新增 point 並加進路線（不改 `go`）；別張圖的點擋（狀態列提示）；都是一筆 undo。再按一次（「✔ 完成」）、Esc（沒有對話框開著時）或選別張卡片結束。文字欄位照舊能直接打。
 
 ## 測試
 
-`node scripts/test/schedule-tool.mjs`：外觀｜作息切換與記住、預設地圖、下拉列路網的地圖、室內圖大小、具名物件、烤出來的圖有畫（翻轉的樓梯、地板、template 建築）、滑過顯示名稱與作息編號、地圖倍率自己一組、換地圖記住；先開一局遊戲讀 `ScheduleManager.plans`，比對工具算的全部角色時刻表一樣；預設選第 1 張、卡片時刻表（倒推）、麵包屑、路線走得到且終點在目的地站位格、標籤內容、點標籤切圖、點卡片不重畫表單、排不下標紅；滑過別人用的點、點物件改目的地＋undo、Shift＋點插入＋undo、顯示 ▾ 預設與記住、格子權重；全部地圖的 Tiled 排版 roundtrip；OPFS 假資料夾放 trump-inn-f1 跟 navgraph.json：沒過期、點空地新增（預設名、point.tj、nextobjectid、其他資料不變、排版、換行）、過期橫幅、卡片 ⚠、拖曳對齊格子、改名連帶存 role.json、撞名擋、有人用不能刪、刪除、更新路網（攔 fetch）。
+`node scripts/test/schedule-tool.mjs`：外觀｜作息切換與記住、預設地圖、下拉列路網的地圖、室內圖大小、具名物件、烤出來的圖有畫（翻轉的樓梯、地板、template 建築）、滑過顯示名稱與作息編號、地圖倍率自己一組、換地圖記住；先開一局遊戲讀 `ScheduleManager.plans`，比對工具算的全部角色時刻表一樣；預設選第 1 張、卡片時刻表（倒推）、麵包屑、路線走得到且終點在目的地站位格、標籤內容、點標籤切圖、點卡片不重畫表單、排不下標紅；滑過別人用的點、點物件改目的地＋undo、Shift＋點插入＋undo、顯示 ▾ 預設與記住、格子權重；全部地圖的 Tiled 排版 roundtrip；OPFS 假資料夾放 trump-inn-f1 跟 navgraph.json：沒過期、點空地新增（預設名、point.tj、nextobjectid、其他資料不變、排版、換行）、過期橫幅、卡片 ⚠、拖曳對齊格子、改名連帶存 role.json、撞名擋、有人用不能刪、刪除、更新路網（攔 fetch）；guard-1 巡邏：一圈時間、線段種類、號碼、編輯模式開關、點加、右鍵拿掉、別張圖擋、Esc 結束。
+
+之後可以做（定案時往後放的）：全部 NPC 的時間軸（甘特圖）、時間拖桿看某個時刻誰在哪。
