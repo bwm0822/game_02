@@ -338,7 +338,8 @@ function drawWorld(cv, st)
     if (!geo) return;
     g.imageSmoothingEnabled = false;
     st.hits = [];
-    const big = geo.cells[0] && geo.cells[0].cw * K >= 48;      // 格子夠大才寫字
+    const FS = 15;      // 總覽的字（螢幕 px）
+    const big = geo.cells[0] && geo.cells[0].cw * K >= FS * 4.5;      // 格子夠大才寫字
     for (const c of geo.cells)
     {
         const img = st.imgs.get(c.w.name);
@@ -378,7 +379,7 @@ function drawWorld(cv, st)
     // 字：地圖名（左上）、徽章（右下，一行一個）
     if (big)
     {
-        g.font = `${11 / K}px sans-serif`;
+        g.font = `${FS / K}px sans-serif`;
         g.textBaseline = 'top';
         for (const c of geo.cells)
         {
@@ -400,13 +401,13 @@ function drawWorld(cv, st)
             let y = c.y + c.ch - 2 / K;
             for (const tag of tags.reverse())
             {
-                const tw = g.measureText(tag.t).width + 6 / K, th = 14 / K;
+                const tw = g.measureText(tag.t).width + 6 / K, th = (FS + 4) / K;
                 y -= th + 1 / K;
                 const x = c.x + c.cw - 2 / K;
                 g.fillStyle = 'rgba(0,0,0,0.75)';
                 g.fillRect(x - tw, y, tw, th);
                 g.fillStyle = tag.c;
-                g.fillText(tag.t, x - 3 / K, y + 1.5 / K);
+                g.fillText(tag.t, x - 3 / K, y + 2 / K);
                 if (tag.room) st.hits.push({kind: 'room', x: x - tw, y, w: tw, h: th, map: c.w.name});
             }
         }

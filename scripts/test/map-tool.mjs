@@ -52,6 +52,8 @@ run('map-tool', async t => {
         const wst = () => cv()?.st;
         const cells = () => (wst()?.world ? wst().geo.cells : []);
         await until(() => wst()?.world && wst().imgs.size > 0);
+        // 測試視窗小，裝滿時一格不到 15px 字的門檻，先放到 1 倍（一格 100px）
+        Object.assign(wst().pz.view, {zoom: 1, ox: 0, oy: 0});
         await sleep(50); wst().redraw();
         // 總覽單位 → 螢幕座標
         const wAt = (p) => {const s = wst(), b = cv().getBoundingClientRect(); return {clientX: b.left + s.pz.o.x + p.x * s.pz.K, clientY: b.top + s.pz.o.y + p.y * s.pz.K};};
@@ -68,8 +70,12 @@ run('map-tool', async t => {
         const WV = wst().pz.view;
         mt.PZ.setZoom(50, 0, 0, WV);
         out.zmax = [WV.zoom, document.querySelector('#view input.zoom')?.max];
+        // 裝滿時格子太小不寫字
         mt.PZ.center(WV);
-        await sleep(30);
+        await sleep(30); wst().redraw();
+        out.smallNoText = [cells()[0].cw * WV.zoom < 15 * 4.5, hitsOf('room').length];
+        Object.assign(WV, {zoom: 1, ox: 0, oy: 0});
+        await sleep(30); wst().redraw();
         // 左鍵拖：平移、不開地圖
         const ox0 = WV.ox, p0 = cellAt('m/m_00x00');
         cv().dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, button: 0, ...p0}));
@@ -77,7 +83,7 @@ run('map-tool', async t => {
         cv().dispatchEvent(new PointerEvent('pointerup', {bubbles: true, clientX: p0.clientX + 30, clientY: p0.clientY}));
         cv().dispatchEvent(new MouseEvent('click', {bubbles: true, clientX: p0.clientX + 30, clientY: p0.clientY}));
         out.drag = [Math.round(WV.ox - ox0), S.sel];
-        mt.PZ.center(WV);
+        Object.assign(WV, {zoom: 1, ox: 0, oy: 0});
         await sleep(30); wst().redraw();
         // 🏠：點了列室內地圖、選一張打開
         const rb = hitsOf('room', 'm/m_04x05')[0];
@@ -485,6 +491,7 @@ run('map-tool', async t => {
     t.check('小點位置＝格子＋站的位置 × 縮放', r.dotPos?.every(Boolean), JSON.stringify(r.dotPos));
     t.eq('🏠 徽章在有室內地圖的格子', r.room, 'm/m_04x05');
     t.check('倍率上限 6、倍率欄 max', r.zmax[0] === 6 && r.zmax[1] === '6', r.zmax.join());
+    t.check('格子比 15px 字的門檻小：不寫字（沒有 🏠 可點）', !r.smallNoText[0] || r.smallNoText[1] === 0, r.smallNoText.join());
     t.check('左鍵拖：平移 30px、不開地圖', r.drag[0] === 30 && r.drag[1] === null, r.drag.join());
     t.eq('點 🏠：列室內地圖', r.roomMenu, 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2');
     t.check('點小點：打開地圖、選取那個角色', r.dotClick[0] === 'm/m_03x05' && r.dotClick[1], r.dotClick.join());
