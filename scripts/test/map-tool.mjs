@@ -78,7 +78,7 @@ run('map-tool', async t => {
         // 右欄：常駐＋兩個群組（條件照 story.json）、角色清單
         const right = document.getElementById('right');
         out.layers = [...right.querySelectorAll('.layer')].map(e => `${e.dataset.layer}=${e.querySelector('.n').textContent}`);
-        out.cond = right.querySelector('.layer[data-layer="@wolves"] .cond')?.textContent;
+        out.cond = right.querySelector('.layer[data-layer="@wolves"] input.cond')?.value;
         out.roleRows = right.querySelectorAll('.roles .r').length;
 
         // 點畫布上的狼：選取、右欄顯示
@@ -261,6 +261,118 @@ run('map-tool', async t => {
         await w.write((await readText(`${KH}.json`)) + ' '); await w.close();
         await mt.undo().catch(e => {out.refuse = e.message;});
         out.refuseHi = S.hi;
+
+        // ================= 第 4 步：@群組＋spawns =================
+        const jsonDir = await assets.getDirectoryHandle('json');
+        const readStory = async () => (await (await jsonDir.getFileHandle('story.json')).getFile()).text();
+        const snap = {story: await readStory(), forest: await readText('forest-01.json'), m35: await readText('m/m_03x05.json'), kh: await readText(`${KH}.json`)};
+        const hi0 = S.hi;
+        const dlg = document.getElementById('dlgAsk');
+        const answer = async (fn) => {await until(() => dlg.open); const v = fn(dlg); dlg.close(v);};
+        const spawnsOf = (st) => Object.fromEntries(Object.entries(JSON.parse(st).lines).flatMap(([l, x]) => Object.entries(x.spawns ?? {}).map(([g, c]) => [g, `${l}:${c}`])));
+        const line0 = S.lines[0];
+        saved.length = 0;
+
+        // 新群組：選劇情線＋條件，地圖加空圖層、story.json 加 spawns，目標層換過去
+        mt.selectMap('forest-01');
+        await settle();
+        let pr2 = mt.newGroup();
+        await answer(d => {
+            const [nm, cd] = d.querySelectorAll('input');
+            nm.value = 'deer'; nm.dispatchEvent(new Event('input'));
+            d.querySelector('select').value = line0; cd.value = 'wolf_hunt>=2';
+            return 'ok';
+        });
+        await pr2;
+        await settle();
+        let fm = JSON.parse(await readText('forest-01.json'));
+        const deer = fm.layers.find(l => l.name === '@deer');
+        out.newGrp = [!!deer && deer.objects.length === 0 && deer.type === 'objectgroup', spawnsOf(await readStory()).deer, S.target,
+            !!document.querySelector('#right .layer[data-layer="@deer"]'), saved.includes('story.json') && saved.includes('maps/forest-01.json'), localStorage.getItem('tools.map.line')];
+        // 已有的群組（wolves）：共用條件、只加圖層、不動 story.json
+        mt.selectMap(KH);
+        await settle();
+        const storyBefore = await readStory();
+        pr2 = mt.newGroup();
+        await answer(d => {
+            const nm = d.querySelector('input');
+            nm.value = 'wolves'; nm.dispatchEvent(new Event('input'));
+            out.shareHint = [d.querySelector('.hint').textContent, d.querySelector('select').disabled];
+            return 'ok';
+        });
+        await pr2;
+        await settle();
+        out.shared = [JSON.parse(await readText(`${KH}.json`)).layers.some(l => l.name === '@wolves'), await readStory() === storyBefore, S.hist[S.hi - 1].files.length];
+        // 同一張圖重複擋
+        pr2 = mt.newGroup();
+        await answer(d => {d.querySelector('input').value = 'wolves'; return 'ok';});
+        await pr2;
+        out.dupBlock = document.getElementById('status').textContent;
+
+        // 改條件（右欄的條件欄）；認不得的 quality 標 ⚠
+        mt.selectMap('forest-01');
+        await settle();
+        const ci = () => document.querySelector('#right .layer[data-layer="@deer"] input.cond');
+        ci().value = 'wolf_hunt>=3'; ci().dispatchEvent(new Event('change'));
+        await until(() => spawnsOf(storyBefore).deer !== undefined || true);
+        await sleep(200); await settle();
+        out.cond3 = spawnsOf(await readStory()).deer;
+        ci().value = 'no_such_q>1'; ci().dispatchEvent(new Event('change'));
+        await sleep(200); await settle();
+        out.condWarn = [...document.querySelectorAll('#right .layer[data-layer="@deer"] .warn')].map(e => e.textContent).join();
+        out.dl = !!document.querySelector('#dl-cond option[value="wolf_hunt"]');
+        // 群組右鍵選單
+        document.querySelector('#right .layer[data-layer="@deer"]').dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, clientX: 50, clientY: 50}));
+        out.gmenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        document.querySelector('.ctxmenu')?.remove();
+
+        // 👁：藏起 @wolves（只影響畫面）
+        mt.selectMap('m/m_03x05');
+        await settle();
+        document.querySelector('#right .layer[data-layer="@wolves"] .eye').click();
+        out.hide = [cv().st.roles.length, cv().st.all.length, document.querySelector('#right .layer[data-layer="@wolves"]').classList.contains('hid'),
+            localStorage.getItem('tools.map.hide'), document.querySelectorAll('#right .r.hid').length];
+        document.querySelector('#right .layer[data-layer="@wolves"] .eye').click();
+        out.unhide = cv().st.roles.length;
+
+        // 改名 wolves → pack：用到的地圖（m_03x05、karen-home）＋story.json 一起改，一筆 undo
+        pr2 = mt.renameGroup('wolves');
+        await answer(d => {
+            out.renameHint = [d.querySelector('.hint').textContent, !!d.querySelector('.warn')];
+            d.querySelector('input').value = 'pack';
+            return 'ok';
+        });
+        await pr2;
+        await settle();
+        const m35 = JSON.parse(await readText('m/m_03x05.json')), kh2 = JSON.parse(await readText(`${KH}.json`)), sps = spawnsOf(await readStory());
+        out.renamed = [m35.layers.some(l => l.name === '@pack') && !m35.layers.some(l => l.name === '@wolves'), kh2.layers.some(l => l.name === '@pack'),
+            sps.pack, 'wolves' in sps, S.hist[S.hi - 1].files.length, S.sums['m/m_03x05'].groups.join(), cv().st.all.filter(it => it.layer === '@pack').length];
+        // 改成已有的名字擋
+        pr2 = mt.renameGroup('pack');
+        await answer(d => {d.querySelector('input').value = 'bandits'; return 'ok';});
+        await pr2;
+        out.renameBlock = document.getElementById('status').textContent;
+
+        // 刪除：karen-home 的 @pack（別張圖還在用）→ 只刪圖層
+        mt.selectMap(KH);
+        await settle();
+        pr2 = mt.deleteGroup('pack');
+        await answer(d => {out.delBtns1 = [...d.querySelectorAll('.buttons button')].map(b => b.value).join(); return 'layer';});
+        await pr2;
+        await settle();
+        out.del1 = [JSON.parse(await readText(`${KH}.json`)).layers.some(l => l.name === '@pack'), 'pack' in spawnsOf(await readStory())];
+        // forest-01 的 @deer 是最後一張 → 可以連條件一起刪
+        mt.selectMap('forest-01');
+        await settle();
+        pr2 = mt.deleteGroup('deer');
+        await answer(d => {out.delBtns2 = [...d.querySelectorAll('.buttons button')].map(b => b.value).join(); return 'all';});
+        await pr2;
+        await settle();
+        out.del2 = [JSON.parse(await readText('forest-01.json')).layers.some(l => l.name === '@deer'), 'deer' in spawnsOf(await readStory()), S.target];
+
+        // undo 回到第 4 步之前：story.json＋三張地圖一字不差
+        while (S.hi > hi0) await mt.undo();
+        out.undo4 = [await readStory() === snap.story, await readText('forest-01.json') === snap.forest, await readText('m/m_03x05.json') === snap.m35, await readText(`${KH}.json`) === snap.kh];
         chan.close();
         return out;
     }, SETUP.toString());
@@ -317,4 +429,23 @@ run('map-tool', async t => {
     t.check('undo 全部：兩張地圖回到原檔一字不差', r.undoAll[0] === 0 && r.undoAll[1] && r.undoAll[2], r.undoAll.join());
     t.check('redo 一步', r.redo[0] === 1 && r.redo[1], r.redo.join());
     t.check('別處改過不復原', /別處改過/.test(r.refuse ?? '') && r.refuseHi === 1, `${r.refuse} ${r.refuseHi}`);
+
+    // ---- 第 4 步 ----
+    t.check('新群組：地圖加空 @deer 層、story.json 加 spawns、目標換過去、兩個檔都廣播、記住劇情線',
+        r.newGrp[0] && r.newGrp[1]?.endsWith(':wolf_hunt>=2') && r.newGrp[2] === '@deer' && r.newGrp[3] && r.newGrp[4] && r.newGrp[5] === r.newGrp[1]?.split(':')[0], JSON.stringify(r.newGrp));
+    t.check('已有的群組：提示共用、劇情線鎖住', /共用/.test(r.shareHint[0]) && r.shareHint[1], r.shareHint.join(' | '));
+    t.check('共用：只加圖層、不動 story.json', r.shared[0] && r.shared[1] && r.shared[2] === 1, r.shared.join());
+    t.check('同一張圖重複擋', /已經有 @wolves/.test(r.dupBlock), r.dupBlock);
+    t.check('改條件寫進 story.json', r.cond3?.endsWith(':wolf_hunt>=3'), r.cond3);
+    t.check('條件有認不得的 quality 標 ⚠', /未宣告的 quality「no_such_q」/.test(r.condWarn), r.condWarn);
+    t.check('條件自動完成：dl-cond 有 quality', r.dl);
+    t.check('群組右鍵：改名、刪除、↗ 任務分頁', r.gmenu.join().startsWith('改名…,刪除…,↗ 到任務分頁'), r.gmenu.join());
+    t.check('👁：藏起來的組不畫（清單還在、變淡）、記住；再點顯示', r.hide[0] === 3 && r.hide[1] === 6 && r.hide[2] && r.hide[3] === '["wolves"]' && r.hide[4] === 3 && r.unhide === 6, `${r.hide.join()} ${r.unhide}`);
+    t.check('改名對話框：列出要改的檔、存檔命名空間警告', /m_03x05/.test(r.renameHint[0]) && /karen-home/.test(r.renameHint[0]) && /story\.json/.test(r.renameHint[0]) && r.renameHint[1], r.renameHint.join(' | '));
+    t.check('改名：兩張地圖＋story.json 一筆寫完、徽章／畫面跟著', r.renamed[0] && r.renamed[1] && r.renamed[2]?.endsWith(':wolf_hunt && wolf_hunt<9') && !r.renamed[3]
+        && r.renamed[4] === 3 && r.renamed[5] === 'pack,bandits' && r.renamed[6] === 3, JSON.stringify(r.renamed));
+    t.check('改成已有的名字擋', /已經有 @bandits/.test(r.renameBlock), r.renameBlock);
+    t.check('刪除（別張圖還在用）：只刪圖層、條件留著', r.delBtns1 === 'layer,cancel' && !r.del1[0] && r.del1[1], `${r.delBtns1} ${r.del1.join()}`);
+    t.check('刪除最後一張：可以連條件一起刪、目標回常駐', r.delBtns2 === 'all,layer,cancel' && !r.del2[0] && !r.del2[1] && r.del2[2] === '', `${r.delBtns2} ${r.del2.join()}`);
+    t.check('undo 回到第 4 步之前：story.json＋三張地圖一字不差', r.undo4.every(Boolean), r.undo4.join());
 });

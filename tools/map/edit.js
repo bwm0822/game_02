@@ -1,4 +1,4 @@
-// 地圖分頁改 Tiled 地圖（只動角色物件）：讀硬碟上的地圖 json → 改 → 照 Tiled 排版寫回；每次寫回傳前後全文給 undo
+// 地圖分頁改 Tiled 地圖（角色物件、@群組圖層）跟 story.json 的 spawns：讀硬碟上的檔 → 改 → 寫回（地圖照 Tiled 排版）；每次寫回傳前後全文給 undo
 // 位置一律用「站的格子」：root＝物件中心＋role.anchor（同 roles.js 的 placeOf），換算回 Tiled 的 x/y 看物件格式（template 的圖塊物件／點物件）
 import * as FS from '../common/fs.js';
 import {stringify, eolOf} from '../common/tiledjson.js';
@@ -7,26 +7,69 @@ import {resolveObject} from '../../src/data/navgrid.js';
 export const ROLES_LAYER = 'roles';
 const file = (name) => `maps/${name}.json`;
 
-// fn(data) 改 data；回傳 false＝不寫；throw Error＝不寫、訊息給呼叫端；寫了回傳 {before, after}（全文）
-export async function editMap(assets, name, fn)
+export const mapFile = file;
+// 地圖照 Tiled 排版，其他 json（story.json）同 doc.js 的 2 格縮排
+const serialize = (rel, data, before) => (rel.startsWith('maps/') ? stringify(data, eolOf(before)) : JSON.stringify(data, null, 2));
+const readRel = async (assets, rel) => {const {dir, file: fh} = await FS.resolveFile(assets, rel); return {dir, name: fh.name, text: await (await fh.getFile()).text()};};
+
+// 一次改好幾個檔（相對 assets 的路徑）：fn({rel: data}) 改；回傳 false＝不寫；throw Error＝不寫、訊息給呼叫端
+// 全部改好才一起寫；寫了回傳 [{rel, before, after}]（有變的檔，全文），都沒變回傳 null
+export async function editFiles(assets, rels, fn)
 {
-    const {dir, file: fh} = await FS.resolveFile(assets, file(name));
-    const before = await (await fh.getFile()).text();
-    const data = JSON.parse(before);
+    const src = {};
+    for (const rel of rels) src[rel] = await readRel(assets, rel);
+    const data = Object.fromEntries(rels.map(rel => [rel, JSON.parse(src[rel].text)]));
     if (fn(data) === false) return null;
-    const after = stringify(data, eolOf(before));
-    if (after === before) return null;
-    await FS.writeFile(dir, fh.name, new Blob([after]));
-    return {before, after};
+    const out = rels.map(rel => ({rel, before: src[rel].text, after: serialize(rel, data[rel], src[rel].text)})).filter(f => f.after !== f.before);
+    if (!out.length) return null;
+    for (const f of out) await FS.writeFile(src[f.rel].dir, src[f.rel].name, new Blob([f.after]));
+    return out;
 }
 
-// undo／redo：現在的檔案要等於 expect（不然是別處改過，不蓋）才寫回 text
-export async function restore(assets, name, expect, text)
+// 只改一張地圖：fn(data)
+export const editMap = (assets, name, fn) => editFiles(assets, [file(name)], d => fn(d[file(name)]));
+
+// undo／redo：每個檔現在都要等於 expect（不然是別處改過，不蓋）才全部寫回 text；files：[{rel, expect, text}]
+export async function restore(assets, files)
 {
-    const {dir, file: fh} = await FS.resolveFile(assets, file(name));
-    const now = await (await fh.getFile()).text();
-    if (now !== expect) throw new Error(`${name} 之後在別處改過了，不能復原這一步`);
-    await FS.writeFile(dir, fh.name, new Blob([text]));
+    const src = {};
+    for (const f of files)
+    {
+        src[f.rel] = await readRel(assets, f.rel);
+        if (src[f.rel].text !== f.expect) throw new Error(`${f.rel} 之後在別處改過了，不能復原這一步`);
+    }
+    for (const f of files) await FS.writeFile(src[f.rel].dir, src[f.rel].name, new Blob([f.text]));
+}
+
+// ---------- @群組 ----------
+// 加一個空的 @群組 物件層（接在最後）
+export function addGroupLayer(data, g)
+{
+    if (data.layers.some(l => l.name === `@${g}`)) throw new Error(`已經有 @${g} 圖層`);
+    data.layers.push({draworder: 'topdown', id: data.nextlayerid, name: `@${g}`, objects: [], opacity: 1, type: 'objectgroup', visible: true, x: 0, y: 0});
+    data.nextlayerid++;
+}
+
+export function renameGroupLayer(data, from, to)
+{
+    const l = data.layers.find(x => x.name === `@${from}`);
+    if (!l) return false;
+    l.name = `@${to}`;
+}
+
+export function deleteGroupLayer(data, g)
+{
+    const i = data.layers.findIndex(x => x.name === `@${g}`);
+    if (i < 0) throw new Error(`沒有 @${g} 圖層`);
+    data.layers.splice(i, 1);
+}
+
+// story.json 的 spawns：改 key 保留順序
+export function renameKey(obj, from, to)
+{
+    const e = Object.entries(obj);
+    for (const k of Object.keys(obj)) delete obj[k];
+    for (const [k, v] of e) obj[k === from ? to : k] = v;
 }
 
 // templates/ 底下 type npc＋屬性 id 的 template：{角色 id: {path（相對 assets）, object}}，同一個角色有好幾個取路徑排第一的

@@ -1,6 +1,6 @@
 // 地圖分頁：左樹（世界／室內／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色唯讀）、右欄圖層／群組＋角色清單＋選取的角色
 // 地圖先讀專案資料夾、讀不到走 dev server（tools/common/mapview.js）；見 docs/map-tool.md
-import {$, h, status} from '../common/dom.js';
+import {$, h, ask, status} from '../common/dom.js';
 import * as ED from './edit.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
@@ -10,6 +10,10 @@ import * as IC from '../common/icons.js';
 import * as MV from '../common/mapview.js';
 import {createFold} from '../common/fold.js';
 import {createShowMenu} from '../common/showmenu.js';
+import {renderDatalists} from '../common/views.js';
+import {storyLists} from '../common/storyform.js';
+import '../common/combo.js';
+import {checkStory} from '../../src/data/storycheck.js';
 import {resolveObject, joinPath} from '../../src/data/navgrid.js';
 import {usersOf as pointUsers} from '../role/mapedit.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
@@ -79,12 +83,21 @@ async function loadRefs()
     forgetSprites();
 }
 
+// story.json 的 spawns＋條件檢查（同任務分頁的 checkStory）＋條件自動完成的 dl-cond
 async function loadSpawns()
 {
-    const story = await readJsonFile('story.json', {});
+    const story = await readJsonFile('story.json', {}), dialog = await readJsonFile('dialog.json', {});
+    S.lines = Object.keys(story.lines ?? {});
     S.spawns = {};
     for (const [line, l] of Object.entries(story.lines ?? {}))
-        for (const [g, cond] of Object.entries(l.spawns ?? {})) S.spawns[g] = {line, cond};
+        for (const [g, cond] of Object.entries(l.spawns ?? {})) S.spawns[g] = {line, cond, errs: []};
+    for (const r of checkStory({story, dialog, roles: S.roles, items: S.items}))
+    {
+        const [top, line, k, g] = r.path ?? [];
+        if (r.file === 'story.json' && top === 'lines' && k === 'spawns' && S.spawns[g]?.line === line) S.spawns[g].errs.push(r.msg);
+    }
+    const {lists, labels} = storyLists({roles: S.roles, items: S.items}, story, dialog);
+    renderDatalists({cond: lists.cond}, {cond: labels.cond});
 }
 
 // maps/ 底下的地圖（不含 _ 開頭的舊檔），名稱＝相對 maps/、不含 .json
@@ -338,8 +351,9 @@ async function loadMapState(st)
     const d = await MV.mapData(st.name, {skip: skipRoles, tag: 'map'});
     st.data = d;
     if (!d) return;
-    st.roles = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
-    const rids = new Set(st.roles.map(it => it.rid));
+    st.all = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
+    applyHide(st);
+    const rids = new Set(st.all.map(it => it.rid));
     if (S.place) rids.add(S.place);
     await Promise.all([...rids].map(async rid => st.sprites.set(rid, await spriteOf(rid, refs()))));
 }
@@ -524,48 +538,48 @@ const tplOf = (rid) => S.tpls[rid] ?? null;
 const isNamed = (rid) => S.roles[rid]?.kind === 'npc';
 const NAMED_WARN = '⚠ 具名 NPC 是作息產生的，地圖上再放一個遊戲裡可能出現兩個';
 
-async function afterWrite(map, text)
+const mapOfRel = (rel) => (rel.startsWith('maps/') ? rel.slice(5).replace(/\.json$/, '') : null);
+
+// 寫完：地圖丟掉快取、重算徽章；story.json 重讀 spawns；每個檔都廣播（file＝相對 public/assets/json，地圖是 maps/…）
+async function afterWrite(rels, text)
 {
-    MV.forget(map);
-    SH.notifySaved(`maps/${map}.json`);
-    await resummarize([map]);
+    const maps = rels.map(mapOfRel).filter(Boolean);
+    for (const m of maps) MV.forget(m);
+    for (const rel of rels) SH.notifySaved(rel.startsWith('json/') ? rel.slice(5) : rel);
+    if (rels.includes(STORY)) await loadSpawns();
+    await resummarize(maps);
     status(text);
     render();
 }
 
-// fn(data) 改地圖；寫了記一筆 undo
-async function write(map, fn, msg, warn = '')
+const STORY = 'json/story.json';
+// 改好幾個檔（rels：相對 assets；地圖用 ED.mapFile(名稱)）：fn({rel: data})；寫了記一筆 undo（map＝復原時切過去的地圖）
+async function writeFiles(rels, fn, msg, warn = '', map = S.sel)
 {
     let r;
-    try {r = await ED.editMap(S.assets.dir, map, fn);}
+    try {r = await ED.editFiles(S.assets.dir, rels, fn);}
     catch (e) {status(e.message); return false;}
     if (!r) return false;
     S.hist.length = S.hi;
-    S.hist.push({map, ...r, msg});
+    S.hist.push({map, files: r, msg});
     S.hi++;
-    await afterWrite(map, `${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖要重新載入）${warn ? `　${warn}` : ''}`);
+    const where = r.map(f => f.rel.replace(/^json\//, '')).join('、');
+    await afterWrite(r.map(f => f.rel), `${msg}：已寫入 ${where}${r.some(f => f.rel.startsWith('maps/')) ? '（Tiled 開著這張圖要重新載入）' : ''}${warn ? `　${warn}` : ''}`);
     return true;
 }
 
-async function undo()
-{
-    if (!S.hi) return;
-    const x = S.hist[S.hi - 1];
-    await ED.restore(S.assets.dir, x.map, x.after, x.before);
-    S.hi--;
-    if (S.sel !== x.map) selectMap(x.map);
-    await afterWrite(x.map, `復原：${x.msg}`);
-}
+// fn(data) 改一張地圖
+const write = (map, fn, msg, warn = '') => writeFiles([ED.mapFile(map)], d => fn(d[ED.mapFile(map)]), msg, warn, map);
 
-async function redo()
+async function step(x, back)
 {
-    if (S.hi >= S.hist.length) return;
-    const x = S.hist[S.hi];
-    await ED.restore(S.assets.dir, x.map, x.before, x.after);
-    S.hi++;
-    if (S.sel !== x.map) selectMap(x.map);
-    await afterWrite(x.map, `重做：${x.msg}`);
+    await ED.restore(S.assets.dir, x.files.map(f => ({rel: f.rel, expect: back ? f.after : f.before, text: back ? f.before : f.after})));
+    S.hi += back ? -1 : 1;
+    if (x.map && S.sel !== x.map) selectMap(x.map);
+    await afterWrite(x.files.map(f => f.rel), `${back ? '復原' : '重做'}：${x.msg}`);
 }
+const undo = () => (S.hi ? step(S.hist[S.hi - 1], true) : null);
+const redo = () => (S.hi < S.hist.length ? step(S.hist[S.hi], false) : null);
 
 // 現在的目標層這張圖沒有（換了地圖）就回常駐
 const targetOn = (d) => (layersOf(d).includes(S.target) ? S.target : '');
@@ -611,6 +625,127 @@ function setPlace(rid)
     renderRight();
 }
 
+// ---------- @群組（地圖任務） ----------
+const GID_RE = /^[A-Za-z0-9_-]+$/;
+const HIDE_KEY = 'tools.map.hide';
+S.hide = new Set();         // 👁 關掉的群組（只影響工具畫面）
+try {S.hide = new Set(JSON.parse(localStorage.getItem(HIDE_KEY)) ?? []);} catch {}
+const LINE_KEY = 'tools.map.line';
+const mapsWithGroup = (g) => S.maps.map(m => m.name).filter(n => S.sums[n]?.groups.includes(g));
+
+function toggleHide(g)
+{
+    S.hide.has(g) ? S.hide.delete(g) : S.hide.add(g);
+    try {localStorage.setItem(HIDE_KEY, JSON.stringify([...S.hide]));} catch {}
+    const st = mapSt();
+    if (st?.data) applyHide(st);
+    renderRight();
+    st?.redraw();
+}
+
+// 新增：沒宣告過＝選劇情線＋寫條件（地圖＋story.json 一起寫）；已經宣告過（別張圖在用）＝共用它的條件，只加圖層
+async function newGroup()
+{
+    const map = S.sel, st = mapSt();
+    if (!st?.data) return;
+    let lastLine = null;
+    try {lastLine = localStorage.getItem(LINE_KEY);} catch {}
+    const name = h('input', {size: 20, placeholder: '英數字，例如 wolves'});
+    const line = h('select', null, S.lines.map(l => h('option', {value: l, selected: l === lastLine}, l)));
+    const cond = h('input', {class: 'expr', size: 34, placeholder: '出現條件，例如 wolf_hunt && wolf_hunt<9', dataset: {combo: 'dl-cond', expr: ''}});
+    const hint = h('div', {class: 'hint'});
+    const sync = () => {
+        const sp = S.spawns[name.value.trim()];
+        line.disabled = cond.disabled = !!sp;
+        if (sp) {line.value = sp.line; cond.value = sp.cond;}
+        hint.textContent = sp ? `已經有這個群組（${sp.line}，用在 ${mapsWithGroup(name.value.trim()).join('、') || '沒有地圖'}）：共用它的條件，只在這張圖加圖層`
+            : '群組名稱全域唯一，也是存檔的命名空間；條件只在進地圖時判斷';
+    };
+    name.oninput = sync;
+    sync();
+    const p = ask(`在 ${map} 新增 @群組`, [h('div', {class: 'fields'},
+        h('span', {class: 'k'}, '名稱'), h('span', null, '@', name),
+        h('span', {class: 'k'}, '劇情線'), line,
+        h('span', {class: 'k'}, '條件'), cond), hint], [['ok', '新增'], ['cancel', '取消']]);
+    name.focus();
+    if (await p !== 'ok') return;
+    const g = name.value.trim(), sp = S.spawns[g];
+    if (!GID_RE.test(g)) return status(`群組名稱只能用英數、- 和 _：${g}`);
+    if (st.data.map.layers.some(l => l.name === `@${g}`)) return status(`${map} 已經有 @${g}`);
+    if (!sp && !line.value) return status('story.json 沒有劇情線，先到任務分頁建一條');
+    try {localStorage.setItem(LINE_KEY, line.value);} catch {}
+    const mf = ED.mapFile(map);
+    const ok = await writeFiles(sp ? [mf] : [mf, STORY], d => {
+        ED.addGroupLayer(d[mf], g);
+        if (!sp) (d[STORY].lines[line.value].spawns ??= {})[g] = cond.value.trim();
+    }, sp ? `${map} 加 @${g}（共用 ${sp.line} 的條件）` : `新群組 @${g}（${line.value}）`);
+    if (ok) {S.target = `@${g}`; renderRight(); mapSt()?.updatePlacing();}
+}
+
+async function setCond(g, cond)
+{
+    const sp = S.spawns[g];
+    if (!sp || sp.cond === cond) return;
+    await writeFiles([STORY], d => {d[STORY].lines[sp.line].spawns[g] = cond;}, `@${g} 的條件`);
+}
+
+// 改名：所有用到的地圖的 @圖層＋story.json 的 spawns key（存檔命名空間跟著換，舊存檔裡這組的狀態對不上）
+async function renameGroup(from)
+{
+    const name = h('input', {size: 20, value: from});
+    const used = mapsWithGroup(from);
+    const p = ask(`改名 @${from}`, [h('div', {class: 'fields'}, h('span', {class: 'k'}, '新名稱'), h('span', null, '@', name)),
+        h('div', {class: 'hint'}, `會一起改：${[...used.map(m => `maps/${m}.json`), S.spawns[from] && 'story.json'].filter(Boolean).join('、')}`),
+        h('div', {class: 'warn'}, '⚠ 群組名稱也是存檔的命名空間：舊存檔裡這組的狀態（殺了幾隻、撿走什麼）會對不上，進地圖時當成全新的')],
+        [['ok', '改名'], ['cancel', '取消']]);
+    name.select();
+    if (await p !== 'ok') return;
+    const to = name.value.trim();
+    if (to === from) return;
+    if (!GID_RE.test(to)) return status(`群組名稱只能用英數、- 和 _：${to}`);
+    if (S.spawns[to] || mapsWithGroup(to).length) return status(`已經有 @${to}`);
+    const rels = [...used.map(ED.mapFile), ...(S.spawns[from] ? [STORY] : [])];
+    const ok = await writeFiles(rels, d => {
+        for (const m of used) ED.renameGroupLayer(d[ED.mapFile(m)], from, to);
+        if (S.spawns[from]) ED.renameKey(d[STORY].lines[S.spawns[from].line].spawns, from, to);
+    }, `@${from} 改名 @${to}`);
+    if (!ok) return;
+    if (S.target === `@${from}`) S.target = `@${to}`;
+    if (S.hide.delete(from)) {S.hide.add(to); try {localStorage.setItem(HIDE_KEY, JSON.stringify([...S.hide]));} catch {}}
+    render();
+}
+
+// 刪除：這張圖的圖層（連裡面的角色）；是最後一張用到的地圖就問要不要連 spawns 一起刪
+async function deleteGroup(g)
+{
+    const map = S.sel, st = mapSt(), n = st.roles.filter(it => it.layer === `@${g}`).length;
+    const others = mapsWithGroup(g).filter(m => m !== map), sp = S.spawns[g];
+    const body = [h('div', null, `從 ${map} 刪掉 @${g} 圖層${n ? `，連同裡面 ${n} 個角色` : ''}`),
+        others.length ? h('div', {class: 'hint'}, `${others.join('、')} 也在用，story.json 的條件留著`)
+            : sp && h('div', {class: 'hint'}, `這是最後一張用到 @${g} 的地圖；story.json（${sp.line}）的條件也要刪嗎？`)];
+    const btns = !others.length && sp ? [['all', '連條件一起刪'], ['layer', '只刪圖層'], ['cancel', '取消']] : [['layer', '刪除'], ['cancel', '取消']];
+    const v = await ask(`刪除 @${g}？`, body, btns);
+    if (v !== 'all' && v !== 'layer') return;
+    const mf = ED.mapFile(map), withStory = v === 'all';
+    const ok = await writeFiles(withStory ? [mf, STORY] : [mf], d => {
+        ED.deleteGroupLayer(d[mf], g);
+        if (withStory) delete d[STORY].lines[sp.line].spawns[g];
+    }, `刪除 ${map} 的 @${g}${withStory ? '＋條件' : ''}`);
+    if (ok && S.target === `@${g}`) {S.target = ''; renderRight();}
+}
+
+function groupMenu(e, g)
+{
+    menu(e, [['改名…', () => act(renameGroup(g))], ['刪除…', () => act(deleteGroup(g))],
+        S.spawns[g] && [`↗ 到任務分頁（${S.spawns[g].line}）`, () => SH.gotoTab('story', [S.spawns[g].line, 'spawns', g])]].filter(Boolean));
+}
+
+// 👁 關掉的群組：角色不畫、點不到
+function applyHide(st)
+{
+    st.roles = st.all.filter(it => !(it.layer.startsWith('@') && S.hide.has(it.layer.slice(1))));
+}
+
 // ---------- 右欄 ----------
 function renderRight()
 {
@@ -618,30 +753,42 @@ function renderRight()
     if (!S.sel) {$('right').replaceChildren(); return;}
     if (!st?.data) return;      // 地圖還在讀（寫完重畫）：右欄先留著，讀完會再畫
     const d = st.data, target = targetOn(d);
-    const count = (g) => st.roles.filter(it => groupOf(it.layer) === g).length;
+    const count = (g) => st.all.filter(it => groupOf(it.layer) === g).length;
+    const pickLayer = (l) => {S.target = l; renderRight(); st.updatePlacing();};
     const layerRows = layersOf(d).map(l => {
-        const sp = l && S.spawns[l.slice(1)];
-        return h('div', {class: 'layer' + (l ? ' grp' : '') + (l === target ? ' on' : ''), dataset: {layer: l}, title: '點＝放角色放到這一層',
-            onclick: () => {S.target = l; renderRight(); st.updatePlacing();}},
-            h('div', null, h('b', null, l || '常駐'),
-                l ? h('span', {class: 'dim'}, sp ? `　${sp.line}` : '　⚠ story.json 沒宣告') : h('span', {class: 'dim'}, '（不屬於群組，一直都在；寫在 roles 層）'),
-                sp && h('span', {class: 'cond'}, sp.cond)),
-            h('span', {class: 'n'}, String(count(l))));
+        if (!l) return h('div', {class: 'layer' + (l === target ? ' on' : ''), dataset: {layer: ''}, title: '點＝放角色放到這一層', onclick: () => pickLayer('')},
+            h('div', {class: 'lhead'}, h('b', null, '常駐'), h('span', {class: 'dim'}, '（一直都在；寫在 roles 層）'), h('span', {class: 'n'}, String(count('')))));
+        const g = l.slice(1), sp = S.spawns[g], hid = S.hide.has(g);
+        const stop = (e) => e.stopPropagation();
+        const cond = sp && h('input', {class: 'expr cond', placeholder: '（一直出現）', value: sp.cond, dataset: {combo: 'dl-cond', expr: '', k: `cond-${g}`},
+            title: `story.json 的 ${sp.line}.spawns.${g}：只在進地圖時判斷`, onclick: stop,
+            onchange: e => act(setCond(g, e.target.value.trim()))});
+        return h('div', {class: 'layer grp' + (l === target ? ' on' : '') + (hid ? ' hid' : ''), dataset: {layer: l}, title: '點＝放角色放到這一層；右鍵＝改名／刪除',
+            onclick: () => pickLayer(l), oncontextmenu: (e) => groupMenu(e, g)},
+            h('div', {class: 'lhead'},
+                h('button', {type: 'button', class: 'eye', title: hid ? '顯示這組（只影響工具畫面）' : '藏起這組（只影響工具畫面，預覽劇情不同階段）', dataset: {eye: g},
+                    onclick: e => {stop(e); toggleHide(g);}}, hid ? '◌' : '👁'),
+                h('b', null, l),
+                sp ? h('a', {class: 'go', title: '到任務分頁', onclick: e => {stop(e); SH.gotoTab('story', [sp.line, 'spawns', g]);}}, `↗ ${sp.line}`)
+                    : h('span', {class: 'warn'}, '⚠ story.json 沒宣告'),
+                h('span', {class: 'n'}, String(count(l)))),
+            cond, ...(sp?.errs ?? []).map(m => h('div', {class: 'warn small'}, `⚠ ${m}`)));
     });
-    const roleRows = st.roles.map(it => {
-        const [tx, ty] = rootTile(d, it);
-        return h('div', {class: 'r' + (S.pick === it.o.id ? ' sel' : ''), dataset: {oid: it.o.id},
+    const roleRows = st.all.map(it => {
+        const [tx, ty] = rootTile(d, it), hid = !st.roles.includes(it);
+        return h('div', {class: 'r' + (S.pick === it.o.id ? ' sel' : '') + (hid ? ' hid' : ''), dataset: {oid: it.o.id},
             onclick: () => {S.pick = S.pick === it.o.id ? null : it.o.id; renderRight(); st.redraw();},
             oncontextmenu: (e) => roleMenu(e, st, it)},
             IC.iconEl(S.roles[it.rid]?.icon, 20), h('span', null, it.rid),
             h('span', {class: 'where'}, `${layerLabel(groupOf(it.layer))}・${tx},${ty}`));
     });
-    const it = st.roles.find(x => x.o.id === S.pick);
+    const it = st.all.find(x => x.o.id === S.pick);
     $('right').replaceChildren(
         h('div', {class: 'sec'}, '圖層／群組 ', h('span', {class: 'dim'}, '（點一層＝放到這裡）')), ...layerRows,
+        h('div', null, h('button', {type: 'button', class: 'newgrp', onclick: () => act(newGroup())}, '＋ 新群組（地圖任務）…')),
         paletteEl(),
         it && pickedEl(it, d),
-        h('div', {class: 'sec'}, '角色 ', h('span', {class: 'dim'}, `（${st.roles.length}）`)),
+        h('div', {class: 'sec'}, '角色 ', h('span', {class: 'dim'}, `（${st.all.length}）`)),
         h('div', {class: 'roles'}, roleRows.length ? roleRows : h('div', {class: 'dim'}, '這張地圖沒有角色')));
 }
 
@@ -749,7 +896,7 @@ addEventListener('keydown', (e) => {
     else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); act(redo());}
     else if (e.key === 'Delete' && S.pick != null)
     {
-        const st = mapSt(), it = st?.roles.find(x => x.o.id === S.pick);
+        const st = mapSt(), it = st?.all.find(x => x.o.id === S.pick);
         if (it) {e.preventDefault(); act(deleteRole(st.name, it));}
     }
 });
@@ -770,4 +917,4 @@ SH.onProject((dir) => act(setRoot(dir)));
 render();
 
 // 給無頭測試用
-window.__mt = {S, setRoot, reload, render, selectMap, mapSt, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, MV, PZ, ED};
+window.__mt = {S, setRoot, reload, render, selectMap, mapSt, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, newGroup, setCond, renameGroup, deleteGroup, toggleHide, MV, PZ, ED};
