@@ -17,7 +17,11 @@ export const M = {map: null};       // 目前顯示的地圖（null＝跟著作�
 try {M.map = localStorage.getItem(`${KEY}.map`);} catch {}
 const remember = () => {try {M.map ? localStorage.setItem(`${KEY}.map`, M.map) : localStorage.removeItem(`${KEY}.map`);} catch {}};
 
-const readJson = (rel) => fetch(`/assets/${rel}`, {cache: 'no-store'}).then(r => (r.ok ? r.json() : null)).catch(() => null);
+const fetchJson = (rel) => fetch(`/assets/${rel}`, {cache: 'no-store'}).then(r => (r.ok ? r.json() : null)).catch(() => null);
+// 讀檔：預設走 dev server；角色分頁設成先讀專案資料夾（工具剛寫的地圖、測試的假資料夾），讀不到再走 dev server
+let reader = null;
+export const setReader = (fn) => {reader = fn;};
+const readJson = async (rel) => (reader && await reader(rel)) ?? fetchJson(rel);
 const dirOf = (p) => (p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '');
 
 const imgs = new Map();
@@ -313,6 +317,16 @@ function draw(cv, st)
         }
     }
     drawRoute(g, st, K);
+    // 拖曳中的 point：放開後會落在的格子
+    if (st.drag?.moved)
+    {
+        const {x, y} = st.drag.to;
+        g.setLineDash([4 / K, 3 / K]);
+        g.strokeStyle = '#ffd24a';
+        g.lineWidth = 2 / K;
+        g.strokeRect(x, y, d.map.tilewidth, d.map.tileheight);
+        g.setLineDash([]);
+    }
     cv.dataset.drawn = d.named.size;
 }
 
@@ -379,7 +393,10 @@ export function setMap(m)
 // r＝角色；maps＝路網裡的地圖清單；refresh()＝換地圖後要整個重畫右欄
 // opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆（-1＝沒有）、opt.edges＝路網的 edges
 // opt.others＝其他角色的作息 [{id, i, s}]；opt.onPick(map, name, shift)＝點了具名物件（有選卡片才改、Shift＝在後面插入）
-export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], onPick = null} = {})
+// point 編輯：opt.onNew(map, x, y, data)＝點空地、opt.onMove(map, name, x, y)＝拖完、opt.onMenu(e, map, name)＝右鍵（x/y＝格子左上角）
+// 路網：opt.stale＝比 navgraph.json 新的地圖（null／[]＝沒過期）、opt.onUpdate()＝按「更新路網」、opt.navMsg＝上次更新的結果文字
+export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], onPick = null,
+    onNew = null, onMove = null, onMenu = null, stale = null, onUpdate = null, navMsg = ''} = {})
 {
     const name = M.map && maps.includes(M.map) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
     const view = viewOf(name);
@@ -390,13 +407,14 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const go = (m) => {setMap(m); refresh();};
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
     cv.addEventListener('click', (e) => {
-        if (!st.data) return;
-        // 先看路線標籤（「→ 地圖」切圖），再看具名物件
+        if (!st.data || st.swallow) return;
+        // 先看路線標籤（「→ 地圖」切圖），再看具名物件，都沒點到＝空地（新增 point）
         const p = toMap(e);
         const hit = st.hits.find(b => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
         if (hit) return go(hit.go);
         const n = hitAt(st.data, p, st.pz.K);
-        if (n && onPick && (e.shiftKey || sel >= 0)) onPick(name, n.name, e.shiftKey);
+        if (n) {if (onPick && (e.shiftKey || sel >= 0)) onPick(name, n.name, e.shiftKey); return;}
+        if (onNew && p.x >= 0 && p.y >= 0 && p.x < st.data.W && p.y < st.data.H) {const s = snap(p); onNew(name, s.x, s.y, st.data);}
     });
     const redraw = () => draw(cv, st);
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
@@ -411,17 +429,51 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         info.textContent = n ? `${n.name}（${n.type || '無 type'}）${users(n)}${onPick ? hint() : ''}` : st.data ? `${name}　具名物件 ${st.data.named.size}` : info.textContent;
         info.title = info.textContent;
     };
+    // 拖 point（左鍵按在 point 上、移超過 4px 才算拖）：放開時 onMove(map, name, x, y)，x/y＝格子左上角；拖過就吃掉接著的 click
+    const snap = (p) => {const tw = st.data.map.tilewidth, th = st.data.map.tileheight; return {x: Math.floor(p.x / tw) * tw, y: Math.floor(p.y / th) * th};};
+    cv.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || !st.data || !onMove) return;
+        const n = hitAt(st.data, toMap(e), st.pz.K);
+        if (n?.type !== 'point') return;
+        if (e.isTrusted) cv.setPointerCapture(e.pointerId);
+        st.drag = {name: n.name, sx: e.clientX, sy: e.clientY, moved: false, to: snap(toMap(e))};
+    });
+    cv.addEventListener('pointerup', (e) => {
+        const dr = st.drag;
+        st.drag = null;
+        if (!dr?.moved) return;
+        st.swallow = true;
+        setTimeout(() => {st.swallow = false;}, 0);
+        redraw();
+        onMove(name, dr.name, dr.to.x, dr.to.y);
+    });
     cv.addEventListener('pointermove', (e) => {
         if (!st.data || st.pz.panning) return;
+        const dr = st.drag;
+        if (dr)
+        {
+            if (!dr.moved && Math.hypot(e.clientX - dr.sx, e.clientY - dr.sy) < 4) return;
+            dr.moved = true;
+            dr.to = snap(toMap(e));
+            cv.style.cursor = 'grabbing';
+            return redraw();
+        }
         const n = hitAt(st.data, toMap(e), st.pz.K);
         const k = n?.name ?? null;
-        cv.style.cursor = n ? 'pointer' : '';
+        cv.style.cursor = n?.type === 'point' && onMove ? 'grab' : n ? 'pointer' : '';
         if (k === st.hover) return;
         st.hover = k;
         say();
         redraw();
     });
     cv.addEventListener('pointerleave', () => {if (st.hover) {st.hover = null; say(); redraw();}});
+    cv.addEventListener('contextmenu', (e) => {
+        if (!st.data || !onMenu) return;
+        const n = hitAt(st.data, toMap(e), st.pz.K);
+        if (n?.type !== 'point') return;
+        e.preventDefault();
+        onMenu(e, name, n.name);
+    });
     mapData(name).then(d => {
         st.data = d;
         if (!d) info.textContent = `讀不到地圖 ${name}`;
@@ -437,7 +489,12 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         legs.flatMap((l, i) => [i > 0 && h('span', {class: 'dim'}, '→'),
             h('button', {type: 'button', class: l.map === name ? 'on' : '', dataset: {map: l.map}, onclick: () => go(l.map)},
                 shortMap(l.map), h('small', null, ` ${hhmm(l.nodes[0].t)}～${hhmm(l.nodes.at(-1).t)}`))]));
+    const banner = stale?.length > 0 && h('div', {class: 'stale', title: '遊戲的 NPC 照 navgraph.json 走；地圖改了沒更新，遊戲裡找不到新的點、時間也不準'},
+        `⚠ 路網已過期（${stale.map(m => `${shortMap(m)}.json`).join('、')} 比 navgraph.json 新）`,
+        onUpdate && h('button', {type: 'button', class: 'navupd', onclick: onUpdate}, '更新路網'));
     return h('div', {class: 'pv smap'},
+        banner,
+        navMsg && h('div', {class: 'navmsg dim'}, navMsg),
         h('div', {class: 'opts'}, pick),
         crumbs,
         h('div', {class: 'cvbox'}, cv),

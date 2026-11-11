@@ -18,6 +18,7 @@ import {previewEl} from './preview.js';
 import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
+import * as ME from './mapedit.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -590,14 +591,122 @@ function pickDest(id, map, go, shift)
     });
 }
 
+// ---------- 作息地圖：改 point（寫 Tiled 地圖）、路網過期 ----------
+// 地圖先讀專案資料夾（剛寫的、測試的假資料夾），讀不到才走 dev server
+SM.setReader(async (rel) => {
+    if (!S.assets) return null;
+    try {return JSON.parse(await (await (await FS.resolveFile(S.assets.dir, rel)).file.getFile()).text());}
+    catch {return null;}
+});
+S.stale = null;                                  // 比 navgraph.json 新的地圖
+S.navMsg = '';                                   // 上次「更新路網」的結果
+let staleBusy = false;
+async function checkStale()
+{
+    if (staleBusy || !S.assets) return;
+    staleBusy = true;
+    try
+    {
+        const st = await ME.staleMaps(S.assets.dir, Object.keys(S.ext.maps));
+        if (JSON.stringify(st) !== JSON.stringify(S.stale)) {S.stale = st; renderRight();}
+    }
+    finally {staleBusy = false;}
+}
+
+const ID_RE = /^[A-Za-z0-9_-]+$/;
+const isPointRaw = (o) => o.type === 'point' || /(^|\/)point\.tj$/.test(o.template ?? '');
+
+async function writeMap(map, fn, msg)
+{
+    try {if (await ME.editMap(S.assets.dir, map, fn) === false) return false;}
+    catch (e) {status(e.message); return false;}
+    SM.forget(map);
+    status(`${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖的話要重新載入，不然 Tiled 存檔會蓋掉）`);
+    await checkStale();
+    renderRight();
+    return true;
+}
+
+async function askPointName(title, value, taken)
+{
+    const inp = h('input', {size: 24, value});
+    const p = ask(title, h('label', null, '名稱 ', inp), [['ok', '確定'], ['cancel', '取消']]);
+    inp.select();
+    if (await p !== 'ok') return null;
+    const v = inp.value.trim();
+    if (!ID_RE.test(v)) {status(`名稱只能用英數、- 和 _：${v}`); return null;}
+    if (taken.has(v)) {status(`這張圖已經有 ${v}`); return null;}
+    return v;
+}
+
+// 點空地：新增 point（預設 <角色id>-p<n>）；有選卡片就把它的目的地指過去
+async function newPoint(id, map, x, y, d)
+{
+    let n = 1;
+    while (d.named.has(`${id}-p${n}`)) n++;
+    const name = await askPointName(`在 ${map} 新增 point`, `${id}-p${n}`, d.named);
+    if (!name || !await writeMap(map, data => ME.addPoint(data, map, name, x, y, isPointRaw), `新增 ${name}`)) return;
+    const i = schSel(id);
+    if (i >= 0) commit(() => Object.assign(S.data[id].schedule[i], {map, go: name}));
+}
+
+const movePoint = (map, name, x, y) => writeMap(map, data => ME.movePoint(data, name, x, y), `移動 ${name}`);
+
+function pointMenu(e, map, name)
+{
+    menu(e, [['改名…', () => renamePoint(map, name)], ['刪除…', () => deletePoint(map, name)]]);
+}
+
+async function renamePoint(map, from)
+{
+    const d = await SM.mapData(map);
+    const to = await askPointName(`改名 ${from}`, from, new Set([...d.named.keys()].filter(k => k !== from)));
+    if (!to || to === from || !await writeMap(map, data => ME.renamePoint(data, map, from, to), `改名 ${from} → ${to}`)) return;
+    const users = ME.usersOf(S.data, map, from);
+    if (!users.length) return;
+    commit(() => ME.renameRefs(S.data, map, from, to));
+    await D.save();
+    status(`改名 ${from} → ${to}：地圖跟 role.json（${[...new Set(users.map(u => u.id))].join('、')}）都寫好了`);
+}
+
+async function deletePoint(map, name)
+{
+    const users = ME.usersOf(S.data, map, name);
+    if (users.length)
+    {
+        await ask(`不能刪 ${name}`, h('div', null, `還有作息用到它：${users.map(u => `${u.id} 第 ${u.i + 1} 筆`).join('、')}`), [['ok', '知道了']]);
+        return;
+    }
+    if (await ask(`刪除 ${name}？`, h('div', null, `從 ${map} 刪掉這個 point`), [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    await writeMap(map, data => ME.deletePoint(data, name), `刪除 ${name}`);
+}
+
+async function updateNav()
+{
+    status('路網更新中…');
+    let r;
+    try {r = await (await fetch('/__tools/navgraph', {method: 'POST'})).json();}
+    catch (e) {r = {ok: false, errors: [e.message]};}
+    S.navMsg = r.ok ? `路網已更新：${r.count} 個節點${r.warns.length ? `，${r.warns.length} 個警告\n${r.warns.join('\n')}` : ''}` : `路網更新失敗：${(r.errors ?? []).join('；')}`;
+    status(S.navMsg.split('\n')[0]);
+    await loadRefs();
+    S.stale = null;
+    await checkStale();
+    render();
+}
+
 // 時刻表（跟遊戲 ScheduleManager 同一支 buildPlan）
 const planOf = (id) => (Array.isArray(S.data[id]?.schedule) && S.data[id].schedule.every(s => typeof s.t === 'string')
     ? SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes) : {plan: null, warns: []});
 
-function schTimes(i, pl)
+function schTimes(i, pl, s)
 {
     const p = pl.plan?.[i];
-    if (!p) return null;
+    if (!p)
+    {
+        const key = `${s.map}:${s.go}`, miss = s.go && pl.warns.some(w => w.kind === 'node' && w.keys?.includes(key));
+        return miss && h('div', {class: 'times bad'}, `⚠ 路網裡沒有 ${key}（新加的點要按右欄的「更新路網」）`);
+    }
     const late = pl.warns.find(w => w.i === i && w.kind === 'late'), pre = pl.plan[(i - 1 + pl.plan.length) % pl.plan.length];
     return h('div', {class: 'times' + (late || !p.path ? ' bad' : '')},
         p.path ? `出發 ${SP.hhmm(p.dep)} → 抵達 ${SP.hhmm(p.arr)}（走 ${p.cost} 分）` : `從 ${p.from} 走不到`,
@@ -619,7 +728,7 @@ function schCard(id, list, i, pl)
             h('button', {type: 'button', title: '下移', disabled: i === list.length - 1, onclick: () => move(1)}, '↓'),
             h('button', {type: 'button', title: '複製', onclick: () => commit(() => S.data[id].schedule.splice(i + 1, 0, structuredClone(s)))}, '⧉'),
             h('button', {type: 'button', title: '刪除', onclick: () => commit(() => S.data[id].schedule.splice(i, 1))}, '×')),
-        schTimes(i, pl),
+        schTimes(i, pl, s),
         h('div', {class: 'sub'},
             h('label', {title: 't'}, '時間',
                 h('select', {dataset: {k: `${k}.t#mode`}, onchange: e => put('t', `${e.target.value}${hhmm}`)},
@@ -691,8 +800,10 @@ function renderRight()
 {
     const id = S.sel, r = S.data[id];
     if (!r || S.view !== 'form') return;
+    if (S.rtab === 'sched') checkStale();
     document.getElementById('right').replaceChildren(rightTabs(), S.rtab === 'sched'
         ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges, onPick: (m, go, shift) => pickDest(id, m, go, shift),
+            onNew: (m, x, y, d) => newPoint(id, m, x, y, d), onMove: movePoint, onMenu: pointMenu, stale: S.stale, onUpdate: updateNav, navMsg: S.navMsg,
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
@@ -848,6 +959,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, ME, updateNav, checkStale, renamePoint, deletePoint, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};
