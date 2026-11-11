@@ -4,9 +4,7 @@ import Record from '../infra/record.js'
 import NavGraph from '../core/navgraph.js'
 import {Npc} from '../roles/npc.js'
 import {T,dlog} from '../core/debug.js'
-
-const DAY = 1440;
-const mod = (m)=>((m % DAY) + DAY) % DAY;
+import {buildPlan, DAY, mod} from '../data/schedplan.js'
 
 //--------------------------------------------------
 // 所有有作息 NPC 的「抽象狀態」(存在 Record.game.schedule[id])：
@@ -71,39 +69,12 @@ export default class ScheduleManager
     // 把作息換算成出發時間；"@HH:MM" 是抵達時間，用上一筆目的地走過來的花費倒推
     static _buildPlan(id, sch)
     {
-        const n = sch.length;
-        const keys = sch.map(s=>`${s.map}:${s.go}`);
-        const bad = keys.filter(k=>!NavGraph.has(k));
-        if(bad.length) {console.warn(`[Schedule] ${id} 的作息目的地不在路網裡：${bad.join(', ')}`); return null;}
-        for(const s of sch.filter(s=>s.do==='patrol'))
-        {
-            const route = (s.route ?? []).map(name=>`${s.map}:${name}`);
-            if(!route.length) {console.warn(`[Schedule] ${id} 的巡邏沒有 route`); return null;}
-            const broken = route.filter((k,i)=>NavGraph.cost(k, route[(i+1)%route.length])===Infinity && k!==route[(i+1)%route.length]);
-            if(broken.length) {console.warn(`[Schedule] ${id} 的巡邏路點不在路網裡或走不到下一點：${broken.join(', ')}`); return null;}
-        }
-
-        const plan = sch.map((s,i)=>{
-            const arrive = s.t.startsWith('@');
-            const m = TimeSystem.str2Ticks(arrive ? s.t.slice(1) : s.t);
-            const r = NavGraph.route(keys[(i-1+n)%n], keys[i]);
-            if(!r) {console.warn(`[Schedule] ${id} 從 ${keys[(i-1+n)%n]} 走不到 ${keys[i]}`);}
-            const cost = r?.cost ?? 0;
-            return {key:keys[i], dep:arrive ? mod(m-cost) : m, arr:arrive ? m : mod(m+cost), do:s.do};
-        });
-
-        plan.forEach((p,i)=>{
-            const pre = plan[(i-1+n)%n];
-            if(n>1 && mod(p.dep-pre.dep) < mod(pre.arr-pre.dep))
-            {
-                console.warn(`[Schedule] ${id} 第 ${i} 筆作息排不下：要在 ${this._hhmm(p.dep)} 出發，但上一筆 ${this._hhmm(pre.arr)} 才到 ${pre.key}`);
-            }
-        });
-
+        const nav = DB.navgraph() ?? {nodes:{}, edges:{}};
+        const {plan, warns} = buildPlan(sch, nav.edges, nav.nodes);
+        for(const w of warns) {console.warn(`[Schedule] ${id} ${w.msg}`);}
         return plan;
     }
 
-    static _hhmm(m) {return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
 
     // 距離下一筆作息出發的分鐘數
     static _gap(plan, i) {return mod(plan[(i+1)%plan.length].dep - plan[i].dep) || DAY;}

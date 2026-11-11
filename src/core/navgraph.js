@@ -1,4 +1,5 @@
 import DB from '../data/db.js'
+import {route} from '../data/schedplan.js'
 
 //--------------------------------------------------
 // 跨地圖路網查詢(資料由 scripts/navgraph.js 產生)
@@ -24,30 +25,5 @@ export default class NavGraph
         return r && {path:[...r.path], cost:r.cost};
     }
 
-    static _dijkstra(from, to)
-    {
-        if(from===to) {return {path:[], cost:0};}
-        const edges = DB.navgraph()?.edges ?? {};
-        const dist = {[from]:0};
-        const prev = {};
-        const open = new Set([from]);
-
-        while(open.size)
-        {
-            let cur = null;
-            for(const k of open) {if(cur===null || dist[k]<dist[cur]) {cur=k;}}
-            open.delete(cur);
-            if(cur===to) {break;}
-            for(const e of edges[cur] ?? [])
-            {
-                const d = dist[cur] + e.cost;
-                if(d < (dist[e.to] ?? Infinity)) {dist[e.to]=d; prev[e.to]=cur; open.add(e.to);}
-            }
-        }
-
-        if(dist[to]===undefined) {return null;}
-        const path = [];
-        for(let k=to; k!==from; k=prev[k]) {path.unshift(k);}
-        return {path, cost:dist[to]};
-    }
+    static _dijkstra(from, to) {return route(DB.navgraph()?.edges ?? {}, from, to);}
 }

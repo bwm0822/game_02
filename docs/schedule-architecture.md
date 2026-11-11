@@ -18,6 +18,7 @@
 - `do`（選填）：抵達後的活動。沒寫就觸發目的地物件預設的 act（床 → `rest`）；`idle` = 只站著；`patrol` = 巡邏（見下）。`enter`（port）永遠不觸發，那是玩家切場景用的
 - 中途怎麼走（哪個門、哪座樓梯）**不寫**，由路網算
 - 依陣列順序循環：第一筆的「上一筆」是最後一筆
+- 換算成時刻表（`@` 倒推、走不到／排不下的警告）跟路網最短路是 `src/data/schedplan.js` 的純函式 `buildPlan()`／`route()`，`ScheduleManager._buildPlan()`、`NavGraph.route()` 跟角色分頁的作息地圖共用，改算法改這裡
 
 ### 巡邏（`do:"patrol"`）
 

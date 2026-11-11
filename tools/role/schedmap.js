@@ -2,7 +2,8 @@
 // 地圖資料走 dev server（/assets/maps/…），格子／物件的算法跟路網共用 src/data/navgrid.js；縮放平移每張地圖一組 view
 import {h} from '../common/dom.js';
 import * as PZ from '../common/panzoom.js';
-import {loadMap, decodeLayer, joinPath, objectTiles} from '../../src/data/navgrid.js';
+import {loadMap, decodeLayer, joinPath, objectTiles, buildGrid, bestPath} from '../../src/data/navgrid.js';
+import {edgeCost, hhmm, mod} from '../../src/data/schedplan.js';
 
 const FH = 0x80000000, FV = 0x40000000, FD = 0x20000000, GID = 0x1fffffff;
 const KEY = 'tools.role.sched';
@@ -155,6 +156,56 @@ export function mapData(name)
 // 地圖檔改了（之後工具寫 point、或別的分頁通知）就丟掉重讀
 export const forget = (name) => (name ? loaded.delete(name) : loaded.clear());
 
+const mapOf = (key) => key.slice(0, key.indexOf(':'));
+const nameOf = (key) => key.slice(key.indexOf(':') + 1);
+export const shortMap = (m) => m.split('/').at(-1);
+
+// 選中那筆作息的路線，照地圖分段：[{map, nodes: [{key, name, t}]}]（t＝經過那個節點的時刻）；沒有路線回傳 null
+export function legsOf(p, edges)
+{
+    if (!p?.path) return null;
+    const keys = [p.from, ...p.path], legs = [];
+    let t = p.dep;
+    keys.forEach((key, i) => {
+        if (i > 0) t = mod(t + edgeCost(edges, keys[i - 1], key));
+        const m = mapOf(key);
+        if (legs.at(-1)?.map !== m) legs.push({map: m, nodes: []});
+        legs.at(-1).nodes.push({key, name: nameOf(key), t});
+    });
+    return legs;
+}
+
+// 這張圖上要畫的路線：[{pts: [{x,y}...]}]、標籤 [{x, y, text, go?（點了切到哪張圖）}]
+function routeOn(d, legs, name)
+{
+    if (!legs) return null;
+    d.grid ??= buildGrid(d.map, d.tilesets, d.objs);
+    const tw = d.map.tilewidth, th = d.map.tileheight, px = ([tx, ty]) => ({x: (tx + 0.5) * tw, y: (ty + 0.5) * th});
+    const lines = [], labels = [];
+    legs.forEach((leg, li) => {
+        if (leg.map !== name) return;
+        const ns = leg.nodes.map(n => ({...n, o: d.named.get(n.name)}));
+        for (let i = 1; i < ns.length; i++)
+        {
+            const a = ns[i - 1].o, b = ns[i].o;
+            if (!a || !b) continue;
+            let best = null;
+            for (const sp of a.tiles)
+            {
+                const path = bestPath(d.grid, sp, b.tiles);
+                if (path && (!best || path.length < best.path.length)) best = {sp, path};
+            }
+            lines.push({pts: best ? [best.sp, ...best.path].map(px) : [a.cen, b.cen], broken: !best});
+        }
+        const first = ns[0], last = ns.at(-1);
+        const prev = legs[li - 1], next = legs[li + 1];
+        if (first.o) labels.push({...first.o.cen, text: prev ? `${hhmm(first.t)} 從 ${shortMap(prev.map)} 進來` : `${hhmm(first.t)} 出發`, go: prev?.map});
+        if (last.o && last !== first) labels.push({...last.o.cen, text: next ? `${hhmm(last.t)} → ${shortMap(next.map)}` : `${hhmm(last.t)} 抵達`, go: next?.map});
+        else if (last.o && next) labels.push({...last.o.cen, y: last.o.cen.y + 1, text: `${hhmm(last.t)} → ${shortMap(next.map)}`, go: next.map});
+    });
+    return {lines, labels};
+}
+
 const views = new Map();
 const viewOf = (name) => {if (!views.has(name)) views.set(name, PZ.createView(`tools.preview.view.role.map.${name}`)); return views.get(name);};
 
@@ -207,7 +258,47 @@ function draw(cv, st)
         g.fillStyle = '#fff';
         g.fillText(txt, n.cen.x, n.cen.y + 0.5 / K);
     }
+    drawRoute(g, st, K);
     cv.dataset.drawn = d.named.size;
+}
+
+// 選中那筆的路線：亮藍折線（走不到的段畫紅虛線），起訖／換圖處標時間；標籤的螢幕範圍記在 st.hits（點了切圖）
+function drawRoute(g, st, K)
+{
+    st.hits = [];
+    const rt = st.route;
+    if (!rt) return;
+    g.lineJoin = g.lineCap = 'round';
+    for (const ln of rt.lines)
+    {
+        g.beginPath();
+        ln.pts.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
+        g.setLineDash(ln.broken ? [6 / K, 4 / K] : []);
+        g.strokeStyle = '#000';
+        g.lineWidth = 5 / K;
+        g.stroke();
+        g.strokeStyle = ln.broken ? '#ff5555' : '#4fc3f7';
+        g.lineWidth = 3 / K;
+        g.stroke();
+    }
+    g.setLineDash([]);
+    g.font = `${12 / K}px sans-serif`;
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    const pad = 4 / K, hh = 18 / K;
+    for (const lb of rt.labels)
+    {
+        const w = g.measureText(lb.text).width + pad * 2, x = lb.x + 12 / K, y = lb.y - hh / 2;
+        g.fillStyle = lb.go ? 'rgba(20,60,90,0.92)' : 'rgba(0,0,0,0.8)';
+        g.strokeStyle = lb.go ? '#4fc3f7' : '#888';
+        g.lineWidth = 1 / K;
+        g.beginPath();
+        g.roundRect(x, y, w, hh, 3 / K);
+        g.fill(); g.stroke();
+        g.fillStyle = '#fff';
+        g.fillText(lb.text, x + pad, lb.y);
+        if (lb.go) st.hits.push({x, y, w, h: hh, go: lb.go});
+    }
 }
 
 // 滑鼠底下的具名物件（點物件取最近的圓、其他看框；框重疊取面積小的）
@@ -225,14 +316,33 @@ function hitAt(d, p, K)
     return best;
 }
 
+export function setMap(m)
+{
+    M.map = m;
+    remember();
+}
+
 // r＝角色；maps＝路網裡的地圖清單；refresh()＝換地圖後要整個重畫右欄
-export function schedMapEl(r, maps, refresh)
+// opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆、opt.edges＝路網的 edges
+export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}} = {})
 {
     const name = M.map && maps.includes(M.map) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
     const view = viewOf(name);
-    const cv = h('canvas', {title: '滾輪縮放、按住中鍵拖曳平移'});
+    const cv = h('canvas', {title: '滾輪縮放、按住中鍵拖曳平移；點路線上的「→ 地圖」切過去'});
     const info = h('span', {class: 'info dim'}, '讀取中…');
-    const st = {name, schedule: r.schedule, data: null, hover: null};
+    const legs = legsOf(plan?.[sel], edges);
+    const st = {name, schedule: r.schedule, data: null, hover: null, legs, route: null, hits: []};
+    const go = (m) => {setMap(m); refresh();};
+    cv.addEventListener('click', (e) => {
+        const rc = cv.getBoundingClientRect(), K = st.pz.K, o = st.pz.o;
+        // hits 是世界座標（地圖左上角為 0）；換成螢幕
+        const x = e.clientX - rc.left, y = e.clientY - rc.top;
+        const hit = st.hits.find(b => {
+            const sx = o.x + (b.x - (st.data?.W ?? 0) / 2) * K, sy = o.y + (b.y - (st.data?.H ?? 0) / 2) * K;
+            return x >= sx && x <= sx + b.w * K && y >= sy && y <= sy + b.h * K;
+        });
+        if (hit) go(hit.go);
+    });
     const redraw = () => draw(cv, st);
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
     cv.st = st;
@@ -255,15 +365,21 @@ export function schedMapEl(r, maps, refresh)
     mapData(name).then(d => {
         st.data = d;
         if (!d) info.textContent = `讀不到地圖 ${name}`;
-        else say();
+        else {st.route = routeOn(d, legs, name); say();}
         if (d && !view.set) PZ.center(view);
         redraw();
     });
     requestAnimationFrame(redraw);
-    const pick = h('select', {title: '地圖', dataset: {k: 'schedMap'}, onchange: e => {M.map = e.target.value; remember(); refresh();}},
+    const pick = h('select', {title: '地圖', dataset: {k: 'schedMap'}, onchange: e => go(e.target.value)},
         maps.map(m => h('option', {value: m, selected: m === name}, m)));
+    // 麵包屑：這段路依序經過的地圖（點了切過去），標進出時刻
+    const crumbs = legs && legs.length > 0 && h('div', {class: 'crumbs', title: `作息 ${sel + 1} 經過的地圖`},
+        legs.flatMap((l, i) => [i > 0 && h('span', {class: 'dim'}, '→'),
+            h('button', {type: 'button', class: l.map === name ? 'on' : '', dataset: {map: l.map}, onclick: () => go(l.map)},
+                shortMap(l.map), h('small', null, ` ${hhmm(l.nodes[0].t)}～${hhmm(l.nodes.at(-1).t)}`))]));
     return h('div', {class: 'pv smap'},
         h('div', {class: 'opts'}, pick),
+        crumbs,
         h('div', {class: 'cvbox'}, cv),
         h('div', {class: 'opts'}, PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布'), info));
 }

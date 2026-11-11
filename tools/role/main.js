@@ -17,6 +17,7 @@ import * as SC from './schema.js';
 import {previewEl} from './preview.js';
 import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
+import * as SP from '../../src/data/schedplan.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -33,7 +34,7 @@ const D = createDoc({
 });
 const {S, render, commit, set} = D;
 IC.onReload(render);
-S.ext = {items: {}, abilities: {}, maps: {}, parts: {}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
+S.ext = {items: {}, abilities: {}, maps: {}, parts: {}, nav: {nodes: {}, edges: {}}};    // 唯讀參考資料：item.json、ability.json、part.json、navgraph.json 的「地圖 → 物件名稱」
 S.grp = ALL;                                     // 總覽表 kind 分頁的子分類篩選（ALL＝全部、''＝無子分類），換分頁重置
 S.grpTab = 0;
 S.grpNew = {};                                   // 新增還沒有角色的子分類（kind → [名稱]），只在記憶體
@@ -558,7 +559,36 @@ function invBox(id, v)
 }
 
 // ---------- 表單：作息 ----------
-function schCard(id, list, i)
+// 選中的卡片（右欄地圖畫它的路線）：換角色從第 1 筆開始
+const schSel = (id) => {
+    const n = S.data[id]?.schedule?.length ?? 0;
+    return !n ? -1 : S.schSel?.id === id ? Math.min(S.schSel.i, n - 1) : 0;
+};
+// 不重畫左邊表單（點的可能是卡片裡的按鈕／輸入框），只換反白、重畫右欄
+function selectSch(id, i)
+{
+    if (S.schSel?.id === id && S.schSel.i === i) return;
+    S.schSel = {id, i};
+    const m = S.data[id].schedule[i]?.map;
+    if (m) SM.setMap(m);
+    for (const c of document.querySelectorAll('#view .card[data-sch]')) c.classList.toggle('sel', +c.dataset.sch === i);
+    renderRight();
+}
+// 時刻表（跟遊戲 ScheduleManager 同一支 buildPlan）
+const planOf = (id) => (Array.isArray(S.data[id]?.schedule) && S.data[id].schedule.every(s => typeof s.t === 'string')
+    ? SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes) : {plan: null, warns: []});
+
+function schTimes(i, pl)
+{
+    const p = pl.plan?.[i];
+    if (!p) return null;
+    const late = pl.warns.find(w => w.i === i && w.kind === 'late'), pre = pl.plan[(i - 1 + pl.plan.length) % pl.plan.length];
+    return h('div', {class: 'times' + (late || !p.path ? ' bad' : '')},
+        p.path ? `出發 ${SP.hhmm(p.dep)} → 抵達 ${SP.hhmm(p.arr)}（走 ${p.cost} 分）` : `從 ${p.from} 走不到`,
+        late && `　排不下：晚 ${late.late} 分（上一筆 ${SP.hhmm(pre.arr)} 才到）`);
+}
+
+function schCard(id, list, i, pl)
 {
     const s = list[i], path = ['schedule', i], k = `schedule.${i}`;
     const t = s.t ?? '', arrive = t.startsWith('@'), hhmm = t.replace(/^@/, '');
@@ -566,13 +596,14 @@ function schCard(id, list, i)
     const put = (f, v) => set(id, [...path, f], v);
     const known = (f) => SC.SCH_FIELDS.includes(f);
     const nav = `dl-nav-${s.map}`;
-    return h('div', {class: 'card'},
+    return h('div', {class: 'card' + (schSel(id) === i ? ' sel' : ''), dataset: {sch: i}, onclick: () => selectSch(id, i), onfocusin: () => selectSch(id, i)},
         h('div', {class: 'bar'},
             h('span', {class: 'sum'}, `${i + 1}. ${SC.schSummary(s)}`),
             h('button', {type: 'button', title: '上移', disabled: i === 0, onclick: () => move(-1)}, '↑'),
             h('button', {type: 'button', title: '下移', disabled: i === list.length - 1, onclick: () => move(1)}, '↓'),
             h('button', {type: 'button', title: '複製', onclick: () => commit(() => S.data[id].schedule.splice(i + 1, 0, structuredClone(s)))}, '⧉'),
             h('button', {type: 'button', title: '刪除', onclick: () => commit(() => S.data[id].schedule.splice(i, 1))}, '×')),
+        schTimes(i, pl),
         h('div', {class: 'sub'},
             h('label', {title: 't'}, '時間',
                 h('select', {dataset: {k: `${k}.t#mode`}, onchange: e => put('t', `${e.target.value}${hhmm}`)},
@@ -616,7 +647,7 @@ function schedBox(id, v)
             h('span', {class: 'grow'}),
             h('button', {type: 'button', onclick: () => addSch(id)}, '＋ 新增'),
             v !== undefined && h('button', {type: 'button', onclick: () => set(id, ['schedule'], undefined)}, '移除')),
-        open && list.map((_, i) => schCard(id, list, i)));
+        open && (() => {const pl = planOf(id); return list.map((_, i) => schCard(id, list, i, pl));})());
 }
 
 // ---------- 表單 ----------
@@ -640,6 +671,15 @@ function rightTabs()
     return h('div', {class: 'rtabs'}, tab('look', '外觀'), tab('sched', '作息'));
 }
 
+function renderRight()
+{
+    const id = S.sel, r = S.data[id];
+    if (!r || S.view !== 'form') return;
+    document.getElementById('right').replaceChildren(rightTabs(), S.rtab === 'sched'
+        ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges})
+        : previewEl(r, S.ext.items, S.ext.parts));
+}
+
 function renderForm()
 {
     const id = S.sel, r = S.data[id];
@@ -654,7 +694,7 @@ function renderForm()
     const wkeys = [], warns = validate(id, wkeys), draft = F.fullDraft();
     const secs = SC.SECTIONS.map(sec => ({...sec, keys: sec.keys.filter(k => shown.has(k))})).filter(sec => sec.keys.length > 0);
     const allOpen = (v) => {for (const sec of SC.SECTIONS) S.secOpen[sec.title] = v; render();};
-    right.replaceChildren(rightTabs(), S.rtab === 'sched' ? SM.schedMapEl(r, Object.keys(S.ext.maps), render) : previewEl(r, S.ext.items, S.ext.parts));
+    renderRight();
     view.replaceChildren(
         h('div', {class: 'form'},
             h('div', {class: 'head'},
@@ -776,7 +816,7 @@ async function loadRefs()
         const i = key.indexOf(':');
         (maps[key.slice(0, i)] ??= []).push(key.slice(i + 1));
     }
-    Object.assign(S.ext, {items, abilities, maps, parts});
+    Object.assign(S.ext, {items, abilities, maps, parts, nav: {nodes: nav.nodes ?? {}, edges: nav.edges ?? {}}});
 }
 
 (async () => {
@@ -791,6 +831,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

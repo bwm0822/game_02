@@ -12,6 +12,14 @@
 .smap .opts:first-child { margin: 0 0 6px; }
 .smap .opts { max-width: none; align-items: center; }
 .smap .opts select { max-width: 100%; }
+.card[data-sch].sel { border-color: #4fc3f7; box-shadow: 0 0 0 1px #4fc3f7 inset; }
+.card .times { color: #8fd0ef; font-size: 13px; margin: -2px 0 6px; }
+.card .times.bad { color: #ff7b7b; }
+.smap .crumbs { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin-bottom: 6px; font-size: 13px; }
+.smap .crumbs button { padding: 1px 6px; }
+.smap .crumbs button.on { background: #2f6db5; color: #fff; }
+.smap .crumbs small { color: #9ab; }
+.smap .crumbs button.on small { color: #dde; }
 .smap .info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }
