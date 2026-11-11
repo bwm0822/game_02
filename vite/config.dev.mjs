@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { run as genTextures } from '../scripts/textures.js';
+import { run as genNavgraph } from '../scripts/navgraph.js';
 
 const norm = (p) => p.replace(/\\/g, '/').toLowerCase();
 const TEX = norm(resolve('public/assets/textures')) + '/';
@@ -24,6 +25,15 @@ const toolsApi = {
             if (req.method !== 'POST') {res.statusCode = 405; res.end(); return;}
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify(gen()));
+        });
+        // 角色分頁作息地圖的「更新路網」：重跑 scripts/navgraph.js，回 {ok, warns, count} 或 {ok:false, errors}
+        server.middlewares.use('/__tools/navgraph', async (req, res) => {
+            if (req.method !== 'POST') {res.statusCode = 405; res.end(); return;}
+            let r;
+            try {r = await genNavgraph();}
+            catch (e) {r = {ok: false, errors: [e.message]};}
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(r));
         });
         let timer;
         const onFile = (file) => {

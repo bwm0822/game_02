@@ -38,7 +38,8 @@
 
 - 節點 key = `"地圖:物件名稱"`，例如 `"m_04x05/trump-inn-f1:door"`
 - 邊 `{to, cost, type}`：`walk` = 同圖兩節點間 A* 步數（1 步 = 1 分鐘）；`port` = 物件的 `map`/`port` 屬性連到別張圖，花 1 分鐘。邊界出口（`main.world` 相鄰大地圖）目前**沒有**算進來，之後要加就是新的 `type`
-- 腳本在 node 裡模擬地圖的格子權重：tile 的 `collide`/`weight` + 物件依 `View` 規則算出來的 footprint（預設 1000 = 擋住、`point`/`pickup` 0、門當可通行）。跟遊戲內實際 A* 會有 ±幾步誤差，不影響
+- 格子權重跟 A* 在 `src/data/navgrid.js`（不碰 fs，讀檔由呼叫端傳 `readJson(相對 assets 的路徑)`；`loadMap()`／`buildGrid()`／`objectTiles()`／`findPath()`／`bestPath()`），腳本跟角色分頁的作息地圖共用；腳本匯出 `run()`，vite dev 的 `POST /__tools/navgraph` 直接呼叫它（回 `{ok, warns, count}`）
+- 模擬地圖的格子權重：tile 的 `collide`/`weight` + 物件依 `View` 規則算出來的 footprint（預設 1000 = 擋住、`point`/`pickup` 0、門當可通行）。跟遊戲內實際 A* 會有 ±幾步誤差，不影響
 - 地圖從 `main.world` 列的地圖出發，沿 port 找到所有室內地圖；`navgraph.js` 產生完會檢查 `role.json` 的作息目的地跟巡邏路點在不在路網裡
 - 執行期查詢走 `src/core/navgraph.js`（`NavGraph.route()`/`cost()`/`mapOf()`）
 
