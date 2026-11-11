@@ -882,6 +882,44 @@ run('paperdoll', async t => {
     t.eq('改名：雙擊名字開輸入框帶目前名字', pose.renameInput, 'x');
     t.eq('改名：Enter 套用、輸入框收起', JSON.stringify(pose.renamed), JSON.stringify(['y', false]));
 
+    // 數字框 focus 時的 Ctrl+Z／Y
+    const nz = await ev(async () => {
+        const pd = window.__pd, out = {}, inp = document.getElementById('pX');
+        const c = document.createElement('canvas'); c.width = c.height = 4;
+        Object.assign(pd.S, {layers: [], active: null, projSig: null});
+        pd.setMode('move');
+        const L = Object.assign(pd.addLayer(await createImageBitmap(c), 'nz', null, null), {x: 10});
+        pd.select(L);
+        const key = (k, extra = {}) => inp.dispatchEvent(new KeyboardEvent('keydown', {key: k, ctrlKey: true, bubbles: true, cancelable: true, ...extra}));
+        const type = (v) => {inp.value = v; inp.dispatchEvent(new Event('input', {bubbles: true}));};
+        const commit = (v) => {type(v); inp.dispatchEvent(new Event('change', {bubbles: true}));};
+        inp.focus();
+        commit('25');
+        commit('30');
+        key('z');
+        out.undo = [L.x, inp.value, document.activeElement === inp];
+        key('y');
+        out.redo = [L.x, inp.value, document.activeElement === inp];
+        key('z', {shiftKey: true});
+        out.redoShift = [L.x, inp.value];
+        type('99');
+        key('z');
+        out.typedZ = [L.x, inp.value];
+        key('z');
+        out.typedZ2 = [L.x, inp.value];
+        type('77');
+        key('y');
+        out.typedY = [L.x, inp.value];
+        inp.blur();
+        return out;
+    });
+    t.eq('數字框：Ctrl+Z 走工具 undo、框刷新、焦點留著', JSON.stringify(nz.undo), JSON.stringify([25, '25', true]));
+    t.eq('數字框：Ctrl+Y redo', JSON.stringify(nz.redo), JSON.stringify([30, '30', true]));
+    t.eq('數字框：Ctrl+Shift+Z 也是 redo（已是最新，不動）', JSON.stringify(nz.redoShift), JSON.stringify([30, '30']));
+    t.eq('數字框：打了沒套用，第一下 Ctrl+Z 只還原框', JSON.stringify(nz.typedZ), JSON.stringify([30, '30']));
+    t.eq('數字框：再一下才真的 undo', JSON.stringify(nz.typedZ2), JSON.stringify([25, '25']));
+    t.eq('數字框：打了沒套用，Ctrl+Y 丟掉輸入並 redo', JSON.stringify(nz.typedY), JSON.stringify([30, '30']));
+
     t.eq('載入的圖層預設 scale 0.25', r.loadScale, 0.25);
     t.eq('載入：尺寸', JSON.stringify(r.load), JSON.stringify({w: 100, h: 50, x: 8, y: 32}));
     t.eq('trim 後內容不跳位', JSON.stringify(r.trim), JSON.stringify({w: 80, h: 40, x: 8, y: 27}));

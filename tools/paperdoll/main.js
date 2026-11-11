@@ -2963,8 +2963,33 @@ cv.addEventListener('wheel', e => {
 
 const ARROWS = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]};
 
+// 數字框記住「已套用」的值：focus 進來或 change 之後；框裡跟它不同＝打了還沒套用
+const NUM = 'input[type=number]';
+document.addEventListener('focusin', e => {if (e.target.matches(NUM)) e.target._v = e.target.value;});
+document.addEventListener('change', e => {if (e.target.matches(NUM)) e.target._v = e.target.value;});
+
+// 數字框裡的 Ctrl+Z／Y：有未套用的輸入先還原框（Z 到此為止），否則走工具 undo/redo；
+// 先失焦讓各 refresh 刷到這格（它們會跳過 focus 中的框），再把焦點放回去
+function numUndo(inp, redoIt)
+{
+    const typed = inp.value !== (inp._v ?? inp.value);
+    if (typed) inp.value = inp._v;
+    if (typed && !redoIt) return;
+    const id = inp.id;
+    inp.blur();
+    redoIt ? redo() : undo();
+    ((id && $(id)) || inp).focus();
+}
+
 window.addEventListener('keydown', e => {
-    if (document.querySelector('dialog[open]') || e.target.matches('input')) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.target.matches(NUM) && e.ctrlKey && ['z', 'y'].includes(e.key.toLowerCase()))
+    {
+        e.preventDefault();
+        numUndo(e.target, e.key.toLowerCase() === 'y' || e.shiftKey);
+        return;
+    }
+    if (e.target.matches('input')) return;
     const key = e.key.toLowerCase();
     S.keys.add(key);
     if (e.key !== 'Control' && e.key !== 'Shift') magStop();
