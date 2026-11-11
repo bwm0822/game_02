@@ -13,8 +13,21 @@ const SETUP = async () => {
         const segs = rel.split('/'), d = await dir(maps, ...segs.slice(0, -1));
         await write(d, segs.at(-1), await (await fetch(`/assets/maps/${rel}`)).text());
     };
-    for (const f of ['main.world', 'm/m_03x05.json', 'm/m_04x05.json', 'm_04x05/karen-home.json', 'forest-01.json', 'village-01.json', '_m_00x00.json',
+    for (const f of ['main.world', 'm/m_03x05.json', 'm/m_04x05.json', 'm_04x05/karen-home.json', '_m_00x00.json',
         'm_04x05/trump-inn-f1.json', 'm_04x05/trump-inn-f2.json']) await copy(f);
+    // 假地圖（不在 public/）：fixture-01＝圖塊物件的 rogue（role.json 沒有）跟 orc；fixture-02＝門（好的、地圖不存在、落腳點不存在）
+    const W = 12, fx = (objs) => JSON.stringify({compressionlevel: -1, height: W, infinite: false,
+        layers: [{data: new Array(W * W).fill(0), height: W, id: 1, name: 'map', opacity: 1, type: 'tilelayer', visible: true, width: W, x: 0, y: 0},
+            {draworder: 'topdown', id: 2, name: 'layer3', objects: objs, opacity: 1, type: 'objectgroup', visible: true, x: 0, y: 0}],
+        nextlayerid: 3, nextobjectid: 10, orientation: 'orthogonal', renderorder: 'right-down', tiledversion: '1.11.0', tileheight: 32,
+        tilesets: [{firstgid: 1, source: '../tilesets/monsters.tsj'}, {firstgid: 200, source: '../tilesets/npcs.tsj'}],
+        tilewidth: 32, type: 'map', version: '1.10', width: W});
+    const npc = (id, gid, rid, x, y, w) => ({gid, height: 64, id, name: '', properties: [{name: 'id', type: 'string', value: rid}], rotation: 0, type: 'npc', visible: true, width: w, x, y});
+    const port = (id, name, map, to, x, y) => ({height: 32, id, name, properties: [{name: 'map', type: 'string', value: map}, {name: 'port', type: 'string', value: to}],
+        rotation: 0, type: 'port', visible: true, width: 32, x, y});
+    await write(maps, 'fixture-01.json', fx([npc(1, 205, 'rogue', 64, 128, 32), npc(3, 1, 'orc', 192, 320, 64)]));
+    await write(maps, 'fixture-02.json', fx([port(1, 'to-kh', 'm_04x05/karen-home', 'door', 64, 64), port(2, 'to-nowhere', 'no-such-map', 'door', 160, 64),
+        port(3, 'to-kh-bad', 'm_04x05/karen-home', 'nope', 256, 64)]));
     const tdir = await dir(assets, 'templates', 'animals');
     await write(tdir, 'wolf.tj', await (await fetch('/assets/templates/animals/wolf.tj')).text());
     await write(await dir(assets, 'templates'), 'point.tj', await (await fetch('/assets/templates/point.tj')).text());
@@ -36,7 +49,7 @@ run('map-tool', async t => {
 
         // ---- 左欄 ----
         out.cats = Object.fromEntries(['world', 'room', 'other'].map(c => [c, S.maps.filter(m => m.cat === c).map(m => m.name)]));
-        out.sum = [S.sums['m/m_03x05'], S.sums['forest-01']?.roles, S.sums['m/m_04x05']?.roles];
+        out.sum = [S.sums['m/m_03x05'], S.sums['fixture-01']?.roles, S.sums['m/m_04x05']?.roles];
         for (const g of [...document.querySelectorAll('#list .group.fold')]) if (g.querySelector('.arrow').textContent === '▸') g.click();
         for (const g of [...document.querySelectorAll('#list .group.fold')]) if (g.querySelector('.arrow').textContent === '▸') g.click();
         const items = () => [...document.querySelectorAll('#list .item')];
@@ -118,8 +131,8 @@ run('map-tool', async t => {
         const opaque = (c) => {const a = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < a.length; i += 4) if (a[i]) n++; return n;};
         out.sprites = [!!sp && opaque(sp) > 50, !!rog && opaque(rog) > 50];
         // 角色不烤進底圖（另外畫）：tag map 的烤圖跟作息地圖那份（有烤 template 狼）在狼那格不一樣
-        // （m_03x05 的狼 template 用的 tileset 不在地圖裡，兩份都沒畫；改看 village-01 的圖塊物件 orc）
-        const plain = await mt.MV.mapData('village-01'), noRole = await mt.MV.mapData('village-01', {skip: (o) => o.type === 'npc' && !!o.props.id, tag: 'map'});
+        // （m_03x05 的狼 template 用的 tileset 不在地圖裡，兩份都沒畫；改看 fixture-01 的圖塊物件 orc）
+        const plain = await mt.MV.mapData('fixture-01'), noRole = await mt.MV.mapData('fixture-01', {skip: (o) => o.type === 'npc' && !!o.props.id, tag: 'map'});
         const orc = plain.objs.find(o => o.props.id === 'orc');
         const px = (c, x, y) => [...c.getContext('2d').getImageData(x, y, 1, 1).data].join();
         let diff = 0;
@@ -317,7 +330,8 @@ run('map-tool', async t => {
         // ================= 第 4 步：@群組＋spawns =================
         const jsonDir = await assets.getDirectoryHandle('json');
         const readStory = async () => (await (await jsonDir.getFileHandle('story.json')).getFile()).text();
-        const snap = {story: await readStory(), forest: await readText('forest-01.json'), m35: await readText('m/m_03x05.json'), kh: await readText(`${KH}.json`)};
+        const FX = 'fixture-01';
+        const snap = {story: await readStory(), forest: await readText(`${FX}.json`), m35: await readText('m/m_03x05.json'), kh: await readText(`${KH}.json`)};
         const hi0 = S.hi;
         const dlg = document.getElementById('dlgAsk');
         const answer = async (fn) => {await until(() => dlg.open); const v = fn(dlg); dlg.close(v);};
@@ -326,7 +340,7 @@ run('map-tool', async t => {
         saved.length = 0;
 
         // 新群組：選劇情線＋條件，地圖加空圖層、story.json 加 spawns，目標層換過去
-        mt.selectMap('forest-01');
+        mt.selectMap(FX);
         await settle();
         let pr2 = mt.newGroup();
         await answer(d => {
@@ -337,10 +351,10 @@ run('map-tool', async t => {
         });
         await pr2;
         await settle();
-        let fm = JSON.parse(await readText('forest-01.json'));
+        let fm = JSON.parse(await readText(`${FX}.json`));
         const deer = fm.layers.find(l => l.name === '@deer');
         out.newGrp = [!!deer && deer.objects.length === 0 && deer.type === 'objectgroup', spawnsOf(await readStory()).deer, S.target,
-            !!document.querySelector('#right .layer[data-layer="@deer"]'), saved.includes('story.json') && saved.includes('maps/forest-01.json'), localStorage.getItem('tools.map.line')];
+            !!document.querySelector('#right .layer[data-layer="@deer"]'), saved.includes('story.json') && saved.includes(`maps/${FX}.json`), localStorage.getItem('tools.map.line')];
         // 已有的群組（wolves）：共用條件、只加圖層、不動 story.json
         mt.selectMap(KH);
         await settle();
@@ -362,9 +376,9 @@ run('map-tool', async t => {
         out.dupBlock = document.getElementById('status').textContent;
 
         // 改條件（右欄的條件欄）；認不得的 quality 標 ⚠
-        mt.selectMap('forest-01');
+        mt.selectMap(FX);
         await settle();
-        const ci = () => document.querySelector('#right .layer[data-layer="@deer"] input.cond');
+        const ci =() => document.querySelector('#right .layer[data-layer="@deer"] input.cond');
         ci().value = 'wolf_hunt>=3'; ci().dispatchEvent(new Event('change'));
         await until(() => spawnsOf(storyBefore).deer !== undefined || true);
         await sleep(200); await settle();
@@ -413,22 +427,22 @@ run('map-tool', async t => {
         await pr2;
         await settle();
         out.del1 = [JSON.parse(await readText(`${KH}.json`)).layers.some(l => l.name === '@pack'), 'pack' in spawnsOf(await readStory())];
-        // forest-01 的 @deer 是最後一張 → 可以連條件一起刪
-        mt.selectMap('forest-01');
+        // fixture-01 的 @deer 是最後一張 → 可以連條件一起刪
+        mt.selectMap(FX);
         await settle();
         pr2 = mt.deleteGroup('deer');
         await answer(d => {out.delBtns2 = [...d.querySelectorAll('.buttons button')].map(b => b.value).join(); return 'all';});
         await pr2;
         await settle();
-        out.del2 = [JSON.parse(await readText('forest-01.json')).layers.some(l => l.name === '@deer'), 'deer' in spawnsOf(await readStory()), S.target];
+        out.del2 = [JSON.parse(await readText(`${FX}.json`)).layers.some(l => l.name === '@deer'), 'deer' in spawnsOf(await readStory()), S.target];
 
         // undo 回到第 4 步之前：story.json＋三張地圖一字不差
         while (S.hi > hi0) await mt.undo();
-        out.undo4 = [await readStory() === snap.story, await readText('forest-01.json') === snap.forest, await readText('m/m_03x05.json') === snap.m35, await readText(`${KH}.json`) === snap.kh];
+        out.undo4 = [await readStory() === snap.story, await readText(`${FX}.json`) === snap.forest, await readText('m/m_03x05.json') === snap.m35, await readText(`${KH}.json`) === snap.kh];
 
         // ================= 第 5 步：⚠ 檢查 =================
-        // village-01 的 rogue 在 role.json 沒有 → 左欄徽章 ⚠
-        out.v01 = [S.sums['village-01'].issues.join(), items().find(e => e.dataset.map === 'village-01')?.querySelector('.badges .warn')?.textContent];
+        // fixture-01 的 rogue 在 role.json 沒有 → 左欄徽章 ⚠
+        out.v01 = [S.sums[FX].issues.join(), items().find(e => e.dataset.map === FX)?.querySelector('.badges .warn')?.textContent];
         // karen-home：放一隻狼在牆上（擋路格）、放 karen（具名 NPC）
         mt.selectMap(KH);
         await settle();
@@ -481,8 +495,8 @@ run('map-tool', async t => {
     }, SETUP.toString());
 
     t.check('地圖分類：世界／室內／其他，_ 開頭的舊檔不列', r.cats.world.join() === 'm/m_03x05,m/m_04x05' && r.cats.room.join() === 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2'
-        && r.cats.other.join() === 'forest-01,village-01', JSON.stringify(r.cats));
-    t.check('徽章：m_03x05 六個角色、兩個群組；forest-01 兩個', r.sum[0]?.roles === 6 && r.sum[0]?.groups.join() === 'wolves,bandits' && r.sum[1] === 2, JSON.stringify(r.sum));
+        && r.cats.other.join() === 'fixture-01,fixture-02', JSON.stringify(r.cats));
+    t.check('徽章：m_03x05 六個角色、兩個群組；fixture-01 兩個', r.sum[0]?.roles === 6 && r.sum[0]?.groups.join() === 'wolves,bandits' && r.sum[1] === 2, JSON.stringify(r.sum));
     t.eq('左欄徽章文字', r.badge, '🐾6@2');
     t.check('沒角色的地圖變淡', r.emptyDim);
     t.check('只看有角色的：記住、沒角色的不列', r.onlyMem === '1' && !r.only.includes('m_04x05/karen-home') && r.only.includes('m/m_03x05'), r.only.join());
@@ -589,14 +603,14 @@ run('map-tool', async t => {
         const answer = async (fn) => {await until(() => dlg.open); const v = fn(dlg); dlg.close(v);};
         const saved = [], chan = new BroadcastChannel('tools');
         chan.onmessage = (e) => saved.push(e.data.file);
-        // orc：village-01 物件自己寫 id → 改名連帶改、role.json 一起存
+        // orc：fixture-01 物件自己寫 id → 改名連帶改、role.json 一起存
         let p = re.rename('orc', 'orc_x');
         await answer(d => {out.orcDlg = d.querySelector('.body').textContent; return 'ok';});
         await p;
         await sleep(100);
-        const v01 = JSON.parse(await read('maps/village-01.json'));
-        out.orc = [v01.layers.flatMap(l => l.objects ?? []).find(o => o.id === 143)?.properties.find(x => x.name === 'id').value,
-            Object.keys(JSON.parse(await read('json/role.json'))).includes('orc_x'), saved.includes('maps/village-01.json')];
+        const v01 = JSON.parse(await read('maps/fixture-01.json'));
+        out.orc = [v01.layers.flatMap(l => l.objects ?? []).find(o => o.id === 3)?.properties.find(x => x.name === 'id').value,
+            Object.keys(JSON.parse(await read('json/role.json'))).includes('orc_x'), saved.includes('maps/fixture-01.json')];
         // wolf：用 template → 改 template 的值（其他一字不動）
         const tplBefore = await read('templates/animals/wolf.tj');
         p = re.rename('wolf', 'wolf_x');
@@ -616,10 +630,10 @@ run('map-tool', async t => {
         chan.close();
         return out;
     });
-    t.check('角色改名：對話框列出地圖物件', /maps\/village-01\.json：物件 143/.test(r2.orcDlg), r2.orcDlg);
+    t.check('角色改名：對話框列出地圖物件', /maps\/fixture-01\.json：物件 3/.test(r2.orcDlg), r2.orcDlg);
     t.check('角色改名：地圖物件的 id 跟著改、role.json 存好、廣播', r2.orc.every(Boolean) && r2.orc[0] === 'orc_x', r2.orc.join());
     t.check('角色改名：對話框列出 template 跟在用的地圖', /templates\/animals\/wolf\.tj（template，.*maps\/m\/m_03x05\.json/.test(r2.wolfDlg), r2.wolfDlg);
     t.check('角色改名：template 只換那個值、廣播', r2.wolf.every(Boolean), r2.wolf.join());
-    t.check('刪除角色：地圖還在用就擋', r2.delBlock[0] === '不能刪 orc_x' && /village-01/.test(r2.delBlock[1]) && r2.stillThere, r2.delBlock.join(' | '));
+    t.check('刪除角色：地圖還在用就擋', r2.delBlock[0] === '不能刪 orc_x' && /fixture-01/.test(r2.delBlock[1]) && r2.stillThere, r2.delBlock.join(' | '));
     t.eq('刪除沒人用的角色照常問', r2.delNormal, '刪除 bandit-5');
 });

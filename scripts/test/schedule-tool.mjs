@@ -5,7 +5,7 @@ import path from 'path'
 import {roundtrip} from '../../tools/common/tiledjson.js'
 
 // 手改過排版的地圖（有 `},` 少空白、多空行），工具寫的時候會整理成 Tiled 的樣子
-const HAND_EDITED = ['forest-01.json', 'house-08.json', 'trump-inn-f1.json'];
+const HAND_EDITED = ['house-08.json', 'trump-inn-f1.json'];
 
 run('schedule-tool', async t => {
     const walk = (d) => fs.readdirSync(d, {withFileTypes: true}).flatMap(e => (e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.json') ? [path.join(d, e.name)] : []));
