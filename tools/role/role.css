@@ -24,6 +24,25 @@
 .smap .navmsg { flex: none; margin-bottom: 6px; font-size: 12px; white-space: pre-wrap; max-height: 6em; overflow: auto; }
 .smap .routeedit { flex: none; margin-bottom: 6px; padding: 4px 8px; background: #1e3d1a; border: 1px solid #5aa845; border-radius: 4px; color: #c8f0b8; font-size: 13px; }
 .card .times.patrol { color: #9fe08a; }
+/* 作息 24 小時橫條（schedbar.js） */
+.daybar { margin: 4px 0 10px; font-size: 12px; }
+.daybar.none { font-size: 13px; }
+.daybar .track { position: relative; height: 22px; background: #1d1f22; border: 1px solid #3a3d44; border-radius: 3px; overflow: hidden; }
+.daybar .hr { position: absolute; top: 0; bottom: 0; width: 1px; background: #2c2f34; }
+.daybar .hr.six { background: #464a52; }
+.daybar .seg { position: absolute; top: 2px; bottom: 2px; box-sizing: border-box; cursor: pointer; overflow: hidden; white-space: nowrap;
+               color: #fff; font-size: 11px; line-height: 18px; text-align: center; text-shadow: 0 0 2px #000; }
+.daybar .seg.walk { top: 7px; bottom: 7px; background: repeating-linear-gradient(135deg, #888 0 3px, #555 3px 6px); }
+.daybar .seg.late { top: 0; bottom: 0; background: rgba(255, 70, 70, .75); }
+.daybar .seg.nope { top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ff5050; overflow: visible; line-height: 22px; }
+.daybar .seg:hover { filter: brightness(1.25); }
+.daybar .seg.sel { box-shadow: 0 0 0 2px #4fc3f7 inset; filter: brightness(1.2); }
+.daybar .axis { position: relative; height: 14px; color: #888; }
+.daybar .axis span { position: absolute; transform: translateX(-50%); }
+.daybar .axis span:first-child { transform: none; }
+.daybar .axis span:last-child { transform: translateX(-100%); }
+.daybar .legend { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #aaa; }
+.daybar .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 3px; border-radius: 2px; vertical-align: -1px; }
 .smap .info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }

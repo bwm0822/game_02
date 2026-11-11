@@ -124,7 +124,36 @@ run('schedule-tool', async t => {
         re.commit(() => {S.data.trump.schedule[1].t = '06:10';});
         out.late = cards()[1].querySelector('.times')?.className + '|' + cards()[1].querySelector('.times')?.textContent;
         out.lateWant = p0.cost > 10;
+        out.lateBar = [...document.querySelectorAll('#view .daybar .seg.late')].map(s => `${s.dataset.i}:${s.title.split('\n')[0]}`);
         re.undo();
+
+        // ---- 24 小時橫條 ----
+        const bar = () => document.querySelector('#view .daybar');
+        const segs = () => [...bar().querySelectorAll('.seg')];
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        out.barFirst = bar()?.nextElementSibling === cards()[0];
+        // trump：06:20 到 1F、22:50 到 2F 床 → 1F 停留一段、床跨午夜切兩截、兩段走路
+        out.barSegs = segs().map(s => `${s.className.replace(/^seg /, '').replace(' sel', '')}${s.dataset.i}`).sort().join();
+        const SB = re.SB, segs0 = SB.daySegs(pl.plan, sch, pl.warns);
+        out.barSum = segs0.filter(g => g.kind !== 'late' && g.kind !== 'nope').reduce((a, g) => a + g.len, 0);
+        const bed = segs().filter(s => s.classList.contains('stay') && s.dataset.i === '1');
+        out.bedCut = [bed.length, bed.map(s => s.style.left === '0%' || parseFloat(s.style.left) + parseFloat(s.style.width) > 99.99).every(Boolean),
+            bed[0]?.style.backgroundColor !== segs().find(s => s.classList.contains('stay') && s.dataset.i === '0')?.style.backgroundColor];
+        out.bedTip = bed[0]?.title;
+        out.legend = [...bar().querySelectorAll('.legend span')].map(s => s.textContent);
+        out.barSel = segs().filter(s => s.classList.contains('sel')).map(s => s.dataset.i);
+        // 點床那段：選第 2 張卡片（不重畫表單）、橫條反白跟著換
+        const card0 = cards()[0];
+        bed[0].click();
+        await until(() => S.schSel?.i === 1);
+        out.barPick = [S.schSel.i, card0.isConnected, cards()[1].classList.contains('sel'), [...new Set(segs().filter(s => s.classList.contains('sel')).map(s => s.dataset.i))].join()];
+        // 走不到：紅線；資料有問題：不畫橫條
+        out.nopeSeg = SB.daySegs([{key: 'a', dep: 600, arr: 600, cost: 0, from: 'b', path: null}, {key: 'b', dep: 900, arr: 960, cost: 60, from: 'a', path: []}], [{map: 'x'}, {map: 'y'}], [])
+            .map(g => `${g.kind}${g.i}@${g.s}+${g.len}`).join();
+        re.commit(() => {S.data.trump.schedule[0].go = 'no-such-point';});
+        out.barNone = [!!bar(), document.querySelector('#view .daybar.none')?.textContent];
+        re.undo();
+        S.schSel = {id: 'trump', i: 0}; re.render();
 
         // ---- 第 4 步：點物件改目的地、Shift＋點插入、顯示 ▾ ----
         const at = async (name, type, opts = {}) => {
@@ -326,6 +355,17 @@ run('schedule-tool', async t => {
         JSON.stringify(['m_04x05/trump-inn-f2', 'm_04x05/trump-inn-f2', ['出發', '→ trump-inn-f1→m_04x05/trump-inn-f1']]));
     t.eq('點第 2 張卡片：反白換過去、表單沒重畫、地圖到床那層', JSON.stringify(r.sel2), JSON.stringify([true, true, false, 'm_04x05/trump-inn-f2', 1]));
     t.check('排不下標紅、寫晚幾分', !r.lateWant || /^times bad\|.*排不下：晚 \d+ 分/.test(r.late), r.late);
+    t.check('橫條：排不下那筆塗紅', !r.lateWant || (r.lateBar.length === 1 && r.lateBar[0].startsWith('1:⚠ 2. 排不下')), JSON.stringify(r.lateBar));
+    t.eq('橫條在卡片列表最上面', r.barFirst, true);
+    t.eq('橫條分段：停留×2（床跨午夜切兩截）＋走路×2', r.barSegs, 'stay0,stay1,stay1,walk0,walk1');
+    t.eq('橫條分段加起來剛好 24 小時', r.barSum, 1440);
+    t.eq('床跨午夜：兩截貼著兩端、跟 1F 不同色', JSON.stringify(r.bedCut), JSON.stringify([2, true, true]));
+    t.check('滑過床那段：編號、目的地、地圖、時段', /^2\. bed（m_04x05\/trump-inn-f2）\n22:50～\d\d:\d\d，停 \d+ 時/.test(r.bedTip ?? ''), r.bedTip);
+    t.eq('圖例：地圖名', JSON.stringify(r.legend), JSON.stringify(['trump-inn-f1', 'trump-inn-f2']));
+    t.eq('預設反白第 1 筆（停留＋走過去那段）', JSON.stringify(r.barSel), JSON.stringify(['0', '0']));
+    t.eq('點橫條：選那張卡片、表單沒重畫、反白跟著換', JSON.stringify(r.barPick), JSON.stringify([1, true, true, '1']));
+    t.eq('走不到：紅線、沒有走路段', r.nopeSeg, 'nope0@600+0,stay0@600+300,walk1@900+60,stay1@960+1080');
+    t.eq('作息資料有問題：不畫橫條、一行灰字', JSON.stringify(r.barNone), JSON.stringify([true, '作息資料有問題，無法排時刻表']));
     t.check('滑過別人用的點：列出誰的第幾筆、提示點選', /^sit-1（.*）.*musk 2（@12:10）.*點＝設成作息 1 的目的地/.test(r.hoverOthers), r.hoverOthers);
     t.eq('有選卡片時點物件：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
     t.eq('一筆 undo 回原本的目的地', r.pickUndo, 'trump-p1');

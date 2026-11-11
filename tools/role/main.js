@@ -19,6 +19,7 @@ import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
 import * as ME from './mapedit.js';
+import * as SB from './schedbar.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -574,6 +575,7 @@ function selectSch(id, i)
     const m = S.data[id].schedule[i]?.map;
     if (m) SM.setMap(m);
     for (const c of document.querySelectorAll('#view .card[data-sch]')) c.classList.toggle('sel', +c.dataset.sch === i);
+    SB.markSel(document.getElementById('view'), i);
     renderRight();
 }
 // 地圖上點了具名物件：改選中那筆的 map＋go；Shift＝在選中那筆後面插入一筆（時間抄它、改成抵達），沒有作息就是第一筆
@@ -828,7 +830,13 @@ function schedBox(id, v)
             h('span', {class: 'grow'}),
             h('button', {type: 'button', onclick: () => addSch(id)}, '＋ 新增'),
             v !== undefined && h('button', {type: 'button', onclick: () => set(id, ['schedule'], undefined)}, '移除')),
-        open && (() => {const pl = planOf(id); return list.map((_, i) => schCard(id, list, i, pl));})());
+        open && (() => {
+            const pl = planOf(id);
+            return [list.length > 0 && SB.dayBarEl(pl.plan, list, pl.warns, {sel: schSel(id), onPick: (i) => {
+                selectSch(id, i);
+                document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
+            }}), list.map((_, i) => schCard(id, list, i, pl))];
+        })());
 }
 
 // ---------- 表單 ----------
@@ -1017,6 +1025,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, ME, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, ME, SB, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};
