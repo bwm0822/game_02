@@ -4,7 +4,7 @@
 
 1. ✅ 作息地圖的畫圖抽到 `tools/common/mapview.js`（角色分頁共用）
 2. ✅ 分頁骨架：地圖樹＋徽章、世界總覽、畫地圖＋角色、右欄（唯讀）
-3. 放置角色：調色盤、點放／Shift 連放／拖曳／刪除／換 id／屬性表、`roles` 圖層、立刻寫檔＋廣播＋undo
+3. ✅ 放置角色：調色盤、點放／Shift 連放／拖曳／刪除／換 id／屬性表、`roles` 圖層、立刻寫檔＋廣播＋undo
 4. `@群組`：新增／共用／改名／刪除，連動 story.json 劇情線的 `spawns`、條件編輯＋↗ 任務分頁、👁 預覽
 5. 檢查與連動：`src/data/` 共用的地圖檢查（id 不存在／擋路格／具名 NPC 標 ⚠，run_all 也跑）、角色分頁改名／刪除連動地圖
 6. 時間游標：`whereAt()` 顯示具名 NPC 此刻在這張圖的哪裡
@@ -32,13 +32,23 @@
 
 ## 互動
 
-- 滑過角色：浮動框 id 名字、種類・圖層・格子；點＝選取（右欄跟著反白），點空地取消。
+- 滑過角色：浮動框 id 名字、種類・圖層・格子；點＝選取（右欄跟著反白），點空地取消；**拖曳**＝整格移動（拖超過 4px 才算、綠框鬼影、放開寫檔、吃掉接著的 click）；**Del** 刪選取的；**右鍵**選單＝移到「常駐」／別的 `@群組`、刪除、↗ 角色分頁。
 - 滑過 point：誰的第幾筆作息在用；點了跳到第一個使用者的角色分頁。
 - 「顯示 ▾」（`tools.map.show`）：作息 point（預設勾）、物件名稱、格子可走。
+
+## 放角色（第 3 步）
+
+- **右欄調色盤**：role.json 除了 `player` 的全部，種類分頁（全部／動物／怪物／首領／土匪／NPC／其他，只列有的，記 `tools.map.kind`）＋搜尋；具名 NPC（`kind:"npc"`）標 ⚠。點一個＝放置模式（地圖上方綠色提示列、滑過顯示半透明鬼影＋綠框），**點格子放一個就結束、Shift＋點連放**，右鍵／Esc／再點同一個結束。放完選到新的那個。
+- **目標層**：右欄「圖層／群組」點一列＝放到那裡（綠框，`S.target`；換到沒有那層的地圖就回常駐）。常駐＝`roles` 物件層，沒有就建在最後（`nextlayerid`+1）。
+- **格式**（`tools/map/edit.js`）：啟動時掃 `templates/` 底下 `type:"npc"`＋屬性 `id` 的 `.tj`（`scanTemplates()`，同一角色多個取路徑排第一的）。有 template 寫 `{id, template: <相對地圖的路徑>, x, y}`；沒有寫點物件 `{height:0, id, name:'', point:true, properties:[{id}], rotation:0, type:'npc', visible:true, width:0, x, y}`。x/y 從「站的格子」反推：格子中心 −anchor ＝ view 中心，再換回 Tiled 原點（圖塊物件左下 `(cx−w/2, cy+h/2)`、矩形左上、點物件就是中心）。物件 key 照字母排、properties 照名稱排（同 Tiled），排版走 `tiledjson.js`。
+- **選取的角色**（右欄）：角色下拉＝換成別的角色（`replaceRole()`：站的格子、物件 id 不變，格式照新角色，物件自己的其他屬性保留）、圖層下拉、站的格子、格式、重生（`respawn`，int，空白＝拿掉，template 給的標灰）、物件自己的屬性（改值／✕ 拿掉）、template 給的屬性（灰、唯讀）、加屬性（名稱＋型別 string/int/float/bool＋值；`id` 不行）、刪除。
+- **寫檔**：每個動作 `editMap()` 現讀硬碟上的地圖 → 改 → 寫回，所以別的分頁（角色分頁寫 point）的修改不會被蓋；寫完 `forget()`、廣播 `maps/<地圖>.json`、重算徽章、狀態列提醒「Tiled 開著這張圖要重新載入」。具名 NPC 放下去狀態列加 ⚠，不擋。
+- **undo／redo**（左欄 ↶↷、Ctrl+Z／Ctrl+Y）：每步記地圖前後全文，復原時現在的檔案要等於「後」才寫回「前」（不然是別處改過，擋下來、狀態列說明），跨地圖也行（會切過去）。只在記憶體、重開分頁就沒了。
 
 ## 同步
 
 - `SH.onSaved`：role／item／part.json → 重讀並丟掉角色小圖；story.json → 重讀 spawns；`maps/<地圖>.json` → `forget()`＋重算那張徽章。
+- 角色分頁寫 point 後也廣播 `maps/<地圖>.json`，收到地圖分頁的廣播會 `SM.forget()` 重畫作息地圖。
 - `SH.onGoto([地圖, 物件 id?])`。
 
 測試：`node scripts/test/map-tool.mjs`。

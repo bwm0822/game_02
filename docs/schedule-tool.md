@@ -27,7 +27,7 @@
   - 滑過物件：浮動框寫名稱、type、這個角色第幾筆（時間）、別的角色誰的第幾筆（時間），加上點選提示
 - **顯示 ▾**（`tools/common/showmenu.js` 的 `createShowMenu()`，記在 `tools.role.sched.show`，只存勾了的；存過就不套預設）：這個角色其他行程（預設勾；不勾只畫選中那筆的編號）、其他角色的點（綠字 `id 編號`）、物件名稱、格子可走（`buildGrid()` 的結果：紅＝擋住、黃＝權重大於 1）。
 
-- **改 point（寫 Tiled 地圖）**：`tools/role/mapedit.js`，**只動 point**（type `point` 或用 `point.tj` 的），家具、門只能點選。每次都從硬碟重讀地圖 json → 改 → 寫回，然後 `SM.forget(map)` 重烤、狀態列提醒「Tiled 開著這張圖要重新載入，不然 Tiled 存檔會蓋掉」。
+- **改 point（寫 Tiled 地圖）**：`tools/role/mapedit.js`，**只動 point**（type `point` 或用 `point.tj` 的），家具、門只能點選。每次都從硬碟重讀地圖 json → 改 → 寫回，然後 `SM.forget(map)` 重烤、廣播 `maps/<地圖>.json`（地圖分頁收），收到別的分頁（地圖分頁放角色）廣播的 `maps/…` 也 `SM.forget()` 重畫、狀態列提醒「Tiled 開著這張圖要重新載入，不然 Tiled 存檔會蓋掉」。
   - 新增：點空地（沒點到標籤或物件）→ 問名稱（預設 `<角色id>-p<n>`，只能英數 `-` `_`、同圖撞名擋）→ 加 `{id: nextobjectid, name, template: <相對>/templates/point.tj, x, y}`（x/y＝點到的格子左上角）、`nextobjectid` +1，放進已經有 point 的物件層（沒有就第一個物件層）；有選卡片就把它的 `map`＋`go` 指過去（一筆 undo）
   - 拖曳：左鍵按住 point 移超過 4px 才算拖，黃虛線框是放開後的格子，放開寫檔；拖過的那次 click 吃掉（不會變成點空地）
   - 右鍵 point：改名（同圖撞名擋；所有角色作息裡同 `map` 的 `go`／巡邏 `route` 一起改並**立刻存 role.json**，有檢查警告照常問「仍然存檔」）、刪除（還有作息用到就擋、列出誰的第幾筆；沒人用確認後刪）

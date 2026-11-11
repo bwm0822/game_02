@@ -33,6 +33,8 @@ const D = createDoc({
     innerRefs: () => [], renameRefs: () => {},
     onSaved: (file) => {
         if (file === 'item.json' || file === 'part.json') loadRefs().then(render);
+        // 地圖分頁寫了地圖：丟掉烤好的圖重讀
+        else if (file?.startsWith('maps/')) {SM.forget(file.slice(5).replace(/\.json$/, '')); if (S.rtab === 'sched') renderRight();}
     },
 });
 const {S, render, commit, set} = D;
@@ -625,6 +627,7 @@ async function writeMap(map, fn, msg)
     try {if (await ME.editMap(S.assets.dir, map, fn) === false) return false;}
     catch (e) {status(e.message); return false;}
     SM.forget(map);
+    SH.notifySaved(`maps/${map}.json`);
     status(`${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖的話要重新載入，不然 Tiled 存檔會蓋掉）`);
     await checkStale();
     renderRight();

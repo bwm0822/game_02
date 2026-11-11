@@ -1,6 +1,7 @@
 // 地圖分頁：左樹（世界／室內／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色唯讀）、右欄圖層／群組＋角色清單＋選取的角色
 // 地圖先讀專案資料夾、讀不到走 dev server（tools/common/mapview.js）；見 docs/map-tool.md
 import {$, h, status} from '../common/dom.js';
+import * as ED from './edit.js';
 import * as FS from '../common/fs.js';
 import * as SH from '../common/shell.js';
 import * as PZ from '../common/panzoom.js';
@@ -26,8 +27,15 @@ const S = {
     pick: null,         // 選中的角色（物件 id）
     search: '',
     only: false,
+    tpls: {},           // 角色 id → {path, object}（templates/ 裡 type npc 的）
+    place: null,        // 調色盤選中的角色（放置模式）
+    target: '',         // 放到哪層：''＝常駐（roles 層）、'@群組'
+    kindTab: 'all',     // 調色盤的種類分頁
+    psearch: '',
+    hist: [], hi: 0,    // undo：[{map, before, after, msg}]（地圖全文），hi＝下一筆要放的位置
 };
-try {S.sel = localStorage.getItem(SEL_KEY); S.only = localStorage.getItem(ONLY_KEY) === '1';} catch {}
+const KIND_KEY = 'tools.map.kind';
+try {S.sel = localStorage.getItem(SEL_KEY); S.only = localStorage.getItem(ONLY_KEY) === '1'; S.kindTab = localStorage.getItem(KIND_KEY) || 'all';} catch {}
 
 const SHOW = createShowMenu('tools.map.show', [['points', '作息 point（淡色）', '#ffd24a'], ['names', '物件名稱', '#dddddd'],
     ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {points: true});
@@ -145,6 +153,7 @@ async function reload()
     await loadRefs();
     await loadSpawns();
     await loadWorld();
+    S.tpls = await ED.scanTemplates(S.assets.dir);
     const names = await listMaps();
     const worldSet = new Set(S.world.map(w => w.name)), worldBase = new Set(S.world.map(w => w.name.split('/').at(-1)));
     S.maps = names.map(name => ({name, cat: catOf(name, worldSet, worldBase)}));
@@ -217,6 +226,30 @@ function worldEl()
 const views = new Map();
 const viewOf = (name) => {if (!views.has(name)) views.set(name, PZ.createView(`tools.preview.view.map.${name}`)); return views.get(name);};
 const skipRoles = (o) => isRoleObj(o);
+const tileOfPt = (d, p) => [Math.floor(p.x / d.map.tilewidth), Math.floor(p.y / d.map.tileheight)];
+const rootTile = (d, it) => tileOfPt(d, it.at.root);
+const inMap = (d, [tx, ty]) => tx >= 0 && ty >= 0 && tx < d.map.width && ty < d.map.height;
+
+// 角色 rid 站在格子 tile 時的 view 中心
+function cenAt(d, rid, [tx, ty])
+{
+    const a = S.roles[rid]?.anchor;
+    return {x: tx * d.map.tilewidth + d.map.tilewidth / 2 - (a?.x ?? 0), y: ty * d.map.tileheight + d.map.tileheight / 2 - (a?.y ?? 0)};
+}
+
+// 半透明的角色＋格子框（放置模式滑過、拖曳中）
+function drawGhost(g, d, K, rid, tile, sprites)
+{
+    const tw = d.map.tilewidth, th = d.map.tileheight, c = cenAt(d, rid, tile), sp = sprites.get(rid);
+    g.globalAlpha = 0.6;
+    if (sp) g.drawImage(sp, c.x - SPRITE_HALF, c.y - SPRITE_HALF);
+    g.globalAlpha = 1;
+    g.setLineDash([4 / K, 3 / K]);
+    g.strokeStyle = '#7ddc5a';
+    g.lineWidth = 2 / K;
+    g.strokeRect(tile[0] * tw, tile[1] * th, tw, th);
+    g.setLineDash([]);
+}
 
 function draw(cv, st)
 {
@@ -241,10 +274,11 @@ function draw(cv, st)
         }
         g.globalAlpha = 1;
     }
-    // 角色：照 root 的 y 排（下面的蓋上面）
+    // 角色：照 root 的 y 排（下面的蓋上面）；拖著的那隻變淡
     for (const it of st.roles)
     {
         const sp = st.sprites.get(it.rid);
+        g.globalAlpha = st.drag?.moved && st.drag.it === it ? 0.3 : 1;
         if (sp) g.drawImage(sp, it.at.cen.x - SPRITE_HALF, it.at.cen.y - SPRITE_HALF);
         else
         {
@@ -252,6 +286,7 @@ function draw(cv, st)
             g.fillRect(it.at.cen.x - it.at.w / 2, it.at.cen.y - it.at.h / 2, it.at.w, it.at.h);
         }
     }
+    g.globalAlpha = 1;
     for (const it of st.roles)
     {
         const sel = S.pick === it.o.id, on = st.hover?.role === it.o.id;
@@ -265,6 +300,8 @@ function draw(cv, st)
         g.fillStyle = sel ? 'rgba(79,195,247,0.25)' : 'rgba(255,255,255,0.15)';
         g.fillRect(Math.floor(root.x / tw) * tw, Math.floor(root.y / th) * th, tw, th);
     }
+    if (st.drag?.moved) drawGhost(g, d, K, st.drag.it.rid, st.drag.tile, st.sprites);
+    else if (S.place && st.ghost) drawGhost(g, d, K, S.place, st.ghost, st.sprites);
     if (show.names)
     {
         g.font = `bold ${14 / K}px sans-serif`;
@@ -302,7 +339,9 @@ async function loadMapState(st)
     st.data = d;
     if (!d) return;
     st.roles = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
-    await Promise.all([...new Set(st.roles.map(it => it.rid))].map(async rid => st.sprites.set(rid, await spriteOf(rid, refs()))));
+    const rids = new Set(st.roles.map(it => it.rid));
+    if (S.place) rids.add(S.place);
+    await Promise.all([...rids].map(async rid => st.sprites.set(rid, await spriteOf(rid, refs()))));
 }
 
 function mapEl(name)
@@ -311,22 +350,22 @@ function mapEl(name)
     const cv = h('canvas');
     const tip = h('div', {class: 'tip', hidden: true});
     const msg = h('div', {class: 'msg dim', hidden: true});
-    const st = {name, data: null, roles: [], sprites: new Map(), hover: null};
+    const st = {name, data: null, roles: [], sprites: new Map(), hover: null, ghost: null, drag: null};
     cv.st = st;
     const redraw = () => draw(cv, st);
+    st.redraw = redraw;
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
     const say = (e) => {
         const hit = st.hover;
-        if (!hit) {tip.hidden = true; return;}
+        if (!hit || S.place || st.drag?.moved) {tip.hidden = true; return;}
         const lines = [];
         if (hit.role)
         {
-            const it = st.roles.find(x => x.o.id === hit.role), r = S.roles[it.rid];
-            const tw = st.data.map.tilewidth, th = st.data.map.tileheight;
+            const it = hit.it, r = S.roles[it.rid], [tx, ty] = rootTile(st.data, it);
             lines.push(h('div', {class: 'tname'}, `${it.rid}${r?.lab ? ` ${r.lab}` : ''}`),
-                h('div', {class: 'tsub'}, `${KIND[r?.kind] ?? r?.kind ?? '⚠ role.json 沒有'}・${it.layer}・格 ${Math.floor(it.at.root.x / tw)},${Math.floor(it.at.root.y / th)}`),
-                h('div', {class: 'thint'}, '點＝選取'));
+                h('div', {class: 'tsub'}, `${KIND[r?.kind] ?? r?.kind ?? '⚠ role.json 沒有'}・${it.layer}・格 ${tx},${ty}`),
+                h('div', {class: 'thint'}, '點＝選取、拖＝移動、右鍵＝選單'));
         }
         else
         {
@@ -342,19 +381,64 @@ function mapEl(name)
         tip.style.left = `${Math.max(0, x + 14 + tip.offsetWidth > box.width ? x - 14 - tip.offsetWidth : x + 14)}px`;
         tip.style.top = `${Math.max(0, y + 16 + tip.offsetHeight > box.height ? y - 10 - tip.offsetHeight : y + 16)}px`;
     };
+    // 拖角色（左鍵按在角色上、移超過 4px 才算拖）：整格移動，放開寫檔；拖過就吃掉接著的 click
+    cv.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || !st.data || S.place) return;
+        const hit = hitAt(st, toMap(e), st.pz.K);
+        if (!hit?.role) return;
+        if (e.isTrusted) cv.setPointerCapture(e.pointerId);
+        const from = rootTile(st.data, hit.it);
+        st.drag = {it: hit.it, sx: e.clientX, sy: e.clientY, at: tileOfPt(st.data, toMap(e)), from, tile: from, moved: false};
+    });
+    cv.addEventListener('pointerup', () => {
+        const dr = st.drag;
+        st.drag = null;
+        if (!dr?.moved) return;
+        st.swallow = true;
+        setTimeout(() => {st.swallow = false;}, 0);
+        redraw();
+        act(moveRole(name, dr.it, dr.tile[0] - dr.from[0], dr.tile[1] - dr.from[1]));
+    });
     cv.addEventListener('pointermove', (e) => {
         if (!st.data || st.pz.panning) return;
-        const hit = hitAt(st, toMap(e), st.pz.K);
+        const p = toMap(e), dr = st.drag;
+        if (dr)
+        {
+            if (!dr.moved && Math.hypot(e.clientX - dr.sx, e.clientY - dr.sy) < 4) return;
+            dr.moved = true;
+            const t = tileOfPt(st.data, p), to = [dr.from[0] + t[0] - dr.at[0], dr.from[1] + t[1] - dr.at[1]];
+            if (inMap(st.data, to)) dr.tile = to;
+            cv.style.cursor = 'grabbing';
+            tip.hidden = true;
+            return redraw();
+        }
+        if (S.place)
+        {
+            const t = tileOfPt(st.data, p), was = st.ghost;
+            st.ghost = inMap(st.data, t) ? t : null;
+            cv.style.cursor = 'crosshair';
+            tip.hidden = true;
+            if (String(was) !== String(st.ghost)) redraw();
+            return;
+        }
+        const hit = hitAt(st, p, st.pz.K);
         const key = hit ? (hit.role ?? `p:${hit.point}`) : null, was = st.hover ? (st.hover.role ?? `p:${st.hover.point}`) : null;
         st.hover = hit;
-        cv.style.cursor = hit ? 'pointer' : '';
+        cv.style.cursor = hit?.role ? 'grab' : hit ? 'pointer' : '';
         say(e);
         if (key !== was) redraw();
     });
-    cv.addEventListener('pointerleave', () => {if (st.hover) {st.hover = null; say(); redraw();}});
+    cv.addEventListener('pointerleave', () => {if (st.hover || st.ghost) {st.hover = st.ghost = null; say(); redraw();}});
     cv.addEventListener('click', (e) => {
-        if (!st.data) return;
-        const hit = hitAt(st, toMap(e), st.pz.K);
+        if (!st.data || st.swallow) return;
+        const p = toMap(e);
+        if (S.place)
+        {
+            const t = tileOfPt(st.data, p);
+            if (inMap(st.data, t)) act(placeRole(name, S.place, t, e.shiftKey));
+            return;
+        }
+        const hit = hitAt(st, p, st.pz.K);
         if (hit?.point)
         {
             const users = pointUsers(S.roles, name, hit.point);
@@ -365,6 +449,16 @@ function mapEl(name)
         redraw();
         renderRight();
     });
+    cv.addEventListener('contextmenu', (e) => {
+        if (!st.data) return;
+        if (S.place) {e.preventDefault(); setPlace(null); return;}
+        const hit = hitAt(st, toMap(e), st.pz.K);
+        if (!hit?.role) return;
+        S.pick = hit.role;
+        redraw();
+        renderRight();
+        roleMenu(e, st, hit.it);
+    });
     loadMapState(st).then(() => {
         if (!st.data) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
         else if (!view.set) PZ.center(view);
@@ -372,10 +466,19 @@ function mapEl(name)
         renderRight();
     });
     requestAnimationFrame(redraw);
+    const placing = h('div', {class: 'placing', hidden: true});
+    st.updatePlacing = () => {
+        placing.hidden = !S.place;
+        placing.textContent = S.place ? `放 ${S.place} 到「${layerLabel(st.data ? targetOn(st.data) : S.target)}」：點格子＝放一個、Shift＋點＝連放、右鍵／Esc＝結束` : '';
+        if (!S.place) {st.ghost = null; cv.style.cursor = '';}
+        redraw();
+    };
+    st.updatePlacing();
     return h('div', {class: 'mv'},
         h('div', {class: 'opts'}, h('span', {class: 'name'}, name),
             h('button', {type: 'button', title: '回世界總覽', onclick: () => selectMap(name)}, '總覽'),
-            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取；淡色圓點是作息 point（唯讀，點了跳到角色分頁）'}, '?')),
+            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（唯讀，點了跳到角色分頁）'}, '?')),
+        placing,
         h('div', {class: 'cvbox'}, cv, tip, msg),
         h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
 }
@@ -387,50 +490,236 @@ function renderView()
     $('view').replaceChildren(...[S.sel ? mapEl(S.sel) : worldEl()].flat());
 }
 
+// ---------- 右鍵選單 ----------
+const closeMenu = () => document.querySelector('.ctxmenu')?.remove();
+addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu')) closeMenu();});
+
+function menu(e, items)
+{
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    document.body.append(h('div', {class: 'ctxmenu', style: `left:${e.clientX}px;top:${e.clientY}px`},
+        items.map(it => (it ? h('button', {type: 'button', disabled: !it[1], onclick: () => {closeMenu(); it[1]();}}, it[0]) : h('hr')))));
+}
+
+const layersOf = (d) => ['', ...d.map.layers.filter(l => l.type === 'objectgroup' && l.name.startsWith('@')).map(l => l.name)];
+const layerLabel = (l) => l || '常駐';
+// 角色實際所在的層算哪一組：@ 開頭＝那個群組，其他（roles、舊圖層）＝常駐
+const groupOf = (layer) => (layer.startsWith('@') ? layer : '');
+
+function roleMenu(e, st, it)
+{
+    const cur = groupOf(it.layer);
+    menu(e, [
+        ...layersOf(st.data).filter(l => l !== cur).map(l => [`移到「${layerLabel(l)}」`, () => act(setLayer(st.name, it, l))]),
+        null,
+        ['刪除（Del）', () => act(deleteRole(st.name, it))],
+        [`↗ 到角色分頁看 ${it.rid}`, () => SH.gotoTab('role', [it.rid])],
+    ]);
+}
+
+// ---------- 寫地圖、undo ----------
+const tplOf = (rid) => S.tpls[rid] ?? null;
+const isNamed = (rid) => S.roles[rid]?.kind === 'npc';
+const NAMED_WARN = '⚠ 具名 NPC 是作息產生的，地圖上再放一個遊戲裡可能出現兩個';
+
+async function afterWrite(map, text)
+{
+    MV.forget(map);
+    SH.notifySaved(`maps/${map}.json`);
+    await resummarize([map]);
+    status(text);
+    render();
+}
+
+// fn(data) 改地圖；寫了記一筆 undo
+async function write(map, fn, msg, warn = '')
+{
+    let r;
+    try {r = await ED.editMap(S.assets.dir, map, fn);}
+    catch (e) {status(e.message); return false;}
+    if (!r) return false;
+    S.hist.length = S.hi;
+    S.hist.push({map, ...r, msg});
+    S.hi++;
+    await afterWrite(map, `${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖要重新載入）${warn ? `　${warn}` : ''}`);
+    return true;
+}
+
+async function undo()
+{
+    if (!S.hi) return;
+    const x = S.hist[S.hi - 1];
+    await ED.restore(S.assets.dir, x.map, x.after, x.before);
+    S.hi--;
+    if (S.sel !== x.map) selectMap(x.map);
+    await afterWrite(x.map, `復原：${x.msg}`);
+}
+
+async function redo()
+{
+    if (S.hi >= S.hist.length) return;
+    const x = S.hist[S.hi];
+    await ED.restore(S.assets.dir, x.map, x.before, x.after);
+    S.hi++;
+    if (S.sel !== x.map) selectMap(x.map);
+    await afterWrite(x.map, `重做：${x.msg}`);
+}
+
+// 現在的目標層這張圖沒有（換了地圖）就回常駐
+const targetOn = (d) => (layersOf(d).includes(S.target) ? S.target : '');
+
+async function placeRole(map, rid, tile, keep)
+{
+    const st = mapSt(), target = targetOn(st.data);
+    let id;
+    const ok = await write(map, data => {id = ED.placeRole(data, map, target, rid, tile, S.roles[rid], tplOf(rid));},
+        `放 ${rid} 到「${layerLabel(target)}」格 ${tile.join(',')}`, isNamed(rid) ? NAMED_WARN : '');
+    if (!ok) return;
+    S.pick = id;
+    if (!keep) S.place = null;
+    render();
+}
+
+const moveRole = (map, it, dx, dy) => write(map, data => ED.moveRole(data, it.o.id, dx, dy), `移動 ${it.rid}`);
+
+async function deleteRole(map, it)
+{
+    if (await write(map, data => ED.deleteRole(data, it.o.id), `刪除 ${it.rid}`)) {S.pick = null; render();}
+}
+
+const setLayer = (map, it, layer) => write(map, data => ED.setLayer(data, it.o.id, layer), `${it.rid} 移到「${layerLabel(layer)}」`);
+
+async function replaceRole(map, it, rid)
+{
+    if (!S.roles[rid] || rid === it.rid) return;
+    await write(map, data => ED.replaceRole(data, map, it.o.id, rid, rootTile(mapSt().data, it), S.roles[rid], tplOf(rid)),
+        `${it.rid} 換成 ${rid}`, isNamed(rid) ? NAMED_WARN : '');
+}
+
+const setProp = (map, it, name, type, value) => write(map, data => ED.setProp(data, it.o.id, name, type, value),
+    value === undefined ? `${it.rid} 拿掉 ${name}` : `${it.rid} ${name}＝${value}`);
+
+function setPlace(rid)
+{
+    S.place = S.place === rid ? null : rid;
+    if (S.place) S.pick = null;
+    const st = mapSt();
+    if (S.place && st && !st.sprites.has(S.place)) spriteOf(S.place, refs()).then(sp => {st.sprites.set(S.place, sp); st.redraw();});
+    st?.updatePlacing();
+    renderRight();
+}
+
 // ---------- 右欄 ----------
 function renderRight()
 {
     const st = mapSt();
-    if (!S.sel || !st?.data) {$('right').replaceChildren(); return;}
-    const d = st.data, tw = d.map.tilewidth, th = d.map.tileheight;
-    const groups = d.map.layers.filter(l => l.type === 'objectgroup' && l.name.startsWith('@')).map(l => l.name.slice(1));
-    const count = (pred) => st.roles.filter(pred).length;
-    const fixed = count(it => !it.layer.startsWith('@'));
-    const layerRows = [
-        h('div', {class: 'layer', dataset: {layer: ''}}, h('b', null, '常駐'), h('span', {class: 'dim'}, '（不屬於群組，一直都在）'), h('span', {class: 'n'}, String(fixed))),
-        ...groups.map(g => {
-            const sp = S.spawns[g];
-            return h('div', {class: 'layer grp', dataset: {layer: `@${g}`}},
-                h('div', null, h('b', null, `@${g}`), h('span', {class: 'dim'}, sp ? `　${sp.line}` : '　⚠ story.json 沒宣告'),
-                    sp && h('span', {class: 'cond'}, sp.cond)),
-                h('span', {class: 'n'}, String(count(it => it.layer === `@${g}`))));
-        })];
-    const roleRows = st.roles.map(it => h('div', {class: 'r' + (S.pick === it.o.id ? ' sel' : ''), dataset: {oid: it.o.id}, onclick: () => {S.pick = S.pick === it.o.id ? null : it.o.id; renderRight(); draw(document.querySelector('#view canvas'), st);}},
-        IC.iconEl(S.roles[it.rid]?.icon, 20), h('span', null, it.rid), h('span', {class: 'where'}, `${it.layer.startsWith('@') ? it.layer : '常駐'}・${Math.floor(it.at.root.x / tw)},${Math.floor(it.at.root.y / th)}`)));
+    if (!S.sel) {$('right').replaceChildren(); return;}
+    if (!st?.data) return;      // 地圖還在讀（寫完重畫）：右欄先留著，讀完會再畫
+    const d = st.data, target = targetOn(d);
+    const count = (g) => st.roles.filter(it => groupOf(it.layer) === g).length;
+    const layerRows = layersOf(d).map(l => {
+        const sp = l && S.spawns[l.slice(1)];
+        return h('div', {class: 'layer' + (l ? ' grp' : '') + (l === target ? ' on' : ''), dataset: {layer: l}, title: '點＝放角色放到這一層',
+            onclick: () => {S.target = l; renderRight(); st.updatePlacing();}},
+            h('div', null, h('b', null, l || '常駐'),
+                l ? h('span', {class: 'dim'}, sp ? `　${sp.line}` : '　⚠ story.json 沒宣告') : h('span', {class: 'dim'}, '（不屬於群組，一直都在；寫在 roles 層）'),
+                sp && h('span', {class: 'cond'}, sp.cond)),
+            h('span', {class: 'n'}, String(count(l))));
+    });
+    const roleRows = st.roles.map(it => {
+        const [tx, ty] = rootTile(d, it);
+        return h('div', {class: 'r' + (S.pick === it.o.id ? ' sel' : ''), dataset: {oid: it.o.id},
+            onclick: () => {S.pick = S.pick === it.o.id ? null : it.o.id; renderRight(); st.redraw();},
+            oncontextmenu: (e) => roleMenu(e, st, it)},
+            IC.iconEl(S.roles[it.rid]?.icon, 20), h('span', null, it.rid),
+            h('span', {class: 'where'}, `${layerLabel(groupOf(it.layer))}・${tx},${ty}`));
+    });
     const it = st.roles.find(x => x.o.id === S.pick);
     $('right').replaceChildren(
-        h('div', {class: 'sec'}, '圖層／群組'), ...layerRows,
+        h('div', {class: 'sec'}, '圖層／群組 ', h('span', {class: 'dim'}, '（點一層＝放到這裡）')), ...layerRows,
+        paletteEl(),
+        it && pickedEl(it, d),
         h('div', {class: 'sec'}, '角色 ', h('span', {class: 'dim'}, `（${st.roles.length}）`)),
-        h('div', {class: 'roles'}, roleRows.length ? roleRows : h('div', {class: 'dim'}, '這張地圖沒有角色')),
-        it && pickedEl(it, tw, th));
+        h('div', {class: 'roles'}, roleRows.length ? roleRows : h('div', {class: 'dim'}, '這張地圖沒有角色')));
 }
 
-function pickedEl(it, tw, th)
+const KIND_TABS = [['all', '全部'], ['animal', '動物'], ['monster', '怪物'], ['boss', '首領'], ['rogue', '土匪'], ['npc', 'NPC'], ['', '其他']];
+const placeable = () => Object.keys(S.roles).filter(rid => S.roles[rid]?.kind !== 'player');
+const kindKey = (rid) => (KIND_TABS.some(([k]) => k && k === S.roles[rid].kind) ? S.roles[rid].kind : '');
+
+function paletteEl()
 {
-    const r = S.roles[it.rid], raw = it.o.raw;
-    const fmt = raw.template ? `template ${raw.template.split('/').at(-1)}` : raw.gid != null ? '圖塊物件' : '點';
-    const props = Object.entries(it.o.props).filter(([k]) => k !== 'id');
-    return h('div', null,
-        h('div', {class: 'sec'}, '選取的角色'),
+    const q = S.psearch.trim().toLowerCase();
+    const all = placeable(), tabs = KIND_TABS.filter(([k]) => k === 'all' || all.some(rid => kindKey(rid) === k));
+    if (!tabs.some(([k]) => k === S.kindTab)) S.kindTab = 'all';
+    const list = all.filter(rid => (S.kindTab === 'all' || kindKey(rid) === S.kindTab)
+        && (!q || rid.toLowerCase().includes(q) || String(S.roles[rid].lab ?? '').toLowerCase().includes(q)));
+    const search = h('input', {class: 'psearch', placeholder: '搜尋角色', value: S.psearch,
+        oninput: e => {S.psearch = e.target.value; const p = e.target.selectionStart; renderRight(); const n = document.querySelector('#right .psearch'); n.focus(); n.setSelectionRange(p, p);}});
+    return h('div', {class: 'palette'},
+        h('div', {class: 'sec'}, '放角色 ', h('span', {class: 'dim'}, S.place ? `（放 ${S.place} 中，右鍵／Esc 結束）` : '（點一個，再點地圖）')),
+        h('div', {class: 'ktabs'}, tabs.map(([k, t]) => h('button', {type: 'button', class: k === S.kindTab ? 'on' : '', dataset: {kind: k},
+            onclick: () => {S.kindTab = k; try {localStorage.setItem(KIND_KEY, k);} catch {} renderRight();}}, t))),
+        search,
+        h('div', {class: 'pcells'}, list.map(rid => h('div', {class: 'pcell' + (rid === S.place ? ' on' : ''), dataset: {rid},
+            title: `${rid}${S.roles[rid].lab ? ` ${S.roles[rid].lab}` : ''}${S.tpls[rid] ? `\ntemplate：${S.tpls[rid].path}` : '\n沒有 template，寫成點物件'}${isNamed(rid) ? `\n${NAMED_WARN}` : ''}`,
+            onclick: () => setPlace(rid)},
+            IC.iconEl(S.roles[rid].icon, 32), h('span', {class: 'k'}, rid), isNamed(rid) && h('span', {class: 'warn mark'}, '⚠')))));
+}
+
+const PTYPES = ['string', 'int', 'float', 'bool'];
+const parseProp = (type, v) => (type === 'int' ? parseInt(v, 10) : type === 'float' ? parseFloat(v) : type === 'bool' ? v === 'true' : v);
+const propOk = (type, v) => (type === 'int' || type === 'float' ? Number.isFinite(v) : true);
+
+function pickedEl(it, d)
+{
+    const map = mapSt().name, r = S.roles[it.rid], raw = it.o.raw, [tx, ty] = rootTile(d, it);
+    const fmt = raw.template ? `template ${raw.template.split('/').at(-1)}` : raw.gid != null ? '圖塊物件' : '點物件';
+    const own = (raw.properties ?? []).filter(p => p.name !== 'id');
+    const tplProps = Object.entries(it.o.props).filter(([k]) => k !== 'id' && !own.some(p => p.name === k));
+    const idSel = h('select', {dataset: {k: 'rid'}, onchange: e => act(replaceRole(map, it, e.target.value))},
+        !S.roles[it.rid] && h('option', {value: it.rid, selected: true}, `${it.rid}（role.json 沒有）`),
+        placeable().map(rid => h('option', {value: rid, selected: rid === it.rid}, `${rid}${S.roles[rid].lab ? ` ${S.roles[rid].lab}` : ''}`)));
+    const resp = own.find(p => p.name === 'respawn') ?? (it.o.props.respawn != null ? {value: it.o.props.respawn, tpl: true} : null);
+    const respIn = h('input', {type: 'number', class: 'num', min: 0, step: 1, value: resp?.value ?? '', placeholder: '不重生', dataset: {k: 'respawn'},
+        title: '被殺之後隔多少遊戲分鐘重生，空白＝不重生（gameobject.js）',
+        onchange: e => {
+            const v = e.target.value.trim();
+            act(setProp(map, it, 'respawn', 'int', v === '' ? undefined : parseInt(v, 10)));
+        }});
+    const propRow = (p) => h('tr', {dataset: {prop: p.name}}, h('td', {class: 'k'}, p.name),
+        h('td', null, h('input', {class: 'pv', value: String(p.value), title: p.type ?? 'string',
+            onchange: e => {
+                const v = parseProp(p.type ?? 'string', e.target.value);
+                if (!propOk(p.type, v)) {status(`${p.name} 要是數字`); e.target.value = String(p.value); return;}
+                act(setProp(map, it, p.name, p.type ?? 'string', v));
+            }}),
+            h('button', {type: 'button', class: 'del', title: '拿掉這個屬性', onclick: () => act(setProp(map, it, p.name, p.type ?? 'string', undefined))}, '✕')));
+    const nName = h('input', {class: 'pn', placeholder: '名稱', size: 8}), nType = h('select', null, PTYPES.map(t => h('option', {value: t}, t)));
+    const nVal = h('input', {class: 'pv', placeholder: '值', size: 8});
+    const addProp = () => {
+        const n = nName.value.trim(), v = parseProp(nType.value, nVal.value);
+        if (!n || n === 'id') return status('屬性名稱不能空白，也不能是 id（換角色用上面的下拉）');
+        if (!propOk(nType.value, v)) return status(`${n} 要是數字`);
+        act(setProp(map, it, n, nType.value, v));
+    };
+    return h('div', {class: 'picked'},
+        h('div', {class: 'sec'}, '選取的角色 ', h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [it.rid])}, `↗ ${it.rid}`)),
         h('table', null,
-            h('tr', null, h('td', {class: 'k'}, 'id'), h('td', null, it.rid, ' ', h('a', {class: 'go', title: '到角色分頁', onclick: () => SH.gotoTab('role', [it.rid])}, '↗'))),
-            h('tr', null, h('td', {class: 'k'}, '名字'), h('td', null, r?.lab ?? h('span', {class: 'warn'}, '⚠ role.json 沒有'))),
+            h('tr', null, h('td', {class: 'k'}, '角色'), h('td', null, idSel, isNamed(it.rid) && h('div', {class: 'warn'}, NAMED_WARN))),
             r && h('tr', null, h('td', {class: 'k'}, '種類'), h('td', null, KIND[r.kind] ?? r.kind ?? '')),
-            h('tr', null, h('td', {class: 'k'}, '圖層'), h('td', null, it.layer)),
-            h('tr', null, h('td', {class: 'k'}, '站的格子'), h('td', null, `${Math.floor(it.at.root.x / tw)}, ${Math.floor(it.at.root.y / th)}`)),
-            h('tr', null, h('td', {class: 'k'}, '格式'), h('td', null, fmt)),
-            h('tr', null, h('td', {class: 'k'}, '物件 id'), h('td', null, it.o.id)),
-            ...props.map(([k, v]) => h('tr', null, h('td', {class: 'k'}, k), h('td', null, String(v))))));
+            h('tr', null, h('td', {class: 'k'}, '圖層'), h('td', null, h('select', {dataset: {k: 'layer'}, onchange: e => act(setLayer(map, it, e.target.value))},
+                layersOf(d).map(l => h('option', {value: l, selected: l === groupOf(it.layer)}, layerLabel(l)))),
+                groupOf(it.layer) !== it.layer && it.layer !== ED.ROLES_LAYER && h('span', {class: 'dim'}, ` 在 ${it.layer} 層`))),
+            h('tr', null, h('td', {class: 'k'}, '站的格子'), h('td', null, `${tx}, ${ty}`, h('span', {class: 'dim'}, '（拖曳移動）'))),
+            h('tr', null, h('td', {class: 'k'}, '格式'), h('td', null, fmt, h('span', {class: 'dim'}, `　物件 id ${it.o.id}`))),
+            h('tr', null, h('td', {class: 'k'}, '重生（分）'), h('td', null, respIn, resp?.tpl && h('span', {class: 'dim'}, ' template 的'))),
+            ...own.filter(p => p.name !== 'respawn').map(propRow),
+            ...tplProps.filter(([k]) => k !== 'respawn').map(([k, v]) => h('tr', {class: 'dim'}, h('td', {class: 'k'}, k), h('td', null, `${v}（template 的）`))),
+            h('tr', null, h('td', {class: 'k'}, '加屬性'), h('td', {class: 'addprop'}, nName, nType, nVal, h('button', {type: 'button', onclick: addProp}, '加')))),
+        h('div', {class: 'acts'}, h('button', {type: 'button', class: 'danger', onclick: () => act(deleteRole(map, it))}, '刪除（Del）')));
 }
 
 function render()
@@ -448,7 +737,22 @@ $('onlyRoles').onchange = (e) => {
     try {localStorage.setItem(ONLY_KEY, S.only ? '1' : '0');} catch {}
     renderList();
 };
-const act = (p) => p.catch(e => status(e.message));
+const act = (p) => Promise.resolve(p).catch(e => status(e.message));
+$('btnUndo').onclick = () => act(undo());
+$('btnRedo').onclick = () => act(redo());
+const TYPING = 'input:not([type=checkbox]), textarea, select';
+addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {closeMenu(); if (S.place) setPlace(null); return;}
+    if (e.target.matches?.(TYPING)) return;
+    const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) {e.preventDefault(); act(undo());}
+    else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) {e.preventDefault(); act(redo());}
+    else if (e.key === 'Delete' && S.pick != null)
+    {
+        const st = mapSt(), it = st?.roles.find(x => x.o.id === S.pick);
+        if (it) {e.preventDefault(); act(deleteRole(st.name, it));}
+    }
+});
 SH.onSaved((file) => {
     if (!S.assets) return;
     if (['role.json', 'item.json', 'part.json'].includes(file)) act(loadRefs().then(render));
@@ -466,4 +770,4 @@ SH.onProject((dir) => act(setRoot(dir)));
 render();
 
 // 給無頭測試用
-window.__mt = {S, setRoot, reload, render, selectMap, mapSt, MV, PZ};
+window.__mt = {S, setRoot, reload, render, selectMap, mapSt, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, MV, PZ, ED};

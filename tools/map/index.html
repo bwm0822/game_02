@@ -58,7 +58,34 @@
     #right table { border-collapse: collapse; font-size: 14px; }
     #right td { padding: 1px 10px 1px 0; vertical-align: top; }
     #right td.k { color: #888; white-space: nowrap; }
-    #right a.go { color: #8bd; cursor: pointer; }
+    #right a.go { color: #8bd; cursor: pointer; font-weight: normal; }
+    #right .layer { cursor: pointer; border: 1px solid transparent; }
+    #right .layer:hover { background: #33363c; }
+    #right .layer.on { border-color: #7ddc5a; background: #24331f; }
+    #right .ktabs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 4px; }
+    #right .ktabs button { padding: 1px 6px; font-size: 13px; }
+    #right .ktabs button.on { background: #2f6db5; color: #fff; }
+    #right .psearch { width: 100%; box-sizing: border-box; margin-bottom: 4px; }
+    #right .pcells { display: flex; flex-wrap: wrap; gap: 4px; max-height: 220px; overflow: auto; }
+    #right .pcell { position: relative; width: 64px; padding: 3px 2px; text-align: center; border: 1px solid transparent; border-radius: 3px; cursor: pointer; font-size: 12px; }
+    #right .pcell:hover { background: #33363c; }
+    #right .pcell.on { border-color: #7ddc5a; background: #24331f; }
+    #right .pcell .ico { display: flex; margin: 0 auto 1px; }
+    #right .pcell .k { display: block; word-break: break-all; }
+    #right .pcell .mark { position: absolute; top: 1px; right: 3px; }
+    #right .picked input.num { width: 80px; }
+    #right .picked input.pv { width: 110px; }
+    #right .picked select { max-width: 200px; }
+    #right .picked .del { padding: 0 5px; margin-left: 3px; }
+    #right .picked .addprop { display: flex; flex-wrap: wrap; gap: 3px; }
+    #right .picked .addprop input.pv { width: 70px; }
+    #right .acts { margin-top: 6px; }
+    #right .warn, .warn { color: #f88; }
+    .mv .placing { flex: none; margin-bottom: 6px; padding: 4px 8px; background: #1e3d1a; border: 1px solid #5aa845; border-radius: 4px; color: #c8f0b8; font-size: 13px; }
+    .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 160px; padding: 4px 0; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+    .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
+    .ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
+    .ctxmenu hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid #444; }
 </style>
 </head>
 <body>
@@ -68,6 +95,7 @@
         <label class="row2"><input type="checkbox" id="onlyRoles"> 只看有角色／群組的</label>
         <div id="list"></div>
         <div class="bottom">
+            <div class="row2"><span class="grow"></span><button id="btnUndo" title="復原（Ctrl+Z，直接寫回地圖）">↶</button><button id="btnRedo" title="重做（Ctrl+Y）">↷</button></div>
             <span id="status" class="dim"></span>
         </div>
     </aside>
