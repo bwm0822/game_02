@@ -613,7 +613,7 @@
     "grp": "brooklyn",
     "lab": "守衛",
     "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
-    "icon": "head-trump",
+    "icon": "portrait-guard-1",
     "job": "guard",
     "gold": 50,
     "style": "passive_fighter",
@@ -643,12 +643,14 @@
       "t": 32,
       "b": 0
     },
-    "body": "rogue",
+    "body": "body-man",
     "inv": {
       "equips": [
         "sword-1",
-        "helmet_01",
-        "chest_01"
+        "helmet-guard-chain",
+        "armor-guard-chain",
+        "boots-guard-chain",
+        "gloves-guard-chain"
       ]
     },
     "stats": {
@@ -688,14 +690,18 @@
         "map": "m_04x05/house-08",
         "do": "idle"
       }
-    ]
+    ],
+    "hair": "hair-guard-1",
+    "handF": "handF",
+    "handB": "handB",
+    "head": "head-guard-1"
   },
   "guard-2": {
     "kind": "npc",
     "grp": "brooklyn",
     "lab": "守衛",
     "des": "駐守南門的守衛，跟搭檔輪流日夜巡邏村子",
-    "icon": "head-trump",
+    "icon": "portrait-guard-2",
     "job": "guard",
     "gold": 50,
     "style": "passive_fighter",
@@ -725,12 +731,14 @@
       "t": 32,
       "b": 0
     },
-    "body": "rogue",
+    "body": "body-man",
     "inv": {
       "equips": [
         "sword-1",
-        "helmet_01",
-        "chest_01"
+        "helmet-guard-chain",
+        "armor-guard-chain",
+        "boots-guard-chain",
+        "gloves-guard-chain"
       ]
     },
     "stats": {
@@ -770,7 +778,11 @@
         "map": "m_04x05/house-08",
         "do": "idle"
       }
-    ]
+    ],
+    "head": "head-guard-2",
+    "hair": "hair-guard-2",
+    "handF": "handF",
+    "handB": "handB"
   },
   "kidman": {
     "kind": "npc",

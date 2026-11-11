@@ -159,7 +159,8 @@
       "sprite": "cloth-gloves",
       "scale": 0.25,
       "y": 2,
-      "x": 13
+      "x": 13,
+      "hideHand": true
     },
     "drop": {
       "sprite": "cloth-gloves",
@@ -176,7 +177,8 @@
       "sprite": "leather-gloves",
       "scale": 0.25,
       "y": 2,
-      "x": 13
+      "x": 13,
+      "hideHand": true
     },
     "drop": {
       "sprite": "leather-gloves",
@@ -184,6 +186,28 @@
     },
     "def": 10,
     "lab": "高級手套"
+  },
+  "gloves-guard-chain": {
+    "cat": "CAT_GLOVES",
+    "icon": "guard-chain-gloves",
+    "lab": "守衛手套",
+    "equip": {
+      "sprite": "guard-chain-gloves-front",
+      "back": "guard-chain-gloves-back",
+      "handB": {
+        "sprite": "guard-chain-gloves-b-front",
+        "back": "guard-chain-gloves-b-back"
+      },
+      "scale": 0.2,
+      "x": 0,
+      "y": 0,
+      "oy": 0.5,
+      "hideHand": true
+    },
+    "drop": {
+      "sprite": "guard-chain-gloves",
+      "scale": 0.25
+    }
   },
   "boots_01": {
     "cat": "CAT_BOOTS",
@@ -1475,6 +1499,23 @@
       "scale": 0.25
     }
   },
+  "helmet-guard-chain": {
+    "cat": "CAT_HELMET",
+    "icon": "guard-chain-helmet",
+    "lab": "守衛頭盔",
+    "equip": {
+      "sprite": "guard-chain-helmet-front",
+      "scale": 0.25,
+      "x": -2,
+      "y": 3.25,
+      "back": "guard-chain-helmet-back",
+      "hideHair": true
+    },
+    "drop": {
+      "sprite": "guard-chain-helmet",
+      "scale": 0.25
+    }
+  },
   "armor-hvy-5": {
     "cat": "CAT_CHESTPLATE",
     "lab": "秘銀甲",
@@ -1505,6 +1546,21 @@
       "scale": 0.25
     }
   },
+  "armor-guard-chain": {
+    "cat": "CAT_CHESTPLATE",
+    "icon": "guard-chain-armor",
+    "lab": "守衛甲",
+    "equip": {
+      "sprite": "guard-chain-armor",
+      "scale": 0.25,
+      "x": -0.25,
+      "y": -6.75
+    },
+    "drop": {
+      "sprite": "guard-chain-armor",
+      "scale": 0.25
+    }
+  },
   "boots-hvy-5": {
     "cat": "CAT_BOOTS",
     "lab": "秘銀靴",
@@ -1532,6 +1588,21 @@
     "icon": "mithril-boots",
     "drop": {
       "sprite": "mithril-boots",
+      "scale": 0.25
+    }
+  },
+  "boots-guard-chain": {
+    "cat": "CAT_BOOTS",
+    "icon": "guard-chain-boots",
+    "lab": "守衛靴",
+    "equip": {
+      "sprite": "guard-chain-boots",
+      "scale": 0.25,
+      "x": 1.25,
+      "y": 0
+    },
+    "drop": {
+      "sprite": "guard-chain-boots",
       "scale": 0.25
     }
   },

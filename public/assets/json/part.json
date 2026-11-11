@@ -347,6 +347,24 @@
     "y": 3,
     "name": "放羊少年的頭"
   },
+  "head-guard-1": {
+    "kind": "head",
+    "sprite": "head-guard-1",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3,
+    "name": "老兵的頭",
+    "sex": "m"
+  },
+  "head-guard-2": {
+    "kind": "head",
+    "sprite": "head-guard-2",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": 3,
+    "sex": "m",
+    "name": "新兵的頭"
+  },
   "hair-karen": {
     "kind": "hair",
     "sprite": "hair-karen",
@@ -565,6 +583,24 @@
     "y": -11.5,
     "name": "白鬍老爺爺的髮"
   },
+  "hair-guard-1": {
+    "kind": "hair",
+    "sprite": "hair-guard-1",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -16.072,
+    "name": "老兵的髮",
+    "sex": "m"
+  },
+  "hair-guard-2": {
+    "kind": "hair",
+    "sprite": "hair-guard-2",
+    "scale": 0.25,
+    "x": -2.5,
+    "y": -13.25,
+    "name": "新兵的髮",
+    "sex": "m"
+  },
   "cloth-outfit-innkeeper": {
     "kind": "cloth",
     "sprite": "outfit-innkeeper-cloth",
@@ -774,14 +810,16 @@
     "sprite": "cloth-outfit-villager-m-3",
     "scale": 0.25,
     "x": 0,
-    "y": -6.25
+    "y": -6.25,
+    "name": "樵夫服"
   },
   "cloth-outfit-villager-m-5": {
     "kind": "cloth",
     "sprite": "cloth-outfit-villager-m-5",
     "scale": 0.25,
     "x": 0,
-    "y": -5.5
+    "y": -5.5,
+    "name": "白鬍老爺爺服"
   },
   "shoes-outfit-innkeeper": {
     "kind": "shoes",
@@ -992,14 +1030,16 @@
     "sprite": "shoes-outfit-villager-m-3",
     "scale": 0.25,
     "x": 1,
-    "y": 0
+    "y": 0,
+    "name": "樵夫鞋"
   },
   "shoes-outfit-villager-m-5": {
     "kind": "shoes",
     "sprite": "shoes-outfit-villager-m-5",
     "scale": 0.25,
     "x": 1,
-    "y": 0
+    "y": 0,
+    "name": "白鬍老爺爺鞋"
   },
   "handF": {
     "kind": "handF",
