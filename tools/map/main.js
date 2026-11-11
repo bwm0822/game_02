@@ -18,6 +18,8 @@ import {resolveObject, joinPath} from '../../src/data/navgrid.js';
 import {usersOf as pointUsers} from '../role/mapedit.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
 import {roleIssues, checkMapRoles} from '../../src/data/mapcheck.js';
+import {buildPlan, hhmm, mod} from '../../src/data/schedplan.js';
+import {daySegs, whereAt} from '../role/schedbar.js';
 import '../common/splitter.js';
 
 const SEL_KEY = 'tools.map.sel', ONLY_KEY = 'tools.map.only';
@@ -81,7 +83,54 @@ async function loadRefs()
     S.roles = await readJsonFile('role.json', {});
     S.items = await readJsonFile('item.json', {});
     S.parts = await PT.readParts(S.assets.json).catch(() => ({}));
+    const nav = await readJsonFile('navgraph.json', {nodes: {}, edges: {}});
+    // 有作息的角色的時刻表（同遊戲 ScheduleManager 的 buildPlan），時間游標用
+    S.plans = {};
+    for (const [id, r] of Object.entries(S.roles))
+    {
+        const sch = Array.isArray(r.schedule) ? r.schedule : [];
+        if (!sch.length) continue;
+        const plan = buildPlan(sch, nav.edges ?? {}, nav.nodes ?? {}).plan;
+        if (plan) S.plans[id] = {sch, plan, segs: daySegs(plan, sch)};
+    }
     forgetSprites();
+}
+
+// ---------- 時間游標：具名 NPC 這個時刻在這張圖的哪裡 ----------
+const TIME_KEY = 'tools.map.time', T_KEY = 'tools.map.t';
+S.timeOn = false;
+S.t = 8 * 60;
+try {S.timeOn = localStorage.getItem(TIME_KEY) === '1'; S.t = mod(+(localStorage.getItem(T_KEY) ?? 480) || 0);} catch {}
+const toMin = (s) => {const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim()); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;};
+
+// [{id, at（whereAt）, n（具名物件）}]：停在這張圖的點、或正走向這張圖的點（走路中）；同一點好幾個人照順序排開
+function npcsAt(st)
+{
+    if (!S.timeOn || !st.data) return [];
+    const out = [];
+    for (const [id, p] of Object.entries(S.plans ?? {}))
+    {
+        const at = whereAt(p.plan, p.sch, S.t, p.segs);
+        if (!at || at.map !== st.name) continue;
+        const n = st.data.named.get(at.go);
+        if (n) out.push({id, at, n});
+    }
+    const slot = new Map();
+    for (const x of out) {const k = slot.get(x.n.name) ?? 0; slot.set(x.n.name, k + 1); x.k = k;}
+    return out;
+}
+
+function setTime(t, on = S.timeOn)
+{
+    S.t = mod(Math.round(t));
+    S.timeOn = on;
+    try {localStorage.setItem(T_KEY, String(S.t)); localStorage.setItem(TIME_KEY, on ? '1' : '0');} catch {}
+    const st = mapSt();
+    if (!st) return;
+    st.npcs = npcsAt(st);
+    Promise.all(st.npcs.filter(x => !st.sprites.has(x.id)).map(async x => st.sprites.set(x.id, await spriteOf(x.id, refs())))).then(() => st.redraw());
+    st.updateTime?.();
+    st.redraw();
 }
 
 // story.json 的 spawns＋條件檢查（同任務分頁的 checkStory）＋條件自動完成的 dl-cond
@@ -318,6 +367,30 @@ function draw(cv, st)
         g.fillStyle = sel ? 'rgba(79,195,247,0.25)' : 'rgba(255,255,255,0.15)';
         g.fillRect(Math.floor(root.x / tw) * tw, Math.floor(root.y / th) * th, tw, th);
     }
+    // 時間游標：具名 NPC（作息）半透明畫在點上，下面藍底名字（走路中虛線框＋→）
+    for (const x of st.npcs ?? [])
+    {
+        const c = npcCen(x), sp = st.sprites.get(x.id), r = S.roles[x.id];
+        g.globalAlpha = x.at.kind === 'walk' ? 0.45 : 0.8;
+        if (sp) g.drawImage(sp, c.x - SPRITE_HALF, c.y - SPRITE_HALF);
+        g.globalAlpha = 1;
+        const on = st.hover?.npc === x.id;
+        g.setLineDash(x.at.kind === 'walk' ? [4 / K, 3 / K] : []);
+        g.strokeStyle = on ? '#fff' : '#4fc3f7';
+        g.lineWidth = (on ? 2 : 1) / K;
+        g.strokeRect(c.x - (r?.w ?? 32) / 2, c.y - (r?.h ?? 64) / 2, r?.w ?? 32, r?.h ?? 64);
+        g.setLineDash([]);
+        const txt = `${x.at.kind === 'walk' ? '→' : ''}${x.id}`;
+        g.font = `${12 / K}px sans-serif`;
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        const tw = g.measureText(txt).width + 6 / K, ty = c.y + (r?.h ?? 64) / 2 + 8 / K;
+        g.fillStyle = 'rgba(20,60,90,0.9)';
+        g.fillRect(c.x - tw / 2, ty - 7 / K, tw, 14 / K);
+        g.fillStyle = '#fff';
+        g.fillText(txt, c.x, ty);
+        g.textBaseline = 'alphabetic';
+    }
     // ⚠：有錯紅、只有警告黃（大小固定在螢幕 px）
     g.font = `bold ${12 / K}px sans-serif`;
     g.textAlign = 'center';
@@ -355,12 +428,24 @@ function draw(cv, st)
     cv.dataset.drawn = st.roles.length;
 }
 
+// 時間游標的 NPC 站在點上（point 中心＝站的格子），同一點好幾個往右排開
+function npcCen(x)
+{
+    const a = S.roles[x.id]?.anchor;
+    return {x: x.n.cen.x - (a?.x ?? 0) + x.k * 24, y: x.n.cen.y - (a?.y ?? 0)};
+}
+
 function hitAt(st, p, K)
 {
     for (let i = st.roles.length - 1; i >= 0; i--)
     {
         const {cen, w, h: hh} = st.roles[i].at;
         if (Math.abs(p.x - cen.x) <= w / 2 && Math.abs(p.y - cen.y) <= hh / 2) return {role: st.roles[i].o.id, it: st.roles[i]};
+    }
+    for (const x of st.npcs ?? [])
+    {
+        const c = npcCen(x), r = S.roles[x.id];
+        if (Math.abs(p.x - c.x) <= (r?.w ?? 32) / 2 && Math.abs(p.y - c.y) <= (r?.h ?? 64) / 2) return {npc: x.id, x};
     }
     if (!show.points) return null;
     for (const n of st.data.named.values())
@@ -377,7 +462,8 @@ async function loadMapState(st)
     applyHide(st);
     st.issues = new Map();
     for (const x of checkMapRoles(d, S.roles, MV.gridOf(d))) (st.issues.get(x.oid) ?? st.issues.set(x.oid, []).get(x.oid)).push(x);
-    const rids = new Set(st.all.map(it => it.rid));
+    st.npcs = npcsAt(st);
+    const rids = new Set([...st.all.map(it => it.rid), ...st.npcs.map(x => x.id)]);
     if (S.place) rids.add(S.place);
     await Promise.all([...rids].map(async rid => st.sprites.set(rid, await spriteOf(rid, refs()))));
 }
@@ -405,6 +491,13 @@ function mapEl(name)
                 h('div', {class: 'tsub'}, `${KIND[r?.kind] ?? r?.kind ?? '⚠ role.json 沒有'}・${it.layer}・格 ${tx},${ty}`),
                 ...(st.issues?.get(it.o.id) ?? []).map(x => h('div', {class: 'twarn'}, `⚠ ${x.msg}`)),
                 h('div', {class: 'thint'}, '點＝選取、拖＝移動、右鍵＝選單'));
+        }
+        else if (hit.npc)
+        {
+            const {at} = hit.x, r = S.roles[hit.npc];
+            lines.push(h('div', {class: 'tname'}, `${hit.npc}${r?.lab ? ` ${r.lab}` : ''}（作息）`),
+                h('div', {class: 'tsub'}, `${hhmm(S.t)} ${at.kind === 'walk' ? '正走去' : '在'} ${at.go}（第 ${at.i + 1} 筆）`),
+                h('div', {class: 'thint'}, '點＝到角色分頁看作息'));
         }
         else
         {
@@ -461,7 +554,8 @@ function mapEl(name)
             return;
         }
         const hit = hitAt(st, p, st.pz.K);
-        const key = hit ? (hit.role ?? `p:${hit.point}`) : null, was = st.hover ? (st.hover.role ?? `p:${st.hover.point}`) : null;
+        const keyOf = (x) => (x ? (x.role ?? (x.npc ? `n:${x.npc}` : `p:${x.point}`)) : null);
+        const key = keyOf(hit), was = keyOf(st.hover);
         st.hover = hit;
         cv.style.cursor = hit?.role ? 'grab' : hit ? 'pointer' : '';
         say(e);
@@ -478,6 +572,7 @@ function mapEl(name)
             return;
         }
         const hit = hitAt(st, p, st.pz.K);
+        if (hit?.npc) {SH.gotoTab('role', [hit.npc]); return;}
         if (hit?.point)
         {
             const users = pointUsers(S.roles, name, hit.point);
@@ -501,6 +596,7 @@ function mapEl(name)
     loadMapState(st).then(() => {
         if (!st.data) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
         else if (!view.set) PZ.center(view);
+        st.updateTime?.();
         redraw();
         renderRight();
     });
@@ -519,7 +615,26 @@ function mapEl(name)
             h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（唯讀，點了跳到角色分頁）'}, '?')),
         placing,
         h('div', {class: 'cvbox'}, cv, tip, msg),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')),
+        timeBar(st));
+}
+
+// 🕒 時間游標：勾了才畫具名 NPC；時間可打 HH:MM 或拖滑桿（10 分一格），記住
+function timeBar(st)
+{
+    const chk = h('input', {type: 'checkbox', dataset: {k: 'timeOn'}, checked: S.timeOn, onchange: e => setTime(S.t, e.target.checked)});
+    const inp = h('input', {class: 'num', size: 5, dataset: {k: 'timeT'}, value: hhmm(S.t), onchange: e => {const v = toMin(e.target.value); v === null ? (e.target.value = hhmm(S.t)) : setTime(v, true);}});
+    const rng = h('input', {type: 'range', class: 'trange', min: 0, max: 1430, step: 10, value: S.t, dataset: {k: 'timeR'}, oninput: e => setTime(+e.target.value, true)});
+    const cnt = h('span', {class: 'dim'});
+    st.updateTime = () => {
+        chk.checked = S.timeOn;
+        if (document.activeElement !== inp) inp.value = hhmm(S.t);
+        rng.value = S.t;
+        cnt.textContent = S.timeOn ? `這張圖 ${(st.npcs ?? []).filter(x => x.at.kind === 'stay').length} 人${(st.npcs ?? []).some(x => x.at.kind === 'walk') ? `、${st.npcs.filter(x => x.at.kind === 'walk').length} 人走過來` : ''}` : '';
+    };
+    st.updateTime();
+    return h('div', {class: 'opts timebar', title: '照 role.json 的作息（同遊戲 ScheduleManager）算具名 NPC 這個時刻在哪；淡的虛線框＝正走去那個點'},
+        h('label', null, chk, '🕒 作息'), inp, rng, cnt);
 }
 
 const mapSt = () => document.querySelector('#view canvas')?.st;
@@ -947,4 +1062,4 @@ SH.onProject((dir) => act(setRoot(dir)));
 render();
 
 // 給無頭測試用
-window.__mt = {S, setRoot, reload, render, selectMap, mapSt, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, newGroup, setCond, renameGroup, deleteGroup, toggleHide, MV, PZ, ED};
+window.__mt = {S, setRoot, reload, render, selectMap, mapSt, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, newGroup, setCond, renameGroup, deleteGroup, toggleHide, setTime, MV, PZ, ED};

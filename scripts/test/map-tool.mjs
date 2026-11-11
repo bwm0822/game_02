@@ -8,12 +8,13 @@ const SETUP = async () => {
     const dir = async (parent, ...names) => {let d = parent; for (const n of names) d = await d.getDirectoryHandle(n, {create: true}); return d;};
     const write = async (d, name, data) => {const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
     const assets = await dir(opfs, 'game', 'public', 'assets'), json = await dir(assets, 'json'), maps = await dir(assets, 'maps');
-    for (const f of ['role.json', 'item.json', 'part.json', 'story.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
+    for (const f of ['role.json', 'item.json', 'part.json', 'story.json', 'navgraph.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
     const copy = async (rel) => {
         const segs = rel.split('/'), d = await dir(maps, ...segs.slice(0, -1));
         await write(d, segs.at(-1), await (await fetch(`/assets/maps/${rel}`)).text());
     };
-    for (const f of ['main.world', 'm/m_03x05.json', 'm/m_04x05.json', 'm_04x05/karen-home.json', 'forest-01.json', 'village-01.json', '_m_00x00.json']) await copy(f);
+    for (const f of ['main.world', 'm/m_03x05.json', 'm/m_04x05.json', 'm_04x05/karen-home.json', 'forest-01.json', 'village-01.json', '_m_00x00.json',
+        'm_04x05/trump-inn-f1.json', 'm_04x05/trump-inn-f2.json']) await copy(f);
     const tdir = await dir(assets, 'templates', 'animals');
     await write(tdir, 'wolf.tj', await (await fetch('/assets/templates/animals/wolf.tj')).text());
     await write(await dir(assets, 'templates'), 'point.tj', await (await fetch('/assets/templates/point.tj')).text());
@@ -395,11 +396,40 @@ run('map-tool', async t => {
         S.pick = kar.o.id; mt.render();
         await settle();
         out.pickWarn = [...document.querySelectorAll('#right .picked .issue')].map(e => e.textContent).join();
+
+        // ================= 第 6 步：時間游標 =================
+        const F1 = 'm_04x05/trump-inn-f1', F2 = 'm_04x05/trump-inn-f2';
+        mt.selectMap(F1);
+        await settle();
+        out.timeOff = [document.querySelector('#view [data-k=timeOn]')?.checked, (cv().st.npcs ?? []).length];
+        const tin = document.querySelector('#view [data-k=timeT]');
+        tin.value = '12:00'; tin.dispatchEvent(new Event('change'));
+        await sleep(100);
+        const n12 = cv().st.npcs.map(x => `${x.id}:${x.at.kind}:${x.n.name}`);
+        out.t12 = [n12.join(), S.timeOn, localStorage.getItem('tools.map.t'), localStorage.getItem('tools.map.time'), document.querySelector('#view .timebar .dim').textContent];
+        // 滑過：浮動框
+        await sleep(50);
+        const tx = cv().st.npcs.find(x => x.id === 'trump');
+        if (tx)
+        {
+            const b = cv().getBoundingClientRect(), s = cv().st, c = {x: tx.n.cen.x - (S.roles.trump.anchor?.x ?? 0), y: tx.n.cen.y - (S.roles.trump.anchor?.y ?? 0)};
+            cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, clientX: b.left + s.pz.o.x + (c.x - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (c.y - s.data.H / 2) * s.pz.K}));
+            out.ttip = [...document.querySelectorAll('#view .tip > div')].map(e => e.textContent).join(' | ');
+        }
+        // 03:00：trump 在 2F 床上，1F 沒有他
+        mt.setTime(3 * 60, true);
+        out.t3f1 = cv().st.npcs.some(x => x.id === 'trump');
+        mt.selectMap(F2);
+        await settle();
+        out.t3f2 = cv().st.npcs.filter(x => x.id === 'trump').map(x => `${x.at.kind}:${x.n.type}`).join();
+        // 關掉
+        document.querySelector('#view [data-k=timeOn]').click();
+        out.offAgain = [cv().st.npcs.length, localStorage.getItem('tools.map.time')];
         chan.close();
         return out;
     }, SETUP.toString());
 
-    t.check('地圖分類：世界／室內／其他，_ 開頭的舊檔不列', r.cats.world.join() === 'm/m_03x05,m/m_04x05' && r.cats.room.join() === 'm_04x05/karen-home'
+    t.check('地圖分類：世界／室內／其他，_ 開頭的舊檔不列', r.cats.world.join() === 'm/m_03x05,m/m_04x05' && r.cats.room.join() === 'm_04x05/karen-home,m_04x05/trump-inn-f1,m_04x05/trump-inn-f2'
         && r.cats.other.join() === 'forest-01,village-01', JSON.stringify(r.cats));
     t.check('徽章：m_03x05 六個角色、兩個群組；forest-01 兩個', r.sum[0]?.roles === 6 && r.sum[0]?.groups.join() === 'wolves,bandits' && r.sum[1] === 2, JSON.stringify(r.sum));
     t.eq('左欄徽章文字', r.badge, '🐾6@2');
@@ -477,6 +507,13 @@ run('map-tool', async t => {
     t.eq('左欄徽章只算不用格子的（具名 NPC）', r.badgeKH, '⚠1');
     t.eq('角色清單標 ⚠', r.rowWarn, 2);
     t.check('選取的角色列出問題', /具名 NPC/.test(r.pickWarn), r.pickWarn);
+
+    // ---- 第 6 步 ----
+    t.check('時間游標預設關、不畫', r.timeOff[0] === false && r.timeOff[1] === 0, r.timeOff.join());
+    t.check('打 12:00：自動打開、trump 停在 1F trump-p1、記住、人數', /trump:stay:trump-p1/.test(r.t12[0]) && r.t12[1] && r.t12[2] === '720' && r.t12[3] === '1' && /這張圖 \d+ 人/.test(r.t12[4]), JSON.stringify(r.t12));
+    t.check('滑過作息 NPC：浮動框時間、點名、第幾筆', /trump.*（作息）/.test(r.ttip ?? '') && /12:00 在 trump-p1（第 \d+ 筆）/.test(r.ttip ?? ''), r.ttip);
+    t.check('03:00：1F 沒有 trump、2F 床上有', !r.t3f1 && r.t3f2 === 'stay:bed', `${r.t3f1} ${r.t3f2}`);
+    t.check('關掉：不畫、記住', r.offAgain[0] === 0 && r.offAgain[1] === '0', r.offAgain.join());
 
     // ---- 角色分頁改名／刪除連動地圖 ----
     await t.page.goto(new URL('/tools/role/', t.page.url()).href);
