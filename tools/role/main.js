@@ -15,6 +15,8 @@ import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
 import {previewEl} from './preview.js';
+import * as SM from './schedmap.js';
+import * as PZ from '../common/panzoom.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -36,6 +38,8 @@ S.grp = ALL;                                     // 總覽表 kind 分頁的子�
 S.grpTab = 0;
 S.grpNew = {};                                   // 新增還沒有角色的子分類（kind → [名稱]），只在記憶體
 S.secOpen = {};                                  // 表單段落開關（段名 → bool，預設收合；記在頁面，換角色保持）
+S.rtab = 'look';                                 // 右欄：look＝外觀預覽、sched＝作息地圖（記在 localStorage）
+try {if (localStorage.getItem('tools.role.rtab') === 'sched') S.rtab = 'sched';} catch {}
 const F = createForm(D);
 const V = createViews(D, {icon: id => S.data[id].icon, lab: id => S.data[id].lab, warns: id => validate(id),
                           item: (el, id) => {el.onpointerdown = (e) => dragRole(e, id);}});
@@ -626,6 +630,16 @@ function otherBox(id, r)
         open && F.rawArea(r, known, raw => commit(() => replaceRaw(S.data[id], known, raw)), '#raw'));
 }
 
+function rightTabs()
+{
+    const tab = (k, text) => h('button', {type: 'button', class: S.rtab === k ? 'on' : '', dataset: {rtab: k}, onclick: () => {
+        S.rtab = k;
+        try {localStorage.setItem('tools.role.rtab', k);} catch {}
+        render();
+    }}, text);
+    return h('div', {class: 'rtabs'}, tab('look', '外觀'), tab('sched', '作息'));
+}
+
 function renderForm()
 {
     const id = S.sel, r = S.data[id];
@@ -640,7 +654,7 @@ function renderForm()
     const wkeys = [], warns = validate(id, wkeys), draft = F.fullDraft();
     const secs = SC.SECTIONS.map(sec => ({...sec, keys: sec.keys.filter(k => shown.has(k))})).filter(sec => sec.keys.length > 0);
     const allOpen = (v) => {for (const sec of SC.SECTIONS) S.secOpen[sec.title] = v; render();};
-    right.replaceChildren(previewEl(r, S.ext.items, S.ext.parts));
+    right.replaceChildren(rightTabs(), S.rtab === 'sched' ? SM.schedMapEl(r, Object.keys(S.ext.maps), render) : previewEl(r, S.ext.items, S.ext.parts));
     view.replaceChildren(
         h('div', {class: 'form'},
             h('div', {class: 'head'},
@@ -777,6 +791,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

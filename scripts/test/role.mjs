@@ -255,6 +255,7 @@ run('role', async t => {
             const [x1, y1] = center(to);
             ev(row, 'pointermove', x1, y1);
             ev(row, 'pointerup', x1, y1);
+            row.click();    // 真的滑鼠放開後瀏覽器會補一次 click，拖曳就是要吃掉它；不送的話吃 click 的監聽會留著，300ms 內的下一個 click 被吃掉
             return true;
         };
         out.drag = [drag('rogue-1', 'rogue', '山賊'), S.data['rogue-1'].grp, flushed('rogue-1'), heads().includes('山賊（1）')];

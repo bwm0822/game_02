@@ -22,7 +22,7 @@ export function joinPath(dir, rel)
 
 const dirOf = (p)=>p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : '';
 
-// Tiled 物件：套用 template（tpl＝template 檔的內容），回傳 {id,name,type,gid,x,y,width,height,props}
+// Tiled 物件：套用 template（tpl＝template 檔的內容），回傳 {id,name,type,gid,x,y,width,height,props,raw}；raw＝地圖裡原本的物件
 export function resolveObject(obj, tpl)
 {
     const base = tpl?.object ?? {};
@@ -30,6 +30,7 @@ export function resolveObject(obj, tpl)
     for(const p of base.properties??[]) {props[p.name]=p.value;}
     for(const p of obj.properties??[]) {props[p.name]=p.value;}
     return {
+        raw: obj,
         id: obj.id,
         name: obj.name || base.name || '',
         type: obj.type || obj.class || base.type || base.class || '',
@@ -94,9 +95,11 @@ function tileLut(map, tilesets)
     return lut;
 }
 
-export function decodeLayer(layer)
+// flags＝true 保留翻轉旗標（高 3 bit），畫圖用
+export function decodeLayer(layer, flags=false)
 {
-    if(Array.isArray(layer.data)) {return layer.data;}
+    const mask = flags ? 0xffffffff : 0x1fffffff;
+    if(Array.isArray(layer.data)) {return flags ? layer.data : layer.data.map(v=>v & 0x1fffffff);}
     if(layer.encoding==='base64' && !layer.compression)
     {
         const bin = atob(layer.data);
@@ -104,7 +107,7 @@ export function decodeLayer(layer)
         for(let i=0;i<bin.length;i+=4)
         {
             const v = bin.charCodeAt(i) | bin.charCodeAt(i+1)<<8 | bin.charCodeAt(i+2)<<16 | bin.charCodeAt(i+3)<<24;
-            out.push((v>>>0) & 0x1fffffff);
+            out.push(((v>>>0) & mask)>>>0);
         }
         return out;
     }
@@ -191,6 +194,7 @@ export function bestPath(grid, sp, eps)
 }
 
 // 讀一張地圖＋它的 template／tileset：readJson(相對 assets 的路徑) 可同步或 async，找不到回 null
+// 回傳 {map, tilesets（跟 map.tilesets 對齊的內容）, objs, tpls（obj.template → template 內容）}
 export async function loadMap(mapName, readJson)
 {
     const file = `maps/${mapName}.json`;
@@ -208,5 +212,5 @@ export async function loadMap(mapName, readJson)
     const objs = map.layers
         .filter(l=>l.type==='objectgroup')
         .flatMap(l=>l.objects.map(o=>resolveObject(o, tpls[o.template])));
-    return {map, tilesets, objs};
+    return {map, tilesets, objs, tpls};
 }
