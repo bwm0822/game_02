@@ -155,6 +155,59 @@ run('schedule-tool', async t => {
         re.undo();
         S.schSel = {id: 'trump', i: 0}; re.render();
 
+        // ---- 總覽「作息」分頁（全 NPC 甘特圖）----
+        localStorage.removeItem('tools.role.gantt.t'); localStorage.removeItem('tools.role.gantt.map');
+        re.GT.setT(18 * 60); re.GT.setMap(null);
+        const npcs = Object.keys(S.data).filter(id => S.data[id].kind === 'npc');
+        S.view = 'table'; S.grp = re.ALL; S.tab = re.SC.TABS.findIndex(t => t.gantt); re.render();
+        const g = () => document.querySelector('#view .gantt');
+        const rowOf = (id) => g().querySelector(`.grole[data-id="${id}"]`);
+        out.gTab = document.querySelector('#view .tabs button.on')?.textContent;
+        out.gTabWant = `作息（${npcs.length}）`;
+        out.gRows = [g().querySelectorAll('.grole:not(.ghead)').length, g().querySelectorAll('.grole.nosch').length, npcs.length, npcs.filter(id => !S.data[id].schedule?.length).length];
+        out.gGroups = [...g().querySelectorAll('.ggrp')].map(e => e.textContent);
+        out.gGroupsWant = [...new Set(npcs.map(id => S.data[id].grp || '（無子分類）'))];
+        const typeT = (v) => {const i = g().querySelector('[data-k=ganttT]'); i.value = v; i.dispatchEvent(new Event('change'));};
+        typeT('12:00');
+        out.gNoon = [rowOf('trump').querySelector('.gnow').textContent, localStorage.getItem('tools.role.gantt.t'), rowOf('trump').querySelector('.cur').style.left];
+        typeT('03:00');
+        out.gNight = rowOf('trump').querySelector('.gnow').textContent;
+        // 時間軸按住拖：拖到正中間＝12:00
+        const ax = g().querySelector('.gaxis'), tr = ax.querySelector('.track').getBoundingClientRect();
+        ax.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, button: 0, pointerId: 1, clientX: tr.left + tr.width * 0.25, clientY: tr.top + 3}));
+        ax.dispatchEvent(new PointerEvent('pointermove', {bubbles: true, button: 0, pointerId: 1, clientX: tr.left + tr.width * 0.5, clientY: tr.top + 3}));
+        ax.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, button: 0, pointerId: 1}));
+        out.gDrag = [Math.abs(re.GT.G.t - 720) <= 1, g().querySelector('[data-k=ganttT]').value.slice(0, 2)];
+        // 圖例人數＝此刻停在那張圖的 NPC 數
+        const F1m = 'm_04x05/trump-inn-f1';
+        const want = npcs.filter(id => {
+            const sc = S.data[id].schedule;
+            if (!sc?.length) return false;
+            const p = re.SP.buildPlan(sc, S.ext.nav.edges, S.ext.nav.nodes);
+            if (!p.plan) return false;
+            const at = re.SB.whereAt(p.plan, sc, re.GT.G.t, re.SB.daySegs(p.plan, sc, p.warns));
+            return at?.kind === 'stay' && at.map === F1m;
+        }).length;
+        const leg = () => g().querySelector(`.glegend [data-map="${F1m}"]`);
+        out.gCount = [leg()?.querySelector('small').textContent, `（${want}）`, want > 0];
+        // 點圖例：只看這張圖（其他變淡、此刻欄加粗、記住），再點取消
+        leg().click();
+        out.gMap = [localStorage.getItem('tools.role.gantt.map'), leg().classList.contains('on'),
+            [...g().querySelectorAll('.seg.stay')].every(s => s.classList.contains('dim') === (s.dataset.map !== F1m)),
+            rowOf('trump').querySelector('.gnow').classList.contains('on')];
+        leg().click();
+        out.gMapOff = [localStorage.getItem('tools.role.gantt.map'), g().querySelectorAll('.seg.dim').length];
+        // 點 trump 的床那段：進表單、選第 2 張卡片、右欄作息
+        rowOf('trump').querySelector('.seg.stay[data-i="1"]').click();
+        await until(() => cv()?.st);
+        out.gPick = [S.view, S.sel, S.schSel.i, S.rtab, cards()[1]?.classList.contains('sel'), cv()?.st.name];
+        // 點角色名＝進表單
+        S.view = 'table'; re.render();
+        rowOf('musk').querySelector('.gname a').click();
+        out.gName = [S.view, S.sel];
+        S.sel = 'trump'; S.view = 'form'; S.tab = 0; S.schSel = {id: 'trump', i: 0}; re.render();
+        localStorage.removeItem('tools.role.gantt.t'); localStorage.removeItem('tools.role.gantt.map');
+
         // ---- 第 4 步：點物件改目的地、Shift＋點插入、顯示 ▾ ----
         const at = async (name, type, opts = {}) => {
             await until(() => cv()?.st.data);
@@ -366,6 +419,17 @@ run('schedule-tool', async t => {
     t.eq('點橫條：選那張卡片、表單沒重畫、反白跟著換', JSON.stringify(r.barPick), JSON.stringify([1, true, true, '1']));
     t.eq('走不到：紅線、沒有走路段', r.nopeSeg, 'nope0@600+0,stay0@600+300,walk1@900+60,stay1@960+1080');
     t.eq('作息資料有問題：不畫橫條、一行灰字', JSON.stringify(r.barNone), JSON.stringify([true, '作息資料有問題，無法排時刻表']));
+    t.eq('總覽多一個「作息」分頁（NPC 數）', r.gTab, r.gTabWant);
+    t.check('甘特圖：每個 NPC 一列、沒作息的灰條', r.gRows[0] === r.gRows[2] && r.gRows[1] === r.gRows[3] && r.gRows[1] < r.gRows[0], JSON.stringify(r.gRows));
+    t.eq('照子分類分組', JSON.stringify(r.gGroups), JSON.stringify(r.gGroupsWant));
+    t.eq('打 12:00：trump 在 1F、記住、游標在正中間', JSON.stringify(r.gNoon), JSON.stringify(['trump-inn-f1／trump-p1', '720', '50%']));
+    t.eq('打 03:00：trump 在床上', r.gNight, 'trump-inn-f2／bed');
+    t.eq('時間軸按住拖到正中間＝12 點', JSON.stringify(r.gDrag), JSON.stringify([true, '12']));
+    t.eq('圖例人數＝此刻停在那張圖的人', JSON.stringify(r.gCount), JSON.stringify([r.gCount[1], r.gCount[1], true]));
+    t.eq('點圖例：記住、加亮、其他地圖變淡、此刻欄加粗', JSON.stringify(r.gMap), JSON.stringify(['m_04x05/trump-inn-f1', true, true, true]));
+    t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
+    t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
+    t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.check('滑過別人用的點：列出誰的第幾筆、提示點選', /^sit-1（.*）.*musk 2（@12:10）.*點＝設成作息 1 的目的地/.test(r.hoverOthers), r.hoverOthers);
     t.eq('有選卡片時點物件：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
     t.eq('一筆 undo 回原本的目的地', r.pickUndo, 'trump-p1');

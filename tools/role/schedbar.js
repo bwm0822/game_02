@@ -32,6 +32,15 @@ export function daySegs(plan, sch, warns = [])
     return segs;
 }
 
+// 某時刻在哪：{kind:'stay', i, map, go} 或 {kind:'walk', i, map, go}（走去第 i 筆）；沒有時刻表＝null
+export function whereAt(plan, sch, t, segs = daySegs(plan, sch))
+{
+    if (!segs) return null;
+    const hit = (k) => segs.find(g => g.kind === k && mod(t - g.s) < g.len);
+    const g = hit('walk') ?? hit('stay');
+    return g && {kind: g.kind, i: g.i, map: sch[g.i]?.map, go: sch[g.i]?.go};
+}
+
 // 跨午夜切成兩截
 const pieces = (s, len) => (s + len <= DAY ? [[s, len]] : [[s, DAY - s], [0, s + len - DAY]]);
 
@@ -44,10 +53,10 @@ function tip(g, plan)
     return `⚠ ${no}. 從 ${p.from} 走不到 ${p.key}（${hhmm(p.dep)}）`;
 }
 
-// opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段
+// opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段、opt.bare＝不畫刻度跟圖例（總覽每列）
 export function dayBarEl(plan, sch, warns, opt = {})
 {
-    const segs = daySegs(plan, sch, warns);
+    const segs = opt.segs ?? daySegs(plan, sch, warns);
     if (!segs) return h('div', {class: 'daybar none dim'}, '作息資料有問題，無法排時刻表');
     const pct = (m) => `${(m / DAY) * 100}%`;
     const bar = h('div', {class: 'track'},
@@ -55,14 +64,16 @@ export function dayBarEl(plan, sch, warns, opt = {})
         segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
             const label = g.kind === 'stay' ? `${g.i + 1}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
             const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
-            return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : ''), dataset: {i: g.i}, title: tip({...g, go: g.go ?? sch[g.i]?.go}, plan), style,
+            return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : ''), dataset: {i: g.i, map: sch[g.i]?.map ?? ''}, title: tip({...g, go: g.go ?? sch[g.i]?.go}, plan), style,
                 onclick: (e) => {e.stopPropagation(); opt.onPick?.(g.i);}}, label);
         })));
-    const axis = h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${pct(t * 60)}`}, String(t))));
+    if (opt.bare) return h('div', {class: 'daybar'}, bar);
     const maps = [...new Set(segs.filter(g => g.kind === 'stay').map(g => g.map))];
     const legend = h('div', {class: 'legend'}, maps.map(m => h('span', {title: m ?? ''}, h('b', {style: `background:${mapColor(m)}`}), m?.split('/').at(-1) ?? '?')));
-    return h('div', {class: 'daybar'}, bar, axis, legend);
+    return h('div', {class: 'daybar'}, bar, axisEl(), legend);
 }
+
+export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));
 
 // 只換反白（不重畫）
 export function markSel(root, i)

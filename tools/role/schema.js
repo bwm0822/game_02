@@ -135,6 +135,7 @@ export const TABS = [
     {label: '全部', kind: null, cols: ['lab', 'icon', 'kind', 'job', 'gold', 'style']},
     {label: '玩家', kind: 'player', cols: ['lab', 'grp', 'icon', 'job', 'gold', 'survival', '#equips']},
     {label: 'NPC', kind: 'npc', cols: ['lab', 'grp', 'icon', 'job', 'gold', 'style', 'trade', 'unique', '#sch']},
+    {label: '作息', kind: 'npc', gantt: true, cols: []},
     {label: '盜賊', kind: 'rogue', cols: FIGHT_COLS},
     {label: '怪物', kind: 'monster', cols: FIGHT_COLS},
     {label: '動物', kind: 'animal', cols: ['lab', 'grp', 'icon', 'style', 'meat', 'skin', 'fall', 'attrs.hpMax', 'attrs.atk', 'attrs.def']},

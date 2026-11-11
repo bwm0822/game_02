@@ -20,6 +20,7 @@ import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
 import * as ME from './mapedit.js';
 import * as SB from './schedbar.js';
+import * as GT from './gantt.js';
 import {ROLE_PARTS, partFor, sexOk} from '../../src/core/equip.js';
 
 const ALL = '#all';
@@ -988,13 +989,26 @@ function draw()
     if (S.view === 'form') return renderForm();
     document.getElementById('right').replaceChildren();
     if (S.grpTab !== S.tab) {S.grpTab = S.tab; S.grp = ALL;}
-    const tabKind = SC.TABS[S.tab].kind;
+    const tabKind = SC.TABS[S.tab].kind, tab = SC.TABS[S.tab];
     V.renderTable(SC.TABS, {
         inTab,
         sortKey: (id, c) => c === '#sch' ? (S.data[id].schedule?.length ?? 0) : c === '#equips' ? cellText(c, S.data[id]) : getAt(S.data[id], c.split('.')),
         head: (c) => c === '#sch' ? ['作息'] : c === '#equips' ? ['裝備'] : [SC.colDef(c).label, c],
         cell: tableCell,
     });
+    if (tab.gantt) document.querySelector('#view table.grid').replaceWith(GT.ganttEl({
+        ids: Object.keys(S.data).filter(id => inTab(tab, id) && V.matchSearch(id)), data: S.data, planOf, rerender: render,
+        onRole: (id) => {S.sel = id; S.view = 'form'; render();},
+        onSeg: (id, i) => {
+            Object.assign(S, {sel: id, view: 'form', schSel: {id, i}, rtab: 'sched'});
+            try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
+            S.secOpen['作息'] = true;
+            S.open.schedule = true;
+            if (S.data[id].schedule[i]?.map) SM.setMap(S.data[id].schedule[i].map);
+            render();
+            document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
+        },
+    }));
     if (tabKind)
         document.querySelector('#view .tabs').append(h('select', {title: '子分類', dataset: {k: 'grpFilter'}, onchange: e => {S.grp = e.target.value; render();}},
             [[ALL, '全部子分類'], ['', '（無子分類）'], ...grpsOf(tabKind).map(g => [g, g])].map(([v, t]) => h('option', {value: v, selected: v === S.grp}, t))));
@@ -1025,6 +1039,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, ME, SB, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, ME, SB, GT, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

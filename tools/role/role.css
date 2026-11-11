@@ -43,6 +43,30 @@
 .daybar .axis span:last-child { transform: translateX(-100%); }
 .daybar .legend { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #aaa; }
 .daybar .legend b { display: inline-block; width: 10px; height: 10px; margin-right: 3px; border-radius: 2px; vertical-align: -1px; }
+/* 總覽「作息」分頁（gantt.js） */
+.gantt { display: flex; flex-direction: column; gap: 2px; padding: 4px 0; }
+.gantt .gtop { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-bottom: 6px; }
+.gantt .grole { display: grid; grid-template-columns: 180px minmax(240px, 1fr) 220px; gap: 8px; align-items: center; }
+.gantt .grole .daybar { margin: 0; }
+.gantt .gname { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gantt .gname a { cursor: pointer; margin-right: 6px; }
+.gantt .gnow { font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #bbb; }
+.gantt .gnow.on { color: #fff; font-weight: bold; }
+.gantt .ggrp { color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 8px; padding-bottom: 2px; }
+.gantt .ghead { position: sticky; top: 0; z-index: 2; background: #1e1f22; padding: 2px 0; }
+.gantt .gaxis { cursor: ew-resize; user-select: none; touch-action: none; font-size: 12px; }
+.gantt .gaxis .track { position: relative; height: 10px; background: #1d1f22; border: 1px solid #3a3d44; border-radius: 3px; }
+.gantt .gaxis .axis { position: relative; height: 14px; color: #888; }
+.gantt .gaxis .axis span { position: absolute; transform: translateX(-50%); }
+.gantt .gaxis .axis span:first-child { transform: none; }
+.gantt .gaxis .axis span:last-child { transform: translateX(-100%); }
+.gantt .track.empty { display: flex; align-items: center; padding-left: 6px; font-size: 12px; }
+.gantt .cur { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ffd54f; z-index: 1; pointer-events: none; }
+.gantt .knob { position: absolute; top: -1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #ffd54f; pointer-events: none; }
+.gantt .seg.dim { opacity: .2; }
+.gantt .glegend .pick { cursor: pointer; padding: 1px 4px; border-radius: 3px; }
+.gantt .glegend .pick.on { background: #2f6db5; color: #fff; }
+.gantt .glegend small { color: #ffd54f; margin-left: 2px; }
 .smap .info { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .sec { grid-column: 1 / -1; color: #8bd; font-weight: bold; border-bottom: 1px solid #333; margin-top: 10px; padding-bottom: 2px; }

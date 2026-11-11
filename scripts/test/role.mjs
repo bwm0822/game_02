@@ -205,7 +205,7 @@ run('role', async t => {
                         [...document.querySelectorAll('#view thead th')].some(th => th.textContent.startsWith('子分類'))];
         S.tab = 0; re.render();
         out.tableAll = [S.grp, !!document.querySelector('#view .tabs select[data-k="grpFilter"]')];
-        S.tab = 5; re.render();
+        S.tab = re.SC.TABS.findIndex(t => t.kind === 'animal'); re.render();
         out.tableAnimal = [...document.querySelectorAll('#view thead th')].map(th => th.textContent).join('|');
         // 第三欄預覽：總覽表時右欄空、中間把手藏起來；選了角色才有預覽跟把手
         const tick = () => new Promise(res => setTimeout(res));
