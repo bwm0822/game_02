@@ -348,6 +348,11 @@ run('schedule-tool', async t => {
         await sleep(30);
         evAt(cell[0] * 32 + 5, cell[1] * 32 + 5, 'pointermove');
         out.cellHover = [cv().st.cell?.key, JSON.stringify(cv().st.cell?.rect), tipText()];
+        // 顯示 ▾ 座標沒勾：空地沒浮動框、方框照畫
+        re.SM.show.coord = false;
+        evAt(cell[0] * 32 + 6, cell[1] * 32 + 5, 'pointermove');
+        out.noCoord = [tip().hidden, cv().st.cell?.key === out.cellHover[0]];
+        re.SM.show.coord = true;
         let defT = '';
         out.addAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {defT = dl.querySelector('[data-k=arriveAt]').textContent; pickT('arriveAt', '12:00'); return 'ok';});
         out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i];
@@ -492,6 +497,8 @@ run('schedule-tool', async t => {
         re.SM.forget();
 
         // ---- 第 6 步：巡邏路線 ----
+        // guard-1 的巡邏用凍結的（真的那份會一直在角色分頁調，下面的點數、號碼都寫死）；只改記憶體，跟遊戲比時刻表在前面
+        re.commit(() => {S.data['guard-1'].schedule[0] = {t: '@08:00', go: 'guard-p1', map: 'm/m_04x05', do: 'patrol', route: ['guard-p1', 'guard-p2', 'guard-p3', 'guard-p2', 'guard-p4'], wait: 3};});
         S.sel = 'guard-1'; S.schSel = {id: 'guard-1', i: 0}; re.SM.setMap('m/m_04x05'); re.render();
         const g1 = S.data['guard-1'].schedule[0];
         out.patrolInfo = cards()[0].querySelector('.times.patrol')?.textContent;
@@ -616,9 +623,10 @@ run('schedule-tool', async t => {
     t.eq('都 undo 回去', JSON.stringify(r.insUndo), JSON.stringify([2, true]));
     t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
     t.eq('← 返回 回到點門前那張', JSON.stringify(r.backed), JSON.stringify(['m_04x05/trump-inn-f1', true]));
-    t.eq('顯示 ▾ 預設只勾本角色其他行程', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'names:false', 'grid:false']));
+    t.check('座標沒勾：空地沒浮動框、方框照畫', r.noCoord.every(Boolean), r.noCoord.join());
+    t.eq('顯示 ▾ 預設勾本角色其他行程、座標', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'names:false', 'grid:false', 'coord:true']));
     t.eq('作息地圖也有名稱過濾框：sit-* 只中 sit-1、記自己的 key、自動勾物件名稱', JSON.stringify(r.schFilter), JSON.stringify([true, true, false, 'sit-*', true]));
-    t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"grid":true}', '顯示（2）▾', true]));
+    t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"coord":true,"grid":true}', '顯示（3）▾', true]));
     t.check('格子權重有算出牆', r.wall);
     t.eq('地圖沒比 navgraph.json 新：沒有過期提示', JSON.stringify(r.notStale), JSON.stringify(['[]', true]));
     t.eq('左鍵點空地：沒問、沒寫地圖', JSON.stringify(r.leftEmpty), JSON.stringify([false, true]));

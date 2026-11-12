@@ -662,33 +662,21 @@
     "schedule": [
       {
         "t": "@08:00",
-        "go": "guard-p1",
         "map": "m/m_04x05",
+        "go": "guard-p1",
         "do": "patrol",
+        "wait": 3,
         "route": [
           "guard-p1",
           "guard-p2",
           "guard-p3",
-          "guard-p2",
-          "guard-p4"
-        ],
-        "wait": 3
-      },
-      {
-        "t": "20:00",
-        "go": "sit-2",
-        "map": "m_04x05/trump-inn-f1"
-      },
-      {
-        "t": "21:02",
-        "go": "bed",
-        "map": "m_04x05/house-08"
-      },
-      {
-        "t": "05:41",
-        "go": "guard-room-p1",
-        "map": "m_04x05/house-08",
-        "do": "idle"
+          "guard-p4",
+          "guard-p5",
+          "guard-p6",
+          "guard-p7",
+          "guard-p8",
+          "guard-p9"
+        ]
       }
     ],
     "hair": "hair-guard-1",

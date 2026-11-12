@@ -32,7 +32,7 @@
     - point 另有 改名…／刪除…；門另有「進入」
   - **門**：`tools/common/doors.js`（地圖分頁共用：`portsOf()`／`drawDoors()`／`doorAt()`／`landAt()`／`drawFlash()`）畫橘框 🚪（壞門紅／黃，門指到的地圖要讀進來才知道，讀完再補畫），單擊＝切到目的地圖、鏡頭移到落腳點閃一下；「← 返回」回點門前那張（`M.back` 堆疊，用下拉／標籤／麵包屑換圖就清空）；路網外的地圖也能進去看（下拉多一個「（路網沒有）」），但右鍵新增目的地反灰
 - **格子 `at` 的臨時路網**：`navgraph.json` 還沒有的 `at` 節點，`main.js` 的 `fillAt()` 用 `SM.spotOf()`＋`bestPath()` 在記憶體補節點跟 walk 邊（同 `scripts/navgraph.js` 的算法，存在 `S.atNav`，`navAll()` 合併給 `buildPlan()`），時刻表／路線馬上算得出來；橫幅同時寫「N 個作息格子還沒進路網」，按「更新路網」才寫進 navgraph.json。地圖改了（寫檔、別的分頁廣播）就整包重算（`forgetMap()`）。卡片上 `at` 顯示成「格子 x, y」欄位
-- **顯示 ▾**（`tools/common/showmenu.js` 的 `createShowMenu()`，記在 `tools.role.sched.show`，只存勾了的；存過就不套預設）：這個角色其他行程（預設勾；不勾只畫選中那筆的編號）、其他角色的點（綠字 `id 編號`）、物件名稱（後面有名稱過濾框，記 `tools.role.sched.show.filter`，規則見 [map-tool.md](map-tool.md)）、格子可走（`buildGrid()` 的結果：紅＝擋住、黃＝權重大於 1）。
+- **顯示 ▾**（`tools/common/showmenu.js` 的 `createShowMenu()`，記在 `tools.role.sched.show`，只存勾了的；存過就不套預設）：這個角色其他行程（預設勾；不勾只畫選中那筆的編號）、其他角色的點（綠字 `id 編號`）、物件名稱（後面有名稱過濾框，記 `tools.role.sched.show.filter`，規則見 [map-tool.md](map-tool.md)）、格子可走（`buildGrid()` 的結果：紅＝擋住、黃＝權重大於 1）、座標（預設勾；沒勾＝滑過真正的空地不出浮動框，作息用到的 `@x,y` 格子、具名物件、門照常有，游標方框照畫）。
 
 - **改 point（寫 Tiled 地圖）**：`tools/common/pointedit.js`（地圖分頁共用，另有路網過期橫幅 `navBanner()`、`updateNavgraph()`），**只動 point**（type `point` 或用 `point.tj` 的），家具、門只能點選。每次都從硬碟重讀地圖 json → 改 → 寫回，然後 `SM.forget(map)` 重烤、廣播 `maps/<地圖>.json`（地圖分頁收），收到別的分頁（地圖分頁放角色）廣播的 `maps/…` 也 `SM.forget()` 重畫、狀態列提醒「Tiled 開著這張圖要重新載入，不然 Tiled 存檔會蓋掉」。
   - 新增：右鍵空地「新增 point…」（巡邏編輯模式是左鍵點空地）→ 問名稱（預設 `<角色id>-p<n>`，只能英數 `-` `_`、同圖撞名擋）→ 加 `{id: nextobjectid, name, template: <相對>/templates/point.tj, x, y}`（x/y＝點到的格子左上角）、`nextobjectid` +1，放進已經有 point 的物件層（沒有就第一個物件層）；不碰作息（要當目的地再右鍵它「改成第 N 筆」）

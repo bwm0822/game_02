@@ -11,7 +11,7 @@ import {spotsOn, clashOf, occupyEl} from './occupy.js';
 export {setReader, forget, mapData, spotOf, gridOf} from '../common/mapview.js';
 
 const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
-    ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {mine: true});
+    ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777'], ['coord', '座標（滑過空地的浮動框）', '#aaccff']], {mine: true, coord: true});
 export const show = SHOW.show;
 export const nameOk = SHOW.nameOk;
 
@@ -464,6 +464,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         if (!x || st.drag?.moved) {tip.hidden = true; return;}
         const key = x.n?.name ?? (x.door ? x.door.o.name : atName(x.tile));
         const rows = key && spotsOf(st).get(key);
+        if (!x.door && !x.n && !rows && !show.coord) {tip.hidden = true; return;}
         const title = x.door ? `🚪 ${x.door.o.name || '（沒名字）'} → ${x.door.o.props.map}` : x.n ? `${x.n.name}（${x.n.type || '無 type'}）` : `格 ${x.tile[0]}, ${x.tile[1]}`;
         tip.replaceChildren(...[
             h('div', {class: 'tname'}, title),
