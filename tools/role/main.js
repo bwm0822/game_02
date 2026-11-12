@@ -18,6 +18,7 @@ import {previewEl} from './preview.js';
 import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
+import {bestPath} from '../../src/data/navgrid.js';
 import * as ME from './mapedit.js';
 import * as MR from '../common/maproles.js';
 import * as SB from './schedbar.js';
@@ -46,14 +47,14 @@ const D = createDoc({
             try {files = await MR.renameRoleRefs(S.assets.dir, data, from, to);}
             catch (e) {status(`地圖沒改完：${e.message}`); return;}
             await D.save();
-            for (const f of files) {SH.notifySaved(f); if (f.startsWith('maps/')) SM.forget(f.slice(5).replace(/\.json$/, ''));}
+            for (const f of files) {SH.notifySaved(f); if (f.startsWith('maps/')) forgetMap(f.slice(5).replace(/\.json$/, ''));}
             status(`已改名 ${from} → ${to}：role.json 跟 ${files.join('、')} 都寫好了`);
         },
     },
     onSaved: (file) => {
         if (file === 'item.json' || file === 'part.json') loadRefs().then(render);
         // 地圖分頁寫了地圖：丟掉烤好的圖重讀
-        else if (file?.startsWith('maps/')) {SM.forget(file.slice(5).replace(/\.json$/, '')); if (S.rtab === 'sched') renderRight();}
+        else if (file?.startsWith('maps/')) {forgetMap(file.slice(5).replace(/\.json$/, '')); if (S.rtab === 'sched') renderRight();}
     },
 });
 const {S, render, commit, set} = D;
@@ -135,10 +136,13 @@ function checkSchedule(list, out)
     list.forEach((s, i) => {
         const at = `作息 ${i + 1}`;
         if (!/^@?\d\d:\d\d$/.test(s.t ?? '')) out.push(`${at} 時間要寫 HH:MM（出發）或 @HH:MM（抵達）：${s.t ?? '（沒填）'}`);
+        const xy = s.at !== undefined;
+        if (xy && !(Array.isArray(s.at) && s.at.length === 2 && s.at.every(Number.isInteger))) out.push(`${at} 格子 at 要寫 [x, y]（整數）：${JSON.stringify(s.at)}`);
+        if (xy && s.go !== undefined) out.push(`${at} 目的地 go 跟格子 at 只能寫一個`);
         if (!nav) return;
         const names = S.ext.maps[s.map];
         if (!names) out.push(`${at} 路網沒有地圖 ${s.map ?? '（沒填）'}（新地圖要重跑 scripts/navgraph.js）`);
-        else if (!names.includes(s.go)) out.push(`${at} ${s.map} 沒有物件 ${s.go ?? '（沒填）'}`);
+        else if (!xy && !names.includes(s.go)) out.push(`${at} ${s.map} 沒有物件 ${s.go ?? '（沒填）'}`);
         if (s.do === 'patrol')
         {
             if (!s.route?.length) out.push(`${at} 巡邏沒有 route`);
@@ -271,14 +275,14 @@ const closeMenu = () => document.querySelector('.ctxmenu')?.remove();
 addEventListener('pointerdown', (e) => {if (!e.target.closest?.('.ctxmenu')) closeMenu();});
 addEventListener('keydown', (e) => {if (e.key === 'Escape') closeMenu();});
 
-// items: [[文字, fn]]
+// items: [[文字, fn, 反灰的原因（有＝不能按，滑過看原因）]]，'-'＝分隔線，falsy 略過
 function menu(e, items)
 {
     e.preventDefault();
     e.stopPropagation();
     closeMenu();
     document.body.append(h('div', {class: 'ctxmenu', style: `left:${e.clientX}px;top:${e.clientY}px`},
-        items.map(([label, fn]) => h('button', {type: 'button', onclick: () => {closeMenu(); fn();}}, label))));
+        items.filter(Boolean).map(it => (it === '-' ? h('hr') : h('button', {type: 'button', disabled: !!it[2], title: it[2] || null, onclick: () => {closeMenu(); it[1]();}}, it[0])))));
 }
 
 // ---------- 拖角色到子分類 ----------
@@ -600,20 +604,72 @@ function selectSch(id, i)
     SB.markSel(document.getElementById('view'), i);
     renderRight();
 }
-// 地圖上點了具名物件：改選中那筆的 map＋go；Shift＝在選中那筆後面插入一筆（時間抄它、改成抵達），沒有作息就是第一筆
-function pickDest(id, map, go, shift)
+// ---------- 作息地圖右鍵：新增目的地／改目的地（dest＝{go: 物件名稱} 或 {at: [tx, ty]}） ----------
+// 換目的地：go／at 互換時新的 key 放在舊的位置，key 順序不亂
+function putDest(s, map, dest)
 {
-    const i = schSel(id);
-    if (!shift && i < 0) return;
+    const [k, v] = dest.at ? ['at', dest.at] : ['go', dest.go], drop = k === 'at' ? 'go' : 'at';
+    const out = {};
+    for (const [a, b] of Object.entries(s)) out[a === drop ? k : a] = a === drop ? v : b;
+    out.map = map;
+    out[k] = v;
+    for (const a of Object.keys(s)) delete s[a];
+    Object.assign(s, out);
+}
+
+function setDest(id, i, map, dest)
+{
+    S.secOpen['作息'] = true;
+    S.open.schedule = true;
+    commit(() => putDest(S.data[id].schedule[i], map, dest));
+}
+
+const toMin = (v) => {const m = /^(\d{1,2}):(\d{2})$/.exec(String(v).trim()); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;};
+
+// 問抵達時間，照抵達時刻從 00:00 排、插在「抵達 ≤ 新時間」的最後一筆後面；同一時間擋下
+async function addDest(id, map, dest)
+{
+    const a = Array.isArray(S.data[id].schedule) ? S.data[id].schedule : [];
+    const plan = planOf(id).plan, i = schSel(id);
+    const arrOf = (k) => plan?.[k]?.arr ?? toMin(a[k].t?.replace(/^@/, '') ?? '');
+    const def = i >= 0 && arrOf(i) != null ? SP.hhmm(SP.mod(arrOf(i) + 60)) : '08:00';
+    const inp = h('input', {class: 'num', size: 6, value: def, dataset: {k: 'arriveAt'}, placeholder: 'HH:MM'});
+    const where = dest.at ? `${map} 格 ${dest.at.join(',')}` : `${map}／${dest.go}`;
+    const p = ask('新增目的地', [h('div', null, where), h('label', null, '抵達時間 ', inp)], [['ok', '確定'], ['cancel', '取消']]);
+    inp.select();
+    if (await p !== 'ok') return;
+    const m = toMin(inp.value);
+    if (m === null) return status(`時間要寫 HH:MM：${inp.value}`);
+    const same = a.findIndex((_, k) => arrOf(k) === m);
+    if (same >= 0) return status(`第 ${same + 1} 筆已經是 ${SP.hhmm(m)} 抵達`);
+    let pos = 0;
+    a.forEach((_, k) => {if (arrOf(k) != null && arrOf(k) <= m) pos = k + 1;});
     S.secOpen['作息'] = true;
     S.open.schedule = true;
     commit(() => {
-        const a = ensureArr(S.data[id], ['schedule']);
-        if (!shift) {Object.assign(a[i], {map, go}); return;}
-        const t = a[i]?.t ? `@${a[i].t.replace(/^@/, '')}` : '@08:00';
-        a.splice(i + 1, 0, {t, go, map});
-        S.schSel = {id, i: i + 1};
+        ensureArr(S.data[id], ['schedule']).splice(pos, 0, {t: `@${SP.hhmm(m)}`, map, ...dest});
+        S.schSel = {id, i: pos};
     });
+    status(`第 ${pos + 1} 筆：${SP.hhmm(m)} 抵達 ${where}`);
+}
+
+// x＝schedMapEl 給的 {name, type, door, tile, blocked, inNav, enter}
+async function mapMenu(e, id, map, x)
+{
+    const point = x.type === 'point' && [['改名…', () => renamePoint(map, x.name)], ['刪除…', () => deletePoint(map, x.name)]];
+    if (S.routeEdit) return point && menu(e, point);
+    const obj = x.name ?? x.door?.o.name, i = schSel(id);
+    const dest = obj ? {go: obj} : {at: x.tile};
+    const why = !x.inNav ? '這張圖不在路網裡（先更新路網）' : !obj && x.blocked ? '這格走不到' : '';
+    const d = await SM.mapData(map);
+    menu(e, [
+        x.enter && ['進入', x.enter],
+        x.enter && '-',
+        ['新增目的地…', () => addDest(id, map, dest), why],
+        i >= 0 && [`改成第 ${i + 1} 筆的目的地`, () => setDest(id, i, map, dest), why],
+        !obj && ['新增 point…', () => newPoint(id, map, x.tile[0] * d.map.tilewidth, x.tile[1] * d.map.tileheight, d)],
+        point && '-', ...(point || []),
+    ]);
 }
 
 // ---------- 作息地圖：改 point（寫 Tiled 地圖）、路網過期 ----------
@@ -645,7 +701,7 @@ async function writeMap(map, fn, msg)
 {
     try {if (await ME.editMap(S.assets.dir, map, fn) === false) return false;}
     catch (e) {status(e.message); return false;}
-    SM.forget(map);
+    forgetMap(map);
     SH.notifySaved(`maps/${map}.json`);
     status(`${msg}：已寫入 maps/${map}.json（Tiled 開著這張圖的話要重新載入，不然 Tiled 存檔會蓋掉）`);
     await checkStale();
@@ -665,24 +721,17 @@ async function askPointName(title, value, taken)
     return v;
 }
 
-// 點空地：新增 point（預設 <角色id>-p<n>）；有選卡片就把它的目的地指過去
+// 新增 point（預設 <角色id>-p<n>，不碰作息）；編輯巡邏路線中＝加進路線
 async function newPoint(id, map, x, y, d)
 {
     let n = 1;
     while (d.named.has(`${id}-p${n}`)) n++;
     const name = await askPointName(`在 ${map} 新增 point`, `${id}-p${n}`, d.named);
     if (!name || !await writeMap(map, data => ME.addPoint(data, map, name, x, y, isPointRaw), `新增 ${name}`)) return;
-    if (S.routeEdit?.id === id) return routeAdd(id, map, name);
-    const i = schSel(id);
-    if (i >= 0) commit(() => Object.assign(S.data[id].schedule[i], {map, go: name}));
+    if (S.routeEdit?.id === id) routeAdd(id, map, name);
 }
 
 const movePoint = (map, name, x, y) => writeMap(map, data => ME.movePoint(data, name, x, y), `移動 ${name}`);
-
-function pointMenu(e, map, name)
-{
-    menu(e, [['改名…', () => renamePoint(map, name)], ['刪除…', () => deletePoint(map, name)]]);
-}
 
 async function renamePoint(map, from)
 {
@@ -766,23 +815,83 @@ function patrolInfo(s)
     const rt = s.route ?? [];
     if (!rt.length) return null;
     const keys = rt.map(n => `${s.map}:${n}`), wait = s.wait ?? 0;
-    const legs = keys.map((k, j) => (k === keys[(j + 1) % keys.length] ? 0 : SP.edgeCost(S.ext.nav.edges, k, keys[(j + 1) % keys.length])));
+    const legs = keys.map((k, j) => (k === keys[(j + 1) % keys.length] ? 0 : SP.edgeCost(navAll().edges, k, keys[(j + 1) % keys.length])));
     const bad = legs.findIndex(c => c === Infinity);
     if (bad >= 0) return h('div', {class: 'times bad'}, `巡邏：${rt[bad]} 走不到 ${rt[(bad + 1) % rt.length]}（路網）`);
     const walk = legs.reduce((a, b) => a + b, 0);
     return h('div', {class: 'times patrol'}, `巡邏一圈 ${walk + wait * rt.length} 分（走 ${walk} 分＋停 ${rt.length}×${wait}）`);
 }
 
+// ---------- 作息格子 at：navgraph.json 還沒有的，先在記憶體補節點跟 walk 邊（算法同 scripts/navgraph.js），按「更新路網」才寫進去 ----------
+S.atNav = {nodes: {}, edges: {}};
+let atBusy = false, navMemo = null;
+function resetAt() {S.atNav = {nodes: {}, edges: {}}; navMemo = null;}
+// 地圖改了：丟掉烤好的圖，補的格子邊也重算
+function forgetMap(m) {SM.forget(m); resetAt();}
+// 所有角色作息裡、navgraph.json 沒有的格子 key
+function atMissing()
+{
+    const out = new Set();
+    for (const r of Object.values(S.data ?? {}))
+        for (const s of Array.isArray(r?.schedule) ? r.schedule : [])
+            if (Array.isArray(s?.at) && s.map && !S.ext.nav.nodes[SP.schKey(s)]) out.add(SP.schKey(s));
+    return [...out];
+}
+// 路網＋補上的格子（給 buildPlan）
+function navAll()
+{
+    if (!Object.keys(S.atNav.nodes).length) return S.ext.nav;
+    if (navMemo?.base === S.ext.nav) return navMemo.nav;
+    const edges = {...S.ext.nav.edges};
+    for (const [k, list] of Object.entries(S.atNav.edges)) edges[k] = [...(edges[k] ?? []), ...list];
+    navMemo = {base: S.ext.nav, nav: {nodes: {...S.ext.nav.nodes, ...S.atNav.nodes}, edges}};
+    return navMemo.nav;
+}
+async function addAtNode(key)
+{
+    const i = key.indexOf(':'), map = key.slice(0, i), d = await SM.mapData(map);
+    const n = d && SM.spotOf(d, key.slice(i + 1));
+    if (!n) return false;
+    const grid = SM.gridOf(d), pre = `${map}:`;
+    const others = [...Object.keys(S.ext.nav.nodes), ...Object.keys(S.atNav.nodes)].filter(k => k.startsWith(pre) && k !== key);
+    const add = (a, b, cost) => (S.atNav.edges[a] ??= []).push({to: b, cost, type: 'walk'});
+    for (const k of others)
+    {
+        const tiles = SM.spotOf(d, k.slice(pre.length))?.tiles;
+        if (!tiles) continue;
+        const cost = Math.min(...tiles.map(sp => bestPath(grid, sp, n.tiles)?.length ?? Infinity));
+        if (cost === Infinity) continue;
+        add(key, k, cost);
+        add(k, key, cost);
+    }
+    S.atNav.nodes[key] = {};
+    navMemo = null;
+    return true;
+}
+async function fillAt()
+{
+    if (atBusy) return;
+    atBusy = true;
+    let added = false;
+    try {for (const k of atMissing()) if (!S.atNav.nodes[k] && await addAtNode(k)) added = true;}
+    finally {atBusy = false;}
+    if (added) render();
+}
+
 // 時刻表（跟遊戲 ScheduleManager 同一支 buildPlan）
-const planOf = (id) => (Array.isArray(S.data[id]?.schedule) && S.data[id].schedule.every(s => typeof s.t === 'string')
-    ? SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes) : {plan: null, warns: []});
+const planOf = (id) => {
+    if (!Array.isArray(S.data[id]?.schedule) || !S.data[id].schedule.every(s => typeof s.t === 'string')) return {plan: null, warns: []};
+    if (S.data[id].schedule.some(s => Array.isArray(s.at) && !navAll().nodes[SP.schKey(s)])) fillAt();
+    const nav = navAll();
+    return SP.buildPlan(S.data[id].schedule, nav.edges, nav.nodes);
+};
 
 function schTimes(i, pl, s)
 {
     const p = pl.plan?.[i];
     if (!p)
     {
-        const key = `${s.map}:${s.go}`, miss = s.go && pl.warns.some(w => w.kind === 'node' && w.keys?.includes(key));
+        const key = SP.schKey(s), miss = SP.destOf(s) && pl.warns.some(w => w.kind === 'node' && w.keys?.includes(key));
         return miss && h('div', {class: 'times bad'}, `⚠ 路網裡沒有 ${key}（新加的點要按右欄的「更新路網」）`);
     }
     const late = pl.warns.find(w => w.i === i && w.kind === 'late'), pre = pl.plan[(i - 1 + pl.plan.length) % pl.plan.length];
@@ -816,8 +925,11 @@ function schCard(id, list, i, pl)
                     onchange: e => put('t', `${arrive ? '@' : ''}${e.target.value.trim()}`)})),
             h('label', {title: 'map'}, '地圖', h('input', {size: 22, dataset: {k: `${k}.map`, combo: 'dl-maps'}, value: s.map ?? '',
                 onchange: e => put('map', e.target.value.trim() || undefined)})),
-            h('label', {title: 'go'}, '目的地', h('input', {size: 14, dataset: {k: `${k}.go`, combo: nav}, value: s.go ?? '',
-                onchange: e => put('go', e.target.value.trim() || undefined)})),
+            s.at !== undefined
+                ? h('label', {title: 'at（格子 x, y；在右欄地圖右鍵改）'}, '格子', h('input', {size: 8, dataset: {k: `${k}.at`}, value: Array.isArray(s.at) ? s.at.join(', ') : JSON.stringify(s.at),
+                    onchange: e => {const a = e.target.value.split(',').map(x => parseNum(x)); put('at', a.length === 2 && a.every(Number.isInteger) ? a : undefined);}}))
+                : h('label', {title: 'go'}, '目的地', h('input', {size: 14, dataset: {k: `${k}.go`, combo: nav}, value: s.go ?? '',
+                    onchange: e => put('go', e.target.value.trim() || undefined)})),
             h('label', {title: 'do'}, '活動', h('select', {dataset: {k: `${k}.do`}, onchange: e => put('do', e.target.value || undefined)},
                 Object.entries(SC.DO_NAMES).map(([v, n]) => h('option', {value: v, selected: v === (s.do ?? '')}, n)),
                 s.do && !(s.do in SC.DO_NAMES) && h('option', {value: s.do, selected: true}, s.do))),
@@ -889,8 +1001,9 @@ function renderRight()
     if (!r || S.view !== 'form') return;
     if (S.rtab === 'sched') checkStale();
     document.getElementById('right').replaceChildren(rightTabs(), S.rtab === 'sched'
-        ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: S.ext.nav.edges, onPick: (m, go, shift) => pickDest(id, m, go, shift),
-            onNew: (m, x, y, d) => newPoint(id, m, x, y, d), onMove: movePoint, onMenu: pointMenu, stale: S.stale, onUpdate: updateNav, navMsg: S.navMsg,
+        ? SM.schedMapEl(r, Object.keys(S.ext.maps), renderRight, {plan: planOf(id).plan, sel: schSel(id), edges: navAll().edges,
+            onNew: (m, x, y, d) => newPoint(id, m, x, y, d), onMove: movePoint, onMenu: (e, m, x) => mapMenu(e, id, m, x),
+            stale: S.stale, atStale: atMissing().length, onUpdate: updateNav, navMsg: S.navMsg,
             patrol: r.schedule?.[schSel(id)]?.do === 'patrol' ? r.schedule[schSel(id)] : null, editRoute: editingRoute(id, schSel(id)),
             onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k),
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
@@ -1043,10 +1156,11 @@ async function loadRefs()
     const maps = {};
     for (const key of Object.keys(nav.nodes ?? {}))
     {
-        const i = key.indexOf(':');
-        (maps[key.slice(0, i)] ??= []).push(key.slice(i + 1));
+        const i = key.indexOf(':'), names = (maps[key.slice(0, i)] ??= []);
+        if (!SP.parseAt(key.slice(i + 1))) names.push(key.slice(i + 1));
     }
     Object.assign(S.ext, {items, abilities, maps, parts, nav: {nodes: nav.nodes ?? {}, edges: nav.edges ?? {}}});
+    resetAt();
 }
 
 (async () => {

@@ -1,6 +1,6 @@
 // 作息 24 小時橫條：buildPlan() 的時刻表 → 一列分段（之後全 NPC 總覽疊很多列也用這支）
 import {h} from '../common/dom.js';
-import {DAY, mod, hhmm} from '../../src/data/schedplan.js';
+import {DAY, mod, hhmm, destOf} from '../../src/data/schedplan.js';
 
 const PALETTE = ['#3f7fbf', '#4f9a4a', '#b5793a', '#8a5bb0', '#3a9a94', '#b0544f', '#9a9a3a', '#5b6fc4', '#b05b8f', '#6b8a3a'];
 
@@ -27,7 +27,7 @@ export function daySegs(plan, sch, warns = [])
         if (n > 1 && late > 0) segs.push({kind: 'late', i, s: p.dep, len: late});
         const next = plan[(i + 1) % n];
         const len = n > 1 && lateOf((i + 1) % n) > 0 ? 0 : mod(next.dep - p.arr) || (n === 1 ? DAY - p.cost : 0);
-        if (len > 0) segs.push({kind: 'stay', i, s: p.arr, len, map: sch[i]?.map, go: sch[i]?.go, do: sch[i]?.do});
+        if (len > 0) segs.push({kind: 'stay', i, s: p.arr, len, map: sch[i]?.map, go: destOf(sch[i]), do: sch[i]?.do});
     });
     return segs;
 }
@@ -38,7 +38,7 @@ export function whereAt(plan, sch, t, segs = daySegs(plan, sch))
     if (!segs) return null;
     const hit = (k) => segs.find(g => g.kind === k && mod(t - g.s) < g.len);
     const g = hit('walk') ?? hit('stay');
-    return g && {kind: g.kind, i: g.i, map: sch[g.i]?.map, go: sch[g.i]?.go};
+    return g && {kind: g.kind, i: g.i, map: sch[g.i]?.map, go: destOf(sch[g.i])};
 }
 
 // 跨午夜切成兩截
@@ -64,7 +64,7 @@ export function dayBarEl(plan, sch, warns, opt = {})
         segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
             const label = g.kind === 'stay' ? `${g.i + 1}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
             const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
-            return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : ''), dataset: {i: g.i, map: sch[g.i]?.map ?? ''}, title: tip({...g, go: g.go ?? sch[g.i]?.go}, plan), style,
+            return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : ''), dataset: {i: g.i, map: sch[g.i]?.map ?? ''}, title: tip({...g, go: g.go ?? destOf(sch[g.i])}, plan), style,
                 onclick: (e) => {e.stopPropagation(); opt.onPick?.(g.i);}}, label);
         })));
     if (opt.bare) return h('div', {class: 'daybar'}, bar);

@@ -6,6 +6,12 @@ export const mod = (m) => ((m % DAY) + DAY) % DAY;
 export const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 const toMin = (s) => {const [h, m] = s.split(':'); return parseInt(h, 10) * 60 + parseInt(m, 10);};
 
+// 作息目的地的路網 key：go＝具名物件 "地圖:名稱"；at:[tx,ty]＝地圖上的格子 "地圖:@tx,ty"
+export const atName = (at) => `@${at[0]},${at[1]}`;
+export const destOf = (s) => (s?.at ? atName(s.at) : s?.go);
+export const schKey = (s) => `${s.map}:${destOf(s)}`;
+export const parseAt = (name) => {const m = /^@(-?\d+),(-?\d+)$/.exec(name ?? ''); return m ? [+m[1], +m[2]] : null;};
+
 // 最短路線：{path:[不含起點的節點...], cost}，到不了回傳 null
 export function route(edges, from, to)
 {
@@ -41,7 +47,7 @@ export const edgeCost = (edges, from, to) => edges[from]?.find(e=>e.to===to)?.co
 export function buildPlan(sch, edges, nodes)
 {
     const n = sch.length, warns = [];
-    const keys = sch.map(s=>`${s.map}:${s.go}`);
+    const keys = sch.map(schKey);
     const bad = keys.filter(k=>!nodes[k]);
     if(bad.length) {warns.push({kind:'node', msg:`作息目的地不在路網裡：${bad.join(', ')}`, keys:bad}); return {plan:null, warns};}
     for(const s of sch.filter(s=>s.do==='patrol'))

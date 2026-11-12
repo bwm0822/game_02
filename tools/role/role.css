@@ -74,6 +74,8 @@
 .smap .smaptip .tmine b { color: #fff; background: #e8743b; padding: 0 3px; border-radius: 3px; }
 .smap .smaptip .tothers { color: #9ccc65; }
 .smap .smaptip .thint { color: #999; }
+.smap .smaptip .tsub { color: #bbb; }
+.smap .smaptip .twarn { color: #ffb74d; }
 .smap .smapmsg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
 .smap .smapmsg[hidden] { display: none; }
 
@@ -102,7 +104,9 @@
 .ctxmenu { position: fixed; z-index: 20; display: flex; flex-direction: column; min-width: 160px; padding: 4px 0;
            background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
 .ctxmenu button { border: 0; border-radius: 0; background: none; text-align: left; padding: 3px 12px; white-space: nowrap; }
-.ctxmenu button:hover { background: #2f6db5; }
+.ctxmenu button:hover:not(:disabled) { background: #2f6db5; }
+.ctxmenu button:disabled { color: #777; }
+.ctxmenu hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid #444; }
 
 #dlgPart { max-width: 640px; }
 #dlgPart .title { margin-bottom: 8px; }

@@ -1,6 +1,7 @@
 // 工具共用的 Tiled 地圖：讀檔（dev server 或專案資料夾）、圖塊＋有 gid 的物件烤成一張圖（每張地圖烤一次）、具名物件、可走格子
 // 角色分頁的作息地圖、地圖分頁都用；格子／物件的算法跟路網共用 src/data/navgrid.js
 import {loadMap, decodeLayer, joinPath, objectTiles, buildGrid} from '../../src/data/navgrid.js';
+import {parseAt} from '../../src/data/schedplan.js';
 
 const FH = 0x80000000, FV = 0x40000000, FD = 0x20000000, GID = 0x1fffffff;
 
@@ -135,6 +136,17 @@ function namedOf(map, objs)
         out.set(o.name, {name: o.name, type: o.type, rect, cen: {x: rect.x + w / 2, y: rect.y + hh / 2}, tiles: objectTiles(map, o)});
     }
     return out;
+}
+
+// 作息目的地（具名物件名稱，或格子 "@tx,ty"）→ 同 named 的格式；格子的 type 是 'at'，不在地圖內／找不到＝null
+export function spotOf(d, name)
+{
+    const n = d.named.get(name);
+    if (n) return n;
+    const at = parseAt(name);
+    if (!at || at[0] < 0 || at[1] < 0 || at[0] >= d.map.width || at[1] >= d.map.height) return null;
+    const tw = d.map.tilewidth, th = d.map.tileheight, rect = {x: at[0] * tw, y: at[1] * th, w: tw, h: th};
+    return {name, type: 'at', rect, cen: {x: rect.x + tw / 2, y: rect.y + th / 2}, tiles: [at]};
 }
 
 // 地圖名 → Promise<{map, tilesets, objs, tpls, bake, named, W, H} | null>；opt.skip 不同的（地圖分頁不烤角色）各快取一份

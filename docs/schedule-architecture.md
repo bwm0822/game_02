@@ -15,6 +15,7 @@
 
 - `t`：`"HH:MM"` 是**出發**時間；`"@HH:MM"` 是**抵達**時間，載入時用「上一筆目的地 → 這筆目的地」的路網花費倒推成出發時間（排不下會 `console.warn`）
 - `map` + `go`：目的地是哪張地圖的哪個具名物件（Tiled 物件名稱只在單張圖內唯一，所以一定要帶 `map`）
+- `map` + `at:[tx, ty]`：目的地是那張圖的某一格（tile 座標），跟 `go` 二選一；沒有物件，抵達後沒有預設 act（＝站著，可另外寫 `do`）。路網節點 key＝`"地圖:@tx,ty"`（`schedplan.js` 的 `schKey()`／`destOf()`／`parseAt()`），`COM_Schedule._go()` 對這種 key 回一個只有 `getPts()` 的替身（同一格同一個物件）
 - `do`（選填）：抵達後的活動。沒寫就觸發目的地物件預設的 act（床 → `rest`）；`idle` = 只站著；`patrol` = 巡邏（見下）。`enter`（port）永遠不觸發，那是玩家切場景用的
 - 中途怎麼走（哪個門、哪座樓梯）**不寫**，由路網算
 - 依陣列順序循環：第一筆的「上一筆」是最後一筆
@@ -37,7 +38,7 @@
 
 `node scripts/navgraph.js` 產生（`run_all` 會跑），**改了 Tiled 地圖（物件位置、名稱、port 目標）要重跑**。
 
-- 節點 key = `"地圖:物件名稱"`，例如 `"m_04x05/trump-inn-f1:door"`
+- 節點 key = `"地圖:物件名稱"`，例如 `"m_04x05/trump-inn-f1:door"`；作息用到的格子 `at` 也是節點 `"地圖:@tx,ty"`（從 role.json 收集，跟同圖其他節點算 walk 邊，同一格只一個），所以**改了作息的 `at` 也要重跑**
 - 邊 `{to, cost, type}`：`walk` = 同圖兩節點間 A* 步數（1 步 = 1 分鐘）；`port` = 物件的 `map`/`port` 屬性連到別張圖，花 1 分鐘。邊界出口（`main.world` 相鄰大地圖）目前**沒有**算進來，之後要加就是新的 `type`
 - 格子權重跟 A* 在 `src/data/navgrid.js`（不碰 fs，讀檔由呼叫端傳 `readJson(相對 assets 的路徑)`；`loadMap()`／`buildGrid()`／`objectTiles()`／`findPath()`／`bestPath()`），腳本跟角色分頁的作息地圖共用；腳本匯出 `run()`，vite dev 的 `POST /__tools/navgraph` 直接呼叫它（回 `{ok, warns, count}`）
 - 模擬地圖的格子權重：tile 的 `collide`/`weight` + 物件依 `View` 規則算出來的 footprint（預設 1000 = 擋住、`point`/`pickup` 0、門當可通行）。跟遊戲內實際 A* 會有 ±幾步誤差，不影響

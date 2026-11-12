@@ -2,10 +2,11 @@
 import {h} from '../common/dom.js';
 import * as PZ from '../common/panzoom.js';
 import {bestPath} from '../../src/data/navgrid.js';
-import {edgeCost, hhmm, mod} from '../../src/data/schedplan.js';
+import {edgeCost, hhmm, mod, destOf, atName} from '../../src/data/schedplan.js';
 import {createShowMenu} from '../common/showmenu.js';
-import {mapData, gridOf, drawGrid, snapTile} from '../common/mapview.js';
-export {setReader, forget, mapData} from '../common/mapview.js';
+import {mapData, gridOf, drawGrid, snapTile, spotOf} from '../common/mapview.js';
+import * as DR from '../common/doors.js';
+export {setReader, forget, mapData, spotOf, gridOf} from '../common/mapview.js';
 
 const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
     ['names', '物件名稱', '#dddddd'], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {mine: true});
@@ -13,7 +14,7 @@ export const show = SHOW.show;
 
 const KEY = 'tools.role.sched';
 
-export const M = {map: null};       // 目前顯示的地圖（null＝跟著作息第一筆）
+export const M = {map: null, back: [], land: null, free: null};       // map＝目前顯示的地圖（null＝跟著作息第一筆）；back＝點門進來之前那幾張（← 返回）、land＝要落腳的 {map, port}、free＝點門進的路網外地圖
 try {M.map = localStorage.getItem(`${KEY}.map`);} catch {}
 const remember = () => {try {M.map ? localStorage.setItem(`${KEY}.map`, M.map) : localStorage.removeItem(`${KEY}.map`);} catch {}};
 
@@ -43,7 +44,7 @@ function routeOn(d, legs, name)
     const lines = [], labels = [];
     legs.forEach((leg, li) => {
         if (leg.map !== name) return;
-        const ns = leg.nodes.map(n => ({...n, o: d.named.get(n.name)}));
+        const ns = leg.nodes.map(n => ({...n, o: spotOf(d, n.name)}));
         for (let i = 1; i < ns.length; i++)
         {
             const a = ns[i - 1].o, b = ns[i].o;
@@ -76,9 +77,9 @@ function patrolOn(d, s)
 {
     const rt = (s.route ?? []).filter(Boolean);
     if (!rt.length) return null;
-    const lines = [], at = (n) => d.named.get(n);
+    const lines = [], at = (n) => spotOf(d, n);
     const add = (a, b, kind) => {if (at(a) && at(b) && a !== b) lines.push({...walkLine(d, at(a), at(b)), kind});};
-    add(s.go, rt[0], 'entry');
+    add(destOf(s), rt[0], 'entry');
     for (let i = 0; i + 1 < rt.length; i++) add(rt[i], rt[i + 1], 'loop');
     if (rt.length > 1) add(rt.at(-1), rt[0], 'close');
     return {lines, route: rt};
@@ -89,11 +90,13 @@ const viewOf = (name) => {if (!views.has(name)) views.set(name, PZ.createView(`t
 
 const COLOR = {point: '#ffd24a', port: '#5cd0ff', door: '#5cd0ff', bed: '#c88cff'};
 
-// 這個角色在這張圖的作息點：名稱 → [卡片編號（1 起）]
+const push = (m, k, v) => (m.get(k) ?? m.set(k, []).get(k)).push(v);
+
+// 這個角色在這張圖的作息點：名稱（格子＝"@x,y"）→ [卡片編號（1 起）]
 function stopsOn(schedule, mapName)
 {
     const out = new Map();
-    (schedule ?? []).forEach((s, i) => {if (s.map === mapName && s.go) (out.get(s.go) ?? out.set(s.go, []).get(s.go)).push(i + 1);});
+    (schedule ?? []).forEach((s, i) => {if (s.map === mapName && destOf(s)) push(out, destOf(s), i + 1);});
     return out;
 }
 
@@ -101,7 +104,7 @@ function stopsOn(schedule, mapName)
 function othersOn(others, mapName)
 {
     const out = new Map();
-    for (const o of others ?? []) if (o.s.map === mapName && o.s.go) (out.get(o.s.go) ?? out.set(o.s.go, []).get(o.s.go)).push({id: o.id, i: o.i, t: o.s.t});
+    for (const o of others ?? []) if (o.s.map === mapName && destOf(o.s)) push(out, destOf(o.s), {id: o.id, i: o.i, t: o.s.t});
     return out;
 }
 
@@ -118,8 +121,10 @@ function draw(cv, st)
     const stops = stopsOn(st.schedule, st.name);
     if (!show.mine) for (const [name, nums] of stops) {const keep = nums.filter(n => n === st.sel + 1); keep.length ? stops.set(name, keep) : stops.delete(name);}
     g.lineWidth = 1 / K;
+    const doorNames = new Set((st.ports ?? []).map(p => p.o.name).filter(Boolean));
     for (const n of d.named.values())
     {
+        if (doorNames.has(n.name)) continue;
         const c = COLOR[n.type] ?? '#ffffff', on = st.hover === n.name;
         g.globalAlpha = on ? 1 : 0.55;
         g.strokeStyle = c;
@@ -128,6 +133,8 @@ function draw(cv, st)
         else g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
     }
     g.globalAlpha = 1;
+    DR.drawDoors(g, st.ports, K, st.door);
+    drawCursor(g, st, K);
     drawRoute(g, st, K);
     drawPatrol(g, st, K);
     // 作息點：膠囊一格一個卡片編號，選中那張反白（大小固定在螢幕 px）；畫在路線上面
@@ -137,7 +144,7 @@ function draw(cv, st)
     g.textBaseline = 'middle';
     for (const [name, nums] of stops)
     {
-        const n = d.named.get(name);
+        const n = spotOf(d, name);
         if (!n) continue;
         const ws = nums.map(v => g.measureText(String(v)).width + 8 / K);
         if (ws.length === 1) ws[0] = Math.max(r * 2, ws[0]);
@@ -170,7 +177,7 @@ function draw(cv, st)
         g.font = `${14 / K}px sans-serif`;
         for (const [name, list] of othersOn(st.others, st.name))
         {
-            const n = d.named.get(name);
+            const n = spotOf(d, name);
             if (!n) continue;
             const txt = list.map(o => `${o.id} ${o.i + 1}`).join('、'), w = g.measureText(txt).width + 8 / K, y = n.cen.y + r + 10 / K;
             g.fillStyle = 'rgba(20,40,10,0.85)';
@@ -204,7 +211,23 @@ function draw(cv, st)
         g.strokeRect(x, y, d.map.tilewidth, d.map.tileheight);
         g.setLineDash([]);
     }
+    DR.drawFlash(g, st, K);
     cv.dataset.drawn = d.named.size;
+}
+
+// 游標底下：空地＝對齊格子的方框（白＝可以站、紅＝擋住）、具名物件＝框住整個物件（門有自己的框）
+function drawCursor(g, st, K)
+{
+    const c = st.cell, n = !c && !st.door && st.hover && st.data.named.get(st.hover);
+    const r = c ? c.rect : n?.rect;
+    if (!r || st.drag?.moved) return;
+    g.strokeStyle = '#000';
+    g.lineWidth = 3.5 / K;
+    g.strokeRect(r.x, r.y, r.w, r.h);
+    g.strokeStyle = c?.blocked ? '#ff5555' : '#ffffff';
+    g.lineWidth = 1.5 / K;
+    g.strokeRect(r.x, r.y, r.w, r.h);
+    if (c?.blocked) {g.fillStyle = 'rgba(255,60,60,0.25)'; g.fillRect(r.x, r.y, r.w, r.h);}
 }
 
 // 選中那筆的路線：亮藍折線（走不到的段畫紅虛線）
@@ -317,63 +340,125 @@ function hitAt(d, p, K)
     return best;
 }
 
+// 用下拉／標籤／麵包屑換地圖：清掉「← 返回」
 export function setMap(m)
 {
     M.map = m;
+    M.back = [];
+    M.free = null;
     remember();
+}
+
+// 點門：記住從哪來、打開那張圖（路網外的也能看）、鏡頭移到落腳點
+function enterDoor(from, door)
+{
+    const t = DR.targetOf(door);
+    M.back.push(from);
+    M.land = t;
+    M.map = t.map;
+    M.free = t.map;
+    remember();
+}
+
+function goBack()
+{
+    const m = M.back.pop();
+    if (!m) return;
+    M.map = m;
+    M.free = m;
+    remember();
+}
+
+// 門的問題要別張圖的物件名稱：先把門指到的地圖讀進來
+async function portsFor(d)
+{
+    const names = new Map();
+    const targets = [...new Set(d.objs.filter(o => o.type === 'port' && o.props?.map).map(o => String(o.props.map)))];
+    await Promise.all(targets.map(async m => {const x = await mapData(m); names.set(m, x ? new Set(x.objs.map(o => o.name).filter(Boolean)) : null);}));
+    return DR.portsOf(d, (m) => names.get(m) ?? null);
 }
 
 // r＝角色；maps＝路網裡的地圖清單；refresh()＝換地圖後要整個重畫右欄
 // opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆（-1＝沒有）、opt.edges＝路網的 edges
-// opt.others＝其他角色的作息 [{id, i, s}]；opt.onPick(map, name, shift)＝點了具名物件（有選卡片才改、Shift＝在後面插入）
-// point 編輯：opt.onNew(map, x, y, data)＝點空地、opt.onMove(map, name, x, y)＝拖完、opt.onMenu(e, map, name)＝右鍵（x/y＝格子左上角）
-// 路網：opt.stale＝比 navgraph.json 新的地圖（null／[]＝沒過期）、opt.onUpdate()＝按「更新路網」、opt.navMsg＝上次更新的結果文字
-// 巡邏：opt.patrol＝選中那筆（do 是 patrol 才給）、opt.editRoute＝編輯路線中（點物件＝onRouteAdd(map, name)、右鍵號碼＝onRouteDel(第幾個)）
-export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], onPick = null,
-    onNew = null, onMove = null, onMenu = null, stale = null, onUpdate = null, navMsg = '',
+// opt.others＝其他角色的作息 [{id, i, s}]
+// 左鍵只看（點門進去、點路線標籤切圖、拖 point 改 Tiled）；改資料都走右鍵 opt.onMenu(e, map, hit)：
+//   hit＝{name?, type?（具名物件）, door?（{o, issue}）, tile: [tx, ty], blocked（格子走不到）, inNav（這張圖在路網裡）}
+// point 編輯：opt.onMove(map, name, x, y)＝拖完（x/y＝格子左上角）
+// 路網：opt.stale＝比 navgraph.json 新的地圖（null／[]＝沒過期）、opt.atStale＝還沒進路網的作息格子數、opt.onUpdate()＝按「更新路網」、opt.navMsg＝上次更新的結果文字
+// 巡邏：opt.patrol＝選中那筆（do 是 patrol 才給）、opt.editRoute＝編輯路線中（點物件＝onRouteAdd(map, name)、點空地＝onNew(map, x, y, data)、右鍵號碼＝onRouteDel(第幾個)）
+export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [],
+    onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
     patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null} = {})
 {
-    const name = M.map && maps.includes(M.map) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
+    const free = M.map && M.free === M.map;
+    const name = M.map && (maps.includes(M.map) || free) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
+    const inNav = maps.includes(name);
     const view = viewOf(name);
     const cv = h('canvas');
     const tip = h('div', {class: 'smaptip', hidden: true});
     const msg = h('div', {class: 'smapmsg dim', hidden: true});
     const legs = legsOf(plan?.[sel], edges);
-    const st = {name, schedule: r.schedule, sel, others, data: null, hover: null, legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
+    const st = {name, schedule: r.schedule, sel, others, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
     const inBox = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
     const go = (m) => {setMap(m); refresh();};
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
+    const inMap = (p) => p.x >= 0 && p.y >= 0 && p.x < st.data.W && p.y < st.data.H;
+    const tileOf = (p) => [Math.floor(p.x / st.data.map.tilewidth), Math.floor(p.y / st.data.map.tileheight)];
+    const blockedAt = ([tx, ty]) => gridOf(st.data)[ty]?.[tx] === 0;
+    // 滑鼠底下是什麼：門 → 具名物件 → 空地格子
+    const probe = (p) => {
+        const door = DR.doorAt(st.ports, p);
+        const n = !door && hitAt(st.data, p, st.pz.K);
+        const tile = tileOf(p);
+        return {door, n: n || null, tile, blocked: !door && !n && blockedAt(tile)};
+    };
     cv.addEventListener('click', (e) => {
         if (!st.data || st.swallow) return;
-        // 先看路線標籤（「→ 地圖」切圖），再看具名物件，都沒點到＝空地（新增 point）
         const p = toMap(e);
         const hit = st.hits.find(b => inBox(p, b));
         if (hit) return go(hit.go);
-        const n = hitAt(st.data, p, st.pz.K);
-        if (n && editRoute) {onRouteAdd?.(name, n.name); return;}
-        if (n) {if (onPick && (e.shiftKey || sel >= 0)) onPick(name, n.name, e.shiftKey); return;}
-        if (onNew && p.x >= 0 && p.y >= 0 && p.x < st.data.W && p.y < st.data.H) {const s = snap(p); onNew(name, s.x, s.y, st.data);}
+        const {door, n} = probe(p);
+        if (door)
+        {
+            if (door.issue?.level === 'error') {tip.hidden = true; msg.textContent = `⚠ ${door.issue.msg}`; msg.hidden = false; setTimeout(() => {msg.hidden = true;}, 2000); return;}
+            enterDoor(name, door);
+            return refresh();
+        }
+        if (!editRoute) return;
+        if (n) {onRouteAdd?.(name, n.name); return;}
+        if (onNew && inMap(p)) {const s = snap(p); onNew(name, s.x, s.y, st.data);}
     });
     const redraw = () => draw(cv, st);
+    st.redraw = redraw;
     st.pz = PZ.panzoom(cv, {frame: () => ({w: st.data?.W ?? 320, h: st.data?.H ?? 320}), redraw, view});
     cv.st = st;
-    const hint = () => (editRoute ? '點＝加到巡邏路線最後' : sel >= 0 ? `點＝設成作息 ${sel + 1} 的目的地、Shift＋點＝在後面插入` : 'Shift＋點＝新增一筆作息');
-    // 滑過具名物件：游標旁浮動框（名稱、這個角色第幾筆作息＋時間、其他角色、操作提示），靠右／下邊翻面
+    const hint = (x) => {
+        if (x.door) return x.door.issue?.level === 'error' ? '地圖不存在，點了不會進去' : '點＝進去、右鍵＝選單';
+        if (editRoute) return x.n ? '點＝加到巡邏路線最後' : '點＝新增 point 並加進巡邏路線';
+        if (!inNav) return '這張圖不在路網裡，不能設成作息目的地（先更新路網）';
+        if (x.blocked) return '這格走不到，不能設成目的地';
+        return x.n ? '右鍵＝新增目的地／改目的地…' : '右鍵＝新增目的地…';
+    };
+    // 游標旁浮動框：物件／格子的名稱、這個角色第幾筆作息＋時間、其他角色、操作提示，靠右／下邊翻面
     const say = (e) => {
-        const n = st.hover && st.data?.named.get(st.hover);
-        if (!n) {tip.hidden = true; return;}
-        const nums = stopsOn(r.schedule, name).get(n.name), os = othersOn(others, name).get(n.name);
+        const x = st.probe;
+        if (!x || st.drag?.moved) {tip.hidden = true; return;}
+        const key = x.n?.name ?? (x.door ? x.door.o.name : atName(x.tile));
+        const nums = key && stopsOn(r.schedule, name).get(key), os = key && othersOn(others, name).get(key);
+        const title = x.door ? `🚪 ${x.door.o.name || '（沒名字）'} → ${x.door.o.props.map}` : x.n ? `${x.n.name}（${x.n.type || '無 type'}）` : `格 ${x.tile[0]}, ${x.tile[1]}`;
         tip.replaceChildren(...[
-            h('div', {class: 'tname'}, `${n.name}（${n.type || '無 type'}）`),
+            h('div', {class: 'tname'}, title),
+            x.door && h('div', {class: 'tsub'}, `落腳點 ${x.door.o.props.port || '（沒寫）'}`),
+            x.door?.issue && h('div', {class: 'twarn'}, `⚠ ${x.door.issue.msg}`),
             nums && h('div', {class: 'tmine'}, '作息 ', nums.flatMap((v, i) => [i > 0 && '、', h(v === sel + 1 ? 'b' : 'span', null, `${v}（${r.schedule[v - 1].t}）`)])),
             os && h('div', {class: 'tothers'}, os.map(o => `${o.id} ${o.i + 1}（${o.t}）`).join('、')),
-            (onPick || editRoute) && h('div', {class: 'thint'}, hint())].filter(Boolean));
+            h('div', {class: 'thint'}, hint(x))].filter(Boolean));
         tip.hidden = false;
         if (!e) return;
-        const box = cv.getBoundingClientRect(), x = e.clientX - box.left, y = e.clientY - box.top;
+        const box = cv.getBoundingClientRect(), cx = e.clientX - box.left, cy = e.clientY - box.top;
         const w = tip.offsetWidth, ht = tip.offsetHeight;
-        tip.style.left = `${Math.max(0, x + 14 + w > box.width ? x - 14 - w : x + 14)}px`;
-        tip.style.top = `${Math.max(0, y + 16 + ht > box.height ? y - 10 - ht : y + 16)}px`;
+        tip.style.left = `${Math.max(0, cx + 14 + w > box.width ? cx - 14 - w : cx + 14)}px`;
+        tip.style.top = `${Math.max(0, cy + 16 + ht > box.height ? cy - 10 - ht : cy + 16)}px`;
     };
     // 拖 point（左鍵按在 point 上、移超過 4px 才算拖）：放開時 onMove(map, name, x, y)，x/y＝格子左上角；拖過就吃掉接著的 click
     const snap = (p) => snapTile(st.data, p);
@@ -393,6 +478,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         redraw();
         onMove(name, dr.name, dr.to.x, dr.to.y);
     });
+    const unhover = () => {st.hover = st.cell = st.door = st.probe = null;};
     cv.addEventListener('pointermove', (e) => {
         if (!st.data || st.pz.panning) return;
         const dr = st.drag;
@@ -405,42 +491,64 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
             tip.hidden = true;
             return redraw();
         }
-        const n = hitAt(st.data, toMap(e), st.pz.K);
-        const k = n?.name ?? null;
-        cv.style.cursor = n?.type === 'point' && onMove ? 'grab' : n ? 'pointer' : '';
-        const changed = k !== st.hover;
-        st.hover = k;
+        const p = toMap(e);
+        if (!inMap(p))
+        {
+            if (st.probe) {unhover(); say(); redraw();}
+            return;
+        }
+        const x = probe(p), was = `${st.hover}|${st.cell?.key}|${st.door?.o.id}`;
+        const tw = st.data.map.tilewidth, th = st.data.map.tileheight;
+        st.probe = x;
+        st.door = x.door;
+        st.hover = x.n?.name ?? null;
+        st.cell = !x.door && !x.n && !editRoute ? {key: atName(x.tile), blocked: x.blocked, rect: {x: x.tile[0] * tw, y: x.tile[1] * th, w: tw, h: th}} : null;
+        cv.style.cursor = x.door ? 'pointer' : x.n?.type === 'point' && onMove ? 'grab' : x.n && editRoute ? 'pointer' : '';
         say(e);
-        if (changed) redraw();
+        if (was !== `${st.hover}|${st.cell?.key}|${st.door?.o.id}`) redraw();
     });
-    cv.addEventListener('pointerleave', () => {if (st.hover) {st.hover = null; say(); redraw();}});
+    cv.addEventListener('pointerleave', () => {if (st.probe) {unhover(); say(); redraw();}});
     cv.addEventListener('contextmenu', (e) => {
         if (!st.data) return;
-        const rh = editRoute && st.routeHits.find(b => inBox(toMap(e), b));
-        if (rh) {e.preventDefault(); onRouteDel?.(rh.idx); return;}
-        if (!onMenu) return;
-        const n = hitAt(st.data, toMap(e), st.pz.K);
-        if (n?.type !== 'point') return;
         e.preventDefault();
-        onMenu(e, name, n.name);
+        const p = toMap(e);
+        const rh = editRoute && st.routeHits.find(b => inBox(p, b));
+        if (rh) {onRouteDel?.(rh.idx); return;}
+        if (!onMenu || !inMap(p)) return;
+        const x = probe(p);
+        onMenu(e, name, {name: x.n?.name, type: x.n?.type, door: x.door, tile: x.tile, blocked: x.blocked, inNav,
+            enter: x.door && x.door.issue?.level !== 'error' ? () => {enterDoor(name, x.door); refresh();} : null});
     });
-    mapData(name).then(d => {
+    const land = M.land?.map === name ? M.land : null;
+    if (land) M.land = null;
+    mapData(name).then(async d => {
         st.data = d;
         if (!d) {msg.textContent = `讀不到地圖 ${name}`; msg.hidden = false;}
-        else {st.route = routeOn(d, legs, name); st.patrol = patrol?.map === name ? patrolOn(d, patrol) : null;}
+        else
+        {
+            st.route = routeOn(d, legs, name);
+            st.patrol = patrol?.map === name ? patrolOn(d, patrol) : null;
+        }
         if (d && !view.set) PZ.center(view);
+        if (d && land && !DR.landAt(st, view, land.port)) {msg.textContent = `⚠ ${name} 找不到落腳點「${land.port}」`; msg.hidden = false;}
         redraw();
+        // 門要讀它指到的地圖才知道壞不壞，讀完再畫
+        if (d) {st.ports = await portsFor(d); redraw();}
     });
     requestAnimationFrame(redraw);
     const pick = h('select', {title: '地圖', dataset: {k: 'schedMap'}, onchange: e => go(e.target.value)},
+        !inNav && h('option', {value: name, selected: true}, `${name}（路網沒有）`),
         maps.map(m => h('option', {value: m, selected: m === name}, m)));
+    const back = h('button', {type: 'button', class: 'back', dataset: {k: 'schedBack'}, disabled: !M.back.length,
+        title: M.back.length ? `回到 ${M.back.at(-1)}（點門進來之前那張）` : '點門進來的才能返回', onclick: () => {goBack(); refresh();}}, '← 返回');
     // 麵包屑：這段路依序經過的地圖（點了切過去），標進出時刻
     const crumbs = legs && legs.length > 0 && h('div', {class: 'crumbs', title: `作息 ${sel + 1} 經過的地圖`},
         legs.flatMap((l, i) => [i > 0 && h('span', {class: 'dim'}, '→'),
             h('button', {type: 'button', class: l.map === name ? 'on' : '', dataset: {map: l.map}, onclick: () => go(l.map)},
                 shortMap(l.map), h('small', null, ` ${hhmm(l.nodes[0].t)}～${hhmm(l.nodes.at(-1).t)}`))]));
-    const banner = stale?.length > 0 && h('div', {class: 'stale', title: '遊戲的 NPC 照 navgraph.json 走；地圖改了沒更新，遊戲裡找不到新的點、時間也不準'},
-        `⚠ 路網已過期（${stale.map(m => `${shortMap(m)}.json`).join('、')} 比 navgraph.json 新）`,
+    const why = [stale?.length > 0 && `${stale.map(m => `${shortMap(m)}.json`).join('、')} 比 navgraph.json 新`, atStale > 0 && `${atStale} 個作息格子還沒進路網`].filter(Boolean);
+    const banner = why.length > 0 && h('div', {class: 'stale', title: '遊戲的 NPC 照 navgraph.json 走；地圖或作息格子改了沒更新，遊戲裡找不到新的點、時間也不準（工具裡的時刻表先用臨時算的）'},
+        `⚠ 路網已過期（${why.join('；')}）`,
         onUpdate && h('button', {type: 'button', class: 'navupd', onclick: onUpdate}, '更新路網'));
     const editBar = editRoute && h('div', {class: 'routeedit'},
         `編輯作息 ${sel + 1} 的巡邏路線（${patrol?.map ?? ''}）：點點＝加到最後、右鍵綠色號碼＝拿掉那一次、點空地＝新增 point 並加進去、Esc 結束`);
@@ -448,7 +556,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         banner,
         navMsg && h('div', {class: 'navmsg dim'}, navMsg),
         editBar,
-        h('div', {class: 'opts'}, pick, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點路線上的「→ 地圖」切過去；滑過物件看誰在用'}, '?')),
+        h('div', {class: 'opts'}, pick, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地；拖 point 改位置'}, '?')),
         crumbs,
         h('div', {class: 'cvbox'}, cv, tip, msg),
         h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));

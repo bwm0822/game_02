@@ -19,6 +19,32 @@ run('schedule-tool', async t => {
         return Object.fromEntries(Object.entries(SM.plans).map(([id, p]) => [id, p.map(x => [x.key, x.dep, x.arr])]));
     });
 
+    // 遊戲端 at:[x,y]：trump 第 1 筆改成 trump-p1 那一格（路網補一個 "地圖:@x,y" 節點、邊抄 trump-p1 的），12:00 進 1F 站在那格
+    const F1g = 'm_04x05/trump-inn-f1';
+    const atGame = await t.eval(async (d, F1) => {
+        const DB = (await import('/src/data/db.js')).default, SM = (await import('/src/manager/schedule.js')).default;
+        const NG = (await import('/src/core/navgraph.js')).default;
+        const map = await (await fetch(`/assets/maps/${F1}.json`)).json();
+        const p1 = map.layers.filter(l => l.objects).flatMap(l => l.objects).find(o => o.name === 'trump-p1');
+        const tx = Math.floor(p1.x / map.tilewidth), ty = Math.floor(p1.y / map.tileheight);
+        const nav = DB.navgraph(), from = `${F1}:trump-p1`, key = `${F1}:@${tx},${ty}`;
+        nav.nodes[key] = {};
+        nav.edges[key] = nav.edges[from].map(e => ({...e}));
+        for (const e of nav.edges[from]) nav.edges[e.to].push({...nav.edges[e.to].find(x => x.to === from), to: key});
+        DB.role('trump').schedule[0] = {t: '@06:20', map: F1, at: [tx, ty]};
+        NG._routes.clear();
+        delete d.Record.game.schedule.trump;
+        Object.assign(d.TimeSystem.time, {h: 12, m: 0});
+        SM.init(SM.scene);
+        return {tile: [tx, ty], key, plan: SM.plans.trump?.[0]?.key, st: d.Record.game.schedule.trump?.node};
+    }, F1g);
+    await t.gotoMap(F1g);
+    await t.waitFor(d => d.objs().some(g => g.id === 'trump'), {what: 'trump 出現在 1F'});
+    const atPos = await t.eval(d => {const g = d.objs().find(g => g.id === 'trump'), m = g.scene.map; return m.worldToTile(g.x, g.y);});
+    t.eq('遊戲 at：時刻表的 key＝地圖:@x,y、12:00 停在那個節點', JSON.stringify([atGame.plan, atGame.st]), JSON.stringify([atGame.key, atGame.key]));
+    t.eq('遊戲 at：進 1F 時 trump 站在那一格', JSON.stringify(atPos), JSON.stringify(atGame.tile));
+    await t.page.reload();
+
     await t.page.goto(new URL('tools/role/', t.page.url()).href);
     await t.page.waitForFunction(() => window.__re && Object.keys(window.__re.S.ext.maps).length);
 
@@ -217,25 +243,100 @@ run('schedule-tool', async t => {
         S.sel = 'trump'; S.view = 'form'; S.tab = 0; S.schSel = {id: 'trump', i: 0}; re.render();
         localStorage.removeItem('tools.role.gantt.t'); localStorage.removeItem('tools.role.gantt.map');
 
-        // ---- 第 4 步：點物件改目的地、Shift＋點插入、顯示 ▾ ----
+        // ---- 第 4 步：左鍵只看、右鍵選單改目的地／新增目的地（問抵達時間、照時間插入）、點門進去、顯示 ▾ ----
+        const $ = (id) => document.getElementById(id);
+        // 依序回答 #dlgAsk：fn(dlg) 回傳要按的值（可以順便填輸入框）；記下標題
+        const answering = (...fns) => {
+            const seen = [];
+            let stop = false;
+            (async () => {
+                while (!stop)
+                {
+                    if ($('dlgAsk').open) {seen.push($('dlgAsk').querySelector('.title').textContent); $('dlgAsk').close((fns.shift() ?? (() => 'cancel'))($('dlgAsk')));}
+                    await sleep(20);
+                }
+            })();
+            return {seen, stop: () => {stop = true;}};
+        };
+        const runAns = async (p, ...fns) => {const a = answering(...fns); await p; await sleep(60); a.stop(); return a.seen;};
+        const evAt = (x, y, type, opts = {}) => {
+            const c = cv(), s = c.st, d = s.data, rc = c.getBoundingClientRect(), o = s.pz.o, K = s.pz.K;
+            c.dispatchEvent(new (type.startsWith('pointer') ? PointerEvent : MouseEvent)(type, {bubbles: true, cancelable: true, button: type === 'contextmenu' ? 2 : 0, pointerId: 1,
+                clientX: rc.left + o.x + (x - d.W / 2) * K, clientY: rc.top + o.y + (y - d.H / 2) * K, ...opts}));
+        };
         const at = async (name, type, opts = {}) => {
             await until(() => cv()?.st.data);
-            const c = cv(), s = c.st, d = s.data, n = d.named.get(name), rc = c.getBoundingClientRect(), o = s.pz.o, K = s.pz.K;
-            c.dispatchEvent(new MouseEvent(type, {bubbles: true, clientX: rc.left + o.x + (n.cen.x - d.W / 2) * K, clientY: rc.top + o.y + (n.cen.y - d.H / 2) * K, ...opts}));
+            const n = cv().st.data.named.get(name);
+            evAt(n.cen.x, n.cen.y, type, opts);
         };
-        S.schSel = {id: 'trump', i: 0}; re.SM.setMap('m_04x05/trump-inn-f1'); re.render();
+        // 右鍵 → 等選單出來 → 列出項目（反灰標 ×）；pick＝要按的項目文字
+        const ctx = async (x, y, pick) => {
+            document.querySelector('.ctxmenu')?.remove();
+            evAt(x, y, 'contextmenu');
+            await until(() => document.querySelector('.ctxmenu'));
+            const bs = [...document.querySelectorAll('.ctxmenu button')];
+            const items = bs.map(b => b.textContent + (b.disabled ? '×' : ''));
+            if (pick) bs.find(b => b.textContent === pick)?.click();
+            else document.querySelector('.ctxmenu')?.remove();
+            return items;
+        };
+        const ctxObj = async (name, pick) => {await until(() => cv()?.st.data); const n = cv().st.data.named.get(name); return ctx(n.cen.x, n.cen.y, pick);};
+        const F1 = 'm_04x05/trump-inn-f1';
+        S.schSel = {id: 'trump', i: 0}; re.SM.setMap(F1); re.render();
         const hist0 = S.hi;
         await at('sit-1', 'pointermove');
         out.hoverOthers = tipText();
         await at('sit-1', 'click');
+        out.leftNoop = [S.data.trump.schedule[0].go, S.hi === hist0];
+        out.objMenu = await ctxObj('sit-1', '改成第 1 筆的目的地');
         out.picked = [cards()[0].classList.contains('sel'), S.data.trump.schedule[0].map, S.data.trump.schedule[0].go, S.data.trump.schedule.length];
         re.undo();
         out.pickUndo = S.data.trump.schedule[0].go;
-        await sleep(50);
-        await at('stair-up', 'click', {shiftKey: true});
-        out.inserted = [S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i, cards()[1]?.classList.contains('sel')];
-        re.undo();
+        // 空地：方框對齊格子、浮動框寫格子；右鍵 新增目的地 → 問抵達時間（預設選中那筆 +1 小時）→ 照時間插在第 2 筆、寫 at
+        await until(() => cv()?.st.data);
+        const d6 = cv().st.data, g6 = re.SM.gridOf(d6);
+        const noObj = (tx, ty) => ![...d6.named.values()].some(n => {const c = {x: tx * 32 + 16, y: ty * 32 + 16}; return Math.hypot(c.x - n.cen.x, c.y - n.cen.y) < 24 || (c.x >= n.rect.x && c.x <= n.rect.x + n.rect.w && c.y >= n.rect.y && c.y <= n.rect.y + n.rect.h);});
+        let cell = null, wall0 = null;
+        for (let ty = 0; ty < 15; ty++) for (let tx = 0; tx < 15; tx++)
+        {
+            if (!cell && ty >= 2 && tx >= 2 && g6[ty][tx] !== 0 && noObj(tx, ty)) cell = [tx, ty];
+            if (!wall0 && g6[ty][tx] === 0 && noObj(tx, ty)) wall0 = [tx, ty];
+        }
+        await sleep(30);
+        evAt(cell[0] * 32 + 5, cell[1] * 32 + 5, 'pointermove');
+        out.cellHover = [cv().st.cell?.key, JSON.stringify(cv().st.cell?.rect), tipText()];
+        let defT = '';
+        out.addAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {const i = dl.querySelector('[data-k=arriveAt]'); defT = i.value; i.value = '12:00'; return 'ok';});
+        out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i];
+        out.addedAtWant = JSON.stringify({t: '@12:00', map: F1, at: cell});
+        // 臨時補路網：時刻表算得出來、橫幅說有格子還沒進路網
+        await until(() => /抵達 12:00/.test(cards()[1]?.querySelector('.times')?.textContent ?? ''));
+        out.atTimes = cards()[1]?.querySelector('.times')?.textContent;
+        await until(() => right().querySelector('.smap .stale'));
+        out.atBanner = right().querySelector('.smap .stale')?.textContent;
+        await until(() => cv()?.st.data);
+        out.atStop = [...cv().st.data.named.keys()].length > 0 && !!re.SM.spotOf(cv().st.data, `@${cell.join(',')}`);
+        // 改成物件：at 換成 go、key 位置不變
+        await ctxObj('sit-1', '改成第 2 筆的目的地');
+        out.atToGo = JSON.stringify(S.data.trump.schedule[1]);
+        // 同一時間擋下
+        out.dupAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {dl.querySelector('[data-k=arriveAt]').value = '06:20'; return 'ok';});
+        out.dupT = [S.data.trump.schedule.length, $('status').textContent];
+        // 走不到的格子：新增目的地反灰
+        out.wallMenu = wall0 ? await ctx(wall0[0] * 32 + 16, wall0[1] * 32 + 16) : null;
+        while (S.hi > hist0) re.undo();
         out.insUndo = [S.data.trump.schedule.length, S.hi === hist0];
+        // 點門：進到目的地圖、← 返回 回來
+        S.schSel = {id: 'trump', i: 0}; re.SM.setMap(F1); re.render();
+        await until(() => cv()?.st.data && cv().st.ports.length);
+        const door = cv().st.ports.find(p => !p.issue);
+        out.doorTo = door && String(door.o.props.map);
+        evAt(door.rect.x + door.rect.w / 2, door.rect.y + door.rect.h / 2, 'click');
+        await until(() => cv()?.st.name === out.doorTo && cv().st.data);
+        out.entered = [cv().st.name, right().querySelector('[data-k=schedBack]').disabled, S.data.trump.schedule.length];
+        right().querySelector('[data-k=schedBack]').click();
+        await until(() => cv()?.st.name === F1);
+        out.backed = [cv().st.name, right().querySelector('[data-k=schedBack]').disabled];
 
         // 顯示 ▾：預設只勾「這個角色其他行程」；勾「物件名稱」記住
         right().querySelector('.smap .showbtn').click();
@@ -254,22 +355,6 @@ run('schedule-tool', async t => {
         localStorage.removeItem('tools.role.sched.show');
 
         // ---- 第 5 步：寫 point 到地圖、路網過期 ----
-        const $ = (id) => document.getElementById(id);
-        // 依序回答 #dlgAsk：fn(dlg) 回傳要按的值（可以順便填輸入框）；記下標題
-        const answering = (...fns) => {
-            const seen = [];
-            let stop = false;
-            (async () => {
-                while (!stop)
-                {
-                    if ($('dlgAsk').open) {seen.push($('dlgAsk').querySelector('.title').textContent); $('dlgAsk').close((fns.shift() ?? (() => 'cancel'))($('dlgAsk')));}
-                    await sleep(20);
-                }
-            })();
-            return {seen, stop: () => {stop = true;}};
-        };
-        const runAns = async (p, ...fns) => {const a = answering(...fns); await p; await sleep(60); a.stop(); return a.seen;};
-        const F1 = 'm_04x05/trump-inn-f1';
         const mapsDir = await dir(assets, 'maps', 'm_04x05');
         const orig = await (await fetch(`/assets/maps/${F1}.json`)).text();
         await write(mapsDir, 'trump-inn-f1.json', orig);
@@ -297,10 +382,17 @@ run('schedule-tool', async t => {
             c.dispatchEvent(new PointerEvent(type, {bubbles: true, button: 0, pointerId: 1, clientX: rc.left + o.x + (x - d.W / 2) * K, clientY: rc.top + o.y + (y - d.H / 2) * K, ...extra}));
         };
         let defName = '';
-        out.newAsk = await runAns((async () => {clickAt(empty[0] * 32 + 16, empty[1] * 32 + 16); for (let i = 0; i < 100 && !S.data.trump.schedule[0].go.startsWith('trump-p2'); i++) await sleep(30);})(),
+        // 左鍵點空地什麼都不做；右鍵「新增 point…」問名稱、寫進地圖、不碰作息
+        clickAt(empty[0] * 32 + 16, empty[1] * 32 + 16);
+        await sleep(60);
+        out.leftEmpty = [$('dlgAsk').open, objs(await readMap()).length === objs(m0).length];
+        out.newAsk = await runAns((async () => {await ctx(empty[0] * 32 + 16, empty[1] * 32 + 16, '新增 point…'); for (let i = 0; i < 100 && !objs(await readMap()).find(o => o.name === 'trump-p2'); i++) await sleep(30);})(),
             dl => {defName = dl.querySelector('input').value; return 'ok';});
         const m1 = await readMap(), np = objs(m1).find(o => o.name === 'trump-p2');
-        out.added = [defName, JSON.stringify(np), m1.nextobjectid === m0.nextobjectid + 1, np?.id === m0.nextobjectid, S.data.trump.schedule[0].go];
+        const goBefore = S.data.trump.schedule[0].go;
+        await until(() => cv()?.st.data?.named.has('trump-p2'));
+        await ctxObj('trump-p2', '改成第 1 筆的目的地');
+        out.added = [defName, JSON.stringify(np), m1.nextobjectid === m0.nextobjectid + 1, np?.id === m0.nextobjectid, goBefore, S.data.trump.schedule[0].go];
         out.addedExpect = JSON.stringify({id: m0.nextobjectid, name: 'trump-p2', template: '../../templates/point.tj', x: empty[0] * 32, y: empty[1] * 32});
         // 寫出來的檔：除了新物件跟 nextobjectid，其他資料一樣；排版照 Tiled（\/ 跳脫、CRLF 照原檔）
         const text1 = await (await (await mapsDir.getFileHandle('trump-inn-f1.json')).getFile()).text();
@@ -442,19 +534,30 @@ run('schedule-tool', async t => {
     t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
-    t.check('滑過別人用的點：列出誰的第幾筆、提示點選', /^sit-1（[^\n]*）\n[^\n]*musk 2（@12:10）[^\n]*\n點＝設成作息 1 的目的地/.test(r.hoverOthers), r.hoverOthers);
-    t.eq('有選卡片時點物件：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
+    t.check('滑過別人用的點：列出誰的第幾筆、提示右鍵', /^sit-1（[^\n]*）\n[^\n]*musk 2（@12:10）[^\n]*\n右鍵＝新增目的地／改目的地…/.test(r.hoverOthers), r.hoverOthers);
+    t.eq('左鍵點物件不改資料', JSON.stringify(r.leftNoop), JSON.stringify(['trump-p1', true]));
+    t.eq('右鍵物件：新增目的地／改成第 1 筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成第 1 筆的目的地']));
+    t.eq('改成第 1 筆的目的地：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
     t.eq('一筆 undo 回原本的目的地', r.pickUndo, 'trump-p1');
-    t.eq('Shift＋點：在選中那筆後面插入（時間抄它、抵達）、選到新的那筆',
-        JSON.stringify(r.inserted), JSON.stringify([3, JSON.stringify({t: '@06:20', go: 'stair-up', map: 'm_04x05/trump-inn-f1'}), 1, true]));
-    t.eq('插入一筆 undo', JSON.stringify(r.insUndo), JSON.stringify([2, true]));
+    t.check('滑過空地：方框對齊格子、浮動框寫格子＋右鍵提示', r.cellHover[0] === `@${r.addedAt && JSON.parse(r.addedAtWant).at.join(',')}` && r.cellHover[2].startsWith('格 ') && r.cellHover[2].endsWith('右鍵＝新增目的地…'), JSON.stringify(r.cellHover));
+    t.eq('右鍵空地 新增目的地：問抵達時間（預設選中那筆 +1 小時）', JSON.stringify([r.addAsk, r.addedAt[0]]), JSON.stringify([['新增目的地'], '07:20']));
+    t.eq('照抵達時間插在第 2 筆、寫 at、選到新的那筆', JSON.stringify(r.addedAt.slice(1)), JSON.stringify([3, r.addedAtWant, 1]));
+    t.check('格子還沒進路網：時刻表先臨時算', /抵達 12:00/.test(r.atTimes ?? ''), r.atTimes);
+    t.check('橫幅：N 個作息格子還沒進路網', /1 個作息格子還沒進路網/.test(r.atBanner ?? ''), r.atBanner);
+    t.eq('改成物件：at 換成 go、key 位置不變', r.atToGo, JSON.stringify({t: '@12:00', map: 'm_04x05/trump-inn-f1', go: 'sit-1'}));
+    t.eq('同一時間擋下', JSON.stringify([r.dupAsk, r.dupT]), JSON.stringify([['新增目的地'], [3, '第 1 筆已經是 06:20 抵達']]));
+    t.check('走不到的格子：新增目的地反灰', r.wallMenu?.[0] === '新增目的地…×', JSON.stringify(r.wallMenu));
+    t.eq('都 undo 回去', JSON.stringify(r.insUndo), JSON.stringify([2, true]));
+    t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
+    t.eq('← 返回 回到點門前那張', JSON.stringify(r.backed), JSON.stringify(['m_04x05/trump-inn-f1', true]));
     t.eq('顯示 ▾ 預設只勾本角色其他行程', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'names:false', 'grid:false']));
     t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"grid":true}', '顯示（2）▾', true]));
     t.check('格子權重有算出牆', r.wall);
     t.eq('地圖沒比 navgraph.json 新：沒有過期提示', JSON.stringify(r.notStale), JSON.stringify(['[]', true]));
-    t.eq('點空地問名稱、預設 <角色id>-p<n>', JSON.stringify([r.newAsk, r.added[0]]), JSON.stringify([['在 m_04x05/trump-inn-f1 新增 point'], 'trump-p2']));
+    t.eq('左鍵點空地：沒問、沒寫地圖', JSON.stringify(r.leftEmpty), JSON.stringify([false, true]));
+    t.eq('右鍵空地 新增 point…：問名稱、預設 <角色id>-p<n>', JSON.stringify([r.newAsk, r.added[0]]), JSON.stringify([['在 m_04x05/trump-inn-f1 新增 point'], 'trump-p2']));
     t.eq('新增 point：point.tj、id＝nextobjectid、格子左上角', r.added[1], r.addedExpect);
-    t.eq('nextobjectid +1、選中那筆指到新點', JSON.stringify(r.added.slice(2)), JSON.stringify([true, true, 'trump-p2']));
+    t.eq('nextobjectid +1、不碰作息；右鍵新點 改成第 1 筆 才指過去', JSON.stringify(r.added.slice(2)), JSON.stringify([true, true, 'trump-p1', 'trump-p2']));
     t.eq('其他資料不變、排版照 Tiled、換行照原檔', JSON.stringify(r.sameElse), JSON.stringify([true, true, true]));
     t.eq('寫完地圖：路網過期提示＋更新鈕', JSON.stringify(r.stale), JSON.stringify(['["m_04x05/trump-inn-f1"]', '⚠ 路網已過期（trump-inn-f1.json 比 navgraph.json 新）更新路網']));
     t.check('卡片標 ⚠ 路網裡沒有', (r.cardMiss ?? '').startsWith('⚠ 路網裡沒有 m_04x05/trump-inn-f1:trump-p2'), r.cardMiss);

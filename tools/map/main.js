@@ -8,6 +8,7 @@ import * as PZ from '../common/panzoom.js';
 import * as PT from '../common/part.js';
 import * as IC from '../common/icons.js';
 import * as MV from '../common/mapview.js';
+import * as DR from '../common/doors.js';
 import {createFold} from '../common/fold.js';
 import {createShowMenu} from '../common/showmenu.js';
 import {renderDatalists} from '../common/views.js';
@@ -19,7 +20,7 @@ import {resolveObject, joinPath} from '../../src/data/navgrid.js';
 import {usersOf as pointUsers} from '../role/mapedit.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
 import {roleIssues, checkMapRoles, isPortObj, portIssue} from '../../src/data/mapcheck.js';
-import {buildPlan, hhmm, mod} from '../../src/data/schedplan.js';
+import {buildPlan, hhmm, mod, parseAt} from '../../src/data/schedplan.js';
 import {daySegs, whereAt} from '../role/schedbar.js';
 import '../common/splitter.js';
 
@@ -118,7 +119,7 @@ function npcsAt(st)
     {
         const at = whereAt(p.plan, p.sch, S.t, p.segs);
         if (!at || at.map !== st.name) continue;
-        const n = st.data.named.get(at.go);
+        const n = MV.spotOf(st.data, at.go);
         if (n) out.push({id, at, n});
     }
     const slot = new Map();
@@ -222,7 +223,7 @@ async function summarize(name)
             dots.push({oid: o.id, rid, layer: l.name, x: root.x, y: root.y, level: xs.some(x => x.level === 'error') ? 'error' : xs.length ? 'warn' : null});
         }
     }
-    return {roles, groups, issues, roleIssues: issues, dots, named, names, ports};
+    return {roles, groups, issues, roleIssues: issues, dots, named, names, ports, tile: [map.tilewidth, map.tileheight]};
 }
 
 const namesOf = (map) => (S.sums[map] && !S.sums[map].err ? S.sums[map].names : null);
@@ -307,10 +308,10 @@ function reveal(name)
 }
 
 // 點門：記住從哪來（← 返回）、打開那張圖、鏡頭移到落腳點
-function enterDoor(from, o)
+function enterDoor(from, door)
 {
     S.back.push(from);
-    S.land = {map: String(o.props.map), port: String(o.props.port ?? '')};
+    S.land = DR.targetOf(door);
     openMap(S.land.map);
 }
 
@@ -369,7 +370,6 @@ function renderList()
 const WS = 100;
 const WORLD_VIEW = PZ.createView('tools.preview.view.map.#world', {max: 6});
 const DOT = {fixed: '#4fc3f7', grp: '#ff8fc8', warn: '#f0b400', error: '#e53935'};
-const DOOR = {ok: {fill: 'rgba(255,152,0,0.22)', line: '#ff9800'}, warn: {fill: 'rgba(240,180,0,0.25)', line: '#f0b400'}, error: {fill: 'rgba(229,57,53,0.3)', line: '#e53935'}};
 
 function worldGeom()
 {
@@ -406,7 +406,8 @@ function worldNpcs(geo)
         const c = byName.get(at.map);
         if (c)
         {
-            const n = S.sums[at.map]?.named[at.go];
+            const sm = S.sums[at.map], xy = parseAt(at.go);
+            const n = sm?.named[at.go] ?? (xy && sm?.tile && {x: (xy[0] + 0.5) * sm.tile[0], y: (xy[1] + 0.5) * sm.tile[1]});
             if (n) out.push({id, at, map: at.map, x: c.x + n.x * geo.unit, y: c.y + n.y * geo.unit});
             continue;
         }
@@ -662,32 +663,8 @@ function draw(cv, st)
         g.globalAlpha = 1;
     }
     // 門：橘框（壞的紅／黃）＋🚪，滑過實線；落腳點閃一下
-    if (show.doors)
-    {
-        g.font = `${14 / K}px sans-serif`;
-        g.textAlign = 'center';
-        g.textBaseline = 'middle';
-        for (const p of st.ports ?? [])
-        {
-            const {x, y, w, h: hh} = p.rect, on = st.hover?.door === p, c = DOOR[p.issue?.level ?? 'ok'];
-            g.fillStyle = c.fill;
-            g.fillRect(x, y, w, hh);
-            g.setLineDash(on ? [] : [4 / K, 3 / K]);
-            g.strokeStyle = c.line;
-            g.lineWidth = (on ? 2.5 : 1.5) / K;
-            g.strokeRect(x, y, w, hh);
-            g.setLineDash([]);
-            g.fillText(p.issue ? '⚠' : '🚪', x + w / 2, y + hh / 2);
-        }
-        g.textBaseline = 'alphabetic';
-    }
-    if (st.flash && Math.floor((performance.now() - st.flash.t0) / 200) % 2 === 0)
-    {
-        const {x, y, w, h: hh} = st.flash.rect, m = 4 / K;
-        g.strokeStyle = '#fff176';
-        g.lineWidth = 3 / K;
-        g.strokeRect(x - m, y - m, w + m * 2, hh + m * 2);
-    }
+    if (show.doors) DR.drawDoors(g, st.ports, K, st.hover?.door);
+    DR.drawFlash(g, st, K);
     // 角色：照 root 的 y 排（下面的蓋上面）；拖著的那隻變淡
     for (const it of st.roles)
     {
@@ -783,23 +760,9 @@ function npcCen(x)
 }
 
 // 點門進來：倍率不動（沒記過＝置中的），落腳點放到畫布正中央、閃一下；找不到就照原本的視角
-const FLASH_MS = 1200;
 function landAt(st, view, port)
 {
-    const n = st.data.named.get(port);
-    if (!n) {status(`⚠ ${st.name} 找不到落腳點「${port}」，照原本的視角打開`); return;}
-    view.ox = -(n.cen.x - st.data.W / 2) * view.zoom;
-    view.oy = -(n.cen.y - st.data.H / 2) * view.zoom;
-    PZ.setZoom(view.zoom, 0, 0, view);
-    const t0 = performance.now();
-    st.flash = {rect: n.rect, t0};
-    const tick = () => {
-        if (st.flash?.t0 !== t0) return;
-        if (performance.now() - t0 >= FLASH_MS) st.flash = null;
-        st.redraw();
-        if (st.flash) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+    if (!DR.landAt(st, view, port)) status(`⚠ ${st.name} 找不到落腳點「${port}」，照原本的視角打開`);
 }
 
 function hitAt(st, p, K)
@@ -814,9 +777,8 @@ function hitAt(st, p, K)
         const c = npcCen(x), r = S.roles[x.id];
         if (Math.abs(p.x - c.x) <= (r?.w ?? 32) / 2 && Math.abs(p.y - c.y) <= (r?.h ?? 64) / 2) return {npc: x.id, x};
     }
-    if (show.doors)
-        for (const d of st.ports ?? [])
-            if (p.x >= d.rect.x && p.x <= d.rect.x + d.rect.w && p.y >= d.rect.y && p.y <= d.rect.y + d.rect.h) return {door: d};
+    const door = show.doors && DR.doorAt(st.ports, p);
+    if (door) return {door};
     if (!show.points) return null;
     for (const n of st.data.named.values())
         if (n.type === 'point' && Math.hypot(p.x - n.cen.x, p.y - n.cen.y) <= Math.max(8, 8 / K)) return {point: n.name, n};
@@ -832,10 +794,7 @@ async function loadMapState(st)
     applyHide(st);
     st.issues = new Map();
     for (const x of checkMapRoles(d, S.roles, MV.gridOf(d))) (st.issues.get(x.oid) ?? st.issues.set(x.oid, []).get(x.oid)).push(x);
-    st.ports = d.objs.filter(isPortObj).map(o => {
-        const w = o.width || d.map.tilewidth, hh = o.height || d.map.tileheight;
-        return {o, rect: {x: o.x, y: o.gid ? o.y - hh : o.y, w, h: hh}, issue: portIssue(o, namesOf)};
-    });
+    st.ports = DR.portsOf(d, namesOf);
     st.npcs = npcsAt(st);
     const rids = new Set([...st.all.map(it => it.rid), ...st.npcs.map(x => x.id)]);
     if (S.place) rids.add(S.place);
@@ -958,7 +917,7 @@ function mapEl(name)
         if (hit?.door)
         {
             if (hit.door.issue?.level === 'error') status(`⚠ ${hit.door.issue.msg}`);
-            else enterDoor(name, hit.door.o);
+            else enterDoor(name, hit.door);
             return;
         }
         if (hit?.point)

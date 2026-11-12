@@ -3,6 +3,7 @@ import {GM} from '../core/setting.js'
 import TimeSystem from '../systems/time.js'
 import Record from '../infra/record.js'
 import NavGraph from '../core/navgraph.js'
+import {parseAt} from '../data/schedplan.js'
 import {T,dlog} from '../core/debug.js'
 const _tag = 'schedule';
 
@@ -24,10 +25,20 @@ export class COM_Schedule extends Com
     //------------------------------------------------------
     //  Local
     //------------------------------------------------------
+    // at 目的地(格子)沒有物件，給一個只有 getPts 的替身；同一格回傳同一個，bb.go 比較才不會一直換
+    _spot(key, at)
+    {
+        const{scene}=this.ctx;
+        this._spots ??= {};
+        return this._spots[key] ??= {getPts:()=>[scene.map.tileToWorld(at[0], at[1])], emit(){}};
+    }
+
     _go(key)
     {
         const{scene}=this.ctx;
         if(NavGraph.mapOf(key)!==scene.mapName) {return null;}
+        const at = parseAt(NavGraph.nameOf(key));
+        if(at) {return this._spot(key, at);}
         const go = scene.named[NavGraph.nameOf(key)];
         if(!go) {console.warn(`[COM_Schedule] ${this.ctx.bb.id} 的作息節點 ${key} 不在地圖上，navgraph.json 可能過期了`);}
         return go;

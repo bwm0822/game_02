@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath, pathToFileURL} from 'url';
 import {loadMap, buildGrid, objectTiles, bestPath} from '../src/data/navgrid.js';
+import {atName, parseAt, schKey} from '../src/data/schedplan.js';
 
 // 產生 NPC 作息用的跨地圖路網 public/assets/json/navgraph.json
 // 節點 = 每張地圖的具名物件("地圖:名稱")，邊 = 同圖內節點間的步數(walk) + port 連到別張圖的對應物件(port)
@@ -26,6 +27,14 @@ export async function run({log = ()=>{}} = {})
     const edges = {};
     const addEdge = (from,to,cost,type)=>{(edges[from] ??= []).push({to,cost,type});};
     const warns = [];
+    const roles = readJson('json/role.json');
+
+    // 作息用到的格子目的地 at:[tx,ty]，照地圖收集，當成那張圖的節點 "地圖:@tx,ty"
+    const ats = {};
+    for(const role of Object.values(roles))
+    {
+        for(const sh of role.schedule??[]) {if(sh.at && sh.map) {(ats[sh.map] ??= new Set()).add(atName(sh.at));}}
+    }
 
     while(queue.length)
     {
@@ -59,6 +68,14 @@ export async function run({log = ()=>{}} = {})
                 queue.push(o.props.map);
             }
         }
+        for(const name of ats[mapName] ?? [])
+        {
+            const [tx,ty] = parseAt(name);
+            if(tx<0 || ty<0 || tx>=map.width || ty>=map.height) {warns.push(`${mapName}:${name} 在地圖外`); continue;}
+            const key = `${mapName}:${name}`;
+            keys.push(key);
+            nodes[key] = {tiles: [[tx,ty]]};
+        }
 
         for(let i=0;i<keys.length;i++)
         {
@@ -83,13 +100,12 @@ export async function run({log = ()=>{}} = {})
     }
 
     // 作息的目的地一定要在路網裡
-    const roles = readJson('json/role.json');
     for(const [id,role] of Object.entries(roles))
     {
         for(const sh of role.schedule??[])
         {
-            if(sh.go==null) {continue;}
-            const key = `${sh.map}:${sh.go}`;
+            if(sh.go==null && !sh.at) {continue;}
+            const key = schKey(sh);
             if(!nodes[key]) {warns.push(`角色 ${id} 的作息目的地 ${key} 不在路網裡`);}
             if(sh.do==='patrol' && !sh.route?.length) {warns.push(`角色 ${id} 的巡邏沒有 route`);}
             for(const name of sh.route??[])

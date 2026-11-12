@@ -98,13 +98,14 @@ export function shownFields(r)
 }
 
 // ---------- 作息 ----------
-export const SCH_FIELDS = ['t', 'map', 'go', 'do', 'route', 'wait'];
+export const SCH_FIELDS = ['t', 'map', 'go', 'at', 'do', 'route', 'wait'];
+export const destText = (s) => (Array.isArray(s.at) ? `格 ${s.at.join(',')}` : s.go ?? '?');
 export const DO_NAMES = {'': '預設（目的地物件的動作）', idle: '站著', patrol: '巡邏'};
 
 export function schSummary(s)
 {
     const t = s.t ?? '';
-    return `${t.startsWith('@') ? '抵達' : '出發'} ${t.replace(/^@/, '') || '??:??'} → ${s.map?.split('/').at(-1) ?? '?'}／${s.go ?? '?'}${s.do ? `（${DO_NAMES[s.do] ?? s.do}）` : ''}`;
+    return `${t.startsWith('@') ? '抵達' : '出發'} ${t.replace(/^@/, '') || '??:??'} → ${s.map?.split('/').at(-1) ?? '?'}／${destText(s)}${s.do ? `（${DO_NAMES[s.do] ?? s.do}）` : ''}`;
 }
 
 // ---------- 預覽 ----------
