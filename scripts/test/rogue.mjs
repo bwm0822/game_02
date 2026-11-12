@@ -26,6 +26,18 @@ run('盜賊討伐', async t => {
     await t.gotoMap(FOREST);
     t.eq('黑森林出現 3 個盜賊', await t.count('rogue-1'), 3);
 
+    t.eq('計數器照群組數', await t.eval(d => d.Record.game.counters?.['bandit_hunt.kills']), 'kill:@bandits');
+    const byGroup = await t.eval(d => {
+        d.Story.onKill('rogue-1');
+        const outside = d.Quality.get('bandit_hunt.kills');
+        d.Story.onKill('bandit-1', 'bandits');
+        const other = d.Quality.get('bandit_hunt.kills');
+        d.Quality.set('bandit_hunt.kills', 0);
+        return {outside, other};
+    });
+    t.eq('群組外的 rogue-1 不算', byGroup.outside, 0);
+    t.eq('群組裡別種 id 也算', byGroup.other, 1);
+
     await t.kill('rogue-1');
     t.eq('清光盜賊', await t.q('bandit_hunt.kills'), 3);
     t.eq('任務進到取得匕首', await t.q('bandit_hunt'), 3);

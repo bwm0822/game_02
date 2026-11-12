@@ -449,6 +449,16 @@ run('map-tool', async t => {
         await answer(d => {d.querySelector('input').value = 'bandits'; return 'ok';});
         await pr2;
         out.renameBlock = document.getElementById('status').textContent;
+        // 改名 bandits → gang：計數器的 kill:@bandits 跟著改；再改回來
+        pr2 = mt.renameGroup('bandits');
+        await answer(d => {d.querySelector('input').value = 'gang'; return 'ok';});
+        await pr2;
+        await settle();
+        out.renameKill = (await readStory()).includes('kill:@gang') && !(await readStory()).includes('kill:@bandits');
+        pr2 = mt.renameGroup('gang');
+        await answer(d => {d.querySelector('input').value = 'bandits'; return 'ok';});
+        await pr2;
+        await settle();
 
         // 刪除：karen-home 的 @pack（別張圖還在用）→ 只刪圖層
         mt.selectMap(KH);
@@ -658,6 +668,7 @@ run('map-tool', async t => {
     t.check('改名：兩張地圖＋story.json 一筆寫完、徽章／畫面跟著', r.renamed[0] && r.renamed[1] && r.renamed[2]?.endsWith(':wolf_hunt && wolf_hunt<9') && !r.renamed[3]
         && r.renamed[4] === 3 && r.renamed[5] === 'pack,bandits' && r.renamed[6] === 3, JSON.stringify(r.renamed));
     t.check('改成已有的名字擋', /已經有 @bandits/.test(r.renameBlock), r.renameBlock);
+    t.check('改名：story.json 的 kill:@群組 跟著改', r.renameKill);
     t.check('刪除（別張圖還在用）：只刪圖層、條件留著', r.delBtns1 === 'layer,cancel' && !r.del1[0] && r.del1[1], `${r.delBtns1} ${r.del1.join()}`);
     t.check('刪除最後一張：可以連條件一起刪、目標回常駐', r.delBtns2 === 'all,layer,cancel' && !r.del2[0] && !r.del2[1] && r.del2[2] === '', `${r.delBtns2} ${r.del2.join()}`);
     t.check('undo 回到第 4 步之前：story.json＋三張地圖一字不差', r.undo4.every(Boolean), r.undo4.join());

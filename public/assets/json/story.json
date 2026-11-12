@@ -194,7 +194,7 @@
                 "label": "了解",
                 "actions": [
                   "bandit_hunt=2",
-                  "count bandit_hunt.kills kill:rogue-1"
+                  "count bandit_hunt.kills kill:@bandits"
                 ],
                 "next": "n_default"
               }

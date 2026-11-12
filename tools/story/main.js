@@ -73,11 +73,11 @@ function renameQuality(from, to)
     });
 }
 
-// spawn 群組只有地圖的 @群組 圖層會引用（其他檔案，只列）
+// spawn 群組：同檔改計數器的 kill:@群組；地圖的 @群組 圖層是其他檔案（只列）
 const renameSpawn = (path, to) => SF.renameWithRefs(D, {
     what: 'spawn 群組', from: path.at(-1), to, file: 'story.json',
     error: to => Object.values(linesOf(S.data)).some(l => to in (l.spawns ?? {})) && `已經有 spawn 群組 ${to}`,
-    apply: data => {SF.renameKeyAt(data, path, to); return [];},
+    apply: data => {SF.renameKeyAt(data, path, to); return RN.rewriteStory(linesOf(data), RN.groupRenamer(path.at(-1), to));},
 });
 const pendingGoto = SF.listenGoto(D);
 const {get, btn, row} = F;

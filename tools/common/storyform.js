@@ -17,7 +17,7 @@ export async function loadRefs()
     return {roles, items, story, dialog, maps};
 }
 
-const FACTS = ['time=night', 'time=day', 'hour>=', 'map=', 'hp<', 'job=', 'style=', 'trade', 'dead='];
+const FACTS = ['time=night', 'time=day', 'hour>=', 'map=', 'hp<', 'job=', 'style=', 'trade', 'dead=', 'group='];
 
 // story：story.json 來源格式；dialog：dialog.json 來源格式（兩個分頁各自用自己正在編的那份）
 export function storyLists(refs, story, dialog)
@@ -31,11 +31,12 @@ export function storyLists(refs, story, dialog)
     const q = Object.keys(story.qualities ?? {}).filter(k => !k.includes('*'));
     const itemIds = Object.keys(refs.items);
     const kills = Object.keys(refs.roles).filter(id => !refs.roles[id].unique);
+    const groups = Object.values(story.lines ?? {}).flatMap(l => Object.keys(l.spawns ?? {}));
     const cond = [...q, ...npcs.map(n => `${n}.favor`), ...FACTS, ...itemIds.map(i => `item:${i}:1`), ...kills.map(id => `kill.${id}`)];
     const allNodes = [...new Set(Object.values(nodes).flatMap(s => [...s]))];
     const lists = {
         q, cond,
-        eff: [...OPS.map(o => ['trade', 'close'].includes(o) ? o : `${o} `), 'gold+', ...cond, ...itemIds, ...allNodes, ...kills.map(id => `kill:${id}`)],
+        eff: [...OPS.map(o => ['trade', 'close'].includes(o) ? o : `${o} `), 'gold+', ...cond, ...itemIds, ...allNodes, ...kills.map(id => `kill:${id}`), ...groups.map(g => `kill:@${g}`)],
         who: [...npcs, ...new Set(Object.values(refs.roles).map(r => r.job).filter(Boolean).map(j => `job:${j}`)), '*'],
         events: EVENTS,
         maps: refs.maps,

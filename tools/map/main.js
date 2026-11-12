@@ -12,6 +12,7 @@ import {createFold} from '../common/fold.js';
 import {createShowMenu} from '../common/showmenu.js';
 import {renderDatalists} from '../common/views.js';
 import {storyLists} from '../common/storyform.js';
+import {rewriteStory, groupRenamer} from '../common/storyrename.js';
 import '../common/combo.js';
 import {checkStory} from '../../src/data/storycheck.js';
 import {resolveObject, joinPath} from '../../src/data/navgrid.js';
@@ -1228,7 +1229,7 @@ async function renameGroup(from)
     const used = mapsWithGroup(from);
     const p = ask(`改名 @${from}`, [h('div', {class: 'fields'}, h('span', {class: 'k'}, '新名稱'), h('span', null, '@', name)),
         h('div', {class: 'hint'}, `會一起改：${[...used.map(m => `maps/${m}.json`), S.spawns[from] && 'story.json'].filter(Boolean).join('、')}`),
-        h('div', {class: 'warn'}, '⚠ 群組名稱也是存檔的命名空間：舊存檔裡這組的狀態（殺了幾隻、撿走什麼）會對不上，進地圖時當成全新的')],
+        h('div', {class: 'warn'}, '⚠ 群組名稱也是存檔的命名空間：舊存檔裡這組的狀態（殺了幾隻、撿走什麼）會對不上，進地圖時當成全新的；進行中的 count kill:@群組 計數器也不會再數')],
         [['ok', '改名'], ['cancel', '取消']]);
     name.select();
     if (await p !== 'ok') return;
@@ -1239,7 +1240,11 @@ async function renameGroup(from)
     const rels = [...used.map(ED.mapFile), ...(S.spawns[from] ? [STORY] : [])];
     const ok = await writeFiles(rels, d => {
         for (const m of used) ED.renameGroupLayer(d[ED.mapFile(m)], from, to);
-        if (S.spawns[from]) ED.renameKey(d[STORY].lines[S.spawns[from].line].spawns, from, to);
+        if (S.spawns[from])
+        {
+            ED.renameKey(d[STORY].lines[S.spawns[from].line].spawns, from, to);
+            rewriteStory(d[STORY].lines, groupRenamer(from, to));
+        }
     }, `@${from} 改名 @${to}`);
     if (!ok) return;
     if (S.target === `@${from}`) S.target = `@${to}`;

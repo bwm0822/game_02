@@ -71,7 +71,7 @@ export class Npc extends Role
         this.strip?.();
         this.ctx.bb.sta=GM.ST.DEATH;
         this._latency = 5;
-        Story.onKill(this.id);
+        Story.onKill(this.id, this.qid);
         // option
         this._delAct(GM.OBSERVE);
         this._delAct(GM.ATTACK);

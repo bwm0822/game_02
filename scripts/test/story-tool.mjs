@@ -110,6 +110,17 @@ run('story-tool', async t => {
         await renameBy(k('wolf_hunt', 'spawns', 'wolves', '#id'), 'wolfpack');
         out.renameSpawn = ['wolfpack' in S.data.wolf_hunt.spawns, out.dlg.includes('maps/m.json')];
         st.undo();
+        // spawn 改名：計數器的 kill:@群組 跟著改
+        S.sel = 'bandit_hunt'; st.render();
+        await renameBy(k('bandit_hunt', 'spawns', 'bandits', '#id'), 'gang');
+        out.renameKill = [S.data.bandit_hunt.nodes.xi.n_hunt_xi.choices[0].actions[1], out.dlg.includes('kill:@bandits')];
+        st.undo();
+        // count 的來源檢查
+        st.commit(() => {S.data.bandit_hunt.nodes.xi.n_hunt_xi.choices[0].actions.push('count bandit_hunt.kills kill:@nope', 'count bandit_hunt.kills kill:nobody', 'count bandit_hunt.kills item:x');});
+        out.countErr = S.results.filter(r => r.level === 'error').map(r => r.msg);
+        st.undo();
+        // 自動完成列出 kill:@群組
+        out.killList = S.lists.lists.eff.includes('kill:@bandits');
 
         // 存檔前三方合併：外部改 bandit_hunt、這邊改 wolf_hunt
         const ext = JSON.parse(orig); ext.lines.bandit_hunt.title = '外部';
@@ -148,6 +159,10 @@ run('story-tool', async t => {
     t.check('quality 改名一步 undo', r.renameQUndo);
     t.eq('節點改名：approach 跟著改、確認框有列', JSON.stringify(r.renameNode), JSON.stringify([true, 'approach n_grudge', true]));
     t.eq('spawn 改名：地圖圖層列在其他檔案', JSON.stringify(r.renameSpawn), JSON.stringify([true, true]));
+    t.eq('spawn 改名：kill:@群組 跟著改、確認框有列', JSON.stringify(r.renameKill), JSON.stringify(['count bandit_hunt.kills kill:@gang', true]));
+    t.eq('count 來源檢查：群組沒宣告／角色不存在／不是 kill:', JSON.stringify(r.countErr), JSON.stringify([
+        '沒有宣告 spawn 群組「nope」', '沒有角色「nobody」', 'count 的來源要寫 kill:<角色 id> 或 kill:@<群組>：item:x']));
+    t.check('指令自動完成有 kill:@群組', r.killList);
     t.eq('合併：外部的、這邊的都留著，結構不變', JSON.stringify(r.merge), JSON.stringify(['外部', '這邊', 'qualities,lines']));
     t.eq('總覽 3 條劇情線', r.table, 3);
 });

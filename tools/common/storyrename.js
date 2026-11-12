@@ -98,6 +98,12 @@ export function qualityRenamer(from, to, npcIds = [])
     };
 }
 
+// spawn 群組改名：指令裡計數器的來源 kill:@<群組>
+export function groupRenamer(from, to)
+{
+    return (kind, v) => kind === 'act' ? replaceTok(v, `kill:@${from}`, `kill:@${to}`) : v;
+}
+
 // 節點改名：next／entry／extend、storylet 的 @節點、goto／approach 指令；inNpc(npc) 決定哪些 NPC 情境下的引用算數
 export function nodeRenamer(from, to, inNpc)
 {

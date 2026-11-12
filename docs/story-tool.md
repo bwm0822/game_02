@@ -34,7 +34,7 @@
 ### 共用（`tools/common/storyform.js`）
 
 - **節點編輯器**：台詞（`{條件: 台詞}` 一句一列，條件空白＝無條件）、進入時（actions）、沿用（next）、選項表格（文字／條件／做什麼／接著到／排序）、離開時（posts）。對話分頁還多 cards、mood 兩欄，任務分頁的節點有值時才顯示。
-- **條件、指令欄**：純文字，指令一行一個（存成陣列）。用 `combo.js` 的 `data-expr` 模式自動完成，只補游標前那個字：打字就開清單，Ctrl+空白鍵也能開，Tab／Enter 選。清單內容有 quality、`<npc>.favor`、情境事實、`item:<id>:1`、`kill.<id>`、指令（give/take/count/stop/trade/close/goto/approach、gold+）、道具 id、節點 id。
+- **條件、指令欄**：純文字，指令一行一個（存成陣列）。用 `combo.js` 的 `data-expr` 模式自動完成，只補游標前那個字：打字就開清單，Ctrl+空白鍵也能開，Tab／Enter 選。清單內容有 quality、`<npc>.favor`、情境事實、`item:<id>:1`、`kill.<id>`、指令（give/take/count/stop/trade/close/goto/approach、gold+）、道具 id、節點 id、計數器來源 `kill:<id>`／`kill:@<spawn 群組>`。`count` 的來源檢查：角色不存在、群組沒宣告、不是 `kill:` 開頭都是錯誤。
 - **連結**：`next`、`@節點`、entry 旁邊的「→」會跳到節點。節點在同一個檔案就直接跳；在另一個檔案就切到另一個分頁跳過去（`shell.js` 的 `gotoTab`／`onGoto`，殼轉送；分頁還沒載入就等它 ready 再送）。
 - **檢查**：每次重畫都跑 `src/data/storycheck.js` 的 `checkStory()`，結果分兩處顯示：
   - 欄位標紅框（錯誤）或黃框（警告）。欄位找不到就往上一層標，例如收起來的卡片、整個 effects 框；欄位的 `data-k` 是資料路徑的 JSON 字串。
@@ -43,7 +43,7 @@
 
 ## 改名
 
-`tools/common/storyrename.js`（純函式）走訪條件、指令、next、entry、extend、`@節點`、thread.quality、日誌的 `{佔位符}`，用 token 比對，所以 `wolf_hunt` 不會誤改到 `wolf_hunt.kills`、`@n_x`、`item:x:1`。
+`tools/common/storyrename.js`（純函式）走訪條件、指令、next、entry、extend、`@節點`、thread.quality、日誌的 `{佔位符}`，用 token 比對，所以 `wolf_hunt` 不會誤改到 `wolf_hunt.kills`、`@n_x`、`item:x:1`。spawn 群組改名用 `groupRenamer()` 連帶改指令裡的 `kill:@<群組>`（地圖分頁改群組名稱也呼叫它）。
 
 - **quality**：條件、指令裡的名稱一起改；scope=npc 的話，`<npc>.名稱` 也一起改。
 - **節點**：引用只算同一個 NPC 情境下的（storylet 的 who、節點所屬的 NPC）。對話分頁改 `_common` 的節點時，所有「沒有自己同名節點」的 NPC 的引用都會一起改。

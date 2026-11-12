@@ -108,14 +108,15 @@ export default class Story
         finally {if(outer) {this._fired = null;}}
     }
 
-    static onKill(id)
+    // group：死者所屬的 @群組（map.js 給的 qid），計數器 kill:@<群組> 照它數
+    static onKill(id, group)
     {
         Quality.add(`kill.${id}`, 1);
         for(const [name, src] of Object.entries(this.counters))
         {
-            if(src === `kill:${id}`) {Quality.add(name, 1);}
+            if(src === `kill:${id}` || (group && src === `kill:@${group}`)) {Quality.add(name, 1);}
         }
-        this.fire('kill', {dead:id});
+        this.fire('kill', {dead:id, group:group || ''});
     }
 
     static onItem() {this.fire('item');}

@@ -4,7 +4,7 @@
 import {flattenStory, mergeDialog, COMMON} from './storydata.js'
 
 // 條件裡由查詢方提供的情境事實，不是 quality
-const FACTS = ['time', 'hour', 'map', 'hp', 'job', 'style', 'trade', 'dead', 'true', 'false'];
+const FACTS = ['time', 'hour', 'map', 'hp', 'job', 'style', 'trade', 'dead', 'group', 'true', 'false'];
 export const EVENTS = ['kill', 'item', 'enter', 'time', 'quality', 'see'];
 // script.js 自己處理的＋交給呼叫方（COM_Talk／uidialog／Story）的
 export const OPS = ['give', 'take', 'count', 'stop', 'trade', 'close', 'goto', 'approach'];
@@ -73,6 +73,14 @@ export function checkStory({story, dialog, roles, items, maps})
     };
     const checkCond = (expr, at) => condNames(expr).forEach(n => checkName(n, at));
 
+    // count 的來源：kill:<角色 id> 或 kill:@<spawn 群組>（Story.onKill 只數這兩種）
+    const checkCounter = (src, at) => {
+        const m = src?.match(/^kill:(@?)(.+)$/);
+        if (!m) return err(at, `count 的來源要寫 kill:<角色 id> 或 kill:@<群組>：${src ?? '（空白）'}`);
+        if (m[1] && !(m[2] in flat.spawns)) err(at, `沒有宣告 spawn 群組「${m[2]}」`);
+        if (!m[1] && !roleIds.has(m[2])) err(at, `沒有角色「${m[2]}」`);
+    };
+
     const nodeExists = (npc, id) => !!(flat.nodes[npc]?.[id] || merged[npc]?.nodes?.[id]);
     const checkNode = (npc, id, at) => {if (id && !nodeExists(npc, id)) err(at, `${npc} 沒有節點「${id}」`);};
 
@@ -82,6 +90,7 @@ export function checkStory({story, dialog, roles, items, maps})
         names.forEach(n => checkName(n, sub(at, i)));
         if (op && !OPS.includes(op)) err(sub(at, i), `認不得的指令「${op}」`);
         if (op === 'give' || op === 'take') checkItem(args[0], sub(at, i));
+        if (op === 'count') checkCounter(args[1], sub(at, i));
         if ((op === 'goto' || op === 'approach') && npcs) npcs.forEach(npc => checkNode(npc, args[0], sub(at, i)));
     });
 

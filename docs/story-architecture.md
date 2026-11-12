@@ -90,7 +90,7 @@ dialog、storylet、事件卡共用**同一個模組**（取代 `COM_Talk._exec`
 | `karen.favor+10` | 指定 NPC |
 | `give axe-1 1`、`take plet 3` | 給玩家／拿走玩家的道具（`take` 取代 `consume`，不檢查數量，搭配 `item:` 條件先擋） |
 | `gold+120`、`gold-50` | 金錢 |
-| `count wolf_hunt.kills kill:wolf`、`stop wolf_hunt.kills` | 開／停專屬計數器 |
+| `count wolf_hunt.kills kill:wolf`、`stop wolf_hunt.kills` | 開／停專屬計數器；來源 `kill:<角色 id>` 照 id 數，`kill:@<群組>` 數那個 spawn 群組（地圖 `@群組` 圖層生的，`GameObject.qid`）裡死掉的、不管 id（如 `kill:@bandits`）；同一隻兩種都對得上就都 +1。只有 `kill:` 兩種，其他寫法檢查報錯；群組沒有總數 quality（`kill.<id>` 只照 id） |
 | `trade`、`close`、`goto n_xxx` | 對話控制（只在對話中有效） |
 | `approach n_xxx` | NPC 走到玩家身邊並打開對話（見 §8） |
 | `條件 : 指令` | 條件執行 |
@@ -256,7 +256,7 @@ entry 依 `priority` 排序取第一個成立的（執行期欄位是 `nodeId`�
 
 | `on` | 觸發時機 | 查詢時附帶的事實 |
 |---|---|---|
-| `kill` | 任何角色死亡（`kill.<id>` 與 count 計數器在檢查前先更新） | 死者 id |
+| `kill` | 任何角色死亡，不管兇手是誰（`kill.<id>` 與 count 計數器在檢查前先更新，`Story.onKill(id, qid)`） | `dead`＝死者 id、`group`＝死者的 spawn 群組（不在群組是空字串） |
 | `item` | 玩家背包變動 | — |
 | `enter` | 進入地圖（`GameScene.create()` 放好玩家之後；讀檔進地圖也算） | — |
 | `time` | 遊戲時間跨過整點；一次跳好幾小時（睡覺）時每個整點各觸發一次 | `hour`／`time` 是那個整點的 |
