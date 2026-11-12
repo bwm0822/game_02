@@ -96,4 +96,4 @@
 - 角色分頁寫 point 後也廣播 `maps/<地圖>.json`，收到地圖分頁的廣播會 `SM.forget()` 重畫作息地圖。
 - `SH.onGoto([地圖, 物件 id?])`。
 
-測試：`node scripts/test/map-tool.mjs`（假專案在 OPFS：真的 json＋幾張地圖，加上測試自己寫的 `fixture-01`（圖塊物件的 `rogue`／`orc`）、`fixture-02`（好的／地圖不存在／落腳點不存在三個門），不放進 `public/`）。
+測試：`node scripts/test/map-tool.mjs`（假專案在 OPFS：真的 json＋幾張地圖，加上測試自己寫的 `fixture-01`（圖塊物件的 `rogue`／`orc`）、`fixture-02`（好的／地圖不存在／落腳點不存在三個門），不放進 `public/`）。`m/m_03x05.json` 用凍結的 `scripts/test/fixtures/m_03x05.json`（斷言寫死它的角色數、圖層、狼的位置；真的那張在 Tiled 改了不會影響測試，要更新就照新的斷言重抄一份）。

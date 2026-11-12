@@ -25,6 +25,8 @@ run('dialog-tool', async t => {
 
         out.load = Object.keys(S.data).join(',');
         out.groups = qa('#list .group').map(g => g.textContent.trim());
+        const dlgKeys = JSON.parse(orig);
+        out.commonOnly = Object.entries(S.refs.roles).filter(([id, r]) => r.unique && !dlgKeys[id]).length;
         out.clean = S.results.filter(r => r.level === 'error').map(r => r.msg);
         await dl.save();
         out.roundtrip = (await disk()) === orig;
@@ -74,7 +76,7 @@ run('dialog-tool', async t => {
     });
 
     t.eq('讀入 _common＋karen＋xi', r.load, '_common,karen,xi');
-    t.check('清單有「只用 _common」組', r.groups.some(g => g.includes('只用 _common（6）')), r.groups.join(' '));
+    t.check('清單有「只用 _common」組', r.commonOnly > 0 && r.groups.some(g => g.includes(`只用 _common（${r.commonOnly}）`)), r.groups.join(' '));
     t.eq('現有資料沒有錯誤', r.clean.join('；'), '');
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('_common：入口／台詞／節點數、沒有 [object', JSON.stringify(r.common), JSON.stringify([2, 4, 7, false]));

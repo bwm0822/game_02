@@ -9,9 +9,11 @@ const SETUP = async () => {
     const write = async (d, name, data) => {const w = await (await d.getFileHandle(name, {create: true})).createWritable(); await w.write(data); await w.close();};
     const assets = await dir(opfs, 'game', 'public', 'assets'), json = await dir(assets, 'json'), maps = await dir(assets, 'maps');
     for (const f of ['role.json', 'item.json', 'part.json', 'story.json', 'navgraph.json']) await write(json, f, await (await fetch(`/assets/json/${f}`)).text());
+    // m/m_03x05.json 用凍結的 scripts/test/fixtures/m_03x05.json（真的那張會一直在 Tiled 改，角色數、位置都寫在斷言裡）
+    const FROZEN = {'m/m_03x05.json': '/scripts/test/fixtures/m_03x05.json'};
     const copy = async (rel) => {
         const segs = rel.split('/'), d = await dir(maps, ...segs.slice(0, -1));
-        await write(d, segs.at(-1), await (await fetch(`/assets/maps/${rel}`)).text());
+        await write(d, segs.at(-1), await (await fetch(FROZEN[rel] ?? `/assets/maps/${rel}`)).text());
     };
     for (const f of ['main.world', 'm/m_03x05.json', 'm/m_04x05.json', 'm_04x05/karen-home.json', '_m_00x00.json',
         'm_04x05/trump-inn-f1.json', 'm_04x05/trump-inn-f2.json']) await copy(f);
@@ -106,8 +108,15 @@ run('map-tool', async t => {
         const c35 = cells().find(c => c.w.name === 'm/m_03x05');
         const hitsOf = (kind, map) => wst().hits.filter(x => x.kind === kind && (!map || x.map === map));
         out.dots = hitsOf('dot', 'm/m_03x05').map(x => x.d.layer).sort().join();
-        const wolfDot = hitsOf('dot', 'm/m_03x05').find(x => x.d.rid === 'wolf' && x.d.x === 528 && x.d.y === 208);
-        out.dotPos = wolfDot && [Math.abs(wolfDot.x + wolfDot.w / 2 - (c35.x + 528 * wst().geo.unit)) < 0.01, Math.abs(wolfDot.y + wolfDot.h / 2 - (c35.y + 208 * wst().geo.unit)) < 0.01];
+        // 第一隻狼的位置照地圖檔算：tile 物件中心（y 是底部）＋role.anchor
+        const m35src = await (await fetch('/scripts/test/fixtures/m_03x05.json', {cache: 'no-store'})).json();
+        const w0 = m35src.layers.find(l => l.name === '@wolves').objects[0];
+        const tj = (await (await fetch(new URL(w0.template, `${location.origin}/assets/maps/m/`).href, {cache: 'no-store'})).json()).object;
+        const an = S.roles.wolf.anchor ?? {x: 0, y: 0};
+        const W0 = {o: [w0.x, w0.y], root: [w0.x + tj.width / 2 + an.x, w0.y - tj.height / 2 + an.y]};
+        out.W0 = W0;
+        const wolfDot = hitsOf('dot', 'm/m_03x05').find(x => x.d.rid === 'wolf' && x.d.x === W0.root[0] && x.d.y === W0.root[1]);
+        out.dotPos = wolfDot && [Math.abs(wolfDot.x + wolfDot.w / 2 - (c35.x + W0.root[0] * wst().geo.unit)) < 0.01, Math.abs(wolfDot.y + wolfDot.h / 2 - (c35.y + W0.root[1] * wst().geo.unit)) < 0.01];
         out.room = hitsOf('room').map(x => x.map).join();
         out.noRight = document.getElementById('right').children.length;
         // 倍率上限 6、倍率欄 max
@@ -135,11 +144,11 @@ run('map-tool', async t => {
         out.roomMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent.split('　')[0]).join();
         document.querySelector('.ctxmenu')?.remove();
         // 點小點（放大到 6 倍、點放正中央，縮小時點會疊在一起）：打開那張地圖、選取那個角色
-        const dc = {x: c35.x + 528 * wst().geo.unit, y: c35.y + 208 * wst().geo.unit};
+        const dc = {x: c35.x + W0.root[0] * wst().geo.unit, y: c35.y + W0.root[1] * wst().geo.unit};
         Object.assign(WV, {zoom: 6, ox: -dc.x * 6, oy: -dc.y * 6});
         wst().redraw();
         cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...wAt(dc)}));
-        out.dotClick = [S.sel, S.pick === wolfDot.d.oid];
+        out.dotClick = [S.sel, S.pick === wolfDot?.d.oid];
         mt.selectMap(S.sel);        // 回總覽
         await until(() => wst()?.world);
         // 時間游標在總覽：12:00
@@ -156,7 +165,7 @@ run('map-tool', async t => {
         const st = cv().st;
         out.size = [st.data.W, st.data.H];
         out.roles = st.roles.map(it => `${it.layer}:${it.rid}`).sort();
-        const wolf = st.roles.find(it => it.rid === 'wolf' && it.o.x === 512 && it.o.y === 224);
+        const wolf = st.roles.find(it => it.rid === 'wolf' && it.o.x === W0.o[0] && it.o.y === W0.o[1]);
         out.wolfRoot = wolf && [wolf.at.root.x, wolf.at.root.y];
         const sp = st.sprites.get('wolf'), rog = st.sprites.get('rogue-1');
         const opaque = (c) => {const a = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < a.length; i += 4) if (a[i]) n++; return n;};
@@ -348,7 +357,7 @@ run('map-tool', async t => {
 
         // undo 全部：兩張地圖都回到原檔一字不差；redo 一步
         for (let i = 0; i < 12; i++) await mt.undo();
-        out.undoAll = [S.hi, await readText(`${KH}.json`) === orig, await readText('m/m_03x05.json') === await (await fetch('/assets/maps/m/m_03x05.json')).text()];
+        out.undoAll = [S.hi, await readText(`${KH}.json`) === orig, await readText('m/m_03x05.json') === await (await fetch('/scripts/test/fixtures/m_03x05.json')).text()];
         await mt.redo();
         m = await readKH();
         out.redo = [S.hi, !!m.layers.find(l => l.name === 'roles')];
@@ -612,7 +621,7 @@ run('map-tool', async t => {
     t.check('點格子：選那張、記住', r.sel[0] === 'm/m_03x05' && r.sel[1] === 'm/m_03x05', r.sel.join());
     t.check('地圖 100×100 格', r.size.join() === '3200,3200', r.size.join());
     t.check('角色：三隻狼在 @wolves、三個土匪在 @bandits', r.roles.join() === '@bandits:rogue-1,@bandits:rogue-1,@bandits:rogue-1,@wolves:wolf,@wolves:wolf,@wolves:wolf', r.roles.join());
-    t.check('站的位置＝物件中心＋錨點（狼 512,224 → 528,208）', r.wolfRoot?.join() === '528,208', r.wolfRoot?.join());
+    t.check(`站的位置＝物件中心＋錨點（狼 ${r.W0.o} → ${r.W0.root}）`, r.wolfRoot?.join() === r.W0.root.join(), r.wolfRoot?.join());
     t.check('角色照 role.json 合成出圖', r.sprites.every(Boolean), r.sprites.join());
     t.check('角色不烤進底圖', r.skipBake > 20, r.skipBake);
     t.check('右欄圖層：常駐 0、@wolves 3、@bandits 3', r.layers.join() === '=0,@wolves=3,@bandits=3', r.layers.join());
