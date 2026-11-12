@@ -15,7 +15,7 @@
 - **物件格式混合**：有 template 的（`templates/animals/wolf.tj` 等）用 template，沒有的寫成 `type:"npc"`＋屬性 `id` 的點物件。遊戲只認 `type:"npc"`＋`id`；template 的 `gid` 只給 Tiled 編輯器看圖。
 - **常駐角色**放 `roles` 物件層（沒有就建）；舊圖層裡的角色歸在「常駐」底下、標它實際在哪層。
 - **地圖任務**＝`@群組` 物件層＋story.json 劇情線的 `spawns` 條件（[story-architecture.md §5.4](story-architecture.md)）。群組名稱全域唯一、也是存檔命名空間。
-- 作息 point 在這裡**唯讀**（淡色、↗ 角色分頁），point 只在角色分頁改。
+- **作息點**：作息（目的地、巡邏）只在角色分頁改，point 本身這裡也能改（見下面「改 point」）。畫三種（`spotsOf(st)`，`S.occ` 或地圖換了才重算）：所有 `point`（淡黃圈）、作息 `at` 格子（淡黃方框）、被作息用到的其他具名物件（淡黃框住整個物件；沒人用不畫），巡邏 `route` 經過的點也算；兩人以上同時停留（`occupy.js` 的 `clashOf()`）畫**紅色**，只是提示、不算進左欄 ⚠ 跟 `mapcheck.js`。滑過＝名稱（作息 point／作息格子／`<type>`・作息點）＋占用時間圖（見 [schedule-tool.md](schedule-tool.md)，時間游標開著畫白線、此刻在這的人加粗）；門也是作息點時門的浮動框一起列。點擊：只有一筆＝`gotoTab('role', [id, 'schedule', i])`（角色分頁 `openSch()`：開表單、作息段、選那張卡片、右欄切作息地圖），好幾筆＝小選單 `id 第幾筆（時間）` 挑一筆，沒人用＝沒反應；hit 順序 point 圓圈 → 格子 → 物件框，門在作息點前面。`S.occ`＝`loadRefs()` 時有作息的角色 `[{id, sch, segs}]`（排不出時刻表的 `segs:null`，時間圖寫「排不出時刻表」）。
 
 ## 版面
 
@@ -43,8 +43,15 @@
 ## 互動
 
 - 滑過角色：浮動框 id 名字、種類・圖層・格子；點＝選取（右欄跟著反白），點空地取消；**拖曳**＝整格移動（拖超過 4px 才算、綠框鬼影、放開寫檔、吃掉接著的 click）；**Del** 刪選取的；**右鍵**選單＝移到「常駐」／別的 `@群組`、刪除、↗ 角色分頁。
-- 滑過 point：誰的第幾筆作息在用；點了跳到第一個使用者的角色分頁。
-- 「顯示 ▾」（`tools.map.show`）：作息 point（預設勾）、物件名稱、格子可走、門（預設勾）。`showmenu.js` 只存勾了的＋預設勾卻取消的（`false`），讀的時候預設先套再蓋存的，所以後來才加的預設項目舊存檔也會勾。
+- 滑過 point：誰的第幾筆作息在用；點了跳到使用者的角色分頁（好幾筆跳小選單）。
+- **改 point**（2026-11-12，寫法共用角色分頁的 `tools/common/pointedit.js`，只動 point、不碰作息目的地）：
+  - 拖曳：左鍵按住 `point` 移超過 4px 才算，黃虛線框＝放開後的格子，放開寫檔（x/y＝格子左上角），吃掉接著的 click；角色疊在上面時角色優先。
+  - 右鍵空地（或 `@x,y` 作息格子）：「新增 point…」，預設＝上次新增成功的名字去掉尾巴數字（`tools.map.pointPrefix`，所有地圖共用，沒記過或剩空的＝`p`；取消、被擋不記，改名不更新）＋這張圖最小的空號（如上次 `inn-sit3` → `inn-sit1`），名稱只能英數 `-` `_`、同圖撞名擋，放進已經有 point 的物件層（沒有＝第一個物件層）、`template` 指 `templates/point.tj`。
+  - 右鍵 point：改名…（對話框標題列出 role.json 會改的「誰第幾筆」；地圖＋role.json 的 `go`／巡邏 `route` 用 `writeFiles()` 一起寫＝**一筆 undo**，兩個檔都廣播、自己 `loadRefs()`；角色分頁沒存的修改交給 doc.js 存檔時合併）、刪除…（還有作息用到擋、列出誰的第幾筆）、↗ 到角色分頁看作息（有人用才有）。其他具名物件右鍵只有 ↗。
+  - 「顯示 ▾」的作息點沒勾＝點不到也改不了。
+  - **路網過期**：地圖上方同角色分頁的橫幅（`navBanner()`），這張圖比 `navgraph.json` 新就亮（只比 mtime，放角色也會亮，接受誤報），「更新路網」走 `POST /__tools/navgraph`、重讀 navgraph 重算時間游標。
+- **物件名稱過濾**：「顯示 ▾」的「物件名稱」後面一個輸入框（`showmenu.js` 項目第 4 格 `{filter:true}`，字記在 `<key>.filter`＝`tools.map.show.filter`，角色分頁作息地圖同一套、記 `tools.role.sched.show.filter`）。`nameFilter(text)`：空白／逗號隔開好幾個關鍵字、符合任一個、不分大小寫，沒有 `*`＝部分比對、有 `*`＝萬用字元整個名字要對上，空的＝全部。只過濾畫出來的名字（框、作息點、門、hover、點擊照舊），畫名字前問 `SHOW.nameOk(name)`；邊打邊重畫、打字時沒勾就自動勾、✕ 清空、底下 `符合 n／總數`（`showMenu(onChange, disabled, {names})` 的 `names()`＝這張圖的具名物件）、有過濾時按鈕 `顯示（n）🔍▾`。
+- 「顯示 ▾」（`tools.map.show`）：作息點（key 還是 `points`，預設勾）、物件名稱、格子可走、門（預設勾）。`showmenu.js` 只存勾了的＋預設勾卻取消的（`false`），讀的時候預設先套再蓋存的，所以後來才加的預設項目舊存檔也會勾。
 
 ## 門（2026-11-11）
 
@@ -62,7 +69,7 @@
 - **目標層**：右欄「圖層／群組」點一列＝放到那裡（綠框，`S.target`；換到沒有那層的地圖就回常駐）。常駐＝`roles` 物件層，沒有就建在最後（`nextlayerid`+1）。
 - **格式**（`tools/map/edit.js`）：啟動時掃 `templates/` 底下 `type:"npc"`＋屬性 `id` 的 `.tj`（`scanTemplates()`，同一角色多個取路徑排第一的）。有 template 寫 `{id, template: <相對地圖的路徑>, x, y}`；沒有寫點物件 `{height:0, id, name:'', point:true, properties:[{id}], rotation:0, type:'npc', visible:true, width:0, x, y}`。x/y 從「站的格子」反推：格子中心 −anchor ＝ view 中心，再換回 Tiled 原點（圖塊物件左下 `(cx−w/2, cy+h/2)`、矩形左上、點物件就是中心）。物件 key 照字母排、properties 照名稱排（同 Tiled），排版走 `tiledjson.js`。
 - **選取的角色**（右欄）：角色下拉＝換成別的角色（`replaceRole()`：站的格子、物件 id 不變，格式照新角色，物件自己的其他屬性保留）、圖層下拉、站的格子、格式、重生（`respawn`，int，空白＝拿掉，template 給的標灰）、物件自己的屬性（改值／✕ 拿掉）、template 給的屬性（灰、唯讀）、加屬性（名稱＋型別 string/int/float/bool＋值；`id` 不行）、刪除。
-- **寫檔**：每個動作 `editMap()` 現讀硬碟上的地圖 → 改 → 寫回，所以別的分頁（角色分頁寫 point）的修改不會被蓋；寫完 `forget()`、廣播 `maps/<地圖>.json`、重算徽章、狀態列提醒「Tiled 開著這張圖要重新載入」。具名 NPC 放下去狀態列加 ⚠，不擋。
+- **寫檔**：每個動作 `editMap()` 現讀硬碟上的地圖 → 改 → 寫回，所以別的分頁（角色分頁寫 point）的修改不會被蓋（`writeFiles()` 也能一次寫好幾個檔，如 point 改名連 role.json）；寫完 `forget()`、廣播 `maps/<地圖>.json`、重算徽章、狀態列提醒「Tiled 開著這張圖要重新載入」。具名 NPC 放下去狀態列加 ⚠，不擋。
 - **undo／redo**（左欄 ↶↷、Ctrl+Z／Ctrl+Y）：每步記地圖前後全文，復原時現在的檔案要等於「後」才寫回「前」（不然是別處改過，擋下來、狀態列說明），跨地圖也行（會切過去）。只在記憶體、重開分頁就沒了。
 
 ## @群組（地圖任務，第 4 步）

@@ -541,6 +541,58 @@ run('map-tool', async t => {
         document.querySelector('#view [data-k=timeOn]').click();
         out.offAgain = [cv().st.npcs.length, localStorage.getItem('tools.map.time')];
 
+        // ================= 作息點：at 格子、撞了、巡邏經過、占用時間圖、時刻線、點了選一筆 =================
+        // 假作息（不靠真的 role.json）：za 08:00～20:00 在 @8,2、20:00～08:00 在 @3,6 巡邏 @8,2／@10,10；zb 10:00～12:00 在 @8,2 → @8,2 撞 10:00～12:00
+        mt.selectMap('fixture-01');
+        await until(() => cv()?.st.name === 'fixture-01' && cv().st.data);
+        const roles0 = S.roles, occ0 = S.occ;
+        const za = [{t: '@08:00', map: 'fixture-01', at: [8, 2]}, {t: '@20:00', map: 'fixture-01', at: [3, 6], do: 'patrol', route: ['@8,2', '@10,10']}];
+        const zb = [{t: '@10:00', map: 'fixture-01', at: [8, 2]}];
+        S.roles = {...roles0, za: {schedule: za}, zb: {schedule: zb}};
+        S.occ = [{id: 'za', sch: za, segs: [{kind: 'stay', i: 0, s: 480, len: 720}, {kind: 'stay', i: 1, s: 1200, len: 720}]},
+            {id: 'zb', sch: zb, segs: [{kind: 'stay', i: 0, s: 600, len: 120}]}];
+        cv().st.redraw();
+        out.spots = [...cv().st.spots.values()].map(x => `${x.name}:${x.n.type}:${x.clash ? '撞' : ''}`).sort();
+        const tileMid = (tx, ty) => {const s = cv().st, b = cv().getBoundingClientRect(); return {clientX: b.left + s.pz.o.x + (tx * 32 + 16 - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (ty * 32 + 16 - s.data.H / 2) * s.pz.K};};
+        const occLabs = () => [...document.querySelectorAll('#view .tip .occ .orow:not(.axis) .olab')].map(x => x.textContent + (x.tagName === 'B' ? '*' : ''));
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...tileMid(8, 2)}));
+        out.spotTip = [document.querySelector('#view .tip .tname')?.textContent, occLabs(), document.querySelectorAll('#view .tip .oseg.clash').length,
+            document.querySelectorAll('#view .tip .oseg.patrol').length, !document.querySelector('#view .tip .onow'), cv().style.cursor];
+        mt.setTime(11 * 60, true);
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...tileMid(8, 2), clientX: tileMid(8, 2).clientX + 1}));
+        out.spotNow = [occLabs(), !!document.querySelector('#view .tip .onow')];
+        mt.setTime(11 * 60, false);
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...tileMid(8, 2)}));
+        out.spotMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        document.querySelector('.ctxmenu')?.remove();
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...tileMid(10, 10)}));
+        out.patrolTip = [document.querySelector('#view .tip .tname')?.textContent, occLabs(), document.querySelectorAll('#view .tip .oseg.clash').length];
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...tileMid(3, 6)}));
+        out.oneNoMenu = !document.querySelector('.ctxmenu');
+        S.roles = roles0;
+        S.occ = occ0;
+        cv().st.redraw();
+
+        // ================= 物件名稱過濾 =================
+        const {nameFilter} = await import('/tools/common/showmenu.js');
+        const NM = ['sit-1', 'sit-2', 'cabinet-sit', 'bed', 'trump-p1', 'Musk-P1'];
+        out.nf = ['', 'sit', 'sit-*', '*-p1', 'sit bed', 'bed,trump', 'SIT-1', '*'].map(q => `${q}=${NM.filter(nameFilter(q)).join('|')}`);
+        mt.selectMap('fixture-02');
+        await until(() => cv()?.st.name === 'fixture-02' && cv().st.data);
+        const showBtn = () => document.querySelector('#view .showbtn');
+        showBtn().click();
+        const fpop = document.querySelector('.showpop'), finp = fpop.querySelector('[data-filter=names]'), fcount = () => fpop.querySelector('.fcount').textContent;
+        const type = (v) => {finp.value = v; finp.dispatchEvent(new Event('input'));};
+        out.f0 = [fcount(), fpop.querySelector('[data-show=names]').checked];
+        type('kh');
+        out.f1 = [fcount(), fpop.querySelector('[data-show=names]').checked, mt.SHOW.show.names, /🔍/.test(showBtn().textContent), localStorage.getItem('tools.map.show.filter')];
+        type('*-bad');
+        out.f2 = [fcount(), mt.SHOW.nameOk('to-kh-bad'), mt.SHOW.nameOk('to-kh')];
+        fpop.querySelector('.fclear').click();
+        out.f3 = [fcount(), finp.value, /🔍/.test(showBtn().textContent), localStorage.getItem('tools.map.show.filter'), mt.SHOW.nameOk('anything')];
+        fpop.querySelector('[data-show=names]').click();
+        showBtn().click();
+
         // ================= 門：點了進那張圖 =================
         const scr = (p) => {const s = cv().st, b = cv().getBoundingClientRect(); return {clientX: b.left + s.pz.o.x + (p.x - s.data.W / 2) * s.pz.K, clientY: b.top + s.pz.o.y + (p.y - s.data.H / 2) * s.pz.K};};
         const doorOf = (nm) => cv().st.ports.find(p => p.o.name === nm);
@@ -588,6 +640,90 @@ run('map-tool', async t => {
         cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...mid(doorOf('to-kh-bad'))}));
         await settle();
         out.noLand = [S.sel, document.getElementById('status').textContent, S.back.at(-1)];
+
+        // ================= 作息 point：右鍵新增、拖曳、改名（連 role.json 一筆 undo）、刪除 =================
+        const roleFile = async () => (await (await jsonDir.getFileHandle('role.json')).getFile()).text();
+        const writeRole = async (text) => {const w = await (await jsonDir.getFileHandle('role.json')).createWritable(); await w.write(text); await w.close();};
+        const orig01 = await readText(`${FX}.json`), origRole = await roleFile();
+        const objs01 = async () => JSON.parse(await readText(`${FX}.json`)).layers.filter(l => l.type === 'objectgroup').flatMap(l => l.objects);
+        const pt01 = async (nm) => (await objs01()).find(o => o.name === nm);
+        mt.selectMap(FX);
+        await settle();
+        out.navBanner = document.querySelector('#view .navstale')?.textContent ?? '';
+        const hiP = S.hi;
+        saved.length = 0;
+        cv().dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, ...tileMid(9, 2)}));
+        out.emptyMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        let pp = (document.querySelector('.ctxmenu button').click(), null);
+        await answer(d => {out.newDef = d.querySelector('input').value; return 'ok';});
+        await until(() => S.hi === hiP + 1);
+        await settle();
+        const f1 = JSON.parse(await readText(`${FX}.json`));
+        out.added = [JSON.stringify(await pt01('p1')), f1.nextobjectid, f1.layers[1].objects.length, saved.includes(`maps/${FX}.json`), !!cv().st.data.named.get('p1')];
+        // 滑過：手掌、提示拖曳／右鍵
+        const p1c = () => scr(cv().st.data.named.get('p1').cen);
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...p1c()}));
+        out.ptHover = [cv().style.cursor, document.querySelector('#view .tip .thint')?.textContent];
+        // 拖到 5,4
+        cv().dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, button: 0, ...p1c()}));
+        cv().dispatchEvent(new PointerEvent('pointermove', {bubbles: true, ...tileMid(5, 4)}));
+        out.pdrag = [cv().st.pdrag?.moved, cv().st.pdrag?.to.x, cv().st.pdrag?.to.y];
+        cv().dispatchEvent(new PointerEvent('pointerup', {bubbles: true, ...tileMid(5, 4)}));
+        cv().dispatchEvent(new MouseEvent('click', {bubbles: true, ...tileMid(5, 4)}));
+        await until(() => S.hi === hiP + 2);
+        await settle();
+        out.ptMoved = [(await pt01('p1'))?.x, (await pt01('p1'))?.y];
+        // 有作息用 p1：刪除擋、改名連 role.json
+        const roleData = JSON.parse(origRole);
+        roleData.zz = {schedule: [{t: '@08:00', map: FX, go: 'p1'}, {t: '@12:00', map: FX, at: [1, 1], do: 'patrol', route: ['p1', '@1,1']}]};
+        await writeRole(JSON.stringify(roleData, null, 2));
+        const roleWithZz = await roleFile();
+        chan.postMessage({type: 'saved', file: 'role.json'});
+        await until(() => S.roles.zz);
+        cv().dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, ...p1c()}));
+        out.ptMenu = [...document.querySelectorAll('.ctxmenu button')].map(b => b.textContent);
+        document.querySelector('.ctxmenu')?.remove();
+        pp = mt.deletePoint(FX, 'p1');
+        await answer(d => {out.delBlock = [d.querySelector('.title').textContent, d.querySelector('.body').textContent]; return 'ok';});
+        await pp;
+        out.delBlocked = [!!await pt01('p1'), S.hi];
+        // 改成已有的名字擋：先加 p2 在 1,1
+        pp = mt.newPoint(FX, [1, 1]);
+        await answer(d => {out.newDef2 = d.querySelector('input').value; return 'ok';});
+        await pp;
+        pp = mt.renamePoint(FX, 'p1');
+        await answer(d => {d.querySelector('input').value = 'p2'; return 'ok';});
+        await pp;
+        out.renameDup = [document.getElementById('status').textContent, S.hi];
+        saved.length = 0;
+        pp = mt.renamePoint(FX, 'p1');
+        await answer(d => {out.renameTitle = d.querySelector('.title').textContent; d.querySelector('input').value = 'home'; return 'ok';});
+        await pp;
+        await settle();
+        const rz = JSON.parse(await roleFile()).zz?.schedule;
+        out.ptRenamed = [!!await pt01('home'), !await pt01('p1'), rz?.[0].go, rz?.[1].route.join(), saved.includes('role.json'), saved.includes(`maps/${FX}.json`),
+            S.hist[S.hi - 1].files.map(f => f.rel).join(), S.roles.zz?.schedule[0].go];
+        // 沒人用的 p2：確認後刪
+        pp = mt.deletePoint(FX, 'p2');
+        await answer(() => 'ok');
+        await pp;
+        out.ptDeleted = !await pt01('p2');
+        // undo 改名：地圖＋role.json 一起回去
+        await mt.undo();
+        await mt.undo();
+        out.undoRename = [!!await pt01('p1'), JSON.parse(await roleFile()).zz?.schedule[0].go, S.roles.zz?.schedule[0].go];
+        // 記住上次的前綴：新增 inn-sit3 → 下次預設 inn-sit1；取消不記
+        pp = mt.newPoint(FX, [3, 3]);
+        await answer(d => {d.querySelector('input').value = 'inn-sit3'; return 'ok';});
+        await pp;
+        pp = mt.newPoint(FX, [4, 3]);
+        await answer(d => {out.prefixDef = d.querySelector('input').value; d.querySelector('input').value = 'zzz9'; return 'cancel';});
+        await pp;
+        out.prefixKey = localStorage.getItem('tools.map.pointPrefix');
+        // 全部 undo：地圖一字不差，role.json 回到加了 zz 那時
+        while (S.hi > hiP) await mt.undo();
+        out.undoAllPt = [await readText(`${FX}.json`) === orig01, await roleFile() === roleWithZz];
+        await writeRole(origRole);
         chan.close();
         return out;
     }, SETUP.toString());
@@ -710,7 +846,43 @@ run('map-tool', async t => {
     t.check('滑過壞門：⚠ 原因、點了不會跳', /⚠ 門「to-nowhere」指到不存在的地圖/.test(r.badTip) && /點了不會跳/.test(r.badTip), r.badTip);
     t.check('點地圖不存在的門：不跳、狀態列提示', r.noJump[0] === 'fixture-02' && /不存在的地圖/.test(r.noJump[1]), r.noJump.join(' | '));
     t.eq('顯示 ▾ 關掉門：點不到', r.hidden, 'fixture-02');
+    t.eq('作息點：at 格子（含巡邏 route 經過的）都算、兩人同時停留＝撞', JSON.stringify(r.spots), JSON.stringify(['@10,10:at:', '@3,6:at:', '@8,2:at:撞']));
+    t.eq('滑過格子：名稱（作息格子）、每人一列、撞了一段、巡邏經過斜線（跨午夜兩截）、沒開時間游標沒白線、手指',
+        JSON.stringify(r.spotTip), JSON.stringify(['@8,2（作息格子）', ['撞了', 'za 1,2 ↻', 'zb 1'], 1, 2, true, 'pointer']));
+    t.eq('時間游標 11:00：白線、此刻停在這的人加粗', JSON.stringify(r.spotNow), JSON.stringify([['撞了', 'za 1,2 ↻*', 'zb 1*'], true]));
+    t.eq('點多人用的點：小選單列每一筆（時間）', JSON.stringify(r.spotMenu), JSON.stringify(['za 1（@08:00）', 'za 2（@20:00）', 'zb 1（@10:00）']));
+    t.eq('只有巡邏經過的點：一列、不算撞', JSON.stringify(r.patrolTip), JSON.stringify(['@10,10（作息格子）', ['za 2 ↻'], 0]));
+    t.check('只有一筆的點：直接跳、不跳選單', r.oneNoMenu);
+    t.eq('名稱過濾：部分比對、* 整個對上、空白逗號任一個、不分大小寫', JSON.stringify(r.nf), JSON.stringify([
+        '=sit-1|sit-2|cabinet-sit|bed|trump-p1|Musk-P1', 'sit=sit-1|sit-2|cabinet-sit', 'sit-*=sit-1|sit-2', '*-p1=trump-p1|Musk-P1',
+        'sit bed=sit-1|sit-2|cabinet-sit|bed', 'bed,trump=bed|trump-p1', 'SIT-1=sit-1', '*=sit-1|sit-2|cabinet-sit|bed|trump-p1|Musk-P1']));
+    t.eq('過濾框：一開始全部符合、物件名稱沒勾', JSON.stringify(r.f0), JSON.stringify(['符合 3／3', false]));
+    t.eq('打字：邊打邊算、自動勾物件名稱、按鈕 🔍、記住', JSON.stringify(r.f1), JSON.stringify(['符合 2／3', true, true, true, 'kh']));
+    t.eq('萬用字元：*-bad 只中 to-kh-bad', JSON.stringify(r.f2), JSON.stringify(['符合 1／3', true, false]));
+    t.eq('✕ 清空：全部符合、沒 🔍', JSON.stringify(r.f3), JSON.stringify(['符合 3／3', '', false, '', true]));
     t.check('落腳點找不到：照樣進去、提示', r.noLand[0] === 'm_04x05/karen-home' && /找不到落腳點「nope」/.test(r.noLand[1]) && r.noLand[2] === 'fixture-02', r.noLand.join(' | '));
+
+    // ---- 作息 point ----
+    t.check('路網過期橫幅：這張圖比 navgraph.json 新', /路網已過期（fixture-01\.json 比 navgraph\.json 新）更新路網/.test(r.navBanner), r.navBanner);
+    t.eq('右鍵空地：新增 point…', JSON.stringify(r.emptyMenu), JSON.stringify(['新增 point…']));
+    t.eq('新增：預設 p1', r.newDef, 'p1');
+    t.check('新增：point.tj template、格子左上角、放第一個物件層、nextobjectid +1、廣播、畫面有',
+        r.added[0] === JSON.stringify({id: 10, name: 'p1', template: '../templates/point.tj', x: 288, y: 64}) && r.added[1] === 11 && r.added[2] === 3 && r.added[3] && r.added[4], JSON.stringify(r.added));
+    t.check('滑過 point：手掌、提示拖曳右鍵', r.ptHover[0] === 'grab' && /拖＝移動、右鍵＝改名／刪除/.test(r.ptHover[1] ?? ''), r.ptHover.join(' | '));
+    t.eq('拖曳：黃框在放開的格子', r.pdrag.join(), 'true,160,128');
+    t.eq('放開寫檔', r.ptMoved.join(), '160,128');
+    t.eq('右鍵 point：改名、刪除、↗', JSON.stringify(r.ptMenu), JSON.stringify(['改名 p1…', '刪除 p1…', '↗ 到角色分頁看作息']));
+    t.check('有作息用：刪除擋、列出誰的第幾筆', r.delBlock[0] === '不能刪 p1' && /zz 第 1 筆、zz 第 2 筆/.test(r.delBlock[1]) && r.delBlocked[0], r.delBlock.join(' | '));
+    t.eq('預設名稱取最小空號', r.newDef2, 'p2');
+    t.check('改成已有的名字擋', /這張圖已經有 p2/.test(r.renameDup[0]), r.renameDup.join());
+    t.check('改名對話框列出 role.json 會改的', /role\.json 一起改：zz 第 1 筆、zz 第 2 筆/.test(r.renameTitle), r.renameTitle);
+    t.check('改名：地圖＋role.json 的 go／route 一筆寫完、兩個都廣播、重讀角色',
+        r.ptRenamed[0] && r.ptRenamed[1] && r.ptRenamed[2] === 'home' && r.ptRenamed[3] === 'home,@1,1' && r.ptRenamed[4] && r.ptRenamed[5] && r.ptRenamed[6] === 'maps/fixture-01.json,json/role.json' && r.ptRenamed[7] === 'home',
+        JSON.stringify(r.ptRenamed));
+    t.check('沒人用的 point：確認後刪', r.ptDeleted);
+    t.check('undo 改名：地圖跟 role.json 一起回去', r.undoRename.join() === 'true,p1,p1', r.undoRename.join());
+    t.check('新增記住前綴：inn-sit3 → 下次預設 inn-sit1、取消不記', r.prefixDef === 'inn-sit1' && r.prefixKey === 'inn-sit', `${r.prefixDef} ${r.prefixKey}`);
+    t.check('undo 全部：地圖、role.json 一字不差', r.undoAllPt.every(Boolean), r.undoAllPt.join());
 
     // ---- 角色分頁改名／刪除連動地圖 ----
     await t.page.goto(new URL('/tools/role/', t.page.url()).href);

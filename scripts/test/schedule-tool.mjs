@@ -91,7 +91,10 @@ run('schedule-tool', async t => {
         const tip = () => right().querySelector('.smap .smaptip');
         const tipText = () => (tip().hidden ? '' : [...tip().children].map(c => c.textContent).join('\n'));
         out.hover = tipText();
-        out.hoverBold = tip().querySelector('.tmine b')?.textContent;
+        // 占用時間圖：每列 label（mine＝*）、選中那筆那段加白框、有刻度
+        const occLabs = () => [...tip().querySelectorAll('.occ .orow:not(.axis) .olab')].map(x => x.textContent + (x.closest('.mine') ? '*' : ''));
+        out.hoverOcc = occLabs();
+        out.hoverBold = [!!tip().querySelector('.occ .mine .oseg.sel'), !!tip().querySelector('.occ .oaxis'), !tip().querySelector('.occ .onow')];
         out.noInfo = [!right().querySelector('.smap .info'), !cv().hasAttribute('title'), !!right().querySelector('.smap .help[title]')];
         // 選中那張的編號反白：膠囊裡數字左邊是白底（橘點畫在藍線上面）
         const dpr = devicePixelRatio || 1, px0 = cv().getContext('2d').getImageData(Math.round((o.x + (p.x - d.W / 2) * K - 7) * dpr), Math.round((o.y + (p.y - d.H / 2) * K) * dpr), 1, 1).data;
@@ -125,6 +128,45 @@ run('schedule-tool', async t => {
         out.times0 = cards()[0].querySelector('.times')?.textContent;
         out.times0Want = `出發 ${re.SP.hhmm(p0.dep)} → 抵達 06:20（走 ${p0.cost} 分）`;
         out.dep0 = re.SP.mod(p0.dep + p0.cost) === 6 * 60 + 20;
+
+        // 時間選擇器：不能打字，點時／分彈出 5 格（中間＝目前值、循環），滾就寫、連續滾一步 undo，點格子寫入並關閉，Esc 關
+        const tpop = () => document.querySelector('.tpick-pop');
+        const cellsOf = () => [...tpop().children].map(c => c.textContent + (c.classList.contains('cur') ? '*' : ''));
+        const wheel = (n) => {for (let i = 0; i < Math.abs(n); i++) tpop().dispatchEvent(new WheelEvent('wheel', {deltaY: Math.sign(n) * 100, bubbles: true, cancelable: true}));};
+        const seg = (k, s) => document.querySelector(`[data-k="${k}.${s}"]`);
+        const down = (el) => el.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
+        const h0 = S.hi, tk = 'schedule.0.t';
+        out.tpNoInput = [document.querySelector(`.tpick[data-k="${tk}"]`)?.textContent, !document.querySelector(`input[data-k="${tk}"]`)];
+        down(seg(tk, 'h')); seg(tk, 'h').click();
+        out.tpOpen = cellsOf();
+        wheel(3);
+        out.tpWheel = [S.data.trump.schedule[0].t, S.hi - h0, cellsOf()];
+        down(tpop().children[4]); tpop().children[4].click();
+        out.tpClick = [S.data.trump.schedule[0].t, S.hi - h0, !tpop()];
+        re.undo();
+        out.tpUndo = S.data.trump.schedule[0].t;
+        down(seg(tk, 'm')); seg(tk, 'm').click();
+        wheel(-21);
+        out.tpWrap = [S.data.trump.schedule[0].t, cellsOf()];
+        document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.tpEsc = !tpop();
+        re.undo();
+        re.set('trump', ['schedule', 0, 't'], undefined);
+        out.tpEmpty = document.querySelector(`.tpick[data-k="${tk}"]`)?.textContent;
+        down(seg(tk, 'm')); seg(tk, 'm').click();
+        out.tpEmptyOpen = cellsOf();
+        down(tpop().children[3]); tpop().children[3].click();
+        out.tpEmptyPick = S.data.trump.schedule[0].t;
+        while (S.hi > h0) re.undo();
+        out.tpBack = [S.data.trump.schedule[0].t, S.hi === h0];
+        // 用滾輪把選擇器捲到 want（每段走最短的方向），捲完點外面關掉
+        const pickT =(k, want) => want.split(':').forEach((w, i) => {
+            const s = seg(k, 'hm'[i]), n = i ? 60 : 24;
+            down(s); s.click();
+            const d = ((+w - +tpop().querySelector('.cur').textContent) % n + n) % n;
+            wheel(d > n / 2 ? d - n : d);
+            down(document.body);
+        });
         // 工具算的時刻表跟遊戲 ScheduleManager 一樣（全部角色）
         out.tool = Object.fromEntries(Object.keys(S.data).filter(id => S.data[id].schedule?.length).map(id => {
             const p = re.SP.buildPlan(S.data[id].schedule, S.ext.nav.edges, S.ext.nav.nodes).plan;
@@ -286,6 +328,7 @@ run('schedule-tool', async t => {
         const hist0 = S.hi;
         await at('sit-1', 'pointermove');
         out.hoverOthers = tipText();
+        out.hoverOthersOcc = occLabs();
         await at('sit-1', 'click');
         out.leftNoop = [S.data.trump.schedule[0].go, S.hi === hist0];
         out.objMenu = await ctxObj('sit-1', '改成第 1 筆的目的地');
@@ -306,7 +349,7 @@ run('schedule-tool', async t => {
         evAt(cell[0] * 32 + 5, cell[1] * 32 + 5, 'pointermove');
         out.cellHover = [cv().st.cell?.key, JSON.stringify(cv().st.cell?.rect), tipText()];
         let defT = '';
-        out.addAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {const i = dl.querySelector('[data-k=arriveAt]'); defT = i.value; i.value = '12:00'; return 'ok';});
+        out.addAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {defT = dl.querySelector('[data-k=arriveAt]').textContent; pickT('arriveAt', '12:00'); return 'ok';});
         out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i];
         out.addedAtWant = JSON.stringify({t: '@12:00', map: F1, at: cell});
         // 臨時補路網：時刻表算得出來、橫幅說有格子還沒進路網
@@ -316,11 +359,14 @@ run('schedule-tool', async t => {
         out.atBanner = right().querySelector('.smap .stale')?.textContent;
         await until(() => cv()?.st.data);
         out.atStop = [...cv().st.data.named.keys()].length > 0 && !!re.SM.spotOf(cv().st.data, `@${cell.join(',')}`);
+        // 地圖上畫 at 方框：畫的時候就算好這張圖的作息點（含這一格）
+        await sleep(30);
+        out.atBox = [!!cv().st.spots?.has(`@${cell.join(',')}`), cv().st.spots?.get(`@${cell.join(',')}`)?.[0]?.id];
         // 改成物件：at 換成 go、key 位置不變
         await ctxObj('sit-1', '改成第 2 筆的目的地');
         out.atToGo = JSON.stringify(S.data.trump.schedule[1]);
         // 同一時間擋下
-        out.dupAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {dl.querySelector('[data-k=arriveAt]').value = '06:20'; return 'ok';});
+        out.dupAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), () => {pickT('arriveAt', '06:20'); return 'ok';});
         out.dupT = [S.data.trump.schedule.length, $('status').textContent];
         // 走不到的格子：新增目的地反灰
         out.wallMenu = wall0 ? await ctx(wall0[0] * 32 + 16, wall0[1] * 32 + 16) : null;
@@ -341,7 +387,14 @@ run('schedule-tool', async t => {
         // 顯示 ▾：預設只勾「這個角色其他行程」；勾「物件名稱」記住
         right().querySelector('.smap .showbtn').click();
         const pop = document.querySelector('.showpop');
-        out.showDefault = [...pop.querySelectorAll('input')].map(i => `${i.dataset.show}:${i.checked}`);
+        out.showDefault = [...pop.querySelectorAll('input[data-show]')].map(i => `${i.dataset.show}:${i.checked}`);
+        // 物件名稱後面有過濾框，打字只過濾名字、記在自己的 key
+        const sinp = pop.querySelector('[data-filter=names]');
+        sinp.value = 'sit-*'; sinp.dispatchEvent(new Event('input'));
+        out.schFilter = [pop.querySelector('.fcount')?.textContent.startsWith('符合 '), re.SM.nameOk('sit-1'), re.SM.nameOk('trump-p1'), localStorage.getItem('tools.role.sched.show.filter'), pop.querySelector('[data-show=names]').checked];
+        pop.querySelector('.fclear').click();
+        pop.querySelector('[data-show=names]').click();
+        localStorage.removeItem('tools.role.sched.show.filter');
         pop.querySelector('[data-show=grid]').click();
         out.showSaved = [localStorage.getItem('tools.role.sched.show'), right().querySelector('.smap .showbtn').textContent, re.SM.show.grid];
         // 格子可走：牆（擋住）那格畫紅
@@ -488,8 +541,9 @@ run('schedule-tool', async t => {
     t.eq('trump-inn-f1 畫成 15×15 格（480×480）', JSON.stringify(r.size), JSON.stringify([480, 480]));
     t.eq('具名物件：trump-p1、door、stair-up', JSON.stringify(r.named), JSON.stringify([true, true, true]));
     t.eq('烤好的圖：翻轉的樓梯、地板都有畫', JSON.stringify(r.pixels), JSON.stringify([true, true]));
-    t.check('滑過物件：浮動框顯示名稱、type、第幾筆作息＋時間', r.hover.startsWith('trump-p1（point）\n作息 1（@06:20）\n'), r.hover);
-    t.eq('浮動框：選中那張加粗、離開就藏', JSON.stringify([r.hoverBold, r.tipGone]), JSON.stringify(['1（@06:20）', true]));
+    t.check('滑過物件：浮動框顯示名稱、type、占用時間圖', r.hover.startsWith('trump-p1（point）\n'), r.hover);
+    t.check('占用時間圖：這個角色排第一列（橘）、別人在後面', r.hoverOcc[0] === 'trump 1*' && r.hoverOcc.slice(1).every(x => !x.endsWith('*')), JSON.stringify(r.hoverOcc));
+    t.eq('占用時間圖：選中那筆加白框、有刻度、沒時刻線；離開就藏', JSON.stringify([...r.hoverBold, r.tipGone]), JSON.stringify([true, true, true, true]));
     t.eq('沒有下方資訊列、canvas 沒 title、說明在 ?', JSON.stringify(r.noInfo), JSON.stringify([true, true, true]));
     t.check('選中那張的編號反白（白底，蓋在路線上面）', r.selWhite);
     t.eq('地圖的倍率自己一組', JSON.stringify(r.zoomSep), JSON.stringify([1.5, true]));
@@ -504,6 +558,17 @@ run('schedule-tool', async t => {
     t.eq('預設選第 1 張卡片', JSON.stringify(r.firstSel), JSON.stringify([true, false]));
     t.eq('卡片時刻表：出發（倒推）→ 抵達、走幾分', r.times0, r.times0Want);
     t.check('@ 抵達倒推出發', r.dep0);
+    t.eq('時間選擇器：顯示 HH:MM、沒有輸入框', JSON.stringify(r.tpNoInput), JSON.stringify(['06:20', true]));
+    t.eq('點「時」：5 格、中間＝目前值', JSON.stringify(r.tpOpen), JSON.stringify(['04', '05', '06*', '07', '08']));
+    t.eq('滾輪 3 格：立刻寫、併成一步 undo、選單跟著捲', JSON.stringify(r.tpWheel), JSON.stringify(['@09:20', 1, ['07', '08', '09*', '10', '11']]));
+    t.eq('點格子：寫入、還是同一步 undo、關閉', JSON.stringify(r.tpClick), JSON.stringify(['@11:20', 1, true]));
+    t.eq('undo 一次回到原本時間', r.tpUndo, '@06:20');
+    t.eq('分鐘往上捲 21 格繞過 00、小時不動', JSON.stringify(r.tpWrap), JSON.stringify(['@06:59', ['57', '58', '59*', '00', '01']]));
+    t.check('Esc 關閉選單', r.tpEsc);
+    t.eq('空的時間顯示 --:--', r.tpEmpty, '--:--');
+    t.eq('空的從 08:00 起算', JSON.stringify(r.tpEmptyOpen), JSON.stringify(['58', '59', '00*', '01', '02']));
+    t.eq('空的點一格就寫成合法 HH:MM', r.tpEmptyPick, '08:01');
+    t.eq('全部 undo 回原狀', JSON.stringify(r.tpBack), JSON.stringify(['@06:20', true]));
     t.eq('麵包屑：2F → 1F，目前 1F', JSON.stringify(r.crumbs), JSON.stringify(['m_04x05/trump-inn-f2', 'm_04x05/trump-inn-f1*']));
     t.eq('1F 路線：有線、都走得到、每段至少兩點', JSON.stringify(r.lines), JSON.stringify([true, true, true]));
     t.check('路線終點在目的地的站位格', r.endsAtDest);
@@ -534,7 +599,7 @@ run('schedule-tool', async t => {
     t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
-    t.check('滑過別人用的點：列出誰的第幾筆、提示右鍵', /^sit-1（[^\n]*）\n[^\n]*musk 2（@12:10）[^\n]*\n右鍵＝新增目的地／改目的地…/.test(r.hoverOthers), r.hoverOthers);
+    t.check('滑過別人用的點：占用時間圖列出誰的第幾筆、提示右鍵', r.hoverOthersOcc.some(x => /^musk (\d+,)*2(,|$)/.test(x)) &&r.hoverOthers.endsWith('右鍵＝新增目的地／改目的地…'), JSON.stringify([r.hoverOthersOcc, r.hoverOthers]));
     t.eq('左鍵點物件不改資料', JSON.stringify(r.leftNoop), JSON.stringify(['trump-p1', true]));
     t.eq('右鍵物件：新增目的地／改成第 1 筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成第 1 筆的目的地']));
     t.eq('改成第 1 筆的目的地：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
@@ -545,12 +610,14 @@ run('schedule-tool', async t => {
     t.check('格子還沒進路網：時刻表先臨時算', /抵達 12:00/.test(r.atTimes ?? ''), r.atTimes);
     t.check('橫幅：N 個作息格子還沒進路網', /1 個作息格子還沒進路網/.test(r.atBanner ?? ''), r.atBanner);
     t.eq('改成物件：at 換成 go、key 位置不變', r.atToGo, JSON.stringify({t: '@12:00', map: 'm_04x05/trump-inn-f1', go: 'sit-1'}));
+    t.eq('作息地圖畫 at 格子方框（畫的時候就算好作息點）', JSON.stringify(r.atBox), JSON.stringify([true, 'trump']));
     t.eq('同一時間擋下', JSON.stringify([r.dupAsk, r.dupT]), JSON.stringify([['新增目的地'], [3, '第 1 筆已經是 06:20 抵達']]));
     t.check('走不到的格子：新增目的地反灰', r.wallMenu?.[0] === '新增目的地…×', JSON.stringify(r.wallMenu));
     t.eq('都 undo 回去', JSON.stringify(r.insUndo), JSON.stringify([2, true]));
     t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
     t.eq('← 返回 回到點門前那張', JSON.stringify(r.backed), JSON.stringify(['m_04x05/trump-inn-f1', true]));
     t.eq('顯示 ▾ 預設只勾本角色其他行程', JSON.stringify(r.showDefault), JSON.stringify(['mine:true', 'others:false', 'names:false', 'grid:false']));
+    t.eq('作息地圖也有名稱過濾框：sit-* 只中 sit-1、記自己的 key、自動勾物件名稱', JSON.stringify(r.schFilter), JSON.stringify([true, true, false, 'sit-*', true]));
     t.eq('勾格子可走：記住、按鈕數字', JSON.stringify(r.showSaved), JSON.stringify(['{"mine":true,"grid":true}', '顯示（2）▾', true]));
     t.check('格子權重有算出牆', r.wall);
     t.eq('地圖沒比 navgraph.json 新：沒有過期提示', JSON.stringify(r.notStale), JSON.stringify(['[]', true]));

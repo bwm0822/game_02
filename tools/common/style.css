@@ -38,6 +38,10 @@ label { white-space: nowrap; }
 .showpop { position: fixed; z-index: 10; display: flex; flex-direction: column; gap: 2px; padding: 6px 10px; font-size: 14px; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
 .showpop label { display: inline-flex; align-items: center; gap: 4px; }
 .showpop label:has(:disabled) { opacity: 0.4; }
+.showpop .fline { display: flex; align-items: center; gap: 4px; }
+.showpop .fname { width: 130px; font-size: 13px; }
+.showpop .fclear { padding: 0 5px; font-size: 12px; }
+.showpop .fcount { margin-left: 22px; font-size: 12px; }
 .showpop hr { width: 100%; margin: 3px 0; border: none; border-top: 1px solid #555; }
 input[data-combo] { padding-right: 20px; background: #2b2d31 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23999'/%3E%3C/svg%3E") no-repeat right 6px center; }
 .combo { position: fixed; z-index: 10; max-height: 360px; overflow: auto; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
@@ -47,6 +51,33 @@ input[data-combo] { padding-right: 20px; background: #2b2d31 url("data:image/svg
 .combo .opt.cur { color: #fc8; }
 .combo .opt.cur::before { content: '✓ '; }
 .combo .lab { color: #888; margin-left: 10px; }
+.tpick { display: inline-flex; align-items: center; padding: 1px 4px; background: #2b2d31; border: 1px solid #555; border-radius: 3px; font-variant-numeric: tabular-nums; }
+.tpick.bad { color: #ff7b7b; border-color: #ff5555; }
+.tp-seg { padding: 0 3px; cursor: pointer; border-radius: 2px; }
+.tp-seg:hover { background: #3a3d44; }
+.tpick-pop { position: fixed; z-index: 20; background: #2b2d31; border: 1px solid #666; box-shadow: 0 4px 12px rgba(0,0,0,.5); font-variant-numeric: tabular-nums; user-select: none; }
+.tpick-pop .tp-cell { padding: 1px 10px; text-align: center; cursor: pointer; color: #999; }
+.tpick-pop .tp-cell:hover { background: #3a3d44; color: #ddd; }
+.tpick-pop .tp-cell.cur { background: #2f6db5; color: #fff; }
+.occ { width: 240px; margin: 3px 0; font-size: 12px; }
+.occ .orow { display: flex; align-items: center; gap: 4px; height: 13px; margin-bottom: 2px; }
+.occ .olab { flex: 0 0 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #ccc; }
+.occ .mine .olab { color: #e8743b; }
+.occ .clash .olab { color: #ff6b6b; }
+.occ .otrack { position: relative; flex: 1; height: 10px; background: #333; overflow: hidden; }
+.occ .otrack .hr { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.08); }
+.occ .otrack .hr.six { background: rgba(255,255,255,.22); }
+.occ .oseg { position: absolute; top: 0; bottom: 0; }
+.occ .oseg.patrol { background: repeating-linear-gradient(45deg, rgba(156,204,101,.55) 0 2px, transparent 2px 4px); }
+.occ .oseg.clash { background: #e53935; }
+.occ .oseg.sel { box-shadow: inset 0 0 0 1.5px #fff; }
+.occ .onow { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: #fff; }
+.occ .onone { flex: 1; color: #ff7b7b; }
+.occ .axis { height: 11px; }
+.occ .oaxis { position: relative; flex: 1; height: 11px; color: #888; font-size: 10px; }
+.occ .oaxis span { position: absolute; transform: translateX(-50%); }
+.occ .oaxis span:first-child { transform: none; }
+.occ .oaxis span:last-child { transform: translateX(-100%); }
 .dim { color: #888; }
 .hint { color: #888; font-size: 15px; margin: 4px 0; }
 .title { font-weight: bold; margin: 8px 0 4px; }
@@ -132,3 +163,6 @@ dialog.itempick { width: 720px; }
 .imgCell { width: 110px; text-align: center; cursor: pointer; padding: 4px; border-radius: 3px; font-size: 14px; overflow: hidden; }
 .imgCell:hover { background: #33363c; }
 .imgCell.sel { background: #2f6db5; }
+/* 路網過期橫幅（pointedit.js 的 navBanner，角色分頁作息地圖、地圖分頁） */
+.navstale { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 6px; padding: 4px 8px; background: #4a3a10; border: 1px solid #b8902a; border-radius: 4px; color: #ffe08a; font-size: 13px; }
+.navmsg { flex: none; margin-bottom: 6px; font-size: 12px; white-space: pre-wrap; max-height: 6em; overflow: auto; }

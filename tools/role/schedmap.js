@@ -2,15 +2,18 @@
 import {h} from '../common/dom.js';
 import * as PZ from '../common/panzoom.js';
 import {bestPath} from '../../src/data/navgrid.js';
-import {edgeCost, hhmm, mod, destOf, atName} from '../../src/data/schedplan.js';
+import {edgeCost, hhmm, mod, destOf, atName, parseAt} from '../../src/data/schedplan.js';
 import {createShowMenu} from '../common/showmenu.js';
 import {mapData, gridOf, drawGrid, snapTile, spotOf} from '../common/mapview.js';
 import * as DR from '../common/doors.js';
+import {navBanner} from '../common/pointedit.js';
+import {spotsOn, clashOf, occupyEl} from './occupy.js';
 export {setReader, forget, mapData, spotOf, gridOf} from '../common/mapview.js';
 
 const SHOW = createShowMenu('tools.role.sched.show', [['mine', '這個角色其他行程', '#e8743b'], ['others', '其他角色的點', '#9ccc65'],
-    ['names', '物件名稱', '#dddddd'], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {mine: true});
+    ['names', '物件名稱', '#dddddd', {filter: true}], ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777']], {mine: true});
 export const show = SHOW.show;
+export const nameOk = SHOW.nameOk;
 
 const KEY = 'tools.role.sched';
 
@@ -108,6 +111,9 @@ function othersOn(others, mapName)
     return out;
 }
 
+// 這張圖所有角色的作息點占用（occupy.js），每次重建右欄（資料改了）才重算
+const spotsOf = (st) => (st.spots ??= spotsOn(st.occ(), st.name));
+
 function draw(cv, st)
 {
     const d = st.data, g = cv.getContext('2d');
@@ -131,6 +137,17 @@ function draw(cv, st)
         g.lineWidth = (on ? 2 : 1) / K;
         if (n.type === 'point') {g.beginPath(); g.arc(n.cen.x, n.cen.y, 5, 0, Math.PI * 2); g.stroke();}
         else g.strokeRect(n.rect.x, n.rect.y, n.rect.w, n.rect.h);
+    }
+    // 作息 at 格子（所有角色的、含巡邏 route 經過的）：淡黃方框，兩人以上同時停留＝紅
+    for (const [key, rows] of spotsOf(st))
+    {
+        const n = parseAt(key) && spotOf(d, key);
+        if (!n) continue;
+        const clash = clashOf(rows).length > 0, on = st.cell?.key === key;
+        g.globalAlpha = on ? 1 : clash ? 0.85 : 0.55;
+        g.strokeStyle = clash ? '#ff4d4d' : COLOR.point;
+        g.lineWidth = (on || clash ? 2 : 1) / K;
+        g.strokeRect(n.rect.x + 2, n.rect.y + 2, n.rect.w - 4, n.rect.h - 4);
     }
     g.globalAlpha = 1;
     DR.drawDoors(g, st.ports, K, st.door);
@@ -194,6 +211,7 @@ function draw(cv, st)
         g.fillStyle = '#eee';
         for (const n of d.named.values())
         {
+            if (!SHOW.nameOk(n.name)) continue;
             const y = n.type === 'point' ? n.cen.y - 18 / K : n.rect.y - 9 / K;
             g.strokeText(n.name, n.cen.x, y);
             g.fillText(n.name, n.cen.x, y);
@@ -380,13 +398,14 @@ async function portsFor(d)
 
 // r＝角色；maps＝路網裡的地圖清單；refresh()＝換地圖後要整個重畫右欄
 // opt.plan＝schedplan.js 的 buildPlan().plan（可以是 null）、opt.sel＝選中第幾筆（-1＝沒有）、opt.edges＝路網的 edges
-// opt.others＝其他角色的作息 [{id, i, s}]
+// opt.others＝其他角色的作息 [{id, i, s}]（地圖上的綠字）
+// opt.id＝這個角色的 id、opt.occ()＝全部角色的 [{id, sch, segs}]（occupy.js 的 spotsOn，浮動框的占用時間圖；第一次 hover 才算）
 // 左鍵只看（點門進去、點路線標籤切圖、拖 point 改 Tiled）；改資料都走右鍵 opt.onMenu(e, map, hit)：
 //   hit＝{name?, type?（具名物件）, door?（{o, issue}）, tile: [tx, ty], blocked（格子走不到）, inNav（這張圖在路網裡）}
 // point 編輯：opt.onMove(map, name, x, y)＝拖完（x/y＝格子左上角）
 // 路網：opt.stale＝比 navgraph.json 新的地圖（null／[]＝沒過期）、opt.atStale＝還沒進路網的作息格子數、opt.onUpdate()＝按「更新路網」、opt.navMsg＝上次更新的結果文字
 // 巡邏：opt.patrol＝選中那筆（do 是 patrol 才給）、opt.editRoute＝編輯路線中（點物件＝onRouteAdd(map, name)、點空地＝onNew(map, x, y, data)、右鍵號碼＝onRouteDel(第幾個)）
-export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [],
+export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], id = null, occ = () => [],
     onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
     patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null} = {})
 {
@@ -398,7 +417,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const tip = h('div', {class: 'smaptip', hidden: true});
     const msg = h('div', {class: 'smapmsg dim', hidden: true});
     const legs = legsOf(plan?.[sel], edges);
-    const st = {name, schedule: r.schedule, sel, others, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
+    const st = {name, schedule: r.schedule, sel, others, occ, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
     const inBox = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
     const go = (m) => {setMap(m); refresh();};
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
@@ -444,14 +463,13 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         const x = st.probe;
         if (!x || st.drag?.moved) {tip.hidden = true; return;}
         const key = x.n?.name ?? (x.door ? x.door.o.name : atName(x.tile));
-        const nums = key && stopsOn(r.schedule, name).get(key), os = key && othersOn(others, name).get(key);
+        const rows = key && spotsOf(st).get(key);
         const title = x.door ? `🚪 ${x.door.o.name || '（沒名字）'} → ${x.door.o.props.map}` : x.n ? `${x.n.name}（${x.n.type || '無 type'}）` : `格 ${x.tile[0]}, ${x.tile[1]}`;
         tip.replaceChildren(...[
             h('div', {class: 'tname'}, title),
             x.door && h('div', {class: 'tsub'}, `落腳點 ${x.door.o.props.port || '（沒寫）'}`),
             x.door?.issue && h('div', {class: 'twarn'}, `⚠ ${x.door.issue.msg}`),
-            nums && h('div', {class: 'tmine'}, '作息 ', nums.flatMap((v, i) => [i > 0 && '、', h(v === sel + 1 ? 'b' : 'span', null, `${v}（${r.schedule[v - 1].t}）`)])),
-            os && h('div', {class: 'tothers'}, os.map(o => `${o.id} ${o.i + 1}（${o.t}）`).join('、')),
+            rows && occupyEl(rows, {map: name, mine: id, sel}),
             h('div', {class: 'thint'}, hint(x))].filter(Boolean));
         tip.hidden = false;
         if (!e) return;
@@ -546,18 +564,13 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         legs.flatMap((l, i) => [i > 0 && h('span', {class: 'dim'}, '→'),
             h('button', {type: 'button', class: l.map === name ? 'on' : '', dataset: {map: l.map}, onclick: () => go(l.map)},
                 shortMap(l.map), h('small', null, ` ${hhmm(l.nodes[0].t)}～${hhmm(l.nodes.at(-1).t)}`))]));
-    const why = [stale?.length > 0 && `${stale.map(m => `${shortMap(m)}.json`).join('、')} 比 navgraph.json 新`, atStale > 0 && `${atStale} 個作息格子還沒進路網`].filter(Boolean);
-    const banner = why.length > 0 && h('div', {class: 'stale', title: '遊戲的 NPC 照 navgraph.json 走；地圖或作息格子改了沒更新，遊戲裡找不到新的點、時間也不準（工具裡的時刻表先用臨時算的）'},
-        `⚠ 路網已過期（${why.join('；')}）`,
-        onUpdate && h('button', {type: 'button', class: 'navupd', onclick: onUpdate}, '更新路網'));
     const editBar = editRoute && h('div', {class: 'routeedit'},
         `編輯作息 ${sel + 1} 的巡邏路線（${patrol?.map ?? ''}）：點點＝加到最後、右鍵綠色號碼＝拿掉那一次、點空地＝新增 point 並加進去、Esc 結束`);
     return h('div', {class: 'pv smap'},
-        banner,
-        navMsg && h('div', {class: 'navmsg dim'}, navMsg),
+        ...navBanner({stale, atStale, onUpdate, navMsg}),
         editBar,
         h('div', {class: 'opts'}, pick, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地；拖 point 改位置'}, '?')),
         crumbs,
         h('div', {class: 'cvbox'}, cv, tip, msg),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));
 }

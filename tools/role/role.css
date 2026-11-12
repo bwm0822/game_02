@@ -20,8 +20,6 @@
 .smap .crumbs button.on { background: #2f6db5; color: #fff; }
 .smap .crumbs small { color: #9ab; }
 .smap .crumbs button.on small { color: #dde; }
-.smap .stale { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-bottom: 6px; padding: 4px 8px; background: #4a3a10; border: 1px solid #b8902a; border-radius: 4px; color: #ffe08a; font-size: 13px; }
-.smap .navmsg { flex: none; margin-bottom: 6px; font-size: 12px; white-space: pre-wrap; max-height: 6em; overflow: auto; }
 .smap .routeedit { flex: none; margin-bottom: 6px; padding: 4px 8px; background: #1e3d1a; border: 1px solid #5aa845; border-radius: 4px; color: #c8f0b8; font-size: 13px; }
 .card .times.patrol { color: #9fe08a; }
 /* 作息 24 小時橫條（schedbar.js） */

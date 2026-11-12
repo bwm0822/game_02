@@ -1,4 +1,4 @@
-// 地圖分頁：左樹（世界（室內地圖掛在所屬世界地圖底下）／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色唯讀）、右欄圖層／群組＋角色清單＋選取的角色
+// 地圖分頁：左樹（世界（室內地圖掛在所屬世界地圖底下）／其他，徽章＝角色數、@群組數）、中間沒選＝世界縮圖總覽／選了＝地圖（角色照 role.json 合成、作息 point 淡色，拖曳／右鍵改 point）、右欄圖層／群組＋角色清單＋選取的角色
 // 地圖先讀專案資料夾、讀不到走 dev server（tools/common/mapview.js）；見 docs/map-tool.md
 import {$, h, ask, status} from '../common/dom.js';
 import * as ED from './edit.js';
@@ -9,6 +9,8 @@ import * as PT from '../common/part.js';
 import * as IC from '../common/icons.js';
 import * as MV from '../common/mapview.js';
 import * as DR from '../common/doors.js';
+import * as PE from '../common/pointedit.js';
+import {ID_RE} from '../common/doc.js';
 import {createFold} from '../common/fold.js';
 import {createShowMenu} from '../common/showmenu.js';
 import {renderDatalists} from '../common/views.js';
@@ -17,7 +19,7 @@ import {rewriteStory, groupRenamer} from '../common/storyrename.js';
 import '../common/combo.js';
 import {checkStory} from '../../src/data/storycheck.js';
 import {resolveObject, joinPath} from '../../src/data/navgrid.js';
-import {usersOf as pointUsers} from '../role/mapedit.js';
+import {spotsOn, clashOf, occupyEl} from '../role/occupy.js';
 import {isRoleObj, roleObjs, placeOf, spriteOf, forgetSprites, SPRITE_HALF} from './roles.js';
 import {roleIssues, checkMapRoles, isPortObj, portIssue} from '../../src/data/mapcheck.js';
 import {buildPlan, hhmm, mod, parseAt} from '../../src/data/schedplan.js';
@@ -50,7 +52,7 @@ const S = {
 const KIND_KEY = 'tools.map.kind';
 try {S.sel = localStorage.getItem(SEL_KEY); S.only = localStorage.getItem(ONLY_KEY) === '1'; S.kindTab = localStorage.getItem(KIND_KEY) || 'all';} catch {}
 
-const SHOW = createShowMenu('tools.map.show', [['points', '作息 point（淡色）', '#ffd24a'], ['names', '物件名稱', '#dddddd'],
+const SHOW = createShowMenu('tools.map.show', [['points', '作息點（淡色、撞了紅）', '#ffd24a'], ['names', '物件名稱', '#dddddd', {filter: true}],
     ['grid', '格子可走（紅＝擋住、黃＝慢）', '#ff7777'], ['doors', '門（點了進去）', '#ff9800']], {points: true, doors: true});
 const show = SHOW.show;
 const F = createFold();
@@ -100,6 +102,9 @@ async function loadRefs()
         const plan = buildPlan(sch, nav.edges ?? {}, nav.nodes ?? {}).plan;
         if (plan) S.plans[id] = {sch, plan, segs: daySegs(plan, sch)};
     }
+    // 作息點占用：有作息的角色都算（排不出時刻表的 segs＝null，只列名字）
+    S.occ = Object.entries(S.roles).filter(([, r]) => Array.isArray(r.schedule) && r.schedule.length)
+        .map(([id, r]) => ({id, sch: r.schedule, segs: S.plans[id]?.segs ?? null}));
     forgetSprites();
 }
 
@@ -125,6 +130,38 @@ function npcsAt(st)
     const slot = new Map();
     for (const x of out) {const k = slot.get(x.n.name) ?? 0; slot.set(x.n.name, k + 1); x.k = k;}
     return out;
+}
+
+// 這張圖被作息用到的點（point、其他具名物件、@x,y 格子）：名稱 → {name, n（spotOf）, rows, clash}；角色資料或地圖換了才重算
+function spotsOf(st)
+{
+    if (st.occOf === S.occ && st.occData === st.data) return st.spots;
+    st.occOf = S.occ;
+    st.occData = st.data;
+    st.spots = new Map();
+    for (const [name, rows] of spotsOn(S.occ ?? [], st.name))
+    {
+        const n = st.data && MV.spotOf(st.data, name);
+        if (n) st.spots.set(name, {name, n, rows, clash: clashOf(rows).length > 0});
+    }
+    return st.spots;
+}
+
+// 作息點的浮動框內容：名稱（種類）＋占用時間圖（時間游標開著畫白線）
+function spotLines(name, x)
+{
+    const kind = !x || x.n.type === 'point' ? '作息 point' : x.n.type === 'at' ? '作息格子' : `${x.n.type || '物件'}・作息點`;
+    return [h('div', {class: 'tname'}, `${name}（${kind}）`),
+        x ? occupyEl(x.rows, {map: S.sel, now: S.timeOn ? S.t : null}) : h('div', {class: 'tsub'}, '沒有作息用到')];
+}
+
+// 點作息點：一個人（一筆）直接跳角色分頁選那張卡片，好幾筆跳小選單
+function gotoSpot(e, x)
+{
+    const list = x.rows.flatMap(r => r.nums.map(i => ({id: r.id, i})));
+    const go = ({id, i}) => SH.gotoTab('role', [id, 'schedule', i]);
+    if (list.length === 1) return go(list[0]);
+    menu(e, list.map(u => [`${u.id} ${u.i + 1}（${S.roles[u.id]?.schedule?.[u.i]?.t ?? '?'}）`, () => go(u)]));
 }
 
 function setTime(t, on = S.timeOn)
@@ -648,18 +685,22 @@ function draw(cv, st)
     g.translate(-d.W / 2, -d.H / 2);
     g.drawImage(d.bake, 0, 0);
     if (show.grid) MV.drawGrid(g, d);
-    // 作息 point：淡色唯讀
+    // 作息點：淡色唯讀（point 圓圈、@x,y 格子方框、被用到的其他物件框住），兩人以上同時停留＝紅
     if (show.points)
     {
-        for (const n of d.named.values())
-        {
-            if (n.type !== 'point') continue;
+        const spots = spotsOf(st);
+        const one = (n, clash) => {
             const on = st.hover?.point === n.name;
-            g.globalAlpha = on ? 1 : 0.35;
-            g.strokeStyle = '#ffd24a';
-            g.lineWidth = (on ? 2 : 1) / K;
-            g.beginPath(); g.arc(n.cen.x, n.cen.y, 5, 0, Math.PI * 2); g.stroke();
-        }
+            g.globalAlpha = on ? 1 : clash ? 0.8 : 0.35;
+            g.strokeStyle = clash ? '#ff4d4d' : '#ffd24a';
+            g.lineWidth = (on ? 2 : clash ? 1.5 : 1) / K;
+            g.beginPath();
+            if (n.type === 'point') g.arc(n.cen.x, n.cen.y, 5, 0, Math.PI * 2);
+            else g.rect(n.rect.x + 1, n.rect.y + 1, n.rect.w - 2, n.rect.h - 2);
+            g.stroke();
+        };
+        for (const n of d.named.values()) if (n.type === 'point' && !spots.has(n.name)) one(n, false);
+        for (const x of spots.values()) one(x.n, x.clash);
         g.globalAlpha = 1;
     }
     // 門：橘框（壞的紅／黃）＋🚪，滑過實線；落腳點閃一下
@@ -734,6 +775,15 @@ function draw(cv, st)
     g.textBaseline = 'alphabetic';
     if (st.drag?.moved) drawGhost(g, d, K, st.drag.it.rid, st.drag.tile, st.sprites);
     else if (S.place && st.ghost) drawGhost(g, d, K, S.place, st.ghost, st.sprites);
+    // 拖曳中的 point：放開後會落在的格子
+    if (st.pdrag?.moved)
+    {
+        g.setLineDash([4 / K, 3 / K]);
+        g.strokeStyle = '#ffd24a';
+        g.lineWidth = 2 / K;
+        g.strokeRect(st.pdrag.to.x, st.pdrag.to.y, d.map.tilewidth, d.map.tileheight);
+        g.setLineDash([]);
+    }
     if (show.names)
     {
         g.font = `bold ${14 / K}px sans-serif`;
@@ -743,7 +793,7 @@ function draw(cv, st)
         g.fillStyle = '#eee';
         for (const n of d.named.values())
         {
-            if (n.type === 'point' && !show.points) continue;
+            if (n.type === 'point' && !show.points || !SHOW.nameOk(n.name)) continue;
             const y = n.type === 'point' ? n.cen.y - 12 / K : n.rect.y - 6 / K;
             g.strokeText(n.name, n.cen.x, y);
             g.fillText(n.name, n.cen.x, y);
@@ -780,14 +830,21 @@ function hitAt(st, p, K)
     const door = show.doors && DR.doorAt(st.ports, p);
     if (door) return {door};
     if (!show.points) return null;
+    // point（圓圈）先、格子再來、物件框最後（大的蓋住小的時小的點得到）
+    const spots = spotsOf(st), inRect = (r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
+    const hit = (n) => ({point: n.name, n, spot: spots.get(n.name)});
     for (const n of st.data.named.values())
-        if (n.type === 'point' && Math.hypot(p.x - n.cen.x, p.y - n.cen.y) <= Math.max(8, 8 / K)) return {point: n.name, n};
+        if (n.type === 'point' && Math.hypot(p.x - n.cen.x, p.y - n.cen.y) <= Math.max(8, 8 / K)) return hit(n);
+    for (const x of spots.values()) if (x.n.type === 'at' && inRect(x.n.rect)) return hit(x.n);
+    for (const x of spots.values()) if (x.n.type !== 'at' && x.n.type !== 'point' && inRect(x.n.rect)) return hit(x.n);
     return null;
 }
 
+const mapDataOf = (name) => MV.mapData(name, {skip: skipRoles, tag: 'map'});
+
 async function loadMapState(st)
 {
-    const d = await MV.mapData(st.name, {skip: skipRoles, tag: 'map'});
+    const d = await mapDataOf(st.name);
     st.data = d;
     if (!d) return;
     st.all = roleObjs(d).map(it => ({...it, at: placeOf(it.o, S.roles[it.rid])})).sort((a, b) => a.at.root.y - b.at.root.y);
@@ -815,7 +872,7 @@ function mapEl(name)
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
     const say = (e) => {
         const hit = st.hover;
-        if (!hit || S.place || st.drag?.moved) {tip.hidden = true; return;}
+        if (!hit || S.place || st.drag?.moved || st.pdrag?.moved) {tip.hidden = true; return;}
         const lines = [];
         if (hit.role)
         {
@@ -838,14 +895,15 @@ function mapEl(name)
             lines.push(h('div', {class: 'tname'}, `🚪 ${o.name || '（沒名字）'} → ${o.props.map}`),
                 h('div', {class: 'tsub'}, `落腳點 ${o.props.port || '（沒寫）'}`),
                 ...(issue ? [h('div', {class: 'twarn'}, `⚠ ${issue.msg}`)] : []),
+                ...(show.points && o.name && spotsOf(st).has(o.name) ? [occupyEl(spotsOf(st).get(o.name).rows, {map: name, now: S.timeOn ? S.t : null})] : []),
                 h('div', {class: 'thint'}, issue?.level === 'error' ? '地圖不存在，點了不會跳' : '點＝進去'));
         }
         else
         {
-            const users = pointUsers(S.roles, name, hit.point);
-            lines.push(h('div', {class: 'tname'}, `${hit.point}（作息 point）`),
-                h('div', {class: 'tsub'}, users.length ? users.map(u => `${u.id} ${u.i + 1}`).join('、') : '沒有作息用到'),
-                h('div', {class: 'thint'}, users.length ? '點＝到角色分頁看作息（point 在角色分頁改）' : 'point 在角色分頁改'));
+            const x = hit.spot, n = x?.rows.reduce((a, r) => a + r.nums.length, 0) ?? 0;
+            const go = n === 1 ? '點＝到角色分頁看這筆作息' : n ? '點＝選一筆到角色分頁看' : '';
+            const edit = hit.n.type === 'point' ? '拖＝移動、右鍵＝改名／刪除' : hit.n.type === 'at' ? '右鍵＝新增 point' : '';
+            lines.push(...spotLines(hit.point, x), h('div', {class: 'thint'}, [go, edit].filter(Boolean).join('、')));
         }
         tip.replaceChildren(...lines);
         tip.hidden = false;
@@ -858,10 +916,26 @@ function mapEl(name)
     cv.addEventListener('pointerdown', (e) => {
         if (e.button !== 0 || !st.data || S.place) return;
         const hit = hitAt(st, toMap(e), st.pz.K);
+        if (hit?.point && hit.n.type === 'point')
+        {
+            if (e.isTrusted) cv.setPointerCapture(e.pointerId);
+            st.pdrag = {name: hit.point, sx: e.clientX, sy: e.clientY, moved: false, to: MV.snapTile(st.data, toMap(e))};
+            return;
+        }
         if (!hit?.role) return;
         if (e.isTrusted) cv.setPointerCapture(e.pointerId);
         const from = rootTile(st.data, hit.it);
         st.drag = {it: hit.it, sx: e.clientX, sy: e.clientY, at: tileOfPt(st.data, toMap(e)), from, tile: from, moved: false};
+    });
+    // 拖 point：放開寫檔（x/y＝格子左上角，同角色分頁）
+    cv.addEventListener('pointerup', () => {
+        const pd = st.pdrag;
+        st.pdrag = null;
+        if (!pd?.moved) return;
+        st.swallow = true;
+        setTimeout(() => {st.swallow = false;}, 0);
+        redraw();
+        act(movePoint(name, pd.name, pd.to.x, pd.to.y));
     });
     cv.addEventListener('pointerup', () => {
         const dr = st.drag;
@@ -874,7 +948,16 @@ function mapEl(name)
     });
     cv.addEventListener('pointermove', (e) => {
         if (!st.data || st.pz.panning) return;
-        const p = toMap(e), dr = st.drag;
+        const p = toMap(e), dr = st.drag, pd = st.pdrag;
+        if (pd)
+        {
+            if (!pd.moved && Math.hypot(e.clientX - pd.sx, e.clientY - pd.sy) < 4) return;
+            pd.moved = true;
+            if (inMap(st.data, tileOfPt(st.data, p))) pd.to = MV.snapTile(st.data, p);
+            cv.style.cursor = 'grabbing';
+            tip.hidden = true;
+            return redraw();
+        }
         if (dr)
         {
             if (!dr.moved && Math.hypot(e.clientX - dr.sx, e.clientY - dr.sy) < 4) return;
@@ -898,7 +981,7 @@ function mapEl(name)
         const keyOf = (x) => (x ? (x.role ?? (x.npc ? `n:${x.npc}` : x.door ? `d:${x.door.o.id}` : `p:${x.point}`)) : null);
         const key = keyOf(hit), was = keyOf(st.hover);
         st.hover = hit;
-        cv.style.cursor = hit?.role ? 'grab' : hit ? 'pointer' : '';
+        cv.style.cursor = hit?.role || hit?.n?.type === 'point' ? 'grab' : hit ? 'pointer' : '';
         say(e);
         if (key !== was) redraw();
     });
@@ -922,8 +1005,7 @@ function mapEl(name)
         }
         if (hit?.point)
         {
-            const users = pointUsers(S.roles, name, hit.point);
-            if (users.length) SH.gotoTab('role', [users[0].id]);
+            if (hit.spot) gotoSpot(e, hit.spot);
             return;
         }
         S.pick = hit?.role ?? null;
@@ -933,8 +1015,14 @@ function mapEl(name)
     cv.addEventListener('contextmenu', (e) => {
         if (!st.data) return;
         if (S.place) {e.preventDefault(); setPlace(null); return;}
-        const hit = hitAt(st, toMap(e), st.pz.K);
-        if (!hit?.role) return;
+        const p = toMap(e), hit = hitAt(st, p, st.pz.K);
+        if (!hit || hit.point)
+        {
+            const t = tileOfPt(st.data, p);
+            if (hit || inMap(st.data, t)) pointMenu(e, st, hit, t);
+            return;
+        }
+        if (!hit.role) return;
         S.pick = hit.role;
         redraw();
         renderRight();
@@ -959,15 +1047,23 @@ function mapEl(name)
         redraw();
     };
     st.updatePlacing();
+    // 路網過期：這張圖比 navgraph.json 新（放角色也會亮，接受誤報）
+    const nav = h('div');
+    st.updateNav = async () => {
+        const stale = await PE.staleMaps(S.assets.dir, [name]);
+        nav.replaceChildren(...PE.navBanner({stale, onUpdate: () => act(updateNav()), navMsg: S.navMsg}));
+    };
+    st.updateNav();
     return h('div', {class: 'mv'},
         h('div', {class: 'opts'}, h('span', {class: 'name'}, name),
             h('button', {type: 'button', title: '回世界總覽', onclick: () => selectMap(name)}, '總覽'),
             h('button', {type: 'button', class: 'back', disabled: !S.back.length, title: S.back.length ? `回到 ${S.back.at(-1)}（點門進來之前那張）` : '點門進來的才能返回',
                 onclick: goBack}, '← 返回'),
-            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（唯讀，點了跳到角色分頁）；橘框 🚪 是門，點了進那張地圖（← 返回 回來）'}, '?')),
+            h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點角色選取、拖曳移動、Del 刪除、右鍵選單；右欄調色盤點一個角色再點地圖放置；淡色圓點是作息 point（點了跳到角色分頁、拖曳移動、右鍵改名／刪除，右鍵空地新增）；橘框 🚪 是門，點了進那張地圖（← 返回 回來）'}, '?')),
+        nav,
         placing,
         h('div', {class: 'cvbox'}, cv, tip, msg),
-        h('div', {class: 'opts'}, SHOW.showMenu(redraw), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')),
+        h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')),
         timeBar(st));
 }
 
@@ -1025,6 +1121,85 @@ function roleMenu(e, st, it)
     ]);
 }
 
+// point 右鍵：改名／刪除／↗；空地（或 @x,y 作息格子）：新增 point；其他具名物件只有 ↗
+function pointMenu(e, st, hit, tile)
+{
+    const isPt = hit?.n.type === 'point', spot = hit?.spot;
+    const items = [];
+    if (!hit || hit.n.type === 'at') items.push(['新增 point…', () => act(newPoint(st.name, tile))]);
+    if (isPt) items.push([`改名 ${hit.point}…`, () => act(renamePoint(st.name, hit.point))], [`刪除 ${hit.point}…`, () => act(deletePoint(st.name, hit.point))]);
+    if (spot) items.push(...(items.length ? [null] : []), ['↗ 到角色分頁看作息', () => gotoSpot(e, spot)]);
+    if (items.length) menu(e, items);
+}
+
+// ---------- 作息 point（寫 Tiled 地圖；改名連帶改 role.json 的 go／route，同一筆 undo） ----------
+async function askPointName(title, value, taken)
+{
+    const inp = h('input', {size: 24, value});
+    const p = ask(title, h('label', null, '名稱 ', inp), [['ok', '確定'], ['cancel', '取消']]);
+    inp.select();
+    if (await p !== 'ok') return null;
+    const v = inp.value.trim();
+    if (!ID_RE.test(v)) {status(`名稱只能用英數、- 和 _：${v}`); return null;}
+    if (taken.has(v)) {status(`這張圖已經有 ${v}`); return null;}
+    return v;
+}
+
+// 預設＝上次新增的名字去掉尾巴數字（記住、所有地圖共用，沒記過＝p）＋這張圖最小的空號；x/y＝格子左上角
+const PREFIX_KEY = 'tools.map.pointPrefix';
+async function newPoint(map, [tx, ty])
+{
+    const d = await mapDataOf(map);
+    if (!d) return;
+    let pre = 'p';
+    try {pre = localStorage.getItem(PREFIX_KEY) || 'p';} catch {}
+    let n = 1;
+    while (d.named.has(`${pre}${n}`)) n++;
+    const name = await askPointName(`在 ${map} 新增 point`, `${pre}${n}`, d.named);
+    if (!name) return;
+    if (!await write(map, data => PE.addPoint(data, map, name, tx * d.map.tilewidth, ty * d.map.tileheight), `新增 point ${name}`)) return;
+    try {localStorage.setItem(PREFIX_KEY, name.replace(/\d+$/, '') || 'p');} catch {}
+}
+
+const movePoint = (map, pname, x, y) => write(map, data => PE.movePoint(data, pname, x, y), `移動 ${pname}`);
+
+async function renamePoint(map, from)
+{
+    const d = await mapDataOf(map);
+    if (!d) return;
+    const users = PE.usersOf(S.roles, map, from);
+    const to = await askPointName(`改名 ${from}${users.length ? `（role.json 一起改：${PE.usersText(users)}）` : ''}`, from,
+        new Set([...d.named.keys()].filter(k => k !== from)));
+    if (!to || to === from) return;
+    const mf = ED.mapFile(map);
+    await writeFiles(users.length ? [mf, ROLE] : [mf], files => {
+        PE.renamePoint(files[mf], map, from, to);
+        if (users.length) PE.renameRefs(files[ROLE], map, from, to);
+    }, `point 改名 ${from} → ${to}`, '', map);
+}
+
+async function deletePoint(map, pname)
+{
+    const users = PE.usersOf(S.roles, map, pname);
+    if (users.length)
+    {
+        await ask(`不能刪 ${pname}`, h('div', null, `還有作息用到它：${PE.usersText(users)}`), [['ok', '知道了']]);
+        return;
+    }
+    if (await ask(`刪除 ${pname}？`, h('div', null, `從 ${map} 刪掉這個 point`), [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
+    await write(map, data => PE.deletePoint(data, pname), `刪除 point ${pname}`);
+}
+
+S.navMsg = '';
+async function updateNav()
+{
+    status('路網更新中…');
+    S.navMsg = (await PE.updateNavgraph()).msg;
+    await loadRefs();
+    render();
+    status(S.navMsg.split('\n')[0]);
+}
+
 // ---------- 寫地圖、undo ----------
 const tplOf = (rid) => S.tpls[rid] ?? null;
 const isNamed = (rid) => S.roles[rid]?.kind === 'npc';
@@ -1039,12 +1214,13 @@ async function afterWrite(rels, text)
     for (const m of maps) MV.forget(m);
     for (const rel of rels) SH.notifySaved(rel.startsWith('json/') ? rel.slice(5) : rel);
     if (rels.includes(STORY)) await loadSpawns();
+    if (rels.includes(ROLE)) await loadRefs();
     await resummarize(maps);
     status(text);
     render();
 }
 
-const STORY = 'json/story.json';
+const STORY = 'json/story.json', ROLE = 'json/role.json';
 // 改好幾個檔（rels：相對 assets；地圖用 ED.mapFile(名稱)）：fn({rel: data})；寫了記一筆 undo（map＝復原時切過去的地圖）
 async function writeFiles(rels, fn, msg, warn = '', map = S.sel)
 {
@@ -1418,4 +1594,4 @@ SH.onProject((dir) => act(setRoot(dir)));
 render();
 
 // 給無頭測試用
-window.__mt = {S, setRoot, reload, render, selectMap, goBack, mapSt, SHOW, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, newGroup, setCond, renameGroup, deleteGroup, toggleHide, setTime, MV, PZ, ED};
+window.__mt = {S, setRoot, reload, render, selectMap, goBack, mapSt, SHOW, setPlace, placeRole, moveRole, deleteRole, setLayer, replaceRole, setProp, undo, redo, newGroup, setCond, renameGroup, deleteGroup, toggleHide, setTime, newPoint, movePoint, renamePoint, deletePoint, MV, PZ, ED};

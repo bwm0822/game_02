@@ -283,8 +283,8 @@
                  "type":"point",
                  "visible":true,
                  "width":32,
-                 "x":1600,
-                 "y":1440
+                 "x":960,
+                 "y":2080
                 }, 
                 {
                  "height":32,
@@ -294,7 +294,7 @@
                  "type":"point",
                  "visible":true,
                  "width":32,
-                 "x":896,
+                 "x":864,
                  "y":1408
                 }, 
                 {
@@ -305,8 +305,8 @@
                  "type":"point",
                  "visible":true,
                  "width":32,
-                 "x":2240,
-                 "y":1664
+                 "x":1408,
+                 "y":1024
                 }, 
                 {
                  "id":13,
@@ -678,6 +678,48 @@
                  "type":"npc",
                  "x":1088,
                  "y":2464
+                }, 
+                {
+                 "id":182,
+                 "name":"jobs-p1",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":1728,
+                 "y":1344
+                }, 
+                {
+                 "id":185,
+                 "name":"guard-p5",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":2304,
+                 "y":1088
+                }, 
+                {
+                 "id":186,
+                 "name":"guard-p6",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":2016,
+                 "y":1312
+                }, 
+                {
+                 "id":187,
+                 "name":"guard-p7",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":1600,
+                 "y":1632
+                }, 
+                {
+                 "id":188,
+                 "name":"guard-p8",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":2304,
+                 "y":1664
+                }, 
+                {
+                 "id":189,
+                 "name":"guard-p9",
+                 "template":"..\/..\/templates\/point.tj",
+                 "x":2144,
+                 "y":2144
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -686,7 +728,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":181,
+ "nextobjectid":190,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",

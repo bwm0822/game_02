@@ -4,13 +4,14 @@ import * as SH from '../common/shell.js';
 import * as ST from '../common/settings.js';
 import {portraitOf, toPng} from '../common/portrait.js';
 import {str, isObj, getAt, setAt, replaceRaw, parseNum} from '../common/obj.js';
-import {createDoc} from '../common/doc.js';
+import {createDoc, ID_RE} from '../common/doc.js';
 import {fieldInput, createForm} from '../common/form.js';
 import {createViews, renderDatalists} from '../common/views.js';
 import * as IC from '../common/icons.js';
 import * as JE from '../common/jsonedit.js';
 import * as PT from '../common/part.js';
 import {pickItem} from '../common/itempick.js';
+import {timePick} from '../common/timepick.js';
 import '../common/combo.js';
 import '../common/splitter.js';
 import * as SC from './schema.js';
@@ -19,7 +20,7 @@ import * as SM from './schedmap.js';
 import * as PZ from '../common/panzoom.js';
 import * as SP from '../../src/data/schedplan.js';
 import {bestPath} from '../../src/data/navgrid.js';
-import * as ME from './mapedit.js';
+import * as ME from '../common/pointedit.js';
 import * as MR from '../common/maproles.js';
 import * as SB from './schedbar.js';
 import * as GT from './gantt.js';
@@ -593,6 +594,19 @@ const schSel = (id) => {
     return !n ? -1 : S.schSel?.id === id ? Math.min(S.schSel.i, n - 1) : 0;
 };
 // 不重畫左邊表單（點的可能是卡片裡的按鈕／輸入框），只換反白、重畫右欄
+// 打開角色的表單、作息段、選第 i 張卡片、右欄切到作息地圖（總覽甘特圖點一段、地圖分頁點作息點跳過來）
+function openSch(id, i)
+{
+    if (!S.data[id]?.schedule?.[i]) {S.sel = id; S.view = 'form'; render(); return;}
+    Object.assign(S, {sel: id, view: 'form', schSel: {id, i}, rtab: 'sched'});
+    try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
+    S.secOpen['作息'] = true;
+    S.open.schedule = true;
+    if (S.data[id].schedule[i].map) SM.setMap(S.data[id].schedule[i].map);
+    render();
+    document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
+}
+
 function selectSch(id, i)
 {
     if (S.schSel?.id === id && S.schSel.i === i) return;
@@ -633,13 +647,10 @@ async function addDest(id, map, dest)
     const plan = planOf(id).plan, i = schSel(id);
     const arrOf = (k) => plan?.[k]?.arr ?? toMin(a[k].t?.replace(/^@/, '') ?? '');
     const def = i >= 0 && arrOf(i) != null ? SP.hhmm(SP.mod(arrOf(i) + 60)) : '08:00';
-    const inp = h('input', {class: 'num', size: 6, value: def, dataset: {k: 'arriveAt'}, placeholder: 'HH:MM'});
+    let val = def;
     const where = dest.at ? `${map} 格 ${dest.at.join(',')}` : `${map}／${dest.go}`;
-    const p = ask('新增目的地', [h('div', null, where), h('label', null, '抵達時間 ', inp)], [['ok', '確定'], ['cancel', '取消']]);
-    inp.select();
-    if (await p !== 'ok') return;
-    const m = toMin(inp.value);
-    if (m === null) return status(`時間要寫 HH:MM：${inp.value}`);
+    if (await ask('新增目的地', [h('div', null, where), h('label', null, '抵達時間 ', timePick('arriveAt', def, v => {val = v;}))], [['ok', '確定'], ['cancel', '取消']]) !== 'ok') return;
+    const m = toMin(val);
     const same = a.findIndex((_, k) => arrOf(k) === m);
     if (same >= 0) return status(`第 ${same + 1} 筆已經是 ${SP.hhmm(m)} 抵達`);
     let pos = 0;
@@ -694,9 +705,6 @@ async function checkStale()
     finally {staleBusy = false;}
 }
 
-const ID_RE = /^[A-Za-z0-9_-]+$/;
-const isPointRaw = (o) => o.type === 'point' || /(^|\/)point\.tj$/.test(o.template ?? '');
-
 async function writeMap(map, fn, msg)
 {
     try {if (await ME.editMap(S.assets.dir, map, fn) === false) return false;}
@@ -727,7 +735,7 @@ async function newPoint(id, map, x, y, d)
     let n = 1;
     while (d.named.has(`${id}-p${n}`)) n++;
     const name = await askPointName(`在 ${map} 新增 point`, `${id}-p${n}`, d.named);
-    if (!name || !await writeMap(map, data => ME.addPoint(data, map, name, x, y, isPointRaw), `新增 ${name}`)) return;
+    if (!name || !await writeMap(map, data => ME.addPoint(data, map, name, x, y), `新增 ${name}`)) return;
     if (S.routeEdit?.id === id) routeAdd(id, map, name);
 }
 
@@ -750,7 +758,7 @@ async function deletePoint(map, name)
     const users = ME.usersOf(S.data, map, name);
     if (users.length)
     {
-        await ask(`不能刪 ${name}`, h('div', null, `還有作息用到它：${users.map(u => `${u.id} 第 ${u.i + 1} 筆`).join('、')}`), [['ok', '知道了']]);
+        await ask(`不能刪 ${name}`, h('div', null, `還有作息用到它：${ME.usersText(users)}`), [['ok', '知道了']]);
         return;
     }
     if (await ask(`刪除 ${name}？`, h('div', null, `從 ${map} 刪掉這個 point`), [['ok', '刪除'], ['cancel', '取消']]) !== 'ok') return;
@@ -760,10 +768,7 @@ async function deletePoint(map, name)
 async function updateNav()
 {
     status('路網更新中…');
-    let r;
-    try {r = await (await fetch('/__tools/navgraph', {method: 'POST'})).json();}
-    catch (e) {r = {ok: false, errors: [e.message]};}
-    S.navMsg = r.ok ? `路網已更新：${r.count} 個節點${r.warns.length ? `，${r.warns.length} 個警告\n${r.warns.join('\n')}` : ''}` : `路網更新失敗：${(r.errors ?? []).join('；')}`;
+    S.navMsg = (await ME.updateNavgraph()).msg;
     status(S.navMsg.split('\n')[0]);
     await loadRefs();
     S.stale = null;
@@ -921,8 +926,7 @@ function schCard(id, list, i, pl)
             h('label', {title: 't'}, '時間',
                 h('select', {dataset: {k: `${k}.t#mode`}, onchange: e => put('t', `${e.target.value}${hhmm}`)},
                     h('option', {value: '', selected: !arrive}, '出發'), h('option', {value: '@', selected: arrive}, '抵達')),
-                h('input', {class: 'num', placeholder: 'HH:MM', dataset: {k: `${k}.t`}, value: hhmm,
-                    onchange: e => put('t', `${arrive ? '@' : ''}${e.target.value.trim()}`)})),
+                timePick(`${k}.t`, hhmm, v => put('t', `${arrive ? '@' : ''}${v}`))),
             h('label', {title: 'map'}, '地圖', h('input', {size: 22, dataset: {k: `${k}.map`, combo: 'dl-maps'}, value: s.map ?? '',
                 onchange: e => put('map', e.target.value.trim() || undefined)})),
             s.at !== undefined
@@ -1006,6 +1010,8 @@ function renderRight()
             stale: S.stale, atStale: atMissing().length, onUpdate: updateNav, navMsg: S.navMsg,
             patrol: r.schedule?.[schSel(id)]?.do === 'patrol' ? r.schedule[schSel(id)] : null, editRoute: editingRoute(id, schSel(id)),
             onRouteAdd: (m, n) => routeAdd(id, m, n), onRouteDel: (k) => routeDel(id, k),
+            id, occ: () => Object.entries(S.data).filter(([, x]) => Array.isArray(x.schedule) && x.schedule.length)
+                .map(([o, x]) => {const pl = planOf(o); return {id: o, sch: x.schedule, segs: SB.daySegs(pl.plan, x.schedule, pl.warns)};}),
             others: Object.entries(S.data).filter(([o]) => o !== id).flatMap(([o, x]) => (Array.isArray(x.schedule) ? x.schedule.map((s, i) => ({id: o, i, s})) : []))})
         : previewEl(r, S.ext.items, S.ext.parts));
 }
@@ -1134,15 +1140,7 @@ function draw()
     if (tab.gantt) document.querySelector('#view table.grid').replaceWith(GT.ganttEl({
         ids: Object.keys(S.data).filter(id => inTab(tab, id) && V.matchSearch(id)), data: S.data, planOf, rerender: render,
         onRole: (id) => {S.sel = id; S.view = 'form'; render();},
-        onSeg: (id, i) => {
-            Object.assign(S, {sel: id, view: 'form', schSel: {id, i}, rtab: 'sched'});
-            try {localStorage.setItem('tools.role.rtab', 'sched');} catch {}
-            S.secOpen['作息'] = true;
-            S.open.schedule = true;
-            if (S.data[id].schedule[i]?.map) SM.setMap(S.data[id].schedule[i].map);
-            render();
-            document.querySelector(`#view .card[data-sch="${i}"]`)?.scrollIntoView({block: 'nearest'});
-        },
+        onSeg: openSch,
     }));
     if (tabKind)
         document.querySelector('#view .tabs').append(h('select', {title: '子分類', dataset: {k: 'grpFilter'}, onchange: e => {S.grp = e.target.value; render();}},
@@ -1167,7 +1165,7 @@ async function loadRefs()
     await loadRefs();
     render();
     IC.ready.then(render);
-    D.listenGoto();
+    SH.onGoto(([id, k, i]) => {if (k === 'schedule') openSch(id, i); else {S.sel = id; S.view = 'form'; render();}});
     D.start(async (dir) => {
         await ST.load(dir).catch(e => status(`tools/settings.json 讀不到：${e.message}`));
         await D.setAssets(dir);
@@ -1175,6 +1173,6 @@ async function loadRefs()
 })();
 
 // 給無頭測試用
-window.__re = {S, SM, PZ, SP, ME, SB, GT, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
+window.__re = {S, SM, PZ, SP, ME, SB, GT, openSch, updateNav, checkStale, renamePoint, deletePoint, toggleRouteEdit, setAssets: D.setAssets, reload: D.reload, save: D.save, commit, set, undo: D.undo, redo: D.redo, add, askNew, dup: D.dup,
                rename: D.rename, remove: D.remove, addSch, scanRefs: D.scanRefs, validate, validateAll, render, IC, JE, SC,
                pickPart, renamePart, deletePart, genPortrait, loadRefs, grpsOf, newGrp, renameGrp, removeGrp, dropRole, setGrp, setKind, ALL};

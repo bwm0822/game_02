@@ -42,7 +42,7 @@ export function whereAt(plan, sch, t, segs = daySegs(plan, sch))
 }
 
 // 跨午夜切成兩截
-const pieces = (s, len) => (s + len <= DAY ? [[s, len]] : [[s, DAY - s], [0, s + len - DAY]]);
+export const pieces = (s, len) => (s + len <= DAY ? [[s, len]] : [[s, DAY - s], [0, s + len - DAY]]);
 
 function tip(g, plan)
 {

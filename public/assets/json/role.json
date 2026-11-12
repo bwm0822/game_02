@@ -822,7 +822,40 @@
         "items": []
       }
     },
-    "schedule": [],
+    "schedule": [
+      {
+        "t": "@08:00",
+        "map": "m/m_04x05",
+        "at": [
+          46,
+          42
+        ]
+      },
+      {
+        "t": "@12:00",
+        "map": "m_04x05/house-10",
+        "at": [
+          6,
+          5
+        ]
+      },
+      {
+        "t": "@14:00",
+        "map": "m/m_04x05",
+        "at": [
+          46,
+          42
+        ]
+      },
+      {
+        "t": "@17:00",
+        "map": "m_04x05/house-10",
+        "at": [
+          6,
+          5
+        ]
+      }
+    ],
     "sex": "f",
     "head": "head-kidman",
     "icon": "portrait-kidman",
@@ -870,7 +903,13 @@
         "items": []
       }
     },
-    "schedule": [],
+    "schedule": [
+      {
+        "t": "@08:00",
+        "go": "jobs-p1",
+        "map": "m/m_04x05"
+      }
+    ],
     "head": "head-jobs",
     "hair": "hair-jobs",
     "icon": "portrait-jobs",
@@ -1530,6 +1569,15 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "hammer-1"
+      ]
     }
   },
   "bandit-2": {
@@ -1589,6 +1637,15 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "dagger-1"
+      ]
     }
   },
   "bandit-3": {
@@ -1648,6 +1705,15 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "bow-1"
+      ]
     }
   },
   "bandit-4": {
@@ -1707,6 +1773,15 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "sword-1"
+      ]
     }
   },
   "bandit-5": {
@@ -1766,6 +1841,15 @@
         "cur": 0,
         "max": 100
       }
+    },
+    "inv": {
+      "storage": {
+        "capacity": -1,
+        "items": []
+      },
+      "equips": [
+        "staff-1"
+      ]
     }
   },
   "orc": {
