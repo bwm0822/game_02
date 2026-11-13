@@ -35,7 +35,7 @@ run('local-tool', async t => {
         await lc.D.setAssets(proj);
         await lc.rescan();
 
-        out.count = Object.keys(S.data).length;
+        out.count = [Object.keys(S.data).length, Object.keys(JSON.parse(orig)).length];
         out.groups = qa('#list .node').map(n => n.dataset.node);
         await lc.D.save();
         out.roundtrip = (await disk(json, 'local.json')) === orig;
@@ -90,7 +90,7 @@ run('local-tool', async t => {
         return out;
     });
 
-    t.eq('讀入 219 筆', r.count, 219);
+    t.check('讀入 local.json 全部筆數', r.count[0] === r.count[1] && r.count[0] > 200, JSON.stringify(r.count));
     t.check('左欄有全部／分組／缺少／未使用', ['#all', 'general', 'msg', 'ability', '#miss', '#unused'].every(n => r.groups.includes(n)), r.groups.join(' '));
     t.check('沒改就存檔，內容一字不差', r.roundtrip);
     t.eq('缺少：src 明確查表＋role.json 的 job', r.missing, '_zz_missing,zz_job');

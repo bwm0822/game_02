@@ -95,11 +95,13 @@ const COLOR = {point: '#ffd24a', port: '#5cd0ff', door: '#5cd0ff', bed: '#c88cff
 
 const push = (m, k, v) => (m.get(k) ?? m.set(k, []).get(k)).push(v);
 
-// 這個角色在這張圖的作息點：名稱（格子＝"@x,y"）→ [卡片編號（1 起）]
-function stopsOn(schedule, mapName)
+// 這個角色在這張圖的作息點：名稱（格子＝"@x,y"）→ [{i（第幾筆，0 起）, text（抵達時間）}]
+function stopsOn(schedule, mapName, plan)
 {
     const out = new Map();
-    (schedule ?? []).forEach((s, i) => {if (s.map === mapName && destOf(s)) push(out, destOf(s), i + 1);});
+    (schedule ?? []).forEach((s, i) => {
+        if (s.map === mapName && destOf(s)) push(out, destOf(s), {i, text: plan?.[i] ? hhmm(plan[i].arr) : (s.t ?? '?').replace(/^@/, '')});
+    });
     return out;
 }
 
@@ -124,8 +126,8 @@ function draw(cv, st)
     g.drawImage(d.bake, 0, 0);
     if (show.grid) drawGrid(g, d);
     // 只顯示選中那筆時，其他筆的編號不畫
-    const stops = stopsOn(st.schedule, st.name);
-    if (!show.mine) for (const [name, nums] of stops) {const keep = nums.filter(n => n === st.sel + 1); keep.length ? stops.set(name, keep) : stops.delete(name);}
+    const stops = stopsOn(st.schedule, st.name, st.plan);
+    if (!show.mine) for (const [name, nums] of stops) {const keep = nums.filter(n => n.i === st.sel); keep.length ? stops.set(name, keep) : stops.delete(name);}
     g.lineWidth = 1 / K;
     const doorNames = new Set((st.ports ?? []).map(p => p.o.name).filter(Boolean));
     for (const n of d.named.values())
@@ -163,7 +165,7 @@ function draw(cv, st)
     {
         const n = spotOf(d, name);
         if (!n) continue;
-        const ws = nums.map(v => g.measureText(String(v)).width + 8 / K);
+        const ws = nums.map(v => g.measureText(v.text).width + 8 / K);
         if (ws.length === 1) ws[0] = Math.max(r * 2, ws[0]);
         const w = ws.reduce((a, b) => a + b, 0), x0 = n.cen.x - w / 2, y0 = n.cen.y - r;
         g.beginPath();
@@ -174,11 +176,11 @@ function draw(cv, st)
         g.clip();
         let x = x0;
         nums.forEach((v, i) => {
-            const on = v === st.sel + 1;
+            const on = v.i === st.sel;
             if (on) {g.fillStyle = '#fff'; g.fillRect(x, y0, ws[i], r * 2);}
             if (i) {g.fillStyle = '#000'; g.fillRect(x - 0.5 / K, y0, 1 / K, r * 2);}
             g.fillStyle = on ? '#e8743b' : '#fff';
-            g.fillText(String(v), x + ws[i] / 2, n.cen.y + 0.5 / K);
+            g.fillText(v.text, x + ws[i] / 2, n.cen.y + 0.5 / K);
             x += ws[i];
         });
         g.restore();
@@ -405,9 +407,10 @@ async function portsFor(d)
 // point 編輯：opt.onMove(map, name, x, y)＝拖完（x/y＝格子左上角）
 // 路網：opt.stale＝比 navgraph.json 新的地圖（null／[]＝沒過期）、opt.atStale＝還沒進路網的作息格子數、opt.onUpdate()＝按「更新路網」、opt.navMsg＝上次更新的結果文字
 // 巡邏：opt.patrol＝選中那筆（do 是 patrol 才給）、opt.editRoute＝編輯路線中（點物件＝onRouteAdd(map, name)、點空地＝onNew(map, x, y, data)、右鍵號碼＝onRouteDel(第幾個)）
+// 挑目的地：opt.pick＝提示文字（有＝挑選模式，左鍵點物件／空地＝onPick(map, {name?, tile})，門照樣能進去）
 export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {}, others = [], id = null, occ = () => [],
     onNew = null, onMove = null, onMenu = null, stale = null, atStale = 0, onUpdate = null, navMsg = '',
-    patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null} = {})
+    patrol = null, editRoute = false, onRouteAdd = null, onRouteDel = null, pick = null, onPick = null} = {})
 {
     const free = M.map && M.free === M.map;
     const name = M.map && (maps.includes(M.map) || free) ? M.map : (r.schedule?.find(s => maps.includes(s.map))?.map ?? maps[0]);
@@ -417,7 +420,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     const tip = h('div', {class: 'smaptip', hidden: true});
     const msg = h('div', {class: 'smapmsg dim', hidden: true});
     const legs = legsOf(plan?.[sel], edges);
-    const st = {name, schedule: r.schedule, sel, others, occ, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
+    const st = {name, schedule: r.schedule, plan, sel, others, occ, data: null, hover: null, cell: null, door: null, ports: [], legs, route: null, hits: [], patrol: null, routeHits: [], editRoute};
     const inBox = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
     const go = (m) => {setMap(m); refresh();};
     const toMap = (e) => {const p = st.pz.toWorld(e); return {x: p.x + st.data.W / 2, y: p.y + st.data.H / 2};};
@@ -443,6 +446,14 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
             enterDoor(name, door);
             return refresh();
         }
+        if (pick)
+        {
+            if (!inMap(p) || !inNav) return;
+            const tile = tileOf(p);
+            if (!n && blockedAt(tile)) return;
+            onPick?.(name, {name: n?.name, tile});
+            return;
+        }
         if (!editRoute) return;
         if (n) {onRouteAdd?.(name, n.name); return;}
         if (onNew && inMap(p)) {const s = snap(p); onNew(name, s.x, s.y, st.data);}
@@ -453,6 +464,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     cv.st = st;
     const hint = (x) => {
         if (x.door) return x.door.issue?.level === 'error' ? '地圖不存在，點了不會進去' : '點＝進去、右鍵＝選單';
+        if (pick) return !inNav ? '這張圖不在路網裡，不能選' : !x.n && x.blocked ? '這格走不到' : '點＝選這裡';
         if (editRoute) return x.n ? '點＝加到巡邏路線最後' : '點＝新增 point 並加進巡邏路線';
         if (!inNav) return '這張圖不在路網裡，不能設成作息目的地（先更新路網）';
         if (x.blocked) return '這格走不到，不能設成目的地';
@@ -522,7 +534,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         st.door = x.door;
         st.hover = x.n?.name ?? null;
         st.cell = !x.door && !x.n && !editRoute ? {key: atName(x.tile), blocked: x.blocked, rect: {x: x.tile[0] * tw, y: x.tile[1] * th, w: tw, h: th}} : null;
-        cv.style.cursor = x.door ? 'pointer' : x.n?.type === 'point' && onMove ? 'grab' : x.n && editRoute ? 'pointer' : '';
+        cv.style.cursor = x.door ? 'pointer' : pick ? (x.n || !x.blocked ? 'crosshair' : 'not-allowed') : x.n?.type === 'point' && onMove ? 'grab' : x.n && editRoute ? 'pointer' : '';
         say(e);
         if (was !== `${st.hover}|${st.cell?.key}|${st.door?.o.id}`) redraw();
     });
@@ -555,7 +567,7 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
         if (d) {st.ports = await portsFor(d); redraw();}
     });
     requestAnimationFrame(redraw);
-    const pick = h('select', {title: '地圖', dataset: {k: 'schedMap'}, onchange: e => go(e.target.value)},
+    const mapSel = h('select', {title: '地圖', dataset: {k: 'schedMap'}, onchange: e => go(e.target.value)},
         !inNav && h('option', {value: name, selected: true}, `${name}（路網沒有）`),
         maps.map(m => h('option', {value: m, selected: m === name}, m)));
     const back = h('button', {type: 'button', class: 'back', dataset: {k: 'schedBack'}, disabled: !M.back.length,
@@ -570,7 +582,8 @@ export function schedMapEl(r, maps, refresh, {plan = null, sel = -1, edges = {},
     return h('div', {class: 'pv smap'},
         ...navBanner({stale, atStale, onUpdate, navMsg}),
         editBar,
-        h('div', {class: 'opts'}, pick, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地；拖 point 改位置'}, '?')),
+        pick && h('div', {class: 'routeedit pickbar'}, `${pick}：點物件或空地（可以點門進去），Esc 取消`),
+        h('div', {class: 'opts'}, mapSel, back, h('span', {class: 'help', title: '滾輪縮放、按住中鍵拖曳平移；點門（橘框 🚪）進去、「← 返回」回來；點路線上的「→ 地圖」切過去；右鍵空地或物件＝新增目的地／改目的地；拖 point 改位置'}, '?')),
         crumbs,
         h('div', {class: 'cvbox'}, cv, tip, msg),
         h('div', {class: 'opts'}, SHOW.showMenu(redraw, [], {names: () => [...(st.data?.named.keys() ?? [])]}), PZ.zoomField(view), PZ.centerBtn(view, '整張地圖放回中央、倍率剛好裝滿畫布')));

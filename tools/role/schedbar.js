@@ -1,6 +1,7 @@
 // 作息 24 小時橫條：buildPlan() 的時刻表 → 一列分段（之後全 NPC 總覽疊很多列也用這支）
 import {h} from '../common/dom.js';
 import {DAY, mod, hhmm, destOf} from '../../src/data/schedplan.js';
+import {toMin, shiftT as shift, dragRange} from './schedit.js';
 
 const PALETTE = ['#3f7fbf', '#4f9a4a', '#b5793a', '#8a5bb0', '#3a9a94', '#b0544f', '#9a9a3a', '#5b6fc4', '#b05b8f', '#6b8a3a'];
 
@@ -44,33 +45,106 @@ export function whereAt(plan, sch, t, segs = daySegs(plan, sch))
 // 跨午夜切成兩截
 export const pieces = (s, len) => (s + len <= DAY ? [[s, len]] : [[s, DAY - s], [0, s + len - DAY]]);
 
-function tip(g, plan)
+function tip(g, plan, ty)
 {
-    const p = plan[g.i], e = mod(g.s + g.len), no = g.i + 1;
-    if (g.kind === 'stay') return `${no}. ${g.go ?? '?'}（${g.map ?? '?'}）${g.do ? ` ${g.do}` : ''}\n${hhmm(g.s)}～${hhmm(e)}，停 ${dur(g.len)}`;
-    if (g.kind === 'walk') return `${no}. 走去 ${g.go ?? p.key}\n出發 ${hhmm(p.dep)} → 抵達 ${hhmm(p.arr)}，走 ${dur(p.cost)}`;
-    if (g.kind === 'late') return `⚠ ${no}. 排不下：晚 ${g.len} 分\n${hhmm(p.dep)} 要出發，上一筆 ${hhmm(e)} 才到`;
-    return `⚠ ${no}. 從 ${p.from} 走不到 ${p.key}（${hhmm(p.dep)}）`;
+    const p = plan[g.i], e = mod(g.s + g.len), pre = ty ? `${ty} · ` : '';
+    if (g.kind === 'stay') return `${pre}${g.go ?? '?'}（${g.map ?? '?'}）${g.do ? ` ${g.do}` : ''}\n${hhmm(g.s)}～${hhmm(e)}，停 ${dur(g.len)}`;
+    if (g.kind === 'walk') return `走去 ${g.go ?? p.key}\n出發 ${hhmm(p.dep)} → 抵達 ${hhmm(p.arr)}，走 ${dur(p.cost)}`;
+    if (g.kind === 'late') return `⚠ 排不下：晚 ${g.len} 分\n${hhmm(p.dep)} 要出發，上一筆 ${hhmm(e)} 才到`;
+    return `⚠ 從 ${p.from} 走不到 ${p.key}（${hhmm(p.dep)}）`;
 }
 
-// opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段、opt.bare＝不畫刻度跟圖例（總覽每列）
+const EDGE = 4;
+
+// opt.sel＝選中第幾筆（-1＝沒有）、opt.onPick(i)＝點了某段、opt.bare＝不畫刻度跟圖例（總覽每列）、opt.typeName(s)＝段內寫的類型名
+// opt.dim(map)＝true 的段變淡（總覽點圖例）
+// 編輯：opt.onMenu(e, t)＝右鍵（t＝那裡的分鐘）；opt.planOf(sch)＝{plan, warns}、opt.onShift(j, delta)＝拖第 j 筆的分界線（走路段）放開
 export function dayBarEl(plan, sch, warns, opt = {})
 {
-    const segs = opt.segs ?? daySegs(plan, sch, warns);
-    if (!segs) return h('div', {class: 'daybar none dim'}, '作息資料有問題，無法排時刻表');
+    const segs0 = opt.segs ?? (sch.length ? daySegs(plan, sch, warns) : []);
+    if (!segs0) return h('div', {class: 'daybar none dim'}, '作息資料有問題，無法排時刻表');
     const pct = (m) => `${(m / DAY) * 100}%`;
-    const bar = h('div', {class: 'track'},
-        Array.from({length: 23}, (_, k) => h('i', {class: 'hr' + ((k + 1) % 6 ? '' : ' six'), style: `left:${pct((k + 1) * 60)}`})),
-        segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
-            const label = g.kind === 'stay' ? `${g.i + 1}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
-            const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
-            return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : ''), dataset: {i: g.i, map: sch[g.i]?.map ?? ''}, title: tip({...g, go: g.go ?? destOf(sch[g.i])}, plan), style,
-                onclick: (e) => {e.stopPropagation(); opt.onPick?.(g.i);}}, label);
-        })));
-    if (opt.bare) return h('div', {class: 'daybar'}, bar);
+    const bar = h('div', {class: 'track'});
+    const fill = (pl, list, segs) => {
+        const tyOf = (i) => opt.typeName?.(list[i]) ?? '';
+        bar.replaceChildren(
+            ...Array.from({length: 23}, (_, k) => h('i', {class: 'hr' + ((k + 1) % 6 ? '' : ' six'), style: `left:${pct((k + 1) * 60)}`})),
+            ...segs.flatMap(g => pieces(g.s, g.len).map(([s, len]) => {
+                const label = g.kind === 'stay' ? `${tyOf(g.i)}${g.do === 'patrol' ? '↻' : ''}` : g.kind === 'nope' ? '⚠' : '';
+                const style = `left:${pct(s)};` + (g.kind === 'nope' ? '' : `width:${pct(len)};`) + (g.kind === 'stay' ? `background:${mapColor(g.map)};` : '');
+                const map = list[g.i]?.map ?? '';
+                return h('div', {class: `seg ${g.kind}` + (opt.sel === g.i ? ' sel' : '') + (opt.dim?.(map) ? ' dim' : ''),
+                    dataset: {i: g.i, map, kind: g.kind, l: s === g.s ? 1 : 0, r: s + len === g.s + g.len || s + len === mod(g.s + g.len) ? 1 : 0},
+                    title: tip({...g, go: g.go ?? destOf(list[g.i])}, pl, tyOf(g.i)), style}, label);
+            })));
+    };
+    fill(plan, sch, segs0);
+    if (!sch.length) bar.append(h('span', {class: 'empty dim'}, opt.onMenu ? '（沒有作息，右鍵插入）' : '（沒有作息）'));
+    const tOf = (x) => {const rc = bar.getBoundingClientRect(); return Math.max(0, Math.min(DAY - 1, ((x - rc.left) / rc.width) * DAY));};
+    // 滑鼠底下哪條分界線能拖：停留段的左右邊緣、整塊走路段；回傳第幾筆的走路段（j）
+    const grab = (e) => {
+        if (!opt.onShift || sch.length < 2) return -1;
+        const el = e.target.closest?.('.seg');
+        if (!el) return -1;
+        const i = +el.dataset.i, n = sch.length, rc = el.getBoundingClientRect();
+        if (el.dataset.kind === 'walk') return i;
+        if (el.dataset.kind !== 'stay') return -1;
+        if (+el.dataset.l && e.clientX - rc.left <= EDGE) return i;
+        if (+el.dataset.r && rc.right - e.clientX <= EDGE) return (i + 1) % n;
+        return -1;
+    };
+    const tipEl = h('div', {class: 'dragtip', hidden: true});
+    let drag = null, swallow = false;
+    bar.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        const j = grab(e);
+        if (j < 0) return;
+        e.preventDefault();
+        try {bar.setPointerCapture(e.pointerId);} catch {}
+        const t0 = toMin(sch[j].t);
+        drag = {j, x0: e.clientX, t0, delta: 0, moved: false, range: dragRange(plan, j) ?? [0, 0]};
+    });
+    bar.addEventListener('pointermove', (e) => {
+        if (!drag) {bar.style.cursor = grab(e) >= 0 ? 'ew-resize' : ''; return;}
+        if (!drag.moved && Math.abs(e.clientX - drag.x0) < 3) return;
+        drag.moved = true;
+        const raw = tOf(e.clientX) - tOf(drag.x0);
+        const step = e.shiftKey ? 1 : 10;
+        const want = Math.round((drag.t0 + raw) / step) * step - drag.t0;
+        const delta = Math.max(drag.range[0], Math.min(drag.range[1], want));
+        if (delta === drag.delta && !tipEl.hidden) return;
+        drag.delta = delta;
+        const list = sch.map((s, k) => (k === drag.j ? {...s, t: shift(s.t, delta)} : s));
+        const pl = opt.planOf(list);
+        fill(pl.plan, list, daySegs(pl.plan, list, pl.warns) ?? []);
+        const n = list.length, p = pl.plan?.[drag.j], pre = pl.plan?.[(drag.j - 1 + n) % n], nx = pl.plan?.[(drag.j + 1) % n];
+        tipEl.textContent = p ? `停 ${dur(mod(p.dep - pre.arr))} ｜ 抵達 ${hhmm(p.arr)} ｜ 停 ${dur(mod(nx.dep - p.arr))}` : list[drag.j].t;
+        tipEl.style.left = pct(tOf(e.clientX));
+        tipEl.hidden = false;
+    });
+    const end = () => {
+        const d = drag;
+        drag = null;
+        tipEl.hidden = true;
+        if (!d?.moved) return;
+        swallow = true;
+        setTimeout(() => {swallow = false;}, 0);
+        if (d.delta) opt.onShift(d.j, d.delta);
+        else fill(plan, sch, segs0);
+    };
+    bar.addEventListener('pointerup', end);
+    bar.addEventListener('pointercancel', end);
+    bar.addEventListener('click', (e) => {
+        if (swallow) return;
+        const el = e.target.closest?.('.seg');
+        if (el) {e.stopPropagation(); opt.onPick?.(+el.dataset.i);}
+    });
+    if (opt.onMenu) bar.addEventListener('contextmenu', (e) => opt.onMenu(e, Math.round(tOf(e.clientX))));
+    if (opt.bare) return h('div', {class: 'daybar'}, bar, tipEl);
+    const segs = segs0;
     const maps = [...new Set(segs.filter(g => g.kind === 'stay').map(g => g.map))];
     const legend = h('div', {class: 'legend'}, maps.map(m => h('span', {title: m ?? ''}, h('b', {style: `background:${mapColor(m)}`}), m?.split('/').at(-1) ?? '?')));
-    return h('div', {class: 'daybar'}, bar, axisEl(), legend);
+    return h('div', {class: 'daybar'}, bar, tipEl, axisEl(), legend);
 }
 
 export const axisEl = () => h('div', {class: 'axis'}, [0, 6, 12, 18, 24].map(t => h('span', {style: `left:${(t / 24) * 100}%`}, String(t))));

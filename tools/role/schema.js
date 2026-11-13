@@ -98,7 +98,10 @@ export function shownFields(r)
 }
 
 // ---------- 作息 ----------
-export const SCH_FIELDS = ['t', 'map', 'go', 'at', 'do', 'route', 'wait'];
+export const SCH_FIELDS = ['t', 'type', 'map', 'go', 'at', 'do', 'route', 'wait'];
+// 作息類型：local.json 的 sch.<id>（只是標籤，遊戲現在不讀）
+export const schTypes = (local) => Object.keys(local ?? {}).filter(k => k.startsWith('sch.')).map(k => k.slice(4));
+export const typeName = (local, t) => (t ? local?.[`sch.${t}`]?.lab ?? t : '');
 export const destText = (s) => (Array.isArray(s.at) ? `格 ${s.at.join(',')}` : s.go ?? '?');
 export const DO_NAMES = {'': '預設（目的地物件的動作）', idle: '站著', patrol: '巡邏'};
 

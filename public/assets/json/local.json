@@ -935,5 +935,45 @@
   "_pickup_item": {
     "lab": "拾取 {#item}",
     "grp": "msg"
+  },
+  "sch.sleep": {
+    "lab": "睡覺",
+    "grp": "sched"
+  },
+  "sch.work": {
+    "lab": "工作",
+    "grp": "sched"
+  },
+  "sch.rest": {
+    "lab": "休息",
+    "grp": "sched"
+  },
+  "sch.breakfast": {
+    "lab": "早餐",
+    "grp": "sched"
+  },
+  "sch.lunch": {
+    "lab": "午餐",
+    "grp": "sched"
+  },
+  "sch.dinner": {
+    "lab": "晚餐",
+    "grp": "sched"
+  },
+  "sch.patrol": {
+    "lab": "巡邏",
+    "grp": "sched"
+  },
+  "sch.shop": {
+    "lab": "購物",
+    "grp": "sched"
+  },
+  "sch.social": {
+    "lab": "社交",
+    "grp": "sched"
+  },
+  "sch.commute": {
+    "lab": "通勤",
+    "grp": "sched"
   }
 }

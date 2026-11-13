@@ -34,6 +34,11 @@
 .daybar .seg.late { top: 0; bottom: 0; background: rgba(255, 70, 70, .75); }
 .daybar .seg.nope { top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ff5050; overflow: visible; line-height: 22px; }
 .daybar .seg:hover { filter: brightness(1.25); }
+.daybar { position: relative; }
+.daybar .track { user-select: none; touch-action: none; }
+.daybar .track .empty { position: absolute; left: 6px; top: 3px; font-size: 12px; pointer-events: none; }
+.daybar .dragtip { position: absolute; top: -20px; transform: translateX(-50%); z-index: 3; padding: 1px 6px; border-radius: 3px;
+    background: #111; border: 1px solid #4fc3f7; color: #fff; white-space: nowrap; pointer-events: none; font-size: 12px; }
 .daybar .seg.sel { box-shadow: 0 0 0 2px #4fc3f7 inset; filter: brightness(1.2); }
 .daybar .axis { position: relative; height: 14px; color: #888; }
 .daybar .axis span { position: absolute; transform: translateX(-50%); }
@@ -61,7 +66,11 @@
 .gantt .track.empty { display: flex; align-items: center; padding-left: 6px; font-size: 12px; }
 .gantt .cur { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #ffd54f; z-index: 1; pointer-events: none; }
 .gantt .knob { position: absolute; top: -1px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #ffd54f; pointer-events: none; }
-.gantt .seg.dim { opacity: .2; }
+.daybar .seg.dim { opacity: .2; }
+.smap .pickbar { background: #173246; border-color: #4fc3f7; color: #cdeefc; }
+.schhint { margin: 4px 0 8px; }
+.ctxmenu button.sub::after { content: '▸'; float: right; margin-left: 12px; color: #999; }
+.ctxmenu button.open { background: #2a4f7a; }
 .gantt .glegend .pick { cursor: pointer; padding: 1px 4px; border-radius: 3px; }
 .gantt .glegend .pick.on { background: #2f6db5; color: #fff; }
 .gantt .glegend small { color: #ffd54f; margin-left: 2px; }

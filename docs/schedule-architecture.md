@@ -17,6 +17,7 @@
 - `map` + `go`：目的地是哪張地圖的哪個具名物件（Tiled 物件名稱只在單張圖內唯一，所以一定要帶 `map`）
 - `map` + `at:[tx, ty]`：目的地是那張圖的某一格（tile 座標），跟 `go` 二選一；沒有物件，抵達後沒有預設 act（＝站著，可另外寫 `do`）。路網節點 key＝`"地圖:@tx,ty"`（`schedplan.js` 的 `schKey()`／`destOf()`／`parseAt()`），`COM_Schedule._go()` 對這種 key 回一個只有 `getPts()` 的替身（同一格同一個物件）
 - `do`（選填）：抵達後的活動。沒寫就觸發目的地物件預設的 act（床 → `rest`）；`idle` = 只站著；`patrol` = 巡邏（見下）。`enter`（port）永遠不觸發，那是玩家切場景用的
+- `type`（選填）：語意標籤（`sleep`／`work`／`lunch`…，清單＝`local.json` 的 `sch.<id>`），跟 `do` 分開；**遊戲現在不讀**，只給角色分頁的時序條顯示，之後可給劇情／台詞條件用
 - 中途怎麼走（哪個門、哪座樓梯）**不寫**，由路網算
 - 依陣列順序循環：第一筆的「上一筆」是最後一筆
 - 換算成時刻表（`@` 倒推、走不到／排不下的警告）跟路網最短路是 `src/data/schedplan.js` 的純函式 `buildPlan()`／`route()`，`ScheduleManager._buildPlan()`、`NavGraph.route()` 跟角色分頁的作息地圖共用，改算法改這裡

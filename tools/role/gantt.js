@@ -17,7 +17,7 @@ const toMin = (s) => {
 };
 const short = (m) => m?.split('/').at(-1) ?? '?';
 
-// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i)}
+// o：{ids（已篩好、照 role.json 順序）, data, planOf(id), onRole(id), onSeg(id, i), typeName(s), planFor(sch)＝拖曳中的試算, onShift(id, j, delta)＝拖分界線放開}
 export function ganttEl(o)
 {
     const rows = o.ids.map(id => {
@@ -77,9 +77,9 @@ export function ganttEl(o)
             const now = h('div', {class: 'gnow'});
             nows.push({w, el: now});
             const bar = !w.sch.length ? h('div', {class: 'daybar'}, h('div', {class: 'track empty'}, h('span', {class: 'dim'}, '（沒有作息）')))
-                : SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs, bare: true, sel: -1, onPick: (i) => o.onSeg(w.id, i)});
+                : SB.dayBarEl(w.pl.plan, w.sch, w.pl.warns, {segs: w.segs, bare: true, sel: -1, onPick: (i) => o.onSeg(w.id, i),
+                    typeName: o.typeName, planOf: o.planFor, onShift: (j, d) => o.onShift(w.id, j, d), dim: G.map ? (m) => m !== G.map : null});
             bar.querySelector('.track')?.append(cur('cur'));
-            if (G.map) for (const s of bar.querySelectorAll('.seg')) s.classList.toggle('dim', s.dataset.map !== G.map);
             return h('div', {class: 'grole' + (w.sch.length ? '' : ' nosch'), dataset: {id: w.id}},
                 h('div', {class: 'gname'}, h('a', {onclick: () => o.onRole(w.id)}, w.id), h('span', {class: 'dim'}, w.r.lab ?? '')),
                 bar, now);

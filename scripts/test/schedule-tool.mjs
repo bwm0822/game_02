@@ -63,7 +63,7 @@ run('schedule-tool', async t => {
         const assets = await dir(opfs, 'game', 'public', 'assets'), json = await dir(assets, 'json');
         await write(json, 'role.json', await (await fetch('/assets/json/role.json')).text());
         await re.setAssets(assets);
-        S.sel = 'trump'; S.view = 'form'; re.render();
+        S.sel = 'trump'; S.view = 'form'; S.schSel = {id: 'trump', i: 0}; re.render();
 
         const right = () => document.getElementById('right');
         out.tabs = [...right().querySelectorAll('.rtabs button')].map(b => b.textContent + (b.classList.contains('on') ? '*' : ''));
@@ -97,7 +97,7 @@ run('schedule-tool', async t => {
         out.hoverBold = [!!tip().querySelector('.occ .mine .oseg.sel'), !!tip().querySelector('.occ .oaxis'), !tip().querySelector('.occ .onow')];
         out.noInfo = [!right().querySelector('.smap .info'), !cv().hasAttribute('title'), !!right().querySelector('.smap .help[title]')];
         // 選中那張的編號反白：膠囊裡數字左邊是白底（橘點畫在藍線上面）
-        const dpr = devicePixelRatio || 1, px0 = cv().getContext('2d').getImageData(Math.round((o.x + (p.x - d.W / 2) * K - 7) * dpr), Math.round((o.y + (p.y - d.H / 2) * K) * dpr), 1, 1).data;
+        const dpr = devicePixelRatio || 1, px0 = cv().getContext('2d').getImageData(Math.round((o.x + (p.x - d.W / 2) * K) * dpr), Math.round((o.y + (p.y - d.H / 2) * K - 7) * dpr), 1, 1).data;
         out.selWhite = [...px0.slice(0, 3)].every(v => v > 230);
         cv().dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
         out.tipGone = tip().hidden;
@@ -120,12 +120,15 @@ run('schedule-tool', async t => {
         // ---- 第 3 步：選卡片 → 路線、麵包屑、時刻表 ----
         S.secOpen['作息'] = true; S.open.schedule = true; S.schSel = null; re.render();
         const cards = () => [...document.querySelectorAll('#view .card[data-sch]')];
+        const card = (i) => document.querySelector(`#view .card[data-sch="${i}"]`);
         const sch = S.data.trump.schedule;
         out.trumpSch = sch.map(s => `${s.t} ${s.map}:${s.go}`);
-        out.firstSel = [cards()[0]?.classList.contains('sel'), cards()[1]?.classList.contains('sel')];
+        out.firstSel = [cards().length, document.querySelector('#view .schhint')?.textContent, re.S.schSel];
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        out.oneCard = cards().map(c => c.dataset.sch);
         const pl = re.SP.buildPlan(sch, S.ext.nav.edges, S.ext.nav.nodes);
         const p0 = pl.plan[0];
-        out.times0 = cards()[0].querySelector('.times')?.textContent;
+        out.times0 = card(0).querySelector('.times')?.textContent;
         out.times0Want = `出發 ${re.SP.hhmm(p0.dep)} → 抵達 06:20（走 ${p0.cost} 分）`;
         out.dep0 = re.SP.mod(p0.dep + p0.cost) === 6 * 60 + 20;
 
@@ -191,15 +194,15 @@ run('schedule-tool', async t => {
         await until(() => cv()?.st.name !== sch[0].map && cv().st.route);
         out.jumped = [cv().st.name, crumbs().find(b => b.classList.contains('on'))?.dataset.map, cv().st.route.labels.map(l => l.text.replace(/^\d\d:\d\d /, '') + (l.go ? `→${l.go}` : ''))];
 
-        // 點第 2 張卡片：反白換過去、左邊表單不重畫（同一個元素）、地圖跳到床那層
-        const card1 = cards()[1];
-        card1.querySelector('.sum').click();
+        // 點時序條第 2 段：下面換成第 2 筆的卡片、橫條沒重畫（同一個元素）、地圖跳到床那層
+        const bar1 = document.querySelector('#view .daybar');
+        bar1.querySelector('.seg.stay[data-i="1"]').click();
         await until(() => cv()?.st.data);
-        out.sel2 = [card1.isConnected, card1.classList.contains('sel'), cards()[0].classList.contains('sel'), cv().st.name, S.schSel.i];
+        out.sel2 = [bar1.isConnected, cards().map(c => c.dataset.sch).join(), cv().st.name, S.schSel.i];
 
         // 排不下：第 2 筆改成比第 1 筆抵達還早出發 → 卡片標紅、寫晚幾分
         re.commit(() => {S.data.trump.schedule[1].t = '06:10';});
-        out.late = cards()[1].querySelector('.times')?.className + '|' + cards()[1].querySelector('.times')?.textContent;
+        out.late = card(1).querySelector('.times')?.className + '|' + card(1).querySelector('.times')?.textContent;
         out.lateWant = p0.cost > 10;
         out.lateBar = [...document.querySelectorAll('#view .daybar .seg.late')].map(s => `${s.dataset.i}:${s.title.split('\n')[0]}`);
         re.undo();
@@ -208,7 +211,7 @@ run('schedule-tool', async t => {
         const bar = () => document.querySelector('#view .daybar');
         const segs = () => [...bar().querySelectorAll('.seg')];
         S.schSel = {id: 'trump', i: 0}; re.render();
-        out.barFirst = bar()?.nextElementSibling === cards()[0];
+        out.barFirst = bar()?.nextElementSibling?.firstElementChild === card(0);
         // trump：06:20 到 1F、22:50 到 2F 床 → 1F 停留一段、床跨午夜切兩截、兩段走路
         out.barSegs = segs().map(s => `${s.className.replace(/^seg /, '').replace(' sel', '')}${s.dataset.i}`).sort().join();
         const SB = re.SB, segs0 = SB.daySegs(pl.plan, sch, pl.warns);
@@ -219,11 +222,11 @@ run('schedule-tool', async t => {
         out.bedTip = bed[0]?.title;
         out.legend = [...bar().querySelectorAll('.legend span')].map(s => s.textContent);
         out.barSel = segs().filter(s => s.classList.contains('sel')).map(s => s.dataset.i);
-        // 點床那段：選第 2 張卡片（不重畫表單）、橫條反白跟著換
-        const card0 = cards()[0];
+        // 點床那段：下面換成第 2 筆（不重畫橫條）、橫條反白跟著換
+        const bar0 = bar();
         bed[0].click();
         await until(() => S.schSel?.i === 1);
-        out.barPick = [S.schSel.i, card0.isConnected, cards()[1].classList.contains('sel'), [...new Set(segs().filter(s => s.classList.contains('sel')).map(s => s.dataset.i))].join()];
+        out.barPick = [S.schSel.i, bar0.isConnected, cards().map(c => c.dataset.sch).join(), [...new Set(segs().filter(s => s.classList.contains('sel')).map(s => s.dataset.i))].join()];
         // 走不到：紅線；資料有問題：不畫橫條
         out.nopeSeg = SB.daySegs([{key: 'a', dep: 600, arr: 600, cost: 0, from: 'b', path: null}, {key: 'b', dep: 900, arr: 960, cost: 60, from: 'a', path: []}], [{map: 'x'}, {map: 'y'}], [])
             .map(g => `${g.kind}${g.i}@${g.s}+${g.len}`).join();
@@ -274,10 +277,19 @@ run('schedule-tool', async t => {
             rowOf('trump').querySelector('.gnow').classList.contains('on')];
         leg().click();
         out.gMapOff = [localStorage.getItem('tools.role.gantt.map'), g().querySelectorAll('.seg.dim').length];
+        // 總覽也能拖分界線：trump 走去床那段往左 30 分＝@22:50 → @22:20，段內寫類型名
+        {
+            const hg = S.hi, w = rowOf('trump').querySelector('.seg.walk[data-i="1"]'), tr2 = rowOf('trump').querySelector('.track');
+            const r2 = w.getBoundingClientRect(), y2 = r2.top + r2.height / 2, x2 = r2.left + r2.width / 2, dx = tr2.getBoundingClientRect().width * 30 / 1440;
+            const pe2 = (type, x, el = tr2) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: y2}));
+            pe2('pointerdown', x2, w); pe2('pointermove', x2 - dx / 2); pe2('pointermove', x2 - dx); pe2('pointerup', x2 - dx);
+            out.gShift = [S.data.trump.schedule[1].t, S.hi - hg, S.view];
+            re.undo();
+        }
         // 點 trump 的床那段：進表單、選第 2 張卡片、右欄作息
         rowOf('trump').querySelector('.seg.stay[data-i="1"]').click();
         await until(() => cv()?.st);
-        out.gPick = [S.view, S.sel, S.schSel.i, S.rtab, cards()[1]?.classList.contains('sel'), cv()?.st.name];
+        out.gPick = [S.view, S.sel, S.schSel.i, S.rtab, !!card(1), cv()?.st.name];
         // 點角色名＝進表單
         S.view = 'table'; re.render();
         rowOf('musk').querySelector('.gname a').click();
@@ -318,7 +330,7 @@ run('schedule-tool', async t => {
             await until(() => document.querySelector('.ctxmenu'));
             const bs = [...document.querySelectorAll('.ctxmenu button')];
             const items = bs.map(b => b.textContent + (b.disabled ? '×' : ''));
-            if (pick) bs.find(b => b.textContent === pick)?.click();
+            if (pick) bs.find(b => (pick instanceof RegExp ? pick.test(b.textContent) : b.textContent === pick))?.click();
             else document.querySelector('.ctxmenu')?.remove();
             return items;
         };
@@ -331,8 +343,8 @@ run('schedule-tool', async t => {
         out.hoverOthersOcc = occLabs();
         await at('sit-1', 'click');
         out.leftNoop = [S.data.trump.schedule[0].go, S.hi === hist0];
-        out.objMenu = await ctxObj('sit-1', '改成第 1 筆的目的地');
-        out.picked = [cards()[0].classList.contains('sel'), S.data.trump.schedule[0].map, S.data.trump.schedule[0].go, S.data.trump.schedule.length];
+        out.objMenu = await ctxObj('sit-1', /^改成選中那筆/);
+        out.picked = [!!card(0), S.data.trump.schedule[0].map, S.data.trump.schedule[0].go, S.data.trump.schedule.length];
         re.undo();
         out.pickUndo = S.data.trump.schedule[0].go;
         // 空地：方框對齊格子、浮動框寫格子；右鍵 新增目的地 → 問抵達時間（預設選中那筆 +1 小時）→ 照時間插在第 2 筆、寫 at
@@ -355,11 +367,12 @@ run('schedule-tool', async t => {
         re.SM.show.coord = true;
         let defT = '';
         out.addAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), dl => {defT = dl.querySelector('[data-k=arriveAt]').textContent; pickT('arriveAt', '12:00'); return 'ok';});
-        out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i];
+        await until(() => S.data.trump.schedule.length === 4);
+        out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i, JSON.stringify(S.data.trump.schedule[2])];
         out.addedAtWant = JSON.stringify({t: '@12:00', map: F1, at: cell});
         // 臨時補路網：時刻表算得出來、橫幅說有格子還沒進路網
-        await until(() => /抵達 12:00/.test(cards()[1]?.querySelector('.times')?.textContent ?? ''));
-        out.atTimes = cards()[1]?.querySelector('.times')?.textContent;
+        await until(() => /抵達 12:00/.test(card(1)?.querySelector('.times')?.textContent ?? ''));
+        out.atTimes = card(1)?.querySelector('.times')?.textContent;
         await until(() => right().querySelector('.smap .stale'));
         out.atBanner = right().querySelector('.smap .stale')?.textContent;
         await until(() => cv()?.st.data);
@@ -368,7 +381,7 @@ run('schedule-tool', async t => {
         await sleep(30);
         out.atBox = [!!cv().st.spots?.has(`@${cell.join(',')}`), cv().st.spots?.get(`@${cell.join(',')}`)?.[0]?.id];
         // 改成物件：at 換成 go、key 位置不變
-        await ctxObj('sit-1', '改成第 2 筆的目的地');
+        await ctxObj('sit-1', /^改成選中那筆/);
         out.atToGo = JSON.stringify(S.data.trump.schedule[1]);
         // 同一時間擋下
         out.dupAsk = await runAns(ctx(cell[0] * 32 + 16, cell[1] * 32 + 16, '新增目的地…'), () => {pickT('arriveAt', '06:20'); return 'ok';});
@@ -377,6 +390,73 @@ run('schedule-tool', async t => {
         out.wallMenu = wall0 ? await ctx(wall0[0] * 32 + 16, wall0[1] * 32 + 16) : null;
         while (S.hi > hist0) re.undo();
         out.insUndo = [S.data.trump.schedule.length, S.hi === hist0];
+
+        // ---- 時序條編輯：右鍵分層選單插入（夾一小時）、拖分界線、類型、刪除合併、在地圖上選 ----
+        S.schSel = {id: 'trump', i: 0}; re.SM.setMap(F1); re.render();
+        const h1 = S.hi, sch0 = JSON.stringify(S.data.trump.schedule);
+        const tb = () => document.querySelector('#view .daybar .track');
+        const xOf = (min) => {const rc = tb().getBoundingClientRect(); return rc.left + rc.width * min / 1440;};
+        const ctxBar = async (min) => {
+            document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+            tb().dispatchEvent(new MouseEvent('contextmenu', {bubbles: true, cancelable: true, button: 2, clientX: xOf(min), clientY: tb().getBoundingClientRect().top + 8}));
+            await until(() => document.querySelector('.ctxmenu'));
+        };
+        const mItems = (lv) => [...document.querySelectorAll(`.ctxmenu[data-lv="${lv}"] button`)];
+        const hover = (lv, rx) => {const b = mItems(lv).find(x => rx.test(x.textContent)); b?.dispatchEvent(new MouseEvent('mouseenter')); return b;};
+        await ctxBar(10 * 60 + 3);
+        out.barMenu = mItems(0).map(b => b.textContent);
+        hover(0, /^插入作息/);
+        out.barL1 = mItems(1).map(b => b.textContent);
+        hover(1, /^m_04x05$/);
+        out.barL2 = mItems(2).map(b => b.textContent);
+        hover(2, /trump-inn-f1$/);
+        out.barL3 = mItems(3).map(b => b.textContent);
+        mItems(3).find(b => b.textContent === 'sit-1').click();
+        out.barIns = [S.data.trump.schedule.map(s => `${s.t} ${s.go}`).join(' | '), S.schSel.i, !document.querySelector('.ctxmenu'), S.hi - h1];
+        // 拖第 3 筆（回 trump-p1）的走路段往右 30 分＝出發 11:00 → 11:30
+        const walk2 = () => tb().querySelector('.seg.walk[data-i="2"]');
+        const wr = walk2().getBoundingClientRect(), wy = wr.top + wr.height / 2, wx = wr.left + wr.width / 2;
+        const pe = (type, x, el = tb()) => el.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: wy}));
+        pe('pointerdown', wx, walk2());
+        pe('pointermove', wx + (xOf(30) - xOf(0)) / 2);
+        pe('pointermove', wx + (xOf(30) - xOf(0)));
+        out.dragTip = document.querySelector('#view .daybar .dragtip:not([hidden])')?.textContent ?? '';
+        pe('pointerup', wx + (xOf(30) - xOf(0)));
+        out.dragged = [S.data.trump.schedule[2].t, S.data.trump.schedule[1].t, S.hi - h1];
+        // 拖過頭夾住：往左拖 3 小時，sit-1 最少停 10 分
+        const wr2 = walk2().getBoundingClientRect(), wx2 = wr2.left + wr2.width / 2;
+        pe('pointerdown', wx2, walk2()); pe('pointermove', wx2 - (xOf(180) - xOf(0))); pe('pointerup', wx2 - (xOf(180) - xOf(0)));
+        const plc = re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+        out.clamped = re.SP.mod(plc[2].dep - plc[1].arr);
+        re.undo();
+        // 類型：卡片下拉選午餐 → 時序條段內寫「午餐」
+        const tsel = document.querySelector('#view [data-k="schedule.1.type"]');
+        out.typeOpts = [...tsel.options].map(o => o.textContent);
+        tsel.value = 'lunch'; tsel.dispatchEvent(new Event('change'));
+        out.typed = [S.data.trump.schedule[1].type, tb().querySelector('.seg.stay[data-i="1"]')?.textContent, Object.keys(S.data.trump.schedule[1]).join()];
+        // 右鍵 sit-1 那段：改目的地／類型／刪除；刪除＝前後同目的地合併，回到原本
+        await ctxBar(10 * 60 + 20);
+        out.segMenu = mItems(0).map(b => b.textContent);
+        mItems(0).find(b => b.textContent === '刪除這筆').click();
+        out.delMerged = [JSON.stringify(S.data.trump.schedule) === sch0, S.schSel.i];
+        // 在地圖上選：插入 15:00 → 挑選模式 → 點 sit-2
+        await ctxBar(15 * 60);
+        hover(0, /^插入作息/);
+        mItems(1).find(b => b.textContent.includes('在地圖上選')).click();
+        await until(() => right().querySelector('.smap .pickbar'));
+        out.pickBar = right().querySelector('.smap .pickbar')?.textContent;
+        await until(() => cv()?.st.data && cv().st.name === F1);
+        await at('sit-2', 'click');
+        await until(() => S.data.trump.schedule.length === 4);
+        out.picked2 = [S.data.trump.schedule.map(s => `${s.t} ${s.go}`).join(' | '), !right().querySelector('.smap .pickbar')];
+        // Esc 取消挑選
+        await ctxBar(16 * 60 + 30);
+        hover(0, /^插入作息/);
+        mItems(1).find(b => b.textContent.includes('在地圖上選')).click();
+        document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+        out.pickEsc = [!right().querySelector('.smap .pickbar'), !re.S.pick];
+        while (S.hi > h1) re.undo();
+        out.barUndo = JSON.stringify(S.data.trump.schedule) === sch0;
         // 點門：進到目的地圖、← 返回 回來
         S.schSel = {id: 'trump', i: 0}; re.SM.setMap(F1); re.render();
         await until(() => cv()?.st.data && cv().st.ports.length);
@@ -449,7 +529,7 @@ run('schedule-tool', async t => {
         const m1 = await readMap(), np = objs(m1).find(o => o.name === 'trump-p2');
         const goBefore = S.data.trump.schedule[0].go;
         await until(() => cv()?.st.data?.named.has('trump-p2'));
-        await ctxObj('trump-p2', '改成第 1 筆的目的地');
+        await ctxObj('trump-p2', /^改成選中那筆/);
         out.added = [defName, JSON.stringify(np), m1.nextobjectid === m0.nextobjectid + 1, np?.id === m0.nextobjectid, goBefore, S.data.trump.schedule[0].go];
         out.addedExpect = JSON.stringify({id: m0.nextobjectid, name: 'trump-p2', template: '../../templates/point.tj', x: empty[0] * 32, y: empty[1] * 32});
         // 寫出來的檔：除了新物件跟 nextobjectid，其他資料一樣；排版照 Tiled（\/ 跳脫、CRLF 照原檔）
@@ -459,7 +539,7 @@ run('schedule-tool', async t => {
         await sleep(60);
         await until(() => right().querySelector('.smap .stale'));
         out.stale = [JSON.stringify(S.stale), right().querySelector('.smap .stale')?.textContent];
-        out.cardMiss = cards()[0].querySelector('.times')?.textContent;
+        out.cardMiss = card(0).querySelector('.times')?.textContent;
 
         // 拖 trump-p2 往右兩格
         await until(() => cv()?.st.data?.named.has('trump-p2'));
@@ -562,7 +642,8 @@ run('schedule-tool', async t => {
     t.check('遊戲 ScheduleManager 照樣排出時刻表', Object.keys(game).length > 0 && game.trump?.length === 2, JSON.stringify(Object.keys(game)));
     t.eq('工具算的時刻表跟遊戲一樣（全部角色）', JSON.stringify(r.tool), JSON.stringify(game));
     t.check('trump 作息：06:20 到 1F trump-p1、22:50 到 2F 床', JSON.stringify(r.trumpSch) === JSON.stringify(['@06:20 m_04x05/trump-inn-f1:trump-p1', '@22:50 m_04x05/trump-inn-f2:bed']), JSON.stringify(r.trumpSch));
-    t.eq('預設選第 1 張卡片', JSON.stringify(r.firstSel), JSON.stringify([true, false]));
+    t.eq('沒選：沒有卡片、一行灰字', JSON.stringify(r.firstSel), JSON.stringify([0, '點時序條上的一段來編輯', null]));
+    t.eq('選了：只顯示那一筆的卡片', JSON.stringify(r.oneCard), JSON.stringify(['0']));
     t.eq('卡片時刻表：出發（倒推）→ 抵達、走幾分', r.times0, r.times0Want);
     t.check('@ 抵達倒推出發', r.dep0);
     t.eq('時間選擇器：顯示 HH:MM、沒有輸入框', JSON.stringify(r.tpNoInput), JSON.stringify(['06:20', true]));
@@ -582,17 +663,17 @@ run('schedule-tool', async t => {
     t.eq('1F 標籤：從 2F 進來（可點）、抵達', JSON.stringify(r.labels), JSON.stringify(['從 trump-inn-f2 進來→m_04x05/trump-inn-f2', '抵達']));
     t.eq('點標籤切到 2F：麵包屑跟著、2F 標籤＝出發、→ 1F', JSON.stringify(r.jumped),
         JSON.stringify(['m_04x05/trump-inn-f2', 'm_04x05/trump-inn-f2', ['出發', '→ trump-inn-f1→m_04x05/trump-inn-f1']]));
-    t.eq('點第 2 張卡片：反白換過去、表單沒重畫、地圖到床那層', JSON.stringify(r.sel2), JSON.stringify([true, true, false, 'm_04x05/trump-inn-f2', 1]));
+    t.eq('點時序條第 2 段：卡片換成第 2 筆、橫條沒重畫、地圖到床那層', JSON.stringify(r.sel2), JSON.stringify([true, '1', 'm_04x05/trump-inn-f2', 1]));
     t.check('排不下標紅、寫晚幾分', !r.lateWant || /^times bad\|.*排不下：晚 \d+ 分/.test(r.late), r.late);
-    t.check('橫條：排不下那筆塗紅', !r.lateWant || (r.lateBar.length === 1 && r.lateBar[0].startsWith('1:⚠ 2. 排不下')), JSON.stringify(r.lateBar));
-    t.eq('橫條在卡片列表最上面', r.barFirst, true);
+    t.check('橫條：排不下那筆塗紅', !r.lateWant || (r.lateBar.length === 1 && r.lateBar[0].startsWith('1:⚠ 排不下')), JSON.stringify(r.lateBar));
+    t.eq('橫條在卡片上面', r.barFirst, true);
     t.eq('橫條分段：停留×2（床跨午夜切兩截）＋走路×2', r.barSegs, 'stay0,stay1,stay1,walk0,walk1');
     t.eq('橫條分段加起來剛好 24 小時', r.barSum, 1440);
     t.eq('床跨午夜：兩截貼著兩端、跟 1F 不同色', JSON.stringify(r.bedCut), JSON.stringify([2, true, true]));
-    t.check('滑過床那段：編號、目的地、地圖、時段', /^2\. bed（m_04x05\/trump-inn-f2）\n22:50～\d\d:\d\d，停 \d+ 時/.test(r.bedTip ?? ''), r.bedTip);
+    t.check('滑過床那段：目的地、地圖、時段（沒有編號）', /^bed（m_04x05\/trump-inn-f2）\n22:50～\d\d:\d\d，停 \d+ 時/.test(r.bedTip ?? ''), r.bedTip);
     t.eq('圖例：地圖名', JSON.stringify(r.legend), JSON.stringify(['trump-inn-f1', 'trump-inn-f2']));
     t.eq('預設反白第 1 筆（停留＋走過去那段）', JSON.stringify(r.barSel), JSON.stringify(['0', '0']));
-    t.eq('點橫條：選那張卡片、表單沒重畫、反白跟著換', JSON.stringify(r.barPick), JSON.stringify([1, true, true, '1']));
+    t.eq('點橫條：卡片換成那筆、橫條沒重畫、反白跟著換', JSON.stringify(r.barPick), JSON.stringify([1, true, '1', '1']));
     t.eq('走不到：紅線、沒有走路段', r.nopeSeg, 'nope0@600+0,stay0@600+300,walk1@900+60,stay1@960+1080');
     t.eq('作息資料有問題：不畫橫條、一行灰字', JSON.stringify(r.barNone), JSON.stringify([true, '作息資料有問題，無法排時刻表']));
     t.eq('總覽多一個「作息」分頁（NPC 數）', r.gTab, r.gTabWant);
@@ -606,19 +687,38 @@ run('schedule-tool', async t => {
     t.eq('再點取消', JSON.stringify(r.gMapOff), JSON.stringify([null, 0]));
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
+    t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
+    t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '改目的地', '類型', '刪除這筆']));
+    t.eq('插入 ▸ 世界圖 ＋ 在地圖上選', JSON.stringify(r.barL1), JSON.stringify(['m_04x05', '🗺 在地圖上選…']));
+    t.check('世界圖 ▸ 自己的點＋🏠 室內圖（不列門、樓梯、只有門的空屋）', r.barL2.includes('musk-p1') && r.barL2.includes('🏠 trump-inn-f1') && !r.barL2.includes('trump-inn') && !r.barL2.some(x => /house-0[1-7]$/.test(x)), JSON.stringify(r.barL2));
+    t.check('🏠 室內圖 ▸ 點（不列 door／stair-up）', r.barL3.includes('sit-1') && r.barL3.includes('trump-p1') && !r.barL3.includes('door') && !r.barL3.includes('stair-up'), JSON.stringify(r.barL3));
+    t.eq('插入夾一小時：10:00 抵達 sit-1、11:00 出發回 trump-p1、選新那筆、一筆 undo', JSON.stringify(r.barIns),
+        JSON.stringify(['@06:20 trump-p1 | @10:00 sit-1 | 11:00 trump-p1 | @22:50 bed', 1, true, 1]));
+    t.check('拖曳中浮出 停｜抵達｜停', /^停 .+ ｜ 抵達 \d\d:\d\d ｜ 停 /.test(r.dragTip), r.dragTip);
+    t.eq('拖走路段：那筆照原型別平移 30 分、前一筆不動、一筆 undo', JSON.stringify(r.dragged), JSON.stringify(['11:30', '@10:00', 2]));
+    t.eq('拖過頭：前一段最少停 10 分', r.clamped, 10);
+    t.check('類型下拉：（無）＋清單＋新類型', r.typeOpts[0] === '（無）' && r.typeOpts.includes('午餐') && r.typeOpts.at(-1) === '＋ 新類型…', JSON.stringify(r.typeOpts));
+    t.eq('選午餐：寫 type、段內寫午餐、type 排在 t 後面', JSON.stringify(r.typed), JSON.stringify(['lunch', '午餐', 't,map,go,type']));
+    t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '改目的地', '類型', '刪除這筆']));
+    t.eq('刪除：前後同目的地合併，回到原本、選前一筆', JSON.stringify(r.delMerged), JSON.stringify([true, 0]));
+    t.check('在地圖上選：地圖上方提示', /插入 15:00 抵達的目的地/.test(r.pickBar ?? ''), r.pickBar);
+    t.eq('點 sit-2：插入（夾一小時）、提示消失', JSON.stringify(r.picked2), JSON.stringify(['@06:20 trump-p1 | @15:00 sit-2 | 16:00 trump-p1 | @22:50 bed', true]));
+    t.eq('Esc 取消挑選', JSON.stringify(r.pickEsc), JSON.stringify([true, true]));
+    t.eq('全部 undo 回原狀', r.barUndo, true);
     t.check('滑過別人用的點：占用時間圖列出誰的第幾筆、提示右鍵', r.hoverOthersOcc.some(x => /^musk (\d+,)*2(,|$)/.test(x)) &&r.hoverOthers.endsWith('右鍵＝新增目的地／改目的地…'), JSON.stringify([r.hoverOthersOcc, r.hoverOthers]));
     t.eq('左鍵點物件不改資料', JSON.stringify(r.leftNoop), JSON.stringify(['trump-p1', true]));
-    t.eq('右鍵物件：新增目的地／改成第 1 筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成第 1 筆的目的地']));
-    t.eq('改成第 1 筆的目的地：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
+    t.eq('右鍵物件：新增目的地／改成選中那筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成選中那筆（06:20）的目的地']));
+    t.eq('改成選中那筆的目的地：改那筆的 map＋go', JSON.stringify(r.picked), JSON.stringify([true, 'm_04x05/trump-inn-f1', 'sit-1', 2]));
     t.eq('一筆 undo 回原本的目的地', r.pickUndo, 'trump-p1');
     t.check('滑過空地：方框對齊格子、浮動框寫格子＋右鍵提示', r.cellHover[0] === `@${r.addedAt && JSON.parse(r.addedAtWant).at.join(',')}` && r.cellHover[2].startsWith('格 ') && r.cellHover[2].endsWith('右鍵＝新增目的地…'), JSON.stringify(r.cellHover));
     t.eq('右鍵空地 新增目的地：問抵達時間（預設選中那筆 +1 小時）', JSON.stringify([r.addAsk, r.addedAt[0]]), JSON.stringify([['新增目的地'], '07:20']));
-    t.eq('照抵達時間插在第 2 筆、寫 at、選到新的那筆', JSON.stringify(r.addedAt.slice(1)), JSON.stringify([3, r.addedAtWant, 1]));
+    t.eq('夾一小時：插在第 2 筆、寫 at、選到新的那筆、13:00 出發回 trump-p1', JSON.stringify(r.addedAt.slice(1)),
+        JSON.stringify([4, r.addedAtWant, 1, JSON.stringify({t: '13:00', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'})]));
     t.check('格子還沒進路網：時刻表先臨時算', /抵達 12:00/.test(r.atTimes ?? ''), r.atTimes);
     t.check('橫幅：N 個作息格子還沒進路網', /1 個作息格子還沒進路網/.test(r.atBanner ?? ''), r.atBanner);
     t.eq('改成物件：at 換成 go、key 位置不變', r.atToGo, JSON.stringify({t: '@12:00', map: 'm_04x05/trump-inn-f1', go: 'sit-1'}));
     t.eq('作息地圖畫 at 格子方框（畫的時候就算好作息點）', JSON.stringify(r.atBox), JSON.stringify([true, 'trump']));
-    t.eq('同一時間擋下', JSON.stringify([r.dupAsk, r.dupT]), JSON.stringify([['新增目的地'], [3, '第 1 筆已經是 06:20 抵達']]));
+    t.eq('同一時間擋下', JSON.stringify([r.dupAsk, r.dupT]), JSON.stringify([['新增目的地'], [4, '已經有一筆是 06:20 抵達']]));
     t.check('走不到的格子：新增目的地反灰', r.wallMenu?.[0] === '新增目的地…×', JSON.stringify(r.wallMenu));
     t.eq('都 undo 回去', JSON.stringify(r.insUndo), JSON.stringify([2, true]));
     t.check('點門：進到目的地圖、← 返回 能按、作息沒動', r.entered[0] === r.doorTo && r.entered[1] === false && r.entered[2] === 2, JSON.stringify([r.doorTo, r.entered]));
