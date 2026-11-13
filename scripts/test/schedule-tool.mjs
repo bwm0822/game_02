@@ -515,6 +515,29 @@ run('schedule-tool', async t => {
         out.sameFull = await insSame(22 * 60 + 10);
         re.undo();
         out.sameUndo = JSON.stringify(S.data.trump.schedule) === sch0;
+        // 右鍵「待多久…」：對話框 待到／長度連動，確定才寫（只平移下一筆）、取消不動
+        const stayDlg = async (fn) => {
+            const a = answering(fn);
+            await ctxBar(12 * 60);
+            mItems(0).find(b => b.textContent === '待多久…').click();
+            await until(() => a.seen.length);
+            await sleep(60); a.stop();
+            return a.seen[0];
+        };
+        const hs0 = S.hi;
+        out.stayCancel = [await stayDlg(dl => {pickT('stayAsk.end', '20:00'); return 'cancel';}), JSON.stringify(S.data.trump.schedule) === sch0, S.hi - hs0];
+        let linked = '';
+        await stayDlg(dl => {pickT('stayAsk.end', '20:00'); linked = dl.querySelector('[data-k="stayAsk.stay"]').textContent; return 'ok';});
+        const pls = re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+        out.stayOk = [linked, pls[1].dep, S.data.trump.schedule[0].t, S.data.trump.schedule[1].t.startsWith('@'), S.hi - hs0];
+        re.undo();
+        out.stayUndo = JSON.stringify(S.data.trump.schedule) === sch0;
+        const keep = S.data.trump.schedule;
+        S.data.trump.schedule = [keep[0]]; re.render();
+        await ctxBar(12 * 60);
+        out.stayOne = mItems(0).find(b => b.textContent === '待多久…')?.disabled;
+        document.querySelectorAll('.ctxmenu').forEach(m => m.remove());
+        S.data.trump.schedule = keep; re.render();
         // 在地圖上選：插入 15:00 → 挑選模式 → 點 sit-2
         await ctxBar(15 * 60);
         hover(0, /^插入作息/);
@@ -900,7 +923,7 @@ run('schedule-tool', async t => {
     t.eq('點一段：進表單、選那張卡片、右欄作息地圖', JSON.stringify(r.gPick), JSON.stringify(['form', 'trump', 1, 'sched', true, 'm_04x05/trump-inn-f2']));
     t.eq('點角色名：進表單', JSON.stringify(r.gName), JSON.stringify(['form', 'musk']));
     t.eq('總覽拖分界線：照原型別平移、一筆 undo、留在總覽', JSON.stringify(r.gShift), JSON.stringify(['@22:20', 1, 'table']));
-    t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '分割（10:00）', '改目的地', '類型', '刪除這筆']));
+    t.eq('時序條右鍵（落在停留段）：插入／改目的地／類型／刪除', JSON.stringify(r.barMenu), JSON.stringify(['插入作息（10:00 抵達）', '分割（10:00）', '改目的地', '類型', '待多久…', '刪除這筆']));
     t.eq('插入 ▸ 世界圖 ＋ 在地圖上選', JSON.stringify(r.barL1), JSON.stringify(['m_04x05', '🗺 在地圖上選…']));
     t.check('世界圖 ▸ 自己的點＋🏠 室內圖（不列門、樓梯、只有門的空屋）', r.barL2.includes('musk-p1') && r.barL2.includes('🏠 trump-inn-f1') && !r.barL2.includes('trump-inn') && !r.barL2.some(x => /house-0[1-7]$/.test(x)), JSON.stringify(r.barL2));
     t.check('🏠 室內圖 ▸ 點（不列 door／stair-up）', r.barL3.includes('sit-1') && r.barL3.includes('trump-p1') && !r.barL3.includes('door') && !r.barL3.includes('stair-up'), JSON.stringify(r.barL3));
@@ -911,12 +934,17 @@ run('schedule-tool', async t => {
     t.eq('拖過頭：前一段最少停 10 分', r.clamped, 10);
     t.check('類型下拉：（無）＋清單＋新類型', r.typeOpts[0] === '（無）' && r.typeOpts.includes('午餐') && r.typeOpts.at(-1) === '＋ 新類型…', JSON.stringify(r.typeOpts));
     t.eq('選午餐：寫 type、段內寫午餐、type 排在 t 後面', JSON.stringify(r.typed), JSON.stringify(['lunch', '午餐', 't,map,go,type']));
-    t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '分割（10:20）', '改目的地', '類型', '刪除這筆']));
+    t.eq('右鍵段：一樣的選單', JSON.stringify(r.segMenu), JSON.stringify(['插入作息（10:20 抵達）', '分割（10:20）', '改目的地', '類型', '待多久…', '刪除這筆']));
     t.eq('刪除：前後同目的地合併，回到原本、選前一筆', JSON.stringify(r.delMerged), JSON.stringify([true, 0]));
     t.eq('同目的地插入：也夾一小時（12:00 抵達、13:00 出發回原處）、選新那筆', JSON.stringify(r.sameIns),
         JSON.stringify(['@06:20 trump-p1 | @12:00 trump-p1 | 13:00 trump-p1 | @22:50 bed', 1]));
     t.eq('同目的地塞不下一小時：只插一筆（＝分割）', r.sameFull, '@06:20 trump-p1 | @22:10 trump-p1 | @22:50 bed');
     t.eq('同目的地插入 undo 回原狀', r.sameUndo, true);
+    t.eq('待多久…：取消不動、不進 undo', JSON.stringify(r.stayCancel), JSON.stringify(['待多久', true, 0]));
+    t.eq('待多久…：待到 20:00＝長度連動 13 時 40 分、下一筆出發平移到 20:00（照原本抵達型）、這筆不動、一筆 undo', JSON.stringify(r.stayOk),
+        JSON.stringify(['13 時 40 分', 1200, '@06:20', true, 1]));
+    t.eq('待多久…：undo 回原狀', r.stayUndo, true);
+    t.eq('待多久…：只有一筆＝反灰', r.stayOne, true);
     t.check('在地圖上選：地圖上方提示', /插入 15:00 抵達的目的地/.test(r.pickBar ?? ''), r.pickBar);
     t.eq('點 sit-2：插入（夾一小時）、提示消失', JSON.stringify(r.picked2), JSON.stringify(['@06:20 trump-p1 | @15:00 sit-2 | 16:00 trump-p1 | @22:50 bed', true]));
     t.eq('Esc 取消挑選', JSON.stringify(r.pickEsc), JSON.stringify([true, true]));
@@ -939,7 +967,7 @@ run('schedule-tool', async t => {
     t.eq('沒作息的 NPC：空的時序條＋提示', JSON.stringify(r.emptyBar), JSON.stringify([true, '（沒有作息，右鍵插入）']));
     t.eq('第一筆只插一筆', r.firstIns, JSON.stringify([{t: '@09:00', map: 'm/m_04x05', go: 'musk-p1'}]));
     t.eq('卡片測試全部 undo 回原狀', r.cardUndo, true);
-    t.eq('總覽右鍵：跟表單同一份選單', JSON.stringify(r.ggMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '刪除這筆']));
+    t.eq('總覽右鍵：跟表單同一份選單', JSON.stringify(r.ggMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '待多久…', '刪除這筆']));
     t.eq('總覽分割：寫進去、留在總覽、一筆 undo', JSON.stringify(r.ggSplit), JSON.stringify([3, 'table', 1]));
     t.eq('總覽 Shift＋點第一下：反白那段、不跳頁', JSON.stringify(r.ggShift1), JSON.stringify([[0], 'table']));
     t.eq('總覽 Shift＋點第二下：反白範圍', JSON.stringify(r.ggShift2), JSON.stringify([[0, 1], 'table']));
@@ -954,7 +982,7 @@ run('schedule-tool', async t => {
     t.eq('取消 trump：那列消失、記藏的、數字、清單還開著', JSON.stringify(r.ggHide), JSON.stringify([true, '["trump"]', `角色（${r.gRows[2] - 1}/${r.gRows[2]}）▾`, true]));
     t.eq('全部：回來、清掉記錄', JSON.stringify(r.ggAll), JSON.stringify([true, null, `角色（${r.gRows[2]}/${r.gRows[2]}）▾`]));
     t.eq('分割：離邊緣不到 10 分反灰', JSON.stringify(r.splitNear), JSON.stringify(['分割（06:20）', true, '離段的邊緣至少 10 分']));
-    t.eq('分割：在選單裡', JSON.stringify(r.splitMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '刪除這筆']));
+    t.eq('分割：在選單裡', JSON.stringify(r.splitMenu), JSON.stringify(['插入作息（12:00 抵達）', '分割（12:00）', '改目的地', '類型', '待多久…', '刪除這筆']));
     t.eq('分割：新的一筆 @12:00 同目的地、選它、一筆 undo', JSON.stringify(r.split), JSON.stringify([JSON.stringify({t: '@12:00', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'}), 3, 1, 1]));
     t.check('Shift＋點：反白兩段、卡片區寫已選 2 筆', JSON.stringify(r.multi[0]) === '[0,1]' && /^已選 2 筆（06:20～/.test(r.multi[1]), JSON.stringify(r.multi));
     t.eq('多選右鍵：只有合併／刪除', JSON.stringify(r.multiMenu), JSON.stringify(['合併 2 筆', '刪除 2 筆']));
