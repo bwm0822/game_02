@@ -15,6 +15,11 @@
 .card[data-sch].sel { border-color: #4fc3f7; box-shadow: 0 0 0 1px #4fc3f7 inset; }
 .card .times { color: #8fd0ef; font-size: 13px; margin: -2px 0 6px; }
 .card .times.bad { color: #ff7b7b; }
+.card .times { font-size: 15px; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; }
+.card .times .tw, .card .times .ts { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.card .times .tlate { flex-basis: 100%; font-size: 13px; }
+.card .destbtn { text-align: left; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .destbtn.bad { color: #ff7b7b; border-color: #a33; }
 .smap .crumbs { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin-bottom: 6px; font-size: 13px; }
 .smap .crumbs button { padding: 1px 6px; }
 .smap .crumbs button.on { background: #2f6db5; color: #fff; }

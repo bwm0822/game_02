@@ -129,7 +129,10 @@ run('schedule-tool', async t => {
         const pl = re.SP.buildPlan(sch, S.ext.nav.edges, S.ext.nav.nodes);
         const p0 = pl.plan[0];
         out.times0 = card(0).querySelector('.times')?.textContent;
-        out.times0Want = `出發 ${re.SP.hhmm(p0.dep)} → 抵達 06:20（走 ${p0.cost} 分）`;
+        const p1 = pl.plan[1];
+        out.times0Want = `走：${re.SP.hhmm(p0.dep)}（${re.SB.dur(p0.cost)}）待：06:20 ~ ${re.SP.hhmm(p1.dep)}（${re.SB.dur(re.SP.mod(p1.dep - p0.arr))}）`;
+        out.cardNoMap = [!document.querySelector('#view .card [data-k="schedule.0.map"]'), !document.querySelector('#view .card [data-k="schedule.0.t#mode"]'),
+            document.querySelector('#view .card [data-k="schedule.0.dest"]')?.textContent];
         out.dep0 = re.SP.mod(p0.dep + p0.cost) === 6 * 60 + 20;
 
         // 時間選擇器：不能打字，點時／分彈出 5 格（中間＝目前值、循環），滾就寫、連續滾一步 undo，點格子寫入並關閉，Esc 關
@@ -371,7 +374,7 @@ run('schedule-tool', async t => {
         out.addedAt = [defT, S.data.trump.schedule.length, JSON.stringify(S.data.trump.schedule[1]), S.schSel.i, JSON.stringify(S.data.trump.schedule[2])];
         out.addedAtWant = JSON.stringify({t: '@12:00', map: F1, at: cell});
         // 臨時補路網：時刻表算得出來、橫幅說有格子還沒進路網
-        await until(() => /抵達 12:00/.test(card(1)?.querySelector('.times')?.textContent ?? ''));
+        await until(() => /待：12:00/.test(card(1)?.querySelector('.times')?.textContent ?? ''));
         out.atTimes = card(1)?.querySelector('.times')?.textContent;
         await until(() => right().querySelector('.smap .stale'));
         out.atBanner = right().querySelector('.smap .stale')?.textContent;
@@ -457,6 +460,36 @@ run('schedule-tool', async t => {
         out.pickEsc = [!right().querySelector('.smap .pickbar'), !re.S.pick];
         while (S.hi > h1) re.undo();
         out.barUndo = JSON.stringify(S.data.trump.schedule) === sch0;
+
+        // ---- 卡片：點時間改（出發型／訖＝下一筆平移）、目的地按鈕＝分層選單打 ✔ ----
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        const plk = re.SP.buildPlan(S.data.trump.schedule, re.S.ext.nav.edges, re.S.ext.nav.nodes).plan;
+        pickT('schedule.0.end', '22:00');
+        out.endPick = [S.data.trump.schedule[1].t, `@${re.SP.hhmm(22 * 60 + plk[1].cost)}`, S.data.trump.schedule[0].t];
+        pickT('schedule.0.dep', '06:00');
+        out.depPick = S.data.trump.schedule[0].t;
+        while (S.hi > h1) re.undo();
+        S.schSel = {id: 'trump', i: 0}; re.render();
+        document.querySelector('#view [data-k="schedule.0.dest"]').click();
+        await until(() => document.querySelector('.ctxmenu'));
+        out.destL0 = mItems(0).map(b => b.textContent);
+        hover(0, /m_04x05$/);
+        out.destL1 = mItems(1).filter(b => b.textContent.startsWith('✔')).map(b => b.textContent);
+        hover(1, /trump-inn-f1$/);
+        out.destL2 = mItems(2).filter(b => b.textContent.startsWith('✔')).map(b => b.textContent);
+        mItems(2).find(b => b.textContent === 'sit-1').click();
+        out.destSet = [S.data.trump.schedule[0].map, S.data.trump.schedule[0].go, document.querySelector('#view [data-k="schedule.0.dest"]')?.textContent];
+        while (S.hi > h1) re.undo();
+        // 沒有作息的 NPC 也有時序條（空的、右鍵插入只插一筆）
+        re.commit(() => {delete S.data.trump.schedule;});
+        S.schSel = null; re.render();
+        out.emptyBar = [!!tb(), tb()?.querySelector('.empty')?.textContent];
+        await ctxBar(9 * 60);
+        hover(0, /^插入作息/); hover(1, /^m_04x05$/);
+        mItems(2).find(b => b.textContent === 'musk-p1').click();
+        out.firstIns = JSON.stringify(S.data.trump.schedule);
+        while (S.hi > h1) re.undo();
+        out.cardUndo = JSON.stringify(S.data.trump.schedule) === sch0;
         // 點門：進到目的地圖、← 返回 回來
         S.schSel = {id: 'trump', i: 0}; re.SM.setMap(F1); re.render();
         await until(() => cv()?.st.data && cv().st.ports.length);
@@ -644,7 +677,8 @@ run('schedule-tool', async t => {
     t.check('trump 作息：06:20 到 1F trump-p1、22:50 到 2F 床', JSON.stringify(r.trumpSch) === JSON.stringify(['@06:20 m_04x05/trump-inn-f1:trump-p1', '@22:50 m_04x05/trump-inn-f2:bed']), JSON.stringify(r.trumpSch));
     t.eq('沒選：沒有卡片、一行灰字', JSON.stringify(r.firstSel), JSON.stringify([0, '點時序條上的一段來編輯', null]));
     t.eq('選了：只顯示那一筆的卡片', JSON.stringify(r.oneCard), JSON.stringify(['0']));
-    t.eq('卡片時刻表：出發（倒推）→ 抵達、走幾分', r.times0, r.times0Want);
+    t.eq('卡片第一行：走：出發（倒推）（幾分）待：抵達 ~ 下一筆出發（停多久）', r.times0, r.times0Want);
+    t.eq('卡片沒有地圖欄、出發／抵達下拉；目的地是按鈕', JSON.stringify(r.cardNoMap), JSON.stringify([true, true, '🏠 trump-inn-f1 ▸ trump-p1']));
     t.check('@ 抵達倒推出發', r.dep0);
     t.eq('時間選擇器：顯示 HH:MM、沒有輸入框', JSON.stringify(r.tpNoInput), JSON.stringify(['06:20', true]));
     t.eq('點「時」：5 格、中間＝目前值', JSON.stringify(r.tpOpen), JSON.stringify(['04', '05', '06*', '07', '08']));
@@ -705,6 +739,14 @@ run('schedule-tool', async t => {
     t.eq('點 sit-2：插入（夾一小時）、提示消失', JSON.stringify(r.picked2), JSON.stringify(['@06:20 trump-p1 | @15:00 sit-2 | 16:00 trump-p1 | @22:50 bed', true]));
     t.eq('Esc 取消挑選', JSON.stringify(r.pickEsc), JSON.stringify([true, true]));
     t.eq('全部 undo 回原狀', r.barUndo, true);
+    t.eq('點訖改 22:00：下一筆照原型別平移（@ 抵達＝22:00＋走路）、這筆不動', JSON.stringify(r.endPick), JSON.stringify([r.endPick[1], r.endPick[1], '@06:20']));
+    t.eq('點出發改 06:00：這筆變出發型', r.depPick, '06:00');
+    t.check('目的地按鈕：分層選單、目前所在打 ✔', r.destL0[0] === '✔ m_04x05' && r.destL0.at(-1) === '🗺 在地圖上選…', JSON.stringify(r.destL0));
+    t.eq('✔ 掛在室內圖跟點上', JSON.stringify([r.destL1, r.destL2]), JSON.stringify([['✔ 🏠 trump-inn-f1'], ['✔ trump-p1']]));
+    t.eq('選 sit-1：改 map＋go、按鈕跟著換', JSON.stringify(r.destSet), JSON.stringify(['m_04x05/trump-inn-f1', 'sit-1', '🏠 trump-inn-f1 ▸ sit-1']));
+    t.eq('沒作息的 NPC：空的時序條＋提示', JSON.stringify(r.emptyBar), JSON.stringify([true, '（沒有作息，右鍵插入）']));
+    t.eq('第一筆只插一筆', r.firstIns, JSON.stringify([{t: '@09:00', map: 'm/m_04x05', go: 'musk-p1'}]));
+    t.eq('卡片測試全部 undo 回原狀', r.cardUndo, true);
     t.check('滑過別人用的點：占用時間圖列出誰的第幾筆、提示右鍵', r.hoverOthersOcc.some(x => /^musk (\d+,)*2(,|$)/.test(x)) &&r.hoverOthers.endsWith('右鍵＝新增目的地／改目的地…'), JSON.stringify([r.hoverOthersOcc, r.hoverOthers]));
     t.eq('左鍵點物件不改資料', JSON.stringify(r.leftNoop), JSON.stringify(['trump-p1', true]));
     t.eq('右鍵物件：新增目的地／改成選中那筆', JSON.stringify(r.objMenu), JSON.stringify(['新增目的地…', '改成選中那筆（06:20）的目的地']));
@@ -714,7 +756,7 @@ run('schedule-tool', async t => {
     t.eq('右鍵空地 新增目的地：問抵達時間（預設選中那筆 +1 小時）', JSON.stringify([r.addAsk, r.addedAt[0]]), JSON.stringify([['新增目的地'], '07:20']));
     t.eq('夾一小時：插在第 2 筆、寫 at、選到新的那筆、13:00 出發回 trump-p1', JSON.stringify(r.addedAt.slice(1)),
         JSON.stringify([4, r.addedAtWant, 1, JSON.stringify({t: '13:00', go: 'trump-p1', map: 'm_04x05/trump-inn-f1'})]));
-    t.check('格子還沒進路網：時刻表先臨時算', /抵達 12:00/.test(r.atTimes ?? ''), r.atTimes);
+    t.check('格子還沒進路網：時刻表先臨時算', /待：12:00/.test(r.atTimes ?? ''), r.atTimes);
     t.check('橫幅：N 個作息格子還沒進路網', /1 個作息格子還沒進路網/.test(r.atBanner ?? ''), r.atBanner);
     t.eq('改成物件：at 換成 go、key 位置不變', r.atToGo, JSON.stringify({t: '@12:00', map: 'm_04x05/trump-inn-f1', go: 'sit-1'}));
     t.eq('作息地圖畫 at 格子方框（畫的時候就算好作息點）', JSON.stringify(r.atBox), JSON.stringify([true, 'trump']));
@@ -735,7 +777,7 @@ run('schedule-tool', async t => {
     t.eq('nextobjectid +1、不碰作息；右鍵新點 改成第 1 筆 才指過去', JSON.stringify(r.added.slice(2)), JSON.stringify([true, true, 'trump-p1', 'trump-p2']));
     t.eq('其他資料不變、排版照 Tiled、換行照原檔', JSON.stringify(r.sameElse), JSON.stringify([true, true, true]));
     t.eq('寫完地圖：路網過期提示＋更新鈕', JSON.stringify(r.stale), JSON.stringify(['["m_04x05/trump-inn-f1"]', '⚠ 路網已過期（trump-inn-f1.json 比 navgraph.json 新）更新路網']));
-    t.check('卡片標 ⚠ 路網裡沒有', (r.cardMiss ?? '').startsWith('⚠ 路網裡沒有 m_04x05/trump-inn-f1:trump-p2'), r.cardMiss);
+    t.check('卡片標 ⚠ 路網裡沒有、只剩一個時間欄', (r.cardMiss ?? '').includes('⚠ 路網裡沒有 m_04x05/trump-inn-f1:trump-p2') && r.cardMiss.startsWith('時間：06:20（抵達）'), r.cardMiss);
     t.eq('拖 point：對齊格子、往右兩格、拖完不會當成點空地', JSON.stringify(r.moved), JSON.stringify([64, 0, false]));
     t.eq('改名：問名稱、有警告問存檔', JSON.stringify(r.renameAsk), JSON.stringify(['改名 trump-p2', '有 1 個問題']));
     t.eq('改名：地圖改了、role.json 引用跟著改並存檔', JSON.stringify(r.renamed), JSON.stringify([true, true, 'trump-p9', 'trump-p9']));

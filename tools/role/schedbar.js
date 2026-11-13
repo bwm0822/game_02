@@ -13,7 +13,7 @@ export function mapColor(map)
     return PALETTE[x % PALETTE.length];
 }
 
-const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)} 時${m % 60 ? ` ${m % 60} 分` : ''}` : `${m} 分`);
+export const dur = (m) => (m >= 60 ? `${Math.floor(m / 60)} 時${m % 60 ? ` ${m % 60} 分` : ''}` : `${m} 分`);
 
 // 分段：{kind:'stay'|'walk'|'late'|'nope', i, s, len}（s＝開始分鐘，len 可能跨午夜）；plan＝null 回傳 null
 export function daySegs(plan, sch, warns = [])

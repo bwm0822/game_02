@@ -133,10 +133,8 @@ run('role', async t => {
         re.undo(); re.undo(); re.undo(); re.undo();
         out.schUndo = sch().length === n0;
         S.schSel = {id: 'karen', i: 0}; re.render();
-        const mode = document.querySelector('#view .card [data-k="schedule.0.t#mode"]');
-        mode.value = ''; mode.dispatchEvent(new Event('change'));
-        out.schMode = sch()[0].t;
-        re.undo();
+        out.schMode = [!document.querySelector('#view .card [data-k="schedule.0.t#mode"]'), !document.querySelector('#view .card [data-k="schedule.0.map"]'),
+            !!document.querySelector('#view .card [data-k="schedule.0.dest"]'), !!document.querySelector('#view .card [data-k="schedule.0.dep.h"]')];
         out.navMaps = !!document.getElementById('dl-nav-m/m_04x05')?.options.length;
 
         // 預覽
@@ -343,7 +341,7 @@ run('role', async t => {
     t.eq('目的地不在路網、時間格式錯都有警告', r.schBad, 2);
     t.check('巡邏沒 route 有警告、出現路線欄', r.patrol[0] && r.patrol[1]);
     t.eq('作息 undo', r.schUndo, true);
-    t.eq('切成出發時間', r.schMode, '08:00');
+    t.eq('卡片：沒有出發／抵達下拉、地圖欄；有目的地按鈕、出發時間可點', JSON.stringify(r.schMode), JSON.stringify([true, true, true, true]));
     t.check('路網選項依地圖分', r.navMaps);
     t.check('預覽畫出身體', r.preview >= 1, `${r.preview}`);
     t.check('預覽畫出裝備', r.previewEquip > 2, `${r.previewEquip}`);
