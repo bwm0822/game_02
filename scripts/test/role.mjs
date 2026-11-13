@@ -121,17 +121,17 @@ run('role', async t => {
         re.set('karen', ['style'], 'weak');    // 留著，後面存檔才有警告可問
         out.style = re.validate('karen').some(w => w.includes('weak'));
         out.schCards = [document.querySelectorAll('#view .card[data-sch]').length, !!document.querySelector('#view .schhint'), sch().length];
-        const n0 = sch().length, last = sch().at(-1);
+        const ns0 = sch().length, last = sch().at(-1);
         re.addSch('karen');
         const k = S.schSel.i;
-        out.schAdd = [sch().length - n0, k, sch()[k].map === last.map, re.validate('karen').filter(w => w.startsWith('作息')).length, JSON.stringify(sch()[k])];
+        out.schAdd = [sch().length - ns0, k, sch()[k].map === last.map, re.validate('karen').filter(w => w.startsWith('作息')).length, JSON.stringify(sch()[k])];
         re.set('karen', ['schedule', k, 'go'], 'nowhere');
         re.set('karen', ['schedule', k, 't'], '8:00');
         out.schBad = re.validate('karen').filter(w => w.startsWith(`作息 ${k + 1} `)).length;
         re.set('karen', ['schedule', k, 'do'], 'patrol');
         out.patrol = [re.validate('karen').some(w => w.includes('巡邏沒有 route')), !!document.querySelector('#view .card[data-sch] input[data-tags]')];
         re.undo(); re.undo(); re.undo(); re.undo();
-        out.schUndo = sch().length === n0;
+        out.schUndo = sch().length === ns0;
         S.schSel = {id: 'karen', i: 0}; re.render();
         out.schMode = [!document.querySelector('#view .card [data-k="schedule.0.t#mode"]'), !document.querySelector('#view .card [data-k="schedule.0.map"]'),
             !!document.querySelector('#view .card [data-k="schedule.0.dest"]'), !!document.querySelector('#view .card [data-k="schedule.0.dep.h"]')];
