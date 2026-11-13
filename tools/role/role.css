@@ -28,7 +28,7 @@
 .smap .routeedit { flex: none; margin-bottom: 6px; padding: 4px 8px; background: #1e3d1a; border: 1px solid #5aa845; border-radius: 4px; color: #c8f0b8; font-size: 13px; }
 .card .times.patrol { color: #9fe08a; }
 /* 作息 24 小時橫條（schedbar.js） */
-.daybar { margin: 20px 0 10px; font-size: 12px; }
+.daybar { margin: 4px 0 10px; font-size: 12px; }
 .daybar.none { font-size: 13px; }
 .daybar .track { position: relative; height: 22px; background: #1d1f22; border: 1px solid #3a3d44; border-radius: 3px; overflow: hidden; }
 .daybar .hr { position: absolute; top: 0; bottom: 0; width: 1px; background: #2c2f34; }
